@@ -1,0 +1,45 @@
+{
+  "_comment": "Minimal 2-D p-n diode mesh: 1 µm × 1 µm square, two triangular cells",
+
+  "nodes": [
+    { "id": 0, "x": 0.0e-6, "y": 0.0e-6 },
+    { "id": 1, "x": 1.0e-6, "y": 0.0e-6 },
+    { "id": 2, "x": 1.0e-6, "y": 1.0e-6 },
+    { "id": 3, "x": 0.0e-6, "y": 1.0e-6 }
+  ],
+
+  "triangles": [
+    { "id": 0, "region_id": 0, "node_ids": [0, 1, 2] },
+    { "id": 1, "region_id": 1, "node_ids": [0, 2, 3] }
+  ],
+
+  "regions": [
+    {
+      "id": 0,
+      "name": "n_region",
+      "material": "Si",
+      "cell_ids": [0]
+    },
+    {
+      "id": 1,
+      "name": "p_region",
+      "material": "Si",
+      "cell_ids": [1]
+    }
+  ],
+
+  "contacts": [
+    {
+      "id": 0,
+      "name": "cathode",
+      "region_id": 0,
+      "node_ids": [1, 2]
+    },
+    {
+      "id": 1,
+      "name": "anode",
+      "region_id": 1,
+      "node_ids": [0, 3]
+    }
+  ]
+}
