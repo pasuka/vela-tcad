@@ -74,31 +74,12 @@ public:
     const VectorXd&      rhs()    const { return b_; }
 
 private:
-    // ---- geometry helpers ----
-
-    /// Compute per-node control-volume areas (1/3 of adjacent triangle areas).
-    std::vector<Real> computeNodeVolumes() const;
-
-    /// Compute per-edge Voronoi coupling lengths.
-    /// Current approximation: couple = edge_length.
-    /// Replace body with circumcenter-distance formula when ready.
-    std::vector<Real> computeEdgeCouplings() const;
-
-    /// Return the average dielectric constant [F/m] for a given edge.
-    Real edgeEpsilon(Index edgeId) const;
-
-    // ---- data ----
     const DeviceMesh&       mesh_;
     const MaterialDatabase& matdb_;
     const DopingModel&      doping_;
 
     SparseMatrixd A_;
     VectorXd      b_;
-
-    /// edge id → cells that contain this edge
-    std::vector<std::vector<Index>> edgeCells_;
-
-    void buildEdgeCellMap();
 };
 
 } // namespace vela
