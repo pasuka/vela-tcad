@@ -1,6 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
+
+#include <Eigen/SparseLU>
 
 #include "vela/core/PhysicalConstants.h"
+#include "vela/equation/CoupledDDAssembler.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DopingModel.h"
@@ -46,6 +50,25 @@ static DopingModel makePNDoping(const DeviceMesh& mesh)
         {"p_region", 0.0, 1.0e21},
     };
     return DopingModel::fromMeshAndRegions(mesh, specs);
+}
+
+static DeviceMesh makeOxideMesh()
+{
+    DeviceMesh mesh;
+    const double L = 1.0e-6;
+
+    Node n0; n0.id = 0; n0.x = 0.0; n0.y = 0.0; mesh.addNode(n0);
+    Node n1; n1.id = 1; n1.x = L;   n1.y = 0.0; mesh.addNode(n1);
+    Node n2; n2.id = 2; n2.x = L;   n2.y = L;   mesh.addNode(n2);
+    Node n3; n3.id = 3; n3.x = 0.0; n3.y = L;   mesh.addNode(n3);
+
+    Cell c0; c0.id = 0; c0.type = CellType::Tri3; c0.region_id = 0; c0.node_ids = {0, 1, 2}; mesh.addCell(c0);
+    Cell c1; c1.id = 1; c1.type = CellType::Tri3; c1.region_id = 0; c1.node_ids = {0, 2, 3}; mesh.addCell(c1);
+
+    Region r0; r0.id = 0; r0.name = "oxide"; r0.material = "SiO2"; r0.cell_ids = {0, 1}; mesh.addRegion(r0);
+
+    mesh.buildEdges();
+    return mesh;
 }
 
 static std::unordered_map<std::string, Real> zeroBias()
@@ -117,4 +140,39 @@ TEST_CASE("NewtonSolver: no NaN or Inf and carriers stay positive", "[newton]")
         REQUIRE(result.solution.n(i) > 0.0);
         REQUIRE(result.solution.p(i) > 0.0);
     }
+}
+
+TEST_CASE("CoupledDDAssembler: zero-mobility continuity rows are pinned", "[newton][coupled]")
+{
+    DeviceMesh mesh = makeOxideMesh();
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    CoupledDDAssembler assembler(mesh, matdb, doping, constants::Vt_300, 1.0e-6, 1.0e-6);
+
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi = VectorXd::Zero(N);
+    state.phin = VectorXd::LinSpaced(N, 0.1, 0.4);
+    state.phip = VectorXd::LinSpaced(N, -0.4, -0.1);
+    const VectorXd x = assembler.pack(state);
+
+    CoupledDDBoundaryConditions bcs;
+    for (Index i = 0; i < mesh.numNodes(); ++i)
+        bcs.psi[i] = 0.0;
+
+    const VectorXd r = assembler.residual(x, bcs);
+    for (int i = 0; i < N; ++i) {
+        REQUIRE(r(N + i) == Catch::Approx(state.phin(i)));
+        REQUIRE(r(2 * N + i) == Catch::Approx(state.phip(i)));
+    }
+
+    const SparseMatrixd J = assembler.finiteDifferenceJacobian(x, bcs);
+    for (int i = 0; i < N; ++i) {
+        REQUIRE(J.coeff(N + i, N + i) == Catch::Approx(1.0));
+        REQUIRE(J.coeff(2 * N + i, 2 * N + i) == Catch::Approx(1.0));
+    }
+
+    Eigen::SparseLU<SparseMatrixd> lu;
+    lu.compute(J);
+    REQUIRE(lu.info() == Eigen::Success);
 }

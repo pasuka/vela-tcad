@@ -5,6 +5,7 @@
 #include "vela/physics/CarrierStatistics.h"
 #include <Eigen/Sparse>
 #include <cmath>
+#include <cstddef>
 #include <stdexcept>
 #include <vector>
 
@@ -101,6 +102,8 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
     VectorXd r = VectorXd::Zero(3 * N);
+    std::vector<bool> hasElectronContribution(static_cast<std::size_t>(N), false);
+    std::vector<bool> hasHoleContribution(static_cast<std::size_t>(N), false);
 
     const auto edgeCells = detail::buildEdgeCellMap(mesh_);
     const auto vol = detail::computeNodeVolumes(mesh_);
@@ -127,6 +130,9 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
         const Real mun = detail::edgeAvgMaterialProp(
             edgeCells[e], mesh_, matdb_, &Material::mun, 0.0);
         if (mun > 0.0) {
+            hasElectronContribution[static_cast<std::size_t>(i)] = true;
+            hasElectronContribution[static_cast<std::size_t>(j)] = true;
+
             const Real coef = mun * Vt_ * couple[e] / h;
             r(phinOffset() + i) += coef * (Bmu * n(i) - Bu * n(j));
             r(phinOffset() + j) += coef * (Bu * n(j) - Bmu * n(i));
@@ -135,6 +141,9 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
         const Real mup = detail::edgeAvgMaterialProp(
             edgeCells[e], mesh_, matdb_, &Material::mup, 0.0);
         if (mup > 0.0) {
+            hasHoleContribution[static_cast<std::size_t>(i)] = true;
+            hasHoleContribution[static_cast<std::size_t>(j)] = true;
+
             const Real coef = mup * Vt_ * couple[e] / h;
             r(phipOffset() + i) += coef * (Bu * p(i) - Bmu * p(j));
             r(phipOffset() + j) += coef * (Bmu * p(j) - Bu * p(i));
@@ -152,7 +161,22 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             const Real R = (n(ii) * p(ii) - ni * ni) / D;
             r(phinOffset() + ii) += R * vol[i];
             r(phipOffset() + ii) += R * vol[i];
+            hasElectronContribution[static_cast<std::size_t>(ii)] = true;
+            hasHoleContribution[static_cast<std::size_t>(ii)] = true;
         }
+    }
+
+    // Insulating nodes such as SiO2 (mun = mup = ni = 0) can have no
+    // transport or recombination contribution in the continuity equations.
+    // Pin those otherwise unconstrained quasi-Fermi unknowns to avoid zero
+    // residual/Jacobian rows. Explicit boundary conditions below take
+    // precedence over this internal gauge constraint.
+    for (Index i = 0; i < Nidx; ++i) {
+        const int ii = static_cast<int>(i);
+        if (!hasElectronContribution[static_cast<std::size_t>(ii)])
+            r(phinOffset() + ii) = x(phinOffset() + ii);
+        if (!hasHoleContribution[static_cast<std::size_t>(ii)])
+            r(phipOffset() + ii) = x(phipOffset() + ii);
     }
 
     for (const auto& [node, value] : bcs.psi)
