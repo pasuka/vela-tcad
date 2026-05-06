@@ -40,6 +40,10 @@ add_library(vela_core STATIC
     src/discretization/ScharfetterGummel.cpp
     src/solver/LinearSolver.cpp
     src/solver/GummelSolver.cpp
+    src/solver/NewtonSolver.cpp
+    src/equation/CoupledDDAssembler.cpp
+    src/numerics/ResidualNorm.cpp
+    src/numerics/LineSearch.cpp
     src/simulation/PoissonSimulation.cpp
 )
 
@@ -76,6 +80,9 @@ target_link_libraries(test_sg_flux PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_dd_gummel tests/test_dd_gummel.cpp)
 target_link_libraries(test_dd_gummel PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_newton_solver tests/test_newton_solver.cpp)
+target_link_libraries(test_newton_solver PRIVATE vela_core Catch2::Catch2WithMain)
+
 include(Catch)
 catch_discover_tests(test_scaling)
 catch_discover_tests(test_mesh)
@@ -83,3 +90,4 @@ catch_discover_tests(test_poisson)
 catch_discover_tests(test_bernoulli)
 catch_discover_tests(test_sg_flux)
 catch_discover_tests(test_dd_gummel)
+catch_discover_tests(test_newton_solver)
