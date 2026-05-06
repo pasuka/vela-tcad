@@ -95,14 +95,10 @@ private:
     SparseMatrixd A_;
     VectorXd      b_;
 
-    /// node id → average eps_r (material permittivity, dimensionless)
-    std::vector<Real> nodeEpsR_;
-
     /// edge id → cells that contain this edge
     std::vector<std::vector<Index>> edgeCells_;
 
     void buildEdgeCellMap();
-    void buildNodeEpsR();
 };
 
 } // namespace vela

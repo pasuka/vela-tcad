@@ -82,11 +82,11 @@ static DeviceMesh makePNMesh()
 //   p_region: Nd = 0,         Na = 1e23 m^-3
 static DopingModel makePNDoping(const DeviceMesh& mesh)
 {
-    nlohmann::json dopingJson = nlohmann::json::array({
-        { {"region","n_region"}, {"donors",1e23}, {"acceptors",0.0} },
-        { {"region","p_region"}, {"donors",0.0},  {"acceptors",1e23} }
-    });
-    return DopingModel::fromMeshAndRegions(mesh, dopingJson);
+    std::vector<RegionDopingSpec> specs = {
+        { "n_region", 1e23, 0.0 },
+        { "p_region", 0.0,  1e23 }
+    };
+    return DopingModel::fromMeshAndRegions(mesh, specs);
 }
 
 // ---------------------------------------------------------------------------

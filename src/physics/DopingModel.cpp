@@ -39,28 +39,22 @@ Real DopingModel::netDoping(Index nodeId) const
     return donors(nodeId) - acceptors(nodeId);
 }
 
-DopingModel DopingModel::fromMeshAndRegions(const DeviceMesh&     mesh,
-                                             const nlohmann::json& dopingArray)
+DopingModel DopingModel::fromMeshAndRegions(
+    const DeviceMesh&                    mesh,
+    const std::vector<RegionDopingSpec>& specs)
 {
-    // Build region-name → {donors, acceptors} map from JSON
-    struct RegionDoping { Real donors = 0.0; Real acceptors = 0.0; };
-    std::unordered_map<std::string, RegionDoping> regionSpec;
+    // Build region-name → {donors, acceptors} map from specs
+    std::unordered_map<std::string, const RegionDopingSpec*> regionSpec;
+    for (const auto& s : specs)
+        regionSpec[s.region] = &s;
 
-    for (const auto& entry : dopingArray) {
-        RegionDoping rd;
-        rd.donors    = entry.at("donors").get<Real>();
-        rd.acceptors = entry.at("acceptors").get<Real>();
-        regionSpec[entry.at("region").get<std::string>()] = rd;
-    }
-
-    // Build region-id → doping lookup
-    std::unordered_map<Index, RegionDoping> regionIdSpec;
+    // Build region-id → spec lookup
+    std::unordered_map<Index, const RegionDopingSpec*> regionIdSpec;
     for (Index r = 0; r < mesh.numRegions(); ++r) {
         const auto& reg = mesh.getRegion(r);
         auto it = regionSpec.find(reg.name);
-        if (it != regionSpec.end()) {
+        if (it != regionSpec.end())
             regionIdSpec[reg.id] = it->second;
-        }
     }
 
     // Accumulate per-node doping (average if node shared between regions)
@@ -74,7 +68,7 @@ DopingModel DopingModel::fromMeshAndRegions(const DeviceMesh&     mesh,
         auto it = regionIdSpec.find(cell.region_id);
         if (it == regionIdSpec.end()) continue;
 
-        const RegionDoping& rd = it->second;
+        const RegionDopingSpec& rd = *it->second;
         for (Index nid : cell.node_ids) {
             sumDon[nid] += rd.donors;
             sumAcc[nid] += rd.acceptors;

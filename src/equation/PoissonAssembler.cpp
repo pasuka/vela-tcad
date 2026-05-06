@@ -100,29 +100,6 @@ void PoissonAssembler::buildEdgeCellMap()
     }
 }
 
-void PoissonAssembler::buildNodeEpsR()
-{
-    const Index N = mesh_.numNodes();
-    nodeEpsR_.assign(N, 0.0);
-    std::vector<int> count(N, 0);
-
-    for (Index c = 0; c < mesh_.numCells(); ++c) {
-        const auto& cell = mesh_.getCell(c);
-        const auto& region = mesh_.getRegion(cell.region_id);
-        Real epsR = 1.0;
-        if (matdb_.hasMaterial(region.material))
-            epsR = matdb_.getMaterial(region.material).eps_r;
-
-        for (Index nid : cell.node_ids) {
-            nodeEpsR_[nid] += epsR;
-            ++count[nid];
-        }
-    }
-
-    for (Index i = 0; i < N; ++i)
-        if (count[i] > 0) nodeEpsR_[i] /= count[i];
-}
-
 Real PoissonAssembler::edgeEpsilon(Index edgeId) const
 {
     // Average epsilon [F/m] over cells adjacent to this edge
@@ -152,7 +129,6 @@ void PoissonAssembler::assemble()
 {
     const Index N = mesh_.numNodes();
     buildEdgeCellMap();
-    buildNodeEpsR();
 
     const std::vector<Real> vol    = computeNodeVolumes();
     const std::vector<Real> couple = computeEdgeCouplings();
@@ -183,10 +159,10 @@ void PoissonAssembler::assemble()
 
     A_.setFromTriplets(triplets.begin(), triplets.end());
 
-    // ---- Source term: rhs_i = -q * netDoping_i * vol_i ----
+    // ---- Source term: rhs_i = +q * netDoping_i * vol_i ----
     for (Index i = 0; i < N; ++i) {
         b_(static_cast<int>(i)) =
-            -constants::q * doping_.netDoping(i) * vol[i];
+            constants::q * doping_.netDoping(i) * vol[i];
     }
 }
 

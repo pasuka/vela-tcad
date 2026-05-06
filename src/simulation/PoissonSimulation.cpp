@@ -54,8 +54,15 @@ VectorXd PoissonSimulation::run(const std::string& configFile)
     // ------------------------------------------------------------------
     // Doping model
     // ------------------------------------------------------------------
-    DopingModel doping = DopingModel::fromMeshAndRegions(
-        mesh, cfg.at("doping"));
+    std::vector<RegionDopingSpec> dopingSpecs;
+    for (const auto& entry : cfg.at("doping")) {
+        RegionDopingSpec spec;
+        spec.region    = entry.at("region").get<std::string>();
+        spec.donors    = entry.at("donors").get<Real>();
+        spec.acceptors = entry.at("acceptors").get<Real>();
+        dopingSpecs.push_back(std::move(spec));
+    }
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, dopingSpecs);
 
     // ------------------------------------------------------------------
     // Assemble Poisson equation
