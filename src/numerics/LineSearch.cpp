@@ -16,7 +16,12 @@ LineSearchResult BacktrackingLineSearch::search(
     const AcceptFunction& acceptFunction) const
 {
     const Real currentNorm = currentResidual.norm();
-    Real alpha = std::clamp(cfg_.initialDamping, cfg_.minDamping, 1.0);
+    // When line search is disabled the caller's initialDamping is applied as a
+    // fixed damping factor; minDamping applies only during backtracking so it
+    // must not constrain a disabled line search from below.
+    Real alpha = cfg_.enabled
+        ? std::clamp(cfg_.initialDamping, cfg_.minDamping, 1.0)
+        : std::clamp(cfg_.initialDamping, 0.0, 1.0);
 
     const int attempts = cfg_.enabled ? std::max(1, cfg_.maxBacktracks + 1) : 1;
     for (int k = 0; k < attempts; ++k) {

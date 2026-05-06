@@ -171,12 +171,15 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         acceptedR = r;
         acceptedIters = iter;
 
+        // Record the norm of the actually applied update (damped step) so that
+        // per-iteration metrics are consistent with the accepted solution.
+        const Real appliedStepNorm = ls.damping * stepNorm;
         const Real residualNorm = ls.residualNorm;
-        result.history.push_back({iter, residualNorm, stepNorm, ls.damping});
+        result.history.push_back({iter, residualNorm, appliedStepNorm, ls.damping});
         if (cfg_.verbose) {
             std::cout << "Newton iter " << iter
                       << " residual=" << residualNorm
-                      << " step=" << stepNorm
+                      << " step=" << appliedStepNorm
                       << " damping=" << ls.damping << '\n';
         }
 

@@ -60,6 +60,11 @@ private:
     double taun_;
     double taup_;
     std::vector<Real> ni_;
+
+    // Mesh-derived quantities cached at construction time.
+    std::vector<std::vector<Index>> edgeCells_;
+    std::vector<Real> vol_;
+    std::vector<Real> couple_;
 };
 
 } // namespace vela

@@ -24,6 +24,9 @@ CoupledDDAssembler::CoupledDDAssembler(const DeviceMesh& mesh,
     , taun_(taun)
     , taup_(taup)
     , ni_(detail::buildNodeNi(mesh, matdb))
+    , edgeCells_(detail::buildEdgeCellMap(mesh))
+    , vol_(detail::computeNodeVolumes(mesh))
+    , couple_(detail::computeEdgeCouplings(mesh))
 {
     if (doping.numNodes() != mesh.numNodes())
         throw std::invalid_argument(
@@ -99,15 +102,35 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
     if (x.size() != 3 * N)
         throw std::invalid_argument("CoupledDDAssembler::residual: vector size mismatch.");
 
+    // n and p are needed for Poisson source and SRH recombination.
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
     VectorXd r = VectorXd::Zero(3 * N);
     std::vector<bool> hasElectronContribution(static_cast<std::size_t>(N), false);
     std::vector<bool> hasHoleContribution(static_cast<std::size_t>(N), false);
 
-    const auto edgeCells = detail::buildEdgeCellMap(mesh_);
-    const auto vol = detail::computeNodeVolumes(mesh_);
-    const auto couple = detail::computeEdgeCouplings(mesh_);
+    // Pre-compute per-node exponentials used in the balanced SG flux formulas.
+    // Using the Bernoulli identity B(-u) = B(u)*exp(u), the standard SG flux
+    //   B(-u)*n_i - B(u)*n_j   (electrons, ni=n0)
+    //   B(u)*p_i  - B(-u)*p_j  (holes,     ni=n0)
+    // can be rewritten without catastrophic cancellation at equilibrium as:
+    //   B(u) * ni_i * exp(psi_j/Vt) * [exp(-phin_i/Vt) - exp(-phin_j/Vt)]
+    //   B(u) * ni_i * exp(-psi_i/Vt) * [exp(phip_i/Vt) - exp(phip_j/Vt)]
+    // At equilibrium (phin=phip=0), the bracketed differences are exactly 0.
+    std::vector<Real> expNegPhin(static_cast<std::size_t>(N));
+    std::vector<Real> expPhip(static_cast<std::size_t>(N));
+    std::vector<Real> expPsi(static_cast<std::size_t>(N));
+    std::vector<Real> expNegPsi(static_cast<std::size_t>(N));
+    for (int k = 0; k < N; ++k) {
+        expNegPhin[static_cast<std::size_t>(k)] = std::exp(-x(phinOffset() + k) / Vt_);
+        expPhip[static_cast<std::size_t>(k)]    = std::exp( x(phipOffset()  + k) / Vt_);
+        expPsi[static_cast<std::size_t>(k)]     = std::exp( x(psiOffset()   + k) / Vt_);
+        expNegPsi[static_cast<std::size_t>(k)]  = std::exp(-x(psiOffset()   + k) / Vt_);
+    }
+
+    const auto& edgeCells = edgeCells_;
+    const auto& vol = vol_;
+    const auto& couple = couple_;
 
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
         const Edge& edge = mesh_.getEdge(e);
@@ -119,7 +142,6 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
         const Real dpsi = x(psiOffset() + j) - x(psiOffset() + i);
         const Real u = dpsi / Vt_;
         const Real Bu = bernoulli(u);
-        const Real Bmu = bernoulli(-u);
 
         const Real eps = detail::edgeEpsilon(edgeCells, mesh_, matdb_, e);
         const Real G = eps * couple[e] / h;
@@ -133,9 +155,17 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
 
+            // Balanced electron SG flux (avoids catastrophic cancellation):
+            //   B(-u)*n_i - B(u)*n_j = B(u)*ni_i*exp(psi_j/Vt)
+            //                           * [exp(-phin_i/Vt) - exp(-phin_j/Vt)]
             const Real coef = mun * Vt_ * couple[e] / h;
-            r(phinOffset() + i) += coef * (Bmu * n(i) - Bu * n(j));
-            r(phinOffset() + j) += coef * (Bu * n(j) - Bmu * n(i));
+            const Real ni_i = ni_[static_cast<Index>(i)];
+            const Real nFlux = coef * Bu * ni_i
+                               * expPsi[static_cast<std::size_t>(j)]
+                               * (expNegPhin[static_cast<std::size_t>(i)]
+                                  - expNegPhin[static_cast<std::size_t>(j)]);
+            r(phinOffset() + i) += nFlux;
+            r(phinOffset() + j) -= nFlux;
         }
 
         const Real mup = detail::edgeAvgMaterialProp(
@@ -144,9 +174,17 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
 
+            // Balanced hole SG flux (avoids catastrophic cancellation):
+            //   B(u)*p_i - B(-u)*p_j = B(u)*ni_i*exp(-psi_i/Vt)
+            //                           * [exp(phip_i/Vt) - exp(phip_j/Vt)]
             const Real coef = mup * Vt_ * couple[e] / h;
-            r(phipOffset() + i) += coef * (Bu * p(i) - Bmu * p(j));
-            r(phipOffset() + j) += coef * (Bmu * p(j) - Bu * p(i));
+            const Real ni_i = ni_[static_cast<Index>(i)];
+            const Real pFlux = coef * Bu * ni_i
+                               * expNegPsi[static_cast<std::size_t>(i)]
+                               * (expPhip[static_cast<std::size_t>(i)]
+                                  - expPhip[static_cast<std::size_t>(j)]);
+            r(phipOffset() + i) += pFlux;
+            r(phipOffset() + j) -= pFlux;
         }
     }
 
@@ -194,13 +232,24 @@ SparseMatrixd CoupledDDAssembler::finiteDifferenceJacobian(
     const CoupledDDBoundaryConditions& bcs,
     Real relativeStep) const
 {
+    if (relativeStep <= 0.0)
+        throw std::invalid_argument(
+            "CoupledDDAssembler::finiteDifferenceJacobian: relativeStep must be positive.");
+
     const int M = x.size();
     const VectorXd r0 = residual(x, bcs);
     std::vector<Eigen::Triplet<double>> triplets;
-    triplets.reserve(static_cast<std::size_t>(M) * static_cast<std::size_t>(M));
+    // Heuristic: for a 2-D mesh with M = 3*N unknowns and sparse connectivity
+    // (average ~6-7 neighbours per node), the Jacobian has O(N * 7 * 9) ≈ 63*N
+    // non-zeros.  Reserving M * 7 avoids the M^2 allocation that would OOM for
+    // any realistically-sized mesh while still keeping reallocations rare.
+    triplets.reserve(static_cast<std::size_t>(M) * 7);
+
+    // Minimum absolute perturbation to prevent h == 0 when x(col) == 0.
+    constexpr Real minAbsStep = 1.0e-15;
 
     for (int col = 0; col < M; ++col) {
-        const Real h = relativeStep * std::max(1.0, std::abs(x(col)));
+        const Real h = std::max(relativeStep * std::max(1.0, std::abs(x(col))), minAbsStep);
         VectorXd xp = x;
         xp(col) += h;
         const VectorXd rp = residual(xp, bcs);
