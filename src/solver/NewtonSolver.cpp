@@ -75,7 +75,20 @@ DDSolution NewtonSolver::buildInitialGuess(
     gcfg.dampingPsi = 0.5;
     gcfg.taun = cfg_.taun;
     gcfg.taup = cfg_.taup;
-    return runGummel(mesh_, matdb_, doping_, contactBiases_, gcfg);
+    DDSolution sol = runGummel(mesh_, matdb_, doping_, contactBiases_, gcfg);
+
+    // The Gummel solver leaves tiny numerical noise (~1e-18 V) in the
+    // quasi-Fermi potentials at interior nodes.  The balanced SG flux formula
+    // multiplies exp(-phi/Vt) differences by coefficients of order exp(psi/Vt)
+    // (~1e5 at a PN junction), so even 1-ULP rounding in exp(-tiny/Vt) creates
+    // a spurious initial residual of O(0.05) that prevents Newton convergence.
+    // Zeroing phi_n/phi_p is physically correct for equilibrium (flat
+    // quasi-Fermi levels) and produces a small, well-conditioned initial
+    // residual for the coupled Newton iteration.
+    const int N = static_cast<int>(mesh_.numNodes());
+    sol.phin = VectorXd::Zero(N);
+    sol.phip = VectorXd::Zero(N);
+    return sol;
 }
 
 DDSolution NewtonSolver::makeSolution(const CoupledDDAssembler& assembler,
@@ -108,6 +121,23 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
 
     VectorXd x = assembler.pack({initial.psi, initial.phin, initial.phip});
+
+    // The balanced Scharfetter-Gummel formula multiplies the quasi-Fermi
+    // difference (expNegPhin[i]-expNegPhin[j]) by exp(+ψ[j]/Vt) for electrons
+    // and exp(-ψ[i]/Vt) for holes.  At a PN junction these factors reach ~1e5,
+    // so even sub-ULP noise in phin/phip from an external initial guess (e.g.
+    // Gummel) produces O(1) residuals.  Zeroing the interior quasi-Fermi
+    // potentials removes this amplification: at equilibrium the exact solution
+    // has phin = phip = 0 everywhere, and for any bias Newton will converge to
+    // the correct non-zero values from this well-conditioned start.
+    for (int i = 0; i < assembler.numNodes(); ++i) {
+        const Index nid = static_cast<Index>(i);
+        if (bcs.phin.find(nid) == bcs.phin.end()) {
+            x(assembler.phinOffset() + i) = 0.0;
+            x(assembler.phipOffset() + i) = 0.0;
+        }
+    }
+
     VectorXd r = assembler.residual(x, bcs);
     const Real initialNorm = r.norm();
 

@@ -196,7 +196,13 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
         const Real ni = ni_[i];
         const Real D = taup_ * (n(ii) + ni) + taun_ * (p(ii) + ni);
         if (D > 1.0e-100) {
-            const Real R = (n(ii) * p(ii) - ni * ni) / D;
+            // Compute n*p - ni² via the identity n*p = ni²·exp((φp-φn)/Vt),
+            // i.e. n*p - ni² = ni²·expm1((φp-φn)/Vt).  This avoids
+            // catastrophic cancellation when φp≈φn (near equilibrium), where
+            // the naive form n·p - ni² is dominated by floating-point rounding
+            // in exp(+u)·exp(−u) ≠ 1.
+            const Real dPhi = x(phipOffset() + ii) - x(phinOffset() + ii);
+            const Real R    = ni * ni * std::expm1(dPhi / Vt_) / D;
             r(phinOffset() + ii) += R * vol[i];
             r(phipOffset() + ii) += R * vol[i];
             hasElectronContribution[static_cast<std::size_t>(ii)] = true;
