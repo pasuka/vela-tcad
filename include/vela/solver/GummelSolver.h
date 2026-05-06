@@ -64,7 +64,7 @@ DDSolution runGummel(const DeviceMesh&                         mesh,
 /**
  * @brief Write a DDSolution to a VTK file.
  *
- * Fields written: potential, ElectronQuasiFermi, HoleQuasiFermi,
+ * Fields written: Potential, ElectronQuasiFermi, HoleQuasiFermi,
  *                 Electrons, Holes, NetDoping.
  */
 void writeDDSolutionVTK(const std::string&    filename,

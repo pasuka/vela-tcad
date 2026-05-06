@@ -194,7 +194,7 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
 
         // Enforce positivity (guard against small negative artefacts)
         for (int ii = 0; ii < static_cast<int>(N); ++ii)
-            if (n_new(ii) < 0.0) n_new(ii) = 0.0;
+            if (n_new(ii) < 0.0) { n_new(ii) = 0.0; }
 
         // ---- c. Solve hole continuity for p ----
         assembler.assembleHoleContinuity(psi, n_new, p);
@@ -202,7 +202,7 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
         VectorXd p_new = ls.solve(assembler.matrix(), assembler.rhs());
 
         for (int ii = 0; ii < static_cast<int>(N); ++ii)
-            if (p_new(ii) < 0.0) p_new(ii) = 0.0;
+            if (p_new(ii) < 0.0) { p_new(ii) = 0.0; }
 
         // ---- d. Update quasi-Fermi potentials ----
         for (Index i = 0; i < N; ++i) {
