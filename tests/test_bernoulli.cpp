@@ -23,11 +23,10 @@ TEST_CASE("Bernoulli: tiny x uses Taylor", "[bernoulli]")
     REQUIRE(bernoulli(xn) == Approx(expectedn).epsilon(1.0e-12));
 }
 
-TEST_CASE("Bernoulli: B(x) + B(-x) = x * (exp(x)+1)/(exp(x)-1)", "[bernoulli]")
+TEST_CASE("Bernoulli: B(x) - B(-x) = -x", "[bernoulli]")
 {
-    // Identity: B(x) + B(-x) = x + x*exp(x)/(exp(x)-1) = x*(1+exp(x))/(exp(x)-1)
-    // A simpler derived identity: B(x) - B(-x) = -x  (verify B(-x) = B(x) + x)
-    //   B(x) = x/(exp(x)-1)
+    // Derivation of the identity:
+    //   B(x)  = x/(exp(x)-1)
     //   B(-x) = -x/(exp(-x)-1) = x*exp(x)/(exp(x)-1)
     //   B(-x) - B(x) = x  →  B(x) - B(-x) = -x
     for (double x : {-5.0, -1.0, -0.1, 0.1, 1.0, 5.0}) {

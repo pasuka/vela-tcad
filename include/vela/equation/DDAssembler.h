@@ -84,15 +84,6 @@ public:
     const VectorXd&      rhs()    const { return b_; }
 
 private:
-    // helpers
-    std::vector<Real> computeNodeVolumes()    const;
-    std::vector<Real> computeEdgeCouplings()  const;
-    void              buildEdgeCellMap();
-    Real              edgeEpsilon (Index edgeId) const;
-    Real              edgeMun     (Index edgeId) const;
-    Real              edgeMup     (Index edgeId) const;
-    Real              nodeNi      (Index nodeId) const;
-
     const DeviceMesh&       mesh_;
     const MaterialDatabase& matdb_;
     const DopingModel&      doping_;
@@ -100,10 +91,10 @@ private:
     double                  taun_;
     double                  taup_;
 
+    std::vector<Real> ni_; ///< Per-node intrinsic concentration [m^-3]
+
     SparseMatrixd A_;
     VectorXd      b_;
-
-    std::vector<std::vector<Index>> edgeCells_; ///< edge → adjacent cell ids
 };
 
 } // namespace vela

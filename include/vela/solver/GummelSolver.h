@@ -37,8 +37,11 @@ struct GummelConfig {
  *
  * Solves the coupled system:
  *   Poisson:            -div(ε·grad(ψ)) = q*(p - n + Nd - Na)
- *   Electron continuity: div(Jn) = q*R_SRH
- *   Hole continuity:    -div(Jp) = q*R_SRH
+ *   Electron continuity: div(Fn) = R_SRH   (Fn = particle flux density [m⁻²s⁻¹])
+ *   Hole continuity:    -div(Fp) = R_SRH   (Fp = particle flux density [m⁻²s⁻¹])
+ *
+ * Note: The Scharfetter–Gummel helpers return particle flux densities
+ * (units [m⁻²s⁻¹]); the factor q is not included in those routines.
  *
  * using decoupled (Gummel) linearisation.
  *

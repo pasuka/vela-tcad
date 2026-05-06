@@ -183,9 +183,10 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
         assembler.applyDirichlet(psiBC);
         VectorXd psi_new = ls.solve(assembler.matrix(), assembler.rhs());
 
-        // Damped update
-        const VectorXd dpsi = psi_new - psi;
-        psi += cfg.dampingPsi * dpsi;
+        // Damped update: compute full correction then apply with damping factor
+        const VectorXd dpsi         = psi_new - psi;
+        const VectorXd dpsi_applied = cfg.dampingPsi * dpsi;
+        psi += dpsi_applied;
 
         // ---- b. Solve electron continuity for n ----
         assembler.assembleElectronContinuity(psi, n, p);
@@ -218,7 +219,9 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
         for (const auto& [nid, val] : phipBC) phip(static_cast<int>(nid)) = val;
 
         // ---- e. Convergence check ----
-        const double dpsi_norm = dpsi.norm();
+        // Base residuals on the actual applied updates so that damping < 1
+        // does not prevent detection of convergence.
+        const double dpsi_norm = dpsi_applied.norm();
         const double psi_norm  = psi.norm();
         const double rel_err   = (psi_norm > 1.0e-30)
                                      ? dpsi_norm / psi_norm
@@ -229,10 +232,15 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
         const double n_norm  = n.norm();
         const double rel_n   = (n_norm > 1.0e-30) ? dn_norm / n_norm : dn_norm;
 
+        const VectorXd dp = p_new - p;
+        const double dp_norm = dp.norm();
+        const double p_norm  = p.norm();
+        const double rel_p   = (p_norm > 1.0e-30) ? dp_norm / p_norm : dp_norm;
+
         n = n_new;
         p = p_new;
 
-        if (rel_err < cfg.reltol && rel_n < cfg.reltol)
+        if (rel_err < cfg.reltol && rel_n < cfg.reltol && rel_p < cfg.reltol)
             break;
     }
 
