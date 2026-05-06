@@ -1,0 +1,16 @@
+{
+  "_comment": "2-D p-n diode Poisson simulation config. Mesh is a 1 µm × 1 µm square split into two triangular regions.",
+
+  "mesh_file":  "pn_diode_2d.json",
+  "output_vtk": "pn_poisson_2d.vtk",
+
+  "doping": [
+    { "region": "n_region", "donors": 1e23, "acceptors": 0.0  },
+    { "region": "p_region", "donors": 0.0,  "acceptors": 1e23 }
+  ],
+
+  "contacts": [
+    { "name": "cathode", "bias": 0.0 },
+    { "name": "anode",   "bias": 0.0 }
+  ]
+}

@@ -31,6 +31,10 @@ add_library(vela_core STATIC
     src/mesh/DeviceMesh.cpp
     src/io/MeshReader.cpp
     src/io/VTKWriter.cpp
+    src/physics/DopingModel.cpp
+    src/equation/PoissonAssembler.cpp
+    src/solver/LinearSolver.cpp
+    src/simulation/PoissonSimulation.cpp
 )
 
 target_include_directories(vela_core PUBLIC
@@ -54,6 +58,10 @@ target_link_libraries(test_scaling PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_mesh tests/test_mesh.cpp)
 target_link_libraries(test_mesh PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_poisson tests/test_poisson.cpp)
+target_link_libraries(test_poisson PRIVATE vela_core Catch2::Catch2WithMain)
+
 include(Catch)
 catch_discover_tests(test_scaling)
 catch_discover_tests(test_mesh)
+catch_discover_tests(test_poisson)
