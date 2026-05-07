@@ -22,9 +22,9 @@ RecombinationModel::RecombinationModel(RecombinationModelConfig config)
         }
     }
 
-    if (config_.taun <= 0.0 || config_.taup <= 0.0)
+    if (srhEnabled_ && (config_.taun <= 0.0 || config_.taup <= 0.0))
         throw std::invalid_argument("RecombinationModel: SRH lifetimes must be positive.");
-    if (config_.augerCn < 0.0 || config_.augerCp < 0.0)
+    if (augerEnabled_ && (config_.augerCn < 0.0 || config_.augerCp < 0.0))
         throw std::invalid_argument("RecombinationModel: Auger coefficients cannot be negative.");
 }
 

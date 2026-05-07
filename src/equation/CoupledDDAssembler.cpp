@@ -209,7 +209,7 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             (p(ii) - n(ii) + doping_.netDoping(i)) * vol[i];
 
         const Real ni = ni_[i];
-        if (ni > 0.0 || recombination_.augerEnabled() || recombination_.srhEnabled()) {
+        if (recombination_.srhEnabled() || recombination_.augerEnabled()) {
             // Compute n*p - ni² via the identity n*p = ni²·exp((φp-φn)/Vt),
             // i.e. n*p - ni² = ni²·expm1((φp-φn)/Vt).  This avoids
             // catastrophic cancellation when φp≈φn (near equilibrium), where
@@ -221,7 +221,7 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
                 : n(ii) * p(ii);
             const Real R = recombination_.totalRateFromExcessProduct(
                 excessProduct, n(ii), p(ii), ni);
-            if (R != 0.0 || ni > 0.0) {
+            if (R != 0.0) {
                 r(phinOffset() + ii) += R * vol[i];
                 r(phipOffset() + ii) += R * vol[i];
                 hasElectronContribution[static_cast<std::size_t>(ii)] = true;
