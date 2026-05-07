@@ -4,6 +4,7 @@
 #include "vela/solver/LinearSolver.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/io/VTKWriter.h"
+#include <nlohmann/json.hpp>
 #include <cmath>
 #include <stdexcept>
 #include <limits>
@@ -57,6 +58,31 @@ std::vector<double> buildNiVector(const DeviceMesh&       mesh,
 }
 
 } // anonymous namespace
+
+
+GummelConfig gummelConfigFromJson(const nlohmann::json& json)
+{
+    GummelConfig cfg;
+    cfg.maxIter = json.value("max_iter", cfg.maxIter);
+    cfg.reltol = json.value("reltol", cfg.reltol);
+    cfg.dampingPsi = json.value("damping_psi", cfg.dampingPsi);
+    cfg.taun = json.value("taun", cfg.taun);
+    cfg.taup = json.value("taup", cfg.taup);
+    cfg.mobility = json.value("mobility", cfg.mobility);
+
+    if (json.contains("recombination")) {
+        const auto& value = json.at("recombination");
+        if (value.is_array())
+            cfg.recombination = value.get<std::vector<std::string>>();
+        else if (value.is_string())
+            cfg.recombination = {value.get<std::string>()};
+        else
+            throw std::invalid_argument(
+                "gummelConfigFromJson: recombination must be a string or string array.");
+    }
+
+    return cfg;
+}
 
 // ---------------------------------------------------------------------------
 // runGummel
@@ -118,7 +144,10 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
     // ------------------------------------------------------------------
     // Initial guess: solve linear Poisson (no carriers) for ψ
     // ------------------------------------------------------------------
-    DDAssembler assembler(mesh, matdb, doping, Vt, cfg.taun, cfg.taup);
+    MobilityModelConfig mobilityConfig = mobilityModelConfig(cfg.mobility);
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(cfg.recombination, cfg.taun, cfg.taup);
+    DDAssembler assembler(mesh, matdb, doping, Vt, mobilityConfig, recombinationConfig);
 
     VectorXd psi_init  = VectorXd::Zero(static_cast<int>(N));
     VectorXd n_init    = VectorXd::Zero(static_cast<int>(N));

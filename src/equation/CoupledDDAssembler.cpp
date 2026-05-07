@@ -17,12 +17,27 @@ CoupledDDAssembler::CoupledDDAssembler(const DeviceMesh& mesh,
                                        double Vt,
                                        double taun,
                                        double taup)
+    : CoupledDDAssembler(mesh,
+                         matdb,
+                         doping,
+                         Vt,
+                         MobilityModelConfig{},
+                         recombinationModelConfig({"srh"}, taun, taup))
+{}
+
+CoupledDDAssembler::CoupledDDAssembler(
+    const DeviceMesh& mesh,
+    const MaterialDatabase& matdb,
+    const DopingModel& doping,
+    double Vt,
+    const MobilityModelConfig& mobilityConfig,
+    const RecombinationModelConfig& recombinationConfig)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
     , Vt_(Vt)
-    , taun_(taun)
-    , taup_(taup)
+    , mobility_(makeMobilityModel(mobilityConfig))
+    , recombination_(recombinationConfig)
     , ni_(detail::buildNodeNi(mesh, matdb))
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
@@ -102,7 +117,7 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
     if (x.size() != 3 * N)
         throw std::invalid_argument("CoupledDDAssembler::residual: vector size mismatch.");
 
-    // n and p are needed for Poisson source and SRH recombination.
+    // n and p are needed for Poisson source and configured recombination.
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
     VectorXd r = VectorXd::Zero(3 * N);
@@ -149,8 +164,8 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
         r(psiOffset() + i) += psiFlux;
         r(psiOffset() + j) -= psiFlux;
 
-        const Real mun = detail::edgeAvgMaterialProp(
-            edgeCells[e], mesh_, matdb_, &Material::mun, 0.0);
+        const Real mun = detail::edgeMobility(
+            edgeCells, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Electron);
         if (mun > 0.0) {
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
@@ -168,8 +183,8 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             r(phinOffset() + j) -= nFlux;
         }
 
-        const Real mup = detail::edgeAvgMaterialProp(
-            edgeCells[e], mesh_, matdb_, &Material::mup, 0.0);
+        const Real mup = detail::edgeMobility(
+            edgeCells, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Hole);
         if (mup > 0.0) {
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
@@ -194,19 +209,24 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             (p(ii) - n(ii) + doping_.netDoping(i)) * vol[i];
 
         const Real ni = ni_[i];
-        const Real D = taup_ * (n(ii) + ni) + taun_ * (p(ii) + ni);
-        if (D > 1.0e-100) {
+        if (ni > 0.0 || recombination_.augerEnabled() || recombination_.srhEnabled()) {
             // Compute n*p - ni² via the identity n*p = ni²·exp((φp-φn)/Vt),
             // i.e. n*p - ni² = ni²·expm1((φp-φn)/Vt).  This avoids
             // catastrophic cancellation when φp≈φn (near equilibrium), where
             // the naive form n·p - ni² is dominated by floating-point rounding
             // in exp(+u)·exp(−u) ≠ 1.
             const Real dPhi = x(phipOffset() + ii) - x(phinOffset() + ii);
-            const Real R    = ni * ni * std::expm1(dPhi / Vt_) / D;
-            r(phinOffset() + ii) += R * vol[i];
-            r(phipOffset() + ii) += R * vol[i];
-            hasElectronContribution[static_cast<std::size_t>(ii)] = true;
-            hasHoleContribution[static_cast<std::size_t>(ii)] = true;
+            const Real excessProduct = (ni > 0.0)
+                ? ni * ni * std::expm1(dPhi / Vt_)
+                : n(ii) * p(ii);
+            const Real R = recombination_.totalRateFromExcessProduct(
+                excessProduct, n(ii), p(ii), ni);
+            if (R != 0.0 || ni > 0.0) {
+                r(phinOffset() + ii) += R * vol[i];
+                r(phipOffset() + ii) += R * vol[i];
+                hasElectronContribution[static_cast<std::size_t>(ii)] = true;
+                hasHoleContribution[static_cast<std::size_t>(ii)] = true;
+            }
         }
     }
 

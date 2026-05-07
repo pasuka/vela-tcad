@@ -7,6 +7,7 @@
 #include "vela/numerics/LineSearch.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/solver/GummelSolver.h"
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -23,6 +24,8 @@ struct NewtonConfig {
     Real finiteDifferenceStep = 1.0e-6;
     Real taun = 1.0e-7;
     Real taup = 1.0e-7;
+    std::string mobility = "constant"; ///< "constant" or "caughey_thomas"
+    std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
 };
 
 struct NewtonIterationInfo {
@@ -67,6 +70,8 @@ private:
     std::unordered_map<std::string, Real> contactBiases_;
     NewtonConfig cfg_;
 };
+
+NewtonConfig newtonConfigFromJson(const nlohmann::json& cfg);
 
 NewtonResult runNewton(const DeviceMesh& mesh,
                        const MaterialDatabase& matdb,

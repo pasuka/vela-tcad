@@ -3,6 +3,7 @@
 #include "vela/numerics/ResidualNorm.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/solver/LinearSolver.h"
+#include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -24,6 +25,35 @@ inline double nEq(double Ndop, double ni)
 }
 
 } // namespace
+
+
+NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
+{
+    NewtonConfig cfg;
+    cfg.maxIter = json.value("max_iter", cfg.maxIter);
+    cfg.reltol = json.value("reltol", cfg.reltol);
+    cfg.abstol = json.value("abstol", cfg.abstol);
+    cfg.dampingFactor = json.value("damping_factor", cfg.dampingFactor);
+    cfg.lineSearch = json.value("line_search", cfg.lineSearch);
+    cfg.verbose = json.value("verbose", cfg.verbose);
+    cfg.finiteDifferenceStep = json.value("finite_difference_step", cfg.finiteDifferenceStep);
+    cfg.taun = json.value("taun", cfg.taun);
+    cfg.taup = json.value("taup", cfg.taup);
+    cfg.mobility = json.value("mobility", cfg.mobility);
+
+    if (json.contains("recombination")) {
+        const auto& value = json.at("recombination");
+        if (value.is_array())
+            cfg.recombination = value.get<std::vector<std::string>>();
+        else if (value.is_string())
+            cfg.recombination = {value.get<std::string>()};
+        else
+            throw std::invalid_argument(
+                "newtonConfigFromJson: recombination must be a string or string array.");
+    }
+
+    return cfg;
+}
 
 NewtonSolver::NewtonSolver(
     const DeviceMesh& mesh,
@@ -75,6 +105,8 @@ DDSolution NewtonSolver::buildInitialGuess(
     gcfg.dampingPsi = 0.5;
     gcfg.taun = cfg_.taun;
     gcfg.taup = cfg_.taup;
+    gcfg.mobility = cfg_.mobility;
+    gcfg.recombination = cfg_.recombination;
     DDSolution sol = runGummel(mesh_, matdb_, doping_, contactBiases_, gcfg);
 
     // The Gummel solver leaves tiny numerical noise (~1e-18 V) in the
@@ -109,7 +141,10 @@ DDSolution NewtonSolver::makeSolution(const CoupledDDAssembler& assembler,
 NewtonResult NewtonSolver::solve() const
 {
     const double Vt = thermalVoltage();
-    CoupledDDAssembler assembler(mesh_, matdb_, doping_, Vt, cfg_.taun, cfg_.taup);
+    MobilityModelConfig mobilityConfig = mobilityModelConfig(cfg_.mobility);
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    CoupledDDAssembler assembler(mesh_, matdb_, doping_, Vt, mobilityConfig, recombinationConfig);
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
     return solve(buildInitialGuess(assembler, bcs));
 }
@@ -117,7 +152,10 @@ NewtonResult NewtonSolver::solve() const
 NewtonResult NewtonSolver::solve(const DDSolution& initial) const
 {
     const double Vt = thermalVoltage();
-    CoupledDDAssembler assembler(mesh_, matdb_, doping_, Vt, cfg_.taun, cfg_.taup);
+    MobilityModelConfig mobilityConfig = mobilityModelConfig(cfg_.mobility);
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    CoupledDDAssembler assembler(mesh_, matdb_, doping_, Vt, mobilityConfig, recombinationConfig);
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
 
     // The balanced Scharfetter-Gummel formula multiplies the quasi-Fermi

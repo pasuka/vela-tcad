@@ -4,6 +4,9 @@
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
+#include "vela/physics/MobilityModel.h"
+#include "vela/physics/RecombinationModel.h"
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -29,6 +32,13 @@ public:
                        double Vt,
                        double taun,
                        double taup);
+
+    CoupledDDAssembler(const DeviceMesh& mesh,
+                       const MaterialDatabase& matdb,
+                       const DopingModel& doping,
+                       double Vt,
+                       const MobilityModelConfig& mobilityConfig,
+                       const RecombinationModelConfig& recombinationConfig);
 
     VectorXd pack(const CoupledDDState& state) const;
     CoupledDDState unpack(const VectorXd& x) const;
@@ -57,8 +67,8 @@ private:
     const MaterialDatabase& matdb_;
     const DopingModel& doping_;
     double Vt_;
-    double taun_;
-    double taup_;
+    std::unique_ptr<MobilityModel> mobility_;
+    RecombinationModel recombination_;
     std::vector<Real> ni_;
 
     // Mesh-derived quantities cached at construction time.

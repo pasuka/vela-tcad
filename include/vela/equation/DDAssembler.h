@@ -4,6 +4,9 @@
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
+#include "vela/physics/MobilityModel.h"
+#include "vela/physics/RecombinationModel.h"
+#include <memory>
 #include <vector>
 #include <unordered_map>
 
@@ -21,15 +24,15 @@ namespace vela {
  *
  *  2. assembleElectronContinuity(psi, n_old, p_old)
  *     Assembles the Scharfetter-Gummel electron continuity equation
- *     (solving for n) with SRH recombination linearised w.r.t. n.
+ *     (solving for n) with configured recombination linearised w.r.t. n.
  *
  *  3. assembleHoleContinuity(psi, n_old, p_old)
  *     Assembles the SG hole continuity equation (solving for p) with
- *     SRH recombination linearised w.r.t. p.
+ *     configured recombination linearised w.r.t. p.
  *
  * Dirichlet boundary conditions are applied via applyDirichlet().
  *
- * SRH parameters are set at construction time.
+ * Mobility and recombination models are set at construction time.
  */
 class DDAssembler {
 public:
@@ -47,6 +50,13 @@ public:
                 double                  Vt,
                 double                  taun,
                 double                  taup);
+
+    DDAssembler(const DeviceMesh&               mesh,
+                const MaterialDatabase&         matdb,
+                const DopingModel&              doping,
+                double                          Vt,
+                const MobilityModelConfig&      mobilityConfig,
+                const RecombinationModelConfig& recombinationConfig);
 
     // ------------------------------------------------------------------
     // Assembly
@@ -88,8 +98,8 @@ private:
     const MaterialDatabase& matdb_;
     const DopingModel&      doping_;
     double                  Vt_;
-    double                  taun_;
-    double                  taup_;
+    std::unique_ptr<MobilityModel> mobility_;
+    RecombinationModel recombination_;
 
     std::vector<Real> ni_; ///< Per-node intrinsic concentration [m^-3]
 
