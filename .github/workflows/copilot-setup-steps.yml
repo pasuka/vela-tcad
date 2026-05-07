@@ -1,0 +1,44 @@
+name: "Copilot Setup Steps"
+
+# Validate this setup when it changes, and allow manual runs from the Actions tab.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # This job name is required for GitHub Copilot coding agent setup steps.
+  copilot-setup-steps:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install C++ build dependencies
+        uses: awalsh128/cache-apt-pkgs-action@v1.4.3
+        with:
+          packages: >-
+            build-essential
+            cmake
+            ninja-build
+            libeigen3-dev
+            nlohmann-json3-dev
+            catch2
+          version: 1.0
+
+      - name: Configure debug build
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure
