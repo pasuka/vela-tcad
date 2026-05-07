@@ -117,11 +117,65 @@ def check_csv_converged(example_dir: Path) -> None:
         raise AssertionError(f"Non-converged PN sweep rows: {bad}")
 
 
-def check_iv_trend(example_dir: Path) -> None:
+def expected_sweep_voltages(sweep: dict[str, Any]) -> list[float]:
+    start = float(sweep["start"])
+    stop = float(sweep["stop"])
+    step = float(sweep["step"])
+    if step == 0.0:
+        raise AssertionError("PN sweep step must be non-zero")
+    direction = 1.0 if step > 0.0 else -1.0
+    if (stop - start) * step < 0.0:
+        raise AssertionError("PN sweep step does not move start toward stop")
+
+    values = [start]
+    voltage = start + step
+    while direction * (voltage - stop) <= 1.0e-12:
+        values.append(voltage)
+        voltage += step
+    if abs(values[-1] - stop) > 1.0e-12:
+        values.append(stop)
+    return values
+
+
+def check_iv_trend(example_dir: Path) -> dict[str, Any]:
+    cfg = json.loads((example_dir / "simulation.json").read_text())
+    expected = expected_sweep_voltages(cfg["sweep"])
     rows = read_csv(example_dir / "outputs" / "pn_iv.csv")
+    voltages = [float(row["voltage"]) for row in rows]
+    if len(voltages) != len(expected):
+        raise AssertionError(
+            f"PN sweep wrote {len(voltages)} rows, expected {len(expected)}: {voltages}"
+        )
+    for actual, want in zip(voltages, expected):
+        if abs(actual - want) > 1.0e-9:
+            raise AssertionError(
+                f"PN sweep voltage {actual} does not match expected {want}; all voltages: {voltages}"
+            )
+    if abs(voltages[-1] - float(cfg["sweep"]["stop"])) > 1.0e-9:
+        raise AssertionError(
+            f"PN sweep ended at {voltages[-1]} V instead of configured stop "
+            f"{cfg['sweep']['stop']} V"
+        )
+
     currents = [abs(float(row["total_current"])) for row in rows]
     if currents[-1] + 1e-40 < currents[0]:
         raise AssertionError(f"PN diode current trend is not forward-increasing: {currents}")
+    return {"voltages": voltages, "expected_voltages": expected}
+
+
+def contact_node_ids(mesh: dict[str, Any], name: str) -> list[int]:
+    for contact in mesh["contacts"]:
+        if contact["name"] == name:
+            return [int(node_id) for node_id in contact["node_ids"]]
+    raise AssertionError(f"Contact '{name}' not found in mesh")
+
+
+def contact_biases(cfg: dict[str, Any]) -> dict[str, float]:
+    return {contact["name"]: float(contact["bias"]) for contact in cfg["contacts"]}
+
+
+def average_potential(psi: list[float], node_ids: list[int]) -> float:
+    return sum(psi[node_id] for node_id in node_ids) / len(node_ids)
 
 
 def check_moscap_interface(example_dir: Path) -> dict[str, float]:
@@ -133,6 +187,23 @@ def check_moscap_interface(example_dir: Path) -> dict[str, float]:
     y_if = float(reg["interface_y"])
     y_si = float(reg["silicon_probe_y"])
     y_ox = float(reg["oxide_probe_y"])
+
+    biases = contact_biases(cfg)
+    gate_bias = biases["gate"]
+    body_bias = biases["body"]
+    expected_bias = gate_bias - body_bias
+    contact_tol = float(reg.get("contact_bias_tol", 1.0e-8))
+    min_probe_drop = float(reg.get("min_probe_potential_drop", 1.0e-3))
+
+    gate_potential = average_potential(psi, contact_node_ids(mesh, "gate"))
+    body_potential = average_potential(psi, contact_node_ids(mesh, "body"))
+    contact_drop = gate_potential - body_potential
+    if abs(contact_drop - expected_bias) > contact_tol:
+        raise AssertionError(
+            f"MOSCAP contact potential drop {contact_drop} V does not match configured "
+            f"gate/body bias {expected_bias} V"
+        )
+
     i_if_a = node_index(mesh, x, y_if)
     i_if_b = node_index(mesh, x, y_if)
     jump = abs(psi[i_if_a] - psi[i_if_b])
@@ -140,15 +211,25 @@ def check_moscap_interface(example_dir: Path) -> dict[str, float]:
         raise AssertionError(f"MOSCAP interface potential jump {jump} exceeds tolerance")
     eps_si = 11.7
     eps_ox = 3.9
-    field_si = abs((psi[i_if_a] - psi[node_index(mesh, x, y_si)]) / (y_if - y_si))
-    field_ox = abs((psi[node_index(mesh, x, y_ox)] - psi[i_if_b]) / (y_ox - y_if))
+    si_probe = psi[node_index(mesh, x, y_si)]
+    ox_probe = psi[node_index(mesh, x, y_ox)]
+    probe_drop = abs(ox_probe - si_probe)
+    if probe_drop < min_probe_drop:
+        raise AssertionError(f"MOSCAP probe potential drop {probe_drop} V is below {min_probe_drop} V")
+    field_si = abs((psi[i_if_a] - si_probe) / (y_if - y_si))
+    field_ox = abs((ox_probe - psi[i_if_b]) / (y_ox - y_if))
     disp_si = eps_si * field_si
     disp_ox = eps_ox * field_ox
     denom = max(abs(disp_si), abs(disp_ox), 1e-300)
     rel = abs(disp_si - disp_ox) / denom
     if rel > float(reg["displacement_rel_tol"]):
         raise AssertionError(f"MOSCAP displacement mismatch {rel} exceeds tolerance")
-    return {"potential_jump": jump, "displacement_rel_error": rel}
+    return {
+        "potential_jump": jump,
+        "displacement_rel_error": rel,
+        "contact_potential_drop": contact_drop,
+        "probe_potential_drop": probe_drop,
+    }
 
 
 def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -> dict[str, Any]:
@@ -180,8 +261,7 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
             check_csv_converged(example_dir)
             result["checks"]["csv_converged"] = True
         if "iv_trend" in spec["checks"]:
-            check_iv_trend(example_dir)
-            result["checks"]["iv_trend"] = True
+            result["checks"]["iv_trend"] = check_iv_trend(example_dir)
         if "moscap_interface" in spec["checks"]:
             result["checks"]["moscap_interface"] = check_moscap_interface(example_dir)
         result["passed"] = True
