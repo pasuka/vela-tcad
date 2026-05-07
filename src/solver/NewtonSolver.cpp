@@ -120,8 +120,6 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     CoupledDDAssembler assembler(mesh_, matdb_, doping_, Vt, cfg_.taun, cfg_.taup);
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
 
-    VectorXd x = assembler.pack({initial.psi, initial.phin, initial.phip});
-
     // The balanced Scharfetter-Gummel formula multiplies the quasi-Fermi
     // difference (expNegPhin[i]-expNegPhin[j]) by exp(+ψ[j]/Vt) for electrons
     // and exp(-ψ[i]/Vt) for holes.  At a PN junction these factors reach ~1e5,
@@ -130,14 +128,18 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     // potentials removes this amplification: at equilibrium the exact solution
     // has phin = phip = 0 everywhere, and for any bias Newton will converge to
     // the correct non-zero values from this well-conditioned start.
-    for (int i = 0; i < assembler.numNodes(); ++i) {
+    VectorXd phinInit = initial.phin;
+    VectorXd phipInit = initial.phip;
+    const int N = static_cast<int>(mesh_.numNodes());
+    for (int i = 0; i < N; ++i) {
         const Index nid = static_cast<Index>(i);
         if (bcs.phin.find(nid) == bcs.phin.end()) {
-            x(assembler.phinOffset() + i) = 0.0;
-            x(assembler.phipOffset() + i) = 0.0;
+            phinInit(i) = 0.0;
+            phipInit(i) = 0.0;
         }
     }
 
+    VectorXd x = assembler.pack({initial.psi, phinInit, phipInit});
     VectorXd r = assembler.residual(x, bcs);
     const Real initialNorm = r.norm();
 
