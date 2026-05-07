@@ -24,14 +24,13 @@ namespace vela {
  *
  *   flux_ij = eps_ij * (couple_ij / h_ij) * (psi_j - psi_i)
  *
- * where h_ij is the edge length and couple_ij is the Voronoi coupling
- * length (initially approximated as h_ij; replace with real Voronoi
- * circumcenter distance once that is computed).
+ * where h_ij is the edge length and couple_ij is the precomputed box
+ * coupling length from DeviceMesh::buildBoxGeometry().
  *
  * Node volumes
  * ------------
- * Approximated as one-third of the sum of the areas of all triangles
- * that share the node.  Replace with real Voronoi dual-cell areas later.
+ * Computed as one-third of the sum of the areas of all Tri3 cells that
+ * share the node (barycentric control volume).
  *
  * Usage
  * -----

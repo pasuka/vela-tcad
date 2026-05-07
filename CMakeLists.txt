@@ -29,6 +29,7 @@ add_library(vela_core STATIC
     src/material/Material.cpp
     src/material/MaterialDatabase.cpp
     src/mesh/DeviceMesh.cpp
+    src/mesh/BoxGeometryBuilder.cpp
     src/io/MeshReader.cpp
     src/io/VTKWriter.cpp
     src/physics/DopingModel.cpp
@@ -71,6 +72,9 @@ target_link_libraries(test_mesh PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_poisson tests/test_poisson.cpp)
 target_link_libraries(test_poisson PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_box_geometry tests/test_box_geometry.cpp)
+target_link_libraries(test_box_geometry PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_bernoulli tests/test_bernoulli.cpp)
 target_link_libraries(test_bernoulli PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -87,6 +91,7 @@ include(Catch)
 catch_discover_tests(test_scaling)
 catch_discover_tests(test_mesh)
 catch_discover_tests(test_poisson)
+catch_discover_tests(test_box_geometry)
 catch_discover_tests(test_bernoulli)
 catch_discover_tests(test_sg_flux)
 catch_discover_tests(test_dd_gummel)

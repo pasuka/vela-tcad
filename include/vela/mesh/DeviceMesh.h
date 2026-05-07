@@ -8,6 +8,8 @@
 
 namespace vela {
 
+class BoxGeometryBuilder;
+
 /**
  * @brief Container for the 2-D device mesh.
  *
@@ -28,11 +30,19 @@ public:
     void addContact(const Contact& contact);
 
     /**
-     * @brief Generate unique edges from triangle cells and compute edge lengths.
+     * @brief Generate unique edges, compute edge lengths, and build box geometry.
      *
      * Must be called after all nodes and cells have been added.
      */
     void buildEdges();
+
+    /**
+     * @brief Compute node control volumes and edge coupling lengths.
+     *
+     * Uses 2-D Tri3 barycentric node volumes and cotangent box edge
+     * couplings. buildEdges() also invokes this after generating edges.
+     */
+    void buildBoxGeometry();
 
     // ------------------------------------------------------------------
     // Queries
@@ -57,6 +67,10 @@ public:
     const std::vector<Contact>& contacts() const { return contacts_; }
 
 private:
+    friend class BoxGeometryBuilder;
+
+    void buildEdgesOnly();
+
     std::vector<Node>    nodes_;
     std::vector<Edge>    edges_;
     std::vector<Cell>    cells_;

@@ -1,8 +1,10 @@
 #include "vela/mesh/DeviceMesh.h"
+#include "vela/mesh/BoxGeometryBuilder.h"
 #include <cmath>
 #include <map>
 #include <algorithm>
 #include <stdexcept>
+#include <string>
 
 namespace vela {
 
@@ -37,8 +39,9 @@ void DeviceMesh::addContact(const Contact& contact)
 /**
  * Iterate over all triangular cells, collect unique {min,max} node-pairs,
  * then compute their Euclidean lengths from node coordinates.
+ * Box geometry is computed by the public buildEdges() wrapper.
  */
-void DeviceMesh::buildEdges()
+void DeviceMesh::buildEdgesOnly()
 {
     edges_.clear();
 
@@ -73,13 +76,27 @@ void DeviceMesh::buildEdges()
                 Real dx = nb.x - na.x;
                 Real dy = nb.y - na.y;
                 edge.length = std::sqrt(dx*dx + dy*dy);
-                edge.couple = 0.0; // Voronoi coupling – computed in a later stage
+                edge.couple = 0.0; // Box coupling computed after edge generation
 
                 edgeMap[key] = edge.id;
                 edges_.push_back(std::move(edge));
             }
         }
     }
+
+}
+
+void DeviceMesh::buildEdges()
+{
+    buildEdgesOnly();
+    buildBoxGeometry();
+}
+
+void DeviceMesh::buildBoxGeometry()
+{
+    if (edges_.empty() && !cells_.empty())
+        buildEdgesOnly();
+    BoxGeometryBuilder::build(*this);
 }
 
 // ------------------------------------------------------------------
