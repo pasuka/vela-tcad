@@ -20,6 +20,7 @@ find_package(nlohmann_json REQUIRED)
 
 # Catch2 v3 (unit test framework)
 find_package(Catch2 3 REQUIRED)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 # ---------------------------------------------------------------------------
 # Library: vela_core
@@ -62,6 +63,12 @@ target_link_libraries(vela_core PUBLIC
     Eigen3::Eigen
     nlohmann_json::nlohmann_json
 )
+
+# ---------------------------------------------------------------------------
+# Example runner
+# ---------------------------------------------------------------------------
+add_executable(vela_example_runner src/tools/vela_example_runner.cpp)
+target_link_libraries(vela_example_runner PRIVATE vela_core)
 
 # ---------------------------------------------------------------------------
 # Tests
@@ -114,3 +121,10 @@ catch_discover_tests(test_newton_solver)
 catch_discover_tests(test_mobility)
 catch_discover_tests(test_recombination)
 catch_discover_tests(test_dc_sweep)
+
+add_test(NAME regression
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_regression.py
+            --repo ${CMAKE_CURRENT_SOURCE_DIR}
+            --runner $<TARGET_FILE:vela_example_runner>
+            --workdir ${CMAKE_CURRENT_BINARY_DIR}/regression_output)

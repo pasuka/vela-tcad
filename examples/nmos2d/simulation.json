@@ -1,0 +1,46 @@
+{
+  "_comment": "Poisson-only first NMOS regression bias point with source/drain/body/gate contacts.",
+  "simulation_type": "poisson",
+  "mesh_file": "mesh.json",
+  "output_vtk": "outputs/nmos_poisson.vtk",
+  "doping": [
+    {
+      "region": "p_body",
+      "donors": 0.0,
+      "acceptors": 5e+21
+    },
+    {
+      "region": "n_source",
+      "donors": 1e+23,
+      "acceptors": 0.0
+    },
+    {
+      "region": "n_drain",
+      "donors": 1e+23,
+      "acceptors": 0.0
+    },
+    {
+      "region": "gate_oxide",
+      "donors": 0.0,
+      "acceptors": 0.0
+    }
+  ],
+  "contacts": [
+    {
+      "name": "body",
+      "bias": 0.0
+    },
+    {
+      "name": "source",
+      "bias": 0.0
+    },
+    {
+      "name": "drain",
+      "bias": 0.1
+    },
+    {
+      "name": "gate",
+      "bias": 0.8
+    }
+  ]
+}
