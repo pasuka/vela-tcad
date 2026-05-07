@@ -22,6 +22,8 @@ find_package(nlohmann_json REQUIRED)
 find_package(Catch2 3 REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
+option(VELA_ENABLE_PYTHON "Build the pybind11 Python API" OFF)
+
 # ---------------------------------------------------------------------------
 # Library: vela_core
 # ---------------------------------------------------------------------------
@@ -63,6 +65,38 @@ target_link_libraries(vela_core PUBLIC
     Eigen3::Eigen
     nlohmann_json::nlohmann_json
 )
+
+set_target_properties(vela_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+
+# ---------------------------------------------------------------------------
+# Python API
+# ---------------------------------------------------------------------------
+if(VELA_ENABLE_PYTHON)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
+    find_package(pybind11 CONFIG REQUIRED)
+
+    pybind11_add_module(_core bindings/pyvela.cpp)
+    target_link_libraries(_core PRIVATE vela_core)
+
+    set(VELA_PYTHON_PACKAGE_DIR ${CMAKE_CURRENT_BINARY_DIR}/python/vela)
+    set_target_properties(_core PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${VELA_PYTHON_PACKAGE_DIR}
+        RUNTIME_OUTPUT_DIRECTORY ${VELA_PYTHON_PACKAGE_DIR}
+    )
+
+    file(MAKE_DIRECTORY ${VELA_PYTHON_PACKAGE_DIR})
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/python/vela/__init__.py
+        ${VELA_PYTHON_PACKAGE_DIR}/__init__.py
+        COPYONLY)
+
+    add_test(NAME python_api
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/python/test_python_api.py)
+    set_tests_properties(python_api PROPERTIES
+        ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python;VELA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
 
 # ---------------------------------------------------------------------------
 # Example runner
