@@ -26,34 +26,23 @@ namespace vela::detail {
 // Geometry helpers
 // ---------------------------------------------------------------------------
 
-/// Compute per-node control-volume areas (1/3 of adjacent triangle areas).
+/// Return precomputed per-node control-volume areas.
 inline std::vector<Real> computeNodeVolumes(const DeviceMesh& mesh)
 {
     const Index N = mesh.numNodes();
     std::vector<Real> vol(N, 0.0);
-    for (Index c = 0; c < mesh.numCells(); ++c) {
-        const auto& cell = mesh.getCell(c);
-        if (cell.node_ids.size() < 3) continue;
-        const Node& n0 = mesh.getNode(cell.node_ids[0]);
-        const Node& n1 = mesh.getNode(cell.node_ids[1]);
-        const Node& n2 = mesh.getNode(cell.node_ids[2]);
-        const Real area = std::abs(
-            (n1.x - n0.x) * (n2.y - n0.y) -
-            (n2.x - n0.x) * (n1.y - n0.y)) * 0.5;
-        vol[cell.node_ids[0]] += area / 3.0;
-        vol[cell.node_ids[1]] += area / 3.0;
-        vol[cell.node_ids[2]] += area / 3.0;
-    }
+    for (Index i = 0; i < N; ++i)
+        vol[i] = mesh.getNode(i).volume;
     return vol;
 }
 
-/// Compute per-edge Voronoi coupling lengths (current approximation: length).
+/// Return precomputed per-edge box coupling lengths.
 inline std::vector<Real> computeEdgeCouplings(const DeviceMesh& mesh)
 {
     const Index E = mesh.numEdges();
-    std::vector<Real> couple(E);
+    std::vector<Real> couple(E, 0.0);
     for (Index e = 0; e < E; ++e)
-        couple[e] = mesh.getEdge(e).length;
+        couple[e] = mesh.getEdge(e).couple;
     return couple;
 }
 
