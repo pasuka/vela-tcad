@@ -125,6 +125,7 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
     DCSweepConfig sweep = dcSweepConfigFromJson(cfg, cfgDir);
     GummelConfig gummel = cfg.contains("solver") ? gummelConfigFromJson(cfg.at("solver")) : GummelConfig{};
     MobilityModelConfig mobilityConfig = mobilityModelConfig(gummel.mobility);
+    ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig);
 
     CSVWriter csv(sweep.csvFile);
     csv.writeHeader({"voltage", "electron_current", "hole_current",
@@ -143,16 +144,17 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
                 ? runGummel(mesh, matdb, doping, biases, gummel, *initial)
                 : runGummel(mesh, matdb, doping, biases, gummel);
             return {sol.converged && isFiniteSolution(sol), std::move(sol)};
-        } catch (...) {
-            return {false, DDSolution{}};
+        } catch (const std::exception& ex) {
+            throw std::runtime_error(
+                "DCSweep: solver threw at voltage " + formatReal(voltage) +
+                " V: " + ex.what());
         }
     };
 
     auto recordPoint = [&](Real voltage, const DDSolution& sol, bool converged) {
         ContactCurrentResult current{};
         if (converged)
-            current = ContactCurrent::compute(mesh, matdb, doping, sol,
-                                              sweep.currentContact, mobilityConfig);
+            current = contactCurrent.compute(sol, sweep.currentContact);
 
         DCSweepPoint point;
         point.voltage = voltage;

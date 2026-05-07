@@ -7,6 +7,7 @@
 #include "vela/physics/MobilityModel.h"
 #include "vela/solver/GummelSolver.h"
 #include <string>
+#include <vector>
 
 namespace vela {
 
@@ -18,12 +19,27 @@ struct ContactCurrentResult {
 
 class ContactCurrent {
 public:
+    ContactCurrent(const DeviceMesh& mesh,
+                   const MaterialDatabase& matdb,
+                   const DopingModel& doping,
+                   MobilityModelConfig mobilityConfig = {});
+
+    ContactCurrentResult compute(const DDSolution& solution,
+                                 const std::string& contactName) const;
+
     static ContactCurrentResult compute(const DeviceMesh& mesh,
                                         const MaterialDatabase& matdb,
                                         const DopingModel& doping,
                                         const DDSolution& solution,
                                         const std::string& contactName,
                                         const MobilityModelConfig& mobilityConfig = {});
+
+private:
+    const DeviceMesh& mesh_;
+    const MaterialDatabase& matdb_;
+    const DopingModel& doping_;
+    std::vector<std::vector<Index>> edgeCells_;
+    std::unique_ptr<MobilityModel> mobility_;
 };
 
 } // namespace vela

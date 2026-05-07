@@ -2,6 +2,7 @@
 
 #include "vela/simulation/DCSweep.h"
 
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -10,6 +11,16 @@
 using namespace vela;
 
 namespace {
+
+struct ScopedDirectoryCleanup {
+    std::filesystem::path path;
+
+    ~ScopedDirectoryCleanup()
+    {
+        std::error_code ec;
+        std::filesystem::remove_all(path, ec);
+    }
+};
 
 std::filesystem::path writePNMesh(const std::filesystem::path& dir)
 {
@@ -79,7 +90,10 @@ std::filesystem::path writeSweepConfig(const std::filesystem::path& dir,
 
 TEST_CASE("DCSweep: PN diode sweep writes CSV and finite monotonic IV data", "[dc_sweep]")
 {
-    const auto dir = std::filesystem::temp_directory_path() / "vela_dc_sweep_test";
+    const auto dir = std::filesystem::temp_directory_path() /
+        ("vela_dc_sweep_test_" +
+         std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+    const ScopedDirectoryCleanup cleanup{dir};
     std::filesystem::create_directories(dir);
     const auto meshPath = writePNMesh(dir);
     const auto csvPath = dir / "iv.csv";

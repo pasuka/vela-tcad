@@ -7,16 +7,23 @@
 
 namespace vela {
 
-ContactCurrentResult ContactCurrent::compute(
-    const DeviceMesh& mesh,
-    const MaterialDatabase& matdb,
-    const DopingModel& doping,
-    const DDSolution& solution,
-    const std::string& contactName,
-    const MobilityModelConfig& mobilityConfig)
+ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
+                               const MaterialDatabase& matdb,
+                               const DopingModel& doping,
+                               MobilityModelConfig mobilityConfig)
+    : mesh_(mesh)
+    , matdb_(matdb)
+    , doping_(doping)
+    , edgeCells_(detail::buildEdgeCellMap(mesh))
+    , mobility_(makeMobilityModel(mobilityConfig))
+{
+}
+
+ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
+                                             const std::string& contactName) const
 {
     const Contact* contact = nullptr;
-    for (const Contact& candidate : mesh.contacts()) {
+    for (const Contact& candidate : mesh_.contacts()) {
         if (candidate.name == contactName) {
             contact = &candidate;
             break;
@@ -26,12 +33,10 @@ ContactCurrentResult ContactCurrent::compute(
         throw std::invalid_argument("ContactCurrent: unknown contact '" + contactName + "'.");
 
     std::unordered_set<Index> contactNodes(contact->node_ids.begin(), contact->node_ids.end());
-    const auto edgeCells = detail::buildEdgeCellMap(mesh);
-    auto mobility = makeMobilityModel(mobilityConfig);
 
     ContactCurrentResult result;
-    for (Index e = 0; e < mesh.numEdges(); ++e) {
-        const Edge& edge = mesh.getEdge(e);
+    for (Index e = 0; e < mesh_.numEdges(); ++e) {
+        const Edge& edge = mesh_.getEdge(e);
         const bool n0OnContact = contactNodes.count(edge.n0) > 0;
         const bool n1OnContact = contactNodes.count(edge.n1) > 0;
         if (n0OnContact == n1OnContact)
@@ -40,9 +45,9 @@ ContactCurrentResult ContactCurrent::compute(
             continue;
 
         const Real mun = detail::edgeMobility(
-            edgeCells, mesh, matdb, doping, *mobility, e, CarrierType::Electron);
+            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Electron);
         const Real mup = detail::edgeMobility(
-            edgeCells, mesh, matdb, doping, *mobility, e, CarrierType::Hole);
+            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Hole);
 
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
@@ -64,6 +69,17 @@ ContactCurrentResult ContactCurrent::compute(
 
     result.totalCurrent = result.electronCurrent + result.holeCurrent;
     return result;
+}
+
+ContactCurrentResult ContactCurrent::compute(
+    const DeviceMesh& mesh,
+    const MaterialDatabase& matdb,
+    const DopingModel& doping,
+    const DDSolution& solution,
+    const std::string& contactName,
+    const MobilityModelConfig& mobilityConfig)
+{
+    return ContactCurrent(mesh, matdb, doping, mobilityConfig).compute(solution, contactName);
 }
 
 } // namespace vela
