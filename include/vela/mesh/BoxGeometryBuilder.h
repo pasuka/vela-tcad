@@ -20,7 +20,7 @@ class BoxGeometryBuilder {
 public:
     struct Options {
         bool fallbackNegativeCotangent = true;
-        bool warnOnNegativeCotangent = true;
+        bool warnOnNegativeCotangent = false;
     };
 
     static Real triangleArea(const Node& a, const Node& b, const Node& c);

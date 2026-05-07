@@ -5,6 +5,9 @@
 #include "vela/mesh/DeviceMesh.h"
 
 #include <cmath>
+#include <iostream>
+#include <sstream>
+#include <streambuf>
 
 using namespace vela;
 
@@ -73,6 +76,20 @@ DeviceMesh makeObtuseTriangle()
     return mesh;
 }
 
+struct CerrRedirectGuard {
+    explicit CerrRedirectGuard(std::ostream& stream, std::streambuf* replacement)
+        : stream_(stream), original_(stream.rdbuf(replacement))
+    {}
+
+    ~CerrRedirectGuard()
+    {
+        stream_.rdbuf(original_);
+    }
+
+    std::ostream& stream_;
+    std::streambuf* original_;
+};
+
 } // namespace
 
 TEST_CASE("BoxGeometryBuilder: equilateral triangle area is correct", "[box_geometry]")
@@ -109,4 +126,27 @@ TEST_CASE("BoxGeometryBuilder: all edge couplings are non-negative", "[box_geome
     DeviceMesh obtuse = makeObtuseTriangle();
     for (const Edge& edge : obtuse.edges())
         REQUIRE(edge.couple >= 0.0);
+}
+
+TEST_CASE("BoxGeometryBuilder: warnings are opt-in", "[box_geometry]")
+{
+    REQUIRE_FALSE(BoxGeometryBuilder::Options{}.warnOnNegativeCotangent);
+
+    std::ostringstream capturedErr;
+    CerrRedirectGuard guard(std::cerr, capturedErr.rdbuf());
+
+    DeviceMesh mesh;
+    Node n0; n0.id = 0; n0.x = 0.0; n0.y = 0.0; mesh.addNode(n0);
+    Node n1; n1.id = 1; n1.x = 2.0; n1.y = 0.0; mesh.addNode(n1);
+    Node n2; n2.id = 2; n2.x = 0.2; n2.y = 0.1; mesh.addNode(n2);
+    Cell c; c.id = 0; c.type = CellType::Tri3; c.region_id = 0;
+    c.node_ids = {0, 1, 2};
+    mesh.addCell(c);
+    Region r; r.id = 0; r.name = "body"; r.material = "Si"; r.cell_ids = {0};
+    mesh.addRegion(r);
+    mesh.buildEdges();
+
+    REQUIRE(mesh.numEdges() == 3);
+    REQUIRE(mesh.getEdge(0).couple >= 0.0);
+    REQUIRE(capturedErr.str().empty());
 }
