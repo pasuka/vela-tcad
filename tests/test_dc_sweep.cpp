@@ -9,10 +9,13 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <random>
+#include <thread>
 
 using namespace vela;
 
 namespace {
+
+constexpr int kMaxDirCreationAttempts = 8;
 
 struct ScopedDirectoryCleanup {
     std::filesystem::path path;
@@ -31,10 +34,11 @@ std::filesystem::path makeUniqueSweepDir()
 {
     const auto base = std::filesystem::temp_directory_path();
     const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
-    std::mt19937_64 rng(static_cast<std::mt19937_64::result_type>(stamp));
+    const auto tid = std::hash<std::thread::id>{}(std::this_thread::get_id());
+    std::mt19937_64 rng(static_cast<std::mt19937_64::result_type>(stamp ^ tid));
     std::uniform_int_distribution<unsigned long long> dist;
 
-    for (int attempt = 0; attempt < 8; ++attempt) {
+    for (int attempt = 0; attempt < kMaxDirCreationAttempts; ++attempt) {
         const auto dir = base /
             ("vela_dc_sweep_test_" + std::to_string(stamp) + "_" + std::to_string(dist(rng)));
         if (!std::filesystem::exists(dir))

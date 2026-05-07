@@ -6,6 +6,7 @@
 #include "vela/post/ContactCurrent.h"
 #include <nlohmann/json.hpp>
 #include <cmath>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -145,13 +146,13 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
                 : runGummel(mesh, matdb, doping, biases, gummel);
             return {sol.converged && isFiniteSolution(sol), std::move(sol)};
         } catch (const std::exception& ex) {
-            throw std::runtime_error(
+            std::throw_with_nested(std::runtime_error(
                 "DCSweep: solver threw at voltage " + formatReal(voltage) +
-                " V: " + ex.what());
+                " V: " + ex.what()));
         } catch (...) {
-            throw std::runtime_error(
+            std::throw_with_nested(std::runtime_error(
                 "DCSweep: solver threw an unknown exception at voltage " +
-                formatReal(voltage) + " V.");
+                formatReal(voltage) + " V."));
         }
     };
 
