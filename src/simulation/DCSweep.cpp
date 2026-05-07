@@ -148,6 +148,10 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
             throw std::runtime_error(
                 "DCSweep: solver threw at voltage " + formatReal(voltage) +
                 " V: " + ex.what());
+        } catch (...) {
+            throw std::runtime_error(
+                "DCSweep: solver threw an unknown exception at voltage " +
+                formatReal(voltage) + " V.");
         }
     };
 
