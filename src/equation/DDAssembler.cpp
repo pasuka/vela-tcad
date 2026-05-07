@@ -17,12 +17,26 @@ DDAssembler::DDAssembler(const DeviceMesh&       mesh,
                          double                  Vt,
                          double                  taun,
                          double                  taup)
+    : DDAssembler(mesh,
+                  matdb,
+                  doping,
+                  Vt,
+                  MobilityModelConfig{},
+                  recombinationModelConfig({"srh"}, taun, taup))
+{}
+
+DDAssembler::DDAssembler(const DeviceMesh&               mesh,
+                         const MaterialDatabase&         matdb,
+                         const DopingModel&              doping,
+                         double                          Vt,
+                         const MobilityModelConfig&      mobilityConfig,
+                         const RecombinationModelConfig& recombinationConfig)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
     , Vt_(Vt)
-    , taun_(taun)
-    , taup_(taup)
+    , mobility_(makeMobilityModel(mobilityConfig))
+    , recombination_(recombinationConfig)
     , ni_(detail::buildNodeNi(mesh, matdb))
     , A_(static_cast<int>(mesh.numNodes()),
          static_cast<int>(mesh.numNodes()))
@@ -124,8 +138,8 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         const Real  h    = edge.length;
         if (h < 1.0e-30) continue;
 
-        const Real mun = detail::edgeAvgMaterialProp(
-            edgeCells[e], mesh_, matdb_, &Material::mun, 0.0);
+        const Real mun = detail::edgeMobility(
+            edgeCells, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Electron);
         if (mun <= 0.0) continue; // skip insulator edges
 
         const Real coef = mun * Vt_ * couple[e] / h;
@@ -148,9 +162,8 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
 
     A_.setFromTriplets(triplets.begin(), triplets.end());
 
-    // SRH source term (linearised w.r.t. n to maintain diagonal dominance):
-    //   R = n*p/D - ni²/D   (D = τp*(n+ni) + τn*(p+ni))
-    // Move n-term to LHS diagonal; ni² term goes to RHS.
+    // Recombination source term linearised w.r.t. n.
+    // Positive source derivatives move to the LHS diagonal; constants move to RHS.
     for (Index i = 0; i < N; ++i) {
         const int  ii    = static_cast<int>(i);
         const Real ni_i  = ni_[i];
@@ -158,14 +171,10 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         const Real p_v   = p_old(ii);
         const Real vol_i = vol[i];
 
-        const Real D = taup_ * (n_v + ni_i) + taun_ * (p_v + ni_i);
-        if (D < 1.0e-100) continue;
-
-        // p/D * vol → positive diagonal addition
-        A_.coeffRef(ii, ii) += (p_v / D) * vol_i;
-
-        // ni²/D * vol → non-negative RHS
-        b_(ii) += (ni_i * ni_i / D) * vol_i;
+        const RecombinationLinearization linearization =
+            recombination_.electronLinearization(n_v, p_v, ni_i);
+        A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
+        b_(ii) += linearization.rhs * vol_i;
     }
 
     // Guard: if any diagonal is still zero (insulator node with all edges
@@ -205,8 +214,8 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         const Real  h    = edge.length;
         if (h < 1.0e-30) continue;
 
-        const Real mup = detail::edgeAvgMaterialProp(
-            edgeCells[e], mesh_, matdb_, &Material::mup, 0.0);
+        const Real mup = detail::edgeMobility(
+            edgeCells, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Hole);
         if (mup <= 0.0) continue; // skip insulator edges
 
         const Real coef = mup * Vt_ * couple[e] / h;
@@ -230,9 +239,8 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
 
     A_.setFromTriplets(triplets.begin(), triplets.end());
 
-    // SRH source term (linearised w.r.t. p):
-    //   R = n*p/D - ni²/D
-    // Move p-term to LHS; ni² term goes to RHS.
+    // Recombination source term linearised w.r.t. p.
+    // Positive source derivatives move to the LHS diagonal; constants move to RHS.
     for (Index i = 0; i < N; ++i) {
         const int  ii    = static_cast<int>(i);
         const Real ni_i  = ni_[i];
@@ -240,14 +248,10 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         const Real p_v   = p_old(ii);
         const Real vol_i = vol[i];
 
-        const Real D = taup_ * (n_v + ni_i) + taun_ * (p_v + ni_i);
-        if (D < 1.0e-100) continue;
-
-        // n/D * vol → positive diagonal addition
-        A_.coeffRef(ii, ii) += (n_v / D) * vol_i;
-
-        // ni²/D * vol → non-negative RHS
-        b_(ii) += (ni_i * ni_i / D) * vol_i;
+        const RecombinationLinearization linearization =
+            recombination_.holeLinearization(n_v, p_v, ni_i);
+        A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
+        b_(ii) += linearization.rhs * vol_i;
     }
 
     // Guard: pin insulator nodes (zero-diagonal) to p = 0

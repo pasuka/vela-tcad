@@ -4,8 +4,10 @@
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
+#include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace vela {
 
@@ -30,6 +32,8 @@ struct GummelConfig {
     double dampingPsi  = 1.0;   ///< Damping factor for Poisson update (0 < α ≤ 1)
     double taun        = 1.0e-7; ///< Electron SRH lifetime [s]
     double taup        = 1.0e-7; ///< Hole SRH lifetime [s]
+    std::string mobility = "constant"; ///< "constant" or "caughey_thomas"
+    std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
 };
 
 /**
@@ -58,6 +62,8 @@ struct GummelConfig {
  * @param cfg            Iteration settings.
  * @return               Converged (or last) solution.
  */
+GummelConfig gummelConfigFromJson(const nlohmann::json& cfg);
+
 DDSolution runGummel(const DeviceMesh&                         mesh,
                      const MaterialDatabase&                    matdb,
                      const DopingModel&                         doping,

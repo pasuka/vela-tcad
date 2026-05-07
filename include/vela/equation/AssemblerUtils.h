@@ -14,6 +14,8 @@
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
+#include "vela/physics/DopingModel.h"
+#include "vela/physics/MobilityModel.h"
 #include <Eigen/Sparse>
 #include <vector>
 #include <unordered_map>
@@ -94,6 +96,38 @@ inline Real edgeAvgMaterialProp(
         if (matdb.hasMaterial(region.material))
             val = matdb.getMaterial(region.material).*prop;
         sum += val;
+    }
+    return sum / static_cast<Real>(cells.size());
+}
+
+
+/// Return average model mobility [m^2/V/s] for edge @p edgeId.
+inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
+                         const DeviceMesh&                       mesh,
+                         const MaterialDatabase&                 matdb,
+                         const DopingModel&                      doping,
+                         const MobilityModel&                    mobility,
+                         Index                                   edgeId,
+                         CarrierType                             carrier)
+{
+    const auto& cells = edgeCells[edgeId];
+    if (cells.empty()) return 0.0;
+
+    const Edge& edge = mesh.getEdge(edgeId);
+    const Real netDoping = 0.5 * (doping.netDoping(edge.n0) +
+                                  doping.netDoping(edge.n1));
+
+    Real sum = 0.0;
+    for (Index c : cells) {
+        const auto& region = mesh.getRegion(mesh.getCell(c).region_id);
+        if (!matdb.hasMaterial(region.material))
+            continue;
+
+        const Material& material = matdb.getMaterial(region.material);
+        if (carrier == CarrierType::Electron)
+            sum += mobility.electronMobility(material, netDoping, 0.0, 0.0);
+        else
+            sum += mobility.holeMobility(material, netDoping, 0.0, 0.0);
     }
     return sum / static_cast<Real>(cells.size());
 }
