@@ -1,0 +1,42 @@
+{
+  "_comment": "Forward-bias PN diode drift-diffusion sweep. Produces outputs/pn_iv.csv and VTK snapshots.",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "output_csv": "outputs/pn_iv.csv",
+  "doping": [
+    {
+      "region": "n_region",
+      "donors": 1e+23,
+      "acceptors": 0.0
+    },
+    {
+      "region": "p_region",
+      "donors": 0.0,
+      "acceptors": 1e+23
+    }
+  ],
+  "contacts": [
+    {
+      "name": "anode",
+      "bias": 0.0
+    },
+    {
+      "name": "cathode",
+      "bias": 0.0
+    }
+  ],
+  "solver": {
+    "max_iter": 80,
+    "reltol": 1e-05,
+    "damping_psi": 0.5
+  },
+  "sweep": {
+    "contact": "anode",
+    "start": 0.0,
+    "stop": 0.5,
+    "step": 0.25,
+    "current_contact": "anode",
+    "write_vtk": true,
+    "vtk_prefix": "outputs/pn_sweep"
+  }
+}
