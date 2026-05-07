@@ -88,11 +88,14 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json)
 // runGummel
 // ---------------------------------------------------------------------------
 
-DDSolution runGummel(const DeviceMesh&                          mesh,
-                     const MaterialDatabase&                     matdb,
-                     const DopingModel&                          doping,
-                     const std::unordered_map<std::string, Real>& contactBiases,
-                     const GummelConfig&                          cfg)
+namespace {
+
+DDSolution runGummelImpl(const DeviceMesh&                          mesh,
+                         const MaterialDatabase&                     matdb,
+                         const DopingModel&                          doping,
+                         const std::unordered_map<std::string, Real>& contactBiases,
+                         const GummelConfig&                          cfg,
+                         const DDSolution*                           initialGuess)
 {
     const Index  N   = mesh.numNodes();
     const double Vt  = thermalVoltage();
@@ -152,44 +155,55 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
     VectorXd psi_init  = VectorXd::Zero(static_cast<int>(N));
     VectorXd n_init    = VectorXd::Zero(static_cast<int>(N));
     VectorXd p_init    = VectorXd::Zero(static_cast<int>(N));
+    VectorXd phin      = VectorXd::Zero(static_cast<int>(N));
+    VectorXd phip      = VectorXd::Zero(static_cast<int>(N));
 
-    // Set non-contact nodes to thermal-equilibrium Boltzmann values
-    // (all quasi-Fermi levels = 0 initially)
-    for (Index i = 0; i < N; ++i)
-        psi_init(static_cast<int>(i)) = 0.0;
+    const bool useInitialGuess = initialGuess != nullptr &&
+        initialGuess->psi.size() == static_cast<int>(N) &&
+        initialGuess->phin.size() == static_cast<int>(N) &&
+        initialGuess->phip.size() == static_cast<int>(N) &&
+        initialGuess->n.size() == static_cast<int>(N) &&
+        initialGuess->p.size() == static_cast<int>(N);
 
-    // Override contact nodes
-    for (const auto& [nid, val] : psiBC)
-        psi_init(static_cast<int>(nid)) = val;
+    if (useInitialGuess) {
+        psi_init = initialGuess->psi;
+        phin = initialGuess->phin;
+        phip = initialGuess->phip;
+        n_init = initialGuess->n;
+        p_init = initialGuess->p;
+    } else {
+        // Override contact nodes before solving an initial Poisson problem.
+        for (const auto& [nid, val] : psiBC)
+            psi_init(static_cast<int>(nid)) = val;
 
-    // Solve initial Poisson (no free carriers)
-    {
-        VectorXd n_zero = VectorXd::Zero(static_cast<int>(N));
-        VectorXd p_zero = VectorXd::Zero(static_cast<int>(N));
-        assembler.assemblePoissonWithCarriers(n_zero, p_zero, psi_init);
-        assembler.applyDirichlet(psiBC);
-        LinearSolver ls;
-        psi_init = ls.solve(assembler.matrix(), assembler.rhs());
+        // Solve initial Poisson (no free carriers)
+        {
+            VectorXd n_zero = VectorXd::Zero(static_cast<int>(N));
+            VectorXd p_zero = VectorXd::Zero(static_cast<int>(N));
+            assembler.assemblePoissonWithCarriers(n_zero, p_zero, psi_init);
+            assembler.applyDirichlet(psiBC);
+            LinearSolver ls;
+            psi_init = ls.solve(assembler.matrix(), assembler.rhs());
+        }
+
+        for (const auto& [nid, val] : phinBC) phin(static_cast<int>(nid)) = val;
+        for (const auto& [nid, val] : phipBC) phip(static_cast<int>(nid)) = val;
+
+        for (Index i = 0; i < N; ++i) {
+            const int    ii     = static_cast<int>(i);
+            const double ni_i   = ni_v[i];
+            n_init(ii) = electronDensity(ni_i, psi_init(ii), phin(ii), Vt);
+            p_init(ii) = holeDensity    (ni_i, psi_init(ii), phip(ii), Vt);
+        }
     }
 
-    // ------------------------------------------------------------------
-    // Compute initial n, p from Boltzmann using psi_init and flat
-    // quasi-Fermi levels (phin = phip = 0 everywhere)
-    // ------------------------------------------------------------------
-    VectorXd phin = VectorXd::Zero(static_cast<int>(N));
-    VectorXd phip = VectorXd::Zero(static_cast<int>(N));
+    // Enforce the new bias point's Ohmic contact values even when the
+    // previous bias point is used as the initial guess.
+    for (const auto& [nid, val] : psiBC)  psi_init(static_cast<int>(nid)) = val;
     for (const auto& [nid, val] : phinBC) phin(static_cast<int>(nid)) = val;
     for (const auto& [nid, val] : phipBC) phip(static_cast<int>(nid)) = val;
-
-    for (Index i = 0; i < N; ++i) {
-        const int    ii     = static_cast<int>(i);
-        const double ni_i   = ni_v[i];
-        n_init(ii) = electronDensity(ni_i, psi_init(ii), phin(ii), Vt);
-        p_init(ii) = holeDensity    (ni_i, psi_init(ii), phip(ii), Vt);
-    }
-    // Override contacts
-    for (const auto& [nid, val] : nBC) n_init(static_cast<int>(nid)) = val;
-    for (const auto& [nid, val] : pBC) p_init(static_cast<int>(nid)) = val;
+    for (const auto& [nid, val] : nBC)    n_init(static_cast<int>(nid)) = val;
+    for (const auto& [nid, val] : pBC)    p_init(static_cast<int>(nid)) = val;
 
     // ------------------------------------------------------------------
     // Working copies
@@ -200,6 +214,7 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
 
     LinearSolver ls;
     int iters = 0;
+    bool converged = false;
 
     // ------------------------------------------------------------------
     // Gummel iteration
@@ -269,8 +284,10 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
         n = n_new;
         p = p_new;
 
-        if (rel_err < cfg.reltol && rel_n < cfg.reltol && rel_p < cfg.reltol)
+        if (rel_err < cfg.reltol && rel_n < cfg.reltol && rel_p < cfg.reltol) {
+            converged = true;
             break;
+        }
     }
 
     DDSolution sol;
@@ -280,7 +297,29 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
     sol.n     = n;
     sol.p     = p;
     sol.iters = iters;
+    sol.converged = converged;
     return sol;
+}
+
+} // anonymous namespace
+
+DDSolution runGummel(const DeviceMesh&                          mesh,
+                     const MaterialDatabase&                     matdb,
+                     const DopingModel&                          doping,
+                     const std::unordered_map<std::string, Real>& contactBiases,
+                     const GummelConfig&                          cfg)
+{
+    return runGummelImpl(mesh, matdb, doping, contactBiases, cfg, nullptr);
+}
+
+DDSolution runGummel(const DeviceMesh&                          mesh,
+                     const MaterialDatabase&                     matdb,
+                     const DopingModel&                          doping,
+                     const std::unordered_map<std::string, Real>& contactBiases,
+                     const GummelConfig&                          cfg,
+                     const DDSolution&                           initialGuess)
+{
+    return runGummelImpl(mesh, matdb, doping, contactBiases, cfg, &initialGuess);
 }
 
 // ---------------------------------------------------------------------------
