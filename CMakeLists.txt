@@ -32,6 +32,7 @@ add_library(vela_core STATIC
     src/mesh/BoxGeometryBuilder.cpp
     src/io/MeshReader.cpp
     src/io/VTKWriter.cpp
+    src/io/CSVWriter.cpp
     src/physics/DopingModel.cpp
     src/physics/CarrierStatistics.cpp
     src/physics/SRHRecombination.cpp
@@ -44,11 +45,13 @@ add_library(vela_core STATIC
     src/discretization/ScharfetterGummel.cpp
     src/solver/LinearSolver.cpp
     src/solver/GummelSolver.cpp
+    src/post/ContactCurrent.cpp
     src/solver/NewtonSolver.cpp
     src/equation/CoupledDDAssembler.cpp
     src/numerics/ResidualNorm.cpp
     src/numerics/LineSearch.cpp
     src/simulation/PoissonSimulation.cpp
+    src/simulation/DCSweep.cpp
 )
 
 target_include_directories(vela_core PUBLIC
@@ -96,6 +99,9 @@ target_link_libraries(test_mobility PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_recombination tests/test_recombination.cpp)
 target_link_libraries(test_recombination PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_dc_sweep tests/test_dc_sweep.cpp)
+target_link_libraries(test_dc_sweep PRIVATE vela_core Catch2::Catch2WithMain)
+
 include(Catch)
 catch_discover_tests(test_scaling)
 catch_discover_tests(test_mesh)
@@ -107,3 +113,4 @@ catch_discover_tests(test_dd_gummel)
 catch_discover_tests(test_newton_solver)
 catch_discover_tests(test_mobility)
 catch_discover_tests(test_recombination)
+catch_discover_tests(test_dc_sweep)

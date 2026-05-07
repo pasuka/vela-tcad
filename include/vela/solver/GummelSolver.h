@@ -20,7 +20,8 @@ struct DDSolution {
     VectorXd phip;  ///< Hole quasi-Fermi potential [V]
     VectorXd n;     ///< Electron concentration [m^-3]
     VectorXd p;     ///< Hole concentration [m^-3]
-    int      iters; ///< Number of Gummel iterations performed
+    int      iters = 0; ///< Number of Gummel iterations performed
+    bool     converged = false; ///< True if the Gummel convergence criteria were met
 };
 
 /**
@@ -69,6 +70,13 @@ DDSolution runGummel(const DeviceMesh&                         mesh,
                      const DopingModel&                         doping,
                      const std::unordered_map<std::string, Real>& contactBiases,
                      const GummelConfig&                         cfg = {});
+
+DDSolution runGummel(const DeviceMesh&                          mesh,
+                     const MaterialDatabase&                     matdb,
+                     const DopingModel&                          doping,
+                     const std::unordered_map<std::string, Real>& contactBiases,
+                     const GummelConfig&                          cfg,
+                     const DDSolution&                           initialGuess);
 
 /**
  * @brief Write a DDSolution to a VTK file.
