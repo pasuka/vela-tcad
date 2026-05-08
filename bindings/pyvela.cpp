@@ -5,12 +5,10 @@
 #include "vela/simulation/DCSweep.h"
 #include "vela/simulation/PoissonSimulation.h"
 
-#include <nlohmann/json.hpp>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 #include <filesystem>
-#include <fstream>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -30,32 +28,6 @@ LastResult& lastResult()
 {
     static LastResult result;
     return result;
-}
-
-std::filesystem::path configDirectory(const std::string& configFile)
-{
-    const std::filesystem::path path(configFile);
-    const std::filesystem::path parent = path.parent_path();
-    return parent.empty() ? std::filesystem::current_path() : parent;
-}
-
-std::string resolvePath(const std::filesystem::path& baseDir, const std::string& path)
-{
-    std::filesystem::path resolved(path);
-    if (resolved.is_relative())
-        resolved = baseDir / resolved;
-    return resolved.string();
-}
-
-nlohmann::json readJsonFile(const std::string& filename)
-{
-    std::ifstream ifs(filename);
-    if (!ifs.is_open())
-        throw std::runtime_error("Cannot open JSON file: " + filename);
-
-    nlohmann::json json;
-    ifs >> json;
-    return json;
 }
 
 std::vector<vela::Real> eigenToVector(const vela::VectorXd& values)
@@ -106,18 +78,15 @@ std::shared_ptr<vela::DeviceMesh> loadMesh(const std::string& jsonFile)
 std::vector<vela::Real> runPoisson(const std::string& configFile)
 {
     vela::PoissonSimulation simulation;
-    vela::VectorXd psi = simulation.run(configFile);
-
-    const nlohmann::json cfg = readJsonFile(configFile);
-    const std::filesystem::path cfgDir = configDirectory(configFile);
-    auto mesh = loadMeshImpl(resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>()));
+    vela::PoissonResult poissonResult = simulation.runWithResult(configFile);
 
     LastResult& result = lastResult();
-    result.mesh = mesh;
+    result.mesh = std::make_shared<vela::DeviceMesh>(std::move(poissonResult.mesh));
     result.nodeScalars.clear();
-    result.nodeScalars.emplace_back("potential_V", eigenToVector(psi));
+    result.nodeScalars.emplace_back("potential_V", eigenToVector(poissonResult.potential));
+    result.nodeScalars.emplace_back("net_doping_m3", std::move(poissonResult.netDoping));
 
-    return result.nodeScalars.back().second;
+    return result.nodeScalars.front().second;
 }
 
 std::vector<py::dict> runDCSweep(const std::string& configFile)

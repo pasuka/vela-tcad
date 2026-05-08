@@ -10,5 +10,5 @@ if __name__ == "__main__":
     output_dir = repo_root / "examples" / "pn_diode" / "outputs"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    sim = vela.run_dc_sweep(str(repo_root / "examples" / "pn_diode" / "sweep.json"))
+    sim = vela.run_dc_sweep(str(repo_root / "examples" / "pn_diode" / "simulation.json"))
     print(f"computed {len(sim)} DC sweep points")

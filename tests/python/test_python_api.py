@@ -10,7 +10,10 @@ import vela
 
 class PythonApiTest(unittest.TestCase):
     def setUp(self):
-        source_dir = Path(os.environ["VELA_SOURCE_DIR"])
+        source_dir_env = os.environ.get("VELA_SOURCE_DIR")
+        if source_dir_env is None:
+            raise unittest.SkipTest("VELA_SOURCE_DIR must point to the repository root")
+        source_dir = Path(source_dir_env)
         self.tmpdir = Path(tempfile.mkdtemp(prefix="vela_python_api_"))
         self.mesh_file = self.tmpdir / "mesh.json"
         shutil.copyfile(source_dir / "examples" / "pn_diode" / "mesh.json", self.mesh_file)
