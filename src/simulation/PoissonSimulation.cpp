@@ -1,19 +1,43 @@
 #include "vela/simulation/PoissonSimulation.h"
+#include "vela/equation/PoissonAssembler.h"
 #include "vela/io/MeshReader.h"
 #include "vela/io/VTKWriter.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
-#include "vela/equation/PoissonAssembler.h"
 #include "vela/solver/LinearSolver.h"
 #include <nlohmann/json.hpp>
+#include <filesystem>
 #include <fstream>
 #include <stdexcept>
-#include <filesystem>
 #include <unordered_map>
 
 namespace vela {
 
+namespace {
+
+std::filesystem::path configDirectory(const std::string& configFile)
+{
+    const std::filesystem::path path(configFile);
+    const std::filesystem::path parent = path.parent_path();
+    return parent.empty() ? std::filesystem::current_path() : parent;
+}
+
+std::string resolvePath(const std::filesystem::path& baseDir, const std::string& path)
+{
+    std::filesystem::path resolved(path);
+    if (resolved.is_relative())
+        resolved = baseDir / resolved;
+    return resolved.string();
+}
+
+} // namespace
+
 VectorXd PoissonSimulation::run(const std::string& configFile)
+{
+    return runWithResult(configFile).potential;
+}
+
+PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
 {
     // ------------------------------------------------------------------
     // Load config JSON
@@ -27,18 +51,9 @@ VectorXd PoissonSimulation::run(const std::string& configFile)
     ifs >> cfg;
 
     // Resolve paths relative to the config file's directory
-    std::filesystem::path cfgDir =
-        std::filesystem::path(configFile).parent_path();
-
-    auto resolvePath = [&](const std::string& p) -> std::string {
-        std::filesystem::path fp(p);
-        if (fp.is_relative())
-            return (cfgDir / fp).string();
-        return p;
-    };
-
-    const std::string meshFile   = resolvePath(cfg.at("mesh_file").get<std::string>());
-    const std::string outputVtk  = resolvePath(cfg.at("output_vtk").get<std::string>());
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    const std::string meshFile = resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>());
+    const std::string outputVtk = resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>());
 
     // ------------------------------------------------------------------
     // Build mesh
@@ -98,24 +113,24 @@ VectorXd PoissonSimulation::run(const std::string& configFile)
     LinearSolver solver;
     VectorXd psi = solver.solve(assembler.matrix(), assembler.rhs());
 
-    // ------------------------------------------------------------------
-    // Write VTK output
-    // ------------------------------------------------------------------
-    VTKWriter writer(outputVtk, mesh);
-    writer.write();
-
     std::vector<Real> psiVec(mesh.numNodes());
     for (Index i = 0; i < mesh.numNodes(); ++i)
         psiVec[i] = psi(static_cast<int>(i));
-    writer.addNodeScalar("potential_V", psiVec);
 
     // Also write net doping for visualisation
     std::vector<Real> dopingVec(mesh.numNodes());
     for (Index i = 0; i < mesh.numNodes(); ++i)
         dopingVec[i] = doping.netDoping(i);
+
+    // ------------------------------------------------------------------
+    // Write VTK output
+    // ------------------------------------------------------------------
+    VTKWriter writer(outputVtk, mesh);
+    writer.write();
+    writer.addNodeScalar("potential_V", psiVec);
     writer.addNodeScalar("net_doping_m3", dopingVec);
 
-    return psi;
+    return PoissonResult{std::move(mesh), std::move(psi), std::move(dopingVec)};
 }
 
 } // namespace vela

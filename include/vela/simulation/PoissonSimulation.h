@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/mesh/DeviceMesh.h"
 #include <string>
 #include <vector>
 
@@ -35,6 +36,12 @@ namespace vela {
  * Relative paths in "mesh_file" and "output_vtk" are resolved relative to
  * the directory containing the config JSON.
  */
+struct PoissonResult {
+    DeviceMesh mesh;
+    VectorXd potential;
+    std::vector<Real> netDoping;
+};
+
 class PoissonSimulation {
 public:
     /**
@@ -45,6 +52,15 @@ public:
      * @throws std::runtime_error on I/O or solver failure.
      */
     VectorXd run(const std::string& configFile);
+
+    /**
+     * @brief Run the simulation and return reusable artifacts for integrations.
+     *
+     * @param configFile  Path to the JSON configuration file.
+     * @return Mesh, solved electrostatic potential, and net doping used by the run.
+     * @throws std::runtime_error on I/O or solver failure.
+     */
+    PoissonResult runWithResult(const std::string& configFile);
 };
 
 } // namespace vela
