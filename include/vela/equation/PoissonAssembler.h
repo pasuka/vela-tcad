@@ -58,7 +58,7 @@ public:
     /**
      * @brief Enforce Dirichlet boundary conditions (strong row-replacement).
      *
-    * @param bcs  Map of nodeId -> prescribed potential value [V].
+     * @param bcs  Map of nodeId -> prescribed potential value [V].
      *
      * For each constrained node i with value v:
      *  - rhs of every free neighbour k is reduced by A(k,i)*v

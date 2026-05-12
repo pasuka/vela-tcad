@@ -67,7 +67,7 @@ if(offending_files)
     list(SORT offending_files)
     list(JOIN offending_files "\n  " offending_report)
     message(FATAL_ERROR
-        "Non-ASCII bytes found in source-controlled text files:\n"
+        "Non-ASCII bytes found in the configured ASCII check scope (tests/, src/, include/, examples/ and selected text/source extensions):\n"
         "  ${offending_report}\n\n"
         "Keep files under tests/, src/, include/, and examples/ ASCII-only for reliable MSYS2 UCRT64 builds and test selection."
     )
