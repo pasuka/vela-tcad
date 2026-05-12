@@ -159,8 +159,8 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
 
     // The balanced Scharfetter-Gummel formula multiplies the quasi-Fermi
-    // difference (expNegPhin[i]-expNegPhin[j]) by exp(+ψ[j]/Vt) for electrons
-    // and exp(-ψ[i]/Vt) for holes.  At a PN junction these factors reach ~1e5,
+    // difference (expNegPhin[i]-expNegPhin[j]) by exp(+psi[j]/Vt) for electrons
+    // and exp(-psi[i]/Vt) for holes.  At a PN junction these factors reach ~1e5,
     // so even sub-ULP noise in phin/phip from an external initial guess (e.g.
     // Gummel) produces O(1) residuals.  Zeroing the interior quasi-Fermi
     // potentials removes this amplification: at equilibrium the exact solution

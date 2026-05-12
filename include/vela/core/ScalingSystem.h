@@ -40,7 +40,7 @@ public:
     Real R0()  const { return R0_;  }  ///< Recombination rate scale [m^-3/s]
 
     // ------------------------------------------------------------------
-    // Scale (physical → dimensionless)
+    // Scale (physical -> dimensionless)
     // ------------------------------------------------------------------
     Real scalePotential     (Real phi)  const { return phi  / V0_; }
     Real scaleConcentration (Real n)    const { return n    / C0_; }
@@ -50,7 +50,7 @@ public:
     Real scaleRecombination (Real R)    const { return R    / R0_; }
 
     // ------------------------------------------------------------------
-    // Unscale (dimensionless → physical)
+    // Unscale (dimensionless -> physical)
     // ------------------------------------------------------------------
     Real unscalePotential     (Real phi_s) const { return phi_s  * V0_; }
     Real unscaleConcentration (Real n_s)   const { return n_s    * C0_; }

@@ -36,7 +36,7 @@ void VTKWriter::write()
     // ------------------------------------------------------------------
     // Cells (only Tri3 supported in this stage)
     // ------------------------------------------------------------------
-    // Each Tri3 cell: 1 count + 3 node ids → 4 integers per cell
+    // Each Tri3 cell: 1 count + 3 node ids -> 4 integers per cell
     const Index numCells = cells.size();
     ofs << "CELLS " << numCells << " " << numCells * 4 << "\n";
     for (const auto& c : cells) {

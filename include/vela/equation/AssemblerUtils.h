@@ -48,7 +48,7 @@ inline std::vector<Real> computeEdgeCouplings(const DeviceMesh& mesh)
     return couple;
 }
 
-/// Build edge → adjacent cell ids map.
+/// Build edge -> adjacent cell ids map.
 inline std::vector<std::vector<Index>> buildEdgeCellMap(const DeviceMesh& mesh)
 {
     std::vector<std::vector<Index>> edgeCells(mesh.numEdges());

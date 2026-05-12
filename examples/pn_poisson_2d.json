@@ -1,5 +1,5 @@
 {
-  "_comment": "2-D p-n diode Poisson simulation config. Mesh is a 1 µm × 1 µm square split into two triangular regions.",
+  "_comment": "2-D p-n diode Poisson simulation config. Mesh is a 1 um x 1 um square split into two triangular regions.",
 
   "mesh_file":  "pn_diode_2d.json",
   "output_vtk": "pn_poisson_2d.vtk",

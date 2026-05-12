@@ -11,7 +11,7 @@ constexpr double kb   = 1.380649e-23;
 // Permittivity of free space [F/m]
 constexpr double eps0 = 8.8541878128e-12;
 
-// Planck constant [J·s]
+// Planck constant [J*s]
 constexpr double h    = 6.62607015e-34;
 
 // Electron rest mass [kg]

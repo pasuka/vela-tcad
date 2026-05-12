@@ -43,12 +43,12 @@ DopingModel DopingModel::fromMeshAndRegions(
     const DeviceMesh&                    mesh,
     const std::vector<RegionDopingSpec>& specs)
 {
-    // Build region-name → {donors, acceptors} map from specs
+    // Build region-name -> {donors, acceptors} map from specs
     std::unordered_map<std::string, const RegionDopingSpec*> regionSpec;
     for (const auto& s : specs)
         regionSpec[s.region] = &s;
 
-    // Build region-id → spec lookup
+    // Build region-id -> spec lookup
     std::unordered_map<Index, const RegionDopingSpec*> regionIdSpec;
     for (Index r = 0; r < mesh.numRegions(); ++r) {
         const auto& reg = mesh.getRegion(r);

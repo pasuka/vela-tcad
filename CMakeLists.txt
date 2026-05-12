@@ -110,6 +110,21 @@ target_link_libraries(vela_example_runner PRIVATE vela_core)
 enable_testing()
 include(CTest)
 
+set(VELA_ASCII_CHECK_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CheckAscii.cmake)
+
+add_custom_target(check_ascii
+    COMMAND ${CMAKE_COMMAND}
+            -DVELA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -P ${VELA_ASCII_CHECK_SCRIPT}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Checking tests/src/include/examples for non-ASCII bytes"
+    VERBATIM)
+
+add_test(NAME ascii_sources
+    COMMAND ${CMAKE_COMMAND}
+            -DVELA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+            -P ${VELA_ASCII_CHECK_SCRIPT})
+
 add_executable(test_scaling tests/test_scaling.cpp)
 target_link_libraries(test_scaling PRIVATE vela_core Catch2::Catch2WithMain)
 

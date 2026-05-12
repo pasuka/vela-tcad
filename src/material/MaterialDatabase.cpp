@@ -13,7 +13,7 @@ MaterialDatabase::MaterialDatabase()
     si.mup   = 0.048;    // [m^2/V/s]
     db_["Si"] = si;
 
-    // Silicon dioxide (insulator – ni, mun, mup remain 0)
+    // Silicon dioxide (insulator - ni, mun, mup remain 0)
     Material sio2;
     sio2.name  = "SiO2";
     sio2.eps_r = 3.9;

@@ -1,5 +1,5 @@
 {
-  "_comment": "Minimal 2-D p-n diode mesh: 1 µm × 1 µm square, two triangular cells",
+  "_comment": "Minimal 2-D p-n diode mesh: 1 um x 1 um square, two triangular cells",
 
   "nodes": [
     { "id": 0, "x": 0.0e-6, "y": 0.0e-6 },

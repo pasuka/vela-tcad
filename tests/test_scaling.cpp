@@ -22,7 +22,7 @@ TEST_CASE("ScalingSystem: thermal voltage at 300 K", "[scaling]")
 {
     ScalingSystem sc = makeSi300();
 
-    // kT/q at 300 K ≈ 0.025852 V
+    // kT/q at 300 K ~= 0.025852 V
     REQUIRE(sc.V0() == Catch::Approx(0.025852).epsilon(1e-3));
 }
 

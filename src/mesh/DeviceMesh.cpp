@@ -45,7 +45,7 @@ void DeviceMesh::buildEdgesOnly()
 {
     edges_.clear();
 
-    // Map from sorted node pair → edge index in edges_
+    // Map from sorted node pair -> edge index in edges_
     std::map<std::pair<Index,Index>, Index> edgeMap;
 
     for (const auto& cell : cells_) {
