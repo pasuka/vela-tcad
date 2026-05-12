@@ -269,19 +269,21 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
         return false;
     };
 
+    bool blockedByFailedStep = false;
     Real nominalTarget = sweep.start + sweep.step;
-    while (direction * (nominalTarget - sweep.stop) <= tolerance) {
+    while (!blockedByFailedStep && direction * (nominalTarget - sweep.stop) <= tolerance) {
         while (direction * (previousVoltage - nominalTarget) < -tolerance) {
             if (!advanceToward(nominalTarget)) {
                 if (sweep.stopOnFailure)
                     return points;
+                blockedByFailedStep = true;
                 break;
             }
         }
         nominalTarget += sweep.step;
     }
 
-    while (direction * (previousVoltage - sweep.stop) < -tolerance) {
+    while (!blockedByFailedStep && direction * (previousVoltage - sweep.stop) < -tolerance) {
         if (!advanceToward(sweep.stop)) {
             if (sweep.stopOnFailure)
                 return points;

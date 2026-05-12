@@ -86,6 +86,12 @@ class PythonApiTest(unittest.TestCase):
         points = vela.run_dc_sweep(str(sweep_cfg))
         self.assertEqual(len(points), 3)
         self.assertTrue(all(point["converged"] for point in points))
+        self.assertEqual(points[0]["attempted_step"], 0.0)
+        self.assertEqual(points[0]["accepted_step"], 0.0)
+        self.assertEqual(points[0]["retry_count"], 0)
+        self.assertAlmostEqual(points[1]["attempted_step"], 0.25)
+        self.assertAlmostEqual(points[1]["accepted_step"], 0.25)
+        self.assertEqual(points[1]["retry_count"], 0)
         self.assertTrue((self.tmpdir / "iv.csv").exists())
         self.assertTrue((self.tmpdir / "pn_sweep_0000_0V.vtk").exists())
 
