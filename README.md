@@ -216,7 +216,7 @@ generated package directory:
 ```python
 import vela
 
-mesh = vela.load_mesh("examples/pn_diode/mesh.json")
+mesh = vela.load_mesh("examples/pn_diode_2d.json")
 potential = vela.run_poisson("examples/pn_poisson_2d.json")
 points = vela.run_dc_sweep("examples/pn_diode/simulation.json")
 vela.write_vtk("examples/pn_diode/outputs/python_export.vtk")
