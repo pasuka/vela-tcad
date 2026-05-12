@@ -151,9 +151,23 @@ build/vela_example_runner --config examples/nmos2d/simulation.json
 
 ## Adding Future Regression Cases
 
-1. Add a new example directory with `mesh.json` and `simulation.json`.
-2. Keep meshes small and outputs under an ignored `outputs/` subdirectory.
-3. Extend `EXAMPLES` in `scripts/run_regression.py` with expected files and any
-   physics-specific checks.
-4. Run `ctest --test-dir build --output-on-failure -R regression` before
-   committing.
+Use this minimal checklist when adding a new device regression case:
+
+1. Create `examples/<device_name>/` with a small `mesh.json` and
+   `simulation.json` that exercise only implemented solver features.
+2. Keep generated files under `examples/<device_name>/outputs/`; do not commit
+   those outputs unless a task explicitly asks for golden artifacts.
+3. Add the case to `EXAMPLES` in `scripts/run_regression.py` with every expected
+   CSV/VTK file that the runner should verify.
+4. Add the smallest physics-specific regression check that matches the current
+   implementation, such as convergence flags, NaN/Inf scanning, interface
+   continuity, current-direction sanity, or a monotonic trend already supported
+   by the model.
+5. Document the case in this file with physical meaning, inputs, direct run
+   command, outputs, and any special checks.
+6. If the new case exposes solver, mesh, physics, or discretization behavior,
+   add or update the closest Catch2 test in `tests/` instead of relying only on
+   the example.
+7. Build and run `ctest --test-dir build --output-on-failure -R regression`
+   before committing; run the full CTest suite when core code changes are part
+   of the regression update.
