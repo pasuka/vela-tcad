@@ -63,6 +63,9 @@ std::vector<py::dict> sweepPointsToPython(const std::vector<vela::DCSweepPoint>&
         row["total_current"] = point.totalCurrent;
         row["converged"] = point.converged;
         row["iterations"] = point.iterations;
+        row["attempted_step"] = point.attemptedStep;
+        row["accepted_step"] = point.acceptedStep;
+        row["retry_count"] = point.retryCount;
         out.push_back(std::move(row));
     }
     return out;

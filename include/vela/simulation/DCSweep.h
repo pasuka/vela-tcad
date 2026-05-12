@@ -13,6 +13,12 @@ struct DCSweepConfig {
     Real start = 0.0;
     Real stop = 0.0;
     Real step = 0.0;
+    Real minStep = 0.0;
+    Real maxStep = 0.0;
+    Real growthFactor = 1.0;
+    Real shrinkFactor = 0.5;
+    int maxRetries = 5;
+    bool stopOnFailure = true;
     std::string currentContact;
     bool writeVtk = false;
     std::string vtkPrefix;
@@ -26,6 +32,9 @@ struct DCSweepPoint {
     Real totalCurrent = 0.0;
     bool converged = false;
     int iterations = 0;
+    Real attemptedStep = 0.0;
+    Real acceptedStep = 0.0;
+    int retryCount = 0;
 };
 
 class DCSweep {

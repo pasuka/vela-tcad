@@ -1,3 +1,4 @@
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include "vela/simulation/DCSweep.h"
@@ -9,7 +10,10 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <random>
+#include <sstream>
+#include <string>
 #include <thread>
+#include <vector>
 
 using namespace vela;
 
@@ -76,11 +80,11 @@ std::filesystem::path writePNMesh(const std::filesystem::path& dir)
     return meshPath;
 }
 
-std::filesystem::path writeSweepConfig(const std::filesystem::path& dir,
-                                       const std::filesystem::path& meshPath,
-                                       const std::filesystem::path& csvPath)
+nlohmann::json baseSweepConfig(const std::filesystem::path& dir,
+                               const std::filesystem::path& meshPath,
+                               const std::filesystem::path& csvPath)
 {
-    nlohmann::json cfg = {
+    return {
         {"mesh_file", meshPath.string()},
         {"output_csv", csvPath.string()},
         {"doping", {
@@ -106,15 +110,44 @@ std::filesystem::path writeSweepConfig(const std::filesystem::path& dir,
             {"vtk_prefix", (dir / "pn_sweep").string()}
         }}
     };
+}
+
+std::filesystem::path writeSweepConfig(const std::filesystem::path& dir,
+                                       const std::filesystem::path& meshPath,
+                                       const std::filesystem::path& csvPath,
+                                       const nlohmann::json& sweepOverrides = {},
+                                       const nlohmann::json& solverOverrides = {})
+{
+    nlohmann::json cfg = baseSweepConfig(dir, meshPath, csvPath);
+    for (auto it = sweepOverrides.begin(); it != sweepOverrides.end(); ++it)
+        cfg["sweep"][it.key()] = it.value();
+    for (auto it = solverOverrides.begin(); it != solverOverrides.end(); ++it)
+        cfg["solver"][it.key()] = it.value();
 
     const auto cfgPath = dir / "pn_sweep.json";
     std::ofstream(cfgPath) << cfg.dump(2);
     return cfgPath;
 }
 
+std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& csvPath)
+{
+    std::ifstream input(csvPath);
+    std::vector<std::vector<std::string>> rows;
+    std::string line;
+    while (std::getline(input, line)) {
+        std::vector<std::string> columns;
+        std::stringstream ss(line);
+        std::string column;
+        while (std::getline(ss, column, ','))
+            columns.push_back(column);
+        rows.push_back(columns);
+    }
+    return rows;
+}
+
 } // namespace
 
-TEST_CASE("DCSweep: PN diode sweep writes CSV and finite monotonic IV data", "[dc_sweep]")
+TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV data", "[dc_sweep]")
 {
     const auto dir = makeUniqueSweepDir();
     const ScopedDirectoryCleanup cleanup{dir};
@@ -137,6 +170,100 @@ TEST_CASE("DCSweep: PN diode sweep writes CSV and finite monotonic IV data", "[d
         REQUIRE(std::isfinite(point.totalCurrent));
     }
 
+    REQUIRE(points[0].attemptedStep == Catch::Approx(0.0));
+    REQUIRE(points[1].attemptedStep == Catch::Approx(0.25));
+    REQUIRE(points[1].acceptedStep == Catch::Approx(0.25));
+    REQUIRE(points[1].retryCount == 0);
     REQUIRE(std::abs(points.back().totalCurrent) >= std::abs(points.front().totalCurrent));
     REQUIRE(std::filesystem::exists(dir / "pn_sweep_0000_0V.vtk"));
+
+    const auto rows = readCsvRows(csvPath);
+    REQUIRE(rows.front() == std::vector<std::string>{"voltage", "electron_current", "hole_current",
+                                                     "total_current", "converged", "iterations",
+                                                     "attempted_step", "accepted_step", "retry_count"});
+}
+
+TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_sweep]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "reverse.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.5},
+        {"stop", 0.0},
+        {"step", -0.25},
+        {"write_vtk", false}
+    });
+
+    DCSweep sweep;
+    const std::vector<DCSweepPoint> points = sweep.run(cfgPath.string());
+
+    REQUIRE(points.size() == 3);
+    REQUIRE(points[0].voltage == Catch::Approx(0.5));
+    REQUIRE(points[1].voltage == Catch::Approx(0.25));
+    REQUIRE(points[2].voltage == Catch::Approx(0.0));
+    REQUIRE(points[1].attemptedStep == Catch::Approx(-0.25));
+    REQUIRE(points[1].acceptedStep == Catch::Approx(-0.25));
+}
+
+TEST_CASE("DCSweep: failed solve records retry diagnostics", "[dc_sweep]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "retry_failure.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"stop", 0.5},
+        {"step", 0.5},
+        {"min_step", 0.0625},
+        {"max_step", 0.5},
+        {"shrink_factor", 0.5},
+        {"growth_factor", 1.0},
+        {"max_retries", 3},
+        {"stop_on_failure", true},
+        {"write_vtk", false}
+    }, {
+        {"max_iter", 0},
+        {"reltol", 1.0e-30}
+    });
+
+    DCSweep sweep;
+    const std::vector<DCSweepPoint> points = sweep.run(cfgPath.string());
+
+    REQUIRE(points.size() >= 1);
+    REQUIRE_FALSE(points.back().converged);
+    REQUIRE(points.back().retryCount <= 3);
+    REQUIRE(points.back().attemptedStep == Catch::Approx(0.0));
+    REQUIRE(points.back().acceptedStep == Catch::Approx(0.0));
+}
+
+TEST_CASE("DCSweep: final stop point is reached exactly without overshoot", "[dc_sweep]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "exact_stop.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"stop", 0.55},
+        {"step", 0.2},
+        {"min_step", 0.05},
+        {"max_step", 0.2},
+        {"growth_factor", 2.0},
+        {"shrink_factor", 0.5},
+        {"write_vtk", false}
+    });
+
+    DCSweep sweep;
+    const std::vector<DCSweepPoint> points = sweep.run(cfgPath.string());
+
+    REQUIRE(points.size() == 4);
+    REQUIRE(points[1].voltage == Catch::Approx(0.2));
+    REQUIRE(points[2].voltage == Catch::Approx(0.4));
+    REQUIRE(points[3].voltage == Catch::Approx(0.55));
+    REQUIRE(points[3].attemptedStep == Catch::Approx(0.15));
+    REQUIRE(points[3].acceptedStep == Catch::Approx(0.15));
 }

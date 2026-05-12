@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
@@ -47,6 +48,13 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.start = j.at("start").get<Real>();
     sweep.stop = j.at("stop").get<Real>();
     sweep.step = j.at("step").get<Real>();
+    const Real nominalStep = std::abs(sweep.step);
+    sweep.shrinkFactor = j.value("shrink_factor", sweep.shrinkFactor);
+    sweep.growthFactor = j.value("growth_factor", sweep.growthFactor);
+    sweep.maxRetries = j.value("max_retries", sweep.maxRetries);
+    sweep.minStep = j.value("min_step", nominalStep * std::pow(sweep.shrinkFactor, sweep.maxRetries));
+    sweep.maxStep = j.value("max_step", nominalStep);
+    sweep.stopOnFailure = j.value("stop_on_failure", sweep.stopOnFailure);
     sweep.currentContact = j.value("current_contact", sweep.contact);
     sweep.writeVtk = j.value("write_vtk", cfg.value("write_vtk", false));
     sweep.csvFile = j.value("csv_file", cfg.value("output_csv", sweep.csvFile));
@@ -65,6 +73,18 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         throw std::invalid_argument("DCSweep: sweep.step must be non-zero.");
     if ((sweep.stop - sweep.start) * sweep.step < 0.0)
         throw std::invalid_argument("DCSweep: sweep.step sign must move start toward stop.");
+    if (sweep.minStep <= 0.0)
+        throw std::invalid_argument("DCSweep: sweep.min_step must be positive.");
+    if (sweep.maxStep <= 0.0)
+        throw std::invalid_argument("DCSweep: sweep.max_step must be positive.");
+    if (sweep.minStep > sweep.maxStep)
+        throw std::invalid_argument("DCSweep: sweep.min_step must not exceed sweep.max_step.");
+    if (sweep.growthFactor < 1.0)
+        throw std::invalid_argument("DCSweep: sweep.growth_factor must be at least 1.");
+    if (sweep.shrinkFactor <= 0.0 || sweep.shrinkFactor >= 1.0)
+        throw std::invalid_argument("DCSweep: sweep.shrink_factor must be greater than 0 and less than 1.");
+    if (sweep.maxRetries < 0)
+        throw std::invalid_argument("DCSweep: sweep.max_retries must be non-negative.");
     return sweep;
 }
 
@@ -130,7 +150,8 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
 
     CSVWriter csv(sweep.csvFile);
     csv.writeHeader({"voltage", "electron_current", "hole_current",
-                     "total_current", "converged", "iterations"});
+                     "total_current", "converged", "iterations",
+                     "attempted_step", "accepted_step", "retry_count"});
 
     std::vector<DCSweepPoint> points;
     DDSolution previousSolution;
@@ -156,7 +177,8 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
         }
     };
 
-    auto recordPoint = [&](Real voltage, const DDSolution& sol, bool converged) {
+    auto recordPoint = [&](Real voltage, const DDSolution& sol, bool converged,
+                           Real attemptedStep, Real acceptedStep, int retryCount) {
         ContactCurrentResult current{};
         if (converged)
             current = contactCurrent.compute(sol, sweep.currentContact);
@@ -168,6 +190,9 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
         point.totalCurrent = current.totalCurrent;
         point.converged = converged;
         point.iterations = sol.iters;
+        point.attemptedStep = attemptedStep;
+        point.acceptedStep = acceptedStep;
+        point.retryCount = retryCount;
         points.push_back(point);
 
         csv.writeRow({formatReal(point.voltage),
@@ -175,53 +200,95 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
                       formatReal(point.holeCurrent),
                       formatReal(point.totalCurrent),
                       point.converged ? "1" : "0",
-                      std::to_string(point.iterations)});
+                      std::to_string(point.iterations),
+                      formatReal(point.attemptedStep),
+                      formatReal(point.acceptedStep),
+                      std::to_string(point.retryCount)});
 
         if (converged && sweep.writeVtk)
             writeDDSolutionVTK(vtkFilename(sweep.vtkPrefix, vtkIndex++, voltage), mesh, doping, sol);
     };
 
     auto [startOk, startSol] = solvePoint(sweep.start, nullptr);
-    recordPoint(sweep.start, startSol, startOk);
+    recordPoint(sweep.start, startSol, startOk, 0.0, 0.0, 0);
     if (!startOk)
         return points;
     previousSolution = std::move(startSol);
+
+    const Real direction = (sweep.step > 0.0) ? 1.0 : -1.0;
+    const Real tolerance = 1.0e-12;
+    Real adaptiveStep = std::min(std::abs(sweep.step), sweep.maxStep);
+
+    auto limitedTarget = [&](Real target, Real stepMagnitude) {
+        const Real remaining = direction * (target - previousVoltage);
+        const Real limited = previousVoltage + direction * std::min(stepMagnitude, remaining);
+        return limited;
+    };
+
     auto advanceToward = [&](Real target) -> bool {
-        Real candidate = target;
-        int depth = 0;
+        int retryCount = 0;
+        Real trialStep = std::min(adaptiveStep, sweep.maxStep);
+        DDSolution lastSol;
+        Real lastAttempted = 0.0;
+        Real lastCandidate = previousVoltage;
 
         while (true) {
+            const Real remaining = direction * (target - previousVoltage);
+            if (remaining <= tolerance)
+                return true;
+
+            const Real stepMagnitude = std::min(trialStep, remaining);
+            const Real candidate = limitedTarget(target, stepMagnitude);
+            const Real attemptedStep = candidate - previousVoltage;
             auto [ok, sol] = solvePoint(candidate, &previousSolution);
+            lastSol = sol;
+            lastAttempted = attemptedStep;
+            lastCandidate = candidate;
+
             if (ok) {
-                recordPoint(candidate, sol, true);
+                recordPoint(candidate, sol, true, attemptedStep, attemptedStep, retryCount);
                 previousSolution = std::move(sol);
                 previousVoltage = candidate;
+                adaptiveStep = std::min(sweep.maxStep, stepMagnitude * sweep.growthFactor);
                 return true;
             }
 
-            if (depth >= 5) {
-                recordPoint(candidate, sol, false);
-                return false;
-            }
+            if (retryCount >= sweep.maxRetries)
+                break;
 
-            candidate = 0.5 * (previousVoltage + candidate);
-            ++depth;
+            const Real shrunken = stepMagnitude * sweep.shrinkFactor;
+            if (shrunken < sweep.minStep - std::numeric_limits<Real>::epsilon())
+                break;
+
+            trialStep = shrunken;
+            ++retryCount;
         }
+
+        recordPoint(lastCandidate, lastSol, false, lastAttempted, 0.0, retryCount);
+        adaptiveStep = std::max(sweep.minStep, std::min(sweep.maxStep, std::abs(lastAttempted) * sweep.shrinkFactor));
+        return false;
     };
 
-    const Real direction = (sweep.step > 0.0) ? 1.0 : -1.0;
+    bool blockedByFailedStep = false;
     Real nominalTarget = sweep.start + sweep.step;
-    while (direction * (nominalTarget - sweep.stop) <= 1.0e-12) {
-        while (direction * (previousVoltage - nominalTarget) < -1.0e-12) {
-            if (!advanceToward(nominalTarget))
-                return points;
+    while (!blockedByFailedStep && direction * (nominalTarget - sweep.stop) <= tolerance) {
+        while (direction * (previousVoltage - nominalTarget) < -tolerance) {
+            if (!advanceToward(nominalTarget)) {
+                if (sweep.stopOnFailure)
+                    return points;
+                blockedByFailedStep = true;
+                break;
+            }
         }
         nominalTarget += sweep.step;
     }
 
-    while (direction * (previousVoltage - sweep.stop) < -1.0e-12) {
-        if (!advanceToward(sweep.stop))
-            return points;
+    while (!blockedByFailedStep && direction * (previousVoltage - sweep.stop) < -tolerance) {
+        if (!advanceToward(sweep.stop)) {
+            if (sweep.stopOnFailure)
+                return points;
+            break;
+        }
     }
 
     return points;
