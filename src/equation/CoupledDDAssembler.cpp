@@ -414,27 +414,27 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             const Real excessProduct = (ni > 0.0)
                 ? ni * ni * std::expm1(dPhi / Vt_)
                 : n(ii) * p(ii);
-            const auto deriv = recombination_.totalRateDerivativesFromExcessProduct(
-                excessProduct, n(ii), p(ii), ni);
-
-            const Real dExcess_dphin = -np / Vt_;
-            const Real dExcess_dphip =  np / Vt_;
-            const Real dR_dpsi = deriv.dRateDn * dni_dpsi + deriv.dRateDp * dpi_dpsi;
-            const Real dR_dphin = deriv.dRateDn * dni_dphin
-                                 + deriv.dRateDExcess * dExcess_dphin;
-            const Real dR_dphip = deriv.dRateDp * dpi_dphip
-                                 + deriv.dRateDExcess * dExcess_dphip;
-
-            add(phinOffset() + ii, psiOffset() + ii, dR_dpsi * vol_[i]);
-            add(phinOffset() + ii, phinOffset() + ii, dR_dphin * vol_[i]);
-            add(phinOffset() + ii, phipOffset() + ii, dR_dphip * vol_[i]);
-            add(phipOffset() + ii, psiOffset() + ii, dR_dpsi * vol_[i]);
-            add(phipOffset() + ii, phinOffset() + ii, dR_dphin * vol_[i]);
-            add(phipOffset() + ii, phipOffset() + ii, dR_dphip * vol_[i]);
-
             const Real R = recombination_.totalRateFromExcessProduct(
                 excessProduct, n(ii), p(ii), ni);
             if (R != 0.0) {
+                const auto deriv = recombination_.totalRateDerivativesFromExcessProduct(
+                    excessProduct, n(ii), p(ii), ni);
+
+                const Real dExcess_dphin = -np / Vt_;
+                const Real dExcess_dphip =  np / Vt_;
+                const Real dR_dpsi = deriv.dRateDn * dni_dpsi + deriv.dRateDp * dpi_dpsi;
+                const Real dR_dphin = deriv.dRateDn * dni_dphin
+                                     + deriv.dRateDExcess * dExcess_dphin;
+                const Real dR_dphip = deriv.dRateDp * dpi_dphip
+                                     + deriv.dRateDExcess * dExcess_dphip;
+
+                add(phinOffset() + ii, psiOffset() + ii, dR_dpsi * vol_[i]);
+                add(phinOffset() + ii, phinOffset() + ii, dR_dphin * vol_[i]);
+                add(phinOffset() + ii, phipOffset() + ii, dR_dphip * vol_[i]);
+                add(phipOffset() + ii, psiOffset() + ii, dR_dpsi * vol_[i]);
+                add(phipOffset() + ii, phinOffset() + ii, dR_dphin * vol_[i]);
+                add(phipOffset() + ii, phipOffset() + ii, dR_dphip * vol_[i]);
+
                 hasElectronContribution[static_cast<std::size_t>(ii)] = true;
                 hasHoleContribution[static_cast<std::size_t>(ii)] = true;
             }

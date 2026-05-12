@@ -226,9 +226,11 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             result.finalResidualNorm = acceptedR.norm();
             result.iters = acceptedIters;
             result.solution = makeSolution(assembler, acceptedX, acceptedIters);
-            std::cerr << "Newton failed at iter " << iter
-                      << ": residual=" << r.norm()
-                      << " damping=0 step=0 (linear solve failed)\n";
+            if (cfg_.verbose) {
+                std::cerr << "Newton failed at iter " << iter
+                          << ": residual=" << r.norm()
+                          << " damping=0 step=0 (linear solve failed)\n";
+            }
             return result;
         }
         const Real stepNorm = step.norm();
@@ -244,11 +246,13 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             result.finalResidualNorm = acceptedR.norm();
             result.iters = acceptedIters;
             result.solution = makeSolution(assembler, acceptedX, acceptedIters);
-            std::cerr << "Newton failed at iter " << iter
-                      << ": residual=" << ls.residualNorm
-                      << " damping=" << ls.damping
-                      << " step=" << stepNorm
-                      << " (line search rejected step)\n";
+            if (cfg_.verbose) {
+                std::cerr << "Newton failed at iter " << iter
+                          << ": residual=" << ls.residualNorm
+                          << " damping=" << ls.damping
+                          << " step=" << stepNorm
+                          << " (line search rejected step)\n";
+            }
             return result;
         }
 
@@ -284,13 +288,15 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     result.iters = acceptedIters;
     result.finalResidualNorm = acceptedR.norm();
     result.solution = makeSolution(assembler, acceptedX, acceptedIters);
-    std::cerr << "Newton failed after " << cfg_.maxIter
-              << " iterations: residual=" << result.finalResidualNorm
-              << " damping="
-              << (result.history.empty() ? 0.0 : result.history.back().dampingFactor)
-              << " step="
-              << (result.history.empty() ? 0.0 : result.history.back().stepNorm)
-              << '\n';
+    if (cfg_.verbose) {
+        std::cerr << "Newton failed after " << cfg_.maxIter
+                  << " iterations: residual=" << result.finalResidualNorm
+                  << " damping="
+                  << (result.history.empty() ? 0.0 : result.history.back().dampingFactor)
+                  << " step="
+                  << (result.history.empty() ? 0.0 : result.history.back().stepNorm)
+                  << '\n';
+    }
     return result;
 }
 

@@ -13,6 +13,8 @@
 #include "vela/solver/NewtonSolver.h"
 
 #include <cmath>
+#include <iostream>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
@@ -178,6 +180,43 @@ TEST_CASE("CoupledDDAssembler: zero-mobility continuity rows are pinned", "[newt
     REQUIRE(lu.info() == Eigen::Success);
 }
 
+
+TEST_CASE("CoupledDDAssembler: analytic pinned rows suppress zero-rate recombination derivatives", "[newton][coupled]")
+{
+    DeviceMesh mesh = makeOxideMesh();
+    MaterialDatabase matdb;
+    Material zeroMobilitySemiconductor;
+    zeroMobilitySemiconductor.name = "SiO2";
+    zeroMobilitySemiconductor.eps_r = 11.7;
+    zeroMobilitySemiconductor.ni = 1.0e16;
+    zeroMobilitySemiconductor.mun = 0.0;
+    zeroMobilitySemiconductor.mup = 0.0;
+    matdb.addMaterial(zeroMobilitySemiconductor);
+
+    DopingModel doping(mesh.numNodes());
+    CoupledDDAssembler assembler(mesh, matdb, doping, constants::Vt_300, 1.0e-7, 1.0e-7);
+
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi = VectorXd::Zero(N);
+    state.phin = VectorXd::LinSpaced(N, 0.05, 0.2);
+    state.phip = state.phin;
+    const VectorXd x = assembler.pack(state);
+
+    CoupledDDBoundaryConditions bcs;
+    const SparseMatrixd J = assembler.assembleJacobian(x, bcs);
+    const Eigen::MatrixXd dense = Eigen::MatrixXd(J);
+
+    for (int i = 0; i < N; ++i) {
+        const int electronRow = N + i;
+        const int holeRow = 2 * N + i;
+        for (int col = 0; col < 3 * N; ++col) {
+            REQUIRE(dense(electronRow, col) == Catch::Approx(col == electronRow ? 1.0 : 0.0));
+            REQUIRE(dense(holeRow, col) == Catch::Approx(col == holeRow ? 1.0 : 0.0));
+        }
+    }
+}
+
 TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences on small mesh", "[newton][coupled]")
 {
     DeviceMesh mesh = makePNMesh();
@@ -216,4 +255,30 @@ TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
 
     const NewtonConfig debugCfg = newtonConfigFromJson(nlohmann::json{{"jacobian", "finite_difference"}});
     REQUIRE(debugCfg.jacobian == "finite_difference");
+}
+
+
+TEST_CASE("NewtonSolver: verbose false suppresses failure diagnostics", "[newton]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    const int N = static_cast<int>(mesh.numNodes());
+    DDSolution initial;
+    initial.psi = VectorXd::LinSpaced(N, -0.03, 0.04);
+    initial.phin = VectorXd::Constant(N, 0.01);
+    initial.phip = VectorXd::Constant(N, -0.01);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.maxIter = 0;
+    cfg.verbose = false;
+
+    std::ostringstream capturedStderr;
+    std::streambuf* previousStderr = std::cerr.rdbuf(capturedStderr.rdbuf());
+    const NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), initial, cfg);
+    std::cerr.rdbuf(previousStderr);
+
+    REQUIRE_FALSE(result.converged);
+    REQUIRE(capturedStderr.str().empty());
 }
