@@ -10,6 +10,24 @@
 #include <vector>
 
 namespace vela {
+namespace {
+
+Real bernoulliDerivative(Real x)
+{
+    const Real ax = std::abs(x);
+    if (ax < 1.0e-8)
+        return -0.5 + x / 6.0 - x * x * x / 180.0;
+    if (x > 500.0)
+        return (1.0 - x) * std::exp(-x);
+    if (x < -500.0)
+        return -1.0;
+
+    const Real em1 = std::expm1(x);
+    const Real ex = em1 + 1.0;
+    return (em1 - x * ex) / (em1 * em1);
+}
+
+} // namespace
 
 CoupledDDAssembler::CoupledDDAssembler(const DeviceMesh& mesh,
                                        const MaterialDatabase& matdb,
@@ -251,6 +269,205 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
         r(phipOffset() + static_cast<int>(node)) = x(phipOffset() + static_cast<int>(node)) - value;
 
     return r;
+}
+
+SparseMatrixd CoupledDDAssembler::assembleJacobian(
+    const VectorXd& x,
+    const CoupledDDBoundaryConditions& bcs) const
+{
+    const Index Nidx = mesh_.numNodes();
+    const int N = static_cast<int>(Nidx);
+    if (x.size() != 3 * N)
+        throw std::invalid_argument("CoupledDDAssembler::assembleJacobian: vector size mismatch.");
+
+    const VectorXd n = electronDensity(x);
+    const VectorXd p = holeDensity(x);
+
+    std::vector<bool> constrainedRows(static_cast<std::size_t>(3 * N), false);
+    for (const auto& [node, value] : bcs.psi) {
+        (void)value;
+        constrainedRows[static_cast<std::size_t>(psiOffset() + static_cast<int>(node))] = true;
+    }
+    for (const auto& [node, value] : bcs.phin) {
+        (void)value;
+        constrainedRows[static_cast<std::size_t>(phinOffset() + static_cast<int>(node))] = true;
+    }
+    for (const auto& [node, value] : bcs.phip) {
+        (void)value;
+        constrainedRows[static_cast<std::size_t>(phipOffset() + static_cast<int>(node))] = true;
+    }
+
+    std::vector<Eigen::Triplet<double>> triplets;
+    triplets.reserve(static_cast<std::size_t>(N) * 27);
+    auto add = [&](int row, int col, Real value) {
+        if (value != 0.0 && !constrainedRows[static_cast<std::size_t>(row)])
+            triplets.emplace_back(row, col, value);
+    };
+
+    std::vector<bool> hasElectronContribution(static_cast<std::size_t>(N), false);
+    std::vector<bool> hasHoleContribution(static_cast<std::size_t>(N), false);
+    std::vector<Real> expNegPhin(static_cast<std::size_t>(N));
+    std::vector<Real> expPhip(static_cast<std::size_t>(N));
+    std::vector<Real> expPsi(static_cast<std::size_t>(N));
+    std::vector<Real> expNegPsi(static_cast<std::size_t>(N));
+    for (int k = 0; k < N; ++k) {
+        expNegPhin[static_cast<std::size_t>(k)] = std::exp(-x(phinOffset() + k) / Vt_);
+        expPhip[static_cast<std::size_t>(k)]    = std::exp( x(phipOffset()  + k) / Vt_);
+        expPsi[static_cast<std::size_t>(k)]     = std::exp( x(psiOffset()   + k) / Vt_);
+        expNegPsi[static_cast<std::size_t>(k)]  = std::exp(-x(psiOffset()   + k) / Vt_);
+    }
+
+    for (Index e = 0; e < mesh_.numEdges(); ++e) {
+        const Edge& edge = mesh_.getEdge(e);
+        const Real h = edge.length;
+        if (h < 1.0e-30) continue;
+
+        const int i = static_cast<int>(edge.n0);
+        const int j = static_cast<int>(edge.n1);
+        const Real dpsi = x(psiOffset() + j) - x(psiOffset() + i);
+        const Real u = dpsi / Vt_;
+        const Real Bu = bernoulli(u);
+        const Real dBu = bernoulliDerivative(u);
+
+        const Real eps = detail::edgeEpsilon(edgeCells_, mesh_, matdb_, e);
+        const Real G = eps * couple_[e] / h;
+        add(psiOffset() + i, psiOffset() + i,  G);
+        add(psiOffset() + i, psiOffset() + j, -G);
+        add(psiOffset() + j, psiOffset() + i, -G);
+        add(psiOffset() + j, psiOffset() + j,  G);
+
+        const Real mun = detail::edgeMobility(
+            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Electron);
+        if (mun > 0.0) {
+            hasElectronContribution[static_cast<std::size_t>(i)] = true;
+            hasElectronContribution[static_cast<std::size_t>(j)] = true;
+
+            const Real coef = mun * Vt_ * couple_[e] / h;
+            const Real factor = coef * ni_[static_cast<Index>(i)]
+                              * expPsi[static_cast<std::size_t>(j)];
+            const Real diff = expNegPhin[static_cast<std::size_t>(i)]
+                            - expNegPhin[static_cast<std::size_t>(j)];
+            const Real dF_dpsi_i = factor * (-dBu / Vt_) * diff;
+            const Real dF_dpsi_j = factor * ((dBu + Bu) / Vt_) * diff;
+            const Real dF_dphin_i = factor * Bu
+                                  * (-expNegPhin[static_cast<std::size_t>(i)] / Vt_);
+            const Real dF_dphin_j = factor * Bu
+                                  * ( expNegPhin[static_cast<std::size_t>(j)] / Vt_);
+
+            add(phinOffset() + i, psiOffset() + i, dF_dpsi_i);
+            add(phinOffset() + i, psiOffset() + j, dF_dpsi_j);
+            add(phinOffset() + i, phinOffset() + i, dF_dphin_i);
+            add(phinOffset() + i, phinOffset() + j, dF_dphin_j);
+            add(phinOffset() + j, psiOffset() + i, -dF_dpsi_i);
+            add(phinOffset() + j, psiOffset() + j, -dF_dpsi_j);
+            add(phinOffset() + j, phinOffset() + i, -dF_dphin_i);
+            add(phinOffset() + j, phinOffset() + j, -dF_dphin_j);
+        }
+
+        const Real mup = detail::edgeMobility(
+            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Hole);
+        if (mup > 0.0) {
+            hasHoleContribution[static_cast<std::size_t>(i)] = true;
+            hasHoleContribution[static_cast<std::size_t>(j)] = true;
+
+            const Real coef = mup * Vt_ * couple_[e] / h;
+            const Real factor = coef * ni_[static_cast<Index>(i)]
+                              * expNegPsi[static_cast<std::size_t>(i)];
+            const Real diff = expPhip[static_cast<std::size_t>(i)]
+                            - expPhip[static_cast<std::size_t>(j)];
+            const Real dF_dpsi_i = factor * (-(dBu + Bu) / Vt_) * diff;
+            const Real dF_dpsi_j = factor * (dBu / Vt_) * diff;
+            const Real dF_dphip_i = factor * Bu
+                                  * ( expPhip[static_cast<std::size_t>(i)] / Vt_);
+            const Real dF_dphip_j = factor * Bu
+                                  * (-expPhip[static_cast<std::size_t>(j)] / Vt_);
+
+            add(phipOffset() + i, psiOffset() + i, dF_dpsi_i);
+            add(phipOffset() + i, psiOffset() + j, dF_dpsi_j);
+            add(phipOffset() + i, phipOffset() + i, dF_dphip_i);
+            add(phipOffset() + i, phipOffset() + j, dF_dphip_j);
+            add(phipOffset() + j, psiOffset() + i, -dF_dpsi_i);
+            add(phipOffset() + j, psiOffset() + j, -dF_dpsi_j);
+            add(phipOffset() + j, phipOffset() + i, -dF_dphip_i);
+            add(phipOffset() + j, phipOffset() + j, -dF_dphip_j);
+        }
+    }
+
+    for (Index i = 0; i < Nidx; ++i) {
+        const int ii = static_cast<int>(i);
+        const Real dni_dpsi = n(ii) / Vt_;
+        const Real dni_dphin = -n(ii) / Vt_;
+        const Real dpi_dpsi = -p(ii) / Vt_;
+        const Real dpi_dphip = p(ii) / Vt_;
+
+        add(psiOffset() + ii, psiOffset() + ii,
+            -constants::q * (dpi_dpsi - dni_dpsi) * vol_[i]);
+        add(psiOffset() + ii, phinOffset() + ii,
+            -constants::q * (-dni_dphin) * vol_[i]);
+        add(psiOffset() + ii, phipOffset() + ii,
+            -constants::q * dpi_dphip * vol_[i]);
+
+        const Real ni = ni_[i];
+        if (recombination_.srhEnabled() || recombination_.augerEnabled()) {
+            const Real dPhi = x(phipOffset() + ii) - x(phinOffset() + ii);
+            const Real np = (ni > 0.0) ? ni * ni * std::exp(dPhi / Vt_) : n(ii) * p(ii);
+            const Real excessProduct = (ni > 0.0)
+                ? ni * ni * std::expm1(dPhi / Vt_)
+                : n(ii) * p(ii);
+            const Real R = recombination_.totalRateFromExcessProduct(
+                excessProduct, n(ii), p(ii), ni);
+            if (R != 0.0) {
+                const auto deriv = recombination_.totalRateDerivativesFromExcessProduct(
+                    excessProduct, n(ii), p(ii), ni);
+
+                const Real dExcess_dphin = -np / Vt_;
+                const Real dExcess_dphip =  np / Vt_;
+                const Real dR_dpsi = deriv.dRateDn * dni_dpsi + deriv.dRateDp * dpi_dpsi;
+                const Real dR_dphin = deriv.dRateDn * dni_dphin
+                                     + deriv.dRateDExcess * dExcess_dphin;
+                const Real dR_dphip = deriv.dRateDp * dpi_dphip
+                                     + deriv.dRateDExcess * dExcess_dphip;
+
+                add(phinOffset() + ii, psiOffset() + ii, dR_dpsi * vol_[i]);
+                add(phinOffset() + ii, phinOffset() + ii, dR_dphin * vol_[i]);
+                add(phinOffset() + ii, phipOffset() + ii, dR_dphip * vol_[i]);
+                add(phipOffset() + ii, psiOffset() + ii, dR_dpsi * vol_[i]);
+                add(phipOffset() + ii, phinOffset() + ii, dR_dphin * vol_[i]);
+                add(phipOffset() + ii, phipOffset() + ii, dR_dphip * vol_[i]);
+
+                hasElectronContribution[static_cast<std::size_t>(ii)] = true;
+                hasHoleContribution[static_cast<std::size_t>(ii)] = true;
+            }
+        }
+    }
+
+    for (Index i = 0; i < Nidx; ++i) {
+        const int ii = static_cast<int>(i);
+        if (!hasElectronContribution[static_cast<std::size_t>(ii)])
+            add(phinOffset() + ii, phinOffset() + ii, 1.0);
+        if (!hasHoleContribution[static_cast<std::size_t>(ii)])
+            add(phipOffset() + ii, phipOffset() + ii, 1.0);
+    }
+
+    for (const auto& [node, value] : bcs.psi) {
+        (void)value;
+        triplets.emplace_back(psiOffset() + static_cast<int>(node),
+                              psiOffset() + static_cast<int>(node), 1.0);
+    }
+    for (const auto& [node, value] : bcs.phin) {
+        (void)value;
+        triplets.emplace_back(phinOffset() + static_cast<int>(node),
+                              phinOffset() + static_cast<int>(node), 1.0);
+    }
+    for (const auto& [node, value] : bcs.phip) {
+        (void)value;
+        triplets.emplace_back(phipOffset() + static_cast<int>(node),
+                              phipOffset() + static_cast<int>(node), 1.0);
+    }
+
+    SparseMatrixd J(3 * N, 3 * N);
+    J.setFromTriplets(triplets.begin(), triplets.end());
+    return J;
 }
 
 SparseMatrixd CoupledDDAssembler::finiteDifferenceJacobian(

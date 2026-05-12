@@ -22,6 +22,7 @@ struct NewtonConfig {
     bool lineSearch = true;
     bool verbose = true;
     Real finiteDifferenceStep = 1.0e-6;
+    std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
     Real taun = 1.0e-7;
     Real taup = 1.0e-7;
     std::string mobility = "constant"; ///< "constant" or "caughey_thomas"

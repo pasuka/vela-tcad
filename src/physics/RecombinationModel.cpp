@@ -80,6 +80,34 @@ Real RecombinationModel::totalRateFromExcessProduct(Real excessProduct,
          + augerRateFromExcessProduct(excessProduct, n, p);
 }
 
+RecombinationRateDerivatives RecombinationModel::totalRateDerivativesFromExcessProduct(
+    Real excessProduct,
+    Real n,
+    Real p,
+    Real ni) const
+{
+    RecombinationRateDerivatives derivatives;
+
+    if (srhEnabled_) {
+        const Real den = srhDenominator(n, p, ni);
+        if (std::abs(den) >= 1.0e-100) {
+            derivatives.dRateDExcess += 1.0 / den;
+            const Real invDen2 = 1.0 / (den * den);
+            derivatives.dRateDn -= excessProduct * config_.taup * invDen2;
+            derivatives.dRateDp -= excessProduct * config_.taun * invDen2;
+        }
+    }
+
+    if (augerEnabled_) {
+        const Real prefactor = config_.augerCn * n + config_.augerCp * p;
+        derivatives.dRateDExcess += prefactor;
+        derivatives.dRateDn += config_.augerCn * excessProduct;
+        derivatives.dRateDp += config_.augerCp * excessProduct;
+    }
+
+    return derivatives;
+}
+
 RecombinationLinearization RecombinationModel::electronLinearization(
     Real n,
     Real p,
