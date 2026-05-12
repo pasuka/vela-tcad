@@ -6,6 +6,12 @@
 
 namespace vela {
 
+struct RecombinationRateDerivatives {
+    Real dRateDn = 0.0;      ///< Partial derivative at fixed excess product [s^-1]
+    Real dRateDp = 0.0;      ///< Partial derivative at fixed excess product [s^-1]
+    Real dRateDExcess = 0.0; ///< Partial derivative wrt n*p-ni^2 [m^3/s]
+};
+
 struct RecombinationLinearization {
     Real diagonal = 0.0; ///< Coefficient multiplying the solved carrier [s^-1]
     Real rhs = 0.0;      ///< Source contribution moved to the RHS [m^-3 s^-1]
@@ -43,6 +49,11 @@ public:
                                     Real n,
                                     Real p,
                                     Real ni) const;
+    RecombinationRateDerivatives totalRateDerivativesFromExcessProduct(
+        Real excessProduct,
+        Real n,
+        Real p,
+        Real ni) const;
 
     RecombinationLinearization electronLinearization(Real n, Real p, Real ni) const;
     RecombinationLinearization holeLinearization(Real n, Real p, Real ni) const;

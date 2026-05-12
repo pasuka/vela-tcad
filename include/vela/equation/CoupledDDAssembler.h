@@ -46,6 +46,10 @@ public:
     VectorXd residual(const VectorXd& x,
                       const CoupledDDBoundaryConditions& bcs) const;
 
+    SparseMatrixd assembleJacobian(
+        const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs) const;
+
     SparseMatrixd finiteDifferenceJacobian(
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs,

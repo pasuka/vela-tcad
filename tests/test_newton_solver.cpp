@@ -2,6 +2,7 @@
 #include <catch2/catch_approx.hpp>
 
 #include <Eigen/SparseLU>
+#include <nlohmann/json.hpp>
 
 #include "vela/core/PhysicalConstants.h"
 #include "vela/equation/CoupledDDAssembler.h"
@@ -175,4 +176,44 @@ TEST_CASE("CoupledDDAssembler: zero-mobility continuity rows are pinned", "[newt
     Eigen::SparseLU<SparseMatrixd> lu;
     lu.compute(J);
     REQUIRE(lu.info() == Eigen::Success);
+}
+
+TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences on small mesh", "[newton][coupled]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    CoupledDDAssembler assembler(mesh, matdb, doping, constants::Vt_300, 1.0e-7, 1.0e-7);
+
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi = VectorXd::LinSpaced(N, -0.04, 0.05);
+    state.phin = VectorXd::LinSpaced(N, 0.01, -0.015);
+    state.phip = VectorXd::LinSpaced(N, -0.02, 0.012);
+    const VectorXd x = assembler.pack(state);
+
+    CoupledDDBoundaryConditions bcs;
+    bcs.psi[0] = state.psi(0);
+    bcs.phin[0] = state.phin(0);
+    bcs.phip[0] = state.phip(0);
+    bcs.psi[2] = state.psi(2);
+    bcs.phin[2] = state.phin(2);
+    bcs.phip[2] = state.phip(2);
+
+    const SparseMatrixd Ja = assembler.assembleJacobian(x, bcs);
+    const SparseMatrixd Jfd = assembler.finiteDifferenceJacobian(x, bcs, 1.0e-7);
+    const Eigen::MatrixXd diff = Eigen::MatrixXd(Ja - Jfd);
+    const Eigen::MatrixXd ref = Eigen::MatrixXd(Jfd);
+    const Real rel = diff.norm() / std::max<Real>(1.0, ref.norm());
+
+    REQUIRE(rel < 5.0e-5);
+}
+
+TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
+{
+    const NewtonConfig cfg;
+    REQUIRE(cfg.jacobian == "analytic");
+
+    const NewtonConfig debugCfg = newtonConfigFromJson(nlohmann::json{{"jacobian", "finite_difference"}});
+    REQUIRE(debugCfg.jacobian == "finite_difference");
 }

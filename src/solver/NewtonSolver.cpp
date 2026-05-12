@@ -37,9 +37,13 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
     cfg.lineSearch = json.value("line_search", cfg.lineSearch);
     cfg.verbose = json.value("verbose", cfg.verbose);
     cfg.finiteDifferenceStep = json.value("finite_difference_step", cfg.finiteDifferenceStep);
+    cfg.jacobian = json.value("jacobian", cfg.jacobian);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
     cfg.mobility = json.value("mobility", cfg.mobility);
+    if (cfg.jacobian != "analytic" && cfg.jacobian != "finite_difference")
+        throw std::invalid_argument(
+            "newtonConfigFromJson: jacobian must be 'analytic' or 'finite_difference'.");
 
     if (json.contains("recombination")) {
         const auto& value = json.at("recombination");
@@ -66,7 +70,11 @@ NewtonSolver::NewtonSolver(
     , doping_(doping)
     , contactBiases_(contactBiases)
     , cfg_(cfg)
-{}
+{
+    if (cfg_.jacobian != "analytic" && cfg_.jacobian != "finite_difference")
+        throw std::invalid_argument(
+            "NewtonSolver: jacobian must be 'analytic' or 'finite_difference'.");
+}
 
 CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
     const CoupledDDAssembler& assembler) const
@@ -208,8 +216,9 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     int acceptedIters = 0;
 
     for (int iter = 1; iter <= cfg_.maxIter; ++iter) {
-        SparseMatrixd J = assembler.finiteDifferenceJacobian(
-            x, bcs, cfg_.finiteDifferenceStep);
+        const SparseMatrixd J = (cfg_.jacobian == "finite_difference")
+            ? assembler.finiteDifferenceJacobian(x, bcs, cfg_.finiteDifferenceStep)
+            : assembler.assembleJacobian(x, bcs);
         VectorXd step;
         try {
             step = linearSolver.solve(J, -r);
@@ -217,6 +226,9 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             result.finalResidualNorm = acceptedR.norm();
             result.iters = acceptedIters;
             result.solution = makeSolution(assembler, acceptedX, acceptedIters);
+            std::cerr << "Newton failed at iter " << iter
+                      << ": residual=" << r.norm()
+                      << " damping=0 step=0 (linear solve failed)\n";
             return result;
         }
         const Real stepNorm = step.norm();
@@ -232,6 +244,11 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             result.finalResidualNorm = acceptedR.norm();
             result.iters = acceptedIters;
             result.solution = makeSolution(assembler, acceptedX, acceptedIters);
+            std::cerr << "Newton failed at iter " << iter
+                      << ": residual=" << ls.residualNorm
+                      << " damping=" << ls.damping
+                      << " step=" << stepNorm
+                      << " (line search rejected step)\n";
             return result;
         }
 
@@ -267,6 +284,13 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     result.iters = acceptedIters;
     result.finalResidualNorm = acceptedR.norm();
     result.solution = makeSolution(assembler, acceptedX, acceptedIters);
+    std::cerr << "Newton failed after " << cfg_.maxIter
+              << " iterations: residual=" << result.finalResidualNorm
+              << " damping="
+              << (result.history.empty() ? 0.0 : result.history.back().dampingFactor)
+              << " step="
+              << (result.history.empty() ? 0.0 : result.history.back().stepNorm)
+              << '\n';
     return result;
 }
 
