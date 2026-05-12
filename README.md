@@ -256,9 +256,71 @@ drift-diffusion fields when available.
 
 ## Next Steps
 
-- [x] Poisson FVM - assemble and solve the Poisson equation on the mesh
-- [x] Scharfetter-Gummel flux - discretize carrier continuity fluxes
-- [x] Gummel drift-diffusion sweep - run a PN diode IV curve
-- [x] Python API - expose a compact pybind11 integration surface
-- [ ] Voronoi control volumes - refine dual-cell areas and edge couplings
-- [ ] Gmsh reader - replace `JsonMeshReader` with a real `.msh` importer
+The roadmap below tracks future work only. Items already listed as `done` in
+[Current Stage](#current-stage---what-is-implemented) are treated as implemented
+baseline capabilities, while every milestone here remains planned until its
+source changes and tests land.
+
+### P0 - Numerical Stability
+
+**Goal:** make the existing Poisson and drift-diffusion paths more robust on
+coarse, highly doped, and multi-material meshes before expanding device
+coverage.
+
+- **Main source paths:** `src/discretization/`, `src/equation/`,
+  `src/numerics/`, `src/solver/`, `src/mesh/BoxGeometryBuilder.cpp`, and the
+  related public headers.
+- **Test targets:** strengthen `tests/test_poisson.cpp`,
+  `tests/test_dd_gummel.cpp`, `tests/test_sg_flux.cpp`,
+  `tests/test_box_geometry.cpp`, `tests/test_newton_solver.cpp`, and the
+  engineering regression suite (`ctest --test-dir build --output-on-failure -R regression`).
+- **Planned milestones:** refine dual/control-volume geometry and edge
+  couplings; add convergence guards for nonlinear solves; expand regression
+  thresholds that catch NaN/Inf fields, non-converged sweeps, and current or
+  potential sign regressions.
+
+### P1 - MOS Physics
+
+**Goal:** improve MOS capacitor and NMOS electrostatics/transport modeling
+without marking Poisson-only examples as complete MOSFET simulation support.
+
+- **Main source paths:** `src/material/`, `src/physics/`, `src/equation/`,
+  `src/simulation/PoissonSimulation.cpp`, `examples/moscap/`, and
+  `examples/nmos2d/`.
+- **Test targets:** extend `tests/test_poisson.cpp`, `tests/test_mobility.cpp`,
+  `tests/test_recombination.cpp`, and regression checks for `examples/moscap`
+  and `examples/nmos2d`.
+- **Planned milestones:** add explicit MOS interface/fixed-charge checks, improve
+  oxide/semiconductor boundary validation, and introduce MOS-focused carrier
+  physics tests only after the corresponding implementation exists.
+
+### P2 - Device-Level Sweep
+
+**Goal:** make bias sweeps reliable as device regression artifacts rather than
+only single example runs.
+
+- **Main source paths:** `src/simulation/DCSweep.cpp`,
+  `src/tools/vela_example_runner.cpp`, `src/post/ContactCurrent.cpp`,
+  `src/io/`, `scripts/run_regression.py`, and `examples/*/simulation.json`.
+- **Test targets:** expand `tests/test_dc_sweep.cpp`,
+  `tests/test_dd_gummel.cpp`, regression summary checks, and CSV/VTK output
+  validation in `scripts/run_regression.py`.
+- **Planned milestones:** add reusable sweep specifications for more devices,
+  record stable per-bias convergence metadata, and tighten regression checks for
+  monotonicity or physically expected trends where the implemented model
+  supports them.
+
+### P3 - Python/API/Documentation
+
+**Goal:** keep the C++ core, optional Python bindings, examples, and docs aligned
+with implemented behavior.
+
+- **Main source paths:** `bindings/pyvela.cpp`, `python/vela/`,
+  `examples/python/`, `docs/`, `README.md`, and public headers under
+  `include/vela/`.
+- **Test targets:** maintain `tests/python/test_python_api.py`, CTest's
+  `python_api` target when `VELA_ENABLE_PYTHON=ON`, documentation examples, and
+  the full `ctest --test-dir build --output-on-failure` suite.
+- **Planned milestones:** document new regression-case patterns, keep Python
+  wrappers limited to implemented C++ capabilities, and add API examples only
+  when they are covered by tests.
