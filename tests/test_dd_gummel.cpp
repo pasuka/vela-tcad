@@ -25,7 +25,7 @@ using namespace vela;
 //   | n-reg    |
 //   0 -------- 1
 //
-//  Nodes: 0=(0,0), 1=(L,0), 2=(L,L), 3=(0,L)   L = 1 µm
+//  Nodes: 0=(0,0), 1=(L,0), 2=(L,L), 3=(0,L)   L = 1 um
 //  Cells: T0={0,1,2} n-region,  T1={0,2,3} p-region
 //  Contacts:
 //    cathode (n): nodes 1, 2   V = 0

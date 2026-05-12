@@ -19,7 +19,7 @@ namespace vela {
  *
  *  1. assemblePoissonWithCarriers(n, p)
  *     Assembles the linearised electrostatic Poisson equation:
- *       -div(ε·grad(ψ)) + q*(n+p)/Vt·ψ = q*(p-n+Nd-Na) + q*(n+p)/Vt·ψ_old
+ *       -div(eps*grad(psi)) + q*(n+p)/Vt*psi = q*(p-n+Nd-Na) + q*(n+p)/Vt*psi_old
  *     including free-carrier charge.
  *
  *  2. assembleElectronContinuity(psi, n_old, p_old)
@@ -71,13 +71,13 @@ public:
                                      const VectorXd& psi);
 
     /// Assemble the electron continuity matrix and RHS.
-    /// Solves for n_new given ψ, p (from previous Gummel step).
+    /// Solves for n_new given psi, p (from previous Gummel step).
     void assembleElectronContinuity(const VectorXd& psi,
                                     const VectorXd& n_old,
                                     const VectorXd& p_old);
 
     /// Assemble the hole continuity matrix and RHS.
-    /// Solves for p_new given ψ, n (from previous Gummel step).
+    /// Solves for p_new given psi, n (from previous Gummel step).
     void assembleHoleContinuity(const VectorXd& psi,
                                 const VectorXd& n_old,
                                 const VectorXd& p_old);

@@ -5,7 +5,7 @@ namespace vela {
 /**
  * @brief Shockley-Read-Hall (SRH) net recombination rate.
  *
- * R_SRH = (n*p - ni²) / (τp*(n + n1) + τn*(p + p1))
+ * R_SRH = (n*p - ni^2) / (tau_p*(n + n1) + tau_n*(p + p1))
  *
  * Initial version: n1 = p1 = ni (trap level at mid-gap).
  *

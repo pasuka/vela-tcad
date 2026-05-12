@@ -24,7 +24,7 @@ inline double thermalVoltage(double T = 300.0)
 }
 
 /// Charge-neutral equilibrium electron concentration from net doping and ni.
-/// Solves: n - p = Ndop,  n*p = ni²  →  n = Ndop/2 + sqrt((Ndop/2)² + ni²)
+/// Solves: n - p = Ndop,  n*p = ni^2  ->  n = Ndop/2 + sqrt((Ndop/2)^2 + ni^2)
 inline double nEq(double Ndop, double ni)
 {
     const double half = 0.5 * Ndop;
@@ -108,7 +108,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     // ------------------------------------------------------------------
     //   psi_contact  = V_bias + Vt * ln(n_eq / ni)  (built-in potential)
     //   n_contact    = n_eq
-    //   p_contact    = ni² / n_eq
+    //   p_contact    = ni^2 / n_eq
     //   phin_contact = V_bias
     //   phip_contact = V_bias
     // ------------------------------------------------------------------
@@ -145,7 +145,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     }
 
     // ------------------------------------------------------------------
-    // Initial guess: solve linear Poisson (no carriers) for ψ
+    // Initial guess: solve linear Poisson (no carriers) for psi
     // ------------------------------------------------------------------
     MobilityModelConfig mobilityConfig = mobilityModelConfig(cfg.mobility);
     RecombinationModelConfig recombinationConfig =

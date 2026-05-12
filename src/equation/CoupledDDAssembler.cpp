@@ -210,11 +210,11 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
 
         const Real ni = ni_[i];
         if (recombination_.srhEnabled() || recombination_.augerEnabled()) {
-            // Compute n*p - ni² via the identity n*p = ni²·exp((φp-φn)/Vt),
-            // i.e. n*p - ni² = ni²·expm1((φp-φn)/Vt).  This avoids
-            // catastrophic cancellation when φp≈φn (near equilibrium), where
-            // the naive form n·p - ni² is dominated by floating-point rounding
-            // in exp(+u)·exp(−u) ≠ 1.
+            // Compute n*p - ni^2 via the identity n*p = ni^2 * exp((phip-phin)/Vt),
+            // i.e. n*p - ni^2 = ni^2 * expm1((phip-phin)/Vt). This avoids
+            // catastrophic cancellation when phip ~= phin (near equilibrium), where
+            // the naive form n*p - ni^2 is dominated by floating-point rounding
+            // in exp(+u) * exp(-u) != 1.
             const Real dPhi = x(phipOffset() + ii) - x(phinOffset() + ii);
             const Real excessProduct = (ni > 0.0)
                 ? ni * ni * std::expm1(dPhi / Vt_)
@@ -266,7 +266,7 @@ SparseMatrixd CoupledDDAssembler::finiteDifferenceJacobian(
     const VectorXd r0 = residual(x, bcs);
     std::vector<Eigen::Triplet<double>> triplets;
     // Heuristic: for a 2-D mesh with M = 3*N unknowns and sparse connectivity
-    // (average ~6-7 neighbours per node), the Jacobian has O(N * 7 * 9) ≈ 63*N
+    // (average ~6-7 neighbours per node), the Jacobian has O(N * 7 * 9) ~= 63*N
     // non-zeros.  Reserving M * 7 avoids the M^2 allocation that would OOM for
     // any realistically-sized mesh while still keeping reallocations rare.
     triplets.reserve(static_cast<std::size_t>(M) * 7);

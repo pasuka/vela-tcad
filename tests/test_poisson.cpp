@@ -34,7 +34,7 @@ using namespace vela;
  *   | /        |
  *   0 -------- 1
  *
- *  Nodes:  0=(0,0), 1=(1e-6,0), 2=(1e-6,1e-6), 3=(0,1e-6)  [1 µm square]
+ *  Nodes:  0=(0,0), 1=(1e-6,0), 2=(1e-6,1e-6), 3=(0,1e-6)  [1 um square]
  *  Cells:  T0={0,1,2} region 0 (n-Si),  T1={0,2,3} region 1 (p-Si)
  *  Contacts:
  *    cathode (n): nodes 1, 2   bias = 0 V
@@ -44,7 +44,7 @@ static DeviceMesh makePNMesh()
 {
     DeviceMesh mesh;
 
-    const double L = 1.0e-6; // 1 µm
+    const double L = 1.0e-6; // 1 um
 
     Node n0; n0.id=0; n0.x=0;  n0.y=0;  mesh.addNode(n0);
     Node n1; n1.id=1; n1.x=L;  n1.y=0;  mesh.addNode(n1);
@@ -100,10 +100,10 @@ TEST_CASE("DopingModel: net doping has correct sign per region", "[doping]")
 
     REQUIRE(doping.numNodes() == mesh.numNodes());
 
-    // Node 1 belongs only to n_region cell → positive net doping
+    // Node 1 belongs only to n_region cell -> positive net doping
     REQUIRE(doping.netDoping(1) > 0.0);
 
-    // Node 3 belongs only to p_region cell → negative net doping
+    // Node 3 belongs only to p_region cell -> negative net doping
     REQUIRE(doping.netDoping(3) < 0.0);
 }
 

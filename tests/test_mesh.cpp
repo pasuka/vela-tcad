@@ -56,8 +56,8 @@ TEST_CASE("DeviceMesh: node and cell counts", "[mesh]")
 TEST_CASE("DeviceMesh: edge count for two triangles sharing a diagonal", "[mesh]")
 {
     DeviceMesh mesh = makeSquareMesh();
-    // Two triangles on a unit square share the diagonal (0–2).
-    // Unique edges: (0,1),(1,2),(0,2),(2,3),(0,3) → 5 edges
+    // Two triangles on a unit square share the diagonal (0-2).
+    // Unique edges: (0,1),(1,2),(0,2),(2,3),(0,3) -> 5 edges
     REQUIRE(mesh.numEdges() == 5);
 }
 

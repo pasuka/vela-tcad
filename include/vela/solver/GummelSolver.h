@@ -29,8 +29,8 @@ struct DDSolution {
  */
 struct GummelConfig {
     int    maxIter     = 50;    ///< Maximum number of outer Gummel iterations
-    double reltol      = 1.0e-6; ///< Relative convergence tolerance (||Δψ||/||ψ||)
-    double dampingPsi  = 1.0;   ///< Damping factor for Poisson update (0 < α ≤ 1)
+    double reltol      = 1.0e-6; ///< Relative convergence tolerance (||dpsi||/||psi||)
+    double dampingPsi  = 1.0;   ///< Damping factor for Poisson update (0 < alpha <= 1)
     double taun        = 1.0e-7; ///< Electron SRH lifetime [s]
     double taup        = 1.0e-7; ///< Hole SRH lifetime [s]
     std::string mobility = "constant"; ///< "constant" or "caughey_thomas"
@@ -41,25 +41,25 @@ struct GummelConfig {
  * @brief Gummel self-consistent iteration for steady-state drift-diffusion.
  *
  * Solves the coupled system:
- *   Poisson:            -div(ε·grad(ψ)) = q*(p - n + Nd - Na)
- *   Electron continuity: div(Fn) = R_SRH   (Fn = particle flux density [m⁻²s⁻¹])
- *   Hole continuity:    -div(Fp) = R_SRH   (Fp = particle flux density [m⁻²s⁻¹])
+ *   Poisson:            -div(eps*grad(psi)) = q*(p - n + Nd - Na)
+ *   Electron continuity: div(Fn) = R_SRH   (Fn = particle flux density [m^-2 s^-1])
+ *   Hole continuity:    -div(Fp) = R_SRH   (Fp = particle flux density [m^-2 s^-1])
  *
- * Note: The Scharfetter–Gummel helpers return particle flux densities
- * (units [m⁻²s⁻¹]); the factor q is not included in those routines.
+ * Note: The Scharfetter-Gummel helpers return particle flux densities
+ * (units [m^-2 s^-1]); the factor q is not included in those routines.
  *
  * using decoupled (Gummel) linearisation.
  *
  * Ohmic contact boundary conditions:
- *   ψ_contact = V_bias + ψ_bi   (ψ_bi computed from charge neutrality)
+ *   psi_contact = V_bias + psi_bi   (psi_bi computed from charge neutrality)
  *   n_contact = n_eq             (charge-neutral equilibrium concentration)
- *   p_contact = ni² / n_eq
+ *   p_contact = ni^2 / n_eq
  *   phin = phip = V_bias
  *
  * @param mesh           Device mesh.
  * @param matdb          Material database.
  * @param doping         Per-node doping concentrations.
- * @param contactBiases  Map of contact name → applied bias voltage [V].
+ * @param contactBiases  Map of contact name -> applied bias voltage [V].
  * @param cfg            Iteration settings.
  * @return               Converged (or last) solution.
  */

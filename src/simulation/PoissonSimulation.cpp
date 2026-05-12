@@ -88,14 +88,14 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // ------------------------------------------------------------------
     // Dirichlet boundary conditions from contacts
     // ------------------------------------------------------------------
-    // Build name → bias map from config
+    // Build name -> bias map from config
     std::unordered_map<std::string, Real> contactBias;
     for (const auto& ct : cfg.at("contacts")) {
         contactBias[ct.at("name").get<std::string>()] =
             ct.at("bias").get<Real>();
     }
 
-    // Map contact nodes → prescribed potential
+    // Map contact nodes -> prescribed potential
     std::unordered_map<Index, Real> dirichletBCs;
     for (Index c = 0; c < mesh.numContacts(); ++c) {
         const Contact& contact = mesh.getContact(c);

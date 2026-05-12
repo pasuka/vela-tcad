@@ -8,7 +8,7 @@ class BandgapNarrowing {
 public:
     virtual ~BandgapNarrowing() = default;
 
-    /// Return the effective bandgap narrowing ΔEg [eV] at a node.
+    /// Return the effective bandgap narrowing DeltaEg [eV] at a node.
     virtual Real deltaEg(Real netDoping, Real n, Real p) const;
 };
 

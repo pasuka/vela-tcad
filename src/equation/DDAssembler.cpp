@@ -97,7 +97,7 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
 
     // Linearised carrier charge:
     //   q*(n+p)/Vt added to diagonal; adjusted RHS keeps the equation
-    //   equivalent to the nonlinear form around the current ψ.
+    //   equivalent to the nonlinear form around the current psi.
     for (Index i = 0; i < N; ++i) {
         const int  ii     = static_cast<int>(i);
         const Real ni_v   = n(ii);
@@ -228,7 +228,7 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         const Real Bu   = bernoulli( u);
         const Real Bmu  = bernoulli(-u);
 
-        // Hole SG flux from i to j: Jp = μp*Vt/h*[B(-u)*p_j - B(+u)*p_i]
+        // Hole SG flux from i to j: Jp = mu_p*Vt/h*[B(-u)*p_j - B(+u)*p_i]
         // Diagonal: coef * B(+u) for p_i
         triplets.emplace_back(i, i,  coef * Bu);
         triplets.emplace_back(j, j,  coef * Bmu);
