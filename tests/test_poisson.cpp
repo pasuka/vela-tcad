@@ -10,11 +10,18 @@
 #include "vela/io/VTKWriter.h"
 #include "vela/simulation/PoissonSimulation.h"
 
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <nlohmann/json.hpp>
+#include <random>
+#include <stdexcept>
+#include <string>
+#include <thread>
 #include <unordered_map>
+#include <utility>
 
 using namespace vela;
 
@@ -118,12 +125,56 @@ static void writePNMeshJson(const std::filesystem::path& meshPath,
     std::ofstream(meshPath) << mesh.dump(2);
 }
 
-static std::filesystem::path makePoissonTempDir(const std::string& name)
+struct ScopedPoissonTempDir {
+    std::filesystem::path path;
+
+    explicit ScopedPoissonTempDir(std::filesystem::path dir)
+        : path(std::move(dir))
+    {
+    }
+
+    ScopedPoissonTempDir(const ScopedPoissonTempDir&) = delete;
+    ScopedPoissonTempDir& operator=(const ScopedPoissonTempDir&) = delete;
+    ScopedPoissonTempDir(ScopedPoissonTempDir&& other) noexcept
+        : path(std::move(other.path))
+    {
+        other.path.clear();
+    }
+
+    ScopedPoissonTempDir& operator=(ScopedPoissonTempDir&& other) noexcept
+    {
+        if (this != &other) {
+            path = std::move(other.path);
+            other.path.clear();
+        }
+        return *this;
+    }
+
+    ~ScopedPoissonTempDir()
+    {
+        std::error_code ec;
+        std::filesystem::remove_all(path, ec);
+    }
+};
+
+static ScopedPoissonTempDir makePoissonTempDir(const std::string& name)
 {
-    const auto dir = std::filesystem::temp_directory_path() / name;
-    std::filesystem::remove_all(dir);
-    std::filesystem::create_directories(dir);
-    return dir;
+    constexpr int maxAttempts = 8;
+    const auto base = std::filesystem::temp_directory_path();
+    const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
+    const auto tid = std::hash<std::thread::id>{}(std::this_thread::get_id());
+    std::mt19937_64 rng(static_cast<std::mt19937_64::result_type>(stamp ^ tid));
+    std::uniform_int_distribution<unsigned long long> dist;
+
+    for (int attempt = 0; attempt < maxAttempts; ++attempt) {
+        const auto dir = base /
+            (name + "_" + std::to_string(stamp) + "_" + std::to_string(dist(rng)));
+        std::error_code ec;
+        if (std::filesystem::create_directory(dir, ec))
+            return ScopedPoissonTempDir(dir);
+    }
+
+    throw std::runtime_error("Failed to create a unique temp directory for Poisson test.");
 }
 
 static void writePoissonConfigJson(const std::filesystem::path& cfgPath,
@@ -277,7 +328,8 @@ TEST_CASE("VTKWriter: writes file with potential field", "[poisson][vtk]")
 
 TEST_CASE("MaterialDatabase: external file overrides built-ins", "[material]")
 {
-    const auto dir = makePoissonTempDir("vela_material_override_test");
+    const auto tempDir = makePoissonTempDir("vela_material_override_test");
+    const auto& dir = tempDir.path;
     const auto materialsPath = dir / "materials.json";
     std::ofstream(materialsPath) << nlohmann::json{
         {"materials", {
@@ -298,7 +350,25 @@ TEST_CASE("MaterialDatabase: external file overrides built-ins", "[material]")
     REQUIRE(*si.Nc_m3 == Catch::Approx(3.0e25));
     REQUIRE(matdb.hasMaterial("SiO2"));
 
-    std::filesystem::remove_all(dir);
+}
+
+
+TEST_CASE("MaterialDatabase: malformed materials array reports file path", "[material]")
+{
+    const auto tempDir = makePoissonTempDir("vela_material_malformed_test");
+    const auto& dir = tempDir.path;
+    const auto materialsPath = dir / "materials.json";
+    std::ofstream(materialsPath) << nlohmann::json{{"materials", "not an array"}}.dump(2);
+
+    MaterialDatabase matdb;
+    try {
+        matdb.loadJson(materialsPath.string());
+        FAIL("Expected malformed materials JSON to throw");
+    } catch (const std::runtime_error& e) {
+        const std::string message = e.what();
+        REQUIRE(message.find(materialsPath.string()) != std::string::npos);
+        REQUIRE(message.find("'materials' must be an array") != std::string::npos);
+    }
 }
 
 TEST_CASE("PoissonAssembler: unknown material reports an error", "[poisson][material]")
@@ -314,7 +384,8 @@ TEST_CASE("PoissonAssembler: unknown material reports an error", "[poisson][mate
 
 TEST_CASE("PoissonSimulation: external new material can be used for assembly", "[poisson][material]")
 {
-    const auto dir = makePoissonTempDir("vela_new_material_poisson_test");
+    const auto tempDir = makePoissonTempDir("vela_new_material_poisson_test");
+    const auto& dir = tempDir.path;
     const auto meshPath = dir / "pn_mesh.json";
     const auto cfgPath = dir / "poisson.json";
     const auto outputPath = dir / "out.vtk";
@@ -339,5 +410,4 @@ TEST_CASE("PoissonSimulation: external new material can be used for assembly", "
     for (int i = 0; i < result.potential.size(); ++i)
         REQUIRE(std::isfinite(result.potential(i)));
 
-    std::filesystem::remove_all(dir);
 }

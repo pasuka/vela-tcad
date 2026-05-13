@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <stdexcept>
 #include <vector>
 
 namespace vela {
@@ -36,8 +37,13 @@ std::vector<nlohmann::json> materialEntries(const nlohmann::json& root)
 {
     if (root.is_array())
         return root.get<std::vector<nlohmann::json>>();
-    if (root.is_object() && root.contains("materials"))
-        return root.at("materials").get<std::vector<nlohmann::json>>();
+    if (root.is_object() && root.contains("materials")) {
+        const auto& materials = root.at("materials");
+        if (!materials.is_array())
+            throw std::runtime_error(
+                "MaterialDatabase: 'materials' must be an array of material objects.");
+        return materials.get<std::vector<nlohmann::json>>();
+    }
     if (root.is_object()) {
         std::vector<nlohmann::json> entries;
         for (auto it = root.begin(); it != root.end(); ++it) {
@@ -95,16 +101,21 @@ void MaterialDatabase::loadJson(const std::string& jsonPath)
     if (!ifs.is_open())
         throw std::runtime_error("MaterialDatabase: cannot open materials file: " + jsonPath);
 
-    nlohmann::json root;
-    ifs >> root;
+    try {
+        nlohmann::json root;
+        ifs >> root;
 
-    for (const nlohmann::json& entry : materialEntries(root)) {
-        const std::string name = entry.at("name").get<std::string>();
-        const Material* base = nullptr;
-        auto it = db_.find(name);
-        if (it != db_.end())
-            base = &it->second;
-        addMaterial(materialFromJson(entry, base));
+        for (const nlohmann::json& entry : materialEntries(root)) {
+            const std::string name = entry.at("name").get<std::string>();
+            const Material* base = nullptr;
+            auto it = db_.find(name);
+            if (it != db_.end())
+                base = &it->second;
+            addMaterial(materialFromJson(entry, base));
+        }
+    } catch (const std::exception& e) {
+        throw std::runtime_error(
+            "MaterialDatabase: failed to load materials file '" + jsonPath + "': " + e.what());
     }
 }
 

@@ -94,8 +94,6 @@ inline Real edgeAvgMaterialProp(
     Real sum = 0.0;
     for (Index c : cells) {
         const auto& region = mesh.getRegion(mesh.getCell(c).region_id);
-        if (!matdb.hasMaterial(region.material))
-            throw std::out_of_range("MaterialDatabase: unknown material '" + region.material + "'");
         sum += matdb.getMaterial(region.material).*prop;
     }
     return sum / static_cast<Real>(cells.size());
@@ -121,9 +119,6 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
     Real sum = 0.0;
     for (Index c : cells) {
         const auto& region = mesh.getRegion(mesh.getCell(c).region_id);
-        if (!matdb.hasMaterial(region.material))
-            throw std::out_of_range("MaterialDatabase: unknown material '" + region.material + "'");
-
         const Material& material = matdb.getMaterial(region.material);
         if (carrier == CarrierType::Electron)
             sum += mobility.electronMobility(material, netDoping, 0.0, 0.0);
@@ -158,8 +153,6 @@ inline std::vector<Real> buildNodeNi(const DeviceMesh&       mesh,
     for (Index c = 0; c < mesh.numCells(); ++c) {
         const auto& cell   = mesh.getCell(c);
         const auto& region = mesh.getRegion(cell.region_id);
-        if (!matdb.hasMaterial(region.material))
-            throw std::out_of_range("MaterialDatabase: unknown material '" + region.material + "'");
         const Real ni_mat = matdb.getMaterial(region.material).ni;
         for (Index nid : cell.node_ids) {
             if (!found[nid]) {
