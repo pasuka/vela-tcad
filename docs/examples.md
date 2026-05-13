@@ -96,7 +96,13 @@ build/vela_example_runner --config examples/pn_diode/newton_simulation.json
 DC sweeps can also opt into Newton by setting `solver.method` (or
 `solver.type`) to `"newton"` in the same `solver` block used for Newton
 tolerances such as `max_iter`, `reltol`, `abstol`, `damping_factor`, and
-`line_search`. Omitting the field keeps the historical Gummel sweep path.
+`line_search`. Newton convergence and line-search merit checks use
+`residual_norm: "block"` by default, which normalizes the Poisson, electron
+continuity, and hole continuity residual blocks independently before combining
+them. Set `residual_norm: "l2"` for the legacy raw L2 norm, or tune
+`residual_weights` / `residual_scales` with `psi`, `phin`, and `phip` entries
+when a case needs explicit block weighting. Omitting the field keeps the
+historical Gummel sweep path.
 
 **Outputs.**
 

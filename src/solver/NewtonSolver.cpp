@@ -24,6 +24,31 @@ inline double nEq(double Ndop, double ni)
     return half + std::sqrt(half * half + ni * ni);
 }
 
+ResidualBlockWeights residualWeightsFromConfig(const NewtonConfig& cfg)
+{
+    return {cfg.residualWeightPsi, cfg.residualWeightPhin, cfg.residualWeightPhip};
+}
+
+ResidualBlockNormValue residualScalesFromConfig(
+    const NewtonConfig& cfg,
+    const ResidualBlockNormValue& initialBlocks)
+{
+    ResidualBlockNormValue scales;
+    scales.psi = std::max(initialBlocks.psi, 1.0);
+    scales.phin = std::max(initialBlocks.phin, 1.0);
+    scales.phip = std::max(initialBlocks.phip, 1.0);
+    if (cfg.residualScalePsi > 0.0)
+        scales.psi = cfg.residualScalePsi;
+    if (cfg.residualScalePhin > 0.0)
+        scales.phin = cfg.residualScalePhin;
+    if (cfg.residualScalePhip > 0.0)
+        scales.phip = cfg.residualScalePhip;
+    scales.combined = std::sqrt(scales.psi * scales.psi
+        + scales.phin * scales.phin
+        + scales.phip * scales.phip);
+    return scales;
+}
+
 } // namespace
 
 
@@ -38,12 +63,28 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
     cfg.verbose = json.value("verbose", cfg.verbose);
     cfg.finiteDifferenceStep = json.value("finite_difference_step", cfg.finiteDifferenceStep);
     cfg.jacobian = json.value("jacobian", cfg.jacobian);
+    cfg.residualNorm = json.value("residual_norm", cfg.residualNorm);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
     cfg.mobility = json.value("mobility", cfg.mobility);
+    if (json.contains("residual_weights")) {
+        const auto& weights = json.at("residual_weights");
+        cfg.residualWeightPsi = weights.value("psi", cfg.residualWeightPsi);
+        cfg.residualWeightPhin = weights.value("phin", cfg.residualWeightPhin);
+        cfg.residualWeightPhip = weights.value("phip", cfg.residualWeightPhip);
+    }
+    if (json.contains("residual_scales")) {
+        const auto& scales = json.at("residual_scales");
+        cfg.residualScalePsi = scales.value("psi", cfg.residualScalePsi);
+        cfg.residualScalePhin = scales.value("phin", cfg.residualScalePhin);
+        cfg.residualScalePhip = scales.value("phip", cfg.residualScalePhip);
+    }
     if (cfg.jacobian != "analytic" && cfg.jacobian != "finite_difference")
         throw std::invalid_argument(
             "newtonConfigFromJson: jacobian must be 'analytic' or 'finite_difference'.");
+    if (cfg.residualNorm != "block" && cfg.residualNorm != "l2")
+        throw std::invalid_argument(
+            "newtonConfigFromJson: residual_norm must be 'block' or 'l2'.");
 
     if (json.contains("recombination")) {
         const auto& value = json.at("recombination");
@@ -74,6 +115,9 @@ NewtonSolver::NewtonSolver(
     if (cfg_.jacobian != "analytic" && cfg_.jacobian != "finite_difference")
         throw std::invalid_argument(
             "NewtonSolver: jacobian must be 'analytic' or 'finite_difference'.");
+    if (cfg_.residualNorm != "block" && cfg_.residualNorm != "l2")
+        throw std::invalid_argument(
+            "NewtonSolver: residual_norm must be 'block' or 'l2'.");
 }
 
 CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
@@ -187,7 +231,20 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
 
     VectorXd x = assembler.pack({initial.psi, phinInit, phipInit});
     VectorXd r = assembler.residual(x, bcs);
-    const Real initialNorm = r.norm();
+    const ResidualBlockNormValue initialBlocks =
+        ResidualNorm::computeBlocks(r, mesh_.numNodes());
+    const ResidualBlockNormValue residualScales =
+        residualScalesFromConfig(cfg_, initialBlocks);
+    const ResidualBlockWeights residualWeights = residualWeightsFromConfig(cfg_);
+    const auto residualNorm = [&](const VectorXd& residual) {
+        if (cfg_.residualNorm == "l2")
+            return residual.norm();
+        return ResidualNorm::normalizedBlockL2(
+            ResidualNorm::computeBlocks(residual, mesh_.numNodes()),
+            residualScales,
+            residualWeights);
+    };
+    const Real initialNorm = residualNorm(r);
 
     NewtonResult result;
     result.solution = initial;
@@ -223,12 +280,12 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         try {
             step = linearSolver.solve(J, -r);
         } catch (const std::runtime_error&) {
-            result.finalResidualNorm = acceptedR.norm();
+            result.finalResidualNorm = residualNorm(acceptedR);
             result.iters = acceptedIters;
             result.solution = makeSolution(assembler, acceptedX, acceptedIters);
             if (cfg_.verbose) {
                 std::cerr << "Newton failed at iter " << iter
-                          << ": residual=" << r.norm()
+                          << ": residual=" << residualNorm(r)
                           << " damping=0 step=0 (linear solve failed)\n";
             }
             return result;
@@ -240,10 +297,11 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             [&](const VectorXd& candidate) { return assembler.residual(candidate, bcs); },
             [&](const VectorXd& candidate, const VectorXd&) {
                 return assembler.hasPositiveFiniteCarriers(candidate);
-            });
+            },
+            residualNorm);
 
         if (!ls.accepted) {
-            result.finalResidualNorm = acceptedR.norm();
+            result.finalResidualNorm = residualNorm(acceptedR);
             result.iters = acceptedIters;
             result.solution = makeSolution(assembler, acceptedX, acceptedIters);
             if (cfg_.verbose) {
@@ -286,7 +344,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
 
     result.converged = false;
     result.iters = acceptedIters;
-    result.finalResidualNorm = acceptedR.norm();
+    result.finalResidualNorm = residualNorm(acceptedR);
     result.solution = makeSolution(assembler, acceptedX, acceptedIters);
     if (cfg_.verbose) {
         std::cerr << "Newton failed after " << cfg_.maxIter

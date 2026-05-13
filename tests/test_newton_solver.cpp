@@ -7,6 +7,7 @@
 #include "vela/core/PhysicalConstants.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/material/MaterialDatabase.h"
+#include "vela/numerics/ResidualNorm.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/solver/GummelSolver.h"
@@ -269,6 +270,59 @@ TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
     REQUIRE(debugCfg.jacobian == "finite_difference");
 }
 
+
+
+TEST_CASE("NewtonSolver: block residual norm balances mixed equation blocks", "[newton][residual]")
+{
+    const int N = 2;
+    VectorXd initial(3 * N);
+    initial << 1.0e-18, -1.0e-18,
+               10.0, -10.0,
+               5.0, -5.0;
+    VectorXd current(3 * N);
+    current << 1.0e-18, 0.0,
+               1.0, -1.0,
+               0.5, -0.5;
+
+    const ResidualBlockNormValue initialBlocks = ResidualNorm::computeBlocks(initial, N);
+    const ResidualBlockNormValue currentBlocks = ResidualNorm::computeBlocks(current, N);
+
+    REQUIRE(initialBlocks.psi == Catch::Approx(std::sqrt(2.0) * 1.0e-18));
+    REQUIRE(initialBlocks.phin == Catch::Approx(std::sqrt(200.0)));
+    REQUIRE(initialBlocks.phip == Catch::Approx(std::sqrt(50.0)));
+
+    const Real balanced = ResidualNorm::normalizedBlockL2(currentBlocks, initialBlocks);
+    REQUIRE(balanced == Catch::Approx(std::sqrt(0.5 + 0.01 + 0.01)));
+
+    ResidualBlockWeights continuityOnly;
+    continuityOnly.psi = 0.0;
+    continuityOnly.phin = 1.0;
+    continuityOnly.phip = 4.0;
+    const Real weighted = ResidualNorm::normalizedBlockL2(
+        currentBlocks, initialBlocks, continuityOnly);
+    REQUIRE(weighted == Catch::Approx(std::sqrt(0.01 + 4.0 * 0.01)));
+}
+
+TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]")
+{
+    const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
+        {"residual_norm", "block"},
+        {"residual_weights", {{"psi", 0.25}, {"phin", 2.0}, {"phip", 3.0}}},
+        {"residual_scales", {{"psi", 1.0e-18}, {"phin", 2.0e4}, {"phip", 3.0e4}}}
+    });
+
+    REQUIRE(cfg.residualNorm == "block");
+    REQUIRE(cfg.residualWeightPsi == Catch::Approx(0.25));
+    REQUIRE(cfg.residualWeightPhin == Catch::Approx(2.0));
+    REQUIRE(cfg.residualWeightPhip == Catch::Approx(3.0));
+    REQUIRE(cfg.residualScalePsi == Catch::Approx(1.0e-18));
+    REQUIRE(cfg.residualScalePhin == Catch::Approx(2.0e4));
+    REQUIRE(cfg.residualScalePhip == Catch::Approx(3.0e4));
+
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{"residual_norm", "unknown"}}),
+        std::invalid_argument);
+}
 
 TEST_CASE("NewtonSolver: verbose false suppresses failure diagnostics", "[newton]")
 {
