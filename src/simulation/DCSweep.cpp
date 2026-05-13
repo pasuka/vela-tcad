@@ -71,7 +71,7 @@ SolverMethod solverMethodFromJson(const nlohmann::json& cfg)
     if (method == "newton")
         return SolverMethod::Newton;
     throw std::invalid_argument(
-        "DCSweep: solver.method must be 'gummel' or 'newton'.");
+        "DCSweep: solver.method/type must be 'gummel' or 'newton'.");
 }
 
 DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
@@ -188,11 +188,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     DCSweepConfig sweep = dcSweepConfigFromJson(cfg, cfgDir);
     const nlohmann::json solverCfg = cfg.value("solver", nlohmann::json::object());
     const SolverMethod solverMethod = solverMethodFromJson(cfg);
-    GummelConfig gummel = gummelConfigFromJson(solverCfg);
-    NewtonConfig newton = newtonConfigFromJson(solverCfg);
-    MobilityModelConfig mobilityConfig = solverMethod == SolverMethod::Newton
-        ? mobilityModelConfig(newton.mobility)
-        : mobilityModelConfig(gummel.mobility);
+    GummelConfig gummel;
+    NewtonConfig newton;
+    MobilityModelConfig mobilityConfig;
+    if (solverMethod == SolverMethod::Newton) {
+        newton = newtonConfigFromJson(solverCfg);
+        mobilityConfig = mobilityModelConfig(newton.mobility);
+    } else {
+        gummel = gummelConfigFromJson(solverCfg);
+        mobilityConfig = mobilityModelConfig(gummel.mobility);
+    }
     ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig);
 
     CSVWriter csv(sweep.csvFile);

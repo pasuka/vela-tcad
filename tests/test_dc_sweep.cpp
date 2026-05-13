@@ -274,6 +274,60 @@ TEST_CASE("DCSweep: final stop point is reached exactly without overshoot", "[dc
     REQUIRE(points[3].acceptedStep == Catch::Approx(0.15));
 }
 
+
+TEST_CASE("DCSweep: Gummel method ignores Newton-only solver fields", "[dc_sweep][gummel]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "gummel_with_newton_fields.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel"},
+        {"jacobian", "ignored_by_gummel"}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    REQUIRE(std::filesystem::exists(csvPath));
+}
+
+TEST_CASE("DCSweep: invalid solver type message mentions both solver keys", "[dc_sweep]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "invalid_solver.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false}
+    }, {
+        {"type", "gummle"}
+    });
+
+    DCSweep sweep;
+    try {
+        (void)sweep.runWithResult(cfgPath.string());
+        FAIL("Expected invalid solver type to throw");
+    } catch (const std::invalid_argument& ex) {
+        const std::string message = ex.what();
+        REQUIRE(message.find("solver.method/type") != std::string::npos);
+        REQUIRE(message.find("gummel") != std::string::npos);
+        REQUIRE(message.find("newton") != std::string::npos);
+    }
+}
+
 TEST_CASE("DCSweep: explicit Newton solver method is reachable from config", "[dc_sweep][newton]")
 {
     const auto dir = makeUniqueSweepDir();
