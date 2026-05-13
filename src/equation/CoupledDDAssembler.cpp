@@ -139,6 +139,22 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
     // n and p are needed for Poisson source and configured recombination.
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
+
+    // Cache Boltzmann factors used by the balanced quasi-Fermi SG fluxes.
+    // residual() is called repeatedly by Newton iteration and finite-difference
+    // Jacobian assembly, so computing these once per node avoids repeating the
+    // same expensive exponentials for every incident edge endpoint.
+    VectorXd expPsi(N);
+    VectorXd expNegPsi(N);
+    VectorXd expNegPhin(N);
+    VectorXd expPhip(N);
+    for (int i = 0; i < N; ++i) {
+        expPsi(i) = std::exp(x(psiOffset() + i) / Vt_);
+        expNegPsi(i) = std::exp(-x(psiOffset() + i) / Vt_);
+        expNegPhin(i) = std::exp(-x(phinOffset() + i) / Vt_);
+        expPhip(i) = std::exp(x(phipOffset() + i) / Vt_);
+    }
+
     VectorXd r = VectorXd::Zero(3 * N);
     std::vector<bool> hasElectronContribution(static_cast<std::size_t>(N), false);
     std::vector<bool> hasHoleContribution(static_cast<std::size_t>(N), false);
@@ -169,11 +185,11 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
 
             const Real coef = mun * Vt_ * couple[e] / h;
-            const Real nFlux = sgElectronContinuityFluxFromQuasiFermi(
+            const Real nFlux = sgElectronContinuityFluxFromQuasiFermiFactors(
                 ni_[static_cast<Index>(i)],
-                x(psiOffset() + j),
-                x(phinOffset() + i),
-                x(phinOffset() + j),
+                expPsi(j),
+                expNegPhin(i),
+                expNegPhin(j),
                 dpsi,
                 Vt_,
                 coef);
@@ -188,11 +204,11 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
 
             const Real coef = mup * Vt_ * couple[e] / h;
-            const Real pFlux = sgHoleContinuityFluxFromQuasiFermi(
+            const Real pFlux = sgHoleContinuityFluxFromQuasiFermiFactors(
                 ni_[static_cast<Index>(i)],
-                x(psiOffset() + i),
-                x(phipOffset() + i),
-                x(phipOffset() + j),
+                expNegPsi(i),
+                expPhip(i),
+                expPhip(j),
                 dpsi,
                 Vt_,
                 coef);

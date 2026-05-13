@@ -51,6 +51,20 @@ Real sgElectronContinuityFluxFromQuasiFermi(Real ni0,
                                             Real coef);
 
 /**
+ * @brief Balanced electron continuity flux with precomputed Boltzmann factors.
+ *
+ * Uses expPsi1 = exp(psi1/Vt) and expNegPhin0/1 = exp(-phin0/1 / Vt), allowing
+ * callers to cache the per-node exponentials across all incident edges.
+ */
+Real sgElectronContinuityFluxFromQuasiFermiFactors(Real ni0,
+                                                   Real expPsi1,
+                                                   Real expNegPhin0,
+                                                   Real expNegPhin1,
+                                                   Real dpsi,
+                                                   Real Vt,
+                                                   Real coef);
+
+/**
  * @brief Balanced hole continuity flux for Boltzmann quasi-Fermi variables.
  *
  * Algebraically equivalent to sgHoleContinuityFlux when both edge nodes use the
@@ -64,6 +78,20 @@ Real sgHoleContinuityFluxFromQuasiFermi(Real ni0,
                                         Real dpsi,
                                         Real Vt,
                                         Real coef);
+
+/**
+ * @brief Balanced hole continuity flux with precomputed Boltzmann factors.
+ *
+ * Uses expNegPsi0 = exp(-psi0/Vt) and expPhip0/1 = exp(phip0/1 / Vt), allowing
+ * callers to cache the per-node exponentials across all incident edges.
+ */
+Real sgHoleContinuityFluxFromQuasiFermiFactors(Real ni0,
+                                               Real expNegPsi0,
+                                               Real expPhip0,
+                                               Real expPhip1,
+                                               Real dpsi,
+                                               Real Vt,
+                                               Real coef);
 
 /**
  * @brief Scharfetter-Gummel edge fluxes for drift-diffusion.

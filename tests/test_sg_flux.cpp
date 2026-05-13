@@ -1,7 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include "vela/discretization/ScharfetterGummel.h"
-#include "vela/discretization/Bernoulli.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/equation/DDAssembler.h"
@@ -9,6 +8,7 @@
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/RecombinationModel.h"
+#include <algorithm>
 #include <cmath>
 
 using namespace vela;
