@@ -1,9 +1,9 @@
 #pragma once
 
 #include "vela/material/Material.h"
-#include <unordered_map>
-#include <string>
 #include <stdexcept>
+#include <string>
+#include <unordered_map>
 
 namespace vela {
 
@@ -16,6 +16,10 @@ namespace vela {
 class MaterialDatabase {
 public:
     MaterialDatabase();
+    explicit MaterialDatabase(const std::string& jsonPath);
+
+    /// Load material entries from JSON, adding new entries or overriding built-ins.
+    void loadJson(const std::string& jsonPath);
 
     /// Add or overwrite a material entry.
     void addMaterial(const Material& mat);

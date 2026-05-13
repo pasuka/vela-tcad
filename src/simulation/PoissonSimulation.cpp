@@ -54,6 +54,9 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     const std::filesystem::path cfgDir = configDirectory(configFile);
     const std::string meshFile = resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>());
     const std::string outputVtk = resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>());
+    const std::string materialsFile = cfg.contains("materials_file")
+        ? resolvePath(cfgDir, cfg.at("materials_file").get<std::string>())
+        : std::string{};
 
     // ------------------------------------------------------------------
     // Build mesh
@@ -62,9 +65,11 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     DeviceMesh mesh = reader.read(meshFile);
 
     // ------------------------------------------------------------------
-    // Material database (built-in Si, SiO2)
+    // Material database (built-in Si, SiO2 plus optional config override)
     // ------------------------------------------------------------------
     MaterialDatabase matdb;
+    if (!materialsFile.empty())
+        matdb.loadJson(materialsFile);
 
     // ------------------------------------------------------------------
     // Doping model

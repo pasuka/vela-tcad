@@ -25,7 +25,7 @@ optional Python API through pybind11.
 | `DeviceMesh` - nodes, cells, edges, regions, contacts | done |
 | `JsonMeshReader` - reads JSON meshes | done |
 | `VTKWriter` and `CSVWriter` - simulation output files | done |
-| `MaterialDatabase` - Si and SiO2 built in | done |
+| `MaterialDatabase` - Si/SiO2 built in plus optional JSON overrides | done |
 | `DopingModel` - per-node Nd/Na from region JSON spec | done |
 | `PoissonAssembler` - FVM/Box electrostatic Poisson | done |
 | `ScharfetterGummel` and drift-diffusion assembly | done |
@@ -235,6 +235,7 @@ Poisson configurations use this shape:
 ```json
 {
   "mesh_file": "pn_diode_2d.json",
+  "materials_file": "materials.json",
   "output_vtk": "pn_poisson_2d.vtk",
   "doping": [
     { "region": "n_region", "donors": 1e23, "acceptors": 0.0 },
@@ -247,10 +248,44 @@ Poisson configurations use this shape:
 }
 ```
 
-Relative paths in `mesh_file`, `output_vtk`, and sweep output settings are
-resolved relative to the directory containing the config JSON. VTK files can be
-opened in ParaView to inspect electrostatic potential, net doping, and
-drift-diffusion fields when available.
+`materials_file` is optional. When present, it is loaded after the built-in
+`Si` and `SiO2` materials, so entries with the same `name` override built-ins
+and entries with new names can be referenced by mesh regions. The same optional
+field is honored by Poisson runs, DC sweep runs, and the Python helpers that run
+those same C++ config paths. A materials file may be either an object with a
+`materials` array, a top-level array, or an object keyed by material name:
+
+```json
+{
+  "materials": [
+    {
+      "name": "Si",
+      "eps_r": 11.7,
+      "ni": 1.0e16,
+      "mun": 0.135,
+      "mup": 0.048,
+      "bandgap_eV": 1.12,
+      "electron_affinity_eV": 4.05,
+      "Nc_m3": 2.8e25,
+      "Nv_m3": 1.04e25,
+      "temperature_K": 300.0
+    }
+  ]
+}
+```
+
+All numeric config values use SI units unless the field name explicitly states
+otherwise. Concentrations such as `donors`, `acceptors`, `ni`, `Nc_m3`, and
+`Nv_m3` are in `m^-3`; mobilities are in `m^2/(V s)`; lengths are in meters;
+voltages are in volts; and `temperature_K` is in kelvin. Band gap and electron
+affinity fields use electron-volts as indicated by their `_eV` suffix. To
+convert concentrations from `cm^-3` to `m^-3`, multiply by `1e6`; for example,
+`1e17 cm^-3` is `1e23 m^-3`.
+
+Relative paths in `mesh_file`, optional `materials_file`, `output_vtk`, and
+sweep output settings are resolved relative to the directory containing the
+config JSON. VTK files can be opened in ParaView to inspect electrostatic
+potential, net doping, and drift-diffusion fields when available.
 
 ---
 
