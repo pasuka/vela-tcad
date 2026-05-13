@@ -10,6 +10,8 @@
 #include <fstream>
 #include <stdexcept>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace vela {
 
@@ -70,29 +72,82 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // Doping model
     // ------------------------------------------------------------------
     std::vector<RegionDopingSpec> dopingSpecs;
+    std::vector<RegionFixedChargeSpec> fixedChargeSpecs;
     for (const auto& entry : cfg.at("doping")) {
         RegionDopingSpec spec;
         spec.region    = entry.at("region").get<std::string>();
         spec.donors    = entry.at("donors").get<Real>();
         spec.acceptors = entry.at("acceptors").get<Real>();
         dopingSpecs.push_back(std::move(spec));
+
+        if (entry.contains("fixed_charge_m3")) {
+            fixedChargeSpecs.push_back(RegionFixedChargeSpec{
+                entry.at("region").get<std::string>(),
+                entry.at("fixed_charge_m3").get<Real>()});
+        }
     }
     DopingModel doping = DopingModel::fromMeshAndRegions(mesh, dopingSpecs);
+
+    if (cfg.contains("regions")) {
+        for (const auto& entry : cfg.at("regions")) {
+            if (!entry.contains("fixed_charge_m3")) continue;
+            fixedChargeSpecs.push_back(RegionFixedChargeSpec{
+                entry.at("name").get<std::string>(),
+                entry.at("fixed_charge_m3").get<Real>()});
+        }
+    }
+
+    std::vector<InterfaceSheetChargeSpec> sheetChargeSpecs;
+    if (cfg.contains("interfaces")) {
+        for (const auto& entry : cfg.at("interfaces")) {
+            if (!entry.contains("sheet_charge_m2")) continue;
+
+            if (entry.contains("regions")) {
+                const auto regions = entry.at("regions").get<std::vector<std::string>>();
+                if (regions.size() != 2)
+                    throw std::runtime_error(
+                        "PoissonSimulation: interface regions must contain exactly two names.");
+                sheetChargeSpecs.push_back(InterfaceSheetChargeSpec{
+                    regions[0], regions[1], entry.at("sheet_charge_m2").get<Real>()});
+            } else {
+                sheetChargeSpecs.push_back(InterfaceSheetChargeSpec{
+                    entry.at("region0").get<std::string>(),
+                    entry.at("region1").get<std::string>(),
+                    entry.at("sheet_charge_m2").get<Real>()});
+            }
+        }
+    }
 
     // ------------------------------------------------------------------
     // Assemble Poisson equation
     // ------------------------------------------------------------------
-    PoissonAssembler assembler(mesh, matdb, doping);
+    PoissonAssembler assembler(mesh, matdb, doping,
+                               std::move(fixedChargeSpecs),
+                               std::move(sheetChargeSpecs));
     assembler.assemble();
 
     // ------------------------------------------------------------------
     // Dirichlet boundary conditions from contacts
     // ------------------------------------------------------------------
-    // Build name -> bias map from config
+    // Build name -> effective contact potential map from config. A configured
+    // flatband voltage or work function shifts the electrostatic Dirichlet
+    // potential as psi_contact = bias - offset. work_function_eV is interpreted
+    // as its equivalent voltage because 1 eV/q is 1 V.
     std::unordered_map<std::string, Real> contactBias;
     for (const auto& ct : cfg.at("contacts")) {
-        contactBias[ct.at("name").get<std::string>()] =
-            ct.at("bias").get<Real>();
+        const bool hasFlatband = ct.contains("flatband_voltage");
+        const bool hasWorkFunction = ct.contains("work_function_eV");
+        if (hasFlatband && hasWorkFunction)
+            throw std::runtime_error(
+                "PoissonSimulation: contact cannot set both flatband_voltage and work_function_eV.");
+
+        Real value = ct.at("bias").get<Real>();
+        if (hasFlatband)
+            value -= ct.at("flatband_voltage").get<Real>();
+        if (hasWorkFunction)
+            value -= ct.at("work_function_eV").get<Real>();
+
+        contactBias[ct.at("name").get<std::string>()] = value;
     }
 
     // Map contact nodes -> prescribed potential
