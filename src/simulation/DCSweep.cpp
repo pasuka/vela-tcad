@@ -123,6 +123,11 @@ std::string vtkFilename(const std::string& prefix, int index, Real voltage)
 
 std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
 {
+    return runWithResult(configFile).points;
+}
+
+DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
+{
     std::ifstream ifs(configFile);
     if (!ifs.is_open())
         throw std::runtime_error("DCSweep: cannot open config file: " + configFile);
@@ -212,7 +217,7 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
     auto [startOk, startSol] = solvePoint(sweep.start, nullptr);
     recordPoint(sweep.start, startSol, startOk, 0.0, 0.0, 0);
     if (!startOk)
-        return points;
+        return DCSweepResult{std::move(mesh), std::move(points)};
     previousSolution = std::move(startSol);
 
     const Real direction = (sweep.step > 0.0) ? 1.0 : -1.0;
@@ -275,7 +280,7 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
         while (direction * (previousVoltage - nominalTarget) < -tolerance) {
             if (!advanceToward(nominalTarget)) {
                 if (sweep.stopOnFailure)
-                    return points;
+                    return DCSweepResult{std::move(mesh), std::move(points)};
                 blockedByFailedStep = true;
                 break;
             }
@@ -286,12 +291,12 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
     while (!blockedByFailedStep && direction * (previousVoltage - sweep.stop) < -tolerance) {
         if (!advanceToward(sweep.stop)) {
             if (sweep.stopOnFailure)
-                return points;
+                return DCSweepResult{std::move(mesh), std::move(points)};
             break;
         }
     }
 
-    return points;
+    return DCSweepResult{std::move(mesh), std::move(points)};
 }
 
 } // namespace vela

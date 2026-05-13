@@ -1,9 +1,6 @@
 #include "vela/simulation/DCSweep.h"
 #include "vela/simulation/PoissonSimulation.h"
-#include "vela/io/MeshReader.h"
-
 #include <exception>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -14,21 +11,6 @@ namespace {
 void usage(const char* argv0)
 {
     std::cerr << "Usage: " << argv0 << " --config <simulation.json> [--mesh-report]\n";
-}
-
-std::filesystem::path configDirectory(const std::string& configFile)
-{
-    const std::filesystem::path path(configFile);
-    const std::filesystem::path parent = path.parent_path();
-    return parent.empty() ? std::filesystem::current_path() : parent;
-}
-
-std::string resolvePath(const std::filesystem::path& baseDir, const std::string& path)
-{
-    std::filesystem::path resolved(path);
-    if (resolved.is_relative())
-        resolved = baseDir / resolved;
-    return resolved.string();
 }
 
 nlohmann::json meshReportJson(const vela::GeometryBuildReport& report)
@@ -86,25 +68,22 @@ int main(int argc, char** argv)
         status["simulation_type"] = type;
         status["converged"] = true;
 
-        if (includeMeshReport) {
-            vela::JsonMeshReader reader;
-            const std::filesystem::path cfgDir = configDirectory(configFile);
-            vela::DeviceMesh mesh = reader.read(resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>()));
-            status["mesh_report"] = meshReportJson(mesh.lastGeometryBuildReport());
-        }
-
         if (type == "dc_sweep") {
             vela::DCSweep sweep;
-            const auto points = sweep.run(configFile);
-            bool allConverged = !points.empty();
-            for (const auto& point : points)
+            const auto result = sweep.runWithResult(configFile);
+            bool allConverged = !result.points.empty();
+            for (const auto& point : result.points)
                 allConverged = allConverged && point.converged;
             status["converged"] = allConverged;
-            status["points"] = points.size();
+            status["points"] = result.points.size();
+            if (includeMeshReport)
+                status["mesh_report"] = meshReportJson(result.mesh.lastGeometryBuildReport());
         } else if (type == "poisson") {
             vela::PoissonSimulation sim;
-            const auto psi = sim.run(configFile);
-            status["nodes"] = psi.size();
+            const auto result = sim.runWithResult(configFile);
+            status["nodes"] = result.potential.size();
+            if (includeMeshReport)
+                status["mesh_report"] = meshReportJson(result.mesh.lastGeometryBuildReport());
         } else {
             std::cerr << "Unknown simulation_type: " << type << '\n';
             return 2;

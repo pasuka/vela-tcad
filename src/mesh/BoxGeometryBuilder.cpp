@@ -192,7 +192,6 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
         }
     }
 
-    mesh.lastGeometryBuildReport_ = report;
     return report;
 }
 
