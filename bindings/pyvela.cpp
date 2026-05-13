@@ -130,6 +130,8 @@ PYBIND11_MODULE(_core, m)
 
     py::class_<vela::MaterialDatabase>(m, "MaterialDatabase")
         .def(py::init<>())
+        .def(py::init<const std::string&>(), py::arg("materials_file"))
+        .def("load_json", &vela::MaterialDatabase::loadJson, py::arg("materials_file"))
         .def("has_material", &vela::MaterialDatabase::hasMaterial);
 
     py::class_<vela::PoissonSimulation>(m, "PoissonSimulation")

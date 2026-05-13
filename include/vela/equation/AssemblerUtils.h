@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <cmath>
+#include <stdexcept>
 
 namespace vela::detail {
 
@@ -80,7 +81,8 @@ inline std::vector<std::vector<Index>> buildEdgeCellMap(const DeviceMesh& mesh)
 // ---------------------------------------------------------------------------
 
 /// Return the average value of a material property over edge-adjacent cells.
-/// Falls back to @p fallback for cells whose material is not in the database.
+/// Falls back to @p fallback only when the edge has no adjacent cells.
+/// Throws if any adjacent cell references an unknown material.
 inline Real edgeAvgMaterialProp(
     const std::vector<Index>& cells,
     const DeviceMesh&          mesh,
@@ -92,10 +94,7 @@ inline Real edgeAvgMaterialProp(
     Real sum = 0.0;
     for (Index c : cells) {
         const auto& region = mesh.getRegion(mesh.getCell(c).region_id);
-        Real val = fallback;
-        if (matdb.hasMaterial(region.material))
-            val = matdb.getMaterial(region.material).*prop;
-        sum += val;
+        sum += matdb.getMaterial(region.material).*prop;
     }
     return sum / static_cast<Real>(cells.size());
 }
@@ -120,9 +119,6 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
     Real sum = 0.0;
     for (Index c : cells) {
         const auto& region = mesh.getRegion(mesh.getCell(c).region_id);
-        if (!matdb.hasMaterial(region.material))
-            continue;
-
         const Material& material = matdb.getMaterial(region.material);
         if (carrier == CarrierType::Electron)
             sum += mobility.electronMobility(material, netDoping, 0.0, 0.0);
@@ -157,9 +153,7 @@ inline std::vector<Real> buildNodeNi(const DeviceMesh&       mesh,
     for (Index c = 0; c < mesh.numCells(); ++c) {
         const auto& cell   = mesh.getCell(c);
         const auto& region = mesh.getRegion(cell.region_id);
-        Real ni_mat = 0.0;
-        if (matdb.hasMaterial(region.material))
-            ni_mat = matdb.getMaterial(region.material).ni;
+        const Real ni_mat = matdb.getMaterial(region.material).ni;
         for (Index nid : cell.node_ids) {
             if (!found[nid]) {
                 ni_v[nid]  = ni_mat;

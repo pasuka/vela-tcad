@@ -141,6 +141,8 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
     JsonMeshReader reader;
     DeviceMesh mesh = reader.read(resolve(cfg.at("mesh_file").get<std::string>()));
     MaterialDatabase matdb;
+    if (cfg.contains("materials_file"))
+        matdb.loadJson(resolve(cfg.at("materials_file").get<std::string>()));
     DopingModel doping = dopingFromJson(mesh, cfg);
     std::unordered_map<std::string, Real> baseBiases = contactBiasesFromJson(cfg);
     DCSweepConfig sweep = dcSweepConfigFromJson(cfg, cfgDir);

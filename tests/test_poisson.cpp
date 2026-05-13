@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include <catch2/catch_approx.hpp>
 #include <nlohmann/json.hpp>
 
@@ -11,11 +12,18 @@
 #include "vela/io/VTKWriter.h"
 #include "vela/simulation/PoissonSimulation.h"
 
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <functional>
+#include <nlohmann/json.hpp>
+#include <random>
 #include <stdexcept>
+#include <string>
+#include <thread>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 using namespace vela;
@@ -45,7 +53,7 @@ using namespace vela;
  *    cathode (n): nodes 1, 2   bias = 0 V
  *    anode   (p): nodes 0, 3   bias = 0 V
  */
-static DeviceMesh makePNMesh()
+static DeviceMesh makePNMesh(const std::string& material = "Si")
 {
     DeviceMesh mesh;
 
@@ -64,10 +72,10 @@ static DeviceMesh makePNMesh()
     c1.node_ids = {0, 2, 3};
     mesh.addCell(c1);
 
-    Region r0; r0.id=0; r0.name="n_region"; r0.material="Si"; r0.cell_ids={0};
+    Region r0; r0.id=0; r0.name="n_region"; r0.material=material; r0.cell_ids={0};
     mesh.addRegion(r0);
 
-    Region r1; r1.id=1; r1.name="p_region"; r1.material="Si"; r1.cell_ids={1};
+    Region r1; r1.id=1; r1.name="p_region"; r1.material=material; r1.cell_ids={1};
     mesh.addRegion(r1);
 
     Contact anode;   anode.id=0;   anode.name="anode";   anode.region_id=1;
@@ -94,32 +102,112 @@ static DopingModel makePNDoping(const DeviceMesh& mesh)
     return DopingModel::fromMeshAndRegions(mesh, specs);
 }
 
-static std::filesystem::path writePNMeshJson(const std::filesystem::path& dir)
+static void writePNMeshJson(const std::filesystem::path& meshPath,
+                            const std::string& material = "Si")
 {
     nlohmann::json mesh = {
         {"nodes", {
-            {{"id", 0}, {"x", 0.0e-6}, {"y", 0.0e-6}},
-            {{"id", 1}, {"x", 1.0e-6}, {"y", 0.0e-6}},
+            {{"id", 0}, {"x", 0.0}, {"y", 0.0}},
+            {{"id", 1}, {"x", 1.0e-6}, {"y", 0.0}},
             {{"id", 2}, {"x", 1.0e-6}, {"y", 1.0e-6}},
-            {{"id", 3}, {"x", 0.0e-6}, {"y", 1.0e-6}}
+            {{"id", 3}, {"x", 0.0}, {"y", 1.0e-6}}
         }},
         {"triangles", {
             {{"id", 0}, {"region_id", 0}, {"node_ids", {0, 1, 2}}},
             {{"id", 1}, {"region_id", 1}, {"node_ids", {0, 2, 3}}}
         }},
         {"regions", {
-            {{"id", 0}, {"name", "n_region"}, {"material", "Si"}, {"cell_ids", {0}}},
-            {{"id", 1}, {"name", "p_region"}, {"material", "Si"}, {"cell_ids", {1}}}
+            {{"id", 0}, {"name", "n_region"}, {"material", material}, {"cell_ids", {0}}},
+            {{"id", 1}, {"name", "p_region"}, {"material", material}, {"cell_ids", {1}}}
         }},
         {"contacts", {
             {{"id", 0}, {"name", "anode"}, {"region_id", 1}, {"node_ids", {0, 3}}},
             {{"id", 1}, {"name", "cathode"}, {"region_id", 0}, {"node_ids", {1, 2}}}
         }}
     };
-
-    const auto meshPath = dir / "mesh.json";
     std::ofstream(meshPath) << mesh.dump(2);
+}
+
+static std::filesystem::path writePNMeshJsonToDir(const std::filesystem::path& dir,
+                                                  const std::string& material = "Si")
+{
+    const auto meshPath = dir / "mesh.json";
+    writePNMeshJson(meshPath, material);
     return meshPath;
+}
+
+struct ScopedPoissonTempDir {
+    std::filesystem::path path;
+
+    explicit ScopedPoissonTempDir(std::filesystem::path dir)
+        : path(std::move(dir))
+    {
+    }
+
+    ScopedPoissonTempDir(const ScopedPoissonTempDir&) = delete;
+    ScopedPoissonTempDir& operator=(const ScopedPoissonTempDir&) = delete;
+    ScopedPoissonTempDir(ScopedPoissonTempDir&& other) noexcept
+        : path(std::move(other.path))
+    {
+        other.path.clear();
+    }
+
+    ScopedPoissonTempDir& operator=(ScopedPoissonTempDir&& other) noexcept
+    {
+        if (this != &other) {
+            path = std::move(other.path);
+            other.path.clear();
+        }
+        return *this;
+    }
+
+    ~ScopedPoissonTempDir()
+    {
+        std::error_code ec;
+        std::filesystem::remove_all(path, ec);
+    }
+};
+
+static ScopedPoissonTempDir makePoissonTempDir(const std::string& name)
+{
+    constexpr int maxAttempts = 8;
+    const auto base = std::filesystem::temp_directory_path();
+    const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
+    const auto tid = std::hash<std::thread::id>{}(std::this_thread::get_id());
+    std::mt19937_64 rng(static_cast<std::mt19937_64::result_type>(stamp ^ tid));
+    std::uniform_int_distribution<unsigned long long> dist;
+
+    for (int attempt = 0; attempt < maxAttempts; ++attempt) {
+        const auto dir = base /
+            (name + "_" + std::to_string(stamp) + "_" + std::to_string(dist(rng)));
+        std::error_code ec;
+        if (std::filesystem::create_directory(dir, ec))
+            return ScopedPoissonTempDir(dir);
+    }
+
+    throw std::runtime_error("Failed to create a unique temp directory for Poisson test.");
+}
+
+static void writePoissonConfigJson(const std::filesystem::path& cfgPath,
+                                   const std::filesystem::path& meshPath,
+                                   const std::filesystem::path& outputPath,
+                                   const std::filesystem::path& materialsPath = {})
+{
+    nlohmann::json cfg = {
+        {"mesh_file", meshPath.filename().string()},
+        {"output_vtk", outputPath.filename().string()},
+        {"doping", {
+            {{"region", "n_region"}, {"donors", 1.0e23}, {"acceptors", 0.0}},
+            {{"region", "p_region"}, {"donors", 0.0}, {"acceptors", 1.0e23}}
+        }},
+        {"contacts", {
+            {{"name", "anode"}, {"bias", 0.0}},
+            {{"name", "cathode"}, {"bias", 0.0}}
+        }}
+    };
+    if (!materialsPath.empty())
+        cfg["materials_file"] = materialsPath.filename().string();
+    std::ofstream(cfgPath) << cfg.dump(2);
 }
 
 // ---------------------------------------------------------------------------
@@ -248,6 +336,8 @@ TEST_CASE("VTKWriter: writes file with potential field", "[poisson][vtk]")
     REQUIRE(content.find("potential_V") != std::string::npos);
 }
 
+
+
 static DeviceMesh makeMOSCapChargeMesh()
 {
     DeviceMesh mesh;
@@ -336,12 +426,10 @@ TEST_CASE("PoissonAssembler: zero explicit charge matches legacy RHS", "[poisson
 
 TEST_CASE("PoissonSimulation: duplicate fixed charge config entries are rejected", "[poisson][charge]")
 {
-    const auto dir = std::filesystem::temp_directory_path() /
-                     "vela_poisson_duplicate_fixed_charge_test";
-    std::filesystem::remove_all(dir);
-    std::filesystem::create_directories(dir);
+    const auto tempDir = makePoissonTempDir("vela_poisson_duplicate_fixed_charge_test");
+    const auto& dir = tempDir.path;
 
-    const auto meshPath = writePNMeshJson(dir);
+    const auto meshPath = writePNMeshJsonToDir(dir);
     const auto configPath = dir / "poisson_duplicate_fixed_charge.json";
     const nlohmann::json cfg = {
         {"mesh_file", meshPath.string()},
@@ -365,8 +453,6 @@ TEST_CASE("PoissonSimulation: duplicate fixed charge config entries are rejected
 
     PoissonSimulation sim;
     REQUIRE_THROWS_AS(sim.runWithResult(configPath.string()), std::runtime_error);
-
-    std::filesystem::remove_all(dir);
 }
 
 TEST_CASE("PoissonAssembler: duplicate fixed charge specs are rejected", "[poisson][charge]")
@@ -421,4 +507,90 @@ TEST_CASE("PoissonAssembler: sheet charge is split to shared interface endpoints
     REQUIRE(asm_.rhs()(3) == Catch::Approx(expectedEndpointCharge).epsilon(1e-12));
     REQUIRE(asm_.rhs()(0) == Catch::Approx(0.0).margin(1e-30));
     REQUIRE(asm_.rhs()(5) == Catch::Approx(0.0).margin(1e-30));
+}
+
+TEST_CASE("MaterialDatabase: external file overrides built-ins", "[material]")
+{
+    const auto tempDir = makePoissonTempDir("vela_material_override_test");
+    const auto& dir = tempDir.path;
+    const auto materialsPath = dir / "materials.json";
+    std::ofstream(materialsPath) << nlohmann::json{
+        {"materials", {
+            {{"name", "Si"}, {"eps_r", 12.5}, {"bandgap_eV", 1.11}, {"Nc_m3", 3.0e25}}
+        }}
+    }.dump(2);
+
+    MaterialDatabase matdb;
+    REQUIRE(matdb.getMaterial("Si").eps_r == Catch::Approx(11.7));
+    matdb.loadJson(materialsPath.string());
+
+    const Material& si = matdb.getMaterial("Si");
+    REQUIRE(si.eps_r == Catch::Approx(12.5));
+    REQUIRE(si.mun == Catch::Approx(0.135));
+    REQUIRE(si.bandgap_eV.has_value());
+    REQUIRE(*si.bandgap_eV == Catch::Approx(1.11));
+    REQUIRE(si.Nc_m3.has_value());
+    REQUIRE(*si.Nc_m3 == Catch::Approx(3.0e25));
+    REQUIRE(matdb.hasMaterial("SiO2"));
+
+}
+
+
+TEST_CASE("MaterialDatabase: malformed materials array reports file path", "[material]")
+{
+    const auto tempDir = makePoissonTempDir("vela_material_malformed_test");
+    const auto& dir = tempDir.path;
+    const auto materialsPath = dir / "materials.json";
+    std::ofstream(materialsPath) << nlohmann::json{{"materials", "not an array"}}.dump(2);
+
+    MaterialDatabase matdb;
+    try {
+        matdb.loadJson(materialsPath.string());
+        FAIL("Expected malformed materials JSON to throw");
+    } catch (const std::runtime_error& e) {
+        const std::string message = e.what();
+        REQUIRE(message.find(materialsPath.string()) != std::string::npos);
+        REQUIRE(message.find("'materials' must be an array") != std::string::npos);
+    }
+}
+
+TEST_CASE("PoissonAssembler: unknown material reports an error", "[poisson][material]")
+{
+    DeviceMesh mesh = makePNMesh("Unobtainium");
+
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    PoissonAssembler asm_(mesh, matdb, doping);
+
+    REQUIRE_THROWS_WITH(asm_.assemble(), Catch::Matchers::ContainsSubstring("unknown material"));
+}
+
+TEST_CASE("PoissonSimulation: external new material can be used for assembly", "[poisson][material]")
+{
+    const auto tempDir = makePoissonTempDir("vela_new_material_poisson_test");
+    const auto& dir = tempDir.path;
+    const auto meshPath = dir / "pn_mesh.json";
+    const auto cfgPath = dir / "poisson.json";
+    const auto outputPath = dir / "out.vtk";
+    const auto materialsPath = dir / "materials.json";
+
+    writePNMeshJson(meshPath, "GaAsLike");
+    std::ofstream(materialsPath) << nlohmann::json{
+        {"materials", {
+            {{"name", "GaAsLike"}, {"eps_r", 12.9}, {"ni", 2.0e12},
+             {"mun", 0.85}, {"mup", 0.04}, {"bandgap_eV", 1.42},
+             {"electron_affinity_eV", 4.07}, {"Nc_m3", 4.7e23},
+             {"Nv_m3", 7.0e24}, {"temperature_K", 300.0}}
+        }}
+    }.dump(2);
+    writePoissonConfigJson(cfgPath, meshPath, outputPath, materialsPath);
+
+    PoissonSimulation sim;
+    PoissonResult result = sim.runWithResult(cfgPath.string());
+
+    REQUIRE(result.potential.size() == static_cast<int>(result.mesh.numNodes()));
+    REQUIRE(std::filesystem::exists(outputPath));
+    for (int i = 0; i < result.potential.size(); ++i)
+        REQUIRE(std::isfinite(result.potential(i)));
+
 }
