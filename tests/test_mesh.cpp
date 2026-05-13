@@ -2,11 +2,16 @@
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/io/MeshReader.h"
+#include <atomic>
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
+#include <thread>
+#include <utility>
 
 using namespace vela;
 
@@ -133,15 +138,49 @@ TEST_CASE("MaterialDatabase: unknown material throws", "[material]")
     REQUIRE_THROWS_AS(db.getMaterial("GaAs"), std::out_of_range);
 }
 
-static std::filesystem::path writeMeshReaderTestFile(const std::string& stem,
-                                                     const std::string& content)
+struct TemporaryMeshFile {
+    std::filesystem::path path;
+
+    TemporaryMeshFile(std::filesystem::path file_path, const std::string& content)
+        : path(std::move(file_path))
+    {
+        std::ofstream ofs(path);
+        REQUIRE(ofs.is_open());
+        ofs << content;
+    }
+
+    TemporaryMeshFile(const TemporaryMeshFile&) = delete;
+    TemporaryMeshFile& operator=(const TemporaryMeshFile&) = delete;
+
+    TemporaryMeshFile(TemporaryMeshFile&&) = default;
+    TemporaryMeshFile& operator=(TemporaryMeshFile&&) = default;
+
+    ~TemporaryMeshFile()
+    {
+        std::error_code ec;
+        std::filesystem::remove(path, ec);
+    }
+
+    operator const std::filesystem::path&() const { return path; }
+};
+
+static std::filesystem::path uniqueMeshReaderTestPath(const std::string& stem)
 {
-    const auto path = std::filesystem::temp_directory_path() /
-                      ("vela_mesh_reader_" + stem + ".json");
-    std::ofstream ofs(path);
-    REQUIRE(ofs.is_open());
-    ofs << content;
-    return path;
+    static std::atomic<unsigned long long> counter{0};
+
+    std::ostringstream name;
+    name << "vela_mesh_reader_" << stem << '_'
+         << std::chrono::steady_clock::now().time_since_epoch().count() << '_'
+         << std::this_thread::get_id() << '_'
+         << counter.fetch_add(1, std::memory_order_relaxed) << ".json";
+
+    return std::filesystem::temp_directory_path() / name.str();
+}
+
+static TemporaryMeshFile writeMeshReaderTestFile(const std::string& stem,
+                                                const std::string& content)
+{
+    return TemporaryMeshFile(uniqueMeshReaderTestPath(stem), content);
 }
 
 static void requireReadThrowsContaining(const std::filesystem::path& path,
@@ -349,4 +388,21 @@ TEST_CASE("JsonMeshReader rejects contacts with missing regions", "[mesh][reader
 )json");
 
     requireReadThrowsContaining(path, "contact id 0 references missing region id 2");
+}
+
+TEST_CASE("JsonMeshReader reports JSON schema errors with filename", "[mesh][reader]")
+{
+    const auto path = writeMeshReaderTestFile("missing_node_coordinate", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0}
+  ],
+  "triangles": [],
+  "regions": [],
+  "contacts": []
+}
+)json");
+
+    requireReadThrowsContaining(path, "invalid JSON mesh");
+    requireReadThrowsContaining(path, "key 'y' not found");
 }
