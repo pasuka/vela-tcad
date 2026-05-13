@@ -4,6 +4,7 @@
 #include <Eigen/Sparse>
 #include <cmath>
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <utility>
 
@@ -23,12 +24,52 @@ Real triangleArea(const DeviceMesh& mesh, const Cell& cell)
                           (c.x - a.x) * (b.y - a.y));
 }
 
-bool matchesRegionPair(const std::string& a,
-                       const std::string& b,
-                       const InterfaceSheetChargeSpec& spec)
+struct RegionPairKey {
+    std::string first;
+    std::string second;
+
+    bool operator==(const RegionPairKey& other) const
+    {
+        return first == other.first && second == other.second;
+    }
+};
+
+struct RegionPairKeyHash {
+    std::size_t operator()(const RegionPairKey& key) const
+    {
+        const std::hash<std::string> hash;
+        return hash(key.first) ^ (hash(key.second) << 1U);
+    }
+};
+
+RegionPairKey makeRegionPairKey(std::string a, std::string b)
 {
-    return (a == spec.region0 && b == spec.region1) ||
-           (a == spec.region1 && b == spec.region0);
+    if (b < a)
+        std::swap(a, b);
+    return RegionPairKey{std::move(a), std::move(b)};
+}
+
+std::unordered_map<std::string, Real> fixedChargeByRegion(
+    const std::vector<RegionFixedChargeSpec>& fixedCharges)
+{
+    std::unordered_map<std::string, Real> fixedByRegion;
+    for (const auto& spec : fixedCharges) {
+        const auto [_, inserted] = fixedByRegion.emplace(spec.region, spec.fixedCharge);
+        if (!inserted)
+            throw std::invalid_argument(
+                "PoissonAssembler: duplicate fixed_charge_m3 for region '" +
+                spec.region + "'.");
+    }
+    return fixedByRegion;
+}
+
+std::unordered_map<RegionPairKey, Real, RegionPairKeyHash> sheetChargeByRegionPair(
+    const std::vector<InterfaceSheetChargeSpec>& sheetCharges)
+{
+    std::unordered_map<RegionPairKey, Real, RegionPairKeyHash> sheetByRegionPair;
+    for (const auto& spec : sheetCharges)
+        sheetByRegionPair[makeRegionPairKey(spec.region0, spec.region1)] += spec.sheetCharge;
+    return sheetByRegionPair;
 }
 
 } // namespace
@@ -95,9 +136,7 @@ void PoissonAssembler::assemble()
         b_(static_cast<int>(i)) = constants::q * doping_.netDoping(i) * vol[i];
 
     // ---- Region fixed charge: q * fixed_charge_m3 * cell_area / 3 ----
-    std::unordered_map<std::string, Real> fixedByRegion;
-    for (const auto& spec : fixedCharges_)
-        fixedByRegion[spec.region] += spec.fixedCharge;
+    const auto fixedByRegion = fixedChargeByRegion(fixedCharges_);
 
     if (!fixedByRegion.empty()) {
         for (Index c = 0; c < mesh_.numCells(); ++c) {
@@ -114,17 +153,21 @@ void PoissonAssembler::assemble()
 
     // ---- Interface sheet charge on shared-node region-pair edges ----
     // Allocation rule: q * sheet_charge_m2 * edge_length / 2 to each endpoint.
-    for (const auto& spec : sheetCharges_) {
+    // Pre-index configured region pairs so assembly scans edges once. Multiple
+    // sheet specs for the same unordered region pair are intentionally summed.
+    const auto sheetByRegionPair = sheetChargeByRegionPair(sheetCharges_);
+    if (!sheetByRegionPair.empty()) {
         for (Index e = 0; e < mesh_.numEdges(); ++e) {
             const auto& cells = edgeCells[e];
             if (cells.size() != 2) continue;
 
             const Region& r0 = mesh_.getRegion(mesh_.getCell(cells[0]).region_id);
             const Region& r1 = mesh_.getRegion(mesh_.getCell(cells[1]).region_id);
-            if (!matchesRegionPair(r0.name, r1.name, spec)) continue;
+            const auto it = sheetByRegionPair.find(makeRegionPairKey(r0.name, r1.name));
+            if (it == sheetByRegionPair.end()) continue;
 
             const Edge& edge = mesh_.getEdge(e);
-            const Real endpointCharge = constants::q * spec.sheetCharge * edge.length * 0.5;
+            const Real endpointCharge = constants::q * it->second * edge.length * 0.5;
             b_(static_cast<int>(edge.n0)) += endpointCharge;
             b_(static_cast<int>(edge.n1)) += endpointCharge;
         }

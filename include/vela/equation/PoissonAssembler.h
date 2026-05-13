@@ -20,8 +20,10 @@ namespace vela {
  *   -div(eps * grad(psi)) = q * (NetDoping + fixed_charge)
  *
  * Fixed region charge is supplied as an elementary-charge number density
- * [m^-3]. Sheet interface charge is supplied as an elementary-charge
- * number density [m^-2]. Both are multiplied by q during RHS assembly.
+ * [m^-3]. At most one fixed-charge spec may target a given region. Sheet
+ * interface charge is supplied as an elementary-charge number density [m^-2];
+ * multiple specs for the same unordered interface pair are summed. Both are
+ * multiplied by q during RHS assembly.
  *
  * Edge-flux formulation (Box method)
  * ------------------------------------
@@ -71,9 +73,11 @@ public:
      * May be called multiple times (e.g. after changing doping); each call
      * resets and rebuilds both matrix and RHS.
      *
+     * Fixed-charge specs with duplicate region names are rejected.
+     *
      * Sheet-charge allocation rule for shared-node interfaces:
      * every mesh edge whose two adjacent cells belong to the requested
-     * region pair is treated as an interface segment. The segment charge
+     * unordered region pair is treated as an interface segment. The segment charge
      * q * sheet_charge_m2 * edge_length is divided equally between the
      * two endpoint control volumes. This is equivalent to a line-length
      * dual-area split for a conforming shared-node 2-D mesh with unit depth.

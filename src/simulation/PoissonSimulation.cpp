@@ -32,6 +32,22 @@ std::string resolvePath(const std::filesystem::path& baseDir, const std::string&
     return resolved.string();
 }
 
+void appendFixedChargeSpec(std::vector<RegionFixedChargeSpec>& specs,
+                           std::unordered_map<std::string, std::string>& sourcesByRegion,
+                           std::string region,
+                           Real fixedCharge,
+                           std::string source)
+{
+    const auto [_, inserted] = sourcesByRegion.emplace(region, source);
+    if (!inserted)
+        throw std::runtime_error(
+            "PoissonSimulation: duplicate fixed_charge_m3 for region '" +
+            region + "' from " + sourcesByRegion.at(region) + " and " +
+            source + ". Specify fixed charge for each region only once.");
+
+    specs.push_back(RegionFixedChargeSpec{std::move(region), fixedCharge});
+}
+
 } // namespace
 
 VectorXd PoissonSimulation::run(const std::string& configFile)
@@ -73,17 +89,23 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // ------------------------------------------------------------------
     std::vector<RegionDopingSpec> dopingSpecs;
     std::vector<RegionFixedChargeSpec> fixedChargeSpecs;
+    std::unordered_map<std::string, std::string> fixedChargeSourcesByRegion;
     for (const auto& entry : cfg.at("doping")) {
+        const auto region = entry.at("region").get<std::string>();
+
         RegionDopingSpec spec;
-        spec.region    = entry.at("region").get<std::string>();
+        spec.region    = region;
         spec.donors    = entry.at("donors").get<Real>();
         spec.acceptors = entry.at("acceptors").get<Real>();
         dopingSpecs.push_back(std::move(spec));
 
         if (entry.contains("fixed_charge_m3")) {
-            fixedChargeSpecs.push_back(RegionFixedChargeSpec{
-                entry.at("region").get<std::string>(),
-                entry.at("fixed_charge_m3").get<Real>()});
+            appendFixedChargeSpec(
+                fixedChargeSpecs,
+                fixedChargeSourcesByRegion,
+                region,
+                entry.at("fixed_charge_m3").get<Real>(),
+                "doping entry");
         }
     }
     DopingModel doping = DopingModel::fromMeshAndRegions(mesh, dopingSpecs);
@@ -91,9 +113,12 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     if (cfg.contains("regions")) {
         for (const auto& entry : cfg.at("regions")) {
             if (!entry.contains("fixed_charge_m3")) continue;
-            fixedChargeSpecs.push_back(RegionFixedChargeSpec{
+            appendFixedChargeSpec(
+                fixedChargeSpecs,
+                fixedChargeSourcesByRegion,
                 entry.at("name").get<std::string>(),
-                entry.at("fixed_charge_m3").get<Real>()});
+                entry.at("fixed_charge_m3").get<Real>(),
+                "regions entry");
         }
     }
 

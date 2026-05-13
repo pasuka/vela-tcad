@@ -40,7 +40,9 @@ namespace vela {
  * Charge and contact conventions
  * ------------------------------
  * fixed_charge_m3 and sheet_charge_m2 are signed elementary-charge number
- * densities. The assembler multiplies them by q. Sheet charge on a shared-node
+ * densities. A region may define fixed_charge_m3 in either a doping entry or
+ * a top-level regions entry, but not both and not more than once. The assembler
+ * multiplies charge densities by q. Sheet charge on a shared-node
  * interface is distributed edge-by-edge: q * sheet_charge_m2 * edge_length / 2
  * is added to each endpoint of every edge whose adjacent cells match the
  * configured region pair. Contact flatband_voltage or work_function_eV shifts

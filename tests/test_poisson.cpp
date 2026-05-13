@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+#include <nlohmann/json.hpp>
 
 #include "vela/core/PhysicalConstants.h"
 #include "vela/mesh/DeviceMesh.h"
@@ -8,10 +9,12 @@
 #include "vela/equation/PoissonAssembler.h"
 #include "vela/solver/LinearSolver.h"
 #include "vela/io/VTKWriter.h"
+#include "vela/simulation/PoissonSimulation.h"
 
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
 
@@ -89,6 +92,34 @@ static DopingModel makePNDoping(const DeviceMesh& mesh)
         { "p_region", 0.0,  1e23 }
     };
     return DopingModel::fromMeshAndRegions(mesh, specs);
+}
+
+static std::filesystem::path writePNMeshJson(const std::filesystem::path& dir)
+{
+    nlohmann::json mesh = {
+        {"nodes", {
+            {{"id", 0}, {"x", 0.0e-6}, {"y", 0.0e-6}},
+            {{"id", 1}, {"x", 1.0e-6}, {"y", 0.0e-6}},
+            {{"id", 2}, {"x", 1.0e-6}, {"y", 1.0e-6}},
+            {{"id", 3}, {"x", 0.0e-6}, {"y", 1.0e-6}}
+        }},
+        {"triangles", {
+            {{"id", 0}, {"region_id", 0}, {"node_ids", {0, 1, 2}}},
+            {{"id", 1}, {"region_id", 1}, {"node_ids", {0, 2, 3}}}
+        }},
+        {"regions", {
+            {{"id", 0}, {"name", "n_region"}, {"material", "Si"}, {"cell_ids", {0}}},
+            {{"id", 1}, {"name", "p_region"}, {"material", "Si"}, {"cell_ids", {1}}}
+        }},
+        {"contacts", {
+            {{"id", 0}, {"name", "anode"}, {"region_id", 1}, {"node_ids", {0, 3}}},
+            {{"id", 1}, {"name", "cathode"}, {"region_id", 0}, {"node_ids", {1, 2}}}
+        }}
+    };
+
+    const auto meshPath = dir / "mesh.json";
+    std::ofstream(meshPath) << mesh.dump(2);
+    return meshPath;
 }
 
 // ---------------------------------------------------------------------------
@@ -303,6 +334,57 @@ TEST_CASE("PoissonAssembler: zero explicit charge matches legacy RHS", "[poisson
         REQUIRE(explicitZero.rhs()(i) == Catch::Approx(legacy.rhs()(i)).margin(1e-30));
 }
 
+TEST_CASE("PoissonSimulation: duplicate fixed charge config entries are rejected", "[poisson][charge]")
+{
+    const auto dir = std::filesystem::temp_directory_path() /
+                     "vela_poisson_duplicate_fixed_charge_test";
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+
+    const auto meshPath = writePNMeshJson(dir);
+    const auto configPath = dir / "poisson_duplicate_fixed_charge.json";
+    const nlohmann::json cfg = {
+        {"mesh_file", meshPath.string()},
+        {"output_vtk", (dir / "out.vtk").string()},
+        {"doping", {
+            {{"region", "n_region"},
+             {"donors", 1.0e23},
+             {"acceptors", 0.0},
+             {"fixed_charge_m3", 1.0e20}},
+            {{"region", "p_region"}, {"donors", 0.0}, {"acceptors", 1.0e23}}
+        }},
+        {"regions", {
+            {{"name", "n_region"}, {"fixed_charge_m3", 2.0e20}}
+        }},
+        {"contacts", {
+            {{"name", "anode"}, {"bias", 0.0}},
+            {{"name", "cathode"}, {"bias", 0.0}}
+        }}
+    };
+    std::ofstream(configPath) << cfg.dump(2);
+
+    PoissonSimulation sim;
+    REQUIRE_THROWS_AS(sim.runWithResult(configPath.string()), std::runtime_error);
+
+    std::filesystem::remove_all(dir);
+}
+
+TEST_CASE("PoissonAssembler: duplicate fixed charge specs are rejected", "[poisson][charge]")
+{
+    DeviceMesh mesh = makeMOSCapChargeMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makeZeroMOSCapDoping(mesh);
+
+    PoissonAssembler asm_(
+        mesh,
+        matdb,
+        doping,
+        {RegionFixedChargeSpec{"oxide", 1.0e21},
+         RegionFixedChargeSpec{"oxide", 2.0e21}});
+
+    REQUIRE_THROWS_AS(asm_.assemble(), std::invalid_argument);
+}
+
 TEST_CASE("PoissonAssembler: fixed charge sign shifts MOS capacitor potential", "[poisson][charge]")
 {
     const VectorXd zero = solveMOSCapChargeCase({});
@@ -330,7 +412,8 @@ TEST_CASE("PoissonAssembler: sheet charge is split to shared interface endpoints
         matdb,
         doping,
         {},
-        {InterfaceSheetChargeSpec{"silicon", "oxide", 2.0e15}});
+        {InterfaceSheetChargeSpec{"silicon", "oxide", 1.25e15},
+         InterfaceSheetChargeSpec{"oxide", "silicon", 0.75e15}});
     asm_.assemble();
 
     const Real expectedEndpointCharge = constants::q * 2.0e15 * 1.0e-6 * 0.5;
