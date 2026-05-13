@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/mesh/DeviceMesh.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/solver/GummelSolver.h"
 #include <string>
@@ -37,9 +38,15 @@ struct DCSweepPoint {
     int retryCount = 0;
 };
 
+struct DCSweepResult {
+    DeviceMesh mesh;
+    std::vector<DCSweepPoint> points;
+};
+
 class DCSweep {
 public:
     std::vector<DCSweepPoint> run(const std::string& configFile) const;
+    DCSweepResult runWithResult(const std::string& configFile) const;
 };
 
 } // namespace vela

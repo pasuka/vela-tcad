@@ -2,6 +2,7 @@
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/mesh/MeshEntity.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <iostream>
 #include <map>
@@ -14,11 +15,27 @@ namespace vela {
 namespace {
 
 constexpr Real kDegenerateTol = 1.0e-30;
+constexpr Real kPi = 3.141592653589793238462643383279502884;
 
 std::pair<Index, Index> edgeKey(Index a, Index b)
 {
     if (a > b) std::swap(a, b);
     return {a, b};
+}
+
+Real angleDegreesAt(const Node& a, const Node& b, const Node& c)
+{
+    const Real ux = b.x - a.x;
+    const Real uy = b.y - a.y;
+    const Real vx = c.x - a.x;
+    const Real vy = c.y - a.y;
+    const Real ul = std::sqrt(ux * ux + uy * uy);
+    const Real vl = std::sqrt(vx * vx + vy * vy);
+    if (ul < kDegenerateTol || vl < kDegenerateTol)
+        return 0.0;
+
+    const Real cosTheta = std::clamp((ux * vx + uy * vy) / (ul * vl), -1.0, 1.0);
+    return std::acos(cosTheta) * 180.0 / kPi;
 }
 
 Real cotangentAtOppositeVertex(const Node& a, const Node& b, const Node& opp)
@@ -62,13 +79,34 @@ Real BoxGeometryBuilder::triangleArea(const DeviceMesh& mesh, const Cell& cell)
 
 void BoxGeometryBuilder::build(DeviceMesh& mesh)
 {
-    build(mesh, Options{});
+    (void)buildWithReport(mesh, Options{});
 }
 
 void BoxGeometryBuilder::build(DeviceMesh& mesh, const Options& options)
 {
+    (void)buildWithReport(mesh, options);
+}
+
+GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh)
+{
+    return buildWithReport(mesh, Options{});
+}
+
+GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const Options& options)
+{
     if (mesh.edges_.empty() && !mesh.cells_.empty())
         mesh.buildEdgesOnly();
+
+    GeometryBuildReport report;
+    report.totalCells = mesh.cells_.size();
+
+    bool hasEdgeLength = false;
+    for (const auto& edge : mesh.edges_) {
+        if (!hasEdgeLength || edge.length < report.minEdgeLength) {
+            report.minEdgeLength = edge.length;
+            hasEdgeLength = true;
+        }
+    }
 
     for (auto& node : mesh.nodes_)
         node.volume = 0.0;
@@ -79,14 +117,36 @@ void BoxGeometryBuilder::build(DeviceMesh& mesh, const Options& options)
     for (Index e = 0; e < mesh.edges_.size(); ++e)
         edgeMap[edgeKey(mesh.edges_[e].n0, mesh.edges_[e].n1)] = e;
 
+    bool hasAngle = false;
     for (const auto& cell : mesh.cells_) {
         if (cell.type != CellType::Tri3 || cell.node_ids.size() < 3)
             continue;
 
         const Index ids[3] = {cell.node_ids[0], cell.node_ids[1], cell.node_ids[2]};
-        const Real area = triangleArea(mesh, cell);
-        if (area <= 0.0)
+        const Node& n0 = mesh.getNode(ids[0]);
+        const Node& n1 = mesh.getNode(ids[1]);
+        const Node& n2 = mesh.getNode(ids[2]);
+        const Real area = triangleArea(n0, n1, n2);
+        if (area <= kDegenerateTol) {
+            ++report.degenerateCells;
             continue;
+        }
+
+        const std::array<Real, 3> angles = {
+            angleDegreesAt(n0, n1, n2),
+            angleDegreesAt(n1, n2, n0),
+            angleDegreesAt(n2, n0, n1),
+        };
+        for (Real angle : angles) {
+            if (!hasAngle) {
+                report.minAngleDegrees = angle;
+                report.maxAngleDegrees = angle;
+                hasAngle = true;
+            } else {
+                report.minAngleDegrees = std::min(report.minAngleDegrees, angle);
+                report.maxAngleDegrees = std::max(report.maxAngleDegrees, angle);
+            }
+        }
 
         const Real nodeShare = area / 3.0;
         for (Index id : ids)
@@ -114,11 +174,13 @@ void BoxGeometryBuilder::build(DeviceMesh& mesh, const Options& options)
 
             Real localCouple = 0.5 * cot * edge.length;
             if (cot < 0.0) {
+                ++report.negativeCotangentCount;
                 if (options.warnOnNegativeCotangent)
                     warnNegativeCotangent(cell.id, a, b, cot);
 
                 if (options.fallbackNegativeCotangent) {
                     localCouple = area / (3.0 * edge.length);
+                    ++report.fallbackCount;
                 } else {
                     localCouple = 0.0;
                 }
@@ -129,6 +191,8 @@ void BoxGeometryBuilder::build(DeviceMesh& mesh, const Options& options)
             edge.couple += localCouple;
         }
     }
+
+    return report;
 }
 
 } // namespace vela

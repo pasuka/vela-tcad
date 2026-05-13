@@ -157,9 +157,12 @@ TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV da
     const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath);
 
     DCSweep sweep;
-    const std::vector<DCSweepPoint> points = sweep.run(cfgPath.string());
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    const std::vector<DCSweepPoint>& points = result.points;
 
     REQUIRE(points.size() == 3);
+    REQUIRE(result.mesh.numNodes() == 4);
+    REQUIRE(result.mesh.lastGeometryBuildReport().totalCells == 2);
     REQUIRE(std::filesystem::exists(csvPath));
     REQUIRE(std::filesystem::file_size(csvPath) > 0);
 
@@ -198,9 +201,12 @@ TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_swe
     });
 
     DCSweep sweep;
-    const std::vector<DCSweepPoint> points = sweep.run(cfgPath.string());
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    const std::vector<DCSweepPoint>& points = result.points;
 
     REQUIRE(points.size() == 3);
+    REQUIRE(result.mesh.numNodes() == 4);
+    REQUIRE(result.mesh.lastGeometryBuildReport().totalCells == 2);
     REQUIRE(points[0].voltage == Catch::Approx(0.5));
     REQUIRE(points[1].voltage == Catch::Approx(0.25));
     REQUIRE(points[2].voltage == Catch::Approx(0.0));

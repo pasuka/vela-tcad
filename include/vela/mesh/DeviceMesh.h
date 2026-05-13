@@ -1,14 +1,13 @@
 #pragma once
 
 #include "vela/mesh/MeshEntity.h"
+#include "vela/mesh/BoxGeometryBuilder.h"
 #include <vector>
 #include <unordered_map>
 #include <string>
 #include <stdexcept>
 
 namespace vela {
-
-class BoxGeometryBuilder;
 
 /**
  * @brief Container for the 2-D device mesh.
@@ -58,6 +57,7 @@ public:
     const Cell&    getCell   (Index id) const;
     const Region&  getRegion (Index id) const;
     const Contact& getContact(Index id) const;
+    const GeometryBuildReport& lastGeometryBuildReport() const { return lastGeometryBuildReport_; }
 
     // Accessors to full collections (read-only)
     const std::vector<Node>&    nodes()    const { return nodes_;    }
@@ -76,6 +76,7 @@ private:
     std::vector<Cell>    cells_;
     std::vector<Region>  regions_;
     std::vector<Contact> contacts_;
+    GeometryBuildReport lastGeometryBuildReport_;
 };
 
 } // namespace vela

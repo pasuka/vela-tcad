@@ -150,3 +150,20 @@ TEST_CASE("BoxGeometryBuilder: warnings are opt-in", "[box_geometry]")
     REQUIRE(mesh.getEdge(0).couple >= 0.0);
     REQUIRE(capturedErr.str().empty());
 }
+
+TEST_CASE("BoxGeometryBuilder: obtuse triangle reports fallback and keeps couplings non-negative", "[box_geometry]")
+{
+    DeviceMesh mesh = makeObtuseTriangle();
+    const GeometryBuildReport& report = mesh.lastGeometryBuildReport();
+
+    REQUIRE(report.totalCells == 1);
+    REQUIRE(report.degenerateCells == 0);
+    REQUIRE(report.negativeCotangentCount == 1);
+    REQUIRE(report.fallbackCount == 1);
+    REQUIRE(report.minAngleDegrees > 0.0);
+    REQUIRE(report.maxAngleDegrees > 90.0);
+    REQUIRE(report.minEdgeLength > 0.0);
+
+    for (const Edge& edge : mesh.edges())
+        REQUIRE(edge.couple >= 0.0);
+}
