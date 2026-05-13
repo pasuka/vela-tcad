@@ -4,6 +4,7 @@
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -16,7 +17,13 @@ namespace vela {
  *   -div(eps * grad(psi)) = q * (p - n + Nd - Na)
  *
  * with n = p = 0 in the current (linear) stage, reducing to:
- *   -div(eps * grad(psi)) = q * NetDoping
+ *   -div(eps * grad(psi)) = q * (NetDoping + fixed_charge)
+ *
+ * Fixed region charge is supplied as an elementary-charge number density
+ * [m^-3]. At most one fixed-charge spec may target a given region. Sheet
+ * interface charge is supplied as an elementary-charge number density [m^-2];
+ * multiple specs for the same unordered interface pair are summed. Both are
+ * multiplied by q during RHS assembly.
  *
  * Edge-flux formulation (Box method)
  * ------------------------------------
@@ -41,17 +48,39 @@ namespace vela {
  *   auto psi = LinearSolver().solve(asm.matrix(), asm.rhs());
  * @endcode
  */
+struct RegionFixedChargeSpec {
+    std::string region;          ///< Region name (matches Region::name)
+    Real        fixedCharge = 0; ///< Fixed charge density [m^-3], in units of q
+};
+
+struct InterfaceSheetChargeSpec {
+    std::string region0;          ///< First region name adjacent to the interface
+    std::string region1;          ///< Second region name adjacent to the interface
+    Real        sheetCharge = 0;  ///< Sheet charge density [m^-2], in units of q
+};
+
 class PoissonAssembler {
 public:
     PoissonAssembler(const DeviceMesh&      mesh,
                      const MaterialDatabase& matdb,
-                     const DopingModel&      doping);
+                     const DopingModel&      doping,
+                     std::vector<RegionFixedChargeSpec> fixedCharges = {},
+                     std::vector<InterfaceSheetChargeSpec> sheetCharges = {});
 
     /**
      * @brief Assemble the global stiffness matrix and RHS.
      *
      * May be called multiple times (e.g. after changing doping); each call
      * resets and rebuilds both matrix and RHS.
+     *
+     * Fixed-charge specs with duplicate region names are rejected.
+     *
+     * Sheet-charge allocation rule for shared-node interfaces:
+     * every mesh edge whose two adjacent cells belong to the requested
+     * unordered region pair is treated as an interface segment. The segment charge
+     * q * sheet_charge_m2 * edge_length is divided equally between the
+     * two endpoint control volumes. This is equivalent to a line-length
+     * dual-area split for a conforming shared-node 2-D mesh with unit depth.
      */
     void assemble();
 
@@ -76,6 +105,8 @@ private:
     const DeviceMesh&       mesh_;
     const MaterialDatabase& matdb_;
     const DopingModel&      doping_;
+    std::vector<RegionFixedChargeSpec> fixedCharges_;
+    std::vector<InterfaceSheetChargeSpec> sheetCharges_;
 
     SparseMatrixd A_;
     VectorXd      b_;

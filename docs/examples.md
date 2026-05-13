@@ -104,7 +104,7 @@ regression; the case is Poisson-only.
 
 - `mesh.json`: layered triangular mesh with a silicon slab, a silicon-dioxide
   slab, shared interface nodes at `y = 0.30 um`, and `body`/`gate` contacts.
-- `simulation.json`: Poisson configuration with zero fixed charge and a
+- `simulation.json`: Poisson configuration with nonzero oxide `fixed_charge_m3` and a
   `regression` block describing interface probe locations and tolerances.
 
 **Run directly.**
