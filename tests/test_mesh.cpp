@@ -1,7 +1,17 @@
 #include <catch2/catch_test_macros.hpp>
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
+#include "vela/io/MeshReader.h"
+#include <atomic>
+#include <chrono>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <thread>
+#include <utility>
 
 using namespace vela;
 
@@ -126,4 +136,273 @@ TEST_CASE("MaterialDatabase: unknown material throws", "[material]")
 {
     MaterialDatabase db;
     REQUIRE_THROWS_AS(db.getMaterial("GaAs"), std::out_of_range);
+}
+
+struct TemporaryMeshFile {
+    std::filesystem::path path;
+
+    TemporaryMeshFile(std::filesystem::path file_path, const std::string& content)
+        : path(std::move(file_path))
+    {
+        std::ofstream ofs(path);
+        REQUIRE(ofs.is_open());
+        ofs << content;
+    }
+
+    TemporaryMeshFile(const TemporaryMeshFile&) = delete;
+    TemporaryMeshFile& operator=(const TemporaryMeshFile&) = delete;
+
+    TemporaryMeshFile(TemporaryMeshFile&&) = default;
+    TemporaryMeshFile& operator=(TemporaryMeshFile&&) = default;
+
+    ~TemporaryMeshFile()
+    {
+        std::error_code ec;
+        std::filesystem::remove(path, ec);
+    }
+
+    operator const std::filesystem::path&() const { return path; }
+};
+
+static std::filesystem::path uniqueMeshReaderTestPath(const std::string& stem)
+{
+    static std::atomic<unsigned long long> counter{0};
+
+    std::ostringstream name;
+    name << "vela_mesh_reader_" << stem << '_'
+         << std::chrono::steady_clock::now().time_since_epoch().count() << '_'
+         << std::this_thread::get_id() << '_'
+         << counter.fetch_add(1, std::memory_order_relaxed) << ".json";
+
+    return std::filesystem::temp_directory_path() / name.str();
+}
+
+static TemporaryMeshFile writeMeshReaderTestFile(const std::string& stem,
+                                                const std::string& content)
+{
+    return TemporaryMeshFile(uniqueMeshReaderTestPath(stem), content);
+}
+
+static void requireReadThrowsContaining(const std::filesystem::path& path,
+                                        const std::string& expected)
+{
+    JsonMeshReader reader;
+    try {
+        (void)reader.read(path.string());
+        FAIL("expected JsonMeshReader::read to throw");
+    } catch (const std::runtime_error& e) {
+        const std::string message = e.what();
+        REQUIRE(message.find(path.string()) != std::string::npos);
+        REQUIRE(message.find(expected) != std::string::npos);
+    }
+}
+
+TEST_CASE("JsonMeshReader rejects non-contiguous ids", "[mesh][reader]")
+{
+    const auto path = writeMeshReaderTestFile("non_contiguous_ids", R"json(
+{
+  "nodes": [
+    {"id": 1, "x": 0.0, "y": 0.0},
+    {"id": 0, "x": 1.0, "y": 0.0},
+    {"id": 2, "x": 0.0, "y": 1.0}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]}
+  ],
+  "regions": [
+    {"id": 0, "name": "Si", "material": "Si", "cell_ids": [0]}
+  ],
+  "contacts": [
+    {"id": 0, "name": "anode", "region_id": 0, "node_ids": [0]}
+  ]
+}
+)json");
+
+    requireReadThrowsContaining(path, "node id 1 must be 0");
+}
+
+TEST_CASE("JsonMeshReader rejects triangles with missing nodes", "[mesh][reader]")
+{
+    const auto path = writeMeshReaderTestFile("missing_triangle_node", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 1.0, "y": 0.0},
+    {"id": 2, "x": 0.0, "y": 1.0}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 0, "node_ids": [0, 1, 9]}
+  ],
+  "regions": [
+    {"id": 0, "name": "Si", "material": "Si", "cell_ids": [0]}
+  ],
+  "contacts": [
+    {"id": 0, "name": "anode", "region_id": 0, "node_ids": [0]}
+  ]
+}
+)json");
+
+    requireReadThrowsContaining(path, "triangle id 0 references missing node id 9");
+}
+
+TEST_CASE("JsonMeshReader rejects triangles with missing regions", "[mesh][reader]")
+{
+    const auto path = writeMeshReaderTestFile("missing_triangle_region", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 1.0, "y": 0.0},
+    {"id": 2, "x": 0.0, "y": 1.0}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 3, "node_ids": [0, 1, 2]}
+  ],
+  "regions": [
+    {"id": 0, "name": "Si", "material": "Si", "cell_ids": [0]}
+  ],
+  "contacts": [
+    {"id": 0, "name": "anode", "region_id": 0, "node_ids": [0]}
+  ]
+}
+)json");
+
+    requireReadThrowsContaining(path, "triangle id 0 references missing region id 3");
+}
+
+TEST_CASE("JsonMeshReader rejects triangles with the wrong node count", "[mesh][reader]")
+{
+    const auto path = writeMeshReaderTestFile("wrong_triangle_node_count", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 1.0, "y": 0.0},
+    {"id": 2, "x": 0.0, "y": 1.0}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 0, "node_ids": [0, 1]}
+  ],
+  "regions": [
+    {"id": 0, "name": "Si", "material": "Si", "cell_ids": [0]}
+  ],
+  "contacts": [
+    {"id": 0, "name": "anode", "region_id": 0, "node_ids": [0]}
+  ]
+}
+)json");
+
+    requireReadThrowsContaining(path, "triangle id 0 must have exactly 3 node ids");
+}
+
+TEST_CASE("JsonMeshReader rejects inconsistent region cell references", "[mesh][reader]")
+{
+    const auto path = writeMeshReaderTestFile("region_cell_mismatch", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 1.0, "y": 0.0},
+    {"id": 2, "x": 0.0, "y": 1.0}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 1, "node_ids": [0, 1, 2]}
+  ],
+  "regions": [
+    {"id": 0, "name": "Si", "material": "Si", "cell_ids": [0]},
+    {"id": 1, "name": "Ox", "material": "SiO2", "cell_ids": []}
+  ],
+  "contacts": [
+    {"id": 0, "name": "anode", "region_id": 0, "node_ids": [0]}
+  ]
+}
+)json");
+
+    requireReadThrowsContaining(path, "region id 0 references cell id 0 whose region id is 1");
+}
+
+TEST_CASE("JsonMeshReader rejects contacts with missing references", "[mesh][reader]")
+{
+    const auto path = writeMeshReaderTestFile("contact_missing_node", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 1.0, "y": 0.0},
+    {"id": 2, "x": 0.0, "y": 1.0}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]}
+  ],
+  "regions": [
+    {"id": 0, "name": "Si", "material": "Si", "cell_ids": [0]}
+  ],
+  "contacts": [
+    {"id": 0, "name": "anode", "region_id": 0, "node_ids": [4]}
+  ]
+}
+)json");
+
+    requireReadThrowsContaining(path, "contact id 0 references missing node id 4");
+}
+
+TEST_CASE("JsonMeshReader rejects regions with missing cells", "[mesh][reader]")
+{
+    const auto path = writeMeshReaderTestFile("region_missing_cell", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 1.0, "y": 0.0},
+    {"id": 2, "x": 0.0, "y": 1.0}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]}
+  ],
+  "regions": [
+    {"id": 0, "name": "Si", "material": "Si", "cell_ids": [3]}
+  ],
+  "contacts": [
+    {"id": 0, "name": "anode", "region_id": 0, "node_ids": [0]}
+  ]
+}
+)json");
+
+    requireReadThrowsContaining(path, "region id 0 references missing cell id 3");
+}
+
+TEST_CASE("JsonMeshReader rejects contacts with missing regions", "[mesh][reader]")
+{
+    const auto path = writeMeshReaderTestFile("contact_missing_region", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 1.0, "y": 0.0},
+    {"id": 2, "x": 0.0, "y": 1.0}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]}
+  ],
+  "regions": [
+    {"id": 0, "name": "Si", "material": "Si", "cell_ids": [0]}
+  ],
+  "contacts": [
+    {"id": 0, "name": "anode", "region_id": 2, "node_ids": [0]}
+  ]
+}
+)json");
+
+    requireReadThrowsContaining(path, "contact id 0 references missing region id 2");
+}
+
+TEST_CASE("JsonMeshReader reports JSON schema errors with filename", "[mesh][reader]")
+{
+    const auto path = writeMeshReaderTestFile("missing_node_coordinate", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0}
+  ],
+  "triangles": [],
+  "regions": [],
+  "contacts": []
+}
+)json");
+
+    requireReadThrowsContaining(path, "invalid JSON mesh");
+    requireReadThrowsContaining(path, "key 'y' not found");
 }
