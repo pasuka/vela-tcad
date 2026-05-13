@@ -3,7 +3,7 @@
 ## 1. 输入来源
 1. 架构/算法风险审计（Vela Architecture Analyst）。
 2. 测试覆盖缺口审计（Explore）。
-3. 基线文档：[docs/agent_handoff_baseline_2026-05-13.md](docs/agent_handoff_baseline_2026-05-13.md)
+3. 基线文档：[docs/agent_handoff_baseline_2026-05-13.md](agent_handoff_baseline_2026-05-13.md)
 
 ## 2. 合并优先级规则
 1. 先修复“功能不可达/易误用”的阻断项。
@@ -14,20 +14,20 @@
 
 | ID | 优先级 | 类型 | 事项 | 关键改动位置 | 测试任务 | 依赖 |
 |---|---|---|---|---|---|---|
-| B01 | P0 | 功能缺口 | 暴露 Newton 入口（CLI + 可选 DCSweep 分派） | [src/tools/vela_example_runner.cpp](src/tools/vela_example_runner.cpp#L64), [src/simulation/DCSweep.cpp](src/simulation/DCSweep.cpp#L173), [include/vela/simulation/DCSweep.h](include/vela/simulation/DCSweep.h#L1) | 新增 Newton 路径集成测试，确保配置可达 | 无 |
-| B02 | P0 | 稳定性 | Gummel 收敛判据增加 abstol 保底，避免三重相对误差锁死 | [include/vela/solver/GummelSolver.h](include/vela/solver/GummelSolver.h#L30), [src/solver/GummelSolver.cpp](src/solver/GummelSolver.cpp#L287) | 新增边界收敛测试（高掺杂/强阻尼/maxIter耗尽） | 无 |
-| B03 | P0 | 测试缺口 | LineSearch 回溯失败路径专测（alpha 衰减/acceptFunction 拒绝/minDamping 边界） | [src/numerics/LineSearch.cpp](src/numerics/LineSearch.cpp#L11), [include/vela/numerics/LineSearch.h](include/vela/numerics/LineSearch.h#L9) | 新文件 tests/test_line_search_backtrack_failure.cpp | 无 |
-| B04 | P0 | 测试缺口 | Newton 线搜索失败回退行为专测（返回 acceptedX） | [src/solver/NewtonSolver.cpp](src/solver/NewtonSolver.cpp#L238), [src/solver/NewtonSolver.cpp](src/solver/NewtonSolver.cpp#L248) | 扩展 [tests/test_newton_solver.cpp](tests/test_newton_solver.cpp#L261) | B03 |
-| B05 | P1 | 稳定性 | Newton 残差按分块归一化/加权，减轻混合量纲停机偏差 | [src/solver/NewtonSolver.cpp](src/solver/NewtonSolver.cpp#L219), [src/numerics/ResidualNorm.cpp](src/numerics/ResidualNorm.cpp#L16), [include/vela/solver/NewtonSolver.h](include/vela/solver/NewtonSolver.h#L18) | 新增分块残差停机行为测试 | B04 |
-| B06 | P1 | 可维护性 | SG 通量实现收敛到单一代码路径（DDAssembler 与 CoupledDDAssembler 一致） | [src/equation/DDAssembler.cpp](src/equation/DDAssembler.cpp#L143), [src/equation/CoupledDDAssembler.cpp](src/equation/CoupledDDAssembler.cpp#L173) | 新增一致性对比测试 | B02 |
-| B07 | P1 | 稳定性/性能 | Newton warm-start 选项化（避免无条件清零 phin/phip） | [src/solver/NewtonSolver.cpp](src/solver/NewtonSolver.cpp#L128), [src/solver/NewtonSolver.cpp](src/solver/NewtonSolver.cpp#L194), [include/vela/solver/NewtonSolver.h](include/vela/solver/NewtonSolver.h#L18) | 扩展 Newton 扫描迭代数对比测试 | B01 |
-| B08 | P1 | 功能缺口 | 温度参数化（300K硬编码改为配置透传） | [src/solver/GummelSolver.cpp](src/solver/GummelSolver.cpp#L21), [src/solver/NewtonSolver.cpp](src/solver/NewtonSolver.cpp#L16), [include/vela/solver/GummelSolver.h](include/vela/solver/GummelSolver.h#L30), [include/vela/solver/NewtonSolver.h](include/vela/solver/NewtonSolver.h#L18) | 新增温度敏感性测试 | B02 |
-| B09 | P1 | 测试缺口 | DCSweep 步长边界专测（growth 后失败回缩、minStep 触发中止） | [src/simulation/DCSweep.cpp](src/simulation/DCSweep.cpp#L256), [src/simulation/DCSweep.cpp](src/simulation/DCSweep.cpp#L266) | 扩展 [tests/test_dc_sweep.cpp](tests/test_dc_sweep.cpp#L217) | 无 |
-| B10 | P1 | 测试缺口 | 高掺杂 Gummel 稳定性专测（1e24 级） | [src/solver/GummelSolver.cpp](src/solver/GummelSolver.cpp#L222), [tests/test_dd_gummel.cpp](tests/test_dd_gummel.cpp#L175) | 新文件 tests/test_gummel_high_doping.cpp | B02 |
-| B11 | P2 | 性能 | DDAssembler 缓存几何量（edgeCells/nodeVolumes/edgeCouplings） | [src/equation/DDAssembler.cpp](src/equation/DDAssembler.cpp#L69), [src/equation/CoupledDDAssembler.cpp](src/equation/CoupledDDAssembler.cpp#L54) | 回归测试确保数值等价 | B06 |
-| B12 | P2 | 性能 | LinearSolver 稀疏结构复用（analyzePattern 缓存） | [src/solver/LinearSolver.cpp](src/solver/LinearSolver.cpp#L9) | 压测/性能回归（不改物理结果） | B11 |
-| B13 | P2 | 功能缺口 | Bandgap Narrowing 实体模型实现 | [src/physics/BandgapNarrowing.cpp](src/physics/BandgapNarrowing.cpp#L5), [src/physics/RecombinationModel.cpp](src/physics/RecombinationModel.cpp#L36) | 新增 BGN 单测 + 回归样例 | B08 |
-| B14 | P2 | 可观测性 | LineSearch/Newton 增强诊断历史（可选） | [src/numerics/LineSearch.cpp](src/numerics/LineSearch.cpp#L11), [src/solver/NewtonSolver.cpp](src/solver/NewtonSolver.cpp#L269) | 输出历史结构测试 | B03 |
+| B01 | P0 | 功能缺口 | 暴露 Newton 入口（CLI + 可选 DCSweep 分派） | [src/tools/vela_example_runner.cpp](../src/tools/vela_example_runner.cpp#L64), [src/simulation/DCSweep.cpp](../src/simulation/DCSweep.cpp#L173), [include/vela/simulation/DCSweep.h](../include/vela/simulation/DCSweep.h#L1) | 新增 Newton 路径集成测试，确保配置可达 | 无 |
+| B02 | P0 | 稳定性 | Gummel 收敛判据增加 abstol 保底，避免三重相对误差锁死 | [include/vela/solver/GummelSolver.h](../include/vela/solver/GummelSolver.h#L30), [src/solver/GummelSolver.cpp](../src/solver/GummelSolver.cpp#L287) | 新增边界收敛测试（高掺杂/强阻尼/maxIter耗尽） | 无 |
+| B03 | P0 | 测试缺口 | LineSearch 回溯失败路径专测（alpha 衰减/acceptFunction 拒绝/minDamping 边界） | [src/numerics/LineSearch.cpp](../src/numerics/LineSearch.cpp#L11), [include/vela/numerics/LineSearch.h](../include/vela/numerics/LineSearch.h#L9) | 新文件 tests/test_line_search_backtrack_failure.cpp | 无 |
+| B04 | P0 | 测试缺口 | Newton 线搜索失败回退行为专测（返回 acceptedX） | [src/solver/NewtonSolver.cpp](../src/solver/NewtonSolver.cpp#L238), [src/solver/NewtonSolver.cpp](../src/solver/NewtonSolver.cpp#L248) | 扩展 [tests/test_newton_solver.cpp](../tests/test_newton_solver.cpp#L261) | B03 |
+| B05 | P1 | 稳定性 | Newton 残差按分块归一化/加权，减轻混合量纲停机偏差 | [src/solver/NewtonSolver.cpp](../src/solver/NewtonSolver.cpp#L219), [src/numerics/ResidualNorm.cpp](../src/numerics/ResidualNorm.cpp#L16), [include/vela/solver/NewtonSolver.h](../include/vela/solver/NewtonSolver.h#L18) | 新增分块残差停机行为测试 | B04 |
+| B06 | P1 | 可维护性 | SG 通量实现收敛到单一代码路径（DDAssembler 与 CoupledDDAssembler 一致） | [src/equation/DDAssembler.cpp](../src/equation/DDAssembler.cpp#L143), [src/equation/CoupledDDAssembler.cpp](../src/equation/CoupledDDAssembler.cpp#L173) | 新增一致性对比测试 | B02 |
+| B07 | P1 | 稳定性/性能 | Newton warm-start 选项化（避免无条件清零 phin/phip） | [src/solver/NewtonSolver.cpp](../src/solver/NewtonSolver.cpp#L128), [src/solver/NewtonSolver.cpp](../src/solver/NewtonSolver.cpp#L194), [include/vela/solver/NewtonSolver.h](../include/vela/solver/NewtonSolver.h#L18) | 扩展 Newton 扫描迭代数对比测试 | B01 |
+| B08 | P1 | 功能缺口 | 温度参数化（300K硬编码改为配置透传） | [src/solver/GummelSolver.cpp](../src/solver/GummelSolver.cpp#L21), [src/solver/NewtonSolver.cpp](../src/solver/NewtonSolver.cpp#L16), [include/vela/solver/GummelSolver.h](../include/vela/solver/GummelSolver.h#L30), [include/vela/solver/NewtonSolver.h](../include/vela/solver/NewtonSolver.h#L18) | 新增温度敏感性测试 | B02 |
+| B09 | P1 | 测试缺口 | DCSweep 步长边界专测（growth 后失败回缩、minStep 触发中止） | [src/simulation/DCSweep.cpp](../src/simulation/DCSweep.cpp#L256), [src/simulation/DCSweep.cpp](../src/simulation/DCSweep.cpp#L266) | 扩展 [tests/test_dc_sweep.cpp](../tests/test_dc_sweep.cpp#L217) | 无 |
+| B10 | P1 | 测试缺口 | 高掺杂 Gummel 稳定性专测（1e24 级） | [src/solver/GummelSolver.cpp](../src/solver/GummelSolver.cpp#L222), [tests/test_dd_gummel.cpp](../tests/test_dd_gummel.cpp#L175) | 新文件 tests/test_gummel_high_doping.cpp | B02 |
+| B11 | P2 | 性能 | DDAssembler 缓存几何量（edgeCells/nodeVolumes/edgeCouplings） | [src/equation/DDAssembler.cpp](../src/equation/DDAssembler.cpp#L69), [src/equation/CoupledDDAssembler.cpp](../src/equation/CoupledDDAssembler.cpp#L54) | 回归测试确保数值等价 | B06 |
+| B12 | P2 | 性能 | LinearSolver 稀疏结构复用（analyzePattern 缓存） | [src/solver/LinearSolver.cpp](../src/solver/LinearSolver.cpp#L9) | 压测/性能回归（不改物理结果） | B11 |
+| B13 | P2 | 功能缺口 | Bandgap Narrowing 实体模型实现 | [src/physics/BandgapNarrowing.cpp](../src/physics/BandgapNarrowing.cpp#L5), [src/physics/RecombinationModel.cpp](../src/physics/RecombinationModel.cpp#L36) | 新增 BGN 单测 + 回归样例 | B08 |
+| B14 | P2 | 可观测性 | LineSearch/Newton 增强诊断历史（可选） | [src/numerics/LineSearch.cpp](../src/numerics/LineSearch.cpp#L11), [src/solver/NewtonSolver.cpp](../src/solver/NewtonSolver.cpp#L269) | 输出历史结构测试 | B03 |
 
 ## 4. 串行执行建议（里程碑）
 
