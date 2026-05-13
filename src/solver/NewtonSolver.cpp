@@ -9,6 +9,7 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <string>
 
 namespace vela {
 namespace {
@@ -22,6 +23,23 @@ inline double nEq(double Ndop, double ni)
 {
     const double half = 0.5 * Ndop;
     return half + std::sqrt(half * half + ni * ni);
+}
+
+void validateResidualWeights(
+    Real psi,
+    Real phin,
+    Real phip,
+    const char* context)
+{
+    const bool allFinite = std::isfinite(psi) && std::isfinite(phin) && std::isfinite(phip);
+    const bool allNonnegative = psi >= 0.0 && phin >= 0.0 && phip >= 0.0;
+    const bool anyEnabled = psi > 0.0 || phin > 0.0 || phip > 0.0;
+    if (!allFinite || !allNonnegative || !anyEnabled) {
+        throw std::invalid_argument(
+            std::string(context)
+            + ": residual_weights values must be finite, nonnegative, "
+              "and leave at least one block enabled.");
+    }
 }
 
 ResidualBlockWeights residualWeightsFromConfig(const NewtonConfig& cfg)
@@ -85,6 +103,11 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
     if (cfg.residualNorm != "block" && cfg.residualNorm != "l2")
         throw std::invalid_argument(
             "newtonConfigFromJson: residual_norm must be 'block' or 'l2'.");
+    validateResidualWeights(
+        cfg.residualWeightPsi,
+        cfg.residualWeightPhin,
+        cfg.residualWeightPhip,
+        "newtonConfigFromJson");
 
     if (json.contains("recombination")) {
         const auto& value = json.at("recombination");
@@ -118,6 +141,11 @@ NewtonSolver::NewtonSolver(
     if (cfg_.residualNorm != "block" && cfg_.residualNorm != "l2")
         throw std::invalid_argument(
             "NewtonSolver: residual_norm must be 'block' or 'l2'.");
+    validateResidualWeights(
+        cfg_.residualWeightPsi,
+        cfg_.residualWeightPhin,
+        cfg_.residualWeightPhip,
+        "NewtonSolver");
 }
 
 CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
@@ -236,7 +264,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     const ResidualBlockNormValue residualScales =
         residualScalesFromConfig(cfg_, initialBlocks);
     const ResidualBlockWeights residualWeights = residualWeightsFromConfig(cfg_);
-    const auto residualNorm = [&](const VectorXd& residual) {
+    const auto residualNormFn = [&](const VectorXd& residual) {
         if (cfg_.residualNorm == "l2")
             return residual.norm();
         return ResidualNorm::normalizedBlockL2(
@@ -244,7 +272,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             residualScales,
             residualWeights);
     };
-    const Real initialNorm = residualNorm(r);
+    const Real initialNorm = residualNormFn(r);
 
     NewtonResult result;
     result.solution = initial;
@@ -280,12 +308,12 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         try {
             step = linearSolver.solve(J, -r);
         } catch (const std::runtime_error&) {
-            result.finalResidualNorm = residualNorm(acceptedR);
+            result.finalResidualNorm = residualNormFn(acceptedR);
             result.iters = acceptedIters;
             result.solution = makeSolution(assembler, acceptedX, acceptedIters);
             if (cfg_.verbose) {
                 std::cerr << "Newton failed at iter " << iter
-                          << ": residual=" << residualNorm(r)
+                          << ": residual=" << residualNormFn(r)
                           << " damping=0 step=0 (linear solve failed)\n";
             }
             return result;
@@ -298,10 +326,10 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             [&](const VectorXd& candidate, const VectorXd&) {
                 return assembler.hasPositiveFiniteCarriers(candidate);
             },
-            residualNorm);
+            residualNormFn);
 
         if (!ls.accepted) {
-            result.finalResidualNorm = residualNorm(acceptedR);
+            result.finalResidualNorm = residualNormFn(acceptedR);
             result.iters = acceptedIters;
             result.solution = makeSolution(assembler, acceptedX, acceptedIters);
             if (cfg_.verbose) {
@@ -344,7 +372,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
 
     result.converged = false;
     result.iters = acceptedIters;
-    result.finalResidualNorm = residualNorm(acceptedR);
+    result.finalResidualNorm = residualNormFn(acceptedR);
     result.solution = makeSolution(assembler, acceptedX, acceptedIters);
     if (cfg_.verbose) {
         std::cerr << "Newton failed after " << cfg_.maxIter

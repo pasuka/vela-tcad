@@ -324,6 +324,28 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
         std::invalid_argument);
 }
 
+TEST_CASE("NewtonSolver: rejects disabled residual weights", "[newton][config]")
+{
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{
+            {"residual_weights", {{"psi", 0.0}, {"phin", 0.0}, {"phip", 0.0}}}
+        }),
+        std::invalid_argument);
+
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{
+            {"residual_weights", {{"psi", -1.0}, {"phin", 0.0}, {"phip", 1.0}}}
+        }),
+        std::invalid_argument);
+
+    const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
+        {"residual_weights", {{"psi", 0.0}, {"phin", 0.0}, {"phip", 1.0}}}
+    });
+    REQUIRE(cfg.residualWeightPsi == Catch::Approx(0.0));
+    REQUIRE(cfg.residualWeightPhin == Catch::Approx(0.0));
+    REQUIRE(cfg.residualWeightPhip == Catch::Approx(1.0));
+}
+
 TEST_CASE("NewtonSolver: verbose false suppresses failure diagnostics", "[newton]")
 {
     DeviceMesh mesh = makePNMesh();

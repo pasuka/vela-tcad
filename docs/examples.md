@@ -99,10 +99,10 @@ tolerances such as `max_iter`, `reltol`, `abstol`, `damping_factor`, and
 `line_search`. Newton convergence and line-search merit checks use
 `residual_norm: "block"` by default, which normalizes the Poisson, electron
 continuity, and hole continuity residual blocks independently before combining
-them. Set `residual_norm: "l2"` for the legacy raw L2 norm, or tune
-`residual_weights` / `residual_scales` with `psi`, `phin`, and `phip` entries
-when a case needs explicit block weighting. Omitting the field keeps the
-historical Gummel sweep path.
+them. `residual_norm` only affects Newton solves; set it to `"l2"` for the
+legacy raw L2 norm, or tune `residual_weights` / `residual_scales` with `psi`,
+`phin`, and `phip` entries when a case needs explicit block weighting. Omitting
+`solver.method` / `solver.type` keeps the historical Gummel sweep path.
 
 **Outputs.**
 
