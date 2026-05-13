@@ -13,9 +13,13 @@ LineSearchResult BacktrackingLineSearch::search(
     const VectorXd& step,
     const VectorXd& currentResidual,
     const ResidualFunction& residualFunction,
-    const AcceptFunction& acceptFunction) const
+    const AcceptFunction& acceptFunction,
+    const NormFunction& normFunction) const
 {
-    const Real currentNorm = currentResidual.norm();
+    const auto normOf = [&](const VectorXd& residual) {
+        return normFunction ? normFunction(residual) : residual.norm();
+    };
+    const Real currentNorm = normOf(currentResidual);
     // When line search is disabled the caller's initialDamping is applied as a
     // fixed damping factor; minDamping applies only during backtracking so it
     // must not constrain a disabled line search from below.
@@ -27,7 +31,7 @@ LineSearchResult BacktrackingLineSearch::search(
     for (int k = 0; k < attempts; ++k) {
         VectorXd candidate = x + alpha * step;
         VectorXd residual = residualFunction(candidate);
-        const Real norm = residual.norm();
+        const Real norm = normOf(residual);
         const bool finite = candidate.allFinite() && residual.allFinite() && std::isfinite(norm);
         const bool acceptedByCaller = !acceptFunction || acceptFunction(candidate, residual);
         const Real target = (1.0 - cfg_.sufficientDecrease * alpha) * currentNorm;

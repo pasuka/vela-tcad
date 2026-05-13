@@ -26,6 +26,7 @@ class BacktrackingLineSearch {
 public:
     using ResidualFunction = std::function<VectorXd(const VectorXd&)>;
     using AcceptFunction = std::function<bool(const VectorXd&, const VectorXd&)>;
+    using NormFunction = std::function<Real(const VectorXd&)>;
 
     explicit BacktrackingLineSearch(LineSearchConfig cfg = {});
 
@@ -33,7 +34,8 @@ public:
                             const VectorXd& step,
                             const VectorXd& currentResidual,
                             const ResidualFunction& residualFunction,
-                            const AcceptFunction& acceptFunction = {}) const;
+                            const AcceptFunction& acceptFunction = {},
+                            const NormFunction& normFunction = {}) const;
 
 private:
     LineSearchConfig cfg_;
