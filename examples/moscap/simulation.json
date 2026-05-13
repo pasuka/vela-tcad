@@ -1,5 +1,5 @@
 {
-  "_comment": "Poisson-only MOS capacitor bias point for oxide/silicon interface continuity checks.",
+  "_comment": "Poisson-only MOS capacitor bias point with nonzero oxide fixed charge.",
   "simulation_type": "poisson",
   "mesh_file": "mesh.json",
   "output_vtk": "outputs/moscap_poisson.vtk",
@@ -32,5 +32,11 @@
     "x_probe": 5e-07,
     "potential_jump_tol": 1e-10,
     "displacement_rel_tol": 0.55
-  }
+  },
+  "regions": [
+    {
+      "name": "oxide",
+      "fixed_charge_m3": 1e+21
+    }
+  ]
 }
