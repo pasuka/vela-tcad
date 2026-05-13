@@ -30,6 +30,7 @@ struct DDSolution {
 struct GummelConfig {
     int    maxIter     = 50;    ///< Maximum number of outer Gummel iterations
     double reltol      = 1.0e-6; ///< Relative convergence tolerance (||dpsi||/||psi||)
+    double abstol      = 0.0;   ///< Absolute update tolerance across psi, n, and p
     double dampingPsi  = 1.0;   ///< Damping factor for Poisson update (0 < alpha <= 1)
     double taun        = 1.0e-7; ///< Electron SRH lifetime [s]
     double taup        = 1.0e-7; ///< Hole SRH lifetime [s]

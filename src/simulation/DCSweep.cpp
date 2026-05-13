@@ -4,7 +4,10 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/post/ContactCurrent.h"
+#include "vela/solver/NewtonSolver.h"
 #include <nlohmann/json.hpp>
+#include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <exception>
 #include <filesystem>
@@ -18,6 +21,11 @@
 namespace vela {
 
 namespace {
+
+enum class SolverMethod {
+    Gummel,
+    Newton,
+};
 
 std::string formatReal(Real value)
 {
@@ -37,6 +45,33 @@ bool isFiniteSolution(const DDSolution& sol)
     };
     return finiteVector(sol.psi) && finiteVector(sol.phin) &&
            finiteVector(sol.phip) && finiteVector(sol.n) && finiteVector(sol.p);
+}
+
+std::string normalizedSolverMethod(const nlohmann::json& cfg)
+{
+    std::string method = "gummel";
+    if (cfg.contains("solver")) {
+        const auto& solver = cfg.at("solver");
+        if (solver.contains("method"))
+            method = solver.at("method").get<std::string>();
+        else if (solver.contains("type"))
+            method = solver.at("type").get<std::string>();
+    }
+
+    std::transform(method.begin(), method.end(), method.begin(),
+                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    return method;
+}
+
+SolverMethod solverMethodFromJson(const nlohmann::json& cfg)
+{
+    const std::string method = normalizedSolverMethod(cfg);
+    if (method == "gummel")
+        return SolverMethod::Gummel;
+    if (method == "newton")
+        return SolverMethod::Newton;
+    throw std::invalid_argument(
+        "DCSweep: solver.method/type must be 'gummel' or 'newton'.");
 }
 
 DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
@@ -151,8 +186,18 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     DopingModel doping = dopingFromJson(mesh, cfg);
     std::unordered_map<std::string, Real> baseBiases = contactBiasesFromJson(cfg);
     DCSweepConfig sweep = dcSweepConfigFromJson(cfg, cfgDir);
-    GummelConfig gummel = cfg.contains("solver") ? gummelConfigFromJson(cfg.at("solver")) : GummelConfig{};
-    MobilityModelConfig mobilityConfig = mobilityModelConfig(gummel.mobility);
+    const nlohmann::json solverCfg = cfg.value("solver", nlohmann::json::object());
+    const SolverMethod solverMethod = solverMethodFromJson(cfg);
+    GummelConfig gummel;
+    NewtonConfig newton;
+    MobilityModelConfig mobilityConfig;
+    if (solverMethod == SolverMethod::Newton) {
+        newton = newtonConfigFromJson(solverCfg);
+        mobilityConfig = mobilityModelConfig(newton.mobility);
+    } else {
+        gummel = gummelConfigFromJson(solverCfg);
+        mobilityConfig = mobilityModelConfig(gummel.mobility);
+    }
     ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig);
 
     CSVWriter csv(sweep.csvFile);
@@ -169,6 +214,14 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         auto biases = baseBiases;
         biases[sweep.contact] = voltage;
         try {
+            if (solverMethod == SolverMethod::Newton) {
+                NewtonResult result = initial != nullptr
+                    ? runNewton(mesh, matdb, doping, biases, *initial, newton)
+                    : runNewton(mesh, matdb, doping, biases, newton);
+                DDSolution sol = std::move(result.solution);
+                return {result.converged && isFiniteSolution(sol), std::move(sol)};
+            }
+
             DDSolution sol = initial != nullptr
                 ? runGummel(mesh, matdb, doping, biases, gummel, *initial)
                 : runGummel(mesh, matdb, doping, biases, gummel);

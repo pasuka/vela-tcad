@@ -74,6 +74,18 @@ static DeviceMesh makeOxideMesh()
     return mesh;
 }
 
+static DeviceMesh makeContactedOxideMesh()
+{
+    DeviceMesh mesh = makeOxideMesh();
+    Contact gate;
+    gate.id = 0;
+    gate.name = "gate";
+    gate.region_id = 0;
+    gate.node_ids = {0, 1, 2, 3};
+    mesh.addContact(gate);
+    return mesh;
+}
+
 static std::unordered_map<std::string, Real> zeroBias()
 {
     return {{"anode", 0.0}, {"cathode", 0.0}};
@@ -281,4 +293,35 @@ TEST_CASE("NewtonSolver: verbose false suppresses failure diagnostics", "[newton
 
     REQUIRE_FALSE(result.converged);
     REQUIRE(capturedStderr.str().empty());
+}
+
+TEST_CASE("NewtonSolver: line search rejection returns last accepted state", "[newton][line_search]")
+{
+    DeviceMesh mesh = makeContactedOxideMesh();
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+
+    const int N = static_cast<int>(mesh.numNodes());
+    DDSolution initial;
+    initial.psi = VectorXd::Zero(N);
+    initial.phin = VectorXd::Constant(N, 0.1);
+    initial.phip = VectorXd::Constant(N, -0.1);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.maxIter = 3;
+    cfg.reltol = 0.0;
+    cfg.abstol = 0.0;
+    cfg.verbose = false;
+    cfg.lineSearch = true;
+
+    const NewtonResult result = runNewton(
+        mesh, matdb, doping, {{"gate", 0.0}}, initial, cfg);
+
+    REQUIRE_FALSE(result.converged);
+    REQUIRE(result.iters == 0);
+    REQUIRE(result.history.empty());
+    REQUIRE(result.finalResidualNorm == Catch::Approx(result.initialResidualNorm));
+    REQUIRE((result.solution.psi - initial.psi).norm() == Catch::Approx(0.0));
+    REQUIRE((result.solution.phin - initial.phin).norm() == Catch::Approx(0.0));
+    REQUIRE((result.solution.phip - initial.phip).norm() == Catch::Approx(0.0));
 }

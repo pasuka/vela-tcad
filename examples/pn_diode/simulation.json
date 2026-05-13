@@ -26,8 +26,10 @@
     }
   ],
   "solver": {
+    "method": "gummel",
     "max_iter": 80,
     "reltol": 1e-05,
+    "abstol": 0.0,
     "damping_psi": 0.5
   },
   "sweep": {

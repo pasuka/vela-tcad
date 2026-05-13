@@ -1,10 +1,18 @@
+#include "vela/io/MeshReader.h"
+#include "vela/material/MaterialDatabase.h"
+#include "vela/physics/DopingModel.h"
+#include "vela/solver/NewtonSolver.h"
 #include "vela/simulation/DCSweep.h"
 #include "vela/simulation/PoissonSimulation.h"
 #include <exception>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace {
 
@@ -24,6 +32,79 @@ nlohmann::json meshReportJson(const vela::GeometryBuildReport& report)
         {"max_angle_degrees", report.maxAngleDegrees},
         {"min_edge_length", report.minEdgeLength},
     };
+}
+
+std::filesystem::path configDirectory(const std::string& configFile)
+{
+    const std::filesystem::path path(configFile);
+    const std::filesystem::path parent = path.parent_path();
+    return parent.empty() ? std::filesystem::current_path() : parent;
+}
+
+std::string resolvePath(const std::filesystem::path& baseDir, const std::string& path)
+{
+    std::filesystem::path resolved(path);
+    if (resolved.is_relative())
+        resolved = baseDir / resolved;
+    return resolved.string();
+}
+
+vela::DopingModel dopingFromJson(const vela::DeviceMesh& mesh, const nlohmann::json& cfg)
+{
+    std::vector<vela::RegionDopingSpec> specs;
+    for (const auto& entry : cfg.at("doping")) {
+        vela::RegionDopingSpec spec;
+        spec.region = entry.at("region").get<std::string>();
+        spec.donors = entry.at("donors").get<vela::Real>();
+        spec.acceptors = entry.at("acceptors").get<vela::Real>();
+        specs.push_back(std::move(spec));
+    }
+    return vela::DopingModel::fromMeshAndRegions(mesh, specs);
+}
+
+std::unordered_map<std::string, vela::Real> contactBiasesFromJson(const nlohmann::json& cfg)
+{
+    std::unordered_map<std::string, vela::Real> biases;
+    for (const auto& contact : cfg.at("contacts")) {
+        biases[contact.at("name").get<std::string>()] =
+            contact.at("bias").get<vela::Real>();
+    }
+    return biases;
+}
+
+struct NewtonCliResult {
+    vela::DeviceMesh mesh;
+    vela::NewtonResult result;
+};
+
+NewtonCliResult runNewtonConfig(const std::string& configFile, const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+
+    vela::JsonMeshReader reader;
+    vela::DeviceMesh mesh = reader.read(resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>()));
+
+    vela::MaterialDatabase matdb;
+    if (cfg.contains("materials_file"))
+        matdb.loadJson(resolvePath(cfgDir, cfg.at("materials_file").get<std::string>()));
+
+    vela::DopingModel doping = dopingFromJson(mesh, cfg);
+    const auto biases = contactBiasesFromJson(cfg);
+    vela::NewtonConfig newton = cfg.contains("solver")
+        ? vela::newtonConfigFromJson(cfg.at("solver"))
+        : vela::NewtonConfig{};
+
+    vela::NewtonResult result = vela::runNewton(mesh, matdb, doping, biases, newton);
+
+    if (cfg.contains("output_vtk")) {
+        vela::writeDDSolutionVTK(
+            resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>()),
+            mesh,
+            doping,
+            result.solution);
+    }
+
+    return NewtonCliResult{std::move(mesh), std::move(result)};
 }
 
 } // namespace
@@ -82,6 +163,15 @@ int main(int argc, char** argv)
             vela::PoissonSimulation sim;
             const auto result = sim.runWithResult(configFile);
             status["nodes"] = result.potential.size();
+            if (includeMeshReport)
+                status["mesh_report"] = meshReportJson(result.mesh.lastGeometryBuildReport());
+        } else if (type == "newton") {
+            const auto result = runNewtonConfig(configFile, cfg);
+            status["converged"] = result.result.converged;
+            status["nodes"] = result.mesh.numNodes();
+            status["iterations"] = result.result.iters;
+            status["initial_residual"] = result.result.initialResidualNorm;
+            status["final_residual"] = result.result.finalResidualNorm;
             if (includeMeshReport)
                 status["mesh_report"] = meshReportJson(result.mesh.lastGeometryBuildReport());
         } else {

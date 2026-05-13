@@ -125,6 +125,10 @@ add_test(NAME ascii_sources
             -DVELA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -P ${VELA_ASCII_CHECK_SCRIPT})
 
+add_test(NAME example_runner_newton
+    COMMAND $<TARGET_FILE:vela_example_runner>
+            --config ${CMAKE_CURRENT_SOURCE_DIR}/examples/pn_diode/newton_simulation.json)
+
 add_executable(test_scaling tests/test_scaling.cpp)
 target_link_libraries(test_scaling PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -155,6 +159,9 @@ target_link_libraries(test_mobility PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_recombination tests/test_recombination.cpp)
 target_link_libraries(test_recombination PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_line_search_backtrack_failure tests/test_line_search_backtrack_failure.cpp)
+target_link_libraries(test_line_search_backtrack_failure PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_dc_sweep tests/test_dc_sweep.cpp)
 target_link_libraries(test_dc_sweep PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -169,6 +176,7 @@ catch_discover_tests(test_dd_gummel)
 catch_discover_tests(test_newton_solver)
 catch_discover_tests(test_mobility)
 catch_discover_tests(test_recombination)
+catch_discover_tests(test_line_search_backtrack_failure)
 catch_discover_tests(test_dc_sweep)
 
 add_test(NAME regression
