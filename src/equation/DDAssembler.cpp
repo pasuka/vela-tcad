@@ -1,7 +1,7 @@
 #include "vela/equation/DDAssembler.h"
 #include "vela/equation/AssemblerUtils.h"
 #include "vela/core/PhysicalConstants.h"
-#include "vela/discretization/Bernoulli.h"
+#include "vela/discretization/ScharfetterGummel.h"
 #include <Eigen/Sparse>
 #include <stdexcept>
 
@@ -148,16 +148,14 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         auto j = static_cast<int>(edge.n1);
 
         const Real dpsi = psi(j) - psi(i);
-        const Real u    = dpsi / Vt_;
-        const Real Bu   = bernoulli( u);
-        const Real Bmu  = bernoulli(-u);
+        const SGEdgeWeights weights = sgEdgeWeights(dpsi, Vt_);
 
-        // Diagonal: coef * B(-u) for n_i
-        triplets.emplace_back(i, i,  coef * Bmu);
-        triplets.emplace_back(j, j,  coef * Bu);
-        // Off-diagonal: -coef * B(+u) for n_j
-        triplets.emplace_back(i, j, -coef * Bu);
-        triplets.emplace_back(j, i, -coef * Bmu);
+        // Electron continuity flux from i to j:
+        //   F_nij = coef * (B(-u) * n_i - B(+u) * n_j)
+        triplets.emplace_back(i, i,  coef * weights.b_minus);
+        triplets.emplace_back(j, j,  coef * weights.b_plus);
+        triplets.emplace_back(i, j, -coef * weights.b_plus);
+        triplets.emplace_back(j, i, -coef * weights.b_minus);
     }
 
     A_.setFromTriplets(triplets.begin(), triplets.end());
@@ -224,17 +222,14 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         auto j = static_cast<int>(edge.n1);
 
         const Real dpsi = psi(j) - psi(i);
-        const Real u    = dpsi / Vt_;
-        const Real Bu   = bernoulli( u);
-        const Real Bmu  = bernoulli(-u);
+        const SGEdgeWeights weights = sgEdgeWeights(dpsi, Vt_);
 
-        // Hole SG flux from i to j: Jp = mu_p*Vt/h*[B(-u)*p_j - B(+u)*p_i]
-        // Diagonal: coef * B(+u) for p_i
-        triplets.emplace_back(i, i,  coef * Bu);
-        triplets.emplace_back(j, j,  coef * Bmu);
-        // Off-diagonal: -coef * B(-u) for p_j
-        triplets.emplace_back(i, j, -coef * Bmu);
-        triplets.emplace_back(j, i, -coef * Bu);
+        // Hole continuity flux from i to j:
+        //   F_pij = coef * (B(+u) * p_i - B(-u) * p_j)
+        triplets.emplace_back(i, i,  coef * weights.b_plus);
+        triplets.emplace_back(j, j,  coef * weights.b_minus);
+        triplets.emplace_back(i, j, -coef * weights.b_minus);
+        triplets.emplace_back(j, i, -coef * weights.b_plus);
     }
 
     A_.setFromTriplets(triplets.begin(), triplets.end());

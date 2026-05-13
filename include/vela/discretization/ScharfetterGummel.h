@@ -1,6 +1,69 @@
 #pragma once
 
+#include "vela/core/Types.h"
+
 namespace vela {
+
+/**
+ * @brief Scharfetter-Gummel Bernoulli weights for an oriented edge 0 -> 1.
+ *
+ * For u = (psi_1 - psi_0) / Vt, b_plus = B(+u) and b_minus = B(-u).
+ */
+struct SGEdgeWeights {
+    Real b_plus = 0.0;
+    Real b_minus = 0.0;
+};
+
+SGEdgeWeights sgEdgeWeights(Real dpsi, Real Vt);
+
+/**
+ * @brief Electron continuity flux contribution from node 0 to node 1.
+ *
+ * This is the sign convention used by DDAssembler and CoupledDDAssembler
+ * continuity residual rows:
+ *   F_n01 = coef * (B(-u) * n0 - B(+u) * n1)
+ * where coef contains mobility, thermal voltage, and edge geometry.
+ */
+Real sgElectronContinuityFlux(Real n0, Real n1, Real dpsi, Real Vt, Real coef);
+
+/**
+ * @brief Hole continuity flux contribution from node 0 to node 1.
+ *
+ * Continuity residual convention:
+ *   F_p01 = coef * (B(+u) * p0 - B(-u) * p1)
+ * where coef contains mobility, thermal voltage, and edge geometry.
+ */
+Real sgHoleContinuityFlux(Real p0, Real p1, Real dpsi, Real Vt, Real coef);
+
+/**
+ * @brief Balanced electron continuity flux for Boltzmann quasi-Fermi variables.
+ *
+ * Algebraically equivalent to sgElectronContinuityFlux when both edge nodes use
+ * the same intrinsic density, but it evaluates equilibrium edges without the
+ * subtractive cancellation in B(-u)*n0 - B(+u)*n1.
+ */
+Real sgElectronContinuityFluxFromQuasiFermi(Real ni0,
+                                            Real psi1,
+                                            Real phin0,
+                                            Real phin1,
+                                            Real dpsi,
+                                            Real Vt,
+                                            Real coef);
+
+/**
+ * @brief Balanced hole continuity flux for Boltzmann quasi-Fermi variables.
+ *
+ * Algebraically equivalent to sgHoleContinuityFlux when both edge nodes use the
+ * same intrinsic density, but it evaluates equilibrium edges without the
+ * subtractive cancellation in B(+u)*p0 - B(-u)*p1.
+ */
+Real sgHoleContinuityFluxFromQuasiFermi(Real ni0,
+                                        Real psi0,
+                                        Real phip0,
+                                        Real phip1,
+                                        Real dpsi,
+                                        Real Vt,
+                                        Real coef);
 
 /**
  * @brief Scharfetter-Gummel edge fluxes for drift-diffusion.
