@@ -96,7 +96,7 @@ void DeviceMesh::buildBoxGeometry()
 {
     if (edges_.empty() && !cells_.empty())
         buildEdgesOnly();
-    BoxGeometryBuilder::build(*this);
+    lastGeometryBuildReport_ = BoxGeometryBuilder::buildWithReport(*this);
 }
 
 // ------------------------------------------------------------------
