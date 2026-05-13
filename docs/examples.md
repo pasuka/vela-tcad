@@ -86,6 +86,18 @@ mkdir -p examples/pn_diode/outputs
 build/vela_example_runner --config examples/pn_diode/simulation.json
 ```
 
+The default PN diode sweep uses `solver.method: "gummel"`. To exercise the
+coupled Newton CLI entry point for a single equilibrium bias point, run:
+
+```bash
+build/vela_example_runner --config examples/pn_diode/newton_simulation.json
+```
+
+DC sweeps can also opt into Newton by setting `solver.method` (or
+`solver.type`) to `"newton"` in the same `solver` block used for Newton
+tolerances such as `max_iter`, `reltol`, `abstol`, `damping_factor`, and
+`line_search`. Omitting the field keeps the historical Gummel sweep path.
+
 **Outputs.**
 
 - `examples/pn_diode/outputs/pn_iv.csv`: voltage, electron current, hole

@@ -287,6 +287,31 @@ sweep output settings are resolved relative to the directory containing the
 config JSON. VTK files can be opened in ParaView to inspect electrostatic
 potential, net doping, and drift-diffusion fields when available.
 
+Drift-diffusion sweeps use the Gummel solver unless the `solver` block
+explicitly selects Newton:
+
+```json
+{
+  "simulation_type": "dc_sweep",
+  "solver": {
+    "method": "newton",
+    "max_iter": 10,
+    "reltol": 1e-8,
+    "abstol": 1e-18,
+    "damping_factor": 1.0,
+    "line_search": true,
+    "verbose": false
+  }
+}
+```
+
+Use `"method": "gummel"` or omit the field to keep the default sweep path.
+Gummel solver configs also accept `abstol`; convergence is reported when either
+all relative update checks pass or all absolute update norms are below that
+positive threshold. A single-bias coupled Newton CLI run is available with
+`"simulation_type": "newton"`; see
+`examples/pn_diode/newton_simulation.json`.
+
 ---
 
 ## Next Steps

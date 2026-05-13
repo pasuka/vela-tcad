@@ -273,3 +273,36 @@ TEST_CASE("DCSweep: final stop point is reached exactly without overshoot", "[dc
     REQUIRE(points[3].attemptedStep == Catch::Approx(0.15));
     REQUIRE(points[3].acceptedStep == Catch::Approx(0.15));
 }
+
+TEST_CASE("DCSweep: explicit Newton solver method is reachable from config", "[dc_sweep][newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "newton_start.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false}
+    }, {
+        {"method", "newton"},
+        {"max_iter", 10},
+        {"reltol", 1.0e-8},
+        {"abstol", 1.0e-18},
+        {"damping_factor", 1.0},
+        {"line_search", true},
+        {"verbose", false}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    const std::vector<DCSweepPoint>& points = result.points;
+
+    REQUIRE(points.size() == 1);
+    REQUIRE(points.front().converged);
+    REQUIRE(points.front().voltage == Catch::Approx(0.0));
+    REQUIRE(points.front().attemptedStep == Catch::Approx(0.0));
+    REQUIRE(std::filesystem::exists(csvPath));
+}

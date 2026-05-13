@@ -10,6 +10,7 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <nlohmann/json.hpp>
 #include <unordered_map>
 
 using namespace vela;
@@ -198,4 +199,40 @@ TEST_CASE("GummelSolver: forward bias converges without crash", "[gummel]")
         REQUIRE(sol.n(i) >= 0.0);
         REQUIRE(sol.p(i) >= 0.0);
     }
+}
+
+TEST_CASE("GummelSolver: abstol can terminate strongly damped high-doping updates", "[gummel]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    std::vector<RegionDopingSpec> specs = {
+        {"n_region", 1.0e24, 0.0},
+        {"p_region", 0.0, 1.0e24}
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    std::unordered_map<std::string, Real> biases = {
+        {"anode", 0.25},
+        {"cathode", 0.0}
+    };
+
+    GummelConfig noAbs;
+    noAbs.maxIter = 2;
+    noAbs.reltol = 0.0;
+    noAbs.abstol = 0.0;
+    noAbs.dampingPsi = 0.05;
+
+    const DDSolution exhausted = runGummel(mesh, matdb, doping, biases, noAbs);
+    REQUIRE_FALSE(exhausted.converged);
+    REQUIRE(exhausted.iters == noAbs.maxIter);
+
+    GummelConfig withAbs = noAbs;
+    withAbs.abstol = 1.0e40;
+
+    const DDSolution converged = runGummel(mesh, matdb, doping, biases, withAbs);
+    REQUIRE(converged.converged);
+    REQUIRE(converged.iters == 1);
+
+    const GummelConfig parsed = gummelConfigFromJson(nlohmann::json{{"abstol", 1.0e-12}});
+    REQUIRE(parsed.abstol == Catch::Approx(1.0e-12));
 }

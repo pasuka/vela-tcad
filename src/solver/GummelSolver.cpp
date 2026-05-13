@@ -65,6 +65,7 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json)
     GummelConfig cfg;
     cfg.maxIter = json.value("max_iter", cfg.maxIter);
     cfg.reltol = json.value("reltol", cfg.reltol);
+    cfg.abstol = json.value("abstol", cfg.abstol);
     cfg.dampingPsi = json.value("damping_psi", cfg.dampingPsi);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
@@ -284,7 +285,11 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         n = n_new;
         p = p_new;
 
-        if (rel_err < cfg.reltol && rel_n < cfg.reltol && rel_p < cfg.reltol) {
+        const bool relativeConverged =
+            rel_err < cfg.reltol && rel_n < cfg.reltol && rel_p < cfg.reltol;
+        const bool absoluteConverged = cfg.abstol > 0.0 &&
+            dpsi_norm <= cfg.abstol && dn_norm <= cfg.abstol && dp_norm <= cfg.abstol;
+        if (relativeConverged || absoluteConverged) {
             converged = true;
             break;
         }
