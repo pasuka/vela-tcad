@@ -198,5 +198,7 @@ TEST_CASE("Gummel high-doping asymmetric reverse bias does not diverge", "[gumme
     REQUIRE(sol.iters <= cfg.maxIter);
     requireFinitePositiveCarriers(sol, mesh.numNodes());
     REQUIRE(sol.phin(0) == Catch::Approx(-0.20));
+    REQUIRE(sol.phip(0) == Catch::Approx(-0.20));
+    REQUIRE(sol.phin(1) == Catch::Approx(0.0));
     REQUIRE(sol.phip(1) == Catch::Approx(0.0));
 }

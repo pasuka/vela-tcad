@@ -192,13 +192,28 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     max_abs_attempted = float(reg.get("max_abs_attempted_step", math.inf))
     max_abs_accepted = float(reg.get("max_abs_accepted_step", math.inf))
     max_retry = int(reg.get("max_retry_count", 0))
+    required_columns = ("attempted_step", "accepted_step", "retry_count")
+    missing_columns = [column for column in required_columns if column not in rows[0]]
+    if missing_columns:
+        raise AssertionError(
+            "DC sweep CSV is missing required diagnostic column(s): "
+            + ", ".join(missing_columns))
+
     max_attempted_seen = 0.0
     max_accepted_seen = 0.0
     max_retry_seen = 0
-    for row in rows:
-        attempted = abs(float(row.get("attempted_step", "0")))
-        accepted = abs(float(row.get("accepted_step", "0")))
-        retry = int(row.get("retry_count", "0"))
+    for row_index, row in enumerate(rows, start=1):
+        for column in required_columns:
+            if column not in row:
+                raise AssertionError(
+                    f"DC sweep row {row_index} is missing required diagnostic column '{column}'")
+        try:
+            attempted = abs(float(row["attempted_step"]))
+            accepted = abs(float(row["accepted_step"]))
+            retry = int(row["retry_count"])
+        except ValueError as exc:
+            raise AssertionError(
+                f"DC sweep row {row_index} has unparseable step diagnostics: {row}") from exc
         max_attempted_seen = max(max_attempted_seen, attempted)
         max_accepted_seen = max(max_accepted_seen, accepted)
         max_retry_seen = max(max_retry_seen, retry)

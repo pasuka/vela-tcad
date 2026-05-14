@@ -580,7 +580,11 @@ TEST_CASE("NewtonSolver: multi-terminal contacted mesh accepts distinct biases",
     REQUIRE_FALSE(result.converged);
     requireFiniteNewtonSolution(result, mesh.numNodes());
     REQUIRE(result.solution.phin(0) == Catch::Approx(0.0));
+    REQUIRE(result.solution.phip(0) == Catch::Approx(0.0));
+    REQUIRE(result.solution.phin(1) == Catch::Approx(0.02));
     REQUIRE(result.solution.phip(1) == Catch::Approx(0.02));
     REQUIRE(result.solution.phin(2) == Catch::Approx(0.04));
+    REQUIRE(result.solution.phip(2) == Catch::Approx(0.04));
+    REQUIRE(result.solution.phin(3) == Catch::Approx(0.06));
     REQUIRE(result.solution.phip(3) == Catch::Approx(0.06));
 }
