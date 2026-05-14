@@ -26,11 +26,21 @@ inline double thermalVoltage(double T)
 }
 
 /// Charge-neutral equilibrium electron concentration from net doping and ni.
-/// Solves: n - p = Ndop,  n*p = ni^2  ->  n = Ndop/2 + sqrt((Ndop/2)^2 + ni^2)
+/// Solves: n - p = Ndop,  n*p = ni^2  ->  n = Ndop/2 + hypot(Ndop/2, ni)
 inline double nEq(double Ndop, double ni)
 {
     const double half = 0.5 * Ndop;
-    return half + std::sqrt(half * half + ni * ni);
+    const double root = std::hypot(half, ni);
+
+    if (Ndop >= 0.0)
+        return half + root;
+
+    // std::hypot avoids overflow in the radicand. For p-type contacts with
+    // |Ndop| >> ni, half + root still suffers severe cancellation, so use
+    // the algebraically equivalent minority-carrier form
+    // n = ni^2 / p, with p = root - half, to preserve high-doping accuracy.
+    const double p_eq = root - half;
+    return (p_eq > 0.0) ? (ni * ni / p_eq) : 0.0;
 }
 
 /// Compute per-node ni from the material database.
