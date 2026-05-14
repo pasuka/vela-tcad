@@ -2,6 +2,7 @@
 #include <catch2/catch_approx.hpp>
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/equation/AssemblerUtils.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/equation/DDAssembler.h"
 #include "vela/material/MaterialDatabase.h"
@@ -196,4 +197,201 @@ TEST_CASE("SG continuity residuals match DDAssembler and CoupledDDAssembler", "[
         REQUIRE(coupledResidual(2 * N + i) / holeScale ==
                 Approx(ddHoleResidual(i) / holeScale).epsilon(1.0e-12).margin(1.0e-12));
     }
+}
+
+struct AssemblySystem {
+    SparseMatrixd A;
+    VectorXd b;
+};
+
+static AssemblySystem assembleReferencePoissonWithFreshGeometry(
+    const DeviceMesh& mesh,
+    const MaterialDatabase& matdb,
+    const DopingModel& doping,
+    double Vt,
+    const VectorXd& n,
+    const VectorXd& p,
+    const VectorXd& psi)
+{
+    const Index N = mesh.numNodes();
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto vol = detail::computeNodeVolumes(mesh);
+    const auto couple = detail::computeEdgeCouplings(mesh);
+
+    AssemblySystem system{SparseMatrixd(static_cast<int>(N), static_cast<int>(N)),
+                          VectorXd::Zero(static_cast<int>(N))};
+
+    std::vector<Eigen::Triplet<double>> triplets;
+    triplets.reserve(mesh.numEdges() * 4 + N);
+
+    for (Index e = 0; e < mesh.numEdges(); ++e) {
+        const Edge& edge = mesh.getEdge(e);
+        const Real h = edge.length;
+        if (h < 1.0e-30) continue;
+
+        const Real eps = detail::edgeEpsilon(edgeCells, mesh, matdb, e);
+        const Real G = eps * couple[e] / h;
+
+        const auto i = static_cast<int>(edge.n0);
+        const auto j = static_cast<int>(edge.n1);
+        triplets.emplace_back(i, i, G);
+        triplets.emplace_back(j, j, G);
+        triplets.emplace_back(i, j, -G);
+        triplets.emplace_back(j, i, -G);
+    }
+
+    system.A.setFromTriplets(triplets.begin(), triplets.end());
+
+    for (Index i = 0; i < N; ++i) {
+        const int ii = static_cast<int>(i);
+        const Real diagCarrier = constants::q * (n(ii) + p(ii)) / Vt * vol[i];
+        system.A.coeffRef(ii, ii) += diagCarrier;
+        system.b(ii) = constants::q * (p(ii) - n(ii) + doping.netDoping(i)) * vol[i]
+                       + diagCarrier * psi(ii);
+    }
+
+    return system;
+}
+
+static AssemblySystem assembleReferenceContinuityWithFreshGeometry(
+    const DeviceMesh& mesh,
+    const MaterialDatabase& matdb,
+    const DopingModel& doping,
+    double Vt,
+    const MobilityModelConfig& mobilityConfig,
+    const RecombinationModelConfig& recombinationConfig,
+    CarrierType carrier,
+    const VectorXd& psi,
+    const VectorXd& nOld,
+    const VectorXd& pOld)
+{
+    const Index N = mesh.numNodes();
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto vol = detail::computeNodeVolumes(mesh);
+    const auto couple = detail::computeEdgeCouplings(mesh);
+    const auto ni = detail::buildNodeNi(mesh, matdb);
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const RecombinationModel recombination(recombinationConfig);
+
+    AssemblySystem system{SparseMatrixd(static_cast<int>(N), static_cast<int>(N)),
+                          VectorXd::Zero(static_cast<int>(N))};
+
+    std::vector<Eigen::Triplet<double>> triplets;
+    triplets.reserve(mesh.numEdges() * 4 + N);
+
+    for (Index e = 0; e < mesh.numEdges(); ++e) {
+        const Edge& edge = mesh.getEdge(e);
+        const Real h = edge.length;
+        if (h < 1.0e-30) continue;
+
+        const Real mu = detail::edgeMobility(
+            edgeCells, mesh, matdb, doping, *mobility, e, carrier);
+        if (mu <= 0.0) continue;
+
+        const Real coef = mu * Vt * couple[e] / h;
+        const auto i = static_cast<int>(edge.n0);
+        const auto j = static_cast<int>(edge.n1);
+        const Real dpsi = psi(j) - psi(i);
+        const SGEdgeWeights weights = sgEdgeWeights(dpsi, Vt);
+
+        if (carrier == CarrierType::Electron) {
+            triplets.emplace_back(i, i, coef * weights.b_minus);
+            triplets.emplace_back(j, j, coef * weights.b_plus);
+            triplets.emplace_back(i, j, -coef * weights.b_plus);
+            triplets.emplace_back(j, i, -coef * weights.b_minus);
+        } else {
+            triplets.emplace_back(i, i, coef * weights.b_plus);
+            triplets.emplace_back(j, j, coef * weights.b_minus);
+            triplets.emplace_back(i, j, -coef * weights.b_minus);
+            triplets.emplace_back(j, i, -coef * weights.b_plus);
+        }
+    }
+
+    system.A.setFromTriplets(triplets.begin(), triplets.end());
+
+    for (Index i = 0; i < N; ++i) {
+        const int ii = static_cast<int>(i);
+        const RecombinationLinearization linearization =
+            carrier == CarrierType::Electron
+                ? recombination.electronLinearization(nOld(ii), pOld(ii), ni[i])
+                : recombination.holeLinearization(nOld(ii), pOld(ii), ni[i]);
+        system.A.coeffRef(ii, ii) += linearization.diagonal * vol[i];
+        system.b(ii) += linearization.rhs * vol[i];
+    }
+
+    for (Index i = 0; i < N; ++i) {
+        const int ii = static_cast<int>(i);
+        if (system.A.coeff(ii, ii) == 0.0) {
+            system.A.coeffRef(ii, ii) = 1.0;
+            system.b(ii) = 0.0;
+        }
+    }
+
+    return system;
+}
+
+static void requireSystemsMatch(const SparseMatrixd& lhsA,
+                                const VectorXd& lhsB,
+                                const SparseMatrixd& rhsA,
+                                const VectorXd& rhsB)
+{
+    REQUIRE(lhsA.rows() == rhsA.rows());
+    REQUIRE(lhsA.cols() == rhsA.cols());
+    REQUIRE(lhsB.size() == rhsB.size());
+
+    for (int row = 0; row < lhsA.rows(); ++row) {
+        for (int col = 0; col < lhsA.cols(); ++col) {
+            const double lhs = lhsA.coeff(row, col);
+            const double rhs = rhsA.coeff(row, col);
+            const double scale = std::max({1.0, std::abs(lhs), std::abs(rhs)});
+            REQUIRE(lhs / scale == Approx(rhs / scale).epsilon(1.0e-14).margin(1.0e-14));
+        }
+    }
+
+    for (int row = 0; row < lhsB.size(); ++row) {
+        const double lhs = lhsB(row);
+        const double rhs = rhsB(row);
+        const double scale = std::max({1.0, std::abs(lhs), std::abs(rhs)});
+        REQUIRE(lhs / scale == Approx(rhs / scale).epsilon(1.0e-14).margin(1.0e-14));
+    }
+}
+
+TEST_CASE("DDAssembler cached geometry matches fresh reference assembly", "[sg][dd][cache]")
+{
+    DeviceMesh mesh = makeSingleSiliconTriangleMesh();
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    const MobilityModelConfig mobilityConfig{};
+    const RecombinationModelConfig noRecombination = recombinationModelConfig({"none"});
+
+    DDAssembler cached(mesh,
+                       matdb,
+                       doping,
+                       constants::Vt_300,
+                       mobilityConfig,
+                       noRecombination);
+
+    VectorXd psi(3);
+    VectorXd n(3);
+    VectorXd p(3);
+    psi << 0.020, -0.010, 0.030;
+    n << 1.0e16, 2.0e16, 4.0e16;
+    p << 3.0e15, 1.5e15, 2.5e15;
+
+    cached.assemblePoissonWithCarriers(n, p, psi);
+    const AssemblySystem referencePoisson = assembleReferencePoissonWithFreshGeometry(
+        mesh, matdb, doping, constants::Vt_300, n, p, psi);
+    requireSystemsMatch(cached.matrix(), cached.rhs(), referencePoisson.A, referencePoisson.b);
+
+    cached.assembleElectronContinuity(psi, n, p);
+    const AssemblySystem referenceElectrons = assembleReferenceContinuityWithFreshGeometry(
+        mesh, matdb, doping, constants::Vt_300, mobilityConfig, noRecombination,
+        CarrierType::Electron, psi, n, p);
+    requireSystemsMatch(cached.matrix(), cached.rhs(), referenceElectrons.A, referenceElectrons.b);
+
+    cached.assembleHoleContinuity(psi, n, p);
+    const AssemblySystem referenceHoles = assembleReferenceContinuityWithFreshGeometry(
+        mesh, matdb, doping, constants::Vt_300, mobilityConfig, noRecombination,
+        CarrierType::Hole, psi, n, p);
+    requireSystemsMatch(cached.matrix(), cached.rhs(), referenceHoles.A, referenceHoles.b);
 }
