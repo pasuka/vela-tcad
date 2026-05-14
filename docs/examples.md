@@ -1,8 +1,32 @@
 # Engineering Examples and Regression Suite
 
-Vela ships three small engineering examples that are intentionally coarse so
-they can run quickly in CI while still exercising the Poisson,
-drift-diffusion, post-processing, and file-output paths.
+Vela ships small engineering examples that are intentionally coarse so they can
+run quickly in CI while still exercising the Poisson, drift-diffusion,
+post-processing, and file-output paths. Device-oriented examples live under
+`examples/<device>/` with a shared `mesh.json` and named simulation decks such
+as `simulation_iv.json`, `simulation_cv.json`, and `simulation_bv.json` when the
+corresponding capability is implemented for that device.
+
+## Current Support Matrix
+
+The table below is the source of truth for the example decks. It describes what
+is currently present in the repository, not a claim of calibrated production
+TCAD coverage.
+
+| Device example | Poisson-only | DD-IV | CV | BV |
+| --- | --- | --- | --- | --- |
+| `examples/pn_diode` | Implicit equilibrium in DD decks | `simulation_iv.json` forward IV | `simulation_cv.json` quasi-static junction C-V | `simulation_bv.json` reverse-bias diagnostics |
+| `examples/nmos2d_dd` | Implicit equilibrium in DD decks | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg | `simulation_cv.json` gate/body quasi-static CV | Not yet |
+| `examples/pmos2d_dd` | Implicit equilibrium in DD decks | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg | `simulation_cv.json` gate/body quasi-static CV | Not yet |
+| `examples/ldmos2d` | `simulation_iv.json` is currently a reverse-biased Poisson field-distribution deck on the mixed Si/SiO2 mesh | Not yet | Not yet | Not yet |
+| `examples/igbt2d` | `simulation_poisson.json` PNPN/drift off-state baseline | `simulation_iv.json` low-current collector DD prototype | Not yet | Not yet |
+| `examples/moscap` | `simulation.json` Si/SiO2 Poisson interface check | Not applicable | Not yet | Not applicable |
+| `examples/nmos2d` | `simulation.json` legacy simplified NMOS Poisson check | Not yet | Not yet | Not yet |
+
+Planned extensions should keep this table conservative. For example, LDMOS
+on-state IV and BV, and IGBT high-injection, recombination, lifetime-control,
+and on-voltage regression decks are not claimed until they have executable
+regression coverage.
 
 ## Common Workflow
 
@@ -31,14 +55,13 @@ ctest --test-dir build --output-on-failure -R regression
 ```
 
 The regression script copies examples into `build/regression_output/`, creates
-per-example `outputs/` folders, runs `vela_example_runner --config
-simulation.json`, verifies expected files, checks convergence indicators, scans
-CSV/VTK text for NaN/Inf values, and writes
-`build/regression_output/regression_summary.json`.
+per-example `outputs/` folders, runs `vela_example_runner --config <deck>`,
+verifies expected files, checks convergence indicators, scans CSV/VTK text for
+NaN/Inf values, and writes `build/regression_output/regression_summary.json`.
 
 ## Python API Example
 
-The optional pybind11 API can run the same PN diode sweep from Python. Configure
+The optional pybind11 API can run the PN diode IV sweep from Python. Configure
 with `VELA_ENABLE_PYTHON=ON` and make the generated package importable:
 
 ```bash
@@ -54,8 +77,9 @@ $env:PYTHONPATH = "build\python\Debug"
 python examples\python\run_pn_diode.py
 ```
 
-The script calls `vela.run_dc_sweep()` on `examples/pn_diode/simulation.json`
-and writes the usual CSV/VTK outputs under `examples/pn_diode/outputs/`.
+The script calls `vela.run_dc_sweep()` on
+`examples/pn_diode/simulation_iv.json` and writes the usual CSV/VTK outputs
+under `examples/pn_diode/outputs/`.
 
 CTest registers the Python coverage as `python_api` when the extension is
 enabled:
@@ -67,27 +91,34 @@ ctest --test-dir build --output-on-failure -R python_api
 ## PN Diode (`examples/pn_diode`)
 
 **Physical meaning.** A tiny 2-D silicon p-n diode validates the
-self-consistent drift-diffusion flow and contact-current extraction. The anode
-is forward swept from 0 V to 0.5 V while the cathode is grounded. The
-regression checks that every sweep point converges and that the forward-current
-magnitude increases from the first to the final bias point.
+self-consistent drift-diffusion flow, contact-current extraction, quasi-static
+terminal charge extraction, and reverse-bias breakdown diagnostics. The decks
+are CI smoke cases rather than calibrated diode models.
 
 **Inputs.**
 
 - `mesh.json`: 1 um x 1 um triangular silicon mesh split into `p_region` and
   `n_region`, with `anode` and `cathode` contacts.
-- `simulation.json`: region doping, contact biases, Gummel solver controls, and
-  a DC sweep definition.
+- `simulation_iv.json`: forward anode IV from 0 V to 0.5 V.
+- `simulation_cv.json`: reverse/anode quasi-static junction capacitance from
+  0 V to -0.2 V using terminal-charge differencing.
+- `simulation_bv.json`: reverse/anode sweep from 0 V to -0.5 V with maximum
+  electric-field and current-jump diagnostic columns.
+- `newton_simulation.json`: single equilibrium Newton solve used by the CLI
+  Newton smoke test.
 
 **Run directly.**
 
 ```bash
 mkdir -p examples/pn_diode/outputs
-build/vela_example_runner --config examples/pn_diode/simulation.json
+build/vela_example_runner --config examples/pn_diode/simulation_iv.json
+build/vela_example_runner --config examples/pn_diode/simulation_cv.json
+build/vela_example_runner --config examples/pn_diode/simulation_bv.json
 ```
 
-The default PN diode sweep uses `solver.method: "gummel"`. To exercise the
-coupled Newton CLI entry point for a single equilibrium bias point, run:
+The default PN diode IV/BV/CV sweeps use `solver.method: "gummel"`. To
+exercise the coupled Newton CLI entry point for a single equilibrium bias point,
+run:
 
 ```bash
 build/vela_example_runner --config examples/pn_diode/newton_simulation.json
@@ -96,20 +127,161 @@ build/vela_example_runner --config examples/pn_diode/newton_simulation.json
 DC sweeps can also opt into Newton by setting `solver.method` (or
 `solver.type`) to `"newton"` in the same `solver` block used for Newton
 tolerances such as `max_iter`, `reltol`, `abstol`, `damping_factor`, and
-`line_search`. Newton convergence and line-search merit checks use
-`residual_norm: "block"` by default, which normalizes the Poisson, electron
-continuity, and hole continuity residual blocks independently before combining
-them. `residual_norm` only affects Newton solves; set it to `"l2"` for the
-legacy raw L2 norm, or tune `residual_weights` / `residual_scales` with `psi`,
-`phin`, and `phip` entries when a case needs explicit block weighting. Omitting
-`solver.method` / `solver.type` keeps the historical Gummel sweep path.
+`line_search`. Omitting `solver.method` / `solver.type` keeps the historical
+Gummel sweep path.
 
 **Outputs.**
 
 - `examples/pn_diode/outputs/pn_iv.csv`: voltage, electron current, hole
   current, total current, convergence flag, and iteration count.
-- `examples/pn_diode/outputs/pn_sweep_*.vtk`: potential, quasi-Fermi levels,
-  carrier densities, and net doping snapshots for converged sweep points.
+- `examples/pn_diode/outputs/pn_cv.csv`: quasi-static charge and capacitance
+  columns in addition to the common sweep diagnostics.
+- `examples/pn_diode/outputs/pn_bv.csv`: maximum electric field, current-jump
+  ratio, breakdown flag, breakdown voltage, and criterion columns.
+- `examples/pn_diode/outputs/pn_sweep_*.vtk` and
+  `examples/pn_diode/outputs/pn_bv_sweep_*.vtk`: potential, quasi-Fermi
+  levels, carrier densities, and net doping snapshots for converged points.
+
+## NMOS Drift-Diffusion (`examples/nmos2d_dd`)
+
+**Physical meaning.** A deliberately coarse, all-silicon NMOS-like
+cross-section exercises the drift-diffusion Gummel path with four independently
+biased terminals (`body`, `source`, `gate`, and `drain`). The source/drain
+implant regions are abrupt n+ boxes next to a p-type body/channel.
+
+**Current support level.** DD-IV and CV. This is a CI stability baseline, not a
+calibrated transistor model. BV and oxide-interface MOS electrostatics are not
+claimed for this deck.
+
+**Inputs.**
+
+- `mesh.json`: all-silicon body, source implant, and drain implant regions.
+- `simulation_iv.json`: Id-Vd drain sweep at fixed small positive gate bias.
+- `simulation_idvg.json`: Id-Vg gate sweep at fixed drain bias.
+- `simulation_cv.json`: gate/body quasi-static CV sweep on the same DD mesh.
+
+**Run directly.**
+
+```bash
+mkdir -p examples/nmos2d_dd/outputs
+build/vela_example_runner --config examples/nmos2d_dd/simulation_iv.json
+build/vela_example_runner --config examples/nmos2d_dd/simulation_idvg.json
+build/vela_example_runner --config examples/nmos2d_dd/simulation_cv.json
+```
+
+**Outputs and acceptance metrics.**
+
+- `examples/nmos2d_dd/outputs/nmos2d_dd_iv.csv`: Id-Vd sweep rows with
+  `converged=1` for each declared point.
+- `examples/nmos2d_dd/outputs/nmos2d_dd_idvg.csv`: fixed-drain Id-Vg rows.
+- `examples/nmos2d_dd/outputs/nmos2d_dd_cv.csv`: gate/body charge and
+  capacitance columns.
+- `examples/nmos2d_dd/outputs/nmos2d_dd_sweep_*.vtk`: finite potential,
+  quasi-Fermi, carrier-density, and net-doping fields.
+
+## PMOS Drift-Diffusion (`examples/pmos2d_dd`)
+
+**Physical meaning.** The PMOS deck is the polarity-complement counterpart to
+the NMOS stability case. It uses abrupt p+ source/drain implants in an n-type
+body to exercise sign handling, descending DC sweep targets, and contact-bias
+application in the drift-diffusion solver.
+
+**Current support level.** DD-IV and CV. BV is not yet covered.
+
+**Inputs.**
+
+- `mesh.json`: all-silicon n-body, p+ source implant, and p+ drain implant
+  regions.
+- `simulation_iv.json`: Id-Vd drain sweep at fixed small negative gate bias.
+- `simulation_idvg.json`: Id-Vg gate sweep at fixed drain bias.
+- `simulation_cv.json`: gate/body quasi-static CV sweep on the same DD mesh.
+
+**Run directly.**
+
+```bash
+mkdir -p examples/pmos2d_dd/outputs
+build/vela_example_runner --config examples/pmos2d_dd/simulation_iv.json
+build/vela_example_runner --config examples/pmos2d_dd/simulation_idvg.json
+build/vela_example_runner --config examples/pmos2d_dd/simulation_cv.json
+```
+
+**Outputs and acceptance metrics.**
+
+- `examples/pmos2d_dd/outputs/pmos2d_dd_iv.csv`: Id-Vd sweep rows with
+  `converged=1` for each declared point.
+- `examples/pmos2d_dd/outputs/pmos2d_dd_idvg.csv`: fixed-drain Id-Vg rows.
+- `examples/pmos2d_dd/outputs/pmos2d_dd_cv.csv`: gate/body charge and
+  capacitance columns.
+- `examples/pmos2d_dd/outputs/pmos2d_dd_sweep_*.vtk`: finite potential,
+  quasi-Fermi, carrier-density, and net-doping fields.
+
+## LDMOS (`examples/ldmos2d`)
+
+**Physical meaning.** A coarse lateral DMOS-like Poisson-only deck covers a
+p-body / n-drift lateral junction with n+ source/drain regions and a field-oxide
+slab. It is intended to catch Poisson assembly and material-interface
+regressions under a small reverse drain bias before a full LDMOS
+drift-diffusion model is introduced.
+
+**Current support level.** Poisson-only. On-state IV and BV are planned but not
+represented by executable decks yet.
+
+**Inputs.**
+
+- `mesh.json`: p-body/drift silicon, n+ source, n drain/drift, field oxide, and
+  body/source/gate/drain contacts.
+- `simulation_iv.json`: currently a reverse-biased Poisson field-distribution
+  deck; the filename is retained so every device directory has a stable IV deck
+  slot, but this file does not claim DD-IV support.
+
+**Run directly.**
+
+```bash
+mkdir -p examples/ldmos2d/outputs
+build/vela_example_runner --config examples/ldmos2d/simulation_iv.json
+```
+
+**Outputs and acceptance metrics.**
+
+- `examples/ldmos2d/outputs/ldmos2d_reverse_poisson.vtk`: electrostatic
+  potential and net doping across silicon and field oxide.
+- Regression requires the VTK file to exist, be nonempty, and contain no
+  NaN/Inf tokens.
+
+## IGBT (`examples/igbt2d`)
+
+**Physical meaning.** A coarse vertical IGBT-like stack contains a p-type
+collector, n buffer, lightly doped n drift, and top p-base/emitter region. The
+Poisson deck targets off-state electrostatic stability; the IV deck is a
+low-current drift-diffusion prototype only.
+
+**Current support level.** Poisson-only plus a low-current DD-IV prototype.
+High injection, recombination/lifetime-control calibration, and on-state voltage
+regression are not yet implemented in these examples.
+
+**Inputs.**
+
+- `mesh.json`: vertical PNPN/drift stack with collector, gate, and emitter
+  contacts.
+- `simulation_poisson.json`: off-state collector-bias Poisson baseline.
+- `simulation_iv.json`: low-current collector sweep DD prototype.
+
+**Run directly.**
+
+```bash
+mkdir -p examples/igbt2d/outputs
+build/vela_example_runner --config examples/igbt2d/simulation_poisson.json
+build/vela_example_runner --config examples/igbt2d/simulation_iv.json
+```
+
+**Outputs and acceptance metrics.**
+
+- `examples/igbt2d/outputs/igbt2d_poisson.vtk`: electrostatic potential and net
+  doping through the vertical stack.
+- `examples/igbt2d/outputs/igbt2d_iv.csv`: low-current collector sweep with
+  convergence and step diagnostics.
+- `examples/igbt2d/outputs/igbt2d_iv_sweep_*.vtk`: DD field snapshots for the
+  low-current prototype.
 
 ## MOS Capacitor (`examples/moscap`)
 
@@ -122,8 +294,9 @@ regression; the case is Poisson-only.
 
 - `mesh.json`: layered triangular mesh with a silicon slab, a silicon-dioxide
   slab, shared interface nodes at `y = 0.30 um`, and `body`/`gate` contacts.
-- `simulation.json`: Poisson configuration with nonzero oxide `fixed_charge_m3` and a
-  `regression` block describing interface probe locations and tolerances.
+- `simulation.json`: Poisson configuration with nonzero oxide
+  `fixed_charge_m3` and a `regression` block describing interface probe
+  locations and tolerances.
 
 **Run directly.**
 
@@ -140,11 +313,11 @@ build/vela_example_runner --config examples/moscap/simulation.json
   is effectively zero and that the normal electric-displacement estimates on
   the silicon and oxide sides are approximately continuous.
 
-## Simplified NMOS (`examples/nmos2d`)
+## Legacy Simplified NMOS (`examples/nmos2d`)
 
 **Physical meaning.** A coarse rectangular NMOS cross-section exercises a mixed
 semiconductor/oxide mesh with four contacts: `source`, `drain`, `body`, and
-`gate`. The first version is Poisson-only and uses rectangular n+ source/drain
+`gate`. This legacy case is Poisson-only and uses rectangular n+ source/drain
 implant regions plus a p-type body as a CI-friendly approximation of analytic
 implant profiles.
 
@@ -167,118 +340,13 @@ build/vela_example_runner --config examples/nmos2d/simulation.json
 - `examples/nmos2d/outputs/nmos_poisson.vtk`: potential and net doping for
   quick inspection in a VTK viewer.
 
-## NMOS Drift-Diffusion Stability (`examples/nmos2d_dd`)
-
-**Physical meaning.** A deliberately coarse, all-silicon NMOS-like cross-section
-exercises the drift-diffusion Gummel path with four independently biased
-terminals (`body`, `source`, `gate`, and `drain`). The source/drain implant
-regions are represented as abrupt n+ boxes next to a p-type body/channel. This
-is a CI stability baseline rather than a calibrated transistor model; it keeps
-the mesh and voltage range small so that regressions catch solver instability
-without requiring a production TCAD deck.
-
-**Bias conditions.** Body and source are grounded, the gate contact is held at
-0.05 V, and the drain is swept from 0 V to 0.10 V in 0.05 V steps.
-
-**Run directly.**
-
-```bash
-mkdir -p examples/nmos2d_dd/outputs
-build/vela_example_runner --config examples/nmos2d_dd/simulation.json
-```
-
-**Outputs and acceptance metrics.**
-
-- `examples/nmos2d_dd/outputs/nmos2d_dd_iv.csv`: three drain-bias rows with
-  `converged=1` for each declared point.
-- `examples/nmos2d_dd/outputs/nmos2d_dd_sweep_*.vtk`: finite potential,
-  quasi-Fermi, carrier-density, and net-doping fields.
-- Regression requires all expected CSV/VTK files to exist, no NaN/Inf tokens in
-  those outputs, no retries, and `attempted_step` / `accepted_step` magnitudes
-  no larger than 0.05 V.
-
-## PMOS Drift-Diffusion Stability (`examples/pmos2d_dd`)
-
-**Physical meaning.** This is the polarity-complement counterpart to the NMOS
-stability case. It uses a coarse all-silicon mesh with abrupt p+ source/drain
-implants in an n-type body to exercise sign handling, descending DC sweep
-targets, and contact-bias application in the drift-diffusion solver.
-
-**Bias conditions.** Body and source are grounded, the gate contact is held at
--0.05 V, and the drain is swept from 0 V to -0.10 V in -0.05 V steps.
-
-**Run directly.**
-
-```bash
-mkdir -p examples/pmos2d_dd/outputs
-build/vela_example_runner --config examples/pmos2d_dd/simulation.json
-```
-
-**Outputs and acceptance metrics.**
-
-- `examples/pmos2d_dd/outputs/pmos2d_dd_iv.csv`: three drain-bias rows with
-  `converged=1` for each declared point.
-- `examples/pmos2d_dd/outputs/pmos2d_dd_sweep_*.vtk`: finite potential,
-  quasi-Fermi, carrier-density, and net-doping fields.
-- Regression requires all expected CSV/VTK files to exist, no NaN/Inf tokens in
-  those outputs, no retries, and `attempted_step` / `accepted_step` magnitudes
-  no larger than 0.05 V.
-
-## LDMOS Poisson Stability (`examples/ldmos2d_poisson`)
-
-**Physical meaning.** A coarse lateral DMOS-like Poisson-only deck covers a
-p-body / n-drift lateral junction with n+ source/drain regions and a field-oxide
-slab. It is intended to catch Poisson assembly and material-interface
-regressions under a small reverse drain bias before a full LDMOS
-drift-diffusion model is introduced.
-
-**Bias conditions.** Body and source are grounded, the gate/field-plate contact
-is held at 0.2 V, and the drain contact is held at 1.0 V.
-
-**Run directly.**
-
-```bash
-mkdir -p examples/ldmos2d_poisson/outputs
-build/vela_example_runner --config examples/ldmos2d_poisson/simulation.json
-```
-
-**Outputs and acceptance metrics.**
-
-- `examples/ldmos2d_poisson/outputs/ldmos2d_poisson.vtk`: electrostatic
-  potential and net doping across silicon and field oxide.
-- Regression requires the VTK file to exist, be nonempty, and contain no
-  NaN/Inf tokens.
-
-## IGBT Poisson Stability (`examples/igbt2d_poisson`)
-
-**Physical meaning.** A coarse vertical IGBT-like Poisson baseline stacks a
-p-type collector, n buffer, lightly doped n drift, and top p-base/emitter
-region. It targets off-state electrostatic stability and high-gradient doping
-assembly in a CI-friendly mesh.
-
-**Bias conditions.** The collector is biased at 1.0 V while the top gate and
-emitter contacts are grounded.
-
-**Run directly.**
-
-```bash
-mkdir -p examples/igbt2d_poisson/outputs
-build/vela_example_runner --config examples/igbt2d_poisson/simulation.json
-```
-
-**Outputs and acceptance metrics.**
-
-- `examples/igbt2d_poisson/outputs/igbt2d_poisson.vtk`: electrostatic
-  potential and net doping through the vertical stack.
-- Regression requires the VTK file to exist, be nonempty, and contain no
-  NaN/Inf tokens.
-
 ## Adding Future Regression Cases
 
 Use this minimal checklist when adding a new device regression case:
 
-1. Create `examples/<device_name>/` with a small `mesh.json` and
-   `simulation.json` that exercise only implemented solver features.
+1. Create or update `examples/<device_name>/` with a small `mesh.json` and a
+   named simulation deck such as `simulation_iv.json`, `simulation_cv.json`, or
+   `simulation_bv.json` that exercises only implemented solver features.
 2. Keep generated files under `examples/<device_name>/outputs/`; do not commit
    those outputs unless a task explicitly asks for golden artifacts.
 3. Add the case to `EXAMPLES` in `scripts/run_regression.py` with every expected
@@ -288,7 +356,8 @@ Use this minimal checklist when adding a new device regression case:
    continuity, current-direction sanity, or a monotonic trend already supported
    by the model.
 5. Document the case in this file with physical meaning, inputs, direct run
-   command, outputs, and any special checks.
+   command, outputs, and any special checks; keep the support matrix from
+   over-promising.
 6. If the new case exposes solver, mesh, physics, or discretization behavior,
    add or update the closest Catch2 test in `tests/` instead of relying only on
    the example.

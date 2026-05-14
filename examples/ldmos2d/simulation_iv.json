@@ -1,8 +1,8 @@
 {
-  "_comment": "Reverse-biased LDMOS-like Poisson stability point with field plate/gate oxide.",
+  "_comment": "Reverse-biased LDMOS-like Poisson stability point with field plate/gate oxide; IV DD is not enabled for this mixed dielectric mesh yet.",
   "simulation_type": "poisson",
   "mesh_file": "mesh.json",
-  "output_vtk": "outputs/ldmos2d_poisson.vtk",
+  "output_vtk": "outputs/ldmos2d_reverse_poisson.vtk",
   "doping": [
     {
       "region": "p_body_drift",
