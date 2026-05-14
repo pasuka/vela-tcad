@@ -121,5 +121,11 @@ TEST_CASE("Gummel high-doping forward bias does not produce invalid state", "[gu
 
     REQUIRE(sol.iters >= 1);
     REQUIRE(sol.iters <= cfg.maxIter);
+    REQUIRE(sol.converged);
     requireFinitePositiveCarriers(sol, mesh.numNodes());
+
+    REQUIRE(sol.phin(0) == Catch::Approx(0.2));
+    REQUIRE(sol.phip(0) == Catch::Approx(0.2));
+    REQUIRE(sol.phin(1) == Catch::Approx(0.0));
+    REQUIRE(sol.phip(1) == Catch::Approx(0.0));
 }
