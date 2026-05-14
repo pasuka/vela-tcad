@@ -6,6 +6,16 @@
 #include <stdexcept>
 
 namespace vela {
+namespace {
+
+Real validatedThermalVoltage(Real temperature_K)
+{
+    if (temperature_K <= 0.0)
+        throw std::invalid_argument("ContactCurrent: temperature_K must be positive.");
+    return constants::kb * temperature_K / constants::q;
+}
+
+} // namespace
 
 ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
                                const MaterialDatabase& matdb,
@@ -17,11 +27,8 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
     , doping_(doping)
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , mobility_(makeMobilityModel(mobilityConfig))
-    , thermalVoltage_(constants::kb * temperature_K / constants::q)
-{
-    if (temperature_K <= 0.0)
-        throw std::invalid_argument("ContactCurrent: temperature_K must be positive.");
-}
+    , thermalVoltage_(validatedThermalVoltage(temperature_K))
+{}
 
 ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
                                              const std::string& contactName) const

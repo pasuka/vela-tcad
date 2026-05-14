@@ -73,8 +73,6 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json)
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
     cfg.mobility = json.value("mobility", cfg.mobility);
-    if (cfg.temperature_K <= 0.0)
-        throw std::invalid_argument("gummelConfigFromJson: temperature_K must be positive.");
 
     if (json.contains("recombination")) {
         const auto& value = json.at("recombination");
@@ -86,6 +84,9 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json)
             throw std::invalid_argument(
                 "gummelConfigFromJson: recombination must be a string or string array.");
     }
+
+    if (cfg.temperature_K <= 0.0)
+        throw std::invalid_argument("gummelConfigFromJson: temperature_K must be positive.");
 
     return cfg;
 }

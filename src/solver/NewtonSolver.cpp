@@ -41,15 +41,9 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
     cfg.verbose = json.value("verbose", cfg.verbose);
     cfg.finiteDifferenceStep = json.value("finite_difference_step", cfg.finiteDifferenceStep);
     cfg.jacobian = json.value("jacobian", cfg.jacobian);
-    if (cfg.temperature_K <= 0.0)
-        throw std::invalid_argument("newtonConfigFromJson: temperature_K must be positive.");
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
     cfg.mobility = json.value("mobility", cfg.mobility);
-    if (cfg.jacobian != "analytic" && cfg.jacobian != "finite_difference")
-        throw std::invalid_argument(
-            "newtonConfigFromJson: jacobian must be 'analytic' or 'finite_difference'.");
-
     if (json.contains("recombination")) {
         const auto& value = json.at("recombination");
         if (value.is_array())
@@ -60,6 +54,12 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
             throw std::invalid_argument(
                 "newtonConfigFromJson: recombination must be a string or string array.");
     }
+
+    if (cfg.jacobian != "analytic" && cfg.jacobian != "finite_difference")
+        throw std::invalid_argument(
+            "newtonConfigFromJson: jacobian must be 'analytic' or 'finite_difference'.");
+    if (cfg.temperature_K <= 0.0)
+        throw std::invalid_argument("newtonConfigFromJson: temperature_K must be positive.");
 
     return cfg;
 }

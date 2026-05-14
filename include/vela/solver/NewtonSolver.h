@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/core/PhysicalConstants.h"
 #include "vela/core/Types.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/material/MaterialDatabase.h"
