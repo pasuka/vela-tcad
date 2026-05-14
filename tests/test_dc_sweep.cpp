@@ -2,6 +2,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "vela/simulation/DCSweep.h"
+#include "vela/simulation/DCSweepStepControl.h"
 
 #include <chrono>
 #include <cmath>
@@ -11,6 +12,7 @@
 #include <nlohmann/json.hpp>
 #include <random>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
@@ -212,6 +214,151 @@ TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_swe
     REQUIRE(points[2].voltage == Catch::Approx(0.0));
     REQUIRE(points[1].attemptedStep == Catch::Approx(-0.25));
     REQUIRE(points[1].acceptedStep == Catch::Approx(-0.25));
+}
+
+
+TEST_CASE("DCSweep step control: invalid direct-call config fails fast", "[dc_sweep]")
+{
+    const auto attempt = [](Real, Real, int) { return true; };
+    const auto record = [](const detail::DCSweepStepControlEvent&) {};
+
+    SECTION("default config has a zero step")
+    {
+        REQUIRE_THROWS_AS(detail::runDCSweepStepControl({}, attempt, record),
+                          std::invalid_argument);
+    }
+
+    SECTION("zero maxStep is rejected before attempting a solve")
+    {
+        detail::DCSweepStepControlConfig cfg;
+        cfg.start = 0.0;
+        cfg.stop = 1.0;
+        cfg.step = 0.25;
+        cfg.minStep = 0.125;
+        cfg.maxStep = 0.0;
+        cfg.growthFactor = 1.0;
+        cfg.shrinkFactor = 0.5;
+        cfg.maxRetries = 1;
+
+        bool attempted = false;
+        REQUIRE_THROWS_AS(
+            detail::runDCSweepStepControl(
+                cfg,
+                [&](Real, Real, int) {
+                    attempted = true;
+                    return true;
+                },
+                record),
+            std::invalid_argument);
+        REQUIRE_FALSE(attempted);
+    }
+
+    SECTION("step direction must move toward stop")
+    {
+        detail::DCSweepStepControlConfig cfg;
+        cfg.start = 1.0;
+        cfg.stop = 0.0;
+        cfg.step = 0.25;
+        cfg.minStep = 0.125;
+        cfg.maxStep = 0.25;
+        cfg.growthFactor = 1.0;
+        cfg.shrinkFactor = 0.5;
+        cfg.maxRetries = 1;
+
+        REQUIRE_THROWS_AS(detail::runDCSweepStepControl(cfg, attempt, record),
+                          std::invalid_argument);
+    }
+}
+
+TEST_CASE("DCSweep step control: failure after growth shrinks and retries", "[dc_sweep]")
+{
+    detail::DCSweepStepControlConfig cfg;
+    cfg.start = 0.0;
+    cfg.stop = 0.5;
+    cfg.step = 0.5;
+    cfg.minStep = 0.0625;
+    cfg.maxStep = 0.5;
+    cfg.growthFactor = 2.0;
+    cfg.shrinkFactor = 0.5;
+    cfg.maxRetries = 4;
+    cfg.stopOnFailure = true;
+
+    std::vector<detail::DCSweepStepControlEvent> events;
+    std::vector<Real> attempts;
+
+    detail::runDCSweepStepControl(
+        cfg,
+        [&](Real voltage, Real, int) {
+            attempts.push_back(voltage);
+            return attempts.size() == 2 || attempts.size() == 4 || attempts.size() == 5;
+        },
+        [&](const detail::DCSweepStepControlEvent& event) {
+            events.push_back(event);
+        });
+
+    REQUIRE(attempts.size() == 5);
+    REQUIRE(attempts[0] == Catch::Approx(0.5));
+    REQUIRE(attempts[1] == Catch::Approx(0.25));
+    REQUIRE(attempts[2] == Catch::Approx(0.5));
+    REQUIRE(attempts[3] == Catch::Approx(0.375));
+    REQUIRE(attempts[4] == Catch::Approx(0.5));
+
+    REQUIRE(events.size() == 3);
+    REQUIRE(events[0].converged);
+    REQUIRE(events[0].voltage == Catch::Approx(0.25));
+    REQUIRE(events[0].attemptedStep == Catch::Approx(0.25));
+    REQUIRE(events[0].acceptedStep == Catch::Approx(0.25));
+    REQUIRE(events[0].retryCount == 1);
+
+    REQUIRE(events[1].converged);
+    REQUIRE(events[1].voltage == Catch::Approx(0.375));
+    REQUIRE(events[1].attemptedStep == Catch::Approx(0.125));
+    REQUIRE(events[1].acceptedStep == Catch::Approx(0.125));
+    REQUIRE(events[1].retryCount == 1);
+
+    REQUIRE(events[2].converged);
+    REQUIRE(events[2].voltage == Catch::Approx(0.5));
+    REQUIRE(events[2].attemptedStep == Catch::Approx(0.125));
+    REQUIRE(events[2].acceptedStep == Catch::Approx(0.125));
+    REQUIRE(events[2].retryCount == 0);
+}
+
+TEST_CASE("DCSweep step control: minStep boundary records aborting failed attempt", "[dc_sweep]")
+{
+    detail::DCSweepStepControlConfig cfg;
+    cfg.start = 0.0;
+    cfg.stop = 0.5;
+    cfg.step = 0.5;
+    cfg.minStep = 0.2;
+    cfg.maxStep = 0.5;
+    cfg.growthFactor = 1.0;
+    cfg.shrinkFactor = 0.5;
+    cfg.maxRetries = 5;
+    cfg.stopOnFailure = true;
+
+    std::vector<detail::DCSweepStepControlEvent> events;
+    std::vector<Real> attempts;
+
+    detail::runDCSweepStepControl(
+        cfg,
+        [&](Real voltage, Real, int) {
+            attempts.push_back(voltage);
+            return false;
+        },
+        [&](const detail::DCSweepStepControlEvent& event) {
+            events.push_back(event);
+        });
+
+    REQUIRE(attempts.size() == 2);
+    REQUIRE(attempts[0] == Catch::Approx(0.5));
+    REQUIRE(attempts[1] == Catch::Approx(0.25));
+
+    REQUIRE(events.size() == 1);
+    REQUIRE_FALSE(events[0].converged);
+    REQUIRE(events[0].voltage == Catch::Approx(0.25));
+    REQUIRE(events[0].attemptedStep == Catch::Approx(0.25));
+    REQUIRE(events[0].acceptedStep == Catch::Approx(0.0));
+    REQUIRE(events[0].retryCount == 1);
 }
 
 TEST_CASE("DCSweep: failed solve records retry diagnostics", "[dc_sweep]")
