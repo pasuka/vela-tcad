@@ -1,6 +1,7 @@
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/discretization/Bernoulli.h"
+#include "vela/discretization/ScharfetterGummel.h"
 #include "vela/equation/AssemblerUtils.h"
 #include "vela/physics/CarrierStatistics.h"
 #include <Eigen/Sparse>
@@ -138,28 +139,25 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
     // n and p are needed for Poisson source and configured recombination.
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
+
+    // Cache Boltzmann factors used by the balanced quasi-Fermi SG fluxes.
+    // residual() is called repeatedly by Newton iteration and finite-difference
+    // Jacobian assembly, so computing these once per node avoids repeating the
+    // same expensive exponentials for every incident edge endpoint.
+    VectorXd expPsi(N);
+    VectorXd expNegPsi(N);
+    VectorXd expNegPhin(N);
+    VectorXd expPhip(N);
+    for (int i = 0; i < N; ++i) {
+        expPsi(i) = std::exp(x(psiOffset() + i) / Vt_);
+        expNegPsi(i) = std::exp(-x(psiOffset() + i) / Vt_);
+        expNegPhin(i) = std::exp(-x(phinOffset() + i) / Vt_);
+        expPhip(i) = std::exp(x(phipOffset() + i) / Vt_);
+    }
+
     VectorXd r = VectorXd::Zero(3 * N);
     std::vector<bool> hasElectronContribution(static_cast<std::size_t>(N), false);
     std::vector<bool> hasHoleContribution(static_cast<std::size_t>(N), false);
-
-    // Pre-compute per-node exponentials used in the balanced SG flux formulas.
-    // Using the Bernoulli identity B(-u) = B(u)*exp(u), the standard SG flux
-    //   B(-u)*n_i - B(u)*n_j   (electrons, ni=n0)
-    //   B(u)*p_i  - B(-u)*p_j  (holes,     ni=n0)
-    // can be rewritten without catastrophic cancellation at equilibrium as:
-    //   B(u) * ni_i * exp(psi_j/Vt) * [exp(-phin_i/Vt) - exp(-phin_j/Vt)]
-    //   B(u) * ni_i * exp(-psi_i/Vt) * [exp(phip_i/Vt) - exp(phip_j/Vt)]
-    // At equilibrium (phin=phip=0), the bracketed differences are exactly 0.
-    std::vector<Real> expNegPhin(static_cast<std::size_t>(N));
-    std::vector<Real> expPhip(static_cast<std::size_t>(N));
-    std::vector<Real> expPsi(static_cast<std::size_t>(N));
-    std::vector<Real> expNegPsi(static_cast<std::size_t>(N));
-    for (int k = 0; k < N; ++k) {
-        expNegPhin[static_cast<std::size_t>(k)] = std::exp(-x(phinOffset() + k) / Vt_);
-        expPhip[static_cast<std::size_t>(k)]    = std::exp( x(phipOffset()  + k) / Vt_);
-        expPsi[static_cast<std::size_t>(k)]     = std::exp( x(psiOffset()   + k) / Vt_);
-        expNegPsi[static_cast<std::size_t>(k)]  = std::exp(-x(psiOffset()   + k) / Vt_);
-    }
 
     const auto& edgeCells = edgeCells_;
     const auto& vol = vol_;
@@ -173,8 +171,6 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
         const Real dpsi = x(psiOffset() + j) - x(psiOffset() + i);
-        const Real u = dpsi / Vt_;
-        const Real Bu = bernoulli(u);
 
         const Real eps = detail::edgeEpsilon(edgeCells, mesh_, matdb_, e);
         const Real G = eps * couple[e] / h;
@@ -188,15 +184,15 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
 
-            // Balanced electron SG flux (avoids catastrophic cancellation):
-            //   B(-u)*n_i - B(u)*n_j = B(u)*ni_i*exp(psi_j/Vt)
-            //                           * [exp(-phin_i/Vt) - exp(-phin_j/Vt)]
             const Real coef = mun * Vt_ * couple[e] / h;
-            const Real ni_i = ni_[static_cast<Index>(i)];
-            const Real nFlux = coef * Bu * ni_i
-                               * expPsi[static_cast<std::size_t>(j)]
-                               * (expNegPhin[static_cast<std::size_t>(i)]
-                                  - expNegPhin[static_cast<std::size_t>(j)]);
+            const Real nFlux = sgElectronContinuityFluxFromQuasiFermiFactors(
+                ni_[static_cast<Index>(i)],
+                expPsi(j),
+                expNegPhin(i),
+                expNegPhin(j),
+                dpsi,
+                Vt_,
+                coef);
             r(phinOffset() + i) += nFlux;
             r(phinOffset() + j) -= nFlux;
         }
@@ -207,15 +203,15 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
 
-            // Balanced hole SG flux (avoids catastrophic cancellation):
-            //   B(u)*p_i - B(-u)*p_j = B(u)*ni_i*exp(-psi_i/Vt)
-            //                           * [exp(phip_i/Vt) - exp(phip_j/Vt)]
             const Real coef = mup * Vt_ * couple[e] / h;
-            const Real ni_i = ni_[static_cast<Index>(i)];
-            const Real pFlux = coef * Bu * ni_i
-                               * expNegPsi[static_cast<std::size_t>(i)]
-                               * (expPhip[static_cast<std::size_t>(i)]
-                                  - expPhip[static_cast<std::size_t>(j)]);
+            const Real pFlux = sgHoleContinuityFluxFromQuasiFermiFactors(
+                ni_[static_cast<Index>(i)],
+                expNegPsi(i),
+                expPhip(i),
+                expPhip(j),
+                dpsi,
+                Vt_,
+                coef);
             r(phipOffset() + i) += pFlux;
             r(phipOffset() + j) -= pFlux;
         }

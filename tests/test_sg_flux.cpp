@@ -1,7 +1,14 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include "vela/discretization/ScharfetterGummel.h"
-#include "vela/discretization/Bernoulli.h"
+#include "vela/core/PhysicalConstants.h"
+#include "vela/equation/CoupledDDAssembler.h"
+#include "vela/equation/DDAssembler.h"
+#include "vela/material/MaterialDatabase.h"
+#include "vela/mesh/DeviceMesh.h"
+#include "vela/physics/DopingModel.h"
+#include "vela/physics/RecombinationModel.h"
+#include <algorithm>
 #include <cmath>
 
 using namespace vela;
@@ -119,5 +126,74 @@ TEST_CASE("SG fluxes: finite for large dpsi", "[sg]")
         REQUIRE(std::isfinite(Jn));
         const double Jp = sgHoleFlux   (1.0e16, 1.0e16, dpsi, Vt, 0.048, h);
         REQUIRE(std::isfinite(Jp));
+    }
+}
+
+static DeviceMesh makeSingleSiliconTriangleMesh()
+{
+    DeviceMesh mesh;
+
+    Node n0; n0.id = 0; n0.x = 0.0;     n0.y = 0.0;     mesh.addNode(n0);
+    Node n1; n1.id = 1; n1.x = 1.0e-6;  n1.y = 0.0;     mesh.addNode(n1);
+    Node n2; n2.id = 2; n2.x = 0.25e-6; n2.y = 0.8e-6;  mesh.addNode(n2);
+
+    Cell c0; c0.id = 0; c0.type = CellType::Tri3; c0.region_id = 0;
+    c0.node_ids = {0, 1, 2};
+    mesh.addCell(c0);
+
+    Region r0; r0.id = 0; r0.name = "silicon"; r0.material = "Si"; r0.cell_ids = {0};
+    mesh.addRegion(r0);
+
+    mesh.buildEdges();
+    return mesh;
+}
+
+TEST_CASE("SG continuity residuals match DDAssembler and CoupledDDAssembler", "[sg][dd][coupled]")
+{
+    DeviceMesh mesh = makeSingleSiliconTriangleMesh();
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    const RecombinationModelConfig noRecombination = recombinationModelConfig({"none"});
+
+    DDAssembler dd(mesh,
+                   matdb,
+                   doping,
+                   constants::Vt_300,
+                   MobilityModelConfig{},
+                   noRecombination);
+    CoupledDDAssembler coupled(mesh,
+                               matdb,
+                               doping,
+                               constants::Vt_300,
+                               MobilityModelConfig{},
+                               noRecombination);
+
+    CoupledDDState state;
+    state.psi.resize(3);
+    state.phin.resize(3);
+    state.phip.resize(3);
+    state.psi << 0.020, -0.010, 0.030;
+    state.phin << 0.005, -0.002, 0.010;
+    state.phip << -0.004, 0.006, -0.008;
+
+    const VectorXd x = coupled.pack(state);
+    const VectorXd n = coupled.electronDensity(x);
+    const VectorXd p = coupled.holeDensity(x);
+    const VectorXd coupledResidual = coupled.residual(x, CoupledDDBoundaryConditions{});
+
+    dd.assembleElectronContinuity(state.psi, n, p);
+    const VectorXd ddElectronResidual = dd.matrix() * n - dd.rhs();
+
+    dd.assembleHoleContinuity(state.psi, n, p);
+    const VectorXd ddHoleResidual = dd.matrix() * p - dd.rhs();
+
+    const int N = static_cast<int>(mesh.numNodes());
+    for (int i = 0; i < N; ++i) {
+        const double electronScale = std::max(1.0, std::abs(ddElectronResidual(i)));
+        const double holeScale = std::max(1.0, std::abs(ddHoleResidual(i)));
+        REQUIRE(coupledResidual(N + i) / electronScale ==
+                Approx(ddElectronResidual(i) / electronScale).epsilon(1.0e-12).margin(1.0e-12));
+        REQUIRE(coupledResidual(2 * N + i) / holeScale ==
+                Approx(ddHoleResidual(i) / holeScale).epsilon(1.0e-12).margin(1.0e-12));
     }
 }
