@@ -151,7 +151,7 @@ Debug builds include symbols through `-DCMAKE_BUILD_TYPE=Debug`. On
 Windows/MSYS2 UCRT64, use the matching UCRT64 GDB:
 
 ```bash
-gdb --args build/vela_example_runner.exe --config examples/pn_diode/simulation.json
+gdb --args build/vela_example_runner.exe --config examples/pn_diode/simulation_iv.json
 ```
 
 Inside GDB, common commands are:
@@ -218,7 +218,7 @@ import vela
 
 mesh = vela.load_mesh("examples/pn_diode_2d.json")
 potential = vela.run_poisson("examples/pn_poisson_2d.json")
-points = vela.run_dc_sweep("examples/pn_diode/simulation.json")
+points = vela.run_dc_sweep("examples/pn_diode/simulation_iv.json")
 vela.write_vtk("examples/pn_diode/outputs/python_export.vtk")
 ```
 
@@ -377,7 +377,7 @@ only single example runs.
 
 - **Main source paths:** `src/simulation/DCSweep.cpp`,
   `src/tools/vela_example_runner.cpp`, `src/post/ContactCurrent.cpp`,
-  `src/io/`, `scripts/run_regression.py`, and `examples/*/simulation.json`.
+  `src/io/`, `scripts/run_regression.py`, and `examples/*/simulation_*.json`.
 - **Test targets:** expand `tests/test_dc_sweep.cpp`,
   `tests/test_dd_gummel.cpp`, regression summary checks, and CSV/VTK output
   validation in `scripts/run_regression.py`.

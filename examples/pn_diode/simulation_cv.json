@@ -1,0 +1,62 @@
+{
+  "_comment": "PN diode quasi-static junction capacitance sweep under reverse/anode bias.",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "output_csv": "outputs/pn_cv.csv",
+  "doping": [
+    {
+      "region": "n_region",
+      "donors": 1e+23,
+      "acceptors": 0.0
+    },
+    {
+      "region": "p_region",
+      "donors": 0.0,
+      "acceptors": 1e+23
+    }
+  ],
+  "contacts": [
+    {
+      "name": "anode",
+      "bias": 0.0
+    },
+    {
+      "name": "cathode",
+      "bias": 0.0
+    }
+  ],
+  "solver": {
+    "method": "gummel",
+    "max_iter": 80,
+    "reltol": 1e-05,
+    "abstol": 0.0,
+    "damping_psi": 0.5
+  },
+  "sweep": {
+    "mode": "cv_quasistatic",
+    "contact": "anode",
+    "start": 0.0,
+    "stop": -0.2,
+    "step": -0.1,
+    "current_contact": "anode",
+    "write_vtk": false,
+    "terminal_charge": {
+      "contact": "anode",
+      "regions": [
+        "p_region",
+        "n_region"
+      ],
+      "per_meter": true
+    }
+  },
+  "regression": {
+    "declared_converged": true,
+    "dc_sweep": {
+      "expected_rows": 3,
+      "max_abs_attempted_step": 0.1,
+      "max_abs_accepted_step": 0.1,
+      "max_retry_count": 0,
+      "allow_zero_capacitance": true
+    }
+  }
+}

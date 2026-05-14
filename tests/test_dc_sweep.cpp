@@ -187,7 +187,7 @@ Real runMosExampleDrainCurrentAtGate(const std::string& exampleName, Real gateBi
     std::filesystem::copy(src, dir, std::filesystem::copy_options::recursive);
     std::filesystem::create_directories(dir / "outputs");
 
-    const auto cfgPath = dir / "simulation.json";
+    const auto cfgPath = dir / "simulation_iv.json";
     std::ifstream input(cfgPath);
     nlohmann::json cfg;
     input >> cfg;
