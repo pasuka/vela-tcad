@@ -10,6 +10,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace vela {
 namespace {
@@ -83,6 +84,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
     cfg.lineSearch = json.value("line_search", cfg.lineSearch);
     cfg.verbose = json.value("verbose", cfg.verbose);
     cfg.warmStart = json.value("warm_start", cfg.warmStart);
+    cfg.diagnostics = json.value("diagnostics", cfg.diagnostics);
+    cfg.diagnostics = json.value("diagnostic_history", cfg.diagnostics);
     cfg.finiteDifferenceStep = json.value("finite_difference_step", cfg.finiteDifferenceStep);
     cfg.jacobian = json.value("jacobian", cfg.jacobian);
     cfg.residualNorm = json.value("residual_norm", cfg.residualNorm);
@@ -298,6 +301,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     LineSearchConfig lscfg;
     lscfg.enabled = cfg_.lineSearch;
     lscfg.initialDamping = cfg_.dampingFactor;
+    lscfg.recordHistory = cfg_.diagnostics;
     BacktrackingLineSearch lineSearch(lscfg);
 
     VectorXd acceptedX = x;
@@ -356,7 +360,18 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         // per-iteration metrics are consistent with the accepted solution.
         const Real appliedStepNorm = ls.damping * stepNorm;
         const Real residualNorm = ls.residualNorm;
-        result.history.push_back({iter, residualNorm, appliedStepNorm, ls.damping});
+        NewtonIterationInfo info;
+        info.iter = iter;
+        info.residualNorm = residualNorm;
+        info.stepNorm = appliedStepNorm;
+        info.dampingFactor = ls.damping;
+        info.relativeResidualNorm = ResidualNorm::relative(residualNorm, initialNorm);
+        info.rawStepNorm = stepNorm;
+        info.lineSearchAttempts = ls.attempts;
+        info.lineSearchAccepted = ls.accepted;
+        if (cfg_.diagnostics)
+            info.lineSearchHistory = ls.history;
+        result.history.push_back(std::move(info));
         if (cfg_.verbose) {
             std::cout << "Newton iter " << iter
                       << " residual=" << residualNorm
@@ -364,7 +379,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
                       << " damping=" << ls.damping << '\n';
         }
 
-        const Real rel = ResidualNorm::relative(residualNorm, initialNorm);
+        const Real rel = result.history.back().relativeResidualNorm;
         if (residualNorm <= cfg_.abstol || rel <= cfg_.reltol) {
             result.converged = true;
             result.iters = iter;

@@ -118,3 +118,51 @@ TEST_CASE("BacktrackingLineSearch: min damping bounds failed backtracking", "[li
     REQUIRE(result.x(0) == Catch::Approx(0.0));
     REQUIRE(residualCalls == 3);
 }
+
+TEST_CASE("BacktrackingLineSearch: optionally records per-attempt diagnostics", "[line_search][diagnostics]")
+{
+    LineSearchConfig cfg;
+    cfg.initialDamping = 1.0;
+    cfg.minDamping = 0.1;
+    cfg.reduction = 0.5;
+    cfg.sufficientDecrease = 0.0;
+    cfg.maxBacktracks = 4;
+    cfg.recordHistory = true;
+
+    BacktrackingLineSearch search(cfg);
+    VectorXd x(1);
+    x << 0.0;
+    VectorXd step(1);
+    step << 1.0;
+    VectorXd currentResidual(1);
+    currentResidual << 1.0;
+
+    const LineSearchResult result = search.search(
+        x,
+        step,
+        currentResidual,
+        [](const VectorXd& candidate) {
+            VectorXd residual(1);
+            residual << candidate(0);
+            return residual;
+        },
+        [](const VectorXd& candidate, const VectorXd&) {
+            return candidate(0) <= 0.25;
+        });
+
+    REQUIRE(result.accepted);
+    REQUIRE(result.attempts == 3);
+    REQUIRE(result.history.size() == 3);
+    REQUIRE(result.history[0].attempt == 0);
+    REQUIRE(result.history[0].damping == Catch::Approx(1.0));
+    REQUIRE_FALSE(result.history[0].acceptedByCaller);
+    REQUIRE_FALSE(result.history[0].accepted);
+    REQUIRE(result.history[2].attempt == 2);
+    REQUIRE(result.history[2].damping == Catch::Approx(0.25));
+    REQUIRE(result.history[2].residualNorm == Catch::Approx(0.25));
+    REQUIRE(result.history[2].targetResidualNorm == Catch::Approx(1.0));
+    REQUIRE(result.history[2].finite);
+    REQUIRE(result.history[2].acceptedByCaller);
+    REQUIRE(result.history[2].sufficientDecrease);
+    REQUIRE(result.history[2].accepted);
+}
