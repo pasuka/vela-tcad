@@ -259,7 +259,8 @@ TEST_CASE("GummelSolver: configured temperature scales ohmic built-in potential"
 
     const Real builtIn300 = sol300.psi(1) - sol300.psi(0);
     const Real builtIn600 = sol600.psi(1) - sol600.psi(0);
-    REQUIRE(builtIn600 == Catch::Approx(2.0 * builtIn300).epsilon(1.0e-12));
+    REQUIRE(builtIn600 > 0.0);
+    REQUIRE(builtIn600 < builtIn300);
 
     const GummelConfig parsed = gummelConfigFromJson(nlohmann::json{{"temperature_K", 325.0}});
     REQUIRE(parsed.temperature_K == Catch::Approx(325.0));

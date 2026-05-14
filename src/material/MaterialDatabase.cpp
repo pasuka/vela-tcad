@@ -134,6 +134,11 @@ const Material& MaterialDatabase::getMaterial(const std::string& name) const
     return it->second;
 }
 
+Material MaterialDatabase::getMaterial(const std::string& name, Real temperature_K) const
+{
+    return getMaterial(name).atTemperature(temperature_K);
+}
+
 bool MaterialDatabase::hasMaterial(const std::string& name) const
 {
     return db_.count(name) > 0;

@@ -6,6 +6,7 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/BandgapNarrowing.h"
 #include "vela/physics/DopingModel.h"
+#include "vela/physics/ImpactIonizationModel.h"
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <unordered_map>
@@ -39,6 +40,7 @@ struct GummelConfig {
     double taup        = 1.0e-7; ///< Hole SRH lifetime [s]
     std::string mobility = "constant"; ///< "constant" or "caughey_thomas"
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
+    ImpactIonizationModelConfig impactIonization; ///< Avalanche generation model.
     BandgapNarrowingConfig bandgapNarrowing; ///< Effective ni model for high doping.
 };
 

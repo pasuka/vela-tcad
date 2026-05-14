@@ -509,6 +509,27 @@ TEST_CASE("PoissonAssembler: sheet charge is split to shared interface endpoints
     REQUIRE(asm_.rhs()(5) == Catch::Approx(0.0).margin(1e-30));
 }
 
+
+TEST_CASE("PoissonAssembler: interface fixed charge and traps add to sheet charge", "[poisson][charge][traps]")
+{
+    DeviceMesh mesh = makeMOSCapChargeMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makeZeroMOSCapDoping(mesh);
+
+    PoissonAssembler asm_(
+        mesh,
+        matdb,
+        doping,
+        {},
+        {InterfaceSheetChargeSpec{"silicon", "oxide", 1.0e15, 2.0e15, 4.0e15, 0.25}});
+    asm_.assemble();
+
+    const Real totalCharge = 1.0e15 + 2.0e15 + 4.0e15 * 0.25;
+    const Real expectedEndpointCharge = constants::q * totalCharge * 1.0e-6 * 0.5;
+    REQUIRE(asm_.rhs()(2) == Catch::Approx(expectedEndpointCharge).epsilon(1e-12));
+    REQUIRE(asm_.rhs()(3) == Catch::Approx(expectedEndpointCharge).epsilon(1e-12));
+}
+
 TEST_CASE("MaterialDatabase: external file overrides built-ins", "[material]")
 {
     const auto tempDir = makePoissonTempDir("vela_material_override_test");

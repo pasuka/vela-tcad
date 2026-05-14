@@ -109,7 +109,9 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          const DopingModel&                      doping,
                          const MobilityModel&                    mobility,
                          Index                                   edgeId,
-                         CarrierType                             carrier)
+                         CarrierType                             carrier,
+                         Real                                    electricField = 0.0,
+                         Real                                    temperature_K = constants::T0)
 {
     const auto& cells = edgeCells[edgeId];
     if (cells.empty()) return 0.0;
@@ -121,11 +123,11 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
     Real sum = 0.0;
     for (Index c : cells) {
         const auto& region = mesh.getRegion(mesh.getCell(c).region_id);
-        const Material& material = matdb.getMaterial(region.material);
+        const Material material = matdb.getMaterial(region.material, temperature_K);
         if (carrier == CarrierType::Electron)
-            sum += mobility.electronMobility(material, netDoping, 0.0, 0.0);
+            sum += mobility.electronMobility(material, netDoping, 0.0, 0.0, electricField);
         else
-            sum += mobility.holeMobility(material, netDoping, 0.0, 0.0);
+            sum += mobility.holeMobility(material, netDoping, 0.0, 0.0, electricField);
     }
     return sum / static_cast<Real>(cells.size());
 }
@@ -147,7 +149,8 @@ inline Real edgeEpsilon(const std::vector<std::vector<Index>>& edgeCells,
 /// Build per-node intrinsic concentration vector from the material database.
 /// For interface nodes shared by multiple regions, uses the first-found value.
 inline std::vector<Real> buildNodeNi(const DeviceMesh&       mesh,
-                                     const MaterialDatabase& matdb)
+                                     const MaterialDatabase& matdb,
+                                     Real                    temperature_K = constants::T0)
 {
     const Index N = mesh.numNodes();
     std::vector<Real> ni_v(N, 0.0);
@@ -155,7 +158,7 @@ inline std::vector<Real> buildNodeNi(const DeviceMesh&       mesh,
     for (Index c = 0; c < mesh.numCells(); ++c) {
         const auto& cell   = mesh.getCell(c);
         const auto& region = mesh.getRegion(cell.region_id);
-        const Real ni_mat = matdb.getMaterial(region.material).ni;
+        const Real ni_mat = matdb.getMaterial(region.material, temperature_K).ni;
         for (Index nid : cell.node_ids) {
             if (!found[nid]) {
                 ni_v[nid]  = ni_mat;
@@ -183,7 +186,8 @@ inline std::vector<Real> buildEffectiveNodeNi(const DeviceMesh&       mesh,
                                               const BandgapNarrowing& bgn,
                                               Real                    thermalVoltage)
 {
-    std::vector<Real> ni_v = buildNodeNi(mesh, matdb);
+    const Real temperature_K = thermalVoltage * constants::q / constants::kb;
+    std::vector<Real> ni_v = buildNodeNi(mesh, matdb, temperature_K);
     for (Index i = 0; i < mesh.numNodes(); ++i) {
         const Real totalImpurity = doping.donors(i) + doping.acceptors(i);
         const Real delta = bgn.deltaEg(totalImpurity, 0.0, 0.0);

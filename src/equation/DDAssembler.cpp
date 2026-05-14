@@ -3,9 +3,29 @@
 #include "vela/core/PhysicalConstants.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include <Eigen/Sparse>
+#include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 namespace vela {
+
+namespace {
+Real nodeElectricField(const VectorXd& psi, const DeviceMesh& mesh, Index node)
+{
+    Real maxField = 0.0;
+    for (Index e = 0; e < mesh.numEdges(); ++e) {
+        const Edge& edge = mesh.getEdge(e);
+        if (edge.n0 != node && edge.n1 != node)
+            continue;
+        if (edge.length <= 1.0e-30)
+            continue;
+        const int i = static_cast<int>(edge.n0);
+        const int j = static_cast<int>(edge.n1);
+        maxField = std::max(maxField, std::abs((psi(j) - psi(i)) / edge.length));
+    }
+    return maxField;
+}
+}
 
 // ---------------------------------------------------------------------------
 // Constructor
@@ -23,7 +43,8 @@ DDAssembler::DDAssembler(const DeviceMesh&       mesh,
                   Vt,
                   MobilityModelConfig{},
                   recombinationModelConfig({"srh"}, taun, taup),
-                  BandgapNarrowingConfig{})
+                  BandgapNarrowingConfig{},
+                  ImpactIonizationModelConfig{})
 {}
 
 DDAssembler::DDAssembler(const DeviceMesh&               mesh,
@@ -32,13 +53,15 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
                          double                          Vt,
                          const MobilityModelConfig&      mobilityConfig,
                          const RecombinationModelConfig& recombinationConfig,
-                         const BandgapNarrowingConfig& bandgapNarrowingConfig)
+                         const BandgapNarrowingConfig& bandgapNarrowingConfig,
+                         const ImpactIonizationModelConfig& impactIonizationConfig)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
     , Vt_(Vt)
     , mobility_(makeMobilityModel(mobilityConfig))
     , recombination_(recombinationConfig)
+    , impactIonization_(makeImpactIonizationModel(impactIonizationConfig))
     , ni_(detail::buildValidatedEffectiveNodeNi(
           "DDAssembler",
           mesh,
@@ -140,8 +163,11 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         const Real  h    = edge.length;
         if (h < 1.0e-30) continue;
 
+        const Real electricField = std::abs(
+            (psi(static_cast<int>(edge.n1)) - psi(static_cast<int>(edge.n0))) / h);
         const Real mun = detail::edgeMobility(
-            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Electron);
+            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Electron,
+            electricField, Vt_ * constants::q / constants::kb);
         if (mun <= 0.0) continue; // skip insulator edges
 
         const Real coef = mun * Vt_ * couple_[e] / h;
@@ -175,6 +201,8 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
             recombination_.electronLinearization(n_v, p_v, ni_i);
         A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
         b_(ii) += linearization.rhs * vol_i;
+        b_(ii) += impactIonization_->generationRate(
+            nodeElectricField(psi, mesh_, i), n_v, p_v) * vol_i;
     }
 
     // Guard: if any diagonal is still zero (insulator node with all edges
@@ -210,8 +238,11 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         const Real  h    = edge.length;
         if (h < 1.0e-30) continue;
 
+        const Real electricField = std::abs(
+            (psi(static_cast<int>(edge.n1)) - psi(static_cast<int>(edge.n0))) / h);
         const Real mup = detail::edgeMobility(
-            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Hole);
+            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Hole,
+            electricField, Vt_ * constants::q / constants::kb);
         if (mup <= 0.0) continue; // skip insulator edges
 
         const Real coef = mup * Vt_ * couple_[e] / h;
@@ -245,6 +276,8 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
             recombination_.holeLinearization(n_v, p_v, ni_i);
         A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
         b_(ii) += linearization.rhs * vol_i;
+        b_(ii) += impactIonization_->generationRate(
+            nodeElectricField(psi, mesh_, i), n_v, p_v) * vol_i;
     }
 
     // Guard: pin insulator nodes (zero-diagonal) to p = 0

@@ -28,7 +28,8 @@ namespace vela {
  *     { "name": "oxide", "fixed_charge_m3": 1e21 }
  *   ],
  *   "interfaces": [
- *     { "regions": ["silicon", "oxide"], "sheet_charge_m2": 1e15 }
+ *     { "regions": ["silicon", "oxide"], "sheet_charge_m2": 1e15,
+       "fixed_charge_m2": 2e15, "trap_density_m2": 1e15, "trap_occupancy": 0.5 }
  *   ],
  *   "contacts": [
  *     { "name": "cathode", "bias": 0.0, "flatband_voltage": 0.1 },
@@ -39,13 +40,14 @@ namespace vela {
  *
  * Charge and contact conventions
  * ------------------------------
- * fixed_charge_m3 and sheet_charge_m2 are signed elementary-charge number
- * densities. A region may define fixed_charge_m3 in either a doping entry or
+ * fixed_charge_m3, sheet_charge_m2, fixed_charge_m2, and trap_density_m2
+ * are signed elementary-charge number densities. A region may define fixed_charge_m3 in either a doping entry or
  * a top-level regions entry, but not both and not more than once. The assembler
  * multiplies charge densities by q. Sheet charge on a shared-node
  * interface is distributed edge-by-edge: q * sheet_charge_m2 * edge_length / 2
  * is added to each endpoint of every edge whose adjacent cells match the
- * configured region pair. Contact flatband_voltage or work_function_eV shifts
+ * configured region pair. Interface trap charge uses trap_density_m2 *
+ * trap_occupancy as a minimal occupied-trap sheet charge. Contact flatband_voltage or work_function_eV shifts
  * the Dirichlet electrostatic potential as psi = bias - offset.
  *
  * Path resolution

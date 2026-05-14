@@ -7,6 +7,7 @@
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/MobilityModel.h"
 #include "vela/physics/RecombinationModel.h"
+#include "vela/physics/ImpactIonizationModel.h"
 #include <memory>
 #include <vector>
 #include <unordered_map>
@@ -58,7 +59,8 @@ public:
                 double                          Vt,
                 const MobilityModelConfig&      mobilityConfig,
                 const RecombinationModelConfig& recombinationConfig,
-                const BandgapNarrowingConfig& bandgapNarrowingConfig = {});
+                const BandgapNarrowingConfig& bandgapNarrowingConfig = {},
+                const ImpactIonizationModelConfig& impactIonizationConfig = {});
 
     // ------------------------------------------------------------------
     // Assembly
@@ -102,6 +104,7 @@ private:
     double                  Vt_;
     std::unique_ptr<MobilityModel> mobility_;
     RecombinationModel recombination_;
+    std::unique_ptr<ImpactIonizationModel> impactIonization_;
 
     std::vector<Real> ni_; ///< Per-node intrinsic concentration [m^-3]
 

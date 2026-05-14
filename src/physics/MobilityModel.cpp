@@ -9,12 +9,14 @@ namespace vela {
 Real ConstantMobility::electronMobility(const Material& material,
                                         Real,
                                         Real,
+                                        Real,
                                         Real) const
 {
     return material.mun;
 }
 
 Real ConstantMobility::holeMobility(const Material& material,
+                                    Real,
                                     Real,
                                     Real,
                                     Real) const
@@ -29,17 +31,25 @@ DopingDependentMobility::DopingDependentMobility(MobilityModelConfig config)
 Real DopingDependentMobility::electronMobility(const Material& material,
                                                Real netDoping,
                                                Real,
-                                               Real) const
+                                               Real,
+                                               Real electricField) const
 {
-    return caugheyThomas(material.mun, netDoping, config_.electronCT);
+    const Real lowField = caugheyThomas(material.mun, netDoping, config_.electronCT);
+    if (config_.model == "caughey_thomas_field")
+        return fieldLimit(lowField, electricField, config_.electronField);
+    return lowField;
 }
 
 Real DopingDependentMobility::holeMobility(const Material& material,
                                            Real netDoping,
                                            Real,
-                                           Real) const
+                                           Real,
+                                           Real electricField) const
 {
-    return caugheyThomas(material.mup, netDoping, config_.holeCT);
+    const Real lowField = caugheyThomas(material.mup, netDoping, config_.holeCT);
+    if (config_.model == "caughey_thomas_field")
+        return fieldLimit(lowField, electricField, config_.holeField);
+    return lowField;
 }
 
 Real DopingDependentMobility::caugheyThomas(
@@ -59,6 +69,22 @@ Real DopingDependentMobility::caugheyThomas(
     return muMin + (muMax - muMin) / (1.0 + rolloff);
 }
 
+Real DopingDependentMobility::fieldLimit(Real lowFieldMobility,
+                                         Real electricField,
+                                         const FieldMobilityParameters& params)
+{
+    if (lowFieldMobility <= 0.0)
+        return 0.0;
+    if (params.saturationVelocity <= 0.0 || params.beta <= 0.0)
+        throw std::invalid_argument(
+            "DopingDependentMobility: field saturation velocity and beta must be positive.");
+    const Real field = std::abs(electricField);
+    if (field <= 0.0)
+        return lowFieldMobility;
+    const Real ratio = lowFieldMobility * field / params.saturationVelocity;
+    return lowFieldMobility / std::pow(1.0 + std::pow(ratio, params.beta), 1.0 / params.beta);
+}
+
 MobilityModelConfig mobilityModelConfig(std::string modelName)
 {
     MobilityModelConfig config;
@@ -70,7 +96,7 @@ std::unique_ptr<MobilityModel> makeMobilityModel(const MobilityModelConfig& conf
 {
     if (config.model == "constant")
         return std::make_unique<ConstantMobility>();
-    if (config.model == "caughey_thomas")
+    if (config.model == "caughey_thomas" || config.model == "caughey_thomas_field")
         return std::make_unique<DopingDependentMobility>(config);
 
     throw std::invalid_argument(

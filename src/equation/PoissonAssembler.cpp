@@ -68,7 +68,7 @@ std::unordered_map<RegionPairKey, Real, RegionPairKeyHash> sheetChargeByRegionPa
 {
     std::unordered_map<RegionPairKey, Real, RegionPairKeyHash> sheetByRegionPair;
     for (const auto& spec : sheetCharges)
-        sheetByRegionPair[makeRegionPairKey(spec.region0, spec.region1)] += spec.sheetCharge;
+        sheetByRegionPair[makeRegionPairKey(spec.region0, spec.region1)] += spec.totalSheetCharge();
     return sheetByRegionPair;
 }
 

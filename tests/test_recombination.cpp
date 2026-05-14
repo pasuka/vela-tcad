@@ -1,7 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 
+#include "vela/material/MaterialDatabase.h"
 #include "vela/physics/BandgapNarrowing.h"
+#include "vela/physics/CarrierStatistics.h"
 #include "vela/physics/RecombinationModel.h"
 
 #include <cmath>
@@ -88,4 +90,14 @@ TEST_CASE("Bandgap narrowing factory validates model names", "[bgn]")
             > 0.0);
     REQUIRE_THROWS_AS(makeBandgapNarrowingModel(bandgapNarrowingConfig("unknown")),
                       std::invalid_argument);
+}
+
+TEST_CASE("CarrierStatistics intrinsic density uses temperature_K material path", "[temperature]")
+{
+    MaterialDatabase matdb;
+    const Material& si = matdb.getMaterial("Si");
+    const Real ni300 = intrinsicDensity(si, 300.0);
+    const Real ni450 = intrinsicDensity(si, 450.0);
+    REQUIRE(ni300 == Catch::Approx(si.ni));
+    REQUIRE(ni450 > ni300);
 }
