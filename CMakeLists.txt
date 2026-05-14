@@ -170,6 +170,7 @@ target_link_libraries(test_line_search_backtrack_failure PRIVATE vela_core Catch
 
 add_executable(test_dc_sweep tests/test_dc_sweep.cpp)
 target_link_libraries(test_dc_sweep PRIVATE vela_core Catch2::Catch2WithMain)
+target_compile_definitions(test_dc_sweep PRIVATE VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(Catch)
 catch_discover_tests(test_scaling)

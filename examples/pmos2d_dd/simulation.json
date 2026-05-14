@@ -61,6 +61,17 @@
       "max_abs_attempted_step": 0.05,
       "max_abs_accepted_step": 0.05,
       "max_retry_count": 0
+    },
+    "mos": {
+      "device": "pmos",
+      "drain_current_sign": 1.0,
+      "idvg": {
+        "drain_bias": -0.1,
+        "gate_start": 0.0,
+        "gate_stop": -0.05,
+        "gate_step": -0.05,
+        "output_csv": "outputs/pmos2d_dd_idvg.csv"
+      }
     }
   }
 }

@@ -40,7 +40,7 @@ EXAMPLES = [
             Path("outputs/nmos2d_dd_iv.csv"),
             Path("outputs/nmos2d_dd_sweep_0000_0V.vtk"),
         ],
-        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression", "mos_trends"],
     },
     {
         "name": "pmos2d_dd",
@@ -49,7 +49,7 @@ EXAMPLES = [
             Path("outputs/pmos2d_dd_iv.csv"),
             Path("outputs/pmos2d_dd_sweep_0000_0V.vtk"),
         ],
-        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression", "mos_trends"],
     },
     {
         "name": "ldmos2d_poisson",
@@ -329,6 +329,104 @@ def check_moscap_interface(example_dir: Path) -> dict[str, float]:
     }
 
 
+
+def contact_bias(cfg: dict[str, Any], name: str) -> float:
+    for contact in cfg["contacts"]:
+        if contact["name"] == name:
+            return float(contact["bias"])
+    raise AssertionError(f"Contact '{name}' not found in config")
+
+
+def set_contact_bias(cfg: dict[str, Any], name: str, bias: float) -> None:
+    for contact in cfg["contacts"]:
+        if contact["name"] == name:
+            contact["bias"] = bias
+            return
+    raise AssertionError(f"Contact '{name}' not found in config")
+
+
+def assert_monotone_non_decreasing(values: list[float], label: str, tolerance: float = 1.0e-18) -> None:
+    for left, right in zip(values, values[1:]):
+        if right + tolerance < left:
+            raise AssertionError(f"{label} is not monotone non-decreasing: {values}")
+
+
+def check_mos_trends(example_dir: Path, runner: Path) -> dict[str, Any]:
+    cfg_path = example_dir / "simulation.json"
+    cfg = json.loads(cfg_path.read_text())
+    reg = cfg.get("regression", {}).get("mos", {})
+    device = reg.get("device", example_dir.name.split("2d", maxsplit=1)[0]).lower()
+    if device not in {"nmos", "pmos"}:
+        raise AssertionError(f"Unsupported MOS regression device '{device}'")
+
+    rows = read_csv(output_csv_path(example_dir, cfg))
+    if not rows:
+        raise AssertionError("MOS Id-Vd CSV contains no rows")
+    voltages = [float(row["voltage"]) for row in rows]
+    currents = [float(row["total_current"]) for row in rows]
+    abs_currents = [abs(value) for value in currents]
+    expected_voltages = expected_sweep_voltages(cfg["sweep"])
+    for actual, want in zip(voltages, expected_voltages):
+        if abs(actual - want) > 1.0e-9:
+            raise AssertionError(f"MOS Id-Vd voltage {actual} does not match expected {want}")
+    assert_monotone_non_decreasing(abs_currents, f"{device.upper()} |Id|-Vd trend")
+
+    polarity = float(reg.get("drain_current_sign", 1.0))
+    on_current = currents[-1]
+    if polarity * on_current <= 0.0:
+        raise AssertionError(
+            f"{device.upper()} drain current sign {on_current} does not match expected polarity {polarity}")
+
+    idvg = reg.get("idvg", {})
+    if not idvg:
+        return {"idvd_currents": currents, "idvd_voltages": voltages}
+
+    idvg_cfg = json.loads(cfg_path.read_text())
+    drain_bias = float(idvg.get("drain_bias", cfg["sweep"]["stop"]))
+    gate_start = float(idvg["gate_start"])
+    gate_stop = float(idvg["gate_stop"])
+    gate_step = float(idvg["gate_step"])
+    set_contact_bias(idvg_cfg, "drain", drain_bias)
+    idvg_cfg["output_csv"] = idvg.get("output_csv", f"outputs/{device}_idvg.csv")
+    idvg_cfg["sweep"] = dict(idvg_cfg["sweep"])
+    idvg_cfg["sweep"].update({
+        "contact": "gate",
+        "start": gate_start,
+        "stop": gate_stop,
+        "step": gate_step,
+        "current_contact": "drain",
+        "write_vtk": False,
+    })
+    idvg_cfg_path = example_dir / f"{device}_idvg_regression.json"
+    idvg_cfg_path.write_text(json.dumps(idvg_cfg, indent=2) + "\n")
+    proc = subprocess.run(
+        [str(runner), "--config", str(idvg_cfg_path)],
+        cwd=example_dir,
+        text=True,
+        capture_output=True,
+    )
+    if proc.returncode != 0:
+        raise AssertionError(f"{device.upper()} Id-Vg regression run failed: {proc.stderr.strip()}")
+
+    idvg_rows = read_csv(output_csv_path(example_dir, idvg_cfg))
+    if not idvg_rows:
+        raise AssertionError(f"{device.upper()} Id-Vg CSV contains no rows")
+    idvg_gate = [float(row["voltage"]) for row in idvg_rows]
+    idvg_currents = [float(row["total_current"]) for row in idvg_rows]
+    idvg_abs = [abs(value) for value in idvg_currents]
+    assert_monotone_non_decreasing(idvg_abs, f"{device.upper()} |Id|-Vg trend")
+    if idvg_abs[-1] <= idvg_abs[0]:
+        raise AssertionError(
+            f"{device.upper()} Id-Vg on-current did not increase: {idvg_abs}")
+
+    return {
+        "device": device,
+        "idvd_voltages": voltages,
+        "idvd_currents": currents,
+        "idvg_gate_voltages": idvg_gate,
+        "idvg_currents": idvg_currents,
+    }
+
 def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -> dict[str, Any]:
     name = spec["name"]
     example_dir = copy_example(repo, workdir, name)
@@ -363,6 +461,8 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
             result["checks"]["iv_trend"] = check_iv_trend(example_dir)
         if "moscap_interface" in spec["checks"]:
             result["checks"]["moscap_interface"] = check_moscap_interface(example_dir)
+        if "mos_trends" in spec["checks"]:
+            result["checks"]["mos_trends"] = check_mos_trends(example_dir, runner)
         result["passed"] = True
     except Exception as ex:  # noqa: BLE001 - regression summary should capture all failures.
         result["error"] = str(ex)

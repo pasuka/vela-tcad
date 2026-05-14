@@ -60,6 +60,9 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
 
 void DDAssembler::applyDirichlet(const std::unordered_map<Index, Real>& bcs)
 {
+    // The caller chooses which contact nodes belong to each scalar equation:
+    // MOS source/drain/body contacts pass carrier-density Dirichlet maps, and
+    // the electrostatic solve passes the corresponding potential map.
     detail::applyDirichletBC(A_, b_, bcs);
 }
 
