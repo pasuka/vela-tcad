@@ -330,13 +330,6 @@ def check_moscap_interface(example_dir: Path) -> dict[str, float]:
 
 
 
-def contact_bias(cfg: dict[str, Any], name: str) -> float:
-    for contact in cfg["contacts"]:
-        if contact["name"] == name:
-            return float(contact["bias"])
-    raise AssertionError(f"Contact '{name}' not found in config")
-
-
 def set_contact_bias(cfg: dict[str, Any], name: str, bias: float) -> None:
     for contact in cfg["contacts"]:
         if contact["name"] == name:
@@ -345,7 +338,38 @@ def set_contact_bias(cfg: dict[str, Any], name: str, bias: float) -> None:
     raise AssertionError(f"Contact '{name}' not found in config")
 
 
+def parse_finite_float(row: dict[str, str], column: str, label: str, row_index: int) -> float:
+    try:
+        value = float(row[column])
+    except KeyError as exc:
+        raise AssertionError(f"{label} row {row_index} is missing column '{column}'") from exc
+    except ValueError as exc:
+        raise AssertionError(
+            f"{label} row {row_index} has non-numeric {column} value {row.get(column)!r}") from exc
+    if not math.isfinite(value):
+        raise AssertionError(f"{label} row {row_index} has non-finite {column} value {value}")
+    return value
+
+
+def validate_sweep_voltages(
+    actual: list[float],
+    expected: list[float],
+    label: str,
+    tolerance: float = 1.0e-9,
+) -> None:
+    if len(actual) != len(expected):
+        raise AssertionError(f"{label} wrote {len(actual)} rows, expected {len(expected)}: {actual}")
+    for actual_value, expected_value in zip(actual, expected):
+        if abs(actual_value - expected_value) > tolerance:
+            raise AssertionError(
+                f"{label} voltage {actual_value} does not match expected {expected_value}; "
+                f"all voltages: {actual}")
+
+
 def assert_monotone_non_decreasing(values: list[float], label: str, tolerance: float = 1.0e-18) -> None:
+    for value in values:
+        if not math.isfinite(value):
+            raise AssertionError(f"{label} contains non-finite value: {values}")
     for left, right in zip(values, values[1:]):
         if right + tolerance < left:
             raise AssertionError(f"{label} is not monotone non-decreasing: {values}")
@@ -362,13 +386,17 @@ def check_mos_trends(example_dir: Path, runner: Path) -> dict[str, Any]:
     rows = read_csv(output_csv_path(example_dir, cfg))
     if not rows:
         raise AssertionError("MOS Id-Vd CSV contains no rows")
-    voltages = [float(row["voltage"]) for row in rows]
-    currents = [float(row["total_current"]) for row in rows]
+    voltages = [
+        parse_finite_float(row, "voltage", "MOS Id-Vd", idx)
+        for idx, row in enumerate(rows, start=1)
+    ]
+    currents = [
+        parse_finite_float(row, "total_current", "MOS Id-Vd", idx)
+        for idx, row in enumerate(rows, start=1)
+    ]
     abs_currents = [abs(value) for value in currents]
     expected_voltages = expected_sweep_voltages(cfg["sweep"])
-    for actual, want in zip(voltages, expected_voltages):
-        if abs(actual - want) > 1.0e-9:
-            raise AssertionError(f"MOS Id-Vd voltage {actual} does not match expected {want}")
+    validate_sweep_voltages(voltages, expected_voltages, "MOS Id-Vd")
     assert_monotone_non_decreasing(abs_currents, f"{device.upper()} |Id|-Vd trend")
 
     polarity = float(reg.get("drain_current_sign", 1.0))
@@ -411,8 +439,16 @@ def check_mos_trends(example_dir: Path, runner: Path) -> dict[str, Any]:
     idvg_rows = read_csv(output_csv_path(example_dir, idvg_cfg))
     if not idvg_rows:
         raise AssertionError(f"{device.upper()} Id-Vg CSV contains no rows")
-    idvg_gate = [float(row["voltage"]) for row in idvg_rows]
-    idvg_currents = [float(row["total_current"]) for row in idvg_rows]
+    idvg_gate = [
+        parse_finite_float(row, "voltage", f"{device.upper()} Id-Vg", idx)
+        for idx, row in enumerate(idvg_rows, start=1)
+    ]
+    idvg_currents = [
+        parse_finite_float(row, "total_current", f"{device.upper()} Id-Vg", idx)
+        for idx, row in enumerate(idvg_rows, start=1)
+    ]
+    expected_idvg_gate = expected_sweep_voltages(idvg_cfg["sweep"])
+    validate_sweep_voltages(idvg_gate, expected_idvg_gate, f"{device.upper()} Id-Vg")
     idvg_abs = [abs(value) for value in idvg_currents]
     assert_monotone_non_decreasing(idvg_abs, f"{device.upper()} |Id|-Vg trend")
     if idvg_abs[-1] <= idvg_abs[0]:

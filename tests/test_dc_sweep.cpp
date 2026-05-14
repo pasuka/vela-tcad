@@ -160,10 +160,14 @@ Real runMosExampleDrainCurrentAtGate(const std::string& exampleName, Real gateBi
     std::ifstream input(cfgPath);
     nlohmann::json cfg;
     input >> cfg;
+    bool foundGateContact = false;
     for (auto& contact : cfg["contacts"]) {
-        if (contact.at("name").get<std::string>() == "gate")
+        if (contact.at("name").get<std::string>() == "gate") {
             contact["bias"] = gateBias;
+            foundGateContact = true;
+        }
     }
+    REQUIRE(foundGateContact);
     cfg["output_csv"] = "outputs/mos_idvd_test.csv";
     cfg["sweep"]["start"] = drainBias;
     cfg["sweep"]["stop"] = drainBias;
