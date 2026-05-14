@@ -168,3 +168,37 @@ TEST_CASE("Gummel high-doping contacts use Slotboom bandgap narrowing", "[gummel
     REQUIRE(sol.n(3) == Catch::Approx(minority).epsilon(1.0e-12));
     REQUIRE(sol.psi(1) - sol.psi(3) == Catch::Approx(builtIn).epsilon(1.0e-12));
 }
+
+TEST_CASE("Gummel high-doping asymmetric reverse bias does not diverge", "[gummel][high-doping][stability]")
+{
+    DeviceMesh mesh = makeHighDopingPNMesh();
+    MaterialDatabase matdb;
+    std::vector<RegionDopingSpec> specs = {
+        {"n_region", 1.0e24, 0.0},
+        {"p_region", 0.0, 2.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.20},
+        {"cathode", 0.0},
+    };
+
+    GummelConfig cfg;
+    cfg.maxIter = 120;
+    cfg.reltol = 1.0e-5;
+    cfg.abstol = 1.0e8;
+    cfg.dampingPsi = 0.2;
+    cfg.mobility = "caughey_thomas";
+    cfg.bandgapNarrowing.model = "slotboom";
+
+    DDSolution sol;
+    REQUIRE_NOTHROW(sol = runGummel(mesh, matdb, doping, biases, cfg));
+    REQUIRE(sol.iters >= 1);
+    REQUIRE(sol.iters <= cfg.maxIter);
+    requireFinitePositiveCarriers(sol, mesh.numNodes());
+    REQUIRE(sol.phin(0) == Catch::Approx(-0.20));
+    REQUIRE(sol.phip(0) == Catch::Approx(-0.20));
+    REQUIRE(sol.phin(1) == Catch::Approx(0.0));
+    REQUIRE(sol.phip(1) == Catch::Approx(0.0));
+}

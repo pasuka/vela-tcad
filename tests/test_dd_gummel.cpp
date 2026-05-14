@@ -266,3 +266,111 @@ TEST_CASE("GummelSolver: configured temperature scales ohmic built-in potential"
     REQUIRE_THROWS_AS(gummelConfigFromJson(nlohmann::json{{"temperature_K", 0.0}}),
                       std::invalid_argument);
 }
+
+static DeviceMesh makeFourTerminalSiliconMesh()
+{
+    DeviceMesh mesh;
+    const double Lx = 1.0e-6;
+    const double Ly = 4.0e-7;
+    const double xmid = 0.5e-6;
+
+    Node n0; n0.id=0; n0.x=0.0;  n0.y=0.0;  mesh.addNode(n0);
+    Node n1; n1.id=1; n1.x=xmid; n1.y=0.0;  mesh.addNode(n1);
+    Node n2; n2.id=2; n2.x=Lx;   n2.y=0.0;  mesh.addNode(n2);
+    Node n3; n3.id=3; n3.x=0.0;  n3.y=Ly;   mesh.addNode(n3);
+    Node n4; n4.id=4; n4.x=xmid; n4.y=Ly;   mesh.addNode(n4);
+    Node n5; n5.id=5; n5.x=Lx;   n5.y=Ly;   mesh.addNode(n5);
+
+    Cell c0; c0.id=0; c0.type=CellType::Tri3; c0.region_id=0; c0.node_ids={0,1,4}; mesh.addCell(c0);
+    Cell c1; c1.id=1; c1.type=CellType::Tri3; c1.region_id=0; c1.node_ids={0,4,3}; mesh.addCell(c1);
+    Cell c2; c2.id=2; c2.type=CellType::Tri3; c2.region_id=1; c2.node_ids={1,2,5}; mesh.addCell(c2);
+    Cell c3; c3.id=3; c3.type=CellType::Tri3; c3.region_id=1; c3.node_ids={1,5,4}; mesh.addCell(c3);
+
+    Region r0; r0.id=0; r0.name="p_channel"; r0.material="Si"; r0.cell_ids={0,1}; mesh.addRegion(r0);
+    Region r1; r1.id=1; r1.name="n_drain"; r1.material="Si"; r1.cell_ids={2,3}; mesh.addRegion(r1);
+
+    Contact body; body.id=0; body.name="body"; body.region_id=0; body.node_ids={0,1}; mesh.addContact(body);
+    Contact source; source.id=1; source.name="source"; source.region_id=0; source.node_ids={3}; mesh.addContact(source);
+    Contact gate; gate.id=2; gate.name="gate"; gate.region_id=0; gate.node_ids={4}; mesh.addContact(gate);
+    Contact drain; drain.id=3; drain.name="drain"; drain.region_id=1; drain.node_ids={2,5}; mesh.addContact(drain);
+
+    mesh.buildEdges();
+    return mesh;
+}
+
+static void requireFiniteDDSolution(const DDSolution& sol, Index nodeCount)
+{
+    for (Index i = 0; i < nodeCount; ++i) {
+        const int ii = static_cast<int>(i);
+        REQUIRE(std::isfinite(sol.psi(ii)));
+        REQUIRE(std::isfinite(sol.phin(ii)));
+        REQUIRE(std::isfinite(sol.phip(ii)));
+        REQUIRE(std::isfinite(sol.n(ii)));
+        REQUIRE(std::isfinite(sol.p(ii)));
+        REQUIRE(sol.n(ii) >= 0.0);
+        REQUIRE(sol.p(ii) >= 0.0);
+    }
+}
+
+TEST_CASE("GummelSolver: high doping gradient reverse bias remains finite", "[gummel][stability]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    std::vector<RegionDopingSpec> specs = {
+        {"n_region", 8.0e23, 0.0},
+        {"p_region", 0.0, 5.0e21}
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.25},
+        {"cathode", 0.0}
+    };
+
+    GummelConfig cfg;
+    cfg.maxIter = 100;
+    cfg.reltol = 1.0e-5;
+    cfg.abstol = 1.0e8;
+    cfg.dampingPsi = 0.25;
+    cfg.mobility = "caughey_thomas";
+
+    DDSolution sol;
+    REQUIRE_NOTHROW(sol = runGummel(mesh, matdb, doping, biases, cfg));
+    REQUIRE(sol.iters >= 1);
+    REQUIRE(sol.iters <= cfg.maxIter);
+    requireFiniteDDSolution(sol, mesh.numNodes());
+}
+
+TEST_CASE("GummelSolver: multi-terminal contact biases are imposed", "[gummel][contacts]")
+{
+    DeviceMesh mesh = makeFourTerminalSiliconMesh();
+    MaterialDatabase matdb;
+    std::vector<RegionDopingSpec> specs = {
+        {"p_channel", 0.0, 1.0e21},
+        {"n_drain", 5.0e21, 0.0}
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const std::unordered_map<std::string, Real> biases = {
+        {"body", 0.0},
+        {"source", 0.0},
+        {"gate", 0.05},
+        {"drain", 0.10}
+    };
+
+    GummelConfig cfg;
+    cfg.maxIter = 80;
+    cfg.reltol = 1.0e-5;
+    cfg.abstol = 1.0e8;
+    cfg.dampingPsi = 0.5;
+
+    DDSolution sol;
+    REQUIRE_NOTHROW(sol = runGummel(mesh, matdb, doping, biases, cfg));
+    requireFiniteDDSolution(sol, mesh.numNodes());
+    REQUIRE(sol.phin(3) == Catch::Approx(0.0));
+    REQUIRE(sol.phip(3) == Catch::Approx(0.0));
+    REQUIRE(sol.phin(4) == Catch::Approx(0.05));
+    REQUIRE(sol.phip(4) == Catch::Approx(0.05));
+    REQUIRE(sol.phin(5) == Catch::Approx(0.10));
+    REQUIRE(sol.phip(5) == Catch::Approx(0.10));
+}

@@ -40,5 +40,14 @@
     "current_contact": "anode",
     "write_vtk": true,
     "vtk_prefix": "outputs/pn_sweep"
+  },
+  "regression": {
+    "declared_converged": true,
+    "dc_sweep": {
+      "expected_rows": 3,
+      "max_abs_attempted_step": 0.25,
+      "max_abs_accepted_step": 0.25,
+      "max_retry_count": 0
+    }
   }
 }

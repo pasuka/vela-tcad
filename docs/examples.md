@@ -167,6 +167,112 @@ build/vela_example_runner --config examples/nmos2d/simulation.json
 - `examples/nmos2d/outputs/nmos_poisson.vtk`: potential and net doping for
   quick inspection in a VTK viewer.
 
+## NMOS Drift-Diffusion Stability (`examples/nmos2d_dd`)
+
+**Physical meaning.** A deliberately coarse, all-silicon NMOS-like cross-section
+exercises the drift-diffusion Gummel path with four independently biased
+terminals (`body`, `source`, `gate`, and `drain`). The source/drain implant
+regions are represented as abrupt n+ boxes next to a p-type body/channel. This
+is a CI stability baseline rather than a calibrated transistor model; it keeps
+the mesh and voltage range small so that regressions catch solver instability
+without requiring a production TCAD deck.
+
+**Bias conditions.** Body and source are grounded, the gate contact is held at
+0.05 V, and the drain is swept from 0 V to 0.10 V in 0.05 V steps.
+
+**Run directly.**
+
+```bash
+mkdir -p examples/nmos2d_dd/outputs
+build/vela_example_runner --config examples/nmos2d_dd/simulation.json
+```
+
+**Outputs and acceptance metrics.**
+
+- `examples/nmos2d_dd/outputs/nmos2d_dd_iv.csv`: three drain-bias rows with
+  `converged=1` for each declared point.
+- `examples/nmos2d_dd/outputs/nmos2d_dd_sweep_*.vtk`: finite potential,
+  quasi-Fermi, carrier-density, and net-doping fields.
+- Regression requires all expected CSV/VTK files to exist, no NaN/Inf tokens in
+  those outputs, no retries, and `attempted_step` / `accepted_step` magnitudes
+  no larger than 0.05 V.
+
+## PMOS Drift-Diffusion Stability (`examples/pmos2d_dd`)
+
+**Physical meaning.** This is the polarity-complement counterpart to the NMOS
+stability case. It uses a coarse all-silicon mesh with abrupt p+ source/drain
+implants in an n-type body to exercise sign handling, descending DC sweep
+targets, and contact-bias application in the drift-diffusion solver.
+
+**Bias conditions.** Body and source are grounded, the gate contact is held at
+-0.05 V, and the drain is swept from 0 V to -0.10 V in -0.05 V steps.
+
+**Run directly.**
+
+```bash
+mkdir -p examples/pmos2d_dd/outputs
+build/vela_example_runner --config examples/pmos2d_dd/simulation.json
+```
+
+**Outputs and acceptance metrics.**
+
+- `examples/pmos2d_dd/outputs/pmos2d_dd_iv.csv`: three drain-bias rows with
+  `converged=1` for each declared point.
+- `examples/pmos2d_dd/outputs/pmos2d_dd_sweep_*.vtk`: finite potential,
+  quasi-Fermi, carrier-density, and net-doping fields.
+- Regression requires all expected CSV/VTK files to exist, no NaN/Inf tokens in
+  those outputs, no retries, and `attempted_step` / `accepted_step` magnitudes
+  no larger than 0.05 V.
+
+## LDMOS Poisson Stability (`examples/ldmos2d_poisson`)
+
+**Physical meaning.** A coarse lateral DMOS-like Poisson-only deck covers a
+p-body / n-drift lateral junction with n+ source/drain regions and a field-oxide
+slab. It is intended to catch Poisson assembly and material-interface
+regressions under a small reverse drain bias before a full LDMOS
+drift-diffusion model is introduced.
+
+**Bias conditions.** Body and source are grounded, the gate/field-plate contact
+is held at 0.2 V, and the drain contact is held at 1.0 V.
+
+**Run directly.**
+
+```bash
+mkdir -p examples/ldmos2d_poisson/outputs
+build/vela_example_runner --config examples/ldmos2d_poisson/simulation.json
+```
+
+**Outputs and acceptance metrics.**
+
+- `examples/ldmos2d_poisson/outputs/ldmos2d_poisson.vtk`: electrostatic
+  potential and net doping across silicon and field oxide.
+- Regression requires the VTK file to exist, be nonempty, and contain no
+  NaN/Inf tokens.
+
+## IGBT Poisson Stability (`examples/igbt2d_poisson`)
+
+**Physical meaning.** A coarse vertical IGBT-like Poisson baseline stacks a
+p-type collector, n buffer, lightly doped n drift, and top p-base/emitter
+region. It targets off-state electrostatic stability and high-gradient doping
+assembly in a CI-friendly mesh.
+
+**Bias conditions.** The collector is biased at 1.0 V while the top gate and
+emitter contacts are grounded.
+
+**Run directly.**
+
+```bash
+mkdir -p examples/igbt2d_poisson/outputs
+build/vela_example_runner --config examples/igbt2d_poisson/simulation.json
+```
+
+**Outputs and acceptance metrics.**
+
+- `examples/igbt2d_poisson/outputs/igbt2d_poisson.vtk`: electrostatic
+  potential and net doping through the vertical stack.
+- Regression requires the VTK file to exist, be nonempty, and contain no
+  NaN/Inf tokens.
+
 ## Adding Future Regression Cases
 
 Use this minimal checklist when adding a new device regression case:
