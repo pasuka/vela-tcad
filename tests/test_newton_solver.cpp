@@ -7,6 +7,7 @@
 #include "vela/core/PhysicalConstants.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/material/MaterialDatabase.h"
+#include "vela/numerics/ResidualNorm.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/solver/GummelSolver.h"
@@ -265,11 +266,130 @@ TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
 {
     const NewtonConfig cfg;
     REQUIRE(cfg.jacobian == "analytic");
+    REQUIRE_FALSE(cfg.warmStart);
 
-    const NewtonConfig debugCfg = newtonConfigFromJson(nlohmann::json{{"jacobian", "finite_difference"}});
+    const NewtonConfig debugCfg = newtonConfigFromJson(nlohmann::json{
+        {"jacobian", "finite_difference"},
+        {"warm_start", true},
+    });
     REQUIRE(debugCfg.jacobian == "finite_difference");
+    REQUIRE(debugCfg.warmStart);
 }
 
+TEST_CASE("NewtonSolver: warm start preserves supplied quasi-Fermi guess", "[newton][warm_start]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    const int N = static_cast<int>(mesh.numNodes());
+    DDSolution initial;
+    initial.psi = VectorXd::Zero(N);
+    initial.phin = VectorXd::Zero(N);
+    initial.phip = VectorXd::Zero(N);
+    const int interiorNode = 4;
+    initial.phin(interiorNode) = 0.02;
+    initial.phip(interiorNode) = -0.015;
+
+    NewtonConfig coldCfg = newtonConfig();
+    coldCfg.maxIter = 0;
+    coldCfg.reltol = 0.0;
+    coldCfg.abstol = 0.0;
+    coldCfg.warmStart = false;
+
+    NewtonConfig warmCfg = coldCfg;
+    warmCfg.warmStart = true;
+
+    const NewtonResult cold = runNewton(mesh, matdb, doping, zeroBias(), initial, coldCfg);
+    const NewtonResult warm = runNewton(mesh, matdb, doping, zeroBias(), initial, warmCfg);
+
+    REQUIRE_FALSE(cold.converged);
+    REQUIRE_FALSE(warm.converged);
+
+    REQUIRE(cold.solution.phin(interiorNode) == Catch::Approx(0.0).margin(1.0e-14));
+    REQUIRE(cold.solution.phip(interiorNode) == Catch::Approx(0.0).margin(1.0e-14));
+    REQUIRE(warm.solution.phin(interiorNode) ==
+            Catch::Approx(initial.phin(interiorNode)).margin(1.0e-14));
+    REQUIRE(warm.solution.phip(interiorNode) ==
+            Catch::Approx(initial.phip(interiorNode)).margin(1.0e-14));
+    REQUIRE(warm.initialResidualNorm != Catch::Approx(cold.initialResidualNorm));
+}
+
+
+
+TEST_CASE("NewtonSolver: block residual norm balances mixed equation blocks", "[newton][residual]")
+{
+    const int N = 2;
+    VectorXd initial(3 * N);
+    initial << 1.0e-18, -1.0e-18,
+               10.0, -10.0,
+               5.0, -5.0;
+    VectorXd current(3 * N);
+    current << 1.0e-18, 0.0,
+               1.0, -1.0,
+               0.5, -0.5;
+
+    const ResidualBlockNormValue initialBlocks = ResidualNorm::computeBlocks(initial, N);
+    const ResidualBlockNormValue currentBlocks = ResidualNorm::computeBlocks(current, N);
+
+    REQUIRE(initialBlocks.psi == Catch::Approx(std::sqrt(2.0) * 1.0e-18));
+    REQUIRE(initialBlocks.phin == Catch::Approx(std::sqrt(200.0)));
+    REQUIRE(initialBlocks.phip == Catch::Approx(std::sqrt(50.0)));
+
+    const Real balanced = ResidualNorm::normalizedBlockL2(currentBlocks, initialBlocks);
+    REQUIRE(balanced == Catch::Approx(std::sqrt(0.5 + 0.01 + 0.01)));
+
+    ResidualBlockWeights continuityOnly;
+    continuityOnly.psi = 0.0;
+    continuityOnly.phin = 1.0;
+    continuityOnly.phip = 4.0;
+    const Real weighted = ResidualNorm::normalizedBlockL2(
+        currentBlocks, initialBlocks, continuityOnly);
+    REQUIRE(weighted == Catch::Approx(std::sqrt(0.01 + 4.0 * 0.01)));
+}
+
+TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]")
+{
+    const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
+        {"residual_norm", "block"},
+        {"residual_weights", {{"psi", 0.25}, {"phin", 2.0}, {"phip", 3.0}}},
+        {"residual_scales", {{"psi", 1.0e-18}, {"phin", 2.0e4}, {"phip", 3.0e4}}}
+    });
+
+    REQUIRE(cfg.residualNorm == "block");
+    REQUIRE(cfg.residualWeightPsi == Catch::Approx(0.25));
+    REQUIRE(cfg.residualWeightPhin == Catch::Approx(2.0));
+    REQUIRE(cfg.residualWeightPhip == Catch::Approx(3.0));
+    REQUIRE(cfg.residualScalePsi == Catch::Approx(1.0e-18));
+    REQUIRE(cfg.residualScalePhin == Catch::Approx(2.0e4));
+    REQUIRE(cfg.residualScalePhip == Catch::Approx(3.0e4));
+
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{"residual_norm", "unknown"}}),
+        std::invalid_argument);
+}
+
+TEST_CASE("NewtonSolver: rejects disabled residual weights", "[newton][config]")
+{
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{
+            {"residual_weights", {{"psi", 0.0}, {"phin", 0.0}, {"phip", 0.0}}}
+        }),
+        std::invalid_argument);
+
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{
+            {"residual_weights", {{"psi", -1.0}, {"phin", 0.0}, {"phip", 1.0}}}
+        }),
+        std::invalid_argument);
+
+    const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
+        {"residual_weights", {{"psi", 0.0}, {"phin", 0.0}, {"phip", 1.0}}}
+    });
+    REQUIRE(cfg.residualWeightPsi == Catch::Approx(0.0));
+    REQUIRE(cfg.residualWeightPhin == Catch::Approx(0.0));
+    REQUIRE(cfg.residualWeightPhip == Catch::Approx(1.0));
+}
 
 TEST_CASE("NewtonSolver: verbose false suppresses failure diagnostics", "[newton]")
 {

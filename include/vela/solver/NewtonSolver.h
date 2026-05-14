@@ -23,8 +23,16 @@ struct NewtonConfig {
     Real dampingFactor = 1.0;
     bool lineSearch = true;
     bool verbose = true;
+    bool warmStart = false; ///< Preserve supplied quasi-Fermi potentials instead of resetting interiors.
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
+    std::string residualNorm = "block"; ///< "block" or "l2" convergence/line-search norm
+    Real residualWeightPsi = 1.0;
+    Real residualWeightPhin = 1.0;
+    Real residualWeightPhip = 1.0;
+    Real residualScalePsi = 0.0;  ///< <= 0 selects max(initial psi-block residual norm, 1)
+    Real residualScalePhin = 0.0; ///< <= 0 selects max(initial electron-continuity residual norm, 1)
+    Real residualScalePhip = 0.0; ///< <= 0 selects max(initial hole-continuity residual norm, 1)
     Real taun = 1.0e-7;
     Real taup = 1.0e-7;
     std::string mobility = "constant"; ///< "constant" or "caughey_thomas"

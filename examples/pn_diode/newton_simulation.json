@@ -31,6 +31,7 @@
     "abstol": 1e-18,
     "damping_factor": 1.0,
     "line_search": true,
+    "warm_start": false,
     "verbose": false
   }
 }
