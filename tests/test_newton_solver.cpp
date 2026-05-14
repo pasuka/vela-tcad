@@ -264,9 +264,45 @@ TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
 {
     const NewtonConfig cfg;
     REQUIRE(cfg.jacobian == "analytic");
+    REQUIRE_FALSE(cfg.warmStart);
 
-    const NewtonConfig debugCfg = newtonConfigFromJson(nlohmann::json{{"jacobian", "finite_difference"}});
+    const NewtonConfig debugCfg = newtonConfigFromJson(nlohmann::json{
+        {"jacobian", "finite_difference"},
+        {"warm_start", true},
+    });
     REQUIRE(debugCfg.jacobian == "finite_difference");
+    REQUIRE(debugCfg.warmStart);
+}
+
+TEST_CASE("NewtonSolver: warm start preserves supplied quasi-Fermi guess", "[newton][warm_start]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    const int N = static_cast<int>(mesh.numNodes());
+    DDSolution initial;
+    initial.psi = VectorXd::Zero(N);
+    initial.phin = VectorXd::Zero(N);
+    initial.phip = VectorXd::Zero(N);
+    initial.phin(4) = 0.02;
+    initial.phip(4) = -0.015;
+
+    NewtonConfig coldCfg = newtonConfig();
+    coldCfg.maxIter = 0;
+    coldCfg.reltol = 0.0;
+    coldCfg.abstol = 0.0;
+    coldCfg.warmStart = false;
+
+    NewtonConfig warmCfg = coldCfg;
+    warmCfg.warmStart = true;
+
+    const NewtonResult cold = runNewton(mesh, matdb, doping, zeroBias(), initial, coldCfg);
+    const NewtonResult warm = runNewton(mesh, matdb, doping, zeroBias(), initial, warmCfg);
+
+    REQUIRE_FALSE(cold.converged);
+    REQUIRE_FALSE(warm.converged);
+    REQUIRE(warm.initialResidualNorm != Catch::Approx(cold.initialResidualNorm));
 }
 
 

@@ -21,6 +21,7 @@ struct NewtonConfig {
     Real dampingFactor = 1.0;
     bool lineSearch = true;
     bool verbose = true;
+    bool warmStart = false; ///< Preserve supplied quasi-Fermi potentials instead of resetting interiors.
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
     Real taun = 1.0e-7;
