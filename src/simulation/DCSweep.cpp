@@ -310,10 +310,61 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
 namespace detail {
 
+namespace {
+
+void validateDCSweepStepControlConfig(const DCSweepStepControlConfig& cfg)
+{
+    const auto requireFinite = [](Real value, const char* name) {
+        if (!std::isfinite(value)) {
+            throw std::invalid_argument(std::string("DCSweep step control: ") + name +
+                                        " must be finite.");
+        }
+    };
+
+    requireFinite(cfg.start, "start");
+    requireFinite(cfg.stop, "stop");
+    requireFinite(cfg.step, "step");
+    requireFinite(cfg.minStep, "minStep");
+    requireFinite(cfg.maxStep, "maxStep");
+    requireFinite(cfg.growthFactor, "growthFactor");
+    requireFinite(cfg.shrinkFactor, "shrinkFactor");
+
+    if (cfg.step == 0.0)
+        throw std::invalid_argument("DCSweep step control: step must be non-zero.");
+    if ((cfg.stop - cfg.start) * cfg.step < 0.0) {
+        throw std::invalid_argument(
+            "DCSweep step control: step sign must move start toward stop.");
+    }
+    if (cfg.minStep <= 0.0)
+        throw std::invalid_argument("DCSweep step control: minStep must be positive.");
+    if (cfg.maxStep <= 0.0)
+        throw std::invalid_argument("DCSweep step control: maxStep must be positive.");
+    if (cfg.minStep > cfg.maxStep) {
+        throw std::invalid_argument(
+            "DCSweep step control: minStep must not exceed maxStep.");
+    }
+    if (cfg.growthFactor < 1.0) {
+        throw std::invalid_argument(
+            "DCSweep step control: growthFactor must be at least 1.");
+    }
+    if (cfg.shrinkFactor <= 0.0 || cfg.shrinkFactor >= 1.0) {
+        throw std::invalid_argument(
+            "DCSweep step control: shrinkFactor must be greater than 0 and less than 1.");
+    }
+    if (cfg.maxRetries < 0) {
+        throw std::invalid_argument(
+            "DCSweep step control: maxRetries must be non-negative.");
+    }
+}
+
+} // namespace
+
 void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
                            const DCSweepStepAttempt& attempt,
                            const DCSweepStepRecorder& record)
 {
+    validateDCSweepStepControlConfig(cfg);
+
     Real previousVoltage = cfg.start;
     const Real direction = (cfg.step > 0.0) ? 1.0 : -1.0;
     const Real tolerance = 1.0e-12;

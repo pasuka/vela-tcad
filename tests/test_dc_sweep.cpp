@@ -12,6 +12,7 @@
 #include <nlohmann/json.hpp>
 #include <random>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
@@ -215,6 +216,59 @@ TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_swe
     REQUIRE(points[1].acceptedStep == Catch::Approx(-0.25));
 }
 
+
+TEST_CASE("DCSweep step control: invalid direct-call config fails fast", "[dc_sweep]")
+{
+    const auto attempt = [](Real, Real, int) { return true; };
+    const auto record = [](const detail::DCSweepStepControlEvent&) {};
+
+    SECTION("default config has a zero step")
+    {
+        REQUIRE_THROWS_AS(detail::runDCSweepStepControl({}, attempt, record),
+                          std::invalid_argument);
+    }
+
+    SECTION("zero maxStep is rejected before attempting a solve")
+    {
+        detail::DCSweepStepControlConfig cfg;
+        cfg.start = 0.0;
+        cfg.stop = 1.0;
+        cfg.step = 0.25;
+        cfg.minStep = 0.125;
+        cfg.maxStep = 0.0;
+        cfg.growthFactor = 1.0;
+        cfg.shrinkFactor = 0.5;
+        cfg.maxRetries = 1;
+
+        bool attempted = false;
+        REQUIRE_THROWS_AS(
+            detail::runDCSweepStepControl(
+                cfg,
+                [&](Real, Real, int) {
+                    attempted = true;
+                    return true;
+                },
+                record),
+            std::invalid_argument);
+        REQUIRE_FALSE(attempted);
+    }
+
+    SECTION("step direction must move toward stop")
+    {
+        detail::DCSweepStepControlConfig cfg;
+        cfg.start = 1.0;
+        cfg.stop = 0.0;
+        cfg.step = 0.25;
+        cfg.minStep = 0.125;
+        cfg.maxStep = 0.25;
+        cfg.growthFactor = 1.0;
+        cfg.shrinkFactor = 0.5;
+        cfg.maxRetries = 1;
+
+        REQUIRE_THROWS_AS(detail::runDCSweepStepControl(cfg, attempt, record),
+                          std::invalid_argument);
+    }
+}
 
 TEST_CASE("DCSweep step control: failure after growth shrinks and retries", "[dc_sweep]")
 {
