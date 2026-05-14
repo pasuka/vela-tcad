@@ -45,14 +45,19 @@ public:
 private:
     using StorageIndex = SparseMatrixd::StorageIndex;
 
+    class SparseLUSolver : public Eigen::SparseLU<SparseMatrixd> {
+    public:
+        bool analysisIsOk() const noexcept { return this->m_analysisIsOk; }
+    };
+
     bool patternMatches(const SparseMatrixd& A) const;
     void cachePattern(const SparseMatrixd& A);
     void analyzePatternIfNeeded(const SparseMatrixd& A);
 
-    Eigen::SparseLU<SparseMatrixd> solver_;
+    SparseLUSolver solver_;
     bool hasAnalyzedPattern_ = false;
-    int cachedRows_ = 0;
-    int cachedCols_ = 0;
+    Eigen::Index cachedRows_ = 0;
+    Eigen::Index cachedCols_ = 0;
     std::size_t cachedNonZeros_ = 0;
     std::vector<StorageIndex> cachedOuterStarts_;
     std::vector<StorageIndex> cachedInnerIndices_;

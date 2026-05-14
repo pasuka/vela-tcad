@@ -77,8 +77,8 @@ bool LinearSolver::patternMatches(const SparseMatrixd& A) const
 
 void LinearSolver::cachePattern(const SparseMatrixd& A)
 {
-    cachedRows_ = static_cast<int>(A.rows());
-    cachedCols_ = static_cast<int>(A.cols());
+    cachedRows_ = A.rows();
+    cachedCols_ = A.cols();
     cachedNonZeros_ = static_cast<std::size_t>(A.nonZeros());
 
     const auto outerCount = static_cast<std::size_t>(A.outerSize() + 1);
@@ -95,6 +95,11 @@ void LinearSolver::analyzePatternIfNeeded(const SparseMatrixd& A)
         return;
 
     solver_.analyzePattern(A);
+    if (!solver_.analysisIsOk()) {
+        clearPatternCache();
+        throw std::runtime_error("LinearSolver: SparseLU symbolic analysis failed.");
+    }
+
     cachePattern(A);
     ++patternAnalysisCount_;
 }
