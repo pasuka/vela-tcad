@@ -3,6 +3,7 @@
 #include "vela/core/Types.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
+#include "vela/physics/BandgapNarrowing.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/MobilityModel.h"
 #include "vela/physics/RecombinationModel.h"
@@ -56,7 +57,8 @@ public:
                 const DopingModel&              doping,
                 double                          Vt,
                 const MobilityModelConfig&      mobilityConfig,
-                const RecombinationModelConfig& recombinationConfig);
+                const RecombinationModelConfig& recombinationConfig,
+                const BandgapNarrowingConfig& bandgapNarrowingConfig = {});
 
     // ------------------------------------------------------------------
     // Assembly

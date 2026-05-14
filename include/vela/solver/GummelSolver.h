@@ -4,6 +4,7 @@
 #include "vela/core/Types.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
+#include "vela/physics/BandgapNarrowing.h"
 #include "vela/physics/DopingModel.h"
 #include <nlohmann/json_fwd.hpp>
 #include <string>
@@ -38,6 +39,7 @@ struct GummelConfig {
     double taup        = 1.0e-7; ///< Hole SRH lifetime [s]
     std::string mobility = "constant"; ///< "constant" or "caughey_thomas"
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
+    BandgapNarrowingConfig bandgapNarrowing; ///< Effective ni model for high doping.
 };
 
 /**

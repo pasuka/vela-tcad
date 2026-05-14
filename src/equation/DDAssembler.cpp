@@ -22,7 +22,8 @@ DDAssembler::DDAssembler(const DeviceMesh&       mesh,
                   doping,
                   Vt,
                   MobilityModelConfig{},
-                  recombinationModelConfig({"srh"}, taun, taup))
+                  recombinationModelConfig({"srh"}, taun, taup),
+                  BandgapNarrowingConfig{})
 {}
 
 DDAssembler::DDAssembler(const DeviceMesh&               mesh,
@@ -30,14 +31,20 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
                          const DopingModel&              doping,
                          double                          Vt,
                          const MobilityModelConfig&      mobilityConfig,
-                         const RecombinationModelConfig& recombinationConfig)
+                         const RecombinationModelConfig& recombinationConfig,
+                         const BandgapNarrowingConfig& bandgapNarrowingConfig)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
     , Vt_(Vt)
     , mobility_(makeMobilityModel(mobilityConfig))
     , recombination_(recombinationConfig)
-    , ni_(detail::buildNodeNi(mesh, matdb))
+    , ni_(detail::buildEffectiveNodeNi(
+          mesh,
+          matdb,
+          doping,
+          *makeBandgapNarrowingModel(bandgapNarrowingConfig),
+          Vt))
     , A_(static_cast<int>(mesh.numNodes()),
          static_cast<int>(mesh.numNodes()))
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))

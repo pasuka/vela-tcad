@@ -41,7 +41,8 @@ CoupledDDAssembler::CoupledDDAssembler(const DeviceMesh& mesh,
                          doping,
                          Vt,
                          MobilityModelConfig{},
-                         recombinationModelConfig({"srh"}, taun, taup))
+                         recombinationModelConfig({"srh"}, taun, taup),
+                         BandgapNarrowingConfig{})
 {}
 
 CoupledDDAssembler::CoupledDDAssembler(
@@ -50,14 +51,20 @@ CoupledDDAssembler::CoupledDDAssembler(
     const DopingModel& doping,
     double Vt,
     const MobilityModelConfig& mobilityConfig,
-    const RecombinationModelConfig& recombinationConfig)
+    const RecombinationModelConfig& recombinationConfig,
+    const BandgapNarrowingConfig& bandgapNarrowingConfig)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
     , Vt_(Vt)
     , mobility_(makeMobilityModel(mobilityConfig))
     , recombination_(recombinationConfig)
-    , ni_(detail::buildNodeNi(mesh, matdb))
+    , ni_(detail::buildEffectiveNodeNi(
+          mesh,
+          matdb,
+          doping,
+          *makeBandgapNarrowingModel(bandgapNarrowingConfig),
+          Vt))
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
     , couple_(detail::computeEdgeCouplings(mesh))

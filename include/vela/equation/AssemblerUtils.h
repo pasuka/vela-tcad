@@ -16,6 +16,7 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/MobilityModel.h"
+#include "vela/physics/BandgapNarrowing.h"
 #include <Eigen/Sparse>
 #include <vector>
 #include <unordered_map>
@@ -160,6 +161,21 @@ inline std::vector<Real> buildNodeNi(const DeviceMesh&       mesh,
                 found[nid] = true;
             }
         }
+    }
+    return ni_v;
+}
+
+/// Build per-node effective intrinsic concentration including bandgap narrowing.
+inline std::vector<Real> buildEffectiveNodeNi(const DeviceMesh&       mesh,
+                                              const MaterialDatabase& matdb,
+                                              const DopingModel&      doping,
+                                              const BandgapNarrowing& bgn,
+                                              Real                    thermalVoltage)
+{
+    std::vector<Real> ni_v = buildNodeNi(mesh, matdb);
+    for (Index i = 0; i < mesh.numNodes(); ++i) {
+        const Real delta = bgn.deltaEg(doping.netDoping(i), 0.0, 0.0);
+        ni_v[i] = effectiveIntrinsicDensity(ni_v[i], thermalVoltage, delta);
     }
     return ni_v;
 }

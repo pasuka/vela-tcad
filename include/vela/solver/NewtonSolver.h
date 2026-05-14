@@ -6,6 +6,7 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/numerics/LineSearch.h"
+#include "vela/physics/BandgapNarrowing.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/solver/GummelSolver.h"
 #include <nlohmann/json_fwd.hpp>
@@ -37,6 +38,7 @@ struct NewtonConfig {
     Real taup = 1.0e-7;
     std::string mobility = "constant"; ///< "constant" or "caughey_thomas"
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
+    BandgapNarrowingConfig bandgapNarrowing; ///< Effective ni model for high doping.
 };
 
 struct NewtonIterationInfo {

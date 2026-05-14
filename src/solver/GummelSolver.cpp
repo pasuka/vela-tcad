@@ -83,6 +83,23 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json)
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
     cfg.mobility = json.value("mobility", cfg.mobility);
+    if (json.contains("bandgap_narrowing")) {
+        const auto& value = json.at("bandgap_narrowing");
+        if (value.is_string()) {
+            cfg.bandgapNarrowing.model = value.get<std::string>();
+        } else if (value.is_object()) {
+            cfg.bandgapNarrowing.model = value.value("model", cfg.bandgapNarrowing.model);
+            cfg.bandgapNarrowing.referenceDoping = value.value(
+                "reference_doping_m3", cfg.bandgapNarrowing.referenceDoping);
+            cfg.bandgapNarrowing.coefficient = value.value(
+                "coefficient_eV", cfg.bandgapNarrowing.coefficient);
+            cfg.bandgapNarrowing.smoothing = value.value(
+                "smoothing", cfg.bandgapNarrowing.smoothing);
+        } else {
+            throw std::invalid_argument(
+                "gummelConfigFromJson: bandgap_narrowing must be a string or object.");
+        }
+    }
 
     if (json.contains("recombination")) {
         const auto& value = json.at("recombination");
@@ -117,8 +134,13 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     const Index  N   = mesh.numNodes();
     const double Vt  = thermalVoltage(cfg.temperature_K);
 
-    // Per-node ni
-    const std::vector<double> ni_v = buildNiVector(mesh, matdb);
+    // Per-node effective ni, including optional bandgap narrowing.
+    std::vector<double> ni_v = buildNiVector(mesh, matdb);
+    const auto bgn = makeBandgapNarrowingModel(cfg.bandgapNarrowing);
+    for (Index i = 0; i < N; ++i) {
+        const double deltaEg = bgn->deltaEg(doping.netDoping(i), 0.0, 0.0);
+        ni_v[i] = effectiveIntrinsicDensity(ni_v[i], Vt, deltaEg);
+    }
 
     // ------------------------------------------------------------------
     // Build Ohmic contact Dirichlet BCs
@@ -167,7 +189,8 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     MobilityModelConfig mobilityConfig = mobilityModelConfig(cfg.mobility);
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg.recombination, cfg.taun, cfg.taup);
-    DDAssembler assembler(mesh, matdb, doping, Vt, mobilityConfig, recombinationConfig);
+    DDAssembler assembler(
+        mesh, matdb, doping, Vt, mobilityConfig, recombinationConfig, cfg.bandgapNarrowing);
 
     VectorXd psi_init  = VectorXd::Zero(static_cast<int>(N));
     VectorXd n_init    = VectorXd::Zero(static_cast<int>(N));
