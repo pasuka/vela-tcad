@@ -2,6 +2,10 @@
 
 #include "vela/core/Types.h"
 
+#include <Eigen/SparseLU>
+#include <cstddef>
+#include <vector>
+
 namespace vela {
 
 /**
@@ -16,9 +20,48 @@ public:
     /**
      * @brief Solve the linear system A * x = b.
      *
-     * @throws std::runtime_error if the factorisation or solve fails.
+     * Reuses Eigen's symbolic analysis when consecutive solves have the same
+     * sparse structure. Numerical factorisation is still performed every call
+     * so changed coefficient values are reflected in the solution.
+     *
+     * @throws std::invalid_argument if dimensions are inconsistent.
+     * @throws std::runtime_error if the analysis, factorisation, or solve fails.
      */
     VectorXd solve(const SparseMatrixd& A, const VectorXd& b);
+
+    /**
+     * @brief Clear the cached sparse pattern and force re-analysis next solve.
+     */
+    void clearPatternCache();
+
+    /**
+     * @brief Number of symbolic pattern analyses performed by this instance.
+     *
+     * This is primarily useful for tests and lightweight performance
+     * diagnostics; it does not count numerical factorisations.
+     */
+    std::size_t patternAnalysisCount() const noexcept;
+
+private:
+    using StorageIndex = SparseMatrixd::StorageIndex;
+
+    class SparseLUSolver : public Eigen::SparseLU<SparseMatrixd> {
+    public:
+        bool analysisIsOk() const noexcept { return this->m_analysisIsOk; }
+    };
+
+    bool patternMatches(const SparseMatrixd& A) const;
+    void cachePattern(const SparseMatrixd& A);
+    void analyzePatternIfNeeded(const SparseMatrixd& A);
+
+    SparseLUSolver solver_;
+    bool hasAnalyzedPattern_ = false;
+    Eigen::Index cachedRows_ = 0;
+    Eigen::Index cachedCols_ = 0;
+    std::size_t cachedNonZeros_ = 0;
+    std::vector<StorageIndex> cachedOuterStarts_;
+    std::vector<StorageIndex> cachedInnerIndices_;
+    std::size_t patternAnalysisCount_ = 0;
 };
 
 } // namespace vela
