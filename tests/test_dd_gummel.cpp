@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <stdexcept>
 #include <unordered_map>
 
 using namespace vela;
@@ -235,4 +236,33 @@ TEST_CASE("GummelSolver: abstol can terminate strongly damped high-doping update
 
     const GummelConfig parsed = gummelConfigFromJson(nlohmann::json{{"abstol", 1.0e-12}});
     REQUIRE(parsed.abstol == Catch::Approx(1.0e-12));
+}
+
+TEST_CASE("GummelSolver: configured temperature scales ohmic built-in potential", "[gummel][temperature]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", 0.0},
+        {"cathode", 0.0}
+    };
+
+    GummelConfig cfg300;
+    cfg300.maxIter = 1;
+    cfg300.temperature_K = 300.0;
+    const DDSolution sol300 = runGummel(mesh, matdb, doping, biases, cfg300);
+
+    GummelConfig cfg600 = cfg300;
+    cfg600.temperature_K = 600.0;
+    const DDSolution sol600 = runGummel(mesh, matdb, doping, biases, cfg600);
+
+    const Real builtIn300 = sol300.psi(1) - sol300.psi(0);
+    const Real builtIn600 = sol600.psi(1) - sol600.psi(0);
+    REQUIRE(builtIn600 == Catch::Approx(2.0 * builtIn300).epsilon(1.0e-12));
+
+    const GummelConfig parsed = gummelConfigFromJson(nlohmann::json{{"temperature_K", 325.0}});
+    REQUIRE(parsed.temperature_K == Catch::Approx(325.0));
+    REQUIRE_THROWS_AS(gummelConfigFromJson(nlohmann::json{{"temperature_K", 0.0}}),
+                      std::invalid_argument);
 }

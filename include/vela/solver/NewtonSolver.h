@@ -18,6 +18,7 @@ struct NewtonConfig {
     int maxIter = 20;
     Real reltol = 1.0e-8;
     Real abstol = 1.0e-18;
+    Real temperature_K = constants::T0; ///< Lattice temperature [K]
     Real dampingFactor = 1.0;
     bool lineSearch = true;
     bool verbose = true;

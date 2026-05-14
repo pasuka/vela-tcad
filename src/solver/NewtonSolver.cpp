@@ -13,8 +13,10 @@
 namespace vela {
 namespace {
 
-inline double thermalVoltage(double T = 300.0)
+inline double thermalVoltage(double T)
 {
+    if (T <= 0.0)
+        throw std::invalid_argument("thermalVoltage: temperature_K must be positive.");
     return constants::kb * T / constants::q;
 }
 
@@ -33,11 +35,14 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
     cfg.maxIter = json.value("max_iter", cfg.maxIter);
     cfg.reltol = json.value("reltol", cfg.reltol);
     cfg.abstol = json.value("abstol", cfg.abstol);
+    cfg.temperature_K = json.value("temperature_K", cfg.temperature_K);
     cfg.dampingFactor = json.value("damping_factor", cfg.dampingFactor);
     cfg.lineSearch = json.value("line_search", cfg.lineSearch);
     cfg.verbose = json.value("verbose", cfg.verbose);
     cfg.finiteDifferenceStep = json.value("finite_difference_step", cfg.finiteDifferenceStep);
     cfg.jacobian = json.value("jacobian", cfg.jacobian);
+    if (cfg.temperature_K <= 0.0)
+        throw std::invalid_argument("newtonConfigFromJson: temperature_K must be positive.");
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
     cfg.mobility = json.value("mobility", cfg.mobility);
@@ -81,7 +86,7 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
 {
     CoupledDDBoundaryConditions bcs;
     const auto& ni = assembler.intrinsicDensity();
-    const double Vt = thermalVoltage();
+    const double Vt = thermalVoltage(cfg_.temperature_K);
 
     for (Index c = 0; c < mesh_.numContacts(); ++c) {
         const Contact& contact = mesh_.getContact(c);
@@ -110,6 +115,7 @@ DDSolution NewtonSolver::buildInitialGuess(
     GummelConfig gcfg;
     gcfg.maxIter = 1;
     gcfg.reltol = 0.0;
+    gcfg.temperature_K = cfg_.temperature_K;
     gcfg.dampingPsi = 0.5;
     gcfg.taun = cfg_.taun;
     gcfg.taup = cfg_.taup;
@@ -148,7 +154,7 @@ DDSolution NewtonSolver::makeSolution(const CoupledDDAssembler& assembler,
 
 NewtonResult NewtonSolver::solve() const
 {
-    const double Vt = thermalVoltage();
+    const double Vt = thermalVoltage(cfg_.temperature_K);
     MobilityModelConfig mobilityConfig = mobilityModelConfig(cfg_.mobility);
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
@@ -159,7 +165,7 @@ NewtonResult NewtonSolver::solve() const
 
 NewtonResult NewtonSolver::solve(const DDSolution& initial) const
 {
-    const double Vt = thermalVoltage();
+    const double Vt = thermalVoltage(cfg_.temperature_K);
     MobilityModelConfig mobilityConfig = mobilityModelConfig(cfg_.mobility);
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);

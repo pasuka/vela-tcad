@@ -10,13 +10,17 @@ namespace vela {
 ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
                                const MaterialDatabase& matdb,
                                const DopingModel& doping,
-                               MobilityModelConfig mobilityConfig)
+                               MobilityModelConfig mobilityConfig,
+                               Real temperature_K)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , mobility_(makeMobilityModel(mobilityConfig))
+    , thermalVoltage_(constants::kb * temperature_K / constants::q)
 {
+    if (temperature_K <= 0.0)
+        throw std::invalid_argument("ContactCurrent: temperature_K must be positive.");
 }
 
 ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
@@ -55,11 +59,11 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
 
         const Real electronFlux01 = (mun > 0.0)
             ? sgElectronFlux(solution.n(i), solution.n(j), dpsi,
-                             constants::Vt_300, mun, edge.length)
+                             thermalVoltage_, mun, edge.length)
             : 0.0;
         const Real holeFlux01 = (mup > 0.0)
             ? sgHoleFlux(solution.p(i), solution.p(j), dpsi,
-                         constants::Vt_300, mup, edge.length)
+                         thermalVoltage_, mup, edge.length)
             : 0.0;
 
         const Real outwardSign = n0OnContact ? 1.0 : -1.0;
@@ -77,9 +81,10 @@ ContactCurrentResult ContactCurrent::compute(
     const DopingModel& doping,
     const DDSolution& solution,
     const std::string& contactName,
-    const MobilityModelConfig& mobilityConfig)
+    const MobilityModelConfig& mobilityConfig,
+    Real temperature_K)
 {
-    return ContactCurrent(mesh, matdb, doping, mobilityConfig).compute(solution, contactName);
+    return ContactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K).compute(solution, contactName);
 }
 
 } // namespace vela

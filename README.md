@@ -306,9 +306,12 @@ explicitly selects Newton:
 ```
 
 Use `"method": "gummel"` or omit the field to keep the default sweep path.
-Gummel solver configs also accept `abstol`; convergence is reported when either
-all relative update checks pass or all absolute update norms are below that
-positive threshold. A single-bias coupled Newton CLI run is available with
+Gummel and Newton solver configs also accept `temperature_K` (default `300.0`)
+which sets the thermal voltage used by contact built-in potentials, drift-
+diffusion assembly, and DC-sweep contact-current post-processing. Gummel solver
+configs also accept `abstol`; convergence is reported when either all relative
+update checks pass or all absolute update norms are below that positive
+threshold. A single-bias coupled Newton CLI run is available with
 `"simulation_type": "newton"`; see
 `examples/pn_diode/newton_simulation.json`.
 

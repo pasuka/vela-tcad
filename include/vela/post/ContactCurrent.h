@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/core/PhysicalConstants.h"
 #include "vela/core/Types.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
@@ -22,7 +23,8 @@ public:
     ContactCurrent(const DeviceMesh& mesh,
                    const MaterialDatabase& matdb,
                    const DopingModel& doping,
-                   MobilityModelConfig mobilityConfig = {});
+                   MobilityModelConfig mobilityConfig = {},
+                   Real temperature_K = constants::T0);
 
     ContactCurrentResult compute(const DDSolution& solution,
                                  const std::string& contactName) const;
@@ -32,7 +34,8 @@ public:
                                         const DopingModel& doping,
                                         const DDSolution& solution,
                                         const std::string& contactName,
-                                        const MobilityModelConfig& mobilityConfig = {});
+                                        const MobilityModelConfig& mobilityConfig = {},
+                                        Real temperature_K = constants::T0);
 
 private:
     const DeviceMesh& mesh_;
@@ -40,6 +43,7 @@ private:
     const DopingModel& doping_;
     std::vector<std::vector<Index>> edgeCells_;
     std::unique_ptr<MobilityModel> mobility_;
+    Real thermalVoltage_;
 };
 
 } // namespace vela

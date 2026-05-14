@@ -15,6 +15,7 @@
 #include <cmath>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
 
@@ -324,4 +325,29 @@ TEST_CASE("NewtonSolver: line search rejection returns last accepted state", "[n
     REQUIRE((result.solution.psi - initial.psi).norm() == Catch::Approx(0.0));
     REQUIRE((result.solution.phin - initial.phin).norm() == Catch::Approx(0.0));
     REQUIRE((result.solution.phip - initial.phip).norm() == Catch::Approx(0.0));
+}
+
+TEST_CASE("NewtonSolver: configured temperature is parsed and passed to initial Gummel guess", "[newton][temperature]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    NewtonConfig cfg300 = newtonConfig();
+    cfg300.maxIter = 0;
+    cfg300.temperature_K = 300.0;
+    const NewtonResult result300 = runNewton(mesh, matdb, doping, zeroBias(), cfg300);
+
+    NewtonConfig cfg600 = cfg300;
+    cfg600.temperature_K = 600.0;
+    const NewtonResult result600 = runNewton(mesh, matdb, doping, zeroBias(), cfg600);
+
+    const Real builtIn300 = result300.solution.psi(1) - result300.solution.psi(0);
+    const Real builtIn600 = result600.solution.psi(1) - result600.solution.psi(0);
+    REQUIRE(builtIn600 == Catch::Approx(2.0 * builtIn300).epsilon(1.0e-12));
+
+    const NewtonConfig parsed = newtonConfigFromJson(nlohmann::json{{"temperature_K", 325.0}});
+    REQUIRE(parsed.temperature_K == Catch::Approx(325.0));
+    REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{{"temperature_K", -1.0}}),
+                      std::invalid_argument);
 }
