@@ -22,7 +22,8 @@ DDAssembler::DDAssembler(const DeviceMesh&       mesh,
                   doping,
                   Vt,
                   MobilityModelConfig{},
-                  recombinationModelConfig({"srh"}, taun, taup))
+                  recombinationModelConfig({"srh"}, taun, taup),
+                  BandgapNarrowingConfig{})
 {}
 
 DDAssembler::DDAssembler(const DeviceMesh&               mesh,
@@ -30,25 +31,28 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
                          const DopingModel&              doping,
                          double                          Vt,
                          const MobilityModelConfig&      mobilityConfig,
-                         const RecombinationModelConfig& recombinationConfig)
+                         const RecombinationModelConfig& recombinationConfig,
+                         const BandgapNarrowingConfig& bandgapNarrowingConfig)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
     , Vt_(Vt)
     , mobility_(makeMobilityModel(mobilityConfig))
     , recombination_(recombinationConfig)
-    , ni_(detail::buildNodeNi(mesh, matdb))
+    , ni_(detail::buildValidatedEffectiveNodeNi(
+          "DDAssembler",
+          mesh,
+          matdb,
+          doping,
+          bandgapNarrowingConfig,
+          Vt))
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
     , couple_(detail::computeEdgeCouplings(mesh))
     , A_(static_cast<int>(mesh.numNodes()),
          static_cast<int>(mesh.numNodes()))
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
-{
-    if (doping.numNodes() != mesh.numNodes())
-        throw std::invalid_argument(
-            "DDAssembler: doping model size does not match mesh node count.");
-}
+{}
 
 // ---------------------------------------------------------------------------
 // Dirichlet boundary conditions

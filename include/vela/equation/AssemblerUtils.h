@@ -16,12 +16,14 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/MobilityModel.h"
+#include "vela/physics/BandgapNarrowing.h"
 #include <Eigen/Sparse>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
 #include <cmath>
 #include <stdexcept>
+#include <string>
 
 namespace vela::detail {
 
@@ -162,6 +164,50 @@ inline std::vector<Real> buildNodeNi(const DeviceMesh&       mesh,
         }
     }
     return ni_v;
+}
+
+/// Validate that the doping model has one entry per mesh node.
+inline void validateDopingMeshSize(const DeviceMesh& mesh,
+                                   const DopingModel& doping,
+                                   const std::string& context)
+{
+    if (doping.numNodes() != mesh.numNodes())
+        throw std::invalid_argument(
+            context + ": doping model size does not match mesh node count.");
+}
+
+/// Build per-node effective intrinsic concentration including bandgap narrowing.
+inline std::vector<Real> buildEffectiveNodeNi(const DeviceMesh&       mesh,
+                                              const MaterialDatabase& matdb,
+                                              const DopingModel&      doping,
+                                              const BandgapNarrowing& bgn,
+                                              Real                    thermalVoltage)
+{
+    std::vector<Real> ni_v = buildNodeNi(mesh, matdb);
+    for (Index i = 0; i < mesh.numNodes(); ++i) {
+        const Real totalImpurity = doping.donors(i) + doping.acceptors(i);
+        const Real delta = bgn.deltaEg(totalImpurity, 0.0, 0.0);
+        ni_v[i] = effectiveIntrinsicDensity(ni_v[i], thermalVoltage, delta);
+    }
+    return ni_v;
+}
+
+/// Validate inputs before building effective intrinsic concentrations.
+inline std::vector<Real> buildValidatedEffectiveNodeNi(
+    const std::string&             context,
+    const DeviceMesh&              mesh,
+    const MaterialDatabase&        matdb,
+    const DopingModel&             doping,
+    const BandgapNarrowingConfig&  bandgapNarrowingConfig,
+    Real                           thermalVoltage)
+{
+    validateDopingMeshSize(mesh, doping, context);
+    return buildEffectiveNodeNi(
+        mesh,
+        matdb,
+        doping,
+        *makeBandgapNarrowingModel(bandgapNarrowingConfig),
+        thermalVoltage);
 }
 
 // ---------------------------------------------------------------------------

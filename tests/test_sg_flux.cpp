@@ -11,6 +11,7 @@
 #include "vela/physics/RecombinationModel.h"
 #include <algorithm>
 #include <cmath>
+#include <stdexcept>
 
 using namespace vela;
 using Catch::Approx;
@@ -168,6 +169,116 @@ TEST_CASE("SG continuity residuals match DDAssembler and CoupledDDAssembler", "[
                                constants::Vt_300,
                                MobilityModelConfig{},
                                noRecombination);
+
+    CoupledDDState state;
+    state.psi.resize(3);
+    state.phin.resize(3);
+    state.phip.resize(3);
+    state.psi << 0.020, -0.010, 0.030;
+    state.phin << 0.005, -0.002, 0.010;
+    state.phip << -0.004, 0.006, -0.008;
+
+    const VectorXd x = coupled.pack(state);
+    const VectorXd n = coupled.electronDensity(x);
+    const VectorXd p = coupled.holeDensity(x);
+    const VectorXd coupledResidual = coupled.residual(x, CoupledDDBoundaryConditions{});
+
+    dd.assembleElectronContinuity(state.psi, n, p);
+    const VectorXd ddElectronResidual = dd.matrix() * n - dd.rhs();
+
+    dd.assembleHoleContinuity(state.psi, n, p);
+    const VectorXd ddHoleResidual = dd.matrix() * p - dd.rhs();
+
+    const int N = static_cast<int>(mesh.numNodes());
+    for (int i = 0; i < N; ++i) {
+        const double electronScale = std::max(1.0, std::abs(ddElectronResidual(i)));
+        const double holeScale = std::max(1.0, std::abs(ddHoleResidual(i)));
+        REQUIRE(coupledResidual(N + i) / electronScale ==
+                Approx(ddElectronResidual(i) / electronScale).epsilon(1.0e-12).margin(1.0e-12));
+        REQUIRE(coupledResidual(2 * N + i) / holeScale ==
+                Approx(ddHoleResidual(i) / holeScale).epsilon(1.0e-12).margin(1.0e-12));
+    }
+}
+
+TEST_CASE("CoupledDDAssembler validates doping size before BGN construction", "[sg][dd][coupled][bgn]")
+{
+    DeviceMesh mesh = makeSingleSiliconTriangleMesh();
+    MaterialDatabase matdb;
+    DopingModel shortDoping(mesh.numNodes() - 1);
+    BandgapNarrowingConfig bgn;
+    bgn.model = "slotboom";
+
+    REQUIRE_THROWS_AS(DDAssembler(mesh,
+                                  matdb,
+                                  shortDoping,
+                                  constants::Vt_300,
+                                  MobilityModelConfig{},
+                                  recombinationModelConfig({"none"}),
+                                  bgn),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(CoupledDDAssembler(mesh,
+                                         matdb,
+                                         shortDoping,
+                                         constants::Vt_300,
+                                         MobilityModelConfig{},
+                                         recombinationModelConfig({"none"}),
+                                         bgn),
+                      std::invalid_argument);
+}
+
+TEST_CASE("Slotboom BGN uses total impurity density for compensated nodes", "[sg][coupled][bgn]")
+{
+    DeviceMesh mesh = makeSingleSiliconTriangleMesh();
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    for (Index i = 0; i < mesh.numNodes(); ++i)
+        doping.setNodeDoping(i, 1.0e24, 1.0e24);
+
+    BandgapNarrowingConfig bgn;
+    bgn.model = "slotboom";
+    CoupledDDAssembler coupled(mesh,
+                               matdb,
+                               doping,
+                               constants::Vt_300,
+                               MobilityModelConfig{},
+                               recombinationModelConfig({"none"}),
+                               bgn);
+
+    const Material& si = matdb.getMaterial("Si");
+    for (Real niEff : coupled.intrinsicDensity())
+        REQUIRE(niEff > si.ni);
+}
+
+TEST_CASE("CoupledDDAssembler BGN residuals match DDAssembler with nonuniform ni", "[sg][dd][coupled][bgn]")
+{
+    DeviceMesh mesh = makeSingleSiliconTriangleMesh();
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    doping.setNodeDoping(0, 1.0e24, 0.0);
+    doping.setNodeDoping(1, 0.0, 1.0e23);
+    doping.setNodeDoping(2, 1.0e24, 1.0e24);
+
+    BandgapNarrowingConfig bgn;
+    bgn.model = "slotboom";
+    const RecombinationModelConfig noRecombination = recombinationModelConfig({"none"});
+
+    DDAssembler dd(mesh,
+                   matdb,
+                   doping,
+                   constants::Vt_300,
+                   MobilityModelConfig{},
+                   noRecombination,
+                   bgn);
+    CoupledDDAssembler coupled(mesh,
+                               matdb,
+                               doping,
+                               constants::Vt_300,
+                               MobilityModelConfig{},
+                               noRecombination,
+                               bgn);
+
+    REQUIRE(coupled.intrinsicDensity()[0] != Approx(coupled.intrinsicDensity()[1]));
+    REQUIRE(coupled.intrinsicDensity()[2] > coupled.intrinsicDensity()[0]);
 
     CoupledDDState state;
     state.psi.resize(3);

@@ -4,6 +4,7 @@
 #include "vela/core/PhysicalConstants.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/mesh/DeviceMesh.h"
+#include "vela/physics/BandgapNarrowing.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/solver/GummelSolver.h"
 
@@ -128,4 +129,42 @@ TEST_CASE("Gummel high-doping forward bias does not produce invalid state", "[gu
     REQUIRE(sol.phip(0) == Catch::Approx(0.2));
     REQUIRE(sol.phin(1) == Catch::Approx(0.0));
     REQUIRE(sol.phip(1) == Catch::Approx(0.0));
+}
+
+TEST_CASE("Gummel high-doping contacts use Slotboom bandgap narrowing", "[gummel][high-doping][bgn]")
+{
+    DeviceMesh mesh = makeHighDopingPNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makeOneE24PNDoping(mesh);
+
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", 0.0},
+        {"cathode", 0.0},
+    };
+
+    GummelConfig cfg;
+    cfg.maxIter = 80;
+    cfg.reltol = 1.0e-6;
+    cfg.abstol = 1.0e-8;
+    cfg.dampingPsi = 0.25;
+    cfg.bandgapNarrowing.model = "slotboom";
+
+    DDSolution sol;
+    REQUIRE_NOTHROW(sol = runGummel(mesh, matdb, doping, biases, cfg));
+
+    REQUIRE(sol.converged);
+    requireFinitePositiveCarriers(sol, mesh.numNodes());
+
+    const Material& si = matdb.getMaterial("Si");
+    const Real Vt = constants::kb * cfg.temperature_K / constants::q;
+    const SlotboomBandgapNarrowing bgn(cfg.bandgapNarrowing);
+    const Real niEff = effectiveIntrinsicDensity(
+        si.ni, Vt, bgn.deltaEg(1.0e24, 0.0, 0.0));
+    const Real minority = niEff * niEff / 1.0e24;
+    const Real builtIn = Vt * std::log(1.0e24 / minority);
+
+    REQUIRE(niEff > si.ni);
+    REQUIRE(sol.p(1) == Catch::Approx(minority).epsilon(1.0e-12));
+    REQUIRE(sol.n(3) == Catch::Approx(minority).epsilon(1.0e-12));
+    REQUIRE(sol.psi(1) - sol.psi(3) == Catch::Approx(builtIn).epsilon(1.0e-12));
 }

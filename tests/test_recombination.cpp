@@ -5,6 +5,8 @@
 #include "vela/physics/RecombinationModel.h"
 
 #include <cmath>
+#include <stdexcept>
+#include <limits>
 
 using namespace vela;
 
@@ -46,4 +48,44 @@ TEST_CASE("Default bandgap narrowing interface returns zero", "[bgn]")
 {
     NoBandgapNarrowing bgn;
     REQUIRE(bgn.deltaEg(1.0e25, 1.0e24, 1.0e20) == Catch::Approx(0.0));
+}
+
+TEST_CASE("Slotboom bandgap narrowing grows effective intrinsic density", "[bgn]")
+{
+    BandgapNarrowingConfig cfg;
+    cfg.model = "slotboom";
+    SlotboomBandgapNarrowing bgn(cfg);
+
+    const Real low = bgn.deltaEg(1.0e21, 0.0, 0.0);
+    const Real high = bgn.deltaEg(1.0e25, 0.0, 0.0);
+
+    REQUIRE(low >= 0.0);
+    REQUIRE(high > low);
+    REQUIRE(high == Catch::Approx(0.0833788).epsilon(1.0e-5));
+
+    const Real ni = 1.0e16;
+    const Real Vt = 0.025852;
+    const Real niEff = effectiveIntrinsicDensity(ni, Vt, high);
+    REQUIRE(niEff > ni);
+    REQUIRE(niEff == Catch::Approx(ni * std::exp(high / (2.0 * Vt))));
+}
+
+TEST_CASE("Effective intrinsic density caps overflow", "[bgn]")
+{
+    const Real ni = 1.0e16;
+    const Real Vt = 0.025852;
+    const Real niEff = effectiveIntrinsicDensity(ni, Vt, 1.0e6);
+
+    REQUIRE(std::isfinite(niEff));
+    REQUIRE(niEff == std::numeric_limits<Real>::max());
+}
+
+TEST_CASE("Bandgap narrowing factory validates model names", "[bgn]")
+{
+    REQUIRE(makeBandgapNarrowingModel(bandgapNarrowingConfig("none"))->deltaEg(1.0e25, 0.0, 0.0)
+            == Catch::Approx(0.0));
+    REQUIRE(makeBandgapNarrowingModel(bandgapNarrowingConfig("slotboom"))->deltaEg(1.0e25, 0.0, 0.0)
+            > 0.0);
+    REQUIRE_THROWS_AS(makeBandgapNarrowingModel(bandgapNarrowingConfig("unknown")),
+                      std::invalid_argument);
 }
