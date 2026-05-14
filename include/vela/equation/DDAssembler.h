@@ -103,6 +103,11 @@ private:
 
     std::vector<Real> ni_; ///< Per-node intrinsic concentration [m^-3]
 
+    // Mesh-derived quantities cached at construction time.
+    std::vector<std::vector<Index>> edgeCells_;
+    std::vector<Real> vol_;
+    std::vector<Real> couple_;
+
     SparseMatrixd A_;
     VectorXd      b_;
 };

@@ -197,3 +197,69 @@ TEST_CASE("SG continuity residuals match DDAssembler and CoupledDDAssembler", "[
                 Approx(ddHoleResidual(i) / holeScale).epsilon(1.0e-12).margin(1.0e-12));
     }
 }
+
+static void requireSystemsMatch(const SparseMatrixd& lhsA,
+                                const VectorXd& lhsB,
+                                const SparseMatrixd& rhsA,
+                                const VectorXd& rhsB)
+{
+    REQUIRE(lhsA.rows() == rhsA.rows());
+    REQUIRE(lhsA.cols() == rhsA.cols());
+    REQUIRE(lhsB.size() == rhsB.size());
+
+    for (int row = 0; row < lhsA.rows(); ++row) {
+        for (int col = 0; col < lhsA.cols(); ++col) {
+            const double lhs = lhsA.coeff(row, col);
+            const double rhs = rhsA.coeff(row, col);
+            const double scale = std::max({1.0, std::abs(lhs), std::abs(rhs)});
+            REQUIRE(lhs / scale == Approx(rhs / scale).epsilon(1.0e-14).margin(1.0e-14));
+        }
+    }
+
+    for (int row = 0; row < lhsB.size(); ++row) {
+        const double lhs = lhsB(row);
+        const double rhs = rhsB(row);
+        const double scale = std::max({1.0, std::abs(lhs), std::abs(rhs)});
+        REQUIRE(lhs / scale == Approx(rhs / scale).epsilon(1.0e-14).margin(1.0e-14));
+    }
+}
+
+TEST_CASE("DDAssembler cached geometry gives identical fresh assembly systems", "[sg][dd][cache]")
+{
+    DeviceMesh mesh = makeSingleSiliconTriangleMesh();
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    const RecombinationModelConfig noRecombination = recombinationModelConfig({"none"});
+
+    DDAssembler cached(mesh,
+                       matdb,
+                       doping,
+                       constants::Vt_300,
+                       MobilityModelConfig{},
+                       noRecombination);
+    DDAssembler fresh(mesh,
+                      matdb,
+                      doping,
+                      constants::Vt_300,
+                      MobilityModelConfig{},
+                      noRecombination);
+
+    VectorXd psi(3);
+    VectorXd n(3);
+    VectorXd p(3);
+    psi << 0.020, -0.010, 0.030;
+    n << 1.0e16, 2.0e16, 4.0e16;
+    p << 3.0e15, 1.5e15, 2.5e15;
+
+    cached.assemblePoissonWithCarriers(n, p, psi);
+    fresh.assemblePoissonWithCarriers(n, p, psi);
+    requireSystemsMatch(cached.matrix(), cached.rhs(), fresh.matrix(), fresh.rhs());
+
+    cached.assembleElectronContinuity(psi, n, p);
+    fresh.assembleElectronContinuity(psi, n, p);
+    requireSystemsMatch(cached.matrix(), cached.rhs(), fresh.matrix(), fresh.rhs());
+
+    cached.assembleHoleContinuity(psi, n, p);
+    fresh.assembleHoleContinuity(psi, n, p);
+    requireSystemsMatch(cached.matrix(), cached.rhs(), fresh.matrix(), fresh.rhs());
+}
