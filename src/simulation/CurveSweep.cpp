@@ -15,7 +15,7 @@ std::string toString(CurveSweepMode mode)
     case CurveSweepMode::BVReverse:
         return "bv_reverse";
     }
-    return "iv";
+    throw std::invalid_argument("CurveSweep: unhandled sweep mode enum value.");
 }
 
 CurveSweepMode curveSweepModeFromString(const std::string& mode)

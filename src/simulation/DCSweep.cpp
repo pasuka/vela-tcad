@@ -269,7 +269,6 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     csv.writeHeader(header);
 
     std::vector<DCSweepPoint> points;
-    bool breakdownDetected = false;
     DDSolution previousSolution;
     int vtkIndex = 0;
 
@@ -333,6 +332,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 const Real currentAbs = std::abs(point.totalCurrent);
                 if (previous > 0.0)
                     point.currentJumpRatio = currentAbs / previous;
+                else if (currentAbs > 0.0)
+                    point.currentJumpRatio = std::numeric_limits<Real>::infinity();
             }
             if (sweep.breakdown.maxElectricField_V_per_m > 0.0 &&
                 point.maxElectricField >= sweep.breakdown.maxElectricField_V_per_m) {
@@ -351,8 +352,6 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             point.breakdownVoltage = points.back().bias;
             point.breakdownCriterion = "last_stable_before_nonconvergence";
         }
-        if (point.breakdownDetected)
-            breakdownDetected = true;
         points.push_back(point);
 
         std::vector<std::string> row = {

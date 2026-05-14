@@ -3,6 +3,7 @@
 
 #include "vela/simulation/DCSweep.h"
 #include "vela/simulation/DCSweepStepControl.h"
+#include "vela/post/TerminalCharge.h"
 
 #include <chrono>
 #include <cmath>
@@ -148,6 +149,36 @@ std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& c
 }
 
 
+
+DeviceMesh makeTwoRegionUnitSquareMesh()
+{
+    DeviceMesh mesh;
+    mesh.addNode(Node{0, 0.0, 0.0, 0.0});
+    mesh.addNode(Node{1, 1.0, 0.0, 0.0});
+    mesh.addNode(Node{2, 1.0, 1.0, 0.0});
+    mesh.addNode(Node{3, 0.0, 1.0, 0.0});
+    mesh.addCell(Cell{0, CellType::Tri3, 0, {0, 1, 2}});
+    mesh.addCell(Cell{1, CellType::Tri3, 1, {0, 2, 3}});
+    mesh.addRegion(Region{0, "right", "Si", {0}});
+    mesh.addRegion(Region{1, "left", "Si", {1}});
+    mesh.addContact(Contact{0, "left_contact", 1, {0, 3}});
+    mesh.addContact(Contact{1, "right_contact", 0, {1, 2}});
+    mesh.buildEdges();
+    return mesh;
+}
+
+DDSolution uniformCarrierSolution(Index numNodes, Real electrons, Real holes)
+{
+    DDSolution solution;
+    solution.psi = VectorXd::Zero(static_cast<int>(numNodes));
+    solution.phin = VectorXd::Zero(static_cast<int>(numNodes));
+    solution.phip = VectorXd::Zero(static_cast<int>(numNodes));
+    solution.n = VectorXd::Constant(static_cast<int>(numNodes), electrons);
+    solution.p = VectorXd::Constant(static_cast<int>(numNodes), holes);
+    solution.converged = true;
+    return solution;
+}
+
 Real runMosExampleDrainCurrentAtGate(const std::string& exampleName, Real gateBias, Real drainBias)
 {
     const auto dir = makeUniqueSweepDir();
@@ -228,6 +259,35 @@ TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV da
 }
 
 
+TEST_CASE("TerminalCharge: region selections use region-local cell volume", "[terminal_charge]")
+{
+    DeviceMesh mesh = makeTwoRegionUnitSquareMesh();
+    DopingModel doping(mesh.numNodes());
+    const DDSolution solution = uniformCarrierSolution(mesh.numNodes(), 0.0, 1.0);
+
+    TerminalChargeConfig config;
+    config.regions = {"left"};
+    config.includeIonizedDopants = false;
+
+    const TerminalChargeResult result = TerminalCharge::compute(mesh, doping, solution, config);
+
+    REQUIRE(result.charge / constants::q == Catch::Approx(0.5));
+}
+
+TEST_CASE("TerminalCharge: unknown region selections are rejected", "[terminal_charge]")
+{
+    DeviceMesh mesh = makeTwoRegionUnitSquareMesh();
+    DopingModel doping(mesh.numNodes());
+    const DDSolution solution = uniformCarrierSolution(mesh.numNodes(), 0.0, 1.0);
+
+    TerminalChargeConfig config;
+    config.regions = {"missing"};
+
+    REQUIRE_THROWS_AS(TerminalCharge::compute(mesh, doping, solution, config),
+                      std::invalid_argument);
+}
+
+
 TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc_sweep][curve]")
 {
     const auto dir = makeUniqueSweepDir();
@@ -301,6 +361,7 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
         REQUIRE(rows.at(1).at(0) == "bv_reverse");
     }
 }
+
 
 TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_sweep]")
 {

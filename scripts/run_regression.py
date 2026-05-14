@@ -177,6 +177,29 @@ def expected_sweep_voltages(sweep: dict[str, Any]) -> list[float]:
 
 
 
+def normalize_curve_mode(mode: str) -> str:
+    normalized = mode.lower().replace("-", "_")
+    if normalized in {"", "iv"}:
+        return "iv"
+    if normalized in {"cv", "cv_quasistatic"}:
+        return "cv_quasistatic"
+    if normalized in {"bv", "bv_reverse", "reverse_breakdown"}:
+        return "bv_reverse"
+    return normalized
+
+
+def cv_charge_columns(sweep: dict[str, Any], row: dict[str, str]) -> tuple[str, str]:
+    charge_cfg = sweep.get("terminal_charge", {})
+    per_meter = bool(charge_cfg.get("per_meter", sweep.get("charge_per_meter", True)))
+    preferred = ("charge_C_per_m", "capacitance_F_per_m") if per_meter else ("charge_C", "capacitance_F")
+    alternate = ("charge_C", "capacitance_F") if per_meter else ("charge_C_per_m", "capacitance_F_per_m")
+    if all(column in row for column in preferred):
+        return preferred
+    if all(column in row for column in alternate):
+        return alternate
+    return preferred
+
+
 def curve_column(row: dict[str, str], modern: str, legacy: str | None = None) -> str:
     if modern in row:
         return row[modern]
@@ -221,9 +244,10 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
             "DC sweep CSV is missing required curve schema column(s): "
             + ", ".join(missing_modern))
 
-    mode = cfg.get("sweep", {}).get("mode", "iv")
+    sweep_cfg = cfg.get("sweep", {})
+    mode = normalize_curve_mode(str(sweep_cfg.get("mode", "iv")))
     if mode == "cv_quasistatic":
-        for column in ("charge_C_per_m", "capacitance_F_per_m"):
+        for column in cv_charge_columns(sweep_cfg, rows[0]):
             if column not in rows[0]:
                 raise AssertionError(f"CV sweep CSV is missing required column '{column}'")
     if mode == "bv_reverse":
@@ -248,16 +272,21 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
         max_accepted_seen = max(max_accepted_seen, accepted)
         max_retry_seen = max(max_retry_seen, retry)
         if mode == "cv_quasistatic":
-            _ = parse_finite_float(row, "charge_C_per_m", "CV sweep", row_index)
-            capacitance = parse_finite_float(row, "capacitance_F_per_m", "CV sweep", row_index)
+            charge_column, capacitance_column = cv_charge_columns(sweep_cfg, row)
+            _ = parse_finite_float(row, charge_column, "CV sweep", row_index)
+            capacitance = parse_finite_float(row, capacitance_column, "CV sweep", row_index)
             if row_index > 1 and abs(capacitance) <= 0.0:
                 raise AssertionError(f"CV sweep row {row_index} has zero differential capacitance")
         if mode == "bv_reverse":
             max_field = parse_finite_float(row, "max_electric_field_V_per_m", "BV sweep", row_index)
             if max_field < 0.0:
                 raise AssertionError(f"BV sweep row {row_index} has negative max electric field")
-            jump = parse_finite_float(row, "current_jump_ratio", "BV sweep", row_index)
-            if jump < 0.0:
+            try:
+                jump = float(row["current_jump_ratio"])
+            except (KeyError, ValueError) as exc:
+                raise AssertionError(
+                    f"BV sweep row {row_index} has invalid current_jump_ratio") from exc
+            if math.isnan(jump) or jump < 0.0:
                 raise AssertionError(f"BV sweep row {row_index} has negative current jump ratio")
             if row.get("breakdown_detected") == "1" and not row.get("criterion"):
                 raise AssertionError(f"BV sweep row {row_index} detected breakdown without a criterion")

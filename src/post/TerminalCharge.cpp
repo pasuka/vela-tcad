@@ -1,6 +1,8 @@
 #include "vela/post/TerminalCharge.h"
+#include "vela/mesh/BoxGeometryBuilder.h"
 #include <cmath>
 #include <stdexcept>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace vela {
@@ -15,21 +17,50 @@ const Contact* findContact(const DeviceMesh& mesh, const std::string& name)
     return nullptr;
 }
 
-std::unordered_set<Index> regionNodeSet(const DeviceMesh& mesh,
-                                        const std::vector<std::string>& regionNames)
+std::unordered_map<Index, Real> selectedNodeVolumes(
+    const DeviceMesh& mesh,
+    const std::vector<std::string>& regionNames)
 {
+    std::unordered_map<Index, Real> volumes;
+    if (regionNames.empty()) {
+        for (Index i = 0; i < mesh.numNodes(); ++i)
+            volumes[i] = mesh.getNode(i).volume;
+        return volumes;
+    }
+
     std::unordered_set<std::string> wanted(regionNames.begin(), regionNames.end());
-    std::unordered_set<Index> nodes;
+    std::unordered_set<std::string> found;
     for (const Region& region : mesh.regions()) {
-        if (!wanted.empty() && wanted.count(region.name) == 0)
+        if (wanted.count(region.name) == 0)
             continue;
+
+        found.insert(region.name);
         for (Index cellId : region.cell_ids) {
             const Cell& cell = mesh.getCell(cellId);
+            if (cell.type != CellType::Tri3 || cell.node_ids.size() < 3)
+                continue;
+
+            const Real area = BoxGeometryBuilder::triangleArea(
+                mesh.getNode(cell.node_ids[0]),
+                mesh.getNode(cell.node_ids[1]),
+                mesh.getNode(cell.node_ids[2]));
+            if (area <= 0.0)
+                continue;
+
+            const Real nodeShare = area / 3.0;
             for (Index nodeId : cell.node_ids)
-                nodes.insert(nodeId);
+                volumes[nodeId] += nodeShare;
         }
     }
-    return nodes;
+
+    for (const std::string& name : wanted) {
+        if (found.count(name) == 0)
+            throw std::invalid_argument("TerminalCharge: unknown region '" + name + "'.");
+    }
+    if (volumes.empty())
+        throw std::invalid_argument("TerminalCharge: selected regions contain no supported cell volume.");
+
+    return volumes;
 }
 
 bool withinContactRadius(const DeviceMesh& mesh,
@@ -80,30 +111,25 @@ TerminalChargeResult TerminalCharge::compute(const DDSolution& solution,
             throw std::invalid_argument("TerminalCharge: unknown contact '" + config.contact + "'.");
     }
 
-    std::unordered_set<Index> selected = regionNodeSet(mesh_, config.regions);
-    if (selected.empty() && config.regions.empty()) {
-        for (Index i = 0; i < mesh_.numNodes(); ++i)
-            selected.insert(i);
-    }
+    std::unordered_map<Index, Real> selectedVolumes = selectedNodeVolumes(mesh_, config.regions);
 
     if (contact != nullptr) {
-        for (auto it = selected.begin(); it != selected.end();) {
-            if (!withinContactRadius(mesh_, *contact, *it, config.contactRadius))
-                it = selected.erase(it);
+        for (auto it = selectedVolumes.begin(); it != selectedVolumes.end();) {
+            if (!withinContactRadius(mesh_, *contact, it->first, config.contactRadius))
+                it = selectedVolumes.erase(it);
             else
                 ++it;
         }
     }
 
     Real chargePerMeter = 0.0;
-    for (Index nodeId : selected) {
-        const Node& node = mesh_.getNode(nodeId);
+    for (const auto& [nodeId, volume] : selectedVolumes) {
         Real rho = 0.0;
         if (config.includeMobileCharge)
             rho += solution.p(static_cast<int>(nodeId)) - solution.n(static_cast<int>(nodeId));
         if (config.includeIonizedDopants)
             rho += doping_.netDoping(nodeId);
-        chargePerMeter += constants::q * rho * node.volume;
+        chargePerMeter += constants::q * rho * volume;
     }
 
     TerminalChargeResult result;
