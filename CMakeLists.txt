@@ -138,6 +138,9 @@ target_link_libraries(test_mesh PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_poisson tests/test_poisson.cpp)
 target_link_libraries(test_poisson PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_linear_solver tests/test_linear_solver.cpp)
+target_link_libraries(test_linear_solver PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_box_geometry tests/test_box_geometry.cpp)
 target_link_libraries(test_box_geometry PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -172,6 +175,7 @@ include(Catch)
 catch_discover_tests(test_scaling)
 catch_discover_tests(test_mesh)
 catch_discover_tests(test_poisson)
+catch_discover_tests(test_linear_solver)
 catch_discover_tests(test_box_geometry)
 catch_discover_tests(test_bernoulli)
 catch_discover_tests(test_sg_flux)
