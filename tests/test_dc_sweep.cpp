@@ -3,6 +3,7 @@
 
 #include "vela/simulation/DCSweep.h"
 #include "vela/simulation/DCSweepStepControl.h"
+#include "vela/post/TerminalCharge.h"
 
 #include <chrono>
 #include <cmath>
@@ -148,6 +149,36 @@ std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& c
 }
 
 
+
+DeviceMesh makeTwoRegionUnitSquareMesh()
+{
+    DeviceMesh mesh;
+    mesh.addNode(Node{0, 0.0, 0.0, 0.0});
+    mesh.addNode(Node{1, 1.0, 0.0, 0.0});
+    mesh.addNode(Node{2, 1.0, 1.0, 0.0});
+    mesh.addNode(Node{3, 0.0, 1.0, 0.0});
+    mesh.addCell(Cell{0, CellType::Tri3, 0, {0, 1, 2}});
+    mesh.addCell(Cell{1, CellType::Tri3, 1, {0, 2, 3}});
+    mesh.addRegion(Region{0, "right", "Si", {0}});
+    mesh.addRegion(Region{1, "left", "Si", {1}});
+    mesh.addContact(Contact{0, "left_contact", 1, {0, 3}});
+    mesh.addContact(Contact{1, "right_contact", 0, {1, 2}});
+    mesh.buildEdges();
+    return mesh;
+}
+
+DDSolution uniformCarrierSolution(Index numNodes, Real electrons, Real holes)
+{
+    DDSolution solution;
+    solution.psi = VectorXd::Zero(static_cast<int>(numNodes));
+    solution.phin = VectorXd::Zero(static_cast<int>(numNodes));
+    solution.phip = VectorXd::Zero(static_cast<int>(numNodes));
+    solution.n = VectorXd::Constant(static_cast<int>(numNodes), electrons);
+    solution.p = VectorXd::Constant(static_cast<int>(numNodes), holes);
+    solution.converged = true;
+    return solution;
+}
+
 Real runMosExampleDrainCurrentAtGate(const std::string& exampleName, Real gateBias, Real drainBias)
 {
     const auto dir = makeUniqueSweepDir();
@@ -221,10 +252,116 @@ TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV da
     REQUIRE(std::filesystem::exists(dir / "pn_sweep_0000_0V.vtk"));
 
     const auto rows = readCsvRows(csvPath);
-    REQUIRE(rows.front() == std::vector<std::string>{"voltage", "electron_current", "hole_current",
-                                                     "total_current", "converged", "iterations",
-                                                     "attempted_step", "accepted_step", "retry_count"});
+    REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
+                                                     "current_contact", "current_electron", "current_hole",
+                                                     "current_total", "converged", "iterations",
+                                                     "step_diagnostics"});
 }
+
+
+TEST_CASE("TerminalCharge: region selections use region-local cell volume", "[terminal_charge]")
+{
+    DeviceMesh mesh = makeTwoRegionUnitSquareMesh();
+    DopingModel doping(mesh.numNodes());
+    const DDSolution solution = uniformCarrierSolution(mesh.numNodes(), 0.0, 1.0);
+
+    TerminalChargeConfig config;
+    config.regions = {"left"};
+    config.includeIonizedDopants = false;
+
+    const TerminalChargeResult result = TerminalCharge::compute(mesh, doping, solution, config);
+
+    REQUIRE(result.charge / constants::q == Catch::Approx(0.5));
+}
+
+TEST_CASE("TerminalCharge: unknown region selections are rejected", "[terminal_charge]")
+{
+    DeviceMesh mesh = makeTwoRegionUnitSquareMesh();
+    DopingModel doping(mesh.numNodes());
+    const DDSolution solution = uniformCarrierSolution(mesh.numNodes(), 0.0, 1.0);
+
+    TerminalChargeConfig config;
+    config.regions = {"missing"};
+
+    REQUIRE_THROWS_AS(TerminalCharge::compute(mesh, doping, solution, config),
+                      std::invalid_argument);
+}
+
+
+TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc_sweep][curve]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+
+    SECTION("CV quasistatic adds terminal charge and capacitance columns")
+    {
+        const auto csvPath = dir / "cv.csv";
+        const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+            {"mode", "cv_quasistatic"},
+            {"start", 0.0},
+            {"stop", 0.25},
+            {"step", 0.25},
+            {"write_vtk", false},
+            {"terminal_charge", {
+                {"contact", "anode"},
+                {"regions", {"p_region"}},
+                {"per_meter", true}
+            }}
+        });
+
+        DCSweep sweep;
+        const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+        REQUIRE(result.points.size() == 2);
+        REQUIRE(result.points[0].converged);
+        REQUIRE(result.points[1].converged);
+        REQUIRE(std::isfinite(result.points[1].terminalCharge));
+        REQUIRE(std::isfinite(result.points[1].capacitance));
+
+        const auto rows = readCsvRows(csvPath);
+        REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
+                                                         "current_contact", "current_electron", "current_hole",
+                                                         "current_total", "converged", "iterations",
+                                                         "step_diagnostics", "charge_C_per_m",
+                                                         "capacitance_F_per_m"});
+        REQUIRE(rows.at(1).at(0) == "cv_quasistatic");
+    }
+
+    SECTION("BV reverse adds breakdown diagnostic columns")
+    {
+        const auto csvPath = dir / "bv.csv";
+        const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+            {"mode", "bv_reverse"},
+            {"start", 0.0},
+            {"stop", 0.25},
+            {"step", 0.25},
+            {"write_vtk", false},
+            {"breakdown", {
+                {"max_electric_field_V_per_m", 1.0},
+                {"current_jump_ratio", 1.0e12},
+                {"non_convergence", true}
+            }}
+        });
+
+        DCSweep sweep;
+        const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+        REQUIRE(result.points.size() == 2);
+        REQUIRE(result.points.back().converged);
+        REQUIRE(result.points.back().breakdownDetected);
+        REQUIRE(result.points.back().breakdownCriterion == "max_electric_field");
+
+        const auto rows = readCsvRows(csvPath);
+        REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
+                                                         "current_contact", "current_electron", "current_hole",
+                                                         "current_total", "converged", "iterations",
+                                                         "step_diagnostics", "max_electric_field_V_per_m",
+                                                         "current_jump_ratio", "breakdown_detected",
+                                                         "breakdown_voltage", "criterion"});
+        REQUIRE(rows.at(1).at(0) == "bv_reverse");
+    }
+}
+
 
 TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_sweep]")
 {

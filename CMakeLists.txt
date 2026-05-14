@@ -49,11 +49,13 @@ add_library(vela_core STATIC
     src/solver/LinearSolver.cpp
     src/solver/GummelSolver.cpp
     src/post/ContactCurrent.cpp
+    src/post/TerminalCharge.cpp
     src/solver/NewtonSolver.cpp
     src/equation/CoupledDDAssembler.cpp
     src/numerics/ResidualNorm.cpp
     src/numerics/LineSearch.cpp
     src/simulation/PoissonSimulation.cpp
+    src/simulation/CurveSweep.cpp
     src/simulation/DCSweep.cpp
 )
 

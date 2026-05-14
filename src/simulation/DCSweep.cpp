@@ -5,6 +5,7 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/post/ContactCurrent.h"
+#include "vela/post/TerminalCharge.h"
 #include "vela/solver/NewtonSolver.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -80,6 +81,7 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
 {
     const auto& j = cfg.at("sweep");
     DCSweepConfig sweep;
+    sweep.mode = curveSweepModeFromString(j.value("mode", std::string("iv")));
     sweep.contact = j.at("contact").get<std::string>();
     sweep.start = j.at("start").get<Real>();
     sweep.stop = j.at("stop").get<Real>();
@@ -95,6 +97,18 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.writeVtk = j.value("write_vtk", cfg.value("write_vtk", false));
     sweep.csvFile = j.value("csv_file", cfg.value("output_csv", sweep.csvFile));
     sweep.vtkPrefix = j.value("vtk_prefix", cfg.value("output_vtk_prefix", std::string("dc_sweep")));
+
+    const auto chargeCfg = j.value("terminal_charge", nlohmann::json::object());
+    sweep.chargeContact = chargeCfg.value("contact", j.value("charge_contact", sweep.contact));
+    sweep.chargeRegions = chargeCfg.value("regions", j.value("charge_regions", std::vector<std::string>{}));
+    sweep.chargeContactRadius = chargeCfg.value("contact_radius", j.value("charge_contact_radius", 0.0));
+    sweep.chargePerMeter = chargeCfg.value("per_meter", j.value("charge_per_meter", true));
+    sweep.chargeDepth_m = chargeCfg.value("depth_m", j.value("charge_depth_m", 1.0));
+
+    const auto bvCfg = j.value("breakdown", nlohmann::json::object());
+    sweep.breakdown.maxElectricField_V_per_m = bvCfg.value("max_electric_field_V_per_m", j.value("breakdown_max_electric_field_V_per_m", 0.0));
+    sweep.breakdown.currentJumpRatio = bvCfg.value("current_jump_ratio", j.value("breakdown_current_jump_ratio", 0.0));
+    sweep.breakdown.nonConvergenceBreakdown = bvCfg.value("non_convergence", j.value("breakdown_on_non_convergence", true));
 
     auto resolve = [&](std::string path) {
         std::filesystem::path fp(path);
@@ -121,6 +135,10 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         throw std::invalid_argument("DCSweep: sweep.shrink_factor must be greater than 0 and less than 1.");
     if (sweep.maxRetries < 0)
         throw std::invalid_argument("DCSweep: sweep.max_retries must be non-negative.");
+    if (sweep.mode == CurveSweepMode::BVReverse && sweep.start * sweep.stop < 0.0)
+        throw std::invalid_argument("DCSweep: bv_reverse sweeps must stay on one reverse-bias polarity side.");
+    if (!sweep.chargePerMeter && sweep.chargeDepth_m <= 0.0)
+        throw std::invalid_argument("DCSweep: sweep terminal charge depth_m must be positive.");
     return sweep;
 }
 
@@ -154,6 +172,28 @@ std::string vtkFilename(const std::string& prefix, int index, Real voltage)
         << "_" << std::setprecision(6) << std::defaultfloat << voltage << "V.vtk";
     return oss.str();
 }
+
+
+Real maxElectricField(const DeviceMesh& mesh, const DDSolution& sol)
+{
+    Real maxField = 0.0;
+    for (Index e = 0; e < mesh.numEdges(); ++e) {
+        const Edge& edge = mesh.getEdge(e);
+        if (edge.length <= 0.0)
+            continue;
+        const Real dpsi = sol.psi(static_cast<int>(edge.n1)) - sol.psi(static_cast<int>(edge.n0));
+        maxField = std::max(maxField, std::abs(dpsi) / edge.length);
+    }
+    return maxField;
+}
+
+std::string stepDiagnostics(const DCSweepPoint& point)
+{
+    return "attempted_step=" + formatReal(point.attemptedStep) +
+           ";accepted_step=" + formatReal(point.acceptedStep) +
+           ";retry_count=" + std::to_string(point.retryCount);
+}
+
 
 } // namespace
 
@@ -203,11 +243,30 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         ? newton.temperature_K
         : gummel.temperature_K;
     ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K);
+    TerminalCharge terminalCharge(mesh, doping);
+    TerminalChargeConfig chargeConfig;
+    chargeConfig.contact = sweep.chargeContact;
+    chargeConfig.regions = sweep.chargeRegions;
+    chargeConfig.contactRadius = sweep.chargeContactRadius;
+    chargeConfig.perMeter = sweep.chargePerMeter;
+    chargeConfig.depth_m = sweep.chargeDepth_m;
 
     CSVWriter csv(sweep.csvFile);
-    csv.writeHeader({"voltage", "electron_current", "hole_current",
-                     "total_current", "converged", "iterations",
-                     "attempted_step", "accepted_step", "retry_count"});
+    std::vector<std::string> header = {"mode", "bias_contact", "bias_V",
+        "current_contact", "current_electron", "current_hole", "current_total",
+        "converged", "iterations", "step_diagnostics"};
+    if (sweep.mode == CurveSweepMode::CVQuasistatic) {
+        header.push_back(sweep.chargePerMeter ? "charge_C_per_m" : "charge_C");
+        header.push_back(sweep.chargePerMeter ? "capacitance_F_per_m" : "capacitance_F");
+    }
+    if (sweep.mode == CurveSweepMode::BVReverse) {
+        header.push_back("max_electric_field_V_per_m");
+        header.push_back("current_jump_ratio");
+        header.push_back("breakdown_detected");
+        header.push_back("breakdown_voltage");
+        header.push_back("criterion");
+    }
+    csv.writeHeader(header);
 
     std::vector<DCSweepPoint> points;
     DDSolution previousSolution;
@@ -248,6 +307,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
         DCSweepPoint point;
         point.voltage = voltage;
+        point.bias = voltage;
         point.electronCurrent = current.electronCurrent;
         point.holeCurrent = current.holeCurrent;
         point.totalCurrent = current.totalCurrent;
@@ -256,17 +316,67 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         point.attemptedStep = attemptedStep;
         point.acceptedStep = acceptedStep;
         point.retryCount = retryCount;
+        if (converged && sweep.mode == CurveSweepMode::CVQuasistatic) {
+            point.terminalCharge = terminalCharge.compute(sol, chargeConfig).charge;
+            if (!points.empty()) {
+                const DCSweepPoint& prev = points.back();
+                const Real dV = point.bias - prev.bias;
+                if (dV != 0.0)
+                    point.capacitance = (point.terminalCharge - prev.terminalCharge) / dV;
+            }
+        }
+        if (converged && sweep.mode == CurveSweepMode::BVReverse) {
+            point.maxElectricField = maxElectricField(mesh, sol);
+            if (!points.empty()) {
+                const Real previous = std::abs(points.back().totalCurrent);
+                const Real currentAbs = std::abs(point.totalCurrent);
+                if (previous > 0.0)
+                    point.currentJumpRatio = currentAbs / previous;
+                else if (currentAbs > 0.0)
+                    point.currentJumpRatio = std::numeric_limits<Real>::infinity();
+            }
+            if (sweep.breakdown.maxElectricField_V_per_m > 0.0 &&
+                point.maxElectricField >= sweep.breakdown.maxElectricField_V_per_m) {
+                point.breakdownDetected = true;
+                point.breakdownVoltage = point.bias;
+                point.breakdownCriterion = "max_electric_field";
+            } else if (sweep.breakdown.currentJumpRatio > 0.0 &&
+                       point.currentJumpRatio >= sweep.breakdown.currentJumpRatio) {
+                point.breakdownDetected = true;
+                point.breakdownVoltage = point.bias;
+                point.breakdownCriterion = "current_jump";
+            }
+        } else if (!converged && sweep.mode == CurveSweepMode::BVReverse &&
+                   sweep.breakdown.nonConvergenceBreakdown && !points.empty()) {
+            point.breakdownDetected = true;
+            point.breakdownVoltage = points.back().bias;
+            point.breakdownCriterion = "last_stable_before_nonconvergence";
+        }
         points.push_back(point);
 
-        csv.writeRow({formatReal(point.voltage),
-                      formatReal(point.electronCurrent),
-                      formatReal(point.holeCurrent),
-                      formatReal(point.totalCurrent),
-                      point.converged ? "1" : "0",
-                      std::to_string(point.iterations),
-                      formatReal(point.attemptedStep),
-                      formatReal(point.acceptedStep),
-                      std::to_string(point.retryCount)});
+        std::vector<std::string> row = {
+            toString(sweep.mode),
+            sweep.contact,
+            formatReal(point.bias),
+            sweep.currentContact,
+            formatReal(point.electronCurrent),
+            formatReal(point.holeCurrent),
+            formatReal(point.totalCurrent),
+            point.converged ? "1" : "0",
+            std::to_string(point.iterations),
+            stepDiagnostics(point)};
+        if (sweep.mode == CurveSweepMode::CVQuasistatic) {
+            row.push_back(formatReal(point.terminalCharge));
+            row.push_back(formatReal(point.capacitance));
+        }
+        if (sweep.mode == CurveSweepMode::BVReverse) {
+            row.push_back(formatReal(point.maxElectricField));
+            row.push_back(formatReal(point.currentJumpRatio));
+            row.push_back(point.breakdownDetected ? "1" : "0");
+            row.push_back(formatReal(point.breakdownVoltage));
+            row.push_back(point.breakdownCriterion);
+        }
+        csv.writeRow(row);
 
         if (converged && sweep.writeVtk)
             writeDDSolutionVTK(vtkFilename(sweep.vtkPrefix, vtkIndex++, voltage), mesh, doping, sol);
