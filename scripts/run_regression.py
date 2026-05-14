@@ -291,6 +291,11 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     max_abs_attempted = float(reg.get("max_abs_attempted_step", math.inf))
     max_abs_accepted = float(reg.get("max_abs_accepted_step", math.inf))
     max_retry = int(reg.get("max_retry_count", 0))
+    allow_zero_capacitance = bool(reg.get("allow_zero_capacitance", False))
+    expected_zero_capacitance_rows = reg.get("expected_zero_capacitance_rows")
+    min_nonzero_capacitance_rows = int(reg.get(
+        "min_nonzero_capacitance_rows",
+        0 if expected_zero_capacitance_rows is not None else 1))
     modern_required = ("mode", "bias_contact", "bias_V", "current_contact",
                        "current_electron", "current_hole", "current_total",
                        "converged", "iterations", "step_diagnostics")
@@ -315,6 +320,8 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     max_attempted_seen = 0.0
     max_accepted_seen = 0.0
     max_retry_seen = 0
+    nonzero_capacitance_rows = 0
+    zero_capacitance_rows = 0
     for row_index, row in enumerate(rows, start=1):
         try:
             diagnostics = parse_step_diagnostics(row["step_diagnostics"])
@@ -331,9 +338,14 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
             charge_column, capacitance_column = cv_charge_columns(sweep_cfg, row)
             _ = parse_finite_float(row, charge_column, "CV sweep", row_index)
             capacitance = parse_finite_float(row, capacitance_column, "CV sweep", row_index)
-            allow_zero_capacitance = bool(reg.get("allow_zero_capacitance", False))
-            if (not allow_zero_capacitance) and row_index > 1 and abs(capacitance) <= 0.0:
-                raise AssertionError(f"CV sweep row {row_index} has zero differential capacitance")
+            if row_index > 1:
+                if abs(capacitance) > 0.0:
+                    nonzero_capacitance_rows += 1
+                else:
+                    zero_capacitance_rows += 1
+                    if not allow_zero_capacitance:
+                        raise AssertionError(
+                            f"CV sweep row {row_index} has zero differential capacitance")
         if mode == "bv_reverse":
             max_field = parse_finite_float(row, "max_electric_field_V_per_m", "BV sweep", row_index)
             if max_field < 0.0:
@@ -355,6 +367,19 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
                 f"accepted_step {accepted} exceeds regression limit {max_abs_accepted}")
         if retry > max_retry:
             raise AssertionError(f"retry_count {retry} exceeds regression limit {max_retry}")
+
+    if mode == "cv_quasistatic":
+        if nonzero_capacitance_rows < min_nonzero_capacitance_rows:
+            raise AssertionError(
+                "CV sweep observed "
+                f"{nonzero_capacitance_rows} non-zero differential capacitance row(s), "
+                f"expected at least {min_nonzero_capacitance_rows}")
+        if (expected_zero_capacitance_rows is not None
+                and zero_capacitance_rows != int(expected_zero_capacitance_rows)):
+            raise AssertionError(
+                "CV sweep observed "
+                f"{zero_capacitance_rows} zero differential capacitance row(s), "
+                f"expected {expected_zero_capacitance_rows}")
 
     return {
         "rows": len(rows),
@@ -593,10 +618,17 @@ def check_mos_trends(example_dir: Path, runner: Path) -> dict[str, Any]:
         "idvg_currents": idvg_currents,
     }
 
+
 def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -> dict[str, Any]:
     name = spec["name"]
-    example_dir = copy_example(repo, workdir, name, spec.get("source"))
+    source = spec.get("source")
     config_source = repo / spec["config"]
+    source_dir = repo / "examples" / (source or name)
+    if config_source.name != "simulation.json" and (source_dir / "simulation.json").exists():
+        raise AssertionError(
+            f"named-deck example {name!r} must not ship a source simulation.json; "
+            "keep simulation.json generated from the selected regression deck")
+    example_dir = copy_example(repo, workdir, name, source)
     config = example_dir / config_source.name
     canonical_config = example_dir / "simulation.json"
     if config.resolve() != canonical_config.resolve():

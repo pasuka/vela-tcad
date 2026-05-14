@@ -15,7 +15,7 @@ TCAD coverage.
 
 | Device example | Poisson-only | DD-IV | CV | BV |
 | --- | --- | --- | --- | --- |
-| `examples/pn_diode` | Yes, through the coupled DD decks | `simulation_iv.json` forward IV | `simulation_cv.json` quasi-static junction C-V | `simulation_bv.json` reverse-bias diagnostics |
+| `examples/pn_diode` | Implicit equilibrium in DD decks | `simulation_iv.json` forward IV | `simulation_cv.json` quasi-static junction C-V | `simulation_bv.json` reverse-bias diagnostics |
 | `examples/nmos2d_dd` | Implicit equilibrium in DD decks | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg | `simulation_cv.json` gate/body quasi-static CV | Not yet |
 | `examples/pmos2d_dd` | Implicit equilibrium in DD decks | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg | `simulation_cv.json` gate/body quasi-static CV | Not yet |
 | `examples/ldmos2d` | `simulation_iv.json` is currently a reverse-biased Poisson field-distribution deck on the mixed Si/SiO2 mesh | Not yet | Not yet | Not yet |

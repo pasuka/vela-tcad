@@ -58,7 +58,8 @@
       "regions": [
         "body"
       ],
-      "per_meter": true
+      "per_meter": true,
+      "contact_radius": 0.001
     }
   },
   "regression": {
@@ -67,8 +68,7 @@
       "expected_rows": 2,
       "max_abs_attempted_step": 0.05,
       "max_abs_accepted_step": 0.05,
-      "max_retry_count": 0,
-      "allow_zero_capacitance": true
+      "max_retry_count": 0
     }
   }
 }

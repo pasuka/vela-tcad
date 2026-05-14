@@ -56,7 +56,8 @@
       "max_abs_attempted_step": 0.1,
       "max_abs_accepted_step": 0.1,
       "max_retry_count": 0,
-      "allow_zero_capacitance": true
+      "allow_zero_capacitance": true,
+      "expected_zero_capacitance_rows": 2
     }
   }
 }
