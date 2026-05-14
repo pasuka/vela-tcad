@@ -300,12 +300,18 @@ explicitly selects Newton:
     "abstol": 1e-18,
     "damping_factor": 1.0,
     "line_search": true,
+    "warm_start": false,
     "verbose": false
   }
 }
 ```
 
 Use `"method": "gummel"` or omit the field to keep the default sweep path.
+For Newton, `"warm_start": true` preserves supplied quasi-Fermi potentials
+(`phin`/`phip`) when continuing from a previous solution; the default `false`
+keeps the conservative cold-start behavior that resets interior quasi-Fermi
+potentials before the coupled solve.
+
 Gummel solver configs also accept `abstol`; convergence is reported when either
 all relative update checks pass or all absolute update norms are below that
 positive threshold. A single-bias coupled Newton CLI run is available with

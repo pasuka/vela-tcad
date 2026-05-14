@@ -79,6 +79,7 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
     cfg.dampingFactor = json.value("damping_factor", cfg.dampingFactor);
     cfg.lineSearch = json.value("line_search", cfg.lineSearch);
     cfg.verbose = json.value("verbose", cfg.verbose);
+    cfg.warmStart = json.value("warm_start", cfg.warmStart);
     cfg.finiteDifferenceStep = json.value("finite_difference_step", cfg.finiteDifferenceStep);
     cfg.jacobian = json.value("jacobian", cfg.jacobian);
     cfg.residualNorm = json.value("residual_norm", cfg.residualNorm);
@@ -189,17 +190,14 @@ DDSolution NewtonSolver::buildInitialGuess(
     gcfg.recombination = cfg_.recombination;
     DDSolution sol = runGummel(mesh_, matdb_, doping_, contactBiases_, gcfg);
 
-    // The Gummel solver leaves tiny numerical noise (~1e-18 V) in the
-    // quasi-Fermi potentials at interior nodes.  The balanced SG flux formula
-    // multiplies exp(-phi/Vt) differences by coefficients of order exp(psi/Vt)
-    // (~1e5 at a PN junction), so even 1-ULP rounding in exp(-tiny/Vt) creates
-    // a spurious initial residual of O(0.05) that prevents Newton convergence.
-    // Zeroing phi_n/phi_p is physically correct for equilibrium (flat
-    // quasi-Fermi levels) and produces a small, well-conditioned initial
-    // residual for the coupled Newton iteration.
-    const int N = static_cast<int>(mesh_.numNodes());
-    sol.phin = VectorXd::Zero(N);
-    sol.phip = VectorXd::Zero(N);
+    // The default cold-start path removes tiny quasi-Fermi numerical noise left
+    // by the one-step Gummel initializer.  A caller can opt into warm_start when
+    // the supplied/constructed quasi-Fermi potentials should be used as-is.
+    if (!cfg_.warmStart) {
+        const int N = static_cast<int>(mesh_.numNodes());
+        sol.phin = VectorXd::Zero(N);
+        sol.phip = VectorXd::Zero(N);
+    }
     return sol;
 }
 
@@ -238,22 +236,22 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     CoupledDDAssembler assembler(mesh_, matdb_, doping_, Vt, mobilityConfig, recombinationConfig);
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
 
-    // The balanced Scharfetter-Gummel formula multiplies the quasi-Fermi
-    // difference (expNegPhin[i]-expNegPhin[j]) by exp(+psi[j]/Vt) for electrons
-    // and exp(-psi[i]/Vt) for holes.  At a PN junction these factors reach ~1e5,
-    // so even sub-ULP noise in phin/phip from an external initial guess (e.g.
-    // Gummel) produces O(1) residuals.  Zeroing the interior quasi-Fermi
-    // potentials removes this amplification: at equilibrium the exact solution
-    // has phin = phip = 0 everywhere, and for any bias Newton will converge to
-    // the correct non-zero values from this well-conditioned start.
+    // By default Newton uses a conservative cold start for quasi-Fermi
+    // potentials: interior phin/phip are reset to equilibrium values because
+    // tiny external-initializer noise can be strongly amplified by the balanced
+    // Scharfetter-Gummel flux.  Set warm_start=true to preserve the supplied
+    // quasi-Fermi potentials, which is useful for continuation runs where the
+    // previous bias point is already a high-quality initial guess.
     VectorXd phinInit = initial.phin;
     VectorXd phipInit = initial.phip;
     const int N = static_cast<int>(mesh_.numNodes());
-    for (int i = 0; i < N; ++i) {
-        const Index nid = static_cast<Index>(i);
-        if (bcs.phin.find(nid) == bcs.phin.end()) {
-            phinInit(i) = 0.0;
-            phipInit(i) = 0.0;
+    if (!cfg_.warmStart) {
+        for (int i = 0; i < N; ++i) {
+            const Index nid = static_cast<Index>(i);
+            if (bcs.phin.find(nid) == bcs.phin.end()) {
+                phinInit(i) = 0.0;
+                phipInit(i) = 0.0;
+            }
         }
     }
 
