@@ -30,7 +30,16 @@ inline double thermalVoltage(double T)
 inline double nEq(double Ndop, double ni)
 {
     const double half = 0.5 * Ndop;
-    return half + std::sqrt(half * half + ni * ni);
+    const double root = std::sqrt(half * half + ni * ni);
+
+    if (Ndop >= 0.0)
+        return half + root;
+
+    // For p-type contacts with |Ndop| >> ni, half + root suffers severe
+    // cancellation. Use the algebraically equivalent minority-carrier form
+    // n = ni^2 / p, with p = root - half, to preserve high-doping accuracy.
+    const double p_eq = root - half;
+    return (p_eq > 0.0) ? (ni * ni / p_eq) : 0.0;
 }
 
 /// Compute per-node ni from the material database.

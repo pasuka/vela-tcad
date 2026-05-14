@@ -150,6 +150,9 @@ target_link_libraries(test_sg_flux PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_dd_gummel tests/test_dd_gummel.cpp)
 target_link_libraries(test_dd_gummel PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_gummel_high_doping tests/test_gummel_high_doping.cpp)
+target_link_libraries(test_gummel_high_doping PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_newton_solver tests/test_newton_solver.cpp)
 target_link_libraries(test_newton_solver PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -173,6 +176,7 @@ catch_discover_tests(test_box_geometry)
 catch_discover_tests(test_bernoulli)
 catch_discover_tests(test_sg_flux)
 catch_discover_tests(test_dd_gummel)
+catch_discover_tests(test_gummel_high_doping)
 catch_discover_tests(test_newton_solver)
 catch_discover_tests(test_mobility)
 catch_discover_tests(test_recombination)
