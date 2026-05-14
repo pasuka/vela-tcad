@@ -1,4 +1,5 @@
 #include "vela/simulation/DCSweep.h"
+#include "vela/simulation/DCSweepStepControl.h"
 #include "vela/io/CSVWriter.h"
 #include "vela/io/MeshReader.h"
 #include "vela/material/MaterialDatabase.h"
@@ -210,7 +211,6 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
     std::vector<DCSweepPoint> points;
     DDSolution previousSolution;
-    Real previousVoltage = sweep.start;
     int vtkIndex = 0;
 
     auto solvePoint = [&](Real voltage, const DDSolution* initial) -> std::pair<bool, DDSolution> {
@@ -278,9 +278,46 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         return DCSweepResult{std::move(mesh), std::move(points)};
     previousSolution = std::move(startSol);
 
-    const Real direction = (sweep.step > 0.0) ? 1.0 : -1.0;
+    DDSolution lastStepSolution;
+    detail::DCSweepStepControlConfig stepControl;
+    stepControl.start = sweep.start;
+    stepControl.stop = sweep.stop;
+    stepControl.step = sweep.step;
+    stepControl.minStep = sweep.minStep;
+    stepControl.maxStep = sweep.maxStep;
+    stepControl.growthFactor = sweep.growthFactor;
+    stepControl.shrinkFactor = sweep.shrinkFactor;
+    stepControl.maxRetries = sweep.maxRetries;
+    stepControl.stopOnFailure = sweep.stopOnFailure;
+
+    detail::runDCSweepStepControl(
+        stepControl,
+        [&](Real voltage, Real, int) {
+            auto [ok, sol] = solvePoint(voltage, &previousSolution);
+            lastStepSolution = std::move(sol);
+            return ok;
+        },
+        [&](const detail::DCSweepStepControlEvent& event) {
+            recordPoint(event.voltage, lastStepSolution, event.converged,
+                        event.attemptedStep, event.acceptedStep, event.retryCount);
+            if (event.converged) {
+                previousSolution = std::move(lastStepSolution);
+            }
+        });
+
+    return DCSweepResult{std::move(mesh), std::move(points)};
+}
+
+namespace detail {
+
+void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
+                           const DCSweepStepAttempt& attempt,
+                           const DCSweepStepRecorder& record)
+{
+    Real previousVoltage = cfg.start;
+    const Real direction = (cfg.step > 0.0) ? 1.0 : -1.0;
     const Real tolerance = 1.0e-12;
-    Real adaptiveStep = std::min(std::abs(sweep.step), sweep.maxStep);
+    Real adaptiveStep = std::min(std::abs(cfg.step), cfg.maxStep);
 
     auto limitedTarget = [&](Real target, Real stepMagnitude) {
         const Real remaining = direction * (target - previousVoltage);
@@ -290,8 +327,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
     auto advanceToward = [&](Real target) -> bool {
         int retryCount = 0;
-        Real trialStep = std::min(adaptiveStep, sweep.maxStep);
-        DDSolution lastSol;
+        Real trialStep = std::min(adaptiveStep, cfg.maxStep);
         Real lastAttempted = 0.0;
         Real lastCandidate = previousVoltage;
 
@@ -303,58 +339,57 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             const Real stepMagnitude = std::min(trialStep, remaining);
             const Real candidate = limitedTarget(target, stepMagnitude);
             const Real attemptedStep = candidate - previousVoltage;
-            auto [ok, sol] = solvePoint(candidate, &previousSolution);
-            lastSol = sol;
+            const bool ok = attempt(candidate, attemptedStep, retryCount);
             lastAttempted = attemptedStep;
             lastCandidate = candidate;
 
             if (ok) {
-                recordPoint(candidate, sol, true, attemptedStep, attemptedStep, retryCount);
-                previousSolution = std::move(sol);
+                record({candidate, true, attemptedStep, attemptedStep, retryCount});
                 previousVoltage = candidate;
-                adaptiveStep = std::min(sweep.maxStep, stepMagnitude * sweep.growthFactor);
+                adaptiveStep = std::min(cfg.maxStep, stepMagnitude * cfg.growthFactor);
                 return true;
             }
 
-            if (retryCount >= sweep.maxRetries)
+            if (retryCount >= cfg.maxRetries)
                 break;
 
-            const Real shrunken = stepMagnitude * sweep.shrinkFactor;
-            if (shrunken < sweep.minStep - std::numeric_limits<Real>::epsilon())
+            const Real shrunken = stepMagnitude * cfg.shrinkFactor;
+            if (shrunken < cfg.minStep - std::numeric_limits<Real>::epsilon())
                 break;
 
             trialStep = shrunken;
             ++retryCount;
         }
 
-        recordPoint(lastCandidate, lastSol, false, lastAttempted, 0.0, retryCount);
-        adaptiveStep = std::max(sweep.minStep, std::min(sweep.maxStep, std::abs(lastAttempted) * sweep.shrinkFactor));
+        record({lastCandidate, false, lastAttempted, 0.0, retryCount});
+        adaptiveStep = std::max(cfg.minStep,
+                                std::min(cfg.maxStep, std::abs(lastAttempted) * cfg.shrinkFactor));
         return false;
     };
 
     bool blockedByFailedStep = false;
-    Real nominalTarget = sweep.start + sweep.step;
-    while (!blockedByFailedStep && direction * (nominalTarget - sweep.stop) <= tolerance) {
+    Real nominalTarget = cfg.start + cfg.step;
+    while (!blockedByFailedStep && direction * (nominalTarget - cfg.stop) <= tolerance) {
         while (direction * (previousVoltage - nominalTarget) < -tolerance) {
             if (!advanceToward(nominalTarget)) {
-                if (sweep.stopOnFailure)
-                    return DCSweepResult{std::move(mesh), std::move(points)};
+                if (cfg.stopOnFailure)
+                    return;
                 blockedByFailedStep = true;
                 break;
             }
         }
-        nominalTarget += sweep.step;
+        nominalTarget += cfg.step;
     }
 
-    while (!blockedByFailedStep && direction * (previousVoltage - sweep.stop) < -tolerance) {
-        if (!advanceToward(sweep.stop)) {
-            if (sweep.stopOnFailure)
-                return DCSweepResult{std::move(mesh), std::move(points)};
+    while (!blockedByFailedStep && direction * (previousVoltage - cfg.stop) < -tolerance) {
+        if (!advanceToward(cfg.stop)) {
+            if (cfg.stopOnFailure)
+                return;
             break;
         }
     }
-
-    return DCSweepResult{std::move(mesh), std::move(points)};
 }
+
+} // namespace detail
 
 } // namespace vela
