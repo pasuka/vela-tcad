@@ -270,6 +270,10 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             r(phipOffset() + ii) = x(phipOffset() + ii);
     }
 
+    // Boundary-condition maps are independent so multi-terminal MOS callers can
+    // pin electrostatic potential, electron quasi-Fermi potential, and hole
+    // quasi-Fermi potential on the source/drain/body nodes selected by contact
+    // name without relying on contact order.
     for (const auto& [node, value] : bcs.psi)
         r(psiOffset() + static_cast<int>(node)) = x(psiOffset() + static_cast<int>(node)) - value;
     for (const auto& [node, value] : bcs.phin)

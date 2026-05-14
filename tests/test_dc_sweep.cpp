@@ -147,6 +147,44 @@ std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& c
     return rows;
 }
 
+
+Real runMosExampleDrainCurrentAtGate(const std::string& exampleName, Real gateBias, Real drainBias)
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    const std::filesystem::path src = std::filesystem::path(VELA_SOURCE_DIR) / "examples" / exampleName;
+    std::filesystem::copy(src, dir, std::filesystem::copy_options::recursive);
+    std::filesystem::create_directories(dir / "outputs");
+
+    const auto cfgPath = dir / "simulation.json";
+    std::ifstream input(cfgPath);
+    nlohmann::json cfg;
+    input >> cfg;
+    bool foundGateContact = false;
+    for (auto& contact : cfg["contacts"]) {
+        if (contact.at("name").get<std::string>() == "gate") {
+            contact["bias"] = gateBias;
+            foundGateContact = true;
+        }
+    }
+    REQUIRE(foundGateContact);
+    cfg["output_csv"] = "outputs/mos_idvd_test.csv";
+    cfg["sweep"]["start"] = drainBias;
+    cfg["sweep"]["stop"] = drainBias;
+    cfg["sweep"]["step"] = (drainBias >= 0.0) ? 0.05 : -0.05;
+    cfg["sweep"]["write_vtk"] = false;
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    const DCSweepPoint& point = result.points.front();
+    REQUIRE(point.converged);
+    REQUIRE(std::isfinite(point.totalCurrent));
+    REQUIRE(point.iterations > 0);
+    return point.totalCurrent;
+}
+
 } // namespace
 
 TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV data", "[dc_sweep]")
@@ -506,4 +544,16 @@ TEST_CASE("DCSweep: explicit Newton solver method is reachable from config", "[d
     REQUIRE(points.front().voltage == Catch::Approx(0.0));
     REQUIRE(points.front().attemptedStep == Catch::Approx(0.0));
     REQUIRE(std::filesystem::exists(csvPath));
+}
+
+
+TEST_CASE("DCSweep: NMOS and PMOS DD examples increase drain current with stronger gate drive", "[dc_sweep][mos]")
+{
+    const Real nmosOff = std::abs(runMosExampleDrainCurrentAtGate("nmos2d_dd", 0.0, 0.1));
+    const Real nmosOn = std::abs(runMosExampleDrainCurrentAtGate("nmos2d_dd", 0.05, 0.1));
+    REQUIRE(nmosOn > nmosOff);
+
+    const Real pmosOff = std::abs(runMosExampleDrainCurrentAtGate("pmos2d_dd", 0.0, -0.1));
+    const Real pmosOn = std::abs(runMosExampleDrainCurrentAtGate("pmos2d_dd", -0.05, -0.1));
+    REQUIRE(pmosOn > pmosOff);
 }
