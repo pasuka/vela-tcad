@@ -501,3 +501,86 @@ TEST_CASE("NewtonSolver: configured temperature is parsed and passed to initial 
     REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{{"temperature_K", -1.0}}),
                       std::invalid_argument);
 }
+
+static void requireFiniteNewtonSolution(const NewtonResult& result, Index nodeCount)
+{
+    REQUIRE(std::isfinite(result.initialResidualNorm));
+    REQUIRE(std::isfinite(result.finalResidualNorm));
+    for (Index i = 0; i < nodeCount; ++i) {
+        const int ii = static_cast<int>(i);
+        REQUIRE(std::isfinite(result.solution.psi(ii)));
+        REQUIRE(std::isfinite(result.solution.phin(ii)));
+        REQUIRE(std::isfinite(result.solution.phip(ii)));
+        REQUIRE(std::isfinite(result.solution.n(ii)));
+        REQUIRE(std::isfinite(result.solution.p(ii)));
+        REQUIRE(result.solution.n(ii) >= 0.0);
+        REQUIRE(result.solution.p(ii) >= 0.0);
+    }
+}
+
+TEST_CASE("NewtonSolver: high doping gradient reverse bias does not diverge", "[newton][stability]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 1.0e21},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.maxIter = 8;
+    cfg.reltol = 1.0e-6;
+    cfg.abstol = 1.0e-18;
+    cfg.lineSearch = true;
+    cfg.verbose = false;
+
+    const NewtonResult result = runNewton(
+        mesh, matdb, doping, {{"anode", -0.10}, {"cathode", 0.0}}, cfg);
+
+    REQUIRE(result.iters <= cfg.maxIter);
+    requireFiniteNewtonSolution(result, mesh.numNodes());
+    REQUIRE(result.finalResidualNorm <= result.initialResidualNorm * 1.0e6);
+}
+
+TEST_CASE("NewtonSolver: multi-terminal contacted mesh accepts distinct biases", "[newton][contacts]")
+{
+    DeviceMesh mesh;
+    const double L = 1.0e-6;
+    Node n0; n0.id = 0; n0.x = 0.0; n0.y = 0.0; mesh.addNode(n0);
+    Node n1; n1.id = 1; n1.x = L;   n1.y = 0.0; mesh.addNode(n1);
+    Node n2; n2.id = 2; n2.x = L;   n2.y = L;   mesh.addNode(n2);
+    Node n3; n3.id = 3; n3.x = 0.0; n3.y = L;   mesh.addNode(n3);
+    Cell c0; c0.id = 0; c0.type = CellType::Tri3; c0.region_id = 0; c0.node_ids = {0, 1, 2}; mesh.addCell(c0);
+    Cell c1; c1.id = 1; c1.type = CellType::Tri3; c1.region_id = 0; c1.node_ids = {0, 2, 3}; mesh.addCell(c1);
+    Region r0; r0.id = 0; r0.name = "p_region"; r0.material = "Si"; r0.cell_ids = {0, 1}; mesh.addRegion(r0);
+    Contact body; body.id = 0; body.name = "body"; body.region_id = 0; body.node_ids = {0}; mesh.addContact(body);
+    Contact source; source.id = 1; source.name = "source"; source.region_id = 0; source.node_ids = {1}; mesh.addContact(source);
+    Contact gate; gate.id = 2; gate.name = "gate"; gate.region_id = 0; gate.node_ids = {2}; mesh.addContact(gate);
+    Contact drain; drain.id = 3; drain.name = "drain"; drain.region_id = 0; drain.node_ids = {3}; mesh.addContact(drain);
+    mesh.buildEdges();
+
+    MaterialDatabase matdb;
+    DopingModel doping = DopingModel::fromMeshAndRegions(
+        mesh, std::vector<RegionDopingSpec>{{"p_region", 0.0, 1.0e21}});
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.maxIter = 0;
+    cfg.reltol = 0.0;
+    cfg.abstol = 0.0;
+    cfg.warmStart = true;
+
+    const NewtonResult result = runNewton(
+        mesh,
+        matdb,
+        doping,
+        {{"body", 0.0}, {"source", 0.02}, {"gate", 0.04}, {"drain", 0.06}},
+        cfg);
+
+    REQUIRE_FALSE(result.converged);
+    requireFiniteNewtonSolution(result, mesh.numNodes());
+    REQUIRE(result.solution.phin(0) == Catch::Approx(0.0));
+    REQUIRE(result.solution.phip(1) == Catch::Approx(0.02));
+    REQUIRE(result.solution.phin(2) == Catch::Approx(0.04));
+    REQUIRE(result.solution.phip(3) == Catch::Approx(0.06));
+}

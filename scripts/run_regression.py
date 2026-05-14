@@ -19,7 +19,7 @@ EXAMPLES = [
         "name": "pn_diode",
         "config": Path("examples/pn_diode/simulation.json"),
         "expected": [Path("outputs/pn_iv.csv"), Path("outputs/pn_sweep_0000_0V.vtk")],
-        "checks": ["csv_converged", "finite_outputs", "iv_trend"],
+        "checks": ["csv_converged", "finite_outputs", "iv_trend", "dc_sweep_regression"],
     },
     {
         "name": "moscap",
@@ -31,6 +31,36 @@ EXAMPLES = [
         "name": "nmos2d",
         "config": Path("examples/nmos2d/simulation.json"),
         "expected": [Path("outputs/nmos_poisson.vtk")],
+        "checks": ["finite_outputs"],
+    },
+    {
+        "name": "nmos2d_dd",
+        "config": Path("examples/nmos2d_dd/simulation.json"),
+        "expected": [
+            Path("outputs/nmos2d_dd_iv.csv"),
+            Path("outputs/nmos2d_dd_sweep_0000_0V.vtk"),
+        ],
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
+    },
+    {
+        "name": "pmos2d_dd",
+        "config": Path("examples/pmos2d_dd/simulation.json"),
+        "expected": [
+            Path("outputs/pmos2d_dd_iv.csv"),
+            Path("outputs/pmos2d_dd_sweep_0000_0V.vtk"),
+        ],
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
+    },
+    {
+        "name": "ldmos2d_poisson",
+        "config": Path("examples/ldmos2d_poisson/simulation.json"),
+        "expected": [Path("outputs/ldmos2d_poisson.vtk")],
+        "checks": ["finite_outputs"],
+    },
+    {
+        "name": "igbt2d_poisson",
+        "config": Path("examples/igbt2d_poisson/simulation.json"),
+        "expected": [Path("outputs/igbt2d_poisson.vtk")],
         "checks": ["finite_outputs"],
     },
 ]
@@ -108,13 +138,22 @@ def node_index(mesh: dict[str, Any], x: float, y: float) -> int:
     return int(best["id"])
 
 
+def output_csv_path(example_dir: Path, cfg: dict[str, Any]) -> Path:
+    if "output_csv" in cfg:
+        return example_dir / cfg["output_csv"]
+    return example_dir / cfg.get("sweep", {}).get("csv_file", "dc_sweep.csv")
+
+
 def check_csv_converged(example_dir: Path) -> None:
-    rows = read_csv(example_dir / "outputs" / "pn_iv.csv")
+    cfg = json.loads((example_dir / "simulation.json").read_text())
+    rows = read_csv(output_csv_path(example_dir, cfg))
     if not rows:
-        raise AssertionError("PN IV CSV contains no sweep rows")
-    bad = [row for row in rows if row.get("converged") != "1"]
-    if bad:
-        raise AssertionError(f"Non-converged PN sweep rows: {bad}")
+        raise AssertionError("DC sweep CSV contains no sweep rows")
+    declared = bool(cfg.get("regression", {}).get("declared_converged", True))
+    if declared:
+        bad = [row for row in rows if row.get("converged") != "1"]
+        if bad:
+            raise AssertionError(f"Non-converged declared sweep rows: {bad}")
 
 
 def expected_sweep_voltages(sweep: dict[str, Any]) -> list[float]:
@@ -135,6 +174,49 @@ def expected_sweep_voltages(sweep: dict[str, Any]) -> list[float]:
     if abs(values[-1] - stop) > 1.0e-12:
         values.append(stop)
     return values
+
+
+def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
+    cfg = json.loads((example_dir / "simulation.json").read_text())
+    reg = cfg.get("regression", {}).get("dc_sweep", {})
+    rows = read_csv(output_csv_path(example_dir, cfg))
+    if not rows:
+        raise AssertionError("DC sweep CSV contains no sweep rows")
+
+    expected_rows = reg.get("expected_rows")
+    if expected_rows is None and "sweep" in cfg:
+        expected_rows = len(expected_sweep_voltages(cfg["sweep"]))
+    if expected_rows is not None and len(rows) != int(expected_rows):
+        raise AssertionError(f"DC sweep wrote {len(rows)} rows, expected {expected_rows}")
+
+    max_abs_attempted = float(reg.get("max_abs_attempted_step", math.inf))
+    max_abs_accepted = float(reg.get("max_abs_accepted_step", math.inf))
+    max_retry = int(reg.get("max_retry_count", 0))
+    max_attempted_seen = 0.0
+    max_accepted_seen = 0.0
+    max_retry_seen = 0
+    for row in rows:
+        attempted = abs(float(row.get("attempted_step", "0")))
+        accepted = abs(float(row.get("accepted_step", "0")))
+        retry = int(row.get("retry_count", "0"))
+        max_attempted_seen = max(max_attempted_seen, attempted)
+        max_accepted_seen = max(max_accepted_seen, accepted)
+        max_retry_seen = max(max_retry_seen, retry)
+        if attempted > max_abs_attempted + 1.0e-12:
+            raise AssertionError(
+                f"attempted_step {attempted} exceeds regression limit {max_abs_attempted}")
+        if accepted > max_abs_accepted + 1.0e-12:
+            raise AssertionError(
+                f"accepted_step {accepted} exceeds regression limit {max_abs_accepted}")
+        if retry > max_retry:
+            raise AssertionError(f"retry_count {retry} exceeds regression limit {max_retry}")
+
+    return {
+        "rows": len(rows),
+        "max_abs_attempted_step": max_attempted_seen,
+        "max_abs_accepted_step": max_accepted_seen,
+        "max_retry_count": max_retry_seen,
+    }
 
 
 def check_iv_trend(example_dir: Path) -> dict[str, Any]:
@@ -260,6 +342,8 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
         if "csv_converged" in spec["checks"]:
             check_csv_converged(example_dir)
             result["checks"]["csv_converged"] = True
+        if "dc_sweep_regression" in spec["checks"]:
+            result["checks"]["dc_sweep_regression"] = check_dc_sweep_regression(example_dir)
         if "iv_trend" in spec["checks"]:
             result["checks"]["iv_trend"] = check_iv_trend(example_dir)
         if "moscap_interface" in spec["checks"]:

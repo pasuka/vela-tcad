@@ -1,0 +1,55 @@
+{
+  "_comment": "Reverse-biased LDMOS-like Poisson stability point with field plate/gate oxide.",
+  "simulation_type": "poisson",
+  "mesh_file": "mesh.json",
+  "output_vtk": "outputs/ldmos2d_poisson.vtk",
+  "doping": [
+    {
+      "region": "p_body_drift",
+      "donors": 0.0,
+      "acceptors": 1e+21
+    },
+    {
+      "region": "n_source",
+      "donors": 1e+22,
+      "acceptors": 0.0
+    },
+    {
+      "region": "n_drain_drift",
+      "donors": 2e+21,
+      "acceptors": 0.0
+    },
+    {
+      "region": "field_oxide",
+      "donors": 0.0,
+      "acceptors": 0.0
+    }
+  ],
+  "contacts": [
+    {
+      "name": "body",
+      "bias": 0.0
+    },
+    {
+      "name": "source",
+      "bias": 0.0
+    },
+    {
+      "name": "gate",
+      "bias": 0.2
+    },
+    {
+      "name": "drain",
+      "bias": 1.0
+    }
+  ],
+  "regions": [
+    {
+      "name": "field_oxide",
+      "fixed_charge_m3": 5e+20
+    }
+  ],
+  "regression": {
+    "declared_converged": true
+  }
+}
