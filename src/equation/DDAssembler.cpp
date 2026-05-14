@@ -39,20 +39,17 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
     , Vt_(Vt)
     , mobility_(makeMobilityModel(mobilityConfig))
     , recombination_(recombinationConfig)
-    , ni_(detail::buildEffectiveNodeNi(
+    , ni_(detail::buildValidatedEffectiveNodeNi(
+          "DDAssembler",
           mesh,
           matdb,
           doping,
-          *makeBandgapNarrowingModel(bandgapNarrowingConfig),
+          bandgapNarrowingConfig,
           Vt))
     , A_(static_cast<int>(mesh.numNodes()),
          static_cast<int>(mesh.numNodes()))
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
-{
-    if (doping.numNodes() != mesh.numNodes())
-        throw std::invalid_argument(
-            "DDAssembler: doping model size does not match mesh node count.");
-}
+{}
 
 // ---------------------------------------------------------------------------
 // Dirichlet boundary conditions

@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <limits>
 
 using namespace vela;
 
@@ -67,6 +68,16 @@ TEST_CASE("Slotboom bandgap narrowing grows effective intrinsic density", "[bgn]
     const Real niEff = effectiveIntrinsicDensity(ni, Vt, high);
     REQUIRE(niEff > ni);
     REQUIRE(niEff == Catch::Approx(ni * std::exp(high / (2.0 * Vt))));
+}
+
+TEST_CASE("Effective intrinsic density caps overflow", "[bgn]")
+{
+    const Real ni = 1.0e16;
+    const Real Vt = 0.025852;
+    const Real niEff = effectiveIntrinsicDensity(ni, Vt, 1.0e6);
+
+    REQUIRE(std::isfinite(niEff));
+    REQUIRE(niEff == std::numeric_limits<Real>::max());
 }
 
 TEST_CASE("Bandgap narrowing factory validates model names", "[bgn]")

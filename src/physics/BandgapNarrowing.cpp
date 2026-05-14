@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <limits>
 #include <utility>
 
 namespace vela {
@@ -48,7 +49,10 @@ Real effectiveIntrinsicDensity(Real ni, Real thermalVoltage, Real deltaEg)
     if (thermalVoltage <= 0.0)
         throw std::invalid_argument("effectiveIntrinsicDensity: thermalVoltage must be positive.");
 
-    const Real exponent = std::min(deltaEg / (2.0 * thermalVoltage), 700.0);
+    const Real exponent = deltaEg / (2.0 * thermalVoltage);
+    const Real maxExponent = std::log(std::numeric_limits<Real>::max() / ni);
+    if (exponent >= maxExponent)
+        return std::numeric_limits<Real>::max();
     return ni * std::exp(exponent);
 }
 
