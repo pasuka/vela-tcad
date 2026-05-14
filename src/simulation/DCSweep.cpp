@@ -198,7 +198,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         gummel = gummelConfigFromJson(solverCfg);
         mobilityConfig = mobilityModelConfig(gummel.mobility);
     }
-    ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig);
+    const Real temperature_K = (solverMethod == SolverMethod::Newton)
+        ? newton.temperature_K
+        : gummel.temperature_K;
+    ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K);
 
     CSVWriter csv(sweep.csvFile);
     csv.writeHeader({"voltage", "electron_current", "hole_current",

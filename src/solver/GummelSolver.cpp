@@ -18,8 +18,10 @@ namespace vela {
 namespace {
 
 /// Thermal voltage at temperature T [K].
-inline double thermalVoltage(double T = 300.0)
+inline double thermalVoltage(double T)
 {
+    if (T <= 0.0)
+        throw std::invalid_argument("thermalVoltage: temperature_K must be positive.");
     return constants::kb * T / constants::q;
 }
 
@@ -66,6 +68,7 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json)
     cfg.maxIter = json.value("max_iter", cfg.maxIter);
     cfg.reltol = json.value("reltol", cfg.reltol);
     cfg.abstol = json.value("abstol", cfg.abstol);
+    cfg.temperature_K = json.value("temperature_K", cfg.temperature_K);
     cfg.dampingPsi = json.value("damping_psi", cfg.dampingPsi);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
@@ -81,6 +84,9 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json)
             throw std::invalid_argument(
                 "gummelConfigFromJson: recombination must be a string or string array.");
     }
+
+    if (cfg.temperature_K <= 0.0)
+        throw std::invalid_argument("gummelConfigFromJson: temperature_K must be positive.");
 
     return cfg;
 }
@@ -99,7 +105,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
                          const DDSolution*                           initialGuess)
 {
     const Index  N   = mesh.numNodes();
-    const double Vt  = thermalVoltage();
+    const double Vt  = thermalVoltage(cfg.temperature_K);
 
     // Per-node ni
     const std::vector<double> ni_v = buildNiVector(mesh, matdb);
