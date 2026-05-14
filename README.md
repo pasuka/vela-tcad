@@ -323,6 +323,13 @@ threshold. A single-bias coupled Newton CLI run is available with
 
 ---
 
+## Development Notes
+
+- 本周开发任务总结已同步到 [`docs/weekly_development_summary_2026-05-14.md`](docs/weekly_development_summary_2026-05-14.md)，按提交记录归纳了 2026-05-11 至 2026-05-14 的求解器、物理模型、性能、可观测性和测试进展。
+- 2026-05-13 合并 Backlog 的 B01-B14 已全部完成；状态同步见 [`docs/multi_agent_merged_backlog_2026-05-13.md`](docs/multi_agent_merged_backlog_2026-05-13.md#31-2026-05-14-执行状态同步)。
+
+---
+
 ## Next Steps
 
 The roadmap below tracks future work only. Items already listed as `done` in
