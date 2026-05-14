@@ -29,6 +29,17 @@
 | B13 | P2 | 功能缺口 | Bandgap Narrowing 实体模型实现 | [src/physics/BandgapNarrowing.cpp](../src/physics/BandgapNarrowing.cpp#L5), [src/physics/RecombinationModel.cpp](../src/physics/RecombinationModel.cpp#L36) | 新增 BGN 单测 + 回归样例 | B08 |
 | B14 | P2 | 可观测性 | LineSearch/Newton 增强诊断历史（可选） | [src/numerics/LineSearch.cpp](../src/numerics/LineSearch.cpp#L11), [src/solver/NewtonSolver.cpp](../src/solver/NewtonSolver.cpp#L269) | 输出历史结构测试 | B03 |
 
+
+## 3.1 2026-05-14 执行状态同步
+
+截至 2026-05-14，本文件合并出的 B01-B14 已全部由本周提交落地；详细提交对照和任务归纳见 [本周开发任务总结（2026-05-11 至 2026-05-14）](weekly_development_summary_2026-05-14.md)。后续使用本 Backlog 时，应将 B01-B14 视为已完成基线，而不是待办事项。
+
+| Backlog 范围 | 当前状态 | 对应提交范围 | 说明 |
+|---|---|---|---|
+| B01-B04 | 完成 | `97264ca` | P0 阻断项完成：Newton 入口、Gummel `abstol`、LineSearch/Newton 失败路径测试。 |
+| B05-B10 | 完成 | `10e7b49` - `d4a0589` | 稳定性主线完成：分块残差、统一 SG 通量、warm-start、温度参数、DCSweep 边界、高掺杂覆盖。 |
+| B11-B14 | 完成 | `57f1f14` - `38f4a3e` | 性能与可观测性完成：DD 几何缓存、LinearSolver pattern 缓存、Slotboom BGN、Newton/LineSearch history。 |
+
 ## 4. 串行执行建议（里程碑）
 
 ### M0（开工前，半天，基线冻结）
