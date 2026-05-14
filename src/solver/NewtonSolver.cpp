@@ -328,7 +328,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         }
         const Real stepNorm = step.norm();
 
-        const auto ls = lineSearch.search(
+        auto ls = lineSearch.search(
             x, step, r,
             [&](const VectorXd& candidate) { return assembler.residual(candidate, bcs); },
             [&](const VectorXd& candidate, const VectorXd&) {
@@ -370,7 +370,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         info.lineSearchAttempts = ls.attempts;
         info.lineSearchAccepted = ls.accepted;
         if (cfg_.diagnostics)
-            info.lineSearchHistory = ls.history;
+            info.lineSearchHistory = std::move(ls.history);
         result.history.push_back(std::move(info));
         if (cfg_.verbose) {
             std::cout << "Newton iter " << iter
