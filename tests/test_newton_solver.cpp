@@ -285,8 +285,9 @@ TEST_CASE("NewtonSolver: warm start preserves supplied quasi-Fermi guess", "[new
     initial.psi = VectorXd::Zero(N);
     initial.phin = VectorXd::Zero(N);
     initial.phip = VectorXd::Zero(N);
-    initial.phin(4) = 0.02;
-    initial.phip(4) = -0.015;
+    const int interiorNode = 4;
+    initial.phin(interiorNode) = 0.02;
+    initial.phip(interiorNode) = -0.015;
 
     NewtonConfig coldCfg = newtonConfig();
     coldCfg.maxIter = 0;
@@ -302,6 +303,13 @@ TEST_CASE("NewtonSolver: warm start preserves supplied quasi-Fermi guess", "[new
 
     REQUIRE_FALSE(cold.converged);
     REQUIRE_FALSE(warm.converged);
+
+    REQUIRE(cold.solution.phin(interiorNode) == Catch::Approx(0.0).margin(1.0e-14));
+    REQUIRE(cold.solution.phip(interiorNode) == Catch::Approx(0.0).margin(1.0e-14));
+    REQUIRE(warm.solution.phin(interiorNode) ==
+            Catch::Approx(initial.phin(interiorNode)).margin(1.0e-14));
+    REQUIRE(warm.solution.phip(interiorNode) ==
+            Catch::Approx(initial.phip(interiorNode)).margin(1.0e-14));
     REQUIRE(warm.initialResidualNorm != Catch::Approx(cold.initialResidualNorm));
 }
 
