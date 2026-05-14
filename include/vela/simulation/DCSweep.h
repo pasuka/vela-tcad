@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/simulation/CurveSweep.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/solver/GummelSolver.h"
@@ -9,7 +10,14 @@
 
 namespace vela {
 
+struct BVReverseCriteria {
+    Real maxElectricField_V_per_m = 0.0;
+    Real currentJumpRatio = 0.0;
+    bool nonConvergenceBreakdown = true;
+};
+
 struct DCSweepConfig {
+    CurveSweepMode mode = CurveSweepMode::IV;
     std::string contact;
     Real start = 0.0;
     Real stop = 0.0;
@@ -24,10 +32,17 @@ struct DCSweepConfig {
     bool writeVtk = false;
     std::string vtkPrefix;
     std::string csvFile = "dc_sweep.csv";
+    std::string chargeContact;
+    std::vector<std::string> chargeRegions;
+    Real chargeContactRadius = 0.0;
+    bool chargePerMeter = true;
+    Real chargeDepth_m = 1.0;
+    BVReverseCriteria breakdown;
 };
 
 struct DCSweepPoint {
     Real voltage = 0.0;
+    Real bias = 0.0;
     Real electronCurrent = 0.0;
     Real holeCurrent = 0.0;
     Real totalCurrent = 0.0;
@@ -36,6 +51,13 @@ struct DCSweepPoint {
     Real attemptedStep = 0.0;
     Real acceptedStep = 0.0;
     int retryCount = 0;
+    Real terminalCharge = 0.0;
+    Real capacitance = 0.0;
+    Real maxElectricField = 0.0;
+    Real currentJumpRatio = 0.0;
+    bool breakdownDetected = false;
+    Real breakdownVoltage = 0.0;
+    std::string breakdownCriterion;
 };
 
 struct DCSweepResult {

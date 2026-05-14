@@ -221,9 +221,85 @@ TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV da
     REQUIRE(std::filesystem::exists(dir / "pn_sweep_0000_0V.vtk"));
 
     const auto rows = readCsvRows(csvPath);
-    REQUIRE(rows.front() == std::vector<std::string>{"voltage", "electron_current", "hole_current",
-                                                     "total_current", "converged", "iterations",
-                                                     "attempted_step", "accepted_step", "retry_count"});
+    REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
+                                                     "current_contact", "current_electron", "current_hole",
+                                                     "current_total", "converged", "iterations",
+                                                     "step_diagnostics"});
+}
+
+
+TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc_sweep][curve]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+
+    SECTION("CV quasistatic adds terminal charge and capacitance columns")
+    {
+        const auto csvPath = dir / "cv.csv";
+        const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+            {"mode", "cv_quasistatic"},
+            {"start", 0.0},
+            {"stop", 0.25},
+            {"step", 0.25},
+            {"write_vtk", false},
+            {"terminal_charge", {
+                {"contact", "anode"},
+                {"regions", {"p_region"}},
+                {"per_meter", true}
+            }}
+        });
+
+        DCSweep sweep;
+        const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+        REQUIRE(result.points.size() == 2);
+        REQUIRE(result.points[0].converged);
+        REQUIRE(result.points[1].converged);
+        REQUIRE(std::isfinite(result.points[1].terminalCharge));
+        REQUIRE(std::isfinite(result.points[1].capacitance));
+
+        const auto rows = readCsvRows(csvPath);
+        REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
+                                                         "current_contact", "current_electron", "current_hole",
+                                                         "current_total", "converged", "iterations",
+                                                         "step_diagnostics", "charge_C_per_m",
+                                                         "capacitance_F_per_m"});
+        REQUIRE(rows.at(1).at(0) == "cv_quasistatic");
+    }
+
+    SECTION("BV reverse adds breakdown diagnostic columns")
+    {
+        const auto csvPath = dir / "bv.csv";
+        const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+            {"mode", "bv_reverse"},
+            {"start", 0.0},
+            {"stop", 0.25},
+            {"step", 0.25},
+            {"write_vtk", false},
+            {"breakdown", {
+                {"max_electric_field_V_per_m", 1.0},
+                {"current_jump_ratio", 1.0e12},
+                {"non_convergence", true}
+            }}
+        });
+
+        DCSweep sweep;
+        const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+        REQUIRE(result.points.size() == 2);
+        REQUIRE(result.points.back().converged);
+        REQUIRE(result.points.back().breakdownDetected);
+        REQUIRE(result.points.back().breakdownCriterion == "max_electric_field");
+
+        const auto rows = readCsvRows(csvPath);
+        REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
+                                                         "current_contact", "current_electron", "current_hole",
+                                                         "current_total", "converged", "iterations",
+                                                         "step_diagnostics", "max_electric_field_V_per_m",
+                                                         "current_jump_ratio", "breakdown_detected",
+                                                         "breakdown_voltage", "criterion"});
+        REQUIRE(rows.at(1).at(0) == "bv_reverse");
+    }
 }
 
 TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_sweep]")

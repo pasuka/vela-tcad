@@ -176,6 +176,26 @@ def expected_sweep_voltages(sweep: dict[str, Any]) -> list[float]:
     return values
 
 
+
+def curve_column(row: dict[str, str], modern: str, legacy: str | None = None) -> str:
+    if modern in row:
+        return row[modern]
+    if legacy is not None and legacy in row:
+        return row[legacy]
+    raise KeyError(modern)
+
+
+def parse_step_diagnostics(value: str) -> dict[str, str]:
+    diagnostics: dict[str, str] = {}
+    for item in value.split(";"):
+        if not item:
+            continue
+        if "=" not in item:
+            raise ValueError(f"Malformed step diagnostic item {item!r}")
+        key, raw = item.split("=", maxsplit=1)
+        diagnostics[key] = raw
+    return diagnostics
+
 def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     cfg = json.loads((example_dir / "simulation.json").read_text())
     reg = cfg.get("regression", {}).get("dc_sweep", {})
@@ -192,31 +212,55 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     max_abs_attempted = float(reg.get("max_abs_attempted_step", math.inf))
     max_abs_accepted = float(reg.get("max_abs_accepted_step", math.inf))
     max_retry = int(reg.get("max_retry_count", 0))
-    required_columns = ("attempted_step", "accepted_step", "retry_count")
-    missing_columns = [column for column in required_columns if column not in rows[0]]
-    if missing_columns:
+    modern_required = ("mode", "bias_contact", "bias_V", "current_contact",
+                       "current_electron", "current_hole", "current_total",
+                       "converged", "iterations", "step_diagnostics")
+    missing_modern = [column for column in modern_required if column not in rows[0]]
+    if missing_modern:
         raise AssertionError(
-            "DC sweep CSV is missing required diagnostic column(s): "
-            + ", ".join(missing_columns))
+            "DC sweep CSV is missing required curve schema column(s): "
+            + ", ".join(missing_modern))
+
+    mode = cfg.get("sweep", {}).get("mode", "iv")
+    if mode == "cv_quasistatic":
+        for column in ("charge_C_per_m", "capacitance_F_per_m"):
+            if column not in rows[0]:
+                raise AssertionError(f"CV sweep CSV is missing required column '{column}'")
+    if mode == "bv_reverse":
+        for column in ("max_electric_field_V_per_m", "current_jump_ratio",
+                       "breakdown_detected", "breakdown_voltage", "criterion"):
+            if column not in rows[0]:
+                raise AssertionError(f"BV sweep CSV is missing required column '{column}'")
 
     max_attempted_seen = 0.0
     max_accepted_seen = 0.0
     max_retry_seen = 0
     for row_index, row in enumerate(rows, start=1):
-        for column in required_columns:
-            if column not in row:
-                raise AssertionError(
-                    f"DC sweep row {row_index} is missing required diagnostic column '{column}'")
         try:
-            attempted = abs(float(row["attempted_step"]))
-            accepted = abs(float(row["accepted_step"]))
-            retry = int(row["retry_count"])
-        except ValueError as exc:
+            diagnostics = parse_step_diagnostics(row["step_diagnostics"])
+            attempted = abs(float(diagnostics["attempted_step"]))
+            accepted = abs(float(diagnostics["accepted_step"]))
+            retry = int(diagnostics["retry_count"])
+        except (KeyError, ValueError) as exc:
             raise AssertionError(
                 f"DC sweep row {row_index} has unparseable step diagnostics: {row}") from exc
         max_attempted_seen = max(max_attempted_seen, attempted)
         max_accepted_seen = max(max_accepted_seen, accepted)
         max_retry_seen = max(max_retry_seen, retry)
+        if mode == "cv_quasistatic":
+            _ = parse_finite_float(row, "charge_C_per_m", "CV sweep", row_index)
+            capacitance = parse_finite_float(row, "capacitance_F_per_m", "CV sweep", row_index)
+            if row_index > 1 and abs(capacitance) <= 0.0:
+                raise AssertionError(f"CV sweep row {row_index} has zero differential capacitance")
+        if mode == "bv_reverse":
+            max_field = parse_finite_float(row, "max_electric_field_V_per_m", "BV sweep", row_index)
+            if max_field < 0.0:
+                raise AssertionError(f"BV sweep row {row_index} has negative max electric field")
+            jump = parse_finite_float(row, "current_jump_ratio", "BV sweep", row_index)
+            if jump < 0.0:
+                raise AssertionError(f"BV sweep row {row_index} has negative current jump ratio")
+            if row.get("breakdown_detected") == "1" and not row.get("criterion"):
+                raise AssertionError(f"BV sweep row {row_index} detected breakdown without a criterion")
         if attempted > max_abs_attempted + 1.0e-12:
             raise AssertionError(
                 f"attempted_step {attempted} exceeds regression limit {max_abs_attempted}")
@@ -238,7 +282,7 @@ def check_iv_trend(example_dir: Path) -> dict[str, Any]:
     cfg = json.loads((example_dir / "simulation.json").read_text())
     expected = expected_sweep_voltages(cfg["sweep"])
     rows = read_csv(example_dir / "outputs" / "pn_iv.csv")
-    voltages = [float(row["voltage"]) for row in rows]
+    voltages = [float(curve_column(row, "bias_V", "voltage")) for row in rows]
     if len(voltages) != len(expected):
         raise AssertionError(
             f"PN sweep wrote {len(voltages)} rows, expected {len(expected)}: {voltages}"
@@ -254,7 +298,7 @@ def check_iv_trend(example_dir: Path) -> dict[str, Any]:
             f"{cfg['sweep']['stop']} V"
         )
 
-    currents = [abs(float(row["total_current"])) for row in rows]
+    currents = [abs(float(curve_column(row, "current_total", "total_current"))) for row in rows]
     if currents[-1] + 1e-40 < currents[0]:
         raise AssertionError(f"PN diode current trend is not forward-increasing: {currents}")
     return {"voltages": voltages, "expected_voltages": expected}
@@ -387,11 +431,11 @@ def check_mos_trends(example_dir: Path, runner: Path) -> dict[str, Any]:
     if not rows:
         raise AssertionError("MOS Id-Vd CSV contains no rows")
     voltages = [
-        parse_finite_float(row, "voltage", "MOS Id-Vd", idx)
+        parse_finite_float(row, "bias_V", "MOS Id-Vd", idx)
         for idx, row in enumerate(rows, start=1)
     ]
     currents = [
-        parse_finite_float(row, "total_current", "MOS Id-Vd", idx)
+        parse_finite_float(row, "current_total", "MOS Id-Vd", idx)
         for idx, row in enumerate(rows, start=1)
     ]
     abs_currents = [abs(value) for value in currents]
@@ -440,11 +484,11 @@ def check_mos_trends(example_dir: Path, runner: Path) -> dict[str, Any]:
     if not idvg_rows:
         raise AssertionError(f"{device.upper()} Id-Vg CSV contains no rows")
     idvg_gate = [
-        parse_finite_float(row, "voltage", f"{device.upper()} Id-Vg", idx)
+        parse_finite_float(row, "bias_V", f"{device.upper()} Id-Vg", idx)
         for idx, row in enumerate(idvg_rows, start=1)
     ]
     idvg_currents = [
-        parse_finite_float(row, "total_current", f"{device.upper()} Id-Vg", idx)
+        parse_finite_float(row, "current_total", f"{device.upper()} Id-Vg", idx)
         for idx, row in enumerate(idvg_rows, start=1)
     ]
     expected_idvg_gate = expected_sweep_voltages(idvg_cfg["sweep"])
