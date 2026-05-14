@@ -25,6 +25,7 @@ struct NewtonConfig {
     bool lineSearch = true;
     bool verbose = true;
     bool warmStart = false; ///< Preserve supplied quasi-Fermi potentials instead of resetting interiors.
+    bool diagnostics = false; ///< Store detailed line-search diagnostics in NewtonResult::history.
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
     std::string residualNorm = "block"; ///< "block" or "l2" convergence/line-search norm
@@ -46,6 +47,11 @@ struct NewtonIterationInfo {
     Real residualNorm = 0.0;
     Real stepNorm = 0.0;
     Real dampingFactor = 0.0;
+    Real relativeResidualNorm = 0.0;
+    Real rawStepNorm = 0.0;
+    int lineSearchAttempts = 0;
+    bool lineSearchAccepted = false;
+    std::vector<LineSearchIterationInfo> lineSearchHistory;
 };
 
 struct NewtonResult {

@@ -447,6 +447,36 @@ TEST_CASE("NewtonSolver: line search rejection returns last accepted state", "[n
     REQUIRE((result.solution.phip - initial.phip).norm() == Catch::Approx(0.0));
 }
 
+TEST_CASE("NewtonSolver: optionally records line-search diagnostics in history", "[newton][diagnostics]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.diagnostics = true;
+
+    const NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), cfg);
+
+    REQUIRE(result.converged);
+    REQUIRE_FALSE(result.history.empty());
+    const NewtonIterationInfo& first = result.history.front();
+    REQUIRE(first.iter == 1);
+    REQUIRE(first.rawStepNorm >= first.stepNorm);
+    REQUIRE(first.stepNorm == Catch::Approx(first.dampingFactor * first.rawStepNorm));
+    REQUIRE(first.relativeResidualNorm == Catch::Approx(
+        ResidualNorm::relative(first.residualNorm, result.initialResidualNorm)));
+    REQUIRE(first.lineSearchAccepted);
+    REQUIRE(first.lineSearchAttempts >= 1);
+    REQUIRE(first.lineSearchHistory.size() == static_cast<std::size_t>(first.lineSearchAttempts));
+    REQUIRE(first.lineSearchHistory.back().accepted);
+    REQUIRE(first.lineSearchHistory.back().damping == Catch::Approx(first.dampingFactor));
+    REQUIRE(first.lineSearchHistory.back().residualNorm == Catch::Approx(first.residualNorm));
+
+    const NewtonConfig parsed = newtonConfigFromJson(nlohmann::json{{"diagnostic_history", true}});
+    REQUIRE(parsed.diagnostics);
+}
+
 TEST_CASE("NewtonSolver: configured temperature is parsed and passed to initial Gummel guess", "[newton][temperature]")
 {
     DeviceMesh mesh = makePNMesh();

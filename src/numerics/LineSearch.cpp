@@ -1,6 +1,8 @@
 #include "vela/numerics/LineSearch.h"
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <utility>
 
 namespace vela {
 
@@ -27,6 +29,13 @@ LineSearchResult BacktrackingLineSearch::search(
         ? std::clamp(cfg_.initialDamping, cfg_.minDamping, 1.0)
         : std::clamp(cfg_.initialDamping, 0.0, 1.0);
 
+    std::vector<LineSearchIterationInfo> history;
+    if (cfg_.recordHistory) {
+        const int reserve = cfg_.enabled ? std::max(1, cfg_.maxBacktracks + 1) : 1;
+        history.reserve(static_cast<std::size_t>(reserve));
+    }
+
+    int attemptCount = 0;
     const int attempts = cfg_.enabled ? std::max(1, cfg_.maxBacktracks + 1) : 1;
     for (int k = 0; k < attempts; ++k) {
         VectorXd candidate = x + alpha * step;
@@ -35,9 +44,24 @@ LineSearchResult BacktrackingLineSearch::search(
         const bool finite = candidate.allFinite() && residual.allFinite() && std::isfinite(norm);
         const bool acceptedByCaller = !acceptFunction || acceptFunction(candidate, residual);
         const Real target = (1.0 - cfg_.sufficientDecrease * alpha) * currentNorm;
+        const bool sufficientDecrease = !cfg_.enabled || norm <= target || norm < currentNorm;
+        const bool accepted = finite && acceptedByCaller && sufficientDecrease;
+        ++attemptCount;
 
-        if (finite && acceptedByCaller && (!cfg_.enabled || norm <= target || norm < currentNorm)) {
-            return {candidate, residual, alpha, norm, true};
+        if (cfg_.recordHistory) {
+            history.push_back({
+                k,
+                alpha,
+                norm,
+                target,
+                finite,
+                acceptedByCaller,
+                sufficientDecrease,
+                accepted});
+        }
+
+        if (accepted) {
+            return {candidate, residual, alpha, norm, true, attemptCount, std::move(history)};
         }
 
         alpha *= cfg_.reduction;
@@ -45,7 +69,7 @@ LineSearchResult BacktrackingLineSearch::search(
             break;
     }
 
-    return {x, currentResidual, 0.0, currentNorm, false};
+    return {x, currentResidual, 0.0, currentNorm, false, attemptCount, std::move(history)};
 }
 
 } // namespace vela

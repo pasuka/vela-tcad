@@ -2,6 +2,7 @@
 
 #include "vela/core/Types.h"
 #include <functional>
+#include <vector>
 
 namespace vela {
 
@@ -12,6 +13,18 @@ struct LineSearchConfig {
     Real reduction = 0.5;
     Real sufficientDecrease = 1.0e-4;
     int maxBacktracks = 12;
+    bool recordHistory = false; ///< Store per-backtrack diagnostics in LineSearchResult::history.
+};
+
+struct LineSearchIterationInfo {
+    int attempt = 0;
+    Real damping = 0.0;
+    Real residualNorm = 0.0;
+    Real targetResidualNorm = 0.0;
+    bool finite = false;
+    bool acceptedByCaller = false;
+    bool sufficientDecrease = false;
+    bool accepted = false;
 };
 
 struct LineSearchResult {
@@ -20,6 +33,8 @@ struct LineSearchResult {
     Real damping = 0.0;
     Real residualNorm = 0.0;
     bool accepted = false;
+    int attempts = 0;
+    std::vector<LineSearchIterationInfo> history;
 };
 
 class BacktrackingLineSearch {
