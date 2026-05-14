@@ -46,6 +46,9 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
           doping,
           bandgapNarrowingConfig,
           Vt))
+    , edgeCells_(detail::buildEdgeCellMap(mesh))
+    , vol_(detail::computeNodeVolumes(mesh))
+    , couple_(detail::computeEdgeCouplings(mesh))
     , A_(static_cast<int>(mesh.numNodes()),
          static_cast<int>(mesh.numNodes()))
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
@@ -70,10 +73,6 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
 {
     const Index N = mesh_.numNodes();
 
-    const auto edgeCells = detail::buildEdgeCellMap(mesh_);
-    const auto vol       = detail::computeNodeVolumes(mesh_);
-    const auto couple    = detail::computeEdgeCouplings(mesh_);
-
     std::vector<Eigen::Triplet<double>> triplets;
     triplets.reserve(mesh_.numEdges() * 4 + N);
 
@@ -85,8 +84,8 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
         const Real  h    = edge.length;
         if (h < 1.0e-30) continue;
 
-        const Real eps = detail::edgeEpsilon(edgeCells, mesh_, matdb_, e);
-        const Real G   = eps * couple[e] / h;
+        const Real eps = detail::edgeEpsilon(edgeCells_, mesh_, matdb_, e);
+        const Real G   = eps * couple_[e] / h;
 
         auto i = static_cast<int>(edge.n0);
         auto j = static_cast<int>(edge.n1);
@@ -106,7 +105,7 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
         const int  ii     = static_cast<int>(i);
         const Real ni_v   = n(ii);
         const Real pi_v   = p(ii);
-        const Real vol_i  = vol[i];
+        const Real vol_i  = vol_[i];
 
         const Real diagCarrier = constants::q * (ni_v + pi_v) / Vt_ * vol_i;
         A_.coeffRef(ii, ii) += diagCarrier;
@@ -127,10 +126,6 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
 {
     const Index N = mesh_.numNodes();
 
-    const auto edgeCells = detail::buildEdgeCellMap(mesh_);
-    const auto vol       = detail::computeNodeVolumes(mesh_);
-    const auto couple    = detail::computeEdgeCouplings(mesh_);
-
     std::vector<Eigen::Triplet<double>> triplets;
     triplets.reserve(mesh_.numEdges() * 4 + N);
 
@@ -143,10 +138,10 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         if (h < 1.0e-30) continue;
 
         const Real mun = detail::edgeMobility(
-            edgeCells, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Electron);
+            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Electron);
         if (mun <= 0.0) continue; // skip insulator edges
 
-        const Real coef = mun * Vt_ * couple[e] / h;
+        const Real coef = mun * Vt_ * couple_[e] / h;
 
         auto i = static_cast<int>(edge.n0);
         auto j = static_cast<int>(edge.n1);
@@ -171,7 +166,7 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         const Real ni_i  = ni_[i];
         const Real n_v   = n_old(ii);
         const Real p_v   = p_old(ii);
-        const Real vol_i = vol[i];
+        const Real vol_i = vol_[i];
 
         const RecombinationLinearization linearization =
             recombination_.electronLinearization(n_v, p_v, ni_i);
@@ -201,10 +196,6 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
 {
     const Index N = mesh_.numNodes();
 
-    const auto edgeCells = detail::buildEdgeCellMap(mesh_);
-    const auto vol       = detail::computeNodeVolumes(mesh_);
-    const auto couple    = detail::computeEdgeCouplings(mesh_);
-
     std::vector<Eigen::Triplet<double>> triplets;
     triplets.reserve(mesh_.numEdges() * 4 + N);
 
@@ -217,10 +208,10 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         if (h < 1.0e-30) continue;
 
         const Real mup = detail::edgeMobility(
-            edgeCells, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Hole);
+            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Hole);
         if (mup <= 0.0) continue; // skip insulator edges
 
-        const Real coef = mup * Vt_ * couple[e] / h;
+        const Real coef = mup * Vt_ * couple_[e] / h;
 
         auto i = static_cast<int>(edge.n0);
         auto j = static_cast<int>(edge.n1);
@@ -245,7 +236,7 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         const Real ni_i  = ni_[i];
         const Real n_v   = n_old(ii);
         const Real p_v   = p_old(ii);
-        const Real vol_i = vol[i];
+        const Real vol_i = vol_[i];
 
         const RecombinationLinearization linearization =
             recombination_.holeLinearization(n_v, p_v, ni_i);
