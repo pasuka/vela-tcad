@@ -204,21 +204,36 @@ def check_csv_converged(example_dir: Path) -> None:
     cfg = json.loads((example_dir / "simulation.json").read_text())
     rows = read_csv(output_csv_path(example_dir, cfg))
     if not rows:
-        raise AssertionError("DC sweep CSV contains no sweep rows")
+        raise AssertionError(f"{example_dir.name}: DC sweep CSV contains no sweep rows")
     declared = bool(cfg.get("regression", {}).get("declared_converged", True))
-    if declared:
-        bad = [row for row in rows if row.get("converged") != "1"]
-        if bad:
-            diagnostics = [
-                {
-                    "bias_V": row.get("bias_V"),
-                    "failure_reason": row.get("failure_reason", ""),
-                    "validation_diagnostics": row.get("validation_diagnostics", ""),
-                }
-                for row in bad
-            ]
-            raise AssertionError(
-                f"Non-converged declared sweep rows: {bad}; diagnostics: {diagnostics}")
+    if not declared:
+        return
+
+    reg = cfg.get("regression", {}).get("dc_sweep", {})
+    sweep_cfg = cfg.get("sweep", {})
+    mode = normalize_curve_mode(str(sweep_cfg.get("mode", "iv")))
+    allow_final_bv = bool(reg.get("allow_nonconverged_final_bv_point", False)) and mode == "bv_reverse"
+    bad: list[tuple[int, dict[str, str]]] = []
+    for row_index, row in enumerate(rows, start=1):
+        if row.get("converged") == "1":
+            continue
+        if allow_final_bv and row_index == len(rows):
+            continue
+        bad.append((row_index, row))
+    if bad:
+        diagnostics = [
+            {
+                "example": example_dir.name,
+                "row_index": row_index,
+                "field": "converged",
+                "actual": row.get("converged"),
+                "bias_V": row.get("bias_V"),
+                "failure_reason": row.get("failure_reason", ""),
+                "validation_diagnostics": row.get("validation_diagnostics", ""),
+            }
+            for row_index, row in bad
+        ]
+        raise AssertionError(f"Non-converged declared sweep rows: {diagnostics}")
 
 
 def expected_sweep_voltages(sweep: dict[str, Any]) -> list[float]:
@@ -284,25 +299,36 @@ def parse_step_diagnostics(value: str) -> dict[str, str]:
         diagnostics[key] = raw
     return diagnostics
 
+
 def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     cfg = json.loads((example_dir / "simulation.json").read_text())
+    example = example_dir.name
     reg = cfg.get("regression", {}).get("dc_sweep", {})
     rows = read_csv(output_csv_path(example_dir, cfg))
     if not rows:
-        raise AssertionError("DC sweep CSV contains no sweep rows")
+        raise AssertionError(f"{example}: DC sweep CSV contains no sweep rows")
+
+    sweep_cfg = cfg.get("sweep", {})
+    mode = normalize_curve_mode(str(sweep_cfg.get("mode", "iv")))
 
     expected_rows = reg.get("expected_rows")
     if expected_rows is None and "sweep" in cfg:
         expected_rows = len(expected_sweep_voltages(cfg["sweep"]))
     if expected_rows is not None and len(rows) != int(expected_rows):
-        raise AssertionError(f"DC sweep wrote {len(rows)} rows, expected {expected_rows}")
+        raise AssertionError(
+            f"{example}: field=rows actual={len(rows)} expected={expected_rows}")
 
     max_abs_attempted = float(reg.get("max_abs_attempted_step", math.inf))
     max_abs_accepted = float(reg.get("max_abs_accepted_step", math.inf))
     max_retry = int(reg.get("max_retry_count", 0))
+    require_monotone_abs_current = bool(reg.get("require_monotone_abs_current", False))
+    current_abs_tolerance = float(reg.get("current_monotone_abs_tolerance", 1.0e-30))
+    current_rel_tolerance = float(reg.get("current_monotone_rel_tolerance", 1.0e-12))
     require_monotone_max_field = bool(reg.get("require_monotone_max_field", False))
     max_field_abs_tolerance = float(reg.get("max_field_monotone_abs_tolerance", 1.0e-9))
     max_field_rel_tolerance = float(reg.get("max_field_monotone_rel_tolerance", 1.0e-12))
+    min_converged_rows = reg.get("min_converged_rows")
+    allow_final_bv_nonconverged = bool(reg.get("allow_nonconverged_final_bv_point", False)) and mode == "bv_reverse"
     min_max_field = reg.get("min_max_electric_field_V_per_m")
     max_max_field = reg.get("max_max_electric_field_V_per_m")
     allow_zero_capacitance = bool(reg.get("allow_zero_capacitance", False))
@@ -316,29 +342,40 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     missing_modern = [column for column in modern_required if column not in rows[0]]
     if missing_modern:
         raise AssertionError(
-            "DC sweep CSV is missing required curve schema column(s): "
+            f"{example}: DC sweep CSV is missing required curve schema column(s): "
             + ", ".join(missing_modern))
 
-    sweep_cfg = cfg.get("sweep", {})
-    mode = normalize_curve_mode(str(sweep_cfg.get("mode", "iv")))
     if mode == "cv_quasistatic":
         for column in cv_charge_columns(sweep_cfg, rows[0]):
             if column not in rows[0]:
-                raise AssertionError(f"CV sweep CSV is missing required column '{column}'")
+                raise AssertionError(f"{example}: CV sweep row 1 is missing column '{column}'")
     if mode == "bv_reverse":
         for column in ("max_electric_field_V_per_m", "current_jump_ratio",
                        "breakdown_detected", "breakdown_voltage", "criterion",
                        "last_stable_bias", "failed_bias", "failure_reason"):
             if column not in rows[0]:
-                raise AssertionError(f"BV sweep CSV is missing required column '{column}'")
+                raise AssertionError(f"{example}: BV sweep row 1 is missing column '{column}'")
 
     max_attempted_seen = 0.0
     max_accepted_seen = 0.0
     max_retry_seen = 0
+    converged_rows = 0
+    final_current_total = 0.0
+    current_values: list[tuple[int, float]] = []
     max_fields: list[tuple[int, float]] = []
+    max_electric_field_seen = 0.0
+    breakdown_detected = False
     nonzero_capacitance_rows = 0
     zero_capacitance_rows = 0
     for row_index, row in enumerate(rows, start=1):
+        label = f"{example}: DC sweep"
+        converged = row.get("converged") == "1"
+        if converged:
+            converged_rows += 1
+        current_total = parse_finite_float(row, "current_total", label, row_index)
+        final_current_total = current_total
+        if converged:
+            current_values.append((row_index, abs(current_total)))
         try:
             diagnostics = parse_step_diagnostics(row["step_diagnostics"])
             attempted = abs(float(diagnostics["attempted_step"]))
@@ -346,14 +383,15 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
             retry = int(diagnostics["retry_count"])
         except (KeyError, ValueError) as exc:
             raise AssertionError(
-                f"DC sweep row {row_index} has unparseable step diagnostics: {row}") from exc
+                f"{example}: row {row_index} field=step_diagnostics actual={row.get('step_diagnostics')!r} "
+                f"is unparseable") from exc
         max_attempted_seen = max(max_attempted_seen, attempted)
         max_accepted_seen = max(max_accepted_seen, accepted)
         max_retry_seen = max(max_retry_seen, retry)
         if mode == "cv_quasistatic":
             charge_column, capacitance_column = cv_charge_columns(sweep_cfg, row)
-            _ = parse_finite_float(row, charge_column, "CV sweep", row_index)
-            capacitance = parse_finite_float(row, capacitance_column, "CV sweep", row_index)
+            _ = parse_finite_float(row, charge_column, f"{example}: CV sweep", row_index)
+            capacitance = parse_finite_float(row, capacitance_column, f"{example}: CV sweep", row_index)
             if row_index > 1:
                 if abs(capacitance) > 0.0:
                     nonzero_capacitance_rows += 1
@@ -361,59 +399,95 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
                     zero_capacitance_rows += 1
                     if not allow_zero_capacitance:
                         raise AssertionError(
-                            f"CV sweep row {row_index} has zero differential capacitance")
+                            f"{example}: row {row_index} field={capacitance_column} actual={capacitance} "
+                            "is zero differential capacitance")
         if mode == "bv_reverse":
-            max_field = parse_finite_float(row, "max_electric_field_V_per_m", "BV sweep", row_index)
+            max_field = parse_finite_float(row, "max_electric_field_V_per_m", f"{example}: BV sweep", row_index)
+            max_electric_field_seen = max(max_electric_field_seen, max_field)
             if max_field < 0.0:
-                raise AssertionError(f"BV sweep row {row_index} has negative max electric field")
-            if row.get("converged") == "1":
+                raise AssertionError(
+                    f"{example}: row {row_index} field=max_electric_field_V_per_m actual={max_field} is negative")
+            if converged:
                 if min_max_field is not None and max_field < float(min_max_field):
                     raise AssertionError(
-                        f"BV sweep row {row_index} max_electric_field_V_per_m {max_field} "
+                        f"{example}: row {row_index} field=max_electric_field_V_per_m actual={max_field} "
                         f"is below regression minimum {min_max_field}")
                 if max_max_field is not None and max_field > float(max_max_field):
                     raise AssertionError(
-                        f"BV sweep row {row_index} max_electric_field_V_per_m {max_field} "
+                        f"{example}: row {row_index} field=max_electric_field_V_per_m actual={max_field} "
                         f"exceeds regression maximum {max_max_field}")
                 max_fields.append((row_index, max_field))
             try:
                 jump = float(row["current_jump_ratio"])
             except (KeyError, ValueError) as exc:
                 raise AssertionError(
-                    f"BV sweep row {row_index} has invalid current_jump_ratio") from exc
+                    f"{example}: row {row_index} field=current_jump_ratio actual={row.get('current_jump_ratio')!r} "
+                    "is invalid") from exc
             if math.isnan(jump) or jump < 0.0:
-                raise AssertionError(f"BV sweep row {row_index} has negative current jump ratio")
-            if row.get("breakdown_detected") == "1" and not row.get("criterion"):
-                raise AssertionError(f"BV sweep row {row_index} detected breakdown without a criterion")
-            if (row.get("breakdown_detected") == "1"
-                    and row.get("criterion") == "last_stable_before_nonconvergence"):
-                last_stable = parse_finite_float(
-                    row, "last_stable_bias", "BV sweep", row_index)
-                failed_bias = parse_finite_float(
-                    row, "failed_bias", "BV sweep", row_index)
+                raise AssertionError(
+                    f"{example}: row {row_index} field=current_jump_ratio actual={jump} is negative or NaN")
+            row_breakdown = row.get("breakdown_detected") == "1"
+            breakdown_detected = breakdown_detected or row_breakdown
+            if row_breakdown and not row.get("criterion"):
+                raise AssertionError(
+                    f"{example}: row {row_index} field=criterion actual={row.get('criterion')!r} "
+                    "is empty after breakdown_detected=1")
+            if row_breakdown and row.get("criterion") == "last_stable_before_nonconvergence":
+                last_stable = parse_finite_float(row, "last_stable_bias", f"{example}: BV sweep", row_index)
+                failed_bias = parse_finite_float(row, "failed_bias", f"{example}: BV sweep", row_index)
                 if not row.get("failure_reason"):
                     raise AssertionError(
-                        f"BV sweep row {row_index} has no failure_reason for non-convergence breakdown")
+                        f"{example}: row {row_index} field=failure_reason actual={row.get('failure_reason')!r} "
+                        "is empty for non-convergence breakdown")
                 stop = float(sweep_cfg["stop"])
                 direction = 1.0 if stop >= last_stable else -1.0
                 if direction * (failed_bias - last_stable) <= 0.0:
                     raise AssertionError(
-                        f"BV sweep row {row_index} failed_bias {failed_bias} is not beyond "
+                        f"{example}: row {row_index} field=failed_bias actual={failed_bias} is not beyond "
                         f"last_stable_bias {last_stable} toward stop {stop}")
         if attempted > max_abs_attempted + 1.0e-12:
             raise AssertionError(
-                f"attempted_step {attempted} exceeds regression limit {max_abs_attempted}")
+                f"{example}: row {row_index} field=attempted_step actual={attempted} "
+                f"exceeds regression limit {max_abs_attempted}")
         if accepted > max_abs_accepted + 1.0e-12:
             raise AssertionError(
-                f"accepted_step {accepted} exceeds regression limit {max_abs_accepted}")
+                f"{example}: row {row_index} field=accepted_step actual={accepted} "
+                f"exceeds regression limit {max_abs_accepted}")
         if retry > max_retry:
-            raise AssertionError(f"retry_count {retry} exceeds regression limit {max_retry}")
+            raise AssertionError(
+                f"{example}: row {row_index} field=retry_count actual={retry} "
+                f"exceeds regression limit {max_retry}")
+        if not converged and not (allow_final_bv_nonconverged and row_index == len(rows)):
+            raise AssertionError(
+                f"{example}: row {row_index} field=converged actual={row.get('converged')!r} "
+                "is non-converged and not allowed by regression.dc_sweep")
+
+    if min_converged_rows is not None and converged_rows < int(min_converged_rows):
+        raise AssertionError(
+            f"{example}: field=converged_rows actual={converged_rows} expected_at_least={min_converged_rows}")
+
+    current_trend_checked = False
+    if require_monotone_abs_current:
+        if not current_values:
+            raise AssertionError(
+                f"{example}: require_monotone_abs_current requested but no converged current values were read")
+        for idx in range(1, len(current_values)):
+            previous_row, previous = current_values[idx - 1]
+            current_row, current = current_values[idx]
+            tolerance = current_abs_tolerance + current_rel_tolerance * max(abs(previous), abs(current), 1.0)
+            if current + tolerance < previous:
+                values = [value for _, value in current_values]
+                raise AssertionError(
+                    f"{example}: row {current_row} field=abs(current_total) actual={current} decreased "
+                    f"below row {previous_row} value {previous} beyond tolerance {tolerance}; "
+                    f"converged values: {values}")
+        current_trend_checked = True
 
     max_field_trend_checked = False
     if mode == "bv_reverse" and require_monotone_max_field:
         if not max_fields:
             raise AssertionError(
-                "BV max electric field monotonic regression requested but no converged field values were read")
+                f"{example}: require_monotone_max_field requested but no converged field values were read")
         for idx in range(1, len(max_fields)):
             previous_row, previous = max_fields[idx - 1]
             current_row, current = max_fields[idx]
@@ -421,35 +495,44 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
             if current + tolerance < previous:
                 max_field_values = [field for _, field in max_fields]
                 raise AssertionError(
-                    "BV max_electric_field_V_per_m is not non-decreasing along the converged sweep rows: "
-                    f"row {previous_row} value {previous} > row {current_row} value {current} "
-                    f"beyond tolerance {tolerance}; converged values: {max_field_values}")
+                    f"{example}: row {current_row} field=max_electric_field_V_per_m actual={current} "
+                    f"decreased below row {previous_row} value {previous} beyond tolerance {tolerance}; "
+                    f"converged values: {max_field_values}")
         max_field_trend_checked = True
 
     if mode == "cv_quasistatic":
         if nonzero_capacitance_rows < min_nonzero_capacitance_rows:
             raise AssertionError(
-                "CV sweep observed "
-                f"{nonzero_capacitance_rows} non-zero differential capacitance row(s), "
-                f"expected at least {min_nonzero_capacitance_rows}")
+                f"{example}: field=nonzero_capacitance_rows actual={nonzero_capacitance_rows} "
+                f"expected_at_least={min_nonzero_capacitance_rows}")
         if (expected_zero_capacitance_rows is not None
                 and zero_capacitance_rows != int(expected_zero_capacitance_rows)):
             raise AssertionError(
-                "CV sweep observed "
-                f"{zero_capacitance_rows} zero differential capacitance row(s), "
-                f"expected {expected_zero_capacitance_rows}")
+                f"{example}: field=zero_capacitance_rows actual={zero_capacitance_rows} "
+                f"expected={expected_zero_capacitance_rows}")
 
     result = {
         "rows": len(rows),
+        "converged_rows": converged_rows,
+        "max_attempted_step": max_attempted_seen,
+        "max_accepted_step": max_accepted_seen,
+        "max_retry_count_seen": max_retry_seen,
+        "final_current_total": final_current_total,
+        "current_trend_checked": current_trend_checked,
+        # Retain the historic keys for downstream consumers while adding the
+        # clearer P0-stability summary field names above.
         "max_abs_attempted_step": max_attempted_seen,
         "max_abs_accepted_step": max_accepted_seen,
         "max_retry_count": max_retry_seen,
     }
     if mode == "bv_reverse":
+        result["max_electric_field_seen"] = max_electric_field_seen
+        result["breakdown_detected"] = breakdown_detected
         result["max_electric_field_V_per_m"] = [field for _, field in max_fields]
         result["max_field_trend_checked"] = max_field_trend_checked
+    if mode == "cv_quasistatic":
+        result["nonzero_capacitance_rows"] = nonzero_capacitance_rows
     return result
-
 
 def check_iv_trend(example_dir: Path) -> dict[str, Any]:
     cfg = json.loads((example_dir / "simulation.json").read_text())
