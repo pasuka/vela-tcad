@@ -165,6 +165,10 @@ target_link_libraries(test_gummel_high_doping PRIVATE vela_core Catch2::Catch2Wi
 add_executable(test_newton_solver tests/test_newton_solver.cpp)
 target_link_libraries(test_newton_solver PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_mos_solver_crosscheck tests/test_mos_solver_crosscheck.cpp)
+target_link_libraries(test_mos_solver_crosscheck PRIVATE vela_core Catch2::Catch2WithMain)
+target_compile_definitions(test_mos_solver_crosscheck PRIVATE VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
 add_executable(test_mobility tests/test_mobility.cpp)
 target_link_libraries(test_mobility PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -192,6 +196,8 @@ catch_discover_tests(test_sg_flux)
 catch_discover_tests(test_dd_gummel)
 catch_discover_tests(test_gummel_high_doping)
 catch_discover_tests(test_newton_solver)
+catch_discover_tests(test_mos_solver_crosscheck)
+add_test(NAME mos_solver_crosscheck COMMAND test_mos_solver_crosscheck [mos_solver_crosscheck])
 catch_discover_tests(test_mobility)
 catch_discover_tests(test_impact_ionization)
 catch_discover_tests(test_recombination)
