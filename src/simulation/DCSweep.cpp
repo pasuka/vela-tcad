@@ -8,6 +8,7 @@
 #include "vela/post/ElectricFieldDiagnostics.h"
 #include "vela/post/TerminalCharge.h"
 #include "vela/solver/NewtonSolver.h"
+#include "vela/solver/SolutionValidation.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cctype>
@@ -37,18 +38,34 @@ std::string formatReal(Real value)
     return oss.str();
 }
 
-bool isFiniteSolution(const DDSolution& sol)
+DDSolutionValidationOptions validationOptionsFromJson(const nlohmann::json& cfg)
 {
-    auto finiteVector = [](const VectorXd& values) {
-        for (int i = 0; i < values.size(); ++i) {
-            if (!std::isfinite(values(i)))
-                return false;
-        }
-        return true;
-    };
-    return finiteVector(sol.psi) && finiteVector(sol.phin) &&
-           finiteVector(sol.phip) && finiteVector(sol.n) && finiteVector(sol.p);
+    DDSolutionValidationOptions options;
+    const auto validation = cfg.value("validation", nlohmann::json::object());
+    options.carrierFloor = validation.value("carrier_floor", options.carrierFloor);
+    options.enforceMinimumCarrierDensity =
+        validation.value("enforce_minimum_carrier_density", options.enforceMinimumCarrierDensity);
+    options.minimumCarrierDensity =
+        validation.value("minimum_carrier_density", options.minimumCarrierDensity);
+    options.checkContactQuasiFermiBias =
+        validation.value("check_contact_quasi_fermi_bias", options.checkContactQuasiFermiBias);
+    options.contactPotentialAbsTolerance =
+        validation.value("contact_potential_abs_tolerance", options.contactPotentialAbsTolerance);
+    options.contactPotentialRelTolerance =
+        validation.value("contact_potential_rel_tolerance", options.contactPotentialRelTolerance);
+    if (options.carrierFloor < 0.0)
+        throw std::invalid_argument("DCSweep: validation.carrier_floor must be non-negative.");
+    if (options.enforceMinimumCarrierDensity && options.minimumCarrierDensity < 0.0)
+        throw std::invalid_argument(
+            "DCSweep: validation.minimum_carrier_density must be non-negative.");
+    if (options.contactPotentialAbsTolerance < 0.0 ||
+        options.contactPotentialRelTolerance < 0.0) {
+        throw std::invalid_argument(
+            "DCSweep: validation contact tolerances must be non-negative.");
+    }
+    return options;
 }
+
 
 std::string normalizedSolverMethod(const nlohmann::json& cfg)
 {
@@ -217,6 +234,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     DCSweepConfig sweep = dcSweepConfigFromJson(cfg, cfgDir);
     const nlohmann::json solverCfg = cfg.value("solver", nlohmann::json::object());
     const SolverMethod solverMethod = solverMethodFromJson(cfg);
+    const DDSolutionValidationOptions validationOptions = validationOptionsFromJson(cfg);
     GummelConfig gummel;
     NewtonConfig newton;
     MobilityModelConfig mobilityConfig;
@@ -242,7 +260,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     CSVWriter csv(sweep.csvFile);
     std::vector<std::string> header = {"mode", "bias_contact", "bias_V",
         "current_contact", "current_electron", "current_hole", "current_total",
-        "converged", "iterations", "step_diagnostics"};
+        "converged", "iterations", "step_diagnostics", "validation_diagnostics"};
     if (sweep.mode == CurveSweepMode::CVQuasistatic) {
         header.push_back(sweep.chargePerMeter ? "charge_C_per_m" : "charge_C");
         header.push_back(sweep.chargePerMeter ? "capacitance_F_per_m" : "capacitance_F");
@@ -263,22 +281,43 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     DDSolution previousSolution;
     int vtkIndex = 0;
 
-    auto solvePoint = [&](Real voltage, const DDSolution* initial) -> std::pair<bool, DDSolution> {
+    struct SolvePointAttempt {
+        bool ok = false;
+        DDSolution solution;
+        std::string failureReason;
+        std::string validationDiagnostics;
+    };
+
+    auto solvePoint = [&](Real voltage, const DDSolution* initial) -> SolvePointAttempt {
         auto biases = baseBiases;
         biases[sweep.contact] = voltage;
         try {
+            bool solverConverged = false;
+            DDSolution sol;
             if (solverMethod == SolverMethod::Newton) {
                 NewtonResult result = initial != nullptr
                     ? runNewton(mesh, matdb, doping, biases, *initial, newton)
                     : runNewton(mesh, matdb, doping, biases, newton);
-                DDSolution sol = std::move(result.solution);
-                return {result.converged && isFiniteSolution(sol), std::move(sol)};
+                solverConverged = result.converged;
+                sol = std::move(result.solution);
+            } else {
+                sol = initial != nullptr
+                    ? runGummel(mesh, matdb, doping, biases, gummel, *initial)
+                    : runGummel(mesh, matdb, doping, biases, gummel);
+                solverConverged = sol.converged;
             }
 
-            DDSolution sol = initial != nullptr
-                ? runGummel(mesh, matdb, doping, biases, gummel, *initial)
-                : runGummel(mesh, matdb, doping, biases, gummel);
-            return {sol.converged && isFiniteSolution(sol), std::move(sol)};
+            const DDSolutionValidationResult validation =
+                validateDDSolution(sol, mesh, biases, validationOptions);
+            SolvePointAttempt attempt;
+            attempt.ok = solverConverged && validation.valid;
+            attempt.solution = std::move(sol);
+            attempt.validationDiagnostics = validation.diagnosticsString();
+            if (!solverConverged)
+                attempt.failureReason = "non_convergence";
+            else if (!validation.valid)
+                attempt.failureReason = "validation_failed";
+            return attempt;
         } catch (const std::exception& ex) {
             std::throw_with_nested(std::runtime_error(
                 "DCSweep: solver threw at voltage " + formatReal(voltage) +
@@ -300,7 +339,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
     auto recordPoint = [&](Real voltage, const DDSolution& sol, bool converged,
                            Real attemptedStep, Real acceptedStep, int retryCount,
-                           const std::string& failureReason = std::string()) {
+                           const std::string& failureReason = std::string(),
+                           const std::string& validationDiagnostics = std::string()) {
         ContactCurrentResult current{};
         if (converged)
             current = contactCurrent.compute(sol, sweep.currentContact);
@@ -317,6 +357,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         point.attemptedStep = attemptedStep;
         point.acceptedStep = acceptedStep;
         point.retryCount = retryCount;
+        point.validationDiagnostics = validationDiagnostics;
+        if (!converged && sweep.mode != CurveSweepMode::BVReverse)
+            point.failureReason = failureReason;
         if (converged && sweep.mode == CurveSweepMode::CVQuasistatic) {
             point.terminalCharge = terminalCharge.compute(sol, chargeConfig).charge;
             if (!points.empty()) {
@@ -369,7 +412,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             formatReal(point.totalCurrent),
             point.converged ? "1" : "0",
             std::to_string(point.iterations),
-            stepDiagnostics(point)};
+            stepDiagnostics(point),
+            point.validationDiagnostics};
         if (sweep.mode == CurveSweepMode::CVQuasistatic) {
             row.push_back(formatReal(point.terminalCharge));
             row.push_back(formatReal(point.capacitance));
@@ -397,11 +441,14 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     bool startOk = false;
     DDSolution startSol;
     std::string startFailureReason;
+    std::string startValidationDiagnostics;
     try {
         auto startAttempt = solvePoint(sweep.start, nullptr);
-        startOk = startAttempt.first;
-        startSol = std::move(startAttempt.second);
-        if (!startOk)
+        startOk = startAttempt.ok;
+        startSol = std::move(startAttempt.solution);
+        startFailureReason = startAttempt.failureReason;
+        startValidationDiagnostics = startAttempt.validationDiagnostics;
+        if (!startOk && startFailureReason.empty())
             startFailureReason = "non_convergence";
     } catch (const std::exception&) {
         if (sweep.mode == CurveSweepMode::BVReverse && sweep.breakdown.nonConvergenceBreakdown)
@@ -409,13 +456,15 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         else
             throw;
     }
-    recordPoint(sweep.start, startSol, startOk, 0.0, 0.0, 0, startFailureReason);
+    recordPoint(sweep.start, startSol, startOk, 0.0, 0.0, 0, startFailureReason,
+                startValidationDiagnostics);
     if (!startOk)
         return DCSweepResult{std::move(mesh), std::move(points)};
     previousSolution = std::move(startSol);
 
     DDSolution lastStepSolution;
     std::string lastStepFailureReason;
+    std::string lastStepValidationDiagnostics;
     detail::DCSweepStepControlConfig stepControl;
     stepControl.start = sweep.start;
     stepControl.stop = sweep.stop;
@@ -431,15 +480,17 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         stepControl,
         [&](Real voltage, Real, int) {
             try {
-                auto [ok, sol] = solvePoint(voltage, &previousSolution);
-                lastStepSolution = std::move(sol);
-                lastStepFailureReason = ok ? std::string() : "non_convergence";
-                return ok;
+                SolvePointAttempt attempt = solvePoint(voltage, &previousSolution);
+                lastStepSolution = std::move(attempt.solution);
+                lastStepFailureReason = attempt.ok ? std::string() : attempt.failureReason;
+                lastStepValidationDiagnostics = attempt.validationDiagnostics;
+                return attempt.ok;
             } catch (const std::exception&) {
                 if (sweep.mode == CurveSweepMode::BVReverse &&
                     sweep.breakdown.nonConvergenceBreakdown) {
                     lastStepSolution = DDSolution{};
                     lastStepFailureReason = "solver_exception";
+                    lastStepValidationDiagnostics.clear();
                     return false;
                 }
                 throw;
@@ -448,11 +499,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         [&](const detail::DCSweepStepControlEvent& event) {
             std::string failureReason;
             if (!event.converged)
-                failureReason = (lastStepFailureReason == "solver_exception")
+                failureReason = !lastStepFailureReason.empty()
                     ? lastStepFailureReason
                     : event.failureReason;
             recordPoint(event.voltage, lastStepSolution, event.converged,
-                        event.attemptedStep, event.acceptedStep, event.retryCount, failureReason);
+                        event.attemptedStep, event.acceptedStep, event.retryCount, failureReason,
+                        lastStepValidationDiagnostics);
             if (event.converged) {
                 previousSolution = std::move(lastStepSolution);
             }

@@ -255,7 +255,7 @@ TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV da
     REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
                                                      "current_contact", "current_electron", "current_hole",
                                                      "current_total", "converged", "iterations",
-                                                     "step_diagnostics"});
+                                                     "step_diagnostics", "validation_diagnostics"});
 }
 
 
@@ -323,7 +323,7 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
         REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
                                                          "current_contact", "current_electron", "current_hole",
                                                          "current_total", "converged", "iterations",
-                                                         "step_diagnostics", "charge_C_per_m",
+                                                         "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
                                                          "capacitance_F_per_m"});
         REQUIRE(rows.at(1).at(0) == "cv_quasistatic");
     }
@@ -355,7 +355,7 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
         REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
                                                          "current_contact", "current_electron", "current_hole",
                                                          "current_total", "converged", "iterations",
-                                                         "step_diagnostics", "max_electric_field_V_per_m",
+                                                         "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
                                                          "current_jump_ratio", "breakdown_detected",
                                                          "breakdown_voltage", "criterion", "last_stable_bias",
                                                          "failed_bias", "failure_reason"});
@@ -411,12 +411,12 @@ TEST_CASE("DCSweep: BV reverse start failure records failed diagnostic row", "[d
     REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
                                                      "current_contact", "current_electron", "current_hole",
                                                      "current_total", "converged", "iterations",
-                                                     "step_diagnostics", "max_electric_field_V_per_m",
+                                                     "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
                                                      "current_jump_ratio", "breakdown_detected",
                                                      "breakdown_voltage", "criterion", "last_stable_bias",
                                                      "failed_bias", "failure_reason"});
-    REQUIRE(rows.at(1).at(14).empty());
-    REQUIRE(rows.at(1).at(17) == "non_convergence");
+    REQUIRE(rows.at(1).at(15).empty());
+    REQUIRE(rows.at(1).at(18) == "non_convergence");
 }
 
 TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_sweep]")

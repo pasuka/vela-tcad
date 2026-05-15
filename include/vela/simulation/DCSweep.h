@@ -62,6 +62,7 @@ struct DCSweepPoint {
     Real lastStableBias = 0.0;
     Real failedBias = 0.0;
     std::string failureReason;
+    std::string validationDiagnostics;
     std::string outputCsv;
     std::string outputVtk;
 };
