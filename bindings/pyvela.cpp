@@ -124,6 +124,7 @@ py::dict convergenceDiagnostics(const vela::DCSweepPoint& point)
     diagnostics["last_stable_bias"] = point.lastStableBias;
     diagnostics["failed_bias"] = point.failedBias;
     diagnostics["failure_reason"] = point.failureReason;
+    diagnostics["validation_diagnostics"] = point.validationDiagnostics;
     return diagnostics;
 }
 
@@ -160,6 +161,7 @@ std::vector<py::dict> sweepPointsToPython(const std::vector<vela::DCSweepPoint>&
         row["last_stable_bias"] = point.lastStableBias;
         row["failed_bias"] = point.failedBias;
         row["failure_reason"] = point.failureReason;
+        row["validation_diagnostics"] = point.validationDiagnostics;
         row["output_csv"] = point.outputCsv.empty() ? metadata.outputCsv : point.outputCsv;
         row["output_vtk"] = point.outputVtk;
         py::list outputFiles;

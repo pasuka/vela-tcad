@@ -134,6 +134,11 @@ class PythonApiTest(unittest.TestCase):
         self.assertEqual(points[0]["accepted_step"], 0.0)
         self.assertEqual(points[0]["retry_count"], 0)
         self.assertEqual(points[0]["convergence_diagnostics"]["retry_count"], 0)
+        self.assertIn("validation_diagnostics", points[0])
+        self.assertEqual(
+            points[0]["convergence_diagnostics"]["validation_diagnostics"],
+            points[0]["validation_diagnostics"],
+        )
         self.assertIn("total_current", points[1])
         self.assertAlmostEqual(points[1]["attempted_step"], 0.25)
         self.assertAlmostEqual(points[1]["accepted_step"], 0.25)
@@ -144,6 +149,21 @@ class PythonApiTest(unittest.TestCase):
         self.assertIn(points[0]["output_csv"], points[0]["output_files"])
         self.assertIn(points[0]["output_vtk"], points[0]["output_files"])
         self.assertTrue(Path(points[0]["output_vtk"]).exists())
+
+        validation_failure_cfg = self.write_sweep_config(output_name="validation_failure.csv")
+        validation_failure_data = json.loads(validation_failure_cfg.read_text(encoding="utf-8"))
+        validation_failure_data["validation"] = {
+            "enforce_minimum_carrier_density": True,
+            "minimum_carrier_density": 1.0e30,
+        }
+        validation_failure_cfg.write_text(json.dumps(validation_failure_data), encoding="utf-8")
+        validation_failure_points = vela.run_iv_curve(str(validation_failure_cfg))
+        self.assertEqual(validation_failure_points[0]["failure_reason"], "validation_failed")
+        self.assertIn("below minimum", validation_failure_points[0]["validation_diagnostics"])
+        self.assertEqual(
+            validation_failure_points[0]["convergence_diagnostics"]["validation_diagnostics"],
+            validation_failure_points[0]["validation_diagnostics"],
+        )
 
         cv_cfg = self.write_sweep_config(mode="cv_quasistatic", output_name="cv.csv")
         cv_points = vela.run_cv_curve(str(cv_cfg))
