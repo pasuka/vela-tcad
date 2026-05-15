@@ -18,6 +18,7 @@
 #include "vela/physics/MobilityModel.h"
 #include "vela/physics/BandgapNarrowing.h"
 #include <Eigen/Sparse>
+#include <cstddef>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -102,16 +103,29 @@ inline Real edgeAvgMaterialProp(
 }
 
 
+/// Build one temperature-adjusted material per mesh cell for hot-path reuse.
+inline std::vector<Material> buildCellMaterials(const DeviceMesh&       mesh,
+                                                const MaterialDatabase& matdb,
+                                                Real                    temperature_K)
+{
+    std::vector<Material> materials;
+    materials.reserve(mesh.numCells());
+    for (Index c = 0; c < mesh.numCells(); ++c) {
+        const auto& region = mesh.getRegion(mesh.getCell(c).region_id);
+        materials.push_back(matdb.getMaterial(region.material, temperature_K));
+    }
+    return materials;
+}
+
 /// Return average model mobility [m^2/V/s] for edge @p edgeId.
 inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          const DeviceMesh&                       mesh,
-                         const MaterialDatabase&                 matdb,
                          const DopingModel&                      doping,
                          const MobilityModel&                    mobility,
+                         const std::vector<Material>&            cellMaterials,
                          Index                                   edgeId,
                          CarrierType                             carrier,
-                         Real                                    electricField = 0.0,
-                         Real                                    temperature_K = constants::T0)
+                         Real                                    electricField)
 {
     const auto& cells = edgeCells[edgeId];
     if (cells.empty()) return 0.0;
@@ -122,8 +136,7 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
 
     Real sum = 0.0;
     for (Index c : cells) {
-        const auto& region = mesh.getRegion(mesh.getCell(c).region_id);
-        const Material material = matdb.getMaterial(region.material, temperature_K);
+        const Material& material = cellMaterials.at(static_cast<std::size_t>(c));
         if (carrier == CarrierType::Electron)
             sum += mobility.electronMobility(material, netDoping, 0.0, 0.0, electricField);
         else

@@ -3,7 +3,9 @@
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/equation/AssemblerUtils.h"
 #include <unordered_set>
+#include <cmath>
 #include <stdexcept>
+#include <vector>
 
 namespace vela {
 namespace {
@@ -44,6 +46,9 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
         throw std::invalid_argument("ContactCurrent: unknown contact '" + contactName + "'.");
 
     std::unordered_set<Index> contactNodes(contact->node_ids.begin(), contact->node_ids.end());
+    const Real temperature_K = thermalVoltage_ * constants::q / constants::kb;
+    const std::vector<Material> cellMaterials =
+        detail::buildCellMaterials(mesh_, matdb_, temperature_K);
 
     ContactCurrentResult result;
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
@@ -55,14 +60,17 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
         if (edge.length < 1.0e-30 || edge.couple <= 0.0)
             continue;
 
-        const Real mun = detail::edgeMobility(
-            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Electron);
-        const Real mup = detail::edgeMobility(
-            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Hole);
-
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
         const Real dpsi = solution.psi(j) - solution.psi(i);
+        const Real electricField = std::abs(dpsi / edge.length);
+
+        const Real mun = detail::edgeMobility(
+            edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
+            electricField);
+        const Real mup = detail::edgeMobility(
+            edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
+            electricField);
 
         const Real electronFlux01 = (mun > 0.0)
             ? sgElectronFlux(solution.n(i), solution.n(j), dpsi,

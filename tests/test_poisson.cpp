@@ -455,6 +455,39 @@ TEST_CASE("PoissonSimulation: duplicate fixed charge config entries are rejected
     REQUIRE_THROWS_AS(sim.runWithResult(configPath.string()), std::runtime_error);
 }
 
+
+TEST_CASE("PoissonSimulation: trap occupancy outside unit interval is rejected", "[poisson][charge][traps]")
+{
+    const auto tempDir = makePoissonTempDir("vela_poisson_bad_trap_occupancy_test");
+    const auto& dir = tempDir.path;
+
+    const auto meshPath = writePNMeshJsonToDir(dir);
+    const auto configPath = dir / "poisson_bad_trap_occupancy.json";
+    nlohmann::json cfg = {
+        {"mesh_file", meshPath.string()},
+        {"output_vtk", (dir / "out.vtk").string()},
+        {"doping", {
+            {{"region", "n_region"}, {"donors", 1.0e23}, {"acceptors", 0.0}},
+            {{"region", "p_region"}, {"donors", 0.0}, {"acceptors", 1.0e23}}
+        }},
+        {"interfaces", {
+            {{"regions", {"n_region", "p_region"}},
+             {"trap_density_m2", 1.0e15},
+             {"trap_occupancy", 1.25}}
+        }},
+        {"contacts", {
+            {{"name", "anode"}, {"bias", 0.0}},
+            {{"name", "cathode"}, {"bias", 0.0}}
+        }}
+    };
+    std::ofstream(configPath) << cfg.dump(2);
+
+    PoissonSimulation sim;
+    REQUIRE_THROWS_WITH(
+        sim.runWithResult(configPath.string()),
+        Catch::Matchers::ContainsSubstring("trap_occupancy must be in [0, 1]"));
+}
+
 TEST_CASE("PoissonAssembler: duplicate fixed charge specs are rejected", "[poisson][charge]")
 {
     DeviceMesh mesh = makeMOSCapChargeMesh();

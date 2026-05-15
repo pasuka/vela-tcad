@@ -15,9 +15,6 @@ struct ImpactIonizationModelConfig {
     Real carrierVelocity = 1.0e5; ///< Effective saturated carrier speed [m/s]
 };
 
-struct ImpactIonizationLinearization {
-    Real generation = 0.0; ///< Explicit generation rate [m^-3 s^-1]
-};
 
 class ImpactIonizationModel {
 public:

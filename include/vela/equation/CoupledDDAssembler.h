@@ -2,6 +2,7 @@
 
 #include "vela/core/Types.h"
 #include "vela/mesh/DeviceMesh.h"
+#include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/BandgapNarrowing.h"
 #include "vela/physics/DopingModel.h"
@@ -76,6 +77,7 @@ private:
     std::unique_ptr<MobilityModel> mobility_;
     RecombinationModel recombination_;
     std::vector<Real> ni_;
+    std::vector<Material> cellMaterials_;
 
     // Mesh-derived quantities cached at construction time.
     std::vector<std::vector<Index>> edgeCells_;

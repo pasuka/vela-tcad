@@ -29,7 +29,7 @@ namespace vela {
  *   ],
  *   "interfaces": [
  *     { "regions": ["silicon", "oxide"], "sheet_charge_m2": 1e15,
-       "fixed_charge_m2": 2e15, "trap_density_m2": 1e15, "trap_occupancy": 0.5 }
+ *       "fixed_charge_m2": 2e15, "trap_density_m2": 1e15, "trap_occupancy": 0.5 }
  *   ],
  *   "contacts": [
  *     { "name": "cathode", "bias": 0.0, "flatband_voltage": 0.1 },

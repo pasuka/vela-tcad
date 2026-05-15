@@ -138,6 +138,11 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
             const Real fixedCharge = entry.value("fixed_charge_m2", 0.0);
             const Real trapDensity = entry.value("trap_density_m2", 0.0);
             const Real trapOccupancy = entry.value("trap_occupancy", 0.0);
+            if (entry.contains("trap_density_m2") &&
+                (trapOccupancy < 0.0 || trapOccupancy > 1.0)) {
+                throw std::runtime_error(
+                    "PoissonSimulation: trap_occupancy must be in [0, 1] when trap_density_m2 is provided.");
+            }
 
             if (entry.contains("regions")) {
                 const auto regions = entry.at("regions").get<std::vector<std::string>>();

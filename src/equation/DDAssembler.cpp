@@ -6,22 +6,23 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <vector>
 
 namespace vela {
 
 namespace {
-Real nodeElectricField(const VectorXd& psi, const DeviceMesh& mesh, Index node)
+std::vector<Real> computeNodeElectricFields(const VectorXd& psi, const DeviceMesh& mesh)
 {
-    Real maxField = 0.0;
+    std::vector<Real> maxField(mesh.numNodes(), 0.0);
     for (Index e = 0; e < mesh.numEdges(); ++e) {
         const Edge& edge = mesh.getEdge(e);
-        if (edge.n0 != node && edge.n1 != node)
-            continue;
         if (edge.length <= 1.0e-30)
             continue;
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
-        maxField = std::max(maxField, std::abs((psi(j) - psi(i)) / edge.length));
+        const Real edgeField = std::abs((psi(j) - psi(i)) / edge.length);
+        maxField[edge.n0] = std::max(maxField[edge.n0], edgeField);
+        maxField[edge.n1] = std::max(maxField[edge.n1], edgeField);
     }
     return maxField;
 }
@@ -157,6 +158,10 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
 
     b_ = VectorXd::Zero(static_cast<int>(N));
 
+    const Real temperature_K = Vt_ * constants::q / constants::kb;
+    const std::vector<Material> cellMaterials =
+        detail::buildCellMaterials(mesh_, matdb_, temperature_K);
+
     // SG matrix entries from all edges
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
         const Edge& edge = mesh_.getEdge(e);
@@ -166,8 +171,8 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         const Real electricField = std::abs(
             (psi(static_cast<int>(edge.n1)) - psi(static_cast<int>(edge.n0))) / h);
         const Real mun = detail::edgeMobility(
-            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Electron,
-            electricField, Vt_ * constants::q / constants::kb);
+            edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
+            electricField);
         if (mun <= 0.0) continue; // skip insulator edges
 
         const Real coef = mun * Vt_ * couple_[e] / h;
@@ -188,6 +193,8 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
 
     A_.setFromTriplets(triplets.begin(), triplets.end());
 
+    const std::vector<Real> nodeElectricFields = computeNodeElectricFields(psi, mesh_);
+
     // Recombination source term linearised w.r.t. n.
     // Positive source derivatives move to the LHS diagonal; constants move to RHS.
     for (Index i = 0; i < N; ++i) {
@@ -202,7 +209,7 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
         b_(ii) += linearization.rhs * vol_i;
         b_(ii) += impactIonization_->generationRate(
-            nodeElectricField(psi, mesh_, i), n_v, p_v) * vol_i;
+            nodeElectricFields[i], n_v, p_v) * vol_i;
     }
 
     // Guard: if any diagonal is still zero (insulator node with all edges
@@ -232,6 +239,10 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
 
     b_ = VectorXd::Zero(static_cast<int>(N));
 
+    const Real temperature_K = Vt_ * constants::q / constants::kb;
+    const std::vector<Material> cellMaterials =
+        detail::buildCellMaterials(mesh_, matdb_, temperature_K);
+
     // SG matrix entries for holes
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
         const Edge& edge = mesh_.getEdge(e);
@@ -241,8 +252,8 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         const Real electricField = std::abs(
             (psi(static_cast<int>(edge.n1)) - psi(static_cast<int>(edge.n0))) / h);
         const Real mup = detail::edgeMobility(
-            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Hole,
-            electricField, Vt_ * constants::q / constants::kb);
+            edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
+            electricField);
         if (mup <= 0.0) continue; // skip insulator edges
 
         const Real coef = mup * Vt_ * couple_[e] / h;
@@ -263,6 +274,8 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
 
     A_.setFromTriplets(triplets.begin(), triplets.end());
 
+    const std::vector<Real> nodeElectricFields = computeNodeElectricFields(psi, mesh_);
+
     // Recombination source term linearised w.r.t. p.
     // Positive source derivatives move to the LHS diagonal; constants move to RHS.
     for (Index i = 0; i < N; ++i) {
@@ -277,7 +290,7 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
         b_(ii) += linearization.rhs * vol_i;
         b_(ii) += impactIonization_->generationRate(
-            nodeElectricField(psi, mesh_, i), n_v, p_v) * vol_i;
+            nodeElectricFields[i], n_v, p_v) * vol_i;
     }
 
     // Guard: pin insulator nodes (zero-diagonal) to p = 0
