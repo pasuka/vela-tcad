@@ -174,6 +174,10 @@ claimed for this deck.
 - `simulation_iv.json`: Id-Vd drain sweep at fixed small positive gate bias.
 - `simulation_idvg.json`: Id-Vg gate sweep at fixed drain bias.
 - `simulation_cv.json`: gate/body quasi-static CV sweep on the same DD mesh.
+- `test_mos_solver_crosscheck`: CTest single-bias smoke coverage that solves
+  the same low-bias NMOS point with Gummel and Newton, checks both solutions
+  are finite and converged, and compares drain-current sign and order of
+  magnitude.
 
 **Run directly.**
 
@@ -210,6 +214,10 @@ application in the drift-diffusion solver.
 - `simulation_iv.json`: Id-Vd drain sweep at fixed small negative gate bias.
 - `simulation_idvg.json`: Id-Vg gate sweep at fixed drain bias.
 - `simulation_cv.json`: gate/body quasi-static CV sweep on the same DD mesh.
+- `test_mos_solver_crosscheck`: CTest single-bias smoke coverage that solves
+  the same low-bias PMOS point with Gummel and Newton, checks both solutions
+  are finite and converged, and compares drain-current sign and order of
+  magnitude.
 
 **Run directly.**
 
