@@ -14,6 +14,8 @@ from ._core import (  # noqa: F401
     run_poisson,
     write_vtk,
 )
+from .curves import run_bv_curve, run_cv_curve, run_iv_curve  # noqa: F401
+
 
 __all__ = [
     "DCSweep",
@@ -21,7 +23,10 @@ __all__ = [
     "MaterialDatabase",
     "PoissonSimulation",
     "load_mesh",
+    "run_bv_curve",
+    "run_cv_curve",
     "run_dc_sweep",
+    "run_iv_curve",
     "run_poisson",
     "write_vtk",
 ]

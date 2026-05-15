@@ -2,14 +2,19 @@
 #include "vela/io/VTKWriter.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/mesh/DeviceMesh.h"
+#include "vela/simulation/CurveSweep.h"
 #include "vela/simulation/DCSweep.h"
 #include "vela/simulation/PoissonSimulation.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <nlohmann/json.hpp>
 
 #include <filesystem>
+#include <fstream>
+#include <iomanip>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -22,6 +27,16 @@ namespace {
 struct LastResult {
     std::shared_ptr<vela::DeviceMesh> mesh;
     std::vector<std::pair<std::string, std::vector<vela::Real>>> nodeScalars;
+};
+
+struct SweepPythonMetadata {
+    std::string curveType = "iv";
+    std::string biasContact;
+    std::string currentContact;
+    std::string chargeContact;
+    bool writeVtk = false;
+    std::string outputCsv;
+    std::string vtkPrefix;
 };
 
 LastResult& lastResult()
@@ -51,13 +66,87 @@ void rememberMesh(std::shared_ptr<vela::DeviceMesh> mesh)
     result.nodeScalars.clear();
 }
 
-std::vector<py::dict> sweepPointsToPython(const std::vector<vela::DCSweepPoint>& points)
+std::string vtkFilename(const std::string& prefix, int index, vela::Real voltage)
+{
+    std::ostringstream oss;
+    oss << prefix << "_" << std::setw(4) << std::setfill('0') << index
+        << "_" << std::setprecision(6) << std::defaultfloat << voltage << "V.vtk";
+    return oss.str();
+}
+
+std::filesystem::path configDirectory(const std::string& configFile)
+{
+    const std::filesystem::path configPath(configFile);
+    const std::filesystem::path parent = configPath.parent_path();
+    if (!parent.empty())
+        return parent;
+    return std::filesystem::current_path();
+}
+
+std::string resolvePath(const std::filesystem::path& baseDir, const std::string& path)
+{
+    std::filesystem::path resolved(path);
+    if (resolved.is_relative())
+        resolved = baseDir / resolved;
+    return resolved.string();
+}
+
+nlohmann::json readJsonFile(const std::string& configFile)
+{
+    std::ifstream input(configFile);
+    if (!input)
+        throw std::runtime_error("Python API: unable to open sweep config file: " + configFile);
+
+    nlohmann::json cfg;
+    input >> cfg;
+    return cfg;
+}
+
+SweepPythonMetadata sweepMetadataFromConfig(const std::string& configFile)
+{
+    const nlohmann::json cfg = readJsonFile(configFile);
+    const auto& sweep = cfg.at("sweep");
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+
+    SweepPythonMetadata metadata;
+    metadata.curveType = vela::toString(vela::curveSweepModeFromString(sweep.value("mode", std::string("iv"))));
+    metadata.biasContact = sweep.at("contact").get<std::string>();
+    metadata.currentContact = sweep.value("current_contact", metadata.biasContact);
+    const nlohmann::json chargeCfg = sweep.value("terminal_charge", nlohmann::json::object());
+    metadata.chargeContact = chargeCfg.value("contact", sweep.value("charge_contact", metadata.biasContact));
+    metadata.writeVtk = sweep.value("write_vtk", cfg.value("write_vtk", false));
+    metadata.outputCsv = resolvePath(
+        cfgDir, sweep.value("csv_file", cfg.value("output_csv", std::string("dc_sweep.csv"))));
+    metadata.vtkPrefix = resolvePath(
+        cfgDir, sweep.value("vtk_prefix", cfg.value("output_vtk_prefix", std::string("dc_sweep"))));
+    return metadata;
+}
+
+py::dict convergenceDiagnostics(const vela::DCSweepPoint& point)
+{
+    py::dict diagnostics;
+    diagnostics["converged"] = point.converged;
+    diagnostics["iterations"] = point.iterations;
+    diagnostics["attempted_step"] = point.attemptedStep;
+    diagnostics["accepted_step"] = point.acceptedStep;
+    diagnostics["retry_count"] = point.retryCount;
+    return diagnostics;
+}
+
+std::vector<py::dict> sweepPointsToPython(const std::vector<vela::DCSweepPoint>& points,
+                                          const SweepPythonMetadata& metadata)
 {
     std::vector<py::dict> out;
     out.reserve(points.size());
+    int vtkIndex = 0;
     for (const vela::DCSweepPoint& point : points) {
         py::dict row;
+        row["curve_type"] = metadata.curveType;
+        row["bias_contact"] = metadata.biasContact;
+        row["current_contact"] = metadata.currentContact;
+        row["charge_contact"] = metadata.chargeContact;
         row["voltage"] = point.voltage;
+        row["bias"] = point.bias;
         row["electron_current"] = point.electronCurrent;
         row["hole_current"] = point.holeCurrent;
         row["total_current"] = point.totalCurrent;
@@ -66,9 +155,34 @@ std::vector<py::dict> sweepPointsToPython(const std::vector<vela::DCSweepPoint>&
         row["attempted_step"] = point.attemptedStep;
         row["accepted_step"] = point.acceptedStep;
         row["retry_count"] = point.retryCount;
+        row["convergence_diagnostics"] = convergenceDiagnostics(point);
+        row["terminal_charge"] = point.terminalCharge;
+        row["capacitance"] = point.capacitance;
+        row["max_electric_field"] = point.maxElectricField;
+        row["current_jump_ratio"] = point.currentJumpRatio;
+        row["breakdown_detected"] = point.breakdownDetected;
+        row["breakdown_voltage"] = point.breakdownVoltage;
+        row["breakdown_criterion"] = point.breakdownCriterion;
+        row["output_csv"] = metadata.outputCsv;
+        py::list outputFiles;
+        outputFiles.append(metadata.outputCsv);
+        if (metadata.writeVtk && point.converged) {
+            row["output_vtk"] = vtkFilename(metadata.vtkPrefix, vtkIndex, point.voltage);
+            outputFiles.append(row["output_vtk"]);
+            ++vtkIndex;
+        } else {
+            row["output_vtk"] = "";
+        }
+        row["output_files"] = std::move(outputFiles);
         out.push_back(std::move(row));
     }
     return out;
+}
+
+std::vector<py::dict> sweepPointsToPython(const std::string& configFile,
+                                          const std::vector<vela::DCSweepPoint>& points)
+{
+    return sweepPointsToPython(points, sweepMetadataFromConfig(configFile));
 }
 
 std::shared_ptr<vela::DeviceMesh> loadMesh(const std::string& jsonFile)
@@ -96,7 +210,7 @@ std::vector<py::dict> runDCSweep(const std::string& configFile)
 {
     vela::DCSweep sweep;
     const std::vector<vela::DCSweepPoint> points = sweep.run(configFile);
-    return sweepPointsToPython(points);
+    return sweepPointsToPython(configFile, points);
 }
 
 void writeVtk(const std::string& outputFile)
@@ -143,7 +257,7 @@ PYBIND11_MODULE(_core, m)
     py::class_<vela::DCSweep>(m, "DCSweep")
         .def(py::init<>())
         .def("run", [](const vela::DCSweep& self, const std::string& configFile) {
-            return sweepPointsToPython(self.run(configFile));
+            return sweepPointsToPython(configFile, self.run(configFile));
         });
 
     m.def("load_mesh", &loadMesh, py::arg("json_file"),

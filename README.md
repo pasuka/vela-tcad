@@ -218,13 +218,20 @@ import vela
 
 mesh = vela.load_mesh("examples/pn_diode_2d.json")
 potential = vela.run_poisson("examples/pn_poisson_2d.json")
-points = vela.run_dc_sweep("examples/pn_diode/simulation_iv.json")
+iv_points = vela.run_iv_curve("examples/pn_diode/simulation_iv.json")
+cv_points = vela.run_cv_curve("examples/pn_diode/simulation_cv.json")
+bv_points = vela.run_bv_curve("examples/pn_diode/simulation_bv.json")
 vela.write_vtk("examples/pn_diode/outputs/python_export.vtk")
 ```
 
 The top-level Python API currently exposes `DeviceMesh`, `MaterialDatabase`,
-`PoissonSimulation`, `DCSweep`, `load_mesh`, `run_poisson`, `run_dc_sweep`, and
-`write_vtk`.
+`PoissonSimulation`, `DCSweep`, `load_mesh`, `run_poisson`, `run_dc_sweep`,
+`run_iv_curve`, `run_cv_curve`, `run_bv_curve`, and `write_vtk`. Sweep points
+are dictionaries with the C++ sweep data plus metadata such as `curve_type`,
+`bias_contact`, `current_contact`, `convergence_diagnostics`, `output_csv`,
+and per-point `output_vtk` paths. The Python API is a thin pybind11 wrapper
+around documented C++ functionality; only capabilities already exercised and
+tested in the C++ core are documented as supported from Python.
 
 ---
 

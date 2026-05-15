@@ -92,6 +92,9 @@ if(VELA_ENABLE_PYTHON)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${CMAKE_CURRENT_SOURCE_DIR}/python/vela/__init__.py
                 $<TARGET_FILE_DIR:_core>/__init__.py
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${CMAKE_CURRENT_SOURCE_DIR}/python/vela/curves.py
+                $<TARGET_FILE_DIR:_core>/curves.py
         VERBATIM)
 
     add_test(NAME python_api

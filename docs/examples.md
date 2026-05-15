@@ -61,25 +61,34 @@ NaN/Inf values, and writes `build/regression_output/regression_summary.json`.
 
 ## Python API Example
 
-The optional pybind11 API can run the PN diode IV sweep from Python. Configure
-with `VELA_ENABLE_PYTHON=ON` and make the generated package importable:
+The optional pybind11 API is a thin wrapper over the C++ core. Python examples
+only document curve features that are already implemented and tested in C++
+(DD-IV, quasi-static CV, and reverse-bias BV diagnostics for the decks listed
+in this guide); experimental C++-only behavior should not be presented as a
+Python-supported API until it has matching tests. Configure with
+`VELA_ENABLE_PYTHON=ON` and make the generated package importable:
 
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DVELA_ENABLE_PYTHON=ON
 cmake --build build --parallel
-PYTHONPATH=build/python/Debug python3 examples/python/run_pn_diode.py
+PYTHONPATH=build/python/Debug python3 examples/python/run_device_curves.py
 ```
 
 On Windows PowerShell, set `PYTHONPATH` with:
 
 ```powershell
 $env:PYTHONPATH = "build\python\Debug"
-python examples\python\run_pn_diode.py
+python examples\python\run_device_curves.py
 ```
 
-The script calls `vela.run_dc_sweep()` on
-`examples/pn_diode/simulation_iv.json` and writes the usual CSV/VTK outputs
-under `examples/pn_diode/outputs/`.
+The script calls the lightweight helpers `vela.run_iv_curve()`,
+`vela.run_cv_curve()`, and `vela.run_bv_curve()`. Those helpers still call the
+C++ DC sweep binding internally and return the same point dictionaries as
+`vela.run_dc_sweep()`, including `curve_type`, contact names, convergence
+diagnostics, current/capacitance/breakdown fields, `output_csv`, and per-point
+`output_vtk` paths when VTK output is enabled. The example covers PN IV/CV/BV
+and the NMOS Id-Vd sweep, writing the usual CSV/VTK outputs under each
+device's `outputs/` directory.
 
 CTest registers the Python coverage as `python_api` when the extension is
 enabled:
