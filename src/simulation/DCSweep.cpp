@@ -587,11 +587,6 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
             trialStep = shrunken;
             ++retryCount;
         }
-
-        record({lastCandidate, false, lastAttempted, 0.0, retryCount, "non_convergence"});
-        adaptiveStep = std::max(cfg.minStep,
-                                std::min(cfg.maxStep, std::abs(lastAttempted) * cfg.shrinkFactor));
-        return false;
     };
 
     bool blockedByFailedStep = false;
