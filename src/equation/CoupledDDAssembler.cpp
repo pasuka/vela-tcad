@@ -66,6 +66,10 @@ CoupledDDAssembler::CoupledDDAssembler(
           doping,
           bandgapNarrowingConfig,
           Vt))
+    , cellMaterials_(detail::buildCellMaterials(
+          mesh,
+          matdb,
+          Vt * constants::q / constants::kb))
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
     , couple_(detail::computeEdgeCouplings(mesh))
@@ -160,6 +164,7 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
         const Real dpsi = x(psiOffset() + j) - x(psiOffset() + i);
+        const Real electricField = std::abs(dpsi / h);
 
         const Real eps = detail::edgeEpsilon(edgeCells, mesh_, matdb_, e);
         const Real G = eps * couple[e] / h;
@@ -168,7 +173,8 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
         r(psiOffset() + j) -= psiFlux;
 
         const Real mun = detail::edgeMobility(
-            edgeCells, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Electron);
+            edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
+            electricField);
         if (mun > 0.0) {
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
@@ -199,7 +205,8 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
         }
 
         const Real mup = detail::edgeMobility(
-            edgeCells, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Hole);
+            edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Hole,
+            electricField);
         if (mup > 0.0) {
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
@@ -338,6 +345,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
         const Real dpsi = x(psiOffset() + j) - x(psiOffset() + i);
+        const Real electricField = std::abs(dpsi / h);
         const Real u = dpsi / Vt_;
         const Real Bu = bernoulli(u);
         const Real dBu = bernoulliDerivative(u);
@@ -350,7 +358,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         add(psiOffset() + j, psiOffset() + j,  G);
 
         const Real mun = detail::edgeMobility(
-            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Electron);
+            edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
+            electricField);
         if (mun > 0.0) {
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
@@ -378,7 +387,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         }
 
         const Real mup = detail::edgeMobility(
-            edgeCells_, mesh_, matdb_, doping_, *mobility_, e, CarrierType::Hole);
+            edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Hole,
+            electricField);
         if (mup > 0.0) {
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;

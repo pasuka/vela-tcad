@@ -114,3 +114,29 @@ TEST_CASE("Gummel PN diode runs with configured mobility and recombination", "[m
         REQUIRE(sol.p(i) >= 0.0);
     }
 }
+
+TEST_CASE("Caughey-Thomas field mobility rolls off toward velocity saturation", "[mobility][field]")
+{
+    MaterialDatabase matdb;
+    const Material& si = matdb.getMaterial("Si");
+    MobilityModelConfig config = mobilityModelConfig("caughey_thomas_field");
+    DopingDependentMobility mobility(config);
+
+    const Real lowField = mobility.electronMobility(si, 1.0e20, 0.0, 0.0, 0.0);
+    const Real highField = mobility.electronMobility(si, 1.0e20, 0.0, 0.0, 1.0e8);
+
+    REQUIRE(highField < lowField);
+    REQUIRE(highField * 1.0e8 <= config.electronField.saturationVelocity * 1.01);
+}
+
+TEST_CASE("Material temperature path updates intrinsic density and mobility", "[mobility][temperature]")
+{
+    MaterialDatabase matdb;
+    const Material si300 = matdb.getMaterial("Si", 300.0);
+    const Material si400 = matdb.getMaterial("Si", 400.0);
+
+    REQUIRE(si300.temperature_K.has_value());
+    REQUIRE(*si300.temperature_K == Catch::Approx(300.0));
+    REQUIRE(si400.ni > si300.ni);
+    REQUIRE(si400.mun < si300.mun);
+}

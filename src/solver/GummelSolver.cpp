@@ -45,7 +45,8 @@ inline double nEq(double Ndop, double ni)
 
 /// Compute per-node ni from the material database.
 std::vector<double> buildNiVector(const DeviceMesh&       mesh,
-                                  const MaterialDatabase& matdb)
+                                  const MaterialDatabase& matdb,
+                                  Real                    cfgTemperature_K)
 {
     const Index N = mesh.numNodes();
     std::vector<double> ni_v(N, 0.0);
@@ -58,7 +59,7 @@ std::vector<double> buildNiVector(const DeviceMesh&       mesh,
         const auto& region = mesh.getRegion(cell.region_id);
         double      ni_mat = 0.0;
         if (matdb.hasMaterial(region.material))
-            ni_mat = matdb.getMaterial(region.material).ni;
+            ni_mat = matdb.getMaterial(region.material, cfgTemperature_K).ni;
         for (Index nid : cell.node_ids) {
             if (!found[nid]) {
                 ni_v[nid]   = ni_mat;
@@ -112,6 +113,29 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json)
                 "gummelConfigFromJson: recombination must be a string or string array.");
     }
 
+
+    if (json.contains("impact_ionization")) {
+        const auto& value = json.at("impact_ionization");
+        if (value.is_string()) {
+            cfg.impactIonization.model = value.get<std::string>();
+        } else if (value.is_object()) {
+            cfg.impactIonization.model = value.value("model", cfg.impactIonization.model);
+            cfg.impactIonization.electronA = value.value(
+                "electron_A_m_inv", cfg.impactIonization.electronA);
+            cfg.impactIonization.electronB = value.value(
+                "electron_B_V_m", cfg.impactIonization.electronB);
+            cfg.impactIonization.holeA = value.value(
+                "hole_A_m_inv", cfg.impactIonization.holeA);
+            cfg.impactIonization.holeB = value.value(
+                "hole_B_V_m", cfg.impactIonization.holeB);
+            cfg.impactIonization.carrierVelocity = value.value(
+                "carrier_velocity_m_s", cfg.impactIonization.carrierVelocity);
+        } else {
+            throw std::invalid_argument(
+                "gummelConfigFromJson: impact_ionization must be a string or object.");
+        }
+    }
+
     if (cfg.temperature_K <= 0.0)
         throw std::invalid_argument("gummelConfigFromJson: temperature_K must be positive.");
 
@@ -135,7 +159,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     const double Vt  = thermalVoltage(cfg.temperature_K);
 
     // Per-node effective ni, including optional bandgap narrowing.
-    std::vector<double> ni_v = buildNiVector(mesh, matdb);
+    std::vector<double> ni_v = buildNiVector(mesh, matdb, cfg.temperature_K);
     const auto bgn = makeBandgapNarrowingModel(cfg.bandgapNarrowing);
     for (Index i = 0; i < N; ++i) {
         const double deltaEg = bgn->deltaEg(doping.netDoping(i), 0.0, 0.0);
@@ -190,7 +214,14 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg.recombination, cfg.taun, cfg.taup);
     DDAssembler assembler(
-        mesh, matdb, doping, Vt, mobilityConfig, recombinationConfig, cfg.bandgapNarrowing);
+        mesh,
+        matdb,
+        doping,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        cfg.bandgapNarrowing,
+        cfg.impactIonization);
 
     VectorXd psi_init  = VectorXd::Zero(static_cast<int>(N));
     VectorXd n_init    = VectorXd::Zero(static_cast<int>(N));

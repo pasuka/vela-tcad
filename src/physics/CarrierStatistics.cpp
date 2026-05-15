@@ -16,4 +16,10 @@ double holeDensity(double ni, double psi, double phip, double Vt)
     return ni * std::exp(arg);
 }
 
+
+double intrinsicDensity(const Material& material, double temperature_K)
+{
+    return material.atTemperature(temperature_K).ni;
+}
+
 } // namespace vela

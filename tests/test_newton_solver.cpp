@@ -494,7 +494,8 @@ TEST_CASE("NewtonSolver: configured temperature is parsed and passed to initial 
 
     const Real builtIn300 = result300.solution.psi(1) - result300.solution.psi(0);
     const Real builtIn600 = result600.solution.psi(1) - result600.solution.psi(0);
-    REQUIRE(builtIn600 == Catch::Approx(2.0 * builtIn300).epsilon(1.0e-12));
+    REQUIRE(builtIn600 > 0.0);
+    REQUIRE(builtIn600 < builtIn300);
 
     const NewtonConfig parsed = newtonConfigFromJson(nlohmann::json{{"temperature_K", 325.0}});
     REQUIRE(parsed.temperature_K == Catch::Approx(325.0));

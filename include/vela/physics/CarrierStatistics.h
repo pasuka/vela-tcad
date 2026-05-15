@@ -1,5 +1,7 @@
 #pragma once
 
+#include "vela/material/Material.h"
+
 namespace vela {
 
 /**
@@ -19,5 +21,8 @@ namespace vela {
  */
 double electronDensity(double ni, double psi, double phin, double Vt);
 double holeDensity    (double ni, double psi, double phip, double Vt);
+
+/// Temperature-adjusted intrinsic density for a material using temperature_K.
+double intrinsicDensity(const Material& material, double temperature_K);
 
 } // namespace vela

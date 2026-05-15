@@ -22,6 +22,9 @@ struct Material {
     std::optional<Real> Nc_m3;                ///< Effective conduction-band DOS [m^-3]
     std::optional<Real> Nv_m3;                ///< Effective valence-band DOS [m^-3]
     std::optional<Real> temperature_K;        ///< Material parameter temperature [K]
+
+    /// Return a copy with ni and low-field mobilities scaled to temperature_K.
+    Material atTemperature(Real targetTemperature_K) const;
 };
 
 } // namespace vela

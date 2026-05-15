@@ -41,6 +41,7 @@ add_library(vela_core STATIC
     src/physics/SRHRecombination.cpp
     src/physics/MobilityModel.cpp
     src/physics/RecombinationModel.cpp
+    src/physics/ImpactIonizationModel.cpp
     src/physics/BandgapNarrowing.cpp
     src/equation/PoissonAssembler.cpp
     src/equation/DDAssembler.cpp
@@ -164,6 +165,9 @@ target_link_libraries(test_newton_solver PRIVATE vela_core Catch2::Catch2WithMai
 add_executable(test_mobility tests/test_mobility.cpp)
 target_link_libraries(test_mobility PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_impact_ionization tests/test_impact_ionization.cpp)
+target_link_libraries(test_impact_ionization PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_recombination tests/test_recombination.cpp)
 target_link_libraries(test_recombination PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -186,6 +190,7 @@ catch_discover_tests(test_dd_gummel)
 catch_discover_tests(test_gummel_high_doping)
 catch_discover_tests(test_newton_solver)
 catch_discover_tests(test_mobility)
+catch_discover_tests(test_impact_ionization)
 catch_discover_tests(test_recombination)
 catch_discover_tests(test_line_search_backtrack_failure)
 catch_discover_tests(test_dc_sweep)

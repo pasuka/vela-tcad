@@ -380,7 +380,9 @@ static AssemblySystem assembleReferenceContinuityWithFreshGeometry(
     const auto edgeCells = detail::buildEdgeCellMap(mesh);
     const auto vol = detail::computeNodeVolumes(mesh);
     const auto couple = detail::computeEdgeCouplings(mesh);
-    const auto ni = detail::buildNodeNi(mesh, matdb);
+    const Real temperature_K = Vt * constants::q / constants::kb;
+    const auto ni = detail::buildNodeNi(mesh, matdb, temperature_K);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, temperature_K);
     const auto mobility = makeMobilityModel(mobilityConfig);
     const RecombinationModel recombination(recombinationConfig);
 
@@ -395,13 +397,14 @@ static AssemblySystem assembleReferenceContinuityWithFreshGeometry(
         const Real h = edge.length;
         if (h < 1.0e-30) continue;
 
+        const auto i = static_cast<int>(edge.n0);
+        const auto j = static_cast<int>(edge.n1);
+        const Real electricField = std::abs((psi(j) - psi(i)) / h);
         const Real mu = detail::edgeMobility(
-            edgeCells, mesh, matdb, doping, *mobility, e, carrier);
+            edgeCells, mesh, doping, *mobility, cellMaterials, e, carrier, electricField);
         if (mu <= 0.0) continue;
 
         const Real coef = mu * Vt * couple[e] / h;
-        const auto i = static_cast<int>(edge.n0);
-        const auto j = static_cast<int>(edge.n1);
         const Real dpsi = psi(j) - psi(i);
         const SGEdgeWeights weights = sgEdgeWeights(dpsi, Vt);
 

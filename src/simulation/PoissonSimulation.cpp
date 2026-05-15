@@ -130,7 +130,19 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     std::vector<InterfaceSheetChargeSpec> sheetChargeSpecs;
     if (cfg.contains("interfaces")) {
         for (const auto& entry : cfg.at("interfaces")) {
-            if (!entry.contains("sheet_charge_m2")) continue;
+            if (!entry.contains("sheet_charge_m2") &&
+                !entry.contains("fixed_charge_m2") &&
+                !entry.contains("trap_density_m2")) continue;
+
+            const Real sheetCharge = entry.value("sheet_charge_m2", 0.0);
+            const Real fixedCharge = entry.value("fixed_charge_m2", 0.0);
+            const Real trapDensity = entry.value("trap_density_m2", 0.0);
+            const Real trapOccupancy = entry.value("trap_occupancy", 0.0);
+            if (entry.contains("trap_density_m2") &&
+                (trapOccupancy < 0.0 || trapOccupancy > 1.0)) {
+                throw std::runtime_error(
+                    "PoissonSimulation: trap_occupancy must be in [0, 1] when trap_density_m2 is provided.");
+            }
 
             if (entry.contains("regions")) {
                 const auto regions = entry.at("regions").get<std::vector<std::string>>();
@@ -138,12 +150,12 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
                     throw std::runtime_error(
                         "PoissonSimulation: interface regions must contain exactly two names.");
                 sheetChargeSpecs.push_back(InterfaceSheetChargeSpec{
-                    regions[0], regions[1], entry.at("sheet_charge_m2").get<Real>()});
+                    regions[0], regions[1], sheetCharge, fixedCharge, trapDensity, trapOccupancy});
             } else {
                 sheetChargeSpecs.push_back(InterfaceSheetChargeSpec{
                     entry.at("region0").get<std::string>(),
                     entry.at("region1").get<std::string>(),
-                    entry.at("sheet_charge_m2").get<Real>()});
+                    sheetCharge, fixedCharge, trapDensity, trapOccupancy});
             }
         }
     }

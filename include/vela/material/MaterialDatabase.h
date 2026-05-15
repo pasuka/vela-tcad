@@ -28,6 +28,9 @@ public:
     /// @throws std::out_of_range if the material is not found.
     const Material& getMaterial(const std::string& name) const;
 
+    /// Retrieve a temperature-adjusted material copy.
+    Material getMaterial(const std::string& name, Real temperature_K) const;
+
     /// Check whether a material is registered.
     bool hasMaterial(const std::string& name) const;
 
