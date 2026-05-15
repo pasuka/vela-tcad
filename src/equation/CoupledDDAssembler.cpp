@@ -29,22 +29,6 @@ Real bernoulliDerivative(Real x)
     return (em1 - x * ex) / (em1 * em1);
 }
 
-std::vector<Real> computeNodeElectricFields(const VectorXd& psi, const DeviceMesh& mesh)
-{
-    std::vector<Real> maxField(mesh.numNodes(), 0.0);
-    for (Index e = 0; e < mesh.numEdges(); ++e) {
-        const Edge& edge = mesh.getEdge(e);
-        if (edge.length <= 1.0e-30)
-            continue;
-        const int i = static_cast<int>(edge.n0);
-        const int j = static_cast<int>(edge.n1);
-        const Real edgeField = std::abs((psi(j) - psi(i)) / edge.length);
-        maxField[edge.n0] = std::max(maxField[edge.n0], edgeField);
-        maxField[edge.n1] = std::max(maxField[edge.n1], edgeField);
-    }
-    return maxField;
-}
-
 } // namespace
 
 CoupledDDAssembler::CoupledDDAssembler(const DeviceMesh& mesh,
@@ -79,6 +63,7 @@ CoupledDDAssembler::CoupledDDAssembler(
     , mobility_(makeMobilityModel(mobilityConfig))
     , recombination_(recombinationConfig)
     , impactIonization_(makeImpactIonizationModel(impactIonizationConfig))
+    , impactIonizationEnabled_(impactIonizationConfig.model != "none")
     , ni_(detail::buildValidatedEffectiveNodeNi(
           "CoupledDDAssembler",
           mesh,
@@ -167,8 +152,9 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
     // n and p are needed for Poisson source and configured recombination.
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
-    const std::vector<Real> nodeElectricFields = computeNodeElectricFields(
-        x.segment(psiOffset(), N), mesh_);
+    const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
+        ? detail::computeNodeElectricFields(x.segment(psiOffset(), N), mesh_)
+        : std::vector<Real>{};
 
     VectorXd r = VectorXd::Zero(3 * N);
     std::vector<bool> hasElectronContribution(static_cast<std::size_t>(N), false);
@@ -285,12 +271,14 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             }
         }
 
-        const Real G = impactIonization_->generationRate(nodeElectricFields[i], n(ii), p(ii));
-        if (G != 0.0) {
-            r(phinOffset() + ii) -= G * vol[i];
-            r(phipOffset() + ii) -= G * vol[i];
-            hasElectronContribution[static_cast<std::size_t>(ii)] = true;
-            hasHoleContribution[static_cast<std::size_t>(ii)] = true;
+        if (impactIonizationEnabled_) {
+            const Real G = impactIonization_->generationRate(nodeElectricFields[i], n(ii), p(ii));
+            if (G != 0.0) {
+                r(phinOffset() + ii) -= G * vol[i];
+                r(phipOffset() + ii) -= G * vol[i];
+                hasElectronContribution[static_cast<std::size_t>(ii)] = true;
+                hasHoleContribution[static_cast<std::size_t>(ii)] = true;
+            }
         }
     }
 
@@ -332,8 +320,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
-    const std::vector<Real> nodeElectricFields = computeNodeElectricFields(
-        x.segment(psiOffset(), N), mesh_);
+    const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
+        ? detail::computeNodeElectricFields(x.segment(psiOffset(), N), mesh_)
+        : std::vector<Real>{};
 
     std::vector<bool> constrainedRows(static_cast<std::size_t>(3 * N), false);
     for (const auto& [node, value] : bcs.psi) {
@@ -495,28 +484,30 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             }
         }
 
-        const Real alphaN = impactIonization_->electronCoefficient(nodeElectricFields[i]);
-        const Real alphaP = impactIonization_->holeCoefficient(nodeElectricFields[i]);
-        const Real G = impactIonization_->generationRate(nodeElectricFields[i], n(ii), p(ii));
-        if (G != 0.0) {
-            // Local carrier-density derivatives are included in the analytic Jacobian.
-            // Electric-field derivatives are intentionally omitted because the nodal
-            // field uses a max-edge magnitude; finite-difference Jacobian remains
-            // available for exact derivatives of configured avalanche runs.
-            const Real velocity = G / (alphaN * n(ii) + alphaP * p(ii));
-            const Real dG_dpsi = velocity * (alphaN * dni_dpsi + alphaP * dpi_dpsi);
-            const Real dG_dphin = velocity * alphaN * dni_dphin;
-            const Real dG_dphip = velocity * alphaP * dpi_dphip;
+        if (impactIonizationEnabled_) {
+            const Real alphaN = impactIonization_->electronCoefficient(nodeElectricFields[i]);
+            const Real alphaP = impactIonization_->holeCoefficient(nodeElectricFields[i]);
+            const Real G = impactIonization_->generationRate(nodeElectricFields[i], n(ii), p(ii));
+            if (G != 0.0) {
+                // Local carrier-density derivatives are included in the analytic Jacobian.
+                // Electric-field derivatives are intentionally omitted because the nodal
+                // field uses a max-edge magnitude; finite-difference Jacobian remains
+                // available for exact derivatives of configured avalanche runs.
+                const Real velocity = G / (alphaN * n(ii) + alphaP * p(ii));
+                const Real dG_dpsi = velocity * (alphaN * dni_dpsi + alphaP * dpi_dpsi);
+                const Real dG_dphin = velocity * alphaN * dni_dphin;
+                const Real dG_dphip = velocity * alphaP * dpi_dphip;
 
-            add(phinOffset() + ii, psiOffset() + ii, -dG_dpsi * vol_[i]);
-            add(phinOffset() + ii, phinOffset() + ii, -dG_dphin * vol_[i]);
-            add(phinOffset() + ii, phipOffset() + ii, -dG_dphip * vol_[i]);
-            add(phipOffset() + ii, psiOffset() + ii, -dG_dpsi * vol_[i]);
-            add(phipOffset() + ii, phinOffset() + ii, -dG_dphin * vol_[i]);
-            add(phipOffset() + ii, phipOffset() + ii, -dG_dphip * vol_[i]);
+                add(phinOffset() + ii, psiOffset() + ii, -dG_dpsi * vol_[i]);
+                add(phinOffset() + ii, phinOffset() + ii, -dG_dphin * vol_[i]);
+                add(phinOffset() + ii, phipOffset() + ii, -dG_dphip * vol_[i]);
+                add(phipOffset() + ii, psiOffset() + ii, -dG_dpsi * vol_[i]);
+                add(phipOffset() + ii, phinOffset() + ii, -dG_dphin * vol_[i]);
+                add(phipOffset() + ii, phipOffset() + ii, -dG_dphip * vol_[i]);
 
-            hasElectronContribution[static_cast<std::size_t>(ii)] = true;
-            hasHoleContribution[static_cast<std::size_t>(ii)] = true;
+                hasElectronContribution[static_cast<std::size_t>(ii)] = true;
+                hasHoleContribution[static_cast<std::size_t>(ii)] = true;
+            }
         }
     }
 

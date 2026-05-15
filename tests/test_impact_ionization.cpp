@@ -10,6 +10,7 @@
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <unordered_map>
@@ -144,6 +145,64 @@ TEST_CASE("Coupled DD residual includes impact-ionization generation", "[impact]
     REQUIRE(sawGeneration);
 }
 
+TEST_CASE("Coupled DD analytic avalanche Jacobian matches carrier finite differences", "[impact][newton]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    CoupledDDState state;
+    state.psi = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.phin = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), 0.01, -0.005);
+    state.phip = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.008, 0.006);
+    state.psi(1) = 0.1;
+    state.psi(2) = 0.1;
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0;
+    impactConfig.carrierVelocity = 1.0;
+
+    CoupledDDAssembler assembler(
+        mesh,
+        matdb,
+        doping,
+        Vt,
+        mobilityModelConfig("constant"),
+        recombinationModelConfig({"none"}),
+        BandgapNarrowingConfig{},
+        impactConfig);
+
+    const VectorXd x = assembler.pack(state);
+    const CoupledDDBoundaryConditions bcs;
+    const SparseMatrixd analytic = assembler.assembleJacobian(x, bcs);
+    const SparseMatrixd finiteDifference = assembler.finiteDifferenceJacobian(x, bcs, 1.0e-7);
+    const Eigen::MatrixXd denseAnalytic = Eigen::MatrixXd(analytic);
+    const Eigen::MatrixXd denseFiniteDifference = Eigen::MatrixXd(finiteDifference);
+
+    const int N = static_cast<int>(mesh.numNodes());
+    Real maxAbsDiff = 0.0;
+    Real maxAbsRef = 0.0;
+    for (int row = 0; row < 3 * N; ++row) {
+        for (int col = N; col < 3 * N; ++col) {
+            maxAbsDiff = std::max(
+                maxAbsDiff,
+                std::abs(denseAnalytic(row, col) - denseFiniteDifference(row, col)));
+            maxAbsRef = std::max(maxAbsRef, std::abs(denseFiniteDifference(row, col)));
+        }
+    }
+
+    REQUIRE(maxAbsDiff / std::max<Real>(1.0, maxAbsRef) < 5.0e-5);
+}
+
 TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]")
 {
     const GummelConfig cfg = gummelConfigFromJson(nlohmann::json{
@@ -152,8 +211,25 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
     REQUIRE(cfg.impactIonization.model == "selberherr");
     REQUIRE(cfg.impactIonization.electronA == Catch::Approx(1.0e6));
 
-    const NewtonConfig ncfg = newtonConfigFromJson(nlohmann::json{
+    const NewtonConfig stringCfg = newtonConfigFromJson(nlohmann::json{
         {"impact_ionization", "selberherr"}
     });
-    REQUIRE(ncfg.impactIonization.model == "selberherr");
+    REQUIRE(stringCfg.impactIonization.model == "selberherr");
+
+    const NewtonConfig objectCfg = newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "selberherr"},
+            {"electron_A_m_inv", 2.0e6},
+            {"electron_B_V_m", 3.0e7},
+            {"hole_A_m_inv", 4.0e6},
+            {"hole_B_V_m", 5.0e7},
+            {"carrier_velocity_m_s", 6.0e4},
+        }}
+    });
+    REQUIRE(objectCfg.impactIonization.model == "selberherr");
+    REQUIRE(objectCfg.impactIonization.electronA == Catch::Approx(2.0e6));
+    REQUIRE(objectCfg.impactIonization.electronB == Catch::Approx(3.0e7));
+    REQUIRE(objectCfg.impactIonization.holeA == Catch::Approx(4.0e6));
+    REQUIRE(objectCfg.impactIonization.holeB == Catch::Approx(5.0e7));
+    REQUIRE(objectCfg.impactIonization.carrierVelocity == Catch::Approx(6.0e4));
 }
