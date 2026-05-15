@@ -60,7 +60,9 @@
       "expected_rows": 3,
       "max_abs_attempted_step": 0.05,
       "max_abs_accepted_step": 0.05,
-      "max_retry_count": 0
+      "max_retry_count": 0,
+      "min_converged_rows": 3,
+      "require_monotone_abs_current": true
     },
     "mos": {
       "device": "pmos",
