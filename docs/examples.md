@@ -112,7 +112,9 @@ are CI smoke cases rather than calibrated diode models.
 - `simulation_cv.json`: reverse/anode quasi-static junction capacitance from
   0 V to -0.2 V using terminal-charge differencing.
 - `simulation_bv.json`: reverse/anode sweep from 0 V to -0.5 V with maximum
-  electric-field and current-jump diagnostic columns.
+  electric-field and current-jump diagnostic columns, plus
+  last-stable/failed-bias diagnostics when non-convergence is treated as
+  breakdown.
 - `newton_simulation.json`: single equilibrium Newton solve used by the CLI
   Newton smoke test.
 
@@ -146,7 +148,11 @@ Gummel sweep path.
 - `examples/pn_diode/outputs/pn_cv.csv`: quasi-static charge and capacitance
   columns in addition to the common sweep diagnostics.
 - `examples/pn_diode/outputs/pn_bv.csv`: maximum electric field, current-jump
-  ratio, breakdown flag, breakdown voltage, and criterion columns.
+  ratio, breakdown flag, breakdown voltage, criterion, `last_stable_bias`,
+  `failed_bias`, and `failure_reason` columns. If `breakdown.non_convergence`
+  is enabled and a reverse-bias point cannot be continued, the diagnostic row
+  reports `criterion=last_stable_before_nonconvergence` and uses the last
+  converged bias as the reported breakdown voltage.
 - `examples/pn_diode/outputs/pn_sweep_*.vtk` and
   `examples/pn_diode/outputs/pn_bv_sweep_*.vtk`: potential, quasi-Fermi
   levels, carrier densities, and net doping snapshots for converged points.

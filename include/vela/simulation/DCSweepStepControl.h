@@ -2,6 +2,7 @@
 
 #include "vela/core/Types.h"
 #include <functional>
+#include <string>
 
 namespace vela::detail {
 
@@ -23,6 +24,7 @@ struct DCSweepStepControlEvent {
     Real attemptedStep = 0.0;
     Real acceptedStep = 0.0;
     int retryCount = 0;
+    std::string failureReason;
 };
 
 using DCSweepStepAttempt =

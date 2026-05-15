@@ -265,6 +265,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         header.push_back("breakdown_detected");
         header.push_back("breakdown_voltage");
         header.push_back("criterion");
+        header.push_back("last_stable_bias");
+        header.push_back("failed_bias");
+        header.push_back("failure_reason");
     }
     csv.writeHeader(header);
 
@@ -299,8 +302,17 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
     };
 
+    auto lastConvergedPoint = [&]() -> const DCSweepPoint* {
+        for (auto it = points.rbegin(); it != points.rend(); ++it) {
+            if (it->converged)
+                return &(*it);
+        }
+        return nullptr;
+    };
+
     auto recordPoint = [&](Real voltage, const DDSolution& sol, bool converged,
-                           Real attemptedStep, Real acceptedStep, int retryCount) {
+                           Real attemptedStep, Real acceptedStep, int retryCount,
+                           const std::string& failureReason = std::string()) {
         ContactCurrentResult current{};
         if (converged)
             current = contactCurrent.compute(sol, sweep.currentContact);
@@ -348,10 +360,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 point.breakdownCriterion = "current_jump";
             }
         } else if (!converged && sweep.mode == CurveSweepMode::BVReverse &&
-                   sweep.breakdown.nonConvergenceBreakdown && !points.empty()) {
-            point.breakdownDetected = true;
-            point.breakdownVoltage = points.back().bias;
-            point.breakdownCriterion = "last_stable_before_nonconvergence";
+                   sweep.breakdown.nonConvergenceBreakdown) {
+            point.failed = true;
+            point.failedBias = voltage;
+            point.failureReason = failureReason.empty() ? "non_convergence" : failureReason;
+            if (const DCSweepPoint* stable = lastConvergedPoint()) {
+                point.lastStableBias = stable->bias;
+                point.breakdownDetected = true;
+                point.breakdownVoltage = point.lastStableBias;
+                point.breakdownCriterion = "last_stable_before_nonconvergence";
+            }
         }
         std::vector<std::string> row = {
             toString(sweep.mode),
@@ -374,6 +392,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             row.push_back(point.breakdownDetected ? "1" : "0");
             row.push_back(formatReal(point.breakdownVoltage));
             row.push_back(point.breakdownCriterion);
+            row.push_back(formatReal(point.lastStableBias));
+            row.push_back(formatReal(point.failedBias));
+            row.push_back(point.failureReason);
         }
         csv.writeRow(row);
 
@@ -385,13 +406,28 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         points.push_back(std::move(point));
     };
 
-    auto [startOk, startSol] = solvePoint(sweep.start, nullptr);
-    recordPoint(sweep.start, startSol, startOk, 0.0, 0.0, 0);
+    bool startOk = false;
+    DDSolution startSol;
+    std::string startFailureReason;
+    try {
+        auto startAttempt = solvePoint(sweep.start, nullptr);
+        startOk = startAttempt.first;
+        startSol = std::move(startAttempt.second);
+        if (!startOk)
+            startFailureReason = "non_convergence";
+    } catch (const std::exception&) {
+        if (sweep.mode == CurveSweepMode::BVReverse && sweep.breakdown.nonConvergenceBreakdown)
+            startFailureReason = "solver_exception";
+        else
+            throw;
+    }
+    recordPoint(sweep.start, startSol, startOk, 0.0, 0.0, 0, startFailureReason);
     if (!startOk)
         return DCSweepResult{std::move(mesh), std::move(points)};
     previousSolution = std::move(startSol);
 
     DDSolution lastStepSolution;
+    std::string lastStepFailureReason;
     detail::DCSweepStepControlConfig stepControl;
     stepControl.start = sweep.start;
     stepControl.stop = sweep.stop;
@@ -406,13 +442,29 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     detail::runDCSweepStepControl(
         stepControl,
         [&](Real voltage, Real, int) {
-            auto [ok, sol] = solvePoint(voltage, &previousSolution);
-            lastStepSolution = std::move(sol);
-            return ok;
+            try {
+                auto [ok, sol] = solvePoint(voltage, &previousSolution);
+                lastStepSolution = std::move(sol);
+                lastStepFailureReason = ok ? std::string() : "non_convergence";
+                return ok;
+            } catch (const std::exception&) {
+                if (sweep.mode == CurveSweepMode::BVReverse &&
+                    sweep.breakdown.nonConvergenceBreakdown) {
+                    lastStepSolution = DDSolution{};
+                    lastStepFailureReason = "solver_exception";
+                    return false;
+                }
+                throw;
+            }
         },
         [&](const detail::DCSweepStepControlEvent& event) {
+            std::string failureReason;
+            if (!event.converged)
+                failureReason = (lastStepFailureReason == "solver_exception")
+                    ? lastStepFailureReason
+                    : event.failureReason;
             recordPoint(event.voltage, lastStepSolution, event.converged,
-                        event.attemptedStep, event.acceptedStep, event.retryCount);
+                        event.attemptedStep, event.acceptedStep, event.retryCount, failureReason);
             if (event.converged) {
                 previousSolution = std::move(lastStepSolution);
             }
@@ -514,21 +566,27 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
                 return true;
             }
 
-            if (retryCount >= cfg.maxRetries)
-                break;
+            std::string failureReason;
+            if (retryCount >= cfg.maxRetries) {
+                failureReason = "non_convergence";
+                record({lastCandidate, false, lastAttempted, 0.0, retryCount, failureReason});
+                adaptiveStep = std::max(cfg.minStep,
+                                        std::min(cfg.maxStep, std::abs(lastAttempted) * cfg.shrinkFactor));
+                return false;
+            }
 
             const Real shrunken = stepMagnitude * cfg.shrinkFactor;
-            if (shrunken < cfg.minStep - std::numeric_limits<Real>::epsilon())
-                break;
+            if (shrunken < cfg.minStep - std::numeric_limits<Real>::epsilon()) {
+                failureReason = "min_step_exhausted";
+                record({lastCandidate, false, lastAttempted, 0.0, retryCount, failureReason});
+                adaptiveStep = std::max(cfg.minStep,
+                                        std::min(cfg.maxStep, std::abs(lastAttempted) * cfg.shrinkFactor));
+                return false;
+            }
 
             trialStep = shrunken;
             ++retryCount;
         }
-
-        record({lastCandidate, false, lastAttempted, 0.0, retryCount});
-        adaptiveStep = std::max(cfg.minStep,
-                                std::min(cfg.maxStep, std::abs(lastAttempted) * cfg.shrinkFactor));
-        return false;
     };
 
     bool blockedByFailedStep = false;

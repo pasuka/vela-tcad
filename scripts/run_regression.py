@@ -313,7 +313,8 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
                 raise AssertionError(f"CV sweep CSV is missing required column '{column}'")
     if mode == "bv_reverse":
         for column in ("max_electric_field_V_per_m", "current_jump_ratio",
-                       "breakdown_detected", "breakdown_voltage", "criterion"):
+                       "breakdown_detected", "breakdown_voltage", "criterion",
+                       "last_stable_bias", "failed_bias", "failure_reason"):
             if column not in rows[0]:
                 raise AssertionError(f"BV sweep CSV is missing required column '{column}'")
 
@@ -359,6 +360,21 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
                 raise AssertionError(f"BV sweep row {row_index} has negative current jump ratio")
             if row.get("breakdown_detected") == "1" and not row.get("criterion"):
                 raise AssertionError(f"BV sweep row {row_index} detected breakdown without a criterion")
+            if (row.get("breakdown_detected") == "1"
+                    and row.get("criterion") == "last_stable_before_nonconvergence"):
+                last_stable = parse_finite_float(
+                    row, "last_stable_bias", "BV sweep", row_index)
+                failed_bias = parse_finite_float(
+                    row, "failed_bias", "BV sweep", row_index)
+                if not row.get("failure_reason"):
+                    raise AssertionError(
+                        f"BV sweep row {row_index} has no failure_reason for non-convergence breakdown")
+                stop = float(sweep_cfg["stop"])
+                direction = 1.0 if stop >= last_stable else -1.0
+                if direction * (failed_bias - last_stable) <= 0.0:
+                    raise AssertionError(
+                        f"BV sweep row {row_index} failed_bias {failed_bias} is not beyond "
+                        f"last_stable_bias {last_stable} toward stop {stop}")
         if attempted > max_abs_attempted + 1.0e-12:
             raise AssertionError(
                 f"attempted_step {attempted} exceeds regression limit {max_abs_attempted}")

@@ -197,6 +197,7 @@ catch_discover_tests(test_impact_ionization)
 catch_discover_tests(test_recombination)
 catch_discover_tests(test_line_search_backtrack_failure)
 catch_discover_tests(test_dc_sweep)
+add_test(NAME dc_sweep COMMAND test_dc_sweep [dc_sweep])
 
 add_test(NAME regression
     COMMAND ${Python3_EXECUTABLE}
