@@ -51,6 +51,7 @@
     "declared_converged": true,
     "dc_sweep": {
       "expected_rows": 3,
+      "require_monotone_max_field": true,
       "max_abs_attempted_step": 0.25,
       "max_abs_accepted_step": 0.25,
       "max_retry_count": 0

@@ -291,6 +291,11 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     max_abs_attempted = float(reg.get("max_abs_attempted_step", math.inf))
     max_abs_accepted = float(reg.get("max_abs_accepted_step", math.inf))
     max_retry = int(reg.get("max_retry_count", 0))
+    require_monotone_max_field = bool(reg.get("require_monotone_max_field", False))
+    max_field_abs_tolerance = float(reg.get("max_field_monotone_abs_tolerance", 1.0e-9))
+    max_field_rel_tolerance = float(reg.get("max_field_monotone_rel_tolerance", 1.0e-12))
+    min_max_field = reg.get("min_max_electric_field_V_per_m")
+    max_max_field = reg.get("max_max_electric_field_V_per_m")
     allow_zero_capacitance = bool(reg.get("allow_zero_capacitance", False))
     expected_zero_capacitance_rows = reg.get("expected_zero_capacitance_rows")
     min_nonzero_capacitance_rows = int(reg.get(
@@ -321,6 +326,7 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     max_attempted_seen = 0.0
     max_accepted_seen = 0.0
     max_retry_seen = 0
+    max_fields: list[float] = []
     nonzero_capacitance_rows = 0
     zero_capacitance_rows = 0
     for row_index, row in enumerate(rows, start=1):
@@ -351,6 +357,15 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
             max_field = parse_finite_float(row, "max_electric_field_V_per_m", "BV sweep", row_index)
             if max_field < 0.0:
                 raise AssertionError(f"BV sweep row {row_index} has negative max electric field")
+            if min_max_field is not None and max_field < float(min_max_field):
+                raise AssertionError(
+                    f"BV sweep row {row_index} max_electric_field_V_per_m {max_field} "
+                    f"is below regression minimum {min_max_field}")
+            if max_max_field is not None and max_field > float(max_max_field):
+                raise AssertionError(
+                    f"BV sweep row {row_index} max_electric_field_V_per_m {max_field} "
+                    f"exceeds regression maximum {max_max_field}")
+            max_fields.append(max_field)
             try:
                 jump = float(row["current_jump_ratio"])
             except (KeyError, ValueError) as exc:
@@ -384,6 +399,21 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
         if retry > max_retry:
             raise AssertionError(f"retry_count {retry} exceeds regression limit {max_retry}")
 
+    max_field_trend_checked = False
+    if mode == "bv_reverse" and require_monotone_max_field:
+        if not max_fields:
+            raise AssertionError("BV max electric field monotonic regression requested but no field values were read")
+        for idx in range(1, len(max_fields)):
+            previous = max_fields[idx - 1]
+            current = max_fields[idx]
+            tolerance = max_field_abs_tolerance + max_field_rel_tolerance * max(abs(previous), abs(current), 1.0)
+            if current + tolerance < previous:
+                raise AssertionError(
+                    "BV max_electric_field_V_per_m is not non-decreasing along the sweep: "
+                    f"row {idx} value {previous} > row {idx + 1} value {current} "
+                    f"beyond tolerance {tolerance}; all values: {max_fields}")
+        max_field_trend_checked = True
+
     if mode == "cv_quasistatic":
         if nonzero_capacitance_rows < min_nonzero_capacitance_rows:
             raise AssertionError(
@@ -397,12 +427,16 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
                 f"{zero_capacitance_rows} zero differential capacitance row(s), "
                 f"expected {expected_zero_capacitance_rows}")
 
-    return {
+    result = {
         "rows": len(rows),
         "max_abs_attempted_step": max_attempted_seen,
         "max_abs_accepted_step": max_accepted_seen,
         "max_retry_count": max_retry_seen,
     }
+    if mode == "bv_reverse":
+        result["max_electric_field_V_per_m"] = max_fields
+        result["max_field_trend_checked"] = max_field_trend_checked
+    return result
 
 
 def check_iv_trend(example_dir: Path) -> dict[str, Any]:

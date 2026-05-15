@@ -50,6 +50,7 @@ add_library(vela_core STATIC
     src/solver/LinearSolver.cpp
     src/solver/GummelSolver.cpp
     src/post/ContactCurrent.cpp
+    src/post/ElectricFieldDiagnostics.cpp
     src/post/TerminalCharge.cpp
     src/solver/NewtonSolver.cpp
     src/equation/CoupledDDAssembler.cpp
@@ -186,6 +187,9 @@ target_link_libraries(test_line_search_backtrack_failure PRIVATE vela_core Catch
 
 add_executable(test_dc_sweep tests/test_dc_sweep.cpp)
 target_link_libraries(test_dc_sweep PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_electric_field_diagnostics tests/test_electric_field_diagnostics.cpp)
+target_link_libraries(test_electric_field_diagnostics PRIVATE vela_core Catch2::Catch2WithMain)
 target_compile_definitions(test_dc_sweep PRIVATE VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(Catch)
@@ -211,6 +215,8 @@ catch_discover_tests(test_recombination)
 catch_discover_tests(test_line_search_backtrack_failure)
 catch_discover_tests(test_dc_sweep)
 add_test(NAME dc_sweep COMMAND test_dc_sweep [dc_sweep])
+catch_discover_tests(test_electric_field_diagnostics)
+add_test(NAME electric_field_diagnostics COMMAND test_electric_field_diagnostics [electric_field])
 
 add_test(NAME regression
     COMMAND ${Python3_EXECUTABLE}
