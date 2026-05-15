@@ -209,7 +209,16 @@ def check_csv_converged(example_dir: Path) -> None:
     if declared:
         bad = [row for row in rows if row.get("converged") != "1"]
         if bad:
-            raise AssertionError(f"Non-converged declared sweep rows: {bad}")
+            diagnostics = [
+                {
+                    "bias_V": row.get("bias_V"),
+                    "failure_reason": row.get("failure_reason", ""),
+                    "validation_diagnostics": row.get("validation_diagnostics", ""),
+                }
+                for row in bad
+            ]
+            raise AssertionError(
+                f"Non-converged declared sweep rows: {bad}; diagnostics: {diagnostics}")
 
 
 def expected_sweep_voltages(sweep: dict[str, Any]) -> list[float]:
