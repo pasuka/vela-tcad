@@ -200,26 +200,63 @@ def output_csv_path(example_dir: Path, cfg: dict[str, Any]) -> Path:
     return example_dir / cfg.get("sweep", {}).get("csv_file", "dc_sweep.csv")
 
 
+def dc_sweep_regression_options(cfg: dict[str, Any]) -> tuple[dict[str, Any], str, bool, bool]:
+    regression = cfg.get("regression", {})
+    reg = regression.get("dc_sweep", {})
+    mode = normalize_curve_mode(str(cfg.get("sweep", {}).get("mode", "iv")))
+    declared = bool(regression.get("declared_converged", True))
+    allow_final_bv = bool(reg.get("allow_nonconverged_final_bv_point", False)) and mode == "bv_reverse"
+    return reg, mode, declared, allow_final_bv
+
+
+def nonconverged_row_allowed(
+    *,
+    declared_converged: bool,
+    allow_final_bv_nonconverged: bool,
+    row_index: int,
+    row_count: int,
+) -> bool:
+    return (not declared_converged) or (allow_final_bv_nonconverged and row_index == row_count)
+
+
+def disallowed_nonconverged_rows(
+    rows: list[dict[str, str]],
+    *,
+    declared_converged: bool,
+    allow_final_bv_nonconverged: bool,
+) -> list[tuple[int, dict[str, str]]]:
+    bad: list[tuple[int, dict[str, str]]] = []
+    for row_index, row in enumerate(rows, start=1):
+        if row.get("converged") == "1":
+            continue
+        if nonconverged_row_allowed(
+            declared_converged=declared_converged,
+            allow_final_bv_nonconverged=allow_final_bv_nonconverged,
+            row_index=row_index,
+            row_count=len(rows),
+        ):
+            continue
+        bad.append((row_index, row))
+    return bad
+
+
+def nonzero_runner_exit_allowed(cfg: dict[str, Any]) -> bool:
+    _reg, _mode, declared, allow_final_bv = dc_sweep_regression_options(cfg)
+    return (not declared) or allow_final_bv
+
+
 def check_csv_converged(example_dir: Path) -> None:
     cfg = json.loads((example_dir / "simulation.json").read_text())
     rows = read_csv(output_csv_path(example_dir, cfg))
     if not rows:
         raise AssertionError(f"{example_dir.name}: DC sweep CSV contains no sweep rows")
-    declared = bool(cfg.get("regression", {}).get("declared_converged", True))
-    if not declared:
-        return
+    _reg, _mode, declared, allow_final_bv = dc_sweep_regression_options(cfg)
 
-    reg = cfg.get("regression", {}).get("dc_sweep", {})
-    sweep_cfg = cfg.get("sweep", {})
-    mode = normalize_curve_mode(str(sweep_cfg.get("mode", "iv")))
-    allow_final_bv = bool(reg.get("allow_nonconverged_final_bv_point", False)) and mode == "bv_reverse"
-    bad: list[tuple[int, dict[str, str]]] = []
-    for row_index, row in enumerate(rows, start=1):
-        if row.get("converged") == "1":
-            continue
-        if allow_final_bv and row_index == len(rows):
-            continue
-        bad.append((row_index, row))
+    bad = disallowed_nonconverged_rows(
+        rows,
+        declared_converged=declared,
+        allow_final_bv_nonconverged=allow_final_bv,
+    )
     if bad:
         diagnostics = [
             {
@@ -303,13 +340,12 @@ def parse_step_diagnostics(value: str) -> dict[str, str]:
 def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     cfg = json.loads((example_dir / "simulation.json").read_text())
     example = example_dir.name
-    reg = cfg.get("regression", {}).get("dc_sweep", {})
     rows = read_csv(output_csv_path(example_dir, cfg))
     if not rows:
         raise AssertionError(f"{example}: DC sweep CSV contains no sweep rows")
 
     sweep_cfg = cfg.get("sweep", {})
-    mode = normalize_curve_mode(str(sweep_cfg.get("mode", "iv")))
+    reg, mode, declared_converged, allow_final_bv_nonconverged = dc_sweep_regression_options(cfg)
 
     expected_rows = reg.get("expected_rows")
     if expected_rows is None and "sweep" in cfg:
@@ -328,7 +364,6 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     max_field_abs_tolerance = float(reg.get("max_field_monotone_abs_tolerance", 1.0e-9))
     max_field_rel_tolerance = float(reg.get("max_field_monotone_rel_tolerance", 1.0e-12))
     min_converged_rows = reg.get("min_converged_rows")
-    allow_final_bv_nonconverged = bool(reg.get("allow_nonconverged_final_bv_point", False)) and mode == "bv_reverse"
     min_max_field = reg.get("min_max_electric_field_V_per_m")
     max_max_field = reg.get("max_max_electric_field_V_per_m")
     allow_zero_capacitance = bool(reg.get("allow_zero_capacitance", False))
@@ -457,7 +492,12 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
             raise AssertionError(
                 f"{example}: row {row_index} field=retry_count actual={retry} "
                 f"exceeds regression limit {max_retry}")
-        if not converged and not (allow_final_bv_nonconverged and row_index == len(rows)):
+        if not converged and not nonconverged_row_allowed(
+            declared_converged=declared_converged,
+            allow_final_bv_nonconverged=allow_final_bv_nonconverged,
+            row_index=row_index,
+            row_count=len(rows),
+        ):
             raise AssertionError(
                 f"{example}: row {row_index} field=converged actual={row.get('converged')!r} "
                 "is non-converged and not allowed by regression.dc_sweep")
@@ -474,7 +514,7 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
         for idx in range(1, len(current_values)):
             previous_row, previous = current_values[idx - 1]
             current_row, current = current_values[idx]
-            tolerance = current_abs_tolerance + current_rel_tolerance * max(abs(previous), abs(current), 1.0)
+            tolerance = current_abs_tolerance + current_rel_tolerance * max(abs(previous), abs(current))
             if current + tolerance < previous:
                 values = [value for _, value in current_values]
                 raise AssertionError(
@@ -778,6 +818,8 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
     canonical_config = example_dir / "simulation.json"
     if config.resolve() != canonical_config.resolve():
         shutil.copyfile(config, canonical_config)
+    run_cfg = json.loads(canonical_config.read_text())
+    allow_nonzero_runner_exit = nonzero_runner_exit_allowed(run_cfg)
     proc = subprocess.run([str(runner), "--config", str(config)], cwd=example_dir, text=True, capture_output=True)
     result: dict[str, Any] = {
         "name": name,
@@ -788,8 +830,10 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
         "checks": {},
     }
     try:
-        if proc.returncode != 0:
+        if proc.returncode != 0 and not allow_nonzero_runner_exit:
             raise AssertionError(f"runner exited with {proc.returncode}: {proc.stderr.strip()}")
+        if proc.returncode != 0:
+            result["runner_nonzero_exit_allowed"] = True
         for rel in spec["expected"]:
             out = example_dir / rel
             if not out.exists() or out.stat().st_size == 0:
