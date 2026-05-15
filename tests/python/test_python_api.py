@@ -80,6 +80,36 @@ class PythonApiTest(unittest.TestCase):
         path.write_text(json.dumps(cfg), encoding="utf-8")
         return path
 
+    def relative_sweep_config(self):
+        (self.tmpdir / "outputs").mkdir(exist_ok=True)
+        return {
+            "mesh_file": "mesh.json",
+            "output_csv": "outputs/mapping_iv.csv",
+            "doping": [
+                {"region": "n_region", "donors": 1.0e23, "acceptors": 0.0},
+                {"region": "p_region", "donors": 0.0, "acceptors": 1.0e23},
+            ],
+            "contacts": [
+                {"name": "anode", "bias": 0.0},
+                {"name": "cathode", "bias": 0.0},
+            ],
+            "solver": {
+                "max_iter": 80,
+                "reltol": 1.0e-5,
+                "damping_psi": 0.5,
+            },
+            "sweep": {
+                "mode": "iv",
+                "contact": "anode",
+                "start": 0.0,
+                "stop": 0.25,
+                "step": 0.25,
+                "current_contact": "anode",
+                "write_vtk": True,
+                "vtk_prefix": "outputs/mapping_iv_sweep",
+            },
+        }
+
     def test_import_and_run_api(self):
         mesh = vela.load_mesh(str(self.mesh_file))
         self.assertEqual(mesh.num_nodes(), 4)
@@ -129,6 +159,18 @@ class PythonApiTest(unittest.TestCase):
         self.assertTrue(any(point["breakdown_detected"] for point in bv_points))
         self.assertTrue(Path(bv_points[0]["output_csv"]).exists())
         self.assertTrue(Path(bv_points[0]["output_vtk"]).exists())
+
+        old_cwd = Path.cwd()
+        try:
+            os.chdir(self.tmpdir)
+            mapping_points = vela.run_iv_curve(self.relative_sweep_config())
+        finally:
+            os.chdir(old_cwd)
+        self.assertEqual(len(mapping_points), 2)
+        self.assertEqual(mapping_points[0]["output_csv"], str(self.tmpdir / "outputs" / "mapping_iv.csv"))
+        self.assertEqual(mapping_points[0]["output_vtk"], str(self.tmpdir / "outputs" / "mapping_iv_sweep_0000_0V.vtk"))
+        self.assertTrue(Path(mapping_points[0]["output_csv"]).exists())
+        self.assertTrue(Path(mapping_points[0]["output_vtk"]).exists())
 
 
 if __name__ == "__main__":

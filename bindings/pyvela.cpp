@@ -12,9 +12,7 @@
 
 #include <filesystem>
 #include <fstream>
-#include <iomanip>
 #include <memory>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -64,14 +62,6 @@ void rememberMesh(std::shared_ptr<vela::DeviceMesh> mesh)
     LastResult& result = lastResult();
     result.mesh = std::move(mesh);
     result.nodeScalars.clear();
-}
-
-std::string vtkFilename(const std::string& prefix, int index, vela::Real voltage)
-{
-    std::ostringstream oss;
-    oss << prefix << "_" << std::setw(4) << std::setfill('0') << index
-        << "_" << std::setprecision(6) << std::defaultfloat << voltage << "V.vtk";
-    return oss.str();
 }
 
 std::filesystem::path configDirectory(const std::string& configFile)
@@ -138,7 +128,6 @@ std::vector<py::dict> sweepPointsToPython(const std::vector<vela::DCSweepPoint>&
 {
     std::vector<py::dict> out;
     out.reserve(points.size());
-    int vtkIndex = 0;
     for (const vela::DCSweepPoint& point : points) {
         py::dict row;
         row["curve_type"] = metadata.curveType;
@@ -163,16 +152,12 @@ std::vector<py::dict> sweepPointsToPython(const std::vector<vela::DCSweepPoint>&
         row["breakdown_detected"] = point.breakdownDetected;
         row["breakdown_voltage"] = point.breakdownVoltage;
         row["breakdown_criterion"] = point.breakdownCriterion;
-        row["output_csv"] = metadata.outputCsv;
+        row["output_csv"] = point.outputCsv.empty() ? metadata.outputCsv : point.outputCsv;
+        row["output_vtk"] = point.outputVtk;
         py::list outputFiles;
-        outputFiles.append(metadata.outputCsv);
-        if (metadata.writeVtk && point.converged) {
-            row["output_vtk"] = vtkFilename(metadata.vtkPrefix, vtkIndex, point.voltage);
-            outputFiles.append(row["output_vtk"]);
-            ++vtkIndex;
-        } else {
-            row["output_vtk"] = "";
-        }
+        outputFiles.append(row["output_csv"]);
+        if (!point.outputVtk.empty())
+            outputFiles.append(point.outputVtk);
         row["output_files"] = std::move(outputFiles);
         out.push_back(std::move(row));
     }
