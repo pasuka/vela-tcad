@@ -3,10 +3,12 @@
 #include <nlohmann/json.hpp>
 
 #include "vela/material/MaterialDatabase.h"
+#include "vela/equation/CoupledDDAssembler.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/ImpactIonizationModel.h"
 #include "vela/solver/GummelSolver.h"
+#include "vela/solver/NewtonSolver.h"
 
 #include <cmath>
 #include <memory>
@@ -82,6 +84,66 @@ TEST_CASE("Gummel reverse bias BV regression runs with impact ionization", "[imp
     }
 }
 
+
+TEST_CASE("Coupled DD residual includes impact-ionization generation", "[impact][newton]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    CoupledDDState state;
+    state.psi = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.phin = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.phip = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.psi(1) = 1.0;
+    state.psi(2) = 1.0;
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const RecombinationModelConfig recombinationConfig = recombinationModelConfig({"none"});
+
+    CoupledDDAssembler noImpact(
+        mesh, matdb, doping, Vt, mobilityConfig, recombinationConfig);
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0;
+    impactConfig.carrierVelocity = 1.0;
+    CoupledDDAssembler withImpact(
+        mesh,
+        matdb,
+        doping,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        BandgapNarrowingConfig{},
+        impactConfig);
+
+    const VectorXd x = noImpact.pack(state);
+    const CoupledDDBoundaryConditions bcs;
+    const VectorXd r0 = noImpact.residual(x, bcs);
+    const VectorXd r1 = withImpact.residual(x, bcs);
+
+    const int phinOffset = static_cast<int>(mesh.numNodes());
+    const int phipOffset = 2 * static_cast<int>(mesh.numNodes());
+    bool sawGeneration = false;
+    for (int i = 0; i < static_cast<int>(mesh.numNodes()); ++i) {
+        const Real electronDelta = r1(phinOffset + i) - r0(phinOffset + i);
+        const Real holeDelta = r1(phipOffset + i) - r0(phipOffset + i);
+        REQUIRE(electronDelta <= 0.0);
+        REQUIRE(holeDelta <= 0.0);
+        sawGeneration = sawGeneration || electronDelta < 0.0 || holeDelta < 0.0;
+    }
+    REQUIRE(sawGeneration);
+}
+
 TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]")
 {
     const GummelConfig cfg = gummelConfigFromJson(nlohmann::json{
@@ -89,4 +151,9 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
     });
     REQUIRE(cfg.impactIonization.model == "selberherr");
     REQUIRE(cfg.impactIonization.electronA == Catch::Approx(1.0e6));
+
+    const NewtonConfig ncfg = newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", "selberherr"}
+    });
+    REQUIRE(ncfg.impactIonization.model == "selberherr");
 }
