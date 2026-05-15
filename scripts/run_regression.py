@@ -326,7 +326,7 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     max_attempted_seen = 0.0
     max_accepted_seen = 0.0
     max_retry_seen = 0
-    max_fields: list[float] = []
+    max_fields: list[tuple[int, float]] = []
     nonzero_capacitance_rows = 0
     zero_capacitance_rows = 0
     for row_index, row in enumerate(rows, start=1):
@@ -357,15 +357,16 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
             max_field = parse_finite_float(row, "max_electric_field_V_per_m", "BV sweep", row_index)
             if max_field < 0.0:
                 raise AssertionError(f"BV sweep row {row_index} has negative max electric field")
-            if min_max_field is not None and max_field < float(min_max_field):
-                raise AssertionError(
-                    f"BV sweep row {row_index} max_electric_field_V_per_m {max_field} "
-                    f"is below regression minimum {min_max_field}")
-            if max_max_field is not None and max_field > float(max_max_field):
-                raise AssertionError(
-                    f"BV sweep row {row_index} max_electric_field_V_per_m {max_field} "
-                    f"exceeds regression maximum {max_max_field}")
-            max_fields.append(max_field)
+            if row.get("converged") == "1":
+                if min_max_field is not None and max_field < float(min_max_field):
+                    raise AssertionError(
+                        f"BV sweep row {row_index} max_electric_field_V_per_m {max_field} "
+                        f"is below regression minimum {min_max_field}")
+                if max_max_field is not None and max_field > float(max_max_field):
+                    raise AssertionError(
+                        f"BV sweep row {row_index} max_electric_field_V_per_m {max_field} "
+                        f"exceeds regression maximum {max_max_field}")
+                max_fields.append((row_index, max_field))
             try:
                 jump = float(row["current_jump_ratio"])
             except (KeyError, ValueError) as exc:
@@ -402,16 +403,18 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     max_field_trend_checked = False
     if mode == "bv_reverse" and require_monotone_max_field:
         if not max_fields:
-            raise AssertionError("BV max electric field monotonic regression requested but no field values were read")
+            raise AssertionError(
+                "BV max electric field monotonic regression requested but no converged field values were read")
         for idx in range(1, len(max_fields)):
-            previous = max_fields[idx - 1]
-            current = max_fields[idx]
+            previous_row, previous = max_fields[idx - 1]
+            current_row, current = max_fields[idx]
             tolerance = max_field_abs_tolerance + max_field_rel_tolerance * max(abs(previous), abs(current), 1.0)
             if current + tolerance < previous:
+                max_field_values = [field for _, field in max_fields]
                 raise AssertionError(
-                    "BV max_electric_field_V_per_m is not non-decreasing along the sweep: "
-                    f"row {idx} value {previous} > row {idx + 1} value {current} "
-                    f"beyond tolerance {tolerance}; all values: {max_fields}")
+                    "BV max_electric_field_V_per_m is not non-decreasing along the converged sweep rows: "
+                    f"row {previous_row} value {previous} > row {current_row} value {current} "
+                    f"beyond tolerance {tolerance}; converged values: {max_field_values}")
         max_field_trend_checked = True
 
     if mode == "cv_quasistatic":
@@ -434,7 +437,7 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
         "max_retry_count": max_retry_seen,
     }
     if mode == "bv_reverse":
-        result["max_electric_field_V_per_m"] = max_fields
+        result["max_electric_field_V_per_m"] = [field for _, field in max_fields]
         result["max_field_trend_checked"] = max_field_trend_checked
     return result
 
