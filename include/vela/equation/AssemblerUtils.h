@@ -52,6 +52,23 @@ inline std::vector<Real> computeEdgeCouplings(const DeviceMesh& mesh)
     return couple;
 }
 
+/// Return a per-node max adjacent-edge electric-field magnitude [V/m].
+inline std::vector<Real> computeNodeElectricFields(const VectorXd& psi, const DeviceMesh& mesh)
+{
+    std::vector<Real> maxField(mesh.numNodes(), 0.0);
+    for (Index e = 0; e < mesh.numEdges(); ++e) {
+        const Edge& edge = mesh.getEdge(e);
+        if (edge.length <= 1.0e-30)
+            continue;
+        const int i = static_cast<int>(edge.n0);
+        const int j = static_cast<int>(edge.n1);
+        const Real edgeField = std::abs((psi(j) - psi(i)) / edge.length);
+        maxField[edge.n0] = std::max(maxField[edge.n0], edgeField);
+        maxField[edge.n1] = std::max(maxField[edge.n1], edgeField);
+    }
+    return maxField;
+}
+
 /// Build edge -> adjacent cell ids map.
 inline std::vector<std::vector<Index>> buildEdgeCellMap(const DeviceMesh& mesh)
 {

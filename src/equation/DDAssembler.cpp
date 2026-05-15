@@ -63,6 +63,7 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
     , mobility_(makeMobilityModel(mobilityConfig))
     , recombination_(recombinationConfig)
     , impactIonization_(makeImpactIonizationModel(impactIonizationConfig))
+    , impactIonizationEnabled_(impactIonizationConfig.model != "none")
     , ni_(detail::buildValidatedEffectiveNodeNi(
           "DDAssembler",
           mesh,
@@ -193,7 +194,9 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
 
     A_.setFromTriplets(triplets.begin(), triplets.end());
 
-    const std::vector<Real> nodeElectricFields = computeNodeElectricFields(psi, mesh_);
+    const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
+        ? detail::computeNodeElectricFields(psi, mesh_)
+        : std::vector<Real>{};
 
     // Recombination source term linearised w.r.t. n.
     // Positive source derivatives move to the LHS diagonal; constants move to RHS.
@@ -208,8 +211,10 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
             recombination_.electronLinearization(n_v, p_v, ni_i);
         A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
         b_(ii) += linearization.rhs * vol_i;
-        b_(ii) += impactIonization_->generationRate(
-            nodeElectricFields[i], n_v, p_v) * vol_i;
+        if (impactIonizationEnabled_) {
+            b_(ii) += impactIonization_->generationRate(
+                nodeElectricFields[i], n_v, p_v) * vol_i;
+        }
     }
 
     // Guard: if any diagonal is still zero (insulator node with all edges
@@ -274,7 +279,9 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
 
     A_.setFromTriplets(triplets.begin(), triplets.end());
 
-    const std::vector<Real> nodeElectricFields = computeNodeElectricFields(psi, mesh_);
+    const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
+        ? detail::computeNodeElectricFields(psi, mesh_)
+        : std::vector<Real>{};
 
     // Recombination source term linearised w.r.t. p.
     // Positive source derivatives move to the LHS diagonal; constants move to RHS.
@@ -289,8 +296,10 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
             recombination_.holeLinearization(n_v, p_v, ni_i);
         A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
         b_(ii) += linearization.rhs * vol_i;
-        b_(ii) += impactIonization_->generationRate(
-            nodeElectricFields[i], n_v, p_v) * vol_i;
+        if (impactIonizationEnabled_) {
+            b_(ii) += impactIonization_->generationRate(
+                nodeElectricFields[i], n_v, p_v) * vol_i;
+        }
     }
 
     // Guard: pin insulator nodes (zero-diagonal) to p = 0

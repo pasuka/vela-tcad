@@ -105,6 +105,7 @@ private:
     std::unique_ptr<MobilityModel> mobility_;
     RecombinationModel recombination_;
     std::unique_ptr<ImpactIonizationModel> impactIonization_;
+    bool impactIonizationEnabled_ = false;
 
     std::vector<Real> ni_; ///< Per-node intrinsic concentration [m^-3]
 

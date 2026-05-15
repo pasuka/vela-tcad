@@ -132,6 +132,28 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
                 "newtonConfigFromJson: recombination must be a string or string array.");
     }
 
+    if (json.contains("impact_ionization")) {
+        const auto& value = json.at("impact_ionization");
+        if (value.is_string()) {
+            cfg.impactIonization.model = value.get<std::string>();
+        } else if (value.is_object()) {
+            cfg.impactIonization.model = value.value("model", cfg.impactIonization.model);
+            cfg.impactIonization.electronA = value.value(
+                "electron_A_m_inv", cfg.impactIonization.electronA);
+            cfg.impactIonization.electronB = value.value(
+                "electron_B_V_m", cfg.impactIonization.electronB);
+            cfg.impactIonization.holeA = value.value(
+                "hole_A_m_inv", cfg.impactIonization.holeA);
+            cfg.impactIonization.holeB = value.value(
+                "hole_B_V_m", cfg.impactIonization.holeB);
+            cfg.impactIonization.carrierVelocity = value.value(
+                "carrier_velocity_m_s", cfg.impactIonization.carrierVelocity);
+        } else {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: impact_ionization must be a string or object.");
+        }
+    }
+
     if (cfg.jacobian != "analytic" && cfg.jacobian != "finite_difference")
         throw std::invalid_argument(
             "newtonConfigFromJson: jacobian must be 'analytic' or 'finite_difference'.");
@@ -215,6 +237,7 @@ DDSolution NewtonSolver::buildInitialGuess(
     gcfg.mobility = cfg_.mobility;
     gcfg.recombination = cfg_.recombination;
     gcfg.bandgapNarrowing = cfg_.bandgapNarrowing;
+    gcfg.impactIonization = cfg_.impactIonization;
     DDSolution sol = runGummel(mesh_, matdb_, doping_, contactBiases_, gcfg);
 
     // The default cold-start path removes tiny quasi-Fermi numerical noise left
@@ -250,7 +273,14 @@ NewtonResult NewtonSolver::solve() const
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
     CoupledDDAssembler assembler(
-        mesh_, matdb_, doping_, Vt, mobilityConfig, recombinationConfig, cfg_.bandgapNarrowing);
+        mesh_,
+        matdb_,
+        doping_,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        cfg_.bandgapNarrowing,
+        cfg_.impactIonization);
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
     return solve(buildInitialGuess(assembler, bcs));
 }
@@ -262,7 +292,14 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
     CoupledDDAssembler assembler(
-        mesh_, matdb_, doping_, Vt, mobilityConfig, recombinationConfig, cfg_.bandgapNarrowing);
+        mesh_,
+        matdb_,
+        doping_,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        cfg_.bandgapNarrowing,
+        cfg_.impactIonization);
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
 
     // By default Newton uses a conservative cold start for quasi-Fermi
