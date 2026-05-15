@@ -1,6 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 
+#include <algorithm>
+
 #include "vela/core/PhysicalConstants.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/equation/DDAssembler.h"
@@ -95,10 +97,10 @@ DeviceMesh makeHorizontalStripMesh(const std::vector<RegionSpec>& regions)
     const Real h = 1.0e-7;
     const Index nx = regions.size() + 1;
 
-    for (Index ix = 0; ix < nx; ++ix) {
+    for (Index ix = 0; ix < nx; ++ix)
         addNode(mesh, ix, static_cast<Real>(ix) * dx, 0.0);
+    for (Index ix = 0; ix < nx; ++ix)
         addNode(mesh, nx + ix, static_cast<Real>(ix) * dx, h);
-    }
 
     for (Index r = 0; r < regions.size(); ++r) {
         const Index bl = r;
@@ -189,7 +191,7 @@ VectorXd initialElectrons(const DeviceMesh& mesh, const DopingModel& doping)
 {
     VectorXd n(static_cast<int>(mesh.numNodes()));
     for (Index i = 0; i < mesh.numNodes(); ++i)
-        n(static_cast<int>(i)) = std::max({1.0e10, doping.donors(i), constants::q});
+        n(static_cast<int>(i)) = std::max(1.0e10, doping.donors(i));
     return n;
 }
 
@@ -197,7 +199,7 @@ VectorXd initialHoles(const DeviceMesh& mesh, const DopingModel& doping)
 {
     VectorXd p(static_cast<int>(mesh.numNodes()));
     for (Index i = 0; i < mesh.numNodes(); ++i)
-        p(static_cast<int>(i)) = std::max({1.0e10, doping.acceptors(i), constants::q});
+        p(static_cast<int>(i)) = std::max(1.0e10, doping.acceptors(i));
     return p;
 }
 
