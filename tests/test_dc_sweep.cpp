@@ -357,11 +357,67 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
                                                          "current_total", "converged", "iterations",
                                                          "step_diagnostics", "max_electric_field_V_per_m",
                                                          "current_jump_ratio", "breakdown_detected",
-                                                         "breakdown_voltage", "criterion"});
+                                                         "breakdown_voltage", "criterion", "last_stable_bias",
+                                                         "failed_bias", "failure_reason"});
         REQUIRE(rows.at(1).at(0) == "bv_reverse");
     }
 }
 
+
+
+TEST_CASE("DCSweep: BV reverse start failure records failed diagnostic row", "[dc_sweep]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "bv_nonconvergence.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"mode", "bv_reverse"},
+        {"start", 0.0},
+        {"stop", -0.5},
+        {"step", -0.5},
+        {"min_step", 0.2},
+        {"max_step", 0.5},
+        {"shrink_factor", 0.5},
+        {"growth_factor", 1.0},
+        {"max_retries", 3},
+        {"stop_on_failure", true},
+        {"write_vtk", false},
+        {"breakdown", {
+            {"max_electric_field_V_per_m", 0.0},
+            {"current_jump_ratio", 0.0},
+            {"non_convergence", true}
+        }}
+    }, {
+        {"max_iter", 0},
+        {"reltol", 1.0e-30}
+    });
+
+    DCSweep sweep;
+    const std::vector<DCSweepPoint> points = sweep.run(cfgPath.string());
+
+    REQUIRE(points.size() == 1);
+    const DCSweepPoint& point = points.back();
+    REQUIRE_FALSE(point.converged);
+    REQUIRE(point.failed);
+    REQUIRE_FALSE(point.breakdownDetected);
+    REQUIRE(point.breakdownCriterion.empty());
+    REQUIRE(point.failedBias == Catch::Approx(0.0));
+    REQUIRE(point.lastStableBias == Catch::Approx(0.0));
+    REQUIRE(point.failureReason == "non_convergence");
+
+    const auto rows = readCsvRows(csvPath);
+    REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
+                                                     "current_contact", "current_electron", "current_hole",
+                                                     "current_total", "converged", "iterations",
+                                                     "step_diagnostics", "max_electric_field_V_per_m",
+                                                     "current_jump_ratio", "breakdown_detected",
+                                                     "breakdown_voltage", "criterion", "last_stable_bias",
+                                                     "failed_bias", "failure_reason"});
+    REQUIRE(rows.at(1).at(14).empty());
+    REQUIRE(rows.at(1).at(17) == "non_convergence");
+}
 
 TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_sweep]")
 {
@@ -530,6 +586,7 @@ TEST_CASE("DCSweep step control: minStep boundary records aborting failed attemp
 
     REQUIRE(events.size() == 1);
     REQUIRE_FALSE(events[0].converged);
+    REQUIRE(events[0].failureReason == "min_step_exhausted");
     REQUIRE(events[0].voltage == Catch::Approx(0.25));
     REQUIRE(events[0].attemptedStep == Catch::Approx(0.25));
     REQUIRE(events[0].acceptedStep == Catch::Approx(0.0));
