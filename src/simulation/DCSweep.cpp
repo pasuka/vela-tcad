@@ -5,6 +5,7 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/post/ContactCurrent.h"
+#include "vela/post/ElectricFieldDiagnostics.h"
 #include "vela/post/TerminalCharge.h"
 #include "vela/solver/NewtonSolver.h"
 #include <nlohmann/json.hpp>
@@ -174,19 +175,6 @@ std::string vtkFilename(const std::string& prefix, int index, Real voltage)
 }
 
 
-Real maxElectricField(const DeviceMesh& mesh, const DDSolution& sol)
-{
-    Real maxField = 0.0;
-    for (Index e = 0; e < mesh.numEdges(); ++e) {
-        const Edge& edge = mesh.getEdge(e);
-        if (edge.length <= 0.0)
-            continue;
-        const Real dpsi = sol.psi(static_cast<int>(edge.n1)) - sol.psi(static_cast<int>(edge.n0));
-        maxField = std::max(maxField, std::abs(dpsi) / edge.length);
-    }
-    return maxField;
-}
-
 std::string stepDiagnostics(const DCSweepPoint& point)
 {
     return "attempted_step=" + formatReal(point.attemptedStep) +
@@ -339,7 +327,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             }
         }
         if (converged && sweep.mode == CurveSweepMode::BVReverse) {
-            point.maxElectricField = maxElectricField(mesh, sol);
+            point.maxElectricField = maxEdgeElectricFieldMagnitude(mesh, sol.psi);
             if (!points.empty()) {
                 const Real previous = std::abs(points.back().totalCurrent);
                 const Real currentAbs = std::abs(point.totalCurrent);
