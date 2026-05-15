@@ -58,6 +58,8 @@ struct DCSweepPoint {
     bool breakdownDetected = false;
     Real breakdownVoltage = 0.0;
     std::string breakdownCriterion;
+    std::string outputCsv;
+    std::string outputVtk;
 };
 
 struct DCSweepResult {

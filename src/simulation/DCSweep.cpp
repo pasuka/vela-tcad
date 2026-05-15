@@ -308,6 +308,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         DCSweepPoint point;
         point.voltage = voltage;
         point.bias = voltage;
+        point.outputCsv = sweep.csvFile;
         point.electronCurrent = current.electronCurrent;
         point.holeCurrent = current.holeCurrent;
         point.totalCurrent = current.totalCurrent;
@@ -352,8 +353,6 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             point.breakdownVoltage = points.back().bias;
             point.breakdownCriterion = "last_stable_before_nonconvergence";
         }
-        points.push_back(point);
-
         std::vector<std::string> row = {
             toString(sweep.mode),
             sweep.contact,
@@ -378,8 +377,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
         csv.writeRow(row);
 
-        if (converged && sweep.writeVtk)
-            writeDDSolutionVTK(vtkFilename(sweep.vtkPrefix, vtkIndex++, voltage), mesh, doping, sol);
+        if (converged && sweep.writeVtk) {
+            point.outputVtk = vtkFilename(sweep.vtkPrefix, vtkIndex++, voltage);
+            writeDDSolutionVTK(point.outputVtk, mesh, doping, sol);
+        }
+
+        points.push_back(std::move(point));
     };
 
     auto [startOk, startSol] = solvePoint(sweep.start, nullptr);
