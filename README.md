@@ -255,6 +255,17 @@ Poisson configurations use this shape:
 }
 ```
 
+Contact entries support an optional `type` field that selects the boundary
+model. The legacy untyped form is equivalent to `"type": "ohmic"`, so existing
+decks keep working unchanged. The parser accepts case-insensitive names with
+either `-` or `_` separators (for example `metal_gate` and `Metal-Gate` both
+resolve to `metal_gate`). Recognised values are `ohmic`, `dirichlet`,
+`metal_gate`, `schottky`, and `floating`. The Poisson driver currently
+implements `ohmic`, `dirichlet`, and `metal_gate`; `schottky` and `floating`
+are reserved by the schema for future milestones and the solver will raise a
+clear error if they appear in a deck today. A detailed contact-schema
+reference is planned for the M1.4 milestone.
+
 `materials_file` is optional. When present, it is loaded after the built-in
 `Si` and `SiO2` materials, so entries with the same `name` override built-ins
 and entries with new names can be referenced by mesh regions. The same optional

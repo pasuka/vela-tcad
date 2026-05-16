@@ -1,4 +1,5 @@
 #include "vela/simulation/PoissonSimulation.h"
+#include "vela/boundary/BoundaryCondition.h"
 #include "vela/equation/PoissonAssembler.h"
 #include "vela/io/MeshReader.h"
 #include "vela/io/VTKWriter.h"
@@ -171,25 +172,32 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // ------------------------------------------------------------------
     // Dirichlet boundary conditions from contacts
     // ------------------------------------------------------------------
-    // Build name -> effective contact potential map from config. A configured
-    // flatband voltage or work function shifts the electrostatic Dirichlet
-    // potential as psi_contact = bias - offset. work_function_eV is interpreted
-    // as its equivalent voltage because 1 eV/q is 1 V.
+    // The unified boundary parser interprets each ``contacts[]`` entry and
+    // normalises optional ``type`` / ``flatband_voltage`` / ``work_function_eV``
+    // fields.  Legacy decks without ``type`` are treated as ohmic; ohmic,
+    // dirichlet, and metal_gate contacts all map to an effective Poisson
+    // Dirichlet potential.  Schottky and floating contacts do not yet have a
+    // dedicated Poisson model and are rejected here so misconfiguration
+    // surfaces early.
+    const std::vector<ContactBoundarySpec> contactSpecs =
+        parseContactBoundarySpecs(cfg);
+
     std::unordered_map<std::string, Real> contactBias;
-    for (const auto& ct : cfg.at("contacts")) {
-        const bool hasFlatband = ct.contains("flatband_voltage");
-        const bool hasWorkFunction = ct.contains("work_function_eV");
-        if (hasFlatband && hasWorkFunction)
-            throw std::runtime_error(
-                "PoissonSimulation: contact cannot set both flatband_voltage and work_function_eV.");
-
-        Real value = ct.at("bias").get<Real>();
-        if (hasFlatband)
-            value -= ct.at("flatband_voltage").get<Real>();
-        if (hasWorkFunction)
-            value -= ct.at("work_function_eV").get<Real>();
-
-        contactBias[ct.at("name").get<std::string>()] = value;
+    for (const auto& spec : contactSpecs) {
+        switch (spec.type) {
+            case ContactType::Ohmic:
+            case ContactType::Dirichlet:
+            case ContactType::MetalGate:
+                contactBias[spec.name] = effectivePoissonDirichletPotential(spec);
+                break;
+            case ContactType::Schottky:
+            case ContactType::Floating:
+                throw std::runtime_error(
+                    "PoissonSimulation: contact '" + spec.name +
+                    "' has type '" + toString(spec.type) +
+                    "' which is not yet implemented for the Poisson driver. "
+                    "Use ohmic, dirichlet, or metal_gate for now.");
+        }
     }
 
     // Map contact nodes -> prescribed potential

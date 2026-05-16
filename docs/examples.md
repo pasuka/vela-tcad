@@ -28,6 +28,21 @@ on-state IV and BV, and IGBT high-injection, recombination, lifetime-control,
 and on-voltage regression decks are not claimed until they have executable
 regression coverage.
 
+## Contact Schema Compatibility
+
+Every deck below uses the original `contacts[]` shape (`name`, `bias`, and an
+optional `flatband_voltage` or `work_function_eV`). Starting with the unified
+boundary parser, contact entries may also include a string `type` field. The
+legacy untyped form is treated as `"type": "ohmic"`, so the example decks here
+keep working without changes. The parser accepts case-insensitive names with
+either `-` or `_` separators (for example `metal_gate` and `Metal-Gate` both
+resolve to the same metal-gate model). Recognised values are `ohmic`,
+`dirichlet`, `metal_gate`, `schottky`, and `floating`. The Poisson driver
+currently maps `ohmic`, `dirichlet`, and `metal_gate` to an effective
+Dirichlet potential; `schottky` and `floating` are reserved by the schema and
+will raise a clear error if a deck requests them today. A detailed
+contact-schema reference is planned for the M1.4 milestone.
+
 ## Common Workflow
 
 Build the project first:

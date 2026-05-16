@@ -28,6 +28,7 @@ option(VELA_ENABLE_PYTHON "Build the pybind11 Python API" OFF)
 # Library: vela_core
 # ---------------------------------------------------------------------------
 add_library(vela_core STATIC
+    src/boundary/BoundaryCondition.cpp
     src/core/ScalingSystem.cpp
     src/material/Material.cpp
     src/material/MaterialDatabase.cpp
@@ -196,6 +197,9 @@ add_executable(test_electric_field_diagnostics tests/test_electric_field_diagnos
 target_link_libraries(test_electric_field_diagnostics PRIVATE vela_core Catch2::Catch2WithMain)
 target_compile_definitions(test_dc_sweep PRIVATE VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
+add_executable(test_boundary_conditions tests/test_boundary_conditions.cpp)
+target_link_libraries(test_boundary_conditions PRIVATE vela_core Catch2::Catch2WithMain)
+
 include(Catch)
 catch_discover_tests(test_scaling)
 catch_discover_tests(test_mesh)
@@ -222,6 +226,8 @@ add_test(NAME dc_sweep COMMAND test_dc_sweep [dc_sweep])
 catch_discover_tests(test_solution_validation)
 catch_discover_tests(test_electric_field_diagnostics)
 add_test(NAME electric_field_diagnostics COMMAND test_electric_field_diagnostics [electric_field])
+catch_discover_tests(test_boundary_conditions)
+add_test(NAME boundary COMMAND test_boundary_conditions [boundary])
 
 add_test(NAME regression
     COMMAND ${Python3_EXECUTABLE}

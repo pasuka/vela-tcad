@@ -1,4 +1,5 @@
 #include "vela/simulation/DCSweep.h"
+#include "vela/boundary/BoundaryCondition.h"
 #include "vela/simulation/DCSweepStepControl.h"
 #include "vela/io/CSVWriter.h"
 #include "vela/io/MeshReader.h"
@@ -175,10 +176,30 @@ DopingModel dopingFromJson(const DeviceMesh& mesh, const nlohmann::json& cfg)
 
 std::unordered_map<std::string, Real> contactBiasesFromJson(const nlohmann::json& cfg)
 {
+    // Route legacy ``contacts[]`` parsing through the unified boundary parser
+    // so the optional ``type`` field is recognised and normalised.  For the
+    // DD/Gummel/Newton paths the bias map preserves the historical semantics:
+    // ohmic contacts apply the raw bias, while Dirichlet/MetalGate use the
+    // same effective potential expression as the Poisson driver.  Schottky
+    // and Floating contacts have no DD physics yet and are rejected so a
+    // misconfigured deck fails loudly instead of silently downgrading.
     std::unordered_map<std::string, Real> biases;
-    for (const auto& contact : cfg.at("contacts")) {
-        biases[contact.at("name").get<std::string>()] =
-            contact.at("bias").get<Real>();
+    for (const auto& spec : parseContactBoundarySpecs(cfg)) {
+        switch (spec.type) {
+            case ContactType::Ohmic:
+                biases[spec.name] = spec.bias;
+                break;
+            case ContactType::Dirichlet:
+            case ContactType::MetalGate:
+                biases[spec.name] = effectivePoissonDirichletPotential(spec);
+                break;
+            case ContactType::Schottky:
+            case ContactType::Floating:
+                throw std::runtime_error(
+                    "DCSweep: contact '" + spec.name + "' has type '" +
+                    toString(spec.type) + "' which is not yet implemented "
+                    "for drift-diffusion sweeps. Use ohmic for now.");
+        }
     }
     return biases;
 }
