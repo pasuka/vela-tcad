@@ -1,0 +1,67 @@
+{
+  "_comment": "PMOS low-voltage Id-Vg drift-diffusion smoke sweep at fixed drain bias.",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "output_csv": "outputs/pmos2d_dd_idvg.csv",
+  "doping": [
+    {
+      "region": "body",
+      "donors": 1e+21,
+      "acceptors": 0.0
+    },
+    {
+      "region": "source_implant",
+      "donors": 0.0,
+      "acceptors": 5e+21
+    },
+    {
+      "region": "drain_implant",
+      "donors": 0.0,
+      "acceptors": 5e+21
+    }
+  ],
+  "contacts": [
+    {
+      "name": "body",
+      "bias": 0.0
+    },
+    {
+      "name": "source",
+      "bias": 0.0
+    },
+    {
+      "name": "gate",
+      "bias": 0.0
+    },
+    {
+      "name": "drain",
+      "bias": -0.1
+    }
+  ],
+  "solver": {
+    "method": "gummel",
+    "max_iter": 80,
+    "reltol": 1e-05,
+    "abstol": 1e+18,
+    "damping_psi": 0.5
+  },
+  "sweep": {
+    "contact": "gate",
+    "start": 0.0,
+    "stop": -0.05,
+    "step": -0.05,
+    "current_contact": "drain",
+    "write_vtk": false
+  },
+  "regression": {
+    "declared_converged": true,
+    "dc_sweep": {
+      "expected_rows": 2,
+      "max_abs_attempted_step": 0.05,
+      "max_abs_accepted_step": 0.05,
+      "max_retry_count": 0,
+      "min_converged_rows": 2,
+      "require_monotone_abs_current": true
+    }
+  }
+}

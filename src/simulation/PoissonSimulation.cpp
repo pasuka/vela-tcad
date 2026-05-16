@@ -162,11 +162,39 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     }
 
     // ------------------------------------------------------------------
+    // Parse explicit boundary conditions
+    // ------------------------------------------------------------------
+    const std::vector<BoundarySegmentSpec> boundarySpecs =
+        parseBoundarySegmentSpecs(cfg);
+
+    std::vector<PoissonNeumannBoundarySpec> neumannBoundarySpecs;
+    for (const auto& spec : boundarySpecs) {
+        switch (spec.type) {
+            case BoundaryType::Neumann:
+            case BoundaryType::Insulating:
+            case BoundaryType::Symmetry: {
+                // Insulating and symmetry are zero Neumann
+                const Real displacement = (spec.type == BoundaryType::Neumann)
+                    ? spec.value : 0.0;
+                neumannBoundarySpecs.push_back(
+                    PoissonNeumannBoundarySpec{spec.node_ids, displacement});
+                break;
+            }
+            case BoundaryType::Dirichlet:
+                // Already rejected by parser
+                throw std::runtime_error(
+                    "PoissonSimulation: boundary '" + spec.name +
+                    "' has type 'dirichlet' which should have been rejected by parser.");
+        }
+    }
+
+    // ------------------------------------------------------------------
     // Assemble Poisson equation
     // ------------------------------------------------------------------
     PoissonAssembler assembler(mesh, matdb, doping,
                                std::move(fixedChargeSpecs),
-                               std::move(sheetChargeSpecs));
+                               std::move(sheetChargeSpecs),
+                               std::move(neumannBoundarySpecs));
     assembler.assemble();
 
     // ------------------------------------------------------------------

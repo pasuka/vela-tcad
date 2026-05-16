@@ -1,0 +1,4 @@
+mode,bias_contact,bias_V,current_contact,current_electron,current_hole,current_total,converged,iterations,step_diagnostics,validation_diagnostics,charge_C_per_m,capacitance_F_per_m
+cv_quasistatic,anode,0,anode,-6.2626245039110927e-20,2.2267109347239441e-20,-4.0359135691871486e-20,1,1,attempted_step=0;accepted_step=0;retry_count=0,,0,0
+cv_quasistatic,anode,-0.10000000000000001,anode,-5.4710245526346964e-05,1.945253174270114e-05,-3.5257713783645828e-05,1,1,attempted_step=-0.10000000000000001;accepted_step=-0.10000000000000001;retry_count=0,,0,-0
+cv_quasistatic,anode,-0.20000000000000001,anode,-6.666347004518952e-05,2.3702567127178503e-05,-4.2960902918011018e-05,1,1,attempted_step=-0.10000000000000001;accepted_step=-0.10000000000000001;retry_count=0,,0,-0

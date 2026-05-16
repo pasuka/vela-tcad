@@ -1,0 +1,4 @@
+mode,bias_contact,bias_V,current_contact,current_electron,current_hole,current_total,converged,iterations,step_diagnostics,validation_diagnostics,max_electric_field_V_per_m,current_jump_ratio,breakdown_detected,breakdown_voltage,criterion,last_stable_bias,failed_bias,failure_reason
+bv_reverse,anode,0,anode,-6.2626245039110927e-20,2.2267109347239441e-20,-4.0359135691871486e-20,1,1,attempted_step=0;accepted_step=0;retry_count=0,,416685.00532632234,0,0,0,,0,0,
+bv_reverse,anode,-0.25,anode,-7.2095387874798788e-05,2.563391568881735e-05,-4.6461472185981438e-05,1,1,attempted_step=-0.25;accepted_step=-0.25;retry_count=0,,666685.00532632228,1151200871611801.8,1,-0.25,current_jump,0,0,
+bv_reverse,anode,-0.5,anode,-9.913667201701992e-05,3.5248594494940416e-05,-6.3888077522079504e-05,1,1,attempted_step=-0.25;accepted_step=-0.25;retry_count=0,,916685.00532632228,1.3750764776962039,0,0,,0,0,

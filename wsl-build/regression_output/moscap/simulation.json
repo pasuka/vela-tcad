@@ -1,0 +1,42 @@
+{
+  "_comment": "Poisson-only MOS capacitor bias point with nonzero oxide fixed charge.",
+  "simulation_type": "poisson",
+  "mesh_file": "mesh.json",
+  "output_vtk": "outputs/moscap_poisson.vtk",
+  "doping": [
+    {
+      "region": "silicon",
+      "donors": 0.0,
+      "acceptors": 0.0
+    },
+    {
+      "region": "oxide",
+      "donors": 0.0,
+      "acceptors": 0.0
+    }
+  ],
+  "contacts": [
+    {
+      "name": "gate",
+      "bias": 1.0
+    },
+    {
+      "name": "body",
+      "bias": 0.0
+    }
+  ],
+  "regression": {
+    "interface_y": 3e-07,
+    "silicon_probe_y": 1.5e-07,
+    "oxide_probe_y": 3.5e-07,
+    "x_probe": 5e-07,
+    "potential_jump_tol": 1e-10,
+    "displacement_rel_tol": 0.55
+  },
+  "regions": [
+    {
+      "name": "oxide",
+      "fixed_charge_m3": 1e+21
+    }
+  ]
+}

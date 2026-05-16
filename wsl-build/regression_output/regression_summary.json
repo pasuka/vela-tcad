@@ -1,0 +1,348 @@
+{
+  "runner": "/mnt/d/code-repo/vela-tcad/wsl-build/vela_example_runner",
+  "workdir": "/mnt/d/code-repo/vela-tcad/wsl-build/regression_output",
+  "passed": true,
+  "examples": [
+    {
+      "name": "pn_diode_iv",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/pn_diode_iv/simulation_iv.json\",\"converged\":true,\"points\":3,\"simulation_type\":\"dc_sweep\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true,
+        "csv_converged": true,
+        "dc_sweep_regression": {
+          "rows": 3,
+          "converged_rows": 3,
+          "max_attempted_step": 0.25,
+          "max_accepted_step": 0.25,
+          "max_retry_count_seen": 0,
+          "final_current_total": 60.47576122209657,
+          "current_trend_checked": true,
+          "max_abs_attempted_step": 0.25,
+          "max_abs_accepted_step": 0.25,
+          "max_retry_count": 0
+        },
+        "iv_trend": {
+          "voltages": [
+            0.0,
+            0.25,
+            0.5
+          ],
+          "expected_voltages": [
+            0.0,
+            0.25,
+            0.5
+          ]
+        }
+      }
+    },
+    {
+      "name": "pn_diode_cv",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/pn_diode_cv/simulation_cv.json\",\"converged\":true,\"points\":3,\"simulation_type\":\"dc_sweep\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true,
+        "csv_converged": true,
+        "dc_sweep_regression": {
+          "rows": 3,
+          "converged_rows": 3,
+          "max_attempted_step": 0.1,
+          "max_accepted_step": 0.1,
+          "max_retry_count_seen": 0,
+          "final_current_total": -4.296090291801102e-05,
+          "current_trend_checked": false,
+          "max_abs_attempted_step": 0.1,
+          "max_abs_accepted_step": 0.1,
+          "max_retry_count": 0,
+          "nonzero_capacitance_rows": 0
+        }
+      }
+    },
+    {
+      "name": "pn_diode_bv",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/pn_diode_bv/simulation_bv.json\",\"converged\":true,\"points\":3,\"simulation_type\":\"dc_sweep\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true,
+        "csv_converged": true,
+        "dc_sweep_regression": {
+          "rows": 3,
+          "converged_rows": 3,
+          "max_attempted_step": 0.25,
+          "max_accepted_step": 0.25,
+          "max_retry_count_seen": 0,
+          "final_current_total": -6.38880775220795e-05,
+          "current_trend_checked": true,
+          "max_abs_attempted_step": 0.25,
+          "max_abs_accepted_step": 0.25,
+          "max_retry_count": 0,
+          "max_electric_field_seen": 916685.0053263223,
+          "breakdown_detected": true,
+          "max_electric_field_V_per_m": [
+            416685.00532632234,
+            666685.0053263223,
+            916685.0053263223
+          ],
+          "max_field_trend_checked": true
+        }
+      }
+    },
+    {
+      "name": "moscap",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/moscap/simulation.json\",\"converged\":true,\"nodes\":15,\"simulation_type\":\"poisson\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true,
+        "moscap_interface": {
+          "potential_jump": 0.0,
+          "displacement_rel_error": 0.022670143354743374,
+          "contact_potential_drop": 1.0,
+          "probe_potential_drop": 0.505799
+        }
+      }
+    },
+    {
+      "name": "nmos2d",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/nmos2d/simulation.json\",\"converged\":true,\"nodes\":20,\"simulation_type\":\"poisson\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true
+      }
+    },
+    {
+      "name": "nmos2d_dd_iv",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/nmos2d_dd_iv/simulation_iv.json\",\"converged\":true,\"points\":3,\"simulation_type\":\"dc_sweep\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true,
+        "csv_converged": true,
+        "dc_sweep_regression": {
+          "rows": 3,
+          "converged_rows": 3,
+          "max_attempted_step": 0.05,
+          "max_accepted_step": 0.05,
+          "max_retry_count_seen": 0,
+          "final_current_total": 4.004537908269333,
+          "current_trend_checked": true,
+          "max_abs_attempted_step": 0.05,
+          "max_abs_accepted_step": 0.05,
+          "max_retry_count": 0
+        },
+        "mos_trends": {
+          "device": "nmos",
+          "idvd_voltages": [
+            0.0,
+            0.05,
+            0.1
+          ],
+          "idvd_currents": [
+            -2.2807996432054207e-09,
+            1.9642780706291016,
+            4.004537908269333
+          ],
+          "idvg_gate_voltages": [
+            0.0,
+            0.05
+          ],
+          "idvg_currents": [
+            3.9295201082791613,
+            4.004441599998616
+          ]
+        }
+      }
+    },
+    {
+      "name": "nmos2d_dd_idvg",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/nmos2d_dd_idvg/simulation_idvg.json\",\"converged\":true,\"points\":2,\"simulation_type\":\"dc_sweep\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true,
+        "csv_converged": true,
+        "dc_sweep_regression": {
+          "rows": 2,
+          "converged_rows": 2,
+          "max_attempted_step": 0.05,
+          "max_accepted_step": 0.05,
+          "max_retry_count_seen": 0,
+          "final_current_total": 4.004441599998616,
+          "current_trend_checked": true,
+          "max_abs_attempted_step": 0.05,
+          "max_abs_accepted_step": 0.05,
+          "max_retry_count": 0
+        }
+      }
+    },
+    {
+      "name": "nmos2d_dd_cv",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/nmos2d_dd_cv/simulation_cv.json\",\"converged\":true,\"points\":2,\"simulation_type\":\"dc_sweep\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true,
+        "csv_converged": true,
+        "dc_sweep_regression": {
+          "rows": 2,
+          "converged_rows": 2,
+          "max_attempted_step": 0.05,
+          "max_accepted_step": 0.05,
+          "max_retry_count_seen": 0,
+          "final_current_total": -2.280336972836989e-09,
+          "current_trend_checked": false,
+          "max_abs_attempted_step": 0.05,
+          "max_abs_accepted_step": 0.05,
+          "max_retry_count": 0,
+          "nonzero_capacitance_rows": 1
+        }
+      }
+    },
+    {
+      "name": "pmos2d_dd_iv",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/pmos2d_dd_iv/simulation_iv.json\",\"converged\":true,\"points\":3,\"simulation_type\":\"dc_sweep\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true,
+        "csv_converged": true,
+        "dc_sweep_regression": {
+          "rows": 3,
+          "converged_rows": 3,
+          "max_attempted_step": 0.05,
+          "max_accepted_step": 0.05,
+          "max_retry_count_seen": 0,
+          "final_current_total": 1.4238357000880453,
+          "current_trend_checked": true,
+          "max_abs_attempted_step": 0.05,
+          "max_abs_accepted_step": 0.05,
+          "max_retry_count": 0
+        },
+        "mos_trends": {
+          "device": "pmos",
+          "idvd_voltages": [
+            0.0,
+            -0.05,
+            -0.1
+          ],
+          "idvd_currents": [
+            1.8642960885761844e-09,
+            0.698409980586005,
+            1.4238357000880453
+          ],
+          "idvg_gate_voltages": [
+            0.0,
+            -0.05
+          ],
+          "idvg_currents": [
+            1.397162704426798,
+            1.4238014571472548
+          ]
+        }
+      }
+    },
+    {
+      "name": "pmos2d_dd_idvg",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/pmos2d_dd_idvg/simulation_idvg.json\",\"converged\":true,\"points\":2,\"simulation_type\":\"dc_sweep\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true,
+        "csv_converged": true,
+        "dc_sweep_regression": {
+          "rows": 2,
+          "converged_rows": 2,
+          "max_attempted_step": 0.05,
+          "max_accepted_step": 0.05,
+          "max_retry_count_seen": 0,
+          "final_current_total": 1.4238014571472548,
+          "current_trend_checked": true,
+          "max_abs_attempted_step": 0.05,
+          "max_abs_accepted_step": 0.05,
+          "max_retry_count": 0
+        }
+      }
+    },
+    {
+      "name": "pmos2d_dd_cv",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/pmos2d_dd_cv/simulation_cv.json\",\"converged\":true,\"points\":2,\"simulation_type\":\"dc_sweep\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true,
+        "csv_converged": true,
+        "dc_sweep_regression": {
+          "rows": 2,
+          "converged_rows": 2,
+          "max_attempted_step": 0.05,
+          "max_accepted_step": 0.05,
+          "max_retry_count_seen": 0,
+          "final_current_total": 1.864554174001968e-09,
+          "current_trend_checked": false,
+          "max_abs_attempted_step": 0.05,
+          "max_abs_accepted_step": 0.05,
+          "max_retry_count": 0,
+          "nonzero_capacitance_rows": 1
+        }
+      }
+    },
+    {
+      "name": "ldmos2d_poisson",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/ldmos2d_poisson/simulation_iv.json\",\"converged\":true,\"nodes\":20,\"simulation_type\":\"poisson\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true
+      }
+    },
+    {
+      "name": "igbt2d_poisson",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/igbt2d_poisson/simulation_poisson.json\",\"converged\":true,\"nodes\":15,\"simulation_type\":\"poisson\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true
+      }
+    },
+    {
+      "name": "igbt2d_iv",
+      "returncode": 0,
+      "stdout": "{\"config\":\"/mnt/d/code-repo/vela-tcad/wsl-build/regression_output/igbt2d_iv/simulation_iv.json\",\"converged\":true,\"points\":3,\"simulation_type\":\"dc_sweep\"}",
+      "stderr": "",
+      "passed": true,
+      "checks": {
+        "finite_outputs": true,
+        "csv_converged": true,
+        "dc_sweep_regression": {
+          "rows": 3,
+          "converged_rows": 3,
+          "max_attempted_step": 0.05,
+          "max_accepted_step": 0.05,
+          "max_retry_count_seen": 0,
+          "final_current_total": -0.14212180067459365,
+          "current_trend_checked": false,
+          "max_abs_attempted_step": 0.05,
+          "max_abs_accepted_step": 0.05,
+          "max_retry_count": 0
+        }
+      }
+    }
+  ]
+}

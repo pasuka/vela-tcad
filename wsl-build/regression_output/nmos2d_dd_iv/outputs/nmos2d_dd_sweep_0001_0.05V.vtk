@@ -1,0 +1,160 @@
+# vtk DataFile Version 3.0
+Vela TCAD output
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 15 double
+0 0 0.0
+2.5e-07 0 0.0
+5e-07 0 0.0
+7.5e-07 0 0.0
+1e-06 0 0.0
+0 2e-07 0.0
+2.5e-07 2e-07 0.0
+5e-07 2e-07 0.0
+7.5e-07 2e-07 0.0
+1e-06 2e-07 0.0
+0 4e-07 0.0
+2.5e-07 4e-07 0.0
+5e-07 4e-07 0.0
+7.5e-07 4e-07 0.0
+1e-06 4e-07 0.0
+CELLS 16 64
+3 0 1 6
+3 0 6 5
+3 1 2 7
+3 1 7 6
+3 2 3 8
+3 2 8 7
+3 3 4 9
+3 3 9 8
+3 5 6 11
+3 5 11 10
+3 6 7 12
+3 6 12 11
+3 7 8 13
+3 7 13 12
+3 8 9 14
+3 8 14 13
+CELL_TYPES 16
+5
+5
+5
+5
+5
+5
+5
+5
+5
+5
+5
+5
+5
+5
+5
+5
+CELL_DATA 16
+SCALARS region_id int 1
+LOOKUP_TABLE default
+POINT_DATA 15
+SCALARS Potential double 1
+LOOKUP_TABLE default
+0.339239
+0.297632
+-0.297632
+0.326033
+0.339239
+0.332988
+0.271317
+-0.0753618
+0.291028
+0.35661
+0.339239
+0.326033
+-0.247632
+0.347632
+0.389239
+SCALARS ElectronQuasiFermi double 1
+LOOKUP_TABLE default
+0
+0
+0
+0
+0
+1.97829e-09
+1.63686e-08
+0.00811724
+0.0191876
+0.0238689
+0
+0
+0.05
+0.05
+0.05
+SCALARS HoleQuasiFermi double 1
+LOOKUP_TABLE default
+0
+0
+0
+0
+0
+0.0240019
+0.0311403
+0.0330102
+0.0327547
+0.0301682
+0
+0
+0.05
+0.05
+0.05
+SCALARS Electrons double 1
+LOOKUP_TABLE default
+5e+21
+1e+21
+1e+11
+3e+21
+5e+21
+3.92607e+21
+3.61347e+20
+3.95926e+14
+3.6873e+20
+3.88874e+21
+5e+21
+3e+21
+1e+11
+1e+21
+5e+21
+SCALARS Holes double 1
+LOOKUP_TABLE default
+2e+10
+1e+11
+1e+21
+3.33333e+10
+2e+10
+6.4455e+10
+9.23017e+11
+6.61559e+17
+4.58361e+11
+3.28106e+10
+2e+10
+3.33333e+10
+1e+21
+1e+11
+2e+10
+SCALARS NetDoping double 1
+LOOKUP_TABLE default
+5e+21
+1e+21
+-1e+21
+3e+21
+5e+21
+5e+21
+2e+21
+-1e+21
+2e+21
+5e+21
+5e+21
+3e+21
+-1e+21
+1e+21
+5e+21

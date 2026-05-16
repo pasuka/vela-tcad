@@ -199,3 +199,118 @@ TEST_CASE("toString round-trips contact and boundary enums", "[boundary]")
     REQUIRE(toString(BoundaryType::Insulating) == "insulating");
     REQUIRE(toString(BoundaryType::Symmetry)   == "symmetry");
 }
+
+// ---------------------------------------------------------------------------
+// Boundary segment parsing tests
+// ---------------------------------------------------------------------------
+
+TEST_CASE("parseBoundarySegmentSpecs handles missing boundaries field", "[boundary]")
+{
+    nlohmann::json cfg = nlohmann::json::object();
+    REQUIRE(parseBoundarySegmentSpecs(cfg).empty());
+}
+
+TEST_CASE("parseBoundarySegmentSpecs parses Neumann boundary", "[boundary]")
+{
+    nlohmann::json cfg;
+    cfg["boundaries"] = nlohmann::json::array({
+        {{"name", "top"}, {"type", "neumann"}, {"node_ids", {0, 1, 2}},
+         {"normal_displacement_C_per_m2", 1.5e-8}}
+    });
+
+    const auto specs = parseBoundarySegmentSpecs(cfg);
+    REQUIRE(specs.size() == 1);
+    REQUIRE(specs[0].name == "top");
+    REQUIRE(specs[0].type == BoundaryType::Neumann);
+    REQUIRE(specs[0].node_ids.size() == 3);
+    REQUIRE(specs[0].node_ids[0] == 0);
+    REQUIRE(specs[0].node_ids[1] == 1);
+    REQUIRE(specs[0].node_ids[2] == 2);
+    REQUIRE(specs[0].value == Approx(1.5e-8));
+}
+
+TEST_CASE("parseBoundarySegmentSpecs parses insulating boundary", "[boundary]")
+{
+    nlohmann::json cfg;
+    cfg["boundaries"] = nlohmann::json::array({
+        {{"name", "left_insulating"}, {"type", "insulating"}, {"node_ids", {0, 3, 6}}}
+    });
+
+    const auto specs = parseBoundarySegmentSpecs(cfg);
+    REQUIRE(specs.size() == 1);
+    REQUIRE(specs[0].name == "left_insulating");
+    REQUIRE(specs[0].type == BoundaryType::Insulating);
+    REQUIRE(specs[0].node_ids.size() == 3);
+    REQUIRE(specs[0].value == Approx(0.0)); // Default value
+}
+
+TEST_CASE("parseBoundarySegmentSpecs parses symmetry boundary", "[boundary]")
+{
+    nlohmann::json cfg;
+    cfg["boundaries"] = nlohmann::json::array({
+        {{"name", "symmetry_axis"}, {"type", "symmetry"}, {"node_ids", {0, 1}}}
+    });
+
+    const auto specs = parseBoundarySegmentSpecs(cfg);
+    REQUIRE(specs.size() == 1);
+    REQUIRE(specs[0].name == "symmetry_axis");
+    REQUIRE(specs[0].type == BoundaryType::Symmetry);
+    REQUIRE(specs[0].value == Approx(0.0));
+}
+
+TEST_CASE("parseBoundarySegmentSpecs rejects Dirichlet type", "[boundary]")
+{
+    nlohmann::json cfg;
+    cfg["boundaries"] = nlohmann::json::array({
+        {{"name", "dir"}, {"type", "dirichlet"}, {"node_ids", {0, 1}}}
+    });
+
+    REQUIRE_THROWS_AS(parseBoundarySegmentSpecs(cfg), std::runtime_error);
+}
+
+TEST_CASE("parseBoundarySegmentSpecs requires at least 2 node IDs", "[boundary]")
+{
+    nlohmann::json cfg;
+    cfg["boundaries"] = nlohmann::json::array({
+        {{"name", "bad"}, {"type", "neumann"}, {"node_ids", {0}}}
+    });
+
+    REQUIRE_THROWS_AS(parseBoundarySegmentSpecs(cfg), std::invalid_argument);
+}
+
+TEST_CASE("parseBoundarySegmentSpecs requires node_ids field", "[boundary]")
+{
+    nlohmann::json cfg;
+    cfg["boundaries"] = nlohmann::json::array({
+        {{"name", "bad"}, {"type", "neumann"}}
+    });
+
+    REQUIRE_THROWS_AS(parseBoundarySegmentSpecs(cfg), std::invalid_argument);
+}
+
+TEST_CASE("parseBoundarySegmentSpecs rejects non-finite Neumann value", "[boundary]")
+{
+    nlohmann::json cfg;
+    cfg["boundaries"] = nlohmann::json::array({
+        {{"name", "bad"}, {"type", "neumann"}, {"node_ids", {0, 1}},
+         {"normal_displacement_C_per_m2", std::numeric_limits<double>::infinity()}}
+    });
+
+    REQUIRE_THROWS_AS(parseBoundarySegmentSpecs(cfg), std::invalid_argument);
+}
+
+TEST_CASE("parseBoundarySegmentSpecs normalises boundary type strings", "[boundary]")
+{
+    nlohmann::json cfg;
+    cfg["boundaries"] = nlohmann::json::array({
+        {{"name", "b1"}, {"type", "Neumann"}, {"node_ids", {0, 1}}},
+        {{"name", "b2"}, {"type", "INSULATING"}, {"node_ids", {1, 2}}},
+        {{"name", "b3"}, {"type", "Symmetry"}, {"node_ids", {2, 3}}}
+    });
+
+    const auto specs = parseBoundarySegmentSpecs(cfg);
+    REQUIRE(specs.size() == 3);
+    REQUIRE(specs[0].type == BoundaryType::Neumann);
+    REQUIRE(specs[1].type == BoundaryType::Insulating);
+    REQUIRE(specs[2].type == BoundaryType::Symmetry);
+}

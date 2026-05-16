@@ -64,13 +64,34 @@ struct InterfaceSheetChargeSpec {
     Real totalSheetCharge() const { return sheetCharge + fixedCharge + trapDensity * trapOccupancy; }
 };
 
+/**
+ * @brief Neumann boundary condition specification for Poisson equation.
+ *
+ * Specifies normal displacement D·n [C/m^2] on a boundary segment defined by
+ * a polyline of node IDs. The RHS contribution for each edge in the polyline is:
+ *
+ *   rhs_contribution = normalDisplacement * edge_length / 2
+ *
+ * distributed equally to the two endpoint nodes.
+ *
+ * Sign convention:
+ *   - Positive normalDisplacement: outward flux (field pointing out of domain)
+ *   - Negative normalDisplacement: inward flux (field pointing into domain)
+ *   - Zero normalDisplacement: insulating/symmetry boundary
+ */
+struct PoissonNeumannBoundarySpec {
+    std::vector<Index> node_ids;           ///< Polyline defining the boundary segment
+    Real               normalDisplacement; ///< Normal displacement D·n [C/m^2]
+};
+
 class PoissonAssembler {
 public:
     PoissonAssembler(const DeviceMesh&      mesh,
                      const MaterialDatabase& matdb,
                      const DopingModel&      doping,
                      std::vector<RegionFixedChargeSpec> fixedCharges = {},
-                     std::vector<InterfaceSheetChargeSpec> sheetCharges = {});
+                     std::vector<InterfaceSheetChargeSpec> sheetCharges = {},
+                     std::vector<PoissonNeumannBoundarySpec> neumannBoundaries = {});
 
     /**
      * @brief Assemble the global stiffness matrix and RHS.
@@ -112,6 +133,7 @@ private:
     const DopingModel&      doping_;
     std::vector<RegionFixedChargeSpec> fixedCharges_;
     std::vector<InterfaceSheetChargeSpec> sheetCharges_;
+    std::vector<PoissonNeumannBoundarySpec> neumannBoundaries_;
 
     SparseMatrixd A_;
     VectorXd      b_;

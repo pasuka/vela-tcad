@@ -43,6 +43,49 @@ Dirichlet potential; `schottky` and `floating` are reserved by the schema and
 will raise a clear error if a deck requests them today. A detailed
 contact-schema reference is planned for the M1.4 milestone.
 
+## Boundary Schema (Neumann / Insulating / Symmetry)
+
+In addition to `contacts[]` for Dirichlet boundary conditions, decks may
+include an optional top-level `boundaries[]` array to declare explicit
+non-Dirichlet boundary conditions for the Poisson equation. Example:
+
+```json
+"boundaries": [
+  {
+    "name": "left_symmetry",
+    "type": "symmetry",
+    "node_ids": [0, 4, 8]
+  },
+  {
+    "name": "top_neumann",
+    "type": "neumann",
+    "node_ids": [8, 9, 10],
+    "normal_displacement_C_per_m2": 0.0
+  }
+]
+```
+
+Supported `type` values (case-insensitive, with `-` or `_` separators):
+
+- `neumann`: Specifies the normal displacement on the segment via
+  `normal_displacement_C_per_m2`, in units of C/m^2. Positive values describe
+  flux pointing out of the simulation domain; the RHS contribution per polyline
+  edge is `value * edge_length / 2` to each endpoint.
+- `insulating`: Equivalent to zero normal displacement (`D_n = 0`). Accepted by
+  parsers; does not change the matrix or RHS.
+- `symmetry`: Same numerical meaning as `insulating`; intended for symmetry
+  planes such as half-device decks.
+
+Each `boundaries[]` entry must define `node_ids` as a polyline of at least two
+existing mesh node ids; the segment length is taken from the Euclidean distance
+between consecutive nodes. The unified parser rejects unknown `type` strings,
+`node_ids` shorter than 2, and non-finite Neumann values. Naturally-bounded
+edges that are not declared explicitly continue to behave as zero-flux, exactly
+as before this milestone, so existing decks need no changes. The DD path
+accepts `insulating`, `symmetry`, and `zero_flux` (alias) declarations and
+keeps its current natural zero-flux behaviour; non-zero carrier-flux Neumann
+specs are not implemented and raise a clear error.
+
 ## Common Workflow
 
 Build the project first:

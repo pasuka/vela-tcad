@@ -1,0 +1,5 @@
+if(EXISTS "/mnt/d/code-repo/vela-tcad/wsl-build/test_mos_solver_crosscheck_tests-b12d07c.cmake")
+  include("/mnt/d/code-repo/vela-tcad/wsl-build/test_mos_solver_crosscheck_tests-b12d07c.cmake")
+else()
+  add_test(test_mos_solver_crosscheck_NOT_BUILT-b12d07c test_mos_solver_crosscheck_NOT_BUILT-b12d07c)
+endif()

@@ -53,15 +53,25 @@ struct ContactBoundarySpec {
     std::string rawType;
 };
 
-/// Parsed representation of a single boundary-segment entry.  This is reserved
-/// for future M1.2/M1.3 milestones (Neumann, insulating, symmetry).  The
-/// schema is intentionally lightweight; node-id and edge-tagging support will
-/// be added when the corresponding mesh tags land.
+/// Parsed representation of a single boundary-segment entry.
+///
+/// Supports explicit Neumann, insulating, and symmetry boundary conditions.
+/// The boundary segment is defined by a polyline of node IDs.
+///
+/// For Neumann boundaries:
+///   - value represents normal_displacement_C_per_m2 (D·n at the boundary)
+///   - Positive value means outward flux (field pointing out of domain)
+///   - RHS contribution: value * edge_length / 2 to each endpoint
+///
+/// For insulating/symmetry boundaries:
+///   - Equivalent to zero Neumann (D·n = 0)
+///   - No matrix/RHS modification needed
 struct BoundarySegmentSpec {
-    std::string  name;
-    BoundaryType type = BoundaryType::Dirichlet;
-    Real         value = 0.0;
-    std::string  rawType;
+    std::string         name;
+    BoundaryType        type = BoundaryType::Dirichlet;
+    std::vector<Index>  node_ids;  ///< Polyline defining the boundary segment
+    Real                value = 0.0;  ///< Boundary value (interpretation depends on type)
+    std::string         rawType;
 };
 
 // ---------------------------------------------------------------------------
@@ -105,6 +115,20 @@ std::string toString(BoundaryType type);
 ///     parser stays stable across the M1.x milestones.
 std::vector<ContactBoundarySpec>
 parseContactBoundarySpecs(const nlohmann::json& cfg);
+
+/// Parse the top-level ``boundaries`` array from a deck JSON object.
+///
+/// Behaviour:
+///   * Each entry must have a string ``name`` and a string ``type``.
+///   * The ``type`` field is normalised via ``boundaryTypeFromString``.
+///   * The ``node_ids`` field must be an array of at least 2 node indices
+///     defining a polyline boundary segment.
+///   * For Neumann boundaries, the optional ``normal_displacement_C_per_m2``
+///     field specifies the normal displacement (D·n) at the boundary.
+///   * Insulating and symmetry boundaries are equivalent to zero Neumann.
+///   * Dirichlet boundaries are not yet implemented via this path.
+std::vector<BoundarySegmentSpec>
+parseBoundarySegmentSpecs(const nlohmann::json& cfg);
 
 /// Compute the effective electrostatic Dirichlet potential for a contact when
 /// it is mapped to a Poisson Dirichlet node.  Matches the legacy formulation:

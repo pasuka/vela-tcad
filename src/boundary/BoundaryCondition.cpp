@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -132,6 +133,63 @@ parseContactBoundarySpecs(const nlohmann::json& cfg)
         if (ct.contains("surface_recombination_velocity")) {
             spec.surfaceRecombinationVelocity =
                 ct.at("surface_recombination_velocity").get<Real>();
+        }
+
+        specs.push_back(std::move(spec));
+    }
+    return specs;
+}
+
+std::vector<BoundarySegmentSpec>
+parseBoundarySegmentSpecs(const nlohmann::json& cfg)
+{
+    std::vector<BoundarySegmentSpec> specs;
+    if (!cfg.contains("boundaries"))
+        return specs;
+
+    const auto& boundaries = cfg.at("boundaries");
+    if (!boundaries.is_array()) {
+        throw std::invalid_argument(
+            "parseBoundarySegmentSpecs: 'boundaries' must be a JSON array.");
+    }
+
+    specs.reserve(boundaries.size());
+    for (const auto& bd : boundaries) {
+        BoundarySegmentSpec spec;
+        spec.name = bd.at("name").get<std::string>();
+        spec.rawType = bd.at("type").get<std::string>();
+        spec.type = boundaryTypeFromString(spec.rawType);
+
+        if (!bd.contains("node_ids")) {
+            throw std::invalid_argument(
+                "parseBoundarySegmentSpecs: boundary '" + spec.name +
+                "' must have a 'node_ids' array.");
+        }
+
+        spec.node_ids = bd.at("node_ids").get<std::vector<Index>>();
+        if (spec.node_ids.size() < 2) {
+            throw std::invalid_argument(
+                "parseBoundarySegmentSpecs: boundary '" + spec.name +
+                "' must have at least 2 node IDs.");
+        }
+
+        // For Neumann boundaries, read the normal displacement value
+        if (spec.type == BoundaryType::Neumann) {
+            spec.value = bd.value("normal_displacement_C_per_m2", 0.0);
+            if (!std::isfinite(spec.value)) {
+                throw std::invalid_argument(
+                    "parseBoundarySegmentSpecs: boundary '" + spec.name +
+                    "' has non-finite normal_displacement_C_per_m2.");
+            }
+        }
+
+        // Insulating and symmetry are zero Neumann, no value needed
+        // Dirichlet via boundaries is not yet implemented
+        if (spec.type == BoundaryType::Dirichlet) {
+            throw std::runtime_error(
+                "parseBoundarySegmentSpecs: boundary '" + spec.name +
+                "' has type 'dirichlet' which is not yet implemented via the boundaries array. "
+                "Use contacts for Dirichlet boundary conditions.");
         }
 
         specs.push_back(std::move(spec));

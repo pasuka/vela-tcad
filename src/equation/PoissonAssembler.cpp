@@ -79,12 +79,14 @@ PoissonAssembler::PoissonAssembler(
     const MaterialDatabase& matdb,
     const DopingModel&      doping,
     std::vector<RegionFixedChargeSpec> fixedCharges,
-    std::vector<InterfaceSheetChargeSpec> sheetCharges)
+    std::vector<InterfaceSheetChargeSpec> sheetCharges,
+    std::vector<PoissonNeumannBoundarySpec> neumannBoundaries)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
     , fixedCharges_(std::move(fixedCharges))
     , sheetCharges_(std::move(sheetCharges))
+    , neumannBoundaries_(std::move(neumannBoundaries))
     , A_(static_cast<int>(mesh.numNodes()),
          static_cast<int>(mesh.numNodes()))
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
@@ -170,6 +172,36 @@ void PoissonAssembler::assemble()
             const Real endpointCharge = constants::q * it->second * edge.length * 0.5;
             b_(static_cast<int>(edge.n0)) += endpointCharge;
             b_(static_cast<int>(edge.n1)) += endpointCharge;
+        }
+    }
+
+    // ---- Neumann boundary conditions ----
+    // For each boundary segment defined by a polyline of node IDs, compute the
+    // RHS contribution from the normal displacement D·n [C/m^2].
+    // For each edge in the polyline: rhs += D_n * edge_length / 2 to each endpoint.
+    for (const auto& neumannSpec : neumannBoundaries_) {
+        if (neumannSpec.node_ids.size() < 2) continue;
+
+        for (size_t i = 0; i + 1 < neumannSpec.node_ids.size(); ++i) {
+            const Index n0 = neumannSpec.node_ids[i];
+            const Index n1 = neumannSpec.node_ids[i + 1];
+
+            if (n0 >= N || n1 >= N) {
+                throw std::out_of_range(
+                    "PoissonAssembler: Neumann boundary node ID out of range.");
+            }
+
+            const Node& node0 = mesh_.getNode(n0);
+            const Node& node1 = mesh_.getNode(n1);
+            const Real dx = node1.x - node0.x;
+            const Real dy = node1.y - node0.y;
+            const Real edgeLength = std::sqrt(dx * dx + dy * dy);
+
+            if (edgeLength < 1e-30) continue; // Skip degenerate edges
+
+            const Real endpointContribution = neumannSpec.normalDisplacement * edgeLength * 0.5;
+            b_(static_cast<int>(n0)) += endpointContribution;
+            b_(static_cast<int>(n1)) += endpointContribution;
         }
     }
 }

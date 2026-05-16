@@ -1,0 +1,55 @@
+# vtk DataFile Version 3.0
+Vela TCAD output
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 4 double
+0 0 0.0
+1e-06 0 0.0
+1e-06 1e-06 0.0
+0 1e-06 0.0
+CELLS 2 8
+3 0 1 2
+3 0 2 3
+CELL_TYPES 2
+5
+5
+CELL_DATA 2
+SCALARS region_id int 1
+LOOKUP_TABLE default
+POINT_DATA 4
+SCALARS Potential double 1
+LOOKUP_TABLE default
+-0.5
+0.416685
+0
+-0.916685
+SCALARS ElectronQuasiFermi double 1
+LOOKUP_TABLE default
+-0.5
+0
+0
+-0.5
+SCALARS HoleQuasiFermi double 1
+LOOKUP_TABLE default
+-0.5
+0
+0
+-0.5
+SCALARS Electrons double 1
+LOOKUP_TABLE default
+1e+16
+1e+23
+1e+16
+1e+09
+SCALARS Holes double 1
+LOOKUP_TABLE default
+1e+16
+1e+09
+1e+16
+1e+23
+SCALARS NetDoping double 1
+LOOKUP_TABLE default
+0
+1e+23
+0
+-1e+23
