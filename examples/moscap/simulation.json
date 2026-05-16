@@ -18,11 +18,25 @@
   "contacts": [
     {
       "name": "gate",
+      "type": "metal_gate",
       "bias": 1.0
     },
     {
       "name": "body",
+      "type": "ohmic",
       "bias": 0.0
+    }
+  ],
+  "boundaries": [
+    {
+      "name": "left_symmetry",
+      "type": "symmetry",
+      "node_ids": [0, 3, 6, 9, 12]
+    },
+    {
+      "name": "right_symmetry",
+      "type": "symmetry",
+      "node_ids": [2, 5, 8, 11, 14]
     }
   ],
   "regression": {

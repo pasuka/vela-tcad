@@ -27,6 +27,9 @@ optional Python API through pybind11.
 | `VTKWriter` and `CSVWriter` - simulation output files | done |
 | `MaterialDatabase` - Si/SiO2 built in plus optional JSON overrides | done |
 | `DopingModel` - per-node Nd/Na from region JSON spec | done |
+| Boundary/contact schema parser (`contacts.type`, `boundaries`) | done |
+| Explicit Poisson boundaries (Neumann/insulating/symmetry) | done |
+| Schottky contact prototype (Poisson + Gummel sweep path) | done |
 | `PoissonAssembler` - FVM/Box electrostatic Poisson | done |
 | `ScharfetterGummel` and drift-diffusion assembly | done |
 | `LinearSolver`, `GummelSolver`, and Newton helpers | done |
@@ -237,6 +240,10 @@ tested in the C++ core are documented as supported from Python.
 
 ## Config JSON Schema
 
+Full schema reference: [`docs/config_schema.md`](docs/config_schema.md).
+
+Examples and support matrix: [`docs/examples.md`](docs/examples.md).
+
 Poisson configurations use this shape:
 
 ```json
@@ -260,11 +267,11 @@ model. The legacy untyped form is equivalent to `"type": "ohmic"`, so existing
 decks keep working unchanged. The parser accepts case-insensitive names with
 either `-` or `_` separators (for example `metal_gate` and `Metal-Gate` both
 resolve to `metal_gate`). Recognised values are `ohmic`, `dirichlet`,
-`metal_gate`, `schottky`, and `floating`. The Poisson driver currently
-implements `ohmic`, `dirichlet`, and `metal_gate`; `schottky` and `floating`
-are reserved by the schema for future milestones and the solver will raise a
-clear error if they appear in a deck today. A detailed contact-schema
-reference is planned for the M1.4 milestone.
+`metal_gate`, `schottky`, and `floating`. The Poisson driver supports
+`ohmic`, `dirichlet`, `metal_gate`, and a Schottky prototype path; `floating`
+is still reserved and raises a clear error when requested. In DD sweeps,
+Schottky is available on the Gummel path and rejected on the Newton path with
+a clear error.
 
 `materials_file` is optional. When present, it is loaded after the built-in
 `Si` and `SiO2` materials, so entries with the same `name` override built-ins

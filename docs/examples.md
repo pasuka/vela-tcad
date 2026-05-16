@@ -22,7 +22,7 @@ TCAD coverage.
 | `examples/igbt2d` | `simulation_poisson.json` PNPN/drift off-state baseline | `simulation_iv.json` low-current collector DD prototype | Not yet | Not yet |
 | `examples/moscap` | `simulation.json` Si/SiO2 Poisson interface check | Not applicable | Not yet | Not applicable |
 | `examples/nmos2d` | `simulation.json` legacy simplified NMOS Poisson check | Not yet | Not yet | Not yet |
-| `examples/schottky_diode_2d` | Implicit equilibrium in DD deck | `simulation_iv.json` prototype Schottky-anode IV smoke (not a calibrated Schottky model) | Not yet | Not yet |
+| `examples/schottky_diode_2d` | Implicit equilibrium in DD deck | `simulation_iv.json` prototype Schottky-anode IV smoke (M1.3, not a calibrated Schottky model) | Not yet | Not yet |
 
 
 Planned extensions should keep this table conservative. For example, LDMOS
@@ -32,8 +32,9 @@ regression coverage.
 
 ## Contact Schema Compatibility
 
-Every deck below uses the original `contacts[]` shape (`name`, `bias`, and an
-optional `flatband_voltage` or `work_function_eV`). Starting with the unified
+Decks below use either the original `contacts[]` shape (`name`, `bias`, and an
+optional `flatband_voltage` or `work_function_eV`) or the explicit typed form.
+Starting with the unified
 boundary parser, contact entries may also include a string `type` field. The
 legacy untyped form is treated as `"type": "ohmic"`, so the example decks here
 keep working without changes. The parser accepts case-insensitive names with
@@ -46,8 +47,8 @@ model that pins the surface carrier density via a Boltzmann factor
 `n = Nc*exp(-phi_Bn/Vt)` and is supported by the Gummel solver and the Poisson
 driver (the Newton solver rejects Schottky contacts with a clear error until a
 future milestone). `floating` contacts are reserved by the schema and will
-raise a clear error if a deck requests them today. A detailed contact-schema
-reference is planned for the M1.4 milestone.
+raise a clear error if a deck requests them today. See `docs/config_schema.md`
+for the central field-level schema reference.
 
 
 ## Boundary Schema (Neumann / Insulating / Symmetry)
@@ -88,10 +89,10 @@ existing mesh node ids; the segment length is taken from the Euclidean distance
 between consecutive nodes. The unified parser rejects unknown `type` strings,
 `node_ids` shorter than 2, and non-finite Neumann values. Naturally-bounded
 edges that are not declared explicitly continue to behave as zero-flux, exactly
-as before this milestone, so existing decks need no changes. The DD path
-accepts `insulating`, `symmetry`, and `zero_flux` (alias) declarations and
-keeps its current natural zero-flux behaviour; non-zero carrier-flux Neumann
-specs are not implemented and raise a clear error.
+as before this milestone, so existing decks need no changes. Explicit
+`boundaries[]` are currently consumed by the Poisson driver. DD sweeps keep
+their historical natural zero-flux behavior and do not yet parse non-contact
+boundary segments from deck JSON.
 
 ## Common Workflow
 
@@ -169,6 +170,9 @@ self-consistent drift-diffusion flow, contact-current extraction, quasi-static
 terminal charge extraction, and reverse-bias breakdown diagnostics. The decks
 are CI smoke cases rather than calibrated diode models.
 
+**Contact schema note.** PN decks can omit `contacts[].type` (legacy-compatible
+default `ohmic`) or set it explicitly to `ohmic`.
+
 **Inputs.**
 
 - `mesh.json`: 1 um x 1 um triangular silicon mesh split into `p_region` and
@@ -239,6 +243,9 @@ implant regions are abrupt n+ boxes next to a p-type body/channel.
 calibrated transistor model. BV and oxide-interface MOS electrostatics are not
 claimed for this deck.
 
+**Contact schema note.** NMOS decks remain compatible with omitted
+`contacts[].type` and may also use explicit `ohmic` / `metal_gate` entries.
+
 **Inputs.**
 
 - `mesh.json`: all-silicon body, source implant, and drain implant regions.
@@ -277,6 +284,9 @@ body to exercise sign handling, descending DC sweep targets, and contact-bias
 application in the drift-diffusion solver.
 
 **Current support level.** DD-IV and CV. BV is not yet covered.
+
+**Contact schema note.** PMOS decks remain compatible with omitted
+`contacts[].type` and may also use explicit `ohmic` / `metal_gate` entries.
 
 **Inputs.**
 
@@ -320,6 +330,10 @@ drift-diffusion model is introduced.
 **Current support level.** Poisson-only. On-state IV and BV are planned but not
 represented by executable decks yet.
 
+**Contact schema note.** LDMOS Poisson decks remain compatible with omitted
+`contacts[].type`; explicit `ohmic` / `metal_gate` typing is supported by the
+shared parser.
+
 **Inputs.**
 
 - `mesh.json`: p-body/drift silicon, n+ source, n drain/drift, field oxide, and
@@ -352,6 +366,10 @@ low-current drift-diffusion prototype only.
 **Current support level.** Poisson-only plus a low-current DD-IV prototype.
 High injection, recombination/lifetime-control calibration, and on-state voltage
 regression are not yet implemented in these examples.
+
+**Contact schema note.** IGBT decks remain compatible with omitted
+`contacts[].type`; explicit `ohmic` / `metal_gate` typing is supported by the
+shared parser.
 
 **Inputs.**
 

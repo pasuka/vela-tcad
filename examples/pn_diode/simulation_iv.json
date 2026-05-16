@@ -18,10 +18,12 @@
   "contacts": [
     {
       "name": "anode",
+      "type": "ohmic",
       "bias": 0.0
     },
     {
       "name": "cathode",
+      "type": "ohmic",
       "bias": 0.0
     }
   ],

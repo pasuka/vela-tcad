@@ -10,6 +10,14 @@ The optional Python binding has separate CTest coverage. Configure with
 `python_api` test, which imports `vela`, loads a mesh, runs Poisson and DC sweep
 flows, and verifies generated CSV/VTK outputs.
 
+## Boundary and contact schema notes
+
+- `contacts[].type` is parsed by both Poisson and DC sweep paths.
+- Omitted contact `type` remains backward-compatible and defaults to `ohmic`.
+- Explicit `boundaries[]` segments are currently consumed by the Poisson driver
+  (Neumann/insulating/symmetry). DD sweep regressions keep the historical
+  natural zero-flux behavior on non-contact boundaries.
+
 ## DC sweep regression configuration
 
 DC sweep decks can tune checks under `regression.dc_sweep` without changing how

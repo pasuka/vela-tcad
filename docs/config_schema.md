@@ -1,0 +1,317 @@
+# Config Schema Reference
+
+This document is the implementation-aligned reference for JSON config files used by Vela.
+It describes fields currently parsed by the C++ code paths in Poisson and DC sweep drivers.
+
+Scope and conventions:
+- All numeric values are SI unless a field name includes a unit suffix such as `_eV`.
+- Relative paths are resolved from the directory of the config JSON file.
+- Legacy decks remain supported where noted.
+- Prototype features are marked explicitly.
+
+## Top-level fields
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| simulation_type | string | Optional | Common values: `poisson`, `dc_sweep`, `newton`. The selected CLI/tool path determines which fields are consumed. |
+| mesh_file | string | Yes | Input mesh JSON path. |
+| materials_file | string | Optional | Optional material override file. Supported shapes: top-level array, object with `materials` array, or object map keyed by material name. |
+| output_csv | string | Optional | Default CSV output path for DC sweep. Can be overridden by `sweep.csv_file`. |
+| output_vtk | string | Poisson: Yes | Poisson VTK output file path. |
+| output_vtk_prefix | string | Optional | Default VTK prefix for DC sweep point outputs. Can be overridden by `sweep.vtk_prefix`. |
+| doping | array | Yes | Region doping definitions; see below. |
+| regions | array | Optional | Region-level fixed charge definitions; see below. |
+| interfaces | array | Optional | Interface sheet/fixed/trap charge definitions; see below. |
+| contacts | array | Yes | Contact bias and type definitions; see below. |
+| boundaries | array | Optional | Explicit Poisson boundary segments (Neumann/insulating/symmetry); see below. |
+| solver | object | Optional | Gummel/Newton settings for DD sweep and Newton solve. |
+| sweep | object | Required for dc_sweep | Sweep mode, range, outputs, and diagnostics controls. |
+| regression | object | Optional | Regression assertions consumed by `scripts/run_regression.py`. |
+
+## Doping, regions, interfaces
+
+### doping[] entries
+
+Required per entry:
+- region: string
+- donors: number (m^-3)
+- acceptors: number (m^-3)
+
+Optional per entry:
+- fixed_charge_m3: number (signed elementary-charge density in m^-3)
+
+Notes:
+- Doping uses net doping `Nd - Na` per region.
+- `fixed_charge_m3` may be specified either in `doping[]` or `regions[]` for a region, but not both.
+
+### regions[] entries
+
+Common fields:
+- name: string
+- fixed_charge_m3: number (optional)
+
+Notes:
+- Region `fixed_charge_m3` is additive source charge for Poisson.
+- Duplicate definitions for the same region are rejected.
+
+### interfaces[] entries
+
+Region pair selectors:
+- regions: [regionA, regionB] (preferred)
+- or region0 + region1 (legacy-compatible form)
+
+Charge fields (all optional, each in m^-2 and in units of elementary charge):
+- sheet_charge_m2
+- fixed_charge_m2
+- trap_density_m2
+- trap_occupancy (0..1 when `trap_density_m2` is provided)
+
+Notes:
+- Effective interface sheet charge is:
+  `sheet_charge_m2 + fixed_charge_m2 + trap_density_m2 * trap_occupancy`
+- Charge is distributed edge-by-edge across the requested region pair.
+
+## contacts[]
+
+Required per entry:
+- name: string
+- bias: number (V)
+
+Optional fields:
+- type: string
+- flatband_voltage: number (V)
+- work_function_eV: number (eV)
+- barrier_eV: number (eV)
+- electron_barrier_eV: number (eV)
+- hole_barrier_eV: number (eV)
+- surface_recombination_velocity_m_per_s: number (m/s)
+- surface_recombination_velocity: number (legacy alias)
+- emission_model: string (prototype Schottky selector)
+
+Recognized type values (case-insensitive, `-`/`_` normalized):
+- ohmic
+- dirichlet
+- metal_gate (alias: gate)
+- schottky
+- floating
+
+Compatibility policy:
+- If `type` is omitted, behavior is exactly legacy-compatible and treated as `ohmic`.
+
+Current implementation status:
+- Poisson driver: `ohmic`, `dirichlet`, `metal_gate`, `schottky` supported; `floating` rejected.
+- DC sweep (Gummel): `ohmic` and prototype `schottky` supported.
+- DC sweep (Newton): Schottky currently rejected with a clear error.
+
+Prototype notes:
+- Schottky is an engineering prototype (Dirichlet-barrier style), not a calibrated thermionic-emission model.
+
+## boundaries[]
+
+Required per entry:
+- name: string
+- type: string
+- node_ids: array of node ids, length >= 2
+
+Optional per entry:
+- normal_displacement_C_per_m2: number (for `type: neumann`)
+
+Recognized boundary type values:
+- neumann
+- insulating
+- symmetry
+- dirichlet (parsed but currently rejected in boundaries path; use contacts for Dirichlet)
+
+Behavior:
+- `neumann` uses `normal_displacement_C_per_m2` (default 0.0 if omitted).
+- `insulating` and `symmetry` are equivalent to zero-Neumann.
+- Unknown type, short `node_ids`, or non-finite Neumann values are rejected.
+
+About node_ids or edge_node_pairs:
+- `node_ids` polyline is the implemented path.
+- `edge_node_pairs` is not currently parsed by the C++ drivers and should be treated as reserved for future schema extensions.
+
+About normal_displacement_C_per_m2 / normal_electric_field_V_per_m:
+- `normal_displacement_C_per_m2` is implemented for Neumann Poisson boundaries.
+- `normal_electric_field_V_per_m` is not currently parsed; treat it as a future extension placeholder.
+
+## solver
+
+The solver object is used by DD sweep and Newton solve paths.
+
+Method selection:
+- method: `gummel` or `newton`
+- type: alias for method (legacy compatibility)
+
+Commonly used controls:
+- max_iter
+- reltol
+- abstol
+- temperature_K
+- mobility
+- recombination
+- impact_ionization
+
+Gummel-specific keys:
+- damping_psi
+- taun
+- taup
+- bandgap_narrowing
+
+Newton-specific keys:
+- damping_factor
+- line_search
+- warm_start
+- verbose
+- diagnostics / diagnostic_history
+- jacobian (`analytic` or `finite_difference`)
+- finite_difference_step
+- residual_norm (`block` or `l2`)
+- residual_weights
+- residual_scales
+- taun
+- taup
+- bandgap_narrowing
+
+Notes:
+- `line_search` and `damping_factor` apply to Newton config.
+- Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
+
+## sweep
+
+Required core fields:
+- mode: `iv`, `cv_quasistatic`, or `bv_reverse` (aliases: `cv`, `bv`, `reverse_breakdown`)
+- contact: swept contact name
+- start: number
+- stop: number
+- step: non-zero number, sign must move start toward stop
+
+Output and current fields:
+- current_contact
+- write_vtk
+- vtk_prefix
+- csv_file
+
+Step control fields:
+- min_step
+- max_step
+- growth_factor
+- shrink_factor
+- max_retries
+- stop_on_failure
+
+terminal_charge (for CV):
+- terminal_charge.contact
+- terminal_charge.regions
+- terminal_charge.contact_radius
+- terminal_charge.per_meter
+- terminal_charge.depth_m
+
+Legacy aliases still accepted:
+- charge_contact
+- charge_regions
+- charge_contact_radius
+- charge_per_meter
+- charge_depth_m
+
+breakdown (for BV reverse):
+- breakdown.max_electric_field_V_per_m
+- breakdown.current_jump_ratio
+- breakdown.non_convergence
+
+Legacy aliases still accepted:
+- breakdown_max_electric_field_V_per_m
+- breakdown_current_jump_ratio
+- breakdown_on_non_convergence
+
+## regression block
+
+Regression fields are optional and consumed by the regression runner.
+
+### regression.dc_sweep
+
+Supported fields include:
+- expected_rows
+- max_abs_attempted_step
+- max_abs_accepted_step
+- max_retry_count
+- require_monotone_abs_current
+- require_monotone_max_field
+- min_converged_rows
+
+Also supported:
+- allow_nonconverged_final_bv_point
+- current_monotone_abs_tolerance
+- current_monotone_rel_tolerance
+- max_field_monotone_abs_tolerance
+- max_field_monotone_rel_tolerance
+- min_max_electric_field_V_per_m
+- max_max_electric_field_V_per_m
+- allow_zero_capacitance
+- expected_zero_capacitance_rows
+- min_nonzero_capacitance_rows
+
+### regression (top-level)
+
+Common fields used by examples:
+- declared_converged
+- dc_sweep: { ... }
+- example-specific keys used by dedicated checks (for example MOS interface probes)
+
+## Minimal examples
+
+Poisson with explicit boundary/contact types:
+
+```json
+{
+  "simulation_type": "poisson",
+  "mesh_file": "mesh.json",
+  "output_vtk": "outputs/result.vtk",
+  "doping": [
+    { "region": "silicon", "donors": 1e21, "acceptors": 0.0 }
+  ],
+  "contacts": [
+    { "name": "anode", "type": "ohmic", "bias": 0.0 },
+    { "name": "gate", "type": "metal_gate", "bias": 1.0 }
+  ],
+  "boundaries": [
+    { "name": "left", "type": "symmetry", "node_ids": [0, 3, 6] },
+    { "name": "right", "type": "insulating", "node_ids": [2, 5, 8] }
+  ]
+}
+```
+
+DC sweep with Gummel:
+
+```json
+{
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "output_csv": "outputs/iv.csv",
+  "doping": [
+    { "region": "n_region", "donors": 1e23, "acceptors": 0.0 },
+    { "region": "p_region", "donors": 0.0, "acceptors": 1e23 }
+  ],
+  "contacts": [
+    { "name": "anode", "type": "ohmic", "bias": 0.0 },
+    { "name": "cathode", "type": "ohmic", "bias": 0.0 }
+  ],
+  "solver": {
+    "method": "gummel",
+    "max_iter": 80,
+    "reltol": 1e-5,
+    "damping_psi": 0.5,
+    "temperature_K": 300.0
+  },
+  "sweep": {
+    "mode": "iv",
+    "contact": "anode",
+    "start": 0.0,
+    "stop": 0.5,
+    "step": 0.25,
+    "current_contact": "anode",
+    "write_vtk": true,
+    "vtk_prefix": "outputs/iv"
+  }
+}
+```
