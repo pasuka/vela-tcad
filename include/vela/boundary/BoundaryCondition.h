@@ -59,12 +59,12 @@ struct ContactBoundarySpec {
 /// The boundary segment is defined by a polyline of node IDs.
 ///
 /// For Neumann boundaries:
-///   - value represents normal_displacement_C_per_m2 (D·n at the boundary)
+///   - value represents normal_displacement_C_per_m2 (D.n at the boundary)
 ///   - Positive value means outward flux (field pointing out of domain)
 ///   - RHS contribution: value * edge_length / 2 to each endpoint
 ///
 /// For insulating/symmetry boundaries:
-///   - Equivalent to zero Neumann (D·n = 0)
+///   - Equivalent to zero Neumann (D.n = 0)
 ///   - No matrix/RHS modification needed
 struct BoundarySegmentSpec {
     std::string         name;
@@ -124,7 +124,7 @@ parseContactBoundarySpecs(const nlohmann::json& cfg);
 ///   * The ``node_ids`` field must be an array of at least 2 node indices
 ///     defining a polyline boundary segment.
 ///   * For Neumann boundaries, the optional ``normal_displacement_C_per_m2``
-///     field specifies the normal displacement (D·n) at the boundary.
+///     field specifies the normal displacement (D.n) at the boundary.
 ///   * Insulating and symmetry boundaries are equivalent to zero Neumann.
 ///   * Dirichlet boundaries are not yet implemented via this path.
 std::vector<BoundarySegmentSpec>

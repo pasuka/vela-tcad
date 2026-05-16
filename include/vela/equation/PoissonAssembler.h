@@ -67,7 +67,7 @@ struct InterfaceSheetChargeSpec {
 /**
  * @brief Neumann boundary condition specification for Poisson equation.
  *
- * Specifies normal displacement D·n [C/m^2] on a boundary segment defined by
+ * Specifies normal displacement D.n [C/m^2] on a boundary segment defined by
  * a polyline of node IDs. The RHS contribution for each edge in the polyline is:
  *
  *   rhs_contribution = normalDisplacement * edge_length / 2
@@ -81,7 +81,7 @@ struct InterfaceSheetChargeSpec {
  */
 struct PoissonNeumannBoundarySpec {
     std::vector<Index> node_ids;           ///< Polyline defining the boundary segment
-    Real               normalDisplacement; ///< Normal displacement D·n [C/m^2]
+    Real               normalDisplacement; ///< Normal displacement D.n [C/m^2]
 };
 
 class PoissonAssembler {

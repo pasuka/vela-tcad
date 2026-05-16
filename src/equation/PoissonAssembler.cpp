@@ -177,7 +177,7 @@ void PoissonAssembler::assemble()
 
     // ---- Neumann boundary conditions ----
     // For each boundary segment defined by a polyline of node IDs, compute the
-    // RHS contribution from the normal displacement D·n [C/m^2].
+    // RHS contribution from the normal displacement D.n [C/m^2].
     // For each edge in the polyline: rhs += D_n * edge_length / 2 to each endpoint.
     for (const auto& neumannSpec : neumannBoundaries_) {
         if (neumannSpec.node_ids.size() < 2) continue;
