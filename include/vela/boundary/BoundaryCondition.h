@@ -45,13 +45,35 @@ struct ContactBoundarySpec {
 
     std::optional<Real> flatbandVoltage;       ///< Optional flat-band voltage [V].
     std::optional<Real> workFunction_eV;       ///< Metal work-function offset [eV].
-    std::optional<Real> barrier_eV;            ///< Schottky barrier height [eV].
-    std::optional<Real> surfaceRecombinationVelocity;
+    std::optional<Real> barrier_eV;            ///< Schottky barrier height [eV] (electron barrier by default).
+    std::optional<Real> electronBarrier_eV;    ///< Optional explicit electron Schottky barrier [eV].
+    std::optional<Real> holeBarrier_eV;        ///< Optional explicit hole Schottky barrier [eV] (default Eg - phi_Bn).
+    std::optional<Real> surfaceRecombinationVelocity; ///< Surface recombination velocity [m/s] (reserved).
+
+    /// Identifier of the carrier-boundary emission model.  Only
+    /// ``"dirichlet_barrier"`` is implemented today; thermionic emission
+    /// (Robin) is reserved for a follow-up milestone.
+    std::string emissionModel;
 
     /// Verbatim copy of the spelling found in the deck for diagnostics.
     /// Empty when the legacy untyped form was used.
     std::string rawType;
 };
+
+/// Dirichlet-style boundary state assembled for a single contact node.
+///
+/// Solvers pick the subset they need: Gummel pins ``psi``, ``n``, ``p``,
+/// ``phin``, and ``phip``; Newton's coupled formulation only needs ``psi``,
+/// ``phin``, and ``phip``.  Carrier densities are stored to make the
+/// Boltzmann relation ``n = ni*exp((psi-phin)/Vt)`` exact at the contact.
+struct ContactState {
+    Real psi  = 0.0;
+    Real n    = 0.0;
+    Real p    = 0.0;
+    Real phin = 0.0;
+    Real phip = 0.0;
+};
+
 
 /// Parsed representation of a single boundary-segment entry.
 ///
@@ -140,4 +162,52 @@ parseBoundarySegmentSpecs(const nlohmann::json& cfg);
 /// hand-constructed spec.
 Real effectivePoissonDirichletPotential(const ContactBoundarySpec& spec);
 
+// ---------------------------------------------------------------------------
+// Schottky / metal-semiconductor contact prototype helpers
+// ---------------------------------------------------------------------------
+
+/// Resolve the electron Schottky barrier height [eV] for a contact spec.
+///
+/// Precedence: ``electron_barrier_eV`` > ``barrier_eV`` > derived from
+/// ``work_function_eV - electron_affinity_eV`` (when both numbers are
+/// available).  Throws ``std::invalid_argument`` if no field provides a
+/// finite barrier.
+Real schottkyElectronBarrier_eV(const ContactBoundarySpec& spec,
+                                Real electronAffinity_eV);
+
+/// Resolve the hole Schottky barrier height [eV] for a contact spec.  When
+/// not set explicitly the helper uses ``Eg - phi_Bn`` as the complementary
+/// barrier so that ``phi_Bn + phi_Bp == Eg``.
+Real schottkyHoleBarrier_eV(const ContactBoundarySpec& spec,
+                            Real electronBarrier_eV,
+                            Real bandgap_eV);
+
+/// Build the Dirichlet-style ``ContactState`` used by the Schottky prototype.
+///
+/// Strategy (engineering smoke, not a calibrated Schottky model):
+///   * ``psi_contact = bias - (phi_Bn - chi)``, i.e. the metal Fermi level
+///     sits ``phi_Bn`` below the conduction band so the surface band bending
+///     follows the barrier.  When ``electron_affinity_eV`` is unknown the
+///     helper falls back to ``psi_contact = bias - phi_Bn`` (1 eV/q == 1 V).
+///   * ``n_contact = Nc * exp(-phi_Bn / Vt)`` if ``Nc`` is known, otherwise
+///     ``ni * exp(-(phi_Bn - 0.5*Eg)/Vt)`` so the carrier density still
+///     decays exponentially with barrier height.
+///   * ``p_contact`` uses the complementary hole barrier.
+///   * ``phin_contact = phip_contact = bias`` (electrochemical potential of
+///     the metal); this matches the Boltzmann relation exactly.
+///
+/// Inputs are SI/eV as documented in the deck (``barrier_eV`` is in eV,
+/// ``temperature_K`` in kelvin, ``bias`` in volts).  Throws on missing or
+/// non-finite required parameters.
+ContactState computeSchottkyContactState(const ContactBoundarySpec& spec,
+                                         Real ni,
+                                         Real Nc,
+                                         Real Nv,
+                                         Real bandgap_eV,
+                                         Real electronAffinity_eV,
+                                         Real netDoping_m3,
+                                         Real temperature_K);
+
 } // namespace vela
+
+

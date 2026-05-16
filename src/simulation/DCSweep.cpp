@@ -174,35 +174,46 @@ DopingModel dopingFromJson(const DeviceMesh& mesh, const nlohmann::json& cfg)
     return DopingModel::fromMeshAndRegions(mesh, specs);
 }
 
-std::unordered_map<std::string, Real> contactBiasesFromJson(const nlohmann::json& cfg)
+struct ContactConfig {
+    std::unordered_map<std::string, Real> biases;
+    ContactSpecsMap specs;
+};
+
+ContactConfig contactConfigFromJson(const nlohmann::json& cfg)
 {
     // Route legacy ``contacts[]`` parsing through the unified boundary parser
     // so the optional ``type`` field is recognised and normalised.  For the
-    // DD/Gummel/Newton paths the bias map preserves the historical semantics:
+    // DD/Gummel paths the bias map preserves the historical semantics:
     // ohmic contacts apply the raw bias, while Dirichlet/MetalGate use the
     // same effective potential expression as the Poisson driver.  Schottky
-    // and Floating contacts have no DD physics yet and are rejected so a
-    // misconfigured deck fails loudly instead of silently downgrading.
-    std::unordered_map<std::string, Real> biases;
+    // contacts route through a barrier-aware ``ContactSpecsMap`` and use the
+    // raw bias so the swept value reaches the metal Fermi level.  Floating
+    // contacts have no DD physics yet and are rejected so a misconfigured
+    // deck fails loudly instead of silently downgrading.
+    ContactConfig out;
     for (const auto& spec : parseContactBoundarySpecs(cfg)) {
         switch (spec.type) {
             case ContactType::Ohmic:
-                biases[spec.name] = spec.bias;
+                out.biases[spec.name] = spec.bias;
                 break;
             case ContactType::Dirichlet:
             case ContactType::MetalGate:
-                biases[spec.name] = effectivePoissonDirichletPotential(spec);
+                out.biases[spec.name] = effectivePoissonDirichletPotential(spec);
                 break;
             case ContactType::Schottky:
+                out.biases[spec.name] = spec.bias;
+                out.specs[spec.name] = spec;
+                break;
             case ContactType::Floating:
                 throw std::runtime_error(
                     "DCSweep: contact '" + spec.name + "' has type '" +
                     toString(spec.type) + "' which is not yet implemented "
-                    "for drift-diffusion sweeps. Use ohmic for now.");
+                    "for drift-diffusion sweeps. Use ohmic or schottky for now.");
         }
     }
-    return biases;
+    return out;
 }
+
 
 std::string vtkFilename(const std::string& prefix, int index, Real voltage)
 {
@@ -251,8 +262,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     if (cfg.contains("materials_file"))
         matdb.loadJson(resolve(cfg.at("materials_file").get<std::string>()));
     DopingModel doping = dopingFromJson(mesh, cfg);
-    std::unordered_map<std::string, Real> baseBiases = contactBiasesFromJson(cfg);
+    ContactConfig contactConfig = contactConfigFromJson(cfg);
+    std::unordered_map<std::string, Real>& baseBiases = contactConfig.biases;
+    ContactSpecsMap& contactSpecs = contactConfig.specs;
     DCSweepConfig sweep = dcSweepConfigFromJson(cfg, cfgDir);
+
     const nlohmann::json solverCfg = cfg.value("solver", nlohmann::json::object());
     const SolverMethod solverMethod = solverMethodFromJson(cfg);
     const DDSolutionValidationOptions validationOptions = validationOptionsFromJson(cfg);
@@ -309,6 +323,21 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         std::string validationDiagnostics;
     };
 
+    if (solverMethod == SolverMethod::Newton && !contactSpecs.empty()) {
+        // The Newton coupled-DD path does not yet construct Schottky-aware
+        // boundary conditions.  Fail loudly so a user mis-configuring the
+        // deck does not silently get the legacy Ohmic interpretation.
+        std::string firstSchottky;
+        for (const auto& [name, _] : contactSpecs) {
+            firstSchottky = name;
+            break;
+        }
+        throw std::runtime_error(
+            "DCSweep: solver.method='newton' does not yet support Schottky contacts "
+            "(contact '" + firstSchottky + "'). Use solver.method='gummel' for the "
+            "Schottky prototype, or switch the contact to type='ohmic'.");
+    }
+
     auto solvePoint = [&](Real voltage, const DDSolution* initial) -> SolvePointAttempt {
         auto biases = baseBiases;
         biases[sweep.contact] = voltage;
@@ -323,10 +352,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 sol = std::move(result.solution);
             } else {
                 sol = initial != nullptr
-                    ? runGummel(mesh, matdb, doping, biases, gummel, *initial)
-                    : runGummel(mesh, matdb, doping, biases, gummel);
+                    ? runGummel(mesh, matdb, doping, biases, contactSpecs, gummel, *initial)
+                    : runGummel(mesh, matdb, doping, biases, contactSpecs, gummel);
                 solverConverged = sol.converged;
             }
+
 
             const DDSolutionValidationResult validation =
                 validateDDSolution(sol, mesh, biases, validationOptions);

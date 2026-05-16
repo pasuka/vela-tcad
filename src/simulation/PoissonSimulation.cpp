@@ -7,12 +7,16 @@
 #include "vela/physics/DopingModel.h"
 #include "vela/solver/LinearSolver.h"
 #include <nlohmann/json.hpp>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <limits>
+#include <optional>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
 
 namespace vela {
 
@@ -210,6 +214,32 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     const std::vector<ContactBoundarySpec> contactSpecs =
         parseContactBoundarySpecs(cfg);
 
+    // Helper used for Schottky contacts to look up the contact-region material.
+    auto contactMaterialByName = [&](const std::string& name) -> std::optional<Material> {
+        for (Index c = 0; c < mesh.numContacts(); ++c) {
+            const Contact& ct = mesh.getContact(c);
+            if (ct.name != name) continue;
+            if (ct.region_id < mesh.numRegions()) {
+                const Region& region = mesh.getRegion(ct.region_id);
+                if (matdb.hasMaterial(region.material))
+                    return matdb.getMaterial(region.material);
+            }
+            for (Index ci = 0; ci < mesh.numCells(); ++ci) {
+                const Cell& cell = mesh.getCell(ci);
+                for (Index nid : cell.node_ids) {
+                    for (Index cnid : ct.node_ids) {
+                        if (nid == cnid) {
+                            const Region& region = mesh.getRegion(cell.region_id);
+                            if (matdb.hasMaterial(region.material))
+                                return matdb.getMaterial(region.material);
+                        }
+                    }
+                }
+            }
+        }
+        return std::nullopt;
+    };
+
     std::unordered_map<std::string, Real> contactBias;
     for (const auto& spec : contactSpecs) {
         switch (spec.type) {
@@ -218,15 +248,42 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
             case ContactType::MetalGate:
                 contactBias[spec.name] = effectivePoissonDirichletPotential(spec);
                 break;
-            case ContactType::Schottky:
+            case ContactType::Schottky: {
+                // Schottky contacts: use the same Dirichlet-barrier prototype
+                // as the DD path so the Poisson-only field plot is consistent
+                // with the DD result.  psi_contact = bias - (phi_Bn - Eg/2)
+                // when bandgap+affinity are known, else psi_contact = bias -
+                // phi_Bn (1 eV/q == 1 V).
+                const auto materialOpt = contactMaterialByName(spec.name);
+                const Real bandgap_eV = materialOpt && materialOpt->bandgap_eV
+                    ? *materialOpt->bandgap_eV
+                    : std::numeric_limits<Real>::quiet_NaN();
+                const Real affinity_eV = materialOpt && materialOpt->electron_affinity_eV
+                    ? *materialOpt->electron_affinity_eV
+                    : std::numeric_limits<Real>::quiet_NaN();
+                const Real phiBn = schottkyElectronBarrier_eV(spec, affinity_eV);
+                Real psiOffset = phiBn;
+                if (std::isfinite(bandgap_eV) && bandgap_eV > 0.0 &&
+                    std::isfinite(affinity_eV)) {
+                    psiOffset = phiBn - 0.5 * bandgap_eV;
+                }
+                if (spec.workFunction_eV && std::isfinite(affinity_eV) &&
+                    !spec.barrier_eV && !spec.electronBarrier_eV &&
+                    std::isfinite(bandgap_eV) && bandgap_eV > 0.0) {
+                    psiOffset = *spec.workFunction_eV - affinity_eV - 0.5 * bandgap_eV;
+                }
+                contactBias[spec.name] = spec.bias - psiOffset;
+                break;
+            }
             case ContactType::Floating:
                 throw std::runtime_error(
                     "PoissonSimulation: contact '" + spec.name +
                     "' has type '" + toString(spec.type) +
                     "' which is not yet implemented for the Poisson driver. "
-                    "Use ohmic, dirichlet, or metal_gate for now.");
+                    "Use ohmic, dirichlet, metal_gate, or schottky for now.");
         }
     }
+
 
     // Map contact nodes -> prescribed potential
     std::unordered_map<Index, Real> dirichletBCs;

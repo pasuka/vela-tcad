@@ -119,7 +119,19 @@ EXAMPLES = [
         "expected": [Path("outputs/igbt2d_iv.csv"), Path("outputs/igbt2d_iv_sweep_0000_0V.vtk")],
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
     },
+    {
+        "name": "schottky_diode_2d_iv",
+        "source": "schottky_diode_2d",
+        "config": Path("examples/schottky_diode_2d/simulation_iv.json"),
+        "expected": [
+            Path("outputs/schottky_iv.csv"),
+            Path("outputs/schottky_sweep_0000_-0.1V.vtk"),
+        ],
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression",
+                   "schottky_iv_trend"],
+    },
 ]
+
 
 
 def parse_args() -> argparse.Namespace:
@@ -574,7 +586,47 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
         result["nonzero_capacitance_rows"] = nonzero_capacitance_rows
     return result
 
+def check_schottky_iv_trend(example_dir: Path) -> dict[str, Any]:
+    cfg = json.loads((example_dir / "simulation.json").read_text())
+    rows = read_csv(output_csv_path(example_dir, cfg))
+    if not rows:
+        raise AssertionError("Schottky IV CSV contains no rows")
+    voltages = [
+        parse_finite_float(row, "bias_V", "Schottky IV", idx)
+        for idx, row in enumerate(rows, start=1)
+    ]
+    currents = [
+        parse_finite_float(row, "current_total", "Schottky IV", idx)
+        for idx, row in enumerate(rows, start=1)
+    ]
+    # The Dirichlet-barrier prototype is not calibrated, but the engineering
+    # smoke regression checks that forward bias gives at least as much |I| as
+    # zero / reverse bias.  We grab the most-forward and most-reverse bias
+    # rows from the converged set rather than assuming any particular order.
+    converged = [
+        (v, i) for v, i in zip(voltages, currents)
+        if math.isfinite(v) and math.isfinite(i)
+    ]
+    if not converged:
+        raise AssertionError("Schottky IV CSV contains no finite converged rows")
+    converged.sort(key=lambda item: item[0])
+    reverse_abs = abs(converged[0][1])
+    forward_abs = abs(converged[-1][1])
+    if forward_abs + 1.0e-30 < reverse_abs:
+        raise AssertionError(
+            "Schottky IV forward |I| should not be smaller than reverse |I|; "
+            f"reverse={reverse_abs} forward={forward_abs} "
+            f"all voltages={voltages} currents={currents}")
+    return {
+        "voltages": voltages,
+        "currents": currents,
+        "reverse_abs": reverse_abs,
+        "forward_abs": forward_abs,
+    }
+
+
 def check_iv_trend(example_dir: Path) -> dict[str, Any]:
+
     cfg = json.loads((example_dir / "simulation.json").read_text())
     expected = expected_sweep_voltages(cfg["sweep"])
     rows = read_csv(example_dir / "outputs" / "pn_iv.csv")
@@ -854,7 +906,10 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
             result["checks"]["moscap_interface"] = check_moscap_interface(example_dir)
         if "mos_trends" in spec["checks"]:
             result["checks"]["mos_trends"] = check_mos_trends(example_dir, runner)
+        if "schottky_iv_trend" in spec["checks"]:
+            result["checks"]["schottky_iv_trend"] = check_schottky_iv_trend(example_dir)
         result["passed"] = True
+
     except Exception as ex:  # noqa: BLE001 - regression summary should capture all failures.
         result["error"] = str(ex)
     return result

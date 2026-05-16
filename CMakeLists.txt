@@ -200,8 +200,12 @@ target_compile_definitions(test_dc_sweep PRIVATE VELA_SOURCE_DIR="${CMAKE_CURREN
 add_executable(test_boundary_conditions tests/test_boundary_conditions.cpp)
 target_link_libraries(test_boundary_conditions PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_schottky_contact tests/test_schottky_contact.cpp)
+target_link_libraries(test_schottky_contact PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_poisson_neumann tests/test_poisson_neumann.cpp)
 target_link_libraries(test_poisson_neumann PRIVATE vela_core Catch2::Catch2WithMain)
+
 
 include(Catch)
 catch_discover_tests(test_scaling)
@@ -231,7 +235,10 @@ catch_discover_tests(test_electric_field_diagnostics)
 add_test(NAME electric_field_diagnostics COMMAND test_electric_field_diagnostics [electric_field])
 catch_discover_tests(test_boundary_conditions)
 add_test(NAME boundary COMMAND test_boundary_conditions [boundary])
+catch_discover_tests(test_schottky_contact)
+add_test(NAME schottky COMMAND test_schottky_contact [schottky])
 catch_discover_tests(test_poisson_neumann)
+
 
 add_test(NAME regression
     COMMAND ${Python3_EXECUTABLE}

@@ -22,6 +22,8 @@ TCAD coverage.
 | `examples/igbt2d` | `simulation_poisson.json` PNPN/drift off-state baseline | `simulation_iv.json` low-current collector DD prototype | Not yet | Not yet |
 | `examples/moscap` | `simulation.json` Si/SiO2 Poisson interface check | Not applicable | Not yet | Not applicable |
 | `examples/nmos2d` | `simulation.json` legacy simplified NMOS Poisson check | Not yet | Not yet | Not yet |
+| `examples/schottky_diode_2d` | Implicit equilibrium in DD deck | `simulation_iv.json` prototype Schottky-anode IV smoke (not a calibrated Schottky model) | Not yet | Not yet |
+
 
 Planned extensions should keep this table conservative. For example, LDMOS
 on-state IV and BV, and IGBT high-injection, recombination, lifetime-control,
@@ -39,9 +41,14 @@ either `-` or `_` separators (for example `metal_gate` and `Metal-Gate` both
 resolve to the same metal-gate model). Recognised values are `ohmic`,
 `dirichlet`, `metal_gate`, `schottky`, and `floating`. The Poisson driver
 currently maps `ohmic`, `dirichlet`, and `metal_gate` to an effective
-Dirichlet potential; `schottky` and `floating` are reserved by the schema and
-will raise a clear error if a deck requests them today. A detailed
-contact-schema reference is planned for the M1.4 milestone.
+Dirichlet potential; `schottky` contacts use a prototype Dirichlet-barrier
+model that pins the surface carrier density via a Boltzmann factor
+`n = Nc*exp(-phi_Bn/Vt)` and is supported by the Gummel solver and the Poisson
+driver (the Newton solver rejects Schottky contacts with a clear error until a
+future milestone). `floating` contacts are reserved by the schema and will
+raise a clear error if a deck requests them today. A detailed contact-schema
+reference is planned for the M1.4 milestone.
+
 
 ## Boundary Schema (Neumann / Insulating / Symmetry)
 

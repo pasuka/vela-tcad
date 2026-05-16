@@ -1,4 +1,5 @@
 #include "vela/solver/GummelSolver.h"
+#include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/equation/DDAssembler.h"
 #include "vela/solver/LinearSolver.h"
@@ -8,8 +9,11 @@
 #include <cmath>
 #include <stdexcept>
 #include <limits>
+#include <optional>
 
 namespace vela {
+
+
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -152,6 +156,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
                          const MaterialDatabase&                     matdb,
                          const DopingModel&                          doping,
                          const std::unordered_map<std::string, Real>& contactBiases,
+                         const ContactSpecsMap&                       contactSpecs,
                          const GummelConfig&                          cfg,
                          const DDSolution*                           initialGuess)
 {
@@ -166,14 +171,39 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         ni_v[i] = effectiveIntrinsicDensity(ni_v[i], Vt, deltaEg);
     }
 
+    // Look up a contact-region material for Schottky barrier helpers.
+    auto contactMaterial = [&](const Contact& contact) -> std::optional<Material> {
+        if (contact.region_id < mesh.numRegions()) {
+            const Region& region = mesh.getRegion(contact.region_id);
+            if (matdb.hasMaterial(region.material))
+                return matdb.getMaterial(region.material, cfg.temperature_K);
+        }
+        // Fallback: pick any cell that contains a contact node.
+        for (Index c = 0; c < mesh.numCells(); ++c) {
+            const Cell& cell = mesh.getCell(c);
+            for (Index nid : cell.node_ids) {
+                for (Index cnid : contact.node_ids) {
+                    if (nid == cnid) {
+                        const Region& region = mesh.getRegion(cell.region_id);
+                        if (matdb.hasMaterial(region.material))
+                            return matdb.getMaterial(region.material, cfg.temperature_K);
+                    }
+                }
+            }
+        }
+        return std::nullopt;
+    };
+
     // ------------------------------------------------------------------
-    // Build Ohmic contact Dirichlet BCs
+    // Build contact Dirichlet BCs
     // ------------------------------------------------------------------
-    //   psi_contact  = V_bias + Vt * ln(n_eq / ni)  (built-in potential)
-    //   n_contact    = n_eq
-    //   p_contact    = ni^2 / n_eq
-    //   phin_contact = V_bias
-    //   phip_contact = V_bias
+    //   Ohmic (default):
+    //     psi_contact  = V_bias + Vt * ln(n_eq / ni)
+    //     n_contact    = n_eq
+    //     p_contact    = ni^2 / n_eq
+    //     phin = phip  = V_bias
+    //   Schottky (prototype Dirichlet barrier):
+    //     ContactState from computeSchottkyContactState()
     // ------------------------------------------------------------------
     std::unordered_map<Index, Real> psiBC;
     std::unordered_map<Index, Real> nBC;
@@ -186,6 +216,43 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         auto it = contactBiases.find(contact.name);
         if (it == contactBiases.end()) continue;
         const double Vbias = it->second;
+
+        auto specIt = contactSpecs.find(contact.name);
+        const ContactBoundarySpec* spec =
+            (specIt != contactSpecs.end()) ? &specIt->second : nullptr;
+        const bool isSchottky =
+            spec != nullptr && spec->type == ContactType::Schottky;
+
+        if (isSchottky) {
+            ContactBoundarySpec effSpec = *spec;
+            effSpec.bias = Vbias; // honour the swept bias point
+
+            const auto materialOpt = contactMaterial(contact);
+            const Real bandgap_eV = materialOpt && materialOpt->bandgap_eV
+                ? *materialOpt->bandgap_eV
+                : std::numeric_limits<Real>::quiet_NaN();
+            const Real affinity_eV = materialOpt && materialOpt->electron_affinity_eV
+                ? *materialOpt->electron_affinity_eV
+                : std::numeric_limits<Real>::quiet_NaN();
+            const Real NcVal = materialOpt && materialOpt->Nc_m3
+                ? *materialOpt->Nc_m3 : 0.0;
+            const Real NvVal = materialOpt && materialOpt->Nv_m3
+                ? *materialOpt->Nv_m3 : 0.0;
+
+            for (Index nid : contact.node_ids) {
+                const double ni_node = ni_v[nid];
+                const double Ndop = doping.netDoping(nid);
+                const ContactState state = computeSchottkyContactState(
+                    effSpec, ni_node, NcVal, NvVal,
+                    bandgap_eV, affinity_eV, Ndop, cfg.temperature_K);
+                psiBC [nid] = state.psi;
+                nBC   [nid] = state.n;
+                pBC   [nid] = state.p;
+                phinBC[nid] = state.phin;
+                phipBC[nid] = state.phip;
+            }
+            continue;
+        }
 
         for (Index nid : contact.node_ids) {
             const double ni_node  = ni_v[nid];
@@ -206,6 +273,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
             phipBC[nid] = Vbias;
         }
     }
+
 
     // ------------------------------------------------------------------
     // Initial guess: solve linear Poisson (no carriers) for psi
@@ -384,7 +452,8 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
                      const std::unordered_map<std::string, Real>& contactBiases,
                      const GummelConfig&                          cfg)
 {
-    return runGummelImpl(mesh, matdb, doping, contactBiases, cfg, nullptr);
+    ContactSpecsMap emptySpecs;
+    return runGummelImpl(mesh, matdb, doping, contactBiases, emptySpecs, cfg, nullptr);
 }
 
 DDSolution runGummel(const DeviceMesh&                          mesh,
@@ -394,8 +463,31 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
                      const GummelConfig&                          cfg,
                      const DDSolution&                           initialGuess)
 {
-    return runGummelImpl(mesh, matdb, doping, contactBiases, cfg, &initialGuess);
+    ContactSpecsMap emptySpecs;
+    return runGummelImpl(mesh, matdb, doping, contactBiases, emptySpecs, cfg, &initialGuess);
 }
+
+DDSolution runGummel(const DeviceMesh&                          mesh,
+                     const MaterialDatabase&                     matdb,
+                     const DopingModel&                          doping,
+                     const std::unordered_map<std::string, Real>& contactBiases,
+                     const ContactSpecsMap&                       contactSpecs,
+                     const GummelConfig&                          cfg)
+{
+    return runGummelImpl(mesh, matdb, doping, contactBiases, contactSpecs, cfg, nullptr);
+}
+
+DDSolution runGummel(const DeviceMesh&                          mesh,
+                     const MaterialDatabase&                     matdb,
+                     const DopingModel&                          doping,
+                     const std::unordered_map<std::string, Real>& contactBiases,
+                     const ContactSpecsMap&                       contactSpecs,
+                     const GummelConfig&                          cfg,
+                     const DDSolution&                           initialGuess)
+{
+    return runGummelImpl(mesh, matdb, doping, contactBiases, contactSpecs, cfg, &initialGuess);
+}
+
 
 // ---------------------------------------------------------------------------
 // writeDDSolutionVTK

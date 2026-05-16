@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/Types.h"
 #include "vela/mesh/DeviceMesh.h"
@@ -13,6 +14,16 @@
 #include <vector>
 
 namespace vela {
+
+/// Per-contact physics metadata routed to the DD solvers.
+///
+/// Bias for each contact is still passed through ``contactBiases`` so the
+/// existing DC sweep code can update it cheaply.  This auxiliary map carries
+/// the parsed ``ContactBoundarySpec`` (Schottky barrier, work function, etc.)
+/// for any contact whose type is not the default Ohmic.  Contacts missing
+/// from the map fall back to the legacy Ohmic Dirichlet construction.
+using ContactSpecsMap = std::unordered_map<std::string, ContactBoundarySpec>;
+
 
 /**
  * @brief Result of a Gummel iteration.
@@ -84,6 +95,25 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
                      const std::unordered_map<std::string, Real>& contactBiases,
                      const GummelConfig&                          cfg,
                      const DDSolution&                           initialGuess);
+
+/// Schottky-aware overloads.  ``contactSpecs`` selects the per-contact
+/// boundary model; any contact missing from the map falls back to the
+/// legacy Ohmic Dirichlet construction so existing decks keep working.
+DDSolution runGummel(const DeviceMesh&                          mesh,
+                     const MaterialDatabase&                     matdb,
+                     const DopingModel&                          doping,
+                     const std::unordered_map<std::string, Real>& contactBiases,
+                     const ContactSpecsMap&                       contactSpecs,
+                     const GummelConfig&                          cfg);
+
+DDSolution runGummel(const DeviceMesh&                          mesh,
+                     const MaterialDatabase&                     matdb,
+                     const DopingModel&                          doping,
+                     const std::unordered_map<std::string, Real>& contactBiases,
+                     const ContactSpecsMap&                       contactSpecs,
+                     const GummelConfig&                          cfg,
+                     const DDSolution&                           initialGuess);
+
 
 /**
  * @brief Write a DDSolution to a VTK file.
