@@ -1,5 +1,0 @@
-if(EXISTS "/mnt/d/code-repo/vela-tcad/wsl-build/test_mobility_tests-b12d07c.cmake")
-  include("/mnt/d/code-repo/vela-tcad/wsl-build/test_mobility_tests-b12d07c.cmake")
-else()
-  add_test(test_mobility_NOT_BUILT-b12d07c test_mobility_NOT_BUILT-b12d07c)
-endif()

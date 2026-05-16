@@ -1,4 +1,0 @@
-mode,bias_contact,bias_V,current_contact,current_electron,current_hole,current_total,converged,iterations,step_diagnostics,validation_diagnostics
-iv,drain,0,drain,3.0664941901205244e-09,-1.2021981015443399e-09,1.8642960885761844e-09,1,19,attempted_step=0;accepted_step=0;retry_count=0,
-iv,drain,-0.050000000000000003,drain,-9.0482347927915506e-11,0.69840998067648741,0.69840998058600501,1,13,attempted_step=-0.050000000000000003;accepted_step=-0.050000000000000003;retry_count=0,
-iv,drain,-0.10000000000000001,drain,-7.1770477111238769e-10,1.4238357008057501,1.4238357000880453,1,14,attempted_step=-0.050000000000000003;accepted_step=-0.050000000000000003;retry_count=0,

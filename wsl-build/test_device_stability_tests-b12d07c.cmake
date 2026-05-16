@@ -1,5 +1,0 @@
-add_test( [==[small pathological device assemblies stay finite]==] /mnt/d/code-repo/vela-tcad/wsl-build/test_device_stability [==[small pathological device assemblies stay finite]==]  )
-set_tests_properties( [==[small pathological device assemblies stay finite]==] PROPERTIES WORKING_DIRECTORY /mnt/d/code-repo/vela-tcad/wsl-build)
-add_test( [==[zero-mobility oxide edges do not create carrier transport rows]==] /mnt/d/code-repo/vela-tcad/wsl-build/test_device_stability [==[zero-mobility oxide edges do not create carrier transport rows]==]  )
-set_tests_properties( [==[zero-mobility oxide edges do not create carrier transport rows]==] PROPERTIES WORKING_DIRECTORY /mnt/d/code-repo/vela-tcad/wsl-build)
-set( test_device_stability_TESTS [==[small pathological device assemblies stay finite]==] [==[zero-mobility oxide edges do not create carrier transport rows]==])

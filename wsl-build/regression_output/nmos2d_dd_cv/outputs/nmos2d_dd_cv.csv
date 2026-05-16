@@ -1,3 +1,0 @@
-mode,bias_contact,bias_V,current_contact,current_electron,current_hole,current_total,converged,iterations,step_diagnostics,validation_diagnostics,charge_C_per_m,capacitance_F_per_m
-cv_quasistatic,gate,0,drain,5.4967944522381847e-16,-9.0179115240783673e-25,5.4967944432202729e-16,1,19,attempted_step=0;accepted_step=0;retry_count=0,,5.4598073295625829e-12,0
-cv_quasistatic,gate,0.050000000000000003,drain,-3.3706732057728564e-09,1.0903362329358672e-09,-2.2803369728369892e-09,1,7,attempted_step=0.050000000000000003;accepted_step=0.050000000000000003;retry_count=0,,5.1957861197305358e-12,-5.2804241966409417e-12

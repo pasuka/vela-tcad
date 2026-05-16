@@ -1,3 +1,0 @@
-mode,bias_contact,bias_V,current_contact,current_electron,current_hole,current_total,converged,iterations,step_diagnostics,validation_diagnostics
-iv,gate,0,drain,-8.4817785171550962e-10,1.3971627052749758,1.397162704426798,1,21,attempted_step=0;accepted_step=0;retry_count=0,
-iv,gate,-0.050000000000000003,drain,-7.1774888455458922e-10,1.4238014578650038,1.4238014571472548,1,7,attempted_step=-0.050000000000000003;accepted_step=-0.050000000000000003;retry_count=0,

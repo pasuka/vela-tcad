@@ -1,7 +1,0 @@
-add_test( [==[edge electric field diagnostic matches linear potential projections]==] /mnt/d/code-repo/vela-tcad/wsl-build/test_electric_field_diagnostics [==[edge electric field diagnostic matches linear potential projections]==]  )
-set_tests_properties( [==[edge electric field diagnostic matches linear potential projections]==] PROPERTIES WORKING_DIRECTORY /mnt/d/code-repo/vela-tcad/wsl-build)
-add_test( [==[edge electric field diagnostic reports expected horizontal and vertical projections]==] /mnt/d/code-repo/vela-tcad/wsl-build/test_electric_field_diagnostics [==[edge electric field diagnostic reports expected horizontal and vertical projections]==]  )
-set_tests_properties( [==[edge electric field diagnostic reports expected horizontal and vertical projections]==] PROPERTIES WORKING_DIRECTORY /mnt/d/code-repo/vela-tcad/wsl-build)
-add_test( [==[edge electric field diagnostic ignores degenerate edges without NaN]==] /mnt/d/code-repo/vela-tcad/wsl-build/test_electric_field_diagnostics [==[edge electric field diagnostic ignores degenerate edges without NaN]==]  )
-set_tests_properties( [==[edge electric field diagnostic ignores degenerate edges without NaN]==] PROPERTIES WORKING_DIRECTORY /mnt/d/code-repo/vela-tcad/wsl-build)
-set( test_electric_field_diagnostics_TESTS [==[edge electric field diagnostic matches linear potential projections]==] [==[edge electric field diagnostic reports expected horizontal and vertical projections]==] [==[edge electric field diagnostic ignores degenerate edges without NaN]==])
