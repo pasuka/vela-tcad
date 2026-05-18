@@ -86,6 +86,21 @@ TEST_CASE("JSON solver config selects mobility and recombination models", "[mobi
     REQUIRE(cfg.bandgapNarrowing.coefficient == Catch::Approx(0.010));
 }
 
+
+TEST_CASE("JSON mobility surface interface rejects canonical and alias together",
+          "[mobility][json][surface]")
+{
+    const nlohmann::json json = {
+        {"model", "caughey_thomas_surface"},
+        {"surface", {
+            {"surface_interface", {"channel", "gate_oxide"}},
+            {"interface", {"channel", "field_oxide"}}
+        }}
+    };
+
+    REQUIRE_THROWS_AS(mobilityModelConfigFromJson(json), std::invalid_argument);
+}
+
 TEST_CASE("Gummel PN diode runs with configured mobility and recombination", "[mobility][gummel]")
 {
     DeviceMesh mesh = makePNMesh();

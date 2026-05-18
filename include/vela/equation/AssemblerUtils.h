@@ -260,6 +260,84 @@ inline std::vector<Material> buildCellMaterials(const DeviceMesh&       mesh,
     return materials;
 }
 
+
+inline Real cellCentroidPotential(const DeviceMesh& mesh, const VectorXd& psi, Index cellId)
+{
+    const Cell& cell = mesh.getCell(cellId);
+    if (cell.node_ids.empty())
+        return std::numeric_limits<Real>::quiet_NaN();
+
+    Real sum = 0.0;
+    for (Index nodeId : cell.node_ids)
+        sum += psi(static_cast<int>(nodeId));
+    return sum / static_cast<Real>(cell.node_ids.size());
+}
+
+inline std::pair<Real, Real> cellCentroid(const DeviceMesh& mesh, Index cellId)
+{
+    const Cell& cell = mesh.getCell(cellId);
+    if (cell.node_ids.empty())
+        return {std::numeric_limits<Real>::quiet_NaN(),
+                std::numeric_limits<Real>::quiet_NaN()};
+
+    Real x = 0.0;
+    Real y = 0.0;
+    for (Index nodeId : cell.node_ids) {
+        const Node& node = mesh.getNode(nodeId);
+        x += node.x;
+        y += node.y;
+    }
+    const Real invCount = 1.0 / static_cast<Real>(cell.node_ids.size());
+    return {x * invCount, y * invCount};
+}
+
+inline Real estimateSurfaceNormalField(const std::vector<Index>& cells,
+                                       const DeviceMesh& mesh,
+                                       const VectorXd& psi,
+                                       Index edgeId,
+                                       Index cellId)
+{
+    const Edge& edge = mesh.getEdge(edgeId);
+    if (edge.length <= 1.0e-30)
+        return std::numeric_limits<Real>::quiet_NaN();
+
+    const Node& n0 = mesh.getNode(edge.n0);
+    const Node& n1 = mesh.getNode(edge.n1);
+    const Real normalX = -(n1.y - n0.y) / edge.length;
+    const Real normalY =  (n1.x - n0.x) / edge.length;
+
+    const auto [cx, cy] = cellCentroid(mesh, cellId);
+    const Real cellPhi = cellCentroidPotential(mesh, psi, cellId);
+    if (!std::isfinite(cx) || !std::isfinite(cy) || !std::isfinite(cellPhi))
+        return std::numeric_limits<Real>::quiet_NaN();
+
+    Real maxField = std::numeric_limits<Real>::quiet_NaN();
+    for (Index otherCellId : cells) {
+        if (otherCellId == cellId)
+            continue;
+        const auto [ox, oy] = cellCentroid(mesh, otherCellId);
+        const Real otherPhi = cellCentroidPotential(mesh, psi, otherCellId);
+        if (!std::isfinite(ox) || !std::isfinite(oy) || !std::isfinite(otherPhi))
+            continue;
+        const Real normalDistance = std::abs((ox - cx) * normalX + (oy - cy) * normalY);
+        if (normalDistance <= 1.0e-30)
+            continue;
+        const Real field = std::abs((otherPhi - cellPhi) / normalDistance);
+        if (!std::isfinite(maxField) || field > maxField)
+            maxField = field;
+    }
+    if (std::isfinite(maxField))
+        return maxField;
+
+    const Real edgePhi = 0.5 * (psi(static_cast<int>(edge.n0)) + psi(static_cast<int>(edge.n1)));
+    const Real mx = 0.5 * (n0.x + n1.x);
+    const Real my = 0.5 * (n0.y + n1.y);
+    const Real normalDistance = std::abs((cx - mx) * normalX + (cy - my) * normalY);
+    if (normalDistance <= 1.0e-30)
+        return std::numeric_limits<Real>::quiet_NaN();
+    return std::abs((cellPhi - edgePhi) / normalDistance);
+}
+
 /// Return average model mobility [m^2/V/s] for edge @p edgeId.
 inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          const DeviceMesh&                       mesh,
@@ -269,7 +347,8 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          Index                                   edgeId,
                          CarrierType                             carrier,
                          Real                                    electricField,
-                         const MobilityModelConfig*              mobilityConfig = nullptr)
+                         const MobilityModelConfig*              mobilityConfig = nullptr,
+                         const VectorXd*                         psi = nullptr)
 {
     const auto& cells = edgeCells[edgeId];
     if (cells.empty()) return 0.0;
@@ -278,10 +357,14 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
     const Real netDoping = 0.5 * (doping.netDoping(edge.n0) +
                                   doping.netDoping(edge.n1));
 
+    const bool surfaceEnabled =
+        mobilityConfig != nullptr && isSurfaceMobilityModel(*mobilityConfig);
     std::vector<std::string> adjacentRegionNames;
-    adjacentRegionNames.reserve(cells.size());
-    for (Index c : cells)
-        adjacentRegionNames.push_back(mesh.getRegion(mesh.getCell(c).region_id).name);
+    if (surfaceEnabled) {
+        adjacentRegionNames.reserve(cells.size());
+        for (Index c : cells)
+            adjacentRegionNames.push_back(mesh.getRegion(mesh.getCell(c).region_id).name);
+    }
 
     Real sum = 0.0;
     Index contributingCells = 0;
@@ -295,13 +378,13 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
         // edges pinned while preserving lateral semiconductor transport on
         // edges that lie along a semiconductor/oxide interface. Surface
         // mobility is enabled only on configured regions/interfaces; when no
-        // surface match is present the NaN normal field disables the surface
+        // normal-field estimate is available the NaN field disables the surface
         // factor while preserving any high-field velocity saturation.
         const Region& region = mesh.getRegion(mesh.getCell(c).region_id);
-        const bool surfaceApplies = mobilityConfig != nullptr &&
+        const bool surfaceApplies = surfaceEnabled &&
             surfaceMobilityAppliesToRegionPair(*mobilityConfig, region.name, adjacentRegionNames);
-        const Real surfaceNormalField = surfaceApplies
-            ? electricField
+        const Real surfaceNormalField = (surfaceApplies && psi != nullptr)
+            ? estimateSurfaceNormalField(cells, mesh, *psi, edgeId, c)
             : std::numeric_limits<Real>::quiet_NaN();
         const Real modelMobility = (carrier == CarrierType::Electron)
             ? mobility.electronMobility(

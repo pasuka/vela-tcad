@@ -125,7 +125,82 @@ std::vector<std::filesystem::path> mosExampleDirs()
     };
 }
 
+DeviceMesh makeHorizontalInterfaceMesh()
+{
+    DeviceMesh mesh;
+    const Real L = 1.0e-6;
+
+    Node n0; n0.id = 0; n0.x = 0.0;     n0.y = 0.0;  mesh.addNode(n0);
+    Node n1; n1.id = 1; n1.x = L;       n1.y = 0.0;  mesh.addNode(n1);
+    Node n2; n2.id = 2; n2.x = 0.5 * L; n2.y = -L;   mesh.addNode(n2);
+    Node n3; n3.id = 3; n3.x = 0.5 * L; n3.y = L;    mesh.addNode(n3);
+
+    Cell si; si.id = 0; si.type = CellType::Tri3; si.region_id = 0;
+    si.node_ids = {0, 1, 2}; mesh.addCell(si);
+    Cell oxide; oxide.id = 1; oxide.type = CellType::Tri3; oxide.region_id = 1;
+    oxide.node_ids = {0, 3, 1}; mesh.addCell(oxide);
+
+    Region channel; channel.id = 0; channel.name = "channel"; channel.material = "Si";
+    channel.cell_ids = {0}; mesh.addRegion(channel);
+    Region gateOxide; gateOxide.id = 1; gateOxide.name = "gate_oxide"; gateOxide.material = "SiO2";
+    gateOxide.cell_ids = {1}; mesh.addRegion(gateOxide);
+
+    mesh.buildEdges();
+    return mesh;
+}
+
+Index findEdgeByNodes(const DeviceMesh& mesh, Index a, Index b)
+{
+    if (b < a)
+        std::swap(a, b);
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        Index e0 = edge.n0;
+        Index e1 = edge.n1;
+        if (e1 < e0)
+            std::swap(e0, e1);
+        if (e0 == a && e1 == b)
+            return edgeId;
+    }
+    FAIL("expected edge in test mesh");
+    return 0;
+}
+
 } // namespace
+
+
+TEST_CASE("surface mobility uses the reconstructed normal interface field",
+          "[mos_mixed][mobility][surface]")
+{
+    DeviceMesh mesh = makeHorizontalInterfaceMesh();
+    MaterialDatabase matdb;
+    const DopingModel doping = DopingModel::fromMeshAndRegions(
+        mesh, {{"channel", 0.0, 0.0}, {"gate_oxide", 0.0, 0.0}});
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const Real temperature_K = constants::Vt_300 * constants::q / constants::kb;
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, temperature_K);
+
+    MobilityModelConfig config = mobilityModelConfig("caughey_thomas_surface");
+    config.surface.thetaElectron = 2.0e-6;
+    config.surface.surfaceRegion = "channel";
+    config.surface.surfaceInterface = {"channel", "gate_oxide"};
+    const auto mobility = makeMobilityModel(config);
+
+    VectorXd psi(4);
+    psi << 0.0, 0.0, 0.0, 1.0;
+    const Index interfaceEdge = findEdgeByNodes(mesh, 0, 1);
+
+    const Real tangentialOnly = detail::edgeMobility(
+        edgeCells, mesh, doping, *mobility, cellMaterials, interfaceEdge,
+        CarrierType::Electron, 0.0, &config);
+    const Real normalLimited = detail::edgeMobility(
+        edgeCells, mesh, doping, *mobility, cellMaterials, interfaceEdge,
+        CarrierType::Electron, 0.0, &config, &psi);
+
+    REQUIRE(tangentialOnly > 0.0);
+    REQUIRE(normalLimited > 0.0);
+    REQUIRE(normalLimited < tangentialOnly);
+}
 
 TEST_CASE("mixed Si/SiO2 MOS edge mobility preserves semiconductor interface transport",
           "[mos_mixed][dd]")

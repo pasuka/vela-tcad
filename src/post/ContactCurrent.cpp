@@ -69,11 +69,13 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electricField,
-            &mobilityConfig_);
+            &mobilityConfig_,
+            &solution.psi);
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
             electricField,
-            &mobilityConfig_);
+            &mobilityConfig_,
+            &solution.psi);
 
         const Real electronFlux01 = (mun > 0.0)
             ? sgElectronFlux(solution.n(i), solution.n(j), dpsi,

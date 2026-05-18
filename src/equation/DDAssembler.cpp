@@ -195,7 +195,8 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electricField,
-            &mobilityConfig_);
+            &mobilityConfig_,
+            &psi);
         if (mun <= 0.0) continue; // skip insulator edges
 
         const Real coef = mun * Vt_ * couple_[e] / h;
@@ -284,7 +285,8 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
             electricField,
-            &mobilityConfig_);
+            &mobilityConfig_,
+            &psi);
         if (mup <= 0.0) continue; // skip insulator edges
 
         const Real coef = mup * Vt_ * couple_[e] / h;

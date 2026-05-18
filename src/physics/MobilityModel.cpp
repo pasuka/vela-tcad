@@ -187,10 +187,13 @@ MobilityModelConfig mobilityModelConfigFromJson(const nlohmann::json& value)
         config.surface.maxFactor = surface.value("max_factor", config.surface.maxFactor);
         config.surface.surfaceRegion = surface.value(
             "surface_region", config.surface.surfaceRegion);
+        if (surface.contains("surface_interface") && surface.contains("interface"))
+            throw std::invalid_argument(
+                "mobility.surface must not specify both surface_interface and interface.");
         if (surface.contains("surface_interface"))
             config.surface.surfaceInterface =
                 surface.at("surface_interface").get<std::vector<std::string>>();
-        if (surface.contains("interface"))
+        else if (surface.contains("interface"))
             config.surface.surfaceInterface =
                 surface.at("interface").get<std::vector<std::string>>();
     }
