@@ -30,7 +30,7 @@
     "abstol": 1e+18,
     "damping_psi": 0.5
   },
-  "_comment": "Mixed-material Si/SiO2 PMOS prototype quasi-static gate/body capacitance smoke sweep; not calibrated.",
+  "_comment": "Mixed-material Si/SiO2 PMOS prototype quasi-static gate-to-semiconductor terminal-charge smoke sweep over body/source/drain regions; not calibrated.",
   "output_csv": "outputs/pmos2d_mos_dd_cv.csv",
   "contacts": [
     {
