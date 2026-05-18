@@ -251,6 +251,9 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             (p(ii) - n(ii) + doping_.netDoping(i)) * vol[i];
 
         const Real ni = ni_[i];
+        if (ni <= 0.0)
+            continue;
+
         if (recombination_.srhEnabled() || recombination_.augerEnabled()) {
             // Compute n*p - ni^2 via the identity n*p = ni^2 * exp((phip-phin)/Vt),
             // i.e. n*p - ni^2 = ni^2 * expm1((phip-phin)/Vt). This avoids
@@ -452,6 +455,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             -constants::q * dpi_dphip * vol_[i]);
 
         const Real ni = ni_[i];
+        if (ni <= 0.0)
+            continue;
+
         if (recombination_.srhEnabled() || recombination_.augerEnabled()) {
             const Real dPhi = x(phipOffset() + ii) - x(phinOffset() + ii);
             const Real np = (ni > 0.0) ? ni * ni * std::exp(dPhi / Vt_) : n(ii) * p(ii);

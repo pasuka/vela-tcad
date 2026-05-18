@@ -152,14 +152,28 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                                   doping.netDoping(edge.n1));
 
     Real sum = 0.0;
+    Index contributingCells = 0;
     for (Index c : cells) {
         const Material& material = cellMaterials.at(static_cast<std::size_t>(c));
-        if (carrier == CarrierType::Electron)
-            sum += mobility.electronMobility(material, netDoping, 0.0, 0.0, electricField);
-        else
-            sum += mobility.holeMobility(material, netDoping, 0.0, 0.0, electricField);
+        const Real baseMobility = (carrier == CarrierType::Electron) ? material.mun : material.mup;
+        if (baseMobility <= 0.0)
+            continue;
+
+        // Average only transport-capable cells.  This keeps oxide-only
+        // edges pinned while preserving lateral semiconductor transport on
+        // edges that lie along a semiconductor/oxide interface.
+        const Real modelMobility = (carrier == CarrierType::Electron)
+            ? mobility.electronMobility(material, netDoping, 0.0, 0.0, electricField)
+            : mobility.holeMobility(material, netDoping, 0.0, 0.0, electricField);
+        if (modelMobility <= 0.0)
+            continue;
+
+        sum += modelMobility;
+        ++contributingCells;
     }
-    return sum / static_cast<Real>(cells.size());
+    if (contributingCells == 0)
+        return 0.0;
+    return sum / static_cast<Real>(contributingCells);
 }
 
 /// Return average dielectric constant [F/m] for edge @p edgeId.
