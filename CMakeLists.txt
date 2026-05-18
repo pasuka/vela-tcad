@@ -169,6 +169,10 @@ target_link_libraries(test_gummel_high_doping PRIVATE vela_core Catch2::Catch2Wi
 add_executable(test_device_stability tests/test_device_stability.cpp)
 target_link_libraries(test_device_stability PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_ldmos_dd tests/test_ldmos_dd.cpp)
+target_link_libraries(test_ldmos_dd PRIVATE vela_core Catch2::Catch2WithMain)
+target_compile_definitions(test_ldmos_dd PRIVATE VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
 add_executable(test_newton_solver tests/test_newton_solver.cpp)
 target_link_libraries(test_newton_solver PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -229,6 +233,8 @@ add_test(NAME dd COMMAND test_dd_gummel [gummel])
 catch_discover_tests(test_gummel_high_doping)
 catch_discover_tests(test_device_stability)
 add_test(NAME device_stability COMMAND test_device_stability [device_stability])
+catch_discover_tests(test_ldmos_dd)
+add_test(NAME ldmos COMMAND test_ldmos_dd [ldmos])
 catch_discover_tests(test_newton_solver)
 catch_discover_tests(test_mos_solver_crosscheck)
 add_test(NAME mos_solver_crosscheck COMMAND test_mos_solver_crosscheck [mos_solver_crosscheck])

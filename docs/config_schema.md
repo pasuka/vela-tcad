@@ -383,6 +383,8 @@ Common fields used by examples:
 - declared_converged
 - dc_sweep: { ... }
 - example-specific keys used by dedicated checks (for example MOS interface probes)
+- ldmos_iv: optional regression-runner settings for the LDMOS DD-IV smoke check,
+  including `drain_current_sign` and `current_monotone_abs_tolerance`
 
 ## Minimal examples
 
