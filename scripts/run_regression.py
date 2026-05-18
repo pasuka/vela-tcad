@@ -109,12 +109,8 @@ EXAMPLES = [
         "name": "nmos2d_mos_dd_bv",
         "source": "nmos2d_mos_dd",
         "config": Path("examples/nmos2d_mos_dd/simulation_bv.json"),
-        "expected": [
-            Path("outputs/nmos2d_mos_dd_bv.csv"),
-            Path("outputs/nmos2d_mos_dd_bv_sweep_0000_0V.vtk"),
-            Path("outputs/nmos2d_mos_dd_bv_sweep_0001_0.1V.vtk"),
-            Path("outputs/nmos2d_mos_dd_bv_sweep_0002_0.2V.vtk"),
-        ],
+        "expected": [Path("outputs/nmos2d_mos_dd_bv.csv")],
+        "expected_sweep_vtk": True,
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
     },
     {
@@ -169,12 +165,8 @@ EXAMPLES = [
         "name": "pmos2d_mos_dd_bv",
         "source": "pmos2d_mos_dd",
         "config": Path("examples/pmos2d_mos_dd/simulation_bv.json"),
-        "expected": [
-            Path("outputs/pmos2d_mos_dd_bv.csv"),
-            Path("outputs/pmos2d_mos_dd_bv_sweep_0000_0V.vtk"),
-            Path("outputs/pmos2d_mos_dd_bv_sweep_0001_-0.1V.vtk"),
-            Path("outputs/pmos2d_mos_dd_bv_sweep_0002_-0.2V.vtk"),
-        ],
+        "expected": [Path("outputs/pmos2d_mos_dd_bv.csv")],
+        "expected_sweep_vtk": True,
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
     },
     {
@@ -383,6 +375,29 @@ def expected_sweep_voltages(sweep: dict[str, Any]) -> list[float]:
         values.append(stop)
     return values
 
+
+def format_vtk_voltage(voltage: float) -> str:
+    """Match C++ std::defaultfloat with setprecision(6) for sweep VTK names."""
+    return f"{voltage:.6g}"
+
+
+def sweep_vtk_filename(prefix: str, index: int, voltage: float) -> Path:
+    return Path(f"{prefix}_{index:04d}_{format_vtk_voltage(voltage)}V.vtk")
+
+
+def expected_outputs(spec: dict[str, Any], cfg: dict[str, Any]) -> list[Path]:
+    outputs = list(spec["expected"])
+    if spec.get("expected_sweep_vtk"):
+        sweep = cfg.get("sweep", {})
+        if not bool(sweep.get("write_vtk", cfg.get("write_vtk", False))):
+            raise AssertionError(
+                f"{spec['name']}: expected sweep VTK outputs but write_vtk is disabled")
+        prefix = str(sweep.get("vtk_prefix", cfg.get("output_vtk_prefix", "dc_sweep")))
+        outputs.extend(
+            sweep_vtk_filename(prefix, index, voltage)
+            for index, voltage in enumerate(expected_sweep_voltages(sweep))
+        )
+    return outputs
 
 
 def normalize_curve_mode(mode: str) -> str:
@@ -1055,12 +1070,13 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
             raise AssertionError(f"runner exited with {proc.returncode}: {proc.stderr.strip()}")
         if proc.returncode != 0:
             result["runner_nonzero_exit_allowed"] = True
-        for rel in spec["expected"]:
+        expected = expected_outputs(spec, run_cfg)
+        for rel in expected:
             out = example_dir / rel
             if not out.exists() or out.stat().st_size == 0:
                 raise AssertionError(f"missing or empty output file: {rel}")
         if "finite_outputs" in spec["checks"]:
-            for rel in spec["expected"]:
+            for rel in expected:
                 if has_nan_or_inf(example_dir / rel):
                     raise AssertionError(f"NaN/Inf detected in {rel}")
             result["checks"]["finite_outputs"] = True

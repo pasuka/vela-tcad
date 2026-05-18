@@ -34,7 +34,7 @@ regression coverage. The `examples/nmos2d_mos_dd` and
 `examples/pmos2d_mos_dd` decks are true mixed-material Si/SiO2 MOS
 drift-diffusion prototypes with metal-gate contacts over gate oxide and ohmic
 source/drain/body contacts. They are intentionally coarse CI smoke decks for
-polarity, multi-terminal terminal-charge/CV, and off-state drain reverse-bias
+polarity, multi-terminal charge/CV, and off-state drain reverse-bias
 high-field/BV diagnostics, and must not be described as calibrated MOSFETs.
 The mixed-material MOS DD CV decks use the
 multi-terminal quasi-static CV prototype: a single gate-bias sweep is finite-
