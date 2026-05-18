@@ -32,6 +32,9 @@
   },
   "_comment": "Mixed-material Si/SiO2 PMOS prototype quasi-static gate-to-semiconductor terminal-charge smoke sweep over body/source/drain regions; not calibrated.",
   "output_csv": "outputs/pmos2d_mos_dd_cv.csv",
+  "interfaces": [
+    { "regions": ["n_body", "gate_oxide"], "trap_density_m2": -2.0e14, "trap_occupancy": 0.5 }
+  ],
   "contacts": [
     {
       "name": "body",

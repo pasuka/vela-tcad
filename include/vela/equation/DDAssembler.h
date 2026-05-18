@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/equation/ChargeSpec.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/BandgapNarrowing.h"
@@ -53,6 +54,15 @@ public:
                 double                  taun,
                 double                  taup);
 
+    DDAssembler(const DeviceMesh&       mesh,
+                const MaterialDatabase& matdb,
+                const DopingModel&      doping,
+                double                  Vt,
+                double                  taun,
+                double                  taup,
+                std::vector<RegionFixedChargeSpec> fixedCharges,
+                std::vector<InterfaceSheetChargeSpec> sheetCharges);
+
     DDAssembler(const DeviceMesh&               mesh,
                 const MaterialDatabase&         matdb,
                 const DopingModel&              doping,
@@ -60,7 +70,9 @@ public:
                 const MobilityModelConfig&      mobilityConfig,
                 const RecombinationModelConfig& recombinationConfig,
                 const BandgapNarrowingConfig& bandgapNarrowingConfig = {},
-                const ImpactIonizationModelConfig& impactIonizationConfig = {});
+                const ImpactIonizationModelConfig& impactIonizationConfig = {},
+                std::vector<RegionFixedChargeSpec> fixedCharges = {},
+                std::vector<InterfaceSheetChargeSpec> sheetCharges = {});
 
     // ------------------------------------------------------------------
     // Assembly
@@ -113,6 +125,7 @@ private:
     std::vector<std::vector<Index>> edgeCells_;
     std::vector<Real> vol_;
     std::vector<Real> couple_;
+    VectorXd fixedInterfaceChargeRhs_; ///< Cached fixed/interface charge RHS contribution [C].
 
     SparseMatrixd A_;
     VectorXd      b_;

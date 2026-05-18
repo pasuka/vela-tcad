@@ -32,6 +32,9 @@
   },
   "_comment": "Mixed-material Si/SiO2 PMOS DD prototype Id-Vg smoke sweep at fixed negative drain bias; not calibrated.",
   "output_csv": "outputs/pmos2d_mos_dd_idvg.csv",
+  "interfaces": [
+    { "regions": ["n_body", "gate_oxide"], "fixed_charge_m2": -1.0e14 }
+  ],
   "contacts": [
     {
       "name": "body",

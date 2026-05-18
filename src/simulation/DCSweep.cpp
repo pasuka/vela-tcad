@@ -1,6 +1,7 @@
 #include "vela/simulation/DCSweep.h"
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/simulation/DCSweepStepControl.h"
+#include "vela/simulation/ConfigParsing.h"
 #include "vela/io/CSVWriter.h"
 #include "vela/io/MeshReader.h"
 #include "vela/material/MaterialDatabase.h"
@@ -262,6 +263,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     if (cfg.contains("materials_file"))
         matdb.loadJson(resolve(cfg.at("materials_file").get<std::string>()));
     DopingModel doping = dopingFromJson(mesh, cfg);
+    std::vector<RegionFixedChargeSpec> fixedChargeSpecs = parseRegionFixedChargeSpecs(cfg);
+    std::vector<InterfaceSheetChargeSpec> sheetChargeSpecs = parseInterfaceSheetChargeSpecs(cfg);
     ContactConfig contactConfig = contactConfigFromJson(cfg);
     std::unordered_map<std::string, Real>& baseBiases = contactConfig.biases;
     ContactSpecsMap& contactSpecs = contactConfig.specs;
@@ -346,14 +349,14 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             DDSolution sol;
             if (solverMethod == SolverMethod::Newton) {
                 NewtonResult result = initial != nullptr
-                    ? runNewton(mesh, matdb, doping, biases, *initial, newton)
-                    : runNewton(mesh, matdb, doping, biases, newton);
+                    ? runNewton(mesh, matdb, doping, biases, *initial, newton, fixedChargeSpecs, sheetChargeSpecs)
+                    : runNewton(mesh, matdb, doping, biases, newton, fixedChargeSpecs, sheetChargeSpecs);
                 solverConverged = result.converged;
                 sol = std::move(result.solution);
             } else {
                 sol = initial != nullptr
-                    ? runGummel(mesh, matdb, doping, biases, contactSpecs, gummel, *initial)
-                    : runGummel(mesh, matdb, doping, biases, contactSpecs, gummel);
+                    ? runGummel(mesh, matdb, doping, biases, contactSpecs, gummel, *initial, fixedChargeSpecs, sheetChargeSpecs)
+                    : runGummel(mesh, matdb, doping, biases, contactSpecs, gummel, fixedChargeSpecs, sheetChargeSpecs);
                 solverConverged = sol.converged;
             }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/equation/ChargeSpec.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
@@ -40,10 +41,21 @@ public:
                        const MaterialDatabase& matdb,
                        const DopingModel& doping,
                        double Vt,
+                       double taun,
+                       double taup,
+                       std::vector<RegionFixedChargeSpec> fixedCharges,
+                       std::vector<InterfaceSheetChargeSpec> sheetCharges);
+
+    CoupledDDAssembler(const DeviceMesh& mesh,
+                       const MaterialDatabase& matdb,
+                       const DopingModel& doping,
+                       double Vt,
                        const MobilityModelConfig& mobilityConfig,
                        const RecombinationModelConfig& recombinationConfig,
                        const BandgapNarrowingConfig& bandgapNarrowingConfig = {},
-                       const ImpactIonizationModelConfig& impactIonizationConfig = {});
+                       const ImpactIonizationModelConfig& impactIonizationConfig = {},
+                       std::vector<RegionFixedChargeSpec> fixedCharges = {},
+                       std::vector<InterfaceSheetChargeSpec> sheetCharges = {});
 
     VectorXd pack(const CoupledDDState& state) const;
     CoupledDDState unpack(const VectorXd& x) const;
@@ -87,6 +99,7 @@ private:
     std::vector<std::vector<Index>> edgeCells_;
     std::vector<Real> vol_;
     std::vector<Real> couple_;
+    VectorXd fixedInterfaceChargeRhs_;
 };
 
 } // namespace vela

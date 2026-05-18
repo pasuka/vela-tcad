@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace vela {
@@ -38,6 +39,17 @@ DDAssembler::DDAssembler(const DeviceMesh&       mesh,
                          double                  Vt,
                          double                  taun,
                          double                  taup)
+    : DDAssembler(mesh, matdb, doping, Vt, taun, taup, {}, {})
+{}
+
+DDAssembler::DDAssembler(const DeviceMesh&       mesh,
+                         const MaterialDatabase& matdb,
+                         const DopingModel&      doping,
+                         double                  Vt,
+                         double                  taun,
+                         double                  taup,
+                         std::vector<RegionFixedChargeSpec> fixedCharges,
+                         std::vector<InterfaceSheetChargeSpec> sheetCharges)
     : DDAssembler(mesh,
                   matdb,
                   doping,
@@ -45,7 +57,9 @@ DDAssembler::DDAssembler(const DeviceMesh&       mesh,
                   MobilityModelConfig{},
                   recombinationModelConfig({"srh"}, taun, taup),
                   BandgapNarrowingConfig{},
-                  ImpactIonizationModelConfig{})
+                  ImpactIonizationModelConfig{},
+                  std::move(fixedCharges),
+                  std::move(sheetCharges))
 {}
 
 DDAssembler::DDAssembler(const DeviceMesh&               mesh,
@@ -55,7 +69,9 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
                          const MobilityModelConfig&      mobilityConfig,
                          const RecombinationModelConfig& recombinationConfig,
                          const BandgapNarrowingConfig& bandgapNarrowingConfig,
-                         const ImpactIonizationModelConfig& impactIonizationConfig)
+                         const ImpactIonizationModelConfig& impactIonizationConfig,
+                         std::vector<RegionFixedChargeSpec> fixedCharges,
+                         std::vector<InterfaceSheetChargeSpec> sheetCharges)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
@@ -74,6 +90,8 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
     , couple_(detail::computeEdgeCouplings(mesh))
+    , fixedInterfaceChargeRhs_(detail::computeFixedAndInterfaceChargeRhs(
+          mesh, edgeCells_, fixedCharges, sheetCharges, "DDAssembler"))
     , A_(static_cast<int>(mesh.numNodes()),
          static_cast<int>(mesh.numNodes()))
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
@@ -142,6 +160,8 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
                  (pi_v - ni_v + doping_.netDoping(i)) * vol_i
                  + diagCarrier * psi(ii);
     }
+
+    b_ += fixedInterfaceChargeRhs_;
 }
 
 // ---------------------------------------------------------------------------

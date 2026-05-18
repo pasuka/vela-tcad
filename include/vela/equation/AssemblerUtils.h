@@ -11,6 +11,7 @@
 
 #include "vela/core/Types.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/equation/ChargeSpec.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
@@ -18,6 +19,7 @@
 #include "vela/physics/MobilityModel.h"
 #include "vela/physics/BandgapNarrowing.h"
 #include <Eigen/Sparse>
+#include <algorithm>
 #include <cstddef>
 #include <vector>
 #include <unordered_map>
@@ -25,8 +27,131 @@
 #include <cmath>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace vela::detail {
+
+
+// ---------------------------------------------------------------------------
+// Fixed and interface charge helpers
+// ---------------------------------------------------------------------------
+
+struct RegionPairKey {
+    std::string first;
+    std::string second;
+
+    bool operator==(const RegionPairKey& other) const
+    {
+        return first == other.first && second == other.second;
+    }
+};
+
+struct RegionPairKeyHash {
+    std::size_t operator()(const RegionPairKey& key) const
+    {
+        const std::hash<std::string> hash;
+        std::size_t seed = hash(key.first);
+        seed ^= hash(key.second) + 0x9e3779b97f4a7c15ULL + (seed << 6U) + (seed >> 2U);
+        return seed;
+    }
+};
+
+inline RegionPairKey makeRegionPairKey(std::string a, std::string b)
+{
+    if (b < a)
+        std::swap(a, b);
+    return RegionPairKey{std::move(a), std::move(b)};
+}
+
+inline Real triangleArea(const DeviceMesh& mesh, const Cell& cell)
+{
+    if (cell.node_ids.size() < 3) return 0.0;
+
+    const Node& a = mesh.getNode(cell.node_ids[0]);
+    const Node& b = mesh.getNode(cell.node_ids[1]);
+    const Node& c = mesh.getNode(cell.node_ids[2]);
+
+    return 0.5 * std::abs((b.x - a.x) * (c.y - a.y) -
+                          (c.x - a.x) * (b.y - a.y));
+}
+
+inline std::unordered_map<std::string, Real> fixedChargeByRegion(
+    const std::vector<RegionFixedChargeSpec>& fixedCharges,
+    const std::string& context)
+{
+    std::unordered_map<std::string, Real> fixedByRegion;
+    for (const auto& spec : fixedCharges) {
+        const auto [_, inserted] = fixedByRegion.emplace(spec.region, spec.fixedCharge);
+        if (!inserted)
+            throw std::invalid_argument(
+                context + ": duplicate fixed_charge_m3 for region '" + spec.region + "'.");
+    }
+    return fixedByRegion;
+}
+
+inline std::unordered_map<RegionPairKey, Real, RegionPairKeyHash> sheetChargeByRegionPair(
+    const std::vector<InterfaceSheetChargeSpec>& sheetCharges)
+{
+    std::unordered_map<RegionPairKey, Real, RegionPairKeyHash> sheetByRegionPair;
+    for (const auto& spec : sheetCharges)
+        sheetByRegionPair[makeRegionPairKey(spec.region0, spec.region1)] += spec.totalSheetCharge();
+    return sheetByRegionPair;
+}
+
+inline VectorXd computeFixedAndInterfaceChargeRhs(
+    const DeviceMesh& mesh,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<RegionFixedChargeSpec>& fixedCharges,
+    const std::vector<InterfaceSheetChargeSpec>& sheetCharges,
+    const std::string& context)
+{
+    VectorXd contribution = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+
+    const auto fixedByRegion = fixedChargeByRegion(fixedCharges, context);
+    if (!fixedByRegion.empty()) {
+        for (Index c = 0; c < mesh.numCells(); ++c) {
+            const Cell& cell = mesh.getCell(c);
+            const Region& region = mesh.getRegion(cell.region_id);
+            auto it = fixedByRegion.find(region.name);
+            if (it == fixedByRegion.end()) continue;
+
+            const Real nodeCharge = constants::q * it->second * triangleArea(mesh, cell) / 3.0;
+            for (Index nid : cell.node_ids)
+                contribution(static_cast<int>(nid)) += nodeCharge;
+        }
+    }
+
+    const auto sheetByRegionPair = sheetChargeByRegionPair(sheetCharges);
+    if (!sheetByRegionPair.empty()) {
+        for (Index e = 0; e < mesh.numEdges(); ++e) {
+            const auto& cells = edgeCells[e];
+            if (cells.size() != 2) continue;
+
+            const Region& r0 = mesh.getRegion(mesh.getCell(cells[0]).region_id);
+            const Region& r1 = mesh.getRegion(mesh.getCell(cells[1]).region_id);
+            const auto it = sheetByRegionPair.find(makeRegionPairKey(r0.name, r1.name));
+            if (it == sheetByRegionPair.end()) continue;
+
+            const Edge& edge = mesh.getEdge(e);
+            const Real endpointCharge = constants::q * it->second * edge.length * 0.5;
+            contribution(static_cast<int>(edge.n0)) += endpointCharge;
+            contribution(static_cast<int>(edge.n1)) += endpointCharge;
+        }
+    }
+
+    return contribution;
+}
+
+inline void addFixedAndInterfaceChargeToRhs(
+    const DeviceMesh& mesh,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<RegionFixedChargeSpec>& fixedCharges,
+    const std::vector<InterfaceSheetChargeSpec>& sheetCharges,
+    VectorXd& rhs,
+    const std::string& context)
+{
+    rhs += computeFixedAndInterfaceChargeRhs(mesh, edgeCells, fixedCharges, sheetCharges, context);
+}
 
 // ---------------------------------------------------------------------------
 // Geometry helpers
