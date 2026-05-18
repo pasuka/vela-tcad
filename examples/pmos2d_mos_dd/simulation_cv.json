@@ -1,0 +1,88 @@
+{
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "doping": [
+    {
+      "region": "n_body",
+      "donors": 1e+21,
+      "acceptors": 0.0
+    },
+    {
+      "region": "p_source",
+      "donors": 0.0,
+      "acceptors": 5e+21
+    },
+    {
+      "region": "p_drain",
+      "donors": 0.0,
+      "acceptors": 5e+21
+    },
+    {
+      "region": "gate_oxide",
+      "donors": 0.0,
+      "acceptors": 0.0
+    }
+  ],
+  "solver": {
+    "method": "gummel",
+    "max_iter": 100,
+    "reltol": 1e-05,
+    "abstol": 1e+18,
+    "damping_psi": 0.5
+  },
+  "_comment": "Mixed-material Si/SiO2 PMOS prototype quasi-static gate/body capacitance smoke sweep; not calibrated.",
+  "output_csv": "outputs/pmos2d_mos_dd_cv.csv",
+  "contacts": [
+    {
+      "name": "body",
+      "type": "ohmic",
+      "bias": 0.0
+    },
+    {
+      "name": "source",
+      "type": "ohmic",
+      "bias": 0.0
+    },
+    {
+      "name": "gate",
+      "type": "metal_gate",
+      "bias": 0.0,
+      "flatband_voltage": 0.0
+    },
+    {
+      "name": "drain",
+      "type": "ohmic",
+      "bias": 0.0
+    }
+  ],
+  "sweep": {
+    "mode": "cv_quasistatic",
+    "contact": "gate",
+    "start": 0.0,
+    "stop": -0.1,
+    "step": -0.05,
+    "current_contact": "drain",
+    "write_vtk": false,
+    "terminal_charge": {
+      "contact": "gate",
+      "regions": [
+        "n_body",
+        "p_source",
+        "p_drain"
+      ],
+      "per_meter": true,
+      "contact_radius": 1e-06
+    }
+  },
+  "regression": {
+    "declared_converged": true,
+    "dc_sweep": {
+      "expected_rows": 3,
+      "max_abs_attempted_step": 0.05,
+      "max_abs_accepted_step": 0.05,
+      "max_retry_count": 0,
+      "min_converged_rows": 3,
+      "min_nonzero_capacitance_rows": 1
+    }
+  }
+}
