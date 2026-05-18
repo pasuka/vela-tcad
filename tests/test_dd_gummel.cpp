@@ -333,7 +333,7 @@ TEST_CASE("GummelSolver: high doping gradient reverse bias remains finite", "[gu
     cfg.reltol = 1.0e-5;
     cfg.abstol = 1.0e8;
     cfg.dampingPsi = 0.25;
-    cfg.mobility = "caughey_thomas";
+    cfg.mobility = mobilityModelConfig("caughey_thomas");
 
     DDSolution sol;
     REQUIRE_NOTHROW(sol = runGummel(mesh, matdb, doping, biases, cfg));

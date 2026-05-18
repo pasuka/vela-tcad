@@ -114,7 +114,7 @@ TEST_CASE("Gummel high-doping forward bias does not produce invalid state", "[gu
     cfg.reltol = 1.0e-5;
     cfg.abstol = 1.0e-8;
     cfg.dampingPsi = 0.2;
-    cfg.mobility = "caughey_thomas";
+    cfg.mobility = mobilityModelConfig("caughey_thomas");
     cfg.recombination = {"srh", "auger"};
 
     DDSolution sol;
@@ -189,7 +189,7 @@ TEST_CASE("Gummel high-doping asymmetric reverse bias does not diverge", "[gumme
     cfg.reltol = 1.0e-5;
     cfg.abstol = 1.0e8;
     cfg.dampingPsi = 0.2;
-    cfg.mobility = "caughey_thomas";
+    cfg.mobility = mobilityModelConfig("caughey_thomas");
     cfg.bandgapNarrowing.model = "slotboom";
 
     DDSolution sol;

@@ -180,6 +180,46 @@ Notes:
 - `line_search` and `damping_factor` apply to Newton config.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 
+### mobility
+
+`solver.mobility` accepts either the legacy string form or an object. String decks remain compatible:
+
+```json
+"mobility": "caughey_thomas"
+```
+
+Object form:
+
+```json
+"mobility": {
+  "model": "caughey_thomas_field_surface",
+  "electron_mu_min_m2_V_s": 0.00522,
+  "electron_nref_m3": 9.68e22,
+  "electron_alpha": 0.68,
+  "hole_mu_min_m2_V_s": 0.00449,
+  "hole_nref_m3": 2.23e23,
+  "hole_alpha": 0.70,
+  "electron_saturation_velocity_m_s": 1.0e5,
+  "electron_field_beta": 2.0,
+  "hole_saturation_velocity_m_s": 1.0e5,
+  "hole_field_beta": 2.0,
+  "surface": {
+    "theta_electron_m_per_V": 2.0e-8,
+    "theta_hole_m_per_V": 1.0e-8,
+    "beta": 1.0,
+    "reference_field_V_per_m": 0.0,
+    "min_factor": 0.05,
+    "max_factor": 1.0,
+    "surface_region": "p_body",
+    "surface_interface": ["p_body", "gate_oxide"]
+  }
+}
+```
+
+Supported `model` values are `constant`, `caughey_thomas`, `caughey_thomas_field`, `caughey_thomas_surface`, and `caughey_thomas_field_surface`. The `surface` block is a MOS prototype for Si/SiO2-like channel mobility degradation, not a calibrated Lombardi model. It applies a vertical-field factor `mu_eff = mu_bulk / (1 + (theta * max(|E_normal| - reference_field, 0))^beta)^(1/beta)`, optionally clamped by `min_factor`/`max_factor`.
+
+The first implementation estimates `E_normal` with the local edge electric-field magnitude on edges that match `surface_region` and/or the two-name `surface_interface`; this is sufficient for trend regressions but should not be interpreted as a calibrated normal-field extraction. If no matching surface edge is found for a mobility evaluation, surface degradation is disabled and the existing low-field or velocity-saturation behavior is used.
+
 ## sweep
 
 Required core fields:

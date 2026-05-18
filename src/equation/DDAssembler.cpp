@@ -76,6 +76,7 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
     , matdb_(matdb)
     , doping_(doping)
     , Vt_(Vt)
+    , mobilityConfig_(mobilityConfig)
     , mobility_(makeMobilityModel(mobilityConfig))
     , recombination_(recombinationConfig)
     , impactIonization_(makeImpactIonizationModel(impactIonizationConfig))
@@ -193,7 +194,9 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
             (psi(static_cast<int>(edge.n1)) - psi(static_cast<int>(edge.n0))) / h);
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
-            electricField);
+            electricField,
+            &mobilityConfig_,
+            &psi);
         if (mun <= 0.0) continue; // skip insulator edges
 
         const Real coef = mun * Vt_ * couple_[e] / h;
@@ -281,7 +284,9 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
             (psi(static_cast<int>(edge.n1)) - psi(static_cast<int>(edge.n0))) / h);
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
-            electricField);
+            electricField,
+            &mobilityConfig_,
+            &psi);
         if (mup <= 0.0) continue; // skip insulator edges
 
         const Real coef = mup * Vt_ * couple_[e] / h;

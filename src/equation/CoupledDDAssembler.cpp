@@ -77,6 +77,7 @@ CoupledDDAssembler::CoupledDDAssembler(
     , matdb_(matdb)
     , doping_(doping)
     , Vt_(Vt)
+    , mobilityConfig_(mobilityConfig)
     , mobility_(makeMobilityModel(mobilityConfig))
     , recombination_(recombinationConfig)
     , impactIonization_(makeImpactIonizationModel(impactIonizationConfig))
@@ -171,8 +172,9 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
     // n and p are needed for Poisson source and configured recombination.
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
+    const VectorXd psi = x.segment(psiOffset(), N);
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
-        ? detail::computeNodeElectricFields(x.segment(psiOffset(), N), mesh_)
+        ? detail::computeNodeElectricFields(psi, mesh_)
         : std::vector<Real>{};
 
     VectorXd r = VectorXd::Zero(3 * N);
@@ -201,7 +203,9 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
 
         const Real mun = detail::edgeMobility(
             edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
-            electricField);
+            electricField,
+            &mobilityConfig_,
+            &psi);
         if (mun > 0.0) {
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
@@ -233,7 +237,9 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
 
         const Real mup = detail::edgeMobility(
             edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Hole,
-            electricField);
+            electricField,
+            &mobilityConfig_,
+            &psi);
         if (mup > 0.0) {
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
@@ -345,8 +351,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
+    const VectorXd psi = x.segment(psiOffset(), N);
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
-        ? detail::computeNodeElectricFields(x.segment(psiOffset(), N), mesh_)
+        ? detail::computeNodeElectricFields(psi, mesh_)
         : std::vector<Real>{};
 
     std::vector<bool> constrainedRows(static_cast<std::size_t>(3 * N), false);
@@ -405,7 +412,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
-            electricField);
+            electricField,
+            &mobilityConfig_,
+            &psi);
         if (mun > 0.0) {
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
@@ -434,7 +443,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Hole,
-            electricField);
+            electricField,
+            &mobilityConfig_,
+            &psi);
         if (mup > 0.0) {
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
