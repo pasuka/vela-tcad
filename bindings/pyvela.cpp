@@ -152,6 +152,16 @@ std::vector<py::dict> sweepPointsToPython(const std::vector<vela::DCSweepPoint>&
         row["convergence_diagnostics"] = convergenceDiagnostics(point);
         row["terminal_charge"] = point.terminalCharge;
         row["capacitance"] = point.capacitance;
+        py::dict terminalCharges;
+        for (const auto& [name, value] : point.terminalChargeValues)
+            terminalCharges[py::str(name)] = value;
+        row["terminal_charges"] = std::move(terminalCharges);
+        py::dict terminalCapacitances;
+        for (const auto& [name, value] : point.terminalCapacitanceValues)
+            terminalCapacitances[py::str(name)] = value;
+        row["terminal_capacitances"] = std::move(terminalCapacitances);
+        for (const auto& [name, value] : point.extraFields)
+            row[py::str(name)] = value;
         row["max_electric_field"] = point.maxElectricField;
         row["current_jump_ratio"] = point.currentJumpRatio;
         row["breakdown_detected"] = point.breakdownDetected;

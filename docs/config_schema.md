@@ -243,12 +243,35 @@ Step control fields:
 - max_retries
 - stop_on_failure
 
-terminal_charge (for CV):
+terminal_charge (for legacy single-terminal CV):
 - terminal_charge.contact
 - terminal_charge.regions
 - terminal_charge.contact_radius
+- terminal_charge.include_mobile_charge
+- terminal_charge.include_ionized_dopants
 - terminal_charge.per_meter
 - terminal_charge.depth_m
+
+terminal_charges (for multi-terminal quasi-static CV prototype):
+- `terminal_charges` is an optional array of terminal-charge objects. When present,
+  each entry is computed independently while a single sweep contact is varied.
+- Each entry accepts `name`, `contact`, `regions`, `contact_radius`,
+  `include_mobile_charge`, `include_ionized_dopants`, `per_meter`, and `depth_m`.
+- `name` is sanitized to lowercase alphanumeric/underscore for CSV columns. If it
+  is omitted, the contact name is used.
+- The implementation is a quasi-static finite-difference prototype: for a sweep of
+  contact `gate`, `capacitance_Cgate_drain_F_per_m` means `dQ_drain / dV_gate`. It is not
+  an AC small-signal matrix solve or matrix inversion.
+- CV CSV output always retains legacy `charge_C_per_m` / `capacitance_F_per_m`
+  (or total-charge `charge_C` / `capacitance_F`) for compatibility, populated
+  from the first configured terminal charge. With `terminal_charges`, additional
+  columns are emitted as `charge_<name>_C_per_m` (or `_C`) and
+  `capacitance_C<swept contact>_<name>_F_per_m`
+  (or `_F`), for example `charge_gate_C_per_m`, `charge_drain_C_per_m`,
+  `capacitance_Cgate_gate_F_per_m`, `capacitance_Cgate_drain_F_per_m`,
+  `capacitance_Cgate_source_F_per_m`, and `capacitance_Cgate_body_F_per_m`
+  for a gate sweep. Full sanitized names are used rather than initials so
+  terminals such as `source` and `substrate` cannot collide.
 
 Legacy aliases still accepted:
 - charge_contact
@@ -306,7 +329,17 @@ Minimal contact and sweep fragments:
       "regions": ["p_body", "n_source", "n_drain"],
       "per_meter": true,
       "contact_radius": 1e-6
-    }
+    },
+    "terminal_charges": [
+      { "name": "gate", "contact": "gate", "regions": ["p_body", "n_source", "n_drain"],
+        "per_meter": true, "contact_radius": 1e-6 },
+      { "name": "drain", "contact": "drain", "regions": ["n_drain"],
+        "per_meter": true, "contact_radius": 1e-6 },
+      { "name": "source", "contact": "source", "regions": ["n_source"],
+        "per_meter": true, "contact_radius": 1e-6 },
+      { "name": "body", "contact": "body", "regions": ["p_body"],
+        "per_meter": true, "contact_radius": 1e-6 }
+    ]
   }
 }
 ```

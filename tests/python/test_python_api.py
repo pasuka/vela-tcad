@@ -172,6 +172,21 @@ class PythonApiTest(unittest.TestCase):
         self.assertIn("terminal_charge", cv_points[1])
         self.assertTrue(Path(cv_points[0]["output_csv"]).exists())
 
+        multi_cv_cfg = self.write_sweep_config(mode="cv_quasistatic", output_name="cv_multi.csv")
+        multi_cv_data = json.loads(multi_cv_cfg.read_text(encoding="utf-8"))
+        multi_cv_data["sweep"]["terminal_charges"] = [
+            {"name": "gate", "contact": "anode", "regions": ["p_region"], "per_meter": True},
+            {"name": "drain", "contact": "cathode", "regions": ["n_region"], "per_meter": True},
+        ]
+        multi_cv_cfg.write_text(json.dumps(multi_cv_data), encoding="utf-8")
+        multi_cv_points = vela.run_cv_curve(str(multi_cv_cfg))
+        self.assertIn("charge_gate_C_per_m", multi_cv_points[1])
+        self.assertIn("capacitance_Canode_gate_F_per_m", multi_cv_points[1])
+        self.assertIn("charge_drain_C_per_m", multi_cv_points[1])
+        self.assertIn("capacitance_Canode_drain_F_per_m", multi_cv_points[1])
+        self.assertIn("gate", multi_cv_points[1]["terminal_charges"])
+        self.assertIn("drain", multi_cv_points[1]["terminal_capacitances"])
+
         bv_cfg = self.write_sweep_config(mode="bv_reverse", output_name="bv.csv")
         bv_points = vela.run_bv_curve(str(bv_cfg))
         self.assertEqual(bv_points[0]["curve_type"], "bv_reverse")

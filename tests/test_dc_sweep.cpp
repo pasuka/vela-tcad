@@ -1,5 +1,6 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "vela/simulation/DCSweep.h"
 #include "vela/simulation/DCSweepStepControl.h"
@@ -326,6 +327,74 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
                                                          "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
                                                          "capacitance_F_per_m"});
         REQUIRE(rows.at(1).at(0) == "cv_quasistatic");
+    }
+
+    SECTION("CV quasistatic adds multi-terminal charge and capacitance columns")
+    {
+        const auto csvPath = dir / "cv_multi.csv";
+        const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+            {"mode", "cv_quasistatic"},
+            {"start", 0.0},
+            {"stop", 0.25},
+            {"step", 0.25},
+            {"write_vtk", false},
+            {"terminal_charges", {
+                {
+                    {"name", "gate"},
+                    {"contact", "anode"},
+                    {"regions", {"p_region"}},
+                    {"per_meter", true}
+                },
+                {
+                    {"name", "source"},
+                    {"contact", "cathode"},
+                    {"regions", {"n_region"}},
+                    {"per_meter", true}
+                },
+                {
+                    {"name", "substrate"},
+                    {"contact", "cathode"},
+                    {"regions", {"n_region"}},
+                    {"per_meter", true}
+                }
+            }}
+        });
+
+        DCSweep sweep;
+        const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+        REQUIRE(result.points.size() == 2);
+        REQUIRE(result.points[1].terminalChargeValues.size() == 3);
+        REQUIRE(result.points[1].terminalCapacitanceValues.size() == 3);
+        REQUIRE(std::isfinite(result.points[1].terminalChargeValues[0].second));
+        REQUIRE(std::isfinite(result.points[1].terminalCapacitanceValues[0].second));
+        REQUIRE(std::isfinite(result.points[1].extraFields[0].second));
+
+        const auto rows = readCsvRows(csvPath);
+        REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
+                                                         "current_contact", "current_electron", "current_hole",
+                                                         "current_total", "converged", "iterations",
+                                                         "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
+                                                         "capacitance_F_per_m", "charge_gate_C_per_m",
+                                                         "capacitance_Canode_gate_F_per_m", "charge_source_C_per_m",
+                                                         "capacitance_Canode_source_F_per_m", "charge_substrate_C_per_m",
+                                                         "capacitance_Canode_substrate_F_per_m"});
+    }
+
+    SECTION("CV quasistatic rejects an empty terminal_charges array")
+    {
+        const auto csvPath = dir / "cv_empty_multi.csv";
+        const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+            {"mode", "cv_quasistatic"},
+            {"start", 0.0},
+            {"stop", 0.25},
+            {"step", 0.25},
+            {"write_vtk", false},
+            {"terminal_charges", nlohmann::json::array()}
+        });
+
+        DCSweep sweep;
+        REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
+                            Catch::Matchers::ContainsSubstring("sweep.terminal_charges must not be empty"));
     }
 
     SECTION("BV reverse adds breakdown diagnostic columns")
