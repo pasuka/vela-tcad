@@ -28,6 +28,7 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
     , matdb_(matdb)
     , doping_(doping)
     , edgeCells_(detail::buildEdgeCellMap(mesh))
+    , mobilityConfig_(mobilityConfig)
     , mobility_(makeMobilityModel(mobilityConfig))
     , thermalVoltage_(validatedThermalVoltage(temperature_K))
 {}
@@ -67,10 +68,12 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
 
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
-            electricField);
+            electricField,
+            &mobilityConfig_);
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
-            electricField);
+            electricField,
+            &mobilityConfig_);
 
         const Real electronFlux01 = (mun > 0.0)
             ? sgElectronFlux(solution.n(i), solution.n(j), dpsi,

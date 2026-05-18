@@ -70,7 +70,7 @@ TEST_CASE("Gummel reverse bias BV regression runs with impact ionization", "[imp
     cfg.reltol = 1.0e-4;
     cfg.abstol = 1.0e12;
     cfg.dampingPsi = 0.3;
-    cfg.mobility = "caughey_thomas_field";
+    cfg.mobility = mobilityModelConfig("caughey_thomas_field");
     cfg.impactIonization.model = "selberherr";
 
     DDSolution sol;

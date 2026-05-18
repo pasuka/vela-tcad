@@ -9,6 +9,7 @@
 #include "vela/physics/BandgapNarrowing.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/ImpactIonizationModel.h"
+#include "vela/physics/MobilityModel.h"
 #include "vela/solver/GummelSolver.h"
 #include <nlohmann/json_fwd.hpp>
 #include <string>
@@ -38,7 +39,7 @@ struct NewtonConfig {
     Real residualScalePhip = 0.0; ///< <= 0 selects max(initial hole-continuity residual norm, 1)
     Real taun = 1.0e-7;
     Real taup = 1.0e-7;
-    std::string mobility = "constant"; ///< "constant", "caughey_thomas", or "caughey_thomas_field"
+    MobilityModelConfig mobility{}; ///< Mobility model configuration
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
     ImpactIonizationModelConfig impactIonization; ///< Avalanche generation model.
     BandgapNarrowingConfig bandgapNarrowing; ///< Effective ni model for high doping.

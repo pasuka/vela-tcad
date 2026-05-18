@@ -42,6 +42,7 @@ private:
     const MaterialDatabase& matdb_;
     const DopingModel& doping_;
     std::vector<std::vector<Index>> edgeCells_;
+    MobilityModelConfig mobilityConfig_;
     std::unique_ptr<MobilityModel> mobility_;
     Real thermalVoltage_;
 };

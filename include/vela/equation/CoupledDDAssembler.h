@@ -88,6 +88,7 @@ private:
     const MaterialDatabase& matdb_;
     const DopingModel& doping_;
     double Vt_;
+    MobilityModelConfig mobilityConfig_;
     std::unique_ptr<MobilityModel> mobility_;
     RecombinationModel recombination_;
     std::unique_ptr<ImpactIonizationModel> impactIonization_;

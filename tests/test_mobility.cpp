@@ -76,7 +76,7 @@ TEST_CASE("JSON solver config selects mobility and recombination models", "[mobi
     };
 
     const GummelConfig cfg = gummelConfigFromJson(json);
-    REQUIRE(cfg.mobility == "caughey_thomas");
+    REQUIRE(cfg.mobility.model == "caughey_thomas");
     REQUIRE(cfg.recombination.size() == 2);
     REQUIRE(cfg.recombination[0] == "srh");
     REQUIRE(cfg.recombination[1] == "auger");
@@ -96,7 +96,7 @@ TEST_CASE("Gummel PN diode runs with configured mobility and recombination", "[m
     cfg.maxIter = 20;
     cfg.reltol = 1.0e-5;
     cfg.dampingPsi = 0.5;
-    cfg.mobility = "caughey_thomas";
+    cfg.mobility = mobilityModelConfig("caughey_thomas");
     cfg.recombination = {"srh", "auger"};
 
     std::unordered_map<std::string, Real> biases = {
@@ -139,4 +139,81 @@ TEST_CASE("Material temperature path updates intrinsic density and mobility", "[
     REQUIRE(*si300.temperature_K == Catch::Approx(300.0));
     REQUIRE(si400.ni > si300.ni);
     REQUIRE(si400.mun < si300.mun);
+}
+
+TEST_CASE("surface mobility degradation decreases with vertical field", "[mobility][surface]")
+{
+    MaterialDatabase matdb;
+    const Material& si = matdb.getMaterial("Si");
+    MobilityModelConfig config = mobilityModelConfig("caughey_thomas_surface");
+    config.surface.thetaElectron = 2.0e-8;
+    config.surface.thetaHole = 1.0e-8;
+    config.surface.beta = 1.0;
+    DopingDependentMobility mobility(config);
+
+    const Real lowField = mobility.electronMobility(si, 1.0e20, 0.0, 0.0, 0.0, 0.0);
+    const Real highField = mobility.electronMobility(si, 1.0e20, 0.0, 0.0, 0.0, 1.0e8);
+    const Real highFieldHole = mobility.holeMobility(si, 1.0e20, 0.0, 0.0, 0.0, 1.0e8);
+
+    REQUIRE(highField < lowField);
+    REQUIRE(highFieldHole < mobility.holeMobility(si, 1.0e20, 0.0, 0.0, 0.0, 0.0));
+}
+
+TEST_CASE("surface mobility theta zero preserves baseline", "[mobility][surface]")
+{
+    MaterialDatabase matdb;
+    const Material& si = matdb.getMaterial("Si");
+    MobilityModelConfig baselineConfig = mobilityModelConfig("caughey_thomas");
+    MobilityModelConfig surfaceConfig = mobilityModelConfig("caughey_thomas_surface");
+    surfaceConfig.surface.thetaElectron = 0.0;
+    surfaceConfig.surface.thetaHole = 0.0;
+
+    DopingDependentMobility baseline(baselineConfig);
+    DopingDependentMobility surface(surfaceConfig);
+
+    REQUIRE(surface.electronMobility(si, 1.0e22, 0.0, 0.0, 0.0, 1.0e9) ==
+            Catch::Approx(baseline.electronMobility(si, 1.0e22, 0.0, 0.0, 0.0)));
+    REQUIRE(surface.holeMobility(si, 1.0e22, 0.0, 0.0, 0.0, 1.0e9) ==
+            Catch::Approx(baseline.holeMobility(si, 1.0e22, 0.0, 0.0, 0.0)));
+}
+
+TEST_CASE("surface mobility rejects invalid parameters", "[mobility][surface]")
+{
+    MaterialDatabase matdb;
+    const Material& si = matdb.getMaterial("Si");
+    MobilityModelConfig config = mobilityModelConfig("caughey_thomas_surface");
+    config.surface.thetaElectron = -1.0e-8;
+    DopingDependentMobility mobility(config);
+
+    REQUIRE_THROWS_AS(
+        mobility.electronMobility(si, 1.0e20, 0.0, 0.0, 0.0, 1.0e8),
+        std::invalid_argument);
+}
+
+TEST_CASE("JSON mobility object parses surface settings", "[mobility][json][surface]")
+{
+    const nlohmann::json json = {
+        {"mobility", {
+            {"model", "caughey_thomas_field_surface"},
+            {"surface", {
+                {"theta_electron_m_per_V", 2.0e-8},
+                {"theta_hole_m_per_V", 3.0e-8},
+                {"beta", 2.0},
+                {"reference_field_V_per_m", 1.0e6},
+                {"min_factor", 0.1},
+                {"surface_region", "p_body"},
+                {"surface_interface", {"p_body", "gate_oxide"}}
+            }}
+        }}
+    };
+
+    const GummelConfig cfg = gummelConfigFromJson(json);
+    REQUIRE(cfg.mobility.model == "caughey_thomas_field_surface");
+    REQUIRE(cfg.mobility.surface.thetaElectron == Catch::Approx(2.0e-8));
+    REQUIRE(cfg.mobility.surface.thetaHole == Catch::Approx(3.0e-8));
+    REQUIRE(cfg.mobility.surface.beta == Catch::Approx(2.0));
+    REQUIRE(cfg.mobility.surface.referenceField == Catch::Approx(1.0e6));
+    REQUIRE(cfg.mobility.surface.minFactor == Catch::Approx(0.1));
+    REQUIRE(cfg.mobility.surface.surfaceRegion == "p_body");
+    REQUIRE(cfg.mobility.surface.surfaceInterface.size() == 2);
 }

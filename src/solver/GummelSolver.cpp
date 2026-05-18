@@ -87,7 +87,8 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json)
     cfg.dampingPsi = json.value("damping_psi", cfg.dampingPsi);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
-    cfg.mobility = json.value("mobility", cfg.mobility);
+    if (json.contains("mobility"))
+        cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"));
     if (json.contains("bandgap_narrowing")) {
         const auto& value = json.at("bandgap_narrowing");
         if (value.is_string()) {
@@ -280,7 +281,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     // ------------------------------------------------------------------
     // Initial guess: solve linear Poisson (no carriers) for psi
     // ------------------------------------------------------------------
-    MobilityModelConfig mobilityConfig = mobilityModelConfig(cfg.mobility);
+    const MobilityModelConfig mobilityConfig = cfg.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg.recombination, cfg.taun, cfg.taup);
     DDAssembler assembler(

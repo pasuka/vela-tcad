@@ -77,6 +77,7 @@ CoupledDDAssembler::CoupledDDAssembler(
     , matdb_(matdb)
     , doping_(doping)
     , Vt_(Vt)
+    , mobilityConfig_(mobilityConfig)
     , mobility_(makeMobilityModel(mobilityConfig))
     , recombination_(recombinationConfig)
     , impactIonization_(makeImpactIonizationModel(impactIonizationConfig))
@@ -201,7 +202,8 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
 
         const Real mun = detail::edgeMobility(
             edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
-            electricField);
+            electricField,
+            &mobilityConfig_);
         if (mun > 0.0) {
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
@@ -233,7 +235,8 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
 
         const Real mup = detail::edgeMobility(
             edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Hole,
-            electricField);
+            electricField,
+            &mobilityConfig_);
         if (mup > 0.0) {
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
@@ -405,7 +408,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
-            electricField);
+            electricField,
+            &mobilityConfig_);
         if (mun > 0.0) {
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
@@ -434,7 +438,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Hole,
-            electricField);
+            electricField,
+            &mobilityConfig_);
         if (mup > 0.0) {
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;

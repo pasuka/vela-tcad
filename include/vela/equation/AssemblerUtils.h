@@ -26,6 +26,7 @@
 #include <unordered_set>
 #include <cmath>
 #include <stdexcept>
+#include <limits>
 #include <string>
 #include <utility>
 
@@ -267,7 +268,8 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          const std::vector<Material>&            cellMaterials,
                          Index                                   edgeId,
                          CarrierType                             carrier,
-                         Real                                    electricField)
+                         Real                                    electricField,
+                         const MobilityModelConfig*              mobilityConfig = nullptr)
 {
     const auto& cells = edgeCells[edgeId];
     if (cells.empty()) return 0.0;
@@ -275,6 +277,11 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
     const Edge& edge = mesh.getEdge(edgeId);
     const Real netDoping = 0.5 * (doping.netDoping(edge.n0) +
                                   doping.netDoping(edge.n1));
+
+    std::vector<std::string> adjacentRegionNames;
+    adjacentRegionNames.reserve(cells.size());
+    for (Index c : cells)
+        adjacentRegionNames.push_back(mesh.getRegion(mesh.getCell(c).region_id).name);
 
     Real sum = 0.0;
     Index contributingCells = 0;
@@ -286,10 +293,21 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
 
         // Average only transport-capable cells.  This keeps oxide-only
         // edges pinned while preserving lateral semiconductor transport on
-        // edges that lie along a semiconductor/oxide interface.
+        // edges that lie along a semiconductor/oxide interface. Surface
+        // mobility is enabled only on configured regions/interfaces; when no
+        // surface match is present the NaN normal field disables the surface
+        // factor while preserving any high-field velocity saturation.
+        const Region& region = mesh.getRegion(mesh.getCell(c).region_id);
+        const bool surfaceApplies = mobilityConfig != nullptr &&
+            surfaceMobilityAppliesToRegionPair(*mobilityConfig, region.name, adjacentRegionNames);
+        const Real surfaceNormalField = surfaceApplies
+            ? electricField
+            : std::numeric_limits<Real>::quiet_NaN();
         const Real modelMobility = (carrier == CarrierType::Electron)
-            ? mobility.electronMobility(material, netDoping, 0.0, 0.0, electricField)
-            : mobility.holeMobility(material, netDoping, 0.0, 0.0, electricField);
+            ? mobility.electronMobility(
+                material, netDoping, 0.0, 0.0, electricField, surfaceNormalField)
+            : mobility.holeMobility(
+                material, netDoping, 0.0, 0.0, electricField, surfaceNormalField);
         if (modelMobility <= 0.0)
             continue;
 

@@ -278,10 +278,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     MobilityModelConfig mobilityConfig;
     if (solverMethod == SolverMethod::Newton) {
         newton = newtonConfigFromJson(solverCfg);
-        mobilityConfig = mobilityModelConfig(newton.mobility);
+        mobilityConfig = newton.mobility;
     } else {
         gummel = gummelConfigFromJson(solverCfg);
-        mobilityConfig = mobilityModelConfig(gummel.mobility);
+        mobilityConfig = gummel.mobility;
     }
     const Real temperature_K = (solverMethod == SolverMethod::Newton)
         ? newton.temperature_K

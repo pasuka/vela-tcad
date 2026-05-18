@@ -92,6 +92,13 @@ EXAMPLES = [
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
     },
     {
+        "name": "nmos2d_mos_dd_idvg_surface",
+        "source": "nmos2d_mos_dd",
+        "config": Path("examples/nmos2d_mos_dd/simulation_idvg_surface.json"),
+        "expected": [Path("outputs/nmos2d_mos_dd_idvg_surface.csv")],
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression", "surface_mobility"],
+    },
+    {
         "name": "nmos2d_mos_dd_cv",
         "source": "nmos2d_mos_dd",
         "config": Path("examples/nmos2d_mos_dd/simulation_cv.json"),
@@ -829,6 +836,54 @@ def assert_monotone_non_decreasing(values: list[float], label: str, tolerance: f
             raise AssertionError(f"{label} is not monotone non-decreasing: {values}")
 
 
+
+def check_surface_mobility(example_dir: Path, runner: Path) -> dict[str, Any]:
+    cfg = json.loads((example_dir / "simulation.json").read_text())
+    reg = cfg.get("regression", {}).get("surface_mobility", {})
+    if not reg:
+        raise AssertionError("surface_mobility regression block is required")
+
+    surface_rows = read_csv(output_csv_path(example_dir, cfg))
+    if not surface_rows:
+        raise AssertionError("Surface mobility CSV contains no rows")
+
+    baseline_cfg_path = example_dir / str(reg.get("baseline_config", "simulation_idvg.json"))
+    baseline_cfg = json.loads(baseline_cfg_path.read_text())
+    baseline_cfg["output_csv"] = reg.get(
+        "baseline_csv", "outputs/surface_mobility_baseline.csv")
+    baseline_run_path = example_dir / "surface_mobility_baseline.json"
+    baseline_run_path.write_text(json.dumps(baseline_cfg, indent=2) + "\n")
+    proc = subprocess.run(
+        [str(runner), "--config", str(baseline_run_path)],
+        cwd=example_dir,
+        text=True,
+        capture_output=True,
+    )
+    if proc.returncode != 0:
+        raise AssertionError(
+            f"Surface mobility baseline run failed: {proc.stderr.strip()}")
+
+    baseline_rows = read_csv(output_csv_path(example_dir, baseline_cfg))
+    if len(baseline_rows) != len(surface_rows):
+        raise AssertionError(
+            f"Surface/baseline row count mismatch: {len(surface_rows)} vs {len(baseline_rows)}")
+
+    tolerance = float(reg.get("current_ratio_tolerance", 1.01))
+    surface_last = abs(parse_finite_float(
+        surface_rows[-1], "current_total", "surface mobility", len(surface_rows)))
+    baseline_last = abs(parse_finite_float(
+        baseline_rows[-1], "current_total", "surface mobility baseline", len(baseline_rows)))
+    if surface_last > baseline_last * tolerance:
+        raise AssertionError(
+            f"Surface high-Vg |Id| {surface_last} exceeds baseline {baseline_last} "
+            f"by tolerance {tolerance}")
+
+    return {
+        "surface_high_vg_abs_current": surface_last,
+        "baseline_high_vg_abs_current": baseline_last,
+        "current_ratio_tolerance": tolerance,
+    }
+
 def check_mos_trends(example_dir: Path, runner: Path) -> dict[str, Any]:
     cfg_path = example_dir / "simulation.json"
     cfg = json.loads(cfg_path.read_text())
@@ -968,6 +1023,8 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
             result["checks"]["moscap_interface"] = check_moscap_interface(example_dir)
         if "mos_trends" in spec["checks"]:
             result["checks"]["mos_trends"] = check_mos_trends(example_dir, runner)
+        if "surface_mobility" in spec["checks"]:
+            result["checks"]["surface_mobility"] = check_surface_mobility(example_dir, runner)
         if "schottky_iv_trend" in spec["checks"]:
             result["checks"]["schottky_iv_trend"] = check_schottky_iv_trend(example_dir)
         result["passed"] = True

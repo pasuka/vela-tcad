@@ -91,7 +91,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
     cfg.residualNorm = json.value("residual_norm", cfg.residualNorm);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
-    cfg.mobility = json.value("mobility", cfg.mobility);
+    if (json.contains("mobility"))
+        cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"));
     if (json.contains("bandgap_narrowing")) {
         const auto& value = json.at("bandgap_narrowing");
         if (value.is_string()) {
@@ -273,7 +274,7 @@ DDSolution NewtonSolver::makeSolution(const CoupledDDAssembler& assembler,
 NewtonResult NewtonSolver::solve() const
 {
     const double Vt = thermalVoltage(cfg_.temperature_K);
-    MobilityModelConfig mobilityConfig = mobilityModelConfig(cfg_.mobility);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
     CoupledDDAssembler assembler(
@@ -294,7 +295,7 @@ NewtonResult NewtonSolver::solve() const
 NewtonResult NewtonSolver::solve(const DDSolution& initial) const
 {
     const double Vt = thermalVoltage(cfg_.temperature_K);
-    MobilityModelConfig mobilityConfig = mobilityModelConfig(cfg_.mobility);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
     CoupledDDAssembler assembler(
