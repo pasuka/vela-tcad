@@ -17,9 +17,9 @@ TCAD coverage.
 | --- | --- | --- | --- | --- |
 | `examples/pn_diode` | Implicit equilibrium in DD decks | `simulation_iv.json` forward IV | `simulation_cv.json` quasi-static junction C-V | `simulation_bv.json` reverse-bias diagnostics |
 | `examples/nmos2d_dd` | Implicit equilibrium in DD decks | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg | `simulation_cv.json` gate/body quasi-static CV | Not yet |
-| `examples/nmos2d_mos_dd` | Implicit equilibrium in DD decks on a mixed Si/SiO2 mesh | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg Si/SiO2 MOS DD prototype smoke sweeps | `simulation_cv.json` quasi-static metal-gate terminal-charge smoke sweep | `simulation_bv.json` off-state drain high-field diagnostic smoke sweep |
+| `examples/nmos2d_mos_dd` | Implicit equilibrium in DD decks on a mixed Si/SiO2 mesh | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg Si/SiO2 MOS DD prototype smoke sweeps | `simulation_cv.json` multi-terminal quasi-static MOS CV prototype | `simulation_bv.json` off-state drain high-field diagnostic smoke sweep |
 | `examples/pmos2d_dd` | Implicit equilibrium in DD decks | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg | `simulation_cv.json` gate/body quasi-static CV | Not yet |
-| `examples/pmos2d_mos_dd` | Implicit equilibrium in DD decks on a mixed Si/SiO2 mesh | `simulation_iv.json` negative-bias Id-Vd and `simulation_idvg.json` negative-gate Id-Vg Si/SiO2 MOS DD prototype smoke sweeps | `simulation_cv.json` quasi-static metal-gate terminal-charge smoke sweep over body/source/drain regions | `simulation_bv.json` off-state negative-drain high-field diagnostic smoke sweep |
+| `examples/pmos2d_mos_dd` | Implicit equilibrium in DD decks on a mixed Si/SiO2 mesh | `simulation_iv.json` negative-bias Id-Vd and `simulation_idvg.json` negative-gate Id-Vg Si/SiO2 MOS DD prototype smoke sweeps | `simulation_cv.json` multi-terminal quasi-static MOS CV prototype | `simulation_bv.json` off-state negative-drain high-field diagnostic smoke sweep |
 | `examples/ldmos2d` | `simulation_iv.json` is currently a reverse-biased Poisson field-distribution deck on the mixed Si/SiO2 mesh | Not yet | Not yet | Not yet |
 | `examples/igbt2d` | `simulation_poisson.json` PNPN/drift off-state baseline | `simulation_iv.json` low-current collector DD prototype | Not yet | Not yet |
 | `examples/moscap` | `simulation.json` Si/SiO2 Poisson interface check | Not applicable | Not yet | Not applicable |
@@ -34,8 +34,13 @@ regression coverage. The `examples/nmos2d_mos_dd` and
 `examples/pmos2d_mos_dd` decks are true mixed-material Si/SiO2 MOS
 drift-diffusion prototypes with metal-gate contacts over gate oxide and ohmic
 source/drain/body contacts. They are intentionally coarse CI smoke decks for
-polarity, terminal-charge, and high-field diagnostics, and must not be
-described as calibrated MOSFETs.
+polarity, multi-terminal terminal-charge/CV, and high-field diagnostics, and must not be
+described as calibrated MOSFETs. The mixed-material MOS DD CV decks use the
+multi-terminal quasi-static CV prototype: a single gate-bias sweep is finite-
+differenced to report terminal charges plus `Cgg`, `Cgd`, `Cgs`, and `Cgb`-style
+columns such as `capacitance_Cgg_F_per_m` and `capacitance_Cgd_F_per_m`. These
+columns are useful engineering smoke diagnostics, not AC small-signal admittance
+or capacitance matrix results.
 
 ## Contact Schema Compatibility
 

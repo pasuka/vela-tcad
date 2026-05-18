@@ -23,6 +23,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace vela {
 
@@ -38,6 +39,59 @@ std::string formatReal(Real value)
     std::ostringstream oss;
     oss << std::setprecision(17) << value;
     return oss.str();
+}
+
+
+std::string sanitizedColumnToken(std::string value)
+{
+    for (char& ch : value) {
+        const unsigned char uch = static_cast<unsigned char>(ch);
+        if (!std::isalnum(uch))
+            ch = '_';
+        else
+            ch = static_cast<char>(std::tolower(uch));
+    }
+    if (value.empty())
+        value = "terminal";
+    return value;
+}
+
+std::string terminalChargeName(const TerminalChargeConfig& cfg, std::size_t index)
+{
+    if (!cfg.name.empty())
+        return sanitizedColumnToken(cfg.name);
+    if (!cfg.contact.empty())
+        return sanitizedColumnToken(cfg.contact);
+    return "terminal" + std::to_string(index + 1);
+}
+
+std::string capacitanceMnemonic(const std::string& sweepContact, const std::string& terminalName)
+{
+    const std::string sweep = sanitizedColumnToken(sweepContact);
+    const std::string terminal = sanitizedColumnToken(terminalName);
+    const char sweepInitial = sweep.empty() ? 'v' : sweep.front();
+    const char terminalInitial = terminal.empty() ? 'x' : terminal.front();
+    return std::string("C") + sweepInitial + terminalInitial;
+}
+
+TerminalChargeConfig terminalChargeConfigFromJson(const nlohmann::json& chargeCfg,
+                                                  const DCSweepConfig& sweep,
+                                                  std::size_t index)
+{
+    TerminalChargeConfig config;
+    config.name = chargeCfg.value("name", std::string{});
+    config.contact = chargeCfg.value("contact", sweep.chargeContact.empty() ? sweep.contact : sweep.chargeContact);
+    config.regions = chargeCfg.value("regions", sweep.chargeRegions);
+    config.contactRadius = chargeCfg.value("contact_radius", sweep.chargeContactRadius);
+    config.includeMobileCharge = chargeCfg.value("include_mobile_charge", config.includeMobileCharge);
+    config.includeIonizedDopants = chargeCfg.value("include_ionized_dopants", config.includeIonizedDopants);
+    config.perMeter = chargeCfg.value("per_meter", sweep.chargePerMeter);
+    config.depth_m = chargeCfg.value("depth_m", sweep.chargeDepth_m);
+    if (config.name.empty())
+        config.name = terminalChargeName(config, index);
+    if (!config.perMeter && config.depth_m <= 0.0)
+        throw std::invalid_argument("DCSweep: sweep terminal charge depth_m must be positive.");
+    return config;
 }
 
 DDSolutionValidationOptions validationOptionsFromJson(const nlohmann::json& cfg)
@@ -124,6 +178,23 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.chargeContactRadius = chargeCfg.value("contact_radius", j.value("charge_contact_radius", 0.0));
     sweep.chargePerMeter = chargeCfg.value("per_meter", j.value("charge_per_meter", true));
     sweep.chargeDepth_m = chargeCfg.value("depth_m", j.value("charge_depth_m", 1.0));
+
+    if (j.contains("terminal_charges")) {
+        const auto& charges = j.at("terminal_charges");
+        if (!charges.is_array())
+            throw std::invalid_argument("DCSweep: sweep.terminal_charges must be an array.");
+        std::unordered_set<std::string> names;
+        for (std::size_t i = 0; i < charges.size(); ++i) {
+            TerminalChargeConfig config = terminalChargeConfigFromJson(charges.at(i), sweep, i);
+            const std::string name = terminalChargeName(config, i);
+            if (!names.insert(name).second)
+                throw std::invalid_argument("DCSweep: duplicate terminal_charges name '" + name + "'.");
+            config.name = name;
+            sweep.terminalCharges.push_back(std::move(config));
+        }
+    } else {
+        sweep.terminalCharges.push_back(terminalChargeConfigFromJson(chargeCfg, sweep, 0));
+    }
 
     const auto bvCfg = j.value("breakdown", nlohmann::json::object());
     sweep.breakdown.maxElectricField_V_per_m = bvCfg.value("max_electric_field_V_per_m", j.value("breakdown_max_electric_field_V_per_m", 0.0));
@@ -288,20 +359,31 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         : gummel.temperature_K;
     ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K);
     TerminalCharge terminalCharge(mesh, doping);
-    TerminalChargeConfig chargeConfig;
-    chargeConfig.contact = sweep.chargeContact;
-    chargeConfig.regions = sweep.chargeRegions;
-    chargeConfig.contactRadius = sweep.chargeContactRadius;
-    chargeConfig.perMeter = sweep.chargePerMeter;
-    chargeConfig.depth_m = sweep.chargeDepth_m;
+    const bool hasMultiTerminalCharges = cfg.at("sweep").contains("terminal_charges");
+    const TerminalChargeConfig& legacyChargeConfig = sweep.terminalCharges.front();
 
     CSVWriter csv(sweep.csvFile);
     std::vector<std::string> header = {"mode", "bias_contact", "bias_V",
         "current_contact", "current_electron", "current_hole", "current_total",
         "converged", "iterations", "step_diagnostics", "validation_diagnostics"};
+    std::vector<std::pair<std::string, std::string>> chargeColumns;
+    std::vector<std::pair<std::string, std::string>> capacitanceColumns;
     if (sweep.mode == CurveSweepMode::CVQuasistatic) {
-        header.push_back(sweep.chargePerMeter ? "charge_C_per_m" : "charge_C");
-        header.push_back(sweep.chargePerMeter ? "capacitance_F_per_m" : "capacitance_F");
+        header.push_back(legacyChargeConfig.perMeter ? "charge_C_per_m" : "charge_C");
+        header.push_back(legacyChargeConfig.perMeter ? "capacitance_F_per_m" : "capacitance_F");
+        if (hasMultiTerminalCharges) {
+            for (std::size_t i = 0; i < sweep.terminalCharges.size(); ++i) {
+                const TerminalChargeConfig& config = sweep.terminalCharges[i];
+                const std::string name = terminalChargeName(config, i);
+                const std::string chargeColumn = "charge_" + name + (config.perMeter ? "_C_per_m" : "_C");
+                const std::string capColumn = "capacitance_" + capacitanceMnemonic(sweep.contact, name) +
+                    (config.perMeter ? "_F_per_m" : "_F");
+                chargeColumns.emplace_back(name, chargeColumn);
+                capacitanceColumns.emplace_back(name, capColumn);
+                header.push_back(chargeColumn);
+                header.push_back(capColumn);
+            }
+        }
     }
     if (sweep.mode == CurveSweepMode::BVReverse) {
         header.push_back("max_electric_field_V_per_m");
@@ -415,12 +497,31 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         if (!converged && sweep.mode != CurveSweepMode::BVReverse)
             point.failureReason = failureReason;
         if (converged && sweep.mode == CurveSweepMode::CVQuasistatic) {
-            point.terminalCharge = terminalCharge.compute(sol, chargeConfig).charge;
-            if (!points.empty()) {
-                const DCSweepPoint& prev = points.back();
-                const Real dV = point.bias - prev.bias;
-                if (dV != 0.0)
-                    point.capacitance = (point.terminalCharge - prev.terminalCharge) / dV;
+            for (std::size_t i = 0; i < sweep.terminalCharges.size(); ++i) {
+                const TerminalChargeConfig& config = sweep.terminalCharges[i];
+                const std::string name = terminalChargeName(config, i);
+                const Real charge = terminalCharge.compute(sol, config).charge;
+                point.terminalChargeValues.emplace_back(name, charge);
+                Real capacitance = 0.0;
+                if (!points.empty()) {
+                    const DCSweepPoint& prev = points.back();
+                    const Real dV = point.bias - prev.bias;
+                    auto prevIt = std::find_if(prev.terminalChargeValues.begin(), prev.terminalChargeValues.end(),
+                        [&](const auto& entry) { return entry.first == name; });
+                    if (dV != 0.0 && prevIt != prev.terminalChargeValues.end())
+                        capacitance = (charge - prevIt->second) / dV;
+                }
+                point.terminalCapacitanceValues.emplace_back(name, capacitance);
+            }
+            if (!point.terminalChargeValues.empty())
+                point.terminalCharge = point.terminalChargeValues.front().second;
+            if (!point.terminalCapacitanceValues.empty())
+                point.capacitance = point.terminalCapacitanceValues.front().second;
+            if (hasMultiTerminalCharges) {
+                for (std::size_t i = 0; i < point.terminalChargeValues.size(); ++i) {
+                    point.extraFields.emplace_back(chargeColumns.at(i).second, point.terminalChargeValues.at(i).second);
+                    point.extraFields.emplace_back(capacitanceColumns.at(i).second, point.terminalCapacitanceValues.at(i).second);
+                }
             }
         }
         if (converged && sweep.mode == CurveSweepMode::BVReverse) {
@@ -471,6 +572,17 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         if (sweep.mode == CurveSweepMode::CVQuasistatic) {
             row.push_back(formatReal(point.terminalCharge));
             row.push_back(formatReal(point.capacitance));
+            if (hasMultiTerminalCharges) {
+                if (!point.extraFields.empty()) {
+                    for (const auto& [_, value] : point.extraFields)
+                        row.push_back(formatReal(value));
+                } else {
+                    for (std::size_t i = 0; i < chargeColumns.size(); ++i) {
+                        row.push_back(formatReal(0.0));
+                        row.push_back(formatReal(0.0));
+                    }
+                }
+            }
         }
         if (sweep.mode == CurveSweepMode::BVReverse) {
             row.push_back(formatReal(point.maxElectricField));

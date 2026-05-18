@@ -4,8 +4,10 @@
 #include "vela/simulation/CurveSweep.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/post/ContactCurrent.h"
+#include "vela/post/TerminalCharge.h"
 #include "vela/solver/GummelSolver.h"
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace vela {
@@ -37,6 +39,7 @@ struct DCSweepConfig {
     Real chargeContactRadius = 0.0;
     bool chargePerMeter = true;
     Real chargeDepth_m = 1.0;
+    std::vector<TerminalChargeConfig> terminalCharges;
     BVReverseCriteria breakdown;
 };
 
@@ -53,6 +56,9 @@ struct DCSweepPoint {
     int retryCount = 0;
     Real terminalCharge = 0.0;
     Real capacitance = 0.0;
+    std::vector<std::pair<std::string, Real>> terminalChargeValues;
+    std::vector<std::pair<std::string, Real>> terminalCapacitanceValues;
+    std::vector<std::pair<std::string, Real>> extraFields;
     Real maxElectricField = 0.0;
     Real currentJumpRatio = 0.0;
     bool breakdownDetected = false;

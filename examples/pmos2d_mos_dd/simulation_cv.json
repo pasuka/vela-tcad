@@ -30,10 +30,17 @@
     "abstol": 1e+18,
     "damping_psi": 0.5
   },
-  "_comment": "Mixed-material Si/SiO2 PMOS prototype quasi-static gate-to-semiconductor terminal-charge smoke sweep over body/source/drain regions; not calibrated.",
+  "_comment": "Mixed-material Si/SiO2 PMOS prototype multi-terminal quasi-static MOS CV prototype smoke sweep over gate/body/source/drain charge regions; not calibrated.",
   "output_csv": "outputs/pmos2d_mos_dd_cv.csv",
   "interfaces": [
-    { "regions": ["n_body", "gate_oxide"], "trap_density_m2": -2.0e14, "trap_occupancy": 0.5 }
+    {
+      "regions": [
+        "n_body",
+        "gate_oxide"
+      ],
+      "trap_density_m2": -200000000000000.0,
+      "trap_occupancy": 0.5
+    }
   ],
   "contacts": [
     {
@@ -75,7 +82,47 @@
       ],
       "per_meter": true,
       "contact_radius": 1e-06
-    }
+    },
+    "terminal_charges": [
+      {
+        "name": "gate",
+        "contact": "gate",
+        "regions": [
+          "n_body",
+          "p_source",
+          "p_drain"
+        ],
+        "per_meter": true,
+        "contact_radius": 1e-06
+      },
+      {
+        "name": "drain",
+        "contact": "drain",
+        "regions": [
+          "p_drain"
+        ],
+        "per_meter": true,
+        "contact_radius": 1e-06
+      },
+      {
+        "name": "source",
+        "contact": "source",
+        "regions": [
+          "p_source"
+        ],
+        "per_meter": true,
+        "contact_radius": 1e-06
+      },
+      {
+        "name": "body",
+        "contact": "body",
+        "regions": [
+          "n_body"
+        ],
+        "per_meter": true,
+        "contact_radius": 1e-06
+      }
+    ]
   },
   "regression": {
     "declared_converged": true,
@@ -85,7 +132,8 @@
       "max_abs_accepted_step": 0.05,
       "max_retry_count": 0,
       "min_converged_rows": 3,
-      "min_nonzero_capacitance_rows": 1
+      "min_nonzero_capacitance_rows": 1,
+      "min_nonzero_Cgg_rows": 1
     }
   }
 }

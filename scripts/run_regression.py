@@ -398,6 +398,25 @@ def cv_charge_columns(sweep: dict[str, Any], row: dict[str, str]) -> tuple[str, 
     return preferred
 
 
+
+def cv_multi_terminal_columns(sweep: dict[str, Any], row: dict[str, str]) -> list[tuple[str, str, str]]:
+    columns: list[tuple[str, str, str]] = []
+    charges = sweep.get("terminal_charges", [])
+    if not isinstance(charges, list):
+        return columns
+    sweep_contact = str(sweep.get("contact", ""))
+    sweep_initial = (sweep_contact[:1] or "v").lower()
+    for index, charge in enumerate(charges):
+        if not isinstance(charge, dict):
+            continue
+        raw_name = str(charge.get("name") or charge.get("contact") or f"terminal{index + 1}")
+        name = "".join(ch.lower() if ch.isalnum() else "_" for ch in raw_name) or f"terminal{index + 1}"
+        per_meter = bool(charge.get("per_meter", sweep.get("charge_per_meter", True)))
+        charge_column = f"charge_{name}_{'C_per_m' if per_meter else 'C'}"
+        cap_column = f"capacitance_C{sweep_initial}{name[:1] or 'x'}_{'F_per_m' if per_meter else 'F'}"
+        columns.append((name, charge_column, cap_column))
+    return columns
+
 def curve_column(row: dict[str, str], modern: str, legacy: str | None = None) -> str:
     if modern in row:
         return row[modern]
@@ -465,6 +484,11 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
         for column in cv_charge_columns(sweep_cfg, rows[0]):
             if column not in rows[0]:
                 raise AssertionError(f"{example}: CV sweep row 1 is missing column '{column}'")
+        for terminal_name, charge_column, capacitance_column in cv_multi_terminal_columns(sweep_cfg, rows[0]):
+            for column in (charge_column, capacitance_column):
+                if column not in rows[0]:
+                    raise AssertionError(
+                        f"{example}: multi-terminal CV terminal {terminal_name!r} is missing column '{column}'")
     if mode == "bv_reverse":
         for column in ("max_electric_field_V_per_m", "current_jump_ratio",
                        "breakdown_detected", "breakdown_voltage", "criterion",
@@ -481,6 +505,9 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     max_fields: list[tuple[int, float]] = []
     max_electric_field_seen = 0.0
     breakdown_detected = False
+    multi_terminal_cv_columns = cv_multi_terminal_columns(sweep_cfg, rows[0]) if mode == "cv_quasistatic" else []
+    cgg_column = next((cap for name, _, cap in multi_terminal_cv_columns if name == "gate"), None)
+    nonzero_cgg_rows = 0
     nonzero_capacitance_rows = 0
     zero_capacitance_rows = 0
     for row_index, row in enumerate(rows, start=1):
@@ -508,6 +535,11 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
             charge_column, capacitance_column = cv_charge_columns(sweep_cfg, row)
             _ = parse_finite_float(row, charge_column, f"{example}: CV sweep", row_index)
             capacitance = parse_finite_float(row, capacitance_column, f"{example}: CV sweep", row_index)
+            for terminal_name, multi_charge_column, multi_cap_column in multi_terminal_cv_columns:
+                _ = parse_finite_float(row, multi_charge_column, f"{example}: multi-terminal CV {terminal_name}", row_index)
+                multi_cap = parse_finite_float(row, multi_cap_column, f"{example}: multi-terminal CV {terminal_name}", row_index)
+                if row_index > 1 and multi_cap_column == cgg_column and abs(multi_cap) > 0.0:
+                    nonzero_cgg_rows += 1
             if row_index > 1:
                 if abs(capacitance) > 0.0:
                     nonzero_capacitance_rows += 1
@@ -631,6 +663,11 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
             raise AssertionError(
                 f"{example}: field=zero_capacitance_rows actual={zero_capacitance_rows} "
                 f"expected={expected_zero_capacitance_rows}")
+        min_nonzero_cgg_rows = int(reg.get("min_nonzero_Cgg_rows", 0))
+        if cgg_column is not None and nonzero_cgg_rows < min_nonzero_cgg_rows:
+            raise AssertionError(
+                f"{example}: field=nonzero_Cgg_rows actual={nonzero_cgg_rows} "
+                f"expected_at_least={min_nonzero_cgg_rows}")
 
     result = {
         "rows": len(rows),
@@ -653,6 +690,11 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
         result["max_field_trend_checked"] = max_field_trend_checked
     if mode == "cv_quasistatic":
         result["nonzero_capacitance_rows"] = nonzero_capacitance_rows
+        result["multi_terminal_cv_columns"] = [
+            {"terminal": name, "charge": charge, "capacitance": capacitance}
+            for name, charge, capacitance in multi_terminal_cv_columns
+        ]
+        result["nonzero_Cgg_rows"] = nonzero_cgg_rows
     return result
 
 def check_schottky_iv_trend(example_dir: Path) -> dict[str, Any]:

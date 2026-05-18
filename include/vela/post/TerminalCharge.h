@@ -11,6 +11,7 @@
 namespace vela {
 
 struct TerminalChargeConfig {
+    std::string name;
     std::string contact;
     std::vector<std::string> regions;
     Real contactRadius = 0.0;
