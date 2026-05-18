@@ -51,7 +51,7 @@ Common fields:
 - fixed_charge_m3: number (optional)
 
 Notes:
-- Region `fixed_charge_m3` is additive source charge for Poisson.
+- Region `fixed_charge_m3` is additive source charge for Poisson and for drift-diffusion Poisson substeps.
 - Duplicate definitions for the same region are rejected.
 
 ### interfaces[] entries
@@ -70,6 +70,8 @@ Notes:
 - Effective interface sheet charge is:
   `sheet_charge_m2 + fixed_charge_m2 + trap_density_m2 * trap_occupancy`
 - Charge is distributed edge-by-edge across the requested region pair.
+- `interfaces[]` is consumed by the standalone Poisson driver and by drift-diffusion DC sweep Poisson substeps (`solver.method: gummel` and `solver.method: newton`).
+- The trap model is a quasi-static prototype: `trap_occupancy` is a fixed user-supplied constant for the whole run/sweep. Bias-dependent trap occupancy, frequency dispersion, and trap statistics are not implemented.
 
 ## contacts[]
 

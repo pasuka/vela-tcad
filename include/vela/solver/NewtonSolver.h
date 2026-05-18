@@ -71,7 +71,9 @@ public:
                  const MaterialDatabase& matdb,
                  const DopingModel& doping,
                  const std::unordered_map<std::string, Real>& contactBiases,
-                 NewtonConfig cfg = {});
+                 NewtonConfig cfg = {},
+                 std::vector<RegionFixedChargeSpec> fixedCharges = {},
+                 std::vector<InterfaceSheetChargeSpec> sheetCharges = {});
 
     NewtonResult solve() const;
     NewtonResult solve(const DDSolution& initial) const;
@@ -90,6 +92,8 @@ private:
     const DopingModel& doping_;
     std::unordered_map<std::string, Real> contactBiases_;
     NewtonConfig cfg_;
+    std::vector<RegionFixedChargeSpec> fixedCharges_;
+    std::vector<InterfaceSheetChargeSpec> sheetCharges_;
 };
 
 NewtonConfig newtonConfigFromJson(const nlohmann::json& cfg);
@@ -106,5 +110,23 @@ NewtonResult runNewton(const DeviceMesh& mesh,
                        const std::unordered_map<std::string, Real>& contactBiases,
                        const DDSolution& initial,
                        const NewtonConfig& cfg = {});
+
+
+NewtonResult runNewton(const DeviceMesh& mesh,
+                       const MaterialDatabase& matdb,
+                       const DopingModel& doping,
+                       const std::unordered_map<std::string, Real>& contactBiases,
+                       const NewtonConfig& cfg,
+                       std::vector<RegionFixedChargeSpec> fixedCharges,
+                       std::vector<InterfaceSheetChargeSpec> sheetCharges);
+
+NewtonResult runNewton(const DeviceMesh& mesh,
+                       const MaterialDatabase& matdb,
+                       const DopingModel& doping,
+                       const std::unordered_map<std::string, Real>& contactBiases,
+                       const DDSolution& initial,
+                       const NewtonConfig& cfg,
+                       std::vector<RegionFixedChargeSpec> fixedCharges,
+                       std::vector<InterfaceSheetChargeSpec> sheetCharges);
 
 } // namespace vela

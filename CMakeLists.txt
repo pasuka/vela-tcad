@@ -210,6 +210,9 @@ target_link_libraries(test_schottky_contact PRIVATE vela_core Catch2::Catch2With
 add_executable(test_poisson_neumann tests/test_poisson_neumann.cpp)
 target_link_libraries(test_poisson_neumann PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_mos_interface_charge tests/test_mos_interface_charge.cpp)
+target_link_libraries(test_mos_interface_charge PRIVATE vela_core Catch2::Catch2WithMain)
+
 
 include(Catch)
 catch_discover_tests(test_scaling)
@@ -244,6 +247,8 @@ add_test(NAME boundary COMMAND test_boundary_conditions [boundary])
 catch_discover_tests(test_schottky_contact)
 add_test(NAME schottky COMMAND test_schottky_contact [schottky])
 catch_discover_tests(test_poisson_neumann)
+catch_discover_tests(test_mos_interface_charge)
+add_test(NAME interface COMMAND test_mos_interface_charge [interface])
 
 
 add_test(NAME regression

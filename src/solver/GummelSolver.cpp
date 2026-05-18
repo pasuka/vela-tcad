@@ -158,7 +158,9 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
                          const std::unordered_map<std::string, Real>& contactBiases,
                          const ContactSpecsMap&                       contactSpecs,
                          const GummelConfig&                          cfg,
-                         const DDSolution*                           initialGuess)
+                         const DDSolution*                           initialGuess,
+                         std::vector<RegionFixedChargeSpec>           fixedCharges,
+                         std::vector<InterfaceSheetChargeSpec>        sheetCharges)
 {
     const Index  N   = mesh.numNodes();
     const double Vt  = thermalVoltage(cfg.temperature_K);
@@ -289,7 +291,9 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         mobilityConfig,
         recombinationConfig,
         cfg.bandgapNarrowing,
-        cfg.impactIonization);
+        cfg.impactIonization,
+        fixedCharges,
+        sheetCharges);
 
     VectorXd psi_init  = VectorXd::Zero(static_cast<int>(N));
     VectorXd n_init    = VectorXd::Zero(static_cast<int>(N));
@@ -453,7 +457,7 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
                      const GummelConfig&                          cfg)
 {
     ContactSpecsMap emptySpecs;
-    return runGummelImpl(mesh, matdb, doping, contactBiases, emptySpecs, cfg, nullptr);
+    return runGummelImpl(mesh, matdb, doping, contactBiases, emptySpecs, cfg, nullptr, {}, {});
 }
 
 DDSolution runGummel(const DeviceMesh&                          mesh,
@@ -464,7 +468,7 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
                      const DDSolution&                           initialGuess)
 {
     ContactSpecsMap emptySpecs;
-    return runGummelImpl(mesh, matdb, doping, contactBiases, emptySpecs, cfg, &initialGuess);
+    return runGummelImpl(mesh, matdb, doping, contactBiases, emptySpecs, cfg, &initialGuess, {}, {});
 }
 
 DDSolution runGummel(const DeviceMesh&                          mesh,
@@ -474,7 +478,7 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
                      const ContactSpecsMap&                       contactSpecs,
                      const GummelConfig&                          cfg)
 {
-    return runGummelImpl(mesh, matdb, doping, contactBiases, contactSpecs, cfg, nullptr);
+    return runGummelImpl(mesh, matdb, doping, contactBiases, contactSpecs, cfg, nullptr, {}, {});
 }
 
 DDSolution runGummel(const DeviceMesh&                          mesh,
@@ -485,7 +489,36 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
                      const GummelConfig&                          cfg,
                      const DDSolution&                           initialGuess)
 {
-    return runGummelImpl(mesh, matdb, doping, contactBiases, contactSpecs, cfg, &initialGuess);
+    return runGummelImpl(mesh, matdb, doping, contactBiases, contactSpecs, cfg, &initialGuess, {}, {});
+}
+
+DDSolution runGummel(const DeviceMesh&                          mesh,
+                     const MaterialDatabase&                     matdb,
+                     const DopingModel&                          doping,
+                     const std::unordered_map<std::string, Real>& contactBiases,
+                     const ContactSpecsMap&                       contactSpecs,
+                     const GummelConfig&                          cfg,
+                     std::vector<RegionFixedChargeSpec>           fixedCharges,
+                     std::vector<InterfaceSheetChargeSpec>        sheetCharges)
+{
+    return runGummelImpl(
+        mesh, matdb, doping, contactBiases, contactSpecs, cfg, nullptr,
+        std::move(fixedCharges), std::move(sheetCharges));
+}
+
+DDSolution runGummel(const DeviceMesh&                          mesh,
+                     const MaterialDatabase&                     matdb,
+                     const DopingModel&                          doping,
+                     const std::unordered_map<std::string, Real>& contactBiases,
+                     const ContactSpecsMap&                       contactSpecs,
+                     const GummelConfig&                          cfg,
+                     const DDSolution&                           initialGuess,
+                     std::vector<RegionFixedChargeSpec>           fixedCharges,
+                     std::vector<InterfaceSheetChargeSpec>        sheetCharges)
+{
+    return runGummelImpl(
+        mesh, matdb, doping, contactBiases, contactSpecs, cfg, &initialGuess,
+        std::move(fixedCharges), std::move(sheetCharges));
 }
 
 

@@ -10,70 +10,6 @@
 
 namespace vela {
 
-namespace {
-
-Real triangleArea(const DeviceMesh& mesh, const Cell& cell)
-{
-    if (cell.node_ids.size() < 3) return 0.0;
-
-    const Node& a = mesh.getNode(cell.node_ids[0]);
-    const Node& b = mesh.getNode(cell.node_ids[1]);
-    const Node& c = mesh.getNode(cell.node_ids[2]);
-
-    return 0.5 * std::abs((b.x - a.x) * (c.y - a.y) -
-                          (c.x - a.x) * (b.y - a.y));
-}
-
-struct RegionPairKey {
-    std::string first;
-    std::string second;
-
-    bool operator==(const RegionPairKey& other) const
-    {
-        return first == other.first && second == other.second;
-    }
-};
-
-struct RegionPairKeyHash {
-    std::size_t operator()(const RegionPairKey& key) const
-    {
-        const std::hash<std::string> hash;
-        return hash(key.first) ^ (hash(key.second) << 1U);
-    }
-};
-
-RegionPairKey makeRegionPairKey(std::string a, std::string b)
-{
-    if (b < a)
-        std::swap(a, b);
-    return RegionPairKey{std::move(a), std::move(b)};
-}
-
-std::unordered_map<std::string, Real> fixedChargeByRegion(
-    const std::vector<RegionFixedChargeSpec>& fixedCharges)
-{
-    std::unordered_map<std::string, Real> fixedByRegion;
-    for (const auto& spec : fixedCharges) {
-        const auto [_, inserted] = fixedByRegion.emplace(spec.region, spec.fixedCharge);
-        if (!inserted)
-            throw std::invalid_argument(
-                "PoissonAssembler: duplicate fixed_charge_m3 for region '" +
-                spec.region + "'.");
-    }
-    return fixedByRegion;
-}
-
-std::unordered_map<RegionPairKey, Real, RegionPairKeyHash> sheetChargeByRegionPair(
-    const std::vector<InterfaceSheetChargeSpec>& sheetCharges)
-{
-    std::unordered_map<RegionPairKey, Real, RegionPairKeyHash> sheetByRegionPair;
-    for (const auto& spec : sheetCharges)
-        sheetByRegionPair[makeRegionPairKey(spec.region0, spec.region1)] += spec.totalSheetCharge();
-    return sheetByRegionPair;
-}
-
-} // namespace
-
 PoissonAssembler::PoissonAssembler(
     const DeviceMesh&      mesh,
     const MaterialDatabase& matdb,
@@ -138,42 +74,8 @@ void PoissonAssembler::assemble()
         b_(static_cast<int>(i)) = constants::q * doping_.netDoping(i) * vol[i];
 
     // ---- Region fixed charge: q * fixed_charge_m3 * cell_area / 3 ----
-    const auto fixedByRegion = fixedChargeByRegion(fixedCharges_);
-
-    if (!fixedByRegion.empty()) {
-        for (Index c = 0; c < mesh_.numCells(); ++c) {
-            const Cell& cell = mesh_.getCell(c);
-            const Region& region = mesh_.getRegion(cell.region_id);
-            auto it = fixedByRegion.find(region.name);
-            if (it == fixedByRegion.end()) continue;
-
-            const Real nodeCharge = constants::q * it->second * triangleArea(mesh_, cell) / 3.0;
-            for (Index nid : cell.node_ids)
-                b_(static_cast<int>(nid)) += nodeCharge;
-        }
-    }
-
-    // ---- Interface sheet charge on shared-node region-pair edges ----
-    // Allocation rule: q * sheet_charge_m2 * edge_length / 2 to each endpoint.
-    // Pre-index configured region pairs so assembly scans edges once. Multiple
-    // sheet specs for the same unordered region pair are intentionally summed.
-    const auto sheetByRegionPair = sheetChargeByRegionPair(sheetCharges_);
-    if (!sheetByRegionPair.empty()) {
-        for (Index e = 0; e < mesh_.numEdges(); ++e) {
-            const auto& cells = edgeCells[e];
-            if (cells.size() != 2) continue;
-
-            const Region& r0 = mesh_.getRegion(mesh_.getCell(cells[0]).region_id);
-            const Region& r1 = mesh_.getRegion(mesh_.getCell(cells[1]).region_id);
-            const auto it = sheetByRegionPair.find(makeRegionPairKey(r0.name, r1.name));
-            if (it == sheetByRegionPair.end()) continue;
-
-            const Edge& edge = mesh_.getEdge(e);
-            const Real endpointCharge = constants::q * it->second * edge.length * 0.5;
-            b_(static_cast<int>(edge.n0)) += endpointCharge;
-            b_(static_cast<int>(edge.n1)) += endpointCharge;
-        }
-    }
+    detail::addFixedAndInterfaceChargeToRhs(
+        mesh_, edgeCells, fixedCharges_, sheetCharges_, b_, "PoissonAssembler");
 
     // ---- Neumann boundary conditions ----
     // For each boundary segment defined by a polyline of node IDs, compute the

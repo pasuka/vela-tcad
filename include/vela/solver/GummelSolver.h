@@ -2,6 +2,7 @@
 
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/equation/ChargeSpec.h"
 #include "vela/core/Types.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
@@ -113,6 +114,26 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
                      const ContactSpecsMap&                       contactSpecs,
                      const GummelConfig&                          cfg,
                      const DDSolution&                           initialGuess);
+
+
+DDSolution runGummel(const DeviceMesh&                          mesh,
+                     const MaterialDatabase&                     matdb,
+                     const DopingModel&                          doping,
+                     const std::unordered_map<std::string, Real>& contactBiases,
+                     const ContactSpecsMap&                       contactSpecs,
+                     const GummelConfig&                          cfg,
+                     std::vector<RegionFixedChargeSpec>           fixedCharges,
+                     std::vector<InterfaceSheetChargeSpec>        sheetCharges);
+
+DDSolution runGummel(const DeviceMesh&                          mesh,
+                     const MaterialDatabase&                     matdb,
+                     const DopingModel&                          doping,
+                     const std::unordered_map<std::string, Real>& contactBiases,
+                     const ContactSpecsMap&                       contactSpecs,
+                     const GummelConfig&                          cfg,
+                     const DDSolution&                           initialGuess,
+                     std::vector<RegionFixedChargeSpec>           fixedCharges,
+                     std::vector<InterfaceSheetChargeSpec>        sheetCharges);
 
 
 /**

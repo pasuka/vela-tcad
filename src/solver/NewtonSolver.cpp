@@ -176,12 +176,16 @@ NewtonSolver::NewtonSolver(
     const MaterialDatabase& matdb,
     const DopingModel& doping,
     const std::unordered_map<std::string, Real>& contactBiases,
-    NewtonConfig cfg)
+    NewtonConfig cfg,
+    std::vector<RegionFixedChargeSpec> fixedCharges,
+    std::vector<InterfaceSheetChargeSpec> sheetCharges)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
     , contactBiases_(contactBiases)
     , cfg_(cfg)
+    , fixedCharges_(std::move(fixedCharges))
+    , sheetCharges_(std::move(sheetCharges))
 {
     if (cfg_.jacobian != "analytic" && cfg_.jacobian != "finite_difference")
         throw std::invalid_argument(
@@ -238,7 +242,7 @@ DDSolution NewtonSolver::buildInitialGuess(
     gcfg.recombination = cfg_.recombination;
     gcfg.bandgapNarrowing = cfg_.bandgapNarrowing;
     gcfg.impactIonization = cfg_.impactIonization;
-    DDSolution sol = runGummel(mesh_, matdb_, doping_, contactBiases_, gcfg);
+    DDSolution sol = runGummel(mesh_, matdb_, doping_, contactBiases_, ContactSpecsMap{}, gcfg, fixedCharges_, sheetCharges_);
 
     // The default cold-start path removes tiny quasi-Fermi numerical noise left
     // by the one-step Gummel initializer.  A caller can opt into warm_start when
@@ -280,7 +284,9 @@ NewtonResult NewtonSolver::solve() const
         mobilityConfig,
         recombinationConfig,
         cfg_.bandgapNarrowing,
-        cfg_.impactIonization);
+        cfg_.impactIonization,
+        fixedCharges_,
+        sheetCharges_);
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
     return solve(buildInitialGuess(assembler, bcs));
 }
@@ -299,7 +305,9 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         mobilityConfig,
         recombinationConfig,
         cfg_.bandgapNarrowing,
-        cfg_.impactIonization);
+        cfg_.impactIonization,
+        fixedCharges_,
+        sheetCharges_);
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
 
     // By default Newton uses a conservative cold start for quasi-Fermi
@@ -479,6 +487,43 @@ NewtonResult runNewton(const DeviceMesh& mesh,
                        const NewtonConfig& cfg)
 {
     return NewtonSolver(mesh, matdb, doping, contactBiases, cfg).solve(initial);
+}
+
+NewtonResult runNewton(const DeviceMesh& mesh,
+                       const MaterialDatabase& matdb,
+                       const DopingModel& doping,
+                       const std::unordered_map<std::string, Real>& contactBiases,
+                       const NewtonConfig& cfg,
+                       std::vector<RegionFixedChargeSpec> fixedCharges,
+                       std::vector<InterfaceSheetChargeSpec> sheetCharges)
+{
+    return NewtonSolver(
+        mesh,
+        matdb,
+        doping,
+        contactBiases,
+        cfg,
+        std::move(fixedCharges),
+        std::move(sheetCharges)).solve();
+}
+
+NewtonResult runNewton(const DeviceMesh& mesh,
+                       const MaterialDatabase& matdb,
+                       const DopingModel& doping,
+                       const std::unordered_map<std::string, Real>& contactBiases,
+                       const DDSolution& initial,
+                       const NewtonConfig& cfg,
+                       std::vector<RegionFixedChargeSpec> fixedCharges,
+                       std::vector<InterfaceSheetChargeSpec> sheetCharges)
+{
+    return NewtonSolver(
+        mesh,
+        matdb,
+        doping,
+        contactBiases,
+        cfg,
+        std::move(fixedCharges),
+        std::move(sheetCharges)).solve(initial);
 }
 
 } // namespace vela

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/equation/ChargeSpec.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
@@ -43,7 +44,9 @@ public:
                        const MobilityModelConfig& mobilityConfig,
                        const RecombinationModelConfig& recombinationConfig,
                        const BandgapNarrowingConfig& bandgapNarrowingConfig = {},
-                       const ImpactIonizationModelConfig& impactIonizationConfig = {});
+                       const ImpactIonizationModelConfig& impactIonizationConfig = {},
+                       std::vector<RegionFixedChargeSpec> fixedCharges = {},
+                       std::vector<InterfaceSheetChargeSpec> sheetCharges = {});
 
     VectorXd pack(const CoupledDDState& state) const;
     CoupledDDState unpack(const VectorXd& x) const;
@@ -81,6 +84,8 @@ private:
     std::unique_ptr<ImpactIonizationModel> impactIonization_;
     bool impactIonizationEnabled_ = false;
     std::vector<Real> ni_;
+    std::vector<RegionFixedChargeSpec> fixedCharges_;
+    std::vector<InterfaceSheetChargeSpec> sheetCharges_;
     std::vector<Material> cellMaterials_;
 
     // Mesh-derived quantities cached at construction time.

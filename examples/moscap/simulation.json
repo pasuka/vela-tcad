@@ -15,6 +15,9 @@
       "acceptors": 0.0
     }
   ],
+  "interfaces": [
+    { "regions": ["silicon", "oxide"], "trap_density_m2": 1.0e15, "trap_occupancy": 0.25 }
+  ],
   "contacts": [
     {
       "name": "gate",

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/equation/ChargeSpec.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/BandgapNarrowing.h"
@@ -60,7 +61,9 @@ public:
                 const MobilityModelConfig&      mobilityConfig,
                 const RecombinationModelConfig& recombinationConfig,
                 const BandgapNarrowingConfig& bandgapNarrowingConfig = {},
-                const ImpactIonizationModelConfig& impactIonizationConfig = {});
+                const ImpactIonizationModelConfig& impactIonizationConfig = {},
+                std::vector<RegionFixedChargeSpec> fixedCharges = {},
+                std::vector<InterfaceSheetChargeSpec> sheetCharges = {});
 
     // ------------------------------------------------------------------
     // Assembly
@@ -108,6 +111,8 @@ private:
     bool impactIonizationEnabled_ = false;
 
     std::vector<Real> ni_; ///< Per-node intrinsic concentration [m^-3]
+    std::vector<RegionFixedChargeSpec> fixedCharges_;
+    std::vector<InterfaceSheetChargeSpec> sheetCharges_;
 
     // Mesh-derived quantities cached at construction time.
     std::vector<std::vector<Index>> edgeCells_;

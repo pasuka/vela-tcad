@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace vela {
@@ -45,7 +46,9 @@ DDAssembler::DDAssembler(const DeviceMesh&       mesh,
                   MobilityModelConfig{},
                   recombinationModelConfig({"srh"}, taun, taup),
                   BandgapNarrowingConfig{},
-                  ImpactIonizationModelConfig{})
+                  ImpactIonizationModelConfig{},
+                         {},
+                         {})
 {}
 
 DDAssembler::DDAssembler(const DeviceMesh&               mesh,
@@ -55,7 +58,9 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
                          const MobilityModelConfig&      mobilityConfig,
                          const RecombinationModelConfig& recombinationConfig,
                          const BandgapNarrowingConfig& bandgapNarrowingConfig,
-                         const ImpactIonizationModelConfig& impactIonizationConfig)
+                         const ImpactIonizationModelConfig& impactIonizationConfig,
+                         std::vector<RegionFixedChargeSpec> fixedCharges,
+                         std::vector<InterfaceSheetChargeSpec> sheetCharges)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
@@ -71,6 +76,8 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
           doping,
           bandgapNarrowingConfig,
           Vt))
+    , fixedCharges_(std::move(fixedCharges))
+    , sheetCharges_(std::move(sheetCharges))
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
     , couple_(detail::computeEdgeCouplings(mesh))
@@ -142,6 +149,9 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
                  (pi_v - ni_v + doping_.netDoping(i)) * vol_i
                  + diagCarrier * psi(ii);
     }
+
+    detail::addFixedAndInterfaceChargeToRhs(
+        mesh_, edgeCells_, fixedCharges_, sheetCharges_, b_, "DDAssembler");
 }
 
 // ---------------------------------------------------------------------------

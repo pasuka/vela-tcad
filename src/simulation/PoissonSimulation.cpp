@@ -6,6 +6,7 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/solver/LinearSolver.h"
+#include "vela/simulation/ConfigParsing.h"
 #include <nlohmann/json.hpp>
 #include <cmath>
 #include <filesystem>
@@ -35,22 +36,6 @@ std::string resolvePath(const std::filesystem::path& baseDir, const std::string&
     if (resolved.is_relative())
         resolved = baseDir / resolved;
     return resolved.string();
-}
-
-void appendFixedChargeSpec(std::vector<RegionFixedChargeSpec>& specs,
-                           std::unordered_map<std::string, std::string>& sourcesByRegion,
-                           std::string region,
-                           Real fixedCharge,
-                           std::string source)
-{
-    const auto [_, inserted] = sourcesByRegion.emplace(region, source);
-    if (!inserted)
-        throw std::runtime_error(
-            "PoissonSimulation: duplicate fixed_charge_m3 for region '" +
-            region + "' from " + sourcesByRegion.at(region) + " and " +
-            source + ". Specify fixed charge for each region only once.");
-
-    specs.push_back(RegionFixedChargeSpec{std::move(region), fixedCharge});
 }
 
 } // namespace
@@ -98,72 +83,17 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // Doping model
     // ------------------------------------------------------------------
     std::vector<RegionDopingSpec> dopingSpecs;
-    std::vector<RegionFixedChargeSpec> fixedChargeSpecs;
-    std::unordered_map<std::string, std::string> fixedChargeSourcesByRegion;
     for (const auto& entry : cfg.at("doping")) {
-        const auto region = entry.at("region").get<std::string>();
-
         RegionDopingSpec spec;
-        spec.region    = region;
+        spec.region    = entry.at("region").get<std::string>();
         spec.donors    = entry.at("donors").get<Real>();
         spec.acceptors = entry.at("acceptors").get<Real>();
         dopingSpecs.push_back(std::move(spec));
-
-        if (entry.contains("fixed_charge_m3")) {
-            appendFixedChargeSpec(
-                fixedChargeSpecs,
-                fixedChargeSourcesByRegion,
-                region,
-                entry.at("fixed_charge_m3").get<Real>(),
-                "doping entry");
-        }
     }
     DopingModel doping = DopingModel::fromMeshAndRegions(mesh, dopingSpecs);
 
-    if (cfg.contains("regions")) {
-        for (const auto& entry : cfg.at("regions")) {
-            if (!entry.contains("fixed_charge_m3")) continue;
-            appendFixedChargeSpec(
-                fixedChargeSpecs,
-                fixedChargeSourcesByRegion,
-                entry.at("name").get<std::string>(),
-                entry.at("fixed_charge_m3").get<Real>(),
-                "regions entry");
-        }
-    }
-
-    std::vector<InterfaceSheetChargeSpec> sheetChargeSpecs;
-    if (cfg.contains("interfaces")) {
-        for (const auto& entry : cfg.at("interfaces")) {
-            if (!entry.contains("sheet_charge_m2") &&
-                !entry.contains("fixed_charge_m2") &&
-                !entry.contains("trap_density_m2")) continue;
-
-            const Real sheetCharge = entry.value("sheet_charge_m2", 0.0);
-            const Real fixedCharge = entry.value("fixed_charge_m2", 0.0);
-            const Real trapDensity = entry.value("trap_density_m2", 0.0);
-            const Real trapOccupancy = entry.value("trap_occupancy", 0.0);
-            if (entry.contains("trap_density_m2") &&
-                (trapOccupancy < 0.0 || trapOccupancy > 1.0)) {
-                throw std::runtime_error(
-                    "PoissonSimulation: trap_occupancy must be in [0, 1] when trap_density_m2 is provided.");
-            }
-
-            if (entry.contains("regions")) {
-                const auto regions = entry.at("regions").get<std::vector<std::string>>();
-                if (regions.size() != 2)
-                    throw std::runtime_error(
-                        "PoissonSimulation: interface regions must contain exactly two names.");
-                sheetChargeSpecs.push_back(InterfaceSheetChargeSpec{
-                    regions[0], regions[1], sheetCharge, fixedCharge, trapDensity, trapOccupancy});
-            } else {
-                sheetChargeSpecs.push_back(InterfaceSheetChargeSpec{
-                    entry.at("region0").get<std::string>(),
-                    entry.at("region1").get<std::string>(),
-                    sheetCharge, fixedCharge, trapDensity, trapOccupancy});
-            }
-        }
-    }
+    std::vector<RegionFixedChargeSpec> fixedChargeSpecs = parseRegionFixedChargeSpecs(cfg);
+    std::vector<InterfaceSheetChargeSpec> sheetChargeSpecs = parseInterfaceSheetChargeSpecs(cfg);
 
     // ------------------------------------------------------------------
     // Parse explicit boundary conditions
