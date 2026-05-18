@@ -109,7 +109,12 @@ EXAMPLES = [
         "name": "nmos2d_mos_dd_bv",
         "source": "nmos2d_mos_dd",
         "config": Path("examples/nmos2d_mos_dd/simulation_bv.json"),
-        "expected": [Path("outputs/nmos2d_mos_dd_bv.csv")],
+        "expected": [
+            Path("outputs/nmos2d_mos_dd_bv.csv"),
+            Path("outputs/nmos2d_mos_dd_bv_sweep_0000_0V.vtk"),
+            Path("outputs/nmos2d_mos_dd_bv_sweep_0001_0.1V.vtk"),
+            Path("outputs/nmos2d_mos_dd_bv_sweep_0002_0.2V.vtk"),
+        ],
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
     },
     {
@@ -164,7 +169,12 @@ EXAMPLES = [
         "name": "pmos2d_mos_dd_bv",
         "source": "pmos2d_mos_dd",
         "config": Path("examples/pmos2d_mos_dd/simulation_bv.json"),
-        "expected": [Path("outputs/pmos2d_mos_dd_bv.csv")],
+        "expected": [
+            Path("outputs/pmos2d_mos_dd_bv.csv"),
+            Path("outputs/pmos2d_mos_dd_bv_sweep_0000_0V.vtk"),
+            Path("outputs/pmos2d_mos_dd_bv_sweep_0001_-0.1V.vtk"),
+            Path("outputs/pmos2d_mos_dd_bv_sweep_0002_-0.2V.vtk"),
+        ],
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
     },
     {
