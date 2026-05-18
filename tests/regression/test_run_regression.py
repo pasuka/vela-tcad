@@ -132,6 +132,87 @@ class RegressionRunnerPolicies(unittest.TestCase):
             run_regression.check_csv_converged(example_dir)
             self.assertEqual(run_regression.check_dc_sweep_regression(example_dir)["converged_rows"], 1)
 
+    def test_ldmos_iv_rejects_empty_csv(self) -> None:
+        cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "iv", "start": 0, "stop": 0.1, "step": 0.1},
+            "regression": {"ldmos_iv": {}},
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), cfg, [])
+            with self.assertRaisesRegex(AssertionError, "LDMOS DD-IV CSV contains no rows"):
+                run_regression.check_ldmos_iv_trend(example_dir)
+
+    def test_ldmos_iv_rejects_non_monotone_abs_current(self) -> None:
+        cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "iv", "start": 0, "stop": 0.2, "step": 0.1},
+            "regression": {
+                "ldmos_iv": {
+                    "current_monotone_abs_tolerance": 1e-30,
+                    "current_monotone_rel_tolerance": 0.0,
+                }
+            },
+        }
+        rows = [
+            base_row(current_total="0"),
+            base_row(bias_V="0.1", current_total="2e-12"),
+            base_row(bias_V="0.2", current_total="1e-12"),
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), cfg, rows)
+            with self.assertRaisesRegex(AssertionError, "LDMOS \\|Id\\|-Vd trend is not monotone"):
+                run_regression.check_ldmos_iv_trend(example_dir)
+
+    def test_ldmos_iv_uses_relative_monotonicity_tolerance(self) -> None:
+        cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "iv", "start": 0, "stop": 0.2, "step": 0.1},
+            "regression": {
+                "ldmos_iv": {
+                    "drain_current_sign": 1.0,
+                    "current_monotone_abs_tolerance": 1e-30,
+                    "current_monotone_rel_tolerance": 0.1,
+                }
+            },
+        }
+        rows = [
+            base_row(current_total="0"),
+            base_row(bias_V="0.1", current_total="1.0e-9"),
+            base_row(bias_V="0.2", current_total="9.5e-10"),
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), cfg, rows)
+            result = run_regression.check_ldmos_iv_trend(example_dir)
+            self.assertEqual(result["abs_currents"], [0.0, 1.0e-9, 9.5e-10])
+
+    def test_ldmos_iv_rejects_wrong_drain_current_sign(self) -> None:
+        cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "iv", "start": 0, "stop": 0.1, "step": 0.1},
+            "regression": {"ldmos_iv": {"drain_current_sign": 1.0}},
+        }
+        rows = [base_row(current_total="0"), base_row(bias_V="0.1", current_total="-1e-12")]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), cfg, rows)
+            with self.assertRaisesRegex(AssertionError, "does not match expected polarity"):
+                run_regression.check_ldmos_iv_trend(example_dir)
+
+    def test_ldmos_iv_rejects_missing_required_columns(self) -> None:
+        cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "iv", "start": 0, "stop": 0.1, "step": 0.1},
+            "regression": {"ldmos_iv": {}},
+        }
+        fieldnames = [name for name in FIELDNAMES if name != "current_total"]
+        rows = [base_row(), base_row(bias_V="0.1")]
+        for row in rows:
+            row.pop("current_total")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), cfg, rows, fieldnames)
+            with self.assertRaisesRegex(AssertionError, "missing column 'current_total'"):
+                run_regression.check_ldmos_iv_trend(example_dir)
+
     def test_run_example_tolerates_configured_nonzero_runner_exit(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)

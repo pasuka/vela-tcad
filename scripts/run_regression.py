@@ -176,6 +176,16 @@ EXAMPLES = [
         "expected": [Path("outputs/ldmos2d_reverse_poisson.vtk")],
         "checks": ["finite_outputs"],
     },
+
+    {
+        "name": "ldmos2d_dd_iv",
+        "source": "ldmos2d",
+        "config": Path("examples/ldmos2d/simulation_dd_iv.json"),
+        "expected": [Path("outputs/ldmos2d_dd_iv.csv")],
+        "expected_sweep_vtk": True,
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression",
+                   "ldmos_iv_trend"],
+    },
     {
         "name": "igbt2d_poisson",
         "source": "igbt2d",
@@ -356,15 +366,15 @@ def check_csv_converged(example_dir: Path) -> None:
         raise AssertionError(f"Non-converged declared sweep rows: {diagnostics}")
 
 
-def expected_sweep_voltages(sweep: dict[str, Any]) -> list[float]:
+def expected_sweep_voltages(sweep: dict[str, Any], label: str = "DC sweep") -> list[float]:
     start = float(sweep["start"])
     stop = float(sweep["stop"])
     step = float(sweep["step"])
     if step == 0.0:
-        raise AssertionError("PN sweep step must be non-zero")
+        raise AssertionError(f"{label} step must be non-zero")
     direction = 1.0 if step > 0.0 else -1.0
     if (stop - start) * step < 0.0:
-        raise AssertionError("PN sweep step does not move start toward stop")
+        raise AssertionError(f"{label} step does not move start toward stop")
 
     values = [start]
     voltage = start + step
@@ -894,15 +904,65 @@ def validate_sweep_voltages(
                 f"all voltages: {actual}")
 
 
-def assert_monotone_non_decreasing(values: list[float], label: str, tolerance: float = 1.0e-18) -> None:
+def assert_monotone_non_decreasing(
+    values: list[float],
+    label: str,
+    abs_tolerance: float = 1.0e-18,
+    rel_tolerance: float = 0.0,
+) -> None:
     for value in values:
         if not math.isfinite(value):
             raise AssertionError(f"{label} contains non-finite value: {values}")
     for left, right in zip(values, values[1:]):
+        tolerance = abs_tolerance + rel_tolerance * max(abs(left), abs(right))
         if right + tolerance < left:
-            raise AssertionError(f"{label} is not monotone non-decreasing: {values}")
+            raise AssertionError(
+                f"{label} is not monotone non-decreasing within tolerance {tolerance}: {values}")
 
 
+
+def check_ldmos_iv_trend(example_dir: Path) -> dict[str, Any]:
+    cfg = json.loads((example_dir / "simulation.json").read_text())
+    rows = read_csv(output_csv_path(example_dir, cfg))
+    if not rows:
+        raise AssertionError("LDMOS DD-IV CSV contains no rows")
+
+    voltages = [
+        parse_finite_float(row, "bias_V", "LDMOS DD-IV", idx)
+        for idx, row in enumerate(rows, start=1)
+    ]
+    expected = expected_sweep_voltages(cfg["sweep"], "LDMOS DD-IV sweep")
+    validate_sweep_voltages(voltages, expected, "LDMOS DD-IV")
+
+    currents = [
+        parse_finite_float(row, "current_total", "LDMOS DD-IV", idx)
+        for idx, row in enumerate(rows, start=1)
+    ]
+    abs_currents = [abs(current) for current in currents]
+    reg = cfg.get("regression", {}).get("ldmos_iv", {})
+    abs_tolerance = float(reg.get("current_monotone_abs_tolerance", 1.0e-30))
+    rel_tolerance = float(reg.get("current_monotone_rel_tolerance", 1.0e-12))
+    assert_monotone_non_decreasing(
+        abs_currents, "LDMOS |Id|-Vd trend", abs_tolerance, rel_tolerance)
+
+    sign = float(reg.get("drain_current_sign", 1.0))
+    positive_bias_currents = [
+        current for voltage, current in zip(voltages, currents)
+        if voltage > 0.0
+    ]
+    if not positive_bias_currents:
+        raise AssertionError("LDMOS DD-IV trend requires at least one positive drain-bias row")
+    if sign * positive_bias_currents[-1] <= 0.0:
+        raise AssertionError(
+            f"LDMOS drain current sign {positive_bias_currents[-1]} does not match "
+            f"expected polarity {sign}; all currents={currents}")
+
+    return {
+        "voltages": voltages,
+        "currents": currents,
+        "abs_currents": abs_currents,
+        "drain_current_sign": sign,
+    }
 
 def check_surface_mobility(example_dir: Path, runner: Path) -> dict[str, Any]:
     cfg = json.loads((example_dir / "simulation.json").read_text())
@@ -1095,6 +1155,8 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
             result["checks"]["surface_mobility"] = check_surface_mobility(example_dir, runner)
         if "schottky_iv_trend" in spec["checks"]:
             result["checks"]["schottky_iv_trend"] = check_schottky_iv_trend(example_dir)
+        if "ldmos_iv_trend" in spec["checks"]:
+            result["checks"]["ldmos_iv_trend"] = check_ldmos_iv_trend(example_dir)
         result["passed"] = True
 
     except Exception as ex:  # noqa: BLE001 - regression summary should capture all failures.
