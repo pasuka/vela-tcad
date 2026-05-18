@@ -34,14 +34,20 @@ regression coverage. The `examples/nmos2d_mos_dd` and
 `examples/pmos2d_mos_dd` decks are true mixed-material Si/SiO2 MOS
 drift-diffusion prototypes with metal-gate contacts over gate oxide and ohmic
 source/drain/body contacts. They are intentionally coarse CI smoke decks for
-polarity, multi-terminal terminal-charge/CV, and high-field diagnostics, and must not be
-described as calibrated MOSFETs. The mixed-material MOS DD CV decks use the
+polarity, multi-terminal charge/CV, and off-state drain reverse-bias
+high-field/BV diagnostics, and must not be described as calibrated MOSFETs.
+The mixed-material MOS DD CV decks use the
 multi-terminal quasi-static CV prototype: a single gate-bias sweep is finite-
-differenced to report terminal charges plus `Cgate_gate`, `Cgate_drain`, `Cgate_source`, and `Cgate_body`-style
+differenced to report terminal charges plus `Cgate_gate`, `Cgate_drain`,
+`Cgate_source`, and `Cgate_body`-style
 columns such as `capacitance_Cgate_gate_F_per_m` and
 `capacitance_Cgate_drain_F_per_m`. These
 columns are useful engineering smoke diagnostics, not AC small-signal admittance
-or capacitance matrix results.
+or capacitance matrix results. The mixed-material MOS DD BV decks hold gate,
+source, and body at off-state bias, sweep the drain in the reverse/high-field
+direction with `sweep.mode: "bv_reverse"`, write per-point VTK snapshots, and
+regress finite leakage current plus non-decreasing maximum edge-field columns;
+these are smoke diagnostics, not calibrated breakdown-voltage predictions.
 
 ## Contact Schema Compatibility
 
