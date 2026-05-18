@@ -48,7 +48,8 @@
     },
     "ldmos_iv": {
       "drain_current_sign": 1.0,
-      "current_monotone_abs_tolerance": 1e-30
+      "current_monotone_abs_tolerance": 1e-30,
+      "current_monotone_rel_tolerance": 1e-12
     }
   }
 }

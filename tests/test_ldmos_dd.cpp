@@ -7,6 +7,7 @@
 #include "vela/physics/DopingModel.h"
 #include "vela/solver/GummelSolver.h"
 
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <string>
@@ -69,6 +70,32 @@ bool allFinite(const VectorXd& values)
 }
 
 } // namespace
+
+TEST_CASE("LDMOS source contact is tied to silicon source nodes", "[ldmos][mesh]")
+{
+    const DeviceMesh mesh = loadLdmosMesh();
+
+    const auto sourceContactIt = std::find_if(
+        mesh.contacts().begin(),
+        mesh.contacts().end(),
+        [](const Contact& contact) { return contact.name == "source"; });
+    REQUIRE(sourceContactIt != mesh.contacts().end());
+
+    const Region& sourceRegion = mesh.getRegion(sourceContactIt->region_id);
+    REQUIRE(sourceRegion.name == "n_source");
+    REQUIRE(sourceRegion.material == "Si");
+
+    for (const Index node : sourceContactIt->node_ids) {
+        const bool touchesSourceSilicon = std::any_of(
+            sourceRegion.cell_ids.begin(),
+            sourceRegion.cell_ids.end(),
+            [&](const Index cellId) {
+                const auto& nodeIds = mesh.getCell(cellId).node_ids;
+                return std::find(nodeIds.begin(), nodeIds.end(), node) != nodeIds.end();
+            });
+        REQUIRE(touchesSourceSilicon);
+    }
+}
 
 TEST_CASE("LDMOS mixed-material drift-diffusion assembly stays finite", "[ldmos][dd]")
 {
