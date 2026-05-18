@@ -50,7 +50,9 @@ struct RegionPairKeyHash {
     std::size_t operator()(const RegionPairKey& key) const
     {
         const std::hash<std::string> hash;
-        return hash(key.first) ^ (hash(key.second) << 1U);
+        std::size_t seed = hash(key.first);
+        seed ^= hash(key.second) + 0x9e3779b97f4a7c15ULL + (seed << 6U) + (seed >> 2U);
+        return seed;
     }
 };
 
@@ -96,14 +98,15 @@ inline std::unordered_map<RegionPairKey, Real, RegionPairKeyHash> sheetChargeByR
     return sheetByRegionPair;
 }
 
-inline void addFixedAndInterfaceChargeToRhs(
+inline VectorXd computeFixedAndInterfaceChargeRhs(
     const DeviceMesh& mesh,
     const std::vector<std::vector<Index>>& edgeCells,
     const std::vector<RegionFixedChargeSpec>& fixedCharges,
     const std::vector<InterfaceSheetChargeSpec>& sheetCharges,
-    VectorXd& rhs,
     const std::string& context)
 {
+    VectorXd contribution = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+
     const auto fixedByRegion = fixedChargeByRegion(fixedCharges, context);
     if (!fixedByRegion.empty()) {
         for (Index c = 0; c < mesh.numCells(); ++c) {
@@ -114,7 +117,7 @@ inline void addFixedAndInterfaceChargeToRhs(
 
             const Real nodeCharge = constants::q * it->second * triangleArea(mesh, cell) / 3.0;
             for (Index nid : cell.node_ids)
-                rhs(static_cast<int>(nid)) += nodeCharge;
+                contribution(static_cast<int>(nid)) += nodeCharge;
         }
     }
 
@@ -131,10 +134,23 @@ inline void addFixedAndInterfaceChargeToRhs(
 
             const Edge& edge = mesh.getEdge(e);
             const Real endpointCharge = constants::q * it->second * edge.length * 0.5;
-            rhs(static_cast<int>(edge.n0)) += endpointCharge;
-            rhs(static_cast<int>(edge.n1)) += endpointCharge;
+            contribution(static_cast<int>(edge.n0)) += endpointCharge;
+            contribution(static_cast<int>(edge.n1)) += endpointCharge;
         }
     }
+
+    return contribution;
+}
+
+inline void addFixedAndInterfaceChargeToRhs(
+    const DeviceMesh& mesh,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<RegionFixedChargeSpec>& fixedCharges,
+    const std::vector<InterfaceSheetChargeSpec>& sheetCharges,
+    VectorXd& rhs,
+    const std::string& context)
+{
+    rhs += computeFixedAndInterfaceChargeRhs(mesh, edgeCells, fixedCharges, sheetCharges, context);
 }
 
 // ---------------------------------------------------------------------------

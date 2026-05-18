@@ -59,6 +59,7 @@ add_library(vela_core STATIC
     src/numerics/ResidualNorm.cpp
     src/numerics/LineSearch.cpp
     src/simulation/PoissonSimulation.cpp
+    src/simulation/ConfigParsing.cpp
     src/simulation/CurveSweep.cpp
     src/simulation/DCSweep.cpp
 )

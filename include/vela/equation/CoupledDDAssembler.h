@@ -41,6 +41,15 @@ public:
                        const MaterialDatabase& matdb,
                        const DopingModel& doping,
                        double Vt,
+                       double taun,
+                       double taup,
+                       std::vector<RegionFixedChargeSpec> fixedCharges,
+                       std::vector<InterfaceSheetChargeSpec> sheetCharges);
+
+    CoupledDDAssembler(const DeviceMesh& mesh,
+                       const MaterialDatabase& matdb,
+                       const DopingModel& doping,
+                       double Vt,
                        const MobilityModelConfig& mobilityConfig,
                        const RecombinationModelConfig& recombinationConfig,
                        const BandgapNarrowingConfig& bandgapNarrowingConfig = {},
@@ -84,14 +93,13 @@ private:
     std::unique_ptr<ImpactIonizationModel> impactIonization_;
     bool impactIonizationEnabled_ = false;
     std::vector<Real> ni_;
-    std::vector<RegionFixedChargeSpec> fixedCharges_;
-    std::vector<InterfaceSheetChargeSpec> sheetCharges_;
     std::vector<Material> cellMaterials_;
 
     // Mesh-derived quantities cached at construction time.
     std::vector<std::vector<Index>> edgeCells_;
     std::vector<Real> vol_;
     std::vector<Real> couple_;
+    VectorXd fixedInterfaceChargeRhs_;
 };
 
 } // namespace vela

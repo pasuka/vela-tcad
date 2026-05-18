@@ -39,6 +39,17 @@ DDAssembler::DDAssembler(const DeviceMesh&       mesh,
                          double                  Vt,
                          double                  taun,
                          double                  taup)
+    : DDAssembler(mesh, matdb, doping, Vt, taun, taup, {}, {})
+{}
+
+DDAssembler::DDAssembler(const DeviceMesh&       mesh,
+                         const MaterialDatabase& matdb,
+                         const DopingModel&      doping,
+                         double                  Vt,
+                         double                  taun,
+                         double                  taup,
+                         std::vector<RegionFixedChargeSpec> fixedCharges,
+                         std::vector<InterfaceSheetChargeSpec> sheetCharges)
     : DDAssembler(mesh,
                   matdb,
                   doping,
@@ -47,8 +58,8 @@ DDAssembler::DDAssembler(const DeviceMesh&       mesh,
                   recombinationModelConfig({"srh"}, taun, taup),
                   BandgapNarrowingConfig{},
                   ImpactIonizationModelConfig{},
-                         {},
-                         {})
+                  std::move(fixedCharges),
+                  std::move(sheetCharges))
 {}
 
 DDAssembler::DDAssembler(const DeviceMesh&               mesh,
@@ -76,11 +87,11 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
           doping,
           bandgapNarrowingConfig,
           Vt))
-    , fixedCharges_(std::move(fixedCharges))
-    , sheetCharges_(std::move(sheetCharges))
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
     , couple_(detail::computeEdgeCouplings(mesh))
+    , fixedInterfaceChargeRhs_(detail::computeFixedAndInterfaceChargeRhs(
+          mesh, edgeCells_, fixedCharges, sheetCharges, "DDAssembler"))
     , A_(static_cast<int>(mesh.numNodes()),
          static_cast<int>(mesh.numNodes()))
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
@@ -150,8 +161,7 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
                  + diagCarrier * psi(ii);
     }
 
-    detail::addFixedAndInterfaceChargeToRhs(
-        mesh_, edgeCells_, fixedCharges_, sheetCharges_, b_, "DDAssembler");
+    b_ += fixedInterfaceChargeRhs_;
 }
 
 // ---------------------------------------------------------------------------

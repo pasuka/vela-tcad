@@ -69,10 +69,8 @@ TEST_CASE("DDAssembler: Poisson substep includes MOS interface sheet charge", "[
         matdb,
         doping,
         constants::Vt_300,
-        MobilityModelConfig{},
-        recombinationModelConfig({"srh"}, 1.0e-7, 1.0e-7),
-        BandgapNarrowingConfig{},
-        ImpactIonizationModelConfig{},
+        1.0e-7,
+        1.0e-7,
         {},
         {InterfaceSheetChargeSpec{"silicon", "oxide", sheet}});
     charged.assemblePoissonWithCarriers(n, p, psi);
@@ -96,10 +94,8 @@ TEST_CASE("CoupledDDAssembler: Newton Poisson residual consumes fixed trap occup
         matdb,
         doping,
         constants::Vt_300,
-        MobilityModelConfig{},
-        recombinationModelConfig({"srh"}, 1.0e-7, 1.0e-7),
-        BandgapNarrowingConfig{},
-        ImpactIonizationModelConfig{},
+        1.0e-7,
+        1.0e-7,
         {},
         {InterfaceSheetChargeSpec{"silicon", "oxide", 0.0, 0.0, 4.0e15, 0.25}});
 
@@ -129,5 +125,66 @@ TEST_CASE("ConfigParsing: interface trap occupancy outside unit interval is reje
 
     REQUIRE_THROWS_WITH(
         parseInterfaceSheetChargeSpecs(cfg),
+        Catch::Matchers::ContainsSubstring("trap_occupancy must be in [0, 1]"));
+}
+
+
+TEST_CASE("ConfigParsing: interface region selectors validate preferred and legacy forms", "[interface][config]")
+{
+    const nlohmann::json preferred = {
+        {"interfaces", {{{"regions", {"silicon", "oxide", "metal"}},
+                         {"fixed_charge_m2", 1.0e14}}}}
+    };
+    REQUIRE_THROWS_WITH(
+        parseInterfaceSheetChargeSpecs(preferred),
+        Catch::Matchers::ContainsSubstring("interface regions must contain exactly two names"));
+
+    const nlohmann::json legacy = {
+        {"interfaces", {{{"region0", "silicon"},
+                         {"region1", "oxide"},
+                         {"sheet_charge_m2", 2.0e14}}}}
+    };
+    const auto specs = parseInterfaceSheetChargeSpecs(legacy);
+    REQUIRE(specs.size() == 1);
+    REQUIRE(specs[0].region0 == "silicon");
+    REQUIRE(specs[0].region1 == "oxide");
+    REQUIRE(specs[0].sheetCharge == Catch::Approx(2.0e14));
+}
+
+TEST_CASE("ConfigParsing: duplicate region fixed charge sources are rejected", "[interface][config]")
+{
+    const nlohmann::json cfg = {
+        {"doping", {{{"region", "silicon"},
+                     {"donors", 0.0},
+                     {"acceptors", 0.0},
+                     {"fixed_charge_m3", 1.0e20}}}},
+        {"regions", {{{"name", "silicon"},
+                      {"material", "Si"},
+                      {"fixed_charge_m3", 2.0e20}}}}
+    };
+
+    REQUIRE_THROWS_WITH(
+        parseRegionFixedChargeSpecs(cfg),
+        Catch::Matchers::ContainsSubstring("duplicate fixed_charge_m3 for region 'silicon'"));
+}
+
+TEST_CASE("ConfigParsing: trap occupancy requires density and is always bounded", "[interface][traps][config]")
+{
+    const nlohmann::json missingDensity = {
+        {"interfaces", {{{"regions", {"silicon", "oxide"}},
+                         {"fixed_charge_m2", 1.0e14},
+                         {"trap_occupancy", 0.5}}}}
+    };
+    REQUIRE_THROWS_WITH(
+        parseInterfaceSheetChargeSpecs(missingDensity),
+        Catch::Matchers::ContainsSubstring("trap_occupancy requires trap_density_m2"));
+
+    const nlohmann::json outOfRangeWithoutCharge = {
+        {"interfaces", {{{"regions", {"silicon", "oxide"}},
+                         {"trap_density_m2", 1.0e15},
+                         {"trap_occupancy", 1.1}}}}
+    };
+    REQUIRE_THROWS_WITH(
+        parseInterfaceSheetChargeSpecs(outOfRangeWithoutCharge),
         Catch::Matchers::ContainsSubstring("trap_occupancy must be in [0, 1]"));
 }

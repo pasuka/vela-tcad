@@ -54,6 +54,15 @@ public:
                 double                  taun,
                 double                  taup);
 
+    DDAssembler(const DeviceMesh&       mesh,
+                const MaterialDatabase& matdb,
+                const DopingModel&      doping,
+                double                  Vt,
+                double                  taun,
+                double                  taup,
+                std::vector<RegionFixedChargeSpec> fixedCharges,
+                std::vector<InterfaceSheetChargeSpec> sheetCharges);
+
     DDAssembler(const DeviceMesh&               mesh,
                 const MaterialDatabase&         matdb,
                 const DopingModel&              doping,
@@ -111,13 +120,12 @@ private:
     bool impactIonizationEnabled_ = false;
 
     std::vector<Real> ni_; ///< Per-node intrinsic concentration [m^-3]
-    std::vector<RegionFixedChargeSpec> fixedCharges_;
-    std::vector<InterfaceSheetChargeSpec> sheetCharges_;
 
     // Mesh-derived quantities cached at construction time.
     std::vector<std::vector<Index>> edgeCells_;
     std::vector<Real> vol_;
     std::vector<Real> couple_;
+    VectorXd fixedInterfaceChargeRhs_; ///< Cached fixed/interface charge RHS contribution [C].
 
     SparseMatrixd A_;
     VectorXd      b_;

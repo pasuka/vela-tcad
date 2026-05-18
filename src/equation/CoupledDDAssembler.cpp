@@ -38,6 +38,18 @@ CoupledDDAssembler::CoupledDDAssembler(const DeviceMesh& mesh,
                                        double Vt,
                                        double taun,
                                        double taup)
+    : CoupledDDAssembler(mesh, matdb, doping, Vt, taun, taup, {}, {})
+{}
+
+CoupledDDAssembler::CoupledDDAssembler(
+    const DeviceMesh& mesh,
+    const MaterialDatabase& matdb,
+    const DopingModel& doping,
+    double Vt,
+    double taun,
+    double taup,
+    std::vector<RegionFixedChargeSpec> fixedCharges,
+    std::vector<InterfaceSheetChargeSpec> sheetCharges)
     : CoupledDDAssembler(mesh,
                          matdb,
                          doping,
@@ -46,8 +58,8 @@ CoupledDDAssembler::CoupledDDAssembler(const DeviceMesh& mesh,
                          recombinationModelConfig({"srh"}, taun, taup),
                          BandgapNarrowingConfig{},
                          ImpactIonizationModelConfig{},
-                         {},
-                         {})
+                         std::move(fixedCharges),
+                         std::move(sheetCharges))
 {}
 
 CoupledDDAssembler::CoupledDDAssembler(
@@ -76,8 +88,6 @@ CoupledDDAssembler::CoupledDDAssembler(
           doping,
           bandgapNarrowingConfig,
           Vt))
-    , fixedCharges_(std::move(fixedCharges))
-    , sheetCharges_(std::move(sheetCharges))
     , cellMaterials_(detail::buildCellMaterials(
           mesh,
           matdb,
@@ -85,6 +95,8 @@ CoupledDDAssembler::CoupledDDAssembler(
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
     , couple_(detail::computeEdgeCouplings(mesh))
+    , fixedInterfaceChargeRhs_(detail::computeFixedAndInterfaceChargeRhs(
+          mesh, edgeCells_, fixedCharges, sheetCharges, "CoupledDDAssembler"))
 {}
 
 VectorXd CoupledDDAssembler::pack(const CoupledDDState& state) const
@@ -305,11 +317,8 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             r(phipOffset() + ii) = x(phipOffset() + ii);
     }
 
-    VectorXd fixedInterfaceCharge = VectorXd::Zero(N);
-    detail::addFixedAndInterfaceChargeToRhs(
-        mesh_, edgeCells_, fixedCharges_, sheetCharges_, fixedInterfaceCharge, "CoupledDDAssembler");
     for (int i = 0; i < N; ++i)
-        r(psiOffset() + i) -= fixedInterfaceCharge(i);
+        r(psiOffset() + i) -= fixedInterfaceChargeRhs_(i);
 
     // Boundary-condition maps are independent so multi-terminal MOS callers can
     // pin electrostatic potential, electron quasi-Fermi potential, and hole
