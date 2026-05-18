@@ -75,6 +75,37 @@ EXAMPLES = [
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
     },
     {
+        "name": "nmos2d_mos_dd_iv",
+        "source": "nmos2d_mos_dd",
+        "config": Path("examples/nmos2d_mos_dd/simulation_iv.json"),
+        "expected": [
+            Path("outputs/nmos2d_mos_dd_iv.csv"),
+            Path("outputs/nmos2d_mos_dd_iv_sweep_0000_0V.vtk"),
+        ],
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression", "mos_trends"],
+    },
+    {
+        "name": "nmos2d_mos_dd_idvg",
+        "source": "nmos2d_mos_dd",
+        "config": Path("examples/nmos2d_mos_dd/simulation_idvg.json"),
+        "expected": [Path("outputs/nmos2d_mos_dd_idvg.csv")],
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
+    },
+    {
+        "name": "nmos2d_mos_dd_cv",
+        "source": "nmos2d_mos_dd",
+        "config": Path("examples/nmos2d_mos_dd/simulation_cv.json"),
+        "expected": [Path("outputs/nmos2d_mos_dd_cv.csv")],
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
+    },
+    {
+        "name": "nmos2d_mos_dd_bv",
+        "source": "nmos2d_mos_dd",
+        "config": Path("examples/nmos2d_mos_dd/simulation_bv.json"),
+        "expected": [Path("outputs/nmos2d_mos_dd_bv.csv")],
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
+    },
+    {
         "name": "pmos2d_dd_iv",
         "source": "pmos2d_dd",
         "config": Path("examples/pmos2d_dd/simulation_iv.json"),

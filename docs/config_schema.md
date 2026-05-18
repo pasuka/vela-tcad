@@ -224,6 +224,56 @@ Legacy aliases still accepted:
 - breakdown_current_jump_ratio
 - breakdown_on_non_convergence
 
+## Mixed-material MOS DD deck example
+
+A compact Si/SiO2 NMOS drift-diffusion prototype can use a semiconductor-only
+source/body/drain set of ohmic contacts plus a `metal_gate` contact on the oxide
+region. The continuity equations are intended to carry transport only in the Si
+regions; SiO2 uses zero `ni`, `mun`, and `mup` from the built-in material
+database so oxide carrier rows are pinned internally rather than treated as
+transport unknowns.
+
+Minimal contact and sweep fragments:
+
+```json
+{
+  "mesh_file": "mesh.json",
+  "doping": [
+    { "region": "p_body", "donors": 0.0, "acceptors": 1e21 },
+    { "region": "n_source", "donors": 5e21, "acceptors": 0.0 },
+    { "region": "n_drain", "donors": 5e21, "acceptors": 0.0 },
+    { "region": "gate_oxide", "donors": 0.0, "acceptors": 0.0 }
+  ],
+  "contacts": [
+    { "name": "body", "type": "ohmic", "bias": 0.0 },
+    { "name": "source", "type": "ohmic", "bias": 0.0 },
+    { "name": "drain", "type": "ohmic", "bias": 0.1 },
+    { "name": "gate", "type": "metal_gate", "bias": 0.1,
+      "flatband_voltage": 0.0 }
+  ],
+  "sweep": {
+    "mode": "cv_quasistatic",
+    "contact": "gate",
+    "start": 0.0,
+    "stop": 0.1,
+    "step": 0.05,
+    "current_contact": "drain",
+    "terminal_charge": {
+      "contact": "gate",
+      "regions": ["p_body", "n_source", "n_drain"],
+      "per_meter": true,
+      "contact_radius": 1e-6
+    }
+  }
+}
+```
+
+For off-state high-field diagnostics, set `sweep.mode` to `bv_reverse` and add
+`breakdown.max_electric_field_V_per_m`, `breakdown.current_jump_ratio`, and
+`breakdown.non_convergence` under the sweep block. See
+`examples/nmos2d_mos_dd/simulation_bv.json` for the CI smoke deck. This example
+family is an engineering prototype and is not a calibrated MOSFET model.
+
 ## regression block
 
 Regression fields are optional and consumed by the regression runner.

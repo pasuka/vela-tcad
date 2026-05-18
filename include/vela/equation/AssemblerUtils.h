@@ -154,10 +154,21 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
     Real sum = 0.0;
     for (Index c : cells) {
         const Material& material = cellMaterials.at(static_cast<std::size_t>(c));
-        if (carrier == CarrierType::Electron)
-            sum += mobility.electronMobility(material, netDoping, 0.0, 0.0, electricField);
-        else
-            sum += mobility.holeMobility(material, netDoping, 0.0, 0.0, electricField);
+        const Real baseMobility = (carrier == CarrierType::Electron) ? material.mun : material.mup;
+        if (baseMobility <= 0.0) {
+            // Treat any edge touching an insulating control volume as a
+            // no-transport edge for that carrier.  This keeps DD continuity
+            // confined to semiconductor cells on mixed Si/SiO2 meshes instead
+            // of averaging a finite Si mobility with zero oxide mobility and
+            // creating artificial carrier rows along the oxide interface.
+            return 0.0;
+        }
+        const Real modelMobility = (carrier == CarrierType::Electron)
+            ? mobility.electronMobility(material, netDoping, 0.0, 0.0, electricField)
+            : mobility.holeMobility(material, netDoping, 0.0, 0.0, electricField);
+        if (modelMobility <= 0.0)
+            return 0.0;
+        sum += modelMobility;
     }
     return sum / static_cast<Real>(cells.size());
 }

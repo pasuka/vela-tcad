@@ -207,6 +207,9 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         const Real p_v   = p_old(ii);
         const Real vol_i = vol_[i];
 
+        if (ni_i <= 0.0)
+            continue;
+
         const RecombinationLinearization linearization =
             recombination_.electronLinearization(n_v, p_v, ni_i);
         A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
@@ -291,6 +294,9 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         const Real n_v   = n_old(ii);
         const Real p_v   = p_old(ii);
         const Real vol_i = vol_[i];
+
+        if (ni_i <= 0.0)
+            continue;
 
         const RecombinationLinearization linearization =
             recombination_.holeLinearization(n_v, p_v, ni_i);

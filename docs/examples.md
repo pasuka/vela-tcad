@@ -17,6 +17,7 @@ TCAD coverage.
 | --- | --- | --- | --- | --- |
 | `examples/pn_diode` | Implicit equilibrium in DD decks | `simulation_iv.json` forward IV | `simulation_cv.json` quasi-static junction C-V | `simulation_bv.json` reverse-bias diagnostics |
 | `examples/nmos2d_dd` | Implicit equilibrium in DD decks | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg | `simulation_cv.json` gate/body quasi-static CV | Not yet |
+| `examples/nmos2d_mos_dd` | Implicit equilibrium in DD decks on a mixed Si/SiO2 mesh | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg Si/SiO2 MOS DD prototype smoke sweeps | `simulation_cv.json` quasi-static metal-gate terminal-charge smoke sweep | `simulation_bv.json` off-state drain high-field diagnostic smoke sweep |
 | `examples/pmos2d_dd` | Implicit equilibrium in DD decks | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg | `simulation_cv.json` gate/body quasi-static CV | Not yet |
 | `examples/ldmos2d` | `simulation_iv.json` is currently a reverse-biased Poisson field-distribution deck on the mixed Si/SiO2 mesh | Not yet | Not yet | Not yet |
 | `examples/igbt2d` | `simulation_poisson.json` PNPN/drift off-state baseline | `simulation_iv.json` low-current collector DD prototype | Not yet | Not yet |
@@ -28,7 +29,10 @@ TCAD coverage.
 Planned extensions should keep this table conservative. For example, LDMOS
 on-state IV and BV, and IGBT high-injection, recombination, lifetime-control,
 and on-voltage regression decks are not claimed until they have executable
-regression coverage.
+regression coverage. The `examples/nmos2d_mos_dd` deck is a true mixed-material
+Si/SiO2 MOS drift-diffusion prototype with a metal-gate contact over gate oxide
+and ohmic source/drain/body contacts, but it is intentionally coarse for CI and
+must not be described as a calibrated MOSFET.
 
 ## Contact Schema Compatibility
 
