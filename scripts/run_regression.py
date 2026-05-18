@@ -405,7 +405,7 @@ def cv_multi_terminal_columns(sweep: dict[str, Any], row: dict[str, str]) -> lis
     if not isinstance(charges, list):
         return columns
     sweep_contact = str(sweep.get("contact", ""))
-    sweep_initial = (sweep_contact[:1] or "v").lower()
+    sweep_token = "".join(ch.lower() if ch.isalnum() else "_" for ch in sweep_contact) or "terminal"
     for index, charge in enumerate(charges):
         if not isinstance(charge, dict):
             continue
@@ -413,7 +413,7 @@ def cv_multi_terminal_columns(sweep: dict[str, Any], row: dict[str, str]) -> lis
         name = "".join(ch.lower() if ch.isalnum() else "_" for ch in raw_name) or f"terminal{index + 1}"
         per_meter = bool(charge.get("per_meter", sweep.get("charge_per_meter", True)))
         charge_column = f"charge_{name}_{'C_per_m' if per_meter else 'C'}"
-        cap_column = f"capacitance_C{sweep_initial}{name[:1] or 'x'}_{'F_per_m' if per_meter else 'F'}"
+        cap_column = f"capacitance_C{sweep_token}_{name}_{'F_per_m' if per_meter else 'F'}"
         columns.append((name, charge_column, cap_column))
     return columns
 

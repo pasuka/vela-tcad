@@ -37,8 +37,9 @@ source/drain/body contacts. They are intentionally coarse CI smoke decks for
 polarity, multi-terminal terminal-charge/CV, and high-field diagnostics, and must not be
 described as calibrated MOSFETs. The mixed-material MOS DD CV decks use the
 multi-terminal quasi-static CV prototype: a single gate-bias sweep is finite-
-differenced to report terminal charges plus `Cgg`, `Cgd`, `Cgs`, and `Cgb`-style
-columns such as `capacitance_Cgg_F_per_m` and `capacitance_Cgd_F_per_m`. These
+differenced to report terminal charges plus `Cgate_gate`, `Cgate_drain`, `Cgate_source`, and `Cgate_body`-style
+columns such as `capacitance_Cgate_gate_F_per_m` and
+`capacitance_Cgate_drain_F_per_m`. These
 columns are useful engineering smoke diagnostics, not AC small-signal admittance
 or capacitance matrix results.
 

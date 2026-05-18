@@ -181,9 +181,9 @@ class PythonApiTest(unittest.TestCase):
         multi_cv_cfg.write_text(json.dumps(multi_cv_data), encoding="utf-8")
         multi_cv_points = vela.run_cv_curve(str(multi_cv_cfg))
         self.assertIn("charge_gate_C_per_m", multi_cv_points[1])
-        self.assertIn("capacitance_Cag_F_per_m", multi_cv_points[1])
+        self.assertIn("capacitance_Canode_gate_F_per_m", multi_cv_points[1])
         self.assertIn("charge_drain_C_per_m", multi_cv_points[1])
-        self.assertIn("capacitance_Cad_F_per_m", multi_cv_points[1])
+        self.assertIn("capacitance_Canode_drain_F_per_m", multi_cv_points[1])
         self.assertIn("gate", multi_cv_points[1]["terminal_charges"])
         self.assertIn("drain", multi_cv_points[1]["terminal_capacitances"])
 

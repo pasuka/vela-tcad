@@ -260,16 +260,18 @@ terminal_charges (for multi-terminal quasi-static CV prototype):
 - `name` is sanitized to lowercase alphanumeric/underscore for CSV columns. If it
   is omitted, the contact name is used.
 - The implementation is a quasi-static finite-difference prototype: for a sweep of
-  contact `gate`, `capacitance_Cgd_F_per_m` means `dQ_drain / dV_gate`. It is not
+  contact `gate`, `capacitance_Cgate_drain_F_per_m` means `dQ_drain / dV_gate`. It is not
   an AC small-signal matrix solve or matrix inversion.
 - CV CSV output always retains legacy `charge_C_per_m` / `capacitance_F_per_m`
   (or total-charge `charge_C` / `capacitance_F`) for compatibility, populated
   from the first configured terminal charge. With `terminal_charges`, additional
   columns are emitted as `charge_<name>_C_per_m` (or `_C`) and
-  `capacitance_C<first letter of swept contact><first letter of name>_F_per_m`
+  `capacitance_C<swept contact>_<name>_F_per_m`
   (or `_F`), for example `charge_gate_C_per_m`, `charge_drain_C_per_m`,
-  `capacitance_Cgg_F_per_m`, `capacitance_Cgd_F_per_m`,
-  `capacitance_Cgs_F_per_m`, and `capacitance_Cgb_F_per_m` for a gate sweep.
+  `capacitance_Cgate_gate_F_per_m`, `capacitance_Cgate_drain_F_per_m`,
+  `capacitance_Cgate_source_F_per_m`, and `capacitance_Cgate_body_F_per_m`
+  for a gate sweep. Full sanitized names are used rather than initials so
+  terminals such as `source` and `substrate` cannot collide.
 
 Legacy aliases still accepted:
 - charge_contact

@@ -67,11 +67,7 @@ std::string terminalChargeName(const TerminalChargeConfig& cfg, std::size_t inde
 
 std::string capacitanceMnemonic(const std::string& sweepContact, const std::string& terminalName)
 {
-    const std::string sweep = sanitizedColumnToken(sweepContact);
-    const std::string terminal = sanitizedColumnToken(terminalName);
-    const char sweepInitial = sweep.empty() ? 'v' : sweep.front();
-    const char terminalInitial = terminal.empty() ? 'x' : terminal.front();
-    return std::string("C") + sweepInitial + terminalInitial;
+    return "C" + sanitizedColumnToken(sweepContact) + "_" + sanitizedColumnToken(terminalName);
 }
 
 TerminalChargeConfig terminalChargeConfigFromJson(const nlohmann::json& chargeCfg,
@@ -183,6 +179,8 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         const auto& charges = j.at("terminal_charges");
         if (!charges.is_array())
             throw std::invalid_argument("DCSweep: sweep.terminal_charges must be an array.");
+        if (charges.empty())
+            throw std::invalid_argument("DCSweep: sweep.terminal_charges must not be empty.");
         std::unordered_set<std::string> names;
         for (std::size_t i = 0; i < charges.size(); ++i) {
             TerminalChargeConfig config = terminalChargeConfigFromJson(charges.at(i), sweep, i);
@@ -573,14 +571,14 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             row.push_back(formatReal(point.terminalCharge));
             row.push_back(formatReal(point.capacitance));
             if (hasMultiTerminalCharges) {
-                if (!point.extraFields.empty()) {
-                    for (const auto& [_, value] : point.extraFields)
-                        row.push_back(formatReal(value));
-                } else {
-                    for (std::size_t i = 0; i < chargeColumns.size(); ++i) {
-                        row.push_back(formatReal(0.0));
-                        row.push_back(formatReal(0.0));
-                    }
+                std::unordered_map<std::string, Real> extraFieldValues;
+                for (const auto& [name, value] : point.extraFields)
+                    extraFieldValues[name] = value;
+                for (std::size_t i = 0; i < chargeColumns.size(); ++i) {
+                    const auto chargeIt = extraFieldValues.find(chargeColumns.at(i).second);
+                    row.push_back(formatReal(chargeIt != extraFieldValues.end() ? chargeIt->second : 0.0));
+                    const auto capacitanceIt = extraFieldValues.find(capacitanceColumns.at(i).second);
+                    row.push_back(formatReal(capacitanceIt != extraFieldValues.end() ? capacitanceIt->second : 0.0));
                 }
             }
         }
