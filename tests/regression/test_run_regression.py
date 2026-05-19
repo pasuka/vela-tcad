@@ -61,6 +61,60 @@ def write_example(tmp: Path, cfg: dict[str, object], rows: list[dict[str, str]],
 
 
 class RegressionRunnerPolicies(unittest.TestCase):
+    def test_ldmos_fieldplate_trend_accepts_ratio_within_limit(self) -> None:
+        cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "bv_reverse", "start": 0, "stop": 0.1, "step": 0.1},
+            "regression": {
+                "ldmos_fieldplate_trend": {
+                    "baseline_config": "simulation_bv.json",
+                    "baseline_csv": "outputs/baseline.csv",
+                    "max_field_ratio_limit": 1.2,
+                }
+            },
+        }
+        fieldnames = FIELDNAMES + ["max_electric_field_V_per_m"]
+        rows = [
+            base_row(mode="bv_reverse", max_electric_field_V_per_m="8"),
+            base_row(mode="bv_reverse", bias_V="0.1", current_total="2e-12", max_electric_field_V_per_m="10"),
+        ]
+        baseline_cfg = {
+            "output_csv": "outputs/baseline.csv",
+            "sweep": {"mode": "bv_reverse", "start": 0, "stop": 0.1, "step": 0.1},
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), cfg, rows, fieldnames)
+            (example_dir / "simulation_bv.json").write_text(json.dumps(baseline_cfg) + "\n")
+            with (example_dir / "fake_runner.sh").open("w") as f:
+                f.write("#!/bin/sh\ncp outputs/sweep.csv outputs/baseline.csv\n")
+            (example_dir / "fake_runner.sh").chmod(stat.S_IRWXU)
+            result = run_regression.check_ldmos_fieldplate_trend(example_dir, example_dir / "fake_runner.sh")
+            self.assertLessEqual(result["max_field_ratio"], 1.2)
+
+    def test_ldmos_fieldplate_trend_rejects_excessive_ratio(self) -> None:
+        cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "bv_reverse", "start": 0, "stop": 0.1, "step": 0.1},
+            "regression": {
+                "ldmos_fieldplate_trend": {
+                    "baseline_config": "simulation_bv.json",
+                    "baseline_csv": "outputs/baseline.csv",
+                    "max_field_ratio_limit": 1.1,
+                }
+            },
+        }
+        fieldnames = FIELDNAMES + ["max_electric_field_V_per_m"]
+        rows = [base_row(mode="bv_reverse", max_electric_field_V_per_m="10")]
+        baseline_cfg = {"output_csv": "outputs/baseline.csv", "sweep": {"mode": "bv_reverse", "start": 0, "stop": 0, "step": 1}}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), cfg, rows, fieldnames)
+            (example_dir / "simulation_bv.json").write_text(json.dumps(baseline_cfg) + "\n")
+            with (example_dir / "fake_runner.sh").open("w") as f:
+                f.write("#!/bin/sh\ncat > outputs/baseline.csv <<'CSV'\nmode,bias_contact,bias_V,current_contact,current_electron,current_hole,current_total,converged,iterations,step_diagnostics,max_electric_field_V_per_m\nbv_reverse,anode,0,cathode,0,0,0,1,1,attempted_step=1;accepted_step=1;retry_count=0,5\nCSV\n")
+            (example_dir / "fake_runner.sh").chmod(stat.S_IRWXU)
+            with self.assertRaisesRegex(AssertionError, "max field ratio"):
+                run_regression.check_ldmos_fieldplate_trend(example_dir, example_dir / "fake_runner.sh")
+
     def test_monotone_current_tolerance_scales_to_observed_currents(self) -> None:
         cfg = {
             "output_csv": "outputs/sweep.csv",
