@@ -73,6 +73,59 @@ class RegressionRunnerPolicies(unittest.TestCase):
             with self.assertRaisesRegex(AssertionError, "abs\\(current_total\\).+decreased"):
                 run_regression.check_dc_sweep_regression(example_dir)
 
+    def test_bv_max_field_monotone_failure_names_field_and_row(self) -> None:
+        bv_columns = FIELDNAMES + [
+            "max_electric_field_V_per_m",
+            "current_jump_ratio",
+            "breakdown_detected",
+            "breakdown_voltage",
+            "criterion",
+            "last_stable_bias",
+            "failed_bias",
+            "failure_reason",
+        ]
+        cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "bv_reverse", "start": 0, "stop": 1, "step": 1},
+            "regression": {
+                "dc_sweep": {
+                    "expected_rows": 2,
+                    "require_monotone_max_field": True,
+                    "max_field_monotone_abs_tolerance": 0.0,
+                    "max_field_monotone_rel_tolerance": 0.0,
+                }
+            },
+        }
+        rows = [
+            base_row(
+                mode="bv_reverse",
+                max_electric_field_V_per_m="10",
+                current_jump_ratio="0",
+                breakdown_detected="0",
+                breakdown_voltage="0",
+                criterion="",
+                last_stable_bias="0",
+                failed_bias="0",
+                failure_reason="",
+            ),
+            base_row(
+                mode="bv_reverse",
+                bias_V="1",
+                max_electric_field_V_per_m="9",
+                current_jump_ratio="1",
+                breakdown_detected="0",
+                breakdown_voltage="0",
+                criterion="",
+                last_stable_bias="0",
+                failed_bias="0",
+                failure_reason="",
+            ),
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), cfg, rows, bv_columns)
+            with self.assertRaisesRegex(AssertionError, "row 2 field=max_electric_field_V_per_m"):
+                run_regression.check_dc_sweep_regression(example_dir)
+
     def test_declared_not_converged_allows_nonconverged_rows(self) -> None:
         cfg = {
             "output_csv": "outputs/sweep.csv",

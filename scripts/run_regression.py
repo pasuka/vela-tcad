@@ -187,6 +187,14 @@ EXAMPLES = [
                    "ldmos_iv_trend"],
     },
     {
+        "name": "ldmos2d_bv",
+        "source": "ldmos2d",
+        "config": Path("examples/ldmos2d/simulation_bv.json"),
+        "expected": [Path("outputs/ldmos2d_bv.csv")],
+        "expected_sweep_vtk": True,
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
+    },
+    {
         "name": "igbt2d_poisson",
         "source": "igbt2d",
         "config": Path("examples/igbt2d/simulation_poisson.json"),

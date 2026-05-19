@@ -434,6 +434,43 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
 
 
 
+
+TEST_CASE("DCSweep: LDMOS BV diagnostic deck writes complete schema", "[dc_sweep][ldmos]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    const std::filesystem::path src = std::filesystem::path(VELA_SOURCE_DIR) / "examples" / "ldmos2d";
+    std::filesystem::copy(src, dir, std::filesystem::copy_options::recursive);
+    std::filesystem::create_directories(dir / "outputs");
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult((dir / "simulation_bv.json").string());
+
+    REQUIRE(result.points.size() == 3);
+    Real previousMaxField = -1.0;
+    for (const DCSweepPoint& point : result.points) {
+        REQUIRE(point.converged);
+        REQUIRE(std::isfinite(point.maxElectricField));
+        REQUIRE(point.maxElectricField >= 0.0);
+        REQUIRE(point.maxElectricField + 1.0e-9 >= previousMaxField);
+        previousMaxField = point.maxElectricField;
+    }
+
+    const auto rows = readCsvRows(dir / "outputs" / "ldmos2d_bv.csv");
+    REQUIRE(rows.size() == 4);
+    REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
+                                                     "current_contact", "current_electron", "current_hole",
+                                                     "current_total", "converged", "iterations",
+                                                     "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
+                                                     "current_jump_ratio", "breakdown_detected",
+                                                     "breakdown_voltage", "criterion", "last_stable_bias",
+                                                     "failed_bias", "failure_reason"});
+    REQUIRE(rows.at(1).at(0) == "bv_reverse");
+    REQUIRE(rows.at(1).at(1) == "drain");
+    REQUIRE(rows.at(1).at(3) == "drain");
+}
+
+
 TEST_CASE("DCSweep: BV reverse start failure records failed diagnostic row", "[dc_sweep]")
 {
     const auto dir = makeUniqueSweepDir();
