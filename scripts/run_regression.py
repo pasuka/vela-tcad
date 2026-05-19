@@ -1059,6 +1059,7 @@ def check_igbt_bv_trend(example_dir: Path, runner: Path) -> dict[str, Any]:
     if baseline_cfg_name:
         baseline_cfg = json.loads((example_dir / str(baseline_cfg_name)).read_text())
         baseline_cfg["output_csv"] = reg.get("baseline_csv", "outputs/igbt2d_bv_baseline_for_ii.csv")
+        baseline_cfg.setdefault("sweep", {})["write_vtk"] = False
         baseline_run_cfg = example_dir / "igbt_bv_baseline_run.json"
         baseline_run_cfg.write_text(json.dumps(baseline_cfg, indent=2) + "\n")
         proc = subprocess.run([str(runner), "--config", str(baseline_run_cfg)],
@@ -1071,15 +1072,34 @@ def check_igbt_bv_trend(example_dir: Path, runner: Path) -> dict[str, Any]:
         baseline_rows = read_csv(output_csv_path(example_dir, baseline_cfg))
         if not baseline_rows:
             raise AssertionError("IGBT BV baseline CSV contains no rows")
-        baseline_final = abs(parse_finite_float(
-            baseline_rows[-1], "current_total", "IGBT BV baseline", len(baseline_rows)))
+
+        ii_final_bias = parse_finite_float(rows[-1], "bias_V", "IGBT BV II", len(rows))
+        baseline_biases = [
+            parse_finite_float(row, "bias_V", "IGBT BV baseline", idx)
+            for idx, row in enumerate(baseline_rows, start=1)
+        ]
+        bias_tol = float(reg.get("baseline_bias_match_tolerance", 1.0e-9))
+        baseline_match_index = None
+        for idx, bias in enumerate(baseline_biases):
+            if abs(bias - ii_final_bias) <= bias_tol:
+                baseline_match_index = idx
+                break
+        if baseline_match_index is None:
+            raise AssertionError(
+                f"IGBT BV baseline has no bias row matching II final bias {ii_final_bias} V "
+                f"within tolerance {bias_tol}; baseline biases={baseline_biases}")
+
+        baseline_match_row = baseline_rows[baseline_match_index]
+        baseline_match = abs(parse_finite_float(
+            baseline_match_row, "current_total", "IGBT BV baseline", baseline_match_index + 1))
         ii_final = leakage[-1]
         multiplier = float(reg.get("current_multiplier_tolerance", 0.5))
-        if ii_final < baseline_final * multiplier:
+        if ii_final < baseline_match * multiplier:
             raise AssertionError(
-                f"IGBT BV II final |I| {ii_final} is smaller than baseline {baseline_final} "
-                f"times tolerance {multiplier}")
-        result["baseline_final_abs_current"] = baseline_final
+                f"IGBT BV II final |I| {ii_final} is smaller than baseline |I| {baseline_match} "
+                f"at {ii_final_bias} V times tolerance {multiplier}")
+        result["baseline_matched_bias_V"] = ii_final_bias
+        result["baseline_matched_abs_current"] = baseline_match
         result["ii_to_baseline_min_multiplier"] = multiplier
         result["ii_final_abs_current"] = ii_final
     return result
