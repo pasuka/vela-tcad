@@ -31,6 +31,7 @@ add_library(vela_core STATIC
     src/boundary/BoundaryCondition.cpp
     src/core/ScalingSystem.cpp
     src/core/UnitScaling.cpp
+    src/core/UnitScalingSystem.cpp
     src/material/Material.cpp
     src/material/MaterialDatabase.cpp
     src/mesh/DeviceMesh.cpp
