@@ -1,7 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/io/MeshReader.h"
+#include "vela/core/UnitScaling.h"
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -181,6 +183,95 @@ static TemporaryMeshFile writeMeshReaderTestFile(const std::string& stem,
                                                 const std::string& content)
 {
     return TemporaryMeshFile(uniqueMeshReaderTestPath(stem), content);
+}
+
+TEST_CASE("mesh reader unit_scaling converts micrometer coordinates to meters",
+          "[mesh][reader][scaling]")
+{
+    const auto legacyPath = writeMeshReaderTestFile("legacy_si", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 0.000001, "y": 0.0},
+    {"id": 2, "x": 0.0, "y": 0.000001}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]}
+  ],
+  "regions": [
+    {"id": 0, "name": "silicon", "material": "Si", "cell_ids": [0]}
+  ],
+  "contacts": []
+}
+)json");
+
+    const auto scaledPath = writeMeshReaderTestFile("unit_scaling", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 1.0, "y": 0.0},
+    {"id": 2, "x": 0.0, "y": 1.0}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]}
+  ],
+  "regions": [
+    {"id": 0, "name": "silicon", "material": "Si", "cell_ids": [0]}
+  ],
+  "contacts": []
+}
+)json");
+
+    JsonMeshReader reader;
+    const DeviceMesh legacy = reader.read(legacyPath.path.string());
+    const DeviceMesh scaled = reader.read(
+        scaledPath.path.string(),
+        UnitScalingConfig{UnitScalingMode::UnitScaling});
+
+    REQUIRE(scaled.numNodes() == legacy.numNodes());
+    REQUIRE(scaled.numEdges() == legacy.numEdges());
+    for (Index i = 0; i < legacy.numNodes(); ++i) {
+        REQUIRE(scaled.getNode(i).x == Catch::Approx(legacy.getNode(i).x));
+        REQUIRE(scaled.getNode(i).y == Catch::Approx(legacy.getNode(i).y));
+    }
+    for (Index i = 0; i < legacy.numEdges(); ++i) {
+        REQUIRE(scaled.getEdge(i).length == Catch::Approx(legacy.getEdge(i).length));
+    }
+}
+
+TEST_CASE("MaterialDatabase unit_scaling converts material concentrations and mobilities",
+          "[material][scaling]")
+{
+    const auto path = writeMeshReaderTestFile("materials_unit_scaling", R"json(
+{
+  "materials": [
+    {
+      "name": "TestSi",
+      "eps_r": 11.7,
+      "ni": 1.0e10,
+      "mun": 1350.0,
+      "mup": 480.0,
+      "Nc_m3": 2.8e19,
+      "Nv_m3": 1.04e19,
+      "bandgap_eV": 1.12,
+      "electron_affinity_eV": 4.05,
+      "temperature_K": 300.0
+    }
+  ]
+}
+)json");
+
+    MaterialDatabase db;
+    db.loadJson(path.path.string(), UnitScalingConfig{UnitScalingMode::UnitScaling});
+    const Material& mat = db.getMaterial("TestSi");
+
+    REQUIRE(mat.ni == Catch::Approx(1.0e16));
+    REQUIRE(mat.mun == Catch::Approx(0.135));
+    REQUIRE(mat.mup == Catch::Approx(0.048));
+    REQUIRE(mat.Nc_m3.has_value());
+    REQUIRE(*mat.Nc_m3 == Catch::Approx(2.8e25));
+    REQUIRE(mat.Nv_m3.has_value());
+    REQUIRE(*mat.Nv_m3 == Catch::Approx(1.04e25));
 }
 
 static void requireReadThrowsContaining(const std::filesystem::path& path,

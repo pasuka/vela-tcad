@@ -30,7 +30,8 @@ void appendConfigFixedChargeSpec(
 } // namespace
 
 std::vector<RegionFixedChargeSpec> parseRegionFixedChargeSpecs(
-    const nlohmann::json& cfg)
+    const nlohmann::json& cfg,
+    UnitScalingConfig scaling)
 {
     std::vector<RegionFixedChargeSpec> specs;
     std::unordered_map<std::string, std::string> sourcesByRegion;
@@ -42,7 +43,7 @@ std::vector<RegionFixedChargeSpec> parseRegionFixedChargeSpecs(
                 specs,
                 sourcesByRegion,
                 entry.at("region").get<std::string>(),
-                entry.at("fixed_charge_m3").get<Real>(),
+                scaling.concentrationToSI(entry.at("fixed_charge_m3").get<Real>()),
                 "doping entry");
         }
     }
@@ -54,7 +55,7 @@ std::vector<RegionFixedChargeSpec> parseRegionFixedChargeSpecs(
                 specs,
                 sourcesByRegion,
                 entry.at("name").get<std::string>(),
-                entry.at("fixed_charge_m3").get<Real>(),
+                scaling.concentrationToSI(entry.at("fixed_charge_m3").get<Real>()),
                 "regions entry");
         }
     }
@@ -62,8 +63,24 @@ std::vector<RegionFixedChargeSpec> parseRegionFixedChargeSpecs(
     return specs;
 }
 
+std::vector<RegionDopingSpec> parseDopingSpecs(
+    const nlohmann::json& cfg,
+    UnitScalingConfig scaling)
+{
+    std::vector<RegionDopingSpec> specs;
+    for (const auto& entry : cfg.at("doping")) {
+        RegionDopingSpec spec;
+        spec.region = entry.at("region").get<std::string>();
+        spec.donors = scaling.concentrationToSI(entry.at("donors").get<Real>());
+        spec.acceptors = scaling.concentrationToSI(entry.at("acceptors").get<Real>());
+        specs.push_back(std::move(spec));
+    }
+    return specs;
+}
+
 std::vector<InterfaceSheetChargeSpec> parseInterfaceSheetChargeSpecs(
-    const nlohmann::json& cfg)
+    const nlohmann::json& cfg,
+    UnitScalingConfig scaling)
 {
     std::vector<InterfaceSheetChargeSpec> specs;
     if (!cfg.contains("interfaces"))
@@ -87,9 +104,12 @@ std::vector<InterfaceSheetChargeSpec> parseInterfaceSheetChargeSpecs(
             !entry.contains("fixed_charge_m2") &&
             !hasTrapDensity) continue;
 
-        const Real sheetCharge = entry.value("sheet_charge_m2", 0.0);
-        const Real fixedCharge = entry.value("fixed_charge_m2", 0.0);
-        const Real trapDensity = entry.value("trap_density_m2", 0.0);
+        const Real sheetCharge = scaling.sheetDensityToSI(
+            entry.value("sheet_charge_m2", 0.0));
+        const Real fixedCharge = scaling.sheetDensityToSI(
+            entry.value("fixed_charge_m2", 0.0));
+        const Real trapDensity = scaling.sheetDensityToSI(
+            entry.value("trap_density_m2", 0.0));
 
         if (entry.contains("regions")) {
             const auto regions = entry.at("regions").get<std::vector<std::string>>();

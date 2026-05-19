@@ -30,6 +30,7 @@ option(VELA_ENABLE_PYTHON "Build the pybind11 Python API" OFF)
 add_library(vela_core STATIC
     src/boundary/BoundaryCondition.cpp
     src/core/ScalingSystem.cpp
+    src/core/UnitScaling.cpp
     src/material/Material.cpp
     src/material/MaterialDatabase.cpp
     src/mesh/DeviceMesh.cpp

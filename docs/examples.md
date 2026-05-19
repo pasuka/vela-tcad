@@ -13,6 +13,16 @@ The table below is the source of truth for the example decks. It describes what
 is currently present in the repository, not a claim of calibrated production
 TCAD coverage.
 
+All example decks in this matrix omit `scaling`; No `scaling` field keeps the
+legacy SI input behavior for backward compatibility. The schema also reserves
+`"scaling": { "mode": "unit_scaling" }` as an external TCAD common-unit input
+mode for future decks: length `um`, concentration `cm^-3`, mobility
+`cm^2/(V s)`, electric field `V/cm`, sheet density `cm^-2`, voltage `V`,
+temperature `K`, and energy `eV`. `unit_scaling` is only a unit interpretation
+and numeric scaling foundation; it is not a calibration capability. The support
+matrix should identify decks using `unit_scaling` explicitly when such examples
+are added.
+
 | Device example | Poisson-only | DD-IV | CV | BV |
 | --- | --- | --- | --- | --- |
 | `examples/pn_diode` | Implicit equilibrium in DD decks | `simulation_iv.json` forward IV | `simulation_cv.json` quasi-static junction C-V | `simulation_bv.json` reverse-bias diagnostics |

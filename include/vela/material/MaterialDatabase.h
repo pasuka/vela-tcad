@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/core/UnitScaling.h"
 #include "vela/material/Material.h"
 #include <stdexcept>
 #include <string>
@@ -17,9 +18,11 @@ class MaterialDatabase {
 public:
     MaterialDatabase();
     explicit MaterialDatabase(const std::string& jsonPath);
+    MaterialDatabase(const std::string& jsonPath, UnitScalingConfig scaling);
 
     /// Load material entries from JSON, adding new entries or overriding built-ins.
     void loadJson(const std::string& jsonPath);
+    void loadJson(const std::string& jsonPath, UnitScalingConfig scaling);
 
     /// Add or overwrite a material entry.
     void addMaterial(const Material& mat);

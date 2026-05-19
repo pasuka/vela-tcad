@@ -4,12 +4,14 @@
 #include <nlohmann/json.hpp>
 
 #include "vela/core/PhysicalConstants.h"
+#include "vela/core/UnitScaling.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/equation/PoissonAssembler.h"
 #include "vela/solver/LinearSolver.h"
 #include "vela/io/VTKWriter.h"
+#include "vela/simulation/ConfigParsing.h"
 #include "vela/simulation/PoissonSimulation.h"
 
 #include <chrono>
@@ -226,6 +228,51 @@ TEST_CASE("DopingModel: net doping has correct sign per region", "[doping]")
 
     // Node 3 belongs only to p_region cell -> negative net doping
     REQUIRE(doping.netDoping(3) < 0.0);
+}
+
+TEST_CASE("ConfigParsing unit_scaling converts cm^-3 doping to m^-3",
+          "[poisson][doping][scaling]")
+{
+    DeviceMesh mesh = makePNMesh();
+    const nlohmann::json legacyCfg = {
+        {"doping", {
+            {{"region", "n_region"}, {"donors", 1.0e23}, {"acceptors", 0.0}},
+            {{"region", "p_region"}, {"donors", 0.0}, {"acceptors", 1.0e23}},
+        }}
+    };
+    const nlohmann::json scaledCfg = {
+        {"scaling", {{"mode", "unit_scaling"}}},
+        {"doping", {
+            {{"region", "n_region"}, {"donors", 1.0e17}, {"acceptors", 0.0}},
+            {{"region", "p_region"}, {"donors", 0.0}, {"acceptors", 1.0e17}},
+        }}
+    };
+
+    const DopingModel legacy = DopingModel::fromMeshAndRegions(
+        mesh, parseDopingSpecs(legacyCfg, parseUnitScalingConfig(legacyCfg)));
+    const DopingModel scaled = DopingModel::fromMeshAndRegions(
+        mesh, parseDopingSpecs(scaledCfg, parseUnitScalingConfig(scaledCfg)));
+
+    REQUIRE(scaled.numNodes() == legacy.numNodes());
+    for (Index i = 0; i < legacy.numNodes(); ++i) {
+        REQUIRE(scaled.donors(i) == Catch::Approx(legacy.donors(i)));
+        REQUIRE(scaled.acceptors(i) == Catch::Approx(legacy.acceptors(i)));
+        REQUIRE(scaled.netDoping(i) == Catch::Approx(legacy.netDoping(i)));
+    }
+}
+
+TEST_CASE("UnitScalingConfig rejects scaling.system aliases",
+          "[poisson][config][scaling]")
+{
+    REQUIRE_THROWS_WITH(
+        parseUnitScalingConfig(nlohmann::json{{"scaling", {{"system", "si"}}}}),
+        Catch::Matchers::ContainsSubstring("scaling.system"));
+    REQUIRE_THROWS_WITH(
+        parseUnitScalingConfig(nlohmann::json{{"scaling", {{"system", "sentaurus"}}}}),
+        Catch::Matchers::ContainsSubstring("scaling.system"));
+    REQUIRE_THROWS_WITH(
+        parseUnitScalingConfig(nlohmann::json{{"scaling", {{"mode", "si"}}}}),
+        Catch::Matchers::ContainsSubstring("unit_scaling"));
 }
 
 TEST_CASE("PoissonAssembler: matrix dimensions match node count", "[poisson]")

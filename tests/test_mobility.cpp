@@ -3,6 +3,7 @@
 #include <nlohmann/json.hpp>
 
 #include "vela/core/PhysicalConstants.h"
+#include "vela/core/UnitScaling.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DopingModel.h"
@@ -84,6 +85,52 @@ TEST_CASE("JSON solver config selects mobility and recombination models", "[mobi
     REQUIRE(cfg.taup == Catch::Approx(3.0e-7));
     REQUIRE(cfg.bandgapNarrowing.model == "slotboom");
     REQUIRE(cfg.bandgapNarrowing.coefficient == Catch::Approx(0.010));
+}
+
+TEST_CASE("JSON solver config unit_scaling normalizes mobility and field inputs",
+          "[mobility][json][scaling]")
+{
+    const nlohmann::json json = {
+        {"mobility", {
+            {"model", "caughey_thomas_field_surface"},
+            {"electron_mu_min_m2_V_s", 52.2},
+            {"electron_nref_m3", 9.68e16},
+            {"hole_mu_min_m2_V_s", 44.9},
+            {"hole_nref_m3", 2.23e17},
+            {"surface", {
+                {"reference_field_V_per_m", 1.5e4},
+                {"theta_electron_m_per_V", 1.0e-6},
+                {"theta_hole_m_per_V", 2.0e-6}
+            }}
+        }},
+        {"bandgap_narrowing", {
+            {"model", "slotboom"},
+            {"reference_doping_m3", 1.0e17}
+        }},
+        {"impact_ionization", {
+            {"model", "selberherr"},
+            {"electron_A_m_inv", 7.03e5},
+            {"electron_B_V_m", 1.231e6},
+            {"hole_A_m_inv", 1.582e6},
+            {"hole_B_V_m", 2.036e6}
+        }}
+    };
+
+    const GummelConfig cfg = gummelConfigFromJson(
+        json, UnitScalingConfig{UnitScalingMode::UnitScaling});
+
+    REQUIRE(cfg.mobility.electronCT.muMin == Catch::Approx(0.00522));
+    REQUIRE(cfg.mobility.electronCT.nRef == Catch::Approx(9.68e22));
+    REQUIRE(cfg.mobility.holeCT.muMin == Catch::Approx(0.00449));
+    REQUIRE(cfg.mobility.holeCT.nRef == Catch::Approx(2.23e23));
+    REQUIRE(cfg.mobility.surface.referenceField == Catch::Approx(1.5e6));
+    REQUIRE(cfg.mobility.surface.thetaElectron == Catch::Approx(1.0e-8));
+    REQUIRE(cfg.mobility.surface.thetaHole == Catch::Approx(2.0e-8));
+    REQUIRE(cfg.bandgapNarrowing.referenceDoping == Catch::Approx(1.0e23));
+    REQUIRE(cfg.impactIonization.electronA == Catch::Approx(7.03e7));
+    REQUIRE(cfg.impactIonization.electronB == Catch::Approx(1.231e8));
+    REQUIRE(cfg.impactIonization.holeA == Catch::Approx(1.582e8));
+    REQUIRE(cfg.impactIonization.holeB == Catch::Approx(2.036e8));
 }
 
 

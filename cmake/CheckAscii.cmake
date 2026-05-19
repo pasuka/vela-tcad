@@ -74,3 +74,57 @@ if(offending_files)
 endif()
 
 message(STATUS "ASCII check passed for ${file_count} files")
+
+set(SCALING_SCHEMA_DOCS
+    README.md
+    docs/config_schema.md
+    docs/examples.md
+)
+
+set(missing_scaling_docs)
+foreach(doc_path IN LISTS SCALING_SCHEMA_DOCS)
+    set(full_doc_path "${VELA_SOURCE_DIR}/${doc_path}")
+    if(NOT EXISTS "${full_doc_path}")
+        list(APPEND missing_scaling_docs "${doc_path} (missing file)")
+        continue()
+    endif()
+
+    file(READ "${full_doc_path}" doc_text)
+    string(FIND "${doc_text}" "unit_scaling" has_unit_scaling)
+    string(FIND "${doc_text}" "legacy SI" has_legacy_si)
+    string(FIND "${doc_text}" "No `scaling` field" has_no_scaling)
+
+    if(has_unit_scaling EQUAL -1
+       OR has_legacy_si EQUAL -1
+       OR has_no_scaling EQUAL -1)
+        list(APPEND missing_scaling_docs "${doc_path}")
+    endif()
+endforeach()
+
+if(missing_scaling_docs)
+    list(JOIN missing_scaling_docs "\n  " missing_scaling_report)
+    message(FATAL_ERROR
+        "Scaling mode documentation is incomplete. Each public schema doc must mention "
+        "`unit_scaling`, `legacy SI`, and `No `scaling` field`:\n"
+        "  ${missing_scaling_report}"
+    )
+endif()
+
+foreach(doc_path IN LISTS SCALING_SCHEMA_DOCS)
+    file(READ "${VELA_SOURCE_DIR}/${doc_path}" doc_text)
+    string(TOLOWER "${doc_text}" doc_text_lower)
+    string(FIND "${doc_text_lower}" "sentaurus" has_forbidden_sentaurus)
+    string(FIND "${doc_text_lower}" "\"system\": \"si\"" has_forbidden_system_si)
+    string(FIND "${doc_text_lower}" "\"system\":\"si\"" has_forbidden_system_si_compact)
+
+    if(NOT has_forbidden_sentaurus EQUAL -1
+       OR NOT has_forbidden_system_si EQUAL -1
+       OR NOT has_forbidden_system_si_compact EQUAL -1)
+        message(FATAL_ERROR
+            "Forbidden scaling schema terminology found in ${doc_path}. "
+            "Do not document commercial software names or a `system: si` mode."
+        )
+    endif()
+endforeach()
+
+message(STATUS "Scaling mode documentation check passed")

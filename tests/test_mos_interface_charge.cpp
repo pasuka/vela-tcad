@@ -5,6 +5,7 @@
 #include <cmath>
 
 #include "vela/core/PhysicalConstants.h"
+#include "vela/core/UnitScaling.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/equation/DDAssembler.h"
 #include "vela/material/MaterialDatabase.h"
@@ -149,6 +150,26 @@ TEST_CASE("ConfigParsing: interface region selectors validate preferred and lega
     REQUIRE(specs[0].region0 == "silicon");
     REQUIRE(specs[0].region1 == "oxide");
     REQUIRE(specs[0].sheetCharge == Catch::Approx(2.0e14));
+}
+
+TEST_CASE("ConfigParsing unit_scaling converts cm^-2 interface charge to m^-2",
+          "[interface][config][scaling]")
+{
+    const nlohmann::json cfg = {
+        {"scaling", {{"mode", "unit_scaling"}}},
+        {"interfaces", {{{"regions", {"silicon", "oxide"}},
+                         {"sheet_charge_m2", 2.0e11},
+                         {"fixed_charge_m2", -3.0e11},
+                         {"trap_density_m2", 4.0e11},
+                         {"trap_occupancy", 0.25}}}}
+    };
+
+    const auto specs = parseInterfaceSheetChargeSpecs(cfg, parseUnitScalingConfig(cfg));
+    REQUIRE(specs.size() == 1);
+    REQUIRE(specs[0].sheetCharge == Catch::Approx(2.0e15));
+    REQUIRE(specs[0].fixedCharge == Catch::Approx(-3.0e15));
+    REQUIRE(specs[0].trapDensity == Catch::Approx(4.0e15));
+    REQUIRE(specs[0].trapOccupancy == Catch::Approx(0.25));
 }
 
 TEST_CASE("ConfigParsing: duplicate region fixed charge sources are rejected", "[interface][config]")

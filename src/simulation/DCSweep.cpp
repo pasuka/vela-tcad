@@ -73,17 +73,22 @@ std::string capacitanceMnemonic(const std::string& sweepContact, const std::stri
 
 TerminalChargeConfig terminalChargeConfigFromJson(const nlohmann::json& chargeCfg,
                                                   const DCSweepConfig& sweep,
-                                                  std::size_t index)
+                                                  std::size_t index,
+                                                  UnitScalingConfig scaling)
 {
     TerminalChargeConfig config;
     config.name = chargeCfg.value("name", std::string{});
     config.contact = chargeCfg.value("contact", sweep.chargeContact.empty() ? sweep.contact : sweep.chargeContact);
     config.regions = chargeCfg.value("regions", sweep.chargeRegions);
-    config.contactRadius = chargeCfg.value("contact_radius", sweep.chargeContactRadius);
+    config.contactRadius = chargeCfg.contains("contact_radius")
+        ? scaling.lengthToSI(chargeCfg.at("contact_radius").get<Real>())
+        : sweep.chargeContactRadius;
     config.includeMobileCharge = chargeCfg.value("include_mobile_charge", config.includeMobileCharge);
     config.includeIonizedDopants = chargeCfg.value("include_ionized_dopants", config.includeIonizedDopants);
     config.perMeter = chargeCfg.value("per_meter", sweep.chargePerMeter);
-    config.depth_m = chargeCfg.value("depth_m", sweep.chargeDepth_m);
+    config.depth_m = chargeCfg.contains("depth_m")
+        ? scaling.lengthToSI(chargeCfg.at("depth_m").get<Real>())
+        : sweep.chargeDepth_m;
     if (config.name.empty())
         config.name = terminalChargeName(config, index);
     if (!config.perMeter && config.depth_m <= 0.0)
@@ -148,7 +153,8 @@ SolverMethod solverMethodFromJson(const nlohmann::json& cfg)
 }
 
 DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
-                                    const std::filesystem::path& cfgDir)
+                                    const std::filesystem::path& cfgDir,
+                                    UnitScalingConfig scaling)
 {
     const auto& j = cfg.at("sweep");
     DCSweepConfig sweep;
@@ -172,15 +178,17 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     const auto chargeCfg = j.value("terminal_charge", nlohmann::json::object());
     sweep.chargeContact = chargeCfg.value("contact", j.value("charge_contact", sweep.contact));
     sweep.chargeRegions = chargeCfg.value("regions", j.value("charge_regions", std::vector<std::string>{}));
-    sweep.chargeContactRadius = chargeCfg.value("contact_radius", j.value("charge_contact_radius", 0.0));
+    sweep.chargeContactRadius = scaling.lengthToSI(
+        chargeCfg.value("contact_radius", j.value("charge_contact_radius", 0.0)));
     sweep.chargePerMeter = chargeCfg.value("per_meter", j.value("charge_per_meter", true));
-    sweep.chargeDepth_m = chargeCfg.value("depth_m", j.value("charge_depth_m", 1.0));
+    sweep.chargeDepth_m = scaling.lengthToSI(
+        chargeCfg.value("depth_m", j.value("charge_depth_m", 1.0)));
 
     sweep.storedChargeEnabled = j.contains("stored_charge");
     const auto storedCfg = j.value("stored_charge", nlohmann::json::object());
     sweep.storedCharge.regions = storedCfg.value("regions", std::vector<std::string>{});
     sweep.storedCharge.perMeter = storedCfg.value("per_meter", true);
-    sweep.storedCharge.depth_m = storedCfg.value("depth_m", 1.0);
+    sweep.storedCharge.depth_m = scaling.lengthToSI(storedCfg.value("depth_m", 1.0));
 
     if (j.contains("terminal_charges")) {
         const auto& charges = j.at("terminal_charges");
@@ -190,7 +198,8 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
             throw std::invalid_argument("DCSweep: sweep.terminal_charges must not be empty.");
         std::unordered_set<std::string> names;
         for (std::size_t i = 0; i < charges.size(); ++i) {
-            TerminalChargeConfig config = terminalChargeConfigFromJson(charges.at(i), sweep, i);
+            TerminalChargeConfig config =
+                terminalChargeConfigFromJson(charges.at(i), sweep, i, scaling);
             const std::string name = terminalChargeName(config, i);
             if (!names.insert(name).second)
                 throw std::invalid_argument("DCSweep: duplicate terminal_charges name '" + name + "'.");
@@ -198,11 +207,14 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
             sweep.terminalCharges.push_back(std::move(config));
         }
     } else {
-        sweep.terminalCharges.push_back(terminalChargeConfigFromJson(chargeCfg, sweep, 0));
+        sweep.terminalCharges.push_back(
+            terminalChargeConfigFromJson(chargeCfg, sweep, 0, scaling));
     }
 
     const auto bvCfg = j.value("breakdown", nlohmann::json::object());
-    sweep.breakdown.maxElectricField_V_per_m = bvCfg.value("max_electric_field_V_per_m", j.value("breakdown_max_electric_field_V_per_m", 0.0));
+    sweep.breakdown.maxElectricField_V_per_m = scaling.electricFieldToSI(
+        bvCfg.value("max_electric_field_V_per_m",
+                    j.value("breakdown_max_electric_field_V_per_m", 0.0)));
     sweep.breakdown.currentJumpRatio = bvCfg.value("current_jump_ratio", j.value("breakdown_current_jump_ratio", 0.0));
     sweep.breakdown.nonConvergenceBreakdown = bvCfg.value("non_convergence", j.value("breakdown_on_non_convergence", true));
 
@@ -240,16 +252,11 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     return sweep;
 }
 
-DopingModel dopingFromJson(const DeviceMesh& mesh, const nlohmann::json& cfg)
+DopingModel dopingFromJson(const DeviceMesh& mesh,
+                           const nlohmann::json& cfg,
+                           UnitScalingConfig scaling)
 {
-    std::vector<RegionDopingSpec> specs;
-    for (const auto& entry : cfg.at("doping")) {
-        RegionDopingSpec spec;
-        spec.region = entry.at("region").get<std::string>();
-        spec.donors = entry.at("donors").get<Real>();
-        spec.acceptors = entry.at("acceptors").get<Real>();
-        specs.push_back(std::move(spec));
-    }
+    const std::vector<RegionDopingSpec> specs = parseDopingSpecs(cfg, scaling);
     return DopingModel::fromMeshAndRegions(mesh, specs);
 }
 
@@ -326,6 +333,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
     nlohmann::json cfg;
     ifs >> cfg;
+    const UnitScalingConfig scaling = parseUnitScalingConfig(cfg);
 
     const std::filesystem::path cfgDir = std::filesystem::path(configFile).parent_path();
     auto resolve = [&](const std::string& path) {
@@ -336,17 +344,19 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     };
 
     JsonMeshReader reader;
-    DeviceMesh mesh = reader.read(resolve(cfg.at("mesh_file").get<std::string>()));
+    DeviceMesh mesh = reader.read(resolve(cfg.at("mesh_file").get<std::string>()), scaling);
     MaterialDatabase matdb;
     if (cfg.contains("materials_file"))
-        matdb.loadJson(resolve(cfg.at("materials_file").get<std::string>()));
-    DopingModel doping = dopingFromJson(mesh, cfg);
-    std::vector<RegionFixedChargeSpec> fixedChargeSpecs = parseRegionFixedChargeSpecs(cfg);
-    std::vector<InterfaceSheetChargeSpec> sheetChargeSpecs = parseInterfaceSheetChargeSpecs(cfg);
+        matdb.loadJson(resolve(cfg.at("materials_file").get<std::string>()), scaling);
+    DopingModel doping = dopingFromJson(mesh, cfg, scaling);
+    std::vector<RegionFixedChargeSpec> fixedChargeSpecs =
+        parseRegionFixedChargeSpecs(cfg, scaling);
+    std::vector<InterfaceSheetChargeSpec> sheetChargeSpecs =
+        parseInterfaceSheetChargeSpecs(cfg, scaling);
     ContactConfig contactConfig = contactConfigFromJson(cfg);
     std::unordered_map<std::string, Real>& baseBiases = contactConfig.biases;
     ContactSpecsMap& contactSpecs = contactConfig.specs;
-    DCSweepConfig sweep = dcSweepConfigFromJson(cfg, cfgDir);
+    DCSweepConfig sweep = dcSweepConfigFromJson(cfg, cfgDir, scaling);
 
     const nlohmann::json solverCfg = cfg.value("solver", nlohmann::json::object());
     const SolverMethod solverMethod = solverMethodFromJson(cfg);
@@ -355,10 +365,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     NewtonConfig newton;
     MobilityModelConfig mobilityConfig;
     if (solverMethod == SolverMethod::Newton) {
-        newton = newtonConfigFromJson(solverCfg);
+        newton = newtonConfigFromJson(solverCfg, scaling);
         mobilityConfig = newton.mobility;
     } else {
-        gummel = gummelConfigFromJson(solverCfg);
+        gummel = gummelConfigFromJson(solverCfg, scaling);
         mobilityConfig = gummel.mobility;
     }
     const Real temperature_K = (solverMethod == SolverMethod::Newton)

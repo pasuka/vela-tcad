@@ -2,6 +2,7 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/solver/NewtonSolver.h"
+#include "vela/simulation/ConfigParsing.h"
 #include "vela/simulation/DCSweep.h"
 #include "vela/simulation/PoissonSimulation.h"
 #include <exception>
@@ -49,19 +50,6 @@ std::string resolvePath(const std::filesystem::path& baseDir, const std::string&
     return resolved.string();
 }
 
-vela::DopingModel dopingFromJson(const vela::DeviceMesh& mesh, const nlohmann::json& cfg)
-{
-    std::vector<vela::RegionDopingSpec> specs;
-    for (const auto& entry : cfg.at("doping")) {
-        vela::RegionDopingSpec spec;
-        spec.region = entry.at("region").get<std::string>();
-        spec.donors = entry.at("donors").get<vela::Real>();
-        spec.acceptors = entry.at("acceptors").get<vela::Real>();
-        specs.push_back(std::move(spec));
-    }
-    return vela::DopingModel::fromMeshAndRegions(mesh, specs);
-}
-
 std::unordered_map<std::string, vela::Real> contactBiasesFromJson(const nlohmann::json& cfg)
 {
     std::unordered_map<std::string, vela::Real> biases;
@@ -80,18 +68,22 @@ struct NewtonCliResult {
 NewtonCliResult runNewtonConfig(const std::string& configFile, const nlohmann::json& cfg)
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
+    const vela::UnitScalingConfig scaling = vela::parseUnitScalingConfig(cfg);
 
     vela::JsonMeshReader reader;
-    vela::DeviceMesh mesh = reader.read(resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>()));
+    vela::DeviceMesh mesh = reader.read(
+        resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>()),
+        scaling);
 
     vela::MaterialDatabase matdb;
     if (cfg.contains("materials_file"))
-        matdb.loadJson(resolvePath(cfgDir, cfg.at("materials_file").get<std::string>()));
+        matdb.loadJson(resolvePath(cfgDir, cfg.at("materials_file").get<std::string>()), scaling);
 
-    vela::DopingModel doping = dopingFromJson(mesh, cfg);
+    vela::DopingModel doping =
+        vela::DopingModel::fromMeshAndRegions(mesh, vela::parseDopingSpecs(cfg, scaling));
     const auto biases = contactBiasesFromJson(cfg);
     vela::NewtonConfig newton = cfg.contains("solver")
-        ? vela::newtonConfigFromJson(cfg.at("solver"))
+        ? vela::newtonConfigFromJson(cfg.at("solver"), scaling)
         : vela::NewtonConfig{};
 
     vela::NewtonResult result = vela::runNewton(mesh, matdb, doping, biases, newton);

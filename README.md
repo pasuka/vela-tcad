@@ -300,13 +300,31 @@ those same C++ config paths. A materials file may be either an object with a
 }
 ```
 
-All numeric config values use SI units unless the field name explicitly states
-otherwise. Concentrations such as `donors`, `acceptors`, `ni`, `Nc_m3`, and
-`Nv_m3` are in `m^-3`; mobilities are in `m^2/(V s)`; lengths are in meters;
-voltages are in volts; and `temperature_K` is in kelvin. Band gap and electron
-affinity fields use electron-volts as indicated by their `_eV` suffix. To
-convert concentrations from `cm^-3` to `m^-3`, multiply by `1e6`; for example,
-`1e17 cm^-3` is `1e23 m^-3`.
+No `scaling` field keeps the legacy SI input behavior used by all existing
+decks. In legacy SI mode, numeric config values use SI units unless the field
+name explicitly states otherwise: lengths are meters, concentrations such as
+`donors`, `acceptors`, `ni`, `Nc_m3`, and `Nv_m3` are in `m^-3`, mobilities are
+in `m^2/(V s)`, electric fields are in `V/m`, interface sheet densities are in
+`m^-2`, voltages are in volts, `temperature_K` is in kelvin, and band gap or
+electron affinity fields use electron-volts as indicated by their `_eV` suffix.
+To convert concentrations from `cm^-3` to `m^-3`, multiply by `1e6`; for
+example, `1e17 cm^-3` is `1e23 m^-3`.
+
+The public schema also defines an optional unit input mode:
+
+```json
+"scaling": { "mode": "unit_scaling" }
+```
+
+`unit_scaling` is an external TCAD common-unit input mode, not a calibration or
+accuracy setting. It interprets lengths as `um`, concentrations as `cm^-3`,
+mobilities as `cm^2/(V s)`, electric fields as `V/cm`, interface sheet
+densities as `cm^-2`, voltages as `V`, temperatures as `K`, and energies as
+`eV`. Vela normalizes those inputs to the existing SI solver kernel when it
+reads mesh coordinates, material overrides, doping, fixed/interface charge,
+mobility settings, and electric-field-related solver settings. The only
+accepted `scaling.mode` value is `unit_scaling`; `si` and vendor-specific mode
+aliases are intentionally not part of the schema.
 
 Relative paths in `mesh_file`, optional `materials_file`, `output_vtk`, and
 sweep output settings are resolved relative to the directory containing the

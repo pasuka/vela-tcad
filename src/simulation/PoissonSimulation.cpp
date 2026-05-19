@@ -57,6 +57,7 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
 
     nlohmann::json cfg;
     ifs >> cfg;
+    const UnitScalingConfig scaling = parseUnitScalingConfig(cfg);
 
     // Resolve paths relative to the config file's directory
     const std::filesystem::path cfgDir = configDirectory(configFile);
@@ -70,30 +71,25 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // Build mesh
     // ------------------------------------------------------------------
     JsonMeshReader reader;
-    DeviceMesh mesh = reader.read(meshFile);
+    DeviceMesh mesh = reader.read(meshFile, scaling);
 
     // ------------------------------------------------------------------
     // Material database (built-in Si, SiO2 plus optional config override)
     // ------------------------------------------------------------------
     MaterialDatabase matdb;
     if (!materialsFile.empty())
-        matdb.loadJson(materialsFile);
+        matdb.loadJson(materialsFile, scaling);
 
     // ------------------------------------------------------------------
     // Doping model
     // ------------------------------------------------------------------
-    std::vector<RegionDopingSpec> dopingSpecs;
-    for (const auto& entry : cfg.at("doping")) {
-        RegionDopingSpec spec;
-        spec.region    = entry.at("region").get<std::string>();
-        spec.donors    = entry.at("donors").get<Real>();
-        spec.acceptors = entry.at("acceptors").get<Real>();
-        dopingSpecs.push_back(std::move(spec));
-    }
+    std::vector<RegionDopingSpec> dopingSpecs = parseDopingSpecs(cfg, scaling);
     DopingModel doping = DopingModel::fromMeshAndRegions(mesh, dopingSpecs);
 
-    std::vector<RegionFixedChargeSpec> fixedChargeSpecs = parseRegionFixedChargeSpecs(cfg);
-    std::vector<InterfaceSheetChargeSpec> sheetChargeSpecs = parseInterfaceSheetChargeSpecs(cfg);
+    std::vector<RegionFixedChargeSpec> fixedChargeSpecs =
+        parseRegionFixedChargeSpecs(cfg, scaling);
+    std::vector<InterfaceSheetChargeSpec> sheetChargeSpecs =
+        parseInterfaceSheetChargeSpecs(cfg, scaling);
 
     // ------------------------------------------------------------------
     // Parse explicit boundary conditions

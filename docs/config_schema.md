@@ -4,7 +4,9 @@ This document is the implementation-aligned reference for JSON config files used
 It describes fields currently parsed by the C++ code paths in Poisson and DC sweep drivers.
 
 Scope and conventions:
-- All numeric values are SI unless a field name includes a unit suffix such as `_eV`.
+- No `scaling` field keeps the legacy SI input behavior used by existing decks.
+- In legacy SI mode, all numeric values are SI unless a field name includes a unit suffix such as `_eV`.
+- The optional public input-unit mode is `scaling.mode: "unit_scaling"`; it is a unit interpretation and numeric scaling foundation only, not a calibration feature.
 - Relative paths are resolved from the directory of the config JSON file.
 - Legacy decks remain supported where noted.
 - Prototype features are marked explicitly.
@@ -19,6 +21,7 @@ Scope and conventions:
 | output_csv | string | Optional | Default CSV output path for DC sweep. Can be overridden by `sweep.csv_file`. |
 | output_vtk | string | Poisson: Yes | Poisson VTK output file path. |
 | output_vtk_prefix | string | Optional | Default VTK prefix for DC sweep point outputs. Can be overridden by `sweep.vtk_prefix`. |
+| scaling | object | Optional | Input unit interpretation. Omit for legacy SI behavior, or set `mode` to `unit_scaling`; see below. |
 | doping | array | Yes | Region doping definitions; see below. |
 | regions | array | Optional | Region-level fixed charge definitions; see below. |
 | interfaces | array | Optional | Interface sheet/fixed/trap charge definitions; see below. |
@@ -27,6 +30,41 @@ Scope and conventions:
 | solver | object | Optional | Gummel/Newton settings for DD sweep and Newton solve. |
 | sweep | object | Required for dc_sweep | Sweep mode, range, outputs, and diagnostics controls. |
 | regression | object | Optional | Regression assertions consumed by `scripts/run_regression.py`. |
+
+## scaling
+
+The `scaling` object selects how numeric input values are interpreted before
+internal solver scaling. No `scaling` field means legacy SI input behavior:
+lengths use `m`, concentrations use `m^-3`, mobilities use `m^2/(V s)`,
+electric fields use `V/m`, interface sheet densities use `m^-2`, voltages use
+`V`, temperatures use `K`, and energies use `eV`.
+
+The only supported public mode name is:
+
+```json
+"scaling": { "mode": "unit_scaling" }
+```
+
+In `unit_scaling` mode, input values use common external TCAD units:
+
+| Quantity | legacy SI input | `unit_scaling` input |
+| --- | --- | --- |
+| length | m | um |
+| concentration | m^-3 | cm^-3 |
+| mobility | m^2/(V s) | cm^2/(V s) |
+| electric field | V/m | V/cm |
+| sheet density | m^-2 | cm^-2 |
+| voltage | V | V |
+| temperature | K | K |
+| energy | eV | eV |
+
+`scaling.mode` does not accept `si` or vendor-specific aliases.
+Field names with explicit unit suffixes remain the stable public names; this
+mode defines how their numeric values are read at the schema boundary.
+The conversion is applied while reading mesh coordinates, material override
+files, doping, region fixed charge, interface sheet/trap charge, mobility
+settings, and electric-field-related solver settings. The Poisson and
+drift-diffusion assemblers continue to receive SI values.
 
 ## Doping, regions, interfaces
 
@@ -43,6 +81,9 @@ Optional per entry:
 Notes:
 - Doping uses net doping `Nd - Na` per region.
 - `fixed_charge_m3` may be specified either in `doping[]` or `regions[]` for a region, but not both.
+- With `scaling.mode: "unit_scaling"`, `donors`, `acceptors`, and
+  `fixed_charge_m3` numeric inputs are read as `cm^-3` and normalized to
+  `m^-3` internally.
 
 ### regions[] entries
 
@@ -53,6 +94,8 @@ Common fields:
 Notes:
 - Region `fixed_charge_m3` is additive source charge for Poisson and for drift-diffusion Poisson substeps.
 - Duplicate definitions for the same region are rejected.
+- With `scaling.mode: "unit_scaling"`, `fixed_charge_m3` numeric inputs are
+  read as `cm^-3` and normalized to `m^-3` internally.
 
 ### interfaces[] entries
 
@@ -73,6 +116,9 @@ Notes:
 - `interfaces[]` is consumed by the standalone Poisson driver and by drift-diffusion DC sweep Poisson substeps (`solver.method: gummel` and `solver.method: newton`).
 - `trap_density_m2` is signed in this prototype. Positive occupied traps contribute positive sheet charge; negative values contribute negative sheet charge. Use `fixed_charge_m2` for bias-independent fixed charge when you do not want the value scaled by `trap_occupancy`.
 - The trap model is a quasi-static prototype: `trap_occupancy` is a fixed user-supplied constant for the whole run/sweep. Bias-dependent trap occupancy, frequency dispersion, and trap statistics are not implemented.
+- With `scaling.mode: "unit_scaling"`, `sheet_charge_m2`,
+  `fixed_charge_m2`, and `trap_density_m2` numeric inputs are read as
+  `cm^-2` and normalized to `m^-2` internally.
 
 ## contacts[]
 
@@ -179,6 +225,8 @@ Newton-specific keys:
 Notes:
 - `line_search` and `damping_factor` apply to Newton config.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
+- With `scaling.mode: "unit_scaling"`, `bandgap_narrowing.reference_doping_m3`
+  is read as `cm^-3` and normalized to `m^-3`.
 
 ### impact_ionization
 
@@ -218,6 +266,13 @@ Field meanings (Selberherr prototype):
 Validation:
 - `electron_A_m_inv`, `hole_A_m_inv`, and `carrier_velocity_m_s` must be non-negative.
 - `electron_B_V_m` and `hole_B_V_m` must be positive.
+
+Scaling:
+- With `scaling.mode: "unit_scaling"`, `electron_A_m_inv` and
+  `hole_A_m_inv` numeric inputs are read as `cm^-1`, while
+  `electron_B_V_m` and `hole_B_V_m` are read as `V/cm`. They are normalized
+  to `1/m` and `V/m` before the impact-ionization model sees them.
+- `carrier_velocity_m_s` remains `m/s`.
 
 Prototype note:
 - This is an engineering impact-ionization source term for smoke diagnostics; it
@@ -262,6 +317,11 @@ Object form:
 Supported `model` values are `constant`, `caughey_thomas`, `caughey_thomas_field`, `caughey_thomas_surface`, and `caughey_thomas_field_surface`. The `surface` block is a MOS prototype for Si/SiO2-like channel mobility degradation, not a calibrated Lombardi model. It applies a vertical-field factor `mu_eff = mu_bulk / (1 + (theta * max(|E_normal| - reference_field, 0))^beta)^(1/beta)`, optionally clamped by `min_factor`/`max_factor`.
 
 The first implementation estimates `E_normal` with the local edge electric-field magnitude on edges that match `surface_region` and/or the two-name `surface_interface`; this is sufficient for trend regressions but should not be interpreted as a calibrated normal-field extraction. If no matching surface edge is found for a mobility evaluation, surface degradation is disabled and the existing low-field or velocity-saturation behavior is used.
+
+With `scaling.mode: "unit_scaling"`, Caughey-Thomas mobility floors are read
+as `cm^2/(V s)`, reference dopings as `cm^-3`, surface reference fields as
+`V/cm`, and surface theta coefficients as `cm/V`. They are normalized to
+`m^2/(V s)`, `m^-3`, `V/m`, and `m/V` before mobility evaluation.
 
 ## sweep
 

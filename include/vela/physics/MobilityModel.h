@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/core/UnitScaling.h"
 #include "vela/core/Types.h"
 #include "vela/material/Material.h"
 #include <nlohmann/json_fwd.hpp>
@@ -118,7 +119,9 @@ private:
 };
 
 MobilityModelConfig mobilityModelConfig(std::string modelName);
-MobilityModelConfig mobilityModelConfigFromJson(const nlohmann::json& value);
+MobilityModelConfig mobilityModelConfigFromJson(
+    const nlohmann::json& value,
+    UnitScalingConfig scaling = {});
 bool isSurfaceMobilityModel(const MobilityModelConfig& config);
 bool surfaceMobilityAppliesToRegionPair(const MobilityModelConfig& config,
                                         const std::string& regionName,

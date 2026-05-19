@@ -2,6 +2,7 @@
 
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/Types.h"
+#include "vela/core/UnitScaling.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/mesh/DeviceMesh.h"
@@ -97,7 +98,9 @@ private:
     std::vector<InterfaceSheetChargeSpec> sheetCharges_;
 };
 
-NewtonConfig newtonConfigFromJson(const nlohmann::json& cfg);
+NewtonConfig newtonConfigFromJson(
+    const nlohmann::json& cfg,
+    UnitScalingConfig scaling = {});
 
 NewtonResult runNewton(const DeviceMesh& mesh,
                        const MaterialDatabase& matdb,

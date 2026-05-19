@@ -73,7 +73,7 @@ ResidualBlockNormValue residualScalesFromConfig(
 } // namespace
 
 
-NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
+NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig scaling)
 {
     NewtonConfig cfg;
     cfg.maxIter = json.value("max_iter", cfg.maxIter);
@@ -92,15 +92,17 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
     if (json.contains("mobility"))
-        cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"));
+        cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"), scaling);
     if (json.contains("bandgap_narrowing")) {
         const auto& value = json.at("bandgap_narrowing");
         if (value.is_string()) {
             cfg.bandgapNarrowing.model = value.get<std::string>();
         } else if (value.is_object()) {
             cfg.bandgapNarrowing.model = value.value("model", cfg.bandgapNarrowing.model);
-            cfg.bandgapNarrowing.referenceDoping = value.value(
-                "reference_doping_m3", cfg.bandgapNarrowing.referenceDoping);
+            if (value.contains("reference_doping_m3")) {
+                cfg.bandgapNarrowing.referenceDoping = scaling.concentrationToSI(
+                    value.at("reference_doping_m3").get<Real>());
+            }
             cfg.bandgapNarrowing.coefficient = value.value(
                 "coefficient_eV", cfg.bandgapNarrowing.coefficient);
             cfg.bandgapNarrowing.smoothing = value.value(
@@ -139,14 +141,22 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json)
             cfg.impactIonization.model = value.get<std::string>();
         } else if (value.is_object()) {
             cfg.impactIonization.model = value.value("model", cfg.impactIonization.model);
-            cfg.impactIonization.electronA = value.value(
-                "electron_A_m_inv", cfg.impactIonization.electronA);
-            cfg.impactIonization.electronB = value.value(
-                "electron_B_V_m", cfg.impactIonization.electronB);
-            cfg.impactIonization.holeA = value.value(
-                "hole_A_m_inv", cfg.impactIonization.holeA);
-            cfg.impactIonization.holeB = value.value(
-                "hole_B_V_m", cfg.impactIonization.holeB);
+            if (value.contains("electron_A_m_inv")) {
+                cfg.impactIonization.electronA = scaling.inverseLengthToSI(
+                    value.at("electron_A_m_inv").get<Real>());
+            }
+            if (value.contains("electron_B_V_m")) {
+                cfg.impactIonization.electronB = scaling.electricFieldToSI(
+                    value.at("electron_B_V_m").get<Real>());
+            }
+            if (value.contains("hole_A_m_inv")) {
+                cfg.impactIonization.holeA = scaling.inverseLengthToSI(
+                    value.at("hole_A_m_inv").get<Real>());
+            }
+            if (value.contains("hole_B_V_m")) {
+                cfg.impactIonization.holeB = scaling.electricFieldToSI(
+                    value.at("hole_B_V_m").get<Real>());
+            }
             cfg.impactIonization.carrierVelocity = value.value(
                 "carrier_velocity_m_s", cfg.impactIonization.carrierVelocity);
         } else {

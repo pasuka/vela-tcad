@@ -17,18 +17,32 @@ void setOptionalReal(const nlohmann::json& j,
         field = j.at(key).get<Real>();
 }
 
-Material materialFromJson(const nlohmann::json& j, const Material* base = nullptr)
+void setOptionalScaledReal(const nlohmann::json& j,
+                           const char* key,
+                           std::optional<Real>& field,
+                           Real (UnitScalingConfig::*scale)(Real) const,
+                           UnitScalingConfig scaling)
+{
+    if (j.contains(key))
+        field = (scaling.*scale)(j.at(key).get<Real>());
+}
+
+Material materialFromJson(const nlohmann::json& j,
+                          const Material* base,
+                          UnitScalingConfig scaling)
 {
     Material mat = base != nullptr ? *base : Material{};
     mat.name = j.at("name").get<std::string>();
     if (j.contains("eps_r")) mat.eps_r = j.at("eps_r").get<Real>();
-    if (j.contains("ni")) mat.ni = j.at("ni").get<Real>();
-    if (j.contains("mun")) mat.mun = j.at("mun").get<Real>();
-    if (j.contains("mup")) mat.mup = j.at("mup").get<Real>();
+    if (j.contains("ni")) mat.ni = scaling.concentrationToSI(j.at("ni").get<Real>());
+    if (j.contains("mun")) mat.mun = scaling.mobilityToSI(j.at("mun").get<Real>());
+    if (j.contains("mup")) mat.mup = scaling.mobilityToSI(j.at("mup").get<Real>());
     setOptionalReal(j, "bandgap_eV", mat.bandgap_eV);
     setOptionalReal(j, "electron_affinity_eV", mat.electron_affinity_eV);
-    setOptionalReal(j, "Nc_m3", mat.Nc_m3);
-    setOptionalReal(j, "Nv_m3", mat.Nv_m3);
+    setOptionalScaledReal(
+        j, "Nc_m3", mat.Nc_m3, &UnitScalingConfig::concentrationToSI, scaling);
+    setOptionalScaledReal(
+        j, "Nv_m3", mat.Nv_m3, &UnitScalingConfig::concentrationToSI, scaling);
     setOptionalReal(j, "temperature_K", mat.temperature_K);
     return mat;
 }
@@ -95,7 +109,18 @@ MaterialDatabase::MaterialDatabase(const std::string& jsonPath)
     loadJson(jsonPath);
 }
 
+MaterialDatabase::MaterialDatabase(const std::string& jsonPath, UnitScalingConfig scaling)
+    : MaterialDatabase()
+{
+    loadJson(jsonPath, scaling);
+}
+
 void MaterialDatabase::loadJson(const std::string& jsonPath)
+{
+    loadJson(jsonPath, UnitScalingConfig{});
+}
+
+void MaterialDatabase::loadJson(const std::string& jsonPath, UnitScalingConfig scaling)
 {
     std::ifstream ifs(jsonPath);
     if (!ifs.is_open())
@@ -111,7 +136,7 @@ void MaterialDatabase::loadJson(const std::string& jsonPath)
             auto it = db_.find(name);
             if (it != db_.end())
                 base = &it->second;
-            addMaterial(materialFromJson(entry, base));
+            addMaterial(materialFromJson(entry, base, scaling));
         }
     } catch (const std::exception& e) {
         throw std::runtime_error(

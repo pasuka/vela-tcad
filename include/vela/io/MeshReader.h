@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/core/UnitScaling.h"
 #include "vela/mesh/DeviceMesh.h"
 #include <string>
 
@@ -32,6 +33,7 @@ public:
 class JsonMeshReader : public MeshReader {
 public:
     DeviceMesh read(const std::string& filename) override;
+    DeviceMesh read(const std::string& filename, UnitScalingConfig scaling);
 };
 
 } // namespace vela

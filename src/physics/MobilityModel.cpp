@@ -12,10 +12,15 @@ namespace {
 
 void parseCaugheyThomas(const nlohmann::json& json,
                         CaugheyThomasParameters& params,
-                        const char* prefix)
+                        const char* prefix,
+                        UnitScalingConfig scaling)
 {
-    params.muMin = json.value((std::string(prefix) + "_mu_min_m2_V_s").c_str(), params.muMin);
-    params.nRef = json.value((std::string(prefix) + "_nref_m3").c_str(), params.nRef);
+    const std::string muMinKey = std::string(prefix) + "_mu_min_m2_V_s";
+    if (json.contains(muMinKey))
+        params.muMin = scaling.mobilityToSI(json.at(muMinKey).get<Real>());
+    const std::string nRefKey = std::string(prefix) + "_nref_m3";
+    if (json.contains(nRefKey))
+        params.nRef = scaling.concentrationToSI(json.at(nRefKey).get<Real>());
     params.alpha = json.value((std::string(prefix) + "_alpha").c_str(), params.alpha);
 }
 
@@ -155,7 +160,9 @@ MobilityModelConfig mobilityModelConfig(std::string modelName)
     return config;
 }
 
-MobilityModelConfig mobilityModelConfigFromJson(const nlohmann::json& value)
+MobilityModelConfig mobilityModelConfigFromJson(
+    const nlohmann::json& value,
+    UnitScalingConfig scaling)
 {
     if (value.is_null())
         return {};
@@ -167,8 +174,8 @@ MobilityModelConfig mobilityModelConfigFromJson(const nlohmann::json& value)
     MobilityModelConfig config;
     config.model = value.value("model", config.model);
 
-    parseCaugheyThomas(value, config.electronCT, "electron");
-    parseCaugheyThomas(value, config.holeCT, "hole");
+    parseCaugheyThomas(value, config.electronCT, "electron", scaling);
+    parseCaugheyThomas(value, config.holeCT, "hole", scaling);
     parseField(value, config.electronField, "electron");
     parseField(value, config.holeField, "hole");
 
@@ -176,13 +183,19 @@ MobilityModelConfig mobilityModelConfigFromJson(const nlohmann::json& value)
         const auto& surface = value.at("surface");
         if (!surface.is_object())
             throw std::invalid_argument("mobility.surface must be an object.");
-        config.surface.thetaElectron = surface.value(
-            "theta_electron_m_per_V", config.surface.thetaElectron);
-        config.surface.thetaHole = surface.value(
-            "theta_hole_m_per_V", config.surface.thetaHole);
+        if (surface.contains("theta_electron_m_per_V")) {
+            config.surface.thetaElectron = scaling.surfaceFieldCoefficientToSI(
+                surface.at("theta_electron_m_per_V").get<Real>());
+        }
+        if (surface.contains("theta_hole_m_per_V")) {
+            config.surface.thetaHole = scaling.surfaceFieldCoefficientToSI(
+                surface.at("theta_hole_m_per_V").get<Real>());
+        }
         config.surface.beta = surface.value("beta", config.surface.beta);
-        config.surface.referenceField = surface.value(
-            "reference_field_V_per_m", config.surface.referenceField);
+        if (surface.contains("reference_field_V_per_m")) {
+            config.surface.referenceField = scaling.electricFieldToSI(
+                surface.at("reference_field_V_per_m").get<Real>());
+        }
         config.surface.minFactor = surface.value("min_factor", config.surface.minFactor);
         config.surface.maxFactor = surface.value("max_factor", config.surface.maxFactor);
         config.surface.surfaceRegion = surface.value(

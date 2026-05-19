@@ -2,6 +2,7 @@
 
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/core/UnitScaling.h"
 #include "vela/equation/ChargeSpec.h"
 #include "vela/core/Types.h"
 #include "vela/mesh/DeviceMesh.h"
@@ -83,7 +84,9 @@ struct GummelConfig {
  * @param cfg            Iteration settings.
  * @return               Converged (or last) solution.
  */
-GummelConfig gummelConfigFromJson(const nlohmann::json& cfg);
+GummelConfig gummelConfigFromJson(
+    const nlohmann::json& cfg,
+    UnitScalingConfig scaling = {});
 
 DDSolution runGummel(const DeviceMesh&                         mesh,
                      const MaterialDatabase&                    matdb,

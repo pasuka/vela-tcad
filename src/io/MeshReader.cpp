@@ -97,6 +97,11 @@ namespace vela {
 
 DeviceMesh JsonMeshReader::read(const std::string& filename)
 {
+    return read(filename, UnitScalingConfig{});
+}
+
+DeviceMesh JsonMeshReader::read(const std::string& filename, UnitScalingConfig scaling)
+{
     std::ifstream ifs(filename);
     if (!ifs.is_open())
         throw std::runtime_error("Cannot open mesh file: " + filename);
@@ -113,8 +118,8 @@ DeviceMesh JsonMeshReader::read(const std::string& filename)
         for (const auto& jn : j.at("nodes")) {
             Node n;
             n.id = jn.at("id").get<Index>();
-            n.x  = jn.at("x").get<Real>();
-            n.y  = jn.at("y").get<Real>();
+            n.x  = scaling.lengthToSI(jn.at("x").get<Real>());
+            n.y  = scaling.lengthToSI(jn.at("y").get<Real>());
             mesh.addNode(n);
         }
 
