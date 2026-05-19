@@ -20,8 +20,8 @@ TCAD coverage.
 | `examples/nmos2d_mos_dd` | Implicit equilibrium in DD decks on a mixed Si/SiO2 mesh | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg Si/SiO2 MOS DD prototype smoke sweeps | `simulation_cv.json` multi-terminal quasi-static MOS CV prototype | `simulation_bv.json` off-state drain high-field diagnostic smoke sweep |
 | `examples/pmos2d_dd` | Implicit equilibrium in DD decks | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg | `simulation_cv.json` gate/body quasi-static CV | Not yet |
 | `examples/pmos2d_mos_dd` | Implicit equilibrium in DD decks on a mixed Si/SiO2 mesh | `simulation_iv.json` negative-bias Id-Vd and `simulation_idvg.json` negative-gate Id-Vg Si/SiO2 MOS DD prototype smoke sweeps | `simulation_cv.json` multi-terminal quasi-static MOS CV prototype | `simulation_bv.json` off-state negative-drain high-field diagnostic smoke sweep |
-| `examples/ldmos2d` | `simulation_iv.json` remains a reverse-biased Poisson field-distribution deck on the mixed Si/SiO2 mesh | `simulation_dd_iv.json` low-voltage on-state Id-Vd prototype smoke sweep | Not yet | `simulation_bv.json` baseline off-state diagnostics and `simulation_bv_fieldplate.json` RESURF/field-plate trend smoke |
-| `examples/igbt2d` | `simulation_poisson.json` PNPN/drift off-state baseline | `simulation_iv.json` low-current collector DD prototype and `simulation_high_injection_iv.json` high-injection IV prototype smoke deck (trend/finite regression only) | `simulation_charge_cv.json` quasi-static gate/collector/emitter charge + stored-charge proxy smoke deck | `simulation_bv.json` off-state collector reverse-bias diagnostics prototype, plus `simulation_bv_ii.json` Selberherr impact-ionization smoke variant |
+| `examples/ldmos2d` | `simulation_iv.json` remains a reverse-biased Poisson field-distribution deck on the mixed Si/SiO2 mesh | `simulation_dd_iv.json` low-voltage on-state Id-Vd prototype smoke sweep (**prototype / not calibrated**) | Not yet | `simulation_bv.json` baseline off-state diagnostics (**prototype / not calibrated**) and `simulation_bv_fieldplate.json` RESURF/field-plate trend variant (**prototype / not calibrated**) |
+| `examples/igbt2d` | `simulation_poisson.json` PNPN/drift off-state baseline | `simulation_iv.json` low-current collector DD prototype and `simulation_high_injection_iv.json` high-injection IV prototype smoke deck (**prototype / not calibrated**) | `simulation_charge_cv.json` quasi-static gate/collector/emitter charge + stored-charge proxy smoke deck (**prototype / not calibrated**) | `simulation_bv.json` off-state collector reverse-bias diagnostics prototype and `simulation_bv_ii.json` impact-ionization smoke variant (**prototype / not calibrated**) |
 | `examples/moscap` | `simulation.json` Si/SiO2 Poisson interface check | Not applicable | Not yet | Not applicable |
 | `examples/nmos2d` | `simulation.json` legacy simplified NMOS Poisson check | Not yet | Not yet | Not yet |
 | `examples/schottky_diode_2d` | Implicit equilibrium in DD deck | `simulation_iv.json` prototype Schottky-anode IV smoke (M1.3, not a calibrated Schottky model) | Not yet | Not yet |
@@ -37,7 +37,7 @@ trend checks;
 IGBT now includes low-current plus high-injection IV prototype smoke decks with recombination/lifetime controls and trend checks; this remains an engineering prototype and is not a calibrated IGBT or calibrated on-state voltage model.
 The `examples/ldmos2d/simulation_bv.json` and
 `examples/ldmos2d/simulation_bv_fieldplate.json` pair form a coarse
-RESURF/field-plate **trend smoke**: the variant extends the gate field-plate
+RESURF/field-plate **trend smoke** (prototype / not calibrated): the variant extends the gate field-plate
 overlap and lightens drift doping to compare 2-D peak-field tendencies
 (`max_electric_field_V_per_m`) and final drain current under the same BV sweep.
 This is intentionally a loose regression guard for field-distribution
