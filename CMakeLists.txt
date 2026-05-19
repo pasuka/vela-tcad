@@ -54,6 +54,7 @@ add_library(vela_core STATIC
     src/post/ContactCurrent.cpp
     src/post/ElectricFieldDiagnostics.cpp
     src/post/TerminalCharge.cpp
+    src/post/StoredCharge.cpp
     src/solver/NewtonSolver.cpp
     src/equation/CoupledDDAssembler.cpp
     src/numerics/ResidualNorm.cpp
@@ -200,6 +201,8 @@ add_executable(test_dc_sweep tests/test_dc_sweep.cpp)
 target_link_libraries(test_dc_sweep PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_solution_validation tests/test_solution_validation.cpp)
+add_executable(test_stored_charge tests/test_stored_charge.cpp)
+target_link_libraries(test_stored_charge PRIVATE vela_core Catch2::Catch2WithMain)
 target_link_libraries(test_solution_validation PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_electric_field_diagnostics tests/test_electric_field_diagnostics.cpp)
@@ -247,6 +250,7 @@ catch_discover_tests(test_line_search_backtrack_failure)
 catch_discover_tests(test_dc_sweep)
 add_test(NAME dc_sweep COMMAND test_dc_sweep [dc_sweep])
 catch_discover_tests(test_solution_validation)
+catch_discover_tests(test_stored_charge)
 catch_discover_tests(test_electric_field_diagnostics)
 add_test(NAME electric_field_diagnostics COMMAND test_electric_field_diagnostics [electric_field])
 catch_discover_tests(test_boundary_conditions)

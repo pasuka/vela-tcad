@@ -21,7 +21,7 @@ TCAD coverage.
 | `examples/pmos2d_dd` | Implicit equilibrium in DD decks | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg | `simulation_cv.json` gate/body quasi-static CV | Not yet |
 | `examples/pmos2d_mos_dd` | Implicit equilibrium in DD decks on a mixed Si/SiO2 mesh | `simulation_iv.json` negative-bias Id-Vd and `simulation_idvg.json` negative-gate Id-Vg Si/SiO2 MOS DD prototype smoke sweeps | `simulation_cv.json` multi-terminal quasi-static MOS CV prototype | `simulation_bv.json` off-state negative-drain high-field diagnostic smoke sweep |
 | `examples/ldmos2d` | `simulation_iv.json` remains a reverse-biased Poisson field-distribution deck on the mixed Si/SiO2 mesh | `simulation_dd_iv.json` low-voltage on-state Id-Vd prototype smoke sweep | Not yet | `simulation_bv.json` baseline off-state diagnostics and `simulation_bv_fieldplate.json` RESURF/field-plate trend smoke |
-| `examples/igbt2d` | `simulation_poisson.json` PNPN/drift off-state baseline | `simulation_iv.json` low-current collector DD prototype | Not yet | Not yet |
+| `examples/igbt2d` | `simulation_poisson.json` PNPN/drift off-state baseline | `simulation_iv.json` low-current collector DD prototype and `simulation_high_injection_iv.json` high-injection IV prototype smoke deck (trend/finite regression only) | Not yet | Not yet |
 | `examples/moscap` | `simulation.json` Si/SiO2 Poisson interface check | Not applicable | Not yet | Not applicable |
 | `examples/nmos2d` | `simulation.json` legacy simplified NMOS Poisson check | Not yet | Not yet | Not yet |
 | `examples/schottky_diode_2d` | Implicit equilibrium in DD deck | `simulation_iv.json` prototype Schottky-anode IV smoke (M1.3, not a calibrated Schottky model) | Not yet | Not yet |
@@ -34,8 +34,7 @@ regression coverage for finite convergence and current trend only; it is not a
 calibrated LDMOS model and does not claim calibrated breakdown-voltage
 coverage. The LDMOS BV decks are limited to executable off-state diagnostics and
 trend checks;
-IGBT high-injection, recombination, lifetime-control, and on-voltage regression
-decks are not claimed until they have executable regression coverage.
+IGBT now includes low-current plus high-injection IV prototype smoke decks with recombination/lifetime controls and trend checks; this remains an engineering prototype and is not a calibrated IGBT or calibrated on-state voltage model.
 The `examples/ldmos2d/simulation_bv.json` and
 `examples/ldmos2d/simulation_bv_fieldplate.json` pair form a coarse
 RESURF/field-plate **trend smoke**: the variant extends the gate field-plate

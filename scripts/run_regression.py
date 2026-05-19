@@ -217,6 +217,15 @@ EXAMPLES = [
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
     },
     {
+        "name": "igbt2d_high_injection_iv",
+        "source": "igbt2d",
+        "config": Path("examples/igbt2d/simulation_high_injection_iv.json"),
+        "expected": [Path("outputs/igbt2d_high_injection_iv.csv")],
+        "expected_sweep_vtk": True,
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression",
+                   "igbt_high_injection_trend"],
+    },
+    {
         "name": "schottky_diode_2d_iv",
         "source": "schottky_diode_2d",
         "config": Path("examples/schottky_diode_2d/simulation_iv.json"),
@@ -981,6 +990,31 @@ def check_ldmos_iv_trend(example_dir: Path) -> dict[str, Any]:
     }
 
 
+def check_igbt_high_injection_trend(example_dir: Path) -> dict[str, Any]:
+    cfg = json.loads((example_dir / "simulation.json").read_text())
+    rows = read_csv(output_csv_path(example_dir, cfg))
+    if not rows:
+        raise AssertionError("IGBT high-injection IV CSV contains no rows")
+
+    currents = [abs(parse_finite_float(r, "current_total", "IGBT high-injection IV", i + 1))
+                for i, r in enumerate(rows)]
+    stored = [parse_finite_float(r, "stored_charge_C_per_m", "IGBT high-injection IV", i + 1)
+              for i, r in enumerate(rows)]
+    assert_monotone_non_decreasing(currents, "IGBT |collector current|",
+                                   abs_tolerance=1e-20, rel_tolerance=1e-8)
+    for value in stored:
+        if value < -1.0e-24:
+            raise AssertionError(f"IGBT stored charge must be non-negative: {stored}")
+    if currents[-1] <= currents[0]:
+        raise AssertionError(f"IGBT final current must exceed initial current: {currents}")
+
+    return {
+        "initial_current_abs": currents[0],
+        "final_current_abs": currents[-1],
+        "stored_charge": stored,
+    }
+
+
 def check_ldmos_fieldplate_trend(example_dir: Path, runner: Path) -> dict[str, Any]:
     cfg = json.loads((example_dir / "simulation.json").read_text())
     reg = cfg.get("regression", {}).get("ldmos_fieldplate_trend", {})
@@ -1233,6 +1267,8 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
             result["checks"]["ldmos_iv_trend"] = check_ldmos_iv_trend(example_dir)
         if "ldmos_fieldplate_trend" in spec["checks"]:
             result["checks"]["ldmos_fieldplate_trend"] = check_ldmos_fieldplate_trend(example_dir, runner)
+        if "igbt_high_injection_trend" in spec["checks"]:
+            result["checks"]["igbt_high_injection_trend"] = check_igbt_high_injection_trend(example_dir)
         result["passed"] = True
 
     except Exception as ex:  # noqa: BLE001 - regression summary should capture all failures.
