@@ -333,6 +333,19 @@ Legacy aliases still accepted:
 - charge_per_meter
 - charge_depth_m
 
+
+impact_ionization (optional BV source prototype):
+- `impact_ionization` is an optional object under `sweep` for `mode: "bv_reverse"`.
+- Fields:
+  - `model`: `none` (default) or `selberherr`.
+  - `a_n_per_m`, `b_n_V_per_m`: electron Selberherr coefficients.
+  - `a_p_per_m`, `b_p_V_per_m`: hole Selberherr coefficients.
+  - `min_field_V_per_m`: floor below which generation is forced to zero.
+  - `max_generation_rate_per_m3s`: optional clamp for smoke-level stability.
+- The current implementation is an engineering prototype used by BV trend
+  decks (for example IGBT `simulation_bv_ii.json`); coefficients are not
+  process-calibrated by default.
+
 breakdown (for BV reverse):
 - breakdown.max_electric_field_V_per_m
 - breakdown.current_jump_ratio
@@ -497,3 +510,30 @@ DC sweep with Gummel:
   }
 }
 ```
+
+
+## power-device regression block examples
+
+LDMOS/IGBT decks can combine `regression.dc_sweep` with device-specific trend
+blocks while staying explicitly prototype-level:
+
+```json
+"regression": {
+  "dc_sweep": {
+    "expected_rows": 7,
+    "min_converged_rows": 6,
+    "require_monotone_abs_current": true,
+    "require_monotone_max_field": true
+  },
+  "ldmos_fieldplate_trend": {
+    "baseline_config": "simulation_bv.json",
+    "max_field_ratio_limit": 1.20
+  },
+  "igbt_charge_cv": {
+    "require_stored_charge_monotone": true
+  }
+}
+```
+
+These checks are trend validation guards (finite outputs + directional checks),
+not calibrated silicon sign-off criteria.

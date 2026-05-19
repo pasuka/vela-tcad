@@ -752,6 +752,11 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
                 f"{example}: field=nonzero_Cgg_rows actual={nonzero_cgg_rows} "
                 f"expected_at_least={min_nonzero_cgg_rows}")
 
+    stored_charge_final = None
+    stored_charge_key = "stored_charge_C_per_m" if rows and "stored_charge_C_per_m" in rows[-1] else ("stored_charge_C" if rows and "stored_charge_C" in rows[-1] else None)
+    if stored_charge_key is not None:
+        stored_charge_final = parse_finite_float(rows[-1], stored_charge_key, f"{example}: stored charge", len(rows))
+
     result = {
         "rows": len(rows),
         "converged_rows": converged_rows,
@@ -771,6 +776,9 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
         result["breakdown_detected"] = breakdown_detected
         result["max_electric_field_V_per_m"] = [field for _, field in max_fields]
         result["max_field_trend_checked"] = max_field_trend_checked
+    if stored_charge_final is not None:
+        result["stored_charge_final"] = stored_charge_final
+
     if mode == "cv_quasistatic":
         result["nonzero_capacitance_rows"] = nonzero_capacitance_rows
         result["multi_terminal_cv_columns"] = [
@@ -1190,6 +1198,7 @@ def check_ldmos_fieldplate_trend(example_dir: Path, runner: Path) -> dict[str, A
             f"variant={variant_max_field}, baseline={baseline_max_field}")
 
     return {
+        "fieldplate_variant_name": cfg.get("name", example_dir.name),
         "variant_max_electric_field_seen": variant_max_field,
         "baseline_max_electric_field_seen": baseline_max_field,
         "max_field_ratio": ratio,

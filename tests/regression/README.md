@@ -82,6 +82,10 @@ For every example with the `dc_sweep_regression` check, the summary includes:
   and checked.
 - `max_electric_field_seen`, `breakdown_detected`, and
   `max_field_trend_checked`: BV-only electric-field and breakdown diagnostics.
+- `stored_charge_final`: final-row `stored_charge_C_per_m` (or `stored_charge_C`)
+  when the sweep outputs stored-charge diagnostics.
+- `fieldplate_variant_name`: present on the LDMOS field-plate trend check to
+  tag the compared variant deck in a human-readable way.
 - `nonzero_capacitance_rows`: CV-only count of non-zero differential
   capacitance rows after the initial bias point.
 

@@ -37,6 +37,7 @@ optional Python API through pybind11.
 | `DCSweep` - bias sweep with CSV/VTK outputs | done |
 | Optional pybind11 Python API | done |
 | Unit and regression tests | done |
+| Power-device prototype examples (LDMOS/IGBT IV/CV/BV/stored-charge trend decks) | done (prototype / not calibrated) |
 
 ---
 
