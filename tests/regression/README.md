@@ -34,13 +34,19 @@ the runner is invoked. Supported stability fields include:
 - `allow_nonconverged_final_bv_point`: for BV sweeps only, allows the final row
   to be non-converged so a last-stable-before-nonconvergence breakdown row can
   be reported while earlier rows remain strict.
+  When enabled, the final row must still carry parseable BV diagnostic columns,
+  and `breakdown_detected=1` rows with the `last_stable_before_nonconvergence`
+  criterion must provide finite `last_stable_bias`, `failed_bias`, and a
+  non-empty `failure_reason`.
 - `require_monotone_abs_current`: requires `abs(current_total)` to be
   non-decreasing across converged rows. Optional tolerances are
   `current_monotone_abs_tolerance` and `current_monotone_rel_tolerance`.
 - `require_monotone_max_field`: for BV sweeps, requires
   `max_electric_field_V_per_m` to be non-decreasing across converged rows.
   Optional tolerances are `max_field_monotone_abs_tolerance` and
-  `max_field_monotone_rel_tolerance`.
+  `max_field_monotone_rel_tolerance`. This field is the solver's edge-difference
+  electric-field diagnostic; example thresholds are smoke/regression bounds, not
+  calibrated breakdown limits.
 - `min_max_electric_field_V_per_m` / `max_max_electric_field_V_per_m`: lower and
   upper bounds for BV `max_electric_field_V_per_m` on converged rows.
 - `allow_zero_capacitance`, `expected_zero_capacitance_rows`, and
@@ -49,6 +55,16 @@ the runner is invoked. Supported stability fields include:
 Regression failures include the example name, CSV row index where applicable,
 field name, and actual value so threshold regressions can be traced directly to
 the failing deck row.
+
+## LDMOS BV diagnostic regression
+
+The `ldmos2d_bv` example uses the shared `bv_reverse` schema for an off-state
+LDMOS drain sweep. Its regression entry runs `finite_outputs` and
+`dc_sweep_regression`, writes sweep VTK snapshots, and requires monotone
+non-decreasing `max_electric_field_V_per_m` across converged rows. The deck uses
+`impact_ionization.model = "none"` as a stable Milestone-3 baseline; Selberherr
+impact-ionization LDMOS BV calibration is intentionally left for a later
+milestone once convergence and model calibration are mature.
 
 ## `regression_summary.json` DC sweep fields
 

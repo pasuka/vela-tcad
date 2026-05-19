@@ -344,40 +344,65 @@ build/vela_example_runner --config examples/pmos2d_dd/simulation_cv.json
 
 ## LDMOS (`examples/ldmos2d`)
 
-**Physical meaning.** A coarse lateral DMOS-like Poisson-only deck covers a
+**Physical meaning.** A coarse lateral DMOS-like mixed Si/SiO2 mesh covers a
 p-body / n-drift lateral junction with n+ source/drain regions and a field-oxide
-slab. It is intended to catch Poisson assembly and material-interface
-regressions under a small reverse drain bias before a full LDMOS
-drift-diffusion model is introduced.
+slab. The Poisson deck catches material-interface regressions under a small
+reverse drain bias. The drift-diffusion decks are engineering smoke/prototype
+cases for off-state diagnostics and low-bias current continuity; they are not
+calibrated LDMOS performance models.
 
-**Current support level.** Poisson-only. On-state IV and BV are planned but not
-represented by executable decks yet.
+**Current support level.** Poisson baseline, low-bias DD-IV smoke sweep, and an
+off-state drain reverse-bias BV diagnostic prototype. The BV deck reports
+breakdown-oriented diagnostics from the generic `bv_reverse` DC sweep mode, but
+`breakdown_voltage` is only the first configured diagnostic crossing (or
+last-stable-before-nonconvergence marker) and must not be interpreted as a
+calibrated avalanche breakdown prediction.
 
-**Contact schema note.** LDMOS Poisson decks remain compatible with omitted
-`contacts[].type`; explicit `ohmic` / `metal_gate` typing is supported by the
-shared parser.
+**Contact schema note.** LDMOS decks use explicit `ohmic` source/body/drain
+contacts and a `metal_gate` contact. In the BV prototype, source/body/gate are
+held at 0 V and the drain is swept on the positive high-voltage/off-state side,
+which stays on one reverse-bias polarity side for `bv_reverse`.
 
 **Inputs.**
 
 - `mesh.json`: p-body/drift silicon, n+ source, n drain/drift, field oxide, and
   body/source/gate/drain contacts.
-- `simulation_iv.json`: currently a reverse-biased Poisson field-distribution
-  deck; the filename is retained so every device directory has a stable IV deck
-  slot, but this file does not claim DD-IV support.
+- `simulation_iv.json`: reverse-biased Poisson field-distribution deck; the
+  filename is retained so every device directory has a stable IV deck slot, but
+  this file itself is not the DD-IV sweep.
+- `simulation_dd_iv.json`: low-bias drain DD-IV smoke sweep with Gummel.
+- `simulation_bv.json`: LDMOS off-state drain `bv_reverse` sweep with
+  source/body/gate at 0 V, `impact_ionization.model: "none"`, sweep VTK output,
+  and BV diagnostic CSV columns: `max_electric_field_V_per_m`,
+  `current_jump_ratio`, `breakdown_detected`, `breakdown_voltage`, `criterion`,
+  `last_stable_bias`, `failed_bias`, and `failure_reason`. The max-field value
+  is the edge-difference diagnostic (`max(|delta psi| / edge length)`) from the
+  mesh potential, not a calibrated high-order electric-field reconstruction or
+  calibrated BV threshold.
 
 **Run directly.**
 
 ```bash
 mkdir -p examples/ldmos2d/outputs
 build/vela_example_runner --config examples/ldmos2d/simulation_iv.json
+build/vela_example_runner --config examples/ldmos2d/simulation_dd_iv.json
+build/vela_example_runner --config examples/ldmos2d/simulation_bv.json
 ```
 
 **Outputs and acceptance metrics.**
 
 - `examples/ldmos2d/outputs/ldmos2d_reverse_poisson.vtk`: electrostatic
   potential and net doping across silicon and field oxide.
-- Regression requires the VTK file to exist, be nonempty, and contain no
-  NaN/Inf tokens.
+- `examples/ldmos2d/outputs/ldmos2d_dd_iv.csv` and
+  `examples/ldmos2d/outputs/ldmos2d_dd_iv_sweep_*.vtk`: finite low-bias DD-IV
+  current rows with monotone absolute drain-current trend.
+- `examples/ldmos2d/outputs/ldmos2d_bv.csv` and
+  `examples/ldmos2d/outputs/ldmos2d_bv_sweep_*.vtk`: finite off-state BV
+  diagnostic rows. Regression requires the BV schema to be present,
+  `max_electric_field_V_per_m` to be finite and non-decreasing across converged
+  rows, and any allowed final non-converged BV row to report valid
+  last-stable/failed-bias diagnostics.
+
 
 ## IGBT (`examples/igbt2d`)
 
