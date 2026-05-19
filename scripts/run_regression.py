@@ -1050,13 +1050,22 @@ def check_igbt_charge_cv(example_dir: Path) -> dict[str, Any]:
     gate_q = [parse_finite_float(r, "charge_gate_C_per_m", "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
     coll_q = [parse_finite_float(r, "charge_collector_C_per_m", "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
     cv_cols = ["capacitance_Cgate_gate_F_per_m", "capacitance_Cgate_collector_F_per_m", "capacitance_Cgate_emitter_F_per_m"]
+    nonzero_counts: dict[str, int] = {col: 0 for col in cv_cols}
     for col in cv_cols:
-        _ = [parse_finite_float(r, col, "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
+        for i, row in enumerate(rows):
+            value = parse_finite_float(row, col, "IGBT charge/CV", i + 1)
+            if i > 0 and abs(value) > 0.0:
+                nonzero_counts[col] += 1
     for value in stored:
         if value < -1.0e-24:
             raise AssertionError(f"IGBT stored charge must be non-negative: {stored}")
 
-    return {"stored_charge": stored, "gate_charge": gate_q, "collector_charge": coll_q}
+    return {
+        "stored_charge": stored,
+        "gate_charge": gate_q,
+        "collector_charge": coll_q,
+        "nonzero_capacitance_rows": nonzero_counts,
+    }
 
 def check_igbt_bv_trend(example_dir: Path, runner: Path) -> dict[str, Any]:
     cfg_path = example_dir / "simulation.json"
