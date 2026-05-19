@@ -7,6 +7,7 @@
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/MobilityModel.h"
 #include "vela/solver/GummelSolver.h"
+#include "vela/equation/DDAssembler.h" // for DDScalingSpec
 #include <string>
 #include <vector>
 
@@ -18,13 +19,17 @@ struct ContactCurrentResult {
     Real totalCurrent = 0.0;
 };
 
+
+#include "vela/equation/DDAssembler.h"
+
 class ContactCurrent {
 public:
     ContactCurrent(const DeviceMesh& mesh,
                    const MaterialDatabase& matdb,
                    const DopingModel& doping,
                    MobilityModelConfig mobilityConfig = {},
-                   Real temperature_K = constants::T0);
+                   Real temperature_K = constants::T0,
+                   DDScalingSpec scaling = {});
 
     ContactCurrentResult compute(const DDSolution& solution,
                                  const std::string& contactName) const;
@@ -35,7 +40,8 @@ public:
                                         const DDSolution& solution,
                                         const std::string& contactName,
                                         const MobilityModelConfig& mobilityConfig = {},
-                                        Real temperature_K = constants::T0);
+                                        Real temperature_K = constants::T0,
+                                        DDScalingSpec scaling = {});
 
 private:
     const DeviceMesh& mesh_;
@@ -45,6 +51,7 @@ private:
     MobilityModelConfig mobilityConfig_;
     std::unique_ptr<MobilityModel> mobility_;
     Real thermalVoltage_;
+    DDScalingSpec scaling_;
 };
 
 } // namespace vela

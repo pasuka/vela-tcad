@@ -201,6 +201,28 @@ std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& c
     return rows;
 }
 
+void convertMeshToMicrometersInPlace(const std::filesystem::path& meshPath)
+{
+    std::ifstream input(meshPath);
+    nlohmann::json mesh;
+    input >> mesh;
+    for (auto& node : mesh["nodes"]) {
+        node["x"] = node.at("x").get<Real>() * 1.0e6;
+        node["y"] = node.at("y").get<Real>() * 1.0e6;
+    }
+    std::ofstream(meshPath) << mesh.dump(2);
+}
+
+void convertDopingToCm3InPlace(nlohmann::json& cfg)
+{
+    for (auto& region : cfg["doping"]) {
+        region["donors"] = region.at("donors").get<Real>() / 1.0e6;
+        region["acceptors"] = region.at("acceptors").get<Real>() / 1.0e6;
+        if (region.contains("fixed_charge_m3"))
+            region["fixed_charge_m3"] = region.at("fixed_charge_m3").get<Real>() / 1.0e6;
+    }
+}
+
 std::size_t csvColumnIndex(const std::vector<std::string>& header,
                            const std::string& column)
 {
@@ -373,6 +395,81 @@ TEST_CASE("DCSweep: unit_scaling CSV appends per-micron currents and V-per-cm fi
                 Catch::Approx(csvReal(row, currentHole) / 1.0e6).epsilon(1.0e-12));
         REQUIRE(csvReal(row, maxFieldCm) ==
                 Catch::Approx(csvReal(row, maxField) / 100.0).epsilon(1.0e-12));
+    }
+}
+
+TEST_CASE("DCSweep: PN forward IV unit_scaling remains physically equivalent to legacy SI",
+          "[dc_sweep][scaling][dd_gummel]")
+{
+    const auto legacyDir = makeUniqueSweepDir();
+    const auto scaledDir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanupLegacy{legacyDir};
+    const ScopedDirectoryCleanup cleanupScaled{scaledDir};
+    std::filesystem::create_directories(legacyDir);
+    std::filesystem::create_directories(scaledDir);
+
+    const auto legacyMesh = writePNMesh(legacyDir);
+    const auto scaledMesh = writePNMeshMicrometers(scaledDir);
+    const auto legacyCsv = legacyDir / "iv_legacy.csv";
+    const auto scaledCsv = scaledDir / "iv_unit_scaling.csv";
+    const auto legacyCfg = writeSweepConfig(legacyDir, legacyMesh, legacyCsv, {
+        {"start", 0.0}, {"stop", 0.5}, {"step", 0.25}, {"write_vtk", false}
+    });
+    const auto scaledCfg = writeUnitScalingSweepConfig(scaledDir, scaledMesh, scaledCsv, {
+        {"start", 0.0}, {"stop", 0.5}, {"step", 0.25}, {"write_vtk", false}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult legacy = sweep.runWithResult(legacyCfg.string());
+    const DCSweepResult scaled = sweep.runWithResult(scaledCfg.string());
+
+    REQUIRE(legacy.points.size() == scaled.points.size());
+    REQUIRE_FALSE(legacy.points.empty());
+    for (std::size_t i = 0; i < legacy.points.size(); ++i) {
+        REQUIRE(legacy.points[i].converged);
+        REQUIRE(scaled.points[i].converged);
+        REQUIRE(std::abs(scaled.points[i].totalCurrent)
+                == Catch::Approx(std::abs(legacy.points[i].totalCurrent)).epsilon(5.0e-2));
+    }
+
+    const Real legacyEnd = std::abs(legacy.points.back().totalCurrent);
+    const Real scaledEnd = std::abs(scaled.points.back().totalCurrent);
+    REQUIRE(scaledEnd == Catch::Approx(legacyEnd).epsilon(5.0e-2));
+}
+
+TEST_CASE("DCSweep: NMOS and PMOS unit_scaling low-bias smoke sweeps converge",
+          "[dc_sweep][scaling][dd_gummel]")
+{
+    const std::vector<std::string> devices = {"nmos2d_dd", "pmos2d_dd"};
+
+    for (const std::string& device : devices) {
+        INFO(device);
+        const auto dir = makeUniqueSweepDir();
+        const ScopedDirectoryCleanup cleanup{dir};
+        const std::filesystem::path src = std::filesystem::path(VELA_SOURCE_DIR) / "examples" / device;
+        std::filesystem::copy(src, dir, std::filesystem::copy_options::recursive);
+        std::filesystem::create_directories(dir / "outputs");
+
+        const auto meshPath = dir / "mesh.json";
+        const auto cfgPath = dir / "simulation_iv.json";
+        convertMeshToMicrometersInPlace(meshPath);
+
+        std::ifstream cfgIn(cfgPath);
+        nlohmann::json cfg;
+        cfgIn >> cfg;
+        cfg["scaling"] = { {"mode", "unit_scaling"} };
+        convertDopingToCm3InPlace(cfg);
+        cfg["sweep"]["write_vtk"] = false;
+        cfg["output_csv"] = (dir / "outputs" / (device + "_unit_scaling_iv.csv")).string();
+        std::ofstream(cfgPath) << cfg.dump(2);
+
+        DCSweep sweep;
+        const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+        REQUIRE_FALSE(result.points.empty());
+        for (const DCSweepPoint& point : result.points) {
+            REQUIRE(point.converged);
+            REQUIRE(std::isfinite(point.totalCurrent));
+        }
     }
 }
 

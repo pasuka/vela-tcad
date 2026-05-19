@@ -1,5 +1,6 @@
 #include "vela/simulation/DCSweep.h"
 #include "vela/boundary/BoundaryCondition.h"
+#include "vela/core/UnitScalingSystem.h"
 #include "vela/simulation/DCSweepStepControl.h"
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/io/CSVWriter.h"
@@ -345,6 +346,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     nlohmann::json cfg;
     ifs >> cfg;
     const UnitScalingConfig scaling = parseUnitScalingConfig(cfg);
+    const UnitScalingReferenceConfig scalingRefs = parseUnitScalingReferenceConfig(cfg);
 
     const std::filesystem::path cfgDir = std::filesystem::path(configFile).parent_path();
     auto resolve = [&](const std::string& path) {
@@ -380,12 +382,31 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         mobilityConfig = newton.mobility;
     } else {
         gummel = gummelConfigFromJson(solverCfg, scaling);
+        gummel.unitScalingRefs = scalingRefs;
         mobilityConfig = gummel.mobility;
     }
     const Real temperature_K = (solverMethod == SolverMethod::Newton)
         ? newton.temperature_K
         : gummel.temperature_K;
-    ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K);
+    // 构造DDScalingSpec
+    DDScalingSpec ddScaling;
+    if (sweep.scaling.isUnitScaling()) {
+        // 需要从UnitScalingSystem推导DDScalingSpec
+        UnitScalingSystem sc = UnitScalingSystem::fromInputs(
+            temperature_K,
+            (11.7 * vela::constants::eps0),
+            UnitScalingSystem::autoInputsFrom(mesh, doping, matdb, 1e10),
+            UnitScalingReferenceConfig{}
+        );
+        ddScaling.enabled = true;
+        ddScaling.V0 = sc.V0();
+        ddScaling.C0 = sc.C0();
+        ddScaling.mu0 = sc.mu0();
+        ddScaling.D0 = sc.D0();
+        ddScaling.L0 = sc.L0();
+        ddScaling.permittivityReference_F_per_m = (11.7 * vela::constants::eps0);
+    }
+    ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K, ddScaling);
     TerminalCharge terminalCharge(mesh, doping);
     StoredCharge storedCharge(mesh);
     const bool hasMultiTerminalCharges = cfg.at("sweep").contains("terminal_charges");

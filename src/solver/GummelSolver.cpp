@@ -1,11 +1,13 @@
 #include "vela/solver/GummelSolver.h"
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/DDAssembler.h"
 #include "vela/solver/LinearSolver.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/io/VTKWriter.h"
 #include <nlohmann/json.hpp>
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <limits>
@@ -74,12 +76,25 @@ std::vector<double> buildNiVector(const DeviceMesh&       mesh,
     return ni_v;
 }
 
+Real maxRelativePermittivityAcrossRegions(const DeviceMesh& mesh,
+                                          const MaterialDatabase& matdb,
+                                          Real temperature_K)
+{
+    Real maxEpsr = 0.0;
+    for (const Region& region : mesh.regions()) {
+        const Material& material = matdb.getMaterial(region.material, temperature_K);
+        maxEpsr = std::max(maxEpsr, material.eps_r);
+    }
+    return std::max(maxEpsr, 1.0);
+}
+
 } // anonymous namespace
 
 
 GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig scaling)
 {
     GummelConfig cfg;
+    cfg.inputScaling = scaling;
     cfg.maxIter = json.value("max_iter", cfg.maxIter);
     cfg.reltol = json.value("reltol", cfg.reltol);
     cfg.abstol = json.value("abstol", cfg.abstol);
@@ -182,6 +197,25 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     for (Index i = 0; i < N; ++i) {
         const double deltaEg = bgn->deltaEg(doping.netDoping(i), 0.0, 0.0);
         ni_v[i] = effectiveIntrinsicDensity(ni_v[i], Vt, deltaEg);
+    }
+
+    const bool useScaledUnknowns = cfg.inputScaling.isUnitScaling();
+    DDScalingSpec ddScaling;
+    if (useScaledUnknowns) {
+        const Real epsRef = constants::eps0 *
+            maxRelativePermittivityAcrossRegions(mesh, matdb, cfg.temperature_K);
+        const Real niFloor = std::max(*std::max_element(ni_v.begin(), ni_v.end()), 1.0);
+        const UnitScalingSystem::AutoInputs autoInputs = UnitScalingSystem::autoInputsFrom(
+            mesh, doping, matdb, niFloor);
+        const UnitScalingSystem scalingSystem = UnitScalingSystem::fromInputs(
+            cfg.temperature_K, epsRef, autoInputs, cfg.unitScalingRefs);
+
+        ddScaling.enabled = true;
+        ddScaling.V0 = scalingSystem.V0();
+        ddScaling.C0 = scalingSystem.C0();
+        ddScaling.mu0 = scalingSystem.mu0();
+        ddScaling.D0 = scalingSystem.D0();
+        ddScaling.permittivityReference_F_per_m = epsRef;
     }
 
     // Look up a contact-region material for Schottky barrier helpers.
@@ -287,6 +321,29 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         }
     }
 
+    const auto scalePotential = [&](Real value) {
+        return useScaledUnknowns ? (value / ddScaling.V0) : value;
+    };
+    const auto scaleCarrier = [&](Real value) {
+        return useScaledUnknowns ? (value / ddScaling.C0) : value;
+    };
+
+    std::unordered_map<Index, Real> psiBCSolve;
+    std::unordered_map<Index, Real> nBCSolve;
+    std::unordered_map<Index, Real> pBCSolve;
+    std::unordered_map<Index, Real> phinBCSolve;
+    std::unordered_map<Index, Real> phipBCSolve;
+    psiBCSolve.reserve(psiBC.size());
+    nBCSolve.reserve(nBC.size());
+    pBCSolve.reserve(pBC.size());
+    phinBCSolve.reserve(phinBC.size());
+    phipBCSolve.reserve(phipBC.size());
+    for (const auto& [nid, val] : psiBC) psiBCSolve[nid] = scalePotential(val);
+    for (const auto& [nid, val] : nBC) nBCSolve[nid] = scaleCarrier(val);
+    for (const auto& [nid, val] : pBC) pBCSolve[nid] = scaleCarrier(val);
+    for (const auto& [nid, val] : phinBC) phinBCSolve[nid] = scalePotential(val);
+    for (const auto& [nid, val] : phipBC) phipBCSolve[nid] = scalePotential(val);
+
 
     // ------------------------------------------------------------------
     // Initial guess: solve linear Poisson (no carriers) for psi
@@ -304,7 +361,8 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         cfg.bandgapNarrowing,
         cfg.impactIonization,
         fixedCharges,
-        sheetCharges);
+        sheetCharges,
+        ddScaling);
 
     VectorXd psi_init  = VectorXd::Zero(static_cast<int>(N));
     VectorXd n_init    = VectorXd::Zero(static_cast<int>(N));
@@ -320,14 +378,22 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         initialGuess->p.size() == static_cast<int>(N);
 
     if (useInitialGuess) {
-        psi_init = initialGuess->psi;
-        phin = initialGuess->phin;
-        phip = initialGuess->phip;
-        n_init = initialGuess->n;
-        p_init = initialGuess->p;
+        if (useScaledUnknowns) {
+            psi_init = initialGuess->psi / ddScaling.V0;
+            phin = initialGuess->phin / ddScaling.V0;
+            phip = initialGuess->phip / ddScaling.V0;
+            n_init = initialGuess->n / ddScaling.C0;
+            p_init = initialGuess->p / ddScaling.C0;
+        } else {
+            psi_init = initialGuess->psi;
+            phin = initialGuess->phin;
+            phip = initialGuess->phip;
+            n_init = initialGuess->n;
+            p_init = initialGuess->p;
+        }
     } else {
         // Override contact nodes before solving an initial Poisson problem.
-        for (const auto& [nid, val] : psiBC)
+        for (const auto& [nid, val] : psiBCSolve)
             psi_init(static_cast<int>(nid)) = val;
 
         // Solve initial Poisson (no free carriers)
@@ -335,29 +401,34 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
             VectorXd n_zero = VectorXd::Zero(static_cast<int>(N));
             VectorXd p_zero = VectorXd::Zero(static_cast<int>(N));
             assembler.assemblePoissonWithCarriers(n_zero, p_zero, psi_init);
-            assembler.applyDirichlet(psiBC);
+            assembler.applyDirichlet(psiBCSolve);
             LinearSolver ls;
             psi_init = ls.solve(assembler.matrix(), assembler.rhs());
         }
 
-        for (const auto& [nid, val] : phinBC) phin(static_cast<int>(nid)) = val;
-        for (const auto& [nid, val] : phipBC) phip(static_cast<int>(nid)) = val;
+        for (const auto& [nid, val] : phinBCSolve) phin(static_cast<int>(nid)) = val;
+        for (const auto& [nid, val] : phipBCSolve) phip(static_cast<int>(nid)) = val;
 
         for (Index i = 0; i < N; ++i) {
             const int    ii     = static_cast<int>(i);
             const double ni_i   = ni_v[i];
-            n_init(ii) = electronDensity(ni_i, psi_init(ii), phin(ii), Vt);
-            p_init(ii) = holeDensity    (ni_i, psi_init(ii), phip(ii), Vt);
+            const double psiSi = useScaledUnknowns ? psi_init(ii) * ddScaling.V0 : psi_init(ii);
+            const double phinSi = useScaledUnknowns ? phin(ii) * ddScaling.V0 : phin(ii);
+            const double phipSi = useScaledUnknowns ? phip(ii) * ddScaling.V0 : phip(ii);
+            const double nSi = electronDensity(ni_i, psiSi, phinSi, Vt);
+            const double pSi = holeDensity    (ni_i, psiSi, phipSi, Vt);
+            n_init(ii) = useScaledUnknowns ? (nSi / ddScaling.C0) : nSi;
+            p_init(ii) = useScaledUnknowns ? (pSi / ddScaling.C0) : pSi;
         }
     }
 
     // Enforce the new bias point's Ohmic contact values even when the
     // previous bias point is used as the initial guess.
-    for (const auto& [nid, val] : psiBC)  psi_init(static_cast<int>(nid)) = val;
-    for (const auto& [nid, val] : phinBC) phin(static_cast<int>(nid)) = val;
-    for (const auto& [nid, val] : phipBC) phip(static_cast<int>(nid)) = val;
-    for (const auto& [nid, val] : nBC)    n_init(static_cast<int>(nid)) = val;
-    for (const auto& [nid, val] : pBC)    p_init(static_cast<int>(nid)) = val;
+    for (const auto& [nid, val] : psiBCSolve)  psi_init(static_cast<int>(nid)) = val;
+    for (const auto& [nid, val] : phinBCSolve) phin(static_cast<int>(nid)) = val;
+    for (const auto& [nid, val] : phipBCSolve) phip(static_cast<int>(nid)) = val;
+    for (const auto& [nid, val] : nBCSolve)    n_init(static_cast<int>(nid)) = val;
+    for (const auto& [nid, val] : pBCSolve)    p_init(static_cast<int>(nid)) = val;
 
     // ------------------------------------------------------------------
     // Working copies
@@ -378,7 +449,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
 
         // ---- a. Solve Poisson with current carriers ----
         assembler.assemblePoissonWithCarriers(n, p, psi);
-        assembler.applyDirichlet(psiBC);
+        assembler.applyDirichlet(psiBCSolve);
         VectorXd psi_new = ls.solve(assembler.matrix(), assembler.rhs());
 
         // Damped update: compute full correction then apply with damping factor
@@ -388,7 +459,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
 
         // ---- b. Solve electron continuity for n ----
         assembler.assembleElectronContinuity(psi, n, p);
-        assembler.applyDirichlet(nBC);
+        assembler.applyDirichlet(nBCSolve);
         VectorXd n_new = ls.solve(assembler.matrix(), assembler.rhs());
 
         // Enforce positivity (guard against small negative artefacts)
@@ -397,7 +468,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
 
         // ---- c. Solve hole continuity for p ----
         assembler.assembleHoleContinuity(psi, n_new, p);
-        assembler.applyDirichlet(pBC);
+        assembler.applyDirichlet(pBCSolve);
         VectorXd p_new = ls.solve(assembler.matrix(), assembler.rhs());
 
         for (int ii = 0; ii < static_cast<int>(N); ++ii)
@@ -407,14 +478,21 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         for (Index i = 0; i < N; ++i) {
             const int    ii   = static_cast<int>(i);
             const double ni_i = ni_v[i];
-            if (ni_i > 0.0 && n_new(ii) > 0.0)
-                phin(ii) = psi(ii) - Vt * std::log(n_new(ii) / ni_i);
-            if (ni_i > 0.0 && p_new(ii) > 0.0)
-                phip(ii) = psi(ii) + Vt * std::log(p_new(ii) / ni_i);
+            const double psiSi = useScaledUnknowns ? psi(ii) * ddScaling.V0 : psi(ii);
+            const double nSi = useScaledUnknowns ? n_new(ii) * ddScaling.C0 : n_new(ii);
+            const double pSi = useScaledUnknowns ? p_new(ii) * ddScaling.C0 : p_new(ii);
+            if (ni_i > 0.0 && nSi > 0.0) {
+                const double phinSi = psiSi - Vt * std::log(nSi / ni_i);
+                phin(ii) = useScaledUnknowns ? (phinSi / ddScaling.V0) : phinSi;
+            }
+            if (ni_i > 0.0 && pSi > 0.0) {
+                const double phipSi = psiSi + Vt * std::log(pSi / ni_i);
+                phip(ii) = useScaledUnknowns ? (phipSi / ddScaling.V0) : phipSi;
+            }
         }
         // Restore Dirichlet quasi-Fermi values at contacts
-        for (const auto& [nid, val] : phinBC) phin(static_cast<int>(nid)) = val;
-        for (const auto& [nid, val] : phipBC) phip(static_cast<int>(nid)) = val;
+        for (const auto& [nid, val] : phinBCSolve) phin(static_cast<int>(nid)) = val;
+        for (const auto& [nid, val] : phipBCSolve) phip(static_cast<int>(nid)) = val;
 
         // ---- e. Convergence check ----
         // Base residuals on the actual applied updates so that damping < 1
@@ -449,11 +527,19 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     }
 
     DDSolution sol;
-    sol.psi   = psi;
-    sol.phin  = phin;
-    sol.phip  = phip;
-    sol.n     = n;
-    sol.p     = p;
+    if (useScaledUnknowns) {
+        sol.psi = psi * ddScaling.V0;
+        sol.phin = phin * ddScaling.V0;
+        sol.phip = phip * ddScaling.V0;
+        sol.n = n * ddScaling.C0;
+        sol.p = p * ddScaling.C0;
+    } else {
+        sol.psi   = psi;
+        sol.phin  = phin;
+        sol.phip  = phip;
+        sol.n     = n;
+        sol.p     = p;
+    }
     sol.iters = iters;
     sol.converged = converged;
     return sol;

@@ -129,7 +129,9 @@ void checkMosCase(const MosCase& mos)
                                   mos.exampleName + " Newton",
                                   false);
 
-    ContactCurrent current(mesh, matdb, doping);
+
+    // 保持legacy路径，scaling默认关闭
+    ContactCurrent current(mesh, matdb, doping, {}, 300.0, {});
     const Real gummelDrainCurrent = current.compute(gummel, "drain").totalCurrent;
     const Real newtonDrainCurrent = current.compute(newton.solution, "drain").totalCurrent;
 

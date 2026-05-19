@@ -3,6 +3,7 @@
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/UnitScaling.h"
+#include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/ChargeSpec.h"
 #include "vela/core/Types.h"
 #include "vela/mesh/DeviceMesh.h"
@@ -56,6 +57,8 @@ struct GummelConfig {
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
     ImpactIonizationModelConfig impactIonization; ///< Avalanche generation model.
     BandgapNarrowingConfig bandgapNarrowing; ///< Effective ni model for high doping.
+    UnitScalingConfig inputScaling{}; ///< Input-unit mode from top-level config.
+    UnitScalingReferenceConfig unitScalingRefs{}; ///< Optional reference overrides.
 };
 
 /**

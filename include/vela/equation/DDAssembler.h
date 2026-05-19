@@ -15,6 +15,16 @@
 
 namespace vela {
 
+struct DDScalingSpec {
+    bool enabled = false;
+    Real V0 = 1.0;
+    Real C0 = 1.0;
+    Real mu0 = 1.0;
+    Real D0 = 1.0;
+    Real L0 = 1.0;
+    Real permittivityReference_F_per_m = 1.0;
+};
+
 /**
  * @brief FVM assembler for the steady-state drift-diffusion equations.
  *
@@ -72,7 +82,8 @@ public:
                 const BandgapNarrowingConfig& bandgapNarrowingConfig = {},
                 const ImpactIonizationModelConfig& impactIonizationConfig = {},
                 std::vector<RegionFixedChargeSpec> fixedCharges = {},
-                std::vector<InterfaceSheetChargeSpec> sheetCharges = {});
+                std::vector<InterfaceSheetChargeSpec> sheetCharges = {},
+                DDScalingSpec scaling = {});
 
     // ------------------------------------------------------------------
     // Assembly
@@ -127,6 +138,7 @@ private:
     std::vector<Real> vol_;
     std::vector<Real> couple_;
     VectorXd fixedInterfaceChargeRhs_; ///< Cached fixed/interface charge RHS contribution [C].
+    DDScalingSpec scaling_;
 
     SparseMatrixd A_;
     VectorXd      b_;

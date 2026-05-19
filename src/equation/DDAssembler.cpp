@@ -71,7 +71,8 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
                          const BandgapNarrowingConfig& bandgapNarrowingConfig,
                          const ImpactIonizationModelConfig& impactIonizationConfig,
                          std::vector<RegionFixedChargeSpec> fixedCharges,
-                         std::vector<InterfaceSheetChargeSpec> sheetCharges)
+                         std::vector<InterfaceSheetChargeSpec> sheetCharges,
+                         DDScalingSpec scaling)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
@@ -93,10 +94,19 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
     , couple_(detail::computeEdgeCouplings(mesh))
     , fixedInterfaceChargeRhs_(detail::computeFixedAndInterfaceChargeRhs(
           mesh, edgeCells_, fixedCharges, sheetCharges, "DDAssembler"))
+    , scaling_(scaling)
     , A_(static_cast<int>(mesh.numNodes()),
          static_cast<int>(mesh.numNodes()))
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
-{}
+{
+    if (scaling_.enabled) {
+        if (scaling_.V0 <= 0.0 || scaling_.C0 <= 0.0 || scaling_.mu0 <= 0.0 ||
+            scaling_.D0 <= 0.0 || scaling_.permittivityReference_F_per_m <= 0.0) {
+            throw std::invalid_argument(
+                "DDAssembler: scaling references must be positive when scaling is enabled.");
+        }
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Dirichlet boundary conditions
@@ -137,10 +147,13 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
         auto i = static_cast<int>(edge.n0);
         auto j = static_cast<int>(edge.n1);
 
-        triplets.emplace_back(i, i,  G);
-        triplets.emplace_back(j, j,  G);
-        triplets.emplace_back(i, j, -G);
-        triplets.emplace_back(j, i, -G);
+        const Real matrixScale = scaling_.enabled
+            ? (1.0 / scaling_.permittivityReference_F_per_m)
+            : 1.0;
+        triplets.emplace_back(i, i,  G * matrixScale);
+        triplets.emplace_back(j, j,  G * matrixScale);
+        triplets.emplace_back(i, j, -G * matrixScale);
+        triplets.emplace_back(j, i, -G * matrixScale);
     }
 
     A_.setFromTriplets(triplets.begin(), triplets.end());
@@ -150,19 +163,30 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
     //   equivalent to the nonlinear form around the current psi.
     for (Index i = 0; i < N; ++i) {
         const int  ii     = static_cast<int>(i);
-        const Real ni_v   = n(ii);
-        const Real pi_v   = p(ii);
+        const Real ni_v   = scaling_.enabled ? n(ii) * scaling_.C0 : n(ii);
+        const Real pi_v   = scaling_.enabled ? p(ii) * scaling_.C0 : p(ii);
+        const Real psi_v  = scaling_.enabled ? psi(ii) * scaling_.V0 : psi(ii);
         const Real vol_i  = vol_[i];
 
         const Real diagCarrier = constants::q * (ni_v + pi_v) / Vt_ * vol_i;
-        A_.coeffRef(ii, ii) += diagCarrier;
+        const Real matrixScale = scaling_.enabled
+            ? (1.0 / scaling_.permittivityReference_F_per_m)
+            : 1.0;
+        A_.coeffRef(ii, ii) += diagCarrier * matrixScale;
 
-        b_(ii) = constants::q *
+        const Real rhs_si = constants::q *
                  (pi_v - ni_v + doping_.netDoping(i)) * vol_i
-                 + diagCarrier * psi(ii);
+                 + diagCarrier * psi_v;
+        b_(ii) = scaling_.enabled
+            ? rhs_si / (scaling_.permittivityReference_F_per_m * scaling_.V0)
+            : rhs_si;
     }
 
-    b_ += fixedInterfaceChargeRhs_;
+    if (scaling_.enabled)
+        b_ += fixedInterfaceChargeRhs_ /
+            (scaling_.permittivityReference_F_per_m * scaling_.V0);
+    else
+        b_ += fixedInterfaceChargeRhs_;
 }
 
 // ---------------------------------------------------------------------------
@@ -183,6 +207,7 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
     const Real temperature_K = Vt_ * constants::q / constants::kb;
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
+    const VectorXd psiForMobility = scaling_.enabled ? (psi * scaling_.V0) : psi;
 
     // SG matrix entries from all edges
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
@@ -190,22 +215,33 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         const Real  h    = edge.length;
         if (h < 1.0e-30) continue;
 
-        const Real electricField = std::abs(
-            (psi(static_cast<int>(edge.n1)) - psi(static_cast<int>(edge.n0))) / h);
+        const Real psi0 = scaling_.enabled
+            ? psi(static_cast<int>(edge.n0)) * scaling_.V0
+            : psi(static_cast<int>(edge.n0));
+        const Real psi1 = scaling_.enabled
+            ? psi(static_cast<int>(edge.n1)) * scaling_.V0
+            : psi(static_cast<int>(edge.n1));
+        const Real electricField = std::abs((psi1 - psi0) / h);
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electricField,
             &mobilityConfig_,
-            &psi);
+            &psiForMobility);
         if (mun <= 0.0) continue; // skip insulator edges
 
-        const Real coef = mun * Vt_ * couple_[e] / h;
+        const Real coef = scaling_.enabled
+            ? (mun / scaling_.mu0) * couple_[e] / h
+            : mun * Vt_ * couple_[e] / h;
 
         auto i = static_cast<int>(edge.n0);
         auto j = static_cast<int>(edge.n1);
 
-        const Real dpsi = psi(j) - psi(i);
-        const SGEdgeWeights weights = sgEdgeWeights(dpsi, Vt_);
+        const Real dpsi = scaling_.enabled
+            ? (psi(j) - psi(i))
+            : (psi(j) - psi(i));
+        const SGEdgeWeights weights = scaling_.enabled
+            ? sgEdgeWeights(dpsi, 1.0)
+            : sgEdgeWeights(dpsi, Vt_);
 
         // Electron continuity flux from i to j:
         //   F_nij = coef * (B(-u) * n_i - B(+u) * n_j)
@@ -217,8 +253,9 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
 
     A_.setFromTriplets(triplets.begin(), triplets.end());
 
+    const VectorXd psi_si = psiForMobility;
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
-        ? detail::computeNodeElectricFields(psi, mesh_)
+        ? detail::computeNodeElectricFields(psi_si, mesh_)
         : std::vector<Real>{};
 
     // Recombination source term linearised w.r.t. n.
@@ -226,8 +263,8 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
     for (Index i = 0; i < N; ++i) {
         const int  ii    = static_cast<int>(i);
         const Real ni_i  = ni_[i];
-        const Real n_v   = n_old(ii);
-        const Real p_v   = p_old(ii);
+        const Real n_v   = scaling_.enabled ? n_old(ii) * scaling_.C0 : n_old(ii);
+        const Real p_v   = scaling_.enabled ? p_old(ii) * scaling_.C0 : p_old(ii);
         const Real vol_i = vol_[i];
 
         if (ni_i <= 0.0)
@@ -235,11 +272,17 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
 
         const RecombinationLinearization linearization =
             recombination_.electronLinearization(n_v, p_v, ni_i);
-        A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
-        b_(ii) += linearization.rhs * vol_i;
+        if (scaling_.enabled) {
+            A_.coeffRef(ii, ii) += linearization.diagonal * vol_i / scaling_.D0;
+            b_(ii) += linearization.rhs * vol_i / (scaling_.C0 * scaling_.D0);
+        } else {
+            A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
+            b_(ii) += linearization.rhs * vol_i;
+        }
         if (impactIonizationEnabled_) {
-            b_(ii) += impactIonization_->generationRate(
+            const Real gen = impactIonization_->generationRate(
                 nodeElectricFields[i], n_v, p_v) * vol_i;
+            b_(ii) += scaling_.enabled ? (gen / (scaling_.C0 * scaling_.D0)) : gen;
         }
     }
 
@@ -273,6 +316,7 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
     const Real temperature_K = Vt_ * constants::q / constants::kb;
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
+    const VectorXd psiForMobility = scaling_.enabled ? (psi * scaling_.V0) : psi;
 
     // SG matrix entries for holes
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
@@ -280,22 +324,33 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         const Real  h    = edge.length;
         if (h < 1.0e-30) continue;
 
-        const Real electricField = std::abs(
-            (psi(static_cast<int>(edge.n1)) - psi(static_cast<int>(edge.n0))) / h);
+        const Real psi0 = scaling_.enabled
+            ? psi(static_cast<int>(edge.n0)) * scaling_.V0
+            : psi(static_cast<int>(edge.n0));
+        const Real psi1 = scaling_.enabled
+            ? psi(static_cast<int>(edge.n1)) * scaling_.V0
+            : psi(static_cast<int>(edge.n1));
+        const Real electricField = std::abs((psi1 - psi0) / h);
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
             electricField,
             &mobilityConfig_,
-            &psi);
+            &psiForMobility);
         if (mup <= 0.0) continue; // skip insulator edges
 
-        const Real coef = mup * Vt_ * couple_[e] / h;
+        const Real coef = scaling_.enabled
+            ? (mup / scaling_.mu0) * couple_[e] / h
+            : mup * Vt_ * couple_[e] / h;
 
         auto i = static_cast<int>(edge.n0);
         auto j = static_cast<int>(edge.n1);
 
-        const Real dpsi = psi(j) - psi(i);
-        const SGEdgeWeights weights = sgEdgeWeights(dpsi, Vt_);
+        const Real dpsi = scaling_.enabled
+            ? (psi(j) - psi(i))
+            : (psi(j) - psi(i));
+        const SGEdgeWeights weights = scaling_.enabled
+            ? sgEdgeWeights(dpsi, 1.0)
+            : sgEdgeWeights(dpsi, Vt_);
 
         // Hole continuity flux from i to j:
         //   F_pij = coef * (B(+u) * p_i - B(-u) * p_j)
@@ -307,8 +362,9 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
 
     A_.setFromTriplets(triplets.begin(), triplets.end());
 
+    const VectorXd psi_si = psiForMobility;
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
-        ? detail::computeNodeElectricFields(psi, mesh_)
+        ? detail::computeNodeElectricFields(psi_si, mesh_)
         : std::vector<Real>{};
 
     // Recombination source term linearised w.r.t. p.
@@ -316,8 +372,8 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
     for (Index i = 0; i < N; ++i) {
         const int  ii    = static_cast<int>(i);
         const Real ni_i  = ni_[i];
-        const Real n_v   = n_old(ii);
-        const Real p_v   = p_old(ii);
+        const Real n_v   = scaling_.enabled ? n_old(ii) * scaling_.C0 : n_old(ii);
+        const Real p_v   = scaling_.enabled ? p_old(ii) * scaling_.C0 : p_old(ii);
         const Real vol_i = vol_[i];
 
         if (ni_i <= 0.0)
@@ -325,11 +381,17 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
 
         const RecombinationLinearization linearization =
             recombination_.holeLinearization(n_v, p_v, ni_i);
-        A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
-        b_(ii) += linearization.rhs * vol_i;
+        if (scaling_.enabled) {
+            A_.coeffRef(ii, ii) += linearization.diagonal * vol_i / scaling_.D0;
+            b_(ii) += linearization.rhs * vol_i / (scaling_.C0 * scaling_.D0);
+        } else {
+            A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
+            b_(ii) += linearization.rhs * vol_i;
+        }
         if (impactIonizationEnabled_) {
-            b_(ii) += impactIonization_->generationRate(
+            const Real gen = impactIonization_->generationRate(
                 nodeElectricFields[i], n_v, p_v) * vol_i;
+            b_(ii) += scaling_.enabled ? (gen / (scaling_.C0 * scaling_.D0)) : gen;
         }
     }
 

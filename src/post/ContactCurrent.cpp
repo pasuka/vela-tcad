@@ -23,7 +23,8 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
                                const MaterialDatabase& matdb,
                                const DopingModel& doping,
                                MobilityModelConfig mobilityConfig,
-                               Real temperature_K)
+                               Real temperature_K,
+                               DDScalingSpec scaling)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
@@ -31,7 +32,9 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
     , mobilityConfig_(mobilityConfig)
     , mobility_(makeMobilityModel(mobilityConfig))
     , thermalVoltage_(validatedThermalVoltage(temperature_K))
+    , scaling_(scaling)
 {}
+
 
 ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
                                              const std::string& contactName) const
@@ -63,37 +66,57 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
 
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
-        const Real dpsi = solution.psi(j) - solution.psi(i);
-        const Real electricField = std::abs(dpsi / edge.length);
+
+        // Scaling: recover physical units if enabled
+        const bool scaling = scaling_.enabled;
+        const Real V0 = scaling ? scaling_.V0 : 1.0;
+        const Real C0 = scaling ? scaling_.C0 : 1.0;
+        const Real mu0 = scaling ? scaling_.mu0 : 1.0;
+        const Real J0 = scaling ? (scaling_.C0 * scaling_.mu0 * scaling_.V0 / scaling_.L0) : 1.0;
+        const Real L0 = scaling ? scaling_.L0 : 1.0;
+
+        // Variables in physical units
+        const Real psi_i = scaling ? solution.psi(i) * V0 : solution.psi(i);
+        const Real psi_j = scaling ? solution.psi(j) * V0 : solution.psi(j);
+        const Real n_i = scaling ? solution.n(i) * C0 : solution.n(i);
+        const Real n_j = scaling ? solution.n(j) * C0 : solution.n(j);
+        const Real p_i = scaling ? solution.p(i) * C0 : solution.p(i);
+        const Real p_j = scaling ? solution.p(j) * C0 : solution.p(j);
+        const Real dpsi = psi_j - psi_i;
+        const Real edgeLength = scaling ? edge.length * L0 : edge.length;
+
+        const Real electricField = std::abs(dpsi / edgeLength);
 
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electricField,
             &mobilityConfig_,
-            &solution.psi);
+            scaling ? nullptr : &solution.psi); // psi for mobility is always SI
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
             electricField,
             &mobilityConfig_,
-            &solution.psi);
+            scaling ? nullptr : &solution.psi);
 
+        // SG fluxes in physical units
         const Real electronFlux01 = (mun > 0.0)
-            ? sgElectronFlux(solution.n(i), solution.n(j), dpsi,
-                             thermalVoltage_, mun, edge.length)
+            ? sgElectronFlux(n_i, n_j, dpsi, thermalVoltage_, mun, edgeLength)
             : 0.0;
         const Real holeFlux01 = (mup > 0.0)
-            ? sgHoleFlux(solution.p(i), solution.p(j), dpsi,
-                         thermalVoltage_, mup, edge.length)
+            ? sgHoleFlux(p_i, p_j, dpsi, thermalVoltage_, mup, edgeLength)
             : 0.0;
 
         const Real outwardSign = n0OnContact ? 1.0 : -1.0;
+        // Current density [A/m^2] * edge.couple [m] = [A/m]
         result.electronCurrent += constants::q * outwardSign * electronFlux01 * edge.couple;
         result.holeCurrent += constants::q * outwardSign * holeFlux01 * edge.couple;
     }
 
+    // If scaling enabled, result is in [A/m], but for 2D, total current is per unit depth
     result.totalCurrent = result.electronCurrent + result.holeCurrent;
     return result;
 }
+
 
 ContactCurrentResult ContactCurrent::compute(
     const DeviceMesh& mesh,
@@ -102,9 +125,10 @@ ContactCurrentResult ContactCurrent::compute(
     const DDSolution& solution,
     const std::string& contactName,
     const MobilityModelConfig& mobilityConfig,
-    Real temperature_K)
+    Real temperature_K,
+    DDScalingSpec scaling)
 {
-    return ContactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K).compute(solution, contactName);
+    return ContactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K, scaling).compute(solution, contactName);
 }
 
 } // namespace vela
