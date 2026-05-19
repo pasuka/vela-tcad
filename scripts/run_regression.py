@@ -195,6 +195,14 @@ EXAMPLES = [
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
     },
     {
+        "name": "ldmos2d_bv_fieldplate",
+        "source": "ldmos2d",
+        "config": Path("examples/ldmos2d/simulation_bv_fieldplate.json"),
+        "expected": [Path("outputs/ldmos2d_bv_fieldplate.csv")],
+        "expected_sweep_vtk": True,
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression", "ldmos_fieldplate_trend"],
+    },
+    {
         "name": "igbt2d_poisson",
         "source": "igbt2d",
         "config": Path("examples/igbt2d/simulation_poisson.json"),
@@ -972,6 +980,60 @@ def check_ldmos_iv_trend(example_dir: Path) -> dict[str, Any]:
         "drain_current_sign": sign,
     }
 
+
+def check_ldmos_fieldplate_trend(example_dir: Path, runner: Path) -> dict[str, Any]:
+    cfg = json.loads((example_dir / "simulation.json").read_text())
+    reg = cfg.get("regression", {}).get("ldmos_fieldplate_trend", {})
+    if not reg:
+        raise AssertionError("ldmos_fieldplate_trend regression block is required")
+    rows = read_csv(output_csv_path(example_dir, cfg))
+    if not rows:
+        raise AssertionError("LDMOS field-plate variant CSV contains no rows")
+
+    variant_col = str(reg.get("variant_field_column", "max_electric_field_V_per_m"))
+    baseline_col = str(reg.get("baseline_field_column", variant_col))
+    variant_max_field = max(
+        parse_finite_float(row, variant_col, "LDMOS field-plate variant", idx)
+        for idx, row in enumerate(rows, start=1)
+    )
+    variant_final_current = parse_finite_float(
+        rows[-1], "current_total", "LDMOS field-plate variant", len(rows))
+
+    baseline_cfg = json.loads((example_dir / str(reg.get("baseline_config", "simulation_bv.json"))).read_text())
+    baseline_cfg["output_csv"] = str(reg.get("baseline_csv", "outputs/ldmos2d_bv_baseline_for_variant.csv"))
+    baseline_run_cfg = example_dir / "ldmos_fieldplate_baseline_run.json"
+    baseline_run_cfg.write_text(json.dumps(baseline_cfg, indent=2) + "\n")
+    proc = subprocess.run([str(runner), "--config", str(baseline_run_cfg)], cwd=example_dir, text=True, capture_output=True)
+    if proc.returncode != 0:
+        raise AssertionError(f"LDMOS baseline BV run failed: {proc.stderr.strip()}")
+    baseline_rows = read_csv(output_csv_path(example_dir, baseline_cfg))
+    if not baseline_rows:
+        raise AssertionError("LDMOS baseline BV CSV contains no rows")
+
+    baseline_max_field = max(
+        parse_finite_float(row, baseline_col, "LDMOS baseline", idx)
+        for idx, row in enumerate(baseline_rows, start=1)
+    )
+    baseline_final_current = parse_finite_float(
+        baseline_rows[-1], "current_total", "LDMOS baseline", len(baseline_rows))
+    ratio_limit = float(reg.get("max_field_ratio_limit", 1.2))
+    ratio = variant_max_field / baseline_max_field if baseline_max_field > 0.0 else math.inf
+    if not math.isfinite(ratio):
+        raise AssertionError("LDMOS field-plate trend ratio is non-finite")
+    if ratio > ratio_limit:
+        raise AssertionError(
+            f"LDMOS field-plate max field ratio {ratio} exceeds limit {ratio_limit}; "
+            f"variant={variant_max_field}, baseline={baseline_max_field}")
+
+    return {
+        "variant_max_electric_field_seen": variant_max_field,
+        "baseline_max_electric_field_seen": baseline_max_field,
+        "max_field_ratio": ratio,
+        "max_field_ratio_limit": ratio_limit,
+        "variant_final_drain_current": variant_final_current,
+        "baseline_final_drain_current": baseline_final_current,
+    }
+
 def check_surface_mobility(example_dir: Path, runner: Path) -> dict[str, Any]:
     cfg = json.loads((example_dir / "simulation.json").read_text())
     reg = cfg.get("regression", {}).get("surface_mobility", {})
@@ -1165,6 +1227,8 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
             result["checks"]["schottky_iv_trend"] = check_schottky_iv_trend(example_dir)
         if "ldmos_iv_trend" in spec["checks"]:
             result["checks"]["ldmos_iv_trend"] = check_ldmos_iv_trend(example_dir)
+        if "ldmos_fieldplate_trend" in spec["checks"]:
+            result["checks"]["ldmos_fieldplate_trend"] = check_ldmos_fieldplate_trend(example_dir, runner)
         result["passed"] = True
 
     except Exception as ex:  # noqa: BLE001 - regression summary should capture all failures.
