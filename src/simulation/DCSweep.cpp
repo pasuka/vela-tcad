@@ -388,10 +388,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     const Real temperature_K = (solverMethod == SolverMethod::Newton)
         ? newton.temperature_K
         : gummel.temperature_K;
-    // 构造DDScalingSpec
+    // Build DDScalingSpec for contact current post-processing.
     DDScalingSpec ddScaling;
     if (sweep.scaling.isUnitScaling()) {
-        // 需要从UnitScalingSystem推导DDScalingSpec
+        // Derive DDScalingSpec from the unit scaling system.
         UnitScalingSystem sc = UnitScalingSystem::fromInputs(
             temperature_K,
             (11.7 * vela::constants::eps0),
@@ -931,3 +931,4 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
 } // namespace detail
 
 } // namespace vela
+

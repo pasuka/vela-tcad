@@ -67,23 +67,16 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
 
-        // Scaling: recover physical units if enabled
-        const bool scaling = scaling_.enabled;
-        const Real V0 = scaling ? scaling_.V0 : 1.0;
-        const Real C0 = scaling ? scaling_.C0 : 1.0;
-        const Real mu0 = scaling ? scaling_.mu0 : 1.0;
-        const Real J0 = scaling ? (scaling_.C0 * scaling_.mu0 * scaling_.V0 / scaling_.L0) : 1.0;
-        const Real L0 = scaling ? scaling_.L0 : 1.0;
-
-        // Variables in physical units
-        const Real psi_i = scaling ? solution.psi(i) * V0 : solution.psi(i);
-        const Real psi_j = scaling ? solution.psi(j) * V0 : solution.psi(j);
-        const Real n_i = scaling ? solution.n(i) * C0 : solution.n(i);
-        const Real n_j = scaling ? solution.n(j) * C0 : solution.n(j);
-        const Real p_i = scaling ? solution.p(i) * C0 : solution.p(i);
-        const Real p_j = scaling ? solution.p(j) * C0 : solution.p(j);
+        // The solver returns physical DDSolution fields, so current post-processing
+        // always operates in SI units regardless of the optional scaling config.
+        const Real psi_i = solution.psi(i);
+        const Real psi_j = solution.psi(j);
+        const Real n_i = solution.n(i);
+        const Real n_j = solution.n(j);
+        const Real p_i = solution.p(i);
+        const Real p_j = solution.p(j);
         const Real dpsi = psi_j - psi_i;
-        const Real edgeLength = scaling ? edge.length * L0 : edge.length;
+        const Real edgeLength = edge.length;
 
         const Real electricField = std::abs(dpsi / edgeLength);
 
@@ -91,12 +84,12 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electricField,
             &mobilityConfig_,
-            scaling ? nullptr : &solution.psi); // psi for mobility is always SI
+            &solution.psi);
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
             electricField,
             &mobilityConfig_,
-            scaling ? nullptr : &solution.psi);
+            &solution.psi);
 
         // SG fluxes in physical units
         const Real electronFlux01 = (mun > 0.0)
@@ -112,7 +105,6 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
         result.holeCurrent += constants::q * outwardSign * holeFlux01 * edge.couple;
     }
 
-    // If scaling enabled, result is in [A/m], but for 2D, total current is per unit depth
     result.totalCurrent = result.electronCurrent + result.holeCurrent;
     return result;
 }
