@@ -1,5 +1,7 @@
 #include "vela/simulation/PoissonSimulation.h"
 #include "vela/boundary/BoundaryCondition.h"
+#include "vela/core/PhysicalConstants.h"
+#include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/PoissonAssembler.h"
 #include "vela/io/MeshReader.h"
 #include "vela/io/VTKWriter.h"
@@ -8,6 +10,7 @@
 #include "vela/solver/LinearSolver.h"
 #include "vela/simulation/ConfigParsing.h"
 #include <nlohmann/json.hpp>
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -36,6 +39,55 @@ std::string resolvePath(const std::filesystem::path& baseDir, const std::string&
     if (resolved.is_relative())
         resolved = baseDir / resolved;
     return resolved.string();
+}
+
+Real meshMaxLength(const DeviceMesh& mesh)
+{
+    if (mesh.numNodes() == 0)
+        throw std::runtime_error("PoissonSimulation: mesh has no nodes.");
+
+    Real minX = mesh.getNode(0).x;
+    Real maxX = mesh.getNode(0).x;
+    Real minY = mesh.getNode(0).y;
+    Real maxY = mesh.getNode(0).y;
+    for (Index i = 1; i < mesh.numNodes(); ++i) {
+        const Node& node = mesh.getNode(i);
+        minX = std::min(minX, node.x);
+        maxX = std::max(maxX, node.x);
+        minY = std::min(minY, node.y);
+        maxY = std::max(maxY, node.y);
+    }
+    return std::max(maxX - minX, maxY - minY);
+}
+
+Real maxAbsNetDoping(const DopingModel& doping)
+{
+    Real maxAbs = 0.0;
+    for (Index i = 0; i < doping.numNodes(); ++i)
+        maxAbs = std::max(maxAbs, std::abs(doping.netDoping(i)));
+    return maxAbs;
+}
+
+Real maxMobilityAcrossRegions(const DeviceMesh& mesh, const MaterialDatabase& matdb)
+{
+    Real maxMobility = 0.0;
+    for (const Region& region : mesh.regions()) {
+        const Material& material = matdb.getMaterial(region.material);
+        maxMobility = std::max(maxMobility, std::abs(material.mun));
+        maxMobility = std::max(maxMobility, std::abs(material.mup));
+    }
+    return maxMobility;
+}
+
+Real maxRelativePermittivityAcrossRegions(const DeviceMesh& mesh,
+                                          const MaterialDatabase& matdb)
+{
+    Real maxEpsr = 0.0;
+    for (const Region& region : mesh.regions()) {
+        const Material& material = matdb.getMaterial(region.material);
+        maxEpsr = std::max(maxEpsr, material.eps_r);
+    }
+    return maxEpsr;
 }
 
 } // namespace
@@ -105,7 +157,7 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
             case BoundaryType::Symmetry: {
                 // Insulating and symmetry are zero Neumann
                 const Real displacement = (spec.type == BoundaryType::Neumann)
-                    ? spec.value : 0.0;
+                    ? scaling.sheetDensityToSI(spec.value) : 0.0;
                 neumannBoundarySpecs.push_back(
                     PoissonNeumannBoundarySpec{spec.node_ids, displacement});
                 break;
@@ -121,10 +173,34 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // ------------------------------------------------------------------
     // Assemble Poisson equation
     // ------------------------------------------------------------------
+    PoissonScalingSpec poissonScaling;
+    if (scaling.isUnitScaling()) {
+        const UnitScalingReferenceConfig refs = parseUnitScalingReferenceConfig(cfg);
+
+        UnitScalingSystem::AutoInputs autoInputs;
+        autoInputs.maxAbsNetDoping_m3 = maxAbsNetDoping(doping);
+        autoInputs.niFloor_m3 = 1.0;
+        autoInputs.meshMaxLength_m = std::max(meshMaxLength(mesh), 1.0e-30);
+        autoInputs.maxMobility_m2_V_s = std::max(maxMobilityAcrossRegions(mesh, matdb), 1.0e-6);
+
+        const Real epsRef = constants::eps0 *
+            std::max(maxRelativePermittivityAcrossRegions(mesh, matdb), 1.0);
+        const UnitScalingSystem scalingSystem = UnitScalingSystem::fromInputs(
+            300.0,
+            epsRef,
+            autoInputs,
+            refs);
+
+        poissonScaling.enabled = true;
+        poissonScaling.potentialScale_V = scalingSystem.V0();
+        poissonScaling.permittivityReference_F_per_m = epsRef;
+    }
+
     PoissonAssembler assembler(mesh, matdb, doping,
                                std::move(fixedChargeSpecs),
                                std::move(sheetChargeSpecs),
-                               std::move(neumannBoundarySpecs));
+                               std::move(neumannBoundarySpecs),
+                               poissonScaling);
     assembler.assemble();
 
     // ------------------------------------------------------------------
@@ -228,6 +304,8 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // ------------------------------------------------------------------
     LinearSolver solver;
     VectorXd psi = solver.solve(assembler.matrix(), assembler.rhs());
+    if (poissonScaling.enabled)
+        psi *= poissonScaling.potentialScale_V;
 
     std::vector<Real> psiVec(mesh.numNodes());
     for (Index i = 0; i < mesh.numNodes(); ++i)

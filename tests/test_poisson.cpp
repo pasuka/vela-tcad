@@ -5,6 +5,7 @@
 
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/UnitScaling.h"
+#include "vela/core/UnitScalingSystem.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
@@ -104,6 +105,9 @@ static DopingModel makePNDoping(const DeviceMesh& mesh)
     return DopingModel::fromMeshAndRegions(mesh, specs);
 }
 
+static DeviceMesh makeMOSCapChargeMesh();
+static DopingModel makeZeroMOSCapDoping(const DeviceMesh& mesh);
+
 static void writePNMeshJson(const std::filesystem::path& meshPath,
                             const std::string& material = "Si")
 {
@@ -135,6 +139,38 @@ static std::filesystem::path writePNMeshJsonToDir(const std::filesystem::path& d
 {
     const auto meshPath = dir / "mesh.json";
     writePNMeshJson(meshPath, material);
+    return meshPath;
+}
+
+static std::filesystem::path writeMOSCapMeshJsonToDir(const std::filesystem::path& dir,
+                                                      Real lengthScale = 1.0e-6)
+{
+    const auto meshPath = dir / "moscap_mesh.json";
+    nlohmann::json mesh = {
+        {"nodes", {
+            {{"id", 0}, {"x", 0.0}, {"y", 0.0}},
+            {{"id", 1}, {"x", 1.0 * lengthScale}, {"y", 0.0}},
+            {{"id", 2}, {"x", 0.0}, {"y", 1.0 * lengthScale}},
+            {{"id", 3}, {"x", 1.0 * lengthScale}, {"y", 1.0 * lengthScale}},
+            {{"id", 4}, {"x", 0.0}, {"y", 2.0 * lengthScale}},
+            {{"id", 5}, {"x", 1.0 * lengthScale}, {"y", 2.0 * lengthScale}}
+        }},
+        {"triangles", {
+            {{"id", 0}, {"region_id", 0}, {"node_ids", {0, 1, 3}}},
+            {{"id", 1}, {"region_id", 0}, {"node_ids", {0, 3, 2}}},
+            {{"id", 2}, {"region_id", 1}, {"node_ids", {2, 3, 5}}},
+            {{"id", 3}, {"region_id", 1}, {"node_ids", {2, 5, 4}}}
+        }},
+        {"regions", {
+            {{"id", 0}, {"name", "silicon"}, {"material", "Si"}, {"cell_ids", {0, 1}}},
+            {{"id", 1}, {"name", "oxide"}, {"material", "SiO2"}, {"cell_ids", {2, 3}}}
+        }},
+        {"contacts", {
+            {{"id", 0}, {"name", "body"}, {"region_id", 0}, {"node_ids", {0, 1}}},
+            {{"id", 1}, {"name", "gate"}, {"region_id", 1}, {"node_ids", {4, 5}}}
+        }}
+    };
+    std::ofstream(meshPath) << mesh.dump(2);
     return meshPath;
 }
 
@@ -288,6 +324,95 @@ TEST_CASE("PoissonAssembler: matrix dimensions match node count", "[poisson]")
     REQUIRE(asm_.matrix().rows() == static_cast<int>(N));
     REQUIRE(asm_.matrix().cols() == static_cast<int>(N));
     REQUIRE(asm_.rhs().size()    == static_cast<int>(N));
+}
+
+TEST_CASE("PoissonAssembler: scaled RHS maps to physical RHS by eps_ref*V0",
+          "[poisson][scaling][boundary][interface]")
+{
+    DeviceMesh mesh = makeMOSCapChargeMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makeZeroMOSCapDoping(mesh);
+
+    std::vector<RegionFixedChargeSpec> fixedCharges = {
+        RegionFixedChargeSpec{"oxide", 1.2e21}
+    };
+    std::vector<InterfaceSheetChargeSpec> sheetCharges = {
+        InterfaceSheetChargeSpec{"silicon", "oxide", 2.5e15, -1.0e15, 4.0e15, 0.25}
+    };
+    std::vector<PoissonNeumannBoundarySpec> neumannSpecs = {
+        PoissonNeumannBoundarySpec{{2, 3}, 3.0e-8}
+    };
+
+    PoissonAssembler legacy(mesh, matdb, doping, fixedCharges, sheetCharges, neumannSpecs);
+    legacy.assemble();
+
+    const Real epsRef = constants::eps0 * 11.7;
+    const Real V0 = constants::Vt_300;
+    PoissonScalingSpec scaledSpec;
+    scaledSpec.enabled = true;
+    scaledSpec.potentialScale_V = V0;
+    scaledSpec.permittivityReference_F_per_m = epsRef;
+    PoissonAssembler scaled(mesh,
+                            matdb,
+                            doping,
+                            fixedCharges,
+                            sheetCharges,
+                            neumannSpecs,
+                            scaledSpec);
+    scaled.assemble();
+
+    REQUIRE(scaled.rhs().size() == legacy.rhs().size());
+    for (int i = 0; i < legacy.rhs().size(); ++i) {
+        REQUIRE(scaled.rhs()(i) * epsRef * V0
+                == Catch::Approx(legacy.rhs()(i)).epsilon(1e-10));
+    }
+}
+
+TEST_CASE("PoissonAssembler: scaled solve recovers legacy physical potential",
+          "[poisson][scaling]")
+{
+    DeviceMesh mesh = makeMOSCapChargeMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makeZeroMOSCapDoping(mesh);
+
+    std::vector<RegionFixedChargeSpec> fixedCharges = {
+        RegionFixedChargeSpec{"oxide", 5.0e20}
+    };
+    std::vector<InterfaceSheetChargeSpec> sheetCharges = {
+        InterfaceSheetChargeSpec{"silicon", "oxide", 2.0e15}
+    };
+
+    std::unordered_map<Index, Real> bcs = {
+        {0, -0.15}, {1, -0.15}, {4, 0.35}, {5, 0.35}
+    };
+
+    PoissonAssembler legacy(mesh, matdb, doping, fixedCharges, sheetCharges);
+    legacy.assemble();
+    legacy.applyDirichlet(bcs);
+    LinearSolver solver;
+    const VectorXd psiLegacy = solver.solve(legacy.matrix(), legacy.rhs());
+
+    const Real epsRef = constants::eps0 * 11.7;
+    const Real V0 = constants::Vt_300;
+    PoissonScalingSpec scaledSpec;
+    scaledSpec.enabled = true;
+    scaledSpec.potentialScale_V = V0;
+    scaledSpec.permittivityReference_F_per_m = epsRef;
+    PoissonAssembler scaled(mesh,
+                            matdb,
+                            doping,
+                            fixedCharges,
+                            sheetCharges,
+                            {},
+                            scaledSpec);
+    scaled.assemble();
+    scaled.applyDirichlet(bcs);
+    const VectorXd psiHat = solver.solve(scaled.matrix(), scaled.rhs());
+
+    REQUIRE(psiHat.size() == psiLegacy.size());
+    for (int i = 0; i < psiLegacy.size(); ++i) {
+        REQUIRE(psiHat(i) * V0 == Catch::Approx(psiLegacy(i)).epsilon(1e-10));
+    }
 }
 
 TEST_CASE("PoissonAssembler + LinearSolver: solve succeeds, no NaN", "[poisson]")
@@ -694,4 +819,69 @@ TEST_CASE("PoissonSimulation: external new material can be used for assembly", "
     for (int i = 0; i < result.potential.size(); ++i)
         REQUIRE(std::isfinite(result.potential(i)));
 
+}
+
+TEST_CASE("PoissonSimulation: unit_scaling Neumann displacement matches legacy physical result",
+          "[poisson][boundary][scaling]")
+{
+    const auto tempLegacy = makePoissonTempDir("vela_poisson_legacy_neumann_scaling");
+    const auto tempScaled = makePoissonTempDir("vela_poisson_unit_neumann_scaling");
+
+    const auto meshLegacy = writeMOSCapMeshJsonToDir(tempLegacy.path, 1.0e-6);
+    const auto meshScaled = writeMOSCapMeshJsonToDir(tempScaled.path, 1.0);
+    const auto cfgLegacyPath = tempLegacy.path / "poisson_legacy.json";
+    const auto cfgScaledPath = tempScaled.path / "poisson_unit_scaling.json";
+    const auto outLegacy = tempLegacy.path / "out.vtk";
+    const auto outScaled = tempScaled.path / "out.vtk";
+
+    const nlohmann::json legacyCfg = {
+        {"mesh_file", meshLegacy.filename().string()},
+        {"output_vtk", outLegacy.filename().string()},
+        {"doping", {
+            {{"region", "silicon"}, {"donors", 0.0}, {"acceptors", 0.0}},
+            {{"region", "oxide"}, {"donors", 0.0}, {"acceptors", 0.0}}
+        }},
+        {"contacts", {
+            {{"name", "body"}, {"bias", 0.0}},
+            {{"name", "gate"}, {"bias", 0.0}}
+        }},
+        {"boundaries", {
+            {{"name", "midline_neumann"},
+             {"type", "neumann"},
+             {"node_ids", {2, 3}},
+             {"normal_displacement_C_per_m2", 1.0e-8}}
+        }}
+    };
+
+    const nlohmann::json scaledCfg = {
+        {"scaling", {{"mode", "unit_scaling"}}},
+        {"mesh_file", meshScaled.filename().string()},
+        {"output_vtk", outScaled.filename().string()},
+        {"doping", {
+            {{"region", "silicon"}, {"donors", 0.0}, {"acceptors", 0.0}},
+            {{"region", "oxide"}, {"donors", 0.0}, {"acceptors", 0.0}}
+        }},
+        {"contacts", {
+            {{"name", "body"}, {"bias", 0.0}},
+            {{"name", "gate"}, {"bias", 0.0}}
+        }},
+        {"boundaries", {
+            {{"name", "midline_neumann"},
+             {"type", "neumann"},
+             {"node_ids", {2, 3}},
+             {"normal_displacement_C_per_m2", 1.0e-12}}
+        }}
+    };
+
+    std::ofstream(cfgLegacyPath) << legacyCfg.dump(2);
+    std::ofstream(cfgScaledPath) << scaledCfg.dump(2);
+
+    PoissonSimulation sim;
+    const PoissonResult legacy = sim.runWithResult(cfgLegacyPath.string());
+    const PoissonResult scaled = sim.runWithResult(cfgScaledPath.string());
+
+    REQUIRE(scaled.potential.size() == legacy.potential.size());
+    for (int i = 0; i < legacy.potential.size(); ++i) {
+        REQUIRE(scaled.potential(i) == Catch::Approx(legacy.potential(i)).epsilon(1e-6));
+    }
 }

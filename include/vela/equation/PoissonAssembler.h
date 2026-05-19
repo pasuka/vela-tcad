@@ -69,6 +69,12 @@ struct PoissonNeumannBoundarySpec {
     Real               normalDisplacement; ///< Normal displacement D.n [C/m^2]
 };
 
+struct PoissonScalingSpec {
+    bool enabled = false;
+    Real potentialScale_V = 1.0;
+    Real permittivityReference_F_per_m = 1.0;
+};
+
 class PoissonAssembler {
 public:
     PoissonAssembler(const DeviceMesh&      mesh,
@@ -76,7 +82,8 @@ public:
                      const DopingModel&      doping,
                      std::vector<RegionFixedChargeSpec> fixedCharges = {},
                      std::vector<InterfaceSheetChargeSpec> sheetCharges = {},
-                     std::vector<PoissonNeumannBoundarySpec> neumannBoundaries = {});
+                     std::vector<PoissonNeumannBoundarySpec> neumannBoundaries = {},
+                     PoissonScalingSpec scaling = {});
 
     /**
      * @brief Assemble the global stiffness matrix and RHS.
@@ -119,6 +126,7 @@ private:
     std::vector<RegionFixedChargeSpec> fixedCharges_;
     std::vector<InterfaceSheetChargeSpec> sheetCharges_;
     std::vector<PoissonNeumannBoundarySpec> neumannBoundaries_;
+    PoissonScalingSpec scaling_;
 
     SparseMatrixd A_;
     VectorXd      b_;

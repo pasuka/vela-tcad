@@ -16,13 +16,15 @@ PoissonAssembler::PoissonAssembler(
     const DopingModel&      doping,
     std::vector<RegionFixedChargeSpec> fixedCharges,
     std::vector<InterfaceSheetChargeSpec> sheetCharges,
-    std::vector<PoissonNeumannBoundarySpec> neumannBoundaries)
+    std::vector<PoissonNeumannBoundarySpec> neumannBoundaries,
+    PoissonScalingSpec scaling)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
     , fixedCharges_(std::move(fixedCharges))
     , sheetCharges_(std::move(sheetCharges))
     , neumannBoundaries_(std::move(neumannBoundaries))
+    , scaling_(scaling)
     , A_(static_cast<int>(mesh.numNodes()),
          static_cast<int>(mesh.numNodes()))
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
@@ -30,6 +32,18 @@ PoissonAssembler::PoissonAssembler(
     if (doping.numNodes() != mesh.numNodes())
         throw std::invalid_argument(
             "PoissonAssembler: doping model size does not match mesh node count.");
+
+    if (scaling_.enabled) {
+        if (scaling_.potentialScale_V <= 0.0 || !std::isfinite(scaling_.potentialScale_V)) {
+            throw std::invalid_argument(
+                "PoissonAssembler: scaling.potentialScale_V must be positive and finite.");
+        }
+        if (scaling_.permittivityReference_F_per_m <= 0.0 ||
+            !std::isfinite(scaling_.permittivityReference_F_per_m)) {
+            throw std::invalid_argument(
+                "PoissonAssembler: scaling.permittivityReference_F_per_m must be positive and finite.");
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -106,6 +120,13 @@ void PoissonAssembler::assemble()
             b_(static_cast<int>(n1)) += endpointContribution;
         }
     }
+
+    if (scaling_.enabled) {
+        const Real matrixScale = 1.0 / scaling_.permittivityReference_F_per_m;
+        const Real rhsScale = matrixScale / scaling_.potentialScale_V;
+        A_ *= matrixScale;
+        b_ *= rhsScale;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -115,7 +136,16 @@ void PoissonAssembler::assemble()
 void PoissonAssembler::applyDirichlet(
     const std::unordered_map<Index, Real>& bcs)
 {
-    detail::applyDirichletBC(A_, b_, bcs);
+    if (!scaling_.enabled) {
+        detail::applyDirichletBC(A_, b_, bcs);
+        return;
+    }
+
+    std::unordered_map<Index, Real> scaledBcs;
+    scaledBcs.reserve(bcs.size());
+    for (const auto& [node, value] : bcs)
+        scaledBcs.emplace(node, value / scaling_.potentialScale_V);
+    detail::applyDirichletBC(A_, b_, scaledBcs);
 }
 
 } // namespace vela

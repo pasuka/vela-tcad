@@ -326,6 +326,28 @@ mobility settings, and electric-field-related solver settings. The only
 accepted `scaling.mode` value is `unit_scaling`; `si` and vendor-specific mode
 aliases are intentionally not part of the schema.
 
+For Poisson runs specifically, `scaling.mode = "unit_scaling"` now enables a
+scaled (dimensionless) Poisson assembly path in the solver, then restores the
+physical potential before returning and writing outputs. Legacy decks without a
+`scaling` field keep the previous SI assembly path unchanged.
+
+Poisson scaling conventions in this mode:
+- Unknown solved variable uses `psi_hat = psi / V0`.
+- Geometry uses `x_hat = x / L0`.
+- Charge inputs use `C_hat = C / C0` through the same SI-normalized config
+  pipeline.
+- Multi-material permittivity contrast is preserved via `eps / eps_ref`
+  (equivalent to scaling matrix/RHS by `eps_ref` in assembly).
+- Region fixed charge, interface sheet/trap charge, and Neumann displacement
+  boundary contributions are all scaled consistently in the Poisson RHS path.
+- `potential_V` in VTK remains the physical potential in volts, not
+  `psi_hat`.
+
+For Neumann Poisson boundaries, `normal_displacement_C_per_m2` keeps the
+stable field name for compatibility. Its numeric interpretation follows the
+selected input mode: SI input in legacy mode, and common-unit input
+(`C/cm^2`) in `unit_scaling` mode.
+
 Relative paths in `mesh_file`, optional `materials_file`, `output_vtk`, and
 sweep output settings are resolved relative to the directory containing the
 config JSON. VTK files can be opened in ParaView to inspect electrostatic
@@ -368,6 +390,10 @@ threshold. A single-bias coupled Newton CLI run is available with
 ---
 
 ## Development Notes
+
+- Poisson unit-scaling implementation notes (assembly equations, reference
+  scales, and boundary/source scaling):
+  [`docs/development_poisson_unit_scaling.md`](docs/development_poisson_unit_scaling.md)
 
 - 本周开发任务总结已同步到 [`docs/weekly_development_summary_2026-05-14.md`](docs/weekly_development_summary_2026-05-14.md)，按提交记录归纳了 2026-05-11 至 2026-05-14 的求解器、物理模型、性能、可观测性和测试进展。
 - 2026-05-13 合并 Backlog 的 B01-B14 已全部完成；状态同步见 [`docs/multi_agent_merged_backlog_2026-05-13.md`](docs/multi_agent_merged_backlog_2026-05-13.md#31-2026-05-14-执行状态同步)。

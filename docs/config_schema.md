@@ -66,6 +66,12 @@ files, doping, region fixed charge, interface sheet/trap charge, mobility
 settings, and electric-field-related solver settings. The Poisson and
 drift-diffusion assemblers continue to receive SI values.
 
+Poisson driver note:
+- In legacy mode (no `scaling`), Poisson uses the historical SI assembly path.
+- In `unit_scaling` mode, Poisson uses a scaled (dimensionless) assembly path
+  and restores physical potential before producing outputs.
+- VTK `potential_V` remains the physical potential in volts in both modes.
+
 CSV output keeps the legacy SI columns for compatibility. In `unit_scaling`
 mode, DC sweep CSV output also appends convenience columns using common
 external TCAD display units, such as `current_total_A_per_um`,
@@ -181,6 +187,12 @@ Behavior:
 - `neumann` uses `normal_displacement_C_per_m2` (default 0.0 if omitted).
 - `insulating` and `symmetry` are equivalent to zero-Neumann.
 - Unknown type, short `node_ids`, or non-finite Neumann values are rejected.
+
+Unit interpretation:
+- The field name `normal_displacement_C_per_m2` is stable for compatibility.
+- Legacy mode reads numeric values as SI displacement (`C/m^2`).
+- `unit_scaling` mode reads numeric values in common TCAD area units
+  (`C/cm^2`) and normalizes to SI before assembly.
 
 About node_ids or edge_node_pairs:
 - `node_ids` polyline is the implemented path.
