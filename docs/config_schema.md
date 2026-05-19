@@ -180,6 +180,49 @@ Notes:
 - `line_search` and `damping_factor` apply to Newton config.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 
+### impact_ionization
+
+`solver.impact_ionization` accepts either a legacy model string or an object.
+
+String form:
+
+```json
+"impact_ionization": "none"
+```
+
+Object form:
+
+```json
+"impact_ionization": {
+  "model": "selberherr",
+  "electronA": 7.03e7,
+  "electronB": 1.231e8,
+  "holeA": 1.582e8,
+  "holeB": 2.036e8,
+  "carrierVelocity": 1.0e5
+}
+```
+
+Supported `model` values:
+- `none`
+- `selberherr`
+
+Field meanings (Selberherr prototype):
+- `electronA` (1/m): electron ionization prefactor.
+- `electronB` (V/m): electron critical field.
+- `holeA` (1/m): hole ionization prefactor.
+- `holeB` (V/m): hole critical field.
+- `carrierVelocity` (m/s): effective saturated carrier speed used by the
+  generation-rate proxy.
+
+Validation:
+- `electronA`, `holeA`, and `carrierVelocity` must be non-negative.
+- `electronB` and `holeB` must be positive.
+
+Prototype note:
+- This is an engineering impact-ionization source term for smoke diagnostics; it
+  is not a calibrated avalanche-breakdown prediction model.
+
 ### mobility
 
 `solver.mobility` accepts either the legacy string form or an object. String decks remain compatible:

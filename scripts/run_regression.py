@@ -226,6 +226,22 @@ EXAMPLES = [
                    "igbt_high_injection_trend"],
     },
     {
+        "name": "igbt2d_bv",
+        "source": "igbt2d",
+        "config": Path("examples/igbt2d/simulation_bv.json"),
+        "expected": [Path("outputs/igbt2d_bv.csv")],
+        "expected_sweep_vtk": True,
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression", "igbt_bv_trend"],
+    },
+    {
+        "name": "igbt2d_bv_ii",
+        "source": "igbt2d",
+        "config": Path("examples/igbt2d/simulation_bv_ii.json"),
+        "expected": [Path("outputs/igbt2d_bv_ii.csv")],
+        "expected_sweep_vtk": True,
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression", "igbt_bv_trend"],
+    },
+    {
         "name": "schottky_diode_2d_iv",
         "source": "schottky_diode_2d",
         "config": Path("examples/schottky_diode_2d/simulation_iv.json"),
@@ -1015,6 +1031,60 @@ def check_igbt_high_injection_trend(example_dir: Path) -> dict[str, Any]:
     }
 
 
+def check_igbt_bv_trend(example_dir: Path, runner: Path) -> dict[str, Any]:
+    cfg_path = example_dir / "simulation.json"
+    cfg = json.loads(cfg_path.read_text())
+    rows = read_csv(output_csv_path(example_dir, cfg))
+    if not rows:
+        raise AssertionError("IGBT BV CSV contains no rows")
+
+    fields = [
+        parse_finite_float(row, "max_electric_field_V_per_m", "IGBT BV", idx)
+        for idx, row in enumerate(rows, start=1)
+    ]
+    leakage = [
+        abs(parse_finite_float(row, "current_total", "IGBT BV", idx))
+        for idx, row in enumerate(rows, start=1)
+    ]
+    assert_monotone_non_decreasing(fields, "IGBT BV max field trend",
+                                   abs_tolerance=1e-12, rel_tolerance=1e-9)
+
+    result: dict[str, Any] = {
+        "max_electric_field_V_per_m": fields,
+        "leakage_abs_current": leakage,
+    }
+
+    reg = cfg.get("regression", {}).get("igbt_bv", {})
+    baseline_cfg_name = reg.get("baseline_config")
+    if baseline_cfg_name:
+        baseline_cfg = json.loads((example_dir / str(baseline_cfg_name)).read_text())
+        baseline_cfg["output_csv"] = reg.get("baseline_csv", "outputs/igbt2d_bv_baseline_for_ii.csv")
+        baseline_run_cfg = example_dir / "igbt_bv_baseline_run.json"
+        baseline_run_cfg.write_text(json.dumps(baseline_cfg, indent=2) + "\n")
+        proc = subprocess.run([str(runner), "--config", str(baseline_run_cfg)],
+                              cwd=example_dir, text=True, capture_output=True)
+        allow_nonzero = nonzero_runner_exit_allowed(baseline_cfg)
+        if proc.returncode != 0 and not allow_nonzero:
+            raise AssertionError(
+                f"IGBT BV baseline run failed with exit code {proc.returncode}; "
+                f"stdout={proc.stdout.strip()}; stderr={proc.stderr.strip()}")
+        baseline_rows = read_csv(output_csv_path(example_dir, baseline_cfg))
+        if not baseline_rows:
+            raise AssertionError("IGBT BV baseline CSV contains no rows")
+        baseline_final = abs(parse_finite_float(
+            baseline_rows[-1], "current_total", "IGBT BV baseline", len(baseline_rows)))
+        ii_final = leakage[-1]
+        multiplier = float(reg.get("current_multiplier_tolerance", 0.5))
+        if ii_final < baseline_final * multiplier:
+            raise AssertionError(
+                f"IGBT BV II final |I| {ii_final} is smaller than baseline {baseline_final} "
+                f"times tolerance {multiplier}")
+        result["baseline_final_abs_current"] = baseline_final
+        result["ii_to_baseline_min_multiplier"] = multiplier
+        result["ii_final_abs_current"] = ii_final
+    return result
+
+
 def check_ldmos_fieldplate_trend(example_dir: Path, runner: Path) -> dict[str, Any]:
     cfg = json.loads((example_dir / "simulation.json").read_text())
     reg = cfg.get("regression", {}).get("ldmos_fieldplate_trend", {})
@@ -1269,6 +1339,8 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
             result["checks"]["ldmos_fieldplate_trend"] = check_ldmos_fieldplate_trend(example_dir, runner)
         if "igbt_high_injection_trend" in spec["checks"]:
             result["checks"]["igbt_high_injection_trend"] = check_igbt_high_injection_trend(example_dir)
+        if "igbt_bv_trend" in spec["checks"]:
+            result["checks"]["igbt_bv_trend"] = check_igbt_bv_trend(example_dir, runner)
         result["passed"] = True
 
     except Exception as ex:  # noqa: BLE001 - regression summary should capture all failures.

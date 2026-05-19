@@ -21,7 +21,7 @@ TCAD coverage.
 | `examples/pmos2d_dd` | Implicit equilibrium in DD decks | `simulation_iv.json` Id-Vd and `simulation_idvg.json` Id-Vg | `simulation_cv.json` gate/body quasi-static CV | Not yet |
 | `examples/pmos2d_mos_dd` | Implicit equilibrium in DD decks on a mixed Si/SiO2 mesh | `simulation_iv.json` negative-bias Id-Vd and `simulation_idvg.json` negative-gate Id-Vg Si/SiO2 MOS DD prototype smoke sweeps | `simulation_cv.json` multi-terminal quasi-static MOS CV prototype | `simulation_bv.json` off-state negative-drain high-field diagnostic smoke sweep |
 | `examples/ldmos2d` | `simulation_iv.json` remains a reverse-biased Poisson field-distribution deck on the mixed Si/SiO2 mesh | `simulation_dd_iv.json` low-voltage on-state Id-Vd prototype smoke sweep | Not yet | `simulation_bv.json` baseline off-state diagnostics and `simulation_bv_fieldplate.json` RESURF/field-plate trend smoke |
-| `examples/igbt2d` | `simulation_poisson.json` PNPN/drift off-state baseline | `simulation_iv.json` low-current collector DD prototype and `simulation_high_injection_iv.json` high-injection IV prototype smoke deck (trend/finite regression only) | Not yet | Not yet |
+| `examples/igbt2d` | `simulation_poisson.json` PNPN/drift off-state baseline | `simulation_iv.json` low-current collector DD prototype and `simulation_high_injection_iv.json` high-injection IV prototype smoke deck (trend/finite regression only) | Not yet | `simulation_bv.json` off-state collector reverse-bias diagnostics prototype, plus `simulation_bv_ii.json` Selberherr impact-ionization smoke variant |
 | `examples/moscap` | `simulation.json` Si/SiO2 Poisson interface check | Not applicable | Not yet | Not applicable |
 | `examples/nmos2d` | `simulation.json` legacy simplified NMOS Poisson check | Not yet | Not yet | Not yet |
 | `examples/schottky_diode_2d` | Implicit equilibrium in DD deck | `simulation_iv.json` prototype Schottky-anode IV smoke (M1.3, not a calibrated Schottky model) | Not yet | Not yet |
@@ -418,11 +418,12 @@ build/vela_example_runner --config examples/ldmos2d/simulation_bv.json
 **Physical meaning.** A coarse vertical IGBT-like stack contains a p-type
 collector, n buffer, lightly doped n drift, and top p-base/emitter region. The
 Poisson deck targets off-state electrostatic stability; the IV deck is a
-low-current drift-diffusion prototype only.
+low-current drift-diffusion prototype, and BV decks are reverse-bias diagnostic
+smoke sweeps only.
 
-**Current support level.** Poisson-only plus a low-current DD-IV prototype.
-High injection, recombination/lifetime-control calibration, and on-state voltage
-regression are not yet implemented in these examples.
+**Current support level.** Poisson baseline, low-current DD-IV, high-injection
+IV smoke trends, and reverse-bias BV diagnostics prototype. These decks are not
+calibrated IGBT or calibrated avalanche-breakdown predictions.
 
 **Contact schema note.** IGBT decks remain compatible with omitted
 `contacts[].type`; explicit `ohmic` / `metal_gate` typing is supported by the
@@ -434,6 +435,10 @@ shared parser.
   contacts.
 - `simulation_poisson.json`: off-state collector-bias Poisson baseline.
 - `simulation_iv.json`: low-current collector sweep DD prototype.
+- `simulation_bv.json`: off-state (`emitter=0 V`, `gate=0 V`) collector
+  reverse-bias BV/leakage diagnostics with `impact_ionization.model: "none"`.
+- `simulation_bv_ii.json`: optional Selberherr impact-ionization variant for a
+  short off-state BV smoke comparison path.
 
 **Run directly.**
 
@@ -441,6 +446,8 @@ shared parser.
 mkdir -p examples/igbt2d/outputs
 build/vela_example_runner --config examples/igbt2d/simulation_poisson.json
 build/vela_example_runner --config examples/igbt2d/simulation_iv.json
+build/vela_example_runner --config examples/igbt2d/simulation_bv.json
+build/vela_example_runner --config examples/igbt2d/simulation_bv_ii.json
 ```
 
 **Outputs and acceptance metrics.**
@@ -451,6 +458,15 @@ build/vela_example_runner --config examples/igbt2d/simulation_iv.json
   convergence and step diagnostics.
 - `examples/igbt2d/outputs/igbt2d_iv_sweep_*.vtk`: DD field snapshots for the
   low-current prototype.
+- `examples/igbt2d/outputs/igbt2d_bv.csv` and
+  `examples/igbt2d/outputs/igbt2d_bv_sweep_*.vtk`: off-state collector reverse-bias
+  diagnostics that include `max_electric_field_V_per_m`,
+  `current_jump_ratio`, `breakdown_detected`, `breakdown_voltage`, `criterion`,
+  plus last-stable/failed-bias non-convergence diagnostics.
+- `examples/igbt2d/outputs/igbt2d_bv_ii.csv` and
+  `examples/igbt2d/outputs/igbt2d_bv_ii_sweep_*.vtk`: short Selberherr impact-ionization
+  smoke variant for finite/trend comparison against the no-impact-ionization
+  baseline. This is a diagnostic trend check, not a calibrated BV predictor.
 
 ## MOS Capacitor (`examples/moscap`)
 
