@@ -34,6 +34,7 @@ struct SweepPythonMetadata {
     std::string biasContact;
     std::string currentContact;
     std::string chargeContact;
+    bool unitScaling = false;
     bool writeVtk = false;
     std::string outputCsv;
     std::string vtkPrefix;
@@ -104,6 +105,16 @@ SweepPythonMetadata sweepMetadataFromConfig(const std::string& configFile)
     metadata.curveType = vela::toString(vela::curveSweepModeFromString(sweep.value("mode", std::string("iv"))));
     metadata.biasContact = sweep.at("contact").get<std::string>();
     metadata.currentContact = sweep.value("current_contact", metadata.biasContact);
+    if (cfg.contains("scaling")) {
+        const auto& scaling = cfg.at("scaling");
+        if (!scaling.is_object())
+            throw std::invalid_argument("scaling must be an object.");
+        const std::string mode = scaling.value("mode", std::string{});
+        if (mode == "unit_scaling")
+            metadata.unitScaling = true;
+        else if (!mode.empty())
+            throw std::invalid_argument("Unsupported scaling.mode '" + mode + "'.");
+    }
     const nlohmann::json chargeCfg = sweep.value("terminal_charge", nlohmann::json::object());
     metadata.chargeContact = chargeCfg.value("contact", sweep.value("charge_contact", metadata.biasContact));
     metadata.writeVtk = sweep.value("write_vtk", cfg.value("write_vtk", false));
@@ -138,6 +149,7 @@ std::vector<py::dict> sweepPointsToPython(const std::vector<vela::DCSweepPoint>&
     for (const vela::DCSweepPoint& point : points) {
         py::dict row;
         row["curve_type"] = metadata.curveType;
+        row["scaling_mode"] = metadata.unitScaling ? "unit_scaling" : "legacy";
         row["bias_contact"] = metadata.biasContact;
         row["current_contact"] = metadata.currentContact;
         row["charge_contact"] = metadata.chargeContact;

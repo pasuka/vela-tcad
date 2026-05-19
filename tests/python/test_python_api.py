@@ -213,6 +213,29 @@ class PythonApiTest(unittest.TestCase):
         self.assertTrue(Path(mapping_points[0]["output_csv"]).exists())
         self.assertTrue(Path(mapping_points[0]["output_vtk"]).exists())
 
+    def test_unit_scaling_adds_python_companion_fields(self):
+        sweep_cfg = self.write_sweep_config()
+        data = json.loads(sweep_cfg.read_text(encoding="utf-8"))
+        data["scaling"] = {"mode": "unit_scaling"}
+        data["sweep"]["stop"] = 0.0
+        data["sweep"]["write_vtk"] = False
+        sweep_cfg.write_text(json.dumps(data), encoding="utf-8")
+
+        points = vela.run_iv_curve(str(sweep_cfg))
+        self.assertEqual(len(points), 1)
+        point = points[0]
+
+        self.assertIn("total_current", point)
+        self.assertIn("current_total_A_per_um", point)
+        self.assertIn("current_electron_A_per_um", point)
+        self.assertIn("current_hole_A_per_um", point)
+        self.assertAlmostEqual(point["current_total_A_per_um"],
+                               point["total_current"] / 1.0e6)
+        self.assertAlmostEqual(point["current_electron_A_per_um"],
+                               point["electron_current"] / 1.0e6)
+        self.assertAlmostEqual(point["current_hole_A_per_um"],
+                               point["hole_current"] / 1.0e6)
+
 
 if __name__ == "__main__":
     unittest.main()
