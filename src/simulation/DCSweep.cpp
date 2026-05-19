@@ -9,6 +9,7 @@
 #include "vela/post/ContactCurrent.h"
 #include "vela/post/ElectricFieldDiagnostics.h"
 #include "vela/post/TerminalCharge.h"
+#include "vela/post/StoredCharge.h"
 #include "vela/solver/NewtonSolver.h"
 #include "vela/solver/SolutionValidation.h"
 #include <nlohmann/json.hpp>
@@ -175,6 +176,12 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.chargePerMeter = chargeCfg.value("per_meter", j.value("charge_per_meter", true));
     sweep.chargeDepth_m = chargeCfg.value("depth_m", j.value("charge_depth_m", 1.0));
 
+    sweep.storedChargeEnabled = j.contains("stored_charge");
+    const auto storedCfg = j.value("stored_charge", nlohmann::json::object());
+    sweep.storedCharge.regions = storedCfg.value("regions", std::vector<std::string>{});
+    sweep.storedCharge.perMeter = storedCfg.value("per_meter", true);
+    sweep.storedCharge.depth_m = storedCfg.value("depth_m", 1.0);
+
     if (j.contains("terminal_charges")) {
         const auto& charges = j.at("terminal_charges");
         if (!charges.is_array())
@@ -228,6 +235,8 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         throw std::invalid_argument("DCSweep: bv_reverse sweeps must stay on one reverse-bias polarity side.");
     if (!sweep.chargePerMeter && sweep.chargeDepth_m <= 0.0)
         throw std::invalid_argument("DCSweep: sweep terminal charge depth_m must be positive.");
+    if (sweep.storedChargeEnabled && !sweep.storedCharge.perMeter && sweep.storedCharge.depth_m <= 0.0)
+        throw std::invalid_argument("DCSweep: sweep stored_charge depth_m must be positive.");
     return sweep;
 }
 
@@ -357,6 +366,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         : gummel.temperature_K;
     ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K);
     TerminalCharge terminalCharge(mesh, doping);
+    StoredCharge storedCharge(mesh);
     const bool hasMultiTerminalCharges = cfg.at("sweep").contains("terminal_charges");
     const TerminalChargeConfig& legacyChargeConfig = sweep.terminalCharges.front();
 
@@ -366,6 +376,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         "converged", "iterations", "step_diagnostics", "validation_diagnostics"};
     std::vector<std::pair<std::string, std::string>> chargeColumns;
     std::vector<std::pair<std::string, std::string>> capacitanceColumns;
+    if (sweep.mode == CurveSweepMode::IV && sweep.storedChargeEnabled)
+        header.push_back(sweep.storedCharge.perMeter ? "stored_charge_C_per_m" : "stored_charge_C");
     if (sweep.mode == CurveSweepMode::CVQuasistatic) {
         header.push_back(legacyChargeConfig.perMeter ? "charge_C_per_m" : "charge_C");
         header.push_back(legacyChargeConfig.perMeter ? "capacitance_F_per_m" : "capacitance_F");
@@ -492,6 +504,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         point.acceptedStep = acceptedStep;
         point.retryCount = retryCount;
         point.validationDiagnostics = validationDiagnostics;
+        if (converged && sweep.mode == CurveSweepMode::IV && sweep.storedChargeEnabled) {
+            point.extraFields.emplace_back(
+                sweep.storedCharge.perMeter ? "stored_charge_C_per_m" : "stored_charge_C",
+                storedCharge.compute(sol, sweep.storedCharge).charge);
+        }
         if (!converged && sweep.mode != CurveSweepMode::BVReverse)
             point.failureReason = failureReason;
         if (converged && sweep.mode == CurveSweepMode::CVQuasistatic) {
@@ -567,6 +584,17 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             std::to_string(point.iterations),
             stepDiagnostics(point),
             point.validationDiagnostics};
+        if (sweep.mode == CurveSweepMode::IV && sweep.storedChargeEnabled) {
+            const char* storedColumn = sweep.storedCharge.perMeter ? "stored_charge_C_per_m" : "stored_charge_C";
+            Real storedValue = 0.0;
+            for (const auto& [name, value] : point.extraFields) {
+                if (name == storedColumn) {
+                    storedValue = value;
+                    break;
+                }
+            }
+            row.push_back(formatReal(storedValue));
+        }
         if (sweep.mode == CurveSweepMode::CVQuasistatic) {
             row.push_back(formatReal(point.terminalCharge));
             row.push_back(formatReal(point.capacitance));

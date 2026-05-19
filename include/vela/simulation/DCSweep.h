@@ -5,6 +5,7 @@
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/post/TerminalCharge.h"
+#include "vela/post/StoredCharge.h"
 #include "vela/solver/GummelSolver.h"
 #include <string>
 #include <utility>
@@ -40,6 +41,8 @@ struct DCSweepConfig {
     bool chargePerMeter = true;
     Real chargeDepth_m = 1.0;
     std::vector<TerminalChargeConfig> terminalCharges;
+    bool storedChargeEnabled = false;
+    StoredChargeConfig storedCharge;
     BVReverseCriteria breakdown;
 };
 
