@@ -66,6 +66,12 @@ files, doping, region fixed charge, interface sheet/trap charge, mobility
 settings, and electric-field-related solver settings. The Poisson and
 drift-diffusion assemblers continue to receive SI values.
 
+CSV output keeps the legacy SI columns for compatibility. In `unit_scaling`
+mode, DC sweep CSV output also appends convenience columns using common
+external TCAD display units, such as `current_total_A_per_um`,
+`current_electron_A_per_um`, `current_hole_A_per_um`, `charge_C_per_um`,
+`capacitance_F_per_um`, and `max_electric_field_V_per_cm`.
+
 ## Doping, regions, interfaces
 
 ### doping[] entries
@@ -338,6 +344,13 @@ Output and current fields:
 - vtk_prefix
 - csv_file
 
+For 2-D devices, currents and terminal charges are per-depth quantities by
+default. Legacy CSV current values are per meter of device depth, and
+`charge_C_per_m` / `capacitance_F_per_m` are also per meter. In
+`unit_scaling` mode the CSV keeps those legacy columns and appends per-micron
+display columns (`*_A_per_um`, `charge_C_per_um`, `capacitance_F_per_um`) by
+dividing per-meter values by `1e6`.
+
 Step control fields:
 - min_step
 - max_step
@@ -375,6 +388,9 @@ terminal_charges (for multi-terminal quasi-static CV prototype):
   `capacitance_Cgate_source_F_per_m`, and `capacitance_Cgate_body_F_per_m`
   for a gate sweep. Full sanitized names are used rather than initials so
   terminals such as `source` and `substrate` cannot collide.
+- With `scaling.mode: "unit_scaling"` and `per_meter: true`, CV CSV output also
+  appends `charge_C_per_um` and `capacitance_F_per_um` for the compatibility
+  terminal charge columns.
 
 stored_charge (optional IV/CV/BV mobile-charge proxy):
 - `stored_charge` is an optional object under `sweep` for IV (`mode: "iv"`), quasi-static CV (`mode: "cv_quasistatic"`), or BV reverse (`mode: "bv_reverse"`) decks.
@@ -410,6 +426,9 @@ breakdown (for BV reverse):
 - breakdown.max_electric_field_V_per_m
 - breakdown.current_jump_ratio
 - breakdown.non_convergence
+
+In `unit_scaling` mode, BV CSV output keeps `max_electric_field_V_per_m` and
+also appends `max_electric_field_V_per_cm` by dividing the SI value by `100`.
 
 Legacy aliases still accepted:
 - breakdown_max_electric_field_V_per_m

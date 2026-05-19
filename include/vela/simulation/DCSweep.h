@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vela/core/UnitScaling.h"
 #include "vela/core/Types.h"
 #include "vela/simulation/CurveSweep.h"
 #include "vela/mesh/DeviceMesh.h"
@@ -44,6 +45,7 @@ struct DCSweepConfig {
     bool storedChargeEnabled = false;
     StoredChargeConfig storedCharge;
     BVReverseCriteria breakdown;
+    UnitScalingConfig scaling;
 };
 
 struct DCSweepPoint {

@@ -6,6 +6,7 @@
 #include "vela/simulation/DCSweepStepControl.h"
 #include "vela/post/TerminalCharge.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <filesystem>
@@ -84,6 +85,34 @@ std::filesystem::path writePNMesh(const std::filesystem::path& dir)
     return meshPath;
 }
 
+std::filesystem::path writePNMeshMicrometers(const std::filesystem::path& dir)
+{
+    nlohmann::json mesh = {
+        {"nodes", {
+            {{"id", 0}, {"x", 0.0}, {"y", 0.0}},
+            {{"id", 1}, {"x", 1.0}, {"y", 0.0}},
+            {{"id", 2}, {"x", 1.0}, {"y", 1.0}},
+            {{"id", 3}, {"x", 0.0}, {"y", 1.0}}
+        }},
+        {"triangles", {
+            {{"id", 0}, {"region_id", 0}, {"node_ids", {0, 1, 2}}},
+            {{"id", 1}, {"region_id", 1}, {"node_ids", {0, 2, 3}}}
+        }},
+        {"regions", {
+            {{"id", 0}, {"name", "n_region"}, {"material", "Si"}, {"cell_ids", {0}}},
+            {{"id", 1}, {"name", "p_region"}, {"material", "Si"}, {"cell_ids", {1}}}
+        }},
+        {"contacts", {
+            {{"id", 0}, {"name", "anode"}, {"region_id", 1}, {"node_ids", {0, 3}}},
+            {{"id", 1}, {"name", "cathode"}, {"region_id", 0}, {"node_ids", {1, 2}}}
+        }}
+    };
+
+    const auto meshPath = dir / "pn_mesh_um.json";
+    std::ofstream(meshPath) << mesh.dump(2);
+    return meshPath;
+}
+
 nlohmann::json baseSweepConfig(const std::filesystem::path& dir,
                                const std::filesystem::path& meshPath,
                                const std::filesystem::path& csvPath)
@@ -133,6 +162,29 @@ std::filesystem::path writeSweepConfig(const std::filesystem::path& dir,
     return cfgPath;
 }
 
+std::filesystem::path writeUnitScalingSweepConfig(
+    const std::filesystem::path& dir,
+    const std::filesystem::path& meshPath,
+    const std::filesystem::path& csvPath,
+    const nlohmann::json& sweepOverrides = {},
+    const nlohmann::json& solverOverrides = {})
+{
+    nlohmann::json cfg = baseSweepConfig(dir, meshPath, csvPath);
+    cfg["scaling"] = {{"mode", "unit_scaling"}};
+    cfg["doping"] = {
+        {{"region", "n_region"}, {"donors", 1.0e17}, {"acceptors", 0.0}},
+        {{"region", "p_region"}, {"donors", 0.0}, {"acceptors", 1.0e17}}
+    };
+    for (auto it = sweepOverrides.begin(); it != sweepOverrides.end(); ++it)
+        cfg["sweep"][it.key()] = it.value();
+    for (auto it = solverOverrides.begin(); it != solverOverrides.end(); ++it)
+        cfg["solver"][it.key()] = it.value();
+
+    const auto cfgPath = dir / "pn_sweep_unit_scaling.json";
+    std::ofstream(cfgPath) << cfg.dump(2);
+    return cfgPath;
+}
+
 std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& csvPath)
 {
     std::ifstream input(csvPath);
@@ -147,6 +199,20 @@ std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& c
         rows.push_back(columns);
     }
     return rows;
+}
+
+std::size_t csvColumnIndex(const std::vector<std::string>& header,
+                           const std::string& column)
+{
+    const auto it = std::find(header.begin(), header.end(), column);
+    REQUIRE(it != header.end());
+    return static_cast<std::size_t>(std::distance(header.begin(), it));
+}
+
+Real csvReal(const std::vector<std::string>& row, std::size_t column)
+{
+    REQUIRE(column < row.size());
+    return std::stod(row.at(column));
 }
 
 
@@ -257,6 +323,100 @@ TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV da
                                                      "current_contact", "current_electron", "current_hole",
                                                      "current_total", "converged", "iterations",
                                                      "step_diagnostics", "validation_diagnostics"});
+}
+
+TEST_CASE("DCSweep: unit_scaling CSV appends per-micron currents and V-per-cm field",
+          "[dc_sweep][scaling]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "bv_unit_scaling.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"mode", "bv_reverse"},
+        {"start", 0.0},
+        {"stop", 0.25},
+        {"step", 0.25},
+        {"write_vtk", false},
+        {"breakdown", {
+            {"max_electric_field_V_per_m", 1.0e12},
+            {"current_jump_ratio", 1.0e12},
+            {"non_convergence", true}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 2);
+    REQUIRE(result.points.back().converged);
+
+    const auto rows = readCsvRows(csvPath);
+    REQUIRE(rows.size() == 3);
+    const auto& header = rows.front();
+    const std::size_t currentTotal = csvColumnIndex(header, "current_total");
+    const std::size_t currentElectron = csvColumnIndex(header, "current_electron");
+    const std::size_t currentHole = csvColumnIndex(header, "current_hole");
+    const std::size_t maxField = csvColumnIndex(header, "max_electric_field_V_per_m");
+    const std::size_t currentTotalUm = csvColumnIndex(header, "current_total_A_per_um");
+    const std::size_t currentElectronUm = csvColumnIndex(header, "current_electron_A_per_um");
+    const std::size_t currentHoleUm = csvColumnIndex(header, "current_hole_A_per_um");
+    const std::size_t maxFieldCm = csvColumnIndex(header, "max_electric_field_V_per_cm");
+
+    for (std::size_t r = 1; r < rows.size(); ++r) {
+        const auto& row = rows.at(r);
+        REQUIRE(csvReal(row, currentTotalUm) ==
+                Catch::Approx(csvReal(row, currentTotal) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, currentElectronUm) ==
+                Catch::Approx(csvReal(row, currentElectron) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, currentHoleUm) ==
+                Catch::Approx(csvReal(row, currentHole) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, maxFieldCm) ==
+                Catch::Approx(csvReal(row, maxField) / 100.0).epsilon(1.0e-12));
+    }
+}
+
+TEST_CASE("DCSweep: unit_scaling CV CSV appends per-micron charge and capacitance",
+          "[dc_sweep][scaling]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "cv_unit_scaling.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"mode", "cv_quasistatic"},
+        {"start", 0.0},
+        {"stop", 0.25},
+        {"step", 0.25},
+        {"write_vtk", false},
+        {"terminal_charge", {
+            {"contact", "anode"},
+            {"regions", {"p_region"}},
+            {"per_meter", true}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 2);
+    REQUIRE(result.points.back().converged);
+
+    const auto rows = readCsvRows(csvPath);
+    REQUIRE(rows.size() == 3);
+    const auto& header = rows.front();
+    const std::size_t charge = csvColumnIndex(header, "charge_C_per_m");
+    const std::size_t capacitance = csvColumnIndex(header, "capacitance_F_per_m");
+    const std::size_t chargeUm = csvColumnIndex(header, "charge_C_per_um");
+    const std::size_t capacitanceUm = csvColumnIndex(header, "capacitance_F_per_um");
+
+    for (std::size_t r = 1; r < rows.size(); ++r) {
+        const auto& row = rows.at(r);
+        REQUIRE(csvReal(row, chargeUm) ==
+                Catch::Approx(csvReal(row, charge) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, capacitanceUm) ==
+                Catch::Approx(csvReal(row, capacitance) / 1.0e6).epsilon(1.0e-12));
+    }
 }
 
 

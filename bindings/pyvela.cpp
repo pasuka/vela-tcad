@@ -22,6 +22,8 @@ namespace py = pybind11;
 
 namespace {
 
+using MaterialLoadJsonLegacy = void (vela::MaterialDatabase::*)(const std::string&);
+
 struct LastResult {
     std::shared_ptr<vela::DeviceMesh> mesh;
     std::vector<std::pair<std::string, std::vector<vela::Real>>> nodeScalars;
@@ -250,7 +252,9 @@ PYBIND11_MODULE(_core, m)
     py::class_<vela::MaterialDatabase>(m, "MaterialDatabase")
         .def(py::init<>())
         .def(py::init<const std::string&>(), py::arg("materials_file"))
-        .def("load_json", &vela::MaterialDatabase::loadJson, py::arg("materials_file"))
+        .def("load_json",
+             static_cast<MaterialLoadJsonLegacy>(&vela::MaterialDatabase::loadJson),
+             py::arg("materials_file"))
         .def("has_material", &vela::MaterialDatabase::hasMaterial);
 
     py::class_<vela::PoissonSimulation>(m, "PoissonSimulation")

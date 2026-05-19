@@ -71,6 +71,16 @@ std::string capacitanceMnemonic(const std::string& sweepContact, const std::stri
     return "C" + sanitizedColumnToken(sweepContact) + "_" + sanitizedColumnToken(terminalName);
 }
 
+Real perMeterToPerMicron(Real value)
+{
+    return value / 1.0e6;
+}
+
+Real voltsPerMeterToVoltsPerCm(Real value)
+{
+    return value / 100.0;
+}
+
 TerminalChargeConfig terminalChargeConfigFromJson(const nlohmann::json& chargeCfg,
                                                   const DCSweepConfig& sweep,
                                                   std::size_t index,
@@ -158,6 +168,7 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
 {
     const auto& j = cfg.at("sweep");
     DCSweepConfig sweep;
+    sweep.scaling = scaling;
     sweep.mode = curveSweepModeFromString(j.value("mode", std::string("iv")));
     sweep.contact = j.at("contact").get<std::string>();
     sweep.start = j.at("start").get<Real>();
@@ -384,6 +395,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     std::vector<std::string> header = {"mode", "bias_contact", "bias_V",
         "current_contact", "current_electron", "current_hole", "current_total",
         "converged", "iterations", "step_diagnostics", "validation_diagnostics"};
+    const bool writeUnitScaledColumns = sweep.scaling.isUnitScaling();
+    if (writeUnitScaledColumns) {
+        header.push_back("current_total_A_per_um");
+        header.push_back("current_electron_A_per_um");
+        header.push_back("current_hole_A_per_um");
+    }
     std::vector<std::pair<std::string, std::string>> chargeColumns;
     std::vector<std::pair<std::string, std::string>> capacitanceColumns;
     if (sweep.storedChargeEnabled)
@@ -391,6 +408,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     if (sweep.mode == CurveSweepMode::CVQuasistatic) {
         header.push_back(legacyChargeConfig.perMeter ? "charge_C_per_m" : "charge_C");
         header.push_back(legacyChargeConfig.perMeter ? "capacitance_F_per_m" : "capacitance_F");
+        if (writeUnitScaledColumns && legacyChargeConfig.perMeter) {
+            header.push_back("charge_C_per_um");
+            header.push_back("capacitance_F_per_um");
+        }
         if (hasMultiTerminalCharges) {
             for (std::size_t i = 0; i < sweep.terminalCharges.size(); ++i) {
                 const TerminalChargeConfig& config = sweep.terminalCharges[i];
@@ -407,6 +428,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     }
     if (sweep.mode == CurveSweepMode::BVReverse) {
         header.push_back("max_electric_field_V_per_m");
+        if (writeUnitScaledColumns)
+            header.push_back("max_electric_field_V_per_cm");
         header.push_back("current_jump_ratio");
         header.push_back("breakdown_detected");
         header.push_back("breakdown_voltage");
@@ -582,6 +605,25 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 point.breakdownCriterion = "last_stable_before_nonconvergence";
             }
         }
+        if (writeUnitScaledColumns) {
+            point.extraFields.emplace_back(
+                "current_total_A_per_um", perMeterToPerMicron(point.totalCurrent));
+            point.extraFields.emplace_back(
+                "current_electron_A_per_um", perMeterToPerMicron(point.electronCurrent));
+            point.extraFields.emplace_back(
+                "current_hole_A_per_um", perMeterToPerMicron(point.holeCurrent));
+            if (sweep.mode == CurveSweepMode::CVQuasistatic && legacyChargeConfig.perMeter) {
+                point.extraFields.emplace_back(
+                    "charge_C_per_um", perMeterToPerMicron(point.terminalCharge));
+                point.extraFields.emplace_back(
+                    "capacitance_F_per_um", perMeterToPerMicron(point.capacitance));
+            }
+            if (sweep.mode == CurveSweepMode::BVReverse) {
+                point.extraFields.emplace_back(
+                    "max_electric_field_V_per_cm",
+                    voltsPerMeterToVoltsPerCm(point.maxElectricField));
+            }
+        }
         std::vector<std::string> row = {
             toString(sweep.mode),
             sweep.contact,
@@ -594,6 +636,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             std::to_string(point.iterations),
             stepDiagnostics(point),
             point.validationDiagnostics};
+        if (writeUnitScaledColumns) {
+            row.push_back(formatReal(perMeterToPerMicron(point.totalCurrent)));
+            row.push_back(formatReal(perMeterToPerMicron(point.electronCurrent)));
+            row.push_back(formatReal(perMeterToPerMicron(point.holeCurrent)));
+        }
         if (sweep.storedChargeEnabled) {
             const char* storedColumn = sweep.storedCharge.perMeter ? "stored_charge_C_per_m" : "stored_charge_C";
             Real storedValue = 0.0;
@@ -608,6 +655,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         if (sweep.mode == CurveSweepMode::CVQuasistatic) {
             row.push_back(formatReal(point.terminalCharge));
             row.push_back(formatReal(point.capacitance));
+            if (writeUnitScaledColumns && legacyChargeConfig.perMeter) {
+                row.push_back(formatReal(perMeterToPerMicron(point.terminalCharge)));
+                row.push_back(formatReal(perMeterToPerMicron(point.capacitance)));
+            }
             if (hasMultiTerminalCharges) {
                 std::unordered_map<std::string, Real> extraFieldValues;
                 for (const auto& [name, value] : point.extraFields)
@@ -622,6 +673,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
         if (sweep.mode == CurveSweepMode::BVReverse) {
             row.push_back(formatReal(point.maxElectricField));
+            if (writeUnitScaledColumns)
+                row.push_back(formatReal(voltsPerMeterToVoltsPerCm(point.maxElectricField)));
             row.push_back(formatReal(point.currentJumpRatio));
             row.push_back(point.breakdownDetected ? "1" : "0");
             row.push_back(formatReal(point.breakdownVoltage));
