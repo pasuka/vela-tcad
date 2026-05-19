@@ -226,6 +226,13 @@ EXAMPLES = [
                    "igbt_high_injection_trend"],
     },
     {
+        "name": "igbt2d_charge_cv",
+        "source": "igbt2d",
+        "config": Path("examples/igbt2d/simulation_charge_cv.json"),
+        "expected": [Path("outputs/igbt2d_charge_cv.csv")],
+        "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression", "igbt_charge_cv"],
+    },
+    {
         "name": "igbt2d_bv",
         "source": "igbt2d",
         "config": Path("examples/igbt2d/simulation_bv.json"),
@@ -1031,6 +1038,26 @@ def check_igbt_high_injection_trend(example_dir: Path) -> dict[str, Any]:
     }
 
 
+
+
+def check_igbt_charge_cv(example_dir: Path) -> dict[str, Any]:
+    cfg = json.loads((example_dir / "simulation.json").read_text())
+    rows = read_csv(output_csv_path(example_dir, cfg))
+    if not rows:
+        raise AssertionError("IGBT charge/CV CSV contains no rows")
+
+    stored = [parse_finite_float(r, "stored_charge_C_per_m", "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
+    gate_q = [parse_finite_float(r, "charge_gate_C_per_m", "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
+    coll_q = [parse_finite_float(r, "charge_collector_C_per_m", "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
+    cv_cols = ["capacitance_Cgate_gate_F_per_m", "capacitance_Cgate_collector_F_per_m", "capacitance_Cgate_emitter_F_per_m"]
+    for col in cv_cols:
+        _ = [parse_finite_float(r, col, "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
+    for value in stored:
+        if value < -1.0e-24:
+            raise AssertionError(f"IGBT stored charge must be non-negative: {stored}")
+
+    return {"stored_charge": stored, "gate_charge": gate_q, "collector_charge": coll_q}
+
 def check_igbt_bv_trend(example_dir: Path, runner: Path) -> dict[str, Any]:
     cfg_path = example_dir / "simulation.json"
     cfg = json.loads(cfg_path.read_text())
@@ -1359,6 +1386,8 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
             result["checks"]["ldmos_fieldplate_trend"] = check_ldmos_fieldplate_trend(example_dir, runner)
         if "igbt_high_injection_trend" in spec["checks"]:
             result["checks"]["igbt_high_injection_trend"] = check_igbt_high_injection_trend(example_dir)
+        if "igbt_charge_cv" in spec["checks"]:
+            result["checks"]["igbt_charge_cv"] = check_igbt_charge_cv(example_dir)
         if "igbt_bv_trend" in spec["checks"]:
             result["checks"]["igbt_bv_trend"] = check_igbt_bv_trend(example_dir, runner)
         result["passed"] = True

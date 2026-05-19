@@ -376,7 +376,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         "converged", "iterations", "step_diagnostics", "validation_diagnostics"};
     std::vector<std::pair<std::string, std::string>> chargeColumns;
     std::vector<std::pair<std::string, std::string>> capacitanceColumns;
-    if (sweep.mode == CurveSweepMode::IV && sweep.storedChargeEnabled)
+    if (sweep.storedChargeEnabled)
         header.push_back(sweep.storedCharge.perMeter ? "stored_charge_C_per_m" : "stored_charge_C");
     if (sweep.mode == CurveSweepMode::CVQuasistatic) {
         header.push_back(legacyChargeConfig.perMeter ? "charge_C_per_m" : "charge_C");
@@ -504,7 +504,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         point.acceptedStep = acceptedStep;
         point.retryCount = retryCount;
         point.validationDiagnostics = validationDiagnostics;
-        if (converged && sweep.mode == CurveSweepMode::IV && sweep.storedChargeEnabled) {
+        if (converged && sweep.storedChargeEnabled) {
             point.extraFields.emplace_back(
                 sweep.storedCharge.perMeter ? "stored_charge_C_per_m" : "stored_charge_C",
                 storedCharge.compute(sol, sweep.storedCharge).charge);
@@ -584,7 +584,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             std::to_string(point.iterations),
             stepDiagnostics(point),
             point.validationDiagnostics};
-        if (sweep.mode == CurveSweepMode::IV && sweep.storedChargeEnabled) {
+        if (sweep.storedChargeEnabled) {
             const char* storedColumn = sweep.storedCharge.perMeter ? "stored_charge_C_per_m" : "stored_charge_C";
             Real storedValue = 0.0;
             for (const auto& [name, value] : point.extraFields) {
