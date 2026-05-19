@@ -5,11 +5,11 @@
 
 TEST_CASE("StoredCharge sums finite non-negative mobile charge", "[post]") {
     vela::DeviceMesh mesh;
-    mesh.addNode(0.0, 0.0);
-    mesh.addNode(1.0, 0.0);
-    mesh.addNode(0.0, 1.0);
-    mesh.addCell({0, 1, 2}, vela::CellType::Tri3, 0);
-    mesh.addRegion("bulk", "Si", {0});
+    mesh.addNode(vela::Node{0, 0.0, 0.0, 0.0});
+    mesh.addNode(vela::Node{1, 1.0, 0.0, 0.0});
+    mesh.addNode(vela::Node{2, 0.0, 1.0, 0.0});
+    mesh.addCell(vela::Cell{0, vela::CellType::Tri3, 0, {0, 1, 2}});
+    mesh.addRegion(vela::Region{0, "bulk", "Si", {0}});
     mesh.buildEdges();
 
     vela::DDSolution sol;

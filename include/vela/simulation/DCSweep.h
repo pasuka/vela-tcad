@@ -41,6 +41,7 @@ struct DCSweepConfig {
     bool chargePerMeter = true;
     Real chargeDepth_m = 1.0;
     std::vector<TerminalChargeConfig> terminalCharges;
+    bool storedChargeEnabled = false;
     StoredChargeConfig storedCharge;
     BVReverseCriteria breakdown;
 };
