@@ -1004,8 +1004,12 @@ def check_ldmos_fieldplate_trend(example_dir: Path, runner: Path) -> dict[str, A
     baseline_run_cfg = example_dir / "ldmos_fieldplate_baseline_run.json"
     baseline_run_cfg.write_text(json.dumps(baseline_cfg, indent=2) + "\n")
     proc = subprocess.run([str(runner), "--config", str(baseline_run_cfg)], cwd=example_dir, text=True, capture_output=True)
-    if proc.returncode != 0:
-        raise AssertionError(f"LDMOS baseline BV run failed: {proc.stderr.strip()}")
+    allow_nonzero_baseline_exit = nonzero_runner_exit_allowed(baseline_cfg)
+    if proc.returncode != 0 and not allow_nonzero_baseline_exit:
+        raise AssertionError(
+            f"LDMOS baseline BV run failed with exit code {proc.returncode}; "
+            f"stdout={proc.stdout.strip()}; stderr={proc.stderr.strip()}"
+        )
     baseline_rows = read_csv(output_csv_path(example_dir, baseline_cfg))
     if not baseline_rows:
         raise AssertionError("LDMOS baseline BV CSV contains no rows")

@@ -114,6 +114,7 @@ class RegressionRunnerPolicies(unittest.TestCase):
             (example_dir / "fake_runner.sh").chmod(stat.S_IRWXU)
             with self.assertRaisesRegex(AssertionError, "max field ratio"):
                 run_regression.check_ldmos_fieldplate_trend(example_dir, example_dir / "fake_runner.sh")
+
     def test_monotone_current_tolerance_scales_to_observed_currents(self) -> None:
         cfg = {
             "output_csv": "outputs/sweep.csv",
