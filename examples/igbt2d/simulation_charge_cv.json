@@ -23,9 +23,9 @@
     "step": 0.2,
     "current_contact": "collector",
     "terminal_charges": [
-      {"name":"gate", "contact":"gate", "regions":["p_base_emitter"], "per_meter":true},
-      {"name":"collector", "contact":"collector", "regions":["p_collector","n_buffer"], "per_meter":true},
-      {"name":"emitter", "contact":"emitter", "regions":["p_base_emitter"], "per_meter":true}
+      {"name":"gate", "contact":"gate", "regions":["p_base_emitter"], "per_meter":true, "contact_radius":1e-6},
+      {"name":"collector", "contact":"collector", "regions":["p_collector","n_buffer"], "per_meter":true, "contact_radius":1e-6},
+      {"name":"emitter", "contact":"emitter", "regions":["p_base_emitter"], "per_meter":true, "contact_radius":1e-6}
     ],
     "stored_charge": {
       "regions": ["n_buffer", "n_drift", "p_base_emitter"],

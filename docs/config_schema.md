@@ -316,8 +316,8 @@ terminal_charges (for multi-terminal quasi-static CV prototype):
   for a gate sweep. Full sanitized names are used rather than initials so
   terminals such as `source` and `substrate` cannot collide.
 
-stored_charge (optional IV/CV mobile-charge proxy):
-- `stored_charge` is an optional object under `sweep` for IV or `cv_quasistatic` decks.
+stored_charge (optional IV/CV/BV mobile-charge proxy):
+- `stored_charge` is an optional object under `sweep` for IV (`mode: "iv"`), quasi-static CV (`mode: "cv_quasistatic"`), or BV reverse (`mode: "bv_reverse"`) decks.
 - Fields: `regions` (array of region names), `per_meter` (bool, default true),
   and `depth_m` (required > 0 when `per_meter` is false).
 - When enabled, CSV adds `stored_charge_C_per_m` (or
