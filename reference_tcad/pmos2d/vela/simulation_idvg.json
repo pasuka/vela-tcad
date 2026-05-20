@@ -1,0 +1,40 @@
+{
+  "_comment": "PMOS mixed Si/SiO2 unit_scaling Id-Vg reference smoke sweep; trend/order only.",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "output_csv": "pmos2d_idvg.csv",
+  "scaling": {
+    "mode": "unit_scaling"
+  },
+  "doping": [
+    { "region": "n_body", "donors": 1.0e15, "acceptors": 0.0 },
+    { "region": "p_source", "donors": 0.0, "acceptors": 5.0e15 },
+    { "region": "p_drain", "donors": 0.0, "acceptors": 5.0e15 },
+    { "region": "gate_oxide", "donors": 0.0, "acceptors": 0.0 }
+  ],
+  "interfaces": [
+    { "regions": ["n_body", "gate_oxide"], "fixed_charge_m2": -1.0e10 }
+  ],
+  "contacts": [
+    { "name": "body", "type": "ohmic", "bias": 0.0 },
+    { "name": "source", "type": "ohmic", "bias": 0.0 },
+    { "name": "gate", "type": "metal_gate", "bias": 0.0, "flatband_voltage": 0.0 },
+    { "name": "drain", "type": "ohmic", "bias": -0.1 }
+  ],
+  "solver": {
+    "method": "gummel",
+    "max_iter": 100,
+    "reltol": 1.0e-5,
+    "abstol": 1.0e18,
+    "damping_psi": 0.5
+  },
+  "sweep": {
+    "mode": "iv",
+    "contact": "gate",
+    "start": 0.0,
+    "stop": -0.1,
+    "step": -0.05,
+    "current_contact": "drain",
+    "write_vtk": false
+  }
+}

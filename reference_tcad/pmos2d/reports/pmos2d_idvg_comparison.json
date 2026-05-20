@@ -1,0 +1,27 @@
+{
+  "reference": "reference_tcad\\pmos2d\\reference_curves\\pmos2d_idvg_reference.csv",
+  "candidate": "reference_tcad\\pmos2d\\vela\\pmos2d_idvg.csv",
+  "iv": {
+    "available": true,
+    "reference_column": "current_total",
+    "candidate_column": "current_total",
+    "points_compared": 3,
+    "reference_trend": "increasing",
+    "candidate_trend": "increasing",
+    "trend_match": true,
+    "orders_of_magnitude": 0.004989322701866955,
+    "max_relative_error": 0.011422601083386686
+  },
+  "cv": {
+    "available": false,
+    "reference_column": null,
+    "candidate_column": null,
+    "trend_match": false
+  },
+  "bv": {
+    "available": false,
+    "reference_column": null,
+    "candidate_column": null,
+    "trend_match": false
+  }
+}

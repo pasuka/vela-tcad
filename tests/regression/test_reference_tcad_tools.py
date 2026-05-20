@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 import subprocess
 import sys
 import tempfile
@@ -194,12 +195,138 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         ]:
             self.assertIn(required, doc)
 
+    def test_checked_in_mos_validation_assets_are_complete(self) -> None:
+        cases = [
+            {
+                "device": "nmos2d",
+                "regions": {"p_body", "n_source", "n_drain", "gate_oxide"},
+                "idvg_stop_sign": 1.0,
+                "idvd_current_sign": 1.0,
+                "validation_doc": "nmos2d_unit_scaling_validation.md",
+            },
+            {
+                "device": "pmos2d",
+                "regions": {"n_body", "p_source", "p_drain", "gate_oxide"},
+                "idvg_stop_sign": -1.0,
+                "idvd_current_sign": 1.0,
+                "validation_doc": "pmos2d_unit_scaling_validation.md",
+            },
+        ]
+
+        for case in cases:
+            with self.subTest(device=case["device"]):
+                device_dir = REPO / "reference_tcad" / case["device"]
+                vela_dir = device_dir / "vela"
+                reports_dir = device_dir / "reports"
+
+                readme = (device_dir / "README.md").read_text()
+                for required in [
+                    "mixed Si/SiO2",
+                    "metal_gate",
+                    "interface charge",
+                    "surface mobility",
+                    "multi-terminal quasi-static CV",
+                    "all-Si MOS baseline",
+                    "unit_scaling",
+                ]:
+                    self.assertIn(required, readme)
+
+                for csv_name in ["nodes.csv", "elements.csv", "contacts.csv", "doping.csv"]:
+                    self.assertTrue((device_dir / csv_name).is_file(), csv_name)
+
+                mesh = json.loads((vela_dir / "mesh.json").read_text())
+                self.assertEqual({region["name"] for region in mesh["regions"]}, case["regions"])
+                self.assertEqual(
+                    {contact["name"] for contact in mesh["contacts"]},
+                    {"source", "drain", "body", "gate"},
+                )
+                self.assertIn("SiO2", {region["material"] for region in mesh["regions"]})
+
+                for deck_name in [
+                    "simulation_idvd.json",
+                    "simulation_idvg.json",
+                    "simulation_idvg_surface.json",
+                    "simulation_cv.json",
+                    "simulation_bv.json",
+                ]:
+                    deck = json.loads((vela_dir / deck_name).read_text())
+                    self.assertEqual(deck["scaling"], {"mode": "unit_scaling"})
+                    self.assertEqual(deck["mesh_file"], "mesh.json")
+
+                surface_deck = json.loads((vela_dir / "simulation_idvg_surface.json").read_text())
+                self.assertEqual(surface_deck["solver"]["mobility"]["model"], "caughey_thomas_field_surface")
+                self.assertEqual(surface_deck["contacts"][2]["type"], "metal_gate")
+                self.assertIn("interfaces", surface_deck)
+
+                idvg_rows = self._read_csv(vela_dir / f"{case['device']}_idvg.csv")
+                idvg_currents = [abs(float(row["current_total"])) for row in idvg_rows]
+                self.assertGreater(idvg_currents[-1], idvg_currents[0])
+                self.assertEqual(
+                    self._sign(float(idvg_rows[-1]["bias_V"])),
+                    case["idvg_stop_sign"],
+                )
+
+                idvd_rows = self._read_csv(vela_dir / f"{case['device']}_idvd.csv")
+                nonzero_idvd = [float(row["current_total"]) for row in idvd_rows if abs(float(row["bias_V"])) > 0.0]
+                self.assertTrue(nonzero_idvd)
+                self.assertEqual(self._sign(nonzero_idvd[-1]), case["idvd_current_sign"])
+
+                cv_rows = self._read_csv(vela_dir / f"{case['device']}_cv.csv")
+                cv_columns = set(cv_rows[0])
+                for column in [
+                    "charge_gate_C_per_m",
+                    "capacitance_Cgate_gate_F_per_m",
+                    "charge_drain_C_per_m",
+                    "capacitance_Cgate_drain_F_per_m",
+                    "charge_source_C_per_m",
+                    "capacitance_Cgate_source_F_per_m",
+                    "charge_body_C_per_m",
+                    "capacitance_Cgate_body_F_per_m",
+                ]:
+                    self.assertIn(column, cv_columns)
+                    values = [float(row[column]) for row in cv_rows]
+                    self.assertTrue(all(math.isfinite(value) for value in values), column)
+
+                bv_rows = self._read_csv(vela_dir / f"{case['device']}_bv.csv")
+                fields = [float(row["max_electric_field_V_per_cm"]) for row in bv_rows]
+                self.assertTrue(all(b >= a for a, b in zip(fields, fields[1:])))
+
+                for report_name in ["idvd", "idvg", "cv", "bv"]:
+                    report = json.loads((reports_dir / f"{case['device']}_{report_name}_comparison.json").read_text())
+                    section = "iv" if report_name in {"idvd", "idvg"} else report_name
+                    self.assertTrue(report[section]["available"], report_name)
+                    self.assertTrue(report[section]["trend_match"], report_name)
+
+                doc = (REPO / "docs" / "validation" / case["validation_doc"]).read_text()
+                for required in [
+                    "Id-Vg",
+                    "Id-Vd",
+                    "multi-terminal CV",
+                    "BV max field",
+                    "trend and order-of-magnitude",
+                    "no calibration claim",
+                ]:
+                    self.assertIn(required, doc)
+
     @staticmethod
     def _write_csv(path: Path, header: list[str], rows: list[list[object]]) -> None:
         with path.open("w", newline="") as handle:
             writer = csv.writer(handle)
             writer.writerow(header)
             writer.writerows(rows)
+
+    @staticmethod
+    def _read_csv(path: Path) -> list[dict[str, str]]:
+        with path.open(newline="") as handle:
+            return list(csv.DictReader(handle))
+
+    @staticmethod
+    def _sign(value: float) -> float:
+        if value > 0.0:
+            return 1.0
+        if value < 0.0:
+            return -1.0
+        return 0.0
 
 
 if __name__ == "__main__":

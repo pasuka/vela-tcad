@@ -1,0 +1,52 @@
+{
+  "_comment": "NMOS unit_scaling Id-Vg sweep with prototype Si/SiO2 surface mobility degradation; trend/order only.",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "output_csv": "nmos2d_idvg_surface.csv",
+  "scaling": {
+    "mode": "unit_scaling"
+  },
+  "doping": [
+    { "region": "p_body", "donors": 0.0, "acceptors": 1.0e15 },
+    { "region": "n_source", "donors": 5.0e15, "acceptors": 0.0 },
+    { "region": "n_drain", "donors": 5.0e15, "acceptors": 0.0 },
+    { "region": "gate_oxide", "donors": 0.0, "acceptors": 0.0 }
+  ],
+  "interfaces": [
+    { "regions": ["p_body", "gate_oxide"], "fixed_charge_m2": 1.0e10 }
+  ],
+  "contacts": [
+    { "name": "body", "type": "ohmic", "bias": 0.0 },
+    { "name": "source", "type": "ohmic", "bias": 0.0 },
+    { "name": "gate", "type": "metal_gate", "bias": 0.0, "flatband_voltage": 0.0 },
+    { "name": "drain", "type": "ohmic", "bias": 0.1 }
+  ],
+  "solver": {
+    "method": "gummel",
+    "max_iter": 100,
+    "reltol": 1.0e-5,
+    "abstol": 1.0e18,
+    "damping_psi": 0.5,
+    "mobility": {
+      "model": "caughey_thomas_field_surface",
+      "surface": {
+        "theta_electron_m_per_V": 2.0e-6,
+        "theta_hole_m_per_V": 1.0e-6,
+        "beta": 1.0,
+        "reference_field_V_per_m": 0.0,
+        "min_factor": 0.05,
+        "surface_region": "p_body",
+        "surface_interface": ["p_body", "gate_oxide"]
+      }
+    }
+  },
+  "sweep": {
+    "mode": "iv",
+    "contact": "gate",
+    "start": 0.0,
+    "stop": 0.1,
+    "step": 0.05,
+    "current_contact": "drain",
+    "write_vtk": false
+  }
+}
