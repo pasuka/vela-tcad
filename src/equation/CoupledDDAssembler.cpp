@@ -397,15 +397,10 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     if (x.size() != 3 * N)
         throw std::invalid_argument("CoupledDDAssembler::assembleJacobian: vector size mismatch.");
 
-    if (scaling_.enabled) {
-        // Scaled Newton currently uses finite-difference derivatives as the
-        // conservative fallback until the full analytic scale chain is wired.
-        return finiteDifferenceJacobian(x, bcs);
-    }
-
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
-    const VectorXd psi = x.segment(psiOffset(), N);
+    const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
+    const VectorXd psi = x.segment(psiOffset(), N) * potentialScale;
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
         ? detail::computeNodeElectricFields(psi, mesh_)
         : std::vector<Real>{};
@@ -426,7 +421,21 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
     std::vector<Eigen::Triplet<double>> triplets;
     triplets.reserve(static_cast<std::size_t>(N) * 27);
+    auto scaleDerivative = [&](int row, int, Real value) {
+        if (!scaling_.enabled)
+            return value;
+        const Real rowScale = (row < N)
+            ? (scaling_.permittivityReference_F_per_m * scaling_.V0)
+            : (scaling_.C0 * scaling_.D0);
+        return value * scaling_.V0 / rowScale;
+    };
+
     auto add = [&](int row, int col, Real value) {
+        if (value != 0.0 && !constrainedRows[static_cast<std::size_t>(row)])
+            triplets.emplace_back(row, col, scaleDerivative(row, col, value));
+    };
+
+    auto addGauge = [&](int row, int col, Real value) {
         if (value != 0.0 && !constrainedRows[static_cast<std::size_t>(row)])
             triplets.emplace_back(row, col, value);
     };
@@ -438,10 +447,14 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     std::vector<Real> expPsi(static_cast<std::size_t>(N));
     std::vector<Real> expNegPsi(static_cast<std::size_t>(N));
     for (int k = 0; k < N; ++k) {
-        expNegPhin[static_cast<std::size_t>(k)] = std::exp(-x(phinOffset() + k) / Vt_);
-        expPhip[static_cast<std::size_t>(k)]    = std::exp( x(phipOffset()  + k) / Vt_);
-        expPsi[static_cast<std::size_t>(k)]     = std::exp( x(psiOffset()   + k) / Vt_);
-        expNegPsi[static_cast<std::size_t>(k)]  = std::exp(-x(psiOffset()   + k) / Vt_);
+        expNegPhin[static_cast<std::size_t>(k)] =
+            std::exp(-x(phinOffset() + k) * potentialScale / Vt_);
+        expPhip[static_cast<std::size_t>(k)] =
+            std::exp(x(phipOffset() + k) * potentialScale / Vt_);
+        expPsi[static_cast<std::size_t>(k)] =
+            std::exp(x(psiOffset() + k) * potentialScale / Vt_);
+        expNegPsi[static_cast<std::size_t>(k)] =
+            std::exp(-x(psiOffset() + k) * potentialScale / Vt_);
     }
 
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
@@ -451,7 +464,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
-        const Real dpsi = x(psiOffset() + j) - x(psiOffset() + i);
+        const Real psi_i = x(psiOffset() + i) * potentialScale;
+        const Real psi_j = x(psiOffset() + j) * potentialScale;
+        const Real dpsi = psi_j - psi_i;
         const Real electricField = std::abs(dpsi / h);
         const Real u = dpsi / Vt_;
         const Real Bu = bernoulli(u);
@@ -546,7 +561,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             continue;
 
         if (recombination_.srhEnabled() || recombination_.augerEnabled()) {
-            const Real dPhi = x(phipOffset() + ii) - x(phinOffset() + ii);
+            const Real dPhi =
+                (x(phipOffset() + ii) - x(phinOffset() + ii)) * potentialScale;
             const Real np = (ni > 0.0) ? ni * ni * std::exp(dPhi / Vt_) : n(ii) * p(ii);
             const Real excessProduct = (ni > 0.0)
                 ? ni * ni * std::expm1(dPhi / Vt_)
@@ -607,9 +623,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     for (Index i = 0; i < Nidx; ++i) {
         const int ii = static_cast<int>(i);
         if (!hasElectronContribution[static_cast<std::size_t>(ii)])
-            add(phinOffset() + ii, phinOffset() + ii, 1.0);
+            addGauge(phinOffset() + ii, phinOffset() + ii, 1.0);
         if (!hasHoleContribution[static_cast<std::size_t>(ii)])
-            add(phipOffset() + ii, phipOffset() + ii, 1.0);
+            addGauge(phipOffset() + ii, phipOffset() + ii, 1.0);
     }
 
     for (const auto& [node, value] : bcs.psi) {

@@ -1,0 +1,4 @@
+bias_V,current_total,max_electric_field_V_per_cm
+0.0,1.0e-12,1.0e4
+-1.0,2.0e-12,2.5e4
+-2.0,4.0e-12,4.2e4

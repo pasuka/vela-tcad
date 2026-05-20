@@ -1,0 +1,4 @@
+bias_V,capacitance_F_per_m,capacitance_F_per_um,stored_charge_C_per_m
+0.0,1.0e-10,1.0e-16,0.0
+0.2,1.3e-10,1.3e-16,1.0e-13
+0.4,1.7e-10,1.7e-16,2.5e-13

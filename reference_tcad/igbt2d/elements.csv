@@ -1,0 +1,10 @@
+id,node0,node1,node2,region,material
+0,0,1,2,p_collector,Si
+1,0,2,3,p_collector,Si
+2,3,2,4,n_buffer,Si
+3,3,4,5,n_buffer,Si
+4,5,4,6,n_drift,Si
+5,5,6,7,n_drift,Si
+6,7,6,8,p_base,Si
+7,8,6,9,n_emitter,Si
+

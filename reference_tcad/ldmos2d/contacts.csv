@@ -1,0 +1,6 @@
+name,node_ids,region
+source,0;1,n_source
+body,7,p_body
+drain,3;4,n_drain
+gate,8;9;10,gate_oxide
+

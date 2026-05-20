@@ -1,0 +1,37 @@
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 1.0, "y": 0.0},
+    {"id": 2, "x": 1.0, "y": 0.4},
+    {"id": 3, "x": 0.0, "y": 0.4},
+    {"id": 4, "x": 1.0, "y": 1.4},
+    {"id": 5, "x": 0.0, "y": 1.4},
+    {"id": 6, "x": 1.0, "y": 2.0},
+    {"id": 7, "x": 0.0, "y": 2.0},
+    {"id": 8, "x": 0.4, "y": 2.2},
+    {"id": 9, "x": 1.0, "y": 2.2}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]},
+    {"id": 1, "region_id": 0, "node_ids": [0, 2, 3]},
+    {"id": 2, "region_id": 1, "node_ids": [3, 2, 4]},
+    {"id": 3, "region_id": 1, "node_ids": [3, 4, 5]},
+    {"id": 4, "region_id": 2, "node_ids": [5, 4, 6]},
+    {"id": 5, "region_id": 2, "node_ids": [5, 6, 7]},
+    {"id": 6, "region_id": 3, "node_ids": [7, 6, 8]},
+    {"id": 7, "region_id": 4, "node_ids": [8, 6, 9]}
+  ],
+  "regions": [
+    {"id": 0, "name": "p_collector", "material": "Si", "cell_ids": [0, 1]},
+    {"id": 1, "name": "n_buffer", "material": "Si", "cell_ids": [2, 3]},
+    {"id": 2, "name": "n_drift", "material": "Si", "cell_ids": [4, 5]},
+    {"id": 3, "name": "p_base", "material": "Si", "cell_ids": [6]},
+    {"id": 4, "name": "n_emitter", "material": "Si", "cell_ids": [7]}
+  ],
+  "contacts": [
+    {"id": 0, "name": "collector", "region_id": 0, "node_ids": [0, 1]},
+    {"id": 1, "name": "gate", "region_id": 3, "node_ids": [6, 9]},
+    {"id": 2, "name": "emitter", "region_id": 4, "node_ids": [8, 9]}
+  ]
+}
+

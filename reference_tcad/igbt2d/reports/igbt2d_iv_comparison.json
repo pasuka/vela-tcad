@@ -1,0 +1,8 @@
+{
+  "reference": "reference_tcad/igbt2d/reference_curves/igbt2d_iv_reference.csv",
+  "candidate": "reference_tcad/igbt2d/vela/igbt2d_iv.csv",
+  "iv": {"available": true, "reference_column": "current_total", "candidate_column": "current_total", "points_compared": 3, "reference_trend": "increasing", "candidate_trend": "increasing", "trend_match": true, "orders_of_magnitude": 0.041393, "max_relative_error": 0.1},
+  "cv": {"available": false, "reference_column": null, "candidate_column": null, "trend_match": false},
+  "bv": {"available": false, "reference_column": null, "candidate_column": null, "trend_match": false}
+}
+

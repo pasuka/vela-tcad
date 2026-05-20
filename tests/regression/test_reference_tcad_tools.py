@@ -308,6 +308,92 @@ class ReferenceTcadToolsTest(unittest.TestCase):
                 ]:
                     self.assertIn(required, doc)
 
+    def test_checked_in_power_device_validation_assets_are_complete(self) -> None:
+        cases = [
+            {
+                "device": "ldmos2d",
+                "regions": {"p_body", "n_source", "n_drift", "n_drain", "gate_oxide"},
+                "contacts": {"source", "body", "drain", "gate"},
+                "decks": [
+                    "simulation_iv.json",
+                    "simulation_bv.json",
+                    "simulation_bv_fieldplate.json",
+                ],
+                "reports": ["iv", "bv", "fieldplate"],
+                "validation_doc": "ldmos2d_unit_scaling_validation.md",
+                "required_doc": [
+                    "low-bias DD-IV",
+                    "field-plate",
+                    "max field",
+                    "engineering trend validation",
+                    "no calibration claim",
+                ],
+            },
+            {
+                "device": "igbt2d",
+                "regions": {"p_collector", "n_buffer", "n_drift", "p_base", "n_emitter"},
+                "contacts": {"collector", "gate", "emitter"},
+                "decks": [
+                    "simulation_iv.json",
+                    "simulation_high_injection_iv.json",
+                    "simulation_charge_cv.json",
+                    "simulation_bv.json",
+                    "simulation_bv_ii.json",
+                ],
+                "reports": ["iv", "high_injection_iv", "charge_cv", "bv", "bv_ii"],
+                "validation_doc": "igbt2d_unit_scaling_validation.md",
+                "required_doc": [
+                    "high-injection",
+                    "stored charge",
+                    "breakdown diagnostic",
+                    "engineering trend validation",
+                    "no calibration claim",
+                ],
+            },
+        ]
+
+        for case in cases:
+            with self.subTest(device=case["device"]):
+                device_dir = REPO / "reference_tcad" / case["device"]
+                vela_dir = device_dir / "vela"
+                reports_dir = device_dir / "reports"
+                reference_dir = device_dir / "reference_curves"
+
+                readme = (device_dir / "README.md").read_text()
+                for required in [
+                    "unit_scaling",
+                    "engineering trend validation",
+                    "no calibration claim",
+                ]:
+                    self.assertIn(required, readme)
+
+                for csv_name in ["nodes.csv", "elements.csv", "contacts.csv", "doping.csv"]:
+                    self.assertTrue((device_dir / csv_name).is_file(), csv_name)
+
+                mesh = json.loads((vela_dir / "mesh.json").read_text())
+                self.assertEqual({region["name"] for region in mesh["regions"]}, case["regions"])
+                self.assertEqual({contact["name"] for contact in mesh["contacts"]}, case["contacts"])
+
+                for deck_name in case["decks"]:
+                    deck = json.loads((vela_dir / deck_name).read_text())
+                    self.assertEqual(deck["scaling"], {"mode": "unit_scaling"})
+                    self.assertEqual(deck["mesh_file"], "mesh.json")
+
+                for report_name in case["reports"]:
+                    self.assertTrue((reference_dir / f"{case['device']}_{report_name}_reference.csv").is_file())
+                    report = json.loads(
+                        (reports_dir / f"{case['device']}_{report_name}_comparison.json").read_text()
+                    )
+                    available = [
+                        key for key in ("iv", "cv", "bv")
+                        if report[key]["available"] and report[key]["trend_match"]
+                    ]
+                    self.assertTrue(available, report_name)
+
+                doc = (REPO / "docs" / "validation" / case["validation_doc"]).read_text()
+                for required in case["required_doc"]:
+                    self.assertIn(required, doc)
+
     @staticmethod
     def _write_csv(path: Path, header: list[str], rows: list[list[object]]) -> None:
         with path.open("w", newline="") as handle:

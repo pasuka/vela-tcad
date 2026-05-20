@@ -1,0 +1,21 @@
+{
+  "_comment": "LDMOS off-state BV/high-field reference_tcad trend deck; not calibrated.",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "output_csv": "ldmos2d_bv.csv",
+  "scaling": {"mode": "unit_scaling"},
+  "doping": [
+    {"region": "p_body", "donors": 0.0, "acceptors": 2.0e17},
+    {"region": "n_source", "donors": 1.0e19, "acceptors": 0.0},
+    {"region": "n_drift", "donors": 5.0e15, "acceptors": 0.0},
+    {"region": "n_drain", "donors": 1.0e18, "acceptors": 0.0}
+  ],
+  "contacts": [
+    {"name": "source", "bias": 0.0},
+    {"name": "body", "bias": 0.0},
+    {"name": "drain", "bias": 0.0},
+    {"name": "gate", "type": "metal_gate", "bias": 0.0, "flatband_voltage": 0.0}
+  ],
+  "solver": {"method": "gummel", "max_iter": 120, "reltol": 1.0e-5, "abstol": 1.0e18, "damping_psi": 0.5},
+  "sweep": {"mode": "bv_reverse", "contact": "drain", "current_contact": "drain", "start": 0.0, "stop": -1.0, "step": -0.5, "write_vtk": false, "breakdown": {"max_electric_field_V_per_m": 1.0e12, "current_jump_ratio": 1.0e12, "non_convergence": true}}
+}

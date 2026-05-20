@@ -1,0 +1,5 @@
+name,node_ids,region
+collector,0;1,p_collector
+emitter,8;9,n_emitter
+gate,6;9,p_base
+

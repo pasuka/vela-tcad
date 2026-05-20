@@ -1,0 +1,4 @@
+bias_V,current_total,current_total_A_per_um,stored_charge_C_per_m
+0.0,0.0,0.0,0.0
+0.4,4.0e-8,4.0e-14,1.0e-13
+0.8,1.2e-7,1.2e-13,4.0e-13

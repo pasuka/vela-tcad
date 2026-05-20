@@ -1,0 +1,41 @@
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 0.5, "y": 0.0},
+    {"id": 2, "x": 2.0, "y": 0.0},
+    {"id": 3, "x": 3.0, "y": 0.0},
+    {"id": 4, "x": 3.0, "y": 0.5},
+    {"id": 5, "x": 2.0, "y": 0.5},
+    {"id": 6, "x": 0.5, "y": 0.5},
+    {"id": 7, "x": 0.0, "y": 0.5},
+    {"id": 8, "x": 0.5, "y": 0.65},
+    {"id": 9, "x": 2.0, "y": 0.65},
+    {"id": 10, "x": 2.4, "y": 0.65}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 0, "node_ids": [0, 1, 6]},
+    {"id": 1, "region_id": 0, "node_ids": [0, 6, 7]},
+    {"id": 2, "region_id": 2, "node_ids": [1, 2, 5]},
+    {"id": 3, "region_id": 2, "node_ids": [1, 5, 6]},
+    {"id": 4, "region_id": 3, "node_ids": [2, 3, 4]},
+    {"id": 5, "region_id": 3, "node_ids": [2, 4, 5]},
+    {"id": 6, "region_id": 1, "node_ids": [0, 1, 6]},
+    {"id": 7, "region_id": 4, "node_ids": [1, 8, 9]},
+    {"id": 8, "region_id": 4, "node_ids": [1, 9, 5]},
+    {"id": 9, "region_id": 4, "node_ids": [9, 10, 5]}
+  ],
+  "regions": [
+    {"id": 0, "name": "p_body", "material": "Si", "cell_ids": [0, 1]},
+    {"id": 1, "name": "n_source", "material": "Si", "cell_ids": [6]},
+    {"id": 2, "name": "n_drift", "material": "Si", "cell_ids": [2, 3]},
+    {"id": 3, "name": "n_drain", "material": "Si", "cell_ids": [4, 5]},
+    {"id": 4, "name": "gate_oxide", "material": "SiO2", "cell_ids": [7, 8, 9]}
+  ],
+  "contacts": [
+    {"id": 0, "name": "source", "region_id": 1, "node_ids": [0, 1]},
+    {"id": 1, "name": "body", "region_id": 0, "node_ids": [7]},
+    {"id": 2, "name": "drain", "region_id": 3, "node_ids": [3, 4]},
+    {"id": 3, "name": "gate", "region_id": 4, "node_ids": [8, 9, 10]}
+  ]
+}
+

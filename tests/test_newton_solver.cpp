@@ -385,7 +385,7 @@ TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
     REQUIRE(debugCfg.warmStart);
 }
 
-TEST_CASE("NewtonSolver: unit_scaling config records scaled mode and uses finite-difference fallback",
+TEST_CASE("NewtonSolver: unit_scaling config records scaled mode and preserves analytic Jacobian",
           "[newton][scaling][config]")
 {
     const NewtonConfig cfg = newtonConfigFromJson(
@@ -393,7 +393,7 @@ TEST_CASE("NewtonSolver: unit_scaling config records scaled mode and uses finite
         UnitScalingConfig{UnitScalingMode::UnitScaling});
 
     REQUIRE(cfg.inputScaling.isUnitScaling());
-    REQUIRE(cfg.jacobian == "finite_difference");
+    REQUIRE(cfg.jacobian == "analytic");
 }
 
 TEST_CASE("NewtonSolver: warm start preserves supplied quasi-Fermi guess", "[newton][warm_start]")

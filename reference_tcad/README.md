@@ -12,3 +12,11 @@ Each device subdirectory can hold:
 - `doping.csv` with `node_id,donors_cm3,acceptors_cm3`
 
 Use `scripts/convert_tcad_export.py` to generate Vela `unit_scaling` decks.
+
+Checked-in validation chains currently cover:
+
+- `pn_diode`
+- `nmos2d`
+- `pmos2d`
+- `ldmos2d`
+- `igbt2d`

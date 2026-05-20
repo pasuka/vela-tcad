@@ -194,8 +194,6 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (cfg.jacobian != "analytic" && cfg.jacobian != "finite_difference")
         throw std::invalid_argument(
             "newtonConfigFromJson: jacobian must be 'analytic' or 'finite_difference'.");
-    if (cfg.inputScaling.isUnitScaling())
-        cfg.jacobian = "finite_difference";
     if (cfg.residualNorm != "block" && cfg.residualNorm != "l2")
         throw std::invalid_argument(
             "newtonConfigFromJson: residual_norm must be 'block' or 'l2'.");
