@@ -215,6 +215,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         ddScaling.C0 = scalingSystem.C0();
         ddScaling.mu0 = scalingSystem.mu0();
         ddScaling.D0 = scalingSystem.D0();
+        ddScaling.L0 = scalingSystem.L0();
         ddScaling.permittivityReference_F_per_m = epsRef;
     }
 

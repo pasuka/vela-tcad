@@ -100,10 +100,17 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
 {
     if (scaling_.enabled) {
-        if (scaling_.V0 <= 0.0 || scaling_.C0 <= 0.0 || scaling_.mu0 <= 0.0 ||
-            scaling_.D0 <= 0.0 || scaling_.permittivityReference_F_per_m <= 0.0) {
+        const auto isPositiveFinite = [](Real value) {
+            return value > 0.0 && std::isfinite(value);
+        };
+        if (!isPositiveFinite(scaling_.V0) ||
+            !isPositiveFinite(scaling_.C0) ||
+            !isPositiveFinite(scaling_.mu0) ||
+            !isPositiveFinite(scaling_.D0) ||
+            !isPositiveFinite(scaling_.L0) ||
+            !isPositiveFinite(scaling_.permittivityReference_F_per_m)) {
             throw std::invalid_argument(
-                "DDAssembler: scaling references must be positive when scaling is enabled.");
+                "DDAssembler: scaling references must be positive and finite when scaling is enabled.");
         }
     }
 }

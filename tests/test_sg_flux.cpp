@@ -11,6 +11,7 @@
 #include "vela/physics/RecombinationModel.h"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 using namespace vela;
@@ -223,6 +224,49 @@ TEST_CASE("CoupledDDAssembler validates doping size before BGN construction", "[
                                          MobilityModelConfig{},
                                          recombinationModelConfig({"none"}),
                                          bgn),
+                      std::invalid_argument);
+}
+
+TEST_CASE("DDAssembler rejects incomplete unit scaling references", "[sg][dd][scaling]")
+{
+    DeviceMesh mesh = makeSingleSiliconTriangleMesh();
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+
+    DDScalingSpec scaling;
+    scaling.enabled = true;
+    scaling.V0 = constants::Vt_300;
+    scaling.C0 = 1.0e23;
+    scaling.mu0 = 0.135;
+    scaling.D0 = scaling.mu0 * scaling.V0;
+    scaling.L0 = 0.0;
+    scaling.permittivityReference_F_per_m = constants::eps0 * 11.7;
+
+    REQUIRE_THROWS_AS(DDAssembler(mesh,
+                                  matdb,
+                                  doping,
+                                  constants::Vt_300,
+                                  MobilityModelConfig{},
+                                  recombinationModelConfig({"none"}),
+                                  BandgapNarrowingConfig{},
+                                  ImpactIonizationModelConfig{},
+                                  {},
+                                  {},
+                                  scaling),
+                      std::invalid_argument);
+
+    scaling.L0 = std::numeric_limits<Real>::quiet_NaN();
+    REQUIRE_THROWS_AS(DDAssembler(mesh,
+                                  matdb,
+                                  doping,
+                                  constants::Vt_300,
+                                  MobilityModelConfig{},
+                                  recombinationModelConfig({"none"}),
+                                  BandgapNarrowingConfig{},
+                                  ImpactIonizationModelConfig{},
+                                  {},
+                                  {},
+                                  scaling),
                       std::invalid_argument);
 }
 
