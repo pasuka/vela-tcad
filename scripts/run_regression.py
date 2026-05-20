@@ -1087,7 +1087,13 @@ def check_igbt_high_injection_trend(example_dir: Path, runner: Path | None = Non
     reg = cfg.get("regression", {}).get("igbt_high_injection", {})
     currents = [abs(parse_finite_float(r, "current_total", "IGBT high-injection IV", i + 1))
                 for i, r in enumerate(rows)]
-    stored = [parse_finite_float(r, "stored_charge_C_per_m", "IGBT high-injection IV", i + 1)
+    stored_charge_key = "stored_charge_C_per_m" if "stored_charge_C_per_m" in rows[-1] else (
+        "stored_charge_C" if "stored_charge_C" in rows[-1] else None)
+    if stored_charge_key is None:
+        raise AssertionError(
+            "IGBT high-injection IV CSV missing stored-charge column "
+            "(expected stored_charge_C_per_m or stored_charge_C)")
+    stored = [parse_finite_float(r, stored_charge_key, "IGBT high-injection IV", i + 1)
               for i, r in enumerate(rows)]
     assert_monotone_non_decreasing(currents, "IGBT |collector current|",
                                    abs_tolerance=1e-20, rel_tolerance=1e-8)
@@ -1155,7 +1161,13 @@ def check_igbt_charge_cv(example_dir: Path) -> dict[str, Any]:
         raise AssertionError("IGBT charge/CV CSV contains no rows")
 
     reg = cfg.get("regression", {}).get("igbt_charge_cv", {})
-    stored = [parse_finite_float(r, "stored_charge_C_per_m", "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
+    stored_charge_key = "stored_charge_C_per_m" if "stored_charge_C_per_m" in rows[-1] else (
+        "stored_charge_C" if "stored_charge_C" in rows[-1] else None)
+    if stored_charge_key is None:
+        raise AssertionError(
+            "IGBT charge/CV CSV missing stored-charge column "
+            "(expected stored_charge_C_per_m or stored_charge_C)")
+    stored = [parse_finite_float(r, stored_charge_key, "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
     gate_q = [parse_finite_float(r, "charge_gate_C_per_m", "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
     coll_q = [parse_finite_float(r, "charge_collector_C_per_m", "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
     cv_cols = ["capacitance_Cgate_gate_F_per_m", "capacitance_Cgate_collector_F_per_m", "capacitance_Cgate_emitter_F_per_m"]

@@ -404,7 +404,7 @@ which stays on one reverse-bias polarity side for `bv_reverse`.
   low-bias DD-IV, off-state BV diagnostics, and field-plate/RESURF max-field
   trend comparisons.
 
-**Run directly.**
+**Run directly (unit-scaling reference path).**
 
 ```bash
 mkdir -p examples/ldmos2d/outputs
@@ -412,6 +412,15 @@ build/vela_example_runner --config examples/ldmos2d/simulation_iv.json
 build/vela_example_runner --config examples/ldmos2d/simulation_dd_iv_unit_scaling.json
 build/vela_example_runner --config examples/ldmos2d/simulation_bv_unit_scaling.json
 build/vela_example_runner --config examples/ldmos2d/simulation_bv_fieldplate_unit_scaling.json
+```
+
+**Run directly (legacy SI optional path).**
+
+```bash
+mkdir -p examples/ldmos2d/outputs
+build/vela_example_runner --config examples/ldmos2d/simulation_iv.json
+build/vela_example_runner --config examples/ldmos2d/simulation_dd_iv.json
+build/vela_example_runner --config examples/ldmos2d/simulation_bv.json
 ```
 
 **Outputs and acceptance metrics.**
@@ -463,7 +472,7 @@ shared parser.
   low-current/high-injection IV, stored-charge proxy CV, and BV diagnostics with
   and without impact ionization.
 
-**Run directly.**
+**Run directly (unit-scaling reference path).**
 
 ```bash
 mkdir -p examples/igbt2d/outputs
@@ -473,6 +482,16 @@ build/vela_example_runner --config examples/igbt2d/simulation_high_injection_iv_
 build/vela_example_runner --config examples/igbt2d/simulation_charge_cv_unit_scaling.json
 build/vela_example_runner --config examples/igbt2d/simulation_bv_unit_scaling.json
 build/vela_example_runner --config examples/igbt2d/simulation_bv_ii_unit_scaling.json
+```
+
+**Run directly (legacy SI optional path).**
+
+```bash
+mkdir -p examples/igbt2d/outputs
+build/vela_example_runner --config examples/igbt2d/simulation_poisson.json
+build/vela_example_runner --config examples/igbt2d/simulation_iv.json
+build/vela_example_runner --config examples/igbt2d/simulation_bv.json
+build/vela_example_runner --config examples/igbt2d/simulation_bv_ii.json
 ```
 
 **Outputs and acceptance metrics.**
