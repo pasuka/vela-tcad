@@ -1,0 +1,37 @@
+{
+  "reference": "reference_tcad\\pn_diode\\reference_curves\\pn_diode_reference_summary.csv",
+  "candidate": "reference_tcad\\pn_diode\\reports\\pn_diode_vela_summary.csv",
+  "iv": {
+    "available": true,
+    "reference_column": "current_total",
+    "candidate_column": "current_total",
+    "points_compared": 3,
+    "reference_trend": "increasing",
+    "candidate_trend": "increasing",
+    "trend_match": true,
+    "orders_of_magnitude": 0.058947606794671537,
+    "max_relative_error": 0.14537475531338728
+  },
+  "cv": {
+    "available": true,
+    "reference_column": "capacitance_F_per_m",
+    "candidate_column": "capacitance_F_per_m",
+    "points_compared": 3,
+    "reference_trend": "flat",
+    "candidate_trend": "flat",
+    "trend_match": true,
+    "orders_of_magnitude": 0.11785158015180415,
+    "max_relative_error": 0.23766050547586878
+  },
+  "bv": {
+    "available": true,
+    "reference_column": "max_electric_field_V_per_cm",
+    "candidate_column": "max_electric_field_V_per_cm",
+    "points_compared": 3,
+    "reference_trend": "increasing",
+    "candidate_trend": "increasing",
+    "trend_match": true,
+    "orders_of_magnitude": 0.001022590309603886,
+    "max_relative_error": 0.0023518313041501772
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "_comment": "Generated from explicit reference TCAD CSV export. Coordinates, doping, mobility-like inputs, fields, and sheet densities use scaling.mode = unit_scaling conventions.",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh.json",
+  "output_csv": "pn_diode_bv.csv",
+  "scaling": {
+    "mode": "unit_scaling"
+  },
+  "doping": [
+    {
+      "region": "p_region",
+      "donors": 0.0,
+      "acceptors": 1000000000000000.0
+    },
+    {
+      "region": "n_region",
+      "donors": 1000000000000000.0,
+      "acceptors": 0.0
+    }
+  ],
+  "contacts": [
+    {
+      "name": "anode",
+      "bias": 0.0
+    },
+    {
+      "name": "cathode",
+      "bias": 0.0
+    }
+  ],
+  "solver": {
+    "method": "gummel",
+    "max_iter": 200,
+    "reltol": 1e-05,
+    "damping_psi": 0.5
+  },
+  "sweep": {
+    "mode": "bv_reverse",
+    "start": 0.0,
+    "stop": -1.0,
+    "step": -0.5,
+    "write_vtk": false,
+    "breakdown": {
+      "max_electric_field_V_per_m": 1000000000000.0,
+      "current_jump_ratio": 1000000000000.0,
+      "non_convergence": true
+    },
+    "contact": "anode",
+    "current_contact": "anode"
+  }
+}

@@ -141,6 +141,59 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             self.assertIn("orders_of_magnitude", report["iv"])
             self.assertIn("Reference TCAD Curve Comparison", report_md.read_text())
 
+    def test_checked_in_pn_validation_assets_are_complete(self) -> None:
+        pn_dir = REPO / "reference_tcad" / "pn_diode"
+        vela_dir = pn_dir / "vela"
+        reports_dir = pn_dir / "reports"
+        validation_doc = REPO / "docs" / "validation" / "pn_diode_unit_scaling_validation.md"
+
+        readme = (pn_dir / "README.md").read_text()
+        for required in [
+            "2D silicon",
+            "p_region",
+            "n_region",
+            "anode",
+            "cathode",
+            "abrupt junction",
+            "forward IV",
+            "reverse quasi-static CV",
+            "reverse BV",
+            "unit_scaling",
+        ]:
+            self.assertIn(required, readme)
+
+        for csv_name in ["nodes.csv", "elements.csv", "contacts.csv", "doping.csv"]:
+            self.assertTrue((pn_dir / csv_name).is_file(), csv_name)
+
+        mesh = json.loads((vela_dir / "mesh.json").read_text())
+        self.assertEqual({region["name"] for region in mesh["regions"]}, {"n_region", "p_region"})
+        self.assertEqual({contact["name"] for contact in mesh["contacts"]}, {"anode", "cathode"})
+
+        for deck_name in ["simulation_iv.json", "simulation_cv.json", "simulation_bv.json"]:
+            deck = json.loads((vela_dir / deck_name).read_text())
+            self.assertEqual(deck["scaling"], {"mode": "unit_scaling"})
+            self.assertEqual(deck["mesh_file"], "mesh.json")
+
+        cv_deck = json.loads((vela_dir / "simulation_cv.json").read_text())
+        bv_deck = json.loads((vela_dir / "simulation_bv.json").read_text())
+        self.assertLess(cv_deck["sweep"]["stop"], 0.0)
+        self.assertLess(bv_deck["sweep"]["stop"], 0.0)
+
+        report = json.loads((reports_dir / "pn_diode_comparison.json").read_text())
+        for section in ["iv", "cv", "bv"]:
+            self.assertTrue(report[section]["available"], section)
+            self.assertTrue(report[section]["trend_match"], section)
+
+        doc = validation_doc.read_text()
+        for required in [
+            "IV monotonic",
+            "finite capacitance",
+            "max field non-decreasing",
+            "trend and order-of-magnitude",
+            "no calibration claim",
+        ]:
+            self.assertIn(required, doc)
+
     @staticmethod
     def _write_csv(path: Path, header: list[str], rows: list[list[object]]) -> None:
         with path.open("w", newline="") as handle:

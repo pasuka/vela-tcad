@@ -1,0 +1,3 @@
+name,node_ids,region
+anode,0;3;6,p_region
+cathode,2;5;8,n_region
