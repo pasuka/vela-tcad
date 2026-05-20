@@ -590,8 +590,8 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     breakdown_detected = False
     breakdown_criterion = ""
     breakdown_voltage = 0.0
-    breakdown_last_stable_bias: float | None = None
-    breakdown_failed_bias: float | None = None
+    last_stable_bias: float | None = None
+    failed_bias: float | None = None
     multi_terminal_cv_columns = cv_multi_terminal_columns(sweep_cfg, rows[0]) if mode == "cv_quasistatic" else []
     cgg_column = next((cap for name, _, cap in multi_terminal_cv_columns if name == "gate"), None)
     nonzero_cgg_rows = 0
@@ -684,10 +684,10 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
                 breakdown_criterion = row.get("criterion", "")
                 breakdown_voltage = parse_finite_float(row, "breakdown_voltage", f"{example}: BV sweep", row_index)
                 if row.get("last_stable_bias", "") != "":
-                    breakdown_last_stable_bias = parse_finite_float(
+                    last_stable_bias = parse_finite_float(
                         row, "last_stable_bias", f"{example}: BV sweep", row_index)
                 if row.get("failed_bias", "") != "":
-                    breakdown_failed_bias = parse_finite_float(
+                    failed_bias = parse_finite_float(
                         row, "failed_bias", f"{example}: BV sweep", row_index)
         if attempted > max_abs_attempted + 1.0e-12:
             raise AssertionError(
@@ -791,8 +791,8 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
         result["max_field_trend_checked"] = max_field_trend_checked
         result["breakdown_criterion"] = breakdown_criterion
         result["breakdown_voltage"] = breakdown_voltage
-        result["last_stable_bias"] = breakdown_last_stable_bias
-        result["failed_bias"] = breakdown_failed_bias
+        result["last_stable_bias"] = last_stable_bias
+        result["failed_bias"] = failed_bias
     if stored_charge_final is not None:
         result["stored_charge_final"] = stored_charge_final
 
@@ -993,7 +993,7 @@ def assert_monotone_non_decreasing(
                 f"{label} is not monotone non-decreasing within tolerance {tolerance}: {values}")
 
 
-def assert_monotone_stable(
+def assert_monotone(
     values: list[float],
     label: str,
     direction: str = "either",
@@ -1012,7 +1012,8 @@ def assert_monotone_stable(
         )
         return
     if direction != "either":
-        raise AssertionError(f"{label} monotone direction must be one of: nondecreasing, nonincreasing, either")
+        raise AssertionError(
+            f"Invalid monotone direction {direction!r}; must be one of: nondecreasing, nonincreasing, either")
     try:
         assert_monotone_non_decreasing(values, label, abs_tolerance, rel_tolerance)
         return
@@ -1090,8 +1091,8 @@ def check_igbt_high_injection_trend(example_dir: Path, runner: Path | None = Non
               for i, r in enumerate(rows)]
     assert_monotone_non_decreasing(currents, "IGBT |collector current|",
                                    abs_tolerance=1e-20, rel_tolerance=1e-8)
-    if bool(reg.get("require_stored_charge_monotone", True)):
-        assert_monotone_stable(
+    if reg.get("require_stored_charge_monotone", True):
+        assert_monotone(
             stored,
             "IGBT stored charge trend",
             direction=str(reg.get("stored_charge_monotone_direction", "either")).lower(),
@@ -1113,8 +1114,13 @@ def check_igbt_high_injection_trend(example_dir: Path, runner: Path | None = Non
     if baseline_cfg_name:
         if runner is None:
             raise AssertionError("IGBT high-injection baseline comparison requires runner path")
+        if not runner.exists():
+            raise AssertionError(f"IGBT high-injection baseline runner not found: {runner}")
+        if not os.access(runner, os.X_OK):
+            raise AssertionError(f"IGBT high-injection baseline runner is not executable: {runner}")
         baseline_cfg = json.loads((example_dir / str(baseline_cfg_name)).read_text())
-        baseline_cfg["output_csv"] = str(reg.get("baseline_csv", "outputs/igbt2d_low_current_baseline.csv"))
+        default_baseline_csv = Path("outputs/baseline.csv")
+        baseline_cfg["output_csv"] = str(reg.get("baseline_csv", str(default_baseline_csv)))
         baseline_cfg.setdefault("sweep", {})["write_vtk"] = False
         baseline_run_cfg = example_dir / "igbt_high_injection_baseline_run.json"
         baseline_run_cfg.write_text(json.dumps(baseline_cfg, indent=2) + "\n")
@@ -1162,8 +1168,8 @@ def check_igbt_charge_cv(example_dir: Path) -> dict[str, Any]:
     for value in stored:
         if value < -1.0e-24:
             raise AssertionError(f"IGBT stored charge must be non-negative: {stored}")
-    if bool(reg.get("require_stored_charge_monotone", False)):
-        assert_monotone_stable(
+    if reg.get("require_stored_charge_monotone", False):
+        assert_monotone(
             stored,
             "IGBT charge/CV stored charge trend",
             direction=str(reg.get("stored_charge_monotone_direction", "either")).lower(),
