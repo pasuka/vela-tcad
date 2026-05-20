@@ -993,6 +993,45 @@ def assert_monotone_non_decreasing(
                 f"{label} is not monotone non-decreasing within tolerance {tolerance}: {values}")
 
 
+def assert_monotone_stable(
+    values: list[float],
+    label: str,
+    direction: str = "either",
+    abs_tolerance: float = 1.0e-18,
+    rel_tolerance: float = 0.0,
+) -> None:
+    if direction == "nondecreasing":
+        assert_monotone_non_decreasing(values, label, abs_tolerance, rel_tolerance)
+        return
+    if direction == "nonincreasing":
+        assert_monotone_non_decreasing(
+            [-value for value in values],
+            label,
+            abs_tolerance,
+            rel_tolerance,
+        )
+        return
+    if direction != "either":
+        raise AssertionError(f"{label} monotone direction must be one of: nondecreasing, nonincreasing, either")
+    try:
+        assert_monotone_non_decreasing(values, label, abs_tolerance, rel_tolerance)
+        return
+    except AssertionError:
+        pass
+    try:
+        assert_monotone_non_decreasing(
+            [-value for value in values],
+            label,
+            abs_tolerance,
+            rel_tolerance,
+        )
+        return
+    except AssertionError:
+        raise AssertionError(
+            f"{label} is not monotone non-decreasing or non-increasing within tolerance; values={values}"
+        ) from None
+
+
 
 def check_ldmos_iv_trend(example_dir: Path) -> dict[str, Any]:
     cfg = json.loads((example_dir / "simulation.json").read_text())
@@ -1052,9 +1091,10 @@ def check_igbt_high_injection_trend(example_dir: Path, runner: Path | None = Non
     assert_monotone_non_decreasing(currents, "IGBT |collector current|",
                                    abs_tolerance=1e-20, rel_tolerance=1e-8)
     if bool(reg.get("require_stored_charge_monotone", True)):
-        assert_monotone_non_decreasing(
+        assert_monotone_stable(
             stored,
             "IGBT stored charge trend",
+            direction=str(reg.get("stored_charge_monotone_direction", "either")).lower(),
             abs_tolerance=float(reg.get("stored_charge_monotone_abs_tolerance", 1.0e-24)),
             rel_tolerance=float(reg.get("stored_charge_monotone_rel_tolerance", 1.0e-8)),
         )
@@ -1123,9 +1163,10 @@ def check_igbt_charge_cv(example_dir: Path) -> dict[str, Any]:
         if value < -1.0e-24:
             raise AssertionError(f"IGBT stored charge must be non-negative: {stored}")
     if bool(reg.get("require_stored_charge_monotone", False)):
-        assert_monotone_non_decreasing(
+        assert_monotone_stable(
             stored,
             "IGBT charge/CV stored charge trend",
+            direction=str(reg.get("stored_charge_monotone_direction", "either")).lower(),
             abs_tolerance=float(reg.get("stored_charge_monotone_abs_tolerance", 1.0e-24)),
             rel_tolerance=float(reg.get("stored_charge_monotone_rel_tolerance", 1.0e-8)),
         )

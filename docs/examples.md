@@ -398,14 +398,20 @@ which stays on one reverse-bias polarity side for `bv_reverse`.
   is the edge-difference diagnostic (`max(|delta psi| / edge length)`) from the
   mesh potential, not a calibrated high-order electric-field reconstruction or
   calibrated BV threshold.
+- `simulation_dd_iv_unit_scaling.json`, `simulation_bv_unit_scaling.json`, and
+  `simulation_bv_fieldplate_unit_scaling.json`: unit-scaling reference decks
+  (`scaling.mode: "unit_scaling"`) for engineering trend validation of
+  low-bias DD-IV, off-state BV diagnostics, and field-plate/RESURF max-field
+  trend comparisons.
 
 **Run directly.**
 
 ```bash
 mkdir -p examples/ldmos2d/outputs
 build/vela_example_runner --config examples/ldmos2d/simulation_iv.json
-build/vela_example_runner --config examples/ldmos2d/simulation_dd_iv.json
-build/vela_example_runner --config examples/ldmos2d/simulation_bv.json
+build/vela_example_runner --config examples/ldmos2d/simulation_dd_iv_unit_scaling.json
+build/vela_example_runner --config examples/ldmos2d/simulation_bv_unit_scaling.json
+build/vela_example_runner --config examples/ldmos2d/simulation_bv_fieldplate_unit_scaling.json
 ```
 
 **Outputs and acceptance metrics.**
@@ -449,15 +455,24 @@ shared parser.
   reverse-bias BV/leakage diagnostics with `impact_ionization.model: "none"`.
 - `simulation_bv_ii.json`: optional Selberherr impact-ionization variant for a
   short off-state BV smoke comparison path.
+- `simulation_iv_unit_scaling.json`,
+  `simulation_high_injection_iv_unit_scaling.json`,
+  `simulation_charge_cv_unit_scaling.json`,
+  `simulation_bv_unit_scaling.json`, and
+  `simulation_bv_ii_unit_scaling.json`: unit-scaling engineering trend decks for
+  low-current/high-injection IV, stored-charge proxy CV, and BV diagnostics with
+  and without impact ionization.
 
 **Run directly.**
 
 ```bash
 mkdir -p examples/igbt2d/outputs
 build/vela_example_runner --config examples/igbt2d/simulation_poisson.json
-build/vela_example_runner --config examples/igbt2d/simulation_iv.json
-build/vela_example_runner --config examples/igbt2d/simulation_bv.json
-build/vela_example_runner --config examples/igbt2d/simulation_bv_ii.json
+build/vela_example_runner --config examples/igbt2d/simulation_iv_unit_scaling.json
+build/vela_example_runner --config examples/igbt2d/simulation_high_injection_iv_unit_scaling.json
+build/vela_example_runner --config examples/igbt2d/simulation_charge_cv_unit_scaling.json
+build/vela_example_runner --config examples/igbt2d/simulation_bv_unit_scaling.json
+build/vela_example_runner --config examples/igbt2d/simulation_bv_ii_unit_scaling.json
 ```
 
 **Outputs and acceptance metrics.**

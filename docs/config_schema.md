@@ -620,6 +620,11 @@ blocks while staying explicitly prototype-level:
     "baseline_config": "simulation_bv.json",
     "max_field_ratio_limit": 1.20
   },
+  "igbt_high_injection": {
+    "baseline_config": "simulation_iv.json",
+    "baseline_final_current_min_ratio": 1.0,
+    "require_stored_charge_monotone": true
+  },
   "igbt_charge_cv": {
     "require_stored_charge_monotone": true
   }
