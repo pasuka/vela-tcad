@@ -1,4 +1,4 @@
-# PMOS2D reference fixture
+# PMOS2D Reference Fixture
 
 This directory contains a neutral reference_tcad validation fixture for a
 mixed Si/SiO2 PMOS deck using `unit_scaling`.
@@ -17,12 +17,13 @@ mixed Si/SiO2 PMOS deck using `unit_scaling`.
 - all-Si MOS baseline: the existing `examples/pmos2d_dd` decks remain the
   stable all-Si MOS reference baseline.
 
-## Validation coverage
+## Validation Coverage
 
 - Id-Vd drain sweep at fixed negative gate bias.
-- Id-Vg gate sweep with current increasing in magnitude under negative gate bias.
+- Id-Vg gate sweep with current increasing in magnitude under negative gate
+  bias.
 - multi-terminal quasi-static CV for gate, drain, source, and body charges.
 - Off-state drain BV/high-field diagnostic.
 
-The first dataset checks signs, trends, and key orders of magnitude only. It is
-not calibrated to a process or external simulator.
+The fixture checks signs, trends, and key orders of magnitude only. It is not
+calibrated to a process or external simulator.

@@ -1,7 +1,12 @@
 # Config Schema Reference
 
-This document is the implementation-aligned reference for JSON config files used by Vela.
-It describes fields currently parsed by the C++ code paths in Poisson and DC sweep drivers.
+This document is the implementation-aligned reference for JSON config files used
+by Vela. It describes fields currently parsed by the C++ Poisson, DC sweep, and
+single-bias Newton paths.
+
+Use this file as the field-level reference. Use
+[examples.md](examples.md) for deck support status and
+[architecture.md](architecture.md) for solver path boundaries.
 
 Scope and conventions:
 - No `scaling` field keeps the legacy SI input behavior used by existing decks.
@@ -10,6 +15,8 @@ Scope and conventions:
 - Relative paths are resolved from the directory of the config JSON file.
 - Legacy decks remain supported where noted.
 - Prototype features are marked explicitly.
+- Field names with historical SI suffixes are kept for compatibility. In
+  `unit_scaling` mode the numeric interpretation is described explicitly below.
 
 ## Top-level fields
 
@@ -30,6 +37,18 @@ Scope and conventions:
 | solver | object | Optional | Gummel/Newton settings for DD sweep and Newton solve. |
 | sweep | object | Required for dc_sweep | Sweep mode, range, outputs, and diagnostics controls. |
 | regression | object | Optional | Regression assertions consumed by `scripts/run_regression.py`. |
+
+## Simulation type dispatch
+
+`vela_example_runner --config <file>` dispatches by `simulation_type`:
+
+- omitted or `poisson`: Poisson driver.
+- `dc_sweep`: adaptive curve sweep driver.
+- `newton`: single-bias coupled Newton solve.
+
+For `dc_sweep`, omitting `solver.method` keeps the default Gummel path. Set
+`solver.method` (or legacy alias `solver.type`) to `newton` to use the coupled
+Newton sweep path where supported.
 
 ## scaling
 
@@ -245,6 +264,53 @@ Notes:
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 - With `scaling.mode: "unit_scaling"`, `bandgap_narrowing.reference_doping_m3`
   is read as `cm^-3` and normalized to `m^-3`.
+
+### bandgap_narrowing
+
+`solver.bandgap_narrowing` accepts either a string or an object.
+
+String form:
+
+```json
+"bandgap_narrowing": "slotboom"
+```
+
+Object form:
+
+```json
+"bandgap_narrowing": {
+  "model": "slotboom",
+  "reference_doping_m3": 1.0e23,
+  "coefficient_eV": 0.009,
+  "smoothing": 0.5
+}
+```
+
+Supported `model` values:
+- `none`
+- `slotboom`
+
+The Slotboom prototype computes an effective bandgap narrowing from the maximum
+of absolute net doping and local carrier densities, then feeds the resulting
+effective intrinsic density into the drift-diffusion statistics path. This is
+implemented in Gummel and Newton configurations. With
+`scaling.mode: "unit_scaling"`, `reference_doping_m3` numeric input is read as
+`cm^-3` and normalized to `m^-3`.
+
+### Newton diagnostics and residual options
+
+Newton configs can opt into diagnostic history with either
+`"diagnostics": true` or `"diagnostic_history": true`. The solver also accepts:
+
+- `jacobian`: `analytic` or `finite_difference`
+- `finite_difference_step`
+- `residual_norm`: `block` or `l2`
+- `residual_weights`: object with `psi`, `phin`, and `phip`
+- `residual_scales`: object with `psi`, `phin`, and `phip`
+
+`warm_start: true` preserves supplied quasi-Fermi potentials when continuing
+from a previous solution. The default `false` keeps the conservative
+cold-start behavior.
 
 ### impact_ionization
 
@@ -543,6 +609,21 @@ Common fields used by examples:
 - ldmos_iv: optional regression-runner settings for the LDMOS DD-IV smoke check,
   including `drain_current_sign`, `current_monotone_abs_tolerance`, and
   `current_monotone_rel_tolerance`
+- mos: optional Id-Vd / generated Id-Vg trend settings for MOS examples,
+  including `device`, `drain_current_sign`, and nested `idvg` sweep controls.
+- surface_mobility: optional comparison block for a surface-mobility variant
+  against a baseline Id-Vg deck. Fields include `baseline_config`,
+  `baseline_csv`, and `current_ratio_tolerance`.
+- schottky_iv: optional Schottky IV trend block with current sign and monotonic
+  tolerance fields.
+- ldmos_fieldplate_trend: optional LDMOS field-plate comparison block with
+  `baseline_config`, optional baseline/variant field columns, and
+  `max_field_ratio_limit`.
+- igbt_high_injection: optional high-injection IV comparison block with
+  baseline CSV/config fields and stored-charge monotonicity settings.
+- igbt_charge_cv: optional stored-charge and multi-terminal CV trend checks.
+- igbt_bv: optional BV/impact-ionization comparison block with baseline config,
+  bias-match tolerance, and current multiplier tolerance.
 
 ## Minimal examples
 

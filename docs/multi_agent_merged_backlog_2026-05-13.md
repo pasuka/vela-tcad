@@ -1,5 +1,10 @@
 # Multi-Agent Merged Implementation Backlog (2026-05-13)
 
+> Archive note: this backlog has been completed. It is kept for traceability
+> and should not be treated as the current roadmap. Use `README.md`,
+> `docs/architecture.md`, `docs/config_schema.md`, and `docs/examples.md` for
+> current behavior.
+
 ## 1. 输入来源
 1. 架构/算法风险审计（Vela Architecture Analyst）。
 2. 测试覆盖缺口审计（Explore）。

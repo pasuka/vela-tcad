@@ -9,7 +9,10 @@ introduced for public input mode:
 
 Scope:
 - Poisson assembly and solve path only.
-- No change to DD/Gummel/Newton assembly logic in this stage.
+- DD/Gummel/Newton decks also use the shared `unit_scaling` input conversion
+  at the schema boundary, but this note only describes the Poisson-specific
+  scaled assembly path. Drift-diffusion assembly still receives normalized SI
+  values.
 
 ## Goals
 
