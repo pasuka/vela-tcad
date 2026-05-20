@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(vela-tcad VERSION 0.1.0 LANGUAGES CXX)
+project(vela-tcad VERSION 0.1.0 LANGUAGES C CXX)
 
 # ---------------------------------------------------------------------------
 # C++20
@@ -23,6 +23,24 @@ find_package(Catch2 3 REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 option(VELA_ENABLE_PYTHON "Build the pybind11 Python API" OFF)
+option(VELA_ENABLE_HDF5 "Build Sentaurus HDF5/TDR import tools when HDF5 is available" ON)
+
+if(VELA_ENABLE_HDF5)
+    find_package(hdf5 CONFIG QUIET)
+    if(TARGET hdf5-shared)
+        set(VELA_HDF5_TARGET hdf5-shared)
+    elseif(TARGET hdf5-static)
+        set(VELA_HDF5_TARGET hdf5-static)
+    else()
+        set(VELA_HDF5_TARGET "")
+    endif()
+
+    if(VELA_HDF5_TARGET)
+        message(STATUS "Sentaurus HDF5/TDR import enabled via ${VELA_HDF5_TARGET}")
+    else()
+        message(STATUS "Sentaurus HDF5/TDR import disabled: HDF5 package not found")
+    endif()
+endif()
 
 # ---------------------------------------------------------------------------
 # Library: vela_core
@@ -76,6 +94,19 @@ target_link_libraries(vela_core PUBLIC
     nlohmann_json::nlohmann_json
 )
 
+if(VELA_HDF5_TARGET)
+    add_library(vela_sentaurus STATIC
+        src/io/SentaurusTdrReader.cpp
+    )
+    target_include_directories(vela_sentaurus PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    )
+    target_compile_definitions(vela_sentaurus PUBLIC VELA_ENABLE_HDF5=1)
+    target_link_libraries(vela_sentaurus PUBLIC
+        nlohmann_json::nlohmann_json
+        ${VELA_HDF5_TARGET}
+    )
+endif()
 
 # ---------------------------------------------------------------------------
 # Python API
@@ -117,6 +148,11 @@ endif()
 add_executable(vela_example_runner src/tools/vela_example_runner.cpp)
 target_link_libraries(vela_example_runner PRIVATE vela_core)
 
+if(VELA_HDF5_TARGET)
+    add_executable(sentaurus_import src/tools/sentaurus_import.cpp)
+    target_link_libraries(sentaurus_import PRIVATE vela_sentaurus)
+endif()
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -124,6 +160,23 @@ enable_testing()
 include(CTest)
 
 set(VELA_ASCII_CHECK_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CheckAscii.cmake)
+
+function(vela_windows_msys2_test_env out_var)
+    if(WIN32)
+        set(_vela_test_path "D:\\msys64\\ucrt64\\bin;D:\\msys64\\usr\\bin;$ENV{PATH}")
+        string(REPLACE ";" "\\;" _vela_test_path "${_vela_test_path}")
+        set(${out_var} "PATH=${_vela_test_path}" PARENT_SCOPE)
+    else()
+        set(${out_var} "" PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(vela_set_windows_msys2_test_path test_name)
+    if(WIN32)
+        vela_windows_msys2_test_env(_vela_env)
+        set_tests_properties(${test_name} PROPERTIES ENVIRONMENT "${_vela_env}")
+    endif()
+endfunction()
 
 add_custom_target(check_ascii
     COMMAND ${CMAKE_COMMAND}
@@ -223,45 +276,83 @@ target_link_libraries(test_poisson_neumann PRIVATE vela_core Catch2::Catch2WithM
 add_executable(test_mos_interface_charge tests/test_mos_interface_charge.cpp)
 target_link_libraries(test_mos_interface_charge PRIVATE vela_core Catch2::Catch2WithMain)
 
+if(VELA_HDF5_TARGET)
+    add_executable(test_sentaurus_tdr_reader tests/test_sentaurus_tdr_reader.cpp)
+    target_link_libraries(test_sentaurus_tdr_reader PRIVATE vela_sentaurus Catch2::Catch2WithMain)
+endif()
+
 
 include(Catch)
-catch_discover_tests(test_scaling)
-catch_discover_tests(test_mesh)
-catch_discover_tests(test_poisson)
+
+function(vela_catch_discover_tests target_name)
+    if(WIN32)
+        vela_windows_msys2_test_env(_vela_env)
+        catch_discover_tests(${target_name} ${ARGN} PROPERTIES ENVIRONMENT "${_vela_env}")
+    else()
+        catch_discover_tests(${target_name} ${ARGN})
+    endif()
+endfunction()
+
+vela_catch_discover_tests(test_scaling)
+vela_catch_discover_tests(test_mesh)
+vela_catch_discover_tests(test_poisson)
 add_test(NAME poisson COMMAND test_poisson [poisson])
-catch_discover_tests(test_linear_solver)
-catch_discover_tests(test_box_geometry)
-catch_discover_tests(test_bernoulli)
-catch_discover_tests(test_sg_flux)
-catch_discover_tests(test_dd_gummel)
+vela_catch_discover_tests(test_linear_solver)
+vela_catch_discover_tests(test_box_geometry)
+vela_catch_discover_tests(test_bernoulli)
+vela_catch_discover_tests(test_sg_flux)
+vela_catch_discover_tests(test_dd_gummel)
 add_test(NAME dd COMMAND test_dd_gummel [gummel])
-catch_discover_tests(test_gummel_high_doping)
-catch_discover_tests(test_device_stability)
+vela_catch_discover_tests(test_gummel_high_doping)
+vela_catch_discover_tests(test_device_stability)
 add_test(NAME device_stability COMMAND test_device_stability [device_stability])
-catch_discover_tests(test_ldmos_dd)
+vela_catch_discover_tests(test_ldmos_dd)
 add_test(NAME ldmos COMMAND test_ldmos_dd [ldmos])
-catch_discover_tests(test_newton_solver)
-catch_discover_tests(test_mos_solver_crosscheck)
+vela_catch_discover_tests(test_newton_solver)
+vela_catch_discover_tests(test_mos_solver_crosscheck)
 add_test(NAME mos_solver_crosscheck COMMAND test_mos_solver_crosscheck [mos_solver_crosscheck])
-catch_discover_tests(test_mos_mixed_material)
+vela_catch_discover_tests(test_mos_mixed_material)
 add_test(NAME mos_mixed COMMAND test_mos_mixed_material [mos_mixed])
-catch_discover_tests(test_mobility)
-catch_discover_tests(test_impact_ionization)
-catch_discover_tests(test_recombination)
-catch_discover_tests(test_line_search_backtrack_failure)
-catch_discover_tests(test_dc_sweep)
+vela_catch_discover_tests(test_mobility)
+vela_catch_discover_tests(test_impact_ionization)
+vela_catch_discover_tests(test_recombination)
+vela_catch_discover_tests(test_line_search_backtrack_failure)
+vela_catch_discover_tests(test_dc_sweep)
 add_test(NAME dc_sweep COMMAND test_dc_sweep [dc_sweep])
-catch_discover_tests(test_solution_validation)
-catch_discover_tests(test_stored_charge)
-catch_discover_tests(test_electric_field_diagnostics)
+vela_catch_discover_tests(test_solution_validation)
+vela_catch_discover_tests(test_stored_charge)
+vela_catch_discover_tests(test_electric_field_diagnostics)
 add_test(NAME electric_field_diagnostics COMMAND test_electric_field_diagnostics [electric_field])
-catch_discover_tests(test_boundary_conditions)
+vela_catch_discover_tests(test_boundary_conditions)
 add_test(NAME boundary COMMAND test_boundary_conditions [boundary])
-catch_discover_tests(test_schottky_contact)
+vela_catch_discover_tests(test_schottky_contact)
 add_test(NAME schottky COMMAND test_schottky_contact [schottky])
-catch_discover_tests(test_poisson_neumann)
-catch_discover_tests(test_mos_interface_charge)
+vela_catch_discover_tests(test_poisson_neumann)
+vela_catch_discover_tests(test_mos_interface_charge)
 add_test(NAME interface COMMAND test_mos_interface_charge [interface])
+
+if(VELA_HDF5_TARGET)
+    vela_catch_discover_tests(test_sentaurus_tdr_reader)
+    add_test(NAME sentaurus_tdr COMMAND test_sentaurus_tdr_reader [sentaurus])
+    vela_set_windows_msys2_test_path(sentaurus_tdr)
+endif()
+
+foreach(_vela_manual_cpp_test IN ITEMS
+    example_runner_newton
+    poisson
+    dd
+    device_stability
+    ldmos
+    mos_solver_crosscheck
+    mos_mixed
+    dc_sweep
+    electric_field_diagnostics
+    boundary
+    schottky
+    interface
+)
+    vela_set_windows_msys2_test_path(${_vela_manual_cpp_test})
+endforeach()
 
 
 add_test(NAME regression
@@ -270,7 +361,14 @@ add_test(NAME regression
             --repo ${CMAKE_CURRENT_SOURCE_DIR}
             --runner $<TARGET_FILE:vela_example_runner>
             --workdir ${CMAKE_CURRENT_BINARY_DIR}/regression_output)
+vela_set_windows_msys2_test_path(regression)
 
 add_test(NAME reference_tcad_regression
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_reference_tcad_tools.py)
+vela_set_windows_msys2_test_path(reference_tcad_regression)
+
+add_test(NAME sentaurus_import_tools
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_sentaurus_import_tools.py)
+vela_set_windows_msys2_test_path(sentaurus_import_tools)
