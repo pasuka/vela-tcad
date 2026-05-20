@@ -379,6 +379,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     MobilityModelConfig mobilityConfig;
     if (solverMethod == SolverMethod::Newton) {
         newton = newtonConfigFromJson(solverCfg, scaling);
+        newton.unitScalingRefs = scalingRefs;
         mobilityConfig = newton.mobility;
     } else {
         gummel = gummelConfigFromJson(solverCfg, scaling);

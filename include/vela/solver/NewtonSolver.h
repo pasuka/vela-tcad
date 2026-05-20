@@ -3,6 +3,7 @@
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/Types.h"
 #include "vela/core/UnitScaling.h"
+#include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/mesh/DeviceMesh.h"
@@ -38,6 +39,8 @@ struct NewtonConfig {
     Real residualScalePsi = 0.0;  ///< <= 0 selects max(initial psi-block residual norm, 1)
     Real residualScalePhin = 0.0; ///< <= 0 selects max(initial electron-continuity residual norm, 1)
     Real residualScalePhip = 0.0; ///< <= 0 selects max(initial hole-continuity residual norm, 1)
+    UnitScalingConfig inputScaling{}; ///< Input-unit mode from top-level config.
+    UnitScalingReferenceConfig unitScalingRefs{}; ///< Optional reference overrides.
     Real taun = 1.0e-7;
     Real taup = 1.0e-7;
     MobilityModelConfig mobility{}; ///< Mobility model configuration
@@ -83,6 +86,7 @@ public:
 private:
     CoupledDDBoundaryConditions buildBoundaryConditions(
         const CoupledDDAssembler& assembler) const;
+    DDScalingSpec buildScalingSpec() const;
     DDSolution buildInitialGuess(const CoupledDDAssembler& assembler,
                                  const CoupledDDBoundaryConditions& bcs) const;
     DDSolution makeSolution(const CoupledDDAssembler& assembler,

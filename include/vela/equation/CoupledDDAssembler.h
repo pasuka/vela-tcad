@@ -2,6 +2,7 @@
 
 #include "vela/core/Types.h"
 #include "vela/equation/ChargeSpec.h"
+#include "vela/equation/DDAssembler.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
@@ -55,7 +56,8 @@ public:
                        const BandgapNarrowingConfig& bandgapNarrowingConfig = {},
                        const ImpactIonizationModelConfig& impactIonizationConfig = {},
                        std::vector<RegionFixedChargeSpec> fixedCharges = {},
-                       std::vector<InterfaceSheetChargeSpec> sheetCharges = {});
+                       std::vector<InterfaceSheetChargeSpec> sheetCharges = {},
+                       DDScalingSpec scaling = {});
 
     VectorXd pack(const CoupledDDState& state) const;
     CoupledDDState unpack(const VectorXd& x) const;
@@ -78,6 +80,9 @@ public:
     bool hasPositiveFiniteCarriers(const VectorXd& x) const;
     Index numNodes() const { return mesh_.numNodes(); }
     const std::vector<Real>& intrinsicDensity() const { return ni_; }
+    bool usesScaledState() const { return scaling_.enabled; }
+    Real potentialScale() const { return scaling_.V0; }
+    Real concentrationScale() const { return scaling_.C0; }
 
 private:
     int psiOffset() const { return 0; }
@@ -101,6 +106,7 @@ private:
     std::vector<Real> vol_;
     std::vector<Real> couple_;
     VectorXd fixedInterfaceChargeRhs_;
+    DDScalingSpec scaling_;
 };
 
 } // namespace vela

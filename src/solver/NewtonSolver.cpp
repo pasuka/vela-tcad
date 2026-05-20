@@ -1,5 +1,6 @@
 #include "vela/solver/NewtonSolver.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/core/UnitScalingSystem.h"
 #include "vela/numerics/ResidualNorm.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/solver/LinearSolver.h"
@@ -70,12 +71,37 @@ ResidualBlockNormValue residualScalesFromConfig(
     return scales;
 }
 
+Real maxRelativePermittivityAcrossRegions(const DeviceMesh& mesh,
+                                          const MaterialDatabase& matdb,
+                                          Real temperature_K)
+{
+    Real maxEpsr = 0.0;
+    for (const Region& region : mesh.regions()) {
+        const Material& material = matdb.getMaterial(region.material, temperature_K);
+        maxEpsr = std::max(maxEpsr, material.eps_r);
+    }
+    return std::max(maxEpsr, 1.0);
+}
+
+Real maxIntrinsicDensityAcrossRegions(const DeviceMesh& mesh,
+                                      const MaterialDatabase& matdb,
+                                      Real temperature_K)
+{
+    Real maxNi = 1.0;
+    for (const Region& region : mesh.regions()) {
+        const Material& material = matdb.getMaterial(region.material, temperature_K);
+        maxNi = std::max(maxNi, material.ni);
+    }
+    return maxNi;
+}
+
 } // namespace
 
 
 NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig scaling)
 {
     NewtonConfig cfg;
+    cfg.inputScaling = scaling;
     cfg.maxIter = json.value("max_iter", cfg.maxIter);
     cfg.reltol = json.value("reltol", cfg.reltol);
     cfg.abstol = json.value("abstol", cfg.abstol);
@@ -168,6 +194,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (cfg.jacobian != "analytic" && cfg.jacobian != "finite_difference")
         throw std::invalid_argument(
             "newtonConfigFromJson: jacobian must be 'analytic' or 'finite_difference'.");
+    if (cfg.inputScaling.isUnitScaling())
+        cfg.jacobian = "finite_difference";
     if (cfg.residualNorm != "block" && cfg.residualNorm != "l2")
         throw std::invalid_argument(
             "newtonConfigFromJson: residual_norm must be 'block' or 'l2'.");
@@ -211,12 +239,39 @@ NewtonSolver::NewtonSolver(
         "NewtonSolver");
 }
 
+DDScalingSpec NewtonSolver::buildScalingSpec() const
+{
+    DDScalingSpec scaling;
+    if (!cfg_.inputScaling.isUnitScaling())
+        return scaling;
+
+    const Real epsRef = constants::eps0 *
+        maxRelativePermittivityAcrossRegions(mesh_, matdb_, cfg_.temperature_K);
+    const Real niFloor =
+        maxIntrinsicDensityAcrossRegions(mesh_, matdb_, cfg_.temperature_K);
+    const UnitScalingSystem::AutoInputs autoInputs =
+        UnitScalingSystem::autoInputsFrom(mesh_, doping_, matdb_, niFloor);
+    const UnitScalingSystem sc = UnitScalingSystem::fromInputs(
+        cfg_.temperature_K, epsRef, autoInputs, cfg_.unitScalingRefs);
+
+    scaling.enabled = true;
+    scaling.V0 = sc.V0();
+    scaling.C0 = sc.C0();
+    scaling.mu0 = sc.mu0();
+    scaling.D0 = sc.D0();
+    scaling.L0 = sc.L0();
+    scaling.permittivityReference_F_per_m = epsRef;
+    return scaling;
+}
+
 CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
     const CoupledDDAssembler& assembler) const
 {
     CoupledDDBoundaryConditions bcs;
     const auto& ni = assembler.intrinsicDensity();
     const double Vt = thermalVoltage(cfg_.temperature_K);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
 
     for (Index c = 0; c < mesh_.numContacts(); ++c) {
         const Contact& contact = mesh_.getContact(c);
@@ -231,9 +286,9 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
             if (niNode > 0.0 && neq > 0.0)
                 psiBuiltIn = Vt * std::log(neq / niNode);
 
-            bcs.psi[nid] = Vbias + psiBuiltIn;
-            bcs.phin[nid] = Vbias;
-            bcs.phip[nid] = Vbias;
+            bcs.psi[nid] = (Vbias + psiBuiltIn) / potentialScale;
+            bcs.phin[nid] = Vbias / potentialScale;
+            bcs.phip[nid] = Vbias / potentialScale;
         }
     }
     return bcs;
@@ -249,6 +304,8 @@ DDSolution NewtonSolver::buildInitialGuess(
     gcfg.dampingPsi = 0.5;
     gcfg.taun = cfg_.taun;
     gcfg.taup = cfg_.taup;
+    gcfg.inputScaling = cfg_.inputScaling;
+    gcfg.unitScalingRefs = cfg_.unitScalingRefs;
     gcfg.mobility = cfg_.mobility;
     gcfg.recombination = cfg_.recombination;
     gcfg.bandgapNarrowing = cfg_.bandgapNarrowing;
@@ -271,10 +328,12 @@ DDSolution NewtonSolver::makeSolution(const CoupledDDAssembler& assembler,
                                       int iters) const
 {
     CoupledDDState state = assembler.unpack(x);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
     DDSolution sol;
-    sol.psi = state.psi;
-    sol.phin = state.phin;
-    sol.phip = state.phip;
+    sol.psi = state.psi * potentialScale;
+    sol.phin = state.phin * potentialScale;
+    sol.phip = state.phip * potentialScale;
     sol.n = assembler.electronDensity(x);
     sol.p = assembler.holeDensity(x);
     sol.iters = iters;
@@ -287,6 +346,7 @@ NewtonResult NewtonSolver::solve() const
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
         mesh_,
         matdb_,
@@ -297,7 +357,8 @@ NewtonResult NewtonSolver::solve() const
         cfg_.bandgapNarrowing,
         cfg_.impactIonization,
         fixedCharges_,
-        sheetCharges_);
+        sheetCharges_,
+        scaling);
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
     return solve(buildInitialGuess(assembler, bcs));
 }
@@ -308,6 +369,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
         mesh_,
         matdb_,
@@ -318,7 +380,8 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         cfg_.bandgapNarrowing,
         cfg_.impactIonization,
         fixedCharges_,
-        sheetCharges_);
+        sheetCharges_,
+        scaling);
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
 
     // By default Newton uses a conservative cold start for quasi-Fermi
@@ -340,7 +403,12 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         }
     }
 
-    VectorXd x = assembler.pack({initial.psi, phinInit, phipInit});
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    VectorXd x = assembler.pack({
+        initial.psi / potentialScale,
+        phinInit / potentialScale,
+        phipInit / potentialScale});
     VectorXd r = assembler.residual(x, bcs);
     const ResidualBlockNormValue initialBlocks =
         ResidualNorm::computeBlocks(r, mesh_.numNodes());

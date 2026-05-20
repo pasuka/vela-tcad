@@ -72,7 +72,8 @@ CoupledDDAssembler::CoupledDDAssembler(
     const BandgapNarrowingConfig& bandgapNarrowingConfig,
     const ImpactIonizationModelConfig& impactIonizationConfig,
     std::vector<RegionFixedChargeSpec> fixedCharges,
-    std::vector<InterfaceSheetChargeSpec> sheetCharges)
+    std::vector<InterfaceSheetChargeSpec> sheetCharges,
+    DDScalingSpec scaling)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
@@ -98,7 +99,23 @@ CoupledDDAssembler::CoupledDDAssembler(
     , couple_(detail::computeEdgeCouplings(mesh))
     , fixedInterfaceChargeRhs_(detail::computeFixedAndInterfaceChargeRhs(
           mesh, edgeCells_, fixedCharges, sheetCharges, "CoupledDDAssembler"))
-{}
+    , scaling_(scaling)
+{
+    if (scaling_.enabled) {
+        const auto isPositiveFinite = [](Real value) {
+            return value > 0.0 && std::isfinite(value);
+        };
+        if (!isPositiveFinite(scaling_.V0) ||
+            !isPositiveFinite(scaling_.C0) ||
+            !isPositiveFinite(scaling_.mu0) ||
+            !isPositiveFinite(scaling_.D0) ||
+            !isPositiveFinite(scaling_.L0) ||
+            !isPositiveFinite(scaling_.permittivityReference_F_per_m)) {
+            throw std::invalid_argument(
+                "CoupledDDAssembler: scaling references must be positive and finite when scaling is enabled.");
+        }
+    }
+}
 
 VectorXd CoupledDDAssembler::pack(const CoupledDDState& state) const
 {
@@ -130,10 +147,11 @@ VectorXd CoupledDDAssembler::electronDensity(const VectorXd& x) const
 {
     const int N = static_cast<int>(mesh_.numNodes());
     VectorXd n(N);
+    const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
     for (int i = 0; i < N; ++i)
         n(i) = vela::electronDensity(ni_[static_cast<Index>(i)],
-                                     x(psiOffset() + i),
-                                     x(phinOffset() + i),
+                                     x(psiOffset() + i) * potentialScale,
+                                     x(phinOffset() + i) * potentialScale,
                                      Vt_);
     return n;
 }
@@ -142,10 +160,11 @@ VectorXd CoupledDDAssembler::holeDensity(const VectorXd& x) const
 {
     const int N = static_cast<int>(mesh_.numNodes());
     VectorXd p(N);
+    const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
     for (int i = 0; i < N; ++i)
         p(i) = vela::holeDensity(ni_[static_cast<Index>(i)],
-                                 x(psiOffset() + i),
-                                 x(phipOffset() + i),
+                                 x(psiOffset() + i) * potentialScale,
+                                 x(phipOffset() + i) * potentialScale,
                                  Vt_);
     return p;
 }
@@ -172,7 +191,8 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
     // n and p are needed for Poisson source and configured recombination.
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
-    const VectorXd psi = x.segment(psiOffset(), N);
+    const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
+    const VectorXd psi = x.segment(psiOffset(), N) * potentialScale;
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
         ? detail::computeNodeElectricFields(psi, mesh_)
         : std::vector<Real>{};
@@ -192,12 +212,18 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
 
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
-        const Real dpsi = x(psiOffset() + j) - x(psiOffset() + i);
+        const Real psi_i = x(psiOffset() + i) * potentialScale;
+        const Real psi_j = x(psiOffset() + j) * potentialScale;
+        const Real phin_i = x(phinOffset() + i) * potentialScale;
+        const Real phin_j = x(phinOffset() + j) * potentialScale;
+        const Real phip_i = x(phipOffset() + i) * potentialScale;
+        const Real phip_j = x(phipOffset() + j) * potentialScale;
+        const Real dpsi = psi_j - psi_i;
         const Real electricField = std::abs(dpsi / h);
 
         const Real eps = detail::edgeEpsilon(edgeCells, mesh_, matdb_, e);
         const Real G = eps * couple[e] / h;
-        const Real psiFlux = G * (x(psiOffset() + i) - x(psiOffset() + j));
+        const Real psiFlux = G * (psi_i - psi_j);
         r(psiOffset() + i) += psiFlux;
         r(psiOffset() + j) -= psiFlux;
 
@@ -219,9 +245,9 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             const Real nFlux = (ni_[idxI] == ni_[idxJ])
                 ? sgElectronContinuityFluxFromQuasiFermi(
                       ni_[idxI],
-                      x(psiOffset() + j),
-                      x(phinOffset() + i),
-                      x(phinOffset() + j),
+                      psi_j,
+                      phin_i,
+                      phin_j,
                       dpsi,
                       Vt_,
                       coef)
@@ -253,9 +279,9 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             const Real pFlux = (ni_[idxI] == ni_[idxJ])
                 ? sgHoleContinuityFluxFromQuasiFermi(
                       ni_[idxI],
-                      x(psiOffset() + i),
-                      x(phipOffset() + i),
-                      x(phipOffset() + j),
+                      psi_i,
+                      phip_i,
+                      phip_j,
                       dpsi,
                       Vt_,
                       coef)
@@ -285,7 +311,8 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             // catastrophic cancellation when phip ~= phin (near equilibrium), where
             // the naive form n*p - ni^2 is dominated by floating-point rounding
             // in exp(+u) * exp(-u) != 1.
-            const Real dPhi = x(phipOffset() + ii) - x(phinOffset() + ii);
+            const Real dPhi =
+                (x(phipOffset() + ii) - x(phinOffset() + ii)) * potentialScale;
             const Real excessProduct = (ni > 0.0)
                 ? ni * ni * std::expm1(dPhi / Vt_)
                 : n(ii) * p(ii);
@@ -326,6 +353,27 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
     for (int i = 0; i < N; ++i)
         r(psiOffset() + i) -= fixedInterfaceChargeRhs_(i);
 
+    if (scaling_.enabled) {
+        const Real poissonScale =
+            scaling_.permittivityReference_F_per_m * scaling_.V0;
+        const Real continuityScale = scaling_.C0 * scaling_.D0;
+        for (int i = 0; i < N; ++i) {
+            r(psiOffset() + i) /= poissonScale;
+            r(phinOffset() + i) /= continuityScale;
+            r(phipOffset() + i) /= continuityScale;
+        }
+    }
+
+    if (scaling_.enabled) {
+        for (Index i = 0; i < Nidx; ++i) {
+            const int ii = static_cast<int>(i);
+            if (!hasElectronContribution[static_cast<std::size_t>(ii)])
+                r(phinOffset() + ii) = x(phinOffset() + ii);
+            if (!hasHoleContribution[static_cast<std::size_t>(ii)])
+                r(phipOffset() + ii) = x(phipOffset() + ii);
+        }
+    }
+
     // Boundary-condition maps are independent so multi-terminal MOS callers can
     // pin electrostatic potential, electron quasi-Fermi potential, and hole
     // quasi-Fermi potential on the source/drain/body nodes selected by contact
@@ -348,6 +396,12 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const int N = static_cast<int>(Nidx);
     if (x.size() != 3 * N)
         throw std::invalid_argument("CoupledDDAssembler::assembleJacobian: vector size mismatch.");
+
+    if (scaling_.enabled) {
+        // Scaled Newton currently uses finite-difference derivatives as the
+        // conservative fallback until the full analytic scale chain is wired.
+        return finiteDifferenceJacobian(x, bcs);
+    }
 
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);

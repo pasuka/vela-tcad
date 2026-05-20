@@ -5,7 +5,10 @@
 #include <nlohmann/json.hpp>
 
 #include "vela/core/PhysicalConstants.h"
+#include "vela/core/UnitScaling.h"
+#include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/CoupledDDAssembler.h"
+#include "vela/equation/DDAssembler.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/numerics/ResidualNorm.h"
 #include "vela/mesh/DeviceMesh.h"
@@ -105,6 +108,8 @@ static NewtonConfig newtonConfig()
     return cfg;
 }
 
+static void requireFiniteNewtonSolution(const NewtonResult& result, Index nodeCount);
+
 TEST_CASE("NewtonSolver: PN diode equilibrium converges", "[newton]")
 {
     DeviceMesh mesh = makePNMesh();
@@ -116,6 +121,24 @@ TEST_CASE("NewtonSolver: PN diode equilibrium converges", "[newton]")
     REQUIRE(result.converged);
     REQUIRE(result.iters >= 0);
     REQUIRE(result.finalResidualNorm <= result.initialResidualNorm);
+}
+
+TEST_CASE("NewtonSolver: PN diode equilibrium converges with unit_scaling state",
+          "[newton][scaling]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+
+    NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), cfg);
+
+    REQUIRE(result.converged);
+    REQUIRE(result.iters >= 0);
+    REQUIRE(result.finalResidualNorm <= result.initialResidualNorm);
+    requireFiniteNewtonSolution(result, mesh.numNodes());
 }
 
 TEST_CASE("NewtonSolver: Gummel initial guess reduces Newton iterations", "[newton]")
@@ -137,6 +160,31 @@ TEST_CASE("NewtonSolver: Gummel initial guess reduces Newton iterations", "[newt
     REQUIRE(fromDefault.converged);
     REQUIRE(fromGummel.converged);
     REQUIRE(fromGummel.iters <= fromDefault.iters);
+}
+
+TEST_CASE("NewtonSolver: unit_scaling accepts a physical Gummel warm initial guess",
+          "[newton][scaling][warm_start]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    GummelConfig gcfg;
+    gcfg.maxIter = 8;
+    gcfg.reltol = 1.0e-6;
+    gcfg.dampingPsi = 0.5;
+    gcfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    DDSolution gummel = runGummel(mesh, matdb, doping, zeroBias(), gcfg);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    cfg.warmStart = true;
+
+    NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), gummel, cfg);
+
+    REQUIRE(result.converged);
+    REQUIRE(result.finalResidualNorm <= result.initialResidualNorm);
+    requireFiniteNewtonSolution(result, mesh.numNodes());
 }
 
 TEST_CASE("NewtonSolver: no NaN or Inf and carriers stay positive", "[newton]")
@@ -262,6 +310,67 @@ TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences on s
     REQUIRE(rel < 5.0e-5);
 }
 
+TEST_CASE("CoupledDDAssembler: scaled state residual and Jacobian are consistent",
+          "[newton][coupled][scaling]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    UnitScalingSystem::AutoInputs inputs =
+        UnitScalingSystem::autoInputsFrom(mesh, doping, matdb, 1.0e16);
+    const UnitScalingSystem sc = UnitScalingSystem::fromInputs(
+        300.0, constants::eps0 * 11.7, inputs);
+
+    DDScalingSpec scaling;
+    scaling.enabled = true;
+    scaling.V0 = sc.V0();
+    scaling.C0 = sc.C0();
+    scaling.mu0 = sc.mu0();
+    scaling.D0 = sc.D0();
+    scaling.L0 = sc.L0();
+    scaling.permittivityReference_F_per_m = constants::eps0 * 11.7;
+
+    CoupledDDAssembler assembler(
+        mesh,
+        matdb,
+        doping,
+        constants::Vt_300,
+        MobilityModelConfig{},
+        recombinationModelConfig({"none"}),
+        BandgapNarrowingConfig{},
+        ImpactIonizationModelConfig{},
+        {},
+        {},
+        scaling);
+
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi = VectorXd::LinSpaced(N, -0.04, 0.05) / scaling.V0;
+    state.phin = VectorXd::LinSpaced(N, 0.01, -0.015) / scaling.V0;
+    state.phip = VectorXd::LinSpaced(N, -0.02, 0.012) / scaling.V0;
+    const VectorXd x = assembler.pack(state);
+
+    CoupledDDBoundaryConditions bcs;
+    bcs.psi[0] = state.psi(0);
+    bcs.phin[0] = state.phin(0);
+    bcs.phip[0] = state.phip(0);
+    bcs.psi[2] = state.psi(2);
+    bcs.phin[2] = state.phin(2);
+    bcs.phip[2] = state.phip(2);
+
+    const VectorXd r = assembler.residual(x, bcs);
+    REQUIRE(r.allFinite());
+    REQUIRE(r.norm() < 1.0e8);
+
+    const SparseMatrixd Ja = assembler.assembleJacobian(x, bcs);
+    const SparseMatrixd Jfd = assembler.finiteDifferenceJacobian(x, bcs, 1.0e-7);
+    const Eigen::MatrixXd diff = Eigen::MatrixXd(Ja - Jfd);
+    const Eigen::MatrixXd ref = Eigen::MatrixXd(Jfd);
+    const Real rel = diff.norm() / std::max<Real>(1.0, ref.norm());
+    REQUIRE(rel < 1.0e-8);
+}
+
 TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
 {
     const NewtonConfig cfg;
@@ -274,6 +383,17 @@ TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
     });
     REQUIRE(debugCfg.jacobian == "finite_difference");
     REQUIRE(debugCfg.warmStart);
+}
+
+TEST_CASE("NewtonSolver: unit_scaling config records scaled mode and uses finite-difference fallback",
+          "[newton][scaling][config]")
+{
+    const NewtonConfig cfg = newtonConfigFromJson(
+        nlohmann::json{{"jacobian", "analytic"}},
+        UnitScalingConfig{UnitScalingMode::UnitScaling});
+
+    REQUIRE(cfg.inputScaling.isUnitScaling());
+    REQUIRE(cfg.jacobian == "finite_difference");
 }
 
 TEST_CASE("NewtonSolver: warm start preserves supplied quasi-Fermi guess", "[newton][warm_start]")
