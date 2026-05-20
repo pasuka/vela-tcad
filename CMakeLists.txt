@@ -270,3 +270,7 @@ add_test(NAME regression
             --repo ${CMAKE_CURRENT_SOURCE_DIR}
             --runner $<TARGET_FILE:vela_example_runner>
             --workdir ${CMAKE_CURRENT_BINARY_DIR}/regression_output)
+
+add_test(NAME reference_tcad_regression
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_reference_tcad_tools.py)
