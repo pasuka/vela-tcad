@@ -1,0 +1,98 @@
+{
+  "_comment": "LDMOS off-state drain reverse/high-field diagnostic prototype; max electric field is an edge-difference diagnostic, not calibrated breakdown voltage.",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh_unit_scaling.json",
+  "output_csv": "outputs/ldmos2d_bv.csv",
+  "doping": [
+    {
+      "region": "p_body_drift",
+      "donors": 0.0,
+      "acceptors": 1000000000000000.0
+    },
+    {
+      "region": "n_source",
+      "donors": 1e+16,
+      "acceptors": 0.0
+    },
+    {
+      "region": "n_drain_drift",
+      "donors": 2000000000000000.0,
+      "acceptors": 0.0
+    },
+    {
+      "region": "field_oxide",
+      "donors": 0.0,
+      "acceptors": 0.0
+    }
+  ],
+  "contacts": [
+    {
+      "name": "body",
+      "type": "ohmic",
+      "bias": 0.0
+    },
+    {
+      "name": "source",
+      "type": "ohmic",
+      "bias": 0.0
+    },
+    {
+      "name": "gate",
+      "type": "metal_gate",
+      "bias": 0.0,
+      "flatband_voltage": 0.0
+    },
+    {
+      "name": "drain",
+      "type": "ohmic",
+      "bias": 0.0
+    }
+  ],
+  "regions": [
+    {
+      "name": "field_oxide",
+      "fixed_charge_m3": 500000000000000.0
+    }
+  ],
+  "solver": {
+    "method": "gummel",
+    "max_iter": 120,
+    "reltol": 1e-05,
+    "abstol": 1e+18,
+    "damping_psi": 0.5,
+    "impact_ionization": {
+      "model": "none"
+    }
+  },
+  "sweep": {
+    "mode": "bv_reverse",
+    "contact": "drain",
+    "start": 0.0,
+    "stop": 0.2,
+    "step": 0.1,
+    "current_contact": "drain",
+    "write_vtk": true,
+    "vtk_prefix": "outputs/ldmos2d_bv_sweep",
+    "breakdown": {
+      "max_electric_field_V_per_m": 5000000.0,
+      "current_jump_ratio": 1e+20,
+      "non_convergence": true
+    }
+  },
+  "regression": {
+    "declared_converged": true,
+    "dc_sweep": {
+      "expected_rows": 3,
+      "max_abs_attempted_step": 0.1,
+      "max_abs_accepted_step": 0.1,
+      "max_retry_count": 0,
+      "min_converged_rows": 3,
+      "require_monotone_max_field": true,
+      "min_max_electric_field_V_per_m": 100000.0,
+      "max_max_electric_field_V_per_m": 1000000000.0
+    }
+  },
+  "scaling": {
+    "mode": "unit_scaling"
+  }
+}

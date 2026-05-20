@@ -1,0 +1,94 @@
+{
+  "_comment": "Mixed-material Si/SiO2 LDMOS DD-IV prototype smoke sweep; not calibrated for production LDMOS behavior.",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh_unit_scaling.json",
+  "output_csv": "outputs/ldmos2d_dd_iv.csv",
+  "doping": [
+    {
+      "region": "p_body_drift",
+      "donors": 0.0,
+      "acceptors": 1000000000000000.0
+    },
+    {
+      "region": "n_source",
+      "donors": 1e+16,
+      "acceptors": 0.0
+    },
+    {
+      "region": "n_drain_drift",
+      "donors": 2000000000000000.0,
+      "acceptors": 0.0
+    },
+    {
+      "region": "field_oxide",
+      "donors": 0.0,
+      "acceptors": 0.0
+    }
+  ],
+  "contacts": [
+    {
+      "name": "body",
+      "type": "ohmic",
+      "bias": 0.0
+    },
+    {
+      "name": "source",
+      "type": "ohmic",
+      "bias": 0.0
+    },
+    {
+      "name": "gate",
+      "type": "metal_gate",
+      "bias": 0.1,
+      "flatband_voltage": 0.0
+    },
+    {
+      "name": "drain",
+      "type": "ohmic",
+      "bias": 0.0
+    }
+  ],
+  "regions": [
+    {
+      "name": "field_oxide",
+      "fixed_charge_m3": 500000000000000.0
+    }
+  ],
+  "solver": {
+    "method": "gummel",
+    "max_iter": 120,
+    "reltol": 1e-05,
+    "abstol": 1e+18,
+    "damping_psi": 0.5
+  },
+  "sweep": {
+    "mode": "iv",
+    "contact": "drain",
+    "start": 0.0,
+    "stop": 0.1,
+    "step": 0.05,
+    "current_contact": "drain",
+    "write_vtk": true,
+    "vtk_prefix": "outputs/ldmos2d_dd_iv_sweep"
+  },
+  "regression": {
+    "declared_converged": true,
+    "dc_sweep": {
+      "expected_rows": 3,
+      "max_abs_attempted_step": 0.05,
+      "max_abs_accepted_step": 0.05,
+      "max_retry_count": 0,
+      "min_converged_rows": 3,
+      "require_monotone_abs_current": true,
+      "current_monotone_abs_tolerance": 1e-30
+    },
+    "ldmos_iv": {
+      "drain_current_sign": 1.0,
+      "current_monotone_abs_tolerance": 1e-30,
+      "current_monotone_rel_tolerance": 1e-12
+    }
+  },
+  "scaling": {
+    "mode": "unit_scaling"
+  }
+}

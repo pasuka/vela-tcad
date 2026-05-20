@@ -620,11 +620,24 @@ blocks while staying explicitly prototype-level:
     "baseline_config": "simulation_bv.json",
     "max_field_ratio_limit": 1.20
   },
+  "igbt_high_injection": {
+    "baseline_config": "simulation_iv.json",
+    "baseline_csv": "outputs/igbt2d_iv_baseline.csv",
+    "baseline_final_current_min_ratio": 1.0,
+    "require_stored_charge_monotone": true,
+    "stored_charge_monotone_direction": "either",
+    "stored_charge_monotone_abs_tolerance": 1e-24,
+    "stored_charge_monotone_rel_tolerance": 1e-8
+  },
   "igbt_charge_cv": {
-    "require_stored_charge_monotone": true
+    "require_stored_charge_monotone": true,
+    "stored_charge_monotone_direction": "either",
+    "stored_charge_monotone_abs_tolerance": 1e-24,
+    "stored_charge_monotone_rel_tolerance": 1e-8
   }
 }
 ```
 
 These checks are trend validation guards (finite outputs + directional checks),
-not calibrated silicon sign-off criteria.
+not calibrated silicon sign-off criteria. `stored_charge_monotone_direction` accepts
+`"nondecreasing"`, `"nonincreasing"`, or `"either"`.

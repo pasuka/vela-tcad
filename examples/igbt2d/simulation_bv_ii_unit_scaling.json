@@ -1,0 +1,84 @@
+{
+  "_comment": "IGBT off-state collector reverse-bias diagnostic sweep with Selberherr impact ionization (prototype smoke deck).",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh_unit_scaling.json",
+  "output_csv": "outputs/igbt2d_bv_ii.csv",
+  "doping": [
+    {
+      "region": "p_collector",
+      "donors": 0.0,
+      "acceptors": 5000000000000000.0
+    },
+    {
+      "region": "n_buffer",
+      "donors": 2000000000000000.0,
+      "acceptors": 0.0
+    },
+    {
+      "region": "n_drift",
+      "donors": 500000000000000.0,
+      "acceptors": 0.0
+    },
+    {
+      "region": "p_base_emitter",
+      "donors": 0.0,
+      "acceptors": 1000000000000000.0
+    }
+  ],
+  "contacts": [
+    {
+      "name": "collector",
+      "bias": 0.0
+    },
+    {
+      "name": "gate",
+      "bias": 0.0
+    },
+    {
+      "name": "emitter",
+      "bias": 0.0
+    }
+  ],
+  "solver": {
+    "method": "gummel",
+    "max_iter": 80,
+    "reltol": 1e-05,
+    "abstol": 1e+18,
+    "damping_psi": 0.5,
+    "impact_ionization": {
+      "model": "selberherr"
+    }
+  },
+  "sweep": {
+    "mode": "bv_reverse",
+    "contact": "collector",
+    "start": 0.0,
+    "stop": 0.3,
+    "step": 0.15,
+    "current_contact": "collector",
+    "write_vtk": true,
+    "vtk_prefix": "outputs/igbt2d_bv_ii_sweep",
+    "breakdown": {
+      "max_electric_field_V_per_m": 1200000.0,
+      "current_jump_ratio": 20.0,
+      "non_convergence": true
+    }
+  },
+  "regression": {
+    "declared_converged": true,
+    "dc_sweep": {
+      "expected_rows": 3,
+      "require_monotone_max_field": true,
+      "max_abs_attempted_step": 0.15,
+      "max_abs_accepted_step": 0.15,
+      "max_retry_count": 0
+    },
+    "igbt_bv": {
+      "baseline_config": "simulation_bv_unit_scaling.json",
+      "current_multiplier_tolerance": 0.6
+    }
+  },
+  "scaling": {
+    "mode": "unit_scaling"
+  }
+}

@@ -357,6 +357,128 @@ class RegressionRunnerPolicies(unittest.TestCase):
             self.assertTrue(result["passed"], result)
             self.assertTrue(result["runner_nonzero_exit_allowed"])
 
+    def test_igbt_high_injection_requires_final_current_above_low_current_baseline(self) -> None:
+        cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "iv", "start": 0, "stop": 0.2, "step": 0.1},
+            "regression": {
+                "igbt_high_injection": {
+                    "baseline_config": "simulation_iv.json",
+                    "baseline_csv": "outputs/baseline.csv",
+                    "baseline_final_current_min_ratio": 1.1,
+                }
+            },
+        }
+        fieldnames = FIELDNAMES + ["stored_charge_C_per_m"]
+        rows = [
+            base_row(current_total="1e-9", stored_charge_C_per_m="1e-18"),
+            base_row(bias_V="0.1", current_total="2e-9", stored_charge_C_per_m="2e-18"),
+            base_row(bias_V="0.2", current_total="3e-9", stored_charge_C_per_m="3e-18"),
+        ]
+        baseline_cfg = {
+            "output_csv": "outputs/baseline.csv",
+            "sweep": {"mode": "iv", "start": 0, "stop": 0.2, "step": 0.1},
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), cfg, rows, fieldnames)
+            (example_dir / "simulation_iv.json").write_text(json.dumps(baseline_cfg) + "\n")
+            with (example_dir / "fake_runner.sh").open("w") as f:
+                f.write(
+                    "#!/bin/sh\n"
+                    "cat > outputs/baseline.csv <<'CSV'\n"
+                    "mode,bias_contact,bias_V,current_contact,current_electron,current_hole,current_total,converged,iterations,step_diagnostics\n"
+                    "iv,anode,0,cathode,0,0,1e-9,1,1,attempted_step=1;accepted_step=1;retry_count=0\n"
+                    "iv,anode,0.1,cathode,0,0,4e-9,1,1,attempted_step=1;accepted_step=1;retry_count=0\n"
+                    "iv,anode,0.2,cathode,0,0,4e-9,1,1,attempted_step=1;accepted_step=1;retry_count=0\n"
+                    "CSV\n"
+                )
+            (example_dir / "fake_runner.sh").chmod(stat.S_IRWXU)
+            with self.assertRaisesRegex(AssertionError, "baseline final \\|I\\|"):
+                run_regression.check_igbt_high_injection_trend(
+                    example_dir, example_dir / "fake_runner.sh")
+
+    def test_igbt_charge_cv_can_require_monotone_stored_charge(self) -> None:
+        cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "cv_quasistatic", "start": 0, "stop": 0.2, "step": 0.1},
+            "regression": {"igbt_charge_cv": {"require_stored_charge_monotone": True}},
+        }
+        fieldnames = FIELDNAMES + [
+            "stored_charge_C_per_m",
+            "charge_gate_C_per_m",
+            "charge_collector_C_per_m",
+            "capacitance_Cgate_gate_F_per_m",
+            "capacitance_Cgate_collector_F_per_m",
+            "capacitance_Cgate_emitter_F_per_m",
+        ]
+        rows = [
+            base_row(mode="cv_quasistatic", stored_charge_C_per_m="3e-18",
+                     charge_gate_C_per_m="0", charge_collector_C_per_m="0",
+                     capacitance_Cgate_gate_F_per_m="0", capacitance_Cgate_collector_F_per_m="0",
+                     capacitance_Cgate_emitter_F_per_m="0"),
+            base_row(mode="cv_quasistatic", bias_V="0.1", stored_charge_C_per_m="2e-18",
+                     charge_gate_C_per_m="0", charge_collector_C_per_m="0",
+                     capacitance_Cgate_gate_F_per_m="0", capacitance_Cgate_collector_F_per_m="0",
+                     capacitance_Cgate_emitter_F_per_m="0"),
+            base_row(mode="cv_quasistatic", bias_V="0.2", stored_charge_C_per_m="4e-18",
+                     charge_gate_C_per_m="0", charge_collector_C_per_m="0",
+                     capacitance_Cgate_gate_F_per_m="0", capacitance_Cgate_collector_F_per_m="0",
+                     capacitance_Cgate_emitter_F_per_m="0"),
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), cfg, rows, fieldnames)
+            with self.assertRaisesRegex(AssertionError, "stored charge trend"):
+                run_regression.check_igbt_charge_cv(example_dir)
+
+    def test_bv_regression_summary_reports_breakdown_diagnostics(self) -> None:
+        bv_columns = FIELDNAMES + [
+            "max_electric_field_V_per_m",
+            "current_jump_ratio",
+            "breakdown_detected",
+            "breakdown_voltage",
+            "criterion",
+            "last_stable_bias",
+            "failed_bias",
+            "failure_reason",
+        ]
+        cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "bv_reverse", "start": 0, "stop": -1, "step": -1},
+            "regression": {"dc_sweep": {"expected_rows": 2, "allow_nonconverged_final_bv_point": True}},
+        }
+        rows = [
+            base_row(
+                mode="bv_reverse",
+                max_electric_field_V_per_m="1",
+                current_jump_ratio="0",
+                breakdown_detected="0",
+                breakdown_voltage="",
+                criterion="",
+                last_stable_bias="",
+                failed_bias="",
+                failure_reason="",
+            ),
+            base_row(
+                mode="bv_reverse",
+                bias_V="-1",
+                converged="0",
+                max_electric_field_V_per_m="2",
+                current_jump_ratio="1",
+                breakdown_detected="1",
+                breakdown_voltage="-1",
+                criterion="last_stable_before_nonconvergence",
+                last_stable_bias="0",
+                failed_bias="-1",
+                failure_reason="solver failed",
+            ),
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), cfg, rows, bv_columns)
+            result = run_regression.check_dc_sweep_regression(example_dir)
+            self.assertEqual(result["breakdown_criterion"], "last_stable_before_nonconvergence")
+            self.assertEqual(result["last_stable_bias"], 0.0)
+            self.assertEqual(result["failed_bias"], -1.0)
+
 
 if __name__ == "__main__":
     unittest.main()
