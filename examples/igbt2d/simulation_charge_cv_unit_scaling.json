@@ -1,0 +1,109 @@
+{
+  "_comment": "IGBT stored-charge/CV prototype deck (quasi-static proxy, not transient turn-off).",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "mesh_unit_scaling.json",
+  "doping": [
+    {
+      "region": "p_collector",
+      "donors": 0.0,
+      "acceptors": 1.5e+16
+    },
+    {
+      "region": "n_buffer",
+      "donors": 7000000000000000.0,
+      "acceptors": 0.0
+    },
+    {
+      "region": "n_drift",
+      "donors": 1200000000000000.0,
+      "acceptors": 0.0
+    },
+    {
+      "region": "p_base_emitter",
+      "donors": 0.0,
+      "acceptors": 4000000000000000.0
+    }
+  ],
+  "contacts": [
+    {
+      "name": "collector",
+      "bias": 0.0
+    },
+    {
+      "name": "gate",
+      "bias": 0.0
+    },
+    {
+      "name": "emitter",
+      "bias": 0.0
+    }
+  ],
+  "output_csv": "outputs/igbt2d_charge_cv.csv",
+  "solver": {
+    "method": "gummel",
+    "max_iter": 120,
+    "reltol": 1e-05,
+    "abstol": 1e+18,
+    "damping_psi": 0.45
+  },
+  "sweep": {
+    "mode": "cv_quasistatic",
+    "contact": "gate",
+    "start": 0.0,
+    "stop": 1.0,
+    "step": 0.2,
+    "current_contact": "collector",
+    "terminal_charges": [
+      {
+        "name": "gate",
+        "contact": "gate",
+        "regions": [
+          "p_base_emitter"
+        ],
+        "per_meter": true,
+        "contact_radius": 1.0
+      },
+      {
+        "name": "collector",
+        "contact": "collector",
+        "regions": [
+          "p_collector",
+          "n_buffer"
+        ],
+        "per_meter": true,
+        "contact_radius": 1.0
+      },
+      {
+        "name": "emitter",
+        "contact": "emitter",
+        "regions": [
+          "p_base_emitter"
+        ],
+        "per_meter": true,
+        "contact_radius": 1.0
+      }
+    ],
+    "stored_charge": {
+      "regions": [
+        "n_buffer",
+        "n_drift",
+        "p_base_emitter"
+      ],
+      "per_meter": true
+    }
+  },
+  "regression": {
+    "declared_converged": true,
+    "dc_sweep": {
+      "expected_rows": 6,
+      "allow_zero_capacitance": true,
+      "min_nonzero_capacitance_rows": 0
+    },
+    "igbt_charge_cv": {
+      "require_stored_charge_monotone": true
+    }
+  },
+  "scaling": {
+    "mode": "unit_scaling"
+  }
+}

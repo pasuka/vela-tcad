@@ -180,7 +180,7 @@ EXAMPLES = [
     {
         "name": "ldmos2d_dd_iv",
         "source": "ldmos2d",
-        "config": Path("examples/ldmos2d/simulation_dd_iv.json"),
+        "config": Path("examples/ldmos2d/simulation_dd_iv_unit_scaling.json"),
         "expected": [Path("outputs/ldmos2d_dd_iv.csv")],
         "expected_sweep_vtk": True,
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression",
@@ -189,7 +189,7 @@ EXAMPLES = [
     {
         "name": "ldmos2d_bv",
         "source": "ldmos2d",
-        "config": Path("examples/ldmos2d/simulation_bv.json"),
+        "config": Path("examples/ldmos2d/simulation_bv_unit_scaling.json"),
         "expected": [Path("outputs/ldmos2d_bv.csv")],
         "expected_sweep_vtk": True,
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
@@ -197,7 +197,7 @@ EXAMPLES = [
     {
         "name": "ldmos2d_bv_fieldplate",
         "source": "ldmos2d",
-        "config": Path("examples/ldmos2d/simulation_bv_fieldplate.json"),
+        "config": Path("examples/ldmos2d/simulation_bv_fieldplate_unit_scaling.json"),
         "expected": [Path("outputs/ldmos2d_bv_fieldplate.csv")],
         "expected_sweep_vtk": True,
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression", "ldmos_fieldplate_trend"],
@@ -212,14 +212,14 @@ EXAMPLES = [
     {
         "name": "igbt2d_iv",
         "source": "igbt2d",
-        "config": Path("examples/igbt2d/simulation_iv.json"),
+        "config": Path("examples/igbt2d/simulation_iv_unit_scaling.json"),
         "expected": [Path("outputs/igbt2d_iv.csv"), Path("outputs/igbt2d_iv_sweep_0000_0V.vtk")],
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression"],
     },
     {
         "name": "igbt2d_high_injection_iv",
         "source": "igbt2d",
-        "config": Path("examples/igbt2d/simulation_high_injection_iv.json"),
+        "config": Path("examples/igbt2d/simulation_high_injection_iv_unit_scaling.json"),
         "expected": [Path("outputs/igbt2d_high_injection_iv.csv")],
         "expected_sweep_vtk": True,
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression",
@@ -228,14 +228,14 @@ EXAMPLES = [
     {
         "name": "igbt2d_charge_cv",
         "source": "igbt2d",
-        "config": Path("examples/igbt2d/simulation_charge_cv.json"),
+        "config": Path("examples/igbt2d/simulation_charge_cv_unit_scaling.json"),
         "expected": [Path("outputs/igbt2d_charge_cv.csv")],
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression", "igbt_charge_cv"],
     },
     {
         "name": "igbt2d_bv",
         "source": "igbt2d",
-        "config": Path("examples/igbt2d/simulation_bv.json"),
+        "config": Path("examples/igbt2d/simulation_bv_unit_scaling.json"),
         "expected": [Path("outputs/igbt2d_bv.csv")],
         "expected_sweep_vtk": True,
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression", "igbt_bv_trend"],
@@ -243,7 +243,7 @@ EXAMPLES = [
     {
         "name": "igbt2d_bv_ii",
         "source": "igbt2d",
-        "config": Path("examples/igbt2d/simulation_bv_ii.json"),
+        "config": Path("examples/igbt2d/simulation_bv_ii_unit_scaling.json"),
         "expected": [Path("outputs/igbt2d_bv_ii.csv")],
         "expected_sweep_vtk": True,
         "checks": ["csv_converged", "finite_outputs", "dc_sweep_regression", "igbt_bv_trend"],
@@ -588,6 +588,10 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
     max_fields: list[tuple[int, float]] = []
     max_electric_field_seen = 0.0
     breakdown_detected = False
+    breakdown_criterion = ""
+    breakdown_voltage = 0.0
+    breakdown_last_stable_bias: float | None = None
+    breakdown_failed_bias: float | None = None
     multi_terminal_cv_columns = cv_multi_terminal_columns(sweep_cfg, rows[0]) if mode == "cv_quasistatic" else []
     cgg_column = next((cap for name, _, cap in multi_terminal_cv_columns if name == "gate"), None)
     nonzero_cgg_rows = 0
@@ -676,6 +680,15 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
                     raise AssertionError(
                         f"{example}: row {row_index} field=failed_bias actual={failed_bias} is not beyond "
                         f"last_stable_bias {last_stable} toward stop {stop}")
+            if row_breakdown:
+                breakdown_criterion = row.get("criterion", "")
+                breakdown_voltage = parse_finite_float(row, "breakdown_voltage", f"{example}: BV sweep", row_index)
+                if row.get("last_stable_bias", "") != "":
+                    breakdown_last_stable_bias = parse_finite_float(
+                        row, "last_stable_bias", f"{example}: BV sweep", row_index)
+                if row.get("failed_bias", "") != "":
+                    breakdown_failed_bias = parse_finite_float(
+                        row, "failed_bias", f"{example}: BV sweep", row_index)
         if attempted > max_abs_attempted + 1.0e-12:
             raise AssertionError(
                 f"{example}: row {row_index} field=attempted_step actual={attempted} "
@@ -776,6 +789,10 @@ def check_dc_sweep_regression(example_dir: Path) -> dict[str, Any]:
         result["breakdown_detected"] = breakdown_detected
         result["max_electric_field_V_per_m"] = [field for _, field in max_fields]
         result["max_field_trend_checked"] = max_field_trend_checked
+        result["breakdown_criterion"] = breakdown_criterion
+        result["breakdown_voltage"] = breakdown_voltage
+        result["last_stable_bias"] = breakdown_last_stable_bias
+        result["failed_bias"] = breakdown_failed_bias
     if stored_charge_final is not None:
         result["stored_charge_final"] = stored_charge_final
 
@@ -1021,29 +1038,66 @@ def check_ldmos_iv_trend(example_dir: Path) -> dict[str, Any]:
     }
 
 
-def check_igbt_high_injection_trend(example_dir: Path) -> dict[str, Any]:
+def check_igbt_high_injection_trend(example_dir: Path, runner: Path | None = None) -> dict[str, Any]:
     cfg = json.loads((example_dir / "simulation.json").read_text())
     rows = read_csv(output_csv_path(example_dir, cfg))
     if not rows:
         raise AssertionError("IGBT high-injection IV CSV contains no rows")
 
+    reg = cfg.get("regression", {}).get("igbt_high_injection", {})
     currents = [abs(parse_finite_float(r, "current_total", "IGBT high-injection IV", i + 1))
                 for i, r in enumerate(rows)]
     stored = [parse_finite_float(r, "stored_charge_C_per_m", "IGBT high-injection IV", i + 1)
               for i, r in enumerate(rows)]
     assert_monotone_non_decreasing(currents, "IGBT |collector current|",
                                    abs_tolerance=1e-20, rel_tolerance=1e-8)
+    if bool(reg.get("require_stored_charge_monotone", True)):
+        assert_monotone_non_decreasing(
+            stored,
+            "IGBT stored charge trend",
+            abs_tolerance=float(reg.get("stored_charge_monotone_abs_tolerance", 1.0e-24)),
+            rel_tolerance=float(reg.get("stored_charge_monotone_rel_tolerance", 1.0e-8)),
+        )
     for value in stored:
         if value < -1.0e-24:
             raise AssertionError(f"IGBT stored charge must be non-negative: {stored}")
     if currents[-1] <= currents[0]:
         raise AssertionError(f"IGBT final current must exceed initial current: {currents}")
 
-    return {
+    result = {
         "initial_current_abs": currents[0],
         "final_current_abs": currents[-1],
         "stored_charge": stored,
     }
+    baseline_cfg_name = reg.get("baseline_config")
+    if baseline_cfg_name:
+        if runner is None:
+            raise AssertionError("IGBT high-injection baseline comparison requires runner path")
+        baseline_cfg = json.loads((example_dir / str(baseline_cfg_name)).read_text())
+        baseline_cfg["output_csv"] = str(reg.get("baseline_csv", "outputs/igbt2d_low_current_baseline.csv"))
+        baseline_cfg.setdefault("sweep", {})["write_vtk"] = False
+        baseline_run_cfg = example_dir / "igbt_high_injection_baseline_run.json"
+        baseline_run_cfg.write_text(json.dumps(baseline_cfg, indent=2) + "\n")
+        proc = subprocess.run([str(runner), "--config", str(baseline_run_cfg)],
+                              cwd=example_dir, text=True, capture_output=True)
+        allow_nonzero = nonzero_runner_exit_allowed(baseline_cfg)
+        if proc.returncode != 0 and not allow_nonzero:
+            raise AssertionError(
+                f"IGBT high-injection baseline run failed with exit code {proc.returncode}; "
+                f"stdout={proc.stdout.strip()}; stderr={proc.stderr.strip()}")
+        baseline_rows = read_csv(output_csv_path(example_dir, baseline_cfg))
+        if not baseline_rows:
+            raise AssertionError("IGBT low-current baseline CSV contains no rows")
+        baseline_final = abs(parse_finite_float(
+            baseline_rows[-1], "current_total", "IGBT low-current baseline", len(baseline_rows)))
+        ratio = float(reg.get("baseline_final_current_min_ratio", 1.0))
+        if currents[-1] < baseline_final * ratio:
+            raise AssertionError(
+                f"IGBT high-injection final |I| {currents[-1]} is below baseline final |I| "
+                f"{baseline_final} times ratio {ratio}")
+        result["baseline_final_current_abs"] = baseline_final
+        result["baseline_final_current_min_ratio"] = ratio
+    return result
 
 
 
@@ -1054,6 +1108,7 @@ def check_igbt_charge_cv(example_dir: Path) -> dict[str, Any]:
     if not rows:
         raise AssertionError("IGBT charge/CV CSV contains no rows")
 
+    reg = cfg.get("regression", {}).get("igbt_charge_cv", {})
     stored = [parse_finite_float(r, "stored_charge_C_per_m", "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
     gate_q = [parse_finite_float(r, "charge_gate_C_per_m", "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
     coll_q = [parse_finite_float(r, "charge_collector_C_per_m", "IGBT charge/CV", i + 1) for i, r in enumerate(rows)]
@@ -1067,6 +1122,13 @@ def check_igbt_charge_cv(example_dir: Path) -> dict[str, Any]:
     for value in stored:
         if value < -1.0e-24:
             raise AssertionError(f"IGBT stored charge must be non-negative: {stored}")
+    if bool(reg.get("require_stored_charge_monotone", False)):
+        assert_monotone_non_decreasing(
+            stored,
+            "IGBT charge/CV stored charge trend",
+            abs_tolerance=float(reg.get("stored_charge_monotone_abs_tolerance", 1.0e-24)),
+            rel_tolerance=float(reg.get("stored_charge_monotone_rel_tolerance", 1.0e-8)),
+        )
 
     return {
         "stored_charge": stored,
@@ -1403,7 +1465,7 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
         if "ldmos_fieldplate_trend" in spec["checks"]:
             result["checks"]["ldmos_fieldplate_trend"] = check_ldmos_fieldplate_trend(example_dir, runner)
         if "igbt_high_injection_trend" in spec["checks"]:
-            result["checks"]["igbt_high_injection_trend"] = check_igbt_high_injection_trend(example_dir)
+            result["checks"]["igbt_high_injection_trend"] = check_igbt_high_injection_trend(example_dir, runner)
         if "igbt_charge_cv" in spec["checks"]:
             result["checks"]["igbt_charge_cv"] = check_igbt_charge_cv(example_dir)
         if "igbt_bv_trend" in spec["checks"]:
