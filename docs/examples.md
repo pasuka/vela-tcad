@@ -59,7 +59,7 @@ coverage in `scripts/run_regression.py`.
 | `examples/nmos2d` | `simulation.json` | Not present | Not present | Not present | Not present | Legacy simplified Poisson-only NMOS cross-section. |
 | `examples/schottky_diode_2d` | Implicit equilibrium in DD deck | `simulation_iv.json` | Not applicable | Not present | Not present | Prototype Schottky-anode Gummel IV smoke deck. |
 
-Decks without a `scaling` block use legacy SI input units. Decks with:
+No `scaling` field keeps legacy SI input units. Decks with:
 
 ```json
 "scaling": { "mode": "unit_scaling" }

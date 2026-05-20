@@ -40,6 +40,12 @@ Current example coverage:
 - LDMOS and IGBT power-device trend fixtures using `unit_scaling`.
 - Reference TCAD CSV fixtures for PN, MOS, LDMOS, and IGBT trend comparison.
 
+Input unit modes:
+
+- No `scaling` field keeps the legacy SI behavior used by older decks.
+- `"scaling": {"mode": "unit_scaling"}` enables common external TCAD input
+  units at the schema boundary.
+
 Prototype boundaries:
 
 - Power-device decks are engineering trend validations, not calibrated
