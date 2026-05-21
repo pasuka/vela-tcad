@@ -111,6 +111,7 @@ Data {
             cmd = root / "pp20_des.cmd"
             summary = root / "cmd_summary.json"
             runner = root / "run_idvd.py"
+            deck = root / "run_idvd_deck.json"
             cmd.write_text(
                 """
 File {
@@ -125,15 +126,29 @@ Electrode {
   { Name="substrate" Voltage=0 }
 }
 Physics { AreaFactor=15.0 Fermi Thermodynamic }
+Physics (MaterialInterface="Oxide/Silicon") { Traps(Conc=5e8) }
+Plot {
+  TotalCurrent/Vector ElectricField/Vector Potential Doping
+}
+Math {
+  Extrapolate
+  Iterations=12
+}
 Solve {
+  Poisson
+  Coupled(Iterations=100){ Poisson Electron }
   Coupled { Poisson Electron Hole }
   Quasistationary(
+    InitialStep=1e-4 MinStep=1e-5 MaxStep=1
     Goal { Name="gate" Voltage=10 }
   ){ Coupled { Poisson Electron Hole } }
   NewCurrentFile="IdVd_"
   Quasistationary(
+    InitialStep=1e-6 MinStep=1e-12 MaxStep=0.1
     Goal { Name="drain" Voltage=30 }
-  ){ Coupled { Poisson Electron Hole } }
+  ){ Coupled { Poisson Electron Hole }
+     CurrentPlot( Time=(Range=(0 1) Intervals=80 ) )
+  }
 }
 """.strip()
                 + "\n"
@@ -150,6 +165,8 @@ Solve {
                     str(summary),
                     "--python-runner",
                     str(runner),
+                    "--deck-json",
+                    str(deck),
                     "--mesh-json",
                     "vela/mesh.json",
                     "--output-csv",
@@ -167,12 +184,106 @@ Solve {
             self.assertEqual(data["sweeps"][0]["stop"], 10.0)
             self.assertEqual(data["sweeps"][1]["contact"], "drain")
             self.assertEqual(data["sweeps"][1]["stop"], 30.0)
+            self.assertEqual(data["physics"][0]["scope"], {"kind": "global"})
+            self.assertEqual(data["physics"][0]["parameters"]["AreaFactor"], 15.0)
+            self.assertIn("Fermi", data["physics"][0]["models"])
+            self.assertIn(
+                {"name": "TotalCurrent", "vector": True},
+                data["plot_fields"],
+            )
+            self.assertEqual(data["math"]["parameters"]["Iterations"], 12.0)
+            self.assertIn("Extrapolate", data["math"]["flags"])
+            self.assertEqual(data["solve"]["initial_steps"][1]["equations"], ["Poisson", "Electron"])
+            self.assertEqual(data["sweeps"][1]["step_control"]["InitialStep"], 1.0e-6)
+            self.assertEqual(data["sweeps"][1]["current_plot"]["intervals"], 80)
             self.assertIn("Thermodynamic", data["unsupported_physics"])
+            self.assertIn("Traps", data["unsupported_physics"])
+            self.assertIn("Thermodynamic", [item["feature"] for item in data["unsupported_report"]])
+            self.assertIn("Traps", [item["feature"] for item in data["unsupported_report"]])
 
             text = runner.read_text()
             self.assertIn("from vela.curves import run_iv_curve", text)
             self.assertIn("\"contact\": \"drain\"", text)
             self.assertIn("\"current_contact\": \"drain\"", text)
+            self.assertIn("\"unsupported_report\"", text)
+            deck_data = json.loads(deck.read_text())
+            self.assertEqual(deck_data["sweep"]["contact"], "drain")
+            self.assertEqual(deck_data["sentaurus_import"]["sweeps"][0]["contact"], "gate")
+
+    def test_cmd_parser_expands_template_variables(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_sentaurus_cmd_template_") as tmp:
+            root = Path(tmp)
+            cmd = root / "IdVd_des.cmd"
+            summary = root / "cmd_summary.json"
+            cmd.write_text(
+                """
+File {
+  grid = "n@node|DevMesh@_final_fps.tdr"
+  current = "@plot@"
+  plot = "@tdrdat@"
+}
+Electrode {
+  { Name="drain" Voltage=0.0 }
+  { Name="gate" Voltage=0.0 }
+}
+Thermode {
+  { Name="drain" Temperature=300 SurfaceResistance=@ThermalR@ }
+}
+Physics { AreaFactor=15.0 Thermodynamic }
+Plot { ElectricField/Vector Potential Doping }
+Math { Iterations=12 ExitOnFailure }
+Solve {
+  Quasistationary(
+    InitialStep=1e-4 MinStep=1e-5 MaxStep=1
+    Goal { Name="gate" Voltage=@Vg@ }
+  ){ Coupled { Poisson Electron Hole Temperature } }
+  NewCurrentFile="IdVd_"
+  Quasistationary(
+    InitialStep=1e-6 MinStep=1e-12 MaxStep=0.1
+    Goal { Name="drain" Voltage=30.0 }
+  ){ Coupled { Poisson Electron Hole Temperature }
+     CurrentPlot( Time=(Range=(0 1) Intervals=80 ) )
+  }
+}
+""".strip()
+                + "\n"
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "sentaurus_import.py"),
+                    "cmd",
+                    "--input",
+                    str(cmd),
+                    "--summary-json",
+                    str(summary),
+                    "--template-var",
+                    "node|DevMesh=13",
+                    "--template-var",
+                    "plot=n20_des.plt",
+                    "--template-var",
+                    "tdrdat=n20_des.tdr",
+                    "--template-var",
+                    "ThermalR=5.0e-4",
+                    "--template-var",
+                    "Vg=10.0",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            data = json.loads(summary.read_text())
+            self.assertEqual(data["files"]["grid"], "n13_final_fps.tdr")
+            self.assertEqual(data["files"]["current"], "n20_des.plt")
+            self.assertEqual(data["files"]["plot"], "n20_des.tdr")
+            self.assertEqual(data["template_variables"]["Vg"], "10.0")
+            self.assertEqual(data["unresolved_placeholders"], [])
+            self.assertEqual(data["thermodes"][0]["surface_resistance"], 5.0e-4)
+            self.assertEqual(data["sweeps"][0]["contact"], "gate")
+            self.assertEqual(data["sweeps"][0]["stop"], 10.0)
+            self.assertEqual(data["sweeps"][0]["equations"], ["Poisson", "Electron", "Hole", "Temperature"])
+            self.assertEqual(data["sweeps"][1]["current_plot"]["intervals"], 80)
 
     def test_project_import_generates_neutral_reference_tree(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_sentaurus_project_") as tmp:
@@ -283,6 +394,7 @@ if args.inventory_json:
                 "import_summary.json",
                 "cmd_summary.json",
                 "run_idvd.py",
+                "run_idvd_deck.json",
                 "reference_curves/ldmos2d_idvd_reference.csv",
                 "vela/mesh.json",
                 "vela/simulation_iv.json",
