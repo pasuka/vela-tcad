@@ -372,3 +372,17 @@ add_test(NAME sentaurus_import_tools
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_sentaurus_import_tools.py)
 vela_set_windows_msys2_test_path(sentaurus_import_tools)
+
+if(VELA_HDF5_TARGET)
+    add_test(NAME sentaurus_sample_integration
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_sentaurus_sample_integration.py)
+    if(WIN32)
+        vela_windows_msys2_test_env(_vela_sample_env)
+        set_tests_properties(sentaurus_sample_integration PROPERTIES
+            ENVIRONMENT "VELA_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR};${_vela_sample_env}")
+    else()
+        set_tests_properties(sentaurus_sample_integration PROPERTIES
+            ENVIRONMENT "VELA_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
+endif()
