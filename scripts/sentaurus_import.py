@@ -11,6 +11,9 @@ import argparse
 import csv
 import json
 import re
+import shlex
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +26,8 @@ UNSUPPORTED_PHYSICS = [
     "eTemperature",
     "hTemperature",
 ]
+
+REPO = Path(__file__).resolve().parents[1]
 
 
 def parse_quoted_list(text: str, key: str) -> list[str]:
@@ -226,6 +231,119 @@ def plt_command(args: argparse.Namespace) -> None:
     export_plt_reference(args.input, args.output, args.bias_column, args.current_column)
 
 
+def default_tdr_importer() -> str:
+    build_dir = Path(__file__).resolve().parents[1] / "build"
+    exe_name = "sentaurus_import.exe" if sys.platform.startswith("win") else "sentaurus_import"
+    return str(build_dir / exe_name)
+
+
+def run_command(command: list[str], cwd: Path) -> None:
+    proc = subprocess.run(command, cwd=cwd, text=True, capture_output=True)
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"command failed with exit code {proc.returncode}: {' '.join(command)}\n"
+            f"stdout={proc.stdout.strip()}\n"
+            f"stderr={proc.stderr.strip()}"
+        )
+
+
+def relative_generated(path: Path, root: Path) -> str:
+    return path.relative_to(root).as_posix()
+
+
+def project_artifacts(project_dir: Path, node: int) -> dict[str, Path]:
+    return {
+        "tdr": project_dir / f"n{node}_des.tdr",
+        "plt": project_dir / f"IdVd_n{node}_des.plt",
+        "cmd": project_dir / f"pp{node}_des.cmd",
+    }
+
+
+def project_command(args: argparse.Namespace) -> None:
+    project_dir = args.project_dir.resolve()
+    output_dir = args.output_dir.resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    artifacts = project_artifacts(project_dir, args.node)
+    for label, path in artifacts.items():
+        if not path.is_file():
+            raise FileNotFoundError(f"missing Sentaurus {label} artifact: {path}")
+
+    generated: list[str] = []
+    tdr_importer = shlex.split(args.tdr_importer or default_tdr_importer(),
+                               posix=not sys.platform.startswith("win"))
+    if not tdr_importer:
+        raise ValueError("tdr importer command is empty")
+    run_command(
+        [
+            *tdr_importer,
+            "--tdr",
+            str(artifacts["tdr"]),
+            "--inventory-json",
+            str(output_dir / "tdr_inventory.json"),
+            "--export-dir",
+            str(output_dir),
+        ],
+        cwd=REPO,
+    )
+    for name in ["nodes.csv", "elements.csv", "contacts.csv", "doping.csv", "metadata.json", "tdr_inventory.json"]:
+        if (output_dir / name).exists():
+            generated.append(name)
+
+    reference_curve = output_dir / "reference_curves" / f"{args.device}_idvd_reference.csv"
+    export_plt_reference(
+        artifacts["plt"],
+        reference_curve,
+        args.bias_column,
+        args.current_column,
+    )
+    generated.append(relative_generated(reference_curve, output_dir))
+
+    cmd_summary = output_dir / "cmd_summary.json"
+    runner = output_dir / "run_idvd.py"
+    summary = parse_cmd(artifacts["cmd"])
+    cmd_summary.write_text(json.dumps(summary, indent=2) + "\n")
+    write_python_runner(
+        summary,
+        runner,
+        args.mesh_json,
+        args.output_csv,
+    )
+    generated.extend(["cmd_summary.json", "run_idvd.py"])
+
+    vela_dir = output_dir / "vela"
+    run_command(
+        [
+            sys.executable,
+            str(REPO / "scripts" / "convert_tcad_export.py"),
+            "--input-dir",
+            str(output_dir),
+            "--output-dir",
+            str(vela_dir),
+            "--device",
+            args.device,
+            "--simulation-types",
+            "iv",
+        ],
+        cwd=REPO,
+    )
+    for name in ["mesh.json", "simulation_iv.json"]:
+        if (vela_dir / name).exists():
+            generated.append(f"vela/{name}")
+
+    warnings = [
+        "unsupported physics: " + ", ".join(summary["unsupported_physics"])
+    ] if summary.get("unsupported_physics") else []
+    import_summary = {
+        "node": args.node,
+        "device": args.device,
+        "sources": {key: str(value) for key, value in artifacts.items()},
+        "generated": sorted(dict.fromkeys(generated)),
+        "warnings": warnings,
+    }
+    (output_dir / "import_summary.json").write_text(json.dumps(import_summary, indent=2) + "\n")
+    print(json.dumps(import_summary, indent=2))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -244,6 +362,18 @@ def build_parser() -> argparse.ArgumentParser:
     cmd.add_argument("--mesh-json", default="mesh.json")
     cmd.add_argument("--output-csv", default="outputs/sentaurus_import.csv")
     cmd.set_defaults(func=cmd_command)
+
+    project = sub.add_parser("project", help="Import a Sentaurus project directory into a neutral reference tree")
+    project.add_argument("--project-dir", type=Path, required=True)
+    project.add_argument("--node", type=int, required=True)
+    project.add_argument("--device", choices=["pn_diode", "nmos2d", "pmos2d", "ldmos2d", "igbt2d"], required=True)
+    project.add_argument("--output-dir", type=Path, required=True)
+    project.add_argument("--tdr-importer", default=None, help="Command used to run the C++ TDR importer")
+    project.add_argument("--bias-column", default="drain OuterVoltage")
+    project.add_argument("--current-column", default="drain TotalCurrent")
+    project.add_argument("--mesh-json", default="vela/mesh.json")
+    project.add_argument("--output-csv", default="outputs/ldmos_idvd.csv")
+    project.set_defaults(func=project_command)
     return parser
 
 
