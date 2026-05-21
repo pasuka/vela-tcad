@@ -579,6 +579,40 @@ def project_artifacts(project_dir: Path, node: int) -> dict[str, Path]:
     }
 
 
+def write_reference_manifest(output_dir: Path,
+                             node: int,
+                             device: str,
+                             artifacts: dict[str, Path],
+                             generated: list[str],
+                             warnings: list[str]) -> None:
+    reference_curves = sorted(item for item in generated if item.startswith("reference_curves/"))
+    vela_decks = sorted(
+        item for item in generated
+        if item.startswith("vela/") and item.endswith(".json")
+    )
+    manifest = {
+        "schema": "vela.reference_tcad.sentaurus_project.v1",
+        "device": device,
+        "node": node,
+        "source_artifacts": {
+            key: {
+                "path": str(path),
+                "filename": path.name,
+            }
+            for key, path in artifacts.items()
+        },
+        "generated": sorted(dict.fromkeys(generated)),
+        "reference_curves": reference_curves,
+        "vela_decks": vela_decks,
+        "warnings": warnings,
+        "commit_policy": {
+            "raw_sentaurus_artifacts": False,
+            "generated_reference_tree": "local-or-explicit-review",
+        },
+    }
+    (output_dir / "reference_tcad_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+
+
 def project_command(args: argparse.Namespace) -> None:
     project_dir = args.project_dir.resolve()
     output_dir = args.output_dir.resolve()
@@ -663,6 +697,15 @@ def project_command(args: argparse.Namespace) -> None:
     warnings = [
         "unsupported physics: " + ", ".join(summary["unsupported_physics"])
     ] if summary.get("unsupported_physics") else []
+    generated.append("reference_tcad_manifest.json")
+    write_reference_manifest(
+        output_dir,
+        args.node,
+        args.device,
+        artifacts,
+        generated,
+        warnings,
+    )
     import_summary = {
         "node": args.node,
         "device": args.device,

@@ -392,6 +392,7 @@ if args.inventory_json:
                 "field_manifest.json",
                 "metadata.json",
                 "import_summary.json",
+                "reference_tcad_manifest.json",
                 "cmd_summary.json",
                 "run_idvd.py",
                 "run_idvd_deck.json",
@@ -407,7 +408,17 @@ if args.inventory_json:
             self.assertEqual(summary["sources"]["tdr"], str(project / "n20_des.tdr"))
             self.assertIn("Thermodynamic", summary["warnings"][0])
             self.assertIn("field_manifest.json", summary["generated"])
+            self.assertIn("reference_tcad_manifest.json", summary["generated"])
             self.assertIn("reference_curves/ldmos2d_idvd_reference.csv", summary["generated"])
+
+            manifest = json.loads((output / "reference_tcad_manifest.json").read_text())
+            self.assertEqual(manifest["schema"], "vela.reference_tcad.sentaurus_project.v1")
+            self.assertEqual(manifest["device"], "ldmos2d")
+            self.assertEqual(manifest["node"], 20)
+            self.assertFalse(manifest["commit_policy"]["raw_sentaurus_artifacts"])
+            self.assertIn("reference_curves/ldmos2d_idvd_reference.csv", manifest["reference_curves"])
+            self.assertIn("vela/simulation_iv.json", manifest["vela_decks"])
+            self.assertIn("unsupported physics: Thermodynamic", manifest["warnings"])
 
 
 if __name__ == "__main__":

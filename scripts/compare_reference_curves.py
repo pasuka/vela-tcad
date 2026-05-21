@@ -115,10 +115,12 @@ def markdown_report(report: dict[str, Any]) -> str:
     lines = [
         "# Reference TCAD Curve Comparison",
         "",
+        f"Status: {report.get('status', 'unknown')}",
+        "",
         "| Curve | Available | Trend match | Reference trend | Candidate trend | Max relative error | Orders of magnitude |",
         "| --- | --- | --- | --- | --- | ---: | ---: |",
     ]
-    for key in ("iv", "cv", "bv"):
+    for key in report.get("checked_kinds", ("iv", "cv", "bv")):
         item = report[key]
         lines.append(
             "| {key} | {available} | {trend_match} | {ref_trend} | {cand_trend} | {rel} | {oom} |".format(
@@ -131,6 +133,11 @@ def markdown_report(report: dict[str, Any]) -> str:
                 oom=format_optional(item.get("orders_of_magnitude")),
             )
         )
+    if report.get("failures"):
+        lines.append("")
+        lines.append("Failures:")
+        for failure in report["failures"]:
+            lines.append(f"- {failure}")
     lines.append("")
     lines.append("Inputs are explicit CSV/text exports; no proprietary binary formats are parsed.")
     return "\n".join(lines) + "\n"
@@ -150,27 +157,90 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-md", type=Path, required=True)
+    parser.add_argument(
+        "--kind",
+        choices=["all", "iv", "cv", "bv"],
+        default="all",
+        help="Curve kind to check. The default preserves the historical all-curve report.",
+    )
+    parser.add_argument("--require-trend-match", action="store_true")
+    parser.add_argument("--min-points", type=int, default=0)
+    parser.add_argument("--max-relative-error", type=float)
+    parser.add_argument("--max-orders-of-magnitude", type=float)
     return parser.parse_args()
+
+
+def checked_kinds(kind: str) -> list[str]:
+    if kind == "all":
+        return ["iv", "cv", "bv"]
+    return [kind]
+
+
+def exceeds(value: Any, limit: float | None) -> bool:
+    if limit is None or value is None:
+        return False
+    return float(value) > limit + max(abs(limit), 1.0) * 1.0e-12
+
+
+def evaluate_failures(report: dict[str, Any], args: argparse.Namespace) -> list[str]:
+    failures: list[str] = []
+    gate_active = (
+        args.kind != "all"
+        or args.require_trend_match
+        or args.min_points
+        or args.max_relative_error is not None
+        or args.max_orders_of_magnitude is not None
+    )
+    for kind in report["checked_kinds"]:
+        item = report[kind]
+        label = kind.upper()
+        if not item.get("available", False):
+            if gate_active:
+                failures.append(f"{label}: required curve columns are not available")
+            continue
+        points = int(item.get("points_compared", 0))
+        if args.min_points and points < args.min_points:
+            failures.append(f"{label}: compared {points} point(s), fewer than required {args.min_points}")
+        if args.require_trend_match and not item.get("trend_match", False):
+            failures.append(
+                f"{label}: trend mismatch "
+                f"({item.get('reference_trend')} vs {item.get('candidate_trend')})"
+            )
+        if exceeds(item.get("max_relative_error"), args.max_relative_error):
+            failures.append(
+                f"{label}: max relative error {item.get('max_relative_error'):.6g} "
+                f"exceeds {args.max_relative_error:.6g}"
+            )
+        if exceeds(item.get("orders_of_magnitude"), args.max_orders_of_magnitude):
+            failures.append(
+                f"{label}: orders-of-magnitude delta {item.get('orders_of_magnitude'):.6g} "
+                f"exceeds {args.max_orders_of_magnitude:.6g}"
+            )
+    return failures
 
 
 def main() -> int:
     args = parse_args()
     reference_rows = read_csv(args.reference)
     candidate_rows = read_csv(args.candidate)
+    kinds = checked_kinds(args.kind)
     report = {
         "reference": str(args.reference),
         "candidate": str(args.candidate),
+        "checked_kinds": kinds,
         "iv": compare_series("iv", reference_rows, candidate_rows),
         "cv": compare_series("cv", reference_rows, candidate_rows),
         "bv": compare_series("bv", reference_rows, candidate_rows),
     }
+    report["failures"] = evaluate_failures(report, args)
+    report["status"] = "fail" if report["failures"] else "pass"
 
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_md.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(json.dumps(report, indent=2) + "\n")
     args.output_md.write_text(markdown_report(report))
     print(json.dumps(report, indent=2))
-    return 0
+    return 1 if report["failures"] else 0
 
 
 if __name__ == "__main__":

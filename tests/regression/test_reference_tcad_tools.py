@@ -142,6 +142,109 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             self.assertIn("orders_of_magnitude", report["iv"])
             self.assertIn("Reference TCAD Curve Comparison", report_md.read_text())
 
+    def test_compare_reference_curves_enforces_single_curve_thresholds(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_reference_compare_gate_") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.csv"
+            candidate = root / "candidate.csv"
+            bad_candidate = root / "bad_candidate.csv"
+            report_json = root / "report.json"
+            report_md = root / "report.md"
+
+            header = ["bias_V", "current_total"]
+            self._write_csv(reference, header, [
+                [0.0, 1.0e-12],
+                [0.5, 1.0e-9],
+                [1.0, 1.0e-6],
+            ])
+            self._write_csv(candidate, header, [
+                [0.0, 1.0e-12],
+                [0.5, 1.1e-9],
+                [1.0, 1.05e-6],
+            ])
+            self._write_csv(bad_candidate, header, [
+                [0.0, 1.0e-6],
+                [0.5, 1.0e-9],
+                [1.0, 1.0e-12],
+            ])
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_reference_curves.py"),
+                    "--reference",
+                    str(reference),
+                    "--candidate",
+                    str(candidate),
+                    "--output-json",
+                    str(root / "default_report.json"),
+                    "--output-md",
+                    str(root / "default_report.md"),
+                ],
+                check=True,
+                cwd=REPO,
+            )
+            default_report = json.loads((root / "default_report.json").read_text())
+            self.assertEqual(default_report["status"], "pass")
+            self.assertFalse(default_report["cv"]["available"])
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_reference_curves.py"),
+                    "--reference",
+                    str(reference),
+                    "--candidate",
+                    str(candidate),
+                    "--output-json",
+                    str(report_json),
+                    "--output-md",
+                    str(report_md),
+                    "--kind",
+                    "iv",
+                    "--require-trend-match",
+                    "--min-points",
+                    "3",
+                    "--max-relative-error",
+                    "0.2",
+                    "--max-orders-of-magnitude",
+                    "0.1",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+            report = json.loads(report_json.read_text())
+            self.assertEqual(report["status"], "pass")
+            self.assertEqual(report["iv"]["points_compared"], 3)
+            self.assertEqual(report["checked_kinds"], ["iv"])
+
+            failed = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_reference_curves.py"),
+                    "--reference",
+                    str(reference),
+                    "--candidate",
+                    str(bad_candidate),
+                    "--output-json",
+                    str(root / "bad_report.json"),
+                    "--output-md",
+                    str(root / "bad_report.md"),
+                    "--kind",
+                    "iv",
+                    "--require-trend-match",
+                    "--min-points",
+                    "3",
+                    "--max-orders-of-magnitude",
+                    "0.1",
+                ],
+                cwd=REPO,
+            )
+            self.assertNotEqual(failed.returncode, 0)
+            bad_report = json.loads((root / "bad_report.json").read_text())
+            self.assertEqual(bad_report["status"], "fail")
+            self.assertTrue(any("trend" in failure for failure in bad_report["failures"]))
+
     def test_checked_in_pn_validation_assets_are_complete(self) -> None:
         pn_dir = REPO / "reference_tcad" / "pn_diode"
         vela_dir = pn_dir / "vela"
