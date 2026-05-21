@@ -244,6 +244,7 @@ if args.export_dir:
     write_csv(out / "contacts.csv", ["name", "node_ids", "region"], [["drain", "1;2", "Silicon_1"], ["gate", "0;3", "Silicon_1"]])
     write_csv(out / "doping.csv", ["node_id", "donors_cm3", "acceptors_cm3"], [[0, 1e17, 0], [1, 1e17, 0], [2, 1e17, 0], [3, 1e17, 0]])
     (out / "metadata.json").write_text(json.dumps({"vertex_count": 4, "region_count": 1, "dataset_count": 0}, indent=2) + "\\n")
+    (out / "field_manifest.json").write_text(json.dumps({"fields": []}, indent=2) + "\\n")
 
 if args.inventory_json:
     Path(args.inventory_json).write_text(json.dumps({"vertex_count": 4, "region_count": 1, "dataset_count": 0}, indent=2) + "\\n")
@@ -277,6 +278,7 @@ if args.inventory_json:
                 "elements.csv",
                 "contacts.csv",
                 "doping.csv",
+                "field_manifest.json",
                 "metadata.json",
                 "import_summary.json",
                 "cmd_summary.json",
@@ -292,6 +294,7 @@ if args.inventory_json:
             self.assertEqual(summary["device"], "ldmos2d")
             self.assertEqual(summary["sources"]["tdr"], str(project / "n20_des.tdr"))
             self.assertIn("Thermodynamic", summary["warnings"][0])
+            self.assertIn("field_manifest.json", summary["generated"])
             self.assertIn("reference_curves/ldmos2d_idvd_reference.csv", summary["generated"])
 
 

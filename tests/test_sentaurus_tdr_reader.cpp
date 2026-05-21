@@ -4,6 +4,7 @@
 #include "vela/io/SentaurusTdrReader.h"
 
 #include <hdf5.h>
+#include <nlohmann/json.hpp>
 
 #include <filesystem>
 #include <fstream>
@@ -152,6 +153,9 @@ std::filesystem::path writeSyntheticTdr()
     hid_t d4 = createGroup(state, "dataset_4");
     writeDoubleDatasetWithAttrs(d4, "values", {2.5e-3}, "ContactCurrentFlux", 1, 1, "A");
     H5Gclose(d4);
+    hid_t d5 = createGroup(state, "dataset_5");
+    writeDoubleDatasetWithAttrs(d5, "values", {7.0, 8.0, 9.0}, "MismatchedScalar", 0, 3, "1");
+    H5Gclose(d5);
     H5Gclose(state);
 
     H5Gclose(geometry);
@@ -177,7 +181,7 @@ TEST_CASE("SentaurusTdrReader reads mesh regions contacts and state datasets", "
 
     REQUIRE(inventory.vertices.size() == 4);
     REQUIRE(inventory.regions.size() == 3);
-    REQUIRE(inventory.fields.size() == 5);
+    REQUIRE(inventory.fields.size() == 6);
 
     const auto& silicon = inventory.regions.at(0);
     REQUIRE(silicon.name == "Silicon_1");
@@ -215,6 +219,7 @@ TEST_CASE("SentaurusTdrReader exports neutral reference TCAD CSV files", "[senta
     REQUIRE(std::filesystem::is_regular_file(outDir / "doping.csv"));
     REQUIRE(std::filesystem::is_regular_file(outDir / "fields" / "ElectricField_region0.csv"));
     REQUIRE(std::filesystem::is_regular_file(outDir / "metadata.json"));
+    REQUIRE(std::filesystem::is_regular_file(outDir / "field_manifest.json"));
 
     const std::string contacts = readFile(outDir / "contacts.csv");
     REQUIRE(contacts.find("drain,1;2;3,Silicon_1") != std::string::npos);
@@ -225,5 +230,28 @@ TEST_CASE("SentaurusTdrReader exports neutral reference TCAD CSV files", "[senta
 
     const std::string metadata = readFile(outDir / "metadata.json");
     REQUIRE(metadata.find("\"vertex_count\": 4") != std::string::npos);
-    REQUIRE(metadata.find("\"dataset_count\": 5") != std::string::npos);
+    REQUIRE(metadata.find("\"dataset_count\": 6") != std::string::npos);
+
+    const auto manifest = nlohmann::json::parse(readFile(outDir / "field_manifest.json"));
+    REQUIRE(manifest["fields"].size() == 6);
+    const auto electric = std::find_if(
+        manifest["fields"].begin(), manifest["fields"].end(),
+        [](const nlohmann::json& field) {
+            return field["name"] == "ElectricField";
+        });
+    REQUIRE(electric != manifest["fields"].end());
+    REQUIRE((*electric)["unit"] == "V*cm^-1");
+    REQUIRE((*electric)["components"] == 2);
+    REQUIRE((*electric)["global_node_mapping"] == "region_node_order");
+    REQUIRE((*electric)["mapping_status"] == "complete");
+
+    const auto mismatch = std::find_if(
+        manifest["fields"].begin(), manifest["fields"].end(),
+        [](const nlohmann::json& field) {
+            return field["name"] == "MismatchedScalar";
+        });
+    REQUIRE(mismatch != manifest["fields"].end());
+    REQUIRE((*mismatch)["mapping_status"] == "partial");
+    REQUIRE((*mismatch)["warnings"][0].get<std::string>().find("value_count 3 does not match region node count 4")
+            != std::string::npos);
 }

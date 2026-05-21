@@ -428,6 +428,68 @@ void writeFieldCsv(const std::filesystem::path& path,
     }
 }
 
+nlohmann::json fieldManifestEntry(const SentaurusTdrInventory& inventory,
+                                  const SentaurusTdrField& field)
+{
+    nlohmann::json entry = {
+        {"index", field.index},
+        {"name", field.name},
+        {"region", field.region_index},
+        {"unit", field.unit},
+        {"values", field.value_count},
+        {"raw_value_count", field.values.size()},
+        {"components", field.component_count},
+        {"global_node_mapping", "none"},
+        {"mapping_status", "unmapped"},
+        {"warnings", nlohmann::json::array()},
+    };
+
+    const auto* region = findRegion(inventory, field.region_index);
+    if (region == nullptr) {
+        entry["warnings"].push_back(
+            "field region " + std::to_string(field.region_index) + " is not present in the geometry");
+        return entry;
+    }
+
+    entry["region_name"] = region->name;
+    entry["region_type"] = static_cast<int>(region->type);
+    const auto nodes = regionNodeOrder(*region);
+    entry["region_node_count"] = nodes.size();
+
+    if (region->type == SentaurusTdrRegionType::Contact && field.value_count == 1) {
+        entry["global_node_mapping"] = "contact_scalar";
+        entry["mapping_status"] = "scalar";
+        return entry;
+    }
+
+    entry["global_node_mapping"] = "region_node_order";
+    if (field.value_count == nodes.size()) {
+        entry["mapping_status"] = "complete";
+        return entry;
+    }
+
+    if (field.value_count == 0) {
+        entry["mapping_status"] = "empty";
+    } else {
+        entry["mapping_status"] = "partial";
+    }
+    entry["warnings"].push_back(
+        "value_count " + std::to_string(field.value_count) +
+        " does not match region node count " + std::to_string(nodes.size()) +
+        "; CSV export uses the overlapping prefix only");
+    return entry;
+}
+
+nlohmann::json fieldManifest(const SentaurusTdrInventory& inventory)
+{
+    nlohmann::json manifest;
+    manifest["fields"] = nlohmann::json::array();
+    for (const auto& field : inventory.fields) {
+        manifest["fields"].push_back(fieldManifestEntry(inventory, field));
+    }
+    return manifest;
+}
+
 } // namespace
 
 const SentaurusTdrField* SentaurusTdrInventory::findField(const std::string& name, int regionIndex) const
@@ -591,6 +653,9 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename, const std::s
     }
     std::ofstream metaOut(outDir / "metadata.json");
     metaOut << metadata.dump(2) << "\n";
+
+    std::ofstream manifestOut(outDir / "field_manifest.json");
+    manifestOut << fieldManifest(inventory).dump(2) << "\n";
 }
 
 } // namespace vela

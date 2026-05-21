@@ -285,7 +285,15 @@ def project_command(args: argparse.Namespace) -> None:
         ],
         cwd=REPO,
     )
-    for name in ["nodes.csv", "elements.csv", "contacts.csv", "doping.csv", "metadata.json", "tdr_inventory.json"]:
+    for name in [
+        "nodes.csv",
+        "elements.csv",
+        "contacts.csv",
+        "doping.csv",
+        "metadata.json",
+        "field_manifest.json",
+        "tdr_inventory.json",
+    ]:
         if (output_dir / name).exists():
             generated.append(name)
 
