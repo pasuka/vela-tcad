@@ -130,8 +130,8 @@ std::filesystem::path writeSyntheticTdr()
     hid_t iface = createGroup(geometry, "region_2");
     writeStringAttribute(iface, "name", "Oxide_1+Silicon_1");
     writeIntAttribute(iface, "type", 2);
-    writeSizeAttribute(iface, "number of elements", 1);
-    writeIntDataset(iface, "elements_0", {1, 0, 3});
+    writeSizeAttribute(iface, "number of elements", 3);
+    writeIntDataset(iface, "elements_0", {0, 0, 0, 3, 1, 2, 3});
     H5Gclose(iface);
 
     hid_t state = createGroup(geometry, "state_0");
@@ -193,6 +193,11 @@ TEST_CASE("SentaurusTdrReader reads mesh regions contacts and state datasets", "
     const auto& contact = inventory.regions.at(1);
     REQUIRE(contact.type == SentaurusTdrRegionType::Contact);
     REQUIRE(contact.edges.size() == 2);
+
+    const auto& interface = inventory.regions.at(2);
+    REQUIRE(interface.type == SentaurusTdrRegionType::Interface);
+    REQUIRE(interface.edges.size() == 1);
+    REQUIRE(interface.points.size() == 2);
 
     const auto* electricField = inventory.findField("ElectricField", 0);
     REQUIRE(electricField != nullptr);

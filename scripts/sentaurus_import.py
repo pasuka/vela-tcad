@@ -465,6 +465,138 @@ def parse_cmd(input_path: Path, template_vars: dict[str, str] | None = None) -> 
     }
 
 
+def strip_scheme_comments(text: str) -> str:
+    return "\n".join(line.split(";", maxsplit=1)[0] for line in text.splitlines())
+
+
+def parse_sde_defines(text: str) -> dict[str, float | str]:
+    defines: dict[str, float | str] = {}
+    for name, value in re.findall(r"\(define\s+([A-Za-z_][\w]*)\s+([^\s)]+)\)", text):
+        defines[name] = coerce_scalar(value)
+    return defines
+
+
+def eval_sde_expr(expr: str, defines: dict[str, float | str]) -> float:
+    expr = expr.strip()
+    if NUMBER_RE.fullmatch(expr):
+        return float(expr)
+    if expr in defines:
+        value = defines[expr]
+        if isinstance(value, (int, float)):
+            return float(value)
+    op_match = re.fullmatch(r"\(([-+])\s+([^\s()]+)\s+([^\s()]+)\)", expr)
+    if op_match:
+        lhs = eval_sde_expr(op_match.group(2), defines)
+        rhs = eval_sde_expr(op_match.group(3), defines)
+        return lhs + rhs if op_match.group(1) == "+" else lhs - rhs
+    raise ValueError(f"unsupported SDE expression: {expr}")
+
+
+def parse_sde_position(text: str, defines: dict[str, float | str]) -> list[float]:
+    body = text.strip()
+    if not body.startswith("(position") or not body.endswith(")"):
+        raise ValueError(f"invalid SDE position: {text}")
+    inner = body[len("(position"):-1].strip()
+    tokens: list[str] = []
+    index = 0
+    while index < len(inner):
+        while index < len(inner) and inner[index].isspace():
+            index += 1
+        if index >= len(inner):
+            break
+        if inner[index] == "(":
+            end = find_matching(inner, index, "(", ")")
+            tokens.append(inner[index:end + 1])
+            index = end + 1
+        else:
+            start = index
+            while index < len(inner) and not inner[index].isspace():
+                index += 1
+            tokens.append(inner[start:index])
+    if len(tokens) != 3:
+        raise ValueError(f"invalid SDE position: {text}")
+    return [eval_sde_expr(token, defines) for token in tokens]
+
+
+def parse_sde(input_path: Path) -> dict[str, Any]:
+    text = strip_scheme_comments(input_path.read_text(errors="ignore"))
+    defines = parse_sde_defines(text)
+
+    rectangles = []
+    rect_pattern = re.compile(
+        r"\(sdegeo:create-rectangle\s+"
+        r"(\(position.*?\))\s+"
+        r"(\(position.*?\))\s+"
+        r"\"([^\"]+)\"\s+\"([^\"]+)\"\s*\)",
+        re.DOTALL,
+    )
+    for lower, upper, material, region in rect_pattern.findall(text):
+        rectangles.append({
+            "region": region,
+            "material": material,
+            "lower_left": parse_sde_position(lower, defines)[:2],
+            "upper_right": parse_sde_position(upper, defines)[:2],
+        })
+
+    profiles: dict[str, dict[str, Any]] = {}
+    for name, species, value in re.findall(
+        r"\(sdedr:define-constant-profile\s+\"([^\"]+)\"\s+\"([^\"]+)\"\s+([^\s)]+)\)",
+        text,
+    ):
+        profiles[name] = {
+            "species": species,
+            "value": eval_sde_expr(value, defines),
+        }
+
+    placements: dict[str, dict[str, str]] = {}
+    for placement, profile, region in re.findall(
+        r"\(sdedr:define-constant-profile-region\s+\"([^\"]+)\"\s+\"([^\"]+)\"\s+\"([^\"]+)\"\)",
+        text,
+    ):
+        placements[placement] = {"profile": profile, "region": region}
+
+    contacts = [
+        {"name": name}
+        for name in re.findall(r"\(sdegeo:define-contact-set\s+\"([^\"]+)\"", text)
+    ]
+
+    refinement_windows = []
+    atom = r"(?:\([^()]*\)|[^\s()]+)"
+    window_pattern = re.compile(
+        rf"\(sdedr:define-refinement-window\s+\"([^\"]+)\"\s+\"([^\"]+)\"\s+"
+        rf"\(position\s+({atom})\s+({atom})\s+({atom})\)\s+"
+        rf"\(position\s+({atom})\s+({atom})\s+({atom})\)\s*\)",
+        re.DOTALL,
+    )
+    for name, shape, lx, ly, lz, ux, uy, uz in window_pattern.findall(text):
+        lower = f"(position {lx} {ly} {lz})"
+        upper = f"(position {ux} {uy} {uz})"
+        refinement_windows.append({
+            "name": name,
+            "shape": shape,
+            "lower_left": parse_sde_position(lower, defines)[:2],
+            "upper_right": parse_sde_position(upper, defines)[:2],
+        })
+
+    return {
+        "defines": defines,
+        "geometry": {"rectangles": rectangles},
+        "doping_profiles": profiles,
+        "doping_placements": placements,
+        "contacts": contacts,
+        "refinement_windows": refinement_windows,
+    }
+
+
+def sde_command(args: argparse.Namespace) -> None:
+    summary = parse_sde(args.input)
+    if args.summary_json:
+        args.summary_json.parent.mkdir(parents=True, exist_ok=True)
+        args.summary_json.write_text(json.dumps(summary, indent=2) + "\n")
+    else:
+        print(json.dumps(summary, indent=2))
+
+
 def build_runner_deck(summary: dict[str, Any], mesh_json: str, output_csv: str) -> dict[str, Any]:
     electrodes = {str(item["name"]): float(item["voltage"]) for item in summary.get("electrodes", [])}
     sweeps = summary.get("sweeps", [])
@@ -613,6 +745,247 @@ def write_reference_manifest(output_dir: Path,
     (output_dir / "reference_tcad_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 
 
+def read_json(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text())
+
+
+def write_json(path: Path, data: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2) + "\n")
+
+
+def resolve_source(source_dir: Path, name: str) -> Path:
+    path = source_dir / name
+    if not path.is_file():
+        raise FileNotFoundError(f"missing Sentaurus reference artifact: {path}")
+    return path
+
+
+def run_tdr_importer(tdr_importer: str | None,
+                     tdr_path: Path,
+                     inventory_path: Path | None,
+                     export_dir: Path | None) -> None:
+    if inventory_path is not None:
+        inventory_path.parent.mkdir(parents=True, exist_ok=True)
+    if export_dir is not None:
+        export_dir.mkdir(parents=True, exist_ok=True)
+    importer = shlex.split(tdr_importer or default_tdr_importer(),
+                           posix=not sys.platform.startswith("win"))
+    if not importer:
+        raise ValueError("tdr importer command is empty")
+    command = [*importer, "--tdr", str(tdr_path)]
+    if inventory_path is not None:
+        command.extend(["--inventory-json", str(inventory_path)])
+    if export_dir is not None:
+        command.extend(["--export-dir", str(export_dir)])
+    run_command(command, cwd=REPO)
+
+
+def patch_reference_deck(deck_path: Path,
+                         cmd_summary: dict[str, Any],
+                         sim: dict[str, Any],
+                         output_csv: str) -> None:
+    deck = read_json(deck_path)
+    sweeps = cmd_summary.get("sweeps", [])
+    sweep = sweeps[-1] if sweeps else {"contact": "Anode", "stop": 0.0, "step_control": {}}
+    stop = numeric_or_none(sweep.get("stop")) or 0.0
+    start = 0.0
+    step_control = sweep.get("step_control", {}) if isinstance(sweep.get("step_control"), dict) else {}
+    max_step = numeric_or_none(step_control.get("MaxStep"))
+    deck["output_csv"] = output_csv
+    deck.setdefault("contacts", [])
+    for contact in deck["contacts"]:
+        contact["bias"] = 0.0
+    deck.setdefault("sweep", {})
+    deck["sweep"]["mode"] = "bv_reverse" if sim.get("kind") == "bv" else "iv"
+    deck["sweep"]["contact"] = sweep.get("contact")
+    deck["sweep"]["current_contact"] = sweep.get("contact")
+    deck["sweep"]["start"] = start
+    deck["sweep"]["stop"] = stop
+    deck["sweep"]["step"] = max_step if max_step is not None and max_step > 0.0 else (stop - start) / 80.0
+    deck["sweep"]["write_vtk"] = False
+    if sim.get("kind") == "bv":
+        deck["sweep"].setdefault("breakdown", {
+            "max_electric_field_V_per_m": 1.0e12,
+            "current_jump_ratio": 1.0e12,
+            "non_convergence": True,
+        })
+    deck["sentaurus_import"] = {
+        "cmd_summary": cmd_summary,
+        "source_simulation": sim,
+    }
+    write_json(deck_path, deck)
+
+
+def scan_csv_has_only_finite_numbers(path: Path) -> None:
+    with path.open(newline="") as handle:
+        for row in csv.DictReader(handle):
+            for key, value in row.items():
+                if value in ("", None):
+                    continue
+                try:
+                    number = float(value)
+                except ValueError:
+                    continue
+                if not (number == number and abs(number) != float("inf")):
+                    raise ValueError(f"non-finite value in {path}: {key}={value}")
+
+
+def run_reference_deck(runner: str | None, deck_path: Path) -> None:
+    runner_command = shlex.split(runner or str(REPO / "build" / ("vela_example_runner.exe" if sys.platform.startswith("win") else "vela_example_runner")),
+                                 posix=not sys.platform.startswith("win"))
+    if not runner_command or not Path(runner_command[0]).exists():
+        return
+    run_command([*runner_command, "--config", str(deck_path)], cwd=deck_path.parent)
+
+
+def reference_command(args: argparse.Namespace) -> None:
+    config = read_json(args.config)
+    source_dir = args.source_dir.resolve()
+    output_dir = args.output_dir.resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    case_name = str(config["case"])
+    device = str(config["device"])
+    simulations = list(config.get("simulations", []))
+    generated: list[str] = []
+    warnings: list[str] = []
+    unsupported: set[str] = set()
+
+    sde_summary_path = output_dir / "sde_summary.json"
+    sde_summary = parse_sde(resolve_source(source_dir, str(config["sde_cmd"])))
+    write_json(sde_summary_path, sde_summary)
+    generated.append("sde_summary.json")
+
+    inventories_dir = output_dir / "tdr_inventory"
+    mesh_tdr = resolve_source(source_dir, str(config["mesh_tdr"]))
+    run_tdr_importer(args.tdr_importer, mesh_tdr, inventories_dir / "mesh.json", output_dir)
+    generated.extend([
+        "nodes.csv",
+        "elements.csv",
+        "contacts.csv",
+        "doping.csv",
+        "metadata.json",
+        "field_manifest.json",
+        "tdr_inventory/mesh.json",
+    ])
+    for sim in simulations:
+        tdr_name = str(sim["tdr"])
+        inventory_path = inventories_dir / f"{sim['name']}.json"
+        run_tdr_importer(args.tdr_importer, resolve_source(source_dir, tdr_name), inventory_path, None)
+        generated.append(relative_generated(inventory_path, output_dir))
+
+    reference_dir = output_dir / "reference_curves"
+    cmd_dir = output_dir / "cmd"
+    for sim in simulations:
+        sim_name = str(sim["name"])
+        reference_curve = reference_dir / f"{case_name}_{sim_name}_reference.csv"
+        export_plt_reference(
+            resolve_source(source_dir, str(sim["plt"])),
+            reference_curve,
+            str(sim["bias_column"]),
+            str(sim["current_column"]),
+        )
+        generated.append(relative_generated(reference_curve, output_dir))
+        cmd_summary = parse_cmd(resolve_source(source_dir, str(sim["cmd"])))
+        unsupported.update(cmd_summary.get("unsupported_physics", []))
+        cmd_summary_path = cmd_dir / f"{sim_name}_summary.json"
+        write_json(cmd_summary_path, cmd_summary)
+        generated.append(relative_generated(cmd_summary_path, output_dir))
+
+    vela_dir = output_dir / "vela"
+    run_command(
+        [
+            sys.executable,
+            str(REPO / "scripts" / "convert_tcad_export.py"),
+            "--input-dir",
+            str(output_dir),
+            "--output-dir",
+            str(vela_dir),
+            "--device",
+            device,
+            "--simulation-types",
+            ",".join("bv" if sim.get("kind") == "bv" else "iv" for sim in simulations),
+        ],
+        cwd=REPO,
+    )
+    generated.append("vela/mesh.json")
+
+    reports: list[str] = []
+    for sim in simulations:
+        sim_name = str(sim["name"])
+        kind = str(sim.get("kind", "iv"))
+        deck_path = vela_dir / f"simulation_{sim_name}.json"
+        generated_deck = vela_dir / ("simulation_bv.json" if kind == "bv" else "simulation_iv.json")
+        if generated_deck != deck_path:
+            generated_deck.replace(deck_path)
+        cmd_summary = read_json(output_dir / "cmd" / f"{sim_name}_summary.json")
+        candidate_csv = f"{case_name}_{sim_name}.csv"
+        patch_reference_deck(deck_path, cmd_summary, sim, candidate_csv)
+        generated.append(relative_generated(deck_path, output_dir))
+        if not args.skip_vela_run:
+            run_reference_deck(args.runner, deck_path)
+        candidate_path = vela_dir / candidate_csv
+        if candidate_path.exists():
+            generated.append(relative_generated(candidate_path, output_dir))
+            scan_csv_has_only_finite_numbers(candidate_path)
+            report_json = output_dir / "reports" / f"{case_name}_{sim_name}_comparison.json"
+            report_md = output_dir / "reports" / f"{case_name}_{sim_name}_comparison.md"
+            compare_kind = str(sim.get("comparison_kind", "iv"))
+            require_trend_match = bool(sim.get("require_trend_match", kind != "bv"))
+            compare_command = [
+                sys.executable,
+                str(REPO / "scripts" / "compare_reference_curves.py"),
+                "--reference",
+                str(output_dir / "reference_curves" / f"{case_name}_{sim_name}_reference.csv"),
+                "--candidate",
+                str(candidate_path),
+                "--output-json",
+                str(report_json),
+                "--output-md",
+                str(report_md),
+                "--kind",
+                compare_kind,
+                "--min-points",
+                "2",
+            ]
+            if require_trend_match:
+                compare_command.append("--require-trend-match")
+            run_command(
+                compare_command,
+                cwd=REPO,
+            )
+            reports.extend([relative_generated(report_json, output_dir), relative_generated(report_md, output_dir)])
+
+    if unsupported:
+        warnings.append("unsupported physics: " + ", ".join(sorted(unsupported)))
+    generated.append("reference_tcad_manifest.json")
+    manifest = {
+        "schema": "vela.reference_tcad.sentaurus_reference.v1",
+        "case": case_name,
+        "device": device,
+        "source_dir": str(source_dir),
+        "generated": sorted(dict.fromkeys([*generated, *reports])),
+        "reference_curves": sorted(item for item in generated if item.startswith("reference_curves/")),
+        "vela_decks": sorted(item for item in generated if item.startswith("vela/") and item.endswith(".json")),
+        "comparison_reports": sorted(reports),
+        "unsupported_physics": sorted(unsupported),
+        "warnings": warnings,
+        "commit_policy": {
+            "raw_sentaurus_artifacts": False,
+            "generated_reference_tree": "local-or-explicit-review",
+        },
+    }
+    write_json(output_dir / "reference_tcad_manifest.json", manifest)
+    import_summary = {
+        "case": case_name,
+        "device": device,
+        "generated": manifest["generated"],
+        "warnings": warnings,
+    }
+    write_json(output_dir / "import_summary.json", import_summary)
+    print(json.dumps(import_summary, indent=2))
+
+
 def project_command(args: argparse.Namespace) -> None:
     project_dir = args.project_dir.resolve()
     output_dir = args.output_dir.resolve()
@@ -728,6 +1101,11 @@ def build_parser() -> argparse.ArgumentParser:
     plt.add_argument("--current-column", required=True)
     plt.set_defaults(func=plt_command)
 
+    sde = sub.add_parser("sde", help="Summarize a Sentaurus Structure Editor .cmd file")
+    sde.add_argument("--input", type=Path, required=True)
+    sde.add_argument("--summary-json", type=Path)
+    sde.set_defaults(func=sde_command)
+
     cmd = sub.add_parser("cmd", help="Summarize an SDevice .cmd file and generate a Python runner")
     cmd.add_argument("--input", type=Path, required=True)
     cmd.add_argument("--summary-json", type=Path)
@@ -755,6 +1133,19 @@ def build_parser() -> argparse.ArgumentParser:
     project.add_argument("--mesh-json", default="vela/mesh.json")
     project.add_argument("--output-csv", default="outputs/ldmos_idvd.csv")
     project.set_defaults(func=project_command)
+
+    reference = sub.add_parser("reference", help="Import a config-driven Sentaurus reference case")
+    reference.add_argument("--config", type=Path, required=True)
+    reference.add_argument("--source-dir", type=Path, required=True)
+    reference.add_argument("--output-dir", type=Path, required=True)
+    reference.add_argument("--tdr-importer", default=None, help="Command used to run the C++ TDR importer")
+    reference.add_argument("--runner", default=None, help="Command used to run vela_example_runner")
+    reference.add_argument(
+        "--skip-vela-run",
+        action="store_true",
+        help="Generate neutral exports and Vela decks without executing the Vela runner",
+    )
+    reference.set_defaults(func=reference_command)
     return parser
 
 

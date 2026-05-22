@@ -15,10 +15,100 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 SAMPLE_ENV = "VELA_SENTAURUS_SAMPLE_DIR"
+PN2D_ENV = "VELA_SENTAURUS_PN2D_DIR"
 BUILD_ENV = "VELA_BUILD_DIR"
 
 
 class SentaurusSampleIntegrationTest(unittest.TestCase):
+    def test_pn2d_reference_import_when_enabled(self) -> None:
+        pn2d_root = self._root_or_skip(PN2D_ENV)
+        build_root = Path(os.environ.get(BUILD_ENV, REPO / "build"))
+        importer = build_root / ("sentaurus_import.exe" if os.name == "nt" else "sentaurus_import")
+        if not importer.is_file():
+            self.skipTest(f"Sentaurus HDF5 importer is not built: {importer}")
+
+        with tempfile.TemporaryDirectory(prefix="vela_sentaurus_pn2d_") as tmp:
+            out = Path(tmp)
+            config_path = out / "pn2d_reference_config.json"
+            config_path.write_text(json.dumps({
+                "case": "pn2d",
+                "device": "pn_diode",
+                "mesh_tdr": "pn2d_msh.tdr",
+                "sde_cmd": "pn2d_sde.cmd",
+                "simulations": [
+                    {
+                        "name": "iv",
+                        "kind": "iv",
+                        "tdr": "pn2d_des.tdr",
+                        "cmd": "pn2d_sdevice.cmd",
+                        "plt": "pn2d_iv.plt",
+                        "bias_column": "Anode OuterVoltage",
+                        "current_column": "Anode TotalCurrent",
+                    },
+                    {
+                        "name": "bv",
+                        "kind": "bv",
+                        "tdr": "pn2d_bv_des.tdr",
+                        "cmd": "pn2d_bv_sdevice.cmd",
+                        "plt": "pn2d_bv.plt",
+                        "bias_column": "Cathode OuterVoltage",
+                        "current_column": "Cathode TotalCurrent",
+                    },
+                ],
+            }, indent=2) + "\n")
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "sentaurus_import.py"),
+                    "reference",
+                    "--config",
+                    str(config_path),
+                    "--source-dir",
+                    str(pn2d_root),
+                    "--output-dir",
+                    str(out / "reference"),
+                    "--tdr-importer",
+                    str(importer),
+                    "--skip-vela-run",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            summary = json.loads((out / "reference" / "sde_summary.json").read_text())
+            self.assertEqual(summary["defines"]["L"], 2.0)
+            self.assertEqual(summary["defines"]["H"], 0.5)
+            self.assertEqual(summary["defines"]["Xj"], 1.0)
+            self.assertEqual(summary["defines"]["Na"], 1.0e17)
+            self.assertEqual(summary["defines"]["Nd"], 1.0e17)
+
+            inventory = json.loads((out / "reference" / "tdr_inventory" / "iv.json").read_text())
+            self.assertEqual(
+                {region["name"] for region in inventory["regions"] if region["type"] == 1},
+                {"Anode", "Cathode"},
+            )
+
+            iv_rows = self._read_curve(out / "reference" / "reference_curves" / "pn2d_iv_reference.csv")
+            bv_rows = self._read_curve(out / "reference" / "reference_curves" / "pn2d_bv_reference.csv")
+            self.assertEqual(len(iv_rows), 62)
+            self.assertEqual(len(bv_rows), 39)
+            self.assertAlmostEqual(float(iv_rows[-1]["bias_V"]), 1.0, places=12)
+            self.assertAlmostEqual(float(iv_rows[-1]["current_total"]), 1.1637177246e-4, places=14)
+            self.assertAlmostEqual(float(bv_rows[-1]["bias_V"]), 50.0, places=12)
+
+            iv_deck = json.loads((out / "reference" / "vela" / "simulation_iv.json").read_text())
+            bv_deck = json.loads((out / "reference" / "vela" / "simulation_bv.json").read_text())
+            self.assertEqual(iv_deck["sweep"]["contact"], "Anode")
+            self.assertEqual(iv_deck["sweep"]["stop"], 1.0)
+            self.assertEqual(bv_deck["sweep"]["contact"], "Cathode")
+            self.assertEqual(bv_deck["sweep"]["stop"], 50.0)
+
+            manifest = json.loads((out / "reference" / "reference_tcad_manifest.json").read_text())
+            self.assertFalse(manifest["commit_policy"]["raw_sentaurus_artifacts"])
+            self.assertIn("Avalanche", manifest["unsupported_physics"])
+            self.assertEqual(manifest["comparison_reports"], [])
+
     def test_ldmos_n20_sample_inventory_curve_and_cmd_when_enabled(self) -> None:
         sample_root = self._sample_root_or_skip()
         build_root = Path(os.environ.get(BUILD_ENV, REPO / "build"))
@@ -117,12 +207,19 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             self.assertIn("from vela.curves import run_iv_curve", runner_path.read_text())
 
     def _sample_root_or_skip(self) -> Path:
-        value = os.environ.get(SAMPLE_ENV)
+        return self._root_or_skip(SAMPLE_ENV)
+
+    def _root_or_skip(self, env_name: str) -> Path:
+        value = os.environ.get(env_name)
         if not value:
-            self.skipTest(f"{SAMPLE_ENV} is not set")
+            self.skipTest(f"{env_name} is not set")
         root = Path(value)
-        self.assertTrue(root.is_dir(), f"{SAMPLE_ENV} is not a directory: {root}")
+        self.assertTrue(root.is_dir(), f"{env_name} is not a directory: {root}")
         return root
+
+    def _read_curve(self, path: Path) -> list[dict[str, str]]:
+        with path.open(newline="") as handle:
+            return list(csv.DictReader(handle))
 
     def _assert_contact_scalar(self,
                                inventory: dict[str, object],

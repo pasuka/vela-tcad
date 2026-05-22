@@ -225,7 +225,10 @@ void parseElements(SentaurusTdrRegion& region, const std::vector<int>& raw)
     std::size_t i = 0;
     while (i < raw.size()) {
         const int kind = raw[i++];
-        if (kind == 2 && i + 2 < raw.size()) {
+        if (kind == 0 && i < raw.size()) {
+            region.points.push_back(static_cast<std::size_t>(raw[i]));
+            i += 1;
+        } else if (kind == 2 && i + 2 < raw.size()) {
             region.triangles.push_back({
                 static_cast<std::size_t>(raw[i]),
                 static_cast<std::size_t>(raw[i + 1]),

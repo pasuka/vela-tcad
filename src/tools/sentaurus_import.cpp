@@ -41,6 +41,7 @@ nlohmann::json inventoryJson(const SentaurusTdrInventory& inventory)
             {"type", regionTypeCode(region.type)},
             {"triangles", region.triangles.size()},
             {"edges", region.edges.size()},
+            {"points", region.points.size()},
         });
     }
     data["fields"] = nlohmann::json::array();

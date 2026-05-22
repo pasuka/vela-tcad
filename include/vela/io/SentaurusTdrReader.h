@@ -26,6 +26,7 @@ struct SentaurusTdrRegion {
     SentaurusTdrRegionType type = SentaurusTdrRegionType::Other;
     std::vector<std::array<std::size_t, 3>> triangles;
     std::vector<std::array<std::size_t, 2>> edges;
+    std::vector<std::size_t> points;
 };
 
 struct SentaurusTdrField {
