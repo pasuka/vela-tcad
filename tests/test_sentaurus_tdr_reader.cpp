@@ -20,6 +20,11 @@ struct Vertex2D {
     double y;
 };
 
+struct SyntheticField {
+    std::string name;
+    std::vector<double> values;
+};
+
 void writeStringAttribute(hid_t object, const char* name, const std::string& value)
 {
     hid_t type = H5Tcopy(H5T_C_S1);
@@ -85,7 +90,10 @@ void writeDoubleDatasetWithAttrs(hid_t group,
     H5Sclose(space);
 }
 
-std::filesystem::path writeSyntheticTdr()
+std::filesystem::path writeSyntheticTdr(const std::vector<SyntheticField>& dopingFields = {
+    {"PhosphorusActiveConcentration", {1.0e17, 2.0e17, 3.0e17, 4.0e17}},
+    {"BoronActiveConcentration", {0.0, 0.0, 1.0e16, 1.0e16}},
+})
 {
     const auto path = std::filesystem::temp_directory_path() / "vela_synthetic_sentaurus.tdr";
     std::filesystem::remove(path);
@@ -135,25 +143,24 @@ std::filesystem::path writeSyntheticTdr()
     H5Gclose(iface);
 
     hid_t state = createGroup(geometry, "state_0");
-    hid_t d0 = createGroup(state, "dataset_0");
-    writeDoubleDatasetWithAttrs(d0, "values", {1.0e17, 2.0e17, 3.0e17, 4.0e17},
-                                "DonorConcentration", 0, 4, "cm^-3");
-    H5Gclose(d0);
-    hid_t d1 = createGroup(state, "dataset_1");
-    writeDoubleDatasetWithAttrs(d1, "values", {0.0, 0.0, 1.0e16, 1.0e16},
-                                "AcceptorConcentration", 0, 4, "cm^-3");
-    H5Gclose(d1);
-    hid_t d2 = createGroup(state, "dataset_2");
+    int datasetIndex = 0;
+    for (const auto& field : dopingFields) {
+        const std::string datasetName = "dataset_" + std::to_string(datasetIndex++);
+        hid_t dataset = createGroup(state, datasetName.c_str());
+        writeDoubleDatasetWithAttrs(dataset, "values", field.values, field.name, 0, 4, "cm^-3");
+        H5Gclose(dataset);
+    }
+    hid_t d2 = createGroup(state, ("dataset_" + std::to_string(datasetIndex++)).c_str());
     writeDoubleDatasetWithAttrs(d2, "values", {0.0, 1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0},
                                 "ElectricField", 0, 4, "V*cm^-1");
     H5Gclose(d2);
-    hid_t d3 = createGroup(state, "dataset_3");
+    hid_t d3 = createGroup(state, ("dataset_" + std::to_string(datasetIndex++)).c_str());
     writeDoubleDatasetWithAttrs(d3, "values", {5.0}, "ContactExternalVoltage", 1, 1, "V");
     H5Gclose(d3);
-    hid_t d4 = createGroup(state, "dataset_4");
+    hid_t d4 = createGroup(state, ("dataset_" + std::to_string(datasetIndex++)).c_str());
     writeDoubleDatasetWithAttrs(d4, "values", {2.5e-3}, "ContactCurrentFlux", 1, 1, "A");
     H5Gclose(d4);
-    hid_t d5 = createGroup(state, "dataset_5");
+    hid_t d5 = createGroup(state, ("dataset_" + std::to_string(datasetIndex++)).c_str());
     writeDoubleDatasetWithAttrs(d5, "values", {7.0, 8.0, 9.0}, "MismatchedScalar", 0, 3, "1");
     H5Gclose(d5);
     H5Gclose(state);
@@ -168,6 +175,17 @@ std::string readFile(const std::filesystem::path& path)
 {
     std::ifstream input(path);
     return std::string(std::istreambuf_iterator<char>(input), {});
+}
+
+std::string exportSyntheticDopingCsv(const std::vector<SyntheticField>& dopingFields)
+{
+    const auto path = writeSyntheticTdr(dopingFields);
+    const auto outDir = std::filesystem::temp_directory_path() / "vela_synthetic_sentaurus_export";
+    std::filesystem::remove_all(outDir);
+
+    SentaurusTdrReader reader;
+    reader.exportNeutral(path.string(), outDir.string());
+    return readFile(outDir / "doping.csv");
 }
 
 } // namespace
@@ -259,4 +277,41 @@ TEST_CASE("SentaurusTdrReader exports neutral reference TCAD CSV files", "[senta
     REQUIRE((*mismatch)["mapping_status"] == "partial");
     REQUIRE((*mismatch)["warnings"][0].get<std::string>().find("value_count 3 does not match region node count 4")
             != std::string::npos);
+}
+
+TEST_CASE("SentaurusTdrReader exports legacy aggregate dopant fields", "[sentaurus][tdr]")
+{
+    const std::string doping = exportSyntheticDopingCsv({
+        {"DonorConcentration", {1.0e17, 2.0e17, 3.0e17, 4.0e17}},
+        {"AcceptorConcentration", {0.0, 0.0, 1.0e16, 1.0e16}},
+    });
+
+    REQUIRE(doping.find("0,1e+17,0") != std::string::npos);
+    REQUIRE(doping.find("3,4e+17,1e+16") != std::string::npos);
+}
+
+TEST_CASE("SentaurusTdrReader sums active dopant species when no aggregate field is present", "[sentaurus][tdr]")
+{
+    const std::string doping = exportSyntheticDopingCsv({
+        {"PhosphorusActiveConcentration", {1.0e17, 2.0e17, 3.0e17, 4.0e17}},
+        {"ArsenicActiveConcentration", {5.0e16, 6.0e16, 7.0e16, 8.0e16}},
+        {"BoronActiveConcentration", {1.0e16, 2.0e16, 3.0e16, 4.0e16}},
+        {"AluminumActiveConcentration", {2.0e16, 3.0e16, 4.0e16, 5.0e16}},
+    });
+
+    REQUIRE(doping.find("0,1.5e+17,3e+16") != std::string::npos);
+    REQUIRE(doping.find("3,4.8e+17,9e+16") != std::string::npos);
+}
+
+TEST_CASE("SentaurusTdrReader prefers aggregate dopant totals over active species for the same region", "[sentaurus][tdr]")
+{
+    const std::string doping = exportSyntheticDopingCsv({
+        {"DonorConcentration", {1.0e17, 2.0e17, 3.0e17, 4.0e17}},
+        {"PhosphorusActiveConcentration", {9.0e17, 9.0e17, 9.0e17, 9.0e17}},
+        {"AcceptorConcentration", {0.0, 0.0, 1.0e16, 1.0e16}},
+        {"BoronActiveConcentration", {9.0e16, 9.0e16, 9.0e16, 9.0e16}},
+    });
+
+    REQUIRE(doping.find("0,1e+17,0") != std::string::npos);
+    REQUIRE(doping.find("3,4e+17,1e+16") != std::string::npos);
 }

@@ -371,6 +371,32 @@ std::string sanitizeFilename(std::string value)
     return value.empty() ? "field" : value;
 }
 
+bool isDonorConcentrationField(const std::string& name)
+{
+    return name == "DonorConcentration" ||
+        name == "PhosphorusActiveConcentration" ||
+        name == "ArsenicActiveConcentration" ||
+        name == "AntimonyActiveConcentration";
+}
+
+bool isAggregateDonorConcentrationField(const std::string& name)
+{
+    return name == "DonorConcentration";
+}
+
+bool isAcceptorConcentrationField(const std::string& name)
+{
+    return name == "AcceptorConcentration" ||
+        name == "BoronActiveConcentration" ||
+        name == "AluminumActiveConcentration" ||
+        name == "IndiumActiveConcentration";
+}
+
+bool isAggregateAcceptorConcentrationField(const std::string& name)
+{
+    return name == "AcceptorConcentration";
+}
+
 const SentaurusTdrRegion* findRegion(const SentaurusTdrInventory& inventory, int index)
 {
     for (const auto& region : inventory.regions) {
@@ -583,8 +609,19 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename, const std::s
 
     std::vector<double> donors(inventory.vertices.size(), 0.0);
     std::vector<double> acceptors(inventory.vertices.size(), 0.0);
+    std::set<int> aggregateDonorRegions;
+    std::set<int> aggregateAcceptorRegions;
     for (const auto& field : inventory.fields) {
-        if (field.name != "DonorConcentration" && field.name != "AcceptorConcentration") {
+        if (isAggregateDonorConcentrationField(field.name)) {
+            aggregateDonorRegions.insert(field.region_index);
+        } else if (isAggregateAcceptorConcentrationField(field.name)) {
+            aggregateAcceptorRegions.insert(field.region_index);
+        }
+    }
+    for (const auto& field : inventory.fields) {
+        const bool donorField = isDonorConcentrationField(field.name);
+        const bool acceptorField = isAcceptorConcentrationField(field.name);
+        if (!donorField && !acceptorField) {
             continue;
         }
         const auto* region = findRegion(inventory, field.region_index);
@@ -597,10 +634,18 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename, const std::s
             if (nodes[row] >= inventory.vertices.size() || field.component_count == 0) {
                 continue;
             }
-            if (field.name == "DonorConcentration") {
-                donors[nodes[row]] = field.values[row * field.component_count];
+            if (donorField) {
+                if (isAggregateDonorConcentrationField(field.name)) {
+                    donors[nodes[row]] = field.values[row * field.component_count];
+                } else if (!aggregateDonorRegions.contains(field.region_index)) {
+                    donors[nodes[row]] += field.values[row * field.component_count];
+                }
             } else {
-                acceptors[nodes[row]] = field.values[row * field.component_count];
+                if (isAggregateAcceptorConcentrationField(field.name)) {
+                    acceptors[nodes[row]] = field.values[row * field.component_count];
+                } else if (!aggregateAcceptorRegions.contains(field.region_index)) {
+                    acceptors[nodes[row]] += field.values[row * field.component_count];
+                }
             }
         }
     }
