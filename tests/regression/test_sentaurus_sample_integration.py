@@ -21,7 +21,9 @@ BUILD_ENV = "VELA_BUILD_DIR"
 
 class SentaurusSampleIntegrationTest(unittest.TestCase):
     def test_pn2d_reference_import_when_enabled(self) -> None:
-        pn2d_root = self._root_or_skip(PN2D_ENV)
+        pn2d_root = self._pn2d_root_or_skip()
+        config_path = pn2d_root / "pn2d_reference.json"
+        self.assertTrue(config_path.is_file(), f"missing pn2d reference config: {config_path}")
         build_root = Path(os.environ.get(BUILD_ENV, REPO / "build"))
         importer = build_root / ("sentaurus_import.exe" if os.name == "nt" else "sentaurus_import")
         if not importer.is_file():
@@ -29,33 +31,6 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory(prefix="vela_sentaurus_pn2d_") as tmp:
             out = Path(tmp)
-            config_path = out / "pn2d_reference_config.json"
-            config_path.write_text(json.dumps({
-                "case": "pn2d",
-                "device": "pn_diode",
-                "mesh_tdr": "pn2d_msh.tdr",
-                "sde_cmd": "pn2d_sde.cmd",
-                "simulations": [
-                    {
-                        "name": "iv",
-                        "kind": "iv",
-                        "tdr": "pn2d_des.tdr",
-                        "cmd": "pn2d_sdevice.cmd",
-                        "plt": "pn2d_iv.plt",
-                        "bias_column": "Anode OuterVoltage",
-                        "current_column": "Anode TotalCurrent",
-                    },
-                    {
-                        "name": "bv",
-                        "kind": "bv",
-                        "tdr": "pn2d_bv_des.tdr",
-                        "cmd": "pn2d_bv_sdevice.cmd",
-                        "plt": "pn2d_bv.plt",
-                        "bias_column": "Cathode OuterVoltage",
-                        "current_column": "Cathode TotalCurrent",
-                    },
-                ],
-            }, indent=2) + "\n")
 
             subprocess.run(
                 [
@@ -75,6 +50,8 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
                 check=True,
                 cwd=REPO,
             )
+
+            self._assert_doping_csv_has_donors_and_acceptors(out / "reference" / "doping.csv")
 
             summary = json.loads((out / "reference" / "sde_summary.json").read_text())
             self.assertEqual(summary["defines"]["L"], 2.0)
@@ -101,8 +78,10 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             bv_deck = json.loads((out / "reference" / "vela" / "simulation_bv.json").read_text())
             self.assertEqual(iv_deck["sweep"]["contact"], "Anode")
             self.assertEqual(iv_deck["sweep"]["stop"], 1.0)
+            self.assertEqual(iv_deck["node_doping_file"], "doping.csv")
             self.assertEqual(bv_deck["sweep"]["contact"], "Cathode")
             self.assertEqual(bv_deck["sweep"]["stop"], 50.0)
+            self.assertEqual(bv_deck["node_doping_file"], "doping.csv")
 
             manifest = json.loads((out / "reference" / "reference_tcad_manifest.json").read_text())
             self.assertFalse(manifest["commit_policy"]["raw_sentaurus_artifacts"])
@@ -209,6 +188,13 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
     def _sample_root_or_skip(self) -> Path:
         return self._root_or_skip(SAMPLE_ENV)
 
+    def _pn2d_root_or_skip(self) -> Path:
+        value = os.environ.get(PN2D_ENV)
+        root = Path(value) if value else REPO / "reference_tcad" / "pn2d"
+        if not root.is_dir():
+            self.skipTest(f"{PN2D_ENV} is not set and bundled pn2d sample is missing")
+        return root
+
     def _root_or_skip(self, env_name: str) -> Path:
         value = os.environ.get(env_name)
         if not value:
@@ -220,6 +206,13 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
     def _read_curve(self, path: Path) -> list[dict[str, str]]:
         with path.open(newline="") as handle:
             return list(csv.DictReader(handle))
+
+    def _assert_doping_csv_has_donors_and_acceptors(self, path: Path) -> None:
+        with path.open(newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertGreater(len(rows), 0)
+        self.assertTrue(any(float(row["donors_cm3"]) > 0.0 for row in rows))
+        self.assertTrue(any(float(row["acceptors_cm3"]) > 0.0 for row in rows))
 
     def _assert_contact_scalar(self,
                                inventory: dict[str, object],

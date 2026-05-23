@@ -1,0 +1,26 @@
+{
+  "case": "pn2d",
+  "device": "pn_diode",
+  "mesh_tdr": "pn2d_msh.tdr",
+  "sde_cmd": "pn2d_sde.cmd",
+  "simulations": [
+    {
+      "name": "iv",
+      "kind": "iv",
+      "tdr": "pn2d_des.tdr",
+      "cmd": "pn2d_sdevice.cmd",
+      "plt": "pn2d_iv.plt",
+      "bias_column": "Anode OuterVoltage",
+      "current_column": "Anode TotalCurrent"
+    },
+    {
+      "name": "bv",
+      "kind": "bv",
+      "tdr": "pn2d_bv_des.tdr",
+      "cmd": "pn2d_bv_sdevice.cmd",
+      "plt": "pn2d_bv.plt",
+      "bias_column": "Cathode OuterVoltage",
+      "current_column": "Cathode TotalCurrent"
+    }
+  ]
+}
