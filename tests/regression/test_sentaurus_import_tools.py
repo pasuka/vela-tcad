@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import subprocess
@@ -13,9 +14,28 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[2]
+SENTAURUS_IMPORT_SPEC = importlib.util.spec_from_file_location(
+    "sentaurus_import",
+    REPO / "scripts" / "sentaurus_import.py",
+)
+assert SENTAURUS_IMPORT_SPEC is not None
+sentaurus_import = importlib.util.module_from_spec(SENTAURUS_IMPORT_SPEC)
+assert SENTAURUS_IMPORT_SPEC.loader is not None
+SENTAURUS_IMPORT_SPEC.loader.exec_module(sentaurus_import)
 
 
 class SentaurusImportToolsTest(unittest.TestCase):
+    def test_solver_physics_ignores_bare_mobility_model(self) -> None:
+        deck = {"solver": {"type": "gummel"}}
+        warnings = sentaurus_import.apply_solver_physics(
+            deck,
+            {"physics": [{"models": ["Mobility"]}]},
+            {"name": "iv", "kind": "iv"},
+        )
+
+        self.assertNotIn("mobility", deck["solver"])
+        self.assertEqual(warnings, [])
+
     def test_plt_parser_exports_reference_curve(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_sentaurus_plt_") as tmp:
             root = Path(tmp)
@@ -361,7 +381,7 @@ Solve {
                 """
 File { Grid="pn2d_msh.tdr" Plot="pn2d_des.tdr" Current="pn2d_iv.plt" }
 Electrode { { Name="Anode" Voltage=0 } { Name="Cathode" Voltage=0 } }
-Physics { Fermi }
+Physics { Fermi Mobility(DopingDep HighFieldSaturation) Recombination(SRH Auger) EffectiveIntrinsicDensity(OldSlotboom) }
 Solve {
   Quasistationary( Goal { Name="Anode" Voltage=1.0 } ){ Coupled { Poisson Electron Hole } }
 }
@@ -372,7 +392,7 @@ Solve {
                 """
 File { Grid="pn2d_msh.tdr" Plot="pn2d_bv_des.tdr" Current="pn2d_bv.plt" }
 Electrode { { Name="Anode" Voltage=0 } { Name="Cathode" Voltage=0 } }
-Physics { Avalanche(OkutoCrowell) }
+Physics { Fermi Avalanche(OkutoCrowell) }
 Solve {
   Quasistationary( Goal { Name="Cathode" Voltage=50.0 } ){ Coupled { Poisson Electron Hole } }
 }
@@ -532,13 +552,21 @@ with out.open("w", newline="") as handle:
             self.assertFalse(manifest["commit_policy"]["raw_sentaurus_artifacts"])
             self.assertIn("Avalanche", manifest["unsupported_physics"])
             self.assertIn("reports/pn2d_iv_comparison.json", manifest["comparison_reports"])
+            self.assertIn("Fermi statistics approximated by Boltzmann carrier statistics", manifest["warnings"])
+            self.assertEqual(len(manifest["warnings"]), len(set(manifest["warnings"])))
             iv_deck = json.loads((output / "vela" / "simulation_iv.json").read_text())
             bv_deck = json.loads((output / "vela" / "simulation_bv.json").read_text())
             self.assertEqual(iv_deck["sweep"]["contact"], "Anode")
             self.assertEqual(iv_deck["sweep"]["stop"], 1.0)
+            self.assertEqual(iv_deck["solver"]["mobility"]["model"], "caughey_thomas_field")
+            self.assertEqual(iv_deck["solver"]["recombination"], ["srh", "auger"])
+            self.assertEqual(iv_deck["solver"]["bandgap_narrowing"], "slotboom")
+            self.assertNotIn("impact_ionization", iv_deck["solver"])
             self.assertEqual(bv_deck["sweep"]["mode"], "bv_reverse")
             self.assertEqual(bv_deck["sweep"]["contact"], "Cathode")
             self.assertEqual(bv_deck["sweep"]["stop"], 50.0)
+            self.assertEqual(bv_deck["solver"]["impact_ionization"]["model"], "selberherr")
+            self.assertIn("OkutoCrowell approximated by Selberherr", manifest["warnings"])
 
     def test_project_import_generates_neutral_reference_tree(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_sentaurus_project_") as tmp:

@@ -465,6 +465,49 @@ def parse_cmd(input_path: Path, template_vars: dict[str, str] | None = None) -> 
     }
 
 
+def sentaurus_models(cmd_summary: dict[str, Any]) -> set[str]:
+    models: set[str] = set()
+    for physics in cmd_summary.get("physics", []):
+        if not isinstance(physics, dict):
+            continue
+        models.update(str(model) for model in physics.get("models", []))
+    return models
+
+
+def apply_solver_physics(deck: dict[str, Any],
+                         cmd_summary: dict[str, Any],
+                         sim: dict[str, Any]) -> list[str]:
+    models = sentaurus_models(cmd_summary)
+    solver = deck.setdefault("solver", {})
+    warnings: list[str] = []
+
+    if "DopingDep" in models:
+        solver["mobility"] = {"model": "caughey_thomas"}
+    if {"Mobility", "HighFieldSaturation"} <= models:
+        solver["mobility"] = {"model": "caughey_thomas_field"}
+
+    recombination = []
+    if "SRH" in models:
+        recombination.append("srh")
+    if "Auger" in models:
+        recombination.append("auger")
+    if recombination:
+        solver["recombination"] = recombination
+
+    if "OldSlotboom" in models:
+        solver["bandgap_narrowing"] = "slotboom"
+
+    if "Avalanche" in models:
+        solver["impact_ionization"] = {"model": "selberherr"}
+        if "OkutoCrowell" in models:
+            warnings.append("OkutoCrowell approximated by Selberherr")
+
+    if "Fermi" in models:
+        warnings.append("Fermi statistics approximated by Boltzmann carrier statistics")
+
+    return warnings
+
+
 def strip_scheme_comments(text: str) -> str:
     return "\n".join(line.split(";", maxsplit=1)[0] for line in text.splitlines())
 
@@ -784,7 +827,7 @@ def run_tdr_importer(tdr_importer: str | None,
 def patch_reference_deck(deck_path: Path,
                          cmd_summary: dict[str, Any],
                          sim: dict[str, Any],
-                         output_csv: str) -> None:
+                         output_csv: str) -> list[str]:
     deck = read_json(deck_path)
     sweeps = cmd_summary.get("sweeps", [])
     sweep = sweeps[-1] if sweeps else {"contact": "Anode", "stop": 0.0, "step_control": {}}
@@ -814,7 +857,9 @@ def patch_reference_deck(deck_path: Path,
         "cmd_summary": cmd_summary,
         "source_simulation": sim,
     }
+    warnings = apply_solver_physics(deck, cmd_summary, sim)
     write_json(deck_path, deck)
+    return warnings
 
 
 def scan_csv_has_only_finite_numbers(path: Path) -> None:
@@ -920,7 +965,7 @@ def reference_command(args: argparse.Namespace) -> None:
             generated_deck.replace(deck_path)
         cmd_summary = read_json(output_dir / "cmd" / f"{sim_name}_summary.json")
         candidate_csv = f"{case_name}_{sim_name}.csv"
-        patch_reference_deck(deck_path, cmd_summary, sim, candidate_csv)
+        warnings.extend(patch_reference_deck(deck_path, cmd_summary, sim, candidate_csv))
         generated.append(relative_generated(deck_path, output_dir))
         if not args.skip_vela_run:
             run_reference_deck(args.runner, deck_path)
@@ -958,6 +1003,7 @@ def reference_command(args: argparse.Namespace) -> None:
 
     if unsupported:
         warnings.append("unsupported physics: " + ", ".join(sorted(unsupported)))
+    warnings = list(dict.fromkeys(warnings))
     generated.append("reference_tcad_manifest.json")
     manifest = {
         "schema": "vela.reference_tcad.sentaurus_reference.v1",
