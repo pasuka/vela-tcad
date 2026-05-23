@@ -76,10 +76,89 @@ Real perMeterToPerMicron(Real value)
 {
     return value / 1.0e6;
 }
-
 Real voltsPerMeterToVoltsPerCm(Real value)
 {
     return value / 100.0;
+}
+
+std::string trim(std::string value)
+{
+    const auto first = std::find_if_not(value.begin(), value.end(), [](unsigned char ch) {
+        return std::isspace(ch);
+    });
+    const auto last = std::find_if_not(value.rbegin(), value.rend(), [](unsigned char ch) {
+        return std::isspace(ch);
+    }).base();
+    if (first >= last)
+        return {};
+    return std::string(first, last);
+}
+
+std::vector<std::string> splitCsvLine(const std::string& line)
+{
+    if (line.find('"') != std::string::npos) {
+        throw std::runtime_error(
+            "DCSweep: node_doping_file does not support quoted fields.");
+    }
+    std::vector<std::string> columns;
+    std::stringstream ss(line);
+    std::string column;
+    while (std::getline(ss, column, ','))
+        columns.push_back(trim(column));
+    return columns;
+}
+
+std::filesystem::path resolveConfigPath(const std::filesystem::path& cfgDir,
+                                        const std::string& path)
+{
+    std::filesystem::path fp(path);
+    if (fp.is_relative())
+        fp = cfgDir / fp;
+    return fp;
+}
+
+long long parseNodeDopingNodeId(const std::string& nodeIdText)
+{
+    std::size_t consumed = 0;
+    long long parsedNodeId = 0;
+    try {
+        parsedNodeId = std::stoll(nodeIdText, &consumed);
+    } catch (const std::exception&) {
+        throw std::runtime_error(
+            "DCSweep: node_doping_file has invalid node id '" + nodeIdText + "'");
+    }
+    if (consumed != nodeIdText.size()) {
+        throw std::runtime_error(
+            "DCSweep: node_doping_file has invalid node id '" + nodeIdText + "'");
+    }
+    return parsedNodeId;
+}
+
+Real parseNodeDopingConcentration(const std::string& value,
+                                  const std::string& column,
+                                  long long nodeId,
+                                  UnitScalingConfig scaling)
+{
+    std::size_t consumed = 0;
+    Real parsed = 0.0;
+    try {
+        parsed = std::stod(value, &consumed);
+    } catch (const std::exception&) {
+        throw std::runtime_error(
+            "DCSweep: node_doping_file has invalid " + column + " '" + value +
+            "' for node id " + std::to_string(nodeId));
+    }
+    if (consumed != value.size()) {
+        throw std::runtime_error(
+            "DCSweep: node_doping_file has invalid " + column + " '" + value +
+            "' for node id " + std::to_string(nodeId));
+    }
+    if (!std::isfinite(parsed)) {
+        throw std::runtime_error(
+            "DCSweep: node_doping_file has non-finite " + column + " '" + value +
+            "' for node id " + std::to_string(nodeId));
+    }
+    return scaling.concentrationToSI(parsed);
 }
 
 TerminalChargeConfig terminalChargeConfigFromJson(const nlohmann::json& chargeCfg,
@@ -266,8 +345,76 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
 
 DopingModel dopingFromJson(const DeviceMesh& mesh,
                            const nlohmann::json& cfg,
+                           const std::filesystem::path& cfgDir,
                            UnitScalingConfig scaling)
 {
+    if (cfg.contains("node_doping_file")) {
+        const std::filesystem::path path =
+            resolveConfigPath(cfgDir, cfg.at("node_doping_file").get<std::string>());
+        std::ifstream input(path);
+        if (!input.is_open())
+            throw std::runtime_error("DCSweep: cannot open node_doping_file: " + path.string());
+
+        std::string line;
+        if (!std::getline(input, line))
+            throw std::runtime_error("DCSweep: node_doping_file is empty: " + path.string());
+
+        const std::vector<std::string> header = splitCsvLine(line);
+        std::unordered_map<std::string, std::size_t> columns;
+        for (std::size_t i = 0; i < header.size(); ++i)
+            columns[header.at(i)] = i;
+        for (const std::string& required : {"node_id", "donors_cm3", "acceptors_cm3"}) {
+            if (!columns.contains(required))
+                throw std::runtime_error(
+                    "DCSweep: node_doping_file missing required column '" + required + "'.");
+        }
+
+        DopingModel model(mesh.numNodes());
+        std::vector<bool> seen(static_cast<std::size_t>(mesh.numNodes()), false);
+        while (std::getline(input, line)) {
+            if (trim(line).empty())
+                continue;
+            const std::vector<std::string> row = splitCsvLine(line);
+            const auto requireColumn = [&](const std::string& name) -> const std::string& {
+                const std::size_t index = columns.at(name);
+                if (index >= row.size())
+                    throw std::runtime_error(
+                        "DCSweep: node_doping_file row missing column '" + name + "'.");
+                return row.at(index);
+            };
+
+            const std::string& nodeIdText = requireColumn("node_id");
+            const long long parsedNodeId = parseNodeDopingNodeId(nodeIdText);
+            if (parsedNodeId < 0 ||
+                static_cast<std::size_t>(parsedNodeId) >= static_cast<std::size_t>(mesh.numNodes())) {
+                throw std::runtime_error(
+                    "DCSweep: node_doping_file references missing node id " +
+                    std::to_string(parsedNodeId));
+            }
+            const Index nodeId = static_cast<Index>(parsedNodeId);
+            const std::size_t nodeIndex = static_cast<std::size_t>(parsedNodeId);
+            if (seen.at(nodeIndex)) {
+                throw std::runtime_error(
+                    "DCSweep: node_doping_file has duplicate row for node id " +
+                    std::to_string(parsedNodeId));
+            }
+            seen.at(nodeIndex) = true;
+            const Real donors = parseNodeDopingConcentration(
+                requireColumn("donors_cm3"), "donors_cm3", parsedNodeId, scaling);
+            const Real acceptors = parseNodeDopingConcentration(
+                requireColumn("acceptors_cm3"), "acceptors_cm3", parsedNodeId, scaling);
+            model.setNodeDoping(nodeId, donors, acceptors);
+        }
+        for (std::size_t nodeId = 0; nodeId < seen.size(); ++nodeId) {
+            if (!seen.at(nodeId)) {
+                throw std::runtime_error(
+                    "DCSweep: node_doping_file missing row for node id " +
+                    std::to_string(nodeId));
+            }
+        }
+        return model;
+    }
+
     const std::vector<RegionDopingSpec> specs = parseDopingSpecs(cfg, scaling);
     return DopingModel::fromMeshAndRegions(mesh, specs);
 }
@@ -361,7 +508,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     MaterialDatabase matdb;
     if (cfg.contains("materials_file"))
         matdb.loadJson(resolve(cfg.at("materials_file").get<std::string>()), scaling);
-    DopingModel doping = dopingFromJson(mesh, cfg, scaling);
+    DopingModel doping = dopingFromJson(mesh, cfg, cfgDir, scaling);
     std::vector<RegionFixedChargeSpec> fixedChargeSpecs =
         parseRegionFixedChargeSpecs(cfg, scaling);
     std::vector<InterfaceSheetChargeSpec> sheetChargeSpecs =

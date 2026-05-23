@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import shutil
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -213,6 +214,7 @@ def base_deck(mesh_file: str,
         "mesh_file": mesh_file,
         "output_csv": output_csv,
         "scaling": {"mode": "unit_scaling"},
+        "node_doping_file": "doping.csv",
         "doping": doping,
         "contacts": contacts,
         "solver": {
@@ -259,8 +261,9 @@ def main() -> int:
     mesh, region_nodes = load_mesh(args.input_dir)
     doping = load_region_doping(args.input_dir, region_nodes)
     write_json(args.output_dir / "mesh.json", mesh)
+    shutil.copyfile(args.input_dir / "doping.csv", args.output_dir / "doping.csv")
 
-    generated = ["mesh.json"]
+    generated = ["mesh.json", "doping.csv"]
     for sim_type in simulation_types:
         suffix = {"iv": "iv", "cv": "cv", "bv": "bv"}[sim_type]
         deck_name = f"simulation_{suffix}.json"

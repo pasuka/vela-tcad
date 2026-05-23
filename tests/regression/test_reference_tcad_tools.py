@@ -88,10 +88,17 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             self.assertEqual(mesh["contacts"][0]["node_ids"], [0, 3])
             self.assertEqual(iv["scaling"], {"mode": "unit_scaling"})
             self.assertEqual(iv["mesh_file"], "mesh.json")
+            self.assertEqual(iv["node_doping_file"], "doping.csv")
+            self.assertEqual(bv["node_doping_file"], "doping.csv")
             self.assertEqual(iv["doping"][0]["donors"], 1.0e17)
             self.assertEqual(iv["doping"][1]["acceptors"], 1.0e17)
+            self.assertEqual(iv["doping"][1]["region"], "p_region")
             self.assertEqual(cv["sweep"]["mode"], "cv_quasistatic")
             self.assertEqual(bv["sweep"]["mode"], "bv_reverse")
+            self.assertEqual(
+                self._read_csv(out_dir / "doping.csv"),
+                self._read_csv(export_dir / "doping.csv"),
+            )
 
     def test_compare_reference_curves_writes_json_and_markdown(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_reference_compare_") as tmp:

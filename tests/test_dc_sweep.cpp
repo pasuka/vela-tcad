@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 using namespace vela;
@@ -199,6 +200,15 @@ std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& c
         rows.push_back(columns);
     }
     return rows;
+}
+
+void writeNodeDopingCsv(const std::filesystem::path& csvPath,
+                        const std::vector<std::tuple<Index, Real, Real>>& rows)
+{
+    std::ofstream output(csvPath);
+    output << "node_id,donors_cm3,acceptors_cm3\n";
+    for (const auto& [nodeId, donors, acceptors] : rows)
+        output << nodeId << ',' << donors << ',' << acceptors << '\n';
 }
 
 void convertMeshToMicrometersInPlace(const std::filesystem::path& meshPath)
@@ -435,6 +445,126 @@ TEST_CASE("DCSweep: PN forward IV unit_scaling remains physically equivalent to 
     const Real legacyEnd = std::abs(legacy.points.back().totalCurrent);
     const Real scaledEnd = std::abs(scaled.points.back().totalCurrent);
     REQUIRE(scaledEnd == Catch::Approx(legacyEnd).epsilon(5.0e-2));
+}
+
+TEST_CASE("DCSweep reads node_doping_file before region averages", "[dc_sweep][doping]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "node_doping_iv.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false}
+    });
+
+    std::ifstream input(cfgPath);
+    nlohmann::json cfg;
+    input >> cfg;
+    cfg["node_doping_file"] = "doping.csv";
+    cfg["doping"] = {
+        {{"region", "n_region"}, {"donors", 0.0}, {"acceptors", 0.0}},
+        {{"region", "p_region"}, {"donors", 0.0}, {"acceptors", 0.0}}
+    };
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    writeNodeDopingCsv(dir / "doping.csv", {
+        {0, 0.0, 1.0e17},
+        {1, 1.0e17, 0.0},
+        {2, 1.0e17, 0.0},
+        {3, 0.0, 1.0e17},
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    REQUIRE(std::isfinite(result.points.front().electronCurrent));
+    REQUIRE(std::isfinite(result.points.front().holeCurrent));
+    REQUIRE(std::isfinite(result.points.front().totalCurrent));
+
+    writeNodeDopingCsv(dir / "doping.csv", {
+        {0, 0.0, 1.0e17},
+        {7, 1.0e17, 0.0},
+    });
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file references missing node id 7"));
+
+    {
+        std::ofstream malformed(dir / "doping.csv");
+        malformed << "node_id,donors_cm3,acceptors_cm3\n";
+        malformed << "1abc,1.0e17,0.0\n";
+    }
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file has invalid node id '1abc'"));
+
+    writeNodeDopingCsv(dir / "doping.csv", {
+        {0, 0.0, 1.0e17},
+        {1, 1.0e17, 0.0},
+        {2, 1.0e17, 0.0},
+    });
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file missing row for node id 3"));
+
+    writeNodeDopingCsv(dir / "doping.csv", {
+        {0, 0.0, 1.0e17},
+        {1, 1.0e17, 0.0},
+        {1, 1.0e17, 0.0},
+        {2, 1.0e17, 0.0},
+        {3, 0.0, 1.0e17},
+    });
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file has duplicate row for node id 1"));
+
+    {
+        std::ofstream malformed(dir / "doping.csv");
+        malformed << "node_id,donors_cm3,acceptors_cm3\n";
+        malformed << "0,0.0,1.0e17\n";
+        malformed << "1,1.0e17abc,0.0\n";
+        malformed << "2,1.0e17,0.0\n";
+        malformed << "3,0.0,1.0e17\n";
+    }
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file has invalid donors_cm3 '1.0e17abc' for node id 1"));
+
+    {
+        std::ofstream malformed(dir / "doping.csv");
+        malformed << "node_id,donors_cm3,acceptors_cm3\n";
+        malformed << "0,0.0,1.0e17\n";
+        malformed << "1,nan,0.0\n";
+        malformed << "2,1.0e17,0.0\n";
+        malformed << "3,0.0,1.0e17\n";
+    }
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file has non-finite donors_cm3 'nan' for node id 1"));
+
+    {
+        std::ofstream malformed(dir / "doping.csv");
+        malformed << "node_id,donors_cm3,acceptors_cm3\n";
+        malformed << "0,0.0,1.0e17\n";
+        malformed << "\"1\",1.0e17,0.0\n";
+        malformed << "2,1.0e17,0.0\n";
+        malformed << "3,0.0,1.0e17\n";
+    }
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file does not support quoted fields"));
 }
 
 TEST_CASE("DCSweep: NMOS and PMOS unit_scaling low-bias smoke sweeps converge",
