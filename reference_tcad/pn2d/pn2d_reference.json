@@ -24,7 +24,10 @@
       "plt": "pn2d_bv.plt",
       "bias_column": "Cathode OuterVoltage",
       "current_column": "Cathode TotalCurrent",
-      "execute": false
+      "runtime_doping_scale": 0.0001,
+      "runtime_step": 5.0,
+      "comparison_kind": "iv",
+      "require_trend_match": false
     }
   ]
 }

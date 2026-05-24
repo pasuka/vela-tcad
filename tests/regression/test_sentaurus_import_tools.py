@@ -448,6 +448,10 @@ Data {
                         "bias_column": "Cathode OuterVoltage",
                         "current_column": "Cathode TotalCurrent",
                         "kind": "bv",
+                        "runtime_doping_scale": 1.0e-4,
+                        "runtime_step": 5.0,
+                        "comparison_kind": "iv",
+                        "require_trend_match": False,
                     },
                 ],
             }) + "\n")
@@ -543,6 +547,7 @@ with out.open("w", newline="") as handle:
                 "vela/simulation_iv.json",
                 "vela/simulation_iv_runtime.json",
                 "vela/simulation_bv.json",
+                "vela/simulation_bv_runtime.json",
                 "vela/pn2d_iv.csv",
                 "vela/pn2d_bv.csv",
                 "reports/pn2d_iv_comparison.json",
@@ -561,10 +566,15 @@ with out.open("w", newline="") as handle:
                 "iv runtime deck uses region-average doping scaled by 0.0001 for Vela convergence diagnostics",
                 manifest["warnings"],
             )
+            self.assertIn(
+                "bv runtime deck uses region-average doping scaled by 0.0001 for Vela convergence diagnostics",
+                manifest["warnings"],
+            )
             self.assertEqual(len(manifest["warnings"]), len(set(manifest["warnings"])))
             iv_deck = json.loads((output / "vela" / "simulation_iv.json").read_text())
             iv_runtime_deck = json.loads((output / "vela" / "simulation_iv_runtime.json").read_text())
             bv_deck = json.loads((output / "vela" / "simulation_bv.json").read_text())
+            bv_runtime_deck = json.loads((output / "vela" / "simulation_bv_runtime.json").read_text())
             self.assertEqual(iv_deck["sweep"]["contact"], "Anode")
             self.assertEqual(iv_deck["sweep"]["stop"], 1.0)
             self.assertEqual(iv_deck["node_doping_file"], "doping.csv")
@@ -586,6 +596,12 @@ with out.open("w", newline="") as handle:
             self.assertEqual(bv_deck["sweep"]["stop"], 50.0)
             self.assertEqual(bv_deck["solver"]["impact_ionization"]["model"], "selberherr")
             self.assertIn("OkutoCrowell approximated by Selberherr", manifest["warnings"])
+            self.assertNotIn("node_doping_file", bv_runtime_deck)
+            self.assertEqual(bv_runtime_deck["sweep"]["mode"], "bv_reverse")
+            self.assertEqual(bv_runtime_deck["sweep"]["step"], 5.0)
+            bv_report = json.loads((output / "reports" / "pn2d_bv_comparison.json").read_text())
+            self.assertEqual(bv_report["status"], "pass")
+            self.assertEqual(bv_report["checked_kinds"], ["iv"])
 
     def test_project_import_generates_neutral_reference_tree(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_sentaurus_project_") as tmp:
