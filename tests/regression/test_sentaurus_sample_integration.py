@@ -45,7 +45,6 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
                     str(out / "reference"),
                     "--tdr-importer",
                     str(importer),
-                    "--skip-vela-run",
                 ],
                 check=True,
                 cwd=REPO,
@@ -78,22 +77,34 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             bv_deck = json.loads((out / "reference" / "vela" / "simulation_bv.json").read_text())
             self.assertTrue((out / "reference" / "vela" / "simulation_iv.json").is_file())
             self.assertTrue((out / "reference" / "vela" / "simulation_bv.json").is_file())
+            self.assertFalse((out / "reference" / "vela" / "simulation_iv_runtime.json").exists())
+            self.assertFalse((out / "reference" / "vela" / "simulation_bv_runtime.json").exists())
             self.assertTrue((out / "reference" / "reference_tcad_manifest.json").is_file())
             self.assertEqual(iv_deck["sweep"]["contact"], "Anode")
             self.assertEqual(iv_deck["sweep"]["stop"], 1.0)
             self.assertEqual(iv_deck["node_doping_file"], "doping.csv")
             self.assertEqual(iv_deck["solver"]["method"], "gummel_newton")
             self.assertTrue(iv_deck["solver"]["warm_start"])
-            self.assertEqual(iv_deck["solver"]["handoff"]["fallback"], "none")
+            self.assertEqual(iv_deck["solver"]["handoff"]["fallback"], "gummel_on_newton_failure")
             self.assertEqual(bv_deck["sweep"]["contact"], "Cathode")
             self.assertEqual(bv_deck["sweep"]["stop"], 50.0)
             self.assertEqual(bv_deck["node_doping_file"], "doping.csv")
             self.assertEqual(bv_deck["solver"]["method"], "gummel_newton")
 
+            faithful_iv = out / "reference" / "vela" / "pn2d_iv.csv"
+            faithful_bv = out / "reference" / "vela" / "pn2d_bv.csv"
+            self.assertTrue(faithful_iv.is_file())
+            self.assertTrue(faithful_bv.is_file())
+            self.assertGreaterEqual(len(self._read_curve(faithful_iv)), 2)
+            self.assertGreaterEqual(len(self._read_curve(faithful_bv)), 2)
+            self._assert_curve_has_finite_currents(faithful_iv)
+            self._assert_curve_has_finite_currents(faithful_bv)
+
             manifest = json.loads((out / "reference" / "reference_tcad_manifest.json").read_text())
             self.assertFalse(manifest["commit_policy"]["raw_sentaurus_artifacts"])
             self.assertIn("Avalanche", manifest["unsupported_physics"])
-            self.assertEqual(manifest["comparison_reports"], [])
+            self.assertIn("reports/pn2d_iv_comparison.json", manifest["comparison_reports"])
+            self.assertIn("reports/pn2d_bv_comparison.json", manifest["comparison_reports"])
 
     def test_ldmos_n20_sample_inventory_curve_and_cmd_when_enabled(self) -> None:
         sample_root = self._sample_root_or_skip()
@@ -220,6 +231,14 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
         self.assertGreater(len(rows), 0)
         self.assertTrue(any(float(row["donors_cm3"]) > 0.0 for row in rows))
         self.assertTrue(any(float(row["acceptors_cm3"]) > 0.0 for row in rows))
+
+    def _assert_curve_has_finite_currents(self, path: Path) -> None:
+        with path.open(newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        for row in rows:
+            value = row.get("current_total", "0")
+            number = float(value)
+            self.assertTrue(number == number and abs(number) != float("inf"), f"{path}: {value}")
 
     def _assert_contact_scalar(self,
                                inventory: dict[str, object],

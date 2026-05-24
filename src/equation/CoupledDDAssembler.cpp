@@ -30,6 +30,11 @@ Real bernoulliDerivative(Real x)
     return (em1 - x * ex) / (em1 * em1);
 }
 
+Real limitedExp(Real value)
+{
+    return std::exp(std::clamp(value, -500.0, 500.0));
+}
+
 } // namespace
 
 CoupledDDAssembler::CoupledDDAssembler(const DeviceMesh& mesh,
@@ -448,13 +453,13 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     std::vector<Real> expNegPsi(static_cast<std::size_t>(N));
     for (int k = 0; k < N; ++k) {
         expNegPhin[static_cast<std::size_t>(k)] =
-            std::exp(-x(phinOffset() + k) * potentialScale / Vt_);
+            limitedExp(-x(phinOffset() + k) * potentialScale / Vt_);
         expPhip[static_cast<std::size_t>(k)] =
-            std::exp(x(phipOffset() + k) * potentialScale / Vt_);
+            limitedExp(x(phipOffset() + k) * potentialScale / Vt_);
         expPsi[static_cast<std::size_t>(k)] =
-            std::exp(x(psiOffset() + k) * potentialScale / Vt_);
+            limitedExp(x(psiOffset() + k) * potentialScale / Vt_);
         expNegPsi[static_cast<std::size_t>(k)] =
-            std::exp(-x(psiOffset() + k) * potentialScale / Vt_);
+            limitedExp(-x(psiOffset() + k) * potentialScale / Vt_);
     }
 
     for (Index e = 0; e < mesh_.numEdges(); ++e) {

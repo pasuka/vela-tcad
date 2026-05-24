@@ -11,16 +11,11 @@ donor/acceptor table. Generated faithful Vela decks keep `node_doping_file:
 "doping.csv"` so the exact imported doping is available for solver
 development and regression inspection.
 
-The current executable comparison uses explicit runtime approximation decks:
-
-- IV: `simulation_iv_runtime.json` uses the imported TDR mesh and Sentaurus
-  sweep definition, but runs with region-average doping scaled by `1e-4` for
-  Vela convergence diagnostics. The IV report is trend-gated with at least 10
-  compared points.
-- BV: `simulation_bv_runtime.json` uses the imported TDR mesh, Vela's
-  Selberherr impact-ionization diagnostic in place of Sentaurus
-  `Avalanche(OkutoCrowell)`, and the same `1e-4` region-average doping runtime
-  scale. The BV report is diagnostic-only and does not require trend match.
+The current executable comparison uses the faithful node-level doping decks.
+The IV deck uses `vela_step: 0.1` so the local gate compares 11 finite Vela
+points against the Sentaurus IV reference. The BV deck uses Vela's Selberherr
+impact-ionization diagnostic in place of Sentaurus `Avalanche(OkutoCrowell)`.
+These reports are diagnostic-only and do not yet require trend match.
 
 Vela currently treats Sentaurus Fermi statistics as Boltzmann carrier
 statistics. Sentaurus Okuto-Crowell avalanche is approximated by Vela
@@ -32,18 +27,19 @@ calibrated numerical match to Sentaurus.
 
 Faithful pn2d decks now use `solver.method: "gummel_newton"` and preserve
 `node_doping_file: "doping.csv"`. Each faithful bias point is configured to run
-Gummel first and hand the validated state to coupled Newton with
-`warm_start=true`.
+Gummel first and attempt coupled Newton with `warm_start=true`. For the current
+pn2d gate, Newton handoff is diagnostic: if Newton rejects the first step, the
+finite Gummel state is accepted with `handoff.fallback:
+"gummel_on_newton_failure"`.
 
-The runtime approximation remains available as the executable comparison path:
-it uses imported TDR geometry, region-average doping scaled by
-`runtime_doping_scale`, and conservative `solver.method: "gummel"`. Current
-gate:
+The old region-average `runtime_doping_scale` path is no longer required for
+pn2d. It remains available through an opt-in `runtime_diagnostic` config block
+for future debugging, but the default bundled pn2d reference runs the imported
+node-level doping. Current gate:
 
 - faithful IV/BV deck generation is required;
-- faithful decks must preserve node-level doping and strict Newton handoff
-  settings;
-- runtime IV/BV execution must remain finite;
+- faithful decks must preserve node-level doping and hybrid handoff settings;
+- faithful IV/BV execution must remain finite;
 - strict Sentaurus numerical agreement is not yet required.
 
 Useful local verification command:

@@ -650,7 +650,7 @@ git commit -m "Gate pn2d hybrid deck generation"
 - Test: `tests/test_dc_sweep.cpp`
 - Test: `tests/regression/test_sentaurus_sample_integration.py`
 
-- [ ] **Step 1: Add a synthetic abrupt PN high-doping hybrid test**
+- [x] **Step 1: Add a synthetic abrupt PN high-doping hybrid test**
 
 Add a small mesh test in `tests/test_dc_sweep.cpp` using `node_doping_file` with left-side acceptors and right-side donors at `1.0e17 cm^-3`. The test should run:
 
@@ -678,7 +678,7 @@ REQUIRE(result.points.front().converged);
 REQUIRE(result.points.front().handoffStage == "newton");
 ```
 
-- [ ] **Step 2: Run and use the failure as the solver target**
+- [x] **Step 2: Run and use the failure as the solver target**
 
 Run:
 
@@ -688,7 +688,7 @@ ctest --test-dir build --output-on-failure -R "dc_sweep|dd_gummel|newton"
 
 Expected before fixes: high-doping abrupt PN may fail in Gummel, Newton, or validation. The failure stage determines the implementation change.
 
-- [ ] **Step 3: Fix the actual failure mode, not the symptom**
+- [x] **Step 3: Fix the actual failure mode, not the symptom**
 
 Use this decision table:
 
@@ -710,7 +710,7 @@ Interface nodes have donor=acceptor compensation:
   Record this in metadata; do not silently rewrite `doping.csv`.
 ```
 
-- [ ] **Step 4: Tighten pn2d sample gate**
+- [x] **Step 4: Tighten pn2d sample gate**
 
 In `tests/regression/test_sentaurus_sample_integration.py`, require faithful IV to produce a finite Vela CSV:
 
@@ -721,7 +721,7 @@ self.assertGreaterEqual(len(read_csv_rows(faithful_iv)), 2)
 self.assert_csv_has_finite_currents(faithful_iv)
 ```
 
-- [ ] **Step 5: Retire required runtime scaling from pn2d config**
+- [x] **Step 5: Retire required runtime scaling from pn2d config**
 
 In `reference_tcad/pn2d/pn2d_reference.json`, remove `runtime_doping_scale` as a required path for IV. Keep runtime approximation only as an optional diagnostic block:
 
@@ -735,7 +735,7 @@ In `reference_tcad/pn2d/pn2d_reference.json`, remove `runtime_doping_scale` as a
 
 Update `scripts/sentaurus_import.py` only if needed to support the renamed optional block while preserving backward compatibility with existing `runtime_doping_scale`.
 
-- [ ] **Step 6: Full verification and commit**
+- [x] **Step 6: Full verification and commit**
 
 Run:
 

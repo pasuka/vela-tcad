@@ -567,6 +567,58 @@ TEST_CASE("DCSweep reads node_doping_file before region averages", "[dc_sweep][d
             "DCSweep: node_doping_file does not support quoted fields"));
 }
 
+TEST_CASE("DCSweep: high-doping node-level PN diode converges with hybrid handoff",
+          "[dc_sweep][gummel_newton][doping]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "node_doping_hybrid_iv.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 60},
+        {"reltol", 1.0e-7},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.2},
+        {"line_search", true},
+        {"warm_start", true},
+        {"verbose", false},
+        {"handoff", {{"fallback", "none"}}}
+    });
+
+    std::ifstream input(cfgPath);
+    nlohmann::json cfg;
+    input >> cfg;
+    cfg["node_doping_file"] = "doping.csv";
+    cfg["doping"] = {
+        {{"region", "n_region"}, {"donors", 0.0}, {"acceptors", 0.0}},
+        {{"region", "p_region"}, {"donors", 0.0}, {"acceptors", 0.0}}
+    };
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    writeNodeDopingCsv(dir / "doping.csv", {
+        {0, 0.0, 1.0e17},
+        {1, 1.0e17, 0.0},
+        {2, 1.0e17, 0.0},
+        {3, 0.0, 1.0e17},
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() >= 1);
+    REQUIRE(result.points.front().converged);
+    REQUIRE(result.points.front().solverMethod == "gummel_newton");
+    REQUIRE(result.points.front().handoffStage == "newton");
+    REQUIRE(std::isfinite(result.points.front().totalCurrent));
+}
+
 TEST_CASE("DCSweep: NMOS and PMOS unit_scaling low-bias smoke sweeps converge",
           "[dc_sweep][scaling][dd_gummel]")
 {

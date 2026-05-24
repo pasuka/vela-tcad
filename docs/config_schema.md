@@ -294,6 +294,22 @@ default fallback policy is strict: a Newton failure fails the sweep point. Use
 `gummel_on_newton_failure` only for diagnostic curves where a finite Gummel
 result is preferable to aborting the sweep.
 
+Reference-import configs may also use `vela_step` on an individual simulation
+entry to override the generated Vela sweep step while preserving the reference
+curve. `runtime_diagnostic` is an optional simulation block:
+
+```json
+"runtime_diagnostic": {
+  "enabled": true,
+  "doping_scale": 0.0001,
+  "step": 0.1
+}
+```
+
+When enabled, it creates an additional conservative runtime deck using
+region-average scaled doping. When disabled or omitted, the faithful deck is
+the executable comparison path.
+
 ### bandgap_narrowing
 
 `solver.bandgap_narrowing` accepts either a string or an object.

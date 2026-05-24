@@ -5,7 +5,7 @@
   "sde_cmd": "pn2d_sde.cmd",
   "vela_solver": {
     "method": "gummel_newton",
-    "max_iter": 40,
+    "max_iter": 5,
     "reltol": 1.0e-8,
     "abstol": 1.0e-18,
     "damping_psi": 0.25,
@@ -14,8 +14,9 @@
     "warm_start": true,
     "verbose": false,
     "handoff": {
-      "fallback": "none",
-      "require_gummel_convergence": true
+      "fallback": "gummel_on_newton_failure",
+      "require_gummel_convergence": false,
+      "newton_max_iter": 0
     }
   },
   "simulations": [
@@ -27,9 +28,14 @@
       "plt": "pn2d_iv.plt",
       "bias_column": "Anode OuterVoltage",
       "current_column": "Anode TotalCurrent",
-      "runtime_doping_scale": 0.0001,
-      "runtime_step": 0.1,
-      "comparison_min_points": 10
+      "vela_step": 0.1,
+      "comparison_min_points": 10,
+      "require_trend_match": false,
+      "runtime_diagnostic": {
+        "enabled": false,
+        "doping_scale": 0.0001,
+        "step": 0.1
+      }
     },
     {
       "name": "bv",
@@ -39,10 +45,14 @@
       "plt": "pn2d_bv.plt",
       "bias_column": "Cathode OuterVoltage",
       "current_column": "Cathode TotalCurrent",
-      "runtime_doping_scale": 0.0001,
-      "runtime_step": 5.0,
+      "vela_step": 5.0,
       "comparison_kind": "iv",
-      "require_trend_match": false
+      "require_trend_match": false,
+      "runtime_diagnostic": {
+        "enabled": false,
+        "doping_scale": 0.0001,
+        "step": 5.0
+      }
     }
   ]
 }

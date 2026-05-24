@@ -847,6 +847,8 @@ def patch_reference_deck(deck_path: Path,
     deck["sweep"]["start"] = start
     deck["sweep"]["stop"] = stop
     deck["sweep"]["step"] = max_step if max_step is not None and max_step > 0.0 else (stop - start) / 80.0
+    if "vela_step" in sim:
+        deck["sweep"]["step"] = float(sim["vela_step"])
     deck["sweep"]["write_vtk"] = False
     if sim.get("kind") == "bv":
         deck["sweep"].setdefault("breakdown", {
@@ -873,7 +875,17 @@ def patch_reference_deck(deck_path: Path,
 def write_runtime_deck_if_requested(deck_path: Path,
                                     sim: dict[str, Any],
                                     output_csv: str) -> tuple[Path, list[str]]:
-    if "runtime_doping_scale" not in sim and "runtime_step" not in sim:
+    runtime_diagnostic = sim.get("runtime_diagnostic")
+    if isinstance(runtime_diagnostic, dict):
+        if not bool(runtime_diagnostic.get("enabled", False)):
+            return deck_path, []
+        runtime_scale = runtime_diagnostic.get("doping_scale")
+        runtime_step = runtime_diagnostic.get("step")
+    else:
+        runtime_scale = sim.get("runtime_doping_scale")
+        runtime_step = sim.get("runtime_step")
+
+    if runtime_scale is None and runtime_step is None:
         return deck_path, []
 
     deck = read_json(deck_path)
@@ -881,8 +893,8 @@ def write_runtime_deck_if_requested(deck_path: Path,
     warnings: list[str] = []
     runtime_notes: list[str] = []
 
-    if "runtime_doping_scale" in sim:
-        scale = float(sim["runtime_doping_scale"])
+    if runtime_scale is not None:
+        scale = float(runtime_scale)
         if scale <= 0.0:
             raise ValueError("runtime_doping_scale must be positive")
         runtime_deck.pop("node_doping_file", None)
@@ -896,8 +908,8 @@ def write_runtime_deck_if_requested(deck_path: Path,
         runtime_notes.append(note)
         warnings.append(note)
 
-    if "runtime_step" in sim:
-        runtime_deck.setdefault("sweep", {})["step"] = float(sim["runtime_step"])
+    if runtime_step is not None:
+        runtime_deck.setdefault("sweep", {})["step"] = float(runtime_step)
 
     runtime_solver = runtime_deck.setdefault("solver", {})
     runtime_solver["method"] = str(sim.get("runtime_solver_method", "gummel"))

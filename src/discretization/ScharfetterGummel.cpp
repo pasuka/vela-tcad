@@ -5,6 +5,15 @@
 
 namespace vela {
 
+namespace {
+
+Real limitedExp(Real value)
+{
+    return std::exp(std::clamp(value, -500.0, 500.0));
+}
+
+} // namespace
+
 SGEdgeWeights sgEdgeWeights(Real dpsi, Real Vt)
 {
     const Real u = dpsi / Vt;
@@ -33,9 +42,9 @@ Real sgElectronContinuityFluxFromQuasiFermi(Real ni0,
 {
     return sgElectronContinuityFluxFromQuasiFermiFactors(
         ni0,
-        std::exp(psi1 / Vt),
-        std::exp(-phin0 / Vt),
-        std::exp(-phin1 / Vt),
+        limitedExp(psi1 / Vt),
+        limitedExp(-phin0 / Vt),
+        limitedExp(-phin1 / Vt),
         dpsi,
         Vt,
         coef);
@@ -63,9 +72,9 @@ Real sgHoleContinuityFluxFromQuasiFermi(Real ni0,
 {
     return sgHoleContinuityFluxFromQuasiFermiFactors(
         ni0,
-        std::exp(-psi0 / Vt),
-        std::exp(phip0 / Vt),
-        std::exp(phip1 / Vt),
+        limitedExp(-psi0 / Vt),
+        limitedExp(phip0 / Vt),
+        limitedExp(phip1 / Vt),
         dpsi,
         Vt,
         coef);
