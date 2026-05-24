@@ -1351,6 +1351,74 @@ TEST_CASE("DCSweep: hybrid validates Gummel initializer before Newton handoff",
     REQUIRE(point.failureReason == "gummel_validation_failed");
 }
 
+TEST_CASE("DCSweep: hybrid fallback can accept converged Gummel when Newton fails",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "gummel_newton_fallback.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 20},
+        {"handoff", {
+            {"fallback", "gummel_on_newton_failure"},
+            {"newton_max_iter", 0}
+        }},
+        {"verbose", false}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    const DCSweepPoint& point = result.points.front();
+    REQUIRE(point.converged);
+    REQUIRE(point.handoffStage == "gummel_fallback");
+    REQUIRE(point.gummelIterations > 0);
+    REQUIRE(point.newtonIterations == 0);
+}
+
+TEST_CASE("DCSweep: hybrid strict policy rejects Newton failure",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "gummel_newton_strict.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false},
+        {"stop_on_failure", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 20},
+        {"handoff", {
+            {"fallback", "none"},
+            {"newton_max_iter", 0}
+        }},
+        {"verbose", false}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    const DCSweepPoint& point = result.points.front();
+    REQUIRE_FALSE(point.converged);
+    REQUIRE(point.handoffStage == "newton_failed");
+    REQUIRE(point.failureReason == "newton_non_convergence");
+}
+
 
 TEST_CASE("DCSweep: NMOS and PMOS DD examples increase drain current with stronger gate drive", "[dc_sweep][mos]")
 {

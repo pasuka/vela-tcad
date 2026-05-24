@@ -37,6 +37,12 @@ enum class SolverMethod {
     GummelNewton,
 };
 
+struct HybridHandoffConfig {
+    bool fallbackToGummelOnNewtonFailure = false;
+    bool requireGummelConvergence = true;
+    int newtonMaxIter = -1;
+};
+
 std::string formatReal(Real value)
 {
     std::ostringstream oss;
@@ -243,6 +249,38 @@ SolverMethod solverMethodFromJson(const nlohmann::json& cfg)
         return SolverMethod::GummelNewton;
     throw std::invalid_argument(
         "DCSweep: solver.method/type must be 'gummel', 'newton', or 'gummel_newton'.");
+}
+
+HybridHandoffConfig hybridHandoffConfigFromJson(const nlohmann::json& solverJson)
+{
+    HybridHandoffConfig hybrid;
+    if (!solverJson.contains("handoff"))
+        return hybrid;
+
+    const auto& handoff = solverJson.at("handoff");
+    if (!handoff.is_object())
+        throw std::invalid_argument("DCSweep: solver.handoff must be an object.");
+
+    const std::string fallback = handoff.value("fallback", std::string("none"));
+    if (fallback == "none") {
+        hybrid.fallbackToGummelOnNewtonFailure = false;
+    } else if (fallback == "gummel_on_newton_failure") {
+        hybrid.fallbackToGummelOnNewtonFailure = true;
+    } else {
+        throw std::invalid_argument(
+            "DCSweep: solver.handoff.fallback must be 'none' or "
+            "'gummel_on_newton_failure'.");
+    }
+
+    hybrid.requireGummelConvergence =
+        handoff.value("require_gummel_convergence", hybrid.requireGummelConvergence);
+    if (handoff.contains("newton_max_iter")) {
+        hybrid.newtonMaxIter = handoff.at("newton_max_iter").get<int>();
+        if (hybrid.newtonMaxIter < 0)
+            throw std::invalid_argument(
+                "DCSweep: solver.handoff.newton_max_iter must be non-negative.");
+    }
+    return hybrid;
 }
 
 DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
@@ -523,6 +561,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
     const nlohmann::json solverCfg = cfg.value("solver", nlohmann::json::object());
     const SolverMethod solverMethod = solverMethodFromJson(cfg);
+    const HybridHandoffConfig hybrid = solverMethod == SolverMethod::GummelNewton
+        ? hybridHandoffConfigFromJson(solverCfg)
+        : HybridHandoffConfig{};
     const DDSolutionValidationOptions validationOptions = validationOptionsFromJson(cfg);
     GummelConfig gummel;
     NewtonConfig newton;
@@ -677,7 +718,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 attempt.solverMethod = "gummel_newton";
                 attempt.gummelIterations = gummelInitial.iters;
 
-                if (!gummelInitial.converged) {
+                if (!gummelInitial.converged && hybrid.requireGummelConvergence) {
                     attempt.ok = false;
                     attempt.solution = std::move(gummelInitial);
                     attempt.handoffStage = "gummel_failed";
@@ -698,11 +739,23 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
                 NewtonConfig handoffNewton = newton;
                 handoffNewton.warmStart = true;
+                if (hybrid.newtonMaxIter >= 0)
+                    handoffNewton.maxIter = hybrid.newtonMaxIter;
                 NewtonResult result = runNewton(mesh, matdb, doping, biases, gummelInitial,
                                                 handoffNewton, fixedChargeSpecs, sheetChargeSpecs);
+                if (!result.converged && hybrid.fallbackToGummelOnNewtonFailure) {
+                    attempt.ok = true;
+                    attempt.solution = std::move(gummelInitial);
+                    attempt.newtonIterations = result.iters;
+                    attempt.handoffStage = "gummel_fallback";
+                    attempt.validationDiagnostics = gummelValidation.diagnosticsString();
+                    return attempt;
+                }
                 solverConverged = result.converged;
                 attempt.newtonIterations = result.iters;
                 attempt.handoffStage = solverConverged ? "newton" : "newton_failed";
+                if (!solverConverged)
+                    attempt.failureReason = "newton_non_convergence";
                 sol = std::move(result.solution);
             } else {
                 sol = initial != nullptr
@@ -721,7 +774,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             attempt.ok = solverConverged && validation.valid;
             attempt.solution = std::move(sol);
             attempt.validationDiagnostics = validation.diagnosticsString();
-            if (!solverConverged)
+            if (!solverConverged && attempt.failureReason.empty())
                 attempt.failureReason = "non_convergence";
             else if (!validation.valid)
                 attempt.failureReason = "validation_failed";

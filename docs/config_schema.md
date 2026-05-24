@@ -243,7 +243,7 @@ About normal_displacement_C_per_m2 / normal_electric_field_V_per_m:
 The solver object is used by DD sweep and Newton solve paths.
 
 Method selection:
-- method: `gummel` or `newton`
+- method: `gummel`, `newton`, or `gummel_newton`
 - type: alias for method (legacy compatibility)
 
 Commonly used controls:
@@ -276,11 +276,23 @@ Newton-specific keys:
 - taup
 - bandgap_narrowing
 
+Hybrid Gummel-Newton keys:
+- `handoff.fallback`: `none` or `gummel_on_newton_failure`
+- `handoff.require_gummel_convergence`: boolean, default `true`
+- `handoff.newton_max_iter`: optional non-negative integer overriding only the
+  Newton handoff stage iteration limit
+
 Notes:
 - `line_search` and `damping_factor` apply to Newton config.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 - With `scaling.mode: "unit_scaling"`, `bandgap_narrowing.reference_doping_m3`
   is read as `cm^-3` and normalized to `m^-3`.
+
+`gummel_newton` runs the configured Gummel solve first, validates that solution,
+then runs coupled Newton with `warm_start=true` from the Gummel state. The
+default fallback policy is strict: a Newton failure fails the sweep point. Use
+`gummel_on_newton_failure` only for diagnostic curves where a finite Gummel
+result is preferable to aborting the sweep.
 
 ### bandgap_narrowing
 

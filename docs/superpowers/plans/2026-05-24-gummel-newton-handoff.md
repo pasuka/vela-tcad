@@ -313,7 +313,7 @@ git commit -m "Implement Gummel initialized Newton sweep"
 - Modify: `docs/config_schema.md`
 - Test: `tests/test_dc_sweep.cpp`
 
-- [ ] **Step 1: Add tests for fallback and strict policies**
+- [x] **Step 1: Add tests for fallback and strict policies**
 
 Add two tests:
 
@@ -376,7 +376,7 @@ TEST_CASE("DCSweep: hybrid strict policy rejects Newton failure",
 }
 ```
 
-- [ ] **Step 2: Parse `solver.handoff` options**
+- [x] **Step 2: Parse `solver.handoff` options**
 
 Add a local struct in `src/simulation/DCSweep.cpp`:
 
@@ -408,7 +408,7 @@ if (solverJson.contains("handoff")) {
 
 Default must be strict: Newton failure means the point fails. This keeps the new path scientifically honest for calibration.
 
-- [ ] **Step 3: Implement fallback behavior**
+- [x] **Step 3: Implement fallback behavior**
 
 After Newton returns but before final acceptance:
 
@@ -428,7 +428,7 @@ if (!result.converged && hybrid.fallbackToGummelOnNewtonFailure) {
 
 Only allow fallback when the Gummel initializer already passed validation.
 
-- [ ] **Step 4: Document schema**
+- [x] **Step 4: Document schema**
 
 In `docs/config_schema.md`, update solver method selection:
 
@@ -450,7 +450,7 @@ point. Use `gummel_on_newton_failure` only for diagnostic curves where a finite
 Gummel result is preferable to aborting the sweep.
 ```
 
-- [ ] **Step 5: Run tests and commit**
+- [x] **Step 5: Run tests and commit**
 
 Run:
 
