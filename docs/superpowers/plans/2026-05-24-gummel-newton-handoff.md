@@ -184,7 +184,7 @@ git commit -m "Add DC sweep hybrid solver method"
 - Modify: `src/simulation/DCSweep.cpp`
 - Test: `tests/test_dc_sweep.cpp`
 
-- [ ] **Step 1: Add a test proving Newton receives the Gummel solution**
+- [x] **Step 1: Add a test proving Newton receives the Gummel solution**
 
 Add this test near the hybrid reachability test:
 
@@ -227,7 +227,7 @@ TEST_CASE("DCSweep: hybrid path uses Gummel iterations before Newton handoff",
 }
 ```
 
-- [ ] **Step 2: Run and confirm failure**
+- [x] **Step 2: Run and confirm failure**
 
 Run:
 
@@ -237,7 +237,7 @@ ctest --test-dir build --output-on-failure -R "DCSweep: hybrid"
 
 Expected: failure because the hybrid branch is parsed but not implemented yet.
 
-- [ ] **Step 3: Implement the hybrid branch**
+- [x] **Step 3: Implement the hybrid branch**
 
 Inside `solvePoint`, add a `SolverMethod::GummelNewton` branch with this behavior:
 
@@ -282,11 +282,11 @@ attempt.handoffStage = solverConverged ? "newton" : "newton_failed";
 
 Use the existing final validation block for the Newton result so all solver modes share one acceptance rule.
 
-- [ ] **Step 4: Preserve previous-bias continuation**
+- [x] **Step 4: Preserve previous-bias continuation**
 
 Keep passing `previousSolution` into `solvePoint`. In hybrid mode it should seed Gummel first, and the converged Gummel result should seed Newton. Do not pass `previousSolution` directly to Newton unless the Gummel initializer fails and a later task adds an explicit fallback.
 
-- [ ] **Step 5: Run tests and commit**
+- [x] **Step 5: Run tests and commit**
 
 Run:
 

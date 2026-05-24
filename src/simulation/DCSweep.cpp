@@ -685,6 +685,17 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     return attempt;
                 }
 
+                const DDSolutionValidationResult gummelValidation =
+                    validateDDSolution(gummelInitial, mesh, biases, validationOptions);
+                if (!gummelValidation.valid) {
+                    attempt.ok = false;
+                    attempt.solution = std::move(gummelInitial);
+                    attempt.handoffStage = "gummel_validation_failed";
+                    attempt.failureReason = "gummel_validation_failed";
+                    attempt.validationDiagnostics = gummelValidation.diagnosticsString();
+                    return attempt;
+                }
+
                 NewtonConfig handoffNewton = newton;
                 handoffNewton.warmStart = true;
                 NewtonResult result = runNewton(mesh, matdb, doping, biases, gummelInitial,

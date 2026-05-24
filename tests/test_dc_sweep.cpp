@@ -1271,6 +1271,86 @@ TEST_CASE("DCSweep: hybrid Gummel-Newton method is reachable from config",
     REQUIRE(std::filesystem::exists(csvPath));
 }
 
+TEST_CASE("DCSweep: hybrid path uses Gummel iterations before Newton handoff",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "gummel_newton_forward.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.2},
+        {"step", 0.2},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 20},
+        {"reltol", 1.0e-8},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.35},
+        {"damping_factor", 1.0},
+        {"line_search", true},
+        {"warm_start", true},
+        {"verbose", false}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 2);
+    for (const DCSweepPoint& point : result.points) {
+        REQUIRE(point.converged);
+        REQUIRE(point.solverMethod == "gummel_newton");
+        REQUIRE(point.gummelIterations > 0);
+        REQUIRE(point.handoffStage == "newton");
+    }
+}
+
+TEST_CASE("DCSweep: hybrid validates Gummel initializer before Newton handoff",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "gummel_newton_gummel_validation.csv";
+
+    nlohmann::json cfg = baseSweepConfig(dir, meshPath, csvPath);
+    cfg["sweep"]["start"] = 0.0;
+    cfg["sweep"]["stop"] = 0.0;
+    cfg["sweep"]["step"] = 0.25;
+    cfg["sweep"]["write_vtk"] = false;
+    cfg["solver"] = {
+        {"method", "gummel_newton"},
+        {"max_iter", 12},
+        {"reltol", 1.0e-8},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.35},
+        {"line_search", true},
+        {"verbose", false}
+    };
+    cfg["validation"] = {
+        {"enforce_minimum_carrier_density", true},
+        {"minimum_carrier_density", 1.0e40}
+    };
+    const auto cfgPath = dir / "gummel_newton_gummel_validation.json";
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    const DCSweepPoint& point = result.points.front();
+    REQUIRE_FALSE(point.converged);
+    REQUIRE(point.solverMethod == "gummel_newton");
+    REQUIRE(point.gummelIterations > 0);
+    REQUIRE(point.newtonIterations == 0);
+    REQUIRE(point.handoffStage == "gummel_validation_failed");
+    REQUIRE(point.failureReason == "gummel_validation_failed");
+}
+
 
 TEST_CASE("DCSweep: NMOS and PMOS DD examples increase drain current with stronger gate drive", "[dc_sweep][mos]")
 {
