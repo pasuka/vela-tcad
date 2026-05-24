@@ -56,6 +56,10 @@ struct DCSweepPoint {
     Real totalCurrent = 0.0;
     bool converged = false;
     int iterations = 0;
+    std::string solverMethod;
+    int gummelIterations = 0;
+    int newtonIterations = 0;
+    std::string handoffStage;
     Real attemptedStep = 0.0;
     Real acceptedStep = 0.0;
     int retryCount = 0;

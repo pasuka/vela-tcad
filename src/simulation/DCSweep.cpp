@@ -34,6 +34,7 @@ namespace {
 enum class SolverMethod {
     Gummel,
     Newton,
+    GummelNewton,
 };
 
 std::string formatReal(Real value)
@@ -238,8 +239,10 @@ SolverMethod solverMethodFromJson(const nlohmann::json& cfg)
         return SolverMethod::Gummel;
     if (method == "newton")
         return SolverMethod::Newton;
+    if (method == "gummel_newton" || method == "hybrid")
+        return SolverMethod::GummelNewton;
     throw std::invalid_argument(
-        "DCSweep: solver.method/type must be 'gummel' or 'newton'.");
+        "DCSweep: solver.method/type must be 'gummel', 'newton', or 'gummel_newton'.");
 }
 
 DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
@@ -528,12 +531,19 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         newton = newtonConfigFromJson(solverCfg, scaling);
         newton.unitScalingRefs = scalingRefs;
         mobilityConfig = newton.mobility;
+    } else if (solverMethod == SolverMethod::GummelNewton) {
+        gummel = gummelConfigFromJson(solverCfg, scaling);
+        gummel.unitScalingRefs = scalingRefs;
+        newton = newtonConfigFromJson(solverCfg, scaling);
+        newton.unitScalingRefs = scalingRefs;
+        mobilityConfig = newton.mobility;
     } else {
         gummel = gummelConfigFromJson(solverCfg, scaling);
         gummel.unitScalingRefs = scalingRefs;
         mobilityConfig = gummel.mobility;
     }
-    const Real temperature_K = (solverMethod == SolverMethod::Newton)
+    const Real temperature_K = (solverMethod == SolverMethod::Newton ||
+                                solverMethod == SolverMethod::GummelNewton)
         ? newton.temperature_K
         : gummel.temperature_K;
     // Build DDScalingSpec for contact current post-processing.
@@ -618,9 +628,15 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         DDSolution solution;
         std::string failureReason;
         std::string validationDiagnostics;
+        std::string solverMethod;
+        int gummelIterations = 0;
+        int newtonIterations = 0;
+        std::string handoffStage;
     };
 
-    if (solverMethod == SolverMethod::Newton && !contactSpecs.empty()) {
+    if ((solverMethod == SolverMethod::Newton ||
+         solverMethod == SolverMethod::GummelNewton) &&
+        !contactSpecs.empty()) {
         // The Newton coupled-DD path does not yet construct Schottky-aware
         // boundary conditions.  Fail loudly so a user mis-configuring the
         // deck does not silently get the legacy Ohmic interpretation.
@@ -630,8 +646,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             break;
         }
         throw std::runtime_error(
-            "DCSweep: solver.method='newton' does not yet support Schottky contacts "
-            "(contact '" + firstSchottky + "'). Use solver.method='gummel' for the "
+            "DCSweep: solver.method='newton' or 'gummel_newton' does not yet support "
+            "Schottky contacts (contact '" + firstSchottky + "'). Use solver.method='gummel' for the "
             "Schottky prototype, or switch the contact to type='ohmic'.");
     }
 
@@ -641,23 +657,56 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         try {
             bool solverConverged = false;
             DDSolution sol;
+            SolvePointAttempt attempt;
             if (solverMethod == SolverMethod::Newton) {
                 NewtonResult result = initial != nullptr
                     ? runNewton(mesh, matdb, doping, biases, *initial, newton, fixedChargeSpecs, sheetChargeSpecs)
                     : runNewton(mesh, matdb, doping, biases, newton, fixedChargeSpecs, sheetChargeSpecs);
                 solverConverged = result.converged;
+                attempt.solverMethod = "newton";
+                attempt.gummelIterations = 0;
+                attempt.newtonIterations = result.iters;
+                attempt.handoffStage = solverConverged ? "newton" : "newton_failed";
+                sol = std::move(result.solution);
+            } else if (solverMethod == SolverMethod::GummelNewton) {
+                DDSolution gummelInitial = initial != nullptr
+                    ? runGummel(mesh, matdb, doping, biases, contactSpecs, gummel, *initial,
+                                fixedChargeSpecs, sheetChargeSpecs)
+                    : runGummel(mesh, matdb, doping, biases, contactSpecs, gummel,
+                                fixedChargeSpecs, sheetChargeSpecs);
+                attempt.solverMethod = "gummel_newton";
+                attempt.gummelIterations = gummelInitial.iters;
+
+                if (!gummelInitial.converged) {
+                    attempt.ok = false;
+                    attempt.solution = std::move(gummelInitial);
+                    attempt.handoffStage = "gummel_failed";
+                    attempt.failureReason = "gummel_non_convergence";
+                    return attempt;
+                }
+
+                NewtonConfig handoffNewton = newton;
+                handoffNewton.warmStart = true;
+                NewtonResult result = runNewton(mesh, matdb, doping, biases, gummelInitial,
+                                                handoffNewton, fixedChargeSpecs, sheetChargeSpecs);
+                solverConverged = result.converged;
+                attempt.newtonIterations = result.iters;
+                attempt.handoffStage = solverConverged ? "newton" : "newton_failed";
                 sol = std::move(result.solution);
             } else {
                 sol = initial != nullptr
                     ? runGummel(mesh, matdb, doping, biases, contactSpecs, gummel, *initial, fixedChargeSpecs, sheetChargeSpecs)
                     : runGummel(mesh, matdb, doping, biases, contactSpecs, gummel, fixedChargeSpecs, sheetChargeSpecs);
                 solverConverged = sol.converged;
+                attempt.solverMethod = "gummel";
+                attempt.gummelIterations = sol.iters;
+                attempt.newtonIterations = 0;
+                attempt.handoffStage = solverConverged ? "gummel" : "gummel_failed";
             }
 
 
             const DDSolutionValidationResult validation =
                 validateDDSolution(sol, mesh, biases, validationOptions);
-            SolvePointAttempt attempt;
             attempt.ok = solverConverged && validation.valid;
             attempt.solution = std::move(sol);
             attempt.validationDiagnostics = validation.diagnosticsString();
@@ -685,11 +734,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         return nullptr;
     };
 
-    auto recordPoint = [&](Real voltage, const DDSolution& sol, bool converged,
+    auto recordPoint = [&](Real voltage, const SolvePointAttempt& attempt, bool converged,
                            Real attemptedStep, Real acceptedStep, int retryCount,
                            const std::string& failureReason = std::string(),
                            const std::string& validationDiagnostics = std::string()) {
         ContactCurrentResult current{};
+        const DDSolution& sol = attempt.solution;
         if (converged)
             current = contactCurrent.compute(sol, sweep.currentContact);
 
@@ -702,6 +752,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         point.totalCurrent = current.totalCurrent;
         point.converged = converged;
         point.iterations = sol.iters;
+        point.solverMethod = attempt.solverMethod;
+        point.gummelIterations = attempt.gummelIterations;
+        point.newtonIterations = attempt.newtonIterations;
+        point.handoffStage = attempt.handoffStage;
         point.attemptedStep = attemptedStep;
         point.acceptedStep = acceptedStep;
         point.retryCount = retryCount;
@@ -863,13 +917,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     };
 
     bool startOk = false;
-    DDSolution startSol;
+    SolvePointAttempt startAttempt;
     std::string startFailureReason;
     std::string startValidationDiagnostics;
     try {
-        auto startAttempt = solvePoint(sweep.start, nullptr);
+        startAttempt = solvePoint(sweep.start, nullptr);
         startOk = startAttempt.ok;
-        startSol = std::move(startAttempt.solution);
         startFailureReason = startAttempt.failureReason;
         startValidationDiagnostics = startAttempt.validationDiagnostics;
         if (!startOk && startFailureReason.empty())
@@ -880,13 +933,13 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         else
             throw;
     }
-    recordPoint(sweep.start, startSol, startOk, 0.0, 0.0, 0, startFailureReason,
+    recordPoint(sweep.start, startAttempt, startOk, 0.0, 0.0, 0, startFailureReason,
                 startValidationDiagnostics);
     if (!startOk)
         return DCSweepResult{std::move(mesh), std::move(points)};
-    previousSolution = std::move(startSol);
+    previousSolution = std::move(startAttempt.solution);
 
-    DDSolution lastStepSolution;
+    SolvePointAttempt lastStepAttempt;
     std::string lastStepFailureReason;
     std::string lastStepValidationDiagnostics;
     detail::DCSweepStepControlConfig stepControl;
@@ -905,14 +958,14 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         [&](Real voltage, Real, int) {
             try {
                 SolvePointAttempt attempt = solvePoint(voltage, &previousSolution);
-                lastStepSolution = std::move(attempt.solution);
-                lastStepFailureReason = attempt.ok ? std::string() : attempt.failureReason;
-                lastStepValidationDiagnostics = attempt.validationDiagnostics;
-                return attempt.ok;
+                lastStepAttempt = std::move(attempt);
+                lastStepFailureReason = lastStepAttempt.ok ? std::string() : lastStepAttempt.failureReason;
+                lastStepValidationDiagnostics = lastStepAttempt.validationDiagnostics;
+                return lastStepAttempt.ok;
             } catch (const std::exception&) {
                 if (sweep.mode == CurveSweepMode::BVReverse &&
                     sweep.breakdown.nonConvergenceBreakdown) {
-                    lastStepSolution = DDSolution{};
+                    lastStepAttempt = SolvePointAttempt{};
                     lastStepFailureReason = "solver_exception";
                     lastStepValidationDiagnostics.clear();
                     return false;
@@ -926,11 +979,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 failureReason = !lastStepFailureReason.empty()
                     ? lastStepFailureReason
                     : event.failureReason;
-            recordPoint(event.voltage, lastStepSolution, event.converged,
+            recordPoint(event.voltage, lastStepAttempt, event.converged,
                         event.attemptedStep, event.acceptedStep, event.retryCount, failureReason,
                         lastStepValidationDiagnostics);
             if (event.converged) {
-                previousSolution = std::move(lastStepSolution);
+                previousSolution = std::move(lastStepAttempt.solution);
             }
         });
 
