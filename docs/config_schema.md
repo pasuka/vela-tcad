@@ -116,6 +116,23 @@ Notes:
   `fixed_charge_m3` numeric inputs are read as `cm^-3` and normalized to
   `m^-3` internally.
 
+### node_doping_file
+
+Optional top-level field:
+- node_doping_file: string
+
+`node_doping_file` points to a CSV with columns
+`node_id,donors_cm3,acceptors_cm3`. When present, it overrides region-average
+`doping[]` entries for drift-diffusion DC sweeps. The file must contain exactly
+one row for each mesh node id; missing rows, duplicate rows, invalid ids,
+quoted fields, malformed concentrations, and non-finite numeric values are
+rejected.
+
+With `scaling.mode: "unit_scaling"`, the donor and acceptor concentrations in
+the CSV use the same external concentration convention as deck-level doping:
+`cm^-3`, normalized to `m^-3` internally. In legacy SI mode, the same values are
+read through the legacy concentration path.
+
 ### regions[] entries
 
 Common fields:
