@@ -28,6 +28,24 @@ Selberherr impact ionization for BV diagnostics. These reports establish a
 readable, runnable, finite, and comparable regression loop; they are not yet a
 calibrated numerical match to Sentaurus.
 
+## Hybrid Solver Status
+
+Faithful pn2d decks now use `solver.method: "gummel_newton"` and preserve
+`node_doping_file: "doping.csv"`. Each faithful bias point is configured to run
+Gummel first and hand the validated state to coupled Newton with
+`warm_start=true`.
+
+The runtime approximation remains available as the executable comparison path:
+it uses imported TDR geometry, region-average doping scaled by
+`runtime_doping_scale`, and conservative `solver.method: "gummel"`. Current
+gate:
+
+- faithful IV/BV deck generation is required;
+- faithful decks must preserve node-level doping and strict Newton handoff
+  settings;
+- runtime IV/BV execution must remain finite;
+- strict Sentaurus numerical agreement is not yet required.
+
 Useful local verification command:
 
 ```powershell

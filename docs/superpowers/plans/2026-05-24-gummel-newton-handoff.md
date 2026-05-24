@@ -576,7 +576,7 @@ git commit -m "Generate pn2d hybrid solver decks"
 - Modify: `docs/validation/pn2d_sentaurus_comparison.md`
 - Optional modify after diagnosis: `src/simulation/DCSweep.cpp`, `src/solver/NewtonSolver.cpp`, or `src/equation/CoupledDDAssembler.cpp`
 
-- [ ] **Step 1: Add a non-strict real-sample hybrid execution test**
+- [x] **Step 1: Add a non-strict real-sample hybrid execution test**
 
 In `tests/regression/test_sentaurus_sample_integration.py`, add a test that runs `scripts/sentaurus_import.py reference` with the bundled `reference_tcad/pn2d` and checks the faithful deck exists and is attempted:
 
@@ -589,7 +589,7 @@ self.assertTrue((out_dir / "reference_tcad_manifest.json").exists())
 
 Do not require the faithful high-doping curve to pass until Task 6. Require runtime approximation to remain finite so the regression suite stays useful.
 
-- [ ] **Step 2: Run real import and capture failure mode**
+- [x] **Step 2: Run real import and capture failure mode**
 
 Run:
 
@@ -599,7 +599,7 @@ python scripts\sentaurus_import.py reference --config reference_tcad\pn2d\pn2d_r
 
 Expected before solver fixes: faithful deck may fail at high doping, but runtime decks must still produce finite CSVs and comparison reports.
 
-- [ ] **Step 3: Document observed status**
+- [x] **Step 3: Document observed status**
 
 In `docs/validation/pn2d_sentaurus_comparison.md`, add:
 
@@ -618,7 +618,7 @@ Current gate:
 - strict Sentaurus numerical agreement is not yet required.
 ```
 
-- [ ] **Step 4: Run regression and commit**
+- [x] **Step 4: Run regression and commit**
 
 Run:
 
