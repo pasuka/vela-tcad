@@ -11,7 +11,10 @@
       "cmd": "pn2d_sdevice.cmd",
       "plt": "pn2d_iv.plt",
       "bias_column": "Anode OuterVoltage",
-      "current_column": "Anode TotalCurrent"
+      "current_column": "Anode TotalCurrent",
+      "runtime_doping_scale": 0.0001,
+      "runtime_step": 0.1,
+      "comparison_min_points": 10
     },
     {
       "name": "bv",
@@ -20,7 +23,8 @@
       "cmd": "pn2d_bv_sdevice.cmd",
       "plt": "pn2d_bv.plt",
       "bias_column": "Cathode OuterVoltage",
-      "current_column": "Cathode TotalCurrent"
+      "current_column": "Cathode TotalCurrent",
+      "execute": false
     }
   ]
 }

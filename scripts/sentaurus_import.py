@@ -857,9 +857,54 @@ def patch_reference_deck(deck_path: Path,
         "cmd_summary": cmd_summary,
         "source_simulation": sim,
     }
+    if sim.get("kind") == "iv":
+        solver = deck.setdefault("solver", {})
+        solver["max_iter"] = max(int(solver.get("max_iter", 0)), 150)
+        solver["reltol"] = min(float(solver.get("reltol", 1.0e-6)), 1.0e-6)
+        solver["damping_psi"] = min(float(solver.get("damping_psi", 0.35)), 0.35)
     warnings = apply_solver_physics(deck, cmd_summary, sim)
     write_json(deck_path, deck)
     return warnings
+
+
+def write_runtime_deck_if_requested(deck_path: Path,
+                                    sim: dict[str, Any],
+                                    output_csv: str) -> tuple[Path, list[str]]:
+    if "runtime_doping_scale" not in sim and "runtime_step" not in sim:
+        return deck_path, []
+
+    deck = read_json(deck_path)
+    runtime_deck = json.loads(json.dumps(deck))
+    warnings: list[str] = []
+    runtime_notes: list[str] = []
+
+    if "runtime_doping_scale" in sim:
+        scale = float(sim["runtime_doping_scale"])
+        if scale <= 0.0:
+            raise ValueError("runtime_doping_scale must be positive")
+        runtime_deck.pop("node_doping_file", None)
+        for doping in runtime_deck.get("doping", []):
+            doping["donors"] = float(doping.get("donors", 0.0)) * scale
+            doping["acceptors"] = float(doping.get("acceptors", 0.0)) * scale
+        note = (
+            f"{sim.get('name', 'simulation')} runtime deck uses region-average "
+            f"doping scaled by {scale:g} for Vela convergence diagnostics"
+        )
+        runtime_notes.append(note)
+        warnings.append(note)
+
+    if "runtime_step" in sim:
+        runtime_deck.setdefault("sweep", {})["step"] = float(sim["runtime_step"])
+
+    runtime_deck["output_csv"] = output_csv
+    runtime_deck.setdefault("sentaurus_import", {})["runtime_approximation"] = {
+        "enabled": True,
+        "notes": runtime_notes,
+        "faithful_deck": deck_path.name,
+    }
+    runtime_path = deck_path.with_name(deck_path.stem + "_runtime.json")
+    write_json(runtime_path, runtime_deck)
+    return runtime_path, warnings
 
 
 def scan_csv_has_only_finite_numbers(path: Path) -> None:
@@ -967,10 +1012,17 @@ def reference_command(args: argparse.Namespace) -> None:
         candidate_csv = f"{case_name}_{sim_name}.csv"
         warnings.extend(patch_reference_deck(deck_path, cmd_summary, sim, candidate_csv))
         generated.append(relative_generated(deck_path, output_dir))
-        if not args.skip_vela_run:
-            run_reference_deck(args.runner, deck_path)
+        run_deck_path, runtime_warnings = write_runtime_deck_if_requested(deck_path, sim, candidate_csv)
+        warnings.extend(runtime_warnings)
+        if run_deck_path != deck_path:
+            generated.append(relative_generated(run_deck_path, output_dir))
+        execute_sim = bool(sim.get("execute", True))
+        if not execute_sim:
+            warnings.append(f"{sim_name} execution disabled by reference config")
+        if execute_sim and not args.skip_vela_run:
+            run_reference_deck(args.runner, run_deck_path)
         candidate_path = vela_dir / candidate_csv
-        if candidate_path.exists():
+        if execute_sim and candidate_path.exists():
             generated.append(relative_generated(candidate_path, output_dir))
             scan_csv_has_only_finite_numbers(candidate_path)
             report_json = output_dir / "reports" / f"{case_name}_{sim_name}_comparison.json"
@@ -991,7 +1043,7 @@ def reference_command(args: argparse.Namespace) -> None:
                 "--kind",
                 compare_kind,
                 "--min-points",
-                "2",
+                str(int(sim.get("comparison_min_points", 2))),
             ]
             if require_trend_match:
                 compare_command.append("--require-trend-match")

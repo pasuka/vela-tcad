@@ -436,6 +436,9 @@ Data {
                         "bias_column": "Anode OuterVoltage",
                         "current_column": "Anode TotalCurrent",
                         "kind": "iv",
+                        "runtime_doping_scale": 1.0e-4,
+                        "runtime_step": 0.1,
+                        "comparison_min_points": 3,
                     },
                     {
                         "name": "bv",
@@ -538,6 +541,7 @@ with out.open("w", newline="") as handle:
                 "cmd/bv_summary.json",
                 "vela/mesh.json",
                 "vela/simulation_iv.json",
+                "vela/simulation_iv_runtime.json",
                 "vela/simulation_bv.json",
                 "vela/pn2d_iv.csv",
                 "vela/pn2d_bv.csv",
@@ -553,15 +557,30 @@ with out.open("w", newline="") as handle:
             self.assertIn("Avalanche", manifest["unsupported_physics"])
             self.assertIn("reports/pn2d_iv_comparison.json", manifest["comparison_reports"])
             self.assertIn("Fermi statistics approximated by Boltzmann carrier statistics", manifest["warnings"])
+            self.assertIn(
+                "iv runtime deck uses region-average doping scaled by 0.0001 for Vela convergence diagnostics",
+                manifest["warnings"],
+            )
             self.assertEqual(len(manifest["warnings"]), len(set(manifest["warnings"])))
             iv_deck = json.loads((output / "vela" / "simulation_iv.json").read_text())
+            iv_runtime_deck = json.loads((output / "vela" / "simulation_iv_runtime.json").read_text())
             bv_deck = json.loads((output / "vela" / "simulation_bv.json").read_text())
             self.assertEqual(iv_deck["sweep"]["contact"], "Anode")
             self.assertEqual(iv_deck["sweep"]["stop"], 1.0)
+            self.assertEqual(iv_deck["node_doping_file"], "doping.csv")
+            self.assertEqual(iv_deck["solver"]["max_iter"], 150)
+            self.assertEqual(iv_deck["solver"]["reltol"], 1.0e-6)
+            self.assertEqual(iv_deck["solver"]["damping_psi"], 0.35)
             self.assertEqual(iv_deck["solver"]["mobility"]["model"], "caughey_thomas_field")
             self.assertEqual(iv_deck["solver"]["recombination"], ["srh", "auger"])
             self.assertEqual(iv_deck["solver"]["bandgap_narrowing"], "slotboom")
             self.assertNotIn("impact_ionization", iv_deck["solver"])
+            iv_report = json.loads((output / "reports" / "pn2d_iv_comparison.json").read_text())
+            self.assertEqual(iv_report["status"], "pass")
+            self.assertEqual(iv_report["iv"]["points_compared"], 3)
+            self.assertNotIn("node_doping_file", iv_runtime_deck)
+            self.assertEqual(iv_runtime_deck["sweep"]["step"], 0.1)
+            self.assertEqual(iv_runtime_deck["doping"][0]["acceptors"], 1.0e13)
             self.assertEqual(bv_deck["sweep"]["mode"], "bv_reverse")
             self.assertEqual(bv_deck["sweep"]["contact"], "Cathode")
             self.assertEqual(bv_deck["sweep"]["stop"], 50.0)
