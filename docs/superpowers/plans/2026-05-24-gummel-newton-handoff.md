@@ -478,7 +478,7 @@ git commit -m "Add hybrid solver handoff policy"
 - Test: `tests/regression/test_sentaurus_import_tools.py`
 - Test: `tests/regression/test_sentaurus_sample_integration.py`
 
-- [ ] **Step 1: Write generator tests**
+- [x] **Step 1: Write generator tests**
 
 In `tests/regression/test_sentaurus_import_tools.py`, add assertions to the existing pn2d deck-generation test:
 
@@ -497,7 +497,7 @@ self.assertEqual(runtime_iv["solver"]["method"], "gummel")
 self.assertIn("runtime_approximation", runtime_iv["sentaurus_import"])
 ```
 
-- [ ] **Step 2: Run regression test and confirm failure**
+- [x] **Step 2: Run regression test and confirm failure**
 
 Run:
 
@@ -507,7 +507,7 @@ python -m unittest tests.regression.test_sentaurus_import_tools -v
 
 Expected: failure because generated faithful decks still use `gummel`.
 
-- [ ] **Step 3: Add config opt-in**
+- [x] **Step 3: Add config opt-in**
 
 In `reference_tcad/pn2d/pn2d_reference.json`, add:
 
@@ -531,7 +531,7 @@ In `reference_tcad/pn2d/pn2d_reference.json`, add:
 
 Place this at the case or simulation level. Simulation-level settings override case-level settings.
 
-- [ ] **Step 4: Apply solver override in import script**
+- [x] **Step 4: Apply solver override in import script**
 
 In `scripts/sentaurus_import.py`, after the base solver is created for each generated deck, merge `vela_solver` from the top-level config and from the current simulation:
 
@@ -549,7 +549,7 @@ Keep `write_runtime_deck_if_requested()` forcing the runtime approximation back 
 "runtime_solver_method": "gummel_newton"
 ```
 
-- [ ] **Step 5: Run tests and commit**
+- [x] **Step 5: Run tests and commit**
 
 Run:
 

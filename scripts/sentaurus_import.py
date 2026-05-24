@@ -827,7 +827,8 @@ def run_tdr_importer(tdr_importer: str | None,
 def patch_reference_deck(deck_path: Path,
                          cmd_summary: dict[str, Any],
                          sim: dict[str, Any],
-                         output_csv: str) -> list[str]:
+                         output_csv: str,
+                         solver_override: dict[str, Any] | None = None) -> list[str]:
     deck = read_json(deck_path)
     sweeps = cmd_summary.get("sweeps", [])
     sweep = sweeps[-1] if sweeps else {"contact": "Anode", "stop": 0.0, "step_control": {}}
@@ -863,6 +864,8 @@ def patch_reference_deck(deck_path: Path,
         solver["reltol"] = min(float(solver.get("reltol", 1.0e-6)), 1.0e-6)
         solver["damping_psi"] = min(float(solver.get("damping_psi", 0.35)), 0.35)
     warnings = apply_solver_physics(deck, cmd_summary, sim)
+    if solver_override:
+        deck.setdefault("solver", {}).update(json.loads(json.dumps(solver_override)))
     write_json(deck_path, deck)
     return warnings
 
@@ -895,6 +898,11 @@ def write_runtime_deck_if_requested(deck_path: Path,
 
     if "runtime_step" in sim:
         runtime_deck.setdefault("sweep", {})["step"] = float(sim["runtime_step"])
+
+    runtime_solver = runtime_deck.setdefault("solver", {})
+    runtime_solver["method"] = str(sim.get("runtime_solver_method", "gummel"))
+    if runtime_solver["method"] != "gummel_newton":
+        runtime_solver.pop("handoff", None)
 
     runtime_deck["output_csv"] = output_csv
     runtime_deck.setdefault("sentaurus_import", {})["runtime_approximation"] = {
@@ -1010,7 +1018,14 @@ def reference_command(args: argparse.Namespace) -> None:
             generated_deck.replace(deck_path)
         cmd_summary = read_json(output_dir / "cmd" / f"{sim_name}_summary.json")
         candidate_csv = f"{case_name}_{sim_name}.csv"
-        warnings.extend(patch_reference_deck(deck_path, cmd_summary, sim, candidate_csv))
+        solver_override: dict[str, Any] = {}
+        config_solver = config.get("vela_solver", {})
+        if isinstance(config_solver, dict):
+            solver_override.update(config_solver)
+        sim_solver = sim.get("vela_solver", {})
+        if isinstance(sim_solver, dict):
+            solver_override.update(sim_solver)
+        warnings.extend(patch_reference_deck(deck_path, cmd_summary, sim, candidate_csv, solver_override))
         generated.append(relative_generated(deck_path, output_dir))
         run_deck_path, runtime_warnings = write_runtime_deck_if_requested(deck_path, sim, candidate_csv)
         warnings.extend(runtime_warnings)

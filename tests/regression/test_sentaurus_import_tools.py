@@ -427,6 +427,21 @@ Data {
                 "device": "pn_diode",
                 "mesh_tdr": "pn2d_msh.tdr",
                 "sde_cmd": "pn2d_sde.cmd",
+                "vela_solver": {
+                    "method": "gummel_newton",
+                    "max_iter": 40,
+                    "reltol": 1.0e-8,
+                    "abstol": 1.0e-18,
+                    "damping_psi": 0.25,
+                    "damping_factor": 1.0,
+                    "line_search": True,
+                    "warm_start": True,
+                    "verbose": False,
+                    "handoff": {
+                        "fallback": "none",
+                        "require_gummel_convergence": True,
+                    },
+                },
                 "simulations": [
                     {
                         "name": "iv",
@@ -578,24 +593,32 @@ with out.open("w", newline="") as handle:
             self.assertEqual(iv_deck["sweep"]["contact"], "Anode")
             self.assertEqual(iv_deck["sweep"]["stop"], 1.0)
             self.assertEqual(iv_deck["node_doping_file"], "doping.csv")
-            self.assertEqual(iv_deck["solver"]["max_iter"], 150)
-            self.assertEqual(iv_deck["solver"]["reltol"], 1.0e-6)
-            self.assertEqual(iv_deck["solver"]["damping_psi"], 0.35)
+            self.assertEqual(iv_deck["solver"]["method"], "gummel_newton")
+            self.assertEqual(iv_deck["solver"]["max_iter"], 40)
+            self.assertEqual(iv_deck["solver"]["reltol"], 1.0e-8)
+            self.assertEqual(iv_deck["solver"]["damping_psi"], 0.25)
+            self.assertTrue(iv_deck["solver"]["warm_start"])
+            self.assertEqual(iv_deck["solver"]["handoff"]["fallback"], "none")
             self.assertEqual(iv_deck["solver"]["mobility"]["model"], "caughey_thomas_field")
             self.assertEqual(iv_deck["solver"]["recombination"], ["srh", "auger"])
             self.assertEqual(iv_deck["solver"]["bandgap_narrowing"], "slotboom")
             self.assertNotIn("impact_ionization", iv_deck["solver"])
+            self.assertNotIn("runtime_approximation", iv_deck.get("sentaurus_import", {}))
             iv_report = json.loads((output / "reports" / "pn2d_iv_comparison.json").read_text())
             self.assertEqual(iv_report["status"], "pass")
             self.assertEqual(iv_report["iv"]["points_compared"], 3)
+            self.assertEqual(iv_runtime_deck["solver"]["method"], "gummel")
+            self.assertIn("runtime_approximation", iv_runtime_deck["sentaurus_import"])
             self.assertNotIn("node_doping_file", iv_runtime_deck)
             self.assertEqual(iv_runtime_deck["sweep"]["step"], 0.1)
             self.assertEqual(iv_runtime_deck["doping"][0]["acceptors"], 1.0e13)
             self.assertEqual(bv_deck["sweep"]["mode"], "bv_reverse")
             self.assertEqual(bv_deck["sweep"]["contact"], "Cathode")
             self.assertEqual(bv_deck["sweep"]["stop"], 50.0)
+            self.assertEqual(bv_deck["solver"]["method"], "gummel_newton")
             self.assertEqual(bv_deck["solver"]["impact_ionization"]["model"], "selberherr")
             self.assertIn("OkutoCrowell approximated by Selberherr", manifest["warnings"])
+            self.assertEqual(bv_runtime_deck["solver"]["method"], "gummel")
             self.assertNotIn("node_doping_file", bv_runtime_deck)
             self.assertEqual(bv_runtime_deck["sweep"]["mode"], "bv_reverse")
             self.assertEqual(bv_runtime_deck["sweep"]["step"], 5.0)
