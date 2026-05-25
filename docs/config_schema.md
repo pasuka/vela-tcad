@@ -329,7 +329,7 @@ When enabled, it creates an additional conservative runtime deck using
 region-average scaled doping. When disabled or omitted, the faithful deck is
 the executable comparison path.
 
-Sentaurus reference import may include:
+Reference import configs may include:
 
 ```json
 "tdr_doping": {
