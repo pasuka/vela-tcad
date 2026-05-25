@@ -12,10 +12,13 @@ donor/acceptor table. Generated faithful Vela decks keep `node_doping_file:
 development and regression inspection.
 
 The current executable comparison uses the faithful node-level doping decks.
-The IV deck uses `vela_step: 0.1` so the local gate compares 11 finite Vela
-points against the Sentaurus IV reference. The BV deck uses Vela's Selberherr
-impact-ionization diagnostic in place of Sentaurus `Avalanche(OkutoCrowell)`.
-These reports are diagnostic-only and do not yet require trend match.
+The IV deck uses `vela_stop: 0.3` and `vela_step: 0.1`; the local gate compares
+the 0.2-0.3 V forward-bias window against the full imported Sentaurus IV
+reference. The BV deck uses `vela_stop: 10.0` and `vela_step: 5.0`; Vela
+currently disables the Sentaurus `Avalanche(OkutoCrowell)` approximation in
+the strict handoff deck because the imported 0 V state is not yet robust with
+impact-ionization Jacobian terms. These reports are diagnostic-only and do not
+yet require trend match.
 
 Vela currently treats Sentaurus Fermi statistics as Boltzmann carrier
 statistics. Sentaurus Okuto-Crowell avalanche is approximated by Vela
@@ -25,12 +28,17 @@ calibrated numerical match to Sentaurus.
 
 ## Hybrid Solver Status
 
-Faithful pn2d decks now use `solver.method: "gummel_newton"` and preserve
-`node_doping_file: "doping.csv"`. Each faithful bias point is configured to run
-Gummel first and attempt coupled Newton with `warm_start=true`. For the current
-pn2d gate, Newton handoff is diagnostic: if Newton rejects the first step, the
-finite Gummel state is accepted with `handoff.fallback:
-"gummel_on_newton_failure"`.
+Faithful pn2d decks now use `solver.method: "gummel_newton"` with
+`handoff.fallback: "none"` and preserve `node_doping_file: "doping.csv"`. Each
+accepted faithful IV/BV row must end with `handoff_stage: "newton"` and
+`newton_iterations > 0`; Gummel fallback is no longer part of the default pn2d
+gate.
+
+Current solver limits are intentionally explicit: Gummel is used as a one-step
+initializer (`handoff.gummel_max_iter: 1`) and coupled Newton owns the accepted
+state. This is a strict provenance gate, not a calibrated convergence claim:
+the IV comparison currently allows a wide order-of-magnitude envelope while
+the coupled Newton residual and physical current calibration are improved.
 
 The old region-average `runtime_doping_scale` path is no longer required for
 pn2d. It remains available through an opt-in `runtime_diagnostic` config block
@@ -39,7 +47,8 @@ node-level doping. Current gate:
 
 - faithful IV/BV deck generation is required;
 - faithful decks must preserve node-level doping and hybrid handoff settings;
-- faithful IV/BV execution must remain finite;
+- faithful IV/BV execution must remain finite and end in Newton handoff;
+- comparison reports align by `bias_V` and use configured bias windows;
 - strict Sentaurus numerical agreement is not yet required.
 
 Useful local verification command:

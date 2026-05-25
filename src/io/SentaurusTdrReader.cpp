@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -551,6 +552,13 @@ SentaurusTdrInventory SentaurusTdrReader::readInventory(const std::string& filen
 
 void SentaurusTdrReader::exportNeutral(const std::string& filename, const std::string& outputDirectory) const
 {
+    exportNeutral(filename, outputDirectory, SentaurusTdrExportOptions{});
+}
+
+void SentaurusTdrReader::exportNeutral(const std::string& filename,
+                                       const std::string& outputDirectory,
+                                       const SentaurusTdrExportOptions& options) const
+{
     const SentaurusTdrInventory inventory = readInventory(filename);
     const std::filesystem::path outDir(outputDirectory);
     std::filesystem::create_directories(outDir);
@@ -609,6 +617,7 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename, const std::s
 
     std::vector<double> donors(inventory.vertices.size(), 0.0);
     std::vector<double> acceptors(inventory.vertices.size(), 0.0);
+    std::vector<std::vector<double>> signedDopingByNode(inventory.vertices.size());
     std::set<int> aggregateDonorRegions;
     std::set<int> aggregateAcceptorRegions;
     for (const auto& field : inventory.fields) {
@@ -621,15 +630,24 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename, const std::s
     for (const auto& field : inventory.fields) {
         const bool donorField = isDonorConcentrationField(field.name);
         const bool acceptorField = isAcceptorConcentrationField(field.name);
-        if (!donorField && !acceptorField) {
-            continue;
-        }
         const auto* region = findRegion(inventory, field.region_index);
         if (region == nullptr) {
             continue;
         }
         const auto nodes = regionNodeOrder(*region);
         const std::size_t rows = std::min(nodes.size(), field.value_count);
+        if (field.name == "DopingConcentration") {
+            for (std::size_t row = 0; row < rows; ++row) {
+                if (nodes[row] >= inventory.vertices.size() || field.component_count == 0) {
+                    continue;
+                }
+                signedDopingByNode[nodes[row]].push_back(
+                    field.values[row * field.component_count]);
+            }
+        }
+        if (!donorField && !acceptorField) {
+            continue;
+        }
         for (std::size_t row = 0; row < rows; ++row) {
             if (nodes[row] >= inventory.vertices.size() || field.component_count == 0) {
                 continue;
@@ -649,12 +667,77 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename, const std::s
             }
         }
     }
+
+    const std::vector<double> originalDonors = donors;
+    const std::vector<double> originalAcceptors = acceptors;
+    auto isCompensated = [](double donor, double acceptor) {
+        const double scale = std::max({std::abs(donor), std::abs(acceptor), 1.0});
+        return donor > 0.0 && acceptor > 0.0 &&
+            std::abs(donor - acceptor) <= 1.0e-6 * scale;
+    };
+
+    if (options.compensatedDopingPolicy == "dominant_signed_region") {
+        for (std::size_t i = 0; i < inventory.vertices.size(); ++i) {
+            if (!isCompensated(donors[i], acceptors[i])) {
+                continue;
+            }
+            double signedPick = 0.0;
+            for (const double value : signedDopingByNode[i]) {
+                if (std::abs(value) > std::abs(signedPick)) {
+                    signedPick = value;
+                }
+            }
+            if (signedPick > 0.0) {
+                donors[i] = std::abs(signedPick);
+                acceptors[i] = 0.0;
+            } else if (signedPick < 0.0) {
+                donors[i] = 0.0;
+                acceptors[i] = std::abs(signedPick);
+            }
+        }
+    } else if (options.compensatedDopingPolicy != "reported") {
+        throw std::invalid_argument(
+            "SentaurusTdrExportOptions: compensatedDopingPolicy must be 'reported' or "
+            "'dominant_signed_region'.");
+    }
+
     {
         std::ofstream out(outDir / "doping.csv");
         out << "node_id,donors_cm3,acceptors_cm3\n";
         for (std::size_t i = 0; i < inventory.vertices.size(); ++i) {
             out << i << "," << donors[i] << "," << acceptors[i] << "\n";
         }
+    }
+    {
+        nlohmann::json dopingMetadata;
+        dopingMetadata["schema"] = "vela.sentaurus_tdr.doping_metadata.v1";
+        dopingMetadata["compensated_nodes"] = {
+            {"policy", options.compensatedDopingPolicy},
+            {"count", 0},
+            {"nodes", nlohmann::json::array()},
+        };
+        for (std::size_t i = 0; i < inventory.vertices.size(); ++i) {
+            const double donor = originalDonors[i];
+            const double acceptor = originalAcceptors[i];
+            if (isCompensated(donor, acceptor)) {
+                const bool resolved =
+                    donors[i] != originalDonors[i] || acceptors[i] != originalAcceptors[i];
+                dopingMetadata["compensated_nodes"]["nodes"].push_back({
+                    {"node_id", i},
+                    {"donors_cm3", donor},
+                    {"acceptors_cm3", acceptor},
+                    {"policy", options.compensatedDopingPolicy},
+                    {"resolved", resolved},
+                    {"resolved_donors_cm3", donors[i]},
+                    {"resolved_acceptors_cm3", acceptors[i]},
+                });
+            }
+        }
+        dopingMetadata["compensated_nodes"]["count"] =
+            dopingMetadata["compensated_nodes"]["nodes"].size();
+
+        std::ofstream out(outDir / "doping_metadata.json");
+        out << dopingMetadata.dump(2) << "\n";
     }
 
     for (const auto& field : inventory.fields) {

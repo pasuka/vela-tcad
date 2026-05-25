@@ -807,7 +807,8 @@ def resolve_source(source_dir: Path, name: str) -> Path:
 def run_tdr_importer(tdr_importer: str | None,
                      tdr_path: Path,
                      inventory_path: Path | None,
-                     export_dir: Path | None) -> None:
+                     export_dir: Path | None,
+                     compensated_doping_policy: str = "reported") -> None:
     if inventory_path is not None:
         inventory_path.parent.mkdir(parents=True, exist_ok=True)
     if export_dir is not None:
@@ -821,6 +822,7 @@ def run_tdr_importer(tdr_importer: str | None,
         command.extend(["--inventory-json", str(inventory_path)])
     if export_dir is not None:
         command.extend(["--export-dir", str(export_dir)])
+        command.extend(["--compensated-doping-policy", compensated_doping_policy])
     run_command(command, cwd=REPO)
 
 
@@ -847,6 +849,8 @@ def patch_reference_deck(deck_path: Path,
     deck["sweep"]["start"] = start
     deck["sweep"]["stop"] = stop
     deck["sweep"]["step"] = max_step if max_step is not None and max_step > 0.0 else (stop - start) / 80.0
+    if "vela_stop" in sim:
+        deck["sweep"]["stop"] = float(sim["vela_stop"])
     if "vela_step" in sim:
         deck["sweep"]["step"] = float(sim["vela_step"])
     deck["sweep"]["write_vtk"] = False
@@ -860,7 +864,8 @@ def patch_reference_deck(deck_path: Path,
         "cmd_summary": cmd_summary,
         "source_simulation": sim,
     }
-    if sim.get("kind") == "iv":
+    solver_method = str(deck.get("solver", {}).get("method", "gummel")).lower()
+    if sim.get("kind") == "iv" and solver_method == "gummel":
         solver = deck.setdefault("solver", {})
         solver["max_iter"] = max(int(solver.get("max_iter", 0)), 150)
         solver["reltol"] = min(float(solver.get("reltol", 1.0e-6)), 1.0e-6)
@@ -960,6 +965,10 @@ def reference_command(args: argparse.Namespace) -> None:
     generated: list[str] = []
     warnings: list[str] = []
     unsupported: set[str] = set()
+    tdr_doping = config.get("tdr_doping", {})
+    compensated_policy = "reported"
+    if isinstance(tdr_doping, dict):
+        compensated_policy = str(tdr_doping.get("compensated_node_policy", compensated_policy))
 
     sde_summary_path = output_dir / "sde_summary.json"
     sde_summary = parse_sde(resolve_source(source_dir, str(config["sde_cmd"])))
@@ -968,12 +977,19 @@ def reference_command(args: argparse.Namespace) -> None:
 
     inventories_dir = output_dir / "tdr_inventory"
     mesh_tdr = resolve_source(source_dir, str(config["mesh_tdr"]))
-    run_tdr_importer(args.tdr_importer, mesh_tdr, inventories_dir / "mesh.json", output_dir)
+    run_tdr_importer(
+        args.tdr_importer,
+        mesh_tdr,
+        inventories_dir / "mesh.json",
+        output_dir,
+        compensated_policy,
+    )
     generated.extend([
         "nodes.csv",
         "elements.csv",
         "contacts.csv",
         "doping.csv",
+        "doping_metadata.json",
         "metadata.json",
         "field_manifest.json",
         "tdr_inventory/mesh.json",
@@ -1055,7 +1071,11 @@ def reference_command(args: argparse.Namespace) -> None:
             report_json = output_dir / "reports" / f"{case_name}_{sim_name}_comparison.json"
             report_md = output_dir / "reports" / f"{case_name}_{sim_name}_comparison.md"
             compare_kind = str(sim.get("comparison_kind", "iv"))
-            require_trend_match = bool(sim.get("require_trend_match", kind != "bv"))
+            comparison = sim.get("comparison", {})
+            if not isinstance(comparison, dict):
+                comparison = {}
+            require_trend_match = bool(
+                comparison.get("require_trend_match", sim.get("require_trend_match", kind != "bv")))
             compare_command = [
                 sys.executable,
                 str(REPO / "scripts" / "compare_reference_curves.py"),
@@ -1070,8 +1090,24 @@ def reference_command(args: argparse.Namespace) -> None:
                 "--kind",
                 compare_kind,
                 "--min-points",
-                str(int(sim.get("comparison_min_points", 2))),
+                str(int(comparison.get("min_points", sim.get("comparison_min_points", 2)))),
             ]
+            if "candidate_scale" in comparison:
+                compare_command.extend(["--candidate-scale", str(comparison["candidate_scale"])])
+            if "bias_min" in comparison:
+                compare_command.extend(["--bias-min", str(comparison["bias_min"])])
+            if "bias_max" in comparison:
+                compare_command.extend(["--bias-max", str(comparison["bias_max"])])
+            if "max_orders_of_magnitude" in comparison:
+                compare_command.extend([
+                    "--max-orders-of-magnitude",
+                    str(comparison["max_orders_of_magnitude"]),
+                ])
+            if "max_relative_error" in comparison:
+                compare_command.extend([
+                    "--max-relative-error",
+                    str(comparison["max_relative_error"]),
+                ])
             if require_trend_match:
                 compare_command.append("--require-trend-match")
             run_command(
@@ -1142,6 +1178,7 @@ def project_command(args: argparse.Namespace) -> None:
         "elements.csv",
         "contacts.csv",
         "doping.csv",
+        "doping_metadata.json",
         "metadata.json",
         "field_manifest.json",
         "tdr_inventory.json",

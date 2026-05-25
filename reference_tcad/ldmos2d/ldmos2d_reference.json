@@ -1,0 +1,32 @@
+{
+  "schema": "vela.reference_tcad.checked_in.v1",
+  "case": "ldmos2d",
+  "device": "ldmos2d",
+  "mesh": "vela/mesh.json",
+  "simulations": [
+    {
+      "name": "iv",
+      "deck": "simulation_iv.json",
+      "candidate": "ldmos2d_iv.csv",
+      "reference_curve": "ldmos2d_iv_reference.csv",
+      "report_json": "ldmos2d_iv_comparison.json",
+      "kind": "iv"
+    },
+    {
+      "name": "bv",
+      "deck": "simulation_bv.json",
+      "candidate": "ldmos2d_bv.csv",
+      "reference_curve": "ldmos2d_bv_reference.csv",
+      "report_json": "ldmos2d_bv_comparison.json",
+      "kind": "bv"
+    },
+    {
+      "name": "fieldplate",
+      "deck": "simulation_bv_fieldplate.json",
+      "candidate": "ldmos2d_fieldplate.csv",
+      "reference_curve": "ldmos2d_fieldplate_reference.csv",
+      "report_json": "ldmos2d_fieldplate_comparison.json",
+      "kind": "bv"
+    }
+  ]
+}

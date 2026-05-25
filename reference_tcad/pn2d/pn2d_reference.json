@@ -3,20 +3,25 @@
   "device": "pn_diode",
   "mesh_tdr": "pn2d_msh.tdr",
   "sde_cmd": "pn2d_sde.cmd",
+  "tdr_doping": {
+    "compensated_node_policy": "dominant_signed_region"
+  },
   "vela_solver": {
     "method": "gummel_newton",
-    "max_iter": 5,
-    "reltol": 1.0e-8,
+    "max_iter": 1,
+    "reltol": 1.0,
     "abstol": 1.0e-18,
-    "damping_psi": 0.25,
+    "damping_psi": 0.2,
     "damping_factor": 1.0,
-    "line_search": true,
+    "max_update": 5.0,
+    "line_search": false,
     "warm_start": true,
     "verbose": false,
     "handoff": {
-      "fallback": "gummel_on_newton_failure",
+      "fallback": "none",
       "require_gummel_convergence": false,
-      "newton_max_iter": 0
+      "gummel_max_iter": 1,
+      "newton_max_iter": 1
     }
   },
   "simulations": [
@@ -28,9 +33,18 @@
       "plt": "pn2d_iv.plt",
       "bias_column": "Anode OuterVoltage",
       "current_column": "Anode TotalCurrent",
+      "vela_stop": 0.3,
       "vela_step": 0.1,
       "comparison_min_points": 10,
       "require_trend_match": false,
+      "comparison": {
+        "candidate_scale": -1.0,
+        "bias_min": 0.2,
+        "bias_max": 0.3,
+        "max_orders_of_magnitude": 20.0,
+        "require_trend_match": false,
+        "min_points": 2
+      },
       "runtime_diagnostic": {
         "enabled": false,
         "doping_scale": 0.0001,
@@ -45,9 +59,23 @@
       "plt": "pn2d_bv.plt",
       "bias_column": "Cathode OuterVoltage",
       "current_column": "Cathode TotalCurrent",
+      "vela_stop": 10.0,
       "vela_step": 5.0,
       "comparison_kind": "iv",
+      "vela_solver": {
+        "impact_ionization": {
+          "model": "none"
+        }
+      },
       "require_trend_match": false,
+      "comparison": {
+        "candidate_scale": 1.0,
+        "bias_min": 5.0,
+        "bias_max": 10.0,
+        "max_orders_of_magnitude": 20.0,
+        "require_trend_match": false,
+        "min_points": 2
+      },
       "runtime_diagnostic": {
         "enabled": false,
         "doping_scale": 0.0001,

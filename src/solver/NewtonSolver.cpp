@@ -112,6 +112,7 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.warmStart = json.value("warm_start", cfg.warmStart);
     cfg.diagnostics = json.value("diagnostics", cfg.diagnostics);
     cfg.diagnostics = json.value("diagnostic_history", cfg.diagnostics);
+    cfg.maxUpdate = json.value("max_update", cfg.maxUpdate);
     cfg.finiteDifferenceStep = json.value("finite_difference_step", cfg.finiteDifferenceStep);
     cfg.jacobian = json.value("jacobian", cfg.jacobian);
     cfg.residualNorm = json.value("residual_norm", cfg.residualNorm);
@@ -194,6 +195,12 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (cfg.jacobian != "analytic" && cfg.jacobian != "finite_difference")
         throw std::invalid_argument(
             "newtonConfigFromJson: jacobian must be 'analytic' or 'finite_difference'.");
+    if (cfg.maxUpdate < 0.0 || !std::isfinite(cfg.maxUpdate))
+        throw std::invalid_argument(
+            "newtonConfigFromJson: max_update must be non-negative and finite.");
+    if (cfg.finiteDifferenceStep <= 0.0 || !std::isfinite(cfg.finiteDifferenceStep))
+        throw std::invalid_argument(
+            "newtonConfigFromJson: finite_difference_step must be positive and finite.");
     if (cfg.residualNorm != "block" && cfg.residualNorm != "l2")
         throw std::invalid_argument(
             "newtonConfigFromJson: residual_norm must be 'block' or 'l2'.");
@@ -429,8 +436,11 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     result.finalResidualNorm = initialNorm;
 
     if (cfg_.verbose) {
+        const ResidualBlockNormValue blocks = ResidualNorm::computeBlocks(r, mesh_.numNodes());
         std::cout << "Newton iter 0 residual=" << initialNorm
-                  << " step=0 damping=0\n";
+                  << " step=0 damping=0"
+                  << " blocks=(" << blocks.psi << ',' << blocks.phin << ','
+                  << blocks.phip << ")\n";
     }
 
     if (initialNorm <= cfg_.abstol) {
@@ -467,6 +477,11 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
                           << " damping=0 step=0 (linear solve failed)\n";
             }
             return result;
+        }
+        if (cfg_.maxUpdate > 0.0) {
+            const Real maxAbsStep = step.cwiseAbs().maxCoeff();
+            if (maxAbsStep > cfg_.maxUpdate)
+                step *= cfg_.maxUpdate / maxAbsStep;
         }
         const Real stepNorm = step.norm();
 
@@ -515,10 +530,14 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             info.lineSearchHistory = std::move(ls.history);
         result.history.push_back(std::move(info));
         if (cfg_.verbose) {
+            const ResidualBlockNormValue blocks =
+                ResidualNorm::computeBlocks(r, mesh_.numNodes());
             std::cout << "Newton iter " << iter
                       << " residual=" << residualNorm
                       << " step=" << appliedStepNorm
-                      << " damping=" << ls.damping << '\n';
+                      << " damping=" << ls.damping
+                      << " blocks=(" << blocks.psi << ',' << blocks.phin << ','
+                      << blocks.phip << ")\n";
         }
 
         const Real rel = result.history.back().relativeResidualNorm;

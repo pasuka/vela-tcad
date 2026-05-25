@@ -252,6 +252,46 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             self.assertEqual(bad_report["status"], "fail")
             self.assertTrue(any("trend" in failure for failure in bad_report["failures"]))
 
+    def test_compare_reference_curves_interpolates_by_bias(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_reference_bias_match_") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.csv"
+            candidate = root / "candidate.csv"
+            out_json = root / "report.json"
+            out_md = root / "report.md"
+            self._write_csv(reference, ["bias_V", "current_total"], [
+                [0.0, 1.0e-12],
+                [0.5, 1.0e-9],
+                [1.0, 1.0e-6],
+            ])
+            self._write_csv(candidate, ["bias_V", "current_total"], [
+                [0.0, -1.0e-12],
+                [0.25, -3.0e-11],
+                [0.75, -2.0e-9],
+                [1.0, -1.0e-6],
+            ])
+
+            subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "compare_reference_curves.py"),
+                "--reference", str(reference),
+                "--candidate", str(candidate),
+                "--output-json", str(out_json),
+                "--output-md", str(out_md),
+                "--kind", "iv",
+                "--candidate-scale", "-1.0",
+                "--bias-min", "0.5",
+                "--bias-max", "1.0",
+                "--max-orders-of-magnitude", "0.25",
+                "--require-trend-match",
+            ], check=True, cwd=REPO)
+
+            report = json.loads(out_json.read_text())
+            self.assertEqual(report["status"], "pass")
+            self.assertEqual(report["iv"]["points_compared"], 2)
+            self.assertEqual(report["iv"]["reference_bias_range"], [0.5, 1.0])
+            self.assertEqual(report["iv"]["candidate_scale"], -1.0)
+
     def test_checked_in_pn_validation_assets_are_complete(self) -> None:
         pn_dir = REPO / "reference_tcad" / "pn_diode"
         vela_dir = pn_dir / "vela"
@@ -304,6 +344,38 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             "no calibration claim",
         ]:
             self.assertIn(required, doc)
+
+    def test_checked_in_reference_configs_cover_device_fixtures(self) -> None:
+        expected = {
+            "nmos2d": ["idvd", "idvg", "idvg_surface", "cv", "bv"],
+            "pmos2d": ["idvd", "idvg", "idvg_surface", "cv", "bv"],
+            "ldmos2d": ["iv", "bv", "fieldplate"],
+            "igbt2d": ["iv", "high_injection_iv", "charge_cv", "bv", "bv_ii"],
+        }
+        for device, simulations in expected.items():
+            with self.subTest(device=device):
+                path = REPO / "reference_tcad" / device / f"{device}_reference.json"
+                self.assertTrue(path.is_file(), path)
+                config = json.loads(path.read_text())
+                self.assertEqual(config["case"], device)
+                self.assertEqual(config["schema"], "vela.reference_tcad.checked_in.v1")
+                self.assertEqual(
+                    [sim["name"] for sim in config["simulations"]],
+                    simulations,
+                )
+                for sim in config["simulations"]:
+                    vela = REPO / "reference_tcad" / device / "vela" / sim["deck"]
+                    reference = (
+                        REPO
+                        / "reference_tcad"
+                        / device
+                        / "reference_curves"
+                        / sim["reference_curve"]
+                    )
+                    report = REPO / "reference_tcad" / device / "reports" / sim["report_json"]
+                    self.assertTrue(vela.is_file(), vela)
+                    self.assertTrue(reference.is_file(), reference)
+                    self.assertTrue(report.is_file(), report)
 
     def test_checked_in_mos_validation_assets_are_complete(self) -> None:
         cases = [

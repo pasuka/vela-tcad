@@ -47,10 +47,17 @@ struct SentaurusTdrInventory {
     const SentaurusTdrField* findField(const std::string& name, int regionIndex) const;
 };
 
+struct SentaurusTdrExportOptions {
+    std::string compensatedDopingPolicy = "reported";
+};
+
 class SentaurusTdrReader {
 public:
     SentaurusTdrInventory readInventory(const std::string& filename) const;
     void exportNeutral(const std::string& filename, const std::string& outputDirectory) const;
+    void exportNeutral(const std::string& filename,
+                       const std::string& outputDirectory,
+                       const SentaurusTdrExportOptions& options) const;
 };
 
 } // namespace vela

@@ -30,6 +30,7 @@ struct NewtonConfig {
     bool verbose = true;
     bool warmStart = false; ///< Preserve supplied quasi-Fermi potentials instead of resetting interiors.
     bool diagnostics = false; ///< Store detailed line-search diagnostics in NewtonResult::history.
+    Real maxUpdate = 0.0; ///< Optional infinity-norm cap on one Newton update in solver unknown units.
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
     std::string residualNorm = "block"; ///< "block" or "l2" convergence/line-search norm

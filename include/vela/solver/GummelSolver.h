@@ -53,6 +53,7 @@ struct GummelConfig {
     double dampingPsi  = 1.0;   ///< Damping factor for Poisson update (0 < alpha <= 1)
     double taun        = 1.0e-7; ///< Electron SRH lifetime [s]
     double taup        = 1.0e-7; ///< Hole SRH lifetime [s]
+    double carrierFloor = 1.0; ///< Minimum solved carrier concentration [m^-3] for quasi-Fermi consistency.
     MobilityModelConfig mobility{}; ///< Mobility model configuration
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
     ImpactIonizationModelConfig impactIonization; ///< Avalanche generation model.

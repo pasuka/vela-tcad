@@ -21,10 +21,18 @@ Each device directory can contain:
 - `vela/simulation_*.json`: Vela decks using `scaling.mode = "unit_scaling"`
 - `vela/*.csv`: checked-in Vela candidate curve outputs
 - `reports/*.json` and `reports/*.md`: generated comparison reports
+- `<device>_reference.json`: metadata inventory for checked-in Vela/reference
+  curve fixtures
 
 Only the README files and validation notes are hand-written. Files under
 `reports/` are generated comparison outputs and should be regenerated through
 the tool workflow instead of manually edited.
+
+Checked-in fixture inventories use schema
+`vela.reference_tcad.checked_in.v1`. These configs list the mesh, Vela decks,
+candidate CSVs, reference curves, comparison reports, and curve kind for each
+reusable sample. They are metadata-only for checked-in CSV fixtures; generated
+Sentaurus imports use `vela.reference_tcad.sentaurus_reference.v1`.
 
 ## Tools
 

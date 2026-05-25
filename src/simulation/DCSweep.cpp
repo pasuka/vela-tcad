@@ -40,6 +40,7 @@ enum class SolverMethod {
 struct HybridHandoffConfig {
     bool fallbackToGummelOnNewtonFailure = false;
     bool requireGummelConvergence = true;
+    int gummelMaxIter = -1;
     int newtonMaxIter = -1;
 };
 
@@ -274,6 +275,12 @@ HybridHandoffConfig hybridHandoffConfigFromJson(const nlohmann::json& solverJson
 
     hybrid.requireGummelConvergence =
         handoff.value("require_gummel_convergence", hybrid.requireGummelConvergence);
+    if (handoff.contains("gummel_max_iter")) {
+        hybrid.gummelMaxIter = handoff.at("gummel_max_iter").get<int>();
+        if (hybrid.gummelMaxIter < 0)
+            throw std::invalid_argument(
+                "DCSweep: solver.handoff.gummel_max_iter must be non-negative.");
+    }
     if (handoff.contains("newton_max_iter")) {
         hybrid.newtonMaxIter = handoff.at("newton_max_iter").get<int>();
         if (hybrid.newtonMaxIter < 0)
@@ -614,7 +621,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     CSVWriter csv(sweep.csvFile);
     std::vector<std::string> header = {"mode", "bias_contact", "bias_V",
         "current_contact", "current_electron", "current_hole", "current_total",
-        "converged", "iterations", "step_diagnostics", "validation_diagnostics"};
+        "converged", "iterations", "solver_method", "gummel_iterations",
+        "newton_iterations", "handoff_stage", "step_diagnostics",
+        "validation_diagnostics"};
     const bool writeUnitScaledColumns = sweep.scaling.isUnitScaling();
     if (writeUnitScaledColumns) {
         header.push_back("current_total_A_per_um");
@@ -710,10 +719,13 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 attempt.handoffStage = solverConverged ? "newton" : "newton_failed";
                 sol = std::move(result.solution);
             } else if (solverMethod == SolverMethod::GummelNewton) {
+                GummelConfig initializerGummel = gummel;
+                if (hybrid.gummelMaxIter >= 0)
+                    initializerGummel.maxIter = hybrid.gummelMaxIter;
                 DDSolution gummelInitial = initial != nullptr
-                    ? runGummel(mesh, matdb, doping, biases, contactSpecs, gummel, *initial,
+                    ? runGummel(mesh, matdb, doping, biases, contactSpecs, initializerGummel, *initial,
                                 fixedChargeSpecs, sheetChargeSpecs)
-                    : runGummel(mesh, matdb, doping, biases, contactSpecs, gummel,
+                    : runGummel(mesh, matdb, doping, biases, contactSpecs, initializerGummel,
                                 fixedChargeSpecs, sheetChargeSpecs);
                 attempt.solverMethod = "gummel_newton";
                 attempt.gummelIterations = gummelInitial.iters;
@@ -921,6 +933,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             formatReal(point.totalCurrent),
             point.converged ? "1" : "0",
             std::to_string(point.iterations),
+            point.solverMethod,
+            std::to_string(point.gummelIterations),
+            std::to_string(point.newtonIterations),
+            point.handoffStage,
             stepDiagnostics(point),
             point.validationDiagnostics};
         if (writeUnitScaledColumns) {

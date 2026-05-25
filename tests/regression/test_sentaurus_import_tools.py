@@ -427,6 +427,9 @@ Data {
                 "device": "pn_diode",
                 "mesh_tdr": "pn2d_msh.tdr",
                 "sde_cmd": "pn2d_sde.cmd",
+                "tdr_doping": {
+                    "compensated_node_policy": "dominant_signed_region",
+                },
                 "vela_solver": {
                     "method": "gummel_newton",
                     "max_iter": 40,
@@ -482,6 +485,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--tdr", required=True)
 parser.add_argument("--inventory-json")
 parser.add_argument("--export-dir")
+parser.add_argument("--compensated-doping-policy", default="reported")
 args = parser.parse_args()
 if args.export_dir:
     out = Path(args.export_dir)
@@ -496,6 +500,7 @@ if args.export_dir:
     write_csv(out / "elements.csv", ["id", "node0", "node1", "node2", "region", "material"], [[0, 0, 1, 4, "R.Si", "Si"], [1, 0, 4, 3, "R.Si", "Si"], [2, 1, 2, 5, "R.NRegion", "Si"], [3, 1, 5, 4, "R.NRegion", "Si"]])
     write_csv(out / "contacts.csv", ["name", "node_ids", "region"], [["Anode", "0;3", "R.Si"], ["Cathode", "2;5", "R.NRegion"]])
     write_csv(out / "doping.csv", ["node_id", "donors_cm3", "acceptors_cm3"], [[0, 0, 1e17], [1, 0, 1e17], [2, 1e17, 0], [3, 0, 1e17], [4, 0, 1e17], [5, 1e17, 0]])
+    (out / "doping_metadata.json").write_text(json.dumps({"compensated_nodes": {"policy": args.compensated_doping_policy}}, indent=2) + "\\n")
     (out / "metadata.json").write_text(json.dumps({"vertex_count": 6, "region_count": 2, "dataset_count": 0}, indent=2) + "\\n")
     (out / "field_manifest.json").write_text(json.dumps({"fields": []}, indent=2) + "\\n")
 if args.inventory_json:
@@ -574,6 +579,12 @@ with out.open("w", newline="") as handle:
             self.assertEqual(manifest["schema"], "vela.reference_tcad.sentaurus_reference.v1")
             self.assertEqual(manifest["case"], "pn2d")
             self.assertFalse(manifest["commit_policy"]["raw_sentaurus_artifacts"])
+            self.assertIn("doping_metadata.json", manifest["generated"])
+            doping_metadata = json.loads((output / "doping_metadata.json").read_text())
+            self.assertEqual(
+                doping_metadata["compensated_nodes"]["policy"],
+                "dominant_signed_region",
+            )
             self.assertIn("Avalanche", manifest["unsupported_physics"])
             self.assertIn("reports/pn2d_iv_comparison.json", manifest["comparison_reports"])
             self.assertIn("Fermi statistics approximated by Boltzmann carrier statistics", manifest["warnings"])

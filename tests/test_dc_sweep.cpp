@@ -202,6 +202,15 @@ std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& c
     return rows;
 }
 
+std::string readTextFile(const std::filesystem::path& path)
+{
+    std::ifstream input(path);
+    REQUIRE(input.is_open());
+    std::ostringstream ss;
+    ss << input.rdbuf();
+    return ss.str();
+}
+
 void writeNodeDopingCsv(const std::filesystem::path& csvPath,
                         const std::vector<std::tuple<Index, Real, Real>>& rows)
 {
@@ -354,7 +363,8 @@ TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV da
     REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
                                                      "current_contact", "current_electron", "current_hole",
                                                      "current_total", "converged", "iterations",
-                                                     "step_diagnostics", "validation_diagnostics"});
+                                                     "solver_method", "gummel_iterations", "newton_iterations",
+                                                     "handoff_stage", "step_diagnostics", "validation_diagnostics"});
 }
 
 TEST_CASE("DCSweep: unit_scaling CSV appends per-micron currents and V-per-cm field",
@@ -763,6 +773,8 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
         REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
                                                          "current_contact", "current_electron", "current_hole",
                                                          "current_total", "converged", "iterations",
+                                                         "solver_method", "gummel_iterations", "newton_iterations",
+                                                         "handoff_stage",
                                                          "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
                                                          "capacitance_F_per_m"});
         REQUIRE(rows.at(1).at(0) == "cv_quasistatic");
@@ -812,6 +824,8 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
         REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
                                                          "current_contact", "current_electron", "current_hole",
                                                          "current_total", "converged", "iterations",
+                                                         "solver_method", "gummel_iterations", "newton_iterations",
+                                                         "handoff_stage",
                                                          "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
                                                          "capacitance_F_per_m", "charge_gate_C_per_m",
                                                          "capacitance_Canode_gate_F_per_m", "charge_source_C_per_m",
@@ -863,6 +877,8 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
         REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
                                                          "current_contact", "current_electron", "current_hole",
                                                          "current_total", "converged", "iterations",
+                                                         "solver_method", "gummel_iterations", "newton_iterations",
+                                                         "handoff_stage",
                                                          "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
                                                          "current_jump_ratio", "breakdown_detected",
                                                          "breakdown_voltage", "criterion", "last_stable_bias",
@@ -900,6 +916,8 @@ TEST_CASE("DCSweep: LDMOS BV diagnostic deck writes complete schema", "[dc_sweep
     REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
                                                      "current_contact", "current_electron", "current_hole",
                                                      "current_total", "converged", "iterations",
+                                                     "solver_method", "gummel_iterations", "newton_iterations",
+                                                     "handoff_stage",
                                                      "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
                                                      "current_jump_ratio", "breakdown_detected",
                                                      "breakdown_voltage", "criterion", "last_stable_bias",
@@ -956,12 +974,14 @@ TEST_CASE("DCSweep: BV reverse start failure records failed diagnostic row", "[d
     REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
                                                      "current_contact", "current_electron", "current_hole",
                                                      "current_total", "converged", "iterations",
+                                                     "solver_method", "gummel_iterations", "newton_iterations",
+                                                     "handoff_stage",
                                                      "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
                                                      "current_jump_ratio", "breakdown_detected",
                                                      "breakdown_voltage", "criterion", "last_stable_bias",
                                                      "failed_bias", "failure_reason"});
-    REQUIRE(rows.at(1).at(15).empty());
-    REQUIRE(rows.at(1).at(18) == "non_convergence");
+    REQUIRE(rows.at(1).at(19).empty());
+    REQUIRE(rows.at(1).at(22) == "non_convergence");
 }
 
 TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_sweep]")
@@ -1323,6 +1343,43 @@ TEST_CASE("DCSweep: hybrid Gummel-Newton method is reachable from config",
     REQUIRE(std::filesystem::exists(csvPath));
 }
 
+TEST_CASE("DCSweep: CSV records hybrid solver handoff provenance",
+          "[dc_sweep][gummel_newton][csv]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "handoff_columns.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 12},
+        {"reltol", 1.0e-8},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.35},
+        {"line_search", true},
+        {"warm_start", true},
+        {"verbose", false},
+        {"handoff", {{"fallback", "none"}}}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().handoffStage == "newton");
+
+    const std::string csv = readTextFile(csvPath);
+    REQUIRE(csv.find("solver_method,gummel_iterations,newton_iterations,handoff_stage") !=
+            std::string::npos);
+    REQUIRE(csv.find("gummel_newton") != std::string::npos);
+    REQUIRE(csv.find(",newton,") != std::string::npos);
+}
+
 TEST_CASE("DCSweep: hybrid path uses Gummel iterations before Newton handoff",
           "[dc_sweep][gummel_newton]")
 {
@@ -1435,6 +1492,45 @@ TEST_CASE("DCSweep: hybrid fallback can accept converged Gummel when Newton fail
     REQUIRE(point.handoffStage == "gummel_fallback");
     REQUIRE(point.gummelIterations > 0);
     REQUIRE(point.newtonIterations == 0);
+}
+
+TEST_CASE("DCSweep: hybrid handoff has separate Gummel and Newton iteration budgets",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "hybrid_budget.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 0},
+        {"reltol", 1.0e-8},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.35},
+        {"line_search", true},
+        {"warm_start", true},
+        {"verbose", false},
+        {"handoff", {
+            {"fallback", "none"},
+            {"gummel_max_iter", 20},
+            {"newton_max_iter", 12}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    REQUIRE(result.points.front().gummelIterations > 0);
+    REQUIRE(result.points.front().newtonIterations <= 12);
+    REQUIRE(result.points.front().handoffStage == "newton");
 }
 
 TEST_CASE("DCSweep: hybrid strict policy rejects Newton failure",

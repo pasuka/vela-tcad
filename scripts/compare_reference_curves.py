@@ -43,6 +43,68 @@ def values(rows: list[dict[str, str]], column: str) -> list[float]:
     return out
 
 
+def finite_pairs(rows: list[dict[str, str]], value_column: str, scale: float) -> list[tuple[float, float]]:
+    pairs: list[tuple[float, float]] = []
+    for row in rows:
+        if "bias_V" not in row:
+            continue
+        bias_text = row.get("bias_V", "")
+        value_text = row.get(value_column, "")
+        if bias_text == "" or value_text == "":
+            continue
+        bias = float(bias_text)
+        value = float(value_text) * scale
+        if math.isfinite(bias) and math.isfinite(value):
+            pairs.append((bias, value))
+    return sorted(pairs)
+
+
+def interpolate_at(pairs: list[tuple[float, float]], bias: float) -> float | None:
+    if not pairs:
+        return None
+    if bias < pairs[0][0] or bias > pairs[-1][0]:
+        return None
+    for existing_bias, value in pairs:
+        if abs(existing_bias - bias) <= max(abs(bias), 1.0) * 1.0e-12:
+            return value
+    for (b0, v0), (b1, v1) in zip(pairs, pairs[1:]):
+        if b0 <= bias <= b1 and b1 != b0:
+            t = (bias - b0) / (b1 - b0)
+            return v0 + t * (v1 - v0)
+    return None
+
+
+def aligned_values(reference_rows: list[dict[str, str]],
+                   candidate_rows: list[dict[str, str]],
+                   ref_col: str,
+                   cand_col: str,
+                   candidate_scale: float,
+                   bias_min: float | None,
+                   bias_max: float | None) -> tuple[list[float], list[float], list[float]]:
+    ref_pairs = finite_pairs(reference_rows, ref_col, 1.0)
+    cand_pairs = finite_pairs(candidate_rows, cand_col, candidate_scale)
+    if not ref_pairs or not cand_pairs:
+        return [], values(reference_rows, ref_col), [
+            value * candidate_scale for value in values(candidate_rows, cand_col)
+        ]
+
+    biases: list[float] = []
+    ref_values: list[float] = []
+    cand_values: list[float] = []
+    for bias, ref_value in ref_pairs:
+        if bias_min is not None and bias < bias_min:
+            continue
+        if bias_max is not None and bias > bias_max:
+            continue
+        cand_value = interpolate_at(cand_pairs, bias)
+        if cand_value is None:
+            continue
+        biases.append(bias)
+        ref_values.append(ref_value)
+        cand_values.append(cand_value)
+    return biases, ref_values, cand_values
+
+
 def trend(values_: list[float]) -> str:
     clean = [value for value in values_ if math.isfinite(value)]
     if len(clean) < 2:
@@ -83,7 +145,10 @@ def relative_error(reference: list[float], candidate: list[float]) -> float | No
 
 def compare_series(kind: str,
                    reference_rows: list[dict[str, str]],
-                   candidate_rows: list[dict[str, str]]) -> dict[str, Any]:
+                   candidate_rows: list[dict[str, str]],
+                   candidate_scale: float,
+                   bias_min: float | None,
+                   bias_max: float | None) -> dict[str, Any]:
     ref_col = find_column(reference_rows, SERIES[kind])
     cand_col = find_column(candidate_rows, SERIES[kind])
     if ref_col is None or cand_col is None:
@@ -94,8 +159,15 @@ def compare_series(kind: str,
             "trend_match": False,
         }
 
-    ref_values = values(reference_rows, ref_col)
-    cand_values = values(candidate_rows, cand_col)
+    biases, ref_values, cand_values = aligned_values(
+        reference_rows,
+        candidate_rows,
+        ref_col,
+        cand_col,
+        candidate_scale,
+        bias_min,
+        bias_max,
+    )
     ref_trend = trend(ref_values)
     cand_trend = trend(cand_values)
     return {
@@ -103,6 +175,8 @@ def compare_series(kind: str,
         "reference_column": ref_col,
         "candidate_column": cand_col,
         "points_compared": min(len(ref_values), len(cand_values)),
+        "reference_bias_range": [biases[0], biases[-1]] if biases else None,
+        "candidate_scale": candidate_scale,
         "reference_trend": ref_trend,
         "candidate_trend": cand_trend,
         "trend_match": ref_trend == cand_trend,
@@ -167,6 +241,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-points", type=int, default=0)
     parser.add_argument("--max-relative-error", type=float)
     parser.add_argument("--max-orders-of-magnitude", type=float)
+    parser.add_argument("--candidate-scale", type=float, default=1.0)
+    parser.add_argument("--bias-min", type=float)
+    parser.add_argument("--bias-max", type=float)
     return parser.parse_args()
 
 
@@ -228,9 +305,15 @@ def main() -> int:
         "reference": str(args.reference),
         "candidate": str(args.candidate),
         "checked_kinds": kinds,
-        "iv": compare_series("iv", reference_rows, candidate_rows),
-        "cv": compare_series("cv", reference_rows, candidate_rows),
-        "bv": compare_series("bv", reference_rows, candidate_rows),
+        "iv": compare_series(
+            "iv", reference_rows, candidate_rows,
+            args.candidate_scale, args.bias_min, args.bias_max),
+        "cv": compare_series(
+            "cv", reference_rows, candidate_rows,
+            args.candidate_scale, args.bias_min, args.bias_max),
+        "bv": compare_series(
+            "bv", reference_rows, candidate_rows,
+            args.candidate_scale, args.bias_min, args.bias_max),
     }
     report["failures"] = evaluate_failures(report, args)
     report["status"] = "fail" if report["failures"] else "pass"

@@ -97,6 +97,12 @@ external TCAD display units, such as `current_total_A_per_um`,
 `current_electron_A_per_um`, `current_hole_A_per_um`, `charge_C_per_um`,
 `capacitance_F_per_um`, and `max_electric_field_V_per_cm`.
 
+DC sweep CSVs include solver provenance columns:
+- `solver_method`: selected nonlinear path, such as `gummel`, `newton`, or `gummel_newton`
+- `gummel_iterations`: iterations used by the Gummel stage for this bias point
+- `newton_iterations`: iterations used by the coupled Newton stage for this bias point
+- `handoff_stage`: final accepted stage or failure stage, such as `newton`, `gummel_failed`, `newton_failed`, or `gummel_fallback`
+
 ## Doping, regions, interfaces
 
 ### doping[] entries
@@ -257,12 +263,14 @@ Commonly used controls:
 
 Gummel-specific keys:
 - damping_psi
+- carrier_floor_m3
 - taun
 - taup
 - bandgap_narrowing
 
 Newton-specific keys:
 - damping_factor
+- max_update
 - line_search
 - warm_start
 - verbose
@@ -279,11 +287,18 @@ Newton-specific keys:
 Hybrid Gummel-Newton keys:
 - `handoff.fallback`: `none` or `gummel_on_newton_failure`
 - `handoff.require_gummel_convergence`: boolean, default `true`
+- `handoff.gummel_max_iter`: optional non-negative integer overriding only the
+  Gummel initializer iteration limit
 - `handoff.newton_max_iter`: optional non-negative integer overriding only the
   Newton handoff stage iteration limit
 
 Notes:
 - `line_search` and `damping_factor` apply to Newton config.
+- `max_update` is an optional non-negative infinity-norm cap on one Newton
+  update in solver unknown units; `0` disables the cap.
+- `carrier_floor_m3` is an optional non-negative Gummel carrier floor used to
+  keep reconstructed quasi-Fermi potentials consistent with solved carrier
+  densities.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 - With `scaling.mode: "unit_scaling"`, `bandgap_narrowing.reference_doping_m3`
   is read as `cm^-3` and normalized to `m^-3`.
@@ -294,9 +309,13 @@ default fallback policy is strict: a Newton failure fails the sweep point. Use
 `gummel_on_newton_failure` only for diagnostic curves where a finite Gummel
 result is preferable to aborting the sweep.
 
-Reference-import configs may also use `vela_step` on an individual simulation
-entry to override the generated Vela sweep step while preserving the reference
-curve. `runtime_diagnostic` is an optional simulation block:
+Reference-import configs may also use `vela_step` and `vela_stop` on an
+individual simulation entry to override the generated Vela sweep range while
+preserving the full imported reference curve. A simulation `comparison` block
+can pass curve gate options such as `candidate_scale`, `bias_min`, `bias_max`,
+`max_orders_of_magnitude`, `max_relative_error`, `min_points`, and
+`require_trend_match` to the comparison report. `runtime_diagnostic` is an
+optional simulation block:
 
 ```json
 "runtime_diagnostic": {
@@ -309,6 +328,18 @@ curve. `runtime_diagnostic` is an optional simulation block:
 When enabled, it creates an additional conservative runtime deck using
 region-average scaled doping. When disabled or omitted, the faithful deck is
 the executable comparison path.
+
+Sentaurus reference import may include:
+
+```json
+"tdr_doping": {
+  "compensated_node_policy": "reported"
+}
+```
+
+Supported policies:
+- `reported`: preserve `doping.csv` exactly as merged from region-local TDR fields and report compensated nodes in `doping_metadata.json`.
+- `dominant_signed_region`: when a global node receives equal donor and acceptor active concentrations, use the signed `DopingConcentration` field with the largest magnitude to choose a single majority dopant for the node, and record the rewrite in `doping_metadata.json`.
 
 ### bandgap_narrowing
 

@@ -65,7 +65,8 @@ nlohmann::json inventoryJson(const SentaurusTdrInventory& inventory)
 void usage()
 {
     std::cerr
-        << "Usage: sentaurus_import --tdr FILE [--inventory-json FILE] [--export-dir DIR]\n";
+        << "Usage: sentaurus_import --tdr FILE [--inventory-json FILE] [--export-dir DIR] "
+           "[--compensated-doping-policy reported|dominant_signed_region]\n";
 }
 
 } // namespace
@@ -76,6 +77,7 @@ int main(int argc, char** argv)
         std::string tdrPath;
         std::string inventoryPath;
         std::string exportDir;
+        SentaurusTdrExportOptions exportOptions;
         for (int i = 1; i < argc; ++i) {
             const std::string arg = argv[i];
             auto requireValue = [&](const char* option) -> std::string {
@@ -90,6 +92,8 @@ int main(int argc, char** argv)
                 inventoryPath = requireValue("--inventory-json");
             } else if (arg == "--export-dir") {
                 exportDir = requireValue("--export-dir");
+            } else if (arg == "--compensated-doping-policy") {
+                exportOptions.compensatedDopingPolicy = requireValue("--compensated-doping-policy");
             } else if (arg == "--help" || arg == "-h") {
                 usage();
                 return 0;
@@ -104,7 +108,7 @@ int main(int argc, char** argv)
 
         SentaurusTdrReader reader;
         if (!exportDir.empty()) {
-            reader.exportNeutral(tdrPath, exportDir);
+            reader.exportNeutral(tdrPath, exportDir, exportOptions);
         }
         const auto inventory = reader.readInventory(tdrPath);
         const auto json = inventoryJson(inventory);

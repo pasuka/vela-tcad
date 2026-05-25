@@ -102,6 +102,7 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.dampingPsi = json.value("damping_psi", cfg.dampingPsi);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
+    cfg.carrierFloor = json.value("carrier_floor_m3", cfg.carrierFloor);
     if (json.contains("mobility"))
         cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"), scaling);
     if (json.contains("bandgap_narrowing")) {
@@ -168,6 +169,9 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
 
     if (cfg.temperature_K <= 0.0)
         throw std::invalid_argument("gummelConfigFromJson: temperature_K must be positive.");
+    if (cfg.carrierFloor < 0.0 || !std::isfinite(cfg.carrierFloor))
+        throw std::invalid_argument(
+            "gummelConfigFromJson: carrier_floor_m3 must be non-negative and finite.");
 
     return cfg;
 }
@@ -441,6 +445,9 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     LinearSolver ls;
     int iters = 0;
     bool converged = false;
+    const double carrierFloorSolve = useScaledUnknowns
+        ? cfg.carrierFloor / ddScaling.C0
+        : cfg.carrierFloor;
 
     // ------------------------------------------------------------------
     // Gummel iteration
@@ -463,17 +470,23 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         assembler.applyDirichlet(nBCSolve);
         VectorXd n_new = ls.solve(assembler.matrix(), assembler.rhs());
 
-        // Enforce positivity (guard against small negative artefacts)
-        for (int ii = 0; ii < static_cast<int>(N); ++ii)
-            if (n_new(ii) < 0.0) { n_new(ii) = 0.0; }
+        // Enforce positivity and keep quasi-Fermi reconstruction well-defined.
+        for (Index i = 0; i < N; ++i) {
+            const int ii = static_cast<int>(i);
+            if (nBCSolve.find(i) == nBCSolve.end() && n_new(ii) < carrierFloorSolve)
+                n_new(ii) = carrierFloorSolve;
+        }
 
         // ---- c. Solve hole continuity for p ----
         assembler.assembleHoleContinuity(psi, n_new, p);
         assembler.applyDirichlet(pBCSolve);
         VectorXd p_new = ls.solve(assembler.matrix(), assembler.rhs());
 
-        for (int ii = 0; ii < static_cast<int>(N); ++ii)
-            if (p_new(ii) < 0.0) { p_new(ii) = 0.0; }
+        for (Index i = 0; i < N; ++i) {
+            const int ii = static_cast<int>(i);
+            if (pBCSolve.find(i) == pBCSolve.end() && p_new(ii) < carrierFloorSolve)
+                p_new(ii) = carrierFloorSolve;
+        }
 
         // ---- d. Update quasi-Fermi potentials ----
         for (Index i = 0; i < N; ++i) {

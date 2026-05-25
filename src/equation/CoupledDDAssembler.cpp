@@ -476,6 +476,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real u = dpsi / Vt_;
         const Real Bu = bernoulli(u);
         const Real dBu = bernoulliDerivative(u);
+        const Real Bminus = bernoulli(-u);
+        const Real dBminusDu = -bernoulliDerivative(-u);
 
         const Real eps = detail::edgeEpsilon(edgeCells_, mesh_, matdb_, e);
         const Real G = eps * couple_[e] / h;
@@ -494,16 +496,31 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
 
             const Real coef = mun * Vt_ * couple_[e] / h;
-            const Real factor = coef * ni_[static_cast<Index>(i)]
-                              * expPsi[static_cast<std::size_t>(j)];
-            const Real diff = expNegPhin[static_cast<std::size_t>(i)]
-                            - expNegPhin[static_cast<std::size_t>(j)];
-            const Real dF_dpsi_i = factor * (-dBu / Vt_) * diff;
-            const Real dF_dpsi_j = factor * ((dBu + Bu) / Vt_) * diff;
-            const Real dF_dphin_i = factor * Bu
-                                  * (-expNegPhin[static_cast<std::size_t>(i)] / Vt_);
-            const Real dF_dphin_j = factor * Bu
-                                  * ( expNegPhin[static_cast<std::size_t>(j)] / Vt_);
+            Real dF_dpsi_i = 0.0;
+            Real dF_dpsi_j = 0.0;
+            Real dF_dphin_i = 0.0;
+            Real dF_dphin_j = 0.0;
+            const Index idxI = static_cast<Index>(i);
+            const Index idxJ = static_cast<Index>(j);
+            if (ni_[idxI] == ni_[idxJ]) {
+                const Real factor = coef * ni_[idxI]
+                                  * expPsi[static_cast<std::size_t>(j)];
+                const Real diff = expNegPhin[static_cast<std::size_t>(i)]
+                                - expNegPhin[static_cast<std::size_t>(j)];
+                dF_dpsi_i = factor * (-dBu / Vt_) * diff;
+                dF_dpsi_j = factor * ((dBu + Bu) / Vt_) * diff;
+                dF_dphin_i = factor * Bu
+                           * (-expNegPhin[static_cast<std::size_t>(i)] / Vt_);
+                dF_dphin_j = factor * Bu
+                           * ( expNegPhin[static_cast<std::size_t>(j)] / Vt_);
+            } else {
+                dF_dpsi_i = coef / Vt_ *
+                    ((-dBminusDu + Bminus) * n(i) + dBu * n(j));
+                dF_dpsi_j = coef / Vt_ *
+                    (dBminusDu * n(i) - (dBu + Bu) * n(j));
+                dF_dphin_i = coef * Bminus * (-n(i) / Vt_);
+                dF_dphin_j = coef * Bu * (n(j) / Vt_);
+            }
 
             add(phinOffset() + i, psiOffset() + i, dF_dpsi_i);
             add(phinOffset() + i, psiOffset() + j, dF_dpsi_j);
@@ -525,16 +542,31 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
 
             const Real coef = mup * Vt_ * couple_[e] / h;
-            const Real factor = coef * ni_[static_cast<Index>(i)]
-                              * expNegPsi[static_cast<std::size_t>(i)];
-            const Real diff = expPhip[static_cast<std::size_t>(i)]
-                            - expPhip[static_cast<std::size_t>(j)];
-            const Real dF_dpsi_i = factor * (-(dBu + Bu) / Vt_) * diff;
-            const Real dF_dpsi_j = factor * (dBu / Vt_) * diff;
-            const Real dF_dphip_i = factor * Bu
-                                  * ( expPhip[static_cast<std::size_t>(i)] / Vt_);
-            const Real dF_dphip_j = factor * Bu
-                                  * (-expPhip[static_cast<std::size_t>(j)] / Vt_);
+            Real dF_dpsi_i = 0.0;
+            Real dF_dpsi_j = 0.0;
+            Real dF_dphip_i = 0.0;
+            Real dF_dphip_j = 0.0;
+            const Index idxI = static_cast<Index>(i);
+            const Index idxJ = static_cast<Index>(j);
+            if (ni_[idxI] == ni_[idxJ]) {
+                const Real factor = coef * ni_[idxI]
+                                  * expNegPsi[static_cast<std::size_t>(i)];
+                const Real diff = expPhip[static_cast<std::size_t>(i)]
+                                - expPhip[static_cast<std::size_t>(j)];
+                dF_dpsi_i = factor * (-(dBu + Bu) / Vt_) * diff;
+                dF_dpsi_j = factor * (dBu / Vt_) * diff;
+                dF_dphip_i = factor * Bu
+                           * ( expPhip[static_cast<std::size_t>(i)] / Vt_);
+                dF_dphip_j = factor * Bu
+                           * (-expPhip[static_cast<std::size_t>(j)] / Vt_);
+            } else {
+                dF_dpsi_i = coef / Vt_ *
+                    (-(dBu + Bu) * p(i) + dBminusDu * p(j));
+                dF_dpsi_j = coef / Vt_ *
+                    (dBu * p(i) + (-dBminusDu + Bminus) * p(j));
+                dF_dphip_i = coef * Bu * (p(i) / Vt_);
+                dF_dphip_j = coef * Bminus * (-p(j) / Vt_);
+            }
 
             add(phipOffset() + i, psiOffset() + i, dF_dpsi_i);
             add(phipOffset() + i, psiOffset() + j, dF_dpsi_j);

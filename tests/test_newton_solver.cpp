@@ -310,6 +310,49 @@ TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences on s
     REQUIRE(rel < 5.0e-5);
 }
 
+TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences with varying intrinsic density",
+          "[newton][coupled][bgn]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, {
+        {"n_region", 1.0e24, 0.0},
+        {"p_region", 0.0, 1.0e21},
+    });
+
+    CoupledDDAssembler assembler(
+        mesh,
+        matdb,
+        doping,
+        constants::Vt_300,
+        MobilityModelConfig{},
+        recombinationModelConfig({"none"}),
+        bandgapNarrowingConfig("slotboom"));
+
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.025);
+    state.phin = VectorXd::LinSpaced(N, 0.006, -0.008);
+    state.phip = VectorXd::LinSpaced(N, -0.007, 0.005);
+    const VectorXd x = assembler.pack(state);
+
+    CoupledDDBoundaryConditions bcs;
+    bcs.psi[0] = state.psi(0);
+    bcs.phin[0] = state.phin(0);
+    bcs.phip[0] = state.phip(0);
+    bcs.psi[2] = state.psi(2);
+    bcs.phin[2] = state.phin(2);
+    bcs.phip[2] = state.phip(2);
+
+    const SparseMatrixd Ja = assembler.assembleJacobian(x, bcs);
+    const SparseMatrixd Jfd = assembler.finiteDifferenceJacobian(x, bcs, 1.0e-7);
+    const Eigen::MatrixXd diff = Eigen::MatrixXd(Ja - Jfd);
+    const Eigen::MatrixXd ref = Eigen::MatrixXd(Jfd);
+    const Real rel = diff.norm() / std::max<Real>(1.0, ref.norm());
+
+    REQUIRE(rel < 1.0e-4);
+}
+
 TEST_CASE("CoupledDDAssembler: scaled state residual and Jacobian are consistent",
           "[newton][coupled][scaling]")
 {
@@ -472,11 +515,13 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
 {
     const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
         {"residual_norm", "block"},
+        {"max_update", 0.25},
         {"residual_weights", {{"psi", 0.25}, {"phin", 2.0}, {"phip", 3.0}}},
         {"residual_scales", {{"psi", 1.0e-18}, {"phin", 2.0e4}, {"phip", 3.0e4}}}
     });
 
     REQUIRE(cfg.residualNorm == "block");
+    REQUIRE(cfg.maxUpdate == Catch::Approx(0.25));
     REQUIRE(cfg.residualWeightPsi == Catch::Approx(0.25));
     REQUIRE(cfg.residualWeightPhin == Catch::Approx(2.0));
     REQUIRE(cfg.residualWeightPhip == Catch::Approx(3.0));
@@ -486,6 +531,9 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
 
     REQUIRE_THROWS_AS(
         newtonConfigFromJson(nlohmann::json{{"residual_norm", "unknown"}}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{"max_update", -1.0}}),
         std::invalid_argument);
 }
 
@@ -565,6 +613,30 @@ TEST_CASE("NewtonSolver: line search rejection returns last accepted state", "[n
     REQUIRE((result.solution.psi - initial.psi).norm() == Catch::Approx(0.0));
     REQUIRE((result.solution.phin - initial.phin).norm() == Catch::Approx(0.0));
     REQUIRE((result.solution.phip - initial.phip).norm() == Catch::Approx(0.0));
+}
+
+TEST_CASE("NewtonSolver: max_update limits a large Newton step before line search",
+          "[newton][line_search]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.maxIter = 1;
+    cfg.reltol = 0.0;
+    cfg.abstol = 0.0;
+    cfg.verbose = false;
+    cfg.lineSearch = false;
+    cfg.maxUpdate = 0.05;
+
+    const NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), cfg);
+
+    REQUIRE(result.iters > 0);
+    REQUIRE_FALSE(result.history.empty());
+    REQUIRE(result.history.front().rawStepNorm == Catch::Approx(result.history.front().stepNorm));
+    REQUIRE(result.history.front().stepNorm <=
+            std::sqrt(static_cast<Real>(3 * mesh.numNodes())) * cfg.maxUpdate);
 }
 
 TEST_CASE("NewtonSolver: optionally records line-search diagnostics in history", "[newton][diagnostics]")
