@@ -709,7 +709,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         ddScaling.L0 = sc.L0();
         ddScaling.permittivityReference_F_per_m = (11.7 * vela::constants::eps0);
     }
-    ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K, ddScaling);
+    ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K, ddScaling, sweepBgnConfig);
     TerminalCharge terminalCharge(mesh, doping);
     StoredCharge storedCharge(mesh);
     const bool hasMultiTerminalCharges = cfg.at("sweep").contains("terminal_charges");

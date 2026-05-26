@@ -24,7 +24,8 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
                                const DopingModel& doping,
                                MobilityModelConfig mobilityConfig,
                                Real temperature_K,
-                               DDScalingSpec scaling)
+                               DDScalingSpec scaling,
+                               BandgapNarrowingConfig bandgapNarrowingConfig)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
@@ -33,6 +34,13 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
     , mobility_(makeMobilityModel(mobilityConfig))
     , thermalVoltage_(validatedThermalVoltage(temperature_K))
     , scaling_(scaling)
+    , ni_(detail::buildValidatedEffectiveNodeNi(
+          "ContactCurrent",
+          mesh,
+          matdb,
+          doping,
+          bandgapNarrowingConfig,
+          validatedThermalVoltage(temperature_K)))
 {}
 
 
@@ -91,13 +99,45 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
             &mobilityConfig_,
             &solution.psi);
 
-        // SG fluxes in physical units
-        const Real electronFlux01 = (mun > 0.0)
-            ? sgElectronFlux(n_i, n_j, dpsi, thermalVoltage_, mun, edgeLength)
-            : 0.0;
-        const Real holeFlux01 = (mup > 0.0)
-            ? sgHoleFlux(p_i, p_j, dpsi, thermalVoltage_, mup, edgeLength)
-            : 0.0;
+        // SG fluxes in physical units.  Mirror CoupledDDAssembler residual:
+        // use the cancellation-free quasi-Fermi balanced form when both edge
+        // endpoints share the same effective intrinsic density, and fall back
+        // to the density-based form only when BGN makes ni node-dependent.
+        // The density-based form B(-u)*n0 - B(+u)*n1 suffers catastrophic
+        // cancellation when |dpsi|/Vt is large (e.g. >>1 at high forward bias)
+        // because B(-u) grows exponentially while B(+u) -> 0; tiny imbalance
+        // in (n0, n1) is then amplified by orders of magnitude, breaking
+        // discrete current conservation between contacts.
+        const Index idxI = edge.n0;
+        const Index idxJ = edge.n1;
+        const Real ni_i = ni_[idxI];
+        const Real ni_j = ni_[idxJ];
+        const Real phin_i = solution.phin(i);
+        const Real phin_j = solution.phin(j);
+        const Real phip_i = solution.phip(i);
+        const Real phip_j = solution.phip(j);
+
+        Real electronFlux01 = 0.0;
+        if (mun > 0.0) {
+            const Real coef = mun * thermalVoltage_ / edgeLength;
+            const Real nFlux = (ni_i == ni_j)
+                ? sgElectronContinuityFluxFromQuasiFermi(
+                      ni_i, psi_j, phin_i, phin_j, dpsi, thermalVoltage_, coef)
+                : sgElectronContinuityFlux(
+                      n_i, n_j, dpsi, thermalVoltage_, coef);
+            // sgElectronFlux = -sgElectronContinuityFlux by definition.
+            electronFlux01 = -nFlux;
+        }
+        Real holeFlux01 = 0.0;
+        if (mup > 0.0) {
+            const Real coef = mup * thermalVoltage_ / edgeLength;
+            const Real pFlux = (ni_i == ni_j)
+                ? sgHoleContinuityFluxFromQuasiFermi(
+                      ni_i, psi_i, phip_i, phip_j, dpsi, thermalVoltage_, coef)
+                : sgHoleContinuityFlux(
+                      p_i, p_j, dpsi, thermalVoltage_, coef);
+            holeFlux01 = -pFlux;
+        }
 
         // Algebraic SG split: J = J_drift + J_diffusion.
         const SGEdgeWeights weights = sgEdgeWeights(dpsi, thermalVoltage_);
@@ -138,9 +178,11 @@ ContactCurrentResult ContactCurrent::compute(
     const std::string& contactName,
     const MobilityModelConfig& mobilityConfig,
     Real temperature_K,
-    DDScalingSpec scaling)
+    DDScalingSpec scaling,
+    const BandgapNarrowingConfig& bandgapNarrowingConfig)
 {
-    return ContactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K, scaling).compute(solution, contactName);
+    return ContactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K, scaling, bandgapNarrowingConfig)
+        .compute(solution, contactName);
 }
 
 } // namespace vela

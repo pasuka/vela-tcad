@@ -4,6 +4,7 @@
 #include "vela/core/Types.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
+#include "vela/physics/BandgapNarrowing.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/MobilityModel.h"
 #include "vela/solver/GummelSolver.h"
@@ -33,7 +34,8 @@ public:
                    const DopingModel& doping,
                    MobilityModelConfig mobilityConfig = {},
                    Real temperature_K = constants::T0,
-                   DDScalingSpec scaling = {});
+                   DDScalingSpec scaling = {},
+                   BandgapNarrowingConfig bandgapNarrowingConfig = {});
 
     ContactCurrentResult compute(const DDSolution& solution,
                                  const std::string& contactName) const;
@@ -45,7 +47,8 @@ public:
                                         const std::string& contactName,
                                         const MobilityModelConfig& mobilityConfig = {},
                                         Real temperature_K = constants::T0,
-                                        DDScalingSpec scaling = {});
+                                        DDScalingSpec scaling = {},
+                                        const BandgapNarrowingConfig& bandgapNarrowingConfig = {});
 
 private:
     const DeviceMesh& mesh_;
@@ -56,6 +59,7 @@ private:
     std::unique_ptr<MobilityModel> mobility_;
     Real thermalVoltage_;
     DDScalingSpec scaling_;
+    std::vector<Real> ni_;
 };
 
 } // namespace vela
