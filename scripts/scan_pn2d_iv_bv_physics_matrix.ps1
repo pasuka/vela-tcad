@@ -15,11 +15,17 @@ $cases = @(
     @{ name = "iv_bgn_none"; kind = "iv"; recombination = @("srh", "auger"); bgn = "none"; mobility = "default" },
     @{ name = "iv_srh_tau1e-6"; kind = "iv"; recombination = @("srh"); bgn = "slotboom"; mobility = "default"; taun = 1.0e-6; taup = 1.0e-6 },
     @{ name = "iv_srh_tau1e-8"; kind = "iv"; recombination = @("srh"); bgn = "slotboom"; mobility = "default"; taun = 1.0e-8; taup = 1.0e-8 },
+    @{ name = "iv_srh_auger_half"; kind = "iv"; recombination = @("srh", "auger"); bgn = "slotboom"; mobility = "default"; augerCn = 1.4e-43; augerCp = 4.95e-44 },
+    @{ name = "iv_srh_auger_double"; kind = "iv"; recombination = @("srh", "auger"); bgn = "slotboom"; mobility = "default"; augerCn = 5.6e-43; augerCp = 1.98e-43 },
+    @{ name = "iv_auger_only"; kind = "iv"; recombination = @("auger"); bgn = "slotboom"; mobility = "default" },
     @{ name = "bv_recomb_none"; kind = "bv"; recombination = @("none"); bgn = "none"; mobility = "promoted_bv" },
     @{ name = "bv_recomb_srh"; kind = "bv"; recombination = @("srh"); bgn = "none"; mobility = "promoted_bv" },
     @{ name = "bv_recomb_srh_auger"; kind = "bv"; recombination = @("srh", "auger"); bgn = "none"; mobility = "promoted_bv" },
     @{ name = "bv_srh_tau1e-6"; kind = "bv"; recombination = @("srh"); bgn = "none"; mobility = "promoted_bv"; taun = 1.0e-6; taup = 1.0e-6 },
-    @{ name = "bv_srh_tau1e-8"; kind = "bv"; recombination = @("srh"); bgn = "none"; mobility = "promoted_bv"; taun = 1.0e-8; taup = 1.0e-8 }
+    @{ name = "bv_srh_tau1e-8"; kind = "bv"; recombination = @("srh"); bgn = "none"; mobility = "promoted_bv"; taun = 1.0e-8; taup = 1.0e-8 },
+    @{ name = "bv_srh_auger_half"; kind = "bv"; recombination = @("srh", "auger"); bgn = "none"; mobility = "promoted_bv"; augerCn = 1.4e-43; augerCp = 4.95e-44 },
+    @{ name = "bv_srh_auger_double"; kind = "bv"; recombination = @("srh", "auger"); bgn = "none"; mobility = "promoted_bv"; augerCn = 5.6e-43; augerCp = 1.98e-43 },
+    @{ name = "bv_auger_only"; kind = "bv"; recombination = @("auger"); bgn = "none"; mobility = "promoted_bv" }
 )
 
 function Get-InterpolatedValue($rows, [string]$column, [double]$bias, [double]$scale) {
@@ -84,6 +90,20 @@ function New-CaseConfig([hashtable]$case, [string]$ivBaseConfigPath, [string]$bv
             $cfg.solver | Add-Member -NotePropertyName "taup" -NotePropertyValue ([double]$case.taup)
         } else {
             $cfg.solver.taup = [double]$case.taup
+        }
+    }
+    if ($case.ContainsKey("augerCn")) {
+        if ($null -eq $cfg.solver.PSObject.Properties["auger_cn_m6_per_s"]) {
+            $cfg.solver | Add-Member -NotePropertyName "auger_cn_m6_per_s" -NotePropertyValue ([double]$case.augerCn)
+        } else {
+            $cfg.solver.auger_cn_m6_per_s = [double]$case.augerCn
+        }
+    }
+    if ($case.ContainsKey("augerCp")) {
+        if ($null -eq $cfg.solver.PSObject.Properties["auger_cp_m6_per_s"]) {
+            $cfg.solver | Add-Member -NotePropertyName "auger_cp_m6_per_s" -NotePropertyValue ([double]$case.augerCp)
+        } else {
+            $cfg.solver.auger_cp_m6_per_s = [double]$case.augerCp
         }
     }
 

@@ -363,6 +363,35 @@ Gate impact:
 - No IV/BV gate values are promoted by Task 3 itself; this is a config-surface
   prerequisite for the next recombination matrix probe.
 
+## Auger And Combined Recombination Matrix (Task 4)
+
+The physics matrix now includes:
+
+- SRH+Auger with Auger coefficients scaled down (`0.5x`) and up (`2.0x`)
+- Auger-only cases (`recombination: ["auger"]`) for SRH-decoupled behavior
+
+Measured with the same summary columns and target biases as prior matrix runs.
+
+| Case | Kind | Orders | Ratio at target | Gate impact |
+| --- | --- | ---: | ---: | --- |
+| iv_srh_auger_half | IV | 1.7843 | 0.0164 at 0.29 V | IV strongly worsened |
+| iv_srh_auger_double | IV | 0.5031 | 0.3139 at 0.29 V | essentially baseline IV |
+| iv_auger_only | IV | 0.8929 | 0.1287 at 0.29 V | IV worsened |
+| bv_srh_auger_half | BV | 1.1701 | 14.7956 at 0.05 V | no meaningful BV recovery |
+| bv_srh_auger_double | BV | 1.1752 | 14.9681 at 0.05 V | no meaningful BV recovery |
+| bv_auger_only | BV | 0.2801 | 0.4753 at 0.05 V | improved vs SRH+Auger, still worse than promoted BV gate |
+
+Task 4 takeaway:
+
+- Within SRH+Auger runs, scaling Auger coefficients over `0.5x` to `2.0x` does
+  not materially change the BV mismatch (still about `1.17` orders).
+- Auger-only improves BV compared with SRH+Auger, but it degrades IV and still
+  underperforms the promoted BV gate (`recombination: ["none"]`, `0.064`
+  orders).
+- No recombination parameter set in this matrix satisfies both IV and BV
+  criteria together, so recombination tuning remains insufficient as a unified
+  explanation for the IV slope and BV SRH jump.
+
 ## Candidate Mobility Impact: q_mu0p89_a0p89
 
 The `scripts/scan_pn2d_candidate_iv_bv.ps1` helper applies the same

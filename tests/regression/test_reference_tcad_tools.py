@@ -35,6 +35,12 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         self.assertIn("bv_srh_tau1e-8", text)
         self.assertIn("iv_srh_tau1e-6", text)
         self.assertIn("iv_srh_tau1e-8", text)
+        self.assertIn("iv_srh_auger_half", text)
+        self.assertIn("iv_srh_auger_double", text)
+        self.assertIn("iv_auger_only", text)
+        self.assertIn("bv_srh_auger_half", text)
+        self.assertIn("bv_srh_auger_double", text)
+        self.assertIn("bv_auger_only", text)
         self.assertIn("pn2d_iv_bv_physics_matrix_summary.csv", text)
 
     def test_pn2d_iv_resolution_scan_script_exists(self) -> None:
