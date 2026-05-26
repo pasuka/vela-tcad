@@ -430,6 +430,32 @@ Task 5 takeaway:
   no local numerical instability signal (NaN/Inf) is observed in the new
   diagnostics.
 
+## Task 6: Fermi Statistics Decision
+
+Degeneracy relevance estimate for pn2d (`Na=Nd=1e17 cm^-3`, Si defaults
+`Nc=2.8e19 cm^-3`, `Nv=1.04e19 cm^-3`):
+
+- `n/Nc ~= 3.57e-3`
+- `p/Nv ~= 9.62e-3`
+- `Ec-Ef ~= 0.1457 eV` (n side, majority estimate)
+- `Ef-Ev ~= 0.1201 eV` (p side, majority estimate)
+
+These values remain comfortably in the non-degenerate regime for the baseline
+doping scale. Combined with Task 5 diagnostics (`max np/ni^2` in the tested BV
+window staying single-digit to low-tens), there is no direct indication that
+missing Fermi-Dirac carrier statistics is the dominant cause of the current BV
+low-bias mismatch.
+
+Decision for this plan stage:
+
+- IV high-bias slope mismatch remains open after Tasks 1-4.
+- BV SRH jump is now localized primarily to SRH recombination sensitivity
+  (lifetime/model parity axis), not Auger dominance and not a numerical
+  instability signature.
+- Therefore, a broad Fermi-statistics implementation is **not** started in this
+  plan stage, and a separate Fermi implementation plan is not yet justified by
+  current evidence.
+
 ## Candidate Mobility Impact: q_mu0p89_a0p89
 
 The `scripts/scan_pn2d_candidate_iv_bv.ps1` helper applies the same

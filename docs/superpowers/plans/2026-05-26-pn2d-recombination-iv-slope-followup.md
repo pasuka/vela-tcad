@@ -167,9 +167,9 @@
 - Modify: `docs/validation/pn2d_sentaurus_comparison.md`
 - Create only if justified: a new plan under `docs/superpowers/plans/`
 
-- [ ] Estimate degeneracy relevance from pn2d doping and carrier levels in the IV/BV windows.
-- [ ] Check whether the IV high-bias slope and BV SRH jump remain after Tasks 1-4.
-- [ ] If both remain unexplained, write a separate Fermi-statistics plan covering equations, tests, and reference impact.
+- [x] Estimate degeneracy relevance from pn2d doping and carrier levels in the IV/BV windows.
+- [x] Check whether the IV high-bias slope and BV SRH jump remain after Tasks 1-4.
+- [x] If both remain unexplained, write a separate Fermi-statistics plan covering equations, tests, and reference impact. (Decision: not triggered in this stage; BV SRH jump is now localized to SRH sensitivity/model parity axis.)
 
 **Decision check:**
 - Do not start a broad Fermi implementation inside this plan unless the cheaper probes fail and the evidence specifically points there.
