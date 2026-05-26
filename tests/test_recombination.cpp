@@ -35,6 +35,17 @@ TEST_CASE("Auger recombination increases at high carrier concentration", "[recom
     REQUIRE(high > low);
 }
 
+TEST_CASE("Auger recombination rejects negative coefficients", "[recombination]")
+{
+    RecombinationModelConfig cfg = recombinationModelConfig({"auger"});
+    cfg.augerCn = -1.0e-43;
+    REQUIRE_THROWS_AS(RecombinationModel(cfg), std::invalid_argument);
+
+    cfg = recombinationModelConfig({"auger"});
+    cfg.augerCp = -1.0e-43;
+    REQUIRE_THROWS_AS(RecombinationModel(cfg), std::invalid_argument);
+}
+
 TEST_CASE("Auger linearization remains finite for extreme initializer carriers",
           "[recombination]")
 {

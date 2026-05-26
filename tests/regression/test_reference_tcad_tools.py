@@ -31,7 +31,20 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         text = script.read_text()
         self.assertIn("recomb_srh_auger", text)
         self.assertIn("recomb_none", text)
+        self.assertIn("bv_srh_tau1e-6", text)
+        self.assertIn("bv_srh_tau1e-8", text)
+        self.assertIn("iv_srh_tau1e-6", text)
+        self.assertIn("iv_srh_tau1e-8", text)
         self.assertIn("pn2d_iv_bv_physics_matrix_summary.csv", text)
+
+    def test_pn2d_iv_resolution_scan_script_exists(self) -> None:
+        script = REPO / "scripts" / "scan_pn2d_iv_resolution.ps1"
+        self.assertTrue(script.is_file(), f"missing pn2d IV resolution scan script: {script}")
+        text = script.read_text()
+        self.assertIn("pn2d_iv_resolution_summary.csv", text)
+        self.assertIn("0.02", text)
+        self.assertIn("0.01", text)
+        self.assertIn("current_total_A_per_um", text)
 
     def test_pn2d_bv_quick_refinement_script_is_documented_and_reproducible(self) -> None:
         script = REPO / "scripts" / "scan_pn2d_bv_ct_quick6.ps1"

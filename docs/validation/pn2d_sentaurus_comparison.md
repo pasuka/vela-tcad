@@ -301,6 +301,68 @@ Physics takeaway:
 - IV mismatch remains dominated by high-forward-bias slope behavior rather than
   a single recombination or BGN toggle.
 
+## IV Resolution Scan (Task 1)
+
+Generated with `scripts/scan_pn2d_iv_resolution.ps1` from
+`build/pn2d_tdr_tie_probe`:
+
+| Case | Step (V) | Accepted rows (`handoff_stage=newton`) | Orders | Max relative error | Ratio at 0.25 V | Ratio at 0.27 V | Ratio at 0.29 V | Gate impact |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| promoted | 0.10 | 4 | 0.5048 | 0.6872 | 0.8499 | 0.5348 | 0.3128 | baseline |
+| step0p02 | 0.02 | 16 | 0.4979 | 0.6822 | 0.4385 | 0.3683 | 0.3178 | no material IV gain |
+| step0p01 | 0.01 | 31 | 0.5207 | 0.6985 | 0.4194 | 0.3508 | 0.3015 | no material IV gain |
+
+Resolution takeaway:
+
+- Finer IV steps increase accepted strict-Newton rows but do not improve IV
+  orders by the `>= 0.15` decision threshold.
+- The high-forward-bias slope mismatch remains after interpolation pressure
+  reduction, so the IV gate remains unchanged.
+
+## SRH Lifetime Sweep In Existing Physics Matrix (Task 2)
+
+Extended matrix generated with `scripts/scan_pn2d_iv_bv_physics_matrix.ps1`.
+
+| Case | Kind | Orders | Ratio at target | Gate impact |
+| --- | --- | ---: | ---: | --- |
+| default | IV | 0.5048 | 0.3128 at 0.29 V | current IV baseline |
+| iv_srh_tau1e-6 | IV | 0.9417 | 0.1144 at 0.29 V | IV worsened |
+| iv_srh_tau1e-8 | IV | 0.8338 | 1.5467 at 0.29 V | IV worsened |
+| bv_recomb_none | BV | 0.0641 | 0.8628 at 0.05 V | current promoted BV gate |
+| bv_recomb_srh | BV | 1.1778 | 15.0580 at 0.05 V | BV parity fails |
+| bv_srh_tau1e-6 | BV | 0.2650 | 1.8406 at 0.05 V | BV improves vs default SRH, still worse than promoted gate |
+| bv_srh_tau1e-8 | BV | 2.1721 | 148.6262 at 0.05 V | BV severely worsened |
+
+SRH sweep takeaway:
+
+- `taun=taup=1e-6` reduces the SRH-enabled BV mismatch from about `1.18` orders
+  to about `0.26` orders, but it still does not outperform the promoted
+  recombination-disabled BV gate (`0.064`).
+- The same SRH lifetime change degrades IV materially, so SRH lifetime alone is
+  not a viable combined IV/BV promotion candidate.
+- Based on this decision check, the next step is exposing Auger coefficients in
+  solver JSON (Task 3) for controlled recombination parameter probes.
+
+## Auger JSON Surface (Task 3)
+
+The solver config surface now accepts the Auger coefficient keys in both
+Gummel and Newton paths:
+
+- `auger_cn_m6_per_s`
+- `auger_cp_m6_per_s`
+
+Coverage status:
+
+- Gummel JSON parsing coverage added in `tests/test_mobility.cpp`.
+- Newton JSON parsing coverage added in `tests/test_newton_solver.cpp`.
+- Negative-coefficient guard remains enforced by `RecombinationModel`
+  validation (`tests/test_recombination.cpp`).
+
+Gate impact:
+
+- No IV/BV gate values are promoted by Task 3 itself; this is a config-surface
+  prerequisite for the next recombination matrix probe.
+
 ## Candidate Mobility Impact: q_mu0p89_a0p89
 
 The `scripts/scan_pn2d_candidate_iv_bv.ps1` helper applies the same

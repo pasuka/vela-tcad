@@ -259,6 +259,8 @@ Commonly used controls:
 - temperature_K
 - mobility
 - recombination
+- auger_cn_m6_per_s
+- auger_cp_m6_per_s
 - impact_ionization
 
 Gummel-specific keys:
@@ -299,6 +301,9 @@ Notes:
 - `carrier_floor_m3` is an optional non-negative Gummel carrier floor used to
   keep reconstructed quasi-Fermi potentials consistent with solved carrier
   densities.
+- `auger_cn_m6_per_s` and `auger_cp_m6_per_s` override the Auger coefficients
+  passed into the recombination model (`2.8e-43` and `9.9e-44 m^6/s` defaults).
+  Negative values are rejected by the recombination model validation.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 - With `scaling.mode: "unit_scaling"`, `bandgap_narrowing.reference_doping_m3`
   is read as `cm^-3` and normalized to `m^-3`.

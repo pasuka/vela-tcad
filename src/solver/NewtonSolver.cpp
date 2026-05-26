@@ -123,6 +123,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.residualNorm = json.value("residual_norm", cfg.residualNorm);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
+    cfg.augerCn = json.value("auger_cn_m6_per_s", cfg.augerCn);
+    cfg.augerCp = json.value("auger_cp_m6_per_s", cfg.augerCp);
     if (json.contains("mobility"))
         cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"), scaling);
     if (json.contains("bandgap_narrowing")) {
@@ -370,6 +372,8 @@ NewtonResult NewtonSolver::solve() const
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
         mesh_,
@@ -393,6 +397,8 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
         mesh_,

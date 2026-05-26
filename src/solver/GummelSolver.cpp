@@ -102,6 +102,8 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.dampingPsi = json.value("damping_psi", cfg.dampingPsi);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
+    cfg.augerCn = json.value("auger_cn_m6_per_s", cfg.augerCn);
+    cfg.augerCp = json.value("auger_cp_m6_per_s", cfg.augerCp);
     cfg.carrierFloor = json.value("carrier_floor_m3", cfg.carrierFloor);
     if (json.contains("mobility"))
         cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"), scaling);
@@ -356,6 +358,8 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     const MobilityModelConfig mobilityConfig = cfg.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg.recombination, cfg.taun, cfg.taup);
+    recombinationConfig.augerCn = cfg.augerCn;
+    recombinationConfig.augerCp = cfg.augerCp;
     DDAssembler assembler(
         mesh,
         matdb,

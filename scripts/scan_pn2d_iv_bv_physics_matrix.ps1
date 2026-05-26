@@ -13,9 +13,13 @@ $cases = @(
     @{ name = "default"; kind = "iv"; recombination = @("srh", "auger"); bgn = "slotboom"; mobility = "default" },
     @{ name = "iv_recomb_none"; kind = "iv"; recombination = @("none"); bgn = "slotboom"; mobility = "default" },
     @{ name = "iv_bgn_none"; kind = "iv"; recombination = @("srh", "auger"); bgn = "none"; mobility = "default" },
+    @{ name = "iv_srh_tau1e-6"; kind = "iv"; recombination = @("srh"); bgn = "slotboom"; mobility = "default"; taun = 1.0e-6; taup = 1.0e-6 },
+    @{ name = "iv_srh_tau1e-8"; kind = "iv"; recombination = @("srh"); bgn = "slotboom"; mobility = "default"; taun = 1.0e-8; taup = 1.0e-8 },
     @{ name = "bv_recomb_none"; kind = "bv"; recombination = @("none"); bgn = "none"; mobility = "promoted_bv" },
     @{ name = "bv_recomb_srh"; kind = "bv"; recombination = @("srh"); bgn = "none"; mobility = "promoted_bv" },
-    @{ name = "bv_recomb_srh_auger"; kind = "bv"; recombination = @("srh", "auger"); bgn = "none"; mobility = "promoted_bv" }
+    @{ name = "bv_recomb_srh_auger"; kind = "bv"; recombination = @("srh", "auger"); bgn = "none"; mobility = "promoted_bv" },
+    @{ name = "bv_srh_tau1e-6"; kind = "bv"; recombination = @("srh"); bgn = "none"; mobility = "promoted_bv"; taun = 1.0e-6; taup = 1.0e-6 },
+    @{ name = "bv_srh_tau1e-8"; kind = "bv"; recombination = @("srh"); bgn = "none"; mobility = "promoted_bv"; taun = 1.0e-8; taup = 1.0e-8 }
 )
 
 function Get-InterpolatedValue($rows, [string]$column, [double]$bias, [double]$scale) {
@@ -60,8 +64,28 @@ function New-CaseConfig([hashtable]$case, [string]$ivBaseConfigPath, [string]$bv
 
     $cfg = Get-Content $baseConfigPath -Raw | ConvertFrom-Json
     $cfg.output_csv = "pn2d_${kind}_${name}.csv"
+    $cfg.solver.method = "gummel_newton"
+    if ($null -eq $cfg.solver.handoff) {
+        $cfg.solver | Add-Member -NotePropertyName "handoff" -NotePropertyValue @{}
+    }
+    $cfg.solver.handoff.fallback = "none"
+    $cfg.solver.handoff.require_gummel_convergence = $true
     $cfg.solver.recombination = @($case.recombination)
     $cfg.solver.bandgap_narrowing = [string]$case.bgn
+    if ($case.ContainsKey("taun")) {
+        if ($null -eq $cfg.solver.PSObject.Properties["taun"]) {
+            $cfg.solver | Add-Member -NotePropertyName "taun" -NotePropertyValue ([double]$case.taun)
+        } else {
+            $cfg.solver.taun = [double]$case.taun
+        }
+    }
+    if ($case.ContainsKey("taup")) {
+        if ($null -eq $cfg.solver.PSObject.Properties["taup"]) {
+            $cfg.solver | Add-Member -NotePropertyName "taup" -NotePropertyValue ([double]$case.taup)
+        } else {
+            $cfg.solver.taup = [double]$case.taup
+        }
+    }
 
     if ($kind -eq "bv") {
         if ($null -eq $cfg.solver.impact_ionization) {

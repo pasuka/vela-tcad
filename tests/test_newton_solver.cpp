@@ -549,6 +549,8 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
     const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
         {"residual_norm", "block"},
         {"max_update", 0.25},
+        {"auger_cn_m6_per_s", 4.0e-43},
+        {"auger_cp_m6_per_s", 2.0e-43},
         {"residual_weights", {{"psi", 0.25}, {"phin", 2.0}, {"phip", 3.0}}},
         {"residual_scales", {{"psi", 1.0e-18}, {"phin", 2.0e4}, {"phip", 3.0e4}}}
     });
@@ -561,6 +563,8 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
     REQUIRE(cfg.residualScalePsi == Catch::Approx(1.0e-18));
     REQUIRE(cfg.residualScalePhin == Catch::Approx(2.0e4));
     REQUIRE(cfg.residualScalePhip == Catch::Approx(3.0e4));
+    REQUIRE(cfg.augerCn == Catch::Approx(4.0e-43));
+    REQUIRE(cfg.augerCp == Catch::Approx(2.0e-43));
 
     REQUIRE_THROWS_AS(
         newtonConfigFromJson(nlohmann::json{{"residual_norm", "unknown"}}),
