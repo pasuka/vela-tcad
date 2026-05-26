@@ -392,6 +392,44 @@ Task 4 takeaway:
   criteria together, so recombination tuning remains insufficient as a unified
   explanation for the IV slope and BV SRH jump.
 
+## Narrow Recombination Diagnostic (Task 5)
+
+`DCSweep` now supports an opt-in per-bias recombination diagnostic path under
+existing `solver.diagnostics` for `newton` and `gummel_newton` sweeps. When
+enabled, CSV output appends:
+
+- `recombination_max_abs_rate_m3_per_s`
+- `recombination_mean_abs_rate_m3_per_s`
+- `carrier_product_max_np_over_ni2`
+
+The diagnostic is disabled by default and verified by
+`tests/test_dc_sweep.cpp` to be both opt-in and finite.
+
+### BV 0.05 V Diagnostic Comparison
+
+Using diagnostic-enabled reruns at `0.05 V`:
+
+| Case | total_A_per_um | max \|R\| (m^-3 s^-1) | mean \|R\| (m^-3 s^-1) | max np/ni^2 |
+| --- | ---: | ---: | ---: | ---: |
+| `bv_recomb_none` | 9.245665e-19 | 0.0 | 0.0 | 13.8270 |
+| `bv_recomb_srh` | 1.613673e-17 | 6.304272e+21 | 4.743757e+20 | 6.3793 |
+| `bv_srh_tau1e-6` | 1.972474e-18 | 6.304274e+20 | 4.743764e+19 | 5.4077 |
+| `bv_recomb_srh_auger` | 1.598583e-17 | 6.304273e+21 | 4.743763e+20 | 5.5690 |
+| `bv_auger_only` | 5.623094e-19 | 1.232900e+13 | 8.291935e+11 | 5.4032 |
+
+Task 5 takeaway:
+
+- The BV SRH jump tracks very large SRH recombination magnitude (`~1e21`) at
+  the target bias.
+- Increasing SRH lifetime from `1e-7` to `1e-6` lowers recombination magnitude
+  by about one order and correspondingly reduces the BV current jump.
+- Auger-only recombination stays many orders smaller than SRH at this bias,
+  and SRH+Auger is nearly identical to SRH-only, so Auger is not the dominant
+  source of the BV jump in this window.
+- This points to SRH lifetime/model parity as the primary sensitivity axis;
+  no local numerical instability signal (NaN/Inf) is observed in the new
+  diagnostics.
+
 ## Candidate Mobility Impact: q_mu0p89_a0p89
 
 The `scripts/scan_pn2d_candidate_iv_bv.ps1` helper applies the same

@@ -256,6 +256,17 @@ Real csvReal(const std::vector<std::string>& row, std::size_t column)
     return std::stod(row.at(column));
 }
 
+bool hasExtraField(const DCSweepPoint& point, const std::string& name, Real* outValue = nullptr)
+{
+    const auto it = std::find_if(point.extraFields.begin(), point.extraFields.end(),
+        [&](const auto& entry) { return entry.first == name; });
+    if (it == point.extraFields.end())
+        return false;
+    if (outValue != nullptr)
+        *outValue = it->second;
+    return true;
+}
+
 
 
 DeviceMesh makeTwoRegionUnitSquareMesh()
@@ -644,6 +655,89 @@ TEST_CASE("DCSweep: high-doping node-level PN diode converges with hybrid handof
     REQUIRE(result.points.front().solverMethod == "gummel_newton");
     REQUIRE(result.points.front().handoffStage == "newton");
     REQUIRE(std::isfinite(result.points.front().totalCurrent));
+}
+
+TEST_CASE("DCSweep: recombination diagnostics are opt-in for hybrid handoff",
+          "[dc_sweep][gummel_newton][diagnostics]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "node_doping_hybrid_diag.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 60},
+        {"reltol", 1.0e-7},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.2},
+        {"line_search", true},
+        {"warm_start", true},
+        {"verbose", false},
+        {"handoff", {{"fallback", "none"}}}
+    });
+
+    std::ifstream input(cfgPath);
+    nlohmann::json cfg;
+    input >> cfg;
+    cfg["node_doping_file"] = "doping.csv";
+    cfg["doping"] = {
+        {{"region", "n_region"}, {"donors", 0.0}, {"acceptors", 0.0}},
+        {{"region", "p_region"}, {"donors", 0.0}, {"acceptors", 0.0}}
+    };
+    cfg["solver"]["diagnostics"] = false;
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    writeNodeDopingCsv(dir / "doping.csv", {
+        {0, 0.0, 1.0e17},
+        {1, 1.0e17, 0.0},
+        {2, 1.0e17, 0.0},
+        {3, 0.0, 1.0e17},
+    });
+
+    DCSweep sweep;
+    const DCSweepResult noDiag = sweep.runWithResult(cfgPath.string());
+    REQUIRE(noDiag.points.size() == 1);
+    REQUIRE(noDiag.points.front().converged);
+    REQUIRE_FALSE(hasExtraField(noDiag.points.front(), "recombination_max_abs_rate_m3_per_s"));
+
+    const auto rowsNoDiag = readCsvRows(csvPath);
+    REQUIRE(std::find(rowsNoDiag.front().begin(), rowsNoDiag.front().end(),
+                      "recombination_max_abs_rate_m3_per_s") == rowsNoDiag.front().end());
+
+    cfg["solver"]["diagnostics"] = true;
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    const DCSweepResult withDiag = sweep.runWithResult(cfgPath.string());
+    REQUIRE(withDiag.points.size() == 1);
+    REQUIRE(withDiag.points.front().converged);
+
+    Real maxAbsRate = 0.0;
+    Real meanAbsRate = 0.0;
+    Real maxNpOverNi2 = 0.0;
+    REQUIRE(hasExtraField(withDiag.points.front(), "recombination_max_abs_rate_m3_per_s", &maxAbsRate));
+    REQUIRE(hasExtraField(withDiag.points.front(), "recombination_mean_abs_rate_m3_per_s", &meanAbsRate));
+    REQUIRE(hasExtraField(withDiag.points.front(), "carrier_product_max_np_over_ni2", &maxNpOverNi2));
+    REQUIRE(std::isfinite(maxAbsRate));
+    REQUIRE(std::isfinite(meanAbsRate));
+    REQUIRE(std::isfinite(maxNpOverNi2));
+
+    const auto rowsWithDiag = readCsvRows(csvPath);
+    const std::size_t maxAbsRateColumn =
+        csvColumnIndex(rowsWithDiag.front(), "recombination_max_abs_rate_m3_per_s");
+    const std::size_t meanAbsRateColumn =
+        csvColumnIndex(rowsWithDiag.front(), "recombination_mean_abs_rate_m3_per_s");
+    const std::size_t maxNpOverNi2Column =
+        csvColumnIndex(rowsWithDiag.front(), "carrier_product_max_np_over_ni2");
+
+    REQUIRE(std::isfinite(csvReal(rowsWithDiag.at(1), maxAbsRateColumn)));
+    REQUIRE(std::isfinite(csvReal(rowsWithDiag.at(1), meanAbsRateColumn)));
+    REQUIRE(std::isfinite(csvReal(rowsWithDiag.at(1), maxNpOverNi2Column)));
 }
 
 TEST_CASE("DCSweep: NMOS and PMOS unit_scaling low-bias smoke sweeps converge",

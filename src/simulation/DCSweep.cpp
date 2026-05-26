@@ -6,7 +6,10 @@
 #include "vela/io/CSVWriter.h"
 #include "vela/io/MeshReader.h"
 #include "vela/material/MaterialDatabase.h"
+#include "vela/physics/BandgapNarrowing.h"
+#include "vela/physics/CarrierStatistics.h"
 #include "vela/physics/DopingModel.h"
+#include "vela/physics/RecombinationModel.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/post/ElectricFieldDiagnostics.h"
 #include "vela/post/TerminalCharge.h"
@@ -42,6 +45,12 @@ struct HybridHandoffConfig {
     bool requireGummelConvergence = true;
     int gummelMaxIter = -1;
     int newtonMaxIter = -1;
+};
+
+struct SweepRecombinationDiagnostics {
+    Real maxAbsRate_m3_per_s = 0.0;
+    Real meanAbsRate_m3_per_s = 0.0;
+    Real maxCarrierProductRatio = 0.0;
 };
 
 std::string formatReal(Real value)
@@ -100,6 +109,75 @@ std::string trim(std::string value)
     if (first >= last)
         return {};
     return std::string(first, last);
+}
+
+std::vector<Real> buildEffectiveIntrinsicDensityVector(const DeviceMesh& mesh,
+                                                       const MaterialDatabase& matdb,
+                                                       const DopingModel& doping,
+                                                       Real temperature_K,
+                                                       const BandgapNarrowingConfig& bgnCfg)
+{
+    const Index nodeCount = mesh.numNodes();
+    std::vector<Real> ni(nodeCount, 0.0);
+    std::vector<bool> seen(nodeCount, false);
+
+    for (Index c = 0; c < mesh.numCells(); ++c) {
+        const Cell& cell = mesh.getCell(c);
+        const Region& region = mesh.getRegion(cell.region_id);
+        Real niMaterial = 0.0;
+        if (matdb.hasMaterial(region.material))
+            niMaterial = matdb.getMaterial(region.material, temperature_K).ni;
+        for (Index nodeId : cell.node_ids) {
+            if (!seen[nodeId]) {
+                ni[nodeId] = niMaterial;
+                seen[nodeId] = true;
+            }
+        }
+    }
+
+    const Real Vt = constants::kb * temperature_K / constants::q;
+    const std::unique_ptr<BandgapNarrowing> bgn = makeBandgapNarrowingModel(bgnCfg);
+    for (Index i = 0; i < nodeCount; ++i) {
+        const Real deltaEg = bgn->deltaEg(doping.netDoping(i), 0.0, 0.0);
+        ni[i] = effectiveIntrinsicDensity(ni[i], Vt, deltaEg);
+    }
+    return ni;
+}
+
+SweepRecombinationDiagnostics computeSweepRecombinationDiagnostics(
+    const DDSolution& sol,
+    const std::vector<Real>& effectiveNi,
+    const RecombinationModelConfig& recombinationCfg)
+{
+    SweepRecombinationDiagnostics diagnostics;
+    const Index nodeCount = static_cast<Index>(effectiveNi.size());
+    if (nodeCount == 0)
+        return diagnostics;
+
+    const RecombinationModel recombination(recombinationCfg);
+    Real absSum = 0.0;
+    for (Index i = 0; i < nodeCount; ++i) {
+        const int row = static_cast<int>(i);
+        const Real n = sol.n(row);
+        const Real p = sol.p(row);
+        const Real ni = effectiveNi[i];
+        const Real rate = recombination.totalRate(n, p, ni);
+        const Real absRate = std::abs(rate);
+        if (std::isfinite(absRate)) {
+            diagnostics.maxAbsRate_m3_per_s = std::max(diagnostics.maxAbsRate_m3_per_s, absRate);
+            absSum += absRate;
+        }
+
+        const Real ni2 = ni * ni;
+        if (ni2 > 0.0) {
+            const Real ratio = std::abs(n * p) / ni2;
+            if (std::isfinite(ratio))
+                diagnostics.maxCarrierProductRatio = std::max(diagnostics.maxCarrierProductRatio, ratio);
+        }
+    }
+
+    diagnostics.meanAbsRate_m3_per_s = absSum / static_cast<Real>(nodeCount);
+    return diagnostics;
 }
 
 std::vector<std::string> splitCsvLine(const std::string& line)
@@ -594,6 +672,25 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                 solverMethod == SolverMethod::GummelNewton)
         ? newton.temperature_K
         : gummel.temperature_K;
+    const bool recombinationDiagnosticsEnabled =
+        (solverMethod == SolverMethod::Newton || solverMethod == SolverMethod::GummelNewton) &&
+        newton.diagnostics;
+
+    RecombinationModelConfig sweepRecombinationConfig;
+    BandgapNarrowingConfig sweepBgnConfig;
+    if (solverMethod == SolverMethod::Newton || solverMethod == SolverMethod::GummelNewton) {
+        sweepRecombinationConfig = recombinationModelConfig(newton.recombination, newton.taun, newton.taup);
+        sweepRecombinationConfig.augerCn = newton.augerCn;
+        sweepRecombinationConfig.augerCp = newton.augerCp;
+        sweepBgnConfig = newton.bandgapNarrowing;
+    } else {
+        sweepRecombinationConfig = recombinationModelConfig(gummel.recombination, gummel.taun, gummel.taup);
+        sweepRecombinationConfig.augerCn = gummel.augerCn;
+        sweepRecombinationConfig.augerCp = gummel.augerCp;
+        sweepBgnConfig = gummel.bandgapNarrowing;
+    }
+    const std::vector<Real> effectiveNi = buildEffectiveIntrinsicDensityVector(
+        mesh, matdb, doping, temperature_K, sweepBgnConfig);
     // Build DDScalingSpec for contact current post-processing.
     DDScalingSpec ddScaling;
     if (sweep.scaling.isUnitScaling()) {
@@ -672,6 +769,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         header.push_back("last_stable_bias");
         header.push_back("failed_bias");
         header.push_back("failure_reason");
+    }
+    if (recombinationDiagnosticsEnabled) {
+        header.push_back("recombination_max_abs_rate_m3_per_s");
+        header.push_back("recombination_mean_abs_rate_m3_per_s");
+        header.push_back("carrier_product_max_np_over_ni2");
     }
     csv.writeHeader(header);
 
@@ -930,6 +1032,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 point.breakdownCriterion = "last_stable_before_nonconvergence";
             }
         }
+        if (converged && recombinationDiagnosticsEnabled) {
+            const SweepRecombinationDiagnostics diagnostics =
+                computeSweepRecombinationDiagnostics(sol, effectiveNi, sweepRecombinationConfig);
+            point.extraFields.emplace_back(
+                "recombination_max_abs_rate_m3_per_s", diagnostics.maxAbsRate_m3_per_s);
+            point.extraFields.emplace_back(
+                "recombination_mean_abs_rate_m3_per_s", diagnostics.meanAbsRate_m3_per_s);
+            point.extraFields.emplace_back(
+                "carrier_product_max_np_over_ni2", diagnostics.maxCarrierProductRatio);
+        }
         if (writeUnitScaledColumns) {
             point.extraFields.emplace_back(
                 "current_total_A_per_um", perMeterToPerMicron(point.totalCurrent));
@@ -1031,6 +1143,18 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             row.push_back(formatReal(point.lastStableBias));
             row.push_back(formatReal(point.failedBias));
             row.push_back(point.failureReason);
+        }
+        if (recombinationDiagnosticsEnabled) {
+            std::unordered_map<std::string, Real> extraFieldValues;
+            for (const auto& [name, value] : point.extraFields)
+                extraFieldValues[name] = value;
+            for (const std::string& name : {
+                     std::string("recombination_max_abs_rate_m3_per_s"),
+                     std::string("recombination_mean_abs_rate_m3_per_s"),
+                     std::string("carrier_product_max_np_over_ni2")}) {
+                const auto it = extraFieldValues.find(name);
+                row.push_back(formatReal(it != extraFieldValues.end() ? it->second : 0.0));
+            }
         }
         csv.writeRow(row);
 

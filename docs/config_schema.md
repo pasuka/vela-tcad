@@ -301,6 +301,12 @@ Notes:
 - `carrier_floor_m3` is an optional non-negative Gummel carrier floor used to
   keep reconstructed quasi-Fermi potentials consistent with solved carrier
   densities.
+- In `dc_sweep`, when `solver.method` is `newton` or `gummel_newton` and
+  `solver.diagnostics: true`, the CSV appends opt-in recombination diagnostics:
+  `recombination_max_abs_rate_m3_per_s`,
+  `recombination_mean_abs_rate_m3_per_s`, and
+  `carrier_product_max_np_over_ni2`.
+  These columns are disabled by default.
 - `auger_cn_m6_per_s` and `auger_cp_m6_per_s` override the Auger coefficients
   passed into the recombination model (`2.8e-43` and `9.9e-44 m^6/s` defaults).
   Negative values are rejected by the recombination model validation.
