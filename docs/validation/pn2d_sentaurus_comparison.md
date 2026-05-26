@@ -27,9 +27,11 @@ quantity gate checks the non-zero 0.05 V point and leaves the 0 V equilibrium
 row as a strict Newton/provenance smoke check. Vela currently disables the Sentaurus
 `Avalanche(OkutoCrowell)` approximation in the strict handoff deck because the
 imported reverse-bias path is not yet robust with impact-ionization Jacobian
-terms. The BV deck also overrides `recombination: ["none"]` because the
-Sentaurus BV command does not enable `Recombination(SRH Auger)`; carrying the
-IV recombination models into BV inflated the 0.05 V current by about 17x.
+terms. The imported BV command includes `Recombination(SRH Auger Avalanche)`.
+The current Vela BV reference override intentionally disables recombination and
+impact ionization as a low-bias numerical gate while recombination and
+avalanche model parity work remains open; carrying IV recombination models into
+BV inflated the 0.05 V current by about 17x.
 After candidate isolation, the BV deck also uses a BV-only Caughey-Thomas
 mobility override with `bandgap_narrowing: "none"`. The same mobility point is
 not used for IV because it degrades the forward-current comparison.
@@ -257,6 +259,47 @@ Fresh baseline rerun on 2026-05-26:
 - default IV: `orders ~= 0.5048`, trend matched;
 - default BV after BV-only promotion: `orders ~= 0.0641`;
 - quick6 best `q_mu0p89_a0p89`: `orders ~= 0.0641`.
+
+## IV Per-Bias Ratio Shape
+
+Generated with `scripts/summarize_pn2d_iv_ratios.ps1` from
+`build/pn2d_tdr_tie_probe/vela/pn2d_iv.csv` against
+`build/pn2d_tdr_tie_probe/reference_curves/pn2d_iv_reference.csv`:
+
+| Bias V | Vela/reference ratio |
+| ---: | ---: |
+| 0.204721576526 | 0.9052 |
+| 0.224721576526 | 1.2270 |
+| 0.244721576526 | 0.9426 |
+| 0.25 | 0.8499 |
+| 0.27 | 0.5348 |
+| 0.29 | 0.3128 |
+
+The ratio roll-off above about 0.25 V confirms that the remaining IV mismatch
+is dominated by a shallower high-forward-bias slope, not by a low-bias offset.
+
+## IV/BV Physics Matrix
+
+Generated with `scripts/scan_pn2d_iv_bv_physics_matrix.ps1` from
+`build/pn2d_tdr_tie_probe`.
+
+| Case | Kind | Orders | Ratio at target | Interpretation |
+| --- | --- | ---: | ---: | --- |
+| default | IV | 0.5048 | 0.3128 at 0.29 V | baseline high-forward-bias slope remains shallow |
+| iv_recomb_none | IV | 0.6415 | 0.4864 at 0.29 V | turning recombination off does not resolve IV slope |
+| iv_bgn_none | IV | 0.5135 | 0.4298 at 0.29 V | removing BGN alone also does not resolve IV slope |
+| bv_recomb_none | BV | 0.0641 | 0.8628 at 0.05 V | current promoted low-bias gate |
+| bv_recomb_srh | BV | 1.1778 | 15.0580 at 0.05 V | SRH parity reintroduces large low-bias mismatch |
+| bv_recomb_srh_auger | BV | 1.1737 | 14.9172 at 0.05 V | SRH+Auger parity remains unresolved |
+
+Physics takeaway:
+
+- BV low-bias numerical agreement currently depends on the deliberate
+  `recombination: ["none"]` gate.
+- Re-enabling SRH (with or without Auger) moves the 0.05 V point by about
+  1.17 orders, so BV physics parity remains open.
+- IV mismatch remains dominated by high-forward-bias slope behavior rather than
+  a single recombination or BGN toggle.
 
 ## Candidate Mobility Impact: q_mu0p89_a0p89
 
