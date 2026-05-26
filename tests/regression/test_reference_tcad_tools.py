@@ -292,6 +292,43 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             self.assertEqual(report["iv"]["reference_bias_range"], [0.5, 1.0])
             self.assertEqual(report["iv"]["candidate_scale"], -1.0)
 
+    def test_compare_reference_curves_can_select_candidate_column(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_reference_column_match_") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.csv"
+            candidate = root / "candidate.csv"
+            out_json = root / "report.json"
+            out_md = root / "report.md"
+            self._write_csv(reference, ["bias_V", "current_total"], [
+                [0.0, 0.0],
+                [0.5, 1.0e-15],
+                [1.0, 2.0e-15],
+            ])
+            self._write_csv(candidate, ["bias_V", "current_total", "current_total_A_per_um"], [
+                [0.0, 0.0, 0.0],
+                [0.5, 1.0e-9, 1.0e-15],
+                [1.0, 2.0e-9, 2.0e-15],
+            ])
+
+            subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "compare_reference_curves.py"),
+                "--reference", str(reference),
+                "--candidate", str(candidate),
+                "--output-json", str(out_json),
+                "--output-md", str(out_md),
+                "--kind", "iv",
+                "--candidate-column", "current_total_A_per_um",
+                "--max-orders-of-magnitude", "0.01",
+                "--require-trend-match",
+            ], check=True, cwd=REPO)
+
+            report = json.loads(out_json.read_text())
+            self.assertEqual(report["status"], "pass")
+            self.assertEqual(report["iv"]["candidate_column"], "current_total_A_per_um")
+            self.assertEqual(report["iv"]["reference_trend"], "increasing")
+            self.assertEqual(report["iv"]["candidate_trend"], "increasing")
+
     def test_checked_in_pn_validation_assets_are_complete(self) -> None:
         pn_dir = REPO / "reference_tcad" / "pn_diode"
         vela_dir = pn_dir / "vela"

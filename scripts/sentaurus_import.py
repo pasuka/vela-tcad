@@ -1094,6 +1094,10 @@ def reference_command(args: argparse.Namespace) -> None:
             ]
             if "candidate_scale" in comparison:
                 compare_command.extend(["--candidate-scale", str(comparison["candidate_scale"])])
+            if "reference_column" in comparison:
+                compare_command.extend(["--reference-column", str(comparison["reference_column"])])
+            if "candidate_column" in comparison:
+                compare_command.extend(["--candidate-column", str(comparison["candidate_column"])])
             if "bias_min" in comparison:
                 compare_command.extend(["--bias-min", str(comparison["bias_min"])])
             if "bias_max" in comparison:

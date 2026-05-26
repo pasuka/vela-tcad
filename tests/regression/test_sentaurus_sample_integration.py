@@ -120,6 +120,12 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             self.assertIn("Avalanche", manifest["unsupported_physics"])
             self.assertIn("reports/pn2d_iv_comparison.json", manifest["comparison_reports"])
             self.assertIn("reports/pn2d_bv_comparison.json", manifest["comparison_reports"])
+            iv_report = json.loads((out / "reference" / "reports" / "pn2d_iv_comparison.json").read_text())
+            bv_report = json.loads((out / "reference" / "reports" / "pn2d_bv_comparison.json").read_text())
+            self.assertEqual(iv_report["iv"]["candidate_column"], "current_total_A_per_um")
+            self.assertLess(iv_report["iv"]["orders_of_magnitude"], 2.0)
+            self.assertEqual(bv_report["iv"]["candidate_column"], "current_total_A_per_um")
+            self.assertLess(bv_report["iv"]["orders_of_magnitude"], 2.0)
 
     def test_ldmos_n20_sample_inventory_curve_and_cmd_when_enabled(self) -> None:
         sample_root = self._sample_root_or_skip()

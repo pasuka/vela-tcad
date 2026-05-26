@@ -457,6 +457,9 @@ Data {
                         "runtime_doping_scale": 1.0e-4,
                         "runtime_step": 0.1,
                         "comparison_min_points": 3,
+                        "comparison": {
+                            "candidate_column": "current_total_A_per_um",
+                        },
                     },
                     {
                         "name": "bv",
@@ -470,6 +473,9 @@ Data {
                         "runtime_step": 5.0,
                         "comparison_kind": "iv",
                         "require_trend_match": False,
+                        "comparison": {
+                            "candidate_column": "current_total_A_per_um",
+                        },
                     },
                 ],
             }) + "\n")
@@ -526,11 +532,11 @@ kind = cfg["sweep"]["mode"]
 with out.open("w", newline="") as handle:
     writer = csv.writer(handle)
     if kind == "bv_reverse":
-        writer.writerow(["bias_V", "max_electric_field_V_per_cm", "current_total"])
-        writer.writerows([[0, 1e4, 0], [25, 2e4, 1e-15], [50, 3e4, 2e-15]])
+        writer.writerow(["bias_V", "max_electric_field_V_per_cm", "current_total", "current_total_A_per_um"])
+        writer.writerows([[0, 1e4, 0, 0], [25, 2e4, 1e-9, 1e-15], [50, 3e4, 2e-9, 2e-15]])
     else:
-        writer.writerow(["bias_V", "current_total"])
-        writer.writerows([[0, 0], [0.5, 1e-9], [1.0, 1e-6]])
+        writer.writerow(["bias_V", "current_total", "current_total_A_per_um"])
+        writer.writerows([[0, 0, 0], [0.5, 1e-3, 1e-9], [1.0, 1.0, 1e-6]])
 """.strip()
                 + "\n"
             )
@@ -618,6 +624,7 @@ with out.open("w", newline="") as handle:
             iv_report = json.loads((output / "reports" / "pn2d_iv_comparison.json").read_text())
             self.assertEqual(iv_report["status"], "pass")
             self.assertEqual(iv_report["iv"]["points_compared"], 3)
+            self.assertEqual(iv_report["iv"]["candidate_column"], "current_total_A_per_um")
             self.assertEqual(iv_runtime_deck["solver"]["method"], "gummel")
             self.assertIn("runtime_approximation", iv_runtime_deck["sentaurus_import"])
             self.assertNotIn("node_doping_file", iv_runtime_deck)
@@ -636,6 +643,7 @@ with out.open("w", newline="") as handle:
             bv_report = json.loads((output / "reports" / "pn2d_bv_comparison.json").read_text())
             self.assertEqual(bv_report["status"], "pass")
             self.assertEqual(bv_report["checked_kinds"], ["iv"])
+            self.assertEqual(bv_report["iv"]["candidate_column"], "current_total_A_per_um")
 
     def test_project_import_generates_neutral_reference_tree(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_sentaurus_project_") as tmp:

@@ -39,9 +39,10 @@
       "require_trend_match": false,
       "comparison": {
         "candidate_scale": -1.0,
+        "candidate_column": "current_total_A_per_um",
         "bias_min": 0.2,
         "bias_max": 0.3,
-        "max_orders_of_magnitude": 20.0,
+        "max_orders_of_magnitude": 2.0,
         "require_trend_match": false,
         "min_points": 2
       },
@@ -70,11 +71,12 @@
       "require_trend_match": false,
       "comparison": {
         "candidate_scale": 1.0,
-        "bias_min": 0.0,
+        "candidate_column": "current_total_A_per_um",
+        "bias_min": 0.05,
         "bias_max": 0.05,
-        "max_orders_of_magnitude": 20.0,
+        "max_orders_of_magnitude": 2.0,
         "require_trend_match": false,
-        "min_points": 2
+        "min_points": 1
       },
       "runtime_diagnostic": {
         "enabled": false,

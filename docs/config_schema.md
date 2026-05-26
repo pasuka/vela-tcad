@@ -313,8 +313,9 @@ Reference-import configs may also use `vela_step` and `vela_stop` on an
 individual simulation entry to override the generated Vela sweep range while
 preserving the full imported reference curve. A simulation `comparison` block
 can pass curve gate options such as `candidate_scale`, `bias_min`, `bias_max`,
-`max_orders_of_magnitude`, `max_relative_error`, `min_points`, and
-`require_trend_match` to the comparison report. `runtime_diagnostic` is an
+`reference_column`, `candidate_column`, `max_orders_of_magnitude`,
+`max_relative_error`, `min_points`, and `require_trend_match` to the comparison
+report. `runtime_diagnostic` is an
 optional simulation block:
 
 ```json

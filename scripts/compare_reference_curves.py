@@ -33,6 +33,16 @@ def find_column(rows: list[dict[str, str]], candidates: list[str]) -> str | None
     return None
 
 
+def resolve_column(rows: list[dict[str, str]],
+                   candidates: list[str],
+                   explicit: str | None) -> str | None:
+    if explicit is None:
+        return find_column(rows, candidates)
+    if not rows:
+        return None
+    return explicit if explicit in rows[0] else None
+
+
 def values(rows: list[dict[str, str]], column: str) -> list[float]:
     out = []
     for row in rows:
@@ -110,7 +120,7 @@ def trend(values_: list[float]) -> str:
     if len(clean) < 2:
         return "insufficient"
     diffs = [b - a for a, b in zip(clean, clean[1:])]
-    eps = max(max(abs(value) for value in clean), 1.0) * 1.0e-12
+    eps = max(max(abs(value) for value in clean) * 1.0e-12, 1.0e-300)
     nonnegative = all(diff >= -eps for diff in diffs)
     nonpositive = all(diff <= eps for diff in diffs)
     if nonnegative and not nonpositive:
@@ -148,9 +158,11 @@ def compare_series(kind: str,
                    candidate_rows: list[dict[str, str]],
                    candidate_scale: float,
                    bias_min: float | None,
-                   bias_max: float | None) -> dict[str, Any]:
-    ref_col = find_column(reference_rows, SERIES[kind])
-    cand_col = find_column(candidate_rows, SERIES[kind])
+                   bias_max: float | None,
+                   reference_column: str | None = None,
+                   candidate_column: str | None = None) -> dict[str, Any]:
+    ref_col = resolve_column(reference_rows, SERIES[kind], reference_column)
+    cand_col = resolve_column(candidate_rows, SERIES[kind], candidate_column)
     if ref_col is None or cand_col is None:
         return {
             "available": False,
@@ -242,6 +254,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-relative-error", type=float)
     parser.add_argument("--max-orders-of-magnitude", type=float)
     parser.add_argument("--candidate-scale", type=float, default=1.0)
+    parser.add_argument("--reference-column")
+    parser.add_argument("--candidate-column")
     parser.add_argument("--bias-min", type=float)
     parser.add_argument("--bias-max", type=float)
     return parser.parse_args()
@@ -307,13 +321,16 @@ def main() -> int:
         "checked_kinds": kinds,
         "iv": compare_series(
             "iv", reference_rows, candidate_rows,
-            args.candidate_scale, args.bias_min, args.bias_max),
+            args.candidate_scale, args.bias_min, args.bias_max,
+            args.reference_column, args.candidate_column),
         "cv": compare_series(
             "cv", reference_rows, candidate_rows,
-            args.candidate_scale, args.bias_min, args.bias_max),
+            args.candidate_scale, args.bias_min, args.bias_max,
+            args.reference_column, args.candidate_column),
         "bv": compare_series(
             "bv", reference_rows, candidate_rows,
-            args.candidate_scale, args.bias_min, args.bias_max),
+            args.candidate_scale, args.bias_min, args.bias_max,
+            args.reference_column, args.candidate_column),
     }
     report["failures"] = evaluate_failures(report, args)
     report["status"] = "fail" if report["failures"] else "pass"
