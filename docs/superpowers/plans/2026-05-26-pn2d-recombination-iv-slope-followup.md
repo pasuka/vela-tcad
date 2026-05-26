@@ -49,23 +49,23 @@
 - Modify: `tests/regression/test_reference_tcad_tools.py`
 - Modify: `docs/validation/pn2d_sentaurus_comparison.md`
 
-- [ ] Add a regression test that requires `scan_pn2d_iv_resolution.ps1` to exist and contain:
+- [x] Add a regression test that requires `scan_pn2d_iv_resolution.ps1` to exist and contain:
   - `pn2d_iv_resolution_summary.csv`
   - `0.02`
   - `0.01`
   - `current_total_A_per_um`
-- [ ] Implement the script to generate temporary pn2d IV configs from the imported reference tree with sweep steps:
+- [x] Implement the script to generate temporary pn2d IV configs from the imported reference tree with sweep steps:
   - existing promoted step
   - `0.02 V`
   - `0.01 V`
-- [ ] For each step, run strict `gummel_newton` and compare against the same reference IV window.
-- [ ] Report at least:
+- [x] For each step, run strict `gummel_newton` and compare against the same reference IV window.
+- [x] Report at least:
   - step size
   - accepted row count
   - orders of magnitude
   - max relative error
   - Vela/reference ratios at reference biases near `0.25 V`, `0.27 V`, and `0.29 V`
-- [ ] Document whether the high-bias rolloff is caused by coarse sweep/interpolation or by the solved current slope.
+- [x] Document whether the high-bias rolloff is caused by coarse sweep/interpolation or by the solved current slope.
 
 **Decision check:**
 - If finer steps improve IV orders by at least `0.15`, consider promoting a smaller IV step only after runtime and strict-Newton acceptance are acceptable.
@@ -80,15 +80,15 @@
 - Modify: `tests/regression/test_reference_tcad_tools.py`
 - Modify: `docs/validation/pn2d_sentaurus_comparison.md`
 
-- [ ] Add script-content tests for named cases:
+- [x] Add script-content tests for named cases:
   - `bv_srh_tau1e-6`
   - `bv_srh_tau1e-8`
   - `iv_srh_tau1e-6`
   - `iv_srh_tau1e-8`
-- [ ] Extend the physics matrix to vary `taun` and `taup` while keeping all other knobs fixed.
-- [ ] Run BV cases with promoted BV mobility and recombination enabled.
-- [ ] Run IV cases with default IV mobility and recombination enabled.
-- [ ] Document whether a physically enabled SRH configuration can keep BV within `0.2` orders without worsening IV beyond the current gate.
+- [x] Extend the physics matrix to vary `taun` and `taup` while keeping all other knobs fixed.
+- [x] Run BV cases with promoted BV mobility and recombination enabled.
+- [x] Run IV cases with default IV mobility and recombination enabled.
+- [x] Document whether a physically enabled SRH configuration can keep BV within `0.2` orders without worsening IV beyond the current gate.
 
 **Decision check:**
 - If SRH lifetime alone explains the BV jump, promote the lifetime only after adding a focused config test and updating the reference comparison doc.
@@ -106,13 +106,13 @@
 - Modify: `docs/config_schema.md`
 - Modify: `tests/test_mobility.cpp` or `tests/test_recombination.cpp`
 
-- [ ] Write a failing config-parsing test that verifies both Gummel and Newton accept:
+- [x] Write a failing config-parsing test that verifies both Gummel and Newton accept:
   - `auger_cn_m6_per_s`
   - `auger_cp_m6_per_s`
-- [ ] Add the fields to Gummel/Newton config structs with defaults matching `RecombinationModelConfig`.
-- [ ] Pass the parsed coefficients into `RecombinationModelConfig` before constructing DD assemblers.
-- [ ] Validate that negative Auger coefficients still fail through the existing `RecombinationModel` checks.
-- [ ] Document the new keys under solver common controls.
+- [x] Add the fields to Gummel/Newton config structs with defaults matching `RecombinationModelConfig`.
+- [x] Pass the parsed coefficients into `RecombinationModelConfig` before constructing DD assemblers.
+- [x] Validate that negative Auger coefficients still fail through the existing `RecombinationModel` checks.
+- [x] Document the new keys under solver common controls.
 
 **Decision check:**
 - Keep this as a config-surface change unless a probe proves that default Auger coefficients are the primary BV or IV error.
@@ -125,10 +125,10 @@
 - Modify: `scripts/scan_pn2d_iv_bv_physics_matrix.ps1`
 - Modify: `docs/validation/pn2d_sentaurus_comparison.md`
 
-- [ ] Add cases that scale Auger coefficients down and up while SRH is enabled.
-- [ ] Include at least one case with SRH disabled and Auger enabled, to separate Auger-only behavior from SRH behavior.
-- [ ] Compare IV and BV with the same summary columns used by the existing matrix.
-- [ ] Record the smallest parameter change that improves BV physics parity without damaging IV slope.
+- [x] Add cases that scale Auger coefficients down and up while SRH is enabled.
+- [x] Include at least one case with SRH disabled and Auger enabled, to separate Auger-only behavior from SRH behavior.
+- [x] Compare IV and BV with the same summary columns used by the existing matrix.
+- [x] Record the smallest parameter change that improves BV physics parity without damaging IV slope.
 
 **Decision check:**
 - If a combined recombination parameter set satisfies both IV and BV criteria, promote it as a reference candidate.
@@ -146,14 +146,14 @@
   - `src/solver/NewtonSolver.cpp`
   - `tests/test_newton_solver.cpp`
 
-- [ ] Identify the smallest existing diagnostic hook that can report recombination magnitude or continuity residual contribution per terminal sweep point.
-- [ ] Add a test that the diagnostic is finite and opt-in.
-- [ ] Use the diagnostic to determine whether the BV SRH jump is caused by:
+- [x] Identify the smallest existing diagnostic hook that can report recombination magnitude or continuity residual contribution per terminal sweep point.
+- [x] Add a test that the diagnostic is finite and opt-in.
+- [x] Use the diagnostic to determine whether the BV SRH jump is caused by:
   - excessive carrier product near the junction
   - lifetime defaults
   - intrinsic-density or BGN interaction
   - boundary/contact carrier reconstruction
-- [ ] Keep diagnostic output disabled by default.
+- [x] Keep diagnostic output disabled by default.
 
 **Decision check:**
 - If the diagnostic points to model mismatch, write a separate model-parity plan before implementing a broad physics change.
