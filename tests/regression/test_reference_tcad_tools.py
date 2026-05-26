@@ -17,6 +17,13 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 class ReferenceTcadToolsTest(unittest.TestCase):
+    def test_pn2d_bv_quick_refinement_script_is_documented_and_reproducible(self) -> None:
+        script = REPO / "scripts" / "scan_pn2d_bv_ct_quick6.ps1"
+        self.assertTrue(script.is_file(), f"missing documented pn2d BV quick refinement script: {script}")
+        text = script.read_text()
+        self.assertIn("q_mu0p89_a0p89", text)
+        self.assertIn("pn2d_bv_ct_quick6_summary.csv", text)
+
     def test_pn_export_converts_to_unit_scaling_deck(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_reference_tcad_") as tmp:
             root = Path(tmp)

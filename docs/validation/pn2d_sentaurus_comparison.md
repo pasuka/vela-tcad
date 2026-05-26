@@ -221,6 +221,11 @@ to probe lower-alpha and nearby-mobility settings around the local optimum.
 Quick refinement summary:
 
 - `build/pn2d_recomb_gate/vela/pn2d_bv_ct_quick6_summary.csv`
+- Repro script: `scripts/scan_pn2d_bv_ct_quick6.ps1`
+
+The script can be run directly after regenerating a pn2d reference tree; it
+starts from `simulation_bv.json`, forces `bandgap_narrowing: none`, applies the
+six CT mobility-object perturbations below, and writes the summary CSV.
 
 Results (0.05 V, sorted by `orders`):
 
@@ -239,6 +244,15 @@ Second-round takeaway:
   mismatch well below 0.20 orders.
 - Current best observed point is `q_mu0p89_a0p89` with
   `orders ~= 0.0641` (previous best was `0.2087`).
+- A fresh rerun from `build/pn2d_current_review` reproduced the same best point:
+  `ratio_vs_ref ~= 0.8628`, `orders ~= 0.0641`, and
+  `total_A_per_um ~= 9.2457e-19`.
+
+Fresh baseline rerun on 2026-05-26:
+
+- default IV: `orders ~= 0.5048`, trend matched;
+- default BV: `orders ~= 0.3508`;
+- quick6 best `q_mu0p89_a0p89`: `orders ~= 0.0641`.
 
 The old region-average `runtime_doping_scale` path is no longer required for
 pn2d. It remains available through an opt-in `runtime_diagnostic` config block
