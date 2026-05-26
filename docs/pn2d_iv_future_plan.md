@@ -5,6 +5,37 @@ jump are still open. This document records the verified state of the
 investigation and the next concrete steps so work can resume without
 re-deriving context.
 
+## Restart update after HEAD rerun
+
+Fresh reruns on `3e84042` changed two conclusions that were true only for
+older artifacts:
+
+- The default Slotboom IV cathode current is already algebraically consistent
+  with the coupled assembler residual. A direct residual probe at 0.30 V gives
+  `assembler_residual = -1.897805e-14 A/um`, matching the CSV cathode total.
+  The residual-based-contact-current hypothesis is therefore closed for the
+  compared cathode terminal; the remaining IV error is in the solved
+  transport/physics state or geometry/model calibration, not in cathode current
+  extraction.
+- The BGN-off/uniform-`ni` cases now take the QF branch introduced in the
+  latest commit. For IV BGN-off at 0.30 V the density extraction would give
+  `2.359720e-14 A/um`, but the QF/assembler residual gives
+  `4.718129e-16 A/um`. The old "BGN-off essentially unchanged" note is stale.
+- Sentaurus logs for both IV and BV report `no Lifetime file`,
+  `no ModelParameters file`, and SRH with no field-, doping-, or
+  temperature-dependent lifetimes. The BV SRH mismatch should not be described
+  as missing Scharfetter doping-dependent lifetimes unless a later reference
+  source proves hidden defaults. Current evidence points to constant-lifetime
+  or SRH parameter parity.
+- A constant equal-lifetime SRH scan cannot explain both IV and BV: IV is
+  closest near `taun=taup=1e-8..3e-8 s`, while BV is closest near
+  `taun=taup=3e-6 s`. Target ratios are recorded in
+  `build/pn2d_tdr_tie_probe/vela/pn2d_taugrid_summary.csv`.
+- A small asymmetric lifetime scan also does not find a joint explanation:
+  the tested pairs improve neither metric together, with BV target ratios still
+  `3.45x` or worse. Results are in
+  `build/pn2d_tdr_tie_probe/vela/pn2d_taupair_summary.csv`.
+
 ## What is committed in this change
 
 - `include/vela/post/ContactCurrent.h`, `src/post/ContactCurrent.cpp`:
@@ -64,15 +95,11 @@ lifetime sweep, Auger sweep, and IV step refinement.
 
 Next investigations (do in order, stop when conservation is restored):
 
-- **F. Residual-based contact current.** Implement an alternate
-  `ContactCurrent` path that sums the *un-replaced* electron + hole
-  continuity residuals at Dirichlet contact nodes (the standard
-  Sentaurus extraction). Compare with the SG-flux-integral result.
-  If the residual-based sum collapses to ~Newton residual but is still
-  off vs reference, the gap is physics/geometry, not post-processing.
-  Touch points: `src/post/ContactCurrent.cpp`,
-  `src/equation/CoupledDDAssembler.cpp` (need to expose the
-  pre-replacement residual or recompute it on demand for contact nodes).
+- **F. Closed: residual-based cathode current check.** A Python recomputation
+  of density, QF, and assembler-style residual currents shows the default
+  Slotboom cathode CSV already equals the assembler-consistent residual at
+  0.30 V. Do not implement a production residual-current path for this
+  hypothesis unless a separate anode-oriented discrepancy is being targeted.
 
 - **G. Geometry / unit-factor audit.** A bias-insensitive 0.2–0.3×
   shortfall is consistent with a per-µm vs per-cm or half-edge
@@ -95,12 +122,12 @@ Next investigations (do in order, stop when conservation is restored):
 ### 2. pn2d BV SRH jump (P1, independent of #1)
 
 Constant `taun = taup = 1e-7 s` in
-`include/vela/physics/RecombinationModel.h` does not match Sentaurus
-Scharfetter doping-dependent lifetimes. Implement the Scharfetter
-parameterization (`tau(N) = tau_max / (1 + (N / N_ref)^gamma)`) with
-the standard `(tau_max, N_ref, gamma)` defaults from Sentaurus and
-plumb it through `MaterialDB` so it can be overridden per-material in
-the simulation JSON.
+`include/vela/physics/RecombinationModel.h` does not match the observed BV
+SRH sensitivity, but the Sentaurus logs explicitly say the run uses no
+field-, doping-, or temperature-dependent lifetimes and no external lifetime
+or model-parameter file. The next step is therefore to identify Sentaurus'
+built-in constant SRH lifetime/parameter defaults for this model set, then
+decide whether Vela needs configurable SRH trap parameters beyond `taun/taup`.
 
 ### 3. Cleanup once #1 is closed (P2)
 

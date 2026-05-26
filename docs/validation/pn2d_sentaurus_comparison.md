@@ -490,6 +490,41 @@ node-level doping. Current gate:
   Vela `current_total_A_per_um` against Sentaurus total current;
 - strict Sentaurus numerical agreement is not yet required.
 
+## HEAD Rerun After Contact-Current QF Alignment
+
+Rerun date: 2026-05-26 on `3e84042`.
+
+The latest `ContactCurrent` change makes uniform-`ni` contact edges use the same
+QF SG branch as `CoupledDDAssembler`. A direct cathode probe at IV 0.30 V shows:
+
+| Case | Density total (A/um) | QF total (A/um) | Assembler-style residual total (A/um) |
+| --- | ---: | ---: | ---: |
+| default Slotboom | 9.786651e-15 | -1.897805e-14 | -1.897805e-14 |
+| BGN off | 2.359720e-14 | 4.718129e-16 | 4.718129e-16 |
+
+Takeaway:
+
+- The default IV cathode CSV already matches the assembler-consistent residual,
+  so the remaining IV shortfall is not a cathode current-extraction artifact.
+- Older BGN-off and promoted BV numbers that relied on density-form extraction
+  are stale under current HEAD.
+- Sentaurus IV/BV logs report no lifetime file, no model-parameter file, and no
+  field-, doping-, or temperature-dependent SRH lifetimes. The SRH parity task
+  should target Sentaurus built-in constant lifetime/trap defaults first, not
+  Scharfetter doping-dependent lifetime support.
+- Equal-lifetime SRH scan:
+  - IV target ratio is closest between `taun=taup=3e-8 s` (`0.666x`) and
+    `1e-8 s` (`1.704x`).
+  - BV target ratio is closest at `taun=taup=3e-6 s` (`0.935x`).
+  - No single equal lifetime matches both IV and BV.
+- Tested asymmetric pairs also do not match both; all BV target ratios remain
+  `3.45x` or worse.
+
+Artifacts:
+
+- `build/pn2d_tdr_tie_probe/vela/pn2d_taugrid_summary.csv`
+- `build/pn2d_tdr_tie_probe/vela/pn2d_taupair_summary.csv`
+
 Useful local verification command:
 
 ```powershell
