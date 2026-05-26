@@ -33,6 +33,17 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         self.assertIn("simulation_iv", text)
         self.assertIn("simulation_bv", text)
 
+    def test_reference_tcad_device_configs_exist(self) -> None:
+        expected = [
+            REPO / "reference_tcad" / "pn2d" / "pn2d_reference.json",
+            REPO / "reference_tcad" / "nmos2d" / "nmos2d_reference.json",
+            REPO / "reference_tcad" / "pmos2d" / "pmos2d_reference.json",
+            REPO / "reference_tcad" / "ldmos2d" / "ldmos2d_reference.json",
+            REPO / "reference_tcad" / "igbt2d" / "igbt2d_reference.json",
+        ]
+        for path in expected:
+            self.assertTrue(path.is_file(), f"missing reference config: {path}")
+
     def test_pn_export_converts_to_unit_scaling_deck(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_reference_tcad_") as tmp:
             root = Path(tmp)
