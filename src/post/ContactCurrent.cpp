@@ -165,7 +165,16 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
         result.holeDiffusionCurrent += constants::q * outwardSign * holeDiffusionFlux01 * edge.couple;
     }
 
-    result.totalCurrent = result.electronCurrent + result.holeCurrent;
+    // Sign convention: electronCurrent and holeCurrent accumulate
+    //   q * (carrier-particle inflow into the contact from the device) * couple.
+    // With the electron carrier charge being -q, the contribution of electrons
+    // to the conventional current supplied into the contact from the external
+    // circuit is -(particle inflow), so the total terminal current is
+    //   I_total = I_electron - I_hole.
+    // Using `I_electron + I_hole` (as previously) double-adds the volume
+    // recombination integral into the terminal current and breaks the
+    // Kirchhoff balance |I_anode| = |I_cathode| for a two-terminal device.
+    result.totalCurrent = result.electronCurrent - result.holeCurrent;
     return result;
 }
 

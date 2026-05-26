@@ -157,3 +157,90 @@ Probe inputs (already generated in `build/pn2d_tdr_tie_probe/vela/`):
 `*_iv_srh_auger_{half,double}`, `*_resolution_step0p0{1,2}`,
 `*_resolution_promoted`. Reference CSV:
 `build/pn2d_tdr_tie_probe/reference_curves/pn2d_iv_reference.csv`.
+
+
+## 2026-05-26 ROOT CAUSE: ContactCurrent totalCurrent sign-convention bug
+
+### Finding
+
+Tracing the SG flux sign conventions through `src/post/ContactCurrent.cpp`
+and `src/discretization/ScharfetterGummel.cpp` reveals that the per-edge
+accumulator stores:
+
+- `result.electronCurrent = +I_n_outward`  (conventional electron current
+  flowing out of the contact into the device)
+- `result.holeCurrent     = -I_p_outward`  (NEGATIVE of conventional hole
+  current flowing out of the contact)
+
+The opposite sign on the hole accumulator arises because `holeFlux01 =
+-pFlux` where `pFlux = sgHoleContinuityFlux` already represents J_p in the
+0->1 direction (positive at anode in forward bias). The negation in
+`holeFlux01 = -pFlux` therefore inverts the conventional hole sign.
+
+Pre-fix line 168 was:
+
+```cpp
+result.totalCurrent = result.electronCurrent + result.holeCurrent;
+//                  = I_n_outward - I_p_outward    <-- WRONG
+```
+
+This is not Kirchhoff-conserved. The correct total terminal current is
+
+```cpp
+result.totalCurrent = result.electronCurrent - result.holeCurrent;
+//                  = I_n_outward + I_p_outward    <-- CORRECT
+```
+
+### Numerical evidence (pn2d default IV, V = 0.30 V)
+
+| Contact | I_e (A/m)     | I_p (A/m)     | e+h (old)     | e-h (new)     |
+|---------|---------------|---------------|---------------|---------------|
+| Anode   | +2.135e-08    | -1.720e-08    | +4.158e-09    | +3.855e-08    |
+| Cathode | -2.876e-08    | +9.787e-09    | -1.898e-08    | -3.855e-08    |
+| SUM     |               |               | -1.482e-08    |  0.000e+00    |
+
+Pre-fix sum-of-totals violates KCL by exactly 2*q*R_total = 1.48e-08 A/m
+(volume recombination integral double-counted into terminal current).
+Post-fix sum is identically zero at every bias point in `pn2d_iv_default.csv`
+and `pn2d_iv_default_vtkprobe_anode_current.csv`.
+
+### Impact on remaining gap to Sentaurus
+
+At V=0.30 V Anode TotalCurrent:
+
+- Pre-fix Vela / Sentaurus = 0.27x (~3.7x short)
+- Post-fix Vela / Sentaurus = 0.55x (~1.8x short)
+
+The fix closes roughly half of the gap. The residual ~1.8x is now
+believed to be physics calibration: mobility model (Vela Caughey-Thomas
+vs Sentaurus Masetti), BGN parameter parity, or the asymmetric mesh
+(N-region has only 3 cathode nodes because the Sentaurus deck assigned
+GlobalMesh to R.Si which became the P-half after R.NRegion overlay).
+
+### Test fallout from the fix (must be addressed before merge)
+
+The old formula coincidentally produced a positive number at MOS drains
+under both NMOS and PMOS small-bias conditions (because
+I_n_outward - I_p_outward yields the majority-carrier sign at the drain
+in both cases). Several configs hard-coded `drain_current_sign = 1.0`
+relying on that artifact:
+
+- `examples/{nmos2d_dd,nmos2d_mos_dd,pmos2d_dd,pmos2d_mos_dd}/simulation_iv.json`
+  - PMOS configs must be retuned: with the corrected convention
+    (positive = current OUT of contact INTO device), a PMOS drain at
+    Vds<0 reports a negative total. Update `drain_current_sign` to -1
+    for the two PMOS decks, leave NMOS at +1.
+- `tests/data/pn2d_iv_*` regression baselines may need refreshed
+  reference magnitudes (now 2x larger by construction).
+- `tests/regression/test_sentaurus_sample_integration.py` assertion
+  `orders_of_magnitude < 0.20` is still violated (0.97 post-fix vs
+  presumably worse pre-fix). The threshold is calibrated to the broken
+  baseline; either tighten the physics gap further (see above) or relax
+  the threshold to reflect known mobility-model differences.
+
+Failing tests after fix (9 of 273):
+- 122, 262: mos_solver_crosscheck (PMOS expectedSign now -1, not +1)
+- 270: regression (PMOS drain polarity check)
+- 273: sentaurus_sample_integration (orders_of_magnitude assertion)
+- 249, 251, 252, 255, 272: SentaurusTdrReader.* (pre-existing,
+  unrelated to ContactCurrent; observed failing on stashed baseline too)
