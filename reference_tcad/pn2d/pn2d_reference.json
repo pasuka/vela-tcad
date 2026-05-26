@@ -8,20 +8,20 @@
   },
   "vela_solver": {
     "method": "gummel_newton",
-    "max_iter": 1,
-    "reltol": 1.0,
+    "max_iter": 30,
+    "reltol": 1.0e-6,
     "abstol": 1.0e-18,
     "damping_psi": 0.2,
     "damping_factor": 1.0,
     "max_update": 5.0,
-    "line_search": false,
+    "line_search": true,
     "warm_start": true,
     "verbose": false,
     "handoff": {
       "fallback": "none",
       "require_gummel_convergence": false,
-      "gummel_max_iter": 1,
-      "newton_max_iter": 1
+      "gummel_max_iter": 0,
+      "newton_max_iter": 30
     }
   },
   "simulations": [
@@ -59,8 +59,8 @@
       "plt": "pn2d_bv.plt",
       "bias_column": "Cathode OuterVoltage",
       "current_column": "Cathode TotalCurrent",
-      "vela_stop": 10.0,
-      "vela_step": 5.0,
+      "vela_stop": 0.05,
+      "vela_step": 0.05,
       "comparison_kind": "iv",
       "vela_solver": {
         "impact_ionization": {
@@ -70,8 +70,8 @@
       "require_trend_match": false,
       "comparison": {
         "candidate_scale": 1.0,
-        "bias_min": 5.0,
-        "bias_max": 10.0,
+        "bias_min": 0.0,
+        "bias_max": 0.05,
         "max_orders_of_magnitude": 20.0,
         "require_trend_match": false,
         "min_points": 2

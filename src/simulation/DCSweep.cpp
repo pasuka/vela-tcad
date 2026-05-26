@@ -719,51 +719,67 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 attempt.handoffStage = solverConverged ? "newton" : "newton_failed";
                 sol = std::move(result.solution);
             } else if (solverMethod == SolverMethod::GummelNewton) {
-                GummelConfig initializerGummel = gummel;
-                if (hybrid.gummelMaxIter >= 0)
-                    initializerGummel.maxIter = hybrid.gummelMaxIter;
-                DDSolution gummelInitial = initial != nullptr
-                    ? runGummel(mesh, matdb, doping, biases, contactSpecs, initializerGummel, *initial,
-                                fixedChargeSpecs, sheetChargeSpecs)
-                    : runGummel(mesh, matdb, doping, biases, contactSpecs, initializerGummel,
-                                fixedChargeSpecs, sheetChargeSpecs);
                 attempt.solverMethod = "gummel_newton";
-                attempt.gummelIterations = gummelInitial.iters;
-
-                if (!gummelInitial.converged && hybrid.requireGummelConvergence) {
-                    attempt.ok = false;
-                    attempt.solution = std::move(gummelInitial);
-                    attempt.handoffStage = "gummel_failed";
-                    attempt.failureReason = "gummel_non_convergence";
-                    return attempt;
-                }
-
-                const DDSolutionValidationResult gummelValidation =
-                    validateDDSolution(gummelInitial, mesh, biases, validationOptions);
-                if (!gummelValidation.valid) {
-                    attempt.ok = false;
-                    attempt.solution = std::move(gummelInitial);
-                    attempt.handoffStage = "gummel_validation_failed";
-                    attempt.failureReason = "gummel_validation_failed";
-                    attempt.validationDiagnostics = gummelValidation.diagnosticsString();
-                    return attempt;
-                }
 
                 NewtonConfig handoffNewton = newton;
                 handoffNewton.warmStart = true;
                 if (hybrid.newtonMaxIter >= 0)
                     handoffNewton.maxIter = hybrid.newtonMaxIter;
-                NewtonResult result = runNewton(mesh, matdb, doping, biases, gummelInitial,
-                                                handoffNewton, fixedChargeSpecs, sheetChargeSpecs);
-                if (!result.converged && hybrid.fallbackToGummelOnNewtonFailure) {
-                    attempt.ok = true;
-                    attempt.solution = std::move(gummelInitial);
-                    attempt.newtonIterations = result.iters;
-                    attempt.handoffStage = "gummel_fallback";
-                    attempt.validationDiagnostics = gummelValidation.diagnosticsString();
-                    return attempt;
+
+                DDSolution gummelInitial;
+                DDSolutionValidationResult gummelValidation;
+                NewtonResult result;
+                if (hybrid.gummelMaxIter == 0) {
+                    attempt.gummelIterations = 0;
+                    result = initial != nullptr
+                        ? runNewton(mesh, matdb, doping, biases, *initial,
+                                    handoffNewton, fixedChargeSpecs, sheetChargeSpecs)
+                        : runNewton(mesh, matdb, doping, biases,
+                                    handoffNewton, fixedChargeSpecs, sheetChargeSpecs);
+                } else {
+                    GummelConfig initializerGummel = gummel;
+                    if (hybrid.gummelMaxIter >= 0)
+                        initializerGummel.maxIter = hybrid.gummelMaxIter;
+                    gummelInitial = initial != nullptr
+                        ? runGummel(mesh, matdb, doping, biases, contactSpecs, initializerGummel, *initial,
+                                    fixedChargeSpecs, sheetChargeSpecs)
+                        : runGummel(mesh, matdb, doping, biases, contactSpecs, initializerGummel,
+                                    fixedChargeSpecs, sheetChargeSpecs);
+                    attempt.gummelIterations = gummelInitial.iters;
+
+                    if (!gummelInitial.converged && hybrid.requireGummelConvergence) {
+                        attempt.ok = false;
+                        attempt.solution = std::move(gummelInitial);
+                        attempt.handoffStage = "gummel_failed";
+                        attempt.failureReason = "gummel_non_convergence";
+                        return attempt;
+                    }
+
+                    gummelValidation = validateDDSolution(gummelInitial, mesh, biases, validationOptions);
+                    if (!gummelValidation.valid) {
+                        attempt.ok = false;
+                        attempt.solution = std::move(gummelInitial);
+                        attempt.handoffStage = "gummel_validation_failed";
+                        attempt.failureReason = "gummel_validation_failed";
+                        attempt.validationDiagnostics = gummelValidation.diagnosticsString();
+                        return attempt;
+                    }
+
+                    result = runNewton(mesh, matdb, doping, biases, gummelInitial,
+                                       handoffNewton, fixedChargeSpecs, sheetChargeSpecs);
+                    const bool acceptedNewton =
+                        result.converged && !(hybrid.newtonMaxIter == 0 && result.iters == 0);
+                    if (!acceptedNewton && hybrid.fallbackToGummelOnNewtonFailure) {
+                        attempt.ok = true;
+                        attempt.solution = std::move(gummelInitial);
+                        attempt.newtonIterations = result.iters;
+                        attempt.handoffStage = "gummel_fallback";
+                        attempt.validationDiagnostics = gummelValidation.diagnosticsString();
+                        return attempt;
+                    }
                 }
-                solverConverged = result.converged;
+                solverConverged =
+                    result.converged && !(hybrid.newtonMaxIter == 0 && result.iters == 0);
                 attempt.newtonIterations = result.iters;
                 attempt.handoffStage = solverConverged ? "newton" : "newton_failed";
                 if (!solverConverged)

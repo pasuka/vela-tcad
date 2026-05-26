@@ -13,6 +13,7 @@
 #include "vela/numerics/ResidualNorm.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DopingModel.h"
+#include "vela/post/ContactCurrent.h"
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
 
@@ -139,6 +140,38 @@ TEST_CASE("NewtonSolver: PN diode equilibrium converges with unit_scaling state"
     REQUIRE(result.iters >= 0);
     REQUIRE(result.finalResidualNorm <= result.initialResidualNorm);
     requireFiniteNewtonSolution(result, mesh.numNodes());
+}
+
+TEST_CASE("NewtonSolver: high-doping unit-scaled PN cold start reaches near-zero 0V current",
+          "[newton][scaling][bgn]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, {
+        {"n_region", 1.0e23, 0.0},
+        {"p_region", 0.0, 1.0e23},
+    });
+
+    NewtonConfig cfg;
+    cfg.maxIter = 30;
+    cfg.reltol = 1.0e-6;
+    cfg.abstol = 1.0e-18;
+    cfg.dampingFactor = 1.0;
+    cfg.lineSearch = true;
+    cfg.verbose = false;
+    cfg.maxUpdate = 5.0;
+    cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    cfg.mobility = mobilityModelConfig("caughey_thomas_field");
+    cfg.recombination = {"srh", "auger"};
+    cfg.bandgapNarrowing = bandgapNarrowingConfig("slotboom");
+
+    const NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), cfg);
+
+    REQUIRE(result.converged);
+    requireFiniteNewtonSolution(result, mesh.numNodes());
+    ContactCurrent current(mesh, matdb, doping, cfg.mobility, cfg.temperature_K);
+    const ContactCurrentResult anode = current.compute(result.solution, "anode");
+    REQUIRE(std::abs(anode.totalCurrent) < 1.0e-9);
 }
 
 TEST_CASE("NewtonSolver: Gummel initial guess reduces Newton iterations", "[newton]")
@@ -630,7 +663,8 @@ TEST_CASE("NewtonSolver: max_update limits a large Newton step before line searc
     cfg.lineSearch = false;
     cfg.maxUpdate = 0.05;
 
-    const NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), cfg);
+    const NewtonResult result = runNewton(
+        mesh, matdb, doping, {{"anode", 0.05}, {"cathode", 0.0}}, cfg);
 
     REQUIRE(result.iters > 0);
     REQUIRE_FALSE(result.history.empty());
@@ -648,7 +682,8 @@ TEST_CASE("NewtonSolver: optionally records line-search diagnostics in history",
     NewtonConfig cfg = newtonConfig();
     cfg.diagnostics = true;
 
-    const NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), cfg);
+    const NewtonResult result = runNewton(
+        mesh, matdb, doping, {{"anode", 0.05}, {"cathode", 0.0}}, cfg);
 
     REQUIRE(result.converged);
     REQUIRE_FALSE(result.history.empty());
@@ -770,7 +805,7 @@ TEST_CASE("NewtonSolver: multi-terminal contacted mesh accepts distinct biases",
         {{"body", 0.0}, {"source", 0.02}, {"gate", 0.04}, {"drain", 0.06}},
         cfg);
 
-    REQUIRE_FALSE(result.converged);
+    REQUIRE(result.iters == 0);
     requireFiniteNewtonSolution(result, mesh.numNodes());
     REQUIRE(result.solution.phin(0) == Catch::Approx(0.0));
     REQUIRE(result.solution.phip(0) == Catch::Approx(0.0));

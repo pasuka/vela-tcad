@@ -675,6 +675,56 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
         return donor > 0.0 && acceptor > 0.0 &&
             std::abs(donor - acceptor) <= 1.0e-6 * scale;
     };
+    std::vector<std::set<std::size_t>> nodeAdjacency(inventory.vertices.size());
+    auto addAdjacency = [&](std::size_t a, std::size_t b) {
+        if (a >= inventory.vertices.size() || b >= inventory.vertices.size() || a == b) {
+            return;
+        }
+        nodeAdjacency[a].insert(b);
+        nodeAdjacency[b].insert(a);
+    };
+    for (const auto& region : inventory.regions) {
+        if (region.type != SentaurusTdrRegionType::Material) {
+            continue;
+        }
+        for (const auto& tri : region.triangles) {
+            addAdjacency(tri[0], tri[1]);
+            addAdjacency(tri[1], tri[2]);
+            addAdjacency(tri[2], tri[0]);
+        }
+        for (const auto& edge : region.edges) {
+            addAdjacency(edge[0], edge[1]);
+        }
+    }
+    auto dominantNeighbourSignedDoping = [&](std::size_t node) {
+        double positive = 0.0;
+        double negative = 0.0;
+        for (const std::size_t neighbour : nodeAdjacency[node]) {
+            const double donor = originalDonors[neighbour];
+            const double acceptor = originalAcceptors[neighbour];
+            const double net = donor - acceptor;
+            const double scale = std::max({std::abs(donor), std::abs(acceptor), 1.0});
+            if (std::abs(net) <= 1.0e-6 * scale) {
+                continue;
+            }
+            if (net > 0.0) {
+                positive += net;
+            } else {
+                negative += -net;
+            }
+        }
+        const double magnitude = std::max(originalDonors[node], originalAcceptors[node]);
+        if (magnitude <= 0.0) {
+            return 0.0;
+        }
+        if (positive > negative) {
+            return magnitude;
+        }
+        if (negative > positive) {
+            return -magnitude;
+        }
+        return 0.0;
+    };
 
     if (options.compensatedDopingPolicy == "dominant_signed_region") {
         for (std::size_t i = 0; i < inventory.vertices.size(); ++i) {
@@ -686,6 +736,9 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
                 if (std::abs(value) > std::abs(signedPick)) {
                     signedPick = value;
                 }
+            }
+            if (signedPick == 0.0) {
+                signedPick = dominantNeighbourSignedDoping(i);
             }
             if (signedPick > 0.0) {
                 donors[i] = std::abs(signedPick);

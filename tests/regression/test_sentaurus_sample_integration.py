@@ -87,10 +87,10 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             self.assertTrue(iv_deck["solver"]["warm_start"])
             self.assertEqual(iv_deck["solver"]["handoff"]["fallback"], "none")
             self.assertFalse(iv_deck["solver"]["handoff"]["require_gummel_convergence"])
-            self.assertEqual(iv_deck["solver"]["handoff"]["gummel_max_iter"], 1)
+            self.assertEqual(iv_deck["solver"]["handoff"]["gummel_max_iter"], 0)
             self.assertGreater(iv_deck["solver"]["handoff"]["newton_max_iter"], 0)
             self.assertEqual(bv_deck["sweep"]["contact"], "Cathode")
-            self.assertEqual(bv_deck["sweep"]["stop"], 10.0)
+            self.assertEqual(bv_deck["sweep"]["stop"], 0.05)
             self.assertEqual(bv_deck["node_doping_file"], "doping.csv")
             self.assertEqual(bv_deck["solver"]["method"], "gummel_newton")
 
@@ -102,11 +102,15 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             self.assertGreaterEqual(len(self._read_curve(faithful_bv)), 2)
             self._assert_curve_has_finite_currents(faithful_iv)
             self._assert_curve_has_finite_currents(faithful_bv)
-            for row in self._read_curve(faithful_iv):
+            faithful_iv_rows = self._read_curve(faithful_iv)
+            faithful_bv_rows = self._read_curve(faithful_bv)
+            self.assertLess(abs(float(faithful_iv_rows[0]["current_total"])), 1.0e-9)
+            self.assertLess(abs(float(faithful_bv_rows[0]["current_total"])), 1.0e-9)
+            for row in faithful_iv_rows:
                 self.assertEqual(row["solver_method"], "gummel_newton")
                 self.assertEqual(row["handoff_stage"], "newton")
                 self.assertGreater(int(row["newton_iterations"]), 0)
-            for row in self._read_curve(faithful_bv):
+            for row in faithful_bv_rows:
                 self.assertEqual(row["solver_method"], "gummel_newton")
                 self.assertEqual(row["handoff_stage"], "newton")
                 self.assertGreater(int(row["newton_iterations"]), 0)

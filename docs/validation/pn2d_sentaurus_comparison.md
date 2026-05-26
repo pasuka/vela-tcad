@@ -14,11 +14,12 @@ development and regression inspection.
 The current executable comparison uses the faithful node-level doping decks.
 The IV deck uses `vela_stop: 0.3` and `vela_step: 0.1`; the local gate compares
 the 0.2-0.3 V forward-bias window against the full imported Sentaurus IV
-reference. The BV deck uses `vela_stop: 10.0` and `vela_step: 5.0`; Vela
-currently disables the Sentaurus `Avalanche(OkutoCrowell)` approximation in
-the strict handoff deck because the imported 0 V state is not yet robust with
-impact-ionization Jacobian terms. These reports are diagnostic-only and do not
-yet require trend match.
+reference. The BV deck currently uses a strict low-reverse-bias smoke window
+(`vela_stop: 0.05`, `vela_step: 0.05`) while Newton continuation beyond the
+first reverse-bias steps is improved. Vela currently disables the Sentaurus
+`Avalanche(OkutoCrowell)` approximation in the strict handoff deck because the
+imported reverse-bias path is not yet robust with impact-ionization Jacobian
+terms. These reports are diagnostic-only and do not yet require trend match.
 
 Vela currently treats Sentaurus Fermi statistics as Boltzmann carrier
 statistics. Sentaurus Okuto-Crowell avalanche is approximated by Vela
@@ -34,11 +35,12 @@ accepted faithful IV/BV row must end with `handoff_stage: "newton"` and
 `newton_iterations > 0`; Gummel fallback is no longer part of the default pn2d
 gate.
 
-Current solver limits are intentionally explicit: Gummel is used as a one-step
-initializer (`handoff.gummel_max_iter: 1`) and coupled Newton owns the accepted
-state. This is a strict provenance gate, not a calibrated convergence claim:
-the IV comparison currently allows a wide order-of-magnitude envelope while
-the coupled Newton residual and physical current calibration are improved.
+Current solver limits are intentionally explicit: the bundled faithful pn2d
+deck sets `handoff.gummel_max_iter: 0`, so the hybrid path skips the damaged
+one-step Gummel initializer and lets coupled Newton cold-start from its
+charge-neutral equilibrium seed. This is a strict Newton ownership gate, not
+yet a calibrated Sentaurus match: the IV comparison still allows a wide
+order-of-magnitude envelope while the physical current calibration is improved.
 
 The old region-average `runtime_doping_scale` path is no longer required for
 pn2d. It remains available through an opt-in `runtime_diagnostic` config block

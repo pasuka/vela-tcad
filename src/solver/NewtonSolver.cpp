@@ -26,7 +26,12 @@ inline double thermalVoltage(double T)
 inline double nEq(double Ndop, double ni)
 {
     const double half = 0.5 * Ndop;
-    return half + std::sqrt(half * half + ni * ni);
+    const double root = std::hypot(half, ni);
+    if (Ndop >= 0.0)
+        return half + root;
+
+    const double pEq = root - half;
+    return (pEq > 0.0) ? (ni * ni / pEq) : 0.0;
 }
 
 void validateResidualWeights(
@@ -300,30 +305,44 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
 }
 
 DDSolution NewtonSolver::buildInitialGuess(
-    const CoupledDDAssembler&, const CoupledDDBoundaryConditions&) const
+    const CoupledDDAssembler& assembler, const CoupledDDBoundaryConditions& bcs) const
 {
-    GummelConfig gcfg;
-    gcfg.maxIter = 1;
-    gcfg.reltol = 0.0;
-    gcfg.temperature_K = cfg_.temperature_K;
-    gcfg.dampingPsi = 0.5;
-    gcfg.taun = cfg_.taun;
-    gcfg.taup = cfg_.taup;
-    gcfg.inputScaling = cfg_.inputScaling;
-    gcfg.unitScalingRefs = cfg_.unitScalingRefs;
-    gcfg.mobility = cfg_.mobility;
-    gcfg.recombination = cfg_.recombination;
-    gcfg.bandgapNarrowing = cfg_.bandgapNarrowing;
-    gcfg.impactIonization = cfg_.impactIonization;
-    DDSolution sol = runGummel(mesh_, matdb_, doping_, contactBiases_, ContactSpecsMap{}, gcfg, fixedCharges_, sheetCharges_);
+    const int N = static_cast<int>(mesh_.numNodes());
+    const Real Vt = thermalVoltage(cfg_.temperature_K);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const auto& ni = assembler.intrinsicDensity();
 
-    // The default cold-start path removes tiny quasi-Fermi numerical noise left
-    // by the one-step Gummel initializer.  A caller can opt into warm_start when
-    // the supplied/constructed quasi-Fermi potentials should be used as-is.
-    if (!cfg_.warmStart) {
-        const int N = static_cast<int>(mesh_.numNodes());
-        sol.phin = VectorXd::Zero(N);
-        sol.phip = VectorXd::Zero(N);
+    DDSolution sol;
+    sol.psi = VectorXd::Zero(N);
+    sol.phin = VectorXd::Zero(N);
+    sol.phip = VectorXd::Zero(N);
+    sol.n = VectorXd::Zero(N);
+    sol.p = VectorXd::Zero(N);
+    sol.iters = 0;
+    sol.converged = false;
+
+    for (int i = 0; i < N; ++i) {
+        const Index nid = static_cast<Index>(i);
+        const Real niNode = ni[nid];
+        const Real neq = nEq(doping_.netDoping(nid), niNode);
+        Real psiBuiltIn = 0.0;
+        if (niNode > 0.0 && neq > 0.0)
+            psiBuiltIn = Vt * std::log(neq / niNode);
+        sol.psi(i) = psiBuiltIn;
+    }
+
+    for (const auto& [nid, value] : bcs.psi)
+        sol.psi(static_cast<int>(nid)) = value * potentialScale;
+    for (const auto& [nid, value] : bcs.phin)
+        sol.phin(static_cast<int>(nid)) = value * potentialScale;
+    for (const auto& [nid, value] : bcs.phip)
+        sol.phip(static_cast<int>(nid)) = value * potentialScale;
+
+    for (int i = 0; i < N; ++i) {
+        const Index nid = static_cast<Index>(i);
+        sol.n(i) = electronDensity(ni[nid], sol.psi(i), sol.phin(i), Vt);
+        sol.p(i) = holeDensity(ni[nid], sol.psi(i), sol.phip(i), Vt);
     }
     return sol;
 }
