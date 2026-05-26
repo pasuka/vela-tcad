@@ -17,6 +17,22 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 class ReferenceTcadToolsTest(unittest.TestCase):
+    def test_pn2d_iv_ratio_summary_script_exists(self) -> None:
+        script = REPO / "scripts" / "summarize_pn2d_iv_ratios.ps1"
+        self.assertTrue(script.is_file(), f"missing pn2d IV ratio summary script: {script}")
+        text = script.read_text()
+        self.assertIn("pn2d_iv_ratio_summary.csv", text)
+        self.assertIn("current_electron_A_per_um", text)
+        self.assertIn("current_hole_A_per_um", text)
+
+    def test_pn2d_iv_bv_physics_matrix_script_exists(self) -> None:
+        script = REPO / "scripts" / "scan_pn2d_iv_bv_physics_matrix.ps1"
+        self.assertTrue(script.is_file(), f"missing pn2d IV/BV physics matrix script: {script}")
+        text = script.read_text()
+        self.assertIn("recomb_srh_auger", text)
+        self.assertIn("recomb_none", text)
+        self.assertIn("pn2d_iv_bv_physics_matrix_summary.csv", text)
+
     def test_pn2d_bv_quick_refinement_script_is_documented_and_reproducible(self) -> None:
         script = REPO / "scripts" / "scan_pn2d_bv_ct_quick6.ps1"
         self.assertTrue(script.is_file(), f"missing documented pn2d BV quick refinement script: {script}")
