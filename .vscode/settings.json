@@ -1,0 +1,21 @@
+{
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "terminal.integrated.env.windows": {
+    "PATH": "D:\\msys64\\ucrt64\\bin;D:\\msys64\\usr\\bin;${env:PATH}"
+  },
+  "cmake.generator": "Ninja",
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "cmake.configureOnOpen": false,
+  "cmake.configureSettings": {
+    "CMAKE_BUILD_TYPE": "Debug"
+  },
+  "cmake.configureEnvironment": {
+    "PATH": "D:\\msys64\\ucrt64\\bin;D:\\msys64\\usr\\bin;${env:PATH}"
+  },
+  "cmake.buildEnvironment": {
+    "PATH": "D:\\msys64\\ucrt64\\bin;D:\\msys64\\usr\\bin;${env:PATH}"
+  },
+  "cmake.testEnvironment": {
+    "PATH": "D:\\msys64\\ucrt64\\bin;D:\\msys64\\usr\\bin;${env:PATH}"
+  }
+}

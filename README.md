@@ -76,6 +76,8 @@ the schema/example documents above.
 
 ## Build
 
+On Windows, this repository is developed primarily in MSYS2 UCRT64. If a tool or agent needs to build, test, or debug on Windows, it should assume `D:\msys64\ucrt64` is the default toolchain unless the user says otherwise.
+
 Prerequisites:
 
 - CMake 3.20 or newer
@@ -101,11 +103,14 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
 Configure and build:
 
 ```bash
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build --parallel
+cmake --preset windows-ucrt64-debug
+cmake --build --preset windows-ucrt64-debug
 ```
 
 If Ninja is unavailable, omit `-G Ninja`.
+
+The repository also ships `CMakePresets.json`, so CMake Tools and command-line
+workflows can share the same Windows UCRT64 configuration.
 
 ### Windows / MSYS2 UCRT64
 
@@ -114,8 +119,8 @@ The Windows development environment uses MSYS2 UCRT64, typically at
 
 ```powershell
 $env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build --parallel
+cmake --preset windows-ucrt64-debug
+cmake --build --preset windows-ucrt64-debug
 ```
 
 Install packages from a UCRT64 shell:
@@ -141,13 +146,13 @@ Use `python` instead of `python3` if the UCRT64 shell does not provide a
 Run the full suite:
 
 ```bash
-ctest --test-dir build --output-on-failure
+ctest --preset windows-ucrt64-debug
 ```
 
 Useful focused groups:
 
 ```bash
-ctest --test-dir build --output-on-failure -R poisson
+ctest --preset windows-ucrt64-poisson
 ctest --test-dir build --output-on-failure -R "dd|newton|dc_sweep"
 ctest --test-dir build --output-on-failure -R regression
 ctest --test-dir build --output-on-failure -R reference_tcad_regression
@@ -190,9 +195,9 @@ development headers and pybind11, then configure with `VELA_ENABLE_PYTHON=ON`:
 # Ubuntu/Debian
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3-dev pybind11-dev
 
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DVELA_ENABLE_PYTHON=ON
-cmake --build build --parallel
-ctest --test-dir build --output-on-failure -R python_api
+cmake --preset windows-ucrt64-debug-python
+cmake --build --preset windows-ucrt64-debug-python
+ctest --preset windows-ucrt64-debug-python -R python_api
 ```
 
 On Windows/MSYS2:
@@ -201,8 +206,8 @@ On Windows/MSYS2:
 pacman -S --needed mingw-w64-ucrt-x86_64-pybind11
 ```
 
-The generated package is placed under `build/python/<config>/vela`, for example
-`build/python/Debug/vela`. The CTest `python_api` target sets `PYTHONPATH`
+The generated package is placed under `build-python/python/<config>/vela`, for example
+`build-python/python/Debug/vela`. The CTest `python_api` target sets `PYTHONPATH`
 automatically.
 
 Python examples:

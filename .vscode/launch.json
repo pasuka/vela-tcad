@@ -1,0 +1,58 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug pn diode IV example (ucrt64)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/vela_example_runner.exe",
+      "args": [
+        "--config",
+        "${workspaceFolder}/examples/pn_diode/simulation_iv.json"
+      ],
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "D:\\msys64\\ucrt64\\bin;D:\\msys64\\usr\\bin;${env:PATH}"
+        }
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "D:/msys64/ucrt64/bin/gdb.exe",
+      "preLaunchTask": "cmake: build debug (ucrt64)",
+      "setupCommands": [
+        {
+          "description": "Enable GDB pretty printing",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      "name": "Debug test_poisson (ucrt64)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/test_poisson.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "D:\\msys64\\ucrt64\\bin;D:\\msys64\\usr\\bin;${env:PATH}"
+        }
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "D:/msys64/ucrt64/bin/gdb.exe",
+      "preLaunchTask": "cmake: build debug (ucrt64)",
+      "setupCommands": [
+        {
+          "description": "Enable GDB pretty printing",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    }
+  ]
+}
