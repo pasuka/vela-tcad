@@ -254,6 +254,28 @@ Fresh baseline rerun on 2026-05-26:
 - default BV: `orders ~= 0.3508`;
 - quick6 best `q_mu0p89_a0p89`: `orders ~= 0.0641`.
 
+## Candidate Mobility Impact: q_mu0p89_a0p89
+
+The `scripts/scan_pn2d_candidate_iv_bv.ps1` helper applies the same
+`q_mu0p89_a0p89` CT mobility object to separately generated IV and BV
+candidate decks. This isolates whether the BV-tuned mobility point is safe as a
+global pn2d calibration.
+
+| Metric | Default | Candidate |
+| --- | ---: | ---: |
+| IV orders | 5.047505e-01 | 2.442584e+00 |
+| IV ratio vs ref at 0.29 V | 3.109879e-01 | 3.609239e-03 |
+| BV 0.05 V orders | 3.508171e-01 | 6.411045e-02 |
+| BV 0.05 V ratio vs ref | 4.458440e-01 | 8.627591e-01 |
+
+Takeaway:
+
+- The candidate is excellent for the low-bias BV quantity gate.
+- The same candidate is not safe as a global IV/BV mobility calibration because
+  it degrades the IV comparison by roughly two orders of magnitude.
+- Any promotion must therefore remain a BV-only override unless a later
+  candidate passes both IV and BV isolation.
+
 The old region-average `runtime_doping_scale` path is no longer required for
 pn2d. It remains available through an opt-in `runtime_diagnostic` config block
 for future debugging, but the default bundled pn2d reference runs the imported

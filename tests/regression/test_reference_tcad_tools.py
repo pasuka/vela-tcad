@@ -24,6 +24,15 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         self.assertIn("q_mu0p89_a0p89", text)
         self.assertIn("pn2d_bv_ct_quick6_summary.csv", text)
 
+    def test_pn2d_candidate_iv_bv_script_records_best_bv_candidate(self) -> None:
+        script = REPO / "scripts" / "scan_pn2d_candidate_iv_bv.ps1"
+        self.assertTrue(script.is_file(), f"missing pn2d candidate IV/BV script: {script}")
+        text = script.read_text()
+        self.assertIn("q_mu0p89_a0p89", text)
+        self.assertIn("pn2d_candidate_iv_bv_summary.csv", text)
+        self.assertIn("simulation_iv", text)
+        self.assertIn("simulation_bv", text)
+
     def test_pn_export_converts_to_unit_scaling_deck(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_reference_tcad_") as tmp:
             root = Path(tmp)
