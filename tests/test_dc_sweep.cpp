@@ -361,8 +361,9 @@ TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV da
 
     const auto rows = readCsvRows(csvPath);
     REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                     "current_contact", "current_electron", "current_hole",
-                                                     "current_total", "converged", "iterations",
+                                                     "current_contact", "current_electron", "current_electron_drift",
+                                                     "current_electron_diffusion", "current_hole", "current_hole_drift",
+                                                     "current_hole_diffusion", "current_total", "converged", "iterations",
                                                      "solver_method", "gummel_iterations", "newton_iterations",
                                                      "handoff_stage", "step_diagnostics", "validation_diagnostics"});
 }
@@ -398,11 +399,19 @@ TEST_CASE("DCSweep: unit_scaling CSV appends per-micron currents and V-per-cm fi
     const auto& header = rows.front();
     const std::size_t currentTotal = csvColumnIndex(header, "current_total");
     const std::size_t currentElectron = csvColumnIndex(header, "current_electron");
+    const std::size_t currentElectronDrift = csvColumnIndex(header, "current_electron_drift");
+    const std::size_t currentElectronDiffusion = csvColumnIndex(header, "current_electron_diffusion");
     const std::size_t currentHole = csvColumnIndex(header, "current_hole");
+    const std::size_t currentHoleDrift = csvColumnIndex(header, "current_hole_drift");
+    const std::size_t currentHoleDiffusion = csvColumnIndex(header, "current_hole_diffusion");
     const std::size_t maxField = csvColumnIndex(header, "max_electric_field_V_per_m");
     const std::size_t currentTotalUm = csvColumnIndex(header, "current_total_A_per_um");
     const std::size_t currentElectronUm = csvColumnIndex(header, "current_electron_A_per_um");
+    const std::size_t currentElectronDriftUm = csvColumnIndex(header, "current_electron_drift_A_per_um");
+    const std::size_t currentElectronDiffusionUm = csvColumnIndex(header, "current_electron_diffusion_A_per_um");
     const std::size_t currentHoleUm = csvColumnIndex(header, "current_hole_A_per_um");
+    const std::size_t currentHoleDriftUm = csvColumnIndex(header, "current_hole_drift_A_per_um");
+    const std::size_t currentHoleDiffusionUm = csvColumnIndex(header, "current_hole_diffusion_A_per_um");
     const std::size_t maxFieldCm = csvColumnIndex(header, "max_electric_field_V_per_cm");
 
     for (std::size_t r = 1; r < rows.size(); ++r) {
@@ -411,8 +420,16 @@ TEST_CASE("DCSweep: unit_scaling CSV appends per-micron currents and V-per-cm fi
                 Catch::Approx(csvReal(row, currentTotal) / 1.0e6).epsilon(1.0e-12));
         REQUIRE(csvReal(row, currentElectronUm) ==
                 Catch::Approx(csvReal(row, currentElectron) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, currentElectronDriftUm) ==
+            Catch::Approx(csvReal(row, currentElectronDrift) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, currentElectronDiffusionUm) ==
+            Catch::Approx(csvReal(row, currentElectronDiffusion) / 1.0e6).epsilon(1.0e-12));
         REQUIRE(csvReal(row, currentHoleUm) ==
                 Catch::Approx(csvReal(row, currentHole) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, currentHoleDriftUm) ==
+            Catch::Approx(csvReal(row, currentHoleDrift) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, currentHoleDiffusionUm) ==
+            Catch::Approx(csvReal(row, currentHoleDiffusion) / 1.0e6).epsilon(1.0e-12));
         REQUIRE(csvReal(row, maxFieldCm) ==
                 Catch::Approx(csvReal(row, maxField) / 100.0).epsilon(1.0e-12));
     }
@@ -771,8 +788,9 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
 
         const auto rows = readCsvRows(csvPath);
         REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                         "current_contact", "current_electron", "current_hole",
-                                                         "current_total", "converged", "iterations",
+                                                         "current_contact", "current_electron", "current_electron_drift",
+                                                         "current_electron_diffusion", "current_hole", "current_hole_drift",
+                                                         "current_hole_diffusion", "current_total", "converged", "iterations",
                                                          "solver_method", "gummel_iterations", "newton_iterations",
                                                          "handoff_stage",
                                                          "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
@@ -822,8 +840,9 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
 
         const auto rows = readCsvRows(csvPath);
         REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                         "current_contact", "current_electron", "current_hole",
-                                                         "current_total", "converged", "iterations",
+                                                         "current_contact", "current_electron", "current_electron_drift",
+                                                         "current_electron_diffusion", "current_hole", "current_hole_drift",
+                                                         "current_hole_diffusion", "current_total", "converged", "iterations",
                                                          "solver_method", "gummel_iterations", "newton_iterations",
                                                          "handoff_stage",
                                                          "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
@@ -875,8 +894,9 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
 
         const auto rows = readCsvRows(csvPath);
         REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                         "current_contact", "current_electron", "current_hole",
-                                                         "current_total", "converged", "iterations",
+                                                         "current_contact", "current_electron", "current_electron_drift",
+                                                         "current_electron_diffusion", "current_hole", "current_hole_drift",
+                                                         "current_hole_diffusion", "current_total", "converged", "iterations",
                                                          "solver_method", "gummel_iterations", "newton_iterations",
                                                          "handoff_stage",
                                                          "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
@@ -914,8 +934,9 @@ TEST_CASE("DCSweep: LDMOS BV diagnostic deck writes complete schema", "[dc_sweep
     const auto rows = readCsvRows(dir / "outputs" / "ldmos2d_bv.csv");
     REQUIRE(rows.size() == 4);
     REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                     "current_contact", "current_electron", "current_hole",
-                                                     "current_total", "converged", "iterations",
+                                                     "current_contact", "current_electron", "current_electron_drift",
+                                                     "current_electron_diffusion", "current_hole", "current_hole_drift",
+                                                     "current_hole_diffusion", "current_total", "converged", "iterations",
                                                      "solver_method", "gummel_iterations", "newton_iterations",
                                                      "handoff_stage",
                                                      "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
@@ -972,16 +993,19 @@ TEST_CASE("DCSweep: BV reverse start failure records failed diagnostic row", "[d
 
     const auto rows = readCsvRows(csvPath);
     REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                     "current_contact", "current_electron", "current_hole",
-                                                     "current_total", "converged", "iterations",
+                                                     "current_contact", "current_electron", "current_electron_drift",
+                                                     "current_electron_diffusion", "current_hole", "current_hole_drift",
+                                                     "current_hole_diffusion", "current_total", "converged", "iterations",
                                                      "solver_method", "gummel_iterations", "newton_iterations",
                                                      "handoff_stage",
                                                      "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
                                                      "current_jump_ratio", "breakdown_detected",
                                                      "breakdown_voltage", "criterion", "last_stable_bias",
                                                      "failed_bias", "failure_reason"});
-    REQUIRE(rows.at(1).at(19).empty());
-    REQUIRE(rows.at(1).at(22) == "non_convergence");
+    const std::size_t criterionColumn = csvColumnIndex(rows.front(), "criterion");
+    const std::size_t failureReasonColumn = csvColumnIndex(rows.front(), "failure_reason");
+    REQUIRE(rows.at(1).at(criterionColumn).empty());
+    REQUIRE(rows.at(1).at(failureReasonColumn) == "non_convergence");
 }
 
 TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_sweep]")

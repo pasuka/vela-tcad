@@ -65,6 +65,9 @@
       "vela_step": 0.05,
       "comparison_kind": "iv",
       "vela_solver": {
+        "recombination": [
+          "none"
+        ],
         "impact_ionization": {
           "model": "none"
         }
@@ -75,7 +78,7 @@
         "candidate_column": "current_total_A_per_um",
         "bias_min": 0.05,
         "bias_max": 0.05,
-        "max_orders_of_magnitude": 2.0,
+        "max_orders_of_magnitude": 1.0,
         "require_trend_match": false,
         "min_points": 1
       },

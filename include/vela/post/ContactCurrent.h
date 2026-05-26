@@ -15,7 +15,11 @@ namespace vela {
 
 struct ContactCurrentResult {
     Real electronCurrent = 0.0;
+    Real electronDriftCurrent = 0.0;
+    Real electronDiffusionCurrent = 0.0;
     Real holeCurrent = 0.0;
+    Real holeDriftCurrent = 0.0;
+    Real holeDiffusionCurrent = 0.0;
     Real totalCurrent = 0.0;
 };
 

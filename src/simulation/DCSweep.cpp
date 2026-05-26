@@ -620,7 +620,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
     CSVWriter csv(sweep.csvFile);
     std::vector<std::string> header = {"mode", "bias_contact", "bias_V",
-        "current_contact", "current_electron", "current_hole", "current_total",
+        "current_contact", "current_electron", "current_electron_drift",
+        "current_electron_diffusion", "current_hole", "current_hole_drift",
+        "current_hole_diffusion", "current_total",
         "converged", "iterations", "solver_method", "gummel_iterations",
         "newton_iterations", "handoff_stage", "step_diagnostics",
         "validation_diagnostics"};
@@ -628,7 +630,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     if (writeUnitScaledColumns) {
         header.push_back("current_total_A_per_um");
         header.push_back("current_electron_A_per_um");
+        header.push_back("current_electron_drift_A_per_um");
+        header.push_back("current_electron_diffusion_A_per_um");
         header.push_back("current_hole_A_per_um");
+        header.push_back("current_hole_drift_A_per_um");
+        header.push_back("current_hole_diffusion_A_per_um");
     }
     std::vector<std::pair<std::string, std::string>> chargeColumns;
     std::vector<std::pair<std::string, std::string>> capacitanceColumns;
@@ -840,7 +846,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         point.bias = voltage;
         point.outputCsv = sweep.csvFile;
         point.electronCurrent = current.electronCurrent;
+        point.electronDriftCurrent = current.electronDriftCurrent;
+        point.electronDiffusionCurrent = current.electronDiffusionCurrent;
         point.holeCurrent = current.holeCurrent;
+        point.holeDriftCurrent = current.holeDriftCurrent;
+        point.holeDiffusionCurrent = current.holeDiffusionCurrent;
         point.totalCurrent = current.totalCurrent;
         point.converged = converged;
         point.iterations = sol.iters;
@@ -926,7 +936,19 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             point.extraFields.emplace_back(
                 "current_electron_A_per_um", perMeterToPerMicron(point.electronCurrent));
             point.extraFields.emplace_back(
+                "current_electron_drift_A_per_um",
+                perMeterToPerMicron(point.electronDriftCurrent));
+            point.extraFields.emplace_back(
+                "current_electron_diffusion_A_per_um",
+                perMeterToPerMicron(point.electronDiffusionCurrent));
+            point.extraFields.emplace_back(
                 "current_hole_A_per_um", perMeterToPerMicron(point.holeCurrent));
+            point.extraFields.emplace_back(
+                "current_hole_drift_A_per_um",
+                perMeterToPerMicron(point.holeDriftCurrent));
+            point.extraFields.emplace_back(
+                "current_hole_diffusion_A_per_um",
+                perMeterToPerMicron(point.holeDiffusionCurrent));
             if (sweep.mode == CurveSweepMode::CVQuasistatic && legacyChargeConfig.perMeter) {
                 point.extraFields.emplace_back(
                     "charge_C_per_um", perMeterToPerMicron(point.terminalCharge));
@@ -945,7 +967,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             formatReal(point.bias),
             sweep.currentContact,
             formatReal(point.electronCurrent),
+            formatReal(point.electronDriftCurrent),
+            formatReal(point.electronDiffusionCurrent),
             formatReal(point.holeCurrent),
+            formatReal(point.holeDriftCurrent),
+            formatReal(point.holeDiffusionCurrent),
             formatReal(point.totalCurrent),
             point.converged ? "1" : "0",
             std::to_string(point.iterations),
@@ -958,7 +984,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         if (writeUnitScaledColumns) {
             row.push_back(formatReal(perMeterToPerMicron(point.totalCurrent)));
             row.push_back(formatReal(perMeterToPerMicron(point.electronCurrent)));
+            row.push_back(formatReal(perMeterToPerMicron(point.electronDriftCurrent)));
+            row.push_back(formatReal(perMeterToPerMicron(point.electronDiffusionCurrent)));
             row.push_back(formatReal(perMeterToPerMicron(point.holeCurrent)));
+            row.push_back(formatReal(perMeterToPerMicron(point.holeDriftCurrent)));
+            row.push_back(formatReal(perMeterToPerMicron(point.holeDiffusionCurrent)));
         }
         if (sweep.storedChargeEnabled) {
             const char* storedColumn = sweep.storedCharge.perMeter ? "stored_charge_C_per_m" : "stored_charge_C";

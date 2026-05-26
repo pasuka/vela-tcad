@@ -99,10 +99,30 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
             ? sgHoleFlux(p_i, p_j, dpsi, thermalVoltage_, mup, edgeLength)
             : 0.0;
 
+        // Algebraic SG split: J = J_drift + J_diffusion.
+        const SGEdgeWeights weights = sgEdgeWeights(dpsi, thermalVoltage_);
+        const Real bAvg = 0.5 * (weights.b_plus + weights.b_minus);
+        const Real electronDriftFlux01 = (mun > 0.0)
+            ? mun * (dpsi / edgeLength) * (0.5 * (n_i + n_j))
+            : 0.0;
+        const Real electronDiffusionFlux01 = (mun > 0.0)
+            ? mun * (thermalVoltage_ / edgeLength) * bAvg * (n_i - n_j)
+            : 0.0;
+        const Real holeDriftFlux01 = (mup > 0.0)
+            ? mup * (dpsi / edgeLength) * (0.5 * (p_i + p_j))
+            : 0.0;
+        const Real holeDiffusionFlux01 = (mup > 0.0)
+            ? mup * (thermalVoltage_ / edgeLength) * bAvg * (p_j - p_i)
+            : 0.0;
+
         const Real outwardSign = n0OnContact ? 1.0 : -1.0;
         // Current density [A/m^2] * edge.couple [m] = [A/m]
         result.electronCurrent += constants::q * outwardSign * electronFlux01 * edge.couple;
+        result.electronDriftCurrent += constants::q * outwardSign * electronDriftFlux01 * edge.couple;
+        result.electronDiffusionCurrent += constants::q * outwardSign * electronDiffusionFlux01 * edge.couple;
         result.holeCurrent += constants::q * outwardSign * holeFlux01 * edge.couple;
+        result.holeDriftCurrent += constants::q * outwardSign * holeDriftFlux01 * edge.couple;
+        result.holeDiffusionCurrent += constants::q * outwardSign * holeDiffusionFlux01 * edge.couple;
     }
 
     result.totalCurrent = result.electronCurrent + result.holeCurrent;

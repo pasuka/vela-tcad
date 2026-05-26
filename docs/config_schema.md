@@ -311,11 +311,13 @@ result is preferable to aborting the sweep.
 
 Reference-import configs may also use `vela_step` and `vela_stop` on an
 individual simulation entry to override the generated Vela sweep range while
-preserving the full imported reference curve. A simulation `comparison` block
-can pass curve gate options such as `candidate_scale`, `bias_min`, `bias_max`,
-`reference_column`, `candidate_column`, `max_orders_of_magnitude`,
-`max_relative_error`, `min_points`, and `require_trend_match` to the comparison
-report. `runtime_diagnostic` is an
+preserving the full imported reference curve. `vela_current_contact` may be set
+when the Vela terminal current to compare differs from the swept bias contact.
+A simulation `comparison` block can pass curve gate options such as
+`candidate_scale`, `bias_min`, `bias_max`, `reference_column`,
+`candidate_column`, `max_orders_of_magnitude`, `max_relative_error`,
+`min_points`, and `require_trend_match` to the comparison report.
+`runtime_diagnostic` is an
 optional simulation block:
 
 ```json
