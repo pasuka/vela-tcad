@@ -65,6 +65,16 @@
       "vela_step": 0.05,
       "comparison_kind": "iv",
       "vela_solver": {
+        "mobility": {
+          "model": "caughey_thomas",
+          "electron_mu_min_m2_V_s": 46.458,
+          "hole_mu_min_m2_V_s": 39.961,
+          "electron_nref_m3": 9.68e16,
+          "hole_nref_m3": 2.23e17,
+          "electron_alpha": 0.6052,
+          "hole_alpha": 0.623
+        },
+        "bandgap_narrowing": "none",
         "recombination": [
           "none"
         ],

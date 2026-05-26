@@ -30,6 +30,9 @@ imported reverse-bias path is not yet robust with impact-ionization Jacobian
 terms. The BV deck also overrides `recombination: ["none"]` because the
 Sentaurus BV command does not enable `Recombination(SRH Auger)`; carrying the
 IV recombination models into BV inflated the 0.05 V current by about 17x.
+After candidate isolation, the BV deck also uses a BV-only Caughey-Thomas
+mobility override with `bandgap_narrowing: "none"`. The same mobility point is
+not used for IV because it degrades the forward-current comparison.
 These reports are diagnostic-only and do not yet require trend match.
 
 Vela currently treats Sentaurus Fermi statistics as Boltzmann carrier
@@ -57,8 +60,9 @@ it requires a trend match over the 0.2-0.3 V window and must stay within one
 order of magnitude.
 
 For BV, matching the Sentaurus physics block by disabling recombination reduced
-the 0.05 V quantity delta from about 1.23 orders to about 0.35 orders, so the BV
-smoke gate is now within one order of magnitude.
+the 0.05 V quantity delta from about 1.23 orders to about 0.35 orders. The
+subsequent BV-only mobility override reduces the promoted BV gate further to
+about 0.064 orders while keeping IV on its default mobility model.
 
 ## BV 0.05 V Drift/Diff Decomposition
 
@@ -251,7 +255,7 @@ Second-round takeaway:
 Fresh baseline rerun on 2026-05-26:
 
 - default IV: `orders ~= 0.5048`, trend matched;
-- default BV: `orders ~= 0.3508`;
+- default BV after BV-only promotion: `orders ~= 0.0641`;
 - quick6 best `q_mu0p89_a0p89`: `orders ~= 0.0641`.
 
 ## Candidate Mobility Impact: q_mu0p89_a0p89
@@ -273,8 +277,8 @@ Takeaway:
 - The candidate is excellent for the low-bias BV quantity gate.
 - The same candidate is not safe as a global IV/BV mobility calibration because
   it degrades the IV comparison by roughly two orders of magnitude.
-- Any promotion must therefore remain a BV-only override unless a later
-  candidate passes both IV and BV isolation.
+- The promoted reference config therefore applies this as a BV-only override;
+  IV remains on the default field-limited mobility path.
 
 The old region-average `runtime_doping_scale` path is no longer required for
 pn2d. It remains available through an opt-in `runtime_diagnostic` config block
