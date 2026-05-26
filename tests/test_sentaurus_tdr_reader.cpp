@@ -233,6 +233,76 @@ std::filesystem::path writeSyntheticTwoRegionCompensatedTdr()
     return path;
 }
 
+std::filesystem::path writeSyntheticTwoRegionAmbiguousCompensatedTdr()
+{
+    const auto path = std::filesystem::temp_directory_path() /
+        "vela_synthetic_sentaurus_two_region_ambiguous_compensated.tdr";
+    std::filesystem::remove(path);
+
+    hid_t file = H5Fcreate(path.string().c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t collection = createGroup(file, "collection");
+    hid_t geometry = createGroup(collection, "geometry_0");
+
+    const std::vector<Vertex2D> vertices = {
+        {0.0, 0.0},
+        {1.0, 0.0},
+        {0.0, 1.0},
+        {-1.0, 1.0},
+        {1.0, 1.0},
+    };
+    hsize_t vertexDims[] = {vertices.size()};
+    hid_t vertexSpace = H5Screate_simple(1, vertexDims, nullptr);
+    hid_t vertexType = H5Tcreate(H5T_COMPOUND, sizeof(Vertex2D));
+    H5Tinsert(vertexType, "x", HOFFSET(Vertex2D, x), H5T_NATIVE_DOUBLE);
+    H5Tinsert(vertexType, "y", HOFFSET(Vertex2D, y), H5T_NATIVE_DOUBLE);
+    hid_t vertexDataset = H5Dcreate2(geometry, "vertex", vertexType, vertexSpace,
+                                     H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    H5Dwrite(vertexDataset, vertexType, H5S_ALL, H5S_ALL, H5P_DEFAULT, vertices.data());
+    H5Dclose(vertexDataset);
+    H5Tclose(vertexType);
+    H5Sclose(vertexSpace);
+
+    hid_t nregion = createGroup(geometry, "region_0");
+    writeStringAttribute(nregion, "name", "NRegion");
+    writeStringAttribute(nregion, "material", "Silicon");
+    writeIntAttribute(nregion, "type", 0);
+    writeSizeAttribute(nregion, "number of elements", 2);
+    writeIntDataset(nregion, "elements_0", {2, 0, 1, 2, 2, 0, 2, 4});
+    H5Gclose(nregion);
+
+    hid_t pregion = createGroup(geometry, "region_1");
+    writeStringAttribute(pregion, "name", "PRegion");
+    writeStringAttribute(pregion, "material", "Silicon");
+    writeIntAttribute(pregion, "type", 0);
+    writeSizeAttribute(pregion, "number of elements", 1);
+    writeIntDataset(pregion, "elements_0", {2, 0, 2, 3});
+    H5Gclose(pregion);
+
+    hid_t state = createGroup(geometry, "state_0");
+    hid_t d0 = createGroup(state, "dataset_0");
+    writeDoubleDatasetWithAttrs(d0, "values", {1.0e17, 1.0e17, 1.0e17, 0.0},
+                                "DopingConcentration", 0, 4, "cm^-3");
+    H5Gclose(d0);
+    hid_t d1 = createGroup(state, "dataset_1");
+    writeDoubleDatasetWithAttrs(d1, "values", {-1.0e17, -1.0e17, -1.0e17},
+                                "DopingConcentration", 1, 3, "cm^-3");
+    H5Gclose(d1);
+    hid_t d2 = createGroup(state, "dataset_2");
+    writeDoubleDatasetWithAttrs(d2, "values", {1.0e17, 1.0e17, 1.0e17, 0.0},
+                                "PhosphorusActiveConcentration", 0, 4, "cm^-3");
+    H5Gclose(d2);
+    hid_t d3 = createGroup(state, "dataset_3");
+    writeDoubleDatasetWithAttrs(d3, "values", {1.0e17, 1.0e17, 1.0e17},
+                                "BoronActiveConcentration", 1, 3, "cm^-3");
+    H5Gclose(d3);
+    H5Gclose(state);
+
+    H5Gclose(geometry);
+    H5Gclose(collection);
+    H5Fclose(file);
+    return path;
+}
+
 std::string readFile(const std::filesystem::path& path)
 {
     std::ifstream input(path);
@@ -420,6 +490,33 @@ TEST_CASE("SentaurusTdrReader resolves compensated junction nodes from neighbour
         REQUIRE(node["resolved"].get<bool>());
         REQUIRE(node["resolved_donors_cm3"].get<double>() == Catch::Approx(1.0e17));
         REQUIRE(node["resolved_acceptors_cm3"].get<double>() == Catch::Approx(0.0));
+    }
+}
+
+TEST_CASE("SentaurusTdrReader records signed compensated junction ties",
+          "[sentaurus][tdr]")
+{
+    const auto path = writeSyntheticTwoRegionAmbiguousCompensatedTdr();
+    const auto outDir = std::filesystem::temp_directory_path() /
+        "vela_synthetic_sentaurus_region_unresolved_export";
+    std::filesystem::remove_all(outDir);
+
+    SentaurusTdrExportOptions options;
+    options.compensatedDopingPolicy = "dominant_signed_region";
+    SentaurusTdrReader reader;
+    reader.exportNeutral(path.string(), outDir.string(), options);
+
+    const std::string doping = readFile(outDir / "doping.csv");
+    REQUIRE(doping.find("0,1e+17,0") != std::string::npos);
+    REQUIRE(doping.find("2,1e+17,0") != std::string::npos);
+
+    const auto metadata = nlohmann::json::parse(readFile(outDir / "doping_metadata.json"));
+    REQUIRE(metadata["compensated_nodes"]["count"].get<int>() == 2);
+    for (const auto& node : metadata["compensated_nodes"]["nodes"]) {
+        REQUIRE(node["resolved"].get<bool>());
+        REQUIRE(node["signed_doping_tie"].get<bool>());
+        REQUIRE(node["resolution_source"].get<std::string>() ==
+                "signed_aggregate_tie_first_region");
     }
 }
 

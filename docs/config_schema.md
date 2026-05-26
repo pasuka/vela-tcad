@@ -342,7 +342,13 @@ Reference import configs may include:
 
 Supported policies:
 - `reported`: preserve `doping.csv` exactly as merged from region-local TDR fields and report compensated nodes in `doping_metadata.json`.
-- `dominant_signed_region`: when a global node receives equal donor and acceptor active concentrations, use the signed `DopingConcentration` field with the largest magnitude to choose a single majority dopant for the node, and record the rewrite in `doping_metadata.json`.
+- `dominant_signed_region`: when a global node receives equal donor and acceptor active concentrations, use the dominant signed `DopingConcentration` field to choose a single majority dopant for the node, and record the rewrite in `doping_metadata.json`. If equal positive and negative signed values tie, Vela preserves the existing first-region tie-break but records `signed_doping_tie: true` with `resolution_source: "signed_aggregate_tie_first_region"`.
+
+For compensated nodes, `doping_metadata.json` records original donor/acceptor
+values, resolved donor/acceptor values, whether a rewrite occurred, and
+`resolution_source` (`reported`, `signed_aggregate_doping`,
+`signed_aggregate_tie_first_region`, `neighbour_region_sign`, or
+`unresolved_tie`).
 
 ### bandgap_narrowing
 

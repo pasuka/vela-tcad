@@ -618,6 +618,8 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
     std::vector<double> donors(inventory.vertices.size(), 0.0);
     std::vector<double> acceptors(inventory.vertices.size(), 0.0);
     std::vector<std::vector<double>> signedDopingByNode(inventory.vertices.size());
+    std::vector<bool> signedDopingTie(inventory.vertices.size(), false);
+    std::vector<std::string> resolutionSource(inventory.vertices.size(), "reported");
     std::set<int> aggregateDonorRegions;
     std::set<int> aggregateAcceptorRegions;
     for (const auto& field : inventory.fields) {
@@ -726,19 +728,52 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
         return 0.0;
     };
 
+    auto dominantSignedAggregateDoping = [&](std::size_t node) {
+        double positive = 0.0;
+        double negative = 0.0;
+        double firstNonzero = 0.0;
+        for (const double value : signedDopingByNode[node]) {
+            if (firstNonzero == 0.0 && value != 0.0) {
+                firstNonzero = value;
+            }
+            if (value > positive) {
+                positive = value;
+            } else if (-value > negative) {
+                negative = -value;
+            }
+        }
+        const double scale = std::max({positive, negative, 1.0});
+        if (positive > negative + 1.0e-6 * scale) {
+            return positive;
+        }
+        if (negative > positive + 1.0e-6 * scale) {
+            return -negative;
+        }
+        if (positive > 0.0 && negative > 0.0) {
+            signedDopingTie[node] = true;
+            return firstNonzero;
+        }
+        return 0.0;
+    };
+
     if (options.compensatedDopingPolicy == "dominant_signed_region") {
         for (std::size_t i = 0; i < inventory.vertices.size(); ++i) {
             if (!isCompensated(donors[i], acceptors[i])) {
                 continue;
             }
-            double signedPick = 0.0;
-            for (const double value : signedDopingByNode[i]) {
-                if (std::abs(value) > std::abs(signedPick)) {
-                    signedPick = value;
-                }
+            double signedPick = dominantSignedAggregateDoping(i);
+            if (signedPick != 0.0) {
+                resolutionSource[i] = signedDopingTie[i]
+                    ? "signed_aggregate_tie_first_region"
+                    : "signed_aggregate_doping";
             }
             if (signedPick == 0.0) {
                 signedPick = dominantNeighbourSignedDoping(i);
+                if (signedPick != 0.0) {
+                    resolutionSource[i] = "neighbour_region_sign";
+                } else if (signedDopingTie[i]) {
+                    resolutionSource[i] = "unresolved_tie";
+                }
             }
             if (signedPick > 0.0) {
                 donors[i] = std::abs(signedPick);
@@ -783,6 +818,8 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
                     {"resolved", resolved},
                     {"resolved_donors_cm3", donors[i]},
                     {"resolved_acceptors_cm3", acceptors[i]},
+                    {"resolution_source", resolutionSource[i]},
+                    {"signed_doping_tie", signedDopingTie[i]},
                 });
             }
         }
