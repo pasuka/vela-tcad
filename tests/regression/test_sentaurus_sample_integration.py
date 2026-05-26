@@ -123,7 +123,8 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             iv_report = json.loads((out / "reference" / "reports" / "pn2d_iv_comparison.json").read_text())
             bv_report = json.loads((out / "reference" / "reports" / "pn2d_bv_comparison.json").read_text())
             self.assertEqual(iv_report["iv"]["candidate_column"], "current_total_A_per_um")
-            self.assertLess(iv_report["iv"]["orders_of_magnitude"], 2.0)
+            self.assertTrue(iv_report["iv"]["trend_match"])
+            self.assertLess(iv_report["iv"]["orders_of_magnitude"], 1.0)
             self.assertEqual(bv_report["iv"]["candidate_column"], "current_total_A_per_um")
             self.assertLess(bv_report["iv"]["orders_of_magnitude"], 2.0)
 

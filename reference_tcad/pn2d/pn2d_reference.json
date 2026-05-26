@@ -33,6 +33,7 @@
       "plt": "pn2d_iv.plt",
       "bias_column": "Anode OuterVoltage",
       "current_column": "Anode TotalCurrent",
+      "vela_current_contact": "Cathode",
       "vela_stop": 0.3,
       "vela_step": 0.1,
       "comparison_min_points": 10,
@@ -42,8 +43,8 @@
         "candidate_column": "current_total_A_per_um",
         "bias_min": 0.2,
         "bias_max": 0.3,
-        "max_orders_of_magnitude": 2.0,
-        "require_trend_match": false,
+        "max_orders_of_magnitude": 1.0,
+        "require_trend_match": true,
         "min_points": 2
       },
       "runtime_diagnostic": {

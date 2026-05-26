@@ -14,9 +14,13 @@ development and regression inspection.
 The current executable comparison uses the faithful node-level doping decks.
 The IV deck uses `vela_stop: 0.3` and `vela_step: 0.1`; the local gate compares
 the 0.2-0.3 V forward-bias window against the full imported Sentaurus IV
-reference. The comparison selects Vela's `current_total_A_per_um` column rather
-than the per-meter `current_total` column, matching the Sentaurus total-current
-quantity used by the imported PLT curves. The BV deck currently uses a strict
+reference. The sweep bias follows the Sentaurus `Anode` voltage ramp, while the
+Vela current is taken from `Cathode`; this matches the terminal-current
+orientation observed in the imported Sentaurus `Anode TotalCurrent` curve and
+avoids an artificial electron/hole cancellation at the swept contact. The
+comparison selects Vela's `current_total_A_per_um` column rather than the
+per-meter `current_total` column, matching the Sentaurus total-current quantity
+used by the imported PLT curves. The BV deck currently uses a strict
 low-reverse-bias smoke window (`vela_stop: 0.05`, `vela_step: 0.05`) while
 Newton continuation beyond the first reverse-bias steps is improved; its
 quantity gate checks the non-zero 0.05 V point and leaves the 0 V equilibrium
@@ -45,7 +49,9 @@ one-step Gummel initializer and lets coupled Newton cold-start from its
 charge-neutral equilibrium seed. This is a strict Newton ownership gate, not
 yet a calibrated Sentaurus match: the comparison gate now removes the A/m versus
 A-per-um post-processing mismatch and keeps a two-order-of-magnitude envelope
-while the remaining physical current calibration is improved.
+while the remaining physical current calibration is improved. IV is tighter:
+it requires a trend match over the 0.2-0.3 V window and must stay within one
+order of magnitude.
 
 The old region-average `runtime_doping_scale` path is no longer required for
 pn2d. It remains available through an opt-in `runtime_diagnostic` config block
@@ -56,7 +62,7 @@ node-level doping. Current gate:
 - faithful decks must preserve node-level doping and hybrid handoff settings;
 - faithful IV/BV execution must remain finite and end in Newton handoff;
 - comparison reports align by `bias_V`, use configured bias windows, and compare
-  `current_total_A_per_um` against Sentaurus total current;
+  Vela `current_total_A_per_um` against Sentaurus total current;
 - strict Sentaurus numerical agreement is not yet required.
 
 Useful local verification command:

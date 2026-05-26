@@ -454,6 +454,7 @@ Data {
                         "bias_column": "Anode OuterVoltage",
                         "current_column": "Anode TotalCurrent",
                         "kind": "iv",
+                        "vela_current_contact": "Cathode",
                         "runtime_doping_scale": 1.0e-4,
                         "runtime_step": 0.1,
                         "comparison_min_points": 3,
@@ -608,6 +609,7 @@ with out.open("w", newline="") as handle:
             bv_deck = json.loads((output / "vela" / "simulation_bv.json").read_text())
             bv_runtime_deck = json.loads((output / "vela" / "simulation_bv_runtime.json").read_text())
             self.assertEqual(iv_deck["sweep"]["contact"], "Anode")
+            self.assertEqual(iv_deck["sweep"]["current_contact"], "Cathode")
             self.assertEqual(iv_deck["sweep"]["stop"], 1.0)
             self.assertEqual(iv_deck["node_doping_file"], "doping.csv")
             self.assertEqual(iv_deck["solver"]["method"], "gummel_newton")

@@ -845,7 +845,7 @@ def patch_reference_deck(deck_path: Path,
     deck.setdefault("sweep", {})
     deck["sweep"]["mode"] = "bv_reverse" if sim.get("kind") == "bv" else "iv"
     deck["sweep"]["contact"] = sweep.get("contact")
-    deck["sweep"]["current_contact"] = sweep.get("contact")
+    deck["sweep"]["current_contact"] = sim.get("vela_current_contact", sweep.get("contact"))
     deck["sweep"]["start"] = start
     deck["sweep"]["stop"] = stop
     deck["sweep"]["step"] = max_step if max_step is not None and max_step > 0.0 else (stop - start) / 80.0
