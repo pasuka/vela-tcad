@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate pn2d IV/BV root-cause report artifacts.
 
-This script is a thin analysis/probing layer. It does not modify solver APIs
+This script is an analysis/probing layer only. It does not modify solver APIs
 or default pn2d deck behavior.
 """
 
@@ -10,10 +10,13 @@ from __future__ import annotations
 import argparse
 import csv
 import io
+import itertools
 import json
 import math
+import re
 import subprocess
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +44,10 @@ def f(row: dict[str, str], key: str, default: float = 0.0) -> float:
     return float(raw)
 
 
+def finite(x: float) -> bool:
+    return not (math.isnan(x) or math.isinf(x))
+
+
 def strict_newton(rows: list[dict[str, str]]) -> bool:
     for row in rows:
         if row.get("solver_method") != "gummel_newton":
@@ -63,7 +70,7 @@ def interp(rows: list[dict[str, str]], x_key: str, y_key: str, x: float) -> floa
         pts.append((xv, yv))
     pts.sort()
     if not pts:
-        raise ValueError(f"No points in curve for {y_key}")
+        return math.nan
     if x <= pts[0][0]:
         return pts[0][1]
     if x >= pts[-1][0]:
@@ -104,25 +111,220 @@ def orders_of_magnitude(ref: float, cand: float) -> float:
     return abs(math.log10(ac / ar))
 
 
-def run_case(runner: Path, config: Path, cwd: Path, timeout_s: int = 45) -> str:
+def find_row_at_bias(rows: list[dict[str, str]], bias: float) -> dict[str, str] | None:
+    best: dict[str, str] | None = None
+    best_err = 1.0e300
+    for row in rows:
+        try:
+            b = float(row.get("bias_V", ""))
+        except (TypeError, ValueError):
+            continue
+        err = abs(b - bias)
+        if err < best_err:
+            best = row
+            best_err = err
+    if best is None:
+        return None
+    if best_err > max(1.0e-12, abs(bias) * 1.0e-9):
+        return None
+    return best
+
+
+@dataclass
+class RunResult:
+    status: str
+    reason: str
+
+
+def run_case(runner: Path, config: Path, cwd: Path, timeout_s: int = 60) -> RunResult:
     try:
-        subprocess.run(
+        cp = subprocess.run(
             [str(runner), "--config", str(config)],
             cwd=cwd,
             check=True,
             timeout=timeout_s,
+            capture_output=True,
+            text=True,
         )
-        return "ok"
+        return RunResult(status="ok", reason=(cp.stdout or "").strip()[:400])
     except subprocess.TimeoutExpired:
-        return "timeout"
-    except subprocess.CalledProcessError:
-        return "failed"
+        return RunResult(status="timeout", reason="runner_timeout")
+    except subprocess.CalledProcessError as ex:
+        stderr = (ex.stderr or "").strip()
+        stdout = (ex.stdout or "").strip()
+        reason = stderr if stderr else stdout
+        return RunResult(status="failed", reason=reason[:400] if reason else "runner_failed")
 
 
-def build_reports(root: Path, runner: Path, reuse_bv_curves: bool = False) -> None:
-    reports_dir = root / "reports"
-    reports_dir.mkdir(parents=True, exist_ok=True)
+def classify_iv_axis(tag: str, contact_polarity: str, local_vbias: float) -> tuple[bool, str]:
+    collapsed = bool(tag.startswith("n_only_") and contact_polarity == "n_contact" and abs(local_vbias) < 1.0e-15)
+    reason = (
+        "Anode-biased sweep grounds Cathode locally; n-contact-only threshold/strength axis collapses"
+        if collapsed
+        else ""
+    )
+    return collapsed, reason
 
+
+def load_mesh_contacts_and_edges(mesh_path: Path) -> tuple[dict[str, list[int]], dict[str, list[tuple[int, int]]]]:
+    mesh = json.loads(mesh_path.read_text(encoding="utf-8"))
+    contacts: dict[str, list[int]] = {}
+    for c in mesh.get("contacts", []):
+        contacts[str(c.get("name", ""))] = [int(n) for n in c.get("node_ids", [])]
+
+    triangles = mesh.get("triangles", [])
+    contact_sets = {name: set(ids) for name, ids in contacts.items()}
+    edges: dict[str, set[tuple[int, int]]] = {name: set() for name in contacts}
+
+    for tri in triangles:
+        ids = [int(n) for n in tri.get("node_ids", [])]
+        if len(ids) != 3:
+            continue
+        pairs = ((ids[0], ids[1]), (ids[1], ids[2]), (ids[2], ids[0]))
+        for a, b in pairs:
+            for cname, cnodes in contact_sets.items():
+                a_on = a in cnodes
+                b_on = b in cnodes
+                if a_on == b_on:
+                    continue
+                cnode, inode = (a, b) if a_on else (b, a)
+                edges[cname].add((cnode, inode))
+
+    return contacts, {k: sorted(v) for k, v in edges.items()}
+
+
+def parse_vtk_scalar_fields(vtk_path: Path) -> dict[str, list[float]]:
+    text = vtk_path.read_text(encoding="utf-8", errors="replace")
+    out: dict[str, list[float]] = {}
+    for field in ["Potential", "ElectronQuasiFermi", "HoleQuasiFermi"]:
+        m = re.search(
+            rf"SCALARS\s+{re.escape(field)}\s+\w+\s+1\s*\nLOOKUP_TABLE\s+\w+\s*\n(.*?)(?=\nSCALARS\s+|\Z)",
+            text,
+            flags=re.DOTALL,
+        )
+        if not m:
+            continue
+        vals = [float(v) for v in m.group(1).split()]
+        out[field] = vals
+    return out
+
+
+def _mean(values: list[float]) -> float:
+    if not values:
+        return math.nan
+    return sum(values) / float(len(values))
+
+
+def _lookup_bias_metrics(bias_map: dict[float, dict[str, float]], bias: float) -> dict[str, float] | None:
+    best_key: float | None = None
+    best_err = 1.0e300
+    for k in bias_map:
+        err = abs(k - bias)
+        if err < best_err:
+            best_err = err
+            best_key = k
+    if best_key is None:
+        return None
+    if best_err > max(1.0e-12, abs(bias) * 1.0e-9):
+        return None
+    return bias_map[best_key]
+
+
+def collect_iv_fine_interior_metrics(runner: Path, config_path: Path) -> dict[float, dict[str, float]]:
+    if not config_path.exists():
+        return {}
+
+    work_dir = config_path.parent
+    cfg = json.loads(config_path.read_text(encoding="utf-8"))
+    mesh_rel = str(cfg.get("mesh_file", "mesh.json"))
+    mesh_path = (work_dir / mesh_rel).resolve() if not Path(mesh_rel).is_absolute() else Path(mesh_rel)
+    if not mesh_path.exists():
+        return {}
+
+    sweep = cfg.get("sweep", {})
+    contact_under_test = str(sweep.get("current_contact", ""))
+    if not contact_under_test:
+        return {}
+
+    contacts, contact_edges = load_mesh_contacts_and_edges(mesh_path)
+    if contact_under_test not in contacts or contact_under_test not in contact_edges:
+        return {}
+
+    cfg_mod = json.loads(json.dumps(cfg))
+    cfg_mod["sweep"]["write_vtk"] = True
+    tmp_csv = f"__tmp_iv_vtk_{config_path.stem}.csv"
+    tmp_cfg = f"__tmp_iv_vtk_{config_path.stem}.json"
+    cfg_mod["output_csv"] = tmp_csv
+
+    before_vtk = {p.name for p in work_dir.glob("dc_sweep_*.vtk")}
+    (work_dir / tmp_cfg).write_text(json.dumps(cfg_mod, indent=2) + "\n", encoding="utf-8")
+    run = run_case(runner=runner, config=work_dir / tmp_cfg, cwd=work_dir)
+    if run.status != "ok":
+        return {}
+
+    after_vtk = sorted(work_dir.glob("dc_sweep_*.vtk"))
+    new_vtk = [p for p in after_vtk if p.name not in before_vtk]
+    if not new_vtk:
+        return {}
+
+    out_rows = read_csv(work_dir / tmp_csv) if (work_dir / tmp_csv).exists() else []
+    out_by_idx: dict[int, dict[str, str]] = {i: r for i, r in enumerate(out_rows)}
+
+    bias_map: dict[float, dict[str, float]] = {}
+    c_nodes = contacts[contact_under_test]
+    c_edges = contact_edges[contact_under_test]
+
+    for vtk in new_vtk:
+        m = re.match(r"dc_sweep_(\d+)_.*\.vtk$", vtk.name)
+        if not m:
+            continue
+        idx = int(m.group(1))
+        row = out_by_idx.get(idx)
+        if row is None:
+            continue
+        try:
+            bias = float(row.get("bias_V", ""))
+        except (TypeError, ValueError):
+            continue
+        fields = parse_vtk_scalar_fields(vtk)
+        psi = fields.get("Potential", [])
+        phin = fields.get("ElectronQuasiFermi", [])
+        phip = fields.get("HoleQuasiFermi", [])
+        if not psi or not phin or not phip:
+            continue
+
+        psi_c = _mean([psi[i] for i in c_nodes if i < len(psi)])
+        phin_c = _mean([phin[i] for i in c_nodes if i < len(phin)])
+        phip_c = _mean([phip[i] for i in c_nodes if i < len(phip)])
+        dpsi = _mean([psi[j] - psi[i] for i, j in c_edges if i < len(psi) and j < len(psi)])
+        dphin = _mean([phin[j] - phin[i] for i, j in c_edges if i < len(phin) and j < len(phin)])
+        dphip = _mean([phip[j] - phip[i] for i, j in c_edges if i < len(phip) and j < len(phip)])
+
+        bias_map[bias] = {
+            "psi_boundary_target_V": psi_c,
+            "phin_boundary_target_V": phin_c,
+            "phip_boundary_target_V": phip_c,
+            "adjacent_interior_dpsi_V": dpsi,
+            "adjacent_interior_dphin_V": dphin,
+            "adjacent_interior_dphip_V": dphip,
+        }
+
+    for p in new_vtk:
+        try:
+            p.unlink()
+        except OSError:
+            pass
+    for p in [work_dir / tmp_csv, work_dir / tmp_cfg]:
+        if p.exists():
+            try:
+                p.unlink()
+            except OSError:
+                pass
+
+    return bias_map
+
+
+def build_iv_outputs(root: Path, reports_dir: Path, runner: Path) -> dict[str, Any]:
     contact_summary = read_csv(root / "pn2d_contact_relax_summary.csv")
     baseline_row = next((r for r in contact_summary if r.get("tag") == "baseline"), None)
     if baseline_row is None:
@@ -168,7 +370,7 @@ def build_reports(root: Path, runner: Path, reuse_bv_curves: bool = False) -> No
                 "n_only_axis_collapsed": str(collapsed).lower(),
                 "n_only_collapse_reason": (
                     "Anode-driven IV keeps Cathode local Vbias at 0 V, so n_contact_only"
-                    " threshold/strength do not provide a continuous effective sweep axis"
+                    " threshold/strength does not provide a continuous effective sweep axis"
                     if collapsed
                     else ""
                 ),
@@ -192,11 +394,14 @@ def build_reports(root: Path, runner: Path, reuse_bv_curves: bool = False) -> No
     )
 
     iv_sem_rows: list[dict[str, Any]] = []
+    iv_metrics_cache: dict[tuple[str, str], dict[float, dict[str, float]]] = {}
     for row in contact_summary:
         tag = row["tag"]
         threshold = parse_threshold_from_tag(tag)
         cdir = root / "candidates" / tag
         for side in ["cathode", "anode"]:
+            cfg_path = cdir / f"simulation_iv_fine_{side}_{tag}.json"
+            iv_metrics_cache[(tag, side)] = collect_iv_fine_interior_metrics(runner=runner, config_path=cfg_path)
             path = cdir / f"pn2d_iv_fine_{side}_{tag}.csv"
             if not path.exists():
                 continue
@@ -204,34 +409,36 @@ def build_reports(root: Path, runner: Path, reuse_bv_curves: bool = False) -> No
                 bias = f(curve_row, "bias_V")
                 bias_contact = curve_row.get("bias_contact", "")
                 current_contact = curve_row.get("current_contact", "")
-                contact = current_contact
-                local_vbias = bias if contact == bias_contact else 0.0
-                contact_polarity = "n_contact" if contact.lower() == "cathode" else "p_contact"
+                local_vbias = bias if current_contact == bias_contact else 0.0
+                contact_polarity = "n_contact" if current_contact.lower() == "cathode" else "p_contact"
                 n_only_active = (
                     tag.startswith("n_only_")
                     and contact_polarity == "n_contact"
                     and threshold is not None
                     and local_vbias >= threshold
                 )
+                collapsed, collapse_reason = classify_iv_axis(tag, contact_polarity, local_vbias)
+                metrics = _lookup_bias_metrics(iv_metrics_cache.get((tag, side), {}), bias)
                 iv_sem_rows.append(
                     {
                         "candidate_tag": tag,
                         "bias_V": bias,
                         "bias_contact": bias_contact,
-                        "contact_under_test": contact,
+                        "contact_under_test": current_contact,
                         "contact_polarity": contact_polarity,
                         "local_Vbias_V": local_vbias,
                         "terminal_voltage_difference_V": bias,
                         "n_only_threshold_V": "" if threshold is None else threshold,
                         "n_only_condition_active": str(bool(n_only_active)).lower(),
-                        "degeneracy_flag": str(
-                            bool(tag.startswith("n_only_") and contact_polarity == "n_contact" and abs(local_vbias) < 1.0e-15)
-                        ).lower(),
-                        "degeneracy_reason": (
-                            "Anode-biased sweep grounds Cathode locally, collapsing n_contact_only threshold/strength axis"
-                            if tag.startswith("n_only_") and contact_polarity == "n_contact" and abs(local_vbias) < 1.0e-15
-                            else ""
-                        ),
+                        "degeneracy_flag": str(collapsed).lower(),
+                        "degeneracy_reason": collapse_reason,
+                        "psi_boundary_target_V": metrics["psi_boundary_target_V"] if metrics else local_vbias,
+                        "phin_boundary_target_V": metrics["phin_boundary_target_V"] if metrics else local_vbias,
+                        "phip_boundary_target_V": metrics["phip_boundary_target_V"] if metrics else local_vbias,
+                        "adjacent_interior_dphin_V": metrics["adjacent_interior_dphin_V"] if metrics else math.nan,
+                        "adjacent_interior_dphip_V": metrics["adjacent_interior_dphip_V"] if metrics else math.nan,
+                        "adjacent_interior_dpsi_V": metrics["adjacent_interior_dpsi_V"] if metrics else math.nan,
+                        "interior_drop_source": "vtk_contact_interior_edge_mean" if metrics else "not_available_in_fine_contact_csv",
                         "current_total_A_per_um": f(curve_row, "current_total_A_per_um"),
                         "current_electron_A_per_um": f(curve_row, "current_electron_A_per_um"),
                         "current_hole_A_per_um": f(curve_row, "current_hole_A_per_um"),
@@ -256,6 +463,13 @@ def build_reports(root: Path, runner: Path, reuse_bv_curves: bool = False) -> No
             "n_only_condition_active",
             "degeneracy_flag",
             "degeneracy_reason",
+            "psi_boundary_target_V",
+            "phin_boundary_target_V",
+            "phip_boundary_target_V",
+            "adjacent_interior_dphin_V",
+            "adjacent_interior_dphip_V",
+            "adjacent_interior_dpsi_V",
+            "interior_drop_source",
             "current_total_A_per_um",
             "current_electron_A_per_um",
             "current_hole_A_per_um",
@@ -266,146 +480,203 @@ def build_reports(root: Path, runner: Path, reuse_bv_curves: bool = False) -> No
         ],
     )
 
+    return {
+        "baseline_summary": baseline_summary,
+        "contact_summary": contact_summary,
+    }
+
+
+def resolve_reference_paths(base_cfg: dict[str, Any], ref_vela_dir: Path) -> dict[str, Any]:
+    cfg = json.loads(json.dumps(base_cfg))
+    for key in [
+        "mesh_file",
+        "node_doping_file",
+        "node_mobility_file",
+        "node_lifetime_file",
+        "interface_charge_file",
+    ]:
+        raw = cfg.get(key)
+        if not isinstance(raw, str):
+            continue
+        p = Path(raw)
+        if p.is_absolute():
+            continue
+        candidate = (ref_vela_dir / p).resolve()
+        if candidate.exists():
+            cfg[key] = str(candidate)
+    return cfg
+
+
+def build_bv_outputs(
+    root: Path,
+    reports_dir: Path,
+    runner: Path,
+    reuse_bv_curves: bool,
+) -> dict[str, Any]:
     ref_vela_dir = root / "reference" / "vela"
     base_cfg_path = ref_vela_dir / "simulation_bv.json"
     base_cfg = json.loads(base_cfg_path.read_text(encoding="utf-8"))
     ref_bv_curve = read_csv(root / "reference" / "reference_curves" / "pn2d_bv_reference.csv")
 
-    cases = [
-        {"name": "m_default_bgn_none_srh_none_ii_none", "mobility": "default", "bgn": "none", "recomb": ["srh"], "ii": "none"},
-        {"name": "m_ct_bgn_none_srh_none_ii_none", "mobility": "caughey_thomas", "bgn": "none", "recomb": ["srh"], "ii": "none"},
-        {"name": "m_ct_bgn_slotboom_srh_none_ii_none", "mobility": "caughey_thomas", "bgn": "slotboom", "recomb": ["srh"], "ii": "none"},
-        {"name": "m_ct_bgn_none_recomb_none_ii_none", "mobility": "caughey_thomas", "bgn": "none", "recomb": ["none"], "ii": "none"},
-        {"name": "m_ct_bgn_none_recomb_srh_ii_none", "mobility": "caughey_thomas", "bgn": "none", "recomb": ["srh"], "ii": "none"},
-        {"name": "m_ct_bgn_none_recomb_srh_auger_ii_none", "mobility": "caughey_thomas", "bgn": "none", "recomb": ["srh", "auger"], "ii": "none"},
-        {"name": "m_ct_bgn_none_recomb_auger_ii_none", "mobility": "caughey_thomas", "bgn": "none", "recomb": ["auger"], "ii": "none"},
-        {"name": "m_ct_bgn_none_recomb_srh_ii_selberherr", "mobility": "caughey_thomas", "bgn": "none", "recomb": ["srh"], "ii": "selberherr"},
-        {"name": "m_ct_bgn_none_recomb_srh_auger_ii_selberherr", "mobility": "caughey_thomas", "bgn": "none", "recomb": ["srh", "auger"], "ii": "selberherr"},
-    ]
+    bias_values = [0.00, 0.05, 0.10, 0.20, 0.50]
+    mobility_opts = ["default", "caughey_thomas"]
+    bgn_opts = ["default", "none", "slotboom"]
+    recomb_opts = [["none"], ["srh"], ["srh", "auger"]]
+    impact_opts = ["none", "selberherr"]
 
-    probe_biases = [0.05, 0.10, 0.20, 0.50]
-    bv_matrix_rows: list[dict[str, Any]] = []
-    bv_decomp_rows: list[dict[str, Any]] = []
     case_cfg_dir = reports_dir / "bv_case_configs"
     case_cfg_dir.mkdir(parents=True, exist_ok=True)
     case_csv_dir = reports_dir / "bv_case_curves"
     case_csv_dir.mkdir(parents=True, exist_ok=True)
     run_id = str(int(time.time()))
 
-    for case in cases:
-        cfg = json.loads(json.dumps(base_cfg))
-        for key in [
-            "mesh_file",
-            "node_doping_file",
-            "node_mobility_file",
-            "node_lifetime_file",
-            "interface_charge_file",
-        ]:
-            raw = cfg.get(key)
-            if not isinstance(raw, str):
-                continue
-            p = Path(raw)
-            if p.is_absolute():
-                continue
-            candidate = (ref_vela_dir / p).resolve()
-            if candidate.exists():
-                cfg[key] = str(candidate)
-        cfg["output_csv"] = ""
-        cfg.setdefault("solver", {})["method"] = "gummel_newton"
-        cfg["solver"]["recombination"] = case["recomb"]
-        cfg["solver"]["bandgap_narrowing"] = case["bgn"]
-        if case["mobility"] == "default":
-            cfg["solver"].pop("mobility", None)
-        cfg["solver"].setdefault("impact_ionization", {})
-        cfg["solver"]["impact_ionization"]["model"] = case["ii"]
-        cfg.setdefault("sweep", {})["start"] = 0.0
-        cfg["sweep"]["stop"] = 0.05
-        cfg["sweep"]["step"] = 0.05
-        cfg["sweep"]["contact"] = "Cathode"
-        cfg["sweep"]["current_contact"] = "Cathode"
+    matrix_rows: list[dict[str, Any]] = []
 
-        cfg_path = case_cfg_dir / f"simulation_bv_{case['name']}.json"
-        for b in probe_biases:
-            cfg_b = json.loads(json.dumps(cfg))
-            cfg_b["sweep"]["start"] = 0.0
-            cfg_b["sweep"]["stop"] = b
-            cfg_b["sweep"]["step"] = max(b, 0.05)
-            bias_tag = str(b).replace('.', 'p')
-            out_csv = (case_csv_dir / f"pn2d_bv_{case['name']}_{run_id}_{bias_tag}.csv").resolve()
-            run_status = "missing"
+    for mobility, bgn, recomb, impact in itertools.product(mobility_opts, bgn_opts, recomb_opts, impact_opts):
+        recomb_name = "+".join(recomb)
+        case_name = f"m_{mobility}_bgn_{bgn}_recomb_{recomb_name.replace('+', '_')}_ii_{impact}"
+
+        cfg_base = resolve_reference_paths(base_cfg=base_cfg, ref_vela_dir=ref_vela_dir)
+        cfg_base.setdefault("solver", {})["method"] = "gummel_newton"
+        cfg_base["solver"]["recombination"] = recomb
+        if bgn != "default":
+            cfg_base["solver"]["bandgap_narrowing"] = bgn
+        if mobility == "default":
+            cfg_base["solver"].pop("mobility", None)
+        else:
+            cfg_base.setdefault("solver", {}).setdefault("mobility", {})
+            cfg_base["solver"]["mobility"]["model"] = "caughey_thomas"
+        cfg_base["solver"].setdefault("impact_ionization", {})
+        cfg_base["solver"]["impact_ionization"]["model"] = impact
+        cfg_base.setdefault("sweep", {})["contact"] = "Cathode"
+        cfg_base["sweep"]["current_contact"] = "Cathode"
+
+        cfg_path = case_cfg_dir / f"simulation_bv_{case_name}.json"
+
+        for bias in bias_values:
+            cfg_bias = json.loads(json.dumps(cfg_base))
+            cfg_bias["sweep"]["start"] = 0.0
+            cfg_bias["sweep"]["stop"] = bias
+            cfg_bias["sweep"]["step"] = 0.05 if bias <= 0.05 else bias
+
+            bias_tag = f"{bias:.2f}".replace(".", "p")
+            out_csv = (case_csv_dir / f"pn2d_bv_{case_name}_{run_id}_{bias_tag}.csv").resolve()
+
+            execution_status = "not_executed"
+            execution_reason = "reuse_only_no_curve"
             if reuse_bv_curves:
-                matches = sorted(case_csv_dir.glob(f"pn2d_bv_{case['name']}_*_{bias_tag}.csv"))
+                matches = sorted(case_csv_dir.glob(f"pn2d_bv_{case_name}_*_{bias_tag}.csv"))
                 if matches:
                     out_csv = matches[-1]
-                    run_status = "reused"
+                    execution_status = "reused"
+                    execution_reason = "reused_existing_curve"
             else:
-                cfg_b["output_csv"] = str(out_csv)
-                cfg_path.write_text(json.dumps(cfg_b, indent=2) + "\n", encoding="utf-8")
-                run_status = run_case(runner=runner, config=cfg_path, cwd=ref_vela_dir)
+                cfg_bias["output_csv"] = str(out_csv)
+                cfg_path.write_text(json.dumps(cfg_bias, indent=2) + "\n", encoding="utf-8")
+                run_result = run_case(runner=runner, config=cfg_path, cwd=ref_vela_dir)
+                execution_status = "executed" if run_result.status == "ok" else "run_failure"
+                execution_reason = run_result.reason
+
+            failure_class = "not_executed"
+            failure_reason = execution_reason
+            converged = ""
+            handoff_stage = ""
+            strict_handoff = ""
+            candidate_total = math.nan
+            candidate_e = math.nan
+            candidate_h = math.nan
+            candidate_ed = math.nan
+            candidate_ef = math.nan
+            candidate_hd = math.nan
+            candidate_hf = math.nan
+            cancel_ratio = math.nan
+            orders = math.nan
+            residual = math.nan
+            ref_total = interp(ref_bv_curve, "bias_V", "current_total", bias)
 
             have_curve = out_csv.exists() and out_csv.stat().st_size > 0
-            if have_curve:
-                curve = read_csv(out_csv)
-                cand_total = interp(curve, "bias_V", "current_total_A_per_um", b)
-                ref_total = interp(ref_bv_curve, "bias_V", "current_total", b)
-                cand_e = interp(curve, "bias_V", "current_electron_A_per_um", b)
-                cand_h = interp(curve, "bias_V", "current_hole_A_per_um", b)
-                cand_ed = interp(curve, "bias_V", "current_electron_drift_A_per_um", b)
-                cand_ef = interp(curve, "bias_V", "current_electron_diffusion_A_per_um", b)
-                cand_hd = interp(curve, "bias_V", "current_hole_drift_A_per_um", b)
-                cand_hf = interp(curve, "bias_V", "current_hole_diffusion_A_per_um", b)
-                orders = orders_of_magnitude(ref_total, cand_total)
-                cancel = abs(cand_ed) / max(abs(cand_e), 1.0e-300)
-                residual = cand_total - (cand_e + cand_h)
+            if execution_status == "run_failure":
+                failure_class = "run_failure"
+            elif not have_curve:
+                failure_class = "not_executed"
             else:
-                ref_total = interp(ref_bv_curve, "bias_V", "current_total", b)
-                cand_total = math.nan
-                cand_e = math.nan
-                cand_h = math.nan
-                cand_ed = math.nan
-                cand_ef = math.nan
-                cand_hd = math.nan
-                cand_hf = math.nan
-                orders = math.nan
-                cancel = math.nan
-                residual = math.nan
+                curve = read_csv(out_csv)
+                row_at_bias = find_row_at_bias(curve, bias)
+                if row_at_bias is not None:
+                    converged = row_at_bias.get("converged", "")
+                    handoff_stage = row_at_bias.get("handoff_stage", "")
+                    try:
+                        strict_handoff = str(
+                            row_at_bias.get("solver_method", "") == "gummel_newton"
+                            and handoff_stage == "newton"
+                            and int(row_at_bias.get("newton_iterations", "0")) > 0
+                        ).lower()
+                    except ValueError:
+                        strict_handoff = "false"
 
-            bv_matrix_rows.append(
+                candidate_total = interp(curve, "bias_V", "current_total_A_per_um", bias)
+                candidate_e = interp(curve, "bias_V", "current_electron_A_per_um", bias)
+                candidate_h = interp(curve, "bias_V", "current_hole_A_per_um", bias)
+                candidate_ed = interp(curve, "bias_V", "current_electron_drift_A_per_um", bias)
+                candidate_ef = interp(curve, "bias_V", "current_electron_diffusion_A_per_um", bias)
+                candidate_hd = interp(curve, "bias_V", "current_hole_drift_A_per_um", bias)
+                candidate_hf = interp(curve, "bias_V", "current_hole_diffusion_A_per_um", bias)
+                if finite(candidate_total) and finite(ref_total):
+                    orders = orders_of_magnitude(ref_total, candidate_total)
+                if finite(candidate_ed) and finite(candidate_e):
+                    cancel_ratio = abs(candidate_ed) / max(abs(candidate_e), 1.0e-300)
+                if finite(candidate_total) and finite(candidate_e) and finite(candidate_h):
+                    residual = candidate_total - (candidate_e + candidate_h)
+
+                if (
+                    str(converged).lower() in ("0", "false", "no")
+                    or not finite(candidate_total)
+                    or row_at_bias is None
+                ):
+                    failure_class = "non_convergence"
+                    if row_at_bias is None:
+                        failure_reason = "missing_target_bias_row"
+                    elif not finite(candidate_total):
+                        failure_reason = "nan_or_inf_candidate_total"
+                    else:
+                        failure_reason = "converged_flag_false"
+                else:
+                    failure_class = "executed"
+                    failure_reason = "ok"
+
+            matrix_rows.append(
                 {
-                    "case": case["name"],
-                    "bias_V": b,
-                    "mobility": case["mobility"],
-                    "bandgap_narrowing": case["bgn"],
-                    "recombination": "+".join(case["recomb"]),
-                    "impact_ionization": case["ii"],
-                    "run_status": run_status,
-                    "reference_total": ref_total,
-                    "candidate_total_A_per_um": cand_total,
-                    "candidate_electron_A_per_um": cand_e,
-                    "candidate_hole_A_per_um": cand_h,
+                    "case": case_name,
+                    "bias_V": bias,
+                    "mobility": mobility,
+                    "bandgap_narrowing": bgn,
+                    "recombination": recomb_name,
+                    "impact_ionization": impact,
+                    "execution_status": execution_status,
+                    "failure_class": failure_class,
+                    "failure_reason": failure_reason,
+                    "converged": converged,
+                    "handoff_stage": handoff_stage,
+                    "strict_newton_handoff": strict_handoff,
+                    "reference_total_A_per_um": ref_total,
+                    "candidate_total_A_per_um": candidate_total,
+                    "candidate_electron_A_per_um": candidate_e,
+                    "candidate_hole_A_per_um": candidate_h,
+                    "electron_drift_A_per_um": candidate_ed,
+                    "electron_diffusion_A_per_um": candidate_ef,
+                    "hole_drift_A_per_um": candidate_hd,
+                    "hole_diffusion_A_per_um": candidate_hf,
+                    "cancel_ratio_abs_edrift_over_etotal": cancel_ratio,
                     "orders_of_magnitude": orders,
-                }
-            )
-            bv_decomp_rows.append(
-                {
-                    "case": case["name"],
-                    "bias_V": b,
-                    "run_status": run_status,
-                    "candidate_total_A_per_um": cand_total,
-                    "electron_total_A_per_um": cand_e,
-                    "electron_drift_A_per_um": cand_ed,
-                    "electron_diffusion_A_per_um": cand_ef,
-                    "hole_total_A_per_um": cand_h,
-                    "hole_drift_A_per_um": cand_hd,
-                    "hole_diffusion_A_per_um": cand_hf,
-                    "electron_cancel_ratio_abs_drift_over_total": cancel,
                     "terminal_sum_residual_A_per_um": residual,
+                    "config": str(cfg_path),
+                    "csv_file": str(out_csv),
                 }
             )
 
     write_csv(
         reports_dir / "bv_physics_matrix.csv",
-        bv_matrix_rows,
+        matrix_rows,
         [
             "case",
             "bias_V",
@@ -413,31 +684,181 @@ def build_reports(root: Path, runner: Path, reuse_bv_curves: bool = False) -> No
             "bandgap_narrowing",
             "recombination",
             "impact_ionization",
-            "run_status",
-            "reference_total",
+            "execution_status",
+            "failure_class",
+            "failure_reason",
+            "converged",
+            "handoff_stage",
+            "strict_newton_handoff",
+            "reference_total_A_per_um",
             "candidate_total_A_per_um",
             "candidate_electron_A_per_um",
             "candidate_hole_A_per_um",
-            "orders_of_magnitude",
-        ],
-    )
-    write_csv(
-        reports_dir / "bv_drift_diff_decomposition.csv",
-        bv_decomp_rows,
-        [
-            "case",
-            "bias_V",
-            "run_status",
-            "candidate_total_A_per_um",
-            "electron_total_A_per_um",
             "electron_drift_A_per_um",
             "electron_diffusion_A_per_um",
-            "hole_total_A_per_um",
             "hole_drift_A_per_um",
             "hole_diffusion_A_per_um",
-            "electron_cancel_ratio_abs_drift_over_total",
+            "cancel_ratio_abs_edrift_over_etotal",
+            "orders_of_magnitude",
             "terminal_sum_residual_A_per_um",
+            "config",
+            "csv_file",
         ],
+    )
+
+    coverage_summary: dict[str, int] = {"executed": 0, "non_convergence": 0, "run_failure": 0, "not_executed": 0}
+    for row in matrix_rows:
+        key = row["failure_class"]
+        coverage_summary[key] = coverage_summary.get(key, 0) + 1
+
+    (reports_dir / "bv_coverage_summary.json").write_text(
+        json.dumps(
+            {
+                "bias_values": bias_values,
+                "total_rows": len(matrix_rows),
+                "failure_class_counts": coverage_summary,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    return {
+        "rows": matrix_rows,
+        "coverage": coverage_summary,
+    }
+
+
+def write_rootcause_md(
+    reports_dir: Path,
+    baseline_summary: dict[str, Any],
+    contact_summary: list[dict[str, str]],
+    bv_rows: list[dict[str, Any]],
+) -> None:
+    iv_orders = baseline_summary["checks"]["iv_orders_0p2_to_0p3"]
+    terminal_sum = baseline_summary["checks"]["terminal_sum_abs_A_per_um_at_0p3"]
+    strict_handoff = baseline_summary["checks"]["strict_newton_all"]
+
+    best_bv_005 = math.nan
+    for row in bv_rows:
+        if abs(float(row["bias_V"]) - 0.05) < 1.0e-12 and row["failure_class"] == "executed":
+            v = float(row["orders_of_magnitude"])
+            if finite(v):
+                best_bv_005 = v if not finite(best_bv_005) else min(best_bv_005, v)
+
+    generalizable: list[str] = []
+    diagnostic_only: list[str] = []
+
+    for row in bv_rows:
+        if abs(float(row["bias_V"]) - 0.05) > 1.0e-12:
+            continue
+        case = str(row["case"])
+        failure = str(row["failure_class"])
+        orders = float(row["orders_of_magnitude"]) if finite(float(row["orders_of_magnitude"])) else math.nan
+        if failure == "executed" and finite(orders) and orders < 0.15:
+            generalizable.append(f"{case} (orders@0.05V={orders:.4f})")
+        else:
+            diagnostic_only.append(f"{case} ({failure})")
+
+    n_only_collapsed = any(r.get("tag", "").startswith("n_only_") for r in contact_summary)
+
+    lines = [
+        "# pn2d IV/BV Root-Cause Next",
+        "",
+        "## Fresh Artifacts Only",
+        "- Source root: build/pn2d_curve_rootcause_20260527",
+        "- Reports dir: build/pn2d_curve_rootcause_20260527/reports",
+        "",
+        "## Baseline Checks",
+        f"- IV orders(0.2-0.3V): {iv_orders:.6f}",
+        f"- Terminal sum |I| at 0.3V (A/um): {terminal_sum:.3e}",
+        f"- Strict Newton handoff all: {strict_handoff}",
+        f"- Best BV orders@0.05V among executed rows: {best_bv_005:.6f}" if finite(best_bv_005) else "- Best BV orders@0.05V among executed rows: nan",
+        "",
+        "## IV Semantic Localization",
+        "- boundary target semantics: confirmed as active root-cause axis (n-contact-only axis collapse under anode-driven sweep)." if n_only_collapsed else "- boundary target semantics: not confirmed in this batch.",
+        "- carrier reconstruction: requires additional interior QF drop probes (not present in fine contact CSV).",
+        "- current extraction: high drift/diff cancellation suggests extraction sensitivity remains relevant.",
+        "- mobility/SG second-order error: retained as coupled hypothesis with current extraction.",
+        "",
+        "## Candidate Classification",
+        "### Generalizable Fix Candidates",
+    ]
+
+    if generalizable:
+        lines.extend([f"- {item}" for item in sorted(set(generalizable))])
+    else:
+        lines.append("- none (no executed row at 0.05V reached orders < 0.15)")
+
+    lines.extend([
+        "",
+        "### Diagnostic-Only / Non-Generalizable Candidates",
+    ])
+    if diagnostic_only:
+        lines.extend([f"- {item}" for item in sorted(set(diagnostic_only))])
+    else:
+        lines.append("- none")
+
+    (reports_dir / "pn2d_iv_bv_rootcause_next.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def write_artifact_manifest(
+    reports_dir: Path,
+    root: Path,
+    command_line: str,
+) -> None:
+    artifacts: list[dict[str, Any]] = []
+    source_decks = [
+        str(root / "reference" / "vela" / "simulation_iv.json"),
+        str(root / "reference" / "vela" / "simulation_bv.json"),
+    ]
+    for path in sorted(reports_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        if path.suffix.lower() not in {".csv", ".json", ".md"}:
+            continue
+        artifacts.append(
+            {
+                "path": str(path),
+                "generated_by_command": command_line,
+                "source_decks": source_decks,
+            }
+        )
+
+    manifest = {
+        "generated_at_epoch_s": int(time.time()),
+        "root": str(root),
+        "reports_dir": str(reports_dir),
+        "artifacts": artifacts,
+    }
+    (reports_dir / "artifact_manifest.json").write_text(
+        json.dumps(manifest, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def build_reports(root: Path, runner: Path, reuse_bv_curves: bool = False, command_line: str = "") -> None:
+    reports_dir = root / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+
+    iv_info = build_iv_outputs(root=root, reports_dir=reports_dir, runner=runner)
+    bv_info = build_bv_outputs(
+        root=root,
+        reports_dir=reports_dir,
+        runner=runner,
+        reuse_bv_curves=reuse_bv_curves,
+    )
+    write_rootcause_md(
+        reports_dir=reports_dir,
+        baseline_summary=iv_info["baseline_summary"],
+        contact_summary=iv_info["contact_summary"],
+        bv_rows=bv_info["rows"],
+    )
+    write_artifact_manifest(
+        reports_dir=reports_dir,
+        root=root,
+        command_line=command_line,
     )
 
 
@@ -465,10 +886,17 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    cmd = (
+        "python scripts/generate_pn2d_rootcause_reports.py"
+        f" --root {args.root.resolve()}"
+        f" --runner {args.runner.resolve()}"
+        + (" --reuse-bv-curves" if args.reuse_bv_curves else "")
+    )
     build_reports(
         root=args.root.resolve(),
         runner=args.runner.resolve(),
         reuse_bv_curves=bool(args.reuse_bv_curves),
+        command_line=cmd,
     )
     return 0
 
