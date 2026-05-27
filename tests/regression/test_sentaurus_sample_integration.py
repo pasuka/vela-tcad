@@ -93,7 +93,9 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             self.assertEqual(bv_deck["sweep"]["stop"], 0.05)
             self.assertEqual(bv_deck["node_doping_file"], "doping.csv")
             self.assertEqual(bv_deck["solver"]["method"], "gummel_newton")
-            self.assertEqual(bv_deck["solver"]["recombination"], ["none"])
+            self.assertEqual(bv_deck["solver"]["recombination"], ["srh"])
+            self.assertAlmostEqual(bv_deck["solver"]["taun"], 1.0e-6)
+            self.assertAlmostEqual(bv_deck["solver"]["taup"], 1.0e-6)
             self.assertEqual(bv_deck["solver"]["bandgap_narrowing"], "none")
             self.assertEqual(bv_deck["solver"]["mobility"]["model"], "caughey_thomas")
             self.assertAlmostEqual(
@@ -137,7 +139,7 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             self.assertTrue(iv_report["iv"]["trend_match"])
             self.assertLess(iv_report["iv"]["orders_of_magnitude"], 1.0)
             self.assertEqual(bv_report["iv"]["candidate_column"], "current_total_A_per_um")
-            self.assertLess(bv_report["iv"]["orders_of_magnitude"], 0.20)
+            self.assertLess(bv_report["iv"]["orders_of_magnitude"], 0.15)
 
     def test_ldmos_n20_sample_inventory_curve_and_cmd_when_enabled(self) -> None:
         sample_root = self._sample_root_or_skip()
