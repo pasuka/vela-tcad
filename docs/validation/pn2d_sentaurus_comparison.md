@@ -709,3 +709,27 @@ Important boundary:
 - The imported Sentaurus IV TDR state is the final quasistationary point (typically `1.0 V`),
   while the compared Vela state is `0.3 V`; this run therefore closes Task I as a trend check,
   not a strict bias-aligned parity proof.
+
+### P1. SRH Default Lifetime Extraction Status
+
+A repository-local evidence pass was completed for SRH default lifetime lookup.
+
+- Evidence report:
+  `build/pn2d_root_cause_probe/reports/taskP1_srh_default_evidence_20260527.md`
+- Checked local Sentaurus artifacts:
+  `reference_tcad/pn2d/pn2d_sdevice.cmd`,
+  `reference_tcad/pn2d/pn2d_bv_sdevice.cmd`,
+  `reference_tcad/pn2d/pn2d_des.log`,
+  `reference_tcad/pn2d/pn2d_bv_des.log`.
+
+Confirmed locally:
+
+- `no Lifetime file`, `no ModelParameters file` in both IV and BV logs.
+- SRH is active and configured without field/doping/temperature-dependent lifetimes.
+- No explicit numeric built-in SRH lifetime value is printed in available local logs/cmd files.
+
+Status:
+
+- P1 numeric default extraction remains blocked by missing external model-parameter source.
+- To close P1, we need either Sentaurus documentation for this model set or a Sentaurus run mode
+  that prints resolved SRH numeric lifetime parameters.
