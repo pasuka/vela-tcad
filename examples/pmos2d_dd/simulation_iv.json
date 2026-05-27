@@ -66,7 +66,7 @@
     },
     "mos": {
       "device": "pmos",
-      "drain_current_sign": 1.0,
+      "drain_current_sign": -1.0,
       "idvg": {
         "drain_bias": -0.1,
         "gate_start": 0.0,
