@@ -682,6 +682,28 @@ strong sensitivity to transport-state details near contact-adjacent edges.
 
 Artifact: `build/pn2d_root_cause_probe/reports/taskH_contact_decomposition_20260527.txt`.
 
+Bias-aligned (`1.0 V`) contact-edge follow-up was also executed using node-mapped Sentaurus exports
+from `pn2d_forward_des.tdr` and Vela `dc_sweep_0001_1V.vtk`:
+
+- Edge report:
+  `build/pn2d_root_cause_probe/reports/taskH_contact_edge_state_compare_1p0V_20260527.csv`
+- Summary:
+  `build/pn2d_root_cause_probe/reports/taskH_contact_edge_state_compare_1p0V_20260527_summary.json`
+
+Key edge-level findings:
+
+- Contact-adjacent electric-potential drop mismatch stays small:
+  `abs_err_dpsi_V` mean `0.0238 V` (p95 `0.0587 V`).
+- Hole quasi-Fermi edge-drop mismatch is also small:
+  `abs_err_defp_V` mean `0.0194 V` (max `0.0749 V`).
+- Electron quasi-Fermi edge-drop mismatch is strongly contact-asymmetric:
+  overall `abs_err_defn_V` mean `0.716 V`, but by contact:
+  - Cathode edges mean `0.0233 V`
+  - Anode edges mean `0.898 V`
+
+This reinforces that the residual mismatch is localized near anode-side electron-QF boundary behavior,
+not a whole-domain potential/geometry scaling mismatch.
+
 ### I. Quasi-Fermi Profile Check (bias-aligned completed)
 
 Per-simulation Sentaurus neutral field export is now enabled in the reference flow, producing
