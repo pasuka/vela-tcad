@@ -8,12 +8,29 @@
 
 #include <filesystem>
 #include <fstream>
+#include <atomic>
+#include <chrono>
+#include <sstream>
 #include <string>
 #include <vector>
 
 using namespace vela;
 
 namespace {
+
+std::filesystem::path uniqueTempPath(const std::string& stem, const std::string& extension)
+{
+    static std::atomic<unsigned int> counter{0};
+    const auto now = std::chrono::steady_clock::now().time_since_epoch().count();
+    const auto id = counter.fetch_add(1, std::memory_order_relaxed);
+    return std::filesystem::temp_directory_path() /
+        (stem + "_" + std::to_string(now) + "_" + std::to_string(id) + extension);
+}
+
+std::filesystem::path uniqueTempDirectory(const std::string& stem)
+{
+    return uniqueTempPath(stem, "");
+}
 
 struct Vertex2D {
     double x;
@@ -95,8 +112,9 @@ std::filesystem::path writeSyntheticTdr(const std::vector<SyntheticField>& dopin
     {"BoronActiveConcentration", {0.0, 0.0, 1.0e16, 1.0e16}},
 })
 {
-    const auto path = std::filesystem::temp_directory_path() / "vela_synthetic_sentaurus.tdr";
-    std::filesystem::remove(path);
+    const auto path = uniqueTempPath("vela_synthetic_sentaurus", ".tdr");
+    std::error_code ec;
+    std::filesystem::remove(path, ec);
 
     hid_t file = H5Fcreate(path.string().c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     hid_t collection = createGroup(file, "collection");
@@ -173,9 +191,9 @@ std::filesystem::path writeSyntheticTdr(const std::vector<SyntheticField>& dopin
 
 std::filesystem::path writeSyntheticTwoRegionCompensatedTdr()
 {
-    const auto path = std::filesystem::temp_directory_path() /
-        "vela_synthetic_sentaurus_two_region_compensated.tdr";
-    std::filesystem::remove(path);
+    const auto path = uniqueTempPath("vela_synthetic_sentaurus_two_region_compensated", ".tdr");
+    std::error_code ec;
+    std::filesystem::remove(path, ec);
 
     hid_t file = H5Fcreate(path.string().c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     hid_t collection = createGroup(file, "collection");
@@ -235,9 +253,9 @@ std::filesystem::path writeSyntheticTwoRegionCompensatedTdr()
 
 std::filesystem::path writeSyntheticTwoRegionAmbiguousCompensatedTdr()
 {
-    const auto path = std::filesystem::temp_directory_path() /
-        "vela_synthetic_sentaurus_two_region_ambiguous_compensated.tdr";
-    std::filesystem::remove(path);
+    const auto path = uniqueTempPath("vela_synthetic_sentaurus_two_region_ambiguous_compensated", ".tdr");
+    std::error_code ec;
+    std::filesystem::remove(path, ec);
 
     hid_t file = H5Fcreate(path.string().c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     hid_t collection = createGroup(file, "collection");
@@ -309,15 +327,41 @@ std::string readFile(const std::filesystem::path& path)
     return std::string(std::istreambuf_iterator<char>(input), {});
 }
 
-std::string exportSyntheticDopingCsv(const std::vector<SyntheticField>& dopingFields)
+std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& path)
+{
+    std::vector<std::vector<std::string>> rows;
+    std::ifstream input(path);
+    std::string line;
+    bool first = true;
+    while (std::getline(input, line)) {
+        if (first) {
+            first = false;
+            continue;
+        }
+        if (line.empty()) {
+            continue;
+        }
+        std::vector<std::string> cells;
+        std::stringstream ss(line);
+        std::string cell;
+        while (std::getline(ss, cell, ',')) {
+            cells.push_back(cell);
+        }
+        rows.push_back(std::move(cells));
+    }
+    return rows;
+}
+
+std::filesystem::path exportSyntheticDopingCsv(const std::vector<SyntheticField>& dopingFields,
+                                               const std::filesystem::path& outDir)
 {
     const auto path = writeSyntheticTdr(dopingFields);
-    const auto outDir = std::filesystem::temp_directory_path() / "vela_synthetic_sentaurus_export";
-    std::filesystem::remove_all(outDir);
+    std::error_code ec;
+    std::filesystem::remove_all(outDir, ec);
 
     SentaurusTdrReader reader;
     reader.exportNeutral(path.string(), outDir.string());
-    return readFile(outDir / "doping.csv");
+    return outDir / "doping.csv";
 }
 
 } // namespace
@@ -362,8 +406,9 @@ TEST_CASE("SentaurusTdrReader reads mesh regions contacts and state datasets", "
 TEST_CASE("SentaurusTdrReader exports neutral reference TCAD CSV files", "[sentaurus][tdr]")
 {
     const auto path = writeSyntheticTdr();
-    const auto outDir = std::filesystem::temp_directory_path() / "vela_synthetic_sentaurus_export";
-    std::filesystem::remove_all(outDir);
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_export");
+    std::error_code ec;
+    std::filesystem::remove_all(outDir, ec);
 
     SentaurusTdrReader reader;
     reader.exportNeutral(path.string(), outDir.string());
@@ -379,9 +424,16 @@ TEST_CASE("SentaurusTdrReader exports neutral reference TCAD CSV files", "[senta
     const std::string contacts = readFile(outDir / "contacts.csv");
     REQUIRE(contacts.find("drain,1;2;3,Silicon_1") != std::string::npos);
 
-    const std::string doping = readFile(outDir / "doping.csv");
-    REQUIRE(doping.find("0,1e+17,0") != std::string::npos);
-    REQUIRE(doping.find("3,4e+17,1e+16") != std::string::npos);
+    const auto dopingRows = readCsvRows(outDir / "doping.csv");
+    REQUIRE(dopingRows.size() == 4);
+    REQUIRE(dopingRows[0].size() == 3);
+    REQUIRE(dopingRows[3].size() == 3);
+    REQUIRE(std::stod(dopingRows[0][0]) == Catch::Approx(0.0));
+    REQUIRE(std::stod(dopingRows[0][1]) == Catch::Approx(1.0e17));
+    REQUIRE(std::stod(dopingRows[0][2]) == Catch::Approx(0.0));
+    REQUIRE(std::stod(dopingRows[3][0]) == Catch::Approx(3.0));
+    REQUIRE(std::stod(dopingRows[3][1]) == Catch::Approx(4.0e17));
+    REQUIRE(std::stod(dopingRows[3][2]) == Catch::Approx(1.0e16));
 
     const auto dopingMetadata = nlohmann::json::parse(readFile(outDir / "doping_metadata.json"));
     REQUIRE(dopingMetadata["compensated_nodes"]["count"].get<int>() == 0);
@@ -420,9 +472,9 @@ TEST_CASE("SentaurusTdrReader reports compensated dopant nodes", "[sentaurus][td
         {"PhosphorusActiveConcentration", {1.0e17, 1.0e17, 3.0e17, 4.0e17}},
         {"BoronActiveConcentration", {0.0, 1.0e17, 1.0e16, 1.0e16}},
     });
-    const auto outDir = std::filesystem::temp_directory_path() /
-        "vela_synthetic_sentaurus_compensated_export";
-    std::filesystem::remove_all(outDir);
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_compensated_export");
+    std::error_code ec;
+    std::filesystem::remove_all(outDir, ec);
 
     SentaurusTdrReader reader;
     reader.exportNeutral(path.string(), outDir.string());
@@ -445,17 +497,21 @@ TEST_CASE("SentaurusTdrReader resolves compensated dopant nodes from signed aggr
         {"PhosphorusActiveConcentration", {1.0e17, 1.0e17, 3.0e17, 4.0e17}},
         {"BoronActiveConcentration", {0.0, 1.0e17, 1.0e16, 1.0e16}},
     });
-    const auto outDir = std::filesystem::temp_directory_path() /
-        "vela_synthetic_sentaurus_resolved_export";
-    std::filesystem::remove_all(outDir);
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_resolved_export");
+    std::error_code ec;
+    std::filesystem::remove_all(outDir, ec);
 
     SentaurusTdrExportOptions options;
     options.compensatedDopingPolicy = "dominant_signed_region";
     SentaurusTdrReader reader;
     reader.exportNeutral(path.string(), outDir.string(), options);
 
-    const std::string doping = readFile(outDir / "doping.csv");
-    REQUIRE(doping.find("1,1e+17,0") != std::string::npos);
+    const auto rows = readCsvRows(outDir / "doping.csv");
+    REQUIRE(rows.size() >= 2);
+    const double donor1 = std::stod(rows[1][1]);
+    const double acceptor1 = std::stod(rows[1][2]);
+    REQUIRE(donor1 == Catch::Approx(1.0e17));
+    REQUIRE(acceptor1 == Catch::Approx(0.0));
     const auto metadata = nlohmann::json::parse(readFile(outDir / "doping_metadata.json"));
     REQUIRE(metadata["compensated_nodes"]["count"].get<int>() == 1);
     REQUIRE(metadata["compensated_nodes"]["nodes"][0]["policy"].get<std::string>() ==
@@ -471,18 +527,23 @@ TEST_CASE("SentaurusTdrReader resolves compensated junction nodes from neighbour
           "[sentaurus][tdr]")
 {
     const auto path = writeSyntheticTwoRegionCompensatedTdr();
-    const auto outDir = std::filesystem::temp_directory_path() /
-        "vela_synthetic_sentaurus_region_resolved_export";
-    std::filesystem::remove_all(outDir);
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_region_resolved_export");
+    std::error_code ec;
+    std::filesystem::remove_all(outDir, ec);
 
     SentaurusTdrExportOptions options;
     options.compensatedDopingPolicy = "dominant_signed_region";
     SentaurusTdrReader reader;
     reader.exportNeutral(path.string(), outDir.string(), options);
 
-    const std::string doping = readFile(outDir / "doping.csv");
-    REQUIRE(doping.find("0,1e+17,0") != std::string::npos);
-    REQUIRE(doping.find("2,1e+17,0") != std::string::npos);
+    const auto dopingRows = readCsvRows(outDir / "doping.csv");
+    REQUIRE(dopingRows.size() == 5);
+    REQUIRE(std::stod(dopingRows[0][0]) == Catch::Approx(0.0));
+    REQUIRE(std::stod(dopingRows[0][1]) == Catch::Approx(1.0e17));
+    REQUIRE(std::stod(dopingRows[0][2]) == Catch::Approx(0.0));
+    REQUIRE(std::stod(dopingRows[2][0]) == Catch::Approx(2.0));
+    REQUIRE(std::stod(dopingRows[2][1]) == Catch::Approx(1.0e17));
+    REQUIRE(std::stod(dopingRows[2][2]) == Catch::Approx(0.0));
 
     const auto metadata = nlohmann::json::parse(readFile(outDir / "doping_metadata.json"));
     REQUIRE(metadata["compensated_nodes"]["count"].get<int>() == 2);
@@ -497,18 +558,23 @@ TEST_CASE("SentaurusTdrReader records signed compensated junction ties",
           "[sentaurus][tdr]")
 {
     const auto path = writeSyntheticTwoRegionAmbiguousCompensatedTdr();
-    const auto outDir = std::filesystem::temp_directory_path() /
-        "vela_synthetic_sentaurus_region_unresolved_export";
-    std::filesystem::remove_all(outDir);
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_region_unresolved_export");
+    std::error_code ec;
+    std::filesystem::remove_all(outDir, ec);
 
     SentaurusTdrExportOptions options;
     options.compensatedDopingPolicy = "dominant_signed_region";
     SentaurusTdrReader reader;
     reader.exportNeutral(path.string(), outDir.string(), options);
 
-    const std::string doping = readFile(outDir / "doping.csv");
-    REQUIRE(doping.find("0,1e+17,0") != std::string::npos);
-    REQUIRE(doping.find("2,1e+17,0") != std::string::npos);
+    const auto dopingRows = readCsvRows(outDir / "doping.csv");
+    REQUIRE(dopingRows.size() == 5);
+    REQUIRE(std::stod(dopingRows[0][0]) == Catch::Approx(0.0));
+    REQUIRE(std::stod(dopingRows[0][1]) == Catch::Approx(1.0e17));
+    REQUIRE(std::stod(dopingRows[0][2]) == Catch::Approx(0.0));
+    REQUIRE(std::stod(dopingRows[2][0]) == Catch::Approx(2.0));
+    REQUIRE(std::stod(dopingRows[2][1]) == Catch::Approx(1.0e17));
+    REQUIRE(std::stod(dopingRows[2][2]) == Catch::Approx(0.0));
 
     const auto metadata = nlohmann::json::parse(readFile(outDir / "doping_metadata.json"));
     REQUIRE(metadata["compensated_nodes"]["count"].get<int>() == 2);
@@ -522,37 +588,59 @@ TEST_CASE("SentaurusTdrReader records signed compensated junction ties",
 
 TEST_CASE("SentaurusTdrReader exports legacy aggregate dopant fields", "[sentaurus][tdr]")
 {
-    const std::string doping = exportSyntheticDopingCsv({
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_export_legacy");
+    const auto dopingCsv = exportSyntheticDopingCsv({
         {"DonorConcentration", {1.0e17, 2.0e17, 3.0e17, 4.0e17}},
         {"AcceptorConcentration", {0.0, 0.0, 1.0e16, 1.0e16}},
-    });
+    }, outDir);
 
-    REQUIRE(doping.find("0,1e+17,0") != std::string::npos);
-    REQUIRE(doping.find("3,4e+17,1e+16") != std::string::npos);
+    const auto rows = readCsvRows(dopingCsv);
+    REQUIRE(rows.size() == 4);
+    REQUIRE(rows[0].size() == 3);
+    REQUIRE(std::stod(rows[0][0]) == Catch::Approx(0.0));
+    REQUIRE(std::stod(rows[0][1]) == Catch::Approx(1.0e17));
+    REQUIRE(std::stod(rows[0][2]) == Catch::Approx(0.0));
+    REQUIRE(std::stod(rows[3][0]) == Catch::Approx(3.0));
+    REQUIRE(std::stod(rows[3][1]) == Catch::Approx(4.0e17));
+    REQUIRE(std::stod(rows[3][2]) == Catch::Approx(1.0e16));
 }
 
 TEST_CASE("SentaurusTdrReader sums active dopant species when no aggregate field is present", "[sentaurus][tdr]")
 {
-    const std::string doping = exportSyntheticDopingCsv({
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_export_sum_active");
+    const auto dopingCsv = exportSyntheticDopingCsv({
         {"PhosphorusActiveConcentration", {1.0e17, 2.0e17, 3.0e17, 4.0e17}},
         {"ArsenicActiveConcentration", {5.0e16, 6.0e16, 7.0e16, 8.0e16}},
         {"BoronActiveConcentration", {1.0e16, 2.0e16, 3.0e16, 4.0e16}},
         {"AluminumActiveConcentration", {2.0e16, 3.0e16, 4.0e16, 5.0e16}},
-    });
+    }, outDir);
 
-    REQUIRE(doping.find("0,1.5e+17,3e+16") != std::string::npos);
-    REQUIRE(doping.find("3,4.8e+17,9e+16") != std::string::npos);
+    const auto rows = readCsvRows(dopingCsv);
+    REQUIRE(rows.size() == 4);
+    REQUIRE(std::stod(rows[0][0]) == Catch::Approx(0.0));
+    REQUIRE(std::stod(rows[0][1]) == Catch::Approx(1.5e17));
+    REQUIRE(std::stod(rows[0][2]) == Catch::Approx(3.0e16));
+    REQUIRE(std::stod(rows[3][0]) == Catch::Approx(3.0));
+    REQUIRE(std::stod(rows[3][1]) == Catch::Approx(4.8e17));
+    REQUIRE(std::stod(rows[3][2]) == Catch::Approx(9.0e16));
 }
 
 TEST_CASE("SentaurusTdrReader prefers aggregate dopant totals over active species for the same region", "[sentaurus][tdr]")
 {
-    const std::string doping = exportSyntheticDopingCsv({
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_export_prefer_aggregate");
+    const auto dopingCsv = exportSyntheticDopingCsv({
         {"DonorConcentration", {1.0e17, 2.0e17, 3.0e17, 4.0e17}},
         {"PhosphorusActiveConcentration", {9.0e17, 9.0e17, 9.0e17, 9.0e17}},
         {"AcceptorConcentration", {0.0, 0.0, 1.0e16, 1.0e16}},
         {"BoronActiveConcentration", {9.0e16, 9.0e16, 9.0e16, 9.0e16}},
-    });
+    }, outDir);
 
-    REQUIRE(doping.find("0,1e+17,0") != std::string::npos);
-    REQUIRE(doping.find("3,4e+17,1e+16") != std::string::npos);
+    const auto rows = readCsvRows(dopingCsv);
+    REQUIRE(rows.size() == 4);
+    REQUIRE(std::stod(rows[0][0]) == Catch::Approx(0.0));
+    REQUIRE(std::stod(rows[0][1]) == Catch::Approx(1.0e17));
+    REQUIRE(std::stod(rows[0][2]) == Catch::Approx(0.0));
+    REQUIRE(std::stod(rows[3][0]) == Catch::Approx(3.0));
+    REQUIRE(std::stod(rows[3][1]) == Catch::Approx(4.0e17));
+    REQUIRE(std::stod(rows[3][2]) == Catch::Approx(1.0e16));
 }
