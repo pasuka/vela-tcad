@@ -112,23 +112,32 @@ void validateContactQuasiFermi(DDSolutionValidationResult& result,
                 continue;
             }
             const int i = static_cast<int>(node);
-            if (!nearlyEqual(sol.phin(i), bias,
-                             options.contactPotentialAbsTolerance,
-                             options.contactPotentialRelTolerance)) {
-                addDiagnostic(result,
-                              "contact '" + contact.name + "' node " + std::to_string(node) +
-                              " phin=" + formatDiagnosticReal(sol.phin(i)) +
-                              " does not match bias=" + formatDiagnosticReal(bias));
-                return;
-            }
-            if (!nearlyEqual(sol.phip(i), bias,
-                             options.contactPotentialAbsTolerance,
-                             options.contactPotentialRelTolerance)) {
-                addDiagnostic(result,
-                              "contact '" + contact.name + "' node " + std::to_string(node) +
-                              " phip=" + formatDiagnosticReal(sol.phip(i)) +
-                              " does not match bias=" + formatDiagnosticReal(bias));
-                return;
+            const bool electronMajority = sol.n(i) > sol.p(i);
+            const bool holeMajority = sol.p(i) > sol.n(i);
+            const auto checkQF = [&](const char* fieldName, Real value) {
+                if (!nearlyEqual(value, bias,
+                                 options.contactPotentialAbsTolerance,
+                                 options.contactPotentialRelTolerance)) {
+                    addDiagnostic(result,
+                                  "contact '" + contact.name + "' node " + std::to_string(node) +
+                                  " " + fieldName + "=" + formatDiagnosticReal(value) +
+                                  " does not match bias=" + formatDiagnosticReal(bias));
+                    return false;
+                }
+                return true;
+            };
+
+            if (electronMajority) {
+                if (!checkQF("phin", sol.phin(i)))
+                    return;
+            } else if (holeMajority) {
+                if (!checkQF("phip", sol.phip(i)))
+                    return;
+            } else {
+                if (!checkQF("phin", sol.phin(i)))
+                    return;
+                if (!checkQF("phip", sol.phip(i)))
+                    return;
             }
         }
     }

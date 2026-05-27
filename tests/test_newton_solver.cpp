@@ -124,6 +124,25 @@ TEST_CASE("NewtonSolver: PN diode equilibrium converges", "[newton]")
     REQUIRE(result.finalResidualNorm <= result.initialResidualNorm);
 }
 
+TEST_CASE("NewtonSolver: ohmic contact BC resists compensated-node polarity flips",
+          "[newton][contact_bc]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    // Inject an opposite-sign outlier on one anode node to mimic imported
+    // compensated/tie ownership artifacts.
+    doping.setNodeDoping(0, 8.0e20, 0.0);
+
+    NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), newtonConfig());
+    REQUIRE(result.converged);
+
+    // Both anode nodes should keep p-side built-in sign (negative psi at 0 V).
+    REQUIRE(result.solution.psi(0) < 0.0);
+    REQUIRE(result.solution.psi(3) < 0.0);
+}
+
 TEST_CASE("NewtonSolver: PN diode equilibrium converges with unit_scaling state",
           "[newton][scaling]")
 {

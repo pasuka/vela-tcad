@@ -49,6 +49,29 @@ inline double nEq(double Ndop, double ni)
     return (p_eq > 0.0) ? (ni * ni / p_eq) : 0.0;
 }
 
+Real ohmicContactNetDoping(const DopingModel& doping,
+                           const Contact& contact,
+                           Index nodeId)
+{
+    const Real local = doping.netDoping(nodeId);
+    if (contact.node_ids.empty())
+        return local;
+
+    Real sum = 0.0;
+    for (Index nid : contact.node_ids)
+        sum += doping.netDoping(nid);
+    const Real mean = sum / static_cast<Real>(contact.node_ids.size());
+
+    // Imported compensated/tie nodes can have a flipped node-owned sign at one
+    // contact endpoint. Preserve local values when polarity matches, but align
+    // opposite-sign outliers with the contact-local mean for Ohmic BC setup.
+    if (mean == 0.0 || local == 0.0)
+        return mean != 0.0 ? mean : local;
+    if ((local > 0.0 && mean > 0.0) || (local < 0.0 && mean < 0.0))
+        return local;
+    return mean;
+}
+
 /// Compute per-node ni from the material database.
 std::vector<double> buildNiVector(const DeviceMesh&       mesh,
                                   const MaterialDatabase& matdb,
@@ -310,7 +333,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
 
         for (Index nid : contact.node_ids) {
             const double ni_node  = ni_v[nid];
-            const double Ndop     = doping.netDoping(nid);
+            const double Ndop     = ohmicContactNetDoping(doping, contact, nid);
             const double n_eq_val = nEq(Ndop, ni_node);
             const double p_eq_val = (ni_node > 0.0)
                                         ? ni_node * ni_node / n_eq_val

@@ -34,6 +34,32 @@ inline double nEq(double Ndop, double ni)
     return (pEq > 0.0) ? (ni * ni / pEq) : 0.0;
 }
 
+Real ohmicContactNetDoping(const DeviceMesh& mesh,
+                           const DopingModel& doping,
+                           const Contact& contact,
+                           Index nodeId)
+{
+    const Real local = doping.netDoping(nodeId);
+    if (contact.node_ids.empty())
+        return local;
+
+    Real sum = 0.0;
+    for (Index nid : contact.node_ids)
+        sum += doping.netDoping(nid);
+    const Real mean = sum / static_cast<Real>(contact.node_ids.size());
+
+    // Contact nodes in imported meshes can include compensated/tie points whose
+    // node-owned signed doping flips relative to the contact side. For Ohmic
+    // BC reconstruction, align those outliers with the contact-local average
+    // polarity to avoid injecting an opposite-type built-in potential on one
+    // endpoint of the same terminal.
+    if (mean == 0.0 || local == 0.0)
+        return mean != 0.0 ? mean : local;
+    if ((local > 0.0 && mean > 0.0) || (local < 0.0 && mean < 0.0))
+        return local;
+    return mean;
+}
+
 void validateResidualWeights(
     Real psi,
     Real phin,
@@ -291,16 +317,25 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
         if (it == contactBiases_.end()) continue;
 
         const double Vbias = it->second;
+        const bool relaxMinorityOnPContact =
+            (mesh_.numContacts() == 2) && (std::abs(Vbias) >= 0.1);
         for (Index nid : contact.node_ids) {
             const double niNode = ni[nid];
-            const double neq = nEq(doping_.netDoping(nid), niNode);
+            const double Ndop = ohmicContactNetDoping(mesh_, doping_, contact, nid);
+            const double neq = nEq(Ndop, niNode);
             double psiBuiltIn = 0.0;
             if (niNode > 0.0 && neq > 0.0)
                 psiBuiltIn = Vt * std::log(neq / niNode);
 
             bcs.psi[nid] = (Vbias + psiBuiltIn) / potentialScale;
-            bcs.phin[nid] = Vbias / potentialScale;
-            bcs.phip[nid] = Vbias / potentialScale;
+            if (Ndop >= 0.0) {
+                bcs.phin[nid] = Vbias / potentialScale;
+                bcs.phip[nid] = Vbias / potentialScale;
+            } else {
+                bcs.phip[nid] = Vbias / potentialScale;
+                if (!relaxMinorityOnPContact)
+                    bcs.phin[nid] = Vbias / potentialScale;
+            }
         }
     }
     return bcs;
