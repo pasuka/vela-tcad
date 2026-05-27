@@ -40,6 +40,12 @@ struct NewtonConfig {
     Real residualScalePsi = 0.0;  ///< <= 0 selects max(initial psi-block residual norm, 1)
     Real residualScalePhin = 0.0; ///< <= 0 selects max(initial electron-continuity residual norm, 1)
     Real residualScalePhip = 0.0; ///< <= 0 selects max(initial hole-continuity residual norm, 1)
+    std::string contactBoundaryReconstruction = "dominant_signed_contact_mean";
+    bool contactBoundaryMinorityElectronRelaxation = true;
+    Real contactBoundaryMinorityElectronRelaxationBiasThreshold_V = 0.1;
+    bool contactBoundaryMinorityElectronRelaxationTwoTerminalOnly = true;
+    std::string contactBoundaryMinorityElectronRelaxationContactSide = "p_contact_only";
+    Real contactBoundaryMinorityElectronRelaxationStrength = 1.0;
     UnitScalingConfig inputScaling{}; ///< Input-unit mode from top-level config.
     UnitScalingReferenceConfig unitScalingRefs{}; ///< Optional reference overrides.
     Real taun = 1.0e-7;

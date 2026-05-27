@@ -28,6 +28,17 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
         importer = build_root / ("sentaurus_import.exe" if os.name == "nt" else "sentaurus_import")
         if not importer.is_file():
             self.skipTest(f"Sentaurus HDF5 importer is not built: {importer}")
+        runner_name = "vela_example_runner.exe" if os.name == "nt" else "vela_example_runner"
+        runner_candidates = [
+            build_root / runner_name,
+            build_root / "src" / "tools" / runner_name,
+        ]
+        runner = next((candidate for candidate in runner_candidates if candidate.is_file()), None)
+        if runner is None:
+            self.skipTest(
+                "Vela runner is not built: expected one of "
+                + ", ".join(str(candidate) for candidate in runner_candidates)
+            )
 
         with tempfile.TemporaryDirectory(prefix="vela_sentaurus_pn2d_") as tmp:
             out = Path(tmp)
@@ -85,6 +96,10 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             self.assertEqual(iv_deck["node_doping_file"], "doping.csv")
             self.assertEqual(iv_deck["solver"]["method"], "gummel_newton")
             self.assertTrue(iv_deck["solver"]["warm_start"])
+            self.assertEqual(
+                iv_deck["solver"].get("contact_boundary_reconstruction"),
+                "dominant_signed_contact_mean",
+            )
             self.assertEqual(iv_deck["solver"]["handoff"]["fallback"], "none")
             self.assertFalse(iv_deck["solver"]["handoff"]["require_gummel_convergence"])
             self.assertEqual(iv_deck["solver"]["handoff"]["gummel_max_iter"], 0)
@@ -137,9 +152,69 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             bv_report = json.loads((out / "reference" / "reports" / "pn2d_bv_comparison.json").read_text())
             self.assertEqual(iv_report["iv"]["candidate_column"], "current_total_A_per_um")
             self.assertTrue(iv_report["iv"]["trend_match"])
-            self.assertLess(iv_report["iv"]["orders_of_magnitude"], 1.0)
+            self.assertLessEqual(iv_report["iv"]["orders_of_magnitude"], 0.50)
             self.assertEqual(bv_report["iv"]["candidate_column"], "current_total_A_per_um")
             self.assertLess(bv_report["iv"]["orders_of_magnitude"], 0.15)
+
+            fine_dir = out / "reference" / "vela"
+            fine_cath_cfg = fine_dir / "simulation_iv_fine_cathode.json"
+            fine_anode_cfg = fine_dir / "simulation_iv_fine_anode.json"
+            fine_cath_deck = json.loads(json.dumps(iv_deck))
+            fine_anode_deck = json.loads(json.dumps(iv_deck))
+            for deck, current_contact, output_csv in [
+                (fine_cath_deck, "Cathode", "pn2d_iv_fine_cathode.csv"),
+                (fine_anode_deck, "Anode", "pn2d_iv_fine_anode.csv"),
+            ]:
+                deck["output_csv"] = output_csv
+                deck["sweep"]["current_contact"] = current_contact
+                deck["sweep"]["start"] = 0.0
+                deck["sweep"]["stop"] = 0.3
+                deck["sweep"]["step"] = 0.01
+            fine_cath_cfg.write_text(json.dumps(fine_cath_deck, indent=2) + "\n")
+            fine_anode_cfg.write_text(json.dumps(fine_anode_deck, indent=2) + "\n")
+
+            subprocess.run(
+                [str(runner), "--config", str(fine_cath_cfg)],
+                check=True,
+                cwd=fine_dir,
+            )
+            subprocess.run(
+                [str(runner), "--config", str(fine_anode_cfg)],
+                check=True,
+                cwd=fine_dir,
+            )
+
+            fine_cath_rows = self._read_curve(fine_dir / "pn2d_iv_fine_cathode.csv")
+            fine_anode_rows = self._read_curve(fine_dir / "pn2d_iv_fine_anode.csv")
+            self.assertGreaterEqual(len(fine_cath_rows), 30)
+            self.assertGreaterEqual(len(fine_anode_rows), 30)
+            for row in fine_cath_rows:
+                self.assertEqual(row["solver_method"], "gummel_newton")
+                self.assertEqual(row["handoff_stage"], "newton")
+                self.assertGreater(int(row["newton_iterations"]), 0)
+            for row in fine_anode_rows:
+                self.assertEqual(row["solver_method"], "gummel_newton")
+                self.assertEqual(row["handoff_stage"], "newton")
+                self.assertGreater(int(row["newton_iterations"]), 0)
+
+            candidate_ratio = abs(
+                self._curve_value_at_bias(fine_cath_rows, 0.29, "current_total_A_per_um")
+                / self._curve_value_at_bias(fine_cath_rows, 0.30, "current_total_A_per_um")
+            )
+            reference_ratio = abs(
+                self._curve_value_at_bias_interpolated(iv_rows, 0.29, "current_total")
+                / self._curve_value_at_bias_interpolated(iv_rows, 0.30, "current_total")
+            )
+            baseline_delta = abs(0.7309 - 0.6324)
+            # Keep the gate tied to the frozen baseline while allowing tiny
+            # rounding/interpolation noise from imported reference sampling.
+            self.assertLessEqual(abs(candidate_ratio - reference_ratio), baseline_delta + 5.0e-6)
+
+            terminal_sum_0p3 = abs(
+                self._curve_value_at_bias(fine_cath_rows, 0.30, "current_total_A_per_um")
+                + self._curve_value_at_bias(fine_anode_rows, 0.30, "current_total_A_per_um")
+            )
+            self.assertLessEqual(terminal_sum_0p3, 1.0e-18)
 
     def test_ldmos_n20_sample_inventory_curve_and_cmd_when_enabled(self) -> None:
         sample_root = self._sample_root_or_skip()
@@ -259,6 +334,43 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
     def _read_curve(self, path: Path) -> list[dict[str, str]]:
         with path.open(newline="") as handle:
             return list(csv.DictReader(handle))
+
+    def _curve_value_at_bias(self,
+                             rows: list[dict[str, str]],
+                             bias: float,
+                             column: str,
+                             tol: float = 1.0e-9) -> float:
+        for row in rows:
+            if abs(float(row["bias_V"]) - bias) <= tol:
+                return float(row[column])
+        raise AssertionError(f"missing bias {bias} in curve for column {column}")
+
+    def _curve_value_at_bias_interpolated(self,
+                                          rows: list[dict[str, str]],
+                                          bias: float,
+                                          column: str,
+                                          tol: float = 1.0e-12) -> float:
+        points = sorted((float(row["bias_V"]), float(row[column])) for row in rows)
+        if not points:
+            raise AssertionError(f"curve has no rows for column {column}")
+        if bias < points[0][0] - tol or bias > points[-1][0] + tol:
+            raise AssertionError(
+                f"bias {bias} is outside curve range [{points[0][0]}, {points[-1][0]}] for {column}")
+
+        for voltage, value in points:
+            if abs(voltage - bias) <= tol:
+                return value
+
+        for idx in range(1, len(points)):
+            v0, y0 = points[idx - 1]
+            v1, y1 = points[idx]
+            if v0 <= bias <= v1:
+                if abs(v1 - v0) <= tol:
+                    return y0
+                alpha = (bias - v0) / (v1 - v0)
+                return y0 + alpha * (y1 - y0)
+
+        raise AssertionError(f"missing interpolation bracket for bias {bias} in column {column}")
 
     def _assert_doping_csv_has_donors_and_acceptors(self, path: Path) -> None:
         with path.open(newline="") as handle:

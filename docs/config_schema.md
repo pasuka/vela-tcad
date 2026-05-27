@@ -275,6 +275,11 @@ Newton-specific keys:
 - max_update
 - line_search
 - warm_start
+- contact_boundary_reconstruction
+- contact_boundary_minority_electron_relaxation
+- contact_boundary_minority_electron_relaxation_bias_threshold_V
+- contact_boundary_minority_electron_relaxation_two_terminal_only
+- contact_boundary_minority_electron_relaxation_contact_side
 - verbose
 - diagnostics / diagnostic_history
 - jacobian (`analytic` or `finite_difference`)
@@ -296,6 +301,29 @@ Hybrid Gummel-Newton keys:
 
 Notes:
 - `line_search` and `damping_factor` apply to Newton config.
+- `contact_boundary_reconstruction` controls only Ohmic-contact boundary
+  quasi-Fermi/carrier reconstruction in the Newton path. Accepted values are
+  `dominant_signed_contact_mean` (default, current behavior) and
+  `legacy_node_local` (uses each node's local signed doping without
+  contact-mean polarity alignment). This is a boundary reconstruction policy,
+  not a mobility calibration knob.
+- `contact_boundary_minority_electron_relaxation` controls whether Newton
+  relaxes minority-electron quasi-Fermi pinning on p-side Ohmic contacts at
+  higher applied bias. Default is `true` (current behavior).
+- `contact_boundary_minority_electron_relaxation_bias_threshold_V` sets the
+  minimum `|Vbias|` that activates this relaxation. It must be finite and
+  non-negative. Default is `0.1`.
+- `contact_boundary_minority_electron_relaxation_two_terminal_only` keeps this
+  relaxation restricted to two-terminal decks when `true` (default). Set to
+  `false` to allow the same relaxation policy in multi-terminal decks.
+- `contact_boundary_minority_electron_relaxation_contact_side` selects which
+  contact polarity relaxes minority-carrier pinning once relaxation is active.
+  Accepted values are `p_contact_only` (default), `n_contact_only`, and
+  `both_contacts`.
+- `contact_boundary_minority_electron_relaxation_strength` controls how much of
+  the selected minority pinning is released when relaxation is active. `1.0`
+  matches the current full-relaxation behavior, while `0.0` leaves the
+  minority contact pinned.
 - `max_update` is an optional non-negative infinity-norm cap on one Newton
   update in solver unknown units; `0` disables the cap.
 - `carrier_floor_m3` is an optional non-negative Gummel carrier floor used to

@@ -194,3 +194,269 @@ Validation and test updates:
 - BV 0.05 V guardrail (manual ratio check):
    - candidate/reference ratio `0.66071`
    - orders `0.17999` (no degradation vs frozen baseline)
+
+## Two-Week Execution Plan (M1-M3)
+
+### M1: Freeze regression entry and explicit strategy boundary
+
+- Add pn2d high-bias regression gate in Sentaurus integration coverage with:
+   - IV `0.2-0.3 V` trend match.
+   - IV window `orders_of_magnitude <= 0.50`.
+   - Local slope gate at `I(0.29)/I(0.30)` relative to the frozen baseline delta
+      versus Sentaurus (`|candidate-ref| <= |0.7309-0.6324|`).
+   - Two-terminal sum gate at `0.3 V`:
+      `abs(I_anode + I_cathode) <= 1e-18 A/um`.
+- Expose an explicit Newton solver config key:
+   `contact_boundary_reconstruction`, defaulting to the currently accepted
+   behavior (`dominant_signed_contact_mean`).
+- Document that this key controls only contact-boundary quasi-Fermi/carrier
+   reconstruction and is not a mobility-tuning parameter.
+
+Acceptance:
+- New/updated tests pass.
+- pn2d frozen metrics do not regress.
+- Full preset test gate remains green (`ctest --preset windows-ucrt64-debug`).
+
+### M2: High-bias local slope refinement
+
+- Restrict tuning to anode-adjacent minority-electron quasi-Fermi/carrier
+   reconstruction (A/B only).
+- Candidate matrix:
+   - current strategy;
+   - more conservative relaxation;
+   - stronger relaxation;
+   - bias-threshold micro-adjustments.
+- For each candidate, record:
+   - `I(0.29)/I(0.30)`;
+   - IV window orders;
+   - terminal sum at `0.3 V`;
+   - BV `0.05 V` orders;
+   - strict Newton handoff status.
+
+Target:
+- Reduce local slope absolute gap to Sentaurus from about `0.0985` to
+   `<= 0.075`.
+- Keep IV window orders `<= 0.4662` (target `< 0.45`).
+- Keep terminal sum `<= 1e-18 A/um`.
+- No BV guardrail regression.
+
+Rollback:
+- Keep iter2 as baseline;
+- reject candidates that improve one-point slope but degrade window/BV gates.
+
+### M2 execution result (2026-05-27)
+
+Implemented M2 as explicit Newton knobs plus automated candidate scan:
+
+- New Newton config knobs (default behavior preserved):
+   - `contact_boundary_minority_electron_relaxation`
+   - `contact_boundary_minority_electron_relaxation_bias_threshold_V`
+   - `contact_boundary_minority_electron_relaxation_two_terminal_only`
+   - `contact_boundary_minority_electron_relaxation_contact_side`
+- Added scan automation:
+   - `scripts/scan_pn2d_contact_relax_candidates.py`
+   - Output root: `build/pn2d_contact_relax_scan`
+   - Summary artifacts:
+      - `build/pn2d_contact_relax_scan/pn2d_contact_relax_summary.csv`
+      - `build/pn2d_contact_relax_scan/pn2d_contact_relax_summary.json`
+
+Candidate matrix evaluated (strategy x contact-side):
+
+- `baseline` (iter2 current behavior)
+- `dominant_p_only`
+- `dominant_n_only`
+- `dominant_both`
+- `legacy_p_only`
+- `legacy_n_only`
+- `legacy_both`
+
+Observed metric snapshot (from summary CSV):
+
+- Local slope ratio `I(0.29)/I(0.30)`:
+   - baseline / `*_p_only` / `*_both`: `0.7309387` (`delta ~= 0.098503`)
+   - `dominant_n_only` / `legacy_n_only`: `0.7025914` (`delta ~= 0.070156`)
+- IV window orders (`0.2-0.3 V`):
+   - baseline / `*_p_only` / `*_both`: `0.4662111`
+   - `dominant_n_only` / `legacy_n_only`: `0.4945596`
+- Terminal sum at 0.3 V:
+   - all candidates remain near numerical floor (`8.5e-20` to `1.7e-19 A/um`)
+- BV 0.05 V orders:
+   - all candidates `0.1109109`
+- Strict Newton handoff:
+   - all candidates `true` for IV/BV/fine sweeps
+
+M2 decision:
+
+- `n_contact_only` branches improve local slope gap (`0.0985 -> 0.0702`) but
+  regress IV window orders (`0.4662 -> 0.4946`), violating the current gate.
+- Reconstruction mode (`dominant` vs `legacy`) does not materially change this
+  outcome in the tested matrix.
+- Keep iter2 promoted baseline (`dominant_p_only` equivalent behavior) and mark
+  `n_contact_only` as a promising but currently unqualified direction.
+
+### M2 round2 result: n-only threshold refinement (2026-05-27)
+
+A focused threshold micro-sweep was executed for the `n_contact_only` branch
+using:
+
+- `scripts/scan_pn2d_n_only_thresholds.py`
+- Summary artifacts:
+   - `build/pn2d_contact_relax_scan/pn2d_contact_relax_round2_n_only_summary.csv`
+   - `build/pn2d_contact_relax_scan/pn2d_contact_relax_round2_n_only_summary.json`
+
+Round2 candidate set:
+
+- `baseline`
+- `n_only_th0p08`
+- `n_only_th0p1`
+- `n_only_th0p12`
+- `n_only_th0p15`
+- `n_only_th0p2`
+
+Observed outcome (stable across all tested thresholds):
+
+- All `n_only_th*` points are numerically identical in this deck:
+   - `I(0.29)/I(0.30) = 0.7025914`
+   - `delta_to_reference = 0.0701557`
+   - `iv_window_orders(0.2-0.3V) = 0.4945596`
+   - `terminal_sum_abs_A_per_um_at_0p3 = 1.7293e-19`
+   - `bv_orders_at_0p05 = 0.1109109`
+   - `strict_newton_handoff_all = true`
+- Relative to baseline:
+   - local slope improves (`delta: 0.0985 -> 0.0702`),
+   - but IV-window orders remain worse (`0.4662 -> 0.4946`).
+
+Round2 decision:
+
+- The threshold axis (`0.08-0.20 V`) does not provide additional separation for
+  the current `n_contact_only` branch.
+- No round2 threshold candidate is promotable under the existing IV-window gate.
+- Keep iter2 promoted baseline unchanged; treat `n_contact_only` as a known
+  trade-off branch pending a new non-threshold mechanism.
+
+### M2 round3 result: n-only edge-threshold refinement (2026-05-27)
+
+To close the threshold-axis uncertainty near the comparison window, the same
+scan script was rerun with high thresholds:
+
+- Command:
+    - `python scripts/scan_pn2d_n_only_thresholds.py --thresholds 0.24,0.26,0.28,0.29,0.295 --summary-prefix pn2d_contact_relax_round3_n_only_edge_summary --candidate-dirname candidates_round3`
+- Summary artifacts:
+    - `build/pn2d_contact_relax_scan/pn2d_contact_relax_round3_n_only_edge_summary.csv`
+    - `build/pn2d_contact_relax_scan/pn2d_contact_relax_round3_n_only_edge_summary.json`
+
+Round3 candidate set:
+
+- `baseline`
+- `n_only_th0p24`
+- `n_only_th0p26`
+- `n_only_th0p28`
+- `n_only_th0p29`
+- `n_only_th0p295`
+
+Observed outcome (again identical for all `n_only_th*` points):
+
+- `I(0.29)/I(0.30) = 0.7025914`
+- `delta_to_reference = 0.0701557`
+- `iv_window_orders(0.2-0.3V) = 0.4945596`
+- `terminal_sum_abs_A_per_um_at_0p3 = 1.7293e-19`
+- `bv_orders_at_0p05 = 0.1109109`
+- `strict_newton_handoff_all = true`
+
+Round3 decision:
+
+- Extending thresholds up to `0.295 V` still does not separate candidate
+   behavior in this deck.
+- The threshold axis is now considered exhausted for `n_contact_only` in M2;
+   next progress must come from a genuinely non-threshold mechanism.
+
+### M2 round4 result: n-only strength refinement (2026-05-27)
+
+After adding a continuous minority-relaxation strength knob, a small strength
+matrix was executed with a fixed `0.1 V` activation threshold:
+
+- Command:
+   - `python scripts/scan_pn2d_n_only_thresholds.py --strengths 0.0,0.25,0.5,0.75,1.0 --strength-threshold 0.1 --summary-prefix pn2d_contact_relax_round4_n_only_strength_summary --candidate-dirname candidates_round4`
+- Summary artifacts:
+   - `build/pn2d_contact_relax_scan/pn2d_contact_relax_round4_n_only_strength_summary.csv`
+   - `build/pn2d_contact_relax_scan/pn2d_contact_relax_round4_n_only_strength_summary.json`
+
+Round4 candidate set:
+
+- `baseline`
+- `n_only_str0p0`
+- `n_only_str0p25`
+- `n_only_str0p5`
+- `n_only_str0p75`
+- `n_only_str1p0`
+
+Observed outcome:
+
+- All `n_only_str*` points are again numerically identical in this deck:
+   - `I(0.29)/I(0.30) = 0.7025914`
+   - `delta_to_reference = 0.0701557`
+   - `iv_window_orders(0.2-0.3V) = 0.4945596`
+   - `terminal_sum_abs_A_per_um_at_0p3 = 1.7293e-19`
+   - `bv_orders_at_0p05 = 0.1109109`
+   - `strict_newton_handoff_all = true`
+- Baseline remains unchanged.
+
+Round4 decision:
+
+- The new continuous strength axis does not create separation either.
+- For this pn2d deck, both threshold and strength sweeps now point to the
+  same fixed `n_contact_only` response.
+- The remaining path forward must be a different non-threshold mechanism, not
+  another scalar tweak of the same relaxation policy.
+
+### M3: Generalization verification and documentation convergence
+
+Validation matrix:
+- pn2d current reference import;
+- simplified pn_diode deck;
+- at least one nmos2d/pmos2d two-terminal or mixed-terminal smoke;
+- existing BV/SRH gates;
+- regression finite-output path.
+
+Deliverables:
+- Update `docs/validation/pn2d_sentaurus_comparison.md` with fresh pn2d IV/BV
+   import metrics and probe paths.
+- Keep this follow-up plan file synchronized with accepted gate values and
+   unresolved issues.
+
+### M3 execution result (2026-05-27)
+
+M3 generalization validation was executed on current HEAD with:
+
+- Full preset gate:
+   - `ctest --preset windows-ucrt64-debug`
+   - Result: `274/274` passed, `0` failed.
+- Engineering regression matrix artifact:
+   - `build/regression_output/regression_summary.json`
+
+Focused matrix evidence (all `passed=true`, all rows converged):
+
+| case | rows | converged_rows | final_current_total |
+| --- | ---: | ---: | ---: |
+| `pn_diode_iv` | 3 | 3 | `3.481904227298678e-03` |
+| `pn_diode_bv` | 3 | 3 | `-5.78531939292131e-11` |
+| `nmos2d_dd_iv` | 3 | 3 | `5.009164630732429` |
+| `pmos2d_dd_iv` | 3 | 3 | `-1.7810363137092906` |
+| `nmos2d_mos_dd_iv` | 3 | 3 | `1.62055767856109e-06` |
+| `pmos2d_mos_dd_iv` | 3 | 3 | `-5.77996479489852e-07` |
+| `nmos2d_mos_dd_bv` | 3 | 3 | `1.72038242915746e-07` |
+| `pmos2d_mos_dd_bv` | 3 | 3 | `-6.3310014841849e-08` |
+
+M3 status decision:
+
+- pn2d + simplified pn/PMOS/NMOS + mixed-material smoke matrix is green under
+   the current promoted iter2 baseline.
+- M3 acceptance is marked complete for this cycle; unresolved work remains the
+   pn2d high-bias local slope improvement branch (new M2 direction, not
+   threshold-only tuning).
+- Preserve reproducibility commands and artifact paths.
+
+Open items to keep visible:
+- external source alignment for Sentaurus default SRH parameters;
+- Avalanche/OkutoCrowell parity;
+- broader contact model generalization beyond pn2d.

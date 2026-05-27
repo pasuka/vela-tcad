@@ -6,6 +6,7 @@
 #include "vela/solver/LinearSolver.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -15,6 +16,53 @@
 
 namespace vela {
 namespace {
+
+std::string normalizeToken(std::string value)
+{
+    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
+        if (ch == '-' || std::isspace(ch))
+            return static_cast<char>('_');
+        return static_cast<char>(std::tolower(ch));
+    });
+    return value;
+}
+
+std::string canonicalContactBoundaryReconstruction(const std::string& raw)
+{
+    const std::string mode = normalizeToken(raw);
+    if (mode == "dominant_signed_contact_mean" || mode == "dominant_signed_region")
+        return "dominant_signed_contact_mean";
+    if (mode == "legacy_node_local" || mode == "node_local")
+        return "legacy_node_local";
+    throw std::invalid_argument(
+        "newtonConfigFromJson: contact_boundary_reconstruction must be "
+        "'dominant_signed_contact_mean' or 'legacy_node_local'.");
+}
+
+std::string canonicalMinorityRelaxationContactSide(const std::string& raw)
+{
+    const std::string mode = normalizeToken(raw);
+    if (mode == "p_contact_only" || mode == "p_contact" || mode == "p")
+        return "p_contact_only";
+    if (mode == "n_contact_only" || mode == "n_contact" || mode == "n")
+        return "n_contact_only";
+    if (mode == "both_contacts" || mode == "both" || mode == "all_contacts")
+        return "both_contacts";
+    throw std::invalid_argument(
+        "newtonConfigFromJson: "
+        "contact_boundary_minority_electron_relaxation_contact_side must be "
+        "'p_contact_only', 'n_contact_only', or 'both_contacts'.");
+}
+
+Real clampMinorityRelaxationStrength(Real value)
+{
+    if (!std::isfinite(value) || value < 0.0 || value > 1.0) {
+        throw std::invalid_argument(
+            "newtonConfigFromJson: contact_boundary_minority_electron_relaxation_strength "
+            "must be finite and lie in [0, 1].");
+    }
+    return value;
+}
 
 inline double thermalVoltage(double T)
 {
@@ -37,9 +85,12 @@ inline double nEq(double Ndop, double ni)
 Real ohmicContactNetDoping(const DeviceMesh& mesh,
                            const DopingModel& doping,
                            const Contact& contact,
-                           Index nodeId)
+                           Index nodeId,
+                           bool dominantSignedContactMean)
 {
     const Real local = doping.netDoping(nodeId);
+    if (!dominantSignedContactMean)
+        return local;
     if (contact.node_ids.empty())
         return local;
 
@@ -147,6 +198,23 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.finiteDifferenceStep = json.value("finite_difference_step", cfg.finiteDifferenceStep);
     cfg.jacobian = json.value("jacobian", cfg.jacobian);
     cfg.residualNorm = json.value("residual_norm", cfg.residualNorm);
+    cfg.contactBoundaryReconstruction =
+        json.value("contact_boundary_reconstruction", cfg.contactBoundaryReconstruction);
+    cfg.contactBoundaryMinorityElectronRelaxation = json.value(
+        "contact_boundary_minority_electron_relaxation",
+        cfg.contactBoundaryMinorityElectronRelaxation);
+    cfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V = json.value(
+        "contact_boundary_minority_electron_relaxation_bias_threshold_V",
+        cfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V);
+    cfg.contactBoundaryMinorityElectronRelaxationTwoTerminalOnly = json.value(
+        "contact_boundary_minority_electron_relaxation_two_terminal_only",
+        cfg.contactBoundaryMinorityElectronRelaxationTwoTerminalOnly);
+    cfg.contactBoundaryMinorityElectronRelaxationContactSide = json.value(
+        "contact_boundary_minority_electron_relaxation_contact_side",
+        cfg.contactBoundaryMinorityElectronRelaxationContactSide);
+    cfg.contactBoundaryMinorityElectronRelaxationStrength = json.value(
+        "contact_boundary_minority_electron_relaxation_strength",
+        cfg.contactBoundaryMinorityElectronRelaxationStrength);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
     cfg.augerCn = json.value("auger_cn_m6_per_s", cfg.augerCn);
@@ -237,6 +305,21 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (cfg.residualNorm != "block" && cfg.residualNorm != "l2")
         throw std::invalid_argument(
             "newtonConfigFromJson: residual_norm must be 'block' or 'l2'.");
+    cfg.contactBoundaryReconstruction =
+        canonicalContactBoundaryReconstruction(cfg.contactBoundaryReconstruction);
+    cfg.contactBoundaryMinorityElectronRelaxationContactSide =
+        canonicalMinorityRelaxationContactSide(
+            cfg.contactBoundaryMinorityElectronRelaxationContactSide);
+    cfg.contactBoundaryMinorityElectronRelaxationStrength =
+        clampMinorityRelaxationStrength(
+            cfg.contactBoundaryMinorityElectronRelaxationStrength);
+    if (!std::isfinite(cfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V)
+        || cfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V < 0.0) {
+        throw std::invalid_argument(
+            "newtonConfigFromJson: "
+            "contact_boundary_minority_electron_relaxation_bias_threshold_V "
+            "must be finite and non-negative.");
+    }
     validateResidualWeights(
         cfg.residualWeightPsi,
         cfg.residualWeightPhin,
@@ -310,6 +393,18 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
     const double Vt = thermalVoltage(cfg_.temperature_K);
     const Real potentialScale =
         assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const bool dominantSignedContactMean =
+        cfg_.contactBoundaryReconstruction == "dominant_signed_contact_mean";
+    const bool enableMinorityElectronRelaxation =
+        cfg_.contactBoundaryMinorityElectronRelaxation;
+    const Real relaxationBiasThreshold =
+        cfg_.contactBoundaryMinorityElectronRelaxationBiasThreshold_V;
+    const bool twoTerminalOnly =
+        cfg_.contactBoundaryMinorityElectronRelaxationTwoTerminalOnly;
+    const std::string contactSidePolicy =
+        cfg_.contactBoundaryMinorityElectronRelaxationContactSide;
+    const bool allowsMinorityRelaxation =
+        !twoTerminalOnly || mesh_.numContacts() == 2;
 
     for (Index c = 0; c < mesh_.numContacts(); ++c) {
         const Contact& contact = mesh_.getContact(c);
@@ -317,11 +412,24 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
         if (it == contactBiases_.end()) continue;
 
         const double Vbias = it->second;
+        const bool relaxByBiasAndTopology =
+            enableMinorityElectronRelaxation
+            && allowsMinorityRelaxation
+            && (std::abs(Vbias) >= relaxationBiasThreshold);
         const bool relaxMinorityOnPContact =
-            (mesh_.numContacts() == 2) && (std::abs(Vbias) >= 0.1);
+            relaxByBiasAndTopology
+            && (contactSidePolicy == "p_contact_only"
+                || contactSidePolicy == "both_contacts");
+        const bool relaxMinorityOnNContact =
+            relaxByBiasAndTopology
+            && (contactSidePolicy == "n_contact_only"
+                || contactSidePolicy == "both_contacts");
+            const Real relaxedMinorityBias =
+                (1.0 - cfg_.contactBoundaryMinorityElectronRelaxationStrength) * Vbias;
         for (Index nid : contact.node_ids) {
             const double niNode = ni[nid];
-            const double Ndop = ohmicContactNetDoping(mesh_, doping_, contact, nid);
+            const double Ndop = ohmicContactNetDoping(
+                mesh_, doping_, contact, nid, dominantSignedContactMean);
             const double neq = nEq(Ndop, niNode);
             double psiBuiltIn = 0.0;
             if (niNode > 0.0 && neq > 0.0)
@@ -330,10 +438,15 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
             bcs.psi[nid] = (Vbias + psiBuiltIn) / potentialScale;
             if (Ndop >= 0.0) {
                 bcs.phin[nid] = Vbias / potentialScale;
-                bcs.phip[nid] = Vbias / potentialScale;
+                if (relaxMinorityOnNContact)
+                    bcs.phip[nid] = relaxedMinorityBias / potentialScale;
+                else
+                    bcs.phip[nid] = Vbias / potentialScale;
             } else {
                 bcs.phip[nid] = Vbias / potentialScale;
-                if (!relaxMinorityOnPContact)
+                if (relaxMinorityOnPContact)
+                    bcs.phin[nid] = relaxedMinorityBias / potentialScale;
+                else
                     bcs.phin[nid] = Vbias / potentialScale;
             }
         }

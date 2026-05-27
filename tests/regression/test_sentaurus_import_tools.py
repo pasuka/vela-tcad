@@ -439,6 +439,7 @@ Data {
                     "damping_factor": 1.0,
                     "line_search": True,
                     "warm_start": True,
+                    "contact_boundary_reconstruction": "dominant_signed_contact_mean",
                     "verbose": False,
                     "handoff": {
                         "fallback": "none",
@@ -617,6 +618,10 @@ with out.open("w", newline="") as handle:
             self.assertEqual(iv_deck["solver"]["reltol"], 1.0e-8)
             self.assertEqual(iv_deck["solver"]["damping_psi"], 0.25)
             self.assertTrue(iv_deck["solver"]["warm_start"])
+            self.assertEqual(
+                iv_deck["solver"]["contact_boundary_reconstruction"],
+                "dominant_signed_contact_mean",
+            )
             self.assertEqual(iv_deck["solver"]["handoff"]["fallback"], "none")
             self.assertEqual(iv_deck["solver"]["mobility"]["model"], "caughey_thomas_field")
             self.assertEqual(iv_deck["solver"]["recombination"], ["srh", "auger"])

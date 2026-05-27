@@ -16,6 +16,7 @@
     "max_update": 5.0,
     "line_search": true,
     "warm_start": true,
+    "contact_boundary_reconstruction": "dominant_signed_contact_mean",
     "verbose": false,
     "handoff": {
       "fallback": "none",

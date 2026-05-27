@@ -471,13 +471,21 @@ TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
     const NewtonConfig cfg;
     REQUIRE(cfg.jacobian == "analytic");
     REQUIRE_FALSE(cfg.warmStart);
+    REQUIRE(cfg.contactBoundaryReconstruction == "dominant_signed_contact_mean");
+        REQUIRE(cfg.contactBoundaryMinorityElectronRelaxation);
+        REQUIRE(cfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V ==
+            Catch::Approx(0.1));
+        REQUIRE(cfg.contactBoundaryMinorityElectronRelaxationTwoTerminalOnly);
+            REQUIRE(cfg.contactBoundaryMinorityElectronRelaxationContactSide == "p_contact_only");
 
     const NewtonConfig debugCfg = newtonConfigFromJson(nlohmann::json{
         {"jacobian", "finite_difference"},
         {"warm_start", true},
+        {"contact_boundary_reconstruction", "legacy_node_local"},
     });
     REQUIRE(debugCfg.jacobian == "finite_difference");
     REQUIRE(debugCfg.warmStart);
+    REQUIRE(debugCfg.contactBoundaryReconstruction == "legacy_node_local");
 }
 
 TEST_CASE("NewtonSolver: unit_scaling config records scaled mode and preserves analytic Jacobian",
@@ -585,11 +593,47 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
     REQUIRE(cfg.augerCn == Catch::Approx(4.0e-43));
     REQUIRE(cfg.augerCp == Catch::Approx(2.0e-43));
 
+    const NewtonConfig boundaryCfg = newtonConfigFromJson(nlohmann::json{
+        {"contact_boundary_minority_electron_relaxation", false},
+        {"contact_boundary_minority_electron_relaxation_bias_threshold_V", 0.2},
+        {"contact_boundary_minority_electron_relaxation_two_terminal_only", false},
+        {"contact_boundary_minority_electron_relaxation_contact_side", "both_contacts"},
+        {"contact_boundary_minority_electron_relaxation_strength", 0.5},
+    });
+    REQUIRE_FALSE(boundaryCfg.contactBoundaryMinorityElectronRelaxation);
+    REQUIRE(boundaryCfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V ==
+            Catch::Approx(0.2));
+    REQUIRE_FALSE(boundaryCfg.contactBoundaryMinorityElectronRelaxationTwoTerminalOnly);
+    REQUIRE(boundaryCfg.contactBoundaryMinorityElectronRelaxationContactSide ==
+            "both_contacts");
+    REQUIRE(boundaryCfg.contactBoundaryMinorityElectronRelaxationStrength ==
+            Catch::Approx(0.5));
+
     REQUIRE_THROWS_AS(
         newtonConfigFromJson(nlohmann::json{{"residual_norm", "unknown"}}),
         std::invalid_argument);
     REQUIRE_THROWS_AS(
         newtonConfigFromJson(nlohmann::json{{"max_update", -1.0}}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{
+            {"contact_boundary_minority_electron_relaxation_bias_threshold_V", -1.0}
+        }),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{"contact_boundary_reconstruction", "unexpected_mode"}}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{
+            "contact_boundary_minority_electron_relaxation_contact_side",
+            "unexpected_side"
+        }}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{
+            "contact_boundary_minority_electron_relaxation_strength",
+            1.5
+        }}),
         std::invalid_argument);
 }
 

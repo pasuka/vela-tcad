@@ -66,6 +66,193 @@ the 0.05 V quantity delta from about 1.23 orders to about 0.35 orders. The
 subsequent BV-only mobility override reduces the promoted BV gate further to
 about 0.064 orders while keeping IV on its default mobility model.
 
+## M2 Strategy x Contact-Side Scan (2026-05-27)
+
+To test a non-threshold M2 direction for the remaining pn2d high-bias slope
+gap, a dedicated strategy x contact-side scan was executed with:
+
+- Script: `scripts/scan_pn2d_contact_relax_candidates.py`
+- Output root: `build/pn2d_contact_relax_scan`
+- Summary files:
+  - `build/pn2d_contact_relax_scan/pn2d_contact_relax_summary.csv`
+  - `build/pn2d_contact_relax_scan/pn2d_contact_relax_summary.json`
+
+Candidates:
+
+- `baseline` (iter2 behavior)
+- `dominant_p_only`, `dominant_n_only`, `dominant_both`
+- `legacy_p_only`, `legacy_n_only`, `legacy_both`
+
+Result summary:
+
+- Baseline/`*_p_only`/`*_both` stay at
+  `I(0.29)/I(0.30) ~= 0.7309387` (`delta ~= 0.098503`).
+- `*_n_only` improves local ratio to `0.7025914`
+  (`delta ~= 0.070156`).
+- IV window orders:
+  - baseline/`*_p_only`/`*_both`: `0.4662111`
+  - `*_n_only`: `0.4945596` (worse than promoted baseline gate)
+- Terminal current sum at 0.3 V remains near numerical floor
+  (`8.5e-20` to `1.7e-19 A/um`).
+- BV 0.05 V orders remain `0.1109109`.
+- Strict Newton handoff remains `true` for IV/BV/fine sweeps in all cases.
+
+Conclusion:
+
+- `n_contact_only` is a valid improvement direction for local slope but is not
+  yet promotable because it regresses IV-window orders beyond the current gate.
+- `dominant` vs `legacy` reconstruction did not materially change the result in
+  this matrix.
+- Promoted baseline remains unchanged (`dominant_p_only` equivalent behavior).
+
+## M2 Round2 N-Only Threshold Refinement (2026-05-27)
+
+A dedicated threshold micro-sweep was run to test whether `n_contact_only`
+becomes promotable when only the bias threshold is adjusted.
+
+- Script: `scripts/scan_pn2d_n_only_thresholds.py`
+- Output root: `build/pn2d_contact_relax_scan`
+- Summary files:
+  - `build/pn2d_contact_relax_scan/pn2d_contact_relax_round2_n_only_summary.csv`
+  - `build/pn2d_contact_relax_scan/pn2d_contact_relax_round2_n_only_summary.json`
+
+Candidates:
+
+- `baseline`
+- `n_only_th0p08`
+- `n_only_th0p1`
+- `n_only_th0p12`
+- `n_only_th0p15`
+- `n_only_th0p2`
+
+Result summary:
+
+- All `n_only_th*` thresholds collapse to the same metric point in this deck:
+  - `I(0.29)/I(0.30) = 0.7025914` (`delta = 0.0701557`)
+  - IV window orders (`0.2-0.3 V`) = `0.4945596`
+  - Terminal sum at 0.3 V = `1.7293e-19 A/um`
+  - BV orders at 0.05 V = `0.1109109`
+  - Strict Newton handoff = `true`
+- Baseline remains:
+  - `I(0.29)/I(0.30) = 0.7309387` (`delta = 0.0985029`)
+  - IV window orders (`0.2-0.3 V`) = `0.4662111`
+
+Conclusion:
+
+- Threshold tuning in `0.08-0.20 V` does not add discrimination for the current
+  `n_contact_only` branch.
+- The local slope gain persists, but IV-window regression persists as well, so
+  no threshold candidate is promotable.
+- Promoted baseline remains unchanged.
+
+## M2 Round3 N-Only Edge-Threshold Refinement (2026-05-27)
+
+To test whether thresholds near the IV comparison window change the trade-off,
+the same scan was rerun with high thresholds:
+
+- Script: `scripts/scan_pn2d_n_only_thresholds.py`
+- Command:
+  - `python scripts/scan_pn2d_n_only_thresholds.py --thresholds 0.24,0.26,0.28,0.29,0.295 --summary-prefix pn2d_contact_relax_round3_n_only_edge_summary --candidate-dirname candidates_round3`
+- Summary files:
+  - `build/pn2d_contact_relax_scan/pn2d_contact_relax_round3_n_only_edge_summary.csv`
+  - `build/pn2d_contact_relax_scan/pn2d_contact_relax_round3_n_only_edge_summary.json`
+
+Candidates:
+
+- `baseline`
+- `n_only_th0p24`
+- `n_only_th0p26`
+- `n_only_th0p28`
+- `n_only_th0p29`
+- `n_only_th0p295`
+
+Result summary:
+
+- All `n_only_th*` points remain identical:
+  - `I(0.29)/I(0.30) = 0.7025914` (`delta = 0.0701557`)
+  - IV window orders (`0.2-0.3 V`) = `0.4945596`
+  - Terminal sum at 0.3 V = `1.7293e-19 A/um`
+  - BV orders at 0.05 V = `0.1109109`
+  - Strict Newton handoff = `true`
+- Baseline remains:
+  - `I(0.29)/I(0.30) = 0.7309387` (`delta = 0.0985029`)
+  - IV window orders (`0.2-0.3 V`) = `0.4662111`
+
+Conclusion:
+
+- Raising the threshold up to `0.295 V` does not recover IV-window quality.
+- The threshold axis is exhausted for this branch; future M2 progress needs a
+  non-threshold boundary mechanism.
+
+## M2 Round4 N-Only Strength Refinement (2026-05-27)
+
+To test a continuous non-threshold relaxation axis, the scan was rerun with a
+fixed `0.1 V` activation threshold and varying minority-relaxation strength:
+
+- Script: `scripts/scan_pn2d_n_only_thresholds.py`
+- Command:
+  - `python scripts/scan_pn2d_n_only_thresholds.py --strengths 0.0,0.25,0.5,0.75,1.0 --strength-threshold 0.1 --summary-prefix pn2d_contact_relax_round4_n_only_strength_summary --candidate-dirname candidates_round4`
+- Summary files:
+  - `build/pn2d_contact_relax_scan/pn2d_contact_relax_round4_n_only_strength_summary.csv`
+  - `build/pn2d_contact_relax_scan/pn2d_contact_relax_round4_n_only_strength_summary.json`
+
+Candidates:
+
+- `baseline`
+- `n_only_str0p0`
+- `n_only_str0p25`
+- `n_only_str0p5`
+- `n_only_str0p75`
+- `n_only_str1p0`
+
+Result summary:
+
+- All `n_only_str*` points remain identical:
+  - `I(0.29)/I(0.30) = 0.7025914` (`delta = 0.0701557`)
+  - IV window orders (`0.2-0.3 V`) = `0.4945596`
+  - Terminal sum at 0.3 V = `1.7293e-19 A/um`
+  - BV orders at 0.05 V = `0.1109109`
+  - Strict Newton handoff = `true`
+- Baseline remains:
+  - `I(0.29)/I(0.30) = 0.7309387` (`delta = 0.0985029`)
+  - IV window orders (`0.2-0.3 V`) = `0.4662111`
+
+Conclusion:
+
+- The strength axis does not separate candidate behavior in this deck.
+- Threshold and strength sweeps now both collapse to the same n-only response.
+- Further progress requires a different non-threshold boundary mechanism.
+
+## M3 Cross-Device Generalization Snapshot (2026-05-27)
+
+Generalization checks were executed on the same HEAD after M2 integration:
+
+- Full preset quality gate:
+  - `ctest --preset windows-ucrt64-debug`
+  - `274/274` passed, `0` failed.
+- Regression matrix artifact:
+  - `build/regression_output/regression_summary.json`
+
+Representative cross-device rows (all passed with converged sweeps):
+
+| case | rows | converged_rows | final_current_total |
+| --- | ---: | ---: | ---: |
+| `pn_diode_iv` | 3 | 3 | `3.481904227298678e-03` |
+| `pn_diode_bv` | 3 | 3 | `-5.78531939292131e-11` |
+| `nmos2d_dd_iv` | 3 | 3 | `5.009164630732429` |
+| `pmos2d_dd_iv` | 3 | 3 | `-1.7810363137092906` |
+| `nmos2d_mos_dd_iv` | 3 | 3 | `1.62055767856109e-06` |
+| `pmos2d_mos_dd_iv` | 3 | 3 | `-5.77996479489852e-07` |
+| `nmos2d_mos_dd_bv` | 3 | 3 | `1.72038242915746e-07` |
+| `pmos2d_mos_dd_bv` | 3 | 3 | `-6.3310014841849e-08` |
+
+Interpretation:
+
+- The pn2d promoted baseline and M2 parameter plumbing did not introduce
+  regressions in the broader NMOS/PMOS and mixed-material smoke matrix.
+- Remaining open item is pn2d high-bias local slope closure, which requires a
+  new tuning direction beyond threshold-only contact-relaxation scans.
+
 ## BV 0.05 V Drift/Diff Decomposition
 
 To localize the remaining BV delta source, Vela now records electron/hole drift
