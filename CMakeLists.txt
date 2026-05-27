@@ -135,11 +135,28 @@ if(VELA_ENABLE_PYTHON)
                 $<TARGET_FILE_DIR:_core>/curves.py
         VERBATIM)
 
+        add_custom_target(vela_python_package_files ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_SOURCE_DIR}/python/vela/__init__.py
+            $<TARGET_FILE_DIR:_core>/__init__.py
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_SOURCE_DIR}/python/vela/curves.py
+            $<TARGET_FILE_DIR:_core>/curves.py
+        DEPENDS _core
+        VERBATIM)
+
     add_test(NAME python_api
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/python/test_python_api.py)
-    set_tests_properties(python_api PROPERTIES
-        ENVIRONMENT "PYTHONPATH=${VELA_PYTHON_ROOT}/$<CONFIG>;VELA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+    if(WIN32)
+        set(_vela_python_api_path "D:\\msys64\\ucrt64\\bin;D:\\msys64\\usr\\bin;$ENV{PATH}")
+        string(REPLACE ";" "\\;" _vela_python_api_path "${_vela_python_api_path}")
+        set_tests_properties(python_api PROPERTIES
+            ENVIRONMENT "PYTHONPATH=${VELA_PYTHON_ROOT}/$<CONFIG>;VELA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR};PATH=${_vela_python_api_path}")
+    else()
+        set_tests_properties(python_api PROPERTIES
+            ENVIRONMENT "PYTHONPATH=${VELA_PYTHON_ROOT}/$<CONFIG>;VELA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
+    endif()
 endif()
 
 # ---------------------------------------------------------------------------
