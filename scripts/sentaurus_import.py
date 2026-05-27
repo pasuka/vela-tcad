@@ -997,8 +997,17 @@ def reference_command(args: argparse.Namespace) -> None:
     for sim in simulations:
         tdr_name = str(sim["tdr"])
         inventory_path = inventories_dir / f"{sim['name']}.json"
-        run_tdr_importer(args.tdr_importer, resolve_source(source_dir, tdr_name), inventory_path, None)
+        sim_name = str(sim["name"])
+        sim_export_dir = output_dir / "sim_fields" / sim_name
+        run_tdr_importer(
+            args.tdr_importer,
+            resolve_source(source_dir, tdr_name),
+            inventory_path,
+            sim_export_dir,
+            compensated_policy,
+        )
         generated.append(relative_generated(inventory_path, output_dir))
+        generated.append(relative_generated(sim_export_dir / "field_manifest.json", output_dir))
 
     reference_dir = output_dir / "reference_curves"
     cmd_dir = output_dir / "cmd"

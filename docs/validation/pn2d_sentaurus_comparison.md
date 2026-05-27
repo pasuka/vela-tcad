@@ -643,3 +643,69 @@ Verification:
 - `ctest --preset windows-ucrt64-debug -I 262,262 --output-on-failure`: pass
 - `ctest --preset windows-ucrt64-debug -I 270,270 --output-on-failure`: pass
 - `ctest --preset windows-ucrt64-debug --output-on-failure`: **100% tests passed (273/273)**
+
+## 2026-05-27 Next-Phase Root-Cause Run (G/H/I)
+
+This follow-up executed the next planned IV residual investigations with currently
+available artifacts.
+
+### G. Geometry / Unit-Factor Audit (refresh)
+
+Reused current geometry audit data confirms no first-order A/m to A/um scaling mismatch:
+
+- At `0.3 V`, `scale_A_per_m_over_A_per_um = 1000000.0`.
+- Contact dual-length totals stay matched: `sum_couple_um = 0.5` for both Cathode and Anode.
+
+Artifact: `build/pn2d_root_cause_probe/reports/task2_current_geometry_audit.csv`.
+
+Additional branch probe at `0.3 V` on `dc_sweep_0003_0.3V.vtk`:
+
+- Cathode `assembler_residual_total = -1.57935e-14 A/um` (matches the qf branch, not density branch).
+- Anode `assembler_residual_total = +2.13545e-14 A/um` (qf and density nearly identical in this case).
+
+Artifacts:
+
+- `build/pn2d_root_cause_probe/reports/taskG_branch_compare_cathode_0p3V_20260527.csv`
+- `build/pn2d_root_cause_probe/reports/taskG_branch_compare_anode_0p3V_20260527.csv`
+
+### H. Mobility / Flux-Coefficient Evidence (refresh)
+
+Re-ran contact-side decomposition summary and confirmed persistent electron drift/diffusion cancellation
+at forward bias, with growing cancellation ratio at high bias:
+
+- default case at `0.3 V`: `I_e=-2.876e-14`, `I_e_drift=+4.985e-14`, `I_e_diff=-2.109e-14`,
+  `|I_e_drift|/|I_e|=1.73`.
+- recombination-off case at `0.3 V`: `|I_e_drift|/|I_e|=1.99`.
+
+This supports that the remaining IV gap is not removed by simple recombination toggles and retains
+strong sensitivity to transport-state details near contact-adjacent edges.
+
+Artifact: `build/pn2d_root_cause_probe/reports/taskH_contact_decomposition_20260527.txt`.
+
+### I. Quasi-Fermi Profile Check (trend-only completed)
+
+Per-simulation Sentaurus neutral field export is now enabled in the reference flow, producing
+`sim_fields/<simulation>/...` artifacts (including potential and quasi-Fermi fields).
+
+Implementation + verification:
+
+- `scripts/sentaurus_import.py` now exports simulation TDR fields to
+  `sim_fields/iv` and `sim_fields/bv` during `reference` import.
+- A dedicated probe script was added:
+  `scripts/probe_pn2d_quasifermi_profile_compare.py`.
+- New import run generated QF/potential fields:
+  `build/pn2d_taskI_qf/sim_fields/iv/fields/eQuasiFermiPotential_region{0,1}.csv`,
+  `.../hQuasiFermiPotential_region{0,1}.csv`, `.../ElectrostaticPotential_region{0,1}.csv`.
+
+Trend-only comparison versus Vela `0.3 V` VTK (node-mapped):
+
+- Report: `build/pn2d_root_cause_probe/reports/taskI_qf_profile_compare_20260527.json`.
+- `ElectrostaticPotential` abs-diff: mean `0.379 V`, p95 `0.656 V`.
+- `eQuasiFermiPotential` abs-diff: mean `0.092 V`, p95 `0.144 V`.
+- `hQuasiFermiPotential` abs-diff: mean `0.631 V`, p95 `0.674 V`.
+
+Important boundary:
+
+- The imported Sentaurus IV TDR state is the final quasistationary point (typically `1.0 V`),
+  while the compared Vela state is `0.3 V`; this run therefore closes Task I as a trend check,
+  not a strict bias-aligned parity proof.
