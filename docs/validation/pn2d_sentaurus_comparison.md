@@ -682,7 +682,7 @@ strong sensitivity to transport-state details near contact-adjacent edges.
 
 Artifact: `build/pn2d_root_cause_probe/reports/taskH_contact_decomposition_20260527.txt`.
 
-### I. Quasi-Fermi Profile Check (trend-only completed)
+### I. Quasi-Fermi Profile Check (bias-aligned completed)
 
 Per-simulation Sentaurus neutral field export is now enabled in the reference flow, producing
 `sim_fields/<simulation>/...` artifacts (including potential and quasi-Fermi fields).
@@ -709,6 +709,32 @@ Important boundary:
 - The imported Sentaurus IV TDR state is the final quasistationary point (typically `1.0 V`),
   while the compared Vela state is `0.3 V`; this run therefore closes Task I as a trend check,
   not a strict bias-aligned parity proof.
+
+Strict bias-aligned follow-up (`1.0 V`) was then executed:
+
+- Sentaurus state source: `reference_tcad/pn2d/pn2d_forward_des.tdr`
+  exported to `build/pn2d_taskI_bias_align/forward_fields`.
+- Vela aligned run: `build/pn2d_taskI_bias_align/simulation_iv_1p0.json`
+  producing `build/pn2d_taskI_bias_align/dc_sweep_0001_1V.vtk`.
+- Bias-aligned report:
+  `build/pn2d_root_cause_probe/reports/taskI_qf_profile_compare_bias_aligned_1p0V_20260527.json`.
+
+Bias-aligned metrics (node-mapped):
+
+- `ElectrostaticPotential` abs-diff: mean `0.00869 V`, p95 `0.0464 V`.
+- `eQuasiFermiPotential` abs-diff: mean `0.0312 V`, p95 `0.0780 V`, max `0.9315 V`.
+- `hQuasiFermiPotential` abs-diff: mean `0.0112 V`, p95 `0.0387 V`.
+
+Outlier localization (`eQuasiFermiPotential`):
+
+- Largest mismatches cluster near the high-bias anode-side boundary (for example node `876`
+  at approximately `(x,y)=(1.0, 0.0)` um, abs diff `0.9315 V`).
+
+Interpretation:
+
+- Most of the domain shows close potential/QF agreement at matched bias; remaining large discrepancy
+  is concentrated in a small boundary-adjacent subset and is consistent with contact/boundary
+  treatment differences rather than a whole-domain quasi-Fermi mismatch.
 
 ### P1. SRH Default Lifetime Extraction Status
 
