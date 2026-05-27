@@ -24,9 +24,6 @@ struct ContactCurrentResult {
     Real totalCurrent = 0.0;
 };
 
-
-#include "vela/equation/DDAssembler.h"
-
 class ContactCurrent {
 public:
     ContactCurrent(const DeviceMesh& mesh,
