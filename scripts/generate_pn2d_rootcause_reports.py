@@ -16,6 +16,7 @@ import math
 import re
 import subprocess
 import time
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -134,6 +135,194 @@ def find_row_at_bias(rows: list[dict[str, str]], bias: float) -> dict[str, str] 
 class RunResult:
     status: str
     reason: str
+
+
+def _to_float(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return math.nan
+
+
+def normalize_run_failure_reason(reason: str) -> str:
+    if reason == "runner_timeout":
+        return "runner_timeout"
+    return "runner_nonzero_exit_with_json"
+
+
+def normalize_failure_reason(row: dict[str, Any]) -> str:
+    failure_class = str(row.get("failure_class", ""))
+    if failure_class == "run_failure":
+        return normalize_run_failure_reason(str(row.get("failure_reason", "")))
+    return str(row.get("failure_reason", ""))
+
+
+def effective_row_settings(row: dict[str, Any]) -> dict[str, str]:
+    mobility = str(row.get("effective_mobility_model") or row.get("mobility") or "default")
+    recomb = str(row.get("effective_recombination_models") or row.get("recombination") or "none")
+    bgn = str(
+        row.get("effective_bandgap_narrowing")
+        or row.get("bandgap_narrowing")
+        or "default"
+    )
+    impact = str(
+        row.get("effective_impact_ionization_model")
+        or row.get("impact_ionization")
+        or "none"
+    )
+    return {
+        "mobility": mobility,
+        "recombination": recomb,
+        "bandgap_narrowing": bgn,
+        "impact_ionization": impact,
+    }
+
+
+def baseline_equivalent_row(row: dict[str, Any]) -> bool:
+    settings = effective_row_settings(row)
+    return (
+        settings["mobility"] == "caughey_thomas"
+        and settings["recombination"] == "srh"
+        and settings["impact_ionization"] == "none"
+        and settings["bandgap_narrowing"] in {"none", "default", "default_inherited"}
+    )
+
+
+def summarize_bv_matrix_rows(
+    matrix_rows: list[dict[str, Any]],
+    bias_values: list[float],
+) -> dict[str, Any]:
+    failure_class_counts: dict[str, int] = {
+        "executed": 0,
+        "non_convergence": 0,
+        "run_failure": 0,
+        "not_executed": 0,
+    }
+    failure_reason_counts: dict[str, int] = defaultdict(int)
+    per_bias_rows: dict[float, list[dict[str, Any]]] = defaultdict(list)
+
+    for row in matrix_rows:
+        failure_class = str(row.get("failure_class", "not_executed"))
+        failure_class_counts[failure_class] = failure_class_counts.get(failure_class, 0) + 1
+        reason = normalize_failure_reason(row)
+        if reason:
+            failure_reason_counts[reason] += 1
+
+        bias = _to_float(row.get("bias_V"))
+        if finite(bias):
+            per_bias_rows[bias].append(row)
+
+    per_bias_summary: list[dict[str, Any]] = []
+    for bias in sorted(set(bias_values) | set(per_bias_rows.keys())):
+        rows = per_bias_rows.get(bias, [])
+        attempted = len(rows)
+        executed_candidates: list[tuple[float, dict[str, Any]]] = []
+        for row in rows:
+            if str(row.get("failure_class")) != "executed":
+                continue
+            orders = _to_float(row.get("orders_of_magnitude"))
+            if finite(orders):
+                executed_candidates.append((orders, row))
+
+        entry: dict[str, Any] = {
+            "bias_V": bias,
+            "attempted_rows": attempted,
+            "executed_rows": sum(1 for row in rows if str(row.get("failure_class")) == "executed"),
+            "run_failure_rows": sum(1 for row in rows if str(row.get("failure_class")) == "run_failure"),
+            "non_convergence_rows": sum(1 for row in rows if str(row.get("failure_class")) == "non_convergence"),
+            "not_executed_rows": sum(1 for row in rows if str(row.get("failure_class")) == "not_executed"),
+        }
+        if executed_candidates:
+            best_orders, best_row = min(executed_candidates, key=lambda item: item[0])
+            entry["best_executed_case"] = str(best_row.get("case", ""))
+            entry["best_executed_orders_of_magnitude"] = best_orders
+        per_bias_summary.append(entry)
+
+    active_bias_summary = [entry for entry in per_bias_summary if int(entry["executed_rows"]) > 0]
+    return {
+        "bias_values": sorted(set(bias_values)),
+        "total_rows": len(matrix_rows),
+        "attempted_rows": len(matrix_rows),
+        "executed_rows": int(failure_class_counts.get("executed", 0)),
+        "failure_class_counts": failure_class_counts,
+        "failure_reason_counts": dict(sorted(failure_reason_counts.items())),
+        "per_bias_summary": per_bias_summary,
+        "active_bias_summary": active_bias_summary,
+    }
+
+
+def extract_fresh_baseline_settings(base_cfg: dict[str, Any]) -> dict[str, str]:
+    solver = base_cfg.get("solver", {}) if isinstance(base_cfg.get("solver", {}), dict) else {}
+    mobility_model = "default"
+    mobility_obj = solver.get("mobility")
+    if isinstance(mobility_obj, dict):
+        mobility_model = str(mobility_obj.get("model", "default"))
+
+    recomb = solver.get("recombination", ["none"])
+    if isinstance(recomb, list):
+        recomb_name = "+".join(str(x) for x in recomb)
+    else:
+        recomb_name = str(recomb)
+
+    bgn = str(solver.get("bandgap_narrowing", "default_inherited"))
+    impact_model = "none"
+    impact = solver.get("impact_ionization")
+    if isinstance(impact, dict):
+        impact_model = str(impact.get("model", "none"))
+
+    return {
+        "mobility": mobility_model,
+        "recombination": recomb_name,
+        "bandgap_narrowing": bgn,
+        "impact_ionization": impact_model,
+    }
+
+
+def compute_baseline_alignment(
+    matrix_rows: list[dict[str, Any]],
+    fresh_baseline_settings: dict[str, str],
+) -> dict[str, Any]:
+    matching_cases: list[str] = []
+    mismatch_counts: dict[str, int] = {
+        "mobility": 0,
+        "recombination": 0,
+        "bandgap_narrowing": 0,
+        "impact_ionization": 0,
+    }
+
+    for row in matrix_rows:
+        settings = effective_row_settings(row)
+        row_mismatches = [
+            key
+            for key in mismatch_counts
+            if str(settings.get(key, "")) != str(fresh_baseline_settings.get(key, ""))
+        ]
+        if not row_mismatches:
+            matching_cases.append(str(row.get("case", "")))
+        else:
+            for key in row_mismatches:
+                mismatch_counts[key] += 1
+
+    baseline_equivalent_cases = sorted({str(row.get("case", "")) for row in matrix_rows if baseline_equivalent_row(row)})
+    implicit_default_case = "m_default_bgn_default_recomb_none_ii_none"
+    implicit_default_case_present = any(str(row.get("case", "")) == implicit_default_case for row in matrix_rows)
+
+    return {
+        "fresh_baseline_settings": fresh_baseline_settings,
+        "matching_case_count": len(set(matching_cases)),
+        "matching_cases": sorted(set(matching_cases)),
+        "mismatch_counts": mismatch_counts,
+        "baseline_equivalent_case_count": len(baseline_equivalent_cases),
+        "baseline_equivalent_cases": baseline_equivalent_cases,
+        "baseline_equivalent_definition": {
+            "mobility": "caughey_thomas",
+            "recombination": "srh",
+            "bandgap_narrowing": "none_or_default_inherited",
+            "impact_ionization": "none",
+        },
+        "implicit_default_case": implicit_default_case,
+        "implicit_default_case_present": implicit_default_case_present,
+    }
 
 
 def run_case(runner: Path, config: Path, cwd: Path, timeout_s: int = 60) -> RunResult:
@@ -512,6 +701,8 @@ def build_bv_outputs(
     reports_dir: Path,
     runner: Path,
     reuse_bv_curves: bool,
+    reuse_bv_matrix: bool,
+    runner_timeout_s: int,
 ) -> dict[str, Any]:
     ref_vela_dir = root / "reference" / "vela"
     base_cfg_path = ref_vela_dir / "simulation_bv.json"
@@ -529,6 +720,37 @@ def build_bv_outputs(
     case_csv_dir = reports_dir / "bv_case_curves"
     case_csv_dir.mkdir(parents=True, exist_ok=True)
     run_id = str(int(time.time()))
+    matrix_path = reports_dir / "bv_physics_matrix.csv"
+
+    if reuse_bv_matrix:
+        if not matrix_path.exists():
+            raise RuntimeError(f"Missing matrix CSV for --reuse-bv-matrix: {matrix_path}")
+        matrix_rows = read_csv(matrix_path)
+        summary = summarize_bv_matrix_rows(matrix_rows=matrix_rows, bias_values=bias_values)
+        baseline_alignment = compute_baseline_alignment(
+            matrix_rows=matrix_rows,
+            fresh_baseline_settings=extract_fresh_baseline_settings(base_cfg),
+        )
+        (reports_dir / "bv_coverage_summary.json").write_text(
+            json.dumps(
+                {
+                    **summary,
+                    "matrix_csv": str(matrix_path),
+                    "root": str(root),
+                    "reports_dir": str(reports_dir),
+                    "baseline_alignment": baseline_alignment,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return {
+            "rows": matrix_rows,
+            "coverage": summary["failure_class_counts"],
+            "summary": summary,
+            "baseline_alignment": baseline_alignment,
+        }
 
     matrix_rows: list[dict[str, Any]] = []
 
@@ -551,8 +773,6 @@ def build_bv_outputs(
         cfg_base.setdefault("sweep", {})["contact"] = "Cathode"
         cfg_base["sweep"]["current_contact"] = "Cathode"
 
-        cfg_path = case_cfg_dir / f"simulation_bv_{case_name}.json"
-
         for bias in bias_values:
             cfg_bias = json.loads(json.dumps(cfg_base))
             cfg_bias["sweep"]["start"] = 0.0
@@ -560,6 +780,7 @@ def build_bv_outputs(
             cfg_bias["sweep"]["step"] = 0.05 if bias <= 0.05 else bias
 
             bias_tag = f"{bias:.2f}".replace(".", "p")
+            cfg_path = case_cfg_dir / f"simulation_bv_{case_name}_{bias_tag}.json"
             out_csv = (case_csv_dir / f"pn2d_bv_{case_name}_{run_id}_{bias_tag}.csv").resolve()
 
             execution_status = "not_executed"
@@ -573,7 +794,7 @@ def build_bv_outputs(
             else:
                 cfg_bias["output_csv"] = str(out_csv)
                 cfg_path.write_text(json.dumps(cfg_bias, indent=2) + "\n", encoding="utf-8")
-                run_result = run_case(runner=runner, config=cfg_path, cwd=ref_vela_dir)
+                run_result = run_case(runner=runner, config=cfg_path, cwd=ref_vela_dir, timeout_s=runner_timeout_s)
                 execution_status = "executed" if run_result.status == "ok" else "run_failure"
                 execution_reason = run_result.reason
 
@@ -654,10 +875,14 @@ def build_bv_outputs(
                     "impact_ionization": impact,
                     "execution_status": execution_status,
                     "failure_class": failure_class,
-                    "failure_reason": failure_reason,
+                    "failure_reason": normalize_run_failure_reason(failure_reason) if failure_class == "run_failure" else failure_reason,
                     "converged": converged,
                     "handoff_stage": handoff_stage,
                     "strict_newton_handoff": strict_handoff,
+                    "effective_mobility_model": "default_inherited" if mobility == "default" else "caughey_thomas",
+                    "effective_recombination_models": recomb_name,
+                    "effective_bandgap_narrowing": "default_inherited" if bgn == "default" else bgn,
+                    "effective_impact_ionization_model": impact,
                     "reference_total_A_per_um": ref_total,
                     "candidate_total_A_per_um": candidate_total,
                     "candidate_electron_A_per_um": candidate_e,
@@ -690,6 +915,10 @@ def build_bv_outputs(
             "converged",
             "handoff_stage",
             "strict_newton_handoff",
+            "effective_mobility_model",
+            "effective_recombination_models",
+            "effective_bandgap_narrowing",
+            "effective_impact_ionization_model",
             "reference_total_A_per_um",
             "candidate_total_A_per_um",
             "candidate_electron_A_per_um",
@@ -706,17 +935,20 @@ def build_bv_outputs(
         ],
     )
 
-    coverage_summary: dict[str, int] = {"executed": 0, "non_convergence": 0, "run_failure": 0, "not_executed": 0}
-    for row in matrix_rows:
-        key = row["failure_class"]
-        coverage_summary[key] = coverage_summary.get(key, 0) + 1
+    summary = summarize_bv_matrix_rows(matrix_rows=matrix_rows, bias_values=bias_values)
+    baseline_alignment = compute_baseline_alignment(
+        matrix_rows=matrix_rows,
+        fresh_baseline_settings=extract_fresh_baseline_settings(base_cfg),
+    )
 
     (reports_dir / "bv_coverage_summary.json").write_text(
         json.dumps(
             {
-                "bias_values": bias_values,
-                "total_rows": len(matrix_rows),
-                "failure_class_counts": coverage_summary,
+                **summary,
+                "matrix_csv": str(matrix_path),
+                "root": str(root),
+                "reports_dir": str(reports_dir),
+                "baseline_alignment": baseline_alignment,
             },
             indent=2,
         )
@@ -726,15 +958,20 @@ def build_bv_outputs(
 
     return {
         "rows": matrix_rows,
-        "coverage": coverage_summary,
+        "coverage": summary["failure_class_counts"],
+        "summary": summary,
+        "baseline_alignment": baseline_alignment,
     }
 
 
 def write_rootcause_md(
+    root: Path,
     reports_dir: Path,
     baseline_summary: dict[str, Any],
     contact_summary: list[dict[str, str]],
     bv_rows: list[dict[str, Any]],
+    bv_summary: dict[str, Any],
+    baseline_alignment: dict[str, Any],
 ) -> None:
     iv_orders = baseline_summary["checks"]["iv_orders_0p2_to_0p3"]
     terminal_sum = baseline_summary["checks"]["terminal_sum_abs_A_per_um_at_0p3"]
@@ -767,8 +1004,8 @@ def write_rootcause_md(
         "# pn2d IV/BV Root-Cause Next",
         "",
         "## Fresh Artifacts Only",
-        "- Source root: build/pn2d_curve_rootcause_20260527",
-        "- Reports dir: build/pn2d_curve_rootcause_20260527/reports",
+        f"- Source root: {root}",
+        f"- Reports dir: {reports_dir}",
         "",
         "## Baseline Checks",
         f"- IV orders(0.2-0.3V): {iv_orders:.6f}",
@@ -799,6 +1036,51 @@ def write_rootcause_md(
         lines.extend([f"- {item}" for item in sorted(set(diagnostic_only))])
     else:
         lines.append("- none")
+
+    lines.extend([
+        "",
+        "## BV Coverage Summary",
+        f"- attempted_rows: {bv_summary.get('attempted_rows', 0)}",
+        f"- executed_rows: {bv_summary.get('executed_rows', 0)}",
+        f"- failure_class_counts: {json.dumps(bv_summary.get('failure_class_counts', {}), sort_keys=True)}",
+        f"- failure_reason_counts: {json.dumps(bv_summary.get('failure_reason_counts', {}), sort_keys=True)}",
+        "",
+        "### Active Bias Summary",
+    ])
+    active_bias_summary = list(bv_summary.get("active_bias_summary", []))
+    if active_bias_summary:
+        lines.append("| bias_V | attempted_rows | executed_rows | run_failure_rows | non_convergence_rows | best_executed_case | best_executed_orders |")
+        lines.append("|---:|---:|---:|---:|---:|---|---:|")
+        for entry in active_bias_summary:
+            best_case = str(entry.get("best_executed_case", ""))
+            best_orders = _to_float(entry.get("best_executed_orders_of_magnitude"))
+            best_orders_text = f"{best_orders:.6f}" if finite(best_orders) else ""
+            lines.append(
+                "| "
+                f"{_to_float(entry.get('bias_V')):.2f} | "
+                f"{int(entry.get('attempted_rows', 0))} | "
+                f"{int(entry.get('executed_rows', 0))} | "
+                f"{int(entry.get('run_failure_rows', 0))} | "
+                f"{int(entry.get('non_convergence_rows', 0))} | "
+                f"{best_case} | "
+                f"{best_orders_text} |"
+            )
+    else:
+        lines.append("- none (no bias has executed rows)")
+
+    lines.extend([
+        "",
+        "## Baseline Alignment Notes",
+        "- Fresh baseline settings: "
+        + json.dumps(baseline_alignment.get("fresh_baseline_settings", {}), sort_keys=True),
+        "- Matrix rows exactly matching fresh baseline settings: "
+        + str(baseline_alignment.get("matching_case_count", 0)),
+        "- Baseline-equivalent physics definition used here: CT mobility + SRH recombination + BGN none/default-inherited + impact none.",
+        "- Baseline-equivalent cases in matrix: "
+        + json.dumps(baseline_alignment.get("baseline_equivalent_cases", [])),
+        "- Implicit-default matrix case is kept as a separate matrix point (not baseline-equivalent): "
+        + str(baseline_alignment.get("implicit_default_case", "m_default_bgn_default_recomb_none_ii_none")),
+    ])
 
     (reports_dir / "pn2d_iv_bv_rootcause_next.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -838,7 +1120,14 @@ def write_artifact_manifest(
     )
 
 
-def build_reports(root: Path, runner: Path, reuse_bv_curves: bool = False, command_line: str = "") -> None:
+def build_reports(
+    root: Path,
+    runner: Path,
+    reuse_bv_curves: bool = False,
+    reuse_bv_matrix: bool = False,
+    command_line: str = "",
+    runner_timeout_s: int = 60,
+) -> None:
     reports_dir = root / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
 
@@ -848,12 +1137,17 @@ def build_reports(root: Path, runner: Path, reuse_bv_curves: bool = False, comma
         reports_dir=reports_dir,
         runner=runner,
         reuse_bv_curves=reuse_bv_curves,
+        reuse_bv_matrix=reuse_bv_matrix,
+        runner_timeout_s=runner_timeout_s,
     )
     write_rootcause_md(
+        root=root,
         reports_dir=reports_dir,
         baseline_summary=iv_info["baseline_summary"],
         contact_summary=iv_info["contact_summary"],
         bv_rows=bv_info["rows"],
+        bv_summary=bv_info.get("summary", {}),
+        baseline_alignment=bv_info.get("baseline_alignment", {}),
     )
     write_artifact_manifest(
         reports_dir=reports_dir,
@@ -881,6 +1175,17 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Do not run new BV cases; reuse existing per-bias BV case curves if available.",
     )
+    parser.add_argument(
+        "--reuse-bv-matrix",
+        action="store_true",
+        help="Regenerate BV coverage/report artifacts from existing bv_physics_matrix.csv only.",
+    )
+    parser.add_argument(
+        "--runner-timeout-s",
+        type=int,
+        default=60,
+        help="Timeout in seconds for each runner invocation.",
+    )
     return parser.parse_args()
 
 
@@ -891,12 +1196,16 @@ def main() -> int:
         f" --root {args.root.resolve()}"
         f" --runner {args.runner.resolve()}"
         + (" --reuse-bv-curves" if args.reuse_bv_curves else "")
+        + (" --reuse-bv-matrix" if args.reuse_bv_matrix else "")
+        + f" --runner-timeout-s {max(1, int(args.runner_timeout_s))}"
     )
     build_reports(
         root=args.root.resolve(),
         runner=args.runner.resolve(),
         reuse_bv_curves=bool(args.reuse_bv_curves),
+        reuse_bv_matrix=bool(args.reuse_bv_matrix),
         command_line=cmd,
+        runner_timeout_s=max(1, int(args.runner_timeout_s)),
     )
     return 0
 

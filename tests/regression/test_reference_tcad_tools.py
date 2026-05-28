@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import importlib.util
 import json
 import math
 import subprocess
@@ -17,6 +18,17 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 class ReferenceTcadToolsTest(unittest.TestCase):
+    @staticmethod
+    def _load_generate_rootcause_module():
+        module_path = REPO / "scripts" / "generate_pn2d_rootcause_reports.py"
+        spec = importlib.util.spec_from_file_location("generate_pn2d_rootcause_reports", module_path)
+        if spec is None or spec.loader is None:
+            raise RuntimeError(f"unable to load module spec from {module_path}")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        return module
+
     def test_pn2d_iv_ratio_summary_script_exists(self) -> None:
         script = REPO / "scripts" / "summarize_pn2d_iv_ratios.ps1"
         self.assertTrue(script.is_file(), f"missing pn2d IV ratio summary script: {script}")
@@ -67,6 +79,147 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         self.assertIn("pn2d_candidate_iv_bv_summary.csv", text)
         self.assertIn("simulation_iv", text)
         self.assertIn("simulation_bv", text)
+
+    def test_generate_rootcause_reports_help_includes_timeout_and_reuse_matrix(self) -> None:
+        script = REPO / "scripts" / "generate_pn2d_rootcause_reports.py"
+        cp = subprocess.run(
+            [sys.executable, str(script), "--help"],
+            check=True,
+            cwd=REPO,
+            capture_output=True,
+            text=True,
+        )
+        self.assertIn("--runner-timeout-s", cp.stdout)
+        self.assertIn("--reuse-bv-matrix", cp.stdout)
+
+    def test_generate_rootcause_reports_summarizes_synthetic_matrix_and_selects_best_row(self) -> None:
+        module = self._load_generate_rootcause_module()
+        rows = [
+            {
+                "case": "m_a",
+                "bias_V": "0.05",
+                "failure_class": "executed",
+                "failure_reason": "ok",
+                "orders_of_magnitude": "0.12",
+            },
+            {
+                "case": "m_b",
+                "bias_V": "0.05",
+                "failure_class": "executed",
+                "failure_reason": "ok",
+                "orders_of_magnitude": "0.08",
+            },
+            {
+                "case": "m_c",
+                "bias_V": "0.10",
+                "failure_class": "run_failure",
+                "failure_reason": "runner_timeout",
+                "orders_of_magnitude": "nan",
+            },
+            {
+                "case": "m_d",
+                "bias_V": "0.10",
+                "failure_class": "run_failure",
+                "failure_reason": "json_parse_error",
+                "orders_of_magnitude": "nan",
+            },
+        ]
+        summary = module.summarize_bv_matrix_rows(rows, [0.05, 0.10])
+        self.assertEqual(summary["attempted_rows"], 4)
+        self.assertEqual(summary["executed_rows"], 2)
+        self.assertEqual(summary["failure_reason_counts"]["runner_timeout"], 1)
+        self.assertEqual(summary["failure_reason_counts"]["runner_nonzero_exit_with_json"], 1)
+
+        active = {float(item["bias_V"]): item for item in summary["active_bias_summary"]}
+        self.assertIn(0.05, active)
+        self.assertEqual(active[0.05]["best_executed_case"], "m_b")
+        self.assertAlmostEqual(active[0.05]["best_executed_orders_of_magnitude"], 0.08, places=12)
+
+    def test_generate_rootcause_reports_baseline_alignment_flags_mobility_recombination_mismatch(self) -> None:
+        module = self._load_generate_rootcause_module()
+        matrix_rows = [
+            {
+                "case": "m_default_bgn_default_recomb_none_ii_none",
+                "mobility": "default",
+                "recombination": "none",
+                "bandgap_narrowing": "default",
+                "impact_ionization": "none",
+            },
+            {
+                "case": "m_caughey_thomas_bgn_none_recomb_srh_ii_none",
+                "mobility": "caughey_thomas",
+                "recombination": "srh",
+                "bandgap_narrowing": "none",
+                "impact_ionization": "none",
+            },
+        ]
+        fresh = {
+            "mobility": "caughey_thomas",
+            "recombination": "srh",
+            "bandgap_narrowing": "default_inherited",
+            "impact_ionization": "none",
+        }
+        alignment = module.compute_baseline_alignment(matrix_rows, fresh)
+        self.assertGreater(alignment["mismatch_counts"]["mobility"], 0)
+        self.assertGreater(alignment["mismatch_counts"]["recombination"], 0)
+        self.assertIn(
+            "m_caughey_thomas_bgn_none_recomb_srh_ii_none",
+            alignment["baseline_equivalent_cases"],
+        )
+
+    def test_generate_rootcause_reports_markdown_uses_dynamic_root_paths(self) -> None:
+        module = self._load_generate_rootcause_module()
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_rootcause_md_") as tmp:
+            root = Path(tmp) / "custom_root"
+            reports = root / "reports"
+            reports.mkdir(parents=True, exist_ok=True)
+            module.write_rootcause_md(
+                root=root,
+                reports_dir=reports,
+                baseline_summary={
+                    "checks": {
+                        "iv_orders_0p2_to_0p3": 0.4,
+                        "terminal_sum_abs_A_per_um_at_0p3": 1.0e-18,
+                        "strict_newton_all": True,
+                    }
+                },
+                contact_summary=[{"tag": "n_only_probe"}],
+                bv_rows=[
+                    {"bias_V": "0.05", "failure_class": "executed", "orders_of_magnitude": "0.11", "case": "m_x"}
+                ],
+                bv_summary={
+                    "attempted_rows": 1,
+                    "executed_rows": 1,
+                    "failure_class_counts": {"executed": 1},
+                    "failure_reason_counts": {"ok": 1},
+                    "active_bias_summary": [
+                        {
+                            "bias_V": 0.05,
+                            "attempted_rows": 1,
+                            "executed_rows": 1,
+                            "run_failure_rows": 0,
+                            "non_convergence_rows": 0,
+                            "best_executed_case": "m_x",
+                            "best_executed_orders_of_magnitude": 0.11,
+                        }
+                    ],
+                },
+                baseline_alignment={
+                    "fresh_baseline_settings": {
+                        "mobility": "caughey_thomas",
+                        "recombination": "srh",
+                        "bandgap_narrowing": "default_inherited",
+                        "impact_ionization": "none",
+                    },
+                    "matching_case_count": 1,
+                    "baseline_equivalent_cases": ["m_x"],
+                    "implicit_default_case": "m_default_bgn_default_recomb_none_ii_none",
+                },
+            )
+
+            content = (reports / "pn2d_iv_bv_rootcause_next.md").read_text(encoding="utf-8")
+            self.assertIn(f"Source root: {root}", content)
+            self.assertIn(f"Reports dir: {reports}", content)
 
     def test_reference_tcad_device_configs_exist(self) -> None:
         expected = [
