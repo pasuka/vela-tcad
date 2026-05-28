@@ -1000,6 +1000,21 @@ def write_rootcause_md(
 
     n_only_collapsed = any(r.get("tag", "").startswith("n_only_") for r in contact_summary)
 
+    interior_drop_rows: list[dict[str, str]] = []
+    sem_path = reports_dir / "iv_contact_boundary_semantics.csv"
+    if sem_path.exists():
+        interior_drop_rows = read_csv(sem_path)
+    has_vtk_interior_drop = any(
+        str(row.get("interior_drop_source", "")) == "vtk_contact_interior_edge_mean"
+        for row in interior_drop_rows
+    )
+
+    carrier_recon_line = (
+        "- carrier reconstruction: interior QF drop probes are available in iv_contact_boundary_semantics.csv (interior_drop_source=vtk_contact_interior_edge_mean)."
+        if has_vtk_interior_drop
+        else "- carrier reconstruction: requires additional interior QF drop probes (not present in fine contact CSV)."
+    )
+
     lines = [
         "# pn2d IV/BV Root-Cause Next",
         "",
@@ -1015,7 +1030,7 @@ def write_rootcause_md(
         "",
         "## IV Semantic Localization",
         "- boundary target semantics: confirmed as active root-cause axis (n-contact-only axis collapse under anode-driven sweep)." if n_only_collapsed else "- boundary target semantics: not confirmed in this batch.",
-        "- carrier reconstruction: requires additional interior QF drop probes (not present in fine contact CSV).",
+        carrier_recon_line,
         "- current extraction: high drift/diff cancellation suggests extraction sensitivity remains relevant.",
         "- mobility/SG second-order error: retained as coupled hypothesis with current extraction.",
         "",
