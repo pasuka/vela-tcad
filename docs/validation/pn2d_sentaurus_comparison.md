@@ -33,8 +33,12 @@ impact ionization as a low-bias numerical gate while recombination and
 avalanche model parity work remains open; carrying IV recombination models into
 BV inflated the 0.05 V current by about 17x.
 After candidate isolation, the BV deck also uses a BV-only Caughey-Thomas
-mobility override with `bandgap_narrowing: "none"`. The same mobility point is
-not used for IV because it degrades the forward-current comparison.
+mobility override with `bandgap_narrowing: "none"`. The IV deck now declares a
+separate `caughey_thomas_field` mobility override (silicon defaults), matching
+the Sentaurus `DopingDep`+`HighFieldSaturation` declaration; this is the
+Sentaurus-faithful model and improves the IV forward-current comparison.
+The BV-only Caughey-Thomas constant point is still not reused for IV because it
+degrades the forward-current comparison relative to the field-dependent point.
 These reports are diagnostic-only and do not yet require trend match.
 
 Vela currently treats Sentaurus Fermi statistics as Boltzmann carrier
@@ -64,7 +68,54 @@ order of magnitude.
 For BV, matching the Sentaurus physics block by disabling recombination reduced
 the 0.05 V quantity delta from about 1.23 orders to about 0.35 orders. The
 subsequent BV-only mobility override reduces the promoted BV gate further to
-about 0.064 orders while keeping IV on its default mobility model.
+about 0.064 orders.
+
+## IV Mobility Promotion (2026-05-29)
+
+A dedicated IV mobility candidate scan
+(`scripts/scan_pn2d_iv_mobility_candidates.py`, summary
+`build/pn2d_iv_mobility_scan/pn2d_iv_mobility_summary.csv`) compared the default
+(no-mobility) IV deck against Caughey-Thomas variants while leaving the BV deck
+untouched. With the imported reference local ratio `I(0.29)/I(0.30) = 0.632436`:
+
+- `baseline` (no mobility): window orders `0.5858` (fails the 0.50 gate).
+- `caughey_thomas` (silicon): window orders `0.4459`.
+- `caughey_thomas_field` (silicon): window orders `0.4214` (best).
+- `caughey_thomas` / `caughey_thomas_field` with BV constants: `0.4364` / `0.4340`.
+
+All Caughey-Thomas variants pass the 0.50 IV window gate, keep the 0.3 V
+terminal-current sum near the numerical floor (`<1e-18 A/um`), keep strict
+Newton handoff `true`, and leave the BV 0.05 V gate unchanged at `0.1109`.
+The winning `caughey_thomas_field` point was promoted into the IV deck via a
+per-simulation `vela_solver.mobility` override in
+`reference_tcad/pn2d/pn2d_reference.json`. Caughey-Thomas closes the IV
+magnitude axis (window orders `-0.15`) but the local slope delta remains
+`~0.099` (target `0.075` not yet met).
+
+## Phase 2B: Local-Slope vs Magnitude Tradeoff (2026-05-29)
+
+To test whether combining the promoted `caughey_thomas_field` mobility with the
+anode minority-electron quasi-Fermi relaxation knob could also close the local
+slope, the contact-relaxation scan
+(`scripts/scan_pn2d_contact_relax_candidates.py`, summary
+`build/pn2d_phase2b_scan/pn2d_contact_relax_summary.csv`) was rerun on the
+promoted base deck. With reference ratio `I(0.29)/I(0.30) = 0.632436`:
+
+- `baseline` (CT_field, no relaxation): local slope delta `0.0987`,
+  IV window orders `0.4214`.
+- `n_contact_only` relaxation (thresholds `0.08`-`0.20` V, all identical):
+  local slope delta `0.0702` (meets the `0.075` target), but IV window orders
+  rise to `0.4946`.
+
+This confirms the magnitude and local-slope axes trade against each other with
+these two levers: the n-contact-only relaxation meets the local-slope target but
+erases the Caughey-Thomas magnitude gain, leaving only `0.0054` of margin below
+the `0.50` IV-window gate (regression-fragile). BV (`0.1109`), the 0.3 V
+terminal-current sum (`~1e-19 A/um`), and strict Newton handoff are preserved in
+all candidates. Decision: keep the `caughey_thomas_field` promotion alone (with
+its healthy `0.4214` magnitude margin) and carry the local slope delta `~0.099`
+as a documented known gap; the n-contact-only relaxation is not promoted because
+the resulting IV-window margin is too small to be regression-stable.
 
 ## M2 Strategy x Contact-Side Scan (2026-05-27)
 

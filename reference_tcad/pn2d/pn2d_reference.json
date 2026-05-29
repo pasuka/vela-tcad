@@ -39,6 +39,11 @@
       "vela_step": 0.1,
       "comparison_min_points": 10,
       "require_trend_match": false,
+      "vela_solver": {
+        "mobility": {
+          "model": "caughey_thomas_field"
+        }
+      },
       "comparison": {
         "candidate_scale": -1.0,
         "candidate_column": "current_total_A_per_um",

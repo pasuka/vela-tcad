@@ -5,6 +5,36 @@ jump are still open. This document records the verified state of the
 investigation and the next concrete steps so work can resume without
 re-deriving context.
 
+## Phase 0 evidence refresh (2026-05-29, HEAD d05fc34)
+
+Rebuilt (36/36 targets) and reran the IV probe; the older frozen
+`|I_cath/ref| = 0.218 @ 0.30 V` figure is **stale**. On the current default
+probe decks (which do not enable the minority-electron relaxation knob),
+`scripts/probe_pn2d_iv_post_fix.py` now reports:
+
+| bias V | \|I_cath/ref\| | two-contact sum (A/µm) |
+| --- | --- | --- |
+| 0.100 | 3.088 | −1.07e−17 |
+| 0.200 | 0.912 | −3.58e−16 |
+| 0.300 | 0.489 | −1.82e−14 |
+
+The terminal-sum closure to ~4.3e−20 A/µm comes from the promoted iter2 deck
+that enables the relaxation knob; these probe decks intentionally do not, so
+the two figures are consistent.
+
+Phase 1 discriminator (already on disk,
+`build/pn2d_root_cause_probe/reports/taskI_qf_profile_compare_bias_aligned_1p0V_20260527.json`):
+`psi` mean |diff| 0.0087 V, `phip` mean 0.0112 V (both agree), but `phin`
+mean 0.0312 V with **max 0.9315 V Anode-localized**. So psi/phip agree and the
+residual disagreement is the Anode electron-QF boundary node (handled by the
+relaxation knob); the remaining magnitude gap is the mobility axis.
+
+Mobility matrix `i0p29_ratio` (Vela/ref @ 0.29 V):
+`default_field = 0.825`, `constant = 1.646`, `caughey_thomas = 0.997`,
+`ct_promoted_bv = 0.971`. `caughey_thomas` nearly closes the 0.29 V point, so
+Phase 2A targets the IV mobility model (the IV deck currently sets no explicit
+mobility model while the BV deck already uses tuned `caughey_thomas`).
+
 ## Restart update after HEAD rerun
 
 Fresh reruns on `3e84042` changed two conclusions that were true only for
