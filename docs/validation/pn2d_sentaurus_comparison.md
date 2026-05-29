@@ -1019,3 +1019,29 @@ Status:
 - P1 numeric default extraction remains blocked by missing external model-parameter source.
 - To close P1, we need either Sentaurus documentation for this model set or a Sentaurus run mode
   that prints resolved SRH numeric lifetime parameters.
+
+#### P1 follow-up: constant-lifetime parity at the BV gate (2026-05-29)
+
+Because the BV deck declares plain `Recombination(SRH ...)` with no
+`DopingDependence` keyword, the Sentaurus SRH lifetime is a *constant* equal to
+the silicon-default `taumax` (documented `1.0e-5 s`), not a doping-dependent
+Scharfetter relation. A direct parity sweep at the validated 0.05 V BV gate
+(`scripts/probe_pn2d_bv_srh_lifetime.py`, summary
+`build/pn2d_bv_srh_probe/pn2d_bv_srh_summary.csv`) shows:
+
+| `taun=taup` (s) | source | BV orders @ 0.05 V | I(0.05 V) A/µm |
+| --- | --- | --- | --- |
+| `1.0e-6` | current BV deck | `0.1109` (best) | `1.38e-18` |
+| `3.0e-6` | prior tau-grid "best" | `0.4562` | `3.75e-19` |
+| `1.0e-5` | Sentaurus silicon default `taumax` | `0.4816` | `-3.54e-19` |
+
+Conclusion: at the validated low-reverse-bias gate the current `1.0e-6 s`
+lifetime already gives the best constant-lifetime parity; moving toward the
+documented `1.0e-5 s` default *degrades* the gate to `~0.48` orders and even
+flips the current sign. So the residual BV mismatch is **not** a constant-SRH
+lifetime parity issue at the low-bias gate — it lives in the higher-reverse-bias
+avalanche/continuation regime (Newton reverse-bias robustness with the
+impact-ionization Jacobian), which is a separate solver-robustness track. The
+current BV deck lifetime is therefore left unchanged; no solver or deck change
+is warranted from this research pass.
+

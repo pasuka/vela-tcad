@@ -185,6 +185,21 @@ or model-parameter file. The next step is therefore to identify Sentaurus'
 built-in constant SRH lifetime/parameter defaults for this model set, then
 decide whether Vela needs configurable SRH trap parameters beyond `taun/taup`.
 
+**Update (2026-05-29) — constant-lifetime parity closed at the BV gate.**
+The BV deck declares plain `Recombination(SRH ...)` with no `DopingDependence`,
+so the Sentaurus SRH lifetime is a constant equal to the silicon-default
+`taumax` (documented `1.0e-5 s`). A direct parity sweep at the validated 0.05 V
+BV gate (`scripts/probe_pn2d_bv_srh_lifetime.py`, summary
+`build/pn2d_bv_srh_probe/pn2d_bv_srh_summary.csv`) shows the current `1.0e-6 s`
+deck lifetime already gives the best parity (`0.1109` orders); the documented
+`1.0e-5 s` default *degrades* the gate to `~0.48` orders and flips the current
+sign. So the residual BV mismatch is **not** a constant-SRH-lifetime parity
+issue at the low-bias gate — it lives in the higher-reverse-bias
+avalanche/continuation regime (Newton reverse-bias robustness with the
+impact-ionization Jacobian). That solver-robustness track is the remaining BV
+work; the BV deck lifetime is left unchanged. See the P1 follow-up in
+`docs/validation/pn2d_sentaurus_comparison.md`.
+
 ### 3. Cleanup once #1 is closed (P2)
 
 - Rebaseline `tests/regression` golden currents (single failing test
