@@ -5,6 +5,32 @@ jump are still open. This document records the verified state of the
 investigation and the next concrete steps so work can resume without
 re-deriving context.
 
+## Status update (2026-05-29, commit c6bb006)
+
+Phases 0–2B are closed and committed:
+
+- **Phase 2A (IV magnitude) — done.** The Sentaurus-faithful
+  `caughey_thomas_field` mobility model was promoted into the IV deck via a
+  per-simulation `vela_solver.mobility` override in
+  `reference_tcad/pn2d/pn2d_reference.json`. The 0.2–0.3 V window orders drop
+  from `0.5858` (default, fails the 0.50 gate) to `0.4214`, trend match holds,
+  and the BV gate, 0.3 V terminal-current sum, and strict Newton handoff are
+  unchanged. Scan: `scripts/scan_pn2d_iv_mobility_candidates.py`.
+- **Phase 2B (IV local slope) — investigated, no promotion.** Re-running the
+  contact-relaxation scan on the promoted base deck shows the n-contact-only QF
+  relaxation meets the local-slope target (`Δ = 0.0702 ≤ 0.075`) but erases the
+  Caughey-Thomas magnitude gain (IV orders rise to `0.4946`, only `0.0054`
+  below the gate). The magnitude and local-slope axes trade against each other
+  with these two levers, so the relaxation is **not** promoted; the residual
+  local slope delta `~0.099` is carried as a documented known gap. Details in
+  `docs/validation/pn2d_sentaurus_comparison.md`.
+- **Phase 3 (cleanup) — done.** `ctest --preset windows-ucrt64-debug` is
+  274/274 (no regression rebaseline needed); the validation doc is updated.
+
+The remaining open item is **#2 the BV SRH/avalanche parity** below, which is a
+separate physics-calibration track independent of the now-closed IV magnitude
+axis.
+
 ## Phase 0 evidence refresh (2026-05-29, HEAD d05fc34)
 
 Rebuilt (36/36 targets) and reran the IV probe; the older frozen
