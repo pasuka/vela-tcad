@@ -1405,3 +1405,179 @@ Nv: 1.04e19` cm⁻³.
 All 275 tests remain green; no solver/source files were modified in
 Iteration C (only new analysis scripts and generated `build/` artifacts).
 
+## Stage 0 Completion (2026-05-30): Promote-Lever Gate Quantification
+
+Stage 0 quantifies how each candidate promote lever moves the **official IV
+gate metric** (the `iv_report.orders_of_magnitude` value the regression test
+asserts `<= 0.50`) before any deck change is made. Four IV variants were run on
+the faithful pn2d deck, all keeping official physics
+(`mobility=caughey_thomas_field`, `bandgap_narrowing=slotboom`,
+`recombination=[srh,auger]`) and differing only in the two levers:
+
+| Variant | tau (s) | ni (cm⁻³) |
+|---------|---------|-----------|
+| s0 baseline | 1e-7 (default) | 1.0e10 |
+| s1 tau1e6 | 1e-6 | 1.0e10 |
+| s2 ni145 | 1e-7 | 1.45e10 |
+| s3 tau1e6_ni145 | 1e-6 | 1.45e10 |
+
+Tooling: `build/pn2d_probe/vela/make_stage0_configs.py` (fine step 0.01),
+`make_stage0_gate_configs.py` (deck step 0.1), and `scripts/analyze_stage0.py`
+(imports `compare_reference_curves` so the gate is computed identically to the
+regression path: `max |log10(|cand·(-1)| / |ref|)|` aligned at the reference's
+own bias points in `[0.2, 0.3]`).
+
+### Fine-Step Gate (vela_step=0.01 — physically faithful)
+
+| Variant | GATE orders | I(0.30) A/µm | gap× | slope `I(0.29)/I(0.30)` | slope Δ vs Sentaurus | handoff |
+|---------|------------:|-------------:|-----:|------------------------:|---------------------:|---------|
+| s0 baseline | 0.5606 | 1.720e−14 | 4.20 | 0.7311 | 0.0987 | newton ✓ |
+| s1 tau1e6 | 0.7995 | 1.054e−14 | 6.86 | 0.6880 | 0.0556 | newton ✓ |
+| s2 ni145 | **0.2968** | 3.198e−14 | 2.26 | 0.7219 | 0.0894 | newton ✓ |
+| s3 tau1e6_ni145 | 0.4868 | 2.173e−14 | 3.33 | 0.6859 | **0.0534** | newton ✓ |
+
+Sentaurus reference: `I(0.30)=7.229e−14 A/µm`, `slope=0.6324`.
+
+### Authoritative Gate At Deck Step (vela_step=0.1)
+
+| Variant | GATE orders | decision |
+|---------|------------:|----------|
+| s0g baseline | 0.4212 | PASS |
+| s1g tau1e6 | 0.3085 | PASS |
+| s2g ni145 | 0.6668 | FAIL (>0.50) |
+| s3g tau1e6_ni145 | 0.5715 | FAIL (>0.50) |
+
+### Critical Finding: The Step-0.1 Gate Is An Interpolation Artifact
+
+The two step settings give **opposite rankings**. The cause is mechanical, not
+physical. At `vela_step=0.1` the candidate curve has points only at
+`0.0/0.1/0.2/0.3`, so the gate (which aligns at reference biases
+`0.2047…0.29`) interpolates the candidate **linearly between 0.2 and 0.3**.
+The true IV is a steep convex exponential, so the straight chord massively
+**overshoots** at the low edge of the window. Per-bias breakdown of the coarse
+baseline:
+
+| ref bias | ref I (A/µm) | coarse cand I (A/µm) | order |
+|---------:|-------------:|---------------------:|------:|
+| 0.2047 | 1.72e−15 | 2.98e−15 | 0.238 |
+| 0.2247 | 3.70e−15 | 9.77e−15 | **0.421** ← max |
+| 0.2447 | 7.99e−15 | 1.66e−14 | 0.317 |
+| 0.2900 | 4.57e−14 | 3.19e−14 | 0.156 |
+
+The gate maximum (`0.4212`) sits at `0.2247 V`, where the linear chord sits
+`2.6×` **above** both the true Vela curve and the reference. Raising the current
+with `ni=1.45e10` makes this low-edge overshoot worse (`0.6668`), so the coarse
+gate *penalizes* a physically-correct current increase. The fine-step gate
+removes the artifact and shows the opposite, correct behavior: `ni=1.45e10`
+genuinely halves the orders gap (`0.5606 → 0.2968`).
+
+### Stage 0 Decisions
+
+1. **The official step-0.1 IV gate is not a trustworthy promotion metric.** It
+   is dominated by linear-interpolation overshoot of the steep forward-bias
+   exponential at the low edge of `[0.2, 0.3]`. Any promote evaluation must use
+   a fine IV step (`<= 0.02`). Recommended deck change before promotion:
+   lower `vela_step` for the pn2d IV simulation (e.g. `0.02`) so the gate
+   reflects physics, not chord overshoot.
+
+2. **`ni=1.45e10 cm⁻³` is the only single lever that reduces the true orders
+   gap** (fine-step `0.5606 → 0.2968`, gap `4.20× → 2.26×`). It barely changes
+   slope (Δ `0.099 → 0.089`).
+
+3. **`tau=1e-6` improves slope but worsens the true orders gap** (fine-step
+   `0.5606 → 0.7995`, gap `4.20× → 6.86×`). Increasing the SRH lifetime lowers
+   the depletion-region recombination current and so lowers I, moving the
+   already-low Vela curve further from the reference magnitude. This confirms
+   the Iteration B tension: the slope and magnitude levers pull in opposite
+   directions.
+
+4. **`tau=1e-6 + ni=1.45e10` is the best combined candidate**: fine-step gate
+   `0.4868` (passes `<0.50`), best slope Δ `0.0534`, strict Newton handoff
+   preserved. It satisfies both the slope and the (fine-step) magnitude gate,
+   but with thin margin against an artifact-sensitive threshold.
+
+5. **All four variants converge with strict Newton handoff** (`handoff=newton`,
+   `newton_iterations>0`) and matching trend, so none introduces a solver
+   regression.
+
+### Implication For The Plan
+
+- **Stage 2 promotion is blocked on a deck-step / gate-methodology fix first.**
+  Promoting `tau+ni` against the current step-0.1 gate would *fail* the test
+  (`0.5715 > 0.50`) for a non-physical reason. The correct sequence is: (a)
+  move the pn2d IV deck to a finer step, (b) re-baseline the documented gate,
+  (c) then promote `tau+ni` with the fine-step gate as the guard.
+- The residual `2.26×` (`0.30` orders) at `ni=1.45e10` remains the BGN-model
+  gap identified in Iteration C and is within the `<1.0` order envelope.
+
+No source or deck files were modified in Stage 0 (only new analysis scripts and
+generated `build/pn2d_probe/` artifacts). All 275 tests remain green.
+
+## Stage 2 Promotion (2026-05-31): Fine-Step Deck + `ni=1.45e10` Bundle (Path B)
+
+Following the Stage 0 finding that the step-`0.1` IV gate is an
+interpolation artifact, Stage 2 promotes the physically-correct `ni=1.45e10`
+magnitude lever together with a fine deck step so the regression gate measures
+physics rather than chord overshoot. This is **Path B**: bundle the fine-step
+deck change with the `ni` promote and tighten the guard.
+
+### Changes Landed
+
+1. **New material override** `reference_tcad/pn2d/pn2d_iv_materials.json` — a
+   minimal `materials` array overriding only Si `ni = 1.45e10 cm⁻³`
+   (`concentrationToSI` ⇒ `1.45e16 m⁻³`). All other Si fields (mun/mup, Nc/Nv,
+   eps_r, bandgap) inherit the built-in defaults, so the override is fully
+   isolated to `ni` and scoped to the pn2d IV deck only. The global
+   `MaterialDatabase` default (`ni = 1.0e16 m⁻³`) is untouched, so the other
+   274 tests are unaffected.
+
+2. **Importer channel** `scripts/sentaurus_import.py` — added a
+   `vela_materials_file` simulation field. When present, the import flow copies
+   the named file from `--source-dir` into the generated `vela/` directory and
+   sets the deck's top-level `materials_file` to its basename (resolved at
+   runtime against the deck directory via `cwd=deck_path.parent`). The channel
+   is per-simulation, so it applies to IV without touching BV.
+
+3. **Deck** `reference_tcad/pn2d/pn2d_reference.json` IV block —
+   `vela_step: 0.1 → 0.02`, added `vela_materials_file: "pn2d_iv_materials.json"`,
+   and tightened `comparison.max_orders_of_magnitude: 1.0 → 0.4`. BV block and
+   global defaults unchanged.
+
+4. **Regression test** `tests/regression/test_sentaurus_sample_integration.py` —
+   tightened the IV gate assertion `<= 0.50 → <= 0.40`, added assertions that
+   the IV deck step is `0.02`, that `materials_file == "pn2d_iv_materials.json"`
+   and the copied file exists, and that the BV deck has **no** `materials_file`
+   (isolation guard). BV assertions are unchanged.
+
+### Validated Outcome (regenerated reference tree)
+
+| metric | before (step 0.1, ni 1e10) | after (step 0.02, ni 1.45e10) |
+|---|---|---|
+| IV `orders_of_magnitude` | `0.4212` (artifact) | **`0.2731`** |
+| IV gate guard | `<= 0.50` | `<= 0.40` (now honest) |
+| IV trend_match | yes | yes |
+| IV deck step | `0.1` | `0.02` |
+| BV `orders_of_magnitude` | `0.1109` | `0.1109` (unchanged) |
+| BV `materials_file` | none | none (isolated) |
+
+The honest fine-step gate dropped from the true baseline `0.5606`
+(step 0.01, ni 1e10) to `0.2731` at the deck step `0.02` with `ni=1.45e10` —
+within the Iteration C BGN-residual envelope (`~0.30` orders, `2.26×`). All
+IV/BV rows keep strict Newton handoff (`handoff_stage=newton`,
+`newton_iterations>0`).
+
+### Step Selection
+
+Step `0.02` was chosen from the Stage 2 step-sensitivity sweep
+(`scripts/analyze_stage2_step.py`): it is the coarsest deck step whose baseline
+gate (`0.5386`) is within `0.022` of the true fine value (`0.5606`) while
+`ni=1.45e10` cleanly ranks below baseline, at roughly half the solve cost of
+step `0.01`.
+
+### Test Status
+
+`ctest -R sentaurus` → 3/3 passed (`sentaurus_sample_integration` 103 s).
+Full suite `ctest --preset windows-ucrt64-debug` → **275/275 passed**, confirming
+no regression across the other 272 tests (the `ni` override is isolated to the
+pn2d IV deck).
+

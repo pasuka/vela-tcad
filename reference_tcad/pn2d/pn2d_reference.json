@@ -36,7 +36,8 @@
       "current_column": "Anode TotalCurrent",
       "vela_current_contact": "Cathode",
       "vela_stop": 0.3,
-      "vela_step": 0.1,
+      "vela_step": 0.02,
+      "vela_materials_file": "pn2d_iv_materials.json",
       "comparison_min_points": 10,
       "require_trend_match": false,
       "vela_solver": {
@@ -49,7 +50,7 @@
         "candidate_column": "current_total_A_per_um",
         "bias_min": 0.2,
         "bias_max": 0.3,
-        "max_orders_of_magnitude": 1.0,
+        "max_orders_of_magnitude": 0.4,
         "require_trend_match": true,
         "min_points": 2
       },

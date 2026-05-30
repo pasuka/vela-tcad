@@ -873,6 +873,9 @@ def patch_reference_deck(deck_path: Path,
     warnings = apply_solver_physics(deck, cmd_summary, sim)
     if solver_override:
         deck.setdefault("solver", {}).update(json.loads(json.dumps(solver_override)))
+    materials_file = sim.get("vela_materials_file")
+    if materials_file:
+        deck["materials_file"] = Path(str(materials_file)).name
     write_json(deck_path, deck)
     return warnings
 
@@ -1062,6 +1065,13 @@ def reference_command(args: argparse.Namespace) -> None:
         sim_solver = sim.get("vela_solver", {})
         if isinstance(sim_solver, dict):
             solver_override.update(sim_solver)
+        materials_ref = sim.get("vela_materials_file")
+        if materials_ref:
+            materials_src = resolve_source(source_dir, str(materials_ref))
+            materials_dst = vela_dir / Path(str(materials_ref)).name
+            materials_dst.write_text(
+                materials_src.read_text(encoding="utf-8"), encoding="utf-8")
+            generated.append(relative_generated(materials_dst, output_dir))
         warnings.extend(patch_reference_deck(deck_path, cmd_summary, sim, candidate_csv, solver_override))
         generated.append(relative_generated(deck_path, output_dir))
         run_deck_path, runtime_warnings = write_runtime_deck_if_requested(deck_path, sim, candidate_csv)
