@@ -20,6 +20,15 @@ struct BVReverseCriteria {
     bool nonConvergenceBreakdown = true;
 };
 
+struct ContactEdgeDiagnosticsConfig {
+    bool enabled = false;
+    std::string csvFile;
+};
+
+struct SweepDiagnosticsConfig {
+    ContactEdgeDiagnosticsConfig contactEdge;
+};
+
 struct DCSweepConfig {
     CurveSweepMode mode = CurveSweepMode::IV;
     std::string contact;
@@ -45,6 +54,7 @@ struct DCSweepConfig {
     bool storedChargeEnabled = false;
     StoredChargeConfig storedCharge;
     BVReverseCriteria breakdown;
+    SweepDiagnosticsConfig diagnostics;
     UnitScalingConfig scaling;
 };
 

@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace vela {
@@ -47,6 +48,13 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
 ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
                                              const std::string& contactName) const
 {
+    return computeDetailed(solution, contactName).totals;
+}
+
+ContactCurrentDetailedResult ContactCurrent::computeDetailed(
+    const DDSolution& solution,
+    const std::string& contactName) const
+{
     const Contact* contact = nullptr;
     for (const Contact& candidate : mesh_.contacts()) {
         if (candidate.name == contactName) {
@@ -62,7 +70,7 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
 
-    ContactCurrentResult result;
+    ContactCurrentDetailedResult detailed;
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
         const Edge& edge = mesh_.getEdge(e);
         const bool n0OnContact = contactNodes.count(edge.n0) > 0;
@@ -157,12 +165,40 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
 
         const Real outwardSign = n0OnContact ? 1.0 : -1.0;
         // Current density [A/m^2] * edge.couple [m] = [A/m]
-        result.electronCurrent += constants::q * outwardSign * electronFlux01 * edge.couple;
-        result.electronDriftCurrent += constants::q * outwardSign * electronDriftFlux01 * edge.couple;
-        result.electronDiffusionCurrent += constants::q * outwardSign * electronDiffusionFlux01 * edge.couple;
-        result.holeCurrent += constants::q * outwardSign * holeFlux01 * edge.couple;
-        result.holeDriftCurrent += constants::q * outwardSign * holeDriftFlux01 * edge.couple;
-        result.holeDiffusionCurrent += constants::q * outwardSign * holeDiffusionFlux01 * edge.couple;
+        const Real electronCurrent = constants::q * outwardSign * electronFlux01 * edge.couple;
+        const Real electronDriftCurrent = constants::q * outwardSign * electronDriftFlux01 * edge.couple;
+        const Real electronDiffusionCurrent = constants::q * outwardSign * electronDiffusionFlux01 * edge.couple;
+        const Real holeCurrent = constants::q * outwardSign * holeFlux01 * edge.couple;
+        const Real holeDriftCurrent = constants::q * outwardSign * holeDriftFlux01 * edge.couple;
+        const Real holeDiffusionCurrent = constants::q * outwardSign * holeDiffusionFlux01 * edge.couple;
+
+        detailed.totals.electronCurrent += electronCurrent;
+        detailed.totals.electronDriftCurrent += electronDriftCurrent;
+        detailed.totals.electronDiffusionCurrent += electronDiffusionCurrent;
+        detailed.totals.holeCurrent += holeCurrent;
+        detailed.totals.holeDriftCurrent += holeDriftCurrent;
+        detailed.totals.holeDiffusionCurrent += holeDiffusionCurrent;
+
+        ContactCurrentEdgeDiagnostic edgeDiag;
+        edgeDiag.edgeId = e;
+        edgeDiag.node0 = edge.n0;
+        edgeDiag.node1 = edge.n1;
+        edgeDiag.edgeLength_m = edge.length;
+        edgeDiag.edgeCouple_m = edge.couple;
+        edgeDiag.outwardSign = outwardSign;
+        edgeDiag.bernoulliU = dpsi / thermalVoltage_;
+        edgeDiag.bernoulliBplus = weights.b_plus;
+        edgeDiag.bernoulliBminus = weights.b_minus;
+        edgeDiag.electronUsedQuasiFermi = (ni_i == ni_j);
+        edgeDiag.holeUsedQuasiFermi = (ni_i == ni_j);
+        edgeDiag.electronCurrent = electronCurrent;
+        edgeDiag.electronDriftCurrent = electronDriftCurrent;
+        edgeDiag.electronDiffusionCurrent = electronDiffusionCurrent;
+        edgeDiag.holeCurrent = holeCurrent;
+        edgeDiag.holeDriftCurrent = holeDriftCurrent;
+        edgeDiag.holeDiffusionCurrent = holeDiffusionCurrent;
+        edgeDiag.totalCurrent = electronCurrent - holeCurrent;
+        detailed.edges.push_back(std::move(edgeDiag));
     }
 
     // Sign convention: electronCurrent and holeCurrent accumulate
@@ -174,8 +210,8 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
     // Using `I_electron + I_hole` (as previously) double-adds the volume
     // recombination integral into the terminal current and breaks the
     // Kirchhoff balance |I_anode| = |I_cathode| for a two-terminal device.
-    result.totalCurrent = result.electronCurrent - result.holeCurrent;
-    return result;
+    detailed.totals.totalCurrent = detailed.totals.electronCurrent - detailed.totals.holeCurrent;
+    return detailed;
 }
 
 

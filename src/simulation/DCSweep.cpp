@@ -25,6 +25,7 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
@@ -407,6 +408,17 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.storedCharge.perMeter = storedCfg.value("per_meter", true);
     sweep.storedCharge.depth_m = scaling.lengthToSI(storedCfg.value("depth_m", 1.0));
 
+    const auto diagnosticsCfg = j.value("diagnostics", nlohmann::json::object());
+    if (diagnosticsCfg.contains("contact_edge")) {
+        const auto& contactEdgeCfg = diagnosticsCfg.at("contact_edge");
+        if (!contactEdgeCfg.is_object())
+            throw std::invalid_argument("DCSweep: sweep.diagnostics.contact_edge must be an object.");
+        sweep.diagnostics.contactEdge.enabled =
+            contactEdgeCfg.value("enabled", sweep.diagnostics.contactEdge.enabled);
+        sweep.diagnostics.contactEdge.csvFile =
+            contactEdgeCfg.value("csv_file", std::string{});
+    }
+
     if (j.contains("terminal_charges")) {
         const auto& charges = j.at("terminal_charges");
         if (!charges.is_array())
@@ -443,6 +455,15 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     };
     sweep.csvFile = resolve(sweep.csvFile);
     sweep.vtkPrefix = resolve(sweep.vtkPrefix);
+    if (sweep.diagnostics.contactEdge.enabled) {
+        if (sweep.diagnostics.contactEdge.csvFile.empty()) {
+            const std::filesystem::path csvPath(sweep.csvFile);
+            sweep.diagnostics.contactEdge.csvFile =
+                (csvPath.parent_path() / (csvPath.stem().string() + "_contact_edges.csv")).string();
+        } else {
+            sweep.diagnostics.contactEdge.csvFile = resolve(sweep.diagnostics.contactEdge.csvFile);
+        }
+    }
 
     if (sweep.step == 0.0)
         throw std::invalid_argument("DCSweep: sweep.step must be non-zero.");
@@ -777,6 +798,39 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     }
     csv.writeHeader(header);
 
+    std::unique_ptr<CSVWriter> contactEdgeCsv;
+    if (sweep.diagnostics.contactEdge.enabled) {
+        const std::filesystem::path diagPath(sweep.diagnostics.contactEdge.csvFile);
+        if (!diagPath.parent_path().empty())
+            std::filesystem::create_directories(diagPath.parent_path());
+        contactEdgeCsv = std::make_unique<CSVWriter>(diagPath.string());
+        std::vector<std::string> diagHeader = {
+            "point_index",
+            "bias_V",
+            "current_contact",
+            "edge_id",
+            "node0",
+            "node1",
+            "edge_length_m",
+            "edge_couple_m",
+            "outward_sign",
+            "bernoulli_u",
+            "bernoulli_bplus",
+            "bernoulli_bminus",
+            "electron_branch",
+            "hole_branch",
+            "current_electron",
+            "current_electron_drift",
+            "current_electron_diffusion",
+            "current_hole",
+            "current_hole_drift",
+            "current_hole_diffusion",
+            "current_total"};
+        if (writeUnitScaledColumns)
+            diagHeader.push_back("current_total_A_per_um");
+        contactEdgeCsv->writeHeader(diagHeader);
+    }
+
     std::vector<DCSweepPoint> points;
     DDSolution previousSolution;
     int vtkIndex = 0;
@@ -939,9 +993,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                            const std::string& failureReason = std::string(),
                            const std::string& validationDiagnostics = std::string()) {
         ContactCurrentResult current{};
+        ContactCurrentDetailedResult currentDetailed{};
         const DDSolution& sol = attempt.solution;
-        if (converged)
-            current = contactCurrent.compute(sol, sweep.currentContact);
+        if (converged) {
+            if (sweep.diagnostics.contactEdge.enabled) {
+                currentDetailed = contactCurrent.computeDetailed(sol, sweep.currentContact);
+                current = currentDetailed.totals;
+            } else {
+                current = contactCurrent.compute(sol, sweep.currentContact);
+            }
+        }
 
         DCSweepPoint point;
         point.voltage = voltage;
@@ -1157,6 +1218,37 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             }
         }
         csv.writeRow(row);
+
+        if (converged && contactEdgeCsv != nullptr) {
+            const std::size_t pointIndex = points.size();
+            for (const ContactCurrentEdgeDiagnostic& edgeDiag : currentDetailed.edges) {
+                std::vector<std::string> diagRow = {
+                    std::to_string(pointIndex),
+                    formatReal(point.bias),
+                    sweep.currentContact,
+                    std::to_string(edgeDiag.edgeId),
+                    std::to_string(edgeDiag.node0),
+                    std::to_string(edgeDiag.node1),
+                    formatReal(edgeDiag.edgeLength_m),
+                    formatReal(edgeDiag.edgeCouple_m),
+                    formatReal(edgeDiag.outwardSign),
+                    formatReal(edgeDiag.bernoulliU),
+                    formatReal(edgeDiag.bernoulliBplus),
+                    formatReal(edgeDiag.bernoulliBminus),
+                    edgeDiag.electronUsedQuasiFermi ? "quasi_fermi" : "density",
+                    edgeDiag.holeUsedQuasiFermi ? "quasi_fermi" : "density",
+                    formatReal(edgeDiag.electronCurrent),
+                    formatReal(edgeDiag.electronDriftCurrent),
+                    formatReal(edgeDiag.electronDiffusionCurrent),
+                    formatReal(edgeDiag.holeCurrent),
+                    formatReal(edgeDiag.holeDriftCurrent),
+                    formatReal(edgeDiag.holeDiffusionCurrent),
+                    formatReal(edgeDiag.totalCurrent)};
+                if (writeUnitScaledColumns)
+                    diagRow.push_back(formatReal(perMeterToPerMicron(edgeDiag.totalCurrent)));
+                contactEdgeCsv->writeRow(diagRow);
+            }
+        }
 
         if (converged && sweep.writeVtk) {
             point.outputVtk = vtkFilename(sweep.vtkPrefix, vtkIndex++, voltage);

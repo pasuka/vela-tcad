@@ -24,6 +24,32 @@ struct ContactCurrentResult {
     Real totalCurrent = 0.0;
 };
 
+struct ContactCurrentEdgeDiagnostic {
+    Index edgeId = -1;
+    Index node0 = -1;
+    Index node1 = -1;
+    Real edgeLength_m = 0.0;
+    Real edgeCouple_m = 0.0;
+    Real outwardSign = 0.0;
+    Real bernoulliU = 0.0;
+    Real bernoulliBplus = 0.0;
+    Real bernoulliBminus = 0.0;
+    bool electronUsedQuasiFermi = false;
+    bool holeUsedQuasiFermi = false;
+    Real electronCurrent = 0.0;
+    Real electronDriftCurrent = 0.0;
+    Real electronDiffusionCurrent = 0.0;
+    Real holeCurrent = 0.0;
+    Real holeDriftCurrent = 0.0;
+    Real holeDiffusionCurrent = 0.0;
+    Real totalCurrent = 0.0;
+};
+
+struct ContactCurrentDetailedResult {
+    ContactCurrentResult totals;
+    std::vector<ContactCurrentEdgeDiagnostic> edges;
+};
+
 class ContactCurrent {
 public:
     ContactCurrent(const DeviceMesh& mesh,
@@ -36,6 +62,9 @@ public:
 
     ContactCurrentResult compute(const DDSolution& solution,
                                  const std::string& contactName) const;
+
+    ContactCurrentDetailedResult computeDetailed(const DDSolution& solution,
+                                                 const std::string& contactName) const;
 
     static ContactCurrentResult compute(const DeviceMesh& mesh,
                                         const MaterialDatabase& matdb,

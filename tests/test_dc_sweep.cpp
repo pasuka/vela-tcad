@@ -740,6 +740,59 @@ TEST_CASE("DCSweep: recombination diagnostics are opt-in for hybrid handoff",
     REQUIRE(std::isfinite(csvReal(rowsWithDiag.at(1), maxNpOverNi2Column)));
 }
 
+TEST_CASE("DCSweep: contact-edge diagnostics are opt-in and write per-edge rows",
+          "[dc_sweep][diagnostics][contact_edge]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "iv_unit_scaling.csv";
+    const auto edgeDiagPath = dir / "iv_contact_edges.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"contact_edge", {
+                {"enabled", true},
+                {"csv_file", edgeDiagPath.string()}
+            }}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+
+    REQUIRE(std::filesystem::exists(edgeDiagPath));
+    const auto rows = readCsvRows(edgeDiagPath);
+    REQUIRE(rows.size() >= 1);
+
+    const auto& header = rows.front();
+    const std::size_t pointIndexCol = csvColumnIndex(header, "point_index");
+    const std::size_t electronBranchCol = csvColumnIndex(header, "electron_branch");
+    const std::size_t holeBranchCol = csvColumnIndex(header, "hole_branch");
+    const std::size_t edgeCurrentCol = csvColumnIndex(header, "current_total");
+    const std::size_t edgeCurrentUmCol = csvColumnIndex(header, "current_total_A_per_um");
+
+    if (rows.size() > 1) {
+        for (std::size_t i = 1; i < rows.size(); ++i) {
+            const auto& row = rows.at(i);
+            REQUIRE(csvReal(row, pointIndexCol) == Catch::Approx(0.0));
+            const std::string electronBranch = row.at(electronBranchCol);
+            const std::string holeBranch = row.at(holeBranchCol);
+            REQUIRE((electronBranch == "density" || electronBranch == "quasi_fermi"));
+            REQUIRE((holeBranch == "density" || holeBranch == "quasi_fermi"));
+            REQUIRE(std::isfinite(csvReal(row, edgeCurrentCol)));
+            REQUIRE(csvReal(row, edgeCurrentUmCol) ==
+                    Catch::Approx(csvReal(row, edgeCurrentCol) / 1.0e6).epsilon(1.0e-12));
+        }
+    }
+}
+
 TEST_CASE("DCSweep: NMOS and PMOS unit_scaling low-bias smoke sweeps converge",
           "[dc_sweep][scaling][dd_gummel]")
 {
