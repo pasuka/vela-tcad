@@ -4,6 +4,20 @@
 
 This repository contains a C++20 CMake project for Vela TCAD, a lightweight 2-D semiconductor device drift-diffusion and Poisson solver. The core remains C++, with an optional pybind11 Python API behind `VELA_ENABLE_PYTHON`.
 
+## Preferred local environment
+
+For this repository, treat Windows development as MSYS2 UCRT64 by default. When an agent runs on Windows and the user does not explicitly request another toolchain, assume the active toolchain is `D:\msys64\ucrt64` and prefer its `cmake`, `ninja`, `g++`, `gdb`, and `python` executables.
+
+From PowerShell, initialize the toolchain with:
+
+```powershell
+$env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
+Set-Location "D:\code-repo\vela-tcad"
+cmake --preset windows-ucrt64-debug
+```
+
+Do not spend time rediscovering Windows compiler locations unless the user says this environment changed or a command proves the UCRT64 toolchain is unavailable.
+
 ## Dependencies
 
 This is not an npm project. Do not install Python package dependencies unless a future task explicitly adds tooling that requires them. The optional Python API uses system Python development headers and pybind11 through CMake.

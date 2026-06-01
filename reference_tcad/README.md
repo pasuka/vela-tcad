@@ -21,12 +21,39 @@ Each device directory can contain:
 - `vela/simulation_*.json`: Vela decks using `scaling.mode = "unit_scaling"`
 - `vela/*.csv`: checked-in Vela candidate curve outputs
 - `reports/*.json` and `reports/*.md`: generated comparison reports
+- `<device>_reference.json`: metadata inventory for checked-in Vela/reference
+  curve fixtures
 
 Only the README files and validation notes are hand-written. Files under
 `reports/` are generated comparison outputs and should be regenerated through
 the tool workflow instead of manually edited.
 
+Checked-in fixture inventories use schema
+`vela.reference_tcad.checked_in.v1`. These configs list the mesh, Vela decks,
+candidate CSVs, reference curves, comparison reports, and curve kind for each
+reusable sample. They are metadata-only for checked-in CSV fixtures; generated
+Sentaurus imports use `vela.reference_tcad.sentaurus_reference.v1`.
+
 ## Tools
+
+Sentaurus import workflow (HDF5/TDR + text artifacts):
+
+1. Use the C++ `sentaurus_import` executable to read a `.tdr` file and export
+  neutral mesh/doping/contact CSV files.
+2. Use `scripts/sentaurus_import.py` for text artifacts such as `.plt` curve
+  extraction and `.cmd`-derived summaries.
+3. Convert neutral exports to Vela decks with `scripts/convert_tcad_export.py`.
+4. Compare candidate and reference curves with `scripts/compare_reference_curves.py`.
+
+Generate inventory JSON and neutral exports from TDR:
+
+```bash
+build/sentaurus_import --tdr path/to/device.tdr --inventory-json build/device_inventory.json
+build/sentaurus_import --tdr path/to/device.tdr --export-dir reference_tcad/sample
+```
+
+Add `--compensated-doping-policy dominant_signed_region` when the default
+`reported` policy is not desired for compensated regions.
 
 Convert neutral CSV exports into Vela decks:
 
@@ -52,6 +79,7 @@ Run tool and fixture checks:
 
 ```bash
 ctest --test-dir build --output-on-failure -R reference_tcad_regression
+ctest --test-dir build --output-on-failure -R sentaurus
 ```
 
 ## Checked-In Validation Chains

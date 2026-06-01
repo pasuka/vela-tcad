@@ -29,6 +29,14 @@ Run the checked-in engineering regression suite:
 python scripts/run_regression.py --runner build/vela_example_runner
 ```
 
+Python helper examples are available under `examples/python/`:
+
+- `run_pn_diode.py`: minimal script-style entry for the PN diode decks.
+- `run_device_curves.py`: helper entry for running multiple curve families.
+
+These scripts are convenience wrappers for local workflows and are not part of
+the core CTest regression matrix.
+
 CTest exposes the same suite:
 
 ```bash
