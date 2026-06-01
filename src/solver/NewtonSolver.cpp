@@ -6,6 +6,7 @@
 #include "vela/solver/LinearSolver.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -15,6 +16,53 @@
 
 namespace vela {
 namespace {
+
+std::string normalizeToken(std::string value)
+{
+    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
+        if (ch == '-' || std::isspace(ch))
+            return static_cast<char>('_');
+        return static_cast<char>(std::tolower(ch));
+    });
+    return value;
+}
+
+std::string canonicalContactBoundaryReconstruction(const std::string& raw)
+{
+    const std::string mode = normalizeToken(raw);
+    if (mode == "dominant_signed_contact_mean" || mode == "dominant_signed_region")
+        return "dominant_signed_contact_mean";
+    if (mode == "legacy_node_local" || mode == "node_local")
+        return "legacy_node_local";
+    throw std::invalid_argument(
+        "newtonConfigFromJson: contact_boundary_reconstruction must be "
+        "'dominant_signed_contact_mean' or 'legacy_node_local'.");
+}
+
+std::string canonicalMinorityRelaxationContactSide(const std::string& raw)
+{
+    const std::string mode = normalizeToken(raw);
+    if (mode == "p_contact_only" || mode == "p_contact" || mode == "p")
+        return "p_contact_only";
+    if (mode == "n_contact_only" || mode == "n_contact" || mode == "n")
+        return "n_contact_only";
+    if (mode == "both_contacts" || mode == "both" || mode == "all_contacts")
+        return "both_contacts";
+    throw std::invalid_argument(
+        "newtonConfigFromJson: "
+        "contact_boundary_minority_electron_relaxation_contact_side must be "
+        "'p_contact_only', 'n_contact_only', or 'both_contacts'.");
+}
+
+Real clampMinorityRelaxationStrength(Real value)
+{
+    if (!std::isfinite(value) || value < 0.0 || value > 1.0) {
+        throw std::invalid_argument(
+            "newtonConfigFromJson: contact_boundary_minority_electron_relaxation_strength "
+            "must be finite and lie in [0, 1].");
+    }
+    return value;
+}
 
 inline double thermalVoltage(double T)
 {
@@ -26,7 +74,41 @@ inline double thermalVoltage(double T)
 inline double nEq(double Ndop, double ni)
 {
     const double half = 0.5 * Ndop;
-    return half + std::sqrt(half * half + ni * ni);
+    const double root = std::hypot(half, ni);
+    if (Ndop >= 0.0)
+        return half + root;
+
+    const double pEq = root - half;
+    return (pEq > 0.0) ? (ni * ni / pEq) : 0.0;
+}
+
+Real ohmicContactNetDoping(const DeviceMesh& mesh,
+                           const DopingModel& doping,
+                           const Contact& contact,
+                           Index nodeId,
+                           bool dominantSignedContactMean)
+{
+    const Real local = doping.netDoping(nodeId);
+    if (!dominantSignedContactMean)
+        return local;
+    if (contact.node_ids.empty())
+        return local;
+
+    Real sum = 0.0;
+    for (Index nid : contact.node_ids)
+        sum += doping.netDoping(nid);
+    const Real mean = sum / static_cast<Real>(contact.node_ids.size());
+
+    // Contact nodes in imported meshes can include compensated/tie points whose
+    // node-owned signed doping flips relative to the contact side. For Ohmic
+    // BC reconstruction, align those outliers with the contact-local average
+    // polarity to avoid injecting an opposite-type built-in potential on one
+    // endpoint of the same terminal.
+    if (mean == 0.0 || local == 0.0)
+        return mean != 0.0 ? mean : local;
+    if ((local > 0.0 && mean > 0.0) || (local < 0.0 && mean < 0.0))
+        return local;
+    return mean;
 }
 
 void validateResidualWeights(
@@ -112,11 +194,31 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.warmStart = json.value("warm_start", cfg.warmStart);
     cfg.diagnostics = json.value("diagnostics", cfg.diagnostics);
     cfg.diagnostics = json.value("diagnostic_history", cfg.diagnostics);
+    cfg.maxUpdate = json.value("max_update", cfg.maxUpdate);
     cfg.finiteDifferenceStep = json.value("finite_difference_step", cfg.finiteDifferenceStep);
     cfg.jacobian = json.value("jacobian", cfg.jacobian);
     cfg.residualNorm = json.value("residual_norm", cfg.residualNorm);
+    cfg.contactBoundaryReconstruction =
+        json.value("contact_boundary_reconstruction", cfg.contactBoundaryReconstruction);
+    cfg.contactBoundaryMinorityElectronRelaxation = json.value(
+        "contact_boundary_minority_electron_relaxation",
+        cfg.contactBoundaryMinorityElectronRelaxation);
+    cfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V = json.value(
+        "contact_boundary_minority_electron_relaxation_bias_threshold_V",
+        cfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V);
+    cfg.contactBoundaryMinorityElectronRelaxationTwoTerminalOnly = json.value(
+        "contact_boundary_minority_electron_relaxation_two_terminal_only",
+        cfg.contactBoundaryMinorityElectronRelaxationTwoTerminalOnly);
+    cfg.contactBoundaryMinorityElectronRelaxationContactSide = json.value(
+        "contact_boundary_minority_electron_relaxation_contact_side",
+        cfg.contactBoundaryMinorityElectronRelaxationContactSide);
+    cfg.contactBoundaryMinorityElectronRelaxationStrength = json.value(
+        "contact_boundary_minority_electron_relaxation_strength",
+        cfg.contactBoundaryMinorityElectronRelaxationStrength);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
+    cfg.augerCn = json.value("auger_cn_m6_per_s", cfg.augerCn);
+    cfg.augerCp = json.value("auger_cp_m6_per_s", cfg.augerCp);
     if (json.contains("mobility"))
         cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"), scaling);
     if (json.contains("bandgap_narrowing")) {
@@ -194,9 +296,30 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (cfg.jacobian != "analytic" && cfg.jacobian != "finite_difference")
         throw std::invalid_argument(
             "newtonConfigFromJson: jacobian must be 'analytic' or 'finite_difference'.");
+    if (cfg.maxUpdate < 0.0 || !std::isfinite(cfg.maxUpdate))
+        throw std::invalid_argument(
+            "newtonConfigFromJson: max_update must be non-negative and finite.");
+    if (cfg.finiteDifferenceStep <= 0.0 || !std::isfinite(cfg.finiteDifferenceStep))
+        throw std::invalid_argument(
+            "newtonConfigFromJson: finite_difference_step must be positive and finite.");
     if (cfg.residualNorm != "block" && cfg.residualNorm != "l2")
         throw std::invalid_argument(
             "newtonConfigFromJson: residual_norm must be 'block' or 'l2'.");
+    cfg.contactBoundaryReconstruction =
+        canonicalContactBoundaryReconstruction(cfg.contactBoundaryReconstruction);
+    cfg.contactBoundaryMinorityElectronRelaxationContactSide =
+        canonicalMinorityRelaxationContactSide(
+            cfg.contactBoundaryMinorityElectronRelaxationContactSide);
+    cfg.contactBoundaryMinorityElectronRelaxationStrength =
+        clampMinorityRelaxationStrength(
+            cfg.contactBoundaryMinorityElectronRelaxationStrength);
+    if (!std::isfinite(cfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V)
+        || cfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V < 0.0) {
+        throw std::invalid_argument(
+            "newtonConfigFromJson: "
+            "contact_boundary_minority_electron_relaxation_bias_threshold_V "
+            "must be finite and non-negative.");
+    }
     validateResidualWeights(
         cfg.residualWeightPsi,
         cfg.residualWeightPhin,
@@ -270,6 +393,18 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
     const double Vt = thermalVoltage(cfg_.temperature_K);
     const Real potentialScale =
         assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const bool dominantSignedContactMean =
+        cfg_.contactBoundaryReconstruction == "dominant_signed_contact_mean";
+    const bool enableMinorityElectronRelaxation =
+        cfg_.contactBoundaryMinorityElectronRelaxation;
+    const Real relaxationBiasThreshold =
+        cfg_.contactBoundaryMinorityElectronRelaxationBiasThreshold_V;
+    const bool twoTerminalOnly =
+        cfg_.contactBoundaryMinorityElectronRelaxationTwoTerminalOnly;
+    const std::string contactSidePolicy =
+        cfg_.contactBoundaryMinorityElectronRelaxationContactSide;
+    const bool allowsMinorityRelaxation =
+        !twoTerminalOnly || mesh_.numContacts() == 2;
 
     for (Index c = 0; c < mesh_.numContacts(); ++c) {
         const Contact& contact = mesh_.getContact(c);
@@ -277,46 +412,87 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
         if (it == contactBiases_.end()) continue;
 
         const double Vbias = it->second;
+        const bool relaxByBiasAndTopology =
+            enableMinorityElectronRelaxation
+            && allowsMinorityRelaxation
+            && (std::abs(Vbias) >= relaxationBiasThreshold);
+        const bool relaxMinorityOnPContact =
+            relaxByBiasAndTopology
+            && (contactSidePolicy == "p_contact_only"
+                || contactSidePolicy == "both_contacts");
+        const bool relaxMinorityOnNContact =
+            relaxByBiasAndTopology
+            && (contactSidePolicy == "n_contact_only"
+                || contactSidePolicy == "both_contacts");
+            const Real relaxedMinorityBias =
+                (1.0 - cfg_.contactBoundaryMinorityElectronRelaxationStrength) * Vbias;
         for (Index nid : contact.node_ids) {
             const double niNode = ni[nid];
-            const double neq = nEq(doping_.netDoping(nid), niNode);
+            const double Ndop = ohmicContactNetDoping(
+                mesh_, doping_, contact, nid, dominantSignedContactMean);
+            const double neq = nEq(Ndop, niNode);
             double psiBuiltIn = 0.0;
             if (niNode > 0.0 && neq > 0.0)
                 psiBuiltIn = Vt * std::log(neq / niNode);
 
             bcs.psi[nid] = (Vbias + psiBuiltIn) / potentialScale;
-            bcs.phin[nid] = Vbias / potentialScale;
-            bcs.phip[nid] = Vbias / potentialScale;
+            if (Ndop >= 0.0) {
+                bcs.phin[nid] = Vbias / potentialScale;
+                if (relaxMinorityOnNContact)
+                    bcs.phip[nid] = relaxedMinorityBias / potentialScale;
+                else
+                    bcs.phip[nid] = Vbias / potentialScale;
+            } else {
+                bcs.phip[nid] = Vbias / potentialScale;
+                if (relaxMinorityOnPContact)
+                    bcs.phin[nid] = relaxedMinorityBias / potentialScale;
+                else
+                    bcs.phin[nid] = Vbias / potentialScale;
+            }
         }
     }
     return bcs;
 }
 
 DDSolution NewtonSolver::buildInitialGuess(
-    const CoupledDDAssembler&, const CoupledDDBoundaryConditions&) const
+    const CoupledDDAssembler& assembler, const CoupledDDBoundaryConditions& bcs) const
 {
-    GummelConfig gcfg;
-    gcfg.maxIter = 1;
-    gcfg.reltol = 0.0;
-    gcfg.temperature_K = cfg_.temperature_K;
-    gcfg.dampingPsi = 0.5;
-    gcfg.taun = cfg_.taun;
-    gcfg.taup = cfg_.taup;
-    gcfg.inputScaling = cfg_.inputScaling;
-    gcfg.unitScalingRefs = cfg_.unitScalingRefs;
-    gcfg.mobility = cfg_.mobility;
-    gcfg.recombination = cfg_.recombination;
-    gcfg.bandgapNarrowing = cfg_.bandgapNarrowing;
-    gcfg.impactIonization = cfg_.impactIonization;
-    DDSolution sol = runGummel(mesh_, matdb_, doping_, contactBiases_, ContactSpecsMap{}, gcfg, fixedCharges_, sheetCharges_);
+    const int N = static_cast<int>(mesh_.numNodes());
+    const Real Vt = thermalVoltage(cfg_.temperature_K);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const auto& ni = assembler.intrinsicDensity();
 
-    // The default cold-start path removes tiny quasi-Fermi numerical noise left
-    // by the one-step Gummel initializer.  A caller can opt into warm_start when
-    // the supplied/constructed quasi-Fermi potentials should be used as-is.
-    if (!cfg_.warmStart) {
-        const int N = static_cast<int>(mesh_.numNodes());
-        sol.phin = VectorXd::Zero(N);
-        sol.phip = VectorXd::Zero(N);
+    DDSolution sol;
+    sol.psi = VectorXd::Zero(N);
+    sol.phin = VectorXd::Zero(N);
+    sol.phip = VectorXd::Zero(N);
+    sol.n = VectorXd::Zero(N);
+    sol.p = VectorXd::Zero(N);
+    sol.iters = 0;
+    sol.converged = false;
+
+    for (int i = 0; i < N; ++i) {
+        const Index nid = static_cast<Index>(i);
+        const Real niNode = ni[nid];
+        const Real neq = nEq(doping_.netDoping(nid), niNode);
+        Real psiBuiltIn = 0.0;
+        if (niNode > 0.0 && neq > 0.0)
+            psiBuiltIn = Vt * std::log(neq / niNode);
+        sol.psi(i) = psiBuiltIn;
+    }
+
+    for (const auto& [nid, value] : bcs.psi)
+        sol.psi(static_cast<int>(nid)) = value * potentialScale;
+    for (const auto& [nid, value] : bcs.phin)
+        sol.phin(static_cast<int>(nid)) = value * potentialScale;
+    for (const auto& [nid, value] : bcs.phip)
+        sol.phip(static_cast<int>(nid)) = value * potentialScale;
+
+    for (int i = 0; i < N; ++i) {
+        const Index nid = static_cast<Index>(i);
+        sol.n(i) = electronDensity(ni[nid], sol.psi(i), sol.phin(i), Vt);
+        sol.p(i) = holeDensity(ni[nid], sol.psi(i), sol.phip(i), Vt);
     }
     return sol;
 }
@@ -344,6 +520,8 @@ NewtonResult NewtonSolver::solve() const
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
         mesh_,
@@ -367,6 +545,8 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
         mesh_,
@@ -429,8 +609,11 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     result.finalResidualNorm = initialNorm;
 
     if (cfg_.verbose) {
+        const ResidualBlockNormValue blocks = ResidualNorm::computeBlocks(r, mesh_.numNodes());
         std::cout << "Newton iter 0 residual=" << initialNorm
-                  << " step=0 damping=0\n";
+                  << " step=0 damping=0"
+                  << " blocks=(" << blocks.psi << ',' << blocks.phin << ','
+                  << blocks.phip << ")\n";
     }
 
     if (initialNorm <= cfg_.abstol) {
@@ -467,6 +650,11 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
                           << " damping=0 step=0 (linear solve failed)\n";
             }
             return result;
+        }
+        if (cfg_.maxUpdate > 0.0) {
+            const Real maxAbsStep = step.cwiseAbs().maxCoeff();
+            if (maxAbsStep > cfg_.maxUpdate)
+                step *= cfg_.maxUpdate / maxAbsStep;
         }
         const Real stepNorm = step.norm();
 
@@ -515,10 +703,14 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             info.lineSearchHistory = std::move(ls.history);
         result.history.push_back(std::move(info));
         if (cfg_.verbose) {
+            const ResidualBlockNormValue blocks =
+                ResidualNorm::computeBlocks(r, mesh_.numNodes());
             std::cout << "Newton iter " << iter
                       << " residual=" << residualNorm
                       << " step=" << appliedStepNorm
-                      << " damping=" << ls.damping << '\n';
+                      << " damping=" << ls.damping
+                      << " blocks=(" << blocks.psi << ',' << blocks.phin << ','
+                      << blocks.phip << ")\n";
         }
 
         const Real rel = result.history.back().relativeResidualNorm;

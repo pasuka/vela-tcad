@@ -49,6 +49,29 @@ inline double nEq(double Ndop, double ni)
     return (p_eq > 0.0) ? (ni * ni / p_eq) : 0.0;
 }
 
+Real ohmicContactNetDoping(const DopingModel& doping,
+                           const Contact& contact,
+                           Index nodeId)
+{
+    const Real local = doping.netDoping(nodeId);
+    if (contact.node_ids.empty())
+        return local;
+
+    Real sum = 0.0;
+    for (Index nid : contact.node_ids)
+        sum += doping.netDoping(nid);
+    const Real mean = sum / static_cast<Real>(contact.node_ids.size());
+
+    // Imported compensated/tie nodes can have a flipped node-owned sign at one
+    // contact endpoint. Preserve local values when polarity matches, but align
+    // opposite-sign outliers with the contact-local mean for Ohmic BC setup.
+    if (mean == 0.0 || local == 0.0)
+        return mean != 0.0 ? mean : local;
+    if ((local > 0.0 && mean > 0.0) || (local < 0.0 && mean < 0.0))
+        return local;
+    return mean;
+}
+
 /// Compute per-node ni from the material database.
 std::vector<double> buildNiVector(const DeviceMesh&       mesh,
                                   const MaterialDatabase& matdb,
@@ -102,6 +125,9 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.dampingPsi = json.value("damping_psi", cfg.dampingPsi);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
+    cfg.augerCn = json.value("auger_cn_m6_per_s", cfg.augerCn);
+    cfg.augerCp = json.value("auger_cp_m6_per_s", cfg.augerCp);
+    cfg.carrierFloor = json.value("carrier_floor_m3", cfg.carrierFloor);
     if (json.contains("mobility"))
         cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"), scaling);
     if (json.contains("bandgap_narrowing")) {
@@ -168,6 +194,9 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
 
     if (cfg.temperature_K <= 0.0)
         throw std::invalid_argument("gummelConfigFromJson: temperature_K must be positive.");
+    if (cfg.carrierFloor < 0.0 || !std::isfinite(cfg.carrierFloor))
+        throw std::invalid_argument(
+            "gummelConfigFromJson: carrier_floor_m3 must be non-negative and finite.");
 
     return cfg;
 }
@@ -304,7 +333,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
 
         for (Index nid : contact.node_ids) {
             const double ni_node  = ni_v[nid];
-            const double Ndop     = doping.netDoping(nid);
+            const double Ndop     = ohmicContactNetDoping(doping, contact, nid);
             const double n_eq_val = nEq(Ndop, ni_node);
             const double p_eq_val = (ni_node > 0.0)
                                         ? ni_node * ni_node / n_eq_val
@@ -352,6 +381,8 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     const MobilityModelConfig mobilityConfig = cfg.mobility;
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(cfg.recombination, cfg.taun, cfg.taup);
+    recombinationConfig.augerCn = cfg.augerCn;
+    recombinationConfig.augerCp = cfg.augerCp;
     DDAssembler assembler(
         mesh,
         matdb,
@@ -441,6 +472,9 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     LinearSolver ls;
     int iters = 0;
     bool converged = false;
+    const double carrierFloorSolve = useScaledUnknowns
+        ? cfg.carrierFloor / ddScaling.C0
+        : cfg.carrierFloor;
 
     // ------------------------------------------------------------------
     // Gummel iteration
@@ -463,17 +497,23 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         assembler.applyDirichlet(nBCSolve);
         VectorXd n_new = ls.solve(assembler.matrix(), assembler.rhs());
 
-        // Enforce positivity (guard against small negative artefacts)
-        for (int ii = 0; ii < static_cast<int>(N); ++ii)
-            if (n_new(ii) < 0.0) { n_new(ii) = 0.0; }
+        // Enforce positivity and keep quasi-Fermi reconstruction well-defined.
+        for (Index i = 0; i < N; ++i) {
+            const int ii = static_cast<int>(i);
+            if (nBCSolve.find(i) == nBCSolve.end() && n_new(ii) < carrierFloorSolve)
+                n_new(ii) = carrierFloorSolve;
+        }
 
         // ---- c. Solve hole continuity for p ----
         assembler.assembleHoleContinuity(psi, n_new, p);
         assembler.applyDirichlet(pBCSolve);
         VectorXd p_new = ls.solve(assembler.matrix(), assembler.rhs());
 
-        for (int ii = 0; ii < static_cast<int>(N); ++ii)
-            if (p_new(ii) < 0.0) { p_new(ii) = 0.0; }
+        for (Index i = 0; i < N; ++i) {
+            const int ii = static_cast<int>(i);
+            if (pBCSolve.find(i) == pBCSolve.end() && p_new(ii) < carrierFloorSolve)
+                p_new(ii) = carrierFloorSolve;
+        }
 
         // ---- d. Update quasi-Fermi potentials ----
         for (Index i = 0; i < N; ++i) {

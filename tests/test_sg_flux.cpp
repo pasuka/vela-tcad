@@ -132,6 +132,35 @@ TEST_CASE("SG fluxes: finite for large dpsi", "[sg]")
     }
 }
 
+TEST_CASE("SG quasi-Fermi fluxes stay finite for large potentials", "[sg][coupled]")
+{
+    const double Vt = constants::Vt_300;
+    const double ni = 1.0e16;
+    const double coef = 1.0;
+
+    const double electronFlux = sgElectronContinuityFluxFromQuasiFermi(
+        ni,
+        50.0,
+        0.0,
+        0.0,
+        0.0,
+        Vt,
+        coef);
+    REQUIRE(std::isfinite(electronFlux));
+    REQUIRE(electronFlux == Approx(0.0));
+
+    const double holeFlux = sgHoleContinuityFluxFromQuasiFermi(
+        ni,
+        -50.0,
+        0.0,
+        0.0,
+        0.0,
+        Vt,
+        coef);
+    REQUIRE(std::isfinite(holeFlux));
+    REQUIRE(holeFlux == Approx(0.0));
+}
+
 static DeviceMesh makeSingleSiliconTriangleMesh()
 {
     DeviceMesh mesh;

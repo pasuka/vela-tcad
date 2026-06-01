@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 using namespace vela;
@@ -201,6 +202,24 @@ std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& c
     return rows;
 }
 
+std::string readTextFile(const std::filesystem::path& path)
+{
+    std::ifstream input(path);
+    REQUIRE(input.is_open());
+    std::ostringstream ss;
+    ss << input.rdbuf();
+    return ss.str();
+}
+
+void writeNodeDopingCsv(const std::filesystem::path& csvPath,
+                        const std::vector<std::tuple<Index, Real, Real>>& rows)
+{
+    std::ofstream output(csvPath);
+    output << "node_id,donors_cm3,acceptors_cm3\n";
+    for (const auto& [nodeId, donors, acceptors] : rows)
+        output << nodeId << ',' << donors << ',' << acceptors << '\n';
+}
+
 void convertMeshToMicrometersInPlace(const std::filesystem::path& meshPath)
 {
     std::ifstream input(meshPath);
@@ -235,6 +254,17 @@ Real csvReal(const std::vector<std::string>& row, std::size_t column)
 {
     REQUIRE(column < row.size());
     return std::stod(row.at(column));
+}
+
+bool hasExtraField(const DCSweepPoint& point, const std::string& name, Real* outValue = nullptr)
+{
+    const auto it = std::find_if(point.extraFields.begin(), point.extraFields.end(),
+        [&](const auto& entry) { return entry.first == name; });
+    if (it == point.extraFields.end())
+        return false;
+    if (outValue != nullptr)
+        *outValue = it->second;
+    return true;
 }
 
 
@@ -342,9 +372,11 @@ TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV da
 
     const auto rows = readCsvRows(csvPath);
     REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                     "current_contact", "current_electron", "current_hole",
-                                                     "current_total", "converged", "iterations",
-                                                     "step_diagnostics", "validation_diagnostics"});
+                                                     "current_contact", "current_electron", "current_electron_drift",
+                                                     "current_electron_diffusion", "current_hole", "current_hole_drift",
+                                                     "current_hole_diffusion", "current_total", "converged", "iterations",
+                                                     "solver_method", "gummel_iterations", "newton_iterations",
+                                                     "handoff_stage", "step_diagnostics", "validation_diagnostics"});
 }
 
 TEST_CASE("DCSweep: unit_scaling CSV appends per-micron currents and V-per-cm field",
@@ -378,11 +410,19 @@ TEST_CASE("DCSweep: unit_scaling CSV appends per-micron currents and V-per-cm fi
     const auto& header = rows.front();
     const std::size_t currentTotal = csvColumnIndex(header, "current_total");
     const std::size_t currentElectron = csvColumnIndex(header, "current_electron");
+    const std::size_t currentElectronDrift = csvColumnIndex(header, "current_electron_drift");
+    const std::size_t currentElectronDiffusion = csvColumnIndex(header, "current_electron_diffusion");
     const std::size_t currentHole = csvColumnIndex(header, "current_hole");
+    const std::size_t currentHoleDrift = csvColumnIndex(header, "current_hole_drift");
+    const std::size_t currentHoleDiffusion = csvColumnIndex(header, "current_hole_diffusion");
     const std::size_t maxField = csvColumnIndex(header, "max_electric_field_V_per_m");
     const std::size_t currentTotalUm = csvColumnIndex(header, "current_total_A_per_um");
     const std::size_t currentElectronUm = csvColumnIndex(header, "current_electron_A_per_um");
+    const std::size_t currentElectronDriftUm = csvColumnIndex(header, "current_electron_drift_A_per_um");
+    const std::size_t currentElectronDiffusionUm = csvColumnIndex(header, "current_electron_diffusion_A_per_um");
     const std::size_t currentHoleUm = csvColumnIndex(header, "current_hole_A_per_um");
+    const std::size_t currentHoleDriftUm = csvColumnIndex(header, "current_hole_drift_A_per_um");
+    const std::size_t currentHoleDiffusionUm = csvColumnIndex(header, "current_hole_diffusion_A_per_um");
     const std::size_t maxFieldCm = csvColumnIndex(header, "max_electric_field_V_per_cm");
 
     for (std::size_t r = 1; r < rows.size(); ++r) {
@@ -391,8 +431,16 @@ TEST_CASE("DCSweep: unit_scaling CSV appends per-micron currents and V-per-cm fi
                 Catch::Approx(csvReal(row, currentTotal) / 1.0e6).epsilon(1.0e-12));
         REQUIRE(csvReal(row, currentElectronUm) ==
                 Catch::Approx(csvReal(row, currentElectron) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, currentElectronDriftUm) ==
+            Catch::Approx(csvReal(row, currentElectronDrift) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, currentElectronDiffusionUm) ==
+            Catch::Approx(csvReal(row, currentElectronDiffusion) / 1.0e6).epsilon(1.0e-12));
         REQUIRE(csvReal(row, currentHoleUm) ==
                 Catch::Approx(csvReal(row, currentHole) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, currentHoleDriftUm) ==
+            Catch::Approx(csvReal(row, currentHoleDrift) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, currentHoleDiffusionUm) ==
+            Catch::Approx(csvReal(row, currentHoleDiffusion) / 1.0e6).epsilon(1.0e-12));
         REQUIRE(csvReal(row, maxFieldCm) ==
                 Catch::Approx(csvReal(row, maxField) / 100.0).epsilon(1.0e-12));
     }
@@ -435,6 +483,314 @@ TEST_CASE("DCSweep: PN forward IV unit_scaling remains physically equivalent to 
     const Real legacyEnd = std::abs(legacy.points.back().totalCurrent);
     const Real scaledEnd = std::abs(scaled.points.back().totalCurrent);
     REQUIRE(scaledEnd == Catch::Approx(legacyEnd).epsilon(5.0e-2));
+}
+
+TEST_CASE("DCSweep reads node_doping_file before region averages", "[dc_sweep][doping]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "node_doping_iv.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false}
+    });
+
+    std::ifstream input(cfgPath);
+    nlohmann::json cfg;
+    input >> cfg;
+    cfg["node_doping_file"] = "doping.csv";
+    cfg["doping"] = {
+        {{"region", "n_region"}, {"donors", 0.0}, {"acceptors", 0.0}},
+        {{"region", "p_region"}, {"donors", 0.0}, {"acceptors", 0.0}}
+    };
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    writeNodeDopingCsv(dir / "doping.csv", {
+        {0, 0.0, 1.0e17},
+        {1, 1.0e17, 0.0},
+        {2, 1.0e17, 0.0},
+        {3, 0.0, 1.0e17},
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    REQUIRE(std::isfinite(result.points.front().electronCurrent));
+    REQUIRE(std::isfinite(result.points.front().holeCurrent));
+    REQUIRE(std::isfinite(result.points.front().totalCurrent));
+
+    writeNodeDopingCsv(dir / "doping.csv", {
+        {0, 0.0, 1.0e17},
+        {7, 1.0e17, 0.0},
+    });
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file references missing node id 7"));
+
+    {
+        std::ofstream malformed(dir / "doping.csv");
+        malformed << "node_id,donors_cm3,acceptors_cm3\n";
+        malformed << "1abc,1.0e17,0.0\n";
+    }
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file has invalid node id '1abc'"));
+
+    writeNodeDopingCsv(dir / "doping.csv", {
+        {0, 0.0, 1.0e17},
+        {1, 1.0e17, 0.0},
+        {2, 1.0e17, 0.0},
+    });
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file missing row for node id 3"));
+
+    writeNodeDopingCsv(dir / "doping.csv", {
+        {0, 0.0, 1.0e17},
+        {1, 1.0e17, 0.0},
+        {1, 1.0e17, 0.0},
+        {2, 1.0e17, 0.0},
+        {3, 0.0, 1.0e17},
+    });
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file has duplicate row for node id 1"));
+
+    {
+        std::ofstream malformed(dir / "doping.csv");
+        malformed << "node_id,donors_cm3,acceptors_cm3\n";
+        malformed << "0,0.0,1.0e17\n";
+        malformed << "1,1.0e17abc,0.0\n";
+        malformed << "2,1.0e17,0.0\n";
+        malformed << "3,0.0,1.0e17\n";
+    }
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file has invalid donors_cm3 '1.0e17abc' for node id 1"));
+
+    {
+        std::ofstream malformed(dir / "doping.csv");
+        malformed << "node_id,donors_cm3,acceptors_cm3\n";
+        malformed << "0,0.0,1.0e17\n";
+        malformed << "1,nan,0.0\n";
+        malformed << "2,1.0e17,0.0\n";
+        malformed << "3,0.0,1.0e17\n";
+    }
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file has non-finite donors_cm3 'nan' for node id 1"));
+
+    {
+        std::ofstream malformed(dir / "doping.csv");
+        malformed << "node_id,donors_cm3,acceptors_cm3\n";
+        malformed << "0,0.0,1.0e17\n";
+        malformed << "\"1\",1.0e17,0.0\n";
+        malformed << "2,1.0e17,0.0\n";
+        malformed << "3,0.0,1.0e17\n";
+    }
+    REQUIRE_THROWS_WITH(
+        sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: node_doping_file does not support quoted fields"));
+}
+
+TEST_CASE("DCSweep: high-doping node-level PN diode converges with hybrid handoff",
+          "[dc_sweep][gummel_newton][doping]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "node_doping_hybrid_iv.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 60},
+        {"reltol", 1.0e-7},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.2},
+        {"line_search", true},
+        {"warm_start", true},
+        {"verbose", false},
+        {"handoff", {{"fallback", "none"}}}
+    });
+
+    std::ifstream input(cfgPath);
+    nlohmann::json cfg;
+    input >> cfg;
+    cfg["node_doping_file"] = "doping.csv";
+    cfg["doping"] = {
+        {{"region", "n_region"}, {"donors", 0.0}, {"acceptors", 0.0}},
+        {{"region", "p_region"}, {"donors", 0.0}, {"acceptors", 0.0}}
+    };
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    writeNodeDopingCsv(dir / "doping.csv", {
+        {0, 0.0, 1.0e17},
+        {1, 1.0e17, 0.0},
+        {2, 1.0e17, 0.0},
+        {3, 0.0, 1.0e17},
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() >= 1);
+    REQUIRE(result.points.front().converged);
+    REQUIRE(result.points.front().solverMethod == "gummel_newton");
+    REQUIRE(result.points.front().handoffStage == "newton");
+    REQUIRE(std::isfinite(result.points.front().totalCurrent));
+}
+
+TEST_CASE("DCSweep: recombination diagnostics are opt-in for hybrid handoff",
+          "[dc_sweep][gummel_newton][diagnostics]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "node_doping_hybrid_diag.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 60},
+        {"reltol", 1.0e-7},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.2},
+        {"line_search", true},
+        {"warm_start", true},
+        {"verbose", false},
+        {"handoff", {{"fallback", "none"}}}
+    });
+
+    std::ifstream input(cfgPath);
+    nlohmann::json cfg;
+    input >> cfg;
+    cfg["node_doping_file"] = "doping.csv";
+    cfg["doping"] = {
+        {{"region", "n_region"}, {"donors", 0.0}, {"acceptors", 0.0}},
+        {{"region", "p_region"}, {"donors", 0.0}, {"acceptors", 0.0}}
+    };
+    cfg["solver"]["diagnostics"] = false;
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    writeNodeDopingCsv(dir / "doping.csv", {
+        {0, 0.0, 1.0e17},
+        {1, 1.0e17, 0.0},
+        {2, 1.0e17, 0.0},
+        {3, 0.0, 1.0e17},
+    });
+
+    DCSweep sweep;
+    const DCSweepResult noDiag = sweep.runWithResult(cfgPath.string());
+    REQUIRE(noDiag.points.size() == 1);
+    REQUIRE(noDiag.points.front().converged);
+    REQUIRE_FALSE(hasExtraField(noDiag.points.front(), "recombination_max_abs_rate_m3_per_s"));
+
+    const auto rowsNoDiag = readCsvRows(csvPath);
+    REQUIRE(std::find(rowsNoDiag.front().begin(), rowsNoDiag.front().end(),
+                      "recombination_max_abs_rate_m3_per_s") == rowsNoDiag.front().end());
+
+    cfg["solver"]["diagnostics"] = true;
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    const DCSweepResult withDiag = sweep.runWithResult(cfgPath.string());
+    REQUIRE(withDiag.points.size() == 1);
+    REQUIRE(withDiag.points.front().converged);
+
+    Real maxAbsRate = 0.0;
+    Real meanAbsRate = 0.0;
+    Real maxNpOverNi2 = 0.0;
+    REQUIRE(hasExtraField(withDiag.points.front(), "recombination_max_abs_rate_m3_per_s", &maxAbsRate));
+    REQUIRE(hasExtraField(withDiag.points.front(), "recombination_mean_abs_rate_m3_per_s", &meanAbsRate));
+    REQUIRE(hasExtraField(withDiag.points.front(), "carrier_product_max_np_over_ni2", &maxNpOverNi2));
+    REQUIRE(std::isfinite(maxAbsRate));
+    REQUIRE(std::isfinite(meanAbsRate));
+    REQUIRE(std::isfinite(maxNpOverNi2));
+
+    const auto rowsWithDiag = readCsvRows(csvPath);
+    const std::size_t maxAbsRateColumn =
+        csvColumnIndex(rowsWithDiag.front(), "recombination_max_abs_rate_m3_per_s");
+    const std::size_t meanAbsRateColumn =
+        csvColumnIndex(rowsWithDiag.front(), "recombination_mean_abs_rate_m3_per_s");
+    const std::size_t maxNpOverNi2Column =
+        csvColumnIndex(rowsWithDiag.front(), "carrier_product_max_np_over_ni2");
+
+    REQUIRE(std::isfinite(csvReal(rowsWithDiag.at(1), maxAbsRateColumn)));
+    REQUIRE(std::isfinite(csvReal(rowsWithDiag.at(1), meanAbsRateColumn)));
+    REQUIRE(std::isfinite(csvReal(rowsWithDiag.at(1), maxNpOverNi2Column)));
+}
+
+TEST_CASE("DCSweep: contact-edge diagnostics are opt-in and write per-edge rows",
+          "[dc_sweep][diagnostics][contact_edge]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "iv_unit_scaling.csv";
+    const auto edgeDiagPath = dir / "iv_contact_edges.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"contact_edge", {
+                {"enabled", true},
+                {"csv_file", edgeDiagPath.string()}
+            }}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+
+    REQUIRE(std::filesystem::exists(edgeDiagPath));
+    const auto rows = readCsvRows(edgeDiagPath);
+    REQUIRE(rows.size() >= 1);
+
+    const auto& header = rows.front();
+    const std::size_t pointIndexCol = csvColumnIndex(header, "point_index");
+    const std::size_t electronBranchCol = csvColumnIndex(header, "electron_branch");
+    const std::size_t holeBranchCol = csvColumnIndex(header, "hole_branch");
+    const std::size_t edgeCurrentCol = csvColumnIndex(header, "current_total");
+    const std::size_t edgeCurrentUmCol = csvColumnIndex(header, "current_total_A_per_um");
+
+    if (rows.size() > 1) {
+        for (std::size_t i = 1; i < rows.size(); ++i) {
+            const auto& row = rows.at(i);
+            REQUIRE(csvReal(row, pointIndexCol) == Catch::Approx(0.0));
+            const std::string electronBranch = row.at(electronBranchCol);
+            const std::string holeBranch = row.at(holeBranchCol);
+            REQUIRE((electronBranch == "density" || electronBranch == "quasi_fermi"));
+            REQUIRE((holeBranch == "density" || holeBranch == "quasi_fermi"));
+            REQUIRE(std::isfinite(csvReal(row, edgeCurrentCol)));
+            REQUIRE(csvReal(row, edgeCurrentUmCol) ==
+                    Catch::Approx(csvReal(row, edgeCurrentCol) / 1.0e6).epsilon(1.0e-12));
+        }
+    }
 }
 
 TEST_CASE("DCSweep: NMOS and PMOS unit_scaling low-bias smoke sweeps converge",
@@ -579,8 +935,11 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
 
         const auto rows = readCsvRows(csvPath);
         REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                         "current_contact", "current_electron", "current_hole",
-                                                         "current_total", "converged", "iterations",
+                                                         "current_contact", "current_electron", "current_electron_drift",
+                                                         "current_electron_diffusion", "current_hole", "current_hole_drift",
+                                                         "current_hole_diffusion", "current_total", "converged", "iterations",
+                                                         "solver_method", "gummel_iterations", "newton_iterations",
+                                                         "handoff_stage",
                                                          "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
                                                          "capacitance_F_per_m"});
         REQUIRE(rows.at(1).at(0) == "cv_quasistatic");
@@ -628,8 +987,11 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
 
         const auto rows = readCsvRows(csvPath);
         REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                         "current_contact", "current_electron", "current_hole",
-                                                         "current_total", "converged", "iterations",
+                                                         "current_contact", "current_electron", "current_electron_drift",
+                                                         "current_electron_diffusion", "current_hole", "current_hole_drift",
+                                                         "current_hole_diffusion", "current_total", "converged", "iterations",
+                                                         "solver_method", "gummel_iterations", "newton_iterations",
+                                                         "handoff_stage",
                                                          "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
                                                          "capacitance_F_per_m", "charge_gate_C_per_m",
                                                          "capacitance_Canode_gate_F_per_m", "charge_source_C_per_m",
@@ -679,8 +1041,11 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
 
         const auto rows = readCsvRows(csvPath);
         REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                         "current_contact", "current_electron", "current_hole",
-                                                         "current_total", "converged", "iterations",
+                                                         "current_contact", "current_electron", "current_electron_drift",
+                                                         "current_electron_diffusion", "current_hole", "current_hole_drift",
+                                                         "current_hole_diffusion", "current_total", "converged", "iterations",
+                                                         "solver_method", "gummel_iterations", "newton_iterations",
+                                                         "handoff_stage",
                                                          "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
                                                          "current_jump_ratio", "breakdown_detected",
                                                          "breakdown_voltage", "criterion", "last_stable_bias",
@@ -716,8 +1081,11 @@ TEST_CASE("DCSweep: LDMOS BV diagnostic deck writes complete schema", "[dc_sweep
     const auto rows = readCsvRows(dir / "outputs" / "ldmos2d_bv.csv");
     REQUIRE(rows.size() == 4);
     REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                     "current_contact", "current_electron", "current_hole",
-                                                     "current_total", "converged", "iterations",
+                                                     "current_contact", "current_electron", "current_electron_drift",
+                                                     "current_electron_diffusion", "current_hole", "current_hole_drift",
+                                                     "current_hole_diffusion", "current_total", "converged", "iterations",
+                                                     "solver_method", "gummel_iterations", "newton_iterations",
+                                                     "handoff_stage",
                                                      "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
                                                      "current_jump_ratio", "breakdown_detected",
                                                      "breakdown_voltage", "criterion", "last_stable_bias",
@@ -772,14 +1140,19 @@ TEST_CASE("DCSweep: BV reverse start failure records failed diagnostic row", "[d
 
     const auto rows = readCsvRows(csvPath);
     REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                     "current_contact", "current_electron", "current_hole",
-                                                     "current_total", "converged", "iterations",
+                                                     "current_contact", "current_electron", "current_electron_drift",
+                                                     "current_electron_diffusion", "current_hole", "current_hole_drift",
+                                                     "current_hole_diffusion", "current_total", "converged", "iterations",
+                                                     "solver_method", "gummel_iterations", "newton_iterations",
+                                                     "handoff_stage",
                                                      "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
                                                      "current_jump_ratio", "breakdown_detected",
                                                      "breakdown_voltage", "criterion", "last_stable_bias",
                                                      "failed_bias", "failure_reason"});
-    REQUIRE(rows.at(1).at(15).empty());
-    REQUIRE(rows.at(1).at(18) == "non_convergence");
+    const std::size_t criterionColumn = csvColumnIndex(rows.front(), "criterion");
+    const std::size_t failureReasonColumn = csvColumnIndex(rows.front(), "failure_reason");
+    REQUIRE(rows.at(1).at(criterionColumn).empty());
+    REQUIRE(rows.at(1).at(failureReasonColumn) == "non_convergence");
 }
 
 TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_sweep]")
@@ -1067,6 +1440,7 @@ TEST_CASE("DCSweep: invalid solver type message mentions both solver keys", "[dc
         REQUIRE(message.find("solver.method/type") != std::string::npos);
         REQUIRE(message.find("gummel") != std::string::npos);
         REQUIRE(message.find("newton") != std::string::npos);
+        REQUIRE(message.find("gummel_newton") != std::string::npos);
     }
 }
 
@@ -1101,6 +1475,267 @@ TEST_CASE("DCSweep: explicit Newton solver method is reachable from config", "[d
     REQUIRE(points.front().voltage == Catch::Approx(0.0));
     REQUIRE(points.front().attemptedStep == Catch::Approx(0.0));
     REQUIRE(std::filesystem::exists(csvPath));
+}
+
+TEST_CASE("DCSweep: hybrid Gummel-Newton method is reachable from config",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "gummel_newton_start.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 12},
+        {"reltol", 1.0e-8},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.35},
+        {"damping_factor", 1.0},
+        {"line_search", true},
+        {"verbose", false}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    const DCSweepPoint& point = result.points.front();
+    REQUIRE(point.converged);
+    REQUIRE(point.solverMethod == "gummel_newton");
+    REQUIRE(point.gummelIterations > 0);
+    REQUIRE(point.newtonIterations >= 0);
+    REQUIRE(point.handoffStage == "newton");
+    REQUIRE(std::filesystem::exists(csvPath));
+}
+
+TEST_CASE("DCSweep: CSV records hybrid solver handoff provenance",
+          "[dc_sweep][gummel_newton][csv]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "handoff_columns.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 12},
+        {"reltol", 1.0e-8},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.35},
+        {"line_search", true},
+        {"warm_start", true},
+        {"verbose", false},
+        {"handoff", {{"fallback", "none"}}}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().handoffStage == "newton");
+
+    const std::string csv = readTextFile(csvPath);
+    REQUIRE(csv.find("solver_method,gummel_iterations,newton_iterations,handoff_stage") !=
+            std::string::npos);
+    REQUIRE(csv.find("gummel_newton") != std::string::npos);
+    REQUIRE(csv.find(",newton,") != std::string::npos);
+}
+
+TEST_CASE("DCSweep: hybrid path uses Gummel iterations before Newton handoff",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "gummel_newton_forward.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.2},
+        {"step", 0.2},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 20},
+        {"reltol", 1.0e-8},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.35},
+        {"damping_factor", 1.0},
+        {"line_search", true},
+        {"warm_start", true},
+        {"verbose", false}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 2);
+    for (const DCSweepPoint& point : result.points) {
+        REQUIRE(point.converged);
+        REQUIRE(point.solverMethod == "gummel_newton");
+        REQUIRE(point.gummelIterations > 0);
+        REQUIRE(point.handoffStage == "newton");
+    }
+}
+
+TEST_CASE("DCSweep: hybrid validates Gummel initializer before Newton handoff",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "gummel_newton_gummel_validation.csv";
+
+    nlohmann::json cfg = baseSweepConfig(dir, meshPath, csvPath);
+    cfg["sweep"]["start"] = 0.0;
+    cfg["sweep"]["stop"] = 0.0;
+    cfg["sweep"]["step"] = 0.25;
+    cfg["sweep"]["write_vtk"] = false;
+    cfg["solver"] = {
+        {"method", "gummel_newton"},
+        {"max_iter", 12},
+        {"reltol", 1.0e-8},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.35},
+        {"line_search", true},
+        {"verbose", false}
+    };
+    cfg["validation"] = {
+        {"enforce_minimum_carrier_density", true},
+        {"minimum_carrier_density", 1.0e40}
+    };
+    const auto cfgPath = dir / "gummel_newton_gummel_validation.json";
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    const DCSweepPoint& point = result.points.front();
+    REQUIRE_FALSE(point.converged);
+    REQUIRE(point.solverMethod == "gummel_newton");
+    REQUIRE(point.gummelIterations > 0);
+    REQUIRE(point.newtonIterations == 0);
+    REQUIRE(point.handoffStage == "gummel_validation_failed");
+    REQUIRE(point.failureReason == "gummel_validation_failed");
+}
+
+TEST_CASE("DCSweep: hybrid fallback can accept converged Gummel when Newton fails",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "gummel_newton_fallback.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 20},
+        {"handoff", {
+            {"fallback", "gummel_on_newton_failure"},
+            {"newton_max_iter", 0}
+        }},
+        {"verbose", false}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    const DCSweepPoint& point = result.points.front();
+    REQUIRE(point.converged);
+    REQUIRE(point.handoffStage == "gummel_fallback");
+    REQUIRE(point.gummelIterations > 0);
+    REQUIRE(point.newtonIterations == 0);
+}
+
+TEST_CASE("DCSweep: hybrid handoff has separate Gummel and Newton iteration budgets",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "hybrid_budget.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 0},
+        {"reltol", 1.0e-8},
+        {"abstol", 1.0e-18},
+        {"damping_psi", 0.35},
+        {"line_search", true},
+        {"warm_start", true},
+        {"verbose", false},
+        {"handoff", {
+            {"fallback", "none"},
+            {"gummel_max_iter", 20},
+            {"newton_max_iter", 12}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    REQUIRE(result.points.front().gummelIterations > 0);
+    REQUIRE(result.points.front().newtonIterations <= 12);
+    REQUIRE(result.points.front().handoffStage == "newton");
+}
+
+TEST_CASE("DCSweep: hybrid strict policy rejects Newton failure",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "gummel_newton_strict.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false},
+        {"stop_on_failure", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 20},
+        {"handoff", {
+            {"fallback", "none"},
+            {"newton_max_iter", 0}
+        }},
+        {"verbose", false}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    const DCSweepPoint& point = result.points.front();
+    REQUIRE_FALSE(point.converged);
+    REQUIRE(point.handoffStage == "newton_failed");
+    REQUIRE(point.failureReason == "newton_non_convergence");
 }
 
 

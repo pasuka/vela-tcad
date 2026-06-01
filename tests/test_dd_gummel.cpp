@@ -6,6 +6,7 @@
 #include "vela/physics/DopingModel.h"
 #include "vela/solver/GummelSolver.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/physics/CarrierStatistics.h"
 
 #include <cmath>
 #include <filesystem>
@@ -117,6 +118,40 @@ TEST_CASE("GummelSolver: n and p are strictly positive", "[gummel]")
         REQUIRE(sol.n(i) > 0.0);
         REQUIRE(sol.p(i) > 0.0);
     }
+}
+
+TEST_CASE("GummelSolver: carrier floor config preserves quasi-Fermi consistency", "[gummel]")
+{
+    DeviceMesh       mesh   = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel      doping = makePNDoping(mesh);
+
+    std::unordered_map<std::string, Real> biases = {
+        {"anode",   0.0},
+        {"cathode", 0.0}
+    };
+
+    GummelConfig cfg;
+    cfg.maxIter = 1;
+    cfg.carrierFloor = 1.0;
+    DDSolution sol = runGummel(mesh, matdb, doping, biases, cfg);
+
+    const Real ni = matdb.getMaterial("Si").ni;
+    for (int i = 0; i < static_cast<int>(mesh.numNodes()); ++i) {
+        const Real n = electronDensity(ni, sol.psi(i), sol.phin(i), constants::Vt_300);
+        const Real p = holeDensity(ni, sol.psi(i), sol.phip(i), constants::Vt_300);
+        REQUIRE(sol.n(i) >= cfg.carrierFloor);
+        REQUIRE(sol.p(i) >= cfg.carrierFloor);
+        REQUIRE(n == Catch::Approx(sol.n(i)).epsilon(1.0e-12));
+        REQUIRE(p == Catch::Approx(sol.p(i)).epsilon(1.0e-12));
+    }
+
+    const GummelConfig parsed =
+        gummelConfigFromJson(nlohmann::json{{"carrier_floor_m3", 2.0}});
+    REQUIRE(parsed.carrierFloor == Catch::Approx(2.0));
+    REQUIRE_THROWS_AS(
+        gummelConfigFromJson(nlohmann::json{{"carrier_floor_m3", -1.0}}),
+        std::invalid_argument);
 }
 
 TEST_CASE("GummelSolver: no NaN or Inf in any output vector", "[gummel]")

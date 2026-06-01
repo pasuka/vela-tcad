@@ -20,6 +20,15 @@ struct BVReverseCriteria {
     bool nonConvergenceBreakdown = true;
 };
 
+struct ContactEdgeDiagnosticsConfig {
+    bool enabled = false;
+    std::string csvFile;
+};
+
+struct SweepDiagnosticsConfig {
+    ContactEdgeDiagnosticsConfig contactEdge;
+};
+
 struct DCSweepConfig {
     CurveSweepMode mode = CurveSweepMode::IV;
     std::string contact;
@@ -45,6 +54,7 @@ struct DCSweepConfig {
     bool storedChargeEnabled = false;
     StoredChargeConfig storedCharge;
     BVReverseCriteria breakdown;
+    SweepDiagnosticsConfig diagnostics;
     UnitScalingConfig scaling;
 };
 
@@ -52,10 +62,18 @@ struct DCSweepPoint {
     Real voltage = 0.0;
     Real bias = 0.0;
     Real electronCurrent = 0.0;
+    Real electronDriftCurrent = 0.0;
+    Real electronDiffusionCurrent = 0.0;
     Real holeCurrent = 0.0;
+    Real holeDriftCurrent = 0.0;
+    Real holeDiffusionCurrent = 0.0;
     Real totalCurrent = 0.0;
     bool converged = false;
     int iterations = 0;
+    std::string solverMethod;
+    int gummelIterations = 0;
+    int newtonIterations = 0;
+    std::string handoffStage;
     Real attemptedStep = 0.0;
     Real acceptedStep = 0.0;
     int retryCount = 0;

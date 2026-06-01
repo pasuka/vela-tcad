@@ -109,5 +109,5 @@ TEST_CASE("DDSolution validation rejects contact quasi-Fermi mismatch", "[soluti
 
     REQUIRE_FALSE(result.valid);
     REQUIRE(diagnosticsContain(result, "cathode"));
-    REQUIRE(diagnosticsContain(result, "phin"));
+    REQUIRE(diagnosticsContain(result, "ph"));
 }

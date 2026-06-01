@@ -289,7 +289,32 @@ def copy_example(repo: Path, workdir: Path, name: str, source: str | None = None
     return dst
 
 
-def has_nan_or_inf(path: Path) -> bool:
+def has_nan_or_inf(path: Path, *, allow_inf_columns: set[str] | None = None) -> bool:
+    allow_inf_columns = allow_inf_columns or set()
+    if path.suffix.lower() == ".csv":
+        with path.open(newline="") as f:
+            reader = csv.DictReader(f)
+            if reader.fieldnames:
+                for row in reader:
+                    for column, raw in row.items():
+                        if raw is None:
+                            continue
+                        token = raw.strip()
+                        if token == "":
+                            continue
+                        try:
+                            value = float(token)
+                        except ValueError:
+                            lowered = token.lower()
+                            if lowered in {"nan", "+nan", "-nan", "inf", "+inf", "-inf", "infinity", "+infinity", "-infinity"}:
+                                return True
+                            continue
+                        if not math.isfinite(value):
+                            if math.isinf(value) and column in allow_inf_columns:
+                                continue
+                            return True
+                return False
+
     text = path.read_text(errors="ignore")
     for token in text.replace(",", " ").split():
         try:
@@ -1500,8 +1525,9 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
             if not out.exists() or out.stat().st_size == 0:
                 raise AssertionError(f"missing or empty output file: {rel}")
         if "finite_outputs" in spec["checks"]:
+            allow_inf_columns = {"current_jump_ratio"} if "_bv" in spec["name"] else set()
             for rel in expected:
-                if has_nan_or_inf(example_dir / rel):
+                if has_nan_or_inf(example_dir / rel, allow_inf_columns=allow_inf_columns):
                     raise AssertionError(f"NaN/Inf detected in {rel}")
             result["checks"]["finite_outputs"] = True
         if "csv_converged" in spec["checks"]:

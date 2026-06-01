@@ -13,6 +13,7 @@
 #include "vela/numerics/ResidualNorm.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DopingModel.h"
+#include "vela/post/ContactCurrent.h"
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
 
@@ -123,6 +124,25 @@ TEST_CASE("NewtonSolver: PN diode equilibrium converges", "[newton]")
     REQUIRE(result.finalResidualNorm <= result.initialResidualNorm);
 }
 
+TEST_CASE("NewtonSolver: ohmic contact BC resists compensated-node polarity flips",
+          "[newton][contact_bc]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    // Inject an opposite-sign outlier on one anode node to mimic imported
+    // compensated/tie ownership artifacts.
+    doping.setNodeDoping(0, 8.0e20, 0.0);
+
+    NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), newtonConfig());
+    REQUIRE(result.converged);
+
+    // Both anode nodes should keep p-side built-in sign (negative psi at 0 V).
+    REQUIRE(result.solution.psi(0) < 0.0);
+    REQUIRE(result.solution.psi(3) < 0.0);
+}
+
 TEST_CASE("NewtonSolver: PN diode equilibrium converges with unit_scaling state",
           "[newton][scaling]")
 {
@@ -139,6 +159,38 @@ TEST_CASE("NewtonSolver: PN diode equilibrium converges with unit_scaling state"
     REQUIRE(result.iters >= 0);
     REQUIRE(result.finalResidualNorm <= result.initialResidualNorm);
     requireFiniteNewtonSolution(result, mesh.numNodes());
+}
+
+TEST_CASE("NewtonSolver: high-doping unit-scaled PN cold start reaches near-zero 0V current",
+          "[newton][scaling][bgn]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, {
+        {"n_region", 1.0e23, 0.0},
+        {"p_region", 0.0, 1.0e23},
+    });
+
+    NewtonConfig cfg;
+    cfg.maxIter = 30;
+    cfg.reltol = 1.0e-6;
+    cfg.abstol = 1.0e-18;
+    cfg.dampingFactor = 1.0;
+    cfg.lineSearch = true;
+    cfg.verbose = false;
+    cfg.maxUpdate = 5.0;
+    cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    cfg.mobility = mobilityModelConfig("caughey_thomas_field");
+    cfg.recombination = {"srh", "auger"};
+    cfg.bandgapNarrowing = bandgapNarrowingConfig("slotboom");
+
+    const NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), cfg);
+
+    REQUIRE(result.converged);
+    requireFiniteNewtonSolution(result, mesh.numNodes());
+    ContactCurrent current(mesh, matdb, doping, cfg.mobility, cfg.temperature_K);
+    const ContactCurrentResult anode = current.compute(result.solution, "anode");
+    REQUIRE(std::abs(anode.totalCurrent) < 1.0e-9);
 }
 
 TEST_CASE("NewtonSolver: Gummel initial guess reduces Newton iterations", "[newton]")
@@ -310,6 +362,49 @@ TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences on s
     REQUIRE(rel < 5.0e-5);
 }
 
+TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences with varying intrinsic density",
+          "[newton][coupled][bgn]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, {
+        {"n_region", 1.0e24, 0.0},
+        {"p_region", 0.0, 1.0e21},
+    });
+
+    CoupledDDAssembler assembler(
+        mesh,
+        matdb,
+        doping,
+        constants::Vt_300,
+        MobilityModelConfig{},
+        recombinationModelConfig({"none"}),
+        bandgapNarrowingConfig("slotboom"));
+
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.025);
+    state.phin = VectorXd::LinSpaced(N, 0.006, -0.008);
+    state.phip = VectorXd::LinSpaced(N, -0.007, 0.005);
+    const VectorXd x = assembler.pack(state);
+
+    CoupledDDBoundaryConditions bcs;
+    bcs.psi[0] = state.psi(0);
+    bcs.phin[0] = state.phin(0);
+    bcs.phip[0] = state.phip(0);
+    bcs.psi[2] = state.psi(2);
+    bcs.phin[2] = state.phin(2);
+    bcs.phip[2] = state.phip(2);
+
+    const SparseMatrixd Ja = assembler.assembleJacobian(x, bcs);
+    const SparseMatrixd Jfd = assembler.finiteDifferenceJacobian(x, bcs, 1.0e-7);
+    const Eigen::MatrixXd diff = Eigen::MatrixXd(Ja - Jfd);
+    const Eigen::MatrixXd ref = Eigen::MatrixXd(Jfd);
+    const Real rel = diff.norm() / std::max<Real>(1.0, ref.norm());
+
+    REQUIRE(rel < 1.0e-4);
+}
+
 TEST_CASE("CoupledDDAssembler: scaled state residual and Jacobian are consistent",
           "[newton][coupled][scaling]")
 {
@@ -376,13 +471,21 @@ TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
     const NewtonConfig cfg;
     REQUIRE(cfg.jacobian == "analytic");
     REQUIRE_FALSE(cfg.warmStart);
+    REQUIRE(cfg.contactBoundaryReconstruction == "dominant_signed_contact_mean");
+        REQUIRE(cfg.contactBoundaryMinorityElectronRelaxation);
+        REQUIRE(cfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V ==
+            Catch::Approx(0.1));
+        REQUIRE(cfg.contactBoundaryMinorityElectronRelaxationTwoTerminalOnly);
+            REQUIRE(cfg.contactBoundaryMinorityElectronRelaxationContactSide == "p_contact_only");
 
     const NewtonConfig debugCfg = newtonConfigFromJson(nlohmann::json{
         {"jacobian", "finite_difference"},
         {"warm_start", true},
+        {"contact_boundary_reconstruction", "legacy_node_local"},
     });
     REQUIRE(debugCfg.jacobian == "finite_difference");
     REQUIRE(debugCfg.warmStart);
+    REQUIRE(debugCfg.contactBoundaryReconstruction == "legacy_node_local");
 }
 
 TEST_CASE("NewtonSolver: unit_scaling config records scaled mode and preserves analytic Jacobian",
@@ -472,20 +575,65 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
 {
     const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
         {"residual_norm", "block"},
+        {"max_update", 0.25},
+        {"auger_cn_m6_per_s", 4.0e-43},
+        {"auger_cp_m6_per_s", 2.0e-43},
         {"residual_weights", {{"psi", 0.25}, {"phin", 2.0}, {"phip", 3.0}}},
         {"residual_scales", {{"psi", 1.0e-18}, {"phin", 2.0e4}, {"phip", 3.0e4}}}
     });
 
     REQUIRE(cfg.residualNorm == "block");
+    REQUIRE(cfg.maxUpdate == Catch::Approx(0.25));
     REQUIRE(cfg.residualWeightPsi == Catch::Approx(0.25));
     REQUIRE(cfg.residualWeightPhin == Catch::Approx(2.0));
     REQUIRE(cfg.residualWeightPhip == Catch::Approx(3.0));
     REQUIRE(cfg.residualScalePsi == Catch::Approx(1.0e-18));
     REQUIRE(cfg.residualScalePhin == Catch::Approx(2.0e4));
     REQUIRE(cfg.residualScalePhip == Catch::Approx(3.0e4));
+    REQUIRE(cfg.augerCn == Catch::Approx(4.0e-43));
+    REQUIRE(cfg.augerCp == Catch::Approx(2.0e-43));
+
+    const NewtonConfig boundaryCfg = newtonConfigFromJson(nlohmann::json{
+        {"contact_boundary_minority_electron_relaxation", false},
+        {"contact_boundary_minority_electron_relaxation_bias_threshold_V", 0.2},
+        {"contact_boundary_minority_electron_relaxation_two_terminal_only", false},
+        {"contact_boundary_minority_electron_relaxation_contact_side", "both_contacts"},
+        {"contact_boundary_minority_electron_relaxation_strength", 0.5},
+    });
+    REQUIRE_FALSE(boundaryCfg.contactBoundaryMinorityElectronRelaxation);
+    REQUIRE(boundaryCfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V ==
+            Catch::Approx(0.2));
+    REQUIRE_FALSE(boundaryCfg.contactBoundaryMinorityElectronRelaxationTwoTerminalOnly);
+    REQUIRE(boundaryCfg.contactBoundaryMinorityElectronRelaxationContactSide ==
+            "both_contacts");
+    REQUIRE(boundaryCfg.contactBoundaryMinorityElectronRelaxationStrength ==
+            Catch::Approx(0.5));
 
     REQUIRE_THROWS_AS(
         newtonConfigFromJson(nlohmann::json{{"residual_norm", "unknown"}}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{"max_update", -1.0}}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{
+            {"contact_boundary_minority_electron_relaxation_bias_threshold_V", -1.0}
+        }),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{"contact_boundary_reconstruction", "unexpected_mode"}}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{
+            "contact_boundary_minority_electron_relaxation_contact_side",
+            "unexpected_side"
+        }}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{
+            "contact_boundary_minority_electron_relaxation_strength",
+            1.5
+        }}),
         std::invalid_argument);
 }
 
@@ -567,6 +715,31 @@ TEST_CASE("NewtonSolver: line search rejection returns last accepted state", "[n
     REQUIRE((result.solution.phip - initial.phip).norm() == Catch::Approx(0.0));
 }
 
+TEST_CASE("NewtonSolver: max_update limits a large Newton step before line search",
+          "[newton][line_search]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.maxIter = 1;
+    cfg.reltol = 0.0;
+    cfg.abstol = 0.0;
+    cfg.verbose = false;
+    cfg.lineSearch = false;
+    cfg.maxUpdate = 0.05;
+
+    const NewtonResult result = runNewton(
+        mesh, matdb, doping, {{"anode", 0.05}, {"cathode", 0.0}}, cfg);
+
+    REQUIRE(result.iters > 0);
+    REQUIRE_FALSE(result.history.empty());
+    REQUIRE(result.history.front().rawStepNorm == Catch::Approx(result.history.front().stepNorm));
+    REQUIRE(result.history.front().stepNorm <=
+            std::sqrt(static_cast<Real>(3 * mesh.numNodes())) * cfg.maxUpdate);
+}
+
 TEST_CASE("NewtonSolver: optionally records line-search diagnostics in history", "[newton][diagnostics]")
 {
     DeviceMesh mesh = makePNMesh();
@@ -576,7 +749,8 @@ TEST_CASE("NewtonSolver: optionally records line-search diagnostics in history",
     NewtonConfig cfg = newtonConfig();
     cfg.diagnostics = true;
 
-    const NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), cfg);
+    const NewtonResult result = runNewton(
+        mesh, matdb, doping, {{"anode", 0.05}, {"cathode", 0.0}}, cfg);
 
     REQUIRE(result.converged);
     REQUIRE_FALSE(result.history.empty());
@@ -698,7 +872,7 @@ TEST_CASE("NewtonSolver: multi-terminal contacted mesh accepts distinct biases",
         {{"body", 0.0}, {"source", 0.02}, {"gate", 0.04}, {"drain", 0.06}},
         cfg);
 
-    REQUIRE_FALSE(result.converged);
+    REQUIRE(result.iters == 0);
     requireFiniteNewtonSolution(result, mesh.numNodes());
     REQUIRE(result.solution.phin(0) == Catch::Approx(0.0));
     REQUIRE(result.solution.phip(0) == Catch::Approx(0.0));

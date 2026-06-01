@@ -35,6 +35,34 @@ TEST_CASE("Auger recombination increases at high carrier concentration", "[recom
     REQUIRE(high > low);
 }
 
+TEST_CASE("Auger recombination rejects negative coefficients", "[recombination]")
+{
+    RecombinationModelConfig cfg = recombinationModelConfig({"auger"});
+    cfg.augerCn = -1.0e-43;
+    REQUIRE_THROWS_AS(RecombinationModel(cfg), std::invalid_argument);
+
+    cfg = recombinationModelConfig({"auger"});
+    cfg.augerCp = -1.0e-43;
+    REQUIRE_THROWS_AS(RecombinationModel(cfg), std::invalid_argument);
+}
+
+TEST_CASE("Auger linearization remains finite for extreme initializer carriers",
+          "[recombination]")
+{
+    RecombinationModel model(recombinationModelConfig({"auger"}));
+    const Real ni = 1.0e16;
+    const Real n = 1.0e234;
+    const Real p = 1.0e234;
+
+    const RecombinationLinearization electron = model.electronLinearization(n, p, ni);
+    const RecombinationLinearization hole = model.holeLinearization(n, p, ni);
+
+    REQUIRE(std::isfinite(electron.diagonal));
+    REQUIRE(std::isfinite(electron.rhs));
+    REQUIRE(std::isfinite(hole.diagonal));
+    REQUIRE(std::isfinite(hole.rhs));
+}
+
 TEST_CASE("Total recombination is SRH plus Auger", "[recombination]")
 {
     RecombinationModel total(recombinationModelConfig({"srh", "auger"}));
