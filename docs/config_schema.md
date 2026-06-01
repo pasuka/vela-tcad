@@ -97,6 +97,12 @@ external TCAD display units, such as `current_total_A_per_um`,
 `current_electron_A_per_um`, `current_hole_A_per_um`, `charge_C_per_um`,
 `capacitance_F_per_um`, and `max_electric_field_V_per_cm`.
 
+DC sweep CSVs include solver provenance columns:
+- `solver_method`: selected nonlinear path, such as `gummel`, `newton`, or `gummel_newton`
+- `gummel_iterations`: iterations used by the Gummel stage for this bias point
+- `newton_iterations`: iterations used by the coupled Newton stage for this bias point
+- `handoff_stage`: final accepted stage or failure stage, such as `newton`, `gummel_failed`, `newton_failed`, or `gummel_fallback`
+
 ## Doping, regions, interfaces
 
 ### doping[] entries
@@ -115,6 +121,23 @@ Notes:
 - With `scaling.mode: "unit_scaling"`, `donors`, `acceptors`, and
   `fixed_charge_m3` numeric inputs are read as `cm^-3` and normalized to
   `m^-3` internally.
+
+### node_doping_file
+
+Optional top-level field:
+- node_doping_file: string
+
+`node_doping_file` points to a CSV with columns
+`node_id,donors_cm3,acceptors_cm3`. When present, it overrides region-average
+`doping[]` entries for drift-diffusion DC sweeps. The file must contain exactly
+one row for each mesh node id; missing rows, duplicate rows, invalid ids,
+quoted fields, malformed concentrations, and non-finite numeric values are
+rejected.
+
+With `scaling.mode: "unit_scaling"`, the donor and acceptor concentrations in
+the CSV use the same external concentration convention as deck-level doping:
+`cm^-3`, normalized to `m^-3` internally. In legacy SI mode, the same values are
+read through the legacy concentration path.
 
 ### regions[] entries
 
@@ -226,7 +249,7 @@ About normal_displacement_C_per_m2 / normal_electric_field_V_per_m:
 The solver object is used by DD sweep and Newton solve paths.
 
 Method selection:
-- method: `gummel` or `newton`
+- method: `gummel`, `newton`, or `gummel_newton`
 - type: alias for method (legacy compatibility)
 
 Commonly used controls:
@@ -236,18 +259,27 @@ Commonly used controls:
 - temperature_K
 - mobility
 - recombination
+- auger_cn_m6_per_s
+- auger_cp_m6_per_s
 - impact_ionization
 
 Gummel-specific keys:
 - damping_psi
+- carrier_floor_m3
 - taun
 - taup
 - bandgap_narrowing
 
 Newton-specific keys:
 - damping_factor
+- max_update
 - line_search
 - warm_start
+- contact_boundary_reconstruction
+- contact_boundary_minority_electron_relaxation
+- contact_boundary_minority_electron_relaxation_bias_threshold_V
+- contact_boundary_minority_electron_relaxation_two_terminal_only
+- contact_boundary_minority_electron_relaxation_contact_side
 - verbose
 - diagnostics / diagnostic_history
 - jacobian (`analytic` or `finite_difference`)
@@ -259,11 +291,103 @@ Newton-specific keys:
 - taup
 - bandgap_narrowing
 
+Hybrid Gummel-Newton keys:
+- `handoff.fallback`: `none` or `gummel_on_newton_failure`
+- `handoff.require_gummel_convergence`: boolean, default `true`
+- `handoff.gummel_max_iter`: optional non-negative integer overriding only the
+  Gummel initializer iteration limit
+- `handoff.newton_max_iter`: optional non-negative integer overriding only the
+  Newton handoff stage iteration limit
+
 Notes:
 - `line_search` and `damping_factor` apply to Newton config.
+- `contact_boundary_reconstruction` controls only Ohmic-contact boundary
+  quasi-Fermi/carrier reconstruction in the Newton path. Accepted values are
+  `dominant_signed_contact_mean` (default, current behavior) and
+  `legacy_node_local` (uses each node's local signed doping without
+  contact-mean polarity alignment). This is a boundary reconstruction policy,
+  not a mobility calibration knob.
+- `contact_boundary_minority_electron_relaxation` controls whether Newton
+  relaxes minority-electron quasi-Fermi pinning on p-side Ohmic contacts at
+  higher applied bias. Default is `true` (current behavior).
+- `contact_boundary_minority_electron_relaxation_bias_threshold_V` sets the
+  minimum `|Vbias|` that activates this relaxation. It must be finite and
+  non-negative. Default is `0.1`.
+- `contact_boundary_minority_electron_relaxation_two_terminal_only` keeps this
+  relaxation restricted to two-terminal decks when `true` (default). Set to
+  `false` to allow the same relaxation policy in multi-terminal decks.
+- `contact_boundary_minority_electron_relaxation_contact_side` selects which
+  contact polarity relaxes minority-carrier pinning once relaxation is active.
+  Accepted values are `p_contact_only` (default), `n_contact_only`, and
+  `both_contacts`.
+- `contact_boundary_minority_electron_relaxation_strength` controls how much of
+  the selected minority pinning is released when relaxation is active. `1.0`
+  matches the current full-relaxation behavior, while `0.0` leaves the
+  minority contact pinned.
+- `max_update` is an optional non-negative infinity-norm cap on one Newton
+  update in solver unknown units; `0` disables the cap.
+- `carrier_floor_m3` is an optional non-negative Gummel carrier floor used to
+  keep reconstructed quasi-Fermi potentials consistent with solved carrier
+  densities.
+- In `dc_sweep`, when `solver.method` is `newton` or `gummel_newton` and
+  `solver.diagnostics: true`, the CSV appends opt-in recombination diagnostics:
+  `recombination_max_abs_rate_m3_per_s`,
+  `recombination_mean_abs_rate_m3_per_s`, and
+  `carrier_product_max_np_over_ni2`.
+  These columns are disabled by default.
+- `auger_cn_m6_per_s` and `auger_cp_m6_per_s` override the Auger coefficients
+  passed into the recombination model (`2.8e-43` and `9.9e-44 m^6/s` defaults).
+  Negative values are rejected by the recombination model validation.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 - With `scaling.mode: "unit_scaling"`, `bandgap_narrowing.reference_doping_m3`
   is read as `cm^-3` and normalized to `m^-3`.
+
+`gummel_newton` runs the configured Gummel solve first, validates that solution,
+then runs coupled Newton with `warm_start=true` from the Gummel state. The
+default fallback policy is strict: a Newton failure fails the sweep point. Use
+`gummel_on_newton_failure` only for diagnostic curves where a finite Gummel
+result is preferable to aborting the sweep.
+
+Reference-import configs may also use `vela_step` and `vela_stop` on an
+individual simulation entry to override the generated Vela sweep range while
+preserving the full imported reference curve. `vela_current_contact` may be set
+when the Vela terminal current to compare differs from the swept bias contact.
+A simulation `comparison` block can pass curve gate options such as
+`candidate_scale`, `bias_min`, `bias_max`, `reference_column`,
+`candidate_column`, `max_orders_of_magnitude`, `max_relative_error`,
+`min_points`, and `require_trend_match` to the comparison report.
+`runtime_diagnostic` is an
+optional simulation block:
+
+```json
+"runtime_diagnostic": {
+  "enabled": true,
+  "doping_scale": 0.0001,
+  "step": 0.1
+}
+```
+
+When enabled, it creates an additional conservative runtime deck using
+region-average scaled doping. When disabled or omitted, the faithful deck is
+the executable comparison path.
+
+Reference import configs may include:
+
+```json
+"tdr_doping": {
+  "compensated_node_policy": "reported"
+}
+```
+
+Supported policies:
+- `reported`: preserve `doping.csv` exactly as merged from region-local TDR fields and report compensated nodes in `doping_metadata.json`.
+- `dominant_signed_region`: when a global node receives equal donor and acceptor active concentrations, use the dominant signed `DopingConcentration` field to choose a single majority dopant for the node, and record the rewrite in `doping_metadata.json`. If equal positive and negative signed values tie, Vela preserves the existing first-region tie-break but records `signed_doping_tie: true` with `resolution_source: "signed_aggregate_tie_first_region"`.
+
+For compensated nodes, `doping_metadata.json` records original donor/acceptor
+values, resolved donor/acceptor values, whether a rewrite occurred, and
+`resolution_source` (`reported`, `signed_aggregate_doping`,
+`signed_aggregate_tie_first_region`, `neighbour_region_sign`, or
+`unresolved_tie`).
 
 ### bandgap_narrowing
 

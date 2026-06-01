@@ -73,6 +73,8 @@ TEST_CASE("JSON solver config selects mobility and recombination models", "[mobi
         {"recombination", {"srh", "auger"}},
         {"taun", 2.0e-7},
         {"taup", 3.0e-7},
+        {"auger_cn_m6_per_s", 3.1e-43},
+        {"auger_cp_m6_per_s", 1.2e-43},
         {"bandgap_narrowing", {{"model", "slotboom"}, {"coefficient_eV", 0.010}}},
     };
 
@@ -83,6 +85,8 @@ TEST_CASE("JSON solver config selects mobility and recombination models", "[mobi
     REQUIRE(cfg.recombination[1] == "auger");
     REQUIRE(cfg.taun == Catch::Approx(2.0e-7));
     REQUIRE(cfg.taup == Catch::Approx(3.0e-7));
+    REQUIRE(cfg.augerCn == Catch::Approx(3.1e-43));
+    REQUIRE(cfg.augerCp == Catch::Approx(1.2e-43));
     REQUIRE(cfg.bandgapNarrowing.model == "slotboom");
     REQUIRE(cfg.bandgapNarrowing.coefficient == Catch::Approx(0.010));
 }

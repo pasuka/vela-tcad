@@ -156,7 +156,11 @@ std::vector<py::dict> sweepPointsToPython(const std::vector<vela::DCSweepPoint>&
         row["voltage"] = point.voltage;
         row["bias"] = point.bias;
         row["electron_current"] = point.electronCurrent;
+        row["electron_current_drift"] = point.electronDriftCurrent;
+        row["electron_current_diffusion"] = point.electronDiffusionCurrent;
         row["hole_current"] = point.holeCurrent;
+        row["hole_current_drift"] = point.holeDriftCurrent;
+        row["hole_current_diffusion"] = point.holeDiffusionCurrent;
         row["total_current"] = point.totalCurrent;
         row["converged"] = point.converged;
         row["iterations"] = point.iterations;

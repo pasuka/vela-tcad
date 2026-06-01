@@ -30,6 +30,7 @@ struct NewtonConfig {
     bool verbose = true;
     bool warmStart = false; ///< Preserve supplied quasi-Fermi potentials instead of resetting interiors.
     bool diagnostics = false; ///< Store detailed line-search diagnostics in NewtonResult::history.
+    Real maxUpdate = 0.0; ///< Optional infinity-norm cap on one Newton update in solver unknown units.
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
     std::string residualNorm = "block"; ///< "block" or "l2" convergence/line-search norm
@@ -39,10 +40,18 @@ struct NewtonConfig {
     Real residualScalePsi = 0.0;  ///< <= 0 selects max(initial psi-block residual norm, 1)
     Real residualScalePhin = 0.0; ///< <= 0 selects max(initial electron-continuity residual norm, 1)
     Real residualScalePhip = 0.0; ///< <= 0 selects max(initial hole-continuity residual norm, 1)
+    std::string contactBoundaryReconstruction = "dominant_signed_contact_mean";
+    bool contactBoundaryMinorityElectronRelaxation = true;
+    Real contactBoundaryMinorityElectronRelaxationBiasThreshold_V = 0.1;
+    bool contactBoundaryMinorityElectronRelaxationTwoTerminalOnly = true;
+    std::string contactBoundaryMinorityElectronRelaxationContactSide = "p_contact_only";
+    Real contactBoundaryMinorityElectronRelaxationStrength = 1.0;
     UnitScalingConfig inputScaling{}; ///< Input-unit mode from top-level config.
     UnitScalingReferenceConfig unitScalingRefs{}; ///< Optional reference overrides.
     Real taun = 1.0e-7;
     Real taup = 1.0e-7;
+    Real augerCn = 2.8e-43; ///< Electron Auger coefficient [m^6/s]
+    Real augerCp = 9.9e-44; ///< Hole Auger coefficient [m^6/s]
     MobilityModelConfig mobility{}; ///< Mobility model configuration
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
     ImpactIonizationModelConfig impactIonization; ///< Avalanche generation model.

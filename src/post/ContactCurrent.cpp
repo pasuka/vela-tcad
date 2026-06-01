@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace vela {
@@ -24,7 +25,8 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
                                const DopingModel& doping,
                                MobilityModelConfig mobilityConfig,
                                Real temperature_K,
-                               DDScalingSpec scaling)
+                               DDScalingSpec scaling,
+                               BandgapNarrowingConfig bandgapNarrowingConfig)
     : mesh_(mesh)
     , matdb_(matdb)
     , doping_(doping)
@@ -33,11 +35,25 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
     , mobility_(makeMobilityModel(mobilityConfig))
     , thermalVoltage_(validatedThermalVoltage(temperature_K))
     , scaling_(scaling)
+    , ni_(detail::buildValidatedEffectiveNodeNi(
+          "ContactCurrent",
+          mesh,
+          matdb,
+          doping,
+          bandgapNarrowingConfig,
+          validatedThermalVoltage(temperature_K)))
 {}
 
 
 ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
                                              const std::string& contactName) const
+{
+    return computeDetailed(solution, contactName).totals;
+}
+
+ContactCurrentDetailedResult ContactCurrent::computeDetailed(
+    const DDSolution& solution,
+    const std::string& contactName) const
 {
     const Contact* contact = nullptr;
     for (const Contact& candidate : mesh_.contacts()) {
@@ -54,7 +70,7 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
 
-    ContactCurrentResult result;
+    ContactCurrentDetailedResult detailed;
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
         const Edge& edge = mesh_.getEdge(e);
         const bool n0OnContact = contactNodes.count(edge.n0) > 0;
@@ -91,22 +107,111 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
             &mobilityConfig_,
             &solution.psi);
 
-        // SG fluxes in physical units
-        const Real electronFlux01 = (mun > 0.0)
-            ? sgElectronFlux(n_i, n_j, dpsi, thermalVoltage_, mun, edgeLength)
+        // SG fluxes in physical units.  Mirror CoupledDDAssembler residual:
+        // use the cancellation-free quasi-Fermi balanced form when both edge
+        // endpoints share the same effective intrinsic density, and fall back
+        // to the density-based form only when BGN makes ni node-dependent.
+        // The density-based form B(-u)*n0 - B(+u)*n1 suffers catastrophic
+        // cancellation when |dpsi|/Vt is large (e.g. >>1 at high forward bias)
+        // because B(-u) grows exponentially while B(+u) -> 0; tiny imbalance
+        // in (n0, n1) is then amplified by orders of magnitude, breaking
+        // discrete current conservation between contacts.
+        const Index idxI = edge.n0;
+        const Index idxJ = edge.n1;
+        const Real ni_i = ni_[idxI];
+        const Real ni_j = ni_[idxJ];
+        const Real phin_i = solution.phin(i);
+        const Real phin_j = solution.phin(j);
+        const Real phip_i = solution.phip(i);
+        const Real phip_j = solution.phip(j);
+
+        Real electronFlux01 = 0.0;
+        if (mun > 0.0) {
+            const Real coef = mun * thermalVoltage_ / edgeLength;
+            const Real nFlux = (ni_i == ni_j)
+                ? sgElectronContinuityFluxFromQuasiFermi(
+                      ni_i, psi_j, phin_i, phin_j, dpsi, thermalVoltage_, coef)
+                : sgElectronContinuityFlux(
+                      n_i, n_j, dpsi, thermalVoltage_, coef);
+            // sgElectronFlux = -sgElectronContinuityFlux by definition.
+            electronFlux01 = -nFlux;
+        }
+        Real holeFlux01 = 0.0;
+        if (mup > 0.0) {
+            const Real coef = mup * thermalVoltage_ / edgeLength;
+            const Real pFlux = (ni_i == ni_j)
+                ? sgHoleContinuityFluxFromQuasiFermi(
+                      ni_i, psi_i, phip_i, phip_j, dpsi, thermalVoltage_, coef)
+                : sgHoleContinuityFlux(
+                      p_i, p_j, dpsi, thermalVoltage_, coef);
+            holeFlux01 = -pFlux;
+        }
+
+        // Algebraic SG split: J = J_drift + J_diffusion.
+        const SGEdgeWeights weights = sgEdgeWeights(dpsi, thermalVoltage_);
+        const Real bAvg = 0.5 * (weights.b_plus + weights.b_minus);
+        const Real electronDriftFlux01 = (mun > 0.0)
+            ? mun * (dpsi / edgeLength) * (0.5 * (n_i + n_j))
             : 0.0;
-        const Real holeFlux01 = (mup > 0.0)
-            ? sgHoleFlux(p_i, p_j, dpsi, thermalVoltage_, mup, edgeLength)
+        const Real electronDiffusionFlux01 = (mun > 0.0)
+            ? mun * (thermalVoltage_ / edgeLength) * bAvg * (n_i - n_j)
+            : 0.0;
+        const Real holeDriftFlux01 = (mup > 0.0)
+            ? mup * (dpsi / edgeLength) * (0.5 * (p_i + p_j))
+            : 0.0;
+        const Real holeDiffusionFlux01 = (mup > 0.0)
+            ? mup * (thermalVoltage_ / edgeLength) * bAvg * (p_j - p_i)
             : 0.0;
 
         const Real outwardSign = n0OnContact ? 1.0 : -1.0;
         // Current density [A/m^2] * edge.couple [m] = [A/m]
-        result.electronCurrent += constants::q * outwardSign * electronFlux01 * edge.couple;
-        result.holeCurrent += constants::q * outwardSign * holeFlux01 * edge.couple;
+        const Real electronCurrent = constants::q * outwardSign * electronFlux01 * edge.couple;
+        const Real electronDriftCurrent = constants::q * outwardSign * electronDriftFlux01 * edge.couple;
+        const Real electronDiffusionCurrent = constants::q * outwardSign * electronDiffusionFlux01 * edge.couple;
+        const Real holeCurrent = constants::q * outwardSign * holeFlux01 * edge.couple;
+        const Real holeDriftCurrent = constants::q * outwardSign * holeDriftFlux01 * edge.couple;
+        const Real holeDiffusionCurrent = constants::q * outwardSign * holeDiffusionFlux01 * edge.couple;
+
+        detailed.totals.electronCurrent += electronCurrent;
+        detailed.totals.electronDriftCurrent += electronDriftCurrent;
+        detailed.totals.electronDiffusionCurrent += electronDiffusionCurrent;
+        detailed.totals.holeCurrent += holeCurrent;
+        detailed.totals.holeDriftCurrent += holeDriftCurrent;
+        detailed.totals.holeDiffusionCurrent += holeDiffusionCurrent;
+
+        ContactCurrentEdgeDiagnostic edgeDiag;
+        edgeDiag.edgeId = e;
+        edgeDiag.node0 = edge.n0;
+        edgeDiag.node1 = edge.n1;
+        edgeDiag.edgeLength_m = edge.length;
+        edgeDiag.edgeCouple_m = edge.couple;
+        edgeDiag.outwardSign = outwardSign;
+        edgeDiag.bernoulliU = dpsi / thermalVoltage_;
+        edgeDiag.bernoulliBplus = weights.b_plus;
+        edgeDiag.bernoulliBminus = weights.b_minus;
+        edgeDiag.electronUsedQuasiFermi = (ni_i == ni_j);
+        edgeDiag.holeUsedQuasiFermi = (ni_i == ni_j);
+        edgeDiag.electronCurrent = electronCurrent;
+        edgeDiag.electronDriftCurrent = electronDriftCurrent;
+        edgeDiag.electronDiffusionCurrent = electronDiffusionCurrent;
+        edgeDiag.holeCurrent = holeCurrent;
+        edgeDiag.holeDriftCurrent = holeDriftCurrent;
+        edgeDiag.holeDiffusionCurrent = holeDiffusionCurrent;
+        edgeDiag.totalCurrent = electronCurrent - holeCurrent;
+        detailed.edges.push_back(std::move(edgeDiag));
     }
 
-    result.totalCurrent = result.electronCurrent + result.holeCurrent;
-    return result;
+    // Sign convention: electronCurrent and holeCurrent accumulate
+    //   q * (carrier-particle inflow into the contact from the device) * couple.
+    // With the electron carrier charge being -q, the contribution of electrons
+    // to the conventional current supplied into the contact from the external
+    // circuit is -(particle inflow), so the total terminal current is
+    //   I_total = I_electron - I_hole.
+    // Using `I_electron + I_hole` (as previously) double-adds the volume
+    // recombination integral into the terminal current and breaks the
+    // Kirchhoff balance |I_anode| = |I_cathode| for a two-terminal device.
+    detailed.totals.totalCurrent = detailed.totals.electronCurrent - detailed.totals.holeCurrent;
+    return detailed;
 }
 
 
@@ -118,9 +223,11 @@ ContactCurrentResult ContactCurrent::compute(
     const std::string& contactName,
     const MobilityModelConfig& mobilityConfig,
     Real temperature_K,
-    DDScalingSpec scaling)
+    DDScalingSpec scaling,
+    const BandgapNarrowingConfig& bandgapNarrowingConfig)
 {
-    return ContactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K, scaling).compute(solution, contactName);
+    return ContactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K, scaling, bandgapNarrowingConfig)
+        .compute(solution, contactName);
 }
 
 } // namespace vela
