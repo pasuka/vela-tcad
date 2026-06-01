@@ -3,7 +3,7 @@
 Vela TCAD is a lightweight C++20 prototype for 2-D semiconductor device
 simulation. It implements finite-volume Poisson and drift-diffusion solvers,
 engineering device sweeps, post-processing diagnostics, and optional pybind11
-Python bindings.
+Python bindings plus optional HDF5-based import tooling.
 
 The project is intentionally transparent and small. It is useful for solver
 development, regression experiments, and device-trend smoke tests. It is not a
@@ -29,6 +29,7 @@ Core solver capabilities:
   model hooks used by the current examples.
 - CSV and VTK outputs for regression and visualization.
 - Optional Python API for the implemented C++ paths.
+- Optional HDF5 inventory and neutral export tooling.
 
 Current example coverage:
 
@@ -65,6 +66,8 @@ Start here:
 - [docs/architecture.md](docs/architecture.md): implementation and module map.
 - [docs/config_schema.md](docs/config_schema.md): JSON configuration reference.
 - [docs/examples.md](docs/examples.md): supported example and regression matrix.
+- [docs/README.md](docs/README.md): documentation index and import-workflow
+  entry points.
 - [tests/regression/README.md](tests/regression/README.md): regression runner
   behavior and assertion fields.
 - [reference_tcad/README.md](reference_tcad/README.md): neutral reference CSV
@@ -76,6 +79,8 @@ the schema/example documents above.
 
 ## Build
 
+On Windows, this repository is developed primarily in MSYS2 UCRT64. If a tool or agent needs to build, test, or debug on Windows, it should assume `D:\msys64\ucrt64` is the default toolchain unless the user says otherwise.
+
 Prerequisites:
 
 - CMake 3.20 or newer
@@ -84,6 +89,7 @@ Prerequisites:
 - nlohmann/json
 - Catch2 v3
 - Python 3 interpreter for CTest regression orchestration
+- HDF5 development package for optional import tooling (`VELA_ENABLE_HDF5=ON`)
 
 Ubuntu/Debian:
 
@@ -95,17 +101,32 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
   ninja-build \
   libeigen3-dev \
   nlohmann-json3-dev \
-  catch2
+  catch2 \
+  libhdf5-dev
 ```
 
 Configure and build:
 
 ```bash
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build --parallel
+cmake --preset windows-ucrt64-debug
+cmake --build --preset windows-ucrt64-debug
 ```
 
 If Ninja is unavailable, omit `-G Ninja`.
+
+The repository also ships `CMakePresets.json`, so CMake Tools and command-line
+workflows can share the same Windows UCRT64 configuration.
+
+Preset summary (from `CMakePresets.json`):
+
+| Preset | Kind | Binary dir | Python | HDF5 | Typical command |
+| --- | --- | --- | --- | --- | --- |
+| `windows-ucrt64-debug` | Configure / Build / Test | `build/` | OFF | ON | `cmake --preset windows-ucrt64-debug` |
+| `windows-ucrt64-debug-python` | Configure / Build / Test | `build-python/` | ON | ON (inherited) | `cmake --preset windows-ucrt64-debug-python` |
+| `windows-ucrt64-poisson` | Test | `build/` | OFF | ON | `ctest --preset windows-ucrt64-poisson` |
+
+If HDF5 is not available, CMake keeps the core build but disables the optional
+import executable and HDF5-specific tests.
 
 ### Windows / MSYS2 UCRT64
 
@@ -114,8 +135,8 @@ The Windows development environment uses MSYS2 UCRT64, typically at
 
 ```powershell
 $env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build --parallel
+cmake --preset windows-ucrt64-debug
+cmake --build --preset windows-ucrt64-debug
 ```
 
 Install packages from a UCRT64 shell:
@@ -128,6 +149,7 @@ pacman -S --needed \
   mingw-w64-ucrt-x86_64-ninja \
   mingw-w64-ucrt-x86_64-eigen3 \
   mingw-w64-ucrt-x86_64-nlohmann-json \
+  mingw-w64-ucrt-x86_64-hdf5 \
   mingw-w64-ucrt-x86_64-catch \
   mingw-w64-ucrt-x86_64-python \
   mingw-w64-ucrt-x86_64-gdb
@@ -141,22 +163,48 @@ Use `python` instead of `python3` if the UCRT64 shell does not provide a
 Run the full suite:
 
 ```bash
-ctest --test-dir build --output-on-failure
+ctest --preset windows-ucrt64-debug
 ```
 
 Useful focused groups:
 
 ```bash
-ctest --test-dir build --output-on-failure -R poisson
+ctest --preset windows-ucrt64-poisson
 ctest --test-dir build --output-on-failure -R "dd|newton|dc_sweep"
 ctest --test-dir build --output-on-failure -R regression
 ctest --test-dir build --output-on-failure -R reference_tcad_regression
+ctest --test-dir build --output-on-failure -R import
 ```
+
+Named CTest targets exposed by `CMakeLists.txt`:
+
+| Target | Always present | Notes |
+| --- | --- | --- |
+| `poisson` | Yes | Poisson-focused Catch2 entry |
+| `dd` | Yes | DD/Gummel-focused Catch2 entry |
+| `device_stability` | Yes | Device stability checks |
+| `ldmos` | Yes | LDMOS smoke/trend checks |
+| `mos_solver_crosscheck` | Yes | MOS solver cross-check |
+| `mos_mixed` | Yes | Mixed-material MOS checks |
+| `dc_sweep` | Yes | DC sweep behavior |
+| `electric_field_diagnostics` | Yes | Electric-field diagnostics |
+| `boundary` | Yes | Boundary-condition checks |
+| `schottky` | Yes | Schottky contact prototype checks |
+| `interface` | Yes | Interface charge checks |
+| `regression` | Yes | Runs `scripts/run_regression.py` |
+| `reference_tcad_regression` | Yes | Reference TCAD conversion/comparison tools |
+| `import_tools` | Yes | Python-level import-tool checks |
+| `python_api` | Conditional | Present when `VELA_ENABLE_PYTHON=ON` |
+| `import_tdr` | Conditional | Present when HDF5 target is found |
+| `import_sample_integration` | Conditional | Present when HDF5 target is found |
 
 The `regression` CTest target runs `scripts/run_regression.py` against the
 engineering examples with `vela_example_runner`. The
 `reference_tcad_regression` target verifies the neutral CSV conversion and
 comparison tools.
+
+For HDF5 import workflows and tool usage, see the documentation index and the
+reference fixture workflow docs under `docs/` and `reference_tcad/`.
 
 ## Run Examples
 
@@ -190,10 +238,14 @@ development headers and pybind11, then configure with `VELA_ENABLE_PYTHON=ON`:
 # Ubuntu/Debian
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3-dev pybind11-dev
 
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DVELA_ENABLE_PYTHON=ON
-cmake --build build --parallel
-ctest --test-dir build --output-on-failure -R python_api
+cmake --preset windows-ucrt64-debug-python
+cmake --build --preset windows-ucrt64-debug-python
+ctest --preset windows-ucrt64-debug-python -R python_api
 ```
+
+The `windows-ucrt64-debug-python` preset still honors `VELA_ENABLE_HDF5=ON`
+from the base preset, so the optional import tooling remains available when
+HDF5 is installed.
 
 On Windows/MSYS2:
 
@@ -201,8 +253,8 @@ On Windows/MSYS2:
 pacman -S --needed mingw-w64-ucrt-x86_64-pybind11
 ```
 
-The generated package is placed under `build/python/<config>/vela`, for example
-`build/python/Debug/vela`. The CTest `python_api` target sets `PYTHONPATH`
+The generated package is placed under `build-python/python/<config>/vela`, for example
+`build-python/python/Debug/vela`. The CTest `python_api` target sets `PYTHONPATH`
 automatically.
 
 Python examples:

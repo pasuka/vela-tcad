@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import importlib.util
 import json
 import math
 import subprocess
@@ -17,6 +18,220 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 class ReferenceTcadToolsTest(unittest.TestCase):
+    @staticmethod
+    def _load_generate_rootcause_module():
+        module_path = REPO / "scripts" / "generate_pn2d_rootcause_reports.py"
+        spec = importlib.util.spec_from_file_location("generate_pn2d_rootcause_reports", module_path)
+        if spec is None or spec.loader is None:
+            raise RuntimeError(f"unable to load module spec from {module_path}")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        return module
+
+    def test_pn2d_iv_ratio_summary_script_exists(self) -> None:
+        script = REPO / "scripts" / "summarize_pn2d_iv_ratios.ps1"
+        self.assertTrue(script.is_file(), f"missing pn2d IV ratio summary script: {script}")
+        text = script.read_text()
+        self.assertIn("pn2d_iv_ratio_summary.csv", text)
+        self.assertIn("current_electron_A_per_um", text)
+        self.assertIn("current_hole_A_per_um", text)
+
+    def test_pn2d_iv_bv_physics_matrix_script_exists(self) -> None:
+        script = REPO / "scripts" / "scan_pn2d_iv_bv_physics_matrix.ps1"
+        self.assertTrue(script.is_file(), f"missing pn2d IV/BV physics matrix script: {script}")
+        text = script.read_text()
+        self.assertIn("recomb_srh_auger", text)
+        self.assertIn("recomb_none", text)
+        self.assertIn("bv_srh_tau1e-6", text)
+        self.assertIn("bv_srh_tau1e-8", text)
+        self.assertIn("iv_srh_tau1e-6", text)
+        self.assertIn("iv_srh_tau1e-8", text)
+        self.assertIn("iv_srh_auger_half", text)
+        self.assertIn("iv_srh_auger_double", text)
+        self.assertIn("iv_auger_only", text)
+        self.assertIn("bv_srh_auger_half", text)
+        self.assertIn("bv_srh_auger_double", text)
+        self.assertIn("bv_auger_only", text)
+        self.assertIn("pn2d_iv_bv_physics_matrix_summary.csv", text)
+
+    def test_pn2d_iv_resolution_scan_script_exists(self) -> None:
+        script = REPO / "scripts" / "scan_pn2d_iv_resolution.ps1"
+        self.assertTrue(script.is_file(), f"missing pn2d IV resolution scan script: {script}")
+        text = script.read_text()
+        self.assertIn("pn2d_iv_resolution_summary.csv", text)
+        self.assertIn("0.02", text)
+        self.assertIn("0.01", text)
+        self.assertIn("current_total_A_per_um", text)
+
+    def test_pn2d_bv_quick_refinement_script_is_documented_and_reproducible(self) -> None:
+        script = REPO / "scripts" / "scan_pn2d_bv_ct_quick6.ps1"
+        self.assertTrue(script.is_file(), f"missing documented pn2d BV quick refinement script: {script}")
+        text = script.read_text()
+        self.assertIn("q_mu0p89_a0p89", text)
+        self.assertIn("pn2d_bv_ct_quick6_summary.csv", text)
+
+    def test_pn2d_candidate_iv_bv_script_records_best_bv_candidate(self) -> None:
+        script = REPO / "scripts" / "scan_pn2d_candidate_iv_bv.ps1"
+        self.assertTrue(script.is_file(), f"missing pn2d candidate IV/BV script: {script}")
+        text = script.read_text()
+        self.assertIn("q_mu0p89_a0p89", text)
+        self.assertIn("pn2d_candidate_iv_bv_summary.csv", text)
+        self.assertIn("simulation_iv", text)
+        self.assertIn("simulation_bv", text)
+
+    def test_generate_rootcause_reports_help_includes_timeout_and_reuse_matrix(self) -> None:
+        script = REPO / "scripts" / "generate_pn2d_rootcause_reports.py"
+        cp = subprocess.run(
+            [sys.executable, str(script), "--help"],
+            check=True,
+            cwd=REPO,
+            capture_output=True,
+            text=True,
+        )
+        self.assertIn("--runner-timeout-s", cp.stdout)
+        self.assertIn("--reuse-bv-matrix", cp.stdout)
+
+    def test_generate_rootcause_reports_summarizes_synthetic_matrix_and_selects_best_row(self) -> None:
+        module = self._load_generate_rootcause_module()
+        rows = [
+            {
+                "case": "m_a",
+                "bias_V": "0.05",
+                "failure_class": "executed",
+                "failure_reason": "ok",
+                "orders_of_magnitude": "0.12",
+            },
+            {
+                "case": "m_b",
+                "bias_V": "0.05",
+                "failure_class": "executed",
+                "failure_reason": "ok",
+                "orders_of_magnitude": "0.08",
+            },
+            {
+                "case": "m_c",
+                "bias_V": "0.10",
+                "failure_class": "run_failure",
+                "failure_reason": "runner_timeout",
+                "orders_of_magnitude": "nan",
+            },
+            {
+                "case": "m_d",
+                "bias_V": "0.10",
+                "failure_class": "run_failure",
+                "failure_reason": "json_parse_error",
+                "orders_of_magnitude": "nan",
+            },
+        ]
+        summary = module.summarize_bv_matrix_rows(rows, [0.05, 0.10])
+        self.assertEqual(summary["attempted_rows"], 4)
+        self.assertEqual(summary["executed_rows"], 2)
+        self.assertEqual(summary["failure_reason_counts"]["runner_timeout"], 1)
+        self.assertEqual(summary["failure_reason_counts"]["runner_nonzero_exit_with_json"], 1)
+
+        active = {float(item["bias_V"]): item for item in summary["active_bias_summary"]}
+        self.assertIn(0.05, active)
+        self.assertEqual(active[0.05]["best_executed_case"], "m_b")
+        self.assertAlmostEqual(active[0.05]["best_executed_orders_of_magnitude"], 0.08, places=12)
+
+    def test_generate_rootcause_reports_baseline_alignment_flags_mobility_recombination_mismatch(self) -> None:
+        module = self._load_generate_rootcause_module()
+        matrix_rows = [
+            {
+                "case": "m_default_bgn_default_recomb_none_ii_none",
+                "mobility": "default",
+                "recombination": "none",
+                "bandgap_narrowing": "default",
+                "impact_ionization": "none",
+            },
+            {
+                "case": "m_caughey_thomas_bgn_none_recomb_srh_ii_none",
+                "mobility": "caughey_thomas",
+                "recombination": "srh",
+                "bandgap_narrowing": "none",
+                "impact_ionization": "none",
+            },
+        ]
+        fresh = {
+            "mobility": "caughey_thomas",
+            "recombination": "srh",
+            "bandgap_narrowing": "default_inherited",
+            "impact_ionization": "none",
+        }
+        alignment = module.compute_baseline_alignment(matrix_rows, fresh)
+        self.assertGreater(alignment["mismatch_counts"]["mobility"], 0)
+        self.assertGreater(alignment["mismatch_counts"]["recombination"], 0)
+        self.assertIn(
+            "m_caughey_thomas_bgn_none_recomb_srh_ii_none",
+            alignment["baseline_equivalent_cases"],
+        )
+
+    def test_generate_rootcause_reports_markdown_uses_dynamic_root_paths(self) -> None:
+        module = self._load_generate_rootcause_module()
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_rootcause_md_") as tmp:
+            root = Path(tmp) / "custom_root"
+            reports = root / "reports"
+            reports.mkdir(parents=True, exist_ok=True)
+            module.write_rootcause_md(
+                root=root,
+                reports_dir=reports,
+                baseline_summary={
+                    "checks": {
+                        "iv_orders_0p2_to_0p3": 0.4,
+                        "terminal_sum_abs_A_per_um_at_0p3": 1.0e-18,
+                        "strict_newton_all": True,
+                    }
+                },
+                contact_summary=[{"tag": "n_only_probe"}],
+                bv_rows=[
+                    {"bias_V": "0.05", "failure_class": "executed", "orders_of_magnitude": "0.11", "case": "m_x"}
+                ],
+                bv_summary={
+                    "attempted_rows": 1,
+                    "executed_rows": 1,
+                    "failure_class_counts": {"executed": 1},
+                    "failure_reason_counts": {"ok": 1},
+                    "active_bias_summary": [
+                        {
+                            "bias_V": 0.05,
+                            "attempted_rows": 1,
+                            "executed_rows": 1,
+                            "run_failure_rows": 0,
+                            "non_convergence_rows": 0,
+                            "best_executed_case": "m_x",
+                            "best_executed_orders_of_magnitude": 0.11,
+                        }
+                    ],
+                },
+                baseline_alignment={
+                    "fresh_baseline_settings": {
+                        "mobility": "caughey_thomas",
+                        "recombination": "srh",
+                        "bandgap_narrowing": "default_inherited",
+                        "impact_ionization": "none",
+                    },
+                    "matching_case_count": 1,
+                    "baseline_equivalent_cases": ["m_x"],
+                    "implicit_default_case": "m_default_bgn_default_recomb_none_ii_none",
+                },
+            )
+
+            content = (reports / "pn2d_iv_bv_rootcause_next.md").read_text(encoding="utf-8")
+            self.assertIn(f"Source root: {root}", content)
+            self.assertIn(f"Reports dir: {reports}", content)
+
+    def test_reference_tcad_device_configs_exist(self) -> None:
+        expected = [
+            REPO / "reference_tcad" / "pn2d" / "pn2d_reference.json",
+            REPO / "reference_tcad" / "nmos2d" / "nmos2d_reference.json",
+            REPO / "reference_tcad" / "pmos2d" / "pmos2d_reference.json",
+            REPO / "reference_tcad" / "ldmos2d" / "ldmos2d_reference.json",
+            REPO / "reference_tcad" / "igbt2d" / "igbt2d_reference.json",
+        ]
+        for path in expected:
+            self.assertTrue(path.is_file(), f"missing reference config: {path}")
+
     def test_pn_export_converts_to_unit_scaling_deck(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_reference_tcad_") as tmp:
             root = Path(tmp)
@@ -88,10 +303,17 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             self.assertEqual(mesh["contacts"][0]["node_ids"], [0, 3])
             self.assertEqual(iv["scaling"], {"mode": "unit_scaling"})
             self.assertEqual(iv["mesh_file"], "mesh.json")
+            self.assertEqual(iv["node_doping_file"], "doping.csv")
+            self.assertEqual(bv["node_doping_file"], "doping.csv")
             self.assertEqual(iv["doping"][0]["donors"], 1.0e17)
             self.assertEqual(iv["doping"][1]["acceptors"], 1.0e17)
+            self.assertEqual(iv["doping"][1]["region"], "p_region")
             self.assertEqual(cv["sweep"]["mode"], "cv_quasistatic")
             self.assertEqual(bv["sweep"]["mode"], "bv_reverse")
+            self.assertEqual(
+                self._read_csv(out_dir / "doping.csv"),
+                self._read_csv(export_dir / "doping.csv"),
+            )
 
     def test_compare_reference_curves_writes_json_and_markdown(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_reference_compare_") as tmp:
@@ -141,6 +363,186 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             self.assertTrue(report["bv"]["trend_match"])
             self.assertIn("orders_of_magnitude", report["iv"])
             self.assertIn("Reference TCAD Curve Comparison", report_md.read_text())
+
+    def test_compare_reference_curves_enforces_single_curve_thresholds(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_reference_compare_gate_") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.csv"
+            candidate = root / "candidate.csv"
+            bad_candidate = root / "bad_candidate.csv"
+            report_json = root / "report.json"
+            report_md = root / "report.md"
+
+            header = ["bias_V", "current_total"]
+            self._write_csv(reference, header, [
+                [0.0, 1.0e-12],
+                [0.5, 1.0e-9],
+                [1.0, 1.0e-6],
+            ])
+            self._write_csv(candidate, header, [
+                [0.0, 1.0e-12],
+                [0.5, 1.1e-9],
+                [1.0, 1.05e-6],
+            ])
+            self._write_csv(bad_candidate, header, [
+                [0.0, 1.0e-6],
+                [0.5, 1.0e-9],
+                [1.0, 1.0e-12],
+            ])
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_reference_curves.py"),
+                    "--reference",
+                    str(reference),
+                    "--candidate",
+                    str(candidate),
+                    "--output-json",
+                    str(root / "default_report.json"),
+                    "--output-md",
+                    str(root / "default_report.md"),
+                ],
+                check=True,
+                cwd=REPO,
+            )
+            default_report = json.loads((root / "default_report.json").read_text())
+            self.assertEqual(default_report["status"], "pass")
+            self.assertFalse(default_report["cv"]["available"])
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_reference_curves.py"),
+                    "--reference",
+                    str(reference),
+                    "--candidate",
+                    str(candidate),
+                    "--output-json",
+                    str(report_json),
+                    "--output-md",
+                    str(report_md),
+                    "--kind",
+                    "iv",
+                    "--require-trend-match",
+                    "--min-points",
+                    "3",
+                    "--max-relative-error",
+                    "0.2",
+                    "--max-orders-of-magnitude",
+                    "0.1",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+            report = json.loads(report_json.read_text())
+            self.assertEqual(report["status"], "pass")
+            self.assertEqual(report["iv"]["points_compared"], 3)
+            self.assertEqual(report["checked_kinds"], ["iv"])
+
+            failed = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_reference_curves.py"),
+                    "--reference",
+                    str(reference),
+                    "--candidate",
+                    str(bad_candidate),
+                    "--output-json",
+                    str(root / "bad_report.json"),
+                    "--output-md",
+                    str(root / "bad_report.md"),
+                    "--kind",
+                    "iv",
+                    "--require-trend-match",
+                    "--min-points",
+                    "3",
+                    "--max-orders-of-magnitude",
+                    "0.1",
+                ],
+                cwd=REPO,
+            )
+            self.assertNotEqual(failed.returncode, 0)
+            bad_report = json.loads((root / "bad_report.json").read_text())
+            self.assertEqual(bad_report["status"], "fail")
+            self.assertTrue(any("trend" in failure for failure in bad_report["failures"]))
+
+    def test_compare_reference_curves_interpolates_by_bias(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_reference_bias_match_") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.csv"
+            candidate = root / "candidate.csv"
+            out_json = root / "report.json"
+            out_md = root / "report.md"
+            self._write_csv(reference, ["bias_V", "current_total"], [
+                [0.0, 1.0e-12],
+                [0.5, 1.0e-9],
+                [1.0, 1.0e-6],
+            ])
+            self._write_csv(candidate, ["bias_V", "current_total"], [
+                [0.0, -1.0e-12],
+                [0.25, -3.0e-11],
+                [0.75, -2.0e-9],
+                [1.0, -1.0e-6],
+            ])
+
+            subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "compare_reference_curves.py"),
+                "--reference", str(reference),
+                "--candidate", str(candidate),
+                "--output-json", str(out_json),
+                "--output-md", str(out_md),
+                "--kind", "iv",
+                "--candidate-scale", "-1.0",
+                "--bias-min", "0.5",
+                "--bias-max", "1.0",
+                "--max-orders-of-magnitude", "0.25",
+                "--require-trend-match",
+            ], check=True, cwd=REPO)
+
+            report = json.loads(out_json.read_text())
+            self.assertEqual(report["status"], "pass")
+            self.assertEqual(report["iv"]["points_compared"], 2)
+            self.assertEqual(report["iv"]["reference_bias_range"], [0.5, 1.0])
+            self.assertEqual(report["iv"]["candidate_scale"], -1.0)
+
+    def test_compare_reference_curves_can_select_candidate_column(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_reference_column_match_") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.csv"
+            candidate = root / "candidate.csv"
+            out_json = root / "report.json"
+            out_md = root / "report.md"
+            self._write_csv(reference, ["bias_V", "current_total"], [
+                [0.0, 0.0],
+                [0.5, 1.0e-15],
+                [1.0, 2.0e-15],
+            ])
+            self._write_csv(candidate, ["bias_V", "current_total", "current_total_A_per_um"], [
+                [0.0, 0.0, 0.0],
+                [0.5, 1.0e-9, 1.0e-15],
+                [1.0, 2.0e-9, 2.0e-15],
+            ])
+
+            subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "compare_reference_curves.py"),
+                "--reference", str(reference),
+                "--candidate", str(candidate),
+                "--output-json", str(out_json),
+                "--output-md", str(out_md),
+                "--kind", "iv",
+                "--candidate-column", "current_total_A_per_um",
+                "--max-orders-of-magnitude", "0.01",
+                "--require-trend-match",
+            ], check=True, cwd=REPO)
+
+            report = json.loads(out_json.read_text())
+            self.assertEqual(report["status"], "pass")
+            self.assertEqual(report["iv"]["candidate_column"], "current_total_A_per_um")
+            self.assertEqual(report["iv"]["reference_trend"], "increasing")
+            self.assertEqual(report["iv"]["candidate_trend"], "increasing")
 
     def test_checked_in_pn_validation_assets_are_complete(self) -> None:
         pn_dir = REPO / "reference_tcad" / "pn_diode"
@@ -194,6 +596,38 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             "no calibration claim",
         ]:
             self.assertIn(required, doc)
+
+    def test_checked_in_reference_configs_cover_device_fixtures(self) -> None:
+        expected = {
+            "nmos2d": ["idvd", "idvg", "idvg_surface", "cv", "bv"],
+            "pmos2d": ["idvd", "idvg", "idvg_surface", "cv", "bv"],
+            "ldmos2d": ["iv", "bv", "fieldplate"],
+            "igbt2d": ["iv", "high_injection_iv", "charge_cv", "bv", "bv_ii"],
+        }
+        for device, simulations in expected.items():
+            with self.subTest(device=device):
+                path = REPO / "reference_tcad" / device / f"{device}_reference.json"
+                self.assertTrue(path.is_file(), path)
+                config = json.loads(path.read_text())
+                self.assertEqual(config["case"], device)
+                self.assertEqual(config["schema"], "vela.reference_tcad.checked_in.v1")
+                self.assertEqual(
+                    [sim["name"] for sim in config["simulations"]],
+                    simulations,
+                )
+                for sim in config["simulations"]:
+                    vela = REPO / "reference_tcad" / device / "vela" / sim["deck"]
+                    reference = (
+                        REPO
+                        / "reference_tcad"
+                        / device
+                        / "reference_curves"
+                        / sim["reference_curve"]
+                    )
+                    report = REPO / "reference_tcad" / device / "reports" / sim["report_json"]
+                    self.assertTrue(vela.is_file(), vela)
+                    self.assertTrue(reference.is_file(), reference)
+                    self.assertTrue(report.is_file(), report)
 
     def test_checked_in_mos_validation_assets_are_complete(self) -> None:
         cases = [

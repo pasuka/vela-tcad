@@ -1,0 +1,48 @@
+{
+  "schema": "vela.reference_tcad.checked_in.v1",
+  "case": "igbt2d",
+  "device": "igbt2d",
+  "mesh": "vela/mesh.json",
+  "simulations": [
+    {
+      "name": "iv",
+      "deck": "simulation_iv.json",
+      "candidate": "igbt2d_iv.csv",
+      "reference_curve": "igbt2d_iv_reference.csv",
+      "report_json": "igbt2d_iv_comparison.json",
+      "kind": "iv"
+    },
+    {
+      "name": "high_injection_iv",
+      "deck": "simulation_high_injection_iv.json",
+      "candidate": "igbt2d_high_injection_iv.csv",
+      "reference_curve": "igbt2d_high_injection_iv_reference.csv",
+      "report_json": "igbt2d_high_injection_iv_comparison.json",
+      "kind": "iv"
+    },
+    {
+      "name": "charge_cv",
+      "deck": "simulation_charge_cv.json",
+      "candidate": "igbt2d_charge_cv.csv",
+      "reference_curve": "igbt2d_charge_cv_reference.csv",
+      "report_json": "igbt2d_charge_cv_comparison.json",
+      "kind": "cv"
+    },
+    {
+      "name": "bv",
+      "deck": "simulation_bv.json",
+      "candidate": "igbt2d_bv.csv",
+      "reference_curve": "igbt2d_bv_reference.csv",
+      "report_json": "igbt2d_bv_comparison.json",
+      "kind": "bv"
+    },
+    {
+      "name": "bv_ii",
+      "deck": "simulation_bv_ii.json",
+      "candidate": "igbt2d_bv_ii.csv",
+      "reference_curve": "igbt2d_bv_ii_reference.csv",
+      "report_json": "igbt2d_bv_ii_comparison.json",
+      "kind": "bv"
+    }
+  ]
+}

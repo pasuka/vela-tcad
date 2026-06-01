@@ -13,11 +13,24 @@ archived planning notes.
   boundaries, solver options, and regression blocks.
 - [Examples](examples.md): support matrix for every checked-in example deck and
   the regression expectations tied to those decks.
+- [Sentaurus import](sentaurus_import.md): HDF5/TDR import prerequisites,
+  `sentaurus_import` CLI usage, and end-to-end conversion workflow.
 - [Poisson unit-scaling notes](development_poisson_unit_scaling.md): developer
   notes for the scaled Poisson assembly path used by
   `scaling.mode = "unit_scaling"`.
+- [PN2D script dedup plan](pn2d_script_dedup_plan.md): staged maintenance
+  plan for consolidating duplicated BV contact-tuning PowerShell workflows.
 - [Validation notes](validation/): trend-validation summaries for checked-in
   reference TCAD fixtures.
+
+Optional feature switches used by this repository:
+
+- `VELA_ENABLE_HDF5` (default ON): enables Sentaurus inventory/export support
+  when an HDF5 package is found by CMake.
+- `VELA_ENABLE_PYTHON` (default OFF): enables the pybind11 Python module and
+  `python_api` CTest target.
+
+See `CMakePresets.json` for the shipped Windows UCRT64 preset combinations.
 
 ## External Fixture And Test References
 

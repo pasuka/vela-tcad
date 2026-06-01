@@ -1,0 +1,90 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "windows-ucrt64-debug",
+      "displayName": "Windows UCRT64 Debug",
+      "description": "Configure a Debug build with the MSYS2 UCRT64 toolchain on PATH.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VELA_ENABLE_PYTHON": "OFF",
+        "VELA_ENABLE_HDF5": "ON"
+      },
+      "environment": {
+        "PATH": "D:\\msys64\\ucrt64\\bin;D:\\msys64\\usr\\bin;$penv{PATH}"
+      }
+    },
+    {
+      "name": "windows-ucrt64-debug-python",
+      "displayName": "Windows UCRT64 Debug + Python",
+      "description": "Configure a Debug build with Python bindings enabled under MSYS2 UCRT64.",
+      "inherits": "windows-ucrt64-debug",
+      "binaryDir": "${sourceDir}/build-python",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VELA_ENABLE_PYTHON": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-ucrt64-debug",
+      "displayName": "Build Windows UCRT64 Debug",
+      "configurePreset": "windows-ucrt64-debug",
+      "jobs": 0
+    },
+    {
+      "name": "windows-ucrt64-debug-python",
+      "displayName": "Build Windows UCRT64 Debug + Python",
+      "configurePreset": "windows-ucrt64-debug-python",
+      "jobs": 0
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "windows-ucrt64-debug",
+      "displayName": "Test Windows UCRT64 Debug",
+      "configurePreset": "windows-ucrt64-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "jobs": 0
+      }
+    },
+    {
+      "name": "windows-ucrt64-poisson",
+      "displayName": "Test Windows UCRT64 Poisson",
+      "configurePreset": "windows-ucrt64-debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "jobs": 0
+      },
+      "filter": {
+        "include": {
+          "name": "poisson"
+        }
+      }
+    },
+    {
+      "name": "windows-ucrt64-debug-python",
+      "displayName": "Test Windows UCRT64 Debug + Python",
+      "configurePreset": "windows-ucrt64-debug-python",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "jobs": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+& $PSScriptRoot\scan_pn2d_bv_ct_base.ps1 `
+    -BaseConfig "build/pn2d_recomb_gate/vela/simulation_bv_m_caughey_thomas__bgn_none.json" `
+    -ReferenceCsv "build/pn2d_recomb_gate/reference_curves/pn2d_bv_reference.csv" `
+    -OutputSummary "build/pn2d_recomb_gate/vela/pn2d_bv_ct_local_scan_summary.csv" `
+    -MuScales @(0.6, 0.8, 1.0, 1.2) `
+    -NrefScales @(0.5, 1.0, 2.0) `
+    -AlphaScales @(0.9, 1.0, 1.1) `
+    -TagPrefix "ct_local" `
+    -IncludeComponentCurrents `
+    -BandgapNarrowing "none" `
+    -Recombination @("none")

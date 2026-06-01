@@ -1,0 +1,88 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "cwd": "${workspaceFolder}",
+    "env": {
+      "PATH": "D:\\msys64\\ucrt64\\bin;D:\\msys64\\usr\\bin;${env:PATH}"
+    }
+  },
+  "tasks": [
+    {
+      "label": "cmake: configure debug (ucrt64)",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "windows-ucrt64-debug"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "cmake: build debug (ucrt64)",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "windows-ucrt64-debug"
+      ],
+      "dependsOn": "cmake: configure debug (ucrt64)",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$msCompile",
+        "$gcc"
+      ]
+    },
+    {
+      "label": "ctest: all (ucrt64)",
+      "type": "shell",
+      "command": "ctest",
+      "args": [
+        "--preset",
+        "windows-ucrt64-debug"
+      ],
+      "dependsOn": "cmake: build debug (ucrt64)",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "ctest: poisson (ucrt64)",
+      "type": "shell",
+      "command": "ctest",
+      "args": [
+        "--preset",
+        "windows-ucrt64-poisson"
+      ],
+      "dependsOn": "cmake: build debug (ucrt64)",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "run: pn diode iv example (ucrt64)",
+      "type": "shell",
+      "command": "build\\vela_example_runner.exe",
+      "args": [
+        "--config",
+        "examples\\pn_diode\\simulation_iv.json"
+      ],
+      "dependsOn": "cmake: build debug (ucrt64)",
+      "problemMatcher": []
+    },
+    {
+      "label": "run: regression suite (ucrt64)",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "scripts\\run_regression.py",
+        "--runner",
+        "build\\vela_example_runner.exe"
+      ],
+      "dependsOn": "cmake: build debug (ucrt64)",
+      "problemMatcher": []
+    }
+  ]
+}
