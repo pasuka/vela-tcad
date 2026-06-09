@@ -44,6 +44,31 @@ nlohmann::json inventoryJson(const SentaurusTdrInventory& inventory)
             {"points", region.points.size()},
         });
     }
+    data["geometry"] = {
+        {"vertices", nlohmann::json::array()},
+        {"regions", nlohmann::json::array()},
+    };
+    for (const auto& vertex : inventory.vertices) {
+        data["geometry"]["vertices"].push_back({vertex.x, vertex.y});
+    }
+    for (const auto& region : inventory.regions) {
+        nlohmann::json regionJson = {
+            {"index", region.index},
+            {"name", region.name},
+            {"material", region.material},
+            {"type", regionTypeCode(region.type)},
+            {"triangles", nlohmann::json::array()},
+            {"edges", nlohmann::json::array()},
+            {"points", region.points},
+        };
+        for (const auto& triangle : region.triangles) {
+            regionJson["triangles"].push_back({triangle[0], triangle[1], triangle[2]});
+        }
+        for (const auto& edge : region.edges) {
+            regionJson["edges"].push_back({edge[0], edge[1]});
+        }
+        data["geometry"]["regions"].push_back(std::move(regionJson));
+    }
     data["fields"] = nlohmann::json::array();
     for (const auto& field : inventory.fields) {
         nlohmann::json fieldJson = {
