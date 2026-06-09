@@ -12,6 +12,7 @@ import csv
 import json
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -826,12 +827,17 @@ def run_tdr_importer(tdr_importer: str | None,
     run_command(command, cwd=REPO)
 
 
+def deck_template_type(sim: dict[str, Any]) -> str:
+    return "bv" if str(sim.get("kind", "iv")).lower() == "bv" else "iv"
+
+
 def patch_reference_deck(deck_path: Path,
                          cmd_summary: dict[str, Any],
                          sim: dict[str, Any],
                          output_csv: str,
                          solver_override: dict[str, Any] | None = None) -> list[str]:
     deck = read_json(deck_path)
+    kind = str(sim.get("kind", "iv")).lower()
     sweeps = cmd_summary.get("sweeps", [])
     sweep = sweeps[-1] if sweeps else {"contact": "Anode", "stop": 0.0, "step_control": {}}
     stop = numeric_or_none(sweep.get("stop")) or 0.0
@@ -843,18 +849,26 @@ def patch_reference_deck(deck_path: Path,
     for contact in deck["contacts"]:
         contact["bias"] = 0.0
     deck.setdefault("sweep", {})
-    deck["sweep"]["mode"] = "bv_reverse" if sim.get("kind") == "bv" else "iv"
-    deck["sweep"]["contact"] = sweep.get("contact")
-    deck["sweep"]["current_contact"] = sim.get("vela_current_contact", sweep.get("contact"))
+    if kind in ("equilibrium", "0v"):
+        stop = 0.0
+        max_step = 0.0
+        deck["sweep"]["mode"] = "equilibrium"
+    else:
+        deck["sweep"]["mode"] = "bv_reverse" if kind == "bv" else "iv"
+    contact = sweep.get("contact") or sim.get("vela_current_contact", "Anode")
+    deck["sweep"]["contact"] = contact
+    deck["sweep"]["current_contact"] = sim.get("vela_current_contact", contact)
     deck["sweep"]["start"] = start
     deck["sweep"]["stop"] = stop
     deck["sweep"]["step"] = max_step if max_step is not None and max_step > 0.0 else (stop - start) / 80.0
+    if kind in ("equilibrium", "0v"):
+        deck["sweep"]["step"] = 0.0
     if "vela_stop" in sim:
         deck["sweep"]["stop"] = float(sim["vela_stop"])
     if "vela_step" in sim:
         deck["sweep"]["step"] = float(sim["vela_step"])
     deck["sweep"]["write_vtk"] = False
-    if sim.get("kind") == "bv":
+    if kind == "bv":
         deck["sweep"].setdefault("breakdown", {
             "max_electric_field_V_per_m": 1.0e12,
             "current_jump_ratio": 1.0e12,
@@ -865,7 +879,7 @@ def patch_reference_deck(deck_path: Path,
         "source_simulation": sim,
     }
     solver_method = str(deck.get("solver", {}).get("method", "gummel")).lower()
-    if sim.get("kind") == "iv" and solver_method == "gummel":
+    if kind == "iv" and solver_method == "gummel":
         solver = deck.setdefault("solver", {})
         solver["max_iter"] = max(int(solver.get("max_iter", 0)), 150)
         solver["reltol"] = min(float(solver.get("reltol", 1.0e-6)), 1.0e-6)
@@ -1042,7 +1056,7 @@ def reference_command(args: argparse.Namespace) -> None:
             "--device",
             device,
             "--simulation-types",
-            ",".join("bv" if sim.get("kind") == "bv" else "iv" for sim in simulations),
+            ",".join(dict.fromkeys(deck_template_type(sim) for sim in simulations)),
         ],
         cwd=REPO,
     )
@@ -1053,9 +1067,9 @@ def reference_command(args: argparse.Namespace) -> None:
         sim_name = str(sim["name"])
         kind = str(sim.get("kind", "iv"))
         deck_path = vela_dir / f"simulation_{sim_name}.json"
-        generated_deck = vela_dir / ("simulation_bv.json" if kind == "bv" else "simulation_iv.json")
+        generated_deck = vela_dir / f"simulation_{deck_template_type(sim)}.json"
         if generated_deck != deck_path:
-            generated_deck.replace(deck_path)
+            shutil.copyfile(generated_deck, deck_path)
         cmd_summary = read_json(output_dir / "cmd" / f"{sim_name}_summary.json")
         candidate_csv = f"{case_name}_{sim_name}.csv"
         solver_override: dict[str, Any] = {}
@@ -1113,6 +1127,10 @@ def reference_command(args: argparse.Namespace) -> None:
             ]
             if "candidate_scale" in comparison:
                 compare_command.extend(["--candidate-scale", str(comparison["candidate_scale"])])
+            if "candidate_bias_scale" in comparison:
+                compare_command.extend(["--candidate-bias-scale", str(comparison["candidate_bias_scale"])])
+            if "candidate_bias_offset" in comparison:
+                compare_command.extend(["--candidate-bias-offset", str(comparison["candidate_bias_offset"])])
             if "reference_column" in comparison:
                 compare_command.extend(["--reference-column", str(comparison["reference_column"])])
             if "candidate_column" in comparison:

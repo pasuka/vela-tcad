@@ -11,6 +11,52 @@ donor/acceptor table. Generated faithful Vela decks keep `node_doping_file:
 "doping.csv"` so the exact imported doping is available for solver
 development and regression inspection.
 
+## Sentaurus 2018 PN2D Fixture
+
+The Sentaurus 2018 calibration case requested for the next pn2d precision pass
+is checked in under `reference_tcad/pn2d_sentaurus2018/source/`. It preserves
+the original `D:\pn2d` artifacts, including `.cmd`, `.log`, `.tdr`, `.plt`,
+`tdx`-generated `.grd/.dat`, and command backups. Its import config is
+`reference_tcad/pn2d_sentaurus2018/pn2d_sentaurus2018_reference.json`.
+
+This fixture has three simulations:
+
+- `0v`: equilibrium state import from `pn2d_0v_des.tdr`, reference curve export
+  from `pn2d_0v.plt`, and Sentaurus field export under `sim_fields/0v`.
+- `iv`: forward-bias import from `pn2d_iv_des.tdr` and `pn2d_iv.plt`.
+- `bv`: reverse-bias import from `pn2d_bv_des.tdr` and `pn2d_bv.plt`.
+
+All generated Vela decks use the current strict coupled-Newton handoff:
+`solver.method: "gummel_newton"`, `handoff.gummel_max_iter: 0`, and
+`handoff.fallback: "none"`. This is the repository's present way to express a
+Newton-only solve of Poisson plus electron and hole continuity while retaining
+the existing runner schema. The decks keep `node_doping_file: "doping.csv"`.
+
+The independent input-data gate is `scripts/compare_sentaurus_tdr_tdx.py`.
+It compares the TDR-derived neutral export against `tdx` text output for mesh
+vertex count, total and bulk element counts, region/contact names, contact edge
+counts, and matching `.dat` datasets such as `DopingConcentration`,
+`DonorConcentration`, and `AcceptorConcentration` when present. State-field
+parity can be run with `scripts/compare_sentaurus_fields.py` for fields such as
+`ElectrostaticPotential`, `eDensity`, `hDensity`, quasi-Fermi potentials,
+`ElectricField`, SRH recombination, and BV avalanche/impact-ionization exports
+where available.
+
+Reproducible import and comparison:
+
+```powershell
+python scripts\sentaurus_import.py reference --config reference_tcad\pn2d_sentaurus2018\pn2d_sentaurus2018_reference.json --source-dir reference_tcad\pn2d_sentaurus2018\source --output-dir build\reference_tcad\pn2d_sentaurus2018 --tdr-importer build\sentaurus_import.exe --runner build\vela_example_runner.exe
+python scripts\compare_sentaurus_tdr_tdx.py --tdr-export build\reference_tcad\pn2d_sentaurus2018 --tdx-dir reference_tcad\pn2d_sentaurus2018\source --output-dir build\reference_tcad\pn2d_sentaurus2018\reports
+```
+
+Known unsupported or approximate physics remains explicit: Sentaurus avalanche
+models are not a calibrated numerical match, Fermi statistics are still treated
+with Vela's current carrier-statistics implementation, and BV impact-ionization
+comparison is diagnostic until the coupled Jacobian and continuation path are
+fully calibrated. The executable BV deck therefore keeps strict coupled Newton
+but sets `impact_ionization.model: "none"`; avalanche/impact-ionization fields
+remain available through the imported Sentaurus TDR/tdx state exports.
+
 The current executable comparison uses the faithful node-level doping decks.
 The IV deck uses `vela_stop: 0.3` and `vela_step: 0.1`; the local gate compares
 the 0.2-0.3 V forward-bias window against the full imported Sentaurus IV
@@ -1580,4 +1626,3 @@ step `0.01`.
 Full suite `ctest --preset windows-ucrt64-debug` → **275/275 passed**, confirming
 no regression across the other 272 tests (the `ni` override is isolated to the
 pn2d IV deck).
-

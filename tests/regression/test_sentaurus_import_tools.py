@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import csv
 import json
 import os
 import subprocess
@@ -786,6 +787,356 @@ if args.inventory_json:
             self.assertIn("reference_curves/ldmos2d_idvd_reference.csv", manifest["reference_curves"])
             self.assertIn("vela/simulation_iv.json", manifest["vela_decks"])
             self.assertIn("unsupported physics: Thermodynamic", manifest["warnings"])
+
+    def test_reference_import_config_supports_equilibrium_newton_fixture(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_sentaurus_equilibrium_reference_") as tmp:
+            root = Path(tmp)
+            source = root / "pn2d_sentaurus2018"
+            output = root / "out"
+            source.mkdir()
+            for name in ["pn2d_msh.tdr", "pn2d_0v_des.tdr", "pn2d_iv_des.tdr"]:
+                (source / name).write_text("fake tdr placeholder\n")
+            (source / "pn2d_sde.cmd").write_text("(define L 2.0)\n(define H 0.5)\n(define XJ 1.0)\n")
+            (source / "pn2d_0v_sdevice.cmd").write_text(
+                """
+File { Grid="pn2d_msh.tdr" Plot="pn2d_0v_des.tdr" Current="pn2d_0v.plt" }
+Electrode { { Name="Anode" Voltage=0 } { Name="Cathode" Voltage=0 } }
+Physics { Mobility(DopingDependence) Recombination(SRH) EffectiveIntrinsicDensity(OldSlotboom) }
+Solve {
+  Coupled(Iterations=100) { Poisson }
+  Coupled(Iterations=100) { Poisson Electron Hole }
+}
+""".strip()
+                + "\n"
+            )
+            (source / "pn2d_iv_sdevice.cmd").write_text(
+                """
+File { Grid="pn2d_msh.tdr" Plot="pn2d_iv_des.tdr" Current="pn2d_iv.plt" }
+Electrode { { Name="Anode" Voltage=0 } { Name="Cathode" Voltage=0 } }
+Physics { Mobility(DopingDependence) Recombination(SRH) EffectiveIntrinsicDensity(OldSlotboom) }
+Solve {
+  Coupled(Iterations=100) { Poisson Electron Hole }
+  Quasistationary( MaxStep=0.05 Goal { Name="Anode" Voltage=1.0 } ){ Coupled { Poisson Electron Hole } }
+}
+""".strip()
+                + "\n"
+            )
+            (source / "pn2d_0v.plt").write_text(
+                """
+Info { datasets = ["time" "Anode OuterVoltage" "Anode TotalCurrent" "Cathode TotalCurrent"] }
+Data {
+  0 0 -2.0e-25 2.0e-25
+  0 0 -7.0e-25 7.0e-25
+}
+""".strip()
+                + "\n"
+            )
+            (source / "pn2d_iv.plt").write_text(
+                """
+Info { datasets = ["time" "Anode OuterVoltage" "Anode TotalCurrent" "Cathode TotalCurrent"] }
+Data {
+  0 0 0 0
+  1 1.0 1.25e-4 -1.25e-4
+}
+""".strip()
+                + "\n"
+            )
+            config = root / "pn2d_sentaurus2018_reference.json"
+            config.write_text(json.dumps({
+                "case": "pn2d_sentaurus2018",
+                "device": "pn_diode",
+                "mesh_tdr": "pn2d_msh.tdr",
+                "sde_cmd": "pn2d_sde.cmd",
+                "tdr_doping": {"compensated_node_policy": "dominant_signed_region"},
+                "vela_solver": {
+                    "method": "gummel_newton",
+                    "max_iter": 40,
+                    "reltol": 1.0e-8,
+                    "abstol": 1.0e-18,
+                    "line_search": True,
+                    "warm_start": True,
+                    "handoff": {
+                        "fallback": "none",
+                        "require_gummel_convergence": False,
+                        "gummel_max_iter": 0,
+                        "newton_max_iter": 40,
+                    },
+                },
+                "simulations": [
+                    {
+                        "name": "0v",
+                        "kind": "equilibrium",
+                        "tdr": "pn2d_0v_des.tdr",
+                        "cmd": "pn2d_0v_sdevice.cmd",
+                        "plt": "pn2d_0v.plt",
+                        "bias_column": "Anode OuterVoltage",
+                        "current_column": "Anode TotalCurrent",
+                        "execute": False,
+                    },
+                    {
+                        "name": "iv",
+                        "kind": "iv",
+                        "tdr": "pn2d_iv_des.tdr",
+                        "cmd": "pn2d_iv_sdevice.cmd",
+                        "plt": "pn2d_iv.plt",
+                        "bias_column": "Anode OuterVoltage",
+                        "current_column": "Anode TotalCurrent",
+                        "vela_current_contact": "Cathode",
+                        "execute": False,
+                        "comparison": {
+                            "candidate_column": "current_total_A_per_um",
+                            "min_points": 2,
+                        },
+                    },
+                ],
+            }, indent=2) + "\n")
+            fake_importer = root / "fake_tdr_importer.py"
+            fake_importer.write_text(
+                """
+from __future__ import annotations
+import argparse
+import csv
+import json
+from pathlib import Path
+parser = argparse.ArgumentParser()
+parser.add_argument("--tdr", required=True)
+parser.add_argument("--inventory-json")
+parser.add_argument("--export-dir")
+parser.add_argument("--compensated-doping-policy", default="reported")
+args = parser.parse_args()
+if args.export_dir:
+    out = Path(args.export_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "fields").mkdir(exist_ok=True)
+    def write_csv(path, header, rows):
+        with path.open("w", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(header)
+            writer.writerows(rows)
+    write_csv(out / "nodes.csv", ["id", "x_um", "y_um"], [[0, 0, 0], [1, 1, 0], [2, 2, 0]])
+    write_csv(out / "elements.csv", ["id", "node0", "node1", "node2", "region", "material"], [[0, 0, 1, 2, "R.Si", "Si"]])
+    write_csv(out / "contacts.csv", ["name", "node_ids", "region"], [["Anode", "0", "R.Si"], ["Cathode", "2", "R.Si"]])
+    write_csv(out / "doping.csv", ["node_id", "donors_cm3", "acceptors_cm3"], [[0, 0, 1e17], [1, 0, 1e17], [2, 1e17, 0]])
+    write_csv(out / "fields" / "ElectrostaticPotential_region0.csv", ["node_id", "component0"], [[0, -0.4], [1, 0.0], [2, 0.4]])
+    (out / "doping_metadata.json").write_text(json.dumps({"compensated_nodes": {"policy": args.compensated_doping_policy}}, indent=2) + "\\n")
+    (out / "metadata.json").write_text(json.dumps({"vertex_count": 3, "region_count": 1, "dataset_count": 1}, indent=2) + "\\n")
+    (out / "field_manifest.json").write_text(json.dumps({"fields": [{"name": "ElectrostaticPotential", "region": 0, "components": 1, "values": 3, "mapping_status": "complete"}]}, indent=2) + "\\n")
+if args.inventory_json:
+    Path(args.inventory_json).write_text(json.dumps({"vertex_count": 3, "region_count": 1, "dataset_count": 1}, indent=2) + "\\n")
+""".strip()
+                + "\n"
+            )
+            fake_runner = root / "fake_runner.py"
+            fake_runner.write_text(
+                """
+from __future__ import annotations
+import argparse
+import csv
+import json
+from pathlib import Path
+parser = argparse.ArgumentParser()
+parser.add_argument("--config", required=True)
+args = parser.parse_args()
+cfg = json.loads(Path(args.config).read_text())
+out = Path(args.config).parent / cfg["output_csv"]
+with out.open("w", newline="") as handle:
+    writer = csv.writer(handle)
+    writer.writerow(["bias_V", "current_total", "current_total_A_per_um"])
+    writer.writerows([[0, 0, 0], [1.0, -1.25e-4, -1.25e-10]])
+""".strip()
+                + "\n"
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "sentaurus_import.py"),
+                    "reference",
+                    "--config",
+                    str(config),
+                    "--source-dir",
+                    str(source),
+                    "--output-dir",
+                    str(output),
+                    "--tdr-importer",
+                    f"{sys.executable} {fake_importer}",
+                    "--runner",
+                    f"{sys.executable} {fake_runner}",
+                ],
+                check=True,
+                cwd=REPO,
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            )
+
+            self.assertTrue((output / "reference_curves" / "pn2d_sentaurus2018_0v_reference.csv").is_file())
+            self.assertTrue((output / "cmd" / "0v_summary.json").is_file())
+            self.assertTrue((output / "sim_fields" / "0v" / "field_manifest.json").is_file())
+            zero_deck = json.loads((output / "vela" / "simulation_0v.json").read_text())
+            self.assertEqual(zero_deck["sweep"]["mode"], "equilibrium")
+            self.assertEqual(zero_deck["sweep"]["start"], 0.0)
+            self.assertEqual(zero_deck["sweep"]["stop"], 0.0)
+            self.assertEqual(zero_deck["solver"]["method"], "gummel_newton")
+            self.assertEqual(zero_deck["solver"]["handoff"]["fallback"], "none")
+            self.assertEqual(zero_deck["solver"]["handoff"]["gummel_max_iter"], 0)
+            manifest = json.loads((output / "reference_tcad_manifest.json").read_text())
+            self.assertIn("0v execution disabled by reference config", manifest["warnings"])
+
+    def test_compare_sentaurus_tdr_tdx_reports_mesh_and_field_parity(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_sentaurus_tdr_tdx_") as tmp:
+            root = Path(tmp)
+            export = root / "tdr_export"
+            tdx = root / "tdx"
+            reports = root / "reports"
+            (export / "fields").mkdir(parents=True)
+            tdx.mkdir()
+            self._write_csv(export / "nodes.csv", ["id", "x_um", "y_um"], [
+                [0, 0.0, 0.0],
+                [1, 1.0, 0.0],
+                [2, 0.0, 1.0],
+            ])
+            self._write_csv(export / "elements.csv", ["id", "node0", "node1", "node2", "region", "material"], [
+                [0, 0, 1, 2, "R.Si", "Si"],
+            ])
+            self._write_csv(export / "contacts.csv", ["name", "node_ids", "region"], [
+                ["Anode", "0;2", "R.Si"],
+            ])
+            self._write_csv(export / "doping.csv", ["node_id", "donors_cm3", "acceptors_cm3"], [
+                [0, 0.0, 1.0e17],
+                [1, 1.0e17, 0.0],
+                [2, 0.0, 1.0e17],
+            ])
+            self._write_csv(export / "fields" / "DopingConcentration_region0.csv", ["node_id", "component0"], [
+                [0, -1.0e17],
+                [1, 1.0e17],
+                [2, -1.0e17],
+            ])
+            (tdx / "pn2d_msh.grd").write_text(
+                """
+DF-ISE text
+Info {
+  type = grid
+  dimension = 2
+  nb_vertices = 3
+  nb_elements = 1
+  nb_regions = 2
+  regions = [ "R.Si" "Anode" ]
+  materials = [ Silicon Contact ]
+}
+Data {
+  Vertices (3) {
+    0 0
+    1 0
+    0 1
+  }
+  Elements (2) {
+    2 0 1 2
+    1 0 2
+  }
+  Region ("R.Si") {
+    material = Silicon
+    Elements (1) { 0 }
+  }
+  Region ("Anode") {
+    material = Contact
+    Elements (1) { 1 }
+  }
+}
+""".strip()
+                + "\n"
+            )
+            (tdx / "pn2d_msh.dat").write_text(
+                """
+DF-ISE text
+Info {
+  type = dataset
+  datasets = [ "DopingConcentration" ]
+}
+Data {
+  Dataset ("DopingConcentration") {
+    function = DopingConcentration
+    type = scalar
+    dimension = 1
+    location = vertex
+    validity = [ "R.Si" ]
+    Values (3) {
+      -1e17 1e17 -1e17
+    }
+  }
+}
+""".strip()
+                + "\n"
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_sentaurus_tdr_tdx.py"),
+                    "--tdr-export",
+                    str(export),
+                    "--tdx-dir",
+                    str(tdx),
+                    "--output-dir",
+                    str(reports),
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            report = json.loads((reports / "tdr_tdx_comparison.json").read_text())
+            self.assertEqual(report["status"], "pass")
+            self.assertEqual(report["mesh"]["vertex_count"]["tdr"], 3)
+            self.assertEqual(report["mesh"]["contact_element_counts"]["Anode"]["tdx"], 1)
+            self.assertEqual(report["fields"]["DopingConcentration"]["max_abs_diff"], 0.0)
+
+    def test_compare_sentaurus_fields_reports_selected_field_parity(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_sentaurus_field_compare_") as tmp:
+            root = Path(tmp)
+            reference = root / "reference"
+            candidate = root / "candidate"
+            reports = root / "reports"
+            reference.mkdir()
+            candidate.mkdir()
+            self._write_csv(reference / "ElectrostaticPotential_region0.csv", ["node_id", "component0"], [
+                [0, -0.4],
+                [1, 0.0],
+                [2, 0.4],
+            ])
+            self._write_csv(candidate / "ElectrostaticPotential_region0.csv", ["node_id", "component0"], [
+                [0, -0.4000000001],
+                [1, 0.0],
+                [2, 0.4000000001],
+            ])
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_sentaurus_fields.py"),
+                    "--reference-fields",
+                    str(reference),
+                    "--candidate-fields",
+                    str(candidate),
+                    "--fields",
+                    "ElectrostaticPotential",
+                    "--output-json",
+                    str(reports / "field_comparison.json"),
+                    "--max-abs-diff",
+                    "1e-8",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            report = json.loads((reports / "field_comparison.json").read_text())
+            self.assertEqual(report["status"], "pass")
+            self.assertEqual(report["fields"]["ElectrostaticPotential"]["points_compared"], 3)
+            self.assertLess(report["fields"]["ElectrostaticPotential"]["max_abs_diff"], 1.0e-8)
+
+    def _write_csv(self, path: Path, header: list[str], rows: list[list[object]]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(header)
+            writer.writerows(rows)
 
 
 if __name__ == "__main__":

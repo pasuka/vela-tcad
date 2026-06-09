@@ -16,6 +16,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 SAMPLE_ENV = "VELA_SENTAURUS_SAMPLE_DIR"
 PN2D_ENV = "VELA_SENTAURUS_PN2D_DIR"
+PN2D_2018_ENV = "VELA_SENTAURUS_PN2D_2018_DIR"
 BUILD_ENV = "VELA_BUILD_DIR"
 
 
@@ -220,6 +221,80 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             )
             self.assertLessEqual(terminal_sum_0p3, 1.0e-18)
 
+    def test_pn2d_sentaurus2018_fixture_import_and_tdx_parity(self) -> None:
+        source_root, config_path = self._pn2d_2018_source_and_config_or_skip()
+        build_root = Path(os.environ.get(BUILD_ENV, REPO / "build"))
+        importer = build_root / ("sentaurus_import.exe" if os.name == "nt" else "sentaurus_import")
+        if not importer.is_file():
+            self.skipTest(f"Sentaurus HDF5 importer is not built: {importer}")
+
+        with tempfile.TemporaryDirectory(prefix="vela_sentaurus_pn2d_2018_") as tmp:
+            out = Path(tmp) / "reference"
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "sentaurus_import.py"),
+                    "reference",
+                    "--config",
+                    str(config_path),
+                    "--source-dir",
+                    str(source_root),
+                    "--output-dir",
+                    str(out),
+                    "--tdr-importer",
+                    str(importer),
+                    "--skip-vela-run",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_sentaurus_tdr_tdx.py"),
+                    "--tdr-export",
+                    str(out),
+                    "--tdx-dir",
+                    str(source_root),
+                    "--output-dir",
+                    str(out / "reports"),
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            self._assert_doping_csv_has_donors_and_acceptors(out / "doping.csv")
+            self.assertTrue((out / "reference_curves" / "pn2d_sentaurus2018_0v_reference.csv").is_file())
+            self.assertTrue((out / "reference_curves" / "pn2d_sentaurus2018_iv_reference.csv").is_file())
+            self.assertTrue((out / "reference_curves" / "pn2d_sentaurus2018_bv_reference.csv").is_file())
+            self.assertTrue((out / "sim_fields" / "0v" / "field_manifest.json").is_file())
+
+            zero_deck = json.loads((out / "vela" / "simulation_0v.json").read_text())
+            self.assertEqual(zero_deck["sweep"]["mode"], "equilibrium")
+            self.assertEqual(zero_deck["sweep"]["start"], 0.0)
+            self.assertEqual(zero_deck["sweep"]["stop"], 0.0)
+            self.assertEqual(zero_deck["node_doping_file"], "doping.csv")
+            self.assertEqual(zero_deck["solver"]["method"], "gummel_newton")
+            self.assertEqual(zero_deck["solver"]["handoff"]["fallback"], "none")
+            self.assertEqual(zero_deck["solver"]["handoff"]["gummel_max_iter"], 0)
+
+            iv_rows = self._read_curve(out / "reference_curves" / "pn2d_sentaurus2018_iv_reference.csv")
+            bv_rows = self._read_curve(out / "reference_curves" / "pn2d_sentaurus2018_bv_reference.csv")
+            self.assertEqual(len(iv_rows), 34)
+            self.assertEqual(len(bv_rows), 52)
+            self.assertAlmostEqual(float(iv_rows[-1]["bias_V"]), 1.0, places=12)
+            self.assertAlmostEqual(float(bv_rows[-1]["bias_V"]), -20.0, places=12)
+
+            tdx_report = json.loads((out / "reports" / "tdr_tdx_comparison.json").read_text())
+            self.assertEqual(tdx_report["status"], "pass")
+            self.assertEqual(tdx_report["mesh"]["vertex_count"]["tdr"], 1943)
+            self.assertEqual(tdx_report["mesh"]["contact_element_counts"]["Anode"]["tdx"], 16)
+            self.assertEqual(tdx_report["mesh"]["contact_element_counts"]["Cathode"]["tdx"], 16)
+            self.assertIn("DopingConcentration", tdx_report["fields"])
+
+            manifest = json.loads((out / "reference_tcad_manifest.json").read_text())
+            self.assertIn("0v execution disabled by reference config", manifest["warnings"])
+
     def test_ldmos_n20_sample_inventory_curve_and_cmd_when_enabled(self) -> None:
         sample_root = self._sample_root_or_skip()
         build_root = Path(os.environ.get(BUILD_ENV, REPO / "build"))
@@ -326,6 +401,22 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
         if not root.is_dir():
             self.skipTest(f"{PN2D_ENV} is not set and bundled pn2d sample is missing")
         return root
+
+    def _pn2d_2018_source_and_config_or_skip(self) -> tuple[Path, Path]:
+        value = os.environ.get(PN2D_2018_ENV)
+        case_root = Path(value) if value else REPO / "reference_tcad" / "pn2d_sentaurus2018"
+        if (case_root / "source").is_dir():
+            source_root = case_root / "source"
+            config_path = case_root / "pn2d_sentaurus2018_reference.json"
+        else:
+            source_root = case_root
+            config_path = case_root / "pn2d_sentaurus2018_reference.json"
+            if not config_path.is_file():
+                config_path = case_root.parent / "pn2d_sentaurus2018_reference.json"
+        if not source_root.is_dir():
+            self.skipTest(f"{PN2D_2018_ENV} is not set and bundled pn2d Sentaurus 2018 source is missing")
+        self.assertTrue(config_path.is_file(), f"missing pn2d Sentaurus 2018 config: {config_path}")
+        return source_root, config_path
 
     def _root_or_skip(self, env_name: str) -> Path:
         value = os.environ.get(env_name)
