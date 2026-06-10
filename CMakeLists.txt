@@ -390,6 +390,11 @@ add_test(NAME sentaurus_import_tools
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_sentaurus_import_tools.py)
 vela_set_windows_msys2_test_path(sentaurus_import_tools)
 
+add_test(NAME diagnose_pn2d_0v_contact_state
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_diagnose_pn2d_0v_contact_state.py)
+vela_set_windows_msys2_test_path(diagnose_pn2d_0v_contact_state)
+
 if(VELA_HDF5_TARGET)
     add_test(NAME sentaurus_sample_integration
         COMMAND ${Python3_EXECUTABLE}
