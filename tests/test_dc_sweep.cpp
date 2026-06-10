@@ -793,6 +793,100 @@ TEST_CASE("DCSweep: contact-edge diagnostics are opt-in and write per-edge rows"
     }
 }
 
+TEST_CASE("DCSweep: terminal balance diagnostics reuse one solution for two contacts",
+          "[dc_sweep][diagnostics][terminal_balance][contact_edge]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "iv_unit_scaling.csv";
+    const auto balancePath = dir / "iv_terminal_balance.csv";
+    const auto edgeDiagPath = dir / "iv_contact_edges.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"terminal_balance", {
+                {"enabled", true},
+                {"contacts", {"anode", "cathode"}},
+                {"csv_file", balancePath.string()}
+            }},
+            {"contact_edge", {
+                {"enabled", true},
+                {"contacts", {"anode", "cathode"}},
+                {"csv_file", edgeDiagPath.string()}
+            }}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+
+    REQUIRE(std::filesystem::exists(balancePath));
+    const auto balanceRows = readCsvRows(balancePath);
+    REQUIRE(balanceRows.size() == 3);
+    const auto& balanceHeader = balanceRows.front();
+    const std::size_t balanceContactCol = csvColumnIndex(balanceHeader, "contact");
+    const std::size_t electronCol = csvColumnIndex(balanceHeader, "current_electron");
+    const std::size_t holeCol = csvColumnIndex(balanceHeader, "current_hole");
+    const std::size_t minusCol = csvColumnIndex(balanceHeader, "electron_minus_hole");
+    const std::size_t plusCol = csvColumnIndex(balanceHeader, "electron_plus_hole");
+    const std::size_t minusUmCol = csvColumnIndex(balanceHeader, "electron_minus_hole_A_per_um");
+    const std::size_t plusUmCol = csvColumnIndex(balanceHeader, "electron_plus_hole_A_per_um");
+
+    for (std::size_t i = 1; i < balanceRows.size(); ++i) {
+        const auto& row = balanceRows.at(i);
+        const Real electron = csvReal(row, electronCol);
+        const Real hole = csvReal(row, holeCol);
+        REQUIRE(csvReal(row, minusCol) == Catch::Approx(electron - hole).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, plusCol) == Catch::Approx(electron + hole).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, minusUmCol) == Catch::Approx(csvReal(row, minusCol) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, plusUmCol) == Catch::Approx(csvReal(row, plusCol) / 1.0e6).epsilon(1.0e-12));
+    }
+
+    REQUIRE(std::filesystem::exists(edgeDiagPath));
+    const auto edgeRows = readCsvRows(edgeDiagPath);
+    REQUIRE(edgeRows.size() > 2);
+    const auto& edgeHeader = edgeRows.front();
+    const std::size_t edgeContactCol = csvColumnIndex(edgeHeader, "current_contact");
+    const std::size_t edgeTotalCol = csvColumnIndex(edgeHeader, "current_total");
+    (void)csvColumnIndex(edgeHeader, "psi0");
+    (void)csvColumnIndex(edgeHeader, "phin0");
+    (void)csvColumnIndex(edgeHeader, "phip0");
+    (void)csvColumnIndex(edgeHeader, "n0");
+    (void)csvColumnIndex(edgeHeader, "p0");
+    (void)csvColumnIndex(edgeHeader, "ni0");
+    (void)csvColumnIndex(edgeHeader, "mun");
+    (void)csvColumnIndex(edgeHeader, "electron_continuity_flux");
+    (void)csvColumnIndex(edgeHeader, "hole_continuity_flux");
+
+    for (const std::string contact : {"anode", "cathode"}) {
+        Real edgeSum = 0.0;
+        int edgeCount = 0;
+        for (std::size_t i = 1; i < edgeRows.size(); ++i) {
+            if (edgeRows.at(i).at(edgeContactCol) == contact) {
+                edgeSum += csvReal(edgeRows.at(i), edgeTotalCol);
+                ++edgeCount;
+            }
+        }
+        REQUIRE(edgeCount > 0);
+
+        bool foundTerminal = false;
+        for (std::size_t i = 1; i < balanceRows.size(); ++i) {
+            if (balanceRows.at(i).at(balanceContactCol) == contact) {
+                REQUIRE(edgeSum == Catch::Approx(csvReal(balanceRows.at(i), minusCol)).epsilon(1.0e-12));
+                foundTerminal = true;
+            }
+        }
+        REQUIRE(foundTerminal);
+    }
+}
+
 TEST_CASE("DCSweep: NMOS and PMOS unit_scaling low-bias smoke sweeps converge",
           "[dc_sweep][scaling][dd_gummel]")
 {

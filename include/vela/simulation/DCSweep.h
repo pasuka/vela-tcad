@@ -22,10 +22,18 @@ struct BVReverseCriteria {
 
 struct ContactEdgeDiagnosticsConfig {
     bool enabled = false;
+    std::vector<std::string> contacts;
+    std::string csvFile;
+};
+
+struct TerminalBalanceDiagnosticsConfig {
+    bool enabled = false;
+    std::vector<std::string> contacts;
     std::string csvFile;
 };
 
 struct SweepDiagnosticsConfig {
+    TerminalBalanceDiagnosticsConfig terminalBalance;
     ContactEdgeDiagnosticsConfig contactEdge;
 };
 

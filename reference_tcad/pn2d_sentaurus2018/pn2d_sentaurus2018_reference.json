@@ -53,6 +53,17 @@
       "bias_column": "Anode OuterVoltage",
       "current_column": "Anode TotalCurrent",
       "vela_current_contact": "Anode",
+      "vela_solver": {
+        "max_iter": 80,
+        "reltol": 1.0e-10,
+        "abstol": 1.0e-24,
+        "handoff": {
+          "fallback": "none",
+          "require_gummel_convergence": false,
+          "gummel_max_iter": 0,
+          "newton_max_iter": 80
+        }
+      },
       "execute": false,
       "comparison": {
         "reference_column": "current_total",

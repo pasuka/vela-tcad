@@ -125,26 +125,28 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         const Real phip_i = solution.phip(i);
         const Real phip_j = solution.phip(j);
 
+        Real electronContinuityFlux01 = 0.0;
         Real electronFlux01 = 0.0;
         if (mun > 0.0) {
             const Real coef = mun * thermalVoltage_ / edgeLength;
-            const Real nFlux = (ni_i == ni_j)
+            electronContinuityFlux01 = (ni_i == ni_j)
                 ? sgElectronContinuityFluxFromQuasiFermi(
                       ni_i, psi_j, phin_i, phin_j, dpsi, thermalVoltage_, coef)
                 : sgElectronContinuityFlux(
                       n_i, n_j, dpsi, thermalVoltage_, coef);
             // sgElectronFlux = -sgElectronContinuityFlux by definition.
-            electronFlux01 = -nFlux;
+            electronFlux01 = -electronContinuityFlux01;
         }
+        Real holeContinuityFlux01 = 0.0;
         Real holeFlux01 = 0.0;
         if (mup > 0.0) {
             const Real coef = mup * thermalVoltage_ / edgeLength;
-            const Real pFlux = (ni_i == ni_j)
+            holeContinuityFlux01 = (ni_i == ni_j)
                 ? sgHoleContinuityFluxFromQuasiFermi(
                       ni_i, psi_i, phip_i, phip_j, dpsi, thermalVoltage_, coef)
                 : sgHoleContinuityFlux(
                       p_i, p_j, dpsi, thermalVoltage_, coef);
-            holeFlux01 = -pFlux;
+            holeFlux01 = -holeContinuityFlux01;
         }
 
         // Algebraic SG split: J = J_drift + J_diffusion.
@@ -191,6 +193,22 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         edgeDiag.bernoulliBminus = weights.b_minus;
         edgeDiag.electronUsedQuasiFermi = (ni_i == ni_j);
         edgeDiag.holeUsedQuasiFermi = (ni_i == ni_j);
+        edgeDiag.psi0 = psi_i;
+        edgeDiag.psi1 = psi_j;
+        edgeDiag.phin0 = phin_i;
+        edgeDiag.phin1 = phin_j;
+        edgeDiag.phip0 = phip_i;
+        edgeDiag.phip1 = phip_j;
+        edgeDiag.n0 = n_i;
+        edgeDiag.n1 = n_j;
+        edgeDiag.p0 = p_i;
+        edgeDiag.p1 = p_j;
+        edgeDiag.ni0 = ni_i;
+        edgeDiag.ni1 = ni_j;
+        edgeDiag.mun = mun;
+        edgeDiag.mup = mup;
+        edgeDiag.electronContinuityFlux = electronContinuityFlux01;
+        edgeDiag.holeContinuityFlux = holeContinuityFlux01;
         edgeDiag.electronCurrent = electronCurrent;
         edgeDiag.electronDriftCurrent = electronDriftCurrent;
         edgeDiag.electronDiffusionCurrent = electronDiffusionCurrent;

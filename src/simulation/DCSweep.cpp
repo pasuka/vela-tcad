@@ -409,12 +409,26 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.storedCharge.depth_m = scaling.lengthToSI(storedCfg.value("depth_m", 1.0));
 
     const auto diagnosticsCfg = j.value("diagnostics", nlohmann::json::object());
+    if (diagnosticsCfg.contains("terminal_balance")) {
+        const auto& terminalBalanceCfg = diagnosticsCfg.at("terminal_balance");
+        if (!terminalBalanceCfg.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.diagnostics.terminal_balance must be an object.");
+        sweep.diagnostics.terminalBalance.enabled =
+            terminalBalanceCfg.value("enabled", sweep.diagnostics.terminalBalance.enabled);
+        sweep.diagnostics.terminalBalance.contacts =
+            terminalBalanceCfg.value("contacts", std::vector<std::string>{});
+        sweep.diagnostics.terminalBalance.csvFile =
+            terminalBalanceCfg.value("csv_file", std::string{});
+    }
     if (diagnosticsCfg.contains("contact_edge")) {
         const auto& contactEdgeCfg = diagnosticsCfg.at("contact_edge");
         if (!contactEdgeCfg.is_object())
             throw std::invalid_argument("DCSweep: sweep.diagnostics.contact_edge must be an object.");
         sweep.diagnostics.contactEdge.enabled =
             contactEdgeCfg.value("enabled", sweep.diagnostics.contactEdge.enabled);
+        sweep.diagnostics.contactEdge.contacts =
+            contactEdgeCfg.value("contacts", std::vector<std::string>{});
         sweep.diagnostics.contactEdge.csvFile =
             contactEdgeCfg.value("csv_file", std::string{});
     }
@@ -455,6 +469,15 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     };
     sweep.csvFile = resolve(sweep.csvFile);
     sweep.vtkPrefix = resolve(sweep.vtkPrefix);
+    if (sweep.diagnostics.terminalBalance.enabled) {
+        if (sweep.diagnostics.terminalBalance.csvFile.empty()) {
+            const std::filesystem::path csvPath(sweep.csvFile);
+            sweep.diagnostics.terminalBalance.csvFile =
+                (csvPath.parent_path() / (csvPath.stem().string() + "_terminal_balance.csv")).string();
+        } else {
+            sweep.diagnostics.terminalBalance.csvFile = resolve(sweep.diagnostics.terminalBalance.csvFile);
+        }
+    }
     if (sweep.diagnostics.contactEdge.enabled) {
         if (sweep.diagnostics.contactEdge.csvFile.empty()) {
             const std::filesystem::path csvPath(sweep.csvFile);
@@ -798,6 +821,48 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     }
     csv.writeHeader(header);
 
+    auto diagnosticContacts = [](const std::vector<std::string>& configured,
+                                 const std::string& fallback) {
+        if (!configured.empty())
+            return configured;
+        return std::vector<std::string>{fallback};
+    };
+    const std::vector<std::string> terminalBalanceContacts =
+        diagnosticContacts(sweep.diagnostics.terminalBalance.contacts, sweep.currentContact);
+    const std::vector<std::string> contactEdgeContacts =
+        diagnosticContacts(sweep.diagnostics.contactEdge.contacts, sweep.currentContact);
+
+    std::unique_ptr<CSVWriter> terminalBalanceCsv;
+    if (sweep.diagnostics.terminalBalance.enabled) {
+        const std::filesystem::path diagPath(sweep.diagnostics.terminalBalance.csvFile);
+        if (!diagPath.parent_path().empty())
+            std::filesystem::create_directories(diagPath.parent_path());
+        terminalBalanceCsv = std::make_unique<CSVWriter>(diagPath.string());
+        std::vector<std::string> diagHeader = {
+            "point_index",
+            "bias_V",
+            "bias_contact",
+            "contact",
+            "current_electron",
+            "current_hole",
+            "electron_minus_hole",
+            "current_total",
+            "electron_plus_hole"};
+        if (writeUnitScaledColumns) {
+            diagHeader.push_back("current_electron_A_per_um");
+            diagHeader.push_back("current_hole_A_per_um");
+            diagHeader.push_back("electron_minus_hole_A_per_um");
+            diagHeader.push_back("current_total_A_per_um");
+            diagHeader.push_back("electron_plus_hole_A_per_um");
+        }
+        diagHeader.push_back("converged");
+        diagHeader.push_back("solver_method");
+        diagHeader.push_back("gummel_iterations");
+        diagHeader.push_back("newton_iterations");
+        diagHeader.push_back("handoff_stage");
+        terminalBalanceCsv->writeHeader(diagHeader);
+    }
+
     std::unique_ptr<CSVWriter> contactEdgeCsv;
     if (sweep.diagnostics.contactEdge.enabled) {
         const std::filesystem::path diagPath(sweep.diagnostics.contactEdge.csvFile);
@@ -819,6 +884,22 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "bernoulli_bminus",
             "electron_branch",
             "hole_branch",
+            "psi0",
+            "psi1",
+            "phin0",
+            "phin1",
+            "phip0",
+            "phip1",
+            "n0",
+            "n1",
+            "p0",
+            "p1",
+            "ni0",
+            "ni1",
+            "mun",
+            "mup",
+            "electron_continuity_flux",
+            "hole_continuity_flux",
             "current_electron",
             "current_electron_drift",
             "current_electron_diffusion",
@@ -995,9 +1076,20 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         ContactCurrentResult current{};
         ContactCurrentDetailedResult currentDetailed{};
         const DDSolution& sol = attempt.solution;
+        std::unordered_map<std::string, ContactCurrentDetailedResult> detailedByContact;
+        auto detailedForContact = [&](const std::string& contactName) -> const ContactCurrentDetailedResult& {
+            auto it = detailedByContact.find(contactName);
+            if (it == detailedByContact.end()) {
+                auto inserted = detailedByContact.emplace(
+                    contactName, contactCurrent.computeDetailed(sol, contactName));
+                it = inserted.first;
+            }
+            return it->second;
+        };
         if (converged) {
-            if (sweep.diagnostics.contactEdge.enabled) {
-                currentDetailed = contactCurrent.computeDetailed(sol, sweep.currentContact);
+            if (sweep.diagnostics.contactEdge.enabled ||
+                sweep.diagnostics.terminalBalance.enabled) {
+                currentDetailed = detailedForContact(sweep.currentContact);
                 current = currentDetailed.totals;
             } else {
                 current = contactCurrent.compute(sol, sweep.currentContact);
@@ -1219,34 +1311,89 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
         csv.writeRow(row);
 
-        if (converged && contactEdgeCsv != nullptr) {
+        if (converged && terminalBalanceCsv != nullptr) {
             const std::size_t pointIndex = points.size();
-            for (const ContactCurrentEdgeDiagnostic& edgeDiag : currentDetailed.edges) {
+            for (const std::string& contactName : terminalBalanceContacts) {
+                const ContactCurrentResult& terminalCurrent =
+                    detailedForContact(contactName).totals;
+                const Real electronMinusHole =
+                    terminalCurrent.electronCurrent - terminalCurrent.holeCurrent;
+                const Real electronPlusHole =
+                    terminalCurrent.electronCurrent + terminalCurrent.holeCurrent;
                 std::vector<std::string> diagRow = {
                     std::to_string(pointIndex),
                     formatReal(point.bias),
-                    sweep.currentContact,
-                    std::to_string(edgeDiag.edgeId),
-                    std::to_string(edgeDiag.node0),
-                    std::to_string(edgeDiag.node1),
-                    formatReal(edgeDiag.edgeLength_m),
-                    formatReal(edgeDiag.edgeCouple_m),
-                    formatReal(edgeDiag.outwardSign),
-                    formatReal(edgeDiag.bernoulliU),
-                    formatReal(edgeDiag.bernoulliBplus),
-                    formatReal(edgeDiag.bernoulliBminus),
-                    edgeDiag.electronUsedQuasiFermi ? "quasi_fermi" : "density",
-                    edgeDiag.holeUsedQuasiFermi ? "quasi_fermi" : "density",
-                    formatReal(edgeDiag.electronCurrent),
-                    formatReal(edgeDiag.electronDriftCurrent),
-                    formatReal(edgeDiag.electronDiffusionCurrent),
-                    formatReal(edgeDiag.holeCurrent),
-                    formatReal(edgeDiag.holeDriftCurrent),
-                    formatReal(edgeDiag.holeDiffusionCurrent),
-                    formatReal(edgeDiag.totalCurrent)};
-                if (writeUnitScaledColumns)
-                    diagRow.push_back(formatReal(perMeterToPerMicron(edgeDiag.totalCurrent)));
-                contactEdgeCsv->writeRow(diagRow);
+                    sweep.contact,
+                    contactName,
+                    formatReal(terminalCurrent.electronCurrent),
+                    formatReal(terminalCurrent.holeCurrent),
+                    formatReal(electronMinusHole),
+                    formatReal(terminalCurrent.totalCurrent),
+                    formatReal(electronPlusHole)};
+                if (writeUnitScaledColumns) {
+                    diagRow.push_back(formatReal(perMeterToPerMicron(terminalCurrent.electronCurrent)));
+                    diagRow.push_back(formatReal(perMeterToPerMicron(terminalCurrent.holeCurrent)));
+                    diagRow.push_back(formatReal(perMeterToPerMicron(electronMinusHole)));
+                    diagRow.push_back(formatReal(perMeterToPerMicron(terminalCurrent.totalCurrent)));
+                    diagRow.push_back(formatReal(perMeterToPerMicron(electronPlusHole)));
+                }
+                diagRow.push_back(point.converged ? "1" : "0");
+                diagRow.push_back(point.solverMethod);
+                diagRow.push_back(std::to_string(point.gummelIterations));
+                diagRow.push_back(std::to_string(point.newtonIterations));
+                diagRow.push_back(point.handoffStage);
+                terminalBalanceCsv->writeRow(diagRow);
+            }
+        }
+
+        if (converged && contactEdgeCsv != nullptr) {
+            const std::size_t pointIndex = points.size();
+            for (const std::string& contactName : contactEdgeContacts) {
+                const ContactCurrentDetailedResult& detailed =
+                    detailedForContact(contactName);
+                for (const ContactCurrentEdgeDiagnostic& edgeDiag : detailed.edges) {
+                    std::vector<std::string> diagRow = {
+                        std::to_string(pointIndex),
+                        formatReal(point.bias),
+                        contactName,
+                        std::to_string(edgeDiag.edgeId),
+                        std::to_string(edgeDiag.node0),
+                        std::to_string(edgeDiag.node1),
+                        formatReal(edgeDiag.edgeLength_m),
+                        formatReal(edgeDiag.edgeCouple_m),
+                        formatReal(edgeDiag.outwardSign),
+                        formatReal(edgeDiag.bernoulliU),
+                        formatReal(edgeDiag.bernoulliBplus),
+                        formatReal(edgeDiag.bernoulliBminus),
+                        edgeDiag.electronUsedQuasiFermi ? "quasi_fermi" : "density",
+                        edgeDiag.holeUsedQuasiFermi ? "quasi_fermi" : "density",
+                        formatReal(edgeDiag.psi0),
+                        formatReal(edgeDiag.psi1),
+                        formatReal(edgeDiag.phin0),
+                        formatReal(edgeDiag.phin1),
+                        formatReal(edgeDiag.phip0),
+                        formatReal(edgeDiag.phip1),
+                        formatReal(edgeDiag.n0),
+                        formatReal(edgeDiag.n1),
+                        formatReal(edgeDiag.p0),
+                        formatReal(edgeDiag.p1),
+                        formatReal(edgeDiag.ni0),
+                        formatReal(edgeDiag.ni1),
+                        formatReal(edgeDiag.mun),
+                        formatReal(edgeDiag.mup),
+                        formatReal(edgeDiag.electronContinuityFlux),
+                        formatReal(edgeDiag.holeContinuityFlux),
+                        formatReal(edgeDiag.electronCurrent),
+                        formatReal(edgeDiag.electronDriftCurrent),
+                        formatReal(edgeDiag.electronDiffusionCurrent),
+                        formatReal(edgeDiag.holeCurrent),
+                        formatReal(edgeDiag.holeDriftCurrent),
+                        formatReal(edgeDiag.holeDiffusionCurrent),
+                        formatReal(edgeDiag.totalCurrent)};
+                    if (writeUnitScaledColumns)
+                        diagRow.push_back(formatReal(perMeterToPerMicron(edgeDiag.totalCurrent)));
+                    contactEdgeCsv->writeRow(diagRow);
+                }
             }
         }
 

@@ -52,6 +52,8 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
                     sys.executable,
                     str(REPO / "scripts" / "compare_sentaurus_tdr_tdx.py"),
                     "--geometry-only",
+                    "--coordinate-epsilon",
+                    "1e-5",
                     "--tdr-export",
                     str(out),
                     "--tdx-dir",
@@ -78,6 +80,115 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
             self.assertEqual(tdx_report["boundaries"]["contacts"]["Cathode"]["grd_element_count"], 16)
             self.assertTrue(tdx_report["boundaries"]["contacts"]["Anode"]["node_set_match"])
             self.assertTrue(tdx_report["boundaries"]["contacts"]["Cathode"]["node_set_match"])
+
+    def test_pn2d_sentaurus2018_zero_bias_state_compare_when_enabled(self) -> None:
+        source_root, config_path = self._pn2d_2018_source_and_config_or_skip()
+        build_root = Path(os.environ.get(BUILD_ENV, REPO / "build"))
+        importer = build_root / ("sentaurus_import.exe" if os.name == "nt" else "sentaurus_import")
+        if not importer.is_file():
+            self.skipTest(f"Sentaurus HDF5 importer is not built: {importer}")
+        runner_name = "vela_example_runner.exe" if os.name == "nt" else "vela_example_runner"
+        runner_candidates = [
+            build_root / runner_name,
+            build_root / "src" / "tools" / runner_name,
+        ]
+        runner = next((candidate for candidate in runner_candidates if candidate.is_file()), None)
+        if runner is None:
+            self.skipTest(
+                "Vela runner is not built: expected one of "
+                + ", ".join(str(candidate) for candidate in runner_candidates)
+            )
+
+        with tempfile.TemporaryDirectory(prefix="vela_sentaurus_pn2d_2018_0v_") as tmp:
+            out = Path(tmp) / "reference"
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "sentaurus_import.py"),
+                    "reference",
+                    "--config",
+                    str(config_path),
+                    "--source-dir",
+                    str(source_root),
+                    "--output-dir",
+                    str(out),
+                    "--tdr-importer",
+                    str(importer),
+                    "--skip-vela-run",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_0v_current_balance.py"),
+                    "--reference-root",
+                    str(out),
+                    "--runner",
+                    str(runner),
+                    "--output-dir",
+                    str(out / "reports" / "0v_current_balance"),
+                ],
+                check=True,
+                cwd=REPO,
+            )
+            compare = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_pn2d_0v_state.py"),
+                    "--reference-root",
+                    str(out),
+                    "--runner",
+                    str(runner),
+                    "--output-dir",
+                    str(out / "reports" / "0v_state"),
+                ],
+                cwd=REPO,
+            )
+
+            balance_report = json.loads(
+                (out / "reports" / "0v_current_balance" / "pn2d_0v_current_balance.json").read_text()
+            )
+            self.assertEqual(balance_report["classification"], "balanced")
+            self.assertTrue(balance_report["classification_reasons"])
+            self.assertIn("Anode", balance_report["terminal_balance"]["contacts"])
+            self.assertIn("Cathode", balance_report["terminal_balance"]["contacts"])
+            self.assertIn("top_edges", balance_report["contact_edges"])
+            self.assertEqual(
+                balance_report["mesh_reference"]["sentaurus_contact_boundary_elements"]["Anode"],
+                16,
+            )
+            self.assertEqual(
+                balance_report["mesh_reference"]["sentaurus_contact_boundary_elements"]["Cathode"],
+                16,
+            )
+            self.assertEqual(balance_report["mesh_reference"]["sentaurus_bulk_triangle_elements"], 3680)
+            self.assertEqual(
+                balance_report["mesh_reference"]["sentaurus_total_elements_including_contacts"],
+                3712,
+            )
+
+            report = json.loads((out / "reports" / "0v_state" / "pn2d_0v_state_comparison.json").read_text())
+            self.assertEqual(compare.returncode, 0)
+            self.assertEqual(report["status"], "pass")
+            self.assertEqual(
+                report["current_balance_report"],
+                str(out / "reports" / "0v_current_balance" / "pn2d_0v_current_balance.json"),
+            )
+            self.assertEqual(report["terminal_currents"]["status"], "pass")
+            self.assertNotIn(
+                "terminal_currents_not_equal_and_opposite",
+                report["terminal_currents"]["failure_reasons"],
+            )
+            self.assertLessEqual(report["terminal_currents"]["max_abs_A_per_um"], 1.0e-12)
+            self.assertLessEqual(
+                abs(report["terminal_currents"]["sum_A_per_um"]),
+                report["terminal_currents"]["pair_abs_gate_A_per_um"],
+            )
+            self.assertGreater(report["field_stats"]["ElectrostaticPotential"]["points_compared"], 1000)
+            self.assertIn("ni", report["diagnostic_matrix"]["priorities"])
+            self.assertIn("OldSlotboom/BGN", report["diagnostic_matrix"]["priorities"])
 
     def test_ldmos_n20_sample_inventory_curve_and_cmd_when_enabled(self) -> None:
         sample_root = self._sample_root_or_skip()

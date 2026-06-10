@@ -354,10 +354,10 @@ def contact_regions(grd: dict[str, Any]) -> list[str]:
     return sorted(names)
 
 
-def compare_geometry(tdr_export: Path, grd: dict[str, Any]) -> dict[str, Any]:
+def compare_geometry(tdr_export: Path, grd: dict[str, Any], coordinate_epsilon: float) -> dict[str, Any]:
     tdr_nodes = read_tdr_nodes(tdr_export)
     grd_vertices = grd.get("vertices", [])
-    nodes_report = compare_geometry_nodes(tdr_nodes, grd_vertices)
+    nodes_report = compare_geometry_nodes(tdr_nodes, grd_vertices, coordinate_epsilon)
 
     tdr_elements = read_tdr_bulk_elements(tdr_export)
     elements_report = compare_geometry_elements(tdr_elements, grd)
@@ -380,7 +380,9 @@ def compare_geometry(tdr_export: Path, grd: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def compare_geometry_nodes(tdr_nodes: list[dict[str, Any]], grd_vertices: list[list[float]]) -> dict[str, Any]:
+def compare_geometry_nodes(tdr_nodes: list[dict[str, Any]],
+                           grd_vertices: list[list[float]],
+                           coordinate_epsilon: float) -> dict[str, Any]:
     points = min(len(tdr_nodes), len(grd_vertices))
     max_abs = 0.0
     max_rel = 0.0
@@ -404,7 +406,7 @@ def compare_geometry_nodes(tdr_nodes: list[dict[str, Any]], grd_vertices: list[l
             grd_value = float(grd_vertices[index][component_index])
             abs_diff = abs(tdr_value - grd_value)
             rel_diff = abs_diff / abs(grd_value) if grd_value != 0.0 else 0.0
-            threshold = sys.float_info.epsilon
+            threshold = coordinate_epsilon
             component_failed = abs_diff > threshold if grd_value == 0.0 else rel_diff > threshold
             if component_failed:
                 failed = True
@@ -425,7 +427,7 @@ def compare_geometry_nodes(tdr_nodes: list[dict[str, Any]], grd_vertices: list[l
         "tdr_count": len(tdr_nodes),
         "grd_count": len(grd_vertices),
         "count_match": len(tdr_nodes) == len(grd_vertices),
-        "epsilon": sys.float_info.epsilon,
+        "epsilon": coordinate_epsilon,
         "max_abs_diff": max_abs,
         "max_rel_diff": max_rel,
         "worst": worst,
@@ -534,13 +536,15 @@ def main() -> int:
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--geometry-only", action="store_true",
                         help="Compare only TDR/GRD nodes, elements, and contact boundaries.")
+    parser.add_argument("--coordinate-epsilon", type=float, default=sys.float_info.epsilon,
+                        help="Absolute/relative coordinate tolerance for --geometry-only checks.")
     parser.add_argument("--max-abs-diff", type=float, default=0.0)
     parser.add_argument("--max-rel-diff", type=float, default=1.0e-12)
     args = parser.parse_args()
 
     grd = parse_grd(choose_first(args.tdx_dir, "*.grd", ["pn2d_msh.grd"]))
     if args.geometry_only:
-        report = compare_geometry(args.tdr_export, grd)
+        report = compare_geometry(args.tdr_export, grd, args.coordinate_epsilon)
         args.output_dir.mkdir(parents=True, exist_ok=True)
         (args.output_dir / "tdr_tdx_comparison.json").write_text(json.dumps(report, indent=2) + "\n")
         return 1 if report["status"] == "fail" else 0
