@@ -83,6 +83,7 @@ TEST_CASE("BacktrackingLineSearch: rejection restores original state", "[line_se
     REQUIRE((result.x - x).norm() == Catch::Approx(0.0));
     REQUIRE((result.residual - currentResidual).norm() == Catch::Approx(0.0));
     REQUIRE(residualCalls == 3);
+    REQUIRE(result.failureReason == "carrier_invalid");
 }
 
 TEST_CASE("BacktrackingLineSearch: min damping bounds failed backtracking", "[line_search]")
@@ -117,6 +118,7 @@ TEST_CASE("BacktrackingLineSearch: min damping bounds failed backtracking", "[li
     REQUIRE(result.damping == Catch::Approx(0.0));
     REQUIRE(result.x(0) == Catch::Approx(0.0));
     REQUIRE(residualCalls == 3);
+    REQUIRE(result.failureReason == "line_search_non_decrease");
 }
 
 TEST_CASE("BacktrackingLineSearch: optionally records per-attempt diagnostics", "[line_search][diagnostics]")
@@ -157,6 +159,7 @@ TEST_CASE("BacktrackingLineSearch: optionally records per-attempt diagnostics", 
     REQUIRE(result.history[0].damping == Catch::Approx(1.0));
     REQUIRE_FALSE(result.history[0].acceptedByCaller);
     REQUIRE_FALSE(result.history[0].accepted);
+    REQUIRE(result.history[0].rejectionReason == "carrier_invalid");
     REQUIRE(result.history[2].attempt == 2);
     REQUIRE(result.history[2].damping == Catch::Approx(0.25));
     REQUIRE(result.history[2].residualNorm == Catch::Approx(0.25));

@@ -57,6 +57,7 @@
         "max_iter": 80,
         "reltol": 1.0e-10,
         "abstol": 1.0e-24,
+        "max_update": 2.0,
         "handoff": {
           "fallback": "none",
           "require_gummel_convergence": false,

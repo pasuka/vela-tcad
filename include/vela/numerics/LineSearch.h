@@ -2,6 +2,7 @@
 
 #include "vela/core/Types.h"
 #include <functional>
+#include <string>
 #include <vector>
 
 namespace vela {
@@ -25,6 +26,7 @@ struct LineSearchIterationInfo {
     bool acceptedByCaller = false;
     bool sufficientDecrease = false;
     bool accepted = false;
+    std::string rejectionReason;
 };
 
 struct LineSearchResult {
@@ -34,6 +36,7 @@ struct LineSearchResult {
     Real residualNorm = 0.0;
     bool accepted = false;
     int attempts = 0;
+    std::string failureReason;
     std::vector<LineSearchIterationInfo> history;
 };
 

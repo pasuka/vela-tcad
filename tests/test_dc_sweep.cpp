@@ -376,7 +376,9 @@ TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV da
                                                      "current_electron_diffusion", "current_hole", "current_hole_drift",
                                                      "current_hole_diffusion", "current_total", "converged", "iterations",
                                                      "solver_method", "gummel_iterations", "newton_iterations",
-                                                     "handoff_stage", "step_diagnostics", "validation_diagnostics"});
+                                                     "handoff_stage", "step_diagnostics", "validation_diagnostics",
+                                                     "failure_reason", "newton_failure_class",
+                                                     "newton_failure_diagnostics_json"});
 }
 
 TEST_CASE("DCSweep: unit_scaling CSV appends per-micron currents and V-per-cm field",
@@ -1037,7 +1039,9 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
                                                          "current_hole_diffusion", "current_total", "converged", "iterations",
                                                          "solver_method", "gummel_iterations", "newton_iterations",
                                                          "handoff_stage",
-                                                         "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
+                                                         "step_diagnostics", "validation_diagnostics",
+                                                         "failure_reason", "newton_failure_class",
+                                                         "newton_failure_diagnostics_json", "charge_C_per_m",
                                                          "capacitance_F_per_m"});
         REQUIRE(rows.at(1).at(0) == "cv_quasistatic");
     }
@@ -1089,7 +1093,9 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
                                                          "current_hole_diffusion", "current_total", "converged", "iterations",
                                                          "solver_method", "gummel_iterations", "newton_iterations",
                                                          "handoff_stage",
-                                                         "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
+                                                         "step_diagnostics", "validation_diagnostics",
+                                                         "failure_reason", "newton_failure_class",
+                                                         "newton_failure_diagnostics_json", "charge_C_per_m",
                                                          "capacitance_F_per_m", "charge_gate_C_per_m",
                                                          "capacitance_Canode_gate_F_per_m", "charge_source_C_per_m",
                                                          "capacitance_Canode_source_F_per_m", "charge_substrate_C_per_m",
@@ -1143,10 +1149,12 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
                                                          "current_hole_diffusion", "current_total", "converged", "iterations",
                                                          "solver_method", "gummel_iterations", "newton_iterations",
                                                          "handoff_stage",
-                                                         "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
+                                                         "step_diagnostics", "validation_diagnostics",
+                                                         "failure_reason", "newton_failure_class",
+                                                         "newton_failure_diagnostics_json", "max_electric_field_V_per_m",
                                                          "current_jump_ratio", "breakdown_detected",
                                                          "breakdown_voltage", "criterion", "last_stable_bias",
-                                                         "failed_bias", "failure_reason"});
+                                                         "failed_bias", "breakdown_failure_reason"});
         REQUIRE(rows.at(1).at(0) == "bv_reverse");
     }
 }
@@ -1183,10 +1191,12 @@ TEST_CASE("DCSweep: LDMOS BV diagnostic deck writes complete schema", "[dc_sweep
                                                      "current_hole_diffusion", "current_total", "converged", "iterations",
                                                      "solver_method", "gummel_iterations", "newton_iterations",
                                                      "handoff_stage",
-                                                     "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
+                                                     "step_diagnostics", "validation_diagnostics",
+                                                     "failure_reason", "newton_failure_class",
+                                                     "newton_failure_diagnostics_json", "max_electric_field_V_per_m",
                                                      "current_jump_ratio", "breakdown_detected",
                                                      "breakdown_voltage", "criterion", "last_stable_bias",
-                                                     "failed_bias", "failure_reason"});
+                                                     "failed_bias", "breakdown_failure_reason"});
     REQUIRE(rows.at(1).at(0) == "bv_reverse");
     REQUIRE(rows.at(1).at(1) == "drain");
     REQUIRE(rows.at(1).at(3) == "drain");
@@ -1242,12 +1252,14 @@ TEST_CASE("DCSweep: BV reverse start failure records failed diagnostic row", "[d
                                                      "current_hole_diffusion", "current_total", "converged", "iterations",
                                                      "solver_method", "gummel_iterations", "newton_iterations",
                                                      "handoff_stage",
-                                                     "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
+                                                     "step_diagnostics", "validation_diagnostics",
+                                                     "failure_reason", "newton_failure_class",
+                                                     "newton_failure_diagnostics_json", "max_electric_field_V_per_m",
                                                      "current_jump_ratio", "breakdown_detected",
                                                      "breakdown_voltage", "criterion", "last_stable_bias",
-                                                     "failed_bias", "failure_reason"});
+                                                     "failed_bias", "breakdown_failure_reason"});
     const std::size_t criterionColumn = csvColumnIndex(rows.front(), "criterion");
-    const std::size_t failureReasonColumn = csvColumnIndex(rows.front(), "failure_reason");
+    const std::size_t failureReasonColumn = csvColumnIndex(rows.front(), "breakdown_failure_reason");
     REQUIRE(rows.at(1).at(criterionColumn).empty());
     REQUIRE(rows.at(1).at(failureReasonColumn) == "non_convergence");
 }
@@ -1833,6 +1845,14 @@ TEST_CASE("DCSweep: hybrid strict policy rejects Newton failure",
     REQUIRE_FALSE(point.converged);
     REQUIRE(point.handoffStage == "newton_failed");
     REQUIRE(point.failureReason == "newton_non_convergence");
+    REQUIRE(point.newtonFailureClass.empty());
+    REQUIRE(point.failureDiagnosticsJson.empty());
+
+    const auto rows = readCsvRows(csvPath);
+    const std::size_t failureReasonColumn = csvColumnIndex(rows.front(), "failure_reason");
+    const std::size_t newtonFailureColumn = csvColumnIndex(rows.front(), "newton_failure_class");
+    REQUIRE(rows.at(1).at(failureReasonColumn) == "newton_non_convergence");
+    REQUIRE(rows.at(1).at(newtonFailureColumn).empty());
 }
 
 

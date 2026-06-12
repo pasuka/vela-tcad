@@ -70,6 +70,49 @@ struct NewtonIterationInfo {
     std::vector<LineSearchIterationInfo> lineSearchHistory;
 };
 
+struct NewtonBlockResidualInfo {
+    Real psi = 0.0;
+    Real phin = 0.0;
+    Real phip = 0.0;
+    Real combined = 0.0;
+};
+
+struct NewtonCarrierDiagnostics {
+    bool positiveFinite = true;
+    Real minElectronDensity = 0.0;
+    Real minHoleDensity = 0.0;
+    int nonfiniteElectronCount = 0;
+    int nonfiniteHoleCount = 0;
+    int nonpositiveElectronCount = 0;
+    int nonpositiveHoleCount = 0;
+};
+
+struct NewtonTopResidualNode {
+    Index nodeId = 0;
+    Real x = 0.0;
+    Real y = 0.0;
+    Real poissonResidual = 0.0;
+    Real absPoissonResidual = 0.0;
+    Real donors = 0.0;
+    Real acceptors = 0.0;
+    Real netDoping = 0.0;
+    Real effectiveIntrinsicDensity = 0.0;
+};
+
+struct NewtonFailureDiagnostics {
+    std::string failureReason;
+    int failedIteration = 0;
+    Real residualNorm = 0.0;
+    Real stepNorm = 0.0;
+    Real dampingFactor = 0.0;
+    int lineSearchAttempts = 0;
+    std::string lineSearchFailureReason;
+    NewtonBlockResidualInfo blockResiduals;
+    NewtonCarrierDiagnostics carrierDiagnostics;
+    std::vector<LineSearchIterationInfo> lineSearchHistory;
+    std::vector<NewtonTopResidualNode> topPoissonResidualNodes;
+};
+
 struct NewtonResult {
     DDSolution solution;
     bool converged = false;
@@ -77,6 +120,7 @@ struct NewtonResult {
     Real initialResidualNorm = 0.0;
     Real finalResidualNorm = 0.0;
     std::vector<NewtonIterationInfo> history;
+    NewtonFailureDiagnostics failureDiagnostics;
 };
 
 class NewtonSolver {

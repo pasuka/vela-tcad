@@ -39,6 +39,11 @@ Real DopingModel::netDoping(Index nodeId) const
     return donors(nodeId) - acceptors(nodeId);
 }
 
+Real DopingModel::totalImpurity(Index nodeId) const
+{
+    return donors(nodeId) + acceptors(nodeId);
+}
+
 DopingModel DopingModel::fromMeshAndRegions(
     const DeviceMesh&                    mesh,
     const std::vector<RegionDopingSpec>& specs)

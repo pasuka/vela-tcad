@@ -169,6 +169,46 @@ TEST_CASE("Gummel high-doping contacts use Slotboom bandgap narrowing", "[gummel
     REQUIRE(sol.psi(1) - sol.psi(3) == Catch::Approx(builtIn).epsilon(1.0e-12));
 }
 
+TEST_CASE("Gummel Slotboom BGN uses total impurity at compensated contacts",
+          "[gummel][high-doping][bgn][doping]")
+{
+    DeviceMesh mesh = makeHighDopingPNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, {
+        {"n_region", 1.0e24, 1.0e24},
+        {"p_region", 1.0e24, 1.0e24},
+    });
+
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", 0.0},
+        {"cathode", 0.0},
+    };
+
+    GummelConfig cfg;
+    cfg.maxIter = 20;
+    cfg.reltol = 1.0e-8;
+    cfg.abstol = 1.0e-10;
+    cfg.bandgapNarrowing.model = "slotboom";
+
+    DDSolution sol;
+    REQUIRE_NOTHROW(sol = runGummel(mesh, matdb, doping, biases, cfg));
+
+    const Material& si = matdb.getMaterial("Si");
+    const Real Vt = constants::kb * cfg.temperature_K / constants::q;
+    const SlotboomBandgapNarrowing bgn(cfg.bandgapNarrowing);
+    const Real niEff = effectiveIntrinsicDensity(
+        si.ni, Vt, bgn.deltaEg(2.0e24, 0.0, 0.0));
+
+    REQUIRE(sol.converged);
+    REQUIRE(doping.netDoping(1) == Catch::Approx(0.0));
+    REQUIRE(doping.totalImpurity(1) == Catch::Approx(2.0e24));
+    REQUIRE(niEff > si.ni);
+    REQUIRE(sol.n(1) == Catch::Approx(niEff).epsilon(1.0e-12));
+    REQUIRE(sol.p(1) == Catch::Approx(niEff).epsilon(1.0e-12));
+    REQUIRE(sol.n(3) == Catch::Approx(niEff).epsilon(1.0e-12));
+    REQUIRE(sol.p(3) == Catch::Approx(niEff).epsilon(1.0e-12));
+}
+
 TEST_CASE("Gummel high-doping asymmetric reverse bias does not diverge", "[gummel][high-doping][stability]")
 {
     DeviceMesh mesh = makeHighDopingPNMesh();

@@ -8,6 +8,7 @@
 #include "vela/post/TerminalCharge.h"
 #include "vela/post/StoredCharge.h"
 #include "vela/solver/GummelSolver.h"
+#include "vela/solver/NewtonSolver.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -99,6 +100,9 @@ struct DCSweepPoint {
     Real lastStableBias = 0.0;
     Real failedBias = 0.0;
     std::string failureReason;
+    std::string newtonFailureClass;
+    std::string failureDiagnosticsJson;
+    NewtonFailureDiagnostics newtonFailureDiagnostics;
     std::string validationDiagnostics;
     std::string outputCsv;
     std::string outputVtk;

@@ -405,6 +405,35 @@ TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences with
     REQUIRE(rel < 1.0e-4);
 }
 
+TEST_CASE("CoupledDDAssembler: Slotboom BGN uses total impurity at compensated nodes",
+          "[newton][coupled][bgn][doping]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    doping.setNodeDoping(4, 1.0e23, 1.0e23);
+
+    CoupledDDAssembler assembler(
+        mesh,
+        matdb,
+        doping,
+        constants::Vt_300,
+        MobilityModelConfig{},
+        recombinationModelConfig({"none"}),
+        bandgapNarrowingConfig("slotboom"));
+
+    const Material& si = matdb.getMaterial("Si");
+    const SlotboomBandgapNarrowing bgn(bandgapNarrowingConfig("slotboom"));
+    const Real expected = effectiveIntrinsicDensity(
+        si.ni,
+        constants::Vt_300,
+        bgn.deltaEg(doping.totalImpurity(4), 0.0, 0.0));
+
+    REQUIRE(doping.netDoping(4) == Catch::Approx(0.0));
+    REQUIRE(expected > si.ni);
+    REQUIRE(assembler.intrinsicDensity().at(4) == Catch::Approx(expected));
+}
+
 TEST_CASE("CoupledDDAssembler: scaled state residual and Jacobian are consistent",
           "[newton][coupled][scaling]")
 {
@@ -710,6 +739,11 @@ TEST_CASE("NewtonSolver: line search rejection returns last accepted state", "[n
     REQUIRE(result.iters == 0);
     REQUIRE(result.history.empty());
     REQUIRE(result.finalResidualNorm == Catch::Approx(result.initialResidualNorm));
+    REQUIRE(result.failureDiagnostics.failureReason == "line_search_non_decrease");
+    REQUIRE(result.failureDiagnostics.lineSearchFailureReason == "line_search_non_decrease");
+    REQUIRE(result.failureDiagnostics.blockResiduals.psi >= 0.0);
+    REQUIRE(result.failureDiagnostics.carrierDiagnostics.positiveFinite);
+    REQUIRE_FALSE(result.failureDiagnostics.topPoissonResidualNodes.empty());
     REQUIRE((result.solution.psi - initial.psi).norm() == Catch::Approx(0.0));
     REQUIRE((result.solution.phin - initial.phin).norm() == Catch::Approx(0.0));
     REQUIRE((result.solution.phip - initial.phip).norm() == Catch::Approx(0.0));

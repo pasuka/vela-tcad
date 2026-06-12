@@ -28,6 +28,14 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         for path in expected:
             self.assertTrue(path.is_file(), f"missing reference config: {path}")
 
+    def test_pn2d_sentaurus2018_zero_bias_uses_stable_newton_cap(self) -> None:
+        path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json"
+        config = json.loads(path.read_text())
+        zero_bias = next(sim for sim in config["simulations"] if sim["name"] == "0v")
+
+        self.assertEqual(config["vela_solver"]["max_update"], 5.0)
+        self.assertEqual(zero_bias["vela_solver"]["max_update"], 2.0)
+
     def test_pn_export_converts_to_unit_scaling_deck(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_reference_tcad_") as tmp:
             root = Path(tmp)

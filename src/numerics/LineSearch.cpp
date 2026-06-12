@@ -6,6 +6,23 @@
 
 namespace vela {
 
+namespace {
+
+std::string lineSearchRejectionReason(bool finite,
+                                      bool acceptedByCaller,
+                                      bool sufficientDecrease)
+{
+    if (!finite)
+        return "nonfinite_residual";
+    if (!acceptedByCaller)
+        return "carrier_invalid";
+    if (!sufficientDecrease)
+        return "line_search_non_decrease";
+    return "unknown_rejection";
+}
+
+} // namespace
+
 BacktrackingLineSearch::BacktrackingLineSearch(LineSearchConfig cfg)
     : cfg_(cfg)
 {}
@@ -37,6 +54,7 @@ LineSearchResult BacktrackingLineSearch::search(
 
     int attemptCount = 0;
     const int attempts = cfg_.enabled ? std::max(1, cfg_.maxBacktracks + 1) : 1;
+    std::string lastRejectionReason;
     for (int k = 0; k < attempts; ++k) {
         VectorXd candidate = x + alpha * step;
         VectorXd residual = residualFunction(candidate);
@@ -46,6 +64,9 @@ LineSearchResult BacktrackingLineSearch::search(
         const Real target = (1.0 - cfg_.sufficientDecrease * alpha) * currentNorm;
         const bool sufficientDecrease = !cfg_.enabled || norm <= target || norm < currentNorm;
         const bool accepted = finite && acceptedByCaller && sufficientDecrease;
+        const std::string rejectionReason = accepted
+            ? std::string{}
+            : lineSearchRejectionReason(finite, acceptedByCaller, sufficientDecrease);
         ++attemptCount;
 
         if (cfg_.recordHistory) {
@@ -57,19 +78,25 @@ LineSearchResult BacktrackingLineSearch::search(
                 finite,
                 acceptedByCaller,
                 sufficientDecrease,
-                accepted});
+                accepted,
+                rejectionReason});
         }
 
         if (accepted) {
-            return {candidate, residual, alpha, norm, true, attemptCount, std::move(history)};
+            return {candidate, residual, alpha, norm, true, attemptCount, {}, std::move(history)};
         }
+
+        lastRejectionReason = rejectionReason;
 
         alpha *= cfg_.reduction;
         if (alpha < cfg_.minDamping)
             break;
     }
 
-    return {x, currentResidual, 0.0, currentNorm, false, attemptCount, std::move(history)};
+    if (lastRejectionReason.empty())
+        lastRejectionReason = "line_search_rejected";
+    return {x, currentResidual, 0.0, currentNorm, false, attemptCount,
+            lastRejectionReason, std::move(history)};
 }
 
 } // namespace vela

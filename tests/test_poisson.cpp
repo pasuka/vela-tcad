@@ -266,6 +266,17 @@ TEST_CASE("DopingModel: net doping has correct sign per region", "[doping]")
     REQUIRE(doping.netDoping(3) < 0.0);
 }
 
+TEST_CASE("DopingModel: total impurity is separate from signed net doping", "[doping]")
+{
+    DopingModel doping(1);
+    doping.setNodeDoping(0, 1.0e23, 1.0e23);
+
+    REQUIRE(doping.donors(0) == Catch::Approx(1.0e23));
+    REQUIRE(doping.acceptors(0) == Catch::Approx(1.0e23));
+    REQUIRE(doping.netDoping(0) == Catch::Approx(0.0));
+    REQUIRE(doping.totalImpurity(0) == Catch::Approx(2.0e23));
+}
+
 TEST_CASE("ConfigParsing unit_scaling converts cm^-3 doping to m^-3",
           "[poisson][doping][scaling]")
 {

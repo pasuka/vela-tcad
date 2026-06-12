@@ -570,6 +570,7 @@ Data {
                     "max_iter": 40,
                     "reltol": 1.0e-8,
                     "abstol": 1.0e-18,
+                    "max_update": 5.0,
                     "line_search": True,
                     "warm_start": True,
                     "handoff": {
@@ -592,6 +593,7 @@ Data {
                             "max_iter": 80,
                             "reltol": 1.0e-10,
                             "abstol": 1.0e-24,
+                            "max_update": 2.0,
                             "handoff": {
                                 "fallback": "none",
                                 "require_gummel_convergence": False,
@@ -707,6 +709,7 @@ with out.open("w", newline="") as handle:
             self.assertEqual(zero_deck["solver"]["max_iter"], 80)
             self.assertEqual(zero_deck["solver"]["reltol"], 1.0e-10)
             self.assertEqual(zero_deck["solver"]["abstol"], 1.0e-24)
+            self.assertEqual(zero_deck["solver"]["max_update"], 2.0)
             self.assertEqual(zero_deck["solver"]["handoff"]["fallback"], "none")
             self.assertEqual(zero_deck["solver"]["handoff"]["gummel_max_iter"], 0)
             self.assertEqual(zero_deck["solver"]["handoff"]["newton_max_iter"], 80)

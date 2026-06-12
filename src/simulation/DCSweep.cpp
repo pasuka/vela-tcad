@@ -139,7 +139,7 @@ std::vector<Real> buildEffectiveIntrinsicDensityVector(const DeviceMesh& mesh,
     const Real Vt = constants::kb * temperature_K / constants::q;
     const std::unique_ptr<BandgapNarrowing> bgn = makeBandgapNarrowingModel(bgnCfg);
     for (Index i = 0; i < nodeCount; ++i) {
-        const Real deltaEg = bgn->deltaEg(doping.netDoping(i), 0.0, 0.0);
+        const Real deltaEg = bgn->deltaEg(doping.totalImpurity(i), 0.0, 0.0);
         ni[i] = effectiveIntrinsicDensity(ni[i], Vt, deltaEg);
     }
     return ni;
@@ -646,6 +646,97 @@ std::string stepDiagnostics(const DCSweepPoint& point)
            ";retry_count=" + std::to_string(point.retryCount);
 }
 
+nlohmann::json residualBlockJson(const NewtonBlockResidualInfo& blocks)
+{
+    return {
+        {"psi", blocks.psi},
+        {"phin", blocks.phin},
+        {"phip", blocks.phip},
+        {"combined", blocks.combined},
+    };
+}
+
+nlohmann::json carrierDiagnosticsJson(const NewtonCarrierDiagnostics& diagnostics)
+{
+    return {
+        {"positive_finite", diagnostics.positiveFinite},
+        {"min_electron_density_m3", diagnostics.minElectronDensity},
+        {"min_hole_density_m3", diagnostics.minHoleDensity},
+        {"nonfinite_electron_count", diagnostics.nonfiniteElectronCount},
+        {"nonfinite_hole_count", diagnostics.nonfiniteHoleCount},
+        {"nonpositive_electron_count", diagnostics.nonpositiveElectronCount},
+        {"nonpositive_hole_count", diagnostics.nonpositiveHoleCount},
+    };
+}
+
+nlohmann::json lineSearchHistoryJson(const std::vector<LineSearchIterationInfo>& history)
+{
+    nlohmann::json out = nlohmann::json::array();
+    for (const LineSearchIterationInfo& item : history) {
+        out.push_back({
+            {"attempt", item.attempt},
+            {"damping", item.damping},
+            {"residual_norm", item.residualNorm},
+            {"target_residual_norm", item.targetResidualNorm},
+            {"finite", item.finite},
+            {"carrier_positive_finite", item.acceptedByCaller},
+            {"sufficient_decrease", item.sufficientDecrease},
+            {"accepted", item.accepted},
+            {"rejection_reason", item.rejectionReason},
+        });
+    }
+    return out;
+}
+
+nlohmann::json topResidualNodesJson(const std::vector<NewtonTopResidualNode>& nodes)
+{
+    nlohmann::json out = nlohmann::json::array();
+    for (const NewtonTopResidualNode& node : nodes) {
+        out.push_back({
+            {"node_id", node.nodeId},
+            {"x_m", node.x},
+            {"y_m", node.y},
+            {"x_um", node.x * 1.0e6},
+            {"y_um", node.y * 1.0e6},
+            {"poisson_residual", node.poissonResidual},
+            {"abs_poisson_residual", node.absPoissonResidual},
+            {"donors_m3", node.donors},
+            {"acceptors_m3", node.acceptors},
+            {"net_doping_m3", node.netDoping},
+            {"donors_cm3", node.donors / 1.0e6},
+            {"acceptors_cm3", node.acceptors / 1.0e6},
+            {"net_doping_cm3", node.netDoping / 1.0e6},
+            {"ni_eff_m3", node.effectiveIntrinsicDensity},
+            {"ni_eff_cm3", node.effectiveIntrinsicDensity / 1.0e6},
+        });
+    }
+    return out;
+}
+
+nlohmann::json newtonFailureDiagnosticsJson(const NewtonFailureDiagnostics& diagnostics)
+{
+    return {
+        {"failure_reason", diagnostics.failureReason},
+        {"failed_iteration", diagnostics.failedIteration},
+        {"residual_norm", diagnostics.residualNorm},
+        {"step_norm", diagnostics.stepNorm},
+        {"damping_factor", diagnostics.dampingFactor},
+        {"line_search_attempts", diagnostics.lineSearchAttempts},
+        {"line_search_failure_reason", diagnostics.lineSearchFailureReason},
+        {"block_residuals", residualBlockJson(diagnostics.blockResiduals)},
+        {"carrier_diagnostics", carrierDiagnosticsJson(diagnostics.carrierDiagnostics)},
+        {"line_search_history", lineSearchHistoryJson(diagnostics.lineSearchHistory)},
+        {"top_poisson_residual_nodes", topResidualNodesJson(diagnostics.topPoissonResidualNodes)},
+    };
+}
+
+std::filesystem::path failureDiagnosticsJsonPath(const DCSweepConfig& sweep)
+{
+    const std::filesystem::path csvPath(sweep.csvFile);
+    return csvPath.parent_path() /
+        (csvPath.stem().string() + "_newton_failure_diagnostics.json");
+}
+
 
 } // namespace
 
@@ -766,7 +857,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         "current_hole_diffusion", "current_total",
         "converged", "iterations", "solver_method", "gummel_iterations",
         "newton_iterations", "handoff_stage", "step_diagnostics",
-        "validation_diagnostics"};
+        "validation_diagnostics", "failure_reason", "newton_failure_class",
+        "newton_failure_diagnostics_json"};
     const bool writeUnitScaledColumns = sweep.scaling.isUnitScaling();
     if (writeUnitScaledColumns) {
         header.push_back("current_total_A_per_um");
@@ -812,7 +904,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         header.push_back("criterion");
         header.push_back("last_stable_bias");
         header.push_back("failed_bias");
-        header.push_back("failure_reason");
+        header.push_back("breakdown_failure_reason");
     }
     if (recombinationDiagnosticsEnabled) {
         header.push_back("recombination_max_abs_rate_m3_per_s");
@@ -925,6 +1017,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         int gummelIterations = 0;
         int newtonIterations = 0;
         std::string handoffStage;
+        NewtonFailureDiagnostics newtonFailureDiagnostics;
     };
 
     if ((solverMethod == SolverMethod::Newton ||
@@ -960,6 +1053,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 attempt.gummelIterations = 0;
                 attempt.newtonIterations = result.iters;
                 attempt.handoffStage = solverConverged ? "newton" : "newton_failed";
+                attempt.newtonFailureDiagnostics = result.failureDiagnostics;
+                if (!solverConverged) {
+                    attempt.failureReason = result.failureDiagnostics.failureReason.empty()
+                        ? "newton_non_convergence"
+                        : result.failureDiagnostics.failureReason;
+                }
                 sol = std::move(result.solution);
             } else if (solverMethod == SolverMethod::GummelNewton) {
                 attempt.solverMethod = "gummel_newton";
@@ -979,6 +1078,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                     handoffNewton, fixedChargeSpecs, sheetChargeSpecs)
                         : runNewton(mesh, matdb, doping, biases,
                                     handoffNewton, fixedChargeSpecs, sheetChargeSpecs);
+                    attempt.newtonFailureDiagnostics = result.failureDiagnostics;
                 } else {
                     GummelConfig initializerGummel = gummel;
                     if (hybrid.gummelMaxIter >= 0)
@@ -1010,6 +1110,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
                     result = runNewton(mesh, matdb, doping, biases, gummelInitial,
                                        handoffNewton, fixedChargeSpecs, sheetChargeSpecs);
+                    attempt.newtonFailureDiagnostics = result.failureDiagnostics;
                     const bool acceptedNewton =
                         result.converged && !(hybrid.newtonMaxIter == 0 && result.iters == 0);
                     if (!acceptedNewton && hybrid.fallbackToGummelOnNewtonFailure) {
@@ -1025,8 +1126,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     result.converged && !(hybrid.newtonMaxIter == 0 && result.iters == 0);
                 attempt.newtonIterations = result.iters;
                 attempt.handoffStage = solverConverged ? "newton" : "newton_failed";
-                if (!solverConverged)
-                    attempt.failureReason = "newton_non_convergence";
+                if (!solverConverged) {
+                    attempt.failureReason = result.failureDiagnostics.failureReason.empty()
+                        ? "newton_non_convergence"
+                        : result.failureDiagnostics.failureReason;
+                }
                 sol = std::move(result.solution);
             } else {
                 sol = initial != nullptr
@@ -1067,6 +1171,26 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 return &(*it);
         }
         return nullptr;
+    };
+
+    const std::filesystem::path newtonFailureJsonPath = failureDiagnosticsJsonPath(sweep);
+    nlohmann::json newtonFailureReports = nlohmann::json::array();
+    auto writeNewtonFailureDiagnostics = [&](std::size_t pointIndex,
+                                             const DCSweepPoint& point) {
+        if (point.newtonFailureDiagnostics.failureReason.empty())
+            return;
+        nlohmann::json entry = newtonFailureDiagnosticsJson(point.newtonFailureDiagnostics);
+        entry["point_index"] = pointIndex;
+        entry["bias_V"] = point.bias;
+        entry["bias_contact"] = sweep.contact;
+        entry["solver_method"] = point.solverMethod;
+        entry["handoff_stage"] = point.handoffStage;
+        entry["failure_reason"] = point.failureReason;
+        newtonFailureReports.push_back(std::move(entry));
+        if (!newtonFailureJsonPath.parent_path().empty())
+            std::filesystem::create_directories(newtonFailureJsonPath.parent_path());
+        std::ofstream output(newtonFailureJsonPath);
+        output << std::setw(2) << newtonFailureReports << '\n';
     };
 
     auto recordPoint = [&](Real voltage, const SolvePointAttempt& attempt, bool converged,
@@ -1117,6 +1241,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         point.acceptedStep = acceptedStep;
         point.retryCount = retryCount;
         point.validationDiagnostics = validationDiagnostics;
+        point.newtonFailureDiagnostics = attempt.newtonFailureDiagnostics;
+        if (!converged && !point.newtonFailureDiagnostics.failureReason.empty()) {
+            point.newtonFailureClass = point.newtonFailureDiagnostics.failureReason;
+            point.failureDiagnosticsJson = newtonFailureJsonPath.string();
+        }
         if (converged && sweep.storedChargeEnabled) {
             point.extraFields.emplace_back(
                 sweep.storedCharge.perMeter ? "stored_charge_C_per_m" : "stored_charge_C",
@@ -1245,7 +1374,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             std::to_string(point.newtonIterations),
             point.handoffStage,
             stepDiagnostics(point),
-            point.validationDiagnostics};
+            point.validationDiagnostics,
+            point.failureReason,
+            point.newtonFailureClass,
+            point.failureDiagnosticsJson};
         if (writeUnitScaledColumns) {
             row.push_back(formatReal(perMeterToPerMicron(point.totalCurrent)));
             row.push_back(formatReal(perMeterToPerMicron(point.electronCurrent)));
@@ -1310,6 +1442,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             }
         }
         csv.writeRow(row);
+        if (!converged && !point.newtonFailureDiagnostics.failureReason.empty())
+            writeNewtonFailureDiagnostics(points.size(), point);
 
         if (converged && terminalBalanceCsv != nullptr) {
             const std::size_t pointIndex = points.size();

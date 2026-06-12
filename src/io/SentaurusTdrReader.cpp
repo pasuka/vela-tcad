@@ -794,11 +794,16 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
             if (!isCompensated(donors[i], acceptors[i])) {
                 continue;
             }
+            const bool hasSignedDoping = !signedDopingByNode[i].empty();
             double signedPick = dominantSignedAggregateDoping(i);
             if (signedPick != 0.0) {
                 resolutionSource[i] = signedDopingTie[i]
                     ? "signed_aggregate_tie_first_region"
                     : "signed_aggregate_doping";
+            }
+            if (signedPick == 0.0 && hasSignedDoping && !signedDopingTie[i]) {
+                resolutionSource[i] = "signed_aggregate_zero";
+                continue;
             }
             if (signedPick == 0.0) {
                 signedPick = dominantNeighbourSignedDoping(i);

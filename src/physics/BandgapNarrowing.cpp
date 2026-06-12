@@ -31,9 +31,9 @@ SlotboomBandgapNarrowing::SlotboomBandgapNarrowing(BandgapNarrowingConfig config
             "SlotboomBandgapNarrowing: smoothing cannot be negative.");
 }
 
-Real SlotboomBandgapNarrowing::deltaEg(Real netDoping, Real n, Real p) const
+Real SlotboomBandgapNarrowing::deltaEg(Real impurityConcentration, Real n, Real p) const
 {
-    const Real effectiveConcentration = std::max({std::abs(netDoping), n, p});
+    const Real effectiveConcentration = std::max({std::abs(impurityConcentration), n, p});
     if (effectiveConcentration <= 0.0 || config_.coefficient == 0.0)
         return 0.0;
 

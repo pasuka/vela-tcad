@@ -598,6 +598,37 @@ TEST_CASE("SentaurusTdrReader resolves compensated dopant nodes from signed aggr
             Catch::Approx(0.0));
 }
 
+TEST_CASE("SentaurusTdrReader keeps compensated dopant nodes when signed aggregate doping is zero",
+          "[sentaurus][tdr]")
+{
+    const auto path = writeSyntheticTdr({
+        {"DopingConcentration", {1.0e17, 0.0, 1.0e17, 1.0e17}},
+        {"PhosphorusActiveConcentration", {1.0e17, 1.0e17, 1.0e17, 1.0e17}},
+        {"BoronActiveConcentration", {0.0, 1.0e17, 0.0, 0.0}},
+    });
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_zero_net_export");
+    std::error_code ec;
+    std::filesystem::remove_all(outDir, ec);
+
+    SentaurusTdrExportOptions options;
+    options.compensatedDopingPolicy = "dominant_signed_region";
+    SentaurusTdrReader reader;
+    reader.exportNeutral(path.string(), outDir.string(), options);
+
+    const auto rows = readCsvRows(outDir / "doping.csv");
+    REQUIRE(rows.size() >= 2);
+    REQUIRE(std::stod(rows[1][0]) == Catch::Approx(1.0));
+    REQUIRE(std::stod(rows[1][1]) == Catch::Approx(1.0e17));
+    REQUIRE(std::stod(rows[1][2]) == Catch::Approx(1.0e17));
+
+    const auto metadata = nlohmann::json::parse(readFile(outDir / "doping_metadata.json"));
+    REQUIRE(metadata["compensated_nodes"]["count"].get<int>() == 1);
+    REQUIRE(metadata["compensated_nodes"]["nodes"][0]["node_id"].get<int>() == 1);
+    REQUIRE_FALSE(metadata["compensated_nodes"]["nodes"][0]["resolved"].get<bool>());
+    REQUIRE(metadata["compensated_nodes"]["nodes"][0]["resolution_source"].get<std::string>() ==
+            "signed_aggregate_zero");
+}
+
 TEST_CASE("SentaurusTdrReader resolves compensated junction nodes from neighbouring region sign",
           "[sentaurus][tdr]")
 {

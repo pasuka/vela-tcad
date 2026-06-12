@@ -119,7 +119,7 @@ def resolve_deck_path(deck: dict[str, Any], reference_root: Path, key: str) -> N
         deck[key] = str((reference_root / "vela" / candidate).resolve())
 
 
-def derive_probe_deck(reference_root: Path, output_dir: Path) -> tuple[Path, Path, Path]:
+def derive_probe_deck(reference_root: Path, output_dir: Path) -> tuple[Path, Path, Path, Path, Path]:
     base_path = reference_root / "vela" / "simulation_0v.json"
     deck = read_json(base_path)
     for key in ("mesh_file", "node_doping_file", "materials_file"):
@@ -128,8 +128,12 @@ def derive_probe_deck(reference_root: Path, output_dir: Path) -> tuple[Path, Pat
     probe_dir.mkdir(parents=True, exist_ok=True)
     terminal_csv = probe_dir / "terminal_balance.csv"
     edge_csv = probe_dir / "contact_edges.csv"
+    sweep_csv = probe_dir / "pn2d_0v_current_balance.csv"
+    failure_json = probe_dir / "pn2d_0v_current_balance_newton_failure_diagnostics.json"
     deck["simulation_type"] = "dc_sweep"
-    deck["output_csv"] = str((probe_dir / "pn2d_0v_current_balance.csv").resolve())
+    deck["output_csv"] = str(sweep_csv.resolve())
+    solver = deck.setdefault("solver", {})
+    solver["diagnostics"] = True
     sweep = deck.setdefault("sweep", {})
     sweep["mode"] = "iv"
     sweep["contact"] = sweep.get("contact", "Anode")
@@ -152,30 +156,65 @@ def derive_probe_deck(reference_root: Path, output_dir: Path) -> tuple[Path, Pat
     }
     path = probe_dir / "simulation_0v_current_balance_probe.json"
     write_json(path, deck)
-    return path, terminal_csv, edge_csv
+    return path, terminal_csv, edge_csv, sweep_csv, failure_json
 
 
-def run_command(command: list[str], cwd: Path) -> None:
+def run_command(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(command, cwd=cwd, text=True, capture_output=True)
-    if result.returncode != 0:
-        raise RuntimeError(
-            "command failed with exit code "
-            f"{result.returncode}: {' '.join(command)}\nstdout={result.stdout}\nstderr={result.stderr}"
-        )
+    return result
 
 
-def run_probe(reference_root: Path, output_dir: Path, runner: str) -> tuple[Path, Path, Path]:
-    deck_path, terminal_csv, edge_csv = derive_probe_deck(reference_root, output_dir)
+def run_probe(reference_root: Path, output_dir: Path, runner: str) -> tuple[Path | None, Path, Path, Path, Path, dict[str, Any]]:
+    deck_path, terminal_csv, edge_csv, sweep_csv, failure_json = derive_probe_deck(reference_root, output_dir)
     runner_command = shlex.split(runner, posix=not sys.platform.startswith("win"))
     if runner_command:
         runner_path = Path(runner_command[0])
         if not runner_path.is_absolute():
             runner_command[0] = str((Path.cwd() / runner_path).resolve())
-    run_command([*runner_command, "--config", str(deck_path.resolve())], cwd=deck_path.parent)
+    result = run_command([*runner_command, "--config", str(deck_path.resolve())], cwd=deck_path.parent)
+    command_report = {
+        "command": [*runner_command, "--config", str(deck_path.resolve())],
+        "returncode": result.returncode,
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+    }
+    if result.returncode != 0 and not sweep_csv.is_file():
+        raise RuntimeError(
+            "command failed before writing sweep CSV with exit code "
+            f"{result.returncode}: {' '.join(command_report['command'])}\n"
+            f"stdout={result.stdout}\nstderr={result.stderr}"
+        )
     vtk_matches = sorted(deck_path.parent.glob("pn2d_0v_current_balance*.vtk"))
-    if not vtk_matches:
-        raise RuntimeError("runner did not produce a 0V VTK probe")
-    return vtk_matches[0], terminal_csv, edge_csv
+    vtk_path = vtk_matches[0] if vtk_matches else None
+    return vtk_path, terminal_csv, edge_csv, sweep_csv, failure_json, command_report
+
+
+def sweep_failure_report(sweep_csv: Path, failure_json: Path) -> dict[str, Any]:
+    rows = read_csv_rows(sweep_csv) if sweep_csv.is_file() else []
+    latest = rows[-1] if rows else {}
+    diagnostics = []
+    diagnostics_path = None
+    csv_diagnostics_path = latest.get("newton_failure_diagnostics_json")
+    if csv_diagnostics_path:
+        candidate = Path(csv_diagnostics_path)
+        if candidate.is_file():
+            diagnostics_path = candidate
+    if diagnostics_path is None and failure_json.is_file():
+        diagnostics_path = failure_json
+    if diagnostics_path is not None:
+        diagnostics = read_json(diagnostics_path)
+    failure_class = latest.get("newton_failure_class") or latest.get("failure_reason") or "unknown_failure"
+    if failure_class == "newton_failed" and diagnostics:
+        failure_class = diagnostics[-1].get("failure_reason") or diagnostics[-1].get("line_search_failure_reason") or failure_class
+    return {
+        "sweep_csv": str(sweep_csv),
+        "diagnostics_json": str(diagnostics_path) if diagnostics_path else None,
+        "latest_row": latest,
+        "failure_class": failure_class,
+        "handoff_stage": latest.get("handoff_stage"),
+        "newton_iterations": latest.get("newton_iterations"),
+        "diagnostics": diagnostics,
+    }
 
 
 def balance_metric(values: dict[str, float], relative_gate: float, abs_gate: float) -> dict[str, Any]:
@@ -864,17 +903,110 @@ def classify(terminal: dict[str, Any], edges: dict[str, Any], vtk: dict[str, Any
     return "balanced", reasons, flags
 
 
+def classify_newton_failure(failure: dict[str, Any]) -> tuple[str, list[str], dict[str, bool]]:
+    failure_class = str(failure.get("failure_class") or "unknown_failure")
+    diagnostics = failure.get("diagnostics") or []
+    latest = diagnostics[-1] if diagnostics else {}
+    if failure_class in {"line_search_rejected", "newton_non_convergence"}:
+        failure_class = str(
+            latest.get("line_search_failure_reason") or
+            latest.get("failure_reason") or
+            failure_class
+        )
+    flags = {
+        "line_search_non_decrease": failure_class == "line_search_non_decrease",
+        "carrier_invalid": failure_class == "carrier_invalid",
+        "nonfinite_residual": failure_class == "nonfinite_residual",
+        "newton_failed_missing_diagnostics": not diagnostics,
+    }
+    reasons = [
+        f"solver handoff_stage={failure.get('handoff_stage')} after newton_iterations={failure.get('newton_iterations')}",
+        f"newton failure class={failure_class}",
+    ]
+    if latest.get("block_residuals"):
+        reasons.append(f"block residuals={latest.get('block_residuals')}")
+    if latest.get("line_search_history"):
+        last = latest["line_search_history"][-1]
+        reasons.append(
+            "last line-search attempt "
+            f"damping={last.get('damping')} residual={last.get('residual_norm')} "
+            f"reason={last.get('rejection_reason')}"
+        )
+    return failure_class, reasons, flags
+
+
 def markdown_report(report: dict[str, Any]) -> str:
     lines = [
         "# PN2D 0V Current Balance Diagnosis",
         "",
         f"Classification: {report.get('classification')}",
         "",
+    ]
+    failure = report.get("newton_failure") or {}
+    if failure:
+        lines.extend([
+            "## Newton Failure",
+            "",
+            f"- failure class: {failure.get('failure_class')}",
+            f"- handoff stage: {failure.get('handoff_stage')}",
+            f"- newton iterations: {failure.get('newton_iterations')}",
+            f"- sweep CSV: {failure.get('sweep_csv')}",
+            f"- diagnostics JSON: {failure.get('diagnostics_json')}",
+        ])
+        diagnostics = failure.get("diagnostics") or []
+        latest = diagnostics[-1] if diagnostics else {}
+        if latest.get("block_residuals"):
+            blocks = latest["block_residuals"]
+            lines.extend([
+                "",
+                "| Block | Residual |",
+                "| --- | ---: |",
+                f"| psi | {blocks.get('psi')} |",
+                f"| phin | {blocks.get('phin')} |",
+                f"| phip | {blocks.get('phip')} |",
+                f"| combined | {blocks.get('combined')} |",
+            ])
+        if latest.get("line_search_history"):
+            lines.extend([
+                "",
+                "### Line Search History",
+                "",
+                "| Attempt | Damping | Residual | Target | Finite | Carrier OK | Decrease | Reason |",
+                "| ---: | ---: | ---: | ---: | --- | --- | --- | --- |",
+            ])
+            for item in latest["line_search_history"][-8:]:
+                lines.append(
+                    f"| {item.get('attempt')} | {item.get('damping')} | "
+                    f"{item.get('residual_norm')} | {item.get('target_residual_norm')} | "
+                    f"{item.get('finite')} | {item.get('carrier_positive_finite')} | "
+                    f"{item.get('sufficient_decrease')} | {item.get('rejection_reason')} |"
+                )
+        if latest.get("top_poisson_residual_nodes"):
+            lines.extend([
+                "",
+                "### Top Poisson Residual Nodes",
+                "",
+                "| Node | x um | y um | Abs residual | donors cm^-3 | acceptors cm^-3 | net cm^-3 | ni_eff cm^-3 |",
+                "| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            ])
+            for node in latest["top_poisson_residual_nodes"][:10]:
+                lines.append(
+                    f"| {node.get('node_id')} | {node.get('x_um')} | {node.get('y_um')} | "
+                    f"{node.get('abs_poisson_residual')} | {node.get('donors_cm3')} | "
+                    f"{node.get('acceptors_cm3')} | {node.get('net_doping_cm3')} | "
+                    f"{node.get('ni_eff_cm3')} |"
+                )
+        lines.extend(["", "## Reasons", ""])
+        for reason in report.get("classification_reasons", []):
+            lines.append(f"- {reason}")
+        return "\n".join(lines) + "\n"
+
+    lines.extend([
         "## Terminal Balance",
         "",
         "| Convention | Status | Sum A/um | Relative balance |",
         "| --- | --- | ---: | ---: |",
-    ]
+    ])
     for name, stats in report.get("terminal_balance", {}).get("conventions", {}).items():
         lines.append(
             f"| {name} | {stats.get('status')} | {stats.get('sum_A_per_um')} | "
@@ -962,12 +1094,41 @@ def main() -> int:
             terminal_csv = args.existing_terminal_balance_csv
             edge_csv = args.existing_contact_edge_csv
             vtk_path = args.existing_vtk
+            sweep_csv = None
+            failure_json = None
+            command_report = None
         else:
             if not args.runner:
                 raise RuntimeError(
                     "--runner is required unless existing terminal, edge, and VTK files are supplied"
                 )
-            vtk_path, terminal_csv, edge_csv = run_probe(args.reference_root, args.output_dir, args.runner)
+            vtk_path, terminal_csv, edge_csv, sweep_csv, failure_json, command_report = run_probe(
+                args.reference_root,
+                args.output_dir,
+                args.runner,
+            )
+
+        if vtk_path is None:
+            if sweep_csv is None or failure_json is None:
+                raise RuntimeError("runner did not produce a 0V VTK probe or failure diagnostics")
+            failure = sweep_failure_report(sweep_csv, failure_json)
+            classification, reasons, flags = classify_newton_failure(failure)
+            report = {
+                "status": "diagnostic_fail",
+                "classification": classification,
+                "classification_reasons": reasons,
+                "root_cause_flags": flags,
+                "reference_root": str(args.reference_root),
+                "runner": command_report,
+                "newton_failure": failure,
+                "thresholds": {
+                    "pair_balance_relative_gate": args.pair_balance_relative_gate,
+                    "abs_current_gate_a_per_um": args.abs_current_gate_a_per_um,
+                },
+            }
+            write_json(report_path, report)
+            md_path.write_text(markdown_report(report))
+            return 1 if args.require_balanced else 0
 
         terminal = terminal_report(
             terminal_csv,
