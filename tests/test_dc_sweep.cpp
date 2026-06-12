@@ -838,6 +838,7 @@ TEST_CASE("DCSweep: terminal balance diagnostics reuse one solution for two cont
     const std::size_t plusCol = csvColumnIndex(balanceHeader, "electron_plus_hole");
     const std::size_t minusUmCol = csvColumnIndex(balanceHeader, "electron_minus_hole_A_per_um");
     const std::size_t plusUmCol = csvColumnIndex(balanceHeader, "electron_plus_hole_A_per_um");
+    Real minusUmPairSum = 0.0;
 
     for (std::size_t i = 1; i < balanceRows.size(); ++i) {
         const auto& row = balanceRows.at(i);
@@ -847,7 +848,9 @@ TEST_CASE("DCSweep: terminal balance diagnostics reuse one solution for two cont
         REQUIRE(csvReal(row, plusCol) == Catch::Approx(electron + hole).epsilon(1.0e-12));
         REQUIRE(csvReal(row, minusUmCol) == Catch::Approx(csvReal(row, minusCol) / 1.0e6).epsilon(1.0e-12));
         REQUIRE(csvReal(row, plusUmCol) == Catch::Approx(csvReal(row, plusCol) / 1.0e6).epsilon(1.0e-12));
+        minusUmPairSum += csvReal(row, minusUmCol);
     }
+    REQUIRE(std::abs(minusUmPairSum) <= 1.0e-24);
 
     REQUIRE(std::filesystem::exists(edgeDiagPath));
     const auto edgeRows = readCsvRows(edgeDiagPath);

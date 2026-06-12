@@ -70,7 +70,36 @@ conventions, finite-volume flux-link sums, contact coverage, top contributing
 links, endpoint `psi/phin/phip/n/p/ni/mu` state, SG continuity fluxes, and a
 root-cause classification such as `total_current_sign_convention`,
 `contact_current_aggregation`, `contact_edge_coverage`, or
-`contact_flux_formula`. It also records the Sentaurus/TDR mesh reference
+`contact_flux_formula`. With `--require-balanced`, the script becomes a hard
+regression gate and returns non-zero unless the same-solution terminal-current
+classification is `balanced`.
+
+`balanced` is intentionally only a Vela two-terminal conservation statement. The
+same report also parses the Sentaurus `pn2d_0v.plt` final Coupled current table
+(falling back to `pn2d_0v.log_des.log`) and writes
+`sentaurus_current_reference` plus `sentaurus_current_parity`. That parity block
+compares Vela `electron_minus_hole_A_per_um` against Sentaurus `TotalCurrent`,
+records the absolute-current ratio and sign relation for each contact, and
+flags component-level evidence such as Vela `Anode:hole` or `Cathode:electron`
+being numerically zero while Sentaurus reports non-zero components. A report can
+therefore be `classification=balanced` while
+`sentaurus_current_parity.status=mismatch`; this means current conservation has
+been hardened, but absolute Sentaurus current parity remains a separate debug
+target.
+
+The follow-up residual-floor probe is
+`scripts/probe_pn2d_0v_newton_residual_current.py`. It derives multiple 0 V
+probe decks from the same imported fixture, varies Newton `reltol`, `abstol`,
+and `max_iter`, runs the same multi-terminal current diagnostics, and ranks
+candidates by Sentaurus total-current magnitude only after preferring successful
+terminal-balanced candidates. This prevents a numerically unbalanced early-stop
+state from being mistaken for Sentaurus parity simply because one terminal
+current happens to have a similar absolute magnitude. Current evidence shows
+that strict `reltol<=1e-9` candidates remain balanced but at the `1e-33 A/um`
+floor, while looser candidates around `3e-9` and above raise residual currents
+but fail the two-terminal balance gate.
+
+It also records the Sentaurus/TDR mesh reference
 counts separately: `pn2d_0v_des.grd` has `nb_elements=3712`, which includes
 `3680` bulk `R.Si` triangle elements plus `16` Cathode and `16` Anode contact
 boundary elements. Vela's contact-current diagnostic `flux_link_count` is a
@@ -111,6 +140,19 @@ only removes the leading `1e6` unit factor; large local density residuals remain
 after conversion. This leaves physical field conventions and material/contact
 parameters as the next state-parity targets.
 
+The dedicated 0 V electric-field distribution report is
+`scripts/compare_pn2d_0v_electric_field.py`. It reads Sentaurus
+`ElectricField_region0.csv`, derives Vela field magnitude from the linear
+triangle gradient of VTK `Potential`, and writes JSON, Markdown, and per-node
+CSV reports. The script tests `V/m`, `V/cm`, and `V/um` candidates and selects
+the unit by matching the field-magnitude distribution before reporting
+all-node, centerline, junction-near, and contact-local error statistics. Current
+pn2d 0 V evidence selects `V_per_cm`: Sentaurus median/max are about
+`144 V/cm` and `1.02e5 V/cm`, while Vela-derived median/max are about
+`308 V/cm` and `1.05e5 V/cm`. The mean magnitudes are close, but local residuals
+remain large near the junction, so this report is a distribution/localization
+diagnostic rather than a pass/fail state-parity gate.
+
 The density-decomposition diagnostic is
 `scripts/diagnose_pn2d_0v_density_decomposition.py`. It checks whether Vela's
 VTK carrier densities are internally consistent with Vela `Potential`,
@@ -141,9 +183,10 @@ Reproducible import and comparison:
 ```powershell
 python scripts\sentaurus_import.py reference --config reference_tcad\pn2d_sentaurus2018\pn2d_sentaurus2018_reference.json --source-dir reference_tcad\pn2d_sentaurus2018\source --output-dir build\reference_tcad\pn2d_sentaurus2018 --tdr-importer build\sentaurus_import.exe --runner build\vela_example_runner.exe
 python scripts\compare_sentaurus_tdr_tdx.py --tdr-export build\reference_tcad\pn2d_sentaurus2018 --tdx-dir reference_tcad\pn2d_sentaurus2018\source --output-dir build\reference_tcad\pn2d_sentaurus2018\reports
-python scripts\diagnose_pn2d_0v_current_balance.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_current_balance
+python scripts\diagnose_pn2d_0v_current_balance.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_current_balance --require-balanced
 python scripts\diagnose_pn2d_0v_field_conventions.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_field_conventions --ni-cm3 1e10 --ni-cm3 1.45e10
 python scripts\diagnose_pn2d_0v_field_mapping.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_field_mapping --fields ElectrostaticPotential:Potential --fields eQuasiFermiPotential:ElectronQuasiFermi --fields hQuasiFermiPotential:HoleQuasiFermi --fields eDensity:Electrons --fields hDensity:Holes
+python scripts\compare_pn2d_0v_electric_field.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_electric_field
 python scripts\diagnose_pn2d_0v_density_decomposition.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_density_decomposition --ni-cm3 1e10 --ni-cm3 1.45e10
 python scripts\diagnose_pn2d_0v_ni_bgn_probe.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_ni_bgn_probe --ni-cm3 1e10 --ni-cm3 1.45e10 --ni-cm3 1.6556207295e10 --bgn none --bgn slotboom
 python scripts\compare_pn2d_0v_state.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_state

@@ -321,6 +321,55 @@ std::filesystem::path writeSyntheticTwoRegionAmbiguousCompensatedTdr()
     return path;
 }
 
+std::filesystem::path writeSyntheticPermutedVertexFieldTdr()
+{
+    const auto path = uniqueTempPath("vela_synthetic_sentaurus_permuted_vertex_field", ".tdr");
+    std::error_code ec;
+    std::filesystem::remove(path, ec);
+
+    hid_t file = H5Fcreate(path.string().c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t collection = createGroup(file, "collection");
+    hid_t geometry = createGroup(collection, "geometry_0");
+
+    const std::vector<Vertex2D> vertices = {
+        {0.0, 0.0},
+        {1.0, 0.0},
+        {0.0, 1.0},
+        {1.0, 1.0},
+    };
+    hsize_t vertexDims[] = {vertices.size()};
+    hid_t vertexSpace = H5Screate_simple(1, vertexDims, nullptr);
+    hid_t vertexType = H5Tcreate(H5T_COMPOUND, sizeof(Vertex2D));
+    H5Tinsert(vertexType, "x", HOFFSET(Vertex2D, x), H5T_NATIVE_DOUBLE);
+    H5Tinsert(vertexType, "y", HOFFSET(Vertex2D, y), H5T_NATIVE_DOUBLE);
+    hid_t vertexDataset = H5Dcreate2(geometry, "vertex", vertexType, vertexSpace,
+                                     H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    H5Dwrite(vertexDataset, vertexType, H5S_ALL, H5S_ALL, H5P_DEFAULT, vertices.data());
+    H5Dclose(vertexDataset);
+    H5Tclose(vertexType);
+    H5Sclose(vertexSpace);
+
+    hid_t silicon = createGroup(geometry, "region_0");
+    writeStringAttribute(silicon, "name", "Silicon_1");
+    writeStringAttribute(silicon, "material", "Silicon");
+    writeIntAttribute(silicon, "type", 0);
+    writeSizeAttribute(silicon, "number of elements", 2);
+    writeIntDataset(silicon, "elements_0", {2, 2, 0, 1, 2, 2, 3, 0});
+    H5Gclose(silicon);
+
+    hid_t state = createGroup(geometry, "state_0");
+    hid_t d0 = createGroup(state, "dataset_0");
+    writeDoubleDatasetWithAttrs(d0, "values", {10.0, 20.0, 30.0, 40.0},
+                                "ElectricField", 0, 4, "V*cm^-1");
+    H5Gclose(d0);
+    H5Gclose(state);
+
+    H5Gclose(geometry);
+    H5Gclose(collection);
+    H5Fclose(file);
+    return path;
+}
+
 std::string readFile(const std::filesystem::path& path)
 {
     std::ifstream input(path);
@@ -452,7 +501,7 @@ TEST_CASE("SentaurusTdrReader exports neutral reference TCAD CSV files", "[senta
     REQUIRE(electric != manifest["fields"].end());
     REQUIRE((*electric)["unit"] == "V*cm^-1");
     REQUIRE((*electric)["components"] == 2);
-    REQUIRE((*electric)["global_node_mapping"] == "region_node_order");
+    REQUIRE((*electric)["global_node_mapping"] == "global_vertex_order");
     REQUIRE((*electric)["mapping_status"] == "complete");
 
     const auto mismatch = std::find_if(
@@ -464,6 +513,32 @@ TEST_CASE("SentaurusTdrReader exports neutral reference TCAD CSV files", "[senta
     REQUIRE((*mismatch)["mapping_status"] == "partial");
     REQUIRE((*mismatch)["warnings"][0].get<std::string>().find("value_count 3 does not match region node count 4")
             != std::string::npos);
+}
+
+TEST_CASE("SentaurusTdrReader exports full vertex fields in global vertex order", "[sentaurus][tdr]")
+{
+    const auto path = writeSyntheticPermutedVertexFieldTdr();
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_permuted_vertex_export");
+    std::error_code ec;
+    std::filesystem::remove_all(outDir, ec);
+
+    SentaurusTdrReader reader;
+    reader.exportNeutral(path.string(), outDir.string());
+
+    const auto rows = readCsvRows(outDir / "fields" / "ElectricField_region0.csv");
+    REQUIRE(rows.size() == 4);
+    REQUIRE(rows[0][0] == "0");
+    REQUIRE(std::stod(rows[0][1]) == Catch::Approx(10.0));
+    REQUIRE(rows[1][0] == "1");
+    REQUIRE(std::stod(rows[1][1]) == Catch::Approx(20.0));
+    REQUIRE(rows[2][0] == "2");
+    REQUIRE(std::stod(rows[2][1]) == Catch::Approx(30.0));
+    REQUIRE(rows[3][0] == "3");
+    REQUIRE(std::stod(rows[3][1]) == Catch::Approx(40.0));
+
+    const auto manifest = nlohmann::json::parse(readFile(outDir / "field_manifest.json"));
+    REQUIRE(manifest["fields"][0]["global_node_mapping"] == "global_vertex_order");
+    REQUIRE(manifest["fields"][0]["mapping_status"] == "complete");
 }
 
 TEST_CASE("SentaurusTdrReader reports compensated dopant nodes", "[sentaurus][tdr]")

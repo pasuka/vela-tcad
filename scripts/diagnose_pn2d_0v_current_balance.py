@@ -7,6 +7,7 @@ import argparse
 import csv
 import json
 import math
+import re
 import shlex
 import subprocess
 import sys
@@ -17,6 +18,13 @@ from typing import Any
 REPORT_NAME = "pn2d_0v_current_balance.json"
 MARKDOWN_NAME = "pn2d_0v_current_balance.md"
 DEFAULT_CONTACTS = ["Anode", "Cathode"]
+SENTAURUS_CURRENT_FIELDS = {
+    "eCurrent": "electron_current",
+    "hCurrent": "hole_current",
+    "TotalCurrent": "total_current",
+}
+DEFAULT_THERMAL_VOLTAGE_V = 0.025851999786435535
+EXP_RESOLUTION_DELTA = 2.0e-16
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -48,6 +56,13 @@ def current_a_per_um(row: dict[str, str], base: str, default: float = 0.0) -> fl
     if row.get(base) not in (None, ""):
         return float(row[base]) / 1.0e6
     return default
+
+
+def optional_float(row: dict[str, str], key: str) -> float | None:
+    raw = row.get(key)
+    if raw in (None, ""):
+        return None
+    return float(raw)
 
 
 def parse_vtk_scalars(path: Path) -> dict[str, list[float]]:
@@ -167,13 +182,19 @@ def balance_metric(values: dict[str, float], relative_gate: float, abs_gate: flo
     total = sum(values.values())
     max_abs = max((abs(value) for value in values.values()), default=0.0)
     relative = 0.0 if max_abs == 0.0 else abs(total) / max_abs
-    passed = relative <= relative_gate or abs(total) <= abs_gate
+    absolute_floor_pass = abs(total) <= abs_gate
+    relative_pass = relative <= relative_gate
+    passed = relative_pass or absolute_floor_pass
     return {
         "by_contact_A_per_um": values,
         "sum_A_per_um": total,
+        "abs_pair_sum_A_per_um": abs(total),
         "max_abs_A_per_um": max_abs,
         "pair_balance_relative": relative,
+        "pair_balance_relative_gate": relative_gate,
         "pair_balance_abs_gate_A_per_um": abs_gate,
+        "relative_gate_pass": relative_pass,
+        "absolute_floor_gate_pass": absolute_floor_pass,
         "status": "pass" if passed else "fail",
     }
 
@@ -231,9 +252,139 @@ def terminal_report(path: Path, relative_gate: float, abs_gate: float) -> dict[s
     }
 
 
+def conservation_summary(terminal: dict[str, Any]) -> dict[str, Any]:
+    conventions = terminal.get("conventions", {})
+    minus = conventions.get("electron_minus_hole", {})
+    plus = conventions.get("electron_plus_hole", {})
+    electron = conventions.get("electron", {})
+    hole = conventions.get("hole", {})
+    return {
+        "electron_minus_hole_sum_A_per_um": minus.get("sum_A_per_um"),
+        "electron_plus_hole_sum_A_per_um": plus.get("sum_A_per_um"),
+        "electron_sum_A_per_um": electron.get("sum_A_per_um"),
+        "hole_sum_A_per_um": hole.get("sum_A_per_um"),
+        "max_abs_terminal_current_A_per_um": minus.get("max_abs_A_per_um"),
+        "abs_pair_sum_A_per_um": minus.get("abs_pair_sum_A_per_um"),
+        "pair_balance_relative": minus.get("pair_balance_relative"),
+        "pair_balance_relative_gate": minus.get("pair_balance_relative_gate"),
+        "absolute_floor_gate_A_per_um": minus.get("pair_balance_abs_gate_A_per_um"),
+        "relative_gate_pass": minus.get("relative_gate_pass"),
+        "absolute_floor_gate_pass": minus.get("absolute_floor_gate_pass"),
+        "status": minus.get("status"),
+    }
+
+
+def classify_zero_component_reason(
+    row: dict[str, str],
+    component: str,
+    thermal_voltage: float = DEFAULT_THERMAL_VOLTAGE_V,
+) -> dict[str, Any]:
+    if component == "electron":
+        branch = row.get("electron_branch")
+        mobility = optional_float(row, "mun")
+        carrier0 = optional_float(row, "n0")
+        carrier1 = optional_float(row, "n1")
+        qf0 = optional_float(row, "phin0")
+        qf1 = optional_float(row, "phin1")
+        flux = optional_float(row, "electron_continuity_flux")
+    else:
+        branch = row.get("hole_branch")
+        mobility = optional_float(row, "mup")
+        carrier0 = optional_float(row, "p0")
+        carrier1 = optional_float(row, "p1")
+        qf0 = optional_float(row, "phip0")
+        qf1 = optional_float(row, "phip1")
+        flux = optional_float(row, "hole_continuity_flux")
+
+    qf_delta = None if qf0 is None or qf1 is None else qf0 - qf1
+    qf_delta_over_vt = None if qf_delta is None else abs(qf_delta) / thermal_voltage
+    mobility_nonzero = mobility is not None and abs(mobility) > 0.0
+    carrier_nonzero = (
+        carrier0 is not None and carrier1 is not None and
+        (abs(carrier0) > 0.0 or abs(carrier1) > 0.0)
+    )
+    flux_zero = flux is None or abs(flux) == 0.0
+    reason = "unknown"
+    if not mobility_nonzero:
+        reason = "zero_mobility"
+    elif not carrier_nonzero:
+        reason = "zero_carrier_density"
+    elif branch == "quasi_fermi" and qf_delta_over_vt is not None and qf_delta_over_vt <= EXP_RESOLUTION_DELTA:
+        reason = "qf_delta_below_exp_resolution"
+    elif flux_zero:
+        reason = "sg_flux_zero_after_evaluation"
+    else:
+        reason = "component_current_zero_after_scaling"
+    return {
+        "reason": reason,
+        "branch": branch,
+        "mobility": mobility,
+        "mobility_nonzero": mobility_nonzero,
+        "carrier0": carrier0,
+        "carrier1": carrier1,
+        "carrier_nonzero": carrier_nonzero,
+        "qf_delta_V": qf_delta,
+        "abs_qf_delta_over_Vt": qf_delta_over_vt,
+        "exp_resolution_delta": EXP_RESOLUTION_DELTA,
+        "continuity_flux": flux,
+        "continuity_flux_zero": flux_zero,
+    }
+
+
+def zero_component_diagnostics(rows: list[dict[str, str]]) -> dict[str, Any]:
+    by_contact: dict[str, dict[str, Any]] = {}
+    examples: list[dict[str, Any]] = []
+    for row in rows:
+        contact = row.get("current_contact") or row.get("contact") or ""
+        if not contact:
+            continue
+        contact_bucket = by_contact.setdefault(contact, {})
+        for component in ("electron", "hole"):
+            current = current_a_per_um(row, f"current_{component}")
+            if current != 0.0:
+                continue
+            detail = classify_zero_component_reason(row, component)
+            component_bucket = contact_bucket.setdefault(component, {
+                "count": 0,
+                "reason_counts": {},
+                "dominant_reason": None,
+                "max_abs_qf_delta_over_Vt": 0.0,
+            })
+            component_bucket["count"] += 1
+            reason_counts = component_bucket["reason_counts"]
+            reason_counts[detail["reason"]] = reason_counts.get(detail["reason"], 0) + 1
+            if detail["abs_qf_delta_over_Vt"] is not None:
+                component_bucket["max_abs_qf_delta_over_Vt"] = max(
+                    component_bucket["max_abs_qf_delta_over_Vt"],
+                    detail["abs_qf_delta_over_Vt"],
+                )
+            if len(examples) < 10:
+                examples.append({
+                    "contact": contact,
+                    "component": component,
+                    "edge_id": row.get("edge_id"),
+                    **detail,
+                })
+    for contact_bucket in by_contact.values():
+        for component_bucket in contact_bucket.values():
+            reason_counts = component_bucket["reason_counts"]
+            if reason_counts:
+                component_bucket["dominant_reason"] = max(
+                    reason_counts.items(),
+                    key=lambda item: (item[1], item[0]),
+                )[0]
+    return {
+        "thermal_voltage_V": DEFAULT_THERMAL_VOLTAGE_V,
+        "exp_resolution_delta": EXP_RESOLUTION_DELTA,
+        "by_contact": by_contact,
+        "examples": examples,
+    }
+
+
 def edge_report(path: Path, terminal: dict[str, Any], top_n: int) -> dict[str, Any]:
     rows = read_csv_rows(path)
     sums: dict[str, float] = {}
+    component_sums: dict[str, dict[str, float]] = {}
     counts: dict[str, int] = {}
     top_rows: list[dict[str, Any]] = []
     for row in rows:
@@ -241,6 +392,18 @@ def edge_report(path: Path, terminal: dict[str, Any], top_n: int) -> dict[str, A
         if not contact:
             continue
         current = current_a_per_um(row, "current_total")
+        electron_current = current_a_per_um(row, "current_electron")
+        hole_current = current_a_per_um(row, "current_hole")
+        contact_components = component_sums.setdefault(contact, {
+            "electron": 0.0,
+            "hole": 0.0,
+            "electron_minus_hole": 0.0,
+            "electron_plus_hole": 0.0,
+        })
+        contact_components["electron"] += electron_current
+        contact_components["hole"] += hole_current
+        contact_components["electron_minus_hole"] += current
+        contact_components["electron_plus_hole"] += electron_current + hole_current
         sums[contact] = sums.get(contact, 0.0) + current
         counts[contact] = counts.get(contact, 0) + 1
         top_rows.append({
@@ -249,6 +412,8 @@ def edge_report(path: Path, terminal: dict[str, Any], top_n: int) -> dict[str, A
             "node0": row.get("node0"),
             "node1": row.get("node1"),
             "current_total_A_per_um": current,
+            "current_electron_A_per_um": electron_current,
+            "current_hole_A_per_um": hole_current,
             "abs_current_total_A_per_um": abs(current),
             "psi0": row.get("psi0"),
             "psi1": row.get("psi1"),
@@ -286,6 +451,8 @@ def edge_report(path: Path, terminal: dict[str, Any], top_n: int) -> dict[str, A
         "edge_count_by_contact": counts,
         "flux_link_sum_A_per_um_by_contact": sums,
         "edge_sum_A_per_um_by_contact": sums,
+        "component_sum_A_per_um_by_contact": component_sums,
+        "zero_component_diagnostics": zero_component_diagnostics(rows),
         "missing_contacts": missing_contacts,
         "aggregation": aggregation,
         "aggregation_status": "fail" if aggregation_fail else "pass",
@@ -386,6 +553,260 @@ def sentaurus_log_reference(reference_root: Path) -> dict[str, Any]:
     }
 
 
+def parse_sentaurus_current_log(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    lines = path.read_text(errors="replace").splitlines()
+    blocks: list[dict[str, Any]] = []
+    for idx, line in enumerate(lines):
+        if "electron current" not in line or "hole current" not in line or "conduction current" not in line:
+            continue
+        contacts: dict[str, dict[str, float]] = {}
+        for contact_line in lines[idx + 1:idx + 3]:
+            parts = contact_line.split()
+            if len(parts) < 5:
+                continue
+            contacts[parts[0]] = {
+                "voltage": float(parts[1]),
+                "electron_current": float(parts[2]),
+                "hole_current": float(parts[3]),
+                "total_current": float(parts[4]),
+            }
+        if contacts:
+            blocks.append({
+                "source": "log",
+                "line_range": f"{idx + 1}-{idx + 1 + len(contacts)}",
+                "contacts": contacts,
+            })
+    if not blocks:
+        return None
+    return {
+        "path": str(path),
+        "initial_poisson": blocks[0],
+        "final_coupled": blocks[-1],
+        "blocks": blocks,
+    }
+
+
+def parse_quoted_tokens(block: str) -> list[str]:
+    return re.findall(r'"([^"]+)"', block)
+
+
+def sentaurus_plt_records(path: Path) -> list[dict[str, float]]:
+    text = path.read_text(errors="replace")
+    datasets_match = re.search(r"datasets\s*=\s*\[(.*?)\]", text, flags=re.S)
+    data_match = re.search(r"Data\s*\{(.*?)\}", text, flags=re.S)
+    if not datasets_match or not data_match:
+        return []
+    datasets = parse_quoted_tokens(datasets_match.group(1))
+    if not datasets:
+        return []
+    values = [float(item) for item in re.findall(r"[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[Ee][+-]?\d+)?", data_match.group(1))]
+    width = len(datasets)
+    if width == 0 or len(values) < width:
+        return []
+    records: list[dict[str, float]] = []
+    for offset in range(0, len(values) - width + 1, width):
+        chunk = values[offset:offset + width]
+        if len(chunk) == width:
+            records.append(dict(zip(datasets, chunk)))
+    return records
+
+
+def convert_sentaurus_plt_record(record: dict[str, float]) -> dict[str, Any]:
+    contacts: dict[str, dict[str, float]] = {}
+    for dataset, value in record.items():
+        if dataset == "time":
+            continue
+        parts = dataset.split(" ", 1)
+        if len(parts) != 2:
+            continue
+        contact, field = parts
+        contact_report = contacts.setdefault(contact, {})
+        if field in SENTAURUS_CURRENT_FIELDS:
+            contact_report[SENTAURUS_CURRENT_FIELDS[field]] = value
+        elif field == "OuterVoltage":
+            contact_report["voltage"] = value
+    return contacts
+
+
+def parse_sentaurus_current_plt(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    records = sentaurus_plt_records(path)
+    current_blocks: list[dict[str, Any]] = []
+    for index, record in enumerate(records):
+        contacts = convert_sentaurus_plt_record(record)
+        if contacts:
+            current_blocks.append({
+                "source": "plt",
+                "record_index": index,
+                "contacts": contacts,
+            })
+    if not current_blocks:
+        return None
+    return {
+        "path": str(path),
+        "initial_poisson": current_blocks[0],
+        "final_coupled": current_blocks[-1],
+        "blocks": current_blocks,
+    }
+
+
+def sentaurus_current_reference(reference_root: Path) -> dict[str, Any]:
+    repo = Path(__file__).resolve().parents[1]
+    source_dirs = [
+        reference_root / "source",
+        repo / "reference_tcad" / "pn2d_sentaurus2018" / "source",
+    ]
+    plt_reference = None
+    log_reference = None
+    for source_dir in source_dirs:
+        if plt_reference is None:
+            plt_reference = parse_sentaurus_current_plt(source_dir / "pn2d_0v.plt")
+        if log_reference is None:
+            log_reference = parse_sentaurus_current_log(source_dir / "pn2d_0v.log_des.log")
+    selected = plt_reference or log_reference
+    if not selected:
+        return {
+            "status": "missing",
+            "source_preference": ["plt", "log"],
+            "searched_source_dirs": [str(path) for path in source_dirs],
+            "initial_poisson": None,
+            "final_coupled": None,
+        }
+    selected["status"] = "present"
+    selected["source_preference"] = ["plt", "log"]
+    selected["searched_source_dirs"] = [str(path) for path in source_dirs]
+    if log_reference and plt_reference:
+        selected["log_crosscheck"] = {
+            "path": log_reference.get("path"),
+            "final_coupled": log_reference.get("final_coupled"),
+        }
+    return selected
+
+
+def signed_relation(a: float, b: float) -> str:
+    if a == 0.0 or b == 0.0:
+        return "zero"
+    return "same_sign" if math.copysign(1.0, a) == math.copysign(1.0, b) else "opposite_sign"
+
+
+def current_component_presence(
+    terminal: dict[str, Any],
+    sentaurus_final: dict[str, Any] | None,
+    zero_gate: float,
+) -> dict[str, Any]:
+    sentaurus_contacts = (sentaurus_final or {}).get("contacts", {})
+    missing_components: list[str] = []
+    by_contact: dict[str, Any] = {}
+    for contact in DEFAULT_CONTACTS:
+        vela = terminal.get("contacts", {}).get(contact, {})
+        sentaurus = sentaurus_contacts.get(contact, {})
+        contact_components: dict[str, Any] = {}
+        for label, vela_key, sentaurus_key in [
+            ("electron", "current_electron_A_per_m", "electron_current"),
+            ("hole", "current_hole_A_per_m", "hole_current"),
+        ]:
+            vela_value = float(vela.get(vela_key) or 0.0)
+            sentaurus_value = float(sentaurus.get(sentaurus_key) or 0.0)
+            vela_zero = abs(vela_value) <= zero_gate
+            sentaurus_nonzero = abs(sentaurus_value) > zero_gate
+            if vela_zero and sentaurus_nonzero:
+                missing_components.append(f"{contact}:{label}")
+            contact_components[label] = {
+                "vela_A_per_m": vela_value,
+                "sentaurus_current": sentaurus_value,
+                "vela_zero": vela_zero,
+                "sentaurus_nonzero": sentaurus_nonzero,
+                "status": "missing_in_vela" if vela_zero and sentaurus_nonzero else "present_or_both_zero",
+            }
+        by_contact[contact] = contact_components
+    return {
+        "zero_gate": zero_gate,
+        "by_contact": by_contact,
+        "missing_components": missing_components,
+        "status": "missing_components" if missing_components else "ok",
+    }
+
+
+def sentaurus_current_parity(
+    terminal: dict[str, Any],
+    reference: dict[str, Any],
+    ratio_gate: float = 10.0,
+    zero_gate: float = 1.0e-40,
+) -> dict[str, Any]:
+    final = reference.get("final_coupled")
+    if not final:
+        return {
+            "status": "missing_reference",
+            "classification": "sentaurus_current_reference_missing",
+        }
+    sentaurus_contacts = final.get("contacts", {})
+    vela_minus = terminal.get("conventions", {}).get("electron_minus_hole", {}).get("by_contact_A_per_um", {})
+    by_contact: dict[str, Any] = {}
+    ratios: list[float] = []
+    signs: dict[str, str] = {}
+    for contact in DEFAULT_CONTACTS:
+        vela_current = float(vela_minus.get(contact) or 0.0)
+        sentaurus_total = float(sentaurus_contacts.get(contact, {}).get("total_current") or 0.0)
+        ratio = math.inf if abs(vela_current) <= zero_gate and abs(sentaurus_total) > zero_gate else (
+            abs(sentaurus_total) / abs(vela_current) if vela_current != 0.0 else 0.0
+        )
+        if math.isfinite(ratio):
+            ratios.append(ratio)
+        signs[contact] = signed_relation(vela_current, sentaurus_total)
+        by_contact[contact] = {
+            "vela_current_total_A_per_um": vela_current,
+            "sentaurus_total_current": sentaurus_total,
+            "abs_ratio_sentaurus_to_vela": ratio,
+            "sign_relation": signs[contact],
+        }
+    component_presence = current_component_presence(terminal, final, zero_gate)
+    finite_mismatch = any(ratio > ratio_gate or ratio < 1.0 / ratio_gate for ratio in ratios)
+    infinite_mismatch = any(
+        math.isinf(item["abs_ratio_sentaurus_to_vela"]) for item in by_contact.values()
+    )
+    sign_mismatch = any(relation == "opposite_sign" for relation in signs.values())
+    status = "mismatch" if finite_mismatch or infinite_mismatch or sign_mismatch else "match"
+    classification = "sentaurus_current_parity_match"
+    if status == "mismatch":
+        classification = "sentaurus_abs_current_mismatch"
+    return {
+        "status": status,
+        "classification": classification,
+        "unit_hypothesis": "vela_current_total_A_per_um_vs_sentaurus_current",
+        "ratio_gate": ratio_gate,
+        "zero_gate": zero_gate,
+        "by_contact": by_contact,
+        "component_presence": component_presence,
+        "minority_component_zero_contacts": sorted({
+            entry.split(":", 1)[0] for entry in component_presence["missing_components"]
+        }),
+        "notes": [
+            "This compares Vela electron_minus_hole_A_per_um with Sentaurus TotalCurrent as printed in pn2d_0v.plt/log.",
+            "A mismatch here does not imply two-terminal imbalance; it flags absolute-current or definition parity.",
+        ],
+    }
+
+
+def contact_metadata_indicates_weak_solve(terminal: dict[str, Any]) -> bool:
+    for row in terminal.get("contacts", {}).values():
+        converged = str(row.get("converged", "")).strip().lower()
+        if converged in {"0", "false", "no"}:
+            return True
+        handoff = str(row.get("handoff_stage", "")).strip().lower()
+        if "failed" in handoff or handoff in {"", "non_convergence"}:
+            return True
+        try:
+            iterations = int(float(row.get("newton_iterations") or 0))
+        except (TypeError, ValueError):
+            iterations = 0
+        if iterations <= 0:
+            return True
+    return False
+
+
 def classify(terminal: dict[str, Any], edges: dict[str, Any], vtk: dict[str, Any]) -> tuple[str, list[str], dict[str, bool]]:
     minus = terminal["conventions"]["electron_minus_hole"]
     plus = terminal["conventions"]["electron_plus_hole"]
@@ -418,6 +839,11 @@ def classify(terminal: dict[str, Any], edges: dict[str, Any], vtk: dict[str, Any
         flags["total_current_sign_convention"] = True
         reasons.append("electron_plus_hole balances but electron_minus_hole does not")
         return "total_current_sign_convention", reasons, flags
+
+    if minus["status"] == "fail" and contact_metadata_indicates_weak_solve(terminal):
+        flags["newton_residual_not_tight_enough"] = True
+        reasons.append("terminal current is above the absolute floor and solver metadata indicates weak/non-Newton convergence")
+        return "newton_residual_not_tight_enough", reasons, flags
 
     if vtk["missing_fields"]:
         flags["contact_boundary_qf_state"] = True
@@ -454,6 +880,40 @@ def markdown_report(report: dict[str, Any]) -> str:
             f"| {name} | {stats.get('status')} | {stats.get('sum_A_per_um')} | "
             f"{stats.get('pair_balance_relative')} |"
         )
+    summary = report.get("conservation_summary", {})
+    if summary:
+        lines.extend([
+            "",
+            "## Conservation Gate",
+            "",
+            f"- electron_minus_hole sum: {summary.get('electron_minus_hole_sum_A_per_um')} A/um",
+            f"- electron_plus_hole sum: {summary.get('electron_plus_hole_sum_A_per_um')} A/um",
+            f"- electron-only sum: {summary.get('electron_sum_A_per_um')} A/um",
+            f"- hole-only sum: {summary.get('hole_sum_A_per_um')} A/um",
+            f"- max abs terminal current: {summary.get('max_abs_terminal_current_A_per_um')} A/um",
+            f"- abs pair sum: {summary.get('abs_pair_sum_A_per_um')} A/um",
+            f"- absolute floor gate pass: {summary.get('absolute_floor_gate_pass')}",
+        ])
+    parity = report.get("sentaurus_current_parity", {})
+    if parity:
+        lines.extend([
+            "",
+            "## Sentaurus Current Parity",
+            "",
+            f"- status: {parity.get('status')}",
+            f"- classification: {parity.get('classification')}",
+            f"- unit hypothesis: {parity.get('unit_hypothesis')}",
+            f"- minority component zero contacts: {parity.get('minority_component_zero_contacts')}",
+            "",
+            "| Contact | Vela total A/um | Sentaurus total | Abs ratio | Sign |",
+            "| --- | ---: | ---: | ---: | --- |",
+        ])
+        for contact, row in parity.get("by_contact", {}).items():
+            lines.append(
+                f"| {contact} | {row.get('vela_current_total_A_per_um')} | "
+                f"{row.get('sentaurus_total_current')} | "
+                f"{row.get('abs_ratio_sentaurus_to_vela')} | {row.get('sign_relation')} |"
+            )
     lines.extend(["", "## Edge Coverage", ""])
     edges = report.get("contact_edges", {})
     mesh = report.get("mesh_reference", {})
@@ -485,8 +945,11 @@ def main() -> int:
     parser.add_argument("--existing-terminal-balance-csv", type=Path)
     parser.add_argument("--existing-contact-edge-csv", type=Path)
     parser.add_argument("--existing-vtk", type=Path)
-    parser.add_argument("--current-pair-relative-gate", type=float, default=5.0e-2)
-    parser.add_argument("--current-pair-abs-gate-A-per-um", type=float, default=1.0e-24)
+    parser.add_argument("--pair-balance-relative-gate", "--current-pair-relative-gate",
+                        dest="pair_balance_relative_gate", type=float, default=5.0e-2)
+    parser.add_argument("--abs-current-gate-a-per-um", "--current-pair-abs-gate-A-per-um",
+                        dest="abs_current_gate_a_per_um", type=float, default=1.0e-24)
+    parser.add_argument("--require-balanced", action="store_true")
     parser.add_argument("--top-edges", type=int, default=10)
     args = parser.parse_args()
 
@@ -508,13 +971,15 @@ def main() -> int:
 
         terminal = terminal_report(
             terminal_csv,
-            args.current_pair_relative_gate,
-            args.current_pair_abs_gate_A_per_um,
+            args.pair_balance_relative_gate,
+            args.abs_current_gate_a_per_um,
         )
         edges = edge_report(edge_csv, terminal, args.top_edges)
         vtk = vtk_report(vtk_path)
         mesh_reference = mesh_reference_report(args.reference_root)
         classification, reasons, flags = classify(terminal, edges, vtk)
+        sentaurus_current = sentaurus_current_reference(args.reference_root)
+        sentaurus_parity = sentaurus_current_parity(terminal, sentaurus_current)
         report = {
             "status": "pass" if classification == "balanced" else "diagnostic_fail",
             "classification": classification,
@@ -522,18 +987,21 @@ def main() -> int:
             "root_cause_flags": flags,
             "reference_root": str(args.reference_root),
             "sentaurus_log_reference": sentaurus_log_reference(args.reference_root),
+            "sentaurus_current_reference": sentaurus_current,
+            "sentaurus_current_parity": sentaurus_parity,
             "mesh_reference": mesh_reference,
             "terminal_balance": terminal,
+            "conservation_summary": conservation_summary(terminal),
             "contact_edges": edges,
             "vtk_fields": vtk,
             "thresholds": {
-                "current_pair_relative_gate": args.current_pair_relative_gate,
-                "current_pair_abs_gate_A_per_um": args.current_pair_abs_gate_A_per_um,
+                "pair_balance_relative_gate": args.pair_balance_relative_gate,
+                "abs_current_gate_a_per_um": args.abs_current_gate_a_per_um,
             },
         }
         write_json(report_path, report)
         md_path.write_text(markdown_report(report))
-        return 0
+        return 1 if args.require_balanced and classification != "balanced" else 0
     except Exception as exc:
         report = {
             "status": "error",

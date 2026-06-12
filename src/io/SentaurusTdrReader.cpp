@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iterator>
 #include <map>
+#include <numeric>
 #include <set>
 #include <stdexcept>
 #include <string_view>
@@ -351,6 +352,31 @@ std::vector<std::size_t> regionNodeOrder(const SentaurusTdrRegion& region)
     return order;
 }
 
+std::vector<std::size_t> globalVertexOrder(std::size_t vertexCount)
+{
+    std::vector<std::size_t> order(vertexCount);
+    std::iota(order.begin(), order.end(), std::size_t{0});
+    return order;
+}
+
+bool usesGlobalVertexOrder(const SentaurusTdrInventory& inventory,
+                           const SentaurusTdrField& field,
+                           const SentaurusTdrRegion& region)
+{
+    return region.type != SentaurusTdrRegionType::Contact &&
+        field.value_count == inventory.vertices.size();
+}
+
+std::vector<std::size_t> fieldNodeOrder(const SentaurusTdrInventory& inventory,
+                                        const SentaurusTdrField& field,
+                                        const SentaurusTdrRegion& region)
+{
+    if (usesGlobalVertexOrder(inventory, field, region)) {
+        return globalVertexOrder(inventory.vertices.size());
+    }
+    return regionNodeOrder(region);
+}
+
 std::string materialName(const std::string& material)
 {
     if (material == "Silicon") {
@@ -485,10 +511,17 @@ nlohmann::json fieldManifestEntry(const SentaurusTdrInventory& inventory,
     entry["region_type"] = static_cast<int>(region->type);
     const auto nodes = regionNodeOrder(*region);
     entry["region_node_count"] = nodes.size();
+    entry["global_vertex_count"] = inventory.vertices.size();
 
     if (region->type == SentaurusTdrRegionType::Contact && field.value_count == 1) {
         entry["global_node_mapping"] = "contact_scalar";
         entry["mapping_status"] = "scalar";
+        return entry;
+    }
+
+    if (usesGlobalVertexOrder(inventory, field, *region)) {
+        entry["global_node_mapping"] = "global_vertex_order";
+        entry["mapping_status"] = "complete";
         return entry;
     }
 
@@ -636,7 +669,7 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
         if (region == nullptr) {
             continue;
         }
-        const auto nodes = regionNodeOrder(*region);
+        const auto nodes = fieldNodeOrder(inventory, field, *region);
         const std::size_t rows = std::min(nodes.size(), field.value_count);
         if (field.name == "DopingConcentration") {
             for (std::size_t row = 0; row < rows; ++row) {
@@ -835,7 +868,7 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
         if (region == nullptr || field.values.empty()) {
             continue;
         }
-        const auto nodes = regionNodeOrder(*region);
+        const auto nodes = fieldNodeOrder(inventory, field, *region);
         const auto fieldPath = outDir / "fields" /
             (sanitizeFilename(field.name) + "_region" + std::to_string(field.region_index) + ".csv");
         writeFieldCsv(fieldPath, field, nodes);

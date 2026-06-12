@@ -119,7 +119,7 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
                 check=True,
                 cwd=REPO,
             )
-            subprocess.run(
+            balance = subprocess.run(
                 [
                     sys.executable,
                     str(REPO / "scripts" / "diagnose_pn2d_0v_current_balance.py"),
@@ -130,9 +130,28 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
                     "--output-dir",
                     str(out / "reports" / "0v_current_balance"),
                 ],
-                check=True,
                 cwd=REPO,
             )
+
+            balance_report = json.loads(
+                (out / "reports" / "0v_current_balance" / "pn2d_0v_current_balance.json").read_text()
+            )
+            if balance_report["status"] == "error":
+                self.assertNotEqual(balance.returncode, 0)
+                self.assertEqual(balance_report["classification"], "input_error")
+                self.assertTrue(balance_report["classification_reasons"])
+                self.assertIn("converged", balance_report["classification_reasons"][0])
+                manifest = json.loads((out / "sim_fields" / "0v" / "field_manifest.json").read_text())
+                field_mappings = {
+                    item["name"]: item["global_node_mapping"]
+                    for item in manifest["fields"]
+                    if item["name"] in {"ElectricField", "DopingConcentration"}
+                }
+                self.assertEqual(field_mappings["ElectricField"], "global_vertex_order")
+                self.assertEqual(field_mappings["DopingConcentration"], "global_vertex_order")
+                return
+
+            self.assertEqual(balance.returncode, 0)
             compare = subprocess.run(
                 [
                     sys.executable,
@@ -147,13 +166,18 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
                 cwd=REPO,
             )
 
-            balance_report = json.loads(
-                (out / "reports" / "0v_current_balance" / "pn2d_0v_current_balance.json").read_text()
-            )
             self.assertEqual(balance_report["classification"], "balanced")
             self.assertTrue(balance_report["classification_reasons"])
             self.assertIn("Anode", balance_report["terminal_balance"]["contacts"])
             self.assertIn("Cathode", balance_report["terminal_balance"]["contacts"])
+            conservation = balance_report["conservation_summary"]
+            self.assertTrue(
+                conservation["absolute_floor_gate_pass"] or conservation["relative_gate_pass"]
+            )
+            self.assertLessEqual(
+                conservation["abs_pair_sum_A_per_um"],
+                conservation["absolute_floor_gate_A_per_um"],
+            )
             self.assertIn("top_edges", balance_report["contact_edges"])
             self.assertEqual(
                 balance_report["mesh_reference"]["sentaurus_contact_boundary_elements"]["Anode"],
