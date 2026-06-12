@@ -178,6 +178,20 @@ best local 0 V material match. This exactly matches the Sentaurus
 remaining 0 V mismatch is dominated by electrostatic/contact state parity rather
 than a pure intrinsic-density or OldSlotboom toggle.
 
+The QF-driver probe is `scripts/probe_pn2d_0v_qf_drivers.py`. It runs a small
+strict-Newton 0 V matrix from the imported `simulation_0v.json` and records
+per-variant QF span, terminal current, terminal-balance, and VTK state outputs.
+Current evidence selects BGN/effective-ni consistency as the direct driver of
+the 0 V quasi-Fermi split: baseline `slotboom` keeps `qf_max_span_V =
+0.0043930610509`, disabling recombination still keeps `qf_max_span_V =
+0.00439298359789`, and switching `bandgap_narrowing` to `none` collapses the
+span to `8.39006e-13 V` while retaining strict Newton handoff
+(`gummel_iterations=0`, `handoff_stage=newton`, `newton_iterations=10`). The
+`l2_residual` variant does not remove the split (`0.004457594 V`), and the
+intentionally over-tight `tight_block_scales` variant fails by
+`line_search_non_decrease`; this is recorded as a diagnostic branch failure,
+not as a matrix execution failure.
+
 Reproducible import and comparison:
 
 ```powershell
@@ -189,6 +203,7 @@ python scripts\diagnose_pn2d_0v_field_mapping.py --reference-root build\referenc
 python scripts\compare_pn2d_0v_electric_field.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_electric_field
 python scripts\diagnose_pn2d_0v_density_decomposition.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_density_decomposition --ni-cm3 1e10 --ni-cm3 1.45e10
 python scripts\diagnose_pn2d_0v_ni_bgn_probe.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_ni_bgn_probe --ni-cm3 1e10 --ni-cm3 1.45e10 --ni-cm3 1.6556207295e10 --bgn none --bgn slotboom
+python scripts\probe_pn2d_0v_qf_drivers.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_qf_drivers
 python scripts\compare_pn2d_0v_state.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_state
 ```
 

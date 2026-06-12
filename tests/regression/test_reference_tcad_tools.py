@@ -36,6 +36,24 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         self.assertEqual(config["vela_solver"]["max_update"], 5.0)
         self.assertEqual(zero_bias["vela_solver"]["max_update"], 2.0)
 
+    def test_probe_pn2d_0v_qf_drivers_help(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(REPO / "scripts" / "probe_pn2d_0v_qf_drivers.py"),
+                "--help",
+            ],
+            cwd=REPO,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("--reference-root", result.stdout)
+        self.assertIn("--runner", result.stdout)
+        self.assertIn("--output-dir", result.stdout)
+
     def test_pn_export_converts_to_unit_scaling_deck(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_reference_tcad_") as tmp:
             root = Path(tmp)
