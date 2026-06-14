@@ -88,14 +88,19 @@
       "vela_step": 0.02,
       "comparison_min_points": 10,
       "require_trend_match": false,
+      "vela_materials_file": "pn2d_sentaurus2018_iv_materials.json",
       "vela_solver": {
+        "contact_boundary_minority_electron_relaxation": false,
+        "taun": 1.0e-5,
+        "taup": 3.0e-6,
         "mobility": {
-          "model": "caughey_thomas_field"
+          "model": "masetti"
         }
       },
       "comparison": {
         "candidate_scale": -1.0,
         "candidate_column": "current_total_A_per_um",
+        "interpolation": "log_current",
         "bias_min": 0.2,
         "bias_max": 0.3,
         "max_orders_of_magnitude": 0.4,

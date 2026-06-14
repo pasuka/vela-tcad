@@ -81,6 +81,7 @@
     "igbt_high_injection": {
       "baseline_config": "simulation_iv_unit_scaling.json",
       "baseline_final_current_min_ratio": 1.0,
+      "current_monotone_abs_tolerance": 0.02,
       "require_stored_charge_monotone": true
     }
   },

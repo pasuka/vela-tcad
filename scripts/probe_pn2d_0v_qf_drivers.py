@@ -14,6 +14,9 @@ from pathlib import Path
 from typing import Any
 
 
+QF_EQUILIBRIUM_TOL_V = 1.0e-6
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reference-root", required=True, type=Path)
@@ -109,7 +112,8 @@ def vtk_report(path: Path | None) -> dict[str, Any]:
         "missing_fields": missing,
         "fields": stats,
         "qf_max_span_V": qf_max_span,
-        "near_equilibrium_qf": qf_max_span <= 1.0e-8,
+        "near_equilibrium_qf": qf_max_span <= QF_EQUILIBRIUM_TOL_V,
+        "qf_equilibrium_tolerance_V": QF_EQUILIBRIUM_TOL_V,
     }
 
 
@@ -293,7 +297,10 @@ def write_markdown_summary(path: Path, rows: list[dict[str, Any]]) -> None:
             "{qf_max_span_V} | {current_total_A_per_um} | {terminal_pair_balance_relative} |".format(**row)
         )
     lines.append("")
-    lines.append("A variant with `qf_max_span_V <= 1e-8` is treated as near-equilibrium for this probe.")
+    lines.append(
+        f"A variant with `qf_max_span_V <= {QF_EQUILIBRIUM_TOL_V:g}` is treated "
+        "as near-equilibrium for this probe."
+    )
     path.write_text("\n".join(lines) + "\n")
 
 

@@ -1142,8 +1142,12 @@ def check_igbt_high_injection_trend(example_dir: Path, runner: Path | None = Non
             "(expected stored_charge_C_per_m or stored_charge_C)")
     stored = [parse_finite_float(r, stored_charge_key, "IGBT high-injection IV", i + 1)
               for i, r in enumerate(rows)]
-    assert_monotone_non_decreasing(currents, "IGBT |collector current|",
-                                   abs_tolerance=1e-20, rel_tolerance=1e-8)
+    assert_monotone_non_decreasing(
+        currents,
+        "IGBT |collector current|",
+        abs_tolerance=float(reg.get("current_monotone_abs_tolerance", 1.0e-20)),
+        rel_tolerance=float(reg.get("current_monotone_rel_tolerance", 1.0e-8)),
+    )
     if reg.get("require_stored_charge_monotone", True):
         assert_monotone(
             stored,

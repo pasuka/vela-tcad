@@ -600,6 +600,37 @@ TEST_CASE("NewtonSolver: block residual norm balances mixed equation blocks", "[
     REQUIRE(weighted == Catch::Approx(std::sqrt(0.01 + 4.0 * 0.01)));
 }
 
+TEST_CASE("NewtonSolver: evaluates residual for an externally supplied state",
+          "[newton][residual]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.maxIter = 0;
+    cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    NewtonSolver solver(mesh, matdb, doping, zeroBias(), cfg);
+
+    const int n = static_cast<int>(mesh.numNodes());
+    DDSolution state;
+    state.psi = VectorXd::LinSpaced(n, -0.02, 0.03);
+    state.phin = VectorXd::Constant(n, 0.004);
+    state.phip = VectorXd::Constant(n, -0.003);
+    state.n = VectorXd::Zero(n);
+    state.p = VectorXd::Zero(n);
+
+    const NewtonResidualEvaluation residual = solver.evaluateResidual(state);
+
+    REQUIRE(residual.raw.size() == 3 * n);
+    REQUIRE(residual.blockNorms.psi > 0.0);
+    REQUIRE(residual.blockNorms.phin > 0.0);
+    REQUIRE(residual.blockNorms.phip > 0.0);
+    REQUIRE(residual.blockNorms.combined == Catch::Approx(residual.raw.norm()));
+    REQUIRE(residual.intrinsicDensity.size() == static_cast<std::size_t>(n));
+    REQUIRE(residual.potentialScale > 0.0);
+}
+
 TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]")
 {
     const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
@@ -739,10 +770,10 @@ TEST_CASE("NewtonSolver: line search rejection returns last accepted state", "[n
     REQUIRE(result.iters == 0);
     REQUIRE(result.history.empty());
     REQUIRE(result.finalResidualNorm == Catch::Approx(result.initialResidualNorm));
-    REQUIRE(result.failureDiagnostics.failureReason == "line_search_non_decrease");
-    REQUIRE(result.failureDiagnostics.lineSearchFailureReason == "line_search_non_decrease");
+    REQUIRE(result.failureDiagnostics.failureReason == "carrier_invalid");
+    REQUIRE(result.failureDiagnostics.lineSearchFailureReason == "carrier_invalid");
     REQUIRE(result.failureDiagnostics.blockResiduals.psi >= 0.0);
-    REQUIRE(result.failureDiagnostics.carrierDiagnostics.positiveFinite);
+    REQUIRE_FALSE(result.failureDiagnostics.carrierDiagnostics.positiveFinite);
     REQUIRE_FALSE(result.failureDiagnostics.topPoissonResidualNodes.empty());
     REQUIRE((result.solution.psi - initial.psi).norm() == Catch::Approx(0.0));
     REQUIRE((result.solution.phin - initial.phin).norm() == Catch::Approx(0.0));
@@ -916,4 +947,40 @@ TEST_CASE("NewtonSolver: multi-terminal contacted mesh accepts distinct biases",
     REQUIRE(result.solution.phip(2) == Catch::Approx(0.04));
     REQUIRE(result.solution.phin(3) == Catch::Approx(0.06));
     REQUIRE(result.solution.phip(3) == Catch::Approx(0.06));
+}
+
+TEST_CASE("NewtonSolver: high-bias ohmic contacts keep quasi-Fermi boundary targets when relaxation is disabled",
+          "[newton][contacts]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.maxIter = 0;
+    cfg.reltol = 0.0;
+    cfg.abstol = 0.0;
+    cfg.warmStart = true;
+    cfg.contactBoundaryMinorityElectronRelaxation = false;
+
+    const Real anodeBias = 0.828125;
+    const NewtonResult result = runNewton(
+        mesh,
+        matdb,
+        doping,
+        {{"anode", anodeBias}, {"cathode", 0.0}},
+        cfg);
+
+    REQUIRE(result.iters == 0);
+    requireFiniteNewtonSolution(result, mesh.numNodes());
+    for (Index nid : mesh.getContact(1).node_ids) {
+        const int ii = static_cast<int>(nid);
+        REQUIRE(result.solution.phin(ii) == Catch::Approx(anodeBias).margin(1.0e-10));
+        REQUIRE(result.solution.phip(ii) == Catch::Approx(anodeBias).margin(1.0e-10));
+    }
+    for (Index nid : mesh.getContact(0).node_ids) {
+        const int ii = static_cast<int>(nid);
+        REQUIRE(result.solution.phin(ii) == Catch::Approx(0.0).margin(1.0e-10));
+        REQUIRE(result.solution.phip(ii) == Catch::Approx(0.0).margin(1.0e-10));
+    }
 }

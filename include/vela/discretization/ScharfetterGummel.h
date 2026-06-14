@@ -65,6 +65,21 @@ Real sgElectronContinuityFluxFromQuasiFermiFactors(Real ni0,
                                                    Real coef);
 
 /**
+ * @brief Balanced electron continuity flux for edge-varying intrinsic density.
+ *
+ * This generalizes the quasi-Fermi form to BGN/effective-ni edges. It cancels
+ * exactly for flat electron quasi-Fermi potential even when ni0 != ni1.
+ */
+Real sgElectronContinuityFluxFromQuasiFermiVariableNi(Real ni0,
+                                                      Real ni1,
+                                                      Real psi0,
+                                                      Real psi1,
+                                                      Real phin0,
+                                                      Real phin1,
+                                                      Real Vt,
+                                                      Real coef);
+
+/**
  * @brief Balanced hole continuity flux for Boltzmann quasi-Fermi variables.
  *
  * Algebraically equivalent to sgHoleContinuityFlux when both edge nodes use the
@@ -92,6 +107,21 @@ Real sgHoleContinuityFluxFromQuasiFermiFactors(Real ni0,
                                                Real dpsi,
                                                Real Vt,
                                                Real coef);
+
+/**
+ * @brief Balanced hole continuity flux for edge-varying intrinsic density.
+ *
+ * This generalizes the quasi-Fermi form to BGN/effective-ni edges. It cancels
+ * exactly for flat hole quasi-Fermi potential even when ni0 != ni1.
+ */
+Real sgHoleContinuityFluxFromQuasiFermiVariableNi(Real ni0,
+                                                  Real ni1,
+                                                  Real psi0,
+                                                  Real psi1,
+                                                  Real phip0,
+                                                  Real phip1,
+                                                  Real Vt,
+                                                  Real coef);
 
 /**
  * @brief Scharfetter-Gummel edge fluxes for drift-diffusion.

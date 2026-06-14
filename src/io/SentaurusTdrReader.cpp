@@ -8,7 +8,9 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iterator>
+#include <limits>
 #include <map>
 #include <numeric>
 #include <set>
@@ -469,6 +471,7 @@ void writeFieldCsv(const std::filesystem::path& path,
                    const std::vector<std::size_t>& nodes)
 {
     std::ofstream out(path);
+    out << std::setprecision(std::numeric_limits<double>::max_digits10);
     out << "node_id";
     for (std::size_t component = 0; component < field.component_count; ++component) {
         out << ",component" << component;
@@ -599,6 +602,7 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
 
     {
         std::ofstream out(outDir / "nodes.csv");
+        out << std::setprecision(std::numeric_limits<double>::max_digits10);
         out << "id,x_um,y_um\n";
         for (std::size_t i = 0; i < inventory.vertices.size(); ++i) {
             out << i << "," << inventory.vertices[i].x << "," << inventory.vertices[i].y << "\n";
@@ -829,6 +833,7 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
 
     {
         std::ofstream out(outDir / "doping.csv");
+        out << std::setprecision(std::numeric_limits<double>::max_digits10);
         out << "node_id,donors_cm3,acceptors_cm3\n";
         for (std::size_t i = 0; i < inventory.vertices.size(); ++i) {
             out << i << "," << donors[i] << "," << acceptors[i] << "\n";

@@ -742,6 +742,43 @@ TEST_CASE("DCSweep: recombination diagnostics are opt-in for hybrid handoff",
     REQUIRE(std::isfinite(csvReal(rowsWithDiag.at(1), maxNpOverNi2Column)));
 }
 
+TEST_CASE("DCSweep: transport diagnostics append mobility and current-driver columns",
+          "[dc_sweep][diagnostics][transport]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "iv_transport.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.05},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"transport", {
+                {"enabled", true},
+            }},
+        }},
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    const auto rows = readCsvRows(csvPath);
+    REQUIRE(rows.size() == 2);
+    const auto& header = rows.front();
+    csvColumnIndex(header, "mean_electron_mobility_m2_V_s");
+    csvColumnIndex(header, "mean_hole_mobility_m2_V_s");
+    csvColumnIndex(header, "min_electron_mobility_m2_V_s");
+    csvColumnIndex(header, "min_hole_mobility_m2_V_s");
+    csvColumnIndex(header, "max_electric_field_V_per_cm");
+    csvColumnIndex(header, "mean_electron_qf_gradient_V_per_cm");
+    csvColumnIndex(header, "mean_hole_qf_gradient_V_per_cm");
+}
+
 TEST_CASE("DCSweep: contact-edge diagnostics are opt-in and write per-edge rows",
           "[dc_sweep][diagnostics][contact_edge]")
 {
@@ -793,6 +830,69 @@ TEST_CASE("DCSweep: contact-edge diagnostics are opt-in and write per-edge rows"
                     Catch::Approx(csvReal(row, edgeCurrentCol) / 1.0e6).epsilon(1.0e-12));
         }
     }
+}
+
+TEST_CASE("DCSweep: continuity-balance diagnostics write contact-adjacent residual rows",
+          "[dc_sweep][diagnostics][continuity_balance]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "iv_unit_scaling.csv";
+    const auto balancePath = dir / "iv_continuity_balance.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"continuity_balance", {
+                {"enabled", true},
+                {"contacts", {"anode", "cathode"}},
+                {"csv_file", balancePath.string()}
+            }}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+
+    REQUIRE(std::filesystem::exists(balancePath));
+    const auto rows = readCsvRows(balancePath);
+    REQUIRE(rows.size() > 1);
+
+    const auto& header = rows.front();
+    const std::size_t pointIndexCol = csvColumnIndex(header, "point_index");
+    const std::size_t contactCol = csvColumnIndex(header, "contact");
+    const std::size_t carrierCol = csvColumnIndex(header, "carrier");
+    const std::size_t residualCol = csvColumnIndex(header, "continuity_residual");
+    const std::size_t contactFluxCol = csvColumnIndex(header, "contact_edge_flux");
+    const std::size_t neighborFluxCol = csvColumnIndex(header, "neighbor_edge_flux");
+    const std::size_t recombinationCol = csvColumnIndex(header, "recombination_term");
+    (void)csvColumnIndex(header, "contact_node");
+    (void)csvColumnIndex(header, "interior_node");
+    (void)csvColumnIndex(header, "interior_volume_m2");
+    (void)csvColumnIndex(header, "qf_contact_V");
+    (void)csvColumnIndex(header, "qf_interior_V");
+
+    bool sawElectron = false;
+    bool sawHole = false;
+    for (std::size_t i = 1; i < rows.size(); ++i) {
+        const auto& row = rows.at(i);
+        REQUIRE(csvReal(row, pointIndexCol) == Catch::Approx(0.0));
+        REQUIRE((row.at(contactCol) == "anode" || row.at(contactCol) == "cathode"));
+        sawElectron = sawElectron || row.at(carrierCol) == "electron";
+        sawHole = sawHole || row.at(carrierCol) == "hole";
+        REQUIRE(std::isfinite(csvReal(row, residualCol)));
+        REQUIRE(std::isfinite(csvReal(row, contactFluxCol)));
+        REQUIRE(std::isfinite(csvReal(row, neighborFluxCol)));
+        REQUIRE(std::isfinite(csvReal(row, recombinationCol)));
+    }
+    REQUIRE(sawElectron);
+    REQUIRE(sawHole);
 }
 
 TEST_CASE("DCSweep: terminal balance diagnostics reuse one solution for two contacts",

@@ -482,10 +482,11 @@ def apply_solver_physics(deck: dict[str, Any],
     solver = deck.setdefault("solver", {})
     warnings: list[str] = []
 
-    if "DopingDep" in models:
-        solver["mobility"] = {"model": "caughey_thomas"}
-    if {"Mobility", "HighFieldSaturation"} <= models:
-        solver["mobility"] = {"model": "caughey_thomas_field"}
+    has_doping_dependence = bool({"DopingDep", "DopingDependence"} & models)
+    if has_doping_dependence:
+        solver["mobility"] = {"model": "masetti"}
+    if has_doping_dependence and {"Mobility", "HighFieldSaturation"} <= models:
+        solver["mobility"] = {"model": "masetti_field"}
 
     recombination = []
     if "SRH" in models:
@@ -1135,6 +1136,8 @@ def reference_command(args: argparse.Namespace) -> None:
                 compare_command.extend(["--reference-column", str(comparison["reference_column"])])
             if "candidate_column" in comparison:
                 compare_command.extend(["--candidate-column", str(comparison["candidate_column"])])
+            if "interpolation" in comparison:
+                compare_command.extend(["--interpolation", str(comparison["interpolation"])])
             if "bias_min" in comparison:
                 compare_command.extend(["--bias-min", str(comparison["bias_min"])])
             if "bias_max" in comparison:

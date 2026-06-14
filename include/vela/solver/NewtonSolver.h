@@ -123,6 +123,14 @@ struct NewtonResult {
     NewtonFailureDiagnostics failureDiagnostics;
 };
 
+struct NewtonResidualEvaluation {
+    VectorXd raw;
+    NewtonBlockResidualInfo blockNorms;
+    std::vector<Real> intrinsicDensity;
+    bool scaledState = false;
+    Real potentialScale = 1.0;
+};
+
 class NewtonSolver {
 public:
     NewtonSolver(const DeviceMesh& mesh,
@@ -135,6 +143,7 @@ public:
 
     NewtonResult solve() const;
     NewtonResult solve(const DDSolution& initial) const;
+    NewtonResidualEvaluation evaluateResidual(const DDSolution& state) const;
 
 private:
     CoupledDDBoundaryConditions buildBoundaryConditions(

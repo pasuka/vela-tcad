@@ -111,3 +111,38 @@ TEST_CASE("DDSolution validation rejects contact quasi-Fermi mismatch", "[soluti
     REQUIRE(diagnosticsContain(result, "cathode"));
     REQUIRE(diagnosticsContain(result, "ph"));
 }
+
+TEST_CASE("DDSolution validation checks hole quasi-Fermi on p-type contact", "[solution_validation]")
+{
+    const DeviceMesh mesh = makeContactedMesh();
+    DDSolution sol = validSolution(mesh.numNodes());
+    sol.phin(0) = 0.0;
+    sol.phip(0) = 0.828125;
+    sol.n(0) = 1.0e10;
+    sol.p(0) = 1.0e17;
+
+    DDSolutionValidationOptions options;
+    options.checkContactQuasiFermiBias = true;
+
+    const auto result = validateDDSolution(sol, mesh, {{"anode", 0.828125}}, options);
+
+    REQUIRE(result.valid);
+}
+
+TEST_CASE("DDSolution validation requires both quasi-Fermi fields on ambiguous contact", "[solution_validation]")
+{
+    const DeviceMesh mesh = makeContactedMesh();
+    DDSolution sol = validSolution(mesh.numNodes());
+    sol.phin(0) = 0.0;
+    sol.phip(0) = 0.828125;
+    sol.n(0) = 1.0e12;
+    sol.p(0) = 1.0e12;
+
+    DDSolutionValidationOptions options;
+    options.checkContactQuasiFermiBias = true;
+
+    const auto result = validateDDSolution(sol, mesh, {{"anode", 0.828125}}, options);
+
+    REQUIRE_FALSE(result.valid);
+    REQUIRE(diagnosticsContain(result, "phin"));
+}

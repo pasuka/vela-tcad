@@ -515,6 +515,29 @@ TEST_CASE("SentaurusTdrReader exports neutral reference TCAD CSV files", "[senta
             != std::string::npos);
 }
 
+TEST_CASE("SentaurusTdrReader preserves small scalar field differences in CSV export",
+          "[sentaurus][tdr]")
+{
+    const double qf0 = 0.08801770000038178;
+    const double qf1 = qf0 + 1.0e-12;
+    const auto path = writeSyntheticTdr({
+        {"eQuasiFermiPotential", {qf0, qf1, qf0, qf1}},
+    });
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_precision_export");
+    std::error_code ec;
+    std::filesystem::remove_all(outDir, ec);
+
+    SentaurusTdrReader reader;
+    reader.exportNeutral(path.string(), outDir.string());
+
+    const auto rows = readCsvRows(outDir / "fields" / "eQuasiFermiPotential_region0.csv");
+    REQUIRE(rows.size() == 4);
+    REQUIRE(std::stod(rows[0][1]) == Catch::Approx(qf0).margin(1.0e-17));
+    REQUIRE(std::stod(rows[1][1]) == Catch::Approx(qf1).margin(1.0e-17));
+    REQUIRE(std::stod(rows[1][1]) - std::stod(rows[0][1]) ==
+            Catch::Approx(1.0e-12).epsilon(1.0e-5));
+}
+
 TEST_CASE("SentaurusTdrReader exports full vertex fields in global vertex order", "[sentaurus][tdr]")
 {
     const auto path = writeSyntheticPermutedVertexFieldTdr();

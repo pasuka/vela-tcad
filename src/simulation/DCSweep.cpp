@@ -1,6 +1,8 @@
 #include "vela/simulation/DCSweep.h"
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/UnitScalingSystem.h"
+#include "vela/discretization/ScharfetterGummel.h"
+#include "vela/equation/AssemblerUtils.h"
 #include "vela/simulation/DCSweepStepControl.h"
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/io/CSVWriter.h"
@@ -52,6 +54,32 @@ struct SweepRecombinationDiagnostics {
     Real maxAbsRate_m3_per_s = 0.0;
     Real meanAbsRate_m3_per_s = 0.0;
     Real maxCarrierProductRatio = 0.0;
+};
+
+struct SweepTransportDiagnostics {
+    Real meanElectronMobility_m2_V_s = 0.0;
+    Real meanHoleMobility_m2_V_s = 0.0;
+    Real minElectronMobility_m2_V_s = 0.0;
+    Real minHoleMobility_m2_V_s = 0.0;
+    Real maxElectricField_V_per_cm = 0.0;
+    Real meanElectronQfGradient_V_per_cm = 0.0;
+    Real meanHoleQfGradient_V_per_cm = 0.0;
+};
+
+struct ContinuityBalanceDiagnosticRow {
+    std::string contact;
+    std::string carrier;
+    Index contactNode = 0;
+    Index interiorNode = 0;
+    Index contactEdgeId = 0;
+    Real contactEdgeFlux = 0.0;
+    Real neighborEdgeFlux = 0.0;
+    Real recombinationTerm = 0.0;
+    Real continuityResidual = 0.0;
+    Real interiorVolume_m2 = 0.0;
+    Real qfContact_V = 0.0;
+    Real qfInterior_V = 0.0;
+    Real carrierDensityInterior_m3 = 0.0;
 };
 
 std::string formatReal(Real value)
@@ -179,6 +207,230 @@ SweepRecombinationDiagnostics computeSweepRecombinationDiagnostics(
 
     diagnostics.meanAbsRate_m3_per_s = absSum / static_cast<Real>(nodeCount);
     return diagnostics;
+}
+
+SweepTransportDiagnostics computeSweepTransportDiagnostics(
+    const DeviceMesh& mesh,
+    const MaterialDatabase& matdb,
+    const DopingModel& doping,
+    const MobilityModelConfig& mobilityConfig,
+    Real temperature_K,
+    const DDSolution& sol)
+{
+    SweepTransportDiagnostics diagnostics;
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const std::vector<Material> cellMaterials =
+        detail::buildCellMaterials(mesh, matdb, temperature_K);
+    const std::unique_ptr<MobilityModel> mobility = makeMobilityModel(mobilityConfig);
+
+    Real electronMobilitySum = 0.0;
+    Real holeMobilitySum = 0.0;
+    Real electronQfGradientSum = 0.0;
+    Real holeQfGradientSum = 0.0;
+    Index electronMobilityCount = 0;
+    Index holeMobilityCount = 0;
+    Index qfGradientCount = 0;
+    bool hasElectronMobility = false;
+    bool hasHoleMobility = false;
+
+    for (Index e = 0; e < mesh.numEdges(); ++e) {
+        const Edge& edge = mesh.getEdge(e);
+        const Node& n0 = mesh.getNode(edge.n0);
+        const Node& n1 = mesh.getNode(edge.n1);
+        const Real dx = n1.x - n0.x;
+        const Real dy = n1.y - n0.y;
+        const Real length = std::sqrt(dx * dx + dy * dy);
+        if (length <= 0.0)
+            continue;
+
+        const int i0 = static_cast<int>(edge.n0);
+        const int i1 = static_cast<int>(edge.n1);
+        const Real electricField = std::abs(sol.psi(i1) - sol.psi(i0)) / length;
+        diagnostics.maxElectricField_V_per_cm =
+            std::max(diagnostics.maxElectricField_V_per_cm,
+                     voltsPerMeterToVoltsPerCm(electricField));
+
+        const Real electronMobility = detail::edgeMobility(
+            edgeCells, mesh, doping, *mobility, cellMaterials, e, CarrierType::Electron,
+            electricField, &mobilityConfig, &sol.psi);
+        if (electronMobility > 0.0 && std::isfinite(electronMobility)) {
+            electronMobilitySum += electronMobility;
+            diagnostics.minElectronMobility_m2_V_s = hasElectronMobility
+                ? std::min(diagnostics.minElectronMobility_m2_V_s, electronMobility)
+                : electronMobility;
+            hasElectronMobility = true;
+            ++electronMobilityCount;
+        }
+
+        const Real holeMobility = detail::edgeMobility(
+            edgeCells, mesh, doping, *mobility, cellMaterials, e, CarrierType::Hole,
+            electricField, &mobilityConfig, &sol.psi);
+        if (holeMobility > 0.0 && std::isfinite(holeMobility)) {
+            holeMobilitySum += holeMobility;
+            diagnostics.minHoleMobility_m2_V_s = hasHoleMobility
+                ? std::min(diagnostics.minHoleMobility_m2_V_s, holeMobility)
+                : holeMobility;
+            hasHoleMobility = true;
+            ++holeMobilityCount;
+        }
+
+        electronQfGradientSum += voltsPerMeterToVoltsPerCm(
+            std::abs(sol.phin(i1) - sol.phin(i0)) / length);
+        holeQfGradientSum += voltsPerMeterToVoltsPerCm(
+            std::abs(sol.phip(i1) - sol.phip(i0)) / length);
+        ++qfGradientCount;
+    }
+
+    if (electronMobilityCount > 0)
+        diagnostics.meanElectronMobility_m2_V_s =
+            electronMobilitySum / static_cast<Real>(electronMobilityCount);
+    if (holeMobilityCount > 0)
+        diagnostics.meanHoleMobility_m2_V_s =
+            holeMobilitySum / static_cast<Real>(holeMobilityCount);
+    if (qfGradientCount > 0) {
+        diagnostics.meanElectronQfGradient_V_per_cm =
+            electronQfGradientSum / static_cast<Real>(qfGradientCount);
+        diagnostics.meanHoleQfGradient_V_per_cm =
+            holeQfGradientSum / static_cast<Real>(qfGradientCount);
+    }
+    return diagnostics;
+}
+
+std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
+    const DeviceMesh& mesh,
+    const MaterialDatabase& matdb,
+    const DopingModel& doping,
+    const MobilityModelConfig& mobilityConfig,
+    Real temperature_K,
+    const DDSolution& sol,
+    const std::vector<Real>& effectiveNi,
+    const RecombinationModelConfig& recombinationCfg,
+    const std::vector<std::string>& contacts)
+{
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const std::vector<Material> cellMaterials =
+        detail::buildCellMaterials(mesh, matdb, temperature_K);
+    const std::unique_ptr<MobilityModel> mobility = makeMobilityModel(mobilityConfig);
+    const RecombinationModel recombination(recombinationCfg);
+    const Real Vt = constants::kb * temperature_K / constants::q;
+
+    std::unordered_set<std::string> requested(contacts.begin(), contacts.end());
+    std::vector<std::vector<Index>> nodeEdges(mesh.numNodes());
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        nodeEdges[edge.n0].push_back(edgeId);
+        nodeEdges[edge.n1].push_back(edgeId);
+    }
+
+    auto edgeFluxForCarrier = [&](Index edgeId, CarrierType carrier) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        const Real h = edge.length;
+        if (h <= 1.0e-30)
+            return Real{0.0};
+        const int i = static_cast<int>(edge.n0);
+        const int j = static_cast<int>(edge.n1);
+        const Real electricField = std::abs(sol.psi(j) - sol.psi(i)) / h;
+        const Real mu = detail::edgeMobility(
+            edgeCells, mesh, doping, *mobility, cellMaterials, edgeId, carrier,
+            electricField, &mobilityConfig, &sol.psi);
+        if (mu <= 0.0)
+            return Real{0.0};
+        const Real coef = mu * Vt * edge.couple / h;
+        if (carrier == CarrierType::Electron) {
+            return sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                effectiveNi[edge.n0],
+                effectiveNi[edge.n1],
+                sol.psi(i),
+                sol.psi(j),
+                sol.phin(i),
+                sol.phin(j),
+                Vt,
+                coef);
+        }
+        return sgHoleContinuityFluxFromQuasiFermiVariableNi(
+            effectiveNi[edge.n0],
+            effectiveNi[edge.n1],
+            sol.psi(i),
+            sol.psi(j),
+            sol.phip(i),
+            sol.phip(j),
+            Vt,
+            coef);
+    };
+
+    auto nodeContribution = [&](Index edgeId, Index node, CarrierType carrier) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        const Real flux = edgeFluxForCarrier(edgeId, carrier);
+        if (edge.n0 == node)
+            return flux;
+        if (edge.n1 == node)
+            return -flux;
+        return Real{0.0};
+    };
+
+    auto recombinationTerm = [&](Index node) {
+        const int row = static_cast<int>(node);
+        const Real ni = effectiveNi[node];
+        if (ni <= 0.0)
+            return Real{0.0};
+        return recombination.totalRate(sol.n(row), sol.p(row), ni) *
+            mesh.getNode(node).volume;
+    };
+
+    std::vector<ContinuityBalanceDiagnosticRow> rows;
+    for (const Contact& contact : mesh.contacts()) {
+        if (!requested.empty() && !requested.contains(contact.name))
+            continue;
+        const std::unordered_set<Index> contactNodes(
+            contact.node_ids.begin(), contact.node_ids.end());
+        for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+            const Edge& edge = mesh.getEdge(edgeId);
+            const bool n0Contact = contactNodes.contains(edge.n0);
+            const bool n1Contact = contactNodes.contains(edge.n1);
+            if (n0Contact == n1Contact)
+                continue;
+            const Index contactNode = n0Contact ? edge.n0 : edge.n1;
+            const Index interiorNode = n0Contact ? edge.n1 : edge.n0;
+
+            for (CarrierType carrier : {CarrierType::Electron, CarrierType::Hole}) {
+                Real contactFlux = 0.0;
+                Real neighborFlux = 0.0;
+                for (Index adjacentEdge : nodeEdges[interiorNode]) {
+                    const Real contribution =
+                        nodeContribution(adjacentEdge, interiorNode, carrier);
+                    if (adjacentEdge == edgeId)
+                        contactFlux += contribution;
+                    else
+                        neighborFlux += contribution;
+                }
+                const Real recombination = recombinationTerm(interiorNode);
+                const int contactRow = static_cast<int>(contactNode);
+                const int interiorRow = static_cast<int>(interiorNode);
+                ContinuityBalanceDiagnosticRow row;
+                row.contact = contact.name;
+                row.carrier = carrier == CarrierType::Electron ? "electron" : "hole";
+                row.contactNode = contactNode;
+                row.interiorNode = interiorNode;
+                row.contactEdgeId = edgeId;
+                row.contactEdgeFlux = contactFlux;
+                row.neighborEdgeFlux = neighborFlux;
+                row.recombinationTerm = recombination;
+                row.continuityResidual = contactFlux + neighborFlux + recombination;
+                row.interiorVolume_m2 = mesh.getNode(interiorNode).volume;
+                row.qfContact_V = carrier == CarrierType::Electron
+                    ? sol.phin(contactRow)
+                    : sol.phip(contactRow);
+                row.qfInterior_V = carrier == CarrierType::Electron
+                    ? sol.phin(interiorRow)
+                    : sol.phip(interiorRow);
+                row.carrierDensityInterior_m3 = carrier == CarrierType::Electron
+                    ? sol.n(interiorRow)
+                    : sol.p(interiorRow);
+                rows.push_back(std::move(row));
+            }
+        }
+    }
+    return rows;
 }
 
 std::vector<std::string> splitCsvLine(const std::string& line)
@@ -432,6 +684,25 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         sweep.diagnostics.contactEdge.csvFile =
             contactEdgeCfg.value("csv_file", std::string{});
     }
+    if (diagnosticsCfg.contains("transport")) {
+        const auto& transportCfg = diagnosticsCfg.at("transport");
+        if (!transportCfg.is_object())
+            throw std::invalid_argument("DCSweep: sweep.diagnostics.transport must be an object.");
+        sweep.diagnostics.transport.enabled =
+            transportCfg.value("enabled", sweep.diagnostics.transport.enabled);
+    }
+    if (diagnosticsCfg.contains("continuity_balance")) {
+        const auto& continuityCfg = diagnosticsCfg.at("continuity_balance");
+        if (!continuityCfg.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.diagnostics.continuity_balance must be an object.");
+        sweep.diagnostics.continuityBalance.enabled =
+            continuityCfg.value("enabled", sweep.diagnostics.continuityBalance.enabled);
+        sweep.diagnostics.continuityBalance.contacts =
+            continuityCfg.value("contacts", std::vector<std::string>{});
+        sweep.diagnostics.continuityBalance.csvFile =
+            continuityCfg.value("csv_file", std::string{});
+    }
 
     if (j.contains("terminal_charges")) {
         const auto& charges = j.at("terminal_charges");
@@ -485,6 +756,16 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
                 (csvPath.parent_path() / (csvPath.stem().string() + "_contact_edges.csv")).string();
         } else {
             sweep.diagnostics.contactEdge.csvFile = resolve(sweep.diagnostics.contactEdge.csvFile);
+        }
+    }
+    if (sweep.diagnostics.continuityBalance.enabled) {
+        if (sweep.diagnostics.continuityBalance.csvFile.empty()) {
+            const std::filesystem::path csvPath(sweep.csvFile);
+            sweep.diagnostics.continuityBalance.csvFile =
+                (csvPath.parent_path() / (csvPath.stem().string() + "_continuity_balance.csv")).string();
+        } else {
+            sweep.diagnostics.continuityBalance.csvFile =
+                resolve(sweep.diagnostics.continuityBalance.csvFile);
         }
     }
 
@@ -911,6 +1192,15 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         header.push_back("recombination_mean_abs_rate_m3_per_s");
         header.push_back("carrier_product_max_np_over_ni2");
     }
+    if (sweep.diagnostics.transport.enabled) {
+        header.push_back("mean_electron_mobility_m2_V_s");
+        header.push_back("mean_hole_mobility_m2_V_s");
+        header.push_back("min_electron_mobility_m2_V_s");
+        header.push_back("min_hole_mobility_m2_V_s");
+        header.push_back("max_electric_field_V_per_cm");
+        header.push_back("mean_electron_qf_gradient_V_per_cm");
+        header.push_back("mean_hole_qf_gradient_V_per_cm");
+    }
     csv.writeHeader(header);
 
     auto diagnosticContacts = [](const std::vector<std::string>& configured,
@@ -923,6 +1213,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         diagnosticContacts(sweep.diagnostics.terminalBalance.contacts, sweep.currentContact);
     const std::vector<std::string> contactEdgeContacts =
         diagnosticContacts(sweep.diagnostics.contactEdge.contacts, sweep.currentContact);
+    const std::vector<std::string> continuityBalanceContacts =
+        diagnosticContacts(sweep.diagnostics.continuityBalance.contacts, sweep.currentContact);
 
     std::unique_ptr<CSVWriter> terminalBalanceCsv;
     if (sweep.diagnostics.terminalBalance.enabled) {
@@ -1002,6 +1294,31 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         if (writeUnitScaledColumns)
             diagHeader.push_back("current_total_A_per_um");
         contactEdgeCsv->writeHeader(diagHeader);
+    }
+
+    std::unique_ptr<CSVWriter> continuityBalanceCsv;
+    if (sweep.diagnostics.continuityBalance.enabled) {
+        const std::filesystem::path diagPath(sweep.diagnostics.continuityBalance.csvFile);
+        if (!diagPath.parent_path().empty())
+            std::filesystem::create_directories(diagPath.parent_path());
+        continuityBalanceCsv = std::make_unique<CSVWriter>(diagPath.string());
+        continuityBalanceCsv->writeHeader({
+            "point_index",
+            "bias_V",
+            "contact",
+            "carrier",
+            "contact_node",
+            "interior_node",
+            "contact_edge_id",
+            "contact_edge_flux",
+            "neighbor_edge_flux",
+            "recombination_term",
+            "continuity_residual",
+            "interior_volume_m2",
+            "qf_contact_V",
+            "qf_interior_V",
+            "qf_drop_V",
+            "carrier_density_interior_m3"});
     }
 
     std::vector<DCSweepPoint> points;
@@ -1324,6 +1641,25 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             point.extraFields.emplace_back(
                 "carrier_product_max_np_over_ni2", diagnostics.maxCarrierProductRatio);
         }
+        if (converged && sweep.diagnostics.transport.enabled) {
+            const SweepTransportDiagnostics diagnostics =
+                computeSweepTransportDiagnostics(
+                    mesh, matdb, doping, mobilityConfig, temperature_K, sol);
+            point.extraFields.emplace_back(
+                "mean_electron_mobility_m2_V_s", diagnostics.meanElectronMobility_m2_V_s);
+            point.extraFields.emplace_back(
+                "mean_hole_mobility_m2_V_s", diagnostics.meanHoleMobility_m2_V_s);
+            point.extraFields.emplace_back(
+                "min_electron_mobility_m2_V_s", diagnostics.minElectronMobility_m2_V_s);
+            point.extraFields.emplace_back(
+                "min_hole_mobility_m2_V_s", diagnostics.minHoleMobility_m2_V_s);
+            point.extraFields.emplace_back(
+                "max_electric_field_V_per_cm", diagnostics.maxElectricField_V_per_cm);
+            point.extraFields.emplace_back(
+                "mean_electron_qf_gradient_V_per_cm", diagnostics.meanElectronQfGradient_V_per_cm);
+            point.extraFields.emplace_back(
+                "mean_hole_qf_gradient_V_per_cm", diagnostics.meanHoleQfGradient_V_per_cm);
+        }
         if (writeUnitScaledColumns) {
             point.extraFields.emplace_back(
                 "current_total_A_per_um", perMeterToPerMicron(point.totalCurrent));
@@ -1441,6 +1777,22 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 row.push_back(formatReal(it != extraFieldValues.end() ? it->second : 0.0));
             }
         }
+        if (sweep.diagnostics.transport.enabled) {
+            std::unordered_map<std::string, Real> extraFieldValues;
+            for (const auto& [name, value] : point.extraFields)
+                extraFieldValues[name] = value;
+            for (const std::string& name : {
+                     std::string("mean_electron_mobility_m2_V_s"),
+                     std::string("mean_hole_mobility_m2_V_s"),
+                     std::string("min_electron_mobility_m2_V_s"),
+                     std::string("min_hole_mobility_m2_V_s"),
+                     std::string("max_electric_field_V_per_cm"),
+                     std::string("mean_electron_qf_gradient_V_per_cm"),
+                     std::string("mean_hole_qf_gradient_V_per_cm")}) {
+                const auto it = extraFieldValues.find(name);
+                row.push_back(formatReal(it != extraFieldValues.end() ? it->second : 0.0));
+            }
+        }
         csv.writeRow(row);
         if (!converged && !point.newtonFailureDiagnostics.failureReason.empty())
             writeNewtonFailureDiagnostics(points.size(), point);
@@ -1528,6 +1880,40 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         diagRow.push_back(formatReal(perMeterToPerMicron(edgeDiag.totalCurrent)));
                     contactEdgeCsv->writeRow(diagRow);
                 }
+            }
+        }
+
+        if (converged && continuityBalanceCsv != nullptr) {
+            const std::size_t pointIndex = points.size();
+            const std::vector<ContinuityBalanceDiagnosticRow> balanceRows =
+                computeContinuityBalanceDiagnostics(
+                    mesh,
+                    matdb,
+                    doping,
+                    mobilityConfig,
+                    temperature_K,
+                    sol,
+                    effectiveNi,
+                    sweepRecombinationConfig,
+                    continuityBalanceContacts);
+            for (const ContinuityBalanceDiagnosticRow& balance : balanceRows) {
+                continuityBalanceCsv->writeRow({
+                    std::to_string(pointIndex),
+                    formatReal(point.bias),
+                    balance.contact,
+                    balance.carrier,
+                    std::to_string(balance.contactNode),
+                    std::to_string(balance.interiorNode),
+                    std::to_string(balance.contactEdgeId),
+                    formatReal(balance.contactEdgeFlux),
+                    formatReal(balance.neighborEdgeFlux),
+                    formatReal(balance.recombinationTerm),
+                    formatReal(balance.continuityResidual),
+                    formatReal(balance.interiorVolume_m2),
+                    formatReal(balance.qfContact_V),
+                    formatReal(balance.qfInterior_V),
+                    formatReal(std::abs(balance.qfInterior_V - balance.qfContact_V)),
+                    formatReal(balance.carrierDensityInterior_m3)});
             }
         }
 

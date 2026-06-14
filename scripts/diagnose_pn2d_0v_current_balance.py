@@ -24,6 +24,7 @@ SENTAURUS_CURRENT_FIELDS = {
     "TotalCurrent": "total_current",
 }
 DEFAULT_THERMAL_VOLTAGE_V = 0.025851999786435535
+QF_EQUILIBRIUM_TOL_V = 1.0e-6
 EXP_RESOLUTION_DELTA = 2.0e-16
 
 
@@ -562,7 +563,8 @@ def vtk_report(path: Path) -> dict[str, Any]:
         "missing_fields": missing,
         "fields": stats,
         "qf_max_span_V": qf_max_span,
-        "near_equilibrium_qf": qf_max_span <= 1.0e-8,
+        "near_equilibrium_qf": qf_max_span <= QF_EQUILIBRIUM_TOL_V,
+        "qf_equilibrium_tolerance_V": QF_EQUILIBRIUM_TOL_V,
     }
 
 

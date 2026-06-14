@@ -63,6 +63,11 @@ Plot {
   # Recombination
 
   SRHRecombination
+
+  # Mobility diagnostics
+
+  eMobility
+  hMobility
 }
 
 Math {
@@ -96,5 +101,6 @@ Solve {
     Coupled {
       Poisson Electron Hole
     }
+    Plot(FilePrefix="pn2d_iv_multibias" Time=(0;0.25;0.3;0.5;0.8;1.0) NoOverWrite)
   }
 }

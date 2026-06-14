@@ -33,9 +33,21 @@ struct TerminalBalanceDiagnosticsConfig {
     std::string csvFile;
 };
 
+struct TransportDiagnosticsConfig {
+    bool enabled = false;
+};
+
+struct ContinuityBalanceDiagnosticsConfig {
+    bool enabled = false;
+    std::vector<std::string> contacts;
+    std::string csvFile;
+};
+
 struct SweepDiagnosticsConfig {
     TerminalBalanceDiagnosticsConfig terminalBalance;
     ContactEdgeDiagnosticsConfig contactEdge;
+    TransportDiagnosticsConfig transport;
+    ContinuityBalanceDiagnosticsConfig continuityBalance;
 };
 
 struct DCSweepConfig {

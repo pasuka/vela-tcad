@@ -38,6 +38,30 @@ class SentaurusImportToolsTest(unittest.TestCase):
         self.assertNotIn("mobility", deck["solver"])
         self.assertEqual(warnings, [])
 
+    def test_solver_physics_maps_doping_dependence_to_masetti(self) -> None:
+        deck = {"solver": {"type": "gummel"}}
+
+        warnings = sentaurus_import.apply_solver_physics(
+            deck,
+            {"physics": [{"models": ["Mobility", "DopingDependence"]}]},
+            {"name": "iv", "kind": "iv"},
+        )
+
+        self.assertEqual(deck["solver"]["mobility"]["model"], "masetti")
+        self.assertEqual(warnings, [])
+
+    def test_solver_physics_maps_doping_dependence_high_field_to_masetti_field(self) -> None:
+        deck = {"solver": {"type": "gummel"}}
+
+        warnings = sentaurus_import.apply_solver_physics(
+            deck,
+            {"physics": [{"models": ["Mobility", "DopingDependence", "HighFieldSaturation"]}]},
+            {"name": "iv", "kind": "iv"},
+        )
+
+        self.assertEqual(deck["solver"]["mobility"]["model"], "masetti_field")
+        self.assertEqual(warnings, [])
+
     def test_plt_parser_exports_reference_curve(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_sentaurus_plt_") as tmp:
             root = Path(tmp)

@@ -24,6 +24,51 @@ void parseCaugheyThomas(const nlohmann::json& json,
     params.alpha = json.value((std::string(prefix) + "_alpha").c_str(), params.alpha);
 }
 
+void parseMasetti(const nlohmann::json& json,
+                  MasettiParameters& params,
+                  const char* prefix,
+                  UnitScalingConfig scaling)
+{
+    const std::string base = std::string(prefix) + "_";
+    const std::pair<const char*, Real*> mobilityFields[] = {
+        {"mu_const_m2_V_s", &params.muConst},
+        {"mumin1_m2_V_s", &params.muMin1},
+        {"mumin2_m2_V_s", &params.muMin2},
+        {"mu1_m2_V_s", &params.mu1},
+    };
+    for (const auto& [name, target] : mobilityFields) {
+        const std::string key = base + name;
+        if (json.contains(key))
+            *target = scaling.mobilityToSI(json.at(key).get<Real>());
+    }
+
+    const std::pair<const char*, Real*> concentrationFields[] = {
+        {"pc_m3", &params.pc},
+        {"cr_m3", &params.cr},
+        {"cs_m3", &params.cs},
+    };
+    for (const auto& [name, target] : concentrationFields) {
+        const std::string key = base + name;
+        if (json.contains(key))
+            *target = scaling.concentrationToSI(json.at(key).get<Real>());
+    }
+
+    params.alpha = json.value((base + "masetti_alpha").c_str(), params.alpha);
+    params.beta = json.value((base + "masetti_beta").c_str(), params.beta);
+}
+
+bool isMasettiModel(const std::string& model)
+{
+    return model == "masetti" || model == "masetti_field";
+}
+
+bool isFieldMobilityModel(const std::string& model)
+{
+    return model == "caughey_thomas_field" ||
+           model == "caughey_thomas_field_surface" ||
+           model == "masetti_field";
+}
+
 void parseField(const nlohmann::json& json,
                 FieldMobilityParameters& params,
                 const char* prefix)
@@ -67,9 +112,10 @@ Real DopingDependentMobility::electronMobility(const Material& material,
                                                Real electricField,
                                                Real surfaceNormalField) const
 {
-    Real mobility = caugheyThomas(material.mun, netDoping, config_.electronCT);
-    if (config_.model == "caughey_thomas_field" ||
-        config_.model == "caughey_thomas_field_surface")
+    Real mobility = isMasettiModel(config_.model)
+        ? masetti(netDoping, config_.electronMasetti)
+        : caugheyThomas(material.mun, netDoping, config_.electronCT);
+    if (isFieldMobilityModel(config_.model))
         mobility = fieldLimit(mobility, electricField, config_.electronField);
     if (isSurfaceMobilityModel(config_))
         mobility = surfaceLimit(
@@ -84,9 +130,10 @@ Real DopingDependentMobility::holeMobility(const Material& material,
                                            Real electricField,
                                            Real surfaceNormalField) const
 {
-    Real mobility = caugheyThomas(material.mup, netDoping, config_.holeCT);
-    if (config_.model == "caughey_thomas_field" ||
-        config_.model == "caughey_thomas_field_surface")
+    Real mobility = isMasettiModel(config_.model)
+        ? masetti(netDoping, config_.holeMasetti)
+        : caugheyThomas(material.mup, netDoping, config_.holeCT);
+    if (isFieldMobilityModel(config_.model))
         mobility = fieldLimit(mobility, electricField, config_.holeField);
     if (isSurfaceMobilityModel(config_))
         mobility = surfaceLimit(
@@ -109,6 +156,30 @@ Real DopingDependentMobility::caugheyThomas(
     const Real normalizedDoping = std::abs(netDoping) / params.nRef;
     const Real rolloff = std::pow(normalizedDoping, params.alpha);
     return muMin + (muMax - muMin) / (1.0 + rolloff);
+}
+
+Real DopingDependentMobility::masetti(Real netDoping,
+                                      const MasettiParameters& params)
+{
+    if (params.muConst <= 0.0)
+        return 0.0;
+    if (params.cr <= 0.0 || params.cs <= 0.0 || params.alpha <= 0.0 ||
+        params.beta <= 0.0)
+        throw std::invalid_argument(
+            "DopingDependentMobility: Masetti cr, cs, alpha, and beta must be positive.");
+
+    const Real doping = std::abs(netDoping);
+    if (doping <= 0.0)
+        return params.muConst;
+
+    const Real exponential =
+        params.muMin1 * std::exp(-std::max<Real>(0.0, params.pc) / doping);
+    const Real rolloff = (params.muConst - params.muMin2) /
+        (1.0 + std::pow(doping / params.cr, params.alpha));
+    const Real highDopingCorrection = params.mu1 /
+        (1.0 + std::pow(params.cs / doping, params.beta));
+    const Real mobility = exponential + rolloff - highDopingCorrection;
+    return std::max<Real>(0.0, mobility);
 }
 
 Real DopingDependentMobility::fieldLimit(Real lowFieldMobility,
@@ -176,6 +247,8 @@ MobilityModelConfig mobilityModelConfigFromJson(
 
     parseCaugheyThomas(value, config.electronCT, "electron", scaling);
     parseCaugheyThomas(value, config.holeCT, "hole", scaling);
+    parseMasetti(value, config.electronMasetti, "electron", scaling);
+    parseMasetti(value, config.holeMasetti, "hole", scaling);
     parseField(value, config.electronField, "electron");
     parseField(value, config.holeField, "hole");
 
@@ -250,6 +323,7 @@ std::unique_ptr<MobilityModel> makeMobilityModel(const MobilityModelConfig& conf
         return std::make_unique<ConstantMobility>();
     if (config.model == "caughey_thomas" ||
         config.model == "caughey_thomas_field" ||
+        isMasettiModel(config.model) ||
         isSurfaceMobilityModel(config))
         return std::make_unique<DopingDependentMobility>(config);
 

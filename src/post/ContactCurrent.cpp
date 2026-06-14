@@ -108,14 +108,10 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             &solution.psi);
 
         // SG fluxes in physical units.  Mirror CoupledDDAssembler residual:
-        // use the cancellation-free quasi-Fermi balanced form when both edge
-        // endpoints share the same effective intrinsic density, and fall back
-        // to the density-based form only when BGN makes ni node-dependent.
-        // The density-based form B(-u)*n0 - B(+u)*n1 suffers catastrophic
-        // cancellation when |dpsi|/Vt is large (e.g. >>1 at high forward bias)
-        // because B(-u) grows exponentially while B(+u) -> 0; tiny imbalance
-        // in (n0, n1) is then amplified by orders of magnitude, breaking
-        // discrete current conservation between contacts.
+        // use the cancellation-free quasi-Fermi balanced form, including the
+        // variable-ni generalization needed for BGN/effective-ni edges.  The
+        // density-based form B(-u)*n0 - B(+u)*n1 does not cancel flat
+        // quasi-Fermi levels when ni varies across the edge.
         const Index idxI = edge.n0;
         const Index idxJ = edge.n1;
         const Real ni_i = ni_[idxI];
@@ -129,11 +125,8 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         Real electronFlux01 = 0.0;
         if (mun > 0.0) {
             const Real coef = mun * thermalVoltage_ / edgeLength;
-            electronContinuityFlux01 = (ni_i == ni_j)
-                ? sgElectronContinuityFluxFromQuasiFermi(
-                      ni_i, psi_j, phin_i, phin_j, dpsi, thermalVoltage_, coef)
-                : sgElectronContinuityFlux(
-                      n_i, n_j, dpsi, thermalVoltage_, coef);
+            electronContinuityFlux01 = sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                ni_i, ni_j, psi_i, psi_j, phin_i, phin_j, thermalVoltage_, coef);
             // sgElectronFlux = -sgElectronContinuityFlux by definition.
             electronFlux01 = -electronContinuityFlux01;
         }
@@ -141,11 +134,8 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         Real holeFlux01 = 0.0;
         if (mup > 0.0) {
             const Real coef = mup * thermalVoltage_ / edgeLength;
-            holeContinuityFlux01 = (ni_i == ni_j)
-                ? sgHoleContinuityFluxFromQuasiFermi(
-                      ni_i, psi_i, phip_i, phip_j, dpsi, thermalVoltage_, coef)
-                : sgHoleContinuityFlux(
-                      p_i, p_j, dpsi, thermalVoltage_, coef);
+            holeContinuityFlux01 = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                ni_i, ni_j, psi_i, psi_j, phip_i, phip_j, thermalVoltage_, coef);
             holeFlux01 = -holeContinuityFlux01;
         }
 
@@ -191,8 +181,8 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         edgeDiag.bernoulliU = dpsi / thermalVoltage_;
         edgeDiag.bernoulliBplus = weights.b_plus;
         edgeDiag.bernoulliBminus = weights.b_minus;
-        edgeDiag.electronUsedQuasiFermi = (ni_i == ni_j);
-        edgeDiag.holeUsedQuasiFermi = (ni_i == ni_j);
+        edgeDiag.electronUsedQuasiFermi = true;
+        edgeDiag.holeUsedQuasiFermi = true;
         edgeDiag.psi0 = psi_i;
         edgeDiag.psi1 = psi_j;
         edgeDiag.phin0 = phin_i;

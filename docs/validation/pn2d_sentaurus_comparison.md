@@ -216,7 +216,7 @@ but sets `impact_ionization.model: "none"`; avalanche/impact-ionization fields
 remain available through the imported Sentaurus TDR/tdx state exports.
 
 The current executable comparison uses the faithful node-level doping decks.
-The IV deck uses `vela_stop: 0.3` and `vela_step: 0.1`; the local gate compares
+The IV deck uses `vela_stop: 0.3` and `vela_step: 0.02`; the local gate compares
 the 0.2-0.3 V forward-bias window against the full imported Sentaurus IV
 reference. The sweep bias follows the Sentaurus `Anode` voltage ramp, while the
 Vela current is taken from `Cathode`; this matches the terminal-current
@@ -244,6 +244,38 @@ Sentaurus-faithful model and improves the IV forward-current comparison.
 The BV-only Caughey-Thomas constant point is still not reused for IV because it
 degrades the forward-current comparison relative to the field-dependent point.
 These reports are diagnostic-only and do not yet require trend match.
+
+### IV high-bias physical quantities
+
+The June 2026 high-bias IV state comparison found that the previous 1 V
+diagnostic was not a same-bias comparison: Sentaurus fields came from the 1.0 V
+terminal state, while the Vela probe stopped at `0.8265625 V` and then failed
+validation at `0.828125 V` with `contact 'Anode' node 2 phin=0 does not match
+bias`. The direct cause was Newton's default p-contact minority-electron
+relaxation, which intentionally relaxed the Anode minority `phin` to 0 V at
+high forward bias. That behavior is useful as a numerical option, but it is not
+appropriate for the Sentaurus-faithful pn2d IV calibration state, where both
+contact quasi-Fermi potentials should remain tied to the Ohmic contact voltage.
+
+The pn2d Sentaurus2018 IV reference override now sets
+`contact_boundary_minority_electron_relaxation: false`. With that override, the
+1 V probe converges through `1.0000000000000002 V`; Anode and Cathode terminal
+currents remain balanced, and the high-bias current ratio improves to
+Vela/Sentaurus `0.826676` at 1 V. The full `0.20547013066..1.0 V` IV curve
+comparison is still not a calibrated pass (`max_relative_error=1.17508`,
+`orders_of_magnitude=0.337475`), mostly because the lower forward-bias points
+remain under-calibrated, but the previous boundary-condition artifact is
+removed.
+
+Same-bias 1.0 V field comparison artifacts live under
+`build/reference_tcad/pn2d_sentaurus2018/reports/iv_state/fixed/physical_quantity_compare/`.
+The dominant field errors after disabling relaxation are much smaller:
+`electron_qf_V` max error drops from the diagnostic 1.0 V discontinuity to
+`0.015289 V`; `eDensity` and `hDensity` mean absolute errors drop to about
+`1.42e16 cm^-3`; and `ElectricField` p95 error drops to about `333 V/cm`.
+Remaining IV mismatch is therefore a current-magnitude calibration problem
+(mobility/current-density magnitude, recombination/effective-ni calibration, or
+width/unit convention), not a contact-boundary failure.
 
 Vela currently treats Sentaurus Fermi statistics as Boltzmann carrier
 statistics. Sentaurus Okuto-Crowell avalanche is approximated by Vela
@@ -1784,3 +1816,116 @@ step `0.01`.
 Full suite `ctest --preset windows-ucrt64-debug` → **275/275 passed**, confirming
 no regression across the other 272 tests (the `ni` override is isolated to the
 pn2d IV deck).
+
+## PN2D Sentaurus2018 0V Current Debug (2026-06-12)
+
+The 0V current-related debug pass generated a five-group comparison report under:
+
+```text
+build/reference_tcad/pn2d_sentaurus2018/reports/0v_current_related
+```
+
+### Current Definition Findings
+
+The baseline terminal signs match Sentaurus, but the absolute current does not:
+
+| contact | Vela total (A/um) | Sentaurus `.plt` total | Sentaurus/Vela |
+|---|---:|---:|---:|
+| Anode | `-6.5533928359887347e-18` | `-7.17389811693691e-25` | `1.0946845849894114e-07` |
+| Cathode | `6.5556001087542772e-18` | `7.17389811693687e-25` | `1.0943160043207828e-07` |
+
+Simple width conversions do not explain the baseline mismatch. Comparing
+Sentaurus internal current definitions shows a separate reference-definition
+ambiguity:
+
+| contact | `.plt TotalCurrent` | `ContactCurrentFlux` | boundary `TotalCurrentDensity` integral |
+|---|---:|---:|---:|
+| Anode | `-7.17389811693691e-25` | `-1.45982e-19` | `1.4598200000000005e-15 A/cm-width` |
+| Cathode | `7.17389811693687e-25` | `6.65229e-20` | `6.652300000000003e-16 A/cm-width` |
+
+`ContactCurrentFlux` is consistent with the boundary current-density integral
+after a `1e4` width conversion, while `.plt TotalCurrent` remains more than
+three orders smaller. This means no Vela current-scaling fix should be made from
+`.plt` parity alone.
+
+### Contact Driver Findings
+
+Contact quasi-Fermi values are not the source of the baseline current mismatch:
+
+| contact | max eQF contact diff | max hQF contact diff |
+|---|---:|---:|
+| Anode | `1.83689e-16 V` | `4.59224e-17 V` |
+| Cathode | `2.29612e-16 V` | `0.0 V` |
+
+The contact majority densities match Sentaurus, while minority densities differ:
+
+| contact | mean e-density ratio Vela/Sentaurus | mean h-density ratio Vela/Sentaurus |
+|---|---:|---:|
+| Anode | `0.46664818246822415` | `0.9999999999999999` |
+| Cathode | `0.9999999999999999` | `0.46664818246822415` |
+
+Contact-to-interior QF deltas in the Vela edge-current path are tiny
+(`~1e-11 V` max), so the contact Dirichlet QF is not the immediate source of the
+large baseline edge current.
+
+### BGN Isolation Finding
+
+The `no_bgn` variant is decisive:
+
+| variant | QF max span | Anode Vela current | Cathode Vela current | Vela A/m vs Sentaurus |
+|---|---:|---:|---:|---:|
+| baseline | `0.0043930610509000005 V` | `-6.553392835988735e-18 A/um` | `6.555600108754277e-18 A/um` | `~9.14e12` |
+| no_bgn | `8.39006e-13 V` | `-1.0647573418528946e-30 A/um` | `-8.8957506957498075e-31 A/um` | `~1.2-1.5` |
+
+Turning off BGN collapses both the body QF split and the Vela current in the
+physical A/m convention to Sentaurus `.plt` scale. The selected root-cause
+hypothesis is therefore BGN/effective-ni consistency across the Newton state,
+continuity residual, density reconstruction, and contact-current post-process.
+
+### Debug Decision
+
+Do not apply a current-unit fix yet. The Sentaurus `.plt`, TDR
+`ContactCurrentFlux`, and boundary current-density integral are not mutually
+consistent after simple conversions, while `no_bgn` strongly implicates the BGN
+state path. The next implementation phase should add a focused failing
+equilibrium test for BGN-enabled 0V QF flatness, then inspect only the
+BGN/effective-ni path in `NewtonSolver`, `CoupledDDAssembler`, and
+`ContactCurrent`.
+
+### Follow-up Fix: Variable-ni Quasi-Fermi SG Flux
+
+The follow-up debug implemented a variable-intrinsic-density quasi-Fermi
+Scharfetter-Gummel flux. The old coupled Newton path used the balanced
+quasi-Fermi flux only when `ni_i == ni_j`; BGN makes `ni_eff` node dependent, so
+the code fell back to density SG on BGN edges. That density fallback does not
+cancel flat quasi-Fermi levels when `ni_eff` varies, producing the 0V QF split
+and artificial terminal current.
+
+The fix adds variable-ni QF flux functions and uses them in both the coupled
+continuity residual/Jacobian and `ContactCurrent` post-processing. New unit
+coverage verifies:
+
+- variable-ni SG electron/hole flux is zero for flat e/h quasi-Fermi levels;
+- `CoupledDDAssembler` BGN continuity residuals vanish for flat e/h
+  quasi-Fermi levels;
+- BGN coupled residuals intentionally diverge from the older density-form
+  `DDAssembler` reference on nonuniform-`ni` edges.
+
+Refreshed 0V diagnostics after the fix:
+
+| metric | before fix | after fix |
+|---|---:|---:|
+| current-balance status | `diagnostic_fail` | `pass` |
+| classification | `contact_boundary_qf_state` | `balanced` |
+| baseline QF max span | `0.0043930610509000005 V` | `1.827779e-08 V` |
+| Anode total current | `-6.553392835988735e-18 A/um` | `-1.656945621904068e-27 A/um` |
+| Cathode total current | `6.555600108754277e-18 A/um` | `3.3547470416890355e-28 A/um` |
+| terminal abs pair sum | `2.2072727655425378e-21 A/um` | `1.3214709177351644e-27 A/um` |
+| terminal balance gate | relative pass | absolute floor pass |
+
+The current-related baseline report now shows edge currents near numerical
+zero: Anode mean absolute edge current `9.746738952376869e-23 A/m`, Cathode
+mean absolute edge current `1.9733806127582562e-23 A/m`. The remaining
+Sentaurus `.plt` absolute-current mismatch should not be used as a Vela unit
+fix trigger because the Sentaurus `.plt`, TDR `ContactCurrentFlux`, and boundary
+current-density integral definitions remain mutually inconsistent.
