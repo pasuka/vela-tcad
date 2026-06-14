@@ -77,7 +77,7 @@ In `unit_scaling` mode, input values use common external TCAD units:
 | temperature | K | K |
 | energy | eV | eV |
 
-`scaling.mode` does not accept `si` or vendor-specific aliases.
+`scaling.mode` does not accept `si` or non-public aliases.
 Field names with explicit unit suffixes remain the stable public names; this
 mode defines how their numeric values are read at the schema boundary.
 The conversion is applied while reading mesh coordinates, material override

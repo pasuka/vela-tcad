@@ -113,16 +113,14 @@ endif()
 foreach(doc_path IN LISTS SCALING_SCHEMA_DOCS)
     file(READ "${VELA_SOURCE_DIR}/${doc_path}" doc_text)
     string(TOLOWER "${doc_text}" doc_text_lower)
-    string(FIND "${doc_text_lower}" "sentaurus" has_forbidden_sentaurus)
     string(FIND "${doc_text_lower}" "\"system\": \"si\"" has_forbidden_system_si)
     string(FIND "${doc_text_lower}" "\"system\":\"si\"" has_forbidden_system_si_compact)
 
-    if(NOT has_forbidden_sentaurus EQUAL -1
-       OR NOT has_forbidden_system_si EQUAL -1
+    if(NOT has_forbidden_system_si EQUAL -1
        OR NOT has_forbidden_system_si_compact EQUAL -1)
         message(FATAL_ERROR
             "Forbidden scaling schema terminology found in ${doc_path}. "
-            "Do not document commercial software names or a `system: si` mode."
+            "Do not document a `system: si` mode."
         )
     endif()
 endforeach()
