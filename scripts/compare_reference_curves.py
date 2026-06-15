@@ -53,7 +53,11 @@ def values(rows: list[dict[str, str]], column: str) -> list[float]:
     return out
 
 
-def finite_pairs(rows: list[dict[str, str]], value_column: str, scale: float) -> list[tuple[float, float]]:
+def finite_pairs(rows: list[dict[str, str]],
+                 value_column: str,
+                 scale: float,
+                 bias_scale: float = 1.0,
+                 bias_offset: float = 0.0) -> list[tuple[float, float]]:
     pairs: list[tuple[float, float]] = []
     for row in rows:
         if "bias_V" not in row:
@@ -62,14 +66,16 @@ def finite_pairs(rows: list[dict[str, str]], value_column: str, scale: float) ->
         value_text = row.get(value_column, "")
         if bias_text == "" or value_text == "":
             continue
-        bias = float(bias_text)
+        bias = float(bias_text) * bias_scale + bias_offset
         value = float(value_text) * scale
         if math.isfinite(bias) and math.isfinite(value):
             pairs.append((bias, value))
     return sorted(pairs)
 
 
-def interpolate_at(pairs: list[tuple[float, float]], bias: float) -> float | None:
+def interpolate_at(pairs: list[tuple[float, float]],
+                   bias: float,
+                   interpolation: str = "linear") -> float | None:
     if not pairs:
         return None
     if bias < pairs[0][0] or bias > pairs[-1][0]:
@@ -80,6 +86,16 @@ def interpolate_at(pairs: list[tuple[float, float]], bias: float) -> float | Non
     for (b0, v0), (b1, v1) in zip(pairs, pairs[1:]):
         if b0 <= bias <= b1 and b1 != b0:
             t = (bias - b0) / (b1 - b0)
+            if (
+                interpolation == "log_current"
+                and v0 != 0.0
+                and v1 != 0.0
+                and math.copysign(1.0, v0) == math.copysign(1.0, v1)
+            ):
+                magnitude = math.exp(
+                    math.log(abs(v0)) + t * (math.log(abs(v1)) - math.log(abs(v0)))
+                )
+                return math.copysign(magnitude, v0)
             return v0 + t * (v1 - v0)
     return None
 
@@ -89,10 +105,13 @@ def aligned_values(reference_rows: list[dict[str, str]],
                    ref_col: str,
                    cand_col: str,
                    candidate_scale: float,
+                   candidate_bias_scale: float,
+                   candidate_bias_offset: float,
                    bias_min: float | None,
-                   bias_max: float | None) -> tuple[list[float], list[float], list[float]]:
+                   bias_max: float | None,
+                   interpolation: str = "linear") -> tuple[list[float], list[float], list[float]]:
     ref_pairs = finite_pairs(reference_rows, ref_col, 1.0)
-    cand_pairs = finite_pairs(candidate_rows, cand_col, candidate_scale)
+    cand_pairs = finite_pairs(candidate_rows, cand_col, candidate_scale, candidate_bias_scale, candidate_bias_offset)
     if not ref_pairs or not cand_pairs:
         return [], values(reference_rows, ref_col), [
             value * candidate_scale for value in values(candidate_rows, cand_col)
@@ -106,7 +125,7 @@ def aligned_values(reference_rows: list[dict[str, str]],
             continue
         if bias_max is not None and bias > bias_max:
             continue
-        cand_value = interpolate_at(cand_pairs, bias)
+        cand_value = interpolate_at(cand_pairs, bias, interpolation)
         if cand_value is None:
             continue
         biases.append(bias)
@@ -157,12 +176,16 @@ def compare_series(kind: str,
                    reference_rows: list[dict[str, str]],
                    candidate_rows: list[dict[str, str]],
                    candidate_scale: float,
+                   candidate_bias_scale: float,
+                   candidate_bias_offset: float,
                    bias_min: float | None,
                    bias_max: float | None,
                    reference_column: str | None = None,
-                   candidate_column: str | None = None) -> dict[str, Any]:
+                   candidate_column: str | None = None,
+                   interpolation: str = "linear") -> dict[str, Any]:
     ref_col = resolve_column(reference_rows, SERIES[kind], reference_column)
     cand_col = resolve_column(candidate_rows, SERIES[kind], candidate_column)
+    effective_interpolation = interpolation if kind == "iv" else "linear"
     if ref_col is None or cand_col is None:
         return {
             "available": False,
@@ -177,8 +200,11 @@ def compare_series(kind: str,
         ref_col,
         cand_col,
         candidate_scale,
+        candidate_bias_scale,
+        candidate_bias_offset,
         bias_min,
         bias_max,
+        effective_interpolation,
     )
     ref_trend = trend(ref_values)
     cand_trend = trend(cand_values)
@@ -189,6 +215,9 @@ def compare_series(kind: str,
         "points_compared": min(len(ref_values), len(cand_values)),
         "reference_bias_range": [biases[0], biases[-1]] if biases else None,
         "candidate_scale": candidate_scale,
+        "candidate_bias_scale": candidate_bias_scale,
+        "candidate_bias_offset": candidate_bias_offset,
+        "interpolation": effective_interpolation,
         "reference_trend": ref_trend,
         "candidate_trend": cand_trend,
         "trend_match": ref_trend == cand_trend,
@@ -254,10 +283,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-relative-error", type=float)
     parser.add_argument("--max-orders-of-magnitude", type=float)
     parser.add_argument("--candidate-scale", type=float, default=1.0)
+    parser.add_argument("--candidate-bias-scale", type=float, default=1.0)
+    parser.add_argument("--candidate-bias-offset", type=float, default=0.0)
     parser.add_argument("--reference-column")
     parser.add_argument("--candidate-column")
     parser.add_argument("--bias-min", type=float)
     parser.add_argument("--bias-max", type=float)
+    parser.add_argument(
+        "--interpolation",
+        choices=["linear", "log_current"],
+        default="linear",
+        help="Bias interpolation mode for candidate values. log_current interpolates signed current magnitude in log space when adjacent values have the same nonzero sign.",
+    )
     return parser.parse_args()
 
 
@@ -321,16 +358,19 @@ def main() -> int:
         "checked_kinds": kinds,
         "iv": compare_series(
             "iv", reference_rows, candidate_rows,
-            args.candidate_scale, args.bias_min, args.bias_max,
-            args.reference_column, args.candidate_column),
+            args.candidate_scale, args.candidate_bias_scale, args.candidate_bias_offset,
+            args.bias_min, args.bias_max,
+            args.reference_column, args.candidate_column, args.interpolation),
         "cv": compare_series(
             "cv", reference_rows, candidate_rows,
-            args.candidate_scale, args.bias_min, args.bias_max,
-            args.reference_column, args.candidate_column),
+            args.candidate_scale, args.candidate_bias_scale, args.candidate_bias_offset,
+            args.bias_min, args.bias_max,
+            args.reference_column, args.candidate_column, args.interpolation),
         "bv": compare_series(
             "bv", reference_rows, candidate_rows,
-            args.candidate_scale, args.bias_min, args.bias_max,
-            args.reference_column, args.candidate_column),
+            args.candidate_scale, args.candidate_bias_scale, args.candidate_bias_offset,
+            args.bias_min, args.bias_max,
+            args.reference_column, args.candidate_column, args.interpolation),
     }
     report["failures"] = evaluate_failures(report, args)
     report["status"] = "fail" if report["failures"] else "pass"

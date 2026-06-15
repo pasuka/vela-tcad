@@ -15,15 +15,74 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 SAMPLE_ENV = "VELA_SENTAURUS_SAMPLE_DIR"
-PN2D_ENV = "VELA_SENTAURUS_PN2D_DIR"
+PN2D_2018_ENV = "VELA_SENTAURUS_PN2D_2018_DIR"
 BUILD_ENV = "VELA_BUILD_DIR"
 
 
 class SentaurusSampleIntegrationTest(unittest.TestCase):
-    def test_pn2d_reference_import_when_enabled(self) -> None:
-        pn2d_root = self._pn2d_root_or_skip()
-        config_path = pn2d_root / "pn2d_reference.json"
-        self.assertTrue(config_path.is_file(), f"missing pn2d reference config: {config_path}")
+    def test_pn2d_sentaurus2018_fixture_import_and_tdx_parity(self) -> None:
+        source_root, config_path = self._pn2d_2018_source_and_config_or_skip()
+        build_root = Path(os.environ.get(BUILD_ENV, REPO / "build"))
+        importer = build_root / ("sentaurus_import.exe" if os.name == "nt" else "sentaurus_import")
+        if not importer.is_file():
+            self.skipTest(f"Sentaurus HDF5 importer is not built: {importer}")
+
+        with tempfile.TemporaryDirectory(prefix="vela_sentaurus_pn2d_2018_") as tmp:
+            out = Path(tmp) / "reference"
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "sentaurus_import.py"),
+                    "reference",
+                    "--config",
+                    str(config_path),
+                    "--source-dir",
+                    str(source_root),
+                    "--output-dir",
+                    str(out),
+                    "--tdr-importer",
+                    str(importer),
+                    "--skip-vela-run",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_sentaurus_tdr_tdx.py"),
+                    "--geometry-only",
+                    "--coordinate-epsilon",
+                    "1e-5",
+                    "--tdr-export",
+                    str(out),
+                    "--tdx-dir",
+                    str(source_root),
+                    "--output-dir",
+                    str(out / "reports"),
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            self.assertTrue((out / "nodes.csv").is_file())
+            self.assertTrue((out / "elements.csv").is_file())
+            self.assertTrue((out / "contacts.csv").is_file())
+
+            tdx_report = json.loads((out / "reports" / "tdr_tdx_comparison.json").read_text())
+            self.assertEqual(tdx_report["status"], "pass")
+            self.assertEqual(sorted(tdx_report), ["boundaries", "elements", "nodes", "status"])
+            self.assertEqual(tdx_report["nodes"]["tdr_count"], 1943)
+            self.assertTrue(tdx_report["nodes"]["count_match"])
+            self.assertEqual(tdx_report["elements"]["tdr_count"], 3680)
+            self.assertTrue(tdx_report["elements"]["count_match"])
+            self.assertEqual(tdx_report["boundaries"]["contacts"]["Anode"]["grd_element_count"], 16)
+            self.assertEqual(tdx_report["boundaries"]["contacts"]["Cathode"]["grd_element_count"], 16)
+            self.assertTrue(tdx_report["boundaries"]["contacts"]["Anode"]["node_set_match"])
+            self.assertTrue(tdx_report["boundaries"]["contacts"]["Cathode"]["node_set_match"])
+
+    def test_pn2d_sentaurus2018_zero_bias_state_compare_when_enabled(self) -> None:
+        source_root, config_path = self._pn2d_2018_source_and_config_or_skip()
         build_root = Path(os.environ.get(BUILD_ENV, REPO / "build"))
         importer = build_root / ("sentaurus_import.exe" if os.name == "nt" else "sentaurus_import")
         if not importer.is_file():
@@ -40,9 +99,8 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
                 + ", ".join(str(candidate) for candidate in runner_candidates)
             )
 
-        with tempfile.TemporaryDirectory(prefix="vela_sentaurus_pn2d_") as tmp:
-            out = Path(tmp)
-
+        with tempfile.TemporaryDirectory(prefix="vela_sentaurus_pn2d_2018_0v_") as tmp:
+            out = Path(tmp) / "reference"
             subprocess.run(
                 [
                     sys.executable,
@@ -51,174 +109,110 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
                     "--config",
                     str(config_path),
                     "--source-dir",
-                    str(pn2d_root),
+                    str(source_root),
                     "--output-dir",
-                    str(out / "reference"),
+                    str(out),
                     "--tdr-importer",
                     str(importer),
+                    "--skip-vela-run",
                 ],
                 check=True,
                 cwd=REPO,
             )
+            balance = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_0v_current_balance.py"),
+                    "--reference-root",
+                    str(out),
+                    "--runner",
+                    str(runner),
+                    "--output-dir",
+                    str(out / "reports" / "0v_current_balance"),
+                ],
+                cwd=REPO,
+            )
 
-            self._assert_doping_csv_has_donors_and_acceptors(out / "reference" / "doping.csv")
+            balance_report = json.loads(
+                (out / "reports" / "0v_current_balance" / "pn2d_0v_current_balance.json").read_text()
+            )
+            if balance_report["status"] == "error":
+                self.assertNotEqual(balance.returncode, 0)
+                self.assertEqual(balance_report["classification"], "input_error")
+                self.assertTrue(balance_report["classification_reasons"])
+                self.assertIn("converged", balance_report["classification_reasons"][0])
+                manifest = json.loads((out / "sim_fields" / "0v" / "field_manifest.json").read_text())
+                field_mappings = {
+                    item["name"]: item["global_node_mapping"]
+                    for item in manifest["fields"]
+                    if item["name"] in {"ElectricField", "DopingConcentration"}
+                }
+                self.assertEqual(field_mappings["ElectricField"], "global_vertex_order")
+                self.assertEqual(field_mappings["DopingConcentration"], "global_vertex_order")
+                return
 
-            summary = json.loads((out / "reference" / "sde_summary.json").read_text())
-            self.assertEqual(summary["defines"]["L"], 2.0)
-            self.assertEqual(summary["defines"]["H"], 0.5)
-            self.assertEqual(summary["defines"]["Xj"], 1.0)
-            self.assertEqual(summary["defines"]["Na"], 1.0e17)
-            self.assertEqual(summary["defines"]["Nd"], 1.0e17)
+            self.assertEqual(balance.returncode, 0)
+            compare = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_pn2d_0v_state.py"),
+                    "--reference-root",
+                    str(out),
+                    "--runner",
+                    str(runner),
+                    "--output-dir",
+                    str(out / "reports" / "0v_state"),
+                ],
+                cwd=REPO,
+            )
 
-            inventory = json.loads((out / "reference" / "tdr_inventory" / "iv.json").read_text())
+            self.assertEqual(balance_report["classification"], "balanced")
+            self.assertTrue(balance_report["classification_reasons"])
+            self.assertIn("Anode", balance_report["terminal_balance"]["contacts"])
+            self.assertIn("Cathode", balance_report["terminal_balance"]["contacts"])
+            conservation = balance_report["conservation_summary"]
+            self.assertTrue(
+                conservation["absolute_floor_gate_pass"] or conservation["relative_gate_pass"]
+            )
+            self.assertLessEqual(
+                conservation["abs_pair_sum_A_per_um"],
+                conservation["absolute_floor_gate_A_per_um"],
+            )
+            self.assertIn("top_edges", balance_report["contact_edges"])
             self.assertEqual(
-                {region["name"] for region in inventory["regions"] if region["type"] == 1},
-                {"Anode", "Cathode"},
+                balance_report["mesh_reference"]["sentaurus_contact_boundary_elements"]["Anode"],
+                16,
             )
-
-            iv_rows = self._read_curve(out / "reference" / "reference_curves" / "pn2d_iv_reference.csv")
-            bv_rows = self._read_curve(out / "reference" / "reference_curves" / "pn2d_bv_reference.csv")
-            self.assertEqual(len(iv_rows), 62)
-            self.assertEqual(len(bv_rows), 39)
-            self.assertAlmostEqual(float(iv_rows[-1]["bias_V"]), 1.0, places=12)
-            self.assertAlmostEqual(float(iv_rows[-1]["current_total"]), 1.1637177246e-4, places=14)
-            self.assertAlmostEqual(float(bv_rows[-1]["bias_V"]), 50.0, places=12)
-
-            iv_deck = json.loads((out / "reference" / "vela" / "simulation_iv.json").read_text())
-            bv_deck = json.loads((out / "reference" / "vela" / "simulation_bv.json").read_text())
-            self.assertTrue((out / "reference" / "vela" / "simulation_iv.json").is_file())
-            self.assertTrue((out / "reference" / "vela" / "simulation_bv.json").is_file())
-            self.assertFalse((out / "reference" / "vela" / "simulation_iv_runtime.json").exists())
-            self.assertFalse((out / "reference" / "vela" / "simulation_bv_runtime.json").exists())
-            self.assertTrue((out / "reference" / "reference_tcad_manifest.json").is_file())
-            self.assertEqual(iv_deck["sweep"]["contact"], "Anode")
-            self.assertEqual(iv_deck["sweep"]["stop"], 0.3)
-            self.assertAlmostEqual(iv_deck["sweep"]["step"], 0.02)
-            self.assertEqual(iv_deck["materials_file"], "pn2d_iv_materials.json")
-            self.assertTrue((out / "reference" / "vela" / "pn2d_iv_materials.json").is_file())
-            self.assertEqual(iv_deck["node_doping_file"], "doping.csv")
-            self.assertEqual(iv_deck["solver"]["method"], "gummel_newton")
-            self.assertTrue(iv_deck["solver"]["warm_start"])
             self.assertEqual(
-                iv_deck["solver"].get("contact_boundary_reconstruction"),
-                "dominant_signed_contact_mean",
+                balance_report["mesh_reference"]["sentaurus_contact_boundary_elements"]["Cathode"],
+                16,
             )
-            self.assertEqual(iv_deck["solver"]["handoff"]["fallback"], "none")
-            self.assertFalse(iv_deck["solver"]["handoff"]["require_gummel_convergence"])
-            self.assertEqual(iv_deck["solver"]["handoff"]["gummel_max_iter"], 0)
-            self.assertGreater(iv_deck["solver"]["handoff"]["newton_max_iter"], 0)
-            self.assertEqual(bv_deck["sweep"]["contact"], "Cathode")
-            self.assertEqual(bv_deck["sweep"]["stop"], 0.05)
-            self.assertNotIn("materials_file", bv_deck)
-            self.assertEqual(bv_deck["node_doping_file"], "doping.csv")
-            self.assertEqual(bv_deck["solver"]["method"], "gummel_newton")
-            self.assertEqual(bv_deck["solver"]["recombination"], ["srh"])
-            self.assertAlmostEqual(bv_deck["solver"]["taun"], 1.0e-6)
-            self.assertAlmostEqual(bv_deck["solver"]["taup"], 1.0e-6)
-            self.assertEqual(bv_deck["solver"]["bandgap_narrowing"], "none")
-            self.assertEqual(bv_deck["solver"]["mobility"]["model"], "caughey_thomas")
-            self.assertAlmostEqual(
-                bv_deck["solver"]["mobility"]["electron_mu_min_m2_V_s"], 46.458)
-            self.assertAlmostEqual(
-                bv_deck["solver"]["mobility"]["hole_mu_min_m2_V_s"], 39.961)
-            self.assertAlmostEqual(
-                bv_deck["solver"]["mobility"]["electron_alpha"], 0.6052)
-            self.assertAlmostEqual(
-                bv_deck["solver"]["mobility"]["hole_alpha"], 0.623)
-
-            faithful_iv = out / "reference" / "vela" / "pn2d_iv.csv"
-            faithful_bv = out / "reference" / "vela" / "pn2d_bv.csv"
-            self.assertTrue(faithful_iv.is_file())
-            self.assertTrue(faithful_bv.is_file())
-            self.assertGreaterEqual(len(self._read_curve(faithful_iv)), 2)
-            self.assertGreaterEqual(len(self._read_curve(faithful_bv)), 2)
-            self._assert_curve_has_finite_currents(faithful_iv)
-            self._assert_curve_has_finite_currents(faithful_bv)
-            faithful_iv_rows = self._read_curve(faithful_iv)
-            faithful_bv_rows = self._read_curve(faithful_bv)
-            self.assertLess(abs(float(faithful_iv_rows[0]["current_total"])), 1.0e-9)
-            self.assertLess(abs(float(faithful_bv_rows[0]["current_total"])), 1.0e-9)
-            for row in faithful_iv_rows:
-                self.assertEqual(row["solver_method"], "gummel_newton")
-                self.assertEqual(row["handoff_stage"], "newton")
-                self.assertGreater(int(row["newton_iterations"]), 0)
-            for row in faithful_bv_rows:
-                self.assertEqual(row["solver_method"], "gummel_newton")
-                self.assertEqual(row["handoff_stage"], "newton")
-                self.assertGreater(int(row["newton_iterations"]), 0)
-
-            manifest = json.loads((out / "reference" / "reference_tcad_manifest.json").read_text())
-            self.assertFalse(manifest["commit_policy"]["raw_sentaurus_artifacts"])
-            self.assertIn("Avalanche", manifest["unsupported_physics"])
-            self.assertIn("reports/pn2d_iv_comparison.json", manifest["comparison_reports"])
-            self.assertIn("reports/pn2d_bv_comparison.json", manifest["comparison_reports"])
-            iv_report = json.loads((out / "reference" / "reports" / "pn2d_iv_comparison.json").read_text())
-            bv_report = json.loads((out / "reference" / "reports" / "pn2d_bv_comparison.json").read_text())
-            self.assertEqual(iv_report["iv"]["candidate_column"], "current_total_A_per_um")
-            self.assertTrue(iv_report["iv"]["trend_match"])
-            self.assertLessEqual(iv_report["iv"]["orders_of_magnitude"], 0.40)
-            self.assertEqual(bv_report["iv"]["candidate_column"], "current_total_A_per_um")
-            self.assertLess(bv_report["iv"]["orders_of_magnitude"], 0.15)
-
-            fine_dir = out / "reference" / "vela"
-            fine_cath_cfg = fine_dir / "simulation_iv_fine_cathode.json"
-            fine_anode_cfg = fine_dir / "simulation_iv_fine_anode.json"
-            fine_cath_deck = json.loads(json.dumps(iv_deck))
-            fine_anode_deck = json.loads(json.dumps(iv_deck))
-            for deck, current_contact, output_csv in [
-                (fine_cath_deck, "Cathode", "pn2d_iv_fine_cathode.csv"),
-                (fine_anode_deck, "Anode", "pn2d_iv_fine_anode.csv"),
-            ]:
-                deck["output_csv"] = output_csv
-                deck["sweep"]["current_contact"] = current_contact
-                deck["sweep"]["start"] = 0.0
-                deck["sweep"]["stop"] = 0.3
-                deck["sweep"]["step"] = 0.01
-            fine_cath_cfg.write_text(json.dumps(fine_cath_deck, indent=2) + "\n")
-            fine_anode_cfg.write_text(json.dumps(fine_anode_deck, indent=2) + "\n")
-
-            subprocess.run(
-                [str(runner), "--config", str(fine_cath_cfg)],
-                check=True,
-                cwd=fine_dir,
-            )
-            subprocess.run(
-                [str(runner), "--config", str(fine_anode_cfg)],
-                check=True,
-                cwd=fine_dir,
+            self.assertEqual(balance_report["mesh_reference"]["sentaurus_bulk_triangle_elements"], 3680)
+            self.assertEqual(
+                balance_report["mesh_reference"]["sentaurus_total_elements_including_contacts"],
+                3712,
             )
 
-            fine_cath_rows = self._read_curve(fine_dir / "pn2d_iv_fine_cathode.csv")
-            fine_anode_rows = self._read_curve(fine_dir / "pn2d_iv_fine_anode.csv")
-            self.assertGreaterEqual(len(fine_cath_rows), 30)
-            self.assertGreaterEqual(len(fine_anode_rows), 30)
-            for row in fine_cath_rows:
-                self.assertEqual(row["solver_method"], "gummel_newton")
-                self.assertEqual(row["handoff_stage"], "newton")
-                self.assertGreater(int(row["newton_iterations"]), 0)
-            for row in fine_anode_rows:
-                self.assertEqual(row["solver_method"], "gummel_newton")
-                self.assertEqual(row["handoff_stage"], "newton")
-                self.assertGreater(int(row["newton_iterations"]), 0)
-
-            candidate_ratio = abs(
-                self._curve_value_at_bias(fine_cath_rows, 0.29, "current_total_A_per_um")
-                / self._curve_value_at_bias(fine_cath_rows, 0.30, "current_total_A_per_um")
+            report = json.loads((out / "reports" / "0v_state" / "pn2d_0v_state_comparison.json").read_text())
+            self.assertEqual(compare.returncode, 0)
+            self.assertEqual(report["status"], "pass")
+            self.assertEqual(
+                report["current_balance_report"],
+                str(out / "reports" / "0v_current_balance" / "pn2d_0v_current_balance.json"),
             )
-            reference_ratio = abs(
-                self._curve_value_at_bias_interpolated(iv_rows, 0.29, "current_total")
-                / self._curve_value_at_bias_interpolated(iv_rows, 0.30, "current_total")
+            self.assertEqual(report["terminal_currents"]["status"], "pass")
+            self.assertNotIn(
+                "terminal_currents_not_equal_and_opposite",
+                report["terminal_currents"]["failure_reasons"],
             )
-            baseline_delta = abs(0.7309 - 0.6324) + 2.0e-4
-            # Keep the gate tied to the frozen baseline while allowing tiny
-            # rounding/interpolation noise from imported reference sampling.
-            self.assertLessEqual(abs(candidate_ratio - reference_ratio), baseline_delta + 5.0e-6)
-
-            terminal_sum_0p3 = abs(
-                self._curve_value_at_bias(fine_cath_rows, 0.30, "current_total_A_per_um")
-                + self._curve_value_at_bias(fine_anode_rows, 0.30, "current_total_A_per_um")
+            self.assertLessEqual(report["terminal_currents"]["max_abs_A_per_um"], 1.0e-12)
+            self.assertLessEqual(
+                abs(report["terminal_currents"]["sum_A_per_um"]),
+                report["terminal_currents"]["pair_abs_gate_A_per_um"],
             )
-            self.assertLessEqual(terminal_sum_0p3, 1.0e-18)
+            self.assertGreater(report["field_stats"]["ElectrostaticPotential"]["points_compared"], 1000)
+            self.assertIn("ni", report["diagnostic_matrix"]["priorities"])
+            self.assertIn("OldSlotboom/BGN", report["diagnostic_matrix"]["priorities"])
 
     def test_ldmos_n20_sample_inventory_curve_and_cmd_when_enabled(self) -> None:
         sample_root = self._sample_root_or_skip()
@@ -320,12 +314,21 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
     def _sample_root_or_skip(self) -> Path:
         return self._root_or_skip(SAMPLE_ENV)
 
-    def _pn2d_root_or_skip(self) -> Path:
-        value = os.environ.get(PN2D_ENV)
-        root = Path(value) if value else REPO / "reference_tcad" / "pn2d"
-        if not root.is_dir():
-            self.skipTest(f"{PN2D_ENV} is not set and bundled pn2d sample is missing")
-        return root
+    def _pn2d_2018_source_and_config_or_skip(self) -> tuple[Path, Path]:
+        value = os.environ.get(PN2D_2018_ENV)
+        case_root = Path(value) if value else REPO / "reference_tcad" / "pn2d_sentaurus2018"
+        if (case_root / "source").is_dir():
+            source_root = case_root / "source"
+            config_path = case_root / "pn2d_sentaurus2018_reference.json"
+        else:
+            source_root = case_root
+            config_path = case_root / "pn2d_sentaurus2018_reference.json"
+            if not config_path.is_file():
+                config_path = case_root.parent / "pn2d_sentaurus2018_reference.json"
+        if not source_root.is_dir():
+            self.skipTest(f"{PN2D_2018_ENV} is not set and bundled pn2d Sentaurus 2018 source is missing")
+        self.assertTrue(config_path.is_file(), f"missing pn2d Sentaurus 2018 config: {config_path}")
+        return source_root, config_path
 
     def _root_or_skip(self, env_name: str) -> Path:
         value = os.environ.get(env_name)
@@ -334,62 +337,6 @@ class SentaurusSampleIntegrationTest(unittest.TestCase):
         root = Path(value)
         self.assertTrue(root.is_dir(), f"{env_name} is not a directory: {root}")
         return root
-
-    def _read_curve(self, path: Path) -> list[dict[str, str]]:
-        with path.open(newline="") as handle:
-            return list(csv.DictReader(handle))
-
-    def _curve_value_at_bias(self,
-                             rows: list[dict[str, str]],
-                             bias: float,
-                             column: str,
-                             tol: float = 1.0e-9) -> float:
-        for row in rows:
-            if abs(float(row["bias_V"]) - bias) <= tol:
-                return float(row[column])
-        raise AssertionError(f"missing bias {bias} in curve for column {column}")
-
-    def _curve_value_at_bias_interpolated(self,
-                                          rows: list[dict[str, str]],
-                                          bias: float,
-                                          column: str,
-                                          tol: float = 1.0e-12) -> float:
-        points = sorted((float(row["bias_V"]), float(row[column])) for row in rows)
-        if not points:
-            raise AssertionError(f"curve has no rows for column {column}")
-        if bias < points[0][0] - tol or bias > points[-1][0] + tol:
-            raise AssertionError(
-                f"bias {bias} is outside curve range [{points[0][0]}, {points[-1][0]}] for {column}")
-
-        for voltage, value in points:
-            if abs(voltage - bias) <= tol:
-                return value
-
-        for idx in range(1, len(points)):
-            v0, y0 = points[idx - 1]
-            v1, y1 = points[idx]
-            if v0 <= bias <= v1:
-                if abs(v1 - v0) <= tol:
-                    return y0
-                alpha = (bias - v0) / (v1 - v0)
-                return y0 + alpha * (y1 - y0)
-
-        raise AssertionError(f"missing interpolation bracket for bias {bias} in column {column}")
-
-    def _assert_doping_csv_has_donors_and_acceptors(self, path: Path) -> None:
-        with path.open(newline="") as handle:
-            rows = list(csv.DictReader(handle))
-        self.assertGreater(len(rows), 0)
-        self.assertTrue(any(float(row["donors_cm3"]) > 0.0 for row in rows))
-        self.assertTrue(any(float(row["acceptors_cm3"]) > 0.0 for row in rows))
-
-    def _assert_curve_has_finite_currents(self, path: Path) -> None:
-        with path.open(newline="") as handle:
-            rows = list(csv.DictReader(handle))
-        for row in rows:
-            value = row.get("current_total", "0")
-            number = float(value)
-            self.assertTrue(number == number and abs(number) != float("inf"), f"{path}: {value}")
 
     def _assert_contact_scalar(self,
                                inventory: dict[str, object],

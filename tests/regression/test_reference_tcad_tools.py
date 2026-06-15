@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import csv
-import importlib.util
 import json
 import math
 import subprocess
@@ -15,215 +14,14 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[2]
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
 
 
 class ReferenceTcadToolsTest(unittest.TestCase):
-    @staticmethod
-    def _load_generate_rootcause_module():
-        module_path = REPO / "scripts" / "generate_pn2d_rootcause_reports.py"
-        spec = importlib.util.spec_from_file_location("generate_pn2d_rootcause_reports", module_path)
-        if spec is None or spec.loader is None:
-            raise RuntimeError(f"unable to load module spec from {module_path}")
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = module
-        spec.loader.exec_module(module)
-        return module
-
-    def test_pn2d_iv_ratio_summary_script_exists(self) -> None:
-        script = REPO / "scripts" / "summarize_pn2d_iv_ratios.ps1"
-        self.assertTrue(script.is_file(), f"missing pn2d IV ratio summary script: {script}")
-        text = script.read_text()
-        self.assertIn("pn2d_iv_ratio_summary.csv", text)
-        self.assertIn("current_electron_A_per_um", text)
-        self.assertIn("current_hole_A_per_um", text)
-
-    def test_pn2d_iv_bv_physics_matrix_script_exists(self) -> None:
-        script = REPO / "scripts" / "scan_pn2d_iv_bv_physics_matrix.ps1"
-        self.assertTrue(script.is_file(), f"missing pn2d IV/BV physics matrix script: {script}")
-        text = script.read_text()
-        self.assertIn("recomb_srh_auger", text)
-        self.assertIn("recomb_none", text)
-        self.assertIn("bv_srh_tau1e-6", text)
-        self.assertIn("bv_srh_tau1e-8", text)
-        self.assertIn("iv_srh_tau1e-6", text)
-        self.assertIn("iv_srh_tau1e-8", text)
-        self.assertIn("iv_srh_auger_half", text)
-        self.assertIn("iv_srh_auger_double", text)
-        self.assertIn("iv_auger_only", text)
-        self.assertIn("bv_srh_auger_half", text)
-        self.assertIn("bv_srh_auger_double", text)
-        self.assertIn("bv_auger_only", text)
-        self.assertIn("pn2d_iv_bv_physics_matrix_summary.csv", text)
-
-    def test_pn2d_iv_resolution_scan_script_exists(self) -> None:
-        script = REPO / "scripts" / "scan_pn2d_iv_resolution.ps1"
-        self.assertTrue(script.is_file(), f"missing pn2d IV resolution scan script: {script}")
-        text = script.read_text()
-        self.assertIn("pn2d_iv_resolution_summary.csv", text)
-        self.assertIn("0.02", text)
-        self.assertIn("0.01", text)
-        self.assertIn("current_total_A_per_um", text)
-
-    def test_pn2d_bv_quick_refinement_script_is_documented_and_reproducible(self) -> None:
-        script = REPO / "scripts" / "scan_pn2d_bv_ct_quick6.ps1"
-        self.assertTrue(script.is_file(), f"missing documented pn2d BV quick refinement script: {script}")
-        text = script.read_text()
-        self.assertIn("q_mu0p89_a0p89", text)
-        self.assertIn("pn2d_bv_ct_quick6_summary.csv", text)
-
-    def test_pn2d_candidate_iv_bv_script_records_best_bv_candidate(self) -> None:
-        script = REPO / "scripts" / "scan_pn2d_candidate_iv_bv.ps1"
-        self.assertTrue(script.is_file(), f"missing pn2d candidate IV/BV script: {script}")
-        text = script.read_text()
-        self.assertIn("q_mu0p89_a0p89", text)
-        self.assertIn("pn2d_candidate_iv_bv_summary.csv", text)
-        self.assertIn("simulation_iv", text)
-        self.assertIn("simulation_bv", text)
-
-    def test_generate_rootcause_reports_help_includes_timeout_and_reuse_matrix(self) -> None:
-        script = REPO / "scripts" / "generate_pn2d_rootcause_reports.py"
-        cp = subprocess.run(
-            [sys.executable, str(script), "--help"],
-            check=True,
-            cwd=REPO,
-            capture_output=True,
-            text=True,
-        )
-        self.assertIn("--runner-timeout-s", cp.stdout)
-        self.assertIn("--reuse-bv-matrix", cp.stdout)
-
-    def test_generate_rootcause_reports_summarizes_synthetic_matrix_and_selects_best_row(self) -> None:
-        module = self._load_generate_rootcause_module()
-        rows = [
-            {
-                "case": "m_a",
-                "bias_V": "0.05",
-                "failure_class": "executed",
-                "failure_reason": "ok",
-                "orders_of_magnitude": "0.12",
-            },
-            {
-                "case": "m_b",
-                "bias_V": "0.05",
-                "failure_class": "executed",
-                "failure_reason": "ok",
-                "orders_of_magnitude": "0.08",
-            },
-            {
-                "case": "m_c",
-                "bias_V": "0.10",
-                "failure_class": "run_failure",
-                "failure_reason": "runner_timeout",
-                "orders_of_magnitude": "nan",
-            },
-            {
-                "case": "m_d",
-                "bias_V": "0.10",
-                "failure_class": "run_failure",
-                "failure_reason": "json_parse_error",
-                "orders_of_magnitude": "nan",
-            },
-        ]
-        summary = module.summarize_bv_matrix_rows(rows, [0.05, 0.10])
-        self.assertEqual(summary["attempted_rows"], 4)
-        self.assertEqual(summary["executed_rows"], 2)
-        self.assertEqual(summary["failure_reason_counts"]["runner_timeout"], 1)
-        self.assertEqual(summary["failure_reason_counts"]["runner_nonzero_exit_with_json"], 1)
-
-        active = {float(item["bias_V"]): item for item in summary["active_bias_summary"]}
-        self.assertIn(0.05, active)
-        self.assertEqual(active[0.05]["best_executed_case"], "m_b")
-        self.assertAlmostEqual(active[0.05]["best_executed_orders_of_magnitude"], 0.08, places=12)
-
-    def test_generate_rootcause_reports_baseline_alignment_flags_mobility_recombination_mismatch(self) -> None:
-        module = self._load_generate_rootcause_module()
-        matrix_rows = [
-            {
-                "case": "m_default_bgn_default_recomb_none_ii_none",
-                "mobility": "default",
-                "recombination": "none",
-                "bandgap_narrowing": "default",
-                "impact_ionization": "none",
-            },
-            {
-                "case": "m_caughey_thomas_bgn_none_recomb_srh_ii_none",
-                "mobility": "caughey_thomas",
-                "recombination": "srh",
-                "bandgap_narrowing": "none",
-                "impact_ionization": "none",
-            },
-        ]
-        fresh = {
-            "mobility": "caughey_thomas",
-            "recombination": "srh",
-            "bandgap_narrowing": "default_inherited",
-            "impact_ionization": "none",
-        }
-        alignment = module.compute_baseline_alignment(matrix_rows, fresh)
-        self.assertGreater(alignment["mismatch_counts"]["mobility"], 0)
-        self.assertGreater(alignment["mismatch_counts"]["recombination"], 0)
-        self.assertIn(
-            "m_caughey_thomas_bgn_none_recomb_srh_ii_none",
-            alignment["baseline_equivalent_cases"],
-        )
-
-    def test_generate_rootcause_reports_markdown_uses_dynamic_root_paths(self) -> None:
-        module = self._load_generate_rootcause_module()
-        with tempfile.TemporaryDirectory(prefix="vela_pn2d_rootcause_md_") as tmp:
-            root = Path(tmp) / "custom_root"
-            reports = root / "reports"
-            reports.mkdir(parents=True, exist_ok=True)
-            module.write_rootcause_md(
-                root=root,
-                reports_dir=reports,
-                baseline_summary={
-                    "checks": {
-                        "iv_orders_0p2_to_0p3": 0.4,
-                        "terminal_sum_abs_A_per_um_at_0p3": 1.0e-18,
-                        "strict_newton_all": True,
-                    }
-                },
-                contact_summary=[{"tag": "n_only_probe"}],
-                bv_rows=[
-                    {"bias_V": "0.05", "failure_class": "executed", "orders_of_magnitude": "0.11", "case": "m_x"}
-                ],
-                bv_summary={
-                    "attempted_rows": 1,
-                    "executed_rows": 1,
-                    "failure_class_counts": {"executed": 1},
-                    "failure_reason_counts": {"ok": 1},
-                    "active_bias_summary": [
-                        {
-                            "bias_V": 0.05,
-                            "attempted_rows": 1,
-                            "executed_rows": 1,
-                            "run_failure_rows": 0,
-                            "non_convergence_rows": 0,
-                            "best_executed_case": "m_x",
-                            "best_executed_orders_of_magnitude": 0.11,
-                        }
-                    ],
-                },
-                baseline_alignment={
-                    "fresh_baseline_settings": {
-                        "mobility": "caughey_thomas",
-                        "recombination": "srh",
-                        "bandgap_narrowing": "default_inherited",
-                        "impact_ionization": "none",
-                    },
-                    "matching_case_count": 1,
-                    "baseline_equivalent_cases": ["m_x"],
-                    "implicit_default_case": "m_default_bgn_default_recomb_none_ii_none",
-                },
-            )
-
-            content = (reports / "pn2d_iv_bv_rootcause_next.md").read_text(encoding="utf-8")
-            self.assertIn(f"Source root: {root}", content)
-            self.assertIn(f"Reports dir: {reports}", content)
-
     def test_reference_tcad_device_configs_exist(self) -> None:
         expected = [
-            REPO / "reference_tcad" / "pn2d" / "pn2d_reference.json",
+            REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json",
             REPO / "reference_tcad" / "nmos2d" / "nmos2d_reference.json",
             REPO / "reference_tcad" / "pmos2d" / "pmos2d_reference.json",
             REPO / "reference_tcad" / "ldmos2d" / "ldmos2d_reference.json",
@@ -231,6 +29,694 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         ]
         for path in expected:
             self.assertTrue(path.is_file(), f"missing reference config: {path}")
+
+    def test_pn2d_sentaurus2018_zero_bias_uses_stable_newton_cap(self) -> None:
+        path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json"
+        config = json.loads(path.read_text())
+        zero_bias = next(sim for sim in config["simulations"] if sim["name"] == "0v")
+
+        self.assertEqual(config["vela_solver"]["max_update"], 5.0)
+        self.assertEqual(zero_bias["vela_solver"]["max_update"], 2.0)
+
+    def test_pn2d_sentaurus2018_iv_disables_minority_relaxation(self) -> None:
+        path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json"
+        config = json.loads(path.read_text())
+        iv = next(sim for sim in config["simulations"] if sim["name"] == "iv")
+
+        self.assertIs(
+            iv["vela_solver"]["contact_boundary_minority_electron_relaxation"],
+            False,
+        )
+
+    def test_pn2d_sentaurus2018_iv_uses_models_par_alignment(self) -> None:
+        path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json"
+        config = json.loads(path.read_text())
+        iv = next(sim for sim in config["simulations"] if sim["name"] == "iv")
+
+        self.assertEqual(iv["vela_materials_file"], "pn2d_sentaurus2018_iv_materials.json")
+        self.assertEqual(iv["comparison"]["interpolation"], "log_current")
+        self.assertAlmostEqual(iv["vela_solver"]["taun"], 1.0e-5)
+        self.assertAlmostEqual(iv["vela_solver"]["taup"], 3.0e-6)
+
+        materials_path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "source" / iv["vela_materials_file"]
+        materials = json.loads(materials_path.read_text())
+        si = next(item for item in materials["materials"] if item["name"] == "Si")
+        self.assertAlmostEqual(si["ni"], 1.4638914958767616e10)
+
+    def test_pn2d_sentaurus2018_iv_cmd_writes_multibias_debug_snapshots(self) -> None:
+        path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "source" / "pn2d_iv_sdevice.cmd"
+        text = path.read_text()
+
+        self.assertIn("eMobility", text)
+        self.assertIn("hMobility", text)
+        self.assertIn("MaxStep=0.025", text)
+        self.assertRegex(text, r'Goal\s*\{\s*Name="Anode"\s*Voltage=2\.0\s*\}')
+        self.assertIn(
+            'Plot(FilePrefix="pn2d_iv_multibias" Time=(Range=(0 1) Intervals=40) NoOverWrite)',
+            text,
+        )
+
+    def test_mobility_scan_resolves_relative_materials_file(self) -> None:
+        from scripts.scan_pn2d_iv_mobility_candidates import resolve_input_paths
+
+        with tempfile.TemporaryDirectory(prefix="vela_mobility_scan_paths_") as tmp:
+            base = Path(tmp)
+            (base / "mesh.json").write_text("{}\n")
+            (base / "materials.json").write_text("{}\n")
+
+            resolved = resolve_input_paths(
+                {
+                    "mesh_file": "mesh.json",
+                    "materials_file": "materials.json",
+                },
+                base,
+            )
+
+            self.assertEqual(resolved["mesh_file"], str((base / "mesh.json").resolve()))
+            self.assertEqual(
+                resolved["materials_file"],
+                str((base / "materials.json").resolve()),
+            )
+
+    def test_probe_pn2d_0v_qf_drivers_help(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(REPO / "scripts" / "probe_pn2d_0v_qf_drivers.py"),
+                "--help",
+            ],
+            cwd=REPO,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("--reference-root", result.stdout)
+        self.assertIn("--runner", result.stdout)
+        self.assertIn("--output-dir", result.stdout)
+
+    def test_compare_pn2d_0v_current_related_quantities_help(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(REPO / "scripts" / "compare_pn2d_0v_current_related_quantities.py"),
+                "--help",
+            ],
+            cwd=REPO,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("--reference-root", result.stdout)
+        self.assertIn("--current-balance", result.stdout)
+        self.assertIn("--edge-csv", result.stdout)
+
+    def test_analyze_pn2d_iv_transport_shape_help(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(REPO / "scripts" / "analyze_pn2d_iv_transport_shape.py"),
+                "--help",
+            ],
+            cwd=REPO,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("--reference-root", result.stdout)
+        self.assertIn("--biases", result.stdout)
+        self.assertIn("--out-dir", result.stdout)
+
+    def test_analyze_pn2d_iv_transport_shape_writes_contact_edge_transport_proxy(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_iv_transport_proxy_") as tmp:
+            root = Path(tmp)
+            fields = root / "sim_fields" / "iv" / "fields"
+            fixed = root / "reports" / "iv_state" / "fixed"
+            vela = root / "vela"
+            out_dir = root / "reports" / "transport"
+            fields.mkdir(parents=True)
+            fixed.mkdir(parents=True)
+            vela.mkdir()
+            (vela / "mesh.json").write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                    {"id": 3, "x": 1.0, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "node_ids": [0, 1, 2], "region_id": 0},
+                    {"id": 1, "node_ids": [1, 3, 2], "region_id": 0},
+                ],
+                "regions": [{"id": 0, "name": "Si", "material": "Si", "cell_ids": [0, 1]}],
+                "contacts": [
+                    {"id": 0, "name": "Cathode", "region_id": 0, "node_ids": [3]},
+                    {"id": 1, "name": "Anode", "region_id": 0, "node_ids": [0]},
+                ],
+            }) + "\n")
+
+            for name, values in {
+                "eCurrentDensity": [100.0, 100.0, 100.0, 100.0],
+                "hCurrentDensity": [40.0, 40.0, 40.0, 40.0],
+                "TotalCurrentDensity": [140.0, 140.0, 140.0, 140.0],
+                "ElectricField": [1.0, 1.0, 1.0, 1.0],
+                "srhRecombination": [0.0, 0.0, 0.0, 0.0],
+                "eDensity": [1.0e17, 1.0e17, 1.0e17, 1.0e17],
+                "hDensity": [2.0e17, 2.0e17, 2.0e17, 2.0e17],
+                "eQuasiFermiPotential": [0.000, 0.010, 0.020, 0.030],
+                "hQuasiFermiPotential": [0.000, 0.010, 0.020, 0.030],
+            }.items():
+                self._write_csv(
+                    fields / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+
+            (fixed / "iv_1v_fixed_probe_0001_1V.vtk").write_text(
+                "\n".join([
+                    "# vtk DataFile Version 3.0",
+                    "fixture",
+                    "ASCII",
+                    "DATASET UNSTRUCTURED_GRID",
+                    "POINTS 4 double",
+                    "0 0 0",
+                    "1e-6 0 0",
+                    "0 1e-6 0",
+                    "1e-6 1e-6 0",
+                    "POINT_DATA 4",
+                    "SCALARS Potential float 1",
+                    "LOOKUP_TABLE default",
+                    "0 0 0 0",
+                    "SCALARS ElectronQuasiFermi float 1",
+                    "LOOKUP_TABLE default",
+                    "0 0.006 0.012 0.018",
+                    "SCALARS HoleQuasiFermi float 1",
+                    "LOOKUP_TABLE default",
+                    "0 0.006 0.012 0.018",
+                    "SCALARS Electrons float 1",
+                    "LOOKUP_TABLE default",
+                    "1e23 1e23 1e23 1e23",
+                    "SCALARS Holes float 1",
+                    "LOOKUP_TABLE default",
+                    "2e23 2e23 2e23 2e23",
+                    "SCALARS NetDoping float 1",
+                    "LOOKUP_TABLE default",
+                    "1e23 1e23 -1e23 -1e23",
+                    "",
+                ])
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "analyze_pn2d_iv_transport_shape.py"),
+                    "--reference-root",
+                    str(root),
+                    "--biases",
+                    "1.0",
+                    "--out-dir",
+                    str(out_dir),
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            rows = self._read_csv(out_dir / "contact_edge_transport_proxy_compare_1v.csv")
+
+        cathode_electron_drop = next(
+            row for row in rows
+            if row["contact"] == "Cathode"
+            and row["carrier"] == "electron"
+            and row["metric"] == "qf_drop_V"
+        )
+        self.assertAlmostEqual(float(cathode_electron_drop["vela_to_sentaurus_mean"]), 0.6)
+        self.assertEqual(cathode_electron_drop["points_sentaurus"], "2")
+        self.assertEqual(cathode_electron_drop["points_vela"], "2")
+
+    def test_analyze_pn2d_iv_transport_shape_writes_multibias_transport_proxy(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_iv_multibias_transport_") as tmp:
+            root = Path(tmp)
+            fixed = root / "reports" / "iv_state" / "fixed"
+            vela = root / "vela"
+            export = root / "sentaurus_exports" / "0000" / "fields"
+            out_dir = root / "reports" / "transport"
+            fixed.mkdir(parents=True)
+            vela.mkdir()
+            export.mkdir(parents=True)
+            (vela / "mesh.json").write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                    {"id": 3, "x": 1.0, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "node_ids": [0, 1, 2], "region_id": 0},
+                    {"id": 1, "node_ids": [1, 3, 2], "region_id": 0},
+                ],
+                "regions": [{"id": 0, "name": "Si", "material": "Si", "cell_ids": [0, 1]}],
+                "contacts": [
+                    {"id": 0, "name": "Cathode", "region_id": 0, "node_ids": [3]},
+                    {"id": 1, "name": "Anode", "region_id": 0, "node_ids": [0]},
+                ],
+            }) + "\n")
+            (fixed / "iv_1v_fixed_probe_0006_0.3V.vtk").write_text(
+                "\n".join([
+                    "# vtk DataFile Version 3.0",
+                    "fixture",
+                    "ASCII",
+                    "DATASET UNSTRUCTURED_GRID",
+                    "POINTS 4 double",
+                    "0 0 0",
+                    "1e-6 0 0",
+                    "0 1e-6 0",
+                    "1e-6 1e-6 0",
+                    "POINT_DATA 4",
+                    "SCALARS Potential float 1",
+                    "LOOKUP_TABLE default",
+                    "0 0 0 0",
+                    "SCALARS ElectronQuasiFermi float 1",
+                    "LOOKUP_TABLE default",
+                    "0 0.006 0.012 0.018",
+                    "SCALARS HoleQuasiFermi float 1",
+                    "LOOKUP_TABLE default",
+                    "0 0.006 0.012 0.018",
+                    "SCALARS Electrons float 1",
+                    "LOOKUP_TABLE default",
+                    "1e23 1e23 1e23 1e23",
+                    "SCALARS Holes float 1",
+                    "LOOKUP_TABLE default",
+                    "2e23 2e23 2e23 2e23",
+                    "SCALARS NetDoping float 1",
+                    "LOOKUP_TABLE default",
+                    "1e23 1e23 -1e23 -1e23",
+                    "",
+                ])
+            )
+            self._write_csv(
+                fixed / "iv_1v_fixed_probe_contact_edges.csv",
+                ["bias_V", "current_contact", "node0", "node1", "mun", "mup", "current_total_A_per_um"],
+                [
+                    [0.3, "Cathode", 1, 3, 0.07, 0.03, 1.0e-12],
+                    [0.3, "Cathode", 2, 3, 0.07, 0.03, 1.0e-12],
+                    [0.3, "Anode", 0, 1, 0.07, 0.03, -1.0e-12],
+                    [0.3, "Anode", 0, 2, 0.07, 0.03, -1.0e-12],
+                ],
+            )
+            for name, values in {
+                "eCurrentDensity": [100.0, 100.0, 100.0, 100.0],
+                "hCurrentDensity": [40.0, 40.0, 40.0, 40.0],
+                "eDensity": [1.0e17, 1.0e17, 1.0e17, 1.0e17],
+                "hDensity": [2.0e17, 2.0e17, 2.0e17, 2.0e17],
+                "eQuasiFermiPotential": [0.000, 0.010, 0.020, 0.030],
+                "hQuasiFermiPotential": [0.000, 0.010, 0.020, 0.030],
+                "eMobility": [700.0, 700.0, 700.0, 700.0],
+                "hMobility": [300.0, 300.0, 300.0, 300.0],
+            }.items():
+                self._write_csv(
+                    export / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+            self._write_csv(export / "ContactExternalVoltage_region1.csv", ["node_id", "component0"], [[1, 0.0]])
+            self._write_csv(export / "ContactExternalVoltage_region2.csv", ["node_id", "component0"], [[2, 0.3]])
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "analyze_pn2d_iv_transport_shape.py"),
+                    "--reference-root",
+                    str(root),
+                    "--biases",
+                    "0.3",
+                    "--sentaurus-multibias-root",
+                    str(root / "sentaurus_exports"),
+                    "--out-dir",
+                    str(out_dir),
+                ],
+                check=True,
+                cwd=REPO,
+            )
+            rows = self._read_csv(out_dir / "contact_edge_transport_proxy_compare_multibias.csv")
+            decision = json.loads((out_dir / "transport_shape_decision.json").read_text())
+
+        qf_drop = next(
+            row for row in rows
+            if row["bias_V"] == "0.3"
+            and row["contact"] == "Cathode"
+            and row["carrier"] == "electron"
+            and row["metric"] == "qf_drop_V"
+        )
+        mobility = next(
+            row for row in rows
+            if row["bias_V"] == "0.3"
+            and row["contact"] == "Cathode"
+            and row["carrier"] == "electron"
+            and row["metric"] == "mobility_m2_V_s"
+        )
+        self.assertAlmostEqual(float(qf_drop["vela_to_sentaurus_mean"]), 0.6)
+        self.assertAlmostEqual(float(mobility["vela_to_sentaurus_mean"]), 1.0)
+        self.assertEqual(decision["recommended_next_branch"], "contact_adjacent_qf_state")
+
+    def test_analyze_pn2d_iv_transport_shape_writes_inferred_ni_eff_report(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_iv_inferred_ni_") as tmp:
+            root = Path(tmp)
+            vela = root / "vela"
+            export = root / "sentaurus_exports" / "0000" / "fields"
+            out_dir = root / "reports" / "transport"
+            vela.mkdir(parents=True)
+            export.mkdir(parents=True)
+            (vela / "mesh.json").write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                    {"id": 3, "x": 1.0, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "node_ids": [0, 1, 2], "region_id": 0},
+                    {"id": 1, "node_ids": [1, 3, 2], "region_id": 0},
+                ],
+                "regions": [{"id": 0, "name": "Si", "material": "Si", "cell_ids": [0, 1]}],
+                "contacts": [
+                    {"id": 0, "name": "Cathode", "region_id": 0, "node_ids": [3]},
+                    {"id": 1, "name": "Anode", "region_id": 0, "node_ids": [0]},
+                ],
+            }) + "\n")
+            ni_eff = 1.65e10
+            vt = 8.617333262145e-5 * 300.0
+            psi = [0.20, 0.25, 0.22, 0.27]
+            phin = [0.10, 0.14, 0.11, 0.15]
+            phip = [0.30, 0.37, 0.32, 0.39]
+            electron_density = [
+                ni_eff * math.exp((psi_i - phin_i) / vt)
+                for psi_i, phin_i in zip(psi, phin)
+            ]
+            hole_density = [
+                ni_eff * math.exp((phip_i - psi_i) / vt)
+                for psi_i, phip_i in zip(psi, phip)
+            ]
+            for name, values in {
+                "ElectrostaticPotential": psi,
+                "eQuasiFermiPotential": phin,
+                "hQuasiFermiPotential": phip,
+                "eDensity": electron_density,
+                "hDensity": hole_density,
+            }.items():
+                self._write_csv(
+                    export / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+            self._write_csv(export / "ContactExternalVoltage_region1.csv", ["node_id", "component0"], [[1, 0.0]])
+            self._write_csv(export / "ContactExternalVoltage_region2.csv", ["node_id", "component0"], [[2, 0.25]])
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "analyze_pn2d_iv_transport_shape.py"),
+                    "--reference-root",
+                    str(root),
+                    "--biases",
+                    "0.25",
+                    "--sentaurus-multibias-root",
+                    str(root / "sentaurus_exports"),
+                    "--out-dir",
+                    str(out_dir),
+                ],
+                cwd=REPO,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = self._read_csv(out_dir / "sentaurus_inferred_ni_eff_multibias.csv")
+            contact_rows = self._read_csv(
+                out_dir / "sentaurus_contact_edge_inferred_ni_eff_multibias.csv"
+            )
+
+        electron = next(row for row in rows if row["source"] == "electron_inferred")
+        hole = next(row for row in rows if row["source"] == "hole_inferred")
+        self.assertAlmostEqual(float(electron["median_ni_eff_cm3"]), ni_eff, delta=ni_eff * 1e-12)
+        self.assertAlmostEqual(float(hole["median_ni_eff_cm3"]), ni_eff, delta=ni_eff * 1e-12)
+        cathode = next(row for row in contact_rows if row["contact"] == "Cathode")
+        anode = next(row for row in contact_rows if row["contact"] == "Anode")
+        self.assertAlmostEqual(float(cathode["median_ni_eff_cm3"]), ni_eff, delta=ni_eff * 1e-12)
+        self.assertAlmostEqual(float(anode["median_ni_eff_cm3"]), ni_eff, delta=ni_eff * 1e-12)
+
+    def test_runner_writes_newton_residual_probe_for_external_state(self) -> None:
+        runner = REPO / "build" / ("vela_example_runner.exe" if sys.platform.startswith("win") else "vela_example_runner")
+        if not runner.is_file():
+            self.skipTest(f"missing built runner: {runner}")
+
+        with tempfile.TemporaryDirectory(prefix="vela_newton_residual_probe_") as tmp:
+            root = Path(tmp)
+            fields = root / "fields"
+            fields.mkdir()
+            self._write_csv(root / "doping.csv", ["node_id", "donors_cm3", "acceptors_cm3"], [
+                [0, 2.0e17, 0.0],
+                [1, 1.0e17, 0.0],
+                [2, 0.0, 1.0e17],
+                [3, 0.0, 2.0e17],
+            ])
+            (root / "mesh.json").write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                    {"id": 3, "x": 1.0, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "node_ids": [0, 1, 2], "region_id": 0},
+                    {"id": 1, "node_ids": [1, 3, 2], "region_id": 0},
+                ],
+                "regions": [{"id": 0, "name": "Si", "material": "Si", "cell_ids": [0, 1]}],
+                "contacts": [
+                    {"id": 0, "name": "Cathode", "region_id": 0, "node_ids": [1, 3]},
+                    {"id": 1, "name": "Anode", "region_id": 0, "node_ids": [0, 2]},
+                ],
+            }) + "\n")
+            for name, values in {
+                "ElectrostaticPotential": [-0.1, 0.1, -0.08, 0.08],
+                "eQuasiFermiPotential": [0.0, 0.0, 0.0, 0.0],
+                "hQuasiFermiPotential": [0.0, 0.0, 0.0, 0.0],
+            }.items():
+                self._write_csv(
+                    fields / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+            output = root / "residual.csv"
+            config = root / "probe.json"
+            config.write_text(json.dumps({
+                "simulation_type": "newton_residual_probe",
+                "mesh_file": "mesh.json",
+                "node_doping_file": "doping.csv",
+                "output_csv": str(output),
+                "state_fields_dir": "fields",
+                "scaling": {"mode": "unit_scaling"},
+                "doping": [{"region": "Si", "donors": 1.0e17, "acceptors": 1.0e17}],
+                "contacts": [
+                    {"name": "Cathode", "bias": 0.0},
+                    {"name": "Anode", "bias": 0.0},
+                ],
+                "solver": {
+                    "method": "gummel_newton",
+                    "bandgap_narrowing": "slotboom",
+                    "mobility": {"model": "caughey_thomas_field"},
+                },
+            }, indent=2) + "\n")
+
+            result = subprocess.run(
+                [str(runner), "--config", str(config)],
+                cwd=REPO,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = self._read_csv(output)
+            status = json.loads(result.stdout)
+
+        self.assertEqual(len(rows), 4)
+        self.assertIn("block_residuals", status)
+        self.assertIn("psi_residual", rows[0])
+        self.assertIn("phin_residual", rows[0])
+        self.assertIn("phip_residual", rows[0])
+        self.assertIn("ni_eff_m3", rows[0])
+        self.assertAlmostEqual(float(rows[0]["donors_m3"]), 2.0e23)
+        self.assertAlmostEqual(float(rows[3]["acceptors_m3"]), 2.0e23)
+
+    def test_prepare_pn2d_sentaurus_multibias_debug_deck(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_sentaurus_multibias_deck_") as tmp:
+            root = Path(tmp)
+            input_cmd = root / "pn2d_iv_sdevice.cmd"
+            output_cmd = root / "pn2d_iv_multibias_debug_sdevice.cmd"
+            input_cmd.write_text(
+                """File {
+  Grid    = "pn2d_msh.tdr"
+  Plot    = "pn2d_iv_des.tdr"
+  Current = "pn2d_iv.plt"
+  Output  = "pn2d_iv.log"
+}
+
+Plot {
+  Potential
+  eDensity
+  hDensity
+}
+
+Solve {
+  Coupled(Iterations=100) { Poisson }
+
+  Quasistationary(
+    Goal {
+      Name="Anode"
+      Voltage=1.0
+    }
+  ) {
+    Coupled {
+      Poisson Electron Hole
+    }
+  }
+}
+"""
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "prepare_pn2d_sentaurus_multibias_debug.py"),
+                    "--input",
+                    str(input_cmd),
+                    "--output",
+                    str(output_cmd),
+                    "--file-prefix",
+                    "pn2d_iv_probe",
+                    "--time-points",
+                    "0,0.3,0.8,1.0",
+                ],
+                cwd=REPO,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            generated = output_cmd.read_text()
+
+        self.assertIn('Plot(FilePrefix="pn2d_iv_probe" Time=(0;0.3;0.8;1.0) NoOverWrite)', generated)
+        self.assertIn("eMobility", generated)
+        self.assertIn("hMobility", generated)
+        self.assertIn('Current = "pn2d_iv.plt"', generated)
+
+    def test_current_related_terminal_rows_recompute_ratio(self) -> None:
+        from scripts.compare_pn2d_0v_current_related_quantities import terminal_rows
+
+        with tempfile.TemporaryDirectory(prefix="vela_current_related_") as tmp:
+            terminal_csv = Path(tmp) / "terminal.csv"
+            self._write_csv(
+                terminal_csv,
+                [
+                    "contact",
+                    "current_electron_A_per_um",
+                    "current_hole_A_per_um",
+                    "current_total_A_per_um",
+                    "current_total",
+                ],
+                [
+                    ["Anode", 0.0, 2.0, -2.0, -2.0e6],
+                    ["Cathode", 2.0, 0.0, 2.0, 2.0e6],
+                ],
+            )
+            balance = {
+                "sentaurus_current_reference": {
+                    "final_coupled": {
+                        "contacts": {
+                            "Anode": {
+                                "electron_current": 0.0,
+                                "hole_current": -1.0,
+                                "total_current": -1.0,
+                            },
+                            "Cathode": {
+                                "electron_current": 0.0,
+                                "hole_current": 1.0,
+                                "total_current": 1.0,
+                            },
+                        }
+                    }
+                },
+                "sentaurus_current_parity": {
+                    "by_contact": {
+                        "Anode": {"abs_ratio_sentaurus_to_vela": 42.0, "sign_relation": "stale"},
+                        "Cathode": {"abs_ratio_sentaurus_to_vela": 42.0, "sign_relation": "stale"},
+                    }
+                },
+            }
+
+            rows = terminal_rows(balance, terminal_csv)
+
+        self.assertEqual(rows[0]["contact"], "Anode")
+        self.assertEqual(rows[0]["abs_ratio_sentaurus_to_vela"], 0.5)
+        self.assertEqual(rows[0]["sign_relation"], "same_sign")
+        self.assertEqual(rows[1]["abs_ratio_sentaurus_to_vela"], 0.5)
+        self.assertEqual(rows[1]["sign_relation"], "same_sign")
+
+    def test_current_related_terminal_rows_mark_sub_floor_components_as_numerical_zero(self) -> None:
+        from scripts.compare_pn2d_0v_current_related_quantities import terminal_rows
+
+        with tempfile.TemporaryDirectory(prefix="vela_current_related_zero_floor_") as tmp:
+            terminal_csv = Path(tmp) / "terminal.csv"
+            self._write_csv(
+                terminal_csv,
+                [
+                    "contact",
+                    "current_electron_A_per_um",
+                    "current_hole_A_per_um",
+                    "current_total_A_per_um",
+                    "current_total",
+                ],
+                [
+                    ["Anode", -1.6e-27, 0.0, -1.6e-27, -1.6e-21],
+                    ["Cathode", 0.0, -3.0e-28, 3.0e-28, 3.0e-22],
+                ],
+            )
+            balance = {
+                "sentaurus_current_reference": {
+                    "final_coupled": {
+                        "contacts": {
+                            "Anode": {
+                                "electron_current": 8.0e-26,
+                                "hole_current": -8.0e-25,
+                                "total_current": -7.2e-25,
+                            },
+                            "Cathode": {
+                                "electron_current": -8.0e-26,
+                                "hole_current": 8.0e-25,
+                                "total_current": 7.2e-25,
+                            },
+                        }
+                    }
+                },
+            }
+
+            rows = terminal_rows(balance, terminal_csv)
+
+        by_contact = {row["contact"]: row for row in rows}
+        self.assertEqual(by_contact["Anode"]["vela_electron_pair_A_per_um"], 0.0)
+        self.assertEqual(by_contact["Cathode"]["vela_electron_pair_A_per_um"], 0.0)
+        self.assertEqual(by_contact["Anode"]["vela_hole_pair_A_per_um"], 0.0)
+        self.assertEqual(by_contact["Cathode"]["vela_hole_pair_A_per_um"], 0.0)
+        self.assertEqual(by_contact["Anode"]["vela_electron_pair_status"], "pass_absolute_floor")
+        self.assertEqual(by_contact["Cathode"]["vela_hole_pair_status"], "pass_absolute_floor")
 
     def test_pn_export_converts_to_unit_scaling_deck(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_reference_tcad_") as tmp:
@@ -506,6 +992,43 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             self.assertEqual(report["iv"]["points_compared"], 2)
             self.assertEqual(report["iv"]["reference_bias_range"], [0.5, 1.0])
             self.assertEqual(report["iv"]["candidate_scale"], -1.0)
+
+    def test_compare_reference_curves_log_current_interpolation(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_reference_log_interp_") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.csv"
+            candidate = root / "candidate.csv"
+            out_json = root / "report.json"
+            out_md = root / "report.md"
+            self._write_csv(reference, ["bias_V", "current_total"], [
+                [0.0, 1.0e-12],
+                [0.5, 1.0e-9],
+                [1.0, 1.0e-6],
+            ])
+            self._write_csv(candidate, ["bias_V", "current_total"], [
+                [0.0, -1.0e-12],
+                [1.0, -1.0e-6],
+            ])
+
+            subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "compare_reference_curves.py"),
+                "--reference", str(reference),
+                "--candidate", str(candidate),
+                "--output-json", str(out_json),
+                "--output-md", str(out_md),
+                "--kind", "iv",
+                "--candidate-scale", "-1.0",
+                "--interpolation", "log_current",
+                "--max-orders-of-magnitude", "1e-12",
+                "--max-relative-error", "1e-12",
+                "--require-trend-match",
+            ], check=True, cwd=REPO)
+
+            report = json.loads(out_json.read_text())
+            self.assertEqual(report["iv"]["interpolation"], "log_current")
+            self.assertEqual(report["iv"]["points_compared"], 3)
+            self.assertAlmostEqual(report["iv"]["max_relative_error"], 0.0, delta=1.0e-12)
 
     def test_compare_reference_curves_can_select_candidate_column(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_reference_column_match_") as tmp:

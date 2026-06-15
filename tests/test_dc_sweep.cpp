@@ -376,7 +376,9 @@ TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV da
                                                      "current_electron_diffusion", "current_hole", "current_hole_drift",
                                                      "current_hole_diffusion", "current_total", "converged", "iterations",
                                                      "solver_method", "gummel_iterations", "newton_iterations",
-                                                     "handoff_stage", "step_diagnostics", "validation_diagnostics"});
+                                                     "handoff_stage", "step_diagnostics", "validation_diagnostics",
+                                                     "failure_reason", "newton_failure_class",
+                                                     "newton_failure_diagnostics_json"});
 }
 
 TEST_CASE("DCSweep: unit_scaling CSV appends per-micron currents and V-per-cm field",
@@ -740,6 +742,43 @@ TEST_CASE("DCSweep: recombination diagnostics are opt-in for hybrid handoff",
     REQUIRE(std::isfinite(csvReal(rowsWithDiag.at(1), maxNpOverNi2Column)));
 }
 
+TEST_CASE("DCSweep: transport diagnostics append mobility and current-driver columns",
+          "[dc_sweep][diagnostics][transport]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "iv_transport.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.05},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"transport", {
+                {"enabled", true},
+            }},
+        }},
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    const auto rows = readCsvRows(csvPath);
+    REQUIRE(rows.size() == 2);
+    const auto& header = rows.front();
+    csvColumnIndex(header, "mean_electron_mobility_m2_V_s");
+    csvColumnIndex(header, "mean_hole_mobility_m2_V_s");
+    csvColumnIndex(header, "min_electron_mobility_m2_V_s");
+    csvColumnIndex(header, "min_hole_mobility_m2_V_s");
+    csvColumnIndex(header, "max_electric_field_V_per_cm");
+    csvColumnIndex(header, "mean_electron_qf_gradient_V_per_cm");
+    csvColumnIndex(header, "mean_hole_qf_gradient_V_per_cm");
+}
+
 TEST_CASE("DCSweep: contact-edge diagnostics are opt-in and write per-edge rows",
           "[dc_sweep][diagnostics][contact_edge]")
 {
@@ -790,6 +829,166 @@ TEST_CASE("DCSweep: contact-edge diagnostics are opt-in and write per-edge rows"
             REQUIRE(csvReal(row, edgeCurrentUmCol) ==
                     Catch::Approx(csvReal(row, edgeCurrentCol) / 1.0e6).epsilon(1.0e-12));
         }
+    }
+}
+
+TEST_CASE("DCSweep: continuity-balance diagnostics write contact-adjacent residual rows",
+          "[dc_sweep][diagnostics][continuity_balance]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "iv_unit_scaling.csv";
+    const auto balancePath = dir / "iv_continuity_balance.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"continuity_balance", {
+                {"enabled", true},
+                {"contacts", {"anode", "cathode"}},
+                {"csv_file", balancePath.string()}
+            }}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+
+    REQUIRE(std::filesystem::exists(balancePath));
+    const auto rows = readCsvRows(balancePath);
+    REQUIRE(rows.size() > 1);
+
+    const auto& header = rows.front();
+    const std::size_t pointIndexCol = csvColumnIndex(header, "point_index");
+    const std::size_t contactCol = csvColumnIndex(header, "contact");
+    const std::size_t carrierCol = csvColumnIndex(header, "carrier");
+    const std::size_t residualCol = csvColumnIndex(header, "continuity_residual");
+    const std::size_t contactFluxCol = csvColumnIndex(header, "contact_edge_flux");
+    const std::size_t neighborFluxCol = csvColumnIndex(header, "neighbor_edge_flux");
+    const std::size_t recombinationCol = csvColumnIndex(header, "recombination_term");
+    (void)csvColumnIndex(header, "contact_node");
+    (void)csvColumnIndex(header, "interior_node");
+    (void)csvColumnIndex(header, "interior_volume_m2");
+    (void)csvColumnIndex(header, "qf_contact_V");
+    (void)csvColumnIndex(header, "qf_interior_V");
+
+    bool sawElectron = false;
+    bool sawHole = false;
+    for (std::size_t i = 1; i < rows.size(); ++i) {
+        const auto& row = rows.at(i);
+        REQUIRE(csvReal(row, pointIndexCol) == Catch::Approx(0.0));
+        REQUIRE((row.at(contactCol) == "anode" || row.at(contactCol) == "cathode"));
+        sawElectron = sawElectron || row.at(carrierCol) == "electron";
+        sawHole = sawHole || row.at(carrierCol) == "hole";
+        REQUIRE(std::isfinite(csvReal(row, residualCol)));
+        REQUIRE(std::isfinite(csvReal(row, contactFluxCol)));
+        REQUIRE(std::isfinite(csvReal(row, neighborFluxCol)));
+        REQUIRE(std::isfinite(csvReal(row, recombinationCol)));
+    }
+    REQUIRE(sawElectron);
+    REQUIRE(sawHole);
+}
+
+TEST_CASE("DCSweep: terminal balance diagnostics reuse one solution for two contacts",
+          "[dc_sweep][diagnostics][terminal_balance][contact_edge]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "iv_unit_scaling.csv";
+    const auto balancePath = dir / "iv_terminal_balance.csv";
+    const auto edgeDiagPath = dir / "iv_contact_edges.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"terminal_balance", {
+                {"enabled", true},
+                {"contacts", {"anode", "cathode"}},
+                {"csv_file", balancePath.string()}
+            }},
+            {"contact_edge", {
+                {"enabled", true},
+                {"contacts", {"anode", "cathode"}},
+                {"csv_file", edgeDiagPath.string()}
+            }}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+
+    REQUIRE(std::filesystem::exists(balancePath));
+    const auto balanceRows = readCsvRows(balancePath);
+    REQUIRE(balanceRows.size() == 3);
+    const auto& balanceHeader = balanceRows.front();
+    const std::size_t balanceContactCol = csvColumnIndex(balanceHeader, "contact");
+    const std::size_t electronCol = csvColumnIndex(balanceHeader, "current_electron");
+    const std::size_t holeCol = csvColumnIndex(balanceHeader, "current_hole");
+    const std::size_t minusCol = csvColumnIndex(balanceHeader, "electron_minus_hole");
+    const std::size_t plusCol = csvColumnIndex(balanceHeader, "electron_plus_hole");
+    const std::size_t minusUmCol = csvColumnIndex(balanceHeader, "electron_minus_hole_A_per_um");
+    const std::size_t plusUmCol = csvColumnIndex(balanceHeader, "electron_plus_hole_A_per_um");
+    Real minusUmPairSum = 0.0;
+
+    for (std::size_t i = 1; i < balanceRows.size(); ++i) {
+        const auto& row = balanceRows.at(i);
+        const Real electron = csvReal(row, electronCol);
+        const Real hole = csvReal(row, holeCol);
+        REQUIRE(csvReal(row, minusCol) == Catch::Approx(electron - hole).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, plusCol) == Catch::Approx(electron + hole).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, minusUmCol) == Catch::Approx(csvReal(row, minusCol) / 1.0e6).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, plusUmCol) == Catch::Approx(csvReal(row, plusCol) / 1.0e6).epsilon(1.0e-12));
+        minusUmPairSum += csvReal(row, minusUmCol);
+    }
+    REQUIRE(std::abs(minusUmPairSum) <= 1.0e-24);
+
+    REQUIRE(std::filesystem::exists(edgeDiagPath));
+    const auto edgeRows = readCsvRows(edgeDiagPath);
+    REQUIRE(edgeRows.size() > 2);
+    const auto& edgeHeader = edgeRows.front();
+    const std::size_t edgeContactCol = csvColumnIndex(edgeHeader, "current_contact");
+    const std::size_t edgeTotalCol = csvColumnIndex(edgeHeader, "current_total");
+    (void)csvColumnIndex(edgeHeader, "psi0");
+    (void)csvColumnIndex(edgeHeader, "phin0");
+    (void)csvColumnIndex(edgeHeader, "phip0");
+    (void)csvColumnIndex(edgeHeader, "n0");
+    (void)csvColumnIndex(edgeHeader, "p0");
+    (void)csvColumnIndex(edgeHeader, "ni0");
+    (void)csvColumnIndex(edgeHeader, "mun");
+    (void)csvColumnIndex(edgeHeader, "electron_continuity_flux");
+    (void)csvColumnIndex(edgeHeader, "hole_continuity_flux");
+
+    for (const std::string contact : {"anode", "cathode"}) {
+        Real edgeSum = 0.0;
+        int edgeCount = 0;
+        for (std::size_t i = 1; i < edgeRows.size(); ++i) {
+            if (edgeRows.at(i).at(edgeContactCol) == contact) {
+                edgeSum += csvReal(edgeRows.at(i), edgeTotalCol);
+                ++edgeCount;
+            }
+        }
+        REQUIRE(edgeCount > 0);
+
+        bool foundTerminal = false;
+        for (std::size_t i = 1; i < balanceRows.size(); ++i) {
+            if (balanceRows.at(i).at(balanceContactCol) == contact) {
+                REQUIRE(edgeSum == Catch::Approx(csvReal(balanceRows.at(i), minusCol)).epsilon(1.0e-12));
+                foundTerminal = true;
+            }
+        }
+        REQUIRE(foundTerminal);
     }
 }
 
@@ -940,7 +1139,9 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
                                                          "current_hole_diffusion", "current_total", "converged", "iterations",
                                                          "solver_method", "gummel_iterations", "newton_iterations",
                                                          "handoff_stage",
-                                                         "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
+                                                         "step_diagnostics", "validation_diagnostics",
+                                                         "failure_reason", "newton_failure_class",
+                                                         "newton_failure_diagnostics_json", "charge_C_per_m",
                                                          "capacitance_F_per_m"});
         REQUIRE(rows.at(1).at(0) == "cv_quasistatic");
     }
@@ -992,7 +1193,9 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
                                                          "current_hole_diffusion", "current_total", "converged", "iterations",
                                                          "solver_method", "gummel_iterations", "newton_iterations",
                                                          "handoff_stage",
-                                                         "step_diagnostics", "validation_diagnostics", "charge_C_per_m",
+                                                         "step_diagnostics", "validation_diagnostics",
+                                                         "failure_reason", "newton_failure_class",
+                                                         "newton_failure_diagnostics_json", "charge_C_per_m",
                                                          "capacitance_F_per_m", "charge_gate_C_per_m",
                                                          "capacitance_Canode_gate_F_per_m", "charge_source_C_per_m",
                                                          "capacitance_Canode_source_F_per_m", "charge_substrate_C_per_m",
@@ -1046,10 +1249,12 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
                                                          "current_hole_diffusion", "current_total", "converged", "iterations",
                                                          "solver_method", "gummel_iterations", "newton_iterations",
                                                          "handoff_stage",
-                                                         "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
+                                                         "step_diagnostics", "validation_diagnostics",
+                                                         "failure_reason", "newton_failure_class",
+                                                         "newton_failure_diagnostics_json", "max_electric_field_V_per_m",
                                                          "current_jump_ratio", "breakdown_detected",
                                                          "breakdown_voltage", "criterion", "last_stable_bias",
-                                                         "failed_bias", "failure_reason"});
+                                                         "failed_bias", "breakdown_failure_reason"});
         REQUIRE(rows.at(1).at(0) == "bv_reverse");
     }
 }
@@ -1086,10 +1291,12 @@ TEST_CASE("DCSweep: LDMOS BV diagnostic deck writes complete schema", "[dc_sweep
                                                      "current_hole_diffusion", "current_total", "converged", "iterations",
                                                      "solver_method", "gummel_iterations", "newton_iterations",
                                                      "handoff_stage",
-                                                     "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
+                                                     "step_diagnostics", "validation_diagnostics",
+                                                     "failure_reason", "newton_failure_class",
+                                                     "newton_failure_diagnostics_json", "max_electric_field_V_per_m",
                                                      "current_jump_ratio", "breakdown_detected",
                                                      "breakdown_voltage", "criterion", "last_stable_bias",
-                                                     "failed_bias", "failure_reason"});
+                                                     "failed_bias", "breakdown_failure_reason"});
     REQUIRE(rows.at(1).at(0) == "bv_reverse");
     REQUIRE(rows.at(1).at(1) == "drain");
     REQUIRE(rows.at(1).at(3) == "drain");
@@ -1145,12 +1352,14 @@ TEST_CASE("DCSweep: BV reverse start failure records failed diagnostic row", "[d
                                                      "current_hole_diffusion", "current_total", "converged", "iterations",
                                                      "solver_method", "gummel_iterations", "newton_iterations",
                                                      "handoff_stage",
-                                                     "step_diagnostics", "validation_diagnostics", "max_electric_field_V_per_m",
+                                                     "step_diagnostics", "validation_diagnostics",
+                                                     "failure_reason", "newton_failure_class",
+                                                     "newton_failure_diagnostics_json", "max_electric_field_V_per_m",
                                                      "current_jump_ratio", "breakdown_detected",
                                                      "breakdown_voltage", "criterion", "last_stable_bias",
-                                                     "failed_bias", "failure_reason"});
+                                                     "failed_bias", "breakdown_failure_reason"});
     const std::size_t criterionColumn = csvColumnIndex(rows.front(), "criterion");
-    const std::size_t failureReasonColumn = csvColumnIndex(rows.front(), "failure_reason");
+    const std::size_t failureReasonColumn = csvColumnIndex(rows.front(), "breakdown_failure_reason");
     REQUIRE(rows.at(1).at(criterionColumn).empty());
     REQUIRE(rows.at(1).at(failureReasonColumn) == "non_convergence");
 }
@@ -1736,6 +1945,14 @@ TEST_CASE("DCSweep: hybrid strict policy rejects Newton failure",
     REQUIRE_FALSE(point.converged);
     REQUIRE(point.handoffStage == "newton_failed");
     REQUIRE(point.failureReason == "newton_non_convergence");
+    REQUIRE(point.newtonFailureClass.empty());
+    REQUIRE(point.failureDiagnosticsJson.empty());
+
+    const auto rows = readCsvRows(csvPath);
+    const std::size_t failureReasonColumn = csvColumnIndex(rows.front(), "failure_reason");
+    const std::size_t newtonFailureColumn = csvColumnIndex(rows.front(), "newton_failure_class");
+    REQUIRE(rows.at(1).at(failureReasonColumn) == "newton_non_convergence");
+    REQUIRE(rows.at(1).at(newtonFailureColumn).empty());
 }
 
 

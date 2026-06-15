@@ -153,6 +153,152 @@ ResidualBlockNormValue residualScalesFromConfig(
     return scales;
 }
 
+NewtonBlockResidualInfo blockResidualInfo(const VectorXd& residual, Index nodeCount)
+{
+    const ResidualBlockNormValue blocks = ResidualNorm::computeBlocks(residual, nodeCount);
+    return {blocks.psi, blocks.phin, blocks.phip, blocks.combined};
+}
+
+NewtonCarrierDiagnostics carrierDiagnostics(const CoupledDDAssembler& assembler,
+                                            const VectorXd& x)
+{
+    NewtonCarrierDiagnostics diagnostics;
+    const VectorXd n = assembler.electronDensity(x);
+    const VectorXd p = assembler.holeDensity(x);
+    diagnostics.minElectronDensity = n.size() > 0
+        ? std::numeric_limits<Real>::infinity()
+        : 0.0;
+    diagnostics.minHoleDensity = p.size() > 0
+        ? std::numeric_limits<Real>::infinity()
+        : 0.0;
+
+    for (int i = 0; i < n.size(); ++i) {
+        if (!std::isfinite(n(i)))
+            ++diagnostics.nonfiniteElectronCount;
+        else
+            diagnostics.minElectronDensity = std::min(diagnostics.minElectronDensity, n(i));
+        if (!std::isfinite(p(i)))
+            ++diagnostics.nonfiniteHoleCount;
+        else
+            diagnostics.minHoleDensity = std::min(diagnostics.minHoleDensity, p(i));
+        if (!(n(i) > 0.0))
+            ++diagnostics.nonpositiveElectronCount;
+        if (!(p(i) > 0.0))
+            ++diagnostics.nonpositiveHoleCount;
+    }
+
+    if (!std::isfinite(diagnostics.minElectronDensity))
+        diagnostics.minElectronDensity = 0.0;
+    if (!std::isfinite(diagnostics.minHoleDensity))
+        diagnostics.minHoleDensity = 0.0;
+    diagnostics.positiveFinite = diagnostics.nonfiniteElectronCount == 0 &&
+        diagnostics.nonfiniteHoleCount == 0 &&
+        diagnostics.nonpositiveElectronCount == 0 &&
+        diagnostics.nonpositiveHoleCount == 0;
+    return diagnostics;
+}
+
+std::vector<NewtonTopResidualNode> topPoissonResidualNodes(
+    const DeviceMesh& mesh,
+    const DopingModel& doping,
+    const CoupledDDAssembler& assembler,
+    const VectorXd& residual,
+    std::size_t limit = 10)
+{
+    struct RankedNode {
+        Index nodeId = 0;
+        Real absResidual = 0.0;
+    };
+
+    const Index nodeCount = mesh.numNodes();
+    std::vector<RankedNode> ranked;
+    ranked.reserve(static_cast<std::size_t>(nodeCount));
+    for (Index nodeId = 0; nodeId < nodeCount; ++nodeId) {
+        const Real value = residual(static_cast<int>(nodeId));
+        ranked.push_back({nodeId, std::abs(value)});
+    }
+    std::sort(ranked.begin(), ranked.end(), [](const RankedNode& a, const RankedNode& b) {
+        if (a.absResidual == b.absResidual)
+            return a.nodeId < b.nodeId;
+        return a.absResidual > b.absResidual;
+    });
+
+    const std::vector<Real>& ni = assembler.intrinsicDensity();
+    const std::size_t count = std::min(limit, ranked.size());
+    std::vector<NewtonTopResidualNode> out;
+    out.reserve(count);
+    for (std::size_t index = 0; index < count; ++index) {
+        const Index nodeId = ranked[index].nodeId;
+        const Node& node = mesh.getNode(nodeId);
+        const Real poissonResidual = residual(static_cast<int>(nodeId));
+        out.push_back({
+            nodeId,
+            node.x,
+            node.y,
+            poissonResidual,
+            std::abs(poissonResidual),
+            doping.donors(nodeId),
+            doping.acceptors(nodeId),
+            doping.netDoping(nodeId),
+            nodeId < static_cast<Index>(ni.size()) ? ni[static_cast<std::size_t>(nodeId)] : 0.0});
+    }
+    return out;
+}
+
+NewtonFailureDiagnostics buildFailureDiagnostics(
+    const DeviceMesh& mesh,
+    const DopingModel& doping,
+    const CoupledDDAssembler& assembler,
+    const VectorXd& x,
+    const VectorXd& residual,
+    const std::string& failureReason,
+    int failedIteration,
+    Real residualNorm,
+    Real stepNorm,
+    Real dampingFactor,
+    int lineSearchAttempts,
+    const std::string& lineSearchFailureReason,
+    std::vector<LineSearchIterationInfo> lineSearchHistory = {})
+{
+    NewtonFailureDiagnostics diagnostics;
+    diagnostics.failureReason = failureReason;
+    diagnostics.failedIteration = failedIteration;
+    diagnostics.residualNorm = residualNorm;
+    diagnostics.stepNorm = stepNorm;
+    diagnostics.dampingFactor = dampingFactor;
+    diagnostics.lineSearchAttempts = lineSearchAttempts;
+    diagnostics.lineSearchFailureReason = lineSearchFailureReason;
+    diagnostics.blockResiduals = blockResidualInfo(residual, mesh.numNodes());
+    diagnostics.carrierDiagnostics = carrierDiagnostics(assembler, x);
+    diagnostics.lineSearchHistory = std::move(lineSearchHistory);
+    diagnostics.topPoissonResidualNodes = topPoissonResidualNodes(mesh, doping, assembler, residual);
+    return diagnostics;
+}
+
+void printFailureDiagnostics(const NewtonFailureDiagnostics& diagnostics)
+{
+    std::cerr << "  failure_reason=" << diagnostics.failureReason
+              << " line_search_reason=" << diagnostics.lineSearchFailureReason
+              << " blocks=(" << diagnostics.blockResiduals.psi << ','
+              << diagnostics.blockResiduals.phin << ','
+              << diagnostics.blockResiduals.phip << ")"
+              << " carriers_positive_finite="
+              << (diagnostics.carrierDiagnostics.positiveFinite ? "1" : "0")
+              << '\n';
+    if (!diagnostics.topPoissonResidualNodes.empty()) {
+        const NewtonTopResidualNode& node = diagnostics.topPoissonResidualNodes.front();
+        std::cerr << "  top_poisson_residual_node=" << node.nodeId
+                  << " x=" << node.x
+                  << " y=" << node.y
+                  << " residual=" << node.poissonResidual
+                  << " donors=" << node.donors
+                  << " acceptors=" << node.acceptors
+                  << " net=" << node.netDoping
+                  << " ni_eff=" << node.effectiveIntrinsicDensity
+                  << '\n';
+    }
+}
+
 Real maxRelativePermittivityAcrossRegions(const DeviceMesh& mesh,
                                           const MaterialDatabase& matdb,
                                           Real temperature_K)
@@ -514,6 +660,46 @@ DDSolution NewtonSolver::makeSolution(const CoupledDDAssembler& assembler,
     return sol;
 }
 
+NewtonResidualEvaluation NewtonSolver::evaluateResidual(const DDSolution& state) const
+{
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    const DDScalingSpec scaling = buildScalingSpec();
+    CoupledDDAssembler assembler(
+        mesh_,
+        matdb_,
+        doping_,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        cfg_.bandgapNarrowing,
+        cfg_.impactIonization,
+        fixedCharges_,
+        sheetCharges_,
+        scaling);
+    const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const VectorXd x = assembler.pack({
+        state.psi / potentialScale,
+        state.phin / potentialScale,
+        state.phip / potentialScale});
+    const VectorXd raw = assembler.residual(x, bcs);
+    const NewtonBlockResidualInfo blocks = blockResidualInfo(raw, mesh_.numNodes());
+
+    NewtonResidualEvaluation evaluation;
+    evaluation.raw = raw;
+    evaluation.blockNorms = blocks;
+    evaluation.intrinsicDensity = assembler.intrinsicDensity();
+    evaluation.scaledState = assembler.usesScaledState();
+    evaluation.potentialScale = potentialScale;
+    return evaluation;
+}
+
 NewtonResult NewtonSolver::solve() const
 {
     const double Vt = thermalVoltage(cfg_.temperature_K);
@@ -644,10 +830,24 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             result.finalResidualNorm = residualNormFn(acceptedR);
             result.iters = acceptedIters;
             result.solution = makeSolution(assembler, acceptedX, acceptedIters);
+            result.failureDiagnostics = buildFailureDiagnostics(
+                mesh_,
+                doping_,
+                assembler,
+                acceptedX,
+                acceptedR,
+                "linear_solve_failed",
+                iter,
+                result.finalResidualNorm,
+                0.0,
+                0.0,
+                0,
+                {});
             if (cfg_.verbose) {
                 std::cerr << "Newton failed at iter " << iter
                           << ": residual=" << residualNormFn(r)
                           << " damping=0 step=0 (linear solve failed)\n";
+                printFailureDiagnostics(result.failureDiagnostics);
             }
             return result;
         }
@@ -670,12 +870,28 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             result.finalResidualNorm = residualNormFn(acceptedR);
             result.iters = acceptedIters;
             result.solution = makeSolution(assembler, acceptedX, acceptedIters);
+            result.failureDiagnostics = buildFailureDiagnostics(
+                mesh_,
+                doping_,
+                assembler,
+                acceptedX,
+                acceptedR,
+                ls.failureReason.empty() ? std::string("line_search_rejected") : ls.failureReason,
+                iter,
+                result.finalResidualNorm,
+                stepNorm,
+                ls.damping,
+                ls.attempts,
+                ls.failureReason,
+                std::move(ls.history));
             if (cfg_.verbose) {
                 std::cerr << "Newton failed at iter " << iter
                           << ": residual=" << ls.residualNorm
                           << " damping=" << ls.damping
                           << " step=" << stepNorm
-                          << " (line search rejected step)\n";
+                          << " (line search rejected step; reason="
+                          << result.failureDiagnostics.failureReason << ")\n";
+                printFailureDiagnostics(result.failureDiagnostics);
             }
             return result;
         }
@@ -727,6 +943,19 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     result.iters = acceptedIters;
     result.finalResidualNorm = residualNormFn(acceptedR);
     result.solution = makeSolution(assembler, acceptedX, acceptedIters);
+    result.failureDiagnostics = buildFailureDiagnostics(
+        mesh_,
+        doping_,
+        assembler,
+        acceptedX,
+        acceptedR,
+        "max_iterations",
+        cfg_.maxIter,
+        result.finalResidualNorm,
+        result.history.empty() ? 0.0 : result.history.back().stepNorm,
+        result.history.empty() ? 0.0 : result.history.back().dampingFactor,
+        result.history.empty() ? 0 : result.history.back().lineSearchAttempts,
+        {});
     if (cfg_.verbose) {
         std::cerr << "Newton failed after " << cfg_.maxIter
                   << " iterations: residual=" << result.finalResidualNorm
@@ -735,6 +964,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
                   << " step="
                   << (result.history.empty() ? 0.0 : result.history.back().stepNorm)
                   << '\n';
+        printFailureDiagnostics(result.failureDiagnostics);
     }
     return result;
 }

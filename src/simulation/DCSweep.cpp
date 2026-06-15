@@ -1,6 +1,8 @@
 #include "vela/simulation/DCSweep.h"
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/UnitScalingSystem.h"
+#include "vela/discretization/ScharfetterGummel.h"
+#include "vela/equation/AssemblerUtils.h"
 #include "vela/simulation/DCSweepStepControl.h"
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/io/CSVWriter.h"
@@ -52,6 +54,32 @@ struct SweepRecombinationDiagnostics {
     Real maxAbsRate_m3_per_s = 0.0;
     Real meanAbsRate_m3_per_s = 0.0;
     Real maxCarrierProductRatio = 0.0;
+};
+
+struct SweepTransportDiagnostics {
+    Real meanElectronMobility_m2_V_s = 0.0;
+    Real meanHoleMobility_m2_V_s = 0.0;
+    Real minElectronMobility_m2_V_s = 0.0;
+    Real minHoleMobility_m2_V_s = 0.0;
+    Real maxElectricField_V_per_cm = 0.0;
+    Real meanElectronQfGradient_V_per_cm = 0.0;
+    Real meanHoleQfGradient_V_per_cm = 0.0;
+};
+
+struct ContinuityBalanceDiagnosticRow {
+    std::string contact;
+    std::string carrier;
+    Index contactNode = 0;
+    Index interiorNode = 0;
+    Index contactEdgeId = 0;
+    Real contactEdgeFlux = 0.0;
+    Real neighborEdgeFlux = 0.0;
+    Real recombinationTerm = 0.0;
+    Real continuityResidual = 0.0;
+    Real interiorVolume_m2 = 0.0;
+    Real qfContact_V = 0.0;
+    Real qfInterior_V = 0.0;
+    Real carrierDensityInterior_m3 = 0.0;
 };
 
 std::string formatReal(Real value)
@@ -139,7 +167,7 @@ std::vector<Real> buildEffectiveIntrinsicDensityVector(const DeviceMesh& mesh,
     const Real Vt = constants::kb * temperature_K / constants::q;
     const std::unique_ptr<BandgapNarrowing> bgn = makeBandgapNarrowingModel(bgnCfg);
     for (Index i = 0; i < nodeCount; ++i) {
-        const Real deltaEg = bgn->deltaEg(doping.netDoping(i), 0.0, 0.0);
+        const Real deltaEg = bgn->deltaEg(doping.totalImpurity(i), 0.0, 0.0);
         ni[i] = effectiveIntrinsicDensity(ni[i], Vt, deltaEg);
     }
     return ni;
@@ -179,6 +207,230 @@ SweepRecombinationDiagnostics computeSweepRecombinationDiagnostics(
 
     diagnostics.meanAbsRate_m3_per_s = absSum / static_cast<Real>(nodeCount);
     return diagnostics;
+}
+
+SweepTransportDiagnostics computeSweepTransportDiagnostics(
+    const DeviceMesh& mesh,
+    const MaterialDatabase& matdb,
+    const DopingModel& doping,
+    const MobilityModelConfig& mobilityConfig,
+    Real temperature_K,
+    const DDSolution& sol)
+{
+    SweepTransportDiagnostics diagnostics;
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const std::vector<Material> cellMaterials =
+        detail::buildCellMaterials(mesh, matdb, temperature_K);
+    const std::unique_ptr<MobilityModel> mobility = makeMobilityModel(mobilityConfig);
+
+    Real electronMobilitySum = 0.0;
+    Real holeMobilitySum = 0.0;
+    Real electronQfGradientSum = 0.0;
+    Real holeQfGradientSum = 0.0;
+    Index electronMobilityCount = 0;
+    Index holeMobilityCount = 0;
+    Index qfGradientCount = 0;
+    bool hasElectronMobility = false;
+    bool hasHoleMobility = false;
+
+    for (Index e = 0; e < mesh.numEdges(); ++e) {
+        const Edge& edge = mesh.getEdge(e);
+        const Node& n0 = mesh.getNode(edge.n0);
+        const Node& n1 = mesh.getNode(edge.n1);
+        const Real dx = n1.x - n0.x;
+        const Real dy = n1.y - n0.y;
+        const Real length = std::sqrt(dx * dx + dy * dy);
+        if (length <= 0.0)
+            continue;
+
+        const int i0 = static_cast<int>(edge.n0);
+        const int i1 = static_cast<int>(edge.n1);
+        const Real electricField = std::abs(sol.psi(i1) - sol.psi(i0)) / length;
+        diagnostics.maxElectricField_V_per_cm =
+            std::max(diagnostics.maxElectricField_V_per_cm,
+                     voltsPerMeterToVoltsPerCm(electricField));
+
+        const Real electronMobility = detail::edgeMobility(
+            edgeCells, mesh, doping, *mobility, cellMaterials, e, CarrierType::Electron,
+            electricField, &mobilityConfig, &sol.psi);
+        if (electronMobility > 0.0 && std::isfinite(electronMobility)) {
+            electronMobilitySum += electronMobility;
+            diagnostics.minElectronMobility_m2_V_s = hasElectronMobility
+                ? std::min(diagnostics.minElectronMobility_m2_V_s, electronMobility)
+                : electronMobility;
+            hasElectronMobility = true;
+            ++electronMobilityCount;
+        }
+
+        const Real holeMobility = detail::edgeMobility(
+            edgeCells, mesh, doping, *mobility, cellMaterials, e, CarrierType::Hole,
+            electricField, &mobilityConfig, &sol.psi);
+        if (holeMobility > 0.0 && std::isfinite(holeMobility)) {
+            holeMobilitySum += holeMobility;
+            diagnostics.minHoleMobility_m2_V_s = hasHoleMobility
+                ? std::min(diagnostics.minHoleMobility_m2_V_s, holeMobility)
+                : holeMobility;
+            hasHoleMobility = true;
+            ++holeMobilityCount;
+        }
+
+        electronQfGradientSum += voltsPerMeterToVoltsPerCm(
+            std::abs(sol.phin(i1) - sol.phin(i0)) / length);
+        holeQfGradientSum += voltsPerMeterToVoltsPerCm(
+            std::abs(sol.phip(i1) - sol.phip(i0)) / length);
+        ++qfGradientCount;
+    }
+
+    if (electronMobilityCount > 0)
+        diagnostics.meanElectronMobility_m2_V_s =
+            electronMobilitySum / static_cast<Real>(electronMobilityCount);
+    if (holeMobilityCount > 0)
+        diagnostics.meanHoleMobility_m2_V_s =
+            holeMobilitySum / static_cast<Real>(holeMobilityCount);
+    if (qfGradientCount > 0) {
+        diagnostics.meanElectronQfGradient_V_per_cm =
+            electronQfGradientSum / static_cast<Real>(qfGradientCount);
+        diagnostics.meanHoleQfGradient_V_per_cm =
+            holeQfGradientSum / static_cast<Real>(qfGradientCount);
+    }
+    return diagnostics;
+}
+
+std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
+    const DeviceMesh& mesh,
+    const MaterialDatabase& matdb,
+    const DopingModel& doping,
+    const MobilityModelConfig& mobilityConfig,
+    Real temperature_K,
+    const DDSolution& sol,
+    const std::vector<Real>& effectiveNi,
+    const RecombinationModelConfig& recombinationCfg,
+    const std::vector<std::string>& contacts)
+{
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const std::vector<Material> cellMaterials =
+        detail::buildCellMaterials(mesh, matdb, temperature_K);
+    const std::unique_ptr<MobilityModel> mobility = makeMobilityModel(mobilityConfig);
+    const RecombinationModel recombination(recombinationCfg);
+    const Real Vt = constants::kb * temperature_K / constants::q;
+
+    std::unordered_set<std::string> requested(contacts.begin(), contacts.end());
+    std::vector<std::vector<Index>> nodeEdges(mesh.numNodes());
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        nodeEdges[edge.n0].push_back(edgeId);
+        nodeEdges[edge.n1].push_back(edgeId);
+    }
+
+    auto edgeFluxForCarrier = [&](Index edgeId, CarrierType carrier) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        const Real h = edge.length;
+        if (h <= 1.0e-30)
+            return Real{0.0};
+        const int i = static_cast<int>(edge.n0);
+        const int j = static_cast<int>(edge.n1);
+        const Real electricField = std::abs(sol.psi(j) - sol.psi(i)) / h;
+        const Real mu = detail::edgeMobility(
+            edgeCells, mesh, doping, *mobility, cellMaterials, edgeId, carrier,
+            electricField, &mobilityConfig, &sol.psi);
+        if (mu <= 0.0)
+            return Real{0.0};
+        const Real coef = mu * Vt * edge.couple / h;
+        if (carrier == CarrierType::Electron) {
+            return sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                effectiveNi[edge.n0],
+                effectiveNi[edge.n1],
+                sol.psi(i),
+                sol.psi(j),
+                sol.phin(i),
+                sol.phin(j),
+                Vt,
+                coef);
+        }
+        return sgHoleContinuityFluxFromQuasiFermiVariableNi(
+            effectiveNi[edge.n0],
+            effectiveNi[edge.n1],
+            sol.psi(i),
+            sol.psi(j),
+            sol.phip(i),
+            sol.phip(j),
+            Vt,
+            coef);
+    };
+
+    auto nodeContribution = [&](Index edgeId, Index node, CarrierType carrier) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        const Real flux = edgeFluxForCarrier(edgeId, carrier);
+        if (edge.n0 == node)
+            return flux;
+        if (edge.n1 == node)
+            return -flux;
+        return Real{0.0};
+    };
+
+    auto recombinationTerm = [&](Index node) {
+        const int row = static_cast<int>(node);
+        const Real ni = effectiveNi[node];
+        if (ni <= 0.0)
+            return Real{0.0};
+        return recombination.totalRate(sol.n(row), sol.p(row), ni) *
+            mesh.getNode(node).volume;
+    };
+
+    std::vector<ContinuityBalanceDiagnosticRow> rows;
+    for (const Contact& contact : mesh.contacts()) {
+        if (!requested.empty() && !requested.contains(contact.name))
+            continue;
+        const std::unordered_set<Index> contactNodes(
+            contact.node_ids.begin(), contact.node_ids.end());
+        for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+            const Edge& edge = mesh.getEdge(edgeId);
+            const bool n0Contact = contactNodes.contains(edge.n0);
+            const bool n1Contact = contactNodes.contains(edge.n1);
+            if (n0Contact == n1Contact)
+                continue;
+            const Index contactNode = n0Contact ? edge.n0 : edge.n1;
+            const Index interiorNode = n0Contact ? edge.n1 : edge.n0;
+
+            for (CarrierType carrier : {CarrierType::Electron, CarrierType::Hole}) {
+                Real contactFlux = 0.0;
+                Real neighborFlux = 0.0;
+                for (Index adjacentEdge : nodeEdges[interiorNode]) {
+                    const Real contribution =
+                        nodeContribution(adjacentEdge, interiorNode, carrier);
+                    if (adjacentEdge == edgeId)
+                        contactFlux += contribution;
+                    else
+                        neighborFlux += contribution;
+                }
+                const Real recombination = recombinationTerm(interiorNode);
+                const int contactRow = static_cast<int>(contactNode);
+                const int interiorRow = static_cast<int>(interiorNode);
+                ContinuityBalanceDiagnosticRow row;
+                row.contact = contact.name;
+                row.carrier = carrier == CarrierType::Electron ? "electron" : "hole";
+                row.contactNode = contactNode;
+                row.interiorNode = interiorNode;
+                row.contactEdgeId = edgeId;
+                row.contactEdgeFlux = contactFlux;
+                row.neighborEdgeFlux = neighborFlux;
+                row.recombinationTerm = recombination;
+                row.continuityResidual = contactFlux + neighborFlux + recombination;
+                row.interiorVolume_m2 = mesh.getNode(interiorNode).volume;
+                row.qfContact_V = carrier == CarrierType::Electron
+                    ? sol.phin(contactRow)
+                    : sol.phip(contactRow);
+                row.qfInterior_V = carrier == CarrierType::Electron
+                    ? sol.phin(interiorRow)
+                    : sol.phip(interiorRow);
+                row.carrierDensityInterior_m3 = carrier == CarrierType::Electron
+                    ? sol.n(interiorRow)
+                    : sol.p(interiorRow);
+                rows.push_back(std::move(row));
+            }
+        }
+    }
+    return rows;
 }
 
 std::vector<std::string> splitCsvLine(const std::string& line)
@@ -409,14 +661,47 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.storedCharge.depth_m = scaling.lengthToSI(storedCfg.value("depth_m", 1.0));
 
     const auto diagnosticsCfg = j.value("diagnostics", nlohmann::json::object());
+    if (diagnosticsCfg.contains("terminal_balance")) {
+        const auto& terminalBalanceCfg = diagnosticsCfg.at("terminal_balance");
+        if (!terminalBalanceCfg.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.diagnostics.terminal_balance must be an object.");
+        sweep.diagnostics.terminalBalance.enabled =
+            terminalBalanceCfg.value("enabled", sweep.diagnostics.terminalBalance.enabled);
+        sweep.diagnostics.terminalBalance.contacts =
+            terminalBalanceCfg.value("contacts", std::vector<std::string>{});
+        sweep.diagnostics.terminalBalance.csvFile =
+            terminalBalanceCfg.value("csv_file", std::string{});
+    }
     if (diagnosticsCfg.contains("contact_edge")) {
         const auto& contactEdgeCfg = diagnosticsCfg.at("contact_edge");
         if (!contactEdgeCfg.is_object())
             throw std::invalid_argument("DCSweep: sweep.diagnostics.contact_edge must be an object.");
         sweep.diagnostics.contactEdge.enabled =
             contactEdgeCfg.value("enabled", sweep.diagnostics.contactEdge.enabled);
+        sweep.diagnostics.contactEdge.contacts =
+            contactEdgeCfg.value("contacts", std::vector<std::string>{});
         sweep.diagnostics.contactEdge.csvFile =
             contactEdgeCfg.value("csv_file", std::string{});
+    }
+    if (diagnosticsCfg.contains("transport")) {
+        const auto& transportCfg = diagnosticsCfg.at("transport");
+        if (!transportCfg.is_object())
+            throw std::invalid_argument("DCSweep: sweep.diagnostics.transport must be an object.");
+        sweep.diagnostics.transport.enabled =
+            transportCfg.value("enabled", sweep.diagnostics.transport.enabled);
+    }
+    if (diagnosticsCfg.contains("continuity_balance")) {
+        const auto& continuityCfg = diagnosticsCfg.at("continuity_balance");
+        if (!continuityCfg.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.diagnostics.continuity_balance must be an object.");
+        sweep.diagnostics.continuityBalance.enabled =
+            continuityCfg.value("enabled", sweep.diagnostics.continuityBalance.enabled);
+        sweep.diagnostics.continuityBalance.contacts =
+            continuityCfg.value("contacts", std::vector<std::string>{});
+        sweep.diagnostics.continuityBalance.csvFile =
+            continuityCfg.value("csv_file", std::string{});
     }
 
     if (j.contains("terminal_charges")) {
@@ -455,6 +740,15 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     };
     sweep.csvFile = resolve(sweep.csvFile);
     sweep.vtkPrefix = resolve(sweep.vtkPrefix);
+    if (sweep.diagnostics.terminalBalance.enabled) {
+        if (sweep.diagnostics.terminalBalance.csvFile.empty()) {
+            const std::filesystem::path csvPath(sweep.csvFile);
+            sweep.diagnostics.terminalBalance.csvFile =
+                (csvPath.parent_path() / (csvPath.stem().string() + "_terminal_balance.csv")).string();
+        } else {
+            sweep.diagnostics.terminalBalance.csvFile = resolve(sweep.diagnostics.terminalBalance.csvFile);
+        }
+    }
     if (sweep.diagnostics.contactEdge.enabled) {
         if (sweep.diagnostics.contactEdge.csvFile.empty()) {
             const std::filesystem::path csvPath(sweep.csvFile);
@@ -462,6 +756,16 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
                 (csvPath.parent_path() / (csvPath.stem().string() + "_contact_edges.csv")).string();
         } else {
             sweep.diagnostics.contactEdge.csvFile = resolve(sweep.diagnostics.contactEdge.csvFile);
+        }
+    }
+    if (sweep.diagnostics.continuityBalance.enabled) {
+        if (sweep.diagnostics.continuityBalance.csvFile.empty()) {
+            const std::filesystem::path csvPath(sweep.csvFile);
+            sweep.diagnostics.continuityBalance.csvFile =
+                (csvPath.parent_path() / (csvPath.stem().string() + "_continuity_balance.csv")).string();
+        } else {
+            sweep.diagnostics.continuityBalance.csvFile =
+                resolve(sweep.diagnostics.continuityBalance.csvFile);
         }
     }
 
@@ -623,6 +927,97 @@ std::string stepDiagnostics(const DCSweepPoint& point)
            ";retry_count=" + std::to_string(point.retryCount);
 }
 
+nlohmann::json residualBlockJson(const NewtonBlockResidualInfo& blocks)
+{
+    return {
+        {"psi", blocks.psi},
+        {"phin", blocks.phin},
+        {"phip", blocks.phip},
+        {"combined", blocks.combined},
+    };
+}
+
+nlohmann::json carrierDiagnosticsJson(const NewtonCarrierDiagnostics& diagnostics)
+{
+    return {
+        {"positive_finite", diagnostics.positiveFinite},
+        {"min_electron_density_m3", diagnostics.minElectronDensity},
+        {"min_hole_density_m3", diagnostics.minHoleDensity},
+        {"nonfinite_electron_count", diagnostics.nonfiniteElectronCount},
+        {"nonfinite_hole_count", diagnostics.nonfiniteHoleCount},
+        {"nonpositive_electron_count", diagnostics.nonpositiveElectronCount},
+        {"nonpositive_hole_count", diagnostics.nonpositiveHoleCount},
+    };
+}
+
+nlohmann::json lineSearchHistoryJson(const std::vector<LineSearchIterationInfo>& history)
+{
+    nlohmann::json out = nlohmann::json::array();
+    for (const LineSearchIterationInfo& item : history) {
+        out.push_back({
+            {"attempt", item.attempt},
+            {"damping", item.damping},
+            {"residual_norm", item.residualNorm},
+            {"target_residual_norm", item.targetResidualNorm},
+            {"finite", item.finite},
+            {"carrier_positive_finite", item.acceptedByCaller},
+            {"sufficient_decrease", item.sufficientDecrease},
+            {"accepted", item.accepted},
+            {"rejection_reason", item.rejectionReason},
+        });
+    }
+    return out;
+}
+
+nlohmann::json topResidualNodesJson(const std::vector<NewtonTopResidualNode>& nodes)
+{
+    nlohmann::json out = nlohmann::json::array();
+    for (const NewtonTopResidualNode& node : nodes) {
+        out.push_back({
+            {"node_id", node.nodeId},
+            {"x_m", node.x},
+            {"y_m", node.y},
+            {"x_um", node.x * 1.0e6},
+            {"y_um", node.y * 1.0e6},
+            {"poisson_residual", node.poissonResidual},
+            {"abs_poisson_residual", node.absPoissonResidual},
+            {"donors_m3", node.donors},
+            {"acceptors_m3", node.acceptors},
+            {"net_doping_m3", node.netDoping},
+            {"donors_cm3", node.donors / 1.0e6},
+            {"acceptors_cm3", node.acceptors / 1.0e6},
+            {"net_doping_cm3", node.netDoping / 1.0e6},
+            {"ni_eff_m3", node.effectiveIntrinsicDensity},
+            {"ni_eff_cm3", node.effectiveIntrinsicDensity / 1.0e6},
+        });
+    }
+    return out;
+}
+
+nlohmann::json newtonFailureDiagnosticsJson(const NewtonFailureDiagnostics& diagnostics)
+{
+    return {
+        {"failure_reason", diagnostics.failureReason},
+        {"failed_iteration", diagnostics.failedIteration},
+        {"residual_norm", diagnostics.residualNorm},
+        {"step_norm", diagnostics.stepNorm},
+        {"damping_factor", diagnostics.dampingFactor},
+        {"line_search_attempts", diagnostics.lineSearchAttempts},
+        {"line_search_failure_reason", diagnostics.lineSearchFailureReason},
+        {"block_residuals", residualBlockJson(diagnostics.blockResiduals)},
+        {"carrier_diagnostics", carrierDiagnosticsJson(diagnostics.carrierDiagnostics)},
+        {"line_search_history", lineSearchHistoryJson(diagnostics.lineSearchHistory)},
+        {"top_poisson_residual_nodes", topResidualNodesJson(diagnostics.topPoissonResidualNodes)},
+    };
+}
+
+std::filesystem::path failureDiagnosticsJsonPath(const DCSweepConfig& sweep)
+{
+    const std::filesystem::path csvPath(sweep.csvFile);
+    return csvPath.parent_path() /
+        (csvPath.stem().string() + "_newton_failure_diagnostics.json");
+}
+
 
 } // namespace
 
@@ -743,7 +1138,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         "current_hole_diffusion", "current_total",
         "converged", "iterations", "solver_method", "gummel_iterations",
         "newton_iterations", "handoff_stage", "step_diagnostics",
-        "validation_diagnostics"};
+        "validation_diagnostics", "failure_reason", "newton_failure_class",
+        "newton_failure_diagnostics_json"};
     const bool writeUnitScaledColumns = sweep.scaling.isUnitScaling();
     if (writeUnitScaledColumns) {
         header.push_back("current_total_A_per_um");
@@ -789,14 +1185,67 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         header.push_back("criterion");
         header.push_back("last_stable_bias");
         header.push_back("failed_bias");
-        header.push_back("failure_reason");
+        header.push_back("breakdown_failure_reason");
     }
     if (recombinationDiagnosticsEnabled) {
         header.push_back("recombination_max_abs_rate_m3_per_s");
         header.push_back("recombination_mean_abs_rate_m3_per_s");
         header.push_back("carrier_product_max_np_over_ni2");
     }
+    if (sweep.diagnostics.transport.enabled) {
+        header.push_back("mean_electron_mobility_m2_V_s");
+        header.push_back("mean_hole_mobility_m2_V_s");
+        header.push_back("min_electron_mobility_m2_V_s");
+        header.push_back("min_hole_mobility_m2_V_s");
+        header.push_back("max_electric_field_V_per_cm");
+        header.push_back("mean_electron_qf_gradient_V_per_cm");
+        header.push_back("mean_hole_qf_gradient_V_per_cm");
+    }
     csv.writeHeader(header);
+
+    auto diagnosticContacts = [](const std::vector<std::string>& configured,
+                                 const std::string& fallback) {
+        if (!configured.empty())
+            return configured;
+        return std::vector<std::string>{fallback};
+    };
+    const std::vector<std::string> terminalBalanceContacts =
+        diagnosticContacts(sweep.diagnostics.terminalBalance.contacts, sweep.currentContact);
+    const std::vector<std::string> contactEdgeContacts =
+        diagnosticContacts(sweep.diagnostics.contactEdge.contacts, sweep.currentContact);
+    const std::vector<std::string> continuityBalanceContacts =
+        diagnosticContacts(sweep.diagnostics.continuityBalance.contacts, sweep.currentContact);
+
+    std::unique_ptr<CSVWriter> terminalBalanceCsv;
+    if (sweep.diagnostics.terminalBalance.enabled) {
+        const std::filesystem::path diagPath(sweep.diagnostics.terminalBalance.csvFile);
+        if (!diagPath.parent_path().empty())
+            std::filesystem::create_directories(diagPath.parent_path());
+        terminalBalanceCsv = std::make_unique<CSVWriter>(diagPath.string());
+        std::vector<std::string> diagHeader = {
+            "point_index",
+            "bias_V",
+            "bias_contact",
+            "contact",
+            "current_electron",
+            "current_hole",
+            "electron_minus_hole",
+            "current_total",
+            "electron_plus_hole"};
+        if (writeUnitScaledColumns) {
+            diagHeader.push_back("current_electron_A_per_um");
+            diagHeader.push_back("current_hole_A_per_um");
+            diagHeader.push_back("electron_minus_hole_A_per_um");
+            diagHeader.push_back("current_total_A_per_um");
+            diagHeader.push_back("electron_plus_hole_A_per_um");
+        }
+        diagHeader.push_back("converged");
+        diagHeader.push_back("solver_method");
+        diagHeader.push_back("gummel_iterations");
+        diagHeader.push_back("newton_iterations");
+        diagHeader.push_back("handoff_stage");
+        terminalBalanceCsv->writeHeader(diagHeader);
+    }
 
     std::unique_ptr<CSVWriter> contactEdgeCsv;
     if (sweep.diagnostics.contactEdge.enabled) {
@@ -819,6 +1268,22 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "bernoulli_bminus",
             "electron_branch",
             "hole_branch",
+            "psi0",
+            "psi1",
+            "phin0",
+            "phin1",
+            "phip0",
+            "phip1",
+            "n0",
+            "n1",
+            "p0",
+            "p1",
+            "ni0",
+            "ni1",
+            "mun",
+            "mup",
+            "electron_continuity_flux",
+            "hole_continuity_flux",
             "current_electron",
             "current_electron_drift",
             "current_electron_diffusion",
@@ -829,6 +1294,31 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         if (writeUnitScaledColumns)
             diagHeader.push_back("current_total_A_per_um");
         contactEdgeCsv->writeHeader(diagHeader);
+    }
+
+    std::unique_ptr<CSVWriter> continuityBalanceCsv;
+    if (sweep.diagnostics.continuityBalance.enabled) {
+        const std::filesystem::path diagPath(sweep.diagnostics.continuityBalance.csvFile);
+        if (!diagPath.parent_path().empty())
+            std::filesystem::create_directories(diagPath.parent_path());
+        continuityBalanceCsv = std::make_unique<CSVWriter>(diagPath.string());
+        continuityBalanceCsv->writeHeader({
+            "point_index",
+            "bias_V",
+            "contact",
+            "carrier",
+            "contact_node",
+            "interior_node",
+            "contact_edge_id",
+            "contact_edge_flux",
+            "neighbor_edge_flux",
+            "recombination_term",
+            "continuity_residual",
+            "interior_volume_m2",
+            "qf_contact_V",
+            "qf_interior_V",
+            "qf_drop_V",
+            "carrier_density_interior_m3"});
     }
 
     std::vector<DCSweepPoint> points;
@@ -844,6 +1334,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         int gummelIterations = 0;
         int newtonIterations = 0;
         std::string handoffStage;
+        NewtonFailureDiagnostics newtonFailureDiagnostics;
     };
 
     if ((solverMethod == SolverMethod::Newton ||
@@ -879,6 +1370,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 attempt.gummelIterations = 0;
                 attempt.newtonIterations = result.iters;
                 attempt.handoffStage = solverConverged ? "newton" : "newton_failed";
+                attempt.newtonFailureDiagnostics = result.failureDiagnostics;
+                if (!solverConverged) {
+                    attempt.failureReason = result.failureDiagnostics.failureReason.empty()
+                        ? "newton_non_convergence"
+                        : result.failureDiagnostics.failureReason;
+                }
                 sol = std::move(result.solution);
             } else if (solverMethod == SolverMethod::GummelNewton) {
                 attempt.solverMethod = "gummel_newton";
@@ -898,6 +1395,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                     handoffNewton, fixedChargeSpecs, sheetChargeSpecs)
                         : runNewton(mesh, matdb, doping, biases,
                                     handoffNewton, fixedChargeSpecs, sheetChargeSpecs);
+                    attempt.newtonFailureDiagnostics = result.failureDiagnostics;
                 } else {
                     GummelConfig initializerGummel = gummel;
                     if (hybrid.gummelMaxIter >= 0)
@@ -929,6 +1427,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
                     result = runNewton(mesh, matdb, doping, biases, gummelInitial,
                                        handoffNewton, fixedChargeSpecs, sheetChargeSpecs);
+                    attempt.newtonFailureDiagnostics = result.failureDiagnostics;
                     const bool acceptedNewton =
                         result.converged && !(hybrid.newtonMaxIter == 0 && result.iters == 0);
                     if (!acceptedNewton && hybrid.fallbackToGummelOnNewtonFailure) {
@@ -944,8 +1443,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     result.converged && !(hybrid.newtonMaxIter == 0 && result.iters == 0);
                 attempt.newtonIterations = result.iters;
                 attempt.handoffStage = solverConverged ? "newton" : "newton_failed";
-                if (!solverConverged)
-                    attempt.failureReason = "newton_non_convergence";
+                if (!solverConverged) {
+                    attempt.failureReason = result.failureDiagnostics.failureReason.empty()
+                        ? "newton_non_convergence"
+                        : result.failureDiagnostics.failureReason;
+                }
                 sol = std::move(result.solution);
             } else {
                 sol = initial != nullptr
@@ -988,6 +1490,26 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         return nullptr;
     };
 
+    const std::filesystem::path newtonFailureJsonPath = failureDiagnosticsJsonPath(sweep);
+    nlohmann::json newtonFailureReports = nlohmann::json::array();
+    auto writeNewtonFailureDiagnostics = [&](std::size_t pointIndex,
+                                             const DCSweepPoint& point) {
+        if (point.newtonFailureDiagnostics.failureReason.empty())
+            return;
+        nlohmann::json entry = newtonFailureDiagnosticsJson(point.newtonFailureDiagnostics);
+        entry["point_index"] = pointIndex;
+        entry["bias_V"] = point.bias;
+        entry["bias_contact"] = sweep.contact;
+        entry["solver_method"] = point.solverMethod;
+        entry["handoff_stage"] = point.handoffStage;
+        entry["failure_reason"] = point.failureReason;
+        newtonFailureReports.push_back(std::move(entry));
+        if (!newtonFailureJsonPath.parent_path().empty())
+            std::filesystem::create_directories(newtonFailureJsonPath.parent_path());
+        std::ofstream output(newtonFailureJsonPath);
+        output << std::setw(2) << newtonFailureReports << '\n';
+    };
+
     auto recordPoint = [&](Real voltage, const SolvePointAttempt& attempt, bool converged,
                            Real attemptedStep, Real acceptedStep, int retryCount,
                            const std::string& failureReason = std::string(),
@@ -995,9 +1517,20 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         ContactCurrentResult current{};
         ContactCurrentDetailedResult currentDetailed{};
         const DDSolution& sol = attempt.solution;
+        std::unordered_map<std::string, ContactCurrentDetailedResult> detailedByContact;
+        auto detailedForContact = [&](const std::string& contactName) -> const ContactCurrentDetailedResult& {
+            auto it = detailedByContact.find(contactName);
+            if (it == detailedByContact.end()) {
+                auto inserted = detailedByContact.emplace(
+                    contactName, contactCurrent.computeDetailed(sol, contactName));
+                it = inserted.first;
+            }
+            return it->second;
+        };
         if (converged) {
-            if (sweep.diagnostics.contactEdge.enabled) {
-                currentDetailed = contactCurrent.computeDetailed(sol, sweep.currentContact);
+            if (sweep.diagnostics.contactEdge.enabled ||
+                sweep.diagnostics.terminalBalance.enabled) {
+                currentDetailed = detailedForContact(sweep.currentContact);
                 current = currentDetailed.totals;
             } else {
                 current = contactCurrent.compute(sol, sweep.currentContact);
@@ -1025,6 +1558,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         point.acceptedStep = acceptedStep;
         point.retryCount = retryCount;
         point.validationDiagnostics = validationDiagnostics;
+        point.newtonFailureDiagnostics = attempt.newtonFailureDiagnostics;
+        if (!converged && !point.newtonFailureDiagnostics.failureReason.empty()) {
+            point.newtonFailureClass = point.newtonFailureDiagnostics.failureReason;
+            point.failureDiagnosticsJson = newtonFailureJsonPath.string();
+        }
         if (converged && sweep.storedChargeEnabled) {
             point.extraFields.emplace_back(
                 sweep.storedCharge.perMeter ? "stored_charge_C_per_m" : "stored_charge_C",
@@ -1103,6 +1641,25 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             point.extraFields.emplace_back(
                 "carrier_product_max_np_over_ni2", diagnostics.maxCarrierProductRatio);
         }
+        if (converged && sweep.diagnostics.transport.enabled) {
+            const SweepTransportDiagnostics diagnostics =
+                computeSweepTransportDiagnostics(
+                    mesh, matdb, doping, mobilityConfig, temperature_K, sol);
+            point.extraFields.emplace_back(
+                "mean_electron_mobility_m2_V_s", diagnostics.meanElectronMobility_m2_V_s);
+            point.extraFields.emplace_back(
+                "mean_hole_mobility_m2_V_s", diagnostics.meanHoleMobility_m2_V_s);
+            point.extraFields.emplace_back(
+                "min_electron_mobility_m2_V_s", diagnostics.minElectronMobility_m2_V_s);
+            point.extraFields.emplace_back(
+                "min_hole_mobility_m2_V_s", diagnostics.minHoleMobility_m2_V_s);
+            point.extraFields.emplace_back(
+                "max_electric_field_V_per_cm", diagnostics.maxElectricField_V_per_cm);
+            point.extraFields.emplace_back(
+                "mean_electron_qf_gradient_V_per_cm", diagnostics.meanElectronQfGradient_V_per_cm);
+            point.extraFields.emplace_back(
+                "mean_hole_qf_gradient_V_per_cm", diagnostics.meanHoleQfGradient_V_per_cm);
+        }
         if (writeUnitScaledColumns) {
             point.extraFields.emplace_back(
                 "current_total_A_per_um", perMeterToPerMicron(point.totalCurrent));
@@ -1153,7 +1710,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             std::to_string(point.newtonIterations),
             point.handoffStage,
             stepDiagnostics(point),
-            point.validationDiagnostics};
+            point.validationDiagnostics,
+            point.failureReason,
+            point.newtonFailureClass,
+            point.failureDiagnosticsJson};
         if (writeUnitScaledColumns) {
             row.push_back(formatReal(perMeterToPerMicron(point.totalCurrent)));
             row.push_back(formatReal(perMeterToPerMicron(point.electronCurrent)));
@@ -1217,36 +1777,143 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 row.push_back(formatReal(it != extraFieldValues.end() ? it->second : 0.0));
             }
         }
+        if (sweep.diagnostics.transport.enabled) {
+            std::unordered_map<std::string, Real> extraFieldValues;
+            for (const auto& [name, value] : point.extraFields)
+                extraFieldValues[name] = value;
+            for (const std::string& name : {
+                     std::string("mean_electron_mobility_m2_V_s"),
+                     std::string("mean_hole_mobility_m2_V_s"),
+                     std::string("min_electron_mobility_m2_V_s"),
+                     std::string("min_hole_mobility_m2_V_s"),
+                     std::string("max_electric_field_V_per_cm"),
+                     std::string("mean_electron_qf_gradient_V_per_cm"),
+                     std::string("mean_hole_qf_gradient_V_per_cm")}) {
+                const auto it = extraFieldValues.find(name);
+                row.push_back(formatReal(it != extraFieldValues.end() ? it->second : 0.0));
+            }
+        }
         csv.writeRow(row);
+        if (!converged && !point.newtonFailureDiagnostics.failureReason.empty())
+            writeNewtonFailureDiagnostics(points.size(), point);
 
-        if (converged && contactEdgeCsv != nullptr) {
+        if (converged && terminalBalanceCsv != nullptr) {
             const std::size_t pointIndex = points.size();
-            for (const ContactCurrentEdgeDiagnostic& edgeDiag : currentDetailed.edges) {
+            for (const std::string& contactName : terminalBalanceContacts) {
+                const ContactCurrentResult& terminalCurrent =
+                    detailedForContact(contactName).totals;
+                const Real electronMinusHole =
+                    terminalCurrent.electronCurrent - terminalCurrent.holeCurrent;
+                const Real electronPlusHole =
+                    terminalCurrent.electronCurrent + terminalCurrent.holeCurrent;
                 std::vector<std::string> diagRow = {
                     std::to_string(pointIndex),
                     formatReal(point.bias),
-                    sweep.currentContact,
-                    std::to_string(edgeDiag.edgeId),
-                    std::to_string(edgeDiag.node0),
-                    std::to_string(edgeDiag.node1),
-                    formatReal(edgeDiag.edgeLength_m),
-                    formatReal(edgeDiag.edgeCouple_m),
-                    formatReal(edgeDiag.outwardSign),
-                    formatReal(edgeDiag.bernoulliU),
-                    formatReal(edgeDiag.bernoulliBplus),
-                    formatReal(edgeDiag.bernoulliBminus),
-                    edgeDiag.electronUsedQuasiFermi ? "quasi_fermi" : "density",
-                    edgeDiag.holeUsedQuasiFermi ? "quasi_fermi" : "density",
-                    formatReal(edgeDiag.electronCurrent),
-                    formatReal(edgeDiag.electronDriftCurrent),
-                    formatReal(edgeDiag.electronDiffusionCurrent),
-                    formatReal(edgeDiag.holeCurrent),
-                    formatReal(edgeDiag.holeDriftCurrent),
-                    formatReal(edgeDiag.holeDiffusionCurrent),
-                    formatReal(edgeDiag.totalCurrent)};
-                if (writeUnitScaledColumns)
-                    diagRow.push_back(formatReal(perMeterToPerMicron(edgeDiag.totalCurrent)));
-                contactEdgeCsv->writeRow(diagRow);
+                    sweep.contact,
+                    contactName,
+                    formatReal(terminalCurrent.electronCurrent),
+                    formatReal(terminalCurrent.holeCurrent),
+                    formatReal(electronMinusHole),
+                    formatReal(terminalCurrent.totalCurrent),
+                    formatReal(electronPlusHole)};
+                if (writeUnitScaledColumns) {
+                    diagRow.push_back(formatReal(perMeterToPerMicron(terminalCurrent.electronCurrent)));
+                    diagRow.push_back(formatReal(perMeterToPerMicron(terminalCurrent.holeCurrent)));
+                    diagRow.push_back(formatReal(perMeterToPerMicron(electronMinusHole)));
+                    diagRow.push_back(formatReal(perMeterToPerMicron(terminalCurrent.totalCurrent)));
+                    diagRow.push_back(formatReal(perMeterToPerMicron(electronPlusHole)));
+                }
+                diagRow.push_back(point.converged ? "1" : "0");
+                diagRow.push_back(point.solverMethod);
+                diagRow.push_back(std::to_string(point.gummelIterations));
+                diagRow.push_back(std::to_string(point.newtonIterations));
+                diagRow.push_back(point.handoffStage);
+                terminalBalanceCsv->writeRow(diagRow);
+            }
+        }
+
+        if (converged && contactEdgeCsv != nullptr) {
+            const std::size_t pointIndex = points.size();
+            for (const std::string& contactName : contactEdgeContacts) {
+                const ContactCurrentDetailedResult& detailed =
+                    detailedForContact(contactName);
+                for (const ContactCurrentEdgeDiagnostic& edgeDiag : detailed.edges) {
+                    std::vector<std::string> diagRow = {
+                        std::to_string(pointIndex),
+                        formatReal(point.bias),
+                        contactName,
+                        std::to_string(edgeDiag.edgeId),
+                        std::to_string(edgeDiag.node0),
+                        std::to_string(edgeDiag.node1),
+                        formatReal(edgeDiag.edgeLength_m),
+                        formatReal(edgeDiag.edgeCouple_m),
+                        formatReal(edgeDiag.outwardSign),
+                        formatReal(edgeDiag.bernoulliU),
+                        formatReal(edgeDiag.bernoulliBplus),
+                        formatReal(edgeDiag.bernoulliBminus),
+                        edgeDiag.electronUsedQuasiFermi ? "quasi_fermi" : "density",
+                        edgeDiag.holeUsedQuasiFermi ? "quasi_fermi" : "density",
+                        formatReal(edgeDiag.psi0),
+                        formatReal(edgeDiag.psi1),
+                        formatReal(edgeDiag.phin0),
+                        formatReal(edgeDiag.phin1),
+                        formatReal(edgeDiag.phip0),
+                        formatReal(edgeDiag.phip1),
+                        formatReal(edgeDiag.n0),
+                        formatReal(edgeDiag.n1),
+                        formatReal(edgeDiag.p0),
+                        formatReal(edgeDiag.p1),
+                        formatReal(edgeDiag.ni0),
+                        formatReal(edgeDiag.ni1),
+                        formatReal(edgeDiag.mun),
+                        formatReal(edgeDiag.mup),
+                        formatReal(edgeDiag.electronContinuityFlux),
+                        formatReal(edgeDiag.holeContinuityFlux),
+                        formatReal(edgeDiag.electronCurrent),
+                        formatReal(edgeDiag.electronDriftCurrent),
+                        formatReal(edgeDiag.electronDiffusionCurrent),
+                        formatReal(edgeDiag.holeCurrent),
+                        formatReal(edgeDiag.holeDriftCurrent),
+                        formatReal(edgeDiag.holeDiffusionCurrent),
+                        formatReal(edgeDiag.totalCurrent)};
+                    if (writeUnitScaledColumns)
+                        diagRow.push_back(formatReal(perMeterToPerMicron(edgeDiag.totalCurrent)));
+                    contactEdgeCsv->writeRow(diagRow);
+                }
+            }
+        }
+
+        if (converged && continuityBalanceCsv != nullptr) {
+            const std::size_t pointIndex = points.size();
+            const std::vector<ContinuityBalanceDiagnosticRow> balanceRows =
+                computeContinuityBalanceDiagnostics(
+                    mesh,
+                    matdb,
+                    doping,
+                    mobilityConfig,
+                    temperature_K,
+                    sol,
+                    effectiveNi,
+                    sweepRecombinationConfig,
+                    continuityBalanceContacts);
+            for (const ContinuityBalanceDiagnosticRow& balance : balanceRows) {
+                continuityBalanceCsv->writeRow({
+                    std::to_string(pointIndex),
+                    formatReal(point.bias),
+                    balance.contact,
+                    balance.carrier,
+                    std::to_string(balance.contactNode),
+                    std::to_string(balance.interiorNode),
+                    std::to_string(balance.contactEdgeId),
+                    formatReal(balance.contactEdgeFlux),
+                    formatReal(balance.neighborEdgeFlux),
+                    formatReal(balance.recombinationTerm),
+                    formatReal(balance.continuityResidual),
+                    formatReal(balance.interiorVolume_m2),
+                    formatReal(balance.qfContact_V),
+                    formatReal(balance.qfInterior_V),
+                    formatReal(std::abs(balance.qfInterior_V - balance.qfContact_V)),
+                    formatReal(balance.carrierDensityInterior_m3)});
             }
         }
 

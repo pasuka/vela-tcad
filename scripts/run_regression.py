@@ -10,6 +10,7 @@ import math
 import os
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import sys
 from typing import Any
@@ -277,6 +278,27 @@ def default_runner(repo: Path) -> Path:
         if candidate.exists():
             return candidate
     return candidates[0]
+
+
+def runner_command(runner: Path, config: Path) -> list[str]:
+    suffix = runner.suffix.lower()
+    if os.name == "nt":
+        if suffix == ".py":
+            return [sys.executable, str(runner), "--config", str(config)]
+        if suffix in {".sh", ".bash"}:
+            def msys_path(path: Path) -> str:
+                resolved = path.resolve()
+                drive = resolved.drive.rstrip(":").lower()
+                tail = resolved.as_posix().split(":", 1)[1]
+                return f"/{drive}{tail}"
+
+            command = (
+                "export HOME=/tmp; PATH=/usr/bin:/bin:$PATH; "
+                f"cd {shlex.quote(msys_path(config.parent))}; "
+                f"{shlex.quote(msys_path(runner))} --config {shlex.quote(msys_path(config))}"
+            )
+            return ["sh", "-lc", command]
+    return [str(runner), "--config", str(config)]
 
 
 def copy_example(repo: Path, workdir: Path, name: str, source: str | None = None) -> Path:
@@ -1120,8 +1142,12 @@ def check_igbt_high_injection_trend(example_dir: Path, runner: Path | None = Non
             "(expected stored_charge_C_per_m or stored_charge_C)")
     stored = [parse_finite_float(r, stored_charge_key, "IGBT high-injection IV", i + 1)
               for i, r in enumerate(rows)]
-    assert_monotone_non_decreasing(currents, "IGBT |collector current|",
-                                   abs_tolerance=1e-20, rel_tolerance=1e-8)
+    assert_monotone_non_decreasing(
+        currents,
+        "IGBT |collector current|",
+        abs_tolerance=float(reg.get("current_monotone_abs_tolerance", 1.0e-20)),
+        rel_tolerance=float(reg.get("current_monotone_rel_tolerance", 1.0e-8)),
+    )
     if reg.get("require_stored_charge_monotone", True):
         assert_monotone(
             stored,
@@ -1155,8 +1181,9 @@ def check_igbt_high_injection_trend(example_dir: Path, runner: Path | None = Non
         baseline_cfg.setdefault("sweep", {})["write_vtk"] = False
         baseline_run_cfg = example_dir / "igbt_high_injection_baseline_run.json"
         baseline_run_cfg.write_text(json.dumps(baseline_cfg, indent=2) + "\n")
-        proc = subprocess.run([str(runner), "--config", str(baseline_run_cfg)],
-                              cwd=example_dir, text=True, capture_output=True)
+        proc = subprocess.run(runner_command(runner, baseline_run_cfg),
+                              cwd=example_dir, text=True, encoding="utf-8",
+                              errors="replace", capture_output=True)
         allow_nonzero = nonzero_runner_exit_allowed(baseline_cfg)
         if proc.returncode != 0 and not allow_nonzero:
             raise AssertionError(
@@ -1252,8 +1279,9 @@ def check_igbt_bv_trend(example_dir: Path, runner: Path) -> dict[str, Any]:
         baseline_cfg.setdefault("sweep", {})["write_vtk"] = False
         baseline_run_cfg = example_dir / "igbt_bv_baseline_run.json"
         baseline_run_cfg.write_text(json.dumps(baseline_cfg, indent=2) + "\n")
-        proc = subprocess.run([str(runner), "--config", str(baseline_run_cfg)],
-                              cwd=example_dir, text=True, capture_output=True)
+        proc = subprocess.run(runner_command(runner, baseline_run_cfg),
+                              cwd=example_dir, text=True, encoding="utf-8",
+                              errors="replace", capture_output=True)
         allow_nonzero = nonzero_runner_exit_allowed(baseline_cfg)
         if proc.returncode != 0 and not allow_nonzero:
             raise AssertionError(
@@ -1317,7 +1345,8 @@ def check_ldmos_fieldplate_trend(example_dir: Path, runner: Path) -> dict[str, A
     baseline_cfg["output_csv"] = str(reg.get("baseline_csv", "outputs/ldmos2d_bv_baseline_for_variant.csv"))
     baseline_run_cfg = example_dir / "ldmos_fieldplate_baseline_run.json"
     baseline_run_cfg.write_text(json.dumps(baseline_cfg, indent=2) + "\n")
-    proc = subprocess.run([str(runner), "--config", str(baseline_run_cfg)], cwd=example_dir, text=True, capture_output=True)
+    proc = subprocess.run(runner_command(runner, baseline_run_cfg), cwd=example_dir,
+                          text=True, encoding="utf-8", errors="replace", capture_output=True)
     allow_nonzero_baseline_exit = nonzero_runner_exit_allowed(baseline_cfg)
     if proc.returncode != 0 and not allow_nonzero_baseline_exit:
         raise AssertionError(
@@ -1370,9 +1399,11 @@ def check_surface_mobility(example_dir: Path, runner: Path) -> dict[str, Any]:
     baseline_run_path = example_dir / "surface_mobility_baseline.json"
     baseline_run_path.write_text(json.dumps(baseline_cfg, indent=2) + "\n")
     proc = subprocess.run(
-        [str(runner), "--config", str(baseline_run_path)],
+        runner_command(runner, baseline_run_path),
         cwd=example_dir,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
     )
     if proc.returncode != 0:
@@ -1453,9 +1484,11 @@ def check_mos_trends(example_dir: Path, runner: Path) -> dict[str, Any]:
     idvg_cfg_path = example_dir / f"{device}_idvg_regression.json"
     idvg_cfg_path.write_text(json.dumps(idvg_cfg, indent=2) + "\n")
     proc = subprocess.run(
-        [str(runner), "--config", str(idvg_cfg_path)],
+        runner_command(runner, idvg_cfg_path),
         cwd=example_dir,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
     )
     if proc.returncode != 0:
@@ -1505,7 +1538,8 @@ def run_example(runner: Path, repo: Path, workdir: Path, spec: dict[str, Any]) -
         shutil.copyfile(config, canonical_config)
     run_cfg = json.loads(canonical_config.read_text())
     allow_nonzero_runner_exit = nonzero_runner_exit_allowed(run_cfg)
-    proc = subprocess.run([str(runner), "--config", str(config)], cwd=example_dir, text=True, capture_output=True)
+    proc = subprocess.run(runner_command(runner, config), cwd=example_dir,
+                          text=True, encoding="utf-8", errors="replace", capture_output=True)
     result: dict[str, Any] = {
         "name": name,
         "returncode": proc.returncode,

@@ -161,6 +161,41 @@ TEST_CASE("SG quasi-Fermi fluxes stay finite for large potentials", "[sg][couple
     REQUIRE(holeFlux == Approx(0.0));
 }
 
+TEST_CASE("SG quasi-Fermi fluxes cancel flat QF with variable intrinsic density", "[sg][coupled][bgn]")
+{
+    const double Vt = constants::Vt_300;
+    const double coef = 1.0;
+    const double ni0 = 1.0e16;
+    const double ni1 = 1.5e16;
+    const double psi0 = 0.013;
+    const double psi1 = -0.021;
+    const double dpsi = psi1 - psi0;
+    const double phin = 0.004;
+    const double phip = -0.003;
+
+    const double electronFlux = sgElectronContinuityFluxFromQuasiFermiVariableNi(
+        ni0,
+        ni1,
+        psi0,
+        psi1,
+        phin,
+        phin,
+        Vt,
+        coef);
+    const double holeFlux = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+        ni0,
+        ni1,
+        psi0,
+        psi1,
+        phip,
+        phip,
+        Vt,
+        coef);
+
+    REQUIRE(electronFlux == Approx(0.0).margin(1.0e-30));
+    REQUIRE(holeFlux == Approx(0.0).margin(1.0e-30));
+}
+
 static DeviceMesh makeSingleSiliconTriangleMesh()
 {
     DeviceMesh mesh;
@@ -178,6 +213,44 @@ static DeviceMesh makeSingleSiliconTriangleMesh()
 
     mesh.buildEdges();
     return mesh;
+}
+
+TEST_CASE("CoupledDDAssembler BGN continuity residuals vanish for flat quasi-Fermi levels",
+          "[sg][coupled][bgn]")
+{
+    DeviceMesh mesh = makeSingleSiliconTriangleMesh();
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    doping.setNodeDoping(0, 1.0e24, 0.0);
+    doping.setNodeDoping(1, 0.0, 1.0e23);
+    doping.setNodeDoping(2, 1.0e24, 1.0e24);
+
+    BandgapNarrowingConfig bgn;
+    bgn.model = "slotboom";
+    CoupledDDAssembler coupled(mesh,
+                               matdb,
+                               doping,
+                               constants::Vt_300,
+                               MobilityModelConfig{},
+                               recombinationModelConfig({"none"}),
+                               bgn);
+
+    REQUIRE(coupled.intrinsicDensity()[0] != Approx(coupled.intrinsicDensity()[1]));
+
+    CoupledDDState state;
+    state.psi.resize(3);
+    state.phin.resize(3);
+    state.phip.resize(3);
+    state.psi << 0.020, -0.010, 0.030;
+    state.phin << 0.0, 0.0, 0.0;
+    state.phip << 0.0, 0.0, 0.0;
+
+    const VectorXd residual = coupled.residual(coupled.pack(state), CoupledDDBoundaryConditions{});
+    const int N = static_cast<int>(mesh.numNodes());
+    for (int i = 0; i < N; ++i) {
+        REQUIRE(residual(N + i) == Approx(0.0).margin(1.0e-18));
+        REQUIRE(residual(2 * N + i) == Approx(0.0).margin(1.0e-18));
+    }
 }
 
 TEST_CASE("SG continuity residuals match DDAssembler and CoupledDDAssembler", "[sg][dd][coupled]")
@@ -322,7 +395,8 @@ TEST_CASE("Slotboom BGN uses total impurity density for compensated nodes", "[sg
         REQUIRE(niEff > si.ni);
 }
 
-TEST_CASE("CoupledDDAssembler BGN residuals match DDAssembler with nonuniform ni", "[sg][dd][coupled][bgn]")
+TEST_CASE("CoupledDDAssembler BGN residuals use variable-ni quasi-Fermi fluxes",
+          "[sg][dd][coupled][bgn]")
 {
     DeviceMesh mesh = makeSingleSiliconTriangleMesh();
     MaterialDatabase matdb;
@@ -372,15 +446,23 @@ TEST_CASE("CoupledDDAssembler BGN residuals match DDAssembler with nonuniform ni
     dd.assembleHoleContinuity(state.psi, n, p);
     const VectorXd ddHoleResidual = dd.matrix() * p - dd.rhs();
 
+    bool sawElectronDifference = false;
+    bool sawHoleDifference = false;
     const int N = static_cast<int>(mesh.numNodes());
     for (int i = 0; i < N; ++i) {
-        const double electronScale = std::max(1.0, std::abs(ddElectronResidual(i)));
-        const double holeScale = std::max(1.0, std::abs(ddHoleResidual(i)));
-        REQUIRE(coupledResidual(N + i) / electronScale ==
-                Approx(ddElectronResidual(i) / electronScale).epsilon(1.0e-12).margin(1.0e-12));
-        REQUIRE(coupledResidual(2 * N + i) / holeScale ==
-                Approx(ddHoleResidual(i) / holeScale).epsilon(1.0e-12).margin(1.0e-12));
+        REQUIRE(std::isfinite(coupledResidual(N + i)));
+        REQUIRE(std::isfinite(coupledResidual(2 * N + i)));
+        const double electronScale = std::max({1.0, std::abs(coupledResidual(N + i)),
+                                               std::abs(ddElectronResidual(i))});
+        const double holeScale = std::max({1.0, std::abs(coupledResidual(2 * N + i)),
+                                           std::abs(ddHoleResidual(i))});
+        sawElectronDifference = sawElectronDifference ||
+            std::abs(coupledResidual(N + i) - ddElectronResidual(i)) / electronScale > 1.0e-6;
+        sawHoleDifference = sawHoleDifference ||
+            std::abs(coupledResidual(2 * N + i) - ddHoleResidual(i)) / holeScale > 1.0e-6;
     }
+    REQUIRE(sawElectronDifference);
+    REQUIRE(sawHoleDifference);
 }
 
 struct AssemblySystem {

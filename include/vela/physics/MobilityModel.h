@@ -21,6 +21,18 @@ struct CaugheyThomasParameters {
     Real alpha = 1.0; ///< Empirical roll-off exponent [-]
 };
 
+struct MasettiParameters {
+    Real muConst = 0.0; ///< ConstantMobility reference mobility [m^2/V/s]
+    Real muMin1 = 0.0;  ///< Low-doping exponential floor term [m^2/V/s]
+    Real muMin2 = 0.0;  ///< Reference floor in the concentration roll-off term [m^2/V/s]
+    Real mu1 = 0.0;     ///< High-doping correction term [m^2/V/s]
+    Real pc = 0.0;      ///< Exponential activation concentration [m^-3]
+    Real cr = 1.0;      ///< Reference doping concentration [m^-3]
+    Real cs = 1.0;      ///< High-doping correction concentration [m^-3]
+    Real alpha = 1.0;   ///< Concentration roll-off exponent [-]
+    Real beta = 1.0;    ///< High-doping correction exponent [-]
+};
+
 struct FieldMobilityParameters {
     Real saturationVelocity = 1.0e5; ///< Saturation velocity [m/s]
     Real beta = 2.0;                 ///< High-field roll-off exponent [-]
@@ -44,6 +56,12 @@ struct MobilityModelConfig {
     // sets expressed in cm^2/(V s) and cm^-3.
     CaugheyThomasParameters electronCT{0.00522, 9.68e22, 0.68};
     CaugheyThomasParameters holeCT{0.00449, 2.23e23, 0.70};
+    // Sentaurus 2018 Silicon DopingDependence Formula 1 (Masetti) defaults,
+    // converted from sdevice -P:Silicon output.
+    MasettiParameters electronMasetti{
+        0.14170, 0.00522, 0.00522, 0.00434, 0.0, 9.68e22, 3.43e26, 0.68, 2.0};
+    MasettiParameters holeMasetti{
+        0.04705, 0.00449, 0.0, 0.00290, 9.23e22, 2.23e23, 6.10e26, 0.719, 2.0};
     FieldMobilityParameters electronField{};
     FieldMobilityParameters holeField{};
     SurfaceMobilityParameters surface{};
@@ -107,6 +125,8 @@ private:
     static Real caugheyThomas(Real muMax,
                               Real netDoping,
                               const CaugheyThomasParameters& params);
+    static Real masetti(Real netDoping,
+                        const MasettiParameters& params);
     static Real fieldLimit(Real lowFieldMobility,
                            Real electricField,
                            const FieldMobilityParameters& params);

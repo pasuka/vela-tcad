@@ -65,6 +65,61 @@ TEST_CASE("Caughey-Thomas mobility decreases as doping increases", "[mobility]")
     REQUIRE(lowDopingHole <= si.mup);
 }
 
+TEST_CASE("Masetti mobility matches Sentaurus silicon DopingDependence formula",
+          "[mobility][masetti]")
+{
+    MaterialDatabase matdb;
+    const Material& si = matdb.getMaterial("Si");
+    MobilityModelConfig config = mobilityModelConfig("masetti");
+    DopingDependentMobility mobility(config);
+
+    const Real netDoping = 1.0e23; // 1e17 cm^-3
+
+    REQUIRE(mobility.electronMobility(si, netDoping, 0.0, 0.0) ==
+            Catch::Approx(0.07270544030120773).epsilon(1.0e-12));
+    REQUIRE(mobility.holeMobility(si, netDoping, 0.0, 0.0) ==
+            Catch::Approx(0.03190980929489245).epsilon(1.0e-12));
+}
+
+TEST_CASE("JSON mobility object parses Masetti parameters with unit scaling",
+          "[mobility][masetti][json][scaling]")
+{
+    const nlohmann::json json = {
+        {"model", "masetti"},
+        {"electron_mu_const_m2_V_s", 1417.0},
+        {"electron_mumin1_m2_V_s", 52.2},
+        {"electron_mumin2_m2_V_s", 52.2},
+        {"electron_mu1_m2_V_s", 43.4},
+        {"electron_pc_m3", 0.0},
+        {"electron_cr_m3", 9.68e16},
+        {"electron_cs_m3", 3.43e20},
+        {"electron_masetti_alpha", 0.68},
+        {"electron_masetti_beta", 2.0},
+        {"hole_mu_const_m2_V_s", 470.5},
+        {"hole_mumin1_m2_V_s", 44.9},
+        {"hole_mumin2_m2_V_s", 0.0},
+        {"hole_mu1_m2_V_s", 29.0},
+        {"hole_pc_m3", 9.23e16},
+        {"hole_cr_m3", 2.23e17},
+        {"hole_cs_m3", 6.10e20},
+        {"hole_masetti_alpha", 0.719},
+        {"hole_masetti_beta", 2.0},
+    };
+
+    const MobilityModelConfig cfg = mobilityModelConfigFromJson(
+        json, UnitScalingConfig{UnitScalingMode::UnitScaling});
+
+    REQUIRE(cfg.model == "masetti");
+    DopingDependentMobility mobility(cfg);
+    MaterialDatabase matdb;
+    const Material& si = matdb.getMaterial("Si");
+
+    REQUIRE(mobility.electronMobility(si, 1.0e23, 0.0, 0.0) ==
+            Catch::Approx(0.07270544030120773).epsilon(1.0e-12));
+    REQUIRE(mobility.holeMobility(si, 1.0e23, 0.0, 0.0) ==
+            Catch::Approx(0.03190980929489245).epsilon(1.0e-12));
+}
+
 
 TEST_CASE("JSON solver config selects mobility and recombination models", "[mobility][json]")
 {

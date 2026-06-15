@@ -42,6 +42,9 @@ public:
     /// Net doping = donors - acceptors [m^-3].
     Real netDoping(Index nodeId) const;
 
+    /// Total ionized impurity concentration = donors + acceptors [m^-3].
+    Real totalImpurity(Index nodeId) const;
+
     Index numNodes() const { return static_cast<Index>(donors_.size()); }
 
     /**

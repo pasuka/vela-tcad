@@ -77,7 +77,7 @@ In `unit_scaling` mode, input values use common external TCAD units:
 | temperature | K | K |
 | energy | eV | eV |
 
-`scaling.mode` does not accept `si` or vendor-specific aliases.
+`scaling.mode` does not accept `si` or non-public aliases.
 Field names with explicit unit suffixes remain the stable public names; this
 mode defines how their numeric values are read at the schema boundary.
 The conversion is applied while reading mesh coordinates, material override
@@ -354,8 +354,11 @@ preserving the full imported reference curve. `vela_current_contact` may be set
 when the Vela terminal current to compare differs from the swept bias contact.
 A simulation `comparison` block can pass curve gate options such as
 `candidate_scale`, `bias_min`, `bias_max`, `reference_column`,
-`candidate_column`, `max_orders_of_magnitude`, `max_relative_error`,
-`min_points`, and `require_trend_match` to the comparison report.
+`candidate_column`, `interpolation`, `max_orders_of_magnitude`,
+`max_relative_error`, `min_points`, and `require_trend_match` to the comparison
+report. `interpolation` defaults to `linear`; use `log_current` for exponential
+current-magnitude comparisons when adjacent current samples keep the same
+nonzero sign after scaling.
 `runtime_diagnostic` is an
 optional simulation block:
 
@@ -522,14 +525,26 @@ Object form:
 }
 ```
 
-Supported `model` values are `constant`, `caughey_thomas`, `caughey_thomas_field`, `caughey_thomas_surface`, and `caughey_thomas_field_surface`. The `surface` block is a MOS prototype for Si/SiO2-like channel mobility degradation, not a calibrated Lombardi model. It applies a vertical-field factor `mu_eff = mu_bulk / (1 + (theta * max(|E_normal| - reference_field, 0))^beta)^(1/beta)`, optionally clamped by `min_factor`/`max_factor`.
+Supported `model` values are `constant`, `caughey_thomas`,
+`caughey_thomas_field`, `caughey_thomas_surface`,
+`caughey_thomas_field_surface`, `masetti`, and `masetti_field`.
+The `masetti` models implement a Masetti-style silicon doping-dependent
+mobility shape with configurable electron/hole fields:
+`*_mu_const_m2_V_s`, `*_mumin1_m2_V_s`, `*_mumin2_m2_V_s`,
+`*_mu1_m2_V_s`, `*_pc_m3`, `*_cr_m3`, `*_cs_m3`,
+`*_masetti_alpha`, and `*_masetti_beta`, where `*` is `electron` or
+`hole`. The `surface` block is a MOS prototype for Si/SiO2-like channel
+mobility degradation, not a calibrated Lombardi model. It applies a
+vertical-field factor `mu_eff = mu_bulk / (1 + (theta * max(|E_normal| -
+reference_field, 0))^beta)^(1/beta)`, optionally clamped by
+`min_factor`/`max_factor`.
 
 The first implementation estimates `E_normal` with the local edge electric-field magnitude on edges that match `surface_region` and/or the two-name `surface_interface`; this is sufficient for trend regressions but should not be interpreted as a calibrated normal-field extraction. If no matching surface edge is found for a mobility evaluation, surface degradation is disabled and the existing low-field or velocity-saturation behavior is used.
 
-With `scaling.mode: "unit_scaling"`, Caughey-Thomas mobility floors are read
-as `cm^2/(V s)`, reference dopings as `cm^-3`, surface reference fields as
-`V/cm`, and surface theta coefficients as `cm/V`. They are normalized to
-`m^2/(V s)`, `m^-3`, `V/m`, and `m/V` before mobility evaluation.
+With `scaling.mode: "unit_scaling"`, Caughey-Thomas and Masetti mobility
+values are read as `cm^2/(V s)`, reference dopings as `cm^-3`, surface
+reference fields as `V/cm`, and surface theta coefficients as `cm/V`. They are
+normalized to `m^2/(V s)`, `m^-3`, `V/m`, and `m/V` before mobility evaluation.
 
 ## sweep
 

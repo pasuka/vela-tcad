@@ -11,8 +11,212 @@ donor/acceptor table. Generated faithful Vela decks keep `node_doping_file:
 "doping.csv"` so the exact imported doping is available for solver
 development and regression inspection.
 
+## Sentaurus 2018 PN2D Fixture
+
+The Sentaurus 2018 calibration case requested for the next pn2d precision pass
+is checked in under `reference_tcad/pn2d_sentaurus2018/source/`. It preserves
+the original `D:\pn2d` artifacts, including `.cmd`, `.log`, `.tdr`, `.plt`,
+`tdx`-generated `.grd/.dat`, and command backups. Its import config is
+`reference_tcad/pn2d_sentaurus2018/pn2d_sentaurus2018_reference.json`.
+
+This fixture has three simulations:
+
+- `0v`: equilibrium state import from `pn2d_0v_des.tdr`, reference curve export
+  from `pn2d_0v.plt`, and Sentaurus field export under `sim_fields/0v`.
+- `iv`: forward-bias import from `pn2d_iv_des.tdr` and `pn2d_iv.plt`.
+- `bv`: reverse-bias import from `pn2d_bv_des.tdr` and `pn2d_bv.plt`.
+
+All generated Vela decks use the current strict coupled-Newton handoff:
+`solver.method: "gummel_newton"`, `handoff.gummel_max_iter: 0`, and
+`handoff.fallback: "none"`. This is the repository's present way to express a
+Newton-only solve of Poisson plus electron and hole continuity while retaining
+the existing runner schema. The decks keep `node_doping_file: "doping.csv"`.
+
+The independent input-data gate is `scripts/compare_sentaurus_tdr_tdx.py`.
+It compares the TDR-derived neutral export against `tdx` text output for mesh
+vertex count, total and bulk element counts, region/contact names, contact edge
+counts, and matching `.dat` datasets such as `DopingConcentration`,
+`DonorConcentration`, and `AcceptorConcentration` when present. State-field
+parity can be run with `scripts/compare_sentaurus_fields.py` for fields such as
+`ElectrostaticPotential`, `eDensity`, `hDensity`, quasi-Fermi potentials,
+`ElectricField`, SRH recombination, and BV avalanche/impact-ionization exports
+where available.
+
+The zero-bias state diagnostic is `scripts/compare_pn2d_0v_state.py`. It
+derives a temporary Vela 0V probe deck from the imported
+`vela/simulation_0v.json`, forces a single strict-Newton IV point at 0 V, writes
+VTK, and compares that state to `pn2d_0v_des.tdr` fields exported under
+`sim_fields/0v/fields`. The report includes potential, electron/hole
+quasi-Fermi potentials, carrier densities reconstructed from
+`psi/phin/phip/ni_eff`, SRH recombination, raw VTK carrier-density cross-checks,
+centerline/contact/junction-local statistics, and Anode/Cathode near-zero
+terminal-current conservation. The 0 V terminal check follows the Sentaurus
+log table convention: Anode and Cathode currents must be equal in magnitude and
+opposite in sign, so the report gates both absolute near-zero current and
+`abs(I_anode + I_cathode) / max(abs(I_anode), abs(I_cathode))`. The diagnostic
+matrix records the current
+priority axes: `ni`, OldSlotboom/BGN, Ohmic contact boundary semantics,
+quasi-Fermi definitions, carrier formulas, and current units.
+
+The terminal-current root-cause diagnostic is
+`scripts/diagnose_pn2d_0v_current_balance.py`. It derives one 0 V probe deck,
+enables `sweep.diagnostics.terminal_balance` and multi-contact
+`sweep.diagnostics.contact_edge`, then computes Anode and Cathode currents on
+the same converged `DDSolution`. Its report is the authoritative source for
+0 V terminal-current conservation because it removes the previous ambiguity
+from running two independent probes with different `current_contact` values.
+The report writes both `electron_minus_hole` and `electron_plus_hole`
+conventions, finite-volume flux-link sums, contact coverage, top contributing
+links, endpoint `psi/phin/phip/n/p/ni/mu` state, SG continuity fluxes, and a
+root-cause classification such as `total_current_sign_convention`,
+`contact_current_aggregation`, `contact_edge_coverage`, or
+`contact_flux_formula`. With `--require-balanced`, the script becomes a hard
+regression gate and returns non-zero unless the same-solution terminal-current
+classification is `balanced`.
+
+`balanced` is intentionally only a Vela two-terminal conservation statement. The
+same report also parses the Sentaurus `pn2d_0v.plt` final Coupled current table
+(falling back to `pn2d_0v.log_des.log`) and writes
+`sentaurus_current_reference` plus `sentaurus_current_parity`. That parity block
+compares Vela `electron_minus_hole_A_per_um` against Sentaurus `TotalCurrent`,
+records the absolute-current ratio and sign relation for each contact, and
+flags component-level evidence such as Vela `Anode:hole` or `Cathode:electron`
+being numerically zero while Sentaurus reports non-zero components. A report can
+therefore be `classification=balanced` while
+`sentaurus_current_parity.status=mismatch`; this means current conservation has
+been hardened, but absolute Sentaurus current parity remains a separate debug
+target.
+
+The follow-up residual-floor probe is
+`scripts/probe_pn2d_0v_newton_residual_current.py`. It derives multiple 0 V
+probe decks from the same imported fixture, varies Newton `reltol`, `abstol`,
+and `max_iter`, runs the same multi-terminal current diagnostics, and ranks
+candidates by Sentaurus total-current magnitude only after preferring successful
+terminal-balanced candidates. This prevents a numerically unbalanced early-stop
+state from being mistaken for Sentaurus parity simply because one terminal
+current happens to have a similar absolute magnitude. Current evidence shows
+that strict `reltol<=1e-9` candidates remain balanced but at the `1e-33 A/um`
+floor, while looser candidates around `3e-9` and above raise residual currents
+but fail the two-terminal balance gate.
+
+It also records the Sentaurus/TDR mesh reference
+counts separately: `pn2d_0v_des.grd` has `nb_elements=3712`, which includes
+`3680` bulk `R.Si` triangle elements plus `16` Cathode and `16` Anode contact
+boundary elements. Vela's contact-current diagnostic `flux_link_count` is a
+finite-volume post-processing count from contact Dirichlet nodes into the bulk,
+so it can differ from the Sentaurus boundary segment count. Sentaurus log lines
+516-518 and 547-549 in `pn2d_0v.log_des.log` remain the reference behavior:
+Anode and Cathode 0 V conduction currents should be equal magnitude and
+opposite sign.
+
+The 0 V deck uses a local tighter Newton tolerance than the IV/BV calibration
+decks: `reltol: 1e-10`, `abstol: 1e-24`, and `newton_max_iter: 80`. This keeps
+equilibrium terminal currents below the numerical floor where relative balance
+is ill-conditioned. The terminal gate therefore accepts either the relative
+pair-balance threshold or an absolute conservation threshold (`1e-24 A/um` by
+default). This preserves the old failure for visible `~1e-21 A/um` imbalance
+while allowing `~1e-33 A/um` roundoff-floor currents from the tightened 0 V
+Newton solve.
+
+The field-convention diagnostic is
+`scripts/diagnose_pn2d_0v_field_conventions.py`. It tests whether the remaining
+0 V state-field mismatch is explained by electrostatic-potential sign, offset,
+or affine convention, then ranks carrier-density formulas and `ni/BGN`
+candidates. This script is diagnostic-only: it does not change solver physics
+or import mappings. Current pn2d 0 V evidence is not a simple sign flip; the
+best potential fit is affine but still has a large residual, so the next debug
+step is to separate node/field mapping issues from material `ni_eff`/OldSlotboom
+differences.
+
+The field-mapping diagnostic is `scripts/diagnose_pn2d_0v_field_mapping.py`.
+It compares Vela VTK fields to Sentaurus `sim_fields/0v/fields` by both direct
+node-id pairing and nearest-coordinate pairing, while testing whether VTK
+coordinates need conversion from meters back to the imported Sentaurus micrometer
+mesh. Current pn2d 0 V evidence rules out a node-ordering mismatch: direct and
+nearest-coordinate pairings produce the same field errors, and the best
+coordinate alignment is `m_to_um`. Carrier-density fields are classified as
+Vela VTK `m^-3` against Sentaurus `cm^-3` (`vtk_m3_to_cm3`), but that conversion
+only removes the leading `1e6` unit factor; large local density residuals remain
+after conversion. This leaves physical field conventions and material/contact
+parameters as the next state-parity targets.
+
+The dedicated 0 V electric-field distribution report is
+`scripts/compare_pn2d_0v_electric_field.py`. It reads Sentaurus
+`ElectricField_region0.csv`, derives Vela field magnitude from the linear
+triangle gradient of VTK `Potential`, and writes JSON, Markdown, and per-node
+CSV reports. The script tests `V/m`, `V/cm`, and `V/um` candidates and selects
+the unit by matching the field-magnitude distribution before reporting
+all-node, centerline, junction-near, and contact-local error statistics. Current
+pn2d 0 V evidence selects `V_per_cm`: Sentaurus median/max are about
+`144 V/cm` and `1.02e5 V/cm`, while Vela-derived median/max are about
+`308 V/cm` and `1.05e5 V/cm`. The mean magnitudes are close, but local residuals
+remain large near the junction, so this report is a distribution/localization
+diagnostic rather than a pass/fail state-parity gate.
+
+The density-decomposition diagnostic is
+`scripts/diagnose_pn2d_0v_density_decomposition.py`. It checks whether Vela's
+VTK carrier densities are internally consistent with Vela `Potential`,
+`ElectronQuasiFermi`, `HoleQuasiFermi`, `ni`, and BGN, then compares those
+densities to Sentaurus. Current pn2d 0 V evidence classifies the mismatch as
+`vela_state_differs_from_sentaurus`: Vela density export is self-consistent to
+about `2.3e-5` relative error after the VTK `m^-3` to `cm^-3` conversion, but
+Sentaurus-vs-Vela density residuals remain large. The inferred equilibrium
+`sqrt(n*p)` median also differs: Sentaurus is about `1.66e10 cm^-3`, while Vela
+is about `1.13e10 cm^-3`, so `ni_eff`/OldSlotboom parity remains a material
+parameter target in addition to the electrostatic-potential state mismatch.
+
+The ni/BGN probe is `scripts/diagnose_pn2d_0v_ni_bgn_probe.py`. It creates
+temporary 0 V decks under the report directory, writes per-candidate
+`materials_file` overrides, toggles `solver.bandgap_narrowing`, runs the same
+strict Newton probe, and ranks Sentaurus state parity. Current pn2d 0 V scan
+over `ni={1e10,1.45e10,1.6556207295e10} cm^-3` and
+`BGN={none,slotboom}` chooses `ni=1.6556207295e10 cm^-3`, `BGN=none` as the
+best local 0 V material match. This exactly matches the Sentaurus
+`sqrt(n*p)` median, but only reduces the density median log10 error to about
+`0.252` and leaves p95 log10 error about `5.44`; potential RMS remains about
+`0.138 V`. Therefore `ni_eff` is a confirmed material-parity lever, but the
+remaining 0 V mismatch is dominated by electrostatic/contact state parity rather
+than a pure intrinsic-density or OldSlotboom toggle.
+
+The QF-driver probe is `scripts/probe_pn2d_0v_qf_drivers.py`. It runs a small
+strict-Newton 0 V matrix from the imported `simulation_0v.json` and records
+per-variant QF span, terminal current, terminal-balance, and VTK state outputs.
+Current evidence selects BGN/effective-ni consistency as the direct driver of
+the 0 V quasi-Fermi split: baseline `slotboom` keeps `qf_max_span_V =
+0.0043930610509`, disabling recombination still keeps `qf_max_span_V =
+0.00439298359789`, and switching `bandgap_narrowing` to `none` collapses the
+span to `8.39006e-13 V` while retaining strict Newton handoff
+(`gummel_iterations=0`, `handoff_stage=newton`, `newton_iterations=10`). The
+`l2_residual` variant does not remove the split (`0.004457594 V`), and the
+intentionally over-tight `tight_block_scales` variant fails by
+`line_search_non_decrease`; this is recorded as a diagnostic branch failure,
+not as a matrix execution failure.
+
+Reproducible import and comparison:
+
+```powershell
+python scripts\sentaurus_import.py reference --config reference_tcad\pn2d_sentaurus2018\pn2d_sentaurus2018_reference.json --source-dir reference_tcad\pn2d_sentaurus2018\source --output-dir build\reference_tcad\pn2d_sentaurus2018 --tdr-importer build\sentaurus_import.exe --runner build\vela_example_runner.exe
+python scripts\compare_sentaurus_tdr_tdx.py --tdr-export build\reference_tcad\pn2d_sentaurus2018 --tdx-dir reference_tcad\pn2d_sentaurus2018\source --output-dir build\reference_tcad\pn2d_sentaurus2018\reports
+python scripts\diagnose_pn2d_0v_current_balance.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_current_balance --require-balanced
+python scripts\diagnose_pn2d_0v_field_conventions.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_field_conventions --ni-cm3 1e10 --ni-cm3 1.45e10
+python scripts\diagnose_pn2d_0v_field_mapping.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_field_mapping --fields ElectrostaticPotential:Potential --fields eQuasiFermiPotential:ElectronQuasiFermi --fields hQuasiFermiPotential:HoleQuasiFermi --fields eDensity:Electrons --fields hDensity:Holes
+python scripts\compare_pn2d_0v_electric_field.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_electric_field
+python scripts\diagnose_pn2d_0v_density_decomposition.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_density_decomposition --ni-cm3 1e10 --ni-cm3 1.45e10
+python scripts\diagnose_pn2d_0v_ni_bgn_probe.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_ni_bgn_probe --ni-cm3 1e10 --ni-cm3 1.45e10 --ni-cm3 1.6556207295e10 --bgn none --bgn slotboom
+python scripts\probe_pn2d_0v_qf_drivers.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_qf_drivers
+python scripts\compare_pn2d_0v_state.py --reference-root build\reference_tcad\pn2d_sentaurus2018 --runner build\vela_example_runner.exe --output-dir build\reference_tcad\pn2d_sentaurus2018\reports\0v_state
+```
+
+Known unsupported or approximate physics remains explicit: Sentaurus avalanche
+models are not a calibrated numerical match, Fermi statistics are still treated
+with Vela's current carrier-statistics implementation, and BV impact-ionization
+comparison is diagnostic until the coupled Jacobian and continuation path are
+fully calibrated. The executable BV deck therefore keeps strict coupled Newton
+but sets `impact_ionization.model: "none"`; avalanche/impact-ionization fields
+remain available through the imported Sentaurus TDR/tdx state exports.
+
 The current executable comparison uses the faithful node-level doping decks.
-The IV deck uses `vela_stop: 0.3` and `vela_step: 0.1`; the local gate compares
+The IV deck uses `vela_stop: 0.3` and `vela_step: 0.02`; the local gate compares
 the 0.2-0.3 V forward-bias window against the full imported Sentaurus IV
 reference. The sweep bias follows the Sentaurus `Anode` voltage ramp, while the
 Vela current is taken from `Cathode`; this matches the terminal-current
@@ -40,6 +244,38 @@ Sentaurus-faithful model and improves the IV forward-current comparison.
 The BV-only Caughey-Thomas constant point is still not reused for IV because it
 degrades the forward-current comparison relative to the field-dependent point.
 These reports are diagnostic-only and do not yet require trend match.
+
+### IV high-bias physical quantities
+
+The June 2026 high-bias IV state comparison found that the previous 1 V
+diagnostic was not a same-bias comparison: Sentaurus fields came from the 1.0 V
+terminal state, while the Vela probe stopped at `0.8265625 V` and then failed
+validation at `0.828125 V` with `contact 'Anode' node 2 phin=0 does not match
+bias`. The direct cause was Newton's default p-contact minority-electron
+relaxation, which intentionally relaxed the Anode minority `phin` to 0 V at
+high forward bias. That behavior is useful as a numerical option, but it is not
+appropriate for the Sentaurus-faithful pn2d IV calibration state, where both
+contact quasi-Fermi potentials should remain tied to the Ohmic contact voltage.
+
+The pn2d Sentaurus2018 IV reference override now sets
+`contact_boundary_minority_electron_relaxation: false`. With that override, the
+1 V probe converges through `1.0000000000000002 V`; Anode and Cathode terminal
+currents remain balanced, and the high-bias current ratio improves to
+Vela/Sentaurus `0.826676` at 1 V. The full `0.20547013066..1.0 V` IV curve
+comparison is still not a calibrated pass (`max_relative_error=1.17508`,
+`orders_of_magnitude=0.337475`), mostly because the lower forward-bias points
+remain under-calibrated, but the previous boundary-condition artifact is
+removed.
+
+Same-bias 1.0 V field comparison artifacts live under
+`build/reference_tcad/pn2d_sentaurus2018/reports/iv_state/fixed/physical_quantity_compare/`.
+The dominant field errors after disabling relaxation are much smaller:
+`electron_qf_V` max error drops from the diagnostic 1.0 V discontinuity to
+`0.015289 V`; `eDensity` and `hDensity` mean absolute errors drop to about
+`1.42e16 cm^-3`; and `ElectricField` p95 error drops to about `333 V/cm`.
+Remaining IV mismatch is therefore a current-magnitude calibration problem
+(mobility/current-density magnitude, recombination/effective-ni calibration, or
+width/unit convention), not a contact-boundary failure.
 
 Vela currently treats Sentaurus Fermi statistics as Boltzmann carrier
 statistics. Sentaurus Okuto-Crowell avalanche is approximated by Vela
@@ -1581,3 +1817,115 @@ Full suite `ctest --preset windows-ucrt64-debug` → **275/275 passed**, confirm
 no regression across the other 272 tests (the `ni` override is isolated to the
 pn2d IV deck).
 
+## PN2D Sentaurus2018 0V Current Debug (2026-06-12)
+
+The 0V current-related debug pass generated a five-group comparison report under:
+
+```text
+build/reference_tcad/pn2d_sentaurus2018/reports/0v_current_related
+```
+
+### Current Definition Findings
+
+The baseline terminal signs match Sentaurus, but the absolute current does not:
+
+| contact | Vela total (A/um) | Sentaurus `.plt` total | Sentaurus/Vela |
+|---|---:|---:|---:|
+| Anode | `-6.5533928359887347e-18` | `-7.17389811693691e-25` | `1.0946845849894114e-07` |
+| Cathode | `6.5556001087542772e-18` | `7.17389811693687e-25` | `1.0943160043207828e-07` |
+
+Simple width conversions do not explain the baseline mismatch. Comparing
+Sentaurus internal current definitions shows a separate reference-definition
+ambiguity:
+
+| contact | `.plt TotalCurrent` | `ContactCurrentFlux` | boundary `TotalCurrentDensity` integral |
+|---|---:|---:|---:|
+| Anode | `-7.17389811693691e-25` | `-1.45982e-19` | `1.4598200000000005e-15 A/cm-width` |
+| Cathode | `7.17389811693687e-25` | `6.65229e-20` | `6.652300000000003e-16 A/cm-width` |
+
+`ContactCurrentFlux` is consistent with the boundary current-density integral
+after a `1e4` width conversion, while `.plt TotalCurrent` remains more than
+three orders smaller. This means no Vela current-scaling fix should be made from
+`.plt` parity alone.
+
+### Contact Driver Findings
+
+Contact quasi-Fermi values are not the source of the baseline current mismatch:
+
+| contact | max eQF contact diff | max hQF contact diff |
+|---|---:|---:|
+| Anode | `1.83689e-16 V` | `4.59224e-17 V` |
+| Cathode | `2.29612e-16 V` | `0.0 V` |
+
+The contact majority densities match Sentaurus, while minority densities differ:
+
+| contact | mean e-density ratio Vela/Sentaurus | mean h-density ratio Vela/Sentaurus |
+|---|---:|---:|
+| Anode | `0.46664818246822415` | `0.9999999999999999` |
+| Cathode | `0.9999999999999999` | `0.46664818246822415` |
+
+Contact-to-interior QF deltas in the Vela edge-current path are tiny
+(`~1e-11 V` max), so the contact Dirichlet QF is not the immediate source of the
+large baseline edge current.
+
+### BGN Isolation Finding
+
+The `no_bgn` variant is decisive:
+
+| variant | QF max span | Anode Vela current | Cathode Vela current | Vela A/m vs Sentaurus |
+|---|---:|---:|---:|---:|
+| baseline | `0.0043930610509000005 V` | `-6.553392835988735e-18 A/um` | `6.555600108754277e-18 A/um` | `~9.14e12` |
+| no_bgn | `8.39006e-13 V` | `-1.0647573418528946e-30 A/um` | `-8.8957506957498075e-31 A/um` | `~1.2-1.5` |
+
+Turning off BGN collapses both the body QF split and the Vela current in the
+physical A/m convention to Sentaurus `.plt` scale. The selected root-cause
+hypothesis is therefore BGN/effective-ni consistency across the Newton state,
+continuity residual, density reconstruction, and contact-current post-process.
+
+### Debug Decision
+
+Do not apply a current-unit fix yet. The Sentaurus `.plt`, TDR
+`ContactCurrentFlux`, and boundary current-density integral are not mutually
+consistent after simple conversions, while `no_bgn` strongly implicates the BGN
+state path. The next implementation phase should add a focused failing
+equilibrium test for BGN-enabled 0V QF flatness, then inspect only the
+BGN/effective-ni path in `NewtonSolver`, `CoupledDDAssembler`, and
+`ContactCurrent`.
+
+### Follow-up Fix: Variable-ni Quasi-Fermi SG Flux
+
+The follow-up debug implemented a variable-intrinsic-density quasi-Fermi
+Scharfetter-Gummel flux. The old coupled Newton path used the balanced
+quasi-Fermi flux only when `ni_i == ni_j`; BGN makes `ni_eff` node dependent, so
+the code fell back to density SG on BGN edges. That density fallback does not
+cancel flat quasi-Fermi levels when `ni_eff` varies, producing the 0V QF split
+and artificial terminal current.
+
+The fix adds variable-ni QF flux functions and uses them in both the coupled
+continuity residual/Jacobian and `ContactCurrent` post-processing. New unit
+coverage verifies:
+
+- variable-ni SG electron/hole flux is zero for flat e/h quasi-Fermi levels;
+- `CoupledDDAssembler` BGN continuity residuals vanish for flat e/h
+  quasi-Fermi levels;
+- BGN coupled residuals intentionally diverge from the older density-form
+  `DDAssembler` reference on nonuniform-`ni` edges.
+
+Refreshed 0V diagnostics after the fix:
+
+| metric | before fix | after fix |
+|---|---:|---:|
+| current-balance status | `diagnostic_fail` | `pass` |
+| classification | `contact_boundary_qf_state` | `balanced` |
+| baseline QF max span | `0.0043930610509000005 V` | `1.827779e-08 V` |
+| Anode total current | `-6.553392835988735e-18 A/um` | `-1.656945621904068e-27 A/um` |
+| Cathode total current | `6.555600108754277e-18 A/um` | `3.3547470416890355e-28 A/um` |
+| terminal abs pair sum | `2.2072727655425378e-21 A/um` | `1.3214709177351644e-27 A/um` |
+| terminal balance gate | relative pass | absolute floor pass |
+
+The current-related baseline report now shows edge currents near numerical
+zero: Anode mean absolute edge current `9.746738952376869e-23 A/m`, Cathode
+mean absolute edge current `1.9733806127582562e-23 A/m`. The remaining
+Sentaurus `.plt` absolute-current mismatch should not be used as a Vela unit
+fix trigger because the Sentaurus `.plt`, TDR `ContactCurrentFlux`, and boundary
+current-density integral definitions remain mutually inconsistent.

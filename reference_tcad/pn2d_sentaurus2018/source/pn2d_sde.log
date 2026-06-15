@@ -1,0 +1,55 @@
+Evaluating file pn2d_sde.cmd
+---> (sde:clear)
+#f
+---> (define L 2.0)
+L
+---> (define H 0.5)
+H
+---> (define XJ 1.0)
+XJ
+---> (sdegeo:create-rectangle (position 0.0 0.0 0.0) (position L H 0.0) Silicon R.Si)
+#[body 9 1]
+---> (sdegeo:define-contact-set Anode 4.0 (color:rgb 1 0 0) ##)
+()
+---> (sdegeo:define-contact-set Cathode 4.0 (color:rgb 0 0 1) ##)
+()
+---> (sdegeo:set-current-contact-set Anode)
+""
+---> (sdegeo:define-2d-contact (find-edge-id (position 0.0 (/ H 2.0) 0.0)) Anode)
+()
+---> (sdegeo:set-current-contact-set Cathode)
+"Anode"
+---> (sdegeo:define-2d-contact (find-edge-id (position L (/ H 2.0) 0.0)) Cathode)
+()
+---> (sdedr:define-refeval-window P.Window Rectangle (position 0.0 0.0 0.0) (position XJ H 0.0))
+#[body 14 1]
+---> (sdedr:define-refeval-window N.Window Rectangle (position XJ 0.0 0.0) (position L H 0.0))
+#[body 15 1]
+---> (sdedr:define-constant-profile P.Doping BoronActiveConcentration 1e+17)
+#t
+---> (sdedr:define-constant-profile N.Doping PhosphorusActiveConcentration 1e+17)
+#t
+---> (sdedr:define-constant-profile-placement P.Place P.Doping P.Window)
+#t
+---> (sdedr:define-constant-profile-placement N.Place N.Doping N.Window)
+#t
+---> (sdedr:define-refinement-size Global.Mesh 0.05 0.05 0.01 0.01)
+#t
+---> (sdedr:define-refinement-region Global.Mesh.Place Global.Mesh R.Si)
+#t
+---> (sdedr:define-refeval-window Junction.Window Rectangle (position 0.9 0.0 0.0) (position 1.1 H 0.0))
+#[body 16 1]
+---> (sdedr:define-refinement-size Junction.Mesh 0.01 0.02 0.005 0.005)
+#t
+---> (sdedr:define-refinement-placement Junction.Mesh.Place Junction.Mesh Junction.Window)
+#t
+---> (sde:build-mesh snmesh  pn2d)
+#t
+---> #[end-of-file]
+"************************************************************************"
+"Sentaurus Structure Editor "
+"Start Time:    Tue Jun  9 21:30:44 2026"
+"End   Time:    Tue Jun  9 21:30:46 2026"
+"Total Execution Time (sec):    2"
+"Total System calls Time (sec): 0"
+"************************************************************************"

@@ -459,8 +459,7 @@ inline std::vector<Real> buildEffectiveNodeNi(const DeviceMesh&       mesh,
     const Real temperature_K = thermalVoltage * constants::q / constants::kb;
     std::vector<Real> ni_v = buildNodeNi(mesh, matdb, temperature_K);
     for (Index i = 0; i < mesh.numNodes(); ++i) {
-        const Real totalImpurity = doping.donors(i) + doping.acceptors(i);
-        const Real delta = bgn.deltaEg(totalImpurity, 0.0, 0.0);
+        const Real delta = bgn.deltaEg(doping.totalImpurity(i), 0.0, 0.0);
         ni_v[i] = effectiveIntrinsicDensity(ni_v[i], thermalVoltage, delta);
     }
     return ni_v;

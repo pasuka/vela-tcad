@@ -108,14 +108,10 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             &solution.psi);
 
         // SG fluxes in physical units.  Mirror CoupledDDAssembler residual:
-        // use the cancellation-free quasi-Fermi balanced form when both edge
-        // endpoints share the same effective intrinsic density, and fall back
-        // to the density-based form only when BGN makes ni node-dependent.
-        // The density-based form B(-u)*n0 - B(+u)*n1 suffers catastrophic
-        // cancellation when |dpsi|/Vt is large (e.g. >>1 at high forward bias)
-        // because B(-u) grows exponentially while B(+u) -> 0; tiny imbalance
-        // in (n0, n1) is then amplified by orders of magnitude, breaking
-        // discrete current conservation between contacts.
+        // use the cancellation-free quasi-Fermi balanced form, including the
+        // variable-ni generalization needed for BGN/effective-ni edges.  The
+        // density-based form B(-u)*n0 - B(+u)*n1 does not cancel flat
+        // quasi-Fermi levels when ni varies across the edge.
         const Index idxI = edge.n0;
         const Index idxJ = edge.n1;
         const Real ni_i = ni_[idxI];
@@ -125,26 +121,22 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         const Real phip_i = solution.phip(i);
         const Real phip_j = solution.phip(j);
 
+        Real electronContinuityFlux01 = 0.0;
         Real electronFlux01 = 0.0;
         if (mun > 0.0) {
             const Real coef = mun * thermalVoltage_ / edgeLength;
-            const Real nFlux = (ni_i == ni_j)
-                ? sgElectronContinuityFluxFromQuasiFermi(
-                      ni_i, psi_j, phin_i, phin_j, dpsi, thermalVoltage_, coef)
-                : sgElectronContinuityFlux(
-                      n_i, n_j, dpsi, thermalVoltage_, coef);
+            electronContinuityFlux01 = sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                ni_i, ni_j, psi_i, psi_j, phin_i, phin_j, thermalVoltage_, coef);
             // sgElectronFlux = -sgElectronContinuityFlux by definition.
-            electronFlux01 = -nFlux;
+            electronFlux01 = -electronContinuityFlux01;
         }
+        Real holeContinuityFlux01 = 0.0;
         Real holeFlux01 = 0.0;
         if (mup > 0.0) {
             const Real coef = mup * thermalVoltage_ / edgeLength;
-            const Real pFlux = (ni_i == ni_j)
-                ? sgHoleContinuityFluxFromQuasiFermi(
-                      ni_i, psi_i, phip_i, phip_j, dpsi, thermalVoltage_, coef)
-                : sgHoleContinuityFlux(
-                      p_i, p_j, dpsi, thermalVoltage_, coef);
-            holeFlux01 = -pFlux;
+            holeContinuityFlux01 = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                ni_i, ni_j, psi_i, psi_j, phip_i, phip_j, thermalVoltage_, coef);
+            holeFlux01 = -holeContinuityFlux01;
         }
 
         // Algebraic SG split: J = J_drift + J_diffusion.
@@ -189,8 +181,24 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         edgeDiag.bernoulliU = dpsi / thermalVoltage_;
         edgeDiag.bernoulliBplus = weights.b_plus;
         edgeDiag.bernoulliBminus = weights.b_minus;
-        edgeDiag.electronUsedQuasiFermi = (ni_i == ni_j);
-        edgeDiag.holeUsedQuasiFermi = (ni_i == ni_j);
+        edgeDiag.electronUsedQuasiFermi = true;
+        edgeDiag.holeUsedQuasiFermi = true;
+        edgeDiag.psi0 = psi_i;
+        edgeDiag.psi1 = psi_j;
+        edgeDiag.phin0 = phin_i;
+        edgeDiag.phin1 = phin_j;
+        edgeDiag.phip0 = phip_i;
+        edgeDiag.phip1 = phip_j;
+        edgeDiag.n0 = n_i;
+        edgeDiag.n1 = n_j;
+        edgeDiag.p0 = p_i;
+        edgeDiag.p1 = p_j;
+        edgeDiag.ni0 = ni_i;
+        edgeDiag.ni1 = ni_j;
+        edgeDiag.mun = mun;
+        edgeDiag.mup = mup;
+        edgeDiag.electronContinuityFlux = electronContinuityFlux01;
+        edgeDiag.holeContinuityFlux = holeContinuityFlux01;
         edgeDiag.electronCurrent = electronCurrent;
         edgeDiag.electronDriftCurrent = electronDriftCurrent;
         edgeDiag.electronDiffusionCurrent = electronDiffusionCurrent;

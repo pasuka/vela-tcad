@@ -397,6 +397,34 @@ class RegressionRunnerPolicies(unittest.TestCase):
                 run_regression.check_igbt_high_injection_trend(
                     example_dir, example_dir / "fake_runner.sh")
 
+    def test_igbt_high_injection_current_monotone_tolerance_is_configurable(self) -> None:
+        fieldnames = FIELDNAMES + ["stored_charge_C_per_m"]
+        rows = [
+            base_row(current_total="0.10", stored_charge_C_per_m="1e-18"),
+            base_row(bias_V="0.1", current_total="0.09", stored_charge_C_per_m="2e-18"),
+            base_row(bias_V="0.2", current_total="0.30", stored_charge_C_per_m="3e-18"),
+        ]
+        cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "iv", "start": 0, "stop": 0.2, "step": 0.1},
+            "regression": {"igbt_high_injection": {"current_monotone_abs_tolerance": 0.02}},
+        }
+        strict_cfg = {
+            "output_csv": "outputs/sweep.csv",
+            "sweep": {"mode": "iv", "start": 0, "stop": 0.2, "step": 0.1},
+            "regression": {"igbt_high_injection": {}},
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), strict_cfg, rows, fieldnames)
+            with self.assertRaisesRegex(AssertionError, "IGBT \\|collector current\\|"):
+                run_regression.check_igbt_high_injection_trend(example_dir)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            example_dir = write_example(Path(tmpdir), cfg, rows, fieldnames)
+            result = run_regression.check_igbt_high_injection_trend(example_dir)
+            self.assertEqual(result["final_current_abs"], 0.30)
+
     def test_igbt_charge_cv_can_require_monotone_stored_charge(self) -> None:
         cfg = {
             "output_csv": "outputs/sweep.csv",

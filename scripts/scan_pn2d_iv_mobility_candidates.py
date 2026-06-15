@@ -175,6 +175,7 @@ def resolve_input_paths(deck: dict[str, Any], base_dir: Path) -> dict[str, Any]:
         "node_doping_file",
         "node_mobility_file",
         "node_lifetime_file",
+        "materials_file",
         "interface_charge_file",
     ]
     for key in path_keys:

@@ -18,19 +18,19 @@ public:
     virtual ~BandgapNarrowing() = default;
 
     /// Return the effective bandgap narrowing DeltaEg [eV] at a node.
-    virtual Real deltaEg(Real netDoping, Real n, Real p) const;
+    virtual Real deltaEg(Real impurityConcentration, Real n, Real p) const;
 };
 
 class NoBandgapNarrowing final : public BandgapNarrowing {
 public:
-    Real deltaEg(Real netDoping, Real n, Real p) const override;
+    Real deltaEg(Real impurityConcentration, Real n, Real p) const override;
 };
 
 class SlotboomBandgapNarrowing final : public BandgapNarrowing {
 public:
     explicit SlotboomBandgapNarrowing(BandgapNarrowingConfig config = {});
 
-    Real deltaEg(Real netDoping, Real n, Real p) const override;
+    Real deltaEg(Real impurityConcentration, Real n, Real p) const override;
 
 private:
     BandgapNarrowingConfig config_;

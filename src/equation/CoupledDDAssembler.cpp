@@ -244,24 +244,15 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             const Real coef = mun * Vt_ * couple[e] / h;
             const Index idxI = static_cast<Index>(i);
             const Index idxJ = static_cast<Index>(j);
-            // The balanced quasi-Fermi form cancels equilibrium edges only when
-            // both endpoints share the same intrinsic density.  With BGN, ni can
-            // vary per node, so fall back to the density-based SG flux then.
-            const Real nFlux = (ni_[idxI] == ni_[idxJ])
-                ? sgElectronContinuityFluxFromQuasiFermi(
-                      ni_[idxI],
-                      psi_j,
-                      phin_i,
-                      phin_j,
-                      dpsi,
-                      Vt_,
-                      coef)
-                : sgElectronContinuityFlux(
-                      n(i),
-                      n(j),
-                      dpsi,
-                      Vt_,
-                      coef);
+            const Real nFlux = sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                ni_[idxI],
+                ni_[idxJ],
+                psi_i,
+                psi_j,
+                phin_i,
+                phin_j,
+                Vt_,
+                coef);
             r(phinOffset() + i) += nFlux;
             r(phinOffset() + j) -= nFlux;
         }
@@ -278,24 +269,15 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             const Real coef = mup * Vt_ * couple[e] / h;
             const Index idxI = static_cast<Index>(i);
             const Index idxJ = static_cast<Index>(j);
-            // The balanced quasi-Fermi form cancels equilibrium edges only when
-            // both endpoints share the same intrinsic density.  With BGN, ni can
-            // vary per node, so fall back to the density-based SG flux then.
-            const Real pFlux = (ni_[idxI] == ni_[idxJ])
-                ? sgHoleContinuityFluxFromQuasiFermi(
-                      ni_[idxI],
-                      psi_i,
-                      phip_i,
-                      phip_j,
-                      dpsi,
-                      Vt_,
-                      coef)
-                : sgHoleContinuityFlux(
-                      p(i),
-                      p(j),
-                      dpsi,
-                      Vt_,
-                      coef);
+            const Real pFlux = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                ni_[idxI],
+                ni_[idxJ],
+                psi_i,
+                psi_j,
+                phip_i,
+                phip_j,
+                Vt_,
+                coef);
             r(phipOffset() + i) += pFlux;
             r(phipOffset() + j) -= pFlux;
         }
@@ -502,25 +484,19 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             Real dF_dphin_j = 0.0;
             const Index idxI = static_cast<Index>(i);
             const Index idxJ = static_cast<Index>(j);
-            if (ni_[idxI] == ni_[idxJ]) {
-                const Real factor = coef * ni_[idxI]
-                                  * expPsi[static_cast<std::size_t>(j)];
-                const Real diff = expNegPhin[static_cast<std::size_t>(i)]
-                                - expNegPhin[static_cast<std::size_t>(j)];
-                dF_dpsi_i = factor * (-dBu / Vt_) * diff;
-                dF_dpsi_j = factor * ((dBu + Bu) / Vt_) * diff;
-                dF_dphin_i = factor * Bu
-                           * (-expNegPhin[static_cast<std::size_t>(i)] / Vt_);
-                dF_dphin_j = factor * Bu
-                           * ( expNegPhin[static_cast<std::size_t>(j)] / Vt_);
-            } else {
-                dF_dpsi_i = coef / Vt_ *
-                    ((-dBminusDu + Bminus) * n(i) + dBu * n(j));
-                dF_dpsi_j = coef / Vt_ *
-                    (dBminusDu * n(i) - (dBu + Bu) * n(j));
-                dF_dphin_i = coef * Bminus * (-n(i) / Vt_);
-                dF_dphin_j = coef * Bu * (n(j) / Vt_);
-            }
+            const Real eta = u + std::log(ni_[idxJ] / ni_[idxI]);
+            const Real Bq = bernoulli(eta);
+            const Real dBq = bernoulliDerivative(eta);
+            const Real factor = coef * ni_[idxJ]
+                              * expPsi[static_cast<std::size_t>(j)];
+            const Real diff = expNegPhin[static_cast<std::size_t>(i)]
+                            - expNegPhin[static_cast<std::size_t>(j)];
+            dF_dpsi_i = factor * (-dBq / Vt_) * diff;
+            dF_dpsi_j = factor * ((dBq + Bq) / Vt_) * diff;
+            dF_dphin_i = factor * Bq
+                       * (-expNegPhin[static_cast<std::size_t>(i)] / Vt_);
+            dF_dphin_j = factor * Bq
+                       * ( expNegPhin[static_cast<std::size_t>(j)] / Vt_);
 
             add(phinOffset() + i, psiOffset() + i, dF_dpsi_i);
             add(phinOffset() + i, psiOffset() + j, dF_dpsi_j);
@@ -548,25 +524,19 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             Real dF_dphip_j = 0.0;
             const Index idxI = static_cast<Index>(i);
             const Index idxJ = static_cast<Index>(j);
-            if (ni_[idxI] == ni_[idxJ]) {
-                const Real factor = coef * ni_[idxI]
-                                  * expNegPsi[static_cast<std::size_t>(i)];
-                const Real diff = expPhip[static_cast<std::size_t>(i)]
-                                - expPhip[static_cast<std::size_t>(j)];
-                dF_dpsi_i = factor * (-(dBu + Bu) / Vt_) * diff;
-                dF_dpsi_j = factor * (dBu / Vt_) * diff;
-                dF_dphip_i = factor * Bu
-                           * ( expPhip[static_cast<std::size_t>(i)] / Vt_);
-                dF_dphip_j = factor * Bu
-                           * (-expPhip[static_cast<std::size_t>(j)] / Vt_);
-            } else {
-                dF_dpsi_i = coef / Vt_ *
-                    (-(dBu + Bu) * p(i) + dBminusDu * p(j));
-                dF_dpsi_j = coef / Vt_ *
-                    (dBu * p(i) + (-dBminusDu + Bminus) * p(j));
-                dF_dphip_i = coef * Bu * (p(i) / Vt_);
-                dF_dphip_j = coef * Bminus * (-p(j) / Vt_);
-            }
+            const Real eta = u + std::log(ni_[idxI] / ni_[idxJ]);
+            const Real Bq = bernoulli(eta);
+            const Real dBq = bernoulliDerivative(eta);
+            const Real factor = coef * ni_[idxI]
+                              * expNegPsi[static_cast<std::size_t>(i)];
+            const Real diff = expPhip[static_cast<std::size_t>(i)]
+                            - expPhip[static_cast<std::size_t>(j)];
+            dF_dpsi_i = factor * (-(dBq + Bq) / Vt_) * diff;
+            dF_dpsi_j = factor * (dBq / Vt_) * diff;
+            dF_dphip_i = factor * Bq
+                       * ( expPhip[static_cast<std::size_t>(i)] / Vt_);
+            dF_dphip_j = factor * Bq
+                       * (-expPhip[static_cast<std::size_t>(j)] / Vt_);
 
             add(phipOffset() + i, psiOffset() + i, dF_dpsi_i);
             add(phipOffset() + i, psiOffset() + j, dF_dpsi_j);

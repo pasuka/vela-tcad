@@ -224,7 +224,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     std::vector<double> ni_v = buildNiVector(mesh, matdb, cfg.temperature_K);
     const auto bgn = makeBandgapNarrowingModel(cfg.bandgapNarrowing);
     for (Index i = 0; i < N; ++i) {
-        const double deltaEg = bgn->deltaEg(doping.netDoping(i), 0.0, 0.0);
+        const double deltaEg = bgn->deltaEg(doping.totalImpurity(i), 0.0, 0.0);
         ni_v[i] = effectiveIntrinsicDensity(ni_v[i], Vt, deltaEg);
     }
 
