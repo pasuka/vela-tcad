@@ -32,6 +32,7 @@ jobs:
             libeigen3-dev
             nlohmann-json3-dev
             catch2
+            python3-pil
           version: 1.0
 
       - name: Configure debug build

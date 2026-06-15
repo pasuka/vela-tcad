@@ -24,7 +24,8 @@ jobs:
             ninja-build \
             libeigen3-dev \
             nlohmann-json3-dev \
-            catch2
+            catch2 \
+            python3-pil
 
       - name: Configure debug build
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
