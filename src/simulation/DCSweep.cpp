@@ -6,6 +6,7 @@
 #include "vela/simulation/DCSweepStepControl.h"
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/io/CSVWriter.h"
+#include "vela/io/CsvUtils.h"
 #include "vela/io/MeshReader.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/BandgapNarrowing.h"
@@ -125,19 +126,6 @@ Real perMeterToPerMicron(Real value)
 Real voltsPerMeterToVoltsPerCm(Real value)
 {
     return value / 100.0;
-}
-
-std::string trim(std::string value)
-{
-    const auto first = std::find_if_not(value.begin(), value.end(), [](unsigned char ch) {
-        return std::isspace(ch);
-    });
-    const auto last = std::find_if_not(value.rbegin(), value.rend(), [](unsigned char ch) {
-        return std::isspace(ch);
-    }).base();
-    if (first >= last)
-        return {};
-    return std::string(first, last);
 }
 
 std::vector<Real> buildEffectiveIntrinsicDensityVector(const DeviceMesh& mesh,
@@ -431,20 +419,6 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
         }
     }
     return rows;
-}
-
-std::vector<std::string> splitCsvLine(const std::string& line)
-{
-    if (line.find('"') != std::string::npos) {
-        throw std::runtime_error(
-            "DCSweep: node_doping_file does not support quoted fields.");
-    }
-    std::vector<std::string> columns;
-    std::stringstream ss(line);
-    std::string column;
-    while (std::getline(ss, column, ','))
-        columns.push_back(trim(column));
-    return columns;
 }
 
 std::filesystem::path resolveConfigPath(const std::filesystem::path& cfgDir,
@@ -810,7 +784,9 @@ DopingModel dopingFromJson(const DeviceMesh& mesh,
         if (!std::getline(input, line))
             throw std::runtime_error("DCSweep: node_doping_file is empty: " + path.string());
 
-        const std::vector<std::string> header = splitCsvLine(line);
+        const std::vector<std::string> header = splitCsvLine(
+            line,
+            "DCSweep: node_doping_file does not support quoted fields.");
         std::unordered_map<std::string, std::size_t> columns;
         for (std::size_t i = 0; i < header.size(); ++i)
             columns[header.at(i)] = i;
@@ -823,9 +799,11 @@ DopingModel dopingFromJson(const DeviceMesh& mesh,
         DopingModel model(mesh.numNodes());
         std::vector<bool> seen(static_cast<std::size_t>(mesh.numNodes()), false);
         while (std::getline(input, line)) {
-            if (trim(line).empty())
+            if (trimCsvToken(line).empty())
                 continue;
-            const std::vector<std::string> row = splitCsvLine(line);
+            const std::vector<std::string> row = splitCsvLine(
+                line,
+                "DCSweep: node_doping_file does not support quoted fields.");
             const auto requireColumn = [&](const std::string& name) -> const std::string& {
                 const std::size_t index = columns.at(name);
                 if (index >= row.size())

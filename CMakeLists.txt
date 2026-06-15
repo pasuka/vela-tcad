@@ -57,6 +57,7 @@ add_library(vela_core STATIC
     src/io/MeshReader.cpp
     src/io/VTKWriter.cpp
     src/io/CSVWriter.cpp
+    src/io/CsvUtils.cpp
     src/physics/DopingModel.cpp
     src/physics/CarrierStatistics.cpp
     src/physics/SRHRecombination.cpp
@@ -227,6 +228,9 @@ target_link_libraries(test_linear_solver PRIVATE vela_core Catch2::Catch2WithMai
 add_executable(test_box_geometry tests/test_box_geometry.cpp)
 target_link_libraries(test_box_geometry PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_csv_utils tests/test_csv_utils.cpp)
+target_link_libraries(test_csv_utils PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_bernoulli tests/test_bernoulli.cpp)
 target_link_libraries(test_bernoulli PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -316,6 +320,7 @@ vela_catch_discover_tests(test_poisson)
 add_test(NAME poisson COMMAND test_poisson [poisson])
 vela_catch_discover_tests(test_linear_solver)
 vela_catch_discover_tests(test_box_geometry)
+vela_catch_discover_tests(test_csv_utils)
 vela_catch_discover_tests(test_bernoulli)
 vela_catch_discover_tests(test_sg_flux)
 vela_catch_discover_tests(test_dd_gummel)

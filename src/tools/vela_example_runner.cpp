@@ -1,3 +1,4 @@
+#include "vela/io/CsvUtils.h"
 #include "vela/io/MeshReader.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
@@ -12,7 +13,6 @@
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -132,16 +132,6 @@ NewtonCliResult runNewtonConfig(const std::string& configFile, const nlohmann::j
     return NewtonCliResult{std::move(problem.mesh), std::move(result)};
 }
 
-std::vector<std::string> splitCsvLine(const std::string& line)
-{
-    std::vector<std::string> cells;
-    std::stringstream ss(line);
-    std::string cell;
-    while (std::getline(ss, cell, ','))
-        cells.push_back(cell);
-    return cells;
-}
-
 std::vector<vela::Real> readNodeScalarCsv(const std::filesystem::path& path,
                                           vela::Index nodeCount)
 {
@@ -151,7 +141,7 @@ std::vector<vela::Real> readNodeScalarCsv(const std::filesystem::path& path,
     std::string headerLine;
     if (!std::getline(input, headerLine))
         throw std::runtime_error("Empty scalar field CSV: " + path.string());
-    const std::vector<std::string> header = splitCsvLine(headerLine);
+    const std::vector<std::string> header = vela::splitCsvLine(headerLine);
     std::size_t nodeCol = header.size();
     std::size_t valueCol = header.size();
     for (std::size_t i = 0; i < header.size(); ++i) {
@@ -170,7 +160,7 @@ std::vector<vela::Real> readNodeScalarCsv(const std::filesystem::path& path,
     while (std::getline(input, line)) {
         if (line.empty())
             continue;
-        const std::vector<std::string> cells = splitCsvLine(line);
+        const std::vector<std::string> cells = vela::splitCsvLine(line);
         if (cells.size() <= std::max(nodeCol, valueCol))
             throw std::runtime_error("Malformed scalar field CSV row: " + path.string());
         const auto node = static_cast<vela::Index>(std::stoll(cells[nodeCol]));
@@ -196,7 +186,7 @@ vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,
     std::string headerLine;
     if (!std::getline(input, headerLine))
         throw std::runtime_error("node_doping_file is empty: " + path.string());
-    const std::vector<std::string> header = splitCsvLine(headerLine);
+    const std::vector<std::string> header = vela::splitCsvLine(headerLine);
     std::size_t nodeCol = header.size();
     std::size_t donorsCol = header.size();
     std::size_t acceptorsCol = header.size();
@@ -220,7 +210,7 @@ vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,
     while (std::getline(input, line)) {
         if (line.empty())
             continue;
-        const std::vector<std::string> cells = splitCsvLine(line);
+        const std::vector<std::string> cells = vela::splitCsvLine(line);
         if (cells.size() <= std::max({nodeCol, donorsCol, acceptorsCol}))
             throw std::runtime_error("Malformed node_doping_file row: " + path.string());
         const auto node = static_cast<vela::Index>(std::stoll(cells[nodeCol]));
