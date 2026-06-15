@@ -132,13 +132,26 @@ NewtonCliResult runNewtonConfig(const std::string& configFile, const nlohmann::j
     return NewtonCliResult{std::move(problem.mesh), std::move(result)};
 }
 
+static std::string trimCell(std::string value)
+{
+    const auto first = std::find_if_not(value.begin(), value.end(), [](unsigned char ch) {
+        return std::isspace(ch);
+    });
+    const auto last = std::find_if_not(value.rbegin(), value.rend(), [](unsigned char ch) {
+        return std::isspace(ch);
+    }).base();
+    if (first >= last)
+        return {};
+    return std::string(first, last);
+}
+
 std::vector<std::string> splitCsvLine(const std::string& line)
 {
     std::vector<std::string> cells;
     std::stringstream ss(line);
     std::string cell;
     while (std::getline(ss, cell, ','))
-        cells.push_back(cell);
+        cells.push_back(trimCell(cell));
     return cells;
 }
 
