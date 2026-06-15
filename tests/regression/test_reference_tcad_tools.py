@@ -69,8 +69,10 @@ class ReferenceTcadToolsTest(unittest.TestCase):
 
         self.assertIn("eMobility", text)
         self.assertIn("hMobility", text)
+        self.assertIn("MaxStep=0.025", text)
+        self.assertRegex(text, r'Goal\s*\{\s*Name="Anode"\s*Voltage=2\.0\s*\}')
         self.assertIn(
-            'Plot(FilePrefix="pn2d_iv_multibias" Time=(0;0.25;0.3;0.5;0.8;1.0) NoOverWrite)',
+            'Plot(FilePrefix="pn2d_iv_multibias" Time=(Range=(0 1) Intervals=40) NoOverWrite)',
             text,
         )
 

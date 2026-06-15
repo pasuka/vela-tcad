@@ -91,16 +91,16 @@ Solve {
   Quasistationary(
     InitialStep=1e-3
     MinStep=1e-8
-    MaxStep=0.05
+    MaxStep=0.025
     Increment=1.3
     Goal {
       Name="Anode"
-      Voltage=1.0
+      Voltage=2.0
     }
   ) {
     Coupled {
       Poisson Electron Hole
     }
-    Plot(FilePrefix="pn2d_iv_multibias" Time=(0;0.25;0.3;0.5;0.8;1.0) NoOverWrite)
+    Plot(FilePrefix="pn2d_iv_multibias" Time=(Range=(0 1) Intervals=40) NoOverWrite)
   }
 }
