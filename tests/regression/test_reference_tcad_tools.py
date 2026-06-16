@@ -38,6 +38,12 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         self.assertEqual(config["vela_solver"]["max_update"], 5.0)
         self.assertEqual(zero_bias["vela_solver"]["max_update"], 2.0)
 
+    def test_pn2d_sentaurus2018_preserves_reported_compensated_doping(self) -> None:
+        path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json"
+        config = json.loads(path.read_text())
+
+        self.assertEqual(config["tdr_doping"]["compensated_node_policy"], "reported")
+
     def test_pn2d_sentaurus2018_iv_disables_minority_relaxation(self) -> None:
         path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json"
         config = json.loads(path.read_text())
@@ -70,9 +76,10 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         self.assertIn("eMobility", text)
         self.assertIn("hMobility", text)
         self.assertIn("MaxStep=0.025", text)
-        self.assertRegex(text, r'Goal\s*\{\s*Name="Anode"\s*Voltage=2\.0\s*\}')
+        self.assertRegex(text, r'Goal\s*\{\s*Name="Anode"\s*Voltage=10\.0\s*\}')
+        self.assertIn("0.05 V spacing over the 0-10 V normalized sweep", text)
         self.assertIn(
-            'Plot(FilePrefix="pn2d_iv_multibias" Time=(Range=(0 1) Intervals=40) NoOverWrite)',
+            'Plot(FilePrefix="pn2d_iv_multibias" Time=(Range=(0 1) Intervals=200) NoOverWrite)',
             text,
         )
 

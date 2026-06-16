@@ -95,12 +95,13 @@ Solve {
     Increment=1.3
     Goal {
       Name="Anode"
-      Voltage=2.0
+      Voltage=10.0
     }
   ) {
     Coupled {
       Poisson Electron Hole
     }
-    Plot(FilePrefix="pn2d_iv_multibias" Time=(Range=(0 1) Intervals=40) NoOverWrite)
+    # 0.05 V spacing over the 0-10 V normalized sweep for per-bias TDR comparison.
+    Plot(FilePrefix="pn2d_iv_multibias" Time=(Range=(0 1) Intervals=200) NoOverWrite)
   }
 }

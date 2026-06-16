@@ -4,7 +4,7 @@
   "mesh_tdr": "pn2d_msh.tdr",
   "sde_cmd": "pn2d_sde.cmd",
   "tdr_doping": {
-    "compensated_node_policy": "dominant_signed_region"
+    "compensated_node_policy": "reported"
   },
   "vela_solver": {
     "method": "gummel_newton",

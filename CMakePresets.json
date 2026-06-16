@@ -31,6 +31,21 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "VELA_ENABLE_PYTHON": "ON"
       }
+    },
+    {
+      "name": "windows-ucrt64-release",
+      "displayName": "Windows UCRT64 Release",
+      "description": "Configure an optimized Release build for MSYS2 UCRT64 performance comparisons.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VELA_ENABLE_PYTHON": "OFF",
+        "VELA_ENABLE_HDF5": "ON"
+      },
+      "environment": {
+        "PATH": "D:\\msys64\\ucrt64\\bin;D:\\msys64\\usr\\bin;$penv{PATH}"
+      }
     }
   ],
   "buildPresets": [
@@ -44,6 +59,12 @@
       "name": "windows-ucrt64-debug-python",
       "displayName": "Build Windows UCRT64 Debug + Python",
       "configurePreset": "windows-ucrt64-debug-python",
+      "jobs": 0
+    },
+    {
+      "name": "windows-ucrt64-release",
+      "displayName": "Build Windows UCRT64 Release",
+      "configurePreset": "windows-ucrt64-release",
       "jobs": 0
     }
   ],
@@ -79,6 +100,17 @@
       "name": "windows-ucrt64-debug-python",
       "displayName": "Test Windows UCRT64 Debug + Python",
       "configurePreset": "windows-ucrt64-debug-python",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "jobs": 0
+      }
+    },
+    {
+      "name": "windows-ucrt64-release",
+      "displayName": "Test Windows UCRT64 Release",
+      "configurePreset": "windows-ucrt64-release",
       "output": {
         "outputOnFailure": true
       },
