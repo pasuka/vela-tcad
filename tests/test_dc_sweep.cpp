@@ -1392,6 +1392,94 @@ TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_swe
     REQUIRE(points[1].acceptedStep == Catch::Approx(-0.25));
 }
 
+TEST_CASE("DCSweep: explicit bias_points solve only requested biases", "[dc_sweep]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "bias_points.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.5},
+        {"step", 0.25},
+        {"bias_points", {0.0, 0.125, 0.4}},
+        {"write_vtk", false}
+    });
+
+    DCSweep sweep;
+    const std::vector<DCSweepPoint> points = sweep.run(cfgPath.string());
+
+    REQUIRE(points.size() == 3);
+    REQUIRE(points[0].voltage == Catch::Approx(0.0));
+    REQUIRE(points[1].voltage == Catch::Approx(0.125));
+    REQUIRE(points[2].voltage == Catch::Approx(0.4));
+    REQUIRE(points[1].attemptedStep == Catch::Approx(0.125));
+    REQUIRE(points[1].acceptedStep == Catch::Approx(0.125));
+    REQUIRE(points[2].attemptedStep == Catch::Approx(0.275));
+    REQUIRE(points[2].acceptedStep == Catch::Approx(0.275));
+}
+
+TEST_CASE("DCSweep: write_state_file stores latest converged restart state", "[dc_sweep]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "state_writer.csv";
+    const auto statePath = dir / "latest_state.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.25},
+        {"step", 0.25},
+        {"write_vtk", false},
+        {"write_state_file", statePath.string()}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 2);
+    REQUIRE(std::filesystem::exists(statePath));
+    const auto rows = readCsvRows(statePath);
+    REQUIRE(rows.size() == result.mesh.numNodes() + 1);
+    REQUIRE(rows.front() == std::vector<std::string>{
+        "node_id", "psi", "phin", "phip", "electrons_m3", "holes_m3"});
+    for (std::size_t row = 1; row < rows.size(); ++row) {
+        REQUIRE(rows[row].size() == 6);
+        REQUIRE(std::stoul(rows[row][0]) == row - 1);
+        for (std::size_t column = 1; column < rows[row].size(); ++column)
+            REQUIRE(std::isfinite(std::stod(rows[row][column])));
+    }
+}
+
+TEST_CASE("DCSweep: initial_state_file validates restart node coverage", "[dc_sweep]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "bad_restart.csv";
+    const auto statePath = dir / "bad_state.csv";
+    {
+        std::ofstream state(statePath);
+        state << "node_id,psi,phin,phip,electrons_m3,holes_m3\n";
+        state << "0,0,0,0,1e10,1e10\n";
+    }
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.25},
+        {"write_vtk", false},
+        {"initial_state_file", statePath.string()}
+    });
+
+    DCSweep sweep;
+    REQUIRE_THROWS_WITH(
+        sweep.run(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring("DCSweep: initial_state_file missing row for node id 1"));
+}
+
 
 TEST_CASE("DCSweep step control: invalid direct-call config fails fast", "[dc_sweep]")
 {

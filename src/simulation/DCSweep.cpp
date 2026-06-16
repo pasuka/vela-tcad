@@ -430,6 +430,144 @@ std::filesystem::path resolveConfigPath(const std::filesystem::path& cfgDir,
     return fp;
 }
 
+Real parseRestartStateReal(const std::string& text,
+                           const std::string& column,
+                           Index nodeId)
+{
+    std::size_t consumed = 0;
+    Real value = 0.0;
+    try {
+        value = std::stod(text, &consumed);
+    } catch (const std::exception&) {
+        throw std::runtime_error(
+            "DCSweep: initial_state_file has invalid " + column +
+            " '" + text + "' for node id " + std::to_string(nodeId));
+    }
+    if (consumed != text.size() || !std::isfinite(value)) {
+        throw std::runtime_error(
+            "DCSweep: initial_state_file has invalid " + column +
+            " '" + text + "' for node id " + std::to_string(nodeId));
+    }
+    return value;
+}
+
+long long parseRestartStateNodeId(const std::string& nodeIdText)
+{
+    std::size_t consumed = 0;
+    long long parsedNodeId = 0;
+    try {
+        parsedNodeId = std::stoll(nodeIdText, &consumed);
+    } catch (const std::exception&) {
+        throw std::runtime_error(
+            "DCSweep: initial_state_file has invalid node id '" + nodeIdText + "'");
+    }
+    if (consumed != nodeIdText.size()) {
+        throw std::runtime_error(
+            "DCSweep: initial_state_file has invalid node id '" + nodeIdText + "'");
+    }
+    return parsedNodeId;
+}
+
+DDSolution readDDSolutionStateCsv(const std::filesystem::path& path,
+                                  Index expectedNodeCount)
+{
+    std::ifstream input(path);
+    if (!input.is_open())
+        throw std::runtime_error("DCSweep: cannot open initial_state_file: " + path.string());
+
+    std::string line;
+    if (!std::getline(input, line))
+        throw std::runtime_error("DCSweep: initial_state_file is empty: " + path.string());
+
+    const std::vector<std::string> expectedHeader = {
+        "node_id", "psi", "phin", "phip", "electrons_m3", "holes_m3"};
+    const std::vector<std::string> header = splitCsvLine(
+        line,
+        "DCSweep: initial_state_file does not support quoted fields.");
+    if (header != expectedHeader)
+        throw std::runtime_error(
+            "DCSweep: initial_state_file header must be "
+            "node_id,psi,phin,phip,electrons_m3,holes_m3");
+
+    DDSolution solution;
+    solution.psi = VectorXd::Zero(static_cast<int>(expectedNodeCount));
+    solution.phin = VectorXd::Zero(static_cast<int>(expectedNodeCount));
+    solution.phip = VectorXd::Zero(static_cast<int>(expectedNodeCount));
+    solution.n = VectorXd::Zero(static_cast<int>(expectedNodeCount));
+    solution.p = VectorXd::Zero(static_cast<int>(expectedNodeCount));
+    solution.iters = 0;
+    solution.converged = true;
+
+    std::vector<bool> seen(expectedNodeCount, false);
+    while (std::getline(input, line)) {
+        if (trimCsvToken(line).empty())
+            continue;
+        const std::vector<std::string> row = splitCsvLine(
+            line,
+            "DCSweep: initial_state_file does not support quoted fields.");
+        if (row.size() != expectedHeader.size())
+            throw std::runtime_error(
+                "DCSweep: initial_state_file rows must have 6 columns.");
+        const long long parsedNodeId = parseRestartStateNodeId(row.at(0));
+        if (parsedNodeId < 0 ||
+            parsedNodeId >= static_cast<long long>(expectedNodeCount)) {
+            throw std::runtime_error(
+                "DCSweep: initial_state_file has out-of-range node id " +
+                std::to_string(parsedNodeId));
+        }
+        const Index nodeId = static_cast<Index>(parsedNodeId);
+        if (seen.at(nodeId)) {
+            throw std::runtime_error(
+                "DCSweep: initial_state_file has duplicate row for node id " +
+                std::to_string(nodeId));
+        }
+        seen.at(nodeId) = true;
+        const int rowIndex = static_cast<int>(nodeId);
+        solution.psi(rowIndex) = parseRestartStateReal(row.at(1), "psi", nodeId);
+        solution.phin(rowIndex) = parseRestartStateReal(row.at(2), "phin", nodeId);
+        solution.phip(rowIndex) = parseRestartStateReal(row.at(3), "phip", nodeId);
+        solution.n(rowIndex) = parseRestartStateReal(row.at(4), "electrons_m3", nodeId);
+        solution.p(rowIndex) = parseRestartStateReal(row.at(5), "holes_m3", nodeId);
+    }
+
+    for (Index nodeId = 0; nodeId < expectedNodeCount; ++nodeId) {
+        if (!seen.at(nodeId)) {
+            throw std::runtime_error(
+                "DCSweep: initial_state_file missing row for node id " +
+                std::to_string(nodeId));
+        }
+    }
+    return solution;
+}
+
+void writeDDSolutionStateCsv(const std::filesystem::path& path,
+                             const DDSolution& solution)
+{
+    const auto fieldSize = solution.psi.size();
+    if (solution.phin.size() != fieldSize ||
+        solution.phip.size() != fieldSize ||
+        solution.n.size() != fieldSize ||
+        solution.p.size() != fieldSize) {
+        throw std::runtime_error("DCSweep: cannot write restart state with inconsistent field sizes.");
+    }
+
+    if (!path.parent_path().empty())
+        std::filesystem::create_directories(path.parent_path());
+    std::ofstream output(path);
+    if (!output.is_open())
+        throw std::runtime_error("DCSweep: cannot open write_state_file: " + path.string());
+
+    output << "node_id,psi,phin,phip,electrons_m3,holes_m3\n";
+    for (int i = 0; i < fieldSize; ++i) {
+        output << i << ','
+               << formatReal(solution.psi(i)) << ','
+               << formatReal(solution.phin(i)) << ','
+               << formatReal(solution.phip(i)) << ','
+               << formatReal(solution.n(i)) << ','
+               << formatReal(solution.p(i)) << '\n';
+    }
+}
+
 long long parseNodeDopingNodeId(const std::string& nodeIdText)
 {
     std::size_t consumed = 0;
@@ -607,6 +745,19 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.start = j.at("start").get<Real>();
     sweep.stop = j.at("stop").get<Real>();
     sweep.step = j.at("step").get<Real>();
+    if (j.contains("bias_points")) {
+        const auto& biasPoints = j.at("bias_points");
+        if (!biasPoints.is_array())
+            throw std::invalid_argument("DCSweep: sweep.bias_points must be an array.");
+        if (biasPoints.empty())
+            throw std::invalid_argument("DCSweep: sweep.bias_points must not be empty.");
+        for (const auto& entry : biasPoints) {
+            const Real bias = entry.get<Real>();
+            if (!std::isfinite(bias))
+                throw std::invalid_argument("DCSweep: sweep.bias_points entries must be finite.");
+            sweep.biasPoints.push_back(bias);
+        }
+    }
     const Real nominalStep = std::abs(sweep.step);
     sweep.shrinkFactor = j.value("shrink_factor", sweep.shrinkFactor);
     sweep.growthFactor = j.value("growth_factor", sweep.growthFactor);
@@ -618,6 +769,8 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.writeVtk = j.value("write_vtk", cfg.value("write_vtk", false));
     sweep.csvFile = j.value("csv_file", cfg.value("output_csv", sweep.csvFile));
     sweep.vtkPrefix = j.value("vtk_prefix", cfg.value("output_vtk_prefix", std::string("dc_sweep")));
+    sweep.initialStateFile = j.value("initial_state_file", std::string{});
+    sweep.writeStateFile = j.value("write_state_file", std::string{});
 
     const auto chargeCfg = j.value("terminal_charge", nlohmann::json::object());
     sweep.chargeContact = chargeCfg.value("contact", j.value("charge_contact", sweep.contact));
@@ -714,6 +867,10 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     };
     sweep.csvFile = resolve(sweep.csvFile);
     sweep.vtkPrefix = resolve(sweep.vtkPrefix);
+    if (!sweep.initialStateFile.empty())
+        sweep.initialStateFile = resolve(sweep.initialStateFile);
+    if (!sweep.writeStateFile.empty())
+        sweep.writeStateFile = resolve(sweep.writeStateFile);
     if (sweep.diagnostics.terminalBalance.enabled) {
         if (sweep.diagnostics.terminalBalance.csvFile.empty()) {
             const std::filesystem::path csvPath(sweep.csvFile);
@@ -1899,16 +2056,68 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             point.outputVtk = vtkFilename(sweep.vtkPrefix, vtkIndex++, voltage);
             writeDDSolutionVTK(point.outputVtk, mesh, doping, sol);
         }
+        if (converged && !sweep.writeStateFile.empty())
+            writeDDSolutionStateCsv(sweep.writeStateFile, sol);
 
         points.push_back(std::move(point));
     };
+
+    std::unique_ptr<DDSolution> initialState;
+    if (!sweep.initialStateFile.empty()) {
+        initialState = std::make_unique<DDSolution>(
+            readDDSolutionStateCsv(sweep.initialStateFile, mesh.numNodes()));
+    }
+
+    if (!sweep.biasPoints.empty()) {
+        const DDSolution* initial = initialState.get();
+        Real previousBias = 0.0;
+        bool havePreviousBias = false;
+        for (Real bias : sweep.biasPoints) {
+            SolvePointAttempt attempt;
+            bool ok = false;
+            std::string failureReason;
+            std::string validationDiagnostics;
+            try {
+                attempt = solvePoint(bias, initial);
+                ok = attempt.ok;
+                failureReason = attempt.failureReason;
+                validationDiagnostics = attempt.validationDiagnostics;
+                if (!ok && failureReason.empty())
+                    failureReason = "non_convergence";
+            } catch (const std::exception&) {
+                if (sweep.mode == CurveSweepMode::BVReverse &&
+                    sweep.breakdown.nonConvergenceBreakdown) {
+                    failureReason = "solver_exception";
+                    validationDiagnostics.clear();
+                } else {
+                    throw;
+                }
+            }
+
+            const Real attemptedStep = havePreviousBias ? bias - previousBias : 0.0;
+            recordPoint(bias, attempt, ok, attemptedStep, ok ? attemptedStep : 0.0, 0,
+                        failureReason, validationDiagnostics);
+            if (!ok) {
+                if (sweep.stopOnFailure)
+                    return DCSweepResult{std::move(mesh), std::move(points)};
+                previousBias = bias;
+                havePreviousBias = true;
+                continue;
+            }
+            previousSolution = std::move(attempt.solution);
+            initial = &previousSolution;
+            previousBias = bias;
+            havePreviousBias = true;
+        }
+        return DCSweepResult{std::move(mesh), std::move(points)};
+    }
 
     bool startOk = false;
     SolvePointAttempt startAttempt;
     std::string startFailureReason;
     std::string startValidationDiagnostics;
     try {
-        startAttempt = solvePoint(sweep.start, nullptr);
+        startAttempt = solvePoint(sweep.start, initialState.get());
         startOk = startAttempt.ok;
         startFailureReason = startAttempt.failureReason;
         startValidationDiagnostics = startAttempt.validationDiagnostics;

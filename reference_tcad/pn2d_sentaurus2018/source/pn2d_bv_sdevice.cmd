@@ -27,20 +27,43 @@ Physics {
 }
 
 Plot {
+
+  # Electrostatic
+
   Potential
+  ElectricField
+
+  # Carrier density
+
   eDensity
   hDensity
+
+  # Quasi Fermi
+
   eQuasiFermi
   hQuasiFermi
-  ElectricField
+
+  # Current
+
   eCurrent
   hCurrent
   TotalCurrent
+
+  # Doping
+
   Doping
   DonorConcentration
   AcceptorConcentration
+
+  # Recombination
+
   SRHRecombination
   AvalancheGeneration
+
+  # Mobility diagnostics
+
+  eMobility
+  hMobility
 }
 
 Math {
@@ -65,5 +88,7 @@ Solve {
     Goal { Name="Anode" Voltage=-20.0 }
   ) {
     Coupled { Poisson Electron Hole }
+    # 0.1 V spacing over the 0 to -20 V normalized sweep for per-bias TDR comparison.
+    Plot(FilePrefix="pn2d_bv_multibias" Time=(Range=(0 1) Intervals=200) NoOverWrite)
   }
 }

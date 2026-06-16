@@ -554,12 +554,32 @@ Required core fields:
 - start: number
 - stop: number
 - step: non-zero number, sign must move start toward stop
+- bias_points: optional array of explicit biases. When present, the adaptive
+  `start`/`stop`/`step` stepping loop is bypassed and Vela solves exactly these
+  biases in order. Use a one-element array for a single-bias restart.
 
 Output and current fields:
 - current_contact
 - write_vtk
 - vtk_prefix
 - csv_file
+- initial_state_file: optional restart-state CSV used as the initial
+  `DDSolution` for the first solved bias.
+- write_state_file: optional restart-state CSV overwritten after every
+  converged point with the latest `DDSolution`.
+
+Restart-state CSV files use this exact header:
+
+```text
+node_id,psi,phin,phip,electrons_m3,holes_m3
+```
+
+Rows must cover every mesh node exactly once by `node_id`. All state values are
+stored in SI solver units: potentials in V and carrier densities in `m^-3`.
+For checkpoint-style BV runs, set `write_state_file` during the first run, then
+resume from the latest converged point with `initial_state_file` plus either a
+new adaptive range or `bias_points` for selected target biases. Sweep CSV files
+are still opened as fresh outputs; use distinct CSV names for resumed segments.
 
 For 2-D devices, currents and terminal charges are per-depth quantities by
 default. Legacy CSV current values are per meter of device depth, and
