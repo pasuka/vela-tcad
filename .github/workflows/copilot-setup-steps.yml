@@ -33,6 +33,7 @@ jobs:
             nlohmann-json3-dev
             catch2
             python3-pil
+            python3-numpy
           version: 1.0
 
       - name: Configure debug build
