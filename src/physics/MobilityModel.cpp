@@ -79,6 +79,14 @@ void parseField(const nlohmann::json& json,
     params.beta = json.value((std::string(prefix) + "_field_beta").c_str(), params.beta);
 }
 
+void validateHighFieldDrivingForce(const std::string& value)
+{
+    if (value != "electric_field" && value != "quasi_fermi_gradient")
+        throw std::invalid_argument(
+            "mobility.high_field_driving_force must be 'electric_field' or "
+            "'quasi_fermi_gradient'.");
+}
+
 } // namespace
 
 Real ConstantMobility::electronMobility(const Material& material,
@@ -228,6 +236,7 @@ MobilityModelConfig mobilityModelConfig(std::string modelName)
 {
     MobilityModelConfig config;
     config.model = std::move(modelName);
+    validateHighFieldDrivingForce(config.highFieldDrivingForce);
     return config;
 }
 
@@ -244,6 +253,9 @@ MobilityModelConfig mobilityModelConfigFromJson(
 
     MobilityModelConfig config;
     config.model = value.value("model", config.model);
+    config.highFieldDrivingForce = value.value(
+        "high_field_driving_force", config.highFieldDrivingForce);
+    validateHighFieldDrivingForce(config.highFieldDrivingForce);
 
     parseCaugheyThomas(value, config.electronCT, "electron", scaling);
     parseCaugheyThomas(value, config.holeCT, "hole", scaling);

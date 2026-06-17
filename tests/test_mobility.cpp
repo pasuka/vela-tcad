@@ -110,6 +110,7 @@ TEST_CASE("JSON mobility object parses Masetti parameters with unit scaling",
         json, UnitScalingConfig{UnitScalingMode::UnitScaling});
 
     REQUIRE(cfg.model == "masetti");
+    REQUIRE(cfg.highFieldDrivingForce == "electric_field");
     DopingDependentMobility mobility(cfg);
     MaterialDatabase matdb;
     const Material& si = matdb.getMaterial("Si");
@@ -192,6 +193,23 @@ TEST_CASE("JSON solver config unit_scaling normalizes mobility and field inputs"
     REQUIRE(cfg.impactIonization.holeB == Catch::Approx(2.036e8));
 }
 
+TEST_CASE("JSON mobility object parses high-field quasi-Fermi driving force",
+          "[mobility][json][field]")
+{
+    const MobilityModelConfig cfg = mobilityModelConfigFromJson(nlohmann::json{
+        {"model", "masetti_field"},
+        {"high_field_driving_force", "quasi_fermi_gradient"},
+    });
+
+    REQUIRE(cfg.model == "masetti_field");
+    REQUIRE(cfg.highFieldDrivingForce == "quasi_fermi_gradient");
+
+    REQUIRE_THROWS_AS(mobilityModelConfigFromJson(nlohmann::json{
+        {"model", "masetti_field"},
+        {"high_field_driving_force", "electrostatic"},
+    }), std::invalid_argument);
+}
+
 
 TEST_CASE("JSON mobility surface interface rejects canonical and alias together",
           "[mobility][json][surface]")
@@ -248,6 +266,30 @@ TEST_CASE("Caughey-Thomas field mobility rolls off toward velocity saturation", 
 
     REQUIRE(highField < lowField);
     REQUIRE(highField * 1.0e8 <= config.electronField.saturationVelocity * 1.01);
+}
+
+TEST_CASE("High-field mobility limiter decomposes limited mobility from low-field mobility",
+          "[mobility][field][diagnostics]")
+{
+    MaterialDatabase matdb;
+    const Material& si = matdb.getMaterial("Si");
+    MobilityModelConfig config = mobilityModelConfig("masetti_field");
+    DopingDependentMobility mobility(config);
+
+    const Real netDoping = 1.0e23;
+    const Real lowElectron = mobility.electronMobility(si, netDoping, 0.0, 0.0, 0.0);
+    const Real highElectron = mobility.electronMobility(si, netDoping, 0.0, 0.0, 1.0e8);
+    const Real lowHole = mobility.holeMobility(si, netDoping, 0.0, 0.0, 0.0);
+    const Real highHole = mobility.holeMobility(si, netDoping, 0.0, 0.0, 1.0e8);
+
+    REQUIRE(lowElectron > 0.0);
+    REQUIRE(lowHole > 0.0);
+    REQUIRE(highElectron < lowElectron);
+    REQUIRE(highHole < lowHole);
+    REQUIRE(highElectron / lowElectron > 0.0);
+    REQUIRE(highElectron / lowElectron < 1.0);
+    REQUIRE(highHole / lowHole > 0.0);
+    REQUIRE(highHole / lowHole < 1.0);
 }
 
 TEST_CASE("Material temperature path updates intrinsic density and mobility", "[mobility][temperature]")

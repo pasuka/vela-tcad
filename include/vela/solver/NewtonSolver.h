@@ -48,10 +48,10 @@ struct NewtonConfig {
     Real contactBoundaryMinorityElectronRelaxationStrength = 1.0;
     UnitScalingConfig inputScaling{}; ///< Input-unit mode from top-level config.
     UnitScalingReferenceConfig unitScalingRefs{}; ///< Optional reference overrides.
-    Real taun = 1.0e-7;
-    Real taup = 1.0e-7;
-    Real augerCn = 2.8e-43; ///< Electron Auger coefficient [m^6/s]
-    Real augerCp = 9.9e-44; ///< Hole Auger coefficient [m^6/s]
+    Real taun = 1.0e-5;
+    Real taup = 3.0e-6;
+    Real augerCn = 2.90e-43; ///< Electron Auger coefficient [m^6/s]
+    Real augerCp = 1.028e-43; ///< Hole Auger coefficient [m^6/s]
     MobilityModelConfig mobility{}; ///< Mobility model configuration
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
     ImpactIonizationModelConfig impactIonization; ///< Avalanche generation model.

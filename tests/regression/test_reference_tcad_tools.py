@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import importlib.util
 import json
 import math
 import subprocess
@@ -19,6 +20,25 @@ if str(REPO) not in sys.path:
 
 
 class ReferenceTcadToolsTest(unittest.TestCase):
+    def test_pn2d_bv_curve_loader_prefers_per_um_current(self) -> None:
+        module_path = REPO / "scripts" / "compare_pn2d_bv_multibias_fields.py"
+        spec = importlib.util.spec_from_file_location("compare_pn2d_bv_multibias_fields", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        with tempfile.TemporaryDirectory(prefix="vela_bv_curve_loader_") as tmp:
+            curve = Path(tmp) / "vela_curve.csv"
+            self._write_csv(curve, [
+                "bias_V",
+                "current_total",
+                "current_total_A_per_um",
+                "converged",
+            ], [[-0.2, -1.0e-12, -1.0e-18, 1]])
+
+            self.assertEqual(module.load_curve_points(curve), [(-0.2, -1.0e-18)])
+
     def test_reference_tcad_device_configs_exist(self) -> None:
         expected = [
             REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json",
@@ -68,6 +88,339 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         materials = json.loads(materials_path.read_text())
         si = next(item for item in materials["materials"] if item["name"] == "Si")
         self.assertAlmostEqual(si["ni"], 1.4638914958767616e10)
+
+    def test_pn2d_sentaurus2018_bv_uses_full_sentaurus_physics(self) -> None:
+        path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json"
+        config = json.loads(path.read_text())
+        bv = next(sim for sim in config["simulations"] if sim["name"] == "bv")
+        solver = bv["vela_solver"]
+
+        self.assertAlmostEqual(solver["abstol"], 1.0e-9)
+        self.assertEqual(solver["mobility"]["model"], "masetti_field")
+        self.assertEqual(
+            solver["mobility"]["high_field_driving_force"],
+            "quasi_fermi_gradient",
+        )
+        self.assertIs(
+            solver["contact_boundary_minority_electron_relaxation"],
+            False,
+        )
+        self.assertEqual(solver["bandgap_narrowing"], "old_slotboom")
+        self.assertEqual(solver["recombination"], ["srh"])
+        self.assertEqual(solver["impact_ionization"]["model"], "van_overstraeten")
+        self.assertEqual(
+            solver["impact_ionization"]["driving_force"],
+            "quasi_fermi_gradient",
+        )
+        self.assertEqual(solver["impact_ionization"]["generation"], "current_density")
+        self.assertEqual(bv["vela_stop"], -0.05)
+        self.assertEqual(bv["vela_step"], -0.05)
+        self.assertNotIn("candidate_bias_scale", bv["comparison"])
+        self.assertEqual(bv["runtime_diagnostic"]["step"], 0.05)
+        self.assertEqual(bv["runtime_diagnostic"]["bias_points"], [-0.5, -2.0, -5.0, -10.0, -20.0])
+
+    def test_pn2d_bv_field_compare_script_help(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(REPO / "scripts" / "compare_pn2d_bv_multibias_fields.py"),
+                "--help",
+            ],
+            cwd=REPO,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("--sentaurus-root", result.stdout)
+        self.assertIn("--vela-vtk-root", result.stdout)
+        self.assertIn("--curve-reference", result.stdout)
+
+    def test_pn2d_bv_mobility_debug_script_writes_decomposition_summary(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_mobility_debug_") as tmp:
+            root = Path(tmp)
+            sentaurus = root / "sentaurus" / "sentaurus_0v"
+            fields = sentaurus / "fields"
+            vela = root / "vela"
+            out = root / "out"
+            fields.mkdir(parents=True)
+            vela.mkdir()
+            self._write_csv(sentaurus / "nodes.csv", ["id", "x_um", "y_um"], [
+                [0, 0.0, 0.0],
+                [1, 1.0, 0.0],
+                [2, 0.0, 1.0],
+            ])
+            self._write_csv(sentaurus / "elements.csv", ["id", "node0", "node1", "node2", "region", "material"], [
+                [0, 0, 1, 2, "R.Si", "Si"],
+            ])
+            for name, values in {
+                "eMobility": [700.0, 300.0, 700.0],
+                "hMobility": [320.0, 180.0, 320.0],
+                "eDensity": [1.0e3, 1.0e8, 1.0e3],
+                "hDensity": [1.0e8, 1.0e3, 1.0e8],
+                "ElectrostaticPotential": [0.0, 0.1, 0.0],
+                "ElectricField": [0.0, 1.0e3, 0.0],
+                "eQuasiFermiPotential": [0.0, 0.2, 0.0],
+                "hQuasiFermiPotential": [0.0, -0.1, 0.0],
+            }.items():
+                self._write_csv(fields / f"{name}_region0.csv", ["node_id", "component0"], [
+                    [0, values[0]],
+                    [1, values[1]],
+                    [2, values[2]],
+                ])
+            (vela / "mini_0000_0V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+mini
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 3 float
+0 0 0
+1e-6 0 0
+0 1e-6 0
+CELLS 1 4
+3 0 1 2
+CELL_TYPES 1
+5
+POINT_DATA 3
+SCALARS ElectronMobility float 1
+LOOKUP_TABLE default
+0.07 0.06 0.07
+SCALARS HoleMobility float 1
+LOOKUP_TABLE default
+0.032 0.03 0.032
+SCALARS ElectronLowFieldMobility float 1
+LOOKUP_TABLE default
+0.07 0.07 0.07
+SCALARS HoleLowFieldMobility float 1
+LOOKUP_TABLE default
+0.032 0.032 0.032
+SCALARS ElectronHighFieldDrive float 1
+LOOKUP_TABLE default
+0 10000 0
+SCALARS HoleHighFieldDrive float 1
+LOOKUP_TABLE default
+0 5000 0
+SCALARS ElectronMobilityLimiter float 1
+LOOKUP_TABLE default
+1 0.857142857 1
+SCALARS HoleMobilityLimiter float 1
+LOOKUP_TABLE default
+1 0.9375 1
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+1e9 1e15 1e9
+SCALARS Holes float 1
+LOOKUP_TABLE default
+1e15 1e9 1e15
+SCALARS Potential float 1
+LOOKUP_TABLE default
+0 0 0
+SCALARS ElectronQuasiFermi float 1
+LOOKUP_TABLE default
+0 0 0
+SCALARS HoleQuasiFermi float 1
+LOOKUP_TABLE default
+0 0 0
+SCALARS ElectricField float 1
+LOOKUP_TABLE default
+0 1000 0
+""".lstrip()
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_mobility.py"),
+                    "--sentaurus-root", str(root / "sentaurus"),
+                    "--vela-vtk-root", str(vela),
+                    "--out-dir", str(out),
+                    "--biases", "0",
+                    "--electron-saturation-velocity-m-s", "1.07e5",
+                    "--hole-saturation-velocity-m-s", "8.37e4",
+                    "--electron-field-beta", "1.109",
+                    "--hole-field-beta", "1.213",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            summary_rows = self._read_csv(out / "mobility_decomposition_summary.csv")
+            self.assertEqual(summary_rows[0]["bias_V"], "0.0")
+            self.assertIn("sentaurus_eMobility_min", summary_rows[0])
+            self.assertIn("vela_electron_limiter_min", summary_rows[0])
+            self.assertIn("electron_density_to_mobility_top_error_distance_um", summary_rows[0])
+            self.assertIn("electron_limiter_to_mobility_top_error_distance_um", summary_rows[0])
+            self.assertIn("sentaurus_grad_eQuasiFermiPotential_V_per_cm_p95", summary_rows[0])
+            self.assertIn("sentaurus_electric_field_V_per_cm_p95", summary_rows[0])
+            self.assertIn("sentaurus_electron_implied_high_field_drive_V_per_cm_p95", summary_rows[0])
+            self.assertIn("electron_implied_to_vela_drive_ratio_p95", summary_rows[0])
+            self.assertIn("electron_implied_drive_p95_over_vela_drive_p95", summary_rows[0])
+            self.assertEqual(summary_rows[0]["mobility_model_electron_field_beta"], "1.109")
+            self.assertEqual(summary_rows[0]["mobility_model_hole_saturation_velocity_m_s"], "83700.0")
+            self.assertGreater(
+                float(summary_rows[0]["sentaurus_electron_implied_high_field_drive_V_per_cm_p95"]),
+                0.0,
+            )
+            neighborhood_rows = self._read_csv(out / "top_error_neighborhood.csv")
+            self.assertTrue(neighborhood_rows)
+            anchors = {row["anchor"] for row in neighborhood_rows}
+            self.assertIn("electron_mobility_top_error", anchors)
+            self.assertIn("electron_density_top_error", anchors)
+            electron_mobility = next(
+                row for row in neighborhood_rows
+                if row["anchor"] == "electron_mobility_top_error"
+            )
+            self.assertIn("sentaurus_eMobility", electron_mobility)
+            self.assertIn("vela_electron_mobility", electron_mobility)
+            self.assertIn("vela_electron_high_field_drive_V_per_cm", electron_mobility)
+            self.assertIn("sentaurus_electron_implied_high_field_drive_V_per_cm", electron_mobility)
+            self.assertIn("electron_density_log10_error", electron_mobility)
+            self.assertIn("nearest_vela_node_distance_um", electron_mobility)
+            self.assertIn("sentaurus_eQuasiFermiPotential", electron_mobility)
+            self.assertIn("vela_electron_quasi_fermi", electron_mobility)
+            self.assertIn("sentaurus_grad_eQuasiFermiPotential_V_per_cm", electron_mobility)
+            self.assertIn("vela_grad_phin_V_per_cm", electron_mobility)
+            profile_rows = self._read_csv(out / "quasi_fermi_anchor_profiles.csv")
+            self.assertTrue(profile_rows)
+            self.assertIn("profile_axis", profile_rows[0])
+            self.assertIn("sentaurus_eQuasiFermiPotential", profile_rows[0])
+            self.assertIn("vela_electron_quasi_fermi", profile_rows[0])
+
+    def test_pn2d_bv_heatmap_accepts_sentaurus_impact_ionization_field(self) -> None:
+        text = (REPO / "scripts" / "plot_pn2d_multibias_heatmaps.py").read_text()
+
+        self.assertIn('"sentaurus_field": ["AvalancheGeneration", "ImpactIonization"]', text)
+        self.assertIn('"resolved_sentaurus_fields"', text)
+
+    def test_pn2d_bv_field_compare_writes_validation_summary_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_summary_compare_") as tmp:
+            root = Path(tmp)
+            sentaurus = root / "sentaurus" / "sentaurus_0v"
+            fields = sentaurus / "fields"
+            vela = root / "vela"
+            out = root / "reports"
+            fields.mkdir(parents=True)
+            vela.mkdir()
+
+            self._write_csv(sentaurus / "nodes.csv", ["id", "x_um", "y_um"], [
+                [0, 0.0, 0.0],
+                [1, 1.0, 0.0],
+                [2, 0.0, 1.0],
+                [3, 1.0, 1.0],
+            ])
+            self._write_csv(sentaurus / "elements.csv", ["id", "node0", "node1", "node2", "region", "material"], [
+                [0, 0, 1, 2, "R.Si", "Si"],
+                [1, 1, 3, 2, "R.Si", "Si"],
+            ])
+            self._write_csv(sentaurus / "contacts.csv", ["name", "node_ids", "region"], [
+                ["Anode", "0;2", "R.Si"],
+                ["Cathode", "1;3", "R.Si"],
+            ])
+            self._write_csv(sentaurus / "doping.csv", ["node_id", "donors_cm3", "acceptors_cm3"], [
+                [0, 0.0, 1.0e17],
+                [1, 1.0e17, 0.0],
+                [2, 0.0, 1.0e17],
+                [3, 1.0e17, 0.0],
+            ])
+            self._write_csv(fields / "ElectrostaticPotential_region0.csv", ["node_id", "component0"], [
+                [0, -0.4],
+                [1, 0.4],
+                [2, -0.4],
+                [3, 0.4],
+            ])
+            self._write_csv(fields / "eDensity_region0.csv", ["node_id", "component0"], [
+                [0, 1.0e3],
+                [1, 1.0e10],
+                [2, 1.0e3],
+                [3, 1.0e10],
+            ])
+            self._write_csv(fields / "ImpactIonization_region0.csv", ["node_id", "component0"], [
+                [0, 0.0],
+                [1, 1.0e2],
+                [2, 0.0],
+                [3, 1.0e4],
+            ])
+            (vela / "mini_0000_0V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+mini
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 4 float
+0 0 0
+1e-6 0 0
+0 1e-6 0
+1e-6 1e-6 0
+CELLS 2 8
+3 0 1 2
+3 1 3 2
+CELL_TYPES 2
+5
+5
+POINT_DATA 4
+SCALARS Potential float 1
+LOOKUP_TABLE default
+-0.39 0.41 -0.42 0.38
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+1e12 1e16 1e12 1e16
+SCALARS AvalancheGeneration float 1
+LOOKUP_TABLE default
+0 1e8 0 1e10
+""".lstrip()
+            )
+            reference_curve = root / "sentaurus_curve.csv"
+            candidate_curve = root / "vela_curve.csv"
+            self._write_csv(reference_curve, ["bias_V", "current_total"], [[0.0, 1.0e-26]])
+            self._write_csv(candidate_curve, [
+                "bias_V", "current_total_A_per_um", "converged",
+            ], [[0.0, 1.0e-20, 1]])
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_pn2d_bv_multibias_fields.py"),
+                    "--sentaurus-root",
+                    str(root / "sentaurus"),
+                    "--vela-vtk-root",
+                    str(vela),
+                    "--curve-reference",
+                    str(reference_curve),
+                    "--curve-candidate",
+                    str(candidate_curve),
+                    "--out-dir",
+                    str(out),
+                    "--biases",
+                    "0",
+                    "--quantities",
+                    "potential,electron_density,avalanche_generation",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            self.assertTrue((out / "field_compare.csv").is_file())
+            self.assertTrue((out / "curve_compare.csv").is_file())
+            self.assertTrue((out / "debug_ranking.json").is_file())
+            self.assertTrue((out / "README.md").is_file())
+
+            curve_rows = self._read_csv(out / "curve_compare.csv")
+            self.assertEqual(curve_rows[0]["status"], "below_current_floor")
+            self.assertEqual(curve_rows[0]["log10_abs_ratio"], "")
+
+            field_rows = self._read_csv(out / "field_compare.csv")
+            electron = next(row for row in field_rows if row["quantity"] == "electron_density")
+            self.assertEqual(electron["status"], "ok")
+            self.assertIn("top_error_x_um", electron)
+            self.assertIn("p_contact_error", electron)
+            self.assertIn("n_contact_error", electron)
+            self.assertIn("junction_error", electron)
+            self.assertIn("bulk_error", electron)
+
+            ranking = json.loads((out / "debug_ranking.json").read_text())
+            self.assertEqual(ranking["field_rankings"][0]["quantity"], "electron_density")
 
     def test_pn2d_sentaurus2018_iv_cmd_writes_multibias_debug_snapshots(self) -> None:
         path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "source" / "pn2d_iv_sdevice.cmd"

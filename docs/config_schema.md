@@ -335,8 +335,10 @@ Notes:
   `recombination_mean_abs_rate_m3_per_s`, and
   `carrier_product_max_np_over_ni2`.
   These columns are disabled by default.
+- `taun` and `taup` override the SRH lifetime defaults (`1e-5 s` and `3e-6 s`).
 - `auger_cn_m6_per_s` and `auger_cp_m6_per_s` override the Auger coefficients
-  passed into the recombination model (`2.8e-43` and `9.9e-44 m^6/s` defaults).
+  passed into the recombination model (`2.90e-43` and `1.028e-43 m^6/s`
+  Sentaurus 2018 silicon-at-300 K defaults).
   Negative values are rejected by the recombination model validation.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 - With `scaling.mode: "unit_scaling"`, `bandgap_narrowing.reference_doping_m3`
@@ -409,18 +411,23 @@ Object form:
   "model": "slotboom",
   "reference_doping_m3": 1.0e23,
   "coefficient_eV": 0.009,
-  "smoothing": 0.5
+  "smoothing": 0.5,
+  "offset_eV": 0.0
 }
 ```
 
 Supported `model` values:
 - `none`
 - `slotboom`
+- `old_slotboom`
 
-The Slotboom prototype computes an effective bandgap narrowing from the maximum
-of absolute net doping and local carrier densities, then feeds the resulting
-effective intrinsic density into the drift-diffusion statistics path. This is
-implemented in Gummel and Newton configurations. With
+The Slotboom and OldSlotboom prototypes compute an effective bandgap narrowing
+from the maximum of absolute net doping and local carrier densities, then feed
+the resulting effective intrinsic density into the drift-diffusion statistics
+path. `old_slotboom` uses the Sentaurus 2018 silicon defaults from
+`models.par`: `dEg0 = -1.595e-2 eV`, `Ebgn = 9e-3 eV`,
+`Nref = 1e17 cm^-3`, and `C = 0.5`. This is implemented in Gummel and Newton
+configurations. With
 `scaling.mode: "unit_scaling"`, `reference_doping_m3` numeric input is read as
 `cm^-3` and normalized to `m^-3`.
 
@@ -454,6 +461,8 @@ Object form:
 ```json
 "impact_ionization": {
   "model": "selberherr",
+  "driving_force": "electric_field",
+  "generation": "carrier_density",
   "electron_A_m_inv": 7.03e7,
   "electron_B_V_m": 1.231e8,
   "hole_A_m_inv": 1.582e8,
@@ -465,6 +474,7 @@ Object form:
 Supported `model` values:
 - `none`
 - `selberherr`
+- `van_overstraeten`
 
 Field meanings (Selberherr prototype):
 - `electron_A_m_inv` (1/m): electron ionization prefactor.
@@ -473,21 +483,35 @@ Field meanings (Selberherr prototype):
 - `hole_B_V_m` (V/m): hole critical field.
 - `carrier_velocity_m_s` (m/s): effective saturated carrier speed used by the
   generation-rate proxy.
+- `driving_force`: `electric_field` (default) or `quasi_fermi_gradient`.
+  Sentaurus `Avalanche(VanOverstraeten)` decks use `quasi_fermi_gradient`.
+- `generation`: `carrier_density` (legacy `alpha*v*n/p` proxy) or
+  `current_density` (`alpha_n*mu_n*n*|grad(phin)| + alpha_p*mu_p*p*|grad(phip)|`).
 
 Validation:
 - `electron_A_m_inv`, `hole_A_m_inv`, and `carrier_velocity_m_s` must be non-negative.
 - `electron_B_V_m` and `hole_B_V_m` must be positive.
+- `driving_force` must be `electric_field` or `quasi_fermi_gradient`.
+- `generation` must be `carrier_density` or `current_density`.
 
 Scaling:
 - With `scaling.mode: "unit_scaling"`, `electron_A_m_inv` and
   `hole_A_m_inv` numeric inputs are read as `cm^-1`, while
   `electron_B_V_m` and `hole_B_V_m` are read as `V/cm`. They are normalized
   to `1/m` and `V/m` before the impact-ionization model sees them.
+- The Van Overstraeten model also accepts split low/high-field parameters:
+  `electron_a_low_m_inv`, `electron_a_high_m_inv`, `electron_b_low_V_m`,
+  `electron_b_high_V_m`, `hole_a_low_m_inv`, `hole_a_high_m_inv`,
+  `hole_b_low_V_m`, `hole_b_high_V_m`, `switch_field_V_m`,
+  `phonon_energy_eV`, `reference_temperature_K`, and `temperature_K`.
+  Its defaults match the Sentaurus 2018 silicon `vanOverstraetendeMan`
+  parameters at 300 K.
 - `carrier_velocity_m_s` remains `m/s`.
 
 Prototype note:
-- This is an engineering impact-ionization source term for smoke diagnostics; it
-  is not a calibrated avalanche-breakdown prediction model.
+- The default `carrier_density` path preserves the original engineering source
+  term for smoke diagnostics. The `quasi_fermi_gradient` + `current_density`
+  path aligns the PN2D Sentaurus 2018 BV driving-force semantics.
 
 ### mobility
 
@@ -502,6 +526,7 @@ Object form:
 ```json
 "mobility": {
   "model": "caughey_thomas_field_surface",
+  "high_field_driving_force": "electric_field",
   "electron_mu_min_m2_V_s": 0.00522,
   "electron_nref_m3": 9.68e22,
   "electron_alpha": 0.68,
@@ -528,6 +553,10 @@ Object form:
 Supported `model` values are `constant`, `caughey_thomas`,
 `caughey_thomas_field`, `caughey_thomas_surface`,
 `caughey_thomas_field_surface`, `masetti`, and `masetti_field`.
+For field-saturation models, `high_field_driving_force` is `electric_field`
+by default and may be set to `quasi_fermi_gradient` to match Sentaurus
+`HighFieldSaturation`; electrons use `|grad(phin)|` and holes use
+`|grad(phip)|`.
 The `masetti` models implement a Masetti-style silicon doping-dependent
 mobility shape with configurable electron/hole fields:
 `*_mu_const_m2_V_s`, `*_mumin1_m2_V_s`, `*_mumin2_m2_V_s`,

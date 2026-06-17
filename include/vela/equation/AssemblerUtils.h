@@ -16,6 +16,7 @@
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
+#include "vela/physics/ImpactIonizationModel.h"
 #include "vela/physics/MobilityModel.h"
 #include "vela/physics/BandgapNarrowing.h"
 #include <Eigen/Sparse>
@@ -178,8 +179,9 @@ inline std::vector<Real> computeEdgeCouplings(const DeviceMesh& mesh)
     return couple;
 }
 
-/// Return a per-node max adjacent-edge electric-field magnitude [V/m].
-inline std::vector<Real> computeNodeElectricFields(const VectorXd& psi, const DeviceMesh& mesh)
+/// Return a per-node max adjacent-edge scalar-gradient magnitude [scalar unit/m].
+inline std::vector<Real> computeNodeScalarGradientMagnitudes(const VectorXd& value,
+                                                            const DeviceMesh& mesh)
 {
     std::vector<Real> maxField(mesh.numNodes(), 0.0);
     for (Index e = 0; e < mesh.numEdges(); ++e) {
@@ -188,11 +190,17 @@ inline std::vector<Real> computeNodeElectricFields(const VectorXd& psi, const De
             continue;
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
-        const Real edgeField = std::abs((psi(j) - psi(i)) / edge.length);
+        const Real edgeField = std::abs((value(j) - value(i)) / edge.length);
         maxField[edge.n0] = std::max(maxField[edge.n0], edgeField);
         maxField[edge.n1] = std::max(maxField[edge.n1], edgeField);
     }
     return maxField;
+}
+
+/// Return a per-node max adjacent-edge electric-field magnitude [V/m].
+inline std::vector<Real> computeNodeElectricFields(const VectorXd& psi, const DeviceMesh& mesh)
+{
+    return computeNodeScalarGradientMagnitudes(psi, mesh);
 }
 
 /// Build edge -> adjacent cell ids map.
@@ -220,6 +228,18 @@ inline std::vector<std::vector<Index>> buildEdgeCellMap(const DeviceMesh& mesh)
         }
     }
     return edgeCells;
+}
+
+/// Build node -> adjacent cell ids map.
+inline std::vector<std::vector<Index>> buildNodeCellMap(const DeviceMesh& mesh)
+{
+    std::vector<std::vector<Index>> nodeCells(mesh.numNodes());
+    for (Index c = 0; c < mesh.numCells(); ++c) {
+        const Cell& cell = mesh.getCell(c);
+        for (Index nodeId : cell.node_ids)
+            nodeCells[nodeId].push_back(c);
+    }
+    return nodeCells;
 }
 
 // ---------------------------------------------------------------------------
@@ -400,6 +420,73 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
     if (contributingCells == 0)
         return 0.0;
     return sum / static_cast<Real>(contributingCells);
+}
+
+/// Return average model mobility [m^2/V/s] over semiconductor cells adjacent to a node.
+inline Real nodeMobility(const std::vector<std::vector<Index>>& nodeCells,
+                         const DeviceMesh&                     mesh,
+                         const DopingModel&                    doping,
+                         const MobilityModel&                  mobility,
+                         const std::vector<Material>&          cellMaterials,
+                         Index                                 nodeId,
+                         CarrierType                           carrier,
+                         Real                                  drivingField)
+{
+    const auto& cells = nodeCells[nodeId];
+    if (cells.empty())
+        return 0.0;
+
+    Real sum = 0.0;
+    Index contributingCells = 0;
+    for (Index c : cells) {
+        const Material& material = cellMaterials.at(static_cast<std::size_t>(c));
+        const Real baseMobility = (carrier == CarrierType::Electron) ? material.mun : material.mup;
+        if (baseMobility <= 0.0)
+            continue;
+        const Real modelMobility = (carrier == CarrierType::Electron)
+            ? mobility.electronMobility(
+                material, doping.netDoping(nodeId), 0.0, 0.0, drivingField)
+            : mobility.holeMobility(
+                material, doping.netDoping(nodeId), 0.0, 0.0, drivingField);
+        if (modelMobility <= 0.0)
+            continue;
+        sum += modelMobility;
+        ++contributingCells;
+    }
+    if (contributingCells == 0)
+        return 0.0;
+    return sum / static_cast<Real>(contributingCells);
+}
+
+inline Real impactIonizationGenerationRate(
+    const ImpactIonizationModelConfig& config,
+    const ImpactIonizationModel&       impact,
+    const MobilityModelConfig&         mobilityConfig,
+    const MobilityModel&               mobility,
+    const std::vector<std::vector<Index>>& nodeCells,
+    const DeviceMesh&                  mesh,
+    const DopingModel&                 doping,
+    const std::vector<Material>&       cellMaterials,
+    Index                              nodeId,
+    Real                               electricField,
+    Real                               electronDrivingField,
+    Real                               holeDrivingField,
+    Real                               n,
+    Real                               p)
+{
+    if (config.generation != "current_density")
+        return impact.generationRate(electricField, n, p);
+
+    const Real alphaN = impact.electronCoefficient(electronDrivingField);
+    const Real alphaP = impact.holeCoefficient(holeDrivingField);
+    const Real mun = nodeMobility(
+        nodeCells, mesh, doping, mobility, cellMaterials, nodeId, CarrierType::Electron,
+        electronDrivingField);
+    const Real mup = nodeMobility(
+        nodeCells, mesh, doping, mobility, cellMaterials, nodeId, CarrierType::Hole,
+        holeDrivingField);
+    return alphaN * mun * std::max(n, 0.0) * std::abs(electronDrivingField) +
+           alphaP * mup * std::max(p, 0.0) * std::abs(holeDrivingField);
 }
 
 /// Return average dielectric constant [F/m] for edge @p edgeId.

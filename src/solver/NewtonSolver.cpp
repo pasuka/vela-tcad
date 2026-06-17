@@ -17,6 +17,25 @@
 namespace vela {
 namespace {
 
+void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& config,
+                                          const char* context)
+{
+    if (config.drivingForce != "electric_field" &&
+        config.drivingForce != "quasi_fermi_gradient") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.driving_force must be 'electric_field' or "
+            "'quasi_fermi_gradient'.");
+    }
+    if (config.generation != "carrier_density" &&
+        config.generation != "current_density") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.generation must be 'carrier_density' or "
+            "'current_density'.");
+    }
+}
+
 std::string normalizeToken(std::string value)
 {
     std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
@@ -370,9 +389,10 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (json.contains("bandgap_narrowing")) {
         const auto& value = json.at("bandgap_narrowing");
         if (value.is_string()) {
-            cfg.bandgapNarrowing.model = value.get<std::string>();
+            cfg.bandgapNarrowing = bandgapNarrowingConfig(value.get<std::string>());
         } else if (value.is_object()) {
-            cfg.bandgapNarrowing.model = value.value("model", cfg.bandgapNarrowing.model);
+            cfg.bandgapNarrowing = bandgapNarrowingConfig(
+                value.value("model", cfg.bandgapNarrowing.model));
             if (value.contains("reference_doping_m3")) {
                 cfg.bandgapNarrowing.referenceDoping = scaling.concentrationToSI(
                     value.at("reference_doping_m3").get<Real>());
@@ -381,6 +401,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "coefficient_eV", cfg.bandgapNarrowing.coefficient);
             cfg.bandgapNarrowing.smoothing = value.value(
                 "smoothing", cfg.bandgapNarrowing.smoothing);
+            cfg.bandgapNarrowing.offset = value.value(
+                "offset_eV", cfg.bandgapNarrowing.offset);
         } else {
             throw std::invalid_argument(
                 "newtonConfigFromJson: bandgap_narrowing must be a string or object.");
@@ -415,6 +437,10 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             cfg.impactIonization.model = value.get<std::string>();
         } else if (value.is_object()) {
             cfg.impactIonization.model = value.value("model", cfg.impactIonization.model);
+            cfg.impactIonization.drivingForce = value.value(
+                "driving_force", cfg.impactIonization.drivingForce);
+            cfg.impactIonization.generation = value.value(
+                "generation", cfg.impactIonization.generation);
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());
@@ -431,6 +457,48 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 cfg.impactIonization.holeB = scaling.electricFieldToSI(
                     value.at("hole_B_V_m").get<Real>());
             }
+            if (value.contains("electron_a_low_m_inv")) {
+                cfg.impactIonization.electronALow = scaling.inverseLengthToSI(
+                    value.at("electron_a_low_m_inv").get<Real>());
+            }
+            if (value.contains("electron_a_high_m_inv")) {
+                cfg.impactIonization.electronAHigh = scaling.inverseLengthToSI(
+                    value.at("electron_a_high_m_inv").get<Real>());
+            }
+            if (value.contains("electron_b_low_V_m")) {
+                cfg.impactIonization.electronBLow = scaling.electricFieldToSI(
+                    value.at("electron_b_low_V_m").get<Real>());
+            }
+            if (value.contains("electron_b_high_V_m")) {
+                cfg.impactIonization.electronBHigh = scaling.electricFieldToSI(
+                    value.at("electron_b_high_V_m").get<Real>());
+            }
+            if (value.contains("hole_a_low_m_inv")) {
+                cfg.impactIonization.holeALow = scaling.inverseLengthToSI(
+                    value.at("hole_a_low_m_inv").get<Real>());
+            }
+            if (value.contains("hole_a_high_m_inv")) {
+                cfg.impactIonization.holeAHigh = scaling.inverseLengthToSI(
+                    value.at("hole_a_high_m_inv").get<Real>());
+            }
+            if (value.contains("hole_b_low_V_m")) {
+                cfg.impactIonization.holeBLow = scaling.electricFieldToSI(
+                    value.at("hole_b_low_V_m").get<Real>());
+            }
+            if (value.contains("hole_b_high_V_m")) {
+                cfg.impactIonization.holeBHigh = scaling.electricFieldToSI(
+                    value.at("hole_b_high_V_m").get<Real>());
+            }
+            if (value.contains("switch_field_V_m")) {
+                cfg.impactIonization.switchField = scaling.electricFieldToSI(
+                    value.at("switch_field_V_m").get<Real>());
+            }
+            cfg.impactIonization.phononEnergy = value.value(
+                "phonon_energy_eV", cfg.impactIonization.phononEnergy);
+            cfg.impactIonization.referenceTemperature_K = value.value(
+                "reference_temperature_K", cfg.impactIonization.referenceTemperature_K);
+            cfg.impactIonization.temperature_K = value.value(
+                "temperature_K", cfg.impactIonization.temperature_K);
             cfg.impactIonization.carrierVelocity = value.value(
                 "carrier_velocity_m_s", cfg.impactIonization.carrierVelocity);
         } else {
@@ -438,6 +506,7 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "newtonConfigFromJson: impact_ionization must be a string or object.");
         }
     }
+    validateImpactIonizationDrivingForce(cfg.impactIonization, "newtonConfigFromJson");
 
     if (cfg.jacobian != "analytic" && cfg.jacobian != "finite_difference")
         throw std::invalid_argument(
@@ -754,6 +823,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     // Scharfetter-Gummel flux.  Set warm_start=true to preserve the supplied
     // quasi-Fermi potentials, which is useful for continuation runs where the
     // previous bias point is already a high-quality initial guess.
+    VectorXd psiInit = initial.psi;
     VectorXd phinInit = initial.phin;
     VectorXd phipInit = initial.phip;
     const int N = static_cast<int>(mesh_.numNodes());
@@ -769,8 +839,14 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
 
     const Real potentialScale =
         assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    for (const auto& [nid, value] : bcs.psi)
+        psiInit(static_cast<int>(nid)) = value * potentialScale;
+    for (const auto& [nid, value] : bcs.phin)
+        phinInit(static_cast<int>(nid)) = value * potentialScale;
+    for (const auto& [nid, value] : bcs.phip)
+        phipInit(static_cast<int>(nid)) = value * potentialScale;
     VectorXd x = assembler.pack({
-        initial.psi / potentialScale,
+        psiInit / potentialScale,
         phinInit / potentialScale,
         phipInit / potentialScale});
     VectorXd r = assembler.residual(x, bcs);

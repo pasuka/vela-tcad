@@ -65,6 +65,12 @@ struct SweepTransportDiagnostics {
     Real maxElectricField_V_per_cm = 0.0;
     Real meanElectronQfGradient_V_per_cm = 0.0;
     Real meanHoleQfGradient_V_per_cm = 0.0;
+    Real meanElectronHighFieldDrive_V_per_cm = 0.0;
+    Real meanHoleHighFieldDrive_V_per_cm = 0.0;
+    Real minElectronMobilityLimiter = 0.0;
+    Real minHoleMobilityLimiter = 0.0;
+    Real meanElectronMobilityLimiter = 0.0;
+    Real meanHoleMobilityLimiter = 0.0;
 };
 
 struct ContinuityBalanceDiagnosticRow {
@@ -215,11 +221,20 @@ SweepTransportDiagnostics computeSweepTransportDiagnostics(
     Real holeMobilitySum = 0.0;
     Real electronQfGradientSum = 0.0;
     Real holeQfGradientSum = 0.0;
+    Real electronHighFieldDriveSum = 0.0;
+    Real holeHighFieldDriveSum = 0.0;
+    Real electronLimiterSum = 0.0;
+    Real holeLimiterSum = 0.0;
     Index electronMobilityCount = 0;
     Index holeMobilityCount = 0;
     Index qfGradientCount = 0;
+    Index highFieldDriveCount = 0;
+    Index electronLimiterCount = 0;
+    Index holeLimiterCount = 0;
     bool hasElectronMobility = false;
     bool hasHoleMobility = false;
+    bool hasElectronLimiter = false;
+    bool hasHoleLimiter = false;
 
     for (Index e = 0; e < mesh.numEdges(); ++e) {
         const Edge& edge = mesh.getEdge(e);
@@ -237,10 +252,28 @@ SweepTransportDiagnostics computeSweepTransportDiagnostics(
         diagnostics.maxElectricField_V_per_cm =
             std::max(diagnostics.maxElectricField_V_per_cm,
                      voltsPerMeterToVoltsPerCm(electricField));
+        const Real electronMobilityField =
+            mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient"
+            ? std::abs(sol.phin(i1) - sol.phin(i0)) / length
+            : electricField;
+        const Real holeMobilityField =
+            mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient"
+            ? std::abs(sol.phip(i1) - sol.phip(i0)) / length
+            : electricField;
+        electronHighFieldDriveSum += voltsPerMeterToVoltsPerCm(electronMobilityField);
+        holeHighFieldDriveSum += voltsPerMeterToVoltsPerCm(holeMobilityField);
+        ++highFieldDriveCount;
+
+        const Real electronLowFieldMobility = detail::edgeMobility(
+            edgeCells, mesh, doping, *mobility, cellMaterials, e, CarrierType::Electron,
+            0.0, &mobilityConfig, nullptr);
+        const Real holeLowFieldMobility = detail::edgeMobility(
+            edgeCells, mesh, doping, *mobility, cellMaterials, e, CarrierType::Hole,
+            0.0, &mobilityConfig, nullptr);
 
         const Real electronMobility = detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, e, CarrierType::Electron,
-            electricField, &mobilityConfig, &sol.psi);
+            electronMobilityField, &mobilityConfig, &sol.psi);
         if (electronMobility > 0.0 && std::isfinite(electronMobility)) {
             electronMobilitySum += electronMobility;
             diagnostics.minElectronMobility_m2_V_s = hasElectronMobility
@@ -248,11 +281,22 @@ SweepTransportDiagnostics computeSweepTransportDiagnostics(
                 : electronMobility;
             hasElectronMobility = true;
             ++electronMobilityCount;
+            if (electronLowFieldMobility > 0.0 && std::isfinite(electronLowFieldMobility)) {
+                const Real limiter = electronMobility / electronLowFieldMobility;
+                if (std::isfinite(limiter)) {
+                    electronLimiterSum += limiter;
+                    diagnostics.minElectronMobilityLimiter = hasElectronLimiter
+                        ? std::min(diagnostics.minElectronMobilityLimiter, limiter)
+                        : limiter;
+                    hasElectronLimiter = true;
+                    ++electronLimiterCount;
+                }
+            }
         }
 
         const Real holeMobility = detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, e, CarrierType::Hole,
-            electricField, &mobilityConfig, &sol.psi);
+            holeMobilityField, &mobilityConfig, &sol.psi);
         if (holeMobility > 0.0 && std::isfinite(holeMobility)) {
             holeMobilitySum += holeMobility;
             diagnostics.minHoleMobility_m2_V_s = hasHoleMobility
@@ -260,6 +304,17 @@ SweepTransportDiagnostics computeSweepTransportDiagnostics(
                 : holeMobility;
             hasHoleMobility = true;
             ++holeMobilityCount;
+            if (holeLowFieldMobility > 0.0 && std::isfinite(holeLowFieldMobility)) {
+                const Real limiter = holeMobility / holeLowFieldMobility;
+                if (std::isfinite(limiter)) {
+                    holeLimiterSum += limiter;
+                    diagnostics.minHoleMobilityLimiter = hasHoleLimiter
+                        ? std::min(diagnostics.minHoleMobilityLimiter, limiter)
+                        : limiter;
+                    hasHoleLimiter = true;
+                    ++holeLimiterCount;
+                }
+            }
         }
 
         electronQfGradientSum += voltsPerMeterToVoltsPerCm(
@@ -281,6 +336,18 @@ SweepTransportDiagnostics computeSweepTransportDiagnostics(
         diagnostics.meanHoleQfGradient_V_per_cm =
             holeQfGradientSum / static_cast<Real>(qfGradientCount);
     }
+    if (highFieldDriveCount > 0) {
+        diagnostics.meanElectronHighFieldDrive_V_per_cm =
+            electronHighFieldDriveSum / static_cast<Real>(highFieldDriveCount);
+        diagnostics.meanHoleHighFieldDrive_V_per_cm =
+            holeHighFieldDriveSum / static_cast<Real>(highFieldDriveCount);
+    }
+    if (electronLimiterCount > 0)
+        diagnostics.meanElectronMobilityLimiter =
+            electronLimiterSum / static_cast<Real>(electronLimiterCount);
+    if (holeLimiterCount > 0)
+        diagnostics.meanHoleMobilityLimiter =
+            holeLimiterSum / static_cast<Real>(holeLimiterCount);
     return diagnostics;
 }
 
@@ -318,9 +385,14 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
         const Real electricField = std::abs(sol.psi(j) - sol.psi(i)) / h;
+        const Real drivingField = mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient"
+            ? ((carrier == CarrierType::Electron)
+                ? std::abs(sol.phin(j) - sol.phin(i)) / h
+                : std::abs(sol.phip(j) - sol.phip(i)) / h)
+            : electricField;
         const Real mu = detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId, carrier,
-            electricField, &mobilityConfig, &sol.psi);
+            drivingField, &mobilityConfig, &sol.psi);
         if (mu <= 0.0)
             return Real{0.0};
         const Real coef = mu * Vt * edge.couple / h;
@@ -1229,16 +1301,19 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
     RecombinationModelConfig sweepRecombinationConfig;
     BandgapNarrowingConfig sweepBgnConfig;
+    ImpactIonizationModelConfig sweepImpactIonizationConfig;
     if (solverMethod == SolverMethod::Newton || solverMethod == SolverMethod::GummelNewton) {
         sweepRecombinationConfig = recombinationModelConfig(newton.recombination, newton.taun, newton.taup);
         sweepRecombinationConfig.augerCn = newton.augerCn;
         sweepRecombinationConfig.augerCp = newton.augerCp;
         sweepBgnConfig = newton.bandgapNarrowing;
+        sweepImpactIonizationConfig = newton.impactIonization;
     } else {
         sweepRecombinationConfig = recombinationModelConfig(gummel.recombination, gummel.taun, gummel.taup);
         sweepRecombinationConfig.augerCn = gummel.augerCn;
         sweepRecombinationConfig.augerCp = gummel.augerCp;
         sweepBgnConfig = gummel.bandgapNarrowing;
+        sweepImpactIonizationConfig = gummel.impactIonization;
     }
     const std::vector<Real> effectiveNi = buildEffectiveIntrinsicDensityVector(
         mesh, matdb, doping, temperature_K, sweepBgnConfig);
@@ -1335,6 +1410,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         header.push_back("max_electric_field_V_per_cm");
         header.push_back("mean_electron_qf_gradient_V_per_cm");
         header.push_back("mean_hole_qf_gradient_V_per_cm");
+        header.push_back("mean_electron_high_field_drive_V_per_cm");
+        header.push_back("mean_hole_high_field_drive_V_per_cm");
+        header.push_back("min_electron_mobility_limiter");
+        header.push_back("min_hole_mobility_limiter");
+        header.push_back("mean_electron_mobility_limiter");
+        header.push_back("mean_hole_mobility_limiter");
     }
     csv.writeHeader(header);
 
@@ -1794,6 +1875,20 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 "mean_electron_qf_gradient_V_per_cm", diagnostics.meanElectronQfGradient_V_per_cm);
             point.extraFields.emplace_back(
                 "mean_hole_qf_gradient_V_per_cm", diagnostics.meanHoleQfGradient_V_per_cm);
+            point.extraFields.emplace_back(
+                "mean_electron_high_field_drive_V_per_cm",
+                diagnostics.meanElectronHighFieldDrive_V_per_cm);
+            point.extraFields.emplace_back(
+                "mean_hole_high_field_drive_V_per_cm",
+                diagnostics.meanHoleHighFieldDrive_V_per_cm);
+            point.extraFields.emplace_back(
+                "min_electron_mobility_limiter", diagnostics.minElectronMobilityLimiter);
+            point.extraFields.emplace_back(
+                "min_hole_mobility_limiter", diagnostics.minHoleMobilityLimiter);
+            point.extraFields.emplace_back(
+                "mean_electron_mobility_limiter", diagnostics.meanElectronMobilityLimiter);
+            point.extraFields.emplace_back(
+                "mean_hole_mobility_limiter", diagnostics.meanHoleMobilityLimiter);
         }
         if (writeUnitScaledColumns) {
             point.extraFields.emplace_back(
@@ -1923,7 +2018,13 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                      std::string("min_hole_mobility_m2_V_s"),
                      std::string("max_electric_field_V_per_cm"),
                      std::string("mean_electron_qf_gradient_V_per_cm"),
-                     std::string("mean_hole_qf_gradient_V_per_cm")}) {
+                     std::string("mean_hole_qf_gradient_V_per_cm"),
+                     std::string("mean_electron_high_field_drive_V_per_cm"),
+                     std::string("mean_hole_high_field_drive_V_per_cm"),
+                     std::string("min_electron_mobility_limiter"),
+                     std::string("min_hole_mobility_limiter"),
+                     std::string("mean_electron_mobility_limiter"),
+                     std::string("mean_hole_mobility_limiter")}) {
                 const auto it = extraFieldValues.find(name);
                 row.push_back(formatReal(it != extraFieldValues.end() ? it->second : 0.0));
             }
@@ -2054,7 +2155,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
         if (converged && sweep.writeVtk) {
             point.outputVtk = vtkFilename(sweep.vtkPrefix, vtkIndex++, voltage);
-            writeDDSolutionVTK(point.outputVtk, mesh, doping, sol);
+            writeDDSolutionVTK(point.outputVtk,
+                               mesh,
+                               matdb,
+                               doping,
+                               sol,
+                               mobilityConfig,
+                               sweepRecombinationConfig,
+                               sweepImpactIonizationConfig,
+                               sweepBgnConfig,
+                               temperature_K);
         }
         if (converged && !sweep.writeStateFile.empty())
             writeDDSolutionStateCsv(sweep.writeStateFile, sol);
@@ -2077,13 +2187,88 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             bool ok = false;
             std::string failureReason;
             std::string validationDiagnostics;
+            Real recordedVoltage = bias;
+            Real attemptedStep = havePreviousBias ? bias - previousBias : 0.0;
+            Real acceptedStep = 0.0;
+            int retryCount = 0;
             try {
-                attempt = solvePoint(bias, initial);
-                ok = attempt.ok;
-                failureReason = attempt.failureReason;
-                validationDiagnostics = attempt.validationDiagnostics;
-                if (!ok && failureReason.empty())
-                    failureReason = "non_convergence";
+                if (!havePreviousBias) {
+                    attempt = solvePoint(bias, initial);
+                    ok = attempt.ok;
+                    acceptedStep = ok ? attemptedStep : 0.0;
+                    failureReason = attempt.failureReason;
+                    validationDiagnostics = attempt.validationDiagnostics;
+                    if (!ok && failureReason.empty())
+                        failureReason = "non_convergence";
+                } else {
+                    const Real direction = (bias >= previousBias) ? 1.0 : -1.0;
+                    detail::DCSweepStepControlConfig pointStepControl;
+                    pointStepControl.start = previousBias;
+                    pointStepControl.stop = bias;
+                    pointStepControl.step = direction * std::min(
+                        std::abs(sweep.step), std::abs(bias - previousBias));
+                    pointStepControl.minStep = sweep.minStep;
+                    pointStepControl.maxStep = sweep.maxStep;
+                    pointStepControl.growthFactor = sweep.growthFactor;
+                    pointStepControl.shrinkFactor = sweep.shrinkFactor;
+                    pointStepControl.maxRetries = sweep.maxRetries;
+                    pointStepControl.stopOnFailure = sweep.stopOnFailure;
+
+                    DDSolution localPreviousSolution = previousSolution;
+                    SolvePointAttempt lastPointAttempt;
+                    std::string lastPointFailureReason;
+                    std::string lastPointValidationDiagnostics;
+
+                    detail::runDCSweepStepControl(
+                        pointStepControl,
+                        [&](Real voltage, Real, int) {
+                            try {
+                                SolvePointAttempt pointAttempt =
+                                    solvePoint(voltage, &localPreviousSolution);
+                                const bool pointOk = pointAttempt.ok;
+                                lastPointAttempt = std::move(pointAttempt);
+                                lastPointFailureReason = pointOk
+                                    ? std::string()
+                                    : lastPointAttempt.failureReason;
+                                lastPointValidationDiagnostics =
+                                    lastPointAttempt.validationDiagnostics;
+                                return pointOk;
+                            } catch (const std::exception&) {
+                                if (sweep.mode == CurveSweepMode::BVReverse &&
+                                    sweep.breakdown.nonConvergenceBreakdown) {
+                                    lastPointAttempt = SolvePointAttempt{};
+                                    lastPointFailureReason = "solver_exception";
+                                    lastPointValidationDiagnostics.clear();
+                                    return false;
+                                }
+                                throw;
+                            }
+                        },
+                        [&](const detail::DCSweepStepControlEvent& event) {
+                            recordedVoltage = event.voltage;
+                            attemptedStep = event.attemptedStep;
+                            acceptedStep = event.acceptedStep;
+                            retryCount = event.retryCount;
+                            ok = event.converged;
+                            attempt = std::move(lastPointAttempt);
+                            validationDiagnostics = lastPointValidationDiagnostics;
+                            if (!event.converged) {
+                                failureReason = !lastPointFailureReason.empty()
+                                    ? lastPointFailureReason
+                                    : event.failureReason;
+                                return;
+                            }
+                            failureReason.clear();
+                            localPreviousSolution = attempt.solution;
+                        });
+
+                    if (ok) {
+                        previousSolution = std::move(localPreviousSolution);
+                        initial = &previousSolution;
+                    } else if (failureReason.empty()) {
+                        failureReason = "non_convergence";
+                    }
+                }
             } catch (const std::exception&) {
                 if (sweep.mode == CurveSweepMode::BVReverse &&
                     sweep.breakdown.nonConvergenceBreakdown) {
@@ -2094,18 +2279,19 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 }
             }
 
-            const Real attemptedStep = havePreviousBias ? bias - previousBias : 0.0;
-            recordPoint(bias, attempt, ok, attemptedStep, ok ? attemptedStep : 0.0, 0,
+            recordPoint(recordedVoltage, attempt, ok, attemptedStep, acceptedStep, retryCount,
                         failureReason, validationDiagnostics);
             if (!ok) {
                 if (sweep.stopOnFailure)
                     return DCSweepResult{std::move(mesh), std::move(points)};
-                previousBias = bias;
+                previousBias = recordedVoltage;
                 havePreviousBias = true;
                 continue;
             }
-            previousSolution = std::move(attempt.solution);
-            initial = &previousSolution;
+            if (!havePreviousBias) {
+                previousSolution = std::move(attempt.solution);
+                initial = &previousSolution;
+            }
             previousBias = bias;
             havePreviousBias = true;
         }

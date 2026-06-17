@@ -54,6 +54,30 @@ TEST_CASE("Selberherr impact ionization grows with electric field", "[impact]")
     REQUIRE(model.generationRate(5.0e8, 1.0e20, 2.0e20) > 0.0);
 }
 
+TEST_CASE("Van Overstraeten impact ionization matches Sentaurus 2018 silicon defaults",
+          "[impact][van_overstraeten]")
+{
+    const auto model = makeImpactIonizationModel(
+        impactIonizationModelConfig("van_overstraeten"));
+
+    const Real lowField = 2.0e7;  // 2e5 V/cm, below E0.
+    const Real highField = 5.0e7; // 5e5 V/cm, above E0.
+
+    const Real expectedElectronLow = 7.03e7 * std::exp(-1.231e8 / lowField);
+    const Real expectedHoleLow = 1.582e8 * std::exp(-2.036e8 / lowField);
+    const Real expectedElectronHigh = 7.03e7 * std::exp(-1.231e8 / highField);
+    const Real expectedHoleHigh = 6.71e7 * std::exp(-1.693e8 / highField);
+
+    REQUIRE(model->electronCoefficient(lowField) ==
+            Catch::Approx(expectedElectronLow).epsilon(1.0e-12));
+    REQUIRE(model->holeCoefficient(lowField) ==
+            Catch::Approx(expectedHoleLow).epsilon(1.0e-12));
+    REQUIRE(model->electronCoefficient(highField) ==
+            Catch::Approx(expectedElectronHigh).epsilon(1.0e-12));
+    REQUIRE(model->holeCoefficient(highField) ==
+            Catch::Approx(expectedHoleHigh).epsilon(1.0e-12));
+}
+
 TEST_CASE("Gummel reverse bias BV regression runs with impact ionization", "[impact][gummel]")
 {
     DeviceMesh mesh = makePNMesh();
@@ -145,6 +169,61 @@ TEST_CASE("Coupled DD residual includes impact-ionization generation", "[impact]
     REQUIRE(sawGeneration);
 }
 
+TEST_CASE("Quasi-Fermi avalanche driving force ignores built-in electrostatic field",
+          "[impact][newton]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    CoupledDDState state;
+    state.psi = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.phin = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.phip = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.psi(1) = 1.0;
+    state.psi(2) = 1.0;
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const RecombinationModelConfig recombinationConfig = recombinationModelConfig({"none"});
+    CoupledDDAssembler noImpact(
+        mesh, matdb, doping, Vt, mobilityConfig, recombinationConfig);
+
+    ImpactIonizationModelConfig qfImpact;
+    qfImpact.model = "selberherr";
+    qfImpact.drivingForce = "quasi_fermi_gradient";
+    qfImpact.generation = "current_density";
+    qfImpact.electronA = 1.0;
+    qfImpact.electronB = 1.0;
+    qfImpact.holeA = 1.0;
+    qfImpact.holeB = 1.0;
+    CoupledDDAssembler withQuasiFermiImpact(
+        mesh,
+        matdb,
+        doping,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        BandgapNarrowingConfig{},
+        qfImpact);
+
+    const VectorXd x = noImpact.pack(state);
+    const CoupledDDBoundaryConditions bcs;
+    const VectorXd r0 = noImpact.residual(x, bcs);
+    const VectorXd r1 = withQuasiFermiImpact.residual(x, bcs);
+
+    const int phinOffset = static_cast<int>(mesh.numNodes());
+    const int phipOffset = 2 * static_cast<int>(mesh.numNodes());
+    for (int i = 0; i < static_cast<int>(mesh.numNodes()); ++i) {
+        REQUIRE(r1(phinOffset + i) == Catch::Approx(r0(phinOffset + i)).margin(1.0e-18));
+        REQUIRE(r1(phipOffset + i) == Catch::Approx(r0(phipOffset + i)).margin(1.0e-18));
+    }
+}
+
 TEST_CASE("Coupled DD analytic avalanche Jacobian matches carrier finite differences", "[impact][newton]")
 {
     DeviceMesh mesh = makePNMesh();
@@ -232,4 +311,43 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
     REQUIRE(objectCfg.impactIonization.holeA == Catch::Approx(4.0e6));
     REQUIRE(objectCfg.impactIonization.holeB == Catch::Approx(5.0e7));
     REQUIRE(objectCfg.impactIonization.carrierVelocity == Catch::Approx(6.0e4));
+
+    const NewtonConfig vanOverstraetenCfg = newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"electron_a_low_m_inv", 1.0e6},
+            {"electron_b_low_V_m", 2.0e7},
+            {"hole_a_high_m_inv", 3.0e6},
+            {"hole_b_high_V_m", 4.0e7},
+            {"switch_field_V_m", 5.0e7},
+            {"phonon_energy_eV", 0.063},
+            {"temperature_K", 300.0},
+        }}
+    });
+    REQUIRE(vanOverstraetenCfg.impactIonization.model == "van_overstraeten");
+    REQUIRE(vanOverstraetenCfg.impactIonization.electronALow == Catch::Approx(1.0e6));
+    REQUIRE(vanOverstraetenCfg.impactIonization.electronBLow == Catch::Approx(2.0e7));
+    REQUIRE(vanOverstraetenCfg.impactIonization.holeAHigh == Catch::Approx(3.0e6));
+    REQUIRE(vanOverstraetenCfg.impactIonization.holeBHigh == Catch::Approx(4.0e7));
+    REQUIRE(vanOverstraetenCfg.impactIonization.switchField == Catch::Approx(5.0e7));
+    REQUIRE(vanOverstraetenCfg.impactIonization.phononEnergy == Catch::Approx(0.063));
+    REQUIRE(vanOverstraetenCfg.impactIonization.temperature_K == Catch::Approx(300.0));
+
+    const NewtonConfig sentaurusCfg = newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"driving_force", "quasi_fermi_gradient"},
+            {"generation", "current_density"},
+        }}
+    });
+    REQUIRE(sentaurusCfg.impactIonization.model == "van_overstraeten");
+    REQUIRE(sentaurusCfg.impactIonization.drivingForce == "quasi_fermi_gradient");
+    REQUIRE(sentaurusCfg.impactIonization.generation == "current_density");
+
+    REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"driving_force", "electrostatic"},
+        }}
+    }), std::invalid_argument);
 }

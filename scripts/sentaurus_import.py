@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import re
 import shlex
 import shutil
@@ -24,7 +25,6 @@ UNSUPPORTED_PHYSICS = [
     "IALMob",
     "Trap",
     "Traps",
-    "Avalanche",
     "eTemperature",
     "hTemperature",
 ]
@@ -437,7 +437,6 @@ def unsupported_report(tokens: list[str]) -> list[dict[str, str]]:
         "IALMob": "IALMob surface-orientation mobility is not represented by the current mobility model.",
         "Trap": "Interface and bulk trap kinetics are imported as metadata only.",
         "Traps": "Interface and bulk trap kinetics are imported as metadata only.",
-        "Avalanche": "Avalanche generation is not calibrated to Sentaurus model semantics yet.",
         "eTemperature": "Carrier temperature transport is not supported in the Vela runner.",
         "hTemperature": "Carrier temperature transport is not supported in the Vela runner.",
     }
@@ -486,7 +485,10 @@ def apply_solver_physics(deck: dict[str, Any],
     if has_doping_dependence:
         solver["mobility"] = {"model": "masetti"}
     if has_doping_dependence and {"Mobility", "HighFieldSaturation"} <= models:
-        solver["mobility"] = {"model": "masetti_field"}
+        solver["mobility"] = {
+            "model": "masetti_field",
+            "high_field_driving_force": "quasi_fermi_gradient",
+        }
 
     recombination = []
     if "SRH" in models:
@@ -497,10 +499,17 @@ def apply_solver_physics(deck: dict[str, Any],
         solver["recombination"] = recombination
 
     if "OldSlotboom" in models:
-        solver["bandgap_narrowing"] = "slotboom"
+        solver["bandgap_narrowing"] = "old_slotboom"
 
     if "Avalanche" in models:
-        solver["impact_ionization"] = {"model": "selberherr"}
+        if "VanOverstraeten" in models:
+            solver["impact_ionization"] = {
+                "model": "van_overstraeten",
+                "driving_force": "quasi_fermi_gradient",
+                "generation": "current_density",
+            }
+        else:
+            solver["impact_ionization"] = {"model": "selberherr"}
         if "OkutoCrowell" in models:
             warnings.append("OkutoCrowell approximated by Selberherr")
 
@@ -652,10 +661,21 @@ def build_runner_deck(summary: dict[str, Any], mesh_json: str, output_csv: str) 
     start = electrodes.get(str(final_sweep["contact"]), 0.0)
     intervals = final_sweep.get("current_plot", {}).get("intervals") if isinstance(final_sweep.get("current_plot"), dict) else None
     step = (final_stop - start) / float(intervals) if intervals else final_stop / 80.0 if final_stop != 0.0 else 1.0
+    step_control = final_sweep.get("step_control", {}) if isinstance(final_sweep.get("step_control"), dict) else {}
     contacts = [
         {"name": name, "bias": voltage}
         for name, voltage in electrodes.items()
     ]
+    sweep = {
+        "mode": "iv",
+        "contact": final_sweep["contact"],
+        "current_contact": final_sweep["contact"],
+        "start": start,
+        "stop": final_stop,
+        "step": step,
+        "write_vtk": False,
+    }
+    apply_step_control_to_vela_sweep(sweep, step_control)
     return {
         "simulation_type": "dc_sweep",
         "mesh_file": mesh_json,
@@ -668,15 +688,7 @@ def build_runner_deck(summary: dict[str, Any], mesh_json: str, output_csv: str) 
             "max_iter": 100,
             "reltol": 1.0e-5,
         },
-        "sweep": {
-            "mode": "iv",
-            "contact": final_sweep["contact"],
-            "current_contact": final_sweep["contact"],
-            "start": start,
-            "stop": final_stop,
-            "step": step,
-            "write_vtk": False,
-        },
+        "sweep": sweep,
         "sentaurus_import": {
             "unsupported_physics": summary.get("unsupported_physics", []),
             "unsupported_report": summary.get("unsupported_report", []),
@@ -832,6 +844,36 @@ def deck_template_type(sim: dict[str, Any]) -> str:
     return "bv" if str(sim.get("kind", "iv")).lower() == "bv" else "iv"
 
 
+def apply_step_control_to_vela_sweep(vela_sweep: dict[str, Any],
+                                     step_control: dict[str, Any]) -> None:
+    max_step = numeric_or_none(step_control.get("MaxStep"))
+    min_step = numeric_or_none(step_control.get("MinStep"))
+    increment = numeric_or_none(step_control.get("Increment"))
+    decrement = numeric_or_none(step_control.get("Decrement"))
+    if max_step is not None and max_step > 0.0:
+        vela_sweep["max_step"] = max_step
+    if min_step is not None and min_step > 0.0:
+        vela_sweep["min_step"] = min_step
+    if increment is not None and increment >= 1.0:
+        vela_sweep["growth_factor"] = increment
+    if decrement is not None and decrement > 1.0:
+        shrink_factor = 1.0 / decrement
+        vela_sweep["shrink_factor"] = shrink_factor
+        if (
+            max_step is not None and max_step > 0.0
+            and min_step is not None and min_step > 0.0
+            and min_step < max_step
+        ):
+            retries = int(math.ceil(math.log(min_step / max_step) / math.log(shrink_factor)))
+            vela_sweep["max_retries"] = max(int(vela_sweep.get("max_retries", 0)), retries)
+
+
+def signed_step_toward(start: float, stop: float, magnitude: float) -> float:
+    if magnitude == 0.0:
+        return 0.0
+    return math.copysign(abs(magnitude), stop - start if stop != start else magnitude)
+
+
 def patch_reference_deck(deck_path: Path,
                          cmd_summary: dict[str, Any],
                          sim: dict[str, Any],
@@ -861,7 +903,12 @@ def patch_reference_deck(deck_path: Path,
     deck["sweep"]["current_contact"] = sim.get("vela_current_contact", contact)
     deck["sweep"]["start"] = start
     deck["sweep"]["stop"] = stop
-    deck["sweep"]["step"] = max_step if max_step is not None and max_step > 0.0 else (stop - start) / 80.0
+    deck["sweep"]["step"] = (
+        signed_step_toward(start, stop, max_step)
+        if max_step is not None and max_step > 0.0
+        else (stop - start) / 80.0
+    )
+    apply_step_control_to_vela_sweep(deck["sweep"], step_control)
     if kind in ("equilibrium", "0v"):
         deck["sweep"]["step"] = 0.0
     if "vela_stop" in sim:

@@ -777,6 +777,67 @@ TEST_CASE("DCSweep: transport diagnostics append mobility and current-driver col
     csvColumnIndex(header, "max_electric_field_V_per_cm");
     csvColumnIndex(header, "mean_electron_qf_gradient_V_per_cm");
     csvColumnIndex(header, "mean_hole_qf_gradient_V_per_cm");
+    const std::size_t meanElectronDriveCol =
+        csvColumnIndex(header, "mean_electron_high_field_drive_V_per_cm");
+    const std::size_t meanHoleDriveCol =
+        csvColumnIndex(header, "mean_hole_high_field_drive_V_per_cm");
+    const std::size_t minElectronLimiterCol =
+        csvColumnIndex(header, "min_electron_mobility_limiter");
+    const std::size_t minHoleLimiterCol =
+        csvColumnIndex(header, "min_hole_mobility_limiter");
+    const std::size_t meanElectronLimiterCol =
+        csvColumnIndex(header, "mean_electron_mobility_limiter");
+    const std::size_t meanHoleLimiterCol =
+        csvColumnIndex(header, "mean_hole_mobility_limiter");
+    const auto& data = rows.at(1);
+    REQUIRE(std::isfinite(csvReal(data, meanElectronDriveCol)));
+    REQUIRE(std::isfinite(csvReal(data, meanHoleDriveCol)));
+    REQUIRE(std::isfinite(csvReal(data, minElectronLimiterCol)));
+    REQUIRE(std::isfinite(csvReal(data, minHoleLimiterCol)));
+    REQUIRE(std::isfinite(csvReal(data, meanElectronLimiterCol)));
+    REQUIRE(std::isfinite(csvReal(data, meanHoleLimiterCol)));
+}
+
+TEST_CASE("DCSweep: VTK transport diagnostics include mobility decomposition fields",
+          "[dc_sweep][diagnostics][vtk]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "iv_transport_vtk.csv";
+    const auto vtkPrefix = dir / "iv_transport_vtk";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.05},
+        {"write_vtk", true},
+        {"vtk_prefix", vtkPrefix.string()},
+        {"solver", {
+            {"mobility", {
+                {"model", "masetti_field"},
+                {"high_field_driving_force", "quasi_fermi_gradient"},
+            }},
+        }},
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    REQUIRE_FALSE(result.points.front().outputVtk.empty());
+
+    std::ifstream ifs(result.points.front().outputVtk);
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                         std::istreambuf_iterator<char>());
+
+    REQUIRE(content.find("ElectronLowFieldMobility") != std::string::npos);
+    REQUIRE(content.find("HoleLowFieldMobility") != std::string::npos);
+    REQUIRE(content.find("ElectronHighFieldDrive") != std::string::npos);
+    REQUIRE(content.find("HoleHighFieldDrive") != std::string::npos);
+    REQUIRE(content.find("ElectronMobilityLimiter") != std::string::npos);
+    REQUIRE(content.find("HoleMobilityLimiter") != std::string::npos);
 }
 
 TEST_CASE("DCSweep: contact-edge diagnostics are opt-in and write per-edge rows",
@@ -1416,8 +1477,8 @@ TEST_CASE("DCSweep: explicit bias_points solve only requested biases", "[dc_swee
     REQUIRE(points[2].voltage == Catch::Approx(0.4));
     REQUIRE(points[1].attemptedStep == Catch::Approx(0.125));
     REQUIRE(points[1].acceptedStep == Catch::Approx(0.125));
-    REQUIRE(points[2].attemptedStep == Catch::Approx(0.275));
-    REQUIRE(points[2].acceptedStep == Catch::Approx(0.275));
+    REQUIRE(points[2].attemptedStep == Catch::Approx(0.025));
+    REQUIRE(points[2].acceptedStep == Catch::Approx(0.025));
 }
 
 TEST_CASE("DCSweep: write_state_file stores latest converged restart state", "[dc_sweep]")

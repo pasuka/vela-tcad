@@ -74,6 +74,17 @@ TEST_CASE("Total recombination is SRH plus Auger", "[recombination]")
             Catch::Approx(total.srhRate(n, p, ni) + total.augerRate(n, p, ni)));
 }
 
+TEST_CASE("Default recombination parameters match Sentaurus 2018 silicon at 300 K",
+          "[recombination][sentaurus]")
+{
+    const RecombinationModelConfig cfg = recombinationModelConfig({"srh", "auger"});
+
+    REQUIRE(cfg.taun == Catch::Approx(1.0e-5));
+    REQUIRE(cfg.taup == Catch::Approx(3.0e-6));
+    REQUIRE(cfg.augerCn == Catch::Approx(2.90e-43).epsilon(1.0e-12));
+    REQUIRE(cfg.augerCp == Catch::Approx(1.028e-43).epsilon(1.0e-12));
+}
+
 TEST_CASE("Default bandgap narrowing interface returns zero", "[bgn]")
 {
     NoBandgapNarrowing bgn;
@@ -116,6 +127,8 @@ TEST_CASE("Bandgap narrowing factory validates model names", "[bgn]")
             == Catch::Approx(0.0));
     REQUIRE(makeBandgapNarrowingModel(bandgapNarrowingConfig("slotboom"))->deltaEg(1.0e25, 0.0, 0.0)
             > 0.0);
+    REQUIRE(makeBandgapNarrowingModel(bandgapNarrowingConfig("old_slotboom"))->deltaEg(1.0e24, 0.0, 0.0)
+            == Catch::Approx(0.0264516824523).epsilon(1.0e-10));
     REQUIRE_THROWS_AS(makeBandgapNarrowingModel(bandgapNarrowingConfig("unknown")),
                       std::invalid_argument);
 }

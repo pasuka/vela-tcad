@@ -51,6 +51,7 @@ struct SurfaceMobilityParameters {
 
 struct MobilityModelConfig {
     std::string model = "constant";
+    std::string highFieldDrivingForce = "electric_field";
 
     // 300 K silicon defaults converted from common Caughey-Thomas parameter
     // sets expressed in cm^2/(V s) and cm^-3.

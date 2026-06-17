@@ -60,7 +60,102 @@ class SentaurusImportToolsTest(unittest.TestCase):
         )
 
         self.assertEqual(deck["solver"]["mobility"]["model"], "masetti_field")
+        self.assertEqual(
+            deck["solver"]["mobility"]["high_field_driving_force"],
+            "quasi_fermi_gradient",
+        )
         self.assertEqual(warnings, [])
+
+    def test_solver_physics_maps_old_slotboom_and_van_overstraeten(self) -> None:
+        deck = {"solver": {"type": "gummel"}}
+
+        warnings = sentaurus_import.apply_solver_physics(
+            deck,
+            {"physics": [{"models": ["EffectiveIntrinsicDensity", "OldSlotboom",
+                                     "Recombination", "Avalanche", "VanOverstraeten"]}]},
+            {"name": "bv", "kind": "bv"},
+        )
+
+        self.assertEqual(deck["solver"]["bandgap_narrowing"], "old_slotboom")
+        self.assertEqual(deck["solver"]["impact_ionization"]["model"], "van_overstraeten")
+        self.assertEqual(
+            deck["solver"]["impact_ionization"]["driving_force"],
+            "quasi_fermi_gradient",
+        )
+        self.assertEqual(deck["solver"]["impact_ionization"]["generation"], "current_density")
+        self.assertEqual(warnings, [])
+
+    def test_reference_patch_preserves_negative_bv_sweep_direction(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_negative_bv_patch_") as tmp:
+            root = Path(tmp)
+            deck_path = root / "simulation_bv.json"
+            deck_path.write_text(json.dumps({
+                "contacts": [
+                    {"name": "Anode", "bias": 0.0},
+                    {"name": "Cathode", "bias": 0.0},
+                ],
+                "solver": {"method": "gummel_newton"},
+                "sweep": {},
+            }) + "\n")
+
+            sentaurus_import.patch_reference_deck(
+                deck_path,
+                {
+                    "physics": [],
+                    "sweeps": [{
+                        "contact": "Anode",
+                        "stop": -20.0,
+                        "step_control": {
+                            "MaxStep": 0.05,
+                            "MinStep": 1.0e-10,
+                            "Increment": 1.2,
+                            "Decrement": 2.0,
+                        },
+                    }],
+                },
+                {
+                    "name": "bv",
+                    "kind": "bv",
+                    "vela_stop": -0.05,
+                    "vela_step": -0.05,
+                    "comparison": {
+                        "candidate_column": "current_total_A_per_um",
+                    },
+                },
+                "bv.csv",
+            )
+
+            deck = json.loads(deck_path.read_text())
+            self.assertEqual(deck["sweep"]["mode"], "bv_reverse")
+            self.assertEqual(deck["sweep"]["stop"], -0.05)
+            self.assertEqual(deck["sweep"]["step"], -0.05)
+            self.assertEqual(deck["sweep"]["max_step"], 0.05)
+            self.assertEqual(deck["sweep"]["min_step"], 1.0e-10)
+
+            deck_path.write_text(json.dumps({
+                "contacts": [
+                    {"name": "Anode", "bias": 0.0},
+                    {"name": "Cathode", "bias": 0.0},
+                ],
+                "solver": {"method": "gummel_newton"},
+                "sweep": {},
+            }) + "\n")
+            sentaurus_import.patch_reference_deck(
+                deck_path,
+                {
+                    "physics": [],
+                    "sweeps": [{
+                        "contact": "Anode",
+                        "stop": -20.0,
+                        "step_control": {"MaxStep": 0.05},
+                    }],
+                },
+                {"name": "bv", "kind": "bv"},
+                "bv.csv",
+            )
+            deck = json.loads(deck_path.read_text())
+            self.assertEqual(deck["sweep"]["stop"], -20.0)
+            self.assertEqual(deck["sweep"]["step"], -0.05)
 
     def test_plt_parser_exports_reference_curve(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_sentaurus_plt_") as tmp:
@@ -190,7 +285,7 @@ Solve {
   ){ Coupled { Poisson Electron Hole } }
   NewCurrentFile="IdVd_"
   Quasistationary(
-    InitialStep=1e-6 MinStep=1e-12 MaxStep=0.1
+    InitialStep=1e-6 MinStep=1e-12 MaxStep=0.1 Increment=1.2 Decrement=2
     Goal { Name="drain" Voltage=30 }
   ){ Coupled { Poisson Electron Hole }
      CurrentPlot( Time=(Range=(0 1) Intervals=80 ) )
@@ -254,6 +349,11 @@ Solve {
             self.assertIn("\"unsupported_report\"", text)
             deck_data = json.loads(deck.read_text())
             self.assertEqual(deck_data["sweep"]["contact"], "drain")
+            self.assertEqual(deck_data["sweep"]["max_step"], 0.1)
+            self.assertEqual(deck_data["sweep"]["min_step"], 1.0e-12)
+            self.assertEqual(deck_data["sweep"]["growth_factor"], 1.2)
+            self.assertEqual(deck_data["sweep"]["shrink_factor"], 0.5)
+            self.assertGreaterEqual(deck_data["sweep"]["max_retries"], 37)
             self.assertEqual(deck_data["sentaurus_import"]["sweeps"][0]["contact"], "gate")
 
     def test_cmd_parser_expands_template_variables(self) -> None:

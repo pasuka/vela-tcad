@@ -95,15 +95,27 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         const Real edgeLength = edge.length;
 
         const Real electricField = std::abs(dpsi / edgeLength);
+        const Real phin_i = solution.phin(i);
+        const Real phin_j = solution.phin(j);
+        const Real phip_i = solution.phip(i);
+        const Real phip_j = solution.phip(j);
+        const Real electronMobilityField =
+            mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient"
+            ? std::abs((phin_j - phin_i) / edgeLength)
+            : electricField;
+        const Real holeMobilityField =
+            mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient"
+            ? std::abs((phip_j - phip_i) / edgeLength)
+            : electricField;
 
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
-            electricField,
+            electronMobilityField,
             &mobilityConfig_,
             &solution.psi);
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
-            electricField,
+            holeMobilityField,
             &mobilityConfig_,
             &solution.psi);
 
@@ -116,11 +128,6 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         const Index idxJ = edge.n1;
         const Real ni_i = ni_[idxI];
         const Real ni_j = ni_[idxJ];
-        const Real phin_i = solution.phin(i);
-        const Real phin_j = solution.phin(j);
-        const Real phip_i = solution.phip(i);
-        const Real phip_j = solution.phip(j);
-
         Real electronContinuityFlux01 = 0.0;
         Real electronFlux01 = 0.0;
         if (mun > 0.0) {

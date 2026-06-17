@@ -38,7 +38,9 @@ Real SlotboomBandgapNarrowing::deltaEg(Real impurityConcentration, Real n, Real 
         return 0.0;
 
     const Real x = std::log(effectiveConcentration / config_.referenceDoping);
-    const Real delta = config_.coefficient * (x + std::sqrt(x * x + config_.smoothing));
+    const Real delta =
+        config_.offset +
+        config_.coefficient * (x + std::sqrt(x * x + config_.smoothing));
     return std::max(delta, 0.0);
 }
 
@@ -60,6 +62,12 @@ BandgapNarrowingConfig bandgapNarrowingConfig(std::string modelName)
 {
     BandgapNarrowingConfig config;
     config.model = std::move(modelName);
+    if (config.model == "old_slotboom") {
+        config.referenceDoping = 1.0e23;
+        config.coefficient = 9.0e-3;
+        config.smoothing = 0.5;
+        config.offset = -1.595e-2;
+    }
     return config;
 }
 
@@ -68,7 +76,7 @@ std::unique_ptr<BandgapNarrowing> makeBandgapNarrowingModel(
 {
     if (config.model == "none")
         return std::make_unique<NoBandgapNarrowing>();
-    if (config.model == "slotboom")
+    if (config.model == "slotboom" || config.model == "old_slotboom")
         return std::make_unique<SlotboomBandgapNarrowing>(config);
 
     throw std::invalid_argument(

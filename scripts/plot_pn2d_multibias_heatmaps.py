@@ -49,6 +49,38 @@ QUANTITIES = {
         "vela_scale": 1.0e-6,
         "norm": "log",
     },
+    "srh_recombination": {
+        "title": "SRH recombination",
+        "unit": "cm^-3 s^-1",
+        "sentaurus_field": "SRHRecombination",
+        "vela_field": "SRHRecombination",
+        "vela_scale": 1.0e-6,
+        "norm": "log",
+    },
+    "avalanche_generation": {
+        "title": "Avalanche generation",
+        "unit": "cm^-3 s^-1",
+        "sentaurus_field": ["AvalancheGeneration", "ImpactIonization"],
+        "vela_field": "AvalancheGeneration",
+        "vela_scale": 1.0e-6,
+        "norm": "log",
+    },
+    "electron_mobility": {
+        "title": "Electron mobility",
+        "unit": "cm^2 V^-1 s^-1",
+        "sentaurus_field": "eMobility",
+        "vela_field": "ElectronMobility",
+        "vela_scale": 1.0e4,
+        "norm": "linear",
+    },
+    "hole_mobility": {
+        "title": "Hole mobility",
+        "unit": "cm^2 V^-1 s^-1",
+        "sentaurus_field": "hMobility",
+        "vela_field": "HoleMobility",
+        "vela_scale": 1.0e4,
+        "norm": "linear",
+    },
 }
 
 
@@ -100,9 +132,20 @@ def load_sentaurus_mesh(root: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]
     return xy[:, 0], xy[:, 1], np.array(triangles, dtype=int)
 
 
-def load_sentaurus_scalar(root: Path, field: str) -> np.ndarray:
+def load_sentaurus_scalar(root: Path, field: str | list[str]) -> tuple[str, np.ndarray]:
     values: dict[int, float] = {}
-    path = root / "fields" / f"{field}_region0.csv"
+    fields = [field] if isinstance(field, str) else field
+    resolved_name = ""
+    path = None
+    for name in fields:
+        candidate = root / "fields" / f"{name}_region0.csv"
+        if candidate.exists():
+            resolved_name = str(name)
+            path = candidate
+            break
+    if path is None:
+        joined = ", ".join(str(name) for name in fields)
+        raise FileNotFoundError(f"missing Sentaurus field for any of: {joined}")
     with path.open(newline="") as handle:
         reader = csv.DictReader(handle)
         component_cols = [name for name in reader.fieldnames or [] if name != "node_id"]
@@ -113,7 +156,7 @@ def load_sentaurus_scalar(root: Path, field: str) -> np.ndarray:
             else:
                 value = math.sqrt(sum(component * component for component in comps))
             values[int(row["node_id"])] = value
-    return np.array([values[node_id] for node_id in sorted(values)], dtype=float)
+    return resolved_name, np.array([values[node_id] for node_id in sorted(values)], dtype=float)
 
 
 def parse_vtk(path: Path) -> dict[str, Any]:
@@ -191,11 +234,16 @@ def compute_node_electric_field_v_cm(
 
 def discover_vela_vtks(root: Path) -> dict[float, Path]:
     result: dict[float, Path] = {}
+    mtimes: dict[float, float] = {}
     pattern = re.compile(r"_(?P<bias>[-+0-9.]+)V\.vtk$")
-    for path in root.glob("*.vtk"):
+    for path in sorted(root.glob("*.vtk")):
         match = pattern.search(path.name)
         if match:
-            result[round(float(match.group("bias")), 12)] = path
+            key = round(float(match.group("bias")), 12)
+            mtime = path.stat().st_mtime
+            if key not in result or mtime >= mtimes[key]:
+                result[key] = path
+                mtimes[key] = mtime
     return result
 
 
@@ -218,10 +266,12 @@ def plot_quantity(
 ) -> dict[str, Any]:
     panels: list[dict[str, Any]] = []
     all_values: list[np.ndarray] = []
+    resolved_sentaurus_fields: dict[str, str] = {}
     for bias in biases:
         s_root = sentaurus_exports[bias]
         sx, sy, stri = load_sentaurus_mesh(s_root)
-        svals = load_sentaurus_scalar(s_root, str(spec["sentaurus_field"]))
+        resolved_field, svals = load_sentaurus_scalar(s_root, spec["sentaurus_field"])
+        resolved_sentaurus_fields[f"{bias:g}"] = resolved_field
         vtk = parse_vtk(vela_vtks[round(bias, 12)])
         if spec["vela_field"] == "__computed_electric_field__":
             vvals = compute_node_electric_field_v_cm(
@@ -264,6 +314,7 @@ def plot_quantity(
         "width_px": width,
         "height_px": height,
         "biases_V": biases,
+        "resolved_sentaurus_fields": resolved_sentaurus_fields,
     }
 
 

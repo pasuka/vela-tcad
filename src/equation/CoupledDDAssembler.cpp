@@ -86,6 +86,7 @@ CoupledDDAssembler::CoupledDDAssembler(
     , mobilityConfig_(mobilityConfig)
     , mobility_(makeMobilityModel(mobilityConfig))
     , recombination_(recombinationConfig)
+    , impactIonizationConfig_(impactIonizationConfig)
     , impactIonization_(makeImpactIonizationModel(impactIonizationConfig))
     , impactIonizationEnabled_(impactIonizationConfig.model != "none")
     , ni_(detail::buildValidatedEffectiveNodeNi(
@@ -100,6 +101,7 @@ CoupledDDAssembler::CoupledDDAssembler(
           matdb,
           Vt * constants::q / constants::kb))
     , edgeCells_(detail::buildEdgeCellMap(mesh))
+    , nodeCells_(detail::buildNodeCellMap(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
     , couple_(detail::computeEdgeCouplings(mesh))
     , fixedInterfaceChargeRhs_(detail::computeFixedAndInterfaceChargeRhs(
@@ -201,6 +203,16 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
         ? detail::computeNodeElectricFields(psi, mesh_)
         : std::vector<Real>{};
+    const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
+    const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
+        ? detail::computeNodeScalarGradientMagnitudes(
+            x.segment(phinOffset(), N) * potentialScale, mesh_)
+        : nodeElectricFields;
+    const std::vector<Real> nodeHoleDrivingFields = (impactIonizationEnabled_ && qfImpact)
+        ? detail::computeNodeScalarGradientMagnitudes(
+            x.segment(phipOffset(), N) * potentialScale, mesh_)
+        : nodeElectricFields;
+    const bool qfMobility = mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
 
     VectorXd r = VectorXd::Zero(3 * N);
     std::vector<bool> hasElectronContribution(static_cast<std::size_t>(N), false);
@@ -225,6 +237,10 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
         const Real phip_j = x(phipOffset() + j) * potentialScale;
         const Real dpsi = psi_j - psi_i;
         const Real electricField = std::abs(dpsi / h);
+        const Real electronMobilityField =
+            qfMobility ? std::abs((phin_j - phin_i) / h) : electricField;
+        const Real holeMobilityField =
+            qfMobility ? std::abs((phip_j - phip_i) / h) : electricField;
 
         const Real eps = detail::edgeEpsilon(edgeCells, mesh_, matdb_, e);
         const Real G = eps * couple[e] / h;
@@ -234,7 +250,7 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
 
         const Real mun = detail::edgeMobility(
             edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
-            electricField,
+            electronMobilityField,
             &mobilityConfig_,
             &psi);
         if (mun > 0.0) {
@@ -259,7 +275,7 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
 
         const Real mup = detail::edgeMobility(
             edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Hole,
-            electricField,
+            holeMobilityField,
             &mobilityConfig_,
             &psi);
         if (mup > 0.0) {
@@ -314,7 +330,21 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
         }
 
         if (impactIonizationEnabled_) {
-            const Real G = impactIonization_->generationRate(nodeElectricFields[i], n(ii), p(ii));
+            const Real G = detail::impactIonizationGenerationRate(
+                impactIonizationConfig_,
+                *impactIonization_,
+                mobilityConfig_,
+                *mobility_,
+                nodeCells_,
+                mesh_,
+                doping_,
+                cellMaterials_,
+                i,
+                nodeElectricFields[i],
+                nodeElectronDrivingFields[i],
+                nodeHoleDrivingFields[i],
+                n(ii),
+                p(ii));
             if (G != 0.0) {
                 r(phinOffset() + ii) -= G * vol[i];
                 r(phipOffset() + ii) -= G * vol[i];
@@ -391,6 +421,16 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
         ? detail::computeNodeElectricFields(psi, mesh_)
         : std::vector<Real>{};
+    const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
+    const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
+        ? detail::computeNodeScalarGradientMagnitudes(
+            x.segment(phinOffset(), N) * potentialScale, mesh_)
+        : nodeElectricFields;
+    const std::vector<Real> nodeHoleDrivingFields = (impactIonizationEnabled_ && qfImpact)
+        ? detail::computeNodeScalarGradientMagnitudes(
+            x.segment(phipOffset(), N) * potentialScale, mesh_)
+        : nodeElectricFields;
+    const bool qfMobility = mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
 
     std::vector<bool> constrainedRows(static_cast<std::size_t>(3 * N), false);
     for (const auto& [node, value] : bcs.psi) {
@@ -453,8 +493,16 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const int j = static_cast<int>(edge.n1);
         const Real psi_i = x(psiOffset() + i) * potentialScale;
         const Real psi_j = x(psiOffset() + j) * potentialScale;
+        const Real phin_i = x(phinOffset() + i) * potentialScale;
+        const Real phin_j = x(phinOffset() + j) * potentialScale;
+        const Real phip_i = x(phipOffset() + i) * potentialScale;
+        const Real phip_j = x(phipOffset() + j) * potentialScale;
         const Real dpsi = psi_j - psi_i;
         const Real electricField = std::abs(dpsi / h);
+        const Real electronMobilityField =
+            qfMobility ? std::abs((phin_j - phin_i) / h) : electricField;
+        const Real holeMobilityField =
+            qfMobility ? std::abs((phip_j - phip_i) / h) : electricField;
         const Real u = dpsi / Vt_;
         const Real Bu = bernoulli(u);
         const Real dBu = bernoulliDerivative(u);
@@ -470,7 +518,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
-            electricField,
+            electronMobilityField,
             &mobilityConfig_,
             &psi);
         if (mun > 0.0) {
@@ -510,7 +558,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Hole,
-            electricField,
+            holeMobilityField,
             &mobilityConfig_,
             &psi);
         if (mup > 0.0) {
@@ -601,18 +649,60 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         }
 
         if (impactIonizationEnabled_) {
-            const Real alphaN = impactIonization_->electronCoefficient(nodeElectricFields[i]);
-            const Real alphaP = impactIonization_->holeCoefficient(nodeElectricFields[i]);
-            const Real G = impactIonization_->generationRate(nodeElectricFields[i], n(ii), p(ii));
+            const Real alphaN = impactIonization_->electronCoefficient(nodeElectronDrivingFields[i]);
+            const Real alphaP = impactIonization_->holeCoefficient(nodeHoleDrivingFields[i]);
+            const Real G = detail::impactIonizationGenerationRate(
+                impactIonizationConfig_,
+                *impactIonization_,
+                mobilityConfig_,
+                *mobility_,
+                nodeCells_,
+                mesh_,
+                doping_,
+                cellMaterials_,
+                i,
+                nodeElectricFields[i],
+                nodeElectronDrivingFields[i],
+                nodeHoleDrivingFields[i],
+                n(ii),
+                p(ii));
             if (G != 0.0) {
                 // Local carrier-density derivatives are included in the analytic Jacobian.
-                // Electric-field derivatives are intentionally omitted because the nodal
-                // field uses a max-edge magnitude; finite-difference Jacobian remains
+                // Driving-field and mobility derivatives are intentionally omitted because
+                // both use edge/node max operations; finite-difference Jacobian remains
                 // available for exact derivatives of configured avalanche runs.
-                const Real velocity = G / (alphaN * n(ii) + alphaP * p(ii));
-                const Real dG_dpsi = velocity * (alphaN * dni_dpsi + alphaP * dpi_dpsi);
-                const Real dG_dphin = velocity * alphaN * dni_dphin;
-                const Real dG_dphip = velocity * alphaP * dpi_dphip;
+                Real electronFactor = 0.0;
+                Real holeFactor = 0.0;
+                if (impactIonizationConfig_.generation == "current_density") {
+                    const Real mun = detail::nodeMobility(
+                        nodeCells_,
+                        mesh_,
+                        doping_,
+                        *mobility_,
+                        cellMaterials_,
+                        i,
+                        CarrierType::Electron,
+                        nodeElectronDrivingFields[i]);
+                    const Real mup = detail::nodeMobility(
+                        nodeCells_,
+                        mesh_,
+                        doping_,
+                        *mobility_,
+                        cellMaterials_,
+                        i,
+                        CarrierType::Hole,
+                        nodeHoleDrivingFields[i]);
+                    electronFactor = alphaN * mun * std::abs(nodeElectronDrivingFields[i]);
+                    holeFactor = alphaP * mup * std::abs(nodeHoleDrivingFields[i]);
+                } else {
+                    const Real denominator = alphaN * n(ii) + alphaP * p(ii);
+                    const Real velocity = (denominator != 0.0) ? (G / denominator) : 0.0;
+                    electronFactor = velocity * alphaN;
+                    holeFactor = velocity * alphaP;
+                }
+                const Real dG_dpsi = electronFactor * dni_dpsi + holeFactor * dpi_dpsi;
+                const Real dG_dphin = electronFactor * dni_dphin;
+                const Real dG_dphip = holeFactor * dpi_dphip;
 
                 add(phinOffset() + ii, psiOffset() + ii, -dG_dpsi * vol_[i]);
                 add(phinOffset() + ii, phinOffset() + ii, -dG_dphin * vol_[i]);

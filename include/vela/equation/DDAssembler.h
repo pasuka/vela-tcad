@@ -128,6 +128,7 @@ private:
     MobilityModelConfig mobilityConfig_;
     std::unique_ptr<MobilityModel> mobility_;
     RecombinationModel recombination_;
+    ImpactIonizationModelConfig impactIonizationConfig_;
     std::unique_ptr<ImpactIonizationModel> impactIonization_;
     bool impactIonizationEnabled_ = false;
 
@@ -135,6 +136,7 @@ private:
 
     // Mesh-derived quantities cached at construction time.
     std::vector<std::vector<Index>> edgeCells_;
+    std::vector<std::vector<Index>> nodeCells_;
     std::vector<Real> vol_;
     std::vector<Real> couple_;
     VectorXd fixedInterfaceChargeRhs_; ///< Cached fixed/interface charge RHS contribution [C].

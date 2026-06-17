@@ -12,6 +12,7 @@
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/ImpactIonizationModel.h"
 #include "vela/physics/MobilityModel.h"
+#include "vela/physics/RecombinationModel.h"
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <unordered_map>
@@ -51,10 +52,10 @@ struct GummelConfig {
     double abstol      = 0.0;   ///< Absolute update tolerance across psi, n, and p
     double temperature_K = constants::T0; ///< Lattice temperature [K]
     double dampingPsi  = 1.0;   ///< Damping factor for Poisson update (0 < alpha <= 1)
-    double taun        = 1.0e-7; ///< Electron SRH lifetime [s]
-    double taup        = 1.0e-7; ///< Hole SRH lifetime [s]
-    double augerCn     = 2.8e-43; ///< Electron Auger coefficient [m^6/s]
-    double augerCp     = 9.9e-44; ///< Hole Auger coefficient [m^6/s]
+    double taun        = 1.0e-5; ///< Electron SRH lifetime [s]
+    double taup        = 3.0e-6; ///< Hole SRH lifetime [s]
+    double augerCn     = 2.90e-43; ///< Electron Auger coefficient [m^6/s]
+    double augerCp     = 1.028e-43; ///< Hole Auger coefficient [m^6/s]
     double carrierFloor = 1.0; ///< Minimum solved carrier concentration [m^-3] for quasi-Fermi consistency.
     MobilityModelConfig mobility{}; ///< Mobility model configuration
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
@@ -156,5 +157,16 @@ void writeDDSolutionVTK(const std::string&    filename,
                         const DeviceMesh&     mesh,
                         const DopingModel&    doping,
                         const DDSolution&     sol);
+
+void writeDDSolutionVTK(const std::string& filename,
+                        const DeviceMesh& mesh,
+                        const MaterialDatabase& matdb,
+                        const DopingModel& doping,
+                        const DDSolution& sol,
+                        const MobilityModelConfig& mobilityConfig,
+                        const RecombinationModelConfig& recombinationConfig,
+                        const ImpactIonizationModelConfig& impactIonizationConfig,
+                        const BandgapNarrowingConfig& bandgapNarrowingConfig,
+                        Real temperature_K = constants::T0);
 
 } // namespace vela

@@ -122,25 +122,29 @@
       "bias_column": "Anode OuterVoltage",
       "current_column": "Anode TotalCurrent",
       "vela_current_contact": "Anode",
-      "vela_stop": 0.05,
-      "vela_step": 0.05,
+      "vela_stop": -0.05,
+      "vela_step": -0.05,
       "comparison_kind": "iv",
       "vela_solver": {
+        "abstol": 1.0e-9,
+        "contact_boundary_minority_electron_relaxation": false,
         "mobility": {
-          "model": "caughey_thomas_field"
+          "model": "masetti_field",
+          "high_field_driving_force": "quasi_fermi_gradient"
         },
-        "bandgap_narrowing": "slotboom",
+        "bandgap_narrowing": "old_slotboom",
         "recombination": [
           "srh"
         ],
         "impact_ionization": {
-          "model": "none"
+          "model": "van_overstraeten",
+          "driving_force": "quasi_fermi_gradient",
+          "generation": "current_density"
         }
       },
       "require_trend_match": false,
       "comparison": {
         "candidate_scale": -1.0,
-        "candidate_bias_scale": -1.0,
         "candidate_column": "current_total_A_per_um",
         "bias_min": -0.05,
         "bias_max": -0.01,
@@ -151,7 +155,14 @@
       "runtime_diagnostic": {
         "enabled": false,
         "doping_scale": 0.0001,
-        "step": 5.0
+        "step": 0.05,
+        "bias_points": [
+          -0.5,
+          -2.0,
+          -5.0,
+          -10.0,
+          -20.0
+        ]
       }
     }
   ]

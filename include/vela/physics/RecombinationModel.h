@@ -19,13 +19,13 @@ struct RecombinationLinearization {
 
 struct RecombinationModelConfig {
     std::vector<std::string> mechanisms = {"srh"};
-    Real taun = 1.0e-7; ///< Electron SRH lifetime [s]
-    Real taup = 1.0e-7; ///< Hole SRH lifetime [s]
+    Real taun = 1.0e-5; ///< Electron SRH lifetime [s]
+    Real taup = 3.0e-6; ///< Hole SRH lifetime [s]
 
-    // Silicon Auger defaults [m^6/s].  Values are intentionally modest so the
-    // default examples remain stable while high-injection tests see growth.
-    Real augerCn = 2.8e-43;
-    Real augerCp = 9.9e-44;
+    // Sentaurus 2018 silicon Auger defaults at 300 K [m^6/s], converted from
+    // Cn = A + B + C in cm^6/s and Cp = A + B + C in cm^6/s.
+    Real augerCn = 2.90e-43;
+    Real augerCp = 1.028e-43;
 };
 
 class RecombinationModel {
@@ -68,7 +68,7 @@ private:
 
 RecombinationModelConfig recombinationModelConfig(
     std::vector<std::string> mechanisms,
-    Real taun = 1.0e-7,
-    Real taup = 1.0e-7);
+    Real taun = 1.0e-5,
+    Real taup = 3.0e-6);
 
 } // namespace vela

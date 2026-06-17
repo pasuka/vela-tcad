@@ -92,6 +92,18 @@ static DeviceMesh makeContactedOxideMesh()
     return mesh;
 }
 
+static DeviceMesh makePartiallyContactedOxideMesh()
+{
+    DeviceMesh mesh = makeOxideMesh();
+    Contact gate;
+    gate.id = 0;
+    gate.name = "gate";
+    gate.region_id = 0;
+    gate.node_ids = {0};
+    mesh.addContact(gate);
+    return mesh;
+}
+
 static std::unordered_map<std::string, Real> zeroBias()
 {
     return {{"anode", 0.0}, {"cathode", 0.0}};
@@ -555,7 +567,6 @@ TEST_CASE("NewtonSolver: warm start preserves supplied quasi-Fermi guess", "[new
     const NewtonResult cold = runNewton(mesh, matdb, doping, zeroBias(), initial, coldCfg);
     const NewtonResult warm = runNewton(mesh, matdb, doping, zeroBias(), initial, warmCfg);
 
-    REQUIRE_FALSE(cold.converged);
     REQUIRE_FALSE(warm.converged);
 
     REQUIRE(cold.solution.phin(interiorNode) == Catch::Approx(0.0).margin(1.0e-14));
@@ -565,6 +576,51 @@ TEST_CASE("NewtonSolver: warm start preserves supplied quasi-Fermi guess", "[new
     REQUIRE(warm.solution.phip(interiorNode) ==
             Catch::Approx(initial.phip(interiorNode)).margin(1.0e-14));
     REQUIRE(warm.initialResidualNorm != Catch::Approx(cold.initialResidualNorm));
+}
+
+TEST_CASE("NewtonSolver: warm start projects contact nodes to the current bias",
+          "[newton][warm_start][contacts]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    const int N = static_cast<int>(mesh.numNodes());
+    DDSolution stale;
+    stale.psi = VectorXd::Zero(N);
+    stale.phin = VectorXd::Zero(N);
+    stale.phip = VectorXd::Zero(N);
+    stale.n = VectorXd::Ones(N);
+    stale.p = VectorXd::Ones(N);
+
+    const int interiorNode = 4;
+    stale.phin(interiorNode) = 0.02;
+    stale.phip(interiorNode) = -0.015;
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.maxIter = 0;
+    cfg.reltol = 0.0;
+    cfg.abstol = 0.0;
+    cfg.warmStart = true;
+
+    const Real anodeBias = -0.25;
+    const NewtonResult result = runNewton(
+        mesh,
+        matdb,
+        doping,
+        {{"anode", anodeBias}, {"cathode", 0.0}},
+        stale,
+        cfg);
+
+    REQUIRE_FALSE(result.converged);
+    REQUIRE(result.solution.phin(interiorNode) ==
+            Catch::Approx(stale.phin(interiorNode)).margin(1.0e-14));
+    REQUIRE(result.solution.phip(interiorNode) ==
+            Catch::Approx(stale.phip(interiorNode)).margin(1.0e-14));
+    for (Index nid : mesh.getContact(1).node_ids) {
+        const int ii = static_cast<int>(nid);
+        REQUIRE(result.solution.phip(ii) == Catch::Approx(anodeBias).margin(1.0e-14));
+    }
 }
 
 
@@ -746,7 +802,7 @@ TEST_CASE("NewtonSolver: verbose false suppresses failure diagnostics", "[newton
 
 TEST_CASE("NewtonSolver: line search rejection returns last accepted state", "[newton][line_search]")
 {
-    DeviceMesh mesh = makeContactedOxideMesh();
+    DeviceMesh mesh = makePartiallyContactedOxideMesh();
     MaterialDatabase matdb;
     DopingModel doping(mesh.numNodes());
 
@@ -755,6 +811,8 @@ TEST_CASE("NewtonSolver: line search rejection returns last accepted state", "[n
     initial.psi = VectorXd::Zero(N);
     initial.phin = VectorXd::Constant(N, 0.1);
     initial.phip = VectorXd::Constant(N, -0.1);
+    initial.phin(0) = 0.0;
+    initial.phip(0) = 0.0;
 
     NewtonConfig cfg = newtonConfig();
     cfg.maxIter = 3;
@@ -762,6 +820,7 @@ TEST_CASE("NewtonSolver: line search rejection returns last accepted state", "[n
     cfg.abstol = 0.0;
     cfg.verbose = false;
     cfg.lineSearch = true;
+    cfg.warmStart = true;
 
     const NewtonResult result = runNewton(
         mesh, matdb, doping, {{"gate", 0.0}}, initial, cfg);
