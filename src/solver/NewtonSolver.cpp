@@ -34,6 +34,68 @@ void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& con
             ": impact_ionization.generation must be 'carrier_density' or "
             "'current_density'.");
     }
+    if (config.currentApproximation != "mobility_density_gradient" &&
+        config.currentApproximation != "density_gradient") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.current_approximation must be "
+            "'mobility_density_gradient' or 'density_gradient'.");
+    }
+    if (config.drivingForceInterpolation != "none" &&
+        config.drivingForceInterpolation != "quasi_fermi_to_electric_field") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.driving_force_interpolation.mode must be "
+            "'none' or 'quasi_fermi_to_electric_field'.");
+    }
+    if (config.drivingForceInterpolation != "none" &&
+        config.drivingForce != "quasi_fermi_gradient") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.driving_force_interpolation requires "
+            "driving_force='quasi_fermi_gradient'.");
+    }
+    if (!std::isfinite(config.electronDrivingForceRefDensity) ||
+        !std::isfinite(config.holeDrivingForceRefDensity) ||
+        config.electronDrivingForceRefDensity < 0.0 ||
+        config.holeDrivingForceRefDensity < 0.0) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization driving-force reference densities must be "
+            "finite and non-negative.");
+    }
+}
+
+void parseImpactIonizationDrivingForceInterpolation(
+    const nlohmann::json& value,
+    const UnitScalingConfig& scaling,
+    ImpactIonizationModelConfig& config,
+    const char* context)
+{
+    if (!value.contains("driving_force_interpolation"))
+        return;
+
+    const auto& interpolation = value.at("driving_force_interpolation");
+    if (interpolation.is_string()) {
+        config.drivingForceInterpolation = interpolation.get<std::string>();
+        return;
+    }
+    if (!interpolation.is_object()) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.driving_force_interpolation must be a string or object.");
+    }
+
+    config.drivingForceInterpolation = interpolation.value(
+        "mode", config.drivingForceInterpolation);
+    if (interpolation.contains("electron_ref_density_m3")) {
+        config.electronDrivingForceRefDensity = scaling.concentrationToSI(
+            interpolation.at("electron_ref_density_m3").get<Real>());
+    }
+    if (interpolation.contains("hole_ref_density_m3")) {
+        config.holeDrivingForceRefDensity = scaling.concentrationToSI(
+            interpolation.at("hole_ref_density_m3").get<Real>());
+    }
 }
 
 std::string normalizeToken(std::string value)
@@ -441,6 +503,10 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "driving_force", cfg.impactIonization.drivingForce);
             cfg.impactIonization.generation = value.value(
                 "generation", cfg.impactIonization.generation);
+            cfg.impactIonization.currentApproximation = value.value(
+                "current_approximation", cfg.impactIonization.currentApproximation);
+            parseImpactIonizationDrivingForceInterpolation(
+                value, scaling, cfg.impactIonization, "newtonConfigFromJson");
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());

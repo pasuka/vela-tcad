@@ -134,18 +134,37 @@ def parse_vtk(path: Path) -> dict[str, Any]:
             continue
         if parts[0] == "POINTS":
             count = int(parts[1])
-            for raw in lines[i + 1:i + 1 + count]:
-                x, y, *_ = raw.split()
+            tokens: list[str] = []
+            i += 1
+            while i < len(lines) and len(tokens) < 3 * count:
+                tokens.extend(lines[i].split())
+                i += 1
+            if len(tokens) < 3 * count:
+                raise ValueError(f"VTK POINTS block in {path} ended early")
+            for offset in range(0, 3 * count, 3):
+                x, y = tokens[offset], tokens[offset + 1]
                 points.append((float(x) * 1.0e6, float(y) * 1.0e6))
-            i += 1 + count
             continue
         if parts[0] == "CELLS":
             count = int(parts[1])
-            for raw in lines[i + 1:i + 1 + count]:
-                cell = [int(item) for item in raw.split()]
-                if cell and cell[0] == 3:
-                    triangles.append(cell[1:4])
-            i += 1 + count
+            tokens: list[str] = []
+            i += 1
+            parsed = 0
+            cursor = 0
+            while i < len(lines) and parsed < count:
+                tokens.extend(lines[i].split())
+                while cursor < len(tokens) and parsed < count:
+                    width = int(tokens[cursor])
+                    if cursor + 1 + width > len(tokens):
+                        break
+                    cell = [width] + [int(item) for item in tokens[cursor + 1:cursor + 1 + width]]
+                    cursor += 1 + width
+                    parsed += 1
+                    if cell and cell[0] == 3:
+                        triangles.append(cell[1:4])
+                i += 1
+            if parsed < count:
+                raise ValueError(f"VTK CELLS block in {path} ended early")
             continue
         if len(parts) >= 3 and parts[0] == "SCALARS":
             name = parts[1]

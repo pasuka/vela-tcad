@@ -224,6 +224,143 @@ TEST_CASE("Quasi-Fermi avalanche driving force ignores built-in electrostatic fi
     }
 }
 
+TEST_CASE("Quasi-Fermi avalanche interpolation falls back to electric field at low density",
+          "[impact][newton]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    CoupledDDState state;
+    state.psi = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.phin = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.phip = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.psi(1) = 1.0;
+    state.psi(2) = 1.0;
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const RecombinationModelConfig recombinationConfig = recombinationModelConfig({"none"});
+    CoupledDDAssembler noImpact(
+        mesh, matdb, doping, Vt, mobilityConfig, recombinationConfig);
+
+    ImpactIonizationModelConfig qfImpact;
+    qfImpact.model = "selberherr";
+    qfImpact.drivingForce = "quasi_fermi_gradient";
+    qfImpact.generation = "current_density";
+    qfImpact.drivingForceInterpolation = "quasi_fermi_to_electric_field";
+    qfImpact.electronDrivingForceRefDensity = 1.0e30;
+    qfImpact.holeDrivingForceRefDensity = 1.0e30;
+    qfImpact.electronA = 1.0;
+    qfImpact.electronB = 1.0;
+    qfImpact.holeA = 1.0;
+    qfImpact.holeB = 1.0;
+    CoupledDDAssembler withInterpolatedImpact(
+        mesh,
+        matdb,
+        doping,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        BandgapNarrowingConfig{},
+        qfImpact);
+
+    const VectorXd x = noImpact.pack(state);
+    const CoupledDDBoundaryConditions bcs;
+    const VectorXd r0 = noImpact.residual(x, bcs);
+    const VectorXd r1 = withInterpolatedImpact.residual(x, bcs);
+
+    const int phinOffset = static_cast<int>(mesh.numNodes());
+    const int phipOffset = 2 * static_cast<int>(mesh.numNodes());
+    bool sawGeneration = false;
+    for (int i = 0; i < static_cast<int>(mesh.numNodes()); ++i) {
+        const Real electronDelta = r1(phinOffset + i) - r0(phinOffset + i);
+        const Real holeDelta = r1(phipOffset + i) - r0(phipOffset + i);
+        REQUIRE(electronDelta <= 0.0);
+        REQUIRE(holeDelta <= 0.0);
+        sawGeneration = sawGeneration || electronDelta < 0.0 || holeDelta < 0.0;
+    }
+    REQUIRE(sawGeneration);
+}
+
+TEST_CASE("SG edge-current avalanche approximation cancels flat quasi-Fermi current",
+          "[impact][newton]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    CoupledDDState state;
+    state.psi = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.phin = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.phip = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    state.psi(1) = 1.0;
+    state.psi(2) = 1.0;
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const RecombinationModelConfig recombinationConfig = recombinationModelConfig({"none"});
+    CoupledDDAssembler noImpact(
+        mesh, matdb, doping, Vt, mobilityConfig, recombinationConfig);
+
+    ImpactIonizationModelConfig localImpact;
+    localImpact.model = "selberherr";
+    localImpact.drivingForce = "electric_field";
+    localImpact.generation = "current_density";
+    localImpact.currentApproximation = "mobility_density_gradient";
+    localImpact.electronA = 1.0;
+    localImpact.electronB = 1.0;
+    localImpact.holeA = 1.0;
+    localImpact.holeB = 1.0;
+    CoupledDDAssembler withLocalCurrentImpact(
+        mesh,
+        matdb,
+        doping,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        BandgapNarrowingConfig{},
+        localImpact);
+
+    ImpactIonizationModelConfig sgImpact = localImpact;
+    sgImpact.currentApproximation = "density_gradient";
+    CoupledDDAssembler withSgCurrentImpact(
+        mesh,
+        matdb,
+        doping,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        BandgapNarrowingConfig{},
+        sgImpact);
+
+    const VectorXd x = noImpact.pack(state);
+    const CoupledDDBoundaryConditions bcs;
+    const VectorXd r0 = noImpact.residual(x, bcs);
+    const VectorXd rLocal = withLocalCurrentImpact.residual(x, bcs);
+    const VectorXd rSg = withSgCurrentImpact.residual(x, bcs);
+
+    const int phinOffset = static_cast<int>(mesh.numNodes());
+    const int phipOffset = 2 * static_cast<int>(mesh.numNodes());
+    bool sawLocalGeneration = false;
+    for (int i = 0; i < static_cast<int>(mesh.numNodes()); ++i) {
+        sawLocalGeneration = sawLocalGeneration ||
+            rLocal(phinOffset + i) < r0(phinOffset + i) ||
+            rLocal(phipOffset + i) < r0(phipOffset + i);
+        REQUIRE(rSg(phinOffset + i) == Catch::Approx(r0(phinOffset + i)).margin(1.0e-18));
+        REQUIRE(rSg(phipOffset + i) == Catch::Approx(r0(phipOffset + i)).margin(1.0e-18));
+    }
+    REQUIRE(sawLocalGeneration);
+}
+
 TEST_CASE("Coupled DD analytic avalanche Jacobian matches carrier finite differences", "[impact][newton]")
 {
     DeviceMesh mesh = makePNMesh();
@@ -272,6 +409,65 @@ TEST_CASE("Coupled DD analytic avalanche Jacobian matches carrier finite differe
     Real maxAbsRef = 0.0;
     for (int row = 0; row < 3 * N; ++row) {
         for (int col = N; col < 3 * N; ++col) {
+            maxAbsDiff = std::max(
+                maxAbsDiff,
+                std::abs(denseAnalytic(row, col) - denseFiniteDifference(row, col)));
+            maxAbsRef = std::max(maxAbsRef, std::abs(denseFiniteDifference(row, col)));
+        }
+    }
+
+    REQUIRE(maxAbsDiff / std::max<Real>(1.0, maxAbsRef) < 5.0e-5);
+}
+
+TEST_CASE("Coupled DD SG edge-current avalanche Jacobian matches carrier finite differences",
+          "[impact][newton]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    CoupledDDState state;
+    state.psi = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.02, 0.025);
+    state.phin = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), 0.01, -0.006);
+    state.phip = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.007, 0.005);
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "electric_field";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "density_gradient";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0e-30;
+
+    CoupledDDAssembler assembler(
+        mesh,
+        matdb,
+        doping,
+        Vt,
+        mobilityModelConfig("constant"),
+        recombinationModelConfig({"none"}),
+        BandgapNarrowingConfig{},
+        impactConfig);
+
+    const VectorXd x = assembler.pack(state);
+    const CoupledDDBoundaryConditions bcs;
+    const SparseMatrixd analytic = assembler.assembleJacobian(x, bcs);
+    const SparseMatrixd finiteDifference = assembler.finiteDifferenceJacobian(x, bcs, 1.0e-7);
+    const Eigen::MatrixXd denseAnalytic = Eigen::MatrixXd(analytic);
+    const Eigen::MatrixXd denseFiniteDifference = Eigen::MatrixXd(finiteDifference);
+
+    const int N = static_cast<int>(mesh.numNodes());
+    Real maxAbsDiff = 0.0;
+    Real maxAbsRef = 0.0;
+    for (int row = N; row < 3 * N; ++row) {
+        for (int col = 0; col < 3 * N; ++col) {
             maxAbsDiff = std::max(
                 maxAbsDiff,
                 std::abs(denseAnalytic(row, col) - denseFiniteDifference(row, col)));
@@ -338,11 +534,32 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
             {"model", "van_overstraeten"},
             {"driving_force", "quasi_fermi_gradient"},
             {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
         }}
     });
     REQUIRE(sentaurusCfg.impactIonization.model == "van_overstraeten");
     REQUIRE(sentaurusCfg.impactIonization.drivingForce == "quasi_fermi_gradient");
     REQUIRE(sentaurusCfg.impactIonization.generation == "current_density");
+    REQUIRE(sentaurusCfg.impactIonization.currentApproximation == "density_gradient");
+
+    const NewtonConfig interpolatedCfg = newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"driving_force", "quasi_fermi_gradient"},
+            {"generation", "current_density"},
+            {"driving_force_interpolation", {
+                {"mode", "quasi_fermi_to_electric_field"},
+                {"electron_ref_density_m3", 1.0e16},
+                {"hole_ref_density_m3", 2.0e16},
+            }},
+        }}
+    });
+    REQUIRE(interpolatedCfg.impactIonization.drivingForceInterpolation ==
+            "quasi_fermi_to_electric_field");
+    REQUIRE(interpolatedCfg.impactIonization.electronDrivingForceRefDensity ==
+            Catch::Approx(1.0e16));
+    REQUIRE(interpolatedCfg.impactIonization.holeDrivingForceRefDensity ==
+            Catch::Approx(2.0e16));
 
     REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
         {"impact_ionization", {

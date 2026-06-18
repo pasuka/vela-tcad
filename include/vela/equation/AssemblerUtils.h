@@ -12,6 +12,7 @@
 #include "vela/core/Types.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/equation/ChargeSpec.h"
+#include "vela/discretization/ScharfetterGummel.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
@@ -458,6 +459,150 @@ inline Real nodeMobility(const std::vector<std::vector<Index>>& nodeCells,
     return sum / static_cast<Real>(contributingCells);
 }
 
+inline Real interpolatedAvalancheDrivingField(const ImpactIonizationModelConfig& config,
+                                              Real                               drivingField,
+                                              Real                               electricField,
+                                              Real                               carrierDensity,
+                                              Real                               referenceDensity)
+{
+    if (config.drivingForceInterpolation != "quasi_fermi_to_electric_field" ||
+        referenceDensity <= 0.0) {
+        return drivingField;
+    }
+    const Real carrier = std::max(carrierDensity, 0.0);
+    const Real weight = carrier / (carrier + referenceDensity);
+    return weight * drivingField + (1.0 - weight) * electricField;
+}
+
+inline Real electronAvalancheDrivingField(const ImpactIonizationModelConfig& config,
+                                          Real                               drivingField,
+                                          Real                               electricField,
+                                          Real                               electronDensity)
+{
+    return interpolatedAvalancheDrivingField(
+        config,
+        drivingField,
+        electricField,
+        electronDensity,
+        config.electronDrivingForceRefDensity);
+}
+
+inline Real holeAvalancheDrivingField(const ImpactIonizationModelConfig& config,
+                                      Real                               drivingField,
+                                      Real                               electricField,
+                                      Real                               holeDensity)
+{
+    return interpolatedAvalancheDrivingField(
+        config,
+        drivingField,
+        electricField,
+        holeDensity,
+        config.holeDrivingForceRefDensity);
+}
+
+inline bool usesDensityGradientAvalancheCurrent(
+    const ImpactIonizationModelConfig& config)
+{
+    return config.generation == "current_density" &&
+           config.currentApproximation == "density_gradient";
+}
+
+inline std::vector<Real> sgEdgeCurrentAvalancheSourceIntegrals(
+    const ImpactIonizationModelConfig& config,
+    const ImpactIonizationModel&       impact,
+    const MobilityModelConfig&         mobilityConfig,
+    const MobilityModel&               mobility,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh&                  mesh,
+    const DopingModel&                 doping,
+    const std::vector<Material>&       cellMaterials,
+    const VectorXd&                    psi,
+    const VectorXd&                    phin,
+    const VectorXd&                    phip,
+    const VectorXd&                    n,
+    const VectorXd&                    p,
+    const std::vector<Real>&           ni,
+    Real                               Vt)
+{
+    std::vector<Real> source(mesh.numNodes(), 0.0);
+    const bool qfImpact = config.drivingForce == "quasi_fermi_gradient";
+    const bool qfMobility = mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient";
+
+    for (Index e = 0; e < mesh.numEdges(); ++e) {
+        const Edge& edge = mesh.getEdge(e);
+        const Real h = edge.length;
+        if (h <= 1.0e-30 || edge.couple <= 0.0)
+            continue;
+
+        const int i = static_cast<int>(edge.n0);
+        const int j = static_cast<int>(edge.n1);
+        const Real psi_i = psi(i);
+        const Real psi_j = psi(j);
+        const Real phin_i = phin(i);
+        const Real phin_j = phin(j);
+        const Real phip_i = phip(i);
+        const Real phip_j = phip(j);
+
+        const Real electricField = std::abs((psi_j - psi_i) / h);
+        const Real electronQfField = std::abs((phin_j - phin_i) / h);
+        const Real holeQfField = std::abs((phip_j - phip_i) / h);
+        const Real electronCoefficientField = qfImpact ? electronQfField : electricField;
+        const Real holeCoefficientField = qfImpact ? holeQfField : electricField;
+        const Real electronMobilityField = qfMobility ? electronQfField : electricField;
+        const Real holeMobilityField = qfMobility ? holeQfField : electricField;
+
+        const Real nAvg = 0.5 * (n(i) + n(j));
+        const Real pAvg = 0.5 * (p(i) + p(j));
+        const Real electronImpactField = electronAvalancheDrivingField(
+            config, electronCoefficientField, electricField, nAvg);
+        const Real holeImpactField = holeAvalancheDrivingField(
+            config, holeCoefficientField, electricField, pAvg);
+
+        const Real edgeArea = 0.5 * h * edge.couple;
+        Real edgeSource = 0.0;
+        const Real mun = edgeMobility(
+            edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Electron,
+            electronMobilityField, &mobilityConfig, &psi);
+        if (mun > 0.0) {
+            const Real electronContinuityFlux01 =
+                sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                    ni[edge.n0],
+                    ni[edge.n1],
+                    psi_i,
+                    psi_j,
+                    phin_i,
+                    phin_j,
+                    Vt,
+                    mun * Vt / h);
+            edgeSource += impact.electronCoefficient(electronImpactField) *
+                std::abs(electronContinuityFlux01) * edgeArea;
+        }
+
+        const Real mup = edgeMobility(
+            edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Hole,
+            holeMobilityField, &mobilityConfig, &psi);
+        if (mup > 0.0) {
+            const Real holeContinuityFlux01 =
+                sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                    ni[edge.n0],
+                    ni[edge.n1],
+                    psi_i,
+                    psi_j,
+                    phip_i,
+                    phip_j,
+                    Vt,
+                    mup * Vt / h);
+            edgeSource += impact.holeCoefficient(holeImpactField) *
+                std::abs(holeContinuityFlux01) * edgeArea;
+        }
+
+        const Real halfSource = 0.5 * edgeSource;
+        source[edge.n0] += halfSource;
+        source[edge.n1] += halfSource;
+    }
+    return source;
+}
+
 inline Real impactIonizationGenerationRate(
     const ImpactIonizationModelConfig& config,
     const ImpactIonizationModel&       impact,
@@ -477,16 +622,20 @@ inline Real impactIonizationGenerationRate(
     if (config.generation != "current_density")
         return impact.generationRate(electricField, n, p);
 
-    const Real alphaN = impact.electronCoefficient(electronDrivingField);
-    const Real alphaP = impact.holeCoefficient(holeDrivingField);
+    const Real electronImpactField = electronAvalancheDrivingField(
+        config, electronDrivingField, electricField, n);
+    const Real holeImpactField = holeAvalancheDrivingField(
+        config, holeDrivingField, electricField, p);
+    const Real alphaN = impact.electronCoefficient(electronImpactField);
+    const Real alphaP = impact.holeCoefficient(holeImpactField);
     const Real mun = nodeMobility(
         nodeCells, mesh, doping, mobility, cellMaterials, nodeId, CarrierType::Electron,
-        electronDrivingField);
+        electronImpactField);
     const Real mup = nodeMobility(
         nodeCells, mesh, doping, mobility, cellMaterials, nodeId, CarrierType::Hole,
-        holeDrivingField);
-    return alphaN * mun * std::max(n, 0.0) * std::abs(electronDrivingField) +
-           alphaP * mup * std::max(p, 0.0) * std::abs(holeDrivingField);
+        holeImpactField);
+    return alphaN * mun * std::max(n, 0.0) * std::abs(electronImpactField) +
+           alphaP * mup * std::max(p, 0.0) * std::abs(holeImpactField);
 }
 
 /// Return average dielectric constant [F/m] for edge @p edgeId.

@@ -298,6 +298,32 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
     const std::vector<Real> nodeHoleDrivingFields = (impactIonizationEnabled_ && qfImpact)
         ? detail::computeNodeScalarGradientMagnitudes(phipForImpact, mesh_)
         : nodeElectricFields;
+    const bool sgCurrentAvalanche = impactIonizationEnabled_ &&
+        detail::usesDensityGradientAvalancheCurrent(impactIonizationConfig_);
+    VectorXd n_physical = n_old;
+    VectorXd p_physical = p_old;
+    if (scaling_.enabled) {
+        n_physical *= scaling_.C0;
+        p_physical *= scaling_.C0;
+    }
+    const std::vector<Real> sgAvalancheSourceIntegrals = sgCurrentAvalanche
+        ? detail::sgEdgeCurrentAvalancheSourceIntegrals(
+            impactIonizationConfig_,
+            *impactIonization_,
+            mobilityConfig_,
+            *mobility_,
+            edgeCells_,
+            mesh_,
+            doping_,
+            cellMaterials,
+            psi_si,
+            phinForMobility,
+            phipForImpact,
+            n_physical,
+            p_physical,
+            ni_,
+            Vt_)
+        : std::vector<Real>{};
 
     // Recombination source term linearised w.r.t. n.
     // Positive source derivatives move to the LHS diagonal; constants move to RHS.
@@ -320,7 +346,10 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
             A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
             b_(ii) += linearization.rhs * vol_i;
         }
-        if (impactIonizationEnabled_) {
+        if (impactIonizationEnabled_ && sgCurrentAvalanche) {
+            const Real gen = sgAvalancheSourceIntegrals[i];
+            b_(ii) += scaling_.enabled ? (gen / (scaling_.C0 * scaling_.D0)) : gen;
+        } else if (impactIonizationEnabled_) {
             const Real gen = detail::impactIonizationGenerationRate(
                 impactIonizationConfig_,
                 *impactIonization_,
@@ -436,6 +465,32 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
     const std::vector<Real> nodeHoleDrivingFields = (impactIonizationEnabled_ && qfImpact)
         ? detail::computeNodeScalarGradientMagnitudes(phipForMobility, mesh_)
         : nodeElectricFields;
+    const bool sgCurrentAvalanche = impactIonizationEnabled_ &&
+        detail::usesDensityGradientAvalancheCurrent(impactIonizationConfig_);
+    VectorXd n_physical = n_old;
+    VectorXd p_physical = p_old;
+    if (scaling_.enabled) {
+        n_physical *= scaling_.C0;
+        p_physical *= scaling_.C0;
+    }
+    const std::vector<Real> sgAvalancheSourceIntegrals = sgCurrentAvalanche
+        ? detail::sgEdgeCurrentAvalancheSourceIntegrals(
+            impactIonizationConfig_,
+            *impactIonization_,
+            mobilityConfig_,
+            *mobility_,
+            edgeCells_,
+            mesh_,
+            doping_,
+            cellMaterials,
+            psi_si,
+            phinForImpact,
+            phipForMobility,
+            n_physical,
+            p_physical,
+            ni_,
+            Vt_)
+        : std::vector<Real>{};
 
     // Recombination source term linearised w.r.t. p.
     // Positive source derivatives move to the LHS diagonal; constants move to RHS.
@@ -458,7 +513,10 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
             A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
             b_(ii) += linearization.rhs * vol_i;
         }
-        if (impactIonizationEnabled_) {
+        if (impactIonizationEnabled_ && sgCurrentAvalanche) {
+            const Real gen = sgAvalancheSourceIntegrals[i];
+            b_(ii) += scaling_.enabled ? (gen / (scaling_.C0 * scaling_.D0)) : gen;
+        } else if (impactIonizationEnabled_) {
             const Real gen = detail::impactIonizationGenerationRate(
                 impactIonizationConfig_,
                 *impactIonization_,

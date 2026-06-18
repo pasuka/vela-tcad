@@ -41,6 +41,68 @@ void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& con
             ": impact_ionization.generation must be 'carrier_density' or "
             "'current_density'.");
     }
+    if (config.currentApproximation != "mobility_density_gradient" &&
+        config.currentApproximation != "density_gradient") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.current_approximation must be "
+            "'mobility_density_gradient' or 'density_gradient'.");
+    }
+    if (config.drivingForceInterpolation != "none" &&
+        config.drivingForceInterpolation != "quasi_fermi_to_electric_field") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.driving_force_interpolation.mode must be "
+            "'none' or 'quasi_fermi_to_electric_field'.");
+    }
+    if (config.drivingForceInterpolation != "none" &&
+        config.drivingForce != "quasi_fermi_gradient") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.driving_force_interpolation requires "
+            "driving_force='quasi_fermi_gradient'.");
+    }
+    if (!std::isfinite(config.electronDrivingForceRefDensity) ||
+        !std::isfinite(config.holeDrivingForceRefDensity) ||
+        config.electronDrivingForceRefDensity < 0.0 ||
+        config.holeDrivingForceRefDensity < 0.0) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization driving-force reference densities must be "
+            "finite and non-negative.");
+    }
+}
+
+void parseImpactIonizationDrivingForceInterpolation(
+    const nlohmann::json& value,
+    const UnitScalingConfig& scaling,
+    ImpactIonizationModelConfig& config,
+    const char* context)
+{
+    if (!value.contains("driving_force_interpolation"))
+        return;
+
+    const auto& interpolation = value.at("driving_force_interpolation");
+    if (interpolation.is_string()) {
+        config.drivingForceInterpolation = interpolation.get<std::string>();
+        return;
+    }
+    if (!interpolation.is_object()) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.driving_force_interpolation must be a string or object.");
+    }
+
+    config.drivingForceInterpolation = interpolation.value(
+        "mode", config.drivingForceInterpolation);
+    if (interpolation.contains("electron_ref_density_m3")) {
+        config.electronDrivingForceRefDensity = scaling.concentrationToSI(
+            interpolation.at("electron_ref_density_m3").get<Real>());
+    }
+    if (interpolation.contains("hole_ref_density_m3")) {
+        config.holeDrivingForceRefDensity = scaling.concentrationToSI(
+            interpolation.at("hole_ref_density_m3").get<Real>());
+    }
 }
 
 /// Thermal voltage at temperature T [K].
@@ -195,6 +257,10 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "driving_force", cfg.impactIonization.drivingForce);
             cfg.impactIonization.generation = value.value(
                 "generation", cfg.impactIonization.generation);
+            cfg.impactIonization.currentApproximation = value.value(
+                "current_approximation", cfg.impactIonization.currentApproximation);
+            parseImpactIonizationDrivingForceInterpolation(
+                value, scaling, cfg.impactIonization, "gummelConfigFromJson");
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());
@@ -830,6 +896,7 @@ void writeDDSolutionVTK(const std::string& filename,
     const std::unique_ptr<ImpactIonizationModel> impact =
         makeImpactIonizationModel(impactIonizationConfig);
     const std::unique_ptr<MobilityModel> mobility = makeMobilityModel(mobilityConfig);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
     const auto nodeCells = detail::buildNodeCellMap(mesh);
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh, matdb, temperature_K);
@@ -860,6 +927,31 @@ void writeDDSolutionVTK(const std::string& filename,
     std::vector<Real> holeHighFieldDrive_V_cm(N, 0.0);
     std::vector<Real> electronMobilityLimiter(N, 0.0);
     std::vector<Real> holeMobilityLimiter(N, 0.0);
+    const std::vector<Real> sgAvalancheSourceIntegrals =
+        detail::usesDensityGradientAvalancheCurrent(impactIonizationConfig)
+        ? detail::sgEdgeCurrentAvalancheSourceIntegrals(
+            impactIonizationConfig,
+            *impact,
+            mobilityConfig,
+            *mobility,
+            edgeCells,
+            mesh,
+            doping,
+            cellMaterials,
+            sol.psi,
+            sol.phin,
+            sol.phip,
+            sol.n,
+            sol.p,
+            detail::buildValidatedEffectiveNodeNi(
+                "writeDDSolutionVTK",
+                mesh,
+                matdb,
+                doping,
+                bandgapNarrowingConfig,
+                Vt),
+            Vt)
+        : std::vector<Real>{};
     for (Index i = 0; i < N; ++i) {
         const int row = static_cast<int>(i);
         const Real n = sol.n(row);
@@ -867,21 +959,27 @@ void writeDDSolutionVTK(const std::string& filename,
         const Real deltaEg = bgn->deltaEg(doping.totalImpurity(i), n, p);
         const Real ni = effectiveIntrinsicDensity(nodeMaterials[i].ni, Vt, deltaEg);
         srh[i] = recombination.srhRate(n, p, ni);
-        avalanche[i] = detail::impactIonizationGenerationRate(
-            impactIonizationConfig,
-            *impact,
-            mobilityConfig,
-            *mobility,
-            nodeCells,
-            mesh,
-            doping,
-            cellMaterials,
-            i,
-            electricField_V_m[i],
-            electronDrivingField_V_m[i],
-            holeDrivingField_V_m[i],
-            n,
-            p);
+        if (detail::usesDensityGradientAvalancheCurrent(impactIonizationConfig)) {
+            avalanche[i] = mesh.getNode(i).volume > 0.0
+                ? sgAvalancheSourceIntegrals[i] / mesh.getNode(i).volume
+                : 0.0;
+        } else {
+            avalanche[i] = detail::impactIonizationGenerationRate(
+                impactIonizationConfig,
+                *impact,
+                mobilityConfig,
+                *mobility,
+                nodeCells,
+                mesh,
+                doping,
+                cellMaterials,
+                i,
+                electricField_V_m[i],
+                electronDrivingField_V_m[i],
+                holeDrivingField_V_m[i],
+                n,
+                p);
+        }
         const Real electronMobilityField = electronMobilityDrive_V_m[i];
         const Real holeMobilityField = holeMobilityDrive_V_m[i];
         electronHighFieldDrive_V_cm[i] = electronMobilityField / 100.0;

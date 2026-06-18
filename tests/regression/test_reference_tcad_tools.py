@@ -422,6 +422,1256 @@ LOOKUP_TABLE default
             ranking = json.loads((out / "debug_ranking.json").read_text())
             self.assertEqual(ranking["field_rankings"][0]["quantity"], "electron_density")
 
+    def test_pn2d_bv_avalanche_hotspot_diagnostic_reports_geometry(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_avalanche_hotspots_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            vtk = root / "state.vtk"
+            out = root / "reports"
+
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.2, "y": 0.1},
+                    {"id": 3, "x": -0.1, "y": 0.4},
+                ],
+                "triangles": [
+                    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]},
+                    {"id": 1, "region_id": 0, "node_ids": [0, 2, 3]},
+                ],
+                "regions": [],
+                "contacts": [],
+            }))
+            vtk.write_text(
+                """
+# vtk DataFile Version 2.0
+hotspots
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 4 float
+0 0 0
+1e-6 0 0
+2e-7 1e-7 0
+-1e-7 4e-7 0
+CELLS 2 8
+3 0 1 2
+3 0 2 3
+CELL_TYPES 2
+5
+5
+POINT_DATA 4
+SCALARS AvalancheGeneration float 1
+LOOKUP_TABLE default
+10 100 1000 0
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+1e20 2e20 3e20 4e20
+SCALARS Holes float 1
+LOOKUP_TABLE default
+4e20 3e20 2e20 1e20
+SCALARS ElectricField float 1
+LOOKUP_TABLE default
+1e5 2e5 3e5 4e5
+SCALARS ElectronHighFieldDrive float 1
+LOOKUP_TABLE default
+1e6 2e6 3e6 4e6
+SCALARS HoleHighFieldDrive float 1
+LOOKUP_TABLE default
+4e6 3e6 2e6 1e6
+""".lstrip()
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_avalanche_hotspots.py"),
+                    "--vtk",
+                    str(vtk),
+                    "--mesh",
+                    str(mesh),
+                    "--out-dir",
+                    str(out),
+                    "--top",
+                    "4",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            rows = self._read_csv(out / "avalanche_hotspots.csv")
+            self.assertEqual(rows[0]["node_id"], "2")
+            self.assertAlmostEqual(float(rows[0]["avalanche_generation_m3_s"]), 1000.0)
+            self.assertEqual(rows[0]["adjacent_element_count"], "2")
+            self.assertEqual(rows[0]["obtuse_adjacent_element_count"], "1")
+            self.assertGreater(float(rows[0]["node_control_volume_m2"]), 0.0)
+            self.assertAlmostEqual(float(rows[0]["electric_field_V_m"]), 3.0e7)
+            self.assertAlmostEqual(float(rows[0]["electron_high_field_drive_V_m"]), 3.0e8)
+            self.assertAlmostEqual(float(rows[0]["hole_high_field_drive_V_m"]), 2.0e8)
+
+            summary = json.loads((out / "avalanche_hotspots_summary.json").read_text())
+            self.assertEqual(summary["node_count"], 4)
+            self.assertEqual(summary["top_node"]["node_id"], 2)
+            self.assertAlmostEqual(summary["concentration"]["top1_fraction"], 1000.0 / 1110.0)
+            self.assertEqual(summary["geometry"]["top1_obtuse_adjacent_element_count"], 1)
+
+    def test_pn2d_bv_sg_avalanche_edge_diagnostic_decomposes_sources(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_sg_avalanche_edges_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            vtk = root / "state.vtk"
+            out = root / "reports"
+
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.2, "y": 1.0},
+                    {"id": 3, "x": 1.2, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]},
+                    {"id": 1, "region_id": 0, "node_ids": [1, 3, 2]},
+                ],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [
+                    {"id": 0, "name": "Anode", "region_id": 0, "node_ids": [0, 1]},
+                ],
+            }))
+            vtk.write_text(
+                """
+# vtk DataFile Version 2.0
+sg avalanche edges
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 3 float
+0 0 0
+1e-6 0 0
+2e-7 1e-6 0
+1.2e-6 1e-6 0
+CELLS 2 8
+3 0 1 2
+3 1 3 2
+CELL_TYPES 2
+5
+5
+POINT_DATA 3
+SCALARS Potential float 1
+LOOKUP_TABLE default
+0 0 0 0
+SCALARS ElectronQuasiFermi float 1
+LOOKUP_TABLE default
+0 8 1 4
+SCALARS HoleQuasiFermi float 1
+LOOKUP_TABLE default
+0 1 8 4
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+1e20 2e20 3e20 4e20
+SCALARS Holes float 1
+LOOKUP_TABLE default
+4e20 3e20 2e20 1e20
+SCALARS ElectronMobility float 1
+LOOKUP_TABLE default
+0.1 0.1 0.1 0.1
+SCALARS HoleMobility float 1
+LOOKUP_TABLE default
+0.05 0.05 0.05 0.05
+SCALARS NetDoping float 1
+LOOKUP_TABLE default
+-1e21 1e21 -1e21 1e21
+SCALARS AvalancheGeneration float 1
+LOOKUP_TABLE default
+1e30 2e30 3e30 4e30
+""".lstrip()
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_sg_avalanche_edges.py"),
+                    "--vtk",
+                    str(vtk),
+                    "--mesh",
+                    str(mesh),
+                    "--out-dir",
+                    str(out),
+                    "--bias",
+                    "-13.2",
+                    "--top",
+                    "8",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            rows = self._read_csv(out / "sg_avalanche_edges.csv")
+            self.assertGreaterEqual(len(rows), 5)
+            self.assertEqual(rows[0]["rank"], "1")
+            self.assertGreater(float(rows[0]["source_integral"]), 0.0)
+            classes = {row["edge_class"] for row in rows}
+            self.assertIn("contact_boundary", classes)
+            self.assertIn("boundary_noncontact", classes)
+
+            summary = json.loads((out / "sg_avalanche_edge_summary.json").read_text())
+            self.assertEqual(summary["bias_V"], -13.2)
+            self.assertEqual(summary["edge_count"], 5)
+            self.assertGreater(summary["total_source_integral_reconstructed"], 0.0)
+            self.assertEqual(summary["edge_area_policy"], "0.5 * edge.length * edge.couple")
+            by_class = {item["edge_class"]: item for item in summary["by_edge_class"]}
+            self.assertIn("contact_boundary", by_class)
+            self.assertGreater(by_class["contact_boundary"]["source_integral"], 0.0)
+            by_node_class = {item["node_class"]: item for item in summary["by_node_class"]}
+            self.assertIn("contact", by_node_class)
+            self.assertGreater(by_node_class["contact"]["vtk_source_integral"], 0.0)
+
+    def test_pn2d_bv_local_avalanche_factor_diagnostic_writes_edge_summary(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_local_avalanche_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            doping = root / "doping.csv"
+            vela = root / "vela"
+            sentaurus = root / "sentaurus" / "sentaurus_0v"
+            fields = sentaurus / "fields"
+            out = root / "reports"
+            vela.mkdir()
+            fields.mkdir(parents=True)
+
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.2, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]},
+                ],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [],
+            }))
+            self._write_csv(doping, ["node_id", "donors_cm3", "acceptors_cm3"], [
+                [0, 0.0, 1.0e17],
+                [1, 1.0e17, 0.0],
+                [2, 0.0, 1.0e17],
+            ])
+            (vela / "mini_0000_0V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+local factors
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 3 float
+0 0 0
+1e-6 0 0
+2e-7 1e-6 0
+CELLS 1 4
+3 0 1 2
+CELL_TYPES 1
+5
+POINT_DATA 3
+SCALARS Potential float 1
+LOOKUP_TABLE default
+0 0 0
+SCALARS ElectronQuasiFermi float 1
+LOOKUP_TABLE default
+0 8 1
+SCALARS HoleQuasiFermi float 1
+LOOKUP_TABLE default
+0 1 8
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+1e20 2e20 3e20
+SCALARS Holes float 1
+LOOKUP_TABLE default
+3e20 2e20 1e20
+SCALARS ElectronMobility float 1
+LOOKUP_TABLE default
+0.1 0.1 0.1
+SCALARS HoleMobility float 1
+LOOKUP_TABLE default
+0.05 0.05 0.05
+SCALARS NetDoping float 1
+LOOKUP_TABLE default
+-1e21 1e21 -1e21
+SCALARS AvalancheGeneration float 1
+LOOKUP_TABLE default
+1e30 2e30 3e30
+""".lstrip()
+            )
+            self._write_csv(sentaurus / "nodes.csv", ["id", "x_um", "y_um"], [
+                [0, 0.5, 0.0],
+            ])
+            for name, value in {
+                "ElectricField": 2.0e5,
+                "ImpactIonization": 1.0e12,
+                "eDensity": 2.0e14,
+                "hDensity": 3.0e14,
+                "eMobility": 1000.0,
+                "hMobility": 500.0,
+                "eCurrentDensity": 1.0e-6,
+                "hCurrentDensity": 2.0e-6,
+            }.items():
+                self._write_csv(fields / f"{name}_region0.csv", ["node_id", "component0"], [
+                    [0, value],
+                ])
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_local_avalanche_factors.py"),
+                    "--mesh", str(mesh),
+                    "--doping-csv", str(doping),
+                    "--sentaurus-root", str(root / "sentaurus"),
+                    "--vela-vtk-root", str(vela),
+                    "--out-dir", str(out),
+                    "--biases", "0",
+                    "--edge-id", "0",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            rows = self._read_csv(out / "local_avalanche_factors.csv")
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["edge_id"], "0")
+            self.assertGreater(float(rows[0]["vela_source_density_m3_s"]), 0.0)
+            self.assertGreater(float(rows[0]["sentaurus_weighted_alpha_m_inv"]), 0.0)
+            summary = json.loads((out / "local_avalanche_factors.json").read_text())
+            self.assertEqual(summary["edge_id"], 0)
+            self.assertEqual(summary["rows"][0]["sentaurus_node_id"], 0)
+
+    def test_pn2d_bv_continuity_feedback_diagnostic_writes_local_terms(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_continuity_feedback_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            doping = root / "doping.csv"
+            vela = root / "vela"
+            sentaurus = root / "sentaurus" / "sentaurus_0v"
+            fields = sentaurus / "fields"
+            out = root / "reports"
+            vela.mkdir()
+            fields.mkdir(parents=True)
+
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.2, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]},
+                ],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [],
+            }))
+            self._write_csv(doping, ["node_id", "donors_cm3", "acceptors_cm3"], [
+                [0, 0.0, 1.0e17],
+                [1, 1.0e17, 0.0],
+                [2, 0.0, 1.0e17],
+            ])
+            (vela / "mini_0000_0V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+continuity feedback
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 3 float
+0 0 0
+1e-6 0 0
+2e-7 1e-6 0
+CELLS 1 4
+3 0 1 2
+CELL_TYPES 1
+5
+POINT_DATA 3
+SCALARS Potential float 1
+LOOKUP_TABLE default
+0 0.1 0.0
+SCALARS ElectronQuasiFermi float 1
+LOOKUP_TABLE default
+0 0.2 0.1
+SCALARS HoleQuasiFermi float 1
+LOOKUP_TABLE default
+0 -0.1 -0.2
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+1e20 2e20 3e20
+SCALARS Holes float 1
+LOOKUP_TABLE default
+3e20 2e20 1e20
+SCALARS ElectronMobility float 1
+LOOKUP_TABLE default
+0.1 0.1 0.1
+SCALARS HoleMobility float 1
+LOOKUP_TABLE default
+0.05 0.05 0.05
+SCALARS NetDoping float 1
+LOOKUP_TABLE default
+-1e21 1e21 -1e21
+SCALARS AvalancheGeneration float 1
+LOOKUP_TABLE default
+1e30 2e30 3e30
+SCALARS SRHRecombination float 1
+LOOKUP_TABLE default
+1e25 1e25 1e25
+""".lstrip()
+            )
+            self._write_csv(sentaurus / "nodes.csv", ["id", "x_um", "y_um"], [
+                [0, 0.0, 0.0],
+                [1, 1.0, 0.0],
+                [2, 0.2, 1.0],
+            ])
+            for name, values in {
+                "ElectrostaticPotential": [0.0, 0.05, 0.0],
+                "eQuasiFermiPotential": [0.0, 0.1, 0.05],
+                "hQuasiFermiPotential": [0.0, -0.05, -0.1],
+                "eDensity": [1.0e14, 2.0e14, 3.0e14],
+                "hDensity": [3.0e14, 2.0e14, 1.0e14],
+                "ImpactIonization": [1.0e12, 2.0e12, 3.0e12],
+                "srhRecombination": [1.0e10, 1.0e10, 1.0e10],
+            }.items():
+                self._write_csv(
+                    fields / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+            for name, values in {
+                "eCurrentDensity": [(1.0e-6, 0.0), (2.0e-6, 0.0), (3.0e-6, 0.0)],
+                "hCurrentDensity": [(4.0e-6, 0.0), (5.0e-6, 0.0), (6.0e-6, 0.0)],
+            }.items():
+                self._write_csv(
+                    fields / f"{name}_region0.csv",
+                    ["node_id", "component0", "component1"],
+                    [[idx, x, y] for idx, (x, y) in enumerate(values)],
+                )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_continuity_feedback.py"),
+                    "--mesh", str(mesh),
+                    "--doping-csv", str(doping),
+                    "--sentaurus-root", str(root / "sentaurus"),
+                    "--vela-vtk-root", str(vela),
+                    "--out-dir", str(out),
+                    "--biases", "0",
+                    "--edge-id", "0",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            edge_rows = self._read_csv(out / "continuity_feedback_edges.csv")
+            node_rows = self._read_csv(out / "continuity_feedback_nodes.csv")
+            summary = json.loads((out / "continuity_feedback_summary.json").read_text())
+
+        focus_edge = next(row for row in edge_rows if row["relation"] == "focus")
+        self.assertEqual(focus_edge["edge_id"], "0")
+        self.assertAlmostEqual(float(focus_edge["vela_dphin_V"]), 0.2)
+        self.assertAlmostEqual(float(focus_edge["sentaurus_dphin_V"]), 0.1)
+        self.assertGreater(float(focus_edge["vela_electron_flux_abs_m2_s"]), 0.0)
+        focus_node = next(row for row in node_rows if row["node_id"] == "0")
+        self.assertIn("vela_electron_residual_estimate_s_inv", focus_node)
+        self.assertGreater(float(focus_node["sentaurus_generation_node_integral_s_inv"]), 0.0)
+        self.assertEqual(summary["edge_id"], 0)
+        self.assertGreaterEqual(summary["edge_rows"], 3)
+
+    def test_pn2d_bv_newton_residual_state_diagnostic_prepares_probe_inputs(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_residual_states_") as tmp:
+            root = Path(tmp)
+            base = root / "base.json"
+            mesh = root / "mesh.json"
+            doping = root / "doping.csv"
+            vela = root / "vela"
+            sentaurus = root / "sentaurus" / "sentaurus_-1v"
+            fields = sentaurus / "fields"
+            out = root / "reports"
+            vela.mkdir()
+            fields.mkdir(parents=True)
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                ],
+                "triangles": [],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [
+                    {"id": 0, "name": "Cathode", "region_id": 0, "node_ids": [0]},
+                    {"id": 1, "name": "Anode", "region_id": 0, "node_ids": [1]},
+                ],
+            }) + "\n")
+            self._write_csv(doping, ["node_id", "donors_cm3", "acceptors_cm3"], [
+                [0, 1.0e17, 0.0],
+                [1, 0.0, 1.0e17],
+            ])
+            base.write_text(json.dumps({
+                "simulation_type": "dc_sweep",
+                "mesh_file": "mesh.json",
+                "node_doping_file": "doping.csv",
+                "output_csv": "unused.csv",
+                "scaling": {"mode": "unit_scaling"},
+                "contacts": [
+                    {"name": "Cathode", "bias": 0.0},
+                    {"name": "Anode", "bias": 0.0},
+                ],
+                "solver": {
+                    "method": "gummel_newton",
+                    "bandgap_narrowing": "old_slotboom",
+                    "mobility": {"model": "masetti_field"},
+                },
+                "sweep": {"mode": "bv_reverse", "start": 0.0, "stop": -1.0, "step": -1.0},
+            }, indent=2) + "\n")
+            (vela / "mini_0000_-1V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+residual states
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 2 float
+0 0 0
+1e-6 0 0
+POINT_DATA 2
+SCALARS Potential float 1
+LOOKUP_TABLE default
+-0.2 -0.1
+SCALARS ElectronQuasiFermi float 1
+LOOKUP_TABLE default
+-0.3 -0.2
+SCALARS HoleQuasiFermi float 1
+LOOKUP_TABLE default
+-0.4 -0.3
+""".lstrip()
+            )
+            for name, values in {
+                "ElectrostaticPotential": [-0.25, -0.15],
+                "eQuasiFermiPotential": [-0.35, -0.25],
+                "hQuasiFermiPotential": [-0.45, -0.35],
+            }.items():
+                self._write_csv(
+                    fields / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_newton_residual_states.py"),
+                    "--base-config", str(base),
+                    "--sentaurus-root", str(root / "sentaurus"),
+                    "--vela-vtk-root", str(vela),
+                    "--out-dir", str(out),
+                    "--states", "vela:-1,sentaurus:-1,hybrid_vpsi_sqf:-1,hybrid_spsi_shift_vqf:-1",
+                    "--nodes", "0,1",
+                    "--prepare-only",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            vela_state = self._read_csv(
+                out / "states" / "vela_m1v" / "fields" / "ElectrostaticPotential_region0.csv"
+            )
+            config = json.loads(
+                (out / "configs" / "sentaurus_m1v_newton_residual_probe.json").read_text()
+            )
+            hybrid_vpsi = self._read_csv(
+                out / "states" / "hybrid_vpsi_sqf_m1v" / "fields" / "eQuasiFermiPotential_region0.csv"
+            )
+            hybrid_shift = self._read_csv(
+                out / "states" / "hybrid_spsi_shift_vqf_m1v" / "fields" / "ElectrostaticPotential_region0.csv"
+            )
+            summary = json.loads((out / "newton_residual_state_summary.json").read_text())
+
+        self.assertEqual(vela_state[0]["component0"], "-0.20000000000000001")
+        self.assertEqual(hybrid_vpsi[0]["component0"], "-0.34999999999999998")
+        self.assertEqual(hybrid_shift[0]["component0"], "-0.20000000000000001")
+        self.assertEqual(config["simulation_type"], "newton_residual_probe")
+        self.assertNotIn("sweep", config)
+        anode = next(contact for contact in config["contacts"] if contact["name"] == "Anode")
+        self.assertEqual(anode["bias"], -1.0)
+        self.assertEqual(summary["node_rows"], 0)
+        self.assertEqual(len(summary["states"]), 4)
+        shifted = next(item for item in summary["states"] if item["source"] == "hybrid_spsi_shift_vqf")
+        self.assertAlmostEqual(shifted["psi_shift_V"], 0.05)
+
+    def test_pn2d_bv_potential_profile_diagnostic_writes_plateaus(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_potential_profiles_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            vela = root / "vela"
+            sentaurus = root / "sentaurus" / "sentaurus_-1v"
+            fields = sentaurus / "fields"
+            out = root / "reports"
+            vela.mkdir()
+            fields.mkdir(parents=True)
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                    {"id": 3, "x": 1.0, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "node_ids": [0, 1, 2], "region_id": 0},
+                    {"id": 1, "node_ids": [1, 3, 2], "region_id": 0},
+                ],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [],
+            }) + "\n")
+            (vela / "mini_0000_-1V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+potential profiles
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 4 float
+0 0 0
+1e-6 0 0
+0 1e-6 0
+1e-6 1e-6 0
+POINT_DATA 4
+SCALARS Potential float 1
+LOOKUP_TABLE default
+0.0 0.2 0.0 0.2
+SCALARS ElectronQuasiFermi float 1
+LOOKUP_TABLE default
+-0.1 0.1 -0.1 0.1
+SCALARS HoleQuasiFermi float 1
+LOOKUP_TABLE default
+0.1 0.3 0.1 0.3
+""".lstrip()
+            )
+            for name, values in {
+                "ElectrostaticPotential": [0.0, 0.1, 0.0, 0.1],
+                "eQuasiFermiPotential": [-0.2, 0.0, -0.2, 0.0],
+                "hQuasiFermiPotential": [0.2, 0.2, 0.2, 0.2],
+            }.items():
+                self._write_csv(
+                    fields / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_potential_profiles.py"),
+                    "--mesh", str(mesh),
+                    "--sentaurus-root", str(root / "sentaurus"),
+                    "--vela-vtk-root", str(vela),
+                    "--out-dir", str(out),
+                    "--biases", "-1",
+                    "--horizontal-y-um", "0",
+                    "--vertical-x-um", "1",
+                    "--bands", "left:0:0,right:1:1",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            profile = self._read_csv(out / "potential_profile_samples.csv")
+            plateaus = self._read_csv(out / "potential_plateau_offsets.csv")
+            summary = json.loads((out / "potential_profile_summary.json").read_text())
+
+        self.assertTrue(profile)
+        self.assertIn("delta_psi_minus_phin_V", profile[0])
+        right = next(row for row in plateaus if row["band"] == "right")
+        self.assertAlmostEqual(float(right["delta_psi_median_V"]), 0.1)
+        self.assertAlmostEqual(float(right["delta_psi_minus_phin_median_V"]), 0.0)
+        self.assertEqual(summary["plateau_rows"], 2)
+
+    def test_pn2d_bv_branch_profile_diagnostic_compares_three_states(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_branch_profiles_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            avalanche = root / "avalanche"
+            noimpact = root / "noimpact"
+            sentaurus = root / "sentaurus" / "sentaurus_-1v"
+            fields = sentaurus / "fields"
+            out = root / "reports"
+            avalanche.mkdir()
+            noimpact.mkdir()
+            fields.mkdir(parents=True)
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                    {"id": 3, "x": 1.0, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "node_ids": [0, 1, 2], "region_id": 0},
+                    {"id": 1, "node_ids": [1, 3, 2], "region_id": 0},
+                ],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [],
+            }) + "\n")
+            vtk_template = """
+# vtk DataFile Version 2.0
+branch profiles
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 4 float
+0 0 0
+1e-6 0 0
+0 1e-6 0
+1e-6 1e-6 0
+POINT_DATA 4
+SCALARS Potential float 1
+LOOKUP_TABLE default
+{psi}
+SCALARS ElectronQuasiFermi float 1
+LOOKUP_TABLE default
+{phin}
+SCALARS HoleQuasiFermi float 1
+LOOKUP_TABLE default
+{phip}
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+{electrons}
+SCALARS Holes float 1
+LOOKUP_TABLE default
+{holes}
+""".lstrip()
+            (avalanche / "mini_0000_-1V.vtk").write_text(vtk_template.format(
+                psi="0.0 0.4 0.0 0.4",
+                phin="-0.1 0.2 -0.1 0.2",
+                phip="0.1 0.5 0.1 0.5",
+                electrons="1e18 1e20 1e18 1e20",
+                holes="1e17 1e19 1e17 1e19",
+            ))
+            (noimpact / "mini_0000_-1V.vtk").write_text(vtk_template.format(
+                psi="0.0 0.2 0.0 0.2",
+                phin="-0.1 0.0 -0.1 0.0",
+                phip="0.1 0.3 0.1 0.3",
+                electrons="1e18 1e18 1e18 1e18",
+                holes="1e17 1e17 1e17 1e17",
+            ))
+            for name, values in {
+                "ElectrostaticPotential": [0.0, 0.1, 0.0, 0.1],
+                "eQuasiFermiPotential": [-0.1, -0.1, -0.1, -0.1],
+                "hQuasiFermiPotential": [0.1, 0.2, 0.1, 0.2],
+                "eDensity": [1.0e12, 1.0e12, 1.0e12, 1.0e12],
+                "hDensity": [1.0e11, 1.0e11, 1.0e11, 1.0e11],
+            }.items():
+                self._write_csv(
+                    fields / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_branch_profiles.py"),
+                    "--mesh", str(mesh),
+                    "--sentaurus-root", str(root / "sentaurus"),
+                    "--vela-avalanche-vtk-root", str(avalanche),
+                    "--vela-no-impact-vtk-root", str(noimpact),
+                    "--out-dir", str(out),
+                    "--biases", "-1",
+                    "--bands", "right:1:1",
+                    "--focus-nodes", "1",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            medians = self._read_csv(out / "branch_profile_medians.csv")
+            comparison = self._read_csv(out / "branch_profile_comparison.csv")
+            focus = self._read_csv(out / "branch_profile_focus_nodes.csv")
+            summary = json.loads((out / "branch_profile_summary.json").read_text())
+
+        self.assertEqual(len(medians), 3)
+        self.assertEqual(len(focus), 3)
+        row = comparison[0]
+        self.assertAlmostEqual(float(row["avalanche_minus_sentaurus_psi_median_V"]), 0.3)
+        self.assertAlmostEqual(float(row["noimpact_minus_sentaurus_psi_median_V"]), 0.1)
+        self.assertAlmostEqual(float(row["avalanche_log10_electron_over_noimpact_median"]), 2.0)
+        self.assertEqual(summary["comparison_rows"], 1)
+
+    def test_pn2d_bv_noimpact_variant_scan_prepares_isolation_configs(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_noimpact_variant_scan_") as tmp:
+            root = Path(tmp)
+            base = root / "simulation.json"
+            out = root / "scan"
+            base.write_text(json.dumps({
+                "simulation_type": "dc_sweep",
+                "mesh_file": "mesh.json",
+                "node_doping_file": "doping.csv",
+                "output_csv": "base.csv",
+                "solver": {
+                    "method": "gummel_newton",
+                    "mobility": {
+                        "model": "masetti_field",
+                        "high_field_driving_force": "quasi_fermi_gradient",
+                    },
+                    "recombination": ["srh"],
+                    "impact_ionization": {"model": "none"},
+                    "contact_boundary_minority_electron_relaxation": False,
+                },
+                "sweep": {
+                    "mode": "bv_reverse",
+                    "contact": "Anode",
+                    "current_contact": "Anode",
+                    "start": 0.0,
+                    "stop": -20.0,
+                    "step": -0.1,
+                    "write_vtk": False,
+                },
+            }) + "\n")
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_noimpact_variant_scan.py"),
+                    "--base-config", str(base),
+                    "--runner", str(REPO / "build-release" / "vela_example_runner.exe"),
+                    "--sentaurus-root", str(root / "sentaurus"),
+                    "--out-dir", str(out),
+                    "--biases", "-1,-2",
+                    "--variants",
+                    "baseline,srh_tau_equal_1e_m6,no_srh,low_field_masetti,contact_relax_n_0p10",
+                    "--prepare-only",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            baseline = json.loads(
+                (out / "cases" / "baseline" / "baseline.json").read_text()
+            )
+            no_srh = json.loads((out / "cases" / "no_srh" / "no_srh.json").read_text())
+            tau = json.loads(
+                (out / "cases" / "srh_tau_equal_1e_m6" /
+                 "srh_tau_equal_1e_m6.json").read_text()
+            )
+            low_field = json.loads(
+                (out / "cases" / "low_field_masetti" / "low_field_masetti.json").read_text()
+            )
+            relax = json.loads(
+                (out / "cases" / "contact_relax_n_0p10" /
+                 "contact_relax_n_0p10.json").read_text()
+            )
+            summary = json.loads((out / "noimpact_variant_scan_summary.json").read_text())
+
+        self.assertEqual(baseline["sweep"]["bias_points"], [0.0, -1.0, -2.0])
+        self.assertTrue(baseline["sweep"]["write_vtk"])
+        self.assertEqual(baseline["solver"]["impact_ionization"]["model"], "none")
+        self.assertEqual(tau["solver"]["taun"], 1.0e-6)
+        self.assertEqual(tau["solver"]["taup"], 1.0e-6)
+        self.assertEqual(no_srh["solver"]["recombination"], ["none"])
+        self.assertEqual(low_field["solver"]["mobility"]["model"], "masetti")
+        self.assertTrue(relax["solver"]["contact_boundary_minority_electron_relaxation"])
+        self.assertEqual(
+            relax["solver"]["contact_boundary_minority_electron_relaxation_contact_side"],
+            "n_contact_only",
+        )
+        self.assertEqual(len(summary["prepared"]), 5)
+
+    def test_pn2d_bv_poisson_boundary_charge_diagnostic_writes_doping_contact_charge(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_poisson_charge_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            doping = root / "doping.csv"
+            vela = root / "vela"
+            sentaurus = root / "sentaurus" / "sentaurus_-1v"
+            fields = sentaurus / "fields"
+            out = root / "reports"
+            vela.mkdir()
+            fields.mkdir(parents=True)
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 0.5, "y": 0.0},
+                    {"id": 2, "x": 1.0, "y": 0.0},
+                    {"id": 3, "x": 1.5, "y": 0.0},
+                ],
+                "triangles": [
+                    {"id": 0, "node_ids": [0, 1, 2], "region_id": 0},
+                    {"id": 1, "node_ids": [1, 3, 2], "region_id": 0},
+                ],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [
+                    {"id": 0, "name": "Anode", "node_ids": [0]},
+                    {"id": 1, "name": "Cathode", "node_ids": [3]},
+                ],
+            }) + "\n")
+            self._write_csv(doping, ["node_id", "donors_cm3", "acceptors_cm3"], [
+                [0, 0.0, 1.0e17],
+                [1, 1.0e17, 1.0e17],
+                [2, 1.0e17, 0.0],
+                [3, 1.0e17, 0.0],
+            ])
+            (vela / "mini_0000_-1V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+poisson charge
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 4 float
+0 0 0
+5e-7 0 0
+1e-6 0 0
+1.5e-6 0 0
+POINT_DATA 4
+SCALARS Potential float 1
+LOOKUP_TABLE default
+-1.4 -0.4 0.1 0.4
+SCALARS ElectronQuasiFermi float 1
+LOOKUP_TABLE default
+-1.0 -0.5 0.0 0.0
+SCALARS HoleQuasiFermi float 1
+LOOKUP_TABLE default
+-1.0 -0.5 0.0 0.0
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+1e9 2e12 3e12 4e12
+SCALARS Holes float 1
+LOOKUP_TABLE default
+4e12 3e12 2e12 1e9
+""".lstrip()
+            )
+            for name, values in {
+                "ElectrostaticPotential": [-1.39, -0.4, 0.1, 0.39],
+                "eQuasiFermiPotential": [-1.0, -0.5, 0.0, 0.0],
+                "hQuasiFermiPotential": [-1.0, -0.5, 0.0, 0.0],
+                "eDensity": [1.0e3, 2.0e6, 3.0e6, 4.0e6],
+                "hDensity": [4.0e6, 3.0e6, 2.0e6, 1.0e3],
+                "DonorConcentration": [0.0, 1.0e17, 1.0e17, 1.0e17],
+                "AcceptorConcentration": [1.0e17, 1.0e17, 0.0, 0.0],
+            }.items():
+                self._write_csv(
+                    fields / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+            self._write_csv(
+                fields / "ContactExternalVoltage_region1.csv",
+                ["node_id", "component0"],
+                [[0, -1.0]],
+            )
+            self._write_csv(
+                fields / "ContactExternalVoltage_region2.csv",
+                ["node_id", "component0"],
+                [[3, 0.0]],
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_poisson_boundary_charge.py"),
+                    "--mesh", str(mesh),
+                    "--doping-csv", str(doping),
+                    "--sentaurus-root", str(root / "sentaurus"),
+                    "--vela-vtk-root", str(vela),
+                    "--out-dir", str(out),
+                    "--biases", "-1",
+                    "--bands", "left:0:0,junction:0.5:0.5,right:1.5:1.5",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            doping_rows = self._read_csv(out / "doping_distribution_summary.csv")
+            contact_rows = self._read_csv(out / "contact_boundary_summary.csv")
+            charge_rows = self._read_csv(out / "charge_balance_bands.csv")
+            summary = json.loads((out / "poisson_boundary_charge_summary.json").read_text())
+
+        vela_groups = [row for row in doping_rows if row["source"] == "vela"]
+        self.assertEqual(len(vela_groups), 3)
+        self.assertIn("expected_psi_builtin_V", contact_rows[0])
+        anode = next(row for row in contact_rows if row["contact"] == "Anode")
+        self.assertLess(float(anode["expected_psi_builtin_V"]), 0.0)
+        right = next(row for row in charge_rows if row["band"] == "right")
+        self.assertAlmostEqual(float(right["vela_electron_median_cm3"]), 4.0e6)
+        self.assertAlmostEqual(float(right["sentaurus_electron_median_cm3"]), 4.0e6)
+        self.assertAlmostEqual(float(right["delta_net_doping_median_cm3"]), 0.0)
+        self.assertEqual(summary["charge_rows"], 3)
+
+    def test_pn2d_bv_poisson_flux_balance_diagnostic_writes_top_nodes(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_poisson_flux_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            doping = root / "doping.csv"
+            vela = root / "vela"
+            sentaurus = root / "sentaurus" / "sentaurus_-1v"
+            fields = sentaurus / "fields"
+            out = root / "reports"
+            vela.mkdir()
+            fields.mkdir(parents=True)
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "node_ids": [0, 1, 2], "region_id": 0},
+                ],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [
+                    {"id": 0, "name": "Anode", "node_ids": [0]},
+                ],
+            }) + "\n")
+            self._write_csv(doping, ["node_id", "donors_cm3", "acceptors_cm3"], [
+                [0, 0.0, 1.0e17],
+                [1, 1.0e17, 0.0],
+                [2, 0.0, 1.0e17],
+            ])
+            (vela / "mini_0000_-1V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+poisson flux
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 3 float
+0 0 0
+1e-6 0 0
+0 1e-6 0
+CELLS 1 4
+3 0 1 2
+CELL_TYPES 1
+5
+POINT_DATA 3
+SCALARS Potential float 1
+LOOKUP_TABLE default
+0.0 0.1 0.0
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+1e10 2e10 3e10
+SCALARS Holes float 1
+LOOKUP_TABLE default
+3e10 2e10 1e10
+""".lstrip()
+            )
+            for name, values in {
+                "ElectrostaticPotential": [0.0, 0.05, 0.0],
+                "eDensity": [1.0e4, 2.0e4, 3.0e4],
+                "hDensity": [3.0e4, 2.0e4, 1.0e4],
+                "DonorConcentration": [0.0, 1.0e17, 0.0],
+                "AcceptorConcentration": [1.0e17, 0.0, 1.0e17],
+            }.items():
+                self._write_csv(
+                    fields / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_poisson_flux_balance.py"),
+                    "--mesh", str(mesh),
+                    "--doping-csv", str(doping),
+                    "--sentaurus-root", str(root / "sentaurus"),
+                    "--vela-vtk-root", str(vela),
+                    "--out-dir", str(out),
+                    "--biases", "-1",
+                    "--bands", "left:0:0,right:1:1",
+                    "--top", "4",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            top_rows = self._read_csv(out / "poisson_flux_balance_top_nodes.csv")
+            band_rows = self._read_csv(out / "poisson_flux_balance_bands.csv")
+            compare_rows = self._read_csv(out / "poisson_flux_balance_band_compare.csv")
+            summary = json.loads((out / "poisson_flux_balance_summary.json").read_text())
+
+        self.assertEqual(len(top_rows), 4)
+        self.assertIn("flux_term_C_per_m", top_rows[0])
+        self.assertIn("charge_term_C_per_m", top_rows[0])
+        self.assertFalse(any(row["contact_names"] == "Anode" for row in top_rows))
+        vela_right = next(
+            row for row in band_rows
+            if row["state"] == "vela" and row["band"] == "right"
+        )
+        self.assertEqual(vela_right["node_count"], "1")
+        self.assertTrue(compare_rows)
+        self.assertEqual(summary["compare_rows"], 2)
+
+    def test_pn2d_bv_junction_geometry_diagnostic_writes_box_terms(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_junction_geometry_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            inventory = root / "inventory_mesh.json"
+            doping = root / "doping.csv"
+            out = root / "reports"
+            mesh_data = {
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                    {"id": 3, "x": 1.0, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "node_ids": [0, 1, 2], "region_id": 0},
+                    {"id": 1, "node_ids": [1, 3, 2], "region_id": 0},
+                ],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [
+                    {"id": 0, "name": "Anode", "node_ids": [0]},
+                ],
+            }
+            mesh.write_text(json.dumps(mesh_data) + "\n")
+            inventory.write_text(json.dumps({
+                "geometry": {
+                    "vertices": [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]],
+                    "regions": [{
+                        "index": 0,
+                        "name": "R.Si",
+                        "material": "Silicon",
+                        "type": 0,
+                        "triangles": [[0, 1, 2], [1, 3, 2]],
+                        "edges": [],
+                        "points": [],
+                    }],
+                }
+            }) + "\n")
+            self._write_csv(doping, ["node_id", "donors_cm3", "acceptors_cm3"], [
+                [0, 0.0, 1.0e17],
+                [1, 1.0e17, 0.0],
+                [2, 0.0, 1.0e17],
+                [3, 1.0e17, 0.0],
+            ])
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_junction_geometry.py"),
+                    "--mesh", str(mesh),
+                    "--doping-csv", str(doping),
+                    "--tdr-inventory-mesh", str(inventory),
+                    "--out-dir", str(out),
+                    "--focus-nodes", "1",
+                    "--x-window", "0.75:1.0",
+                    "--radius-um", "0.1",
+                    "--bands", "right:0.75:1.0",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            node_rows = self._read_csv(out / "junction_geometry_nodes.csv")
+            edge_rows = self._read_csv(out / "junction_geometry_edges.csv")
+            cell_rows = self._read_csv(out / "junction_geometry_cells.csv")
+            band_rows = self._read_csv(out / "junction_geometry_bands.csv")
+            summary = json.loads((out / "junction_geometry_summary.json").read_text())
+
+        focus = next(row for row in node_rows if row["node_id"] == "1")
+        self.assertIn("focus", focus["selected_reason"])
+        self.assertGreater(float(focus["control_volume_m2"]), 0.0)
+        self.assertTrue(edge_rows)
+        self.assertIn("couple_over_length", edge_rows[0])
+        self.assertTrue(cell_rows)
+        self.assertEqual(band_rows[0]["band"], "right")
+        self.assertTrue(summary["inventory_comparison"]["triangle_sets_match"])
+        self.assertAlmostEqual(summary["inventory_comparison"]["max_coordinate_delta_um"], 0.0)
+
+    def test_pn2d_bv_poisson_reconstruction_diagnostic_solves_frozen_states(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_poisson_recon_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            doping = root / "doping.csv"
+            vela = root / "vela"
+            sentaurus = root / "sentaurus" / "sentaurus_-1v"
+            fields = sentaurus / "fields"
+            out = root / "reports"
+            vela.mkdir()
+            fields.mkdir(parents=True)
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "node_ids": [0, 1, 2], "region_id": 0},
+                ],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [
+                    {"id": 0, "name": "Anode", "node_ids": [0]},
+                    {"id": 1, "name": "Cathode", "node_ids": [1]},
+                ],
+            }) + "\n")
+            self._write_csv(doping, ["node_id", "donors_cm3", "acceptors_cm3"], [
+                [0, 0.0, 1.0e17],
+                [1, 1.0e17, 0.0],
+                [2, 1.0e17, 1.0e17],
+            ])
+            (vela / "mini_0000_-1V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+poisson reconstruction
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 3 float
+0 0 0
+1e-6 0 0
+0 1e-6 0
+CELLS 1 4
+3 0 1 2
+CELL_TYPES 1
+5
+POINT_DATA 3
+SCALARS Potential float 1
+LOOKUP_TABLE default
+-1.4 0.4 -0.5
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+1e10 2e10 3e10
+SCALARS Holes float 1
+LOOKUP_TABLE default
+3e10 2e10 1e10
+""".lstrip()
+            )
+            for name, values in {
+                "ElectrostaticPotential": [-1.39, 0.39, -0.45],
+                "eDensity": [1.0e4, 2.0e4, 3.0e4],
+                "hDensity": [3.0e4, 2.0e4, 1.0e4],
+                "DonorConcentration": [0.0, 1.0e17, 1.0e17],
+                "AcceptorConcentration": [1.0e17, 0.0, 1.0e17],
+            }.items():
+                self._write_csv(
+                    fields / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_poisson_reconstruction.py"),
+                    "--mesh", str(mesh),
+                    "--doping-csv", str(doping),
+                    "--sentaurus-root", str(root / "sentaurus"),
+                    "--vela-vtk-root", str(vela),
+                    "--out-dir", str(out),
+                    "--biases", "-1",
+                    "--focus-nodes", "0,1,2",
+                    "--bc-sources", "vela_expected,sentaurus_state",
+                    "--charge-sources", "depletion,vela_frozen,sentaurus_frozen",
+                    "--bands", "all:0:1",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            band_rows = self._read_csv(out / "poisson_reconstruction_bands.csv")
+            node_rows = self._read_csv(out / "poisson_reconstruction_focus_nodes.csv")
+            contact_rows = self._read_csv(out / "poisson_reconstruction_contacts.csv")
+            summary = json.loads((out / "poisson_reconstruction_summary.json").read_text())
+
+        self.assertEqual(len(band_rows), 6)
+        self.assertEqual(len(node_rows), 18)
+        self.assertEqual(len(contact_rows), 4)
+        self.assertIn("median_reconstructed_minus_vela_V", band_rows[0])
+        self.assertIn("reconstructed_minus_sentaurus_V", node_rows[0])
+        self.assertEqual(summary["band_rows"], 6)
+
     def test_pn2d_sentaurus2018_iv_cmd_writes_multibias_debug_snapshots(self) -> None:
         path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "source" / "pn2d_iv_sdevice.cmd"
         text = path.read_text()
