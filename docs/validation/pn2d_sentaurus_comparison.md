@@ -1929,3 +1929,211 @@ mean absolute edge current `1.9733806127582562e-23 A/m`. The remaining
 Sentaurus `.plt` absolute-current mismatch should not be used as a Vela unit
 fix trigger because the Sentaurus `.plt`, TDR `ContactCurrentFlux`, and boundary
 current-density integral definitions remain mutually inconsistent.
+
+## PN2D BV -20 V Blocked Status
+
+Validation date: 2026-06-18.
+
+The Sentaurus-default BV parity target is now explicit in the generated Vela
+deck:
+
+```json
+"impact_ionization": {
+  "model": "van_overstraeten",
+  "driving_force": "quasi_fermi_gradient",
+  "generation": "current_density",
+  "current_approximation": "density_gradient"
+}
+```
+
+The committed reference gate remains low-bias only with `vela_stop = -0.05` and
+`vela_step = -0.05`. Do not promote the pn2d BV gate to `-20 V` yet.
+
+Fresh execution artifacts are under
+`build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution`.
+The no-impact branch converged restart points at `-8 V`, `-10 V`, and `-13.2 V`.
+The Sentaurus-default SG edge-current branch converged single-point solves at
+`-13.2 V` and `-20 V` from the high-bias restart states and wrote C++ SG
+edge-source dumps.
+
+The high-bias gate fails. In the focus-edge region:
+
+| branch | bias | median log10 Vela/Sentaurus electron density | focus-edge log10 Vela/Sentaurus generation |
+|---|---:|---:|---:|
+| no-impact | `-10 V` | `-0.297` | about `-0.303` |
+| no-impact | `-13.2 V` | `+2.654` | about `+2.511` on active generation edges |
+| SG avalanche | `-13.2 V` | `+2.654` | `+2.511` |
+| SG avalanche | `-20 V` | `+1.787` | `+1.382` |
+
+The `-13.2 V` mismatch is already present without impact ionization, so
+avalanche source tuning is not the first fix. The selected blocker is
+high-bias quasi-Fermi/state anchoring between about `-10 V` and `-13.2 V`.
+
+SG edge-source implementation consistency is good at `-13.2 V`:
+`log10(total C++ source / Python source) = +0.00804`, with both paths assigning
+about `96.6%` of source to interior-bulk edges. At `-20 V`, the total source is
+still within about `0.347` decades, but the C++ diagnostic assigns `54.2%` of
+source to contact edges while the Python reconstruction classifies almost all
+source as interior bulk. Resolve this contact-edge/source-reporting discrepancy
+before any `-20 V` promotion.
+
+Ionization-integral breakdown analysis is a future post-processing diagnostic
+only. It must not replace the self-consistent Sentaurus-default drift-diffusion
+avalanche comparison for this validation gate.
+
+A lightweight edge-local ionization-integral proxy was added as
+`scripts/diagnose_pn2d_bv_ionization_integral.py`. It is not a field-line
+integrator; it reports dominant mesh-edge `alpha * dx` values after converting
+Vela VTK high-field scalars from `V/cm` scale to `V/m`. On the current
+Sentaurus-default SG states:
+
+| bias | max edge-local integral | electron max | hole max |
+|---:|---:|---:|---:|
+| `-13.2 V` | `0.08193` | `0.08193` | `0.02804` |
+| `-20 V` | `1.80364` | `1.80364` | `1.40371` |
+
+This explains why `-20 V` is deep in the avalanche-prone regime, but it does
+not pass the Sentaurus-default BV gate because the self-consistent local source
+and carrier-density parity checks still fail.
+
+### No-Impact Branch Follow-Up
+
+Additional no-impact probes on 2026-06-18 narrowed the remaining `-13.2 V`
+blocker.
+
+The previous explicit `-10 V -> -13.2 V` no-impact restart was re-run as a
+small-step continuation from a `-10 V` VTK restart with `step = -0.05 V` and no
+explicit `bias_points`. The run reached `-13.2 V` in 65 points, but the
+focus-edge median electron-density error remained high:
+
+| probe | `-13.2 V` median log10 Vela/Sentaurus electron density |
+|---|---:|
+| explicit `-10 -> -13.2 V` restart | `+2.654` |
+| small-step restart from `-10 V` | `+2.597` |
+
+The no-impact high-current branch begins near `-12.75 V`, where the terminal
+current leaves the `~1e-11 A/m` leakage scale and enters the `~1e-9` to
+`~1e-8 A/m` electron-current branch. A Gummel-initialized handoff from the
+pre-jump `-12.7 V` state changed the failure mode, shrinking near
+`-12.9466659 V`, but did not recover Sentaurus-like carrier densities.
+
+A local material `ni` override to `1.6556153e10 cm^-3` confirms that material
+intrinsic density is a real low-bias calibration axis, not the high-bias branch
+fix:
+
+| probe | `-10 V` median log10 e-density ratio | `-13.2 V` median log10 e-density ratio |
+|---|---:|---:|
+| default `ni = 1.0e10 cm^-3` | `-0.297` | `+2.597` |
+| local `ni = 1.6556153e10 cm^-3` | `-0.072` | `+2.995` |
+
+Contact quasi-Fermi Dirichlet values were checked directly and match the
+electrode biases at both `-10 V` and `-13.2 V`; the contact potential offset is
+the known material-`ni` built-in difference of about `13 mV`. The high-bias
+error is internal: near the focus edge at `-13.2 V`, Vela `psi` is about
+`0.14 V` above Sentaurus while `phin` differs by only about `0.03 V`.
+
+Updated blocker: the remaining first-order task is the no-impact coupled
+continuity/Poisson branch selection around `-12.7 V` to `-13.0 V`, especially
+the electron-continuity residual/Jacobian balance that admits the high-density
+internal solution. Do not promote the `-20 V` BV gate, and do not treat material
+`ni`, SRH lifetime, mobility, or avalanche tuning as the next acceptance fix.
+
+Follow-up high-precision residual probes show that this high-density branch is
+not a false convergence caused by VTK output truncation or continuity residual
+scaling. The diagnostic first confirmed that VTK-roundtripped states can show a
+spurious `~0.1` Poisson block residual; converting the final high-precision
+`latest_state.csv` at `-13.2 V` instead gives `psi ~= 1.37e-8`,
+`phin ~= 7.27e-12`, and `phip ~= 7.27e-12`.
+
+The no-impact branch was then re-run from the same `-10 V` restart to selected
+target biases, saving high-precision final states and probing them with the
+current C++ Newton residual evaluator:
+
+| bias (V) | electron current (A/m) | `psi` block | `phin` block |
+|---:|---:|---:|---:|
+| `-12.70` | `-4.475e-11` | `3.28e-09` | `6.33e-12` |
+| `-12.75` | `-6.424e-10` | `1.17e-09` | `1.01e-11` |
+| `-12.80` | `-3.124e-09` | `1.01e-10` | `1.14e-11` |
+| `-12.85` | `-9.001e-09` | `2.24e-08` | `1.99e-11` |
+| `-12.90` | `-1.389e-08` | `1.17e-11` | `6.72e-12` |
+| `-13.20` | `-1.375e-08` | `1.37e-08` | `7.27e-12` |
+
+At focus nodes `351/986`, `log10(electrons_m^-3)` jumps from about `9.88` at
+`-12.70 V` to about `11.14` at `-12.75 V`, then saturates near `12.29` after
+`-12.90 V`. Since the accepted high-density states are internally
+residual-balanced, the next implementation work should instrument
+accepted-step Newton history and coupled Jacobian/continuation behavior around
+`-12.70 V -> -12.75 V`, rather than loosening/tightening residual thresholds or
+tuning avalanche, SRH, mobility, contact relaxation, or material `ni`.
+
+Accepted-step Newton history diagnostics were then added and run on the same
+branch jump. For the direct `-12.70 V -> -12.75 V` no-impact step, Newton took
+five full accepted iterations at `-12.75 V`; line-search damping stayed at
+`1.0` and the dominant residual was the Poisson block. The first accepted
+iteration at `-12.75 V` had `psi block ~= 3.81`, while `phin block ~=
+1.95e-10`; the final accepted iteration reached `psi block ~= 1.64e-8` and
+`phin block ~= 1.38e-13`.
+
+A smaller `-0.005 V` continuation step from the same `-12.70 V` restart delayed
+but did not remove the transition:
+
+| bias | focus `log10(electrons_m^-3)` | note |
+|---:|---:|---|
+| `-12.75 V` | `~10.71` | lower than the direct `-0.05 V` jump |
+| `-12.77 V` | `>= 11` | first threshold crossing |
+| `-12.84 V` | `>= 12` | high-density branch established |
+| `-13.20 V` | `~12.34` | still high-density at target bias |
+
+Across the `-0.005 V` run, line-search damping remained `1.0`, maximum Newton
+iterations per point were `3`, and final residuals were again dominated by the
+Poisson block. This points away from line-search failure or electron-continuity
+residual imbalance and toward electrostatic Newton branch control:
+pseudo-transient continuation, trust-region/max-update policy, or
+Sentaurus-like coupled-variable extrapolation should be the next opt-in solver
+experiments.
+
+The existing `solver.max_update` cap was then tested as a trust-region proxy.
+All variants used the no-impact `-12.70 V` high-precision restart,
+`step = -0.005 V`, and ran to `-13.20 V`:
+
+| `max_update` | final focus `log10(electrons_m^-3)` | final electron current (A/m) | max Newton iters/point |
+|---:|---:|---:|---:|
+| `5.0` | `12.343` | `-1.568e-08` | 3 |
+| `1.0` | `12.343` | `-1.568e-08` | 4 |
+| `0.5` | `12.343` | `-1.568e-08` | 6 |
+| `0.2` | `12.343` | `-1.568e-08` | 8 |
+| `0.1` | `12.343` | `-1.568e-08` | 14 |
+| `0.05` | `12.343` | `-1.568e-08` | 25 |
+
+Tighter values, `0.02` and `0.01`, fail at the `-12.70 V` restart point with
+`max_iterations`; the remaining residual is still Poisson-dominated. Therefore
+plain Newton update capping is not enough to recover the Sentaurus-like
+low-density branch. The next useful solver work should be a true
+continuation-control experiment: pseudo-transient/homotopy, coupled-variable
+predictor/extrapolation control, or a block-aware trust region.
+
+An external linear-predictor proxy was tested before adding any production
+predictor code. It uses two prior high-precision restart states and solves each
+target bias from:
+
+```text
+x_pred = x_curr + alpha * (x_curr - x_prev)
+```
+
+This proxy is a real branch-control lever. With `-0.005 V` target spacing, the
+focus electron density evolves as:
+
+| bias | focus `log10(electrons_m^-3)` | terminal current state |
+|---:|---:|---|
+| `-12.75 V` | `~10.73` | finite |
+| `-12.80 V` | `~11.61` | finite |
+| `-12.85 V` | `~12.10` | finite |
+| `-12.90 V` | `~12.29` | finite |
+| `-12.95 V` | `~11.96` | terminal current columns collapse to zero |
+| `-13.20 V` | `~10.88` | terminal current columns remain zero |
+
+So predictor/extrapolation can move the solution away from the previously
+stable high-density branch, but the current external proxy lands on a suspicious
+low-current branch and is not an acceptance fix. A production predictor should
+be opt-in and TDD-covered, with explicit diagnostics for predicted initial
+state quality, terminal-current consistency, and no-impact branch parity.

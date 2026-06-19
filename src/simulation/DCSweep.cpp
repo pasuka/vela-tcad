@@ -3,6 +3,7 @@
 #include "vela/core/UnitScalingSystem.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/equation/AssemblerUtils.h"
+#include "vela/simulation/DCSweepPredictor.h"
 #include "vela/simulation/DCSweepStepControl.h"
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/io/CSVWriter.h"
@@ -89,6 +90,27 @@ struct ContinuityBalanceDiagnosticRow {
     Real carrierDensityInterior_m3 = 0.0;
 };
 
+std::string classifySgAvalancheEdge(
+    const DeviceMesh& mesh,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const detail::SgEdgeCurrentAvalancheSourceRecord& record)
+{
+    bool node0Contact = false;
+    bool node1Contact = false;
+    for (Index contactId = 0; contactId < mesh.numContacts(); ++contactId) {
+        const Contact& contact = mesh.getContact(contactId);
+        node0Contact = node0Contact ||
+            std::find(contact.node_ids.begin(), contact.node_ids.end(), record.node0) != contact.node_ids.end();
+        node1Contact = node1Contact ||
+            std::find(contact.node_ids.begin(), contact.node_ids.end(), record.node1) != contact.node_ids.end();
+    }
+    if (node0Contact || node1Contact)
+        return "contact_edge";
+    if (record.edgeId < edgeCells.size() && edgeCells[record.edgeId].size() < 2)
+        return "boundary";
+    return "interior_bulk";
+}
+
 std::string formatReal(Real value)
 {
     std::ostringstream oss;
@@ -132,6 +154,19 @@ Real perMeterToPerMicron(Real value)
 Real voltsPerMeterToVoltsPerCm(Real value)
 {
     return value / 100.0;
+}
+
+Real terminalCurrentConsistencyRatio(const ContactCurrentResult& current)
+{
+    constexpr Real floor = 1.0e-300;
+    const Real componentMagnitude =
+        std::abs(current.electronDriftCurrent) +
+        std::abs(current.electronDiffusionCurrent) +
+        std::abs(current.holeDriftCurrent) +
+        std::abs(current.holeDiffusionCurrent);
+    if (componentMagnitude <= floor)
+        return 1.0;
+    return std::abs(current.totalCurrent) / componentMagnitude;
 }
 
 std::vector<Real> buildEffectiveIntrinsicDensityVector(const DeviceMesh& mesh,
@@ -805,6 +840,90 @@ HybridHandoffConfig hybridHandoffConfigFromJson(const nlohmann::json& solverJson
     return hybrid;
 }
 
+bool isAllowedSweepPredictorMode(const std::string& mode)
+{
+    return mode == "none" || mode == "constant" || mode == "linear" || mode == "secant";
+}
+
+bool isAllowedSweepPredictorField(const std::string& field)
+{
+    return field == "psi" || field == "phin" || field == "phip";
+}
+
+void parseSweepContinuationConfig(const nlohmann::json& sweepJson,
+                                  DCSweepConfig&        sweep)
+{
+    if (!sweepJson.contains("continuation"))
+        return;
+    const auto& continuation = sweepJson.at("continuation");
+    if (!continuation.is_object())
+        throw std::invalid_argument("DCSweep: sweep.continuation must be an object.");
+
+    if (continuation.contains("predictor")) {
+        const auto& predictor = continuation.at("predictor");
+        if (!predictor.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.continuation.predictor must be an object.");
+        sweep.continuation.predictor.mode =
+            predictor.value("mode", sweep.continuation.predictor.mode);
+        if (!isAllowedSweepPredictorMode(sweep.continuation.predictor.mode)) {
+            throw std::invalid_argument(
+                "DCSweep: sweep.continuation.predictor.mode must be one of "
+                "'none', 'constant', 'linear', or 'secant'.");
+        }
+        if (predictor.contains("fields")) {
+            const auto& fields = predictor.at("fields");
+            if (!fields.is_array())
+                throw std::invalid_argument(
+                    "DCSweep: sweep.continuation.predictor.fields must be an array.");
+            sweep.continuation.predictor.fields.clear();
+            for (const auto& entry : fields) {
+                const std::string field = entry.get<std::string>();
+                if (!isAllowedSweepPredictorField(field)) {
+                    throw std::invalid_argument(
+                        "DCSweep: sweep.continuation.predictor.fields entries must be "
+                        "'psi', 'phin', or 'phip'.");
+                }
+                sweep.continuation.predictor.fields.push_back(field);
+            }
+        }
+        sweep.continuation.predictor.maxExtrapolationRatio = predictor.value(
+            "max_extrapolation_ratio",
+            sweep.continuation.predictor.maxExtrapolationRatio);
+        if (!std::isfinite(sweep.continuation.predictor.maxExtrapolationRatio) ||
+            sweep.continuation.predictor.maxExtrapolationRatio < 1.0) {
+            throw std::invalid_argument(
+                "DCSweep: sweep.continuation.predictor.max_extrapolation_ratio "
+                "must be finite and at least 1.");
+        }
+        if (sweep.continuation.predictor.mode != "none" &&
+            sweep.continuation.predictor.fields.empty()) {
+            sweep.continuation.predictor.fields = {"psi", "phin", "phip"};
+        }
+    }
+
+    if (continuation.contains("branch_acceptance")) {
+        const auto& branchAcceptance = continuation.at("branch_acceptance");
+        if (!branchAcceptance.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.continuation.branch_acceptance must be an object.");
+        sweep.continuation.branchAcceptance.terminalCurrentConsistency =
+            branchAcceptance.value(
+                "terminal_current_consistency",
+                sweep.continuation.branchAcceptance.terminalCurrentConsistency);
+        sweep.continuation.branchAcceptance.minTerminalCurrentRatio =
+            branchAcceptance.value(
+                "min_terminal_current_ratio",
+                sweep.continuation.branchAcceptance.minTerminalCurrentRatio);
+        if (!std::isfinite(sweep.continuation.branchAcceptance.minTerminalCurrentRatio) ||
+            sweep.continuation.branchAcceptance.minTerminalCurrentRatio < 0.0) {
+            throw std::invalid_argument(
+                "DCSweep: sweep.continuation.branch_acceptance.min_terminal_current_ratio "
+                "must be finite and non-negative.");
+        }
+    }
+}
+
 DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
                                     const std::filesystem::path& cfgDir,
                                     UnitScalingConfig scaling)
@@ -843,6 +962,7 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.vtkPrefix = j.value("vtk_prefix", cfg.value("output_vtk_prefix", std::string("dc_sweep")));
     sweep.initialStateFile = j.value("initial_state_file", std::string{});
     sweep.writeStateFile = j.value("write_state_file", std::string{});
+    parseSweepContinuationConfig(j, sweep);
 
     const auto chargeCfg = j.value("terminal_charge", nlohmann::json::object());
     sweep.chargeContact = chargeCfg.value("contact", j.value("charge_contact", sweep.contact));
@@ -901,6 +1021,26 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
             continuityCfg.value("contacts", std::vector<std::string>{});
         sweep.diagnostics.continuityBalance.csvFile =
             continuityCfg.value("csv_file", std::string{});
+    }
+    if (diagnosticsCfg.contains("sg_avalanche_edges")) {
+        const auto& sgAvalancheCfg = diagnosticsCfg.at("sg_avalanche_edges");
+        if (!sgAvalancheCfg.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.diagnostics.sg_avalanche_edges must be an object.");
+        sweep.diagnostics.sgAvalancheEdges.enabled =
+            sgAvalancheCfg.value("enabled", sweep.diagnostics.sgAvalancheEdges.enabled);
+        sweep.diagnostics.sgAvalancheEdges.csvFile =
+            sgAvalancheCfg.value("csv_file", std::string{});
+    }
+    if (diagnosticsCfg.contains("newton_history")) {
+        const auto& newtonHistoryCfg = diagnosticsCfg.at("newton_history");
+        if (!newtonHistoryCfg.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.diagnostics.newton_history must be an object.");
+        sweep.diagnostics.newtonHistory.enabled =
+            newtonHistoryCfg.value("enabled", sweep.diagnostics.newtonHistory.enabled);
+        sweep.diagnostics.newtonHistory.csvFile =
+            newtonHistoryCfg.value("csv_file", std::string{});
     }
 
     if (j.contains("terminal_charges")) {
@@ -969,6 +1109,26 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         } else {
             sweep.diagnostics.continuityBalance.csvFile =
                 resolve(sweep.diagnostics.continuityBalance.csvFile);
+        }
+    }
+    if (sweep.diagnostics.sgAvalancheEdges.enabled) {
+        if (sweep.diagnostics.sgAvalancheEdges.csvFile.empty()) {
+            const std::filesystem::path csvPath(sweep.csvFile);
+            sweep.diagnostics.sgAvalancheEdges.csvFile =
+                (csvPath.parent_path() / (csvPath.stem().string() + "_sg_avalanche_edges.csv")).string();
+        } else {
+            sweep.diagnostics.sgAvalancheEdges.csvFile =
+                resolve(sweep.diagnostics.sgAvalancheEdges.csvFile);
+        }
+    }
+    if (sweep.diagnostics.newtonHistory.enabled) {
+        if (sweep.diagnostics.newtonHistory.csvFile.empty()) {
+            const std::filesystem::path csvPath(sweep.csvFile);
+            sweep.diagnostics.newtonHistory.csvFile =
+                (csvPath.parent_path() / (csvPath.stem().string() + "_newton_history.csv")).string();
+        } else {
+            sweep.diagnostics.newtonHistory.csvFile =
+                resolve(sweep.diagnostics.newtonHistory.csvFile);
         }
     }
 
@@ -1317,6 +1477,17 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     }
     const std::vector<Real> effectiveNi = buildEffectiveIntrinsicDensityVector(
         mesh, matdb, doping, temperature_K, sweepBgnConfig);
+    const auto sweepEdgeCells = detail::buildEdgeCellMap(mesh);
+    const auto sweepCellMaterials = detail::buildCellMaterials(mesh, matdb, temperature_K);
+    const auto sweepMobility = makeMobilityModel(mobilityConfig);
+    const auto sweepImpactIonization = makeImpactIonizationModel(sweepImpactIonizationConfig);
+    if (sweep.diagnostics.sgAvalancheEdges.enabled &&
+        !detail::usesDensityGradientAvalancheCurrent(sweepImpactIonizationConfig)) {
+        throw std::invalid_argument(
+            "DCSweep: sweep.diagnostics.sg_avalanche_edges requires "
+            "impact_ionization.generation='current_density' and "
+            "impact_ionization.current_approximation='density_gradient'.");
+    }
     // Build DDScalingSpec for contact current post-processing.
     DDScalingSpec ddScaling;
     if (sweep.scaling.isUnitScaling()) {
@@ -1340,6 +1511,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     StoredCharge storedCharge(mesh);
     const bool hasMultiTerminalCharges = cfg.at("sweep").contains("terminal_charges");
     const TerminalChargeConfig& legacyChargeConfig = sweep.terminalCharges.front();
+    const bool continuationDiagnosticsEnabled =
+        sweep.continuation.predictor.mode != "none" ||
+        sweep.continuation.branchAcceptance.terminalCurrentConsistency;
 
     CSVWriter csv(sweep.csvFile);
     std::vector<std::string> header = {"mode", "bias_contact", "bias_V",
@@ -1416,6 +1590,13 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         header.push_back("min_hole_mobility_limiter");
         header.push_back("mean_electron_mobility_limiter");
         header.push_back("mean_hole_mobility_limiter");
+    }
+    if (continuationDiagnosticsEnabled) {
+        header.push_back("predictor_mode");
+        header.push_back("predicted_initial_state");
+        header.push_back("branch_acceptance_status");
+        header.push_back("branch_acceptance_reason");
+        header.push_back("terminal_current_consistency_ratio");
     }
     csv.writeHeader(header);
 
@@ -1537,8 +1718,75 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "carrier_density_interior_m3"});
     }
 
+    std::unique_ptr<CSVWriter> sgAvalancheEdgesCsv;
+    if (sweep.diagnostics.sgAvalancheEdges.enabled) {
+        const std::filesystem::path diagPath(sweep.diagnostics.sgAvalancheEdges.csvFile);
+        if (!diagPath.parent_path().empty())
+            std::filesystem::create_directories(diagPath.parent_path());
+        sgAvalancheEdgesCsv = std::make_unique<CSVWriter>(diagPath.string());
+        sgAvalancheEdgesCsv->writeHeader({
+            "point_index",
+            "bias_V",
+            "edge_id",
+            "node0",
+            "node1",
+            "x0_um",
+            "y0_um",
+            "x1_um",
+            "y1_um",
+            "edge_length_m",
+            "edge_couple_m",
+            "edge_area_proxy_m2",
+            "electric_field_V_per_m",
+            "electron_impact_field_V_per_m",
+            "hole_impact_field_V_per_m",
+            "electron_alpha_m_inv",
+            "hole_alpha_m_inv",
+            "electron_mobility_m2_V_s",
+            "hole_mobility_m2_V_s",
+            "electron_flux_proxy",
+            "hole_flux_proxy",
+            "electron_source_integral",
+            "hole_source_integral",
+            "edge_source_integral",
+            "node0_source_integral",
+            "node1_source_integral",
+            "edge_class"});
+    }
+
+    std::unique_ptr<CSVWriter> newtonHistoryCsv;
+    if (sweep.diagnostics.newtonHistory.enabled) {
+        const std::filesystem::path diagPath(sweep.diagnostics.newtonHistory.csvFile);
+        if (!diagPath.parent_path().empty())
+            std::filesystem::create_directories(diagPath.parent_path());
+        newtonHistoryCsv = std::make_unique<CSVWriter>(diagPath.string());
+        newtonHistoryCsv->writeHeader({
+            "point_index",
+            "bias_V",
+            "bias_contact",
+            "solver_method",
+            "handoff_stage",
+            "iteration",
+            "residual_norm",
+            "relative_residual_norm",
+            "raw_step_norm",
+            "applied_step_norm",
+            "damping_factor",
+            "line_search_attempts",
+            "line_search_accepted",
+            "block_psi",
+            "block_phin",
+            "block_phip",
+            "block_combined"});
+    }
+
     std::vector<DCSweepPoint> points;
     DDSolution previousSolution;
+    DDSolution predictorPreviousSolution;
+    Real predictorPreviousBias = 0.0;
+    Real currentSolutionBias = 0.0;
+    bool hasPredictorPreviousSolution = false;
+    bool hasCurrentSolutionBias = false;
     int vtkIndex = 0;
 
     struct SolvePointAttempt {
@@ -1551,6 +1799,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         int newtonIterations = 0;
         std::string handoffStage;
         NewtonFailureDiagnostics newtonFailureDiagnostics;
+        std::vector<NewtonIterationInfo> newtonHistory;
+        bool predictedInitialState = false;
+        std::string branchAcceptanceStatus;
+        std::string branchAcceptanceReason;
+        Real terminalCurrentConsistencyRatio = 1.0;
     };
 
     if ((solverMethod == SolverMethod::Newton ||
@@ -1587,6 +1840,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 attempt.newtonIterations = result.iters;
                 attempt.handoffStage = solverConverged ? "newton" : "newton_failed";
                 attempt.newtonFailureDiagnostics = result.failureDiagnostics;
+                attempt.newtonHistory = result.history;
                 if (!solverConverged) {
                     attempt.failureReason = result.failureDiagnostics.failureReason.empty()
                         ? "newton_non_convergence"
@@ -1612,6 +1866,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         : runNewton(mesh, matdb, doping, biases,
                                     handoffNewton, fixedChargeSpecs, sheetChargeSpecs);
                     attempt.newtonFailureDiagnostics = result.failureDiagnostics;
+                    attempt.newtonHistory = result.history;
                 } else {
                     GummelConfig initializerGummel = gummel;
                     if (hybrid.gummelMaxIter >= 0)
@@ -1644,6 +1899,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     result = runNewton(mesh, matdb, doping, biases, gummelInitial,
                                        handoffNewton, fixedChargeSpecs, sheetChargeSpecs);
                     attempt.newtonFailureDiagnostics = result.failureDiagnostics;
+                    attempt.newtonHistory = result.history;
                     const bool acceptedNewton =
                         result.converged && !(hybrid.newtonMaxIter == 0 && result.iters == 0);
                     if (!acceptedNewton && hybrid.fallbackToGummelOnNewtonFailure) {
@@ -1696,6 +1952,63 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 "DCSweep: solver threw an unknown exception at voltage " +
                 formatReal(voltage) + " V."));
         }
+    };
+
+    auto applyBranchAcceptance = [&](SolvePointAttempt& attempt) {
+        if (!sweep.continuation.branchAcceptance.terminalCurrentConsistency)
+            return;
+        attempt.branchAcceptanceStatus = "not_checked";
+        attempt.terminalCurrentConsistencyRatio = 1.0;
+        if (!attempt.ok)
+            return;
+
+        const ContactCurrentResult branchCurrent =
+            contactCurrent.compute(attempt.solution, sweep.currentContact);
+        attempt.terminalCurrentConsistencyRatio =
+            terminalCurrentConsistencyRatio(branchCurrent);
+        if (!std::isfinite(attempt.terminalCurrentConsistencyRatio) ||
+            attempt.terminalCurrentConsistencyRatio <
+                sweep.continuation.branchAcceptance.minTerminalCurrentRatio) {
+            attempt.ok = false;
+            attempt.failureReason = "branch_acceptance_failed";
+            attempt.branchAcceptanceStatus = "rejected";
+            attempt.branchAcceptanceReason = "terminal_current_inconsistent";
+            return;
+        }
+        attempt.branchAcceptanceStatus = "accepted";
+        attempt.branchAcceptanceReason.clear();
+    };
+
+    auto solvePointWithContinuation = [&](Real voltage, const DDSolution* initial) -> SolvePointAttempt {
+        if (initial == nullptr || sweep.continuation.predictor.mode == "none") {
+            SolvePointAttempt attempt = solvePoint(voltage, initial);
+            applyBranchAcceptance(attempt);
+            return attempt;
+        }
+
+        DDSolution predicted = detail::predictDCSweepInitialState(
+            sweep.continuation.predictor,
+            hasPredictorPreviousSolution ? &predictorPreviousSolution : nullptr,
+            *initial,
+            predictorPreviousBias,
+            currentSolutionBias,
+            voltage);
+        SolvePointAttempt attempt = solvePoint(voltage, &predicted);
+        attempt.predictedInitialState = true;
+        applyBranchAcceptance(attempt);
+        return attempt;
+    };
+
+    auto acceptPredictorHistory = [&](const DDSolution& previous,
+                                      Real              previousBias,
+                                      Real              acceptedBias) {
+        if (hasCurrentSolutionBias) {
+            predictorPreviousSolution = previous;
+            predictorPreviousBias = previousBias;
+            hasPredictorPreviousSolution = true;
+        }
+        currentSolutionBias = acceptedBias;
+        hasCurrentSolutionBias = true;
     };
 
     auto lastConvergedPoint = [&]() -> const DCSweepPoint* {
@@ -1775,6 +2088,14 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         point.retryCount = retryCount;
         point.validationDiagnostics = validationDiagnostics;
         point.newtonFailureDiagnostics = attempt.newtonFailureDiagnostics;
+        point.predictorMode = continuationDiagnosticsEnabled
+            ? sweep.continuation.predictor.mode
+            : std::string();
+        point.predictedInitialState = attempt.predictedInitialState;
+        point.branchAcceptanceStatus = attempt.branchAcceptanceStatus;
+        point.branchAcceptanceReason = attempt.branchAcceptanceReason;
+        point.terminalCurrentConsistencyRatio =
+            attempt.terminalCurrentConsistencyRatio;
         if (!converged && !point.newtonFailureDiagnostics.failureReason.empty()) {
             point.newtonFailureClass = point.newtonFailureDiagnostics.failureReason;
             point.failureDiagnosticsJson = newtonFailureJsonPath.string();
@@ -2029,9 +2350,40 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 row.push_back(formatReal(it != extraFieldValues.end() ? it->second : 0.0));
             }
         }
+        if (continuationDiagnosticsEnabled) {
+            row.push_back(point.predictorMode);
+            row.push_back(point.predictedInitialState ? "1" : "0");
+            row.push_back(point.branchAcceptanceStatus);
+            row.push_back(point.branchAcceptanceReason);
+            row.push_back(formatReal(point.terminalCurrentConsistencyRatio));
+        }
         csv.writeRow(row);
         if (!converged && !point.newtonFailureDiagnostics.failureReason.empty())
             writeNewtonFailureDiagnostics(points.size(), point);
+
+        if (converged && newtonHistoryCsv != nullptr) {
+            const std::size_t pointIndex = points.size();
+            for (const NewtonIterationInfo& info : attempt.newtonHistory) {
+                newtonHistoryCsv->writeRow({
+                    std::to_string(pointIndex),
+                    formatReal(point.bias),
+                    sweep.contact,
+                    point.solverMethod,
+                    point.handoffStage,
+                    std::to_string(info.iter),
+                    formatReal(info.residualNorm),
+                    formatReal(info.relativeResidualNorm),
+                    formatReal(info.rawStepNorm),
+                    formatReal(info.stepNorm),
+                    formatReal(info.dampingFactor),
+                    std::to_string(info.lineSearchAttempts),
+                    info.lineSearchAccepted ? "1" : "0",
+                    formatReal(info.blockResiduals.psi),
+                    formatReal(info.blockResiduals.phin),
+                    formatReal(info.blockResiduals.phip),
+                    formatReal(info.blockResiduals.combined)});
+            }
+        }
 
         if (converged && terminalBalanceCsv != nullptr) {
             const std::size_t pointIndex = points.size();
@@ -2153,6 +2505,59 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             }
         }
 
+        if (converged && sgAvalancheEdgesCsv != nullptr) {
+            const std::size_t pointIndex = points.size();
+            const std::vector<detail::SgEdgeCurrentAvalancheSourceRecord> records =
+                detail::sgEdgeCurrentAvalancheSourceRecords(
+                    sweepImpactIonizationConfig,
+                    *sweepImpactIonization,
+                    mobilityConfig,
+                    *sweepMobility,
+                    sweepEdgeCells,
+                    mesh,
+                    doping,
+                    sweepCellMaterials,
+                    sol.psi,
+                    sol.phin,
+                    sol.phip,
+                    sol.n,
+                    sol.p,
+                    effectiveNi,
+                    constants::kb * temperature_K / constants::q);
+            for (const detail::SgEdgeCurrentAvalancheSourceRecord& record : records) {
+                const Node& node0 = mesh.getNode(record.node0);
+                const Node& node1 = mesh.getNode(record.node1);
+                sgAvalancheEdgesCsv->writeRow({
+                    std::to_string(pointIndex),
+                    formatReal(point.bias),
+                    std::to_string(record.edgeId),
+                    std::to_string(record.node0),
+                    std::to_string(record.node1),
+                    formatReal(node0.x * 1.0e6),
+                    formatReal(node0.y * 1.0e6),
+                    formatReal(node1.x * 1.0e6),
+                    formatReal(node1.y * 1.0e6),
+                    formatReal(record.edgeLength),
+                    formatReal(record.edgeCouple),
+                    formatReal(record.edgeAreaProxy),
+                    formatReal(record.electricField),
+                    formatReal(record.electronImpactField),
+                    formatReal(record.holeImpactField),
+                    formatReal(record.electronAlpha),
+                    formatReal(record.holeAlpha),
+                    formatReal(record.electronMobility),
+                    formatReal(record.holeMobility),
+                    formatReal(record.electronFluxProxy),
+                    formatReal(record.holeFluxProxy),
+                    formatReal(record.electronSourceIntegral),
+                    formatReal(record.holeSourceIntegral),
+                    formatReal(record.edgeSourceIntegral),
+                    formatReal(record.node0SourceIntegral),
+                    formatReal(record.node1SourceIntegral),
+                    classifySgAvalancheEdge(mesh, sweepEdgeCells, record)});
+            }
+        }
+
         if (converged && sweep.writeVtk) {
             point.outputVtk = vtkFilename(sweep.vtkPrefix, vtkIndex++, voltage);
             writeDDSolutionVTK(point.outputVtk,
@@ -2193,7 +2598,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             int retryCount = 0;
             try {
                 if (!havePreviousBias) {
-                    attempt = solvePoint(bias, initial);
+                    attempt = solvePointWithContinuation(bias, initial);
                     ok = attempt.ok;
                     acceptedStep = ok ? attemptedStep : 0.0;
                     failureReason = attempt.failureReason;
@@ -2224,7 +2629,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         [&](Real voltage, Real, int) {
                             try {
                                 SolvePointAttempt pointAttempt =
-                                    solvePoint(voltage, &localPreviousSolution);
+                                    solvePointWithContinuation(voltage, &localPreviousSolution);
                                 const bool pointOk = pointAttempt.ok;
                                 lastPointAttempt = std::move(pointAttempt);
                                 lastPointFailureReason = pointOk
@@ -2263,6 +2668,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         });
 
                     if (ok) {
+                        acceptPredictorHistory(previousSolution, currentSolutionBias, recordedVoltage);
                         previousSolution = std::move(localPreviousSolution);
                         initial = &previousSolution;
                     } else if (failureReason.empty()) {
@@ -2290,6 +2696,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             }
             if (!havePreviousBias) {
                 previousSolution = std::move(attempt.solution);
+                currentSolutionBias = bias;
+                hasCurrentSolutionBias = true;
                 initial = &previousSolution;
             }
             previousBias = bias;
@@ -2303,7 +2711,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     std::string startFailureReason;
     std::string startValidationDiagnostics;
     try {
-        startAttempt = solvePoint(sweep.start, initialState.get());
+        startAttempt = solvePointWithContinuation(sweep.start, initialState.get());
         startOk = startAttempt.ok;
         startFailureReason = startAttempt.failureReason;
         startValidationDiagnostics = startAttempt.validationDiagnostics;
@@ -2320,6 +2728,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     if (!startOk)
         return DCSweepResult{std::move(mesh), std::move(points)};
     previousSolution = std::move(startAttempt.solution);
+    currentSolutionBias = sweep.start;
+    hasCurrentSolutionBias = true;
 
     SolvePointAttempt lastStepAttempt;
     std::string lastStepFailureReason;
@@ -2339,7 +2749,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         stepControl,
         [&](Real voltage, Real, int) {
             try {
-                SolvePointAttempt attempt = solvePoint(voltage, &previousSolution);
+                SolvePointAttempt attempt = solvePointWithContinuation(voltage, &previousSolution);
                 lastStepAttempt = std::move(attempt);
                 lastStepFailureReason = lastStepAttempt.ok ? std::string() : lastStepAttempt.failureReason;
                 lastStepValidationDiagnostics = lastStepAttempt.validationDiagnostics;
@@ -2365,6 +2775,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         event.attemptedStep, event.acceptedStep, event.retryCount, failureReason,
                         lastStepValidationDiagnostics);
             if (event.converged) {
+                acceptPredictorHistory(previousSolution, currentSolutionBias, event.voltage);
                 previousSolution = std::move(lastStepAttempt.solution);
             }
         });

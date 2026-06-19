@@ -15,6 +15,9 @@ archived planning notes.
   the regression expectations tied to those decks.
 - [Sentaurus import](sentaurus_import.md): HDF5/TDR import prerequisites,
   `sentaurus_import` CLI usage, and end-to-end conversion workflow.
+- [Sentaurus VMware SSH workflow](sentaurus_vm_ssh_workflow.md): Host-only
+  VMware networking, legacy CentOS SSH setup, and remote Sentaurus run/copy
+  commands for the local Sentaurus 2018 VM.
 - [Poisson unit-scaling notes](development_poisson_unit_scaling.md): developer
   notes for the scaled Poisson assembly path used by
   `scaling.mode = "unit_scaling"`.

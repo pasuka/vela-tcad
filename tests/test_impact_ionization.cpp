@@ -2,6 +2,7 @@
 #include <catch2/catch_approx.hpp>
 #include <nlohmann/json.hpp>
 
+#include "vela/equation/AssemblerUtils.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/mesh/DeviceMesh.h"
@@ -12,7 +13,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 #include <memory>
+#include <sstream>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -476,6 +481,211 @@ TEST_CASE("Coupled DD SG edge-current avalanche Jacobian matches carrier finite 
     }
 
     REQUIRE(maxAbsDiff / std::max<Real>(1.0, maxAbsRef) < 5.0e-5);
+}
+
+TEST_CASE("SG edge-current avalanche records sum to assembled nodal source",
+          "[impact][diagnostic]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    VectorXd psi = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.02, 0.025);
+    VectorXd phin = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), 0.01, -0.006);
+    VectorXd phip = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.007, 0.005);
+    VectorXd n(static_cast<int>(mesh.numNodes()));
+    VectorXd p(static_cast<int>(mesh.numNodes()));
+    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+    for (int i = 0; i < static_cast<int>(mesh.numNodes()); ++i) {
+        n(i) = ni[static_cast<std::size_t>(i)] * std::exp((psi(i) - phin(i)) / Vt);
+        p(i) = ni[static_cast<std::size_t>(i)] * std::exp((phip(i) - psi(i)) / Vt);
+    }
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "electric_field";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "density_gradient";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0e-30;
+    const auto impact = makeImpactIonizationModel(impactConfig);
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, constants::T0);
+
+    const auto nodal = detail::sgEdgeCurrentAvalancheSourceIntegrals(
+        impactConfig,
+        *impact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        psi,
+        phin,
+        phip,
+        n,
+        p,
+        ni,
+        Vt);
+    const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *impact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        psi,
+        phin,
+        phip,
+        n,
+        p,
+        ni,
+        Vt);
+
+    std::vector<Real> fromRecords(static_cast<std::size_t>(mesh.numNodes()), 0.0);
+    Real totalEdgeSource = 0.0;
+    for (const auto& record : records) {
+        REQUIRE(record.edgeAreaProxy > 0.0);
+        REQUIRE(record.edgeSourceIntegral >= 0.0);
+        REQUIRE(record.node0SourceIntegral == Catch::Approx(0.5 * record.edgeSourceIntegral));
+        REQUIRE(record.node1SourceIntegral == Catch::Approx(0.5 * record.edgeSourceIntegral));
+        fromRecords[static_cast<std::size_t>(record.node0)] += record.node0SourceIntegral;
+        fromRecords[static_cast<std::size_t>(record.node1)] += record.node1SourceIntegral;
+        totalEdgeSource += record.edgeSourceIntegral;
+    }
+
+    REQUIRE(totalEdgeSource > 0.0);
+    Real totalNodalSource = 0.0;
+    for (Index node = 0; node < mesh.numNodes(); ++node) {
+        totalNodalSource += nodal[static_cast<std::size_t>(node)];
+        REQUIRE(fromRecords[static_cast<std::size_t>(node)] ==
+                Catch::Approx(nodal[static_cast<std::size_t>(node)]).margin(1.0e-18));
+    }
+    REQUIRE(totalEdgeSource == Catch::Approx(totalNodalSource).margin(1.0e-18));
+}
+
+static std::vector<Real> readVtkScalar(const std::filesystem::path& path,
+                                       const std::string& name,
+                                       std::size_t count)
+{
+    std::ifstream input(path);
+    REQUIRE(input.good());
+    std::string line;
+    while (std::getline(input, line)) {
+        std::istringstream header(line);
+        std::string token;
+        std::string scalarName;
+        header >> token >> scalarName;
+        if (token != "SCALARS" || scalarName != name)
+            continue;
+        REQUIRE(std::getline(input, line));
+        std::vector<Real> values;
+        while (values.size() < count && std::getline(input, line)) {
+            std::istringstream row(line);
+            Real value = 0.0;
+            while (row >> value)
+                values.push_back(value);
+        }
+        REQUIRE(values.size() >= count);
+        values.resize(count);
+        return values;
+    }
+    FAIL("missing VTK scalar " << name);
+    return {};
+}
+
+TEST_CASE("VTK AvalancheGeneration uses SG edge nodal source over node volume",
+          "[impact][diagnostic][vtk]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    DDSolution sol;
+    sol.psi = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.02, 0.025);
+    sol.phin = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), 0.01, -0.006);
+    sol.phip = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.007, 0.005);
+    sol.n.resize(static_cast<int>(mesh.numNodes()));
+    sol.p.resize(static_cast<int>(mesh.numNodes()));
+    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+    for (int i = 0; i < static_cast<int>(mesh.numNodes()); ++i) {
+        sol.n(i) = ni[static_cast<std::size_t>(i)] * std::exp((sol.psi(i) - sol.phin(i)) / Vt);
+        sol.p(i) = ni[static_cast<std::size_t>(i)] * std::exp((sol.phip(i) - sol.psi(i)) / Vt);
+    }
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "electric_field";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "density_gradient";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0e-30;
+    const auto impact = makeImpactIonizationModel(impactConfig);
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const RecombinationModelConfig recombinationConfig = recombinationModelConfig({"none"});
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, constants::T0);
+    const auto expectedNodal = detail::sgEdgeCurrentAvalancheSourceIntegrals(
+        impactConfig,
+        *impact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+
+    const auto vtkPath = std::filesystem::temp_directory_path() /
+        "vela_sg_avalanche_generation_volume_policy.vtk";
+    writeDDSolutionVTK(
+        vtkPath.string(),
+        mesh,
+        matdb,
+        doping,
+        sol,
+        mobilityConfig,
+        recombinationConfig,
+        impactConfig,
+        BandgapNarrowingConfig{},
+        constants::T0);
+    const std::vector<Real> avalanche =
+        readVtkScalar(vtkPath, "AvalancheGeneration", static_cast<std::size_t>(mesh.numNodes()));
+
+    for (Index node = 0; node < mesh.numNodes(); ++node) {
+        const Real integral = avalanche[static_cast<std::size_t>(node)] * mesh.getNode(node).volume;
+        REQUIRE(integral == Catch::Approx(expectedNodal[static_cast<std::size_t>(node)]).margin(1.0e-18));
+    }
+    std::error_code removeError;
+    std::filesystem::remove(vtkPath, removeError);
 }
 
 TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]")

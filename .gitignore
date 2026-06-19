@@ -70,3 +70,12 @@ Testing/
 
 # Example-generated outputs
 examples/*/outputs/
+
+# Locally regenerated Sentaurus 2018 PN2D outputs.
+# Keep source decks (*.cmd), parameter files (*.par), and metadata (*.json)
+# tracked; ignore bulky simulation results and logs.
+reference_tcad/pn2d_sentaurus2018/source/*.tdr
+reference_tcad/pn2d_sentaurus2018/source/*.plt
+reference_tcad/pn2d_sentaurus2018/source/*.log
+reference_tcad/pn2d_sentaurus2018/source/*.grd
+reference_tcad/pn2d_sentaurus2018/source/*.dat

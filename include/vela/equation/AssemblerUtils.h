@@ -507,7 +507,30 @@ inline bool usesDensityGradientAvalancheCurrent(
            config.currentApproximation == "density_gradient";
 }
 
-inline std::vector<Real> sgEdgeCurrentAvalancheSourceIntegrals(
+struct SgEdgeCurrentAvalancheSourceRecord {
+    Index edgeId = 0;
+    Index node0 = 0;
+    Index node1 = 0;
+    Real edgeLength = 0.0;
+    Real edgeCouple = 0.0;
+    Real edgeAreaProxy = 0.0;
+    Real electricField = 0.0;
+    Real electronImpactField = 0.0;
+    Real holeImpactField = 0.0;
+    Real electronAlpha = 0.0;
+    Real holeAlpha = 0.0;
+    Real electronMobility = 0.0;
+    Real holeMobility = 0.0;
+    Real electronFluxProxy = 0.0;
+    Real holeFluxProxy = 0.0;
+    Real electronSourceIntegral = 0.0;
+    Real holeSourceIntegral = 0.0;
+    Real edgeSourceIntegral = 0.0;
+    Real node0SourceIntegral = 0.0;
+    Real node1SourceIntegral = 0.0;
+};
+
+inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSourceRecords(
     const ImpactIonizationModelConfig& config,
     const ImpactIonizationModel&       impact,
     const MobilityModelConfig&         mobilityConfig,
@@ -524,7 +547,8 @@ inline std::vector<Real> sgEdgeCurrentAvalancheSourceIntegrals(
     const std::vector<Real>&           ni,
     Real                               Vt)
 {
-    std::vector<Real> source(mesh.numNodes(), 0.0);
+    std::vector<SgEdgeCurrentAvalancheSourceRecord> records;
+    records.reserve(mesh.numEdges());
     const bool qfImpact = config.drivingForce == "quasi_fermi_gradient";
     const bool qfMobility = mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient";
 
@@ -559,10 +583,23 @@ inline std::vector<Real> sgEdgeCurrentAvalancheSourceIntegrals(
             config, holeCoefficientField, electricField, pAvg);
 
         const Real edgeArea = 0.5 * h * edge.couple;
-        Real edgeSource = 0.0;
+        SgEdgeCurrentAvalancheSourceRecord record;
+        record.edgeId = e;
+        record.node0 = edge.n0;
+        record.node1 = edge.n1;
+        record.edgeLength = h;
+        record.edgeCouple = edge.couple;
+        record.edgeAreaProxy = edgeArea;
+        record.electricField = electricField;
+        record.electronImpactField = electronImpactField;
+        record.holeImpactField = holeImpactField;
+        record.electronAlpha = impact.electronCoefficient(electronImpactField);
+        record.holeAlpha = impact.holeCoefficient(holeImpactField);
+
         const Real mun = edgeMobility(
             edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Electron,
             electronMobilityField, &mobilityConfig, &psi);
+        record.electronMobility = mun;
         if (mun > 0.0) {
             const Real electronContinuityFlux01 =
                 sgElectronContinuityFluxFromQuasiFermiVariableNi(
@@ -574,13 +611,16 @@ inline std::vector<Real> sgEdgeCurrentAvalancheSourceIntegrals(
                     phin_j,
                     Vt,
                     mun * Vt / h);
-            edgeSource += impact.electronCoefficient(electronImpactField) *
-                std::abs(electronContinuityFlux01) * edgeArea;
+            record.electronFluxProxy = std::abs(electronContinuityFlux01);
+            record.electronSourceIntegral =
+                record.electronAlpha * record.electronFluxProxy * edgeArea;
+            record.edgeSourceIntegral += record.electronSourceIntegral;
         }
 
         const Real mup = edgeMobility(
             edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Hole,
             holeMobilityField, &mobilityConfig, &psi);
+        record.holeMobility = mup;
         if (mup > 0.0) {
             const Real holeContinuityFlux01 =
                 sgHoleContinuityFluxFromQuasiFermiVariableNi(
@@ -592,13 +632,57 @@ inline std::vector<Real> sgEdgeCurrentAvalancheSourceIntegrals(
                     phip_j,
                     Vt,
                     mup * Vt / h);
-            edgeSource += impact.holeCoefficient(holeImpactField) *
-                std::abs(holeContinuityFlux01) * edgeArea;
+            record.holeFluxProxy = std::abs(holeContinuityFlux01);
+            record.holeSourceIntegral =
+                record.holeAlpha * record.holeFluxProxy * edgeArea;
+            record.edgeSourceIntegral += record.holeSourceIntegral;
         }
 
-        const Real halfSource = 0.5 * edgeSource;
-        source[edge.n0] += halfSource;
-        source[edge.n1] += halfSource;
+        const Real halfSource = 0.5 * record.edgeSourceIntegral;
+        record.node0SourceIntegral = halfSource;
+        record.node1SourceIntegral = halfSource;
+        records.push_back(record);
+    }
+    return records;
+}
+
+inline std::vector<Real> sgEdgeCurrentAvalancheSourceIntegrals(
+    const ImpactIonizationModelConfig& config,
+    const ImpactIonizationModel&       impact,
+    const MobilityModelConfig&         mobilityConfig,
+    const MobilityModel&               mobility,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh&                  mesh,
+    const DopingModel&                 doping,
+    const std::vector<Material>&       cellMaterials,
+    const VectorXd&                    psi,
+    const VectorXd&                    phin,
+    const VectorXd&                    phip,
+    const VectorXd&                    n,
+    const VectorXd&                    p,
+    const std::vector<Real>&           ni,
+    Real                               Vt)
+{
+    std::vector<Real> source(mesh.numNodes(), 0.0);
+    const auto records = sgEdgeCurrentAvalancheSourceRecords(
+        config,
+        impact,
+        mobilityConfig,
+        mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        psi,
+        phin,
+        phip,
+        n,
+        p,
+        ni,
+        Vt);
+    for (const auto& record : records) {
+        source[record.node0] += record.node0SourceIntegral;
+        source[record.node1] += record.node1SourceIntegral;
     }
     return source;
 }

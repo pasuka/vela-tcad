@@ -139,7 +139,8 @@
         "impact_ionization": {
           "model": "van_overstraeten",
           "driving_force": "quasi_fermi_gradient",
-          "generation": "current_density"
+          "generation": "current_density",
+          "current_approximation": "density_gradient"
         }
       },
       "require_trend_match": false,

@@ -43,11 +43,39 @@ struct ContinuityBalanceDiagnosticsConfig {
     std::string csvFile;
 };
 
+struct SgAvalancheEdgeDiagnosticsConfig {
+    bool enabled = false;
+    std::string csvFile;
+};
+
+struct NewtonHistoryDiagnosticsConfig {
+    bool enabled = false;
+    std::string csvFile;
+};
+
 struct SweepDiagnosticsConfig {
     TerminalBalanceDiagnosticsConfig terminalBalance;
     ContactEdgeDiagnosticsConfig contactEdge;
     TransportDiagnosticsConfig transport;
     ContinuityBalanceDiagnosticsConfig continuityBalance;
+    SgAvalancheEdgeDiagnosticsConfig sgAvalancheEdges;
+    NewtonHistoryDiagnosticsConfig newtonHistory;
+};
+
+struct SweepPredictorConfig {
+    std::string mode = "none";
+    std::vector<std::string> fields;
+    Real maxExtrapolationRatio = 2.0;
+};
+
+struct SweepBranchAcceptanceConfig {
+    bool terminalCurrentConsistency = false;
+    Real minTerminalCurrentRatio = 0.0;
+};
+
+struct SweepContinuationConfig {
+    SweepPredictorConfig predictor;
+    SweepBranchAcceptanceConfig branchAcceptance;
 };
 
 struct DCSweepConfig {
@@ -79,6 +107,7 @@ struct DCSweepConfig {
     StoredChargeConfig storedCharge;
     BVReverseCriteria breakdown;
     SweepDiagnosticsConfig diagnostics;
+    SweepContinuationConfig continuation;
     UnitScalingConfig scaling;
 };
 
@@ -119,6 +148,11 @@ struct DCSweepPoint {
     std::string failureDiagnosticsJson;
     NewtonFailureDiagnostics newtonFailureDiagnostics;
     std::string validationDiagnostics;
+    std::string predictorMode;
+    bool predictedInitialState = false;
+    std::string branchAcceptanceStatus;
+    std::string branchAcceptanceReason;
+    Real terminalCurrentConsistencyRatio = 1.0;
     std::string outputCsv;
     std::string outputVtk;
 };

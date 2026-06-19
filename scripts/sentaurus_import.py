@@ -507,6 +507,7 @@ def apply_solver_physics(deck: dict[str, Any],
                 "model": "van_overstraeten",
                 "driving_force": "quasi_fermi_gradient",
                 "generation": "current_density",
+                "current_approximation": "density_gradient",
             }
         else:
             solver["impact_ionization"] = {"model": "selberherr"}

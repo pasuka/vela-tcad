@@ -610,6 +610,29 @@ resume from the latest converged point with `initial_state_file` plus either a
 new adaptive range or `bias_points` for selected target biases. Sweep CSV files
 are still opened as fresh outputs; use distinct CSV names for resumed segments.
 
+Diagnostics fields:
+- `diagnostics.transport.enabled`: appends aggregate mobility and high-field
+  drive columns to the main sweep CSV.
+- `diagnostics.contact_edge.enabled`: writes a separate contact-edge transport
+  CSV. Optional `contacts` selects contacts and `csv_file` overrides the default
+  `<sweep csv stem>_contact_edges.csv`.
+- `diagnostics.continuity_balance.enabled`: writes contact-adjacent continuity
+  balance rows. Optional `contacts` selects contacts and `csv_file` overrides
+  the default `<sweep csv stem>_continuity_balance.csv`.
+- `diagnostics.terminal_balance.enabled`: writes per-contact terminal current
+  balance rows. Optional `contacts` selects contacts and `csv_file` overrides
+  the default `<sweep csv stem>_terminal_balance.csv`.
+- `diagnostics.sg_avalanche_edges.enabled`: writes C++ assembled SG
+  edge-current avalanche source rows for `impact_ionization.generation:
+  "current_density"` with `current_approximation: "density_gradient"`. Optional
+  `csv_file` overrides the default `<sweep csv stem>_sg_avalanche_edges.csv`.
+- `diagnostics.newton_history.enabled`: writes accepted Newton iteration
+  history rows for converged sweep points. The CSV includes point index, bias,
+  solver/handoff stage, iteration number, residual norm, relative residual,
+  raw and applied update norms, damping, line-search attempt count, and
+  `psi`/`phin`/`phip`/combined block residuals. Optional `csv_file` overrides
+  the default `<sweep csv stem>_newton_history.csv`.
+
 For 2-D devices, currents and terminal charges are per-depth quantities by
 default. Legacy CSV current values are per meter of device depth, and
 `charge_C_per_m` / `capacitance_F_per_m` are also per meter. In

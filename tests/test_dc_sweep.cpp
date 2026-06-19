@@ -3,6 +3,7 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "vela/simulation/DCSweep.h"
+#include "vela/simulation/DCSweepPredictor.h"
 #include "vela/simulation/DCSweepStepControl.h"
 #include "vela/post/TerminalCharge.h"
 
@@ -82,6 +83,37 @@ std::filesystem::path writePNMesh(const std::filesystem::path& dir)
     };
 
     const auto meshPath = dir / "pn_mesh.json";
+    std::ofstream(meshPath) << mesh.dump(2);
+    return meshPath;
+}
+
+std::filesystem::path writePNMeshWithInterior(const std::filesystem::path& dir)
+{
+    nlohmann::json mesh = {
+        {"nodes", {
+            {{"id", 0}, {"x", 0.0e-6}, {"y", 0.0e-6}},
+            {{"id", 1}, {"x", 1.0e-6}, {"y", 0.0e-6}},
+            {{"id", 2}, {"x", 1.0e-6}, {"y", 1.0e-6}},
+            {{"id", 3}, {"x", 0.0e-6}, {"y", 1.0e-6}},
+            {{"id", 4}, {"x", 0.5e-6}, {"y", 0.5e-6}}
+        }},
+        {"triangles", {
+            {{"id", 0}, {"region_id", 0}, {"node_ids", {0, 1, 4}}},
+            {{"id", 1}, {"region_id", 0}, {"node_ids", {1, 2, 4}}},
+            {{"id", 2}, {"region_id", 1}, {"node_ids", {2, 3, 4}}},
+            {{"id", 3}, {"region_id", 1}, {"node_ids", {3, 0, 4}}}
+        }},
+        {"regions", {
+            {{"id", 0}, {"name", "n_region"}, {"material", "Si"}, {"cell_ids", {0, 1}}},
+            {{"id", 1}, {"name", "p_region"}, {"material", "Si"}, {"cell_ids", {2, 3}}}
+        }},
+        {"contacts", {
+            {{"id", 0}, {"name", "anode"}, {"region_id", 1}, {"node_ids", {0, 3}}},
+            {{"id", 1}, {"name", "cathode"}, {"region_id", 0}, {"node_ids", {1, 2}}}
+        }}
+    };
+
+    const auto meshPath = dir / "pn_mesh_with_interior.json";
     std::ofstream(meshPath) << mesh.dump(2);
     return meshPath;
 }
@@ -893,6 +925,80 @@ TEST_CASE("DCSweep: contact-edge diagnostics are opt-in and write per-edge rows"
     }
 }
 
+TEST_CASE("DCSweep: SG avalanche edge diagnostics write assembled source rows",
+          "[dc_sweep][diagnostics][sg_avalanche_edges]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "bv_sg_source.csv";
+    const auto edgeSourcePath = dir / "bv_sg_source_edges.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"mode", "bv_reverse"},
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", -0.05},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"sg_avalanche_edges", {
+                {"enabled", true},
+                {"csv_file", edgeSourcePath.string()}
+            }}
+        }}
+    }, {
+        {"method", "gummel_newton"},
+        {"handoff", {
+            {"gummel_max_iter", 0},
+            {"newton_max_iter", 80},
+            {"require_gummel_convergence", false}
+        }},
+        {"impact_ionization", {
+            {"model", "selberherr"},
+            {"driving_force", "electric_field"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"electron_A_m_inv", 1.0},
+            {"electron_B_V_m", 1.0e-30},
+            {"hole_A_m_inv", 1.0},
+            {"hole_B_V_m", 1.0e-30}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+
+    REQUIRE(std::filesystem::exists(edgeSourcePath));
+    const auto rows = readCsvRows(edgeSourcePath);
+    REQUIRE(rows.size() > 1);
+
+    const auto& header = rows.front();
+    const std::size_t pointIndexCol = csvColumnIndex(header, "point_index");
+    const std::size_t edgeSourceCol = csvColumnIndex(header, "edge_source_integral");
+    const std::size_t node0SourceCol = csvColumnIndex(header, "node0_source_integral");
+    const std::size_t node1SourceCol = csvColumnIndex(header, "node1_source_integral");
+    (void)csvColumnIndex(header, "edge_area_proxy_m2");
+    (void)csvColumnIndex(header, "electric_field_V_per_m");
+    (void)csvColumnIndex(header, "electron_impact_field_V_per_m");
+    (void)csvColumnIndex(header, "hole_impact_field_V_per_m");
+    (void)csvColumnIndex(header, "electron_alpha_m_inv");
+    (void)csvColumnIndex(header, "hole_alpha_m_inv");
+    (void)csvColumnIndex(header, "electron_flux_proxy");
+    (void)csvColumnIndex(header, "hole_flux_proxy");
+    (void)csvColumnIndex(header, "edge_class");
+
+    for (std::size_t i = 1; i < rows.size(); ++i) {
+        const auto& row = rows.at(i);
+        REQUIRE(csvReal(row, pointIndexCol) == Catch::Approx(0.0));
+        const Real edgeSource = csvReal(row, edgeSourceCol);
+        REQUIRE(edgeSource >= 0.0);
+        REQUIRE(csvReal(row, node0SourceCol) == Catch::Approx(0.5 * edgeSource));
+        REQUIRE(csvReal(row, node1SourceCol) == Catch::Approx(0.5 * edgeSource));
+    }
+}
+
 TEST_CASE("DCSweep: continuity-balance diagnostics write contact-adjacent residual rows",
           "[dc_sweep][diagnostics][continuity_balance]")
 {
@@ -954,6 +1060,179 @@ TEST_CASE("DCSweep: continuity-balance diagnostics write contact-adjacent residu
     }
     REQUIRE(sawElectron);
     REQUIRE(sawHole);
+}
+
+TEST_CASE("DCSweep: Newton history diagnostic writes accepted iteration block residuals",
+          "[dc_sweep][diagnostics][newton_history]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshWithInterior(dir);
+    const auto csvPath = dir / "newton_history.csv";
+    const auto historyPath = dir / "newton_history_iterations.csv";
+    const auto initialStatePath = dir / "newton_history_initial_state.csv";
+    {
+        std::ofstream state(initialStatePath);
+        state << "node_id,psi,phin,phip,electrons_m3,holes_m3\n";
+        for (int node = 0; node < 5; ++node)
+            state << node << ",0,0,0,1e10,1e10\n";
+    }
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.05},
+        {"stop", 0.05},
+        {"step", 0.25},
+        {"write_vtk", false},
+        {"initial_state_file", initialStatePath.string()},
+        {"diagnostics", {
+            {"newton_history", {
+                {"enabled", true},
+                {"csv_file", historyPath.string()}
+            }}
+        }}
+    }, {
+        {"method", "newton"},
+        {"line_search", true},
+        {"warm_start", true},
+        {"verbose", false},
+        {"max_iter", 80}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    REQUIRE(std::filesystem::exists(historyPath));
+
+    const auto rows = readCsvRows(historyPath);
+    REQUIRE(rows.size() > 1);
+    const auto& header = rows.front();
+    const std::size_t pointIndexCol = csvColumnIndex(header, "point_index");
+    const std::size_t biasCol = csvColumnIndex(header, "bias_V");
+    const std::size_t iterCol = csvColumnIndex(header, "iteration");
+    const std::size_t residualCol = csvColumnIndex(header, "residual_norm");
+    const std::size_t relativeCol = csvColumnIndex(header, "relative_residual_norm");
+    const std::size_t rawStepCol = csvColumnIndex(header, "raw_step_norm");
+    const std::size_t appliedStepCol = csvColumnIndex(header, "applied_step_norm");
+    const std::size_t dampingCol = csvColumnIndex(header, "damping_factor");
+    const std::size_t attemptsCol = csvColumnIndex(header, "line_search_attempts");
+    const std::size_t psiBlockCol = csvColumnIndex(header, "block_psi");
+    const std::size_t phinBlockCol = csvColumnIndex(header, "block_phin");
+    const std::size_t phipBlockCol = csvColumnIndex(header, "block_phip");
+    const std::size_t combinedBlockCol = csvColumnIndex(header, "block_combined");
+
+    REQUIRE(rows.at(1).at(pointIndexCol) == "0");
+    REQUIRE(std::stod(rows.at(1).at(biasCol)) == Catch::Approx(0.05));
+    REQUIRE(std::stoi(rows.at(1).at(iterCol)) >= 1);
+    REQUIRE(std::stod(rows.at(1).at(residualCol)) > 0.0);
+    REQUIRE(std::stod(rows.at(1).at(relativeCol)) >= 0.0);
+    REQUIRE(std::stod(rows.at(1).at(rawStepCol)) >=
+            std::stod(rows.at(1).at(appliedStepCol)));
+    REQUIRE(std::stod(rows.at(1).at(dampingCol)) > 0.0);
+    REQUIRE(std::stoi(rows.at(1).at(attemptsCol)) >= 1);
+    REQUIRE(std::stod(rows.at(1).at(psiBlockCol)) >= 0.0);
+    REQUIRE(std::stod(rows.at(1).at(phinBlockCol)) >= 0.0);
+    REQUIRE(std::stod(rows.at(1).at(phipBlockCol)) >= 0.0);
+    REQUIRE(std::stod(rows.at(1).at(combinedBlockCol)) >=
+            std::stod(rows.at(1).at(psiBlockCol)));
+}
+
+TEST_CASE("DCSweep: continuation predictor config is validated",
+          "[dc_sweep][continuation][predictor]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "continuation_predictor.csv";
+
+    auto writeConfigWithContinuation = [&](const nlohmann::json& continuation) {
+        const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+            {"start", 0.0},
+            {"stop", 0.0},
+            {"step", 0.25},
+            {"write_vtk", false},
+            {"continuation", continuation}
+        });
+        return cfgPath;
+    };
+
+    DCSweep sweep;
+
+    SECTION("valid predictor modes and branch acceptance parse")
+    {
+        for (const std::string mode : {"none", "constant", "linear", "secant"}) {
+            INFO(mode);
+            const auto cfgPath = writeConfigWithContinuation({
+                {"predictor", {
+                    {"mode", mode},
+                    {"fields", {"psi", "phin", "phip"}},
+                    {"max_extrapolation_ratio", 2.0}
+                }},
+                {"branch_acceptance", {
+                    {"terminal_current_consistency", true},
+                    {"min_terminal_current_ratio", 1.0e-6}
+                }}
+            });
+            const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+            REQUIRE(result.points.size() == 1);
+        }
+    }
+
+    SECTION("invalid predictor mode is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"predictor", {
+                {"mode", "quadratic"}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.predictor.mode must be"));
+    }
+
+    SECTION("invalid predictor field is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"predictor", {
+                {"mode", "linear"},
+                {"fields", {"psi", "electrons"}}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.predictor.fields entries must be"));
+    }
+
+    SECTION("invalid predictor ratio is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"predictor", {
+                {"mode", "linear"},
+                {"max_extrapolation_ratio", 0.5}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.predictor.max_extrapolation_ratio"));
+    }
+
+    SECTION("invalid terminal current threshold is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"branch_acceptance", {
+                {"min_terminal_current_ratio", -1.0}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.branch_acceptance.min_terminal_current_ratio"));
+    }
 }
 
 TEST_CASE("DCSweep: terminal balance diagnostics reuse one solution for two contacts",
@@ -1539,6 +1818,139 @@ TEST_CASE("DCSweep: initial_state_file validates restart node coverage", "[dc_sw
     REQUIRE_THROWS_WITH(
         sweep.run(cfgPath.string()),
         Catch::Matchers::ContainsSubstring("DCSweep: initial_state_file missing row for node id 1"));
+}
+
+TEST_CASE("DCSweep predictor: extrapolates selected coupled variables",
+          "[dc_sweep][continuation][predictor]")
+{
+    DDSolution previous;
+    previous.psi = VectorXd::LinSpaced(3, 1.0, 3.0);
+    previous.phin = VectorXd::LinSpaced(3, 10.0, 12.0);
+    previous.phip = VectorXd::LinSpaced(3, 20.0, 22.0);
+    previous.n = VectorXd::Constant(3, 100.0);
+    previous.p = VectorXd::Constant(3, 200.0);
+    previous.iters = 4;
+    previous.converged = true;
+
+    DDSolution current;
+    current.psi = VectorXd::LinSpaced(3, 2.0, 4.0);
+    current.phin = VectorXd::LinSpaced(3, 12.0, 14.0);
+    current.phip = VectorXd::LinSpaced(3, 23.0, 25.0);
+    current.n = VectorXd::Constant(3, 300.0);
+    current.p = VectorXd::Constant(3, 400.0);
+    current.iters = 5;
+    current.converged = true;
+
+    SECTION("none and constant return current state")
+    {
+        for (const std::string mode : {"none", "constant"}) {
+            SweepPredictorConfig config;
+            config.mode = mode;
+            const DDSolution predicted = detail::predictDCSweepInitialState(
+                config, &previous, current, -12.65, -12.70, -12.75);
+
+            REQUIRE(predicted.psi.isApprox(current.psi));
+            REQUIRE(predicted.phin.isApprox(current.phin));
+            REQUIRE(predicted.phip.isApprox(current.phip));
+            REQUIRE(predicted.n.isApprox(current.n));
+            REQUIRE(predicted.p.isApprox(current.p));
+        }
+    }
+
+    SECTION("linear extrapolates selected fields and leaves carriers from current")
+    {
+        SweepPredictorConfig config;
+        config.mode = "linear";
+        config.fields = {"psi", "phin"};
+        config.maxExtrapolationRatio = 2.0;
+
+        const DDSolution predicted = detail::predictDCSweepInitialState(
+            config, &previous, current, -12.65, -12.70, -12.75);
+
+        REQUIRE(predicted.psi.isApprox(current.psi + (current.psi - previous.psi)));
+        REQUIRE(predicted.phin.isApprox(current.phin + (current.phin - previous.phin)));
+        REQUIRE(predicted.phip.isApprox(current.phip));
+        REQUIRE(predicted.n.isApprox(current.n));
+        REQUIRE(predicted.p.isApprox(current.p));
+    }
+
+    SECTION("secant currently uses the same bounded extrapolation")
+    {
+        SweepPredictorConfig config;
+        config.mode = "secant";
+        config.fields = {"phip"};
+        config.maxExtrapolationRatio = 2.0;
+
+        const DDSolution predicted = detail::predictDCSweepInitialState(
+            config, &previous, current, -12.65, -12.70, -12.75);
+
+        REQUIRE(predicted.psi.isApprox(current.psi));
+        REQUIRE(predicted.phin.isApprox(current.phin));
+        REQUIRE(predicted.phip.isApprox(current.phip + (current.phip - previous.phip)));
+    }
+
+    SECTION("linear extrapolation ratio is clamped")
+    {
+        SweepPredictorConfig config;
+        config.mode = "linear";
+        config.fields = {"psi"};
+        config.maxExtrapolationRatio = 1.5;
+
+        const DDSolution predicted = detail::predictDCSweepInitialState(
+            config, &previous, current, -12.65, -12.70, -12.85);
+
+        REQUIRE(predicted.psi.isApprox(current.psi + 1.5 * (current.psi - previous.psi)));
+    }
+}
+
+TEST_CASE("DCSweep: continuation predictor writes branch diagnostics",
+          "[dc_sweep][continuation][predictor]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "continuation_predictor_diagnostics.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.5},
+        {"step", 0.25},
+        {"write_vtk", false},
+        {"continuation", {
+            {"predictor", {
+                {"mode", "linear"},
+                {"fields", {"psi", "phin", "phip"}},
+                {"max_extrapolation_ratio", 2.0}
+            }},
+            {"branch_acceptance", {
+                {"terminal_current_consistency", true},
+                {"min_terminal_current_ratio", 0.0}
+            }}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 3);
+    REQUIRE(result.points.at(2).converged);
+
+    const auto rows = readCsvRows(csvPath);
+    REQUIRE(rows.size() == 4);
+    const auto& header = rows.front();
+    const std::size_t predictorModeCol = csvColumnIndex(header, "predictor_mode");
+    const std::size_t predictedStateCol = csvColumnIndex(header, "predicted_initial_state");
+    const std::size_t branchStatusCol = csvColumnIndex(header, "branch_acceptance_status");
+    const std::size_t branchReasonCol = csvColumnIndex(header, "branch_acceptance_reason");
+    const std::size_t ratioCol = csvColumnIndex(header, "terminal_current_consistency_ratio");
+
+    REQUIRE(rows.at(1).at(predictorModeCol) == "linear");
+    REQUIRE(rows.at(1).at(predictedStateCol) == "0");
+    REQUIRE(rows.at(2).at(predictedStateCol) == "1");
+    REQUIRE(rows.at(3).at(predictedStateCol) == "1");
+    REQUIRE(rows.at(3).at(branchStatusCol) == "accepted");
+    REQUIRE(rows.at(3).at(branchReasonCol).empty());
+    REQUIRE(std::isfinite(std::stod(rows.at(3).at(ratioCol))));
 }
 
 

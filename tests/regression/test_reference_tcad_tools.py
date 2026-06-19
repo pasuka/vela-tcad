@@ -113,6 +113,10 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             "quasi_fermi_gradient",
         )
         self.assertEqual(solver["impact_ionization"]["generation"], "current_density")
+        self.assertEqual(
+            solver["impact_ionization"]["current_approximation"],
+            "density_gradient",
+        )
         self.assertEqual(bv["vela_stop"], -0.05)
         self.assertEqual(bv["vela_step"], -0.05)
         self.assertNotIn("candidate_bias_scale", bv["comparison"])
@@ -625,6 +629,143 @@ LOOKUP_TABLE default
             self.assertIn("contact", by_node_class)
             self.assertGreater(by_node_class["contact"]["vtk_source_integral"], 0.0)
 
+    def test_pn2d_bv_sg_edge_source_dump_compare_summarizes_cpp_and_python(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_sg_edge_compare_") as tmp:
+            root = Path(tmp)
+            cpp_csv = root / "cpp.csv"
+            python_csv = root / "python.csv"
+            out_json = root / "summary.json"
+
+            cpp_csv.write_text(
+                "\n".join([
+                    "point_index,bias_V,edge_id,node0,node1,edge_source_integral,node0_source_integral,node1_source_integral,edge_class",
+                    "7,-13.2,10,351,986,8.0,4.0,4.0,interior_bulk",
+                    "7,-13.2,11,1,351,2.0,1.0,1.0,contact_edge",
+                    "6,-10,99,1,2,100.0,50.0,50.0,interior_bulk",
+                    "",
+                ]),
+                encoding="utf-8",
+            )
+            python_csv.write_text(
+                "\n".join([
+                    "rank,edge_id,node0,node1,source_integral,edge_class",
+                    "1,10,351,986,7.5,interior_bulk",
+                    "2,11,1,351,2.5,contact_boundary",
+                    "",
+                ]),
+                encoding="utf-8",
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "compare_pn2d_bv_sg_edge_source_dump.py"),
+                    "--cpp-csv",
+                    str(cpp_csv),
+                    "--python-csv",
+                    str(python_csv),
+                    "--out-json",
+                    str(out_json),
+                    "--bias",
+                    "-13.2",
+                    "--node",
+                    "351",
+                    "--node",
+                    "986",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            summary = json.loads(out_json.read_text(encoding="utf-8"))
+            self.assertEqual(summary["bias_V"], -13.2)
+            self.assertEqual(summary["cpp"]["top_edge_ids"], [10, 11])
+            self.assertEqual(summary["python"]["top_edge_ids"], [10, 11])
+            self.assertAlmostEqual(summary["cpp"]["total_source_integral"], 10.0)
+            self.assertAlmostEqual(summary["python"]["total_source_integral"], 10.0)
+            self.assertAlmostEqual(summary["cpp"]["interior_bulk_source_fraction"], 0.8)
+            self.assertAlmostEqual(summary["python"]["contact_edge_source_fraction"], 0.25)
+            self.assertAlmostEqual(summary["comparison"]["total_source_log10_cpp_over_python"], 0.0)
+            self.assertAlmostEqual(summary["cpp"]["node_source_integrals"]["351"], 5.0)
+            self.assertAlmostEqual(summary["python"]["node_source_integrals"]["986"], 3.75)
+
+    def test_pn2d_bv_ionization_integral_diagnostic_writes_required_outputs(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_ionization_integral_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            vtk = root / "state_0000_-5V.vtk"
+            out = root / "reports"
+
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                ],
+                "triangles": [
+                    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]},
+                ],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [],
+            }))
+            vtk.write_text(
+                """
+# vtk DataFile Version 2.0
+ionization integral
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 3 float
+0 0 0
+1e-6 0 0
+0 1e-6 0
+CELLS 1 4
+3 0 1 2
+CELL_TYPES 1
+5
+POINT_DATA 3
+SCALARS ElectricField float 1
+LOOKUP_TABLE default
+2e6 1e6 5e5
+SCALARS ElectronHighFieldDrive float 1
+LOOKUP_TABLE default
+2e6 1e6 5e5
+SCALARS HoleHighFieldDrive float 1
+LOOKUP_TABLE default
+1.5e6 7.5e5 5e5
+""".lstrip(),
+                encoding="utf-8",
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_ionization_integral.py"),
+                    "--vtk",
+                    str(vtk),
+                    "--mesh",
+                    str(mesh),
+                    "--out-dir",
+                    str(out),
+                    "--bias",
+                    "-5",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            rows = self._read_csv(out / "ionization_integral_paths.csv")
+            self.assertEqual({row["carrier"] for row in rows}, {"electron", "hole"})
+            for row in rows:
+                self.assertEqual(row["bias_V"], "-5.0")
+                self.assertGreater(float(row["max_field_V_per_m"]), 0.0)
+                self.assertGreater(float(row["integral_alpha_dx"]), 0.0)
+                self.assertIn("dominant_edge_or_cell_id", row)
+
+            summary = json.loads((out / "ionization_integral_summary.json").read_text())
+            self.assertEqual(summary["bias_V"], -5.0)
+            self.assertEqual(summary["path_count"], 2)
+            self.assertGreater(summary["max_integral_alpha_dx"], 0.1)
+
     def test_pn2d_bv_local_avalanche_factor_diagnostic_writes_edge_summary(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_local_avalanche_") as tmp:
             root = Path(tmp)
@@ -994,6 +1135,72 @@ LOOKUP_TABLE default
         self.assertEqual(len(summary["states"]), 4)
         shifted = next(item for item in summary["states"] if item["source"] == "hybrid_spsi_shift_vqf")
         self.assertAlmostEqual(shifted["psi_shift_V"], 0.05)
+
+    def test_pn2d_bv_newton_residual_state_diagnostic_allows_vela_without_sentaurus(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_residual_vela_only_") as tmp:
+            root = Path(tmp)
+            base = root / "base.json"
+            mesh = root / "mesh.json"
+            vela = root / "vela"
+            out = root / "reports"
+            vela.mkdir()
+            mesh.write_text(json.dumps({
+                "nodes": [{"id": 0, "x": 0.0, "y": 0.0}],
+                "triangles": [],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+            }) + "\n")
+            base.write_text(json.dumps({
+                "simulation_type": "dc_sweep",
+                "mesh_file": "mesh.json",
+                "output_csv": "unused.csv",
+                "contacts": [
+                    {"name": "Cathode", "bias": 0.0},
+                    {"name": "Anode", "bias": 0.0},
+                ],
+                "sweep": {"mode": "bv_reverse", "start": 0.0, "stop": -1.0, "step": -1.0},
+            }, indent=2) + "\n")
+            (vela / "mini_0000_-1V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+residual states
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 1 float
+0 0 0
+POINT_DATA 1
+SCALARS Potential float 1
+LOOKUP_TABLE default
+-0.2
+SCALARS ElectronQuasiFermi float 1
+LOOKUP_TABLE default
+-0.3
+SCALARS HoleQuasiFermi float 1
+LOOKUP_TABLE default
+-0.4
+""".lstrip()
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_newton_residual_states.py"),
+                    "--base-config", str(base),
+                    "--sentaurus-root", str(root / "missing_sentaurus"),
+                    "--vela-vtk-root", str(vela),
+                    "--out-dir", str(out),
+                    "--states", "vela:-1",
+                    "--nodes", "0",
+                    "--prepare-only",
+                ],
+                check=True,
+                cwd=REPO,
+            )
+
+            summary = json.loads((out / "newton_residual_state_summary.json").read_text())
+            self.assertEqual(summary["states"][0]["source"], "vela")
+            self.assertTrue(
+                (out / "states" / "vela_m1v" / "fields" / "ElectrostaticPotential_region0.csv").exists()
+            )
 
     def test_pn2d_bv_potential_profile_diagnostic_writes_plateaus(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_potential_profiles_") as tmp:

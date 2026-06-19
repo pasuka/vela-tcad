@@ -83,6 +83,10 @@ class SentaurusImportToolsTest(unittest.TestCase):
             "quasi_fermi_gradient",
         )
         self.assertEqual(deck["solver"]["impact_ionization"]["generation"], "current_density")
+        self.assertEqual(
+            deck["solver"]["impact_ionization"]["current_approximation"],
+            "density_gradient",
+        )
         self.assertEqual(warnings, [])
 
     def test_reference_patch_preserves_negative_bv_sweep_direction(self) -> None:

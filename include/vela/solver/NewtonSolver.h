@@ -58,6 +58,13 @@ struct NewtonConfig {
     BandgapNarrowingConfig bandgapNarrowing; ///< Effective ni model for high doping.
 };
 
+struct NewtonBlockResidualInfo {
+    Real psi = 0.0;
+    Real phin = 0.0;
+    Real phip = 0.0;
+    Real combined = 0.0;
+};
+
 struct NewtonIterationInfo {
     int iter = 0;
     Real residualNorm = 0.0;
@@ -67,14 +74,8 @@ struct NewtonIterationInfo {
     Real rawStepNorm = 0.0;
     int lineSearchAttempts = 0;
     bool lineSearchAccepted = false;
+    NewtonBlockResidualInfo blockResiduals;
     std::vector<LineSearchIterationInfo> lineSearchHistory;
-};
-
-struct NewtonBlockResidualInfo {
-    Real psi = 0.0;
-    Real phin = 0.0;
-    Real phip = 0.0;
-    Real combined = 0.0;
 };
 
 struct NewtonCarrierDiagnostics {

@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Extend the pn2d Sentaurus2018 BV validation from the current low-reverse-bias gate to a 0 V to -20 V Vela run, then compare BV current and same-bias spatial fields against Sentaurus.
+**Goal:** Reproduce the pn2d Sentaurus2018 default BV avalanche semantics in Vela, extend the validation from the current low-reverse-bias gate to a 0 V to -20 V run only after the Sentaurus-default source path passes high-bias parity checks, then compare BV current and same-bias spatial fields against Sentaurus.
 
-**Architecture:** Use the existing `reference_tcad/pn2d_sentaurus2018` fixture as the source of truth. Keep Sentaurus field export and Vela execution separate, then join them through `scripts/compare_pn2d_bv_multibias_fields.py` so curve error and field error are ranked at the same bias points. Treat impact-ionization model parity as a first-class gate before tuning solver continuation.
+**Architecture:** Use the existing `reference_tcad/pn2d_sentaurus2018` fixture as the source of truth, with Sentaurus's default Scharfetter-Gummel edge-current avalanche discretization as the required Vela parity target. Keep Sentaurus field export and Vela execution separate, then join them through `scripts/compare_pn2d_bv_multibias_fields.py` so curve error, field error, and avalanche-source error are ranked at the same bias points. Treat `current_approximation = "density_gradient"` as the Sentaurus-default path; keep `mobility_density_gradient` only as an `AvalDensGradQF`-like control path.
 
 **Tech Stack:** C++20, CMake/Ninja, MSYS2 UCRT64 on Windows, Python standard library plus NumPy for analysis scripts, existing Vela runner and Sentaurus import tooling.
 
@@ -88,23 +88,31 @@ Current Vela imported deck:
   model = van_overstraeten
   driving_force = quasi_fermi_gradient
   generation = current_density
+  current_approximation must be density_gradient for Sentaurus-default BV parity
 
-Likely parity gap:
-  Vela current_density generation is closer to Sentaurus Math { AvalDensGradQF }
-  than to Sentaurus default SG edge-current avalanche discretization.
+Parity target:
+  Sentaurus default BV uses SG edge-current avalanche generation.
+  Vela current_approximation = density_gradient is the required parity path.
+  Vela current_approximation = mobility_density_gradient is closest to
+  Sentaurus Math { AvalDensGradQF } and must remain a control path, not the
+  acceptance path for Sentaurus-default BV.
 
 Current -13.208 V failure priority:
-  1. Avalanche current-density discretization parity.
-  2. Avalanche hotspot geometry/control-volume amplification.
-  3. Low-density driving-force interpolation to ElectricField.
+  1. No-impact high-bias branch parity, because the carrier-density mismatch is
+     already visible before avalanche feedback is enabled.
+  2. Sentaurus-default SG edge-current avalanche source parity.
+  3. Avalanche hotspot geometry/control-volume amplification.
   4. Analytic Jacobian completeness for avalanche driving-field and mobility terms.
-  5. BandgapDependence only if a future Sentaurus deck explicitly enables it.
+  5. Low-density driving-force interpolation to ElectricField only if the
+     Sentaurus deck enables RefDens_*Aval or a controlled probe requires it.
+  6. BandgapDependence only if a future Sentaurus deck explicitly enables it.
 ```
 
 ## Files To Modify Or Use
 
 - Modify: `reference_tcad/pn2d_sentaurus2018/pn2d_sentaurus2018_reference.json`
-  - Extend BV run target to `vela_stop: -20.0`.
+  - Keep the committed BV gate at low reverse bias until Sentaurus-default SG edge-current parity passes.
+  - When the gate is promoted, extend BV run target to `vela_stop: -20.0` and require `solver.impact_ionization.current_approximation: "density_gradient"`.
   - Use a two-stage step policy through generated probe configs instead of immediately promoting a coarse `-0.1` or `-0.5` step.
 - Use: `scripts/sentaurus_import.py`
   - Regenerate Vela decks and Sentaurus curve references.
@@ -117,6 +125,14 @@ Current -13.208 V failure priority:
   - Report whether the avalanche source is concentrated in a few nodes/elements before changing physics.
 - Modify: `include/vela/physics/ImpactIonizationModel.h`, `include/vela/equation/AssemblerUtils.h`, `src/equation/CoupledDDAssembler.cpp`, `src/equation/DDAssembler.cpp`, `src/solver/NewtonSolver.cpp`, and `src/solver/GummelSolver.cpp`
   - Only if the diagnostic confirms the need for new solver knobs: add explicit avalanche discretization and driving-force-interpolation configuration.
+- Modify: `include/vela/simulation/DCSweep.h` and `src/simulation/DCSweep.cpp`
+  - Add opt-in continuation predictor and branch-acceptance diagnostics only after the external predictor proxy is converted into TDD-covered behavior.
+- Use: `D:\code-repo\tcad-charon\src\evaluators\Charon_Avalanche_vanOverstraeten_impl.hpp`
+  - Reference Charon's avalanche driving-force variants, low-density force damping, and `alpha * |J|` generation form when checking Vela source semantics.
+- Use: `D:\code-repo\tcad-charon\src\Charon_CurrentConstraintModelEvaluator.hpp` and `D:\code-repo\tcad-charon\src\solver\Charon_Solver_SteadyStateConstraint.cpp`
+  - Reference Charon's current-constraint continuation design before adding any Vela current-controlled BV path.
+- Use: `D:\code-repo\devsim\python_packages\ramp.py`, `D:\code-repo\devsim\python_packages\simple_dd.py`, and `D:\code-repo\devsim\src\AutoEquation\ExprEquation.cc`
+  - Reference DEVSIM's bias-ramp fallback, Scharfetter-Gummel expression models, and edge/node-volume assembly when designing lightweight Vela probes.
 - Test: `tests/test_impact_ionization.cpp`
   - Add coefficient and generation checks only if the formula review finds a mismatch.
 - Test: `tests/test_newton_solver.cpp` and `tests/test_dc_sweep.cpp`
@@ -126,7 +142,7 @@ Current -13.208 V failure priority:
 
 ## Task 1: Reproduce The Imported Reference And Existing Gate
 
-- [ ] **Step 1: Configure the MSYS2 UCRT64 build**
+- [x] **Step 1: Configure the MSYS2 UCRT64 build**
 
 Run:
 
@@ -137,7 +153,7 @@ cmake --preset windows-ucrt64-release
 
 Expected: CMake configures `build-release/` successfully and finds Ninja plus the UCRT64 compiler.
 
-- [ ] **Step 2: Build the required tools**
+- [x] **Step 2: Build the required tools**
 
 Run:
 
@@ -148,7 +164,7 @@ cmake --build build-release --parallel --target vela_example_runner sentaurus_im
 
 Expected: `build-release/vela_example_runner.exe`, `build-release/sentaurus_import.exe`, and `build-release/test_impact_ionization.exe` exist.
 
-- [ ] **Step 3: Run the impact-ionization unit tests before changing BV reach**
+- [x] **Step 3: Run the impact-ionization unit tests before changing BV reach**
 
 Run:
 
@@ -159,7 +175,7 @@ $env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
 
 Expected: `All tests passed`, including Van Overstraeten coefficient checks.
 
-- [ ] **Step 4: Regenerate the pn2d Sentaurus2018 imported reference tree**
+- [x] **Step 4: Regenerate the pn2d Sentaurus2018 imported reference tree**
 
 Run:
 
@@ -172,7 +188,7 @@ Expected: current low-bias BV gate still runs, and `build-release/reference_tcad
 
 ## Task 2: Import Sentaurus BV Multi-Bias Field Snapshots
 
-- [ ] **Step 1: Confirm the source snapshots exist**
+- [x] **Step 1: Confirm the source snapshots exist**
 
 Run:
 
@@ -182,7 +198,7 @@ Get-ChildItem reference_tcad\pn2d_sentaurus2018\source\pn2d_bv_multibias_*_des.t
 
 Expected: count is at least `201`, covering normalized times from 0 to 1.
 
-- [ ] **Step 2: Export the comparison bias points**
+- [x] **Step 2: Export the comparison bias points**
 
 Run one command per bias:
 
@@ -218,7 +234,7 @@ build-release\sentaurus_import.exe --tdr reference_tcad\pn2d_sentaurus2018\sourc
 
 Expected: each output directory contains `nodes.csv`, `elements.csv`, and `fields/*.csv`.
 
-- [ ] **Step 3: Verify the imported Sentaurus fields needed by the comparison**
+- [x] **Step 3: Verify the imported Sentaurus fields needed by the comparison**
 
 Run:
 
@@ -230,7 +246,7 @@ Expected: files exist for `ElectrostaticPotential`, `ElectricField`, `eDensity`,
 
 ## Task 3: Create A Controlled Vela -20 V Probe Deck
 
-- [ ] **Step 1: Copy the generated BV deck to a probe file**
+- [x] **Step 1: Copy the generated BV deck to a probe file**
 
 Run:
 
@@ -240,7 +256,7 @@ Copy-Item build-release\reference_tcad\pn2d_sentaurus2018\vela\simulation_bv.jso
 
 Expected: the probe deck exists and the committed reference JSON remains unchanged during the first exploration.
 
-- [ ] **Step 2: Edit the probe deck for a conservative reach test**
+- [x] **Step 2: Edit the probe deck for a conservative reach test**
 
 Change only the BV sweep controls:
 
@@ -265,7 +281,7 @@ Keep solver physics unchanged from the imported BV deck:
 
 Expected: the probe deck remains valid JSON and does not change IV settings.
 
-- [ ] **Step 3: Run the Vela -20 V probe**
+- [x] **Step 3: Run the Vela -20 V probe**
 
 Run:
 
@@ -276,7 +292,7 @@ build-release\vela_example_runner.exe --config build-release\reference_tcad\pn2d
 
 Expected: the run either reaches -20 V with VTK files at comparison bias points, or stops with a clear last-stable bias and failure reason in the BV CSV.
 
-- [ ] **Step 4: If the probe fails before -20 V, rerun with staged continuation**
+- [x] **Step 4: If the probe fails before -20 V, rerun with staged continuation**
 
 Edit only the probe deck step size and rerun:
 
@@ -295,9 +311,19 @@ Expected: the last-stable bias improves or the failure mode stays identical, whi
 - A no-impact-ionization control deck with the same -20 V sweep converged to `-20.000000000000014 V`, so the observed failure requires avalanche coupling rather than the reverse-bias continuation, contacts, mesh, or mobility model alone.
 - A restart from the last stable saved state with analytic Jacobian immediately reproduced `line_search_non_decrease`. A finite-difference Jacobian restart was too slow for this 1943-node mesh in the interactive run and timed out before producing a useful comparison.
 
+### Execution Note 2026-06-19
+
+- `cmake --preset windows-ucrt64-release` completed and `cmake --build build-release --parallel` completed after a resumed Ninja build.
+- `build-release\test_impact_ionization.exe` passed `123 assertions in 13 test cases`.
+- Sentaurus multibias exports were regenerated for `0`, `-0.5`, `-2`, `-5`, `-10`, and `-20 V`; each export contains `ElectrostaticPotential`, `ElectricField`, `eDensity`, `hDensity`, and `ImpactIonization` field CSVs.
+- The direct `simulation_bv_minus20_probe.json` run reached the high-bias branch but hit the interactive timeout after the last complete CSV row at `-17.3 V`; the next row was partial because the process was terminated.
+- A restart state was reconstructed from `dc_sweep_1116_-17.3V.vtk` into `restart_from_minus17p3_state.csv`, then `simulation_bv_minus20_resume_from_minus17p3.json` resumed the same BV path from `-17.3 V` to `-20 V`.
+- The resume segment completed with `converged=true`, `points=55`, and last bias `-20.000000000000039 V`.
+- A clean combined curve was written to `pn2d_sentaurus2018_bv_minus20_combined.csv`, omitting the timeout-truncated row and appending the complete resume segment.
+
 ## Task 4: Compare BV Curve And Spatial Fields
 
-- [ ] **Step 1: Run the multibias comparison script**
+- [x] **Step 1: Run the multibias comparison script**
 
 Run:
 
@@ -308,7 +334,7 @@ python scripts\compare_pn2d_bv_multibias_fields.py --sentaurus-root build-releas
 
 Expected: `curve_compare.csv`, `field_compare.csv`, `debug_ranking.json`, and `README.md` are written.
 
-- [ ] **Step 2: Read the ranked failure order**
+- [x] **Step 2: Read the ranked failure order**
 
 Run:
 
@@ -318,7 +344,7 @@ Get-Content build-release\reference_tcad\pn2d_sentaurus2018\reports\bv_multibias
 
 Expected: the first ranked items identify whether the dominant mismatch is curve current, potential, electric field, carrier density, mobility, SRH recombination, or avalanche generation.
 
-- [ ] **Step 3: Promote only fields that are same-bias and present on both sides**
+- [x] **Step 3: Promote only fields that are same-bias and present on both sides**
 
 Acceptance:
 
@@ -340,6 +366,13 @@ Expected: no field comparison is called passing when its Vela VTK is missing, it
 - `curve_compare.csv` reports candidate data at `0`, `-0.5`, `-2`, `-5`, and `-10 V`; the `-20 V` row is `missing_candidate` because the Vela avalanche run stopped at `-13.208218617474687 V`.
 - Pre-failure curve current errors are about `0.18` to `0.22` decades at the non-floor comparison points.
 - `debug_ranking.json` ranks `electron_density`, `electron_mobility`, `electric_field`, and `avalanche_generation_thresholded` as the leading follow-up fields, but the first numerical blocker is the avalanche-enabled electron-continuity Newton line search near `-13.208 V`.
+
+### Execution Note 2026-06-19
+
+- Re-ran `scripts\compare_pn2d_bv_multibias_fields.py` using the regenerated Sentaurus multibias exports, Vela VTKs including the resumed `-20 V` state, and `pn2d_sentaurus2018_bv_minus20_combined.csv`.
+- Report outputs were regenerated under `build-release\reference_tcad\pn2d_sentaurus2018\reports\bv_multibias`: `curve_compare.csv`, `field_compare.csv`, `debug_ranking.json`, `pn2d_bv_multibias_field_compare.csv`, `pn2d_bv_multibias_field_compare.json`, and `README.md`.
+- `curve_compare.csv` now contains an `ok` row at `-20 V`; `debug_ranking.json` reports the largest curve error at `-20 V` with absolute log10 current error `1.3880802290078997`.
+- The leading ranked field mismatch remains electron density at `-20 V`, with `log10_p95` error `4.009914625448848`. This preserves the high-bias branch-mismatch diagnosis while proving that the current code path can be continued to `-20 V` via a restart segment.
 
 ## Task 5: Localize Manual-Guided Avalanche Parity And Stability Gaps
 
@@ -449,7 +482,7 @@ build-release\vela_example_runner.exe --config build-release\reference_tcad\pn2d
 
 Expected: compare last-stable bias against `-13.208218617327727 V`. If the run moves substantially farther or current drops sharply at the hotspot, prioritize geometric avalanche volume parity before Jacobian tuning.
 
-- [x] **Step 5: Add a Sentaurus-default SG edge-current avalanche probe before promoting Vela's AvalDensGradQF-like path**
+- [x] **Step 5: Add a Sentaurus-default SG edge-current avalanche probe before any -20 V promotion**
 
 Add a Vela-only probe option under `solver.impact_ionization`:
 
@@ -471,10 +504,10 @@ mobility_density_gradient:
   This is closest to Sentaurus Math { AvalDensGradQF }.
 
 density_gradient:
-  Sentaurus-default parity target; derive avalanche current contribution from the same SG edge-current approximation used by the drift-diffusion fluxes, then accumulate Eq. 431 by element/node.
+  Required Sentaurus-default parity path; derive avalanche current contribution from the same SG edge-current approximation used by the drift-diffusion fluxes, then accumulate Eq. 431 by element/node.
 ```
 
-Acceptance: do not promote `vela_stop: -20.0` until the selected Vela path is explicitly documented as either `Sentaurus default SG avalanche` or `AvalDensGradQF-equivalent`, and the Sentaurus deck is made explicit if the latter is chosen.
+Acceptance: do not promote `vela_stop: -20.0` until the `density_gradient` SG edge-current path is explicitly documented, the Sentaurus deck is confirmed to remain on its implicit default avalanche discretization, and the high-bias branch/source gates in Tasks 7-9 pass.
 
 - [x] **Step 6: Add a GradQuasiFermi-to-ElectricField interpolation probe**
 
@@ -520,7 +553,7 @@ stop  = -13.25
 step  = -0.005
 ```
 
-Expected: if finite difference reaches farther after volume/current/interpolation probes are controlled, the analytic avalanche Jacobian must be extended to include driving-field and mobility derivatives before Task 6.
+Expected: if finite difference reaches farther after volume/current/interpolation probes are controlled, the analytic avalanche Jacobian must be extended to include driving-field and mobility derivatives before any Task 9 promotion gate can pass.
 
 - [x] **Step 8: Run mobility decomposition as a secondary field-mismatch check**
 
@@ -544,7 +577,7 @@ Release execution context:
 Manual/parity checks:
 
 - `pn2d_bv_sdevice.cmd` contains `Avalanche(VanOverstraeten)` and no active `BandgapDependence`, `AvalDensGradQF`, `ElementVolumeAvalanche`, or `RefDens_*Aval`.
-- The current Vela `generation = "current_density"` implementation is closest to the SDevice manual's `Math { AvalDensGradQF }` approximation, while the Sentaurus deck is using the default SG edge-current avalanche path. This remains the primary parity gap.
+- The original Vela `generation = "current_density"` node-local implementation is closest to the SDevice manual's `Math { AvalDensGradQF }` approximation, while the Sentaurus deck is using the default SG edge-current avalanche path. The newly added `current_approximation = "density_gradient"` implementation is therefore the required Sentaurus-default parity path.
 
 Hotspot geometry evidence:
 
@@ -592,7 +625,7 @@ Reference-current cross-check:
 
 SG edge-current execution notes:
 
-- Implemented `solver.impact_ionization.current_approximation = "density_gradient"` as the Sentaurus-default SG edge-current probe. The existing Vela node-local path remains the default `mobility_density_gradient`.
+- Implemented `solver.impact_ionization.current_approximation = "density_gradient"` as the Sentaurus-default SG edge-current path. The existing Vela node-local path remains available as `mobility_density_gradient` for `AvalDensGradQF`-like control probes.
 - Added parser and behavior/Jacobian coverage in `tests/test_impact_ionization.cpp`:
   - `SG edge-current avalanche approximation cancels flat quasi-Fermi current`
   - `Coupled DD SG edge-current avalanche Jacobian matches carrier finite differences`
@@ -1213,87 +1246,1173 @@ Interpretation:
 Current recommendation:
 
 - Do not promote a relaxed `abstol` as the -20 V validation solution.
-- Do not promote `density_gradient` directly until the high-field current overshoot is localized with a field comparison or source-volume sensitivity probe.
+- Treat `density_gradient` as the only Sentaurus-default BV parity path, but do not promote the -20 V gate until the high-field current/source overshoot is localized with a field comparison or source-volume sensitivity probe.
+- Treat `mobility_density_gradient` as an `AvalDensGradQF`-like control path. It can help isolate numerical stability and source sensitivity, but it cannot be the acceptance path for a Sentaurus-default BV claim.
 - Next best task: construct a no-impact quasi-Fermi/continuity residual diagnostic across `-10 V` and `-13.2 V`, especially contact-adjacent and plateau quasi-Fermi absolute levels. The goal is to determine why the no-impact continuity solve selects much higher carrier-density exponents even when the electrostatic potential branch is unchanged by mobility, contact relaxation, and stable SRH lifetime changes.
 - Separately add a C++ edge-source dump or VTK contact-node guard to resolve the `-20 V` contact-node diagnostic inconsistency.
 
-## Task 6: Promote The Stable -20 V Path
+## Task 6: Define The Sentaurus-Default Path And Keep -20 V Blocked
 
-- [ ] **Step 1: Choose and document the avalanche parity target before promotion**
+The stable SG edge-current run proves the required Sentaurus-default path is executable, not that BV parity has passed. Keep the committed BV reference gate at low reverse bias until both high-bias current parity and the no-impact branch mismatch are understood.
 
-Promotion is blocked until one of these two paths is explicitly selected:
+- [x] **Step 1: Keep the committed BV reference JSON on the low-bias gate**
 
-```text
-Path A: Sentaurus-default SG avalanche parity
-  Vela impact_ionization.current_approximation = "density_gradient"
-  Sentaurus source deck remains Recombination(Avalanche(VanOverstraeten))
+Confirm `reference_tcad/pn2d_sentaurus2018/pn2d_sentaurus2018_reference.json` still contains the BV controls:
 
-Path B: AvalDensGradQF-equivalent parity
-  Vela impact_ionization.current_approximation = "mobility_density_gradient"
-  Sentaurus source deck or validation note explicitly states Math { AvalDensGradQF }
+```json
+"vela_stop": -0.05,
+"vela_step": -0.05
 ```
 
-Expected: the validation documentation must not compare an implicit Sentaurus-default avalanche run against an undocumented Vela AvalDensGradQF-like implementation.
+Expected: do not set `vela_stop` to `-20.0` in this task. If the committed generated path records Sentaurus-default impact-ionization settings, it must use `current_approximation = "density_gradient"` and clearly remain a low-bias parity gate, not a promoted -20 V validation.
 
-- [ ] **Step 2: Update the committed reference JSON only after the selected probe is stable**
+- [x] **Step 2: Mark `density_gradient` as the Sentaurus-default parity path**
 
-Modify `reference_tcad/pn2d_sentaurus2018/pn2d_sentaurus2018_reference.json` BV block:
+Record in this plan, and later in validation docs only after fresh report regeneration, that:
+
+```text
+mobility_density_gradient:
+  Vela legacy/default control path; closest to Sentaurus Math { AvalDensGradQF }.
+  Useful for stability/source-sensitivity comparison.
+  Must not be used as the acceptance path for Sentaurus-default BV.
+
+density_gradient:
+  Required Sentaurus-default SG edge-current parity path.
+  Must be used in all Sentaurus-default BV probes and eventual promotion.
+  Reaches -20 V in the current probe, but promotion is blocked by current/source overshoot:
+    +2.27 decades near -13.2 V
+    +1.39 decades at -20 V
+```
+
+Expected: no worker should treat the stable `density_gradient` run as sufficient evidence for promoting the -20 V gate, and no worker should fall back to `mobility_density_gradient` to claim Sentaurus-default BV parity.
+
+- [x] **Step 3: Add a blocker note to `docs/validation/pn2d_sentaurus_comparison.md` only after regenerating release reports**
+
+Append a short "PN2D BV -20 V blocked status" note with:
+
+```text
+Validation date:
+Vela probe deck:
+Sentaurus multibias export root:
+Compared biases:
+SG edge-current current errors:
+No-impact branch mismatch summary:
+Why -20 V promotion remains blocked:
+Next required diagnostic:
+```
+
+Expected: the validation doc explains the blocked state without implying that -20 V BV is calibrated.
+
+### Task 6 Execution Notes 2026-06-18
+
+- Regenerated `build-release\reference_tcad\pn2d_sentaurus2018` with `scripts\sentaurus_import.py reference`.
+- Updated `scripts/sentaurus_import.py` and `reference_tcad/pn2d_sentaurus2018/pn2d_sentaurus2018_reference.json` so the Sentaurus-default BV deck records:
+
+```json
+"impact_ionization": {
+  "model": "van_overstraeten",
+  "driving_force": "quasi_fermi_gradient",
+  "generation": "current_density",
+  "current_approximation": "density_gradient"
+}
+```
+
+- The committed BV gate remains low-bias only: `vela_stop = -0.05`, `vela_step = -0.05`.
+- Added regression assertions in `tests/regression/test_sentaurus_import_tools.py` and `tests/regression/test_reference_tcad_tools.py` so future Sentaurus-default BV imports cannot silently drop `current_approximation = "density_gradient"`.
+- Added the blocked-status note to `docs/validation/pn2d_sentaurus_comparison.md`.
+
+## Task 7: No-Impact Quasi-Fermi And Continuity Residual Diagnostic
+
+- [x] **Step 1: Regenerate release no-impact and SG edge-current probe states**
+
+Use the release build and the existing probe-generation scripts to produce same-bias states at `-10 V` and `-13.2 V` for:
+
+```text
+Vela no-impact branch
+Vela SG edge-current avalanche branch
+Sentaurus multibias exported branch
+```
+
+Expected: each branch has VTK or imported field data for `psi`, `phin`, `phip`, electron density, hole density, electric field, and enough mesh metadata to evaluate local continuity terms.
+
+- [x] **Step 2: Extend the existing residual/feedback diagnostics only if the current output lacks the required columns**
+
+Prefer reusing:
+
+```text
+scripts/diagnose_pn2d_bv_newton_residual_states.py
+scripts/diagnose_pn2d_bv_continuity_feedback.py
+```
+
+Required report columns:
+
+```text
+bias_V
+branch
+node_id
+x_um
+y_um
+psi_minus_phin_V
+phip_minus_psi_V
+electron_density_cm3
+hole_density_cm3
+electron_sg_flux_proxy
+hole_sg_flux_proxy
+electron_continuity_residual
+hole_continuity_residual
+contact_or_plateau_band
+```
+
+Expected: the report compares `-10 V` and `-13.2 V`, with special focus on contact-adjacent plateaus and the interior junction focus edge around nodes `351` and `986`.
+
+- [x] **Step 3: Classify the no-impact branch selector**
+
+Use the generated residual tables to choose one of these conclusions:
+
+```text
+quasi_fermi_anchoring:
+  Contact or plateau quasi-Fermi absolute levels explain the density exponent shift.
+
+continuity_residual_balance:
+  Local SG flux, recombination, or continuity residual balance explains the branch shift.
+
+spatial_electrostatic_shape:
+  A nonuniform psi profile change explains the density exponent shift even when local qF slopes look similar.
+
+unclassified:
+  The current diagnostics are insufficient; add the smallest missing observable before proposing a physics fix.
+```
+
+Expected: do not tune avalanche, mobility, SRH lifetime, or Newton tolerances until this classification is complete.
+
+### Task 7 Execution Notes 2026-06-18
+
+- Generated diagnostic decks under `build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution`.
+- A direct no-impact adaptive run timed out after 240 s at about `-7.75 V`, but it wrote a restart state. A restart deck using that state converged explicit no-impact bias points `-8 V`, `-10 V`, and `-13.2 V`.
+- Exported Sentaurus multibias snapshots for `-10 V`, `-13.2 V`, and `-20 V`.
+- Ran `scripts/diagnose_pn2d_bv_continuity_feedback.py` for the no-impact Vela branch at `-10 V` and `-13.2 V`.
+- Classification: `quasi_fermi_anchoring` / high-bias quasi-Fermi absolute-level branch mismatch. The local focus-edge region is close at `-10 V`, then diverges before avalanche is needed:
+
+```text
+-10 V no-impact:
+  median log10(Vela/Sentaurus electron density) = -0.297
+  median log10(Vela/Sentaurus hole density)     = -0.449
+  median delta(psi - phin)                      = -0.00421 V
+
+-13.2 V no-impact:
+  median log10(Vela/Sentaurus electron density) = +2.654
+  median log10(Vela/Sentaurus hole density)     = -0.592
+  median delta(psi - phin)                      = +0.172 V
+```
+
+- Therefore the `-13.2 V` high-density branch is already present without impact ionization. Avalanche source tuning is not the first fix; the next implementation task should inspect high-bias quasi-Fermi anchoring/state reconstruction between about `-10 V` and `-13.2 V`.
+
+## Task 8: C++ SG Edge-Source Diagnostic
+
+- [x] **Step 1: Add a runner-visible edge-source dump for the assembled SG avalanche source**
+
+Expose the actual C++ edge-level source terms used by the `density_gradient` assembler path. The dump must include:
+
+```text
+bias_V
+edge_id
+node0
+node1
+x0_um
+y0_um
+x1_um
+y1_um
+edge_length_m
+edge_couple_m
+edge_area_proxy_m2
+electron_alpha_m_inv
+hole_alpha_m_inv
+electron_flux_proxy
+hole_flux_proxy
+edge_source_integral
+node0_source_integral
+node1_source_integral
+edge_class
+```
+
+Expected: the diagnostic is generated from the same helper path used by the solver, not from a separate Python reconstruction.
+
+- [x] **Step 2: Compare C++ edge dump against the Python SG reconstruction**
+
+Run `scripts/diagnose_pn2d_bv_sg_avalanche_edges.py` on the same state and compare:
+
+```text
+top edge id/order
+total source integral
+contact-edge source fraction
+interior-bulk source fraction
+node 351/986 source contribution
+```
+
+Expected: explain whether the `-20 V` VTK contact-node avalanche peak is an output normalization artifact, a node-volume/reporting artifact, or real assembled source behavior.
+
+- [x] **Step 3: Add focused regression coverage**
+
+Add tests that prove:
+
+```text
+flat quasi-Fermi edge current still produces zero SG avalanche source
+edge-source dump total equals assembled nodal source integral
+VTK AvalancheGeneration remains consistent with the chosen node-volume policy
+```
+
+Expected: future diagnostics cannot silently diverge from the solver source assembly.
+
+### Task 8 Execution Notes 2026-06-18
+
+- Added `detail::sgEdgeCurrentAvalancheSourceRecords(...)` in `include/vela/equation/AssemblerUtils.h`; the existing nodal `sgEdgeCurrentAvalancheSourceIntegrals(...)` now sums those records, so the diagnostic and assembler source share the same helper path.
+- Added `sweep.diagnostics.sg_avalanche_edges` to `DCSweep`. When enabled with `impact_ionization.generation = "current_density"` and `current_approximation = "density_gradient"`, it writes a separate CSV containing edge id, endpoint coordinates, edge-area proxy, alpha values, mobility values, SG flux proxies, source integrals, node half-source integrals, and edge class.
+- Added focused tests:
+  - `SG edge-current avalanche records sum to assembled nodal source`
+  - `DCSweep: SG avalanche edge diagnostics write assembled source rows`
+  - Existing `SG edge-current avalanche approximation cancels flat quasi-Fermi current`
+  - `VTK AvalancheGeneration uses SG edge nodal source over node volume`
+- Added `scripts/compare_pn2d_bv_sg_edge_source_dump.py` plus regression coverage for comparing C++ edge dumps against Python reconstruction CSVs. The comparison reports top edge ids/order, total source integral, contact-edge fraction, interior-bulk fraction, selected node source contributions, and key deltas.
+- Built the release runner with the new diagnostic and generated a 0 V Sentaurus-default SG edge-current C++ dump under `build-release\reference_tcad\pn2d_sentaurus2018\reports\sg_edge_source_cpp_compare\vela_run`.
+- Ran `scripts/diagnose_pn2d_bv_sg_avalanche_edges.py` on the matching 0 V VTK and compared it with the C++ dump:
+  - Summary JSON: `build-release\reference_tcad\pn2d_sentaurus2018\reports\sg_edge_source_cpp_compare\cpp_vs_python_0v_summary.json`
+  - `log10(C++ total / Python total) = -5.3510817401023306e-05`
+  - C++ interior-bulk fraction `0.9771051921163618`; Python interior-bulk fraction `0.9771030786581933`
+  - C++ contact-edge fraction `4.404660969341172e-07`; Python contact-edge fraction `4.885308332737057e-07`
+  - Top edge sets agree, with one near-tie order swap between edge ids `3474` and `4028`.
+- High-bias comparison remains open. A direct `0 -> -13.2 V` density-gradient diagnostic deck wrote the 0 V dump/VTK and then exceeded a 300 s foreground timeout while solving the high-bias point. A sparse ramp deck (`0,-1,-2,-4,-8,-10,-12,-13.2`) similarly wrote the 0 V dump/VTK but did not finish the next point within the short probe timeout. Do not use this 0 V consistency result to classify the `-20 V` contact-node avalanche peak.
+- Remaining Task 8 work: run a true continuation `density_gradient` pn2d high-bias probe long enough to emit C++ SG edge-source rows at `-13.2 V` and `-20 V`, then compare those rows to the Python reconstruction and classify the VTK contact-node peak as output normalization, node-volume/reporting, or real assembled source behavior.
+
+### Task 8 Additional Execution Notes 2026-06-18
+
+- Used the converged no-impact `-13.2 V` state as the initial state for a Sentaurus-default SG edge-current `-13.2 V` single-point solve. It converged and emitted C++ edge-source rows.
+- Used the converged SG `-13.2 V` state as the initial state for a Sentaurus-default SG edge-current `-20 V` single-point solve. It converged and emitted C++ edge-source rows.
+- Full-edge C++ vs Python reconstruction results:
+
+```text
+-13.2 V:
+  log10(total C++ source / Python source) = +0.00804
+  C++ interior-bulk source fraction       = 0.966401
+  Python interior-bulk source fraction    = 0.966459
+  C++ contact-edge source fraction        = 2.68e-6
+
+-20 V:
+  log10(total C++ source / Python source) = +0.34695
+  C++ interior-bulk source fraction       = 0.442780
+  Python interior-bulk source fraction    = 0.966522
+  C++ contact-edge source fraction        = 0.541857
+```
+
+- Interpretation: the assembled SG source and independent Python reconstruction agree well at `-13.2 V`, including focus node source integrals near nodes `351` and `986`. At `-20 V`, the total source remains within a factor of about `2.2`, but the C++ diagnostic assigns over half the source to contact edges while the Python reconstruction classifies almost all source as interior bulk. The `-20 V` contact-edge/source-reporting path remains open and must be resolved before promotion.
+
+## Task 9: High-Bias Branch Acceptance Gate
+
+- [x] **Step 1: Add a local high-bias gate before any -20 V promotion**
+
+At `-13.2 V`, require the focus-edge local source and carrier feedback to satisfy:
+
+```text
+abs(log10(Vela_G / Sentaurus_G)) < 0.5 decades
+abs(log10(Vela_electron_density / Sentaurus_electron_density)) < 0.5 decades
+abs(log10(Vela_electron_flux / Sentaurus_electron_flux)) < 0.5 decades
+```
+
+Use the edge near nodes `351-986` unless a regenerated diagnostic identifies a different dominant interior-bulk edge.
+
+Expected: this is the first promotion gate. Stricter final tolerances can be set after the root cause is known.
+
+- [x] **Step 2: Keep -20 V reference promotion behind the gate**
+
+Only after Task 7 classification and Task 8 source consistency pass, update the committed BV config:
 
 ```json
 "vela_stop": -20.0,
 "vela_step": -0.1
 ```
 
-Use `-0.05` instead of `-0.1` only if the selected Task 5 probe proves `-0.1` is not stable. Include any selected non-default avalanche options in the generated BV deck rather than relying on manual probe files.
+The promoted Sentaurus-default impact-ionization config must include:
 
-- [ ] **Step 3: Add or update regression assertions for the promoted path**
-
-In `tests/regression/test_reference_tcad_tools.py`, assert that the generated BV deck includes:
-
-```python
-assert bv["solver"]["impact_ionization"]["model"] == "van_overstraeten"
-assert bv["solver"]["impact_ionization"]["driving_force"] == "quasi_fermi_gradient"
-assert bv["solver"]["impact_ionization"]["generation"] == "current_density"
-assert bv["solver"]["impact_ionization"]["current_approximation"] in {
-    "density_gradient",
-    "mobility_density_gradient",
-}
-assert bv["sweep"]["stop"] == -20.0
+```json
+"current_approximation": "density_gradient"
 ```
 
-Expected: future imports cannot silently fall back to a low-bias BV gate, a no-avalanche deck, or an undocumented avalanche-current approximation.
+If SG edge-source parity is not confirmed, fix the SG edge-current path, source-volume policy, or high-bias branch selection before promotion. Do not switch the acceptance path to `mobility_density_gradient` to obtain a more stable or closer-looking curve.
 
-- [ ] **Step 4: Run focused regression**
+Expected: the final validation must compare Sentaurus's implicit default avalanche run against Vela's documented SG edge-current implementation, not against a Vela `AvalDensGradQF`-like implementation.
+
+### Task 9 Execution Notes 2026-06-18
+
+- Ran `scripts/diagnose_pn2d_bv_continuity_feedback.py` on the Sentaurus-default SG VTK states at `-13.2 V` and `-20 V`.
+- The promotion gate fails:
+
+```text
+-13.2 V SG branch:
+  median log10(Vela/Sentaurus electron density) = +2.654
+  focus-edge log10(Vela/Sentaurus generation)   = +2.511
+
+-20 V SG branch:
+  median log10(Vela/Sentaurus electron density) = +1.787
+  median log10(Vela/Sentaurus hole density)     = +0.736
+  focus-edge log10(Vela/Sentaurus generation)   = +1.382
+```
+
+- Required gate was `< 0.5 decades` for local source, electron density, and electron flux. Therefore `vela_stop = -20.0` remains blocked. Do not promote the generated reference JSON beyond the low-bias gate.
+
+## Task 10: Ionization-Integral Diagnostic Scope Lock
+
+Ionization-integral breakdown analysis is a useful research diagnostic from the Sentaurus, Silvaco, GSS, and Sze references, but it is not the acceptance path for this Sentaurus-default BV reproduction. Use it to understand field-line breakdown propensity after SG edge-current parity is under control.
+
+- [x] **Step 1: Keep ionization integral out of the -20 V promotion gate**
+
+Record in the validation notes that the active acceptance target remains:
+
+```text
+Sentaurus default:
+  Recombination(Avalanche(VanOverstraeten))
+  isothermal GradQuasiFermi driving force
+  SG edge-current avalanche source
+  no explicit AvalDensGradQF
+  no RefDens_*Aval interpolation
+  no ElementVolumeAvalanche unless the source deck enables it
+
+Vela required counterpart:
+  model = van_overstraeten
+  driving_force = quasi_fermi_gradient
+  generation = current_density
+  current_approximation = density_gradient
+  driving_force_interpolation = none
+```
+
+Expected: do not replace the self-consistent DD avalanche comparison with an ionization-integral `integral >= 1` criterion when claiming Sentaurus-default BV parity.
+
+### Task 10 Execution Notes 2026-06-18
+
+- The active acceptance path remains self-consistent drift-diffusion with Sentaurus-default SG edge-current avalanche.
+- Ionization integral remains a future post-processing diagnostic only; it was not used to pass or fail the `-20 V` promotion gate in this execution.
+
+- [x] **Step 2: Add ionization-integral output only as a post-processing diagnostic after Task 9**
+
+If Task 9 still leaves a high-field source mismatch after the SG edge source is internally consistent, create `scripts/diagnose_pn2d_bv_ionization_integral.py` with these required outputs:
+
+```text
+bias_V
+path_id
+carrier
+start_x_um
+start_y_um
+end_x_um
+end_y_um
+max_field_V_per_m
+integral_alpha_dx
+dominant_material
+dominant_edge_or_cell_id
+```
+
+Expected: the script reads existing Vela and imported Sentaurus field snapshots, reports the largest electron and hole ionization integrals at each bias, and writes a summary JSON. It must not change solver behavior or sweep stopping criteria in this plan.
+
+### Task 10 Additional Execution Notes 2026-06-18
+
+- Added `scripts/diagnose_pn2d_bv_ionization_integral.py`.
+- Added regression coverage:
+  - `ReferenceTcadToolsTest.test_pn2d_bv_ionization_integral_diagnostic_writes_required_outputs`
+- The diagnostic is an edge-local path proxy, not a field-line integrator. It reports the dominant mesh-edge `alpha * dx` values and uses `--field-scale 100` by default because Vela VTK high-field scalars are written in `V/cm` scale while the Van Overstraeten coefficients use `V/m`.
+- Post-processed Sentaurus-default SG VTK states:
+
+```text
+-13.2 V:
+  max edge-local integral = 0.08193
+  electron max            = 0.08193
+  hole max                = 0.02804
+
+-20 V:
+  max edge-local integral = 1.80364
+  electron max            = 1.80364
+  hole max                = 1.40371
+```
+
+- These values support using ionization integrals as a future explanatory diagnostic, but they do not override the failed self-consistent DD high-bias parity gate in Task 9.
+
+## Task 11: No-Impact High-Bias Branch Probe
+
+The next blocker after Task 10 is the no-impact high-bias branch mismatch. Test
+continuation history, Gummel handoff, and material intrinsic-density alignment
+before changing avalanche physics or promoting the `-20 V` gate.
+
+- [x] **Step 1: Re-run no-impact from `-10 V` to `-13.2 V` with small continuation steps**
+
+Generated a restart CSV from the converged no-impact `-10 V` VTK state and ran:
+
+```text
+build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution\noimpact_smallstep_from_minus10
+```
+
+The probe used `impact_ionization.model = none`, `step = -0.05 V`, no explicit
+`bias_points`, and reached `-13.2 V` in 65 points.
+
+Result: the high-density branch still appears. The focus-edge median
+`log10(Vela/Sentaurus electron density)` at `-13.2 V` moves only from `+2.654`
+in the large-jump restart to `+2.597` with small-step continuation. Therefore
+the previous `-10 V -> -13.2 V` explicit-bias jump is not the first-order root
+cause.
+
+- [x] **Step 2: Test whether a real Gummel initializer avoids the high branch**
+
+Generated a restart from the pre-jump `-12.7 V` no-impact state and ran:
+
+```text
+build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution\noimpact_gummel_handoff_from_minus12p7
+```
+
+The probe enabled `handoff.gummel_max_iter = 30` before Newton handoff.
+
+Result: the run did not reach `-13.2 V`; it repeatedly shrank near
+`-12.9466659 V` and then failed Newton. The completed points already show the
+same high-density tendency near `-12.9 V`, so Gummel handoff changes the
+failure mode but does not restore Sentaurus-like carrier densities.
+
+- [x] **Step 3: Separate material `ni` parity from the high-bias branch selector**
+
+Generated a no-impact small-step probe with a local material override:
+
+```json
+{"materials": [{"name": "Si", "ni": 1.6556153e10}]}
+```
+
+Because the deck uses `scaling.mode = unit_scaling`, this is interpreted as
+`1.6556153e10 cm^-3`.
+
+Result:
+
+```text
+-10 V default ni:
+  median log10(Vela/Sentaurus electron density) = -0.297
+
+-10 V ni override:
+  median log10(Vela/Sentaurus electron density) = -0.072
+
+-13.2 V default ni:
+  median log10(Vela/Sentaurus electron density) = +2.597
+
+-13.2 V ni override:
+  median log10(Vela/Sentaurus electron density) = +2.995
+```
+
+The material `ni` override is a real low-bias calibration axis, but it does not
+fix the high-bias no-impact branch. In this probe it worsens the high-bias
+electron-density overshoot.
+
+### Task 11 Execution Notes 2026-06-18
+
+- The high-bias branch starts to depart around `-12.75 V` in the no-impact
+  small-step run. The terminal current jumps from the `~1e-11 A/m` leakage
+  scale into the `~1e-9` to `~1e-8 A/m` electron-current branch before the
+  `-13.2 V` point.
+- Contact Dirichlet quasi-Fermi values are not the immediate cause. At both
+  `-10 V` and `-13.2 V`, contact `phin` and `phip` match the electrode biases
+  to numerical precision; the known contact potential difference is the
+  material-`ni` built-in offset of about `13 mV`.
+- The `-13.2 V` focus-edge density error is mostly driven by the internal
+  electrostatic and carrier branch: Vela `psi` is about `0.14 V` above
+  Sentaurus near the junction, while `phin` differs by only about `0.03 V`.
+- Updated root-cause priority: do not tune avalanche, SRH lifetime, high-field
+  mobility, contact minority relaxation, or material `ni` as the next fix for
+  the `-13.2 V` branch. The remaining target is the no-impact coupled
+  continuity/Poisson branch selection around `-12.7 V` to `-13.0 V`, especially
+  the electron-continuity residual/Jacobian balance that permits the
+  high-density internal solution.
+- The committed BV reference remains blocked at low bias. Do not promote
+  `vela_stop = -20.0` until the no-impact branch gate at `-13.2 V` is below
+  `0.5 decades`.
+
+## Task 12: No-Impact Branch Residual Spectrum
+
+The next step after Task 11 was to test whether the high-density branch is a
+false convergence caused by residual scaling or a self-consistent alternate
+DD/Poisson branch.
+
+- [x] **Step 1: Allow Vela-only Newton residual probe preparation**
+
+Updated `scripts/diagnose_pn2d_bv_newton_residual_states.py` so pure
+`vela:<bias>` states do not require a same-bias Sentaurus field export. Hybrid
+and Sentaurus states still require the Sentaurus export.
+
+Regression coverage added:
+
+```text
+ReferenceTcadToolsTest.test_pn2d_bv_newton_residual_state_diagnostic_allows_vela_without_sentaurus
+```
+
+- [x] **Step 2: Run high-precision residual probes across the no-impact branch
+  jump**
+
+Generated high-precision target states by re-running the no-impact small-step
+deck from the same `-10 V` restart to each target bias. This avoids using
+truncated VTK values as Newton residual input.
+
+Report root:
+
+```text
+build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution\noimpact_branch_high_precision_targets
+```
+
+Summary:
+
+| bias (V) | electron current (A/m) | `psi` block | `phin` block | max `phin` node |
+|---:|---:|---:|---:|---:|
+| `-12.65` | `-1.785e-11` | `8.83e-12` | `5.86e-12` | `2` |
+| `-12.70` | `-4.475e-11` | `3.28e-09` | `6.33e-12` | `2` |
+| `-12.75` | `-6.424e-10` | `1.17e-09` | `1.01e-11` | `202` |
+| `-12.80` | `-3.124e-09` | `1.01e-10` | `1.14e-11` | `1243` |
+| `-12.85` | `-9.001e-09` | `2.24e-08` | `1.99e-11` | `201` |
+| `-12.90` | `-1.389e-08` | `1.17e-11` | `6.72e-12` | `2` |
+| `-12.95` | `-1.061e-09` | `3.82e-10` | `1.10e-10` | `0` |
+| `-13.00` | `-1.375e-08` | `5.67e-11` | `6.80e-12` | `2` |
+| `-13.20` | `-1.375e-08` | `1.37e-08` | `7.27e-12` | `2` |
+
+The branch jump is visible in the state itself. At focus nodes `351/986`,
+`log10(electrons_m^-3)` moves from about `9.88` at `-12.70 V` to about
+`11.14` at `-12.75 V`, then saturates around `12.29` after `-12.90 V`.
+
+- [x] **Step 3: Interpret the branch selector**
+
+The high-density branch is not a residual-threshold artifact. In high-precision
+states, the accepted no-impact branch has electron and hole continuity block
+norms near `1e-11`, including after the current jump. The VTK-based probe had
+shown `~0.1` Poisson block residuals, but converting the high-precision
+`latest_state.csv` for `-13.2 V` gives `psi ~= 1.37e-8`, confirming that the
+VTK residual was dominated by output precision.
+
+Updated next research direction:
+
+- Do not spend the next iteration on residual tolerances or local focus-edge
+  source balancing; the high branch is internally residual-balanced.
+- Add an accepted-step Newton history/Jacobian diagnostic around
+  `-12.70 V -> -12.75 V`, recording per-iteration block residuals, line-search
+  damping, update norms, and optionally the smallest/most singular coupled
+  Jacobian directions.
+- Test branch selection controls rather than physical knobs: smaller target
+  steps below `0.05 V`, pseudo-transient/continuation damping, and a
+  Sentaurus-like extrapolation policy for the coupled variables.
+- If adding a solver change, gate it on recovering the low-density no-impact
+  branch at `-13.2 V` without degrading the existing `-10 V` parity.
+
+## Task 13: Accepted-Step Newton History At The No-Impact Branch Jump
+
+Task 12 showed that the high-density no-impact branch is internally
+residual-balanced. The next step was to inspect how accepted Newton iterations
+enter that branch around `-12.70 V -> -12.75 V`.
+
+- [x] **Step 1: Add accepted-step Newton history diagnostics**
+
+Added `sweep.diagnostics.newton_history` to `DCSweep`. When enabled, it writes a
+separate CSV for converged sweep points with:
+
+```text
+point_index
+bias_V
+bias_contact
+solver_method
+handoff_stage
+iteration
+residual_norm
+relative_residual_norm
+raw_step_norm
+applied_step_norm
+damping_factor
+line_search_attempts
+line_search_accepted
+block_psi
+block_phin
+block_phip
+block_combined
+```
+
+Also extended `NewtonIterationInfo` so each accepted Newton iteration records
+the post-step `psi`/`phin`/`phip`/combined block residuals. The diagnostic is
+off by default and does not change solver behavior.
+
+Regression coverage added:
+
+```text
+DCSweep: Newton history diagnostic writes accepted iteration block residuals
+```
+
+- [x] **Step 2: Run the no-impact `-12.70 V -> -12.75 V` jump with history**
+
+Report root:
+
+```text
+build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution\noimpact_newton_history_m12p70_to_m12p75
+```
+
+The `-0.05 V` step from the high-precision `-12.70 V` restart reached
+`-12.75 V` with no retry and no line-search damping. At `-12.75 V`, Newton used
+five full accepted iterations. The dominant residual was Poisson, not electron
+continuity:
+
+| iter | residual | raw step | damping | `psi` block | `phin` block |
+|---:|---:|---:|---:|---:|---:|
+| 1 | `5.00e-1` | `4.52e1` | `1` | `3.81e0` | `1.95e-10` |
+| 2 | `2.63e-4` | `6.88e1` | `1` | `2.00e-3` | `9.49e-13` |
+| 3 | `2.61e-4` | `5.00e0` | `1` | `1.99e-3` | `9.45e-13` |
+| 4 | `1.07e-4` | `1.91e1` | `1` | `8.18e-4` | `5.50e-13` |
+| 5 | `2.16e-9` | `7.22e0` | `1` | `1.64e-8` | `1.38e-13` |
+
+Interpretation: the branch jump is not caused by line-search backtracking or a
+large electron-continuity residual. Newton accepts full coupled updates, and
+the accepted path is controlled by the electrostatic block.
+
+- [x] **Step 3: Test smaller continuation step size**
+
+Report roots:
+
+```text
+build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution\noimpact_newton_history_m12p70_to_m12p75_step005
+build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution\noimpact_newton_history_m12p70_to_m13p20_step005
+```
+
+Using `step = -0.005 V` from the same `-12.70 V` restart:
+
+```text
+-12.75 V: focus log10(electrons_m^-3) ~= 10.71
+-12.77 V: first focus log10(electrons_m^-3) >= 11
+-12.84 V: first focus log10(electrons_m^-3) >= 12
+-13.20 V: focus log10(electrons_m^-3) ~= 12.34
+```
+
+The smaller step delays the high-density transition but does not recover the
+Sentaurus-like low-density branch at `-13.2 V`. Across the `-0.005 V` run,
+line-search damping remained `1.0`, maximum Newton iterations per point were
+`3`, and the accepted final residuals were again dominated by Poisson block
+residuals.
+
+Updated next research direction:
+
+- Smaller continuation steps are a useful diagnostic but not the final fix.
+- The next solver experiment should target branch control in the electrostatic
+  Newton update: pseudo-transient continuation, a trust-region/max-update
+  policy scaled by block or physical field, or Sentaurus-like extrapolation
+  controls for the coupled variables.
+- Add any branch-control experiment behind an opt-in solver setting and gate it
+  on reducing the no-impact `-13.2 V` focus electron-density error without
+  degrading the existing `-10 V` parity.
+
+## Task 14: Existing Trust-Region Proxy Scan With `max_update`
+
+Task 13 showed that line search accepts full Newton updates and that smaller
+continuation steps only delay the high-density transition. The next experiment
+was to test whether the existing Newton `max_update` cap can act as a
+trust-region proxy for branch control.
+
+- [x] **Step 1: Scan `max_update` on the no-impact `-12.70 V -> -13.20 V`
+  branch**
+
+All variants used:
+
+```text
+initial_state_file = high-precision no-impact -12.70 V state
+start              = -12.70 V
+stop               = -13.20 V
+step               = -0.005 V
+impact_ionization  = none
+sweep.diagnostics.newton_history.enabled = true
+```
+
+Report root:
+
+```text
+build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution\noimpact_max_update_branch_scan
+```
+
+Results:
+
+| `max_update` | points | final focus `log10(electrons_m^-3)` | final electron current (A/m) | max Newton iters/point | min damping |
+|---:|---:|---:|---:|---:|---:|
+| `5.0` | 101 | `12.343` | `-1.568e-08` | 3 | 1 |
+| `1.0` | 101 | `12.343` | `-1.568e-08` | 4 | 1 |
+| `0.5` | 101 | `12.343` | `-1.568e-08` | 6 | 1 |
+| `0.2` | 101 | `12.343` | `-1.568e-08` | 8 | 1 |
+| `0.1` | 101 | `12.343` | `-1.568e-08` | 14 | 1 |
+| `0.05` | 101 | `12.343` | `-1.568e-08` | 25 | 1 |
+
+More aggressive caps were not useful:
+
+```text
+max_update = 0.02: fails at the -12.70 V start point with max_iterations
+max_update = 0.01: fails at the -12.70 V start point with max_iterations
+```
+
+The `0.02` failure still has a small Poisson-dominated residual
+(`psi ~= 1.13e-9`, `phin ~= 5.14e-15`) after 40 Newton iterations, which
+indicates over-restriction rather than a recovered low-density branch.
+
+- [x] **Step 2: Interpret branch-control result**
+
+The existing `max_update` cap is not sufficient branch control for pn2d
+Sentaurus-default BV reproduction. It only changes the iteration count and, if
+made too strict, prevents convergence at the restart point. It does not reduce
+the no-impact `-13.2 V` focus density overshoot.
+
+Updated next research direction:
+
+- Do not promote `max_update` tuning as the BV fix.
+- The next opt-in solver experiment should be a true continuation-control
+  change, not just a Newton step cap:
+  - pseudo-transient/source-term homotopy on the electrostatic equation, or
+  - explicit predictor/extrapolation control for coupled `psi/phin/phip`
+    between bias points, or
+  - a block-aware trust region that separately constrains electrostatic and
+    continuity updates.
+- Any implementation must be TDD-first and gated on the no-impact `-13.2 V`
+  density target plus unchanged `-10 V` parity.
+
+## Task 15: External Linear Predictor Proxy
+
+Task 14 showed that plain Newton update capping is not enough. Before adding a
+new continuation predictor to production code, run an external restart-based
+proxy for Sentaurus-like extrapolation.
+
+- [x] **Step 1: Build external predictor states from prior converged states**
+
+The proxy constructs each target initial state from two previous converged
+restart CSVs:
+
+```text
+x_pred(target) = x_curr + (target - bias_curr) / (bias_curr - bias_prev)
+                 * (x_curr - x_prev)
+```
+
+Only `psi`, `phin`, and `phip` are extrapolated; carrier densities in the
+restart CSV are kept positive placeholders because Newton recomputes densities
+from the potentials.
+
+- [x] **Step 2: Run coarse `-0.05 V` external predictor continuation**
+
+Report root:
+
+```text
+build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution\noimpact_external_linear_predictor_m12p65_m13p20_step05
+```
+
+The coarse predictor used the high-precision no-impact `-12.65 V` and
+`-12.70 V` states as the initial pair, then solved single target-bias decks
+through `-13.20 V`.
+
+Key result:
+
+```text
+-12.75 V: focus log10(electrons_m^-3) ~= 10.81
+-12.90 V: focus log10(electrons_m^-3) ~= 12.30
+-13.20 V: focus log10(electrons_m^-3) ~= 10.51
+```
+
+The predictor eventually leaves the high-density branch, but after about
+`-12.95 V` the terminal current columns collapse to zero while drift/diffusion
+subcolumns remain nonzero. This is not yet an acceptance-quality branch; it is
+a branch-selection signal that needs classification.
+
+- [x] **Step 3: Run fine `-0.005 V` external predictor continuation**
+
+Report root:
+
+```text
+build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution\noimpact_external_linear_predictor_m12p65_m13p20_step005
+```
+
+Fine-step predictor summary:
+
+```text
+-12.75 V: focus log10(electrons_m^-3) ~= 10.73
+-12.80 V: focus log10(electrons_m^-3) ~= 11.61
+-12.85 V: focus log10(electrons_m^-3) ~= 12.10
+-12.90 V: focus log10(electrons_m^-3) ~= 12.29
+-12.95 V: focus log10(electrons_m^-3) ~= 11.96, terminal current columns = 0
+-13.20 V: focus log10(electrons_m^-3) ~= 10.88, terminal current columns = 0
+```
+
+Interpretation:
+
+- Linear predictor/extrapolation is a real branch-control lever; unlike
+  `max_update`, it changes the selected high-bias branch.
+- The current external predictor does not yet reproduce Sentaurus default BV:
+  it improves the `-13.2 V` focus density by roughly `1.5-1.8 decades`, but it
+  lands on a suspicious low-current branch with zero terminal current columns.
+- Do not implement or promote predictor blindly. The next production change
+  should first add an opt-in, TDD-covered continuation predictor with explicit
+  diagnostics for predicted initial state quality, terminal current consistency,
+  and branch acceptance gates.
+
+## Task 16: Charon And DEVSIM Guided Continuation And Branch Diagnostics
+
+Task 15 showed that a linear predictor changes the selected high-bias branch,
+but the current external proxy can land on a suspicious branch with zero
+terminal-current columns. Use the Charon and DEVSIM codebase review to turn
+that observation into production-safe diagnostics before enabling any new
+branch-control behavior by default.
+
+Reference findings to preserve during this task:
+
+```text
+Charon:
+  - van Overstraeten supports GradQuasiFermi, GradPotentialParallelJ,
+    GradPotentialParallelJtot, EffectiveFieldParallelJ, and
+    EffectiveFieldParallelJtot.
+  - low-density driving-force damping uses n * F / (n + n0) and
+    p * F / (p + p0).
+  - current-density avalanche generation is alpha_n * |Jn| + alpha_p * |Jp|.
+  - current constraints add contact voltages/current responses to a
+    continuation-style extended nonlinear system.
+
+DEVSIM:
+  - rampbias restores the last converged bias and halves the step on
+    convergence failure.
+  - SG currents are model expressions over edge Bernoulli functions.
+  - ExprEquation separates EdgeCouple, EdgeNodeVolume, NodeVolume, and
+    element-volume assembly paths, which is useful as a parity checklist.
+
+Vela current state:
+  - already has van_overstraeten, quasi_fermi_gradient,
+    current_density/density_gradient, ref-density interpolation, adaptive
+    retry, max_update, line-search history, and Newton history diagnostics.
+  - lacks an in-core continuation predictor, current-constraint continuation,
+    and a branch acceptance gate that can reject the zero-terminal-current
+    predictor branch.
+```
+
+- [x] **Step 1: Add a source-backed investigation note to this plan**
+
+Append a short subsection under this task after the code changes are complete
+with the exact Vela/Charon/DEVSIM files that were used to justify each solver
+knob. The subsection must include these local paths:
+
+```text
+D:\code-repo\tcad-charon\src\evaluators\Charon_Avalanche_vanOverstraeten_impl.hpp
+D:\code-repo\tcad-charon\src\Charon_CurrentConstraintModelEvaluator.hpp
+D:\code-repo\tcad-charon\src\solver\Charon_Solver_SteadyStateConstraint.cpp
+D:\code-repo\devsim\python_packages\ramp.py
+D:\code-repo\devsim\python_packages\simple_dd.py
+D:\code-repo\devsim\src\AutoEquation\ExprEquation.cc
+include\vela\physics\ImpactIonizationModel.h
+include\vela\equation\AssemblerUtils.h
+src\simulation\DCSweep.cpp
+src\solver\NewtonSolver.cpp
+```
+
+Expected: the plan records that Vela already contains the main Sentaurus-default
+avalanche formula path, so the next change targets branch control and
+diagnostics rather than new ionization coefficients.
+
+- [x] **Step 2: Write failing parser tests for opt-in sweep predictor config**
+
+Modify `tests/test_dc_sweep.cpp` with focused tests for a new optional config:
+
+```json
+"sweep": {
+  "continuation": {
+    "predictor": {
+      "mode": "linear",
+      "fields": ["psi", "phin", "phip"],
+      "max_extrapolation_ratio": 2.0
+    },
+    "branch_acceptance": {
+      "terminal_current_consistency": true,
+      "min_terminal_current_ratio": 1.0e-6
+    }
+  }
+}
+```
+
+Required assertions:
+
+```text
+mode accepts: none, constant, linear, secant
+fields accepts only psi, phin, phip
+max_extrapolation_ratio must be finite and >= 1
+terminal_current_consistency defaults to false
+min_terminal_current_ratio must be finite and non-negative
+```
 
 Run:
 
 ```powershell
 $env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
-build-release\test_impact_ionization.exe
-ctest --test-dir build-release --output-on-failure -R "reference_tcad|sentaurus_import"
+build-release\test_dc_sweep.exe "DCSweep: continuation predictor config"
 ```
 
-Expected: focused tests pass.
+Expected before implementation: the test fails because the config is not parsed.
 
-- [ ] **Step 5: Update validation documentation with the final evidence**
+- [x] **Step 3: Add predictor and branch-acceptance config structs**
 
-Append a section to `docs/validation/pn2d_sentaurus_comparison.md` containing:
+Modify `include/vela/simulation/DCSweep.h`:
+
+```cpp
+struct SweepPredictorConfig {
+    std::string mode = "none";
+    std::vector<std::string> fields;
+    Real maxExtrapolationRatio = 2.0;
+};
+
+struct SweepBranchAcceptanceConfig {
+    bool terminalCurrentConsistency = false;
+    Real minTerminalCurrentRatio = 0.0;
+};
+
+struct SweepContinuationConfig {
+    SweepPredictorConfig predictor;
+    SweepBranchAcceptanceConfig branchAcceptance;
+};
+```
+
+Add `SweepContinuationConfig continuation;` to `DCSweepConfig`.
+
+Expected: headers compile, but parsing still fails until Step 4.
+
+- [x] **Step 4: Implement parser validation without changing default behavior**
+
+Modify `src/simulation/DCSweep.cpp` to parse `sweep.continuation`.
+
+Validation rules:
 
 ```text
-PN2D BV -20 V validation date:
-Vela run deck:
-Sentaurus multibias export root:
-Compared biases:
-Curve max abs log10 error:
-Dominant field mismatch:
-Impact-ionization model:
-Avalanche current approximation:
-Avalanche volume policy:
-Driving-force interpolation:
-Accepted limitations:
+predictor.mode:
+  allowed = none, constant, linear, secant
+predictor.fields:
+  if empty, default to psi, phin, phip when mode != none
+  every entry must be psi, phin, or phip
+predictor.max_extrapolation_ratio:
+  finite and >= 1.0
+branch_acceptance.min_terminal_current_ratio:
+  finite and >= 0.0
 ```
 
-Expected: the next worker can start from the generated report paths instead of rediscovering the run.
+Expected: all new parser tests pass and existing sweep behavior is unchanged
+when `sweep.continuation` is absent.
+
+- [x] **Step 5: Write failing predictor state tests**
+
+Add tests in `tests/test_dc_sweep.cpp` for a helper that predicts a restart
+state from one or two accepted solutions:
+
+```text
+mode = none:
+  returns the current accepted solution unchanged
+mode = constant:
+  returns the current accepted solution unchanged
+mode = linear:
+  x_pred = x_curr + clamp(ratio, -max_ratio, max_ratio) * (x_curr - x_prev)
+mode = secant:
+  same first implementation as linear, but keep the separate mode name for
+  future LOCA-like predictor behavior
+```
+
+Expected before implementation: tests fail because the helper does not exist.
+
+- [x] **Step 6: Implement predictor helper as internal DCSweep detail**
+
+Implement the helper under `namespace detail` and keep it internal to DCSweep
+continuation behavior.
+Only extrapolate selected fields from `DDSolution`; leave derived carrier
+densities to be recomputed by Newton from `psi`, `phin`, and `phip`.
+
+Acceptance:
+
+```text
+predictor disabled by default
+prediction is used only as the initial state for the next attempted bias
+failed attempts do not update predictor history
+accepted attempts update predictor history after branch acceptance passes
+```
+
+Expected: predictor unit tests pass without changing existing no-predictor
+tests.
+
+- [x] **Step 7: Add terminal-current branch acceptance diagnostics**
+
+Extend `DCSweepPoint` and the sweep CSV with diagnostic columns:
+
+```text
+predictor_mode
+predicted_initial_state
+branch_acceptance_status
+branch_acceptance_reason
+terminal_current_consistency_ratio
+```
+
+Define the terminal-current consistency ratio as:
+
+```text
+abs(total_terminal_current) /
+max(abs(electron_drift) + abs(electron_diffusion) +
+    abs(hole_drift) + abs(hole_diffusion), floor)
+```
+
+Use a small fixed floor only to avoid division by zero in diagnostics. If
+`terminal_current_consistency` is enabled and the ratio is below
+`min_terminal_current_ratio`, reject the point with:
+
+```text
+failure_reason = branch_acceptance_failed
+branch_acceptance_reason = terminal_current_inconsistent
+```
+
+Expected: the zero-terminal-current branch observed in Task 15 can be rejected
+without affecting default runs.
+
+- [x] **Step 8: Run the no-impact predictor experiment with the in-core option**
+
+Generate a probe deck from the Task 15 setup with:
+
+```json
+"continuation": {
+  "predictor": {
+    "mode": "linear",
+    "fields": ["psi", "phin", "phip"],
+    "max_extrapolation_ratio": 2.0
+  },
+  "branch_acceptance": {
+    "terminal_current_consistency": true,
+    "min_terminal_current_ratio": 1.0e-6
+  }
+}
+```
+
+Run:
+
+```powershell
+$env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
+build-release\vela_example_runner.exe --config build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution\noimpact_predictor_incore_m12p65_m13p20_step005\simulation.json
+```
+
+Expected: the run either rejects the suspicious low-current branch with a
+clear branch-acceptance reason, or reaches `-13.2 V` with nonzero terminal
+current columns and improved focus density. Do not treat a zero-terminal-current
+result as progress.
+
+- [x] **Step 9: Add SG edge-source parity report before changing avalanche physics**
+
+Use the existing SG avalanche edge diagnostics and add missing fields only if
+needed:
+
+```text
+bias_V
+edge_id
+node0
+node1
+edge_length_m
+edge_couple
+edge_area_proxy
+electric_field_V_per_m
+electron_impact_field_V_per_m
+hole_impact_field_V_per_m
+electron_alpha_1_per_m
+hole_alpha_1_per_m
+electron_flux_proxy
+hole_flux_proxy
+edge_source_integral
+node0_source_integral
+node1_source_integral
+```
+
+Compare this report against the Sentaurus manual expectations and the Charon
+`alpha * |J|` integration-point form before adding more avalanche model knobs.
+
+Expected: any future avalanche source change is backed by a specific edge or
+volume-weight mismatch, not by curve fitting.
+
+- [x] **Step 10: Defer current-constraint continuation until the predictor gate is classified**
+
+Do not implement a current-controlled BV solver in this task. Instead, add a
+short note under this task answering:
+
+```text
+Did in-core predictor recover a nonzero-current branch?
+Did terminal-current branch acceptance reject the suspicious predictor branch?
+Is the remaining mismatch still present in no-impact mode?
+Would a Charon-style current constraint solve a confirmed branch-selection
+problem, or would it mask a terminal-current assembly bug?
+```
+
+Expected: current constraint becomes a separate future plan only if the
+branch-acceptance diagnostics show the solver is selecting a mathematically
+valid but physically wrong voltage-controlled branch.
+
+### Execution Note 2026-06-19: In-Core Predictor Gate
+
+Source-backed investigation files used for this task:
+
+```text
+D:\code-repo\tcad-charon\src\evaluators\Charon_Avalanche_vanOverstraeten_impl.hpp
+D:\code-repo\tcad-charon\src\Charon_CurrentConstraintModelEvaluator.hpp
+D:\code-repo\tcad-charon\src\solver\Charon_Solver_SteadyStateConstraint.cpp
+D:\code-repo\devsim\python_packages\ramp.py
+D:\code-repo\devsim\python_packages\simple_dd.py
+D:\code-repo\devsim\src\AutoEquation\ExprEquation.cc
+include\vela\physics\ImpactIonizationModel.h
+include\vela\equation\AssemblerUtils.h
+src\simulation\DCSweep.cpp
+src\solver\NewtonSolver.cpp
+```
+
+- Added opt-in `sweep.continuation` parsing with predictor modes
+  `none|constant|linear|secant`, field validation for `psi|phin|phip`, bounded
+  extrapolation ratio validation, and branch-acceptance threshold validation.
+- Added `SweepPredictorConfig`, `SweepBranchAcceptanceConfig`, and
+  `SweepContinuationConfig` to `DCSweepConfig`.
+- Added the predictor helper in `include/vela/simulation/DCSweepPredictor.h`
+  under `vela::detail` so it can be TDD-covered directly while remaining an
+  internal DCSweep continuation helper.
+- Wired the predictor into `DCSweep` as an initial-state generator only.
+  Predictor history is advanced only after an accepted point passes branch
+  acceptance.
+- Added continuation CSV diagnostics:
+  `predictor_mode`, `predicted_initial_state`,
+  `branch_acceptance_status`, `branch_acceptance_reason`, and
+  `terminal_current_consistency_ratio`.
+- Added terminal-current branch acceptance. When enabled, a point whose
+  consistency ratio falls below `min_terminal_current_ratio` is rejected with
+  `failure_reason=branch_acceptance_failed` and
+  `branch_acceptance_reason=terminal_current_inconsistent`.
+- Focused verification passed:
+
+```powershell
+$env:Path='D:\msys64\ucrt64\bin;D:\msys64\usr\bin;' + $env:Path
+cmake --build build-release --parallel --target test_dc_sweep
+build-release\test_dc_sweep.exe "DCSweep: continuation predictor config is validated"
+build-release\test_dc_sweep.exe "DCSweep predictor: extrapolates selected coupled variables"
+build-release\test_dc_sweep.exe "DCSweep: continuation predictor writes branch diagnostics"
+```
+
+Status: Step 8's no-impact in-core predictor probe is classified in the
+following execution note before any Charon-style current constraint is split
+into a follow-up plan.
+
+### Execution Note 2026-06-19: Predictor Gate Classification And SG Source Parity
+
+Step 8 no-impact in-core predictor probe:
+
+- Generated `build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution\noimpact_predictor_incore_m12p65_m13p20_step005\simulation.json` from the Task 15 no-impact predictor setup.
+- Enabled `sweep.continuation.predictor.mode = "linear"`, fields `psi|phin|phip`, `max_extrapolation_ratio = 2.0`, and terminal-current branch acceptance with `min_terminal_current_ratio = 1.0e-6`.
+- The run did not recover a nonzero-current branch through `-13.2 V`. It accepted 73 points, then rejected the next point at `-12.926207151135785 V`.
+- Last accepted point: bias `-12.926207151032472 V`, `branch_acceptance_status=accepted`, `terminal_current_consistency_ratio=1.0000005340965768e-06`, and electron terminal current `-1.5589793636067414e-08 A`.
+- Rejected point: bias `-12.926207151135785 V`, `branch_acceptance_status=rejected`, `branch_acceptance_reason=terminal_current_inconsistent`, `terminal_current_consistency_ratio=9.9999986099197646e-07`, and zero terminal-current columns.
+- Conclusion: the in-core predictor confirms the suspicious low-current branch can be detected and rejected, but it does not solve the high-bias no-impact branch mismatch.
+
+Step 9 SG edge-source parity report:
+
+- Added TDD coverage to require SG avalanche edge diagnostics to include `electric_field_V_per_m`, `electron_impact_field_V_per_m`, and `hole_impact_field_V_per_m`.
+- Extended the C++ SG edge diagnostics CSV writer with those fields, using the assembled `SgEdgeCurrentAvalancheSourceRecord` values.
+- Regenerated a C++ single-point `-20 V` SG edge-source dump under `build-release\reference_tcad\pn2d_sentaurus2018\reports\sentaurus_default_bv_execution\sg_cpp_minus20_with_fields`.
+- Compared it against the Python SG reconstruction from `sg_python_minus20_full\sg_avalanche_edges.csv` with `scripts\compare_pn2d_bv_sg_edge_source_dump.py`.
+- C++ and Python both report `3830` SG edge rows at `-20 V`, but the total source integral differs by `log10(C++/Python)=0.47369639705083294`.
+- The leading structural mismatch is source placement, not just source magnitude: C++ reports `contact_edge_source_fraction=0.6578333131556747`, while Python reports essentially zero contact-edge contribution and `interior_bulk_source_fraction=0.9665216700765034`.
+- Hotspot node source integrals at nodes `351` and `986` are close between the two reports, so the next source-parity investigation should focus on contact-edge classification/exclusion and edge-volume weighting rather than ionization coefficients.
+
+Step 10 current-constraint decision:
+
+- Did in-core predictor recover a nonzero-current branch? No. It approached the branch-ratio floor and was rejected before `-13.2 V`.
+- Did terminal-current branch acceptance reject the suspicious predictor branch? Yes, with `failure_reason=branch_acceptance_failed` and `branch_acceptance_reason=terminal_current_inconsistent`.
+- Is the remaining mismatch still present in no-impact mode? Yes. The no-impact predictor probe still fails to reach the Sentaurus-like high-bias branch, so avalanche feedback is not the only branch-selection issue.
+- Would a Charon-style current constraint solve a confirmed branch-selection problem, or mask a terminal-current assembly bug? It should be deferred. The current evidence first requires classifying voltage-controlled branch selection and terminal-current/edge-source assembly. A current-constraint continuation path may be useful only after the zero-current branch rejection and SG source-placement mismatch are resolved or isolated.
 
 ## Final Verification Commands
 
@@ -1314,3 +2433,23 @@ ctest --test-dir build-release --output-on-failure
 ```
 
 Expected: focused tests pass before promotion; full suite passes before merging any C++ solver or physics change.
+
+### Execution Note 2026-06-19: Final Verification
+
+Final verification was run in the MSYS2 UCRT64 release build:
+
+```powershell
+$env:Path='D:\msys64\ucrt64\bin;D:\msys64\usr\bin;' + $env:Path
+cmake --build build-release --parallel --target test_dc_sweep test_impact_ionization vela_example_runner
+build-release\test_impact_ionization.exe
+ctest --test-dir build-release --output-on-failure -R "impact_ionization|newton|dc_sweep|reference_tcad|sentaurus_import"
+python -m unittest tests.regression.test_reference_tcad_tools tests.regression.test_sentaurus_import_tools
+ctest --test-dir build-release --output-on-failure
+```
+
+Results:
+
+- `build-release\test_impact_ionization.exe`: passed `123 assertions in 13 test cases`.
+- Focused CTest subset: passed `5/5` tests.
+- Python regression unittest suite: passed `87` tests.
+- Full CTest suite: passed `316/316` tests.

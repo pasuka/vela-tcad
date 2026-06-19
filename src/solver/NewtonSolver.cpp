@@ -1057,12 +1057,12 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         info.rawStepNorm = stepNorm;
         info.lineSearchAttempts = ls.attempts;
         info.lineSearchAccepted = ls.accepted;
+        info.blockResiduals = blockResidualInfo(r, mesh_.numNodes());
         if (cfg_.diagnostics)
             info.lineSearchHistory = std::move(ls.history);
         result.history.push_back(std::move(info));
         if (cfg_.verbose) {
-            const ResidualBlockNormValue blocks =
-                ResidualNorm::computeBlocks(r, mesh_.numNodes());
+            const NewtonBlockResidualInfo& blocks = result.history.back().blockResiduals;
             std::cout << "Newton iter " << iter
                       << " residual=" << residualNorm
                       << " step=" << appliedStepNorm

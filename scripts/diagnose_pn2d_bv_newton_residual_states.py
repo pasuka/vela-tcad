@@ -196,13 +196,14 @@ def prepare_state(
     sentaurus_root: Path,
 ) -> tuple[str, dict[str, Any]]:
     vtk = vtks.get(bias_key(bias))
-    export = sentaurus_dir(sentaurus_root, bias)
     metadata: dict[str, Any] = {}
     if source == "vela":
         if vtk is None:
             raise FileNotFoundError(f"missing Vela VTK for {bias:g} V")
         write_state(fields_dir, load_vela_state(vtk, node_count))
         return str(vtk), metadata
+
+    export = sentaurus_dir(sentaurus_root, bias)
     if source == "sentaurus":
         write_state(fields_dir, load_sentaurus_state(export, node_count))
         return str(export), metadata
