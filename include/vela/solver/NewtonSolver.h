@@ -31,6 +31,8 @@ struct NewtonConfig {
     bool warmStart = false; ///< Preserve supplied quasi-Fermi potentials instead of resetting interiors.
     bool diagnostics = false; ///< Store detailed line-search diagnostics in NewtonResult::history.
     Real maxUpdate = 0.0; ///< Optional infinity-norm cap on one Newton update in solver unknown units.
+    Real quasiFermiUpdateLimit_V = 0.0; ///< Optional physical-voltage cap on phin/phip Newton updates.
+    Real carrierRegularizationScale = 0.0; ///< Optional carrier-row diagonal regularization scale.
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
     std::string residualNorm = "block"; ///< "block" or "l2" convergence/line-search norm
@@ -132,6 +134,89 @@ struct NewtonResidualEvaluation {
     Real potentialScale = 1.0;
 };
 
+struct NewtonStepEvaluation {
+    NewtonResidualEvaluation residual;
+    NewtonResidualEvaluation trialResidual;
+    DDSolution trialSolution;
+    VectorXd deltaPsi;
+    VectorXd deltaPhin;
+    VectorXd deltaPhip;
+    Real rawStepNorm = 0.0;
+    Real stepNorm = 0.0;
+};
+
+struct NewtonDirectionalDerivativeEvaluation {
+    NewtonResidualEvaluation residual;
+    VectorXd perturbationPsi;
+    VectorXd perturbationPhin;
+    VectorXd perturbationPhip;
+    VectorXd analyticJv;
+    VectorXd finiteDifferenceJv;
+    VectorXd forwardResidual;
+    VectorXd backwardResidual;
+    Real perturbationNorm = 0.0;
+    Real analyticNorm = 0.0;
+    Real finiteDifferenceNorm = 0.0;
+    Real absoluteError = 0.0;
+    Real relativeError = 0.0;
+};
+
+struct NewtonBlockStepEvaluation {
+    std::string mode;
+    NewtonResidualEvaluation residual;
+    NewtonResidualEvaluation trialResidual;
+    DDSolution trialSolution;
+    VectorXd deltaPsi;
+    VectorXd deltaPhin;
+    VectorXd deltaPhip;
+    Real rawStepNorm = 0.0;
+    Real stepNorm = 0.0;
+};
+
+struct NewtonRegularizedCarrierStepEvaluation {
+    Real regularizationScale = 0.0;
+    NewtonResidualEvaluation residual;
+    NewtonResidualEvaluation trialResidual;
+    DDSolution trialSolution;
+    VectorXd deltaPsi;
+    VectorXd deltaPhin;
+    VectorXd deltaPhip;
+    Real rawStepNorm = 0.0;
+    Real stepNorm = 0.0;
+    Real regularizationDiagonalNorm = 0.0;
+};
+
+struct NewtonCarrierRowDiagnostic {
+    Index nodeId = 0;
+    Real electronResidual = 0.0;
+    Real holeResidual = 0.0;
+    Real electronDiagonal = 0.0;
+    Real holeDiagonal = 0.0;
+    Real electronRowAbsSum = 0.0;
+    Real holeRowAbsSum = 0.0;
+    Real electronOffdiagAbsSum = 0.0;
+    Real holeOffdiagAbsSum = 0.0;
+    Real electronRowL2Norm = 0.0;
+    Real holeRowL2Norm = 0.0;
+    Real rawDeltaPhin_V = 0.0;
+    Real rawDeltaPhip_V = 0.0;
+    Real cappedDeltaPhin_V = 0.0;
+    Real cappedDeltaPhip_V = 0.0;
+};
+
+struct NewtonCarrierRowDiagnosticsEvaluation {
+    NewtonResidualEvaluation residual;
+    std::vector<NewtonCarrierRowDiagnostic> rows;
+    Real potentialScale = 1.0;
+    Real rawCarrierStepNorm = 0.0;
+    Real cappedCarrierStepNorm = 0.0;
+};
+
+struct NewtonCarrierTermDiagnosticsEvaluation {
+    NewtonResidualEvaluation residual;
+    std::vector<CoupledDDCarrierTermDiagnostic> rows;
+};
+
 class NewtonSolver {
 public:
     NewtonSolver(const DeviceMesh& mesh,
@@ -145,6 +230,20 @@ public:
     NewtonResult solve() const;
     NewtonResult solve(const DDSolution& initial) const;
     NewtonResidualEvaluation evaluateResidual(const DDSolution& state) const;
+    NewtonStepEvaluation evaluateStep(const DDSolution& state) const;
+    NewtonDirectionalDerivativeEvaluation evaluateDirectionalDerivative(
+        const DDSolution& state,
+        const DDSolution& physicalPerturbation) const;
+    NewtonBlockStepEvaluation evaluateBlockStep(
+        const DDSolution& state,
+        const std::string& mode) const;
+    NewtonRegularizedCarrierStepEvaluation evaluateRegularizedCarrierStep(
+        const DDSolution& state,
+        Real regularizationScale) const;
+    NewtonCarrierRowDiagnosticsEvaluation evaluateCarrierRowDiagnostics(
+        const DDSolution& state) const;
+    NewtonCarrierTermDiagnosticsEvaluation evaluateCarrierTermDiagnostics(
+        const DDSolution& state) const;
 
 private:
     CoupledDDBoundaryConditions buildBoundaryConditions(

@@ -10,6 +10,7 @@
 #include "vela/solver/GummelSolver.h"
 #include "vela/equation/DDAssembler.h" // for DDScalingSpec
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace vela {
@@ -22,6 +23,10 @@ struct ContactCurrentResult {
     Real holeDriftCurrent = 0.0;
     Real holeDiffusionCurrent = 0.0;
     Real totalCurrent = 0.0;
+};
+
+struct ContactCurrentEdgeOverrides {
+    std::unordered_map<Index, Real> holeQuasiFermiDropByEdge;
 };
 
 struct ContactCurrentEdgeDiagnostic {
@@ -42,6 +47,7 @@ struct ContactCurrentEdgeDiagnostic {
     Real phin1 = 0.0;
     Real phip0 = 0.0;
     Real phip1 = 0.0;
+    bool holeQfDropOverrideApplied = false;
     Real n0 = 0.0;
     Real n1 = 0.0;
     Real p0 = 0.0;
@@ -78,9 +84,15 @@ public:
 
     ContactCurrentResult compute(const DDSolution& solution,
                                  const std::string& contactName) const;
+    ContactCurrentResult compute(const DDSolution& solution,
+                                 const std::string& contactName,
+                                 const ContactCurrentEdgeOverrides& overrides) const;
 
     ContactCurrentDetailedResult computeDetailed(const DDSolution& solution,
                                                  const std::string& contactName) const;
+    ContactCurrentDetailedResult computeDetailed(const DDSolution& solution,
+                                                 const std::string& contactName,
+                                                 const ContactCurrentEdgeOverrides& overrides) const;
 
     static ContactCurrentResult compute(const DeviceMesh& mesh,
                                         const MaterialDatabase& matdb,

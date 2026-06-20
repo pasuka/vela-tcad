@@ -128,9 +128,23 @@ TEST_CASE("Bandgap narrowing factory validates model names", "[bgn]")
     REQUIRE(makeBandgapNarrowingModel(bandgapNarrowingConfig("slotboom"))->deltaEg(1.0e25, 0.0, 0.0)
             > 0.0);
     REQUIRE(makeBandgapNarrowingModel(bandgapNarrowingConfig("old_slotboom"))->deltaEg(1.0e24, 0.0, 0.0)
-            == Catch::Approx(0.0264516824523).epsilon(1.0e-10));
+            == Catch::Approx(0.0424016824523).epsilon(1.0e-10));
     REQUIRE_THROWS_AS(makeBandgapNarrowingModel(bandgapNarrowingConfig("unknown")),
                       std::invalid_argument);
+}
+
+TEST_CASE("OldSlotboom matches Sentaurus split ni and positive BGN semantics", "[bgn][sentaurus]")
+{
+    const Real materialNiFromBandgap = 1.4638914958767616e16;
+    const Real dopingAtNref = 1.0e23;
+    const Real Vt = 0.025851999786435;
+
+    const auto bgn = makeBandgapNarrowingModel(bandgapNarrowingConfig("old_slotboom"));
+    const Real deltaEg = bgn->deltaEg(dopingAtNref, 0.0, 0.0);
+    const Real niEff = effectiveIntrinsicDensity(materialNiFromBandgap, Vt, deltaEg);
+
+    REQUIRE(deltaEg == Catch::Approx(0.006363961030678928).epsilon(1.0e-12));
+    REQUIRE(niEff / 1.0e6 == Catch::Approx(1.6556319846864e10).epsilon(1.0e-10));
 }
 
 TEST_CASE("CarrierStatistics intrinsic density uses temperature_K material path", "[temperature]")

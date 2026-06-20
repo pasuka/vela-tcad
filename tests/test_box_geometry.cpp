@@ -76,6 +76,35 @@ DeviceMesh makeObtuseTriangle()
     return mesh;
 }
 
+DeviceMesh makeRefinementTransitionPatch()
+{
+    DeviceMesh mesh;
+
+    Node n0; n0.id = 0; n0.x = 0.0; n0.y = 0.0; mesh.addNode(n0);
+    Node n1; n1.id = 1; n1.x = 2.0; n1.y = 0.0; mesh.addNode(n1);
+    Node n2; n2.id = 2; n2.x = 0.0; n2.y = 1.0; mesh.addNode(n2);
+    Node n3; n3.id = 3; n3.x = 2.0; n3.y = 1.0; mesh.addNode(n3);
+    Node n4; n4.id = 4; n4.x = 1.0; n4.y = 0.0; mesh.addNode(n4);
+
+    Cell c0; c0.id = 0; c0.type = CellType::Tri3; c0.region_id = 0;
+    c0.node_ids = {0, 4, 2};
+    mesh.addCell(c0);
+
+    Cell c1; c1.id = 1; c1.type = CellType::Tri3; c1.region_id = 0;
+    c1.node_ids = {4, 1, 3};
+    mesh.addCell(c1);
+
+    Cell c2; c2.id = 2; c2.type = CellType::Tri3; c2.region_id = 0;
+    c2.node_ids = {4, 3, 2};
+    mesh.addCell(c2);
+
+    Region r; r.id = 0; r.name = "body"; r.material = "Si"; r.cell_ids = {0, 1, 2};
+    mesh.addRegion(r);
+
+    mesh.buildEdges();
+    return mesh;
+}
+
 struct CerrRedirectGuard {
     explicit CerrRedirectGuard(std::ostream& stream, std::streambuf* replacement)
         : stream_(stream), original_(stream.rdbuf(replacement))
@@ -115,6 +144,38 @@ TEST_CASE("BoxGeometryBuilder: square node volumes sum to total area", "[box_geo
         volumeSum += node.volume;
 
     REQUIRE(volumeSum == Catch::Approx(1.0));
+}
+
+TEST_CASE("BoxGeometryBuilder: default node volumes remain barycentric", "[box_geometry]")
+{
+    DeviceMesh mesh = makeRefinementTransitionPatch();
+
+    REQUIRE(mesh.getNode(0).volume == Catch::Approx(1.0 / 6.0));
+    REQUIRE(mesh.getNode(1).volume == Catch::Approx(1.0 / 6.0));
+    REQUIRE(mesh.getNode(2).volume == Catch::Approx(0.5));
+    REQUIRE(mesh.getNode(3).volume == Catch::Approx(0.5));
+    REQUIRE(mesh.getNode(4).volume == Catch::Approx(2.0 / 3.0));
+}
+
+TEST_CASE("BoxGeometryBuilder: mixed Voronoi node volumes are opt-in and conservative",
+          "[box_geometry]")
+{
+    DeviceMesh mesh = makeRefinementTransitionPatch();
+
+    BoxGeometryBuilder::Options options;
+    options.nodeVolumePolicy = BoxGeometryBuilder::NodeVolumePolicy::MixedVoronoi;
+    mesh.buildBoxGeometry(options);
+
+    REQUIRE(mesh.getNode(0).volume == Catch::Approx(0.25));
+    REQUIRE(mesh.getNode(1).volume == Catch::Approx(0.25));
+    REQUIRE(mesh.getNode(2).volume == Catch::Approx(0.375));
+    REQUIRE(mesh.getNode(3).volume == Catch::Approx(0.375));
+    REQUIRE(mesh.getNode(4).volume == Catch::Approx(0.75));
+
+    Real volumeSum = 0.0;
+    for (const Node& node : mesh.nodes())
+        volumeSum += node.volume;
+    REQUIRE(volumeSum == Catch::Approx(2.0));
 }
 
 TEST_CASE("BoxGeometryBuilder: all edge couplings are non-negative", "[box_geometry]")

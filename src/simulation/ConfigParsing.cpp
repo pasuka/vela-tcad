@@ -132,4 +132,28 @@ std::vector<InterfaceSheetChargeSpec> parseInterfaceSheetChargeSpecs(
     return specs;
 }
 
+BoxGeometryBuilder::Options parseBoxGeometryOptions(const nlohmann::json& cfg)
+{
+    BoxGeometryBuilder::Options options;
+    if (!cfg.contains("mesh_geometry"))
+        return options;
+
+    const auto& geometry = cfg.at("mesh_geometry");
+    if (!geometry.is_object())
+        throw std::runtime_error("ConfigParsing: mesh_geometry must be an object.");
+
+    const std::string policy = geometry.value("node_volume_policy", "barycentric");
+    if (policy == "barycentric") {
+        options.nodeVolumePolicy = BoxGeometryBuilder::NodeVolumePolicy::Barycentric;
+    } else if (policy == "mixed_voronoi") {
+        options.nodeVolumePolicy = BoxGeometryBuilder::NodeVolumePolicy::MixedVoronoi;
+    } else {
+        throw std::runtime_error(
+            "ConfigParsing: mesh_geometry.node_volume_policy must be "
+            "'barycentric' or 'mixed_voronoi'.");
+    }
+
+    return options;
+}
+
 } // namespace vela

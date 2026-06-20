@@ -98,6 +98,10 @@ def signed_bias_token(bias: float) -> str:
     return f"{bias:g}".replace("+", "").replace(".", "p")
 
 
+def bias_token(bias: float) -> str:
+    return f"{bias:g}".replace("-", "m").replace("+", "").replace(".", "p")
+
+
 def state_name(source: str, bias: float) -> str:
     token = f"{bias:g}".replace("-", "m").replace(".", "p")
     return f"{source}_{token}v"
@@ -116,6 +120,8 @@ def discover_vela_vtks(root: Path) -> dict[float, Path]:
 def sentaurus_dir(root: Path, bias: float) -> Path:
     candidates = [
         root / f"sentaurus_{signed_bias_token(bias)}v",
+        root / f"sentaurus_{bias_token(bias)}v",
+        root / f"sentaurus_{bias_token(abs(bias))}v",
         root / f"sentaurus_{bias:g}v",
     ]
     for candidate in candidates:

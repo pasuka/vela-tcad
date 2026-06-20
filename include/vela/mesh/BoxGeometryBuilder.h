@@ -31,9 +31,15 @@ struct GeometryBuildReport {
  */
 class BoxGeometryBuilder {
 public:
+    enum class NodeVolumePolicy {
+        Barycentric,
+        MixedVoronoi,
+    };
+
     struct Options {
         bool fallbackNegativeCotangent = true;
         bool warnOnNegativeCotangent = false;
+        NodeVolumePolicy nodeVolumePolicy = NodeVolumePolicy::Barycentric;
     };
 
     static Real triangleArea(const Node& a, const Node& b, const Node& c);

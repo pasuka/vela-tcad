@@ -118,6 +118,36 @@ std::filesystem::path writePNMeshWithInterior(const std::filesystem::path& dir)
     return meshPath;
 }
 
+std::filesystem::path writeRefinementTransitionMesh(const std::filesystem::path& dir)
+{
+    nlohmann::json mesh = {
+        {"nodes", {
+            {{"id", 0}, {"x", 0.0e-6}, {"y", 0.0e-6}},
+            {{"id", 1}, {"x", 2.0e-6}, {"y", 0.0e-6}},
+            {{"id", 2}, {"x", 0.0e-6}, {"y", 1.0e-6}},
+            {{"id", 3}, {"x", 2.0e-6}, {"y", 1.0e-6}},
+            {{"id", 4}, {"x", 1.0e-6}, {"y", 0.0e-6}}
+        }},
+        {"triangles", {
+            {{"id", 0}, {"region_id", 0}, {"node_ids", {0, 4, 2}}},
+            {{"id", 1}, {"region_id", 1}, {"node_ids", {4, 1, 3}}},
+            {{"id", 2}, {"region_id", 1}, {"node_ids", {4, 3, 2}}}
+        }},
+        {"regions", {
+            {{"id", 0}, {"name", "n_region"}, {"material", "Si"}, {"cell_ids", {0}}},
+            {{"id", 1}, {"name", "p_region"}, {"material", "Si"}, {"cell_ids", {1, 2}}}
+        }},
+        {"contacts", {
+            {{"id", 0}, {"name", "anode"}, {"region_id", 0}, {"node_ids", {0, 2}}},
+            {{"id", 1}, {"name", "cathode"}, {"region_id", 1}, {"node_ids", {1, 3}}}
+        }}
+    };
+
+    const auto meshPath = dir / "refinement_transition_mesh.json";
+    std::ofstream(meshPath) << mesh.dump(2);
+    return meshPath;
+}
+
 std::filesystem::path writePNMeshMicrometers(const std::filesystem::path& dir)
 {
     nlohmann::json mesh = {
@@ -637,6 +667,35 @@ TEST_CASE("DCSweep reads node_doping_file before region averages", "[dc_sweep][d
         sweep.runWithResult(cfgPath.string()),
         Catch::Matchers::ContainsSubstring(
             "DCSweep: node_doping_file does not support quoted fields"));
+}
+
+TEST_CASE("DCSweep: mesh_geometry node_volume_policy selects mixed Voronoi volumes",
+          "[dc_sweep][mesh_geometry]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "mixed_volume_iv.csv";
+    nlohmann::json cfg = baseSweepConfig(dir, meshPath, csvPath);
+    cfg["mesh_geometry"] = {{"node_volume_policy", "mixed_voronoi"}};
+    cfg["sweep"]["start"] = 0.0;
+    cfg["sweep"]["stop"] = 0.0;
+    cfg["sweep"]["step"] = 0.1;
+    cfg["sweep"]["write_vtk"] = false;
+
+    const auto cfgPath = dir / "mixed_volume_sweep.json";
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    REQUIRE(result.mesh.getNode(0).volume == Catch::Approx(0.25e-12));
+    REQUIRE(result.mesh.getNode(1).volume == Catch::Approx(0.25e-12));
+    REQUIRE(result.mesh.getNode(2).volume == Catch::Approx(0.25e-12));
+    REQUIRE(result.mesh.getNode(3).volume == Catch::Approx(0.25e-12));
 }
 
 TEST_CASE("DCSweep: high-doping node-level PN diode converges with hybrid handoff",
@@ -1233,6 +1292,36 @@ TEST_CASE("DCSweep: continuation predictor config is validated",
             Catch::Matchers::ContainsSubstring(
                 "DCSweep: sweep.continuation.branch_acceptance.min_terminal_current_ratio"));
     }
+
+    SECTION("invalid psi-phin jump threshold is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"branch_acceptance", {
+                {"psi_phin_jump", true},
+                {"max_psi_phin_jump_V", -1.0}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.branch_acceptance.max_psi_phin_jump_V"));
+    }
+
+    SECTION("invalid p95 electron density jump threshold is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"branch_acceptance", {
+                {"carrier_density_jump", true},
+                {"max_electron_density_jump_dex", 100.0},
+                {"max_electron_density_jump_p95_abs_dex", -0.1}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.branch_acceptance."
+                "max_electron_density_jump_p95_abs_dex"));
+    }
 }
 
 TEST_CASE("DCSweep: terminal balance diagnostics reuse one solution for two contacts",
@@ -1330,6 +1419,238 @@ TEST_CASE("DCSweep: terminal balance diagnostics reuse one solution for two cont
         }
         REQUIRE(foundTerminal);
     }
+}
+
+TEST_CASE("DCSweep: contact current QF floor reporting uses initial edge drops only when enabled",
+          "[dc_sweep][diagnostics][contact_current_qf_floor]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshWithInterior(dir);
+    const auto defaultCsvPath = dir / "default.csv";
+    const auto floorCsvPath = dir / "floor.csv";
+    const auto defaultEdgesPath = dir / "default_edges.csv";
+    const auto floorEdgesPath = dir / "floor_edges.csv";
+    const auto initialStatePath = dir / "initial_state.csv";
+    {
+        std::ofstream state(initialStatePath);
+        state << "node_id,psi,phin,phip,electrons_m3,holes_m3\n";
+        state << "0,0,0,-1e-6,1e10,1e23\n";
+        state << "1,0,0,0,1e23,1e10\n";
+        state << "2,0,0,0,1e23,1e10\n";
+        state << "3,0,0,-1e-6,1e10,1e23\n";
+        state << "4,0,0,0,1e12,1e12\n";
+    }
+
+    const nlohmann::json commonSweep = {
+        {"start", 1.0e-6},
+        {"stop", 1.0e-6},
+        {"step", 1.0e-6},
+        {"write_vtk", false},
+        {"initial_state_file", initialStatePath.string()},
+    };
+    nlohmann::json defaultSweep = commonSweep;
+    defaultSweep["diagnostics"] = {
+        {"contact_edge", {
+            {"enabled", true},
+            {"contacts", {"anode"}},
+            {"csv_file", defaultEdgesPath.string()}
+        }}
+    };
+    nlohmann::json floorSweep = commonSweep;
+    floorSweep["csv_file"] = floorCsvPath.string();
+    floorSweep["diagnostics"] = {
+        {"contact_edge", {
+            {"enabled", true},
+            {"contacts", {"anode"}},
+            {"csv_file", floorEdgesPath.string()}
+        }},
+        {"contact_current_qf_floor", {
+            {"enabled", true},
+            {"contacts", {"anode"}}
+        }}
+    };
+    const nlohmann::json solverOverrides = {
+        {"method", "newton"},
+        {"warm_start", true},
+        {"line_search", true},
+        {"reltol", 1.0e-4},
+        {"max_iter", 80}
+    };
+
+    DCSweep sweep;
+    const auto defaultCfg = writeSweepConfig(
+        dir, meshPath, defaultCsvPath, defaultSweep, solverOverrides);
+    const DCSweepResult defaultResult = sweep.runWithResult(defaultCfg.string());
+    const auto floorCfg = writeSweepConfig(
+        dir, meshPath, floorCsvPath, floorSweep, solverOverrides);
+    const DCSweepResult floorResult = sweep.runWithResult(floorCfg.string());
+    REQUIRE(defaultResult.points.size() == 1);
+    REQUIRE(floorResult.points.size() == 1);
+    REQUIRE(defaultResult.points.front().converged);
+    REQUIRE(floorResult.points.front().converged);
+
+    const auto defaultEdgeRows = readCsvRows(defaultEdgesPath);
+    const auto floorEdgeRows = readCsvRows(floorEdgesPath);
+    REQUIRE(defaultEdgeRows.size() == floorEdgeRows.size());
+    const auto& defaultEdgeHeader = defaultEdgeRows.front();
+    const auto& floorEdgeHeader = floorEdgeRows.front();
+    const std::size_t defaultOverrideCol =
+        csvColumnIndex(defaultEdgeHeader, "hole_qf_drop_override_applied");
+    const std::size_t floorOverrideCol =
+        csvColumnIndex(floorEdgeHeader, "hole_qf_drop_override_applied");
+    const std::size_t phip0Col = csvColumnIndex(floorEdgeHeader, "phip0");
+    const std::size_t phip1Col = csvColumnIndex(floorEdgeHeader, "phip1");
+    const std::size_t holeCurrentCol = csvColumnIndex(floorEdgeHeader, "current_hole");
+
+    bool sawOverride = false;
+    Real floorEdgeHoleCurrent = 0.0;
+    for (std::size_t i = 1; i < floorEdgeRows.size(); ++i) {
+        REQUIRE(defaultEdgeRows.at(i).at(defaultOverrideCol) == "0");
+        floorEdgeHoleCurrent += csvReal(floorEdgeRows.at(i), holeCurrentCol);
+        if (floorEdgeRows.at(i).at(floorOverrideCol) == "1") {
+            sawOverride = true;
+            REQUIRE(std::abs(csvReal(floorEdgeRows.at(i), phip1Col) -
+                             csvReal(floorEdgeRows.at(i), phip0Col)) > 0.0);
+        }
+    }
+    REQUIRE(sawOverride);
+    REQUIRE(floorResult.points.front().holeCurrent ==
+            Catch::Approx(floorEdgeHoleCurrent).margin(1.0e-18));
+}
+
+TEST_CASE("DCSweep: contact current QF floor reporting ignores continuation states",
+          "[dc_sweep][diagnostics][contact_current_qf_floor]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshWithInterior(dir);
+    const auto csvPath = dir / "sweep.csv";
+    const auto edgePath = dir / "contact_edges.csv";
+
+    const nlohmann::json sweepOverrides = {
+        {"start", 0.0},
+        {"stop", -0.05},
+        {"step", -0.05},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"contact_edge", {
+                {"enabled", true},
+                {"contacts", {"anode"}},
+                {"csv_file", edgePath.string()}
+            }},
+            {"contact_current_qf_floor", {
+                {"enabled", true},
+                {"contacts", {"anode"}}
+            }}
+        }}
+    };
+    const nlohmann::json solverOverrides = {
+        {"method", "newton"},
+        {"warm_start", true},
+        {"line_search", true},
+        {"reltol", 1.0e-4},
+        {"max_iter", 80}
+    };
+
+    const auto cfgPath = writeSweepConfig(
+        dir, meshPath, csvPath, sweepOverrides, solverOverrides);
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 2);
+    REQUIRE(result.points.at(0).converged);
+    REQUIRE(result.points.at(1).converged);
+
+    const auto rows = readCsvRows(edgePath);
+    const std::size_t overrideCol =
+        csvColumnIndex(rows.front(), "hole_qf_drop_override_applied");
+    for (std::size_t i = 1; i < rows.size(); ++i)
+        REQUIRE(rows.at(i).at(overrideCol) == "0");
+}
+
+TEST_CASE("DCSweep: contact current reporting policy preserves initial endpoint QF drops",
+          "[dc_sweep][contact_current_reporting]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshWithInterior(dir);
+    const auto csvPath = dir / "reporting_policy.csv";
+    const auto edgePath = dir / "reporting_policy_edges.csv";
+    const auto initialStatePath = dir / "initial_state.csv";
+    {
+        std::ofstream state(initialStatePath);
+        state << "node_id,psi,phin,phip,electrons_m3,holes_m3\n";
+        state << "0,0,0,-1e-6,1e10,1e23\n";
+        state << "1,0,0,0,1e23,1e10\n";
+        state << "2,0,0,0,1e23,1e10\n";
+        state << "3,0,0,-1e-6,1e10,1e23\n";
+        state << "4,0,0,0,1e12,1e12\n";
+    }
+
+    const nlohmann::json sweepOverrides = {
+        {"start", 1.0e-6},
+        {"stop", 1.0e-6},
+        {"step", 1.0e-6},
+        {"write_vtk", false},
+        {"initial_state_file", initialStatePath.string()},
+        {"diagnostics", {
+            {"contact_edge", {
+                {"enabled", true},
+                {"contacts", {"anode"}},
+                {"csv_file", edgePath.string()}
+            }}
+        }},
+        {"contact_current_reporting", {
+            {"endpoint_qf_floor", {
+                {"enabled", true},
+                {"contacts", {"anode"}}
+            }}
+        }},
+        {"continuation", {
+            {"predictor", {
+                {"mode", "constant"},
+                {"fields", {"psi", "phin", "phip"}}
+            }}
+        }}
+    };
+    const nlohmann::json solverOverrides = {
+        {"method", "newton"},
+        {"warm_start", true},
+        {"line_search", true},
+        {"reltol", 1.0e-4},
+        {"max_iter", 80}
+    };
+
+    const auto cfgPath = writeSweepConfig(
+        dir, meshPath, csvPath, sweepOverrides, solverOverrides);
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+
+    const auto rows = readCsvRows(edgePath);
+    const std::size_t overrideCol =
+        csvColumnIndex(rows.front(), "hole_qf_drop_override_applied");
+    const std::size_t phip0Col = csvColumnIndex(rows.front(), "phip0");
+    const std::size_t phip1Col = csvColumnIndex(rows.front(), "phip1");
+    const std::size_t holeCurrentCol =
+        csvColumnIndex(rows.front(), "current_hole");
+    bool sawOverride = false;
+    Real edgeHoleCurrent = 0.0;
+    for (std::size_t i = 1; i < rows.size(); ++i) {
+        edgeHoleCurrent += csvReal(rows.at(i), holeCurrentCol);
+        if (rows.at(i).at(overrideCol) == "1") {
+            sawOverride = true;
+            REQUIRE(csvReal(rows.at(i), phip1Col) - csvReal(rows.at(i), phip0Col) ==
+                    Catch::Approx(1.0e-6).margin(1.0e-15));
+        }
+    }
+    REQUIRE(sawOverride);
+    REQUIRE(result.points.front().holeCurrent ==
+            Catch::Approx(edgeHoleCurrent).margin(1.0e-18));
 }
 
 TEST_CASE("DCSweep: NMOS and PMOS unit_scaling low-bias smoke sweeps converge",
@@ -1901,6 +2222,24 @@ TEST_CASE("DCSweep predictor: extrapolates selected coupled variables",
 
         REQUIRE(predicted.psi.isApprox(current.psi + 1.5 * (current.psi - previous.psi)));
     }
+
+    SECTION("linear predictor is disabled for shrunken retry attempts")
+    {
+        SweepPredictorConfig config;
+        config.mode = "linear";
+        config.fields = {"psi", "phin", "phip"};
+        config.maxExtrapolationRatio = 2.0;
+
+        const int retryCount = 1;
+        const DDSolution predicted = detail::predictDCSweepInitialState(
+            config, &previous, current, -12.65, -12.70, -12.75, retryCount);
+
+        REQUIRE(predicted.psi.isApprox(current.psi));
+        REQUIRE(predicted.phin.isApprox(current.phin));
+        REQUIRE(predicted.phip.isApprox(current.phip));
+        REQUIRE(predicted.n.isApprox(current.n));
+        REQUIRE(predicted.p.isApprox(current.p));
+    }
 }
 
 TEST_CASE("DCSweep: continuation predictor writes branch diagnostics",
@@ -1951,6 +2290,204 @@ TEST_CASE("DCSweep: continuation predictor writes branch diagnostics",
     REQUIRE(rows.at(3).at(branchStatusCol) == "accepted");
     REQUIRE(rows.at(3).at(branchReasonCol).empty());
     REQUIRE(std::isfinite(std::stod(rows.at(3).at(ratioCol))));
+}
+
+TEST_CASE("DCSweep branch acceptance: measures psi-phin exponent jumps",
+          "[dc_sweep][continuation][branch_acceptance]")
+{
+    DDSolution previous;
+    previous.psi = VectorXd::Zero(3);
+    previous.phin = VectorXd::Zero(3);
+    previous.phip = VectorXd::Zero(3);
+    previous.n = VectorXd::Constant(3, 1.0e10);
+    previous.p = VectorXd::Constant(3, 1.0e10);
+
+    DDSolution current = previous;
+    current.psi(0) = 0.01;
+    current.phin(0) = 0.01;
+    current.psi(1) = 0.18;
+    current.phin(1) = 0.02;
+    current.psi(2) = -0.04;
+    current.phin(2) = -0.01;
+
+    REQUIRE(detail::maxPsiPhinJump(previous, current) == Catch::Approx(0.16));
+}
+
+TEST_CASE("DCSweep branch acceptance: measures electron density jump statistics",
+          "[dc_sweep][continuation][branch_acceptance]")
+{
+    DDSolution previous;
+    previous.psi = VectorXd::Zero(4);
+    previous.phin = VectorXd::Zero(4);
+    previous.phip = VectorXd::Zero(4);
+    previous.n = VectorXd::Constant(4, 1.0e10);
+    previous.p = VectorXd::Constant(4, 1.0e10);
+
+    DDSolution current = previous;
+    current.n(0) = 1.0e10;
+    current.n(1) = 1.0e11;
+    current.n(2) = 1.0e12;
+    current.n(3) = 1.0e9;
+
+    const auto stats = detail::electronDensityJumpStats(previous, current);
+
+    REQUIRE(stats.medianDex == Catch::Approx(0.5));
+    REQUIRE(stats.maxAbsDex == Catch::Approx(2.0));
+    REQUIRE(stats.maxSignedDex == Catch::Approx(2.0));
+    REQUIRE(stats.maxNode == 2);
+}
+
+TEST_CASE("DCSweep branch acceptance: rejects invalid electron density jump threshold",
+          "[dc_sweep][continuation][branch_acceptance]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "bad_carrier_branch_guard.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.25},
+        {"step", 0.25},
+        {"write_vtk", false},
+        {"continuation", {
+            {"branch_acceptance", {
+                {"carrier_density_jump", true},
+                {"max_electron_density_jump_dex", -0.1}
+            }}
+        }}
+    });
+
+    DCSweep sweep;
+    REQUIRE_THROWS_WITH(
+        sweep.run(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(
+            "DCSweep: sweep.continuation.branch_acceptance.max_electron_density_jump_dex"));
+}
+
+TEST_CASE("DCSweep: psi-phin branch guard writes jump diagnostics",
+          "[dc_sweep][continuation][branch_acceptance]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "psi_phin_branch_guard.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.25},
+        {"step", 0.25},
+        {"min_step", 0.125},
+        {"max_step", 0.25},
+        {"max_retries", 0},
+        {"stop_on_failure", true},
+        {"write_vtk", false},
+        {"continuation", {
+            {"branch_acceptance", {
+                {"psi_phin_jump", true},
+                {"max_psi_phin_jump_V", 1.0}
+            }}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 2);
+    REQUIRE(result.points.front().converged);
+    REQUIRE(result.points.back().converged);
+    REQUIRE(result.points.back().branchAcceptanceStatus == "accepted");
+    REQUIRE(result.points.back().branchAcceptanceReason.empty());
+    REQUIRE(result.points.back().psiPhinMaxJump_V >= 0.0);
+
+    const auto rows = readCsvRows(csvPath);
+    REQUIRE(rows.size() == 3);
+    const auto& header = rows.front();
+    const std::size_t statusCol = csvColumnIndex(header, "branch_acceptance_status");
+    const std::size_t reasonCol = csvColumnIndex(header, "branch_acceptance_reason");
+    const std::size_t jumpCol = csvColumnIndex(header, "psi_phin_max_jump_V");
+
+    REQUIRE(rows.at(2).at(statusCol) == "accepted");
+    REQUIRE(rows.at(2).at(reasonCol).empty());
+    REQUIRE(std::stod(rows.at(2).at(jumpCol)) >= 0.0);
+}
+
+TEST_CASE("DCSweep: carrier density branch guard writes jump diagnostics",
+          "[dc_sweep][continuation][branch_acceptance]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "carrier_density_branch_guard.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.25},
+        {"step", 0.25},
+        {"min_step", 0.125},
+        {"max_step", 0.25},
+        {"max_retries", 0},
+        {"stop_on_failure", true},
+        {"write_vtk", false},
+        {"continuation", {
+            {"branch_acceptance", {
+                {"carrier_density_jump", true},
+                {"max_electron_density_jump_dex", 100.0}
+            }}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 2);
+    REQUIRE(result.points.front().converged);
+    REQUIRE(result.points.back().converged);
+    REQUIRE(result.points.back().branchAcceptanceStatus == "accepted");
+    REQUIRE(result.points.back().branchAcceptanceReason.empty());
+    REQUIRE(std::isfinite(result.points.back().electronDensityJumpMedianDex));
+    REQUIRE(result.points.back().electronDensityJumpP95AbsDex >= 0.0);
+    REQUIRE(result.points.back().electronDensityJumpMaxAbsDex >= 0.0);
+    REQUIRE(result.points.back().electronDensityJumpMaxNode >= 0);
+
+    const auto rows = readCsvRows(csvPath);
+    REQUIRE(rows.size() == 3);
+    const auto& header = rows.front();
+    const std::size_t statusCol = csvColumnIndex(header, "branch_acceptance_status");
+    const std::size_t reasonCol = csvColumnIndex(header, "branch_acceptance_reason");
+    const std::size_t medianCol =
+        csvColumnIndex(header, "electron_density_jump_median_dex");
+    const std::size_t p95Col =
+        csvColumnIndex(header, "electron_density_jump_p95_abs_dex");
+    const std::size_t maxCol =
+        csvColumnIndex(header, "electron_density_jump_max_abs_dex");
+    const std::size_t nodeCol =
+        csvColumnIndex(header, "electron_density_jump_max_node");
+
+    REQUIRE(rows.at(2).at(statusCol) == "accepted");
+    REQUIRE(rows.at(2).at(reasonCol).empty());
+    REQUIRE(std::isfinite(std::stod(rows.at(2).at(medianCol))));
+    REQUIRE(std::stod(rows.at(2).at(p95Col)) >= 0.0);
+    REQUIRE(std::stod(rows.at(2).at(maxCol)) >= 0.0);
+    REQUIRE(std::stoi(rows.at(2).at(nodeCol)) >= 0);
+}
+
+TEST_CASE("DCSweep branch acceptance: classifies p95 electron density jumps",
+          "[dc_sweep][continuation][branch_acceptance]")
+{
+    SweepBranchAcceptanceConfig cfg;
+    cfg.carrierDensityJump = true;
+    cfg.maxElectronDensityJumpDex = 100.0;
+    cfg.maxElectronDensityJumpP95AbsDex = 0.15;
+
+    detail::ElectronDensityJumpStats stats;
+    stats.medianDex = 0.01;
+    stats.p95AbsDex = 0.20;
+    stats.maxAbsDex = 0.30;
+    stats.maxNode = 7;
+
+    REQUIRE(detail::electronDensityJumpAcceptanceFailure(cfg, stats) ==
+            "electron_density_p95_jump_exceeded");
 }
 
 

@@ -246,9 +246,9 @@ def sg_electron_flux_qf_variable_ni(ni0: float,
             coef,
         )
     eta = (psi1 - psi0) / vt + math.log(ni1 / ni0)
-    prefactor = ni1 * limited_exp(psi1 / vt)
-    return coef * bernoulli(eta) * prefactor * (
-        limited_exp(-phin0 / vt) - limited_exp(-phin1 / vt))
+    n0 = ni0 * limited_exp((psi0 - phin0) / vt)
+    n1 = ni1 * limited_exp((psi1 - phin1) / vt)
+    return coef * (bernoulli(-eta) * n0 - bernoulli(eta) * n1)
 
 
 def sg_hole_flux_qf_variable_ni(ni0: float,
@@ -268,9 +268,9 @@ def sg_hole_flux_qf_variable_ni(ni0: float,
             coef,
         )
     eta = (psi1 - psi0) / vt + math.log(ni0 / ni1)
-    prefactor = ni0 * limited_exp(-psi0 / vt)
-    return coef * bernoulli(eta) * prefactor * (
-        limited_exp(phip0 / vt) - limited_exp(phip1 / vt))
+    p0 = ni0 * limited_exp((phip0 - psi0) / vt)
+    p1 = ni1 * limited_exp((phip1 - psi1) / vt)
+    return coef * (bernoulli(eta) * p0 - bernoulli(-eta) * p1)
 
 
 def estimate_effective_ni(electrons: list[float],
@@ -318,9 +318,10 @@ def old_slotboom_delta_eg_eV(impurity: float) -> float:
     reference = 1.0e23
     coefficient = 9.0e-3
     smoothing = 0.5
-    offset = -1.595e-2
     x = math.log(impurity / reference)
-    delta = offset + coefficient * (x + math.sqrt(x * x + smoothing))
+    # Sentaurus applies Bandgap.dEg0(OldSlotboom) through material ni; the
+    # BGN delta used here is only the positive OldSlotboom term.
+    delta = coefficient * (x + math.sqrt(x * x + smoothing))
     return max(delta, 0.0)
 
 

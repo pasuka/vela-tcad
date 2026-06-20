@@ -29,6 +29,25 @@ struct CoupledDDBoundaryConditions {
     std::unordered_map<Index, Real> phip;
 };
 
+struct CoupledDDCarrierTermDiagnostic {
+    Index nodeId = 0;
+    Real electronFlux = 0.0;
+    Real holeFlux = 0.0;
+    Real electronRecombination = 0.0;
+    Real holeRecombination = 0.0;
+    Real electronImpact = 0.0;
+    Real holeImpact = 0.0;
+    Real impactElectronSource = 0.0;
+    Real impactHoleSource = 0.0;
+    Real impactCombinedSource = 0.0;
+    Real electronGauge = 0.0;
+    Real holeGauge = 0.0;
+    Real electronBoundary = 0.0;
+    Real holeBoundary = 0.0;
+    Real electronResidual = 0.0;
+    Real holeResidual = 0.0;
+};
+
 class CoupledDDAssembler {
 public:
     CoupledDDAssembler(const DeviceMesh& mesh,
@@ -76,6 +95,9 @@ public:
 
     VectorXd electronDensity(const VectorXd& x) const;
     VectorXd holeDensity(const VectorXd& x) const;
+    std::vector<CoupledDDCarrierTermDiagnostic> carrierContinuityTermDiagnostics(
+        const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs) const;
 
     bool hasPositiveFiniteCarriers(const VectorXd& x) const;
     Index numNodes() const { return mesh_.numNodes(); }

@@ -66,7 +66,7 @@ BandgapNarrowingConfig bandgapNarrowingConfig(std::string modelName)
         config.referenceDoping = 1.0e23;
         config.coefficient = 9.0e-3;
         config.smoothing = 0.5;
-        config.offset = -1.595e-2;
+        config.offset = 0.0;
     }
     return config;
 }

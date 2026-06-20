@@ -40,11 +40,13 @@ Real sgElectronContinuityFluxFromQuasiFermi(Real ni0,
                                             Real Vt,
                                             Real coef)
 {
-    return sgElectronContinuityFluxFromQuasiFermiFactors(
-        ni0,
-        limitedExp(psi1 / Vt),
-        limitedExp(-phin0 / Vt),
-        limitedExp(-phin1 / Vt),
+    if (phin0 == phin1)
+        return 0.0;
+
+    const Real psi0 = psi1 - dpsi;
+    return sgElectronContinuityFlux(
+        ni0 * limitedExp((psi0 - phin0) / Vt),
+        ni0 * limitedExp((psi1 - phin1) / Vt),
         dpsi,
         Vt,
         coef);
@@ -71,6 +73,8 @@ Real sgElectronContinuityFluxFromQuasiFermiVariableNi(Real ni0,
                                                       Real Vt,
                                                       Real coef)
 {
+    if (phin0 == phin1)
+        return 0.0;
     if (ni0 <= 0.0 || ni1 <= 0.0)
         return sgElectronContinuityFlux(
             ni0 * limitedExp((psi0 - phin0) / Vt),
@@ -80,9 +84,9 @@ Real sgElectronContinuityFluxFromQuasiFermiVariableNi(Real ni0,
             coef);
 
     const Real eta = (psi1 - psi0) / Vt + std::log(ni1 / ni0);
-    const Real prefactor = ni1 * limitedExp(psi1 / Vt);
-    return coef * bernoulli(eta) * prefactor *
-        (limitedExp(-phin0 / Vt) - limitedExp(-phin1 / Vt));
+    const Real n0 = ni0 * limitedExp((psi0 - phin0) / Vt);
+    const Real n1 = ni1 * limitedExp((psi1 - phin1) / Vt);
+    return coef * (bernoulli(-eta) * n0 - bernoulli(eta) * n1);
 }
 
 Real sgHoleContinuityFluxFromQuasiFermi(Real ni0,
@@ -93,11 +97,13 @@ Real sgHoleContinuityFluxFromQuasiFermi(Real ni0,
                                         Real Vt,
                                         Real coef)
 {
-    return sgHoleContinuityFluxFromQuasiFermiFactors(
-        ni0,
-        limitedExp(-psi0 / Vt),
-        limitedExp(phip0 / Vt),
-        limitedExp(phip1 / Vt),
+    if (phip0 == phip1)
+        return 0.0;
+
+    const Real psi1 = psi0 + dpsi;
+    return sgHoleContinuityFlux(
+        ni0 * limitedExp((phip0 - psi0) / Vt),
+        ni0 * limitedExp((phip1 - psi1) / Vt),
         dpsi,
         Vt,
         coef);
@@ -124,6 +130,8 @@ Real sgHoleContinuityFluxFromQuasiFermiVariableNi(Real ni0,
                                                   Real Vt,
                                                   Real coef)
 {
+    if (phip0 == phip1)
+        return 0.0;
     if (ni0 <= 0.0 || ni1 <= 0.0)
         return sgHoleContinuityFlux(
             ni0 * limitedExp((phip0 - psi0) / Vt),
@@ -133,9 +141,9 @@ Real sgHoleContinuityFluxFromQuasiFermiVariableNi(Real ni0,
             coef);
 
     const Real eta = (psi1 - psi0) / Vt + std::log(ni0 / ni1);
-    const Real prefactor = ni0 * limitedExp(-psi0 / Vt);
-    return coef * bernoulli(eta) * prefactor *
-        (limitedExp(phip0 / Vt) - limitedExp(phip1 / Vt));
+    const Real p0 = ni0 * limitedExp((phip0 - psi0) / Vt);
+    const Real p1 = ni1 * limitedExp((phip1 - psi1) / Vt);
+    return coef * (bernoulli(eta) * p0 - bernoulli(-eta) * p1);
 }
 
 double sgElectronFlux(double n0, double n1, double dpsi, double Vt,

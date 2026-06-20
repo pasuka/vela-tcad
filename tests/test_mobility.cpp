@@ -268,6 +268,17 @@ TEST_CASE("Caughey-Thomas field mobility rolls off toward velocity saturation", 
     REQUIRE(highField * 1.0e8 <= config.electronField.saturationVelocity * 1.01);
 }
 
+TEST_CASE("High-field mobility defaults match Sentaurus 2018 Silicon parameters",
+          "[mobility][field][sentaurus]")
+{
+    const MobilityModelConfig config = mobilityModelConfig("masetti_field");
+
+    REQUIRE(config.electronField.saturationVelocity == Catch::Approx(1.07e5));
+    REQUIRE(config.holeField.saturationVelocity == Catch::Approx(8.37e4));
+    REQUIRE(config.electronField.beta == Catch::Approx(1.109));
+    REQUIRE(config.holeField.beta == Catch::Approx(1.213));
+}
+
 TEST_CASE("High-field mobility limiter decomposes limited mobility from low-field mobility",
           "[mobility][field][diagnostics]")
 {

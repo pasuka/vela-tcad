@@ -129,6 +129,10 @@ def signed_bias_token(bias: float) -> str:
     return f"{bias:g}".replace("+", "").replace(".", "p")
 
 
+def bias_token(bias: float) -> str:
+    return f"{bias:g}".replace("-", "m").replace("+", "").replace(".", "p")
+
+
 def discover_vela_vtks(root: Path) -> dict[float, Path]:
     result: dict[float, Path] = {}
     pattern = re.compile(r"_(?P<bias>[-+0-9.]+)V\.vtk$")
@@ -142,6 +146,8 @@ def discover_vela_vtks(root: Path) -> dict[float, Path]:
 def sentaurus_dir(root: Path, bias: float) -> Path:
     candidates = [
         root / f"sentaurus_{signed_bias_token(bias)}v",
+        root / f"sentaurus_{bias_token(bias)}v",
+        root / f"sentaurus_{bias_token(abs(bias))}v",
         root / f"sentaurus_{bias:g}v",
     ]
     for candidate in candidates:

@@ -124,6 +124,7 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // ------------------------------------------------------------------
     JsonMeshReader reader;
     DeviceMesh mesh = reader.read(meshFile, scaling);
+    mesh.buildBoxGeometry(parseBoxGeometryOptions(cfg));
 
     // ------------------------------------------------------------------
     // Material database (built-in Si, SiO2 plus optional config override)

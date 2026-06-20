@@ -161,6 +161,41 @@ TEST_CASE("SG quasi-Fermi fluxes stay finite for large potentials", "[sg][couple
     REQUIRE(holeFlux == Approx(0.0));
 }
 
+TEST_CASE("SG quasi-Fermi fluxes cancel flat QF at large absolute bias with electric field",
+          "[sg][coupled]")
+{
+    const double Vt = constants::Vt_300;
+    const double ni = 1.0e16;
+    const double coef = 1.0;
+    const double dpsi = 1.0;
+    const double psi0 = -20.0;
+    const double psi1 = psi0 + dpsi;
+    const double phin = -12.8;
+    const double phip = -12.8;
+
+    const double electronFlux = sgElectronContinuityFluxFromQuasiFermi(
+        ni,
+        psi1,
+        phin,
+        phin,
+        dpsi,
+        Vt,
+        coef);
+    const double holeFlux = sgHoleContinuityFluxFromQuasiFermi(
+        ni,
+        psi0,
+        phip,
+        phip,
+        dpsi,
+        Vt,
+        coef);
+
+    REQUIRE(std::isfinite(electronFlux));
+    REQUIRE(std::isfinite(holeFlux));
+    REQUIRE(electronFlux == Approx(0.0).margin(1.0e-30));
+    REQUIRE(holeFlux == Approx(0.0).margin(1.0e-30));
+}
+
 TEST_CASE("SG quasi-Fermi fluxes cancel flat QF with variable intrinsic density", "[sg][coupled][bgn]")
 {
     const double Vt = constants::Vt_300;
@@ -194,6 +229,72 @@ TEST_CASE("SG quasi-Fermi fluxes cancel flat QF with variable intrinsic density"
 
     REQUIRE(electronFlux == Approx(0.0).margin(1.0e-30));
     REQUIRE(holeFlux == Approx(0.0).margin(1.0e-30));
+}
+
+TEST_CASE("SG variable-ni quasi-Fermi flux matches density form at large absolute bias",
+          "[sg][coupled][bgn]")
+{
+    const double Vt = constants::Vt_300;
+    const double coef = 1.0;
+    const double ni = 1.65563e16;
+
+    const double psi0 = -13.203650871693659;
+    const double psi1 = -13.203650871693661;
+    const double phin0 = -12.79890541782345;
+    const double phin1 = -12.800000000000001;
+    const double phip0 = -12.799999999999999;
+    const double phip1 = -12.800000000000001;
+
+    const double n0 = ni * std::exp((psi0 - phin0) / Vt);
+    const double n1 = ni * std::exp((psi1 - phin1) / Vt);
+    const double p0 = ni * std::exp((phip0 - psi0) / Vt);
+    const double p1 = ni * std::exp((phip1 - psi1) / Vt);
+
+    const double electronDensityFlux =
+        sgElectronContinuityFlux(n0, n1, psi1 - psi0, Vt, coef);
+    const double electronPlainQfFlux = sgElectronContinuityFluxFromQuasiFermi(
+        ni,
+        psi1,
+        phin0,
+        phin1,
+        psi1 - psi0,
+        Vt,
+        coef);
+    const double electronQfFlux = sgElectronContinuityFluxFromQuasiFermiVariableNi(
+        ni,
+        ni,
+        psi0,
+        psi1,
+        phin0,
+        phin1,
+        Vt,
+        coef);
+    const double holeDensityFlux =
+        sgHoleContinuityFlux(p0, p1, psi1 - psi0, Vt, coef);
+    const double holePlainQfFlux = sgHoleContinuityFluxFromQuasiFermi(
+        ni,
+        psi0,
+        phip0,
+        phip1,
+        psi1 - psi0,
+        Vt,
+        coef);
+    const double holeQfFlux = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+        ni,
+        ni,
+        psi0,
+        psi1,
+        phip0,
+        phip1,
+        Vt,
+        coef);
+
+    REQUIRE(std::isfinite(electronQfFlux));
+    REQUIRE(std::isfinite(holeQfFlux));
+    REQUIRE(electronPlainQfFlux == Approx(electronDensityFlux).epsilon(1.0e-12));
+    REQUIRE(electronQfFlux == Approx(electronDensityFlux).epsilon(1.0e-12));
+    REQUIRE(holePlainQfFlux == Approx(holeDensityFlux).epsilon(1.0e-12));
+    REQUIRE(holeQfFlux == Approx(holeDensityFlux).epsilon(1.0e-12));
 }
 
 static DeviceMesh makeSingleSiliconTriangleMesh()

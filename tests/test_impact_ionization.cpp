@@ -538,6 +538,22 @@ TEST_CASE("SG edge-current avalanche records sum to assembled nodal source",
         p,
         ni,
         Vt);
+    const auto components = detail::sgEdgeCurrentAvalancheSourceComponentIntegrals(
+        impactConfig,
+        *impact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        psi,
+        phin,
+        phip,
+        n,
+        p,
+        ni,
+        Vt);
     const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
         impactConfig,
         *impact,
@@ -556,25 +572,64 @@ TEST_CASE("SG edge-current avalanche records sum to assembled nodal source",
         Vt);
 
     std::vector<Real> fromRecords(static_cast<std::size_t>(mesh.numNodes()), 0.0);
+    std::vector<Real> electronFromRecords(static_cast<std::size_t>(mesh.numNodes()), 0.0);
+    std::vector<Real> holeFromRecords(static_cast<std::size_t>(mesh.numNodes()), 0.0);
     Real totalEdgeSource = 0.0;
+    Real totalElectronEdgeSource = 0.0;
+    Real totalHoleEdgeSource = 0.0;
     for (const auto& record : records) {
         REQUIRE(record.edgeAreaProxy > 0.0);
         REQUIRE(record.edgeSourceIntegral >= 0.0);
+        REQUIRE(record.edgeSourceIntegral ==
+                Catch::Approx(record.electronSourceIntegral + record.holeSourceIntegral)
+                    .margin(1.0e-18));
         REQUIRE(record.node0SourceIntegral == Catch::Approx(0.5 * record.edgeSourceIntegral));
         REQUIRE(record.node1SourceIntegral == Catch::Approx(0.5 * record.edgeSourceIntegral));
         fromRecords[static_cast<std::size_t>(record.node0)] += record.node0SourceIntegral;
         fromRecords[static_cast<std::size_t>(record.node1)] += record.node1SourceIntegral;
+        electronFromRecords[static_cast<std::size_t>(record.node0)] +=
+            0.5 * record.electronSourceIntegral;
+        electronFromRecords[static_cast<std::size_t>(record.node1)] +=
+            0.5 * record.electronSourceIntegral;
+        holeFromRecords[static_cast<std::size_t>(record.node0)] +=
+            0.5 * record.holeSourceIntegral;
+        holeFromRecords[static_cast<std::size_t>(record.node1)] +=
+            0.5 * record.holeSourceIntegral;
         totalEdgeSource += record.edgeSourceIntegral;
+        totalElectronEdgeSource += record.electronSourceIntegral;
+        totalHoleEdgeSource += record.holeSourceIntegral;
     }
 
     REQUIRE(totalEdgeSource > 0.0);
+    REQUIRE(totalElectronEdgeSource > 0.0);
+    REQUIRE(totalHoleEdgeSource > 0.0);
     Real totalNodalSource = 0.0;
+    Real totalElectronNodalSource = 0.0;
+    Real totalHoleNodalSource = 0.0;
     for (Index node = 0; node < mesh.numNodes(); ++node) {
         totalNodalSource += nodal[static_cast<std::size_t>(node)];
+        totalElectronNodalSource += components.electron[static_cast<std::size_t>(node)];
+        totalHoleNodalSource += components.hole[static_cast<std::size_t>(node)];
         REQUIRE(fromRecords[static_cast<std::size_t>(node)] ==
                 Catch::Approx(nodal[static_cast<std::size_t>(node)]).margin(1.0e-18));
+        REQUIRE(electronFromRecords[static_cast<std::size_t>(node)] ==
+                Catch::Approx(components.electron[static_cast<std::size_t>(node)])
+                    .margin(1.0e-18));
+        REQUIRE(holeFromRecords[static_cast<std::size_t>(node)] ==
+                Catch::Approx(components.hole[static_cast<std::size_t>(node)])
+                    .margin(1.0e-18));
+        REQUIRE(nodal[static_cast<std::size_t>(node)] ==
+                Catch::Approx(components.combined[static_cast<std::size_t>(node)])
+                    .margin(1.0e-18));
+        REQUIRE(components.combined[static_cast<std::size_t>(node)] ==
+                Catch::Approx(components.electron[static_cast<std::size_t>(node)] +
+                              components.hole[static_cast<std::size_t>(node)])
+                    .margin(1.0e-18));
     }
     REQUIRE(totalEdgeSource == Catch::Approx(totalNodalSource).margin(1.0e-18));
+    REQUIRE(totalElectronEdgeSource ==
+            Catch::Approx(totalElectronNodalSource).margin(1.0e-18));
+    REQUIRE(totalHoleEdgeSource == Catch::Approx(totalHoleNodalSource).margin(1.0e-18));
 }
 
 static std::vector<Real> readVtkScalar(const std::filesystem::path& path,
@@ -691,10 +746,15 @@ TEST_CASE("VTK AvalancheGeneration uses SG edge nodal source over node volume",
 TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]")
 {
     const GummelConfig cfg = gummelConfigFromJson(nlohmann::json{
-        {"impact_ionization", {{"model", "selberherr"}, {"electron_A_m_inv", 1.0e6}}}
+        {"impact_ionization", {
+            {"model", "selberherr"},
+            {"electron_A_m_inv", 1.0e6},
+            {"source_geometry_scale", 2.0},
+        }}
     });
     REQUIRE(cfg.impactIonization.model == "selberherr");
     REQUIRE(cfg.impactIonization.electronA == Catch::Approx(1.0e6));
+    REQUIRE(cfg.impactIonization.sourceGeometryScale == Catch::Approx(2.0));
 
     const NewtonConfig stringCfg = newtonConfigFromJson(nlohmann::json{
         {"impact_ionization", "selberherr"}
@@ -771,10 +831,143 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
     REQUIRE(interpolatedCfg.impactIonization.holeDrivingForceRefDensity ==
             Catch::Approx(2.0e16));
 
+    const NewtonConfig sourceGeometryCfg = newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"source_geometry_scale", 4.0},
+        }}
+    });
+    REQUIRE(sourceGeometryCfg.impactIonization.sourceGeometryScale == Catch::Approx(4.0));
+
     REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
         {"impact_ionization", {
             {"model", "van_overstraeten"},
             {"driving_force", "electrostatic"},
         }}
     }), std::invalid_argument);
+}
+
+TEST_CASE("SG edge current avalanche source supports diagnostic geometry scale",
+          "[impact][diagnostic]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    DDSolution sol;
+    sol.psi = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.02, 0.025);
+    sol.phin = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), 0.01, -0.006);
+    sol.phip = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.007, 0.005);
+    sol.n.resize(static_cast<int>(mesh.numNodes()));
+    sol.p.resize(static_cast<int>(mesh.numNodes()));
+    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+    for (int i = 0; i < static_cast<int>(mesh.numNodes()); ++i) {
+        sol.n(i) = ni[static_cast<std::size_t>(i)] * std::exp((sol.psi(i) - sol.phin(i)) / Vt);
+        sol.p(i) = ni[static_cast<std::size_t>(i)] * std::exp((sol.phip(i) - sol.psi(i)) / Vt);
+    }
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "electric_field";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "density_gradient";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0e-30;
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, constants::T0);
+
+    const auto baseImpact = makeImpactIonizationModel(impactConfig);
+    const auto base = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *baseImpact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+    const auto baseNodal = detail::sgEdgeCurrentAvalancheSourceIntegrals(
+        impactConfig,
+        *baseImpact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+
+    impactConfig.sourceGeometryScale = 4.0;
+    const auto scaledImpact = makeImpactIonizationModel(impactConfig);
+    const auto scaled = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *scaledImpact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+    const auto scaledNodal = detail::sgEdgeCurrentAvalancheSourceIntegrals(
+        impactConfig,
+        *scaledImpact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+
+    REQUIRE(scaled.size() == base.size());
+    bool sawNonzeroSource = false;
+    for (std::size_t i = 0; i < base.size(); ++i) {
+        REQUIRE(scaled[i].edgeAreaProxy == Catch::Approx(4.0 * base[i].edgeAreaProxy));
+        REQUIRE(scaled[i].edgeSourceIntegral == Catch::Approx(4.0 * base[i].edgeSourceIntegral));
+        REQUIRE(scaled[i].node0SourceIntegral == Catch::Approx(4.0 * base[i].node0SourceIntegral));
+        REQUIRE(scaled[i].node1SourceIntegral == Catch::Approx(4.0 * base[i].node1SourceIntegral));
+        sawNonzeroSource = sawNonzeroSource || base[i].edgeSourceIntegral > 0.0;
+    }
+    REQUIRE(scaledNodal.size() == baseNodal.size());
+    for (std::size_t i = 0; i < baseNodal.size(); ++i)
+        REQUIRE(scaledNodal[i] == Catch::Approx(4.0 * baseNodal[i]));
+    REQUIRE(sawNonzeroSource);
 }

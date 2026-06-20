@@ -9,6 +9,7 @@
 #include "vela/post/StoredCharge.h"
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
@@ -53,6 +54,11 @@ struct NewtonHistoryDiagnosticsConfig {
     std::string csvFile;
 };
 
+struct ContactCurrentQfFloorDiagnosticsConfig {
+    bool enabled = false;
+    std::vector<std::string> contacts;
+};
+
 struct SweepDiagnosticsConfig {
     TerminalBalanceDiagnosticsConfig terminalBalance;
     ContactEdgeDiagnosticsConfig contactEdge;
@@ -60,6 +66,7 @@ struct SweepDiagnosticsConfig {
     ContinuityBalanceDiagnosticsConfig continuityBalance;
     SgAvalancheEdgeDiagnosticsConfig sgAvalancheEdges;
     NewtonHistoryDiagnosticsConfig newtonHistory;
+    ContactCurrentQfFloorDiagnosticsConfig contactCurrentQfFloor;
 };
 
 struct SweepPredictorConfig {
@@ -71,6 +78,12 @@ struct SweepPredictorConfig {
 struct SweepBranchAcceptanceConfig {
     bool terminalCurrentConsistency = false;
     Real minTerminalCurrentRatio = 0.0;
+    bool psiPhinJump = false;
+    Real maxPsiPhinJump_V = 0.0;
+    bool carrierDensityJump = false;
+    Real maxElectronDensityJumpDex = 0.0;
+    Real maxElectronDensityJumpP95AbsDex =
+        std::numeric_limits<Real>::infinity();
 };
 
 struct SweepContinuationConfig {
@@ -153,6 +166,11 @@ struct DCSweepPoint {
     std::string branchAcceptanceStatus;
     std::string branchAcceptanceReason;
     Real terminalCurrentConsistencyRatio = 1.0;
+    Real psiPhinMaxJump_V = 0.0;
+    Real electronDensityJumpMedianDex = 0.0;
+    Real electronDensityJumpP95AbsDex = 0.0;
+    Real electronDensityJumpMaxAbsDex = 0.0;
+    Index electronDensityJumpMaxNode = -1;
     std::string outputCsv;
     std::string outputVtk;
 };

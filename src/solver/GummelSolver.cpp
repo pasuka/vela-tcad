@@ -71,6 +71,12 @@ void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& con
             ": impact_ionization driving-force reference densities must be "
             "finite and non-negative.");
     }
+    if (!std::isfinite(config.sourceGeometryScale) ||
+        config.sourceGeometryScale <= 0.0) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.source_geometry_scale must be positive and finite.");
+    }
 }
 
 void parseImpactIonizationDrivingForceInterpolation(
@@ -261,6 +267,8 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "current_approximation", cfg.impactIonization.currentApproximation);
             parseImpactIonizationDrivingForceInterpolation(
                 value, scaling, cfg.impactIonization, "gummelConfigFromJson");
+            cfg.impactIonization.sourceGeometryScale = value.value(
+                "source_geometry_scale", cfg.impactIonization.sourceGeometryScale);
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());

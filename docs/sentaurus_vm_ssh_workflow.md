@@ -404,3 +404,17 @@ C:\Users\qzw\.ssh\config
 ```
 
 中的 `HostName`。
+
+## Vela Runner Contract
+
+The automated Vela runner uses:
+
+- SSH target: `sentaurus`
+- Remote root: `~/sentaurus_runs/vela_oracle`
+- Local pn2d source: `reference_tcad/pn2d_sentaurus2018/source`
+- Example staged output: `build-release/reference_tcad/pn2d_sentaurus2018/sentaurus_vm_runs/pn2d_bv_vm_smoke/source`
+- Required common files: `pn2d_sde.cmd`, `models.par`
+- BV command: `sdevice pn2d_bv_sdevice.cmd > run_pn2d_bv.out 2>&1`
+
+The runner must never overwrite `reference_tcad/pn2d_sentaurus2018/source`
+directly. Review staged artifacts first, then copy selected files deliberately.

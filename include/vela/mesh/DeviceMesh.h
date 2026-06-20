@@ -42,6 +42,7 @@ public:
      * couplings. buildEdges() also invokes this after generating edges.
      */
     void buildBoxGeometry();
+    void buildBoxGeometry(const BoxGeometryBuilder::Options& options);
 
     // ------------------------------------------------------------------
     // Queries

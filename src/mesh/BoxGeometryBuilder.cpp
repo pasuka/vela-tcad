@@ -53,6 +53,47 @@ Real cotangentAtOppositeVertex(const Node& a, const Node& b, const Node& opp)
     return dot / std::abs(cross);
 }
 
+Real distanceSquared(const Node& a, const Node& b)
+{
+    const Real dx = b.x - a.x;
+    const Real dy = b.y - a.y;
+    return dx * dx + dy * dy;
+}
+
+std::array<Real, 3> mixedVoronoiShares(const std::array<const Node*, 3>& nodes,
+                                       const std::array<Real, 3>&       angles,
+                                       Real                             area)
+{
+    auto maxAngleIt = std::max_element(angles.begin(), angles.end());
+    const int maxAngleIndex = static_cast<int>(std::distance(angles.begin(), maxAngleIt));
+    if (*maxAngleIt > 90.0) {
+        std::array<Real, 3> shares = {area * 0.25, area * 0.25, area * 0.25};
+        shares[static_cast<std::size_t>(maxAngleIndex)] = area * 0.5;
+        return shares;
+    }
+
+    std::array<Real, 3> shares = {0.0, 0.0, 0.0};
+    for (int i = 0; i < 3; ++i) {
+        const int j = (i + 1) % 3;
+        const int k = (i + 2) % 3;
+        const Real cotJ = cotangentAtOppositeVertex(*nodes[static_cast<std::size_t>(i)],
+                                                    *nodes[static_cast<std::size_t>(k)],
+                                                    *nodes[static_cast<std::size_t>(j)]);
+        const Real cotK = cotangentAtOppositeVertex(*nodes[static_cast<std::size_t>(i)],
+                                                    *nodes[static_cast<std::size_t>(j)],
+                                                    *nodes[static_cast<std::size_t>(k)]);
+        shares[static_cast<std::size_t>(i)] =
+            0.125 *
+            (distanceSquared(*nodes[static_cast<std::size_t>(i)],
+                             *nodes[static_cast<std::size_t>(k)]) * cotJ +
+             distanceSquared(*nodes[static_cast<std::size_t>(i)],
+                             *nodes[static_cast<std::size_t>(j)]) * cotK);
+        if (shares[static_cast<std::size_t>(i)] < 0.0)
+            shares[static_cast<std::size_t>(i)] = 0.0;
+    }
+    return shares;
+}
+
 void warnNegativeCotangent(Index cellId, Index n0, Index n1, Real cot)
 {
     std::cerr << "Vela warning: negative cotangent contribution " << cot
@@ -148,9 +189,16 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
             }
         }
 
-        const Real nodeShare = area / 3.0;
-        for (Index id : ids)
-            mesh.nodes_.at(id).volume += nodeShare;
+        if (options.nodeVolumePolicy == NodeVolumePolicy::MixedVoronoi) {
+            const std::array<const Node*, 3> nodes = {&n0, &n1, &n2};
+            const std::array<Real, 3> shares = mixedVoronoiShares(nodes, angles, area);
+            for (int k = 0; k < 3; ++k)
+                mesh.nodes_.at(ids[k]).volume += shares[static_cast<std::size_t>(k)];
+        } else {
+            const Real nodeShare = area / 3.0;
+            for (Index id : ids)
+                mesh.nodes_.at(id).volume += nodeShare;
+        }
 
         for (int k = 0; k < 3; ++k) {
             const Index a = ids[k];

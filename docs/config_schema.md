@@ -29,6 +29,7 @@ Scope and conventions:
 | output_vtk | string | Poisson: Yes | Poisson VTK output file path. |
 | output_vtk_prefix | string | Optional | Default VTK prefix for DC sweep point outputs. Can be overridden by `sweep.vtk_prefix`. |
 | scaling | object | Optional | Input unit interpretation. Omit for legacy SI behavior, or set `mode` to `unit_scaling`; see below. |
+| mesh_geometry | object | Optional | Mesh box-geometry options; see below. |
 | doping | array | Yes | Region doping definitions; see below. |
 | regions | array | Optional | Region-level fixed charge definitions; see below. |
 | interfaces | array | Optional | Interface sheet/fixed/trap charge definitions; see below. |
@@ -102,6 +103,30 @@ DC sweep CSVs include solver provenance columns:
 - `gummel_iterations`: iterations used by the Gummel stage for this bias point
 - `newton_iterations`: iterations used by the coupled Newton stage for this bias point
 - `handoff_stage`: final accepted stage or failure stage, such as `newton`, `gummel_failed`, `newton_failed`, or `gummel_fallback`
+
+## mesh_geometry
+
+The optional `mesh_geometry` object controls box-method geometry derived from
+the input mesh. Omit it to keep the legacy default.
+
+```json
+"mesh_geometry": {
+  "node_volume_policy": "mixed_voronoi"
+}
+```
+
+Supported `node_volume_policy` values:
+- `barycentric` (default): each Tri3 cell contributes one third of its area to
+  each adjacent node.
+- `mixed_voronoi`: acute and right triangles use the cotangent Voronoi vertex
+  area; obtuse triangles assign half the area to the obtuse vertex and one
+  quarter to each other vertex. Edge couplings still use the existing
+  cotangent box coefficients and negative-cotangent fallback policy.
+
+This option changes the mesh node control volumes used by Poisson charge,
+carrier continuity volume terms, stored/terminal charge, and SG avalanche
+source density normalization. It does not change donor/acceptor values used for
+Ohmic contact boundary conditions.
 
 ## Doping, regions, interfaces
 
@@ -273,6 +298,8 @@ Gummel-specific keys:
 Newton-specific keys:
 - damping_factor
 - max_update
+- quasi_fermi_update_limit_V
+- carrier_regularization_scale
 - line_search
 - warm_start
 - contact_boundary_reconstruction
@@ -326,6 +353,18 @@ Notes:
   minority contact pinned.
 - `max_update` is an optional non-negative infinity-norm cap on one Newton
   update in solver unknown units; `0` disables the cap.
+- `quasi_fermi_update_limit_V` is an optional non-negative physical-voltage
+  cap applied only to Newton quasi-Fermi updates (`phin` and `phip`) after
+  `max_update` and before line search; `0` disables the cap. In
+  `unit_scaling` mode the value is converted to solver unknown units using the
+  potential scale, so the accepted `phin`/`phip` delta remains capped in volts.
+- `carrier_regularization_scale` is an experimental non-negative Newton
+  stabilization knob. When greater than zero, Vela adds
+  `sign(diagonal) * scale * carrier_row_abs_sum` to each carrier continuity
+  diagonal before solving the coupled Newton step; the row sum includes the
+  full coupled carrier row across `psi`, `phin`, and `phip` columns. `0`
+  disables the regularization. This is intended for BV branch-stability
+  diagnostics and is not enabled by default.
 - `carrier_floor_m3` is an optional non-negative Gummel carrier floor used to
   keep reconstructed quasi-Fermi potentials consistent with solved carrier
   densities.
@@ -421,13 +460,14 @@ Supported `model` values:
 - `slotboom`
 - `old_slotboom`
 
-The Slotboom and OldSlotboom prototypes compute an effective bandgap narrowing
-from the maximum of absolute net doping and local carrier densities, then feed
-the resulting effective intrinsic density into the drift-diffusion statistics
-path. `old_slotboom` uses the Sentaurus 2018 silicon defaults from
-`models.par`: `dEg0 = -1.595e-2 eV`, `Ebgn = 9e-3 eV`,
-`Nref = 1e17 cm^-3`, and `C = 0.5`. This is implemented in Gummel and Newton
-configurations. With
+The Slotboom and OldSlotboom prototypes compute the positive effective
+bandgap-narrowing term from the maximum of absolute net doping and local
+carrier densities, then feed the resulting effective intrinsic density into
+the drift-diffusion statistics path. For Sentaurus `OldSlotboom` parity, the
+`models.par` `Bandgap.dEg0(OldSlotboom) = -1.595e-2 eV` term is handled by the
+material intrinsic-density override, while the `old_slotboom` BGN term uses
+`Ebgn = 9e-3 eV`, `Nref = 1e17 cm^-3`, and `C = 0.5`. This is implemented in
+Gummel and Newton configurations. With
 `scaling.mode: "unit_scaling"`, `reference_doping_m3` numeric input is read as
 `cm^-3` and normalized to `m^-3`.
 
@@ -487,6 +527,9 @@ Field meanings (Selberherr prototype):
   Sentaurus `Avalanche(VanOverstraeten)` decks use `quasi_fermi_gradient`.
 - `generation`: `carrier_density` (legacy `alpha*v*n/p` proxy) or
   `current_density` (`alpha_n*mu_n*n*|grad(phin)| + alpha_p*mu_p*p*|grad(phip)|`).
+- `source_geometry_scale`: positive finite diagnostic multiplier for the
+  Scharfetter-Gummel edge-current avalanche source geometry. The default is
+  `1.0`; values other than `1.0` are intended only for BV parity probes.
 
 Validation:
 - `electron_A_m_inv`, `hole_A_m_inv`, and `carrier_velocity_m_s` must be non-negative.
@@ -533,10 +576,10 @@ Object form:
   "hole_mu_min_m2_V_s": 0.00449,
   "hole_nref_m3": 2.23e23,
   "hole_alpha": 0.70,
-  "electron_saturation_velocity_m_s": 1.0e5,
-  "electron_field_beta": 2.0,
-  "hole_saturation_velocity_m_s": 1.0e5,
-  "hole_field_beta": 2.0,
+  "electron_saturation_velocity_m_s": 1.07e5,
+  "electron_field_beta": 1.109,
+  "hole_saturation_velocity_m_s": 8.37e4,
+  "hole_field_beta": 1.213,
   "surface": {
     "theta_electron_m_per_V": 2.0e-8,
     "theta_hole_m_per_V": 1.0e-8,
@@ -632,6 +675,27 @@ Diagnostics fields:
   raw and applied update norms, damping, line-search attempt count, and
   `psi`/`phin`/`phip`/combined block residuals. Optional `csv_file` overrides
   the default `<sweep csv stem>_newton_history.csv`.
+- `contact_current_reporting.endpoint_qf_floor.enabled`: opt-in reporting-only
+  policy for Sentaurus restart parity. When enabled, DCSweep captures tiny
+  contact-edge hole quasi-Fermi endpoint drops from the external
+  `initial_state_file` before contact projection and passes those drops only
+  to terminal/contact-current extraction. Optional `contacts` selects contacts.
+  The nonlinear residual, Jacobian, solution state, VTK output, and ordinary
+  continuation states are unchanged; continuation from a previously solved
+  Vela point is not used as a QF-floor source.
+- `diagnostics.contact_current_qf_floor.enabled`: compatibility alias for the
+  same reporting-only policy. Prefer
+  `contact_current_reporting.endpoint_qf_floor` in new BV configurations.
+
+For Sentaurus BV parity work, compare both the `.plt` terminal current and the
+TDR-exported `ContactCurrentFlux` when judging the remaining terminal-current
+gap. Near high reverse bias these two Sentaurus outputs can differ by
+solver/output convention, so do not tune Vela mobility, SG flux, or avalanche
+transport solely against the `.plt` value before checking the TDR contact flux.
+The helper script
+`scripts/verify_pn2d_sentaurus_terminal_current_crosscheck.py` performs this
+cross-check and reports a JSON `sentaurus_plt_contact_flux_mismatch` status
+when the two Sentaurus outputs exceed the configured relative tolerance.
 
 For 2-D devices, currents and terminal charges are per-depth quantities by
 default. Legacy CSV current values are per meter of device depth, and
@@ -647,6 +711,40 @@ Step control fields:
 - shrink_factor
 - max_retries
 - stop_on_failure
+
+Sweep continuation fields:
+- `sweep.continuation.predictor.mode`: `none`, `constant`, `linear`, or `secant`.
+- `sweep.continuation.predictor.fields`: optional subset of `psi`, `phin`, and
+  `phip`; omitted non-`none` predictors default to all three fields.
+- `sweep.continuation.predictor.max_extrapolation_ratio`: finite value at least `1`.
+- `sweep.continuation.branch_acceptance.terminal_current_consistency`: when true,
+  rejects a converged sweep point if terminal current cancellation is too large.
+- `sweep.continuation.branch_acceptance.min_terminal_current_ratio`: non-negative
+  threshold used by `terminal_current_consistency`.
+- `sweep.continuation.branch_acceptance.psi_phin_jump`: when true, compares
+  `psi - phin` against the previous accepted sweep state before accepting a
+  new point. This is a diagnostic guard for reverse-bias branch jumps.
+- `sweep.continuation.branch_acceptance.max_psi_phin_jump_V`: finite non-negative
+  maximum allowed absolute nodewise jump in `psi - phin` when
+  `psi_phin_jump` is enabled.
+- `sweep.continuation.branch_acceptance.carrier_density_jump`: when true,
+  compares electron density against the previous accepted sweep state in log10
+  space before accepting a new point. This is a diagnostic guard for abrupt
+  carrier-density branch jumps during reverse-bias continuation.
+- `sweep.continuation.branch_acceptance.max_electron_density_jump_dex`: finite
+  non-negative maximum allowed absolute nodewise electron-density jump in dex
+  when `carrier_density_jump` is enabled.
+- `sweep.continuation.branch_acceptance.max_electron_density_jump_p95_abs_dex`:
+  optional finite non-negative maximum allowed p95 absolute electron-density
+  jump in dex when `carrier_density_jump` is enabled. This is usually less
+  sensitive to isolated node spikes than the nodewise maximum.
+
+When any continuation diagnostic is enabled, the sweep CSV appends
+`predictor_mode`, `predicted_initial_state`, `branch_acceptance_status`,
+`branch_acceptance_reason`, `terminal_current_consistency_ratio`, and
+`psi_phin_max_jump_V`, plus carrier-density jump columns
+`electron_density_jump_median_dex`, `electron_density_jump_p95_abs_dex`,
+`electron_density_jump_max_abs_dex`, and `electron_density_jump_max_node`.
 
 terminal_charge (for legacy single-terminal CV):
 - terminal_charge.contact

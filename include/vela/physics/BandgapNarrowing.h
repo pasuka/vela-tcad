@@ -11,7 +11,7 @@ struct BandgapNarrowingConfig {
     Real referenceDoping = 1.0e23; ///< Slotboom reference concentration [m^-3]
     Real coefficient = 9.0e-3; ///< Slotboom narrowing coefficient [eV]
     Real smoothing = 0.5; ///< Dimensionless Slotboom smoothing term
-    Real offset = 0.0; ///< Optional dEg0 offset [eV]
+    Real offset = 0.0; ///< Optional additive narrowing offset [eV]
 };
 
 class BandgapNarrowing {

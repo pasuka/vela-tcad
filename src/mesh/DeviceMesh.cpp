@@ -99,6 +99,13 @@ void DeviceMesh::buildBoxGeometry()
     lastGeometryBuildReport_ = BoxGeometryBuilder::buildWithReport(*this);
 }
 
+void DeviceMesh::buildBoxGeometry(const BoxGeometryBuilder::Options& options)
+{
+    if (edges_.empty() && !cells_.empty())
+        buildEdgesOnly();
+    lastGeometryBuildReport_ = BoxGeometryBuilder::buildWithReport(*this, options);
+}
+
 // ------------------------------------------------------------------
 // Accessors
 // ------------------------------------------------------------------

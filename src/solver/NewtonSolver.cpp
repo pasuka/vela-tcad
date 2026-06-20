@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace vela {
 namespace {
@@ -63,6 +64,12 @@ void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& con
             std::string(context) +
             ": impact_ionization driving-force reference densities must be "
             "finite and non-negative.");
+    }
+    if (!std::isfinite(config.sourceGeometryScale) ||
+        config.sourceGeometryScale <= 0.0) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.source_geometry_scale must be positive and finite.");
     }
 }
 
@@ -238,6 +245,70 @@ NewtonBlockResidualInfo blockResidualInfo(const VectorXd& residual, Index nodeCo
 {
     const ResidualBlockNormValue blocks = ResidualNorm::computeBlocks(residual, nodeCount);
     return {blocks.psi, blocks.phin, blocks.phip, blocks.combined};
+}
+
+SparseMatrixd sparseBlock(const SparseMatrixd& matrix,
+                          int rowStart,
+                          int colStart,
+                          int rows,
+                          int cols)
+{
+    SparseMatrixd block = matrix.block(rowStart, colStart, rows, cols);
+    block.makeCompressed();
+    return block;
+}
+
+Real addCarrierRowRegularization(SparseMatrixd& matrix,
+                                 int nodeCount,
+                                 Real regularizationScale)
+{
+    if (regularizationScale <= 0.0)
+        return 0.0;
+
+    std::vector<Real> rowAbsSums(static_cast<std::size_t>(2 * nodeCount), 0.0);
+    for (int col = 0; col < 3 * nodeCount; ++col) {
+        for (SparseMatrixd::InnerIterator it(matrix, col); it; ++it) {
+            const int row = static_cast<int>(it.row());
+            if (row >= nodeCount && row < 3 * nodeCount) {
+                rowAbsSums[static_cast<std::size_t>(row - nodeCount)] +=
+                    std::abs(it.value());
+            }
+        }
+    }
+
+    Real diagonalNormSq = 0.0;
+    for (int localRow = 0; localRow < 2 * nodeCount; ++localRow) {
+        const int row = nodeCount + localRow;
+        const Real diagonal = matrix.coeff(row, row);
+        const Real sign = diagonal < 0.0 ? -1.0 : 1.0;
+        const Real addition =
+            sign * regularizationScale * rowAbsSums[static_cast<std::size_t>(localRow)];
+        matrix.coeffRef(row, row) += addition;
+        diagonalNormSq += addition * addition;
+    }
+    matrix.makeCompressed();
+    return std::sqrt(diagonalNormSq);
+}
+
+void applyConfiguredStepCaps(VectorXd& step,
+                             const NewtonConfig& cfg,
+                             int nodeCount,
+                             Real potentialScale)
+{
+    if (cfg.maxUpdate > 0.0) {
+        const Real maxAbsStep = step.cwiseAbs().maxCoeff();
+        if (maxAbsStep > cfg.maxUpdate)
+            step *= cfg.maxUpdate / maxAbsStep;
+    }
+    if (cfg.quasiFermiUpdateLimit_V > 0.0) {
+        const Real qfLimit = cfg.quasiFermiUpdateLimit_V / potentialScale;
+        for (int i = nodeCount; i < 3 * nodeCount; ++i) {
+            if (step(i) > qfLimit)
+                step(i) = qfLimit;
+            else if (step(i) < -qfLimit)
+                step(i) = -qfLimit;
+        }
+    }
 }
 
 NewtonCarrierDiagnostics carrierDiagnostics(const CoupledDDAssembler& assembler,
@@ -422,6 +493,12 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.diagnostics = json.value("diagnostics", cfg.diagnostics);
     cfg.diagnostics = json.value("diagnostic_history", cfg.diagnostics);
     cfg.maxUpdate = json.value("max_update", cfg.maxUpdate);
+    cfg.quasiFermiUpdateLimit_V = json.value(
+        "quasi_fermi_update_limit_V",
+        cfg.quasiFermiUpdateLimit_V);
+    cfg.carrierRegularizationScale = json.value(
+        "carrier_regularization_scale",
+        cfg.carrierRegularizationScale);
     cfg.finiteDifferenceStep = json.value("finite_difference_step", cfg.finiteDifferenceStep);
     cfg.jacobian = json.value("jacobian", cfg.jacobian);
     cfg.residualNorm = json.value("residual_norm", cfg.residualNorm);
@@ -507,6 +584,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "current_approximation", cfg.impactIonization.currentApproximation);
             parseImpactIonizationDrivingForceInterpolation(
                 value, scaling, cfg.impactIonization, "newtonConfigFromJson");
+            cfg.impactIonization.sourceGeometryScale = value.value(
+                "source_geometry_scale", cfg.impactIonization.sourceGeometryScale);
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());
@@ -580,6 +659,12 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (cfg.maxUpdate < 0.0 || !std::isfinite(cfg.maxUpdate))
         throw std::invalid_argument(
             "newtonConfigFromJson: max_update must be non-negative and finite.");
+    if (cfg.quasiFermiUpdateLimit_V < 0.0 || !std::isfinite(cfg.quasiFermiUpdateLimit_V))
+        throw std::invalid_argument(
+            "newtonConfigFromJson: quasi_fermi_update_limit_V must be non-negative and finite.");
+    if (cfg.carrierRegularizationScale < 0.0 || !std::isfinite(cfg.carrierRegularizationScale))
+        throw std::invalid_argument(
+            "newtonConfigFromJson: carrier_regularization_scale must be non-negative and finite.");
     if (cfg.finiteDifferenceStep <= 0.0 || !std::isfinite(cfg.finiteDifferenceStep))
         throw std::invalid_argument(
             "newtonConfigFromJson: finite_difference_step must be positive and finite.");
@@ -634,6 +719,11 @@ NewtonSolver::NewtonSolver(
     if (cfg_.residualNorm != "block" && cfg_.residualNorm != "l2")
         throw std::invalid_argument(
             "NewtonSolver: residual_norm must be 'block' or 'l2'.");
+    if (cfg_.carrierRegularizationScale < 0.0 ||
+        !std::isfinite(cfg_.carrierRegularizationScale)) {
+        throw std::invalid_argument(
+            "NewtonSolver: carrier_regularization_scale must be non-negative and finite.");
+    }
     validateResidualWeights(
         cfg_.residualWeightPsi,
         cfg_.residualWeightPhin,
@@ -835,6 +925,472 @@ NewtonResidualEvaluation NewtonSolver::evaluateResidual(const DDSolution& state)
     return evaluation;
 }
 
+NewtonStepEvaluation NewtonSolver::evaluateStep(const DDSolution& state) const
+{
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    const DDScalingSpec scaling = buildScalingSpec();
+    CoupledDDAssembler assembler(
+        mesh_,
+        matdb_,
+        doping_,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        cfg_.bandgapNarrowing,
+        cfg_.impactIonization,
+        fixedCharges_,
+        sheetCharges_,
+        scaling);
+    const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const VectorXd x = assembler.pack({
+        state.psi / potentialScale,
+        state.phin / potentialScale,
+        state.phip / potentialScale});
+    const VectorXd raw = assembler.residual(x, bcs);
+    const SparseMatrixd J = (cfg_.jacobian == "finite_difference")
+        ? assembler.finiteDifferenceJacobian(x, bcs, cfg_.finiteDifferenceStep)
+        : assembler.assembleJacobian(x, bcs);
+
+    LinearSolver linearSolver;
+    VectorXd step = linearSolver.solve(J, -raw);
+    const Real rawStepNorm = step.norm();
+
+    const int N = static_cast<int>(mesh_.numNodes());
+    if (cfg_.maxUpdate > 0.0) {
+        const Real maxAbsStep = step.cwiseAbs().maxCoeff();
+        if (maxAbsStep > cfg_.maxUpdate)
+            step *= cfg_.maxUpdate / maxAbsStep;
+    }
+    if (cfg_.quasiFermiUpdateLimit_V > 0.0) {
+        const Real qfLimit = cfg_.quasiFermiUpdateLimit_V / potentialScale;
+        for (int i = N; i < 3 * N; ++i) {
+            if (step(i) > qfLimit)
+                step(i) = qfLimit;
+            else if (step(i) < -qfLimit)
+                step(i) = -qfLimit;
+        }
+    }
+
+    const VectorXd trialX = x + step;
+    const VectorXd trialRaw = assembler.residual(trialX, bcs);
+
+    NewtonStepEvaluation evaluation;
+    evaluation.residual.raw = raw;
+    evaluation.residual.blockNorms = blockResidualInfo(raw, mesh_.numNodes());
+    evaluation.residual.intrinsicDensity = assembler.intrinsicDensity();
+    evaluation.residual.scaledState = assembler.usesScaledState();
+    evaluation.residual.potentialScale = potentialScale;
+    evaluation.trialResidual.raw = trialRaw;
+    evaluation.trialResidual.blockNorms = blockResidualInfo(trialRaw, mesh_.numNodes());
+    evaluation.trialResidual.intrinsicDensity = assembler.intrinsicDensity();
+    evaluation.trialResidual.scaledState = assembler.usesScaledState();
+    evaluation.trialResidual.potentialScale = potentialScale;
+    evaluation.trialSolution = makeSolution(assembler, trialX, 1);
+    evaluation.deltaPsi = step.segment(0, N) * potentialScale;
+    evaluation.deltaPhin = step.segment(N, N) * potentialScale;
+    evaluation.deltaPhip = step.segment(2 * N, N) * potentialScale;
+    evaluation.rawStepNorm = rawStepNorm;
+    evaluation.stepNorm = step.norm();
+    return evaluation;
+}
+
+NewtonDirectionalDerivativeEvaluation NewtonSolver::evaluateDirectionalDerivative(
+    const DDSolution& state,
+    const DDSolution& physicalPerturbation) const
+{
+    const int N = static_cast<int>(mesh_.numNodes());
+    if (state.psi.size() != N || state.phin.size() != N || state.phip.size() != N ||
+        physicalPerturbation.psi.size() != N ||
+        physicalPerturbation.phin.size() != N ||
+        physicalPerturbation.phip.size() != N) {
+        throw std::invalid_argument(
+            "NewtonSolver::evaluateDirectionalDerivative: state and perturbation sizes "
+            "must match the mesh node count.");
+    }
+
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    const DDScalingSpec scaling = buildScalingSpec();
+    CoupledDDAssembler assembler(
+        mesh_,
+        matdb_,
+        doping_,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        cfg_.bandgapNarrowing,
+        cfg_.impactIonization,
+        fixedCharges_,
+        sheetCharges_,
+        scaling);
+    const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const VectorXd x = assembler.pack({
+        state.psi / potentialScale,
+        state.phin / potentialScale,
+        state.phip / potentialScale});
+    const VectorXd dx = assembler.pack({
+        physicalPerturbation.psi / potentialScale,
+        physicalPerturbation.phin / potentialScale,
+        physicalPerturbation.phip / potentialScale});
+    if (dx.norm() == 0.0)
+        throw std::invalid_argument(
+            "NewtonSolver::evaluateDirectionalDerivative: perturbation must be non-zero.");
+
+    const VectorXd raw = assembler.residual(x, bcs);
+    const SparseMatrixd J = assembler.assembleJacobian(x, bcs);
+    const VectorXd analytic = J * dx;
+    const VectorXd forward = assembler.residual(x + dx, bcs);
+    const VectorXd backward = assembler.residual(x - dx, bcs);
+    const VectorXd finiteDifference = 0.5 * (forward - backward);
+    const VectorXd error = analytic - finiteDifference;
+
+    NewtonDirectionalDerivativeEvaluation evaluation;
+    evaluation.residual.raw = raw;
+    evaluation.residual.blockNorms = blockResidualInfo(raw, mesh_.numNodes());
+    evaluation.residual.intrinsicDensity = assembler.intrinsicDensity();
+    evaluation.residual.scaledState = assembler.usesScaledState();
+    evaluation.residual.potentialScale = potentialScale;
+    evaluation.perturbationPsi = physicalPerturbation.psi;
+    evaluation.perturbationPhin = physicalPerturbation.phin;
+    evaluation.perturbationPhip = physicalPerturbation.phip;
+    evaluation.analyticJv = analytic;
+    evaluation.finiteDifferenceJv = finiteDifference;
+    evaluation.forwardResidual = forward;
+    evaluation.backwardResidual = backward;
+    evaluation.perturbationNorm = dx.norm();
+    evaluation.analyticNorm = analytic.norm();
+    evaluation.finiteDifferenceNorm = finiteDifference.norm();
+    evaluation.absoluteError = error.norm();
+    evaluation.relativeError = evaluation.absoluteError /
+        std::max<Real>(1.0, evaluation.finiteDifferenceNorm);
+    return evaluation;
+}
+
+NewtonBlockStepEvaluation NewtonSolver::evaluateBlockStep(
+    const DDSolution& state,
+    const std::string& mode) const
+{
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    const DDScalingSpec scaling = buildScalingSpec();
+    CoupledDDAssembler assembler(
+        mesh_,
+        matdb_,
+        doping_,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        cfg_.bandgapNarrowing,
+        cfg_.impactIonization,
+        fixedCharges_,
+        sheetCharges_,
+        scaling);
+    const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const VectorXd x = assembler.pack({
+        state.psi / potentialScale,
+        state.phin / potentialScale,
+        state.phip / potentialScale});
+    const VectorXd raw = assembler.residual(x, bcs);
+    const SparseMatrixd J = (cfg_.jacobian == "finite_difference")
+        ? assembler.finiteDifferenceJacobian(x, bcs, cfg_.finiteDifferenceStep)
+        : assembler.assembleJacobian(x, bcs);
+
+    const int N = static_cast<int>(mesh_.numNodes());
+    VectorXd step = VectorXd::Zero(3 * N);
+    LinearSolver linearSolver;
+    if (mode == "poisson_only") {
+        const SparseMatrixd block = sparseBlock(J, 0, 0, N, N);
+        step.segment(0, N) = linearSolver.solve(block, -raw.segment(0, N));
+    } else if (mode == "carrier_only") {
+        const SparseMatrixd block = sparseBlock(J, N, N, 2 * N, 2 * N);
+        step.segment(N, 2 * N) = linearSolver.solve(block, -raw.segment(N, 2 * N));
+    } else {
+        throw std::invalid_argument(
+            "NewtonSolver::evaluateBlockStep: mode must be 'poisson_only' "
+            "or 'carrier_only'.");
+    }
+
+    const Real rawStepNorm = step.norm();
+    applyConfiguredStepCaps(step, cfg_, N, potentialScale);
+    const VectorXd trialX = x + step;
+    const VectorXd trialRaw = assembler.residual(trialX, bcs);
+
+    NewtonBlockStepEvaluation evaluation;
+    evaluation.mode = mode;
+    evaluation.residual.raw = raw;
+    evaluation.residual.blockNorms = blockResidualInfo(raw, mesh_.numNodes());
+    evaluation.residual.intrinsicDensity = assembler.intrinsicDensity();
+    evaluation.residual.scaledState = assembler.usesScaledState();
+    evaluation.residual.potentialScale = potentialScale;
+    evaluation.trialResidual.raw = trialRaw;
+    evaluation.trialResidual.blockNorms = blockResidualInfo(trialRaw, mesh_.numNodes());
+    evaluation.trialResidual.intrinsicDensity = assembler.intrinsicDensity();
+    evaluation.trialResidual.scaledState = assembler.usesScaledState();
+    evaluation.trialResidual.potentialScale = potentialScale;
+    evaluation.trialSolution = makeSolution(assembler, trialX, 1);
+    evaluation.deltaPsi = step.segment(0, N) * potentialScale;
+    evaluation.deltaPhin = step.segment(N, N) * potentialScale;
+    evaluation.deltaPhip = step.segment(2 * N, N) * potentialScale;
+    evaluation.rawStepNorm = rawStepNorm;
+    evaluation.stepNorm = step.norm();
+    return evaluation;
+}
+
+NewtonRegularizedCarrierStepEvaluation NewtonSolver::evaluateRegularizedCarrierStep(
+    const DDSolution& state,
+    Real regularizationScale) const
+{
+    if (!std::isfinite(regularizationScale) || regularizationScale < 0.0) {
+        throw std::invalid_argument(
+            "NewtonSolver::evaluateRegularizedCarrierStep: "
+            "regularization scale must be finite and non-negative.");
+    }
+
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    const DDScalingSpec scaling = buildScalingSpec();
+    CoupledDDAssembler assembler(
+        mesh_,
+        matdb_,
+        doping_,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        cfg_.bandgapNarrowing,
+        cfg_.impactIonization,
+        fixedCharges_,
+        sheetCharges_,
+        scaling);
+    const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const VectorXd x = assembler.pack({
+        state.psi / potentialScale,
+        state.phin / potentialScale,
+        state.phip / potentialScale});
+    const VectorXd raw = assembler.residual(x, bcs);
+    const SparseMatrixd J = (cfg_.jacobian == "finite_difference")
+        ? assembler.finiteDifferenceJacobian(x, bcs, cfg_.finiteDifferenceStep)
+        : assembler.assembleJacobian(x, bcs);
+
+    const int N = static_cast<int>(mesh_.numNodes());
+    const SparseMatrixd carrierBlock = sparseBlock(J, N, N, 2 * N, 2 * N);
+    std::vector<Real> rowAbsSums(static_cast<std::size_t>(2 * N), 0.0);
+    for (int col = 0; col < carrierBlock.outerSize(); ++col) {
+        for (SparseMatrixd::InnerIterator it(carrierBlock, col); it; ++it) {
+            rowAbsSums[static_cast<std::size_t>(it.row())] += std::abs(it.value());
+        }
+    }
+
+    SparseMatrixd regularizedBlock = carrierBlock;
+    Real regularizationDiagonalNormSq = 0.0;
+    for (int row = 0; row < 2 * N; ++row) {
+        const Real diagonal = carrierBlock.coeff(row, row);
+        const Real sign = diagonal < 0.0 ? -1.0 : 1.0;
+        const Real addition =
+            sign * regularizationScale * rowAbsSums[static_cast<std::size_t>(row)];
+        regularizedBlock.coeffRef(row, row) += addition;
+        regularizationDiagonalNormSq += addition * addition;
+    }
+    regularizedBlock.makeCompressed();
+
+    VectorXd step = VectorXd::Zero(3 * N);
+    LinearSolver linearSolver;
+    step.segment(N, 2 * N) =
+        linearSolver.solve(regularizedBlock, -raw.segment(N, 2 * N));
+
+    const Real rawStepNorm = step.norm();
+    applyConfiguredStepCaps(step, cfg_, N, potentialScale);
+    const VectorXd trialX = x + step;
+    const VectorXd trialRaw = assembler.residual(trialX, bcs);
+
+    NewtonRegularizedCarrierStepEvaluation evaluation;
+    evaluation.regularizationScale = regularizationScale;
+    evaluation.residual.raw = raw;
+    evaluation.residual.blockNorms = blockResidualInfo(raw, mesh_.numNodes());
+    evaluation.residual.intrinsicDensity = assembler.intrinsicDensity();
+    evaluation.residual.scaledState = assembler.usesScaledState();
+    evaluation.residual.potentialScale = potentialScale;
+    evaluation.trialResidual.raw = trialRaw;
+    evaluation.trialResidual.blockNorms = blockResidualInfo(trialRaw, mesh_.numNodes());
+    evaluation.trialResidual.intrinsicDensity = assembler.intrinsicDensity();
+    evaluation.trialResidual.scaledState = assembler.usesScaledState();
+    evaluation.trialResidual.potentialScale = potentialScale;
+    evaluation.trialSolution = makeSolution(assembler, trialX, 1);
+    evaluation.deltaPsi = step.segment(0, N) * potentialScale;
+    evaluation.deltaPhin = step.segment(N, N) * potentialScale;
+    evaluation.deltaPhip = step.segment(2 * N, N) * potentialScale;
+    evaluation.rawStepNorm = rawStepNorm;
+    evaluation.stepNorm = step.norm();
+    evaluation.regularizationDiagonalNorm = std::sqrt(regularizationDiagonalNormSq);
+    return evaluation;
+}
+
+NewtonCarrierRowDiagnosticsEvaluation NewtonSolver::evaluateCarrierRowDiagnostics(
+    const DDSolution& state) const
+{
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    const DDScalingSpec scaling = buildScalingSpec();
+    CoupledDDAssembler assembler(
+        mesh_,
+        matdb_,
+        doping_,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        cfg_.bandgapNarrowing,
+        cfg_.impactIonization,
+        fixedCharges_,
+        sheetCharges_,
+        scaling);
+    const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const VectorXd x = assembler.pack({
+        state.psi / potentialScale,
+        state.phin / potentialScale,
+        state.phip / potentialScale});
+    const VectorXd raw = assembler.residual(x, bcs);
+    const SparseMatrixd J = (cfg_.jacobian == "finite_difference")
+        ? assembler.finiteDifferenceJacobian(x, bcs, cfg_.finiteDifferenceStep)
+        : assembler.assembleJacobian(x, bcs);
+
+    const int N = static_cast<int>(mesh_.numNodes());
+    const SparseMatrixd carrierBlock = sparseBlock(J, N, N, 2 * N, 2 * N);
+    LinearSolver linearSolver;
+    VectorXd rawStep = VectorXd::Zero(3 * N);
+    rawStep.segment(N, 2 * N) =
+        linearSolver.solve(carrierBlock, -raw.segment(N, 2 * N));
+    VectorXd cappedStep = rawStep;
+    applyConfiguredStepCaps(cappedStep, cfg_, N, potentialScale);
+
+    std::vector<Real> electronRowAbs(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> holeRowAbs(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> electronRowL2Sq(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> holeRowL2Sq(static_cast<std::size_t>(N), 0.0);
+    for (int col = 0; col < J.outerSize(); ++col) {
+        for (SparseMatrixd::InnerIterator it(J, col); it; ++it) {
+            const int row = static_cast<int>(it.row());
+            const Real value = it.value();
+            if (row >= N && row < 2 * N) {
+                const std::size_t node = static_cast<std::size_t>(row - N);
+                electronRowAbs[node] += std::abs(value);
+                electronRowL2Sq[node] += value * value;
+            } else if (row >= 2 * N && row < 3 * N) {
+                const std::size_t node = static_cast<std::size_t>(row - 2 * N);
+                holeRowAbs[node] += std::abs(value);
+                holeRowL2Sq[node] += value * value;
+            }
+        }
+    }
+
+    NewtonCarrierRowDiagnosticsEvaluation evaluation;
+    evaluation.residual.raw = raw;
+    evaluation.residual.blockNorms = blockResidualInfo(raw, mesh_.numNodes());
+    evaluation.residual.intrinsicDensity = assembler.intrinsicDensity();
+    evaluation.residual.scaledState = assembler.usesScaledState();
+    evaluation.residual.potentialScale = potentialScale;
+    evaluation.potentialScale = potentialScale;
+    evaluation.rawCarrierStepNorm = rawStep.norm();
+    evaluation.cappedCarrierStepNorm = cappedStep.norm();
+    evaluation.rows.reserve(static_cast<std::size_t>(N));
+    for (int i = 0; i < N; ++i) {
+        const int eRow = N + i;
+        const int hRow = 2 * N + i;
+        const Real eDiag = J.coeff(eRow, eRow);
+        const Real hDiag = J.coeff(hRow, hRow);
+        NewtonCarrierRowDiagnostic row;
+        row.nodeId = static_cast<Index>(i);
+        row.electronResidual = raw(eRow);
+        row.holeResidual = raw(hRow);
+        row.electronDiagonal = eDiag;
+        row.holeDiagonal = hDiag;
+        row.electronRowAbsSum = electronRowAbs[static_cast<std::size_t>(i)];
+        row.holeRowAbsSum = holeRowAbs[static_cast<std::size_t>(i)];
+        row.electronOffdiagAbsSum = row.electronRowAbsSum - std::abs(eDiag);
+        row.holeOffdiagAbsSum = row.holeRowAbsSum - std::abs(hDiag);
+        row.electronRowL2Norm =
+            std::sqrt(electronRowL2Sq[static_cast<std::size_t>(i)]);
+        row.holeRowL2Norm =
+            std::sqrt(holeRowL2Sq[static_cast<std::size_t>(i)]);
+        row.rawDeltaPhin_V = rawStep(N + i) * potentialScale;
+        row.rawDeltaPhip_V = rawStep(2 * N + i) * potentialScale;
+        row.cappedDeltaPhin_V = cappedStep(N + i) * potentialScale;
+        row.cappedDeltaPhip_V = cappedStep(2 * N + i) * potentialScale;
+        evaluation.rows.push_back(row);
+    }
+    return evaluation;
+}
+
+NewtonCarrierTermDiagnosticsEvaluation NewtonSolver::evaluateCarrierTermDiagnostics(
+    const DDSolution& state) const
+{
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    const DDScalingSpec scaling = buildScalingSpec();
+    CoupledDDAssembler assembler(
+        mesh_,
+        matdb_,
+        doping_,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        cfg_.bandgapNarrowing,
+        cfg_.impactIonization,
+        fixedCharges_,
+        sheetCharges_,
+        scaling);
+    const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const VectorXd x = assembler.pack({
+        state.psi / potentialScale,
+        state.phin / potentialScale,
+        state.phip / potentialScale});
+    const VectorXd raw = assembler.residual(x, bcs);
+
+    NewtonCarrierTermDiagnosticsEvaluation evaluation;
+    evaluation.residual.raw = raw;
+    evaluation.residual.blockNorms = blockResidualInfo(raw, mesh_.numNodes());
+    evaluation.residual.intrinsicDensity = assembler.intrinsicDensity();
+    evaluation.residual.scaledState = assembler.usesScaledState();
+    evaluation.residual.potentialScale = potentialScale;
+    evaluation.rows = assembler.carrierContinuityTermDiagnostics(x, bcs);
+    return evaluation;
+}
+
 NewtonResult NewtonSolver::solve() const
 {
     const double Vt = thermalVoltage(cfg_.temperature_K);
@@ -962,9 +1518,10 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     int acceptedIters = 0;
 
     for (int iter = 1; iter <= cfg_.maxIter; ++iter) {
-        const SparseMatrixd J = (cfg_.jacobian == "finite_difference")
+        SparseMatrixd J = (cfg_.jacobian == "finite_difference")
             ? assembler.finiteDifferenceJacobian(x, bcs, cfg_.finiteDifferenceStep)
             : assembler.assembleJacobian(x, bcs);
+        addCarrierRowRegularization(J, N, cfg_.carrierRegularizationScale);
         VectorXd step;
         try {
             step = linearSolver.solve(J, -r);
@@ -997,6 +1554,15 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             const Real maxAbsStep = step.cwiseAbs().maxCoeff();
             if (maxAbsStep > cfg_.maxUpdate)
                 step *= cfg_.maxUpdate / maxAbsStep;
+        }
+        if (cfg_.quasiFermiUpdateLimit_V > 0.0) {
+            const Real qfLimit = cfg_.quasiFermiUpdateLimit_V / potentialScale;
+            for (int i = N; i < 3 * N; ++i) {
+                if (step(i) > qfLimit)
+                    step(i) = qfLimit;
+                else if (step(i) < -qfLimit)
+                    step(i) = -qfLimit;
+            }
         }
         const Real stepNorm = step.norm();
 

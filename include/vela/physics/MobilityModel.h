@@ -63,8 +63,10 @@ struct MobilityModelConfig {
         0.14170, 0.00522, 0.00522, 0.00434, 0.0, 9.68e22, 3.43e26, 0.68, 2.0};
     MasettiParameters holeMasetti{
         0.04705, 0.00449, 0.0, 0.00290, 9.23e22, 2.23e23, 6.10e26, 0.719, 2.0};
-    FieldMobilityParameters electronField{};
-    FieldMobilityParameters holeField{};
+    // Sentaurus 2018 Silicon HighFieldDependence defaults from sdevice -P:
+    // vsat0 = 1.07e7, 8.37e6 cm/s and beta0 = 1.109, 1.213 at 300 K.
+    FieldMobilityParameters electronField{1.07e5, 1.109};
+    FieldMobilityParameters holeField{8.37e4, 1.213};
     SurfaceMobilityParameters surface{};
 };
 

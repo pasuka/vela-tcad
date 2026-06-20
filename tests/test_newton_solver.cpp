@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_map>
@@ -203,6 +204,61 @@ TEST_CASE("NewtonSolver: high-doping unit-scaled PN cold start reaches near-zero
     ContactCurrent current(mesh, matdb, doping, cfg.mobility, cfg.temperature_K);
     const ContactCurrentResult anode = current.compute(result.solution, "anode");
     REQUIRE(std::abs(anode.totalCurrent) < 1.0e-9);
+}
+
+TEST_CASE("ContactCurrent: preserved edge hole QF drop changes reporting only",
+          "[contact_current][qf_floor]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, {
+        {"n_region", 1.0e23, 0.0},
+        {"p_region", 0.0, 1.0e23},
+    });
+
+    DDSolution solution;
+    const int N = static_cast<int>(mesh.numNodes());
+    solution.psi = VectorXd::Constant(N, -13.2);
+    solution.phin = VectorXd::Constant(N, -12.8);
+    solution.phip = VectorXd::Constant(N, -12.8);
+    solution.n = VectorXd::Constant(N, 1.0e10);
+    solution.p = VectorXd::Constant(N, 1.0e23);
+
+    MobilityModelConfig mobility = mobilityModelConfig("masetti_field");
+    mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+    ContactCurrent current(mesh, matdb, doping, mobility, 300.0);
+
+    const ContactCurrentDetailedResult baseline =
+        current.computeDetailed(solution, "anode");
+    REQUIRE(std::abs(baseline.totals.holeCurrent) < 1.0e-30);
+
+    REQUIRE_FALSE(baseline.edges.empty());
+    const Index edgeId = baseline.edges.front().edgeId;
+    ContactCurrentEdgeOverrides overrides;
+    const Real ulpAtBias = std::abs(std::nextafter(-12.8, -std::numeric_limits<Real>::infinity()) + 12.8);
+    overrides.holeQuasiFermiDropByEdge[edgeId] = -5.0 * ulpAtBias;
+
+    const ContactCurrentDetailedResult reported =
+        current.computeDetailed(solution, "anode", overrides);
+
+    REQUIRE(reported.totals.electronCurrent ==
+            Catch::Approx(baseline.totals.electronCurrent));
+    REQUIRE(std::abs(reported.totals.holeCurrent) > 1.0e-30);
+    REQUIRE(reported.totals.totalCurrent ==
+            Catch::Approx(reported.totals.electronCurrent - reported.totals.holeCurrent));
+    REQUIRE(reported.totals.totalCurrent !=
+            Catch::Approx(baseline.totals.totalCurrent));
+
+    const auto changed = std::find_if(
+        reported.edges.begin(),
+        reported.edges.end(),
+        [edgeId](const ContactCurrentEdgeDiagnostic& edge) {
+            return edge.edgeId == edgeId;
+        });
+    REQUIRE(changed != reported.edges.end());
+    REQUIRE(changed->holeQfDropOverrideApplied);
+    REQUIRE(changed->phip1 - changed->phip0 ==
+            Catch::Approx(-5.0 * ulpAtBias));
 }
 
 TEST_CASE("NewtonSolver: Gummel initial guess reduces Newton iterations", "[newton]")
@@ -417,6 +473,58 @@ TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences with
     REQUIRE(rel < 1.0e-4);
 }
 
+TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences at BV absolute potential scale",
+          "[newton][coupled][bgn][bv]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, {
+        {"n_region", 1.0e24, 0.0},
+        {"p_region", 0.0, 1.0e21},
+    });
+
+    CoupledDDAssembler assembler(
+        mesh,
+        matdb,
+        doping,
+        constants::Vt_300,
+        MobilityModelConfig{},
+        recombinationModelConfig({"none"}),
+        bandgapNarrowingConfig("slotboom"));
+
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi.resize(N);
+    state.phin.resize(N);
+    state.phip.resize(N);
+    state.psi << -13.20365, -13.20340, -13.20315, -13.20390, -13.20355;
+    state.phin << -12.79890, -12.79930, -12.79970, -12.80010, -12.79910;
+    state.phip << -12.80020, -12.79980, -12.79940, -12.80000, -12.79960;
+    const VectorXd x = assembler.pack(state);
+
+    CoupledDDBoundaryConditions bcs;
+    bcs.psi[0] = state.psi(0);
+    bcs.phin[0] = state.phin(0);
+    bcs.phip[0] = state.phip(0);
+    bcs.psi[1] = state.psi(1);
+    bcs.phin[1] = state.phin(1);
+    bcs.phip[1] = state.phip(1);
+    bcs.psi[2] = state.psi(2);
+    bcs.phin[2] = state.phin(2);
+    bcs.phip[2] = state.phip(2);
+    bcs.psi[3] = state.psi(3);
+    bcs.phin[3] = state.phin(3);
+    bcs.phip[3] = state.phip(3);
+
+    const SparseMatrixd Ja = assembler.assembleJacobian(x, bcs);
+    const SparseMatrixd Jfd = assembler.finiteDifferenceJacobian(x, bcs, 1.0e-8);
+    const Eigen::MatrixXd diff = Eigen::MatrixXd(Ja - Jfd);
+    const Eigen::MatrixXd ref = Eigen::MatrixXd(Jfd);
+    const Real rel = diff.norm() / std::max<Real>(1.0, ref.norm());
+
+    REQUIRE(rel < 1.0e-5);
+}
+
 TEST_CASE("CoupledDDAssembler: Slotboom BGN uses total impurity at compensated nodes",
           "[newton][coupled][bgn][doping]")
 {
@@ -507,11 +615,270 @@ TEST_CASE("CoupledDDAssembler: scaled state residual and Jacobian are consistent
     REQUIRE(rel < 1.0e-8);
 }
 
+TEST_CASE("NewtonSolver: evaluateStep reports one physical Newton correction", "[newton][diagnostics]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.1},
+        {"cathode", 0.0},
+    };
+
+    NewtonConfig cfg;
+    cfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    cfg.recombination = {"none"};
+    cfg.warmStart = true;
+
+    DDSolution state;
+    const int N = static_cast<int>(mesh.numNodes());
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.02);
+    state.phin = VectorXd::Constant(N, -0.01);
+    state.phip = VectorXd::Constant(N, 0.01);
+
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const NewtonStepEvaluation step = solver.evaluateStep(state);
+
+    REQUIRE(step.residual.raw.size() == 3 * N);
+    REQUIRE(step.deltaPsi.size() == N);
+    REQUIRE(step.deltaPhin.size() == N);
+    REQUIRE(step.deltaPhip.size() == N);
+    REQUIRE(step.trialSolution.psi.size() == N);
+    REQUIRE(step.stepNorm > 0.0);
+    REQUIRE(step.rawStepNorm > 0.0);
+    REQUIRE(step.trialSolution.psi(0) ==
+            Catch::Approx(state.psi(0) + step.deltaPsi(0)));
+    REQUIRE(step.trialSolution.phin(1) ==
+            Catch::Approx(state.phin(1) + step.deltaPhin(1)));
+    REQUIRE(step.trialSolution.phip(2) ==
+            Catch::Approx(state.phip(2) + step.deltaPhip(2)));
+    REQUIRE(step.trialResidual.blockNorms.combined < step.residual.blockNorms.combined);
+}
+
+TEST_CASE("NewtonSolver: evaluateDirectionalDerivative compares analytic and finite-difference Jv",
+          "[newton][diagnostics]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.1},
+        {"cathode", 0.0},
+    };
+
+    NewtonConfig cfg;
+    cfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    cfg.recombination = {"none"};
+    cfg.warmStart = true;
+
+    DDSolution state;
+    const int N = static_cast<int>(mesh.numNodes());
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.02);
+    state.phin = VectorXd::Constant(N, -0.01);
+    state.phip = VectorXd::Constant(N, 0.01);
+
+    DDSolution perturbation;
+    perturbation.psi = VectorXd::Zero(N);
+    perturbation.phin = VectorXd::Zero(N);
+    perturbation.phip = VectorXd::Zero(N);
+    perturbation.psi(4) = 0.5e-6;
+    perturbation.phin(4) = -0.5e-6;
+
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const NewtonDirectionalDerivativeEvaluation jvp =
+        solver.evaluateDirectionalDerivative(state, perturbation);
+
+    REQUIRE(jvp.residual.raw.size() == 3 * N);
+    REQUIRE(jvp.analyticJv.size() == 3 * N);
+    REQUIRE(jvp.finiteDifferenceJv.size() == 3 * N);
+    REQUIRE(jvp.perturbationPsi.size() == N);
+    REQUIRE(jvp.perturbationPhin.size() == N);
+    REQUIRE(jvp.perturbationPhip.size() == N);
+    REQUIRE(jvp.analyticJv.norm() > 0.0);
+    REQUIRE(jvp.finiteDifferenceJv.norm() > 0.0);
+    REQUIRE(jvp.relativeError < 1.0e-6);
+    REQUIRE(jvp.perturbationPsi(4) == Catch::Approx(0.5e-6));
+    REQUIRE(jvp.perturbationPhin(4) == Catch::Approx(-0.5e-6));
+}
+
+TEST_CASE("NewtonSolver: evaluateBlockStep freezes complementary unknown blocks",
+          "[newton][diagnostics]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.1},
+        {"cathode", 0.0},
+    };
+
+    NewtonConfig cfg;
+    cfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    cfg.recombination = {"none"};
+    cfg.warmStart = true;
+
+    DDSolution state;
+    const int N = static_cast<int>(mesh.numNodes());
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.02);
+    state.phin = VectorXd::Constant(N, -0.01);
+    state.phip = VectorXd::Constant(N, 0.01);
+
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const NewtonBlockStepEvaluation poisson =
+        solver.evaluateBlockStep(state, "poisson_only");
+    const NewtonBlockStepEvaluation carriers =
+        solver.evaluateBlockStep(state, "carrier_only");
+
+    REQUIRE(poisson.mode == "poisson_only");
+    REQUIRE(carriers.mode == "carrier_only");
+    REQUIRE(poisson.residual.raw.size() == 3 * N);
+    REQUIRE(carriers.residual.raw.size() == 3 * N);
+    REQUIRE(poisson.deltaPsi.size() == N);
+    REQUIRE(carriers.deltaPhin.size() == N);
+    REQUIRE(poisson.deltaPsi.norm() > 0.0);
+    REQUIRE(poisson.deltaPhin.norm() == Catch::Approx(0.0));
+    REQUIRE(poisson.deltaPhip.norm() == Catch::Approx(0.0));
+    REQUIRE(carriers.deltaPsi.norm() == Catch::Approx(0.0));
+    REQUIRE(carriers.deltaPhin.norm() + carriers.deltaPhip.norm() > 0.0);
+    REQUIRE(poisson.trialSolution.psi(0) ==
+            Catch::Approx(state.psi(0) + poisson.deltaPsi(0)));
+    REQUIRE(carriers.trialSolution.phin(1) ==
+            Catch::Approx(state.phin(1) + carriers.deltaPhin(1)));
+}
+
+TEST_CASE("NewtonSolver: evaluateRegularizedCarrierStep damps carrier-only correction",
+          "[newton][diagnostics]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.1},
+        {"cathode", 0.0},
+    };
+
+    NewtonConfig cfg;
+    cfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    cfg.recombination = {"none"};
+    cfg.warmStart = true;
+    cfg.maxUpdate = 0.0;
+
+    DDSolution state;
+    const int N = static_cast<int>(mesh.numNodes());
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.02);
+    state.phin = VectorXd::Constant(N, -0.01);
+    state.phip = VectorXd::Constant(N, 0.01);
+
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const NewtonBlockStepEvaluation baseline =
+        solver.evaluateBlockStep(state, "carrier_only");
+    const NewtonRegularizedCarrierStepEvaluation zero =
+        solver.evaluateRegularizedCarrierStep(state, 0.0);
+    const NewtonRegularizedCarrierStepEvaluation damped =
+        solver.evaluateRegularizedCarrierStep(state, 10.0);
+
+    REQUIRE(zero.regularizationScale == Catch::Approx(0.0));
+    REQUIRE(damped.regularizationScale == Catch::Approx(10.0));
+    REQUIRE(zero.deltaPsi.norm() == Catch::Approx(0.0));
+    REQUIRE(damped.deltaPsi.norm() == Catch::Approx(0.0));
+    REQUIRE((zero.deltaPhin - baseline.deltaPhin).norm() ==
+            Catch::Approx(0.0).margin(1.0e-12));
+    REQUIRE((zero.deltaPhip - baseline.deltaPhip).norm() ==
+            Catch::Approx(0.0).margin(1.0e-12));
+    REQUIRE(damped.rawStepNorm < baseline.rawStepNorm);
+}
+
+TEST_CASE("NewtonSolver: evaluateCarrierRowDiagnostics reports carrier row stiffness",
+          "[newton][diagnostics]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.1},
+        {"cathode", 0.0},
+    };
+
+    NewtonConfig cfg;
+    cfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    cfg.recombination = {"none"};
+    cfg.warmStart = true;
+    cfg.maxUpdate = 1.0;
+
+    DDSolution state;
+    const int N = static_cast<int>(mesh.numNodes());
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.02);
+    state.phin = VectorXd::Constant(N, -0.01);
+    state.phip = VectorXd::Constant(N, 0.01);
+
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const NewtonCarrierRowDiagnosticsEvaluation rows =
+        solver.evaluateCarrierRowDiagnostics(state);
+
+    REQUIRE(rows.rows.size() == static_cast<std::size_t>(N));
+    REQUIRE(rows.rawCarrierStepNorm > 0.0);
+    REQUIRE(rows.cappedCarrierStepNorm > 0.0);
+    REQUIRE(rows.rows[0].nodeId == 0);
+    REQUIRE(rows.rows[0].electronRowAbsSum >= std::abs(rows.rows[0].electronDiagonal));
+    REQUIRE(rows.rows[0].holeRowAbsSum >= std::abs(rows.rows[0].holeDiagonal));
+    REQUIRE(rows.rows[0].electronRowL2Norm >= 0.0);
+    REQUIRE(rows.rows[0].holeRowL2Norm >= 0.0);
+    REQUIRE(rows.rows[0].rawDeltaPhin_V != Catch::Approx(0.0));
+    REQUIRE(std::abs(rows.rows[0].cappedDeltaPhin_V) <=
+            cfg.maxUpdate * rows.potentialScale + 1.0e-12);
+}
+
+TEST_CASE("NewtonSolver: evaluateCarrierTermDiagnostics decomposes continuity residual",
+          "[newton][diagnostics]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.1},
+        {"cathode", 0.0},
+    };
+
+    NewtonConfig cfg;
+    cfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    cfg.recombination = {"srh"};
+    cfg.warmStart = true;
+
+    DDSolution state;
+    const int N = static_cast<int>(mesh.numNodes());
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.02);
+    state.phin = VectorXd::Constant(N, -0.01);
+    state.phip = VectorXd::Constant(N, 0.01);
+
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const NewtonCarrierTermDiagnosticsEvaluation terms =
+        solver.evaluateCarrierTermDiagnostics(state);
+
+    REQUIRE(terms.rows.size() == static_cast<std::size_t>(N));
+    const auto& center = terms.rows[4];
+    REQUIRE(center.nodeId == 4);
+    REQUIRE(center.electronBoundary == Catch::Approx(0.0));
+    const Real electronSum = center.electronFlux
+        + center.electronRecombination
+        + center.electronImpact
+        + center.electronGauge
+        + center.electronBoundary;
+    const Real holeSum = center.holeFlux
+        + center.holeRecombination
+        + center.holeImpact
+        + center.holeGauge
+        + center.holeBoundary;
+    REQUIRE(electronSum == Catch::Approx(center.electronResidual).margin(1.0e-18));
+    REQUIRE(holeSum == Catch::Approx(center.holeResidual).margin(1.0e-18));
+}
+
 TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
 {
     const NewtonConfig cfg;
     REQUIRE(cfg.jacobian == "analytic");
     REQUIRE_FALSE(cfg.warmStart);
+    REQUIRE(cfg.quasiFermiUpdateLimit_V == Catch::Approx(0.0));
+    REQUIRE(cfg.carrierRegularizationScale == Catch::Approx(0.0));
     REQUIRE(cfg.contactBoundaryReconstruction == "dominant_signed_contact_mean");
         REQUIRE(cfg.contactBoundaryMinorityElectronRelaxation);
         REQUIRE(cfg.contactBoundaryMinorityElectronRelaxationBiasThreshold_V ==
@@ -522,10 +889,14 @@ TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
     const NewtonConfig debugCfg = newtonConfigFromJson(nlohmann::json{
         {"jacobian", "finite_difference"},
         {"warm_start", true},
+        {"quasi_fermi_update_limit_V", 0.0259},
+        {"carrier_regularization_scale", 3.0},
         {"contact_boundary_reconstruction", "legacy_node_local"},
     });
     REQUIRE(debugCfg.jacobian == "finite_difference");
     REQUIRE(debugCfg.warmStart);
+    REQUIRE(debugCfg.quasiFermiUpdateLimit_V == Catch::Approx(0.0259));
+    REQUIRE(debugCfg.carrierRegularizationScale == Catch::Approx(3.0));
     REQUIRE(debugCfg.contactBoundaryReconstruction == "legacy_node_local");
 }
 
@@ -732,6 +1103,18 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
         newtonConfigFromJson(nlohmann::json{{"max_update", -1.0}}),
         std::invalid_argument);
     REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{"quasi_fermi_update_limit_V", -1.0}}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{"carrier_regularization_scale", -1.0}}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{
+            "quasi_fermi_update_limit_V",
+            std::numeric_limits<Real>::infinity()
+        }}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
         newtonConfigFromJson(nlohmann::json{
             {"contact_boundary_minority_electron_relaxation_bias_threshold_V", -1.0}
         }),
@@ -839,6 +1222,53 @@ TEST_CASE("NewtonSolver: line search rejection returns last accepted state", "[n
     REQUIRE((result.solution.phip - initial.phip).norm() == Catch::Approx(0.0));
 }
 
+TEST_CASE("NewtonSolver: carrier regularization damps coupled Newton carrier mode",
+          "[newton][line_search][regularization]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.05},
+        {"cathode", 0.0},
+    };
+
+    NewtonConfig seedCfg = newtonConfig();
+    seedCfg.maxIter = 0;
+    seedCfg.reltol = 0.0;
+    seedCfg.abstol = 0.0;
+    seedCfg.warmStart = true;
+    DDSolution initial = runNewton(mesh, matdb, doping, biases, seedCfg).solution;
+    const int interiorNode = 4;
+    initial.phin(interiorNode) = 0.18;
+    initial.phip(interiorNode) = -0.16;
+
+    NewtonConfig baselineCfg = newtonConfig();
+    baselineCfg.maxIter = 1;
+    baselineCfg.reltol = 0.0;
+    baselineCfg.abstol = 0.0;
+    baselineCfg.lineSearch = false;
+    baselineCfg.warmStart = true;
+
+    NewtonConfig regularizedCfg = baselineCfg;
+    regularizedCfg.carrierRegularizationScale = 10.0;
+
+    const NewtonResult baseline = runNewton(
+        mesh, matdb, doping, biases, initial, baselineCfg);
+    const NewtonResult regularized = runNewton(
+        mesh, matdb, doping, biases, initial, regularizedCfg);
+
+    REQUIRE(baseline.iters == 1);
+    REQUIRE(regularized.iters == 1);
+    REQUIRE_FALSE(baseline.history.empty());
+    REQUIRE_FALSE(regularized.history.empty());
+
+    REQUIRE(regularized.history.front().rawStepNorm < baseline.history.front().rawStepNorm);
+    REQUIRE((regularized.solution.psi - initial.psi).norm() > 0.0);
+    REQUIRE((regularized.solution.phin - initial.phin).norm() <
+            (baseline.solution.phin - initial.phin).norm());
+}
+
 TEST_CASE("NewtonSolver: max_update limits a large Newton step before line search",
           "[newton][line_search]")
 {
@@ -862,6 +1292,73 @@ TEST_CASE("NewtonSolver: max_update limits a large Newton step before line searc
     REQUIRE(result.history.front().rawStepNorm == Catch::Approx(result.history.front().stepNorm));
     REQUIRE(result.history.front().stepNorm <=
             std::sqrt(static_cast<Real>(3 * mesh.numNodes())) * cfg.maxUpdate);
+}
+
+TEST_CASE("NewtonSolver: quasi-Fermi update limit clamps only carrier potentials in unit_scaling",
+          "[newton][line_search][scaling]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.05},
+        {"cathode", 0.0},
+    };
+
+    NewtonConfig seedCfg = newtonConfig();
+    seedCfg.maxIter = 0;
+    seedCfg.reltol = 0.0;
+    seedCfg.abstol = 0.0;
+    seedCfg.warmStart = true;
+    seedCfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    DDSolution initial = runNewton(mesh, matdb, doping, biases, seedCfg).solution;
+    const int interiorNode = 4;
+    initial.phin(interiorNode) = 0.18;
+    initial.phip(interiorNode) = -0.16;
+
+    NewtonConfig unclampedCfg = newtonConfig();
+    unclampedCfg.maxIter = 1;
+    unclampedCfg.reltol = 0.0;
+    unclampedCfg.abstol = 0.0;
+    unclampedCfg.dampingFactor = 1.0;
+    unclampedCfg.lineSearch = false;
+    unclampedCfg.warmStart = true;
+    unclampedCfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+
+    NewtonConfig clampedCfg = unclampedCfg;
+    clampedCfg.quasiFermiUpdateLimit_V = 0.01;
+
+    const NewtonResult unclamped = runNewton(
+        mesh, matdb, doping, biases, initial, unclampedCfg);
+    const NewtonResult clamped = runNewton(
+        mesh, matdb, doping, biases, initial, clampedCfg);
+
+    REQUIRE(unclamped.iters == 1);
+    REQUIRE(clamped.iters == 1);
+
+    const VectorXd unclampedPsiDelta = unclamped.solution.psi - initial.psi;
+    const VectorXd clampedPsiDelta = clamped.solution.psi - initial.psi;
+    const VectorXd unclampedPhinDelta = unclamped.solution.phin - initial.phin;
+    const VectorXd unclampedPhipDelta = unclamped.solution.phip - initial.phip;
+    const VectorXd clampedPhinDelta = clamped.solution.phin - initial.phin;
+    const VectorXd clampedPhipDelta = clamped.solution.phip - initial.phip;
+
+    const Real limit = clampedCfg.quasiFermiUpdateLimit_V;
+    const Real maxUnclampedQfDelta = std::max(
+        unclampedPhinDelta.cwiseAbs().maxCoeff(),
+        unclampedPhipDelta.cwiseAbs().maxCoeff());
+
+    REQUIRE(maxUnclampedQfDelta > limit);
+    REQUIRE((clampedPsiDelta - unclampedPsiDelta).norm() ==
+            Catch::Approx(0.0).margin(1.0e-12));
+    REQUIRE(clampedPhinDelta.cwiseAbs().maxCoeff() <= limit + 1.0e-12);
+    REQUIRE(clampedPhipDelta.cwiseAbs().maxCoeff() <= limit + 1.0e-12);
+    REQUIRE(clampedPhinDelta(interiorNode) ==
+            Catch::Approx((unclampedPhinDelta(interiorNode) > 0.0 ? 1.0 : -1.0) * limit)
+                .margin(1.0e-12));
+    REQUIRE(clampedPhipDelta(interiorNode) ==
+            Catch::Approx((unclampedPhipDelta(interiorNode) > 0.0 ? 1.0 : -1.0) * limit)
+                .margin(1.0e-12));
 }
 
 TEST_CASE("NewtonSolver: optionally records line-search diagnostics in history", "[newton][diagnostics]")

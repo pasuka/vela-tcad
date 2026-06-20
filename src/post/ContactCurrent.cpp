@@ -51,9 +51,26 @@ ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
     return computeDetailed(solution, contactName).totals;
 }
 
+ContactCurrentResult ContactCurrent::compute(
+    const DDSolution& solution,
+    const std::string& contactName,
+    const ContactCurrentEdgeOverrides& overrides) const
+{
+    return computeDetailed(solution, contactName, overrides).totals;
+}
+
 ContactCurrentDetailedResult ContactCurrent::computeDetailed(
     const DDSolution& solution,
     const std::string& contactName) const
+{
+    static const ContactCurrentEdgeOverrides noOverrides;
+    return computeDetailed(solution, contactName, noOverrides);
+}
+
+ContactCurrentDetailedResult ContactCurrent::computeDetailed(
+    const DDSolution& solution,
+    const std::string& contactName,
+    const ContactCurrentEdgeOverrides& overrides) const
 {
     const Contact* contact = nullptr;
     for (const Contact& candidate : mesh_.contacts()) {
@@ -99,6 +116,15 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         const Real phin_j = solution.phin(j);
         const Real phip_i = solution.phip(i);
         const Real phip_j = solution.phip(j);
+        Real phip_i_forHole = phip_i;
+        Real phip_j_forHole = phip_j;
+        bool holeQfDropOverrideApplied = false;
+        const auto holeDropIt = overrides.holeQuasiFermiDropByEdge.find(e);
+        if (holeDropIt != overrides.holeQuasiFermiDropByEdge.end()
+            && std::isfinite(holeDropIt->second)) {
+            phip_j_forHole = phip_i_forHole + holeDropIt->second;
+            holeQfDropOverrideApplied = true;
+        }
         const Real electronMobilityField =
             mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient"
             ? std::abs((phin_j - phin_i) / edgeLength)
@@ -142,7 +168,9 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         if (mup > 0.0) {
             const Real coef = mup * thermalVoltage_ / edgeLength;
             holeContinuityFlux01 = sgHoleContinuityFluxFromQuasiFermiVariableNi(
-                ni_i, ni_j, psi_i, psi_j, phip_i, phip_j, thermalVoltage_, coef);
+                ni_i, ni_j, psi_i, psi_j,
+                phip_i_forHole, phip_j_forHole,
+                thermalVoltage_, coef);
             holeFlux01 = -holeContinuityFlux01;
         }
 
@@ -194,8 +222,9 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         edgeDiag.psi1 = psi_j;
         edgeDiag.phin0 = phin_i;
         edgeDiag.phin1 = phin_j;
-        edgeDiag.phip0 = phip_i;
-        edgeDiag.phip1 = phip_j;
+        edgeDiag.phip0 = phip_i_forHole;
+        edgeDiag.phip1 = phip_j_forHole;
+        edgeDiag.holeQfDropOverrideApplied = holeQfDropOverrideApplied;
         edgeDiag.n0 = n_i;
         edgeDiag.n1 = n_j;
         edgeDiag.p0 = p_i;

@@ -530,6 +530,12 @@ struct SgEdgeCurrentAvalancheSourceRecord {
     Real node1SourceIntegral = 0.0;
 };
 
+struct SgAvalancheSourceComponentIntegrals {
+    std::vector<Real> electron;
+    std::vector<Real> hole;
+    std::vector<Real> combined;
+};
+
 inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSourceRecords(
     const ImpactIonizationModelConfig& config,
     const ImpactIonizationModel&       impact,
@@ -582,7 +588,7 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
         const Real holeImpactField = holeAvalancheDrivingField(
             config, holeCoefficientField, electricField, pAvg);
 
-        const Real edgeArea = 0.5 * h * edge.couple;
+        const Real edgeArea = 0.5 * h * edge.couple * config.sourceGeometryScale;
         SgEdgeCurrentAvalancheSourceRecord record;
         record.edgeId = e;
         record.node0 = edge.n0;
@@ -644,6 +650,56 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
         records.push_back(record);
     }
     return records;
+}
+
+inline SgAvalancheSourceComponentIntegrals sgEdgeCurrentAvalancheSourceComponentIntegrals(
+    const ImpactIonizationModelConfig& config,
+    const ImpactIonizationModel&       impact,
+    const MobilityModelConfig&         mobilityConfig,
+    const MobilityModel&               mobility,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh&                  mesh,
+    const DopingModel&                 doping,
+    const std::vector<Material>&       cellMaterials,
+    const VectorXd&                    psi,
+    const VectorXd&                    phin,
+    const VectorXd&                    phip,
+    const VectorXd&                    n,
+    const VectorXd&                    p,
+    const std::vector<Real>&           ni,
+    Real                               Vt)
+{
+    SgAvalancheSourceComponentIntegrals source;
+    source.electron.assign(static_cast<std::size_t>(mesh.numNodes()), 0.0);
+    source.hole.assign(static_cast<std::size_t>(mesh.numNodes()), 0.0);
+    source.combined.assign(static_cast<std::size_t>(mesh.numNodes()), 0.0);
+    const auto records = sgEdgeCurrentAvalancheSourceRecords(
+        config,
+        impact,
+        mobilityConfig,
+        mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        psi,
+        phin,
+        phip,
+        n,
+        p,
+        ni,
+        Vt);
+    for (const auto& record : records) {
+        const Real halfElectron = 0.5 * record.electronSourceIntegral;
+        const Real halfHole = 0.5 * record.holeSourceIntegral;
+        source.electron[record.node0] += halfElectron;
+        source.electron[record.node1] += halfElectron;
+        source.hole[record.node0] += halfHole;
+        source.hole[record.node1] += halfHole;
+        source.combined[record.node0] += record.node0SourceIntegral;
+        source.combined[record.node1] += record.node1SourceIntegral;
+    }
+    return source;
 }
 
 inline std::vector<Real> sgEdgeCurrentAvalancheSourceIntegrals(

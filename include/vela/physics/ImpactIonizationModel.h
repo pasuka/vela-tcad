@@ -14,6 +14,7 @@ struct ImpactIonizationModelConfig {
     std::string drivingForceInterpolation = "none";
     Real electronDrivingForceRefDensity = 0.0; ///< RefDens_eGradQuasiFermi_ElectricField_Aval equivalent [1/m^3]
     Real holeDrivingForceRefDensity = 0.0; ///< RefDens_hGradQuasiFermi_ElectricField_Aval equivalent [1/m^3]
+    Real sourceGeometryScale = 1.0; ///< Diagnostic scale for SG edge-current source geometry.
     Real electronA = 7.03e7; ///< Selberherr electron prefactor [1/m]
     Real electronB = 1.231e8; ///< Selberherr electron critical field [V/m]
     Real holeA = 1.582e8; ///< Selberherr hole prefactor [1/m]
