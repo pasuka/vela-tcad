@@ -7,6 +7,7 @@ import argparse
 import csv
 import json
 import math
+import re
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--restart-name", default="restart_from_vtk.csv")
     parser.add_argument("--config-name", default="simulation.json")
     parser.add_argument("--vtk-prefix-name", default="focused_restart")
+    # On Python < 3.13 argparse treats values like "-13.0,-13.1" as option
+    # flags because they start with "-" but are not single negative numbers.
+    # Broaden the negative-number matcher so comma-separated negative lists
+    # passed to --bias-points are accepted as values across Python versions.
+    parser._negative_number_matcher = re.compile(
+        r"^-\d+$|^-\d*\.\d+$|^-?\d[\d.eE+-]*(?:,-?\d[\d.eE+-]*)+$"
+    )
     return parser.parse_args()
 
 

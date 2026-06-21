@@ -7,6 +7,7 @@ import argparse
 import csv
 import json
 import math
+import re
 import statistics
 import subprocess
 import sys
@@ -122,6 +123,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--skip-run", action="store_true")
+    # On Python < 3.13 argparse treats values like "-1,-2" as option flags
+    # because they start with "-" but are not single negative numbers.
+    # Broaden the negative-number matcher so comma-separated negative lists
+    # passed to --biases are accepted as values across Python versions.
+    parser._negative_number_matcher = re.compile(
+        r"^-\d+$|^-\d*\.\d+$|^-?\d[\d.eE+-]*(?:,-?\d[\d.eE+-]*)+$"
+    )
     return parser.parse_args()
 
 
