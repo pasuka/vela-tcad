@@ -217,6 +217,14 @@ struct NewtonCarrierTermDiagnosticsEvaluation {
     std::vector<CoupledDDCarrierTermDiagnostic> rows;
 };
 
+struct NewtonJacobianBlockAuditRow {
+    std::string block;
+    Real analyticNorm = 0.0;
+    Real fdNorm = 0.0;
+    Real diffNorm = 0.0;
+    Real relDiff = 0.0;
+};
+
 class NewtonSolver {
 public:
     NewtonSolver(const DeviceMesh& mesh,
@@ -244,6 +252,9 @@ public:
         const DDSolution& state) const;
     NewtonCarrierTermDiagnosticsEvaluation evaluateCarrierTermDiagnostics(
         const DDSolution& state) const;
+    std::vector<NewtonJacobianBlockAuditRow> evaluateJacobianBlockAudit(
+        const DDSolution& state,
+        Real finiteDifferenceStep = 1.0e-7) const;
     std::vector<CoupledDDEdgeFluxDiagnostic> evaluateSgEdgeFluxDiagnostics(
         const DDSolution& state) const;
 

@@ -247,6 +247,76 @@ NewtonBlockResidualInfo blockResidualInfo(const VectorXd& residual, Index nodeCo
     return {blocks.psi, blocks.phin, blocks.phip, blocks.combined};
 }
 
+std::vector<int> jacobianAuditRows(const std::string& block,
+                                   int nodeCount,
+                                   const CoupledDDBoundaryConditions& bcs = {})
+{
+    std::vector<int> rows;
+    if (block == "poisson") {
+        for (int i = 0; i < nodeCount; ++i)
+            rows.push_back(i);
+    } else if (block == "transport" ||
+               block == "srh_auger" ||
+               block == "sg_avalanche") {
+        for (int i = nodeCount; i < 3 * nodeCount; ++i)
+            rows.push_back(i);
+    } else if (block == "dirichlet_or_gauge") {
+        for (const auto& [node, value] : bcs.psi) {
+            (void)value;
+            if (node < static_cast<Index>(nodeCount))
+                rows.push_back(static_cast<int>(node));
+        }
+        for (const auto& [node, value] : bcs.phin) {
+            (void)value;
+            if (node < static_cast<Index>(nodeCount))
+                rows.push_back(nodeCount + static_cast<int>(node));
+        }
+        for (const auto& [node, value] : bcs.phip) {
+            (void)value;
+            if (node < static_cast<Index>(nodeCount))
+                rows.push_back(2 * nodeCount + static_cast<int>(node));
+        }
+    }
+    return rows;
+}
+
+Real restrictedSparseNorm(const SparseMatrixd& matrix,
+                          const std::vector<int>& rows)
+{
+    std::vector<char> rowMask(static_cast<std::size_t>(matrix.rows()), 0);
+    for (int row : rows) {
+        if (row >= 0 && row < matrix.rows())
+            rowMask[static_cast<std::size_t>(row)] = 1;
+    }
+
+    Real sum = 0.0;
+    for (int outer = 0; outer < matrix.outerSize(); ++outer) {
+        for (SparseMatrixd::InnerIterator it(matrix, outer); it; ++it) {
+            if (rowMask[static_cast<std::size_t>(it.row())]) {
+                const Real value = it.value();
+                sum += value * value;
+            }
+        }
+    }
+    return std::sqrt(sum);
+}
+
+NewtonJacobianBlockAuditRow jacobianAuditRow(
+    const std::string& block,
+    const SparseMatrixd& analytic,
+    const SparseMatrixd& fd,
+    const std::vector<int>& rows)
+{
+    const SparseMatrixd diff = analytic - fd;
+    NewtonJacobianBlockAuditRow row;
+    row.block = block;
+    row.analyticNorm = restrictedSparseNorm(analytic, rows);
+    row.fdNorm = restrictedSparseNorm(fd, rows);
+    row.diffNorm = restrictedSparseNorm(diff, rows);
+    row.relDiff = row.diffNorm / std::max<Real>(1.0, row.fdNorm);
+    return row;
+}
+
 SparseMatrixd sparseBlock(const SparseMatrixd& matrix,
                           int rowStart,
                           int colStart,
@@ -1389,6 +1459,115 @@ NewtonCarrierTermDiagnosticsEvaluation NewtonSolver::evaluateCarrierTermDiagnost
     evaluation.residual.potentialScale = potentialScale;
     evaluation.rows = assembler.carrierContinuityTermDiagnostics(x, bcs);
     return evaluation;
+}
+
+std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudit(
+    const DDSolution& state,
+    Real finiteDifferenceStep) const
+{
+    const int N = static_cast<int>(mesh_.numNodes());
+    if (state.psi.size() != N || state.phin.size() != N || state.phip.size() != N) {
+        throw std::invalid_argument(
+            "NewtonSolver::evaluateJacobianBlockAudit: state size must match the mesh node count.");
+    }
+    if (finiteDifferenceStep <= 0.0 || !std::isfinite(finiteDifferenceStep)) {
+        throw std::invalid_argument(
+            "NewtonSolver::evaluateJacobianBlockAudit: finite difference step must be positive.");
+    }
+
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
+    const DDScalingSpec scaling = buildScalingSpec();
+
+    const auto makeRecombinationConfig =
+        [&](const std::vector<std::string>& models) {
+            RecombinationModelConfig config =
+                recombinationModelConfig(models, cfg_.taun, cfg_.taup);
+            config.augerCn = cfg_.augerCn;
+            config.augerCp = cfg_.augerCp;
+            return config;
+        };
+    const RecombinationModelConfig noRecombinationConfig =
+        makeRecombinationConfig({"none"});
+    const RecombinationModelConfig recombinationConfig =
+        makeRecombinationConfig(cfg_.recombination);
+    const ImpactIonizationModelConfig noImpactConfig{};
+
+    const auto makeAssembler =
+        [&](const RecombinationModelConfig& recombination,
+            const ImpactIonizationModelConfig& impact) {
+            return CoupledDDAssembler(
+                mesh_,
+                matdb_,
+                doping_,
+                Vt,
+                mobilityConfig,
+                recombination,
+                cfg_.bandgapNarrowing,
+                impact,
+                fixedCharges_,
+                sheetCharges_,
+                scaling);
+        };
+
+    CoupledDDAssembler baseAssembler =
+        makeAssembler(noRecombinationConfig, noImpactConfig);
+    const CoupledDDBoundaryConditions bcs =
+        buildBoundaryConditions(baseAssembler);
+    const Real potentialScale =
+        baseAssembler.usesScaledState() ? baseAssembler.potentialScale() : 1.0;
+    const VectorXd x = baseAssembler.pack({
+        state.psi / potentialScale,
+        state.phin / potentialScale,
+        state.phip / potentialScale});
+
+    const auto matrixPair =
+        [&](CoupledDDAssembler& assembler) {
+            return std::pair<SparseMatrixd, SparseMatrixd>{
+                assembler.assembleJacobian(x, bcs),
+                assembler.finiteDifferenceJacobian(x, bcs, finiteDifferenceStep),
+            };
+        };
+
+    auto base = matrixPair(baseAssembler);
+    CoupledDDAssembler recombinationAssembler =
+        makeAssembler(recombinationConfig, noImpactConfig);
+    auto withRecombination = matrixPair(recombinationAssembler);
+    CoupledDDAssembler impactAssembler =
+        makeAssembler(noRecombinationConfig, cfg_.impactIonization);
+    auto withImpact = matrixPair(impactAssembler);
+    CoupledDDAssembler fullAssembler =
+        makeAssembler(recombinationConfig, cfg_.impactIonization);
+    auto full = matrixPair(fullAssembler);
+
+    std::vector<NewtonJacobianBlockAuditRow> rows;
+    rows.reserve(5);
+    rows.push_back(jacobianAuditRow(
+        "poisson",
+        base.first,
+        base.second,
+        jacobianAuditRows("poisson", N)));
+    rows.push_back(jacobianAuditRow(
+        "transport",
+        base.first,
+        base.second,
+        jacobianAuditRows("transport", N)));
+    rows.push_back(jacobianAuditRow(
+        "srh_auger",
+        withRecombination.first - base.first,
+        withRecombination.second - base.second,
+        jacobianAuditRows("srh_auger", N)));
+    rows.push_back(jacobianAuditRow(
+        "sg_avalanche",
+        withImpact.first - base.first,
+        withImpact.second - base.second,
+        jacobianAuditRows("sg_avalanche", N)));
+    rows.push_back(jacobianAuditRow(
+        "dirichlet_or_gauge",
+        full.first,
+        full.second,
+        jacobianAuditRows("dirichlet_or_gauge", N, bcs)));
+    return rows;
 }
 
 std::vector<CoupledDDEdgeFluxDiagnostic> NewtonSolver::evaluateSgEdgeFluxDiagnostics(

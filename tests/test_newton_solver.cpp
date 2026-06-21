@@ -17,6 +17,7 @@
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -699,6 +700,51 @@ TEST_CASE("NewtonSolver: evaluateDirectionalDerivative compares analytic and fin
     REQUIRE(jvp.relativeError < 1.0e-6);
     REQUIRE(jvp.perturbationPsi(4) == Catch::Approx(0.5e-6));
     REQUIRE(jvp.perturbationPhin(4) == Catch::Approx(-0.5e-6));
+}
+
+TEST_CASE("NewtonSolver: evaluateJacobianBlockAudit reports finite block rows",
+          "[newton][diagnostics][coupled]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.1},
+        {"cathode", 0.0},
+    };
+
+    NewtonConfig cfg;
+    cfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    cfg.recombination = {"srh"};
+    cfg.warmStart = true;
+    cfg.impactIonization.model = "van_overstraeten";
+    cfg.impactIonization.drivingForce = "quasi_fermi_gradient";
+    cfg.impactIonization.generation = "current_density";
+    cfg.impactIonization.currentApproximation = "density_gradient";
+
+    DDSolution state;
+    const int N = static_cast<int>(mesh.numNodes());
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.02);
+    state.phin = VectorXd::LinSpaced(N, -0.015, 0.015);
+    state.phip = VectorXd::LinSpaced(N, 0.012, -0.012);
+
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const auto rows = solver.evaluateJacobianBlockAudit(state, 1.0e-7);
+    const auto hasBlock = [&](const std::string& name) {
+        return std::any_of(rows.begin(), rows.end(), [&](const auto& row) {
+            return row.block == name &&
+                   std::isfinite(row.analyticNorm) &&
+                   std::isfinite(row.fdNorm) &&
+                   std::isfinite(row.diffNorm) &&
+                   std::isfinite(row.relDiff);
+        });
+    };
+
+    REQUIRE(hasBlock("poisson"));
+    REQUIRE(hasBlock("transport"));
+    REQUIRE(hasBlock("srh_auger"));
+    REQUIRE(hasBlock("sg_avalanche"));
+    REQUIRE(hasBlock("dirichlet_or_gauge"));
 }
 
 TEST_CASE("NewtonSolver: evaluateBlockStep freezes complementary unknown blocks",
