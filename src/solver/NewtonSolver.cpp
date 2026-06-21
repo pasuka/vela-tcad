@@ -1391,6 +1391,38 @@ NewtonCarrierTermDiagnosticsEvaluation NewtonSolver::evaluateCarrierTermDiagnost
     return evaluation;
 }
 
+std::vector<CoupledDDEdgeFluxDiagnostic> NewtonSolver::evaluateSgEdgeFluxDiagnostics(
+    const DDSolution& state) const
+{
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    const DDScalingSpec scaling = buildScalingSpec();
+    CoupledDDAssembler assembler(
+        mesh_,
+        matdb_,
+        doping_,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        cfg_.bandgapNarrowing,
+        cfg_.impactIonization,
+        fixedCharges_,
+        sheetCharges_,
+        scaling);
+    const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const VectorXd x = assembler.pack({
+        state.psi / potentialScale,
+        state.phin / potentialScale,
+        state.phip / potentialScale});
+    return assembler.sgEdgeFluxDiagnostics(x, bcs);
+}
+
 NewtonResult NewtonSolver::solve() const
 {
     const double Vt = thermalVoltage(cfg_.temperature_K);

@@ -698,6 +698,105 @@ CoupledDDAssembler::carrierContinuityTermDiagnostics(
     return terms;
 }
 
+std::vector<CoupledDDEdgeFluxDiagnostic>
+CoupledDDAssembler::sgEdgeFluxDiagnostics(
+    const VectorXd& x,
+    const CoupledDDBoundaryConditions& bcs) const
+{
+    (void)bcs;
+    const Index Nidx = mesh_.numNodes();
+    const int N = static_cast<int>(Nidx);
+    if (x.size() != 3 * N)
+        throw std::invalid_argument(
+            "CoupledDDAssembler::sgEdgeFluxDiagnostics: vector size mismatch.");
+
+    const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
+    const VectorXd psi = x.segment(psiOffset(), N) * potentialScale;
+    const bool qfMobility = mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
+    const Real continuityScale =
+        scaling_.enabled ? (scaling_.C0 * scaling_.D0) : 1.0;
+
+    std::vector<CoupledDDEdgeFluxDiagnostic> edges;
+    edges.reserve(static_cast<std::size_t>(mesh_.numEdges()));
+
+    for (Index e = 0; e < mesh_.numEdges(); ++e) {
+        const Edge& edge = mesh_.getEdge(e);
+        const Real h = edge.length;
+        if (h < 1.0e-30)
+            continue;
+
+        const int i = static_cast<int>(edge.n0);
+        const int j = static_cast<int>(edge.n1);
+        const Index idxI = static_cast<Index>(i);
+        const Index idxJ = static_cast<Index>(j);
+        const Real psi_i = x(psiOffset() + i) * potentialScale;
+        const Real psi_j = x(psiOffset() + j) * potentialScale;
+        const Real phin_i = x(phinOffset() + i) * potentialScale;
+        const Real phin_j = x(phinOffset() + j) * potentialScale;
+        const Real phip_i = x(phipOffset() + i) * potentialScale;
+        const Real phip_j = x(phipOffset() + j) * potentialScale;
+        const Real dpsi = psi_j - psi_i;
+        const Real electricField = std::abs(dpsi / h);
+        const Real electronMobilityField =
+            qfMobility ? std::abs((phin_j - phin_i) / h) : electricField;
+        const Real holeMobilityField =
+            qfMobility ? std::abs((phip_j - phip_i) / h) : electricField;
+
+        const Real mun = detail::edgeMobility(
+            edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e,
+            CarrierType::Electron, electronMobilityField, &mobilityConfig_, &psi);
+        const Real mup = detail::edgeMobility(
+            edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e,
+            CarrierType::Hole, holeMobilityField, &mobilityConfig_, &psi);
+
+        Real nFlux = 0.0;
+        if (mun > 0.0) {
+            const Real coef = mun * Vt_ * couple_[e] / h;
+            nFlux = sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                ni_[idxI], ni_[idxJ], psi_i, psi_j, phin_i, phin_j, Vt_, coef,
+                bgnEnabled_);
+        }
+        Real pFlux = 0.0;
+        if (mup > 0.0) {
+            const Real coef = mup * Vt_ * couple_[e] / h;
+            pFlux = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                ni_[idxI], ni_[idxJ], psi_i, psi_j, phip_i, phip_j, Vt_, coef,
+                bgnEnabled_);
+        }
+
+        const Node& node0 = mesh_.getNode(edge.n0);
+        const Node& node1 = mesh_.getNode(edge.n1);
+        CoupledDDEdgeFluxDiagnostic record;
+        record.edgeId = e;
+        record.node0 = idxI;
+        record.node1 = idxJ;
+        record.x0 = node0.x;
+        record.y0 = node0.y;
+        record.x1 = node1.x;
+        record.y1 = node1.y;
+        record.length_m = h;
+        record.couple_m = couple_[e];
+        record.netDopingAvg_m3 =
+            0.5 * (doping_.netDoping(idxI) + doping_.netDoping(idxJ));
+        record.ni0_m3 = ni_[idxI];
+        record.ni1_m3 = ni_[idxJ];
+        record.psi0_V = psi_i;
+        record.psi1_V = psi_j;
+        record.phin0_V = phin_i;
+        record.phin1_V = phin_j;
+        record.phip0_V = phip_i;
+        record.phip1_V = phip_j;
+        record.electricField_V_m = electricField;
+        record.electronMobility_m2_V_s = mun;
+        record.holeMobility_m2_V_s = mup;
+        record.electronFlux = nFlux / continuityScale;
+        record.holeFlux = pFlux / continuityScale;
+        edges.push_back(record);
+    }
+
+    return edges;
+}
+
 SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const VectorXd& x,
     const CoupledDDBoundaryConditions& bcs) const

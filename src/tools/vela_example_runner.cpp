@@ -12,6 +12,7 @@
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -1084,6 +1085,63 @@ nlohmann::json runNewtonCarrierTermProbe(const std::string& configFile, const nl
     };
 }
 
+void writeSgEdgeFluxProbeCsv(
+    const std::filesystem::path& path,
+    const std::vector<vela::CoupledDDEdgeFluxDiagnostic>& edges)
+{
+    std::ofstream out(path);
+    if (!out.is_open())
+        throw std::runtime_error("Cannot write SG edge flux probe CSV: " + path.string());
+    out << "edge_id,node0,node1,x0,y0,x1,y1,length_m,couple_m,"
+        << "net_doping_avg_m3,ni0_m3,ni1_m3,psi0_V,psi1_V,phin0_V,phin1_V,"
+        << "phip0_V,phip1_V,electric_field_V_m,electron_mobility_m2_V_s,"
+        << "hole_mobility_m2_V_s,electron_flux,hole_flux\n";
+    out << std::setprecision(17);
+    for (const auto& edge : edges) {
+        out << edge.edgeId << ','
+            << edge.node0 << ','
+            << edge.node1 << ','
+            << edge.x0 << ','
+            << edge.y0 << ','
+            << edge.x1 << ','
+            << edge.y1 << ','
+            << edge.length_m << ','
+            << edge.couple_m << ','
+            << edge.netDopingAvg_m3 << ','
+            << edge.ni0_m3 << ','
+            << edge.ni1_m3 << ','
+            << edge.psi0_V << ','
+            << edge.psi1_V << ','
+            << edge.phin0_V << ','
+            << edge.phin1_V << ','
+            << edge.phip0_V << ','
+            << edge.phip1_V << ','
+            << edge.electricField_V_m << ','
+            << edge.electronMobility_m2_V_s << ','
+            << edge.holeMobility_m2_V_s << ','
+            << edge.electronFlux << ','
+            << edge.holeFlux << '\n';
+    }
+}
+
+nlohmann::json runSgEdgeFluxProbe(const std::string& configFile, const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    const vela::DDSolution state = readExternalState(cfgDir, cfg, problem.mesh.numNodes());
+    const vela::NewtonSolver solver(
+        problem.mesh, problem.matdb, problem.doping, problem.biases, problem.newton);
+    const std::vector<vela::CoupledDDEdgeFluxDiagnostic> edges =
+        solver.evaluateSgEdgeFluxDiagnostics(state);
+    writeSgEdgeFluxProbeCsv(
+        resolvePath(cfgDir, cfg.at("output_csv").get<std::string>()),
+        edges);
+    return {
+        {"nodes", problem.mesh.numNodes()},
+        {"edge_count", edges.size()},
+    };
+}
+
 void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
                                const vela::DeviceMesh& mesh,
                                const vela::DopingModel& doping,
@@ -1277,6 +1335,8 @@ int main(int argc, char** argv)
             status.update(runNewtonCarrierRowProbe(configFile, cfg));
         } else if (type == "newton_carrier_term_probe") {
             status.update(runNewtonCarrierTermProbe(configFile, cfg));
+        } else if (type == "sg_edge_flux_probe") {
+            status.update(runSgEdgeFluxProbe(configFile, cfg));
         } else if (type == "edge_mobility_probe") {
             status.update(runEdgeMobilityProbe(configFile, cfg));
         } else {

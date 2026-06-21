@@ -48,6 +48,34 @@ struct CoupledDDCarrierTermDiagnostic {
     Real holeResidual = 0.0;
 };
 
+struct CoupledDDEdgeFluxDiagnostic {
+    Index edgeId = 0;
+    Index node0 = 0;
+    Index node1 = 0;
+    Real x0 = 0.0;
+    Real y0 = 0.0;
+    Real x1 = 0.0;
+    Real y1 = 0.0;
+    Real length_m = 0.0;
+    Real couple_m = 0.0;
+    Real netDopingAvg_m3 = 0.0;
+    Real ni0_m3 = 0.0;
+    Real ni1_m3 = 0.0;
+    Real psi0_V = 0.0;
+    Real psi1_V = 0.0;
+    Real phin0_V = 0.0;
+    Real phin1_V = 0.0;
+    Real phip0_V = 0.0;
+    Real phip1_V = 0.0;
+    Real electricField_V_m = 0.0;
+    Real electronMobility_m2_V_s = 0.0;
+    Real holeMobility_m2_V_s = 0.0;
+    // Signed Scharfetter-Gummel continuity edge flux (added to node0's residual
+    // and subtracted from node1's), identical to the residual edge loop.
+    Real electronFlux = 0.0;
+    Real holeFlux = 0.0;
+};
+
 class CoupledDDAssembler {
 public:
     CoupledDDAssembler(const DeviceMesh& mesh,
@@ -96,6 +124,10 @@ public:
     VectorXd electronDensity(const VectorXd& x) const;
     VectorXd holeDensity(const VectorXd& x) const;
     std::vector<CoupledDDCarrierTermDiagnostic> carrierContinuityTermDiagnostics(
+        const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs) const;
+
+    std::vector<CoupledDDEdgeFluxDiagnostic> sgEdgeFluxDiagnostics(
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs) const;
 

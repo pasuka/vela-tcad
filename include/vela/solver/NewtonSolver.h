@@ -244,6 +244,8 @@ public:
         const DDSolution& state) const;
     NewtonCarrierTermDiagnosticsEvaluation evaluateCarrierTermDiagnostics(
         const DDSolution& state) const;
+    std::vector<CoupledDDEdgeFluxDiagnostic> evaluateSgEdgeFluxDiagnostics(
+        const DDSolution& state) const;
 
 private:
     CoupledDDBoundaryConditions buildBoundaryConditions(
