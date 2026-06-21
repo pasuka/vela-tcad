@@ -753,6 +753,66 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     std::vector<bool> hasElectronContribution(static_cast<std::size_t>(N), false);
     std::vector<bool> hasHoleContribution(static_cast<std::size_t>(N), false);
 
+    // Combined Scharfetter-Gummel edge-current avalanche source for one edge,
+    // evaluated directly from the six endpoint potentials. This mirrors
+    // detail::sgEdgeCurrentAvalancheSourceRecords for a single edge and is used
+    // to finite-difference the avalanche source Jacobian block, which captures
+    // the carrier-density (flux), driving-field (alpha), and field-dependent
+    // mobility derivatives together. The driving field near breakdown makes the
+    // alpha derivative the dominant avalanche loop-gain term, so it cannot be
+    // omitted for robust high-bias convergence.
+    auto edgeAvalancheCombinedSource =
+        [&](Index e, int i, int j, Real h,
+            Real psi_i, Real psi_j, Real phin_i, Real phin_j,
+            Real phip_i, Real phip_j) -> Real {
+        const Real couple_e = couple_[e];
+        if (h <= 1.0e-30 || couple_e <= 0.0)
+            return 0.0;
+        const Index idxI = static_cast<Index>(i);
+        const Index idxJ = static_cast<Index>(j);
+        const Real niI = ni_[idxI];
+        const Real niJ = ni_[idxJ];
+        const Real electricField = std::abs((psi_j - psi_i) / h);
+        const Real electronQfField = std::abs((phin_j - phin_i) / h);
+        const Real holeQfField = std::abs((phip_j - phip_i) / h);
+        const Real electronCoefficientField = qfImpact ? electronQfField : electricField;
+        const Real holeCoefficientField = qfImpact ? holeQfField : electricField;
+        const Real electronMobilityField = qfMobility ? electronQfField : electricField;
+        const Real holeMobilityField = qfMobility ? holeQfField : electricField;
+        const Real n_i = niI * limitedExp((psi_i - phin_i) / Vt_);
+        const Real n_j = niJ * limitedExp((psi_j - phin_j) / Vt_);
+        const Real p_i = niI * limitedExp((phip_i - psi_i) / Vt_);
+        const Real p_j = niJ * limitedExp((phip_j - psi_j) / Vt_);
+        const Real nAvg = 0.5 * (n_i + n_j);
+        const Real pAvg = 0.5 * (p_i + p_j);
+        const Real electronImpactField = detail::electronAvalancheDrivingField(
+            impactIonizationConfig_, electronCoefficientField, electricField, nAvg);
+        const Real holeImpactField = detail::holeAvalancheDrivingField(
+            impactIonizationConfig_, holeCoefficientField, electricField, pAvg);
+        const Real edgeArea =
+            0.5 * h * couple_e * impactIonizationConfig_.sourceGeometryScale;
+        Real source = 0.0;
+        const Real mun = detail::edgeMobility(
+            edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e,
+            CarrierType::Electron, electronMobilityField, &mobilityConfig_, &psi);
+        if (mun > 0.0) {
+            const Real fluxN = sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                niI, niJ, psi_i, psi_j, phin_i, phin_j, Vt_, mun * Vt_ / h);
+            const Real alphaN = impactIonization_->electronCoefficient(electronImpactField);
+            source += alphaN * std::abs(fluxN) * edgeArea;
+        }
+        const Real mup = detail::edgeMobility(
+            edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e,
+            CarrierType::Hole, holeMobilityField, &mobilityConfig_, &psi);
+        if (mup > 0.0) {
+            const Real fluxP = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                niI, niJ, psi_i, psi_j, phip_i, phip_j, Vt_, mup * Vt_ / h);
+            const Real alphaP = impactIonization_->holeCoefficient(holeImpactField);
+            source += alphaP * std::abs(fluxP) * edgeArea;
+        }
+        return source;
+    };
+
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
         const Edge& edge = mesh_.getEdge(e);
         const Real h = edge.length;
@@ -823,42 +883,6 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             add(phinOffset() + j, psiOffset() + j, -dF_dpsi_j);
             add(phinOffset() + j, phinOffset() + i, -dF_dphin_i);
             add(phinOffset() + j, phinOffset() + j, -dF_dphin_j);
-
-            if (sgCurrentAvalanche) {
-                const Real electronCoefficientField = qfImpact
-                    ? std::abs((phin_j - phin_i) / h)
-                    : electricField;
-                const Real nAvg = 0.5 * (n(i) + n(j));
-                const Real electronImpactField = detail::electronAvalancheDrivingField(
-                    impactIonizationConfig_, electronCoefficientField, electricField, nAvg);
-                const Real alphaN = impactIonization_->electronCoefficient(electronImpactField);
-                const Real flux = sgElectronContinuityFluxFromQuasiFermiVariableNi(
-                    ni_[idxI],
-                    ni_[idxJ],
-                    psi_i,
-                    psi_j,
-                    phin_i,
-                    phin_j,
-                    Vt_,
-                    coef);
-                if (alphaN > 0.0 && flux != 0.0) {
-                    const Real edgeAreaToCouple = 0.5 * h;
-                    const Real sourceFactor =
-                        -0.5 * alphaN * edgeAreaToCouple * (flux > 0.0 ? 1.0 : -1.0);
-                    const int rows[] = {
-                        phinOffset() + i,
-                        phinOffset() + j,
-                        phipOffset() + i,
-                        phipOffset() + j,
-                    };
-                    for (int row : rows) {
-                        add(row, psiOffset() + i, sourceFactor * dF_dpsi_i);
-                        add(row, psiOffset() + j, sourceFactor * dF_dpsi_j);
-                        add(row, phinOffset() + i, sourceFactor * dF_dphin_i);
-                        add(row, phinOffset() + j, sourceFactor * dF_dphin_j);
-                    }
-                }
-            }
         }
 
         const Real mup = detail::edgeMobility(
@@ -899,41 +923,58 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             add(phipOffset() + j, psiOffset() + j, -dF_dpsi_j);
             add(phipOffset() + j, phipOffset() + i, -dF_dphip_i);
             add(phipOffset() + j, phipOffset() + j, -dF_dphip_j);
+        }
 
-            if (sgCurrentAvalanche) {
-                const Real holeCoefficientField = qfImpact
-                    ? std::abs((phip_j - phip_i) / h)
-                    : electricField;
-                const Real pAvg = 0.5 * (p(i) + p(j));
-                const Real holeImpactField = detail::holeAvalancheDrivingField(
-                    impactIonizationConfig_, holeCoefficientField, electricField, pAvg);
-                const Real alphaP = impactIonization_->holeCoefficient(holeImpactField);
-                const Real flux = sgHoleContinuityFluxFromQuasiFermiVariableNi(
-                    ni_[idxI],
-                    ni_[idxJ],
-                    psi_i,
-                    psi_j,
-                    phip_i,
-                    phip_j,
-                    Vt_,
-                    coef);
-                if (alphaP > 0.0 && flux != 0.0) {
-                    const Real edgeAreaToCouple = 0.5 * h;
-                    const Real sourceFactor =
-                        -0.5 * alphaP * edgeAreaToCouple * (flux > 0.0 ? 1.0 : -1.0);
-                    const int rows[] = {
-                        phinOffset() + i,
-                        phinOffset() + j,
-                        phipOffset() + i,
-                        phipOffset() + j,
-                    };
-                    for (int row : rows) {
-                        add(row, psiOffset() + i, sourceFactor * dF_dpsi_i);
-                        add(row, psiOffset() + j, sourceFactor * dF_dpsi_j);
-                        add(row, phipOffset() + i, sourceFactor * dF_dphip_i);
-                        add(row, phipOffset() + j, sourceFactor * dF_dphip_j);
-                    }
+        if (sgCurrentAvalanche) {
+            // Finite-difference the combined edge avalanche source with respect
+            // to the six endpoint potentials. This captures the flux (carrier
+            // density), driving-field (alpha), and field-dependent mobility
+            // derivatives together. The analytic blocks above only carry the
+            // frozen-alpha flux derivative; near breakdown the alpha derivative
+            // dominates the avalanche loop gain and must be retained for robust
+            // high-bias Newton convergence.
+            const Real base = edgeAvalancheCombinedSource(
+                e, i, j, h, psi_i, psi_j, phin_i, phin_j, phip_i, phip_j);
+            const Real vals[6] = { psi_i, psi_j, phin_i, phin_j, phip_i, phip_j };
+            const int cols[6] = {
+                psiOffset() + i, psiOffset() + j,
+                phinOffset() + i, phinOffset() + j,
+                phipOffset() + i, phipOffset() + j,
+            };
+            Real dS[6];
+            bool anyNonzero = false;
+            for (int k = 0; k < 6; ++k) {
+                const Real step = 1.0e-6 * std::max(1.0, std::abs(vals[k]));
+                Real vp[6];
+                Real vm[6];
+                for (int m = 0; m < 6; ++m) {
+                    vp[m] = vals[m];
+                    vm[m] = vals[m];
                 }
+                vp[k] += step;
+                vm[k] -= step;
+                const Real sp = edgeAvalancheCombinedSource(
+                    e, i, j, h, vp[0], vp[1], vp[2], vp[3], vp[4], vp[5]);
+                const Real sm = edgeAvalancheCombinedSource(
+                    e, i, j, h, vm[0], vm[1], vm[2], vm[3], vm[4], vm[5]);
+                dS[k] = (sp - sm) / (2.0 * step);
+                if (dS[k] != 0.0)
+                    anyNonzero = true;
+            }
+            if (base != 0.0 || anyNonzero) {
+                const int rows[4] = {
+                    phinOffset() + i,
+                    phipOffset() + i,
+                    phinOffset() + j,
+                    phipOffset() + j,
+                };
+                for (int row : rows)
+                    for (int k = 0; k < 6; ++k)
+                        add(row, cols[k], -0.5 * dS[k]);
+                hasElectronContribution[static_cast<std::size_t>(i)] = true;
+                hasElectronContribution[static_cast<std::size_t>(j)] = true;
+                hasHoleContribution[static_cast<std::size_t>(i)] = true;
+                hasHoleContribution[static_cast<std::size_t>(j)] = true;
             }
         }
     }

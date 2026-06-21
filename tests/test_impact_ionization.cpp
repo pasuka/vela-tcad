@@ -483,6 +483,71 @@ TEST_CASE("Coupled DD SG edge-current avalanche Jacobian matches carrier finite 
     REQUIRE(maxAbsDiff / std::max<Real>(1.0, maxAbsRef) < 5.0e-5);
 }
 
+TEST_CASE("Coupled DD SG edge-current avalanche Jacobian captures field-dependent alpha",
+          "[impact][newton]")
+{
+    // Strong-avalanche fixture: quasi-Fermi driving force with a field-sensitive
+    // ionization coefficient (B comparable to the driving field). The avalanche
+    // source therefore depends strongly on the quasi-Fermi gradients through
+    // alpha(F), so the analytic Jacobian must carry the dAlpha/dphin and
+    // dAlpha/dphip derivatives. A frozen-alpha Jacobian fails this comparison.
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi = VectorXd::LinSpaced(N, -0.05, 0.05);
+    state.phin = VectorXd::LinSpaced(N, 0.5, -0.5);
+    state.phip = VectorXd::LinSpaced(N, -0.5, 0.5);
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "quasi_fermi_gradient";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "density_gradient";
+    impactConfig.electronA = 1.0e6;
+    impactConfig.electronB = 1.0e6;
+    impactConfig.holeA = 1.0e6;
+    impactConfig.holeB = 1.0e6;
+
+    CoupledDDAssembler assembler(
+        mesh,
+        matdb,
+        doping,
+        Vt,
+        mobilityModelConfig("constant"),
+        recombinationModelConfig({"none"}),
+        BandgapNarrowingConfig{},
+        impactConfig);
+
+    const VectorXd x = assembler.pack(state);
+    const CoupledDDBoundaryConditions bcs;
+    const SparseMatrixd analytic = assembler.assembleJacobian(x, bcs);
+    const SparseMatrixd finiteDifference = assembler.finiteDifferenceJacobian(x, bcs, 1.0e-7);
+    const Eigen::MatrixXd denseAnalytic = Eigen::MatrixXd(analytic);
+    const Eigen::MatrixXd denseFiniteDifference = Eigen::MatrixXd(finiteDifference);
+
+    Real maxAbsDiff = 0.0;
+    Real maxAbsRef = 0.0;
+    for (int row = N; row < 3 * N; ++row) {
+        for (int col = 0; col < 3 * N; ++col) {
+            maxAbsDiff = std::max(
+                maxAbsDiff,
+                std::abs(denseAnalytic(row, col) - denseFiniteDifference(row, col)));
+            maxAbsRef = std::max(maxAbsRef, std::abs(denseFiniteDifference(row, col)));
+        }
+    }
+
+    REQUIRE(maxAbsRef > 0.0);
+    REQUIRE(maxAbsDiff / std::max<Real>(1.0, maxAbsRef) < 5.0e-5);
+}
+
 TEST_CASE("SG edge-current avalanche records sum to assembled nodal source",
           "[impact][diagnostic]")
 {
