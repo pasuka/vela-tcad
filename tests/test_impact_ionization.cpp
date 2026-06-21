@@ -548,6 +548,54 @@ TEST_CASE("Coupled DD SG edge-current avalanche Jacobian captures field-dependen
     REQUIRE(maxAbsDiff / std::max<Real>(1.0, maxAbsRef) < 5.0e-5);
 }
 
+TEST_CASE("Coupled DD SG avalanche Jacobian captures low-density driving-force interpolation",
+          "[impact][newton]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi = VectorXd::LinSpaced(N, -0.08, 0.08);
+    state.phin = VectorXd::LinSpaced(N, 0.3, -0.3);
+    state.phip = VectorXd::LinSpaced(N, -0.3, 0.3);
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "van_overstraeten";
+    impactConfig.drivingForce = "quasi_fermi_gradient";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "density_gradient";
+    impactConfig.drivingForceInterpolation = "quasi_fermi_to_electric_field";
+    impactConfig.electronDrivingForceRefDensity = 1.0e20;
+    impactConfig.holeDrivingForceRefDensity = 1.0e20;
+
+    CoupledDDAssembler assembler(
+        mesh,
+        matdb,
+        doping,
+        Vt,
+        mobilityModelConfig("constant"),
+        recombinationModelConfig({"none"}),
+        BandgapNarrowingConfig{},
+        impactConfig);
+
+    const VectorXd x = assembler.pack(state);
+    const CoupledDDBoundaryConditions bcs;
+    const SparseMatrixd analytic = assembler.assembleJacobian(x, bcs);
+    const SparseMatrixd finiteDifference = assembler.finiteDifferenceJacobian(x, bcs, 1.0e-7);
+    const Eigen::MatrixXd diff = Eigen::MatrixXd(analytic - finiteDifference);
+    const Eigen::MatrixXd ref = Eigen::MatrixXd(finiteDifference);
+
+    REQUIRE(ref.norm() > 0.0);
+    REQUIRE(diff.norm() / std::max<Real>(1.0, ref.norm()) < 5.0e-5);
+}
+
 TEST_CASE("SG edge-current avalanche records sum to assembled nodal source",
           "[impact][diagnostic]")
 {

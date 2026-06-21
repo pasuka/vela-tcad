@@ -251,6 +251,57 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         self.assertEqual(config["state_file"], "states/bv_state_bias_m13p200000.csv")
         self.assertEqual(config["finite_difference_step"], 1.0e-7)
 
+    def test_pn2d_bv_real_state_jacobian_audit_combines_bias_rows(self) -> None:
+        module_path = REPO / "scripts" / "run_pn2d_bv_real_state_jacobian_audit.py"
+        spec = importlib.util.spec_from_file_location("run_pn2d_bv_real_state_jacobian_audit", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        with tempfile.TemporaryDirectory(prefix="vela_real_state_jacobian_audit_") as tmp:
+            root = Path(tmp)
+            block_csv = root / "block.csv"
+            self._write_csv(block_csv, [
+                "block", "analytic_norm", "fd_norm", "diff_norm", "rel_diff"
+            ], [["sg_avalanche", 2.0, 2.0, 1.0e-8, 5.0e-9]])
+            out = root / "combined.csv"
+            module.write_combined_report(out, [module.BiasBlockReport(-13.2, block_csv)])
+            rows = self._read_csv(out)
+
+        self.assertEqual(rows[0]["bias_V"], "-13.2")
+        self.assertEqual(rows[0]["block"], "sg_avalanche")
+        self.assertLess(float(rows[0]["rel_diff"]), 1.0e-6)
+
+    def test_pn2d_bv_real_state_jacobian_audit_absolutizes_base_paths(self) -> None:
+        module_path = REPO / "scripts" / "run_pn2d_bv_real_state_jacobian_audit.py"
+        spec = importlib.util.spec_from_file_location("run_pn2d_bv_real_state_jacobian_audit", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        with tempfile.TemporaryDirectory(prefix="vela_real_state_jacobian_paths_") as tmp:
+            root = Path(tmp)
+            base_dir = root / "base"
+            out_dir = root / "out"
+            base_dir.mkdir()
+            base_config = base_dir / "simulation.json"
+            base_config.write_text(json.dumps({
+                "mesh_file": "mesh.json",
+                "node_doping_file": "doping.csv",
+                "materials_file": "materials.json",
+                "sweep": {"contact": "Anode"},
+                "contacts": [{"name": "Anode", "bias": 0.0}],
+            }), encoding="utf-8")
+
+            snapshot = module.derive_snapshot_config(base_config, out_dir)
+            cfg = json.loads(snapshot.read_text(encoding="utf-8"))
+
+        self.assertEqual(Path(cfg["mesh_file"]), base_dir / "mesh.json")
+        self.assertEqual(Path(cfg["node_doping_file"]), base_dir / "doping.csv")
+        self.assertEqual(Path(cfg["materials_file"]), base_dir / "materials.json")
+
     def test_pn2d_bv_field_compare_script_help(self) -> None:
         result = subprocess.run(
             [
