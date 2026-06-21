@@ -1513,6 +1513,29 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     lscfg.recordHistory = cfg_.diagnostics;
     BacktrackingLineSearch lineSearch(lscfg);
 
+    // Stall-recovery threshold: when the damped Newton step cannot reduce the
+    // residual but the residual already sits at or below this normalized floor,
+    // the state is effectively solved (the line search is fighting numerical
+    // noise) and convergence is reported instead of failing.
+    const Real stallResidualFloor = 1.0e-9;
+
+    auto capConfiguredStep = [&](VectorXd& candidateStep) {
+        if (cfg_.maxUpdate > 0.0) {
+            const Real maxAbsStep = candidateStep.cwiseAbs().maxCoeff();
+            if (maxAbsStep > cfg_.maxUpdate)
+                candidateStep *= cfg_.maxUpdate / maxAbsStep;
+        }
+        if (cfg_.quasiFermiUpdateLimit_V > 0.0) {
+            const Real qfLimit = cfg_.quasiFermiUpdateLimit_V / potentialScale;
+            for (int i = N; i < 3 * N; ++i) {
+                if (candidateStep(i) > qfLimit)
+                    candidateStep(i) = qfLimit;
+                else if (candidateStep(i) < -qfLimit)
+                    candidateStep(i) = -qfLimit;
+            }
+        }
+    };
+
     VectorXd acceptedX = x;
     VectorXd acceptedR = r;
     int acceptedIters = 0;
@@ -1550,21 +1573,8 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             }
             return result;
         }
-        if (cfg_.maxUpdate > 0.0) {
-            const Real maxAbsStep = step.cwiseAbs().maxCoeff();
-            if (maxAbsStep > cfg_.maxUpdate)
-                step *= cfg_.maxUpdate / maxAbsStep;
-        }
-        if (cfg_.quasiFermiUpdateLimit_V > 0.0) {
-            const Real qfLimit = cfg_.quasiFermiUpdateLimit_V / potentialScale;
-            for (int i = N; i < 3 * N; ++i) {
-                if (step(i) > qfLimit)
-                    step(i) = qfLimit;
-                else if (step(i) < -qfLimit)
-                    step(i) = -qfLimit;
-            }
-        }
-        const Real stepNorm = step.norm();
+        capConfiguredStep(step);
+        Real stepNorm = step.norm();
 
         auto ls = lineSearch.search(
             x, step, r,
@@ -1575,7 +1585,19 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             residualNormFn);
 
         if (!ls.accepted) {
-            result.finalResidualNorm = residualNormFn(acceptedR);
+            const Real stalledNorm = residualNormFn(acceptedR);
+            // Effectively-solved state: the residual already sits at the
+            // numerical floor, so the rejected step is only fighting noise.
+            // Declaring convergence here avoids spurious failures when the
+            // Newton iterate has already reached the achievable precision.
+            if (stalledNorm <= stallResidualFloor) {
+                result.converged = true;
+                result.iters = acceptedIters;
+                result.finalResidualNorm = stalledNorm;
+                result.solution = makeSolution(assembler, acceptedX, acceptedIters);
+                return result;
+            }
+            result.finalResidualNorm = stalledNorm;
             result.iters = acceptedIters;
             result.solution = makeSolution(assembler, acceptedX, acceptedIters);
             result.failureDiagnostics = buildFailureDiagnostics(

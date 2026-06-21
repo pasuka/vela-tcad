@@ -121,6 +121,7 @@ private:
     ImpactIonizationModelConfig impactIonizationConfig_;
     std::unique_ptr<ImpactIonizationModel> impactIonization_;
     bool impactIonizationEnabled_ = false;
+    bool bgnEnabled_ = false;
     std::vector<Real> ni_;
     std::vector<Material> cellMaterials_;
 

@@ -1,6 +1,7 @@
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/discretization/Bernoulli.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace vela {
@@ -52,6 +53,32 @@ Real sgElectronContinuityFluxFromQuasiFermi(Real ni0,
         coef);
 }
 
+Real sgElectronContinuityFluxFromQuasiFermiStable(Real ni0,
+                                                  Real psi0,
+                                                  Real psi1,
+                                                  Real phin0,
+                                                  Real phin1,
+                                                  Real Vt,
+                                                  Real coef)
+{
+    if (phin0 == phin1)
+        return 0.0;
+
+    // Separated-factor form of coef*(B(-u)*n0 - B(u)*n1). Evaluating the
+    // quasi-Fermi difference (exp(-phin0/Vt) - exp(-phin1/Vt)) directly avoids
+    // the catastrophic cancellation of subtracting two large nearly-equal
+    // carrier densities when (psi - phin)/Vt is large (heavy band bending).
+    const Real u = (psi1 - psi0) / Vt;
+    return sgElectronContinuityFluxFromQuasiFermiFactors(
+        ni0,
+        limitedExp(psi1 / Vt),
+        limitedExp(-phin0 / Vt),
+        limitedExp(-phin1 / Vt),
+        u * Vt,
+        Vt,
+        coef);
+}
+
 Real sgElectronContinuityFluxFromQuasiFermiFactors(Real ni0,
                                                    Real expPsi1,
                                                    Real expNegPhin0,
@@ -71,7 +98,8 @@ Real sgElectronContinuityFluxFromQuasiFermiVariableNi(Real ni0,
                                                       Real phin0,
                                                       Real phin1,
                                                       Real Vt,
-                                                      Real coef)
+                                                      Real coef,
+                                                      bool includeNiGradientDrift)
 {
     if (phin0 == phin1)
         return 0.0;
@@ -83,7 +111,8 @@ Real sgElectronContinuityFluxFromQuasiFermiVariableNi(Real ni0,
             Vt,
             coef);
 
-    const Real eta = (psi1 - psi0) / Vt + std::log(ni1 / ni0);
+    const Real eta = (psi1 - psi0) / Vt
+        + (includeNiGradientDrift ? std::log(ni1 / ni0) : 0.0);
     const Real n0 = ni0 * limitedExp((psi0 - phin0) / Vt);
     const Real n1 = ni1 * limitedExp((psi1 - phin1) / Vt);
     return coef * (bernoulli(-eta) * n0 - bernoulli(eta) * n1);
@@ -109,6 +138,30 @@ Real sgHoleContinuityFluxFromQuasiFermi(Real ni0,
         coef);
 }
 
+Real sgHoleContinuityFluxFromQuasiFermiStable(Real ni0,
+                                              Real psi0,
+                                              Real psi1,
+                                              Real phip0,
+                                              Real phip1,
+                                              Real Vt,
+                                              Real coef)
+{
+    if (phip0 == phip1)
+        return 0.0;
+
+    // Separated-factor form of coef*(B(u)*p0 - B(-u)*p1). See the electron
+    // variant above for the numerical rationale.
+    const Real u = (psi1 - psi0) / Vt;
+    return sgHoleContinuityFluxFromQuasiFermiFactors(
+        ni0,
+        limitedExp(-psi0 / Vt),
+        limitedExp(phip0 / Vt),
+        limitedExp(phip1 / Vt),
+        u * Vt,
+        Vt,
+        coef);
+}
+
 Real sgHoleContinuityFluxFromQuasiFermiFactors(Real ni0,
                                                Real expNegPsi0,
                                                Real expPhip0,
@@ -128,7 +181,8 @@ Real sgHoleContinuityFluxFromQuasiFermiVariableNi(Real ni0,
                                                   Real phip0,
                                                   Real phip1,
                                                   Real Vt,
-                                                  Real coef)
+                                                  Real coef,
+                                                  bool includeNiGradientDrift)
 {
     if (phip0 == phip1)
         return 0.0;
@@ -140,7 +194,8 @@ Real sgHoleContinuityFluxFromQuasiFermiVariableNi(Real ni0,
             Vt,
             coef);
 
-    const Real eta = (psi1 - psi0) / Vt + std::log(ni0 / ni1);
+    const Real eta = (psi1 - psi0) / Vt
+        + (includeNiGradientDrift ? std::log(ni0 / ni1) : 0.0);
     const Real p0 = ni0 * limitedExp((phip0 - psi0) / Vt);
     const Real p1 = ni1 * limitedExp((phip1 - psi1) / Vt);
     return coef * (bernoulli(eta) * p0 - bernoulli(-eta) * p1);

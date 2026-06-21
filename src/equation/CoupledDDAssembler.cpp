@@ -89,6 +89,7 @@ CoupledDDAssembler::CoupledDDAssembler(
     , impactIonizationConfig_(impactIonizationConfig)
     , impactIonization_(makeImpactIonizationModel(impactIonizationConfig))
     , impactIonizationEnabled_(impactIonizationConfig.model != "none")
+    , bgnEnabled_(bandgapNarrowingConfig.model != "none")
     , ni_(detail::buildValidatedEffectiveNodeNi(
           "CoupledDDAssembler",
           mesh,
@@ -282,15 +283,22 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             const Real coef = mun * Vt_ * couple[e] / h;
             const Index idxI = static_cast<Index>(i);
             const Index idxJ = static_cast<Index>(j);
-            const Real nFlux = sgElectronContinuityFluxFromQuasiFermiVariableNi(
-                ni_[idxI],
-                ni_[idxJ],
-                psi_i,
-                psi_j,
-                phin_i,
-                phin_j,
-                Vt_,
-                coef);
+            // With bandgap narrowing the per-node intrinsic density varies, so
+            // the ni-gradient drift term must be retained (VariableNi form).
+            // Without BGN, reproduce the baseline discretization: the balanced
+            // quasi-Fermi form on equal-ni edges (overflow-safe, it never
+            // materializes the clamped carrier densities) and the density-based
+            // SG flux on material-interface edges where ni differs.
+            Real nFlux;
+            if (bgnEnabled_) {
+                nFlux = sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                    ni_[idxI], ni_[idxJ], psi_i, psi_j, phin_i, phin_j, Vt_, coef);
+            } else if (ni_[idxI] == ni_[idxJ]) {
+                nFlux = sgElectronContinuityFluxFromQuasiFermiStable(
+                    ni_[idxI], psi_i, psi_j, phin_i, phin_j, Vt_, coef);
+            } else {
+                nFlux = sgElectronContinuityFlux(n(i), n(j), dpsi, Vt_, coef);
+            }
             r(phinOffset() + i) += nFlux;
             r(phinOffset() + j) -= nFlux;
         }
@@ -307,15 +315,17 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
             const Real coef = mup * Vt_ * couple[e] / h;
             const Index idxI = static_cast<Index>(i);
             const Index idxJ = static_cast<Index>(j);
-            const Real pFlux = sgHoleContinuityFluxFromQuasiFermiVariableNi(
-                ni_[idxI],
-                ni_[idxJ],
-                psi_i,
-                psi_j,
-                phip_i,
-                phip_j,
-                Vt_,
-                coef);
+            // See the electron flux above for the BGN gating rationale.
+            Real pFlux;
+            if (bgnEnabled_) {
+                pFlux = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                    ni_[idxI], ni_[idxJ], psi_i, psi_j, phip_i, phip_j, Vt_, coef);
+            } else if (ni_[idxI] == ni_[idxJ]) {
+                pFlux = sgHoleContinuityFluxFromQuasiFermiStable(
+                    ni_[idxI], psi_i, psi_j, phip_i, phip_j, Vt_, coef);
+            } else {
+                pFlux = sgHoleContinuityFlux(p(i), p(j), dpsi, Vt_, coef);
+            }
             r(phipOffset() + i) += pFlux;
             r(phipOffset() + j) -= pFlux;
         }
@@ -530,7 +540,8 @@ CoupledDDAssembler::carrierContinuityTermDiagnostics(
                 phin_i,
                 phin_j,
                 Vt_,
-                coef);
+                coef,
+                bgnEnabled_);
             terms[static_cast<Index>(i)].electronFlux += nFlux;
             terms[static_cast<Index>(j)].electronFlux -= nFlux;
         }
@@ -552,7 +563,8 @@ CoupledDDAssembler::carrierContinuityTermDiagnostics(
                 phip_i,
                 phip_j,
                 Vt_,
-                coef);
+                coef,
+                bgnEnabled_);
             terms[static_cast<Index>(i)].holeFlux += pFlux;
             terms[static_cast<Index>(j)].holeFlux -= pFlux;
         }
@@ -797,7 +809,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             CarrierType::Electron, electronMobilityField, &mobilityConfig_, &psi);
         if (mun > 0.0) {
             const Real fluxN = sgElectronContinuityFluxFromQuasiFermiVariableNi(
-                niI, niJ, psi_i, psi_j, phin_i, phin_j, Vt_, mun * Vt_ / h);
+                niI, niJ, psi_i, psi_j, phin_i, phin_j, Vt_, mun * Vt_ / h, bgnEnabled_);
             const Real alphaN = impactIonization_->electronCoefficient(electronImpactField);
             source += alphaN * std::abs(fluxN) * edgeArea;
         }
@@ -806,7 +818,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             CarrierType::Hole, holeMobilityField, &mobilityConfig_, &psi);
         if (mup > 0.0) {
             const Real fluxP = sgHoleContinuityFluxFromQuasiFermiVariableNi(
-                niI, niJ, psi_i, psi_j, phip_i, phip_j, Vt_, mup * Vt_ / h);
+                niI, niJ, psi_i, psi_j, phip_i, phip_j, Vt_, mup * Vt_ / h, bgnEnabled_);
             const Real alphaP = impactIonization_->holeCoefficient(holeImpactField);
             source += alphaP * std::abs(fluxP) * edgeArea;
         }
