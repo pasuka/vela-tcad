@@ -124,6 +124,133 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         self.assertEqual(bv["runtime_diagnostic"]["step"], 0.05)
         self.assertEqual(bv["runtime_diagnostic"]["bias_points"], [-0.5, -2.0, -5.0, -10.0, -20.0])
 
+    def test_pn2d_bv_jacobian_block_audit_writes_contract_csv(self) -> None:
+        module_path = REPO / "scripts" / "diagnose_pn2d_bv_jacobian_block_audit.py"
+        spec = importlib.util.spec_from_file_location("diagnose_pn2d_bv_jacobian_block_audit", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        with tempfile.TemporaryDirectory(prefix="vela_jacobian_block_audit_") as tmp:
+            output = Path(tmp) / "audit.csv"
+            module.write_placeholder_report(output, [-13.2])
+            rows = self._read_csv(output)
+
+        self.assertEqual(
+            list(rows[0].keys()),
+            [
+                "bias_V",
+                "block",
+                "analytic_norm",
+                "fd_norm",
+                "diff_norm",
+                "rel_diff",
+            ],
+        )
+        self.assertEqual(rows[0]["bias_V"], "-13.2")
+        self.assertEqual(
+            {row["block"] for row in rows},
+            {"srh_auger", "sg_avalanche", "transport", "poisson", "dirichlet_or_gauge"},
+        )
+
+    def test_pn2d_bv_jacobian_block_audit_uses_probe_for_finite_rows(self) -> None:
+        module_path = REPO / "scripts" / "diagnose_pn2d_bv_jacobian_block_audit.py"
+        spec = importlib.util.spec_from_file_location("diagnose_pn2d_bv_jacobian_block_audit", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        with tempfile.TemporaryDirectory(prefix="vela_jacobian_block_probe_") as tmp:
+            root = Path(tmp)
+            probe = root / "fake_probe.py"
+            output = root / "audit.csv"
+            probe.write_text(
+                "\n".join([
+                    "import argparse, csv",
+                    "parser = argparse.ArgumentParser()",
+                    "parser.add_argument('--output', required=True)",
+                    "parser.add_argument('--bias', action='append', required=True)",
+                    "args = parser.parse_args()",
+                    "with open(args.output, 'w', newline='') as handle:",
+                    "    writer = csv.writer(handle)",
+                    "    writer.writerow(['bias_V','block','analytic_norm','fd_norm','diff_norm','rel_diff'])",
+                    "    writer.writerow([args.bias[0], 'sg_avalanche', '2.0', '2.0', '1.0e-8', '5.0e-9'])",
+                ]),
+                encoding="utf-8",
+            )
+
+            module.write_probe_report(output, [-13.2], [sys.executable, str(probe)])
+            rows = self._read_csv(output)
+
+        self.assertEqual(rows[0]["block"], "sg_avalanche")
+        self.assertTrue(math.isfinite(float(rows[0]["rel_diff"])))
+        self.assertLess(float(rows[0]["rel_diff"]), 1.0e-6)
+
+    def test_pn2d_bv_knee_shape_computes_thresholds_and_log_error(self) -> None:
+        module_path = REPO / "scripts" / "diagnose_pn2d_bv_knee_shape.py"
+        spec = importlib.util.spec_from_file_location("diagnose_pn2d_bv_knee_shape", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        with tempfile.TemporaryDirectory(prefix="vela_bv_knee_shape_") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.csv"
+            candidate = root / "candidate.csv"
+            self._write_csv(reference, ["bias_V", "current_total"], [
+                [-10.0, -1.0e-16],
+                [-11.0, -1.2e-16],
+                [-12.0, -2.5e-16],
+            ])
+            self._write_csv(candidate, ["bias_V", "current_total_A_per_um"], [
+                [-10.0, -1.0e-16],
+                [-11.0, -2.1e-16],
+                [-12.0, -4.5e-16],
+            ])
+
+            ref_points = module.load_curve(reference)
+            cand_points = module.load_curve(candidate)
+            ref_summary = module.summarize_curve(ref_points, -10.0, -12.0)
+            cand_summary = module.summarize_curve(cand_points, -10.0, -12.0)
+
+        self.assertEqual(ref_summary.first_growth_over_1p5, -12.0)
+        self.assertEqual(cand_summary.first_growth_over_2p0, -11.0)
+        self.assertAlmostEqual(
+            module.max_abs_log10_error(cand_points, ref_points, -10.0, -12.0),
+            math.log10(4.5 / 2.5),
+        )
+
+    def test_runner_real_state_jacobian_block_probe_config_contract(self) -> None:
+        config = {
+            "simulation_type": "newton_jacobian_block_probe",
+            "mesh_file": "mesh.json",
+            "node_doping_file": "doping.csv",
+            "contacts": [
+                {"name": "Anode", "bias": -13.2},
+                {"name": "Cathode", "bias": 0.0},
+            ],
+            "solver": {
+                "method": "gummel_newton",
+                "recombination": ["srh"],
+                "impact_ionization": {
+                    "model": "van_overstraeten",
+                    "driving_force": "quasi_fermi_gradient",
+                    "generation": "current_density",
+                    "current_approximation": "density_gradient",
+                },
+            },
+            "state_file": "states/bv_state_bias_m13p200000.csv",
+            "output_csv": "reports/jacobian_blocks_m13p2.csv",
+            "finite_difference_step": 1.0e-7,
+        }
+
+        self.assertEqual(config["simulation_type"], "newton_jacobian_block_probe")
+        self.assertEqual(config["state_file"], "states/bv_state_bias_m13p200000.csv")
+        self.assertEqual(config["finite_difference_step"], 1.0e-7)
+
     def test_pn2d_bv_field_compare_script_help(self) -> None:
         result = subprocess.run(
             [

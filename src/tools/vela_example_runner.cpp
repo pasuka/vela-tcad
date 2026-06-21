@@ -1,5 +1,6 @@
 #include "vela/io/CsvUtils.h"
 #include "vela/equation/AssemblerUtils.h"
+#include "vela/io/DDSolutionCsv.h"
 #include "vela/io/MeshReader.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
@@ -1254,6 +1255,45 @@ nlohmann::json runEdgeMobilityProbe(const std::string& configFile, const nlohman
     };
 }
 
+nlohmann::json runNewtonJacobianBlockProbe(const std::string& configFile,
+                                           const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    const std::filesystem::path statePath =
+        resolvePath(cfgDir, cfg.at("state_file").get<std::string>());
+    const vela::DDSolution state =
+        vela::readDDSolutionStateCsv(statePath, problem.mesh.numNodes());
+    const vela::Real fdStep = cfg.value("finite_difference_step", 1.0e-7);
+
+    const vela::NewtonSolver solver(
+        problem.mesh, problem.matdb, problem.doping, problem.biases, problem.newton);
+    const auto rows = solver.evaluateJacobianBlockAudit(state, fdStep);
+
+    const std::filesystem::path outputPath =
+        resolvePath(cfgDir, cfg.at("output_csv").get<std::string>());
+    if (!outputPath.parent_path().empty())
+        std::filesystem::create_directories(outputPath.parent_path());
+    std::ofstream out(outputPath);
+    if (!out.is_open())
+        throw std::runtime_error("Cannot write jacobian block probe CSV: " + outputPath.string());
+    out << "block,analytic_norm,fd_norm,diff_norm,rel_diff\n";
+    out << std::setprecision(17);
+    for (const auto& row : rows) {
+        out << row.block << ','
+            << row.analyticNorm << ','
+            << row.fdNorm << ','
+            << row.diffNorm << ','
+            << row.relDiff << '\n';
+    }
+
+    return {
+        {"nodes", problem.mesh.numNodes()},
+        {"blocks", rows.size()},
+        {"output_csv", outputPath.string()},
+    };
+}
+
 } // namespace
 
 int main(int argc, char** argv)
@@ -1339,6 +1379,8 @@ int main(int argc, char** argv)
             status.update(runSgEdgeFluxProbe(configFile, cfg));
         } else if (type == "edge_mobility_probe") {
             status.update(runEdgeMobilityProbe(configFile, cfg));
+        } else if (type == "newton_jacobian_block_probe") {
+            status.update(runNewtonJacobianBlockProbe(configFile, cfg));
         } else {
             std::cerr << "Unknown simulation_type: " << type << '\n';
             return 2;
