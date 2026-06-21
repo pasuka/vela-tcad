@@ -2139,6 +2139,31 @@ TEST_CASE("DDSolution CSV shared IO roundtrips restart state", "[dc_sweep]")
     REQUIRE((loaded.p - solution.p).norm() == Catch::Approx(0.0));
 }
 
+TEST_CASE("DCSweep: write_state_every_point_prefix stores accepted states", "[dc_sweep]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "point_states.csv";
+    const auto prefix = dir / "states" / "bv_state";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", -0.1},
+        {"step", -0.05},
+        {"write_vtk", false},
+        {"write_state_every_point_prefix", prefix.string()}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 3);
+    REQUIRE(std::filesystem::exists(dir / "states" / "bv_state_bias_0p000000.csv"));
+    REQUIRE(std::filesystem::exists(dir / "states" / "bv_state_bias_m0p050000.csv"));
+    REQUIRE(std::filesystem::exists(dir / "states" / "bv_state_bias_m0p100000.csv"));
+}
+
 TEST_CASE("DCSweep: initial_state_file validates restart node coverage", "[dc_sweep]")
 {
     const auto dir = makeUniqueSweepDir();

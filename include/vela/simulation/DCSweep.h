@@ -110,6 +110,7 @@ struct DCSweepConfig {
     std::string csvFile = "dc_sweep.csv";
     std::string initialStateFile;
     std::string writeStateFile;
+    std::string writeStateEveryPointPrefix;
     std::string chargeContact;
     std::vector<std::string> chargeRegions;
     Real chargeContactRadius = 0.0;

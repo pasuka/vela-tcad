@@ -119,6 +119,15 @@ std::string formatReal(Real value)
     return oss.str();
 }
 
+std::string biasToken(Real bias)
+{
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(6) << std::abs(bias);
+    std::string token = out.str();
+    std::replace(token.begin(), token.end(), '.', 'p');
+    return (bias < 0.0 ? "m" : "") + token;
+}
+
 std::string formatIndexOrMinusOne(Index value)
 {
     if (value == std::numeric_limits<Index>::max())
@@ -916,6 +925,8 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     sweep.vtkPrefix = j.value("vtk_prefix", cfg.value("output_vtk_prefix", std::string("dc_sweep")));
     sweep.initialStateFile = j.value("initial_state_file", std::string{});
     sweep.writeStateFile = j.value("write_state_file", std::string{});
+    sweep.writeStateEveryPointPrefix =
+        j.value("write_state_every_point_prefix", std::string{});
     parseSweepContinuationConfig(j, sweep);
 
     const auto chargeCfg = j.value("terminal_charge", nlohmann::json::object());
@@ -1063,6 +1074,8 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         sweep.initialStateFile = resolve(sweep.initialStateFile);
     if (!sweep.writeStateFile.empty())
         sweep.writeStateFile = resolve(sweep.writeStateFile);
+    if (!sweep.writeStateEveryPointPrefix.empty())
+        sweep.writeStateEveryPointPrefix = resolve(sweep.writeStateEveryPointPrefix);
     if (sweep.diagnostics.terminalBalance.enabled) {
         if (sweep.diagnostics.terminalBalance.csvFile.empty()) {
             const std::filesystem::path csvPath(sweep.csvFile);
@@ -2662,6 +2675,13 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
         if (converged && !sweep.writeStateFile.empty())
             writeDDSolutionStateCsv(sweep.writeStateFile, sol);
+        if (converged && !sweep.writeStateEveryPointPrefix.empty()) {
+            const std::filesystem::path prefix(sweep.writeStateEveryPointPrefix);
+            const std::filesystem::path path =
+                prefix.parent_path() /
+                (prefix.filename().string() + "_bias_" + biasToken(voltage) + ".csv");
+            writeDDSolutionStateCsv(path, sol);
+        }
 
         points.push_back(std::move(point));
     };
