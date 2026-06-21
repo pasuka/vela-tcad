@@ -58,6 +58,7 @@ add_library(vela_core STATIC
     src/io/VTKWriter.cpp
     src/io/CSVWriter.cpp
     src/io/CsvUtils.cpp
+    src/io/DDSolutionCsv.cpp
     src/physics/DopingModel.cpp
     src/physics/CarrierStatistics.cpp
     src/physics/SRHRecombination.cpp
@@ -165,6 +166,9 @@ endif()
 # ---------------------------------------------------------------------------
 add_executable(vela_example_runner src/tools/vela_example_runner.cpp)
 target_link_libraries(vela_example_runner PRIVATE vela_core)
+
+add_executable(pn2d_jacobian_block_audit src/tools/pn2d_jacobian_block_audit.cpp)
+target_link_libraries(pn2d_jacobian_block_audit PRIVATE vela_core)
 
 if(VELA_HDF5_TARGET)
     add_executable(sentaurus_import src/tools/sentaurus_import.cpp)

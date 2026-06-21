@@ -2,6 +2,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "vela/io/DDSolutionCsv.h"
 #include "vela/simulation/DCSweep.h"
 #include "vela/simulation/DCSweepPredictor.h"
 #include "vela/simulation/DCSweepStepControl.h"
@@ -2112,6 +2113,30 @@ TEST_CASE("DCSweep: write_state_file stores latest converged restart state", "[d
         for (std::size_t column = 1; column < rows[row].size(); ++column)
             REQUIRE(std::isfinite(std::stod(rows[row][column])));
     }
+}
+
+TEST_CASE("DDSolution CSV shared IO roundtrips restart state", "[dc_sweep]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto path = dir / "state.csv";
+
+    DDSolution solution;
+    solution.psi = VectorXd::LinSpaced(3, -0.1, 0.1);
+    solution.phin = VectorXd::LinSpaced(3, 0.2, 0.4);
+    solution.phip = VectorXd::LinSpaced(3, -0.4, -0.2);
+    solution.n = VectorXd::Constant(3, 1.0e16);
+    solution.p = VectorXd::Constant(3, 2.0e16);
+
+    writeDDSolutionStateCsv(path, solution);
+    const DDSolution loaded = readDDSolutionStateCsv(path, 3);
+
+    REQUIRE((loaded.psi - solution.psi).norm() == Catch::Approx(0.0));
+    REQUIRE((loaded.phin - solution.phin).norm() == Catch::Approx(0.0));
+    REQUIRE((loaded.phip - solution.phip).norm() == Catch::Approx(0.0));
+    REQUIRE((loaded.n - solution.n).norm() == Catch::Approx(0.0));
+    REQUIRE((loaded.p - solution.p).norm() == Catch::Approx(0.0));
 }
 
 TEST_CASE("DCSweep: initial_state_file validates restart node coverage", "[dc_sweep]")
