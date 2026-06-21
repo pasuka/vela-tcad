@@ -2195,24 +2195,25 @@ without bound as `M -> infinity`. Sentaurus current rises ~2x/V at `-20 V`
 multiplication grows more gently, giving Vela a slightly higher effective
 breakdown voltage.
 
-### Accepted tolerance
+### BV Acceptance Scope After `avaljac`
 
-The residual high-bias deficit has been exhaustively root-caused (see
-`/memories/repo/workflow_notes.md`): every isolated term matches Sentaurus
-(`psi`, junction electric field, mobility, `ni`/BGN, SRH net rate `1.0000x`,
-avalanche multiplication integral `M` ratio `1.007`, e/h source partition,
-contacts `~0 mV`), and uniform 2x depletion-mesh refinement moves the current by
-only `0.11%`. The irreducible difference is a mesh-converged depletion-region
-Scharfetter-Gummel carrier-continuity flux-divergence balance that settles the
-minority quasi-Fermi level `~7 mV` lower in Vela, Boltzmann-amplified
-(`1/Vt = 38.7/V`) into the breakdown-sensitive current. It is a physically
-negligible, sub-percent state-level discretization difference, not a bug in any
-isolated physics model. It is therefore accepted as a documented discretization
-tolerance: pn2d BV is calibrated to `<= ~0.04` decade for `|V| <= 10 V` and
-`~0.12` decade through the `-13.2 V` band, with a known, monotonically widening
-gap approaching avalanche breakdown. Closing it would require changing the core
-SG continuity flux-divergence discretization (high risk to this calibration) for
-no physically meaningful accuracy gain.
+The `avaljac` branch demonstrates that the Sentaurus-faithful BV physics block can
+be continued to `-20 V` without Newton failure. This is a convergence milestone,
+not a final BV parity acceptance. The full-curve shape gate remains open because
+the current Vela curve does not reproduce the Sentaurus one-volt growth knee in
+the `-18 V..-20 V` region.
+
+Accepted status is limited to:
+
+- SG avalanche source Jacobian completeness for the current production path.
+- SRH/Auger local derivative coverage in the coupled residual/Jacobian.
+- End-to-end continuation robustness to `-20 V` for the current branch.
+
+Open status remains:
+
+- Real full-mesh BV-state Jacobian block replay.
+- Curve-shape parity over `-10 V..-20 V`.
+- The physical cause of the missing high-bias one-volt current-growth knee.
 
 Reproduce:
 
@@ -2222,3 +2223,90 @@ $base = "build-release\reference_tcad\pn2d_sentaurus2018"
 build-release\vela_example_runner.exe --config "$base\reports\stepB_bv_minus20\simulation_bv_minus20.json"
 python scripts\compute_bv_iv_rms_minus20.py --reference "$base\reference_curves\pn2d_sentaurus2018_bv_reference.csv" --candidate "$base\reports\stepB_bv_minus20\materials_aligned_minus20.csv"
 ```
+
+### PN2D BV Jacobian Audit Baseline
+
+Current BV production physics uses `van_overstraeten`, `driving_force:
+quasi_fermi_gradient`, `generation: current_density`, and
+`current_approximation: density_gradient`. In this SG edge-current avalanche
+path, `CoupledDDAssembler::assembleJacobian` finite-differences the combined
+edge avalanche source with respect to the six endpoint potentials, so the
+matrix includes carrier-density, alpha driving-field, and local field-dependent
+edge-mobility derivatives for that source discretization.
+
+The non-SG node-local avalanche path remains intentionally approximate: it
+includes local carrier-density derivatives but omits driving-field and mobility
+derivatives. That path is not the current PN2D BV production path and must not
+be used as evidence that the SG BV Jacobian is incomplete.
+
+### PN2D BV Knee-Shape Acceptance Gate
+
+BV parity is not accepted solely because the `-20 V` sweep converges. The next
+acceptance gate requires the Vela knee to move toward the Sentaurus knee
+window, approximately `-18 V` to `-19 V`, and requires the `-10 V` to `-20 V`
+curve to avoid artificial plateaus or early step transitions near `-11 V` to
+`-12 V`.
+
+The current `pn2d_sentaurus2018_bv_minus20_avaljac.csv` audit
+(`scripts/diagnose_pn2d_bv_knee_shape.py`) gives:
+
+| curve | first 1 V growth ratio > 1.5 | first 1 V growth ratio > 2.0 |
+|---|---:|---:|
+| Sentaurus | `-19.0 V` | `-20.0 V` |
+| Vela `avaljac` | none in `-10..-20 V` | none in `-10..-20 V` |
+
+The maximum absolute log10 current error over `-10 V..-20 V` is `0.891693`
+decades for this audit curve. This keeps the next BV work focused on curve
+shape and avalanche feedback parity, not only Newton convergence.
+
+### PN2D BV Next Physics Decision
+
+No production physics configuration is promoted from this audit. The current
+evidence rejects the unsafe options listed in the BV follow-up plan:
+
+- Do not rewrite the core SG flux-divergence discretization as a BV calibration
+  step.
+- Do not use `source_geometry_scale` as a hidden calibration factor.
+- Do not accept a change that only improves one bias point while preserving the
+  wrong high-bias curve shape.
+- Do not disable SRH for the Sentaurus-faithful BV comparison.
+
+The supporting diagnostics are:
+
+- `tests/test_impact_ionization.cpp` now covers SG avalanche Jacobian
+  consistency with low-density quasi-Fermi-to-electric-field interpolation, so
+  the current SG source Jacobian already includes the interpolation sensitivity.
+- `stepB_loop_gain_sensitivity_m13p2` reports
+  `M_electron_qf_vela_over_sentaurus = 1.00734`; the avalanche multiplication
+  integral is close, while the carrier generation ratios close to the
+  Boltzmann prediction from `~6..9 mV` quasi-Fermi level offsets.
+- `active_edge_flux_factors_m13p2` keeps the active-edge particle-flux ratio at
+  about `0.73x`, with electric-field and quasi-Fermi-gradient ratios near
+  unity. That points at carrier-density/level alignment, not an SG edge flux
+  formula mismatch.
+- `edge_direction_source_policy_m13p2` and the focused restart variant both
+  select active-edge averaging as the closest diagnostic policy, with median
+  ratios around `0.76x`, but this remains source-support semantics evidence,
+  not a production correction.
+
+The next implementation target should therefore be a real BV-state Jacobian
+block export probe and curve-shape experiments around avalanche feedback and
+absolute quasi-Fermi level alignment. Reference configuration changes should
+wait until they move the `-10 V..-20 V` knee shape toward Sentaurus rather than
+only changing a local source magnitude.
+
+### PN2D BV Jacobian Block Probe
+
+`scripts/diagnose_pn2d_bv_jacobian_block_audit.py` now delegates to
+`pn2d_jacobian_block_audit` when the C++ probe executable is present. The probe
+constructs a small PN coupled-DD fixture and writes finite analytic-vs-FD norms
+for `poisson`, `transport`, `srh_auger`, `sg_avalanche`, and
+`dirichlet_or_gauge` blocks. It uses a short strong-field fixture for the SG
+avalanche block so Van Overstraeten coefficients are active, and a milder
+fixture for SRH/Auger so recombination derivatives are not judged on an
+avalanche-stiff finite-difference scale.
+
+This is a real assembler-backed Jacobian block audit, but it is still a fixture
+probe rather than a replay of the full `pn2d_sentaurus2018` BV restart state.
+The remaining upgrade is to export or reconstruct the large BV state and run
+the same block decomposition on that state.
