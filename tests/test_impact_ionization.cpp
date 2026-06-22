@@ -41,6 +41,22 @@ static DeviceMesh makePNMesh()
     return mesh;
 }
 
+static DeviceMesh makeContactInteriorMesh()
+{
+    DeviceMesh mesh;
+    const double L = 1.0e-6;
+    Node n0; n0.id=0; n0.x=0.0; n0.y=0.0; mesh.addNode(n0);
+    Node n1; n1.id=1; n1.x=L; n1.y=0.0; mesh.addNode(n1);
+    Node n2; n2.id=2; n2.x=0.0; n2.y=L; mesh.addNode(n2);
+    Node n3; n3.id=3; n3.x=0.5 * L; n3.y=0.5 * L; mesh.addNode(n3);
+    Cell c0; c0.id=0; c0.type=CellType::Tri3; c0.region_id=0; c0.node_ids={0,1,3}; mesh.addCell(c0);
+    Cell c1; c1.id=1; c1.type=CellType::Tri3; c1.region_id=0; c1.node_ids={0,3,2}; mesh.addCell(c1);
+    Region r0; r0.id=0; r0.name="si"; r0.material="Si"; r0.cell_ids={0,1}; mesh.addRegion(r0);
+    Contact anode; anode.id=0; anode.name="anode"; anode.region_id=0; anode.node_ids={0}; mesh.addContact(anode);
+    mesh.buildEdges();
+    return mesh;
+}
+
 
 TEST_CASE("Edge avalanche directional weights follow quasi-Fermi gradient direction",
           "[impact][diagnostic]")
@@ -1160,6 +1176,130 @@ TEST_CASE("Grad-QF avalanche source can rebuild driving field with GSS carrier t
     REQUIRE(record.holeImpactField ==
             Catch::Approx(std::abs(truncatedHoleQf(j) - truncatedHoleQf(i)) /
                           record.edgeLength));
+}
+
+TEST_CASE("Grad-QF avalanche source falls back to electric field on contact-adjacent edges",
+          "[impact][grad_qf]")
+{
+    DeviceMesh mesh = makeContactInteriorMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"si", 1.0e21, 0.0},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const int nodeCount = static_cast<int>(mesh.numNodes());
+    const Real Vt = 0.025852;
+    DDSolution sol;
+    sol.psi = VectorXd::Zero(nodeCount);
+    sol.phin = VectorXd::Zero(nodeCount);
+    sol.phip = VectorXd::Zero(nodeCount);
+    sol.psi(0) = 0.0;
+    sol.psi(3) = 0.1;
+    sol.phin(0) = 0.0;
+    sol.phin(3) = 2.0;
+    sol.phip(0) = 0.0;
+    sol.phip(3) = -2.0;
+    sol.n = VectorXd::Constant(nodeCount, 1.0e21);
+    sol.p = VectorXd::Constant(nodeCount, 1.0e15);
+    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "quasi_fermi_gradient";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "density_gradient";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0e-30;
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, constants::T0);
+    const auto impact = makeImpactIonizationModel(impactConfig);
+
+    const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *impact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+
+    const auto contactEdgeRecord = std::find_if(
+        records.begin(),
+        records.end(),
+        [](const auto& record) {
+            return (record.node0 == 0 && record.node1 == 3) ||
+                   (record.node0 == 3 && record.node1 == 0);
+        });
+    REQUIRE(contactEdgeRecord != records.end());
+    const Real electricField = std::abs((sol.psi(3) - sol.psi(0)) /
+                                        contactEdgeRecord->edgeLength);
+    const Real electronQfField = std::abs((sol.phin(3) - sol.phin(0)) /
+                                          contactEdgeRecord->edgeLength);
+
+    REQUIRE(electronQfField > 10.0 * electricField);
+    REQUIRE(contactEdgeRecord->electronImpactField == Catch::Approx(electricField));
+    REQUIRE(contactEdgeRecord->holeImpactField == Catch::Approx(electricField));
+
+    const auto contactCellInteriorRecord = std::find_if(
+        records.begin(),
+        records.end(),
+        [](const auto& record) {
+            return (record.node0 == 1 && record.node1 == 3) ||
+                   (record.node0 == 3 && record.node1 == 1);
+        });
+    REQUIRE(contactCellInteriorRecord != records.end());
+    const Real interiorElectricField = std::abs((sol.psi(3) - sol.psi(1)) /
+                                                contactCellInteriorRecord->edgeLength);
+    const Real interiorElectronQfField = std::abs((sol.phin(3) - sol.phin(1)) /
+                                                  contactCellInteriorRecord->edgeLength);
+
+    REQUIRE(interiorElectronQfField > 10.0 * interiorElectricField);
+    REQUIRE(contactCellInteriorRecord->electronImpactField == Catch::Approx(interiorElectricField));
+    REQUIRE(contactCellInteriorRecord->holeImpactField == Catch::Approx(interiorElectricField));
+}
+
+TEST_CASE("High-field driving helper falls back to electric field in contact elements",
+          "[impact][mobility]")
+{
+    DeviceMesh mesh = makeContactInteriorMesh();
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto contactNodes = detail::contactNodeMask(mesh);
+
+    const auto contactCellInteriorEdge = std::find_if(
+        mesh.edges().begin(),
+        mesh.edges().end(),
+        [](const Edge& edge) {
+            return (edge.n0 == 1 && edge.n1 == 3) ||
+                   (edge.n0 == 3 && edge.n1 == 1);
+        });
+    REQUIRE(contactCellInteriorEdge != mesh.edges().end());
+
+    const Real qfField = 2.0e6;
+    const Real electricField = 1.0e5;
+    const Real selected = detail::edgeHighFieldDrivingField(
+        true,
+        qfField,
+        electricField,
+        edgeCells,
+        mesh,
+        contactCellInteriorEdge->id,
+        contactNodes);
+
+    REQUIRE(selected == Catch::Approx(electricField));
 }
 
 TEST_CASE("Grad-QF avalanche source uses quasi-Fermi field with SG current proxy",

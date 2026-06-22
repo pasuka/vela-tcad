@@ -20,6 +20,58 @@ if str(REPO) not in sys.path:
 
 
 class ReferenceTcadToolsTest(unittest.TestCase):
+    def test_pn2d_bv_artifact_validator_accepts_endpoint_multibias_set(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_artifacts_valid_") as tmp:
+            source = Path(tmp) / "source"
+            self._write_bv_artifact_fixture(source)
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "validate_pn2d_sentaurus_bv_artifacts.py"),
+                "--source-dir", str(source),
+                "--require-final-bias", "-20.0",
+                "--expected-multibias-count", "201",
+            ], text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("201", result.stdout)
+            self.assertIn("pn2d_bv_multibias_0200_des.tdr", result.stdout)
+
+    def test_pn2d_bv_artifact_validator_rejects_missing_endpoint(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_artifacts_missing_") as tmp:
+            source = Path(tmp) / "source"
+            self._write_bv_artifact_fixture(source)
+            (source / "pn2d_bv_multibias_0200_des.tdr").unlink()
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "validate_pn2d_sentaurus_bv_artifacts.py"),
+                "--source-dir", str(source),
+                "--require-final-bias", "-20.0",
+                "--expected-multibias-count", "201",
+            ], text=True, capture_output=True)
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("expected 201 pn2d_bv_multibias TDR files", result.stderr)
+
+    def test_pn2d_bv_artifact_validator_accepts_sentaurus_des_log_name(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_artifacts_deslog_") as tmp:
+            source = Path(tmp) / "source"
+            self._write_bv_artifact_fixture(source)
+            (source / "pn2d_bv.log_des.log").write_text((source / "pn2d_bv.log").read_text())
+            (source / "pn2d_bv.log").unlink()
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "validate_pn2d_sentaurus_bv_artifacts.py"),
+                "--source-dir", str(source),
+                "--require-final-bias", "-20.0",
+                "--expected-multibias-count", "201",
+            ], text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("pn2d_bv.log_des.log", result.stdout)
+
     def test_pn2d_bv_curve_loader_prefers_per_um_current(self) -> None:
         module_path = REPO / "scripts" / "compare_pn2d_bv_multibias_fields.py"
         spec = importlib.util.spec_from_file_location("compare_pn2d_bv_multibias_fields", module_path)
@@ -38,6 +90,25 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             ], [[-0.2, -1.0e-12, -1.0e-18, 1]])
 
             self.assertEqual(module.load_curve_points(curve), [(-0.2, -1.0e-18)])
+
+    def test_pn2d_bv_trend_summary_marks_missing_current_window_not_evaluated(self) -> None:
+        module_path = REPO / "scripts" / "compare_pn2d_bv_multibias_fields.py"
+        spec = importlib.util.spec_from_file_location("compare_pn2d_bv_multibias_fields", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        summary = module.build_bv_trend_summary(
+            biases=[-0.5, -2.0, -5.0],
+            curve_reference=[(-0.5, -1.0e-18), (-2.0, -2.0e-18), (-5.0, -5.0e-18)],
+            curve_candidate=[(-0.5, -0.8e-18), (-2.0, -1.8e-18), (-5.0, -4.0e-18)],
+            field_rows=[],
+            current_floor=1.0e-25,
+        )
+
+        self.assertEqual(summary["current_windows"][0]["name"], "mid_bias_current_band")
+        self.assertEqual(summary["current_windows"][0]["status"], "not_evaluated")
 
     def test_reference_tcad_device_configs_exist(self) -> None:
         expected = [
@@ -10808,6 +10879,18 @@ Solve {
             writer = csv.writer(handle)
             writer.writerow(header)
             writer.writerows(rows)
+
+    @staticmethod
+    def _write_bv_artifact_fixture(source: Path) -> None:
+        source.mkdir(parents=True, exist_ok=True)
+        (source / "pn2d_bv.plt").write_text(
+            "Anode OuterVoltage,Anode TotalCurrent\n"
+            "0.0,0.0\n"
+            "-20.0,-1.0e-12\n"
+        )
+        (source / "pn2d_bv.log").write_text("Sentaurus run completed cleanly\n")
+        for index in range(201):
+            (source / f"pn2d_bv_multibias_{index:04d}_des.tdr").write_text("tdr\n")
 
     @staticmethod
     def _read_csv(path: Path) -> list[dict[str, str]]:

@@ -836,6 +836,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             x.segment(phipOffset(), N) * potentialScale, mesh_)
         : nodeElectricFields;
     const bool qfMobility = mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
+    const std::vector<bool> contactNodes = detail::contactNodeMask(mesh_);
     const bool transportMobilityDerivative = transportMobilityDependsOnPotentials(mobilityConfig_);
     const bool sgCurrentAvalanche = impactIonizationEnabled_ &&
         detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig_);
@@ -919,8 +920,10 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real electricField = std::abs((psi_j - psi_i) / h);
         const Real electronQfField = std::abs((electronQf_j - electronQf_i) / h);
         const Real holeQfField = std::abs((holeQf_j - holeQf_i) / h);
-        const Real electronCoefficientField = qfImpact ? electronQfField : electricField;
-        const Real holeCoefficientField = qfImpact ? holeQfField : electricField;
+        const Real electronCoefficientField = detail::edgeHighFieldDrivingField(
+            qfImpact, electronQfField, electricField, edgeCells_, mesh_, e, contactNodes);
+        const Real holeCoefficientField = detail::edgeHighFieldDrivingField(
+            qfImpact, holeQfField, electricField, edgeCells_, mesh_, e, contactNodes);
         const Real electronMobilityField = qfMobility ? electronQfField : electricField;
         const Real holeMobilityField = qfMobility ? holeQfField : electricField;
         const Real nAvg = 0.5 * (n_i + n_j);

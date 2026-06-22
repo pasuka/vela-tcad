@@ -462,6 +462,91 @@ def curve_compare_rows(
     return rows
 
 
+def evaluate_current_window(
+    name: str,
+    bias_min: float,
+    bias_max: float,
+    min_ratio: float,
+    max_ratio: float,
+    reference: list[tuple[float, float]],
+    candidate: list[tuple[float, float]],
+    current_floor: float,
+) -> dict[str, Any]:
+    sample_biases = sorted({bias_min, (bias_min + bias_max) / 2.0, bias_max})
+    ratios: list[float] = []
+    missing_biases: list[float] = []
+    floor_biases: list[float] = []
+    for bias in sample_biases:
+        ref = interpolate_curve(reference, bias)
+        cand = interpolate_curve(candidate, bias)
+        if ref is None or cand is None:
+            missing_biases.append(bias)
+            continue
+        if abs(ref) < current_floor or abs(cand) < current_floor or ref == 0.0:
+            floor_biases.append(bias)
+            continue
+        ratios.append(abs(cand) / abs(ref))
+
+    status = "pass"
+    reason = ""
+    if missing_biases:
+        status = "not_evaluated"
+        reason = "missing reference or candidate points in requested bias window"
+    elif floor_biases:
+        status = "not_evaluated"
+        reason = "reference or candidate current below floor in requested bias window"
+    elif not ratios:
+        status = "not_evaluated"
+        reason = "no current ratios available in requested bias window"
+    elif min(ratios) < min_ratio or max(ratios) > max_ratio:
+        status = "fail"
+        reason = "current ratio outside configured band"
+
+    return {
+        "name": name,
+        "bias_min": bias_min,
+        "bias_max": bias_max,
+        "min_ratio": min_ratio,
+        "max_ratio": max_ratio,
+        "sample_biases": sample_biases,
+        "ratios": ratios,
+        "status": status,
+        "reason": reason,
+    }
+
+
+def build_bv_trend_summary(
+    biases: list[float],
+    curve_reference: list[tuple[float, float]],
+    curve_candidate: list[tuple[float, float]],
+    field_rows: list[dict[str, Any]],
+    current_floor: float,
+) -> dict[str, Any]:
+    _ = field_rows
+    current_windows = [
+        evaluate_current_window(
+            "mid_bias_current_band",
+            -13.2,
+            -13.0,
+            0.6,
+            1.4,
+            curve_reference,
+            curve_candidate,
+            current_floor,
+        )
+    ]
+    return {
+        "biases_compared": biases,
+        "max_field_monotonic": None,
+        "max_field_monotonic_status": "not_evaluated",
+        "current_windows": current_windows,
+        "high_bias_knee_shape": {
+            "status": "diagnostic",
+            "reason": "current evidence does not support full -20 V absolute-current parity",
+        },
+    }
+
+
 def compare_bias(
     bias: float,
     sentaurus_dir: Path | None,
@@ -729,6 +814,17 @@ def main() -> None:
     debug_ranking = build_debug_ranking(rows, curve_rows)
     (args.out_dir / "debug_ranking.json").write_text(
         json.dumps(clean_for_json(debug_ranking), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    trend_summary = build_bv_trend_summary(
+        biases,
+        curve_reference,
+        curve_candidate,
+        rows,
+        args.current_floor,
+    )
+    (args.out_dir / "bv_trend_summary.json").write_text(
+        json.dumps(clean_for_json(trend_summary), indent=2, sort_keys=True),
         encoding="utf-8",
     )
     write_readme(args.out_dir / "README.md", biases, quantities, args.current_floor, args.avalanche_floor)

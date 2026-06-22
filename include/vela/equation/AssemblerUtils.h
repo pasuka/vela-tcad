@@ -520,6 +520,57 @@ inline bool usesQuasiFermiCarrierTruncation(const ImpactIonizationModelConfig& c
     return config.quasiFermiCarrierTruncation > 0.0;
 }
 
+inline std::vector<bool> contactNodeMask(const DeviceMesh& mesh)
+{
+    std::vector<bool> mask(static_cast<std::size_t>(mesh.numNodes()), false);
+    for (const Contact& contact : mesh.contacts()) {
+        for (Index nodeId : contact.node_ids) {
+            if (nodeId < mesh.numNodes())
+                mask[static_cast<std::size_t>(nodeId)] = true;
+        }
+    }
+    return mask;
+}
+
+inline bool edgeTouchesContactElement(const DeviceMesh& mesh,
+                                      const std::vector<std::vector<Index>>& edgeCells,
+                                      Index edgeId,
+                                      const std::vector<bool>& contactNodes)
+{
+    const Edge& edge = mesh.getEdge(edgeId);
+    if (contactNodes[static_cast<std::size_t>(edge.n0)] ||
+        contactNodes[static_cast<std::size_t>(edge.n1)]) {
+        return true;
+    }
+    if (edgeId >= edgeCells.size())
+        return false;
+    for (Index cellId : edgeCells[edgeId]) {
+        const Cell& cell = mesh.getCell(cellId);
+        for (Index nodeId : cell.node_ids) {
+            if (nodeId < mesh.numNodes() &&
+                contactNodes[static_cast<std::size_t>(nodeId)]) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+inline Real edgeHighFieldDrivingField(bool qfDrivingForce,
+                                      Real qfField,
+                                      Real electricField,
+                                      const std::vector<std::vector<Index>>& edgeCells,
+                                      const DeviceMesh& mesh,
+                                      Index edgeId,
+                                      const std::vector<bool>& contactNodes)
+{
+    if (!qfDrivingForce)
+        return electricField;
+    if (edgeTouchesContactElement(mesh, edgeCells, edgeId, contactNodes))
+        return electricField;
+    return qfField;
+}
+
 inline Real electronQfForAvalancheGradient(Real psi,
                                            Real phin,
                                            Real electronDensity,
@@ -830,6 +881,7 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
     records.reserve(mesh.numEdges());
     const bool qfImpact = config.drivingForce == "quasi_fermi_gradient";
     const bool qfMobility = mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient";
+    const std::vector<bool> contactNodes = contactNodeMask(mesh);
     const CellScalarGradientCache electronQfGradientCache = computeCellScalarGradientCache(
         mesh, [&](Index node) {
             const int idx = static_cast<int>(node);
@@ -869,8 +921,10 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
         const Real electricField = std::abs((psi_j - psi_i) / h);
         const Real electronQfField = std::abs((electronQf_j - electronQf_i) / h);
         const Real holeQfField = std::abs((holeQf_j - holeQf_i) / h);
-        const Real electronCoefficientField = qfImpact ? electronQfField : electricField;
-        const Real holeCoefficientField = qfImpact ? holeQfField : electricField;
+        const Real electronCoefficientField = edgeHighFieldDrivingField(
+            qfImpact, electronQfField, electricField, edgeCells, mesh, e, contactNodes);
+        const Real holeCoefficientField = edgeHighFieldDrivingField(
+            qfImpact, holeQfField, electricField, edgeCells, mesh, e, contactNodes);
         const Real electronMobilityField = qfMobility ? electronQfField : electricField;
         const Real holeMobilityField = qfMobility ? holeQfField : electricField;
 
