@@ -507,6 +507,275 @@ inline bool usesDensityGradientAvalancheCurrent(
            config.currentApproximation == "density_gradient";
 }
 
+inline bool usesEdgeCurrentAvalancheSource(
+    const ImpactIonizationModelConfig& config)
+{
+    return config.generation == "current_density" &&
+           (config.currentApproximation == "density_gradient" ||
+            config.currentApproximation == "grad_qf");
+}
+
+inline bool usesQuasiFermiCarrierTruncation(const ImpactIonizationModelConfig& config)
+{
+    return config.quasiFermiCarrierTruncation > 0.0;
+}
+
+inline Real electronQfForAvalancheGradient(Real psi,
+                                           Real phin,
+                                           Real electronDensity,
+                                           Real intrinsicDensity,
+                                           Real Vt,
+                                           const ImpactIonizationModelConfig& config)
+{
+    if (!usesQuasiFermiCarrierTruncation(config) || intrinsicDensity <= 0.0)
+        return phin;
+    const Real carrier = std::max(
+        std::max(electronDensity, 0.0),
+        config.quasiFermiCarrierTruncation * intrinsicDensity);
+    return psi - Vt * std::log(carrier / intrinsicDensity);
+}
+
+inline Real holeQfForAvalancheGradient(Real psi,
+                                       Real phip,
+                                       Real holeDensity,
+                                       Real intrinsicDensity,
+                                       Real Vt,
+                                       const ImpactIonizationModelConfig& config)
+{
+    if (!usesQuasiFermiCarrierTruncation(config) || intrinsicDensity <= 0.0)
+        return phip;
+    const Real carrier = std::max(
+        std::max(holeDensity, 0.0),
+        config.quasiFermiCarrierTruncation * intrinsicDensity);
+    return psi + Vt * std::log(carrier / intrinsicDensity);
+}
+
+struct EdgeAvalancheDirectionalWeights {
+    Real electronNode0 = 0.5;
+    Real electronNode1 = 0.5;
+    Real holeNode0 = 0.5;
+    Real holeNode1 = 0.5;
+};
+
+struct CellScalarGradientCache {
+    std::vector<Point2> gradients;
+    std::vector<Real> areas;
+    std::vector<bool> valid;
+};
+
+template <typename ValueAt>
+inline Point2 cellScalarGradient(
+    const DeviceMesh& mesh,
+    const Cell&       cell,
+    ValueAt&&         valueAt,
+    bool&             valid,
+    Real&             area)
+{
+    valid = false;
+    area = 0.0;
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+        return Point2::Zero();
+
+    const Index n0 = cell.node_ids[0];
+    const Index n1 = cell.node_ids[1];
+    const Index n2 = cell.node_ids[2];
+    const Node& p0 = mesh.getNode(n0);
+    const Node& p1 = mesh.getNode(n1);
+    const Node& p2 = mesh.getNode(n2);
+    const Real dx10 = p1.x - p0.x;
+    const Real dy10 = p1.y - p0.y;
+    const Real dx20 = p2.x - p0.x;
+    const Real dy20 = p2.y - p0.y;
+    const Real det = dx10 * dy20 - dy10 * dx20;
+    if (std::abs(det) <= 1.0e-300)
+        return Point2::Zero();
+
+    const Real dv10 = valueAt(n1) - valueAt(n0);
+    const Real dv20 = valueAt(n2) - valueAt(n0);
+    valid = true;
+    area = 0.5 * std::abs(det);
+    return Point2{
+        (dv10 * dy20 - dv20 * dy10) / det,
+        (dx10 * dv20 - dx20 * dv10) / det,
+    };
+}
+
+template <typename ValueAt>
+inline CellScalarGradientCache computeCellScalarGradientCache(
+    const DeviceMesh& mesh,
+    ValueAt&&         valueAt)
+{
+    CellScalarGradientCache cache;
+    cache.gradients.assign(static_cast<std::size_t>(mesh.numCells()), Point2::Zero());
+    cache.areas.assign(static_cast<std::size_t>(mesh.numCells()), 0.0);
+    cache.valid.assign(static_cast<std::size_t>(mesh.numCells()), false);
+
+    for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
+        bool valid = false;
+        Real area = 0.0;
+        cache.gradients[cellId] = cellScalarGradient(
+            mesh, mesh.getCell(cellId), valueAt, valid, area);
+        cache.areas[cellId] = area;
+        cache.valid[cellId] = valid;
+    }
+    return cache;
+}
+
+template <typename ValueAt>
+inline Point2 edgeAveragedCellScalarGradient(
+    const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh&                      mesh,
+    Index                                  edgeId,
+    ValueAt&&                              valueAt,
+    bool&                                  valid)
+{
+    valid = false;
+    if (edgeId >= edgeCells.size())
+        return Point2::Zero();
+
+    Point2 weightedGradient = Point2::Zero();
+    Real totalArea = 0.0;
+    for (const Index cellId : edgeCells[edgeId]) {
+        bool cellValid = false;
+        Real area = 0.0;
+        const Point2 gradient = cellScalarGradient(
+            mesh, mesh.getCell(cellId), valueAt, cellValid, area);
+        if (!cellValid || area <= 0.0)
+            continue;
+        weightedGradient += area * gradient;
+        totalArea += area;
+    }
+
+    if (totalArea <= 0.0)
+        return Point2::Zero();
+    valid = true;
+    return weightedGradient / totalArea;
+}
+
+inline Point2 edgeAveragedCellScalarGradient(
+    const std::vector<std::vector<Index>>& edgeCells,
+    Index                                  edgeId,
+    const CellScalarGradientCache&         cache,
+    bool&                                  valid)
+{
+    valid = false;
+    if (edgeId >= edgeCells.size())
+        return Point2::Zero();
+
+    Point2 weightedGradient = Point2::Zero();
+    Real totalArea = 0.0;
+    for (const Index cellId : edgeCells[edgeId]) {
+        if (cellId >= cache.valid.size() || !cache.valid[cellId])
+            continue;
+        const Real area = cache.areas[cellId];
+        if (area <= 0.0)
+            continue;
+        weightedGradient += area * cache.gradients[cellId];
+        totalArea += area;
+    }
+
+    if (totalArea <= 0.0)
+        return Point2::Zero();
+    valid = true;
+    return weightedGradient / totalArea;
+}
+
+template <typename ValueAt>
+inline Real edgeMinusGradientUnitDot(
+    const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh&                      mesh,
+    Index                                  edgeId,
+    ValueAt&&                              valueAt)
+{
+    const Edge& edge = mesh.getEdge(edgeId);
+    const Node& n0 = mesh.getNode(edge.n0);
+    const Node& n1 = mesh.getNode(edge.n1);
+    if (edge.length <= 1.0e-30)
+        return 0.0;
+
+    bool validGradient = false;
+    const Point2 gradient = edgeAveragedCellScalarGradient(
+        edgeCells, mesh, edgeId, valueAt, validGradient);
+    if (!validGradient)
+        return 0.0;
+
+    const Point2 minusGradient = -gradient;
+    const Real gradientNorm = minusGradient.norm();
+    if (gradientNorm <= 1.0e-300)
+        return 0.0;
+
+    const Point2 edgeUnit{(n1.x - n0.x) / edge.length, (n1.y - n0.y) / edge.length};
+    return std::clamp(edgeUnit.dot(minusGradient / gradientNorm), -1.0, 1.0);
+}
+
+inline Real edgeMinusGradientUnitDot(
+    const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh&                      mesh,
+    Index                                  edgeId,
+    const CellScalarGradientCache&         cache)
+{
+    const Edge& edge = mesh.getEdge(edgeId);
+    const Node& n0 = mesh.getNode(edge.n0);
+    const Node& n1 = mesh.getNode(edge.n1);
+    if (edge.length <= 1.0e-30)
+        return 0.0;
+
+    bool validGradient = false;
+    const Point2 gradient = edgeAveragedCellScalarGradient(
+        edgeCells, edgeId, cache, validGradient);
+    if (!validGradient)
+        return 0.0;
+
+    const Point2 minusGradient = -gradient;
+    const Real gradientNorm = minusGradient.norm();
+    if (gradientNorm <= 1.0e-300)
+        return 0.0;
+
+    const Point2 edgeUnit{(n1.x - n0.x) / edge.length, (n1.y - n0.y) / edge.length};
+    return std::clamp(edgeUnit.dot(minusGradient / gradientNorm), -1.0, 1.0);
+}
+
+inline EdgeAvalancheDirectionalWeights edgeAvalancheDirectionalWeights(
+    const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh&                      mesh,
+    Index                                  edgeId,
+    const CellScalarGradientCache&         electronGradientCache,
+    const CellScalarGradientCache&         holeGradientCache)
+{
+    EdgeAvalancheDirectionalWeights weights;
+    const Real electronDot = edgeMinusGradientUnitDot(
+        edgeCells, mesh, edgeId, electronGradientCache);
+    const Real holeDot = edgeMinusGradientUnitDot(
+        edgeCells, mesh, edgeId, holeGradientCache);
+
+    weights.electronNode0 = std::clamp(0.5 + 0.5 * electronDot, 0.0, 1.0);
+    weights.electronNode1 = 1.0 - weights.electronNode0;
+    weights.holeNode1 = std::clamp(0.5 + 0.5 * holeDot, 0.0, 1.0);
+    weights.holeNode0 = 1.0 - weights.holeNode1;
+    return weights;
+}
+
+template <typename ElectronQfAt, typename HoleQfAt>
+inline EdgeAvalancheDirectionalWeights edgeAvalancheDirectionalWeights(
+    const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh&                      mesh,
+    Index                                  edgeId,
+    ElectronQfAt&&                         electronQfAt,
+    HoleQfAt&&                             holeQfAt)
+{
+    EdgeAvalancheDirectionalWeights weights;
+    const Real electronDot = edgeMinusGradientUnitDot(
+        edgeCells, mesh, edgeId, electronQfAt);
+    const Real holeDot = edgeMinusGradientUnitDot(
+        edgeCells, mesh, edgeId, holeQfAt);
+
+    weights.electronNode0 = std::clamp(0.5 + 0.5 * electronDot, 0.0, 1.0);
+    weights.electronNode1 = 1.0 - weights.electronNode0;
+    weights.holeNode1 = std::clamp(0.5 + 0.5 * holeDot, 0.0, 1.0);
+    weights.holeNode0 = 1.0 - weights.holeNode1;
+    return weights;
+}
+
 struct SgEdgeCurrentAvalancheSourceRecord {
     Index edgeId = 0;
     Index node0 = 0;
@@ -526,6 +795,10 @@ struct SgEdgeCurrentAvalancheSourceRecord {
     Real electronSourceIntegral = 0.0;
     Real holeSourceIntegral = 0.0;
     Real edgeSourceIntegral = 0.0;
+    Real electronNode0SourceIntegral = 0.0;
+    Real electronNode1SourceIntegral = 0.0;
+    Real holeNode0SourceIntegral = 0.0;
+    Real holeNode1SourceIntegral = 0.0;
     Real node0SourceIntegral = 0.0;
     Real node1SourceIntegral = 0.0;
 };
@@ -557,6 +830,18 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
     records.reserve(mesh.numEdges());
     const bool qfImpact = config.drivingForce == "quasi_fermi_gradient";
     const bool qfMobility = mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient";
+    const CellScalarGradientCache electronQfGradientCache = computeCellScalarGradientCache(
+        mesh, [&](Index node) {
+            const int idx = static_cast<int>(node);
+            return electronQfForAvalancheGradient(
+                psi(idx), phin(idx), n(idx), ni[node], Vt, config);
+        });
+    const CellScalarGradientCache holeQfGradientCache = computeCellScalarGradientCache(
+        mesh, [&](Index node) {
+            const int idx = static_cast<int>(node);
+            return holeQfForAvalancheGradient(
+                psi(idx), phip(idx), p(idx), ni[node], Vt, config);
+        });
 
     for (Index e = 0; e < mesh.numEdges(); ++e) {
         const Edge& edge = mesh.getEdge(e);
@@ -573,9 +858,17 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
         const Real phip_i = phip(i);
         const Real phip_j = phip(j);
 
+        const Real electronQf_i = electronQfForAvalancheGradient(
+            psi_i, phin_i, n(i), ni[edge.n0], Vt, config);
+        const Real electronQf_j = electronQfForAvalancheGradient(
+            psi_j, phin_j, n(j), ni[edge.n1], Vt, config);
+        const Real holeQf_i = holeQfForAvalancheGradient(
+            psi_i, phip_i, p(i), ni[edge.n0], Vt, config);
+        const Real holeQf_j = holeQfForAvalancheGradient(
+            psi_j, phip_j, p(j), ni[edge.n1], Vt, config);
         const Real electricField = std::abs((psi_j - psi_i) / h);
-        const Real electronQfField = std::abs((phin_j - phin_i) / h);
-        const Real holeQfField = std::abs((phip_j - phip_i) / h);
+        const Real electronQfField = std::abs((electronQf_j - electronQf_i) / h);
+        const Real holeQfField = std::abs((holeQf_j - holeQf_i) / h);
         const Real electronCoefficientField = qfImpact ? electronQfField : electricField;
         const Real holeCoefficientField = qfImpact ? holeQfField : electricField;
         const Real electronMobilityField = qfMobility ? electronQfField : electricField;
@@ -644,9 +937,24 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
             record.edgeSourceIntegral += record.holeSourceIntegral;
         }
 
-        const Real halfSource = 0.5 * record.edgeSourceIntegral;
-        record.node0SourceIntegral = halfSource;
-        record.node1SourceIntegral = halfSource;
+        const EdgeAvalancheDirectionalWeights weights = edgeAvalancheDirectionalWeights(
+            edgeCells,
+            mesh,
+            e,
+            electronQfGradientCache,
+            holeQfGradientCache);
+        record.electronNode0SourceIntegral =
+            weights.electronNode0 * record.electronSourceIntegral;
+        record.electronNode1SourceIntegral =
+            weights.electronNode1 * record.electronSourceIntegral;
+        record.holeNode0SourceIntegral =
+            weights.holeNode0 * record.holeSourceIntegral;
+        record.holeNode1SourceIntegral =
+            weights.holeNode1 * record.holeSourceIntegral;
+        record.node0SourceIntegral =
+            record.electronNode0SourceIntegral + record.holeNode0SourceIntegral;
+        record.node1SourceIntegral =
+            record.electronNode1SourceIntegral + record.holeNode1SourceIntegral;
         records.push_back(record);
     }
     return records;
@@ -690,12 +998,10 @@ inline SgAvalancheSourceComponentIntegrals sgEdgeCurrentAvalancheSourceComponent
         ni,
         Vt);
     for (const auto& record : records) {
-        const Real halfElectron = 0.5 * record.electronSourceIntegral;
-        const Real halfHole = 0.5 * record.holeSourceIntegral;
-        source.electron[record.node0] += halfElectron;
-        source.electron[record.node1] += halfElectron;
-        source.hole[record.node0] += halfHole;
-        source.hole[record.node1] += halfHole;
+        source.electron[record.node0] += record.electronNode0SourceIntegral;
+        source.electron[record.node1] += record.electronNode1SourceIntegral;
+        source.hole[record.node0] += record.holeNode0SourceIntegral;
+        source.hole[record.node1] += record.holeNode1SourceIntegral;
         source.combined[record.node0] += record.node0SourceIntegral;
         source.combined[record.node1] += record.node1SourceIntegral;
     }

@@ -36,11 +36,12 @@ void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& con
             "'current_density'.");
     }
     if (config.currentApproximation != "mobility_density_gradient" &&
-        config.currentApproximation != "density_gradient") {
+        config.currentApproximation != "density_gradient" &&
+        config.currentApproximation != "grad_qf") {
         throw std::invalid_argument(
             std::string(context) +
             ": impact_ionization.current_approximation must be "
-            "'mobility_density_gradient' or 'density_gradient'.");
+            "'mobility_density_gradient', 'density_gradient', or 'grad_qf'.");
     }
     if (config.drivingForceInterpolation != "none" &&
         config.drivingForceInterpolation != "quasi_fermi_to_electric_field") {
@@ -70,6 +71,12 @@ void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& con
         throw std::invalid_argument(
             std::string(context) +
             ": impact_ionization.source_geometry_scale must be positive and finite.");
+    }
+    if (!std::isfinite(config.quasiFermiCarrierTruncation) ||
+        config.quasiFermiCarrierTruncation < 0.0) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.quasi_fermi_carrier_truncation must be non-negative and finite.");
     }
 }
 
@@ -360,7 +367,7 @@ Real addCarrierRowRegularization(SparseMatrixd& matrix,
     return std::sqrt(diagonalNormSq);
 }
 
-void applyConfiguredStepCaps(VectorXd& step,
+bool applyConfiguredStepCaps(VectorXd& step,
                              const NewtonConfig& cfg,
                              int nodeCount,
                              Real potentialScale)
@@ -370,15 +377,51 @@ void applyConfiguredStepCaps(VectorXd& step,
         if (maxAbsStep > cfg.maxUpdate)
             step *= cfg.maxUpdate / maxAbsStep;
     }
+
+    bool clippedQuasiFermi = false;
     if (cfg.quasiFermiUpdateLimit_V > 0.0) {
         const Real qfLimit = cfg.quasiFermiUpdateLimit_V / potentialScale;
         for (int i = nodeCount; i < 3 * nodeCount; ++i) {
-            if (step(i) > qfLimit)
+            if (step(i) > qfLimit) {
                 step(i) = qfLimit;
-            else if (step(i) < -qfLimit)
+                clippedQuasiFermi = true;
+            } else if (step(i) < -qfLimit) {
                 step(i) = -qfLimit;
+                clippedQuasiFermi = true;
+            }
         }
     }
+    return clippedQuasiFermi;
+}
+
+void recorrectPoissonStepForClippedQuasiFermi(VectorXd& step,
+                                              const SparseMatrixd& J,
+                                              const VectorXd& residual,
+                                              int nodeCount)
+{
+    if (nodeCount <= 0)
+        return;
+
+    const SparseMatrixd poissonBlock = sparseBlock(J, 0, 0, nodeCount, nodeCount);
+    const SparseMatrixd poissonCarrierCoupling = sparseBlock(
+        J, 0, nodeCount, nodeCount, 2 * nodeCount);
+    const VectorXd qfStep = step.segment(nodeCount, 2 * nodeCount);
+    const VectorXd rhs = -residual.segment(0, nodeCount) - poissonCarrierCoupling * qfStep;
+    LinearSolver linearSolver;
+    step.segment(0, nodeCount) = linearSolver.solve(poissonBlock, rhs);
+}
+
+void applyConfiguredStepCapsAndPoissonRecorrection(VectorXd& step,
+                                                   const SparseMatrixd& J,
+                                                   const VectorXd& residual,
+                                                   const NewtonConfig& cfg,
+                                                   int nodeCount,
+                                                   Real potentialScale)
+{
+    const bool clippedQuasiFermi = applyConfiguredStepCaps(
+        step, cfg, nodeCount, potentialScale);
+    if (clippedQuasiFermi)
+        recorrectPoissonStepForClippedQuasiFermi(step, J, residual, nodeCount);
 }
 
 NewtonCarrierDiagnostics carrierDiagnostics(const CoupledDDAssembler& assembler,
@@ -566,6 +609,7 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.quasiFermiUpdateLimit_V = json.value(
         "quasi_fermi_update_limit_V",
         cfg.quasiFermiUpdateLimit_V);
+    cfg.stallResidualFloor = json.value("stall_residual_floor", cfg.stallResidualFloor);
     cfg.carrierRegularizationScale = json.value(
         "carrier_regularization_scale",
         cfg.carrierRegularizationScale);
@@ -656,6 +700,12 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 value, scaling, cfg.impactIonization, "newtonConfigFromJson");
             cfg.impactIonization.sourceGeometryScale = value.value(
                 "source_geometry_scale", cfg.impactIonization.sourceGeometryScale);
+            cfg.impactIonization.quasiFermiCarrierTruncation = value.value(
+                "quasi_fermi_carrier_truncation",
+                cfg.impactIonization.quasiFermiCarrierTruncation);
+            cfg.impactIonization.quasiFermiCarrierTruncation = value.value(
+                "quasi_fermi_carrier_trucation",
+                cfg.impactIonization.quasiFermiCarrierTruncation);
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());
@@ -732,6 +782,9 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (cfg.quasiFermiUpdateLimit_V < 0.0 || !std::isfinite(cfg.quasiFermiUpdateLimit_V))
         throw std::invalid_argument(
             "newtonConfigFromJson: quasi_fermi_update_limit_V must be non-negative and finite.");
+    if (cfg.stallResidualFloor < 0.0 || !std::isfinite(cfg.stallResidualFloor))
+        throw std::invalid_argument(
+            "newtonConfigFromJson: stall_residual_floor must be non-negative and finite.");
     if (cfg.carrierRegularizationScale < 0.0 || !std::isfinite(cfg.carrierRegularizationScale))
         throw std::invalid_argument(
             "newtonConfigFromJson: carrier_regularization_scale must be non-negative and finite.");
@@ -789,6 +842,10 @@ NewtonSolver::NewtonSolver(
     if (cfg_.residualNorm != "block" && cfg_.residualNorm != "l2")
         throw std::invalid_argument(
             "NewtonSolver: residual_norm must be 'block' or 'l2'.");
+    if (cfg_.stallResidualFloor < 0.0 || !std::isfinite(cfg_.stallResidualFloor)) {
+        throw std::invalid_argument(
+            "NewtonSolver: stall_residual_floor must be non-negative and finite.");
+    }
     if (cfg_.carrierRegularizationScale < 0.0 ||
         !std::isfinite(cfg_.carrierRegularizationScale)) {
         throw std::invalid_argument(
@@ -1033,20 +1090,8 @@ NewtonStepEvaluation NewtonSolver::evaluateStep(const DDSolution& state) const
     const Real rawStepNorm = step.norm();
 
     const int N = static_cast<int>(mesh_.numNodes());
-    if (cfg_.maxUpdate > 0.0) {
-        const Real maxAbsStep = step.cwiseAbs().maxCoeff();
-        if (maxAbsStep > cfg_.maxUpdate)
-            step *= cfg_.maxUpdate / maxAbsStep;
-    }
-    if (cfg_.quasiFermiUpdateLimit_V > 0.0) {
-        const Real qfLimit = cfg_.quasiFermiUpdateLimit_V / potentialScale;
-        for (int i = N; i < 3 * N; ++i) {
-            if (step(i) > qfLimit)
-                step(i) = qfLimit;
-            else if (step(i) < -qfLimit)
-                step(i) = -qfLimit;
-        }
-    }
+    applyConfiguredStepCapsAndPoissonRecorrection(
+        step, J, raw, cfg_, N, potentialScale);
 
     const VectorXd trialX = x + step;
     const VectorXd trialRaw = assembler.residual(trialX, bcs);
@@ -1463,7 +1508,8 @@ NewtonCarrierTermDiagnosticsEvaluation NewtonSolver::evaluateCarrierTermDiagnost
 
 std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudit(
     const DDSolution& state,
-    Real finiteDifferenceStep) const
+    Real finiteDifferenceStep,
+    std::vector<std::string> blocks) const
 {
     const int N = static_cast<int>(mesh_.numNodes());
     if (state.psi.size() != N || state.phin.size() != N || state.phip.size() != N) {
@@ -1529,44 +1575,70 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
             };
         };
 
-    auto base = matrixPair(baseAssembler);
-    CoupledDDAssembler recombinationAssembler =
-        makeAssembler(recombinationConfig, noImpactConfig);
-    auto withRecombination = matrixPair(recombinationAssembler);
-    CoupledDDAssembler impactAssembler =
-        makeAssembler(noRecombinationConfig, cfg_.impactIonization);
-    auto withImpact = matrixPair(impactAssembler);
-    CoupledDDAssembler fullAssembler =
-        makeAssembler(recombinationConfig, cfg_.impactIonization);
-    auto full = matrixPair(fullAssembler);
+    const std::vector<std::string> defaultBlocks = {
+        "poisson",
+        "transport",
+        "srh_auger",
+        "sg_avalanche",
+        "dirichlet_or_gauge",
+    };
+    if (blocks.empty())
+        blocks = defaultBlocks;
+
+    const auto wants = [&](const std::string& block) {
+        return std::find(blocks.begin(), blocks.end(), block) != blocks.end();
+    };
+    const bool needsBase =
+        wants("poisson") || wants("transport") || wants("srh_auger") ||
+        wants("sg_avalanche") || wants("dirichlet_or_gauge");
+    const bool needsRecombination = wants("srh_auger");
+    const bool needsImpact = wants("sg_avalanche");
+
+    std::optional<std::pair<SparseMatrixd, SparseMatrixd>> base;
+    std::optional<std::pair<SparseMatrixd, SparseMatrixd>> withRecombination;
+    std::optional<std::pair<SparseMatrixd, SparseMatrixd>> withImpact;
+    if (needsBase)
+        base = matrixPair(baseAssembler);
+    if (needsRecombination) {
+        CoupledDDAssembler recombinationAssembler =
+            makeAssembler(recombinationConfig, noImpactConfig);
+        withRecombination = matrixPair(recombinationAssembler);
+    }
+    if (needsImpact) {
+        CoupledDDAssembler impactAssembler =
+            makeAssembler(noRecombinationConfig, cfg_.impactIonization);
+        withImpact = matrixPair(impactAssembler);
+    }
 
     std::vector<NewtonJacobianBlockAuditRow> rows;
-    rows.reserve(5);
-    rows.push_back(jacobianAuditRow(
-        "poisson",
-        base.first,
-        base.second,
-        jacobianAuditRows("poisson", N)));
-    rows.push_back(jacobianAuditRow(
-        "transport",
-        base.first,
-        base.second,
-        jacobianAuditRows("transport", N)));
-    rows.push_back(jacobianAuditRow(
-        "srh_auger",
-        withRecombination.first - base.first,
-        withRecombination.second - base.second,
-        jacobianAuditRows("srh_auger", N)));
-    rows.push_back(jacobianAuditRow(
-        "sg_avalanche",
-        withImpact.first - base.first,
-        withImpact.second - base.second,
-        jacobianAuditRows("sg_avalanche", N)));
-    rows.push_back(jacobianAuditRow(
-        "dirichlet_or_gauge",
-        full.first,
-        full.second,
-        jacobianAuditRows("dirichlet_or_gauge", N, bcs)));
+    rows.reserve(blocks.size());
+    for (const std::string& block : blocks) {
+        if (block == "poisson") {
+            rows.push_back(jacobianAuditRow(
+                block, base->first, base->second, jacobianAuditRows(block, N)));
+        } else if (block == "transport") {
+            rows.push_back(jacobianAuditRow(
+                block, base->first, base->second, jacobianAuditRows(block, N)));
+        } else if (block == "srh_auger") {
+            rows.push_back(jacobianAuditRow(
+                block,
+                withRecombination->first - base->first,
+                withRecombination->second - base->second,
+                jacobianAuditRows(block, N)));
+        } else if (block == "sg_avalanche") {
+            rows.push_back(jacobianAuditRow(
+                block,
+                withImpact->first - base->first,
+                withImpact->second - base->second,
+                jacobianAuditRows(block, N)));
+        } else if (block == "dirichlet_or_gauge") {
+            rows.push_back(jacobianAuditRow(
+                block, base->first, base->second, jacobianAuditRows(block, N, bcs)));
+        } else {
+            throw std::invalid_argument(
+                "NewtonSolver::evaluateJacobianBlockAudit: unknown block '" + block + "'.");
+        }
+    }
     return rows;
 }
 
@@ -1728,23 +1800,14 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
     // residual but the residual already sits at or below this normalized floor,
     // the state is effectively solved (the line search is fighting numerical
     // noise) and convergence is reported instead of failing.
-    const Real stallResidualFloor = 1.0e-9;
+    const Real stallResidualFloor = cfg_.stallResidualFloor;
 
-    auto capConfiguredStep = [&](VectorXd& candidateStep) {
-        if (cfg_.maxUpdate > 0.0) {
-            const Real maxAbsStep = candidateStep.cwiseAbs().maxCoeff();
-            if (maxAbsStep > cfg_.maxUpdate)
-                candidateStep *= cfg_.maxUpdate / maxAbsStep;
-        }
-        if (cfg_.quasiFermiUpdateLimit_V > 0.0) {
-            const Real qfLimit = cfg_.quasiFermiUpdateLimit_V / potentialScale;
-            for (int i = N; i < 3 * N; ++i) {
-                if (candidateStep(i) > qfLimit)
-                    candidateStep(i) = qfLimit;
-                else if (candidateStep(i) < -qfLimit)
-                    candidateStep(i) = -qfLimit;
-            }
-        }
+
+    auto capConfiguredStep = [&](VectorXd& candidateStep,
+                                 const SparseMatrixd& jacobian,
+                                 const VectorXd& residual) {
+        applyConfiguredStepCapsAndPoissonRecorrection(
+            candidateStep, jacobian, residual, cfg_, N, potentialScale);
     };
 
     VectorXd acceptedX = x;
@@ -1784,7 +1847,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
             }
             return result;
         }
-        capConfiguredStep(step);
+        capConfiguredStep(step, J, r);
         Real stepNorm = step.norm();
 
         auto ls = lineSearch.search(
@@ -1880,10 +1943,15 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         }
     }
 
-    result.converged = false;
     result.iters = acceptedIters;
     result.finalResidualNorm = residualNormFn(acceptedR);
     result.solution = makeSolution(assembler, acceptedX, acceptedIters);
+    if (result.finalResidualNorm <= stallResidualFloor) {
+        result.converged = true;
+        return result;
+    }
+
+    result.converged = false;
     result.failureDiagnostics = buildFailureDiagnostics(
         mesh_,
         doping_,

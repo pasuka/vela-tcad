@@ -2211,7 +2211,7 @@ Accepted status is limited to:
 
 Open status remains:
 
-- Real full-mesh BV-state Jacobian block replay.
+- Full high-bias (`-18 V`, `-19 V`, `-20 V`) real-state replay after the default `avaljac` curve/config/state artifacts are regenerated.
 - Curve-shape parity over `-10 V..-20 V`.
 - The physical cause of the missing high-bias one-volt current-growth knee.
 
@@ -2239,6 +2239,130 @@ includes local carrier-density derivatives but omits driving-field and mobility
 derivatives. That path is not the current PN2D BV production path and must not
 be used as evidence that the SG BV Jacobian is incomplete.
 
+### PN2D BV Real-State Jacobian Block Replay (2026-06-22)
+
+A real-state replay was run on the available Vela BV restart fields reconstructed
+from `bv_newton_residual_states` at `-10 V` and `-13.2 V`. The initial replay
+localized a non-avalanche mismatch to the ordinary transport block when
+quasi-Fermi-gradient high-field mobility was active. After adding the missing
+transport mobility potential sensitivity, the available full-state block audit
+reports:
+
+| bias | poisson | transport | srh_auger | sg_avalanche | dirichlet_or_gauge |
+|---:|---:|---:|---:|---:|---:|
+| `-10 V` | `9.039746e-06` | `1.427413e-05` | `7.623126e-15` | `9.379560e-19` | `2.173359e-10` |
+| `-13.2 V` | `1.255905e-05` | `1.932885e-05` | `7.428910e-15` | `2.725849e-11` | `2.083001e-10` |
+
+Artifact: `build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_real_state_jacobian_audit/jacobian_blocks_real_state.csv`.
+
+A follow-up high-bias replay converted the existing
+`vela/sg_edge_current_vtk/dc_sweep_0006_-20V.vtk` state into restart CSV and ran
+the same block probe at `-20 V` under the `sg_edge_current` BV configuration:
+
+| bias | poisson | transport | srh_auger | sg_avalanche | dirichlet_or_gauge |
+|---:|---:|---:|---:|---:|---:|
+| `-20 V` | `2.487927e-05` | `3.122208e-05` | `7.349736e-15` | `2.544407e-05` | `1.944513e-10` |
+
+Artifacts:
+
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_real_state_jacobian_audit_sg_edge_current/states/bv_state_bias_m20p000000.csv`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_real_state_jacobian_audit_sg_edge_current/jacobian_blocks_real_state.csv`
+
+Decision: for the available real BV states, including the VTK-derived `-20 V`
+state, the SG avalanche, SRH/Auger, and transport Jacobian blocks are no longer
+the leading BV discrepancy. The remaining BV work should stay on curve-shape,
+state-path parity, and absolute quasi-Fermi level alignment.
+
+Caveat: after the high-field transport Jacobian fix, rerunning the old
+`simulation_bv_minus20_sg_edge_current_probe.json` continuation from `0 V` no
+longer reproduces the checked-in `-20 V` CSV path; it stops near
+`-2.4414e-5 V` with `max_iterations`. Therefore the checked-in historical curve
+and VTK states remain useful for block replay, but current end-to-end
+continuation robustness must be re-established before promoting any BV curve.
+
+### PN2D BV Near-0V Early-Stop Globalization Check (2026-06-22)
+
+The near-0V restart blocker was reproduced with a shortened deck derived from
+`simulation_bv_minus20_sg_edge_current_probe.json` under:
+
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_zero_early_stop_debug/`
+
+With the current deck setting `solver.max_update = 5`, the sweep accepts only
+`0 V` and `-2.44140625e-5 V`, then fails at
+`-2.4421215057373049e-5 V` with `max_iterations`. Increasing the global cap to
+`20` fails earlier, at `-1.220703125e-5 V`. The failed states have positive and
+finite carriers, full damping, and residuals dominated by Poisson/hole blocks,
+so this is a Newton globalization/stalling issue rather than an immediate
+carrier-domain failure.
+
+Disabling the global cap (`solver.max_update = 0`) removes the near-0V early
+stop for the short `0 -> -0.05 V` deck, but a longer `0 -> -1 V` replay then
+fails near `-0.091002197265625 V` with `nonfinite_residual`. A
+`newton_step_probe` from the last stable state shows why: the uncapped Newton
+step has non-finite norm and a local `phip` update of order `5.7e221 V` near
+`x ~= 1.078 um, y ~= 0.188 um`; the trial hole density reaches
+`~1.6e233 m^-3`, and the trial Poisson residual reaches `~1e210`. This localizes
+the post-0V failure to an unconstrained quasi-Fermi update around the
+junction/drift transition.
+
+Physics isolation:
+
+| variant | result |
+|---|---|
+| `impact_ionization.model = none` | converges to `-0.05 V` without Newton failure |
+| constant mobility | converges to `-0.05 V` without Newton failure |
+| `max_update = 0`, no QF-specific limit | passes near-0V, then fails near `-0.091 V` |
+| `max_update = 0`, `quasi_fermi_update_limit_V = 0.0259` | converges to `-1 V`, 56 rows, max retry 1 |
+| `max_update = 0`, `quasi_fermi_update_limit_V = 0.05` | converges to `-1 V`, 73 rows, max retry 1 |
+| `max_update = 0`, `quasi_fermi_update_limit_V = 0.1` | converges to `-1 V`, 21 rows, max retry 0 |
+
+Decision: the immediate near-0V early stop is caused by the global
+`max_update` cap interacting with the corrected high-field transport Jacobian.
+The safer continuation policy is not an unrestricted Newton step, but a
+QF-specific update limit with the global cap disabled. The next BV gate should
+run a full or staged `-20 V` sweep with `max_update = 0` and a
+`quasi_fermi_update_limit_V` candidate, starting with `0.1 V` because it reached
+`-1 V` with the fewest accepted rows and no retries.
+
+### PN2D BV QF-Limit Staged Sweep Follow-Up (2026-06-22)
+
+The recommended `quasi_fermi_update_limit_V` candidates were extended from
+`-1 V` toward `-5 V`. This confirmed that the near-0V and `-0.091 V`
+nonfinite-update blockers are cleared, but exposed a new continuation blocker
+before `-5 V`:
+
+| variant | last stable bias | failed bias | failure | residual at failure |
+|---|---:|---:|---|---:|
+| `qflim0p1_to5V` | `-2.92471424 V` | `-2.924716955 V` | `line_search_non_decrease` | `6.3757e-9` |
+| `qflim0p05_to5V` | `-2.101646658 V` | `-2.101646777 V` | `line_search_non_decrease` | `1.2914e-9` |
+| `qflim0p0259_to5V` | `-1.908734980 V` | `-1.908735992 V` | `line_search_non_decrease` | `1.1568e-9` |
+
+All three failures have finite line-search trial residuals and positive finite
+carriers; the residual is Poisson-dominated and sits just above the previous
+hard-coded stall floor (`1e-9`) for the smaller QF limits. This is no longer the
+same failure as the original near-0V `max_iterations` stall or the uncapped
+`phip` overflow near `-0.091 V`.
+
+A new solver knob, `solver.stall_residual_floor`, was added so this numerical
+floor can be swept without changing code. The default remains `1e-9`, preserving
+existing behavior. Diagnostic runs show the knob must be used narrowly:
+
+| variant | result |
+|---|---|
+| `qflim0p1_abstol1e8_to5V` | advances to `-2.93479955 V`, then fails at residual `1.3444e-8` |
+| `qflim0p1_abstol1e7_to5V` | accepts too coarse a path and fails earlier near `-2.85 V` with residual `1.91e-3` |
+| `qflim0p1_stall2e8_to5V` | also accepts too coarse a path and fails near `-2.8498 V` with residual `4.95e-4` |
+| `qflim0p05_stall1p5e9_to5V` | moves slightly past the strict `qflim0p05` failure, then stalls at `-2.103990259 V` with residual `2.36e-9` |
+
+Decision: do not promote a loose residual floor as the BV fix. The useful part
+of this pass is the solver instrumentation: `stall_residual_floor` is now
+configurable for controlled diagnostics. The next implementation target should
+be continuation/globalization quality around `-2 V..-3 V`, especially why the
+raw Newton step remains large (`~38..91` in the smaller-QF-limit failures) when
+the accepted residual is already near the Poisson numerical floor. Full `-20 V`
+reruns should wait until this staged `-5 V` gate is stable without coarse-path
+pollution.
+
 ### PN2D BV Knee-Shape Acceptance Gate
 
 BV parity is not accepted solely because the `-20 V` sweep converges. The next
@@ -2247,17 +2371,25 @@ window, approximately `-18 V` to `-19 V`, and requires the `-10 V` to `-20 V`
 curve to avoid artificial plateaus or early step transitions near `-11 V` to
 `-12 V`.
 
-The current `pn2d_sentaurus2018_bv_minus20_avaljac.csv` audit
-(`scripts/diagnose_pn2d_bv_knee_shape.py`) gives:
+The default `pn2d_sentaurus2018_bv_minus20_avaljac.csv` candidate is not present
+in the current `build-release` workspace, so the default `avaljac` knee gate was
+not refreshed. The same gate was refreshed with `--output-json` for two existing
+candidate curves:
 
-| curve | first 1 V growth ratio > 1.5 | first 1 V growth ratio > 2.0 |
-|---|---:|---:|
-| Sentaurus | `-19.0 V` | `-20.0 V` |
-| Vela `avaljac` | none in `-10..-20 V` | none in `-10..-20 V` |
+| curve | first 1 V growth ratio > 1.5 | first 1 V growth ratio > 2.0 | max abs log10 current error |
+|---|---:|---:|---:|
+| Sentaurus | `-19.0 V` | `-20.0 V` | n/a |
+| Vela `pn2d_sentaurus2018_bv_minus20_sg_edge_current.csv` | `-11.0 V` | `-13.0 V` | `2.39217` decades |
+| Vela dense release curve | `-13.0 V` | `-13.0 V` | `2.4189` decades |
 
-The maximum absolute log10 current error over `-10 V..-20 V` is `0.891693`
-decades for this audit curve. This keeps the next BV work focused on curve
-shape and avalanche feedback parity, not only Newton convergence.
+Artifacts:
+
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_knee_shape/pn2d_bv_minus20_sg_edge_current_knee_shape.json`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_knee_shape/pn2d_bv_release_dense_curve_knee_shape.json`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_real_state_jacobian_audit_sg_edge_current/knee_shape_current.json`
+
+This keeps the next BV work focused on curve shape and avalanche feedback
+parity, not only Newton convergence or local Jacobian completeness.
 
 ### PN2D BV Next Physics Decision
 

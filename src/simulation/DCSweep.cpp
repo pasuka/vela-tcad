@@ -1476,11 +1476,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     const auto sweepMobility = makeMobilityModel(mobilityConfig);
     const auto sweepImpactIonization = makeImpactIonizationModel(sweepImpactIonizationConfig);
     if (sweep.diagnostics.sgAvalancheEdges.enabled &&
-        !detail::usesDensityGradientAvalancheCurrent(sweepImpactIonizationConfig)) {
+        !detail::usesEdgeCurrentAvalancheSource(sweepImpactIonizationConfig)) {
         throw std::invalid_argument(
             "DCSweep: sweep.diagnostics.sg_avalanche_edges requires "
             "impact_ionization.generation='current_density' and "
-            "impact_ionization.current_approximation='density_gradient'.");
+            "impact_ionization.current_approximation='density_gradient' or 'grad_qf'.");
     }
     // Build DDScalingSpec for contact current post-processing.
     DDScalingSpec ddScaling;

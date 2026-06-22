@@ -41,6 +41,97 @@ static DeviceMesh makePNMesh()
     return mesh;
 }
 
+
+TEST_CASE("Edge avalanche directional weights follow quasi-Fermi gradient direction",
+          "[impact][diagnostic]")
+{
+    DeviceMesh mesh = makePNMesh();
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+
+    std::vector<Real> phin(static_cast<std::size_t>(mesh.numNodes()), 0.0);
+    std::vector<Real> phip(static_cast<std::size_t>(mesh.numNodes()), 0.0);
+    for (Index node = 0; node < mesh.numNodes(); ++node) {
+        const Real x = mesh.getNode(node).x;
+        phin[node] = -x;
+        phip[node] = x;
+    }
+
+    bool sawHorizontal = false;
+    bool sawVertical = false;
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        const Node& node0 = mesh.getNode(edge.n0);
+        const Node& node1 = mesh.getNode(edge.n1);
+        const auto weights = detail::edgeAvalancheDirectionalWeights(
+            edgeCells,
+            mesh,
+            edgeId,
+            [&](Index node) { return phin[node]; },
+            [&](Index node) { return phip[node]; });
+
+        if (std::abs(node1.x - node0.x) > 0.0 && std::abs(node1.y - node0.y) <= 1.0e-30) {
+            sawHorizontal = true;
+            const Real edgeUnitX = (node1.x - node0.x) / edge.length;
+            const Real expectedNode0 = 0.5 + 0.5 * edgeUnitX;
+            const Real expectedNode1 = 1.0 - expectedNode0;
+            REQUIRE(weights.electronNode0 == Catch::Approx(expectedNode0));
+            REQUIRE(weights.electronNode1 == Catch::Approx(expectedNode1));
+            REQUIRE(weights.holeNode0 == Catch::Approx(expectedNode0));
+            REQUIRE(weights.holeNode1 == Catch::Approx(expectedNode1));
+        }
+        if (std::abs(node1.x - node0.x) <= 1.0e-30 && std::abs(node1.y - node0.y) > 0.0) {
+            sawVertical = true;
+            REQUIRE(weights.electronNode0 == Catch::Approx(0.5));
+            REQUIRE(weights.electronNode1 == Catch::Approx(0.5));
+            REQUIRE(weights.holeNode0 == Catch::Approx(0.5));
+            REQUIRE(weights.holeNode1 == Catch::Approx(0.5));
+        }
+    }
+
+    REQUIRE(sawHorizontal);
+    REQUIRE(sawVertical);
+}
+
+TEST_CASE("Cached edge avalanche directional weights match direct cell-gradient weights",
+          "[impact][diagnostic]")
+{
+    DeviceMesh mesh = makePNMesh();
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+
+    std::vector<Real> phin(static_cast<std::size_t>(mesh.numNodes()), 0.0);
+    std::vector<Real> phip(static_cast<std::size_t>(mesh.numNodes()), 0.0);
+    for (Index node = 0; node < mesh.numNodes(); ++node) {
+        const Node& point = mesh.getNode(node);
+        phin[node] = 0.03 * point.x - 0.02 * point.y;
+        phip[node] = -0.01 * point.x + 0.04 * point.y;
+    }
+
+    const auto electronGradients = detail::computeCellScalarGradientCache(
+        mesh, [&](Index node) { return phin[node]; });
+    const auto holeGradients = detail::computeCellScalarGradientCache(
+        mesh, [&](Index node) { return phip[node]; });
+
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const auto direct = detail::edgeAvalancheDirectionalWeights(
+            edgeCells,
+            mesh,
+            edgeId,
+            [&](Index node) { return phin[node]; },
+            [&](Index node) { return phip[node]; });
+        const auto cached = detail::edgeAvalancheDirectionalWeights(
+            edgeCells,
+            mesh,
+            edgeId,
+            electronGradients,
+            holeGradients);
+
+        REQUIRE(cached.electronNode0 == Catch::Approx(direct.electronNode0));
+        REQUIRE(cached.electronNode1 == Catch::Approx(direct.electronNode1));
+        REQUIRE(cached.holeNode0 == Catch::Approx(direct.holeNode0));
+        REQUIRE(cached.holeNode1 == Catch::Approx(direct.holeNode1));
+    }
+}
+
 TEST_CASE("Impact ionization none model is zero", "[impact]")
 {
     const auto model = makeImpactIonizationModel(impactIonizationModelConfig("none"));
@@ -691,23 +782,40 @@ TEST_CASE("SG edge-current avalanche records sum to assembled nodal source",
     Real totalElectronEdgeSource = 0.0;
     Real totalHoleEdgeSource = 0.0;
     for (const auto& record : records) {
+        const auto weights = detail::edgeAvalancheDirectionalWeights(
+            edgeCells,
+            mesh,
+            record.edgeId,
+            [&](Index node) { return phin(static_cast<int>(node)); },
+            [&](Index node) { return phip(static_cast<int>(node)); });
+        const Real electronNode0Weight = weights.electronNode0;
+        const Real electronNode1Weight = weights.electronNode1;
+        const Real holeNode0Weight = weights.holeNode0;
+        const Real holeNode1Weight = weights.holeNode1;
+        const Real expectedNode0 =
+            electronNode0Weight * record.electronSourceIntegral +
+            holeNode0Weight * record.holeSourceIntegral;
+        const Real expectedNode1 =
+            electronNode1Weight * record.electronSourceIntegral +
+            holeNode1Weight * record.holeSourceIntegral;
+
         REQUIRE(record.edgeAreaProxy > 0.0);
         REQUIRE(record.edgeSourceIntegral >= 0.0);
         REQUIRE(record.edgeSourceIntegral ==
                 Catch::Approx(record.electronSourceIntegral + record.holeSourceIntegral)
                     .margin(1.0e-18));
-        REQUIRE(record.node0SourceIntegral == Catch::Approx(0.5 * record.edgeSourceIntegral));
-        REQUIRE(record.node1SourceIntegral == Catch::Approx(0.5 * record.edgeSourceIntegral));
+        REQUIRE(record.node0SourceIntegral == Catch::Approx(expectedNode0));
+        REQUIRE(record.node1SourceIntegral == Catch::Approx(expectedNode1));
         fromRecords[static_cast<std::size_t>(record.node0)] += record.node0SourceIntegral;
         fromRecords[static_cast<std::size_t>(record.node1)] += record.node1SourceIntegral;
         electronFromRecords[static_cast<std::size_t>(record.node0)] +=
-            0.5 * record.electronSourceIntegral;
+            electronNode0Weight * record.electronSourceIntegral;
         electronFromRecords[static_cast<std::size_t>(record.node1)] +=
-            0.5 * record.electronSourceIntegral;
+            electronNode1Weight * record.electronSourceIntegral;
         holeFromRecords[static_cast<std::size_t>(record.node0)] +=
-            0.5 * record.holeSourceIntegral;
+            holeNode0Weight * record.holeSourceIntegral;
         holeFromRecords[static_cast<std::size_t>(record.node1)] +=
-            0.5 * record.holeSourceIntegral;
+            holeNode1Weight * record.holeSourceIntegral;
         totalEdgeSource += record.edgeSourceIntegral;
         totalElectronEdgeSource += record.electronSourceIntegral;
         totalHoleEdgeSource += record.holeSourceIntegral;
@@ -925,6 +1033,16 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
     REQUIRE(sentaurusCfg.impactIonization.generation == "current_density");
     REQUIRE(sentaurusCfg.impactIonization.currentApproximation == "density_gradient");
 
+    const NewtonConfig gradQfCfg = newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"driving_force", "quasi_fermi_gradient"},
+            {"generation", "current_density"},
+            {"current_approximation", "grad_qf"},
+        }}
+    });
+    REQUIRE(gradQfCfg.impactIonization.currentApproximation == "grad_qf");
+
     const NewtonConfig interpolatedCfg = newtonConfigFromJson(nlohmann::json{
         {"impact_ionization", {
             {"model", "van_overstraeten"},
@@ -950,9 +1068,11 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
             {"generation", "current_density"},
             {"current_approximation", "density_gradient"},
             {"source_geometry_scale", 4.0},
+            {"quasi_fermi_carrier_truncation", 1.0e-2},
         }}
     });
     REQUIRE(sourceGeometryCfg.impactIonization.sourceGeometryScale == Catch::Approx(4.0));
+    REQUIRE(sourceGeometryCfg.impactIonization.quasiFermiCarrierTruncation == Catch::Approx(1.0e-2));
 
     REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
         {"impact_ionization", {
@@ -962,6 +1082,177 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
     }), std::invalid_argument);
 }
 
+TEST_CASE("Grad-QF avalanche source can rebuild driving field with GSS carrier truncation",
+          "[impact][grad_qf]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const int nodeCount = static_cast<int>(mesh.numNodes());
+    const Real Vt = 0.025852;
+    DDSolution sol;
+    sol.psi = VectorXd::LinSpaced(nodeCount, -0.02, 0.03);
+    sol.phin = VectorXd::LinSpaced(nodeCount, 0.9, -0.7);
+    sol.phip = VectorXd::LinSpaced(nodeCount, -0.6, 0.8);
+    sol.n.resize(nodeCount);
+    sol.p.resize(nodeCount);
+    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+    for (int i = 0; i < nodeCount; ++i) {
+        sol.n(i) = ni[static_cast<std::size_t>(i)] * std::exp((sol.psi(i) - sol.phin(i)) / Vt);
+        sol.p(i) = ni[static_cast<std::size_t>(i)] * std::exp((sol.phip(i) - sol.psi(i)) / Vt);
+    }
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "quasi_fermi_gradient";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "grad_qf";
+    impactConfig.quasiFermiCarrierTruncation = 1.0e-2;
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0e-30;
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, constants::T0);
+    const auto impact = makeImpactIonizationModel(impactConfig);
+
+    const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *impact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+
+    REQUIRE_FALSE(records.empty());
+    const auto& record = records.front();
+    const int i = static_cast<int>(record.node0);
+    const int j = static_cast<int>(record.node1);
+    const auto truncatedElectronQf = [&](int node) {
+        const Real carrier = std::max(sol.n(node), impactConfig.quasiFermiCarrierTruncation * ni[static_cast<std::size_t>(node)]);
+        return sol.psi(node) - Vt * std::log(carrier / ni[static_cast<std::size_t>(node)]);
+    };
+    const auto truncatedHoleQf = [&](int node) {
+        const Real carrier = std::max(sol.p(node), impactConfig.quasiFermiCarrierTruncation * ni[static_cast<std::size_t>(node)]);
+        return sol.psi(node) + Vt * std::log(carrier / ni[static_cast<std::size_t>(node)]);
+    };
+
+    REQUIRE(record.electronImpactField ==
+            Catch::Approx(std::abs(truncatedElectronQf(j) - truncatedElectronQf(i)) /
+                          record.edgeLength));
+    REQUIRE(record.holeImpactField ==
+            Catch::Approx(std::abs(truncatedHoleQf(j) - truncatedHoleQf(i)) /
+                          record.edgeLength));
+}
+
+TEST_CASE("Grad-QF avalanche source uses quasi-Fermi field with SG current proxy",
+          "[impact][grad_qf]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const int nodeCount = static_cast<int>(mesh.numNodes());
+    const Real Vt = 0.025852;
+    DDSolution sol;
+    sol.psi = VectorXd::LinSpaced(nodeCount, -0.02, 0.03);
+    sol.phin = VectorXd::LinSpaced(nodeCount, 0.015, -0.009);
+    sol.phip = VectorXd::LinSpaced(nodeCount, -0.011, 0.007);
+    sol.n.resize(nodeCount);
+    sol.p.resize(nodeCount);
+    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+    for (int i = 0; i < nodeCount; ++i) {
+        sol.n(i) = ni[static_cast<std::size_t>(i)] * std::exp((sol.psi(i) - sol.phin(i)) / Vt);
+        sol.p(i) = ni[static_cast<std::size_t>(i)] * std::exp((sol.phip(i) - sol.psi(i)) / Vt);
+    }
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "quasi_fermi_gradient";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "grad_qf";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0e-30;
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, constants::T0);
+    const auto impact = makeImpactIonizationModel(impactConfig);
+
+    const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *impact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+
+    REQUIRE_FALSE(records.empty());
+    const auto& record = records.front();
+    const int i = static_cast<int>(record.node0);
+    const int j = static_cast<int>(record.node1);
+    const Real electronQfField = std::abs(sol.phin(j) - sol.phin(i)) / record.edgeLength;
+    const Real holeQfField = std::abs(sol.phip(j) - sol.phip(i)) / record.edgeLength;
+    const Real electronSgFlux = std::abs(sgElectronContinuityFluxFromQuasiFermiVariableNi(
+        ni[record.node0],
+        ni[record.node1],
+        sol.psi(i),
+        sol.psi(j),
+        sol.phin(i),
+        sol.phin(j),
+        Vt,
+        record.electronMobility * Vt / record.edgeLength));
+    const Real holeSgFlux = std::abs(sgHoleContinuityFluxFromQuasiFermiVariableNi(
+        ni[record.node0],
+        ni[record.node1],
+        sol.psi(i),
+        sol.psi(j),
+        sol.phip(i),
+        sol.phip(j),
+        Vt,
+        record.holeMobility * Vt / record.edgeLength));
+
+    REQUIRE(record.electronImpactField == Catch::Approx(electronQfField));
+    REQUIRE(record.holeImpactField == Catch::Approx(holeQfField));
+    REQUIRE(record.electronFluxProxy == Catch::Approx(electronSgFlux));
+    REQUIRE(record.holeFluxProxy == Catch::Approx(holeSgFlux));
+    REQUIRE(record.edgeSourceIntegral == Catch::Approx(
+        (record.electronAlpha * electronSgFlux + record.holeAlpha * holeSgFlux)
+        * record.edgeAreaProxy));
+}
 TEST_CASE("SG edge current avalanche source supports diagnostic geometry scale",
           "[impact][diagnostic]")
 {

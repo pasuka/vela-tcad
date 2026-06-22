@@ -42,11 +42,12 @@ void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& con
             "'current_density'.");
     }
     if (config.currentApproximation != "mobility_density_gradient" &&
-        config.currentApproximation != "density_gradient") {
+        config.currentApproximation != "density_gradient" &&
+        config.currentApproximation != "grad_qf") {
         throw std::invalid_argument(
             std::string(context) +
             ": impact_ionization.current_approximation must be "
-            "'mobility_density_gradient' or 'density_gradient'.");
+            "'mobility_density_gradient', 'density_gradient', or 'grad_qf'.");
     }
     if (config.drivingForceInterpolation != "none" &&
         config.drivingForceInterpolation != "quasi_fermi_to_electric_field") {
@@ -76,6 +77,12 @@ void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& con
         throw std::invalid_argument(
             std::string(context) +
             ": impact_ionization.source_geometry_scale must be positive and finite.");
+    }
+    if (!std::isfinite(config.quasiFermiCarrierTruncation) ||
+        config.quasiFermiCarrierTruncation < 0.0) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.quasi_fermi_carrier_truncation must be non-negative and finite.");
     }
 }
 
@@ -269,6 +276,12 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 value, scaling, cfg.impactIonization, "gummelConfigFromJson");
             cfg.impactIonization.sourceGeometryScale = value.value(
                 "source_geometry_scale", cfg.impactIonization.sourceGeometryScale);
+            cfg.impactIonization.quasiFermiCarrierTruncation = value.value(
+                "quasi_fermi_carrier_truncation",
+                cfg.impactIonization.quasiFermiCarrierTruncation);
+            cfg.impactIonization.quasiFermiCarrierTruncation = value.value(
+                "quasi_fermi_carrier_trucation",
+                cfg.impactIonization.quasiFermiCarrierTruncation);
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());
@@ -936,7 +949,7 @@ void writeDDSolutionVTK(const std::string& filename,
     std::vector<Real> electronMobilityLimiter(N, 0.0);
     std::vector<Real> holeMobilityLimiter(N, 0.0);
     const std::vector<Real> sgAvalancheSourceIntegrals =
-        detail::usesDensityGradientAvalancheCurrent(impactIonizationConfig)
+        detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig)
         ? detail::sgEdgeCurrentAvalancheSourceIntegrals(
             impactIonizationConfig,
             *impact,
@@ -967,7 +980,7 @@ void writeDDSolutionVTK(const std::string& filename,
         const Real deltaEg = bgn->deltaEg(doping.totalImpurity(i), n, p);
         const Real ni = effectiveIntrinsicDensity(nodeMaterials[i].ni, Vt, deltaEg);
         srh[i] = recombination.srhRate(n, p, ni);
-        if (detail::usesDensityGradientAvalancheCurrent(impactIonizationConfig)) {
+        if (detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig)) {
             avalanche[i] = mesh.getNode(i).volume > 0.0
                 ? sgAvalancheSourceIntegrals[i] / mesh.getNode(i).volume
                 : 0.0;

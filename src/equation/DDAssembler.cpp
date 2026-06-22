@@ -299,7 +299,7 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         ? detail::computeNodeScalarGradientMagnitudes(phipForImpact, mesh_)
         : nodeElectricFields;
     const bool sgCurrentAvalanche = impactIonizationEnabled_ &&
-        detail::usesDensityGradientAvalancheCurrent(impactIonizationConfig_);
+        detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig_);
     VectorXd n_physical = n_old;
     VectorXd p_physical = p_old;
     if (scaling_.enabled) {
@@ -466,7 +466,7 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         ? detail::computeNodeScalarGradientMagnitudes(phipForMobility, mesh_)
         : nodeElectricFields;
     const bool sgCurrentAvalanche = impactIonizationEnabled_ &&
-        detail::usesDensityGradientAvalancheCurrent(impactIonizationConfig_);
+        detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig_);
     VectorXd n_physical = n_old;
     VectorXd p_physical = p_old;
     if (scaling_.enabled) {

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import math
 from pathlib import Path
 from typing import NamedTuple
@@ -116,6 +117,32 @@ def summarize_curve(points: list[tuple[float, float]],
     )
 
 
+def _summary_to_json(summary: CurveSummary) -> dict[str, float | None]:
+    return {
+        "first_growth_over_1p5_V": summary.first_growth_over_1p5,
+        "first_growth_over_2p0_V": summary.first_growth_over_2p0,
+    }
+
+
+def build_summary(candidate: list[tuple[float, float]],
+                  reference: list[tuple[float, float]],
+                  bias_min: float,
+                  bias_max: float) -> dict[str, object]:
+    reference_summary = summarize_curve(reference, bias_min, bias_max)
+    candidate_summary = summarize_curve(candidate, bias_min, bias_max)
+    return {
+        "bias_window_V": {
+            "min": bias_min,
+            "max": bias_max,
+        },
+        "reference": _summary_to_json(reference_summary),
+        "candidate": _summary_to_json(candidate_summary),
+        "max_abs_log10_current_error_decades": max_abs_log10_error(
+            candidate, reference, bias_min, bias_max
+        ),
+    }
+
+
 def max_abs_log10_error(candidate: list[tuple[float, float]],
                         reference: list[tuple[float, float]],
                         bias_min: float,
@@ -150,13 +177,24 @@ def main() -> int:
     parser.add_argument("--candidate", type=Path, default=DEFAULT_CANDIDATE)
     parser.add_argument("--bias-min", type=float, default=-20.0)
     parser.add_argument("--bias-max", type=float, default=-10.0)
+    parser.add_argument("--output-json", type=Path)
     args = parser.parse_args()
 
     reference = load_curve(args.reference)
     candidate = load_curve(args.candidate)
+    summary = build_summary(candidate, reference, args.bias_min, args.bias_max)
     reference_summary = summarize_curve(reference, args.bias_min, args.bias_max)
     candidate_summary = summarize_curve(candidate, args.bias_min, args.bias_max)
-    max_error = max_abs_log10_error(candidate, reference, args.bias_min, args.bias_max)
+    max_error = summary["max_abs_log10_current_error_decades"]
+
+    if args.output_json is not None:
+        args.output_json.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "reference_path": str(args.reference),
+            "candidate_path": str(args.candidate),
+            **summary,
+        }
+        args.output_json.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
     print("PN2D BV knee-shape summary")
     print(f"reference: {args.reference}")

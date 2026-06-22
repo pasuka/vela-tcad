@@ -32,6 +32,7 @@ struct NewtonConfig {
     bool diagnostics = false; ///< Store detailed line-search diagnostics in NewtonResult::history.
     Real maxUpdate = 0.0; ///< Optional infinity-norm cap on one Newton update in solver unknown units.
     Real quasiFermiUpdateLimit_V = 0.0; ///< Optional physical-voltage cap on phin/phip Newton updates.
+    Real stallResidualFloor = 1.0e-9; ///< Residual floor for accepting line-search stalls as solved.
     Real carrierRegularizationScale = 0.0; ///< Optional carrier-row diagonal regularization scale.
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
@@ -254,7 +255,8 @@ public:
         const DDSolution& state) const;
     std::vector<NewtonJacobianBlockAuditRow> evaluateJacobianBlockAudit(
         const DDSolution& state,
-        Real finiteDifferenceStep = 1.0e-7) const;
+        Real finiteDifferenceStep = 1.0e-7,
+        std::vector<std::string> blocks = {}) const;
     std::vector<CoupledDDEdgeFluxDiagnostic> evaluateSgEdgeFluxDiagnostics(
         const DDSolution& state) const;
 

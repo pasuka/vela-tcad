@@ -340,6 +340,7 @@ void writeNewtonStepProbeCsv(const std::filesystem::path& path,
     std::ofstream out(path);
     if (!out.is_open())
         throw std::runtime_error("Cannot write Newton step probe CSV: " + path.string());
+    out << std::setprecision(17);
     out << "node_id,x,y,psi,phin,phip,delta_psi_V,delta_phin_V,delta_phip_V,"
         << "delta_psi_minus_phin_V,delta_phip_minus_psi_V,"
         << "trial_psi,trial_phin,trial_phip,trial_electron_density_m3,trial_hole_density_m3,"
@@ -613,6 +614,7 @@ void writeNewtonBlockStepProbeCsv(const std::filesystem::path& path,
     std::ofstream out(path);
     if (!out.is_open())
         throw std::runtime_error("Cannot write Newton block-step probe CSV: " + path.string());
+    out << std::setprecision(17);
     out << "mode,node_id,x,y,psi,phin,phip,delta_psi_V,delta_phin_V,delta_phip_V,"
         << "delta_psi_minus_phin_V,delta_phip_minus_psi_V,"
         << "trial_psi,trial_phin,trial_phip,trial_electron_density_m3,trial_hole_density_m3,"
@@ -1265,10 +1267,17 @@ nlohmann::json runNewtonJacobianBlockProbe(const std::string& configFile,
     const vela::DDSolution state =
         vela::readDDSolutionStateCsv(statePath, problem.mesh.numNodes());
     const vela::Real fdStep = cfg.value("finite_difference_step", 1.0e-7);
+    std::vector<std::string> blocks;
+    if (cfg.contains("blocks")) {
+        if (!cfg.at("blocks").is_array())
+            throw std::invalid_argument("newton_jacobian_block_probe blocks must be an array.");
+        for (const auto& value : cfg.at("blocks"))
+            blocks.push_back(value.get<std::string>());
+    }
 
     const vela::NewtonSolver solver(
         problem.mesh, problem.matdb, problem.doping, problem.biases, problem.newton);
-    const auto rows = solver.evaluateJacobianBlockAudit(state, fdStep);
+    const auto rows = solver.evaluateJacobianBlockAudit(state, fdStep, blocks);
 
     const std::filesystem::path outputPath =
         resolvePath(cfgDir, cfg.at("output_csv").get<std::string>());

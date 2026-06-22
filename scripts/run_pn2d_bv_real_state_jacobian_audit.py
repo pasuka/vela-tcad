@@ -52,6 +52,10 @@ def block_path(out_dir: Path, bias: float) -> Path:
     return out_dir / "blocks" / f"jacobian_blocks_{bias_token(bias)}.csv"
 
 
+def resolve_repo_path(path: Path) -> Path:
+    return path.resolve() if path.is_absolute() else (REPO / path).resolve()
+
+
 def write_combined_report(output: Path, reports: list[BiasBlockReport]) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", newline="", encoding="utf-8") as handle:
@@ -76,7 +80,7 @@ def write_combined_report(output: Path, reports: list[BiasBlockReport]) -> None:
 
 
 def absolutize_base_paths(cfg: dict[str, object], base_config: Path) -> None:
-    base_dir = base_config.parent
+    base_dir = base_config.resolve().parent
     for key in ("mesh_file", "node_doping_file", "materials_file"):
         value = cfg.get(key)
         if isinstance(value, str) and value:
@@ -86,6 +90,8 @@ def absolutize_base_paths(cfg: dict[str, object], base_config: Path) -> None:
 
 
 def derive_snapshot_config(base_config: Path, out_dir: Path) -> Path:
+    base_config = resolve_repo_path(base_config)
+    out_dir = resolve_repo_path(out_dir)
     cfg = json.loads(base_config.read_text(encoding="utf-8"))
     absolutize_base_paths(cfg, base_config)
     sweep = cfg.setdefault("sweep", {})
@@ -118,6 +124,8 @@ def _set_contact_bias(cfg: dict[str, object], contact_name: str, bias: float) ->
 
 
 def derive_probe_config(base_config: Path, out_dir: Path, bias: float) -> Path:
+    base_config = resolve_repo_path(base_config)
+    out_dir = resolve_repo_path(out_dir)
     cfg = json.loads(base_config.read_text(encoding="utf-8"))
     absolutize_base_paths(cfg, base_config)
     cfg["simulation_type"] = "newton_jacobian_block_probe"
@@ -162,6 +170,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    args.base_config = resolve_repo_path(args.base_config)
+    args.runner = resolve_repo_path(args.runner)
+    args.out_dir = resolve_repo_path(args.out_dir)
     biases = args.bias if args.bias is not None else DEFAULT_BIASES
 
     args.out_dir.mkdir(parents=True, exist_ok=True)

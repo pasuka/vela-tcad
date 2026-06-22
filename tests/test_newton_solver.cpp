@@ -526,6 +526,51 @@ TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences at B
     REQUIRE(rel < 1.0e-5);
 }
 
+TEST_CASE("CoupledDDAssembler: transport Jacobian captures quasi-Fermi high-field mobility",
+          "[newton][coupled][mobility][field]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, {
+        {"n_region", 1.0e23, 0.0},
+        {"p_region", 0.0, 1.0e23},
+    });
+
+    MobilityModelConfig mobility = mobilityModelConfig("masetti_field");
+    mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+
+    CoupledDDAssembler assembler(
+        mesh,
+        matdb,
+        doping,
+        constants::Vt_300,
+        mobility,
+        recombinationModelConfig({"none"}),
+        BandgapNarrowingConfig{});
+
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.025);
+    state.phin = VectorXd::LinSpaced(N, 0.7, -0.7);
+    state.phip = VectorXd::LinSpaced(N, -0.65, 0.65);
+    const VectorXd x = assembler.pack(state);
+
+    CoupledDDBoundaryConditions bcs;
+    bcs.psi[0] = state.psi(0);
+    bcs.phin[0] = state.phin(0);
+    bcs.phip[0] = state.phip(0);
+    bcs.psi[2] = state.psi(2);
+    bcs.phin[2] = state.phin(2);
+    bcs.phip[2] = state.phip(2);
+
+    const SparseMatrixd Ja = assembler.assembleJacobian(x, bcs);
+    const SparseMatrixd Jfd = assembler.finiteDifferenceJacobian(x, bcs, 1.0e-7);
+    const Eigen::MatrixXd diff = Eigen::MatrixXd(Ja - Jfd);
+    const Eigen::MatrixXd ref = Eigen::MatrixXd(Jfd);
+    const Real rel = diff.norm() / std::max<Real>(1.0, ref.norm());
+
+    REQUIRE(rel < 1.0e-4);
+}
 TEST_CASE("CoupledDDAssembler: Slotboom BGN uses total impurity at compensated nodes",
           "[newton][coupled][bgn][doping]")
 {
@@ -745,6 +790,44 @@ TEST_CASE("NewtonSolver: evaluateJacobianBlockAudit reports finite block rows",
     REQUIRE(hasBlock("srh_auger"));
     REQUIRE(hasBlock("sg_avalanche"));
     REQUIRE(hasBlock("dirichlet_or_gauge"));
+}
+
+TEST_CASE("NewtonSolver: evaluateJacobianBlockAudit can restrict expensive block rows",
+          "[newton][diagnostics][coupled]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.1},
+        {"cathode", 0.0},
+    };
+
+    NewtonConfig cfg;
+    cfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    cfg.recombination = {"srh"};
+    cfg.warmStart = true;
+    cfg.impactIonization.model = "van_overstraeten";
+    cfg.impactIonization.drivingForce = "quasi_fermi_gradient";
+    cfg.impactIonization.generation = "current_density";
+    cfg.impactIonization.currentApproximation = "density_gradient";
+
+    DDSolution state;
+    const int N = static_cast<int>(mesh.numNodes());
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.02);
+    state.phin = VectorXd::LinSpaced(N, -0.015, 0.015);
+    state.phip = VectorXd::LinSpaced(N, 0.012, -0.012);
+
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const auto rows = solver.evaluateJacobianBlockAudit(
+        state, 1.0e-7, std::vector<std::string>{"sg_avalanche"});
+
+    REQUIRE(rows.size() == 1);
+    REQUIRE(rows.front().block == "sg_avalanche");
+    REQUIRE(std::isfinite(rows.front().analyticNorm));
+    REQUIRE(std::isfinite(rows.front().fdNorm));
+    REQUIRE(std::isfinite(rows.front().diffNorm));
+    REQUIRE(std::isfinite(rows.front().relDiff));
 }
 
 TEST_CASE("NewtonSolver: evaluateBlockStep freezes complementary unknown blocks",
@@ -1109,6 +1192,7 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
     const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
         {"residual_norm", "block"},
         {"max_update", 0.25},
+        {"stall_residual_floor", 2.0e-8},
         {"auger_cn_m6_per_s", 4.0e-43},
         {"auger_cp_m6_per_s", 2.0e-43},
         {"residual_weights", {{"psi", 0.25}, {"phin", 2.0}, {"phip", 3.0}}},
@@ -1117,6 +1201,7 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
 
     REQUIRE(cfg.residualNorm == "block");
     REQUIRE(cfg.maxUpdate == Catch::Approx(0.25));
+    REQUIRE(cfg.stallResidualFloor == Catch::Approx(2.0e-8));
     REQUIRE(cfg.residualWeightPsi == Catch::Approx(0.25));
     REQUIRE(cfg.residualWeightPhin == Catch::Approx(2.0));
     REQUIRE(cfg.residualWeightPhip == Catch::Approx(3.0));
@@ -1340,7 +1425,7 @@ TEST_CASE("NewtonSolver: max_update limits a large Newton step before line searc
             std::sqrt(static_cast<Real>(3 * mesh.numNodes())) * cfg.maxUpdate);
 }
 
-TEST_CASE("NewtonSolver: quasi-Fermi update limit clamps only carrier potentials in unit_scaling",
+TEST_CASE("NewtonSolver: quasi-Fermi update limit recomputes Poisson correction in unit_scaling",
           "[newton][line_search][scaling]")
 {
     DeviceMesh mesh = makePNMesh();
@@ -1395,8 +1480,7 @@ TEST_CASE("NewtonSolver: quasi-Fermi update limit clamps only carrier potentials
         unclampedPhipDelta.cwiseAbs().maxCoeff());
 
     REQUIRE(maxUnclampedQfDelta > limit);
-    REQUIRE((clampedPsiDelta - unclampedPsiDelta).norm() ==
-            Catch::Approx(0.0).margin(1.0e-12));
+    REQUIRE((clampedPsiDelta - unclampedPsiDelta).norm() > 1.0e-12);
     REQUIRE(clampedPhinDelta.cwiseAbs().maxCoeff() <= limit + 1.0e-12);
     REQUIRE(clampedPhipDelta.cwiseAbs().maxCoeff() <= limit + 1.0e-12);
     REQUIRE(clampedPhinDelta(interiorNode) ==
@@ -1406,6 +1490,26 @@ TEST_CASE("NewtonSolver: quasi-Fermi update limit clamps only carrier potentials
             Catch::Approx((unclampedPhipDelta(interiorNode) > 0.0 ? 1.0 : -1.0) * limit)
                 .margin(1.0e-12));
 }
+
+TEST_CASE("NewtonSolver: max-iteration exit honors stall residual floor", "[newton][line_search]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.maxIter = 0;
+    cfg.reltol = 0.0;
+    cfg.abstol = 0.0;
+    cfg.stallResidualFloor = 1.0e9;
+
+    const NewtonResult result = runNewton(
+        mesh, matdb, doping, {{"anode", 0.05}, {"cathode", 0.0}}, cfg);
+
+    REQUIRE(result.converged);
+    REQUIRE(result.finalResidualNorm <= cfg.stallResidualFloor);
+}
+
 
 TEST_CASE("NewtonSolver: optionally records line-search diagnostics in history", "[newton][diagnostics]")
 {

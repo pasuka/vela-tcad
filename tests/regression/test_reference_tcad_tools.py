@@ -223,6 +223,42 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             math.log10(4.5 / 2.5),
         )
 
+    def test_pn2d_bv_knee_shape_writes_json_summary(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_knee_shape_json_") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.csv"
+            candidate = root / "candidate.csv"
+            output_json = root / "summary.json"
+            self._write_csv(reference, ["bias_V", "current_total"], [
+                [-10.0, -1.0e-16],
+                [-11.0, -1.2e-16],
+                [-12.0, -2.5e-16],
+            ])
+            self._write_csv(candidate, ["bias_V", "current_total_A_per_um"], [
+                [-10.0, -1.0e-16],
+                [-11.0, -2.1e-16],
+                [-12.0, -4.5e-16],
+            ])
+
+            subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "diagnose_pn2d_bv_knee_shape.py"),
+                "--reference", str(reference),
+                "--candidate", str(candidate),
+                "--bias-min", "-12.0",
+                "--bias-max", "-10.0",
+                "--output-json", str(output_json),
+            ], check=True, cwd=REPO)
+
+            report = json.loads(output_json.read_text())
+
+        self.assertEqual(report["reference"]["first_growth_over_1p5_V"], -12.0)
+        self.assertEqual(report["candidate"]["first_growth_over_2p0_V"], -11.0)
+        self.assertAlmostEqual(
+            report["max_abs_log10_current_error_decades"],
+            math.log10(4.5 / 2.5),
+        )
+
     def test_runner_real_state_jacobian_block_probe_config_contract(self) -> None:
         config = {
             "simulation_type": "newton_jacobian_block_probe",
@@ -301,6 +337,77 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         self.assertEqual(Path(cfg["mesh_file"]), base_dir / "mesh.json")
         self.assertEqual(Path(cfg["node_doping_file"]), base_dir / "doping.csv")
         self.assertEqual(Path(cfg["materials_file"]), base_dir / "materials.json")
+
+    def test_pn2d_bv_real_state_jacobian_audit_resolves_repo_relative_base_config(self) -> None:
+        module_path = REPO / "scripts" / "run_pn2d_bv_real_state_jacobian_audit.py"
+        spec = importlib.util.spec_from_file_location("run_pn2d_bv_real_state_jacobian_audit", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        build_tmp = REPO / "build"
+        build_tmp.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="vela_relative_real_state_base_", dir=build_tmp) as tmp:
+            root = Path(tmp)
+            base_dir = root / "base"
+            out_dir = root / "out"
+            base_dir.mkdir()
+            base_config = base_dir / "simulation.json"
+            base_config.write_text(json.dumps({
+                "mesh_file": "mesh.json",
+                "node_doping_file": "doping.csv",
+                "sweep": {"contact": "Anode"},
+                "contacts": [{"name": "Anode", "bias": 0.0}],
+            }), encoding="utf-8")
+            relative_base_config = base_config.relative_to(REPO)
+
+            snapshot = module.derive_snapshot_config(relative_base_config, out_dir)
+            cfg = json.loads(snapshot.read_text(encoding="utf-8"))
+
+        self.assertTrue(Path(cfg["mesh_file"]).is_absolute())
+        self.assertEqual(Path(cfg["mesh_file"]), base_dir / "mesh.json")
+        self.assertEqual(Path(cfg["node_doping_file"]), base_dir / "doping.csv")
+
+    def test_pn2d_bv_real_state_jacobian_audit_resolves_repo_relative_out_dir(self) -> None:
+        module_path = REPO / "scripts" / "run_pn2d_bv_real_state_jacobian_audit.py"
+        spec = importlib.util.spec_from_file_location("run_pn2d_bv_real_state_jacobian_audit", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        build_tmp = REPO / "build"
+        build_tmp.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="vela_relative_real_state_out_", dir=build_tmp) as tmp:
+            root = Path(tmp)
+            base_dir = root / "base"
+            out_dir = root / "out"
+            base_dir.mkdir()
+            base_config = base_dir / "simulation.json"
+            base_config.write_text(json.dumps({
+                "mesh_file": "mesh.json",
+                "node_doping_file": "doping.csv",
+                "sweep": {"contact": "Anode"},
+                "contacts": [{"name": "Anode", "bias": 0.0}],
+            }), encoding="utf-8")
+            relative_base_config = base_config.relative_to(REPO)
+            relative_out_dir = out_dir.relative_to(REPO)
+
+            snapshot = module.derive_snapshot_config(relative_base_config, relative_out_dir)
+            cfg = json.loads(snapshot.read_text(encoding="utf-8"))
+            probe = module.derive_probe_config(relative_base_config, relative_out_dir, -13.2)
+            probe_cfg = json.loads(probe.read_text(encoding="utf-8"))
+
+        self.assertTrue(Path(cfg["sweep"]["csv_file"]).is_absolute())
+        self.assertEqual(Path(cfg["sweep"]["csv_file"]), out_dir / "snapshot_sweep.csv")
+        self.assertTrue(Path(cfg["sweep"]["write_state_every_point_prefix"]).is_absolute())
+        self.assertEqual(
+            Path(cfg["sweep"]["write_state_every_point_prefix"]),
+            out_dir / "states" / "bv_state",
+        )
+        self.assertTrue(Path(probe_cfg["state_file"]).is_absolute())
+        self.assertTrue(Path(probe_cfg["output_csv"]).is_absolute())
 
     def test_pn2d_bv_field_compare_script_help(self) -> None:
         result = subprocess.run(
@@ -9307,7 +9414,7 @@ LOOKUP_TABLE default
                 ],
             }) + "\n")
             for name, values in {
-                "ElectrostaticPotential": [-0.1, 0.1, -0.08, 0.08],
+                "ElectrostaticPotential": [-0.12345678901234567, 0.1, -0.08, 0.08],
                 "eQuasiFermiPotential": [0.0, 0.0, 0.0, 0.0],
                 "hQuasiFermiPotential": [0.0, 0.0, 0.0, 0.0],
             }.items():
@@ -9356,6 +9463,7 @@ LOOKUP_TABLE default
         self.assertIn("delta_phin_V", rows[0])
         self.assertIn("delta_psi_minus_phin_V", rows[0])
         self.assertIn("trial_electron_density_m3", rows[0])
+        self.assertEqual(rows[0]["psi"], "-0.12345678901234566")
 
     def test_runner_writes_newton_jvp_probe_for_external_state(self) -> None:
         exe_name = "vela_example_runner.exe" if sys.platform.startswith("win") else "vela_example_runner"
