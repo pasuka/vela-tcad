@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Decompose SG edge-source to nodal source-density geometry factors."""
 
 from __future__ import annotations
@@ -127,18 +127,26 @@ def matches_bias(row: dict[str, str], bias: float | None) -> bool:
     return abs(row_bias - bias) <= 1.0e-9
 
 
+def first_float(row: dict[str, str], *names: str) -> float | None:
+    for name in names:
+        value = optional_float(row.get(name))
+        if value is not None:
+            return value
+    return None
+
+
 def load_edge_geometry(edge_csv: Path, bias: float | None, active_relative_threshold: float) -> dict[int, dict[str, float]]:
     contributions: dict[int, list[dict[str, float]]] = {}
     for row in read_csv_rows(edge_csv):
         if not matches_bias(row, bias):
             continue
-        edge_area = optional_float(row.get("edge_area_proxy_m2")) or 0.0
-        electron_flux = abs(optional_float(row.get("electron_flux_proxy")) or 0.0)
-        hole_flux = abs(optional_float(row.get("hole_flux_proxy")) or 0.0)
+        edge_area = first_float(row, "edge_area_proxy_m2", "edge_area_m2") or 0.0
+        electron_flux = abs(first_float(row, "electron_flux_proxy", "electron_flux_abs") or 0.0)
+        hole_flux = abs(first_float(row, "hole_flux_proxy", "hole_flux_abs") or 0.0)
         electron_alpha = optional_float(row.get("electron_alpha_m_inv")) or 0.0
         hole_alpha = optional_float(row.get("hole_alpha_m_inv")) or 0.0
         alpha_flux_density = electron_alpha * electron_flux + hole_alpha * hole_flux
-        edge_source = optional_float(row.get("edge_source_integral"))
+        edge_source = first_float(row, "edge_source_integral", "source_integral")
         if edge_source is None:
             electron_source = optional_float(row.get("electron_source_integral")) or 0.0
             hole_source = optional_float(row.get("hole_source_integral")) or 0.0

@@ -37,6 +37,8 @@ Real limitedExp(Real value)
 
 bool transportMobilityDependsOnPotentials(const MobilityModelConfig& config)
 {
+    if (!config.jacobianFieldDerivatives)
+        return false;
     return config.model == "caughey_thomas_field" ||
            config.model == "masetti_field" ||
            config.model == "caughey_thomas_field_surface" ||

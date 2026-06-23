@@ -114,6 +114,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--biases", default="-10,-13.2")
     parser.add_argument("--edge-id", type=int, default=2886)
     parser.add_argument("--temperature-k", type=float, default=300.0)
+    parser.add_argument("--material-ni-m3", type=float, default=1.0e16)
     return parser.parse_args()
 
 
@@ -329,13 +330,14 @@ def append_bias_rows(
     vtk: Path,
     sentaurus: Path,
     vt: float,
+    material_ni_m3: float,
     edge_rows: list[dict[str, Any]],
     node_rows: list[dict[str, Any]],
 ) -> dict[str, Any]:
     nodes, triangles, contacts = sgdiag.read_mesh(mesh)
     edges = sgdiag.build_edges(nodes, triangles)
     scalars = sgdiag.parse_vtk_scalars(vtk)
-    ni = sgdiag.effective_ni_from_doping(doping_csv, len(nodes), 1.0e16, vt, "old_slotboom")
+    ni = sgdiag.effective_ni_from_doping(doping_csv, len(nodes), material_ni_m3, vt, "old_slotboom")
     rows, node_avalanche = source_rows_with_signed_flux(nodes, edges, contacts, scalars, ni, vt)
     source_by_edge = {int(row["edge_id"]): row for row in rows}
     selected = [
@@ -566,6 +568,7 @@ def main() -> int:
             vtk,
             sentaurus_dir(args.sentaurus_root, bias),
             vt,
+            args.material_ni_m3,
             edge_rows,
             node_rows,
         ))
@@ -577,6 +580,7 @@ def main() -> int:
         json.dumps(clean_json({
             "edge_id": args.edge_id,
             "biases": summaries,
+            "material_ni_m3": args.material_ni_m3,
             "edge_rows": len(edge_rows),
             "node_rows": len(node_rows),
         }), indent=2) + "\n",

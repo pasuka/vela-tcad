@@ -72,6 +72,12 @@ void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& con
             std::string(context) +
             ": impact_ionization.source_geometry_scale must be positive and finite.");
     }
+    if (config.sourceVolumePolicy != "edge_half_box" &&
+        config.sourceVolumePolicy != "edge_box") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.source_volume_policy must be 'edge_half_box' or 'edge_box'.");
+    }
     if (!std::isfinite(config.quasiFermiCarrierTruncation) ||
         config.quasiFermiCarrierTruncation < 0.0) {
         throw std::invalid_argument(
@@ -700,6 +706,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 value, scaling, cfg.impactIonization, "newtonConfigFromJson");
             cfg.impactIonization.sourceGeometryScale = value.value(
                 "source_geometry_scale", cfg.impactIonization.sourceGeometryScale);
+            cfg.impactIonization.sourceVolumePolicy = value.value(
+                "source_volume_policy", cfg.impactIonization.sourceVolumePolicy);
             cfg.impactIonization.quasiFermiCarrierTruncation = value.value(
                 "quasi_fermi_carrier_truncation",
                 cfg.impactIonization.quasiFermiCarrierTruncation);

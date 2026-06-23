@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Regression coverage for neutral reference TCAD CSV conversion tools."""
 
 from __future__ import annotations
@@ -20,6 +20,76 @@ if str(REPO) not in sys.path:
 
 
 class ReferenceTcadToolsTest(unittest.TestCase):
+    def test_prepare_pn2d_bv_localization_deck_writes_absolute_inputs(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_localization_deck_") as td:
+            tmp = Path(td)
+            reference_root = tmp / "reference"
+            (reference_root / "vela").mkdir(parents=True)
+            base = tmp / "base.json"
+            base.write_text(json.dumps({
+                "mesh_file": "mesh.json",
+                "node_doping_file": "doping.csv",
+                "materials_file": "materials.json",
+                "output_csv": "old.csv",
+                "solver": {
+                    "max_update": 5.0,
+                    "impact_ionization": {"model": "van_overstraeten"},
+                },
+                "sweep": {"stop": -0.05},
+            }), encoding="utf-8")
+            out_root = tmp / "out"
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "prepare_pn2d_bv_localization_decks.py"),
+                "--base-config", str(base),
+                "--reference-root", str(reference_root),
+                "--out-root", str(out_root),
+                "--case-name", "qflim",
+                "--stop", "-3",
+                "--qf-limit", "0.1",
+                "--max-update", "0",
+                "--diagnostics",
+            ], text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            deck = json.loads((out_root / "qflim" / "config.json").read_text())
+            self.assertEqual(deck["sweep"]["stop"], -3.0)
+            self.assertEqual(deck["solver"]["max_update"], 0.0)
+            self.assertEqual(deck["solver"]["quasi_fermi_update_limit_V"], 0.1)
+            self.assertTrue(Path(deck["mesh_file"]).is_absolute())
+            self.assertTrue(deck["sweep"]["diagnostics"]["newton_history"]["enabled"])
+
+    def test_compare_pn2d_bv_newton_history_reports_raw_step_ratio(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_newton_history_compare_") as td:
+            tmp = Path(td)
+            left = tmp / "left.csv"
+            right = tmp / "right.csv"
+            header = "bias_V,iteration,residual_norm,raw_step_norm,block_psi,block_phin,block_phip\n"
+            left.write_text(
+                header + "-3,3,4e-13,4.5,3e-12,5e-14,5e-14\n",
+                encoding="utf-8",
+            )
+            right.write_text(
+                header + "-0.3,6,7e-9,90,3e-8,1e-9,7e-9\n",
+                encoding="utf-8",
+            )
+            out = tmp / "summary.json"
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "compare_pn2d_bv_newton_history.py"),
+                "--left", str(left),
+                "--right", str(right),
+                "--out", str(out),
+            ], text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            summary = json.loads(out.read_text())
+            self.assertAlmostEqual(summary["raw_step_ratio"], 20.0)
+            self.assertEqual(summary["left"]["rows"], 1)
+            self.assertEqual(summary["right"]["rows"], 1)
+
     def test_pn2d_bv_artifact_validator_accepts_endpoint_multibias_set(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_bv_artifacts_valid_") as tmp:
             source = Path(tmp) / "source"
@@ -172,6 +242,9 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             solver["mobility"]["high_field_driving_force"],
             "quasi_fermi_gradient",
         )
+        self.assertIs(solver["mobility"]["jacobian_field_derivatives"], False)
+        self.assertAlmostEqual(solver["max_update"], 0.0)
+        self.assertAlmostEqual(solver["quasi_fermi_update_limit_V"], 0.1)
         self.assertIs(
             solver["contact_boundary_minority_electron_relaxation"],
             False,
@@ -1863,6 +1936,146 @@ LOOKUP_TABLE default
                 0.25,
             )
 
+    def test_pn2d_bv_source_geometry_accepts_current_sg_edge_schema(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_source_geometry_current_schema_") as tmp:
+            root = Path(tmp)
+            sentaurus = root / "sentaurus_-20v"
+            fields = sentaurus / "fields"
+            fields.mkdir(parents=True)
+            mesh = root / "mesh.json"
+            support = root / "support.csv"
+            edge_csv = root / "sg_edges.csv"
+            out_dir = root / "out"
+
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 3.0e6, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 2.0e6},
+                ],
+                "triangles": [
+                    {"node_ids": [0, 1, 2]},
+                ],
+            }), encoding="utf-8")
+            self._write_csv(support, [
+                "node_id", "x_um", "y_um", "support_class",
+            ], [[0, 0.0, 0.0, "overlap"]])
+            self._write_csv(fields / "ImpactIonization_region0.csv", ["node_id", "component0"], [[0, 6.0e-6]])
+            self._write_csv(edge_csv, [
+                "bias_V",
+                "edge_id",
+                "node0",
+                "node1",
+                "edge_area_m2",
+                "electron_flux_abs",
+                "hole_flux_abs",
+                "electron_alpha_m_inv",
+                "hole_alpha_m_inv",
+                "source_integral",
+            ], [
+                [-20.0, 10, 0, 1, 0.5, 2.0, 0.0, 1.0, 0.0, 1.0],
+                [-20.0, 11, 0, 2, 0.5, 4.0, 0.0, 1.0, 0.0, 2.0],
+            ])
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO / "scripts" / "diagnose_pn2d_bv_source_geometry.py"),
+                    "--support-csv",
+                    str(support),
+                    "--sg-edge-csv",
+                    str(edge_csv),
+                    "--sentaurus-dir",
+                    str(sentaurus),
+                    "--mesh",
+                    str(mesh),
+                    "--bias",
+                    "-20",
+                    "--out-dir",
+                    str(out_dir),
+                ],
+                cwd=REPO,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = self._read_csv(out_dir / "source_geometry_nodes.csv")
+            self.assertEqual(len(rows), 1)
+            row = rows[0]
+            self.assertAlmostEqual(float(row["node_volume_m2"]), 1.0)
+            self.assertAlmostEqual(float(row["cxx_endpoint_area_sum_m2"]), 0.5)
+            self.assertAlmostEqual(float(row["cxx_alpha_flux_density_sum_m3_s"]), 6.0)
+            self.assertAlmostEqual(float(row["cxx_node_source_integral"]), 1.5)
+            self.assertAlmostEqual(float(row["cxx_source_over_sentaurus_source"]), 0.25)
+    def test_pn2d_bv_impact_feedback_ownership_summary_combines_support_factors(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_impact_feedback_ownership_") as tmp:
+            root = Path(tmp)
+            replay = root / "active_edge_mixed_state_replay_summary.json"
+            geometry = root / "source_geometry_summary.json"
+            scale = root / "predictor_carrier_row_audit_summary.json"
+            out_dir = root / "out"
+
+            replay.write_text(json.dumps({
+                "support_classes": {
+                    "false_negative": {
+                        "variants": {
+                            "predictor": {
+                                "generation_over_sentaurus_median": 1.2,
+                                "generation_over_sentaurus_mean": 1.3,
+                            }
+                        }
+                    }
+                }
+            }), encoding="utf-8")
+            geometry.write_text(json.dumps({
+                "support_classes": {
+                    "false_negative": {
+                        "summed_active_endpoint_area_fraction": 0.5,
+                        "cxx_active_endpoint_area_fraction_median": 0.45,
+                    }
+                }
+            }), encoding="utf-8")
+            scale.write_text(json.dumps({
+                "impact_scale_sensitivity": {
+                    "states": {
+                        "predictor": {
+                            "support_classes": {
+                                "false_negative": {
+                                    "electron_required_impact_scale_median": 2.0,
+                                    "hole_required_impact_scale_median": 2.5,
+                                }
+                            }
+                        }
+                    }
+                }
+            }), encoding="utf-8")
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "summarize_pn2d_bv_impact_feedback_ownership.py"),
+                "--active-edge-replay-summary", str(replay),
+                "--source-geometry-summary", str(geometry),
+                "--impact-scale-summary", str(scale),
+                "--variant", "predictor",
+                "--state", "predictor",
+                "--out-dir", str(out_dir),
+            ], cwd=REPO, text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = self._read_csv(out_dir / "impact_feedback_ownership_summary.csv")
+            self.assertEqual(len(rows), 1)
+            row = rows[0]
+            self.assertEqual(row["support_class"], "false_negative")
+            self.assertAlmostEqual(float(row["active_edge_generation_over_sentaurus_median"]), 1.2)
+            self.assertAlmostEqual(float(row["active_endpoint_area_fraction_summed"]), 0.5)
+            self.assertAlmostEqual(float(row["endpoint_feedback_over_sentaurus"]), 0.6)
+            self.assertAlmostEqual(float(row["full_active_edge_feedback_over_sentaurus"]), 1.2)
+            self.assertAlmostEqual(float(row["electron_required_impact_scale_median"]), 2.0)
+            self.assertAlmostEqual(float(row["endpoint_feedback_times_electron_required_scale"]), 1.2)
+            summary = json.loads((out_dir / "impact_feedback_ownership_summary.json").read_text())
+            self.assertEqual(summary["row_count"], 1)
+            self.assertEqual(summary["support_classes"]["false_negative"]["full_active_edge_closes_unit_feedback"], True)
     def test_pn2d_bv_edge_direction_policy_compares_active_reconstructions(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_bv_edge_direction_policy_") as tmp:
             root = Path(tmp)
@@ -4299,6 +4512,464 @@ LOOKUP_TABLE default
             summary = json.loads((out_dir / "active_edge_density_factors_summary.json").read_text())
             self.assertEqual(summary["support_classes"]["overlap"]["count"], 1)
 
+    def test_pn2d_bv_predictor_carrier_row_audit_summarizes_terms(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_predictor_carrier_rows_") as tmp:
+            root = Path(tmp)
+            support = root / "predictor_nodes.csv"
+            out_dir = root / "out"
+            self._write_csv(support, [
+                "node_id",
+                "support_class",
+                "phin_baseline_V",
+                "phin_predictor_V",
+                "phip_baseline_V",
+                "phip_predictor_V",
+            ], [[0, "false_negative", 0.0, -0.05, 0.0, 0.06]])
+            row_fields = [
+                "node_id", "electron_residual", "hole_residual",
+                "electron_diagonal", "hole_diagonal",
+                "electron_row_abs_sum", "hole_row_abs_sum",
+                "electron_offdiag_abs_sum", "hole_offdiag_abs_sum",
+                "raw_delta_phin_V", "raw_delta_phip_V",
+                "capped_delta_phin_V", "capped_delta_phip_V",
+            ]
+            term_fields = [
+                "node_id", "electron_flux", "electron_recombination", "electron_impact",
+                "electron_gauge", "electron_boundary", "electron_term_sum", "electron_residual",
+                "hole_flux", "hole_recombination", "hole_impact", "hole_gauge", "hole_boundary",
+                "hole_term_sum", "hole_residual", "impact_combined_source",
+            ]
+            for state, e_res, e_delta, e_flux, e_impact in [
+                ("baseline", 1.0e-13, 0.0, 10.0, -1.0),
+                ("predictor", 4.0e-13, 0.022, 40.0, -12.0),
+                ("trial", 2.0e-13, 0.004, 18.0, -4.0),
+            ]:
+                self._write_csv(root / f"{state}_carrier_rows.csv", row_fields, [[
+                    0, e_res, -2.0e-13, -8.0, -9.0, 10.0, 11.0, 2.0, 2.0,
+                    e_delta, -0.020, e_delta, -0.020,
+                ]])
+                self._write_csv(root / f"{state}_carrier_terms.csv", term_fields, [[
+                    0, e_flux, 0.5, e_impact, 0.0, 0.0, e_flux + 0.5 + e_impact, e_res,
+                    -30.0, -0.5, 11.0, 0.0, 0.0, -19.5, -2.0e-13, 23.0,
+                ]])
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "diagnose_pn2d_bv_predictor_carrier_row_audit.py"),
+                "--support-csv", str(support),
+                "--carrier-row-csv", f"baseline={root / 'baseline_carrier_rows.csv'}",
+                "--carrier-row-csv", f"predictor={root / 'predictor_carrier_rows.csv'}",
+                "--carrier-row-csv", f"trial={root / 'trial_carrier_rows.csv'}",
+                "--carrier-term-csv", f"baseline={root / 'baseline_carrier_terms.csv'}",
+                "--carrier-term-csv", f"predictor={root / 'predictor_carrier_terms.csv'}",
+                "--carrier-term-csv", f"trial={root / 'trial_carrier_terms.csv'}",
+                "--out-dir", str(out_dir),
+            ], cwd=REPO, text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            summary = json.loads((out_dir / "predictor_carrier_row_audit_summary.json").read_text())
+            pred = summary["states"]["predictor"]["support_classes"]["false_negative"]
+            self.assertAlmostEqual(pred["electron_raw_delta_phin_median_V"], 0.022)
+            self.assertAlmostEqual(pred["electron_offdiag_fraction_median"], 0.2)
+            self.assertAlmostEqual(pred["electron_flux_median"], 40.0)
+            self.assertAlmostEqual(pred["electron_impact_median"], -12.0)
+            change = summary["comparisons"]["predictor_minus_baseline"]["support_classes"]["false_negative"]
+            self.assertAlmostEqual(change["electron_flux_delta_median"], 30.0)
+            self.assertAlmostEqual(change["electron_impact_delta_median"], -11.0)
+            rows = self._read_csv(out_dir / "predictor_carrier_row_audit_nodes.csv")
+            predictor_row = next(row for row in rows if row["state"] == "predictor")
+            self.assertIn("electron_raw_delta_rollback_fraction", predictor_row)
+            self.assertAlmostEqual(float(predictor_row["electron_raw_delta_rollback_fraction"]), 0.44)
+
+    def test_pn2d_bv_predictor_carrier_row_audit_reports_impact_scale_sensitivity(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_predictor_carrier_impact_scale_") as tmp:
+            root = Path(tmp)
+            support = root / "predictor_nodes.csv"
+            out_dir = root / "out"
+            self._write_csv(support, [
+                "node_id",
+                "support_class",
+                "phin_baseline_V",
+                "phin_predictor_V",
+                "phip_baseline_V",
+                "phip_predictor_V",
+            ], [[0, "false_negative", 0.0, -0.05, 0.0, 0.06]])
+            row_fields = [
+                "node_id", "electron_residual", "hole_residual",
+                "electron_diagonal", "hole_diagonal",
+                "electron_row_abs_sum", "hole_row_abs_sum",
+                "electron_offdiag_abs_sum", "hole_offdiag_abs_sum",
+                "raw_delta_phin_V", "raw_delta_phip_V",
+                "capped_delta_phin_V", "capped_delta_phip_V",
+            ]
+            term_fields = [
+                "node_id", "electron_flux", "electron_recombination", "electron_impact",
+                "electron_gauge", "electron_boundary", "electron_term_sum", "electron_residual",
+                "hole_flux", "hole_recombination", "hole_impact", "hole_gauge", "hole_boundary",
+                "hole_term_sum", "hole_residual", "impact_combined_source",
+            ]
+            self._write_csv(root / "predictor_carrier_rows.csv", row_fields, [[
+                0, 2.85e-13, -1.8e-13, -8.0, -9.0, 10.0, 11.0, 2.0, 2.0,
+                0.022, -0.020, 0.022, -0.020,
+            ]])
+            self._write_csv(root / "predictor_carrier_terms.csv", term_fields, [[
+                0, 40.0, 0.5, -12.0, 0.0, 0.0, 28.5, 2.85e-13,
+                -30.0, -0.5, 11.0, 0.0, 0.0, -19.5, -1.8e-13, 23.0,
+            ]])
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "diagnose_pn2d_bv_predictor_carrier_row_audit.py"),
+                "--support-csv", str(support),
+                "--carrier-row-csv", f"predictor={root / 'predictor_carrier_rows.csv'}",
+                "--carrier-term-csv", f"predictor={root / 'predictor_carrier_terms.csv'}",
+                "--impact-scale", "1.0",
+                "--impact-scale", "3.375",
+                "--out-dir", str(out_dir),
+            ], cwd=REPO, text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            summary = json.loads((out_dir / "predictor_carrier_row_audit_summary.json").read_text())
+            cls = summary["impact_scale_sensitivity"]["states"]["predictor"]["support_classes"]["false_negative"]
+            self.assertAlmostEqual(cls["electron_required_impact_scale_median"], 3.375)
+            by_scale = {row["impact_scale"]: row for row in cls["scales"]}
+            self.assertAlmostEqual(by_scale["3.375"]["electron_adjusted_residual_median"], 0.0)
+            rows = self._read_csv(out_dir / "predictor_carrier_impact_scale_nodes.csv")
+            self.assertEqual(len(rows), 2)
+            closed = next(row for row in rows if row["impact_scale"] == "3.375")
+            self.assertAlmostEqual(float(closed["electron_adjusted_residual"]), 0.0)
+    def test_pn2d_bv_predictor_first_step_audit_accepts_bom_base_config(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_predictor_first_step_bom_") as tmp:
+            root = Path(tmp)
+            support = root / "predictor_nodes.csv"
+            state = root / "state.csv"
+            base = root / "base.json"
+            mesh = root / "mesh.json"
+            doping = root / "doping.csv"
+            out_dir = root / "out"
+            self._write_csv(support, [
+                "node_id", "support_class", "phin_baseline_V", "phin_predictor_V",
+                "phip_baseline_V", "phip_predictor_V",
+            ], [[0, "false_negative", 0.0, -0.05, 0.0, 0.05]])
+            self._write_csv(state, ["node_id", "psi", "phin", "phip", "electrons_m3", "holes_m3"], [
+                [0, 0.0, -0.05, 0.05, 1.0, 1.0],
+            ])
+            mesh.write_text(json.dumps({"nodes": [{"id": 0, "x": 0.0, "y": 0.0}], "triangles": []}), encoding="utf-8")
+            self._write_csv(doping, ["node_id", "donors_cm3", "acceptors_cm3"], [[0, 0.0, 0.0]])
+            base.write_text("\ufeff" + json.dumps({
+                "mesh_file": str(mesh),
+                "node_doping_file": str(doping),
+                "contacts": [{"name": "Anode", "bias": 0.0}, {"name": "Cathode", "bias": 0.0}],
+                "solver": {"method": "gummel_newton"},
+            }), encoding="utf-8")
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "diagnose_pn2d_bv_predictor_first_step_audit.py"),
+                "--support-csv", str(support),
+                "--base-config", str(base),
+                "--state-csv", str(state),
+                "--out-dir", str(out_dir),
+                "--prepare-only",
+            ], cwd=REPO, text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((out_dir / "configs" / "newton_step_probe.json").is_file())
+            self.assertTrue((out_dir / "state_fields" / "ElectrostaticPotential_region0.csv").is_file())
+    def test_pn2d_bv_predictor_first_step_audit_reports_rollback_fraction(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_predictor_first_step_") as tmp:
+            root = Path(tmp)
+            support = root / "predictor_nodes.csv"
+            step_csv = root / "step.csv"
+            block_csv = root / "block_step.csv"
+            out_dir = root / "out"
+            self._write_csv(support, [
+                "node_id",
+                "support_class",
+                "phin_baseline_V",
+                "phin_predictor_V",
+                "phip_baseline_V",
+                "phip_predictor_V",
+            ], [
+                [0, "false_negative", 0.0, -0.05, 0.0, 0.06],
+                [1, "edge_endpoint", 0.0, -0.04, 0.0, 0.04],
+            ])
+            self._write_csv(step_csv, [
+                "node_id",
+                "delta_psi_minus_phin_V",
+                "delta_phip_minus_psi_V",
+                "delta_psi_V",
+                "delta_phin_V",
+                "delta_phip_V",
+                "phin_residual",
+                "phip_residual",
+                "trial_phin_residual",
+                "trial_phip_residual",
+            ], [
+                [0, -0.04, -0.03, 0.0, 0.04, -0.03, 1.0, 2.0, 0.1, 0.2],
+                [1, -0.02, -0.01, 0.0, 0.02, -0.01, 3.0, 4.0, 0.3, 0.4],
+            ])
+            self._write_csv(block_csv, [
+                "mode",
+                "node_id",
+                "delta_psi_minus_phin_V",
+                "delta_phip_minus_psi_V",
+                "delta_psi_V",
+                "delta_phin_V",
+                "delta_phip_V",
+            ], [
+                ["poisson_only", 0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                ["carrier_only", 0, -0.04, -0.03, 0.0, 0.04, -0.03],
+                ["poisson_only", 1, 0.0, 0.0, 0.0, 0.0, 0.0],
+                ["carrier_only", 1, -0.02, -0.01, 0.0, 0.02, -0.01],
+            ])
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "diagnose_pn2d_bv_predictor_first_step_audit.py"),
+                "--support-csv",
+                str(support),
+                "--step-csv",
+                str(step_csv),
+                "--block-step-csv",
+                str(block_csv),
+                "--out-dir",
+                str(out_dir),
+            ], cwd=REPO, text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            summary = json.loads((out_dir / "predictor_first_step_audit_summary.json").read_text())
+            full = summary["modes"]["full_newton"]["support_classes"]["false_negative"]
+            self.assertAlmostEqual(full["electron_rollback_fraction_median"], 0.8)
+            self.assertAlmostEqual(full["hole_rollback_fraction_median"], 0.5)
+            carrier = summary["modes"]["carrier_only"]["support_classes"]["false_negative"]
+            self.assertAlmostEqual(carrier["electron_rollback_fraction_median"], 0.8)
+            poisson = summary["modes"]["poisson_only"]["support_classes"]["false_negative"]
+            self.assertAlmostEqual(poisson["electron_rollback_fraction_median"], 0.0)
+            rows = self._read_csv(out_dir / "predictor_first_step_audit_nodes.csv")
+            self.assertIn("initial_psi_minus_phin_shift_V", rows[0])
+            self.assertIn("electron_rollback_fraction", rows[0])
+    def test_prepare_pn2d_bv_coupled_qf_predictor_state_moves_active_edge_endpoints(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_coupled_qf_predictor_") as tmp:
+            root = Path(tmp)
+            sentaurus = root / "sentaurus_-20v"
+            fields = sentaurus / "fields"
+            vtk_root = root / "vtk"
+            fields.mkdir(parents=True)
+            vtk_root.mkdir()
+            mesh = root / "mesh.json"
+            support = root / "support.csv"
+            edge_csv = root / "sg_edges.csv"
+            out_dir = root / "out"
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                ],
+                "triangles": [{"id": 0, "node_ids": [0, 1, 2]}],
+            }), encoding="utf-8")
+            self._write_csv(support, [
+                "node_id",
+                "x_um",
+                "y_um",
+                "sentaurus_avalanche_cm3_s",
+                "vela_avalanche_cm3_s",
+                "sentaurus_active",
+                "vela_active",
+                "support_class",
+            ], [[0, 0.0, 0.0, 1.0, 0.0, 1, 0, "false_negative"]])
+            self._write_csv(edge_csv, [
+                "edge_id",
+                "node0",
+                "node1",
+                "x0_um",
+                "y0_um",
+                "x1_um",
+                "y1_um",
+                "edge_area_m2",
+                "electron_flux_abs",
+                "hole_flux_abs",
+                "electron_alpha_m_inv",
+                "hole_alpha_m_inv",
+            ], [[0, 0, 1, 0.0, 0.0, 1.0, 0.0, 2.0, 3.0, 5.0, 7.0, 11.0]])
+            (vtk_root / "mini_0000_-20V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+mini
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 3 float
+0 0 0
+1 0 0
+0 1 0
+POINT_DATA 3
+SCALARS Potential float 1
+LOOKUP_TABLE default
+0 0 0
+SCALARS ElectronQuasiFermi float 1
+LOOKUP_TABLE default
+0 0 0
+SCALARS HoleQuasiFermi float 1
+LOOKUP_TABLE default
+0 0 0
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+10 10 10
+SCALARS Holes float 1
+LOOKUP_TABLE default
+20 20 20
+SCALARS ElectronMobility float 1
+LOOKUP_TABLE default
+1 1 1
+SCALARS HoleMobility float 1
+LOOKUP_TABLE default
+1 1 1
+""".strip() + "\n",
+                encoding="utf-8",
+            )
+            self._write_csv(sentaurus / "nodes.csv", ["id", "x_um", "y_um"], [
+                [0, 0.0, 0.0],
+                [1, 1.0, 0.0],
+                [2, 0.0, 1.0],
+            ])
+            for name, values in {
+                "ElectrostaticPotential": [0.0, 0.0, 0.0],
+                "eQuasiFermiPotential": [-0.04, -0.08, -0.12],
+                "hQuasiFermiPotential": [0.06, 0.10, 0.14],
+                "eDensity": [1.0e-5, 1.0e-5, 1.0e-5],
+                "hDensity": [2.0e-5, 2.0e-5, 2.0e-5],
+                "eMobility": [1.0e4, 1.0e4, 1.0e4],
+                "hMobility": [1.0e4, 1.0e4, 1.0e4],
+            }.items():
+                self._write_csv(fields / f"{name}_region0.csv", ["node_id", "component0"], [
+                    [0, values[0]],
+                    [1, values[1]],
+                    [2, values[2]],
+                ])
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "prepare_pn2d_bv_coupled_qf_predictor_state.py"),
+                "--support-csv",
+                str(support),
+                "--sg-edge-csv",
+                str(edge_csv),
+                "--mesh",
+                str(mesh),
+                "--sentaurus-dir",
+                str(sentaurus),
+                "--vela-vtk-root",
+                str(vtk_root),
+                "--bias",
+                "-20",
+                "--support-class",
+                "false_negative",
+                "--blend",
+                "1.0",
+                "--out-dir",
+                str(out_dir),
+            ], cwd=REPO, text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = self._read_csv(out_dir / "coupled_qf_predictor_state.csv")
+            by_node = {int(row["node_id"]): row for row in rows}
+            self.assertAlmostEqual(float(by_node[0]["phin"]), -0.04)
+            self.assertAlmostEqual(float(by_node[1]["phin"]), -0.08)
+            self.assertAlmostEqual(float(by_node[2]["phin"]), 0.0)
+            self.assertAlmostEqual(float(by_node[0]["phip"]), 0.06)
+            self.assertAlmostEqual(float(by_node[1]["phip"]), 0.10)
+            self.assertAlmostEqual(float(by_node[2]["phip"]), 0.0)
+            self.assertGreater(float(by_node[0]["electrons_m3"]), 10.0)
+            self.assertGreater(float(by_node[1]["holes_m3"]), 20.0)
+            node_rows = self._read_csv(out_dir / "coupled_qf_predictor_nodes.csv")
+            classes_by_node = {int(row["node_id"]): row["support_class"] for row in node_rows}
+            self.assertEqual(classes_by_node[0], "false_negative")
+            self.assertEqual(classes_by_node[1], "edge_endpoint")
+            summary = json.loads((out_dir / "coupled_qf_predictor_state_summary.json").read_text())
+            self.assertEqual(summary["active_edge_count"], 1)
+            self.assertEqual(summary["target_node_count"], 2)
+            self.assertAlmostEqual(summary["electron_qf_gradient_delta_median_V"], -0.04)
+            self.assertAlmostEqual(summary["hole_qf_gradient_delta_median_V"], 0.04)
+    def test_pn2d_bv_restart_state_relaxation_reports_retained_qf_shift(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_restart_relaxation_") as tmp:
+            root = Path(tmp)
+            support = root / "support.csv"
+            baseline = root / "baseline.csv"
+            initial = root / "initial.csv"
+            final = root / "final.csv"
+            out_dir = root / "out"
+            self._write_csv(support, [
+                "node_id",
+                "x_um",
+                "y_um",
+                "support_class",
+            ], [[0, 0.0, 0.0, "false_negative"]])
+            header = ["node_id", "psi", "phin", "phip", "electrons_m3", "holes_m3"]
+            self._write_csv(baseline, header, [[0, 0.0, 0.0, 0.0, 10.0, 20.0]])
+            self._write_csv(initial, header, [[0, 0.0, -0.04, 0.08, 40.0, 100.0]])
+            self._write_csv(final, header, [[0, 0.0, -0.01, 0.02, 20.0, 40.0]])
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "diagnose_pn2d_bv_restart_state_relaxation.py"),
+                "--support-csv",
+                str(support),
+                "--initial-state-csv",
+                str(initial),
+                "--final-state-csv",
+                str(final),
+                "--baseline-state-csv",
+                str(baseline),
+                "--out-dir",
+                str(out_dir),
+            ], cwd=REPO, text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            summary = json.loads((out_dir / "restart_state_relaxation_summary.json").read_text())
+            cls = summary["support_classes"]["false_negative"]
+            self.assertAlmostEqual(cls["abs_shift_retained_phin_median"], 0.25)
+            self.assertAlmostEqual(cls["abs_shift_retained_phip_median"], 0.25)
+            self.assertAlmostEqual(cls["final_over_initial_n_median"], 0.5)
+            rows = self._read_csv(out_dir / "restart_state_relaxation_nodes.csv")
+            self.assertAlmostEqual(float(rows[0]["final_minus_initial_phin_V"]), 0.03)
+    def test_pn2d_bv_active_edge_loader_accepts_sg_avalanche_columns(self) -> None:
+        scripts_dir = REPO / "scripts"
+        if str(scripts_dir) not in sys.path:
+            sys.path.insert(0, str(scripts_dir))
+        module_path = scripts_dir / "diagnose_pn2d_bv_active_edge_flux_factors.py"
+        spec = importlib.util.spec_from_file_location("diagnose_pn2d_bv_active_edge_flux_factors", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        with tempfile.TemporaryDirectory(prefix="vela_bv_active_edge_loader_") as tmp:
+            edge_csv = Path(tmp) / "sg_avalanche_edges.csv"
+            self._write_csv(edge_csv, [
+                "rank",
+                "edge_id",
+                "node0",
+                "node1",
+                "x0_um",
+                "y0_um",
+                "x1_um",
+                "y1_um",
+                "edge_area_m2",
+                "electron_flux_abs",
+                "hole_flux_abs",
+                "electron_alpha_m_inv",
+                "hole_alpha_m_inv",
+            ], [[1, 7, 10, 11, 0.0, 0.0, 1.0, 0.0, 4.0, 2.0, 3.0, 5.0, 7.0]])
+
+            active = module.load_active_cxx_edges(edge_csv, -20.0, "x", 0.0)
+
+            self.assertEqual(sorted(active), [10, 11])
+            self.assertEqual(active[10][0]["edge_id"], 7)
+            self.assertAlmostEqual(active[10][0]["endpoint_area_m2"], 2.0)
+            self.assertAlmostEqual(active[10][0]["electron_flux_proxy"], 2.0)
+            self.assertAlmostEqual(active[10][0]["hole_flux_proxy"], 3.0)
+            self.assertAlmostEqual(active[10][0]["alpha_flux"], 31.0)
     def test_pn2d_bv_active_edge_mixed_state_replay_applies_qf_shift(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_bv_active_edge_mixed_state_") as tmp:
             root = Path(tmp)
@@ -4392,6 +5063,18 @@ LOOKUP_TABLE default
                 [1, 1.0, 0.0],
                 [2, 0.0, 1.0],
             ])
+            custom_state = root / "custom_state.csv"
+            self._write_csv(custom_state, ["node_id", "psi", "phin", "phip", "electrons_m3", "holes_m3"], [
+                [0, 0.0, 0.0, hole_shift, 4.0, 6.0],
+                [1, 0.0, 0.0, hole_shift, 2.0, 4.0],
+                [2, 0.0, 0.0, 0.0, 4.0, 3.0],
+            ])
+            custom_state = root / "custom_state.csv"
+            self._write_csv(custom_state, ["node_id", "psi", "phin", "phip", "electrons_m3", "holes_m3"], [
+                [0, 0.0, 0.0, hole_shift, 4.0, 6.0],
+                [1, 0.0, 0.0, hole_shift, 2.0, 4.0],
+                [2, 0.0, 0.0, 0.0, 4.0, 3.0],
+            ])
             for name, values in {
                 "ElectrostaticPotential": [0.0, 0.0, 0.0],
                 "eQuasiFermiPotential": [0.0, 0.0, 0.0],
@@ -4425,6 +5108,8 @@ LOOKUP_TABLE default
                     "-13.2",
                     "--hole-qf-shift-v",
                     str(hole_shift),
+                    "--state-csv-variant",
+                    f"custom={custom_state}",
                     "--out-dir",
                     str(out_dir),
                 ],
@@ -4456,6 +5141,7 @@ LOOKUP_TABLE default
                 float(by_variant["vela_qf_shift_sentaurus_mobility"]["particle_flux_over_sentaurus"]),
                 1.0,
             )
+            self.assertAlmostEqual(float(by_variant["custom"]["particle_flux_over_sentaurus"]), 1.0)
             summary = json.loads((out_dir / "active_edge_mixed_state_replay_summary.json").read_text())
             self.assertEqual(summary["support_classes"]["overlap"]["variants"]["vela_qf_shift"]["count"], 1)
 
@@ -5933,6 +6619,362 @@ LOOKUP_TABLE default
             self.assertEqual(summary["edge_id"], 0)
             self.assertEqual(summary["rows"][0]["sentaurus_node_id"], 0)
 
+    def test_pn2d_bv_absolute_branch_offsets_groups_active_and_contact_nodes(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_abs_branch_offsets_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            vela = root / "vela"
+            sentaurus = root / "sentaurus" / "sentaurus_-20v"
+            fields = sentaurus / "fields"
+            out = root / "out"
+            vela.mkdir()
+            fields.mkdir(parents=True)
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                ],
+                "triangles": [{"id": 0, "region_id": 0, "node_ids": [0, 1, 2]}],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [{"id": 0, "name": "anode", "node_ids": [0]}],
+            }), encoding="utf-8")
+            (vela / "mini_0000_-20V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+branch offsets
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 3 float
+0 0 0
+1e-6 0 0
+0 1e-6 0
+CELLS 1 4
+3 0 1 2
+CELL_TYPES 1
+5
+POINT_DATA 3
+SCALARS Potential float 1
+LOOKUP_TABLE default
+0.0 0.2 0.3
+SCALARS ElectronQuasiFermi float 1
+LOOKUP_TABLE default
+0.1 0.35 0.45
+SCALARS HoleQuasiFermi float 1
+LOOKUP_TABLE default
+-0.1 0.1 0.2
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+1e20 2e20 3e20
+SCALARS Holes float 1
+LOOKUP_TABLE default
+3e20 2e20 1e20
+SCALARS AvalancheGeneration float 1
+LOOKUP_TABLE default
+1e20 1e30 2e30
+""".lstrip(),
+                encoding="utf-8",
+            )
+            self._write_csv(sentaurus / "nodes.csv", ["id", "x_um", "y_um"], [
+                [0, 0.0, 0.0],
+                [1, 1.0, 0.0],
+                [2, 0.0, 1.0],
+            ])
+            for name, values in {
+                "ElectrostaticPotential": [0.0, 0.2, 0.3],
+                "eQuasiFermiPotential": [0.1, 0.30, 0.40],
+                "hQuasiFermiPotential": [-0.1, 0.15, 0.25],
+                "eDensity": [1.0e14, 2.0e14, 3.0e14],
+                "hDensity": [3.0e14, 2.0e14, 1.0e14],
+                "ImpactIonization": [1.0e14, 1.0e24, 2.0e24],
+            }.items():
+                self._write_csv(
+                    fields / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "diagnose_pn2d_bv_absolute_branch_offsets.py"),
+                "--mesh", str(mesh),
+                "--sentaurus-root", str(root / "sentaurus"),
+                "--vela-vtk-root", str(vela),
+                "--out-dir", str(out),
+                "--biases", "-20",
+            ], cwd=REPO, text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = self._read_csv(out / "absolute_branch_offsets_nodes.csv")
+            self.assertEqual(len(rows), 3)
+            active = [row for row in rows if row["impact_active"] == "True"]
+            self.assertEqual({row["node_id"] for row in active}, {"1", "2"})
+            summary = json.loads((out / "absolute_branch_offsets_summary.json").read_text())
+            by_group = {(row["bias_V"], row["group"]): row for row in summary["groups"]}
+            self.assertEqual(by_group[(-20.0, "contact")]["node_count"], 1)
+            self.assertEqual(by_group[(-20.0, "impact_active")]["node_count"], 2)
+            self.assertAlmostEqual(
+                by_group[(-20.0, "impact_active")]["median_delta_psi_minus_phin_V"],
+                -0.05,
+            )
+            self.assertAlmostEqual(
+                by_group[(-20.0, "impact_active")]["median_delta_phip_minus_psi_V"],
+                -0.05,
+            )
+    def test_pn2d_bv_absolute_state_feedback_probe_scales_source_gap(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_abs_state_feedback_") as tmp:
+            root = Path(tmp)
+            edges = root / "continuity_feedback_edges.csv"
+            nodes = root / "continuity_feedback_nodes.csv"
+            out = root / "out"
+            self._write_csv(edges, [
+                "bias_V",
+                "edge_id",
+                "relation",
+                "node0",
+                "node1",
+                "vela_electron_flux_abs_m2_s",
+                "vela_hole_flux_abs_m2_s",
+                "vela_source_density_m3_s",
+                "sentaurus_generation_avg_m3_s",
+            ], [[
+                -20.0,
+                7,
+                "focus",
+                1,
+                2,
+                2.0,
+                8.0,
+                5.0,
+                50.0,
+            ]])
+            self._write_csv(nodes, [
+                "bias_V",
+                "node_id",
+                "relation",
+                "vela_electron_density_cm3",
+                "vela_hole_density_cm3",
+                "vela_electron_density_from_sentaurus_qf_cm3",
+                "vela_hole_density_from_sentaurus_qf_cm3",
+                "delta_psi_minus_phin_V",
+                "delta_phip_minus_psi_V",
+            ], [
+                [-20.0, 1, "focus_endpoint", 10.0, 20.0, 100.0, 200.0, -0.047, -0.056],
+                [-20.0, 2, "focus_endpoint", 40.0, 80.0, 400.0, 800.0, -0.048, -0.055],
+            ])
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "diagnose_pn2d_bv_absolute_state_feedback.py"),
+                "--continuity-edges", str(edges),
+                "--continuity-nodes", str(nodes),
+                "--out-dir", str(out),
+                "--biases", "-20",
+            ], cwd=REPO, text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = self._read_csv(out / "absolute_state_feedback_edges.csv")
+            self.assertEqual(len(rows), 1)
+            self.assertAlmostEqual(float(rows[0]["electron_state_factor"]), 10.0)
+            self.assertAlmostEqual(float(rows[0]["hole_state_factor"]), 10.0)
+            self.assertAlmostEqual(float(rows[0]["state_scaled_source_density_m3_s"]), 50.0)
+            self.assertAlmostEqual(float(rows[0]["state_scaled_log10_vela_over_sentaurus_generation"]), 0.0)
+            self.assertAlmostEqual(float(rows[0]["source_gap_recovered_decades"]), 1.0)
+            summary = json.loads((out / "absolute_state_feedback_summary.json").read_text())
+            self.assertAlmostEqual(summary["biases"][0]["median_source_gap_recovered_decades"], 1.0)
+            self.assertEqual(summary["biases"][0]["active_edge_count"], 1)
+            self.assertAlmostEqual(summary["biases"][0]["active_median_source_gap_recovered_decades"], 1.0)
+    def test_pn2d_bv_mixed_state_charge_audit_integrates_active_charge(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_mixed_charge_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            doping = root / "doping.csv"
+            support = root / "support.csv"
+            vela = root / "vela"
+            sentaurus = root / "sentaurus" / "sentaurus_-20v"
+            fields = sentaurus / "fields"
+            out = root / "out"
+            vela.mkdir()
+            fields.mkdir(parents=True)
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 0.0, "y": 1.0},
+                ],
+                "triangles": [{"id": 0, "region_id": 0, "node_ids": [0, 1, 2]}],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [{"id": 0, "name": "Anode", "node_ids": [0]}],
+            }), encoding="utf-8")
+            self._write_csv(doping, ["node_id", "donors_m3", "acceptors_m3"], [
+                [0, 0.0, 1.0e21],
+                [1, 5.0e21, 1.0e21],
+                [2, 1.0e21, 4.0e21],
+            ])
+            self._write_csv(support, ["node_id", "x_um", "y_um", "support_class"], [
+                [1, 1.0, 0.0, "false_negative"],
+                [2, 0.0, 1.0, "false_positive"],
+            ])
+            (vela / "mini_0000_-20V.vtk").write_text(
+                """
+# vtk DataFile Version 2.0
+mixed charge
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 3 float
+0 0 0
+1e-6 0 0
+0 1e-6 0
+CELLS 1 4
+3 0 1 2
+CELL_TYPES 1
+5
+POINT_DATA 3
+SCALARS Potential float 1
+LOOKUP_TABLE default
+0 0.1 0.2
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+1.0e20 2.0e20 3.0e20
+SCALARS Holes float 1
+LOOKUP_TABLE default
+4.0e20 5.0e20 6.0e20
+""".lstrip(),
+                encoding="utf-8",
+            )
+            for name, values in {
+                "eDensity": [1.0e14, 8.0e14, 30.0e14],
+                "hDensity": [4.0e14, 5.0e14, 60.0e14],
+            }.items():
+                self._write_csv(
+                    fields / f"{name}_region0.csv",
+                    ["node_id", "component0"],
+                    [[idx, value] for idx, value in enumerate(values)],
+                )
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "diagnose_pn2d_bv_mixed_state_charge_audit.py"),
+                "--mesh", str(mesh),
+                "--doping-csv", str(doping),
+                "--support-csv", str(support),
+                "--vela-vtk", str(vela / "mini_0000_-20V.vtk"),
+                "--sentaurus-dir", str(sentaurus),
+                "--out-dir", str(out),
+                "--support-classes", "false_negative",
+            ], cwd=REPO, text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            rows = self._read_csv(out / "mixed_state_charge_audit_nodes.csv")
+            summary = json.loads((out / "mixed_state_charge_audit_summary.json").read_text())
+
+        by_node = {row["node_id"]: row for row in rows}
+        self.assertEqual(by_node["1"]["mixed_source"], "sentaurus_density")
+        self.assertEqual(by_node["2"]["mixed_source"], "vela_density")
+        volume = 0.5e-12 / 3.0
+        q = 1.602176634e-19
+        expected_delta_node1 = q * ((5.0e20 - 5.0e20) - (8.0e20 - 2.0e20)) * volume
+        self.assertAlmostEqual(float(by_node["1"]["delta_mobile_charge_C_per_m"]), expected_delta_node1)
+        self.assertAlmostEqual(float(by_node["2"]["delta_mobile_charge_C_per_m"]), 0.0)
+        self.assertEqual(by_node["1"]["doping_sign"], "n_type")
+        self.assertEqual(summary["support_classes"]["false_negative"]["node_count"], 1)
+        self.assertAlmostEqual(
+            summary["support_classes"]["false_negative"]["sum_delta_mobile_charge_C_per_m"],
+            expected_delta_node1,
+        )
+    def test_prepare_pn2d_bv_smooth_branch_state_preserves_contacts(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_bv_smooth_branch_state_") as tmp:
+            root = Path(tmp)
+            mesh = root / "mesh.json"
+            vtk = root / "state_0000_-20V.vtk"
+            support = root / "support.csv"
+            out = root / "out"
+            mesh.write_text(json.dumps({
+                "nodes": [
+                    {"id": 0, "x": 0.0, "y": 0.0},
+                    {"id": 1, "x": 1.0, "y": 0.0},
+                    {"id": 2, "x": 2.0, "y": 0.0},
+                ],
+                "triangles": [{"id": 0, "region_id": 0, "node_ids": [0, 1, 2]}],
+                "regions": [{"id": 0, "name": "R.Si", "material": "Silicon"}],
+                "contacts": [{"id": 0, "name": "anode", "node_ids": [0]}],
+            }), encoding="utf-8")
+            vtk.write_text(
+                """
+# vtk DataFile Version 2.0
+smooth branch state
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 3 float
+0 0 0
+1e-6 0 0
+2e-6 0 0
+CELLS 1 4
+3 0 1 2
+CELL_TYPES 1
+5
+POINT_DATA 3
+SCALARS Potential float 1
+LOOKUP_TABLE default
+0.0 0.2 0.25
+SCALARS ElectronQuasiFermi float 1
+LOOKUP_TABLE default
+0.0 0.1 0.1
+SCALARS HoleQuasiFermi float 1
+LOOKUP_TABLE default
+0.0 0.3 0.3
+SCALARS Electrons float 1
+LOOKUP_TABLE default
+1.0e16 2.0e16 3.0e16
+SCALARS Holes float 1
+LOOKUP_TABLE default
+4.0e16 5.0e16 6.0e16
+""".lstrip(),
+                encoding="utf-8",
+            )
+            self._write_csv(support, [
+                "node_id",
+                "x_um",
+                "y_um",
+                "support_class",
+            ], [
+                [1, 1.0, 0.0, "false_negative"],
+            ])
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "prepare_pn2d_bv_smooth_branch_state.py"),
+                "--mesh", str(mesh),
+                "--vela-vtk", str(vtk),
+                "--support-csv", str(support),
+                "--out-dir", str(out),
+                "--electron-qf-shift-v", "-0.05",
+                "--hole-qf-shift-v", "0.06",
+                "--decay-length-um", "1.0",
+                "--support-classes", "false_negative",
+            ], cwd=REPO, text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            state_rows = self._read_csv(out / "smooth_branch_state.csv")
+            weight_rows = self._read_csv(out / "smooth_branch_weights.csv")
+            summary = json.loads((out / "smooth_branch_state_summary.json").read_text())
+
+        by_node = {row["node_id"]: row for row in state_rows}
+        by_weight = {row["node_id"]: row for row in weight_rows}
+        self.assertEqual(list(state_rows[0]), [
+            "node_id", "psi", "phin", "phip", "electrons_m3", "holes_m3",
+        ])
+        self.assertAlmostEqual(float(by_weight["0"]["weight"]), 0.0)
+        self.assertEqual(by_weight["0"]["contact_names"], "anode")
+        self.assertAlmostEqual(float(by_node["0"]["phin"]), 0.0)
+        self.assertAlmostEqual(float(by_node["0"]["phip"]), 0.0)
+        self.assertAlmostEqual(float(by_weight["1"]["weight"]), 1.0)
+        self.assertAlmostEqual(float(by_node["1"]["phin"]), 0.05)
+        self.assertAlmostEqual(float(by_node["1"]["phip"]), 0.36)
+        self.assertGreater(float(by_weight["2"]["weight"]), 0.0)
+        self.assertLess(float(by_weight["2"]["weight"]), 1.0)
+        self.assertEqual(summary["selected_support_node_count"], 1)
+        self.assertEqual(summary["contact_zero_weight_count"], 1)
     def test_pn2d_bv_continuity_feedback_diagnostic_writes_local_terms(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_pn2d_bv_continuity_feedback_") as tmp:
             root = Path(tmp)
@@ -6049,6 +7091,7 @@ LOOKUP_TABLE default
                     "--out-dir", str(out),
                     "--biases", "0",
                     "--edge-id", "0",
+                    "--material-ni-m3", "2.0e16",
                 ],
                 check=True,
                 cwd=REPO,
@@ -6066,6 +7109,7 @@ LOOKUP_TABLE default
         focus_node = next(row for row in node_rows if row["node_id"] == "0")
         self.assertIn("vela_electron_residual_estimate_s_inv", focus_node)
         self.assertGreater(float(focus_node["sentaurus_generation_node_integral_s_inv"]), 0.0)
+        self.assertGreater(float(focus_node["vela_ni_eff_cm3"]), 2.0e10)
         self.assertEqual(summary["edge_id"], 0)
         self.assertGreaterEqual(summary["edge_rows"], 3)
 
@@ -6347,6 +7391,7 @@ LOOKUP_TABLE default
                     "--bias", "-13.2",
                     "--edge-local-source-csv", str(edge_local_source),
                     "--hole-qf-shift-v", str(hole_shift),
+                    "--qf-shift-scope", "support_nodes",
                 ],
                 cwd=REPO,
                 text=True,
@@ -6385,6 +7430,10 @@ LOOKUP_TABLE default
         self.assertGreater(
             float(by_variant["sentaurus_state_sentaurus_node_source"]["impact_source_s_inv"]),
             float(by_variant["vela_state_vela_edge_source"]["impact_source_s_inv"]),
+        )
+        self.assertNotEqual(
+            by_variant["shifted_vela_qf_replayed_edge_source"]["hole_transport_s_inv"],
+            by_variant["vela_state_vela_edge_source"]["hole_transport_s_inv"],
         )
         self.assertIn("electron_residual_over_impact", by_variant["sentaurus_state_sentaurus_node_source"])
         self.assertEqual(summary["support_classes"]["overlap"]["variants"]["vela_state_vela_edge_source"]["count"], 1)

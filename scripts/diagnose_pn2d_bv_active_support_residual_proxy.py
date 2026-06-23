@@ -80,6 +80,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--transport-modes", default="density_sg")
     parser.add_argument("--electron-qf-shift-v", type=float, default=0.0)
     parser.add_argument("--hole-qf-shift-v", type=float, default=0.0)
+    parser.add_argument("--qf-shift-scope", choices=["all", "support_nodes"], default="all")
     return parser.parse_args()
 
 
@@ -132,8 +133,10 @@ def parse_transport_modes(raw: str) -> list[str]:
     return list(dict.fromkeys(modes))
 
 
-def shifted(values: list[float], delta: float) -> list[float]:
-    return [value + delta for value in values]
+def shifted(values: list[float], delta: float, node_ids: set[int] | None = None) -> list[float]:
+    if node_ids is None:
+        return [value + delta for value in values]
+    return [value + delta if index in node_ids else value for index, value in enumerate(values)]
 
 
 def inferred_ni_state(state: dict[str, list[float]], vt: float) -> dict[str, list[float]]:
@@ -180,6 +183,7 @@ def make_states(
     vt: float,
     electron_shift: float,
     hole_shift: float,
+    shift_node_ids: set[int] | None = None,
 ) -> dict[str, dict[str, list[float]]]:
     vela_ni = inferred_ni_state(vela, vt)
     sentaurus_with_vela_mobility = deepcopy(sentaurus)
@@ -192,8 +196,8 @@ def make_states(
         "shifted_vela_qf": reconstruct_density_state(
             vela_ni,
             vela["psi"],
-            shifted(vela["phin"], electron_shift),
-            shifted(vela["phip"], hole_shift),
+            shifted(vela["phin"], electron_shift, shift_node_ids),
+            shifted(vela["phip"], hole_shift, shift_node_ids),
             vela,
             vt,
         ),
@@ -433,7 +437,12 @@ def make_rows(args: argparse.Namespace) -> list[dict[str, Any]]:
     vela_vtk = fluxfac.discover_vtk(args.vela_vtk_root, args.bias)
     vela = fluxforms.load_vela_state(vela_vtk, len(nodes))
     sentaurus = fluxforms.load_sentaurus_state(args.sentaurus_dir, len(nodes))
-    states = make_states(vela, sentaurus, vt, args.electron_qf_shift_v, args.hole_qf_shift_v)
+    support = support_nodes(args.support_csv)
+    shift_node_ids = {
+        int(row["node_id"]) for row in support
+    } if args.qf_shift_scope == "support_nodes" else None
+    states = make_states(
+        vela, sentaurus, vt, args.electron_qf_shift_v, args.hole_qf_shift_v, shift_node_ids)
     transports = {
         (state_name, transport_model): transport_terms(state, edges, vt, transport_model, ni_model)
         for state_name, state in states.items()
@@ -489,8 +498,8 @@ def make_rows(args: argparse.Namespace) -> list[dict[str, Any]]:
         ))
 
     rows: list[dict[str, Any]] = []
-    for support in support_nodes(args.support_csv):
-        node_id = int(support["node_id"])
+    for support_row in support:
+        node_id = int(support_row["node_id"])
         node = nodes[node_id]
         sent_id, sent_distance = cont.nearest_node(sent_nodes, node["x_um"], node["y_um"])
         volume = volumes[node_id]
@@ -530,7 +539,7 @@ def make_rows(args: argparse.Namespace) -> list[dict[str, Any]]:
                     "node_id": node_id,
                     "x_um": node["x_um"],
                     "y_um": node["y_um"],
-                    "support_class": support.get("support_class", ""),
+                    "support_class": support_row.get("support_class", ""),
                     "sentaurus_node_id": sent_id,
                     "sentaurus_distance_um": sent_distance,
                     "active_edge_count": len(active_items),

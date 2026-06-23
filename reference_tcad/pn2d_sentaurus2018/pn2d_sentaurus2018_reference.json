@@ -131,7 +131,8 @@
         "contact_boundary_minority_electron_relaxation": false,
         "mobility": {
           "model": "masetti_field",
-          "high_field_driving_force": "quasi_fermi_gradient"
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "jacobian_field_derivatives": false
         },
         "bandgap_narrowing": "old_slotboom",
         "recombination": [
@@ -142,7 +143,9 @@
           "driving_force": "quasi_fermi_gradient",
           "generation": "current_density",
           "current_approximation": "density_gradient"
-        }
+        },
+        "max_update": 0.0,
+        "quasi_fermi_update_limit_V": 0.1
       },
       "require_trend_match": false,
       "comparison": {

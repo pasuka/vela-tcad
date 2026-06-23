@@ -203,6 +203,15 @@ TEST_CASE("JSON mobility object parses high-field quasi-Fermi driving force",
 
     REQUIRE(cfg.model == "masetti_field");
     REQUIRE(cfg.highFieldDrivingForce == "quasi_fermi_gradient");
+    REQUIRE(cfg.jacobianFieldDerivatives);
+
+    const MobilityModelConfig frozenJacobianCfg = mobilityModelConfigFromJson(nlohmann::json{
+        {"model", "masetti_field"},
+        {"high_field_driving_force", "quasi_fermi_gradient"},
+        {"jacobian_field_derivatives", false},
+    });
+    REQUIRE(frozenJacobianCfg.model == "masetti_field");
+    REQUIRE_FALSE(frozenJacobianCfg.jacobianFieldDerivatives);
 
     REQUIRE_THROWS_AS(mobilityModelConfigFromJson(nlohmann::json{
         {"model", "masetti_field"},

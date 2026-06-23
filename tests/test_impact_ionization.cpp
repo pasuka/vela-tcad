@@ -23,7 +23,7 @@
 
 using namespace vela;
 
-static DeviceMesh makePNMesh()
+static DeviceMesh makePNMesh(bool withContacts = true)
 {
     DeviceMesh mesh;
     const double L = 1.0e-6;
@@ -35,8 +35,10 @@ static DeviceMesh makePNMesh()
     Cell c1; c1.id=1; c1.type=CellType::Tri3; c1.region_id=1; c1.node_ids={0,2,3}; mesh.addCell(c1);
     Region r0; r0.id=0; r0.name="n_region"; r0.material="Si"; r0.cell_ids={0}; mesh.addRegion(r0);
     Region r1; r1.id=1; r1.name="p_region"; r1.material="Si"; r1.cell_ids={1}; mesh.addRegion(r1);
-    Contact anode; anode.id=0; anode.name="anode"; anode.region_id=1; anode.node_ids={0,3}; mesh.addContact(anode);
-    Contact cathode; cathode.id=1; cathode.name="cathode"; cathode.region_id=0; cathode.node_ids={1,2}; mesh.addContact(cathode);
+    if (withContacts) {
+        Contact anode; anode.id=0; anode.name="anode"; anode.region_id=1; anode.node_ids={0,3}; mesh.addContact(anode);
+        Contact cathode; cathode.id=1; cathode.name="cathode"; cathode.region_id=0; cathode.node_ids={1,2}; mesh.addContact(cathode);
+    }
     mesh.buildEdges();
     return mesh;
 }
@@ -1088,6 +1090,42 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
         }}
     });
     REQUIRE(sourceGeometryCfg.impactIonization.sourceGeometryScale == Catch::Approx(4.0));
+    auto volumePolicyCfg = newtonConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"source_volume_policy", "edge_box"},
+        }}
+    });
+    REQUIRE(volumePolicyCfg.impactIonization.sourceVolumePolicy == "edge_box");
+
+    const GummelConfig gummelVolumePolicyCfg = gummelConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"source_volume_policy", "edge_box"},
+        }}
+    });
+    REQUIRE(gummelVolumePolicyCfg.impactIonization.sourceVolumePolicy == "edge_box");
+
+    REQUIRE_THROWS_AS(newtonConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"source_volume_policy", "unsupported"},
+        }}
+    }), std::invalid_argument);
+    REQUIRE_THROWS_AS(gummelConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"source_volume_policy", "unsupported"},
+        }}
+    }), std::invalid_argument);
     REQUIRE(sourceGeometryCfg.impactIonization.quasiFermiCarrierTruncation == Catch::Approx(1.0e-2));
 
     REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
@@ -1101,7 +1139,7 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
 TEST_CASE("Grad-QF avalanche source can rebuild driving field with GSS carrier truncation",
           "[impact][grad_qf]")
 {
-    DeviceMesh mesh = makePNMesh();
+    DeviceMesh mesh = makePNMesh(false);
     MaterialDatabase matdb;
     const std::vector<RegionDopingSpec> specs = {
         {"n_region", 5.0e22, 0.0},
@@ -1305,7 +1343,7 @@ TEST_CASE("High-field driving helper falls back to electric field in contact ele
 TEST_CASE("Grad-QF avalanche source uses quasi-Fermi field with SG current proxy",
           "[impact][grad_qf]")
 {
-    DeviceMesh mesh = makePNMesh();
+    DeviceMesh mesh = makePNMesh(false);
     MaterialDatabase matdb;
     const std::vector<RegionDopingSpec> specs = {
         {"n_region", 5.0e22, 0.0},
@@ -1392,6 +1430,93 @@ TEST_CASE("Grad-QF avalanche source uses quasi-Fermi field with SG current proxy
     REQUIRE(record.edgeSourceIntegral == Catch::Approx(
         (record.electronAlpha * electronSgFlux + record.holeAlpha * holeSgFlux)
         * record.edgeAreaProxy));
+}
+TEST_CASE("SG edge current avalanche source supports diagnostic volume policy",
+          "[impact][diagnostic]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    DDSolution sol;
+    sol.psi = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.02, 0.025);
+    sol.phin = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), 0.01, -0.006);
+    sol.phip = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.007, 0.005);
+    sol.n.resize(static_cast<int>(mesh.numNodes()));
+    sol.p.resize(static_cast<int>(mesh.numNodes()));
+    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+    for (int i = 0; i < static_cast<int>(mesh.numNodes()); ++i) {
+        sol.n(i) = ni[static_cast<std::size_t>(i)] * std::exp((sol.psi(i) - sol.phin(i)) / Vt);
+        sol.p(i) = ni[static_cast<std::size_t>(i)] * std::exp((sol.phip(i) - sol.psi(i)) / Vt);
+    }
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "electric_field";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "density_gradient";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0e-30;
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, constants::T0);
+
+    const auto baseImpact = makeImpactIonizationModel(impactConfig);
+    const auto base = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *baseImpact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+
+    impactConfig.sourceVolumePolicy = "edge_box";
+    const auto fullEdgeImpact = makeImpactIonizationModel(impactConfig);
+    const auto fullEdge = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *fullEdgeImpact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+
+    REQUIRE(fullEdge.size() == base.size());
+    bool sawNonzeroSource = false;
+    for (std::size_t i = 0; i < base.size(); ++i) {
+        REQUIRE(fullEdge[i].edgeAreaProxy == Catch::Approx(2.0 * base[i].edgeAreaProxy));
+        REQUIRE(fullEdge[i].edgeSourceIntegral == Catch::Approx(2.0 * base[i].edgeSourceIntegral));
+        REQUIRE(fullEdge[i].node0SourceIntegral == Catch::Approx(2.0 * base[i].node0SourceIntegral));
+        REQUIRE(fullEdge[i].node1SourceIntegral == Catch::Approx(2.0 * base[i].node1SourceIntegral));
+        sawNonzeroSource = sawNonzeroSource || base[i].edgeSourceIntegral > 0.0;
+    }
+    REQUIRE(sawNonzeroSource);
 }
 TEST_CASE("SG edge current avalanche source supports diagnostic geometry scale",
           "[impact][diagnostic]")

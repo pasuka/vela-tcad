@@ -935,7 +935,8 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
         const Real holeImpactField = holeAvalancheDrivingField(
             config, holeCoefficientField, electricField, pAvg);
 
-        const Real edgeArea = 0.5 * h * edge.couple * config.sourceGeometryScale;
+        const Real sourceVolumeFactor = (config.sourceVolumePolicy == "edge_box") ? 1.0 : 0.5;
+        const Real edgeArea = sourceVolumeFactor * h * edge.couple * config.sourceGeometryScale;
         SgEdgeCurrentAvalancheSourceRecord record;
         record.edgeId = e;
         record.node0 = edge.n0;

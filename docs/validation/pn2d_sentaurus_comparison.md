@@ -2363,6 +2363,364 @@ the accepted residual is already near the Poisson numerical floor. Full `-20 V`
 reruns should wait until this staged `-5 V` gate is stable without coarse-path
 pollution.
 
+
+### PN2D BV Newton Continuation Regression Localization (2026-06-23)
+
+The regression boundary is `c04edbf -> 51d8bf1`. With the same imported PN2D BV
+deck, `max_update=0`, and `quasi_fermi_update_limit_V=0.1`, `c04edbf` reaches
+`-3 V` in 61 accepted points. Its Newton-history tail at `-3 V` has residual
+`4.0711e-13` and raw step norm `4.5011`. The same deck on `51d8bf1` fails at
+the next continuation point after `-0.3 V` with residual `~7e-9..8e-9` and raw
+step norm `93.65..124.30`; the `c04edbf` to `51d8bf1` tail raw-step ratio is
+`20.806`. The current branch (`85924e5` plus later changes) fails similarly
+after `-0.40625 V`, with the comparison report showing residual `8.2502e-9`,
+raw step norm `108.8725`, and tail raw-step ratio `24.188`.
+
+The no-impact control localizes the blocker away from avalanche physics. With
+`impact_ionization.model = "none"`, the canonical current-branch deck reaches
+only `-0.8165 V` and then stops at `-0.8165000001609326 V` with
+`max_iterations`, residual `8.5834e-9`, raw step norm `113.1072`, and positive
+finite carriers. The impact-on canonical deck fails at `-0.40625000011175866 V`
+with `line_search_non_decrease`, residual `1.9337e-8`, raw step norm
+`107.5935`, and positive finite carriers. These controls reject the
+`85924e5` contact driving-field fallback as the primary regression source.
+
+A candidate clamp around Poisson recorrection after QF clipping was also
+rejected: it passed the synthetic Newton-step test but did not move either
+canonical `-3 V` gate. The solver patch was not kept. The next root-cause target
+is therefore the raw linear solve and block coupling state before globalization
+at the last stable points, especially why near-floor carrier or Poisson
+residuals still produce a Newton step of order `100`.
+
+### PN2D BV Carrier-Block Step Probe Follow-Up (2026-06-23)
+
+The next raw-step probe used the last converged restart state and the failing
+next contact bias, matching the continuation handoff state. This confirms that
+the `O(100)` step is not driven by the Poisson solve or by Poisson recorrection.
+For the impact-on gate, the full capped Newton step is `108.668`, while the
+Poisson-only block step is only `1.7984e-8` and the carrier-only capped step is
+`108.093`. For the no-impact gate, the full capped step is `113.108`, the
+Poisson-only block step is `2.5885e-8`, and the carrier-only capped step is
+`113.108`.
+
+The carrier rows are already pathological before the QF cap. In the impact-on
+probe, raw carrier deltas reach `7.47368e10 V` for `phin` and `666.932 V` for
+`phip`; after capping, 545 electron-QF nodes and 172 hole-QF nodes sit exactly
+at the `0.1 V` limit. In the no-impact probe, raw carrier deltas reach
+`1.90984e217 V` for `phin` and `9.7053e208 V` for `phip`; after capping, 527
+`phin` nodes and 328 `phip` nodes sit at the same limit. The weakest carrier-row
+diagonal dominance is effectively zero: electron diagonal/row-sum is
+`1.64e-13` in the impact-on probe and `6.66e-220` in the no-impact probe, while
+the no-impact hole row also reaches `1.92e-211`.
+
+The finite-difference Jacobian block audit does not point to a gross Jacobian
+implementation error. Around the same states, analytic-vs-FD relative
+mismatches are about `6.0e-7` to `9.3e-7` for `poisson`, `8.6e-6` to `1.1e-5`
+for `transport`, and near numerical zero for `dirichlet_or_gauge`; no-impact
+`sg_avalanche` is exactly zero as expected. The remaining target is therefore
+carrier-block conditioning and row policy near depleted/floor carrier states,
+not the avalanche source term and not a Poisson-block correction.
+
+Artifacts were written under `build-release/bv_localization/canonical_probe/`,
+including `probe_summary.json`, `jacobian_block_summary.json`, and the per-case
+`probes/*.csv` files.
+
+### PN2D BV Frozen High-Field Mobility Jacobian Gate (2026-06-23)
+
+The carrier-block probe narrowed the continuation failure to the high-field
+mobility Jacobian path rather than to avalanche, Poisson recorrection, or a
+global carrier regularization. A low-field `masetti` control keeps the same
+SRH/BGN/impact setup but removes high-field mobility limiting; both impact-on
+and no-impact canonical `-3 V` gates then converge. A global
+`carrier_regularization_scale` trial can reduce the one-shot carrier step, but
+it destabilizes the full sweep at very low bias, so it is rejected as a
+production fix.
+
+Vela now exposes `solver.mobility.jacobian_field_derivatives`. The default is
+`true`, preserving the analytic/finite-difference transport-Jacobian behavior
+added for high-field mobility. The PN2D BV reference deck sets it to `false` for
+the `masetti_field`/`quasi_fermi_gradient` mobility object, and also sets
+`max_update=0` with `quasi_fermi_update_limit_V=0.1` for this BV solver path.
+The residual still uses the Sentaurus-like high-field mobility while the Newton
+matrix freezes mobility's field sensitivity. With those settings, the
+frozen-Jacobian diagnostic passes the canonical gates:
+
+| case | stop | points | result | last Newton iterations |
+|---|---:|---:|---|---:|
+| impact-on | `-3 V` | 61 | converged | 3 |
+| no-impact | `-3 V` | 61 | converged | 3 |
+| impact-on | `-5 V` | 101 | converged | 3 |
+| impact-on | `-10 V` | 201 | converged | 3 |
+| impact-on | `-20 V` | 401 | converged | 3 |
+
+The `-20 V` terminal row from
+`build-release/bv_localization/canonical_probe/frozen_mobility_jacobian/impact_on_to_20V/iv.csv`
+has `current_total_A_per_um = -1.168307486e-16` and
+`max_electric_field_V_per_cm = 5.607485472e5`. This is a Newton-continuation
+milestone only; it does not by itself accept BV current magnitude or knee-shape
+parity.
+
+
+### PN2D BV Frozen-Jacobian Acceptance Refresh (2026-06-23)
+
+Using the frozen high-field mobility Jacobian base config, the visual acceptance
+run wrote VTK/state outputs at `0, -0.5, -2, -5, -10, -20 V` and converged all
+6 requested points. The terminal `-20 V` row has
+`current_total_A_per_um = -1.168116404e-16`,
+`max_electric_field_V_per_cm = 5.607485472e5`, and 3 Newton iterations.
+Artifacts are under
+`build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_frozen_mobility_jacobian_acceptance_visual/`.
+
+Current-curve parity is mixed. The `-13.2..-13.0 V` current-window gate now
+passes with ratios `0.8034, 0.8040, 0.8044`, and the sampled current errors are
+small through `-10 V`: `0.0355` decades at `-2 V`, `0.0160` decades at `-5 V`,
+and `0.0924` decades at `-10 V`. At `-20 V`, however, Vela is still low by
+`0.8918` decades (`1.1681e-16 A/um` versus Sentaurus `9.1046e-16 A`).
+
+The refreshed knee-shape gate remains diagnostic rather than accepted. In the
+`-10..-20 V` window, Sentaurus first reaches a one-volt current-growth ratio
+above `1.5` at `-19 V` and above `2.0` at `-20 V`; the frozen-Jacobian Vela
+curve reaches neither threshold. The max absolute log-current error in this
+window is `0.8917` decades. Field/state parity also remains open: at `-20 V`,
+field compare reports electron-density and hole-density `log10_p95` errors of
+`0.9207` and `0.9570`, electric-field `relative_p95` error of `0.8685`, and
+thresholded avalanche-generation `log10_p95` error of `13.0551`.
+
+This accepts the frozen-Jacobian path as a continuation fix, not as final BV
+physics parity. The next physics target is the high-bias avalanche/current
+feedback that creates the missing `-19..-20 V` knee.
+
+### PN2D BV High-Bias Feedback Localization (2026-06-23)
+
+The frozen high-field mobility Jacobian path now reaches `-20 V`, so the next
+blocker is curve shape rather than continuation reachability. A field/source
+summary under
+`build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_frozen_mobility_jacobian_feedback/`
+shows that electric-field magnitude is already close at `-20 V` (`max` log10
+Vela/Sentaurus ratio about `-8.6e-5`, p95 ratio about `0.005`, and sum-proxy
+ratio about `0.011`). The same diagnostic shows avalanche/source generation is
+low by about `1.16` decades at `-20 V`, so the missing knee is a feedback/current
+problem rather than an alpha(E) or peak-field problem.
+
+The continuity-feedback diagnostic was corrected to accept `--material-ni-m3`,
+then rerun with the actual PN2D material value
+`1.4638914958767616e16 m^-3`. With that correction, focus-edge quasi-Fermi
+fields still match closely at `-20 V` (`5.5318e7` versus `5.5210e7 V/m` for
+electrons, `5.6468e7` versus `5.6440e7 V/m` for holes), while edge fluxes and
+source density remain low (`log10 Vela/Sentaurus generation = -0.8401` on focus
+edge 2886). The focus endpoint effective intrinsic densities match Sentaurus
+back-inferred values (`~1.9623e10 cm^-3` and `~1.6556e10 cm^-3`), and using the
+Sentaurus `psi/phin/phip` state with Vela's corrected `ni_eff` reconstructs the
+Sentaurus carrier densities. Therefore material `ni` and OldSlotboom BGN are not
+the remaining high-bias discrepancy.
+
+The remaining localized mismatch is the absolute state: at focus endpoints near
+`-20 V`, Vela has `psi-phin` lower by about `47..48 mV` and `phip-psi` lower by
+about `56 mV`. That produces electron-density errors of about `-0.79..-0.81`
+decades and hole-density errors of about `-0.94..-0.95` decades, matching the
+missing flux/source feedback. The next experiment should be a minimal
+state-feedback or continuation/state-alignment probe around absolute
+quasi-Fermi/carrier-density branch selection. Do not promote alpha, material-ni,
+or hidden source-scale changes from this evidence.
+
+### PN2D BV Absolute-State Feedback Probe (2026-06-23)
+
+A minimal post-processing probe now quantifies the high-bias state hypothesis
+without changing production physics. The script
+`scripts/diagnose_pn2d_bv_absolute_state_feedback.py` reads the corrected
+continuity-feedback edge/node CSVs and scales Vela edge source density by the
+endpoint carrier-density factors reconstructed from Vela `ni_eff` with the
+Sentaurus `psi/phin/phip` absolute state. This is a diagnostic source proxy, not
+a replacement flux discretization.
+
+Using
+`build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_frozen_mobility_jacobian_feedback/continuity_feedback_material_ni/`
+as input, the probe wrote
+`build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_frozen_mobility_jacobian_feedback/absolute_state_feedback_probe/`.
+For active edges at `-20 V`, the median original source gap is `-0.8401`
+decades, the state-scaled gap is `+0.04295` decades, and the recovered gap is
+`0.8827` decades. On focus edge 2886, the electron state factor is `6.286`, the
+hole state factor is `8.848`, the flux-weighted state factor is `7.639`, and the
+source proxy moves from `8.0748e21` to `6.1687e22 m^-3 s^-1` versus Sentaurus
+`5.5879e22 m^-3 s^-1`. At `-10 V`, the corresponding active-edge recovered gap
+is only `0.0610` decades, matching the already-small low-bias source mismatch.
+
+This confirms the prior localization: the missing high-bias knee is explained
+at the source-feedback level by the absolute quasi-Fermi/carrier-density branch
+offset. The next production-facing investigation should inspect why the coupled
+continuation settles on a lower-density absolute state at high reverse bias,
+including state initialization, branch selection, and any gauge/contact policy
+that can shift `psi-phin` and `phip-psi`. Do not promote this post-processing
+source proxy, alpha(E) retuning, material `ni` changes, BGN changes, or hidden
+source scaling as a fix.
+
+### PN2D BV Absolute Branch Offset Probe (2026-06-23)
+
+A full-node branch-offset probe now compares Vela and Sentaurus absolute states
+by node class, contact membership, doping sign, and impact-active support. The
+script `scripts/diagnose_pn2d_bv_absolute_branch_offsets.py` writes node rows and
+group summaries under
+`build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_frozen_mobility_jacobian_feedback/absolute_branch_offsets/`.
+It reports the absolute offsets `delta_psi`, `delta_phin`, `delta_phip` and the
+gauge-invariant carrier exponents `delta(psi-phin)` and `delta(phip-psi)`.
+
+The high-bias offset is not a contact Dirichlet or global electrostatic gauge
+error. At `-20 V`, contact nodes remain aligned: contact median
+`delta(psi-phin)` is about `-2.45e-5 V`, and the Anode/Cathode contact averages
+are only about `+/-4.9e-5 V` in the two carrier exponents. In contrast,
+non-contact impact-active nodes show a large internal quasi-Fermi branch offset:
+median `delta_psi = 4.96e-6 V`, median `delta_phin = +0.04609 V`, median
+`delta_phip = -0.05398 V`, median `delta(psi-phin) = -0.04733 V`, and median
+`delta(phip-psi) = -0.05547 V`. The corresponding median density errors are
+`-0.7949` decades for electrons and `-0.9318` decades for holes.
+
+The onset is high-bias specific. For impact-active nodes, the median
+`delta(psi-phin)` / `delta(phip-psi)` values are about `+0.00015/-0.00031 V` at
+`-2 V`, `-0.00088/-0.00078 V` at `-5 V`, `-0.00318/-0.00408 V` at `-10 V`, and
+`-0.04733/-0.05547 V` at `-20 V`. Splitting the `-20 V` impact-active support by
+doping sign shows the same branch issue on both sides: p-type active nodes have
+median density errors of `-0.574/-0.953` decades for electron/hole density, and
+n-type active nodes have `-0.892/-0.859` decades.
+
+This narrows the next production-facing experiment: contact boundary values and
+electrostatic potential alignment are not the leading cause. The next probe
+should target the interior high-field carrier-continuity branch, for example by
+replaying the `-20 V` state with controlled quasi-Fermi shifts or adding a
+continuation experiment that constrains the high-field active support toward the
+Sentaurus absolute carrier-density branch while preserving contact Dirichlet
+values. Any production change should be gated by moving the `-10..-20 V` knee
+shape, not merely by improving a local source proxy.
+
+### PN2D BV Active-Support QF Shift Replay (2026-06-23)
+
+The controlled branch-alignment replay has now been run on the current frozen
+high-field mobility-Jacobian `-20 V` state. The diagnostic uses the current
+visual VTK state, regenerates the 99th-percentile avalanche support and SG edge
+source decomposition, then replays the carrier-continuity residual proxy with
+the median active-state offsets from the branch-offset probe:
+`delta(psi-phin) = -0.04732618818171197 V` and
+`delta(phip-psi) = -0.05547180240410299 V`. The residual-proxy script now
+supports `--qf-shift-scope support_nodes` so the shift can be applied only to
+thresholded active-support nodes rather than globally.
+
+The support comparison itself is an important constraint. At the 99th
+percentile, Sentaurus and Vela active avalanche nodes have zero overlap:
+`20` Sentaurus-only false-negative nodes, `20` Vela-only false-positive nodes,
+and peak separation `0.04752 um`. The Vela active-support integral is also much
+smaller (`7.873498e16 cm^-3 s^-1`) than the Sentaurus active-support integral
+(`1.1225339212493828e18 cm^-3 s^-1`). This means a local support replay is a
+cause probe, not a production correction.
+
+For Sentaurus-only active nodes, the baseline Vela-state transport over the
+Sentaurus node source is only `0.0955` for electrons and `0.1185` for holes,
+with residual/source medians `-0.927` and `-0.904`. A global QF branch shift
+moves those ratios to `0.596` and `1.013`, nearly closing the hole-side residual
+but leaving electron transport low. A support-only shift moves the electron
+ratio closer to parity (`0.844`) but overshoots the hole ratio badly (`14.20`).
+For Vela-only false-positive nodes, support-only replay overshoots electron
+transport even more (`8.424` versus a Sentaurus-state reference of `0.891`).
+
+This confirms the causal link between the internal high-field QF/carrier-density
+branch and the missing avalanche feedback, but rejects hard active-node shifts
+as a production path. The next useful experiment should use a smooth
+active-region or continuation-level branch control that preserves contact
+Dirichlet values and is judged by the curve-level `-10..-20 V` knee gate, not by
+local residual-proxy improvement alone.
+### PN2D BV Smooth Branch-Control Backscan (2026-06-23)
+
+A continuation-level version of the active-support branch probe was then run via
+`scripts/prepare_pn2d_bv_smooth_branch_state.py`. The helper reads the converged
+frozen-Jacobian `-20 V` Vela VTK state, applies a Gaussian distance-weighted QF
+shift around selected support nodes, preserves all contact nodes at zero weight,
+reconstructs carrier densities with the original Vela inferred `ni_eff`, and
+writes a DCSweep-compatible `initial_state_file`. This makes the experiment a
+real Newton/continuation probe rather than another local source-only replay.
+
+The first run targeted only Sentaurus false-negative active-support nodes with
+`decay_length_um = 0.05`, `electron_qf_shift_v = -0.04732618818171197`, and
+`hole_qf_shift_v = +0.05547180240410299`. It selected `20` support nodes, kept
+`34` contact nodes at zero weight, and assigned nonzero smooth weights to `1008`
+interior nodes. The shifted state was used as the initial state for a true
+DCSweep backscan over `-20, -19, ..., -10 V`; all `11` points converged.
+
+The curve-level result is negative: the smooth branch-control initial state does
+not move the high-bias knee. At `-20 V`, current changes from the frozen visual
+baseline `-1.1681164e-16 A/um` to `-1.1690341e-16 A/um`, only `0.00034` decades.
+The error versus Sentaurus remains `-0.8914` decades. The `-20 -> -19 V` smooth
+current-growth ratio is `1.0007`, while Sentaurus is `2.204`; no Sentaurus-like
+`-18..-20 V` knee appears. By `-10 V`, the smooth curve is also unchanged to
+within `~2e-6` decades versus the frozen visual baseline.
+
+Residual probes explain why this does not become a new branch. Comparing the
+zero-shift and smooth-shift `-20 V` states in `newton_residual_probe`, the global
+block residual remains Poisson dominated (`psi = 0.2443387`) while carrier blocks
+remain tiny. On Sentaurus false-negative support nodes, median absolute residuals
+change from `phin = 1.28e-17`, `phip = 7.61e-18` to only `phin = 3.98e-14`,
+`phip = 5.19e-14`; the local Poisson residual is unchanged (`5.80e-4` median).
+Thus a smooth active-support QF initialization is accepted by Newton but is
+pulled back to the same electrostatic/charge-consistent low-current branch.
+
+The next probe should therefore inspect the Poisson/space-charge consistency of
+the desired high-density active-support state, not apply stronger pointwise QF
+shifts. A useful next experiment is a mixed-state residual audit that combines
+Sentaurus-like active carrier densities with Vela potential and measures the
+Poisson residual/charge imbalance by active support, contact distance, and doping
+sign before proposing any production branch-control policy.
+### PN2D BV Mixed-State Charge Audit (2026-06-23)
+
+The follow-up mixed-state charge audit tests whether the desired high-density
+active-support branch is blocked by Poisson/space-charge consistency. The new
+script `scripts/diagnose_pn2d_bv_mixed_state_charge_audit.py` keeps the Vela
+potential and fixed doping, replaces selected active-support carrier densities
+with Sentaurus densities, and integrates the resulting mobile/net charge changes
+with the mesh control volumes. It reports per-node rows and group summaries by
+support class, doping sign, and contact bucket.
+
+For the `-20 V` frozen-Jacobian state, replacing only Sentaurus false-negative
+active-support nodes changes the selected mobile/net charge by only
+`1.4116e-23 C/m`, while the same selected nodes carry
+`3.9116e-11 C/m` of baseline net charge. The ratio is `3.61e-13`. Replacing both
+false-negative and false-positive support nodes still changes only
+`3.1196e-23 C/m` against the same `3.9116e-11 C/m` baseline, or `7.98e-13` in
+absolute-charge ratio. The false-positive compensated nodes show a larger
+relative change only because their baseline net charge is near zero; their
+absolute change is still `1.7080e-23 C/m`.
+
+This rules out a meaningful Poisson/space-charge obstruction from the
+Sentaurus-like active carrier densities themselves. The smooth branch-control
+initial state did not move the curve because the coupled solve returns to the
+same low-current carrier-continuity/flux branch, not because the desired active
+carrier densities would violate electrostatic charge balance. The next useful
+probe should therefore inspect carrier-continuity flux/Jacobian balance around
+high-field active edges: whether the residual/Jacobian is insensitive to the
+absolute QF density lever, whether the SG current path is damping the shifted
+state back to the low-current branch, or whether a coupled predictor must move
+QF gradients/current and density together.
+
+That follow-up probe has now been executed. The replay first exposed a stale
+SG-edge loader assumption: current `sg_avalanche_edges.csv` files write
+`electron_flux_abs`, `hole_flux_abs`, and `edge_area_m2`, while the diagnostic
+loader only read the older `*_proxy` names. After making the loader accept both
+schemas, the real `-20 V` active-edge mixed-state replay reports nonzero active
+support (`40` active x-edges per support class). On false-negative support,
+Vela baseline generation is `0.1380x` Sentaurus, particle flux is `0.1296x`, and
+a uniform Vela QF branch shift using the measured offsets recovers generation to
+`0.9618x` and particle flux to `0.9644x`. This proves the local SG source path is
+not insensitive to the absolute QF density lever.
+
+The complementary restart-state relaxation probe then captured why the smooth
+branch-control deck still leaves the curve unchanged. A one-point `-20 V`
+restart from `smooth_branch_state.csv` converges in two Newton iterations to the
+same terminal current as the backscan (`-1.169034088445e-16 A/um`). Relative to
+the original frozen visual baseline, false-negative support starts with median
+QF shifts `phin=-0.047326 V`, `phip=+0.055472 V` and carrier-density boosts
+`n=6.238x`, `p=8.548x`; the converged state retains only `phin=-0.009381 V`,
+`phip=+0.014140 V`, with `n=1.438x`, `p=1.728x`. The retained absolute QF shift
+is only `0.198x` for electrons and `0.255x` for holes. Therefore the active
+source gap is causal, but a local absolute-QF initialization is mostly relaxed
+away by the coupled carrier-continuity solve. The next experiment should be a
+coupled QF-gradient/current-density branch movement or predictor, not a stronger
+local density seed or Poisson charge correction.
 ### PN2D BV Knee-Shape Acceptance Gate
 
 BV parity is not accepted solely because the `-20 V` sweep converges. The next
@@ -2442,3 +2800,268 @@ This is a real assembler-backed Jacobian block audit, but it is still a fixture
 probe rather than a replay of the full `pn2d_sentaurus2018` BV restart state.
 The remaining upgrade is to export or reconstruct the large BV state and run
 the same block decomposition on that state.
+
+The coupled QF-gradient/current-density predictor experiment was then executed as
+a stricter version of the branch-control probe. The new helper
+`scripts/prepare_pn2d_bv_coupled_qf_predictor_state.py` starts from the Vela
+`-20 V` state, selects active SG edges around requested support classes, blends
+both endpoints' `phin/phip` to the Sentaurus endpoint QF pattern, and
+reconstructs carriers from Vela inferred-ni while keeping `psi` fixed. The
+mixed-state replay now accepts explicit `--state-csv-variant` inputs, so the
+predictor initial state can be evaluated directly at the active-edge source
+level.
+
+For `false_negative` support only, the predictor touches `40` active edges and
+`60` endpoint nodes. Its initial active-edge replay is source-effective:
+false-negative generation is `1.0126x` Sentaurus and particle flux is `0.9826x`.
+However the `-20 V` single-point restart again converges in two Newton iterations
+to `-1.169034089095e-16 A/um`, effectively unchanged from the smooth-branch
+restart. Endpoint relaxation shows the QF shift is mostly removed: false-negative
+support retains only `0.2216x` electron shift and `0.2462x` hole shift, with
+carrier boosts reduced from `7.136x/8.158x` to `1.546x/1.677x`.
+
+For the all-support predictor (`false_negative + false_positive`), the helper
+touches `66` active edges and `92` endpoint nodes. Its initial replay restores
+both active classes near Sentaurus (`false_negative` generation `1.0126x`,
+`false_positive` generation `1.0224x`), but the single-point restart still lands
+at `-1.169034109498e-16 A/um`. The all-support endpoint relaxation is the same
+pattern: retained QF shift remains only about `0.22..0.26x`. This rules out
+"move both edge endpoints to the Sentaurus QF/current-density pattern" as a
+sufficient branch-control predictor. The next useful probe is the first Newton
+linear solve/update on this predictor state: identify which residual block or
+Jacobian coupling drives the 75-80% QF-density rollback.
+
+The first-Newton-step audit of the coupled predictor state was executed with
+`scripts/diagnose_pn2d_bv_predictor_first_step_audit.py`. The helper converts the
+predictor state to runner probe fields, runs `newton_step_probe` and
+`newton_block_step_probe`, and reports rollback of the intended
+`psi-phin`/`phip-psi` branch shift by support class.
+
+For the false-negative-only predictor, the first full Newton step rolls back
+`0.438x` of the electron branch shift and `0.418x` of the hole branch shift on
+false-negative support. The carrier-only block step gives the same medians
+(`0.438x` electron, `0.418x` hole), while the Poisson-only step is effectively
+zero (`~2e-5` rollback fraction). The block residuals show why the solve still
+accepts this direction: the predictor state is Poisson dominated
+(`psi = 0.2443387`) but carrier residuals are already tiny (`phin = 1.41e-12`,
+`phip = 2.01e-12`); the full step combines the Poisson correction with the
+carrier block rollback.
+
+The all-support predictor repeats the same pattern. False-negative support has
+full-step rollback `0.438x/0.418x` for electron/hole, false-positive support has
+`0.437x/0.425x`, and carrier-only matches full Newton. Poisson-only remains near
+zero rollback. Thus the first-step rollback is not caused by Poisson/gauge or
+Dirichlet movement; it is encoded in the carrier-continuity Newton block itself.
+The remaining follow-up should inspect local carrier-row Jacobian coefficients
+and RHS signs on the active endpoints, especially why a source-effective QF
+branch is treated as a carrier-continuity residual reduction direction back
+toward the low-density branch.
+
+The active-endpoint carrier-row audit has now been executed with
+`scripts/diagnose_pn2d_bv_predictor_carrier_row_audit.py`. The helper compares
+baseline, coupled predictor initial state, and first Newton trial state through
+`newton_carrier_row_probe` plus `newton_carrier_term_probe`, so the rollback can
+be read at the row/term level instead of only from state deltas.
+
+For false-negative-only support, the predictor increases median electron flux by
+`7.09e-14` and hole flux by `9.68e-14` over baseline. The impact term moves in
+the compensating direction, but only by `-8.24e-15`, leaving positive residual
+deltas of `6.31e-14` electron and `8.85e-14` hole. The raw carrier-row update
+therefore rolls the intended branch back by `0.438x/0.418x`, matching the
+previous carrier-block step audit. The first trial state reduces the flux and
+impact magnitudes, but still has positive residual deltas and `0.341x/0.336x`
+raw rollback on the same nodes.
+
+For all-support prediction, false-negative support has median flux deltas
+`2.20e-14` electron and `2.07e-14` hole, impact compensation `-8.24e-15`, and
+positive residual deltas `1.32e-14`/`1.27e-14`. False-positive support repeats
+the pattern with flux deltas `1.88e-14`/`1.54e-14`, impact compensation
+`-8.45e-15`, and residual deltas `1.04e-14`/`6.99e-15`.
+
+Conclusion: the active QF branch is source-effective but also overdrives the SG
+continuity flux more than the present impact source feedback cancels. Newton is
+not discarding a good branch because of Poisson/gauge constraints; the local
+carrier residual itself asks for lower carrier density. The next useful probe is
+an impact-source feedback sensitivity, ideally at the same carrier-row/term
+level, to determine whether the mismatch is impact sign/scale/Jacobian coupling
+or an SG flux balance difference.
+The impact-source feedback sensitivity was then run on the same carrier-row
+artifacts by extending `scripts/diagnose_pn2d_bv_predictor_carrier_row_audit.py`
+with `--impact-scale`. The sensitivity keeps the state and SG flux fixed and
+asks how much the impact term would need to be multiplied to close each carrier
+row residual, using `term_sum + (scale - 1) * impact`.
+
+Results reinforce the carrier-row diagnosis. For the false-negative-only
+predictor, the median required scale is `7.97x` electron and `10.26x` hole, and
+the first trial still needs `8.47x`/`10.43x`. The single-support predictor is
+therefore far from a balanced continuity row even though it restores the local
+source proxy.
+
+For the all-support predictor, the required scale is much closer to plausible
+feedback-mismatch territory: predictor false-negative support needs `2.31x`/
+`2.37x`, predictor false-positive support needs `2.07x`/`1.71x`, and the first
+trial remains around `1.61..2.16x`. This makes the next comparison concrete:
+inspect whether Vela's impact source contribution is low by about a factor of
+two at the active high-field rows because of source support, current weighting,
+unit/area scaling, sign convention, or missing Jacobian coupling.
+## Impact Feedback Semantic Audit
+
+The production-facing impact feedback audit has now been executed. The local
+reference-code check found no sign reversal in the basic generation semantics:
+Genius DDM forms `GII = alpha_n * |Jn| / q + alpha_p * |Jp| / q`, distributes it
+with directional current weights, and injects the same generated pair source into
+electron and hole continuity rows over the finite-volume truncated partial
+volume. Charon computes `alpha_n * |Je| + alpha_p * |Jh|` and subtracts avalanche
+from total recombination, i.e. treats it as generation. Vela likewise subtracts
+the SG edge-current avalanche source from both carrier residual rows. The local
+`devsim` tree did not expose an equivalent built-in impact-ionization assembly to
+compare.
+
+The concrete all-support predictor comparison is now:
+
+- Active-edge replay: predictor false-negative generation is `1.01257x`
+  Sentaurus and false-positive generation is `1.02244x` Sentaurus on the selected
+  active x-edges.
+- Source geometry replay, after updating
+  `scripts/diagnose_pn2d_bv_source_geometry.py` to accept current C++
+  `sg_avalanche_edges.csv` columns (`edge_area_m2`, `electron_flux_abs`,
+  `hole_flux_abs`, `source_integral`), reports active endpoint area fraction
+  `0.5` for both support classes.
+- Multiplying those two facts gives effective active-support feedback of
+  `0.506x` on false-negative and `0.511x` on false-positive nodes, matching the
+  carrier-row sensitivity that needed roughly `2.31x/2.37x` and `2.07x/1.71x`
+  electron/hole impact feedback to close the rows.
+
+Artifacts:
+
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_frozen_mobility_jacobian_feedback/coupled_qf_predictor/source_geometry_all_support_blend1/`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_frozen_mobility_jacobian_feedback/coupled_qf_predictor/active_edge_replay_all_support_blend1/`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_frozen_mobility_jacobian_feedback/coupled_qf_predictor/impact_scale_sensitivity_all_support_blend1/`
+
+Conclusion: the all-support predictor's local active-edge avalanche physics is
+already Sentaurus-sized; the remaining factor-of-two is explained by effective
+finite-volume/support feedback into the carrier rows, not by a raw avalanche
+coefficient sign or local QF branch-strength error. Do not introduce a hidden
+source multiplier. The next task should inspect whether Vela's endpoint
+`0.5 * edge_area` carrier-row injection should be compared to Genius/Sentaurus
+truncated partial-volume ownership on active edges, and separately whether the
+SG edge-current avalanche Jacobian should include source derivatives rather than
+omitting them in the current Newton path.
+## Impact Feedback Ownership Policy Probe
+
+A follow-up ownership summary has been executed with the new helper
+`scripts/summarize_pn2d_bv_impact_feedback_ownership.py`. The helper joins three
+already generated all-support predictor diagnostics:
+
+- active-edge replay generation ratio versus Sentaurus,
+- source-geometry active endpoint area fraction,
+- carrier-row impact scale needed to close the local residual.
+
+Artifact:
+
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/bv_frozen_mobility_jacobian_feedback/coupled_qf_predictor/impact_feedback_ownership_all_support_blend1/`
+
+Real `-20 V` all-support results:
+
+| support class | active-edge generation / Sentaurus | active endpoint area fraction | endpoint feedback / Sentaurus | full active-edge feedback / Sentaurus | required e/h impact scale |
+|---|---:|---:|---:|---:|---:|
+| false_negative | `1.01257x` | `0.5` | `0.50628x` | `1.01257x` | `2.30979x / 2.36797x` |
+| false_positive | `1.02244x` | `0.5` | `0.51122x` | `1.02244x` | `2.07195x / 1.71073x` |
+
+This makes the factor-of-two failure mode concrete: the local active-edge source
+strength is already approximately Sentaurus-sized, while endpoint-half ownership
+leaves the carrier row with only about half of that active feedback. The product
+`endpoint_feedback * required_scale` lands near unity (`1.17/1.20` for
+false-negative and `1.06/0.87` for false-positive), so the previous `~2x`
+impact-scale sensitivity is consistent with source-support ownership rather than
+a raw ionization coefficient error.
+
+Current C++ status: the SG edge-current avalanche residual path injects a source,
+but the analytic Jacobian path still explicitly omits those nonlocal edge-source
+derivatives. That is a separate Newton-coupling issue. The next production probe
+should therefore be ordered as:
+
+1. First test a focused source-ownership variant for SG edge-current avalanche,
+   comparing Vela endpoint-half ownership against a directional/truncated-volume
+   policy analogous to Genius/Sentaurus active-edge ownership. This must remain a
+   gated experiment, not a hidden multiplier.
+2. Then test source-derivative Jacobian completion for the SG edge-current path
+   against finite-difference block probes.
+3. Accept neither change without the curve-level `-10..-20 V` knee-shape gate and
+   local carrier-row residual gate moving in the same direction.
+## SG Edge-Box Source Volume Probe
+
+Executed the focused production probe proposed above by adding an explicit gated
+configuration knob, `impact_ionization.source_volume_policy`. The default remains
+`edge_half_box`, preserving the previous SG edge-current avalanche source
+support. The probe value `edge_box` changes only the SG edge source support from
+`0.5 * h * edge.couple` to `1.0 * h * edge.couple`; it is not a hidden avalanche
+coefficient multiplier and does not add the still-missing SG source-derivative
+Jacobian terms.
+
+Real `-20 V` all-support single-point deck:
+
+- Baseline config: `single_m20_all_support_blend1/simulation_bv_coupled_qf_predictor_all_support_blend1_single_m20.json`
+- Probe config: `single_m20_all_support_edge_box/simulation_bv_coupled_qf_predictor_all_support_edge_box_single_m20.json`
+- Sentaurus reference current at `-20 V`: `-9.10455666344e-16 A`
+
+| case | converged | Newton iterations | current_total_A_per_um | abs ratio vs baseline | abs ratio vs Sentaurus | decade error vs Sentaurus |
+|---|---:|---:|---:|---:|---:|---:|
+| endpoint-half baseline | `1` | `2` | `-1.16903410949798e-16` | `1.0000x` | `0.128401x` | `-0.891432` |
+| `edge_box` probe | `1` | `2` | `-6.39910455999440e-16` | `5.47384x` | `0.702846x` | `-0.153140` |
+
+The max field is effectively unchanged (`560748.547233267` to
+`560748.547233097 V/cm`), so the terminal-current movement is carrier-continuity
+feedback from the source ownership policy rather than a field-state movement. The
+probe closes about `0.738` decades of the `0.891` decade gap and leaves a
+remaining Sentaurus multiplier of `1.42279x`.
+
+Conclusion: source ownership is now confirmed as a production-relevant direction,
+but the `edge_box` probe alone is not yet an acceptance change. The next ordered
+work is: run the same gated policy through the `-10..-20 V` knee-shape gate and
+local carrier-row residual gate, then independently test SG edge-current
+avalanche source-derivative Jacobian completion against finite-difference block
+probes.
+
+## SG Edge-Box Backscan Knee And Carrier-Row Gate
+
+The `source_volume_policy=edge_box` experiment was extended from a single `-20 V`
+point to a matched `-20 -> -10 V` all-support predictor backscan. Two decks were
+generated from the same all-support restart family:
+
+- endpoint-half baseline: `all_support_blend1_backscan/simulation_bv_coupled_qf_predictor_all_support_blend1_backscan_m20_to_m10.json`
+- edge-box probe: `all_support_edge_box_backscan/simulation_bv_coupled_qf_predictor_all_support_edge_box_backscan_m20_to_m10.json`
+
+Both backscans converged with `11` integer-bias points. The knee-shape gate now
+reports:
+
+| curve | first 1 V growth ratio > 1.5 | first 1 V growth ratio > 2.0 | max abs log10 current error |
+|---|---:|---:|---:|
+| Sentaurus | `-19.0 V` | `-20.0 V` | n/a |
+| endpoint-half baseline backscan | none | none | `0.891432` decades |
+| `edge_box` backscan | `-16.0 V` | `-19.0 V` | `0.519580` decades |
+
+The probe therefore moves the curve-level knee in the right direction but does
+not pass acceptance: the `>2.0` growth point is still one volt early, and the
+`>1.5` threshold appears too early at `-16 V`. Pointwise, `edge_box` is close at
+some mid-window biases but overshoots around `-19 V` (`3.308x` Sentaurus) while
+remaining low at `-20 V` (`0.703x` Sentaurus).
+
+A local carrier-row audit was also run under the `edge_box` policy with the
+matched `-20 V` states:
+
+- `carrier_row_audit_all_support_edge_box_policy/`
+
+On the active support classes, the endpoint-half state evaluated with `edge_box`
+already has required impact scales below unity (`false_negative` e/h
+`0.8898/0.8774`, `false_positive` e/h `0.7784/0.7033`). The converged `edge_box`
+state pushes the same rows further source-strong (`false_negative` e/h
+`0.6452/0.5778`, `false_positive` e/h `0.6568/0.4142`) and lowers carrier raw
+rollback magnitudes. This confirms source ownership is a real lever, but the
+full-edge policy is too coarse as a production acceptance change.
+
+Next ordered task: introduce and test an intermediate/truncated ownership factor
+rather than binary `0.5` versus `1.0`, or move to the independent SG source-
+derivative Jacobian probe if the goal is Newton coupling rather than curve-shape
+calibration. Any intermediate policy must be gated by the same backscan knee
+summary and carrier-row required-scale summary.

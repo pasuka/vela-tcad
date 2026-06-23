@@ -53,12 +53,50 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature-k", type=float, default=300.0)
     parser.add_argument("--electron-qf-shift-v", type=float, default=0.0)
     parser.add_argument("--hole-qf-shift-v", type=float, default=0.0)
+    parser.add_argument("--state-csv-variant", action="append", default=[], metavar="NAME=CSV")
     return parser.parse_args()
 
 
 def read_csv_rows(path: Path) -> list[dict[str, str]]:
     with path.open(newline="") as handle:
         return list(csv.DictReader(handle))
+
+
+def load_state_csv_variant(path: Path, node_count: int, mobility_source: dict[str, list[float]]) -> dict[str, list[float]]:
+    values = {key: [0.0] * node_count for key in ["psi", "phin", "phip", "n", "p"]}
+    seen: set[int] = set()
+    for row in read_csv_rows(path):
+        node_id = int(row["node_id"])
+        if node_id < 0 or node_id >= node_count:
+            raise RuntimeError(f"state variant {path} has out-of-range node id {node_id}")
+        if node_id in seen:
+            raise RuntimeError(f"state variant {path} has duplicate node id {node_id}")
+        seen.add(node_id)
+        values["psi"][node_id] = float(row["psi"])
+        values["phin"][node_id] = float(row["phin"])
+        values["phip"][node_id] = float(row["phip"])
+        values["n"][node_id] = float(row["electrons_m3"])
+        values["p"][node_id] = float(row["holes_m3"])
+    if len(seen) != node_count:
+        raise RuntimeError(f"state variant {path} has {len(seen)} rows, expected {node_count}")
+    values["mun"] = list(mobility_source["mun"])
+    values["mup"] = list(mobility_source["mup"])
+    return values
+
+
+def parse_state_csv_variants(raw_items: list[str], node_count: int, mobility_source: dict[str, list[float]]) -> dict[str, dict[str, list[float]]]:
+    variants: dict[str, dict[str, list[float]]] = {}
+    for raw in raw_items:
+        if "=" not in raw:
+            raise RuntimeError("--state-csv-variant must have NAME=CSV format")
+        name, path_text = raw.split("=", 1)
+        name = name.strip()
+        if not name:
+            raise RuntimeError("--state-csv-variant name must be non-empty")
+        if name in variants:
+            raise RuntimeError(f"duplicate state csv variant {name}")
+        variants[name] = load_state_csv_variant(Path(path_text), node_count, mobility_source)
+    return variants
 
 
 def optional_float(raw: Any) -> float | None:
@@ -234,7 +272,9 @@ def area_weighted_metrics(items: list[dict[str, Any]], state: dict[str, list[flo
             sums[key] += metrics[key] * area
         area_sum += area
     if area_sum == 0.0:
-        return {key: None for key in sums}
+        result = {key: None for key in sums}
+        result["particle_flux"] = None
+        return result
     result: dict[str, float | None] = {key: value / area_sum for key, value in sums.items()}
     result["particle_flux"] = result["electron_flux"] + result["hole_flux"]  # type: ignore[operator]
     return result
@@ -247,6 +287,10 @@ def make_rows(args: argparse.Namespace) -> list[dict[str, Any]]:
     vela = fluxforms.load_vela_state(fluxfac.discover_vtk(args.vela_vtk_root, args.bias), len(nodes))
     sentaurus = fluxforms.load_sentaurus_state(args.sentaurus_dir, len(nodes))
     variants = make_variants(vela, sentaurus, vt, args.electron_qf_shift_v, args.hole_qf_shift_v)
+    for name, state in parse_state_csv_variants(args.state_csv_variant, len(nodes), vela).items():
+        if name in variants:
+            raise RuntimeError(f"state csv variant {name} conflicts with a built-in variant")
+        variants[name] = state
     active_by_node = fluxfac.load_active_cxx_edges(
         args.sg_edge_csv,
         args.bias,

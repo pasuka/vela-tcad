@@ -570,6 +570,21 @@ TEST_CASE("CoupledDDAssembler: transport Jacobian captures quasi-Fermi high-fiel
     const Real rel = diff.norm() / std::max<Real>(1.0, ref.norm());
 
     REQUIRE(rel < 1.0e-4);
+
+    mobility.jacobianFieldDerivatives = false;
+    CoupledDDAssembler frozenJacobianAssembler(
+        mesh,
+        matdb,
+        doping,
+        constants::Vt_300,
+        mobility,
+        recombinationModelConfig({"none"}),
+        BandgapNarrowingConfig{});
+    const SparseMatrixd frozenJa = frozenJacobianAssembler.assembleJacobian(x, bcs);
+    const Real frozenRel = Eigen::MatrixXd(frozenJa - Jfd).norm() /
+        std::max<Real>(1.0, ref.norm());
+
+    REQUIRE(frozenRel > rel * 10.0);
 }
 TEST_CASE("CoupledDDAssembler: Slotboom BGN uses total impurity at compensated nodes",
           "[newton][coupled][bgn][doping]")
@@ -1303,6 +1318,9 @@ TEST_CASE("NewtonSolver: verbose false suppresses failure diagnostics", "[newton
 
     NewtonConfig cfg = newtonConfig();
     cfg.maxIter = 0;
+    cfg.reltol = 0.0;
+    cfg.abstol = 0.0;
+    cfg.warmStart = true;
     cfg.verbose = false;
 
     std::ostringstream capturedStderr;

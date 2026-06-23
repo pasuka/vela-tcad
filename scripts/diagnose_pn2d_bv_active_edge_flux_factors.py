@@ -101,20 +101,30 @@ def matches_bias(row: dict[str, str], bias: float) -> bool:
     return abs(row_bias - bias) <= 1.0e-9
 
 
+def first_float(row: dict[str, str], *names: str) -> float | None:
+    for name in names:
+        value = optional_float(row.get(name))
+        if value is not None:
+            return value
+    return None
+
+
 def load_active_cxx_edges(edge_csv: Path, bias: float, active_axis: str, threshold_scale: float) -> dict[int, list[dict[str, Any]]]:
     by_node: dict[int, list[dict[str, Any]]] = {}
     for row in read_csv_rows(edge_csv):
         if not matches_bias(row, bias):
             continue
-        electron_flux = abs(optional_float(row.get("electron_flux_proxy")) or 0.0)
-        hole_flux = abs(optional_float(row.get("hole_flux_proxy")) or 0.0)
-        electron_alpha = optional_float(row.get("electron_alpha_m_inv")) or 0.0
-        hole_alpha = optional_float(row.get("hole_alpha_m_inv")) or 0.0
-        alpha_flux = electron_alpha * electron_flux + hole_alpha * hole_flux
+        electron_flux = abs(first_float(row, "electron_flux_proxy", "electron_flux_abs") or 0.0)
+        hole_flux = abs(first_float(row, "hole_flux_proxy", "hole_flux_abs") or 0.0)
+        electron_alpha = first_float(row, "electron_alpha_m_inv") or 0.0
+        hole_alpha = first_float(row, "hole_alpha_m_inv") or 0.0
+        alpha_flux = first_float(row, "source_integral", "alpha_flux")
+        if alpha_flux is None:
+            alpha_flux = electron_alpha * electron_flux + hole_alpha * hole_flux
         edge = {
             "edge_id": int(row["edge_id"]),
             "axis": edge_axis(row),
-            "endpoint_area_m2": 0.5 * (optional_float(row.get("edge_area_proxy_m2")) or 0.0),
+            "endpoint_area_m2": 0.5 * (first_float(row, "edge_area_proxy_m2", "edge_area_m2") or 0.0),
             "electron_flux_proxy": electron_flux,
             "hole_flux_proxy": hole_flux,
             "alpha_flux": alpha_flux,

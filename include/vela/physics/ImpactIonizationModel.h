@@ -15,6 +15,7 @@ struct ImpactIonizationModelConfig {
     Real electronDrivingForceRefDensity = 0.0; ///< RefDens_eGradQuasiFermi_ElectricField_Aval equivalent [1/m^3]
     Real holeDrivingForceRefDensity = 0.0; ///< RefDens_hGradQuasiFermi_ElectricField_Aval equivalent [1/m^3]
     Real sourceGeometryScale = 1.0; ///< Diagnostic scale for SG edge-current source geometry.
+    std::string sourceVolumePolicy = "edge_half_box"; ///< SG edge-current source support: edge_half_box or edge_box.
     Real quasiFermiCarrierTruncation = 0.0; ///< GSS-style floor n,p >= value*ni when rebuilding qF gradients; 0 disables.
     Real electronA = 7.03e7; ///< Selberherr electron prefactor [1/m]
     Real electronB = 1.231e8; ///< Selberherr electron critical field [V/m]

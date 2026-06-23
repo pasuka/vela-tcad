@@ -255,6 +255,8 @@ MobilityModelConfig mobilityModelConfigFromJson(
     config.model = value.value("model", config.model);
     config.highFieldDrivingForce = value.value(
         "high_field_driving_force", config.highFieldDrivingForce);
+    config.jacobianFieldDerivatives = value.value(
+        "jacobian_field_derivatives", config.jacobianFieldDerivatives);
     validateHighFieldDrivingForce(config.highFieldDrivingForce);
 
     parseCaugheyThomas(value, config.electronCT, "electron", scaling);
