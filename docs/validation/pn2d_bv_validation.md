@@ -1058,3 +1058,78 @@ step-size collapse around the `-0.47 V` branch: the run keeps accepting very sma
 steps instead of failing, so the next continuation improvement should target
 progress rate or a production fixed-bias corrector fallback rather than the
 previous minority-carrier dex blowup.
+## PN2D BV Knee Gap Classification (2026-06-24)
+
+This audit switches back to the production voltage-stepped BV path
+(`gummel_newton`, arclength disabled) to decide whether the missing Sentaurus
+knee is a continuation/fold problem or an impact-ionization magnitude/shape
+problem. The diagnostic script added for this audit is
+`scripts/diagnose_pn2d_bv_knee_gap.py`; it reads only existing CSV curves,
+resolves paths before use, writes a per-volt knee table and scan summary, and
+classifies the evidence as either `physics_magnitude_gap` or
+`latent_turning_point`.
+
+Authoritative impact-ionization knobs confirmed from
+`ImpactIonizationModel.{h,cpp}` and `docs/config_schema.md` are: `model` (`none`,
+`selberherr`, `van_overstraeten`), `driving_force` (`electric_field`,
+`quasi_fermi_gradient`, `grad_potential_parallel_j`,
+`effective_field_parallel_j`), `generation` (`carrier_density`,
+`current_density`), `current_approximation` (`density_gradient`, `grad_qf` for
+current-aligned sources), `source_volume_policy` (`edge_half_box`, `edge_box`),
+`source_volume_factor` (diagnostic override only, not used here for fitting),
+`minimum_field_V_m`, GSS-style quasi-Fermi interpolation/truncation fields, and
+the electron/hole ionization coefficient parameters. The scan below varied only
+supported non-arclength voltage-step decks and did not tune `source_volume_factor`.
+
+Baseline voltage-step curve: existing phase-2 production deck
+`minority_qf_cap_scan/phase2_knee/g0p05_unif.csv` reaches `-20 V` with 491
+converged rows and no arclength. The per-volt `-20..-10 V` knee table from
+`diagnose_pn2d_bv_knee_gap.py` is:
+
+| bias V | |I_Vela| | |I_ref| | Vela/ref | log10 err | Vela 1V growth | Ref 1V growth | Vela dlog10/dV | Ref dlog10/dV |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| -10 | 4.409e-17 | 5.454e-17 | 0.808 | -0.092 | 1.000 | 1.217 | 0.000 | 0.085 |
+| -11 | 4.410e-17 | 5.909e-17 | 0.746 | -0.127 | 1.000 | 1.083 | 0.000 | 0.035 |
+| -12 | 5.865e-17 | 6.919e-17 | 0.848 | -0.072 | 1.330 | 1.171 | 0.124 | 0.069 |
+| -13 | 5.877e-17 | 8.193e-17 | 0.717 | -0.144 | 1.002 | 1.184 | 0.001 | 0.073 |
+| -14 | 7.322e-17 | 9.270e-17 | 0.790 | -0.102 | 1.246 | 1.131 | 0.095 | 0.054 |
+| -15 | 7.322e-17 | 1.147e-16 | 0.638 | -0.195 | 1.000 | 1.237 | 0.000 | 0.092 |
+| -16 | 8.774e-17 | 1.440e-16 | 0.609 | -0.215 | 1.198 | 1.256 | 0.079 | 0.099 |
+| -17 | 8.775e-17 | 1.800e-16 | 0.488 | -0.312 | 1.000 | 1.250 | 0.000 | 0.097 |
+| -18 | 8.776e-17 | 2.509e-16 | 0.350 | -0.456 | 1.000 | 1.394 | 0.000 | 0.144 |
+| -19 | 1.168e-16 | 4.131e-16 | 0.283 | -0.548 | 1.331 | 1.646 | 0.124 | 0.217 |
+| -20 | 1.168e-16 | 9.105e-16 | 0.128 | -0.892 | 1.000 | 2.204 | 0.000 | 0.343 |
+
+Baseline conclusion: Vela is not bias-limited and not showing a hidden runaway
+near the Sentaurus knee. It reaches `-20 V`, but the current remains smooth and
+low. Vela has no `>1.5` or `>2.0` first-growth marker in `-20..-10 V`; Sentaurus
+hits `>1.5` at `-19 V` and `>2.0` at `-20 V`. The largest Vela local log slope
+in the window is only `0.124 decade/V`, versus Sentaurus `0.343 decade/V` at
+`-20 V`; the max absolute current error is `0.891695 decade`.
+
+Voltage-step sensitivity probes (all arclength disabled):
+
+| label | changed impact-ionization knob | deepest V | reached -20 | first >1.5 | first >2.0 | peak dlog10/dV | max log10 err | failure |
+|---|---|---:|---:|---:|---:|---:|---:|---|
+| baseline | VanOverstraeten, quasi-Fermi gradient, current-density source | -20.000 | yes | none | none | 0.124 | 0.892 | none |
+| minfield5e6 | `minimum_field_V_m=5.0e6` | -20.000 | yes | none | none | 0.173 | 1.190 | none |
+| selberherr | `model=selberherr` with same current-density/qF source path | -20.000 | yes | none | none | 0.124 | 0.892 | none |
+| edge_box | `source_volume_policy=edge_box` | -0.414855 | no | n/a | n/a | n/a | n/a | branch guard at shallow bias |
+| electric_field | `driving_force=electric_field` with current-density source | -0.454001 | no | n/a | n/a | n/a | n/a | branch guard at shallow bias |
+
+The two shallow failures are not evidence of a Sentaurus-window fold: they occur
+near `-0.4 V`, long before the `-10..-20 V` knee window. They are useful stress
+signals for overly aggressive source ownership/drive choices, but they do not
+show a latent turning point at the missing breakdown knee. In the settings that
+reach the knee window, the curve remains smooth and under-magnitude.
+
+Classification: `physics_magnitude_gap`.
+
+Decision: pause further continuation/arclength work for this PN2D BV discrepancy.
+The production voltage-step solver already spans the bias range, and the audited
+reasonable settings that reach `-20 V` do not reveal a real `dI/dV` turning point.
+The next investment should be impact-ionization physics/calibration: coefficient
+magnitude and field dependence, driving-force/source ownership semantics, and
+current-density generation scaling against Sentaurus. Pseudo-arclength remains a
+landed default-off capability, but L6b continuation is not justified by the
+present evidence.
