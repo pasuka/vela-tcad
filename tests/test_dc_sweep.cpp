@@ -2170,6 +2170,76 @@ TEST_CASE("DCSweep: PN diode reverse sweep reaches descending targets", "[dc_swe
     REQUIRE(points[1].acceptedStep == Catch::Approx(-0.25));
 }
 
+TEST_CASE("DCSweep: BV reverse arclength continuation records converged arc points",
+          "[dc_sweep][continuation][arclength]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "bv_arclength.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"mode", "bv_reverse"},
+        {"start", 0.0},
+        {"stop", -0.05},
+        {"step", -0.05},
+        {"min_step", 0.01},
+        {"max_step", 0.05},
+        {"write_vtk", false},
+        {"continuation", {
+            {"arclength", {
+                {"enabled", true},
+                {"initial_step", 0.02},
+                {"min_step", 0.005},
+                {"max_step", 0.02},
+                {"growth_factor", 1.0},
+                {"shrink_factor", 0.5},
+                {"max_corrector_iterations", 40},
+                {"corrector_tolerance", 1.0e-7},
+                {"max_step_retries", 8},
+                {"parameter_scale", 1.0},
+                {"bias_finite_difference_step_V", 1.0e-4}
+            }}
+        }}
+    }, {
+        {"method", "newton"},
+        {"max_iter", 80},
+        {"reltol", 1.0e-8},
+        {"input_scaling", "unit_scaling"}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() >= 3);
+    REQUIRE(result.points.front().bias == Catch::Approx(0.0));
+    for (std::size_t i = 0; i < result.points.size(); ++i) {
+        INFO(i);
+        REQUIRE(result.points.at(i).converged);
+        if (i > 0) {
+            REQUIRE(result.points.at(i).bias < result.points.at(i - 1).bias);
+            REQUIRE(result.points.at(i).solverMethod == "arclength");
+            REQUIRE(result.points.at(i).newtonIterations >= 0);
+        }
+    }
+    REQUIRE(result.points.back().bias <= -0.05);
+
+    const auto rows = readCsvRows(csvPath);
+    REQUIRE(rows.size() == result.points.size() + 1);
+    const auto& header = rows.front();
+    const std::size_t biasCol = csvColumnIndex(header, "bias_V");
+    const std::size_t convergedCol = csvColumnIndex(header, "converged");
+    const std::size_t solverMethodCol = csvColumnIndex(header, "solver_method");
+    for (std::size_t row = 1; row < rows.size(); ++row) {
+        REQUIRE(rows.at(row).at(convergedCol) == "1");
+        if (row > 1) {
+            REQUIRE(std::stod(rows.at(row).at(biasCol)) <
+                    std::stod(rows.at(row - 1).at(biasCol)));
+            REQUIRE(rows.at(row).at(solverMethodCol) == "arclength");
+        }
+    }
+}
+
 TEST_CASE("DCSweep: explicit bias_points solve only requested biases", "[dc_sweep]")
 {
     const auto dir = makeUniqueSweepDir();

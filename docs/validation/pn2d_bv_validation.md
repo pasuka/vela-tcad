@@ -912,3 +912,51 @@ multi-minute validation are deliberately staged after the corrector was proven
 on the real device Jacobian here, to avoid destabilizing the shared Newton path;
 the Sentaurus knee recovery itself is therefore not yet demonstrated and is the
 explicit next step.
+
+## Pseudo-Arclength BV Main Loop Integration (2026-06-24)
+
+The pseudo-arclength corrector is now wired into the `bv_reverse` main loop when
+`sweep.continuation.arclength.enabled=true`. The default voltage-step path is
+left on the existing `runDCSweepStepControl` branch when arclength is disabled.
+The arclength branch starts from the ordinary converged start-bias solution,
+builds `NewtonSolver::makeArclengthSystem` for the active contact, writes each
+accepted corrected state through the existing `recordPoint` path, and treats the
+branch-acceptance rejection as a step-shrink signal before recording a hard
+failure. The focused debug gates pass:
+
+- `ctest --preset windows-ucrt64-debug -R "dc_sweep|pseudo_arclength|NewtonSolver.*pseudo-arclength" --output-on-failure`
+- `ctest --preset windows-ucrt64-debug --output-on-failure` has only the known
+  unrelated failures `ascii_sources` and `sentaurus_sample_integration`.
+
+Release PN2D BV validation did not recover the Sentaurus knee yet. All runs used
+`build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_source_factor_scan/factor_0p875.json`
+as the base deck and did not change `impact_ionization.source_volume_factor`.
+Only `sweep.continuation.arclength` and output paths were changed in ignored
+`build-release/.../arclength_validation/` decks.
+
+Measured arclength runs:
+
+- `initial_step=max_step=0.25`, `min_step=1e-5`, `stop=-20`: timed out after
+  600 s with 660 converged rows and no hard failure. Deepest bias was
+  `-0.08286686968455001 V`; the deepest current was
+  `-1.4274804967431621e-12 A/m`. This is still about `18.917 V` short of the
+  `-19 V` marker and `19.917 V` short of `-20 V`.
+- `initial_step=max_step=500`, `min_step=0.1`, `stop=-1`: reached only
+  `-0.20408944079055016 V`, then failed at `-0.20411790168552751 V` with
+  `arclength step shrank below min_step`. This is about `18.796 V` short of
+  `-19 V` and `19.796 V` short of `-20 V`.
+- `initial_step=max_step=125`, `min_step=1e-5`, `stop=-1`: after 240 s it was
+  still oscillating in tiny accepted arclength steps around `-0.203741 V`; the
+  last written bias was `-0.2037410230608626 V`. It did not approach the
+  `-19 V` or `-20 V` knee window.
+
+The current blocker is therefore not the JSON plumbing or CSV recording path:
+the branch enters arclength and emits accepted arclength points. The failure is
+that the real PN2D bordered system loses useful bias progress near
+`-0.204 V`. With small arclength steps most of the step length is consumed by
+the high-dimensional packed state norm, so `lambda` advances only about
+`1.25e-4 V` per accepted point. With larger arclength steps the corrector can
+reach about `-0.204 V` quickly but then shrinks to very small steps and stalls.
+The Sentaurus markers remain unhit: there is no `-19 V` or `-20 V` arclength
+point from these runs, so the required 1 V current-growth ratios are unavailable
+rather than merely below threshold.

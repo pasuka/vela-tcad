@@ -1588,7 +1588,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         sweep.continuation.predictor.mode != "none" ||
         sweep.continuation.branchAcceptance.terminalCurrentConsistency ||
         sweep.continuation.branchAcceptance.psiPhinJump ||
-        sweep.continuation.branchAcceptance.carrierDensityJump;
+        sweep.continuation.branchAcceptance.carrierDensityJump ||
+        sweep.continuation.arclength.enabled;
 
     CSVWriter csv(sweep.csvFile);
     std::vector<std::string> header = {"mode", "bias_contact", "bias_V",
@@ -2921,6 +2922,158 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     previousSolution = std::move(startAttempt.solution);
     currentSolutionBias = sweep.start;
     hasCurrentSolutionBias = true;
+
+    if (sweep.mode == CurveSweepMode::BVReverse &&
+        sweep.continuation.arclength.enabled) {
+        if (solverMethod != SolverMethod::Newton &&
+            solverMethod != SolverMethod::GummelNewton) {
+            throw std::invalid_argument(
+                "DCSweep: bv_reverse arclength continuation requires "
+                "solver.method='newton' or 'gummel_newton'.");
+        }
+
+        const Real directionSign = sweep.stop >= sweep.start ? 1.0 : -1.0;
+        auto reachedStop = [&](Real lambda) {
+            return directionSign > 0.0 ? lambda >= sweep.stop : lambda <= sweep.stop;
+        };
+        if (reachedStop(sweep.start))
+            return DCSweepResult{std::move(mesh), std::move(points)};
+
+        NewtonSolver arclengthSolver(
+            mesh,
+            matdb,
+            doping,
+            baseBiases,
+            newton,
+            fixedChargeSpecs,
+            sheetChargeSpecs);
+        ArclengthSystem arclengthSystem = arclengthSolver.makeArclengthSystem(
+            sweep.contact,
+            sweep.continuation.arclength.biasFiniteDifferenceStep_V);
+        PseudoArclengthContinuation continuation(
+            arclengthSystem,
+            sweep.continuation.arclength.core);
+
+        ArclengthState anchor;
+        anchor.x = arclengthSolver.packArclengthState(previousSolution);
+        anchor.lambda = sweep.start;
+        Real deltaS = sweep.continuation.arclength.core.initialStep;
+        ArclengthTangent previousTangent;
+        bool havePreviousTangent = false;
+
+        constexpr int maxArclengthPoints = 10000;
+        for (int pointCount = 0; pointCount < maxArclengthPoints; ++pointCount) {
+            const ArclengthTangent tangent = continuation.computeTangent(
+                anchor,
+                directionSign,
+                havePreviousTangent ? &previousTangent : nullptr);
+            const ArclengthStepResult stepResult = continuation.step(
+                anchor,
+                tangent,
+                deltaS);
+
+            auto recordArclengthFailure = [&](Real failedBias,
+                                              const std::string& reason,
+                                              int retryCount) {
+                SolvePointAttempt failedAttempt;
+                failedAttempt.ok = false;
+                failedAttempt.solution = previousSolution;
+                failedAttempt.failureReason = reason.empty()
+                    ? std::string("arclength_non_convergence")
+                    : reason;
+                failedAttempt.solverMethod = "arclength";
+                failedAttempt.handoffStage = "arclength_failed";
+                failedAttempt.newtonIterations = stepResult.correctorIterations;
+                failedAttempt.branchAcceptanceStatus = "not_checked";
+                failedAttempt.branchAcceptanceReason.clear();
+                recordPoint(
+                    failedBias,
+                    failedAttempt,
+                    false,
+                    deltaS,
+                    0.0,
+                    retryCount,
+                    failedAttempt.failureReason,
+                    failedAttempt.validationDiagnostics);
+            };
+
+            if (!stepResult.converged) {
+                const Real failedBias = anchor.lambda + stepResult.arclengthStep * tangent.lambdaDot;
+                recordArclengthFailure(
+                    failedBias,
+                    stepResult.failureReason,
+                    stepResult.retries);
+                return DCSweepResult{std::move(mesh), std::move(points)};
+            }
+
+            SolvePointAttempt attempt;
+            attempt.ok = true;
+            attempt.solution = arclengthSolver.unpackArclengthState(stepResult.state.x);
+            attempt.solution.converged = true;
+            attempt.solution.iters = stepResult.correctorIterations;
+            attempt.solverMethod = "arclength";
+            attempt.gummelIterations = 0;
+            attempt.newtonIterations = stepResult.correctorIterations;
+            attempt.handoffStage = "arclength";
+            attempt.predictedInitialState = true;
+
+            auto arclengthBiases = baseBiases;
+            arclengthBiases[sweep.contact] = stepResult.state.lambda;
+            const DDSolutionValidationResult validation = validateDDSolution(
+                attempt.solution,
+                mesh,
+                arclengthBiases,
+                validationOptions);
+            attempt.validationDiagnostics = validation.diagnosticsString();
+            if (!validation.valid) {
+                attempt.ok = false;
+                attempt.failureReason = "validation_failed";
+            }
+
+            applyBranchAcceptance(attempt);
+            if (!attempt.ok) {
+                const Real shrunkStep = stepResult.arclengthStep *
+                    sweep.continuation.arclength.core.shrinkFactor;
+                if (shrunkStep >= sweep.continuation.arclength.core.minStep) {
+                    deltaS = shrunkStep;
+                    continue;
+                }
+                recordPoint(
+                    stepResult.state.lambda,
+                    attempt,
+                    false,
+                    stepResult.arclengthStep,
+                    0.0,
+                    stepResult.retries,
+                    attempt.failureReason,
+                    attempt.validationDiagnostics);
+                return DCSweepResult{std::move(mesh), std::move(points)};
+            }
+
+            recordPoint(
+                stepResult.state.lambda,
+                attempt,
+                true,
+                stepResult.arclengthStep,
+                stepResult.arclengthStep,
+                stepResult.retries,
+                std::string(),
+                attempt.validationDiagnostics);
+            acceptPredictorHistory(previousSolution, currentSolutionBias, stepResult.state.lambda);
+            previousSolution = std::move(attempt.solution);
+            currentSolutionBias = stepResult.state.lambda;
+            anchor = stepResult.state;
+            previousTangent = tangent;
+            havePreviousTangent = true;
+            deltaS = continuation.nextStep(stepResult);
+
+            if (reachedStop(anchor.lambda))
+                return DCSweepResult{std::move(mesh), std::move(points)};
+        }
+
+        throw std::runtime_error(
+            "DCSweep: bv_reverse arclength continuation exceeded point budget.");
+    }
 
     SolvePointAttempt lastStepAttempt;
     std::string lastStepFailureReason;
