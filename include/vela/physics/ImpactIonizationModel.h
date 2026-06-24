@@ -12,6 +12,7 @@ struct ImpactIonizationModelConfig {
     std::string generation = "carrier_density";
     std::string currentApproximation = "mobility_density_gradient";
     std::string drivingForceInterpolation = "none";
+    std::string quasiFermiGradientDiscretization = "edge_difference"; ///< edge_difference or Genius-style cell_gradient.
     Real electronDrivingForceRefDensity = 0.0; ///< RefDens_eGradQuasiFermi_ElectricField_Aval equivalent [1/m^3]
     Real holeDrivingForceRefDensity = 0.0; ///< RefDens_hGradQuasiFermi_ElectricField_Aval equivalent [1/m^3]
     Real sourceGeometryScale = 1.0; ///< Diagnostic scale for SG edge-current source geometry.

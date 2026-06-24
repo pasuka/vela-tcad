@@ -512,6 +512,7 @@ Object form:
 "impact_ionization": {
   "model": "selberherr",
   "driving_force": "electric_field",
+  "quasi_fermi_gradient_discretization": "edge_difference",
   "generation": "carrier_density",
   "electron_A_m_inv": 7.03e7,
   "electron_B_V_m": 1.231e8,
@@ -540,6 +541,13 @@ Field meanings (Selberherr prototype):
   require `generation: "current_density"`.
 - `generation`: `carrier_density` (legacy `alpha*v*n/p` proxy) or
   `current_density` (`alpha_n*mu_n*n*|grad(phin)| + alpha_p*mu_p*p*|grad(phip)|`).
+- `quasi_fermi_gradient_discretization`: `edge_difference` (default) preserves
+  the existing Vela GradQf behavior. `cell_gradient` is Genius-compatible for
+  `II.Force=GradQf`: Vela rebuilds electron/hole quasi-Fermi potentials from
+  `psi`, carrier density, `ni`, and `Vt`, then uses the area-weighted adjacent
+  cell-gradient magnitude as the ionization-coefficient driving field. This
+  switch only affects `solver.impact_ionization`; it does not change
+  `solver.mobility.high_field_driving_force`.
 - `source_geometry_scale`: positive finite diagnostic multiplier for the
   Scharfetter-Gummel edge-current avalanche source geometry. The default is
   `1.0`; values other than `1.0` are intended only for BV parity probes.
@@ -561,6 +569,9 @@ Validation:
   `grad_potential_parallel_j`, or `effective_field_parallel_j`.
 - Current-aligned driving forces require `generation: "current_density"` and
   `current_approximation: "density_gradient"` or `"grad_qf"`.
+- `quasi_fermi_gradient_discretization` must be `edge_difference` or
+  `cell_gradient`; `cell_gradient` is valid only with
+  `driving_force: "quasi_fermi_gradient"`.
 - `generation` must be `carrier_density` or `current_density`.
 - `source_volume_policy` must be `edge_half_box` or `edge_box`.
 - `source_volume_factor` must be `0` or finite within `[0.5, 1.0]`.
@@ -582,8 +593,11 @@ Scaling:
 
 Prototype note:
 - The default `carrier_density` path preserves the original engineering source
-  term for smoke diagnostics. The `quasi_fermi_gradient` + `current_density`
-  path aligns the PN2D Sentaurus 2018 BV driving-force semantics.
+  term for smoke diagnostics. For Genius-style BV decks, use
+  `driving_force: "quasi_fermi_gradient"`, `generation: "current_density"`,
+  `current_approximation: "density_gradient"` or `"grad_qf"`,
+  `quasi_fermi_gradient_discretization: "cell_gradient"`, and usually
+  `quasi_fermi_carrier_truncation: 1.0e-2`.
 
 ### mobility
 

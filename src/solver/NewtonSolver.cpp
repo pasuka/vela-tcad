@@ -685,6 +685,9 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "generation", cfg.impactIonization.generation);
             cfg.impactIonization.currentApproximation = value.value(
                 "current_approximation", cfg.impactIonization.currentApproximation);
+            cfg.impactIonization.quasiFermiGradientDiscretization = value.value(
+                "quasi_fermi_gradient_discretization",
+                cfg.impactIonization.quasiFermiGradientDiscretization);
             parseImpactIonizationDrivingForceInterpolation(
                 value, scaling, cfg.impactIonization, "newtonConfigFromJson");
             cfg.impactIonization.sourceGeometryScale = value.value(

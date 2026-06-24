@@ -582,6 +582,20 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
             ": impact_ionization.driving_force_interpolation requires "
             "driving_force='quasi_fermi_gradient'.");
     }
+    if (config.quasiFermiGradientDiscretization != "edge_difference" &&
+        config.quasiFermiGradientDiscretization != "cell_gradient") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.quasi_fermi_gradient_discretization must be "
+            "'edge_difference' or 'cell_gradient'.");
+    }
+    if (config.quasiFermiGradientDiscretization == "cell_gradient" &&
+        config.drivingForce != "quasi_fermi_gradient") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.quasi_fermi_gradient_discretization='cell_gradient' "
+            "requires driving_force='quasi_fermi_gradient'.");
+    }
     if (!std::isfinite(config.electronDrivingForceRefDensity) ||
         !std::isfinite(config.holeDrivingForceRefDensity) ||
         config.electronDrivingForceRefDensity < 0.0 ||
@@ -642,6 +656,13 @@ inline bool usesEdgeCurrentAvalancheSource(
 inline bool usesQuasiFermiCarrierTruncation(const ImpactIonizationModelConfig& config)
 {
     return config.quasiFermiCarrierTruncation > 0.0;
+}
+
+inline bool usesCellGradientQuasiFermiAvalancheDrive(
+    const ImpactIonizationModelConfig& config)
+{
+    return config.drivingForce == "quasi_fermi_gradient" &&
+           config.quasiFermiGradientDiscretization == "cell_gradient";
 }
 
 inline std::vector<bool> contactNodeMask(const DeviceMesh& mesh)
@@ -855,6 +876,99 @@ inline Point2 edgeAveragedCellScalarGradient(
     return weightedGradient / totalArea;
 }
 
+inline std::vector<Real> computeNodeCellGradientMagnitudes(
+    const std::vector<std::vector<Index>>& nodeCells,
+    const CellScalarGradientCache&         cache)
+{
+    std::vector<Real> fields(nodeCells.size(), 0.0);
+    for (std::size_t node = 0; node < nodeCells.size(); ++node) {
+        Point2 weightedGradient = Point2::Zero();
+        Real totalArea = 0.0;
+        for (const Index cellId : nodeCells[node]) {
+            if (cellId >= cache.valid.size() || !cache.valid[cellId])
+                continue;
+            const Real area = cache.areas[cellId];
+            if (area <= 0.0)
+                continue;
+            weightedGradient += area * cache.gradients[cellId];
+            totalArea += area;
+        }
+        if (totalArea > 0.0)
+            fields[node] = (weightedGradient / totalArea).norm();
+    }
+    return fields;
+}
+
+template <typename ValueAt>
+inline std::vector<Real> computeNodeCellGradientMagnitudes(
+    const DeviceMesh&                      mesh,
+    const std::vector<std::vector<Index>>& nodeCells,
+    ValueAt&&                              valueAt)
+{
+    return computeNodeCellGradientMagnitudes(
+        nodeCells, computeCellScalarGradientCache(mesh, valueAt));
+}
+
+inline Real edgeQuasiFermiCoefficientField(
+    const ImpactIonizationModelConfig&     config,
+    Real                                   edgeQfField,
+    Real                                   electricField,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh&                      mesh,
+    Index                                  edgeId,
+    const std::vector<bool>&               contactNodes,
+    const CellScalarGradientCache&         qfGradientCache)
+{
+    if (usesCellGradientQuasiFermiAvalancheDrive(config)) {
+        bool validGradient = false;
+        const Point2 gradient = edgeAveragedCellScalarGradient(
+            edgeCells, edgeId, qfGradientCache, validGradient);
+        return validGradient ? gradient.norm() : edgeQfField;
+    }
+    return edgeHighFieldDrivingField(
+        true, edgeQfField, electricField, edgeCells, mesh, edgeId, contactNodes);
+}
+
+inline std::vector<Real> computeElectronAvalancheNodeQuasiFermiDrivingFields(
+    const ImpactIonizationModelConfig&     config,
+    const DeviceMesh&                      mesh,
+    const std::vector<std::vector<Index>>& nodeCells,
+    const VectorXd&                        psi,
+    const VectorXd&                        phin,
+    const VectorXd&                        n,
+    const std::vector<Real>&               ni,
+    Real                                   Vt)
+{
+    if (!usesCellGradientQuasiFermiAvalancheDrive(config))
+        return computeNodeScalarGradientMagnitudes(phin, mesh);
+    return computeNodeCellGradientMagnitudes(
+        mesh, nodeCells, [&](Index node) {
+            const int idx = static_cast<int>(node);
+            return electronQfForAvalancheGradient(
+                psi(idx), phin(idx), n(idx), ni[node], Vt, config);
+        });
+}
+
+inline std::vector<Real> computeHoleAvalancheNodeQuasiFermiDrivingFields(
+    const ImpactIonizationModelConfig&     config,
+    const DeviceMesh&                      mesh,
+    const std::vector<std::vector<Index>>& nodeCells,
+    const VectorXd&                        psi,
+    const VectorXd&                        phip,
+    const VectorXd&                        p,
+    const std::vector<Real>&               ni,
+    Real                                   Vt)
+{
+    if (!usesCellGradientQuasiFermiAvalancheDrive(config))
+        return computeNodeScalarGradientMagnitudes(phip, mesh);
+    return computeNodeCellGradientMagnitudes(
+        mesh, nodeCells, [&](Index node) {
+            const int idx = static_cast<int>(node);
+            return holeQfForAvalancheGradient(
+                psi(idx), phip(idx), p(idx), ni[node], Vt, config);
+        });
+}
+
 template <typename ValueAt>
 inline Real edgeMinusGradientUnitDot(
     const std::vector<std::vector<Index>>& edgeCells,
@@ -1046,10 +1160,16 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
         const Real electricField = std::abs((psi_j - psi_i) / h);
         const Real electronQfField = std::abs((electronQf_j - electronQf_i) / h);
         const Real holeQfField = std::abs((holeQf_j - holeQf_i) / h);
-        const Real electronCoefficientField = edgeHighFieldDrivingField(
-            qfImpact, electronQfField, electricField, edgeCells, mesh, e, contactNodes);
-        const Real holeCoefficientField = edgeHighFieldDrivingField(
-            qfImpact, holeQfField, electricField, edgeCells, mesh, e, contactNodes);
+        const Real electronCoefficientField = qfImpact
+            ? edgeQuasiFermiCoefficientField(
+                config, electronQfField, electricField, edgeCells, mesh, e,
+                contactNodes, electronQfGradientCache)
+            : electricField;
+        const Real holeCoefficientField = qfImpact
+            ? edgeQuasiFermiCoefficientField(
+                config, holeQfField, electricField, edgeCells, mesh, e,
+                contactNodes, holeQfGradientCache)
+            : electricField;
         const Real electronMobilityField = qfMobility ? electronQfField : electricField;
         const Real holeMobilityField = qfMobility ? holeQfField : electricField;
 

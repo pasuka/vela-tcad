@@ -1057,9 +1057,23 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
             {"driving_force", "quasi_fermi_gradient"},
             {"generation", "current_density"},
             {"current_approximation", "grad_qf"},
+            {"quasi_fermi_gradient_discretization", "cell_gradient"},
         }}
     });
     REQUIRE(gradQfCfg.impactIonization.currentApproximation == "grad_qf");
+    REQUIRE(gradQfCfg.impactIonization.quasiFermiGradientDiscretization == "cell_gradient");
+
+    const GummelConfig gummelGradQfCfg = gummelConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"driving_force", "quasi_fermi_gradient"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"quasi_fermi_gradient_discretization", "cell_gradient"},
+        }}
+    });
+    REQUIRE(gummelGradQfCfg.impactIonization.quasiFermiGradientDiscretization ==
+            "cell_gradient");
 
     const NewtonConfig interpolatedCfg = newtonConfigFromJson(nlohmann::json{
         {"impact_ionization", {
@@ -1198,6 +1212,20 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
         {"impact_ionization", {
             {"model", "van_overstraeten"},
             {"minimum_field_V_m", -1.0},
+        }}
+    }), std::invalid_argument);
+    REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "selberherr"},
+            {"driving_force", "quasi_fermi_gradient"},
+            {"quasi_fermi_gradient_discretization", "cell_average"},
+        }}
+    }), std::invalid_argument);
+    REQUIRE_THROWS_AS(gummelConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "selberherr"},
+            {"driving_force", "electric_field"},
+            {"quasi_fermi_gradient_discretization", "cell_gradient"},
         }}
     }), std::invalid_argument);
 }
@@ -1533,6 +1561,169 @@ TEST_CASE("Grad-QF avalanche source uses quasi-Fermi field with SG current proxy
         (record.electronAlpha * electronSgFlux + record.holeAlpha * holeSgFlux)
         * record.edgeAreaProxy));
 }
+
+TEST_CASE("Genius-style Grad-QF avalanche source uses cell-gradient magnitude",
+          "[impact][grad_qf]")
+{
+    DeviceMesh mesh = makePNMesh(false);
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const int nodeCount = static_cast<int>(mesh.numNodes());
+    const Real Vt = 0.025852;
+    DDSolution sol;
+    sol.psi = VectorXd::Zero(nodeCount);
+    sol.phin.resize(nodeCount);
+    sol.phip.resize(nodeCount);
+    sol.n.resize(nodeCount);
+    sol.p.resize(nodeCount);
+    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+    for (Index node = 0; node < mesh.numNodes(); ++node) {
+        const int i = static_cast<int>(node);
+        const Node& point = mesh.getNode(node);
+        const Real qf = point.x + 2.0 * point.y;
+        sol.phin(i) = qf;
+        sol.phip(i) = qf;
+        sol.n(i) = ni[static_cast<std::size_t>(node)] *
+            std::exp((sol.psi(i) - sol.phin(i)) / Vt);
+        sol.p(i) = ni[static_cast<std::size_t>(node)] *
+            std::exp((sol.phip(i) - sol.psi(i)) / Vt);
+    }
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "quasi_fermi_gradient";
+    impactConfig.quasiFermiGradientDiscretization = "cell_gradient";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "density_gradient";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0e-30;
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, constants::T0);
+    const auto impact = makeImpactIonizationModel(impactConfig);
+
+    const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *impact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+
+    REQUIRE_FALSE(records.empty());
+    const Real expectedCellGradient = std::sqrt(5.0);
+    bool sawDifferentEdgeDifference = false;
+    for (const auto& record : records) {
+        REQUIRE(record.electronImpactField == Catch::Approx(expectedCellGradient));
+        REQUIRE(record.holeImpactField == Catch::Approx(expectedCellGradient));
+        const Edge& edge = mesh.getEdge(record.edgeId);
+        const Real edgeDifference =
+            std::abs((sol.phin(static_cast<int>(edge.n1)) -
+                      sol.phin(static_cast<int>(edge.n0))) / edge.length);
+        if (std::abs(edgeDifference - expectedCellGradient) > 1.0e-9)
+            sawDifferentEdgeDifference = true;
+    }
+    REQUIRE(sawDifferentEdgeDifference);
+}
+
+TEST_CASE("Genius-style Grad-QF contact edges keep cell-gradient drive",
+          "[impact][grad_qf]")
+{
+    DeviceMesh mesh = makeContactInteriorMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"si", 5.0e22, 0.0},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const int nodeCount = static_cast<int>(mesh.numNodes());
+    const Real Vt = 0.025852;
+    DDSolution sol;
+    sol.psi = VectorXd::Zero(nodeCount);
+    sol.phin.resize(nodeCount);
+    sol.phip.resize(nodeCount);
+    sol.n.resize(nodeCount);
+    sol.p.resize(nodeCount);
+    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+    for (Index node = 0; node < mesh.numNodes(); ++node) {
+        const int i = static_cast<int>(node);
+        const Node& point = mesh.getNode(node);
+        const Real qf = point.x + 2.0 * point.y;
+        sol.phin(i) = qf;
+        sol.phip(i) = qf;
+        sol.n(i) = ni[static_cast<std::size_t>(node)] *
+            std::exp((sol.psi(i) - sol.phin(i)) / Vt);
+        sol.p(i) = ni[static_cast<std::size_t>(node)] *
+            std::exp((sol.phip(i) - sol.psi(i)) / Vt);
+    }
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "quasi_fermi_gradient";
+    impactConfig.quasiFermiGradientDiscretization = "cell_gradient";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "density_gradient";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0e-30;
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, constants::T0);
+    const auto impact = makeImpactIonizationModel(impactConfig);
+    const auto contactNodes = detail::contactNodeMask(mesh);
+
+    const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *impact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+
+    REQUIRE_FALSE(records.empty());
+    const Real expectedCellGradient = std::sqrt(5.0);
+    bool checkedContactEdge = false;
+    for (const auto& record : records) {
+        if (!contactNodes[record.node0] && !contactNodes[record.node1])
+            continue;
+        checkedContactEdge = true;
+        REQUIRE(record.electronImpactField == Catch::Approx(expectedCellGradient));
+        REQUIRE(record.holeImpactField == Catch::Approx(expectedCellGradient));
+        REQUIRE(record.electricField == Catch::Approx(0.0));
+    }
+    REQUIRE(checkedContactEdge);
+}
+
 TEST_CASE("SG edge current avalanche source supports diagnostic volume policy",
           "[impact][diagnostic]")
 {

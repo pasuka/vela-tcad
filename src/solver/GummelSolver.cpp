@@ -210,6 +210,9 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "generation", cfg.impactIonization.generation);
             cfg.impactIonization.currentApproximation = value.value(
                 "current_approximation", cfg.impactIonization.currentApproximation);
+            cfg.impactIonization.quasiFermiGradientDiscretization = value.value(
+                "quasi_fermi_gradient_discretization",
+                cfg.impactIonization.quasiFermiGradientDiscretization);
             parseImpactIonizationDrivingForceInterpolation(
                 value, scaling, cfg.impactIonization, "gummelConfigFromJson");
             cfg.impactIonization.sourceGeometryScale = value.value(
@@ -833,13 +836,6 @@ void writeDDSolutionVTK(const std::string& filename,
         detail::computeNodeScalarGradientMagnitudes(sol.phin, mesh);
     const std::vector<Real> holeQfGradient_V_m =
         detail::computeNodeScalarGradientMagnitudes(sol.phip, mesh);
-    const bool qfImpact = impactIonizationConfig.drivingForce == "quasi_fermi_gradient";
-    const std::vector<Real>& electronDrivingField_V_m = qfImpact
-        ? electronQfGradient_V_m
-        : electricField_V_m;
-    const std::vector<Real>& holeDrivingField_V_m = qfImpact
-        ? holeQfGradient_V_m
-        : electricField_V_m;
     const bool qfMobility =
         mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient";
     const std::vector<Real>& electronMobilityDrive_V_m = qfMobility
@@ -865,6 +861,30 @@ void writeDDSolutionVTK(const std::string& filename,
     const auto nodeCells = detail::buildNodeCellMap(mesh);
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh, matdb, temperature_K);
+    const std::vector<Real> effectiveNi = detail::buildValidatedEffectiveNodeNi(
+        "writeDDSolutionVTK",
+        mesh,
+        matdb,
+        doping,
+        bandgapNarrowingConfig,
+        Vt);
+    const bool qfImpact = impactIonizationConfig.drivingForce == "quasi_fermi_gradient";
+    const std::vector<Real> electronImpactQfGradient_V_m = qfImpact
+        ? detail::computeElectronAvalancheNodeQuasiFermiDrivingFields(
+            impactIonizationConfig, mesh, nodeCells, sol.psi, sol.phin, sol.n,
+            effectiveNi, Vt)
+        : std::vector<Real>{};
+    const std::vector<Real> holeImpactQfGradient_V_m = qfImpact
+        ? detail::computeHoleAvalancheNodeQuasiFermiDrivingFields(
+            impactIonizationConfig, mesh, nodeCells, sol.psi, sol.phip, sol.p,
+            effectiveNi, Vt)
+        : std::vector<Real>{};
+    const std::vector<Real>& electronDrivingField_V_m = qfImpact
+        ? electronImpactQfGradient_V_m
+        : electricField_V_m;
+    const std::vector<Real>& holeDrivingField_V_m = qfImpact
+        ? holeImpactQfGradient_V_m
+        : electricField_V_m;
 
     std::vector<Material> nodeMaterials(N);
     std::vector<bool> seen(N, false);
@@ -908,13 +928,7 @@ void writeDDSolutionVTK(const std::string& filename,
             sol.phip,
             sol.n,
             sol.p,
-            detail::buildValidatedEffectiveNodeNi(
-                "writeDDSolutionVTK",
-                mesh,
-                matdb,
-                doping,
-                bandgapNarrowingConfig,
-                Vt),
+            effectiveNi,
             Vt)
         : std::vector<Real>{};
     for (Index i = 0; i < N; ++i) {

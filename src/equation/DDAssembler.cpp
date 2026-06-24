@@ -289,23 +289,27 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
         ? detail::computeNodeElectricFields(psi_si, mesh_)
         : std::vector<Real>{};
-    const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
-    const VectorXd phipForImpact =
-        holeQuasiFermiFromDensity(psi_si, p_old, ni_, Vt_, scaling_);
-    const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
-        ? detail::computeNodeScalarGradientMagnitudes(phinForMobility, mesh_)
-        : nodeElectricFields;
-    const std::vector<Real> nodeHoleDrivingFields = (impactIonizationEnabled_ && qfImpact)
-        ? detail::computeNodeScalarGradientMagnitudes(phipForImpact, mesh_)
-        : nodeElectricFields;
-    const bool sgCurrentAvalanche = impactIonizationEnabled_ &&
-        detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig_);
     VectorXd n_physical = n_old;
     VectorXd p_physical = p_old;
     if (scaling_.enabled) {
         n_physical *= scaling_.C0;
         p_physical *= scaling_.C0;
     }
+    const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
+    const VectorXd phipForImpact =
+        holeQuasiFermiFromDensity(psi_si, p_old, ni_, Vt_, scaling_);
+    const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
+        ? detail::computeElectronAvalancheNodeQuasiFermiDrivingFields(
+            impactIonizationConfig_, mesh_, nodeCells_, psi_si, phinForMobility,
+            n_physical, ni_, Vt_)
+        : nodeElectricFields;
+    const std::vector<Real> nodeHoleDrivingFields = (impactIonizationEnabled_ && qfImpact)
+        ? detail::computeHoleAvalancheNodeQuasiFermiDrivingFields(
+            impactIonizationConfig_, mesh_, nodeCells_, psi_si, phipForImpact,
+            p_physical, ni_, Vt_)
+        : nodeElectricFields;
+    const bool sgCurrentAvalanche = impactIonizationEnabled_ &&
+        detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig_);
     const std::vector<Real> sgAvalancheSourceIntegrals = sgCurrentAvalanche
         ? detail::sgEdgeCurrentAvalancheSourceIntegrals(
             impactIonizationConfig_,
@@ -456,23 +460,27 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
         ? detail::computeNodeElectricFields(psi_si, mesh_)
         : std::vector<Real>{};
-    const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
-    const VectorXd phinForImpact =
-        electronQuasiFermiFromDensity(psi_si, n_old, ni_, Vt_, scaling_);
-    const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
-        ? detail::computeNodeScalarGradientMagnitudes(phinForImpact, mesh_)
-        : nodeElectricFields;
-    const std::vector<Real> nodeHoleDrivingFields = (impactIonizationEnabled_ && qfImpact)
-        ? detail::computeNodeScalarGradientMagnitudes(phipForMobility, mesh_)
-        : nodeElectricFields;
-    const bool sgCurrentAvalanche = impactIonizationEnabled_ &&
-        detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig_);
     VectorXd n_physical = n_old;
     VectorXd p_physical = p_old;
     if (scaling_.enabled) {
         n_physical *= scaling_.C0;
         p_physical *= scaling_.C0;
     }
+    const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
+    const VectorXd phinForImpact =
+        electronQuasiFermiFromDensity(psi_si, n_old, ni_, Vt_, scaling_);
+    const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
+        ? detail::computeElectronAvalancheNodeQuasiFermiDrivingFields(
+            impactIonizationConfig_, mesh_, nodeCells_, psi_si, phinForImpact,
+            n_physical, ni_, Vt_)
+        : nodeElectricFields;
+    const std::vector<Real> nodeHoleDrivingFields = (impactIonizationEnabled_ && qfImpact)
+        ? detail::computeHoleAvalancheNodeQuasiFermiDrivingFields(
+            impactIonizationConfig_, mesh_, nodeCells_, psi_si, phipForMobility,
+            p_physical, ni_, Vt_)
+        : nodeElectricFields;
+    const bool sgCurrentAvalanche = impactIonizationEnabled_ &&
+        detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig_);
     const std::vector<Real> sgAvalancheSourceIntegrals = sgCurrentAvalanche
         ? detail::sgEdgeCurrentAvalancheSourceIntegrals(
             impactIonizationConfig_,

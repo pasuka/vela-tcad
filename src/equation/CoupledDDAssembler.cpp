@@ -219,12 +219,12 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
     const VectorXd phinPhysical = x.segment(phinOffset(), N) * potentialScale;
     const VectorXd phipPhysical = x.segment(phipOffset(), N) * potentialScale;
     const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
-        ? detail::computeNodeScalarGradientMagnitudes(
-            phinPhysical, mesh_)
+        ? detail::computeElectronAvalancheNodeQuasiFermiDrivingFields(
+            impactIonizationConfig_, mesh_, nodeCells_, psi, phinPhysical, n, ni_, Vt_)
         : nodeElectricFields;
     const std::vector<Real> nodeHoleDrivingFields = (impactIonizationEnabled_ && qfImpact)
-        ? detail::computeNodeScalarGradientMagnitudes(
-            phipPhysical, mesh_)
+        ? detail::computeHoleAvalancheNodeQuasiFermiDrivingFields(
+            impactIonizationConfig_, mesh_, nodeCells_, psi, phipPhysical, p, ni_, Vt_)
         : nodeElectricFields;
     const bool qfMobility = mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
     const bool sgCurrentAvalanche = impactIonizationEnabled_ &&
@@ -832,12 +832,12 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const bool currentAlignedImpact =
         detail::usesCurrentAlignedAvalancheDrivingForce(impactIonizationConfig_);
     const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
-        ? detail::computeNodeScalarGradientMagnitudes(
-            x.segment(phinOffset(), N) * potentialScale, mesh_)
+        ? detail::computeElectronAvalancheNodeQuasiFermiDrivingFields(
+            impactIonizationConfig_, mesh_, nodeCells_, psi, phinState, n, ni_, Vt_)
         : nodeElectricFields;
     const std::vector<Real> nodeHoleDrivingFields = (impactIonizationEnabled_ && qfImpact)
-        ? detail::computeNodeScalarGradientMagnitudes(
-            x.segment(phipOffset(), N) * potentialScale, mesh_)
+        ? detail::computeHoleAvalancheNodeQuasiFermiDrivingFields(
+            impactIonizationConfig_, mesh_, nodeCells_, psi, phipState, p, ni_, Vt_)
         : nodeElectricFields;
     const bool qfMobility = mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
     const std::vector<bool> contactNodes = detail::contactNodeMask(mesh_);
@@ -913,21 +913,43 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real n_j = niJ * limitedExp((psi_j - phin_j) / Vt_);
         const Real p_i = niI * limitedExp((phip_i - psi_i) / Vt_);
         const Real p_j = niJ * limitedExp((phip_j - psi_j) / Vt_);
-        const Real electronQf_i = detail::electronQfForAvalancheGradient(
-            psi_i, phin_i, n_i, niI, Vt_, impactIonizationConfig_);
-        const Real electronQf_j = detail::electronQfForAvalancheGradient(
-            psi_j, phin_j, n_j, niJ, Vt_, impactIonizationConfig_);
-        const Real holeQf_i = detail::holeQfForAvalancheGradient(
-            psi_i, phip_i, p_i, niI, Vt_, impactIonizationConfig_);
-        const Real holeQf_j = detail::holeQfForAvalancheGradient(
-            psi_j, phip_j, p_j, niJ, Vt_, impactIonizationConfig_);
+        auto psiAt = [&](Index node) {
+            const int nodeIndex = static_cast<int>(node);
+            return node == idxI ? psi_i : (node == idxJ ? psi_j : psi(nodeIndex));
+        };
+        auto electronQfAt = [&](Index node) {
+            const Real psiNode = psiAt(node);
+            const Real phinNode = phinAt(node);
+            const Real nNode = ni_[node] * limitedExp((psiNode - phinNode) / Vt_);
+            return detail::electronQfForAvalancheGradient(
+                psiNode, phinNode, nNode, ni_[node], Vt_, impactIonizationConfig_);
+        };
+        auto holeQfAt = [&](Index node) {
+            const Real psiNode = psiAt(node);
+            const Real phipNode = phipAt(node);
+            const Real pNode = ni_[node] * limitedExp((phipNode - psiNode) / Vt_);
+            return detail::holeQfForAvalancheGradient(
+                psiNode, phipNode, pNode, ni_[node], Vt_, impactIonizationConfig_);
+        };
+        const Real electronQf_i = electronQfAt(idxI);
+        const Real electronQf_j = electronQfAt(idxJ);
+        const Real holeQf_i = holeQfAt(idxI);
+        const Real holeQf_j = holeQfAt(idxJ);
         const Real electricField = std::abs((psi_j - psi_i) / h);
         const Real electronQfField = std::abs((electronQf_j - electronQf_i) / h);
         const Real holeQfField = std::abs((holeQf_j - holeQf_i) / h);
-        const Real electronCoefficientField = detail::edgeHighFieldDrivingField(
-            qfImpact, electronQfField, electricField, edgeCells_, mesh_, e, contactNodes);
-        const Real holeCoefficientField = detail::edgeHighFieldDrivingField(
-            qfImpact, holeQfField, electricField, edgeCells_, mesh_, e, contactNodes);
+        auto coefficientField = [&](Real edgeQfField, auto&& qfAt) {
+            if (detail::usesCellGradientQuasiFermiAvalancheDrive(impactIonizationConfig_)) {
+                bool validGradient = false;
+                const Point2 gradient = detail::edgeAveragedCellScalarGradient(
+                    edgeCells_, mesh_, e, qfAt, validGradient);
+                return validGradient ? gradient.norm() : edgeQfField;
+            }
+            return detail::edgeHighFieldDrivingField(
+                qfImpact, edgeQfField, electricField, edgeCells_, mesh_, e, contactNodes);
+        };
+        const Real electronCoefficientField = coefficientField(electronQfField, electronQfAt);
+        const Real holeCoefficientField = coefficientField(holeQfField, holeQfAt);
         const Real electronMobilityField = qfMobility ? electronQfField : electricField;
         const Real holeMobilityField = qfMobility ? holeQfField : electricField;
         const Real nAvg = 0.5 * (n_i + n_j);
