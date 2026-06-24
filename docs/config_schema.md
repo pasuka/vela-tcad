@@ -299,6 +299,7 @@ Newton-specific keys:
 - damping_factor
 - max_update
 - quasi_fermi_update_limit_V
+- quasi_fermi_update_limit_minority_V
 - carrier_regularization_scale
 - line_search
 - warm_start
@@ -358,6 +359,15 @@ Notes:
   `max_update` and before line search; `0` disables the cap. In
   `unit_scaling` mode the value is converted to solver unknown units using the
   potential scale, so the accepted `phin`/`phip` delta remains capped in volts.
+- `quasi_fermi_update_limit_minority_V` is an optional non-negative
+  physical-voltage cap applied only to the minority-carrier quasi-Fermi update
+  at each node, classified by local net doping (`netDoping < 0` p-type makes
+  `phin` the minority update; `netDoping > 0` n-type makes `phip` the minority
+  update). When greater than zero it tightens only the minority carrier to
+  `min(quasi_fermi_update_limit_V, quasi_fermi_update_limit_minority_V)` while
+  the majority carrier keeps the looser `quasi_fermi_update_limit_V`. `0`
+  disables the minority-specific cap and reproduces the global uniform behavior
+  (default). It must be finite and non-negative.
 - `carrier_regularization_scale` is an experimental non-negative Newton
   stabilization knob. When greater than zero, Vela adds
   `sign(diagonal) * scale * carrier_row_abs_sum` to each carrier continuity
@@ -523,19 +533,38 @@ Field meanings (Selberherr prototype):
 - `hole_B_V_m` (V/m): hole critical field.
 - `carrier_velocity_m_s` (m/s): effective saturated carrier speed used by the
   generation-rate proxy.
-- `driving_force`: `electric_field` (default) or `quasi_fermi_gradient`.
-  Sentaurus `Avalanche(VanOverstraeten)` decks use `quasi_fermi_gradient`.
+- `driving_force`: `electric_field` (default), `quasi_fermi_gradient`,
+  `grad_potential_parallel_j`, or `effective_field_parallel_j`. Sentaurus
+  `Avalanche(VanOverstraeten)` decks use `quasi_fermi_gradient`; the
+  current-aligned options are Charon-style SG edge-current diagnostics and
+  require `generation: "current_density"`.
 - `generation`: `carrier_density` (legacy `alpha*v*n/p` proxy) or
   `current_density` (`alpha_n*mu_n*n*|grad(phin)| + alpha_p*mu_p*p*|grad(phip)|`).
 - `source_geometry_scale`: positive finite diagnostic multiplier for the
   Scharfetter-Gummel edge-current avalanche source geometry. The default is
   `1.0`; values other than `1.0` are intended only for BV parity probes.
+- `source_volume_policy`: SG edge-current avalanche source support preset.
+  `edge_half_box` keeps the default `0.5 * h * edge.couple` ownership;
+  `edge_box` uses `1.0 * h * edge.couple` for focused source-ownership probes.
+- `source_volume_factor`: default-off diagnostic override for SG edge-current
+  avalanche source support. `0` uses `source_volume_policy`; finite values in
+  `[0.5, 1.0]` directly set the source area factor in
+  `factor * h * edge.couple`.
+- `minimum_field_V_m`: non-negative Charon-style cutoff for avalanche
+  coefficients. `0` disables the cutoff; Charon van Overstraeten defaults are
+  commonly probed with `5.0e6 V/m` (`5.0e4 V/cm`).
 
 Validation:
 - `electron_A_m_inv`, `hole_A_m_inv`, and `carrier_velocity_m_s` must be non-negative.
 - `electron_B_V_m` and `hole_B_V_m` must be positive.
-- `driving_force` must be `electric_field` or `quasi_fermi_gradient`.
+- `driving_force` must be `electric_field`, `quasi_fermi_gradient`,
+  `grad_potential_parallel_j`, or `effective_field_parallel_j`.
+- Current-aligned driving forces require `generation: "current_density"` and
+  `current_approximation: "density_gradient"` or `"grad_qf"`.
 - `generation` must be `carrier_density` or `current_density`.
+- `source_volume_policy` must be `edge_half_box` or `edge_box`.
+- `source_volume_factor` must be `0` or finite within `[0.5, 1.0]`.
+- `minimum_field_V_m` must be non-negative and finite.
 
 Scaling:
 - With `scaling.mode: "unit_scaling"`, `electron_A_m_inv` and
@@ -738,6 +767,32 @@ Sweep continuation fields:
   optional finite non-negative maximum allowed p95 absolute electron-density
   jump in dex when `carrier_density_jump` is enabled. This is usually less
   sensitive to isolated node spikes than the nodewise maximum.
+
+Pseudo-arclength continuation fields (`sweep.continuation.arclength`, default
+disabled; the bias on `sweep.contact` is the continuation parameter):
+- `sweep.continuation.arclength.enabled`: when `false` (default) the sweep keeps
+  its voltage-parameterized stepping unchanged. Bounds below are only validated
+  when this is `true`.
+- `sweep.continuation.arclength.predictor`: must be `tangent` (the only currently
+  supported predictor).
+- `sweep.continuation.arclength.initial_step`: positive initial arclength step
+  length; must lie within `[min_step, max_step]`.
+- `sweep.continuation.arclength.min_step` / `max_step`: positive adaptive
+  arclength step bounds; `min_step` must not exceed `max_step`.
+- `sweep.continuation.arclength.growth_factor`: finite multiplier at least `1`
+  applied after a clean corrector convergence.
+- `sweep.continuation.arclength.shrink_factor`: multiplier in `(0, 1)` applied
+  after a corrector failure.
+- `sweep.continuation.arclength.max_corrector_iterations`: positive cap on the
+  bordered-Newton corrector iterations per attempted step.
+- `sweep.continuation.arclength.corrector_tolerance`: finite positive convergence
+  tolerance on `max(||F||_inf, |arclength residual|)`.
+- `sweep.continuation.arclength.max_step_retries`: non-negative number of shrink
+  retries before a step is abandoned.
+- `sweep.continuation.arclength.parameter_scale`: positive weight `theta` of the
+  bias component in the arclength norm `||x_dot||^2 + theta^2 * lambda_dot^2 = 1`.
+- `sweep.continuation.arclength.bias_finite_difference_step_V`: positive finite
+  voltage step used to estimate `dF/dV` for the bordered system.
 
 When any continuation diagnostic is enabled, the sweep CSV appends
 `predictor_mode`, `predicted_initial_state`, `branch_acceptance_status`,

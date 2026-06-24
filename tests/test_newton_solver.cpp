@@ -175,6 +175,58 @@ TEST_CASE("NewtonSolver: PN diode equilibrium converges with unit_scaling state"
     requireFiniteNewtonSolution(result, mesh.numNodes());
 }
 
+TEST_CASE("NewtonSolver: pseudo-arclength corrector advances a converged device point",
+          "[newton][arclength]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+
+    NewtonSolver solver(mesh, matdb, doping, zeroBias(), cfg);
+    const NewtonResult equilibrium = solver.solve();
+    REQUIRE(equilibrium.converged);
+
+    ArclengthSystem system = solver.makeArclengthSystem("anode");
+
+    ArclengthState point;
+    point.x = solver.packArclengthState(equilibrium.solution);
+    point.lambda = 0.0;
+
+    // The packed equilibrium state already satisfies F(x, lambda = 0) ~ 0, so the
+    // bordered corrector reuses the same scaled residual as the Newton solve.
+    const VectorXd f0 = system.residual(point.x, point.lambda);
+    REQUIRE(f0.lpNorm<Eigen::Infinity>() < 1.0e-6);
+
+    PseudoArclengthConfig arcCfg;
+    arcCfg.enabled = true;
+    arcCfg.initialStep = 0.02;
+    arcCfg.minStep = 1.0e-5;
+    arcCfg.maxStep = 0.1;
+    arcCfg.growthFactor = 1.1;
+    arcCfg.shrinkFactor = 0.5;
+    arcCfg.maxCorrectorIterations = 40;
+    arcCfg.correctorTolerance = 1.0e-7;
+    arcCfg.maxStepRetries = 8;
+    arcCfg.parameterScale = 1.0;
+
+    PseudoArclengthContinuation continuation(system, arcCfg);
+    const ArclengthTangent tangent = continuation.computeTangent(point, +1.0);
+
+    const ArclengthStepResult result =
+        continuation.step(point, tangent, arcCfg.initialStep);
+    REQUIRE(result.converged);
+    REQUIRE(result.residualNorm <= arcCfg.correctorTolerance);
+
+    // The continuation parameter (anode bias) advanced off equilibrium and the
+    // corrected device state still solves the coupled drift-diffusion residual.
+    REQUIRE(std::abs(result.state.lambda) > 1.0e-6);
+    const VectorXd f1 = system.residual(result.state.x, result.state.lambda);
+    REQUIRE(f1.lpNorm<Eigen::Infinity>() < 1.0e-6);
+}
+
 TEST_CASE("NewtonSolver: high-doping unit-scaled PN cold start reaches near-zero 0V current",
           "[newton][scaling][bgn]")
 {
@@ -1022,6 +1074,7 @@ TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
     REQUIRE(cfg.jacobian == "analytic");
     REQUIRE_FALSE(cfg.warmStart);
     REQUIRE(cfg.quasiFermiUpdateLimit_V == Catch::Approx(0.0));
+    REQUIRE(cfg.quasiFermiUpdateLimitMinority_V == Catch::Approx(0.0));
     REQUIRE(cfg.carrierRegularizationScale == Catch::Approx(0.0));
     REQUIRE(cfg.contactBoundaryReconstruction == "dominant_signed_contact_mean");
         REQUIRE(cfg.contactBoundaryMinorityElectronRelaxation);
@@ -1034,12 +1087,14 @@ TEST_CASE("NewtonSolver: defaults to analytic Jacobian", "[newton]")
         {"jacobian", "finite_difference"},
         {"warm_start", true},
         {"quasi_fermi_update_limit_V", 0.0259},
+        {"quasi_fermi_update_limit_minority_V", 0.01},
         {"carrier_regularization_scale", 3.0},
         {"contact_boundary_reconstruction", "legacy_node_local"},
     });
     REQUIRE(debugCfg.jacobian == "finite_difference");
     REQUIRE(debugCfg.warmStart);
     REQUIRE(debugCfg.quasiFermiUpdateLimit_V == Catch::Approx(0.0259));
+    REQUIRE(debugCfg.quasiFermiUpdateLimitMinority_V == Catch::Approx(0.01));
     REQUIRE(debugCfg.carrierRegularizationScale == Catch::Approx(3.0));
     REQUIRE(debugCfg.contactBoundaryReconstruction == "legacy_node_local");
 }
@@ -1250,6 +1305,9 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
         std::invalid_argument);
     REQUIRE_THROWS_AS(
         newtonConfigFromJson(nlohmann::json{{"quasi_fermi_update_limit_V", -1.0}}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{"quasi_fermi_update_limit_minority_V", -1.0}}),
         std::invalid_argument);
     REQUIRE_THROWS_AS(
         newtonConfigFromJson(nlohmann::json{{"carrier_regularization_scale", -1.0}}),
@@ -1507,6 +1565,78 @@ TEST_CASE("NewtonSolver: quasi-Fermi update limit recomputes Poisson correction 
     REQUIRE(clampedPhipDelta(interiorNode) ==
             Catch::Approx((unclampedPhipDelta(interiorNode) > 0.0 ? 1.0 : -1.0) * limit)
                 .margin(1.0e-12));
+}
+
+TEST_CASE("NewtonSolver: minority quasi-Fermi update limit caps only the minority carrier per node",
+          "[newton][line_search][scaling]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    // Force the single interior node to be strongly p-type so that electrons are
+    // its minority carrier (phin minority) and holes are its majority carrier.
+    const int interiorNode = 4;
+    doping.setNodeDoping(interiorNode, 0.0, 1.0e21);
+
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.05},
+        {"cathode", 0.0},
+    };
+
+    NewtonConfig seedCfg = newtonConfig();
+    seedCfg.maxIter = 0;
+    seedCfg.reltol = 0.0;
+    seedCfg.abstol = 0.0;
+    seedCfg.warmStart = true;
+    seedCfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    DDSolution initial = runNewton(mesh, matdb, doping, biases, seedCfg).solution;
+    // Inject a large quasi-Fermi perturbation on both carriers at the interior node
+    // so a single Newton step drives both updates well past the global cap.
+    initial.phin(interiorNode) = 0.30;
+    initial.phip(interiorNode) = -0.30;
+
+    NewtonConfig globalCfg = newtonConfig();
+    globalCfg.maxIter = 1;
+    globalCfg.reltol = 0.0;
+    globalCfg.abstol = 0.0;
+    globalCfg.dampingFactor = 1.0;
+    globalCfg.lineSearch = false;
+    globalCfg.warmStart = true;
+    globalCfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    globalCfg.quasiFermiUpdateLimit_V = 0.05;
+
+    NewtonConfig minorityCfg = globalCfg;
+    minorityCfg.quasiFermiUpdateLimitMinority_V = 0.01;
+
+    const NewtonResult globalResult = runNewton(
+        mesh, matdb, doping, biases, initial, globalCfg);
+    const NewtonResult minorityResult = runNewton(
+        mesh, matdb, doping, biases, initial, minorityCfg);
+
+    REQUIRE(globalResult.iters == 1);
+    REQUIRE(minorityResult.iters == 1);
+
+    const Real globalLimit = globalCfg.quasiFermiUpdateLimit_V;
+    const Real minorityLimit = minorityCfg.quasiFermiUpdateLimitMinority_V;
+
+    const Real globalPhinDelta =
+        globalResult.solution.phin(interiorNode) - initial.phin(interiorNode);
+    const Real globalPhipDelta =
+        globalResult.solution.phip(interiorNode) - initial.phip(interiorNode);
+    const Real minorityPhinDelta =
+        minorityResult.solution.phin(interiorNode) - initial.phin(interiorNode);
+    const Real minorityPhipDelta =
+        minorityResult.solution.phip(interiorNode) - initial.phip(interiorNode);
+
+    // Global cap clips both carriers identically at the p-type interior node.
+    REQUIRE(std::abs(globalPhinDelta) == Catch::Approx(globalLimit).margin(1.0e-12));
+    REQUIRE(std::abs(globalPhipDelta) == Catch::Approx(globalLimit).margin(1.0e-12));
+
+    // Minority cap tightens only the minority electron quasi-Fermi update; the
+    // majority hole quasi-Fermi update keeps the looser global cap.
+    REQUIRE(std::abs(minorityPhinDelta) == Catch::Approx(minorityLimit).margin(1.0e-12));
+    REQUIRE(std::abs(minorityPhipDelta) == Catch::Approx(globalLimit).margin(1.0e-12));
+    REQUIRE(std::abs(minorityPhinDelta) < std::abs(globalPhinDelta));
 }
 
 TEST_CASE("NewtonSolver: max-iteration exit honors stall residual floor", "[newton][line_search]")

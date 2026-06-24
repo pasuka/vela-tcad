@@ -12,7 +12,9 @@
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/ImpactIonizationModel.h"
 #include "vela/physics/MobilityModel.h"
+#include "vela/simulation/PseudoArclength.h"
 #include "vela/solver/GummelSolver.h"
+#include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <unordered_map>
@@ -32,6 +34,7 @@ struct NewtonConfig {
     bool diagnostics = false; ///< Store detailed line-search diagnostics in NewtonResult::history.
     Real maxUpdate = 0.0; ///< Optional infinity-norm cap on one Newton update in solver unknown units.
     Real quasiFermiUpdateLimit_V = 0.0; ///< Optional physical-voltage cap on phin/phip Newton updates.
+    Real quasiFermiUpdateLimitMinority_V = 0.0; ///< Optional tighter physical-voltage cap on the minority-carrier quasi-Fermi update per node; 0 disables (uses the global cap for both carriers).
     Real stallResidualFloor = 1.0e-9; ///< Residual floor for accepting line-search stalls as solved.
     Real carrierRegularizationScale = 0.0; ///< Optional carrier-row diagonal regularization scale.
     Real finiteDifferenceStep = 1.0e-6;
@@ -260,9 +263,29 @@ public:
     std::vector<CoupledDDEdgeFluxDiagnostic> evaluateSgEdgeFluxDiagnostics(
         const DDSolution& state) const;
 
+    /// Build a pseudo-arclength continuation system over the coupled drift-diffusion
+    /// residual, using the bias on `activeContact` (in volts) as the continuation
+    /// parameter lambda. The returned callbacks operate on the scaled packed state
+    /// vector [psi, phin, phip] produced by CoupledDDAssembler::pack, reusing the
+    /// exact assembler, boundary-condition construction, and Jacobian assembly of
+    /// the standard Newton solve. `biasFiniteDifferenceStep_V` sizes the central
+    /// finite difference used to estimate dF/dV.
+    ArclengthSystem makeArclengthSystem(const std::string& activeContact,
+                                        Real biasFiniteDifferenceStep_V = 1.0e-4) const;
+
+    /// Convert a physical-unit DDSolution into the scaled packed state vector and
+    /// back, consistent with makeArclengthSystem. These help drive the continuation
+    /// from a converged Newton solution and interpret the corrected state.
+    VectorXd packArclengthState(const DDSolution& state) const;
+    DDSolution unpackArclengthState(const VectorXd& x) const;
+
 private:
     CoupledDDBoundaryConditions buildBoundaryConditions(
         const CoupledDDAssembler& assembler) const;
+    CoupledDDBoundaryConditions buildBoundaryConditions(
+        const CoupledDDAssembler& assembler,
+        const std::unordered_map<std::string, Real>& contactBiases) const;
+    std::shared_ptr<CoupledDDAssembler> makeArclengthAssembler() const;
     DDScalingSpec buildScalingSpec() const;
     DDSolution buildInitialGuess(const CoupledDDAssembler& assembler,
                                  const CoupledDDBoundaryConditions& bcs) const;

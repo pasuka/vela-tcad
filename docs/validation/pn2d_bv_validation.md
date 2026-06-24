@@ -468,3 +468,447 @@ rather than binary `0.5` versus `1.0`, or move to the independent SG source-
 derivative Jacobian probe if the goal is Newton coupling rather than curve-shape
 calibration. Any intermediate policy must be gated by the same backscan knee
 summary and carrier-row required-scale summary.
+## Intermediate Source-Volume Factor Probe
+
+Implemented a default-off diagnostic override, `impact_ionization.source_volume_factor`,
+for the SG edge-current avalanche source support. The value `0` preserves the
+named `source_volume_policy` preset. A finite value in `[0.5, 1.0]` overrides
+only the edge source support factor used in `factor * h * edge.couple`; it does
+not change the Van Overstraeten coefficients and does not add the missing
+source-derivative Jacobian terms.
+
+The all-support predictor family was rescanned from `-20 V` to `-10 V` with
+intermediate factors. Every single-point restart and 11-point backscan below
+converged.
+
+| curve | source-volume factor | first 1 V growth ratio > 1.5 | first 1 V growth ratio > 2.0 | max abs log10 current error |
+|---|---:|---:|---:|---:|
+| Sentaurus | n/a | `-19.0 V` | `-20.0 V` | n/a |
+| endpoint-half baseline | `0.5` | none | none | `0.891432` decades |
+| factor probe | `0.75` | none | none | `0.649696` decades |
+| factor probe | `0.875` | none | none | `0.453697` decades |
+| factor probe | `0.90625` | `-15.0 V` | none | `0.381288` decades |
+| factor probe | `0.9375` | `-15.0 V` | none | `0.319208` decades |
+| `edge_box` policy | `1.0` | `-16.0 V` | `-19.0 V` | `0.519580` decades |
+
+The factor scan confirms that source support magnitude is a real lever, but it
+also shows a branch/continuation effect rather than a smooth calibration axis.
+Factors up to `0.875` improve absolute current error but still have no 1 V knee
+in the `-20..-10 V` gate. At `0.90625`, the `>1.5` growth marker jumps to
+`-15 V` without producing the Sentaurus `>2.0` marker at `-20 V`. Therefore an
+intermediate scalar source-volume factor should remain diagnostic-only and is
+not an acceptance fix.
+
+Carrier-row audit for `0.875` shows the local active-support required impact
+scales are close to unity on the converged predictor state (`false_negative` e/h
+`1.0055/0.9722`, `false_positive` e/h `1.0222/0.9366`), while the global curve
+still lacks the Sentaurus knee. The next ordered task is the independent SG
+edge-current avalanche source-derivative Jacobian probe against finite-difference
+block checks; if that does not move the knee, the remaining discrepancy is likely
+in branch selection/current-continuation support rather than local source volume
+alone.
+## SG Avalanche Source-Derivative Jacobian Probe
+
+Executed the independent source-derivative Jacobian gate after the intermediate
+source-volume factor scan. Current C++ already carries an SG edge-current
+avalanche source derivative path in `CoupledDDAssembler::assembleJacobian`: the
+edge source is finite-differenced with respect to endpoint `psi` and the local
+quasi-Fermi stencil, then injected into the electron and hole continuity rows.
+The probe therefore checks whether that implementation matches finite-difference
+block behavior on both a synthetic high-field fixture and real `-20 V` PN2D BV
+states.
+
+Synthetic `pn2d_jacobian_block_audit` result:
+
+| bias | block | analytic norm | FD norm | diff norm | rel diff |
+|---:|---|---:|---:|---:|---:|
+| `-20 V` | `sg_avalanche` | `7.99055e18` | `7.99054e18` | `1.65184e13` | `2.06725e-6` |
+| `-19 V` | `sg_avalanche` | `7.99055e18` | `7.99054e18` | `1.65185e13` | `2.06726e-6` |
+| `-15 V` | `sg_avalanche` | `7.99055e18` | `7.99054e18` | `1.65170e13` | `2.06707e-6` |
+
+Real all-support `-20 V` state block probes used
+`simulation_type=newton_jacobian_block_probe`, contact bias `Anode=-20 V`, and
+`blocks=["sg_avalanche"]`:
+
+| state | analytic norm | FD norm | diff norm | rel diff |
+|---|---:|---:|---:|---:|
+| endpoint-half baseline | `6.43224692543827e-14` | `6.43223981306022e-14` | `1.07307058520190e-18` | `1.07307058520190e-18` |
+| factor `0.875` | `3.30373904700992e-13` | `3.30373765609820e-13` | `5.08483411648269e-18` | `5.08483411648269e-18` |
+
+Conclusion: the SG avalanche source-derivative Jacobian block is not the current
+BV knee blocker. It is numerically aligned with finite differences on the
+synthetic gate and on the real high-field states tested here. The next ordered
+work should target branch/continuation support: compare predictor direction,
+state handoff, and current-growth branch selection around the sharp transition
+between factor `0.875` (no knee) and factor `0.90625` (`>1.5` marker jumps to
+`-15 V`).
+
+## Charon-Alignment Minimal Probes
+
+Executed three minimal Charon-alignment probes on the current PN2D Sentaurus2018
+BV deck, with a baseline row for comparison. All runs used the rebuilt release
+runner, `max_update=0`, `quasi_fermi_update_limit_V=0.1`, adaptive reverse-bias
+steps, and a `-3 V` target. Artifacts were written under
+`build-release/reference_tcad/pn2d_sentaurus2018/reports/charon_minimal_probes/`.
+
+| variant | converged rows | deepest reverse bias | terminal failure |
+|---|---:|---:|---|
+| baseline | `5/6` | `-0.875 V` | `line_search_non_decrease` |
+| `minimum_field_V_m=5.0e6` | `4/5` | `-0.75 V` | `max_iterations` |
+| `driving_force=effective_field_parallel_j` | `5/6` | `-0.8125 V` | `max_iterations` |
+| secant predictor + branch guard | `9/10` | `-0.326835876953125 V` | `electron_density_p95_jump_exceeded` |
+
+The probes are negative as production fixes. The Charon-style minimum-field
+cutoff and current-aligned driving force do not recover the missing continuation
+reach; both stop earlier than the baseline in this low-bias robustness window.
+The branch-guard probe does catch a real electron-density branch jump
+(`p95_abs_dex=3.3721` on the rejected row, threshold `2.0`), but it rejects much
+earlier than the baseline and therefore acts as a diagnostic branch detector, not
+as a continuation strategy.
+
+Conclusion: the next useful task should focus on why the accepted Newton state
+moves into that density branch before `-1 V`: inspect the first rejected/failed
+transition row around `-0.3268..-0.875 V`, comparing predicted initial state,
+accepted solution, and carrier-continuity residual direction. The Charon knobs
+alone are not sufficient to reach the `-3 V` gate.
+## Low-Bias Branch-Window QF-Cap Probe
+
+Executed the follow-up branch-window diagnostic around the first rejected
+transition from the Charon-alignment minimal probes. The branch-guard run was
+repeated with `write_state_every_point_prefix` and Newton history enabled, then
+the final two accepted states were used to reconstruct the secant predictor for
+the rejected target bias.
+
+Artifacts:
+
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/branch_window_probe/branch_window_summary.json`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/branch_window_probe/predicted_newton_step.csv`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/branch_window_probe/hot_nodes.csv`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/branch_window_qflimit_probe/summary.csv`
+
+The rejected transition is:
+
+| previous accepted | current accepted | rejected target | secant ratio | rejection |
+|---:|---:|---:|---:|---|
+| `-0.326834453125 V` | `-0.326835876953125 V` | `-0.326837585546875 V` | `1.2` | `electron_density_p95_jump_exceeded` |
+
+The reconstructed predictor already sits on the density-jump threshold:
+
+| state comparison | p95 electron-density jump | max jump | max node |
+|---|---:|---:|---:|
+| predictor vs current accepted | `2.0159389305 dex` | `2.0159399605 dex` | `753` |
+| first Newton trial vs current accepted | `3.3721311137 dex` | `3.6958660389 dex` | `517` |
+| first Newton trial vs predictor | `1.6799260723 dex` | `1.6799260785 dex` | `581` |
+
+The amplified nodes are all in the p-type region (`net_doping=-1e23 m^-3` in
+the sampled hot nodes). Their first Newton step has nearly zero `delta_psi` but
+`delta_phin=+0.1 V`, so `delta(psi-phin)=-0.1 V`. This exactly corresponds to
+`0.1/Vt/log(10)=1.6799 dex`, matching the additional density drop from predictor
+to trial. The local `phin_residual` on these nodes is already tiny (`~1e-16`),
+so the branch jump is not caused by a large local carrier-continuity residual;
+it is the configured quasi-Fermi update cap being applied coherently across the
+p-region minority-electron branch while the global residual decreases.
+
+A minimal QF-cap sweep then tested whether this mechanism is actionable under
+the same secant predictor and branch guard:
+
+| `quasi_fermi_update_limit_V` | converged rows | deepest reverse bias | failure | max accepted p95 jump |
+|---:|---:|---:|---|---:|
+| `0.1` | `9/10` | `-0.326835876953125 V` | `electron_density_p95_jump_exceeded` | n/a |
+| `0.05` | `88/88` | `-3.0 V` | none | `0.9832502361 dex` |
+| `0.025` | `54/55` | `-0.36078397757152 V` | `line_search_non_decrease` | `1.9923007654 dex` |
+
+Conclusion: the immediate low-bias blocker is a narrow continuation/update-cap
+interaction, not the Charon minimum-field or current-aligned driving-force knob.
+`quasi_fermi_update_limit_V=0.05` is the next best candidate to extend beyond
+the `-3 V` gate, while `0.1` oversteps the minority-electron branch and `0.025`
+becomes too restrictive for line search in this window.
+## QF-Cap 0.05 Full-Window BV Probe
+
+Extended the actionable low-bias candidate, `quasi_fermi_update_limit_V=0.05`,
+from the `-3 V` branch-window gate to the full `-20 V` PN2D Sentaurus2018 BV
+window. The run kept the same secant predictor and branch guard used in the
+low-bias probe.
+
+Artifacts:
+
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_minus20/qflim0p05_minus20.csv`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_minus20/qflim0p05_minus20_last_state.csv`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_minus20/knee_shape_minus20_to_minus10.json`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_minus20/summary.json`
+
+Run result:
+
+| setting | result |
+|---|---:|
+| target stop | `-20 V` |
+| converged rows | `491/491` |
+| deepest reverse bias | `-20 V` |
+| runner exit code | `0` |
+| last current | `-1.1683243405189043e-16 A/um` |
+| max accepted p95 electron-density jump | `0.9832502361 dex` |
+| max accepted electron-density jump | `1.1071203737 dex` |
+| min terminal-current consistency ratio | `0.4046220518` |
+
+The continuation robustness problem is therefore substantially improved by the
+`0.05 V` QF cap: the same branch guard that rejected the `0.1 V` cap near
+`-0.3268 V` now allows a complete `-20 V` sweep.
+
+However, the curve shape remains on the low-current/no-knee branch:
+
+| curve | first 1V growth ratio > 1.5 | first 1V growth ratio > 2.0 | max abs log10 current error, `-20..-10 V` |
+|---|---:|---:|---:|
+| Sentaurus | `-19 V` | `-20 V` | n/a |
+| Vela qf cap `0.05 V` | none | none | `0.891695` decades |
+
+Integer-bias current ratios against Sentaurus worsen toward breakdown: the log10
+current error is `-0.0924 dex` at `-10 V`, `-0.5485 dex` at `-19 V`, and
+`-0.8917 dex` at `-20 V`. The final rows have current-jump ratios very close to
+unity, so this run confirms that `qf_limit=0.05` is a continuation-stability fix,
+not an avalanche-knee fix.
+
+Next ordered task: keep `quasi_fermi_update_limit_V=0.05` as the stable
+continuation baseline and rerun the source-ownership lever on top of it, starting
+with `source_volume_factor=0.875` and `0.90625`. The acceptance question is
+whether the previously source-effective factors can now express a Sentaurus-like
+knee without reintroducing branch jumps.
+## QF-Cap 0.05 Source-Volume Factor Scan
+
+Executed the first source-ownership scan on top of the stable
+`quasi_fermi_update_limit_V=0.05` continuation baseline, keeping the same secant
+predictor and branch guard. Both source factors completed the full `-20 V`
+window.
+
+Artifacts:
+
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_source_factor_scan/summary.csv`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_source_factor_scan/factor_0p875.csv`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_source_factor_scan/factor_0p875_summary.json`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_source_factor_scan/factor_0p90625.csv`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_source_factor_scan/factor_0p90625_summary.json`
+
+| `source_volume_factor` | converged rows | deepest reverse bias | last current | max abs log10 current error, `-20..-10 V` | first 1V growth ratio > 1.5 | first 1V growth ratio > 2.0 | max accepted p95 jump |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| `0.875` | `491/491` | `-20 V` | `-3.2026773385317461e-16 A/um` | `0.453746` decades | none | none | `0.9832501955 dex` |
+| `0.90625` | `491/491` | `-20 V` | `-3.78381968433441e-16 A/um` | `0.381328` decades | none | none | `0.9832504328 dex` |
+
+Compared with the `qf_limit=0.05` default source factor (`0.891695` decades
+max error), the source-volume factor is now a stable and effective magnitude
+lever. It does not, however, recover the missing Sentaurus-like avalanche knee:
+both candidates still have no `>1.5` or `>2.0` one-volt growth marker in the
+`-20..-10 V` window.
+
+Next ordered task: extend the same stabilized scan to the higher source
+ownership candidates, especially `source_volume_factor=0.9375` and the existing
+`edge_box` ownership mode, to determine whether the knee only appears once the
+source magnitude is closer to the previous best-fit branch or whether ownership
+geometry is the remaining missing lever.
+
+## QF-Cap 0.05 High Source-Ownership Boundary Probe
+
+Extended the stabilized `quasi_fermi_update_limit_V=0.05` scan to the higher
+source-ownership candidates requested after the initial `0.875` and `0.90625`
+runs. The probe kept the same secant predictor and carrier branch guard.
+
+Artifacts:
+
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_high_source_scan/summary.csv`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_high_source_scan/factor_0p921875.csv`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_high_source_scan/factor_0p921875_knee_shape.json`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_high_source_scan/factor_0p9375.csv`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_high_source_scan/factor_0p9375_newton_failure_diagnostics.json`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_high_source_scan/edge_box.csv`
+- `build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_high_source_scan/edge_box_p95_2p1.csv`
+
+| variant | result | deepest reverse bias | max abs log10 current error, `-20..-10 V` | first 1V growth ratio > 1.5 | first 1V growth ratio > 2.0 | failure |
+|---|---:|---:|---:|---:|---:|---|
+| `source_volume_factor=0.921875` | `491/491` | `-20 V` | `0.349196` decades | `-20 V` | none | none |
+| `source_volume_factor=0.9375` | `12` stable rows | `-0.6897608 V` | n/a | n/a | n/a | `line_search_non_decrease` |
+| `source_volume_policy=edge_box` | `24` stable rows | `-0.4148548 V` | n/a | n/a | n/a | `electron_density_p95_jump_exceeded` |
+| `edge_box`, p95 guard relaxed to `2.1 dex` | `30` stable rows | `-0.4469347 V` | n/a | n/a | n/a | `line_search_non_decrease` |
+
+This places the stable high-source boundary between `0.921875` and `0.9375` for
+this continuation setup. The `0.921875` run is the best stable scalar-source
+candidate so far: it improves the max current error from `0.381328` decades at
+`0.90625` to `0.349196` decades and introduces a late `>1.5` one-volt growth
+marker at `-20 V`. It still does not reproduce Sentaurus, whose reference window
+has `>1.5` at `-19 V` and `>2.0` at `-20 V`.
+
+The full `edge_box` geometry is not just a branch-threshold edge case. With the
+original `2.0 dex` p95 guard it rejects at `-0.4148566 V`; relaxing the guard to
+`2.1 dex` only reaches `-0.4469361 V` before a Newton line-search failure. Thus
+`edge_box` is too aggressive for the current low-bias branch support under
+`qf_limit=0.05`.
+
+Next ordered task: binary-search the scalar factor interval `0.921875..0.9375`
+with the same branch guard, then inspect the first failing Newton transition at
+the unstable side. The acceptance question is whether a slightly higher stable
+factor can recover the Sentaurus `>2.0` marker or whether the low-bias Newton
+branch failure is the hard limit for source-ownership calibration.
+
+## Source-Volume Factor Branch-Divergence Probe (Task 1)
+
+Read-only diagnostic
+`scripts/diagnose_pn2d_bv_factor_branch_divergence.py` (defaults reproduce the
+run below):
+
+```
+python scripts/diagnose_pn2d_bv_factor_branch_divergence.py
+```
+
+It compares the converged `qf_limit=0.05` BV curves that differ only in
+`impact_ionization.source_volume_factor`. The three candidate decks are
+byte-for-byte identical except for that scalar (`quasi_fermi_update_limit_V=0.05`,
+secant predictor, branch guard `p95<=2.0 dex`, `driving_force=quasi_fermi_gradient`,
+`step=-0.25`), so the only varying axis is the source-volume factor.
+
+| factor | reaches -20V | first >1.5 | first >2.0 | max abs log10 current error |
+|---:|:---:|---:|---:|---:|
+| Sentaurus | n/a | `-19.0 V` | `-20.0 V` | n/a |
+| `0.875` | yes | none | none | `0.453746` |
+| `0.90625` | yes | none | none | `0.381328` |
+| `0.921875` | yes | `-20.0 V` | none | `0.349196` |
+
+Per-pair result over the `-20..-10 V` window:
+
+| pair | branch diagnostics identical | branch divergence onset | current-magnitude divergence onset | max abs current ratio | classification |
+|---|:---:|:---:|:---:|---:|---|
+| `0.875` vs `0.90625` | yes | none | `-19 V` | `0.072417` dex | source-volume magnitude |
+| `0.90625` vs `0.921875` | yes | none | `-14 V` | `0.146448` dex | source-volume magnitude |
+
+Across the window every candidate shares an identical continuation branch:
+same `predicted_initial_state`, same `branch_acceptance_status`, identical
+`electron_density_jump_p95_abs_dex` trajectory (max `0.98325 dex` for all three),
+and identical adaptive `retry_count`. The factors differ only by a smooth current
+magnitude scaling. The `>1.5` marker that first appears at `0.921875` is therefore
+a smooth threshold crossing of the rescaled magnitude at the window edge
+(`-20 V`), not a discrete branch jump.
+
+**Classification: source-volume MAGNITUDE on a single shared branch, not a
+continuation/predictor branch selection.** Scalar source-volume selection cannot
+synthesize the Sentaurus knee on this axis; the knee blocker lies in the
+continuation/branch mechanism itself. The ordered next work is pseudo-arclength
+continuation plus local minority quasi-Fermi update caps, not further scalar
+factor binary search.
+
+### Reproducibility correction
+
+This probe does not reproduce the earlier "Intermediate Source-Volume Factor
+Probe" table that reported `0.90625` giving a `>1.5` marker at `-15 V` and
+`0.9375` reaching `-20 V` with a `>1.5` marker. Against the current on-disk
+artifacts the on-disk knee summaries instead show `0.90625` with no `>1.5`
+marker (`first_growth_over_1p5_V=null`), `0.921875` as the first factor with a
+`>1.5` marker (at `-20 V`), and `0.9375` failing at low bias (`-0.6897606 V`,
+`line_search_non_decrease`) so it never enters the `-20..-10 V` window. The
+stale table should be re-derived from the reproducible scan before being cited.
+
+## Minority Quasi-Fermi Update-Cap Scan (Task 3)
+
+Harness `scripts/run_pn2d_bv_minority_qf_cap_scan.py` clones the BV deck with
+default half-box avalanche source support (`source_volume_factor` removed) and
+varies only the Newton quasi-Fermi update caps:
+`solver.quasi_fermi_update_limit_V` (global/majority) and the new
+`solver.quasi_fermi_update_limit_minority_V` (tighter, minority-only,
+classified per node by net doping). All other continuation settings match the
+`qf_limit=0.05` baseline (secant predictor, branch guard `p95<=2.0 dex`,
+`driving_force=quasi_fermi_gradient`, `step=-0.25`).
+
+Low-bias gate (`stop=-1 V`):
+
+| global | minority | deepest reverse bias | gate result | max accepted p95 jump |
+|---:|---:|---:|---|---:|
+| `0.1` | uniform | `-0.327 V` | fail `electron_density_p95_jump_exceeded` | `1.9181` |
+| `0.1` | `0.05` | `-1.0 V` | pass | `0.9833` |
+| `0.1` | `0.025` | `-1.0 V` | pass | `0.7063` |
+| `0.05` | uniform | `-1.0 V` | pass | `0.9833` |
+
+Knee window (full `stop=-20 V`):
+
+| global | minority | converged rows | reaches -20V | max accepted p95 jump | max abs log10 current error |
+|---:|---:|---:|:---:|---:|---:|
+| `0.05` | uniform (baseline) | `491` | yes | `0.98325` | `0.891695` |
+| `0.1` | `0.05` | `491` | yes | `0.98325` | `0.891695` |
+| `0.1` | `0.025` | `546` | yes | `0.70634` | `0.891695` |
+
+**Result: improvement at the low-bias gate with no knee-window regression.** A
+minority-only cap unblocks the exact `-0.327 V` gate that uniform `global=0.1`
+fails, by suppressing the minority (electron) density jump that trips the branch
+guard while leaving the majority carrier free. At full `-20 V` every minority
+candidate reaches the same deepest bias as the uniform `0.05` baseline at an
+identical `0.891695`-decade max current error; `minority=0.025` even lowers the
+max accepted p95 jump (`0.706` vs `0.983`) and takes finer adaptive steps
+(`546` vs `491` rows). The minority cap is therefore a continuation-stability
+lever, not a knee-synthesis lever: like the baseline, none of these recover the
+Sentaurus `>1.5`/`>2.0` markers (all `null`), consistent with the Task 1 finding
+that the knee requires a different continuation mechanism (pseudo-arclength).
+
+## Minority Quasi-Fermi Update Cap (Task 3)
+
+The global `quasi_fermi_update_limit_V` clips electron and hole quasi-Fermi
+Newton updates uniformly. The prior continuation sweeps showed this scalar is a
+blunt instrument: `0.025` is too restrictive (low-bias `line_search_non_decrease`),
+`0.1` fails near `-0.327 V` with `electron_density_p95_jump_exceeded`, and only
+`0.05` reaches `-20 V`. The branch jumps that trip the guard are minority-carrier
+quasi-Fermi excursions, so a uniform cap over-constrains the majority carrier.
+
+A new optional Newton key `quasi_fermi_update_limit_minority_V` adds a per-node
+minority-carrier cap. Each node is classified by local net doping
+(`netDoping < 0` p-type makes `phin` the minority update; `netDoping > 0` n-type
+makes `phip` the minority update). When set `> 0` it tightens only the minority
+carrier to `min(quasi_fermi_update_limit_V, quasi_fermi_update_limit_minority_V)`
+while the majority carrier keeps the looser global cap. The default `0`
+reproduces the existing uniform behavior exactly (verified: the prior
+`quasi-Fermi update limit recomputes Poisson correction` test is unchanged, and
+a new `minority quasi-Fermi update limit caps only the minority carrier per node`
+test confirms electron-minority clipping to the minority cap with the hole
+majority retained at the global cap on a p-type node).
+
+This is the localized continuation lever recommended after the Task 1 finding
+that scalar source-volume selection cannot synthesize the knee. The end-to-end
+BV comparison matrix (low-bias gate at global `0.1`/`0.05` with minority caps
+vs. the uniform baselines, plus the `-20..-10 V` knee window) is the next
+release-sweep experiment; the mechanism and its default-off safety are landed
+and unit-tested here ahead of that campaign.
+
+## Pseudo-Arclength Continuation (Task 2)
+
+Tasks 1 and 3 localized the knee blocker to the continuation mechanism: at the
+avalanche knee `dI/dV -> infinity`, so any voltage-parameterized step is
+unstable there regardless of local source modeling or quasi-Fermi caps.
+Pseudo-arclength (Keller) continuation treats the bias as an unknown and adds an
+arclength constraint, keeping the augmented system nonsingular through the fold.
+
+Landed and unit-tested in this change:
+
+- **Generic engine** (`include/vela/simulation/PseudoArclength.h`): a tangent
+  predictor plus a bordered-Newton corrector with the arclength constraint
+  `N = x_dot . (x - x0) + theta^2 * lambda_dot * (lambda - lambda0) - Delta s`.
+  The corrector reuses the system Jacobian through a `solveJacobian` callback
+  (block elimination: `a = J^-1(-F)`, `z = J^-1(F_lambda)`,
+  `Delta lambda = (-N - x_dot.a) / (theta^2 lambda_dot - x_dot.z)`,
+  `Delta x = a - z Delta lambda`) with adaptive arclength stepping.
+  `tests/test_pseudo_arclength.cpp` proves it traverses the unit-circle fold at
+  `lambda = 1` onto the `x < 0` branch that voltage stepping cannot reach.
+- **Device adapter** (`NewtonSolver::makeArclengthSystem`): builds an
+  `ArclengthSystem` over the coupled drift-diffusion residual with the bias on a
+  chosen contact as the continuation parameter, reusing the exact assembler,
+  boundary-condition construction, and sparse Jacobian assembly of the Newton
+  solve. `dF/dV` is a central finite difference of the contact boundary values.
+  `tests/test_newton_solver.cpp` (`[newton][arclength]`) confirms the bordered
+  corrector advances a converged PN-diode equilibrium off `0 V` while keeping
+  `||F||_inf` below tolerance on the real device Jacobian.
+- **Sweep config plumbing** (`sweep.continuation.arclength`, default disabled):
+  parsed and bounds-validated in `DCSweep`, with `tests/test_dc_sweep.cpp`
+  covering valid parsing and each rejection path. Default decks are unchanged.
+
+**Honest status / remaining gap.** The numerical engine, the device-level
+bordered corrector, and the default-off configuration surface are complete and
+unit-tested. What remains before the BV acceptance markers (`>1.5` 1V-growth at
+`-19 V`, `>2.0` at `-20 V`) can be reported is wiring the arclength driver into
+the `bv_reverse` main loop (replacing the voltage-step iterator, feeding the
+branch-guard p95 jump as a step-shrink signal, and emitting the existing CSV
+columns) and running the `-20..-10 V` release sweep. That integration and its
+multi-minute validation are deliberately staged after the corrector was proven
+on the real device Jacobian here, to avoid destabilizing the shared Newton path;
+the Sentaurus knee recovery itself is therefore not yet demonstrated and is the
+explicit next step.

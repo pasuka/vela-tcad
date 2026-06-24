@@ -1153,3 +1153,77 @@ rather than binary `0.5` versus `1.0`, or move to the independent SG source-
 derivative Jacobian probe if the goal is Newton coupling rather than curve-shape
 calibration. Any intermediate policy must be gated by the same backscan knee
 summary and carrier-row required-scale summary.
+## Intermediate Source-Volume Factor Probe
+
+Implemented a default-off diagnostic override, `impact_ionization.source_volume_factor`,
+for the SG edge-current avalanche source support. The value `0` preserves the
+named `source_volume_policy` preset. A finite value in `[0.5, 1.0]` overrides
+only the edge source support factor used in `factor * h * edge.couple`; it does
+not change the Van Overstraeten coefficients and does not add the missing
+source-derivative Jacobian terms.
+
+The all-support predictor family was rescanned from `-20 V` to `-10 V` with
+intermediate factors. Every single-point restart and 11-point backscan below
+converged.
+
+| curve | source-volume factor | first 1 V growth ratio > 1.5 | first 1 V growth ratio > 2.0 | max abs log10 current error |
+|---|---:|---:|---:|---:|
+| Sentaurus | n/a | `-19.0 V` | `-20.0 V` | n/a |
+| endpoint-half baseline | `0.5` | none | none | `0.891432` decades |
+| factor probe | `0.75` | none | none | `0.649696` decades |
+| factor probe | `0.875` | none | none | `0.453697` decades |
+| factor probe | `0.90625` | `-15.0 V` | none | `0.381288` decades |
+| factor probe | `0.9375` | `-15.0 V` | none | `0.319208` decades |
+| `edge_box` policy | `1.0` | `-16.0 V` | `-19.0 V` | `0.519580` decades |
+
+The factor scan confirms that source support magnitude is a real lever, but it
+also shows a branch/continuation effect rather than a smooth calibration axis.
+Factors up to `0.875` improve absolute current error but still have no 1 V knee
+in the `-20..-10 V` gate. At `0.90625`, the `>1.5` growth marker jumps to
+`-15 V` without producing the Sentaurus `>2.0` marker at `-20 V`. Therefore an
+intermediate scalar source-volume factor should remain diagnostic-only and is
+not an acceptance fix.
+
+Carrier-row audit for `0.875` shows the local active-support required impact
+scales are close to unity on the converged predictor state (`false_negative` e/h
+`1.0055/0.9722`, `false_positive` e/h `1.0222/0.9366`), while the global curve
+still lacks the Sentaurus knee. The next ordered task is the independent SG
+edge-current avalanche source-derivative Jacobian probe against finite-difference
+block checks; if that does not move the knee, the remaining discrepancy is likely
+in branch selection/current-continuation support rather than local source volume
+alone.
+## SG Avalanche Source-Derivative Jacobian Probe
+
+Executed the independent source-derivative Jacobian gate after the intermediate
+source-volume factor scan. Current C++ already carries an SG edge-current
+avalanche source derivative path in `CoupledDDAssembler::assembleJacobian`: the
+edge source is finite-differenced with respect to endpoint `psi` and the local
+quasi-Fermi stencil, then injected into the electron and hole continuity rows.
+The probe therefore checks whether that implementation matches finite-difference
+block behavior on both a synthetic high-field fixture and real `-20 V` PN2D BV
+states.
+
+Synthetic `pn2d_jacobian_block_audit` result:
+
+| bias | block | analytic norm | FD norm | diff norm | rel diff |
+|---:|---|---:|---:|---:|---:|
+| `-20 V` | `sg_avalanche` | `7.99055e18` | `7.99054e18` | `1.65184e13` | `2.06725e-6` |
+| `-19 V` | `sg_avalanche` | `7.99055e18` | `7.99054e18` | `1.65185e13` | `2.06726e-6` |
+| `-15 V` | `sg_avalanche` | `7.99055e18` | `7.99054e18` | `1.65170e13` | `2.06707e-6` |
+
+Real all-support `-20 V` state block probes used
+`simulation_type=newton_jacobian_block_probe`, contact bias `Anode=-20 V`, and
+`blocks=["sg_avalanche"]`:
+
+| state | analytic norm | FD norm | diff norm | rel diff |
+|---|---:|---:|---:|---:|
+| endpoint-half baseline | `6.43224692543827e-14` | `6.43223981306022e-14` | `1.07307058520190e-18` | `1.07307058520190e-18` |
+| factor `0.875` | `3.30373904700992e-13` | `3.30373765609820e-13` | `5.08483411648269e-18` | `5.08483411648269e-18` |
+
+Conclusion: the SG avalanche source-derivative Jacobian block is not the current
+BV knee blocker. It is numerically aligned with finite differences on the
+synthetic gate and on the real high-field states tested here. The next ordered
+work should target branch/continuation support: compare predictor direction,
+state handoff, and current-growth branch selection around the sharp transition
+between factor `0.875` (no knee) and factor `0.90625` (`>1.5` marker jumps to
+`-15 V`).

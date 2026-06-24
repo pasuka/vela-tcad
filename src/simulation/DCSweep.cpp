@@ -885,6 +885,85 @@ void parseSweepContinuationConfig(const nlohmann::json& sweepJson,
                 "must be finite and non-negative when carrier_density_jump is enabled.");
         }
     }
+
+    if (continuation.contains("arclength")) {
+        const auto& arclength = continuation.at("arclength");
+        if (!arclength.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.continuation.arclength must be an object.");
+        SweepArclengthConfig& cfg = sweep.continuation.arclength;
+        cfg.enabled = arclength.value("enabled", cfg.enabled);
+        cfg.predictor = arclength.value("predictor", cfg.predictor);
+        if (cfg.predictor != "tangent") {
+            throw std::invalid_argument(
+                "DCSweep: sweep.continuation.arclength.predictor must be 'tangent'.");
+        }
+        cfg.core.enabled = cfg.enabled;
+        cfg.core.initialStep = arclength.value("initial_step", cfg.core.initialStep);
+        cfg.core.minStep = arclength.value("min_step", cfg.core.minStep);
+        cfg.core.maxStep = arclength.value("max_step", cfg.core.maxStep);
+        cfg.core.growthFactor = arclength.value("growth_factor", cfg.core.growthFactor);
+        cfg.core.shrinkFactor = arclength.value("shrink_factor", cfg.core.shrinkFactor);
+        cfg.core.maxCorrectorIterations =
+            arclength.value("max_corrector_iterations", cfg.core.maxCorrectorIterations);
+        cfg.core.correctorTolerance =
+            arclength.value("corrector_tolerance", cfg.core.correctorTolerance);
+        cfg.core.maxStepRetries = arclength.value("max_step_retries", cfg.core.maxStepRetries);
+        cfg.core.parameterScale = arclength.value("parameter_scale", cfg.core.parameterScale);
+        cfg.biasFiniteDifferenceStep_V =
+            arclength.value("bias_finite_difference_step_V", cfg.biasFiniteDifferenceStep_V);
+
+        if (cfg.enabled) {
+            auto requirePositive = [&](Real value, const char* key) {
+                if (!std::isfinite(value) || value <= 0.0) {
+                    throw std::invalid_argument(
+                        std::string("DCSweep: sweep.continuation.arclength.") + key +
+                        " must be finite and positive when arclength continuation is enabled.");
+                }
+            };
+            requirePositive(cfg.core.initialStep, "initial_step");
+            requirePositive(cfg.core.minStep, "min_step");
+            requirePositive(cfg.core.maxStep, "max_step");
+            requirePositive(cfg.core.parameterScale, "parameter_scale");
+            requirePositive(cfg.biasFiniteDifferenceStep_V, "bias_finite_difference_step_V");
+            if (cfg.core.minStep > cfg.core.maxStep) {
+                throw std::invalid_argument(
+                    "DCSweep: sweep.continuation.arclength.min_step must not exceed max_step.");
+            }
+            if (cfg.core.initialStep < cfg.core.minStep ||
+                cfg.core.initialStep > cfg.core.maxStep) {
+                throw std::invalid_argument(
+                    "DCSweep: sweep.continuation.arclength.initial_step must lie within "
+                    "[min_step, max_step].");
+            }
+            if (!std::isfinite(cfg.core.growthFactor) || cfg.core.growthFactor < 1.0) {
+                throw std::invalid_argument(
+                    "DCSweep: sweep.continuation.arclength.growth_factor must be finite "
+                    "and at least 1.");
+            }
+            if (!std::isfinite(cfg.core.shrinkFactor) ||
+                cfg.core.shrinkFactor <= 0.0 || cfg.core.shrinkFactor >= 1.0) {
+                throw std::invalid_argument(
+                    "DCSweep: sweep.continuation.arclength.shrink_factor must be in (0, 1).");
+            }
+            if (cfg.core.maxCorrectorIterations <= 0) {
+                throw std::invalid_argument(
+                    "DCSweep: sweep.continuation.arclength.max_corrector_iterations "
+                    "must be positive.");
+            }
+            if (!std::isfinite(cfg.core.correctorTolerance) ||
+                cfg.core.correctorTolerance <= 0.0) {
+                throw std::invalid_argument(
+                    "DCSweep: sweep.continuation.arclength.corrector_tolerance "
+                    "must be finite and positive.");
+            }
+            if (cfg.core.maxStepRetries < 0) {
+                throw std::invalid_argument(
+                    "DCSweep: sweep.continuation.arclength.max_step_retries "
+                    "must be non-negative.");
+            }
+        }
+    }
 }
 
 DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,

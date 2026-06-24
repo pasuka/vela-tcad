@@ -500,6 +500,130 @@ inline Real holeAvalancheDrivingField(const ImpactIonizationModelConfig& config,
         config.holeDrivingForceRefDensity);
 }
 
+inline bool usesCurrentAlignedAvalancheDrivingForce(
+    const ImpactIonizationModelConfig& config)
+{
+    return config.drivingForce == "grad_potential_parallel_j" ||
+           config.drivingForce == "effective_field_parallel_j";
+}
+
+inline Real parallelCurrentAvalancheDrivingField(Real signedDrivingField,
+                                                Real signedCurrentProxy)
+{
+    if (!std::isfinite(signedDrivingField) || !std::isfinite(signedCurrentProxy) ||
+        std::abs(signedCurrentProxy) <= 0.0) {
+        return 0.0;
+    }
+    const Real currentSign = signedCurrentProxy > 0.0 ? 1.0 : -1.0;
+    return std::max(signedDrivingField * currentSign, 0.0);
+}
+
+/// Resolves the SG edge-current avalanche source-volume factor used in
+/// `factor * h * edge.couple`. A finite `source_volume_factor` overrides the
+/// named `source_volume_policy` preset; `0` falls back to the preset.
+inline Real avalancheSourceVolumeFactor(const ImpactIonizationModelConfig& config)
+{
+    if (config.sourceVolumeFactor > 0.0)
+        return config.sourceVolumeFactor;
+    return config.sourceVolumePolicy == "edge_box" ? 1.0 : 0.5;
+}
+
+/// Validates the impact-ionization configuration shared by the Gummel and
+/// Newton solver config loaders. `context` is prefixed to any thrown message.
+inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& config,
+                                                 const char* context)
+{
+    const bool currentAlignedDrivingForce = usesCurrentAlignedAvalancheDrivingForce(config);
+    if (config.drivingForce != "electric_field" &&
+        config.drivingForce != "quasi_fermi_gradient" &&
+        !currentAlignedDrivingForce) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.driving_force must be 'electric_field', "
+            "'quasi_fermi_gradient', 'grad_potential_parallel_j', or "
+            "'effective_field_parallel_j'.");
+    }
+    if (config.generation != "carrier_density" &&
+        config.generation != "current_density") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.generation must be 'carrier_density' or "
+            "'current_density'.");
+    }
+    if (config.currentApproximation != "mobility_density_gradient" &&
+        config.currentApproximation != "density_gradient" &&
+        config.currentApproximation != "grad_qf") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.current_approximation must be "
+            "'mobility_density_gradient', 'density_gradient', or 'grad_qf'.");
+    }
+    if (config.drivingForceInterpolation != "none" &&
+        config.drivingForceInterpolation != "quasi_fermi_to_electric_field") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.driving_force_interpolation.mode must be "
+            "'none' or 'quasi_fermi_to_electric_field'.");
+    }
+    if (currentAlignedDrivingForce &&
+        (config.generation != "current_density" ||
+         (config.currentApproximation != "density_gradient" &&
+          config.currentApproximation != "grad_qf"))) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization current-aligned driving forces require "
+            "generation='current_density' with current_approximation='density_gradient' "
+            "or 'grad_qf'.");
+    }
+    if (config.drivingForceInterpolation != "none" &&
+        config.drivingForce != "quasi_fermi_gradient") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.driving_force_interpolation requires "
+            "driving_force='quasi_fermi_gradient'.");
+    }
+    if (!std::isfinite(config.electronDrivingForceRefDensity) ||
+        !std::isfinite(config.holeDrivingForceRefDensity) ||
+        config.electronDrivingForceRefDensity < 0.0 ||
+        config.holeDrivingForceRefDensity < 0.0) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization driving-force reference densities must be "
+            "finite and non-negative.");
+    }
+    if (!std::isfinite(config.sourceGeometryScale) ||
+        config.sourceGeometryScale <= 0.0) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.source_geometry_scale must be positive and finite.");
+    }
+    if (config.sourceVolumePolicy != "edge_half_box" &&
+        config.sourceVolumePolicy != "edge_box") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.source_volume_policy must be 'edge_half_box' or 'edge_box'.");
+    }
+    if (config.sourceVolumeFactor != 0.0 &&
+        (!std::isfinite(config.sourceVolumeFactor) ||
+         config.sourceVolumeFactor < 0.5 ||
+         config.sourceVolumeFactor > 1.0)) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.source_volume_factor must be 0 or within [0.5, 1.0].");
+    }
+    if (!std::isfinite(config.quasiFermiCarrierTruncation) ||
+        config.quasiFermiCarrierTruncation < 0.0) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.quasi_fermi_carrier_truncation must be non-negative and finite.");
+    }
+    if (!std::isfinite(config.minimumField) || config.minimumField < 0.0) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.minimum_field_V_m must be non-negative and finite.");
+    }
+}
+
 inline bool usesDensityGradientAvalancheCurrent(
     const ImpactIonizationModelConfig& config)
 {
@@ -880,6 +1004,7 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
     std::vector<SgEdgeCurrentAvalancheSourceRecord> records;
     records.reserve(mesh.numEdges());
     const bool qfImpact = config.drivingForce == "quasi_fermi_gradient";
+    const bool currentAlignedImpact = usesCurrentAlignedAvalancheDrivingForce(config);
     const bool qfMobility = mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient";
     const std::vector<bool> contactNodes = contactNodeMask(mesh);
     const CellScalarGradientCache electronQfGradientCache = computeCellScalarGradientCache(
@@ -930,12 +1055,9 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
 
         const Real nAvg = 0.5 * (n(i) + n(j));
         const Real pAvg = 0.5 * (p(i) + p(j));
-        const Real electronImpactField = electronAvalancheDrivingField(
-            config, electronCoefficientField, electricField, nAvg);
-        const Real holeImpactField = holeAvalancheDrivingField(
-            config, holeCoefficientField, electricField, pAvg);
+        const Real signedElectricField01 = -(psi_j - psi_i) / h;
 
-        const Real sourceVolumeFactor = (config.sourceVolumePolicy == "edge_box") ? 1.0 : 0.5;
+        const Real sourceVolumeFactor = avalancheSourceVolumeFactor(config);
         const Real edgeArea = sourceVolumeFactor * h * edge.couple * config.sourceGeometryScale;
         SgEdgeCurrentAvalancheSourceRecord record;
         record.edgeId = e;
@@ -945,10 +1067,6 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
         record.edgeCouple = edge.couple;
         record.edgeAreaProxy = edgeArea;
         record.electricField = electricField;
-        record.electronImpactField = electronImpactField;
-        record.holeImpactField = holeImpactField;
-        record.electronAlpha = impact.electronCoefficient(electronImpactField);
-        record.holeAlpha = impact.holeCoefficient(holeImpactField);
 
         const Real mun = edgeMobility(
             edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Electron,
@@ -966,6 +1084,12 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
                     Vt,
                     mun * Vt / h);
             record.electronFluxProxy = std::abs(electronContinuityFlux01);
+            record.electronImpactField = currentAlignedImpact
+                ? parallelCurrentAvalancheDrivingField(
+                    signedElectricField01, electronContinuityFlux01)
+                : electronAvalancheDrivingField(
+                    config, electronCoefficientField, electricField, nAvg);
+            record.electronAlpha = impact.electronCoefficient(record.electronImpactField);
             record.electronSourceIntegral =
                 record.electronAlpha * record.electronFluxProxy * edgeArea;
             record.edgeSourceIntegral += record.electronSourceIntegral;
@@ -987,6 +1111,12 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
                     Vt,
                     mup * Vt / h);
             record.holeFluxProxy = std::abs(holeContinuityFlux01);
+            record.holeImpactField = currentAlignedImpact
+                ? parallelCurrentAvalancheDrivingField(
+                    signedElectricField01, holeContinuityFlux01)
+                : holeAvalancheDrivingField(
+                    config, holeCoefficientField, electricField, pAvg);
+            record.holeAlpha = impact.holeCoefficient(record.holeImpactField);
             record.holeSourceIntegral =
                 record.holeAlpha * record.holeFluxProxy * edgeArea;
             record.edgeSourceIntegral += record.holeSourceIntegral;

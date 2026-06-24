@@ -16,9 +16,9 @@ SelberherrImpactIonization::SelberherrImpactIonization(ImpactIonizationModelConf
 {
     if (config_.electronA < 0.0 || config_.holeA < 0.0 ||
         config_.electronB <= 0.0 || config_.holeB <= 0.0 ||
-        config_.carrierVelocity < 0.0) {
+        config_.carrierVelocity < 0.0 || config_.minimumField < 0.0) {
         throw std::invalid_argument(
-            "SelberherrImpactIonization: prefactors/velocity must be non-negative and critical fields positive.");
+            "SelberherrImpactIonization: prefactors/velocity/minimum field must be non-negative and critical fields positive.");
     }
 }
 
@@ -35,11 +35,15 @@ Real SelberherrImpactIonization::coefficient(Real electricField,
 
 Real SelberherrImpactIonization::electronCoefficient(Real electricField) const
 {
+    if (std::abs(electricField) < config_.minimumField)
+        return 0.0;
     return coefficient(electricField, config_.electronA, config_.electronB);
 }
 
 Real SelberherrImpactIonization::holeCoefficient(Real electricField) const
 {
+    if (std::abs(electricField) < config_.minimumField)
+        return 0.0;
     return coefficient(electricField, config_.holeA, config_.holeB);
 }
 
@@ -74,6 +78,9 @@ VanOverstraetenImpactIonization::VanOverstraetenImpactIonization(
         config_.holeBHigh,
         config_.switchField,
     };
+    if (config_.minimumField < 0.0)
+        throw std::invalid_argument(
+            "VanOverstraetenImpactIonization: minimum field must be non-negative.");
     for (Real field : criticalFields) {
         if (field <= 0.0)
             throw std::invalid_argument(
@@ -121,6 +128,8 @@ Real VanOverstraetenImpactIonization::coefficient(Real electricField,
 
 Real VanOverstraetenImpactIonization::electronCoefficient(Real electricField) const
 {
+    if (std::abs(electricField) < config_.minimumField)
+        return 0.0;
     return coefficient(
         electricField,
         config_.switchField,
@@ -133,6 +142,8 @@ Real VanOverstraetenImpactIonization::electronCoefficient(Real electricField) co
 
 Real VanOverstraetenImpactIonization::holeCoefficient(Real electricField) const
 {
+    if (std::abs(electricField) < config_.minimumField)
+        return 0.0;
     return coefficient(
         electricField,
         config_.switchField,

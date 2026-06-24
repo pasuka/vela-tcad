@@ -1,15 +1,18 @@
 #include "vela/solver/NewtonSolver.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/UnitScalingSystem.h"
+#include "vela/equation/AssemblerUtils.h"
 #include "vela/numerics/ResidualNorm.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/solver/LinearSolver.h"
 #include <nlohmann/json.hpp>
+#include <Eigen/SparseLU>
 #include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -17,74 +20,6 @@
 
 namespace vela {
 namespace {
-
-void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& config,
-                                          const char* context)
-{
-    if (config.drivingForce != "electric_field" &&
-        config.drivingForce != "quasi_fermi_gradient") {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.driving_force must be 'electric_field' or "
-            "'quasi_fermi_gradient'.");
-    }
-    if (config.generation != "carrier_density" &&
-        config.generation != "current_density") {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.generation must be 'carrier_density' or "
-            "'current_density'.");
-    }
-    if (config.currentApproximation != "mobility_density_gradient" &&
-        config.currentApproximation != "density_gradient" &&
-        config.currentApproximation != "grad_qf") {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.current_approximation must be "
-            "'mobility_density_gradient', 'density_gradient', or 'grad_qf'.");
-    }
-    if (config.drivingForceInterpolation != "none" &&
-        config.drivingForceInterpolation != "quasi_fermi_to_electric_field") {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.driving_force_interpolation.mode must be "
-            "'none' or 'quasi_fermi_to_electric_field'.");
-    }
-    if (config.drivingForceInterpolation != "none" &&
-        config.drivingForce != "quasi_fermi_gradient") {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.driving_force_interpolation requires "
-            "driving_force='quasi_fermi_gradient'.");
-    }
-    if (!std::isfinite(config.electronDrivingForceRefDensity) ||
-        !std::isfinite(config.holeDrivingForceRefDensity) ||
-        config.electronDrivingForceRefDensity < 0.0 ||
-        config.holeDrivingForceRefDensity < 0.0) {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization driving-force reference densities must be "
-            "finite and non-negative.");
-    }
-    if (!std::isfinite(config.sourceGeometryScale) ||
-        config.sourceGeometryScale <= 0.0) {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.source_geometry_scale must be positive and finite.");
-    }
-    if (config.sourceVolumePolicy != "edge_half_box" &&
-        config.sourceVolumePolicy != "edge_box") {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.source_volume_policy must be 'edge_half_box' or 'edge_box'.");
-    }
-    if (!std::isfinite(config.quasiFermiCarrierTruncation) ||
-        config.quasiFermiCarrierTruncation < 0.0) {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.quasi_fermi_carrier_truncation must be non-negative and finite.");
-    }
-}
 
 void parseImpactIonizationDrivingForceInterpolation(
     const nlohmann::json& value,
@@ -376,7 +311,8 @@ Real addCarrierRowRegularization(SparseMatrixd& matrix,
 bool applyConfiguredStepCaps(VectorXd& step,
                              const NewtonConfig& cfg,
                              int nodeCount,
-                             Real potentialScale)
+                             Real potentialScale,
+                             const DopingModel& doping)
 {
     if (cfg.maxUpdate > 0.0) {
         const Real maxAbsStep = step.cwiseAbs().maxCoeff();
@@ -384,18 +320,42 @@ bool applyConfiguredStepCaps(VectorXd& step,
             step *= cfg.maxUpdate / maxAbsStep;
     }
 
-    bool clippedQuasiFermi = false;
-    if (cfg.quasiFermiUpdateLimit_V > 0.0) {
-        const Real qfLimit = cfg.quasiFermiUpdateLimit_V / potentialScale;
-        for (int i = nodeCount; i < 3 * nodeCount; ++i) {
-            if (step(i) > qfLimit) {
-                step(i) = qfLimit;
-                clippedQuasiFermi = true;
-            } else if (step(i) < -qfLimit) {
-                step(i) = -qfLimit;
-                clippedQuasiFermi = true;
-            }
+    const Real globalLimit = cfg.quasiFermiUpdateLimit_V > 0.0
+        ? cfg.quasiFermiUpdateLimit_V / potentialScale
+        : 0.0;
+    const Real minorityLimit = cfg.quasiFermiUpdateLimitMinority_V > 0.0
+        ? cfg.quasiFermiUpdateLimitMinority_V / potentialScale
+        : 0.0;
+    if (globalLimit <= 0.0 && minorityLimit <= 0.0)
+        return false;
+
+    const auto resolveLimit = [&](bool isMinority) -> Real {
+        if (isMinority && minorityLimit > 0.0)
+            return globalLimit > 0.0 ? std::min(globalLimit, minorityLimit)
+                                     : minorityLimit;
+        return globalLimit;
+    };
+    const auto clampEntry = [&](int index, Real limit) -> bool {
+        if (limit <= 0.0)
+            return false;
+        if (step(index) > limit) {
+            step(index) = limit;
+            return true;
         }
+        if (step(index) < -limit) {
+            step(index) = -limit;
+            return true;
+        }
+        return false;
+    };
+
+    bool clippedQuasiFermi = false;
+    for (int i = 0; i < nodeCount; ++i) {
+        const Real net = doping.netDoping(i);
+        const bool electronMinority = net < 0.0; // p-type node
+        const bool holeMinority = net > 0.0;     // n-type node
+        clippedQuasiFermi |= clampEntry(nodeCount + i, resolveLimit(electronMinority));
+        clippedQuasiFermi |= clampEntry(2 * nodeCount + i, resolveLimit(holeMinority));
     }
     return clippedQuasiFermi;
 }
@@ -422,10 +382,11 @@ void applyConfiguredStepCapsAndPoissonRecorrection(VectorXd& step,
                                                    const VectorXd& residual,
                                                    const NewtonConfig& cfg,
                                                    int nodeCount,
-                                                   Real potentialScale)
+                                                   Real potentialScale,
+                                                   const DopingModel& doping)
 {
     const bool clippedQuasiFermi = applyConfiguredStepCaps(
-        step, cfg, nodeCount, potentialScale);
+        step, cfg, nodeCount, potentialScale, doping);
     if (clippedQuasiFermi)
         recorrectPoissonStepForClippedQuasiFermi(step, J, residual, nodeCount);
 }
@@ -615,6 +576,9 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.quasiFermiUpdateLimit_V = json.value(
         "quasi_fermi_update_limit_V",
         cfg.quasiFermiUpdateLimit_V);
+    cfg.quasiFermiUpdateLimitMinority_V = json.value(
+        "quasi_fermi_update_limit_minority_V",
+        cfg.quasiFermiUpdateLimitMinority_V);
     cfg.stallResidualFloor = json.value("stall_residual_floor", cfg.stallResidualFloor);
     cfg.carrierRegularizationScale = json.value(
         "carrier_regularization_scale",
@@ -708,12 +672,16 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "source_geometry_scale", cfg.impactIonization.sourceGeometryScale);
             cfg.impactIonization.sourceVolumePolicy = value.value(
                 "source_volume_policy", cfg.impactIonization.sourceVolumePolicy);
+            cfg.impactIonization.sourceVolumeFactor = value.value(
+                "source_volume_factor", cfg.impactIonization.sourceVolumeFactor);
             cfg.impactIonization.quasiFermiCarrierTruncation = value.value(
                 "quasi_fermi_carrier_truncation",
                 cfg.impactIonization.quasiFermiCarrierTruncation);
             cfg.impactIonization.quasiFermiCarrierTruncation = value.value(
                 "quasi_fermi_carrier_trucation",
                 cfg.impactIonization.quasiFermiCarrierTruncation);
+            cfg.impactIonization.minimumField = scaling.electricFieldToSI(value.value(
+                "minimum_field_V_m", cfg.impactIonization.minimumField));
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());
@@ -779,7 +747,7 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "newtonConfigFromJson: impact_ionization must be a string or object.");
         }
     }
-    validateImpactIonizationDrivingForce(cfg.impactIonization, "newtonConfigFromJson");
+    detail::validateImpactIonizationDrivingForce(cfg.impactIonization, "newtonConfigFromJson");
 
     if (cfg.jacobian != "analytic" && cfg.jacobian != "finite_difference")
         throw std::invalid_argument(
@@ -790,6 +758,10 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (cfg.quasiFermiUpdateLimit_V < 0.0 || !std::isfinite(cfg.quasiFermiUpdateLimit_V))
         throw std::invalid_argument(
             "newtonConfigFromJson: quasi_fermi_update_limit_V must be non-negative and finite.");
+    if (cfg.quasiFermiUpdateLimitMinority_V < 0.0 ||
+        !std::isfinite(cfg.quasiFermiUpdateLimitMinority_V))
+        throw std::invalid_argument(
+            "newtonConfigFromJson: quasi_fermi_update_limit_minority_V must be non-negative and finite.");
     if (cfg.stallResidualFloor < 0.0 || !std::isfinite(cfg.stallResidualFloor))
         throw std::invalid_argument(
             "newtonConfigFromJson: stall_residual_floor must be non-negative and finite.");
@@ -894,6 +866,13 @@ DDScalingSpec NewtonSolver::buildScalingSpec() const
 CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
     const CoupledDDAssembler& assembler) const
 {
+    return buildBoundaryConditions(assembler, contactBiases_);
+}
+
+CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
+    const CoupledDDAssembler& assembler,
+    const std::unordered_map<std::string, Real>& contactBiases) const
+{
     CoupledDDBoundaryConditions bcs;
     const auto& ni = assembler.intrinsicDensity();
     const double Vt = thermalVoltage(cfg_.temperature_K);
@@ -914,8 +893,8 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
 
     for (Index c = 0; c < mesh_.numContacts(); ++c) {
         const Contact& contact = mesh_.getContact(c);
-        auto it = contactBiases_.find(contact.name);
-        if (it == contactBiases_.end()) continue;
+        auto it = contactBiases.find(contact.name);
+        if (it == contactBiases.end()) continue;
 
         const double Vbias = it->second;
         const bool relaxByBiasAndTopology =
@@ -1020,6 +999,106 @@ DDSolution NewtonSolver::makeSolution(const CoupledDDAssembler& assembler,
     return sol;
 }
 
+std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler() const
+{
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(cfg_.recombination, cfg_.taun, cfg_.taup);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    const DDScalingSpec scaling = buildScalingSpec();
+    return std::make_shared<CoupledDDAssembler>(
+        mesh_,
+        matdb_,
+        doping_,
+        Vt,
+        mobilityConfig,
+        recombinationConfig,
+        cfg_.bandgapNarrowing,
+        cfg_.impactIonization,
+        fixedCharges_,
+        sheetCharges_,
+        scaling);
+}
+
+ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeContact,
+                                                  Real biasFiniteDifferenceStep_V) const
+{
+    if (!(biasFiniteDifferenceStep_V > 0.0) ||
+        !std::isfinite(biasFiniteDifferenceStep_V)) {
+        throw std::invalid_argument(
+            "NewtonSolver::makeArclengthSystem: biasFiniteDifferenceStep_V must be "
+            "finite and positive.");
+    }
+    if (contactBiases_.find(activeContact) == contactBiases_.end()) {
+        throw std::invalid_argument(
+            "NewtonSolver::makeArclengthSystem: active contact '" + activeContact +
+            "' is not present in the contact bias map.");
+    }
+
+    auto assembler = makeArclengthAssembler();
+    const NewtonSolver* self = this;
+    const std::unordered_map<std::string, Real> baseBiases = contactBiases_;
+    const Real h = biasFiniteDifferenceStep_V;
+
+    auto biasesAt = [baseBiases, activeContact](Real lambda) {
+        std::unordered_map<std::string, Real> biases = baseBiases;
+        biases[activeContact] = lambda;
+        return biases;
+    };
+
+    ArclengthSystem system;
+    system.residual = [self, assembler, biasesAt](const VectorXd& x, Real lambda) {
+        const CoupledDDBoundaryConditions bcs =
+            self->buildBoundaryConditions(*assembler, biasesAt(lambda));
+        return assembler->residual(x, bcs);
+    };
+    system.parameterDerivative =
+        [self, assembler, biasesAt, h](const VectorXd& x, Real lambda) {
+            const CoupledDDBoundaryConditions bcsPlus =
+                self->buildBoundaryConditions(*assembler, biasesAt(lambda + h));
+            const CoupledDDBoundaryConditions bcsMinus =
+                self->buildBoundaryConditions(*assembler, biasesAt(lambda - h));
+            const VectorXd fPlus = assembler->residual(x, bcsPlus);
+            const VectorXd fMinus = assembler->residual(x, bcsMinus);
+            return VectorXd((fPlus - fMinus) / (2.0 * h));
+        };
+    system.solveJacobian =
+        [self, assembler, biasesAt](const VectorXd& x, Real lambda,
+                                    const VectorXd& b, VectorXd& y) {
+            const CoupledDDBoundaryConditions bcs =
+                self->buildBoundaryConditions(*assembler, biasesAt(lambda));
+            const SparseMatrixd jacobian = assembler->assembleJacobian(x, bcs);
+            Eigen::SparseLU<SparseMatrixd> lu;
+            lu.compute(jacobian);
+            if (lu.info() != Eigen::Success)
+                return false;
+            y = lu.solve(b);
+            if (lu.info() != Eigen::Success)
+                return false;
+            return y.allFinite();
+        };
+    return system;
+}
+
+VectorXd NewtonSolver::packArclengthState(const DDSolution& state) const
+{
+    auto assembler = makeArclengthAssembler();
+    const Real potentialScale =
+        assembler->usesScaledState() ? assembler->potentialScale() : 1.0;
+    return assembler->pack({
+        state.psi / potentialScale,
+        state.phin / potentialScale,
+        state.phip / potentialScale});
+}
+
+DDSolution NewtonSolver::unpackArclengthState(const VectorXd& x) const
+{
+    auto assembler = makeArclengthAssembler();
+    return makeSolution(*assembler, x, 0);
+}
+
 NewtonResidualEvaluation NewtonSolver::evaluateResidual(const DDSolution& state) const
 {
     const double Vt = thermalVoltage(cfg_.temperature_K);
@@ -1099,7 +1178,7 @@ NewtonStepEvaluation NewtonSolver::evaluateStep(const DDSolution& state) const
 
     const int N = static_cast<int>(mesh_.numNodes());
     applyConfiguredStepCapsAndPoissonRecorrection(
-        step, J, raw, cfg_, N, potentialScale);
+        step, J, raw, cfg_, N, potentialScale, doping_);
 
     const VectorXd trialX = x + step;
     const VectorXd trialRaw = assembler.residual(trialX, bcs);
@@ -1253,7 +1332,7 @@ NewtonBlockStepEvaluation NewtonSolver::evaluateBlockStep(
     }
 
     const Real rawStepNorm = step.norm();
-    applyConfiguredStepCaps(step, cfg_, N, potentialScale);
+    applyConfiguredStepCaps(step, cfg_, N, potentialScale, doping_);
     const VectorXd trialX = x + step;
     const VectorXd trialRaw = assembler.residual(trialX, bcs);
 
@@ -1346,7 +1425,7 @@ NewtonRegularizedCarrierStepEvaluation NewtonSolver::evaluateRegularizedCarrierS
         linearSolver.solve(regularizedBlock, -raw.segment(N, 2 * N));
 
     const Real rawStepNorm = step.norm();
-    applyConfiguredStepCaps(step, cfg_, N, potentialScale);
+    applyConfiguredStepCaps(step, cfg_, N, potentialScale, doping_);
     const VectorXd trialX = x + step;
     const VectorXd trialRaw = assembler.residual(trialX, bcs);
 
@@ -1413,7 +1492,7 @@ NewtonCarrierRowDiagnosticsEvaluation NewtonSolver::evaluateCarrierRowDiagnostic
     rawStep.segment(N, 2 * N) =
         linearSolver.solve(carrierBlock, -raw.segment(N, 2 * N));
     VectorXd cappedStep = rawStep;
-    applyConfiguredStepCaps(cappedStep, cfg_, N, potentialScale);
+    applyConfiguredStepCaps(cappedStep, cfg_, N, potentialScale, doping_);
 
     std::vector<Real> electronRowAbs(static_cast<std::size_t>(N), 0.0);
     std::vector<Real> holeRowAbs(static_cast<std::size_t>(N), 0.0);
@@ -1815,7 +1894,7 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
                                  const SparseMatrixd& jacobian,
                                  const VectorXd& residual) {
         applyConfiguredStepCapsAndPoissonRecorrection(
-            candidateStep, jacobian, residual, cfg_, N, potentialScale);
+            candidateStep, jacobian, residual, cfg_, N, potentialScale, doping_);
     };
 
     VectorXd acceptedX = x;

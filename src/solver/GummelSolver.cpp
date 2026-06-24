@@ -24,74 +24,6 @@ namespace vela {
 
 namespace {
 
-void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& config,
-                                          const char* context)
-{
-    if (config.drivingForce != "electric_field" &&
-        config.drivingForce != "quasi_fermi_gradient") {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.driving_force must be 'electric_field' or "
-            "'quasi_fermi_gradient'.");
-    }
-    if (config.generation != "carrier_density" &&
-        config.generation != "current_density") {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.generation must be 'carrier_density' or "
-            "'current_density'.");
-    }
-    if (config.currentApproximation != "mobility_density_gradient" &&
-        config.currentApproximation != "density_gradient" &&
-        config.currentApproximation != "grad_qf") {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.current_approximation must be "
-            "'mobility_density_gradient', 'density_gradient', or 'grad_qf'.");
-    }
-    if (config.drivingForceInterpolation != "none" &&
-        config.drivingForceInterpolation != "quasi_fermi_to_electric_field") {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.driving_force_interpolation.mode must be "
-            "'none' or 'quasi_fermi_to_electric_field'.");
-    }
-    if (config.drivingForceInterpolation != "none" &&
-        config.drivingForce != "quasi_fermi_gradient") {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.driving_force_interpolation requires "
-            "driving_force='quasi_fermi_gradient'.");
-    }
-    if (!std::isfinite(config.electronDrivingForceRefDensity) ||
-        !std::isfinite(config.holeDrivingForceRefDensity) ||
-        config.electronDrivingForceRefDensity < 0.0 ||
-        config.holeDrivingForceRefDensity < 0.0) {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization driving-force reference densities must be "
-            "finite and non-negative.");
-    }
-    if (!std::isfinite(config.sourceGeometryScale) ||
-        config.sourceGeometryScale <= 0.0) {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.source_geometry_scale must be positive and finite.");
-    }
-    if (config.sourceVolumePolicy != "edge_half_box" &&
-        config.sourceVolumePolicy != "edge_box") {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.source_volume_policy must be 'edge_half_box' or 'edge_box'.");
-    }
-    if (!std::isfinite(config.quasiFermiCarrierTruncation) ||
-        config.quasiFermiCarrierTruncation < 0.0) {
-        throw std::invalid_argument(
-            std::string(context) +
-            ": impact_ionization.quasi_fermi_carrier_truncation must be non-negative and finite.");
-    }
-}
-
 void parseImpactIonizationDrivingForceInterpolation(
     const nlohmann::json& value,
     const UnitScalingConfig& scaling,
@@ -284,12 +216,16 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "source_geometry_scale", cfg.impactIonization.sourceGeometryScale);
             cfg.impactIonization.sourceVolumePolicy = value.value(
                 "source_volume_policy", cfg.impactIonization.sourceVolumePolicy);
+            cfg.impactIonization.sourceVolumeFactor = value.value(
+                "source_volume_factor", cfg.impactIonization.sourceVolumeFactor);
             cfg.impactIonization.quasiFermiCarrierTruncation = value.value(
                 "quasi_fermi_carrier_truncation",
                 cfg.impactIonization.quasiFermiCarrierTruncation);
             cfg.impactIonization.quasiFermiCarrierTruncation = value.value(
                 "quasi_fermi_carrier_trucation",
                 cfg.impactIonization.quasiFermiCarrierTruncation);
+            cfg.impactIonization.minimumField = scaling.electricFieldToSI(value.value(
+                "minimum_field_V_m", cfg.impactIonization.minimumField));
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());
@@ -355,7 +291,7 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "gummelConfigFromJson: impact_ionization must be a string or object.");
         }
     }
-    validateImpactIonizationDrivingForce(cfg.impactIonization, "gummelConfigFromJson");
+    detail::validateImpactIonizationDrivingForce(cfg.impactIonization, "gummelConfigFromJson");
 
     if (cfg.temperature_K <= 0.0)
         throw std::invalid_argument("gummelConfigFromJson: temperature_K must be positive.");

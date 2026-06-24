@@ -1110,6 +1110,50 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
     });
     REQUIRE(gummelVolumePolicyCfg.impactIonization.sourceVolumePolicy == "edge_box");
 
+    const NewtonConfig sourceVolumeFactorCfg = newtonConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"source_volume_factor", 0.75},
+        }}
+    });
+    REQUIRE(sourceVolumeFactorCfg.impactIonization.sourceVolumeFactor == Catch::Approx(0.75));
+
+    const GummelConfig gummelSourceVolumeFactorCfg = gummelConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"source_volume_factor", 0.75},
+        }}
+    });
+    REQUIRE(gummelSourceVolumeFactorCfg.impactIonization.sourceVolumeFactor == Catch::Approx(0.75));
+
+    const NewtonConfig charonLikeCfg = newtonConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"driving_force", "effective_field_parallel_j"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"minimum_field_V_m", 5.0e6},
+        }}
+    });
+    REQUIRE(charonLikeCfg.impactIonization.drivingForce == "effective_field_parallel_j");
+    REQUIRE(charonLikeCfg.impactIonization.minimumField == Catch::Approx(5.0e6));
+
+    const GummelConfig gummelCharonLikeCfg = gummelConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"driving_force", "grad_potential_parallel_j"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"minimum_field_V_m", 5.0e6},
+        }}
+    });
+    REQUIRE(gummelCharonLikeCfg.impactIonization.drivingForce == "grad_potential_parallel_j");
+    REQUIRE(gummelCharonLikeCfg.impactIonization.minimumField == Catch::Approx(5.0e6));
+
     REQUIRE_THROWS_AS(newtonConfigFromJson({
         {"impact_ionization", {
             {"model", "van_overstraeten"},
@@ -1126,6 +1170,22 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
             {"source_volume_policy", "unsupported"},
         }}
     }), std::invalid_argument);
+    REQUIRE_THROWS_AS(newtonConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"source_volume_factor", 1.25},
+        }}
+    }), std::invalid_argument);
+    REQUIRE_THROWS_AS(gummelConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"source_volume_factor", 0.25},
+        }}
+    }), std::invalid_argument);
     REQUIRE(sourceGeometryCfg.impactIonization.quasiFermiCarrierTruncation == Catch::Approx(1.0e-2));
 
     REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
@@ -1134,6 +1194,48 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
             {"driving_force", "electrostatic"},
         }}
     }), std::invalid_argument);
+    REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"minimum_field_V_m", -1.0},
+        }}
+    }), std::invalid_argument);
+}
+
+TEST_CASE("Van Overstraeten impact ionization supports Charon-style minimum field cutoff",
+          "[impact]")
+{
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "van_overstraeten";
+    impactConfig.minimumField = 5.0e6;
+    impactConfig.electronALow = 10.0;
+    impactConfig.electronAHigh = 10.0;
+    impactConfig.electronBLow = 1.0;
+    impactConfig.electronBHigh = 1.0;
+    impactConfig.holeALow = 20.0;
+    impactConfig.holeAHigh = 20.0;
+    impactConfig.holeBLow = 1.0;
+    impactConfig.holeBHigh = 1.0;
+    impactConfig.switchField = 1.0e7;
+
+    const auto impact = makeImpactIonizationModel(impactConfig);
+
+    REQUIRE(impact->electronCoefficient(4.999e6) == 0.0);
+    REQUIRE(impact->holeCoefficient(4.999e6) == 0.0);
+    REQUIRE(impact->electronCoefficient(5.001e6) > 0.0);
+    REQUIRE(impact->holeCoefficient(5.001e6) > 0.0);
+}
+
+TEST_CASE("Current-aligned avalanche driving field keeps only field parallel to carrier current",
+          "[impact][diagnostic]")
+{
+    REQUIRE(detail::parallelCurrentAvalancheDrivingField(2.0e6, 3.0) ==
+            Catch::Approx(2.0e6));
+    REQUIRE(detail::parallelCurrentAvalancheDrivingField(2.0e6, -3.0) == 0.0);
+    REQUIRE(detail::parallelCurrentAvalancheDrivingField(-2.0e6, -3.0) ==
+            Catch::Approx(2.0e6));
+    REQUIRE(detail::parallelCurrentAvalancheDrivingField(-2.0e6, 3.0) == 0.0);
+    REQUIRE(detail::parallelCurrentAvalancheDrivingField(2.0e6, 0.0) == 0.0);
 }
 
 TEST_CASE("Grad-QF avalanche source can rebuild driving field with GSS carrier truncation",
@@ -1488,6 +1590,26 @@ TEST_CASE("SG edge current avalanche source supports diagnostic volume policy",
         ni,
         Vt);
 
+    impactConfig.sourceVolumeFactor = 0.75;
+    const auto interpolatedImpact = makeImpactIonizationModel(impactConfig);
+    const auto interpolated = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *interpolatedImpact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        Vt);
+
+    impactConfig.sourceVolumeFactor = 0.0;
     impactConfig.sourceVolumePolicy = "edge_box";
     const auto fullEdgeImpact = makeImpactIonizationModel(impactConfig);
     const auto fullEdge = detail::sgEdgeCurrentAvalancheSourceRecords(
@@ -1508,8 +1630,13 @@ TEST_CASE("SG edge current avalanche source supports diagnostic volume policy",
         Vt);
 
     REQUIRE(fullEdge.size() == base.size());
+    REQUIRE(interpolated.size() == base.size());
     bool sawNonzeroSource = false;
     for (std::size_t i = 0; i < base.size(); ++i) {
+        REQUIRE(interpolated[i].edgeAreaProxy == Catch::Approx(1.5 * base[i].edgeAreaProxy));
+        REQUIRE(interpolated[i].edgeSourceIntegral == Catch::Approx(1.5 * base[i].edgeSourceIntegral));
+        REQUIRE(interpolated[i].node0SourceIntegral == Catch::Approx(1.5 * base[i].node0SourceIntegral));
+        REQUIRE(interpolated[i].node1SourceIntegral == Catch::Approx(1.5 * base[i].node1SourceIntegral));
         REQUIRE(fullEdge[i].edgeAreaProxy == Catch::Approx(2.0 * base[i].edgeAreaProxy));
         REQUIRE(fullEdge[i].edgeSourceIntegral == Catch::Approx(2.0 * base[i].edgeSourceIntegral));
         REQUIRE(fullEdge[i].node0SourceIntegral == Catch::Approx(2.0 * base[i].node0SourceIntegral));

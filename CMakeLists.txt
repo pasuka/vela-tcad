@@ -280,6 +280,9 @@ target_link_libraries(test_line_search_backtrack_failure PRIVATE vela_core Catch
 add_executable(test_dc_sweep tests/test_dc_sweep.cpp)
 target_link_libraries(test_dc_sweep PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_pseudo_arclength tests/test_pseudo_arclength.cpp)
+target_link_libraries(test_pseudo_arclength PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_solution_validation tests/test_solution_validation.cpp)
 add_executable(test_stored_charge tests/test_stored_charge.cpp)
 target_link_libraries(test_stored_charge PRIVATE vela_core Catch2::Catch2WithMain)
@@ -345,6 +348,8 @@ vela_catch_discover_tests(test_recombination)
 vela_catch_discover_tests(test_line_search_backtrack_failure)
 vela_catch_discover_tests(test_dc_sweep)
 add_test(NAME dc_sweep COMMAND test_dc_sweep [dc_sweep])
+vela_catch_discover_tests(test_pseudo_arclength)
+add_test(NAME pseudo_arclength COMMAND test_pseudo_arclength [arclength])
 vela_catch_discover_tests(test_solution_validation)
 vela_catch_discover_tests(test_stored_charge)
 vela_catch_discover_tests(test_electric_field_diagnostics)

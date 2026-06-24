@@ -829,6 +829,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         ? detail::computeNodeElectricFields(psi, mesh_)
         : std::vector<Real>{};
     const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
+    const bool currentAlignedImpact =
+        detail::usesCurrentAlignedAvalancheDrivingForce(impactIonizationConfig_);
     const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
         ? detail::computeNodeScalarGradientMagnitudes(
             x.segment(phinOffset(), N) * potentialScale, mesh_)
@@ -930,20 +932,24 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real holeMobilityField = qfMobility ? holeQfField : electricField;
         const Real nAvg = 0.5 * (n_i + n_j);
         const Real pAvg = 0.5 * (p_i + p_j);
-        const Real electronImpactField = detail::electronAvalancheDrivingField(
-            impactIonizationConfig_, electronCoefficientField, electricField, nAvg);
-        const Real holeImpactField = detail::holeAvalancheDrivingField(
-            impactIonizationConfig_, holeCoefficientField, electricField, pAvg);
+        const Real signedElectricField01 = -(psi_j - psi_i) / h;
+        const Real sourceVolumeFactor =
+            detail::avalancheSourceVolumeFactor(impactIonizationConfig_);
         const Real edgeArea =
-            0.5 * h * couple_e * impactIonizationConfig_.sourceGeometryScale;
+            sourceVolumeFactor * h * couple_e * impactIonizationConfig_.sourceGeometryScale;
 
         Real electronSource = 0.0;
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e,
             CarrierType::Electron, electronMobilityField, &mobilityConfig_, &psi);
         if (mun > 0.0) {
-            const Real fluxN = std::abs(sgElectronContinuityFluxFromQuasiFermiVariableNi(
-                niI, niJ, psi_i, psi_j, phin_i, phin_j, Vt_, mun * Vt_ / h, bgnEnabled_));
+            const Real signedFluxN = sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                niI, niJ, psi_i, psi_j, phin_i, phin_j, Vt_, mun * Vt_ / h, bgnEnabled_);
+            const Real fluxN = std::abs(signedFluxN);
+            const Real electronImpactField = currentAlignedImpact
+                ? detail::parallelCurrentAvalancheDrivingField(signedElectricField01, signedFluxN)
+                : detail::electronAvalancheDrivingField(
+                    impactIonizationConfig_, electronCoefficientField, electricField, nAvg);
             const Real alphaN = impactIonization_->electronCoefficient(electronImpactField);
             electronSource = alphaN * fluxN * edgeArea;
         }
@@ -953,8 +959,13 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e,
             CarrierType::Hole, holeMobilityField, &mobilityConfig_, &psi);
         if (mup > 0.0) {
-            const Real fluxP = std::abs(sgHoleContinuityFluxFromQuasiFermiVariableNi(
-                niI, niJ, psi_i, psi_j, phip_i, phip_j, Vt_, mup * Vt_ / h, bgnEnabled_));
+            const Real signedFluxP = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                niI, niJ, psi_i, psi_j, phip_i, phip_j, Vt_, mup * Vt_ / h, bgnEnabled_);
+            const Real fluxP = std::abs(signedFluxP);
+            const Real holeImpactField = currentAlignedImpact
+                ? detail::parallelCurrentAvalancheDrivingField(signedElectricField01, signedFluxP)
+                : detail::holeAvalancheDrivingField(
+                    impactIonizationConfig_, holeCoefficientField, electricField, pAvg);
             const Real alphaP = impactIonization_->holeCoefficient(holeImpactField);
             holeSource = alphaP * fluxP * edgeArea;
         }

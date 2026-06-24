@@ -7,6 +7,7 @@
 #include "vela/post/ContactCurrent.h"
 #include "vela/post/TerminalCharge.h"
 #include "vela/post/StoredCharge.h"
+#include "vela/simulation/PseudoArclength.h"
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
 #include <limits>
@@ -86,9 +87,21 @@ struct SweepBranchAcceptanceConfig {
         std::numeric_limits<Real>::infinity();
 };
 
+struct SweepArclengthConfig {
+    bool enabled = false;
+    /// Arclength predictor type. Only "tangent" is currently supported.
+    std::string predictor = "tangent";
+    /// Numerical parameters forwarded to PseudoArclengthContinuation. The bias
+    /// voltage acts as the continuation parameter lambda.
+    PseudoArclengthConfig core;
+    /// Finite-difference step (in volts) used to estimate dF/dV at the active contact.
+    Real biasFiniteDifferenceStep_V = 1.0e-4;
+};
+
 struct SweepContinuationConfig {
     SweepPredictorConfig predictor;
     SweepBranchAcceptanceConfig branchAcceptance;
+    SweepArclengthConfig arclength;
 };
 
 struct DCSweepConfig {

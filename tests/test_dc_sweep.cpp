@@ -1323,6 +1323,122 @@ TEST_CASE("DCSweep: continuation predictor config is validated",
                 "DCSweep: sweep.continuation.branch_acceptance."
                 "max_electron_density_jump_p95_abs_dex"));
     }
+
+    SECTION("disabled arclength continuation skips bounds validation")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"arclength", {
+                {"enabled", false},
+                {"initial_step", -1.0}
+            }}
+        });
+        const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+        REQUIRE(result.points.size() == 1);
+    }
+
+    SECTION("enabled arclength continuation parses valid parameters")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"arclength", {
+                {"enabled", true},
+                {"predictor", "tangent"},
+                {"initial_step", 0.2},
+                {"min_step", 0.01},
+                {"max_step", 0.5},
+                {"growth_factor", 1.2},
+                {"shrink_factor", 0.5},
+                {"max_corrector_iterations", 20},
+                {"corrector_tolerance", 1.0e-8},
+                {"max_step_retries", 6},
+                {"parameter_scale", 1.0},
+                {"bias_finite_difference_step_V", 1.0e-4}
+            }}
+        });
+        const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+        REQUIRE(result.points.size() == 1);
+    }
+
+    SECTION("invalid arclength predictor is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"arclength", {
+                {"enabled", true},
+                {"predictor", "secant"},
+                {"initial_step", 0.2},
+                {"min_step", 0.01},
+                {"max_step", 0.5}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.arclength.predictor must be 'tangent'."));
+    }
+
+    SECTION("non-positive arclength initial step is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"arclength", {
+                {"enabled", true},
+                {"initial_step", 0.0},
+                {"min_step", 0.01},
+                {"max_step", 0.5}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.arclength.initial_step"));
+    }
+
+    SECTION("arclength min_step exceeding max_step is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"arclength", {
+                {"enabled", true},
+                {"initial_step", 0.2},
+                {"min_step", 0.6},
+                {"max_step", 0.5}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.arclength.min_step must not exceed max_step."));
+    }
+
+    SECTION("arclength initial_step outside [min_step, max_step] is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"arclength", {
+                {"enabled", true},
+                {"initial_step", 0.9},
+                {"min_step", 0.01},
+                {"max_step", 0.5}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.arclength.initial_step must lie within"));
+    }
+
+    SECTION("arclength shrink_factor outside (0, 1) is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"arclength", {
+                {"enabled", true},
+                {"initial_step", 0.2},
+                {"min_step", 0.01},
+                {"max_step", 0.5},
+                {"shrink_factor", 1.5}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.arclength.shrink_factor must be in (0, 1)."));
+    }
 }
 
 TEST_CASE("DCSweep: terminal balance diagnostics reuse one solution for two contacts",
