@@ -54,6 +54,51 @@ PseudoArclengthConfig makeCircleConfig()
     return config;
 }
 
+ArclengthSystem makeSineSystem()
+{
+    ArclengthSystem system;
+    system.residual = [](const VectorXd& x, Real lambda) {
+        VectorXd f(1);
+        f(0) = std::sin(x(0)) - lambda;
+        return f;
+    };
+    system.parameterDerivative = [](const VectorXd&, Real) {
+        VectorXd d(1);
+        d(0) = -1.0;
+        return d;
+    };
+    system.solveJacobian = [](const VectorXd& x, Real, const VectorXd& b, VectorXd& y) {
+        const Real jac = std::cos(x(0));
+        if (!std::isfinite(jac) || std::abs(jac) < 1.0e-12)
+            return false;
+        y.resize(1);
+        y(0) = b(0) / jac;
+        return y.allFinite();
+    };
+    return system;
+}
+
+ArclengthSystem makeLinearWeightedSystem(int n)
+{
+    ArclengthSystem system;
+    system.residual = [n](const VectorXd& x, Real lambda) {
+        VectorXd f(n);
+        for (int i = 0; i < n; ++i)
+            f(i) = x(i) + static_cast<Real>(i + 1) * lambda;
+        return f;
+    };
+    system.parameterDerivative = [n](const VectorXd&, Real) {
+        VectorXd d(n);
+        for (int i = 0; i < n; ++i)
+            d(i) = static_cast<Real>(i + 1);
+        return d;
+    };
+    system.solveJacobian = [](const VectorXd&, Real, const VectorXd& b, VectorXd& y) {
+        y = b;
+        return true;
+    };
+    return system;
+}
 } // namespace
 
 TEST_CASE("PseudoArclength: continuation crosses a turning point", "[arclength]")
@@ -111,6 +156,63 @@ TEST_CASE("PseudoArclength: step fails when length falls below min_step",
     ArclengthStepResult result = continuation.step(point, tangent, 0.2);
     REQUIRE_FALSE(result.converged);
     REQUIRE(result.failureReason == "arclength step shrank below min_step");
+}
+
+TEST_CASE("PseudoArclength: line search damps a stiff scalar corrector",
+          "[arclength]")
+{
+    PseudoArclengthConfig config = makeCircleConfig();
+    config.initialStep = 5.0;
+    config.minStep = 5.0;
+    config.maxStep = 5.0;
+    config.maxStepRetries = 0;
+    config.maxCorrectorIterations = 80;
+    config.correctorTolerance = 1.0e-8;
+    config.dampingFactor = 1.0;
+
+    ArclengthState point;
+    point.x = VectorXd::Constant(1, 0.0);
+    point.lambda = 0.0;
+
+    PseudoArclengthConfig fullStepConfig = config;
+    fullStepConfig.maxLineSearchSteps = 0;
+    PseudoArclengthContinuation fullStep(makeSineSystem(), fullStepConfig);
+    const ArclengthTangent fullStepTangent = fullStep.computeTangent(point, +1.0);
+    const ArclengthStepResult fullStepResult =
+        fullStep.step(point, fullStepTangent, fullStepConfig.initialStep);
+    REQUIRE_FALSE(fullStepResult.converged);
+
+    config.maxLineSearchSteps = 12;
+    PseudoArclengthContinuation damped(makeSineSystem(), config);
+    const ArclengthTangent tangent = damped.computeTangent(point, +1.0);
+    const ArclengthStepResult result = damped.step(point, tangent, config.initialStep);
+
+    REQUIRE(result.converged);
+    REQUIRE(result.residualNorm <= config.correctorTolerance);
+    const VectorXd f = makeSineSystem().residual(result.state.x, result.state.lambda);
+    REQUIRE(f.lpNorm<Eigen::Infinity>() <= config.correctorTolerance);
+}
+
+TEST_CASE("PseudoArclength: tangent normalization uses weighted state norm",
+          "[arclength]")
+{
+    constexpr int n = 4;
+    PseudoArclengthConfig config = makeCircleConfig();
+    config.stateWeight = 0.25;
+    config.parameterScale = 2.0;
+    PseudoArclengthContinuation continuation(makeLinearWeightedSystem(n), config);
+
+    ArclengthState point;
+    point.x = VectorXd::Zero(n);
+    point.lambda = 0.0;
+
+    const ArclengthTangent tangent = continuation.computeTangent(point, +1.0);
+    const Real theta2 = config.parameterScale * config.parameterScale;
+    const Real norm =
+        config.stateWeight * tangent.xDot.squaredNorm() +
+        theta2 * tangent.lambdaDot * tangent.lambdaDot;
+
+    REQUIRE(norm == Approx(1.0).margin(1.0e-12));
 }
 
 TEST_CASE("PseudoArclength: missing callbacks are rejected", "[arclength]")

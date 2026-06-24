@@ -790,7 +790,15 @@ disabled; the bias on `sweep.contact` is the continuation parameter):
 - `sweep.continuation.arclength.max_step_retries`: non-negative number of shrink
   retries before a step is abandoned.
 - `sweep.continuation.arclength.parameter_scale`: positive weight `theta` of the
-  bias component in the arclength norm `||x_dot||^2 + theta^2 * lambda_dot^2 = 1`.
+  bias component in the arclength norm.
+- `sweep.continuation.arclength.state_weight`: finite non-negative weight for
+  state-space inner products. The default `0` selects the mesh-size-independent
+  value `1 / state_dimension`, so the norm is
+  `state_weight * ||x_dot||^2 + theta^2 * lambda_dot^2 = 1`.
+- `sweep.continuation.arclength.damping_factor`: finite initial corrector
+  line-search damping factor in `(0, 1]`.
+- `sweep.continuation.arclength.max_line_search_steps`: non-negative number of
+  corrector backtracking halvings allowed per bordered-Newton update.
 - `sweep.continuation.arclength.bias_finite_difference_step_V`: positive finite
   voltage step used to estimate `dF/dV` for the bordered system.
 

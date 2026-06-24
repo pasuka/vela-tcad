@@ -7,6 +7,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace vela {
 
@@ -32,9 +33,16 @@ struct PseudoArclengthConfig {
     Real correctorTolerance = 1.0e-8;
     /// Maximum number of shrink retries before the step is abandoned.
     int maxStepRetries = 8;
-    /// Weight (theta) of the parameter component in the arclength norm
-    /// ||x_dot||^2 + theta^2 * lambda_dot^2 = 1. Must be > 0.
+    /// Weight (theta) of the parameter component in the arclength norm.
+    /// Must be > 0.
     Real parameterScale = 1.0;
+    /// Weight applied to state-space inner products. A value of 0 selects
+    /// the mesh-size-independent default 1 / x.size().
+    Real stateWeight = 0.0;
+    /// Initial damping factor for corrector backtracking. Must be in (0, 1].
+    Real dampingFactor = 1.0;
+    /// Maximum number of residual-monotone backtracking halvings per corrector step.
+    int maxLineSearchSteps = 10;
 };
 
 /// A point on the solution branch: state vector x and continuation parameter lambda.
@@ -81,7 +89,7 @@ struct ArclengthSystem {
 ///
 /// The engine implements a tangent predictor followed by a bordered-Newton
 /// corrector that augments the system with one arclength constraint equation
-///   N(x, lambda) = x_dot . (x - x0) + theta^2 * lambda_dot * (lambda - lambda0) - Delta s.
+///   N(x, lambda) = w*x_dot . (x - x0) + theta^2 * lambda_dot * (lambda - lambda0) - Delta s.
 /// Because lambda is treated as an unknown, the augmented system remains
 /// nonsingular at turning points where dlambda/d(arclength) -> 0, allowing the
 /// branch to be traced across a fold that voltage-parameterized stepping cannot.
@@ -98,6 +106,19 @@ public:
         if (!(config_.parameterScale > 0.0) || !std::isfinite(config_.parameterScale)) {
             throw std::invalid_argument(
                 "PseudoArclengthContinuation: parameterScale must be finite and positive.");
+        }
+        if (config_.stateWeight < 0.0 || !std::isfinite(config_.stateWeight)) {
+            throw std::invalid_argument(
+                "PseudoArclengthContinuation: stateWeight must be finite and non-negative.");
+        }
+        if (!(config_.dampingFactor > 0.0) || config_.dampingFactor > 1.0 ||
+            !std::isfinite(config_.dampingFactor)) {
+            throw std::invalid_argument(
+                "PseudoArclengthContinuation: dampingFactor must be finite and in (0, 1].");
+        }
+        if (config_.maxLineSearchSteps < 0) {
+            throw std::invalid_argument(
+                "PseudoArclengthContinuation: maxLineSearchSteps must be non-negative.");
         }
     }
 
@@ -120,7 +141,8 @@ public:
                 "PseudoArclengthContinuation: Jacobian solve failed while computing tangent.");
         }
         const Real theta2 = config_.parameterScale * config_.parameterScale;
-        const Real denom = std::sqrt(z.squaredNorm() + theta2);
+        const Real stateWeight = stateWeightForSize(point.x.size());
+        const Real denom = std::sqrt(stateWeight * z.squaredNorm() + theta2);
         if (!(denom > 0.0) || !std::isfinite(denom)) {
             throw std::runtime_error(
                 "PseudoArclengthContinuation: degenerate tangent normalization.");
@@ -131,7 +153,8 @@ public:
         tangent.xDot = -tangent.lambdaDot * z;
         if (previous != nullptr) {
             const Real inner =
-                tangent.xDot.dot(previous->xDot) + theta2 * tangent.lambdaDot * previous->lambdaDot;
+                stateWeight * tangent.xDot.dot(previous->xDot) +
+                theta2 * tangent.lambdaDot * previous->lambdaDot;
             if (inner < 0.0) {
                 tangent.xDot = -tangent.xDot;
                 tangent.lambdaDot = -tangent.lambdaDot;
@@ -151,6 +174,7 @@ public:
     {
         ArclengthStepResult result;
         const Real theta2 = config_.parameterScale * config_.parameterScale;
+        const Real stateWeight = stateWeightForSize(anchor.x.size());
         Real deltaS = arclengthStep;
         for (int retry = 0; retry <= config_.maxStepRetries; ++retry) {
             result.retries = retry;
@@ -170,9 +194,8 @@ public:
             Real residualNorm = std::numeric_limits<Real>::infinity();
             for (iter = 0; iter < config_.maxCorrectorIterations; ++iter) {
                 const VectorXd f = system_.residual(current.x, current.lambda);
-                const Real arclengthResidual =
-                    tangent.xDot.dot(current.x - anchor.x) +
-                    theta2 * tangent.lambdaDot * (current.lambda - anchor.lambda) - deltaS;
+                const Real arclengthResidual = arclengthResidualNorm(
+                    anchor, tangent, current, deltaS, stateWeight, theta2);
                 residualNorm = std::max(infinityNorm(f), std::abs(arclengthResidual));
                 if (!std::isfinite(residualNorm))
                     break;
@@ -191,18 +214,38 @@ public:
                 if (!system_.solveJacobian(current.x, current.lambda, fLambda, zStep))
                     break;
 
-                const Real denom = theta2 * tangent.lambdaDot - tangent.xDot.dot(zStep);
+                const Real denom =
+                    theta2 * tangent.lambdaDot - stateWeight * tangent.xDot.dot(zStep);
                 if (!std::isfinite(denom) || std::abs(denom) <
                         std::numeric_limits<Real>::min()) {
                     break;
                 }
                 const Real deltaLambda =
-                    (-arclengthResidual - tangent.xDot.dot(a)) / denom;
+                    (-arclengthResidual - stateWeight * tangent.xDot.dot(a)) / denom;
                 const VectorXd deltaX = a - zStep * deltaLambda;
                 if (!deltaX.allFinite() || !std::isfinite(deltaLambda))
                     break;
-                current.x += deltaX;
-                current.lambda += deltaLambda;
+
+                bool accepted = false;
+                Real alpha = config_.dampingFactor;
+                for (int ls = 0; ls <= config_.maxLineSearchSteps; ++ls) {
+                    ArclengthState trial;
+                    trial.x = current.x + alpha * deltaX;
+                    trial.lambda = current.lambda + alpha * deltaLambda;
+                    const VectorXd trialF = system_.residual(trial.x, trial.lambda);
+                    const Real trialArclengthResidual = arclengthResidualNorm(
+                        anchor, tangent, trial, deltaS, stateWeight, theta2);
+                    const Real trialNorm = std::max(
+                        infinityNorm(trialF), std::abs(trialArclengthResidual));
+                    if (std::isfinite(trialNorm) && trialNorm < residualNorm) {
+                        current = std::move(trial);
+                        accepted = true;
+                        break;
+                    }
+                    alpha *= 0.5;
+                }
+                if (!accepted)
+                    break;
             }
 
             if (correctorOk) {
@@ -235,6 +278,29 @@ public:
     }
 
 private:
+    Real stateWeightForSize(Eigen::Index size) const
+    {
+        if (size <= 0) {
+            throw std::invalid_argument(
+                "PseudoArclengthContinuation: state vector must be non-empty.");
+        }
+        if (config_.stateWeight > 0.0)
+            return config_.stateWeight;
+        return 1.0 / static_cast<Real>(size);
+    }
+
+    static Real arclengthResidualNorm(const ArclengthState& anchor,
+                                      const ArclengthTangent& tangent,
+                                      const ArclengthState& current,
+                                      Real deltaS,
+                                      Real stateWeight,
+                                      Real theta2)
+    {
+        return stateWeight * tangent.xDot.dot(current.x - anchor.x) +
+               theta2 * tangent.lambdaDot * (current.lambda - anchor.lambda) -
+               deltaS;
+    }
+
     static Real infinityNorm(const VectorXd& v)
     {
         Real norm = 0.0;

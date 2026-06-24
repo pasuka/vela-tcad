@@ -960,3 +960,50 @@ reach about `-0.204 V` quickly but then shrinks to very small steps and stalls.
 The Sentaurus markers remain unhit: there is no `-19 V` or `-20 V` arclength
 point from these runs, so the required 1 V current-growth ratios are unavailable
 rather than merely below threshold.
+## Pseudo-Arclength Robust Corrector L5 (2026-06-24)
+
+The arclength corrector now has two robustness controls: a residual-monotone
+backtracking line search (`damping_factor`, `max_line_search_steps`) and a
+weighted state norm (`state_weight`, with `0` selecting `1 / state_dimension`).
+Focused debug verification passed:
+
+- `ctest --preset windows-ucrt64-debug -R "dc_sweep|pseudo_arclength|NewtonSolver.*pseudo-arclength" --output-on-failure`
+
+Release validation used the rebuilt `windows-ucrt64-release` runner and the same
+base deck as the L4 run:
+`build-release/reference_tcad/pn2d_sentaurus2018/reports/qflim0p05_source_factor_scan/factor_0p875.json`.
+Generated decks and CSVs are under the ignored
+`build-release/reference_tcad/pn2d_sentaurus2018/reports/arclength_validation/`
+directory.
+
+Measured L5 runs:
+
+- `l5_auto_state_weight_step0p25_stop20.json`: `state_weight=0` (auto `1/n`),
+  `initial_step=max_step=0.25`, `min_step=1e-5`, `max_line_search_steps=12`,
+  `stop=-20`. The run stopped after 113 rows. Deepest written bias was
+  `-0.2112237733250674 V`; the final hard failure was
+  `arclength step shrank below min_step` at `-0.21096387646680878 V`, with
+  `last_stable_bias=-0.21096398347486117 V`.
+- `l5_state1e-8_step0p25_stop1.json`: explicit `state_weight=1e-8`,
+  `initial_step=max_step=0.25`, `min_step=1e-5`, `stop=-1`. The run stopped
+  after 135 rows. Deepest written bias was `-0.2233500177146521 V`; the final
+  hard failure was `branch_acceptance_failed` at `-0.22301666266334857 V`, with
+  `last_stable_bias=-0.22301741756269255 V`. The rejected row reported
+  `branch_acceptance_reason=electron_density_jump_exceeded`,
+  `electron_density_jump_p95_abs_dex=0.31220157661077685`,
+  `electron_density_jump_max_abs_dex=42.708202536495776`, node `908`.
+- `l5_state1e-8_min1e-7_step0p25_stop1.json`: same explicit weight, but
+  `min_step=1e-7` and `max_step_retries=24`. The run stopped after 403 rows,
+  again with deepest written bias `-0.2233500177146521 V`. The final rejected
+  row was `-0.22301769006898287 V`,
+  `branch_acceptance_reason=electron_density_jump_exceeded`,
+  `electron_density_jump_p95_abs_dex=0.31220834889878635`,
+  `electron_density_jump_max_abs_dex=42.70575689487616`, node `908`.
+
+This confirms the L5 implementation addresses the immediate corrector mechanics
+and improves the previous `-0.204 V` stall to about `-0.223 V`, but it still does
+not recover the Sentaurus BV knee. No L5 run reached the `-19 V` or `-20 V`
+acceptance markers, so the 1 V current-growth ratios remain unavailable. The
+new blocker is localized to a repeatable carrier-density branch jump around node
+`908` near `-0.223 V`, after the bordered corrector has produced a numerically
+converged candidate state.

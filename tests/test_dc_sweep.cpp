@@ -1358,6 +1358,74 @@ TEST_CASE("DCSweep: continuation predictor config is validated",
         REQUIRE(result.points.size() == 1);
     }
 
+    SECTION("enabled arclength continuation parses robustness parameters")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"arclength", {
+                {"enabled", true},
+                {"initial_step", 0.2},
+                {"min_step", 0.01},
+                {"max_step", 0.5},
+                {"state_weight", 0.25},
+                {"damping_factor", 0.5},
+                {"max_line_search_steps", 4}
+            }}
+        });
+        const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+        REQUIRE(result.points.size() == 1);
+    }
+
+    SECTION("negative arclength state weight is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"arclength", {
+                {"enabled", true},
+                {"initial_step", 0.2},
+                {"min_step", 0.01},
+                {"max_step", 0.5},
+                {"state_weight", -0.1}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.arclength.state_weight"));
+    }
+
+    SECTION("invalid arclength damping factor is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"arclength", {
+                {"enabled", true},
+                {"initial_step", 0.2},
+                {"min_step", 0.01},
+                {"max_step", 0.5},
+                {"damping_factor", 1.5}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.arclength.damping_factor"));
+    }
+
+    SECTION("negative arclength line search step count is rejected")
+    {
+        const auto cfgPath = writeConfigWithContinuation({
+            {"arclength", {
+                {"enabled", true},
+                {"initial_step", 0.2},
+                {"min_step", 0.01},
+                {"max_step", 0.5},
+                {"max_line_search_steps", -1}
+            }}
+        });
+        REQUIRE_THROWS_WITH(
+            sweep.runWithResult(cfgPath.string()),
+            Catch::Matchers::ContainsSubstring(
+                "DCSweep: sweep.continuation.arclength.max_line_search_steps"));
+    }
+
     SECTION("invalid arclength predictor is rejected")
     {
         const auto cfgPath = writeConfigWithContinuation({

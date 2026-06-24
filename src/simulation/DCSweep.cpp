@@ -910,6 +910,10 @@ void parseSweepContinuationConfig(const nlohmann::json& sweepJson,
             arclength.value("corrector_tolerance", cfg.core.correctorTolerance);
         cfg.core.maxStepRetries = arclength.value("max_step_retries", cfg.core.maxStepRetries);
         cfg.core.parameterScale = arclength.value("parameter_scale", cfg.core.parameterScale);
+        cfg.core.stateWeight = arclength.value("state_weight", cfg.core.stateWeight);
+        cfg.core.dampingFactor = arclength.value("damping_factor", cfg.core.dampingFactor);
+        cfg.core.maxLineSearchSteps =
+            arclength.value("max_line_search_steps", cfg.core.maxLineSearchSteps);
         cfg.biasFiniteDifferenceStep_V =
             arclength.value("bias_finite_difference_step_V", cfg.biasFiniteDifferenceStep_V);
 
@@ -926,6 +930,21 @@ void parseSweepContinuationConfig(const nlohmann::json& sweepJson,
             requirePositive(cfg.core.maxStep, "max_step");
             requirePositive(cfg.core.parameterScale, "parameter_scale");
             requirePositive(cfg.biasFiniteDifferenceStep_V, "bias_finite_difference_step_V");
+            if (!std::isfinite(cfg.core.stateWeight) || cfg.core.stateWeight < 0.0) {
+                throw std::invalid_argument(
+                    "DCSweep: sweep.continuation.arclength.state_weight must be finite "
+                    "and non-negative.");
+            }
+            if (!std::isfinite(cfg.core.dampingFactor) ||
+                cfg.core.dampingFactor <= 0.0 || cfg.core.dampingFactor > 1.0) {
+                throw std::invalid_argument(
+                    "DCSweep: sweep.continuation.arclength.damping_factor must be in (0, 1].");
+            }
+            if (cfg.core.maxLineSearchSteps < 0) {
+                throw std::invalid_argument(
+                    "DCSweep: sweep.continuation.arclength.max_line_search_steps "
+                    "must be non-negative.");
+            }
             if (cfg.core.minStep > cfg.core.maxStep) {
                 throw std::invalid_argument(
                     "DCSweep: sweep.continuation.arclength.min_step must not exceed max_step.");
