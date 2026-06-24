@@ -1007,3 +1007,54 @@ acceptance markers, so the 1 V current-growth ratios remain unavailable. The
 new blocker is localized to a repeatable carrier-density branch jump around node
 `908` near `-0.223 V`, after the bordered corrector has produced a numerically
 converged candidate state.
+
+## Pseudo-Arclength Per-Node QF Caps L6a (2026-06-24)
+
+L6a shares NewtonSolver's existing quasi-Fermi update caps with the
+pseudo-arclength bordered corrector. The corrector now calls an optional
+`ArclengthSystem::limitUpdate` hook after forming `(deltaX, deltaLambda)` and
+before residual-monotone line search. `NewtonSolver::makeArclengthSystem` fills
+that hook when `quasi_fermi_update_limit_V` or
+`quasi_fermi_update_limit_minority_V` is enabled, reusing the same per-node
+p-type/n-type minority-carrier classification as the production Newton step.
+No new JSON keys are introduced.
+
+Focused debug verification passed:
+
+- `ctest --preset windows-ucrt64-debug -R "pseudo_arclength|NewtonSolver.*arclength|NewtonSolver.*quasi-Fermi update limit" --output-on-failure`
+
+Root-cause check: rerunning the L5-style arclength deck with
+`carrier_density_jump=false` no longer died at the previous `-0.223 V` dex guard.
+Under a 300 s timeout it reached `-0.4756533867361793 V` with accepted arclength
+points still being written. This confirms the L5 hard stop was the carrier-density
+dex guard reacting to a minority-carrier jump, not an immediate bordered-solver
+singularity. At the L5 failing state, node `908` was p-type
+(`net_doping=-1.000000000000001e17 cm^-3`) with electron density
+`3.9156226478451054e-29 m^-3` and hole density `3.2714272491845255e22 m^-3`, so
+it is an extremely depleted electron-minority node where tiny absolute changes
+become very large dex jumps.
+
+Measured L6a release probes used the rebuilt `windows-ucrt64-release` runner and
+the same base deck as L5 (`factor_0p875.json`), with `state_weight=1e-8`,
+`initial_step=max_step=0.25`, `min_step=1e-7`, `max_step_retries=24`, and
+`solver.quasi_fermi_update_limit_V=0.05`:
+
+- `l6a_state1e-8_min1e-7_step0p25_stop1.json` (carrier-density guard enabled)
+  timed out after 300 s with no hard failure. The deepest complete accepted point
+  was `-0.47563021803856126 V`, current `-1.3630727880845574e-12 A/m`, with
+  `electron_density_jump_p95_abs_dex=3.0055796599093298e-05` and max dex
+  `0.00025835326436496331` at node `965`.
+- `l6a_state1e-8_min1e-7_step0p25_stop20.json` also timed out after 300 s with
+  no hard failure. The deepest complete accepted point was
+  `-0.47507931474910264 V`, current `-4.2225293848419571e-12 A/m`.
+
+Relative to the best L5 guard-on run (`-0.2233500177146521 V` deepest written
+bias, hard failure around `-0.223017 V`), L6a advances the stable branch by about
+`0.252 V` and removes the node-908 dex-guard failure. It still does not reach the
+`-19 V` or `-20 V` Sentaurus knee markers within the release timeout, so the
+`-19V > 1.5`, `-20V > 2.0`, and `-20..-10 V` max log10 current-error checks are
+unavailable rather than passing or failing. The new blocker is throughput and
+step-size collapse around the `-0.47 V` branch: the run keeps accepting very small
+steps instead of failing, so the next continuation improvement should target
+progress rate or a production fixed-bias corrector fallback rather than the
+previous minority-carrier dex blowup.

@@ -215,6 +215,57 @@ TEST_CASE("PseudoArclength: tangent normalization uses weighted state norm",
     REQUIRE(norm == Approx(1.0).margin(1.0e-12));
 }
 
+TEST_CASE("PseudoArclength: limitUpdate hook clamps corrector step before line search",
+          "[arclength]")
+{
+    ArclengthSystem system;
+    system.residual = [](const VectorXd& x, Real) {
+        VectorXd f(1);
+        f(0) = x(0) - 10.0;
+        return f;
+    };
+    system.parameterDerivative = [](const VectorXd&, Real) {
+        return VectorXd::Zero(1);
+    };
+    system.solveJacobian = [](const VectorXd&, Real, const VectorXd& b, VectorXd& y) {
+        y = b;
+        return true;
+    };
+
+    int calls = 0;
+    Real largestProposedDelta = 0.0;
+    system.limitUpdate = [&](const VectorXd&, VectorXd& deltaX, Real& deltaLambda) {
+        ++calls;
+        largestProposedDelta = std::max(largestProposedDelta, std::abs(deltaX(0)));
+        if (deltaX(0) > 1.0)
+            deltaX(0) = 1.0;
+        if (deltaX(0) < -1.0)
+            deltaX(0) = -1.0;
+        deltaLambda = 0.0;
+    };
+
+    PseudoArclengthConfig config = makeCircleConfig();
+    config.initialStep = 1.0;
+    config.minStep = 1.0;
+    config.maxStep = 1.0;
+    config.maxCorrectorIterations = 2;
+    config.maxStepRetries = 0;
+    config.maxLineSearchSteps = 0;
+
+    ArclengthState point;
+    point.x = VectorXd::Zero(1);
+    point.lambda = 0.0;
+    ArclengthTangent tangent;
+    tangent.xDot = VectorXd::Zero(1);
+    tangent.lambdaDot = 1.0;
+
+    PseudoArclengthContinuation continuation(system, config);
+    const ArclengthStepResult result = continuation.step(point, tangent, config.initialStep);
+
+    REQUIRE_FALSE(result.converged);
+    REQUIRE(calls == 2);
+    REQUIRE(largestProposedDelta > 9.0);
+}
 TEST_CASE("PseudoArclength: missing callbacks are rejected", "[arclength]")
 {
     ArclengthSystem incomplete;

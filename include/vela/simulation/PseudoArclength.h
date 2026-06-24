@@ -83,6 +83,9 @@ struct ArclengthSystem {
     /// returns false if the Jacobian is singular or the solve otherwise failed.
     std::function<bool(const VectorXd& x, Real lambda, const VectorXd& b, VectorXd& y)>
         solveJacobian;
+    /// Optional in-place limiter for the bordered-Newton update before line search.
+    std::function<void(const VectorXd& x, VectorXd& deltaX, Real& deltaLambda)>
+        limitUpdate;
 };
 
 /// Pseudo-arclength (Keller) continuation engine.
@@ -220,11 +223,16 @@ public:
                         std::numeric_limits<Real>::min()) {
                     break;
                 }
-                const Real deltaLambda =
+                Real deltaLambda =
                     (-arclengthResidual - stateWeight * tangent.xDot.dot(a)) / denom;
-                const VectorXd deltaX = a - zStep * deltaLambda;
+                VectorXd deltaX = a - zStep * deltaLambda;
                 if (!deltaX.allFinite() || !std::isfinite(deltaLambda))
                     break;
+                if (system_.limitUpdate) {
+                    system_.limitUpdate(current.x, deltaX, deltaLambda);
+                    if (!deltaX.allFinite() || !std::isfinite(deltaLambda))
+                        break;
+                }
 
                 bool accepted = false;
                 Real alpha = config_.dampingFactor;

@@ -308,24 +308,12 @@ Real addCarrierRowRegularization(SparseMatrixd& matrix,
     return std::sqrt(diagonalNormSq);
 }
 
-bool applyConfiguredStepCaps(VectorXd& step,
-                             const NewtonConfig& cfg,
-                             int nodeCount,
-                             Real potentialScale,
-                             const DopingModel& doping)
+bool clampQuasiFermiStep(VectorXd& step,
+                         const DopingModel& doping,
+                         Real globalLimit,
+                         Real minorityLimit,
+                         int nodeCount)
 {
-    if (cfg.maxUpdate > 0.0) {
-        const Real maxAbsStep = step.cwiseAbs().maxCoeff();
-        if (maxAbsStep > cfg.maxUpdate)
-            step *= cfg.maxUpdate / maxAbsStep;
-    }
-
-    const Real globalLimit = cfg.quasiFermiUpdateLimit_V > 0.0
-        ? cfg.quasiFermiUpdateLimit_V / potentialScale
-        : 0.0;
-    const Real minorityLimit = cfg.quasiFermiUpdateLimitMinority_V > 0.0
-        ? cfg.quasiFermiUpdateLimitMinority_V / potentialScale
-        : 0.0;
     if (globalLimit <= 0.0 && minorityLimit <= 0.0)
         return false;
 
@@ -358,6 +346,37 @@ bool applyConfiguredStepCaps(VectorXd& step,
         clippedQuasiFermi |= clampEntry(2 * nodeCount + i, resolveLimit(holeMinority));
     }
     return clippedQuasiFermi;
+}
+
+bool applyConfiguredQuasiFermiStepCaps(VectorXd& step,
+                                       const NewtonConfig& cfg,
+                                       int nodeCount,
+                                       Real potentialScale,
+                                       const DopingModel& doping)
+{
+    const Real globalLimit = cfg.quasiFermiUpdateLimit_V > 0.0
+        ? cfg.quasiFermiUpdateLimit_V / potentialScale
+        : 0.0;
+    const Real minorityLimit = cfg.quasiFermiUpdateLimitMinority_V > 0.0
+        ? cfg.quasiFermiUpdateLimitMinority_V / potentialScale
+        : 0.0;
+    return clampQuasiFermiStep(step, doping, globalLimit, minorityLimit, nodeCount);
+}
+
+bool applyConfiguredStepCaps(VectorXd& step,
+                             const NewtonConfig& cfg,
+                             int nodeCount,
+                             Real potentialScale,
+                             const DopingModel& doping)
+{
+    if (cfg.maxUpdate > 0.0) {
+        const Real maxAbsStep = step.cwiseAbs().maxCoeff();
+        if (maxAbsStep > cfg.maxUpdate)
+            step *= cfg.maxUpdate / maxAbsStep;
+    }
+
+    return applyConfiguredQuasiFermiStepCaps(
+        step, cfg, nodeCount, potentialScale, doping);
 }
 
 void recorrectPoissonStepForClippedQuasiFermi(VectorXd& step,
@@ -1041,6 +1060,10 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
     const NewtonSolver* self = this;
     const std::unordered_map<std::string, Real> baseBiases = contactBiases_;
     const Real h = biasFiniteDifferenceStep_V;
+    const int nodeCount = static_cast<int>(mesh_.numNodes());
+    const Real potentialScale = assembler->usesScaledState()
+        ? assembler->potentialScale()
+        : 1.0;
 
     auto biasesAt = [baseBiases, activeContact](Real lambda) {
         std::unordered_map<std::string, Real> biases = baseBiases;
@@ -1079,6 +1102,14 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
                 return false;
             return y.allFinite();
         };
+    if (cfg_.quasiFermiUpdateLimit_V > 0.0 ||
+        cfg_.quasiFermiUpdateLimitMinority_V > 0.0) {
+        system.limitUpdate = [self, nodeCount, potentialScale](
+            const VectorXd&, VectorXd& deltaX, Real&) {
+            applyConfiguredQuasiFermiStepCaps(
+                deltaX, self->cfg_, nodeCount, potentialScale, self->doping_);
+        };
+    }
     return system;
 }
 

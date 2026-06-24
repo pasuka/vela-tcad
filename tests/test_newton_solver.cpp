@@ -227,6 +227,49 @@ TEST_CASE("NewtonSolver: pseudo-arclength corrector advances a converged device 
     REQUIRE(f1.lpNorm<Eigen::Infinity>() < 1.0e-6);
 }
 
+TEST_CASE("NewtonSolver: arclength system applies quasi-Fermi update caps",
+          "[newton][arclength][scaling]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    const int interiorNode = 4;
+    doping.setNodeDoping(interiorNode, 0.0, 1.0e21);
+
+    NewtonConfig uncappedCfg = newtonConfig();
+    uncappedCfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    NewtonSolver uncappedSolver(mesh, matdb, doping, zeroBias(), uncappedCfg);
+    ArclengthSystem uncappedSystem = uncappedSolver.makeArclengthSystem("anode");
+    REQUIRE_FALSE(static_cast<bool>(uncappedSystem.limitUpdate));
+
+    NewtonConfig cappedCfg = uncappedCfg;
+    cappedCfg.quasiFermiUpdateLimit_V = 0.05;
+    cappedCfg.quasiFermiUpdateLimitMinority_V = 0.01;
+    NewtonSolver cappedSolver(mesh, matdb, doping, zeroBias(), cappedCfg);
+    ArclengthSystem cappedSystem = cappedSolver.makeArclengthSystem("anode");
+    REQUIRE(static_cast<bool>(cappedSystem.limitUpdate));
+
+    const NewtonResult equilibrium = cappedSolver.solve();
+    REQUIRE(equilibrium.converged);
+    const Real potentialScale = cappedSolver.evaluateResidual(equilibrium.solution).potentialScale;
+    const int N = static_cast<int>(mesh.numNodes());
+
+    const VectorXd x = cappedSolver.packArclengthState(equilibrium.solution);
+    VectorXd deltaX = VectorXd::Zero(3 * N);
+    deltaX(interiorNode) = 2.0;
+    deltaX(N + interiorNode) = 2.0;
+    deltaX(2 * N + interiorNode) = -2.0;
+    Real deltaLambda = 0.25;
+
+    cappedSystem.limitUpdate(x, deltaX, deltaLambda);
+
+    REQUIRE(deltaX(interiorNode) == Catch::Approx(2.0));
+    REQUIRE(deltaLambda == Catch::Approx(0.25));
+    REQUIRE(std::abs(deltaX(N + interiorNode) * potentialScale) ==
+            Catch::Approx(cappedCfg.quasiFermiUpdateLimitMinority_V).margin(1.0e-12));
+    REQUIRE(std::abs(deltaX(2 * N + interiorNode) * potentialScale) ==
+            Catch::Approx(cappedCfg.quasiFermiUpdateLimit_V).margin(1.0e-12));
+}
 TEST_CASE("NewtonSolver: high-doping unit-scaled PN cold start reaches near-zero 0V current",
           "[newton][scaling][bgn]")
 {
