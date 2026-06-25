@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Regression coverage for neutral reference TCAD CSV conversion tools."""
 
 from __future__ import annotations
@@ -20,6 +20,150 @@ if str(REPO) not in sys.path:
 
 
 class ReferenceTcadToolsTest(unittest.TestCase):
+    def test_pn2d_bv_impact_parameter_audit_injects_models_par_coefficients(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_impact_param_audit_") as td:
+            tmp = Path(td)
+            models_par = tmp / "models.par"
+            models_par.write_text(
+                """
+VanOverstraeten
+{
+    electron_a_low = 7.03e5 # [1/cm]
+    electron_a_high = 7.03e5 # [1/cm]
+    electron_b_low = 1.231e6 # [V/cm]
+    electron_b_high = 1.231e6 # [V/cm]
+    hole_a_low = 1.582e6 # [1/cm]
+    hole_a_high = 6.71e5 # [1/cm]
+    hole_b_low = 2.036e6 # [V/cm]
+    hole_b_high = 1.693e6 # [V/cm]
+    switch_field = 4.0e5 # [V/cm]
+    phonon_energy = 0.063 # [eV]
+    reference_temperature = 300 # [K]
+    temperature = 300 # [K]
+}
+""",
+                encoding="utf-8",
+            )
+            base_config = tmp / "simulation.json"
+            base_config.write_text(json.dumps({
+                "solver": {
+                    "impact_ionization": {
+                        "model": "van_overstraeten",
+                        "generation": "current_density",
+                    },
+                },
+            }), encoding="utf-8")
+            out_config = tmp / "simulation_explicit.json"
+            report = tmp / "impact_report.json"
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "audit_pn2d_bv_impact_parameters.py"),
+                "--models-par", str(models_par),
+                "--config", str(base_config),
+                "--write-config", str(out_config),
+                "--report", str(report),
+            ], text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            written = json.loads(out_config.read_text(encoding="utf-8"))
+            impact = written["solver"]["impact_ionization"]
+            self.assertEqual(impact["model"], "van_overstraeten")
+            self.assertEqual(impact["generation"], "current_density")
+            self.assertAlmostEqual(impact["electron_a_low_m_inv"], 7.03e7)
+            self.assertAlmostEqual(impact["hole_a_high_m_inv"], 6.71e7)
+            self.assertAlmostEqual(impact["switch_field_V_m"], 4.0e7)
+            self.assertEqual(impact["phonon_energy_eV"], 0.063)
+
+            summary = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(summary["impact_parameter_source"], "models_par:VanOverstraeten")
+            self.assertFalse(summary["warnings"])
+
+    def test_pn2d_bv_impact_parameter_audit_marks_models_par_without_local_coefficients(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_impact_param_audit_missing_") as td:
+            tmp = Path(td)
+            models_par = tmp / "models.par"
+            models_par.write_text(
+                """
+AvalancheFactors
+{
+    n_l_f = 1 # [1]
+    p_l_f = 1 # [1]
+}
+
+Ionization
+{
+    alpha_B = 3.1000e-08 # [eV cm]
+}
+""",
+                encoding="utf-8",
+            )
+            base_config = tmp / "simulation.json"
+            base_config.write_text(json.dumps({
+                "solver": {"impact_ionization": {"model": "van_overstraeten"}},
+            }), encoding="utf-8")
+            out_config = tmp / "simulation_explicit.json"
+            report = tmp / "impact_report.json"
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "audit_pn2d_bv_impact_parameters.py"),
+                "--models-par", str(models_par),
+                "--config", str(base_config),
+                "--write-config", str(out_config),
+                "--report", str(report),
+                "--fallback", "vela-defaults",
+            ], text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            written = json.loads(out_config.read_text(encoding="utf-8"))
+            impact = written["solver"]["impact_ionization"]
+            self.assertAlmostEqual(impact["electron_a_low_m_inv"], 7.03e7)
+            self.assertAlmostEqual(impact["hole_a_high_m_inv"], 6.71e7)
+            self.assertEqual(
+                impact["_parameter_source"],
+                "vela_default_sentaurus2018_compatible",
+            )
+
+            summary = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(
+                summary["impact_parameter_source"],
+                "vela_default_sentaurus2018_compatible",
+            )
+            self.assertIn("no_local_impact_ionization_coefficients_in_models_par",
+                          summary["warnings"])
+
+    def test_pn2d_bv_impact_parameter_audit_writes_unit_scaling_input_units(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_impact_param_audit_units_") as td:
+            tmp = Path(td)
+            models_par = tmp / "models.par"
+            models_par.write_text("AvalancheFactors\n{\n    n_l_f = 1 # [1]\n}\n", encoding="utf-8")
+            base_config = tmp / "simulation.json"
+            base_config.write_text(json.dumps({
+                "scaling": {"mode": "unit_scaling"},
+                "solver": {"impact_ionization": {"model": "van_overstraeten"}},
+            }), encoding="utf-8")
+            out_config = tmp / "simulation_explicit.json"
+            report = tmp / "impact_report.json"
+
+            result = subprocess.run([
+                sys.executable,
+                str(REPO / "scripts" / "audit_pn2d_bv_impact_parameters.py"),
+                "--models-par", str(models_par),
+                "--config", str(base_config),
+                "--write-config", str(out_config),
+                "--report", str(report),
+                "--fallback", "vela-defaults",
+            ], text=True, capture_output=True)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            impact = json.loads(out_config.read_text(encoding="utf-8"))["solver"]["impact_ionization"]
+            self.assertAlmostEqual(impact["electron_a_low_m_inv"], 7.03e5)
+            self.assertAlmostEqual(impact["hole_a_high_m_inv"], 6.71e5)
+            self.assertAlmostEqual(impact["switch_field_V_m"], 4.0e5)
+            summary = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(summary["written_parameter_units"], "unit_scaling_input_cm")
+
     def test_prepare_pn2d_bv_localization_deck_writes_absolute_inputs(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_bv_localization_deck_") as td:
             tmp = Path(td)
@@ -106,6 +250,33 @@ class ReferenceTcadToolsTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("201", result.stdout)
             self.assertIn("pn2d_bv_multibias_0200_des.tdr", result.stdout)
+
+    def test_pn2d_bv_artifact_validator_default_expects_0p05v_multibias_set(self) -> None:
+        result = subprocess.run([
+            sys.executable,
+            str(REPO / "scripts" / "validate_pn2d_sentaurus_bv_artifacts.py"),
+            "--help",
+        ], text=True, capture_output=True)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("default: 401", result.stdout)
+
+    def test_export_pn2d_bv_multibias_fields_maps_target_biases_to_0p05v_indexes(self) -> None:
+        module_path = REPO / "scripts" / "export_pn2d_bv_multibias_fields.py"
+        spec = importlib.util.spec_from_file_location("export_pn2d_bv_multibias_fields", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        targets = module.target_biases(-16.0, -20.0, -0.25)
+        self.assertEqual(targets[0], -16.0)
+        self.assertEqual(targets[-1], -20.0)
+        self.assertEqual(len(targets), 17)
+        self.assertEqual(module.tdr_index_for_bias(-16.0, -20.0, 400), 320)
+        self.assertEqual(module.tdr_index_for_bias(-16.25, -20.0, 400), 325)
+        self.assertEqual(module.tdr_index_for_bias(-19.75, -20.0, 400), 395)
+        self.assertEqual(module.export_dir_name(-16.25), "sentaurus_-16p25v")
 
     def test_pn2d_bv_artifact_validator_rejects_missing_endpoint(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_bv_artifacts_missing_") as tmp:
@@ -205,6 +376,14 @@ class ReferenceTcadToolsTest(unittest.TestCase):
 
         self.assertEqual(config["tdr_doping"]["compensated_node_policy"], "reported")
 
+    def test_pn2d_sentaurus2018_all_sims_use_sentaurus_materials_file(self) -> None:
+        path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json"
+        config = json.loads(path.read_text())
+
+        expected = "pn2d_sentaurus2018_iv_materials.json"
+        for sim in config["simulations"]:
+            with self.subTest(sim=sim["name"]):
+                self.assertEqual(sim.get("vela_materials_file"), expected)
     def test_pn2d_sentaurus2018_iv_disables_minority_relaxation(self) -> None:
         path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json"
         config = json.loads(path.read_text())
@@ -10014,6 +10193,16 @@ LOOKUP_TABLE default
         self.assertIn("0.05 V spacing over the 0-10 V normalized sweep", text)
         self.assertIn(
             'Plot(FilePrefix="pn2d_iv_multibias" Time=(Range=(0 1) Intervals=200) NoOverWrite)',
+            text,
+        )
+
+    def test_pn2d_sentaurus2018_bv_cmd_writes_0p05v_multibias_snapshots(self) -> None:
+        path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "source" / "pn2d_bv_sdevice.cmd"
+        text = path.read_text()
+
+        self.assertIn("0.05 V spacing over the 0 to -20 V normalized sweep", text)
+        self.assertIn(
+            'Plot(FilePrefix="pn2d_bv_multibias" Time=(Range=(0 1) Intervals=400) NoOverWrite)',
             text,
         )
 

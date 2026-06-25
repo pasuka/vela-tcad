@@ -53,6 +53,7 @@
       "bias_column": "Anode OuterVoltage",
       "current_column": "Anode TotalCurrent",
       "vela_current_contact": "Anode",
+      "vela_materials_file": "pn2d_sentaurus2018_iv_materials.json",
       "vela_solver": {
         "max_iter": 80,
         "reltol": 1.0e-10,

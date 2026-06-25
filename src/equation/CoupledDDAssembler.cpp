@@ -831,6 +831,12 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
     const bool currentAlignedImpact =
         detail::usesCurrentAlignedAvalancheDrivingForce(impactIonizationConfig_);
+    const bool cellReconstructedCurrent =
+        detail::usesCellReconstructedAvalancheCurrent(impactIonizationConfig_);
+    const bool cellCurrentReconstructedCurrent =
+        detail::usesCellCurrentReconstructedAvalancheCurrent(impactIonizationConfig_);
+    const bool cellVectorCurrentReconstructedCurrent =
+        detail::usesCellVectorCurrentReconstructedAvalancheCurrent(impactIonizationConfig_);
     const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
         ? detail::computeElectronAvalancheNodeQuasiFermiDrivingFields(
             impactIonizationConfig_, mesh_, nodeCells_, psi, phinState, n, ni_, Vt_)
@@ -841,6 +847,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         : nodeElectricFields;
     const bool qfMobility = mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
     const std::vector<bool> contactNodes = detail::contactNodeMask(mesh_);
+    const std::vector<std::vector<Index>> cellEdges = detail::buildCellEdgeMap(edgeCells_, mesh_);
     const bool transportMobilityDerivative = transportMobilityDependsOnPotentials(mobilityConfig_);
     const bool sgCurrentAvalanche = impactIonizationEnabled_ &&
         detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig_);
@@ -955,10 +962,133 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real nAvg = 0.5 * (n_i + n_j);
         const Real pAvg = 0.5 * (p_i + p_j);
         const Real signedElectricField01 = -(psi_j - psi_i) / h;
-        const Real sourceVolumeFactor =
-            detail::avalancheSourceVolumeFactor(impactIonizationConfig_);
-        const Real edgeArea =
-            sourceVolumeFactor * h * couple_e * impactIonizationConfig_.sourceGeometryScale;
+        const Real edgeArea = detail::avalancheSourceEdgeArea(
+            impactIonizationConfig_, edgeCells_, mesh_, e);
+
+        auto signedElectronFluxForEdge = [&](Index queryEdge) -> Real {
+            const Edge& query = mesh_.getEdge(queryEdge);
+            const Real queryH = query.length;
+            if (queryH <= 1.0e-30 || couple_[queryEdge] <= 0.0)
+                return 0.0;
+            const Index a = query.n0;
+            const Index b = query.n1;
+            const Real psi_a = psiAt(a);
+            const Real psi_b = psiAt(b);
+            const Real phin_a = phinAt(a);
+            const Real phin_b = phinAt(b);
+            const Real electronQf_a = electronQfAt(a);
+            const Real electronQf_b = electronQfAt(b);
+            const Real electric = std::abs((psi_b - psi_a) / queryH);
+            const Real mobilityField = qfMobility
+                ? std::abs((electronQf_b - electronQf_a) / queryH)
+                : electric;
+            const Real munLocal = detail::edgeMobility(
+                edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, queryEdge,
+                CarrierType::Electron, mobilityField, &mobilityConfig_, &psi);
+            if (munLocal <= 0.0)
+                return 0.0;
+            return sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                ni_[a], ni_[b], psi_a, psi_b, phin_a, phin_b, Vt_,
+                munLocal * Vt_ / queryH, bgnEnabled_);
+        };
+        auto signedHoleFluxForEdge = [&](Index queryEdge) -> Real {
+            const Edge& query = mesh_.getEdge(queryEdge);
+            const Real queryH = query.length;
+            if (queryH <= 1.0e-30 || couple_[queryEdge] <= 0.0)
+                return 0.0;
+            const Index a = query.n0;
+            const Index b = query.n1;
+            const Real psi_a = psiAt(a);
+            const Real psi_b = psiAt(b);
+            const Real phip_a = phipAt(a);
+            const Real phip_b = phipAt(b);
+            const Real holeQf_a = holeQfAt(a);
+            const Real holeQf_b = holeQfAt(b);
+            const Real electric = std::abs((psi_b - psi_a) / queryH);
+            const Real mobilityField = qfMobility
+                ? std::abs((holeQf_b - holeQf_a) / queryH)
+                : electric;
+            const Real mupLocal = detail::edgeMobility(
+                edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, queryEdge,
+                CarrierType::Hole, mobilityField, &mobilityConfig_, &psi);
+            if (mupLocal <= 0.0)
+                return 0.0;
+            return sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                ni_[a], ni_[b], psi_a, psi_b, phip_a, phip_b, Vt_,
+                mupLocal * Vt_ / queryH, bgnEnabled_);
+        };
+        auto cellCurrentReconstructedFlux = [&](auto&& signedFluxForEdge) -> Real {
+            if (e >= edgeCells_.size())
+                return 0.0;
+            Real edgeSum = 0.0;
+            int adjacentCellCount = 0;
+            for (Index cellId : edgeCells_[e]) {
+                if (cellId >= cellEdges.size())
+                    continue;
+                Real cellSum = 0.0;
+                int cellEdgeCount = 0;
+                for (Index otherEdge : cellEdges[cellId]) {
+                    cellSum += std::abs(signedFluxForEdge(otherEdge));
+                    ++cellEdgeCount;
+                }
+                if (cellEdgeCount <= 0)
+                    continue;
+                edgeSum += cellSum / static_cast<Real>(cellEdgeCount);
+                ++adjacentCellCount;
+            }
+            return adjacentCellCount > 0
+                ? edgeSum / static_cast<Real>(adjacentCellCount)
+                : 0.0;
+        };
+
+        auto cellVectorCurrentReconstructedFlux = [&](auto&& signedFluxForEdge) -> Real {
+            if (e >= edgeCells_.size())
+                return 0.0;
+            Real edgeSum = 0.0;
+            int adjacentCellCount = 0;
+            for (Index cellId : edgeCells_[e]) {
+                if (cellId >= cellEdges.size())
+                    continue;
+                Real a00 = 0.0;
+                Real a01 = 0.0;
+                Real a11 = 0.0;
+                Real b0 = 0.0;
+                Real b1 = 0.0;
+                Real absSum = 0.0;
+                int used = 0;
+                for (Index otherEdge : cellEdges[cellId]) {
+                    const Edge& other = mesh_.getEdge(otherEdge);
+                    if (other.length <= 1.0e-30)
+                        continue;
+                    const Node& n0 = mesh_.getNode(other.n0);
+                    const Node& n1 = mesh_.getNode(other.n1);
+                    const Real tx = (n1.x - n0.x) / other.length;
+                    const Real ty = (n1.y - n0.y) / other.length;
+                    const Real flux = signedFluxForEdge(otherEdge);
+                    a00 += tx * tx;
+                    a01 += tx * ty;
+                    a11 += ty * ty;
+                    b0 += tx * flux;
+                    b1 += ty * flux;
+                    absSum += std::abs(flux);
+                    ++used;
+                }
+                const Real det = a00 * a11 - a01 * a01;
+                const Real scale = std::max({std::abs(a00 * a11), std::abs(a01 * a01), Real{1.0}});
+                const Real cellMagnitude = (used >= 2 && std::abs(det) > 1.0e-24 * scale)
+                    ? std::sqrt(
+                        std::pow((b0 * a11 - b1 * a01) / det, 2) +
+                        std::pow((a00 * b1 - a01 * b0) / det, 2))
+                    : (used > 0 ? absSum / static_cast<Real>(used) : 0.0);
+                if (cellMagnitude <= 0.0)
+                    continue;
+                edgeSum += cellMagnitude;
+                ++adjacentCellCount;
+            }
+            return adjacentCellCount > 0
+                ? edgeSum / static_cast<Real>(adjacentCellCount)
+                : 0.0;
+        };
 
         Real electronSource = 0.0;
         const Real mun = detail::edgeMobility(
@@ -967,11 +1097,19 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         if (mun > 0.0) {
             const Real signedFluxN = sgElectronContinuityFluxFromQuasiFermiVariableNi(
                 niI, niJ, psi_i, psi_j, phin_i, phin_j, Vt_, mun * Vt_ / h, bgnEnabled_);
-            const Real fluxN = std::abs(signedFluxN);
             const Real electronImpactField = currentAlignedImpact
                 ? detail::parallelCurrentAvalancheDrivingField(signedElectricField01, signedFluxN)
                 : detail::electronAvalancheDrivingField(
                     impactIonizationConfig_, electronCoefficientField, electricField, nAvg);
+            const Real rawFluxN = std::abs(signedFluxN);
+            const Real fluxN = cellVectorCurrentReconstructedCurrent
+                ? cellVectorCurrentReconstructedFlux(signedElectronFluxForEdge)
+                : (cellCurrentReconstructedCurrent
+                    ? cellCurrentReconstructedFlux(signedElectronFluxForEdge)
+                    : (cellReconstructedCurrent
+                    ? detail::reconstructedAvalancheCurrentDensityMagnitude(
+                        mun, nAvg, electronImpactField)
+                    : rawFluxN));
             const Real alphaN = impactIonization_->electronCoefficient(electronImpactField);
             electronSource = alphaN * fluxN * edgeArea;
         }
@@ -983,11 +1121,19 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         if (mup > 0.0) {
             const Real signedFluxP = sgHoleContinuityFluxFromQuasiFermiVariableNi(
                 niI, niJ, psi_i, psi_j, phip_i, phip_j, Vt_, mup * Vt_ / h, bgnEnabled_);
-            const Real fluxP = std::abs(signedFluxP);
             const Real holeImpactField = currentAlignedImpact
                 ? detail::parallelCurrentAvalancheDrivingField(signedElectricField01, signedFluxP)
                 : detail::holeAvalancheDrivingField(
                     impactIonizationConfig_, holeCoefficientField, electricField, pAvg);
+            const Real rawFluxP = std::abs(signedFluxP);
+            const Real fluxP = cellVectorCurrentReconstructedCurrent
+                ? cellVectorCurrentReconstructedFlux(signedHoleFluxForEdge)
+                : (cellCurrentReconstructedCurrent
+                    ? cellCurrentReconstructedFlux(signedHoleFluxForEdge)
+                    : (cellReconstructedCurrent
+                    ? detail::reconstructedAvalancheCurrentDensityMagnitude(
+                        mup, pAvg, holeImpactField)
+                    : rawFluxP));
             const Real alphaP = impactIonization_->holeCoefficient(holeImpactField);
             holeSource = alphaP * fluxP * edgeArea;
         }

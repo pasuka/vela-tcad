@@ -231,6 +231,121 @@ inline std::vector<std::vector<Index>> buildEdgeCellMap(const DeviceMesh& mesh)
     return edgeCells;
 }
 
+inline std::vector<std::vector<Index>> buildCellEdgeMap(
+    const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh&                      mesh)
+{
+    std::vector<std::vector<Index>> cellEdges(static_cast<std::size_t>(mesh.numCells()));
+    for (Index edgeId = 0; edgeId < edgeCells.size(); ++edgeId) {
+        for (Index cellId : edgeCells[edgeId]) {
+            if (cellId < mesh.numCells())
+                cellEdges[static_cast<std::size_t>(cellId)].push_back(edgeId);
+        }
+    }
+    return cellEdges;
+}
+
+inline Real cellSmoothedEdgeFluxMagnitude(
+    Index                                  edgeId,
+    const std::vector<Real>&               rawEdgeFlux,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<std::vector<Index>>& cellEdges)
+{
+    if (edgeId >= edgeCells.size())
+        return 0.0;
+    Real edgeSum = 0.0;
+    int adjacentCellCount = 0;
+    for (Index cellId : edgeCells[edgeId]) {
+        if (cellId >= cellEdges.size())
+            continue;
+        Real cellSum = 0.0;
+        int cellEdgeCount = 0;
+        for (Index otherEdgeId : cellEdges[cellId]) {
+            if (otherEdgeId >= rawEdgeFlux.size())
+                continue;
+            cellSum += rawEdgeFlux[otherEdgeId];
+            ++cellEdgeCount;
+        }
+        if (cellEdgeCount <= 0)
+            continue;
+        edgeSum += cellSum / static_cast<Real>(cellEdgeCount);
+        ++adjacentCellCount;
+    }
+    if (adjacentCellCount <= 0)
+        return edgeId < rawEdgeFlux.size() ? rawEdgeFlux[edgeId] : 0.0;
+    return edgeSum / static_cast<Real>(adjacentCellCount);
+}
+
+inline Real cellVectorCurrentMagnitude(
+    Index                                  cellId,
+    const std::vector<Real>&               signedEdgeFlux,
+    const std::vector<std::vector<Index>>& cellEdges,
+    const DeviceMesh&                      mesh)
+{
+    if (cellId >= cellEdges.size())
+        return 0.0;
+
+    Real a00 = 0.0;
+    Real a01 = 0.0;
+    Real a11 = 0.0;
+    Real b0 = 0.0;
+    Real b1 = 0.0;
+    Real absSum = 0.0;
+    int used = 0;
+    for (Index edgeId : cellEdges[cellId]) {
+        if (edgeId >= signedEdgeFlux.size())
+            continue;
+        const Edge& edge = mesh.getEdge(edgeId);
+        if (edge.length <= 1.0e-30)
+            continue;
+        const Node& n0 = mesh.getNode(edge.n0);
+        const Node& n1 = mesh.getNode(edge.n1);
+        const Real tx = (n1.x - n0.x) / edge.length;
+        const Real ty = (n1.y - n0.y) / edge.length;
+        const Real flux = signedEdgeFlux[edgeId];
+        a00 += tx * tx;
+        a01 += tx * ty;
+        a11 += ty * ty;
+        b0 += tx * flux;
+        b1 += ty * flux;
+        absSum += std::abs(flux);
+        ++used;
+    }
+
+    const Real det = a00 * a11 - a01 * a01;
+    const Real scale = std::max({std::abs(a00 * a11), std::abs(a01 * a01), Real{1.0}});
+    if (used < 2 || std::abs(det) <= 1.0e-24 * scale)
+        return used > 0 ? absSum / static_cast<Real>(used) : 0.0;
+
+    const Real jx = (b0 * a11 - b1 * a01) / det;
+    const Real jy = (a00 * b1 - a01 * b0) / det;
+    return std::sqrt(jx * jx + jy * jy);
+}
+
+inline Real cellVectorReconstructedEdgeFluxMagnitude(
+    Index                                  edgeId,
+    const std::vector<Real>&               signedEdgeFlux,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<std::vector<Index>>& cellEdges,
+    const DeviceMesh&                      mesh)
+{
+    if (edgeId >= edgeCells.size())
+        return 0.0;
+    Real edgeSum = 0.0;
+    int adjacentCellCount = 0;
+    for (Index cellId : edgeCells[edgeId]) {
+        const Real cellMagnitude = cellVectorCurrentMagnitude(
+            cellId, signedEdgeFlux, cellEdges, mesh);
+        if (cellMagnitude <= 0.0)
+            continue;
+        edgeSum += cellMagnitude;
+        ++adjacentCellCount;
+    }
+    if (adjacentCellCount <= 0)
+        return edgeId < signedEdgeFlux.size() ? std::abs(signedEdgeFlux[edgeId]) : 0.0;
+    return edgeSum / static_cast<Real>(adjacentCellCount);
+}
+
 /// Build node -> adjacent cell ids map.
 inline std::vector<std::vector<Index>> buildNodeCellMap(const DeviceMesh& mesh)
 {
@@ -518,7 +633,7 @@ inline Real parallelCurrentAvalancheDrivingField(Real signedDrivingField,
     return std::max(signedDrivingField * currentSign, 0.0);
 }
 
-/// Resolves the SG edge-current avalanche source-volume factor used in
+/// Resolves the legacy SG edge-current avalanche source-volume factor used in
 /// `factor * h * edge.couple`. A finite `source_volume_factor` overrides the
 /// named `source_volume_policy` preset; `0` falls back to the preset.
 inline Real avalancheSourceVolumeFactor(const ImpactIonizationModelConfig& config)
@@ -526,6 +641,159 @@ inline Real avalancheSourceVolumeFactor(const ImpactIonizationModelConfig& confi
     if (config.sourceVolumeFactor > 0.0)
         return config.sourceVolumeFactor;
     return config.sourceVolumePolicy == "edge_box" ? 1.0 : 0.5;
+}
+
+inline Real triangleSignedDoubleArea(const Point2& a, const Point2& b, const Point2& c)
+{
+    return (b.x() - a.x()) * (c.y() - a.y()) -
+           (c.x() - a.x()) * (b.y() - a.y());
+}
+
+inline Point2 meshPoint(const DeviceMesh& mesh, Index node)
+{
+    const Node& n = mesh.getNode(node);
+    return Point2{n.x, n.y};
+}
+
+inline int tri3LocalEdgeIndex(const Cell& cell, Index edgeNode0, Index edgeNode1)
+{
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+        return -1;
+    for (int local = 0; local < 3; ++local) {
+        const Index a = cell.node_ids[static_cast<std::size_t>(local)];
+        const Index b = cell.node_ids[static_cast<std::size_t>((local + 1) % 3)];
+        if ((a == edgeNode0 && b == edgeNode1) ||
+            (a == edgeNode1 && b == edgeNode0)) {
+            return local;
+        }
+    }
+    return -1;
+}
+
+inline Real angleBetween(const Point2& a, const Point2& b)
+{
+    const Real denom = a.norm() * b.norm();
+    if (denom <= 1.0e-300)
+        return 0.0;
+    const Real cosTheta = std::clamp(a.dot(b) / denom, -1.0, 1.0);
+    return std::acos(cosTheta);
+}
+
+inline Real geniusTri3TruncatedPartialVolumeWithEdge(
+    const DeviceMesh& mesh,
+    const Cell&       cell,
+    Index             edgeNode0,
+    Index             edgeNode1)
+{
+    const int localEdge = tri3LocalEdgeIndex(cell, edgeNode0, edgeNode1);
+    if (localEdge < 0)
+        return 0.0;
+
+    const std::array<Index, 3> ids = {
+        cell.node_ids[0], cell.node_ids[1], cell.node_ids[2]};
+    const std::array<Point2, 3> p = {
+        meshPoint(mesh, ids[0]), meshPoint(mesh, ids[1]), meshPoint(mesh, ids[2])};
+    const Real det = triangleSignedDoubleArea(p[0], p[1], p[2]);
+    if (std::abs(det) <= 1.0e-300)
+        return 0.0;
+
+    const Real a2 = p[0].squaredNorm();
+    const Real b2 = p[1].squaredNorm();
+    const Real c2 = p[2].squaredNorm();
+    const Real invDenom = 1.0 / (2.0 * det);
+    const Point2 circumcenter{
+        (a2 * (p[1].y() - p[2].y()) +
+         b2 * (p[2].y() - p[0].y()) +
+         c2 * (p[0].y() - p[1].y())) * invDenom,
+        (a2 * (p[2].x() - p[1].x()) +
+         b2 * (p[0].x() - p[2].x()) +
+         c2 * (p[1].x() - p[0].x())) * invDenom};
+
+    constexpr int sideNodes[3][2] = {{0, 1}, {1, 2}, {2, 0}};
+    std::array<Real, 3> lengths = {0.0, 0.0, 0.0};
+    std::array<Real, 3> dt = {0.0, 0.0, 0.0};
+    int obtuseEdge = -1;
+    for (int local = 0; local < 3; ++local) {
+        const Point2& p1 = p[sideNodes[local][0]];
+        const Point2& p2 = p[sideNodes[local][1]];
+        const Point2& p3 = p[(2 + local) % 3];
+        const Point2 sideCenter = 0.5 * (p1 + p2);
+        lengths[static_cast<std::size_t>(local)] = (p1 - p2).norm();
+        const Real distance = (sideCenter - circumcenter).norm();
+        if ((p1 - p3).dot(p2 - p3) < 0.0) {
+            dt[static_cast<std::size_t>(local)] = -distance;
+            obtuseEdge = local;
+        } else {
+            dt[static_cast<std::size_t>(local)] = distance;
+        }
+    }
+
+    if (obtuseEdge >= 0) {
+        const int obtuseNode = (2 + obtuseEdge) % 3;
+        const Point2& p1 = p[sideNodes[obtuseEdge][0]];
+        const Point2& p2 = p[sideNodes[obtuseEdge][1]];
+        const Point2& p3 = p[obtuseNode];
+        const Real theta1 = angleBetween(p2 - p1, p3 - p1);
+        const Real theta2 = angleBetween(p1 - p2, p3 - p2);
+        const Real cos1 = std::cos(theta1);
+        const Real cos2 = std::cos(theta2);
+        const Point2 preEdgeCenter = 0.5 * (p1 + p3);
+        const Point2 posEdgeCenter = 0.5 * (p2 + p3);
+        dt[static_cast<std::size_t>(obtuseEdge)] = 0.0;
+        if (std::abs(cos1) > 1.0e-300 && (p2 - p1).norm() > 1.0e-300) {
+            const Point2 m1 = p1 + (p2 - p1).normalized() *
+                ((preEdgeCenter - p1).norm() / cos1);
+            dt[static_cast<std::size_t>((obtuseEdge + 2) % 3)] =
+                (preEdgeCenter - m1).norm();
+        }
+        if (std::abs(cos2) > 1.0e-300 && (p1 - p2).norm() > 1.0e-300) {
+            const Point2 m2 = p2 + (p1 - p2).normalized() *
+                ((posEdgeCenter - p2).norm() / cos2);
+            dt[static_cast<std::size_t>((obtuseEdge + 1) % 3)] =
+                (posEdgeCenter - m2).norm();
+        }
+    }
+
+    return 0.5 * lengths[static_cast<std::size_t>(localEdge)] *
+           std::max(0.0, dt[static_cast<std::size_t>(localEdge)]);
+}
+
+inline Real geniusTruncatedEdgeSourceVolume(
+    const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh&                      mesh,
+    Index                                  edgeId)
+{
+    if (edgeId >= mesh.numEdges() || edgeId >= edgeCells.size())
+        return 0.0;
+    const Edge& edge = mesh.getEdge(edgeId);
+    Real volume = 0.0;
+    for (Index cellId : edgeCells[edgeId]) {
+        if (cellId >= mesh.numCells())
+            continue;
+        volume += geniusTri3TruncatedPartialVolumeWithEdge(
+            mesh, mesh.getCell(cellId), edge.n0, edge.n1);
+    }
+    return volume;
+}
+
+inline Real avalancheSourceEdgeArea(
+    const ImpactIonizationModelConfig&     config,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const DeviceMesh&                      mesh,
+    Index                                  edgeId)
+{
+    if (edgeId >= mesh.numEdges())
+        return 0.0;
+    const Edge& edge = mesh.getEdge(edgeId);
+    Real area = 0.0;
+    if (config.sourceVolumeFactor > 0.0) {
+        area = config.sourceVolumeFactor * edge.length * edge.couple;
+    } else if (config.sourceVolumePolicy == "genius_truncated") {
+        area = geniusTruncatedEdgeSourceVolume(edgeCells, mesh, edgeId);
+    } else {
+        area = avalancheSourceVolumeFactor(config) * edge.length * edge.couple;
+    }
+    return area * config.sourceGeometryScale;
 }
 
 /// Validates the impact-ionization configuration shared by the Gummel and
@@ -552,11 +820,15 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
     }
     if (config.currentApproximation != "mobility_density_gradient" &&
         config.currentApproximation != "density_gradient" &&
-        config.currentApproximation != "grad_qf") {
+        config.currentApproximation != "grad_qf" &&
+        config.currentApproximation != "cell_reconstructed" &&
+        config.currentApproximation != "cell_current_reconstructed" &&
+        config.currentApproximation != "cell_vector_current_reconstructed") {
         throw std::invalid_argument(
             std::string(context) +
             ": impact_ionization.current_approximation must be "
-            "'mobility_density_gradient', 'density_gradient', or 'grad_qf'.");
+            "'mobility_density_gradient', 'density_gradient', 'grad_qf', "
+            "'cell_reconstructed', 'cell_current_reconstructed', or 'cell_vector_current_reconstructed'.");
     }
     if (config.drivingForceInterpolation != "none" &&
         config.drivingForceInterpolation != "quasi_fermi_to_electric_field") {
@@ -611,11 +883,12 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
             std::string(context) +
             ": impact_ionization.source_geometry_scale must be positive and finite.");
     }
-    if (config.sourceVolumePolicy != "edge_half_box" &&
+    if (config.sourceVolumePolicy != "genius_truncated" &&
+        config.sourceVolumePolicy != "edge_half_box" &&
         config.sourceVolumePolicy != "edge_box") {
         throw std::invalid_argument(
             std::string(context) +
-            ": impact_ionization.source_volume_policy must be 'edge_half_box' or 'edge_box'.");
+            ": impact_ionization.source_volume_policy must be 'genius_truncated', 'edge_half_box', or 'edge_box'.");
     }
     if (config.sourceVolumeFactor != 0.0 &&
         (!std::isfinite(config.sourceVolumeFactor) ||
@@ -645,12 +918,45 @@ inline bool usesDensityGradientAvalancheCurrent(
            config.currentApproximation == "density_gradient";
 }
 
+inline bool usesCellReconstructedAvalancheCurrent(
+    const ImpactIonizationModelConfig& config)
+{
+    return config.generation == "current_density" &&
+           config.currentApproximation == "cell_reconstructed";
+}
+
+inline bool usesCellCurrentReconstructedAvalancheCurrent(
+    const ImpactIonizationModelConfig& config)
+{
+    return config.generation == "current_density" &&
+           config.currentApproximation == "cell_current_reconstructed";
+}
+
+inline bool usesCellVectorCurrentReconstructedAvalancheCurrent(
+    const ImpactIonizationModelConfig& config)
+{
+    return config.generation == "current_density" &&
+           config.currentApproximation == "cell_vector_current_reconstructed";
+}
+
+inline Real reconstructedAvalancheCurrentDensityMagnitude(Real mobility,
+                                                         Real carrierDensity,
+                                                         Real drivingField)
+{
+    if (mobility <= 0.0)
+        return 0.0;
+    return mobility * std::max(carrierDensity, 0.0) * std::abs(drivingField);
+}
+
 inline bool usesEdgeCurrentAvalancheSource(
     const ImpactIonizationModelConfig& config)
 {
     return config.generation == "current_density" &&
            (config.currentApproximation == "density_gradient" ||
-            config.currentApproximation == "grad_qf");
+            config.currentApproximation == "grad_qf" ||
+            config.currentApproximation == "cell_reconstructed" ||
+            config.currentApproximation == "cell_current_reconstructed" ||
+            config.currentApproximation == "cell_vector_current_reconstructed");
 }
 
 inline bool usesQuasiFermiCarrierTruncation(const ImpactIonizationModelConfig& config)
@@ -1079,8 +1385,16 @@ struct SgEdgeCurrentAvalancheSourceRecord {
     Real holeAlpha = 0.0;
     Real electronMobility = 0.0;
     Real holeMobility = 0.0;
+    Real electronRawFluxProxy = 0.0;
+    Real holeRawFluxProxy = 0.0;
+    Real electronRawSignedFluxProxy = 0.0;
+    Real holeRawSignedFluxProxy = 0.0;
+    Real electronReconstructedFluxProxy = 0.0;
+    Real holeReconstructedFluxProxy = 0.0;
     Real electronFluxProxy = 0.0;
     Real holeFluxProxy = 0.0;
+    Real electronFinalOverRawFluxProxy = 0.0;
+    Real holeFinalOverRawFluxProxy = 0.0;
     Real electronSourceIntegral = 0.0;
     Real holeSourceIntegral = 0.0;
     Real edgeSourceIntegral = 0.0;
@@ -1119,6 +1433,10 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
     records.reserve(mesh.numEdges());
     const bool qfImpact = config.drivingForce == "quasi_fermi_gradient";
     const bool currentAlignedImpact = usesCurrentAlignedAvalancheDrivingForce(config);
+    const bool cellReconstructedCurrent = usesCellReconstructedAvalancheCurrent(config);
+    const bool cellCurrentReconstructedCurrent = usesCellCurrentReconstructedAvalancheCurrent(config);
+    const bool cellVectorCurrentReconstructedCurrent = usesCellVectorCurrentReconstructedAvalancheCurrent(config);
+    const bool usesReconstructedSgCurrent = cellCurrentReconstructedCurrent || cellVectorCurrentReconstructedCurrent;
     const bool qfMobility = mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient";
     const std::vector<bool> contactNodes = contactNodeMask(mesh);
     const CellScalarGradientCache electronQfGradientCache = computeCellScalarGradientCache(
@@ -1133,6 +1451,74 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
             return holeQfForAvalancheGradient(
                 psi(idx), phip(idx), p(idx), ni[node], Vt, config);
         });
+
+    std::vector<Real> rawElectronFlux(static_cast<std::size_t>(mesh.numEdges()), 0.0);
+    std::vector<Real> rawHoleFlux(static_cast<std::size_t>(mesh.numEdges()), 0.0);
+    std::vector<Real> rawSignedElectronFlux(static_cast<std::size_t>(mesh.numEdges()), 0.0);
+    std::vector<Real> rawSignedHoleFlux(static_cast<std::size_t>(mesh.numEdges()), 0.0);
+    std::vector<Real> reconstructedElectronFlux(static_cast<std::size_t>(mesh.numEdges()), 0.0);
+    std::vector<Real> reconstructedHoleFlux(static_cast<std::size_t>(mesh.numEdges()), 0.0);
+    if (usesReconstructedSgCurrent) {
+        for (Index e = 0; e < mesh.numEdges(); ++e) {
+            const Edge& edge = mesh.getEdge(e);
+            const Real h = edge.length;
+            if (h <= 1.0e-30 || edge.couple <= 0.0)
+                continue;
+            const int i = static_cast<int>(edge.n0);
+            const int j = static_cast<int>(edge.n1);
+            const Real psi_i = psi(i);
+            const Real psi_j = psi(j);
+            const Real phin_i = phin(i);
+            const Real phin_j = phin(j);
+            const Real phip_i = phip(i);
+            const Real phip_j = phip(j);
+            const Real electronQf_i = electronQfForAvalancheGradient(
+                psi_i, phin_i, n(i), ni[edge.n0], Vt, config);
+            const Real electronQf_j = electronQfForAvalancheGradient(
+                psi_j, phin_j, n(j), ni[edge.n1], Vt, config);
+            const Real holeQf_i = holeQfForAvalancheGradient(
+                psi_i, phip_i, p(i), ni[edge.n0], Vt, config);
+            const Real holeQf_j = holeQfForAvalancheGradient(
+                psi_j, phip_j, p(j), ni[edge.n1], Vt, config);
+            const Real electricField = std::abs((psi_j - psi_i) / h);
+            const Real electronQfField = std::abs((electronQf_j - electronQf_i) / h);
+            const Real holeQfField = std::abs((holeQf_j - holeQf_i) / h);
+            const Real electronMobilityField = qfMobility ? electronQfField : electricField;
+            const Real holeMobilityField = qfMobility ? holeQfField : electricField;
+            const Real mun = edgeMobility(
+                edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Electron,
+                electronMobilityField, &mobilityConfig, &psi);
+            if (mun > 0.0) {
+                const Real signedFlux = sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                    ni[edge.n0], ni[edge.n1], psi_i, psi_j, phin_i, phin_j,
+                    Vt, mun * Vt / h);
+                rawSignedElectronFlux[static_cast<std::size_t>(e)] = signedFlux;
+                rawElectronFlux[static_cast<std::size_t>(e)] = std::abs(signedFlux);
+            }
+            const Real mup = edgeMobility(
+                edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Hole,
+                holeMobilityField, &mobilityConfig, &psi);
+            if (mup > 0.0) {
+                const Real signedFlux = sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                    ni[edge.n0], ni[edge.n1], psi_i, psi_j, phip_i, phip_j,
+                    Vt, mup * Vt / h);
+                rawSignedHoleFlux[static_cast<std::size_t>(e)] = signedFlux;
+                rawHoleFlux[static_cast<std::size_t>(e)] = std::abs(signedFlux);
+            }
+        }
+
+        const std::vector<std::vector<Index>> cellEdges = buildCellEdgeMap(edgeCells, mesh);
+        for (Index e = 0; e < mesh.numEdges(); ++e) {
+            reconstructedElectronFlux[static_cast<std::size_t>(e)] = cellVectorCurrentReconstructedCurrent
+                ? cellVectorReconstructedEdgeFluxMagnitude(
+                    e, rawSignedElectronFlux, edgeCells, cellEdges, mesh)
+                : cellSmoothedEdgeFluxMagnitude(e, rawElectronFlux, edgeCells, cellEdges);
+            reconstructedHoleFlux[static_cast<std::size_t>(e)] = cellVectorCurrentReconstructedCurrent
+                ? cellVectorReconstructedEdgeFluxMagnitude(
+                    e, rawSignedHoleFlux, edgeCells, cellEdges, mesh)
+                : cellSmoothedEdgeFluxMagnitude(e, rawHoleFlux, edgeCells, cellEdges);
+        }
+    }
 
     for (Index e = 0; e < mesh.numEdges(); ++e) {
         const Edge& edge = mesh.getEdge(e);
@@ -1177,8 +1563,7 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
         const Real pAvg = 0.5 * (p(i) + p(j));
         const Real signedElectricField01 = -(psi_j - psi_i) / h;
 
-        const Real sourceVolumeFactor = avalancheSourceVolumeFactor(config);
-        const Real edgeArea = sourceVolumeFactor * h * edge.couple * config.sourceGeometryScale;
+        const Real edgeArea = avalancheSourceEdgeArea(config, edgeCells, mesh, e);
         SgEdgeCurrentAvalancheSourceRecord record;
         record.edgeId = e;
         record.node0 = edge.n0;
@@ -1203,12 +1588,25 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
                     phin_j,
                     Vt,
                     mun * Vt / h);
-            record.electronFluxProxy = std::abs(electronContinuityFlux01);
             record.electronImpactField = currentAlignedImpact
                 ? parallelCurrentAvalancheDrivingField(
                     signedElectricField01, electronContinuityFlux01)
                 : electronAvalancheDrivingField(
                     config, electronCoefficientField, electricField, nAvg);
+            record.electronRawSignedFluxProxy = electronContinuityFlux01;
+            record.electronRawFluxProxy = std::abs(electronContinuityFlux01);
+            record.electronReconstructedFluxProxy = usesReconstructedSgCurrent
+                ? reconstructedElectronFlux[static_cast<std::size_t>(e)]
+                : record.electronRawFluxProxy;
+            record.electronFluxProxy = usesReconstructedSgCurrent
+                ? record.electronReconstructedFluxProxy
+                : (cellReconstructedCurrent
+                    ? reconstructedAvalancheCurrentDensityMagnitude(
+                        mun, nAvg, record.electronImpactField)
+                    : record.electronRawFluxProxy);
+            record.electronFinalOverRawFluxProxy = record.electronRawFluxProxy > 0.0
+                ? record.electronFluxProxy / record.electronRawFluxProxy
+                : 0.0;
             record.electronAlpha = impact.electronCoefficient(record.electronImpactField);
             record.electronSourceIntegral =
                 record.electronAlpha * record.electronFluxProxy * edgeArea;
@@ -1230,12 +1628,25 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
                     phip_j,
                     Vt,
                     mup * Vt / h);
-            record.holeFluxProxy = std::abs(holeContinuityFlux01);
             record.holeImpactField = currentAlignedImpact
                 ? parallelCurrentAvalancheDrivingField(
                     signedElectricField01, holeContinuityFlux01)
                 : holeAvalancheDrivingField(
                     config, holeCoefficientField, electricField, pAvg);
+            record.holeRawSignedFluxProxy = holeContinuityFlux01;
+            record.holeRawFluxProxy = std::abs(holeContinuityFlux01);
+            record.holeReconstructedFluxProxy = usesReconstructedSgCurrent
+                ? reconstructedHoleFlux[static_cast<std::size_t>(e)]
+                : record.holeRawFluxProxy;
+            record.holeFluxProxy = usesReconstructedSgCurrent
+                ? record.holeReconstructedFluxProxy
+                : (cellReconstructedCurrent
+                    ? reconstructedAvalancheCurrentDensityMagnitude(
+                        mup, pAvg, record.holeImpactField)
+                    : record.holeRawFluxProxy);
+            record.holeFinalOverRawFluxProxy = record.holeRawFluxProxy > 0.0
+                ? record.holeFluxProxy / record.holeRawFluxProxy
+                : 0.0;
             record.holeAlpha = impact.holeCoefficient(record.holeImpactField);
             record.holeSourceIntegral =
                 record.holeAlpha * record.holeFluxProxy * edgeArea;

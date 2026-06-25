@@ -357,6 +357,46 @@ TEST_CASE("ContactCurrent: preserved edge hole QF drop changes reporting only",
             Catch::Approx(-5.0 * ulpAtBias));
 }
 
+TEST_CASE("ContactCurrent: raw residual method matches SG flux without avalanche",
+          "[contact_current][residual]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    MobilityModelConfig mobility = mobilityModelConfig("constant");
+    const RecombinationModelConfig noRecombination = recombinationModelConfig({"none"});
+    CoupledDDAssembler assembler(
+        mesh,
+        matdb,
+        doping,
+        constants::Vt_300,
+        mobility,
+        noRecombination);
+
+    CoupledDDState state;
+    const int N = static_cast<int>(mesh.numNodes());
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.03);
+    state.phin = VectorXd::LinSpaced(N, -0.04, 0.01);
+    state.phip = VectorXd::LinSpaced(N, 0.02, -0.03);
+
+    const VectorXd x = assembler.pack(state);
+    DDSolution solution;
+    solution.psi = state.psi;
+    solution.phin = state.phin;
+    solution.phip = state.phip;
+    solution.n = assembler.electronDensity(x);
+    solution.p = assembler.holeDensity(x);
+
+    ContactCurrent current(mesh, matdb, doping, mobility, constants::T0);
+    const ContactCurrentResult sgFlux = current.compute(solution, "anode");
+    const ContactCurrentResult residual =
+        current.computeFromResidual(assembler, x, "anode");
+
+    REQUIRE(residual.electronCurrent == Catch::Approx(sgFlux.electronCurrent));
+    REQUIRE(residual.holeCurrent == Catch::Approx(sgFlux.holeCurrent));
+    REQUIRE(residual.totalCurrent == Catch::Approx(sgFlux.totalCurrent));
+}
 TEST_CASE("NewtonSolver: Gummel initial guess reduces Newton iterations", "[newton]")
 {
     DeviceMesh mesh = makePNMesh();

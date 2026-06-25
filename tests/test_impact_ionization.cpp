@@ -59,6 +59,24 @@ static DeviceMesh makeContactInteriorMesh()
     return mesh;
 }
 
+static DeviceMesh makeObtuseAvalancheMesh()
+{
+    DeviceMesh mesh;
+    Node n0; n0.id = 0; n0.x = 0.0; n0.y = 0.0; mesh.addNode(n0);
+    Node n1; n1.id = 1; n1.x = 2.0; n1.y = 0.0; mesh.addNode(n1);
+    Node n2; n2.id = 2; n2.x = 0.2; n2.y = 0.1; mesh.addNode(n2);
+
+    Cell c; c.id = 0; c.type = CellType::Tri3; c.region_id = 0;
+    c.node_ids = {0, 1, 2};
+    mesh.addCell(c);
+
+    Region r; r.id = 0; r.name = "body"; r.material = "Si"; r.cell_ids = {0};
+    mesh.addRegion(r);
+
+    mesh.buildEdges();
+    return mesh;
+}
+
 
 TEST_CASE("Edge avalanche directional weights follow quasi-Fermi gradient direction",
           "[impact][diagnostic]")
@@ -982,8 +1000,70 @@ TEST_CASE("VTK AvalancheGeneration uses SG edge nodal source over node volume",
     std::filesystem::remove(vtkPath, removeError);
 }
 
+TEST_CASE("Genius-style avalanche source volume truncates obtuse Tri3 edge support",
+          "[impact][diagnostic]")
+{
+    DeviceMesh mesh = makeObtuseAvalancheMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = DopingModel::fromMeshAndRegions(
+        mesh, std::vector<RegionDopingSpec>{{"body", 1.0e21, 0.0}});
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, constants::T0);
+
+    DDSolution sol;
+    sol.psi = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), 0.0, 0.2);
+    sol.phin = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.01, 0.02);
+    sol.phip = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), 0.03, -0.01);
+    sol.n = VectorXd::Constant(static_cast<int>(mesh.numNodes()), 1.0e21);
+    sol.p = VectorXd::Constant(static_cast<int>(mesh.numNodes()), 2.0e21);
+    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "electric_field";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "density_gradient";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0e-30;
+
+    const auto impact = makeImpactIonizationModel(impactConfig);
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *impact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        sol.psi,
+        sol.phin,
+        sol.phip,
+        sol.n,
+        sol.p,
+        ni,
+        0.025852);
+
+    std::unordered_map<std::string, Real> edgeAreaByNodes;
+    for (const auto& record : records) {
+        edgeAreaByNodes[std::to_string(record.node0) + "-" +
+                        std::to_string(record.node1)] = record.edgeAreaProxy;
+    }
+
+    REQUIRE(edgeAreaByNodes.size() == 3);
+    REQUIRE(edgeAreaByNodes.at("0-1") == Catch::Approx(0.0).margin(1.0e-18));
+    REQUIRE(edgeAreaByNodes.at("1-2") == Catch::Approx(0.045138888888888895));
+    REQUIRE(edgeAreaByNodes.at("0-2") == Catch::Approx(0.006250000000000002));
+}
+
 TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]")
 {
+    REQUIRE(ImpactIonizationModelConfig{}.sourceVolumePolicy == "genius_truncated");
+
     const GummelConfig cfg = gummelConfigFromJson(nlohmann::json{
         {"impact_ionization", {
             {"model", "selberherr"},
@@ -1104,6 +1184,18 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
         }}
     });
     REQUIRE(sourceGeometryCfg.impactIonization.sourceGeometryScale == Catch::Approx(4.0));
+    REQUIRE(sourceGeometryCfg.impactIonization.sourceVolumePolicy == "genius_truncated");
+
+    auto geniusVolumePolicyCfg = newtonConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"source_volume_policy", "genius_truncated"},
+        }}
+    });
+    REQUIRE(geniusVolumePolicyCfg.impactIonization.sourceVolumePolicy == "genius_truncated");
+
     auto volumePolicyCfg = newtonConfigFromJson({
         {"impact_ionization", {
             {"model", "van_overstraeten"},

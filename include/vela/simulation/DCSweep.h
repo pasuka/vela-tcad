@@ -50,6 +50,12 @@ struct SgAvalancheEdgeDiagnosticsConfig {
     std::string csvFile;
 };
 
+struct TerminalCurrentMethodCompareDiagnosticsConfig {
+    bool enabled = false;
+    std::vector<std::string> contacts;
+    std::string csvFile;
+};
+
 struct NewtonHistoryDiagnosticsConfig {
     bool enabled = false;
     std::string csvFile;
@@ -66,6 +72,7 @@ struct SweepDiagnosticsConfig {
     TransportDiagnosticsConfig transport;
     ContinuityBalanceDiagnosticsConfig continuityBalance;
     SgAvalancheEdgeDiagnosticsConfig sgAvalancheEdges;
+    TerminalCurrentMethodCompareDiagnosticsConfig terminalCurrentMethodCompare;
     NewtonHistoryDiagnosticsConfig newtonHistory;
     ContactCurrentQfFloorDiagnosticsConfig contactCurrentQfFloor;
 };

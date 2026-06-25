@@ -1122,6 +1122,66 @@ TEST_CASE("DCSweep: continuity-balance diagnostics write contact-adjacent residu
     REQUIRE(sawHole);
 }
 
+TEST_CASE("DCSweep: terminal current method comparison diagnostic writes three currents",
+          "[dc_sweep][diagnostics][terminal_current_method_compare]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "iv_unit_scaling.csv";
+    const auto comparePath = dir / "iv_terminal_current_method_compare.csv";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"terminal_current_method_compare", {
+                {"enabled", true},
+                {"contacts", {"anode", "cathode"}},
+                {"csv_file", comparePath.string()}
+            }}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+
+    REQUIRE(std::filesystem::exists(comparePath));
+    const auto rows = readCsvRows(comparePath);
+    REQUIRE(rows.size() == 3);
+
+    const auto& header = rows.front();
+    const std::size_t biasCol = csvColumnIndex(header, "bias_V");
+    const std::size_t contactCol = csvColumnIndex(header, "contact");
+    const std::size_t sgCol = csvColumnIndex(header, "I_sgflux_A_per_um");
+    const std::size_t residualCol = csvColumnIndex(header, "I_residual_A_per_um");
+    const std::size_t qfFloorCol = csvColumnIndex(header, "I_sgflux_with_qf_floor_A_per_um");
+    (void)csvColumnIndex(header, "anode_hole_qf_drop_V");
+    (void)csvColumnIndex(header, "sg_avalanche_source_integral_total");
+
+    bool sawAnode = false;
+    bool sawCathode = false;
+    for (std::size_t i = 1; i < rows.size(); ++i) {
+        const auto& row = rows.at(i);
+        REQUIRE(csvReal(row, biasCol) == Catch::Approx(0.0));
+        sawAnode = sawAnode || row.at(contactCol) == "anode";
+        sawCathode = sawCathode || row.at(contactCol) == "cathode";
+        const Real sgCurrent = csvReal(row, sgCol);
+        const Real residualCurrent = csvReal(row, residualCol);
+        const Real qfFloorCurrent = csvReal(row, qfFloorCol);
+        REQUIRE(std::isfinite(sgCurrent));
+        REQUIRE(std::isfinite(residualCurrent));
+        REQUIRE(std::isfinite(qfFloorCurrent));
+        REQUIRE(residualCurrent == Catch::Approx(sgCurrent));
+        REQUIRE(qfFloorCurrent == Catch::Approx(sgCurrent));
+    }
+    REQUIRE(sawAnode);
+    REQUIRE(sawCathode);
+}
 TEST_CASE("DCSweep: Newton history diagnostic writes accepted iteration block residuals",
           "[dc_sweep][diagnostics][newton_history]")
 {

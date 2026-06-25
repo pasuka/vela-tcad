@@ -67,6 +67,36 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
     return computeDetailed(solution, contactName, noOverrides);
 }
 
+ContactCurrentResult ContactCurrent::computeFromResidual(
+    const CoupledDDAssembler& assembler,
+    const VectorXd& x,
+    const std::string& contactName) const
+{
+    const Contact* contact = nullptr;
+    for (const Contact& candidate : mesh_.contacts()) {
+        if (candidate.name == contactName) {
+            contact = &candidate;
+            break;
+        }
+    }
+    if (contact == nullptr)
+        throw std::invalid_argument("ContactCurrent: unknown contact '" + contactName + "'.");
+
+    const int N = static_cast<int>(assembler.numNodes());
+    const int phinOffset = N;
+    const int phipOffset = 2 * N;
+    const VectorXd r = assembler.residual(x, CoupledDDBoundaryConditions{});
+    const Real continuityScale = assembler.continuityResidualScale();
+
+    ContactCurrentResult result;
+    for (Index node : contact->node_ids) {
+        const int row = static_cast<int>(node);
+        result.electronCurrent -= constants::q * r(phinOffset + row) * continuityScale;
+        result.holeCurrent -= constants::q * r(phipOffset + row) * continuityScale;
+    }
+    result.totalCurrent = result.electronCurrent - result.holeCurrent;
+    return result;
+}
 ContactCurrentDetailedResult ContactCurrent::computeDetailed(
     const DDSolution& solution,
     const std::string& contactName,

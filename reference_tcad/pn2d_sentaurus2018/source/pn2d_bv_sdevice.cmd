@@ -88,7 +88,7 @@ Solve {
     Goal { Name="Anode" Voltage=-20.0 }
   ) {
     Coupled { Poisson Electron Hole }
-    # 0.1 V spacing over the 0 to -20 V normalized sweep for per-bias TDR comparison.
-    Plot(FilePrefix="pn2d_bv_multibias" Time=(Range=(0 1) Intervals=200) NoOverWrite)
+    # 0.05 V spacing over the 0 to -20 V normalized sweep for per-bias TDR comparison.
+    Plot(FilePrefix="pn2d_bv_multibias" Time=(Range=(0 1) Intervals=400) NoOverWrite)
   }
 }

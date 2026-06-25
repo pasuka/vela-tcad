@@ -2,6 +2,7 @@
 
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/Types.h"
+#include "vela/equation/CoupledDDAssembler.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/BandgapNarrowing.h"
@@ -93,6 +94,9 @@ public:
     ContactCurrentDetailedResult computeDetailed(const DDSolution& solution,
                                                  const std::string& contactName,
                                                  const ContactCurrentEdgeOverrides& overrides) const;
+    ContactCurrentResult computeFromResidual(const CoupledDDAssembler& assembler,
+                                             const VectorXd& x,
+                                             const std::string& contactName) const;
 
     static ContactCurrentResult compute(const DeviceMesh& mesh,
                                         const MaterialDatabase& matdb,

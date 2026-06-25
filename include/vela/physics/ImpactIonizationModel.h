@@ -16,7 +16,7 @@ struct ImpactIonizationModelConfig {
     Real electronDrivingForceRefDensity = 0.0; ///< RefDens_eGradQuasiFermi_ElectricField_Aval equivalent [1/m^3]
     Real holeDrivingForceRefDensity = 0.0; ///< RefDens_hGradQuasiFermi_ElectricField_Aval equivalent [1/m^3]
     Real sourceGeometryScale = 1.0; ///< Diagnostic scale for SG edge-current source geometry.
-    std::string sourceVolumePolicy = "edge_half_box"; ///< SG edge-current source support: edge_half_box or edge_box.
+    std::string sourceVolumePolicy = "genius_truncated"; ///< SG edge-current source support: genius_truncated, edge_half_box, or edge_box.
     Real sourceVolumeFactor = 0.0; ///< Diagnostic SG source-volume override; 0 uses sourceVolumePolicy presets.
     Real quasiFermiCarrierTruncation = 0.0; ///< GSS-style floor n,p >= value*ni when rebuilding qF gradients; 0 disables.
     Real minimumField = 0.0; ///< Charon-style avalanche cutoff field [V/m]; 0 disables.

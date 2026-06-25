@@ -30,10 +30,10 @@ LOG_CANDIDATES = ("pn2d_bv.log", "pn2d_bv.log_des.log", "run_pn2d_bv.out")
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--require-final-bias", type=float, default=-20.0)
-    parser.add_argument("--expected-multibias-count", type=int, default=201)
+    parser.add_argument("--expected-multibias-count", type=int, default=401, help="Expected number of pn2d_bv_multibias TDR snapshots")
     return parser.parse_args(argv)
 
 

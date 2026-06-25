@@ -1095,6 +1095,18 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         sweep.diagnostics.sgAvalancheEdges.csvFile =
             sgAvalancheCfg.value("csv_file", std::string{});
     }
+    if (diagnosticsCfg.contains("terminal_current_method_compare")) {
+        const auto& compareCfg = diagnosticsCfg.at("terminal_current_method_compare");
+        if (!compareCfg.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.diagnostics.terminal_current_method_compare must be an object.");
+        sweep.diagnostics.terminalCurrentMethodCompare.enabled =
+            compareCfg.value("enabled", sweep.diagnostics.terminalCurrentMethodCompare.enabled);
+        sweep.diagnostics.terminalCurrentMethodCompare.contacts =
+            compareCfg.value("contacts", std::vector<std::string>{});
+        sweep.diagnostics.terminalCurrentMethodCompare.csvFile =
+            compareCfg.value("csv_file", std::string{});
+    }
     if (diagnosticsCfg.contains("newton_history")) {
         const auto& newtonHistoryCfg = diagnosticsCfg.at("newton_history");
         if (!newtonHistoryCfg.is_object())
@@ -1210,6 +1222,16 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         } else {
             sweep.diagnostics.sgAvalancheEdges.csvFile =
                 resolve(sweep.diagnostics.sgAvalancheEdges.csvFile);
+        }
+    }
+    if (sweep.diagnostics.terminalCurrentMethodCompare.enabled) {
+        if (sweep.diagnostics.terminalCurrentMethodCompare.csvFile.empty()) {
+            const std::filesystem::path csvPath(sweep.csvFile);
+            sweep.diagnostics.terminalCurrentMethodCompare.csvFile =
+                (csvPath.parent_path() / (csvPath.stem().string() + "_terminal_current_method_compare.csv")).string();
+        } else {
+            sweep.diagnostics.terminalCurrentMethodCompare.csvFile =
+                resolve(sweep.diagnostics.terminalCurrentMethodCompare.csvFile);
         }
     }
     if (sweep.diagnostics.newtonHistory.enabled) {
@@ -1578,7 +1600,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         throw std::invalid_argument(
             "DCSweep: sweep.diagnostics.sg_avalanche_edges requires "
             "impact_ionization.generation='current_density' and "
-            "impact_ionization.current_approximation='density_gradient' or 'grad_qf'.");
+            "impact_ionization.current_approximation='density_gradient', 'grad_qf', "
+            "'cell_reconstructed', 'cell_current_reconstructed', or 'cell_vector_current_reconstructed'.");
     }
     // Build DDScalingSpec for contact current post-processing.
     DDScalingSpec ddScaling;
@@ -1599,6 +1622,18 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         ddScaling.permittivityReference_F_per_m = (11.7 * vela::constants::eps0);
     }
     ContactCurrent contactCurrent(mesh, matdb, doping, mobilityConfig, temperature_K, ddScaling, sweepBgnConfig);
+    CoupledDDAssembler terminalCurrentResidualAssembler(
+        mesh,
+        matdb,
+        doping,
+        constants::kb * temperature_K / constants::q,
+        mobilityConfig,
+        sweepRecombinationConfig,
+        sweepBgnConfig,
+        sweepImpactIonizationConfig,
+        fixedChargeSpecs,
+        sheetChargeSpecs,
+        ddScaling);
     TerminalCharge terminalCharge(mesh, doping);
     StoredCharge storedCharge(mesh);
     const bool hasMultiTerminalCharges = cfg.at("sweep").contains("terminal_charges");
@@ -1714,6 +1749,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         diagnosticContacts(sweep.diagnostics.continuityBalance.contacts, sweep.currentContact);
     const std::vector<std::string> contactCurrentQfFloorContacts =
         diagnosticContacts(sweep.diagnostics.contactCurrentQfFloor.contacts, sweep.currentContact);
+    const std::vector<std::string> terminalCurrentMethodCompareContacts =
+        diagnosticContacts(sweep.diagnostics.terminalCurrentMethodCompare.contacts, sweep.currentContact);
 
     std::unique_ptr<CSVWriter> terminalBalanceCsv;
     if (sweep.diagnostics.terminalBalance.enabled) {
@@ -1821,6 +1858,23 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "carrier_density_interior_m3"});
     }
 
+    std::unique_ptr<CSVWriter> terminalCurrentMethodCompareCsv;
+    if (sweep.diagnostics.terminalCurrentMethodCompare.enabled) {
+        const std::filesystem::path diagPath(sweep.diagnostics.terminalCurrentMethodCompare.csvFile);
+        if (!diagPath.parent_path().empty())
+            std::filesystem::create_directories(diagPath.parent_path());
+        terminalCurrentMethodCompareCsv = std::make_unique<CSVWriter>(diagPath.string());
+        terminalCurrentMethodCompareCsv->writeHeader({
+            "point_index",
+            "bias_V",
+            "contact",
+            "I_sgflux_A_per_um",
+            "I_residual_A_per_um",
+            "I_sgflux_with_qf_floor_A_per_um",
+            "anode_hole_qf_drop_V",
+            "sg_avalanche_source_integral_total"});
+    }
+
     std::unique_ptr<CSVWriter> sgAvalancheEdgesCsv;
     if (sweep.diagnostics.sgAvalancheEdges.enabled) {
         const std::filesystem::path diagPath(sweep.diagnostics.sgAvalancheEdges.csvFile);
@@ -1849,6 +1903,14 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "hole_mobility_m2_V_s",
             "electron_flux_proxy",
             "hole_flux_proxy",
+            "electron_raw_flux_proxy",
+            "hole_raw_flux_proxy",
+            "electron_raw_signed_flux_proxy",
+            "hole_raw_signed_flux_proxy",
+            "electron_reconstructed_flux_proxy",
+            "hole_reconstructed_flux_proxy",
+            "electron_final_over_raw_flux_proxy",
+            "hole_final_over_raw_flux_proxy",
             "electron_source_integral",
             "hole_source_integral",
             "edge_source_integral",
@@ -1941,7 +2003,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             bool solverConverged = false;
             DDSolution sol;
             SolvePointAttempt attempt;
-            if (sweep.diagnostics.contactCurrentQfFloor.enabled &&
+            if ((sweep.diagnostics.contactCurrentQfFloor.enabled ||
+                 sweep.diagnostics.terminalCurrentMethodCompare.enabled) &&
                 allowContactCurrentQfFloorCapture &&
                 initial != nullptr) {
                 attempt.contactCurrentOverrides = buildContactCurrentQfFloorOverrides(
@@ -2706,6 +2769,62 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             }
         }
 
+        if (converged && terminalCurrentMethodCompareCsv != nullptr) {
+            const std::size_t pointIndex = points.size();
+            const Real potentialScale = terminalCurrentResidualAssembler.usesScaledState()
+                ? terminalCurrentResidualAssembler.potentialScale()
+                : 1.0;
+            const VectorXd residualX = terminalCurrentResidualAssembler.pack({
+                sol.psi / potentialScale,
+                sol.phin / potentialScale,
+                sol.phip / potentialScale});
+            Real sgAvalancheSourceTotal = 0.0;
+            if (detail::usesEdgeCurrentAvalancheSource(sweepImpactIonizationConfig)) {
+                const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
+                    sweepImpactIonizationConfig,
+                    *sweepImpactIonization,
+                    mobilityConfig,
+                    *sweepMobility,
+                    sweepEdgeCells,
+                    mesh,
+                    doping,
+                    sweepCellMaterials,
+                    sol.psi,
+                    sol.phin,
+                    sol.phip,
+                    sol.n,
+                    sol.p,
+                    effectiveNi,
+                    constants::kb * temperature_K / constants::q);
+                for (const auto& record : records)
+                    sgAvalancheSourceTotal += record.edgeSourceIntegral;
+            }
+            for (const std::string& contactName : terminalCurrentMethodCompareContacts) {
+                const ContactCurrentDetailedResult sgFluxDetailed =
+                    contactCurrent.computeDetailed(sol, contactName);
+                const ContactCurrentDetailedResult qfFloorDetailed =
+                    contactCurrent.computeDetailed(sol, contactName, attempt.contactCurrentOverrides);
+                const ContactCurrentResult residualCurrent =
+                    contactCurrent.computeFromResidual(
+                        terminalCurrentResidualAssembler, residualX, contactName);
+                Real maxHoleQfDrop = 0.0;
+                for (const ContactCurrentEdgeDiagnostic& edge : sgFluxDetailed.edges) {
+                    maxHoleQfDrop = std::max(
+                        maxHoleQfDrop,
+                        std::abs(edge.phip1 - edge.phip0));
+                }
+                terminalCurrentMethodCompareCsv->writeRow({
+                    std::to_string(pointIndex),
+                    formatReal(point.bias),
+                    contactName,
+                    formatReal(perMeterToPerMicron(sgFluxDetailed.totals.totalCurrent)),
+                    formatReal(perMeterToPerMicron(residualCurrent.totalCurrent)),
+                    formatReal(perMeterToPerMicron(qfFloorDetailed.totals.totalCurrent)),
+                    formatReal(maxHoleQfDrop),
+                    formatReal(sgAvalancheSourceTotal)});
+            }
+        }
+
         if (converged && sgAvalancheEdgesCsv != nullptr) {
             const std::size_t pointIndex = points.size();
             const std::vector<detail::SgEdgeCurrentAvalancheSourceRecord> records =
@@ -2750,6 +2869,14 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     formatReal(record.holeMobility),
                     formatReal(record.electronFluxProxy),
                     formatReal(record.holeFluxProxy),
+                    formatReal(record.electronRawFluxProxy),
+                    formatReal(record.holeRawFluxProxy),
+                    formatReal(record.electronRawSignedFluxProxy),
+                    formatReal(record.holeRawSignedFluxProxy),
+                    formatReal(record.electronReconstructedFluxProxy),
+                    formatReal(record.holeReconstructedFluxProxy),
+                    formatReal(record.electronFinalOverRawFluxProxy),
+                    formatReal(record.holeFinalOverRawFluxProxy),
                     formatReal(record.electronSourceIntegral),
                     formatReal(record.holeSourceIntegral),
                     formatReal(record.edgeSourceIntegral),
@@ -3289,4 +3416,3 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
 } // namespace detail
 
 } // namespace vela
-
