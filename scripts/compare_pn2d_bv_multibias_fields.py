@@ -63,6 +63,50 @@ FIELD_SPECS: dict[str, dict[str, Any]] = {
         "scale": 1.0e4,
         "metric": "relative_p95",
     },
+    "electron_velocity": {
+        "sentaurus": ["eVelocity"],
+        "vela": "ElectronVelocity",
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "hole_velocity": {
+        "sentaurus": ["hVelocity"],
+        "vela": "HoleVelocity",
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "electron_alpha_avalanche": {
+        "sentaurus": ["eAlphaAvalanche"],
+        "vela": "ElectronAlphaAvalanche",
+        "sentaurus_scale": 100.0,
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "hole_alpha_avalanche": {
+        "sentaurus": ["hAlphaAvalanche"],
+        "vela": "HoleAlphaAvalanche",
+        "sentaurus_scale": 100.0,
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "electron_ion_integral": {
+        "sentaurus": ["eIonIntegral"],
+        "vela": "ElectronIonIntegral",
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "hole_ion_integral": {
+        "sentaurus": ["hIonIntegral"],
+        "vela": "HoleIonIntegral",
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "mean_ion_integral": {
+        "sentaurus": ["MeanIonIntegral"],
+        "vela": "MeanIonIntegral",
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
 }
 
 
@@ -576,7 +620,10 @@ def compare_bias(
             rows.append({"bias_V": bias, "quantity": quantity, "status": "missing_field"})
             continue
         sentaurus_field, svals = loaded
-        vvals = nearest_values(vx, vy, np.asarray(vraw, dtype=float) * spec["scale"], sx, sy)
+        sentaurus_scale = float(spec.get("sentaurus_scale", 1.0))
+        vela_scale = float(spec.get("vela_scale", spec.get("scale", 1.0)))
+        svals = np.asarray(svals, dtype=float) * sentaurus_scale
+        vvals = nearest_values(vx, vy, np.asarray(vraw, dtype=float) * vela_scale, sx, sy)
         metric = metric_value(spec["metric"], svals, vvals)
         center_metric = (
             metric_value(spec["metric"], svals[center_ids], vvals[center_ids])

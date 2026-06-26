@@ -198,11 +198,8 @@ inline std::vector<Real> computeNodeScalarGradientMagnitudes(const VectorXd& val
     return maxField;
 }
 
-/// Return a per-node max adjacent-edge electric-field magnitude [V/m].
-inline std::vector<Real> computeNodeElectricFields(const VectorXd& psi, const DeviceMesh& mesh)
-{
-    return computeNodeScalarGradientMagnitudes(psi, mesh);
-}
+/// Return a per-node Sentaurus-like cell-gradient electric-field magnitude [V/m].
+inline std::vector<Real> computeNodeElectricFields(const VectorXd& psi, const DeviceMesh& mesh);
 
 /// Build edge -> adjacent cell ids map.
 inline std::vector<std::vector<Index>> buildEdgeCellMap(const DeviceMesh& mesh)
@@ -1213,6 +1210,68 @@ inline std::vector<Real> computeNodeCellGradientMagnitudes(
 {
     return computeNodeCellGradientMagnitudes(
         nodeCells, computeCellScalarGradientCache(mesh, valueAt));
+}
+
+template <typename ValueAt>
+inline std::vector<Real> computeNodeWeightedLeastSquaresGradientMagnitudes(
+    const DeviceMesh&                      mesh,
+    const std::vector<std::vector<Index>>& nodeCells,
+    ValueAt&&                              valueAt)
+{
+    std::vector<std::unordered_set<Index>> nodeNeighbors(mesh.numNodes());
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        nodeNeighbors[edge.n0].insert(edge.n1);
+        nodeNeighbors[edge.n1].insert(edge.n0);
+    }
+
+    std::vector<Real> fields(mesh.numNodes(), 0.0);
+    const std::vector<Real> fallback = computeNodeCellGradientMagnitudes(
+        mesh, nodeCells, [&](Index node) { return valueAt(node); });
+
+    for (Index nodeId = 0; nodeId < mesh.numNodes(); ++nodeId) {
+        const Node& center = mesh.getNode(nodeId);
+        const Real centerValue = valueAt(nodeId);
+        Real sxx = 0.0;
+        Real sxy = 0.0;
+        Real syy = 0.0;
+        Real sxv = 0.0;
+        Real syv = 0.0;
+
+        for (const Index neighborId : nodeNeighbors[nodeId]) {
+            const Node& neighbor = mesh.getNode(neighborId);
+            const Real dx = neighbor.x - center.x;
+            const Real dy = neighbor.y - center.y;
+            const Real distance = std::hypot(dx, dy);
+            if (distance <= 1.0e-30)
+                continue;
+            const Real weight = 1.0 / distance;
+            const Real dv = valueAt(neighborId) - centerValue;
+            sxx += weight * dx * dx;
+            sxy += weight * dx * dy;
+            syy += weight * dy * dy;
+            sxv += weight * dx * dv;
+            syv += weight * dy * dv;
+        }
+
+        const Real det = sxx * syy - sxy * sxy;
+        if (std::abs(det) <= 1.0e-60) {
+            fields[nodeId] = fallback[nodeId];
+            continue;
+        }
+
+        const Real gradX = (sxv * syy - syv * sxy) / det;
+        const Real gradY = (sxx * syv - sxy * sxv) / det;
+        fields[nodeId] = std::hypot(gradX, gradY);
+    }
+    return fields;
+}
+
+inline std::vector<Real> computeNodeElectricFields(const VectorXd& psi, const DeviceMesh& mesh)
+{
+    const std::vector<std::vector<Index>> nodeCells = buildNodeCellMap(mesh);
+    return computeNodeWeightedLeastSquaresGradientMagnitudes(
+        mesh, nodeCells, [&](Index node) { return psi(static_cast<int>(node)); });
 }
 
 inline Real edgeQuasiFermiCoefficientField(

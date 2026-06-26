@@ -1000,6 +1000,92 @@ TEST_CASE("VTK AvalancheGeneration uses SG edge nodal source over node volume",
     std::filesystem::remove(vtkPath, removeError);
 }
 
+TEST_CASE("VTK exports direct avalanche velocity alpha ion integral and impact drive scalars",
+          "[impact][diagnostic][vtk]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    DDSolution sol;
+    sol.psi = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -2.0, 2.0);
+    sol.phin = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), 0.4, -0.4);
+    sol.phip = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.3, 0.3);
+    sol.n = VectorXd::Constant(static_cast<int>(mesh.numNodes()), 1.0e21);
+    sol.p = VectorXd::Constant(static_cast<int>(mesh.numNodes()), 2.0e21);
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "quasi_fermi_gradient";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "grad_qf";
+    impactConfig.electronA = 2.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 3.0;
+    impactConfig.holeB = 1.0e-30;
+
+    MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    mobilityConfig.highFieldDrivingForce = "electric_field";
+    const RecombinationModelConfig recombinationConfig = recombinationModelConfig({"none"});
+
+    const auto vtkPath = std::filesystem::temp_directory_path() /
+        "vela_avalanche_direct_scalars.vtk";
+    writeDDSolutionVTK(
+        vtkPath.string(),
+        mesh,
+        matdb,
+        doping,
+        sol,
+        mobilityConfig,
+        recombinationConfig,
+        impactConfig,
+        BandgapNarrowingConfig{},
+        constants::T0);
+
+    const auto electronVelocity =
+        readVtkScalar(vtkPath, "ElectronVelocity", static_cast<std::size_t>(mesh.numNodes()));
+    const auto holeVelocity =
+        readVtkScalar(vtkPath, "HoleVelocity", static_cast<std::size_t>(mesh.numNodes()));
+    const auto electronAlpha =
+        readVtkScalar(vtkPath, "ElectronAlphaAvalanche", static_cast<std::size_t>(mesh.numNodes()));
+    const auto holeAlpha =
+        readVtkScalar(vtkPath, "HoleAlphaAvalanche", static_cast<std::size_t>(mesh.numNodes()));
+    const auto electronImpactDrive =
+        readVtkScalar(vtkPath, "ElectronImpactIonizationDrive", static_cast<std::size_t>(mesh.numNodes()));
+    const auto holeImpactDrive =
+        readVtkScalar(vtkPath, "HoleImpactIonizationDrive", static_cast<std::size_t>(mesh.numNodes()));
+    const auto electronMobilityDrive =
+        readVtkScalar(vtkPath, "ElectronHighFieldDrive", static_cast<std::size_t>(mesh.numNodes()));
+    const auto electronIon =
+        readVtkScalar(vtkPath, "ElectronIonIntegral", static_cast<std::size_t>(mesh.numNodes()));
+    const auto holeIon =
+        readVtkScalar(vtkPath, "HoleIonIntegral", static_cast<std::size_t>(mesh.numNodes()));
+    const auto meanIon =
+        readVtkScalar(vtkPath, "MeanIonIntegral", static_cast<std::size_t>(mesh.numNodes()));
+
+    REQUIRE(*std::max_element(electronVelocity.begin(), electronVelocity.end()) > 0.0);
+    REQUIRE(*std::max_element(holeVelocity.begin(), holeVelocity.end()) > 0.0);
+    REQUIRE(*std::max_element(electronAlpha.begin(), electronAlpha.end()) > 0.0);
+    REQUIRE(*std::max_element(holeAlpha.begin(), holeAlpha.end()) > 0.0);
+    REQUIRE(*std::max_element(electronImpactDrive.begin(), electronImpactDrive.end()) > 0.0);
+    REQUIRE(*std::max_element(holeImpactDrive.begin(), holeImpactDrive.end()) > 0.0);
+    REQUIRE(electronImpactDrive.size() == static_cast<std::size_t>(mesh.numNodes()));
+    REQUIRE(holeImpactDrive.size() == static_cast<std::size_t>(mesh.numNodes()));
+    REQUIRE(electronImpactDrive != electronMobilityDrive);
+    REQUIRE(electronIon.size() == static_cast<std::size_t>(mesh.numNodes()));
+    REQUIRE(holeIon.size() == static_cast<std::size_t>(mesh.numNodes()));
+    REQUIRE(meanIon.size() == static_cast<std::size_t>(mesh.numNodes()));
+    for (std::size_t i = 0; i < meanIon.size(); ++i)
+        REQUIRE(meanIon[i] == Catch::Approx(0.5 * (electronIon[i] + holeIon[i])));
+
+    std::error_code removeError;
+    std::filesystem::remove(vtkPath, removeError);
+}
+
 TEST_CASE("Genius-style avalanche source volume truncates obtuse Tri3 edge support",
           "[impact][diagnostic]")
 {

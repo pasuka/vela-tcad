@@ -912,9 +912,18 @@ void writeDDSolutionVTK(const std::string& filename,
     std::vector<Real> holeHighFieldDrive_V_cm(N, 0.0);
     std::vector<Real> electronMobilityLimiter(N, 0.0);
     std::vector<Real> holeMobilityLimiter(N, 0.0);
-    const std::vector<Real> sgAvalancheSourceIntegrals =
+    std::vector<Real> electronVelocity(N, 0.0);
+    std::vector<Real> holeVelocity(N, 0.0);
+    std::vector<Real> electronAlphaAvalanche(N, 0.0);
+    std::vector<Real> holeAlphaAvalanche(N, 0.0);
+    std::vector<Real> electronImpactIonizationDrive(N, 0.0);
+    std::vector<Real> holeImpactIonizationDrive(N, 0.0);
+    std::vector<Real> electronIonIntegral(N, 0.0);
+    std::vector<Real> holeIonIntegral(N, 0.0);
+    std::vector<Real> meanIonIntegral(N, 0.0);
+    const std::vector<detail::SgEdgeCurrentAvalancheSourceRecord> sgAvalancheRecords =
         detail::usesEdgeCurrentAvalancheSource(impactIonizationConfig)
-        ? detail::sgEdgeCurrentAvalancheSourceIntegrals(
+        ? detail::sgEdgeCurrentAvalancheSourceRecords(
             impactIonizationConfig,
             *impact,
             mobilityConfig,
@@ -930,7 +939,12 @@ void writeDDSolutionVTK(const std::string& filename,
             sol.p,
             effectiveNi,
             Vt)
-        : std::vector<Real>{};
+        : std::vector<detail::SgEdgeCurrentAvalancheSourceRecord>{};
+    std::vector<Real> sgAvalancheSourceIntegrals(N, 0.0);
+    for (const auto& record : sgAvalancheRecords) {
+        sgAvalancheSourceIntegrals[record.node0] += record.node0SourceIntegral;
+        sgAvalancheSourceIntegrals[record.node1] += record.node1SourceIntegral;
+    }
     for (Index i = 0; i < N; ++i) {
         const int row = static_cast<int>(i);
         const Real n = sol.n(row);
@@ -959,6 +973,14 @@ void writeDDSolutionVTK(const std::string& filename,
                 n,
                 p);
         }
+        const Real electronImpactField = detail::electronAvalancheDrivingField(
+            impactIonizationConfig, electronDrivingField_V_m[i], electricField_V_m[i], n);
+        const Real holeImpactField = detail::holeAvalancheDrivingField(
+            impactIonizationConfig, holeDrivingField_V_m[i], electricField_V_m[i], p);
+        electronImpactIonizationDrive[i] = std::abs(electronImpactField);
+        holeImpactIonizationDrive[i] = std::abs(holeImpactField);
+        electronAlphaAvalanche[i] = impact->electronCoefficient(electronImpactField);
+        holeAlphaAvalanche[i] = impact->holeCoefficient(holeImpactField);
         const Real electronMobilityField = electronMobilityDrive_V_m[i];
         const Real holeMobilityField = holeMobilityDrive_V_m[i];
         electronHighFieldDrive_V_cm[i] = electronMobilityField / 100.0;
@@ -975,12 +997,48 @@ void writeDDSolutionVTK(const std::string& filename,
             electronMobilityLimiter[i] = electronMobility[i] / electronLowFieldMobility[i];
         if (holeLowFieldMobility[i] > 0.0)
             holeMobilityLimiter[i] = holeMobility[i] / holeLowFieldMobility[i];
+        electronVelocity[i] = electronMobility[i] * std::abs(electronImpactField);
+        holeVelocity[i] = holeMobility[i] * std::abs(holeImpactField);
     }
 
+    if (!sgAvalancheRecords.empty()) {
+        for (const auto& record : sgAvalancheRecords) {
+            const Real halfLength = 0.5 * record.edgeLength;
+            electronIonIntegral[record.node0] += record.electronAlpha * halfLength;
+            electronIonIntegral[record.node1] += record.electronAlpha * halfLength;
+            holeIonIntegral[record.node0] += record.holeAlpha * halfLength;
+            holeIonIntegral[record.node1] += record.holeAlpha * halfLength;
+        }
+    } else {
+        for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+            const Edge& edge = mesh.getEdge(edgeId);
+            const Real halfLength = 0.5 * edge.length;
+            const Real electronAlpha =
+                0.5 * (electronAlphaAvalanche[edge.n0] + electronAlphaAvalanche[edge.n1]);
+            const Real holeAlpha =
+                0.5 * (holeAlphaAvalanche[edge.n0] + holeAlphaAvalanche[edge.n1]);
+            electronIonIntegral[edge.n0] += electronAlpha * halfLength;
+            electronIonIntegral[edge.n1] += electronAlpha * halfLength;
+            holeIonIntegral[edge.n0] += holeAlpha * halfLength;
+            holeIonIntegral[edge.n1] += holeAlpha * halfLength;
+        }
+    }
+    for (Index i = 0; i < N; ++i) {
+        meanIonIntegral[i] = 0.5 * (electronIonIntegral[i] + holeIonIntegral[i]);
+    }
     writer.addNodeScalar("SRHRecombination", srh);
     writer.addNodeScalar("AvalancheGeneration", avalanche);
     writer.addNodeScalar("ElectronMobility", electronMobility);
     writer.addNodeScalar("HoleMobility", holeMobility);
+    writer.addNodeScalar("ElectronVelocity", electronVelocity);
+    writer.addNodeScalar("HoleVelocity", holeVelocity);
+    writer.addNodeScalar("ElectronAlphaAvalanche", electronAlphaAvalanche);
+    writer.addNodeScalar("HoleAlphaAvalanche", holeAlphaAvalanche);
+    writer.addNodeScalar("ElectronImpactIonizationDrive", electronImpactIonizationDrive);
+    writer.addNodeScalar("HoleImpactIonizationDrive", holeImpactIonizationDrive);
+    writer.addNodeScalar("ElectronIonIntegral", electronIonIntegral);
+    writer.addNodeScalar("HoleIonIntegral", holeIonIntegral);
+    writer.addNodeScalar("MeanIonIntegral", meanIonIntegral);
     writer.addNodeScalar("ElectronLowFieldMobility", electronLowFieldMobility);
     writer.addNodeScalar("HoleLowFieldMobility", holeLowFieldMobility);
     writer.addNodeScalar("ElectronHighFieldDrive", electronHighFieldDrive_V_cm);

@@ -1,0 +1,73 @@
+{
+  "case": "pn2d_sentaurus2018_coarse7x3",
+  "device": "pn_diode",
+  "mesh_tdr": "pn2d_msh.tdr",
+  "sde_cmd": "pn2d_sde.cmd",
+  "tdr_doping": {
+    "compensated_node_policy": "reported"
+  },
+  "vela_solver": {
+    "method": "gummel_newton",
+    "max_iter": 40,
+    "reltol": 1.0e-8,
+    "abstol": 1.0e-9,
+    "damping_psi": 0.2,
+    "damping_factor": 1.0,
+    "max_update": 0.0,
+    "line_search": true,
+    "warm_start": true,
+    "contact_boundary_reconstruction": "dominant_signed_contact_mean",
+    "verbose": false,
+    "handoff": {
+      "fallback": "none",
+      "require_gummel_convergence": false,
+      "gummel_max_iter": 0,
+      "newton_max_iter": 40
+    }
+  },
+  "simulations": [
+    {
+      "name": "bv",
+      "kind": "bv",
+      "tdr": "pn2d_bv_des.tdr",
+      "cmd": "pn2d_bv_sdevice.cmd",
+      "plt": "pn2d_bv.plt",
+      "bias_column": "Anode OuterVoltage",
+      "current_column": "Anode TotalCurrent",
+      "vela_current_contact": "Anode",
+      "vela_stop": -20.0,
+      "vela_step": -0.05,
+      "vela_materials_file": "pn2d_sentaurus2018_iv_materials.json",
+      "comparison_kind": "iv",
+      "execute": false,
+      "vela_solver": {
+        "contact_boundary_minority_electron_relaxation": false,
+        "mobility": {
+          "model": "masetti_field",
+          "high_field_driving_force": "quasi_fermi_gradient",
+          "jacobian_field_derivatives": false
+        },
+        "bandgap_narrowing": "old_slotboom",
+        "recombination": [
+          "srh"
+        ],
+        "impact_ionization": {
+          "model": "van_overstraeten",
+          "driving_force": "quasi_fermi_gradient",
+          "generation": "current_density",
+          "current_approximation": "grad_qf",
+          "quasi_fermi_gradient_discretization": "cell_gradient"
+        },
+        "max_update": 0.0,
+        "quasi_fermi_update_limit_V": 0.1
+      },
+      "comparison": {
+        "candidate_column": "current_total_A_per_um",
+        "bias_min": -20.0,
+        "bias_max": -0.002,
+        "require_trend_match": false,
+        "min_points": 1
+      }
+    }
+  ]
+}
