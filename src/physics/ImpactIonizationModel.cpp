@@ -7,6 +7,51 @@
 
 namespace vela {
 
+namespace {
+
+constexpr Real electronFitLowA_cm_inv = 2.35990376332e7;
+constexpr Real electronFitLowB_V_per_cm = 6.68288073314e5;
+constexpr Real electronFitHighA_cm_inv = 6.78391642452e7;
+constexpr Real electronFitHighB_V_per_cm = 1.21718982697e6;
+constexpr Real holeFitLowA_cm_inv = 3.90747663281e7;
+constexpr Real holeFitLowB_V_per_cm = 1.10514810627e6;
+constexpr Real holeFitHighA_cm_inv = 1.41230834668e8;
+constexpr Real holeFitHighB_V_per_cm = 1.99067614831e6;
+constexpr Real sentaurusFitSwitchField_V_per_cm = 2.5e5;
+
+Real inverseCmToInverseM(Real value) { return value * 100.0; }
+Real fieldVPerCmToVPerM(Real value) { return value * 100.0; }
+
+void applySentaurusFitA(ImpactIonizationModelConfig& config)
+{
+    config.electronALow = inverseCmToInverseM(electronFitLowA_cm_inv);
+    config.electronAHigh = inverseCmToInverseM(electronFitHighA_cm_inv);
+    config.holeALow = inverseCmToInverseM(holeFitLowA_cm_inv);
+    config.holeAHigh = inverseCmToInverseM(holeFitHighA_cm_inv);
+}
+
+void applySentaurusFitB(ImpactIonizationModelConfig& config)
+{
+    config.electronBLow = fieldVPerCmToVPerM(electronFitLowB_V_per_cm);
+    config.electronBHigh = fieldVPerCmToVPerM(electronFitHighB_V_per_cm);
+    config.holeBLow = fieldVPerCmToVPerM(holeFitLowB_V_per_cm);
+    config.holeBHigh = fieldVPerCmToVPerM(holeFitHighB_V_per_cm);
+}
+
+void applyVanOverstraetenAScale(ImpactIonizationModelConfig& config)
+{
+    if (!std::isfinite(config.aScale) || config.aScale <= 0.0) {
+        throw std::invalid_argument(
+            "ImpactIonizationModelConfig: A_scale must be positive and finite.");
+    }
+    config.electronALow *= config.aScale;
+    config.electronAHigh *= config.aScale;
+    config.holeALow *= config.aScale;
+    config.holeAHigh *= config.aScale;
+}
+
+} // namespace
+
 Real NoImpactIonization::electronCoefficient(Real) const { return 0.0; }
 Real NoImpactIonization::holeCoefficient(Real) const { return 0.0; }
 Real NoImpactIonization::generationRate(Real, Real, Real) const { return 0.0; }
@@ -58,7 +103,7 @@ Real SelberherrImpactIonization::generationRate(Real electricField, Real n, Real
 
 VanOverstraetenImpactIonization::VanOverstraetenImpactIonization(
     ImpactIonizationModelConfig config)
-    : config_(std::move(config))
+    : config_(applyImpactIonizationParameterSet(std::move(config)))
 {
     const Real prefactors[] = {
         config_.electronALow,
@@ -128,7 +173,7 @@ Real VanOverstraetenImpactIonization::coefficient(Real electricField,
 
 Real VanOverstraetenImpactIonization::electronCoefficient(Real electricField) const
 {
-    if (std::abs(electricField) < config_.minimumField)
+    if (!config_.debugRawVanOverstraeten && std::abs(electricField) < config_.minimumField)
         return 0.0;
     return coefficient(
         electricField,
@@ -142,7 +187,7 @@ Real VanOverstraetenImpactIonization::electronCoefficient(Real electricField) co
 
 Real VanOverstraetenImpactIonization::holeCoefficient(Real electricField) const
 {
-    if (std::abs(electricField) < config_.minimumField)
+    if (!config_.debugRawVanOverstraeten && std::abs(electricField) < config_.minimumField)
         return 0.0;
     return coefficient(
         electricField,
@@ -170,9 +215,47 @@ ImpactIonizationModelConfig impactIonizationModelConfig(std::string modelName)
     return config;
 }
 
+ImpactIonizationModelConfig applyImpactIonizationParameterSet(
+    ImpactIonizationModelConfig config)
+{
+    if (config.parameterSet == "default") {
+        applyVanOverstraetenAScale(config);
+        return config;
+    }
+    if (config.model != "van_overstraeten") {
+        throw std::invalid_argument(
+            "ImpactIonizationModelConfig: parameter_set requires model 'van_overstraeten'.");
+    }
+    if (config.parameterSet == "sentaurus_fit_A_only") {
+        applySentaurusFitA(config);
+        applyVanOverstraetenAScale(config);
+        return config;
+    }
+    if (config.parameterSet == "sentaurus_fit_A_B") {
+        applySentaurusFitA(config);
+        applySentaurusFitB(config);
+        applyVanOverstraetenAScale(config);
+        return config;
+    }
+    if (config.parameterSet == "sentaurus_fit_A_B_switch") {
+        applySentaurusFitA(config);
+        applySentaurusFitB(config);
+        config.switchField = fieldVPerCmToVPerM(sentaurusFitSwitchField_V_per_cm);
+        applyVanOverstraetenAScale(config);
+        return config;
+    }
+    throw std::invalid_argument(
+        "ImpactIonizationModelConfig: unsupported parameter_set '" +
+        config.parameterSet + "'.");
+}
+
 std::unique_ptr<ImpactIonizationModel> makeImpactIonizationModel(
     const ImpactIonizationModelConfig& config)
 {
+    if (config.parameterSet != "default" && config.model != "van_overstraeten") {
+        throw std::invalid_argument(
+            "makeImpactIonizationModel: non-default parameter_set requires model 'van_overstraeten'.");
+    }
     if (config.model == "none")
         return std::make_unique<NoImpactIonization>();
     if (config.model == "selberherr")

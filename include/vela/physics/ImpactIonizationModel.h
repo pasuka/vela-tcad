@@ -8,6 +8,7 @@ namespace vela {
 
 struct ImpactIonizationModelConfig {
     std::string model = "none";
+    std::string parameterSet = "default";
     std::string drivingForce = "electric_field";
     std::string generation = "carrier_density";
     std::string currentApproximation = "mobility_density_gradient";
@@ -20,6 +21,8 @@ struct ImpactIonizationModelConfig {
     Real sourceVolumeFactor = 0.0; ///< Diagnostic SG source-volume override; 0 uses sourceVolumePolicy presets.
     Real quasiFermiCarrierTruncation = 0.0; ///< GSS-style floor n,p >= value*ni when rebuilding qF gradients; 0 disables.
     Real minimumField = 0.0; ///< Charon-style avalanche cutoff field [V/m]; 0 disables.
+    bool debugRawVanOverstraeten = false; ///< Diagnostic: raw GradQuasiFermi Van Overstraeten alpha without cutoffs/damping.
+    Real aScale = 1.0; ///< Diagnostic Van Overstraeten prefactor scale; 1 keeps defaults unchanged.
     Real electronA = 7.03e7; ///< Selberherr electron prefactor [1/m]
     Real electronB = 1.231e8; ///< Selberherr electron critical field [V/m]
     Real holeA = 1.582e8; ///< Selberherr hole prefactor [1/m]
@@ -88,6 +91,8 @@ private:
 };
 
 ImpactIonizationModelConfig impactIonizationModelConfig(std::string modelName);
+ImpactIonizationModelConfig applyImpactIonizationParameterSet(
+    ImpactIonizationModelConfig config);
 std::unique_ptr<ImpactIonizationModel> makeImpactIonizationModel(
     const ImpactIonizationModelConfig& config);
 

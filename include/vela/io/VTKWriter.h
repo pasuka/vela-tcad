@@ -37,6 +37,15 @@ public:
     void addNodeScalar(const std::string& fieldName,
                        const std::vector<Real>& values);
 
+    /**
+     * @brief Append a node-centred vector field (POINT_DATA) to the file.
+     *
+     * @param fieldName  Name of the field (used as the VTK dataset name).
+     * @param values     One 3-D vector per node, indexed by node id.
+     */
+    void addNodeVector(const std::string& fieldName,
+                       const std::vector<Point3>& values);
+
 private:
     std::string      filename_;
     const DeviceMesh& mesh_;

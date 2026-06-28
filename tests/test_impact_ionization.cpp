@@ -210,6 +210,40 @@ TEST_CASE("Van Overstraeten impact ionization matches Sentaurus 2018 silicon def
             Catch::Approx(expectedHoleHigh).epsilon(1.0e-12));
 }
 
+TEST_CASE("Raw Van Overstraeten diagnostic bypasses minimum field and RefDens damping",
+          "[impact][van_overstraeten][diagnostic]")
+{
+    ImpactIonizationModelConfig cutoffConfig =
+        impactIonizationModelConfig("van_overstraeten");
+    cutoffConfig.minimumField = 1.0e9;
+    const Real field = 2.0e7;
+    const auto cutoffModel = makeImpactIonizationModel(cutoffConfig);
+    REQUIRE(cutoffModel->electronCoefficient(field) == Catch::Approx(0.0));
+
+    ImpactIonizationModelConfig rawConfig = cutoffConfig;
+    rawConfig.debugRawVanOverstraeten = true;
+    const auto rawModel = makeImpactIonizationModel(rawConfig);
+    const Real expectedRaw = 7.03e7 * std::exp(-1.231e8 / field);
+    REQUIRE(rawModel->electronCoefficient(field) ==
+            Catch::Approx(expectedRaw).epsilon(1.0e-12));
+
+    rawConfig.drivingForce = "quasi_fermi_gradient";
+    rawConfig.drivingForceInterpolation = "quasi_fermi_to_electric_field";
+    rawConfig.electronDrivingForceRefDensity = 1.0e30;
+    rawConfig.holeDrivingForceRefDensity = 1.0e30;
+
+    REQUIRE(detail::electronAvalancheDrivingField(
+                rawConfig,
+                field,
+                1.0e5,
+                1.0e10) == Catch::Approx(field));
+    REQUIRE(detail::holeAvalancheDrivingField(
+                rawConfig,
+                field,
+                1.0e5,
+                1.0e10) == Catch::Approx(field));
+}
+
 TEST_CASE("Gummel reverse bias BV regression runs with impact ionization", "[impact][gummel]")
 {
     DeviceMesh mesh = makePNMesh();
@@ -1204,6 +1238,39 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
     REQUIRE(vanOverstraetenCfg.impactIonization.phononEnergy == Catch::Approx(0.063));
     REQUIRE(vanOverstraetenCfg.impactIonization.temperature_K == Catch::Approx(300.0));
 
+    const NewtonConfig rawVanOverstraetenCfg = newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"debug_raw_vanoverstraeten", true},
+        }}
+    });
+    REQUIRE(rawVanOverstraetenCfg.impactIonization.debugRawVanOverstraeten);
+
+    const NewtonConfig scaledVanOverstraetenCfg = newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"A_scale", 2.0},
+        }}
+    });
+    REQUIRE(scaledVanOverstraetenCfg.impactIonization.aScale == Catch::Approx(2.0));
+
+    const GummelConfig gummelScaledVanOverstraetenCfg = gummelConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"A_scale", 4.0},
+        }}
+    });
+    REQUIRE(gummelScaledVanOverstraetenCfg.impactIonization.aScale == Catch::Approx(4.0));
+
+    const NewtonConfig sentaurusFitSetCfg = newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"parameter_set", "sentaurus_fit_A_B_switch"},
+        }}
+    });
+    REQUIRE(sentaurusFitSetCfg.impactIonization.parameterSet ==
+            "sentaurus_fit_A_B_switch");
+
     const NewtonConfig sentaurusCfg = newtonConfigFromJson(nlohmann::json{
         {"impact_ionization", {
             {"model", "van_overstraeten"},
@@ -1394,6 +1461,12 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
     }), std::invalid_argument);
     REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
         {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"A_scale", 0.0},
+        }}
+    }), std::invalid_argument);
+    REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
             {"model", "selberherr"},
             {"driving_force", "quasi_fermi_gradient"},
             {"quasi_fermi_gradient_discretization", "cell_average"},
@@ -1406,6 +1479,68 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
             {"quasi_fermi_gradient_discretization", "cell_gradient"},
         }}
     }), std::invalid_argument);
+}
+
+TEST_CASE("VanOverstraeten Sentaurus fit parameter sets are explicit overrides",
+          "[impact][van_overstraeten]")
+{
+    const Real fieldBelowDefaultSwitch = 3.0e7; // 3e5 V/cm.
+
+    ImpactIonizationModelConfig defaultConfig = impactIonizationModelConfig("van_overstraeten");
+    defaultConfig.temperature_K = 300.0;
+    defaultConfig.referenceTemperature_K = 300.0;
+    const auto defaultModel = makeImpactIonizationModel(defaultConfig);
+    const Real expectedDefaultElectron =
+        7.03e7 * std::exp(-1.231e8 / fieldBelowDefaultSwitch);
+    REQUIRE(defaultModel->electronCoefficient(fieldBelowDefaultSwitch) ==
+            Catch::Approx(expectedDefaultElectron));
+
+    ImpactIonizationModelConfig aOnlyConfig = defaultConfig;
+    aOnlyConfig.parameterSet = "sentaurus_fit_A_only";
+    const auto aOnlyModel = makeImpactIonizationModel(aOnlyConfig);
+    const Real expectedAOnlyElectron =
+        2.35990376332e9 * std::exp(-1.231e8 / fieldBelowDefaultSwitch);
+    REQUIRE(aOnlyModel->electronCoefficient(fieldBelowDefaultSwitch) ==
+            Catch::Approx(expectedAOnlyElectron));
+    REQUIRE(aOnlyModel->holeCoefficient(fieldBelowDefaultSwitch) >
+            defaultModel->holeCoefficient(fieldBelowDefaultSwitch));
+
+    ImpactIonizationModelConfig abSwitchConfig = defaultConfig;
+    abSwitchConfig.parameterSet = "sentaurus_fit_A_B_switch";
+    const auto abSwitchModel = makeImpactIonizationModel(abSwitchConfig);
+    const Real expectedSwitchElectron =
+        6.78391642452e9 * std::exp(-1.21718982697e8 / fieldBelowDefaultSwitch);
+    const Real expectedSwitchHole =
+        1.41230834668e10 * std::exp(-1.99067614831e8 / fieldBelowDefaultSwitch);
+    REQUIRE(abSwitchModel->electronCoefficient(fieldBelowDefaultSwitch) ==
+            Catch::Approx(expectedSwitchElectron));
+    REQUIRE(abSwitchModel->holeCoefficient(fieldBelowDefaultSwitch) ==
+            Catch::Approx(expectedSwitchHole));
+}
+
+TEST_CASE("VanOverstraeten A_scale only multiplies A prefactors",
+          "[impact][van_overstraeten]")
+{
+    const Real lowField = 3.0e7;
+    const Real highField = 5.0e7;
+
+    ImpactIonizationModelConfig defaultConfig = impactIonizationModelConfig("van_overstraeten");
+    defaultConfig.temperature_K = 300.0;
+    defaultConfig.referenceTemperature_K = 300.0;
+    const auto defaultModel = makeImpactIonizationModel(defaultConfig);
+
+    ImpactIonizationModelConfig scaledConfig = defaultConfig;
+    scaledConfig.aScale = 2.0;
+    const auto scaledModel = makeImpactIonizationModel(scaledConfig);
+
+    REQUIRE(scaledModel->electronCoefficient(lowField) ==
+            Catch::Approx(2.0 * defaultModel->electronCoefficient(lowField)));
+    REQUIRE(scaledModel->holeCoefficient(lowField) ==
+            Catch::Approx(2.0 * defaultModel->holeCoefficient(lowField)));
+    REQUIRE(scaledModel->electronCoefficient(highField) ==
+            Catch::Approx(2.0 * defaultModel->electronCoefficient(highField)));
+    REQUIRE(scaledModel->holeCoefficient(highField) ==
+            Catch::Approx(2.0 * defaultModel->holeCoefficient(highField)));
 }
 
 TEST_CASE("Van Overstraeten impact ionization supports Charon-style minimum field cutoff",

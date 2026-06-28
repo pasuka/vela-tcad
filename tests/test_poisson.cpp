@@ -519,6 +519,26 @@ TEST_CASE("VTKWriter: writes file with potential field", "[poisson][vtk]")
     REQUIRE(content.find("potential_V") != std::string::npos);
 }
 
+TEST_CASE("VTKWriter: writes node vector fields", "[poisson][vtk]")
+{
+    DeviceMesh mesh = makePNMesh();
+    const std::string vtkPath =
+        (std::filesystem::temp_directory_path() / "test_poisson_vector_out.vtk").string();
+
+    VTKWriter writer(vtkPath, mesh);
+    writer.write();
+
+    std::vector<Point3> field(mesh.numNodes(), Point3{0.0, 0.0, 0.0});
+    for (Index i = 0; i < mesh.numNodes(); ++i)
+        field[i] = Point3{static_cast<Real>(i), static_cast<Real>(2 * i), 0.0};
+    writer.addNodeVector("ElectricFieldVector", field);
+
+    std::ifstream ifs(vtkPath);
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                         std::istreambuf_iterator<char>());
+    REQUIRE(content.find("VECTORS ElectricFieldVector double") != std::string::npos);
+}
+
 
 
 static DeviceMesh makeMOSCapChargeMesh()

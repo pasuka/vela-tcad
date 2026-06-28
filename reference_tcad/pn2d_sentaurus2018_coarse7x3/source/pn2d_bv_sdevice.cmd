@@ -32,6 +32,7 @@ Plot {
 
   Potential
   ElectricField
+  ElectricField/Vector
 
   # Carrier density
 
@@ -48,6 +49,8 @@ Plot {
   eCurrent
   hCurrent
   TotalCurrent
+  eCurrentDensity/Vector
+  hCurrentDensity/Vector
 
   # Doping
 

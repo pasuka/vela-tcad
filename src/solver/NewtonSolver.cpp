@@ -679,6 +679,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             cfg.impactIonization.model = value.get<std::string>();
         } else if (value.is_object()) {
             cfg.impactIonization.model = value.value("model", cfg.impactIonization.model);
+            cfg.impactIonization.parameterSet = value.value(
+                "parameter_set", cfg.impactIonization.parameterSet);
             cfg.impactIonization.drivingForce = value.value(
                 "driving_force", cfg.impactIonization.drivingForce);
             cfg.impactIonization.generation = value.value(
@@ -704,6 +706,11 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 cfg.impactIonization.quasiFermiCarrierTruncation);
             cfg.impactIonization.minimumField = scaling.electricFieldToSI(value.value(
                 "minimum_field_V_m", cfg.impactIonization.minimumField));
+            cfg.impactIonization.debugRawVanOverstraeten = value.value(
+                "debug_raw_vanoverstraeten",
+                cfg.impactIonization.debugRawVanOverstraeten);
+            cfg.impactIonization.aScale = value.value(
+                "A_scale", cfg.impactIonization.aScale);
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());

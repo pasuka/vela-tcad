@@ -204,6 +204,8 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             cfg.impactIonization.model = value.get<std::string>();
         } else if (value.is_object()) {
             cfg.impactIonization.model = value.value("model", cfg.impactIonization.model);
+            cfg.impactIonization.parameterSet = value.value(
+                "parameter_set", cfg.impactIonization.parameterSet);
             cfg.impactIonization.drivingForce = value.value(
                 "driving_force", cfg.impactIonization.drivingForce);
             cfg.impactIonization.generation = value.value(
@@ -229,6 +231,11 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 cfg.impactIonization.quasiFermiCarrierTruncation);
             cfg.impactIonization.minimumField = scaling.electricFieldToSI(value.value(
                 "minimum_field_V_m", cfg.impactIonization.minimumField));
+            cfg.impactIonization.debugRawVanOverstraeten = value.value(
+                "debug_raw_vanoverstraeten",
+                cfg.impactIonization.debugRawVanOverstraeten);
+            cfg.impactIonization.aScale = value.value(
+                "A_scale", cfg.impactIonization.aScale);
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());
@@ -830,12 +837,24 @@ void writeDDSolutionVTK(const std::string& filename,
         netDop[i] = doping.netDoping(i);
     writer.addNodeScalar("NetDoping", netDop);
 
-    const std::vector<Real> electricField_V_m =
-        detail::computeNodeElectricFields(sol.psi, mesh);
-    const std::vector<Real> electronQfGradient_V_m =
-        detail::computeNodeScalarGradientMagnitudes(sol.phin, mesh);
-    const std::vector<Real> holeQfGradient_V_m =
-        detail::computeNodeScalarGradientMagnitudes(sol.phip, mesh);
+    const auto nodeCells = detail::buildNodeCellMap(mesh);
+    const std::vector<Point2> electricFieldGradient_V_m =
+        detail::computeNodeWeightedLeastSquaresGradients(
+            mesh, nodeCells, [&](Index node) { return sol.psi(static_cast<int>(node)); });
+    const std::vector<Point2> electronQfGradientVector_V_m =
+        detail::computeNodeWeightedLeastSquaresGradients(
+            mesh, nodeCells, [&](Index node) { return sol.phin(static_cast<int>(node)); });
+    const std::vector<Point2> holeQfGradientVector_V_m =
+        detail::computeNodeWeightedLeastSquaresGradients(
+            mesh, nodeCells, [&](Index node) { return sol.phip(static_cast<int>(node)); });
+    std::vector<Real> electricField_V_m(N, 0.0);
+    std::vector<Real> electronQfGradient_V_m(N, 0.0);
+    std::vector<Real> holeQfGradient_V_m(N, 0.0);
+    for (Index i = 0; i < N; ++i) {
+        electricField_V_m[i] = electricFieldGradient_V_m[i].norm();
+        electronQfGradient_V_m[i] = electronQfGradientVector_V_m[i].norm();
+        holeQfGradient_V_m[i] = holeQfGradientVector_V_m[i].norm();
+    }
     const bool qfMobility =
         mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient";
     const std::vector<Real>& electronMobilityDrive_V_m = qfMobility
@@ -846,9 +865,16 @@ void writeDDSolutionVTK(const std::string& filename,
         : electricField_V_m;
 
     std::vector<Real> electricField_V_cm(N, 0.0);
-    for (Index i = 0; i < N; ++i)
+    std::vector<Point3> electricFieldVector_V_cm(N, Point3::Zero());
+    for (Index i = 0; i < N; ++i) {
         electricField_V_cm[i] = electricField_V_m[i] / 100.0;
+        electricFieldVector_V_cm[i] = Point3{
+            -electricFieldGradient_V_m[i].x() / 100.0,
+            -electricFieldGradient_V_m[i].y() / 100.0,
+            0.0};
+    }
     writer.addNodeScalar("ElectricField", electricField_V_cm);
+    writer.addNodeVector("ElectricFieldVector", electricFieldVector_V_cm);
 
     const Real Vt = constants::kb * temperature_K / constants::q;
     const std::unique_ptr<BandgapNarrowing> bgn =
@@ -858,7 +884,6 @@ void writeDDSolutionVTK(const std::string& filename,
         makeImpactIonizationModel(impactIonizationConfig);
     const std::unique_ptr<MobilityModel> mobility = makeMobilityModel(mobilityConfig);
     const auto edgeCells = detail::buildEdgeCellMap(mesh);
-    const auto nodeCells = detail::buildNodeCellMap(mesh);
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh, matdb, temperature_K);
     const std::vector<Real> effectiveNi = detail::buildValidatedEffectiveNodeNi(
@@ -868,7 +893,8 @@ void writeDDSolutionVTK(const std::string& filename,
         doping,
         bandgapNarrowingConfig,
         Vt);
-    const bool qfImpact = impactIonizationConfig.drivingForce == "quasi_fermi_gradient";
+    const bool qfImpact =
+        detail::usesQuasiFermiAvalancheDrivingForce(impactIonizationConfig);
     const std::vector<Real> electronImpactQfGradient_V_m = qfImpact
         ? detail::computeElectronAvalancheNodeQuasiFermiDrivingFields(
             impactIonizationConfig, mesh, nodeCells, sol.psi, sol.phin, sol.n,
@@ -912,6 +938,13 @@ void writeDDSolutionVTK(const std::string& filename,
     std::vector<Real> holeHighFieldDrive_V_cm(N, 0.0);
     std::vector<Real> electronMobilityLimiter(N, 0.0);
     std::vector<Real> holeMobilityLimiter(N, 0.0);
+    std::vector<Point3> electronDriftCurrentDensity_A_cm2(N, Point3::Zero());
+    std::vector<Point3> electronDiffusionCurrentDensity_A_cm2(N, Point3::Zero());
+    std::vector<Point3> electronCurrentDensity_A_cm2(N, Point3::Zero());
+    std::vector<Point3> holeDriftCurrentDensity_A_cm2(N, Point3::Zero());
+    std::vector<Point3> holeDiffusionCurrentDensity_A_cm2(N, Point3::Zero());
+    std::vector<Point3> holeCurrentDensity_A_cm2(N, Point3::Zero());
+    std::vector<Point3> totalCurrentDensity_A_cm2(N, Point3::Zero());
     std::vector<Real> electronVelocity(N, 0.0);
     std::vector<Real> holeVelocity(N, 0.0);
     std::vector<Real> electronAlphaAvalanche(N, 0.0);
@@ -997,6 +1030,29 @@ void writeDDSolutionVTK(const std::string& filename,
             electronMobilityLimiter[i] = electronMobility[i] / electronLowFieldMobility[i];
         if (holeLowFieldMobility[i] > 0.0)
             holeMobilityLimiter[i] = holeMobility[i] / holeLowFieldMobility[i];
+        const Real electronDriftScale = constants::q * electronMobility[i] * n / 1.0e4;
+        const Real holeDriftScale = constants::q * holeMobility[i] * p / 1.0e4;
+        electronDriftCurrentDensity_A_cm2[i] = Point3{
+            electronDriftScale * electricFieldGradient_V_m[i].x(),
+            electronDriftScale * electricFieldGradient_V_m[i].y(),
+            0.0};
+        electronCurrentDensity_A_cm2[i] = Point3{
+            electronDriftScale * electronQfGradientVector_V_m[i].x(),
+            electronDriftScale * electronQfGradientVector_V_m[i].y(),
+            0.0};
+        electronDiffusionCurrentDensity_A_cm2[i] =
+            electronCurrentDensity_A_cm2[i] - electronDriftCurrentDensity_A_cm2[i];
+        holeDriftCurrentDensity_A_cm2[i] = Point3{
+            holeDriftScale * electricFieldGradient_V_m[i].x(),
+            holeDriftScale * electricFieldGradient_V_m[i].y(),
+            0.0};
+        holeCurrentDensity_A_cm2[i] = Point3{
+            holeDriftScale * holeQfGradientVector_V_m[i].x(),
+            holeDriftScale * holeQfGradientVector_V_m[i].y(),
+            0.0};
+        holeDiffusionCurrentDensity_A_cm2[i] =
+            holeCurrentDensity_A_cm2[i] - holeDriftCurrentDensity_A_cm2[i];
+        totalCurrentDensity_A_cm2[i] = electronCurrentDensity_A_cm2[i] + holeCurrentDensity_A_cm2[i];
         electronVelocity[i] = electronMobility[i] * std::abs(electronImpactField);
         holeVelocity[i] = holeMobility[i] * std::abs(holeImpactField);
     }
@@ -1028,6 +1084,15 @@ void writeDDSolutionVTK(const std::string& filename,
     }
     writer.addNodeScalar("SRHRecombination", srh);
     writer.addNodeScalar("AvalancheGeneration", avalanche);
+    writer.addNodeVector("J_n_drift", electronDriftCurrentDensity_A_cm2);
+    writer.addNodeVector("J_n_diffusion", electronDiffusionCurrentDensity_A_cm2);
+    writer.addNodeVector("J_n_total", electronCurrentDensity_A_cm2);
+    writer.addNodeVector("J_p_drift", holeDriftCurrentDensity_A_cm2);
+    writer.addNodeVector("J_p_diffusion", holeDiffusionCurrentDensity_A_cm2);
+    writer.addNodeVector("J_p_total", holeCurrentDensity_A_cm2);
+    writer.addNodeVector("ElectronCurrentDensityVector", electronCurrentDensity_A_cm2);
+    writer.addNodeVector("HoleCurrentDensityVector", holeCurrentDensity_A_cm2);
+    writer.addNodeVector("TotalCurrentDensityVector", totalCurrentDensity_A_cm2);
     writer.addNodeScalar("ElectronMobility", electronMobility);
     writer.addNodeScalar("HoleMobility", holeMobility);
     writer.addNodeScalar("ElectronVelocity", electronVelocity);

@@ -295,7 +295,8 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         n_physical *= scaling_.C0;
         p_physical *= scaling_.C0;
     }
-    const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
+    const bool qfImpact =
+        detail::usesQuasiFermiAvalancheDrivingForce(impactIonizationConfig_);
     const VectorXd phipForImpact =
         holeQuasiFermiFromDensity(psi_si, p_old, ni_, Vt_, scaling_);
     const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
@@ -466,7 +467,8 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         n_physical *= scaling_.C0;
         p_physical *= scaling_.C0;
     }
-    const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
+    const bool qfImpact =
+        detail::usesQuasiFermiAvalancheDrivingForce(impactIonizationConfig_);
     const VectorXd phinForImpact =
         electronQuasiFermiFromDensity(psi_si, n_old, ni_, Vt_, scaling_);
     const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)

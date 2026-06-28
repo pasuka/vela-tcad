@@ -192,7 +192,21 @@ TEST_CASE("GummelSolver: VTK output is written successfully", "[gummel][vtk]")
     const std::string vtkPath =
         (std::filesystem::temp_directory_path() / "test_dd_gummel.vtk").string();
 
-    REQUIRE_NOTHROW(writeDDSolutionVTK(vtkPath, mesh, doping, sol));
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const RecombinationModelConfig recombinationConfig = recombinationModelConfig({"none"});
+    const ImpactIonizationModelConfig impactConfig;
+    const BandgapNarrowingConfig bandgapNarrowingConfig;
+    REQUIRE_NOTHROW(writeDDSolutionVTK(
+        vtkPath,
+        mesh,
+        matdb,
+        doping,
+        sol,
+        mobilityConfig,
+        recombinationConfig,
+        impactConfig,
+        bandgapNarrowingConfig,
+        constants::T0));
 
     REQUIRE(std::filesystem::exists(vtkPath));
     REQUIRE(std::filesystem::file_size(vtkPath) > 0);
@@ -207,6 +221,13 @@ TEST_CASE("GummelSolver: VTK output is written successfully", "[gummel][vtk]")
     REQUIRE(content.find("NetDoping")          != std::string::npos);
     REQUIRE(content.find("ElectronQuasiFermi") != std::string::npos);
     REQUIRE(content.find("HoleQuasiFermi")     != std::string::npos);
+    REQUIRE(content.find("VECTORS J_n_drift double") != std::string::npos);
+    REQUIRE(content.find("VECTORS J_n_diffusion double") != std::string::npos);
+    REQUIRE(content.find("VECTORS J_n_total double") != std::string::npos);
+    REQUIRE(content.find("VECTORS J_p_drift double") != std::string::npos);
+    REQUIRE(content.find("VECTORS J_p_diffusion double") != std::string::npos);
+    REQUIRE(content.find("VECTORS J_p_total double") != std::string::npos);
+    REQUIRE(content.find("VECTORS TotalCurrentDensityVector double") != std::string::npos);
 }
 
 TEST_CASE("GummelSolver: forward bias converges without crash", "[gummel]")

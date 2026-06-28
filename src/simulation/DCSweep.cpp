@@ -2975,11 +2975,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                 lastPointValidationDiagnostics =
                                     lastPointAttempt.validationDiagnostics;
                                 return pointOk;
-                            } catch (const std::exception&) {
+                            } catch (const std::exception& ex) {
                                 if (sweep.mode == CurveSweepMode::BVReverse &&
                                     sweep.breakdown.nonConvergenceBreakdown) {
                                     lastPointAttempt = SolvePointAttempt{};
-                                    lastPointFailureReason = "solver_exception";
+                                    lastPointFailureReason = std::string("solver_exception: ") + ex.what();
                                     lastPointValidationDiagnostics.clear();
                                     return false;
                                 }
@@ -3012,10 +3012,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         failureReason = "non_convergence";
                     }
                 }
-            } catch (const std::exception&) {
+            } catch (const std::exception& ex) {
                 if (sweep.mode == CurveSweepMode::BVReverse &&
                     sweep.breakdown.nonConvergenceBreakdown) {
-                    failureReason = "solver_exception";
+                    failureReason = std::string("solver_exception: ") + ex.what();
                     validationDiagnostics.clear();
                 } else {
                     throw;
@@ -3055,9 +3055,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         startValidationDiagnostics = startAttempt.validationDiagnostics;
         if (!startOk && startFailureReason.empty())
             startFailureReason = "non_convergence";
-    } catch (const std::exception&) {
+    } catch (const std::exception& ex) {
         if (sweep.mode == CurveSweepMode::BVReverse && sweep.breakdown.nonConvergenceBreakdown)
-            startFailureReason = "solver_exception";
+            startFailureReason = std::string("solver_exception: ") + ex.what();
         else
             throw;
     }

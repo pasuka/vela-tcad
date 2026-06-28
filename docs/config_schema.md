@@ -511,9 +511,12 @@ Object form:
 ```json
 "impact_ionization": {
   "model": "selberherr",
+  "parameter_set": "default",
   "driving_force": "electric_field",
   "quasi_fermi_gradient_discretization": "edge_difference",
   "generation": "carrier_density",
+  "debug_raw_vanoverstraeten": false,
+  "A_scale": 1.0,
   "electron_A_m_inv": 7.03e7,
   "electron_B_V_m": 1.231e8,
   "hole_A_m_inv": 1.582e8,
@@ -561,6 +564,28 @@ Field meanings (Selberherr prototype):
 - `minimum_field_V_m`: non-negative Charon-style cutoff for avalanche
   coefficients. `0` disables the cutoff; Charon van Overstraeten defaults are
   commonly probed with `5.0e6 V/m` (`5.0e4 V/cm`).
+  - `debug_raw_vanoverstraeten`: default-off diagnostic switch for
+    `model: "van_overstraeten"`. When `true`, Vela forces the avalanche
+    coefficient drive to `|grad(eQuasiFermi)|` and `|grad(hQuasiFermi)|` and
+  bypasses `minimum_field_V_m`, `driving_force_interpolation` RefDens blending,
+  quasi-Fermi carrier truncation, contact-element electric-field fallback, and
+    current-aligned driving-force projection. This is intended only to isolate
+    cutoff/smoothing/RefDens suppression and should not be used as a production
+    calibration knob.
+  - `parameter_set`: explicit Van Overstraeten/de Man diagnostic parameter
+    override. Accepted values are `default`, `sentaurus_fit_A_only`,
+    `sentaurus_fit_A_B`, and `sentaurus_fit_A_B_switch`. The default leaves the
+    built-in silicon parameters unchanged. The Sentaurus-fit options use the
+    node-output effective fit `van_overstraeten_sentaurus_effective_fit_v1` only
+    when requested; they do not replace the material-library defaults. The
+    `sentaurus_fit_A_B_switch` option also sets the Van Overstraeten
+    `switch_field_V_m` equivalent to `2.5e5 V/cm`.
+  - `A_scale`: positive finite Van Overstraeten/de Man diagnostic multiplier
+    for the four `A` prefactors only (`electron_a_low_m_inv`,
+    `electron_a_high_m_inv`, `hole_a_low_m_inv`, `hole_a_high_m_inv`). The
+    default `1.0` leaves the default path unchanged. It does not modify `B`,
+    `switch_field_V_m`, low/high branch selection, cutoff, smoothing, or
+    RefDens-style driving-force blending.
 
 Validation:
 - `electron_A_m_inv`, `hole_A_m_inv`, and `carrier_velocity_m_s` must be non-negative.
@@ -575,7 +600,11 @@ Validation:
 - `generation` must be `carrier_density` or `current_density`.
 - `source_volume_policy` must be `edge_half_box` or `edge_box`.
 - `source_volume_factor` must be `0` or finite within `[0.5, 1.0]`.
-- `minimum_field_V_m` must be non-negative and finite.
+  - `minimum_field_V_m` must be non-negative and finite.
+  - `debug_raw_vanoverstraeten` requires `model: "van_overstraeten"`.
+  - Non-default `parameter_set` values require `model: "van_overstraeten"`.
+  - `A_scale` must be positive and finite; values other than `1.0` require
+    `model: "van_overstraeten"`.
 
 Scaling:
 - With `scaling.mode: "unit_scaling"`, `electron_A_m_inv` and

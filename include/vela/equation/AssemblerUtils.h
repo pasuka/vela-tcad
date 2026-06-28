@@ -577,7 +577,8 @@ inline Real interpolatedAvalancheDrivingField(const ImpactIonizationModelConfig&
                                               Real                               carrierDensity,
                                               Real                               referenceDensity)
 {
-    if (config.drivingForceInterpolation != "quasi_fermi_to_electric_field" ||
+    if (config.debugRawVanOverstraeten ||
+        config.drivingForceInterpolation != "quasi_fermi_to_electric_field" ||
         referenceDensity <= 0.0) {
         return drivingField;
     }
@@ -617,6 +618,13 @@ inline bool usesCurrentAlignedAvalancheDrivingForce(
 {
     return config.drivingForce == "grad_potential_parallel_j" ||
            config.drivingForce == "effective_field_parallel_j";
+}
+
+inline bool usesQuasiFermiAvalancheDrivingForce(
+    const ImpactIonizationModelConfig& config)
+{
+    return config.debugRawVanOverstraeten ||
+           config.drivingForce == "quasi_fermi_gradient";
 }
 
 inline Real parallelCurrentAvalancheDrivingField(Real signedDrivingField,
@@ -798,10 +806,13 @@ inline Real avalancheSourceEdgeArea(
 inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& config,
                                                  const char* context)
 {
-    const bool currentAlignedDrivingForce = usesCurrentAlignedAvalancheDrivingForce(config);
+    const bool configuredCurrentAlignedDrivingForce =
+        usesCurrentAlignedAvalancheDrivingForce(config);
+    const bool currentAlignedDrivingForce =
+        !config.debugRawVanOverstraeten && configuredCurrentAlignedDrivingForce;
     if (config.drivingForce != "electric_field" &&
         config.drivingForce != "quasi_fermi_gradient" &&
-        !currentAlignedDrivingForce) {
+        !configuredCurrentAlignedDrivingForce) {
         throw std::invalid_argument(
             std::string(context) +
             ": impact_ionization.driving_force must be 'electric_field', "
@@ -845,7 +856,8 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
             "or 'grad_qf'.");
     }
     if (config.drivingForceInterpolation != "none" &&
-        config.drivingForce != "quasi_fermi_gradient") {
+        config.drivingForce != "quasi_fermi_gradient" &&
+        !config.debugRawVanOverstraeten) {
         throw std::invalid_argument(
             std::string(context) +
             ": impact_ionization.driving_force_interpolation requires "
@@ -859,7 +871,8 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
             "'edge_difference' or 'cell_gradient'.");
     }
     if (config.quasiFermiGradientDiscretization == "cell_gradient" &&
-        config.drivingForce != "quasi_fermi_gradient") {
+        config.drivingForce != "quasi_fermi_gradient" &&
+        !config.debugRawVanOverstraeten) {
         throw std::invalid_argument(
             std::string(context) +
             ": impact_ionization.quasi_fermi_gradient_discretization='cell_gradient' "
@@ -905,6 +918,21 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
         throw std::invalid_argument(
             std::string(context) +
             ": impact_ionization.minimum_field_V_m must be non-negative and finite.");
+    }
+    if (!std::isfinite(config.aScale) || config.aScale <= 0.0) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.A_scale must be positive and finite.");
+    }
+    if (config.aScale != 1.0 && config.model != "van_overstraeten") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.A_scale requires model='van_overstraeten'.");
+    }
+    if (config.debugRawVanOverstraeten && config.model != "van_overstraeten") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.debug_raw_vanoverstraeten requires model='van_overstraeten'.");
     }
 }
 
@@ -958,13 +986,14 @@ inline bool usesEdgeCurrentAvalancheSource(
 
 inline bool usesQuasiFermiCarrierTruncation(const ImpactIonizationModelConfig& config)
 {
-    return config.quasiFermiCarrierTruncation > 0.0;
+    return !config.debugRawVanOverstraeten &&
+           config.quasiFermiCarrierTruncation > 0.0;
 }
 
 inline bool usesCellGradientQuasiFermiAvalancheDrive(
     const ImpactIonizationModelConfig& config)
 {
-    return config.drivingForce == "quasi_fermi_gradient" &&
+    return usesQuasiFermiAvalancheDrivingForce(config) &&
            config.quasiFermiGradientDiscretization == "cell_gradient";
 }
 
@@ -1183,7 +1212,7 @@ inline std::vector<Real> computeNodeCellGradientMagnitudes(
     const std::vector<std::vector<Index>>& nodeCells,
     const CellScalarGradientCache&         cache)
 {
-    std::vector<Real> fields(nodeCells.size(), 0.0);
+    std::vector<Point2> gradients(nodeCells.size(), Point2::Zero());
     for (std::size_t node = 0; node < nodeCells.size(); ++node) {
         Point2 weightedGradient = Point2::Zero();
         Real totalArea = 0.0;
@@ -1197,8 +1226,11 @@ inline std::vector<Real> computeNodeCellGradientMagnitudes(
             totalArea += area;
         }
         if (totalArea > 0.0)
-            fields[node] = (weightedGradient / totalArea).norm();
+            gradients[node] = weightedGradient / totalArea;
     }
+    std::vector<Real> fields(nodeCells.size(), 0.0);
+    for (std::size_t node = 0; node < nodeCells.size(); ++node)
+        fields[node] = gradients[node].norm();
     return fields;
 }
 
@@ -1213,7 +1245,7 @@ inline std::vector<Real> computeNodeCellGradientMagnitudes(
 }
 
 template <typename ValueAt>
-inline std::vector<Real> computeNodeWeightedLeastSquaresGradientMagnitudes(
+inline std::vector<Point2> computeNodeWeightedLeastSquaresGradients(
     const DeviceMesh&                      mesh,
     const std::vector<std::vector<Index>>& nodeCells,
     ValueAt&&                              valueAt)
@@ -1225,9 +1257,9 @@ inline std::vector<Real> computeNodeWeightedLeastSquaresGradientMagnitudes(
         nodeNeighbors[edge.n1].insert(edge.n0);
     }
 
-    std::vector<Real> fields(mesh.numNodes(), 0.0);
-    const std::vector<Real> fallback = computeNodeCellGradientMagnitudes(
-        mesh, nodeCells, [&](Index node) { return valueAt(node); });
+    std::vector<Point2> fields(mesh.numNodes(), Point2::Zero());
+    const CellScalarGradientCache fallbackCache = computeCellScalarGradientCache(
+        mesh, [&](Index node) { return valueAt(node); });
 
     for (Index nodeId = 0; nodeId < mesh.numNodes(); ++nodeId) {
         const Node& center = mesh.getNode(nodeId);
@@ -1256,14 +1288,40 @@ inline std::vector<Real> computeNodeWeightedLeastSquaresGradientMagnitudes(
 
         const Real det = sxx * syy - sxy * sxy;
         if (std::abs(det) <= 1.0e-60) {
-            fields[nodeId] = fallback[nodeId];
+            Point2 weightedGradient = Point2::Zero();
+            Real totalArea = 0.0;
+            for (const Index cellId : nodeCells[nodeId]) {
+                if (cellId >= fallbackCache.valid.size() || !fallbackCache.valid[cellId])
+                    continue;
+                const Real area = fallbackCache.areas[cellId];
+                if (area <= 0.0)
+                    continue;
+                weightedGradient += area * fallbackCache.gradients[cellId];
+                totalArea += area;
+            }
+            if (totalArea > 0.0)
+                fields[nodeId] = weightedGradient / totalArea;
             continue;
         }
 
         const Real gradX = (sxv * syy - syv * sxy) / det;
         const Real gradY = (sxx * syv - sxy * sxv) / det;
-        fields[nodeId] = std::hypot(gradX, gradY);
+        fields[nodeId] = Point2{gradX, gradY};
     }
+    return fields;
+}
+
+template <typename ValueAt>
+inline std::vector<Real> computeNodeWeightedLeastSquaresGradientMagnitudes(
+    const DeviceMesh&                      mesh,
+    const std::vector<std::vector<Index>>& nodeCells,
+    ValueAt&&                              valueAt)
+{
+    const std::vector<Point2> gradients = computeNodeWeightedLeastSquaresGradients(
+        mesh, nodeCells, std::forward<ValueAt>(valueAt));
+    std::vector<Real> fields(gradients.size(), 0.0);
+    for (std::size_t node = 0; node < gradients.size(); ++node)
+        fields[node] = gradients[node].norm();
     return fields;
 }
 
@@ -1290,6 +1348,8 @@ inline Real edgeQuasiFermiCoefficientField(
             edgeCells, edgeId, qfGradientCache, validGradient);
         return validGradient ? gradient.norm() : edgeQfField;
     }
+    if (config.debugRawVanOverstraeten)
+        return edgeQfField;
     return edgeHighFieldDrivingField(
         true, edgeQfField, electricField, edgeCells, mesh, edgeId, contactNodes);
 }
@@ -1490,8 +1550,9 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
 {
     std::vector<SgEdgeCurrentAvalancheSourceRecord> records;
     records.reserve(mesh.numEdges());
-    const bool qfImpact = config.drivingForce == "quasi_fermi_gradient";
-    const bool currentAlignedImpact = usesCurrentAlignedAvalancheDrivingForce(config);
+    const bool qfImpact = usesQuasiFermiAvalancheDrivingForce(config);
+    const bool currentAlignedImpact =
+        !config.debugRawVanOverstraeten && usesCurrentAlignedAvalancheDrivingForce(config);
     const bool cellReconstructedCurrent = usesCellReconstructedAvalancheCurrent(config);
     const bool cellCurrentReconstructedCurrent = usesCellCurrentReconstructedAvalancheCurrent(config);
     const bool cellVectorCurrentReconstructedCurrent = usesCellVectorCurrentReconstructedAvalancheCurrent(config);

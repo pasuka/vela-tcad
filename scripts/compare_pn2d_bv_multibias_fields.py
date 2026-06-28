@@ -23,7 +23,49 @@ FIELD_SPECS: dict[str, dict[str, Any]] = {
     },
     "electric_field": {
         "sentaurus": ["ElectricField"],
-        "vela": "ElectricField",
+        "vela": "ElectricFieldVector",
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "electron_current_density": {
+        "sentaurus": ["eCurrentDensity", "eCurrent"],
+        "vela": "J_n_total",
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "electron_current_density_drift": {
+        "sentaurus": ["eDriftCurrentDensity", "eDriftCurrent"],
+        "vela": "J_n_drift",
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "electron_current_density_diffusion": {
+        "sentaurus": ["eDiffusionCurrentDensity", "eDiffusionCurrent"],
+        "vela": "J_n_diffusion",
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "hole_current_density": {
+        "sentaurus": ["hCurrentDensity", "hCurrent"],
+        "vela": "J_p_total",
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "hole_current_density_drift": {
+        "sentaurus": ["hDriftCurrentDensity", "hDriftCurrent"],
+        "vela": "J_p_drift",
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "hole_current_density_diffusion": {
+        "sentaurus": ["hDiffusionCurrentDensity", "hDiffusionCurrent"],
+        "vela": "J_p_diffusion",
+        "scale": 1.0,
+        "metric": "relative_p95",
+    },
+    "total_current_density": {
+        "sentaurus": ["TotalCurrentDensity", "TotalCurrent"],
+        "vela": "TotalCurrentDensityVector",
         "scale": 1.0,
         "metric": "relative_p95",
     },
@@ -66,13 +108,13 @@ FIELD_SPECS: dict[str, dict[str, Any]] = {
     "electron_velocity": {
         "sentaurus": ["eVelocity"],
         "vela": "ElectronVelocity",
-        "scale": 1.0,
+        "scale": 100.0,
         "metric": "relative_p95",
     },
     "hole_velocity": {
         "sentaurus": ["hVelocity"],
         "vela": "HoleVelocity",
-        "scale": 1.0,
+        "scale": 100.0,
         "metric": "relative_p95",
     },
     "electron_alpha_avalanche": {
@@ -337,6 +379,25 @@ def parse_vtk(path: Path) -> dict[str, Any]:
                 }:
                     break
                 values.extend(float(value) for value in next_parts)
+                i += 1
+            scalars[name] = np.array(values, dtype=float)
+            continue
+        if len(parts) >= 3 and parts[0] == "VECTORS":
+            name = parts[1]
+            i += 1
+            values: list[float] = []
+            while i < len(lines):
+                next_parts = lines[i].split()
+                if not next_parts or next_parts[0] in {
+                    "SCALARS",
+                    "VECTORS",
+                    "FIELD",
+                    "CELL_DATA",
+                    "POINT_DATA",
+                }:
+                    break
+                comps = [float(value) for value in next_parts[:3]]
+                values.append(math.sqrt(sum(value * value for value in comps)))
                 i += 1
             scalars[name] = np.array(values, dtype=float)
             continue
@@ -683,6 +744,14 @@ def finite_or_blank(value: Any) -> Any:
     return value
 
 
+def write_ordered_csv(path: Path, rows: list[dict[str, Any]], fields: list[str]) -> None:
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({field: finite_or_blank(row.get(field)) for field in fields})
+
+
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     fields = [
         "bias_V",
@@ -709,11 +778,7 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "junction_error",
         "bulk_error",
     ]
-    with path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({key: finite_or_blank(row.get(key)) for key in fields})
+    write_ordered_csv(path, rows, fields)
 
 
 def write_curve_csv(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -725,11 +790,7 @@ def write_curve_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "abs_log10_error",
         "status",
     ]
-    with path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({key: finite_or_blank(row.get(key)) for key in fields})
+    write_ordered_csv(path, rows, fields)
 
 
 def clean_for_json(value: Any) -> Any:

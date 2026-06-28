@@ -98,20 +98,75 @@ ELEMENTARY_CHARGE_C = 1.602176634e-19
 
 NODE_FIELD_MAP: dict[str, dict[str, Any]] = {
     "potential": {"sentaurus": ["ElectrostaticPotential", "Potential"], "vela": ["Potential"], "scale": 1.0},
-    "electric_field": {"sentaurus": ["ElectricField"], "vela": ["ElectricField"], "scale": 1.0},
+    "electric_field": {"sentaurus": ["ElectricField"], "vela": ["ElectricFieldVector", "ElectricField"], "scale": 1.0},
     "electron_density": {"sentaurus": ["eDensity"], "vela": ["Electrons"], "scale": 1.0e-6},
     "hole_density": {"sentaurus": ["hDensity"], "vela": ["Holes"], "scale": 1.0e-6},
     "electron_qf": {"sentaurus": ["eQuasiFermiPotential", "eQuasiFermi"], "vela": ["ElectronQuasiFermi"], "scale": 1.0},
     "hole_qf": {"sentaurus": ["hQuasiFermiPotential", "hQuasiFermi"], "vela": ["HoleQuasiFermi"], "scale": 1.0},
-    "electron_current": {"sentaurus": ["eCurrentDensity", "eCurrent"], "vela": ["ElectronCurrentDensity"], "scale": 1.0},
-    "hole_current": {"sentaurus": ["hCurrentDensity", "hCurrent"], "vela": ["HoleCurrentDensity"], "scale": 1.0},
-    "total_current": {"sentaurus": ["TotalCurrentDensity", "TotalCurrent"], "vela": ["TotalCurrentDensity"], "scale": 1.0},
+    "electron_current": {
+        "sentaurus": ["eCurrentDensity", "eCurrent"],
+        "vela": ["J_n_total", "ElectronCurrentDensityVector", "ElectronCurrentDensity"],
+        "scale": 1.0,
+        "basis": "magnitude",
+    },
+    "electron_current_drift": {
+        "sentaurus": ["eDriftCurrentDensity", "eDriftCurrent"],
+        "sentaurus_derived": "electron_current_drift",
+        "vela": ["J_n_drift"],
+        "scale": 1.0,
+        "basis": "magnitude",
+    },
+    "electron_current_diffusion": {
+        "sentaurus": ["eDiffusionCurrentDensity", "eDiffusionCurrent"],
+        "sentaurus_derived": "electron_current_diffusion",
+        "vela": ["J_n_diffusion"],
+        "scale": 1.0,
+        "basis": "magnitude",
+    },
+    "electron_current_total": {
+        "sentaurus": ["eCurrentDensity", "eCurrent"],
+        "vela": ["J_n_total", "ElectronCurrentDensityVector", "ElectronCurrentDensity"],
+        "scale": 1.0,
+        "basis": "magnitude",
+    },
+    "hole_current": {
+        "sentaurus": ["hCurrentDensity", "hCurrent"],
+        "vela": ["J_p_total", "HoleCurrentDensityVector", "HoleCurrentDensity"],
+        "scale": 1.0,
+        "basis": "magnitude",
+    },
+    "hole_current_drift": {
+        "sentaurus": ["hDriftCurrentDensity", "hDriftCurrent"],
+        "sentaurus_derived": "hole_current_drift",
+        "vela": ["J_p_drift"],
+        "scale": 1.0,
+        "basis": "magnitude",
+    },
+    "hole_current_diffusion": {
+        "sentaurus": ["hDiffusionCurrentDensity", "hDiffusionCurrent"],
+        "sentaurus_derived": "hole_current_diffusion",
+        "vela": ["J_p_diffusion"],
+        "scale": 1.0,
+        "basis": "magnitude",
+    },
+    "hole_current_total": {
+        "sentaurus": ["hCurrentDensity", "hCurrent"],
+        "vela": ["J_p_total", "HoleCurrentDensityVector", "HoleCurrentDensity"],
+        "scale": 1.0,
+        "basis": "magnitude",
+    },
+    "total_current": {
+        "sentaurus": ["TotalCurrentDensity", "TotalCurrent"],
+        "vela": ["TotalCurrentDensityVector", "TotalCurrentDensity"],
+        "scale": 1.0,
+        "basis": "magnitude",
+    },
     "srh": {"sentaurus": ["SRHRecombination", "srhRecombination"], "vela": ["SRHRecombination"], "scale": 1.0e-6},
     "avalanche": {"sentaurus": ["AvalancheGeneration", "ImpactIonization"], "vela": ["AvalancheGeneration"], "scale": 1.0e-6},
     "electron_mobility": {"sentaurus": ["eMobility"], "vela": ["ElectronMobility"], "scale": 1.0e4},
     "hole_mobility": {"sentaurus": ["hMobility"], "vela": ["HoleMobility"], "scale": 1.0e4},
-    "electron_velocity": {"sentaurus": ["eVelocity"], "vela": ["ElectronVelocity"], "scale": 1.0},
-    "hole_velocity": {"sentaurus": ["hVelocity"], "vela": ["HoleVelocity"], "scale": 1.0},
+    "electron_velocity": {"sentaurus": ["eVelocity"], "vela": ["ElectronVelocity"], "vela_scale": 100.0, "scale": 1.0},
+    "hole_velocity": {"sentaurus": ["hVelocity"], "vela": ["HoleVelocity"], "vela_scale": 100.0, "scale": 1.0},
     "electron_alpha_avalanche": {"sentaurus": ["eAlphaAvalanche"], "vela": ["ElectronAlphaAvalanche"], "sentaurus_scale": 100.0, "scale": 1.0},
     "hole_alpha_avalanche": {"sentaurus": ["hAlphaAvalanche"], "vela": ["HoleAlphaAvalanche"], "sentaurus_scale": 100.0, "scale": 1.0},
     "electron_ion_integral": {"sentaurus": ["eIonIntegral"], "vela": ["ElectronIonIntegral"], "scale": 1.0},
@@ -319,16 +374,26 @@ def read_csv_rows(path: Path) -> list[dict[str, str]]:
     if not path.exists():
         return []
     with path.open(newline="") as handle:
-        return list(csv.DictReader(handle))
+        return [
+            {str(key).strip(): str(value).strip() for key, value in row.items()}
+            for row in csv.DictReader(handle, skipinitialspace=True)
+        ]
 
 
 def write_csv_rows(path: Path, rows: list[dict[str, Any]], fields: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    string_rows = [
+        {field: "" if row.get(field) is None else str(row.get(field)) for field in fields}
+        for row in rows
+    ]
+    widths = {
+        field: max([len(field)] + [len(row.get(field, "")) for row in string_rows])
+        for field in fields
+    }
     with path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({field: "" if row.get(field) is None else row.get(field) for field in fields})
+        handle.write(",".join(field.ljust(widths[field]) for field in fields) + "\n")
+        for row in string_rows:
+            handle.write(",".join(row.get(field, "").ljust(widths[field]) for field in fields) + "\n")
 
 
 def load_nodes(export_dir: Path) -> list[dict[str, Any]]:
@@ -355,6 +420,120 @@ def load_sentaurus_scalar(export_dir: Path, aliases: list[str]) -> tuple[str, di
     return None
 
 
+def load_sentaurus_vector(export_dir: Path, aliases: list[str]) -> tuple[str, dict[int, tuple[float, float]]] | None:
+    for alias in aliases:
+        for path in [export_dir / "fields" / f"{alias}_region0.csv", export_dir / f"{alias}_region0.csv"]:
+            if not path.exists():
+                continue
+            values: dict[int, tuple[float, float]] = {}
+            with path.open(newline="") as handle:
+                reader = csv.DictReader(handle)
+                fieldnames = reader.fieldnames or []
+                if "component0" not in fieldnames:
+                    continue
+                for row in reader:
+                    x = float(row.get("component0", "0") or 0.0)
+                    y = float(row.get("component1", "0") or 0.0)
+                    values[int(row["node_id"])] = (x, y)
+            if values:
+                return alias, values
+    return None
+
+
+def load_elements(export_dir: Path) -> list[tuple[int, int, int]]:
+    elements: list[tuple[int, int, int]] = []
+    for row in read_csv_rows(export_dir / "elements.csv"):
+        try:
+            elements.append((int(row["node0"]), int(row["node1"]), int(row["node2"])))
+        except (KeyError, ValueError):
+            continue
+    return elements
+
+
+def compute_node_gradients_um(
+    nodes: list[dict[str, Any]],
+    elements: list[tuple[int, int, int]],
+    values: dict[int, float],
+) -> dict[int, tuple[float, float]]:
+    coords = {int(node["id"]): (float(node["x_um"]), float(node["y_um"])) for node in nodes}
+    neighbors: dict[int, set[int]] = {node_id: set() for node_id in coords}
+    for a, b, c in elements:
+        for node, others in [(a, (b, c)), (b, (a, c)), (c, (a, b))]:
+            if node in neighbors:
+                neighbors[node].update(other for other in others if other in coords)
+    gradients: dict[int, tuple[float, float]] = {}
+    for node_id, (x0, y0) in coords.items():
+        if node_id not in values:
+            continue
+        sxx = sxy = syy = sxv = syv = 0.0
+        v0 = values[node_id]
+        for other in neighbors.get(node_id, set()):
+            if other not in values:
+                continue
+            x1, y1 = coords[other]
+            dx = x1 - x0
+            dy = y1 - y0
+            dv = values[other] - v0
+            sxx += dx * dx
+            sxy += dx * dy
+            syy += dy * dy
+            sxv += dx * dv
+            syv += dy * dv
+        det = sxx * syy - sxy * sxy
+        if abs(det) <= 1.0e-30:
+            gradients[node_id] = (0.0, 0.0)
+        else:
+            gradients[node_id] = ((sxv * syy - syv * sxy) / det,
+                                  (sxx * syv - sxy * sxv) / det)
+    return gradients
+
+
+def load_derived_sentaurus_current(
+    export_dir: Path,
+    nodes: list[dict[str, Any]],
+    quantity: str,
+) -> tuple[str, dict[int, float]] | None:
+    carrier_specs = {
+        "electron_current_drift": ("e", "eDensity", "eMobility", "eCurrentDensity", True),
+        "electron_current_diffusion": ("e", "eDensity", "eMobility", "eCurrentDensity", False),
+        "hole_current_drift": ("h", "hDensity", "hMobility", "hCurrentDensity", True),
+        "hole_current_diffusion": ("h", "hDensity", "hMobility", "hCurrentDensity", False),
+    }
+    if quantity not in carrier_specs:
+        return None
+    carrier, density_name, mobility_name, current_name, drift_only = carrier_specs[quantity]
+    potential = load_sentaurus_scalar(export_dir, ["ElectrostaticPotential", "Potential"])
+    density = load_sentaurus_scalar(export_dir, [density_name])
+    mobility = load_sentaurus_scalar(export_dir, [mobility_name])
+    net_current = load_sentaurus_vector(export_dir, [current_name])
+    if potential is None or density is None or mobility is None:
+        return None
+    if not drift_only and net_current is None:
+        return None
+    gradients_v_um = compute_node_gradients_um(nodes, load_elements(export_dir), potential[1])
+    values: dict[int, float] = {}
+    for node in nodes:
+        node_id = int(node["id"])
+        if node_id not in gradients_v_um or node_id not in density[1] or node_id not in mobility[1]:
+            continue
+        grad_x_v_cm = gradients_v_um[node_id][0] * 1.0e4
+        grad_y_v_cm = gradients_v_um[node_id][1] * 1.0e4
+        scale = ELEMENTARY_CHARGE_C * mobility[1][node_id] * density[1][node_id]
+        drift = (scale * grad_x_v_cm, scale * grad_y_v_cm)
+        if drift_only:
+            vec = drift
+        else:
+            net = net_current[1].get(node_id) if net_current is not None else None
+            if net is None:
+                continue
+            vec = (net[0] - drift[0], net[1] - drift[1])
+        values[node_id] = math.hypot(vec[0], vec[1])
+    if not values:
+        return None
+    kind = "Drift" if drift_only else "Diffusion"
+    return f"derived:{carrier}{kind}CurrentDensityMagnitude", values
+
+
 def parse_vtk(path: Path) -> dict[str, list[float]]:
     lines = path.read_text().splitlines()
     scalars: dict[str, list[float]] = {}
@@ -370,6 +549,19 @@ def parse_vtk(path: Path) -> dict[str, list[float]]:
                 if not next_parts or next_parts[0] in {"SCALARS", "VECTORS", "FIELD", "CELL_DATA", "POINT_DATA"}:
                     break
                 values.extend(float(value) for value in next_parts)
+                i += 1
+            scalars[name] = values
+            continue
+        if len(parts) >= 3 and parts[0] == "VECTORS":
+            name = parts[1]
+            i += 1
+            values: list[float] = []
+            while i < len(lines):
+                next_parts = lines[i].split()
+                if not next_parts or next_parts[0] in {"SCALARS", "VECTORS", "FIELD", "CELL_DATA", "POINT_DATA"}:
+                    break
+                comps = [float(value) for value in next_parts[:3]]
+                values.append(math.sqrt(sum(value * value for value in comps)))
                 i += 1
             scalars[name] = values
             continue
@@ -408,6 +600,8 @@ def node_field_compare(
         vtk_scalars = parse_vtk(vela_vtks[vela_bias]) if vela_bias is not None else {}
         for quantity, spec in NODE_FIELD_MAP.items():
             loaded = load_sentaurus_scalar(sent_dir, spec["sentaurus"])
+            if loaded is None and spec.get("sentaurus_derived"):
+                loaded = load_derived_sentaurus_current(sent_dir, nodes, str(spec["sentaurus_derived"]))
             sent_field = loaded[0] if loaded else ""
             sent_values = loaded[1] if loaded else {}
             vela_field = next((name for name in spec["vela"] if name in vtk_scalars), "")
@@ -424,6 +618,7 @@ def node_field_compare(
                 ratio = None
                 if sent_value not in (None, 0.0) and vela_value is not None:
                     ratio = vela_value / sent_value
+                diff = None if sent_value is None or vela_value is None else vela_value - sent_value
                 rows.append({
                     "bias_V": bias,
                     "vela_bias_V": vela_bias,
@@ -435,8 +630,10 @@ def node_field_compare(
                     "sentaurus_value": sent_value,
                     "vela_field": vela_field,
                     "vela_value_scaled_to_sentaurus_units": vela_value,
+                    "comparison_basis": spec.get("basis", "scalar_or_magnitude"),
                     "vela_over_sentaurus": ratio,
-                    "abs_diff": None if sent_value is None or vela_value is None else vela_value - sent_value,
+                    "diff": diff,
+                    "abs_diff": None if diff is None else abs(diff),
                 })
     return rows
 
@@ -485,6 +682,13 @@ def current_support_compare(
             vals = [values[node] for node in (node0, node1) if node in values]
             return sum(vals) / len(vals) if vals else None
 
+        electron_source = optional_float(edge.get("electron_source_integral"))
+        hole_source = optional_float(edge.get("hole_source_integral"))
+        source_total = optional_float(edge.get("source_integral_total"))
+        if source_total is None:
+            source_total = optional_float(edge.get("source_integral"))
+        if source_total is None:
+            source_total = (electron_source or 0.0) + (hole_source or 0.0)
         row: dict[str, Any] = {
             "bias_V": bias,
             "nearest_sentaurus_bias_V": matched_bias,
@@ -492,9 +696,10 @@ def current_support_compare(
             "node0": node0,
             "node1": node1,
             "edge_class": edge.get("edge_class", ""),
-            "source_integral": edge.get("source_integral", ""),
-            "electron_source_integral": edge.get("electron_source_integral", ""),
-            "hole_source_integral": edge.get("hole_source_integral", ""),
+            "source_integral_total": source_total,
+            "electron_source_integral": electron_source,
+            "hole_source_integral": hole_source,
+            "current_comparison_basis": "edge_flux_magnitude",
             "electron_flux_abs": edge.get("electron_flux_abs", edge.get("electron_flux_proxy", "")),
             "hole_flux_abs": edge.get("hole_flux_abs", edge.get("hole_flux_proxy", "")),
             "electron_alpha_m_inv": edge.get("electron_alpha_m_inv", ""),
@@ -538,9 +743,11 @@ def build_active_edge_top_rows(
         electron_alpha_flux = electron_flux * electron_alpha
         hole_alpha_flux = hole_flux * hole_alpha
         combined_alpha_flux = electron_alpha_flux + hole_alpha_flux
-        source_integral = optional_float(row.get("source_integral"))
-        if source_integral is None:
-            source_integral = (optional_float(row.get("electron_source_integral")) or 0.0) + \
+        source_integral_total = optional_float(row.get("source_integral_total"))
+        if source_integral_total is None:
+            source_integral_total = optional_float(row.get("source_integral"))
+        if source_integral_total is None:
+            source_integral_total = (optional_float(row.get("electron_source_integral")) or 0.0) + \
                 (optional_float(row.get("hole_source_integral")) or 0.0)
         sent_e_current = optional_float(row.get("sent_e_current"))
         sent_h_current = optional_float(row.get("sent_h_current"))
@@ -564,9 +771,10 @@ def build_active_edge_top_rows(
             "electron_alpha_flux": electron_alpha_flux,
             "hole_alpha_flux": hole_alpha_flux,
             "combined_alpha_flux": combined_alpha_flux,
-            "source_integral": source_integral,
+            "source_integral_total": source_integral_total,
             "electron_source_integral": optional_float(row.get("electron_source_integral")),
             "hole_source_integral": optional_float(row.get("hole_source_integral")),
+            "current_comparison_basis": row.get("current_comparison_basis", "edge_flux_magnitude"),
             "sent_e_current": sent_e_current,
             "sent_h_current": sent_h_current,
             "sent_e_flux_from_J_over_q": sent_e_flux,
@@ -579,7 +787,7 @@ def build_active_edge_top_rows(
             "hole_alpha_over_sentaurus": hole_alpha / sent_h_alpha if sent_h_alpha not in (None, 0.0) else None,
         }
         selected.append(item)
-    selected.sort(key=lambda item: (abs(float(item["combined_alpha_flux"])), abs(float(item["source_integral"]))), reverse=True)
+    selected.sort(key=lambda item: (abs(float(item["combined_alpha_flux"])), abs(float(item["source_integral_total"]))), reverse=True)
     for rank, item in enumerate(selected[:limit], start=1):
         item["rank"] = rank
     return selected[:limit]
@@ -772,7 +980,7 @@ def write_rootcause_summary(path: Path, summary: dict[str, Any]) -> None:
             f"| {rank} | {float(row.get('bias_V', 'nan')):.6g} | {row.get('edge_id', '')} | "
             f"{row.get('node0', '')}-{row.get('node1', '')} | {row.get('edge_class', '')} | "
             f"{float(row.get('combined_alpha_flux', 'nan')):.6e} | "
-            f"{float(row.get('source_integral', 'nan')):.6e} | "
+            f"{float(row.get('source_integral_total', 'nan')):.6e} | "
             f"{float(row.get('electron_flux_over_sentaurus', 'nan')):.6g} | "
             f"{float(row.get('electron_alpha_over_sentaurus', 'nan')):.6g} | "
             f"{float(row.get('hole_flux_over_sentaurus', 'nan')):.6g} | "
@@ -800,6 +1008,8 @@ def write_rootcause_summary(path: Path, summary: dict[str, Any]) -> None:
         "",
         "The Sentaurus exports include velocity, avalanche alpha, and ion-integral fields. Vela VTK now exports matching direct node diagnostics for velocity, alpha, and local alpha-length ion-integral support; remaining gaps should be interpreted as nearest-bias or field-availability differences.",
         "",
+        "Velocity values compare Vela m/s converted to Sentaurus cm/s. Current-density node comparisons use vector magnitudes when vector fields are available; edge current-support comparisons use edge-flux magnitudes.",
+        "",
         "| quantity | node rows | Sentaurus values | Vela direct node values |",
         "| --- | ---: | ---: | ---: |",
         *field_rows,
@@ -808,13 +1018,13 @@ def write_rootcause_summary(path: Path, summary: dict[str, Any]) -> None:
         "",
         "Top Vela active edges ranked by combined `alpha*flux`, using nearest Vela bias to Sentaurus -10 V.",
         "",
-        "| rank | Vela V | edge | nodes | class | combined alpha*flux | source integral | e flux/Sent | e alpha/Sent | h flux/Sent | h alpha/Sent |",
+        "| rank | Vela V | edge | nodes | class | combined alpha*flux | source_integral_total | e flux/Sent | e alpha/Sent | h flux/Sent | h alpha/Sent |",
         "| ---: | ---: | ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
         *active_lines,
         "",
         "## Current-Support Coverage",
         "",
-        "The edge table joins Vela SG flux/source diagnostics with endpoint-averaged Sentaurus current, velocity, alpha, and ion-integral support on the same imported mesh node ids.",
+        "The edge table joins Vela SG flux/source diagnostics with endpoint-averaged Sentaurus current, velocity, alpha, and ion-integral support on the same imported mesh node ids. `current_comparison_basis=edge_flux_magnitude` means these are not x-components, normal components, or signed edge projections.",
         "",
         "| field | non-empty rows |",
         "| --- | ---: |",
@@ -863,6 +1073,13 @@ def main(argv: list[str] | None = None) -> int:
     run_stem = f"coarse_previous_full20{run_suffix}"
     vtk_subdir = f"vtk{run_suffix}"
     args.source_dir = normalize_sentaurus_source_dir(args.source_dir).resolve()
+    args.reference_config = args.reference_config.resolve()
+    args.import_output_dir = args.import_output_dir.resolve()
+    args.out_dir = args.out_dir.resolve()
+    args.runner = args.runner.resolve()
+    args.tdr_importer = args.tdr_importer.resolve()
+    if args.sentaurus_export_root is not None:
+        args.sentaurus_export_root = args.sentaurus_export_root.resolve()
     ensure_sentaurus_source_inputs(args.source_dir)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     vtk_dir = args.out_dir / vtk_subdir
@@ -929,7 +1146,7 @@ def main(argv: list[str] | None = None) -> int:
     write_csv_rows(node_csv, node_rows, [
         "bias_V", "vela_bias_V", "node_id", "x_um", "y_um", "quantity", "sentaurus_field",
         "sentaurus_value", "vela_field", "vela_value_scaled_to_sentaurus_units",
-        "vela_over_sentaurus", "abs_diff",
+        "comparison_basis", "vela_over_sentaurus", "diff", "abs_diff",
     ])
     write_json(args.out_dir / f"coarse_node_field_compare{run_suffix}.json", {"rows": node_rows[:1000], "row_count": len(node_rows)})
 
@@ -940,7 +1157,8 @@ def main(argv: list[str] | None = None) -> int:
     support_csv = args.out_dir / f"coarse_current_support_compare{run_suffix}.csv"
     write_csv_rows(support_csv, support_rows, [
         "bias_V", "nearest_sentaurus_bias_V", "edge_id", "node0", "node1", "edge_class",
-        "source_integral", "electron_source_integral", "hole_source_integral",
+        "source_integral_total", "electron_source_integral", "hole_source_integral",
+        "current_comparison_basis",
         "electron_flux_abs", "hole_flux_abs", "electron_alpha_m_inv", "hole_alpha_m_inv",
         "sent_e_velocity", "sent_h_velocity", "sent_e_alpha", "sent_h_alpha",
         "sent_e_ion_integral", "sent_h_ion_integral", "sent_mean_ion_integral",
@@ -954,8 +1172,9 @@ def main(argv: list[str] | None = None) -> int:
         "rank", "target_sentaurus_bias_V", "bias_V", "nearest_sentaurus_bias_V",
         "edge_id", "node0", "node1", "edge_class",
         "electron_flux_abs", "hole_flux_abs", "electron_alpha_m_inv", "hole_alpha_m_inv",
-        "electron_alpha_flux", "hole_alpha_flux", "combined_alpha_flux", "source_integral",
+        "electron_alpha_flux", "hole_alpha_flux", "combined_alpha_flux", "source_integral_total",
         "electron_source_integral", "hole_source_integral",
+        "current_comparison_basis",
         "sent_e_current", "sent_h_current", "sent_e_flux_from_J_over_q", "sent_h_flux_from_J_over_q",
         "sent_e_alpha", "sent_h_alpha", "electron_flux_over_sentaurus", "hole_flux_over_sentaurus",
         "electron_alpha_over_sentaurus", "hole_alpha_over_sentaurus",

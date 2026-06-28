@@ -170,6 +170,15 @@ target_link_libraries(vela_example_runner PRIVATE vela_core)
 add_executable(pn2d_jacobian_block_audit src/tools/pn2d_jacobian_block_audit.cpp)
 target_link_libraries(pn2d_jacobian_block_audit PRIVATE vela_core)
 
+add_executable(alpha_from_sentaurus_f src/tools/alpha_from_sentaurus_f.cpp)
+target_link_libraries(alpha_from_sentaurus_f PRIVATE vela_core)
+
+add_executable(sentaurus_vanoverstraeten_fit src/tools/sentaurus_vanoverstraeten_fit.cpp)
+target_link_libraries(sentaurus_vanoverstraeten_fit PRIVATE vela_core)
+
+add_executable(vanoverstraeten_parameter_sweep src/tools/vanoverstraeten_parameter_sweep.cpp)
+target_link_libraries(vanoverstraeten_parameter_sweep PRIVATE vela_core)
+
 if(VELA_HDF5_TARGET)
     add_executable(sentaurus_import src/tools/sentaurus_import.cpp)
     target_link_libraries(sentaurus_import PRIVATE vela_sentaurus)
@@ -408,6 +417,45 @@ add_test(NAME sentaurus_import_tools
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_sentaurus_import_tools.py)
 vela_set_windows_msys2_test_path(sentaurus_import_tools)
+
+add_test(NAME sentaurus_vanoverstraeten_fit_regression
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_sentaurus_vanoverstraeten_fit.py)
+if(WIN32)
+    vela_windows_msys2_test_env(_vela_vo_fit_env)
+    set_tests_properties(sentaurus_vanoverstraeten_fit_regression PROPERTIES
+        ENVIRONMENT "VELA_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR};${_vela_vo_fit_env}")
+else()
+    set_tests_properties(sentaurus_vanoverstraeten_fit_regression PROPERTIES
+        ENVIRONMENT "VELA_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}")
+endif()
+
+add_test(NAME vanoverstraeten_parameter_sweep_regression
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_vanoverstraeten_parameter_sweep.py)
+if(WIN32)
+    vela_windows_msys2_test_env(_vela_vo_sweep_env)
+    set_tests_properties(vanoverstraeten_parameter_sweep_regression PROPERTIES
+        ENVIRONMENT "VELA_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR};${_vela_vo_sweep_env}")
+else()
+    set_tests_properties(vanoverstraeten_parameter_sweep_regression PROPERTIES
+        ENVIRONMENT "VELA_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}")
+endif()
+
+add_test(NAME vanoverstraeten_bv_parameter_matrix_regression
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_vanoverstraeten_bv_parameter_matrix.py)
+vela_set_windows_msys2_test_path(vanoverstraeten_bv_parameter_matrix_regression)
+
+add_test(NAME vanoverstraeten_A_scale_iic_sweep_regression
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_vanoverstraeten_A_scale_iic_sweep.py)
+vela_set_windows_msys2_test_path(vanoverstraeten_A_scale_iic_sweep_regression)
+
+add_test(NAME vanoverstraeten_A_scale_full_bv_matrix_regression
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_vanoverstraeten_A_scale_full_bv_matrix.py)
+vela_set_windows_msys2_test_path(vanoverstraeten_A_scale_full_bv_matrix_regression)
 
 add_test(NAME diagnose_pn2d_0v_contact_state
     COMMAND ${Python3_EXECUTABLE}

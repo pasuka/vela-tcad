@@ -84,4 +84,24 @@ void VTKWriter::addNodeScalar(const std::string& fieldName,
         ofs << v << "\n";
 }
 
+void VTKWriter::addNodeVector(const std::string& fieldName,
+                              const std::vector<Point3>& values)
+{
+    if (values.size() != mesh_.numNodes())
+        throw std::invalid_argument("addNodeVector: values size mismatch.");
+
+    std::ofstream ofs(filename_, std::ios::app);
+    if (!ofs.is_open())
+        throw std::runtime_error("Cannot open VTK file for appending: " + filename_);
+
+    if (!pointDataHeaderWritten_) {
+        ofs << "POINT_DATA " << mesh_.numNodes() << "\n";
+        pointDataHeaderWritten_ = true;
+    }
+
+    ofs << "VECTORS " << fieldName << " double\n";
+    for (const auto& v : values)
+        ofs << v.x() << " " << v.y() << " " << v.z() << "\n";
+}
+
 } // namespace vela

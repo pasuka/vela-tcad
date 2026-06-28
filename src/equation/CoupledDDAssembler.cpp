@@ -215,7 +215,8 @@ VectorXd CoupledDDAssembler::residual(const VectorXd& x,
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
         ? detail::computeNodeElectricFields(psi, mesh_)
         : std::vector<Real>{};
-    const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
+    const bool qfImpact =
+        detail::usesQuasiFermiAvalancheDrivingForce(impactIonizationConfig_);
     const VectorXd phinPhysical = x.segment(phinOffset(), N) * potentialScale;
     const VectorXd phipPhysical = x.segment(phipOffset(), N) * potentialScale;
     const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
@@ -479,7 +480,8 @@ CoupledDDAssembler::carrierContinuityTermDiagnostics(
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
         ? detail::computeNodeElectricFields(psi, mesh_)
         : std::vector<Real>{};
-    const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
+    const bool qfImpact =
+        detail::usesQuasiFermiAvalancheDrivingForce(impactIonizationConfig_);
     const VectorXd phinPhysical = x.segment(phinOffset(), N) * potentialScale;
     const VectorXd phipPhysical = x.segment(phipOffset(), N) * potentialScale;
     const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
@@ -828,8 +830,10 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const std::vector<Real> nodeElectricFields = impactIonizationEnabled_
         ? detail::computeNodeElectricFields(psi, mesh_)
         : std::vector<Real>{};
-    const bool qfImpact = impactIonizationConfig_.drivingForce == "quasi_fermi_gradient";
+    const bool qfImpact =
+        detail::usesQuasiFermiAvalancheDrivingForce(impactIonizationConfig_);
     const bool currentAlignedImpact =
+        !impactIonizationConfig_.debugRawVanOverstraeten &&
         detail::usesCurrentAlignedAvalancheDrivingForce(impactIonizationConfig_);
     const bool cellReconstructedCurrent =
         detail::usesCellReconstructedAvalancheCurrent(impactIonizationConfig_);
@@ -952,6 +956,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     edgeCells_, mesh_, e, qfAt, validGradient);
                 return validGradient ? gradient.norm() : edgeQfField;
             }
+            if (impactIonizationConfig_.debugRawVanOverstraeten)
+                return edgeQfField;
             return detail::edgeHighFieldDrivingField(
                 qfImpact, edgeQfField, electricField, edgeCells_, mesh_, e, contactNodes);
         };
