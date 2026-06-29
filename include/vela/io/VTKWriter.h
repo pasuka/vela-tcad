@@ -46,6 +46,18 @@ public:
     void addNodeVector(const std::string& fieldName,
                        const std::vector<Point3>& values);
 
+    /**
+     * @brief Append a cell-centred scalar field (CELL_DATA) to the file.
+     */
+    void addCellScalar(const std::string& fieldName,
+                       const std::vector<Real>& values);
+
+    /**
+     * @brief Append a cell-centred vector field (CELL_DATA) to the file.
+     */
+    void addCellVector(const std::string& fieldName,
+                       const std::vector<Point3>& values);
+
 private:
     std::string      filename_;
     const DeviceMesh& mesh_;

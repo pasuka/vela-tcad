@@ -908,6 +908,14 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
             std::string(context) +
             ": impact_ionization.source_volume_factor must be 0 or within [0.5, 1.0].");
     }
+    if (config.sourceMappingMode != "node_F_node_alpha_node_G" &&
+        config.sourceMappingMode != "edge_F_edge_alpha_edge_G_to_node" &&
+        config.sourceMappingMode != "cell_F_cell_alpha_cell_G_to_node") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.source_mapping_mode must be 'node_F_node_alpha_node_G', "
+            "'edge_F_edge_alpha_edge_G_to_node', or 'cell_F_cell_alpha_cell_G_to_node'.");
+    }
     if (!std::isfinite(config.quasiFermiCarrierTruncation) ||
         config.quasiFermiCarrierTruncation < 0.0) {
         throw std::invalid_argument(
@@ -928,6 +936,16 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
         throw std::invalid_argument(
             std::string(context) +
             ": impact_ionization.A_scale requires model='van_overstraeten'.");
+    }
+    if (!std::isfinite(config.bScale) || config.bScale <= 0.0) {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.B_scale must be positive and finite.");
+    }
+    if (config.bScale != 1.0 && config.model != "van_overstraeten") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.B_scale requires model='van_overstraeten'.");
     }
     if (config.debugRawVanOverstraeten && config.model != "van_overstraeten") {
         throw std::invalid_argument(
@@ -1796,6 +1814,63 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
     return records;
 }
 
+inline void addCellMappedEdgeSourceToNodes(
+    std::vector<Real>&                       target,
+    const std::vector<std::vector<Index>>&   edgeCells,
+    const DeviceMesh&                        mesh,
+    const SgEdgeCurrentAvalancheSourceRecord& record,
+    Real                                     sourceIntegral)
+{
+    if (record.edgeId >= edgeCells.size() || sourceIntegral == 0.0)
+        return;
+    const auto& cells = edgeCells[record.edgeId];
+    Real areaSum = 0.0;
+    for (Index cellId : cells) {
+        if (cellId < mesh.numCells())
+            areaSum += triangleArea(mesh, mesh.getCell(cellId));
+    }
+    if (areaSum <= 0.0) {
+        if (record.node0 < target.size()) target[record.node0] += 0.5 * sourceIntegral;
+        if (record.node1 < target.size()) target[record.node1] += 0.5 * sourceIntegral;
+        return;
+    }
+    for (Index cellId : cells) {
+        if (cellId >= mesh.numCells())
+            continue;
+        const Cell& cell = mesh.getCell(cellId);
+        if (cell.node_ids.empty())
+            continue;
+        const Real cellShare = sourceIntegral * triangleArea(mesh, cell) / areaSum;
+        const Real nodeShare = cellShare / static_cast<Real>(cell.node_ids.size());
+        for (Index nodeId : cell.node_ids) {
+            if (nodeId < target.size())
+                target[nodeId] += nodeShare;
+        }
+    }
+}
+
+inline void addMappedEdgeSourceToNodes(
+    const ImpactIonizationModelConfig&       config,
+    std::vector<Real>&                       target,
+    const std::vector<std::vector<Index>>&   edgeCells,
+    const DeviceMesh&                        mesh,
+    const SgEdgeCurrentAvalancheSourceRecord& record,
+    Real                                     node0DirectionalSource,
+    Real                                     node1DirectionalSource,
+    Real                                     sourceIntegral)
+{
+    if (config.sourceMappingMode == "cell_F_cell_alpha_cell_G_to_node") {
+        addCellMappedEdgeSourceToNodes(target, edgeCells, mesh, record, sourceIntegral);
+        return;
+    }
+    if (config.sourceMappingMode == "edge_F_edge_alpha_edge_G_to_node") {
+        if (record.node0 < target.size()) target[record.node0] += 0.5 * sourceIntegral;
+        if (record.node1 < target.size()) target[record.node1] += 0.5 * sourceIntegral;
+        return;
+    }
+    if (record.node0 < target.size()) target[record.node0] += node0DirectionalSource;
+    if (record.node1 < target.size()) target[record.node1] += node1DirectionalSource;
+}
 inline SgAvalancheSourceComponentIntegrals sgEdgeCurrentAvalancheSourceComponentIntegrals(
     const ImpactIonizationModelConfig& config,
     const ImpactIonizationModel&       impact,
@@ -1834,12 +1909,21 @@ inline SgAvalancheSourceComponentIntegrals sgEdgeCurrentAvalancheSourceComponent
         ni,
         Vt);
     for (const auto& record : records) {
-        source.electron[record.node0] += record.electronNode0SourceIntegral;
-        source.electron[record.node1] += record.electronNode1SourceIntegral;
-        source.hole[record.node0] += record.holeNode0SourceIntegral;
-        source.hole[record.node1] += record.holeNode1SourceIntegral;
-        source.combined[record.node0] += record.node0SourceIntegral;
-        source.combined[record.node1] += record.node1SourceIntegral;
+        addMappedEdgeSourceToNodes(
+            config, source.electron, edgeCells, mesh, record,
+            record.electronNode0SourceIntegral,
+            record.electronNode1SourceIntegral,
+            record.electronSourceIntegral);
+        addMappedEdgeSourceToNodes(
+            config, source.hole, edgeCells, mesh, record,
+            record.holeNode0SourceIntegral,
+            record.holeNode1SourceIntegral,
+            record.holeSourceIntegral);
+        addMappedEdgeSourceToNodes(
+            config, source.combined, edgeCells, mesh, record,
+            record.node0SourceIntegral,
+            record.node1SourceIntegral,
+            record.edgeSourceIntegral);
     }
     return source;
 }
@@ -1879,8 +1963,11 @@ inline std::vector<Real> sgEdgeCurrentAvalancheSourceIntegrals(
         ni,
         Vt);
     for (const auto& record : records) {
-        source[record.node0] += record.node0SourceIntegral;
-        source[record.node1] += record.node1SourceIntegral;
+        addMappedEdgeSourceToNodes(
+            config, source, edgeCells, mesh, record,
+            record.node0SourceIntegral,
+            record.node1SourceIntegral,
+            record.edgeSourceIntegral);
     }
     return source;
 }

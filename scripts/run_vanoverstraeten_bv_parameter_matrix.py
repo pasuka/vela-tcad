@@ -260,6 +260,14 @@ def field_values(data: VtkData, names: list[str]) -> list[float]:
     return []
 
 
+def field_values_with_scale(data: VtkData, candidates: list[tuple[str, float]]) -> tuple[list[float], float]:
+    for name, scale in candidates:
+        values = data.fields.get(name)
+        if values:
+            return values, scale
+    return [], 1.0
+
+
 def max_with_coord(data: VtkData, values: list[float], scale: float = 1.0) -> tuple[float | None, float | None, float | None]:
     if not values or not data.points:
         return None, None, None
@@ -384,15 +392,25 @@ def load_sentaurus_scalar(path: Path) -> list[float]:
 def summarize_vtk(data: VtkData) -> dict[str, Any]:
     out: dict[str, Any] = {}
     field_specs = {
-        "max_ElectricField_V_per_cm": (["ElectricFieldVector", "ElectricField"], 1.0),
-        "max_Fn_V_per_cm": (["ElectronHighFieldDrive", "ElectronImpactIonizationDrive"], 1.0),
-        "max_Fp_V_per_cm": (["HoleHighFieldDrive", "HoleImpactIonizationDrive"], 1.0),
-        "max_eAlphaAvalanche_cm_inv": (["ElectronAlphaAvalanche"], 0.01),
-        "max_hAlphaAvalanche_cm_inv": (["HoleAlphaAvalanche"], 0.01),
-        "max_AvalancheGeneration_m3_per_s": (["AvalancheGeneration"], 1.0),
+        "max_ElectricField_V_per_cm": [
+            ("ElectricFieldVector", 1.0),
+            ("ElectricField", 1.0),
+        ],
+        "max_Fn_V_per_cm": [
+            ("ElectronHighFieldDrive", 1.0),
+            ("ElectronImpactIonizationDrive", 0.01),
+        ],
+        "max_Fp_V_per_cm": [
+            ("HoleHighFieldDrive", 1.0),
+            ("HoleImpactIonizationDrive", 0.01),
+        ],
+        "max_eAlphaAvalanche_cm_inv": [("ElectronAlphaAvalanche", 0.01)],
+        "max_hAlphaAvalanche_cm_inv": [("HoleAlphaAvalanche", 0.01)],
+        "max_AvalancheGeneration_m3_per_s": [("AvalancheGeneration", 1.0)],
     }
-    for label, (names, scale) in field_specs.items():
-        value, x_um, y_um = max_with_coord(data, field_values(data, names), scale)
+    for label, candidates in field_specs.items():
+        values, scale = field_values_with_scale(data, candidates)
+        value, x_um, y_um = max_with_coord(data, values, scale)
         out[label] = value
         out[f"{label}_x_um"] = x_um
         out[f"{label}_y_um"] = y_um

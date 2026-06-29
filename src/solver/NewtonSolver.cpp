@@ -698,6 +698,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "source_volume_policy", cfg.impactIonization.sourceVolumePolicy);
             cfg.impactIonization.sourceVolumeFactor = value.value(
                 "source_volume_factor", cfg.impactIonization.sourceVolumeFactor);
+            cfg.impactIonization.sourceMappingMode = value.value(
+                "source_mapping_mode", cfg.impactIonization.sourceMappingMode);
             cfg.impactIonization.quasiFermiCarrierTruncation = value.value(
                 "quasi_fermi_carrier_truncation",
                 cfg.impactIonization.quasiFermiCarrierTruncation);
@@ -711,6 +713,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 cfg.impactIonization.debugRawVanOverstraeten);
             cfg.impactIonization.aScale = value.value(
                 "A_scale", cfg.impactIonization.aScale);
+            cfg.impactIonization.bScale = value.value(
+                "B_scale", cfg.impactIonization.bScale);
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());

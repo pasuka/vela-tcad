@@ -28,36 +28,43 @@ Physics {
 
 Plot {
 
-  # Electrostatic
+  # Electrostatic and quasi-Fermi potentials
 
   Potential
-  ElectricField
+  eQuasiFermi
+  hQuasiFermi
 
   # Carrier density
 
   eDensity
   hDensity
 
-  # Quasi Fermi
+  # Electric field
 
-  eQuasiFermi
-  hQuasiFermi
+  ElectricField
+  ElectricField/Vector
 
-  # Current
+  # Current density
 
   eCurrent
   hCurrent
   TotalCurrent
+  eCurrentDensity/Vector
+  hCurrentDensity/Vector
+  TotalCurrentDensity/Vector
 
-  # Doping
+  # Doping and charge
 
   Doping
   DonorConcentration
   AcceptorConcentration
+  SpaceCharge
 
-  # Recombination
+  # Recombination and avalanche source
 
   SRHRecombination
+  eAlphaAvalanche
+  hAlphaAvalanche
   AvalancheGeneration
 
   # Mobility diagnostics
@@ -65,7 +72,6 @@ Plot {
   eMobility
   hMobility
 }
-
 Math {
   Extrapolate
   RelErrControl

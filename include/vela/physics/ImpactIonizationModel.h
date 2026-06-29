@@ -19,10 +19,12 @@ struct ImpactIonizationModelConfig {
     Real sourceGeometryScale = 1.0; ///< Diagnostic scale for SG edge-current source geometry.
     std::string sourceVolumePolicy = "genius_truncated"; ///< SG edge-current source support: genius_truncated, edge_half_box, or edge_box.
     Real sourceVolumeFactor = 0.0; ///< Diagnostic SG source-volume override; 0 uses sourceVolumePolicy presets.
+    std::string sourceMappingMode = "node_F_node_alpha_node_G"; ///< Coupled current-density avalanche source mapping diagnostic mode.
     Real quasiFermiCarrierTruncation = 0.0; ///< GSS-style floor n,p >= value*ni when rebuilding qF gradients; 0 disables.
     Real minimumField = 0.0; ///< Charon-style avalanche cutoff field [V/m]; 0 disables.
     bool debugRawVanOverstraeten = false; ///< Diagnostic: raw GradQuasiFermi Van Overstraeten alpha without cutoffs/damping.
     Real aScale = 1.0; ///< Diagnostic Van Overstraeten prefactor scale; 1 keeps defaults unchanged.
+    Real bScale = 1.0; ///< Diagnostic Van Overstraeten critical-field scale; 1 keeps defaults unchanged.
     Real electronA = 7.03e7; ///< Selberherr electron prefactor [1/m]
     Real electronB = 1.231e8; ///< Selberherr electron critical field [V/m]
     Real holeA = 1.582e8; ///< Selberherr hole prefactor [1/m]

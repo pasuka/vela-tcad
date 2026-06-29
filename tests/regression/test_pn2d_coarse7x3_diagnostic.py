@@ -19,6 +19,7 @@ COARSE_SOURCE = COARSE_ROOT / "source"
 REQUIRED_PLOT_FIELDS = {
     "Potential",
     "ElectricField",
+    "ElectricField/Vector",
     "eDensity",
     "hDensity",
     "eQuasiFermi",
@@ -26,9 +27,13 @@ REQUIRED_PLOT_FIELDS = {
     "eCurrent",
     "hCurrent",
     "TotalCurrent",
+    "eCurrentDensity/Vector",
+    "hCurrentDensity/Vector",
+    "TotalCurrentDensity/Vector",
     "Doping",
     "DonorConcentration",
     "AcceptorConcentration",
+    "SpaceCharge",
     "SRHRecombination",
     "AvalancheGeneration",
     "eMobility",
@@ -232,6 +237,65 @@ class Pn2dCoarse7x3DiagnosticTest(unittest.TestCase):
             parsed = multibias.parse_vtk(vtk_path)
             self.assertEqual(parsed["scalars"]["ElectricFieldVector"].tolist(), [5.0, 13.0])
 
+    def test_node_field_compare_expands_core_vectors_into_xy_and_magnitude(self) -> None:
+        module = load_module(REPO / "scripts" / "run_pn2d_coarse7x3_previous_full20_compare.py")
+        with tempfile.TemporaryDirectory(prefix="vela_coarse7x3_vector_components_") as tmp:
+            root = Path(tmp)
+            sent = root / "sentaurus_-5v"
+            (sent / "fields").mkdir(parents=True)
+            (sent / "nodes.csv").write_text("id,x_um,y_um\n0,1,0.25\n", encoding="utf-8")
+            for field, x, y in [
+                ("ElectricField", 3.0, 4.0),
+                ("eCurrentDensity", -5.0, 12.0),
+                ("hCurrentDensity", 8.0, -15.0),
+                ("TotalCurrentDensity", 7.0, 24.0),
+            ]:
+                (sent / "fields" / f"{field}_region0.csv").write_text(
+                    f"node_id,component0,component1\n0,{x},{y}\n",
+                    encoding="utf-8",
+                )
+            vtk = root / "dc_sweep_-5V.vtk"
+            vtk.write_text(
+                "\n".join([
+                    "VECTORS ElectricFieldVector double",
+                    "6 8 0",
+                    "VECTORS ElectronCurrentDensityVector double",
+                    "-10 24 0",
+                    "VECTORS HoleCurrentDensityVector double",
+                    "16 -30 0",
+                    "VECTORS TotalCurrentDensityVector double",
+                    "14 48 0",
+                ]),
+                encoding="utf-8",
+            )
+
+            rows = module.node_field_compare(
+                sentaurus_exports={-5.0: sent},
+                vela_vtks={-5.0: vtk},
+                biases=[-5.0],
+                exact_vela_bias=True,
+            )
+            by_quantity = {row["quantity"]: row for row in rows}
+
+            expected = {
+                "electric_field_x": (3.0, 6.0, "vector_x"),
+                "electric_field_y": (4.0, 8.0, "vector_y"),
+                "electric_field_mag": (5.0, 10.0, "vector_magnitude"),
+                "electron_current_density_x": (-5.0, -10.0, "vector_x"),
+                "electron_current_density_y": (12.0, 24.0, "vector_y"),
+                "electron_current_density_mag": (13.0, 26.0, "vector_magnitude"),
+                "hole_current_density_x": (8.0, 16.0, "vector_x"),
+                "hole_current_density_y": (-15.0, -30.0, "vector_y"),
+                "hole_current_density_mag": (17.0, 34.0, "vector_magnitude"),
+                "total_current_density_x": (7.0, 14.0, "vector_x"),
+                "total_current_density_y": (24.0, 48.0, "vector_y"),
+                "total_current_density_mag": (25.0, 50.0, "vector_magnitude"),
+            }
+            for quantity, (sent_value, vela_value, basis) in expected.items():
+                self.assertIn(quantity, by_quantity)
+                self.assertEqual(by_quantity[quantity]["sentaurus_value"], sent_value)
+                self.assertEqual(by_quantity[quantity]["vela_value_scaled_to_sentaurus_units"], vela_value)
+                self.assertEqual(by_quantity[quantity]["comparison_basis"], basis)
     def test_node_field_compare_reports_diff_abs_diff_and_basis(self) -> None:
         module = load_module(REPO / "scripts" / "run_pn2d_coarse7x3_previous_full20_compare.py")
         with tempfile.TemporaryDirectory(prefix="vela_coarse7x3_diff_basis_") as tmp:

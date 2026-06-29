@@ -5,6 +5,7 @@
 #include "vela/equation/AssemblerUtils.h"
 
 #include <cmath>
+#include <vector>
 
 using namespace vela;
 
@@ -30,6 +31,55 @@ VectorXd linearPotential(const DeviceMesh& mesh, Real a, Real b)
         psi(static_cast<int>(i)) = a * node.x + b * node.y;
     }
     return psi;
+}
+VectorXd affineNodalValue(const DeviceMesh& mesh, Real a, Real b, Real c)
+{
+    VectorXd value(static_cast<int>(mesh.numNodes()));
+    for (Index i = 0; i < mesh.numNodes(); ++i) {
+        const Node& node = mesh.getNode(i);
+        value(static_cast<int>(i)) = a * node.x + b * node.y + c;
+    }
+    return value;
+}
+
+DeviceMesh makeFourTrianglePatch()
+{
+    DeviceMesh mesh;
+    mesh.addNode(Node{0, 0.0, 0.0, 0.0});
+    mesh.addNode(Node{1, 1.0, 0.0, 0.0});
+    mesh.addNode(Node{2, 0.0, 1.0, 0.0});
+    mesh.addNode(Node{3, -1.0, 0.0, 0.0});
+    mesh.addNode(Node{4, 0.0, -1.0, 0.0});
+    mesh.addCell(Cell{0, CellType::Tri3, 0, {0, 1, 2}});
+    mesh.addCell(Cell{1, CellType::Tri3, 0, {0, 2, 3}});
+    mesh.addCell(Cell{2, CellType::Tri3, 0, {0, 3, 4}});
+    mesh.addCell(Cell{3, CellType::Tri3, 0, {0, 4, 1}});
+    mesh.addRegion(Region{0, "silicon", "Si", {0, 1, 2, 3}});
+    mesh.addContact(Contact{0, "anode", 0, {1, 2}});
+    mesh.buildEdges();
+    return mesh;
+}
+
+DeviceMesh makeTwoRegionInterfacePatch()
+{
+    DeviceMesh mesh;
+    mesh.addNode(Node{0, 0.0, 0.0, 0.0});
+    mesh.addNode(Node{1, 1.0, 0.0, 0.0});
+    mesh.addNode(Node{2, 0.0, 1.0, 0.0});
+    mesh.addNode(Node{3, -1.0, 0.0, 0.0});
+    mesh.addNode(Node{4, 0.0, -1.0, 0.0});
+    mesh.addCell(Cell{0, CellType::Tri3, 0, {0, 1, 2}});
+    mesh.addCell(Cell{1, CellType::Tri3, 1, {0, 3, 4}});
+    mesh.addRegion(Region{0, "left_si", "Si", {0}});
+    mesh.addRegion(Region{1, "right_oxide", "SiO2", {1}});
+    mesh.buildEdges();
+    return mesh;
+}
+
+void requireFieldApprox(const Point2& field, Real expectedX, Real expectedY)
+{
+    REQUIRE(field.x() == Catch::Approx(expectedX).margin(1.0e-12));
+    REQUIRE(field.y() == Catch::Approx(expectedY).margin(1.0e-12));
 }
 
 } // namespace
@@ -101,4 +151,90 @@ TEST_CASE("node electric field uses inverse-distance weighted least-squares reco
 
     REQUIRE(fields.size() == 5);
     REQUIRE(fields[0] == Catch::Approx(5.97283471086).epsilon(1.0e-12));
+}
+
+TEST_CASE("Tri3 cell electric field and quasi-Fermi gradients recover affine fields", "[electric_field]")
+{
+    const DeviceMesh mesh = makeTriangularMesh();
+    const VectorXd psi = affineNodalValue(mesh, 2.0, -3.0, 7.0);
+    const VectorXd phin = affineNodalValue(mesh, -4.0, 5.0, 1.0);
+    const VectorXd phip = affineNodalValue(mesh, 6.0, -8.0, -2.0);
+
+    const auto electric = computeCellElectricField(mesh, psi);
+    const auto eGrad = computeCellGradElectronQuasiFermi(mesh, phin);
+    const auto hGrad = computeCellGradHoleQuasiFermi(mesh, phip);
+
+    REQUIRE(electric.size() == 1);
+    REQUIRE(electric[0].valid);
+    requireFieldApprox(electric[0].vector, -2.0, 3.0);
+    REQUIRE(electric[0].magnitude == Catch::Approx(std::sqrt(13.0)).epsilon(1.0e-12));
+
+    REQUIRE(eGrad.size() == 1);
+    REQUIRE(eGrad[0].valid);
+    requireFieldApprox(eGrad[0].vector, -4.0, 5.0);
+
+    REQUIRE(hGrad.size() == 1);
+    REQUIRE(hGrad[0].valid);
+    requireFieldApprox(hGrad[0].vector, 6.0, -8.0);
+}
+
+TEST_CASE("node electric-field recovery methods reproduce affine interior field", "[electric_field]")
+{
+    const DeviceMesh mesh = makeFourTrianglePatch();
+    const VectorXd psi = affineNodalValue(mesh, 3.5, -2.0, 0.25);
+
+    const auto area = computeNodeElectricFieldAreaAverage(mesh, psi);
+    const auto ls1d = computeNodeElectricFieldLeastSquares(
+        mesh, psi, ElectricFieldLeastSquaresWeight::InverseDistance);
+    const auto ls1d2 = computeNodeElectricFieldLeastSquares(
+        mesh, psi, ElectricFieldLeastSquaresWeight::InverseDistanceSquared);
+    const auto spr = computeNodeElectricFieldSPR(mesh, psi);
+
+    requireFieldApprox(area[0].vector, -3.5, 2.0);
+    requireFieldApprox(ls1d[0].vector, -3.5, 2.0);
+    requireFieldApprox(ls1d2[0].vector, -3.5, 2.0);
+    requireFieldApprox(spr[0].vector, -3.5, 2.0);
+}
+
+TEST_CASE("boundary LS and SPR fall back without exceeding area-average affine error", "[electric_field]")
+{
+    const DeviceMesh mesh = makeFourTrianglePatch();
+    const VectorXd psi = affineNodalValue(mesh, -1.25, 4.0, 10.0);
+
+    const auto area = computeNodeElectricFieldAreaAverage(mesh, psi);
+    const auto ls1d = computeNodeElectricFieldLeastSquares(
+        mesh, psi, ElectricFieldLeastSquaresWeight::InverseDistance);
+    const auto spr = computeNodeElectricFieldSPR(mesh, psi);
+
+    const Point2 expected{1.25, -4.0};
+    const Real areaError = (area[1].vector - expected).norm();
+    const Real lsError = (ls1d[1].vector - expected).norm();
+    const Real sprError = (spr[1].vector - expected).norm();
+
+    REQUIRE(lsError <= areaError + 1.0e-12);
+    REQUIRE(sprError <= areaError + 1.0e-12);
+}
+
+TEST_CASE("region-wise recovery does not cross material interfaces", "[electric_field]")
+{
+    const DeviceMesh mesh = makeTwoRegionInterfacePatch();
+    VectorXd psi(static_cast<int>(mesh.numNodes()));
+    psi << 0.0, 2.0, 0.0, 30.0, 10.0;
+
+    const auto area = computeNodeElectricFieldAreaAverage(mesh, psi);
+    const auto ls1d = computeNodeElectricFieldLeastSquares(
+        mesh, psi, ElectricFieldLeastSquaresWeight::InverseDistance);
+    const auto spr = computeNodeElectricFieldSPR(mesh, psi);
+
+    REQUIRE(area[0].regionSamples.size() == 2);
+    requireFieldApprox(area[0].regionSamples.at(0).vector, -2.0, -0.0);
+    requireFieldApprox(area[0].regionSamples.at(1).vector, 30.0, 10.0);
+
+    REQUIRE(ls1d[0].regionSamples.size() == 2);
+    requireFieldApprox(ls1d[0].regionSamples.at(0).vector, -2.0, -0.0);
+    requireFieldApprox(ls1d[0].regionSamples.at(1).vector, 30.0, 10.0);
+
+    REQUIRE(spr[0].regionSamples.size() == 2);
+    requireFieldApprox(spr[0].regionSamples.at(0).vector, -2.0, -0.0);
+    requireFieldApprox(spr[0].regionSamples.at(1).vector, 30.0, 10.0);
 }

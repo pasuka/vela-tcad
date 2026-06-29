@@ -10200,6 +10200,30 @@ LOOKUP_TABLE default
         path = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "source" / "pn2d_bv_sdevice.cmd"
         text = path.read_text()
 
+        required_plot_fields = {
+            "Potential",
+            "eQuasiFermi",
+            "hQuasiFermi",
+            "eDensity",
+            "hDensity",
+            "ElectricField/Vector",
+            "eCurrentDensity/Vector",
+            "hCurrentDensity/Vector",
+            "TotalCurrentDensity/Vector",
+            "eMobility",
+            "hMobility",
+            "Doping",
+            "DonorConcentration",
+            "AcceptorConcentration",
+            "SpaceCharge",
+            "SRHRecombination",
+            "eAlphaAvalanche",
+            "hAlphaAvalanche",
+            "AvalancheGeneration",
+        }
+        missing = sorted(field for field in required_plot_fields if field not in text)
+        self.assertEqual(missing, [])
+
         self.assertIn("0.05 V spacing over the 0 to -20 V normalized sweep", text)
         self.assertIn(
             'Plot(FilePrefix="pn2d_bv_multibias" Time=(Range=(0 1) Intervals=400) NoOverWrite)',

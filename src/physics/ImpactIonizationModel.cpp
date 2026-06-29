@@ -49,6 +49,23 @@ void applyVanOverstraetenAScale(ImpactIonizationModelConfig& config)
     config.holeALow *= config.aScale;
     config.holeAHigh *= config.aScale;
 }
+void applyVanOverstraetenBScale(ImpactIonizationModelConfig& config)
+{
+    if (!std::isfinite(config.bScale) || config.bScale <= 0.0) {
+        throw std::invalid_argument(
+            "ImpactIonizationModelConfig: B_scale must be positive and finite.");
+    }
+    config.electronBLow *= config.bScale;
+    config.electronBHigh *= config.bScale;
+    config.holeBLow *= config.bScale;
+    config.holeBHigh *= config.bScale;
+}
+
+void applyVanOverstraetenDiagnosticScales(ImpactIonizationModelConfig& config)
+{
+    applyVanOverstraetenAScale(config);
+    applyVanOverstraetenBScale(config);
+}
 
 } // namespace
 
@@ -219,7 +236,7 @@ ImpactIonizationModelConfig applyImpactIonizationParameterSet(
     ImpactIonizationModelConfig config)
 {
     if (config.parameterSet == "default") {
-        applyVanOverstraetenAScale(config);
+        applyVanOverstraetenDiagnosticScales(config);
         return config;
     }
     if (config.model != "van_overstraeten") {
@@ -228,20 +245,20 @@ ImpactIonizationModelConfig applyImpactIonizationParameterSet(
     }
     if (config.parameterSet == "sentaurus_fit_A_only") {
         applySentaurusFitA(config);
-        applyVanOverstraetenAScale(config);
+        applyVanOverstraetenDiagnosticScales(config);
         return config;
     }
     if (config.parameterSet == "sentaurus_fit_A_B") {
         applySentaurusFitA(config);
         applySentaurusFitB(config);
-        applyVanOverstraetenAScale(config);
+        applyVanOverstraetenDiagnosticScales(config);
         return config;
     }
     if (config.parameterSet == "sentaurus_fit_A_B_switch") {
         applySentaurusFitA(config);
         applySentaurusFitB(config);
         config.switchField = fieldVPerCmToVPerM(sentaurusFitSwitchField_V_per_cm);
-        applyVanOverstraetenAScale(config);
+        applyVanOverstraetenDiagnosticScales(config);
         return config;
     }
     throw std::invalid_argument(

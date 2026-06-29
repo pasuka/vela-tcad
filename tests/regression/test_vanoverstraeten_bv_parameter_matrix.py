@@ -17,6 +17,17 @@ SCRIPT = REPO / "scripts" / "run_vanoverstraeten_bv_parameter_matrix.py"
 
 
 class VanOverstraetenBvParameterMatrixTest(unittest.TestCase):
+    def test_summarize_vtk_scales_impact_drive_fallback_to_v_per_cm(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_vo_bv_drive_units_") as td:
+            vtk = Path(td) / "impact_drive_only.vtk"
+            write_vtk(vtk, 1.0, include_high_field_drive=False)
+
+            module = load_module(SCRIPT)
+            summary = module.summarize_vtk(module.parse_vtk(vtk))
+
+            self.assertEqual(summary["max_Fn_V_per_cm"], 2200.0)
+            self.assertEqual(summary["max_Fp_V_per_cm"], 1700.0)
+
     def test_skip_run_summarizes_existing_case_outputs(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_vo_bv_matrix_") as td:
             tmp = Path(td)
@@ -177,15 +188,28 @@ def write_rows(path: Path, fields: list[str], rows: list[dict[str, str]]) -> Non
         writer.writerows(rows)
 
 
-def write_vtk(path: Path, scale: float) -> None:
+def load_module(path: Path):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def write_vtk(path: Path, scale: float, *, include_high_field_drive: bool = True) -> None:
     values = {
         "ElectricFieldVector": [(scale * 1.0e5, 0.0, 0.0), (scale * 1.2e5, 0.0, 0.0), (scale * 0.9e5, 0.0, 0.0)],
-        "ElectronHighFieldDrive": [scale * 2.0e5, scale * 2.2e5, scale * 1.8e5],
-        "HoleHighFieldDrive": [scale * 1.5e5, scale * 1.7e5, scale * 1.4e5],
+        "ElectronImpactIonizationDrive": [scale * 2.0e5, scale * 2.2e5, scale * 1.8e5],
+        "HoleImpactIonizationDrive": [scale * 1.5e5, scale * 1.7e5, scale * 1.4e5],
         "ElectronAlphaAvalanche": [scale * 1.0e6, scale * 1.2e6, scale * 0.8e6],
         "HoleAlphaAvalanche": [scale * 0.9e6, scale * 1.1e6, scale * 0.7e6],
         "AvalancheGeneration": [scale * 1.0e20, scale * 2.0e20, scale * 1.0e20],
     }
+    if include_high_field_drive:
+        values["ElectronHighFieldDrive"] = [scale * 2.0e5, scale * 2.2e5, scale * 1.8e5]
+        values["HoleHighFieldDrive"] = [scale * 1.5e5, scale * 1.7e5, scale * 1.4e5]
     with path.open("w", encoding="utf-8") as handle:
         handle.write("# vtk DataFile Version 3.0\n")
         handle.write("test\nASCII\nDATASET UNSTRUCTURED_GRID\n")

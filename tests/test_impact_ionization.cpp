@@ -953,6 +953,69 @@ static std::vector<Real> readVtkScalar(const std::filesystem::path& path,
     return {};
 }
 
+TEST_CASE("Avalanche source mapping modes preserve total source while changing node support",
+          "[impact][diagnostic]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    const Real Vt = 0.025852;
+    VectorXd psi = VectorXd::LinSpaced(static_cast<int>(mesh.numNodes()), -0.02, 0.025);
+    VectorXd phin(static_cast<int>(mesh.numNodes()));
+    VectorXd phip(static_cast<int>(mesh.numNodes()));
+    phin << 0.020, -0.005, -0.018, 0.004;
+    phip << -0.010, 0.006, 0.018, -0.002;
+    VectorXd n(static_cast<int>(mesh.numNodes()));
+    VectorXd p(static_cast<int>(mesh.numNodes()));
+    const std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+    for (int i = 0; i < static_cast<int>(mesh.numNodes()); ++i) {
+        n(i) = ni[static_cast<std::size_t>(i)] * std::exp((psi(i) - phin(i)) / Vt);
+        p(i) = ni[static_cast<std::size_t>(i)] * std::exp((phip(i) - psi(i)) / Vt);
+    }
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "selberherr";
+    impactConfig.drivingForce = "electric_field";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "density_gradient";
+    impactConfig.electronA = 1.0;
+    impactConfig.electronB = 1.0e-30;
+    impactConfig.holeA = 1.0;
+    impactConfig.holeB = 1.0e-30;
+
+    const MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, constants::T0);
+    const auto impact = makeImpactIonizationModel(impactConfig);
+
+    const auto nodeMapped = detail::sgEdgeCurrentAvalancheSourceIntegrals(
+        impactConfig, *impact, mobilityConfig, *mobility, edgeCells, mesh, doping,
+        cellMaterials, psi, phin, phip, n, p, ni, Vt);
+    impactConfig.sourceMappingMode = "cell_F_cell_alpha_cell_G_to_node";
+    const auto cellMapped = detail::sgEdgeCurrentAvalancheSourceIntegrals(
+        impactConfig, *impact, mobilityConfig, *mobility, edgeCells, mesh, doping,
+        cellMaterials, psi, phin, phip, n, p, ni, Vt);
+
+    REQUIRE(nodeMapped.size() == cellMapped.size());
+    Real nodeTotal = 0.0;
+    Real cellTotal = 0.0;
+    Real l1Difference = 0.0;
+    for (std::size_t i = 0; i < nodeMapped.size(); ++i) {
+        nodeTotal += nodeMapped[i];
+        cellTotal += cellMapped[i];
+        l1Difference += std::abs(nodeMapped[i] - cellMapped[i]);
+    }
+    REQUIRE(nodeTotal > 0.0);
+    REQUIRE(cellTotal == Catch::Approx(nodeTotal).epsilon(1.0e-12));
+    REQUIRE(l1Difference > 0.0);
+}
+
 TEST_CASE("VTK AvalancheGeneration uses SG edge nodal source over node volume",
           "[impact][diagnostic][vtk]")
 {
@@ -1261,6 +1324,23 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
         }}
     });
     REQUIRE(gummelScaledVanOverstraetenCfg.impactIonization.aScale == Catch::Approx(4.0));
+    const NewtonConfig bScaledVanOverstraetenCfg = newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"A_scale", 2.0},
+            {"B_scale", 0.95},
+        }}
+    });
+    REQUIRE(bScaledVanOverstraetenCfg.impactIonization.aScale == Catch::Approx(2.0));
+    REQUIRE(bScaledVanOverstraetenCfg.impactIonization.bScale == Catch::Approx(0.95));
+
+    const GummelConfig gummelBScaledVanOverstraetenCfg = gummelConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"B_scale", 1.10},
+        }}
+    });
+    REQUIRE(gummelBScaledVanOverstraetenCfg.impactIonization.bScale == Catch::Approx(1.10));
 
     const NewtonConfig sentaurusFitSetCfg = newtonConfigFromJson(nlohmann::json{
         {"impact_ionization", {
@@ -1369,6 +1449,37 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
     });
     REQUIRE(gummelVolumePolicyCfg.impactIonization.sourceVolumePolicy == "edge_box");
 
+    const NewtonConfig cellSourceMappingCfg = newtonConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "grad_qf"},
+            {"source_mapping_mode", "cell_F_cell_alpha_cell_G_to_node"},
+        }}
+    });
+    REQUIRE(cellSourceMappingCfg.impactIonization.sourceMappingMode ==
+            "cell_F_cell_alpha_cell_G_to_node");
+
+    const GummelConfig edgeSourceMappingCfg = gummelConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "grad_qf"},
+            {"source_mapping_mode", "edge_F_edge_alpha_edge_G_to_node"},
+        }}
+    });
+    REQUIRE(edgeSourceMappingCfg.impactIonization.sourceMappingMode ==
+            "edge_F_edge_alpha_edge_G_to_node");
+
+    REQUIRE_THROWS_AS(newtonConfigFromJson({
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"generation", "current_density"},
+            {"current_approximation", "grad_qf"},
+            {"source_mapping_mode", "cell_F_cell_alpha_cell_G_integral_only"},
+        }}
+    }), std::invalid_argument);
+
     const NewtonConfig sourceVolumeFactorCfg = newtonConfigFromJson({
         {"impact_ionization", {
             {"model", "van_overstraeten"},
@@ -1464,6 +1575,17 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
             {"model", "van_overstraeten"},
             {"A_scale", 0.0},
         }}
+    }), std::invalid_argument);    REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"B_scale", 0.0},
+        }}
+    }), std::invalid_argument);
+    REQUIRE_THROWS_AS(gummelConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "selberherr"},
+            {"B_scale", 0.95},
+        }}
     }), std::invalid_argument);
     REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
         {"impact_ionization", {
@@ -1518,6 +1640,38 @@ TEST_CASE("VanOverstraeten Sentaurus fit parameter sets are explicit overrides",
             Catch::Approx(expectedSwitchHole));
 }
 
+TEST_CASE("VanOverstraeten B_scale only multiplies B critical fields",
+          "[impact][van_overstraeten]")
+{
+    const Real lowField = 3.0e7;
+    const Real highField = 5.0e7;
+
+    ImpactIonizationModelConfig defaultConfig = impactIonizationModelConfig("van_overstraeten");
+    defaultConfig.temperature_K = 300.0;
+    defaultConfig.referenceTemperature_K = 300.0;
+    const auto defaultModel = makeImpactIonizationModel(defaultConfig);
+
+    ImpactIonizationModelConfig scaledConfig = defaultConfig;
+    scaledConfig.bScale = 0.90;
+    const auto scaledModel = makeImpactIonizationModel(scaledConfig);
+
+    const Real gamma = 1.0;
+    const Real expectedElectronLow = gamma * defaultConfig.electronALow *
+        std::exp(-defaultConfig.electronBLow * scaledConfig.bScale * gamma / lowField);
+    const Real expectedHoleLow = gamma * defaultConfig.holeALow *
+        std::exp(-defaultConfig.holeBLow * scaledConfig.bScale * gamma / lowField);
+    const Real expectedElectronHigh = gamma * defaultConfig.electronAHigh *
+        std::exp(-defaultConfig.electronBHigh * scaledConfig.bScale * gamma / highField);
+    const Real expectedHoleHigh = gamma * defaultConfig.holeAHigh *
+        std::exp(-defaultConfig.holeBHigh * scaledConfig.bScale * gamma / highField);
+
+    REQUIRE(scaledModel->electronCoefficient(lowField) == Catch::Approx(expectedElectronLow));
+    REQUIRE(scaledModel->holeCoefficient(lowField) == Catch::Approx(expectedHoleLow));
+    REQUIRE(scaledModel->electronCoefficient(highField) == Catch::Approx(expectedElectronHigh));
+    REQUIRE(scaledModel->holeCoefficient(highField) == Catch::Approx(expectedHoleHigh));
+    REQUIRE(scaledModel->electronCoefficient(lowField) > defaultModel->electronCoefficient(lowField));
+    REQUIRE(scaledModel->holeCoefficient(lowField) > defaultModel->holeCoefficient(lowField));
+}
 TEST_CASE("VanOverstraeten A_scale only multiplies A prefactors",
           "[impact][van_overstraeten]")
 {

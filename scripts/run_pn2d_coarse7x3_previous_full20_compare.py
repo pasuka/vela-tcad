@@ -174,6 +174,18 @@ NODE_FIELD_MAP: dict[str, dict[str, Any]] = {
     "mean_ion_integral": {"sentaurus": ["MeanIonIntegral"], "vela": ["MeanIonIntegral"], "scale": 1.0},
 }
 
+NODE_VECTOR_COMPONENT_QUANTITIES: dict[str, str] = {
+    "electric_field": "electric_field",
+    "electron_current": "electron_current_density",
+    "hole_current": "hole_current_density",
+    "total_current": "total_current_density",
+}
+
+VECTOR_COMPONENTS: list[tuple[str, int | None, str]] = [
+    ("x", 0, "vector_x"),
+    ("y", 1, "vector_y"),
+    ("mag", None, "vector_magnitude"),
+]
 
 def read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8-sig"))
@@ -555,15 +567,27 @@ def parse_vtk(path: Path) -> dict[str, list[float]]:
         if len(parts) >= 3 and parts[0] == "VECTORS":
             name = parts[1]
             i += 1
-            values: list[float] = []
+            xs: list[float] = []
+            ys: list[float] = []
+            zs: list[float] = []
+            mags: list[float] = []
             while i < len(lines):
                 next_parts = lines[i].split()
                 if not next_parts or next_parts[0] in {"SCALARS", "VECTORS", "FIELD", "CELL_DATA", "POINT_DATA"}:
                     break
                 comps = [float(value) for value in next_parts[:3]]
-                values.append(math.sqrt(sum(value * value for value in comps)))
+                while len(comps) < 3:
+                    comps.append(0.0)
+                xs.append(comps[0])
+                ys.append(comps[1])
+                zs.append(comps[2])
+                mags.append(math.sqrt(sum(value * value for value in comps)))
                 i += 1
-            scalars[name] = values
+            scalars[name] = mags
+            scalars[f"{name}_x"] = xs
+            scalars[f"{name}_y"] = ys
+            scalars[f"{name}_z"] = zs
+            scalars[f"{name}_mag"] = mags
             continue
         i += 1
     return scalars
@@ -578,6 +602,31 @@ def discover_vela_vtks(root: Path) -> dict[float, Path]:
             result[bias_key(float(match.group("bias")))] = path
     return result
 
+def vector_component_value(values: tuple[float, float] | None, component_index: int | None) -> float | None:
+    if values is None:
+        return None
+    if component_index is None:
+        return math.hypot(values[0], values[1])
+    return values[component_index]
+
+
+def vela_vector_component_values(
+    vtk_scalars: dict[str, list[float]],
+    aliases: list[str],
+    component_suffix: str,
+) -> tuple[str, list[float]]:
+    if component_suffix == "mag":
+        for alias in aliases:
+            if f"{alias}_mag" in vtk_scalars:
+                return alias, vtk_scalars[f"{alias}_mag"]
+            if alias in vtk_scalars:
+                return alias, vtk_scalars[alias]
+    else:
+        for alias in aliases:
+            key = f"{alias}_{component_suffix}"
+            if key in vtk_scalars:
+                return alias, vtk_scalars[key]
+    return "", []
 
 def node_field_compare(
     *,
@@ -635,6 +684,48 @@ def node_field_compare(
                     "diff": diff,
                     "abs_diff": None if diff is None else abs(diff),
                 })
+                vector_prefix = NODE_VECTOR_COMPONENT_QUANTITIES.get(quantity)
+                if vector_prefix is not None:
+                    sent_vector = load_sentaurus_vector(sent_dir, spec["sentaurus"])
+                    sent_vector_field = sent_vector[0] if sent_vector else ""
+                    sent_vector_values = sent_vector[1] if sent_vector else {}
+                    for component_suffix, component_index, basis in VECTOR_COMPONENTS:
+                        component_quantity = f"{vector_prefix}_{component_suffix}"
+                        raw_vector = sent_vector_values.get(node_id)
+                        raw_component = vector_component_value(raw_vector, component_index)
+                        component_sent_value = None if raw_component is None else raw_component * sent_scale
+                        component_vela_field, component_vela_values = vela_vector_component_values(
+                            vtk_scalars,
+                            spec["vela"],
+                            component_suffix,
+                        )
+                        component_vela_value = None
+                        if component_vela_values and node_id < len(component_vela_values):
+                            component_vela_value = float(component_vela_values[node_id]) * vela_scale
+                        component_ratio = None
+                        if component_sent_value not in (None, 0.0) and component_vela_value is not None:
+                            component_ratio = component_vela_value / component_sent_value
+                        component_diff = (
+                            None
+                            if component_sent_value is None or component_vela_value is None
+                            else component_vela_value - component_sent_value
+                        )
+                        rows.append({
+                            "bias_V": bias,
+                            "vela_bias_V": vela_bias,
+                            "node_id": node_id,
+                            "x_um": node["x_um"],
+                            "y_um": node["y_um"],
+                            "quantity": component_quantity,
+                            "sentaurus_field": sent_vector_field,
+                            "sentaurus_value": component_sent_value,
+                            "vela_field": component_vela_field,
+                            "vela_value_scaled_to_sentaurus_units": component_vela_value,
+                            "comparison_basis": basis,
+                            "vela_over_sentaurus": component_ratio,
+                            "diff": component_diff,
+                            "abs_diff": None if component_diff is None else abs(component_diff),
+                        })
     return rows
 
 
@@ -1008,7 +1099,7 @@ def write_rootcause_summary(path: Path, summary: dict[str, Any]) -> None:
         "",
         "The Sentaurus exports include velocity, avalanche alpha, and ion-integral fields. Vela VTK now exports matching direct node diagnostics for velocity, alpha, and local alpha-length ion-integral support; remaining gaps should be interpreted as nearest-bias or field-availability differences.",
         "",
-        "Velocity values compare Vela m/s converted to Sentaurus cm/s. Current-density node comparisons use vector magnitudes when vector fields are available; edge current-support comparisons use edge-flux magnitudes.",
+        "Velocity values compare Vela m/s converted to Sentaurus cm/s. ElectricField and e/h/total CurrentDensity node comparisons include explicit x, y, and magnitude rows; edge current-support comparisons still use edge-flux magnitudes.",
         "",
         "| quantity | node rows | Sentaurus values | Vela direct node values |",
         "| --- | ---: | ---: | ---: |",

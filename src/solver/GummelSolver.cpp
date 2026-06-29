@@ -7,6 +7,7 @@
 #include "vela/solver/LinearSolver.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/io/VTKWriter.h"
+#include "vela/post/ElectricFieldDiagnostics.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cmath>
@@ -223,6 +224,8 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "source_volume_policy", cfg.impactIonization.sourceVolumePolicy);
             cfg.impactIonization.sourceVolumeFactor = value.value(
                 "source_volume_factor", cfg.impactIonization.sourceVolumeFactor);
+            cfg.impactIonization.sourceMappingMode = value.value(
+                "source_mapping_mode", cfg.impactIonization.sourceMappingMode);
             cfg.impactIonization.quasiFermiCarrierTruncation = value.value(
                 "quasi_fermi_carrier_truncation",
                 cfg.impactIonization.quasiFermiCarrierTruncation);
@@ -236,6 +239,8 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 cfg.impactIonization.debugRawVanOverstraeten);
             cfg.impactIonization.aScale = value.value(
                 "A_scale", cfg.impactIonization.aScale);
+            cfg.impactIonization.bScale = value.value(
+                "B_scale", cfg.impactIonization.bScale);
             if (value.contains("electron_A_m_inv")) {
                 cfg.impactIonization.electronA = scaling.inverseLengthToSI(
                     value.at("electron_A_m_inv").get<Real>());
@@ -771,6 +776,72 @@ DDSolution runGummel(const DeviceMesh&                          mesh,
 }
 
 
+namespace {
+
+std::vector<Point3> cellFieldVectorsVcm(const std::vector<CellField2>& fields)
+{
+    std::vector<Point3> out(fields.size(), Point3::Zero());
+    for (std::size_t i = 0; i < fields.size(); ++i)
+        out[i] = Point3{fields[i].vector.x() / 100.0, fields[i].vector.y() / 100.0, 0.0};
+    return out;
+}
+
+std::vector<Real> cellFieldMagnitudesVcm(const std::vector<CellField2>& fields)
+{
+    std::vector<Real> out(fields.size(), 0.0);
+    for (std::size_t i = 0; i < fields.size(); ++i)
+        out[i] = fields[i].magnitude / 100.0;
+    return out;
+}
+
+std::vector<Point3> nodeFieldVectorsVcm(const std::vector<NodeField2>& fields)
+{
+    std::vector<Point3> out(fields.size(), Point3::Zero());
+    for (std::size_t i = 0; i < fields.size(); ++i)
+        out[i] = Point3{fields[i].vector.x() / 100.0, fields[i].vector.y() / 100.0, 0.0};
+    return out;
+}
+
+std::vector<Real> nodeFieldMagnitudesVcm(const std::vector<NodeField2>& fields)
+{
+    std::vector<Real> out(fields.size(), 0.0);
+    for (std::size_t i = 0; i < fields.size(); ++i)
+        out[i] = fields[i].magnitude / 100.0;
+    return out;
+}
+
+void writeRecoveredElectricFields(VTKWriter& writer,
+                                  const DeviceMesh& mesh,
+                                  const DDSolution& sol)
+{
+    const auto cellElectric = computeCellElectricField(mesh, sol.psi);
+    const auto cellElectronQf = computeCellGradElectronQuasiFermi(mesh, sol.phin);
+    const auto cellHoleQf = computeCellGradHoleQuasiFermi(mesh, sol.phip);
+    writer.addCellVector("CellElectricField", cellFieldVectorsVcm(cellElectric));
+    writer.addCellScalar("CellElectricFieldMagnitude", cellFieldMagnitudesVcm(cellElectric));
+    writer.addCellVector("CellGradElectronQuasiFermi", cellFieldVectorsVcm(cellElectronQf));
+    writer.addCellScalar("CellGradElectronQuasiFermiMagnitude", cellFieldMagnitudesVcm(cellElectronQf));
+    writer.addCellVector("CellGradHoleQuasiFermi", cellFieldVectorsVcm(cellHoleQf));
+    writer.addCellScalar("CellGradHoleQuasiFermiMagnitude", cellFieldMagnitudesVcm(cellHoleQf));
+
+    const auto area = computeNodeElectricFieldAreaAverage(mesh, sol.psi);
+    const auto ls1d = computeNodeElectricFieldLeastSquares(
+        mesh, sol.psi, ElectricFieldLeastSquaresWeight::InverseDistance);
+    const auto ls1d2 = computeNodeElectricFieldLeastSquares(
+        mesh, sol.psi, ElectricFieldLeastSquaresWeight::InverseDistanceSquared);
+    const auto spr = computeNodeElectricFieldSPR(mesh, sol.psi);
+
+    writer.addNodeScalar("NodeElectricField_AreaAverage", nodeFieldMagnitudesVcm(area));
+    writer.addNodeVector("NodeElectricField_AreaAverageVector", nodeFieldVectorsVcm(area));
+    writer.addNodeScalar("NodeElectricField_LS_1overD", nodeFieldMagnitudesVcm(ls1d));
+    writer.addNodeVector("NodeElectricField_LS_1overDVector", nodeFieldVectorsVcm(ls1d));
+    writer.addNodeScalar("NodeElectricField_LS_1overD2", nodeFieldMagnitudesVcm(ls1d2));
+    writer.addNodeVector("NodeElectricField_LS_1overD2Vector", nodeFieldVectorsVcm(ls1d2));
+    writer.addNodeScalar("NodeElectricField_SPR", nodeFieldMagnitudesVcm(spr));
+    writer.addNodeVector("NodeElectricField_SPRVector", nodeFieldVectorsVcm(spr));
+}
+
+} // namespace
 // ---------------------------------------------------------------------------
 // writeDDSolutionVTK
 // ---------------------------------------------------------------------------
@@ -784,6 +855,7 @@ void writeDDSolutionVTK(const std::string& filename,
 
     VTKWriter writer(filename, mesh);
     writer.write();
+    writeRecoveredElectricFields(writer, mesh, sol);
 
     auto toVec = [&](const VectorXd& v) {
         std::vector<Real> out(N);
@@ -818,6 +890,7 @@ void writeDDSolutionVTK(const std::string& filename,
     const Index N = mesh.numNodes();
     VTKWriter writer(filename, mesh);
     writer.write();
+    writeRecoveredElectricFields(writer, mesh, sol);
 
     auto toVec = [&](const VectorXd& v) {
         std::vector<Real> out(N);
