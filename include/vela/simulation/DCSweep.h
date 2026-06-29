@@ -11,6 +11,7 @@
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
 #include <limits>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -50,6 +51,23 @@ struct SgAvalancheEdgeDiagnosticsConfig {
     std::string csvFile;
 };
 
+struct AvalancheInternalSourceCurrentAuditConfig {
+    bool enabled = false;
+    std::string csvFile;
+    std::string summaryFile;
+};
+
+struct ReleaseBVConfigAuditConfig {
+    bool enabled = false;
+    std::string csvFile;
+    std::string summaryFile;
+    Real diagnosticReferenceAScale = 2.0;
+    Real diagnosticReferenceBScale = 1.05;
+    std::string diagnosticReferenceSourceMappingMode = "edge_F_edge_alpha_edge_G_to_node";
+    Real diagnosticReferenceQGFull_A_per_um = 0.0;
+    Real diagnosticReferenceQGJunction_A_per_um = 0.0;
+};
+
 struct TerminalCurrentMethodCompareDiagnosticsConfig {
     bool enabled = false;
     std::vector<std::string> contacts;
@@ -72,6 +90,8 @@ struct SweepDiagnosticsConfig {
     TransportDiagnosticsConfig transport;
     ContinuityBalanceDiagnosticsConfig continuityBalance;
     SgAvalancheEdgeDiagnosticsConfig sgAvalancheEdges;
+    AvalancheInternalSourceCurrentAuditConfig avalancheInternalSourceCurrentAudit;
+    ReleaseBVConfigAuditConfig releaseBVConfigAudit;
     TerminalCurrentMethodCompareDiagnosticsConfig terminalCurrentMethodCompare;
     NewtonHistoryDiagnosticsConfig newtonHistory;
     ContactCurrentQfFloorDiagnosticsConfig contactCurrentQfFloor;
@@ -196,9 +216,31 @@ struct DCSweepPoint {
     std::string outputVtk;
 };
 
+struct ReleaseBVConfigAuditMetadata {
+    bool enabled = false;
+    std::string model;
+    std::string drivingForce;
+    std::string parameterSet;
+    Real aScale = 1.0;
+    Real bScale = 1.0;
+    Real switchField_V_per_cm = 0.0;
+    Real minimumField_V_per_cm = 0.0;
+    std::string smoothing;
+    Real electronRefDens_cm3 = 0.0;
+    Real holeRefDens_cm3 = 0.0;
+    std::string sourceMappingMode;
+    std::string lambdaAva;
+    Real depth2D_um = 1.0;
+    std::string currentNormalization;
+    std::string qGNormalization;
+    std::string auditCsvFile;
+    std::string auditSummaryFile;
+};
+
 struct DCSweepResult {
     DeviceMesh mesh;
     std::vector<DCSweepPoint> points;
+    std::optional<ReleaseBVConfigAuditMetadata> releaseBVConfigAudit;
 };
 
 class DCSweep {

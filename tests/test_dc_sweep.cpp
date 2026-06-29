@@ -1059,6 +1059,212 @@ TEST_CASE("DCSweep: SG avalanche edge diagnostics write assembled source rows",
     }
 }
 
+TEST_CASE("DCSweep: avalanche internal source current audit writes closed used terms",
+          "[dc_sweep][diagnostics][avalanche_internal_source_current_audit]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "bv_internal_source.csv";
+    const auto auditPath = dir / "avalanche_internal_source_current_audit.csv";
+    const auto summaryPath = dir / "avalanche_internal_source_current_audit_summary.md";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"mode", "bv_reverse"},
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", -0.05},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"avalanche_internal_source_current_audit", {
+                {"enabled", true},
+                {"csv_file", auditPath.string()},
+                {"summary_file", summaryPath.string()}
+            }}
+        }}
+    }, {
+        {"method", "gummel_newton"},
+        {"handoff", {
+            {"gummel_max_iter", 0},
+            {"newton_max_iter", 80},
+            {"require_gummel_convergence", false}
+        }},
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"parameter_set", "default"},
+            {"driving_force", "quasi_fermi_gradient"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"A_scale", 2.0},
+            {"B_scale", 1.05}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+
+    REQUIRE(std::filesystem::exists(auditPath));
+    REQUIRE(std::filesystem::exists(summaryPath));
+    const auto rows = readCsvRows(auditPath);
+    REQUIRE(rows.size() > 1);
+
+    const auto& header = rows.front();
+    const std::size_t locationCol = csvColumnIndex(header, "source_location_type");
+    const std::size_t entityCol = csvColumnIndex(header, "source_entity_id");
+    const std::size_t biasCol = csvColumnIndex(header, "bias_V");
+    const std::size_t xCol = csvColumnIndex(header, "x_um");
+    const std::size_t yCol = csvColumnIndex(header, "y_um");
+    const std::size_t fnCol = csvColumnIndex(header, "Fn_used_V_per_cm");
+    const std::size_t fpCol = csvColumnIndex(header, "Fp_used_V_per_cm");
+    const std::size_t alphaNCol = csvColumnIndex(header, "alpha_n_used_cm_inv");
+    const std::size_t alphaPCol = csvColumnIndex(header, "alpha_p_used_cm_inv");
+    const std::size_t jnCol = csvColumnIndex(header, "Jn_mag_used_A_per_cm2");
+    const std::size_t jpCol = csvColumnIndex(header, "Jp_mag_used_A_per_cm2");
+    const std::size_t gnCol = csvColumnIndex(header, "Gava_n_used_cm_minus3_s_minus1");
+    const std::size_t gpCol = csvColumnIndex(header, "Gava_p_used_cm_minus3_s_minus1");
+    const std::size_t gtCol = csvColumnIndex(header, "Gava_total_used_cm_minus3_s_minus1");
+    const std::size_t grCol = csvColumnIndex(header, "Gava_reconstructed_from_used_terms");
+    const std::size_t errCol = csvColumnIndex(header, "Gava_closure_relative_error");
+    const std::size_t sourceWeightCol = csvColumnIndex(header, "source_weight_or_volume_cm2_for_2D");
+    const std::size_t areaCol = csvColumnIndex(header, "contribution_volume_cm3_or_area_cm2_for_2D");
+    const std::size_t qgCol = csvColumnIndex(header, "qG_contribution_A_per_um");
+
+    for (std::size_t i = 1; i < rows.size(); ++i) {
+        const auto& row = rows.at(i);
+        REQUIRE(row.at(locationCol) == "edge");
+        REQUIRE(csvReal(row, entityCol) >= 0.0);
+        REQUIRE(csvReal(row, biasCol) == Catch::Approx(0.0));
+        REQUIRE(std::isfinite(csvReal(row, xCol)));
+        REQUIRE(std::isfinite(csvReal(row, yCol)));
+        REQUIRE(std::isfinite(csvReal(row, fnCol)));
+        REQUIRE(std::isfinite(csvReal(row, fpCol)));
+        REQUIRE(csvReal(row, alphaNCol) >= 0.0);
+        REQUIRE(csvReal(row, alphaPCol) >= 0.0);
+        REQUIRE(csvReal(row, jnCol) >= 0.0);
+        REQUIRE(csvReal(row, jpCol) >= 0.0);
+        REQUIRE(csvReal(row, gnCol) >= 0.0);
+        REQUIRE(csvReal(row, gpCol) >= 0.0);
+        const Real total = csvReal(row, gtCol);
+        const Real reconstructed = csvReal(row, grCol);
+        REQUIRE(reconstructed == Catch::Approx(total).margin(1.0e-20).epsilon(1.0e-12));
+        REQUIRE(csvReal(row, errCol) <= 1.0e-12);
+        REQUIRE(csvReal(row, sourceWeightCol) >= 0.0);
+        REQUIRE(csvReal(row, areaCol) >= 0.0);
+        REQUIRE(csvReal(row, qgCol) >= 0.0);
+    }
+
+    const std::string summary = readTextFile(summaryPath);
+    REQUIRE(summary.find("source_location_type: edge") != std::string::npos);
+    REQUIRE(summary.find("used current unit: A/cm^2") != std::string::npos);
+    REQUIRE(summary.find("self internal used terms close self Gava: yes") != std::string::npos);
+    REQUIRE(summary.find("exported node current density is the same as internal used current: no") != std::string::npos);
+    REQUIRE(summary.find("qG internal contributions reproduce solver qG: yes") != std::string::npos);
+}
+
+TEST_CASE("DCSweep: release BV config audit records resolved avalanche parity metadata",
+          "[dc_sweep][diagnostics][release_bv_config_audit]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto csvPath = dir / "bv_release_config.csv";
+    const auto auditPath = dir / "release_bv_config_audit.csv";
+    const auto summaryPath = dir / "release_bv_config_audit_summary.md";
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, csvPath, {
+        {"mode", "bv_reverse"},
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", -0.05},
+        {"write_vtk", false},
+        {"diagnostics", {
+            {"release_bv_config_audit", {
+                {"enabled", true},
+                {"csv_file", auditPath.string()},
+                {"summary_file", summaryPath.string()},
+                {"diagnostic_reference_A_scale", 2.0},
+                {"diagnostic_reference_B_scale", 1.05},
+                {"diagnostic_reference_source_mapping_mode", "edge_F_edge_alpha_edge_G_to_node"},
+                {"diagnostic_reference_qG_full_A_per_um", 1.323e-16},
+                {"diagnostic_reference_qG_junction_A_per_um", 9.03e-17}
+            }}
+        }}
+    }, {
+        {"method", "gummel_newton"},
+        {"handoff", {
+            {"gummel_max_iter", 0},
+            {"newton_max_iter", 80},
+            {"require_gummel_convergence", false}
+        }},
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"parameter_set", "default"},
+            {"driving_force", "quasi_fermi_gradient"},
+            {"generation", "current_density"},
+            {"current_approximation", "density_gradient"},
+            {"A_scale", 2.0},
+            {"B_scale", 1.05},
+            {"source_mapping_mode", "edge_F_edge_alpha_edge_G_to_node"}
+        }}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    REQUIRE(result.releaseBVConfigAudit.has_value());
+    REQUIRE(result.releaseBVConfigAudit->enabled);
+    REQUIRE(result.releaseBVConfigAudit->model == "van_overstraeten");
+    REQUIRE(result.releaseBVConfigAudit->parameterSet == "default");
+    REQUIRE(result.releaseBVConfigAudit->drivingForce == "GradQuasiFermi");
+    REQUIRE(result.releaseBVConfigAudit->aScale == Catch::Approx(2.0));
+    REQUIRE(result.releaseBVConfigAudit->bScale == Catch::Approx(1.05));
+    REQUIRE(result.releaseBVConfigAudit->sourceMappingMode == "edge_F_edge_alpha_edge_G_to_node");
+    REQUIRE(result.releaseBVConfigAudit->currentNormalization == "A_per_um_from_A_per_m");
+
+    REQUIRE(std::filesystem::exists(auditPath));
+    REQUIRE(std::filesystem::exists(summaryPath));
+    const auto rows = readCsvRows(auditPath);
+    REQUIRE(rows.size() == 2);
+
+    const auto& header = rows.front();
+    const std::size_t biasCol = csvColumnIndex(header, "bias_V");
+    const std::size_t aCol = csvColumnIndex(header, "A_scale");
+    const std::size_t bCol = csvColumnIndex(header, "B_scale");
+    const std::size_t modelCol = csvColumnIndex(header, "model");
+    const std::size_t forceCol = csvColumnIndex(header, "driving_force");
+    const std::size_t mappingCol = csvColumnIndex(header, "source_mapping_mode");
+    const std::size_t qgFullCol = csvColumnIndex(header, "qG_full");
+    const std::size_t qgJunctionCol = csvColumnIndex(header, "qG_junction");
+    const std::size_t currentCol = csvColumnIndex(header, "terminal_current");
+    const std::size_t maxECol = csvColumnIndex(header, "max_E");
+    const std::size_t maxGCol = csvColumnIndex(header, "max_Gava");
+    const std::size_t convergedCol = csvColumnIndex(header, "converged");
+
+    const auto& row = rows.at(1);
+    REQUIRE(csvReal(row, biasCol) == Catch::Approx(0.0));
+    REQUIRE(csvReal(row, aCol) == Catch::Approx(2.0));
+    REQUIRE(csvReal(row, bCol) == Catch::Approx(1.05));
+    REQUIRE(row.at(modelCol) == "van_overstraeten");
+    REQUIRE(row.at(forceCol) == "GradQuasiFermi");
+    REQUIRE(row.at(mappingCol) == "edge_F_edge_alpha_edge_G_to_node");
+    REQUIRE(csvReal(row, qgFullCol) >= 0.0);
+    REQUIRE(csvReal(row, qgJunctionCol) >= 0.0);
+    REQUIRE(std::isfinite(csvReal(row, currentCol)));
+    REQUIRE(csvReal(row, maxECol) >= 0.0);
+    REQUIRE(csvReal(row, maxGCol) >= 0.0);
+    REQUIRE(row.at(convergedCol) == "1");
+
+    const std::string summary = readTextFile(summaryPath);
+    REQUIRE(summary.find("release uses A_scale=2: yes") != std::string::npos);
+    REQUIRE(summary.find("release uses B_scale=1.05: yes") != std::string::npos);
+    REQUIRE(summary.find("release uses VanOverstraeten + GradQuasiFermi: yes") != std::string::npos);
+    REQUIRE(summary.find("release uses diagnostic source_mapping_mode: yes") != std::string::npos);
+    REQUIRE(summary.find("release qG_full/qG_junction same order as A2_B105 diagnostic:") != std::string::npos);
+}
+
 TEST_CASE("DCSweep: continuity-balance diagnostics write contact-adjacent residual rows",
           "[dc_sweep][diagnostics][continuity_balance]")
 {

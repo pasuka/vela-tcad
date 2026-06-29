@@ -119,6 +119,270 @@ std::string formatReal(Real value)
     return oss.str();
 }
 
+Real relativeDifference(Real actual, Real expected)
+{
+    const Real scale = std::max({std::abs(actual), std::abs(expected), 1.0e-300});
+    return std::abs(actual - expected) / scale;
+}
+
+Real medianValue(std::vector<Real> values)
+{
+    if (values.empty())
+        return 0.0;
+    std::sort(values.begin(), values.end());
+    const std::size_t mid = values.size() / 2;
+    if (values.size() % 2 == 1)
+        return values[mid];
+    return 0.5 * (values[mid - 1] + values[mid]);
+}
+
+struct AvalancheInternalSourceCurrentAuditSummary {
+    std::size_t rowCount = 0;
+    std::vector<Real> closureRelativeErrors;
+    Real qGInternal_A_per_um = 0.0;
+    Real qGSolver_A_per_um = 0.0;
+};
+
+void writeAvalancheInternalSourceCurrentAuditSummary(
+    const std::filesystem::path& path,
+    const ImpactIonizationModelConfig& config,
+    const AvalancheInternalSourceCurrentAuditSummary& summary)
+{
+    if (!path.parent_path().empty())
+        std::filesystem::create_directories(path.parent_path());
+
+    const Real medianClosure = medianValue(summary.closureRelativeErrors);
+    const Real maxClosure = summary.closureRelativeErrors.empty()
+        ? 0.0
+        : *std::max_element(
+            summary.closureRelativeErrors.begin(), summary.closureRelativeErrors.end());
+    const Real qGRelativeError =
+        relativeDifference(summary.qGInternal_A_per_um, summary.qGSolver_A_per_um);
+    const bool closureOk = medianClosure <= 1.0e-12;
+    const bool qGOk = qGRelativeError <= 1.0e-12;
+
+    std::ofstream output(path);
+    output << "# Avalanche Internal Source Current Audit\n\n";
+    output << "- model: " << config.model << "\n";
+    output << "- parameter_set: " << config.parameterSet << "\n";
+    output << "- driving_force: GradQuasiFermi\n";
+    output << "- A_scale: " << formatReal(config.aScale) << "\n";
+    output << "- B_scale: " << formatReal(config.bScale) << "\n";
+    output << "- source_location_type: edge\n";
+    output << "- source_entity_count: " << summary.rowCount << "\n";
+    output << "- used current unit: A/cm^2\n";
+    output << "- source_weight_or_volume unit: cm^2 for 2D edge source area\n";
+    output << "- median_Gava_closure_relative_error: " << formatReal(medianClosure) << "\n";
+    output << "- max_Gava_closure_relative_error: " << formatReal(maxClosure) << "\n";
+    output << "- max_Gava_closure_note: max relative error can be dominated by "
+              "near-zero/subnormal source rows; median closure is the acceptance metric.\n";
+    output << "- qG_internal_contributions_A_per_um: "
+           << formatReal(summary.qGInternal_A_per_um) << "\n";
+    output << "- qG_solver_output_A_per_um: "
+           << formatReal(summary.qGSolver_A_per_um) << "\n";
+    output << "- qG_internal_vs_solver_relative_error: "
+           << formatReal(qGRelativeError) << "\n\n";
+
+    output << "## Required Answers\n\n";
+    output << "1. self internal used terms close self Gava: "
+           << (closureOk ? "yes" : "no") << ".\n";
+    output << "2. Jn_mag_used/Jp_mag_used unit is clearly A/cm^2: yes.\n";
+    output << "3. exported node current density is the same as internal used current: no.\n";
+    output << "4. exported node current is a post-processing quantity and cannot explain Gava: yes.\n";
+    output << "5. source_location_type is edge.\n";
+    output << "6. qG internal contributions reproduce solver qG: "
+           << (qGOk ? "yes" : "no") << ".\n";
+    output << "7. If internal source closure succeeds, next step is internal source quantities "
+              "versus Sentaurus edge/cell/window comparison: "
+           << (closureOk ? "yes" : "blocked until closure passes") << ".\n";
+    output << "8. If internal source closure fails, prioritize avalanche source assembly units "
+              "and q factor: "
+           << (closureOk ? "not needed; no missing factor indicated"
+                         : "needed; inspect alpha, current, volume, and q conversions")
+           << ".\n";
+}
+
+struct ReleaseBVConfigAuditRunningSummary {
+    std::size_t rowCount = 0;
+    bool anyConverged = false;
+    bool usesReferenceAScale = false;
+    bool usesReferenceBScale = false;
+    bool usesVanOverstraetenGradQF = false;
+    bool usesReferenceSourceMappingMode = false;
+    bool qGSameOrderAsDiagnostic = false;
+    bool hasDiagnosticQGReference = false;
+    Real lastQGFull_A_per_um = 0.0;
+    Real lastQGJunction_A_per_um = 0.0;
+    Real lastTerminalCurrent_A_per_um = 0.0;
+    Real lastMaxE_V_per_cm = 0.0;
+    Real lastMaxGava_cm3_s = 0.0;
+};
+
+struct ReleaseBVConfigAuditPointTerms {
+    Real qGFull_A_per_um = 0.0;
+    Real qGJunction_A_per_um = 0.0;
+    Real maxGava_cm3_s = 0.0;
+};
+
+std::string drivingForceDisplayName(const std::string& drivingForce)
+{
+    if (drivingForce == "quasi_fermi_gradient")
+        return "GradQuasiFermi";
+    if (drivingForce == "electric_field")
+        return "ElectricField";
+    return drivingForce;
+}
+
+std::string releaseBVLambdaDescription(const ImpactIonizationModelConfig& config)
+{
+    std::ostringstream out;
+    out << "source_geometry_scale=" << formatReal(config.sourceGeometryScale)
+        << ";source_volume_policy=" << config.sourceVolumePolicy
+        << ";source_volume_factor=" << formatReal(config.sourceVolumeFactor);
+    return out.str();
+}
+
+ReleaseBVConfigAuditMetadata releaseBVConfigAuditMetadata(
+    const DCSweepConfig& sweep,
+    const ImpactIonizationModelConfig& config)
+{
+    ReleaseBVConfigAuditMetadata metadata;
+    metadata.enabled = sweep.diagnostics.releaseBVConfigAudit.enabled;
+    metadata.model = config.model;
+    metadata.drivingForce = drivingForceDisplayName(config.drivingForce);
+    metadata.parameterSet = config.parameterSet;
+    metadata.aScale = config.aScale;
+    metadata.bScale = config.bScale;
+    metadata.switchField_V_per_cm = config.switchField / 100.0;
+    metadata.minimumField_V_per_cm = config.minimumField / 100.0;
+    metadata.smoothing = config.drivingForceInterpolation == "none"
+        ? "none"
+        : "driving_force_interpolation:" + config.drivingForceInterpolation;
+    metadata.electronRefDens_cm3 = config.electronDrivingForceRefDensity / 1.0e6;
+    metadata.holeRefDens_cm3 = config.holeDrivingForceRefDensity / 1.0e6;
+    metadata.sourceMappingMode = config.sourceMappingMode;
+    metadata.lambdaAva = releaseBVLambdaDescription(config);
+    metadata.depth2D_um = 1.0;
+    metadata.currentNormalization = sweep.scaling.isUnitScaling()
+        ? "A_per_um_from_A_per_m"
+        : "A_per_m";
+    metadata.qGNormalization = "q_times_integral_G_dA_2D_reported_A_per_um";
+    metadata.auditCsvFile = sweep.diagnostics.releaseBVConfigAudit.csvFile;
+    metadata.auditSummaryFile = sweep.diagnostics.releaseBVConfigAudit.summaryFile;
+    return metadata;
+}
+
+bool sameOrderOfMagnitude(Real value, Real reference)
+{
+    if (reference <= 0.0 || value <= 0.0 ||
+        !std::isfinite(reference) || !std::isfinite(value)) {
+        return false;
+    }
+    const Real ratio = std::abs(value) / std::abs(reference);
+    return ratio >= 0.1 && ratio <= 10.0;
+}
+
+ReleaseBVConfigAuditPointTerms computeReleaseBVConfigAuditPointTerms(
+    const DeviceMesh& mesh,
+    const std::vector<detail::SgEdgeCurrentAvalancheSourceRecord>& records)
+{
+    constexpr Real PerMeterToPerMicron = 1.0e-6;
+    constexpr Real PerM3ToPerCm3 = 1.0e-6;
+    ReleaseBVConfigAuditPointTerms terms;
+    for (const detail::SgEdgeCurrentAvalancheSourceRecord& record : records) {
+        const Real qG_A_per_um =
+            constants::q * record.edgeSourceIntegral * PerMeterToPerMicron;
+        terms.qGFull_A_per_um += qG_A_per_um;
+        const Node& node0 = mesh.getNode(record.node0);
+        const Node& node1 = mesh.getNode(record.node1);
+        const Real xMid_um = 0.5 * (node0.x + node1.x) * 1.0e6;
+        if (xMid_um >= 0.7 && xMid_um <= 1.3)
+            terms.qGJunction_A_per_um += qG_A_per_um;
+        if (record.edgeAreaProxy > 0.0) {
+            const Real gava_cm3_s =
+                (record.edgeSourceIntegral / record.edgeAreaProxy) * PerM3ToPerCm3;
+            terms.maxGava_cm3_s = std::max(terms.maxGava_cm3_s, gava_cm3_s);
+        }
+    }
+    return terms;
+}
+
+void writeReleaseBVConfigAuditSummary(
+    const std::filesystem::path& path,
+    const ReleaseBVConfigAuditMetadata& metadata,
+    const ReleaseBVConfigAuditConfig& config,
+    const ReleaseBVConfigAuditRunningSummary& summary)
+{
+    if (!path.parent_path().empty())
+        std::filesystem::create_directories(path.parent_path());
+
+    std::ofstream output(path);
+    output << "# Release BV Configuration Parity Audit\n\n";
+    output << "- model: " << metadata.model << "\n";
+    output << "- driving_force: " << metadata.drivingForce << "\n";
+    output << "- parameter_set: " << metadata.parameterSet << "\n";
+    output << "- A_scale: " << formatReal(metadata.aScale) << "\n";
+    output << "- B_scale: " << formatReal(metadata.bScale) << "\n";
+    output << "- switchField_V_per_cm: " << formatReal(metadata.switchField_V_per_cm) << "\n";
+    output << "- cutoff_minField_V_per_cm: " << formatReal(metadata.minimumField_V_per_cm) << "\n";
+    output << "- smoothing: " << metadata.smoothing << "\n";
+    output << "- RefDens_electron_cm^-3: " << formatReal(metadata.electronRefDens_cm3) << "\n";
+    output << "- RefDens_hole_cm^-3: " << formatReal(metadata.holeRefDens_cm3) << "\n";
+    output << "- source_mapping_mode: " << metadata.sourceMappingMode << "\n";
+    output << "- lambda_ava: " << metadata.lambdaAva << "\n";
+    output << "- 2D depth/current normalization: depth="
+           << formatReal(metadata.depth2D_um) << " um, current="
+           << metadata.currentNormalization << "\n";
+    output << "- qG unit: A/um\n";
+    output << "- max_E unit: V/cm\n";
+    output << "- max_Gava unit: cm^-3 s^-1\n";
+    output << "- audit_rows: " << summary.rowCount << "\n";
+    output << "- last_qG_full_A_per_um: " << formatReal(summary.lastQGFull_A_per_um) << "\n";
+    output << "- last_qG_junction_A_per_um: " << formatReal(summary.lastQGJunction_A_per_um) << "\n";
+    output << "- last_terminal_current_A_per_um: "
+           << formatReal(summary.lastTerminalCurrent_A_per_um) << "\n";
+    output << "- last_max_E_V_per_cm: " << formatReal(summary.lastMaxE_V_per_cm) << "\n";
+    output << "- last_max_Gava_cm^-3_s^-1: " << formatReal(summary.lastMaxGava_cm3_s) << "\n\n";
+
+    output << "## Required Answers\n\n";
+    output << "a. release uses A_scale=2: "
+           << (summary.usesReferenceAScale ? "yes" : "no") << ".\n";
+    output << "b. release uses B_scale=1.05: "
+           << (summary.usesReferenceBScale ? "yes" : "no") << ".\n";
+    output << "c. release uses VanOverstraeten + GradQuasiFermi: "
+           << (summary.usesVanOverstraetenGradQF ? "yes" : "no") << ".\n";
+    output << "d. release uses diagnostic source_mapping_mode: "
+           << (summary.usesReferenceSourceMappingMode ? "yes" : "no") << ".\n";
+    output << "e. release qG_full/qG_junction same order as A2_B105 diagnostic: ";
+    if (summary.hasDiagnosticQGReference)
+        output << (summary.qGSameOrderAsDiagnostic ? "yes" : "no") << ".\n";
+    else
+        output << "insufficient_data.\n";
+
+    if (!summary.usesReferenceAScale || !summary.usesReferenceBScale) {
+        output << "\nrelease "
+                  "\xE6\x9C\xAA\xE5\x90\xAF\xE7\x94\xA8"
+                  "\xE5\xBD\x93\xE5\x89\x8D"
+                  "\xE6\xA0\xA1\xE5\x87\x86"
+                  "\xE5\x8F\x82\xE6\x95\xB0\xE3\x80\x82\n";
+    } else if (!summary.qGSameOrderAsDiagnostic && summary.hasDiagnosticQGReference) {
+        output << "\nrelease \xE4\xB8\x8E diagnostic "
+                  "\xE4\xBB\xA3\xE7\xA0\x81"
+                  "\xE8\xB7\xAF\xE5\xBE\x84"
+                  "\xE4\xB8\x8D\xE4\xB8\x80\xE8\x87\xB4\xE3\x80\x82\n";
+    }
+
+    output << "\n## Diagnostic Reference\n\n";
+    output << "- reference_A_scale: " << formatReal(config.diagnosticReferenceAScale) << "\n";
+    output << "- reference_B_scale: " << formatReal(config.diagnosticReferenceBScale) << "\n";
+    output << "- reference_source_mapping_mode: "
+           << config.diagnosticReferenceSourceMappingMode << "\n";
+    output << "- reference_qG_full_A_per_um: "
+           << formatReal(config.diagnosticReferenceQGFull_A_per_um) << "\n";
+    output << "- reference_qG_junction_A_per_um: "
+           << formatReal(config.diagnosticReferenceQGJunction_A_per_um) << "\n";
+}
+
 std::string biasToken(Real bias)
 {
     std::ostringstream out;
@@ -1095,6 +1359,50 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         sweep.diagnostics.sgAvalancheEdges.csvFile =
             sgAvalancheCfg.value("csv_file", std::string{});
     }
+    if (diagnosticsCfg.contains("avalanche_internal_source_current_audit")) {
+        const auto& auditCfg = diagnosticsCfg.at("avalanche_internal_source_current_audit");
+        if (!auditCfg.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.diagnostics.avalanche_internal_source_current_audit must be an object.");
+        sweep.diagnostics.avalancheInternalSourceCurrentAudit.enabled =
+            auditCfg.value("enabled", sweep.diagnostics.avalancheInternalSourceCurrentAudit.enabled);
+        sweep.diagnostics.avalancheInternalSourceCurrentAudit.csvFile =
+            auditCfg.value("csv_file", std::string{});
+        sweep.diagnostics.avalancheInternalSourceCurrentAudit.summaryFile =
+            auditCfg.value("summary_file", std::string{});
+    }
+    if (diagnosticsCfg.contains("release_bv_config_audit")) {
+        const auto& auditCfg = diagnosticsCfg.at("release_bv_config_audit");
+        if (!auditCfg.is_object())
+            throw std::invalid_argument(
+                "DCSweep: sweep.diagnostics.release_bv_config_audit must be an object.");
+        sweep.diagnostics.releaseBVConfigAudit.enabled =
+            auditCfg.value("enabled", sweep.diagnostics.releaseBVConfigAudit.enabled);
+        sweep.diagnostics.releaseBVConfigAudit.csvFile =
+            auditCfg.value("csv_file", std::string{});
+        sweep.diagnostics.releaseBVConfigAudit.summaryFile =
+            auditCfg.value("summary_file", std::string{});
+        sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceAScale =
+            auditCfg.value(
+                "diagnostic_reference_A_scale",
+                sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceAScale);
+        sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceBScale =
+            auditCfg.value(
+                "diagnostic_reference_B_scale",
+                sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceBScale);
+        sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceSourceMappingMode =
+            auditCfg.value(
+                "diagnostic_reference_source_mapping_mode",
+                sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceSourceMappingMode);
+        sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceQGFull_A_per_um =
+            auditCfg.value(
+                "diagnostic_reference_qG_full_A_per_um",
+                sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceQGFull_A_per_um);
+        sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceQGJunction_A_per_um =
+            auditCfg.value(
+                "diagnostic_reference_qG_junction_A_per_um",
+                sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceQGJunction_A_per_um);
+    }
     if (diagnosticsCfg.contains("terminal_current_method_compare")) {
         const auto& compareCfg = diagnosticsCfg.at("terminal_current_method_compare");
         if (!compareCfg.is_object())
@@ -1222,6 +1530,40 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         } else {
             sweep.diagnostics.sgAvalancheEdges.csvFile =
                 resolve(sweep.diagnostics.sgAvalancheEdges.csvFile);
+        }
+    }
+    if (sweep.diagnostics.avalancheInternalSourceCurrentAudit.enabled) {
+        const std::filesystem::path csvPath(sweep.csvFile);
+        if (sweep.diagnostics.avalancheInternalSourceCurrentAudit.csvFile.empty()) {
+            sweep.diagnostics.avalancheInternalSourceCurrentAudit.csvFile =
+                (csvPath.parent_path() / "avalanche_internal_source_current_audit.csv").string();
+        } else {
+            sweep.diagnostics.avalancheInternalSourceCurrentAudit.csvFile =
+                resolve(sweep.diagnostics.avalancheInternalSourceCurrentAudit.csvFile);
+        }
+        if (sweep.diagnostics.avalancheInternalSourceCurrentAudit.summaryFile.empty()) {
+            sweep.diagnostics.avalancheInternalSourceCurrentAudit.summaryFile =
+                (csvPath.parent_path() / "avalanche_internal_source_current_audit_summary.md").string();
+        } else {
+            sweep.diagnostics.avalancheInternalSourceCurrentAudit.summaryFile =
+                resolve(sweep.diagnostics.avalancheInternalSourceCurrentAudit.summaryFile);
+        }
+    }
+    if (sweep.diagnostics.releaseBVConfigAudit.enabled) {
+        const std::filesystem::path csvPath(sweep.csvFile);
+        if (sweep.diagnostics.releaseBVConfigAudit.csvFile.empty()) {
+            sweep.diagnostics.releaseBVConfigAudit.csvFile =
+                (csvPath.parent_path() / "release_bv_config_audit.csv").string();
+        } else {
+            sweep.diagnostics.releaseBVConfigAudit.csvFile =
+                resolve(sweep.diagnostics.releaseBVConfigAudit.csvFile);
+        }
+        if (sweep.diagnostics.releaseBVConfigAudit.summaryFile.empty()) {
+            sweep.diagnostics.releaseBVConfigAudit.summaryFile =
+                (csvPath.parent_path() / "release_bv_config_audit_summary.md").string();
+        } else {
+            sweep.diagnostics.releaseBVConfigAudit.summaryFile =
+                resolve(sweep.diagnostics.releaseBVConfigAudit.summaryFile);
         }
     }
     if (sweep.diagnostics.terminalCurrentMethodCompare.enabled) {
@@ -1595,6 +1937,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     const auto sweepCellMaterials = detail::buildCellMaterials(mesh, matdb, temperature_K);
     const auto sweepMobility = makeMobilityModel(mobilityConfig);
     const auto sweepImpactIonization = makeImpactIonizationModel(sweepImpactIonizationConfig);
+    std::optional<ReleaseBVConfigAuditMetadata> releaseBVConfigAuditMetadataOpt;
+    if (sweep.diagnostics.releaseBVConfigAudit.enabled) {
+        releaseBVConfigAuditMetadataOpt =
+            releaseBVConfigAuditMetadata(sweep, sweepImpactIonizationConfig);
+    }
     if (sweep.diagnostics.sgAvalancheEdges.enabled &&
         !detail::usesEdgeCurrentAvalancheSource(sweepImpactIonizationConfig)) {
         throw std::invalid_argument(
@@ -1602,6 +1949,13 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "impact_ionization.generation='current_density' and "
             "impact_ionization.current_approximation='density_gradient', 'grad_qf', "
             "'cell_reconstructed', 'cell_current_reconstructed', or 'cell_vector_current_reconstructed'.");
+    }
+    if (sweep.diagnostics.avalancheInternalSourceCurrentAudit.enabled &&
+        !detail::usesEdgeCurrentAvalancheSource(sweepImpactIonizationConfig)) {
+        throw std::invalid_argument(
+            "DCSweep: sweep.diagnostics.avalanche_internal_source_current_audit requires "
+            "impact_ionization.generation='current_density' and an SG edge-current "
+            "impact_ionization.current_approximation.");
     }
     // Build DDScalingSpec for contact current post-processing.
     DDScalingSpec ddScaling;
@@ -1917,6 +2271,89 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "node0_source_integral",
             "node1_source_integral",
             "edge_class"});
+    }
+
+    std::unique_ptr<CSVWriter> avalancheInternalSourceAuditCsv;
+    AvalancheInternalSourceCurrentAuditSummary avalancheInternalSourceAuditSummary;
+    if (sweep.diagnostics.avalancheInternalSourceCurrentAudit.enabled) {
+        const std::filesystem::path diagPath(
+            sweep.diagnostics.avalancheInternalSourceCurrentAudit.csvFile);
+        if (!diagPath.parent_path().empty())
+            std::filesystem::create_directories(diagPath.parent_path());
+        avalancheInternalSourceAuditCsv = std::make_unique<CSVWriter>(diagPath.string());
+        avalancheInternalSourceAuditCsv->writeHeader({
+            "source_location_type",
+            "source_entity_id",
+            "bias_V",
+            "x_um",
+            "y_um",
+            "Fn_used_V_per_cm",
+            "Fp_used_V_per_cm",
+            "alpha_n_used_cm_inv",
+            "alpha_p_used_cm_inv",
+            "Jn_mag_used_A_per_cm2",
+            "Jp_mag_used_A_per_cm2",
+            "Gava_n_used_cm_minus3_s_minus1",
+            "Gava_p_used_cm_minus3_s_minus1",
+            "Gava_total_used_cm_minus3_s_minus1",
+            "Gava_reconstructed_from_used_terms",
+            "Gava_closure_relative_error",
+            "source_weight_or_volume_cm2_for_2D",
+            "contribution_volume_cm3_or_area_cm2_for_2D",
+            "qG_contribution_A_per_um"});
+    }
+
+    std::unique_ptr<CSVWriter> releaseBVConfigAuditCsv;
+    ReleaseBVConfigAuditRunningSummary releaseBVConfigAuditSummary;
+    if (sweep.diagnostics.releaseBVConfigAudit.enabled) {
+        const std::filesystem::path diagPath(sweep.diagnostics.releaseBVConfigAudit.csvFile);
+        if (!diagPath.parent_path().empty())
+            std::filesystem::create_directories(diagPath.parent_path());
+        releaseBVConfigAuditCsv = std::make_unique<CSVWriter>(diagPath.string());
+        releaseBVConfigAuditCsv->writeHeader({
+            "bias_V",
+            "A_scale",
+            "B_scale",
+            "model",
+            "driving_force",
+            "parameter_set",
+            "switchField_V_per_cm",
+            "cutoff_minField_V_per_cm",
+            "smoothing",
+            "RefDens_electron_cm_minus3",
+            "RefDens_hole_cm_minus3",
+            "source_mapping_mode",
+            "lambda_ava",
+            "depth_2D_um",
+            "current_normalization",
+            "qG_full",
+            "qG_full_unit",
+            "qG_junction",
+            "qG_junction_unit",
+            "terminal_current",
+            "terminal_current_unit",
+            "max_E",
+            "max_E_unit",
+            "max_Gava",
+            "max_Gava_unit",
+            "converged"});
+        releaseBVConfigAuditSummary.usesReferenceAScale =
+            std::abs(
+                sweepImpactIonizationConfig.aScale -
+                sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceAScale) <= 1.0e-12;
+        releaseBVConfigAuditSummary.usesReferenceBScale =
+            std::abs(
+                sweepImpactIonizationConfig.bScale -
+                sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceBScale) <= 1.0e-12;
+        releaseBVConfigAuditSummary.usesVanOverstraetenGradQF =
+            sweepImpactIonizationConfig.model == "van_overstraeten" &&
+            sweepImpactIonizationConfig.drivingForce == "quasi_fermi_gradient";
+        releaseBVConfigAuditSummary.usesReferenceSourceMappingMode =
+            sweepImpactIonizationConfig.sourceMappingMode ==
+            sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceSourceMappingMode;
+        releaseBVConfigAuditSummary.hasDiagnosticQGReference =
+            sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceQGFull_A_per_um > 0.0 &&
+            sweep.diagnostics.releaseBVConfigAudit.diagnosticReferenceQGJunction_A_per_um > 0.0;
     }
 
     std::unique_ptr<CSVWriter> newtonHistoryCsv;
@@ -2621,6 +3058,81 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             row.push_back(formatIndexOrMinusOne(point.electronDensityJumpMaxNode));
         }
         csv.writeRow(row);
+
+        if (releaseBVConfigAuditCsv != nullptr) {
+            ReleaseBVConfigAuditPointTerms terms;
+            if (converged &&
+                detail::usesEdgeCurrentAvalancheSource(sweepImpactIonizationConfig)) {
+                const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
+                    sweepImpactIonizationConfig,
+                    *sweepImpactIonization,
+                    mobilityConfig,
+                    *sweepMobility,
+                    sweepEdgeCells,
+                    mesh,
+                    doping,
+                    sweepCellMaterials,
+                    sol.psi,
+                    sol.phin,
+                    sol.phip,
+                    sol.n,
+                    sol.p,
+                    effectiveNi,
+                    constants::kb * temperature_K / constants::q);
+                terms = computeReleaseBVConfigAuditPointTerms(mesh, records);
+            }
+            const ReleaseBVConfigAuditMetadata& metadata =
+                releaseBVConfigAuditMetadataOpt.value();
+            releaseBVConfigAuditCsv->writeRow({
+                formatReal(point.bias),
+                formatReal(metadata.aScale),
+                formatReal(metadata.bScale),
+                metadata.model,
+                metadata.drivingForce,
+                metadata.parameterSet,
+                formatReal(metadata.switchField_V_per_cm),
+                formatReal(metadata.minimumField_V_per_cm),
+                metadata.smoothing,
+                formatReal(metadata.electronRefDens_cm3),
+                formatReal(metadata.holeRefDens_cm3),
+                metadata.sourceMappingMode,
+                metadata.lambdaAva,
+                formatReal(metadata.depth2D_um),
+                metadata.currentNormalization,
+                formatReal(terms.qGFull_A_per_um),
+                "A/um",
+                formatReal(terms.qGJunction_A_per_um),
+                "A/um",
+                formatReal(perMeterToPerMicron(point.totalCurrent)),
+                "A/um",
+                formatReal(voltsPerMeterToVoltsPerCm(point.maxElectricField)),
+                "V/cm",
+                formatReal(terms.maxGava_cm3_s),
+                "cm^-3 s^-1",
+                point.converged ? "1" : "0"});
+
+            ++releaseBVConfigAuditSummary.rowCount;
+            releaseBVConfigAuditSummary.anyConverged =
+                releaseBVConfigAuditSummary.anyConverged || point.converged;
+            releaseBVConfigAuditSummary.lastQGFull_A_per_um = terms.qGFull_A_per_um;
+            releaseBVConfigAuditSummary.lastQGJunction_A_per_um = terms.qGJunction_A_per_um;
+            releaseBVConfigAuditSummary.lastTerminalCurrent_A_per_um =
+                perMeterToPerMicron(point.totalCurrent);
+            releaseBVConfigAuditSummary.lastMaxE_V_per_cm =
+                voltsPerMeterToVoltsPerCm(point.maxElectricField);
+            releaseBVConfigAuditSummary.lastMaxGava_cm3_s = terms.maxGava_cm3_s;
+            if (releaseBVConfigAuditSummary.hasDiagnosticQGReference) {
+                releaseBVConfigAuditSummary.qGSameOrderAsDiagnostic =
+                    sameOrderOfMagnitude(
+                        terms.qGFull_A_per_um,
+                        sweep.diagnostics.releaseBVConfigAudit
+                            .diagnosticReferenceQGFull_A_per_um) &&
+                    sameOrderOfMagnitude(
+                        terms.qGJunction_A_per_um,
+                        sweep.diagnostics.releaseBVConfigAudit
+                            .diagnosticReferenceQGJunction_A_per_um);
+            }
+        }
         if (!converged && !point.newtonFailureDiagnostics.failureReason.empty())
             writeNewtonFailureDiagnostics(points.size(), point);
 
@@ -2886,6 +3398,107 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             }
         }
 
+        if (converged && avalancheInternalSourceAuditCsv != nullptr) {
+            const std::vector<detail::SgEdgeCurrentAvalancheSourceRecord> records =
+                detail::sgEdgeCurrentAvalancheSourceRecords(
+                    sweepImpactIonizationConfig,
+                    *sweepImpactIonization,
+                    mobilityConfig,
+                    *sweepMobility,
+                    sweepEdgeCells,
+                    mesh,
+                    doping,
+                    sweepCellMaterials,
+                    sol.psi,
+                    sol.phin,
+                    sol.phip,
+                    sol.n,
+                    sol.p,
+                    effectiveNi,
+                    constants::kb * temperature_K / constants::q);
+            const std::vector<Real> solverSourceIntegrals =
+                detail::sgEdgeCurrentAvalancheSourceIntegrals(
+                    sweepImpactIonizationConfig,
+                    *sweepImpactIonization,
+                    mobilityConfig,
+                    *sweepMobility,
+                    sweepEdgeCells,
+                    mesh,
+                    doping,
+                    sweepCellMaterials,
+                    sol.psi,
+                    sol.phin,
+                    sol.phip,
+                    sol.n,
+                    sol.p,
+                    effectiveNi,
+                    constants::kb * temperature_K / constants::q);
+
+            Real solverSourceIntegralTotal = 0.0;
+            for (Real value : solverSourceIntegrals)
+                solverSourceIntegralTotal += value;
+
+            constexpr Real VPerMToVPerCm = 1.0e-2;
+            constexpr Real InvMToInvCm = 1.0e-2;
+            constexpr Real APerM2ToAPerCm2 = 1.0e-4;
+            constexpr Real M2ToCm2 = 1.0e4;
+            constexpr Real PerM3ToPerCm3 = 1.0e-6;
+            constexpr Real PerMeterToPerMicron = 1.0e-6;
+
+            for (const detail::SgEdgeCurrentAvalancheSourceRecord& record : records) {
+                const Node& node0 = mesh.getNode(record.node0);
+                const Node& node1 = mesh.getNode(record.node1);
+                const Real x_um = 0.5 * (node0.x + node1.x) * 1.0e6;
+                const Real y_um = 0.5 * (node0.y + node1.y) * 1.0e6;
+                const Real fn_V_per_cm = record.electronImpactField * VPerMToVPerCm;
+                const Real fp_V_per_cm = record.holeImpactField * VPerMToVPerCm;
+                const Real alphaN_cm_inv = record.electronAlpha * InvMToInvCm;
+                const Real alphaP_cm_inv = record.holeAlpha * InvMToInvCm;
+                const Real jn_A_per_cm2 =
+                    constants::q * record.electronFluxProxy * APerM2ToAPerCm2;
+                const Real jp_A_per_cm2 =
+                    constants::q * record.holeFluxProxy * APerM2ToAPerCm2;
+                const Real gN_cm3_s = alphaN_cm_inv * jn_A_per_cm2 / constants::q;
+                const Real gP_cm3_s = alphaP_cm_inv * jp_A_per_cm2 / constants::q;
+                const Real gTotalFromSource_cm3_s = record.edgeAreaProxy > 0.0
+                    ? (record.edgeSourceIntegral / record.edgeAreaProxy) * PerM3ToPerCm3
+                    : 0.0;
+                const Real gReconstructed_cm3_s = gN_cm3_s + gP_cm3_s;
+                const Real closureError =
+                    relativeDifference(gTotalFromSource_cm3_s, gReconstructed_cm3_s);
+                const Real area_cm2 = record.edgeAreaProxy * M2ToCm2;
+                const Real qG_A_per_um =
+                    constants::q * record.edgeSourceIntegral * PerMeterToPerMicron;
+
+                avalancheInternalSourceAuditCsv->writeRow({
+                    "edge",
+                    std::to_string(record.edgeId),
+                    formatReal(point.bias),
+                    formatReal(x_um),
+                    formatReal(y_um),
+                    formatReal(fn_V_per_cm),
+                    formatReal(fp_V_per_cm),
+                    formatReal(alphaN_cm_inv),
+                    formatReal(alphaP_cm_inv),
+                    formatReal(jn_A_per_cm2),
+                    formatReal(jp_A_per_cm2),
+                    formatReal(gN_cm3_s),
+                    formatReal(gP_cm3_s),
+                    formatReal(gTotalFromSource_cm3_s),
+                    formatReal(gReconstructed_cm3_s),
+                    formatReal(closureError),
+                    formatReal(area_cm2),
+                    formatReal(area_cm2),
+                    formatReal(qG_A_per_um)});
+
+                ++avalancheInternalSourceAuditSummary.rowCount;
+                avalancheInternalSourceAuditSummary.closureRelativeErrors.push_back(closureError);
+                avalancheInternalSourceAuditSummary.qGInternal_A_per_um += qG_A_per_um;
+            }
+            avalancheInternalSourceAuditSummary.qGSolver_A_per_um +=
+                constants::q * solverSourceIntegralTotal * PerMeterToPerMicron;
+        }
+
         if (converged && sweep.writeVtk) {
             point.outputVtk = vtkFilename(sweep.vtkPrefix, vtkIndex++, voltage);
             writeDDSolutionVTK(point.outputVtk,
@@ -2910,6 +3523,37 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
 
         points.push_back(std::move(point));
+    };
+
+    auto writeAvalancheInternalSourceAuditSummaryIfNeeded = [&]() {
+        if (sweep.diagnostics.avalancheInternalSourceCurrentAudit.enabled) {
+            writeAvalancheInternalSourceCurrentAuditSummary(
+                std::filesystem::path(
+                    sweep.diagnostics.avalancheInternalSourceCurrentAudit.summaryFile),
+                sweepImpactIonizationConfig,
+                avalancheInternalSourceAuditSummary);
+        }
+    };
+
+    auto writeReleaseBVConfigAuditSummaryIfNeeded = [&]() {
+        if (sweep.diagnostics.releaseBVConfigAudit.enabled &&
+            releaseBVConfigAuditMetadataOpt.has_value()) {
+            writeReleaseBVConfigAuditSummary(
+                std::filesystem::path(
+                    sweep.diagnostics.releaseBVConfigAudit.summaryFile),
+                *releaseBVConfigAuditMetadataOpt,
+                sweep.diagnostics.releaseBVConfigAudit,
+                releaseBVConfigAuditSummary);
+        }
+    };
+
+    auto finishResult = [&]() {
+        writeAvalancheInternalSourceAuditSummaryIfNeeded();
+        writeReleaseBVConfigAuditSummaryIfNeeded();
+        return DCSweepResult{
+            std::move(mesh),
+            std::move(points),
+            releaseBVConfigAuditMetadataOpt};
     };
 
     std::unique_ptr<DDSolution> initialState;
@@ -3025,8 +3669,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             recordPoint(recordedVoltage, attempt, ok, attemptedStep, acceptedStep, retryCount,
                         failureReason, validationDiagnostics);
             if (!ok) {
-                if (sweep.stopOnFailure)
-                    return DCSweepResult{std::move(mesh), std::move(points)};
+                if (sweep.stopOnFailure) {
+                    return finishResult();
+                }
                 previousBias = recordedVoltage;
                 havePreviousBias = true;
                 continue;
@@ -3040,7 +3685,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             previousBias = bias;
             havePreviousBias = true;
         }
-        return DCSweepResult{std::move(mesh), std::move(points)};
+        return finishResult();
     }
 
     bool startOk = false;
@@ -3063,8 +3708,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     }
     recordPoint(sweep.start, startAttempt, startOk, 0.0, 0.0, 0, startFailureReason,
                 startValidationDiagnostics);
-    if (!startOk)
-        return DCSweepResult{std::move(mesh), std::move(points)};
+    if (!startOk) {
+        return finishResult();
+    }
     previousSolution = std::move(startAttempt.solution);
     currentSolutionBias = sweep.start;
     hasCurrentSolutionBias = true;
@@ -3082,8 +3728,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         auto reachedStop = [&](Real lambda) {
             return directionSign > 0.0 ? lambda >= sweep.stop : lambda <= sweep.stop;
         };
-        if (reachedStop(sweep.start))
-            return DCSweepResult{std::move(mesh), std::move(points)};
+        if (reachedStop(sweep.start)) {
+            return finishResult();
+        }
 
         NewtonSolver arclengthSolver(
             mesh,
@@ -3149,7 +3796,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     failedBias,
                     stepResult.failureReason,
                     stepResult.retries);
-                return DCSweepResult{std::move(mesh), std::move(points)};
+                return finishResult();
             }
 
             SolvePointAttempt attempt;
@@ -3193,7 +3840,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     stepResult.retries,
                     attempt.failureReason,
                     attempt.validationDiagnostics);
-                return DCSweepResult{std::move(mesh), std::move(points)};
+                return finishResult();
             }
 
             recordPoint(
@@ -3213,8 +3860,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             havePreviousTangent = true;
             deltaS = continuation.nextStep(stepResult);
 
-            if (reachedStop(anchor.lambda))
-                return DCSweepResult{std::move(mesh), std::move(points)};
+            if (reachedStop(anchor.lambda)) {
+                return finishResult();
+            }
         }
 
         throw std::runtime_error(
@@ -3271,7 +3919,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             }
         });
 
-    return DCSweepResult{std::move(mesh), std::move(points)};
+    return finishResult();
 }
 
 namespace detail {

@@ -586,6 +586,10 @@ Field meanings (Selberherr prototype):
     default `1.0` leaves the default path unchanged. It does not modify `B`,
     `switch_field_V_m`, low/high branch selection, cutoff, smoothing, or
     RefDens-style driving-force blending.
+  - `B_scale`: positive finite Van Overstraeten/de Man diagnostic multiplier
+    for the four `B` critical-field values only (`electron_b_low_V_m`,
+    `electron_b_high_V_m`, `hole_b_low_V_m`, `hole_b_high_V_m`). The default
+    `1.0` leaves the default path unchanged.
 
 Validation:
 - `electron_A_m_inv`, `hole_A_m_inv`, and `carrier_velocity_m_s` must be non-negative.
@@ -604,6 +608,8 @@ Validation:
   - `debug_raw_vanoverstraeten` requires `model: "van_overstraeten"`.
   - Non-default `parameter_set` values require `model: "van_overstraeten"`.
   - `A_scale` must be positive and finite; values other than `1.0` require
+    `model: "van_overstraeten"`.
+  - `B_scale` must be positive and finite; values other than `1.0` require
     `model: "van_overstraeten"`.
 
 Scaling:
@@ -739,8 +745,35 @@ Diagnostics fields:
   the default `<sweep csv stem>_terminal_balance.csv`.
 - `diagnostics.sg_avalanche_edges.enabled`: writes C++ assembled SG
   edge-current avalanche source rows for `impact_ionization.generation:
-  "current_density"` with `current_approximation: "density_gradient"`. Optional
-  `csv_file` overrides the default `<sweep csv stem>_sg_avalanche_edges.csv`.
+  "current_density"` with an SG edge-current `current_approximation`
+  (`"density_gradient"`, `"grad_qf"`, `"cell_reconstructed"`,
+  `"cell_current_reconstructed"`, or `"cell_vector_current_reconstructed"`).
+  Optional `csv_file` overrides the default
+  `<sweep csv stem>_sg_avalanche_edges.csv`.
+- `diagnostics.avalanche_internal_source_current_audit.enabled`: writes the
+  internal SG edge-current avalanche source terms used by assembly, including
+  `Fn/Fp` in `V/cm`, `alpha_n/alpha_p` in `cm^-1`, `Jn/Jp` in `A/cm^2`,
+  `Gava` in `cm^-3 s^-1`, 2-D contribution area in `cm^2`, and qG contribution
+  in `A/um`. Optional `csv_file` and `summary_file` override the default
+  `avalanche_internal_source_current_audit.csv` and
+  `avalanche_internal_source_current_audit_summary.md` next to the sweep CSV.
+  This diagnostic is an internal source audit; exported node current density is
+  a separate post-processing quantity.
+- `diagnostics.release_bv_config_audit.enabled`: writes a per-bias BV parity
+  metadata CSV and a Markdown summary without changing the solve. It records
+  the resolved avalanche model, `driving_force`, `parameter_set`, `A_scale`,
+  `B_scale`, `switchField`, cutoff/minimum field, RefDens values,
+  `source_mapping_mode`, source support/lambda description, 2-D current
+  normalization, qG full/junction-window integrals in `A/um`, terminal current
+  in `A/um`, max electric field in `V/cm`, max `Gava` in `cm^-3 s^-1`, and
+  convergence. Optional `csv_file` and `summary_file` override the default
+  `release_bv_config_audit.csv` and `release_bv_config_audit_summary.md` next
+  to the sweep CSV. Optional `diagnostic_reference_A_scale`,
+  `diagnostic_reference_B_scale`,
+  `diagnostic_reference_source_mapping_mode`,
+  `diagnostic_reference_qG_full_A_per_um`, and
+  `diagnostic_reference_qG_junction_A_per_um` let the summary compare the
+  current release run against a known A2/B1.05 diagnostic reference.
 - `diagnostics.newton_history.enabled`: writes accepted Newton iteration
   history rows for converged sweep points. The CSV includes point index, bias,
   solver/handoff stage, iteration number, residual norm, relative residual,

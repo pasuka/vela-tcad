@@ -42,6 +42,29 @@ nlohmann::json meshReportJson(const vela::GeometryBuildReport& report)
     };
 }
 
+nlohmann::json releaseBVConfigAuditJson(const vela::ReleaseBVConfigAuditMetadata& metadata)
+{
+    return {
+        {"model", metadata.model},
+        {"driving_force", metadata.drivingForce},
+        {"parameter_set", metadata.parameterSet},
+        {"A_scale", metadata.aScale},
+        {"B_scale", metadata.bScale},
+        {"switchField_V_per_cm", metadata.switchField_V_per_cm},
+        {"cutoff_minField_V_per_cm", metadata.minimumField_V_per_cm},
+        {"smoothing", metadata.smoothing},
+        {"RefDens_electron_cm_minus3", metadata.electronRefDens_cm3},
+        {"RefDens_hole_cm_minus3", metadata.holeRefDens_cm3},
+        {"source_mapping_mode", metadata.sourceMappingMode},
+        {"lambda_ava", metadata.lambdaAva},
+        {"depth_2D_um", metadata.depth2D_um},
+        {"current_normalization", metadata.currentNormalization},
+        {"qG_normalization", metadata.qGNormalization},
+        {"audit_csv", metadata.auditCsvFile},
+        {"audit_summary", metadata.auditSummaryFile},
+    };
+}
+
 std::filesystem::path configDirectory(const std::string& configFile)
 {
     const std::filesystem::path path(configFile);
@@ -1353,6 +1376,9 @@ int main(int argc, char** argv)
                 allConverged = allConverged && point.converged;
             status["converged"] = allConverged;
             status["points"] = result.points.size();
+            if (result.releaseBVConfigAudit.has_value())
+                status["avalanche_config"] =
+                    releaseBVConfigAuditJson(*result.releaseBVConfigAudit);
             if (includeMeshReport)
                 status["mesh_report"] = meshReportJson(result.mesh.lastGeometryBuildReport());
         } else if (type == "poisson") {
