@@ -51,6 +51,8 @@ list(LENGTH files_to_check file_count)
 set(offending_files)
 foreach(file_path IN LISTS files_to_check)
     file(READ "${file_path}" file_hex HEX)
+    # Allow an optional leading UTF-8 BOM while rejecting all other non-ASCII bytes.
+    string(REGEX REPLACE "^[Ee][Ff][Bb][Bb][Bb][Ff]" "" file_hex "${file_hex}")
     string(REGEX REPLACE "(..)" "\\1;" file_bytes "${file_hex}")
 
     foreach(file_byte IN LISTS file_bytes)
