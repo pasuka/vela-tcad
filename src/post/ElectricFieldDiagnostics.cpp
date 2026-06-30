@@ -212,6 +212,89 @@ RecoveredField2 leastSquaresRegionSample(const DeviceMesh& mesh,
     return result;
 }
 
+bool cellCircumcenter(const DeviceMesh& mesh, const Cell& cell, Point2& center)
+{
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+        return false;
+
+    const Node& n0 = mesh.getNode(cell.node_ids[0]);
+    const Node& n1 = mesh.getNode(cell.node_ids[1]);
+    const Node& n2 = mesh.getNode(cell.node_ids[2]);
+    const Real x0 = n0.x;
+    const Real y0 = n0.y;
+    const Real x1 = n1.x;
+    const Real y1 = n1.y;
+    const Real x2 = n2.x;
+    const Real y2 = n2.y;
+    const Real d = 2.0 * (x0 * (y1 - y2) + x1 * (y2 - y0) + x2 * (y0 - y1));
+    if (std::abs(d) <= kMinGeometry || !std::isfinite(d))
+        return false;
+
+    const Real r0 = x0 * x0 + y0 * y0;
+    const Real r1 = x1 * x1 + y1 * y1;
+    const Real r2 = x2 * x2 + y2 * y2;
+    center = Point2{
+        (r0 * (y1 - y2) + r1 * (y2 - y0) + r2 * (y0 - y1)) / d,
+        (r0 * (x2 - x1) + r1 * (x0 - x2) + r2 * (x1 - x0)) / d};
+    return std::isfinite(center.x()) && std::isfinite(center.y());
+}
+
+std::vector<NodeField2> circumcenterRecoverFromCells(
+    const DeviceMesh& mesh,
+    const std::vector<CellField2>& cellFields,
+    ElectricFieldCircumcenterWeight weight,
+    const std::vector<NodeField2>& fallback)
+{
+    std::vector<NodeField2> nodes(mesh.numNodes());
+    std::vector<std::map<Index, Real>> totalWeight(mesh.numNodes());
+    for (Index nodeId = 0; nodeId < mesh.numNodes(); ++nodeId)
+        nodes[nodeId].nodeId = nodeId;
+
+    for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
+        if (cellId >= cellFields.size() || !cellFields[cellId].valid || cellFields[cellId].area <= 0.0)
+            continue;
+        const Cell& cell = mesh.getCell(cellId);
+        Point2 circumcenter = Point2::Zero();
+        if (!cellCircumcenter(mesh, cell, circumcenter))
+            continue;
+
+        for (Index nodeId : cell.node_ids) {
+            if (nodeId >= nodes.size())
+                continue;
+            const Node& node = mesh.getNode(nodeId);
+            const Real distance = std::hypot(circumcenter.x() - node.x, circumcenter.y() - node.y);
+            if (distance <= kMinGeometry || !std::isfinite(distance))
+                continue;
+            Real w = 1.0 / distance;
+            if (weight == ElectricFieldCircumcenterWeight::AreaOverDistance)
+                w *= cellFields[cellId].area;
+            auto& sample = nodes[nodeId].regionSamples[cell.region_id];
+            sample.vector += w * cellFields[cellId].vector;
+            totalWeight[nodeId][cell.region_id] += w;
+        }
+    }
+
+    for (Index nodeId = 0; nodeId < nodes.size(); ++nodeId) {
+        for (auto& item : nodes[nodeId].regionSamples) {
+            const Real w = totalWeight[nodeId][item.first];
+            if (w <= 0.0)
+                continue;
+            item.second.vector /= w;
+            item.second.magnitude = item.second.vector.norm();
+            item.second.valid = std::isfinite(item.second.magnitude);
+        }
+
+        if (nodeId < fallback.size()) {
+            for (const auto& item : fallback[nodeId].regionSamples) {
+                auto existing = nodes[nodeId].regionSamples.find(item.first);
+                if (existing == nodes[nodeId].regionSamples.end() || !existing->second.valid)
+                    nodes[nodeId].regionSamples[item.first] = item.second;
+            }
+        }
+        setPrimaryFromSamples(nodes[nodeId]);
+    }
+    return nodes;
+}
 RecoveredField2 sprRegionSample(const DeviceMesh& mesh,
                                  Index nodeId,
                                  Index regionId,
@@ -372,6 +455,17 @@ std::vector<NodeField2> computeNodeElectricFieldLeastSquares(
         setPrimaryFromSamples(nodes[nodeId]);
     }
     return nodes;
+}
+
+std::vector<NodeField2> computeNodeElectricFieldCircumcenterRecovery(
+    const DeviceMesh& mesh,
+    const VectorXd& potential_V,
+    ElectricFieldCircumcenterWeight weight)
+{
+    validateNodeVector("computeNodeElectricFieldCircumcenterRecovery", mesh, potential_V);
+    const auto cellFields = computeCellElectricField(mesh, potential_V);
+    const auto fallback = computeNodeElectricFieldAreaAverage(mesh, potential_V);
+    return circumcenterRecoverFromCells(mesh, cellFields, weight, fallback);
 }
 
 std::vector<NodeField2> computeNodeElectricFieldSPR(const DeviceMesh& mesh,

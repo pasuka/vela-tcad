@@ -213,6 +213,39 @@ TEST_CASE("Cell-vector current reconstruction recovers a constant edge-projected
     REQUIRE(reconstructed == Catch::Approx(5.0).epsilon(1.0e-12));
 }
 
+
+TEST_CASE("Median-dual face-normal current reconstruction recovers a constant vector current",
+          "[impact][dual_face_vector_mag]")
+{
+    DeviceMesh mesh = makeSingleCellMesh();
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellEdges = detail::buildCellEdgeMap(edgeCells, mesh);
+
+    std::vector<Real> signedFlux(static_cast<std::size_t>(mesh.numEdges()), 0.0);
+    const Real jx = 3.0;
+    const Real jy = 4.0;
+    const Cell& cell = mesh.getCell(0);
+    for (int k = 0; k < 3; ++k) {
+        const Index a = cell.node_ids[static_cast<std::size_t>(k)];
+        const Index b = cell.node_ids[static_cast<std::size_t>((k + 1) % 3)];
+        const Index edgeId = detail::edgeIdForNodePair(mesh, cellEdges[0], a, b);
+        const Point2 normal = detail::medianDualFaceNormal(mesh, cell, a, b);
+        const Edge& edge = mesh.getEdge(edgeId);
+        const Real orientation = (edge.n0 == a && edge.n1 == b) ? 1.0 : -1.0;
+        signedFlux[static_cast<std::size_t>(edgeId)] = orientation * (jx * normal.x() + jy * normal.y());
+    }
+
+    const auto it = std::find_if(mesh.edges().begin(), mesh.edges().end(), [](const Edge& edge) {
+        return edge.n0 == 0 && edge.n1 == 1;
+    });
+    REQUIRE(it != mesh.edges().end());
+
+    const Real reconstructed = detail::medianDualFaceVectorReconstructedEdgeFluxMagnitude(
+        it->id, signedFlux, edgeCells, cellEdges, mesh);
+
+    REQUIRE(reconstructed == Catch::Approx(5.0).epsilon(1.0e-12));
+}
+
 TEST_CASE("Cell-vector current reconstructed avalanche support uses vector SG current magnitude",
           "[impact][cell_vector_current_reconstructed]")
 {

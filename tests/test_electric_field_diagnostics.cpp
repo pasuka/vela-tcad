@@ -189,11 +189,51 @@ TEST_CASE("node electric-field recovery methods reproduce affine interior field"
     const auto ls1d2 = computeNodeElectricFieldLeastSquares(
         mesh, psi, ElectricFieldLeastSquaresWeight::InverseDistanceSquared);
     const auto spr = computeNodeElectricFieldSPR(mesh, psi);
+    const auto circum1d = computeNodeElectricFieldCircumcenterRecovery(
+        mesh, psi, ElectricFieldCircumcenterWeight::InverseDistance);
+    const auto circumArea1d = computeNodeElectricFieldCircumcenterRecovery(
+        mesh, psi, ElectricFieldCircumcenterWeight::AreaOverDistance);
 
     requireFieldApprox(area[0].vector, -3.5, 2.0);
     requireFieldApprox(ls1d[0].vector, -3.5, 2.0);
     requireFieldApprox(ls1d2[0].vector, -3.5, 2.0);
     requireFieldApprox(spr[0].vector, -3.5, 2.0);
+    requireFieldApprox(circum1d[0].vector, -3.5, 2.0);
+    requireFieldApprox(circumArea1d[0].vector, -3.5, 2.0);
+}
+
+TEST_CASE("circumcenter node recovery uses requested distance and area weights", "[electric_field]")
+{
+    DeviceMesh mesh;
+    mesh.addNode(Node{0, 0.0, 0.0, 0.0});
+    mesh.addNode(Node{1, 1.0, 0.0, 0.0});
+    mesh.addNode(Node{2, 0.0, 1.0, 0.0});
+    mesh.addNode(Node{3, -2.0, 0.0, 0.0});
+    mesh.addNode(Node{4, 0.0, -1.0, 0.0});
+    mesh.addCell(Cell{0, CellType::Tri3, 0, {0, 1, 2}});
+    mesh.addCell(Cell{1, CellType::Tri3, 0, {0, 3, 4}});
+    mesh.addRegion(Region{0, "silicon", "Si", {0, 1}});
+    mesh.buildEdges();
+
+    VectorXd psi(5);
+    psi << 0.0, -1.0, 0.0, 0.0, -2.0;
+
+    const auto circum1d = computeNodeElectricFieldCircumcenterRecovery(
+        mesh, psi, ElectricFieldCircumcenterWeight::InverseDistance);
+    const auto circumArea1d = computeNodeElectricFieldCircumcenterRecovery(
+        mesh, psi, ElectricFieldCircumcenterWeight::AreaOverDistance);
+
+    const Real w0 = 1.0 / std::sqrt(0.5);
+    const Real w1 = 1.0 / std::sqrt(1.25);
+    requireFieldApprox(circum1d[0].vector,
+                       w0 / (w0 + w1),
+                       -2.0 * w1 / (w0 + w1));
+
+    const Real aw0 = 0.5 / std::sqrt(0.5);
+    const Real aw1 = 1.0 / std::sqrt(1.25);
+    requireFieldApprox(circumArea1d[0].vector,
+                       aw0 / (aw0 + aw1),
+                       -2.0 * aw1 / (aw0 + aw1));
 }
 
 TEST_CASE("boundary LS and SPR fall back without exceeding area-average affine error", "[electric_field]")

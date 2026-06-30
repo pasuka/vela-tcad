@@ -343,6 +343,143 @@ inline Real cellVectorReconstructedEdgeFluxMagnitude(
     return edgeSum / static_cast<Real>(adjacentCellCount);
 }
 
+
+inline Index edgeIdForNodePair(
+    const DeviceMesh&          mesh,
+    const std::vector<Index>&  candidateEdges,
+    Index                      a,
+    Index                      b)
+{
+    for (Index edgeId : candidateEdges) {
+        if (edgeId >= mesh.numEdges())
+            continue;
+        const Edge& edge = mesh.getEdge(edgeId);
+        if ((edge.n0 == a && edge.n1 == b) || (edge.n0 == b && edge.n1 == a))
+            return edgeId;
+    }
+    return mesh.numEdges();
+}
+
+inline Point2 cellCentroid(const DeviceMesh& mesh, const Cell& cell)
+{
+    Point2 centroid = Point2::Zero();
+    if (cell.node_ids.empty())
+        return centroid;
+    for (Index nodeId : cell.node_ids) {
+        const Node& node = mesh.getNode(nodeId);
+        centroid += Point2{node.x, node.y};
+    }
+    return centroid / static_cast<Real>(cell.node_ids.size());
+}
+
+inline Point2 medianDualFaceNormal(
+    const DeviceMesh& mesh,
+    const Cell&       cell,
+    Index             ownerNode,
+    Index             neighborNode)
+{
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() < 3)
+        return Point2::Zero();
+    const Node& owner = mesh.getNode(ownerNode);
+    const Node& neighbor = mesh.getNode(neighborNode);
+    const Point2 centroid = cellCentroid(mesh, cell);
+    const Point2 midpoint{0.5 * (owner.x + neighbor.x), 0.5 * (owner.y + neighbor.y)};
+    const Point2 segment = midpoint - centroid;
+    const Real length = segment.norm();
+    if (length <= 1.0e-30)
+        return Point2::Zero();
+    Point2 normal{segment.y() / length, -segment.x() / length};
+    const Point2 towardNeighbor{neighbor.x - owner.x, neighbor.y - owner.y};
+    if (normal.dot(towardNeighbor) < 0.0)
+        normal = -normal;
+    return normal;
+}
+
+inline Real medianDualFaceLength(const DeviceMesh& mesh, const Cell& cell, Index a, Index b)
+{
+    const Node& na = mesh.getNode(a);
+    const Node& nb = mesh.getNode(b);
+    const Point2 centroid = cellCentroid(mesh, cell);
+    const Point2 midpoint{0.5 * (na.x + nb.x), 0.5 * (na.y + nb.y)};
+    return (midpoint - centroid).norm();
+}
+
+inline Real medianDualCellVectorCurrentMagnitude(
+    Index                                  cellId,
+    const std::vector<Real>&               signedEdgeFlux,
+    const std::vector<std::vector<Index>>& cellEdges,
+    const DeviceMesh&                      mesh)
+{
+    if (cellId >= mesh.numCells() || cellId >= cellEdges.size())
+        return 0.0;
+    const Cell& cell = mesh.getCell(cellId);
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() < 3)
+        return 0.0;
+
+    Real a00 = 0.0;
+    Real a01 = 0.0;
+    Real a11 = 0.0;
+    Real b0 = 0.0;
+    Real b1 = 0.0;
+    Real absSum = 0.0;
+    int used = 0;
+    for (int k = 0; k < 3; ++k) {
+        const Index owner = cell.node_ids[static_cast<std::size_t>(k)];
+        const Index neighbor = cell.node_ids[static_cast<std::size_t>((k + 1) % 3)];
+        const Index edgeId = edgeIdForNodePair(mesh, cellEdges[cellId], owner, neighbor);
+        if (edgeId >= signedEdgeFlux.size())
+            continue;
+        const Point2 normal = medianDualFaceNormal(mesh, cell, owner, neighbor);
+        const Real normalNorm = normal.norm();
+        if (normalNorm <= 1.0e-30)
+            continue;
+        const Edge& edge = mesh.getEdge(edgeId);
+        const Real orientation = (edge.n0 == owner && edge.n1 == neighbor) ? 1.0 : -1.0;
+        const Real flux = orientation * signedEdgeFlux[edgeId];
+        const Real weight = std::max(medianDualFaceLength(mesh, cell, owner, neighbor), Real{1.0e-300});
+        const Real nx = normal.x() / normalNorm;
+        const Real ny = normal.y() / normalNorm;
+        a00 += weight * nx * nx;
+        a01 += weight * nx * ny;
+        a11 += weight * ny * ny;
+        b0 += weight * nx * flux;
+        b1 += weight * ny * flux;
+        absSum += std::abs(flux);
+        ++used;
+    }
+
+    const Real det = a00 * a11 - a01 * a01;
+    const Real scale = std::max({std::abs(a00 * a11), std::abs(a01 * a01), Real{1.0}});
+    if (used < 2 || std::abs(det) <= 1.0e-24 * scale)
+        return used > 0 ? absSum / static_cast<Real>(used) : 0.0;
+    const Real jx = (b0 * a11 - b1 * a01) / det;
+    const Real jy = (a00 * b1 - a01 * b0) / det;
+    return std::sqrt(jx * jx + jy * jy);
+}
+
+inline Real medianDualFaceVectorReconstructedEdgeFluxMagnitude(
+    Index                                  edgeId,
+    const std::vector<Real>&               signedEdgeFlux,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<std::vector<Index>>& cellEdges,
+    const DeviceMesh&                      mesh)
+{
+    if (edgeId >= edgeCells.size())
+        return 0.0;
+    Real edgeSum = 0.0;
+    int adjacentCellCount = 0;
+    for (Index cellId : edgeCells[edgeId]) {
+        const Real cellMagnitude = medianDualCellVectorCurrentMagnitude(
+            cellId, signedEdgeFlux, cellEdges, mesh);
+        if (cellMagnitude <= 0.0)
+            continue;
+        edgeSum += cellMagnitude;
+        ++adjacentCellCount;
+    }
+    if (adjacentCellCount <= 0)
+        return edgeId < signedEdgeFlux.size() ? std::abs(signedEdgeFlux[edgeId]) : 0.0;
+    return edgeSum / static_cast<Real>(adjacentCellCount);
+}
 /// Build node -> adjacent cell ids map.
 inline std::vector<std::vector<Index>> buildNodeCellMap(const DeviceMesh& mesh)
 {
@@ -837,6 +974,13 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
             ": impact_ionization.current_approximation must be "
             "'mobility_density_gradient', 'density_gradient', 'grad_qf', "
             "'cell_reconstructed', 'cell_current_reconstructed', or 'cell_vector_current_reconstructed'.");
+    }
+    if (config.currentMagnitudeMode != "edge_scalar_abs" &&
+        config.currentMagnitudeMode != "dual_face_vector_mag") {
+        throw std::invalid_argument(
+            std::string(context) +
+            ": impact_ionization.current_magnitude_mode must be "
+            "'edge_scalar_abs' or 'dual_face_vector_mag'.");
     }
     if (config.drivingForceInterpolation != "none" &&
         config.drivingForceInterpolation != "quasi_fermi_to_electric_field") {
@@ -1574,7 +1718,8 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
     const bool cellReconstructedCurrent = usesCellReconstructedAvalancheCurrent(config);
     const bool cellCurrentReconstructedCurrent = usesCellCurrentReconstructedAvalancheCurrent(config);
     const bool cellVectorCurrentReconstructedCurrent = usesCellVectorCurrentReconstructedAvalancheCurrent(config);
-    const bool usesReconstructedSgCurrent = cellCurrentReconstructedCurrent || cellVectorCurrentReconstructedCurrent;
+    const bool dualFaceVectorCurrentMagnitude = config.currentMagnitudeMode == "dual_face_vector_mag";
+    const bool usesReconstructedSgCurrent = cellCurrentReconstructedCurrent || cellVectorCurrentReconstructedCurrent || dualFaceVectorCurrentMagnitude;
     const bool qfMobility = mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient";
     const std::vector<bool> contactNodes = contactNodeMask(mesh);
     const CellScalarGradientCache electronQfGradientCache = computeCellScalarGradientCache(
@@ -1647,14 +1792,20 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
 
         const std::vector<std::vector<Index>> cellEdges = buildCellEdgeMap(edgeCells, mesh);
         for (Index e = 0; e < mesh.numEdges(); ++e) {
-            reconstructedElectronFlux[static_cast<std::size_t>(e)] = cellVectorCurrentReconstructedCurrent
-                ? cellVectorReconstructedEdgeFluxMagnitude(
+            reconstructedElectronFlux[static_cast<std::size_t>(e)] = dualFaceVectorCurrentMagnitude
+                ? medianDualFaceVectorReconstructedEdgeFluxMagnitude(
                     e, rawSignedElectronFlux, edgeCells, cellEdges, mesh)
-                : cellSmoothedEdgeFluxMagnitude(e, rawElectronFlux, edgeCells, cellEdges);
-            reconstructedHoleFlux[static_cast<std::size_t>(e)] = cellVectorCurrentReconstructedCurrent
-                ? cellVectorReconstructedEdgeFluxMagnitude(
+                : (cellVectorCurrentReconstructedCurrent
+                    ? cellVectorReconstructedEdgeFluxMagnitude(
+                        e, rawSignedElectronFlux, edgeCells, cellEdges, mesh)
+                    : cellSmoothedEdgeFluxMagnitude(e, rawElectronFlux, edgeCells, cellEdges));
+            reconstructedHoleFlux[static_cast<std::size_t>(e)] = dualFaceVectorCurrentMagnitude
+                ? medianDualFaceVectorReconstructedEdgeFluxMagnitude(
                     e, rawSignedHoleFlux, edgeCells, cellEdges, mesh)
-                : cellSmoothedEdgeFluxMagnitude(e, rawHoleFlux, edgeCells, cellEdges);
+                : (cellVectorCurrentReconstructedCurrent
+                    ? cellVectorReconstructedEdgeFluxMagnitude(
+                        e, rawSignedHoleFlux, edgeCells, cellEdges, mesh)
+                    : cellSmoothedEdgeFluxMagnitude(e, rawHoleFlux, edgeCells, cellEdges));
         }
     }
 

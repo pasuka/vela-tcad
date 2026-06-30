@@ -841,6 +841,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         detail::usesCellCurrentReconstructedAvalancheCurrent(impactIonizationConfig_);
     const bool cellVectorCurrentReconstructedCurrent =
         detail::usesCellVectorCurrentReconstructedAvalancheCurrent(impactIonizationConfig_);
+    const bool dualFaceVectorCurrentMagnitude =
+        impactIonizationConfig_.currentMagnitudeMode == "dual_face_vector_mag";
     const std::vector<Real> nodeElectronDrivingFields = (impactIonizationEnabled_ && qfImpact)
         ? detail::computeElectronAvalancheNodeQuasiFermiDrivingFields(
             impactIonizationConfig_, mesh_, nodeCells_, psi, phinState, n, ni_, Vt_)
@@ -1096,6 +1098,13 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 : 0.0;
         };
 
+        auto dualFaceVectorCurrentReconstructedFlux = [&](auto&& signedFluxForEdge) -> Real {
+            std::vector<Real> signedFlux(static_cast<std::size_t>(mesh_.numEdges()), 0.0);
+            for (Index otherEdge = 0; otherEdge < mesh_.numEdges(); ++otherEdge)
+                signedFlux[static_cast<std::size_t>(otherEdge)] = signedFluxForEdge(otherEdge);
+            return detail::medianDualFaceVectorReconstructedEdgeFluxMagnitude(
+                e, signedFlux, edgeCells_, cellEdges, mesh_);
+        };
         Real electronSource = 0.0;
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e,
@@ -1108,14 +1117,16 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 : detail::electronAvalancheDrivingField(
                     impactIonizationConfig_, electronCoefficientField, electricField, nAvg);
             const Real rawFluxN = std::abs(signedFluxN);
-            const Real fluxN = cellVectorCurrentReconstructedCurrent
-                ? cellVectorCurrentReconstructedFlux(signedElectronFluxForEdge)
-                : (cellCurrentReconstructedCurrent
+            const Real fluxN = dualFaceVectorCurrentMagnitude
+                ? dualFaceVectorCurrentReconstructedFlux(signedElectronFluxForEdge)
+                : (cellVectorCurrentReconstructedCurrent
+                    ? cellVectorCurrentReconstructedFlux(signedElectronFluxForEdge)
+                    : (cellCurrentReconstructedCurrent
                     ? cellCurrentReconstructedFlux(signedElectronFluxForEdge)
                     : (cellReconstructedCurrent
                     ? detail::reconstructedAvalancheCurrentDensityMagnitude(
                         mun, nAvg, electronImpactField)
-                    : rawFluxN));
+                    : rawFluxN)));
             const Real alphaN = impactIonization_->electronCoefficient(electronImpactField);
             electronSource = alphaN * fluxN * edgeArea;
         }
@@ -1132,14 +1143,16 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 : detail::holeAvalancheDrivingField(
                     impactIonizationConfig_, holeCoefficientField, electricField, pAvg);
             const Real rawFluxP = std::abs(signedFluxP);
-            const Real fluxP = cellVectorCurrentReconstructedCurrent
-                ? cellVectorCurrentReconstructedFlux(signedHoleFluxForEdge)
-                : (cellCurrentReconstructedCurrent
+            const Real fluxP = dualFaceVectorCurrentMagnitude
+                ? dualFaceVectorCurrentReconstructedFlux(signedHoleFluxForEdge)
+                : (cellVectorCurrentReconstructedCurrent
+                    ? cellVectorCurrentReconstructedFlux(signedHoleFluxForEdge)
+                    : (cellCurrentReconstructedCurrent
                     ? cellCurrentReconstructedFlux(signedHoleFluxForEdge)
                     : (cellReconstructedCurrent
                     ? detail::reconstructedAvalancheCurrentDensityMagnitude(
                         mup, pAvg, holeImpactField)
-                    : rawFluxP));
+                    : rawFluxP)));
             const Real alphaP = impactIonization_->holeCoefficient(holeImpactField);
             holeSource = alphaP * fluxP * edgeArea;
         }

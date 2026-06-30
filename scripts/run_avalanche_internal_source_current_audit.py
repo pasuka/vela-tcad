@@ -40,14 +40,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--runner", type=Path, default=default_runner())
     parser.add_argument("--out-dir", type=Path, default=REPO / "build/diagnostics")
     parser.add_argument("--bias-points", default=",".join(f"{bias:g}" for bias in DEFAULT_BIASES))
+    parser.add_argument("--case-id", default=CASE_ID)
+    parser.add_argument("--a-scale", type=float, default=A_SCALE)
+    parser.add_argument("--b-scale", type=float, default=B_SCALE)
     parser.add_argument("--skip-run", action="store_true")
     return parser.parse_args()
 
 
-def build_audit_config(base_config: Path, out_dir: Path, biases: list[float]) -> Path:
+def build_audit_config(base_config: Path, out_dir: Path, biases: list[float], case_id: str, a_scale: float, b_scale: float) -> Path:
     case_root = out_dir / "avalanche_internal_source_current_audit_case"
-    case_dir = case_root / CASE_ID
-    config_path = bmatrix.build_case_config(base_config, case_dir, CASE_ID, B_SCALE, biases)
+    case_dir = case_root / case_id
+    config_path = bmatrix.build_case_config(base_config, case_dir, case_id, b_scale, biases)
     config = bv.read_json(config_path)
 
     solver = config.setdefault("solver", {})
@@ -60,22 +63,22 @@ def build_audit_config(base_config: Path, out_dir: Path, biases: list[float]) ->
     impact["driving_force"] = "quasi_fermi_gradient"
     impact["generation"] = "current_density"
     impact.setdefault("current_approximation", "grad_qf")
-    impact["A_scale"] = A_SCALE
-    impact["B_scale"] = B_SCALE
+    impact["A_scale"] = a_scale
+    impact["B_scale"] = b_scale
 
     sweep = config.setdefault("sweep", {})
     diagnostics = sweep.setdefault("diagnostics", {})
     diagnostics["avalanche_internal_source_current_audit"] = {
         "enabled": True,
-        "csv_file": str(out_dir / "avalanche_internal_source_current_audit.csv"),
-        "summary_file": str(out_dir / "avalanche_internal_source_current_audit_summary.md"),
+        "csv_file": str((out_dir / "avalanche_internal_source_current_audit.csv").resolve()),
+        "summary_file": str((out_dir / "avalanche_internal_source_current_audit_summary.md").resolve()),
     }
     config["_avalanche_internal_source_current_audit_metadata"] = {
-        "case_id": CASE_ID,
+        "case_id": case_id,
         "parameter_set": "default",
         "driving_force": "GradQuasiFermi",
-        "A_scale": A_SCALE,
-        "B_scale": B_SCALE,
+        "A_scale": a_scale,
+        "B_scale": b_scale,
         "csv_file": diagnostics["avalanche_internal_source_current_audit"]["csv_file"],
         "summary_file": diagnostics["avalanche_internal_source_current_audit"]["summary_file"],
     }
@@ -88,14 +91,14 @@ def main() -> int:
     args = parse_args()
     biases = bv.parse_biases(args.bias_points)
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    config_path = build_audit_config(args.base_config, args.out_dir, biases)
+    config_path = build_audit_config(args.base_config, args.out_dir, biases, args.case_id, args.a_scale, args.b_scale)
 
     run_return_code = 0
     if not args.skip_run:
         run_return_code = bv.run_case(
             args.runner,
             config_path,
-            args.out_dir / "avalanche_internal_source_current_audit_case" / CASE_ID,
+            args.out_dir / "avalanche_internal_source_current_audit_case" / args.case_id,
         )
         if run_return_code != 0:
             return run_return_code

@@ -56,6 +56,7 @@ nlohmann::json releaseBVConfigAuditJson(const vela::ReleaseBVConfigAuditMetadata
         {"RefDens_electron_cm_minus3", metadata.electronRefDens_cm3},
         {"RefDens_hole_cm_minus3", metadata.holeRefDens_cm3},
         {"source_mapping_mode", metadata.sourceMappingMode},
+        {"current_magnitude_mode", metadata.currentMagnitudeMode},
         {"lambda_ava", metadata.lambdaAva},
         {"depth_2D_um", metadata.depth2D_um},
         {"current_normalization", metadata.currentNormalization},

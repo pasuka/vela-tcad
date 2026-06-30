@@ -1376,6 +1376,17 @@ TEST_CASE("JSON solver config selects impact ionization model", "[impact][json]"
     REQUIRE(gradQfCfg.impactIonization.currentApproximation == "grad_qf");
     REQUIRE(gradQfCfg.impactIonization.quasiFermiGradientDiscretization == "cell_gradient");
 
+    const NewtonConfig dualFaceCurrentMagnitudeCfg = newtonConfigFromJson(nlohmann::json{
+        {"impact_ionization", {
+            {"model", "van_overstraeten"},
+            {"driving_force", "quasi_fermi_gradient"},
+            {"generation", "current_density"},
+            {"current_approximation", "grad_qf"},
+            {"current_magnitude_mode", "dual_face_vector_mag"},
+        }}
+    });
+    REQUIRE(dualFaceCurrentMagnitudeCfg.impactIonization.currentMagnitudeMode == "dual_face_vector_mag");
+
     const GummelConfig gummelGradQfCfg = gummelConfigFromJson(nlohmann::json{
         {"impact_ionization", {
             {"model", "van_overstraeten"},

@@ -261,6 +261,7 @@ ReleaseBVConfigAuditMetadata releaseBVConfigAuditMetadata(
     metadata.electronRefDens_cm3 = config.electronDrivingForceRefDensity / 1.0e6;
     metadata.holeRefDens_cm3 = config.holeDrivingForceRefDensity / 1.0e6;
     metadata.sourceMappingMode = config.sourceMappingMode;
+    metadata.currentMagnitudeMode = config.currentMagnitudeMode;
     metadata.lambdaAva = releaseBVLambdaDescription(config);
     metadata.depth2D_um = 1.0;
     metadata.currentNormalization = sweep.scaling.isUnitScaling()
@@ -329,6 +330,7 @@ void writeReleaseBVConfigAuditSummary(
     output << "- RefDens_electron_cm^-3: " << formatReal(metadata.electronRefDens_cm3) << "\n";
     output << "- RefDens_hole_cm^-3: " << formatReal(metadata.holeRefDens_cm3) << "\n";
     output << "- source_mapping_mode: " << metadata.sourceMappingMode << "\n";
+    output << "- current_magnitude_mode: " << metadata.currentMagnitudeMode << "\n";
     output << "- lambda_ava: " << metadata.lambdaAva << "\n";
     output << "- 2D depth/current normalization: depth="
            << formatReal(metadata.depth2D_um) << " um, current="
@@ -2323,6 +2325,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "RefDens_electron_cm_minus3",
             "RefDens_hole_cm_minus3",
             "source_mapping_mode",
+            "current_magnitude_mode",
             "lambda_ava",
             "depth_2D_um",
             "current_normalization",
@@ -3096,6 +3099,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 formatReal(metadata.electronRefDens_cm3),
                 formatReal(metadata.holeRefDens_cm3),
                 metadata.sourceMappingMode,
+                metadata.currentMagnitudeMode,
                 metadata.lambdaAva,
                 formatReal(metadata.depth2D_um),
                 metadata.currentNormalization,

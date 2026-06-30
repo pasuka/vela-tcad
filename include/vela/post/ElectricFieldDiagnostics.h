@@ -47,6 +47,11 @@ enum class ElectricFieldLeastSquaresWeight {
     InverseDistanceSquared,
 };
 
+enum class ElectricFieldCircumcenterWeight {
+    InverseDistance,
+    AreaOverDistance,
+};
+
 /**
  * @brief Return the maximum edge-projected electric field magnitude from nodal potential.
  *
@@ -76,6 +81,11 @@ std::vector<NodeField2> computeNodeElectricFieldLeastSquares(
     const DeviceMesh& mesh,
     const VectorXd& potential_V,
     ElectricFieldLeastSquaresWeight weight);
+
+std::vector<NodeField2> computeNodeElectricFieldCircumcenterRecovery(
+    const DeviceMesh& mesh,
+    const VectorXd& potential_V,
+    ElectricFieldCircumcenterWeight weight);
 
 std::vector<NodeField2> computeNodeElectricFieldSPR(const DeviceMesh& mesh,
                                                     const VectorXd& potential_V);

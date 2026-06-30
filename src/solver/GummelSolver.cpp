@@ -213,6 +213,8 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "generation", cfg.impactIonization.generation);
             cfg.impactIonization.currentApproximation = value.value(
                 "current_approximation", cfg.impactIonization.currentApproximation);
+            cfg.impactIonization.currentMagnitudeMode = value.value(
+                "current_magnitude_mode", cfg.impactIonization.currentMagnitudeMode);
             cfg.impactIonization.quasiFermiGradientDiscretization = value.value(
                 "quasi_fermi_gradient_discretization",
                 cfg.impactIonization.quasiFermiGradientDiscretization);
@@ -829,6 +831,10 @@ void writeRecoveredElectricFields(VTKWriter& writer,
         mesh, sol.psi, ElectricFieldLeastSquaresWeight::InverseDistance);
     const auto ls1d2 = computeNodeElectricFieldLeastSquares(
         mesh, sol.psi, ElectricFieldLeastSquaresWeight::InverseDistanceSquared);
+    const auto circum1d = computeNodeElectricFieldCircumcenterRecovery(
+        mesh, sol.psi, ElectricFieldCircumcenterWeight::InverseDistance);
+    const auto circumArea1d = computeNodeElectricFieldCircumcenterRecovery(
+        mesh, sol.psi, ElectricFieldCircumcenterWeight::AreaOverDistance);
     const auto spr = computeNodeElectricFieldSPR(mesh, sol.psi);
 
     writer.addNodeScalar("NodeElectricField_AreaAverage", nodeFieldMagnitudesVcm(area));
@@ -837,6 +843,10 @@ void writeRecoveredElectricFields(VTKWriter& writer,
     writer.addNodeVector("NodeElectricField_LS_1overDVector", nodeFieldVectorsVcm(ls1d));
     writer.addNodeScalar("NodeElectricField_LS_1overD2", nodeFieldMagnitudesVcm(ls1d2));
     writer.addNodeVector("NodeElectricField_LS_1overD2Vector", nodeFieldVectorsVcm(ls1d2));
+    writer.addNodeScalar("NodeElectricField_Circumcenter1overD", nodeFieldMagnitudesVcm(circum1d));
+    writer.addNodeVector("NodeElectricField_Circumcenter1overDVector", nodeFieldVectorsVcm(circum1d));
+    writer.addNodeScalar("NodeElectricField_CircumcenterAreaOverD", nodeFieldMagnitudesVcm(circumArea1d));
+    writer.addNodeVector("NodeElectricField_CircumcenterAreaOverDVector", nodeFieldVectorsVcm(circumArea1d));
     writer.addNodeScalar("NodeElectricField_SPR", nodeFieldMagnitudesVcm(spr));
     writer.addNodeVector("NodeElectricField_SPRVector", nodeFieldVectorsVcm(spr));
 }

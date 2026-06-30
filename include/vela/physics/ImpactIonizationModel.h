@@ -12,6 +12,7 @@ struct ImpactIonizationModelConfig {
     std::string drivingForce = "electric_field";
     std::string generation = "carrier_density";
     std::string currentApproximation = "mobility_density_gradient";
+    std::string currentMagnitudeMode = "edge_scalar_abs"; ///< SG avalanche current magnitude: edge_scalar_abs or dual_face_vector_mag.
     std::string drivingForceInterpolation = "none";
     std::string quasiFermiGradientDiscretization = "edge_difference"; ///< edge_difference or Genius-style cell_gradient.
     Real electronDrivingForceRefDensity = 0.0; ///< RefDens_eGradQuasiFermi_ElectricField_Aval equivalent [1/m^3]

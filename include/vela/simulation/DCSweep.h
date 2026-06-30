@@ -229,6 +229,7 @@ struct ReleaseBVConfigAuditMetadata {
     Real electronRefDens_cm3 = 0.0;
     Real holeRefDens_cm3 = 0.0;
     std::string sourceMappingMode;
+    std::string currentMagnitudeMode;
     std::string lambdaAva;
     Real depth2D_um = 1.0;
     std::string currentNormalization;
