@@ -1,4 +1,4 @@
-﻿import csv
+import csv
 import subprocess
 import sys
 import tempfile

@@ -1,4 +1,4 @@
-﻿"""Regression tests for dual-face normal-flux vector current reconstruction."""
+"""Regression tests for dual-face normal-flux vector current reconstruction."""
 
 from __future__ import annotations
 
