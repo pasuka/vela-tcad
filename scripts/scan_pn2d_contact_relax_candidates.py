@@ -45,14 +45,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=REPO / "reference_tcad" / "pn2d" / "pn2d_reference.json",
-        help="pn2d reference config path.",
+        default=REPO
+        / "reference_tcad"
+        / "pn2d_sentaurus2018"
+        / "pn2d_sentaurus2018_reference.json",
+        help="pn2d Sentaurus2018 reference config path.",
     )
     parser.add_argument(
         "--source-dir",
         type=Path,
-        default=REPO / "reference_tcad" / "pn2d",
-        help="Sentaurus source directory.",
+        default=REPO / "reference_tcad" / "pn2d_sentaurus2018" / "source",
+        help="Sentaurus2018 source directory.",
     )
     parser.add_argument(
         "--runner",

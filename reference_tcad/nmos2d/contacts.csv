@@ -1,5 +1,0 @@
-name,node_ids,region
-body,0;1;2;3;4,p_body
-source,5;10,n_source
-drain,9;14,n_drain
-gate,15;16;17;18;19,gate_oxide

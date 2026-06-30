@@ -1,4 +1,0 @@
-mode,bias_contact,bias_V,current_contact,current_electron,current_hole,current_total,converged,iterations,step_diagnostics,validation_diagnostics,current_total_A_per_um,current_electron_A_per_um,current_hole_A_per_um
-iv,anode,0,anode,-1.0620664302185776e-18,3.7011112968960003e-18,2.6390448666774225e-18,1,2,attempted_step=0;accepted_step=0;retry_count=0,,2.6390448666774227e-24,-1.0620664302185776e-24,3.7011112968960005e-24
-iv,anode,0.25,anode,5.9213690476813226e-06,-2.7454354106136626e-06,3.17593363706766e-06,1,16,attempted_step=0.25;accepted_step=0.25;retry_count=0,,3.1759336370676599e-12,5.9213690476813224e-12,-2.7454354106136625e-12
-iv,anode,0.5,anode,0.026803310173791273,-0.0096226888440904632,0.017180621329700808,1,22,attempted_step=0.25;accepted_step=0.25;retry_count=0,,1.7180621329700807e-08,2.6803310173791273e-08,-9.6226888440904633e-09

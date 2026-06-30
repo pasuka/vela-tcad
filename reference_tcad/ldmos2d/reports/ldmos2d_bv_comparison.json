@@ -1,8 +1,0 @@
-{
-  "reference": "reference_tcad/ldmos2d/reference_curves/ldmos2d_bv_reference.csv",
-  "candidate": "reference_tcad/ldmos2d/vela/ldmos2d_bv.csv",
-  "iv": {"available": false, "reference_column": null, "candidate_column": null, "trend_match": false},
-  "cv": {"available": false, "reference_column": null, "candidate_column": null, "trend_match": false},
-  "bv": {"available": true, "reference_column": "max_electric_field_V_per_cm", "candidate_column": "max_electric_field_V_per_cm", "points_compared": 3, "reference_trend": "increasing", "candidate_trend": "increasing", "trend_match": true, "orders_of_magnitude": 0.041393, "max_relative_error": 0.090909}
-}
-

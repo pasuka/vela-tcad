@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """Characterize the pn2d BV reverse-bias continuation/avalanche robustness gap.
 
-The committed pn2d BV deck is only a 0.05 V smoke gate that disables
-recombination and impact ionization because Newton reverse-bias continuation is
-not yet robust enough to extend further with those models. The avalanche physics
-and its analytic Jacobian already exist and are unit-tested; what is unknown is
-the *empirical* continuation reach on the real pn2d mesh.
+The generated pn2d Sentaurus2018 BV deck is a focused low-bias smoke gate. The
+avalanche physics and its analytic Jacobian already exist and are unit-tested;
+what is unknown is the *empirical* continuation reach on the real pn2d mesh.
 
 This probe is read-only with respect to the committed deck and the solver. It
 copies the generated BV deck and runs progressively harder variants, each with
@@ -19,8 +17,8 @@ Variants (all extend the sweep to a deeper reverse stop with adaptive steps):
 - ``cont_srh``      : same as base (kept for symmetry / explicit label).
 - ``cont_avalanche``: add Selberherr impact ionization (the real BV target).
 
-Nothing here changes ``reference_tcad/pn2d/pn2d_reference.json`` or any solver
-source; outputs land under ``build/pn2d_bv_continuation_probe``.
+Nothing here changes ``reference_tcad/pn2d_sentaurus2018`` or any solver source;
+outputs land under ``build/pn2d_bv_continuation_probe``.
 """
 
 from __future__ import annotations
@@ -42,7 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--workspace",
         type=Path,
-        default=REPO / "build" / "pn2d_iv_promote_check",
+        default=REPO / "build" / "reference_tcad" / "pn2d_sentaurus2018",
         help="Generated reference workspace containing vela/simulation_bv.json.",
     )
     parser.add_argument(
@@ -60,14 +58,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--stop",
         type=float,
-        default=5.0,
-        help="Reverse-bias magnitude to attempt (Cathode voltage goal).",
+        default=-5.0,
+        help="Reverse-bias Anode voltage goal to attempt.",
     )
     parser.add_argument(
         "--step",
         type=float,
-        default=0.25,
-        help="Nominal reverse-bias step magnitude.",
+        default=-0.25,
+        help="Nominal reverse-bias step.",
     )
     return parser.parse_args()
 

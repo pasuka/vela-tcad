@@ -1,9 +1,0 @@
-id,node0,node1,node2,region,material
-0,0,1,4,p_region,Si
-1,0,4,3,p_region,Si
-2,3,4,7,p_region,Si
-3,3,7,6,p_region,Si
-4,1,2,5,n_region,Si
-5,1,5,4,n_region,Si
-6,4,5,8,n_region,Si
-7,4,8,7,n_region,Si
