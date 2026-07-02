@@ -892,6 +892,24 @@ def patch_reference_deck(deck_path: Path,
     deck.setdefault("contacts", [])
     for contact in deck["contacts"]:
         contact["bias"] = 0.0
+    contact_overrides = sim.get("vela_contact_overrides", [])
+    if isinstance(contact_overrides, list):
+        by_name = {
+            str(contact.get("name")): contact
+            for contact in deck["contacts"]
+            if isinstance(contact, dict) and "name" in contact
+        }
+        for override in contact_overrides:
+            if not isinstance(override, dict) or "name" not in override:
+                continue
+            target = by_name.get(str(override["name"]))
+            if target is None:
+                continue
+            for key, value in override.items():
+                if key != "name":
+                    target[key] = value
+    if sim.get("vela_node_doping_file") is False:
+        deck.pop("node_doping_file", None)
     deck.setdefault("sweep", {})
     if kind in ("equilibrium", "0v"):
         stop = 0.0

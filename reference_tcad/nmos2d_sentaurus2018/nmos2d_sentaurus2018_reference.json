@@ -1,0 +1,64 @@
+{
+  "case": "nmos2d_sentaurus2018",
+  "device": "nmos2d",
+  "mesh_tdr": "nmos2d_msh.tdr",
+  "sde_cmd": "nmos2d_sde.cmd",
+  "tdr_doping": {
+    "compensated_node_policy": "reported"
+  },
+  "vela_solver": {
+    "method": "gummel",
+    "max_iter": 150,
+    "reltol": 1.0e-5,
+    "abstol": 1.0e18,
+    "damping_psi": 0.35,
+    "verbose": false
+  },
+  "tdx_comparison": {
+    "mesh": "nmos2d_msh.grd",
+    "doping": "nmos2d_msh.dat",
+    "state_idvd": "nmos2d_idvd_des.dat",
+    "state_fields": [
+      "ElectrostaticPotential",
+      "eDensity",
+      "hDensity",
+      "eQuasiFermiPotential",
+      "hQuasiFermiPotential",
+      "ElectricField",
+      "SRHRecombination",
+      "srhRecombination"
+    ]
+  },
+  "simulations": [
+    {
+      "name": "idvd",
+      "kind": "iv",
+      "tdr": "nmos2d_idvd_des.tdr",
+      "cmd": "nmos2d_idvd_sdevice.cmd",
+      "plt": "nmos2d_idvd.plt",
+      "bias_column": "Drain OuterVoltage",
+      "current_column": "Drain TotalCurrent",
+      "vela_current_contact": "Drain",
+      "vela_stop": 0.5,
+      "vela_step": 0.02,
+      "vela_node_doping_file": false,
+      "vela_contact_overrides": [
+        {
+          "name": "Gate",
+          "type": "metal_gate",
+          "bias": 2.0,
+          "flatband_voltage": 0.0
+        }
+      ],
+      "comparison": {
+        "candidate_column": "current_total_A_per_um",
+        "interpolation": "log_current",
+        "bias_min": 0.02,
+        "bias_max": 0.5,
+        "max_orders_of_magnitude": 9.0,
+        "require_trend_match": false,
+        "min_points": 5
+      }
+    }
+  ]
+}
