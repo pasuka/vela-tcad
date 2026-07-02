@@ -268,8 +268,8 @@ def write_previous_full20_config(
         "model": "van_overstraeten",
         "driving_force": "quasi_fermi_gradient",
         "generation": "current_density",
-        "current_approximation": "grad_qf",
-        "quasi_fermi_gradient_discretization": "cell_gradient",
+        "current_approximation": "cell_reconstructed",
+        "quasi_fermi_gradient_discretization": "edge_difference",
     }
     solver["diagnostics"] = True
 

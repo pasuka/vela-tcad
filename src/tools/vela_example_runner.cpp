@@ -4,6 +4,7 @@
 #include "vela/io/MeshReader.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
+#include "vela/post/ContactCurrent.h"
 #include "vela/solver/NewtonSolver.h"
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/simulation/DCSweep.h"
@@ -108,6 +109,10 @@ vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,
                                     vela::Index nodeCount,
                                     vela::UnitScalingConfig scaling);
 
+vela::DDSolution readExternalState(const std::filesystem::path& cfgDir,
+                                   const nlohmann::json& cfg,
+                                   vela::Index nodeCount);
+
 NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::json& cfg)
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
@@ -161,6 +166,87 @@ NewtonCliResult runNewtonConfig(const std::string& configFile, const nlohmann::j
     return NewtonCliResult{std::move(problem.mesh), std::move(result)};
 }
 
+nlohmann::json runNewtonSolveFromState(const std::string& configFile,
+                                       const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    const vela::DDSolution initial =
+        readExternalState(cfgDir, cfg, problem.mesh.numNodes());
+    const vela::NewtonSolver solver(
+        problem.mesh, problem.matdb, problem.doping, problem.biases, problem.newton);
+    vela::NewtonResult result = solver.solve(initial);
+
+    if (cfg.contains("output_state_file")) {
+        vela::writeDDSolutionStateCsv(
+            resolvePath(cfgDir, cfg.at("output_state_file").get<std::string>()),
+            result.solution);
+    }
+    if (cfg.contains("output_vtk")) {
+        vela::writeDDSolutionVTK(
+            resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>()),
+            problem.mesh,
+            problem.doping,
+            result.solution);
+    }
+
+    // On-state terminal current extraction (no re-solve). Computing ContactCurrent
+    // directly on the converged solution avoids the state relaxation that a
+    // dc_sweep restart introduces, so the reported current belongs to the same
+    // state whose node densities are inspected by the branch gate. The scaling and
+    // model setup mirror DCSweep so the value is directly comparable to a dc_sweep
+    // terminal current.
+    vela::DDScalingSpec ddScaling;
+    if (problem.newton.inputScaling.isUnitScaling()) {
+        const vela::UnitScalingSystem sc = vela::UnitScalingSystem::fromInputs(
+            problem.newton.temperature_K,
+            (11.7 * vela::constants::eps0),
+            vela::UnitScalingSystem::autoInputsFrom(
+                problem.mesh, problem.doping, problem.matdb, 1e10),
+            vela::UnitScalingReferenceConfig{});
+        ddScaling.enabled = true;
+        ddScaling.V0 = sc.V0();
+        ddScaling.C0 = sc.C0();
+        ddScaling.mu0 = sc.mu0();
+        ddScaling.D0 = sc.D0();
+        ddScaling.L0 = sc.L0();
+        ddScaling.permittivityReference_F_per_m = (11.7 * vela::constants::eps0);
+    }
+    const vela::ContactCurrent contactCurrent(
+        problem.mesh,
+        problem.matdb,
+        problem.doping,
+        problem.newton.mobility,
+        problem.newton.temperature_K,
+        ddScaling,
+        problem.newton.bandgapNarrowing);
+
+    constexpr vela::Real perMeterToPerMicron = 1.0e-6;
+    nlohmann::json contactCurrentsJson = nlohmann::json::object();
+    vela::Real drivenCurrentPerMicron = 0.0;
+    vela::Real drivenAbsBias = -1.0;
+    for (const auto& [name, bias] : problem.biases) {
+        const vela::ContactCurrentResult cc =
+            contactCurrent.compute(result.solution, name);
+        const vela::Real currentPerMicron = cc.totalCurrent * perMeterToPerMicron;
+        contactCurrentsJson[name] = currentPerMicron;
+        if (std::abs(bias) > drivenAbsBias) {
+            drivenAbsBias = std::abs(bias);
+            drivenCurrentPerMicron = currentPerMicron;
+        }
+    }
+
+    return {
+        {"nodes", problem.mesh.numNodes()},
+        {"converged", result.converged},
+        {"iterations", result.iters},
+        {"initial_residual", result.initialResidualNorm},
+        {"final_residual", result.finalResidualNorm},
+        {"contact_currents_A_per_um", contactCurrentsJson},
+        {"current_total_A_per_um", drivenCurrentPerMicron},
+    };
+}
+
 std::vector<vela::Real> readNodeScalarCsv(const std::filesystem::path& path,
                                           vela::Index nodeCount)
 {
@@ -195,6 +281,8 @@ std::vector<vela::Real> readNodeScalarCsv(const std::filesystem::path& path,
         const auto node = static_cast<vela::Index>(std::stoll(cells[nodeCol]));
         if (node >= nodeCount)
             throw std::runtime_error("Scalar field CSV node_id out of range: " + path.string());
+        if (seen[static_cast<std::size_t>(node)])
+            throw std::runtime_error("Scalar field CSV has duplicate node_id: " + path.string());
         values[static_cast<std::size_t>(node)] = std::stod(cells[valueCol]);
         seen[static_cast<std::size_t>(node)] = true;
     }
@@ -1397,6 +1485,8 @@ int main(int argc, char** argv)
             status["final_residual"] = result.result.finalResidualNorm;
             if (includeMeshReport)
                 status["mesh_report"] = meshReportJson(result.mesh.lastGeometryBuildReport());
+        } else if (type == "newton_solve_from_state") {
+            status.update(runNewtonSolveFromState(configFile, cfg));
         } else if (type == "newton_residual_probe") {
             status.update(runNewtonResidualProbe(configFile, cfg));
         } else if (type == "newton_step_probe") {

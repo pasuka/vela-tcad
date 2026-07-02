@@ -968,12 +968,14 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
         config.currentApproximation != "grad_qf" &&
         config.currentApproximation != "cell_reconstructed" &&
         config.currentApproximation != "cell_current_reconstructed" &&
-        config.currentApproximation != "cell_vector_current_reconstructed") {
+        config.currentApproximation != "cell_vector_current_reconstructed" &&
+        config.currentApproximation != "conserved_total_current") {
         throw std::invalid_argument(
             std::string(context) +
             ": impact_ionization.current_approximation must be "
             "'mobility_density_gradient', 'density_gradient', 'grad_qf', "
-            "'cell_reconstructed', 'cell_current_reconstructed', or 'cell_vector_current_reconstructed'.");
+            "'cell_reconstructed', 'cell_current_reconstructed', "
+            "'cell_vector_current_reconstructed', or 'conserved_total_current'.");
     }
     if (config.currentMagnitudeMode != "edge_scalar_abs" &&
         config.currentMagnitudeMode != "dual_face_vector_mag") {
@@ -1126,6 +1128,18 @@ inline bool usesCellVectorCurrentReconstructedAvalancheCurrent(
            config.currentApproximation == "cell_vector_current_reconstructed";
 }
 
+/// Avalanche source driven by the conserved total-current magnitude |F_n+F_p|
+/// on each edge instead of the per-carrier local-density SG flux. The total
+/// charge current is divergence-free in the converged state, so it does not
+/// collapse on the depleted side of a reverse-biased junction where the
+/// per-carrier flux (and hence the generation seed) otherwise vanishes.
+inline bool usesConservedTotalCurrentAvalancheCurrent(
+    const ImpactIonizationModelConfig& config)
+{
+    return config.generation == "current_density" &&
+           config.currentApproximation == "conserved_total_current";
+}
+
 inline Real reconstructedAvalancheCurrentDensityMagnitude(Real mobility,
                                                          Real carrierDensity,
                                                          Real drivingField)
@@ -1133,6 +1147,34 @@ inline Real reconstructedAvalancheCurrentDensityMagnitude(Real mobility,
     if (mobility <= 0.0)
         return 0.0;
     return mobility * std::max(carrierDensity, 0.0) * std::abs(drivingField);
+}
+
+/// Fermi/logistic weight aux2(x) = 1 / (1 + exp(x)); numerically stable.
+inline Real avalancheMidpointAux2(Real x)
+{
+    if (x >= 0.0)
+        return 1.0 / (1.0 + std::exp(x));
+    const Real ex = std::exp(x);
+    return ex / (1.0 + ex);
+}
+
+/// Bernoulli/exponentially weighted edge-midpoint carrier density:
+///   n_mid = n_i * aux2((V_i - V_j) / (2 Vt)) + n_j * aux2((V_j - V_i) / (2 Vt))
+/// with aux2(x) = 1/(1+exp(x)); the two weights sum to 1. For electrons pass the
+/// electrostatic potentials as (V_i, V_j); for holes swap them so the potential
+/// enters with the opposite sign.
+inline Real bernoulliWeightedMidpointDensity(Real density_i,
+                                             Real density_j,
+                                             Real potential_i,
+                                             Real potential_j,
+                                             Real Vt)
+{
+    if (Vt <= 0.0)
+        return 0.5 * (density_i + density_j);
+    const Real arg = (potential_i - potential_j) / (2.0 * Vt);
+    const Real weight_i = avalancheMidpointAux2(arg);
+    const Real weight_j = avalancheMidpointAux2(-arg);
+    return density_i * weight_i + density_j * weight_j;
 }
 
 inline bool usesEdgeCurrentAvalancheSource(
@@ -1143,7 +1185,8 @@ inline bool usesEdgeCurrentAvalancheSource(
             config.currentApproximation == "grad_qf" ||
             config.currentApproximation == "cell_reconstructed" ||
             config.currentApproximation == "cell_current_reconstructed" ||
-            config.currentApproximation == "cell_vector_current_reconstructed");
+            config.currentApproximation == "cell_vector_current_reconstructed" ||
+            config.currentApproximation == "conserved_total_current");
 }
 
 inline bool usesQuasiFermiCarrierTruncation(const ImpactIonizationModelConfig& config)
@@ -1718,6 +1761,7 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
     const bool cellReconstructedCurrent = usesCellReconstructedAvalancheCurrent(config);
     const bool cellCurrentReconstructedCurrent = usesCellCurrentReconstructedAvalancheCurrent(config);
     const bool cellVectorCurrentReconstructedCurrent = usesCellVectorCurrentReconstructedAvalancheCurrent(config);
+    const bool conservedTotalCurrent = usesConservedTotalCurrentAvalancheCurrent(config);
     const bool dualFaceVectorCurrentMagnitude = config.currentMagnitudeMode == "dual_face_vector_mag";
     const bool usesReconstructedSgCurrent = cellCurrentReconstructedCurrent || cellVectorCurrentReconstructedCurrent || dualFaceVectorCurrentMagnitude;
     const bool qfMobility = mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient";
@@ -1850,6 +1894,10 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
 
         const Real nAvg = 0.5 * (n(i) + n(j));
         const Real pAvg = 0.5 * (p(i) + p(j));
+        const Real nMid = bernoulliWeightedMidpointDensity(
+            n(i), n(j), psi_i, psi_j, Vt);
+        const Real pMid = bernoulliWeightedMidpointDensity(
+            p(i), p(j), psi_j, psi_i, Vt);
         const Real signedElectricField01 = -(psi_j - psi_i) / h;
 
         const Real edgeArea = avalancheSourceEdgeArea(config, edgeCells, mesh, e);
@@ -1866,17 +1914,40 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
             edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Electron,
             electronMobilityField, &mobilityConfig, &psi);
         record.electronMobility = mun;
+        const Real mup = edgeMobility(
+            edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Hole,
+            holeMobilityField, &mobilityConfig, &psi);
+        record.holeMobility = mup;
+        const Real electronContinuityFlux01 = mun > 0.0
+            ? sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                ni[edge.n0],
+                ni[edge.n1],
+                psi_i,
+                psi_j,
+                phin_i,
+                phin_j,
+                Vt,
+                mun * Vt / h)
+            : 0.0;
+        const Real holeContinuityFlux01 = mup > 0.0
+            ? sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                ni[edge.n0],
+                ni[edge.n1],
+                psi_i,
+                psi_j,
+                phip_i,
+                phip_j,
+                Vt,
+                mup * Vt / h)
+            : 0.0;
+        // Conserved total-current magnitude: the electron and hole continuity
+        // fluxes share the contact-current sign convention (ContactCurrent.cpp
+        // sums them directly), and their sum is divergence-free in the
+        // converged state, so it does not collapse where one carrier is
+        // depleted.
+        const Real conservedTotalFluxMagnitude =
+            std::abs(electronContinuityFlux01 + holeContinuityFlux01);
         if (mun > 0.0) {
-            const Real electronContinuityFlux01 =
-                sgElectronContinuityFluxFromQuasiFermiVariableNi(
-                    ni[edge.n0],
-                    ni[edge.n1],
-                    psi_i,
-                    psi_j,
-                    phin_i,
-                    phin_j,
-                    Vt,
-                    mun * Vt / h);
             record.electronImpactField = currentAlignedImpact
                 ? parallelCurrentAvalancheDrivingField(
                     signedElectricField01, electronContinuityFlux01)
@@ -1891,8 +1962,10 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
                 ? record.electronReconstructedFluxProxy
                 : (cellReconstructedCurrent
                     ? reconstructedAvalancheCurrentDensityMagnitude(
-                        mun, nAvg, record.electronImpactField)
-                    : record.electronRawFluxProxy);
+                        mun, nMid, record.electronImpactField)
+                    : (conservedTotalCurrent
+                        ? conservedTotalFluxMagnitude
+                        : record.electronRawFluxProxy));
             record.electronFinalOverRawFluxProxy = record.electronRawFluxProxy > 0.0
                 ? record.electronFluxProxy / record.electronRawFluxProxy
                 : 0.0;
@@ -1902,21 +1975,7 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
             record.edgeSourceIntegral += record.electronSourceIntegral;
         }
 
-        const Real mup = edgeMobility(
-            edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Hole,
-            holeMobilityField, &mobilityConfig, &psi);
-        record.holeMobility = mup;
         if (mup > 0.0) {
-            const Real holeContinuityFlux01 =
-                sgHoleContinuityFluxFromQuasiFermiVariableNi(
-                    ni[edge.n0],
-                    ni[edge.n1],
-                    psi_i,
-                    psi_j,
-                    phip_i,
-                    phip_j,
-                    Vt,
-                    mup * Vt / h);
             record.holeImpactField = currentAlignedImpact
                 ? parallelCurrentAvalancheDrivingField(
                     signedElectricField01, holeContinuityFlux01)
@@ -1931,8 +1990,10 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
                 ? record.holeReconstructedFluxProxy
                 : (cellReconstructedCurrent
                     ? reconstructedAvalancheCurrentDensityMagnitude(
-                        mup, pAvg, record.holeImpactField)
-                    : record.holeRawFluxProxy);
+                        mup, pMid, record.holeImpactField)
+                    : (conservedTotalCurrent
+                        ? conservedTotalFluxMagnitude
+                        : record.holeRawFluxProxy));
             record.holeFinalOverRawFluxProxy = record.holeRawFluxProxy > 0.0
                 ? record.holeFluxProxy / record.holeRawFluxProxy
                 : 0.0;

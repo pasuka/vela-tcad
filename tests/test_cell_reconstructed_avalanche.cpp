@@ -92,8 +92,17 @@ TEST_CASE("Cell reconstructed avalanche support uses local current density magni
     });
     REQUIRE(it != records.end());
 
-    const Real electronCarrier = 0.5 * (n(0) + n(1));
-    const Real holeCarrier = 0.5 * (p(0) + p(1));
+    const Real Vt = constants::kb * constants::T0 / constants::q;
+    auto aux2 = [](Real x) {
+        return x >= 0.0 ? 1.0 / (1.0 + std::exp(x))
+                        : std::exp(x) / (1.0 + std::exp(x));
+    };
+    const Real electronArg = (psi(0) - psi(1)) / (2.0 * Vt);
+    const Real electronCarrier =
+        n(0) * aux2(electronArg) + n(1) * aux2(-electronArg);
+    const Real holeArg = (psi(1) - psi(0)) / (2.0 * Vt);
+    const Real holeCarrier =
+        p(0) * aux2(holeArg) + p(1) * aux2(-holeArg);
     const Real expectedElectronFlux =
         it->electronMobility * electronCarrier * std::abs((phin(1) - phin(0)) / it->edgeLength);
     const Real expectedHoleFlux =
@@ -183,6 +192,76 @@ TEST_CASE("Cell-current reconstructed avalanche support uses cell-smoothed SG cu
     REQUIRE(it->holeFinalOverRawFluxProxy ==
             Catch::Approx(expectedHole / it->holeRawFluxProxy).epsilon(1.0e-12));
 }
+
+TEST_CASE("Conserved total-current avalanche support uses |F_n + F_p| on both carriers",
+          "[impact][conserved_total_current]")
+{
+    DeviceMesh mesh = makeSingleCellMesh();
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    MaterialDatabase matdb;
+    const auto doping = DopingModel::fromMeshAndRegions(
+        mesh, {RegionDopingSpec{"si", 1.0e21, 0.0}});
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, constants::T0);
+
+    ImpactIonizationModelConfig impactConfig;
+    impactConfig.model = "van_overstraeten";
+    impactConfig.drivingForce = "quasi_fermi_gradient";
+    impactConfig.generation = "current_density";
+    impactConfig.currentApproximation = "conserved_total_current";
+    impactConfig.sourceVolumePolicy = "edge_box";
+    REQUIRE_NOTHROW(detail::validateImpactIonizationDrivingForce(impactConfig, "test"));
+    REQUIRE(detail::usesEdgeCurrentAvalancheSource(impactConfig));
+    REQUIRE(detail::usesConservedTotalCurrentAvalancheCurrent(impactConfig));
+
+    MobilityModelConfig mobilityConfig = mobilityModelConfig("constant");
+    const auto mobility = makeMobilityModel(mobilityConfig);
+    const auto impact = makeImpactIonizationModel(impactConfig);
+
+    VectorXd psi(mesh.numNodes());
+    VectorXd phin(mesh.numNodes());
+    VectorXd phip(mesh.numNodes());
+    VectorXd n(mesh.numNodes());
+    VectorXd p(mesh.numNodes());
+    std::vector<Real> ni(static_cast<std::size_t>(mesh.numNodes()), 1.0e16);
+    psi << 0.0, -0.20, 0.08;
+    phin << 0.0, -0.40, 0.10;
+    phip << 0.0, 0.30, -0.12;
+    n << 1.0e20, 3.0e20, 1.5e20;
+    p << 2.0e20, 6.0e20, 2.5e20;
+
+    const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
+        impactConfig,
+        *impact,
+        mobilityConfig,
+        *mobility,
+        edgeCells,
+        mesh,
+        doping,
+        cellMaterials,
+        psi,
+        phin,
+        phip,
+        n,
+        p,
+        ni,
+        constants::kb * constants::T0 / constants::q);
+
+    const auto it = std::find_if(records.begin(), records.end(), [](const auto& record) {
+        return record.node0 == 0 && record.node1 == 1;
+    });
+    REQUIRE(it != records.end());
+
+    // Both carriers must see the same conserved total-current magnitude
+    // |F_n + F_p| built from the signed SG continuity fluxes.
+    const Real expectedConserved = std::abs(
+        it->electronRawSignedFluxProxy + it->holeRawSignedFluxProxy);
+    REQUIRE(expectedConserved > 0.0);
+    REQUIRE(it->electronFluxProxy == Catch::Approx(expectedConserved).epsilon(1.0e-12));
+    REQUIRE(it->holeFluxProxy == Catch::Approx(expectedConserved).epsilon(1.0e-12));
+    // And it must differ from the per-carrier local-density fluxes in general.
+    REQUIRE(it->electronFluxProxy != Catch::Approx(it->electronRawFluxProxy).epsilon(1.0e-12));
+}
+
 TEST_CASE("Cell-vector current reconstruction recovers a constant edge-projected current",
           "[impact][cell_vector_current_reconstructed]")
 {

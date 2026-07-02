@@ -1133,3 +1133,34 @@ magnitude and field dependence, driving-force/source ownership semantics, and
 current-density generation scaling against Sentaurus. Pseudo-arclength remains a
 landed default-off capability, but L6b continuation is not justified by the
 present evidence.
+
+## PN2D External-State Newton Gate (2026-07-02)
+
+Executed `docs/pn2d_bv_avalanche_branch_continuation_plan.md` through Phase 1. The new default-off `newton_solve_from_state` runner was added and exercised against the coarse7x3 Sentaurus `-20 V` field export.
+
+Artifacts kept under ignored build output:
+
+| artifact | path |
+|---|---|
+| baseline config | `build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/imported_reference/vela/simulation_bv.json` |
+| baseline log | `build/pn2d_bv_phase0/baseline_bv.log` |
+| baseline CSV copy | `build/pn2d_bv_phase0/baseline_bv.csv` |
+| external-state gate config | `build/pn2d_bv_external_state_gate/minus20_from_state.json` |
+| external-state gate log | `build/pn2d_bv_external_state_gate/minus20_from_state.log` |
+| Sentaurus state fields | `build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/reports/coarse_previous_full20_vector_current_20260630/sentaurus_multibias/sentaurus_-20v/fields` |
+| Sentaurus BV reference curve | `build-release/reference_tcad/pn2d_sentaurus2018/reference_curves/pn2d_sentaurus2018_bv_reference.csv` |
+| current extraction config | `build/pn2d_bv_external_state_gate/minus20_current_from_restart.json` |
+| current extraction CSV | `build/pn2d_bv_external_state_gate/outputs/pn2d_minus20_from_state_current.csv` |
+
+Phase 0 baseline reproduced with all new features disabled: `vela_example_runner` reported `converged=true` and `points=401` for the original coarse7x3 BV deck, reaching `-20 V` on the existing low-current branch.
+
+Phase 1 external-state Newton result: `newton_solve_from_state` converged from the Sentaurus `-20 V` scalar fields in 2 Newton iterations with `initial_residual=6.905932434771646e-3` and `final_residual=2.677212625580732e-11`. The resulting node7 electron density was `2.254290903e9 m^-3`, i.e. `2.254e3 cm^-3`, which is in the planned multiplication-state scale.
+
+Stop-condition result: the same converged state, evaluated through a one-point Vela restart current extraction, produced `current_total_A_per_um=-8.792077919e-17` at `-20 V`. This is leakage-level, not the plan's required multiplication-current order. Therefore Phase 2 continuation was not started. The observed result is a mixed gate: Vela can keep a multiplication-like node7 density from the external fields, but the terminal-current gate does not confirm the requested avalanche-multiplication branch.
+
+Focused regression for the new gate passed:
+
+```text
+ctest --preset windows-ucrt64-debug -R "newton|csv|external" --output-on-failure
+100% tests passed, 0 tests failed out of 8
+```

@@ -266,6 +266,12 @@ target_compile_definitions(test_ldmos_dd PRIVATE VELA_SOURCE_DIR="${CMAKE_CURREN
 add_executable(test_newton_solver tests/test_newton_solver.cpp)
 target_link_libraries(test_newton_solver PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_external_state tests/test_external_state.cpp)
+target_link_libraries(test_external_state PRIVATE vela_core Catch2::Catch2WithMain)
+target_compile_definitions(test_external_state PRIVATE
+    VELA_EXAMPLE_RUNNER_EXE="$<TARGET_FILE:vela_example_runner>")
+add_dependencies(test_external_state vela_example_runner)
+
 add_executable(test_mos_solver_crosscheck tests/test_mos_solver_crosscheck.cpp)
 target_link_libraries(test_mos_solver_crosscheck PRIVATE vela_core Catch2::Catch2WithMain)
 target_compile_definitions(test_mos_solver_crosscheck PRIVATE VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
@@ -350,6 +356,7 @@ add_test(NAME device_stability COMMAND test_device_stability [device_stability])
 vela_catch_discover_tests(test_ldmos_dd)
 add_test(NAME ldmos COMMAND test_ldmos_dd [ldmos])
 vela_catch_discover_tests(test_newton_solver)
+vela_catch_discover_tests(test_external_state)
 vela_catch_discover_tests(test_mos_solver_crosscheck)
 add_test(NAME mos_solver_crosscheck COMMAND test_mos_solver_crosscheck [mos_solver_crosscheck])
 vela_catch_discover_tests(test_mos_mixed_material)

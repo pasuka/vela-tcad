@@ -1950,7 +1950,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "DCSweep: sweep.diagnostics.sg_avalanche_edges requires "
             "impact_ionization.generation='current_density' and "
             "impact_ionization.current_approximation='density_gradient', 'grad_qf', "
-            "'cell_reconstructed', 'cell_current_reconstructed', or 'cell_vector_current_reconstructed'.");
+            "'cell_reconstructed', 'cell_current_reconstructed', "
+            "'cell_vector_current_reconstructed', or 'conserved_total_current'.");
     }
     if (sweep.diagnostics.avalancheInternalSourceCurrentAudit.enabled &&
         !detail::usesEdgeCurrentAvalancheSource(sweepImpactIonizationConfig)) {

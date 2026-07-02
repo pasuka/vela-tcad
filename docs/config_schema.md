@@ -22,12 +22,14 @@ Scope and conventions:
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| simulation_type | string | Optional | Common values: `poisson`, `dc_sweep`, `newton`. The selected CLI/tool path determines which fields are consumed. |
+| simulation_type | string | Optional | Common values: `poisson`, `dc_sweep`, `newton`, `newton_solve_from_state`. The selected CLI/tool path determines which fields are consumed. |
 | mesh_file | string | Yes | Input mesh JSON path. |
 | materials_file | string | Optional | Optional material override file. Supported shapes: top-level array, object with `materials` array, or object map keyed by material name. |
 | output_csv | string | Optional | Default CSV output path for DC sweep. Can be overridden by `sweep.csv_file`. |
-| output_vtk | string | Poisson: Yes | Poisson VTK output file path. |
+| output_vtk | string | Poisson: Yes | Poisson VTK output file path. Optional for `newton` and `newton_solve_from_state`. |
 | output_vtk_prefix | string | Optional | Default VTK prefix for DC sweep point outputs. Can be overridden by `sweep.vtk_prefix`. |
+| output_state_file | string | Optional | Restart-state CSV written by `newton_solve_from_state`. Uses Vela restart format: `node_id,psi,phin,phip,electrons_m3,holes_m3`. |
+| state_fields_dir | string | Required for `newton_solve_from_state` and probe-style external-state tools | Directory containing Sentaurus-export-style scalar field CSVs. |
 | scaling | object | Optional | Input unit interpretation. Omit for legacy SI behavior, or set `mode` to `unit_scaling`; see below. |
 | mesh_geometry | object | Optional | Mesh box-geometry options; see below. |
 | doping | array | Yes | Region doping definitions; see below. |
@@ -46,6 +48,7 @@ Scope and conventions:
 - omitted or `poisson`: Poisson driver.
 - `dc_sweep`: adaptive curve sweep driver.
 - `newton`: single-bias coupled Newton solve.
+- `newton_solve_from_state`: single-bias coupled Newton solve initialized from `state_fields_dir`. The directory must contain `ElectrostaticPotential_region0.csv`, `eQuasiFermiPotential_region0.csv`, and `hQuasiFermiPotential_region0.csv`; each file must include `node_id` and `component0` columns with every mesh node exactly once.
 
 For `dc_sweep`, omitting `solver.method` keeps the default Gummel path. Set
 `solver.method` (or legacy alias `solver.type`) to `newton` to use the coupled
@@ -544,6 +547,15 @@ Field meanings (Selberherr prototype):
   require `generation: "current_density"`.
 - `generation`: `carrier_density` (legacy `alpha*v*n/p` proxy) or
   `current_density` (`alpha_n*mu_n*n*|grad(phin)| + alpha_p*mu_p*p*|grad(phip)|`).
+- `current_approximation` (with `generation: "current_density"`):
+  `density_gradient`/`grad_qf` use the per-carrier SG continuity flux,
+  `cell_reconstructed` uses `mu * n_mid * |driving field|` with a
+  Bernoulli-weighted edge-midpoint density, `cell_current_reconstructed` and
+  `cell_vector_current_reconstructed` use cell-smoothed SG flux magnitudes, and
+  `conserved_total_current` feeds both carriers the conserved total-current
+  magnitude `|F_n + F_p|` (divergence-free in the converged state, so the
+  avalanche source does not collapse on the depleted side of a reverse-biased
+  junction).
 - `quasi_fermi_gradient_discretization`: `edge_difference` (default) preserves
   the existing Vela GradQf behavior. `cell_gradient` is Genius-compatible for
   `II.Force=GradQf`: Vela rebuilds electron/hole quasi-Fermi potentials from
@@ -747,7 +759,8 @@ Diagnostics fields:
   edge-current avalanche source rows for `impact_ionization.generation:
   "current_density"` with an SG edge-current `current_approximation`
   (`"density_gradient"`, `"grad_qf"`, `"cell_reconstructed"`,
-  `"cell_current_reconstructed"`, or `"cell_vector_current_reconstructed"`).
+  `"cell_current_reconstructed"`, `"cell_vector_current_reconstructed"`, or
+  `"conserved_total_current"`).
   Optional `csv_file` overrides the default
   `<sweep csv stem>_sg_avalanche_edges.csv`.
 - `diagnostics.avalanche_internal_source_current_audit.enabled`: writes the
@@ -1093,6 +1106,32 @@ Poisson with explicit boundary/contact types:
     { "name": "left", "type": "symmetry", "node_ids": [0, 3, 6] },
     { "name": "right", "type": "insulating", "node_ids": [2, 5, 8] }
   ]
+}
+```
+
+Newton solve initialized from external scalar fields:
+
+```json
+{
+  "simulation_type": "newton_solve_from_state",
+  "mesh_file": "mesh.json",
+  "state_fields_dir": "path/to/state_fields",
+  "output_state_file": "outputs/minus20_from_state.csv",
+  "output_vtk": "outputs/minus20_from_state.vtk",
+  "doping": [
+    { "region": "n_region", "donors": 1e23, "acceptors": 0.0 },
+    { "region": "p_region", "donors": 0.0, "acceptors": 1e23 }
+  ],
+  "contacts": [
+    { "name": "anode", "type": "ohmic", "bias": -20.0 },
+    { "name": "cathode", "type": "ohmic", "bias": 0.0 }
+  ],
+  "solver": {
+    "method": "newton",
+    "max_iter": 40,
+    "warm_start": true,
+    "line_search": true
+  }
 }
 ```
 

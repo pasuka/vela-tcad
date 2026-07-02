@@ -55,8 +55,8 @@
           "model": "van_overstraeten",
           "driving_force": "quasi_fermi_gradient",
           "generation": "current_density",
-          "current_approximation": "grad_qf",
-          "quasi_fermi_gradient_discretization": "cell_gradient"
+          "current_approximation": "cell_reconstructed",
+          "quasi_fermi_gradient_discretization": "edge_difference"
         },
         "max_update": 0.0,
         "quasi_fermi_update_limit_V": 0.1
