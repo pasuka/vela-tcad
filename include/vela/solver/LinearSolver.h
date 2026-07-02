@@ -4,6 +4,7 @@
 
 #include <Eigen/SparseLU>
 #include <cstddef>
+#include <string>
 #include <vector>
 
 namespace vela {
@@ -14,6 +15,12 @@ namespace vela {
  * Wraps Eigen::SparseLU for the convenience of the rest of the solver
  * pipeline.  Swap this class for an iterative solver (e.g. BiCGSTAB)
  * without changing any call sites.
+ *
+ * Experimental backend override: set the environment variable
+ * VELA_LINEAR_SOLVER to one of "sparselu" (default), "sparseqr",
+ * "bicgstab_ilut", "gmres_ilut", or "simplicial_ldlt" to switch the
+ * algorithm used by solve(). Non-default backends bypass the pattern
+ * cache and are intended for diagnostics only.
  */
 class LinearSolver {
 public:
