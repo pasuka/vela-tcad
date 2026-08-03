@@ -21,8 +21,22 @@ find_package(nlohmann_json REQUIRED)
 # Boost.Multiprecision (header-only arbitrary-precision arithmetic)
 find_package(Boost CONFIG REQUIRED)
 
-# spdlog (logging)
-find_package(spdlog REQUIRED)
+# spdlog (logging): prefer system package, fallback to FetchContent
+find_package(spdlog CONFIG QUIET)
+if(NOT spdlog_FOUND)
+    include(FetchContent)
+    set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
+    set(SPDLOG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+    set(SPDLOG_BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
+    set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(
+        spdlog
+        URL https://github.com/gabime/spdlog/archive/refs/tags/v1.14.1.tar.gz
+    )
+    FetchContent_MakeAvailable(spdlog)
+endif()
 
 # Catch2 v3 (unit test framework)
 find_package(Catch2 3 REQUIRED)
