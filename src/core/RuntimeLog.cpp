@@ -118,8 +118,17 @@ RuntimeLogConfig runtimeLogConfigFromJson(const nlohmann::json& cfg,
         std::lock_guard<std::mutex> lock(state.mutex);
         if (state.cliOverrides.enabled.has_value())
             runtime.enabled = *state.cliOverrides.enabled;
-        if (state.cliOverrides.file.has_value())
-            runtime.file = *state.cliOverrides.file;
+        if (state.cliOverrides.file.has_value()) {
+            std::filesystem::path filePath(*state.cliOverrides.file);
+            if (filePath.is_relative()) {
+                const std::filesystem::path cfgPath(configFile);
+                const std::filesystem::path baseDir = cfgPath.parent_path().empty()
+                    ? std::filesystem::current_path()
+                    : cfgPath.parent_path();
+                filePath = baseDir / filePath;
+            }
+            runtime.file = filePath.string();
+        }
         if (state.cliOverrides.profile.has_value())
             runtime.profile = *state.cliOverrides.profile;
     }
@@ -198,7 +207,7 @@ RuntimeLogSession RuntimeLogSession::fromConfig(const nlohmann::json& cfg,
         std::filesystem::create_directories(filePath.parent_path());
 
     auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
-        filePath.string(), runtimeCfg.append);
+        filePath.string(), !runtimeCfg.append);
     auto logger = std::make_shared<spdlog::logger>("vela.runtime", sink);
     logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
     logger->set_level(spdlogLevelFromString(runtimeCfg.level));

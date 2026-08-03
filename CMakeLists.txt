@@ -118,9 +118,9 @@ target_link_libraries(vela_core
     PUBLIC
         Eigen3::Eigen
         nlohmann_json::nlohmann_json
+        spdlog::spdlog
     PRIVATE
         Boost::headers
-        spdlog::spdlog
 )
 target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")
 

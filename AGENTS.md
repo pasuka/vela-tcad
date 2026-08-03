@@ -33,6 +33,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
   libboost-dev \
   libeigen3-dev \
   nlohmann-json3-dev \
+  libspdlog-dev \
   catch2
 ```
 
@@ -57,6 +58,7 @@ pacman -S --needed \
   mingw-w64-ucrt-x86_64-boost \
   mingw-w64-ucrt-x86_64-eigen3 \
   mingw-w64-ucrt-x86_64-nlohmann-json \
+  mingw-w64-ucrt-x86_64-spdlog \
   mingw-w64-ucrt-x86_64-catch \
   mingw-w64-ucrt-x86_64-python \
   mingw-w64-ucrt-x86_64-gdb

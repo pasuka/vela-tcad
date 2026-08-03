@@ -2380,39 +2380,40 @@ int main(int argc, char** argv)
     std::string configFile;
     bool includeMeshReport = false;
     vela::RuntimeLogCliOverrides logOverrides;
-    for (int i = 1; i < argc; ++i) {
-        const std::string arg = argv[i];
-        if (arg == "--config" && i + 1 < argc) {
-            configFile = argv[++i];
-        } else if (arg == "--mesh-report") {
-            includeMeshReport = true;
-        } else if (arg == "--log" && i + 1 < argc) {
-            const std::string value = argv[++i];
-            if (value == "auto") {
-                logOverrides = vela::RuntimeLogCliOverrides{};
-            } else if (value == "off") {
-                logOverrides.enabled = false;
+    try {
+        for (int i = 1; i < argc; ++i) {
+            const std::string arg = argv[i];
+            if (arg == "--config" && i + 1 < argc) {
+                configFile = argv[++i];
+            } else if (arg == "--mesh-report") {
+                includeMeshReport = true;
+            } else if (arg == "--log" && i + 1 < argc) {
+                const std::string value = argv[++i];
+                if (value == "auto") {
+                    logOverrides.enabled.reset();
+                    logOverrides.file.reset();
+                } else if (value == "off") {
+                    logOverrides.enabled = false;
+                } else {
+                    logOverrides.enabled = true;
+                    logOverrides.file = value;
+                }
+            } else if (arg == "--log-profile" && i + 1 < argc) {
+                logOverrides.profile = vela::runtimeLogProfileFromString(argv[++i]);
+            } else if (arg == "--help" || arg == "-h") {
+                usage(argv[0]);
+                return 0;
             } else {
-                logOverrides.enabled = true;
-                logOverrides.file = value;
+                usage(argv[0]);
+                return 2;
             }
-        } else if (arg == "--log-profile" && i + 1 < argc) {
-            logOverrides.profile = vela::runtimeLogProfileFromString(argv[++i]);
-        } else if (arg == "--help" || arg == "-h") {
-            usage(argv[0]);
-            return 0;
-        } else {
+        }
+
+        if (configFile.empty()) {
             usage(argv[0]);
             return 2;
         }
-    }
 
-    if (configFile.empty()) {
-        usage(argv[0]);
-        return 2;
-    }
-
-    try {
         RuntimeLogOverrideGuard logOverrideGuard(logOverrides);
         std::ifstream ifs(configFile);
         if (!ifs.is_open()) {

@@ -290,10 +290,6 @@ About normal_displacement_C_per_m2 / normal_electric_field_V_per_m:
 - `normal_displacement_C_per_m2` is implemented for Neumann Poisson boundaries.
 - `normal_electric_field_V_per_m` is not currently parsed; treat it as a future extension placeholder.
 
-## solver
-
-The solver object is used by DD sweep and Newton solve paths.
-
 ## runtime_log
 
 The optional `runtime_log` object controls file-based runtime logging:
@@ -316,6 +312,10 @@ Fields:
 - `flush_level`: flush threshold with the same value set as `level`.
 - `append`: append mode when true; overwrite mode when false.
 - `profile`: one of `minimal|default|debug`, controls output detail density.
+
+## solver
+
+The solver object is used by DD sweep and Newton solve paths.
 
 Method selection:
 - method: `gummel`, `newton`, or `gummel_newton`
