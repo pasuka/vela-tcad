@@ -38,7 +38,7 @@ void emitVerboseLine(const std::string& line)
 void emitVerboseErrorLine(const std::string& line)
 {
     if (runtimeLogEnabled())
-        runtimeLogWarn(line);
+        runtimeLogError(line);
     else
         std::cerr << line << '\n';
 }
