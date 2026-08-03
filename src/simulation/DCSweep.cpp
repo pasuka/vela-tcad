@@ -1,5 +1,6 @@
 #include "vela/simulation/DCSweep.h"
 #include "vela/boundary/BoundaryCondition.h"
+#include "vela/core/RuntimeLog.h"
 #include "vela/core/UnitScalingSystem.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/equation/AssemblerUtils.h"
@@ -48,6 +49,19 @@ enum class SolverMethod {
     Newton,
     GummelNewton,
 };
+
+std::string solverMethodName(SolverMethod method)
+{
+    switch (method) {
+        case SolverMethod::Gummel:
+            return "gummel";
+        case SolverMethod::Newton:
+            return "newton";
+        case SolverMethod::GummelNewton:
+            return "gummel_newton";
+    }
+    return "gummel";
+}
 
 struct HybridHandoffConfig {
     bool fallbackToGummelOnNewtonFailure = false;
@@ -2202,6 +2216,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
     nlohmann::json cfg;
     ifs >> cfg;
+    RuntimeLogSession runtimeLog =
+        RuntimeLogSession::fromConfig(cfg, configFile, "dc_sweep");
     const UnitScalingConfig scaling = parseUnitScalingConfig(cfg);
     const UnitScalingReferenceConfig scalingRefs = parseUnitScalingReferenceConfig(cfg);
 
@@ -2271,6 +2287,38 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     const bool recombinationDiagnosticsEnabled =
         (solverMethod == SolverMethod::Newton || solverMethod == SolverMethod::GummelNewton) &&
         newton.diagnostics;
+
+    if (runtimeLog.active()) {
+        const auto& report = mesh.lastGeometryBuildReport();
+        runtimeLogInfo(
+            "run_context: mode=" + toString(sweep.mode) +
+            " solver_method=" + solverMethodName(solverMethod) +
+            " sweep_contact=" + sweep.contact +
+            " start_V=" + formatReal(sweep.start) +
+            " stop_V=" + formatReal(sweep.stop) +
+            " step_V=" + formatReal(sweep.step));
+        runtimeLogInfo(
+            "mesh: nodes=" + std::to_string(mesh.numNodes()) +
+            " edges=" + std::to_string(mesh.numEdges()) +
+            " cells=" + std::to_string(mesh.numCells()) +
+            " regions=" + std::to_string(mesh.numRegions()) +
+            " contacts=" + std::to_string(mesh.numContacts()));
+        runtimeLogInfo(
+            "box_geometry: total_cells=" + std::to_string(report.totalCells) +
+            " degenerate_cells=" + std::to_string(report.degenerateCells) +
+            " negative_cotangent_count=" + std::to_string(report.negativeCotangentCount) +
+            " fallback_count=" + std::to_string(report.fallbackCount) +
+            " min_angle_degrees=" + formatReal(report.minAngleDegrees));
+        if (runtimeLogAllows(RuntimeLogProfile::Default)) {
+            runtimeLogInfo(
+                "solver_settings: max_iter=" + std::to_string(
+                    solverMethod == SolverMethod::Gummel ? gummel.maxIter : newton.maxIter) +
+                " reltol=" + formatReal(
+                    solverMethod == SolverMethod::Gummel ? gummel.reltol : newton.reltol) +
+                " abstol=" + formatReal(
+                    solverMethod == SolverMethod::Gummel ? gummel.abstol : newton.abstol));
+        }
+    }
 
     RecombinationModelConfig sweepRecombinationConfig;
     BandgapNarrowingConfig sweepBgnConfig;
@@ -4781,6 +4829,17 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
 
         points.push_back(std::move(point));
+        const DCSweepPoint& loggedPoint = points.back();
+        if (runtimeLog.active() &&
+            (runtimeLogAllows(RuntimeLogProfile::Default) || !loggedPoint.converged)) {
+            runtimeLogInfo(
+                "solve_trace: index=" + std::to_string(points.size() - 1) +
+                " bias_V=" + formatReal(loggedPoint.bias) +
+                " converged=" + std::string(loggedPoint.converged ? "1" : "0") +
+                " iterations=" + std::to_string(loggedPoint.iterations) +
+                " current_total=" + formatReal(loggedPoint.totalCurrent) +
+                " failure_reason=" + loggedPoint.failureReason);
+        }
     };
 
     auto writeAvalancheInternalSourceAuditSummaryIfNeeded = [&]() {
@@ -4808,6 +4867,17 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     auto finishResult = [&]() {
         writeAvalancheInternalSourceAuditSummaryIfNeeded();
         writeReleaseBVConfigAuditSummaryIfNeeded();
+        if (runtimeLog.active()) {
+            std::size_t successCount = 0;
+            std::size_t failureCount = 0;
+            for (const DCSweepPoint& point : points) {
+                if (point.converged)
+                    ++successCount;
+                else
+                    ++failureCount;
+            }
+            runtimeLog.finish(failureCount == 0, successCount, failureCount);
+        }
         return DCSweepResult{
             std::move(mesh),
             std::move(points),

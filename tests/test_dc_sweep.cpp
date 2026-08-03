@@ -250,6 +250,32 @@ std::filesystem::path writeUnitScalingSweepConfig(
     return cfgPath;
 }
 
+std::string readTextFile(const std::filesystem::path& path);
+
+TEST_CASE("DCSweep: default runtime log file is generated", "[dc_sweep][runtime_log]")
+{
+    const std::filesystem::path dir = makeUniqueSweepDir();
+    std::filesystem::create_directories(dir);
+    const ScopedDirectoryCleanup cleanup{dir};
+
+    const std::filesystem::path meshPath = writePNMesh(dir);
+    const std::filesystem::path csvPath = dir / "pn_sweep.csv";
+    const std::filesystem::path cfgPath = writeSweepConfig(dir, meshPath, csvPath);
+
+    DCSweep sweep;
+    const std::vector<DCSweepPoint> points = sweep.run(cfgPath.string());
+    REQUIRE_FALSE(points.empty());
+
+    const std::filesystem::path logPath =
+        cfgPath.parent_path() / (cfgPath.stem().string() + ".log");
+    REQUIRE(std::filesystem::exists(logPath));
+
+    const std::string logText = readTextFile(logPath);
+    REQUIRE_THAT(logText, Catch::Matchers::ContainsSubstring("simulation_type: dc_sweep"));
+    REQUIRE_THAT(logText, Catch::Matchers::ContainsSubstring("run_context"));
+    REQUIRE_THAT(logText, Catch::Matchers::ContainsSubstring("solve_trace"));
+}
+
 std::vector<std::vector<std::string>> readCsvRows(const std::filesystem::path& csvPath)
 {
     std::ifstream input(csvPath);

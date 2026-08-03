@@ -5,6 +5,7 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/post/ContactCurrent.h"
+#include "vela/core/RuntimeLog.h"
 #include "vela/solver/NewtonSolver.h"
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/simulation/DCSweep.h"
@@ -18,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -27,8 +29,20 @@ namespace {
 
 void usage(const char* argv0)
 {
-    std::cerr << "Usage: " << argv0 << " --config <simulation.json> [--mesh-report]\n";
+    std::cerr << "Usage: " << argv0
+              << " --config <simulation.json> [--mesh-report] [--log <auto|off|path>] [--log-profile <minimal|default|debug>]\n";
 }
+
+struct RuntimeLogOverrideGuard {
+    explicit RuntimeLogOverrideGuard(const vela::RuntimeLogCliOverrides& overrides)
+    {
+        vela::setRuntimeLogCliOverrides(overrides);
+    }
+    ~RuntimeLogOverrideGuard()
+    {
+        vela::clearRuntimeLogCliOverrides();
+    }
+};
 
 nlohmann::json meshReportJson(const vela::GeometryBuildReport& report)
 {
@@ -2365,12 +2379,25 @@ int main(int argc, char** argv)
 {
     std::string configFile;
     bool includeMeshReport = false;
+    vela::RuntimeLogCliOverrides logOverrides;
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         if (arg == "--config" && i + 1 < argc) {
             configFile = argv[++i];
         } else if (arg == "--mesh-report") {
             includeMeshReport = true;
+        } else if (arg == "--log" && i + 1 < argc) {
+            const std::string value = argv[++i];
+            if (value == "auto") {
+                logOverrides = vela::RuntimeLogCliOverrides{};
+            } else if (value == "off") {
+                logOverrides.enabled = false;
+            } else {
+                logOverrides.enabled = true;
+                logOverrides.file = value;
+            }
+        } else if (arg == "--log-profile" && i + 1 < argc) {
+            logOverrides.profile = vela::runtimeLogProfileFromString(argv[++i]);
         } else if (arg == "--help" || arg == "-h") {
             usage(argv[0]);
             return 0;
@@ -2386,6 +2413,7 @@ int main(int argc, char** argv)
     }
 
     try {
+        RuntimeLogOverrideGuard logOverrideGuard(logOverrides);
         std::ifstream ifs(configFile);
         if (!ifs.is_open()) {
             std::cerr << "Cannot open config file: " << configFile << '\n';
@@ -2395,6 +2423,9 @@ int main(int argc, char** argv)
         nlohmann::json cfg;
         ifs >> cfg;
         const std::string type = cfg.value("simulation_type", cfg.contains("sweep") ? "dc_sweep" : "poisson");
+        std::optional<vela::RuntimeLogSession> runnerLogSession;
+        if (type != "dc_sweep" && type != "poisson")
+            runnerLogSession = vela::RuntimeLogSession::fromConfig(cfg, configFile, type);
 
         nlohmann::json status;
         status["config"] = configFile;
@@ -2471,8 +2502,11 @@ int main(int argc, char** argv)
             return 2;
         }
 
+        const bool converged = status.value("converged", false);
+        if (runnerLogSession.has_value() && runnerLogSession->active())
+            runnerLogSession->finish(converged);
         std::cout << status.dump() << '\n';
-        return status.value("converged", false) ? 0 : 1;
+        return converged ? 0 : 1;
     } catch (const std::exception& ex) {
         std::cerr << "vela_example_runner failed: " << ex.what() << '\n';
         return 1;

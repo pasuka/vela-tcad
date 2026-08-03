@@ -1,5 +1,6 @@
 #include "vela/solver/NewtonSolver.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/core/RuntimeLog.h"
 #include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/AssemblerUtils.h"
 #include "vela/numerics/ResidualNorm.h"
@@ -25,6 +26,22 @@
 
 namespace vela {
 namespace {
+
+void emitVerboseLine(const std::string& line)
+{
+    if (runtimeLogEnabled())
+        runtimeLogInfo(line);
+    else
+        std::cout << line << '\n';
+}
+
+void emitVerboseErrorLine(const std::string& line)
+{
+    if (runtimeLogEnabled())
+        runtimeLogWarn(line);
+    else
+        std::cerr << line << '\n';
+}
 
 void parseImpactIonizationDrivingForceInterpolation(
     const nlohmann::json& value,
@@ -751,28 +768,29 @@ NewtonFailureDiagnostics buildFailureDiagnostics(
 
 void printFailureDiagnostics(const NewtonFailureDiagnostics& diagnostics)
 {
-    std::cerr << "  failure_reason=" << diagnostics.failureReason
-              << " line_search_reason=" << diagnostics.lineSearchFailureReason
-              << " blocks=(" << diagnostics.blockResiduals.psi << ','
-              << diagnostics.blockResiduals.phin << ','
-              << diagnostics.blockResiduals.phip << ")"
-              << " max_contact_majority_qf_drop_V=" << diagnostics.maxContactMajorityQfDrop
-              << " best_rejected_contact_majority_qf_drop_V="
-              << diagnostics.bestRejectedContactMajorityQfDrop
-              << " carriers_positive_finite="
-              << (diagnostics.carrierDiagnostics.positiveFinite ? "1" : "0")
-              << '\n';
+    emitVerboseErrorLine(
+        "  failure_reason=" + diagnostics.failureReason +
+        " line_search_reason=" + diagnostics.lineSearchFailureReason +
+        " blocks=(" + std::to_string(diagnostics.blockResiduals.psi) + "," +
+        std::to_string(diagnostics.blockResiduals.phin) + "," +
+        std::to_string(diagnostics.blockResiduals.phip) + ")" +
+        " max_contact_majority_qf_drop_V=" +
+        std::to_string(diagnostics.maxContactMajorityQfDrop) +
+        " best_rejected_contact_majority_qf_drop_V=" +
+        std::to_string(diagnostics.bestRejectedContactMajorityQfDrop) +
+        " carriers_positive_finite=" +
+        std::string(diagnostics.carrierDiagnostics.positiveFinite ? "1" : "0"));
     if (!diagnostics.topPoissonResidualNodes.empty()) {
         const NewtonTopResidualNode& node = diagnostics.topPoissonResidualNodes.front();
-        std::cerr << "  top_poisson_residual_node=" << node.nodeId
-                  << " x=" << node.x
-                  << " y=" << node.y
-                  << " residual=" << node.poissonResidual
-                  << " donors=" << node.donors
-                  << " acceptors=" << node.acceptors
-                  << " net=" << node.netDoping
-                  << " ni_eff=" << node.effectiveIntrinsicDensity
-                  << '\n';
+        emitVerboseErrorLine(
+            "  top_poisson_residual_node=" + std::to_string(node.nodeId) +
+            " x=" + std::to_string(node.x) +
+            " y=" + std::to_string(node.y) +
+            " residual=" + std::to_string(node.poissonResidual) +
+            " donors=" + std::to_string(node.donors) +
+            " acceptors=" + std::to_string(node.acceptors) +
+            " net=" + std::to_string(node.netDoping) +
+            " ni_eff=" + std::to_string(node.effectiveIntrinsicDensity));
     }
 }
 
@@ -4209,10 +4227,12 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
 
     if (cfg_.verbose) {
         const ResidualBlockNormValue blocks = ResidualNorm::computeBlocks(r, mesh_.numNodes());
-        std::cout << "Newton iter 0 residual=" << initialNorm
-                  << " step=0 damping=0"
-                  << " blocks=(" << blocks.psi << ',' << blocks.phin << ','
-                  << blocks.phip << ")\n";
+        emitVerboseLine(
+            "Newton iter 0 residual=" + std::to_string(initialNorm) +
+            " step=0 damping=0 blocks=(" +
+            std::to_string(blocks.psi) + "," +
+            std::to_string(blocks.phin) + "," +
+            std::to_string(blocks.phip) + ")");
     }
 
     NewtonCarrierRowConvergenceEvaluation initialRowEval = carrierRowEval(x);
@@ -4316,9 +4336,10 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
                 0,
                 {});
             if (cfg_.verbose) {
-                std::cerr << "Newton failed at iter " << iter
-                          << ": residual=" << residualNormFn(r)
-                          << " damping=0 step=0 (linear solve failed)\n";
+                emitVerboseErrorLine(
+                    "Newton failed at iter " + std::to_string(iter) +
+                    ": residual=" + std::to_string(residualNormFn(r)) +
+                    " damping=0 step=0 (linear solve failed)");
                 printFailureDiagnostics(result.failureDiagnostics);
             }
             return result;
@@ -4428,12 +4449,13 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
                 bestRejectedContactMajorityQfDrop,
                 std::move(ls.history));
             if (cfg_.verbose) {
-                std::cerr << "Newton failed at iter " << iter
-                          << ": residual=" << ls.residualNorm
-                          << " damping=" << ls.damping
-                          << " step=" << stepNorm
-                          << " (line search rejected step; reason="
-                          << result.failureDiagnostics.failureReason << ")\n";
+                emitVerboseErrorLine(
+                    "Newton failed at iter " + std::to_string(iter) +
+                    ": residual=" + std::to_string(ls.residualNorm) +
+                    " damping=" + std::to_string(ls.damping) +
+                    " step=" + std::to_string(stepNorm) +
+                    " (line search rejected step; reason=" +
+                    result.failureDiagnostics.failureReason + ")");
                 printFailureDiagnostics(result.failureDiagnostics);
             }
             return result;
@@ -4470,12 +4492,14 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         result.history.push_back(std::move(info));
         if (cfg_.verbose) {
             const NewtonBlockResidualInfo& blocks = result.history.back().blockResiduals;
-            std::cout << "Newton iter " << iter
-                      << " residual=" << residualNorm
-                      << " step=" << appliedStepNorm
-                      << " damping=" << ls.damping
-                      << " blocks=(" << blocks.psi << ',' << blocks.phin << ','
-                      << blocks.phip << ")\n";
+            emitVerboseLine(
+                "Newton iter " + std::to_string(iter) +
+                " residual=" + std::to_string(residualNorm) +
+                " step=" + std::to_string(appliedStepNorm) +
+                " damping=" + std::to_string(ls.damping) +
+                " blocks=(" + std::to_string(blocks.psi) + "," +
+                std::to_string(blocks.phin) + "," +
+                std::to_string(blocks.phip) + ")");
         }
 
         const Real rel = result.history.back().relativeResidualNorm;
@@ -4544,13 +4568,13 @@ NewtonResult NewtonSolver::solve(const DDSolution& initial) const
         result.history.empty() ? 0 : result.history.back().lineSearchAttempts,
         {});
     if (cfg_.verbose) {
-        std::cerr << "Newton failed after " << cfg_.maxIter
-                  << " iterations: residual=" << result.finalResidualNorm
-                  << " damping="
-                  << (result.history.empty() ? 0.0 : result.history.back().dampingFactor)
-                  << " step="
-                  << (result.history.empty() ? 0.0 : result.history.back().stepNorm)
-                  << '\n';
+        emitVerboseErrorLine(
+            "Newton failed after " + std::to_string(cfg_.maxIter) +
+            " iterations: residual=" + std::to_string(result.finalResidualNorm) +
+            " damping=" + std::to_string(
+                result.history.empty() ? 0.0 : result.history.back().dampingFactor) +
+            " step=" + std::to_string(
+                result.history.empty() ? 0.0 : result.history.back().stepNorm));
         printFailureDiagnostics(result.failureDiagnostics);
     }
     return result;

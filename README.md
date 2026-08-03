@@ -229,6 +229,7 @@ build/vela_example_runner --config examples/pn_diode/simulation_iv.json
 build/vela_example_runner --config examples/pn_diode/simulation_cv.json
 build/vela_example_runner --config examples/pn_diode/simulation_bv.json
 build/vela_example_runner --config examples/pn_diode/newton_simulation.json
+build/vela_example_runner --config examples/pn_diode/simulation_iv.json --log off
 ```
 
 On Windows, use `build\vela_example_runner.exe`.

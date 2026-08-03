@@ -30,6 +30,7 @@ Scope and conventions:
 | output_vtk_prefix | string | Optional | Default VTK prefix for DC sweep point outputs. Can be overridden by `sweep.vtk_prefix`. |
 | output_state_file | string | Optional | Restart-state CSV written by `newton_solve_from_state`. Uses Vela restart format: `node_id,psi,phin,phip,electrons_m3,holes_m3`. |
 | state_fields_dir | string | Required for `newton_solve_from_state` and probe-style external-state tools | Directory containing Sentaurus-export-style scalar field CSVs. |
+| runtime_log | object | Optional | Runtime log control. Default is enabled and writes `<config stem>.log` next to the config file. |
 | scaling | object | Optional | Input unit interpretation. Omit for legacy SI behavior, or set `mode` to `unit_scaling`; see below. |
 | mesh_geometry | object | Optional | Mesh box-geometry options; see below. |
 | doping | array | Yes | Region doping definitions; see below. |
@@ -60,6 +61,14 @@ Scope and conventions:
 For `dc_sweep`, omitting `solver.method` keeps the default Gummel path. Set
 `solver.method` (or legacy alias `solver.type`) to `newton` to use the coupled
 Newton sweep path where supported.
+
+Runtime log CLI override:
+- `--log auto`: keep config/default behavior.
+- `--log off`: disable runtime log for this run.
+- `--log <path>`: force-enable and write to the given path.
+
+Optional runtime log profile CLI override:
+- `--log-profile minimal|default|debug`
 
 ## scaling
 
@@ -284,6 +293,29 @@ About normal_displacement_C_per_m2 / normal_electric_field_V_per_m:
 ## solver
 
 The solver object is used by DD sweep and Newton solve paths.
+
+## runtime_log
+
+The optional `runtime_log` object controls file-based runtime logging:
+
+```json
+"runtime_log": {
+  "enabled": true,
+  "file": "run.log",
+  "level": "info",
+  "flush_level": "error",
+  "append": false,
+  "profile": "default"
+}
+```
+
+Fields:
+- `enabled`: boolean. If omitted, runtime log is enabled by default.
+- `file`: output file path. Relative paths are resolved from the config file directory.
+- `level`: one of `trace|debug|info|warn|error|critical|off`.
+- `flush_level`: flush threshold with the same value set as `level`.
+- `append`: append mode when true; overwrite mode when false.
+- `profile`: one of `minimal|default|debug`, controls output detail density.
 
 Method selection:
 - method: `gummel`, `newton`, or `gummel_newton`

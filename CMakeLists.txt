@@ -21,6 +21,9 @@ find_package(nlohmann_json REQUIRED)
 # Boost.Multiprecision (header-only arbitrary-precision arithmetic)
 find_package(Boost CONFIG REQUIRED)
 
+# spdlog (logging)
+find_package(spdlog REQUIRED)
+
 # Catch2 v3 (unit test framework)
 find_package(Catch2 3 REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
@@ -51,6 +54,7 @@ endif()
 add_library(vela_core STATIC
     src/boundary/BoundaryCondition.cpp
     src/core/ScalingSystem.cpp
+    src/core/RuntimeLog.cpp
     src/core/UnitScaling.cpp
     src/core/UnitScalingSystem.cpp
     src/material/Material.cpp
@@ -102,7 +106,9 @@ target_link_libraries(vela_core
         nlohmann_json::nlohmann_json
     PRIVATE
         Boost::headers
+        spdlog::spdlog
 )
+target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")
 
 if(VELA_HDF5_TARGET)
     add_library(vela_sentaurus STATIC

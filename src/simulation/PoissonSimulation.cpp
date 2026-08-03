@@ -1,6 +1,7 @@
 #include "vela/simulation/PoissonSimulation.h"
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/core/RuntimeLog.h"
 #include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/PoissonAssembler.h"
 #include "vela/io/MeshReader.h"
@@ -72,6 +73,8 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
 
     nlohmann::json cfg;
     ifs >> cfg;
+    RuntimeLogSession runtimeLog =
+        RuntimeLogSession::fromConfig(cfg, configFile, "poisson");
     const UnitScalingConfig scaling = parseUnitScalingConfig(cfg);
 
     // Resolve paths relative to the config file's directory
@@ -88,6 +91,20 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     JsonMeshReader reader;
     DeviceMesh mesh = reader.read(meshFile, scaling);
     mesh.buildBoxGeometry(parseBoxGeometryOptions(cfg));
+    if (runtimeLog.active()) {
+        const auto& report = mesh.lastGeometryBuildReport();
+        runtimeLogInfo(
+            "run_context: mesh_file=" + meshFile +
+            " output_vtk=" + outputVtk +
+            " nodes=" + std::to_string(mesh.numNodes()) +
+            " cells=" + std::to_string(mesh.numCells()) +
+            " contacts=" + std::to_string(mesh.numContacts()));
+        runtimeLogInfo(
+            "box_geometry: total_cells=" + std::to_string(report.totalCells) +
+            " degenerate_cells=" + std::to_string(report.degenerateCells) +
+            " negative_cotangent_count=" + std::to_string(report.negativeCotangentCount) +
+            " fallback_count=" + std::to_string(report.fallbackCount));
+    }
 
     // ------------------------------------------------------------------
     // Material database (built-in Si, SiO2 plus optional config override)
@@ -288,6 +305,13 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     writer.write();
     writer.addNodeScalar("potential_V", psiVec);
     writer.addNodeScalar("net_doping_m3", dopingVec);
+
+    if (runtimeLog.active()) {
+        runtimeLogInfo(
+            "solve_trace: solved_nodes=" + std::to_string(mesh.numNodes()) +
+            " dirichlet_nodes=" + std::to_string(dirichletBCs.size()));
+        runtimeLog.finish(true, 1, 0);
+    }
 
     return PoissonResult{std::move(mesh), std::move(psi), std::move(dopingVec)};
 }

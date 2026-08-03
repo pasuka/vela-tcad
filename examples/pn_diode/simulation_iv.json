@@ -3,6 +3,12 @@
   "simulation_type": "dc_sweep",
   "mesh_file": "mesh.json",
   "output_csv": "outputs/pn_iv.csv",
+  "runtime_log": {
+    "enabled": true,
+    "file": "outputs/pn_iv.log",
+    "profile": "default",
+    "level": "info"
+  },
   "doping": [
     {
       "region": "n_region",
