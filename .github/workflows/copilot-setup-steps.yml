@@ -30,6 +30,7 @@ jobs:
             cmake
             ninja-build
             libboost-dev
+            libspdlog-dev
             libeigen3-dev
             nlohmann-json3-dev
             catch2
