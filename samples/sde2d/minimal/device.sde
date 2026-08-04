@@ -1,0 +1,3 @@
+(sdegeo:create-rectangle (position 0 0 0) (position 1.0 1.0 0) "Silicon" "R.Si")
+(sdedr:define-constant-profile "CP.N" "PhosphorusActiveConcentration" 1.0e17)
+(sdedr:define-constant-profile-region "Place.N" "CP.N" "R.Si")

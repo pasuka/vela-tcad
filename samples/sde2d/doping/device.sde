@@ -1,0 +1,3 @@
+(sdegeo:create-rectangle (position 0 0 0) (position 2.0 1.0 0) "Silicon" "R.Si")
+(sdedr:define-gaussian-profile "GP.P" "BoronActiveConcentration" "PeakPos" 0.5 "PeakVal" 5.0e18 "ValueAtDepth" 1.0e16 "Depth" 0.25)
+(sdedr:define-analytical-profile-region "Place.GP" "GP.P" "R.Si")

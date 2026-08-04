@@ -1,0 +1,6 @@
+(sdegeo:create-rectangle (position 0 0 0) (position 2.0 1.0 0) "Silicon" "R.Si")
+(sdedr:define-gaussian-profile "GP.N" "PhosphorusActiveConcentration" "PeakPos" 0.5 "PeakVal" 1.0e19 "ValueAtDepth" 1.0e16 "Depth" 0.2)
+(sdedr:define-analytical-profile-region "Place.GP" "GP.N" "R.Si")
+(sdedr:define-refinement-size "Ref.Si" 0.25 0.25 0.0 0.0)
+(sdedr:define-refinement-region "Place.Ref.Si" "Ref.Si" "R.Si")
+(sdedr:define-refinement-function "Ref.Si" "DopingConcentration" "MaxTransDiff" 2.0e16)

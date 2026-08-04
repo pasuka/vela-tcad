@@ -77,6 +77,8 @@ add_library(vela_core STATIC
     src/mesh/GmshMeshGenerator.cpp
     src/mesh/BoxGeometryBuilder.cpp
     src/io/MeshReader.cpp
+    src/io/NeutralMeshReader.cpp
+    src/io/NeutralMeshWriter.cpp
     src/io/SdeScriptReader.cpp
     src/io/VTKWriter.cpp
     src/io/CSVWriter.cpp
@@ -111,6 +113,7 @@ add_library(vela_core STATIC
     src/simulation/ConfigParsing.cpp
     src/simulation/CurveSweep.cpp
     src/simulation/DCSweep.cpp
+    src/preprocess/GeometryRegionBuilder.cpp
     src/preprocess/VelaPreprocessDriver.cpp
 )
 
@@ -279,6 +282,22 @@ target_link_libraries(test_gmsh_mesh_generator PRIVATE vela_core Catch2::Catch2W
 add_executable(test_doping_profile_evaluator tests/test_doping_profile_evaluator.cpp)
 target_link_libraries(test_doping_profile_evaluator PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_geometry_region_builder tests/test_geometry_region_builder.cpp)
+target_link_libraries(test_geometry_region_builder PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_neutral_mesh_writer tests/test_neutral_mesh_writer.cpp)
+target_link_libraries(test_neutral_mesh_writer PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_neutral_mesh_reader tests/test_neutral_mesh_reader.cpp)
+target_link_libraries(test_neutral_mesh_reader PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_sde2d_sample_corpus tests/test_sde2d_sample_corpus.cpp)
+target_link_libraries(test_sde2d_sample_corpus PRIVATE vela_core Catch2::Catch2WithMain)
+target_compile_definitions(test_sde2d_sample_corpus PRIVATE VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
+add_executable(test_preprocess_solver_integration tests/test_preprocess_solver_integration.cpp)
+target_link_libraries(test_preprocess_solver_integration PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_poisson tests/test_poisson.cpp)
 target_link_libraries(test_poisson PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -400,6 +419,11 @@ vela_catch_discover_tests(test_mesh)
 vela_catch_discover_tests(test_sde_script_reader)
 vela_catch_discover_tests(test_gmsh_mesh_generator)
 vela_catch_discover_tests(test_doping_profile_evaluator)
+vela_catch_discover_tests(test_geometry_region_builder)
+vela_catch_discover_tests(test_neutral_mesh_writer)
+vela_catch_discover_tests(test_neutral_mesh_reader)
+vela_catch_discover_tests(test_sde2d_sample_corpus)
+vela_catch_discover_tests(test_preprocess_solver_integration)
 vela_catch_discover_tests(test_poisson)
 add_test(NAME poisson COMMAND test_poisson [poisson])
 vela_catch_discover_tests(test_linear_solver)

@@ -1,0 +1,2 @@
+(sdegeo:create-rectangle (position 0 0 0) (position 1.0 1.0 0) "Silicon" "R.Left")
+(sdegeo:create-rectangle (position 1.0 0 0) (position 2.0 1.0 0) "Silicon" "R.Right")

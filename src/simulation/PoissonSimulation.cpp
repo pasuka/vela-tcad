@@ -5,6 +5,7 @@
 #include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/PoissonAssembler.h"
 #include "vela/io/MeshReader.h"
+#include "vela/io/NeutralMeshReader.h"
 #include "vela/io/VTKWriter.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
@@ -79,7 +80,15 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
 
     // Resolve paths relative to the config file's directory
     const std::filesystem::path cfgDir = configDirectory(configFile);
-    const std::string meshFile = resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>());
+    const bool useNeutralMesh = cfg.contains("neutral_mesh_dir");
+    if (useNeutralMesh && !scaling.isUnitScaling()) {
+        throw std::runtime_error(
+            "PoissonSimulation: neutral_mesh_dir requires scaling.mode = 'unit_scaling' "
+            "because neutral mesh coordinates are stored in x_um/y_um and doping in cm^-3.");
+    }
+    const std::string meshFile = useNeutralMesh
+        ? resolvePath(cfgDir, cfg.at("neutral_mesh_dir").get<std::string>())
+        : resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>());
     const std::string outputVtk = resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>());
     const std::string materialsFile = cfg.contains("materials_file")
         ? resolvePath(cfgDir, cfg.at("materials_file").get<std::string>())
@@ -88,8 +97,14 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // ------------------------------------------------------------------
     // Build mesh
     // ------------------------------------------------------------------
-    JsonMeshReader reader;
-    DeviceMesh mesh = reader.read(meshFile, scaling);
+    DeviceMesh mesh;
+    if (useNeutralMesh) {
+        NeutralMeshReader reader;
+        mesh = reader.readDirectory(meshFile, scaling);
+    } else {
+        JsonMeshReader reader;
+        mesh = reader.read(meshFile, scaling);
+    }
     mesh.buildBoxGeometry(parseBoxGeometryOptions(cfg));
     if (runtimeLog.active()) {
         const auto& report = mesh.lastGeometryBuildReport();
@@ -116,8 +131,22 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // ------------------------------------------------------------------
     // Doping model
     // ------------------------------------------------------------------
-    std::vector<RegionDopingSpec> dopingSpecs = parseDopingSpecs(cfg, scaling);
-    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, dopingSpecs);
+    DopingModel doping(mesh.numNodes());
+    if (cfg.contains("node_doping_file")) {
+        NeutralMeshReader reader;
+        doping = reader.readDopingCsv(
+            resolvePath(cfgDir, cfg.at("node_doping_file").get<std::string>()),
+            mesh.numNodes(),
+            scaling);
+    } else if (useNeutralMesh && std::filesystem::exists(std::filesystem::path(meshFile) / "doping.csv")) {
+        NeutralMeshReader reader;
+        doping = reader.readDopingCsv(std::filesystem::path(meshFile) / "doping.csv",
+                                      mesh.numNodes(),
+                                      scaling);
+    } else {
+        std::vector<RegionDopingSpec> dopingSpecs = parseDopingSpecs(cfg, scaling);
+        doping = DopingModel::fromMeshAndRegions(mesh, dopingSpecs);
+    }
 
     std::vector<RegionFixedChargeSpec> fixedChargeSpecs =
         parseRegionFixedChargeSpecs(cfg, scaling);

@@ -2,6 +2,7 @@
 #include "vela/equation/AssemblerUtils.h"
 #include "vela/io/DDSolutionCsv.h"
 #include "vela/io/MeshReader.h"
+#include "vela/io/NeutralMeshReader.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/post/ContactCurrent.h"
@@ -187,22 +188,48 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
     const std::filesystem::path cfgDir = configDirectory(configFile);
     const vela::UnitScalingConfig scaling = vela::parseUnitScalingConfig(cfg);
 
-    vela::JsonMeshReader reader;
-    vela::DeviceMesh mesh = reader.read(
-        resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>()),
-        scaling);
+    const bool useNeutralMesh = cfg.contains("neutral_mesh_dir");
+    if (useNeutralMesh && !scaling.isUnitScaling()) {
+        throw std::runtime_error(
+            "neutral_mesh_dir requires scaling.mode = 'unit_scaling' because neutral mesh uses "
+            "x_um/y_um coordinates and cm^-3 doping values.");
+    }
+    vela::DeviceMesh mesh;
+    if (useNeutralMesh) {
+        vela::NeutralMeshReader reader;
+        mesh = reader.readDirectory(resolvePath(cfgDir, cfg.at("neutral_mesh_dir").get<std::string>()),
+                                    scaling);
+    } else {
+        vela::JsonMeshReader reader;
+        mesh = reader.read(
+            resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>()),
+            scaling);
+    }
     mesh.buildBoxGeometry(vela::parseBoxGeometryOptions(cfg));
 
     vela::MaterialDatabase matdb(scaling);
     if (cfg.contains("materials_file"))
         matdb.loadJson(resolvePath(cfgDir, cfg.at("materials_file").get<std::string>()), scaling);
 
-    vela::DopingModel doping = cfg.contains("node_doping_file")
-        ? readNodeDopingCsv(
+    vela::DopingModel doping(mesh.numNodes());
+    if (cfg.contains("node_doping_file")) {
+        doping = readNodeDopingCsv(
             resolvePath(cfgDir, cfg.at("node_doping_file").get<std::string>()),
             mesh.numNodes(),
-            scaling)
-        : vela::DopingModel::fromMeshAndRegions(mesh, vela::parseDopingSpecs(cfg, scaling));
+            scaling);
+    } else if (useNeutralMesh &&
+               std::filesystem::exists(
+                   std::filesystem::path(resolvePath(cfgDir, cfg.at("neutral_mesh_dir").get<std::string>())) /
+                   "doping.csv")) {
+        vela::NeutralMeshReader reader;
+        doping = reader.readDopingCsv(
+            std::filesystem::path(resolvePath(cfgDir, cfg.at("neutral_mesh_dir").get<std::string>())) /
+                "doping.csv",
+            mesh.numNodes(),
+            scaling);
+    } else {
+        doping = vela::DopingModel::fromMeshAndRegions(mesh, vela::parseDopingSpecs(cfg, scaling));
+    }
     const auto biases = contactBiasesFromJson(cfg);
     vela::NewtonConfig newton = cfg.contains("solver")
         ? vela::newtonConfigFromJson(cfg.at("solver"), scaling)
