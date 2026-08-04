@@ -74,8 +74,10 @@ add_library(vela_core STATIC
     src/material/Material.cpp
     src/material/MaterialDatabase.cpp
     src/mesh/DeviceMesh.cpp
+    src/mesh/GmshMeshGenerator.cpp
     src/mesh/BoxGeometryBuilder.cpp
     src/io/MeshReader.cpp
+    src/io/SdeScriptReader.cpp
     src/io/VTKWriter.cpp
     src/io/CSVWriter.cpp
     src/io/CsvUtils.cpp
@@ -86,6 +88,7 @@ add_library(vela_core STATIC
     src/physics/MobilityModel.cpp
     src/physics/RecombinationModel.cpp
     src/physics/ImpactIonizationModel.cpp
+    src/physics/DopingProfileEvaluator.cpp
     src/physics/BandgapNarrowing.cpp
     src/equation/PoissonAssembler.cpp
     src/equation/DDAssembler.cpp
@@ -108,6 +111,7 @@ add_library(vela_core STATIC
     src/simulation/ConfigParsing.cpp
     src/simulation/CurveSweep.cpp
     src/simulation/DCSweep.cpp
+    src/preprocess/VelaPreprocessDriver.cpp
 )
 
 target_include_directories(vela_core PUBLIC
@@ -266,6 +270,15 @@ target_link_libraries(test_scaling PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_mesh tests/test_mesh.cpp)
 target_link_libraries(test_mesh PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_sde_script_reader tests/test_sde_script_reader.cpp)
+target_link_libraries(test_sde_script_reader PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_gmsh_mesh_generator tests/test_gmsh_mesh_generator.cpp)
+target_link_libraries(test_gmsh_mesh_generator PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_doping_profile_evaluator tests/test_doping_profile_evaluator.cpp)
+target_link_libraries(test_doping_profile_evaluator PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_poisson tests/test_poisson.cpp)
 target_link_libraries(test_poisson PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -384,6 +397,9 @@ endfunction()
 
 vela_catch_discover_tests(test_scaling)
 vela_catch_discover_tests(test_mesh)
+vela_catch_discover_tests(test_sde_script_reader)
+vela_catch_discover_tests(test_gmsh_mesh_generator)
+vela_catch_discover_tests(test_doping_profile_evaluator)
 vela_catch_discover_tests(test_poisson)
 add_test(NAME poisson COMMAND test_poisson [poisson])
 vela_catch_discover_tests(test_linear_solver)
