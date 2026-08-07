@@ -530,6 +530,20 @@ add_test(NAME sentaurus_import_tools
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_sentaurus_import_tools.py)
 vela_set_windows_msys2_test_path(sentaurus_import_tools)
 
+add_test(NAME sentaurus_vm_oracle_comparator_py
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_compare_sentaurus_vm_oracle)
+set_tests_properties(sentaurus_vm_oracle_comparator_py PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_vm_oracle_comparator_py)
+
+add_test(NAME sentaurus_vm_diff_report_py
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_generate_sentaurus_vm_diff_report)
+set_tests_properties(sentaurus_vm_diff_report_py PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_vm_diff_report_py)
+
 add_test(NAME pn2d_minimal6_transport_element_regression
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_pn2d_minimal6_element_currents

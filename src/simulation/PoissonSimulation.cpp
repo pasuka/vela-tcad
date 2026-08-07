@@ -43,6 +43,20 @@ std::string resolvePath(const std::filesystem::path& baseDir, const std::string&
     return resolved.string();
 }
 
+std::string resolveMeshPath(const nlohmann::json& cfg,
+                            const std::filesystem::path& cfgDir,
+                            bool& useNeutralMesh)
+{
+    const bool hasNeutral = cfg.contains("neutral_mesh_dir");
+    const bool hasMesh = cfg.contains("mesh_file");
+    if (hasNeutral == hasMesh) {
+        throw std::runtime_error(
+            "PoissonSimulation: exactly one of 'mesh_file' or 'neutral_mesh_dir' must be provided.");
+    }
+    useNeutralMesh = hasNeutral;
+    return resolvePath(cfgDir, cfg.at(hasNeutral ? "neutral_mesh_dir" : "mesh_file").get<std::string>());
+}
+
 
 Real maxRelativePermittivityAcrossRegions(const DeviceMesh& mesh,
                                           const MaterialDatabase& matdb)
@@ -80,15 +94,13 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
 
     // Resolve paths relative to the config file's directory
     const std::filesystem::path cfgDir = configDirectory(configFile);
-    const bool useNeutralMesh = cfg.contains("neutral_mesh_dir");
+    bool useNeutralMesh = false;
+    const std::string meshFile = resolveMeshPath(cfg, cfgDir, useNeutralMesh);
     if (useNeutralMesh && !scaling.isUnitScaling()) {
         throw std::runtime_error(
             "PoissonSimulation: neutral_mesh_dir requires scaling.mode = 'unit_scaling' "
             "because neutral mesh coordinates are stored in x_um/y_um and doping in cm^-3.");
     }
-    const std::string meshFile = useNeutralMesh
-        ? resolvePath(cfgDir, cfg.at("neutral_mesh_dir").get<std::string>())
-        : resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>());
     const std::string outputVtk = resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>());
     const std::string materialsFile = cfg.contains("materials_file")
         ? resolvePath(cfgDir, cfg.at("materials_file").get<std::string>())

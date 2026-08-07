@@ -175,10 +175,6 @@ struct NewtonProblem {
     vela::NewtonConfig newton;
 };
 
-vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,
-                                    vela::Index nodeCount,
-                                    vela::UnitScalingConfig scaling);
-
 vela::DDSolution readExternalState(const std::filesystem::path& cfgDir,
                                    const nlohmann::json& cfg,
                                    vela::Index nodeCount);
@@ -188,22 +184,28 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
     const std::filesystem::path cfgDir = configDirectory(configFile);
     const vela::UnitScalingConfig scaling = vela::parseUnitScalingConfig(cfg);
 
-    const bool useNeutralMesh = cfg.contains("neutral_mesh_dir");
+    const bool hasNeutralMesh = cfg.contains("neutral_mesh_dir");
+    const bool hasMeshFile = cfg.contains("mesh_file");
+    if (hasNeutralMesh == hasMeshFile) {
+        throw std::runtime_error(
+            "exactly one of 'mesh_file' or 'neutral_mesh_dir' must be provided.");
+    }
+    const bool useNeutralMesh = hasNeutralMesh;
     if (useNeutralMesh && !scaling.isUnitScaling()) {
         throw std::runtime_error(
             "neutral_mesh_dir requires scaling.mode = 'unit_scaling' because neutral mesh uses "
             "x_um/y_um coordinates and cm^-3 doping values.");
     }
+    const std::string resolvedMeshPath = resolvePath(
+        cfgDir,
+        cfg.at(useNeutralMesh ? "neutral_mesh_dir" : "mesh_file").get<std::string>());
     vela::DeviceMesh mesh;
     if (useNeutralMesh) {
         vela::NeutralMeshReader reader;
-        mesh = reader.readDirectory(resolvePath(cfgDir, cfg.at("neutral_mesh_dir").get<std::string>()),
-                                    scaling);
+        mesh = reader.readDirectory(resolvedMeshPath, scaling);
     } else {
         vela::JsonMeshReader reader;
-        mesh = reader.read(
-            resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>()),
-            scaling);
+        mesh = reader.read(resolvedMeshPath, scaling);
     }
     mesh.buildBoxGeometry(vela::parseBoxGeometryOptions(cfg));
 
@@ -213,17 +215,19 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
 
     vela::DopingModel doping(mesh.numNodes());
     if (cfg.contains("node_doping_file")) {
-        doping = readNodeDopingCsv(
+        vela::NeutralMeshReader reader;
+        doping = reader.readNamedDopingCsv(
             resolvePath(cfgDir, cfg.at("node_doping_file").get<std::string>()),
             mesh.numNodes(),
-            scaling);
+            scaling,
+            "node_doping_file");
     } else if (useNeutralMesh &&
                std::filesystem::exists(
-                   std::filesystem::path(resolvePath(cfgDir, cfg.at("neutral_mesh_dir").get<std::string>())) /
+                   std::filesystem::path(resolvedMeshPath) /
                    "doping.csv")) {
         vela::NeutralMeshReader reader;
         doping = reader.readDopingCsv(
-            std::filesystem::path(resolvePath(cfgDir, cfg.at("neutral_mesh_dir").get<std::string>())) /
+            std::filesystem::path(resolvedMeshPath) /
                 "doping.csv",
             mesh.numNodes(),
             scaling);
@@ -403,61 +407,6 @@ std::vector<vela::Real> readNodeScalarCsv(const std::filesystem::path& path,
             throw std::runtime_error("Scalar field CSV is missing a node row: " + path.string());
     }
     return values;
-}
-
-vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,
-                                    vela::Index nodeCount,
-                                    vela::UnitScalingConfig scaling)
-{
-    std::ifstream input(path);
-    if (!input.is_open())
-        throw std::runtime_error("Cannot open node_doping_file: " + path.string());
-    std::string headerLine;
-    if (!std::getline(input, headerLine))
-        throw std::runtime_error("node_doping_file is empty: " + path.string());
-    const std::vector<std::string> header = vela::splitCsvLine(headerLine);
-    std::size_t nodeCol = header.size();
-    std::size_t donorsCol = header.size();
-    std::size_t acceptorsCol = header.size();
-    for (std::size_t i = 0; i < header.size(); ++i) {
-        if (header[i] == "node_id")
-            nodeCol = i;
-        if (header[i] == "donors_cm3")
-            donorsCol = i;
-        if (header[i] == "acceptors_cm3")
-            acceptorsCol = i;
-    }
-    if (nodeCol == header.size() || donorsCol == header.size() || acceptorsCol == header.size()) {
-        throw std::runtime_error(
-            "node_doping_file must contain node_id, donors_cm3, and acceptors_cm3 columns: "
-            + path.string());
-    }
-
-    vela::DopingModel model(nodeCount);
-    std::vector<bool> seen(static_cast<std::size_t>(nodeCount), false);
-    std::string line;
-    while (std::getline(input, line)) {
-        if (line.empty())
-            continue;
-        const std::vector<std::string> cells = vela::splitCsvLine(line);
-        if (cells.size() <= std::max({nodeCol, donorsCol, acceptorsCol}))
-            throw std::runtime_error("Malformed node_doping_file row: " + path.string());
-        const auto node = static_cast<vela::Index>(std::stoll(cells[nodeCol]));
-        if (node >= nodeCount)
-            throw std::runtime_error("node_doping_file node_id out of range: " + path.string());
-        if (seen[static_cast<std::size_t>(node)])
-            throw std::runtime_error("node_doping_file has duplicate node_id: " + path.string());
-        model.setNodeDoping(
-            node,
-            scaling.concentrationToInternal(std::stod(cells[donorsCol])),
-            scaling.concentrationToInternal(std::stod(cells[acceptorsCol])));
-        seen[static_cast<std::size_t>(node)] = true;
-    }
-    for (vela::Index node = 0; node < nodeCount; ++node) {
-        if (!seen[static_cast<std::size_t>(node)])
-            throw std::runtime_error("node_doping_file is missing a node row: " + path.string());
-    }
-    return model;
 }
 
 vela::DDSolution readExternalState(const std::filesystem::path& cfgDir,

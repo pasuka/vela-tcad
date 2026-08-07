@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <fstream>
+#include <limits>
 #include <regex>
 #include <sstream>
 #include <stdexcept>
@@ -18,7 +19,8 @@ struct ConstantProfileDefinition {
 struct GaussianProfileDefinition {
     std::string species;
     Real peak_cm3 = 0.0;
-    Real background_cm3 = 0.0;
+    Real peakPos_um = 0.0;
+    Real valueAtDepth_cm3 = 0.0;
     Real depth_um = 0.0;
 };
 
@@ -37,12 +39,6 @@ bool isCommentOrEmpty(const std::string& line)
     return true;
 }
 
-bool speciesIsAcceptor(const std::string& species)
-{
-    return species.find("Boron") != std::string::npos ||
-        species.find("Acceptor") != std::string::npos;
-}
-
 std::runtime_error parseError(const std::string& sourceName,
                               std::size_t lineNumber,
                               const std::string& message)
@@ -50,6 +46,36 @@ std::runtime_error parseError(const std::string& sourceName,
     return std::runtime_error(
         "SDE parse error in '" + sourceName + "' line " + std::to_string(lineNumber) +
         ": " + message);
+}
+
+bool speciesIsAcceptor(const std::string& species)
+{
+    return species.find("Boron") != std::string::npos ||
+        species.find("Acceptor") != std::string::npos;
+}
+
+Real parseFinitePositive(const std::string& raw,
+                         const std::string& sourceName,
+                         std::size_t lineNumber,
+                         const std::string& field)
+{
+    const Real value = std::stod(raw);
+    if (!std::isfinite(value) || value <= 0.0) {
+        throw parseError(sourceName, lineNumber, field + " must be finite and > 0");
+    }
+    return value;
+}
+
+Real parseFinite(const std::string& raw,
+                 const std::string& sourceName,
+                 std::size_t lineNumber,
+                 const std::string& field)
+{
+    const Real value = std::stod(raw);
+    if (!std::isfinite(value)) {
+        throw parseError(sourceName, lineNumber, field + " must be finite");
+    }
+    return value;
 }
 
 RegionIr& ensureRegion(DeviceIr2D& ir, const std::string& regionName, const std::string& material)
@@ -91,7 +117,7 @@ DeviceIr2D SdeScriptReader::parseText(const std::string& text, const std::string
     const std::regex defineConstantProfileRegion(
         R"regex(\(sdedr:define-constant-profile-region\s+"([^"]+)"\s+"([^"]+)"\s+"([^"]+)"\s*\))regex");
     const std::regex defineGaussianProfile(
-        R"regex(\(sdedr:define-gaussian-profile\s+"([^"]+)"\s+"([^"]+)".*"PeakVal"\s+([-\d.eE+]+).*"ValueAtDepth"\s+([-\d.eE+]+).*"Depth"\s+([-\d.eE+]+).*\))regex");
+        R"regex(\(sdedr:define-gaussian-profile\s+"([^"]+)"\s+"([^"]+)".*"PeakPos"\s+([-\d.eE+]+).*"PeakVal"\s+([-\d.eE+]+).*"ValueAtDepth"\s+([-\d.eE+]+).*"Depth"\s+([-\d.eE+]+).*\))regex");
     const std::regex defineGaussianProfileRegion(
         R"regex(\(sdedr:define-analytical-profile-region\s+"([^"]+)"\s+"([^"]+)"\s+"([^"]+)"\s*\))regex");
     const std::regex defineRefinementSize(
@@ -203,10 +229,16 @@ DeviceIr2D SdeScriptReader::parseText(const std::string& text, const std::string
         if (std::regex_search(line, match, defineGaussianProfile)) {
             gaussianProfiles[match[1].str()] = GaussianProfileDefinition{
                 match[2].str(),
-                std::stod(match[3].str()),
-                std::stod(match[4].str()),
-                std::stod(match[5].str()),
+                parseFinitePositive(match[4].str(), sourceName, lineNumber, "PeakVal"),
+                parseFinite(match[3].str(), sourceName, lineNumber, "PeakPos"),
+                parseFinitePositive(match[5].str(), sourceName, lineNumber, "ValueAtDepth"),
+                parseFinitePositive(match[6].str(), sourceName, lineNumber, "Depth"),
             };
+            if (gaussianProfiles[match[1].str()].valueAtDepth_cm3 >=
+                gaussianProfiles[match[1].str()].peak_cm3) {
+                throw parseError(sourceName, lineNumber,
+                    "ValueAtDepth must be smaller than PeakVal in phase-1 gaussian subset");
+            }
             continue;
         }
 
@@ -225,9 +257,19 @@ DeviceIr2D SdeScriptReader::parseText(const std::string& text, const std::string
             profile.kind = DopingProfileKind::Gaussian;
             profile.targetRegion = regionName;
             profile.gaussianPeak_cm3 = profileIt->second.peak_cm3;
-            profile.gaussianBackground_cm3 = profileIt->second.background_cm3;
-            profile.gaussianSigmaXUm = profileIt->second.depth_um;
-            profile.gaussianSigmaYUm = profileIt->second.depth_um;
+            profile.gaussianValueAtDepth_cm3 = profileIt->second.valueAtDepth_cm3;
+            profile.gaussianPeakPosUm = Point2D{profileIt->second.peakPos_um, 0.0};
+            const Real denominator =
+                -2.0 * std::log(profile.gaussianValueAtDepth_cm3 / profile.gaussianPeak_cm3);
+            if (!std::isfinite(denominator) || denominator <= 0.0) {
+                throw parseError(sourceName, lineNumber,
+                    "gaussian decay could not be derived from PeakVal/ValueAtDepth/Depth");
+            }
+            profile.gaussianSigmaXUm = profileIt->second.depth_um / std::sqrt(denominator);
+            if (!std::isfinite(profile.gaussianSigmaXUm) || profile.gaussianSigmaXUm <= 0.0) {
+                throw parseError(sourceName, lineNumber,
+                    "derived gaussian sigma must be finite and > 0");
+            }
             profile.gaussianActsOnDonors = !speciesIsAcceptor(profileIt->second.species);
             ir.dopingProfiles.push_back(profile);
             continue;

@@ -4,6 +4,7 @@
 #include "vela/core/UnitScaling.h"
 #include "vela/physics/DopingModel.h"
 #include <filesystem>
+#include <string>
 
 namespace vela {
 
@@ -14,6 +15,10 @@ public:
     DopingModel readDopingCsv(const std::filesystem::path& path,
                               Index nodeCount,
                               UnitScalingConfig scaling) const;
+    DopingModel readNamedDopingCsv(const std::filesystem::path& path,
+                                   Index nodeCount,
+                                   UnitScalingConfig scaling,
+                                   const std::string& fileLabel) const;
 };
 
 } // namespace vela

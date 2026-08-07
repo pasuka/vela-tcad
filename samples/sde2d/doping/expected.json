@@ -2,5 +2,23 @@
   "nodes_min": 4,
   "cells_min": 2,
   "regions": 1,
-  "contacts": 0
+  "contacts": 0,
+  "doping_checks": [
+    {
+      "kind": "peak",
+      "x_um": 0.5,
+      "y_um": 0.5,
+      "field": "acceptors_cm3",
+      "expected": 5.0e18,
+      "relative_tolerance": 1.0e-6
+    },
+    {
+      "kind": "depth",
+      "x_um": 0.625,
+      "y_um": 0.5,
+      "field": "acceptors_cm3",
+      "expected": 1.05737e18,
+      "relative_tolerance": 1.0e-4
+    }
+  ]
 }

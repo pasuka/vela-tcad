@@ -52,10 +52,9 @@ struct DopingProfileIr {
     Real donors_cm3 = 0.0;
     Real acceptors_cm3 = 0.0;
     Real gaussianPeak_cm3 = 0.0;
-    Real gaussianBackground_cm3 = 0.0;
-    Point2D gaussianCenterUm{};
+    Real gaussianValueAtDepth_cm3 = 0.0;
+    Point2D gaussianPeakPosUm{};
     Real gaussianSigmaXUm = 0.0;
-    Real gaussianSigmaYUm = 0.0;
     bool gaussianActsOnDonors = true;
 };
 
@@ -96,4 +95,3 @@ struct DeviceIr2D {
 };
 
 } // namespace vela
-

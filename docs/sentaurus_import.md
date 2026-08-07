@@ -74,10 +74,11 @@ python scripts/sentaurus_import.py --help
 
 1. Build with HDF5 enabled and verify `sentaurus_import` exists.
 2. Export TDR inventory and/or neutral files with `sentaurus_import`.
-3. Use `scripts/convert_tcad_export.py` to generate Vela `mesh.json` and
-   `simulation_*.json` from neutral exports.
-4. Use `scripts/compare_reference_curves.py` to compare Vela outputs against
-   reference curves.
+3. Use the neutral exports directly through `NeutralMeshReader` or convert
+   them with existing Vela import utilities.
+4. Use `scripts/generate_sentaurus_vm_diff_report.py` to compare the
+   Sentaurus-side export directory with the Vela-side export directory and
+   produce a machine-readable diff report.
 5. Run tests:
 
 ```bash

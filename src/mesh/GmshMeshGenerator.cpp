@@ -3,12 +3,11 @@
 
 #include <algorithm>
 #include <cmath>
-#include <iomanip>
 #include <limits>
 #include <map>
 #include <set>
-#include <sstream>
 #include <stdexcept>
+#include <functional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -28,16 +27,48 @@ struct PointRef {
     Index globalNodeId = 0;
 };
 
+struct PrimitivePointCloud {
+    std::vector<PointRef> points;
+    std::set<Index> nodeIds;
+};
+
+struct PrimitiveBuildState {
+    std::vector<Point2D> polygon;
+    Real spacing = 0.0;
+};
+
+struct QuantizedPointKey {
+    long long x = 0;
+    long long y = 0;
+
+    bool operator==(const QuantizedPointKey& other) const
+    {
+        return x == other.x && y == other.y;
+    }
+};
+
+struct QuantizedPointKeyHash {
+    std::size_t operator()(const QuantizedPointKey& key) const
+    {
+        return std::hash<long long>{}(key.x) ^ (std::hash<long long>{}(key.y) << 1U);
+    }
+};
+
 std::runtime_error meshError(const std::string& message)
 {
     return std::runtime_error("GmshMeshGenerator: " + message);
 }
 
-std::string pointKey(Real x, Real y)
+constexpr Real kCoordToleranceUm = 1e-9;
+
+long long quantizeCoord(Real value)
 {
-    std::ostringstream out;
-    out << std::setprecision(std::numeric_limits<Real>::max_digits10) << x << "," << y;
-    return out.str();
+    return static_cast<long long>(std::llround(value / kCoordToleranceUm));
+}
+
+QuantizedPointKey pointKey(Real x, Real y)
+{
+    return QuantizedPointKey{quantizeCoord(x), quantizeCoord(y)};
 }
 
 std::vector<Point2D> primitivePolygon(const GeometryPrimitiveIr& primitive)
@@ -128,18 +159,15 @@ Real gaussianGradientMagnitudeCm3PerUm(const DopingProfileIr& profile, const Poi
     if (profile.kind != DopingProfileKind::Gaussian) {
         return 0.0;
     }
-    if (profile.gaussianSigmaXUm <= 0.0 || profile.gaussianSigmaYUm <= 0.0) {
+    if (profile.gaussianSigmaXUm <= 0.0) {
         return 0.0;
     }
-    const Real dx = point.x_um - profile.gaussianCenterUm.x_um;
-    const Real dy = point.y_um - profile.gaussianCenterUm.y_um;
+    const Real dx = point.x_um - profile.gaussianPeakPosUm.x_um;
     const Real exponent = -0.5 *
-                          ((dx * dx) / (profile.gaussianSigmaXUm * profile.gaussianSigmaXUm) +
-                           (dy * dy) / (profile.gaussianSigmaYUm * profile.gaussianSigmaYUm));
+                          ((dx * dx) / (profile.gaussianSigmaXUm * profile.gaussianSigmaXUm));
     const Real amplitude = profile.gaussianPeak_cm3 * std::exp(exponent);
     const Real gx = -dx / (profile.gaussianSigmaXUm * profile.gaussianSigmaXUm) * amplitude;
-    const Real gy = -dy / (profile.gaussianSigmaYUm * profile.gaussianSigmaYUm) * amplitude;
-    return std::sqrt(gx * gx + gy * gy);
+    return std::abs(gx);
 }
 
 std::pair<Point2D, Point2D> polygonBounds(const std::vector<Point2D>& poly)
@@ -153,6 +181,92 @@ std::pair<Point2D, Point2D> polygonBounds(const std::vector<Point2D>& poly)
         maxPoint.y_um = std::max(maxPoint.y_um, p.y_um);
     }
     return {minPoint, maxPoint};
+}
+
+bool pointOnSegment(const Point2D& p, const Point2D& a, const Point2D& b)
+{
+    const Real dx = b.x_um - a.x_um;
+    const Real dy = b.y_um - a.y_um;
+    const Real segmentLength = std::sqrt(dx * dx + dy * dy);
+    if (segmentLength <= 0.0 ||
+        std::abs(signedArea2(a, b, p)) / segmentLength > kCoordToleranceUm) {
+        return false;
+    }
+    const Real minX = std::min(a.x_um, b.x_um) - 1e-10;
+    const Real maxX = std::max(a.x_um, b.x_um) + 1e-10;
+    const Real minY = std::min(a.y_um, b.y_um) - 1e-10;
+    const Real maxY = std::max(a.y_um, b.y_um) + 1e-10;
+    return p.x_um >= minX && p.x_um <= maxX && p.y_um >= minY && p.y_um <= maxY;
+}
+
+Real segmentParameter(const Point2D& point, const Point2D& start, const Point2D& end)
+{
+    const Real dx = end.x_um - start.x_um;
+    const Real dy = end.y_um - start.y_um;
+    const Real length2 = dx * dx + dy * dy;
+    if (length2 <= 0.0) {
+        return 0.0;
+    }
+    return ((point.x_um - start.x_um) * dx + (point.y_um - start.y_um) * dy) / length2;
+}
+
+bool segmentsColinear(const Point2D& a0, const Point2D& a1, const Point2D& b0, const Point2D& b1)
+{
+    const Real dx = a1.x_um - a0.x_um;
+    const Real dy = a1.y_um - a0.y_um;
+    const Real segmentLength = std::sqrt(dx * dx + dy * dy);
+    return segmentLength > 0.0 &&
+           std::abs(signedArea2(a0, a1, b0)) / segmentLength <= kCoordToleranceUm &&
+           std::abs(signedArea2(a0, a1, b1)) / segmentLength <= kCoordToleranceUm;
+}
+
+bool overlappingSegmentPoints(const Point2D& a0,
+                              const Point2D& a1,
+                              const Point2D& b0,
+                              const Point2D& b1,
+                              Point2D& overlapStart,
+                              Point2D& overlapEnd)
+{
+    if (!segmentsColinear(a0, a1, b0, b1)) {
+        return false;
+    }
+
+    const Real bax = a1.x_um - a0.x_um;
+    const Real bay = a1.y_um - a0.y_um;
+    const Real length2 = bax * bax + bay * bay;
+    if (length2 <= 0.0) {
+        return false;
+    }
+
+    const Real t0 = segmentParameter(b0, a0, a1);
+    const Real t1 = segmentParameter(b1, a0, a1);
+    const Real lo = std::max(Real{0.0}, std::min(t0, t1));
+    const Real hi = std::min(Real{1.0}, std::max(t0, t1));
+    if (hi - lo <= 1e-12) {
+        return false;
+    }
+
+    overlapStart = Point2D{a0.x_um + bax * lo, a0.y_um + bay * lo};
+    overlapEnd = Point2D{a0.x_um + bax * hi, a0.y_um + bay * hi};
+    return true;
+}
+
+Real distance(const Point2D& a, const Point2D& b)
+{
+    const Real dx = a.x_um - b.x_um;
+    const Real dy = a.y_um - b.y_um;
+    return std::sqrt(dx * dx + dy * dy);
+}
+
+void addPointUnique(PrimitivePointCloud& cloud,
+                    Real x,
+                    Real y,
+                    const std::function<PointRef(Real, Real)>& getOrCreateNode)
+{
+    const PointRef point = getOrCreateNode(x, y);
+    if (cloud.nodeIds.insert(point.globalNodeId).second) {
+        cloud.points.push_back(point);
+    }
 }
 
 bool circumcircleContains(const PointRef& a, const PointRef& b, const PointRef& c, const PointRef& p)
@@ -272,7 +386,7 @@ MeshBundle2D GmshMeshGenerator::generate(const DeviceIr2D& ir, const GmshMeshing
     const GeometryRegionTopology topology = topologyBuilder.build(ir);
 
     MeshBundle2D bundle;
-    std::unordered_map<std::string, Index> nodeByCoord;
+    std::unordered_map<QuantizedPointKey, Index, QuantizedPointKeyHash> nodeByCoord;
     std::vector<Region> meshRegions;
     meshRegions.reserve(topology.regions.size());
     for (const auto& region : topology.regions) {
@@ -280,18 +394,23 @@ MeshBundle2D GmshMeshGenerator::generate(const DeviceIr2D& ir, const GmshMeshing
     }
 
     auto getOrCreateNode = [&](Real x, Real y) {
-        const std::string key = pointKey(x, y);
+        const QuantizedPointKey key = pointKey(x, y);
         const auto it = nodeByCoord.find(key);
         if (it != nodeByCoord.end()) {
-            return it->second;
+            const auto& existing = bundle.mesh.getNode(it->second);
+            return PointRef{existing.x, existing.y, existing.id};
         }
         const Index nodeId = bundle.mesh.numNodes();
         bundle.mesh.addNode(Node{nodeId, x, y, 0.0});
         nodeByCoord.emplace(key, nodeId);
-        return nodeId;
+        return PointRef{x, y, nodeId};
     };
 
-    for (const auto& primitive : ir.geometry) {
+    std::vector<PrimitivePointCloud> primitiveClouds(ir.geometry.size());
+    std::vector<PrimitiveBuildState> primitiveStates(ir.geometry.size());
+
+    for (std::size_t primitiveIndex = 0; primitiveIndex < ir.geometry.size(); ++primitiveIndex) {
+        const auto& primitive = ir.geometry[primitiveIndex];
         auto regionIt = std::find_if(topology.regions.begin(), topology.regions.end(), [&](const auto& item) {
             return item.name == primitive.region;
         });
@@ -304,18 +423,12 @@ MeshBundle2D GmshMeshGenerator::generate(const DeviceIr2D& ir, const GmshMeshing
             throw meshError("phase-1 triangulation currently supports convex polygons only ('" +
                             primitive.name + "').");
         }
+        primitiveStates[primitiveIndex].polygon = polygon;
 
-        std::vector<PointRef> localPoints;
-        std::set<Index> localNodeIds;
-        localPoints.reserve(polygon.size() + 64);
-        auto addLocalPoint = [&](Real x, Real y) {
-            const Index nodeId = getOrCreateNode(x, y);
-            if (localNodeIds.insert(nodeId).second) {
-                localPoints.push_back(PointRef{x, y, nodeId});
-            }
-        };
+        auto& cloud = primitiveClouds[primitiveIndex];
+        cloud.points.reserve(polygon.size() + 128);
         for (const auto& point : polygon) {
-            addLocalPoint(point.x_um, point.y_um);
+            addPointUnique(cloud, point.x_um, point.y_um, getOrCreateNode);
         }
 
         Real spacing = 0.0;
@@ -325,18 +438,30 @@ MeshBundle2D GmshMeshGenerator::generate(const DeviceIr2D& ir, const GmshMeshing
         } else if (ir.meshControl.globalTargetSizeUm.has_value()) {
             spacing = *ir.meshControl.globalTargetSizeUm;
         }
+        primitiveStates[primitiveIndex].spacing = spacing;
 
         if (spacing > 0.0) {
+            for (std::size_t e = 0; e < polygon.size(); ++e) {
+                const Point2D& a = polygon[e];
+                const Point2D& b = polygon[(e + 1) % polygon.size()];
+                const int segments =
+                    std::max(1, static_cast<int>(std::ceil(distance(a, b) / spacing)));
+                for (int i = 1; i < segments; ++i) {
+                    const Real t = static_cast<Real>(i) / static_cast<Real>(segments);
+                    addPointUnique(cloud,
+                                   a.x_um + t * (b.x_um - a.x_um),
+                                   a.y_um + t * (b.y_um - a.y_um),
+                                   getOrCreateNode);
+                }
+            }
+
             const auto [minPoint, maxPoint] = polygonBounds(polygon);
-            const Real width = maxPoint.x_um - minPoint.x_um;
-            const Real height = maxPoint.y_um - minPoint.y_um;
-            if (width > spacing && height > spacing) {
-                for (Real y = minPoint.y_um + spacing; y < maxPoint.y_um; y += spacing) {
-                    for (Real x = minPoint.x_um + spacing; x < maxPoint.x_um; x += spacing) {
-                        const Point2D candidate{x, y};
-                        if (pointInPolygon(candidate, polygon)) {
-                            addLocalPoint(x, y);
-                        }
+            const Real fineSpacing = spacing / 2.0;
+            for (Real x = minPoint.x_um + fineSpacing; x < maxPoint.x_um - 1e-12; x += fineSpacing) {
+                for (Real y = minPoint.y_um + fineSpacing; y < maxPoint.y_um - 1e-12; y += fineSpacing) {
+                    Point2D probe{x, y};
+                    if (pointInPolygon(probe, polygon)) {
+                        addPointUnique(cloud, x, y, getOrCreateNode);
                     }
                 }
             }
@@ -356,43 +481,100 @@ MeshBundle2D GmshMeshGenerator::generate(const DeviceIr2D& ir, const GmshMeshing
                     profile.kind != DopingProfileKind::Gaussian) {
                     continue;
                 }
+                const auto [boundsMin, boundsMax] = polygonBounds(polygon);
+                const Real midY = 0.5 * (boundsMin.y_um + boundsMax.y_um);
                 const std::vector<Point2D> probes = {
-                    profile.gaussianCenterUm,
-                    Point2D{profile.gaussianCenterUm.x_um + profile.gaussianSigmaXUm * 0.5,
-                            profile.gaussianCenterUm.y_um},
-                    Point2D{profile.gaussianCenterUm.x_um - profile.gaussianSigmaXUm * 0.5,
-                            profile.gaussianCenterUm.y_um},
-                    Point2D{profile.gaussianCenterUm.x_um,
-                            profile.gaussianCenterUm.y_um + profile.gaussianSigmaYUm * 0.5},
-                    Point2D{profile.gaussianCenterUm.x_um,
-                            profile.gaussianCenterUm.y_um - profile.gaussianSigmaYUm * 0.5},
-                    Point2D{profile.gaussianCenterUm.x_um + localMinSize,
-                            profile.gaussianCenterUm.y_um + localMinSize},
-                    Point2D{profile.gaussianCenterUm.x_um - localMinSize,
-                            profile.gaussianCenterUm.y_um - localMinSize},
+                    Point2D{profile.gaussianPeakPosUm.x_um, midY},
+                    Point2D{profile.gaussianPeakPosUm.x_um + profile.gaussianSigmaXUm * 0.5,
+                            midY},
+                    Point2D{profile.gaussianPeakPosUm.x_um - profile.gaussianSigmaXUm * 0.5,
+                            midY},
+                    Point2D{profile.gaussianPeakPosUm.x_um + localMinSize,
+                            midY},
+                    Point2D{profile.gaussianPeakPosUm.x_um - localMinSize,
+                            midY},
                 };
                 for (const auto& probe : probes) {
+                    const bool isPeakProbe = std::abs(probe.x_um - profile.gaussianPeakPosUm.x_um) < 1e-12;
                     if (pointInPolygon(probe, polygon) &&
-                        gaussianGradientMagnitudeCm3PerUm(profile, probe) >= gradientThreshold) {
-                        addLocalPoint(probe.x_um, probe.y_um);
+                        (isPeakProbe ||
+                         gaussianGradientMagnitudeCm3PerUm(profile, probe) >= gradientThreshold)) {
+                        addPointUnique(cloud, probe.x_um, probe.y_um, getOrCreateNode);
                     }
                 }
             }
         }
 
-        const auto triangles = delaunayTriangulate(localPoints);
+    }
+
+    for (std::size_t i = 0; i < primitiveStates.size(); ++i) {
+        for (std::size_t j = i + 1; j < primitiveStates.size(); ++j) {
+            const auto& leftPoly = primitiveStates[i].polygon;
+            const auto& rightPoly = primitiveStates[j].polygon;
+            for (std::size_t le = 0; le < leftPoly.size(); ++le) {
+                const Point2D& la = leftPoly[le];
+                const Point2D& lb = leftPoly[(le + 1) % leftPoly.size()];
+                for (std::size_t re = 0; re < rightPoly.size(); ++re) {
+                    const Point2D& ra = rightPoly[re];
+                    const Point2D& rb = rightPoly[(re + 1) % rightPoly.size()];
+                    Point2D overlapStart{};
+                    Point2D overlapEnd{};
+                    if (!overlappingSegmentPoints(la, lb, ra, rb, overlapStart, overlapEnd)) {
+                        continue;
+                    }
+
+                    std::vector<Point2D> mergedPoints;
+                    const auto collectPoints = [&](std::size_t primitiveIndex, const Point2D& start, const Point2D& end) {
+                        for (const auto& point : primitiveClouds[primitiveIndex].points) {
+                            const Point2D candidate{point.x, point.y};
+                            if (pointOnSegment(candidate, overlapStart, overlapEnd)) {
+                                mergedPoints.push_back(candidate);
+                            }
+                        }
+                        mergedPoints.push_back(overlapStart);
+                        mergedPoints.push_back(overlapEnd);
+                    };
+                    collectPoints(i, la, lb);
+                    collectPoints(j, ra, rb);
+
+                    std::sort(mergedPoints.begin(), mergedPoints.end(), [&](const Point2D& lhs, const Point2D& rhs) {
+                        return segmentParameter(lhs, overlapStart, overlapEnd) <
+                               segmentParameter(rhs, overlapStart, overlapEnd);
+                    });
+                    mergedPoints.erase(std::unique(mergedPoints.begin(), mergedPoints.end(), [](const Point2D& lhs, const Point2D& rhs) {
+                        return std::abs(lhs.x_um - rhs.x_um) <= kCoordToleranceUm &&
+                               std::abs(lhs.y_um - rhs.y_um) <= kCoordToleranceUm;
+                    }), mergedPoints.end());
+
+                    for (const auto& point : mergedPoints) {
+                        addPointUnique(primitiveClouds[i], point.x_um, point.y_um, getOrCreateNode);
+                        addPointUnique(primitiveClouds[j], point.x_um, point.y_um, getOrCreateNode);
+                    }
+                }
+            }
+        }
+    }
+
+    for (std::size_t primitiveIndex = 0; primitiveIndex < ir.geometry.size(); ++primitiveIndex) {
+        const auto& primitive = ir.geometry[primitiveIndex];
+        auto regionIt = std::find_if(topology.regions.begin(), topology.regions.end(), [&](const auto& item) {
+            return item.name == primitive.region;
+        });
+        const auto& cloud = primitiveClouds[primitiveIndex];
+        const auto& polygon = primitiveStates[primitiveIndex].polygon;
+        const auto triangles = delaunayTriangulate(cloud.points);
         for (const auto& tri : triangles) {
             const Point2D centroid{
-                (localPoints[tri.a].x + localPoints[tri.b].x + localPoints[tri.c].x) / 3.0,
-                (localPoints[tri.a].y + localPoints[tri.b].y + localPoints[tri.c].y) / 3.0,
+                (cloud.points[tri.a].x + cloud.points[tri.b].x + cloud.points[tri.c].x) / 3.0,
+                (cloud.points[tri.a].y + cloud.points[tri.b].y + cloud.points[tri.c].y) / 3.0,
             };
             if (!pointInPolygon(centroid, polygon)) {
                 continue;
             }
             const Real area2 = signedArea2(
-                Point2D{localPoints[tri.a].x, localPoints[tri.a].y},
-                Point2D{localPoints[tri.b].x, localPoints[tri.b].y},
-                Point2D{localPoints[tri.c].x, localPoints[tri.c].y});
+                Point2D{cloud.points[tri.a].x, cloud.points[tri.a].y},
+                Point2D{cloud.points[tri.b].x, cloud.points[tri.b].y},
+                Point2D{cloud.points[tri.c].x, cloud.points[tri.c].y});
             if (std::abs(area2) < 1e-14) {
                 continue;
             }
@@ -402,9 +584,9 @@ MeshBundle2D GmshMeshGenerator::generate(const DeviceIr2D& ir, const GmshMeshing
             cell.type = CellType::Tri3;
             cell.region_id = regionIt->id;
             cell.node_ids = {
-                localPoints[tri.a].globalNodeId,
-                localPoints[tri.b].globalNodeId,
-                localPoints[tri.c].globalNodeId,
+                cloud.points[tri.a].globalNodeId,
+                cloud.points[tri.b].globalNodeId,
+                cloud.points[tri.c].globalNodeId,
             };
             bundle.mesh.addCell(cell);
             meshRegions[cell.region_id].cell_ids.push_back(cell.id);
@@ -415,23 +597,111 @@ MeshBundle2D GmshMeshGenerator::generate(const DeviceIr2D& ir, const GmshMeshing
         bundle.mesh.addRegion(region);
     }
 
+    bundle.mesh.buildEdges();
+    std::set<std::pair<Index, Index>> meshEdges;
+    for (const auto& edge : bundle.mesh.edges()) {
+        meshEdges.insert(std::minmax(edge.n0, edge.n1));
+    }
+
+    std::unordered_map<std::string, Index> regionIdByName;
+    for (const auto& region : topology.regions) {
+        regionIdByName.emplace(region.name, region.id);
+    }
+    for (const auto& interface : topology.boundaries) {
+        if (interface.isExternal || interface.adjacentRegion.empty()) {
+            continue;
+        }
+        const auto adjacentIt = regionIdByName.find(interface.adjacentRegion);
+        if (adjacentIt == regionIdByName.end()) {
+            throw meshError("interface references unknown adjacent region '" +
+                            interface.adjacentRegion + "'.");
+        }
+        if (interface.regionId > adjacentIt->second) {
+            continue;
+        }
+
+        std::set<Index> interfaceNodes;
+        for (const auto& node : bundle.mesh.nodes()) {
+            if (pointOnSegment(Point2D{node.x, node.y}, interface.startUm, interface.endUm)) {
+                interfaceNodes.insert(node.id);
+            }
+        }
+        std::set<std::pair<Index, Index>> ownerEdges;
+        std::set<std::pair<Index, Index>> adjacentEdges;
+        std::set<Index> ownerNodes;
+        std::set<Index> adjacentNodes;
+        for (const auto& cell : bundle.mesh.cells()) {
+            const bool owner = cell.region_id == interface.regionId;
+            const bool adjacent = cell.region_id == adjacentIt->second;
+            if (!owner && !adjacent) {
+                continue;
+            }
+            for (const Index nodeId : cell.node_ids) {
+                if (interfaceNodes.contains(nodeId)) {
+                    (owner ? ownerNodes : adjacentNodes).insert(nodeId);
+                }
+            }
+            for (int edgeIndex = 0; edgeIndex < 3; ++edgeIndex) {
+                const Index a = cell.node_ids[edgeIndex];
+                const Index b = cell.node_ids[(edgeIndex + 1) % 3];
+                if (interfaceNodes.contains(a) && interfaceNodes.contains(b)) {
+                    (owner ? ownerEdges : adjacentEdges).insert(std::minmax(a, b));
+                }
+            }
+        }
+        if (ownerNodes != interfaceNodes || adjacentNodes != interfaceNodes ||
+            ownerEdges != adjacentEdges || ownerEdges.empty()) {
+            throw meshError(
+                "non-conformal interface between '" +
+                topology.regions[interface.regionId].name + "' and '" +
+                interface.adjacentRegion + "' over [(" +
+                std::to_string(interface.startUm.x_um) + "," +
+                std::to_string(interface.startUm.y_um) + "),(" +
+                std::to_string(interface.endUm.x_um) + "," +
+                std::to_string(interface.endUm.y_um) + ")].");
+        }
+    }
+
     std::map<std::pair<std::string, Index>, std::set<Index>> contactNodes;
     for (const auto& boundary : topology.boundaries) {
-        const std::string n0Key = pointKey(boundary.startUm.x_um, boundary.startUm.y_um);
-        const std::string n1Key = pointKey(boundary.endUm.x_um, boundary.endUm.y_um);
-        const auto n0It = nodeByCoord.find(n0Key);
-        const auto n1It = nodeByCoord.find(n1Key);
-        if (n0It == nodeByCoord.end() || n1It == nodeByCoord.end()) {
-            throw meshError("boundary '" + boundary.ref + "' cannot be mapped to mesh nodes.");
+        if (!boundary.isExternal) {
+            continue;
         }
-        bundle.boundaryEdges.push_back(
-            BoundaryEdgeTag{n0It->second, n1It->second, boundary.contactName,
-                            topology.regions[boundary.regionId].name});
+        std::vector<std::pair<Real, Index>> boundaryNodes;
+        for (const auto& node : bundle.mesh.nodes()) {
+            const Point2D point{node.x, node.y};
+            if (pointOnSegment(point, boundary.startUm, boundary.endUm)) {
+                boundaryNodes.push_back({segmentParameter(point, boundary.startUm, boundary.endUm), node.id});
+            }
+        }
+        std::sort(boundaryNodes.begin(), boundaryNodes.end(), [](const auto& lhs, const auto& rhs) {
+            if (std::abs(lhs.first - rhs.first) > 1e-12) {
+                return lhs.first < rhs.first;
+            }
+            return lhs.second < rhs.second;
+        });
+        boundaryNodes.erase(std::unique(boundaryNodes.begin(), boundaryNodes.end(), [](const auto& lhs, const auto& rhs) {
+            return lhs.second == rhs.second;
+        }), boundaryNodes.end());
+        if (boundaryNodes.size() < 2) {
+            throw meshError("boundary '" + boundary.ref + "' cannot be mapped to mesh edge chain.");
+        }
+
+        for (std::size_t idx = 1; idx < boundaryNodes.size(); ++idx) {
+            const Index node0 = boundaryNodes[idx - 1].second;
+            const Index node1 = boundaryNodes[idx].second;
+            if (!meshEdges.contains(std::minmax(node0, node1))) {
+                throw meshError("boundary '" + boundary.ref + "' does not align with generated mesh edges.");
+            }
+            bundle.boundaryEdges.push_back(
+                BoundaryEdgeTag{node0, node1, boundary.contactName, topology.regions[boundary.regionId].name});
+        }
 
         if (!boundary.contactName.empty()) {
             auto& nodes = contactNodes[{boundary.contactName, boundary.regionId}];
-            nodes.insert(n0It->second);
-            nodes.insert(n1It->second);
+            for (const auto& [_, nodeId] : boundaryNodes) {
+                nodes.insert(nodeId);
+            }
         }
     }
 
@@ -445,7 +715,6 @@ MeshBundle2D GmshMeshGenerator::generate(const DeviceIr2D& ir, const GmshMeshing
         bundle.mesh.addContact(contact);
     }
 
-    bundle.mesh.buildEdges();
     return bundle;
 }
 

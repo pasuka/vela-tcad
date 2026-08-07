@@ -63,14 +63,43 @@ TEST_CASE("sde parser reads gaussian and refinement subset", "[sde][preprocess]"
     CHECK(profile.kind == DopingProfileKind::Gaussian);
     CHECK(profile.targetRegion == "R.Si");
     CHECK(profile.gaussianPeak_cm3 == Catch::Approx(5.0e18));
-    CHECK(profile.gaussianBackground_cm3 == Catch::Approx(1.0e16));
-    CHECK(profile.gaussianSigmaXUm == Catch::Approx(0.2));
+    CHECK(profile.gaussianValueAtDepth_cm3 == Catch::Approx(1.0e16));
+    CHECK(profile.gaussianPeakPosUm.x_um == Catch::Approx(0.5));
+    CHECK(profile.gaussianSigmaXUm > 0.0);
     CHECK(profile.gaussianActsOnDonors == false);
 
     REQUIRE(ir.meshControl.regionTargetSizeUm.contains("R.Si"));
     CHECK(ir.meshControl.regionTargetSizeUm.at("R.Si") == Catch::Approx(0.05));
     CHECK(ir.meshControl.refineByDopingGradient);
     CHECK(ir.meshControl.dopingGradientThresholdCm3PerUm == Catch::Approx(2.0e16));
+}
+
+TEST_CASE("sde parser rejects invalid gaussian subset parameters", "[sde][preprocess]")
+{
+    const std::string script = R"(
+(sdegeo:create-rectangle (position 0 0 0) (position 2.0 1.0 0) "Silicon" "R.Si")
+(sdedr:define-gaussian-profile "GP.Bad" "BoronActiveConcentration" "PeakPos" 0.5 "PeakVal" 1.0e16 "ValueAtDepth" 1.0e16 "Depth" 0.2)
+(sdedr:define-analytical-profile-region "Place.Bad" "GP.Bad" "R.Si")
+)";
+
+    SdeScriptReader reader;
+    REQUIRE_THROWS_WITH(
+        reader.parseText(script, "invalid_gaussian.sde"),
+        ContainsSubstring("ValueAtDepth must be smaller than PeakVal"));
+}
+
+TEST_CASE("sde parser allows negative gaussian peak position", "[sde][preprocess]")
+{
+    const std::string script = R"(
+(sdegeo:create-rectangle (position -1 0 0) (position 1 1 0) "Silicon" "R.Si")
+(sdedr:define-gaussian-profile "GP.N" "PhosphorusActiveConcentration" "PeakPos" -0.25 "PeakVal" 1.0e19 "ValueAtDepth" 1.0e16 "Depth" 0.2)
+(sdedr:define-analytical-profile-region "Place.GP" "GP.N" "R.Si")
+)";
+
+    SdeScriptReader reader;
+    const DeviceIr2D ir = reader.parseText(script, "negative_peak.sde");
+    REQUIRE(ir.dopingProfiles.size() == 1);
+    CHECK(ir.dopingProfiles.front().gaussianPeakPosUm.x_um == Catch::Approx(-0.25));
 }
 
 TEST_CASE("sde parser reads polygon geometry", "[sde][preprocess]")

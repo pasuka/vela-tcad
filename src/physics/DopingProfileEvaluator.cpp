@@ -79,16 +79,19 @@ DopingModel DopingProfileEvaluator::evaluate(const DeviceMesh& mesh, const Devic
                 continue;
             }
             if (profile->kind == DopingProfileKind::Gaussian) {
-                if (profile->gaussianSigmaXUm <= 0.0 || profile->gaussianSigmaYUm <= 0.0) {
+                if (!std::isfinite(profile->gaussianPeak_cm3) ||
+                    !std::isfinite(profile->gaussianValueAtDepth_cm3) ||
+                    !std::isfinite(profile->gaussianSigmaXUm) ||
+                    profile->gaussianPeak_cm3 <= 0.0 ||
+                    profile->gaussianValueAtDepth_cm3 < 0.0 ||
+                    profile->gaussianValueAtDepth_cm3 >= profile->gaussianPeak_cm3 ||
+                    profile->gaussianSigmaXUm <= 0.0) {
                     throw std::invalid_argument(
-                        "DopingProfileEvaluator: gaussian sigma must be positive for profile '" +
+                        "DopingProfileEvaluator: invalid gaussian parameters for profile '" +
                         profile->name + "'.");
                 }
-                const Real dx = (node.x - profile->gaussianCenterUm.x_um) / profile->gaussianSigmaXUm;
-                const Real dy = (node.y - profile->gaussianCenterUm.y_um) / profile->gaussianSigmaYUm;
-                const Real concentration = profile->gaussianBackground_cm3 +
-                    (profile->gaussianPeak_cm3 - profile->gaussianBackground_cm3) *
-                        std::exp(-0.5 * (dx * dx + dy * dy));
+                const Real dx = (node.x - profile->gaussianPeakPosUm.x_um) / profile->gaussianSigmaXUm;
+                const Real concentration = profile->gaussianPeak_cm3 * std::exp(-0.5 * dx * dx);
                 if (profile->gaussianActsOnDonors) {
                     donors += concentration;
                 } else {
@@ -103,4 +106,3 @@ DopingModel DopingProfileEvaluator::evaluate(const DeviceMesh& mesh, const Devic
 }
 
 } // namespace vela
-

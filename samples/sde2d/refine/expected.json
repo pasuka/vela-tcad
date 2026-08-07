@@ -1,6 +1,24 @@
 {
-  "nodes_min": 10,
+  "nodes_min": 9,
   "cells_min": 8,
   "regions": 1,
-  "contacts": 0
+  "contacts": 0,
+  "doping_checks": [
+    {
+      "kind": "peak",
+      "x_um": 0.5,
+      "y_um": 0.5,
+      "field": "donors_cm3",
+      "expected": 1.0e19,
+      "relative_tolerance": 1.0e-6
+    },
+    {
+      "kind": "depth",
+      "x_um": 0.625,
+      "y_um": 0.5,
+      "field": "donors_cm3",
+      "expected": 6.7317e17,
+      "relative_tolerance": 1.0e-4
+    }
+  ]
 }

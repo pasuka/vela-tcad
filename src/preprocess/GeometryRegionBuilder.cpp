@@ -2,13 +2,11 @@
 
 #include <algorithm>
 #include <cmath>
-#include <iomanip>
 #include <limits>
-#include <map>
 #include <set>
-#include <sstream>
 #include <stdexcept>
 #include <unordered_map>
+#include <vector>
 
 namespace vela {
 namespace {
@@ -18,22 +16,64 @@ std::runtime_error topologyError(const std::string& message)
     return std::runtime_error("GeometryRegionBuilder: " + message);
 }
 
-std::string pointKey(const Point2D& point)
+constexpr Real kTopologyToleranceUm = 1e-9;
+
+Real cross(const Point2D& a, const Point2D& b, const Point2D& p)
 {
-    std::ostringstream out;
-    out << std::setprecision(std::numeric_limits<Real>::max_digits10)
-        << point.x_um << "," << point.y_um;
-    return out.str();
+    return (b.x_um - a.x_um) * (p.y_um - a.y_um) -
+           (b.y_um - a.y_um) * (p.x_um - a.x_um);
 }
 
-std::string edgeKey(const Point2D& a, const Point2D& b)
+Real parameterOnLine(const Point2D& point, const Point2D& start, const Point2D& end)
 {
-    const std::string aKey = pointKey(a);
-    const std::string bKey = pointKey(b);
-    if (aKey < bKey) {
-        return aKey + "->" + bKey;
+    const Real dx = end.x_um - start.x_um;
+    const Real dy = end.y_um - start.y_um;
+    const Real length2 = dx * dx + dy * dy;
+    if (length2 <= 0.0) {
+        return 0.0;
     }
-    return bKey + "->" + aKey;
+    return ((point.x_um - start.x_um) * dx + (point.y_um - start.y_um) * dy) / length2;
+}
+
+Real perpendicularDistance(const Point2D& point, const Point2D& start, const Point2D& end)
+{
+    const Real dx = end.x_um - start.x_um;
+    const Real dy = end.y_um - start.y_um;
+    const Real length = std::sqrt(dx * dx + dy * dy);
+    if (length <= 0.0) {
+        return std::numeric_limits<Real>::infinity();
+    }
+    return std::abs(cross(start, end, point)) / length;
+}
+
+bool collinear(const Point2D& a, const Point2D& b, const Point2D& c, const Point2D& d)
+{
+    return perpendicularDistance(c, a, b) <= kTopologyToleranceUm &&
+           perpendicularDistance(d, a, b) <= kTopologyToleranceUm;
+}
+
+bool pointOnSegment(const Point2D& point, const Point2D& start, const Point2D& end)
+{
+    if (perpendicularDistance(point, start, end) > kTopologyToleranceUm) {
+        return false;
+    }
+    const Real t = parameterOnLine(point, start, end);
+    return t >= -kTopologyToleranceUm && t <= 1.0 + kTopologyToleranceUm;
+}
+
+bool positiveLengthOverlap(const Point2D& a0,
+                           const Point2D& a1,
+                           const Point2D& b0,
+                           const Point2D& b1)
+{
+    if (!collinear(a0, a1, b0, b1)) {
+        return false;
+    }
+    const Real b0t = parameterOnLine(b0, a0, a1);
+    const Real b1t = parameterOnLine(b1, a0, a1);
+    const Real lo = std::max(Real{0.0}, std::min(b0t, b1t));
+    const Real hi = std::min(Real{1.0}, std::max(b0t, b1t));
+    return hi - lo > kTopologyToleranceUm;
 }
 
 std::vector<Point2D> primitivePolygon(const GeometryPrimitiveIr& primitive)
@@ -95,7 +135,15 @@ GeometryRegionTopology GeometryRegionBuilder::build(const DeviceIr2D& ir) const
         }
     }
 
-    std::map<std::string, std::vector<std::size_t>> edgeToBoundaryIndices;
+    struct OriginalEdge {
+        std::string ref;
+        Index regionId = 0;
+        Point2D start{};
+        Point2D end{};
+    };
+    std::vector<OriginalEdge> originalEdges;
+    std::unordered_map<std::string, std::size_t> originalEdgeByRef;
+
     for (const auto& primitive : ir.geometry) {
         const auto regionIt = regionIdByName.find(primitive.region);
         if (regionIt == regionIdByName.end()) {
@@ -108,60 +156,112 @@ GeometryRegionTopology GeometryRegionBuilder::build(const DeviceIr2D& ir) const
             const Point2D& start = polygon[edgeIndex];
             const Point2D& end = polygon[(edgeIndex + 1) % polygon.size()];
 
-            BoundaryTopologyTag boundary;
-            boundary.ref = primitive.name + "#edge" + std::to_string(edgeIndex);
-            boundary.regionId = regionIt->second;
-            boundary.startUm = start;
-            boundary.endUm = end;
-
-            topology.boundaries.push_back(boundary);
-            edgeToBoundaryIndices[edgeKey(start, end)].push_back(topology.boundaries.size() - 1);
+            const std::string ref = primitive.name + "#edge" + std::to_string(edgeIndex);
+            originalEdgeByRef.emplace(ref, originalEdges.size());
+            originalEdges.push_back(OriginalEdge{ref, regionIt->second, start, end});
         }
     }
 
-    for (const auto& [_, boundaryIndices] : edgeToBoundaryIndices) {
-        if (boundaryIndices.size() > 2) {
-            throw topologyError("non-manifold edge shared by more than two regions.");
-        }
-        if (boundaryIndices.size() != 2) {
-            continue;
-        }
-
-        auto& a = topology.boundaries[boundaryIndices[0]];
-        auto& b = topology.boundaries[boundaryIndices[1]];
-        if (a.regionId == b.regionId) {
-            throw topologyError("duplicate edge within region '" +
-                                topology.regions[a.regionId].name + "'.");
-        }
-        a.isExternal = false;
-        b.isExternal = false;
-        a.adjacentRegion = topology.regions[b.regionId].name;
-        b.adjacentRegion = topology.regions[a.regionId].name;
-    }
-
-    std::unordered_map<std::string, std::size_t> boundaryIndexByRef;
-    boundaryIndexByRef.reserve(topology.boundaries.size());
-    for (std::size_t i = 0; i < topology.boundaries.size(); ++i) {
-        boundaryIndexByRef.emplace(topology.boundaries[i].ref, i);
-    }
-
+    std::unordered_map<std::string, std::string> contactByOriginalRef;
     for (const auto& contact : ir.contacts) {
         for (const auto& ref : contact.boundaryRefs) {
-            const auto boundaryIt = boundaryIndexByRef.find(ref);
-            if (boundaryIt == boundaryIndexByRef.end()) {
+            const auto edgeIt = originalEdgeByRef.find(ref);
+            if (edgeIt == originalEdgeByRef.end()) {
                 throw topologyError("contact '" + contact.name +
                                     "' references unknown boundary '" + ref + "'.");
             }
-            auto& boundary = topology.boundaries[boundaryIt->second];
+            const auto& edge = originalEdges[edgeIt->second];
             if (!contact.ownerRegion.empty() &&
-                topology.regions[boundary.regionId].name != contact.ownerRegion) {
+                topology.regions[edge.regionId].name != contact.ownerRegion) {
                 throw topologyError("contact '" + contact.name + "' boundary '" + ref +
                                     "' owner region mismatch.");
             }
-            if (!boundary.contactName.empty() && boundary.contactName != contact.name) {
+            const auto [it, inserted] = contactByOriginalRef.emplace(ref, contact.name);
+            if (!inserted && it->second != contact.name) {
                 throw topologyError("boundary '" + ref + "' assigned to multiple contacts.");
             }
-            boundary.contactName = contact.name;
+        }
+    }
+
+    for (std::size_t edgeIndex = 0; edgeIndex < originalEdges.size(); ++edgeIndex) {
+        const auto& edge = originalEdges[edgeIndex];
+        std::vector<Real> cuts{0.0, 1.0};
+        for (const auto& other : originalEdges) {
+            if (!positiveLengthOverlap(edge.start, edge.end, other.start, other.end)) {
+                continue;
+            }
+            for (const Point2D endpoint : {other.start, other.end}) {
+                const Real t = parameterOnLine(endpoint, edge.start, edge.end);
+                if (t > kTopologyToleranceUm && t < 1.0 - kTopologyToleranceUm) {
+                    cuts.push_back(t);
+                }
+            }
+        }
+        std::sort(cuts.begin(), cuts.end());
+        cuts.erase(std::unique(cuts.begin(), cuts.end(), [](Real lhs, Real rhs) {
+            return std::abs(lhs - rhs) <= kTopologyToleranceUm;
+        }), cuts.end());
+
+        const bool split = cuts.size() > 2;
+        for (std::size_t part = 0; part + 1 < cuts.size(); ++part) {
+            const Real t0 = cuts[part];
+            const Real t1 = cuts[part + 1];
+            if (t1 - t0 <= kTopologyToleranceUm) {
+                continue;
+            }
+            const auto interpolate = [&](Real t) {
+                return Point2D{
+                    edge.start.x_um + t * (edge.end.x_um - edge.start.x_um),
+                    edge.start.y_um + t * (edge.end.y_um - edge.start.y_um),
+                };
+            };
+            const Point2D start = interpolate(t0);
+            const Point2D end = interpolate(t1);
+            const Point2D midpoint = interpolate(0.5 * (t0 + t1));
+
+            std::vector<std::size_t> owners;
+            std::set<Index> ownerRegions;
+            for (std::size_t ownerIndex = 0; ownerIndex < originalEdges.size(); ++ownerIndex) {
+                if (pointOnSegment(midpoint, originalEdges[ownerIndex].start, originalEdges[ownerIndex].end)) {
+                    owners.push_back(ownerIndex);
+                    if (!ownerRegions.insert(originalEdges[ownerIndex].regionId).second) {
+                        throw topologyError(
+                            "duplicate overlapping boundary within region '" +
+                            topology.regions[originalEdges[ownerIndex].regionId].name + "'.");
+                    }
+                }
+            }
+            if (ownerRegions.size() > 2) {
+                throw topologyError("non-manifold boundary subsegment shared by more than two regions.");
+            }
+
+            BoundaryTopologyTag boundary;
+            boundary.ref = split
+                ? edge.ref + "#part" + std::to_string(part)
+                : edge.ref;
+            boundary.regionId = edge.regionId;
+            boundary.startUm = start;
+            boundary.endUm = end;
+            boundary.isExternal = ownerRegions.size() == 1;
+            if (!boundary.isExternal) {
+                for (const Index ownerRegion : ownerRegions) {
+                    if (ownerRegion != edge.regionId) {
+                        boundary.adjacentRegion = topology.regions[ownerRegion].name;
+                        break;
+                    }
+                }
+            }
+
+            const auto contactIt = contactByOriginalRef.find(edge.ref);
+            if (contactIt != contactByOriginalRef.end()) {
+                if (!boundary.isExternal) {
+                    throw topologyError(
+                        "contact '" + contactIt->second + "' boundary '" + edge.ref +
+                        "' covers an internal interface subsegment.");
+                }
+                boundary.contactName = contactIt->second;
+            }
+            topology.boundaries.push_back(std::move(boundary));
         }
     }
 
@@ -169,4 +269,3 @@ GeometryRegionTopology GeometryRegionBuilder::build(const DeviceIr2D& ir) const
 }
 
 } // namespace vela
-

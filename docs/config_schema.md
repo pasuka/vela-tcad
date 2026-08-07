@@ -23,7 +23,8 @@ Scope and conventions:
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
 | simulation_type | string | Optional | Common values: `poisson`, `dc_sweep`, `newton`, `newton_solve_from_state`. The selected CLI/tool path determines which fields are consumed. |
-| mesh_file | string | Yes | Input mesh JSON path. |
+| mesh_file | string | Conditionally required | Input mesh JSON path. Mutually exclusive with `neutral_mesh_dir`; provide exactly one of the two. |
+| neutral_mesh_dir | string | Conditionally required | Input neutral preprocess directory. Mutually exclusive with `mesh_file`; provide exactly one of the two. Requires `scaling.mode: "unit_scaling"`. |
 | materials_file | string | Optional | Optional material override file. Supported shapes: top-level array, object with `materials` array, or object map keyed by material name. |
 | output_csv | string | Optional | Default CSV output path for DC sweep. Can be overridden by `sweep.csv_file`. |
 | output_vtk | string | Poisson: Yes | Poisson VTK output file path. Optional for `newton` and `newton_solve_from_state`. |
@@ -174,8 +175,8 @@ Optional top-level field:
 - node_doping_file: string
 
 `node_doping_file` points to a CSV with columns
-`node_id,donors_cm3,acceptors_cm3`. When present, it overrides region-average
-`doping[]` entries for drift-diffusion DC sweeps. The file must contain exactly
+`node_id,donors_cm3,acceptors_cm3`. When present, it overrides neutral-directory
+`doping.csv` auto-discovery and region-average `doping[]` entries. The file must contain exactly
 one row for each mesh node id; missing rows, duplicate rows, invalid ids,
 quoted fields, malformed concentrations, and non-finite numeric values are
 rejected.
@@ -184,6 +185,25 @@ With `scaling.mode: "unit_scaling"`, the donor and acceptor concentrations in
 the CSV use the same external concentration convention as deck-level doping:
 `cm^-3` and are kept internally as `cm^-3`. In legacy SI mode, the same values are
 read through the legacy concentration path.
+
+### neutral_mesh_dir
+
+Optional top-level field:
+- neutral_mesh_dir: string
+
+`neutral_mesh_dir` points to a directory containing neutral preprocess exports
+such as `nodes.csv`, `elements.csv`, `regions.csv`, optional `contacts.csv`,
+and optional `doping.csv`. It is mutually exclusive with `mesh_file`; configs
+must provide exactly one of the two mesh sources.
+
+When `neutral_mesh_dir` is present:
+- `scaling.mode` must be `unit_scaling`;
+- `doping.csv` inside the directory is auto-discovered when
+  `node_doping_file` is absent;
+- doping priority is:
+  1. explicit `node_doping_file`
+  2. `<neutral_mesh_dir>/doping.csv`
+  3. region-level `doping[]` fallback
 
 ### regions[] entries
 
