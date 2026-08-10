@@ -1,0 +1,235 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.sentaurus_device_ir.v1",
+  "title": "Vela Sentaurus device IR v1",
+  "description": "Deterministic intermediate representation produced by the fail-closed Sentaurus Structure Editor (SDE) frontend in scripts/sentaurus_device_ir.py.",
+  "type": "object",
+  "required": [
+    "schema",
+    "source",
+    "defines",
+    "geometry",
+    "materials",
+    "contacts",
+    "doping",
+    "mesh_control",
+    "metadata_only"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "vela.sentaurus_device_ir.v1"
+    },
+    "source": {
+      "type": "string",
+      "description": "Path of the SDE .cmd file this IR was parsed from."
+    },
+    "defines": {
+      "type": "object",
+      "description": "Symbols bound by (define name value) forms.",
+      "additionalProperties": {
+        "type": ["number", "string"]
+      }
+    },
+    "geometry": {
+      "type": "object",
+      "required": ["regions"],
+      "additionalProperties": false,
+      "properties": {
+        "regions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "shape", "lower_left", "upper_right", "order"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {"type": "string"},
+              "shape": {"enum": ["rectangle"]},
+              "lower_left": {"$ref": "#/definitions/point2d"},
+              "upper_right": {"$ref": "#/definitions/point2d"},
+              "order": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Creation order; later regions claim overlapping area."
+              }
+            }
+          }
+        }
+      }
+    },
+    "materials": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["region", "sde_material", "vela_material"],
+        "additionalProperties": false,
+        "properties": {
+          "region": {"type": "string"},
+          "sde_material": {"type": "string"},
+          "vela_material": {"type": "string"}
+        }
+      }
+    },
+    "contacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "pick_points"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "pick_points": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Points from (find-edge-id (position ...)) used to select outer boundary edges.",
+            "items": {
+              "type": "object",
+              "required": ["x", "y"],
+              "additionalProperties": false,
+              "properties": {
+                "x": {"type": "number"},
+                "y": {"type": "number"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "doping": {
+      "type": "object",
+      "required": ["profiles", "placements", "windows"],
+      "additionalProperties": false,
+      "properties": {
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "type", "species", "carrier", "value_cm3"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {"type": "string"},
+              "type": {"enum": ["constant"]},
+              "species": {"type": "string"},
+              "carrier": {"enum": ["donor", "acceptor"]},
+              "value_cm3": {"type": "number", "minimum": 0}
+            }
+          }
+        },
+        "placements": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/placement"}
+        },
+        "windows": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/window"}
+        }
+      }
+    },
+    "mesh_control": {
+      "type": "object",
+      "required": ["refinement_sizes", "refinement_placements", "windows", "build"],
+      "additionalProperties": false,
+      "properties": {
+        "refinement_sizes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "max_x", "max_y"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {"type": "string"},
+              "max_x": {"type": "number", "exclusiveMinimum": 0},
+              "max_y": {"type": "number", "exclusiveMinimum": 0},
+              "min_x": {"type": "number", "exclusiveMinimum": 0},
+              "min_y": {"type": "number", "exclusiveMinimum": 0}
+            }
+          }
+        },
+        "refinement_placements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "refinement", "target_kind", "target"],
+            "additionalProperties": false,
+            "properties": {
+              "name": {"type": "string"},
+              "refinement": {"type": "string"},
+              "target_kind": {"enum": ["region", "window"]},
+              "target": {"type": "string"}
+            }
+          }
+        },
+        "windows": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/window"}
+        },
+        "build": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "required": ["engine", "prefix"],
+              "additionalProperties": false,
+              "properties": {
+                "engine": {"type": "string"},
+                "prefix": {"type": "string"}
+              }
+            }
+          ]
+        }
+      }
+    },
+    "metadata_only": {
+      "type": "array",
+      "description": "Commands recognised but not translated into IR semantics.",
+      "items": {
+        "type": "object",
+        "required": ["command", "location", "text", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "command": {"type": "string"},
+          "location": {"type": "string"},
+          "text": {"type": "string"},
+          "reason": {"type": "string"}
+        }
+      }
+    }
+  },
+  "definitions": {
+    "point2d": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {"type": "number"}
+    },
+    "window": {
+      "type": "object",
+      "required": ["name", "shape", "lower_left", "upper_right"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "shape": {"enum": ["rectangle"]},
+        "lower_left": {"$ref": "#/definitions/point2d"},
+        "upper_right": {"$ref": "#/definitions/point2d"}
+      }
+    },
+    "placement": {
+      "type": "object",
+      "required": ["name", "profile", "target_kind", "target", "priority"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "profile": {"type": "string"},
+        "target_kind": {"enum": ["region", "window"]},
+        "target": {"type": "string"},
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Evaluation order; a higher priority placement replaces a lower one where they overlap."
+        }
+      }
+    }
+  }
+}

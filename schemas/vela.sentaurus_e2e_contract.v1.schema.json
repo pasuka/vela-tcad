@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.sentaurus_e2e_contract.v1",
+  "title": "Vela Sentaurus SDE+SDevice end-to-end contract v1",
+  "description": "Versioned acceptance thresholds for the SDE+SDevice -> Vela IV/BV end-to-end flow. Tests must read these values instead of hard-coding their own.",
+  "type": "object",
+  "required": ["schema", "cases"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "vela.sentaurus_e2e_contract.v1"
+    },
+    "cases": {
+      "type": "object",
+      "description": "Per-case acceptance thresholds keyed by reference_tcad case name.",
+      "additionalProperties": {"$ref": "#/definitions/case"}
+    }
+  },
+  "definitions": {
+    "case": {
+      "type": "object",
+      "required": [
+        "sde_cmd",
+        "sdevice_cmd",
+        "analysis",
+        "mesh",
+        "curve"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "sde_cmd": {"type": "string"},
+        "sdevice_cmd": {"type": "string"},
+        "analysis": {
+          "enum": ["equilibrium", "iv", "bv", "cv"],
+          "description": "Analysis kind the frontend must derive from the SDevice file."
+        },
+        "mesh": {
+          "type": "object",
+          "required": ["require_non_obtuse", "node_volume_policy"],
+          "additionalProperties": false,
+          "properties": {
+            "require_non_obtuse": {"type": "boolean"},
+            "node_volume_policy": {"enum": ["mixed_voronoi", "barycentric"]},
+            "min_nodes": {"type": "integer", "minimum": 3},
+            "min_cells": {"type": "integer", "minimum": 1},
+            "min_contact_nodes": {"type": "integer", "minimum": 2},
+            "max_angle_degrees": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
+        "curve": {
+          "type": "object",
+          "required": ["bias_start", "bias_stop", "min_points"],
+          "additionalProperties": false,
+          "properties": {
+            "bias_start": {"type": "number"},
+            "bias_stop": {"type": "number"},
+            "bias_coverage_tolerance": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Allowed shortfall, in volts, between the last accepted bias and bias_stop."
+            },
+            "min_points": {"type": "integer", "minimum": 2},
+            "require_finite": {"type": "boolean"},
+            "require_monotonic_current": {"type": "boolean"},
+            "monotonic_relative_tolerance": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Relative slack allowed when checking monotonicity, absorbing solver noise near zero bias."
+            },
+            "max_terminal_current_imbalance": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Maximum |I_a + I_c| / max(|I_a|, |I_c|) accepted as terminal-current conservation."
+            },
+            "conservation_current_floor_a_per_um": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Bias points whose terminal current magnitude is below this floor are excluded from the conservation check."
+            }
+          }
+        },
+        "reference_curve": {
+          "type": "object",
+          "description": "Optional comparison against a frozen Sentaurus curve when the raw artifact is available locally.",
+          "required": ["path"],
+          "additionalProperties": false,
+          "properties": {
+            "path": {"type": "string"},
+            "reference_column": {"type": "string"},
+            "candidate_column": {"type": "string"},
+            "max_orders_of_magnitude": {"type": "number", "minimum": 0},
+            "max_relative_error": {"type": "number", "minimum": 0},
+            "require_trend_match": {"type": "boolean"}
+          }
+        }
+      }
+    }
+  }
+}

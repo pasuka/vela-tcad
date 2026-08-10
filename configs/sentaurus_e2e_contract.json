@@ -1,0 +1,78 @@
+{
+  "schema": "vela.sentaurus_e2e_contract.v1",
+  "_comment": "Acceptance thresholds for the SDE+SDevice -> Vela end-to-end flow. Tests must read these values instead of hard-coding their own. See schemas/vela.sentaurus_e2e_contract.v1.schema.json.",
+  "cases": {
+    "pn2d_sentaurus2018_coarse7x3_iv": {
+      "sde_cmd": "reference_tcad/pn2d_sentaurus2018_coarse7x3/source/pn2d_sde.cmd",
+      "sdevice_cmd": "reference_tcad/pn2d_sentaurus2018/source/pn2d_iv_sdevice.cmd",
+      "analysis": "iv",
+      "mesh": {
+        "require_non_obtuse": true,
+        "node_volume_policy": "mixed_voronoi",
+        "min_nodes": 21,
+        "min_cells": 24,
+        "min_contact_nodes": 3,
+        "max_angle_degrees": 90.000001
+      },
+      "curve": {
+        "bias_start": 0.0,
+        "bias_stop": 0.3,
+        "bias_coverage_tolerance": 1e-06,
+        "min_points": 10,
+        "require_finite": true,
+        "require_monotonic_current": true,
+        "monotonic_relative_tolerance": 1e-09,
+        "max_terminal_current_imbalance": 0.02,
+        "conservation_current_floor_a_per_um": 1e-20
+      }
+    },
+    "pn2d_sentaurus2018_iv": {
+      "sde_cmd": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd",
+      "sdevice_cmd": "reference_tcad/pn2d_sentaurus2018/source/pn2d_iv_sdevice.cmd",
+      "analysis": "iv",
+      "mesh": {
+        "require_non_obtuse": true,
+        "node_volume_policy": "mixed_voronoi",
+        "min_nodes": 1000,
+        "min_cells": 2000,
+        "min_contact_nodes": 11,
+        "max_angle_degrees": 90.000001
+      },
+      "curve": {
+        "bias_start": 0.0,
+        "bias_stop": 0.3,
+        "bias_coverage_tolerance": 1e-06,
+        "min_points": 10,
+        "require_finite": true,
+        "require_monotonic_current": true,
+        "monotonic_relative_tolerance": 1e-09,
+        "max_terminal_current_imbalance": 0.02,
+        "conservation_current_floor_a_per_um": 1e-20
+      }
+    },
+    "pn2d_sentaurus2018_coarse7x3_bv": {
+      "sde_cmd": "reference_tcad/pn2d_sentaurus2018_coarse7x3/source/pn2d_sde.cmd",
+      "sdevice_cmd": "reference_tcad/pn2d_sentaurus2018_coarse7x3/source/pn2d_bv_sdevice.cmd",
+      "analysis": "bv",
+      "mesh": {
+        "require_non_obtuse": true,
+        "node_volume_policy": "mixed_voronoi",
+        "min_nodes": 21,
+        "min_cells": 24,
+        "min_contact_nodes": 3,
+        "max_angle_degrees": 90.000001
+      },
+      "curve": {
+        "bias_start": 0.0,
+        "bias_stop": -0.2,
+        "bias_coverage_tolerance": 1e-06,
+        "min_points": 3,
+        "require_finite": true,
+        "require_monotonic_current": false,
+        "monotonic_relative_tolerance": 1e-09,
+        "max_terminal_current_imbalance": 0.05,
+        "conservation_current_floor_a_per_um": 1e-20
+      }
+    }
+  }
+}

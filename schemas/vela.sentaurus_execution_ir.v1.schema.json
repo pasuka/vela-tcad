@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.sentaurus_execution_ir.v1",
+  "title": "Vela Sentaurus execution IR v1",
+  "description": "Deterministic intermediate representation produced from an SDevice .cmd file by scripts/sentaurus_execution_ir.py. The analysis kind is derived from the file content and is never supplied externally.",
+  "type": "object",
+  "required": [
+    "schema",
+    "source",
+    "files",
+    "electrodes",
+    "initial_solve",
+    "stages",
+    "analysis",
+    "physics",
+    "unsupported",
+    "math"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "vela.sentaurus_execution_ir.v1"
+    },
+    "source": {"type": "string"},
+    "files": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "electrodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "voltage"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "voltage": {"type": "number"}
+        }
+      }
+    },
+    "thermodes": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "initial_solve": {
+      "type": "array",
+      "description": "Ordered pre-sweep solve stages.",
+      "items": {"$ref": "#/definitions/stage"}
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "description": "All solve stages in execution order, including the initial ones.",
+      "items": {"$ref": "#/definitions/stage"}
+    },
+    "analysis": {
+      "type": "object",
+      "required": ["kind", "reason", "sweep_contacts"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"enum": ["equilibrium", "iv", "bv", "cv"]},
+        "reason": {
+          "type": "string",
+          "description": "The rule that produced this kind, recorded so the derivation is auditable."
+        },
+        "sweep_contacts": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "final_contact": {"type": "string"},
+        "final_voltage": {"type": "number"}
+      }
+    },
+    "physics": {
+      "type": "object",
+      "required": ["supported", "metadata_only"],
+      "additionalProperties": false,
+      "properties": {
+        "supported": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["model", "mapping"],
+            "additionalProperties": false,
+            "properties": {
+              "model": {"type": "string"},
+              "mapping": {"type": "string"}
+            }
+          }
+        },
+        "metadata_only": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/reported_model"}
+        }
+      }
+    },
+    "unsupported": {
+      "type": "array",
+      "description": "Models outside the support whitelist. A non-empty list is fail-closed unless the caller explicitly opts out.",
+      "items": {"$ref": "#/definitions/reported_model"}
+    },
+    "math": {"type": "object"}
+  },
+  "definitions": {
+    "reported_model": {
+      "type": "object",
+      "required": ["model", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "model": {"type": "string"},
+        "reason": {"type": "string"}
+      }
+    },
+    "stage": {
+      "type": "object",
+      "required": ["index", "phase", "type", "equations", "depends_on"],
+      "additionalProperties": true,
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "phase": {"enum": ["initial", "sweep"]},
+        "type": {"type": "string"},
+        "equations": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "parameters": {"type": "object"},
+        "step_control": {"type": "object"},
+        "contact": {"type": "string"},
+        "goal_voltage": {"type": ["number", "null"]},
+        "depends_on": {
+          "type": "array",
+          "description": "Indices of stages that must complete first.",
+          "items": {"type": "integer", "minimum": 0}
+        }
+      }
+    }
+  }
+}

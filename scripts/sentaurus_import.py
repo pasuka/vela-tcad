@@ -19,7 +19,29 @@ import sys
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from sentaurus_device_ir import (  # noqa: E402
+    SdeParseError,
+    legacy_summary,
+    parse_sde_device_ir,
+)
+from sentaurus_execution_ir import (  # noqa: E402
+    ExecutionIrError,
+    build_execution_ir,
+    classify_models,
+)
+from sentaurus_mesh_builder import (  # noqa: E402
+    MeshQualificationError,
+    build_mesh_and_doping,
+    write_doping_csv,
+    write_mesh_json,
+)
+
+
+# Historical blacklist retained so that legacy `cmd` summaries keep reporting
+# the same feature names. Authoritative classification now lives in
+# sentaurus_execution_ir.SUPPORTED_MODELS / KNOWN_UNSUPPORTED_MODELS.
 UNSUPPORTED_PHYSICS = [
     "Thermodynamic",
     "IALMob",
@@ -515,141 +537,29 @@ def apply_solver_physics(deck: dict[str, Any],
             warnings.append("OkutoCrowell approximated by Selberherr")
 
     if "Fermi" in models:
-        warnings.append("Fermi statistics approximated by Boltzmann carrier statistics")
+        solver["carrier_statistics"] = {"model": "fermi_dirac"}
 
     return warnings
 
 
-def strip_scheme_comments(text: str) -> str:
-    return "\n".join(line.split(";", maxsplit=1)[0] for line in text.splitlines())
-
-
-def parse_sde_defines(text: str) -> dict[str, float | str]:
-    defines: dict[str, float | str] = {}
-    for name, value in re.findall(r"\(define\s+([A-Za-z_][\w]*)\s+([^\s)]+)\)", text):
-        defines[name] = coerce_scalar(value)
-    return defines
-
-
-def eval_sde_expr(expr: str, defines: dict[str, float | str]) -> float:
-    expr = expr.strip()
-    if NUMBER_RE.fullmatch(expr):
-        return float(expr)
-    if expr in defines:
-        value = defines[expr]
-        if isinstance(value, (int, float)):
-            return float(value)
-    op_match = re.fullmatch(r"\(([-+])\s+([^\s()]+)\s+([^\s()]+)\)", expr)
-    if op_match:
-        lhs = eval_sde_expr(op_match.group(2), defines)
-        rhs = eval_sde_expr(op_match.group(3), defines)
-        return lhs + rhs if op_match.group(1) == "+" else lhs - rhs
-    raise ValueError(f"unsupported SDE expression: {expr}")
-
-
-def parse_sde_position(text: str, defines: dict[str, float | str]) -> list[float]:
-    body = text.strip()
-    if not body.startswith("(position") or not body.endswith(")"):
-        raise ValueError(f"invalid SDE position: {text}")
-    inner = body[len("(position"):-1].strip()
-    tokens: list[str] = []
-    index = 0
-    while index < len(inner):
-        while index < len(inner) and inner[index].isspace():
-            index += 1
-        if index >= len(inner):
-            break
-        if inner[index] == "(":
-            end = find_matching(inner, index, "(", ")")
-            tokens.append(inner[index:end + 1])
-            index = end + 1
-        else:
-            start = index
-            while index < len(inner) and not inner[index].isspace():
-                index += 1
-            tokens.append(inner[start:index])
-    if len(tokens) != 3:
-        raise ValueError(f"invalid SDE position: {text}")
-    return [eval_sde_expr(token, defines) for token in tokens]
-
-
 def parse_sde(input_path: Path) -> dict[str, Any]:
-    text = strip_scheme_comments(input_path.read_text(errors="ignore"))
-    defines = parse_sde_defines(text)
+    """Parse an SDE ``.cmd`` file into the historical summary shape.
 
-    rectangles = []
-    rect_pattern = re.compile(
-        r"\(sdegeo:create-rectangle\s+"
-        r"(\(position.*?\))\s+"
-        r"(\(position.*?\))\s+"
-        r"\"([^\"]+)\"\s+\"([^\"]+)\"\s*\)",
-        re.DOTALL,
-    )
-    for lower, upper, material, region in rect_pattern.findall(text):
-        rectangles.append({
-            "region": region,
-            "material": material,
-            "lower_left": parse_sde_position(lower, defines)[:2],
-            "upper_right": parse_sde_position(upper, defines)[:2],
-        })
-
-    profiles: dict[str, dict[str, Any]] = {}
-    for name, species, value in re.findall(
-        r"\(sdedr:define-constant-profile\s+\"([^\"]+)\"\s+\"([^\"]+)\"\s+([^\s)]+)\)",
-        text,
-    ):
-        profiles[name] = {
-            "species": species,
-            "value": eval_sde_expr(value, defines),
-        }
-
-    placements: dict[str, dict[str, str]] = {}
-    for placement, profile, region in re.findall(
-        r"\(sdedr:define-constant-profile-region\s+\"([^\"]+)\"\s+\"([^\"]+)\"\s+\"([^\"]+)\"\)",
-        text,
-    ):
-        placements[placement] = {"profile": profile, "region": region}
-
-    contacts = [
-        {"name": name}
-        for name in re.findall(r"\(sdegeo:define-contact-set\s+\"([^\"]+)\"", text)
-    ]
-
-    refinement_windows = []
-    atom = r"(?:\([^()]*\)|[^\s()]+)"
-    window_pattern = re.compile(
-        rf"\(sdedr:define-refinement-window\s+\"([^\"]+)\"\s+\"([^\"]+)\"\s+"
-        rf"\(position\s+({atom})\s+({atom})\s+({atom})\)\s+"
-        rf"\(position\s+({atom})\s+({atom})\s+({atom})\)\s*\)",
-        re.DOTALL,
-    )
-    for name, shape, lx, ly, lz, ux, uy, uz in window_pattern.findall(text):
-        lower = f"(position {lx} {ly} {lz})"
-        upper = f"(position {ux} {uy} {uz})"
-        refinement_windows.append({
-            "name": name,
-            "shape": shape,
-            "lower_left": parse_sde_position(lower, defines)[:2],
-            "upper_right": parse_sde_position(upper, defines)[:2],
-        })
-
-    return {
-        "defines": defines,
-        "geometry": {"rectangles": rectangles},
-        "doping_profiles": profiles,
-        "doping_placements": placements,
-        "contacts": contacts,
-        "refinement_windows": refinement_windows,
-    }
+    The parse itself is delegated to the fail-closed S-expression frontend in
+    ``sentaurus_device_ir``; the result also carries the full
+    ``vela.sentaurus_device_ir.v1`` document under the ``device_ir`` key.
+    """
+    return legacy_summary(parse_sde_device_ir(Path(input_path)))
 
 
 def sde_command(args: argparse.Namespace) -> None:
     summary = parse_sde(args.input)
+    payload = summary["device_ir"] if getattr(args, "device_ir", False) else summary
     if args.summary_json:
         args.summary_json.parent.mkdir(parents=True, exist_ok=True)
-        args.summary_json.write_text(json.dumps(summary, indent=2) + "\n")
+        args.summary_json.write_text(json.dumps(payload, indent=2) + "\n")
     else:
-        print(json.dumps(summary, indent=2))
+        print(json.dumps(payload, indent=2))
 
 
 def build_runner_deck(summary: dict[str, Any], mesh_json: str, output_csv: str) -> dict[str, Any]:
@@ -1065,7 +975,17 @@ def reference_command(args: argparse.Namespace) -> None:
         compensated_policy = str(tdr_doping.get("compensated_node_policy", compensated_policy))
 
     sde_summary_path = output_dir / "sde_summary.json"
-    sde_summary = parse_sde(resolve_source(source_dir, str(config["sde_cmd"])))
+    try:
+        sde_summary = parse_sde(resolve_source(source_dir, str(config["sde_cmd"])))
+    except SdeParseError as error:
+        # The reference flow takes its geometry from the TDR export, so the SDE
+        # summary is advisory. Record the fail-closed diagnostic instead of
+        # aborting, and never leave a stale summary that could look successful.
+        sde_summary = {
+            "source": str(resolve_source(source_dir, str(config["sde_cmd"]))),
+            "status": "unsupported",
+            "error": str(error),
+        }
     write_json(sde_summary_path, sde_summary)
     generated.append("sde_summary.json")
 
@@ -1372,6 +1292,263 @@ def project_command(args: argparse.Namespace) -> None:
     print(json.dumps(import_summary, indent=2))
 
 
+# ---------------------------------------------------------------------------
+# Unified SDE + SDevice orchestration
+# ---------------------------------------------------------------------------
+
+E2E_CONTRACT_PATH = REPO / "configs" / "sentaurus_e2e_contract.json"
+
+
+def load_e2e_contract(path: Path | None = None) -> dict[str, Any]:
+    """Load the versioned end-to-end acceptance contract."""
+    contract_path = Path(path) if path is not None else E2E_CONTRACT_PATH
+    contract = json.loads(contract_path.read_text(encoding="utf-8"))
+    if contract.get("schema") != "vela.sentaurus_e2e_contract.v1":
+        raise ValueError(
+            f"{contract_path}: unexpected contract schema "
+            f"{contract.get('schema')!r}")
+    return contract
+
+
+def _write_fail_report(output_dir: Path, stage: str, message: str,
+                       details: dict[str, Any] | None = None) -> Path:
+    path = output_dir / "fail_report.json"
+    payload = {
+        "schema": "vela.sentaurus_device_run.fail_report.v1",
+        "status": "failed",
+        "stage": stage,
+        "message": message,
+    }
+    if details:
+        payload["details"] = details
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def _clear_stale_reports(output_dir: Path) -> None:
+    """Remove reports from a previous run.
+
+    A stale success manifest next to a fresh failure is indistinguishable from
+    a real success, so both report files are removed before anything is written.
+    """
+    for name in ("fail_report.json", "run_manifest.json"):
+        target = output_dir / name
+        if target.exists():
+            target.unlink()
+
+
+def build_device_deck(device_ir: dict[str, Any],
+                      execution_ir: dict[str, Any],
+                      cmd_summary: dict[str, Any],
+                      mesh_file: str,
+                      doping_file: str,
+                      output_csv: str,
+                      current_contact: str | None = None,
+                      stop_voltage: float | None = None,
+                      materials_file: str | None = None) -> tuple[dict[str, Any], list[str]]:
+    """Build a Vela ``dc_sweep`` deck from the device and execution IRs."""
+    analysis = execution_ir["analysis"]
+    kind = analysis["kind"]
+    if kind not in ("iv", "bv"):
+        raise ExecutionIrError(
+            f"analysis kind '{kind}' has no Vela dc_sweep mapping in the "
+            f"device orchestration path")
+
+    contacts = [
+        {"name": electrode["name"], "bias": float(electrode["voltage"])}
+        for electrode in execution_ir["electrodes"]
+    ]
+    contact_names = {item["name"] for item in contacts}
+    mesh_contacts = {contact["name"] for contact in device_ir["contacts"]}
+    missing = sorted(contact_names - mesh_contacts)
+    if missing:
+        raise ExecutionIrError(
+            f"SDevice declares electrode(s) {', '.join(missing)} that the SDE "
+            f"file does not define as a contact set")
+
+    swept_contact = str(analysis["final_contact"])
+    start = next(
+        (item["bias"] for item in contacts if item["name"] == swept_contact), 0.0)
+    goal = float(analysis["final_voltage"])
+    stop = goal if stop_voltage is None else float(stop_voltage)
+    if stop == start:
+        raise ExecutionIrError(
+            f"sweep of contact '{swept_contact}' has a zero-length bias range")
+
+    sweep: dict[str, Any] = {
+        "mode": "iv",
+        "contact": swept_contact,
+        "current_contact": current_contact or swept_contact,
+        "start": start,
+        "stop": stop,
+        "step": signed_step_toward(start, stop, abs(stop - start) / 15.0),
+        "write_vtk": False,
+        "initialization": {"mode": "poisson_block"},
+        "min_step": 1.0e-8,
+        "max_step": abs(stop - start) / 12.0,
+        "growth_factor": 1.3,
+        "shrink_factor": 0.5,
+        "max_retries": 20,
+    }
+    final_stage = next(
+        (stage for stage in reversed(execution_ir["stages"])
+         if stage["phase"] == "sweep"), None)
+    if final_stage:
+        apply_step_control_to_vela_sweep(sweep, final_stage.get("step_control", {}))
+
+    deck: dict[str, Any] = {
+        "_comment": (
+            "Generated by scripts/sentaurus_import.py device from "
+            f"{device_ir['source']} and {execution_ir['source']}."
+        ),
+        "simulation_type": "dc_sweep",
+        "mesh_file": mesh_file,
+        "node_doping_file": doping_file,
+        "output_csv": output_csv,
+        "scaling": {"mode": "unit_scaling"},
+        "contacts": contacts,
+        "doping": [],
+        "solver": {
+            "method": "gummel_newton",
+            "max_iter": 40,
+            "reltol": 1.0e-8,
+            "abstol": 1.0e-9,
+            "damping_psi": 0.2,
+            "damping_factor": 1.0,
+            "max_update": 0.0,
+            "line_search": True,
+            "warm_start": True,
+            "contact_boundary_reconstruction": "dominant_signed_contact_mean",
+            "handoff": {
+                "fallback": "none",
+                "require_gummel_convergence": False,
+                "gummel_max_iter": 0,
+                "newton_max_iter": 40,
+            },
+        },
+        "mesh_geometry": {
+            "node_volume_policy": "mixed_voronoi",
+            "require_non_obtuse": True,
+        },
+        "sweep": sweep,
+    }
+    if materials_file:
+        deck["materials_file"] = materials_file
+    warnings = apply_solver_physics(deck, cmd_summary, {})
+    if kind != "bv":
+        deck["solver"].pop("impact_ionization", None)
+    return deck, warnings
+
+
+def device_command(args: argparse.Namespace) -> None:
+    output_dir = args.output_dir.resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    _clear_stale_reports(output_dir)
+
+    try:
+        device_ir = parse_sde_device_ir(args.sde)
+    except SdeParseError as error:
+        _write_fail_report(output_dir, "sde_parse", str(error))
+        raise
+    write_json(output_dir / "device_ir.json", device_ir)
+
+    template_vars = parse_template_vars(args.template_var)
+    cmd_summary = parse_cmd(args.sdevice, template_vars)
+    try:
+        execution_ir = build_execution_ir(
+            cmd_summary,
+            str(args.sdevice),
+            sentaurus_models(cmd_summary),
+            allow_unsupported=False,
+        )
+    except ExecutionIrError as error:
+        classification = classify_models(sentaurus_models(cmd_summary))
+        _write_fail_report(
+            output_dir, "sdevice_parse", str(error),
+            {"unsupported": classification["unsupported"]})
+        raise
+    write_json(output_dir / "execution_ir.json", execution_ir)
+
+    try:
+        generated = build_mesh_and_doping(
+            device_ir,
+            require_non_obtuse=not args.allow_obtuse,
+            node_volume_policy=args.node_volume_policy,
+        )
+    except MeshQualificationError as error:
+        _write_fail_report(output_dir, "mesh", str(error), error.report)
+        raise
+    write_mesh_json(output_dir / "mesh.json", generated.mesh)
+    write_doping_csv(output_dir / "doping.csv", generated.doping_rows)
+    write_json(output_dir / "mesh_qualification.json", generated.qualification)
+
+    try:
+        deck, warnings = build_device_deck(
+            device_ir,
+            execution_ir,
+            cmd_summary,
+            mesh_file="mesh.json",
+            doping_file="doping.csv",
+            output_csv=args.output_csv,
+            current_contact=args.current_contact,
+            stop_voltage=args.stop_voltage,
+            materials_file=args.materials_file,
+        )
+    except ExecutionIrError as error:
+        _write_fail_report(output_dir, "deck", str(error))
+        raise
+    deck_path = output_dir / "simulation.json"
+    write_json(deck_path, deck)
+
+    manifest = {
+        "schema": "vela.sentaurus_device_run.v1",
+        "status": "generated",
+        "sde_cmd": str(args.sde),
+        "sdevice_cmd": str(args.sdevice),
+        "analysis": execution_ir["analysis"],
+        "generated": [
+            "device_ir.json",
+            "execution_ir.json",
+            "mesh.json",
+            "doping.csv",
+            "mesh_qualification.json",
+            "simulation.json",
+        ],
+        "mesh_qualification": generated.qualification,
+        "metadata_only": device_ir["metadata_only"],
+        "physics_metadata_only": execution_ir["physics"]["metadata_only"],
+        "warnings": warnings,
+        "goal_voltage": execution_ir["analysis"].get("final_voltage"),
+        "sweep_stop_voltage": deck["sweep"]["stop"],
+        "sweep_stop_overridden": args.stop_voltage is not None,
+    }
+
+    if args.run:
+        runner = args.runner or str(
+            REPO / "build" / ("vela_example_runner.exe"
+                              if sys.platform.startswith("win")
+                              else "vela_example_runner"))
+        command = [*shlex.split(runner, posix=not sys.platform.startswith("win")),
+                   "--config", str(deck_path)]
+        try:
+            run_command(command, cwd=output_dir)
+        except Exception as error:  # noqa: BLE001 - reported then re-raised
+            _write_fail_report(output_dir, "solve", str(error),
+                               {"command": command})
+            raise
+        manifest["status"] = "solved"
+        manifest["generated"].append(args.output_csv)
+
+    write_json(output_dir / "run_manifest.json", manifest)
+    print(json.dumps({
+        "analysis": manifest["analysis"],
+        "status": manifest["status"],
+        "output_dir": str(output_dir),
+        "warnings": warnings,
+    }, indent=2))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -1386,7 +1563,54 @@ def build_parser() -> argparse.ArgumentParser:
     sde = sub.add_parser("sde", help="Summarize a Sentaurus Structure Editor .cmd file")
     sde.add_argument("--input", type=Path, required=True)
     sde.add_argument("--summary-json", type=Path)
+    sde.add_argument(
+        "--device-ir",
+        action="store_true",
+        help="Emit the vela.sentaurus_device_ir.v1 document instead of the legacy summary",
+    )
     sde.set_defaults(func=sde_command)
+
+    device = sub.add_parser(
+        "device",
+        help="Build mesh, doping, and a Vela deck from a paired SDE + SDevice input",
+    )
+    device.add_argument("--sde", type=Path, required=True)
+    device.add_argument("--sdevice", type=Path, required=True)
+    device.add_argument("--output-dir", type=Path, required=True)
+    device.add_argument("--output-csv", default="iv.csv")
+    device.add_argument("--materials-file", default=None)
+    device.add_argument(
+        "--current-contact",
+        default=None,
+        help="Contact whose terminal current is reported; defaults to the swept contact",
+    )
+    device.add_argument(
+        "--stop-voltage",
+        type=float,
+        default=None,
+        help="Override the SDevice Quasistationary goal voltage; the override is "
+             "recorded in run_manifest.json",
+    )
+    device.add_argument(
+        "--node-volume-policy",
+        choices=["mixed_voronoi", "barycentric"],
+        default="mixed_voronoi",
+    )
+    device.add_argument(
+        "--allow-obtuse",
+        action="store_true",
+        help="Disable the non-obtuse mesh acceptance gate",
+    )
+    device.add_argument(
+        "--template-var",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Expand a Sentaurus Workbench placeholder such as @Vg@ before parsing",
+    )
+    device.add_argument("--run", action="store_true", help="Execute the generated deck")
+    device.add_argument("--runner", default=None, help="Command used to run vela_example_runner")
+    device.set_defaults(func=device_command)
 
     cmd = sub.add_parser("cmd", help="Summarize an SDevice .cmd file and generate a Python runner")
     cmd.add_argument("--input", type=Path, required=True)
