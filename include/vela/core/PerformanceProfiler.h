@@ -1,5 +1,7 @@
 #pragma once
 
+#include "vela/core/PhysicsCallCounters.h"
+
 #include <chrono>
 #include <cstdint>
 #include <map>
@@ -93,6 +95,9 @@ private:
     PerformanceProfiler* profiler_ = nullptr;
     std::string_view stage_;
     std::chrono::steady_clock::time_point started_{};
+    /// Counter snapshot taken on entry; the exit delta is the stage-inclusive
+    /// carrier-statistics call count for this scope.
+    PhysicsCallCounters startedCounters_{};
 };
 
 PerformanceProfiler* activePerformanceProfiler() noexcept;

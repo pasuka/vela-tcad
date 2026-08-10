@@ -11,6 +11,8 @@
 
 namespace vela {
 
+thread_local PhysicsCallCounters physicsCallCounters{};
+
 namespace {
 
 thread_local PerformanceProfiler* activeProfiler = nullptr;
@@ -25,6 +27,44 @@ std::int64_t percentile(std::vector<std::int64_t> values, double fraction)
         static_cast<std::size_t>(
             std::ceil(fraction * static_cast<double>(values.size()))) - 1);
     return values[index];
+}
+
+/**
+ * @brief Emit the carrier-statistics call counts issued inside one stage.
+ *
+ * The emitted counters are stage-inclusive: a call made inside
+ * `jacobian.edge_physics` is also counted for the enclosing `dd.jacobian`
+ * scope, exactly like the stage timings.  They must therefore not be summed
+ * across parent and child stages.
+ */
+void recordPhysicsCallDeltas(PerformanceProfiler& profiler,
+                             std::string_view stage,
+                             const PhysicsCallCounters& started)
+{
+    const PhysicsCallCounters& current = physicsCallCounters;
+    const auto emit = [&](std::string_view suffix,
+                          std::uint64_t begin,
+                          std::uint64_t end) {
+        if (end == begin)
+            return;
+        std::string name;
+        name.reserve(stage.size() + suffix.size() + 1);
+        name.append(stage);
+        name.push_back('.');
+        name.append(suffix);
+        profiler.increment(name, end - begin);
+    };
+    emit("fermi_dirac_half_calls",
+         started.fermiDiracHalf, current.fermiDiracHalf);
+    emit("fermi_dirac_half_derivative_calls",
+         started.fermiDiracHalfDerivative, current.fermiDiracHalfDerivative);
+    emit("inverse_fermi_dirac_half_calls",
+         started.inverseFermiDiracHalf, current.inverseFermiDiracHalf);
+    emit("equilibrium_state_solves",
+         started.equilibriumStateSolves, current.equilibriumStateSolves);
+    emit("equilibrium_state_iterations",
+         started.equilibriumStateIterations,
+         current.equilibriumStateIterations);
 }
 
 } // namespace
@@ -189,8 +229,10 @@ ScopedPerformanceTimer::ScopedPerformanceTimer(std::string_view stage) noexcept
     : profiler_(activePerformanceProfiler())
     , stage_(stage)
 {
-    if (profiler_ != nullptr)
+    if (profiler_ != nullptr) {
+        startedCounters_ = physicsCallCounters;
         started_ = std::chrono::steady_clock::now();
+    }
 }
 
 ScopedPerformanceTimer::~ScopedPerformanceTimer()
@@ -200,6 +242,7 @@ ScopedPerformanceTimer::~ScopedPerformanceTimer()
             stage_,
             std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now() - started_));
+        recordPhysicsCallDeltas(*profiler_, stage_, startedCounters_);
     }
 }
 
