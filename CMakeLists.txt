@@ -559,6 +559,20 @@ add_test(NAME sentaurus_import_tools
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_sentaurus_import_tools.py)
 vela_set_windows_msys2_test_path(sentaurus_import_tools)
 
+add_test(NAME sentaurus_sde_frontend
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_sde_frontend)
+set_tests_properties(sentaurus_sde_frontend PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_sde_frontend)
+
+add_test(NAME sentaurus_mesh_builder
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_mesh_builder)
+set_tests_properties(sentaurus_mesh_builder PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_mesh_builder)
+
 add_test(NAME pn2d_minimal6_transport_element_regression
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_pn2d_minimal6_element_currents

@@ -28,26 +28,46 @@
       "type": "object",
       "description": "Symbols bound by (define name value) forms.",
       "additionalProperties": {
-        "type": ["number", "string"]
+        "type": [
+          "number",
+          "string"
+        ]
       }
     },
     "geometry": {
       "type": "object",
-      "required": ["regions"],
+      "required": [
+        "regions"
+      ],
       "additionalProperties": false,
       "properties": {
         "regions": {
           "type": "array",
-          "minItems": 1,
           "items": {
             "type": "object",
-            "required": ["name", "shape", "lower_left", "upper_right", "order"],
+            "required": [
+              "name",
+              "shape",
+              "lower_left",
+              "upper_right",
+              "order"
+            ],
             "additionalProperties": false,
             "properties": {
-              "name": {"type": "string"},
-              "shape": {"enum": ["rectangle"]},
-              "lower_left": {"$ref": "#/definitions/point2d"},
-              "upper_right": {"$ref": "#/definitions/point2d"},
+              "name": {
+                "type": "string"
+              },
+              "shape": {
+                "enum": [
+                  "rectangle"
+                ]
+              },
+              "lower_left": {
+                "$ref": "#/definitions/point2d"
+              },
+              "upper_right": {
+                "$ref": "#/definitions/point2d"
+              },
               "order": {
                 "type": "integer",
                 "minimum": 0,
@@ -60,15 +80,24 @@
     },
     "materials": {
       "type": "array",
-      "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["region", "sde_material", "vela_material"],
+        "required": [
+          "region",
+          "sde_material",
+          "vela_material"
+        ],
         "additionalProperties": false,
         "properties": {
-          "region": {"type": "string"},
-          "sde_material": {"type": "string"},
-          "vela_material": {"type": "string"}
+          "region": {
+            "type": "string"
+          },
+          "sde_material": {
+            "type": "string"
+          },
+          "vela_material": {
+            "type": "string"
+          }
         }
       }
     },
@@ -76,21 +105,32 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["name", "pick_points"],
+        "required": [
+          "name",
+          "pick_points"
+        ],
         "additionalProperties": false,
         "properties": {
-          "name": {"type": "string"},
+          "name": {
+            "type": "string"
+          },
           "pick_points": {
             "type": "array",
-            "minItems": 1,
-            "description": "Points from (find-edge-id (position ...)) used to select outer boundary edges.",
+            "description": "Points from (find-edge-id (position ...)) used to select outer boundary edges. May be empty when the SDE file declares a contact set it never assigns; the mesh builder rejects such contacts.",
             "items": {
               "type": "object",
-              "required": ["x", "y"],
+              "required": [
+                "x",
+                "y"
+              ],
               "additionalProperties": false,
               "properties": {
-                "x": {"type": "number"},
-                "y": {"type": "number"}
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
               }
             }
           }
@@ -99,51 +139,104 @@
     },
     "doping": {
       "type": "object",
-      "required": ["profiles", "placements", "windows"],
+      "required": [
+        "profiles",
+        "placements",
+        "windows"
+      ],
       "additionalProperties": false,
       "properties": {
         "profiles": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "type", "species", "carrier", "value_cm3"],
+            "required": [
+              "name",
+              "type",
+              "species",
+              "carrier",
+              "value_cm3"
+            ],
             "additionalProperties": false,
             "properties": {
-              "name": {"type": "string"},
-              "type": {"enum": ["constant"]},
-              "species": {"type": "string"},
-              "carrier": {"enum": ["donor", "acceptor"]},
-              "value_cm3": {"type": "number", "minimum": 0}
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "constant"
+                ]
+              },
+              "species": {
+                "type": "string"
+              },
+              "carrier": {
+                "enum": [
+                  "donor",
+                  "acceptor"
+                ]
+              },
+              "value_cm3": {
+                "type": "number",
+                "minimum": 0
+              }
             }
           }
         },
         "placements": {
           "type": "array",
-          "items": {"$ref": "#/definitions/placement"}
+          "items": {
+            "$ref": "#/definitions/placement"
+          }
         },
         "windows": {
           "type": "array",
-          "items": {"$ref": "#/definitions/window"}
+          "items": {
+            "$ref": "#/definitions/window"
+          }
         }
       }
     },
     "mesh_control": {
       "type": "object",
-      "required": ["refinement_sizes", "refinement_placements", "windows", "build"],
+      "required": [
+        "refinement_sizes",
+        "refinement_placements",
+        "windows",
+        "build"
+      ],
       "additionalProperties": false,
       "properties": {
         "refinement_sizes": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "max_x", "max_y"],
+            "required": [
+              "name",
+              "max_x",
+              "max_y"
+            ],
             "additionalProperties": false,
             "properties": {
-              "name": {"type": "string"},
-              "max_x": {"type": "number", "exclusiveMinimum": 0},
-              "max_y": {"type": "number", "exclusiveMinimum": 0},
-              "min_x": {"type": "number", "exclusiveMinimum": 0},
-              "min_y": {"type": "number", "exclusiveMinimum": 0}
+              "name": {
+                "type": "string"
+              },
+              "max_x": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "max_y": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "min_x": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "min_y": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
             }
           }
         },
@@ -151,30 +244,57 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "refinement", "target_kind", "target"],
+            "required": [
+              "name",
+              "refinement",
+              "target_kind",
+              "target"
+            ],
             "additionalProperties": false,
             "properties": {
-              "name": {"type": "string"},
-              "refinement": {"type": "string"},
-              "target_kind": {"enum": ["region", "window"]},
-              "target": {"type": "string"}
+              "name": {
+                "type": "string"
+              },
+              "refinement": {
+                "type": "string"
+              },
+              "target_kind": {
+                "enum": [
+                  "region",
+                  "window"
+                ]
+              },
+              "target": {
+                "type": "string"
+              }
             }
           }
         },
         "windows": {
           "type": "array",
-          "items": {"$ref": "#/definitions/window"}
+          "items": {
+            "$ref": "#/definitions/window"
+          }
         },
         "build": {
           "oneOf": [
-            {"type": "null"},
+            {
+              "type": "null"
+            },
             {
               "type": "object",
-              "required": ["engine", "prefix"],
+              "required": [
+                "engine",
+                "prefix"
+              ],
               "additionalProperties": false,
               "properties": {
-                "engine": {"type": "string"},
-                "prefix": {"type": "string"}
+                "engine": {
+                  "type": "string"
+                },
+                "prefix": {
+                  "type": "string"
+                }
               }
             }
           ]
@@ -186,13 +306,26 @@
       "description": "Commands recognised but not translated into IR semantics.",
       "items": {
         "type": "object",
-        "required": ["command", "location", "text", "reason"],
+        "required": [
+          "command",
+          "location",
+          "text",
+          "reason"
+        ],
         "additionalProperties": false,
         "properties": {
-          "command": {"type": "string"},
-          "location": {"type": "string"},
-          "text": {"type": "string"},
-          "reason": {"type": "string"}
+          "command": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
         }
       }
     }
@@ -202,28 +335,62 @@
       "type": "array",
       "minItems": 2,
       "maxItems": 2,
-      "items": {"type": "number"}
+      "items": {
+        "type": "number"
+      }
     },
     "window": {
       "type": "object",
-      "required": ["name", "shape", "lower_left", "upper_right"],
+      "required": [
+        "name",
+        "shape",
+        "lower_left",
+        "upper_right"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": {"type": "string"},
-        "shape": {"enum": ["rectangle"]},
-        "lower_left": {"$ref": "#/definitions/point2d"},
-        "upper_right": {"$ref": "#/definitions/point2d"}
+        "name": {
+          "type": "string"
+        },
+        "shape": {
+          "enum": [
+            "rectangle"
+          ]
+        },
+        "lower_left": {
+          "$ref": "#/definitions/point2d"
+        },
+        "upper_right": {
+          "$ref": "#/definitions/point2d"
+        }
       }
     },
     "placement": {
       "type": "object",
-      "required": ["name", "profile", "target_kind", "target", "priority"],
+      "required": [
+        "name",
+        "profile",
+        "target_kind",
+        "target",
+        "priority"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": {"type": "string"},
-        "profile": {"type": "string"},
-        "target_kind": {"enum": ["region", "window"]},
-        "target": {"type": "string"},
+        "name": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "target_kind": {
+          "enum": [
+            "region",
+            "window"
+          ]
+        },
+        "target": {
+          "type": "string"
+        },
         "priority": {
           "type": "integer",
           "minimum": 0,
