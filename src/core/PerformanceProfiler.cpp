@@ -45,6 +45,7 @@ void recordPhysicsCallDeltas(PerformanceProfiler& profiler,
         return;
     const PhysicsCallCounters& current = physicsCallCounters;
     const auto emit = [&](std::string_view suffix,
+                          std::uint64_t begin,
                           std::uint64_t end) {
         if (end == begin)
             return;
@@ -218,7 +219,9 @@ ActivePerformanceProfilerScope::ActivePerformanceProfilerScope(
     PerformanceProfiler* profiler) noexcept
     : previous_(activeProfiler)
 {
-    activeProfiler = profiler;
+    activeProfiler = (profiler != nullptr && profiler->enabled())
+        ? profiler
+        : nullptr;
 }
 
 ActivePerformanceProfilerScope::~ActivePerformanceProfilerScope()
