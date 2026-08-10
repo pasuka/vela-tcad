@@ -372,10 +372,12 @@ def evaluate_doping(device_ir: dict[str, Any],
                     y: float) -> tuple[float, float]:
     """Evaluate donor/acceptor concentration at a node.
 
-    Constant profiles are applied first in placement order; a later placement
-    replaces an earlier one where their targets overlap, matching SDE's
-    last-definition-wins semantics. Analytic (Gaussian) profiles are applied
-    afterwards and add to the constant background.
+    Constant profiles are applied in placement order; a later placement replaces
+    an earlier one where their targets overlap, matching SDE's
+    last-definition-wins semantics.
+
+    Only constant profiles are supported today; any analytic profile type is
+    rejected fail-closed.
     """
     profiles = {profile["name"]: profile for profile in device_ir["doping"]["profiles"]}
     donors = 0.0
