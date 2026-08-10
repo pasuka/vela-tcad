@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <limits>
+#include <stdexcept>
 
 using Catch::Approx;
 using namespace vela;
@@ -69,6 +70,58 @@ TEST_CASE("Fermi-Dirac Ohmic state solves charge neutrality numerically",
     const EquilibriumCarrierState boltzmann = equilibriumCarrierState(
         netDoping, ni, Nc, Nv, Vt, CarrierStatisticsConfig{});
     REQUIRE(state.potential > boltzmann.potential);
+}
+
+TEST_CASE("Resolved carrier statistics model reproduces the configuration overloads bit for bit",
+          "[carrier_statistics][fermi_dirac]")
+{
+    const CarrierStatisticsConfig boltzmann{"boltzmann"};
+    const CarrierStatisticsConfig fermiDirac{"fermi_dirac"};
+    REQUIRE(carrierStatisticsModel(boltzmann) == CarrierStatisticsModel::Boltzmann);
+    REQUIRE(carrierStatisticsModel(fermiDirac) == CarrierStatisticsModel::FermiDirac);
+    REQUIRE_FALSE(usesFermiDirac(CarrierStatisticsModel::Boltzmann));
+    REQUIRE(usesFermiDirac(CarrierStatisticsModel::FermiDirac));
+    REQUIRE_THROWS_AS(carrierStatisticsModel(CarrierStatisticsConfig{"maxwell"}),
+                      std::invalid_argument);
+
+    const Real Vt = constants::kb * 300.0 / constants::q;
+    const Real ni = 1.683405723e17;
+    const Real Nc = 2.8e25;
+    const Real Nv = 1.04e25;
+
+    for (const CarrierStatisticsConfig& config : {boltzmann, fermiDirac}) {
+        const CarrierStatisticsModel model = carrierStatisticsModel(config);
+        for (const Real psi : {-0.8, -0.05, 0.0, 0.35, 1.1}) {
+            for (const Real phi : {-0.4, 0.0, 0.6}) {
+                REQUIRE(electronDensity(ni, Nc, psi, phi, Vt, model) ==
+                        electronDensity(ni, Nc, psi, phi, Vt, config));
+                REQUIRE(holeDensity(ni, Nv, psi, phi, Vt, model) ==
+                        holeDensity(ni, Nv, psi, phi, Vt, config));
+                REQUIRE(electronDensityDerivativeEta(ni, Nc, psi, phi, Vt, model) ==
+                        electronDensityDerivativeEta(ni, Nc, psi, phi, Vt, config));
+                REQUIRE(holeDensityDerivativeEta(ni, Nv, psi, phi, Vt, model) ==
+                        holeDensityDerivativeEta(ni, Nv, psi, phi, Vt, config));
+            }
+        }
+        for (const Real netDoping : {-3.2569e26, -1.0e20, 0.0, 1.0e20, 3.2569e26}) {
+            const EquilibriumCarrierState fromModel =
+                equilibriumCarrierState(netDoping, ni, Nc, Nv, Vt, model);
+            const EquilibriumCarrierState fromConfig =
+                equilibriumCarrierState(netDoping, ni, Nc, Nv, Vt, config);
+            REQUIRE(fromModel.potential == fromConfig.potential);
+            REQUIRE(fromModel.n == fromConfig.n);
+            REQUIRE(fromModel.p == fromConfig.p);
+            // For Fermi-Dirac the returned densities must equal a fresh
+            // evaluation at the returned potential; the solver reuses the
+            // densities it already evaluated for the final residual.
+            if (usesFermiDirac(model)) {
+                REQUIRE(fromModel.n ==
+                        electronDensity(ni, Nc, fromModel.potential, 0.0, Vt, model));
+                REQUIRE(fromModel.p ==
+                        holeDensity(ni, Nv, fromModel.potential, 0.0, Vt, model));
+            }
+        }
+    }
 }
 
 TEST_CASE("Generalized Fermi-Dirac SG preserves flat quasi-Fermi equilibrium",
