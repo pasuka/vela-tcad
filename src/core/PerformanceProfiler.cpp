@@ -41,9 +41,10 @@ void recordPhysicsCallDeltas(PerformanceProfiler& profiler,
                              std::string_view stage,
                              const PhysicsCallCounters& started)
 {
+    if (!profiler.enabled())
+        return;
     const PhysicsCallCounters& current = physicsCallCounters;
     const auto emit = [&](std::string_view suffix,
-                          std::uint64_t begin,
                           std::uint64_t end) {
         if (end == begin)
             return;
