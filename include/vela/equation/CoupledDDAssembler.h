@@ -366,6 +366,11 @@ private:
     bool impactIonizationCoupled_ = false;
     bool bgnEnabled_ = false;
     CarrierStatisticsConfig carrierStatistics_;
+    /// Resolved once in the constructor; hot loops use this instead of the
+    /// string-valued configuration.  Numerically identical, see E4 in
+    /// docs/validation/bv_performance_review_response_2026-08-10.md.
+    CarrierStatisticsModel carrierStatisticsModel_ = CarrierStatisticsModel::Boltzmann;
+    bool usesFermiDirac_ = false;
     std::vector<Real> ni_;
     std::vector<Real> Nc_;
     std::vector<Real> Nv_;

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
@@ -222,21 +223,37 @@ VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b)
     if (backend != "sparselu")
         return solveWithAlternateBackend(backend, *matrix, b);
 
+    // A repeated solve with the same matrix (Newton line searches, feedback
+    // state substitution) currently refactorises identical values.  Reusing the
+    // retained factorisation is numerically identical: the same L and U are
+    // used for the back-substitution.
+    const bool reuseFactorization = hasFactorization_ && patternMatches(*matrix)
+        && valuesMatchFactorization(*matrix);
+
     {
         ScopedPerformanceTimer timer("linear.analyze");
         analyzePatternIfNeeded(*matrix);
     }
     {
         ScopedPerformanceTimer timer("linear.factorize");
-        incrementPerformanceCounter("linear.factorize_calls");
-        solver_.factorize(*matrix);
+        if (reuseFactorization) {
+            incrementPerformanceCounter("linear.factorize_cache_hits");
+        } else {
+            incrementPerformanceCounter("linear.factorize_calls");
+            hasFactorization_ = false;
+            cachedValues_.clear();
+            solver_.factorize(*matrix);
+        }
     }
 
-    if (solver_.info() != Eigen::Success)
-        throw std::runtime_error(
-            "LinearSolver: SparseLU factorisation failed. "
-            "Matrix may be singular or ill-conditioned." +
-            sparseMatrixDiagnostics(*matrix, b));
+    if (!reuseFactorization) {
+        if (solver_.info() != Eigen::Success)
+            throw std::runtime_error(
+                "LinearSolver: SparseLU factorisation failed. "
+                "Matrix may be singular or ill-conditioned." +
+                sparseMatrixDiagnostics(*matrix, b));
+        cacheFactorizationValues(*matrix);
+    }
 
     const double factorNonzerosL = static_cast<double>(solver_.nnzL());
     const double factorNonzerosU = static_cast<double>(solver_.nnzU());
@@ -271,6 +288,28 @@ void LinearSolver::clearPatternCache()
     cachedNonZeros_ = 0;
     cachedOuterStarts_.clear();
     cachedInnerIndices_.clear();
+    cachedValues_.clear();
+    hasFactorization_ = false;
+}
+
+bool LinearSolver::valuesMatchFactorization(const SparseMatrixd& A) const
+{
+    const auto valueCount = static_cast<std::size_t>(A.nonZeros());
+    if (!hasFactorization_ || cachedValues_.size() != valueCount)
+        return false;
+    if (valueCount == 0)
+        return true;
+    // Bitwise comparison: values that differ only in the sign of a zero, or any
+    // NaN payload, are treated as a miss so the factorisation is redone.
+    return std::memcmp(A.valuePtr(), cachedValues_.data(),
+                       valueCount * sizeof(double)) == 0;
+}
+
+void LinearSolver::cacheFactorizationValues(const SparseMatrixd& A)
+{
+    const auto valueCount = static_cast<std::size_t>(A.nonZeros());
+    cachedValues_.assign(A.valuePtr(), A.valuePtr() + valueCount);
+    hasFactorization_ = true;
 }
 
 std::size_t LinearSolver::patternAnalysisCount() const noexcept

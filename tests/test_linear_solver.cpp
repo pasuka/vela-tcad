@@ -108,6 +108,42 @@ TEST_CASE("LinearSolver profiles numeric factor fill", "[linear_solver][performa
     REQUIRE(observations.at("linear.factor_fill_ratio").at("last") > 0.0);
 }
 
+TEST_CASE("LinearSolver reuses the numeric factorisation for an identical matrix",
+          "[linear_solver][performance]")
+{
+    const SparseMatrixd A = makeSparseMatrix(3, 3, {
+        {0, 0, 4.0}, {1, 0, -1.0},
+        {0, 1, -1.0}, {1, 1, 4.0}, {2, 1, -1.0},
+        {1, 2, -1.0}, {2, 2, 4.0},
+    });
+    const VectorXd x1 = (VectorXd(3) << 1.0, 2.0, 3.0).finished();
+    const VectorXd x2 = (VectorXd(3) << -4.0, 0.25, 7.0).finished();
+
+    SparseMatrixd perturbed = A;
+    perturbed.coeffRef(1, 1) = 4.5;
+    perturbed.makeCompressed();
+
+    PerformanceProfiler profiler({true, "unused.json"});
+    LinearSolver solver;
+    {
+        ActivePerformanceProfilerScope active(&profiler);
+        // Same matrix, different right-hand sides: only one factorisation.
+        REQUIRE((solver.solve(A, A * x1) - x1).norm() ==
+                Catch::Approx(0.0).margin(1e-12));
+        REQUIRE((solver.solve(A, A * x2) - x2).norm() ==
+                Catch::Approx(0.0).margin(1e-12));
+        // Changed values with the same pattern must refactorise.
+        REQUIRE((solver.solve(perturbed, perturbed * x1) - x1).norm() ==
+                Catch::Approx(0.0).margin(1e-12));
+    }
+
+    const nlohmann::json counters = profiler.toJson().at("counters");
+    REQUIRE(counters.at("linear.solve_calls") == 3);
+    REQUIRE(counters.at("linear.factorize_calls") == 2);
+    REQUIRE(counters.at("linear.factorize_cache_hits") == 1);
+    REQUIRE(counters.at("linear.analyze_calls") == 1);
+}
+
 TEST_CASE("LinearSolver rejects invalid dimensions", "[linear_solver]")
 {
     const SparseMatrixd rectangular = makeSparseMatrix(2, 3, {

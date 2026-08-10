@@ -67,6 +67,9 @@ private:
     bool patternMatches(const SparseMatrixd& A) const;
     void cachePattern(const SparseMatrixd& A);
     void analyzePatternIfNeeded(const SparseMatrixd& A);
+    /// True when `A` is bit-for-bit the matrix of the retained factorisation.
+    bool valuesMatchFactorization(const SparseMatrixd& A) const;
+    void cacheFactorizationValues(const SparseMatrixd& A);
 
     SparseLUSolver solver_;
     bool hasAnalyzedPattern_ = false;
@@ -75,6 +78,9 @@ private:
     std::size_t cachedNonZeros_ = 0;
     std::vector<StorageIndex> cachedOuterStarts_;
     std::vector<StorageIndex> cachedInnerIndices_;
+    /// Values of the matrix whose numeric factorisation `solver_` still holds.
+    std::vector<double> cachedValues_;
+    bool hasFactorization_ = false;
     std::size_t patternAnalysisCount_ = 0;
 };
 
