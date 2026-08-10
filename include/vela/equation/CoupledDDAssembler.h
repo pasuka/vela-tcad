@@ -367,8 +367,7 @@ private:
     bool bgnEnabled_ = false;
     CarrierStatisticsConfig carrierStatistics_;
     /// Resolved once in the constructor; hot loops use this instead of the
-    /// string-valued configuration.  Numerically identical, see E4 in
-    /// docs/validation/bv_performance_review_response_2026-08-10.md.
+    /// string-valued configuration. Numerically identical: only the model lookup is hoisted.
     CarrierStatisticsModel carrierStatisticsModel_ = CarrierStatisticsModel::Boltzmann;
     bool usesFermiDirac_ = false;
     std::vector<Real> ni_;
