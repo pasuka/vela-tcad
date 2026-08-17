@@ -1,0 +1,258 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.sentaurus_parameter_ir.v1",
+  "title": "Vela Sentaurus parameter IR v1",
+  "description": "Lossless syntax-level intermediate representation of a Sentaurus .par parameter file, produced by scripts/sentaurus_parameter_ir.py. This IR performs no unit conversion and no physics interpretation: values keep their original lexeme and unit annotation. Blocks are an ordered array rather than a section-keyed object so that repeated sections, definition order, and #include override order all survive. Deciding which sections are active is the job of vela.sentaurus_execution_ir.v1, never of this document.",
+  "type": "object",
+  "required": [
+    "schema",
+    "source",
+    "files",
+    "blocks",
+    "unsupported_sections",
+    "parse_errors"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "vela.sentaurus_parameter_ir.v1"
+    },
+    "source": {
+      "type": "string",
+      "description": "The top-level .par file, relative to the import root."
+    },
+    "files": {
+      "type": "array",
+      "description": "Every file that contributed lines, in first-contribution order. The first entry is always the top-level source.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "blocks": {
+      "type": "array",
+      "description": "Section blocks in source order after #include splicing. Repeated definitions are all retained; the superseded one carries shadowed_by.",
+      "items": {
+        "$ref": "#/definitions/block"
+      }
+    },
+    "unsupported_sections": {
+      "type": "array",
+      "description": "Blocks whose section describes a model Vela does not implement. They remain in blocks so coverage can be reported honestly, but an emitter must refuse to run when one of these is active.",
+      "items": {
+        "type": "object",
+        "required": [
+          "index",
+          "section",
+          "scope",
+          "reason"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "section": {
+            "type": "string"
+          },
+          "scope": {
+            "$ref": "#/definitions/scope"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "parse_errors": {
+      "type": "array",
+      "description": "Always empty in a document that was successfully produced. The key exists so a consumer can assert emptiness rather than assume it; a non-empty value must make the emitter refuse to run.",
+      "maxItems": 0,
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "definitions": {
+    "scope": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "global",
+            "material",
+            "region",
+            "material_interface",
+            "region_interface"
+          ]
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "source_ref": {
+      "type": "object",
+      "required": [
+        "file",
+        "line"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "block": {
+      "type": "object",
+      "required": [
+        "index",
+        "scope",
+        "section",
+        "order",
+        "source_span",
+        "include_stack",
+        "parameters"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "scope": {
+          "$ref": "#/definitions/scope"
+        },
+        "section": {
+          "type": "string",
+          "description": "The section name exactly as written, for example Bandgap or ConstantMobility."
+        },
+        "variant": {
+          "type": "string",
+          "description": "The quoted variant label of a named section such as QuantumPotentialParameters \"theta_zero\"."
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Position in the fully spliced source order. Equal to index; kept as a separate key so consumers do not have to rely on array position."
+        },
+        "source_span": {
+          "type": "object",
+          "required": [
+            "file",
+            "line",
+            "end_line"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "file": {
+              "type": "string"
+            },
+            "line": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "end_line": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "include_stack": {
+          "type": "array",
+          "description": "The chain of #include sites that reached this block, outermost first. Empty for blocks in the top-level file.",
+          "items": {
+            "$ref": "#/definitions/source_ref"
+          }
+        },
+        "shadowed_by": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Index of a later block with the same scope, section, and variant that supersedes this one under last-definition-wins."
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/parameter"
+          }
+        }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "required": [
+        "raw_name",
+        "base_name",
+        "raw_lexeme",
+        "value_kind",
+        "values",
+        "source"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "raw_name": {
+          "type": "string",
+          "description": "The left-hand side exactly as written, for example dEg0(OldSlotboom) or Dop[1][1]."
+        },
+        "base_name": {
+          "type": "string",
+          "description": "raw_name with any variant label or index removed."
+        },
+        "variant": {
+          "type": "string",
+          "description": "The parenthesised or quoted label, for example OldSlotboom in dEg0(OldSlotboom). This selects a model and must be matched against the execution IR before use."
+        },
+        "indices": {
+          "type": "array",
+          "description": "Numeric subscripts, for example [1, 1] for Dop[1][1] or [0] for efit( 0).",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "raw_lexeme": {
+          "type": "string",
+          "description": "The right-hand side as written, whitespace-collapsed. Retained so a conversion can always be re-derived from the original text."
+        },
+        "raw_unit": {
+          "type": "string",
+          "description": "The trailing unit annotation with its brackets removed, for example cm^2/(Vs). Absent when the source carries none. This IR never converts units; it only records them."
+        },
+        "value_kind": {
+          "enum": [
+            "scalar",
+            "carrier_pair",
+            "number_list",
+            "string",
+            "string_list",
+            "mixed_list",
+            "numerical_table",
+            "record",
+            "empty_list"
+          ],
+          "description": "carrier_pair is the electron,hole shape that dominates .par files. empty_list is the explicit '()' spelling of an unset value."
+        },
+        "values": {
+          "type": "array",
+          "description": "Parsed values in source order. For numerical_table each item is one row. For record this is empty and raw_lexeme carries the content."
+        },
+        "source": {
+          "$ref": "#/definitions/source_ref"
+        },
+        "shadowed_by": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Index of the later block that redefines this same parameter name."
+        }
+      }
+    }
+  }
+}
