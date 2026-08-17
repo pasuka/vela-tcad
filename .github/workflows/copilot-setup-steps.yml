@@ -22,6 +22,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Set up GCC
+        uses: egor-tensin/setup-gcc@v2
+        with:
+          version: 16
+          platform: x64
+
+      - name: Report compiler version
+        run: |
+          gcc --version
+          g++ --version
+
       - name: Install C++ build dependencies
         run: |
           sudo apt-get update
