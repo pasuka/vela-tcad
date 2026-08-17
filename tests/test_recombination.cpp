@@ -459,3 +459,122 @@ TEST_CASE("CarrierStatistics intrinsic density uses temperature_K material path"
     REQUIRE(ni300 == Catch::Approx(si.ni));
     REQUIRE(ni450 > ni300);
 }
+
+TEST_CASE("PhysicalUnitSystem converts Auger coefficients to internal units",
+          "[recombination][auger][scaling]")
+{
+    const PhysicalUnitSystem tcad = PhysicalUnitSystem::tcadInternal();
+
+    REQUIRE(tcad.augerCoefficientM6SPerInternal() == Catch::Approx(1.0e-12));
+    REQUIRE(tcad.m6PerSToInternalAugerCoefficient(2.90e-43) == Catch::Approx(2.90e-31));
+    REQUIRE(tcad.internalAugerCoefficientToM6PerS(2.90e-31) == Catch::Approx(2.90e-43));
+
+    const PhysicalUnitSystem legacy = PhysicalUnitSystem::legacySI();
+    REQUIRE(legacy.augerCoefficientM6SPerInternal() == Catch::Approx(1.0));
+    REQUIRE(legacy.m6PerSToInternalAugerCoefficient(2.90e-43) == Catch::Approx(2.90e-43));
+}
+
+TEST_CASE("Auger recombination rate is unit-system invariant",
+          "[recombination][auger][scaling]")
+{
+    const PhysicalUnitSystem tcad = PhysicalUnitSystem::tcadInternal();
+
+    RecombinationModelConfig siConfig;
+    siConfig.mechanisms = {"auger"};
+    const RecombinationModel siModel(siConfig);
+
+    RecombinationModelConfig internalConfig;
+    internalConfig.mechanisms = {"auger"};
+    internalConfig.augerCn = tcad.m6PerSToInternalAugerCoefficient(siConfig.augerCn);
+    internalConfig.augerCp = tcad.m6PerSToInternalAugerCoefficient(siConfig.augerCp);
+    const RecombinationModel internalModel(internalConfig);
+
+    const Real n_m3 = 1.0e23;
+    const Real p_m3 = 1.0e15;
+    const Real ni_m3 = 1.0e16;
+
+    const Real rateSI = siModel.augerRate(n_m3, p_m3, ni_m3);
+    const Real rateInternal = internalModel.augerRate(
+        tcad.m3ToInternalConcentration(n_m3),
+        tcad.m3ToInternalConcentration(p_m3),
+        tcad.m3ToInternalConcentration(ni_m3));
+
+    REQUIRE(rateSI > 0.0);
+    REQUIRE(tcad.internalConcentrationToM3(rateInternal)
+            == Catch::Approx(rateSI).epsilon(1.0e-12));
+}
+
+TEST_CASE("Slotboom reference doping follows unit scaling concentration units",
+          "[bgn][scaling]")
+{
+    const UnitScalingConfig scaling{UnitScalingMode::UnitScaling};
+
+    REQUIRE(bandgapNarrowingConfig("slotboom").referenceDoping
+            == Catch::Approx(1.0e23));
+    REQUIRE(bandgapNarrowingConfig("slotboom", scaling).referenceDoping
+            == Catch::Approx(1.0e17));
+
+    // Slotboom and OldSlotboom share the same reference concentration, so the
+    // internal unit treatment must not differ between them.
+    REQUIRE(bandgapNarrowingConfig("slotboom", scaling).referenceDoping
+            == Catch::Approx(
+                bandgapNarrowingConfig("old_slotboom", scaling).referenceDoping));
+}
+
+TEST_CASE("Slotboom bandgap narrowing is unit-system invariant", "[bgn][scaling]")
+{
+    const UnitScalingConfig scaling{UnitScalingMode::UnitScaling};
+    const PhysicalUnitSystem tcad = PhysicalUnitSystem::tcadInternal();
+
+    const Real doping_m3 = 1.0e24;
+    const Real legacyDeltaEg =
+        makeBandgapNarrowingModel(bandgapNarrowingConfig("slotboom"))
+            ->deltaEg(doping_m3, 0.0, 0.0);
+    const Real internalDeltaEg =
+        makeBandgapNarrowingModel(bandgapNarrowingConfig("slotboom", scaling))
+            ->deltaEg(tcad.m3ToInternalConcentration(doping_m3), 0.0, 0.0);
+
+    REQUIRE(legacyDeltaEg > 0.0);
+    REQUIRE(internalDeltaEg == Catch::Approx(legacyDeltaEg).epsilon(1.0e-12));
+}
+
+TEST_CASE("SRH doping dependence default reference doping follows unit scaling",
+          "[recombination][srh][scaling]")
+{
+    const nlohmann::json json = {{"enabled", true}};
+
+    const SRHDopingDependenceConfig legacy =
+        srhDopingDependenceConfigFromJson(json, UnitScalingConfig{});
+    REQUIRE(legacy.electron.referenceDoping == Catch::Approx(1.0e22));
+    REQUIRE(legacy.hole.referenceDoping == Catch::Approx(1.0e22));
+
+    const SRHDopingDependenceConfig tcad = srhDopingDependenceConfigFromJson(
+        json, UnitScalingConfig{UnitScalingMode::UnitScaling});
+    REQUIRE(tcad.electron.referenceDoping == Catch::Approx(1.0e16));
+    REQUIRE(tcad.hole.referenceDoping == Catch::Approx(1.0e16));
+}
+
+TEST_CASE("SRH doping-dependent lifetime is unit-system invariant",
+          "[recombination][srh][scaling]")
+{
+    const PhysicalUnitSystem tcad = PhysicalUnitSystem::tcadInternal();
+    const nlohmann::json json = {{"enabled", true}};
+
+    RecombinationModelConfig legacyConfig;
+    legacyConfig.mechanisms = {"srh"};
+    legacyConfig.srhDopingDependence =
+        srhDopingDependenceConfigFromJson(json, UnitScalingConfig{});
+    const RecombinationModel legacyModel(legacyConfig);
+
+    RecombinationModelConfig internalConfig;
+    internalConfig.mechanisms = {"srh"};
+    internalConfig.srhDopingDependence = srhDopingDependenceConfigFromJson(
+        json, UnitScalingConfig{UnitScalingMode::UnitScaling});
+    const RecombinationModel internalModel(internalConfig);
+
+    const Real doping_m3 = 5.0e23;
+    REQUIRE(internalModel.electronLifetime(tcad.m3ToInternalConcentration(doping_m3))
+            == Catch::Approx(legacyModel.electronLifetime(doping_m3)).epsilon(1.0e-12));
+    REQUIRE(internalModel.holeLifetime(tcad.m3ToInternalConcentration(doping_m3))
+            == Catch::Approx(legacyModel.holeLifetime(doping_m3)).epsilon(1.0e-12));
+}

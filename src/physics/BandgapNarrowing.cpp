@@ -90,7 +90,10 @@ BandgapNarrowingConfig bandgapNarrowingConfig(
 {
     BandgapNarrowingConfig config;
     config.model = std::move(modelName);
-    if (config.model == "old_slotboom") {
+    // Slotboom and OldSlotboom share the same Sentaurus reference
+    // concentration, so both must express the compiled SI default in the
+    // active internal concentration unit.
+    if (config.model == "slotboom" || config.model == "old_slotboom") {
         config.referenceDoping =
             scaling.unitSystem().m3ToInternalConcentration(1.0e23);
         config.coefficient = 9.0e-3;

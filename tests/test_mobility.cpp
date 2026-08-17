@@ -203,6 +203,38 @@ TEST_CASE("JSON solver config unit_scaling default mobility and impact parameter
     REQUIRE(cfg.impactIonization.holeA == Catch::Approx(1.582e6));
     REQUIRE(cfg.impactIonization.holeB == Catch::Approx(2.036e6));
 }
+TEST_CASE("JSON solver config unit_scaling default Auger coefficients are TCAD internal",
+          "[recombination][auger][json][scaling]")
+{
+    const nlohmann::json json = {
+        {"recombination", {"srh", "auger"}}
+    };
+
+    const GummelConfig legacy = gummelConfigFromJson(json);
+    REQUIRE(legacy.augerCn == Catch::Approx(2.90e-43));
+    REQUIRE(legacy.augerCp == Catch::Approx(1.028e-43));
+
+    const GummelConfig scaled = gummelConfigFromJson(
+        json, UnitScalingConfig{UnitScalingMode::UnitScaling});
+    REQUIRE(scaled.augerCn == Catch::Approx(2.90e-31));
+    REQUIRE(scaled.augerCp == Catch::Approx(1.028e-31));
+}
+
+TEST_CASE("JSON solver config unit_scaling keeps explicit Auger coefficients internal",
+          "[recombination][auger][json][scaling]")
+{
+    const nlohmann::json json = {
+        {"recombination", {"srh", "auger"}},
+        {"auger_cn_m6_per_s", 3.1e-31},
+        {"auger_cp_m6_per_s", 1.2e-31}
+    };
+
+    const GummelConfig scaled = gummelConfigFromJson(
+        json, UnitScalingConfig{UnitScalingMode::UnitScaling});
+    REQUIRE(scaled.augerCn == Catch::Approx(3.1e-31));
+    REQUIRE(scaled.augerCp == Catch::Approx(1.2e-31));
+}
+
 TEST_CASE("JSON solver config unit_scaling keeps mobility and field inputs internal",
           "[mobility][json][scaling]")
 {

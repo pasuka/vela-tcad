@@ -319,6 +319,12 @@ SRHDopingDependenceConfig srhDopingDependenceConfigFromJson(
             "srh_doping_dependence must be an object.");
 
     SRHDopingDependenceConfig config;
+    // The compiled reference concentrations are SI literals, so express them
+    // in the active internal concentration unit before any deck override.
+    config.electron.referenceDoping =
+        scaling.unitSystem().m3ToInternalConcentration(config.electron.referenceDoping);
+    config.hole.referenceDoping =
+        scaling.unitSystem().m3ToInternalConcentration(config.hole.referenceDoping);
     config.enabled = value.value("enabled", true);
     config.concentrationBasis = value.value(
         "concentration_basis", config.concentrationBasis);

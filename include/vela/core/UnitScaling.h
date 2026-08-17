@@ -29,6 +29,15 @@ public:
         return surfaceFieldCoefficientMPerVPerInternal_;
     }
     Real currentDensityAM2PerInternal() const { return currentDensityAM2PerInternal_; }
+    /**
+     * Auger coefficients multiply a carrier density by an excess carrier
+     * product, so their unit scale is the inverse square of the concentration
+     * scale: SI [m^6/s] per internal [cm^6/s] is 1e-12 in the TCAD system.
+     */
+    Real augerCoefficientM6SPerInternal() const
+    {
+        return 1.0 / (concentrationM3PerInternal_ * concentrationM3PerInternal_);
+    }
 
     /**
      * Converts a volumetric concentration integrated over a 2-D control area
@@ -123,6 +132,14 @@ public:
     {
         return value / currentDensityAM2PerInternal_;
     }
+    Real internalAugerCoefficientToM6PerS(Real value) const
+    {
+        return value * augerCoefficientM6SPerInternal();
+    }
+    Real m6PerSToInternalAugerCoefficient(Real value) const
+    {
+        return value / augerCoefficientM6SPerInternal();
+    }
     Real internalCurrentPerDeviceDepthToAPerUm(Real value) const;
 
 private:
@@ -165,6 +182,7 @@ struct UnitScalingConfig {
     Real electricFieldToInternal(Real value) const { return value; }
     Real inverseLengthToInternal(Real value) const { return value; }
     Real surfaceFieldCoefficientToInternal(Real value) const { return value; }
+    Real augerCoefficientToInternal(Real value) const { return value; }
 
     Real lengthToSI(Real value) const;
     Real concentrationToSI(Real value) const;

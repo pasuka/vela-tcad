@@ -574,6 +574,9 @@ Notes:
   passed into the recombination model (`2.90e-43` and `1.028e-43 m^6/s`
   Sentaurus 2018 silicon-at-300 K defaults).
   Negative values are rejected by the recombination model validation.
+  With `scaling.mode: "unit_scaling"` the compiled defaults are expressed in
+  the internal unit system (`2.90e-31` and `1.028e-31 cm^6/s`), and an explicit
+  deck value is read and kept internally as `cm^6/s`.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 - With `scaling.mode: "unit_scaling"`, `bandgap_narrowing.reference_doping_m3`
   is read and kept internally as `cm^-3`.
@@ -685,7 +688,9 @@ material intrinsic-density override, while the `old_slotboom` BGN term uses
 `Ebgn = 9e-3 eV`, `Nref = 1e17 cm^-3`, and `C = 0.5`. This is implemented in
 Gummel and Newton configurations. With
 `scaling.mode: "unit_scaling"`, `reference_doping_m3` numeric input is read as
-`cm^-3` and kept internally as `cm^-3`.
+`cm^-3` and kept internally as `cm^-3`. The compiled `Nref` default of both
+`slotboom` and `old_slotboom` is likewise expressed in the internal unit
+system (`1e23 m^-3` in `legacy_si`, `1e17 cm^-3` in `unit_scaling`).
 
 Set `fermi_statistics_correction: true` to reproduce the additional bandgap-
 narrowing correction that Sentaurus applies by default when `Fermi` and
@@ -1097,8 +1102,10 @@ Example matching the BVmethods `models.par` values at 300 K:
 `concentration_basis` accepts `total_impurity` (`Nd + Na`) or `net_doping`
 (`abs(Nd - Na)`). With `scaling.mode: "unit_scaling"`, numeric
 `reference_doping_m3` values are read in the active TCAD concentration unit,
-`cm^-3`, consistently with the existing mobility inputs. Omitting this block
-preserves the legacy uniform `taun` and `taup` behavior.
+`cm^-3`, consistently with the existing mobility inputs. The compiled
+`reference_doping_m3` default is likewise expressed in the internal unit
+system (`1e22 m^-3` in `legacy_si`, `1e16 cm^-3` in `unit_scaling`). Omitting
+this block preserves the legacy uniform `taun` and `taup` behavior.
 
 With `scaling.mode: "unit_scaling"`, Caughey-Thomas and Masetti mobility
 values are read as `cm^2/(V s)`, reference dopings as `cm^-3`, saturation

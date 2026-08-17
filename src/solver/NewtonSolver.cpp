@@ -1698,8 +1698,15 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             json.at("srh_doping_dependence"), scaling);
     }
     cfg.srhDopingDependence.temperature_K = cfg.temperature_K;
-    cfg.augerCn = json.value("auger_cn_m6_per_s", cfg.augerCn);
-    cfg.augerCp = json.value("auger_cp_m6_per_s", cfg.augerCp);
+    // The compiled Auger defaults are SI literals; express them in the active
+    // internal unit before applying any deck override, which is already
+    // written in internal units.
+    cfg.augerCn = scaling.unitSystem().m6PerSToInternalAugerCoefficient(cfg.augerCn);
+    cfg.augerCp = scaling.unitSystem().m6PerSToInternalAugerCoefficient(cfg.augerCp);
+    cfg.augerCn = scaling.augerCoefficientToInternal(
+        json.value("auger_cn_m6_per_s", cfg.augerCn));
+    cfg.augerCp = scaling.augerCoefficientToInternal(
+        json.value("auger_cp_m6_per_s", cfg.augerCp));
     if (json.contains("mobility"))
         cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"), scaling);
     if (json.contains("bandgap_narrowing")) {

@@ -3784,3 +3784,20 @@ TEST_CASE("NewtonSolver: Gummel density recovery uses Ohmic contact densities",
     REQUIRE(fromPolluted.attempted);
     CHECK(fromPolluted.solution.n(4) == Catch::Approx(fromClean.solution.n(4)).epsilon(1.0e-12));
 }
+
+TEST_CASE("NewtonConfig unit_scaling default Auger coefficients are TCAD internal",
+          "[newton][recombination][auger][scaling]")
+{
+    const nlohmann::json json = {
+        {"recombination", {"srh", "auger"}}
+    };
+
+    const NewtonConfig legacy = newtonConfigFromJson(json);
+    REQUIRE(legacy.augerCn == Catch::Approx(2.90e-43));
+    REQUIRE(legacy.augerCp == Catch::Approx(1.028e-43));
+
+    const NewtonConfig scaled = newtonConfigFromJson(
+        json, UnitScalingConfig{UnitScalingMode::UnitScaling});
+    REQUIRE(scaled.augerCn == Catch::Approx(2.90e-31));
+    REQUIRE(scaled.augerCp == Catch::Approx(1.028e-31));
+}
