@@ -167,11 +167,16 @@ private:
 struct UnitScalingConfig {
     UnitScalingMode mode = UnitScalingMode::LegacySI;
     PhysicalUnitSystem physicalUnitSystem = PhysicalUnitSystem::legacySI();
+    /// Deck format version the config was parsed from: 0 for a legacy deck, 2
+    /// for a `format_version: 2` deck. Field parsers need this context to
+    /// apply the version-2 key contract to documents loaded next to the deck.
+    int deckFormatVersion = 0;
 
     UnitScalingConfig() = default;
     explicit UnitScalingConfig(UnitScalingMode mode);
 
     bool isUnitScaling() const { return mode == UnitScalingMode::UnitScaling; }
+    bool isDeckFormatVersion2() const { return deckFormatVersion == 2; }
     const PhysicalUnitSystem& unitSystem() const { return physicalUnitSystem; }
 
     Real lengthToInternal(Real value) const { return value; }
@@ -202,5 +207,17 @@ struct UnitScalingConfig {
 int parseDeckFormatVersion(const nlohmann::json& cfg);
 
 UnitScalingConfig parseUnitScalingConfig(const nlohmann::json& cfg);
+
+// Applies the format_version 2 key contract to a JSON document: the v1 key
+// spellings the contract removed are rejected with a message naming their v2
+// replacement, and the v2 spellings are rewritten to the names the field
+// parsers consume. Documents that are not version 2 are returned unchanged.
+// `formatVersion` is the version of the deck the document belongs to, so that
+// documents referenced by a deck (materials files) follow the deck contract.
+nlohmann::json canonicalizeDeckKeys(const nlohmann::json& doc, int formatVersion);
+
+// Convenience wrapper that reads `format_version` from the deck itself. Every
+// deck loader must apply this to the JSON it reads before parsing fields.
+nlohmann::json canonicalizeDeck(const nlohmann::json& cfg);
 
 } // namespace vela

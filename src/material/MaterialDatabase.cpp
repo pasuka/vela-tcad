@@ -153,6 +153,9 @@ void MaterialDatabase::loadJson(const std::string& jsonPath, UnitScalingConfig s
     try {
         nlohmann::json root;
         ifs >> root;
+        // A materials file inherits the deck's format version, so a version-2
+        // deck also gets the version-2 key contract on its materials file.
+        root = canonicalizeDeckKeys(root, scaling.deckFormatVersion);
 
         for (const nlohmann::json& entry : materialEntries(root)) {
             const std::string name = entry.at("name").get<std::string>();

@@ -73,6 +73,7 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
 
     nlohmann::json cfg;
     ifs >> cfg;
+    cfg = canonicalizeDeck(cfg);
     RuntimeLogSession runtimeLog =
         RuntimeLogSession::fromConfig(cfg, configFile, "poisson");
     const UnitScalingConfig scaling = parseUnitScalingConfig(cfg);

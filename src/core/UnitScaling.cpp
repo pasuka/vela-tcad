@@ -1,8 +1,11 @@
 #include "vela/core/UnitScaling.h"
 
 #include <nlohmann/json.hpp>
+#include <cstdint>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace vela {
 
@@ -142,19 +145,162 @@ int parseDeckFormatVersion(const nlohmann::json& cfg)
             "format_version must be the integer 2.");
     }
 
-    const int version = value.get<int>();
-    if (version == 2)
+    // Compare before narrowing: get<int>() would wrap a wide JSON integer such
+    // as 4294967298 onto 2 and accept it as a supported version.
+    const bool isSupported = value.is_number_unsigned()
+        ? value.get<std::uint64_t>() == 2u
+        : value.get<std::int64_t>() == 2;
+    if (isSupported)
         return 2;
 
     throw std::invalid_argument(
-        "Unsupported format_version " + std::to_string(version) +
+        "Unsupported format_version " + value.dump() +
         ". The only supported deck format version is 2, in which every value is "
         "expressed in the TCAD internal units (um, cm^-3, cm^2/(V s), V/cm). "
         "Run the deck migration tool to convert an older deck.");
 }
 
+namespace {
+
+// Class A of the format_version 2 contract
+// (docs/superpowers/specs/2026-08-17-unit-system-v2-contract.md): the value is
+// already interpreted in TCAD internal units, only the key name still claims an
+// SI unit. In a version-2 deck the v1 name is rejected and the v2 name is the
+// single accepted spelling.
+struct KeyRename {
+    std::string_view v1;
+    std::string_view v2;
+};
+
+constexpr KeyRename kExactRenames[] = {
+    {"ni", "ni_cm3"},
+    {"mun", "mun_cm2_V_s"},
+    {"mup", "mup_cm2_V_s"},
+    {"donors", "donors_cm3"},
+    {"acceptors", "acceptors_cm3"},
+    {"depth_m", "depth_um"},
+    {"contact_radius", "contact_radius_um"},
+    {"surface_recombination_velocity", "surface_recombination_velocity_cm_per_s"},
+    {"minimum_field_V_m", "minimum_field_V_per_cm"},
+    {"switch_field_V_m", "switch_field_V_per_cm"},
+    {"electron_B_V_m", "electron_B_V_per_cm"},
+    {"hole_B_V_m", "hole_B_V_per_cm"},
+    {"electron_b_low_V_m", "electron_b_low_V_per_cm"},
+    {"hole_b_low_V_m", "hole_b_low_V_per_cm"},
+    {"electron_b_high_V_m", "electron_b_high_V_per_cm"},
+    {"hole_b_high_V_m", "hole_b_high_V_per_cm"},
+};
+
+// Suffix families: the mobility, impact-ionization, recombination, doping and
+// diagnostics keys all rename by unit suffix only. Longer suffixes are listed
+// first so that `_m2_V_s` is not matched as `_m2`.
+constexpr KeyRename kSuffixRenames[] = {
+    {"_m6_per_s", "_cm6_per_s"},
+    {"_m2_V_s", "_cm2_V_s"},
+    {"_m_per_V", "_cm_per_V"},
+    {"_m_per_s", "_cm_per_s"},
+    {"_m_inv", "_cm_inv"},
+    {"_V_per_m", "_V_per_cm"},
+    {"_m_s", "_cm_s"},
+    {"_m3", "_cm3"},
+    {"_m2", "_cm2"},
+};
+
+// `solver.band_to_band` is Class C: it stays SI and keeps its SI key names.
+// `solver.normalization` is spelled in v2 units already.
+constexpr std::string_view kUntouchedSubtrees[] = {"band_to_band", "normalization"};
+
+bool endsWith(const std::string& text, std::string_view suffix)
+{
+    return text.size() > suffix.size() &&
+        text.compare(text.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+// Maps a key between the two spellings of the rename table. `toV2` selects the
+// direction: v1 name to v2 name, or v2 name back to the name the field parsers
+// consume.
+std::optional<std::string> renamedKey(const std::string& key, bool toV2)
+{
+    for (const KeyRename& rename : kExactRenames) {
+        const std::string_view from = toV2 ? rename.v1 : rename.v2;
+        if (key == from)
+            return std::string(toV2 ? rename.v2 : rename.v1);
+    }
+    for (const KeyRename& rename : kSuffixRenames) {
+        const std::string_view from = toV2 ? rename.v1 : rename.v2;
+        const std::string_view to = toV2 ? rename.v2 : rename.v1;
+        if (endsWith(key, from))
+            return key.substr(0, key.size() - from.size()) + std::string(to);
+    }
+    return std::nullopt;
+}
+
+bool isUntouchedSubtree(const std::string& key)
+{
+    for (std::string_view name : kUntouchedSubtrees) {
+        if (key == name)
+            return true;
+    }
+    return false;
+}
+
+nlohmann::json canonicalizeNode(const nlohmann::json& node)
+{
+    if (node.is_array()) {
+        nlohmann::json out = nlohmann::json::array();
+        for (const auto& element : node)
+            out.push_back(canonicalizeNode(element));
+        return out;
+    }
+    if (!node.is_object())
+        return node;
+
+    nlohmann::json out = nlohmann::json::object();
+    for (auto it = node.begin(); it != node.end(); ++it) {
+        const std::string& key = it.key();
+        if (isUntouchedSubtree(key)) {
+            out[key] = it.value();
+            continue;
+        }
+
+        if (const std::optional<std::string> v2 = renamedKey(key, true)) {
+            throw std::invalid_argument(
+                "Deck key '" + key + "' was renamed to '" + *v2 +
+                "' in format_version 2 and is not accepted; the old name is not "
+                "an alias. Run the deck migration tool to convert an older deck.");
+        }
+
+        const std::optional<std::string> parsed = renamedKey(key, false);
+        const std::string& outKey = parsed ? *parsed : key;
+        if (out.contains(outKey)) {
+            throw std::invalid_argument(
+                "Deck key '" + key + "' collides with '" + outKey +
+                "' after the format_version 2 rename; remove one of them.");
+        }
+        out[outKey] = canonicalizeNode(it.value());
+    }
+    return out;
+}
+
+} // namespace
+
+nlohmann::json canonicalizeDeckKeys(const nlohmann::json& doc, int formatVersion)
+{
+    if (formatVersion != 2)
+        return doc;
+    return canonicalizeNode(doc);
+}
+
+nlohmann::json canonicalizeDeck(const nlohmann::json& cfg)
+{
+    return canonicalizeDeckKeys(cfg, parseDeckFormatVersion(cfg));
+}
+
 UnitScalingConfig parseUnitScalingConfig(const nlohmann::json& cfg)
 {
+    const bool hasNormalization = cfg.is_object() && cfg.contains("solver") &&
+        cfg.at("solver").is_object() && cfg.at("solver").contains("normalization");
+
     if (parseDeckFormatVersion(cfg) == 2) {
         if (cfg.contains("scaling")) {
             throw std::invalid_argument(
@@ -163,7 +309,14 @@ UnitScalingConfig parseUnitScalingConfig(const nlohmann::json& cfg)
                 "characteristic_length_um, reference_concentration_cm3 and "
                 "reference_mobility_cm2_V_s to solver.normalization.");
         }
-        return UnitScalingConfig{UnitScalingMode::UnitScaling};
+        UnitScalingConfig scaling{UnitScalingMode::UnitScaling};
+        scaling.deckFormatVersion = 2;
+        return scaling;
+    }
+
+    if (hasNormalization) {
+        throw std::invalid_argument(
+            "solver.normalization requires format_version 2.");
     }
 
     if (!cfg.contains("scaling"))

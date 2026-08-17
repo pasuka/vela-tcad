@@ -1,4 +1,5 @@
 #include "vela/core/UnitScaling.h"
+#include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/FixedStateOperatorAudit.h"
 #include "vela/io/CsvUtils.h"
 #include "vela/io/MeshReader.h"
@@ -258,10 +259,12 @@ AuditConfiguration readConfig(const std::filesystem::path& path)
     std::ifstream input = openInput(path, "audit JSON");
     nlohmann::json json;
     input >> json;
+    json = vela::canonicalizeDeck(json);
     const vela::UnitScalingConfig scaling = vela::parseUnitScalingConfig(json);
-    const vela::GummelConfig solver = json.contains("solver")
+    vela::GummelConfig solver = json.contains("solver")
         ? vela::gummelConfigFromJson(json.at("solver"), scaling)
         : vela::gummelConfigFromJson(json, scaling);
+    solver.unitScalingRefs = vela::parseUnitScalingReferenceConfig(json);
     vela::MaterialDatabase materials(scaling);
     if (json.contains("materials_file")) {
         std::filesystem::path materialsPath =

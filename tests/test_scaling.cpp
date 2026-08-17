@@ -392,3 +392,122 @@ TEST_CASE("format_version 2 rejects invalid normalization values",
     REQUIRE_THROWS_AS(parseUnitScalingReferenceConfig(make(-1.0)), std::invalid_argument);
     REQUIRE_THROWS_AS(parseUnitScalingReferenceConfig(make("default")), std::invalid_argument);
 }
+
+TEST_CASE("Deck format version rejects a wide integer that narrows onto 2",
+          "[scaling][format_version]")
+{
+    REQUIRE_THROWS_AS(parseDeckFormatVersion(nlohmann::json{{"format_version", 4294967298ULL}}),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(parseDeckFormatVersion(nlohmann::json{{"format_version", -4294967294LL}}),
+                      std::invalid_argument);
+}
+
+TEST_CASE("parseUnitScalingConfig preserves the deck format version",
+          "[scaling][format_version]")
+{
+    REQUIRE(parseUnitScalingConfig(nlohmann::json{{"format_version", 2}})
+                .isDeckFormatVersion2());
+    REQUIRE_FALSE(parseUnitScalingConfig(nlohmann::json{{"scaling", {{"mode", "unit_scaling"}}}})
+                      .isDeckFormatVersion2());
+    REQUIRE_FALSE(parseUnitScalingConfig(nlohmann::json::object()).isDeckFormatVersion2());
+}
+
+TEST_CASE("parseUnitScalingConfig rejects solver.normalization without format_version 2",
+          "[scaling][format_version]")
+{
+    const nlohmann::json cfg = {
+        {"solver", {{"normalization", {{"characteristic_length_um", 2.5}}}}},
+    };
+    REQUIRE_THROWS_AS(parseUnitScalingConfig(cfg), std::invalid_argument);
+}
+
+TEST_CASE("format_version 2 rejects the renamed v1 keys", "[scaling][format_version]")
+{
+    const auto deck = [](const nlohmann::json& solver) {
+        return nlohmann::json{{"format_version", 2}, {"solver", solver}};
+    };
+    REQUIRE_THROWS_AS(canonicalizeDeck(deck({{"auger_cn_m6_per_s", 1.0e-42}})),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(canonicalizeDeck(deck({{"carrier_floor_m3", 1.0}})),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        canonicalizeDeck(deck({{"impact_ionization", {{"electron_B_V_m", 1.0e6}}}})),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        canonicalizeDeck(nlohmann::json{
+            {"format_version", 2},
+            {"doping", nlohmann::json::array({{{"region", "n"}, {"donors", 1.0e16}}})}}),
+        std::invalid_argument);
+}
+
+TEST_CASE("format_version 2 keys reach the field parsers", "[scaling][format_version]")
+{
+    const nlohmann::json deck = {
+        {"format_version", 2},
+        {"solver", {
+            {"auger_cn_cm6_per_s", 2.8e-31},
+            {"carrier_floor_cm3", 1.0},
+            {"impact_ionization", {
+                {"electron_B_V_per_cm", 1.71e6},
+                {"electron_A_cm_inv", 7.03e5},
+                {"switch_field_V_per_cm", 4.0e5},
+                {"carrier_velocity_cm_s", 1.0e7},
+            }},
+            {"mobility", {{"arora_mumin1_cm2_V_s", 88.0}, {"arora_nref_cm3", 1.26e17}}},
+        }},
+        {"doping", nlohmann::json::array({
+            {{"region", "n"}, {"donors_cm3", 1.0e16}, {"acceptors_cm3", 0.0}},
+        })},
+        {"interfaces", nlohmann::json::array({{{"sheet_charge_cm2", 1.0e11}}})},
+    };
+    const nlohmann::json parsed = canonicalizeDeck(deck);
+    const auto& solver = parsed.at("solver");
+    REQUIRE(solver.at("auger_cn_m6_per_s").get<Real>() == Catch::Approx(2.8e-31));
+    REQUIRE(solver.at("carrier_floor_m3").get<Real>() == Catch::Approx(1.0));
+    const auto& impact = solver.at("impact_ionization");
+    REQUIRE(impact.at("electron_B_V_m").get<Real>() == Catch::Approx(1.71e6));
+    REQUIRE(impact.at("electron_A_m_inv").get<Real>() == Catch::Approx(7.03e5));
+    REQUIRE(impact.at("switch_field_V_m").get<Real>() == Catch::Approx(4.0e5));
+    REQUIRE(impact.at("carrier_velocity_m_s").get<Real>() == Catch::Approx(1.0e7));
+    REQUIRE(solver.at("mobility").at("arora_mumin1_m2_V_s").get<Real>() == Catch::Approx(88.0));
+    REQUIRE(solver.at("mobility").at("arora_nref_m3").get<Real>() == Catch::Approx(1.26e17));
+    REQUIRE(parsed.at("doping").at(0).at("donors").get<Real>() == Catch::Approx(1.0e16));
+    REQUIRE(parsed.at("interfaces").at(0).at("sheet_charge_m2").get<Real>() ==
+            Catch::Approx(1.0e11));
+    REQUIRE(parsed.at("format_version").get<int>() == 2);
+}
+
+TEST_CASE("format_version 2 leaves SI-only and normalization blocks untouched",
+          "[scaling][format_version]")
+{
+    const nlohmann::json deck = {
+        {"format_version", 2},
+        {"solver", {
+            {"band_to_band", {{"B_V_per_m", 2.17e7}, {"minimum_field_V_per_m", 1.0e7}}},
+            {"normalization", {
+                {"reference_concentration_cm3", 5.0e16},
+                {"reference_mobility_cm2_V_s", 900.0},
+                {"characteristic_length_um", 2.5},
+            }},
+        }},
+        {"sweep", {{"external_circuit", {{"resistance_ohm_um", 1.0e3}}}}},
+    };
+    const nlohmann::json parsed = canonicalizeDeck(deck);
+    REQUIRE(parsed.at("solver").at("band_to_band").at("B_V_per_m").get<Real>() ==
+            Catch::Approx(2.17e7));
+    REQUIRE(parsed.at("solver").at("normalization").at("reference_concentration_cm3").get<Real>() ==
+            Catch::Approx(5.0e16));
+    REQUIRE(parsed.at("sweep").at("external_circuit").at("resistance_ohm_um").get<Real>() ==
+            Catch::Approx(1.0e3));
+    REQUIRE(parseUnitScalingReferenceConfig(parsed).referenceMobility_m2_V_s ==
+            Catch::Approx(900.0));
+}
+
+TEST_CASE("Legacy decks are not rewritten", "[scaling][format_version]")
+{
+    const nlohmann::json deck = {
+        {"scaling", {{"mode", "unit_scaling"}}},
+        {"solver", {{"auger_cn_m6_per_s", 1.0e-42}}},
+    };
+    REQUIRE(canonicalizeDeck(deck) == deck);
+}

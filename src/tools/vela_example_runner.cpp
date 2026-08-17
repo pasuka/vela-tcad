@@ -6,6 +6,7 @@
 #include "vela/physics/DopingModel.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/core/RuntimeLog.h"
+#include "vela/core/UnitScalingSystem.h"
 #include "vela/solver/NewtonSolver.h"
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/simulation/DCSweep.h"
@@ -292,6 +293,7 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
     vela::NewtonConfig newton = cfg.contains("solver")
         ? vela::newtonConfigFromJson(cfg.at("solver"), scaling)
         : vela::NewtonConfig{};
+    newton.unitScalingRefs = vela::parseUnitScalingReferenceConfig(cfg);
     std::vector<vela::RegionFixedChargeSpec> fixedCharges =
         vela::parseRegionFixedChargeSpecs(cfg, scaling);
     std::vector<vela::InterfaceSheetChargeSpec> sheetCharges =
@@ -2527,6 +2529,7 @@ int main(int argc, char** argv)
 
         nlohmann::json cfg;
         ifs >> cfg;
+        cfg = vela::canonicalizeDeck(cfg);
         const std::string type = cfg.value("simulation_type", cfg.contains("sweep") ? "dc_sweep" : "poisson");
         std::optional<vela::RuntimeLogSession> runnerLogSession;
         if (type != "dc_sweep" && type != "poisson")

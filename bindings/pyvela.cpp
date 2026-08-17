@@ -92,7 +92,7 @@ nlohmann::json readJsonFile(const std::string& configFile)
 
     nlohmann::json cfg;
     input >> cfg;
-    return cfg;
+    return vela::canonicalizeDeck(cfg);
 }
 
 SweepPythonMetadata sweepMetadataFromConfig(const std::string& configFile)

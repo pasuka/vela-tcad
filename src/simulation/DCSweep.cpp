@@ -2587,6 +2587,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
     nlohmann::json cfg;
     ifs >> cfg;
+    cfg = canonicalizeDeck(cfg);
     RuntimeLogSession runtimeLog =
         RuntimeLogSession::fromConfig(cfg, configFile, "dc_sweep");
     const UnitScalingConfig scaling = parseUnitScalingConfig(cfg);

@@ -94,10 +94,32 @@ Rules:
   mode is implied by the version, and `scaling` no longer has any remaining
   role in a v2 deck.
 - Any `format_version` other than `2`, or a non-integer value, is rejected.
+- A v2 deck uses the v2 key names. Every key whose name still claims an SI unit
+  is renamed, and the old name is rejected rather than aliased; see below.
 - Omitting `format_version` keeps the legacy behavior described under
   `scaling`: no `scaling` block means SI input, and
   `scaling.mode: "unit_scaling"` means TCAD input. This transitional form is
   scheduled for removal.
+
+### v2 key names
+
+A v2 deck renames the keys whose names claim an SI unit while their value is
+already read in the TCAD internal units. The rename is by unit suffix
+(`_m3` to `_cm3`, `_m2` to `_cm2`, `_m2_V_s` to `_cm2_V_s`, `_m_s` to `_cm_s`,
+`_m_inv` to `_cm_inv`, `_m_per_s` to `_cm_per_s`, `_m_per_V` to `_cm_per_V`,
+`_m6_per_s` to `_cm6_per_s`, `_V_per_m` and `_V_m` to `_V_per_cm`), plus the
+unsuffixed names `ni`, `mun`, `mup`, `donors`, `acceptors`, `contact_radius`,
+`surface_recombination_velocity` and `depth_m`, which become `ni_cm3`,
+`mun_cm2_V_s`, `mup_cm2_V_s`, `donors_cm3`, `acceptors_cm3`,
+`contact_radius_um`, `surface_recombination_velocity_cm_per_s` and `depth_um`.
+The v1 spelling of any renamed key is rejected in a v2 deck with a message
+naming its replacement. A materials file loaded by a v2 deck follows the same
+contract.
+
+Two blocks keep their names: `solver.band_to_band`, whose parameters are
+genuinely SI, and `solver.normalization`, which is already spelled in v2 units.
+Values are unchanged by the rename: a v2 deck is numerically identical to the
+same deck with `scaling.mode: "unit_scaling"`.
 
 The equation-normalization references that used to live inside `scaling` move
 to `solver.normalization` in a v2 deck:
