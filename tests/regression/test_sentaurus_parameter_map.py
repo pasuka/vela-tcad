@@ -165,7 +165,7 @@ class LookupStrictnessTest(unittest.TestCase):
 
     def test_unknown_parameter_is_unmapped_not_guessed(self):
         result = pmap.classify("Bandgap", "EgSomethingNew")
-        self.assertEqual(result.status, pmap.STATUS_UNMAPPED)
+        self.assertEqual(result.status, pmap.STATUS_INACTIVE)
         self.assertIsNone(result.entry)
 
 
@@ -174,7 +174,7 @@ class ActivationContextTest(unittest.TestCase):
 
     def test_without_a_context_model_gated_rows_are_not_importable(self):
         result = pmap.classify("Scharfetter", "taumax", active_models=None)
-        self.assertEqual(result.status, pmap.STATUS_UNMAPPED)
+        self.assertEqual(result.status, pmap.STATUS_INACTIVE)
         self.assertIn("no activated model context", result.reason)
 
     def test_parameters_never_enable_a_model_that_is_not_active(self):
@@ -183,7 +183,7 @@ class ActivationContextTest(unittest.TestCase):
             "vanOverstraetendeMan", "a", variant="low",
             active_models=["SRH"],
         )
-        self.assertEqual(result.status, pmap.STATUS_UNMAPPED)
+        self.assertEqual(result.status, pmap.STATUS_INACTIVE)
         self.assertIn("must not enable a new model", result.reason)
 
     def test_the_same_parameter_is_importable_once_its_model_is_active(self):
@@ -258,6 +258,34 @@ class DoubleCountGuardTest(unittest.TestCase):
 class KnownOverstatementTest(unittest.TestCase):
     """Pin the specific claims that a naive coverage count gets wrong."""
 
+    def test_targets_are_consumed_json_keys(self):
+        self.assertIn("electron_mumin1_m2_V_s", pmap.lookup(
+            "DopingDependence", "mumin1", formula="1").target)
+        self.assertIn("electron_field_beta", pmap.lookup(
+            "HighFieldDependence", "beta0").target)
+        self.assertIn("electron_saturation_velocity_m_s", pmap.lookup(
+            "HighFieldDependence", "vsat0").target)
+        self.assertEqual(
+            "solver.electron_quantum_potential.theta",
+            pmap.lookup("QuantumPotentialParameters", "theta").target,
+        )
+
+    def test_aliases_activate_canonical_mapping_gates(self):
+        result = pmap.classify(
+            "DopingDependence", "mumin1", formula="1",
+            active_models=["DopingDep"],
+        )
+        self.assertEqual(pmap.STATUS_EXACT, result.status)
+
+    def test_unknown_active_coefficient_blocks(self):
+        result = pmap.classify(
+            "DopingDependence", "new_coefficient", formula="3",
+            active_models=["DopingDependence"],
+        )
+        self.assertEqual(pmap.STATUS_UNMAPPED, result.status)
+        with self.assertRaises(pmap.ParameterMapError):
+            pmap.assert_importable([result], allow_lossy=True)
+
     def test_auger_density_enhancement_blocks_the_import(self):
         """Vela's Auger is constant-coefficient; H/N0 cannot be honoured."""
         for name in ("H", "N0"):
@@ -319,9 +347,14 @@ class GateBehaviourTest(unittest.TestCase):
                     self._results(status), allow_lossy=True,
                 )
 
-    def test_unmapped_is_not_fatal(self):
+    def test_inactive_is_not_fatal(self):
         """Inactive library entries must not block an otherwise clean run."""
-        pmap.assert_importable(self._results(pmap.STATUS_UNMAPPED))
+        pmap.assert_importable(self._results(pmap.STATUS_INACTIVE))
+
+    def test_unmapped_is_fatal(self):
+        """Unknown input in an active section must fail closed."""
+        with self.assertRaises(pmap.ParameterMapError):
+            pmap.assert_importable(self._results(pmap.STATUS_UNMAPPED))
 
 
 class CorpusClassificationTest(unittest.TestCase):
@@ -386,7 +419,7 @@ class CorpusClassificationTest(unittest.TestCase):
         ]
         self.assertTrue(gated)
         for item in gated:
-            self.assertEqual(item.status, pmap.STATUS_UNMAPPED)
+            self.assertEqual(item.status, pmap.STATUS_INACTIVE)
 
     def test_shadowed_parameters_are_not_counted(self):
         """Coverage must reflect the effective file, not every line in it."""

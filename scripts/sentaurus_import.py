@@ -924,7 +924,8 @@ def patch_reference_deck(deck_path: Path,
                          cmd_summary: dict[str, Any],
                          sim: dict[str, Any],
                          output_csv: str,
-                         solver_override: dict[str, Any] | None = None) -> list[str]:
+                         solver_override: dict[str, Any] | None = None,
+                         allow_lossy: bool = False) -> list[str]:
     deck = read_json(deck_path)
     kind = str(sim.get("kind", "iv")).lower()
     sweeps = cmd_summary.get("sweeps", [])
@@ -1013,7 +1014,8 @@ def patch_reference_deck(deck_path: Path,
         solver["max_iter"] = max(int(solver.get("max_iter", 0)), 150)
         solver["reltol"] = min(float(solver.get("reltol", 1.0e-6)), 1.0e-6)
         solver["damping_psi"] = min(float(solver.get("damping_psi", 0.35)), 0.35)
-    warnings = apply_solver_physics(deck, cmd_summary, sim)
+    warnings = apply_solver_physics(
+        deck, cmd_summary, sim, allow_lossy=allow_lossy)
     if solver_override:
         deck.setdefault("solver", {}).update(json.loads(json.dumps(solver_override)))
     materials_file = sim.get("vela_materials_file")
@@ -1225,7 +1227,11 @@ def reference_command(args: argparse.Namespace) -> None:
             materials_dst.write_text(
                 materials_src.read_text(encoding="utf-8"), encoding="utf-8")
             generated.append(relative_generated(materials_dst, output_dir))
-        warnings.extend(patch_reference_deck(deck_path, cmd_summary, sim, candidate_csv, solver_override))
+        allow_lossy = bool(args.allow_lossy or config.get("allow_lossy", False)
+                           or sim.get("allow_lossy", False))
+        warnings.extend(patch_reference_deck(
+            deck_path, cmd_summary, sim, candidate_csv, solver_override,
+            allow_lossy=allow_lossy))
         generated.append(relative_generated(deck_path, output_dir))
         run_deck_path, runtime_warnings = write_runtime_deck_if_requested(deck_path, sim, candidate_csv)
         warnings.extend(runtime_warnings)
@@ -1488,7 +1494,8 @@ def build_device_deck(device_ir: dict[str, Any],
                       output_csv: str,
                       current_contact: str | None = None,
                       stop_voltage: float | None = None,
-                      materials_file: str | None = None) -> tuple[dict[str, Any], list[str]]:
+                      materials_file: str | None = None,
+                      allow_lossy: bool = False) -> tuple[dict[str, Any], list[str]]:
     """Build a Vela ``dc_sweep`` deck from the device and execution IRs."""
     analysis = execution_ir["analysis"]
     kind = analysis["kind"]
@@ -1577,7 +1584,8 @@ def build_device_deck(device_ir: dict[str, Any],
     }
     if materials_file:
         deck["materials_file"] = materials_file
-    warnings = apply_solver_physics(deck, cmd_summary, {})
+    warnings = apply_solver_physics(
+        deck, cmd_summary, {}, allow_lossy=allow_lossy)
     if kind != "bv":
         deck["solver"].pop("impact_ionization", None)
     return deck, warnings
@@ -1636,6 +1644,7 @@ def device_command(args: argparse.Namespace) -> None:
             current_contact=args.current_contact,
             stop_voltage=args.stop_voltage,
             materials_file=args.materials_file,
+            allow_lossy=args.allow_lossy,
         )
     except ExecutionIrError as error:
         _write_fail_report(output_dir, "deck", str(error))
@@ -1744,6 +1753,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Disable the non-obtuse mesh acceptance gate",
     )
     device.add_argument(
+        "--allow-lossy", action="store_true",
+        help="Explicitly allow substitution of unsupported physics models",
+    )
+    device.add_argument(
         "--template-var",
         action="append",
         default=[],
@@ -1792,6 +1805,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-vela-run",
         action="store_true",
         help="Generate neutral exports and Vela decks without executing the Vela runner",
+    )
+    reference.add_argument(
+        "--allow-lossy", action="store_true",
+        help="Explicitly allow substitution of unsupported physics models",
     )
     reference.set_defaults(func=reference_command)
     return parser

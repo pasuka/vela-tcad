@@ -46,10 +46,11 @@ Every mapping row carries exactly one status.
 | `unsupported_formula` | The section exists in Vela but this `Formula` or named sub-model does not. | never |
 | `unsupported_model` | Vela has no counterpart. | never |
 
-A sixth outcome, `unmapped`, is produced at classification time rather than
-stored in the matrix. It means the parameter was not reached: either no row
-describes it, or its model is not active. `unmapped` is **not** an error — a
-`.par` file is a candidate library, and most of it is inert in any given run.
+Two additional outcomes are produced at classification time. `inactive` means
+the parameter's section model is not selected and is harmless because a `.par`
+file is a candidate library. `unmapped` means an active section contains no
+matching contract row; it is an error so new, misspelled, or unsupported
+coefficients cannot be silently dropped.
 
 `--allow-lossy` widens the gate to `approximated`. It never admits
 `unsupported_formula` or `unsupported_model`: those represent physics Vela
@@ -72,7 +73,9 @@ The activation context comes from the SDevice execution IR
 (`scripts/sentaurus_execution_ir.py`), which classifies the models a `.cmd`
 deck actually selects. Each matrix row names the model it depends on via
 `requires_model`; a row whose model is absent from the active set classifies
-as `unmapped` and contributes nothing.
+as `inactive` and contributes nothing. Supported execution-model aliases such
+as `DopingDep` and carrier-prefixed high-field spellings are canonicalized
+before this gate is evaluated.
 
 Rows for models Vela does not implement are gated on *their own* name — for
 example the `Lackner` rows require the `Lackner` model. Because that name is
@@ -81,7 +84,7 @@ through a legitimate import, but if the gate is ever widened they immediately
 report `unsupported_model` instead of being silently forgotten.
 
 When no activation context is supplied at all, every model-gated row is
-`unmapped`. Only material constants such as permittivity import without one.
+`inactive`. Only material constants such as permittivity import without one.
 
 ## Inert values
 

@@ -64,6 +64,26 @@ STATUSES = (
 
 #: Status used for a parameter that the matrix does not describe at all.
 STATUS_UNMAPPED = "unmapped"
+STATUS_INACTIVE = "inactive"
+
+MODEL_ALIASES = {
+    "DopingDep": "DopingDependence",
+    "HighFieldsaturation": "HighFieldSaturation",
+    "eHighFieldSaturation": "HighFieldSaturation",
+    "eHighFieldsaturation": "HighFieldSaturation",
+    "hHighFieldSaturation": "HighFieldSaturation",
+    "hHighFieldsaturation": "HighFieldSaturation",
+}
+
+SECTION_MODELS = {
+    "DopingDependence": "DopingDependence",
+    "HighFieldDependence": "HighFieldSaturation",
+    "Scharfetter": "SRH",
+    "Auger": "Auger",
+    "OldSlotboom": "OldSlotboom",
+    "vanOverstraetendeMan": "VanOverstraeten",
+    "QuantumPotentialParameters": "eQuantumPotential",
+}
 
 #: Statuses an emitter may act on without an explicit lossy opt-in.
 DEFAULT_ALLOWED_STATUSES = frozenset({STATUS_EXACT, STATUS_FROZEN})
@@ -224,14 +244,14 @@ def _rows() -> list[MappingEntry]:
     # DopingDependence Formula 1 is Masetti, which Vela implements term for
     # term.  Formula 2 (Arora) is not implemented.
     masetti = {
-        "mumin1": "solver.mobility.electronMasetti.mumin1 / holeMasetti.mumin1",
-        "mumin2": "solver.mobility.electronMasetti.mumin2 / holeMasetti.mumin2",
-        "mu1": "solver.mobility.electronMasetti.mu1 / holeMasetti.mu1",
-        "Pc": "solver.mobility.electronMasetti.Pc / holeMasetti.Pc",
-        "Cr": "solver.mobility.electronMasetti.Cr / holeMasetti.Cr",
-        "Cs": "solver.mobility.electronMasetti.Cs / holeMasetti.Cs",
-        "alpha": "solver.mobility.electronMasetti.alpha / holeMasetti.alpha",
-        "beta": "solver.mobility.electronMasetti.beta / holeMasetti.beta",
+        "mumin1": "solver.mobility.electron_mumin1_m2_V_s / hole_mumin1_m2_V_s",
+        "mumin2": "solver.mobility.electron_mumin2_m2_V_s / hole_mumin2_m2_V_s",
+        "mu1": "solver.mobility.electron_mu1_m2_V_s / hole_mu1_m2_V_s",
+        "Pc": "solver.mobility.electron_pc_m3 / hole_pc_m3",
+        "Cr": "solver.mobility.electron_cr_m3 / hole_cr_m3",
+        "Cs": "solver.mobility.electron_cs_m3 / hole_cs_m3",
+        "alpha": "solver.mobility.electron_masetti_alpha / hole_masetti_alpha",
+        "beta": "solver.mobility.electron_masetti_beta / hole_masetti_beta",
     }
     for name, target in masetti.items():
         rows.append(MappingEntry(
@@ -259,14 +279,15 @@ def _rows() -> list[MappingEntry]:
     rows.append(MappingEntry(
         section="HighFieldDependence", parameter="beta0",
         status=STATUS_FROZEN,
-        target="solver.mobility.electronCT.beta / holeCT.beta",
+        target="solver.mobility.electron_field_beta / hole_field_beta",
         requires_model="HighFieldSaturation",
         note="Vela has no betaexp temperature law; valid at the frozen T",
     ))
     rows.append(MappingEntry(
         section="HighFieldDependence", parameter="vsat0",
         status=STATUS_FROZEN,
-        target="solver.mobility.electronCT.vsat / holeCT.vsat",
+        target=("solver.mobility.electron_saturation_velocity_m_s / "
+                "hole_saturation_velocity_m_s"),
         requires_model="HighFieldSaturation",
         note="Vela has no vsatexp temperature law; valid at the frozen T",
     ))
@@ -303,7 +324,7 @@ def _rows() -> list[MappingEntry]:
         ))
     rows.append(MappingEntry(
         section="HighFieldDependence", parameter="Vsat_Formula",
-        status=STATUS_EXACT, target=None, formula=None,
+        status=STATUS_UNSUPPORTED_FORMULA, target=None, formula=None,
         requires_model="HighFieldSaturation",
         neutral_value=1.0,
         note=(
@@ -314,6 +335,7 @@ def _rows() -> list[MappingEntry]:
 
     # -- Recombination ---------------------------------------------------
     scharfetter = {
+        "tau0": "solver.srh_doping_dependence.{carrier}.tau_max_s",
         "taumin": "solver.srh_doping_dependence.{carrier}.tau_min_s",
         "taumax": "solver.srh_doping_dependence.{carrier}.tau_max_s",
         "Nref": "solver.srh_doping_dependence.{carrier}.reference_doping_m3",
@@ -327,7 +349,8 @@ def _rows() -> list[MappingEntry]:
     rows.append(MappingEntry(
         section="Scharfetter", parameter="Talpha",
         status=STATUS_EXACT,
-        target="solver.srh_lifetime_temperature.exponent",
+        target=("solver.srh_doping_dependence.electron_temperature_exponent / "
+                "hole_temperature_exponent"),
         requires_model="TempDependence",
         note="power-law lifetime temperature dependence (TempDep)",
     ))
@@ -339,15 +362,16 @@ def _rows() -> list[MappingEntry]:
     ))
     rows.append(MappingEntry(
         section="Scharfetter", parameter="Etrap",
-        status=STATUS_EXACT, target="solver.srh.trap_level_eV",
+        status=STATUS_UNSUPPORTED_MODEL, target=None, neutral_value=0.0,
         requires_model="SRH",
+        note="Vela fixes the SRH trap at mid-gap",
     ))
 
     for name in ("A", "B", "C"):
         rows.append(MappingEntry(
             section="Auger", parameter=name,
             status=STATUS_APPROXIMATED,
-            target="solver.auger.Cn / solver.auger.Cp",
+            target="solver.auger_cn_m6_per_s / solver.auger_cp_m6_per_s",
             requires_model="Auger",
             note=(
                 "Vela Auger has constant Cn/Cp only; the A/B/C temperature "
@@ -376,7 +400,7 @@ def _rows() -> list[MappingEntry]:
         requires_model="OldSlotboom",
     ))
     rows.append(MappingEntry(
-        section="OldSlotboom", parameter="Con",
+        section="OldSlotboom", parameter="C",
         status=STATUS_EXACT,
         target="solver.bandgap_narrowing.smoothing",
         requires_model="OldSlotboom",
@@ -436,7 +460,7 @@ def _rows() -> list[MappingEntry]:
     rows.append(MappingEntry(
         section="QuantumPotentialParameters", parameter="theta",
         status=STATUS_EXACT,
-        target="solver.quantum_potential.theta",
+        target="solver.electron_quantum_potential.theta",
         requires_model="eQuantumPotential",
         note="electron component only; Vela has a single scalar theta",
     ))
@@ -483,6 +507,8 @@ def lookup(
     variant or formula only matches when the caller supplies the same one,
     while a row that leaves them open matches any caller value.
     """
+    if parameter == "formula":
+        parameter = "Formula"
     candidates = _INDEX.get((section, parameter))
     if candidates is None:
         candidates = _INDEX.get((section, "*"))
@@ -584,27 +610,37 @@ def classify(
     ``values`` is the parsed value from the syntax IR.  It is used only to
     detect parameters that are switched off in this particular file.
     """
+    models = None if active_models is None else {
+        MODEL_ALIASES.get(model, model) for model in active_models
+    }
     entry = lookup(section, parameter, variant, formula)
     if entry is None:
+        section_model = SECTION_MODELS.get(section, section)
+        if models is None or section_model not in models:
+            return Classification(
+                section, parameter, variant, formula, STATUS_INACTIVE, None,
+                reason=f"section model {section_model!r} is not active",
+            )
         return Classification(
             section, parameter, variant, formula, STATUS_UNMAPPED, None,
             reason="no mapping contract row describes this parameter",
         )
 
     if entry.requires_model is not None:
-        if active_models is None:
+        if models is None:
             return Classification(
                 section, parameter, variant, formula,
-                STATUS_UNMAPPED, entry,
+                STATUS_INACTIVE, entry,
                 reason=(
                     f"requires model {entry.requires_model!r} but no activated"
                     " model context was supplied"
                 ),
             )
-        if entry.requires_model not in set(active_models):
+        required = MODEL_ALIASES.get(entry.requires_model, entry.requires_model)
+        if required not in models:
             return Classification(
                 section, parameter, variant, formula,
-                STATUS_UNMAPPED, entry,
+                STATUS_INACTIVE, entry,
                 reason=(
                     f"model {entry.requires_model!r} is not active; the "
                     "parameter is inert and must not enable a new model"
@@ -651,7 +687,7 @@ def _formula_of(block: dict) -> Optional[str]:
     and never match a matrix row, so integral values are narrowed explicitly.
     """
     for parameter in block.get("parameters", []):
-        if parameter.get("base_name") != "Formula":
+        if str(parameter.get("base_name", "")).lower() != "formula":
             continue
         values = parameter.get("values") or []
         if not values:
@@ -674,7 +710,7 @@ def classify_ir(
     """
     results: list[Classification] = []
     report = CoverageReport()
-    models = None if active_models is None else set(active_models)
+    models = active_models
 
     for block in ir.get("blocks", []):
         if block.get("shadowed_by") is not None:
@@ -697,7 +733,7 @@ def classify_ir(
             if result.status == STATUS_APPROXIMATED:
                 report.lossy.append(result)
             elif (result.status not in DEFAULT_ALLOWED_STATUSES
-                    and result.status != STATUS_UNMAPPED):
+                    and result.status != STATUS_INACTIVE):
                 report.blocking.append(result)
 
     return results, report
@@ -709,14 +745,14 @@ def assert_importable(
 ) -> None:
     """Fail closed unless every classification is importable.
 
-    ``unmapped`` results are *not* fatal here: they are parameters the active
-    model set never reaches.  What is fatal is a parameter whose model is
-    active but whose mapping Vela cannot honour.
+    Only ``inactive`` results are exempt. Unknown parameters in an active
+    section are fatal because silently dropping them violates fail-closed
+    import semantics.
     """
     allowed = LOSSY_ALLOWED_STATUSES if allow_lossy else DEFAULT_ALLOWED_STATUSES
     problems = [
         item for item in results
-        if item.status not in allowed and item.status != STATUS_UNMAPPED
+        if item.status not in allowed and item.status != STATUS_INACTIVE
     ]
     if not problems:
         return

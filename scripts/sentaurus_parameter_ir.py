@@ -516,6 +516,7 @@ class _Reader:
         self._block: _Block | None = None
         self._pending: tuple[str, str | None] | tuple[str, str, str | None] | None = None
         self._pending_kind: str | None = None
+        self._pending_line: PhysicalLine | None = None
 
     # -- diagnostics -----------------------------------------------------
     def _error(self, line: PhysicalLine, reason: str) -> None:
@@ -589,6 +590,7 @@ class _Reader:
             self._error(line,
                         "section or scope header is not followed by '{'")
             self._pending_kind = None
+            self._pending_line = None
             return
 
         if stripped == "}":
@@ -611,6 +613,7 @@ class _Reader:
             kind = _SCOPE_KINDS[scope.group("kind")]
             self._pending_kind = "scope"
             self._pending = (kind, scope.group("name"))
+            self._pending_line = line
             if scope.group("brace"):
                 self._commit_pending(line)
             return
@@ -639,6 +642,7 @@ class _Reader:
             self._pending_kind = "section"
             self._pending = ("section", header.group("name"),
                              header.group("variant"))
+            self._pending_line = line
             if header.group("brace"):
                 self._commit_pending(line)
             return
@@ -652,9 +656,10 @@ class _Reader:
             self._scope_stack.append((kind, name))
         else:
             _tag, section, variant = self._pending  # type: ignore[misc]
-            self._open_block(line, section, variant)
+            self._open_block(self._pending_line or line, section, variant)
         self._pending_kind = None
         self._pending = None
+        self._pending_line = None
 
     def _close_scope_or_block(self, line: PhysicalLine) -> None:
         if self._block is not None:
@@ -773,7 +778,7 @@ def parse_parameter_ir(path: Path,
     blocks = [block.to_json() for block in reader.blocks]
     _annotate_shadowing(reader.blocks, blocks)
 
-    files: list[str] = []
+    files: list[str] = [_display_path(path, root)]
     for line in joined:
         if line.file not in files:
             files.append(line.file)

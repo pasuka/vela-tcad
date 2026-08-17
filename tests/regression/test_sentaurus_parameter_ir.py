@@ -204,6 +204,25 @@ class ParameterIrIncludeTest(unittest.TestCase):
             self.assertEqual([{"file": "sdevice.par", "line": 2}],
                              block["include_stack"])
 
+    def test_include_only_top_level_is_first_in_files(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_par_",
+                                         dir=REPO / "build") as tmp:
+            root = Path(tmp)
+            write_par(root, "fragment.par", "Epsilon {\nepsilon = 11.7\n}")
+            top = write_par(root, "top.par", '#include "fragment.par"')
+            self.assertEqual(
+                ["top.par", "fragment.par"],
+                parse_parameter_ir(top, root)["files"],
+            )
+
+    def test_two_line_section_span_starts_at_header(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_par_",
+                                         dir=REPO / "build") as tmp:
+            root = Path(tmp)
+            top = write_par(root, "top.par", "Bandgap\n{\nEg0 = 1.12\n}")
+            block = parse_parameter_ir(top, root)["blocks"][0]
+            self.assertEqual(1, block["source_span"]["line"])
+
     def test_nested_includes_record_the_full_stack(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_par_",
                                          dir=REPO / "build") as tmp:
