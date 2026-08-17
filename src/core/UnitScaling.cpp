@@ -131,8 +131,41 @@ Real UnitScalingConfig::surfaceFieldCoefficientToSI(Real value) const
     return unitSystem().internalSurfaceFieldCoefficientToMPerV(value);
 }
 
+int parseDeckFormatVersion(const nlohmann::json& cfg)
+{
+    if (!cfg.is_object() || !cfg.contains("format_version"))
+        return 0;
+
+    const auto& value = cfg.at("format_version");
+    if (!value.is_number_integer()) {
+        throw std::invalid_argument(
+            "format_version must be the integer 2.");
+    }
+
+    const int version = value.get<int>();
+    if (version == 2)
+        return 2;
+
+    throw std::invalid_argument(
+        "Unsupported format_version " + std::to_string(version) +
+        ". The only supported deck format version is 2, in which every value is "
+        "expressed in the TCAD internal units (um, cm^-3, cm^2/(V s), V/cm). "
+        "Run the deck migration tool to convert an older deck.");
+}
+
 UnitScalingConfig parseUnitScalingConfig(const nlohmann::json& cfg)
 {
+    if (parseDeckFormatVersion(cfg) == 2) {
+        if (cfg.contains("scaling")) {
+            throw std::invalid_argument(
+                "scaling is not accepted with format_version 2; the deck already "
+                "uses the TCAD internal units. Move "
+                "characteristic_length_um, reference_concentration_cm3 and "
+                "reference_mobility_cm2_V_s to solver.normalization.");
+        }
+        return UnitScalingConfig{UnitScalingMode::UnitScaling};
+    }
+
     if (!cfg.contains("scaling"))
         return {};
 

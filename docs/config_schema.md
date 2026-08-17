@@ -31,7 +31,8 @@ Scope and conventions:
 | output_state_file | string | Optional | Restart-state CSV written by `newton_solve_from_state`. Uses Vela restart format: `node_id,psi,phin,phip,electrons_m3,holes_m3`. |
 | state_fields_dir | string | Required for `newton_solve_from_state` and probe-style external-state tools | Directory containing Sentaurus-export-style scalar field CSVs. |
 | runtime_log | object | Optional | Runtime log control. Default is enabled and writes `<config stem>.log` next to the config file. |
-| scaling | object | Optional | Input unit interpretation. Omit for legacy SI behavior, or set `mode` to `unit_scaling`; see below. |
+| scaling | object | Optional | Legacy input unit interpretation. Omit for legacy SI behavior, or set `mode` to `unit_scaling`; see below. Not accepted together with `format_version: 2`. |
+| format_version | integer | Optional | Deck format version. The only supported value is `2`, which interprets the whole deck in the TCAD internal units and forbids `scaling`; see below. |
 | mesh_geometry | object | Optional | Mesh box-geometry options; see below. |
 | doping | array | Yes | Region doping definitions; see below. |
 | regions | array | Optional | Region-level fixed charge definitions; see below. |
@@ -72,6 +73,53 @@ Runtime log CLI override:
 
 Optional runtime log profile CLI override:
 - `--log-profile minimal|default|debug`
+
+## format_version
+
+`format_version` declares the deck format. The only supported value is `2`.
+
+```json
+{ "format_version": 2 }
+```
+
+A `format_version: 2` deck expresses every value in the TCAD internal units:
+`um`, `cm^-3`, `cm^-2`, `cm^2/(V s)`, `cm/s`, `V/cm`, `cm^-1`, `cm/V`,
+`cm^6/s`, `V`, `K`, `s`, and `eV`. This is the same numeric interpretation as
+`scaling.mode: "unit_scaling"`, expressed as a deck-format declaration instead
+of a solver option.
+
+Rules:
+
+- `format_version: 2` and a `scaling` block together are rejected. The unit
+  mode is implied by the version, and `scaling` no longer has any remaining
+  role in a v2 deck.
+- Any `format_version` other than `2`, or a non-integer value, is rejected.
+- Omitting `format_version` keeps the legacy behavior described under
+  `scaling`: no `scaling` block means SI input, and
+  `scaling.mode: "unit_scaling"` means TCAD input. This transitional form is
+  scheduled for removal.
+
+The equation-normalization references that used to live inside `scaling` move
+to `solver.normalization` in a v2 deck:
+
+```json
+{
+  "format_version": 2,
+  "solver": {
+    "normalization": {
+      "characteristic_length_um": "auto",
+      "reference_concentration_cm3": "auto",
+      "reference_mobility_cm2_V_s": "auto"
+    }
+  }
+}
+```
+
+Each key accepts `"auto"` (the default, derived from the mesh, doping, and
+material data) or a positive number. `solver.normalization` requires
+`format_version: 2`; supplying it in a legacy deck is rejected. These values
+control the internal non-dimensionalization of the equations and are
+independent of the input unit system.
 
 ## scaling
 

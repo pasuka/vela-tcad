@@ -24,35 +24,55 @@ Real requirePositive(Real value, const char* name)
     return value;
 }
 
-std::optional<Real> parseAutoOrPositiveNumber(const nlohmann::json& scaling,
+std::optional<Real> parseAutoOrPositiveNumber(const nlohmann::json& block,
+                                              const std::string& blockName,
                                               const char* key,
                                               Real (UnitScalingConfig::*toInternal)(Real) const)
 {
-    if (!scaling.contains(key)) {
+    if (!block.contains(key)) {
         return std::nullopt;
     }
 
-    const nlohmann::json& value = scaling.at(key);
+    const nlohmann::json& value = block.at(key);
     if (value.is_string()) {
         const std::string text = value.get<std::string>();
         if (text == "auto") {
             return std::nullopt;
         }
-        throw std::invalid_argument(std::string("scaling.") + key +
+        throw std::invalid_argument(blockName + "." + key +
                                     " must be 'auto' or a positive number.");
     }
 
     if (!value.is_number()) {
-        throw std::invalid_argument(std::string("scaling.") + key +
+        throw std::invalid_argument(blockName + "." + key +
                                     " must be 'auto' or a positive number.");
     }
 
     const UnitScalingConfig unit{UnitScalingMode::UnitScaling};
     const Real numericValue = (unit.*toInternal)(value.get<Real>());
     if (numericValue <= 0.0) {
-        throw std::invalid_argument(std::string("scaling.") + key + " must be positive.");
+        throw std::invalid_argument(blockName + "." + key + " must be positive.");
     }
     return numericValue;
+}
+
+UnitScalingReferenceConfig parseReferenceBlock(const nlohmann::json& block,
+                                               const std::string& blockName)
+{
+    UnitScalingReferenceConfig refs;
+    refs.characteristicLength_m =
+        parseAutoOrPositiveNumber(block, blockName,
+                                  "characteristic_length_um",
+                                  &UnitScalingConfig::lengthToInternal);
+    refs.referenceConcentration_m3 =
+        parseAutoOrPositiveNumber(block, blockName,
+                                  "reference_concentration_cm3",
+                                  &UnitScalingConfig::concentrationToInternal);
+    refs.referenceMobility_m2_V_s =
+        parseAutoOrPositiveNumber(block, blockName,
+                                  "reference_mobility_cm2_V_s",
+                                  &UnitScalingConfig::mobilityToInternal);
+    return refs;
 }
 
 } // namespace
@@ -60,6 +80,32 @@ std::optional<Real> parseAutoOrPositiveNumber(const nlohmann::json& scaling,
 UnitScalingReferenceConfig parseUnitScalingReferenceConfig(const nlohmann::json& cfg)
 {
     UnitScalingReferenceConfig refs;
+
+    const bool isVersion2 = parseDeckFormatVersion(cfg) == 2;
+    const bool hasNormalization = cfg.contains("solver") && cfg.at("solver").is_object() &&
+        cfg.at("solver").contains("normalization");
+
+    if (isVersion2) {
+        if (cfg.contains("scaling")) {
+            throw std::invalid_argument(
+                "scaling is not accepted with format_version 2; move "
+                "characteristic_length_um, reference_concentration_cm3 and "
+                "reference_mobility_cm2_V_s to solver.normalization.");
+        }
+        if (!hasNormalization) {
+            return refs;
+        }
+        const auto& normalization = cfg.at("solver").at("normalization");
+        if (!normalization.is_object()) {
+            throw std::invalid_argument("solver.normalization must be an object.");
+        }
+        return parseReferenceBlock(normalization, "solver.normalization");
+    }
+
+    if (hasNormalization) {
+        throw std::invalid_argument(
+            "solver.normalization requires format_version 2.");
+    }
 
     if (!cfg.contains("scaling")) {
         return refs;
@@ -88,20 +134,7 @@ UnitScalingReferenceConfig parseUnitScalingReferenceConfig(const nlohmann::json&
             "Omit scaling to keep legacy SI input behavior.");
     }
 
-    refs.characteristicLength_m =
-        parseAutoOrPositiveNumber(scaling,
-                                  "characteristic_length_um",
-                                  &UnitScalingConfig::lengthToInternal);
-    refs.referenceConcentration_m3 =
-        parseAutoOrPositiveNumber(scaling,
-                                  "reference_concentration_cm3",
-                                  &UnitScalingConfig::concentrationToInternal);
-    refs.referenceMobility_m2_V_s =
-        parseAutoOrPositiveNumber(scaling,
-                                  "reference_mobility_cm2_V_s",
-                                  &UnitScalingConfig::mobilityToInternal);
-
-    return refs;
+    return parseReferenceBlock(scaling, "scaling");
 }
 
 UnitScalingSystem::UnitScalingSystem(Real temperature_K,

@@ -194,6 +194,13 @@ struct UnitScalingConfig {
     Real surfaceFieldCoefficientToSI(Real value) const;
 };
 
+// Returns the declared deck format version, or 0 when `format_version` is
+// absent. Version 2 is the single-unit-system deck: values are expressed in
+// the TCAD internal units and the `scaling` block is not accepted. Version 0
+// is the transitional legacy form that still selects its unit system through
+// `scaling.mode`.
+int parseDeckFormatVersion(const nlohmann::json& cfg);
+
 UnitScalingConfig parseUnitScalingConfig(const nlohmann::json& cfg);
 
 } // namespace vela

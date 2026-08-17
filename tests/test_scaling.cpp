@@ -248,3 +248,147 @@ TEST_CASE("UnitScalingSystem reference config: supports auto and explicit values
     REQUIRE(explicitRefs.referenceConcentration_m3 == Catch::Approx(5.0e16));
     REQUIRE(explicitRefs.referenceMobility_m2_V_s == Catch::Approx(900.0));
 }
+
+// ---------------------------------------------------------------------------
+// Deck format_version 2 bridge
+// ---------------------------------------------------------------------------
+
+TEST_CASE("Deck format version defaults to 0 when absent", "[scaling][format_version]")
+{
+    const nlohmann::json cfg = nlohmann::json::object();
+    REQUIRE(parseDeckFormatVersion(cfg) == 0);
+}
+
+TEST_CASE("Deck format version accepts 2", "[scaling][format_version]")
+{
+    const nlohmann::json cfg = {{"format_version", 2}};
+    REQUIRE(parseDeckFormatVersion(cfg) == 2);
+}
+
+TEST_CASE("Deck format version rejects unsupported values", "[scaling][format_version]")
+{
+    REQUIRE_THROWS_AS(parseDeckFormatVersion(nlohmann::json{{"format_version", 1}}),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(parseDeckFormatVersion(nlohmann::json{{"format_version", 3}}),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(parseDeckFormatVersion(nlohmann::json{{"format_version", "2"}}),
+                      std::invalid_argument);
+    REQUIRE_THROWS_AS(parseDeckFormatVersion(nlohmann::json{{"format_version", 2.5}}),
+                      std::invalid_argument);
+}
+
+TEST_CASE("format_version 2 selects the TCAD internal unit system without scaling",
+          "[scaling][format_version]")
+{
+    const nlohmann::json cfg = {{"format_version", 2}};
+    const UnitScalingConfig scaling = parseUnitScalingConfig(cfg);
+    REQUIRE(scaling.isUnitScaling());
+    REQUIRE(scaling.unitSystem().concentrationM3PerInternal() == Catch::Approx(1.0e6));
+    REQUIRE(scaling.unitSystem().lengthMPerInternal() == Catch::Approx(1.0e-6));
+}
+
+TEST_CASE("format_version 2 is physically equivalent to legacy scaling.mode unit_scaling",
+          "[scaling][format_version]")
+{
+    const UnitScalingConfig viaVersion = parseUnitScalingConfig(
+        nlohmann::json{{"format_version", 2}});
+    const UnitScalingConfig viaScaling = parseUnitScalingConfig(
+        nlohmann::json{{"scaling", {{"mode", "unit_scaling"}}}});
+    REQUIRE(viaVersion.isUnitScaling() == viaScaling.isUnitScaling());
+    REQUIRE(viaVersion.unitSystem().concentrationM3PerInternal() ==
+            Catch::Approx(viaScaling.unitSystem().concentrationM3PerInternal()));
+    REQUIRE(viaVersion.unitSystem().lengthMPerInternal() ==
+            Catch::Approx(viaScaling.unitSystem().lengthMPerInternal()));
+    REQUIRE(viaVersion.unitSystem().chargeAreaFactor() ==
+            Catch::Approx(viaScaling.unitSystem().chargeAreaFactor()));
+}
+
+TEST_CASE("format_version 2 rejects a scaling block", "[scaling][format_version]")
+{
+    const nlohmann::json cfg = {
+        {"format_version", 2},
+        {"scaling", {{"mode", "unit_scaling"}}},
+    };
+    REQUIRE_THROWS_AS(parseUnitScalingConfig(cfg), std::invalid_argument);
+    REQUIRE_THROWS_AS(parseUnitScalingReferenceConfig(cfg), std::invalid_argument);
+}
+
+TEST_CASE("format_version 2 reads normalization references from solver.normalization",
+          "[scaling][format_version]")
+{
+    const nlohmann::json autoCfg = {
+        {"format_version", 2},
+        {"solver", {{"normalization", {
+            {"characteristic_length_um", "auto"},
+            {"reference_concentration_cm3", "auto"},
+            {"reference_mobility_cm2_V_s", "auto"},
+        }}}},
+    };
+    const UnitScalingReferenceConfig autoRefs = parseUnitScalingReferenceConfig(autoCfg);
+    REQUIRE(autoRefs.characteristicLength_m == std::nullopt);
+    REQUIRE(autoRefs.referenceConcentration_m3 == std::nullopt);
+    REQUIRE(autoRefs.referenceMobility_m2_V_s == std::nullopt);
+
+    const nlohmann::json explicitCfg = {
+        {"format_version", 2},
+        {"solver", {{"normalization", {
+            {"characteristic_length_um", 2.5},
+            {"reference_concentration_cm3", 5.0e16},
+            {"reference_mobility_cm2_V_s", 900.0},
+        }}}},
+    };
+    const UnitScalingReferenceConfig explicitRefs =
+        parseUnitScalingReferenceConfig(explicitCfg);
+    REQUIRE(explicitRefs.characteristicLength_m == Catch::Approx(2.5));
+    REQUIRE(explicitRefs.referenceConcentration_m3 == Catch::Approx(5.0e16));
+    REQUIRE(explicitRefs.referenceMobility_m2_V_s == Catch::Approx(900.0));
+}
+
+TEST_CASE("solver.normalization matches the legacy scaling reference block",
+          "[scaling][format_version]")
+{
+    const nlohmann::json v2Cfg = {
+        {"format_version", 2},
+        {"solver", {{"normalization", {
+            {"characteristic_length_um", 2.5},
+            {"reference_concentration_cm3", 5.0e16},
+            {"reference_mobility_cm2_V_s", 900.0},
+        }}}},
+    };
+    const nlohmann::json legacyCfg = {
+        {"scaling", {
+            {"mode", "unit_scaling"},
+            {"characteristic_length_um", 2.5},
+            {"reference_concentration_cm3", 5.0e16},
+            {"reference_mobility_cm2_V_s", 900.0},
+        }},
+    };
+    const UnitScalingReferenceConfig v2Refs = parseUnitScalingReferenceConfig(v2Cfg);
+    const UnitScalingReferenceConfig legacyRefs = parseUnitScalingReferenceConfig(legacyCfg);
+    REQUIRE(v2Refs.characteristicLength_m == legacyRefs.characteristicLength_m);
+    REQUIRE(v2Refs.referenceConcentration_m3 == legacyRefs.referenceConcentration_m3);
+    REQUIRE(v2Refs.referenceMobility_m2_V_s == legacyRefs.referenceMobility_m2_V_s);
+}
+
+TEST_CASE("solver.normalization is rejected without format_version 2",
+          "[scaling][format_version]")
+{
+    const nlohmann::json cfg = {
+        {"solver", {{"normalization", {{"characteristic_length_um", 2.5}}}}},
+    };
+    REQUIRE_THROWS_AS(parseUnitScalingReferenceConfig(cfg), std::invalid_argument);
+}
+
+TEST_CASE("format_version 2 rejects invalid normalization values",
+          "[scaling][format_version]")
+{
+    const auto make = [](const nlohmann::json& value) {
+        return nlohmann::json{
+            {"format_version", 2},
+            {"solver", {{"normalization", {{"characteristic_length_um", value}}}}},
+        };
+    };
+    REQUIRE_THROWS_AS(parseUnitScalingReferenceConfig(make(0.0)), std::invalid_argument);
+    REQUIRE_THROWS_AS(parseUnitScalingReferenceConfig(make(-1.0)), std::invalid_argument);
+    REQUIRE_THROWS_AS(parseUnitScalingReferenceConfig(make("default")), std::invalid_argument);
+}
