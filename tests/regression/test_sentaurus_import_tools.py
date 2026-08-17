@@ -89,6 +89,47 @@ class SentaurusImportToolsTest(unittest.TestCase):
         )
         self.assertEqual(warnings, [])
 
+    def test_unimplemented_ionization_model_fails_closed(self) -> None:
+        """Substituting a different ionization model changes the breakdown."""
+        for name in ("OkutoCrowell", "Okuto", "Lackner", "UniBo"):
+            with self.subTest(model=name):
+                deck = {"solver": {"type": "gummel"}}
+                with self.assertRaises(ValueError) as ctx:
+                    sentaurus_import.apply_solver_physics(
+                        deck,
+                        {"physics": [{"models": ["Recombination", "Avalanche", name]}]},
+                        {"name": "bv", "kind": "bv"},
+                    )
+                self.assertIn(name, str(ctx.exception))
+                self.assertNotIn("impact_ionization", deck["solver"])
+
+    def test_unimplemented_ionization_model_is_reported_when_allowed(self) -> None:
+        deck = {"solver": {"type": "gummel"}}
+
+        warnings = sentaurus_import.apply_solver_physics(
+            deck,
+            {"physics": [{"models": ["Recombination", "Avalanche", "OkutoCrowell"]}]},
+            {"name": "bv", "kind": "bv"},
+            allow_lossy=True,
+        )
+
+        self.assertEqual(deck["solver"]["impact_ionization"]["model"], "selberherr")
+        self.assertEqual(
+            warnings, ["OkutoCrowell approximated by selberherr (allow_lossy)"],
+        )
+
+    def test_plain_avalanche_is_unaffected_by_the_guard(self) -> None:
+        deck = {"solver": {"type": "gummel"}}
+
+        warnings = sentaurus_import.apply_solver_physics(
+            deck,
+            {"physics": [{"models": ["Recombination", "Avalanche"]}]},
+            {"name": "bv", "kind": "bv"},
+        )
+
+        self.assertEqual(deck["solver"]["impact_ionization"], {"model": "selberherr"})
+        self.assertEqual(warnings, [])
+
     def test_reference_patch_preserves_negative_bv_sweep_direction(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_negative_bv_patch_") as tmp:
             root = Path(tmp)

@@ -553,9 +553,25 @@ def sentaurus_models(cmd_summary: dict[str, Any]) -> set[str]:
     return models
 
 
+# Impact-ionization coefficient models that appear in Sentaurus decks and
+# parameter files but have no Vela implementation.  ``ImpactIonizationModel``
+# provides selberherr and van_overstraeten only, so selecting any of these and
+# quietly solving with a different one would change the breakdown voltage
+# without changing the deck.
+UNIMPLEMENTED_IONIZATION_MODELS = frozenset({
+    "Okuto",
+    "OkutoCrowell",
+    "Lackner",
+    "UniBo",
+    "UniBo2",
+    "Hatakeyama",
+})
+
+
 def apply_solver_physics(deck: dict[str, Any],
                          cmd_summary: dict[str, Any],
-                         sim: dict[str, Any]) -> list[str]:
+                         sim: dict[str, Any],
+                         allow_lossy: bool = False) -> list[str]:
     models = sentaurus_models(cmd_summary)
     solver = deck.setdefault("solver", {})
     warnings: list[str] = []
@@ -629,6 +645,17 @@ def apply_solver_physics(deck: dict[str, Any],
         solver["bandgap_narrowing"] = "old_slotboom"
 
     if "Avalanche" in models:
+        substitutions = sorted(UNIMPLEMENTED_IONIZATION_MODELS & models)
+        if substitutions and not allow_lossy:
+            raise ValueError(
+                "SDevice selects impact-ionization model(s) "
+                + ", ".join(substitutions)
+                + " which Vela does not implement; only selberherr and "
+                "van_overstraeten exist. Substituting a different ionization "
+                "model changes the breakdown voltage, so the import stops "
+                "here. Re-run with allow_lossy=True to accept the "
+                "substitution explicitly."
+            )
         if "VanOverstraeten" in models:
             solver["impact_ionization"] = {
                 "model": "van_overstraeten",
@@ -638,8 +665,11 @@ def apply_solver_physics(deck: dict[str, Any],
             }
         else:
             solver["impact_ionization"] = {"model": "selberherr"}
-        if "OkutoCrowell" in models:
-            warnings.append("OkutoCrowell approximated by Selberherr")
+        for name in substitutions:
+            warnings.append(
+                f"{name} approximated by "
+                f"{solver['impact_ionization']['model']} (allow_lossy)"
+            )
 
     if "Fermi" in models:
         solver["carrier_statistics"] = {"model": "fermi_dirac"}
