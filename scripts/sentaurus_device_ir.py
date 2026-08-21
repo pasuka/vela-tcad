@@ -90,16 +90,20 @@ class DeviceIrBuilder:
     """Accumulates IR state while walking the SDE forms in source order."""
 
     source: str
+    frontend: str = "offline-static"
     env: Environment = field(default_factory=Environment)
     regions: list[dict[str, Any]] = field(default_factory=list)
     contact_sets: dict[str, dict[str, Any]] = field(default_factory=dict)
     contact_order: list[str] = field(default_factory=list)
     current_contact: str | None = None
+    boolean_mode: str = "ABA"
+    inserted_vertices: list[dict[str, Any]] = field(default_factory=list)
     windows: dict[str, dict[str, Any]] = field(default_factory=dict)
     profiles: dict[str, dict[str, Any]] = field(default_factory=dict)
     placements: list[dict[str, Any]] = field(default_factory=list)
     refinement_sizes: dict[str, dict[str, Any]] = field(default_factory=dict)
     refinement_placements: list[dict[str, Any]] = field(default_factory=list)
+    refinement_functions: list[dict[str, Any]] = field(default_factory=list)
     mesh_build: dict[str, Any] | None = None
     metadata_only: list[MetadataOnlyRecord] = field(default_factory=list)
 
@@ -153,6 +157,24 @@ def _handle_ignore(form: Sexp, builder: DeviceIrBuilder) -> None:
     return None
 
 
+def _handle_evaluated_wrapper_control(form: Sexp,
+                                      builder: DeviceIrBuilder) -> None:
+    if builder.frontend != "sentaurus2022-evaluated":
+        raise SdeParseError(
+            f"{form.location()}: '{form.head()}' is outside the declarative "
+            f"offline-static Scheme subset in '{form.command_text()}'; use the "
+            "sentaurus2022-evaluated frontend")
+    if form.head() == "set!":
+        args = _require_args(form, 2, "(set! evaluate-log-file #t)")
+        name = args[0]
+        if not isinstance(name, Atom) or str(name.value) != "evaluate-log-file":
+            raise SdeParseError(
+                f"{form.location()}: unexpected set! survived evaluated log: "
+                f"'{form.command_text()}'")
+    builder.note_metadata_only(
+        form, "authoritative Sentaurus wrapper control already executed by SDE")
+
+
 def _handle_create_rectangle(form: Sexp, builder: DeviceIrBuilder) -> None:
     args = _require_args(
         form, 4, "(sdegeo:create-rectangle lower upper material region)")
@@ -180,6 +202,10 @@ def _handle_create_rectangle(form: Sexp, builder: DeviceIrBuilder) -> None:
         "vela_material": MATERIAL_ALIASES[material],
         "shape": "rectangle",
         "order": len(builder.regions),
+        # Boolean selection is stateful in SDE.  Capture it at body creation;
+        # consulting the final global mode later gives the wrong geometry.
+        "boolean_mode": builder.boolean_mode,
+        "location": form.location(),
         **bounds,
     })
 
@@ -198,7 +224,22 @@ def _handle_define_contact_set(form: Sexp, builder: DeviceIrBuilder) -> None:
         raise SdeParseError(
             f"{form.location()}: contact set '{name}' is defined more than once "
             f"in '{form.command_text()}'")
-    builder.contact_sets[name] = {"name": name, "pick_points": []}
+    display = []
+    for node in args[1:]:
+        if isinstance(node, Atom) and node.is_number:
+            display.append(float(node.value))
+        elif isinstance(node, Atom) and node.is_string:
+            display.append(str(node.value))
+        elif isinstance(node, Sexp) and node.head() == "color:rgb":
+            display.append({
+                "command": "color:rgb",
+                "values": [eval_number(item, builder.env) for item in node.items[1:]],
+            })
+        else:
+            display.append(eval_scalar(node, builder.env))
+    builder.contact_sets[name] = {
+        "name": name, "pick_points": [], "display": display,
+    }
     builder.contact_order.append(name)
 
 
@@ -206,9 +247,10 @@ def _handle_set_current_contact_set(form: Sexp, builder: DeviceIrBuilder) -> Non
     args = _require_args(form, 1, "(sdegeo:set-current-contact-set name)")
     name = expect_string(args[0], builder.env, "contact name")
     if name not in builder.contact_sets:
-        raise SdeParseError(
-            f"{form.location()}: contact set '{name}' is selected before it is "
-            f"defined in '{form.command_text()}'")
+        # Sentaurus 2022 creates/activates the named set when an explicit name
+        # has not previously been declared.
+        builder.contact_sets[name] = {"name": name, "pick_points": [], "display": []}
+        builder.contact_order.append(name)
     builder.current_contact = name
 
 
@@ -263,28 +305,59 @@ def _handle_define_2d_contact(form: Sexp, builder: DeviceIrBuilder) -> None:
 
 
 def _handle_set_contact(form: Sexp, builder: DeviceIrBuilder) -> None:
-    raise SdeParseError(
-        f"{form.location()}: 'sdegeo:set-contact' selects boundary entities by "
-        f"interactive body/edge id, which the Vela SDE frontend cannot resolve "
-        f"deterministically. Use 'sdegeo:define-2d-contact' with an explicit "
-        f"(find-edge-id (position ...)) pick point. Offending command: "
-        f"'{form.command_text()}'")
+    args = _require_args(form, 1, "(sdegeo:set-contact entities [name])")
+    if len(args) >= 3:
+        operation = expect_string(args[2], builder.env, "contact operation")
+        raise SdeParseError(
+            f"{form.location()}: unsupported 2-D body contact operation "
+            f"'{operation}' in '{form.command_text()}'; body contact, remove, "
+            "and 3-D imprint are outside the offline-static capability")
+    if len(args) >= 2:
+        name = expect_string(args[1], builder.env, "contact name")
+        if name not in builder.contact_sets:
+            builder.contact_sets[name] = {"name": name, "pick_points": [], "display": []}
+            builder.contact_order.append(name)
+        builder.current_contact = name
+    elif builder.current_contact is not None:
+        name = builder.current_contact
+    else:
+        raise SdeParseError(
+            f"{form.location()}: 'sdegeo:set-contact' has neither an explicit "
+            f"name nor an active contact set in '{form.command_text()}'")
+
+    entities = list(args[0].items[1:]) if isinstance(args[0], Sexp) and \
+        args[0].head() == "list" else [args[0]]
+    for entity in entities:
+        if isinstance(entity, Sexp) and entity.head() == "find-body-id":
+            raise SdeParseError(
+                f"{entity.location()}: body contact is unsupported by the 2-D "
+                f"offline-static frontend in '{form.command_text()}'")
+        x, y = _pick_point_from_edge_form(form, entity, builder)
+        builder.contact_sets[name]["pick_points"].append({
+            "x": x, "y": y, "location": form.location(),
+        })
+
+
+def _handle_insert_vertex(form: Sexp, builder: DeviceIrBuilder) -> None:
+    args = _require_args(form, 1, "(sdegeo:insert-vertex position)")
+    if len(args) != 1:
+        raise SdeParseError(
+            f"{form.location()}: 2-D 'sdegeo:insert-vertex' expects exactly one "
+            f"position in '{form.command_text()}'")
+    point = parse_position(args[0], builder.env)
+    builder.inserted_vertices.append({
+        "x": point[0], "y": point[1], "location": form.location(),
+    })
 
 
 def _handle_set_default_boolean(form: Sexp, builder: DeviceIrBuilder) -> None:
     args = _require_args(form, 1, "(sdegeo:set-default-boolean mode)")
     mode = expect_string(args[0], builder.env, "boolean mode")
-    # "ABA" keeps previously created bodies intact where they overlap, which is
-    # what the ordered-rectangle geometry model already assumes.
     if mode.upper() not in {"ABA", "BAB"}:
         raise SdeParseError(
-            f"{form.location()}: unsupported boolean mode '{mode}' in "
-            f"'{form.command_text()}'")
-    builder.note_metadata_only(
-        form,
-        f"boolean mode '{mode}' recorded only; the rectangle geometry model "
-        f"resolves overlaps by creation order",
-    )
+            f"{form.location()}: boolean mode '{mode}' is not implemented by "
+            f"the offline-static frontend; AB, ABiA, ABiB and XX fail closed")
+    builder.boolean_mode = mode.upper()
 
 
 def _handle_refeval_window(form: Sexp, builder: DeviceIrBuilder) -> None:
@@ -292,21 +365,33 @@ def _handle_refeval_window(form: Sexp, builder: DeviceIrBuilder) -> None:
         form, 4, "(sdedr:define-refeval-window name shape lower upper)")
     name = expect_string(args[0], builder.env, "window name")
     shape = expect_string(args[1], builder.env, "window shape")
-    if shape != "Rectangle":
-        raise SdeParseError(
-            f"{form.location()}: unsupported refeval window shape '{shape}' in "
-            f"'{form.command_text()}'; only \"Rectangle\" is supported")
-    lower = parse_position(args[2], builder.env)
-    upper = parse_position(args[3], builder.env)
     if name in builder.windows:
         raise SdeParseError(
             f"{form.location()}: window '{name}' is defined more than once in "
             f"'{form.command_text()}'")
-    builder.windows[name] = {
-        "name": name,
-        "shape": "rectangle",
-        **_rectangle_bounds(lower, upper),
-    }
+    if shape in {"Rectangle", "Line"}:
+        lower = parse_position(args[2], builder.env)
+        upper = parse_position(args[3], builder.env)
+        if lower[:2] == upper[:2]:
+            raise SdeParseError(f"{form.location()}: degenerate {shape} window")
+        builder.windows[name] = {
+            "name": name, "shape": shape.lower(),
+            "start": [lower[0], lower[1]], "end": [upper[0], upper[1]],
+        }
+        if shape == "Rectangle":
+            builder.windows[name].update(_rectangle_bounds(lower, upper))
+    elif shape == "Polygon":
+        raw = args[2]
+        nodes = list(raw.items[1:]) if isinstance(raw, Sexp) and raw.head() == "list" \
+            else list(args[2:])
+        points = [[p[0], p[1]] for p in (parse_position(node, builder.env) for node in nodes)]
+        if len(points) < 3:
+            raise SdeParseError(f"{form.location()}: Polygon window needs at least 3 points")
+        builder.windows[name] = {"name": name, "shape": "polygon", "points": points}
+    else:
+        raise SdeParseError(
+            f"{form.location()}: unsupported refeval window shape '{shape}' in "
+            f"'{form.command_text()}'; supported: Line, Rectangle, Polygon")
 
 
 def _handle_constant_profile(form: Sexp, builder: DeviceIrBuilder) -> None:
@@ -341,12 +426,68 @@ def _handle_constant_profile(form: Sexp, builder: DeviceIrBuilder) -> None:
     }
 
 
-def _handle_gaussian_profile(form: Sexp, builder: DeviceIrBuilder) -> None:
+def _profile_carrier(form: Sexp, species: str) -> str:
+    if species in DONOR_SPECIES:
+        return "donor"
+    if species in ACCEPTOR_SPECIES:
+        return "acceptor"
     raise SdeParseError(
-        f"{form.location()}: 'sdedr:define-gaussian-profile' is not yet "
-        f"translated by the Vela SDE frontend; accepting it would silently drop "
-        f"the analytic decay parameters. Offending command: "
-        f"'{form.command_text()}'")
+        f"{form.location()}: unsupported doping species '{species}' in "
+        f"'{form.command_text()}'; supported species: "
+        f"{', '.join(sorted(DONOR_SPECIES | ACCEPTOR_SPECIES))}")
+
+
+def _keyword_arguments(form: Sexp, nodes: Sequence[Any], builder: DeviceIrBuilder,
+                       flag_keys: set[str] | None = None) -> dict[str, Any]:
+    """Parse Sentaurus' alternating quoted-key/value argument convention."""
+    flags = flag_keys or set()
+    result: dict[str, Any] = {}
+    index = 0
+    while index < len(nodes):
+        key = expect_string(nodes[index], builder.env, "parameter keyword")
+        if key in flags:
+            result[key] = True
+            index += 1
+            continue
+        if index + 1 >= len(nodes):
+            raise SdeParseError(
+                f"{form.location()}: parameter '{key}' has no value in "
+                f"'{form.command_text()}'")
+        value_node = nodes[index + 1]
+        if isinstance(value_node, Atom) and value_node.is_string:
+            value: Any = str(value_node.value)
+        else:
+            value = eval_number(value_node, builder.env)
+        result[key] = value
+        index += 2
+    return result
+
+
+def _handle_gaussian_profile(form: Sexp, builder: DeviceIrBuilder) -> None:
+    args = _require_args(
+        form, 6, "(sdedr:define-gaussian-profile name species key value ...)")
+    name = expect_string(args[0], builder.env, "profile name")
+    species = expect_string(args[1], builder.env, "species name")
+    if name in builder.profiles:
+        raise SdeParseError(f"{form.location()}: duplicate profile '{name}'")
+    params = _keyword_arguments(form, args[2:], builder, {"Gauss", "Erf"})
+    if "PeakPos" not in params:
+        raise SdeParseError(f"{form.location()}: Gaussian profile requires PeakPos")
+    if not ({"PeakVal", "Dose"} & params.keys()):
+        raise SdeParseError(f"{form.location()}: Gaussian profile requires PeakVal or Dose")
+    if "PeakVal" in params and not (
+            "StdDev" in params or "Length" in params or
+            ({"ValueAtDepth", "Depth"} <= params.keys())):
+        raise SdeParseError(
+            f"{form.location()}: Gaussian PeakVal requires StdDev, Length, or "
+            "ValueAtDepth plus Depth")
+    lateral = "Gauss" if params.pop("Gauss", False) else \
+        "Erf" if params.pop("Erf", False) else "Gauss"
+    builder.profiles[name] = {
+        "name": name, "type": "gaussian", "species": species,
+        "carrier": _profile_carrier(form, species), "parameters": params,
+        "lateral_type": lateral.lower(), "location": form.location(),
+    }
 
 
 def _placement_target(form: Sexp,
@@ -361,6 +502,10 @@ def _placement_target(form: Sexp,
         raise SdeParseError(
             f"{form.location()}: placement references unknown window '{target}' "
             f"in '{form.command_text()}'")
+    if target_kind == "material" and target not in MATERIAL_ALIASES:
+        raise SdeParseError(
+            f"{form.location()}: placement references unsupported material "
+            f"'{target}' in '{form.command_text()}'")
 
 
 def _handle_constant_profile_placement(form: Sexp,
@@ -380,6 +525,23 @@ def _handle_constant_profile_placement(form: Sexp,
             f"{form.location()}: doping placement '{name}' is defined more than "
             f"once in '{form.command_text()}'")
     _placement_target(form, builder, target, target_kind)
+    replacement = "NoReplace"
+    decay_length = 0.0
+    decay = "none"
+    for node in args[3:]:
+        if isinstance(node, Atom) and node.is_string:
+            value = str(node.value)
+            if value in {"Replace", "LocalReplace", "NoReplace"}:
+                replacement = value
+            elif value in {"Gauss", "Gaussian", "Erf"}:
+                decay = "gaussian" if value in {"Gauss", "Gaussian"} else "erf"
+            else:
+                raise SdeParseError(
+                    f"{form.location()}: unsupported placement option '{value}'")
+        else:
+            decay_length = eval_number(node, builder.env)
+            if decay_length < 0.0:
+                raise SdeParseError(f"{form.location()}: negative decay length")
     builder.placements.append({
         "name": name,
         "profile": profile,
@@ -388,14 +550,56 @@ def _handle_constant_profile_placement(form: Sexp,
         # Later placements win where windows overlap, matching SDE's
         # last-definition-wins evaluation order.
         "priority": len(builder.placements),
+        "replacement": replacement,
+        "decay_length": decay_length,
+        "decay": decay,
+        "location": form.location(),
     })
 
 
 def _handle_analytical_profile_placement(form: Sexp, builder: DeviceIrBuilder) -> None:
-    raise SdeParseError(
-        f"{form.location()}: 'sdedr:define-analytical-profile-placement' is not "
-        f"yet translated by the Vela SDE frontend. Offending command: "
-        f"'{form.command_text()}'")
+    args = _require_args(
+        form, 6, "(sdedr:define-analytical-profile-placement name profile "
+        "baseline direction replacement evaluation [restriction ...])")
+    name = expect_string(args[0], builder.env, "placement name")
+    profile = expect_string(args[1], builder.env, "profile name")
+    baseline = expect_string(args[2], builder.env, "baseline name")
+    direction = expect_string(args[3], builder.env, "placement direction")
+    replacement = expect_string(args[4], builder.env, "replacement mode")
+    evaluation = expect_string(args[5], builder.env, "evaluation mode")
+    if profile not in builder.profiles or builder.profiles[profile]["type"] != "gaussian":
+        raise SdeParseError(f"{form.location()}: unknown Gaussian profile '{profile}'")
+    if baseline not in builder.windows or builder.windows[baseline]["shape"] != "line":
+        raise SdeParseError(f"{form.location()}: '{baseline}' is not a Line window")
+    direction = "Both" if direction == "Symm" else direction
+    if direction not in {"Positive", "Negative", "Both"}:
+        raise SdeParseError(f"{form.location()}: unsupported direction '{direction}'")
+    if replacement not in {"Replace", "LocalReplace", "NoReplace"}:
+        raise SdeParseError(f"{form.location()}: unsupported replacement '{replacement}'")
+    if evaluation not in {"Eval", "NoEval"}:
+        raise SdeParseError(f"{form.location()}: unsupported evaluation mode '{evaluation}'")
+    restriction_kind = None
+    restriction = None
+    if len(args) > 6:
+        if len(args) != 8:
+            raise SdeParseError(
+                f"{form.location()}: analytical restriction must be kind/name")
+        raw_kind = expect_string(args[6], builder.env, "restriction kind").lower()
+        restriction_kind = {"region": "region", "material": "material",
+                            "window": "window", "evalwin": "window"}.get(raw_kind)
+        if restriction_kind is None:
+            raise SdeParseError(f"{form.location()}: unsupported restriction '{raw_kind}'")
+        restriction = expect_string(args[7], builder.env, "restriction name")
+        _placement_target(form, builder, restriction, restriction_kind)
+    if any(item["name"] == name for item in builder.placements):
+        raise SdeParseError(f"{form.location()}: duplicate placement '{name}'")
+    builder.placements.append({
+        "name": name, "profile": profile, "target_kind": "window",
+        "target": baseline, "priority": len(builder.placements),
+        "replacement": replacement, "direction": direction,
+        "evaluation": evaluation, "restriction_kind": restriction_kind,
+        "restriction": restriction, "location": form.location(),
+    })
 
 
 def _handle_refinement_size(form: Sexp, builder: DeviceIrBuilder) -> None:
@@ -451,10 +655,31 @@ def _handle_refinement_placement(form: Sexp,
 
 
 def _handle_refinement_function(form: Sexp, builder: DeviceIrBuilder) -> None:
-    raise SdeParseError(
-        f"{form.location()}: 'sdedr:define-refinement-function' drives adaptive "
-        f"refinement that the Vela mesh generator does not implement. Offending "
-        f"command: '{form.command_text()}'")
+    args = _require_args(
+        form, 3, "(sdedr:define-refinement-function refinement function ...)")
+    refinement = expect_string(args[0], builder.env, "refinement name")
+    function = expect_string(args[1], builder.env, "refinement function")
+    if refinement not in builder.refinement_sizes:
+        raise SdeParseError(f"{form.location()}: unknown refinement '{refinement}'")
+    if function not in {"MaxTransDiff", "MaxGradient", "MaxLenInt"}:
+        raise SdeParseError(
+            f"{form.location()}: refinement function '{function}' is unsupported; "
+            "MaxInterval, multibox and offsetting fail closed")
+    values: list[Any] = []
+    for node in args[2:]:
+        if isinstance(node, Atom) and node.is_string:
+            values.append(str(node.value))
+        else:
+            values.append(eval_number(node, builder.env))
+    if function in {"MaxTransDiff", "MaxGradient"} and not values:
+        raise SdeParseError(f"{form.location()}: {function} requires a threshold")
+    if function == "MaxLenInt" and len(values) < 4:
+        raise SdeParseError(
+            f"{form.location()}: MaxLenInt requires interface names, length and factor")
+    builder.refinement_functions.append({
+        "refinement": refinement, "function": function, "arguments": values,
+        "location": form.location(),
+    })
 
 
 def _handle_multibox(form: Sexp, builder: DeviceIrBuilder) -> None:
@@ -496,6 +721,8 @@ Handler = Callable[[Sexp, DeviceIrBuilder], None]
 
 HANDLERS: dict[str, Handler] = {
     "define": _handle_define,
+    "set!": _handle_evaluated_wrapper_control,
+    "load": _handle_evaluated_wrapper_control,
     "sde:clear": _handle_ignore,
     "sde:build-mesh": _handle_build_mesh,
     "sde:set-process-up-direction": _handle_process_up_direction,
@@ -505,6 +732,7 @@ HANDLERS: dict[str, Handler] = {
     "sdegeo:set-current-contact-set": _handle_set_current_contact_set,
     "sdegeo:define-2d-contact": _handle_define_2d_contact,
     "sdegeo:set-contact": _handle_set_contact,
+    "sdegeo:insert-vertex": _handle_insert_vertex,
     "sdegeo:set-default-boolean": _handle_set_default_boolean,
     "sdegeo:fillet-2d": _handle_fillet,
     "sdedr:define-refeval-window": _handle_refeval_window,
@@ -516,23 +744,30 @@ HANDLERS: dict[str, Handler] = {
         lambda form, builder: _handle_constant_profile_placement(form, builder, "window"),
     "sdedr:define-constant-profile-region":
         lambda form, builder: _handle_constant_profile_placement(form, builder, "region"),
+    "sdedr:define-constant-profile-material":
+        lambda form, builder: _handle_constant_profile_placement(form, builder, "material"),
     "sdedr:define-analytical-profile-placement": _handle_analytical_profile_placement,
     "sdedr:define-refinement-size": _handle_refinement_size,
     "sdedr:define-refinement-placement":
         lambda form, builder: _handle_refinement_placement(form, builder, "window"),
     "sdedr:define-refinement-region":
         lambda form, builder: _handle_refinement_placement(form, builder, "region"),
+    "sdedr:define-refinement-material":
+        lambda form, builder: _handle_refinement_placement(form, builder, "material"),
     "sdedr:define-refinement-function": _handle_refinement_function,
     "sdedr:define-multibox-size": _handle_multibox,
     "sdedr:define-multibox-placement": _handle_multibox,
 }
 
 
-def parse_sde_device_ir(path: Path) -> dict[str, Any]:
+def parse_sde_device_ir(path: Path,
+                        frontend: str = "offline-static") -> dict[str, Any]:
     """Parse an SDE ``.cmd`` file into ``vela.sentaurus_device_ir.v1``."""
     source = Path(path)
     forms = parse_file(source)
-    builder = DeviceIrBuilder(source=str(source))
+    if frontend not in {"offline-static", "sentaurus2022-evaluated"}:
+        raise ValueError(f"unknown SDE frontend '{frontend}'")
+    builder = DeviceIrBuilder(source=str(source), frontend=frontend)
 
     for form in forms:
         head = form.head()
@@ -542,9 +777,13 @@ def parse_sde_device_ir(path: Path) -> dict[str, Any]:
                 f"'{form.command_text()}'")
         handler = HANDLERS.get(head)
         if handler is None:
+            hint = ""
+            if head in {"set!", "if", "cond", "do", "for-each", "lambda", "load"}:
+                hint = ("; offline-static supports only a declarative Scheme subset; "
+                        "use the sentaurus2022-evaluated frontend")
             raise SdeParseError(
                 f"{form.location()}: unsupported SDE command '{head}' in "
-                f"'{form.command_text()}'")
+                f"'{form.command_text()}'{hint}")
         handler(form, builder)
 
     # A declared-but-unassigned contact set is legal SDE, so a missing
@@ -562,6 +801,7 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
             "lower_left": region["lower_left"],
             "upper_right": region["upper_right"],
             "order": region["order"],
+            "boolean_mode": region["boolean_mode"],
         }
         for region in builder.regions
     ]
@@ -576,6 +816,7 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
     contacts = [
         {
             "name": name,
+            "display": builder.contact_sets[name]["display"],
             "pick_points": [
                 {"x": point["x"], "y": point["y"]}
                 for point in builder.contact_sets[name]["pick_points"]
@@ -593,6 +834,7 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
             builder.refinement_sizes[name] for name in sorted(builder.refinement_sizes)
         ],
         "refinement_placements": list(builder.refinement_placements),
+        "refinement_functions": list(builder.refinement_functions),
         "windows": doping["windows"],
         "build": builder.mesh_build,
     }
@@ -602,7 +844,13 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
         "defines": {
             key: builder.env.get(key) for key in sorted(builder.env.values)
         },
-        "geometry": {"regions": regions},
+        "geometry": {
+            "regions": regions,
+            "inserted_vertices": [
+                {"x": item["x"], "y": item["y"]}
+                for item in builder.inserted_vertices
+            ],
+        },
         "materials": materials,
         "contacts": contacts,
         "doping": doping,

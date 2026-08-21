@@ -240,15 +240,18 @@ class SdeFailClosedTest(unittest.TestCase):
             self.parse_body('(sdeplugin:do-something "x")\n')
         self.assertIn("sdeplugin:do-something", str(ctx.exception))
 
-    def test_known_but_unimplemented_command_reports_a_reason(self) -> None:
-        with self.assertRaises(SdeParseError) as ctx:
-            self.parse_body(
+    def test_gaussian_profile_is_preserved_in_ir(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_sde_gaussian_") as tmp:
+            path = write_sde(
+                Path(tmp), self.HEADER +
                 '(sdedr:define-gaussian-profile "G" "BoronActiveConcentration"\n'
                 '  "PeakPos" 0.0 "PeakVal" 1e18 "ValueAtDepth" 1e15 "Depth" 0.2\n'
                 '  "Gauss" "Factor" 0.8)\n')
-        message = str(ctx.exception)
-        self.assertIn("sdedr:define-gaussian-profile", message)
-        self.assertIn("case_sde.cmd:", message)
+            ir = parse_sde_device_ir(path)
+        profile = next(item for item in ir["doping"]["profiles"] if item["name"] == "G")
+        self.assertEqual("gaussian", profile["type"])
+        self.assertEqual("gauss", profile["lateral_type"])
+        self.assertEqual(0.8, profile["parameters"]["Factor"])
 
     def test_unknown_dopant_species_fails_closed(self) -> None:
         with self.assertRaises(SdeParseError) as ctx:

@@ -37,7 +37,8 @@
     "geometry": {
       "type": "object",
       "required": [
-        "regions"
+        "regions",
+        "inserted_vertices"
       ],
       "additionalProperties": false,
       "properties": {
@@ -50,7 +51,8 @@
               "shape",
               "lower_left",
               "upper_right",
-              "order"
+              "order",
+              "boolean_mode"
             ],
             "additionalProperties": false,
             "properties": {
@@ -71,9 +73,21 @@
               "order": {
                 "type": "integer",
                 "minimum": 0,
-                "description": "Creation order; later regions claim overlapping area."
+                "description": "Creation order; boolean_mode determines overlap ownership."
+              },
+              "boolean_mode": {
+                "enum": ["ABA", "BAB"]
               }
             }
+          }
+        },
+        "inserted_vertices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["x", "y"],
+            "additionalProperties": false,
+            "properties": {"x": {"type": "number"}, "y": {"type": "number"}}
           }
         }
       }
@@ -107,13 +121,15 @@
         "type": "object",
         "required": [
           "name",
-          "pick_points"
+          "pick_points",
+          "display"
         ],
         "additionalProperties": false,
         "properties": {
           "name": {
             "type": "string"
           },
+          "display": {"type": "array"},
           "pick_points": {
             "type": "array",
             "description": "Points from (find-edge-id (position ...)) used to select outer boundary edges. May be empty when the SDE file declares a contact set it never assigns; the mesh builder rejects such contacts.",
@@ -155,18 +171,14 @@
               "type",
               "species",
               "carrier",
-              "value_cm3"
+              "carrier"
             ],
             "additionalProperties": false,
             "properties": {
               "name": {
                 "type": "string"
               },
-              "type": {
-                "enum": [
-                  "constant"
-                ]
-              },
+              "type": {"enum": ["constant", "gaussian"]},
               "species": {
                 "type": "string"
               },
@@ -179,7 +191,10 @@
               "value_cm3": {
                 "type": "number",
                 "minimum": 0
-              }
+              },
+              "parameters": {"type": "object"},
+              "lateral_type": {"enum": ["gauss", "erf"]},
+              "location": {"type": "string"}
             }
           }
         },
@@ -202,6 +217,7 @@
       "required": [
         "refinement_sizes",
         "refinement_placements",
+        "refinement_functions",
         "windows",
         "build"
       ],
@@ -259,14 +275,25 @@
                 "type": "string"
               },
               "target_kind": {
-                "enum": [
-                  "region",
-                  "window"
-                ]
+                "enum": ["region", "window", "material"]
               },
               "target": {
                 "type": "string"
               }
+            }
+          }
+        },
+        "refinement_functions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["refinement", "function", "arguments", "location"],
+            "additionalProperties": false,
+            "properties": {
+              "refinement": {"type": "string"},
+              "function": {"enum": ["MaxTransDiff", "MaxGradient", "MaxLenInt"]},
+              "arguments": {"type": "array"},
+              "location": {"type": "string"}
             }
           }
         },
@@ -344,8 +371,7 @@
       "required": [
         "name",
         "shape",
-        "lower_left",
-        "upper_right"
+        "shape"
       ],
       "additionalProperties": false,
       "properties": {
@@ -353,16 +379,17 @@
           "type": "string"
         },
         "shape": {
-          "enum": [
-            "rectangle"
-          ]
+          "enum": ["rectangle", "line", "polygon"]
         },
         "lower_left": {
           "$ref": "#/definitions/point2d"
         },
         "upper_right": {
           "$ref": "#/definitions/point2d"
-        }
+        },
+        "start": {"$ref": "#/definitions/point2d"},
+        "end": {"$ref": "#/definitions/point2d"},
+        "points": {"type": "array", "minItems": 3, "items": {"$ref": "#/definitions/point2d"}}
       }
     },
     "placement": {
@@ -372,7 +399,9 @@
         "profile",
         "target_kind",
         "target",
-        "priority"
+        "priority",
+        "replacement",
+        "location"
       ],
       "additionalProperties": false,
       "properties": {
@@ -383,10 +412,7 @@
           "type": "string"
         },
         "target_kind": {
-          "enum": [
-            "region",
-            "window"
-          ]
+          "enum": ["region", "window", "material"]
         },
         "target": {
           "type": "string"
@@ -394,8 +420,16 @@
         "priority": {
           "type": "integer",
           "minimum": 0,
-          "description": "Evaluation order; a higher priority placement replaces a lower one where they overlap."
-        }
+          "description": "Evaluation order; replacement determines clearing versus accumulation."
+        },
+        "replacement": {"enum": ["Replace", "LocalReplace", "NoReplace"]},
+        "decay_length": {"type": "number", "minimum": 0},
+        "decay": {"enum": ["none", "gaussian", "erf"]},
+        "direction": {"enum": ["Positive", "Negative", "Both"]},
+        "evaluation": {"enum": ["Eval", "NoEval"]},
+        "restriction_kind": {"type": ["string", "null"]},
+        "restriction": {"type": ["string", "null"]},
+        "location": {"type": "string"}
       }
     }
   }

@@ -1,0 +1,23 @@
+{
+  "schema": "vela.sentaurus_sde_capabilities.v1",
+  "manual_release": "T-2022.03",
+  "frontends": {
+    "authoritative": "sentaurus2022-evaluated",
+    "ci": "offline-static"
+  },
+  "supported": {
+    "geometry": ["rectangle-2d", "ABA", "BAB"],
+    "contacts": ["define-contact-set", "set-current-contact-set", "set-contact-edge", "edge-list", "insert-vertex-2d"],
+    "doping": ["constant", "gaussian", "Replace", "LocalReplace", "NoReplace", "Gauss-lateral", "Erf-lateral", "Positive", "Negative", "Both", "Eval", "NoEval"],
+    "windows": ["Line", "Rectangle", "Polygon"],
+    "refinement": ["region-placement", "material-placement", "window-placement", "max-min-spacing", "MaxTransDiff-conservative", "MaxGradient-conservative", "MaxLenInt-conservative", "DoubleSide-conservative", "UseRegionNames-conservative"],
+    "execution": ["iv", "bv_reverse", "ordered-stage-manifest", "e2e-contract-gate"]
+  },
+  "fail_closed": {
+    "geometry": ["AB", "ABiA", "ABiB", "XX", "polygon-body", "3d", "ACIS"],
+    "contacts": ["body-contact", "remove", "imprint", "ambiguous-pick"],
+    "refinement": ["MaxInterval", "multibox", "offsetting"],
+    "profiles": ["particle", "external-tdr"],
+    "execution": ["multiple-quasistationary-sweeps-without-checkpoint-handoff"]
+  }
+}

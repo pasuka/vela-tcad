@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.sentaurus_sde_capabilities.v1",
+  "type": "object",
+  "required": ["schema", "manual_release", "frontends", "supported", "fail_closed"],
+  "properties": {
+    "schema": {"const": "vela.sentaurus_sde_capabilities.v1"},
+    "manual_release": {"const": "T-2022.03"},
+    "frontends": {"type": "object"},
+    "supported": {"type": "object"},
+    "fail_closed": {"type": "object"}
+  },
+  "additionalProperties": false
+}

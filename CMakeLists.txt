@@ -1694,6 +1694,20 @@ set_tests_properties(sentaurus_sde_frontend PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_sde_frontend)
 
+add_test(NAME sentaurus2022_sde_semantics
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus2022_sde_semantics)
+set_tests_properties(sentaurus2022_sde_semantics PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus2022_sde_semantics)
+
+add_test(NAME sentaurus_device_e2e_contract
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_device_e2e_contract)
+set_tests_properties(sentaurus_device_e2e_contract PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_device_e2e_contract)
+
 add_test(NAME sentaurus_parameter_ir
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_sentaurus_parameter_ir)

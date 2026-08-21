@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.sentaurus_sde_frontend_manifest.v1",
+  "title": "Vela Sentaurus SDE frontend provenance manifest v1",
+  "type": "object",
+  "required": ["schema", "frontend", "sde_version", "source", "source_sha256", "evaluated_log", "evaluated_log_sha256"],
+  "properties": {
+    "schema": {"const": "vela.sentaurus_sde_frontend_manifest.v1"},
+    "frontend": {"enum": ["offline-static", "sentaurus2022-evaluated"]},
+    "sde_version": {"type": ["string", "null"]},
+    "source": {"type": "string"},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "evaluated_log": {"type": ["string", "null"]},
+    "evaluated_log_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "wrapper": {"type": "string"},
+    "command": {"type": "array", "items": {"type": "string"}},
+    "exit_code": {"type": "integer"},
+    "stdout": {"type": "string"},
+    "stderr": {"type": "string"},
+    "capability": {"type": "string"}
+  },
+  "additionalProperties": false
+}

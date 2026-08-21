@@ -380,16 +380,20 @@ def expect_string(node: Any, env: Environment, what: str) -> str:
 
 def parse_position(node: Any, env: Environment) -> tuple[float, float, float]:
     """Evaluate a ``(position x y z)`` form to a 3-tuple."""
-    if not isinstance(node, Sexp) or node.head() != "position":
+    if not isinstance(node, Sexp) or node.head() not in {"position", "position-2d"}:
         location = node.location() if isinstance(node, (Atom, Sexp)) else "<unknown>"
         raise SexpError(
-            f"{location}: expected a (position x y z) form, got '{_describe(node)}'")
+            f"{location}: expected a (position x y z) or (position-2d x y) "
+            f"form, got '{_describe(node)}'")
     args = node.items[1:]
-    if len(args) != 3:
+    if len(args) not in {2, 3}:
         raise SexpError(
-            f"{node.location()}: (position ...) requires exactly 3 coordinates, "
+            f"{node.location()}: position requires 2 or 3 coordinates, "
             f"got {len(args)}")
-    return tuple(eval_number(arg, env) for arg in args)  # type: ignore[return-value]
+    values = [eval_number(arg, env) for arg in args]
+    if len(values) == 2:
+        values.append(0.0)
+    return tuple(values)  # type: ignore[return-value]
 
 
 def collect_positions(nodes: Sequence[Any], env: Environment) -> list[tuple[float, float, float]]:
