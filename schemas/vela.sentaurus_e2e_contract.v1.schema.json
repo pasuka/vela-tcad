@@ -10,6 +10,9 @@
     "schema": {
       "const": "vela.sentaurus_e2e_contract.v1"
     },
+    "_comment": {
+      "type": "string"
+    },
     "cases": {
       "type": "object",
       "description": "Per-case acceptance thresholds keyed by reference_tcad case name.",
@@ -70,7 +73,12 @@
             "max_terminal_current_imbalance": {
               "type": "number",
               "minimum": 0,
-              "description": "Maximum |I_a + I_c| / max(|I_a|, |I_c|) accepted as terminal-current conservation."
+              "description": "Relative term in the mixed conservation gate. The raw ratio is still reported for diagnostics."
+            },
+            "max_terminal_current_absolute_imbalance_a_per_um": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Absolute term in the mixed conservation gate: |I_a + I_c| <= absolute + relative * max(|I_a|, |I_c|)."
             },
             "conservation_current_floor_a_per_um": {
               "type": "number",

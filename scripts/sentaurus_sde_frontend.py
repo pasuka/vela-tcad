@@ -47,15 +47,21 @@ def sentaurus2022_evaluated_frontend(source: Path, output_dir: Path,
     output_dir = output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     wrapper = output_dir / "vela_sde_evaluated_wrapper.scm"
-    escaped = str(source).replace("\\", "/").replace('"', '\\"')
-    forms = ["(set! evaluate-log-file #t)", f'(load "{escaped}")']
+    # T-2022.03-SP2 records only the ``load`` form when the owned deck is
+    # loaded from a wrapper.  Embed the unmodified source text after the toggle
+    # so the official .log.eval contains the variable-expanded SDE commands.
+    forms = [
+        "(set! evaluate-log-file #t)",
+        f"; Vela owned source follows: {source.name}",
+        source.read_text(encoding="utf-8").rstrip(),
+    ]
     if build_mesh:
         prefix = (output_dir / "sentaurus_official").as_posix().replace('"', '\\"')
         forms.append(f'(sde:build-mesh "{prefix}")')
     wrapper.write_text("\n".join(forms) + "\n", encoding="utf-8")
 
     version_run = subprocess.run(
-        [executable, "-version"], cwd=output_dir, capture_output=True, text=True,
+        [executable, "-v"], cwd=output_dir, capture_output=True, text=True,
         check=False)
     completed = subprocess.run(
         [executable, "-e", "-l", str(wrapper)], cwd=output_dir,

@@ -1,0 +1,290 @@
+{
+  "schema": "vela.sentaurus_device_ir.v1",
+  "source": "artifacts/vela_sde_evaluated_wrapper.log.eval",
+  "defines": {
+    "H": 0.5,
+    "L": 2.0,
+    "XJ": 1.0
+  },
+  "geometry": {
+    "regions": [
+      {
+        "name": "R.Si",
+        "shape": "rectangle",
+        "lower_left": [
+          0.0,
+          0.0
+        ],
+        "upper_right": [
+          2.0,
+          0.5
+        ],
+        "order": 0,
+        "boolean_mode": "ABA"
+      }
+    ],
+    "inserted_vertices": []
+  },
+  "materials": [
+    {
+      "region": "R.Si",
+      "sde_material": "Silicon",
+      "vela_material": "Si"
+    }
+  ],
+  "contacts": [
+    {
+      "name": "Anode",
+      "display": [
+        4.0,
+        {
+          "command": "color:rgb",
+          "values": [
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "##"
+      ],
+      "pick_points": [
+        {
+          "x": 0.0,
+          "y": 0.25
+        }
+      ]
+    },
+    {
+      "name": "Cathode",
+      "display": [
+        4.0,
+        {
+          "command": "color:rgb",
+          "values": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "##"
+      ],
+      "pick_points": [
+        {
+          "x": 2.0,
+          "y": 0.25
+        }
+      ]
+    }
+  ],
+  "doping": {
+    "profiles": [
+      {
+        "name": "N.Doping",
+        "type": "constant",
+        "species": "PhosphorusActiveConcentration",
+        "carrier": "donor",
+        "value_cm3": 1e+17
+      },
+      {
+        "name": "P.Doping",
+        "type": "constant",
+        "species": "BoronActiveConcentration",
+        "carrier": "acceptor",
+        "value_cm3": 1e+17
+      }
+    ],
+    "placements": [
+      {
+        "name": "P.Place",
+        "profile": "P.Doping",
+        "target_kind": "window",
+        "target": "P.Window",
+        "priority": 0,
+        "replacement": "NoReplace",
+        "decay_length": 0.0,
+        "decay": "none",
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:17:1"
+      },
+      {
+        "name": "N.Place",
+        "profile": "N.Doping",
+        "target_kind": "window",
+        "target": "N.Window",
+        "priority": 1,
+        "replacement": "NoReplace",
+        "decay_length": 0.0,
+        "decay": "none",
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:18:1"
+      }
+    ],
+    "windows": [
+      {
+        "name": "Junction.Window",
+        "shape": "rectangle",
+        "start": [
+          0.9,
+          0.0
+        ],
+        "end": [
+          1.1,
+          0.5
+        ],
+        "lower_left": [
+          0.9,
+          0.0
+        ],
+        "upper_right": [
+          1.1,
+          0.5
+        ]
+      },
+      {
+        "name": "N.Window",
+        "shape": "rectangle",
+        "start": [
+          1.0,
+          0.0
+        ],
+        "end": [
+          2.0,
+          0.5
+        ],
+        "lower_left": [
+          1.0,
+          0.0
+        ],
+        "upper_right": [
+          2.0,
+          0.5
+        ]
+      },
+      {
+        "name": "P.Window",
+        "shape": "rectangle",
+        "start": [
+          0.0,
+          0.0
+        ],
+        "end": [
+          1.0,
+          0.5
+        ],
+        "lower_left": [
+          0.0,
+          0.0
+        ],
+        "upper_right": [
+          1.0,
+          0.5
+        ]
+      }
+    ]
+  },
+  "mesh_control": {
+    "refinement_sizes": [
+      {
+        "name": "Global.Mesh",
+        "max_x": 0.05,
+        "max_y": 0.05,
+        "min_x": 0.01,
+        "min_y": 0.01
+      },
+      {
+        "name": "Junction.Mesh",
+        "max_x": 0.01,
+        "max_y": 0.02,
+        "min_x": 0.005,
+        "min_y": 0.005
+      }
+    ],
+    "refinement_placements": [
+      {
+        "name": "Global.Mesh.Place",
+        "refinement": "Global.Mesh",
+        "target_kind": "region",
+        "target": "R.Si"
+      },
+      {
+        "name": "Junction.Mesh.Place",
+        "refinement": "Junction.Mesh",
+        "target_kind": "window",
+        "target": "Junction.Window"
+      }
+    ],
+    "refinement_functions": [],
+    "windows": [
+      {
+        "name": "Junction.Window",
+        "shape": "rectangle",
+        "start": [
+          0.9,
+          0.0
+        ],
+        "end": [
+          1.1,
+          0.5
+        ],
+        "lower_left": [
+          0.9,
+          0.0
+        ],
+        "upper_right": [
+          1.1,
+          0.5
+        ]
+      },
+      {
+        "name": "N.Window",
+        "shape": "rectangle",
+        "start": [
+          1.0,
+          0.0
+        ],
+        "end": [
+          2.0,
+          0.5
+        ],
+        "lower_left": [
+          1.0,
+          0.0
+        ],
+        "upper_right": [
+          2.0,
+          0.5
+        ]
+      },
+      {
+        "name": "P.Window",
+        "shape": "rectangle",
+        "start": [
+          0.0,
+          0.0
+        ],
+        "end": [
+          1.0,
+          0.5
+        ],
+        "lower_left": [
+          0.0,
+          0.0
+        ],
+        "upper_right": [
+          1.0,
+          0.5
+        ]
+      }
+    ],
+    "build": {
+      "engine": "snmesh",
+      "prefix": "pn2d"
+    }
+  },
+  "metadata_only": [
+    {
+      "command": "set!",
+      "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:1:1",
+      "text": "(set! evaluate-log-file #t)",
+      "reason": "authoritative Sentaurus wrapper control already executed by SDE"
+    }
+  ]
+}

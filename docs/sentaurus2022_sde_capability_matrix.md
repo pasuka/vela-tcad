@@ -10,15 +10,18 @@ source-located error; it must never be silently approximated.
 | Capability | `sentaurus2022-evaluated` | `offline-static` |
 |---|---:|---:|
 | Run `sde -e -l wrapper.scm` | yes | no |
-| Enable `(set! evaluate-log-file #t)` before loading input | yes | no |
+| Enable `(set! evaluate-log-file #t)` before evaluating input | yes | no |
 | Parse variable-expanded `.log.eval` | yes | n/a |
 | Record source/evaluated SHA-256, SDE version, command, stdout/stderr and exit | yes | source hash only |
 | Full Elk Scheme | delegated to installed SDE | no |
 | `define` plus numeric expressions | via evaluated log | yes |
 | `set!`, `if`/`cond`, `do`, `for-each`, `lambda`, `load` | via evaluated log | fail-closed with evaluated-frontend hint |
 
-Both paths emit `vela.sentaurus_sde_frontend_manifest.v1`. The evaluated path
-can additionally invoke `sde:build-mesh` and preserve the official `_bnd.tdr`
+Both paths emit `vela.sentaurus_sde_frontend_manifest.v1`. T-2022.03-SP2 does
+not flatten a nested `load` into `.log.eval`, so the evaluated path uses an
+isolated wrapper containing the toggle followed by the unchanged, hash-sealed
+source text. The evaluated path can additionally invoke `sde:build-mesh` and
+preserve the official `_bnd.tdr`
 and `_msh.cmd` artifacts. It does not parse TDR as though it were Scheme.
 
 ## Geometry and contacts
@@ -74,6 +77,13 @@ is written only after the checked-in `configs/sentaurus_e2e_contract.json` is
 read and its mesh, curve, coverage, finiteness, monotonicity, and continuity
 thresholds pass. Failure writes `fail_report.json`, removes stale success
 reports, and records the last accepted bias.
+
+Sentaurus Quasistationary `InitialStep`, `MinStep`, and `MaxStep` are normalized
+by the original `Goal - start` span before Vela receives voltage steps. The
+contract may shorten the stop bias without changing that normalization.
+Terminal-current acceptance uses a mixed gate,
+`abs(Ia + Ic) <= abs_limit + rel_limit * max(abs(Ia), abs(Ic))`, so roundoff at
+near-zero current does not masquerade as a large physical conservation error.
 
 Excluded: complete Elk reimplementation, ACIS, Sentaurus Mesh reimplementation,
 3-D geometry, process emulation, particle profiles, and arbitrary external TDR

@@ -1190,6 +1190,11 @@ Commonly used controls:
 Gummel-specific keys:
 - damping_psi
 - carrier_floor_m3
+- `gummel_carrier_convergence_norm`: `l2` (default) or `componentwise`.
+  `componentwise` requires every node's carrier update divided by the maximum
+  of old density, new density, and the solve carrier floor to meet `reltol`;
+  it prevents a large majority-carrier norm from hiding a local minority-
+  carrier update.
 - taun
 - taup
 - bandgap_narrowing

@@ -1,0 +1,41 @@
+{
+  "schema": "vela.sentaurus2022_remaining_tasks_validation.v1",
+  "validation_date": "2026-08-22",
+  "build_type": "Release",
+  "iv": {
+    "case": "pn2d_sentaurus2018_iv",
+    "status": "accepted",
+    "node_count": 1767,
+    "cell_count": 3360,
+    "accepted_points": 18,
+    "last_accepted_bias_V": 0.3,
+    "max_terminal_current_imbalance": 1.8583026284792081,
+    "max_terminal_current_absolute_imbalance_a_per_um": 1.6369807621772063e-18,
+    "max_terminal_current_mixed_tolerance_ratio": 0.5510500339765068,
+    "failures": []
+  },
+  "bv": {
+    "case": "pn2d_sentaurus2018_bv",
+    "status": "failed",
+    "target_reached": true,
+    "node_count": 1767,
+    "cell_count": 3360,
+    "accepted_points": 59,
+    "mode": "bv_reverse",
+    "last_accepted_bias_V": -19.999999999999996,
+    "max_terminal_current_imbalance": 1.557874806215335,
+    "max_terminal_current_absolute_imbalance_a_per_um": 0.0006474399321579581,
+    "max_terminal_current_mixed_tolerance_ratio": 20.000000007989268,
+    "failures": [
+      "terminal-current imbalance exceeds mixed absolute/relative contract maximum"
+    ]
+  },
+  "sde_oracle": {
+    "manifest": "reference_tcad/pn2d_sentaurus2022_oracle/manifest.json",
+    "sde_release": "T-2022.03-SP2",
+    "exit_code": 0,
+    "points": 1943,
+    "elements": 3680,
+    "regions": 3
+  }
+}

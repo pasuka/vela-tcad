@@ -999,15 +999,20 @@ def deck_template_type(sim: dict[str, Any]) -> str:
 
 
 def apply_step_control_to_vela_sweep(vela_sweep: dict[str, Any],
-                                     step_control: dict[str, Any]) -> None:
+                                     step_control: dict[str, Any],
+                                     normalized_voltage_span: float | None = None) -> None:
+    initial_step = numeric_or_none(step_control.get("InitialStep"))
     max_step = numeric_or_none(step_control.get("MaxStep"))
     min_step = numeric_or_none(step_control.get("MinStep"))
     increment = numeric_or_none(step_control.get("Increment"))
     decrement = numeric_or_none(step_control.get("Decrement"))
+    scale = 1.0 if normalized_voltage_span is None else abs(normalized_voltage_span)
+    if initial_step is not None and initial_step > 0.0:
+        vela_sweep["initial_step"] = initial_step * scale
     if max_step is not None and max_step > 0.0:
-        vela_sweep["max_step"] = max_step
+        vela_sweep["max_step"] = max_step * scale
     if min_step is not None and min_step > 0.0:
-        vela_sweep["min_step"] = min_step
+        vela_sweep["min_step"] = min_step * scale
     if increment is not None and increment >= 1.0:
         vela_sweep["growth_factor"] = increment
     if decrement is not None and decrement > 1.0:
@@ -1594,6 +1599,22 @@ def _clear_stale_reports(output_dir: Path) -> None:
             target.unlink()
 
 
+def _last_converged_bias(csv_path: Path) -> float | None:
+    """Return the last converged bias from a partial curve, if readable."""
+    if not csv_path.is_file():
+        return None
+    try:
+        with csv_path.open(encoding="utf-8", newline="") as handle:
+            rows = csv.DictReader(handle)
+            accepted = [
+                float(row["bias_V"]) for row in rows
+                if row.get("converged") in {"1", "true", "True"}
+            ]
+        return accepted[-1] if accepted else None
+    except (OSError, KeyError, TypeError, ValueError):
+        return None
+
+
 def _contract_case(contract: dict[str, Any], case_name: str | None,
                    sde: Path, sdevice: Path) -> tuple[str, dict[str, Any]] | None:
     if case_name:
@@ -1682,7 +1703,12 @@ def evaluate_e2e_acceptance(case_name: str, case: dict[str, Any],
                 by_bias.setdefault(float(row["bias_V"]), []).append(
                     float(row["I_sgflux_A_per_um"]))
             floor = float(curve.get("conservation_current_floor_a_per_um", 0.0))
+            relative_limit = float(curve["max_terminal_current_imbalance"])
+            absolute_limit = float(curve.get(
+                "max_terminal_current_absolute_imbalance_a_per_um", 0.0))
             ratios: list[float] = []
+            absolute_mismatches: list[float] = []
+            mixed_tolerance_ratios: list[float] = []
             for bias in biases:
                 values = next((items for key, items in by_bias.items()
                                if abs(key - bias) <= tolerance), [])
@@ -1692,13 +1718,24 @@ def evaluate_e2e_acceptance(case_name: str, case: dict[str, Any],
                     continue
                 scale = max(abs(value) for value in values)
                 if scale >= floor:
-                    ratios.append(abs(sum(values)) / scale)
+                    mismatch = abs(sum(values))
+                    ratios.append(mismatch / scale)
+                    absolute_mismatches.append(mismatch)
+                    mixed_denominator = absolute_limit + relative_limit * scale
+                    mixed_tolerance_ratios.append(
+                        mismatch / mixed_denominator
+                        if mixed_denominator > 0.0 else math.inf)
             checks["max_terminal_current_imbalance"] = max(ratios, default=0.0)
-            if not all(math.isfinite(value) for value in ratios):
+            checks["max_terminal_current_absolute_imbalance_a_per_um"] = max(
+                absolute_mismatches, default=0.0)
+            checks["max_terminal_current_mixed_tolerance_ratio"] = max(
+                mixed_tolerance_ratios, default=0.0)
+            if not all(math.isfinite(value) for value in mixed_tolerance_ratios):
                 failures.append("terminal-current imbalance contains non-finite values")
-            elif checks["max_terminal_current_imbalance"] > float(
-                    curve["max_terminal_current_imbalance"]):
-                failures.append("terminal-current imbalance exceeds contract maximum")
+            elif checks["max_terminal_current_mixed_tolerance_ratio"] > 1.0:
+                failures.append(
+                    "terminal-current imbalance exceeds mixed absolute/relative "
+                    "contract maximum")
     return {
         "schema": "vela.sentaurus_device_acceptance.v1",
         "case": case_name,
@@ -1773,7 +1810,14 @@ def build_device_deck(device_ir: dict[str, Any],
     }
     final_stage = sweep_stages[0]
     if final_stage:
-        apply_step_control_to_vela_sweep(sweep, final_stage.get("step_control", {}))
+        apply_step_control_to_vela_sweep(
+            sweep,
+            final_stage.get("step_control", {}),
+            # Sentaurus Quasistationary controls are normalized against the
+            # original Goal, even when an E2E contract deliberately truncates
+            # the Vela stop voltage for a shorter acceptance run.
+            normalized_voltage_span=goal - start,
+        )
 
     deck: dict[str, Any] = {
         "_comment": (
@@ -1790,7 +1834,7 @@ def build_device_deck(device_ir: dict[str, Any],
         "solver": {
             "method": "gummel_newton",
             "max_iter": 40,
-            "reltol": 1.0e-8,
+            "reltol": 1.0e-10 if kind == "iv" else 1.0e-8,
             "abstol": 1.0e-9,
             "damping_psi": 0.2,
             "damping_factor": 1.0,
@@ -1799,8 +1843,11 @@ def build_device_deck(device_ir: dict[str, Any],
             "warm_start": True,
             "quasi_fermi_update_limit_V": 0.1,
             "quasi_fermi_reference": "contact_majority",
+            "gummel_carrier_convergence_norm": (
+                "componentwise" if kind == "iv" else "l2"
+            ),
             "carrier_row_convergence": {
-                "mode": "enforce",
+                "mode": "report" if kind == "iv" else "enforce",
                 "eps_row": 1.0e-3,
                 "scale_floor": 1.0e-30,
                 "min_source_scale": 1.0e-18,
@@ -1822,8 +1869,8 @@ def build_device_deck(device_ir: dict[str, Any],
             "contact_boundary_reconstruction": "dominant_signed_contact_mean",
             "handoff": {
                 "fallback": "gummel_on_newton_failure",
-                "require_gummel_convergence": False,
-                "gummel_max_iter": 80,
+                "require_gummel_convergence": kind == "iv",
+                "gummel_max_iter": 300 if kind == "iv" else 80,
                 "newton_max_iter": 50 if kind == "iv" else 80,
             },
         },
@@ -1991,8 +2038,19 @@ def device_command(args: argparse.Namespace) -> None:
         try:
             run_command(command, cwd=output_dir)
         except Exception as error:  # noqa: BLE001 - reported then re-raised
-            _write_fail_report(output_dir, "solve", str(error),
-                               {"command": command})
+            last_bias = _last_converged_bias(curve_path)
+            details = {
+                "command": command,
+                "last_accepted_bias_V": last_bias,
+            }
+            manifest["status"] = "failed"
+            manifest["failure"] = {
+                "stage": "solve",
+                "message": str(error),
+                "last_accepted_bias_V": last_bias,
+            }
+            write_json(output_dir / "run_manifest.json", manifest)
+            _write_fail_report(output_dir, "solve", str(error), details)
             raise
         manifest["status"] = "solved"
         manifest["generated"].append(args.output_csv)

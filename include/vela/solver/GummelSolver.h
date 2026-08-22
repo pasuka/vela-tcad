@@ -155,6 +155,7 @@ struct GummelConfig {
     int    maxIter     = 50;    ///< Maximum number of outer Gummel iterations
     double reltol      = 1.0e-6; ///< Relative convergence tolerance (||dpsi||/||psi||)
     double abstol      = 0.0;   ///< Absolute update tolerance across psi, n, and p
+    std::string carrierConvergenceNorm = "l2"; ///< ``l2`` or per-node ``componentwise`` relative carrier updates.
     double temperature_K = constants::T0; ///< Lattice temperature [K]
     PoissonChargeVolumePolicy poissonChargeVolumePolicy =
         PoissonChargeVolumePolicy::Global;

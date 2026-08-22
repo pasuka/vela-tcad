@@ -1,0 +1,2 @@
+artifacts/** -diff -text
+input/** -diff -text

@@ -1582,6 +1582,14 @@ set_tests_properties(sentaurus_vm_reference_runner PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_vm_reference_runner)
 
+add_test(NAME sentaurus2022_sde_fixture_oracle
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus2022_sde_fixture_vm
+            tests.regression.test_sentaurus2022_sde_oracle)
+set_tests_properties(sentaurus2022_sde_fixture_oracle PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus2022_sde_fixture_oracle)
+
 add_test(NAME templates_ldmos_phase01_regression
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_templates_ldmos_phase01)
@@ -1757,7 +1765,8 @@ set_tests_properties(sdevice_mesh_import PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sdevice_mesh_import)
 set_property(TEST sdevice_mesh_import APPEND PROPERTY ENVIRONMENT
-    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
+    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>"
+    "VELA_SENTAURUS_IMPORT=$<TARGET_FILE:sentaurus_import>")
 
 add_test(NAME sdevice_vela_launcher
     COMMAND ${Python3_EXECUTABLE} -m unittest
@@ -1898,6 +1907,102 @@ add_test(NAME sentaurus_mesh_builder
 set_tests_properties(sentaurus_mesh_builder PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_mesh_builder)
+
+add_test(NAME gmsh_python_runtime
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_gmsh_runtime)
+set_tests_properties(gmsh_python_runtime PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(gmsh_python_runtime)
+
+add_test(NAME sentaurus_ir_v2_contract
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_ir_v2_contract)
+set_tests_properties(sentaurus_ir_v2_contract PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_ir_v2_contract)
+
+add_test(NAME sentaurus_gmsh_m1
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_gmsh_m1)
+set_tests_properties(sentaurus_gmsh_m1 PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_gmsh_m1)
+
+add_test(NAME sentaurus_gmsh_m2
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_gmsh_m2)
+set_tests_properties(sentaurus_gmsh_m2 PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_gmsh_m2)
+
+add_test(NAME sentaurus_gmsh_m3
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_gmsh_m3)
+set_tests_properties(sentaurus_gmsh_m3 PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_gmsh_m3)
+
+add_test(NAME sentaurus_gmsh_m4
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_gmsh_m4)
+set_tests_properties(sentaurus_gmsh_m4 PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_gmsh_m4)
+
+add_test(NAME sentaurus_gmsh_m5
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sentaurus_gmsh_m5)
+set_tests_properties(sentaurus_gmsh_m5 PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_gmsh_m5)
+
+add_test(NAME sentaurus_bjt_modeling
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sentaurus_bjt_modeling)
+set_tests_properties(sentaurus_bjt_modeling PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sentaurus_bjt_modeling)
+
+add_test(NAME sentaurus_mos_modeling
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sentaurus_mos_modeling)
+set_tests_properties(sentaurus_mos_modeling PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS reference_sde_cases)
+vela_set_windows_msys2_test_path(sentaurus_mos_modeling)
+
+add_test(NAME sentaurus_bv_modeling
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sentaurus_bv_modeling)
+set_tests_properties(sentaurus_bv_modeling PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS reference_sde_cases)
+vela_set_windows_msys2_test_path(sentaurus_bv_modeling)
+
+add_test(NAME sde_p6_package
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sde_p6_package)
+set_tests_properties(sde_p6_package PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sde_p6_package)
+
+add_test(NAME sde_integral_control
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sde_integral_control)
+set_tests_properties(sde_integral_control PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sde_integral_control)
+
+add_test(NAME sde_p6_validation
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sde_p6_validation)
+set_tests_properties(sde_p6_validation PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sde_p6_validation)
+
+add_test(NAME reference_sde_cases
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_reference_sde_cases)
+set_tests_properties(reference_sde_cases PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(reference_sde_cases)
+
+add_test(NAME sde_sdevice_checks
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_sde_sdevice_checks)
+set_tests_properties(sde_sdevice_checks PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sde_sdevice_checks)
+set_property(TEST sde_sdevice_checks APPEND PROPERTY ENVIRONMENT
+    "VELA_SD_SIM=$<TARGET_FILE:sd-sim>")
 
 add_test(NAME sentaurus_reference_workflows
     COMMAND ${Python3_EXECUTABLE} -m unittest

@@ -113,6 +113,14 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.maxIter = json.value("max_iter", cfg.maxIter);
     cfg.reltol = json.value("reltol", cfg.reltol);
     cfg.abstol = json.value("abstol", cfg.abstol);
+    cfg.carrierConvergenceNorm = json.value(
+        "gummel_carrier_convergence_norm", cfg.carrierConvergenceNorm);
+    if (cfg.carrierConvergenceNorm != "l2" &&
+        cfg.carrierConvergenceNorm != "componentwise") {
+        throw std::invalid_argument(
+            "gummelConfigFromJson: gummel_carrier_convergence_norm must be "
+            "'l2' or 'componentwise'.");
+    }
     cfg.temperature_K = json.value("temperature_K", cfg.temperature_K);
     if (json.contains("carrier_statistics")) {
         const auto& statistics = json.at("carrier_statistics");
@@ -739,11 +747,33 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         const double p_norm  = p.norm();
         const double rel_p   = (p_norm > 1.0e-30) ? dp_norm / p_norm : dp_norm;
 
+        const auto componentwiseRelativeUpdate = [carrierFloorSolve](
+                const VectorXd& updated, const VectorXd& previous) {
+            double maximum = 0.0;
+            for (int i = 0; i < updated.size(); ++i) {
+                const double scale = std::max({
+                    std::abs(updated(i)), std::abs(previous(i)),
+                    carrierFloorSolve});
+                maximum = std::max(
+                    maximum, std::abs(updated(i) - previous(i)) / scale);
+            }
+            return maximum;
+        };
+        const double carrier_rel_n =
+            cfg.carrierConvergenceNorm == "componentwise"
+            ? componentwiseRelativeUpdate(n_new, n)
+            : rel_n;
+        const double carrier_rel_p =
+            cfg.carrierConvergenceNorm == "componentwise"
+            ? componentwiseRelativeUpdate(p_new, p)
+            : rel_p;
+
         n = n_new;
         p = p_new;
 
         const bool relativeConverged =
-            rel_err < cfg.reltol && rel_n < cfg.reltol && rel_p < cfg.reltol;
+            rel_err < cfg.reltol &&
+            carrier_rel_n < cfg.reltol && carrier_rel_p < cfg.reltol;
         const bool absoluteConverged = cfg.abstol > 0.0 &&
             dpsi_norm <= cfg.abstol && dn_norm <= cfg.abstol && dp_norm <= cfg.abstol;
         if (relativeConverged || absoluteConverged) {

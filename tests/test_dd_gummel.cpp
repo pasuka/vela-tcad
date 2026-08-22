@@ -224,6 +224,14 @@ TEST_CASE("GummelSolver: carrier floor config preserves quasi-Fermi consistency"
     REQUIRE_THROWS_AS(
         gummelConfigFromJson(nlohmann::json{{"carrier_floor_m3", -1.0}}),
         std::invalid_argument);
+
+    const GummelConfig componentwise = gummelConfigFromJson(
+        nlohmann::json{{"gummel_carrier_convergence_norm", "componentwise"}});
+    REQUIRE(componentwise.carrierConvergenceNorm == "componentwise");
+    REQUIRE_THROWS_AS(
+        gummelConfigFromJson(
+            nlohmann::json{{"gummel_carrier_convergence_norm", "invalid"}}),
+        std::invalid_argument);
 }
 
 TEST_CASE("GummelSolver: no NaN or Inf in any output vector", "[gummel]")
