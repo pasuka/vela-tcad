@@ -1,0 +1,146 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.mesh_field_bundle.v1",
+  "title": "Vela normalized mesh and nodal field bundle v1",
+  "description": "Single semantic source for Vela, Gmsh, VTK and DF-ISE exporters. Runtime validation additionally enforces contiguous IDs, reversible maps and field lengths.",
+  "type": "object",
+  "required": [
+    "schema", "coordinate_unit", "field_units", "provenance", "gmsh",
+    "nodes", "triangles", "lines", "regions", "materials", "contacts",
+    "interfaces", "fields", "id_mapping"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "vela.mesh_field_bundle.v1"},
+    "coordinate_unit": {"enum": ["um"]},
+    "field_units": {
+      "type": "object",
+      "required": ["concentration"],
+      "additionalProperties": false,
+      "properties": {"concentration": {"enum": ["cm^-3"]}}
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["device_ir_schema", "mesh_backend"],
+      "additionalProperties": true,
+      "properties": {
+        "device_ir_schema": {"const": "vela.sentaurus_device_ir.v2"},
+        "mesh_backend": {"enum": ["gmsh", "tensor-legacy", "official-tdr"]}
+      }
+    },
+    "gmsh": {
+      "type": "object",
+      "required": ["version", "msh_version", "options"],
+      "additionalProperties": false,
+      "properties": {
+        "version": {"type": "string"},
+        "msh_version": {"enum": ["4.1"]},
+        "options": {"type": "object"}
+      }
+    },
+    "nodes": {"type": "array", "items": {"$ref": "#/definitions/node"}},
+    "triangles": {"type": "array", "items": {"$ref": "#/definitions/triangle"}},
+    "lines": {"type": "array", "items": {"$ref": "#/definitions/line"}},
+    "regions": {"type": "array", "items": {"$ref": "#/definitions/namedGroup"}},
+    "materials": {"type": "array", "items": {"$ref": "#/definitions/namedGroup"}},
+    "contacts": {"type": "array", "items": {"$ref": "#/definitions/namedGroup"}},
+    "interfaces": {"type": "array", "items": {"$ref": "#/definitions/namedGroup"}},
+    "fields": {
+      "type": "object",
+      "required": [
+        "DonorConcentration", "AcceptorConcentration", "DopingConcentration",
+        "AbsDopingConcentration", "Log10AbsDopingConcentration", "species"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "DonorConcentration": {"$ref": "#/definitions/nodalField"},
+        "AcceptorConcentration": {"$ref": "#/definitions/nodalField"},
+        "DopingConcentration": {"$ref": "#/definitions/nodalField"},
+        "AbsDopingConcentration": {"$ref": "#/definitions/nodalField"},
+        "Log10AbsDopingConcentration": {"$ref": "#/definitions/nodalField"},
+        "species": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/definitions/nodalField"}
+        }
+      }
+    },
+    "id_mapping": {
+      "type": "object",
+      "required": ["gmsh_node_to_vela", "gmsh_element_to_vela", "vela_node_to_dfise", "vela_element_to_dfise"],
+      "additionalProperties": false,
+      "properties": {
+        "gmsh_node_to_vela": {"$ref": "#/definitions/stringIntegerMap"},
+        "gmsh_element_to_vela": {"$ref": "#/definitions/stringIntegerMap"},
+        "vela_node_to_dfise": {"$ref": "#/definitions/stringIntegerMap"},
+        "vela_element_to_dfise": {"$ref": "#/definitions/stringIntegerMap"}
+      }
+    }
+  },
+  "definitions": {
+    "nonNegativeId": {"type": "integer", "minimum": 0},
+    "positiveTag": {"type": "integer", "minimum": 1},
+    "node": {
+      "type": "object",
+      "required": ["gmsh_tag", "vela_id", "dfise_id", "x", "y", "z"],
+      "additionalProperties": false,
+      "properties": {
+        "gmsh_tag": {"$ref": "#/definitions/positiveTag"},
+        "vela_id": {"$ref": "#/definitions/nonNegativeId"},
+        "dfise_id": {"$ref": "#/definitions/nonNegativeId"},
+        "x": {"type": "number"}, "y": {"type": "number"}, "z": {"type": "number"}
+      }
+    },
+    "triangle": {
+      "type": "object",
+      "required": ["gmsh_tag", "vela_id", "dfise_id", "node_ids", "region_id", "material_id", "physical_surface_tags"],
+      "additionalProperties": false,
+      "properties": {
+        "gmsh_tag": {"$ref": "#/definitions/positiveTag"},
+        "vela_id": {"$ref": "#/definitions/nonNegativeId"},
+        "dfise_id": {"$ref": "#/definitions/nonNegativeId"},
+        "node_ids": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/definitions/nonNegativeId"}},
+        "region_id": {"$ref": "#/definitions/nonNegativeId"},
+        "material_id": {"$ref": "#/definitions/nonNegativeId"},
+        "physical_surface_tags": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/definitions/positiveTag"}}
+      }
+    },
+    "line": {
+      "type": "object",
+      "required": ["gmsh_tag", "vela_id", "dfise_id", "node_ids", "kind", "physical_curve_tags"],
+      "additionalProperties": false,
+      "properties": {
+        "gmsh_tag": {"$ref": "#/definitions/positiveTag"},
+        "vela_id": {"$ref": "#/definitions/nonNegativeId"},
+        "dfise_id": {"$ref": "#/definitions/nonNegativeId"},
+        "node_ids": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/definitions/nonNegativeId"}},
+        "kind": {"enum": ["contact", "interface", "boundary"]},
+        "physical_curve_tags": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/definitions/positiveTag"}}
+      }
+    },
+    "namedGroup": {
+      "type": "object",
+      "required": ["id", "name", "physical_name", "physical_tag"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"$ref": "#/definitions/nonNegativeId"},
+        "name": {"type": "string", "minLength": 1},
+        "physical_name": {"type": "string", "pattern": "^(region|material|contact|interface):"},
+        "physical_tag": {"$ref": "#/definitions/positiveTag"}
+      }
+    },
+    "nodalField": {
+      "type": "object",
+      "required": ["association", "unit", "values"],
+      "additionalProperties": false,
+      "properties": {
+        "association": {"const": "node"},
+        "unit": {"enum": ["cm^-3", "log10(cm^-3)"]},
+        "values": {"type": "array", "items": {"type": "number"}}
+      }
+    },
+    "stringIntegerMap": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    }
+  }
+}

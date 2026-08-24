@@ -1,0 +1,183 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.sentaurus_device_ir.v2",
+  "title": "Vela Sentaurus Device IR v2",
+  "description": "Loss-aware geometry, contact, refinement and doping IR. Provenance is mandatory and may be explicitly unknown after v1 migration.",
+  "type": "object",
+  "required": [
+    "schema", "source", "defines", "geometry", "contacts", "doping",
+    "mesh_control", "capability_manifest", "metadata_only"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "vela.sentaurus_device_ir.v2"},
+    "source": {
+      "type": "object",
+      "required": ["path", "frontend", "input_schema"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string"},
+        "frontend": {"enum": ["offline-static", "sentaurus2022-evaluated", "unknown"]},
+        "input_schema": {"type": ["string", "null"]}
+      }
+    },
+    "defines": {
+      "type": "object",
+      "additionalProperties": {"type": ["number", "string"]}
+    },
+    "geometry": {
+      "type": "object",
+      "required": ["bodies", "inserted_vertices"],
+      "additionalProperties": false,
+      "properties": {
+        "bodies": {"type": "array", "items": {"$ref": "#/definitions/body"}},
+        "inserted_vertices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["position", "provenance"],
+            "additionalProperties": false,
+            "properties": {
+              "position": {"$ref": "#/definitions/point2d"},
+              "provenance": {"$ref": "#/definitions/provenance"}
+            }
+          }
+        }
+      }
+    },
+    "contacts": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/contact"}
+    },
+    "doping": {
+      "type": "object",
+      "required": ["profiles", "placements", "windows"],
+      "additionalProperties": false,
+      "properties": {
+        "profiles": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}},
+        "placements": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}},
+        "windows": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}}
+      }
+    },
+    "mesh_control": {
+      "type": "object",
+      "required": ["refinement_sizes", "refinement_placements", "refinement_functions", "windows", "build"],
+      "additionalProperties": false,
+      "properties": {
+        "refinement_sizes": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}},
+        "refinement_placements": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}},
+        "refinement_functions": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}},
+        "windows": {"type": "array", "items": {"$ref": "#/definitions/semanticRecord"}},
+        "build": {"type": ["object", "null"]}
+      }
+    },
+    "capability_manifest": {
+      "type": "object",
+      "required": ["migration", "provenance_complete", "unknown_provenance_paths"],
+      "additionalProperties": false,
+      "properties": {
+        "migration": {"enum": ["native-v2", "v1-to-v2"]},
+        "provenance_complete": {"type": "boolean"},
+        "unknown_provenance_paths": {
+          "type": "array", "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^/"}
+        }
+      }
+    },
+    "metadata_only": {"type": "array", "items": {"type": "object"}}
+  },
+  "definitions": {
+    "point2d": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {"type": "number"}
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["status", "source_location", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"enum": ["known", "unknown"]},
+        "source_location": {"type": ["string", "null"]},
+        "reason": {"type": ["string", "null"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "known"}}},
+          "then": {"properties": {"source_location": {"type": "string"}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "unknown"}}},
+          "then": {"properties": {"reason": {"type": "string", "minLength": 1}}}
+        }
+      ]
+    },
+    "material": {
+      "type": "object",
+      "required": ["sde", "vela"],
+      "additionalProperties": false,
+      "properties": {"sde": {"type": "string"}, "vela": {"type": "string"}}
+    },
+    "body": {
+      "type": "object",
+      "required": ["id", "region", "material", "shape", "geometry", "creation_order", "boolean_mode", "provenance"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string"},
+        "region": {"type": "string"},
+        "material": {"$ref": "#/definitions/material"},
+        "shape": {"enum": ["rectangle", "polygon"]},
+        "geometry": {
+          "type": "object",
+          "properties": {
+            "lower_left": {"$ref": "#/definitions/point2d"},
+            "upper_right": {"$ref": "#/definitions/point2d"},
+            "points": {"type": "array", "minItems": 3, "items": {"$ref": "#/definitions/point2d"}}
+          },
+          "additionalProperties": false,
+          "oneOf": [
+            {"required": ["lower_left", "upper_right"]},
+            {"required": ["points"]}
+          ]
+        },
+        "creation_order": {"type": "integer", "minimum": 0},
+        "boolean_mode": {"enum": ["ABA", "BAB", "AB", "ABiA", "ABiB", "XX"]},
+        "provenance": {"$ref": "#/definitions/provenance"}
+      }
+    },
+    "contactAssignment": {
+      "type": "object",
+      "required": ["kind", "entity_ids", "provenance"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"enum": ["pick_point", "entity_list", "body", "remove", "imprint"]},
+        "position": {"$ref": "#/definitions/point2d"},
+        "entity_ids": {"type": "array", "items": {"type": "integer"}},
+        "provenance": {"$ref": "#/definitions/provenance"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "pick_point"}}},
+          "then": {"required": ["position"]}
+        }
+      ]
+    },
+    "contact": {
+      "type": "object",
+      "required": ["name", "display", "current_state", "assignments", "provenance"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "display": {"type": "array"},
+        "current_state": {"enum": ["active", "inactive", "unknown"]},
+        "assignments": {"type": "array", "items": {"$ref": "#/definitions/contactAssignment"}},
+        "provenance": {"$ref": "#/definitions/provenance"}
+      }
+    },
+    "semanticRecord": {
+      "type": "object",
+      "required": ["provenance"],
+      "properties": {"provenance": {"$ref": "#/definitions/provenance"}},
+      "additionalProperties": true
+    }
+  }
+}

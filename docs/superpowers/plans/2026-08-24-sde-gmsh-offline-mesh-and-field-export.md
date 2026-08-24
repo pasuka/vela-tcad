@@ -2,7 +2,7 @@
 
 ## 计划状态
 
-- 状态：实施中；阶段 -1 已完成，M0 待开始
+- 状态：实施中；阶段 -1 和 M0 已完成，M1 待开始
 - 更新日期：2026-08-24
 - 计划源文件：`docs/superpowers/plans/2026-08-24-sde-gmsh-offline-mesh-and-field-export.md`
 - 实施 worktree：`D:\code-repo\copilot-worktrees\vela-tcad-dev`
@@ -14,6 +14,12 @@
 - 阶段 -1 验证：目标 worktree 独立 Release 配置和 137 个构建步骤成功；Sentaurus 定向
   回归 10/10 通过；全量 CTest 705/705 通过，耗时 246.90 秒。该结果是 M0 之前的冻结
   基线，后续新增失败必须相对此基线归因。
+- M0 结果：已新增 Gmsh 4.15.2 Python API probe、UCRT64 构建目录 runtime staging、
+  严格 JSON fail report、Device IR v1-to-v2 失真感知迁移、Device IR v2 schema 和
+  `vela.mesh_field_bundle.v1` schema。真实 probe 验证 wrapper/API/CLI 均为 4.15.2，
+  实际加载 staged `gmsh-4.15.dll`，并生成 3 节点、1 个 Tri3；拓扑相关选项包含单线程、
+  `Mesh.Algorithm=6`、`Mesh.RandomFactor=0`、禁用重组/高阶/优化及 MSH 4.1 ASCII。
+  UCRT64 Release 构建成功，最终全量 CTest 707/707 通过，耗时 234.09 秒。
 - 产品默认：`offline-static + gmsh`
 - 内部验证：`sentaurus2022-evaluated + tdx`，仅限具有许可证的开发环境
 - 取代范围：本计划取代“离线生成器使用正交张量网格并固定对角线切分三角形”的网格部分；
