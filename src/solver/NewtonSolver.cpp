@@ -7361,29 +7361,12 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         [](const NewtonGlobalContinuityClosureEvaluation& evaluation) {
             return !evaluation.enforced || evaluation.satisfied;
         };
-    Real activeGlobalElectronScale = cfg_.globalContinuityClosure.sourceFloor;
-    Real activeGlobalHoleScale = cfg_.globalContinuityClosure.sourceFloor;
     auto globalClosureLineSearchNorm = [&](const VectorXd& residual) {
-        const Real baseNorm = residualNormFn(residual);
-        if (cfg_.globalContinuityClosure.mode == "off")
-            return baseNorm;
-        Real electronSum = 0.0;
-        Real holeSum = 0.0;
-        for (int i = 0; i < N; ++i) {
-            const Index node = static_cast<Index>(i);
-            if (bcs.phin.find(node) == bcs.phin.end())
-                electronSum += residual(N + i);
-            if (bcs.phip.find(node) == bcs.phip.end())
-                holeSum += residual(2 * N + i);
-        }
-        const Real electronRatio =
-            electronSum / std::max(activeGlobalElectronScale, Real{1.0e-300});
-        const Real holeRatio =
-            holeSum / std::max(activeGlobalHoleScale, Real{1.0e-300});
-        return std::sqrt(
-            baseNorm * baseNorm
-            + electronRatio * electronRatio
-            + holeRatio * holeRatio);
+        // Closure is an acceptance/reporting criterion, not a nonlinear merit
+        // function.  In particular, mode=report must be observationally pure.
+        // mode=enforce is evaluated only after the ordinary Newton criterion is
+        // met, so shrinking a sound Newton step cannot be driven by this gate.
+        return residualNormFn(residual);
     };
     auto writeCarrierRowDiagnosticCsv = [&](const NewtonCarrierRowConvergenceEvaluation& evaluation,
                                             int iteration,
@@ -7791,12 +7774,6 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
     for (int iter = 1; iter <= cfg_.maxIter; ++iter) {
         experimental::CacheAuditScope::iteration(iter);
         ScopedPerformanceTimer iterationTimer("newton.iteration");
-        activeGlobalElectronScale = std::max(
-            std::abs(activeGlobalEval.electron.integratedSource),
-            cfg_.globalContinuityClosure.sourceFloor);
-        activeGlobalHoleScale = std::max(
-            std::abs(activeGlobalEval.hole.integratedSource),
-            cfg_.globalContinuityClosure.sourceFloor);
         {
             ScopedPerformanceTimer timer("newton.row_weights");
             activeRowWeights = continuityRowWeights(

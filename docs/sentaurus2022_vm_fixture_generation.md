@@ -1,8 +1,12 @@
-# Generating authoritative Sentaurus 2022 evaluated fixtures
+# Internal development: generating Sentaurus 2022 evaluated fixtures
 
 The licensed Sentaurus 2022 VM is reachable through the configured `sentaurus`
 SSH host. Repository CI does not require a license and consumes only reviewed,
 frozen artifacts.
+
+This workflow is internal development/test infrastructure. It is not part of
+the public product runtime, and end users must not need Sentaurus or access to
+the licensed VM to use the default offline frontend.
 
 1. Keep the owned SDE source in the local checkout; it is hash-sealed before
    upload and is never replaced by a VM copy.

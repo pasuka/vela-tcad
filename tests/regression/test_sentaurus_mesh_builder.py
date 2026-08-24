@@ -33,6 +33,7 @@ from sentaurus_mesh_builder import (  # noqa: E402
     MeshQualificationError,
     build_mesh_and_doping,
     evaluate_doping,
+    qualify_mesh,
     select_contact_segment,
     write_doping_csv,
     write_mesh_json,
@@ -209,12 +210,33 @@ class GeneratedMeshTest(unittest.TestCase):
 
 class MeshQualificationGateTest(unittest.TestCase):
     def test_generated_mesh_is_non_obtuse(self) -> None:
-        report = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE)).qualification
+        generated = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE))
+        report = generated.qualification
         self.assertTrue(report["require_non_obtuse"])
         self.assertEqual([], report["obtuse_cells"])
         self.assertLessEqual(report["max_angle_degrees"], 90.0 + 1e-6)
         self.assertGreater(report["min_angle_degrees"], 0.0)
         self.assertEqual("mixed_voronoi", report["node_volume_policy"])
+
+        imported_report = qualify_mesh(generated.mesh)
+        self.assertEqual(report["node_count"], imported_report["node_count"])
+        self.assertEqual(report["cell_count"], imported_report["cell_count"])
+        self.assertEqual(
+            [(item["name"], item["node_count"]) for item in report["contacts"]],
+            [(item["name"], item["node_count"])
+             for item in imported_report["contacts"]],
+        )
+        self.assertAlmostEqual(
+            report["max_angle_degrees"],
+            imported_report["max_angle_degrees"],
+        )
+
+    def test_existing_mesh_with_noncontiguous_node_ids_fails_closed(self) -> None:
+        generated = build_mesh_and_doping(parse_sde_device_ir(COARSE_SDE))
+        generated.mesh["nodes"][-1]["id"] += 1
+        with self.assertRaises(MeshQualificationError) as ctx:
+            qualify_mesh(generated.mesh)
+        self.assertEqual("qualification", ctx.exception.report["stage"])
 
     def test_unknown_node_volume_policy_is_rejected(self) -> None:
         ir = parse_sde_device_ir(PN2D_SDE)

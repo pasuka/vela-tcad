@@ -34,6 +34,8 @@ def offline_static_frontend(source: Path) -> tuple[dict[str, Any], dict[str, Any
         "source_sha256": sha256_file(source),
         "evaluated_log": None,
         "evaluated_log_sha256": None,
+        "official_mesh_tdr": None,
+        "official_mesh_tdr_sha256": None,
         "capability": "declarative Scheme subset; unsupported forms fail closed",
     }
 
@@ -70,6 +72,9 @@ def sentaurus2022_evaluated_frontend(source: Path, output_dir: Path,
     (output_dir / "sde.stderr.txt").write_text(completed.stderr, encoding="utf-8")
 
     logs = sorted(output_dir.glob("*.log.eval"), key=lambda path: path.stat().st_mtime)
+    official_meshes = sorted(
+        output_dir.glob("*_msh.tdr"), key=lambda path: path.stat().st_mtime)
+    official_mesh = official_meshes[-1] if official_meshes else None
     manifest: dict[str, Any] = {
         "schema": MANIFEST_SCHEMA,
         "frontend": "sentaurus2022-evaluated",
@@ -83,6 +88,9 @@ def sentaurus2022_evaluated_frontend(source: Path, output_dir: Path,
         "stderr": "sde.stderr.txt",
         "evaluated_log": str(logs[-1]) if logs else None,
         "evaluated_log_sha256": sha256_file(logs[-1]) if logs else None,
+        "official_mesh_tdr": str(official_mesh) if official_mesh else None,
+        "official_mesh_tdr_sha256": (
+            sha256_file(official_mesh) if official_mesh else None),
     }
     (output_dir / "sde_frontend_manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
@@ -94,4 +102,7 @@ def sentaurus2022_evaluated_frontend(source: Path, output_dir: Path,
         raise RuntimeError(
             "Sentaurus SDE succeeded but produced no .log.eval; verify that "
             "evaluate-log-file is supported by the installed T-2022.03 build")
+    if build_mesh and official_mesh is None:
+        raise RuntimeError(
+            "Sentaurus SDE build-mesh was requested but produced no *_msh.tdr")
     return parse_sde_device_ir(logs[-1], frontend="sentaurus2022-evaluated"), manifest

@@ -914,6 +914,56 @@ def _qualify(triangles: Sequence[dict[str, Any]],
     return report
 
 
+def qualify_mesh(mesh: dict[str, Any],
+                 require_non_obtuse: bool = True,
+                 node_volume_policy: str = "mixed_voronoi") -> dict[str, Any]:
+    """Qualify an existing Vela mesh, including one imported from a TDR.
+
+    The offline generator and the authoritative TDR importer must feed the
+    same acceptance report shape to the E2E contract.  Keep this public helper
+    limited to geometry/contact checks; doping provenance is recorded by the
+    orchestration manifest.
+    """
+    nodes = list(mesh.get("nodes", []))
+    triangles = list(mesh.get("triangles", []))
+    ordered = sorted(nodes, key=lambda node: int(node["id"]))
+    if [int(node["id"]) for node in ordered] != list(range(len(ordered))):
+        raise MeshQualificationError(
+            "existing mesh node IDs must be contiguous from zero",
+            {"stage": "qualification", "reason": "non-contiguous node IDs"},
+        )
+    coords = [(float(node["x"]), float(node["y"])) for node in ordered]
+    report = _qualify(
+        triangles, coords, require_non_obtuse, node_volume_policy)
+    contacts = list(mesh.get("contacts", []))
+    empty = [str(contact.get("name", "")) for contact in contacts
+             if len(contact.get("node_ids", [])) < 2]
+    overlaps = _overlapping_contacts(contacts)
+    if empty or overlaps:
+        raise MeshQualificationError(
+            "existing mesh has invalid contact topology",
+            {
+                "stage": "contact",
+                "empty_or_singleton_contacts": empty,
+                "overlapping_contacts": overlaps,
+            },
+        )
+    report["contacts"] = [
+        {
+            "name": str(contact["name"]),
+            "node_count": len(contact.get("node_ids", [])),
+        }
+        for contact in contacts
+    ]
+    report["node_count"] = len(nodes)
+    report["cell_count"] = len(triangles)
+    report["region_ids"] = {
+        str(region["name"]): int(region["id"])
+        for region in mesh.get("regions", [])
+    }
+    return report
+
+
 def write_mesh_json(path: Path, mesh: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(mesh, indent=2) + "\n", encoding="utf-8")

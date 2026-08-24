@@ -54,6 +54,15 @@ class UnifiedDeckTest(unittest.TestCase):
     DEVICE = {"source": "case_sde.cmd", "contacts": [
         {"name": "Anode"}, {"name": "Cathode"}]}
 
+    def test_device_cli_defaults_to_license_free_offline_frontend(self) -> None:
+        args = MODULE.build_parser().parse_args([
+            "device",
+            "--sde", "case_sde.cmd",
+            "--sdevice", "case_sdevice.cmd",
+            "--output-dir", "generated",
+        ])
+        self.assertEqual("offline-static", args.sde_frontend)
+
     def test_bv_mode_and_ordered_execution_sequence(self) -> None:
         deck, _warnings = MODULE.build_device_deck(
             self.DEVICE, execution("bv"), {"physics": []},
@@ -61,6 +70,15 @@ class UnifiedDeckTest(unittest.TestCase):
         self.assertEqual("bv_reverse", deck["sweep"]["mode"])
         self.assertEqual([0, 1], [stage["index"]
                                   for stage in deck["_sentaurus_execution_sequence"]])
+        self.assertEqual("gummel_on_newton_failure",
+                         deck["solver"]["handoff"]["fallback"])
+        self.assertFalse(
+            deck["solver"]["handoff"]["require_gummel_convergence"])
+        self.assertEqual(
+            "report", deck["solver"]["global_continuity_closure"]["mode"])
+        self.assertEqual(
+            0.05, deck["solver"]["global_continuity_closure"]["tolerance"])
+        self.assertLess(deck["sweep"]["shrink_factor"], 1.0)
 
     def test_quasistationary_step_controls_scale_to_voltage_span(self) -> None:
         ir = execution("iv")
@@ -98,12 +116,38 @@ class UnifiedDeckTest(unittest.TestCase):
                 "mesh.json", "doping.csv", "iv.csv")
         self.assertIn("refusing to silently discard stages", str(ctx.exception))
 
+    def test_qualified_bv_profile_restores_validated_newton_policy(self) -> None:
+        deck, _warnings = MODULE.build_device_deck(
+            self.DEVICE, execution("bv"), {"physics": []},
+            "mesh.json", "doping.csv", "bv.csv",
+            solver_profile="pn2d_sentaurus2018_bv_qualified")
+        solver = deck["solver"]
+        self.assertEqual("pn2d_sentaurus2018_bv_qualified",
+                         deck["_e2e_solver_profile"])
+        self.assertEqual(0, solver["handoff"]["gummel_max_iter"])
+        self.assertEqual("none", solver["handoff"]["fallback"])
+        self.assertFalse(solver["handoff"]["require_gummel_convergence"])
+        self.assertFalse(solver["mobility"]["jacobian_field_derivatives"])
+        self.assertNotIn("quasi_fermi_reference", solver)
+        self.assertEqual("report", solver["global_continuity_closure"]["mode"])
+        self.assertEqual(0.05, deck["sweep"]["initial_step"])
+        self.assertEqual(0.05, deck["sweep"]["max_step"])
+
+    def test_unknown_solver_profile_fails_closed(self) -> None:
+        with self.assertRaises(MODULE.ExecutionIrError):
+            MODULE.build_device_deck(
+                self.DEVICE, execution("bv"), {"physics": []},
+                "mesh.json", "doping.csv", "bv.csv",
+                solver_profile="not-a-profile")
+
 
 class ContractGateTest(unittest.TestCase):
     def test_full_bv_contract_targets_original_minus_twenty_volts(self) -> None:
         contract = MODULE.load_e2e_contract()
         case = contract["cases"]["pn2d_sentaurus2018_bv"]
         self.assertEqual("bv", case["analysis"])
+        self.assertEqual("pn2d_sentaurus2018_bv_qualified",
+                         case["solver_profile"])
         self.assertEqual(-20.0, case["curve"]["bias_stop"])
         self.assertGreaterEqual(case["curve"]["min_points"], 20)
 
@@ -226,6 +270,7 @@ class SdeFrontendProvenanceTest(unittest.TestCase):
             _ir, manifest = offline_static_frontend(source)
         self.assertEqual("offline-static", manifest["frontend"])
         self.assertEqual(64, len(manifest["source_sha256"]))
+        self.assertIsNone(manifest["official_mesh_tdr"])
 
     def test_evaluated_frontend_builds_wrapper_and_hashes_log(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_evaluated_") as tmp:
@@ -256,7 +301,35 @@ class SdeFrontendProvenanceTest(unittest.TestCase):
         self.assertEqual("sentaurus2022-evaluated", manifest["frontend"])
         self.assertEqual("SDE T-2022.03", manifest["sde_version"])
         self.assertEqual(64, len(manifest["evaluated_log_sha256"]))
+        self.assertIsNone(manifest["official_mesh_tdr"])
         self.assertEqual("R.Si", ir["geometry"]["regions"][0]["name"])
+
+    def test_evaluated_frontend_records_official_mesh_tdr(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="vela_evaluated_mesh_") as tmp:
+            root = Path(tmp)
+            source = root / "case_sde.cmd"
+            source.write_text('(define L 1)\n', encoding="utf-8")
+            output = root / "out"
+            calls = 0
+
+            def fake_run(_command, **_kwargs):
+                nonlocal calls
+                calls += 1
+                if calls == 1:
+                    return SimpleNamespace(
+                        stdout="SDE T-2022.03", stderr="", returncode=0)
+                (output / "case.log.eval").write_text(
+                    '(sdegeo:create-rectangle (position 0 0 0) '
+                    '(position 1 1 0) "Silicon" "R.Si")\n',
+                    encoding="utf-8")
+                (output / "sentaurus_official_msh.tdr").write_bytes(b"tdr")
+                return SimpleNamespace(stdout="ok", stderr="", returncode=0)
+
+            with patch("sentaurus_sde_frontend.subprocess.run", side_effect=fake_run):
+                _ir, manifest = sentaurus2022_evaluated_frontend(
+                    source, output, executable="sde", build_mesh=True)
+        self.assertTrue(str(manifest["official_mesh_tdr"]).endswith("_msh.tdr"))
+        self.assertEqual(64, len(manifest["official_mesh_tdr_sha256"]))
 
 
 if __name__ == "__main__":

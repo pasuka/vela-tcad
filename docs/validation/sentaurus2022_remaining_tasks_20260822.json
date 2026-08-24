@@ -7,11 +7,20 @@
     "status": "accepted",
     "node_count": 1767,
     "cell_count": 3360,
-    "accepted_points": 18,
+    "solver_profile": "pn2d_sentaurus2018_iv_qualified",
+    "accepted_points": 16,
     "last_accepted_bias_V": 0.3,
-    "max_terminal_current_imbalance": 1.8583026284792081,
-    "max_terminal_current_absolute_imbalance_a_per_um": 1.6369807621772063e-18,
-    "max_terminal_current_mixed_tolerance_ratio": 0.5510500339765068,
+    "max_terminal_current_imbalance": 0.0038819523179496546,
+    "max_terminal_current_absolute_imbalance_a_per_um": 9.422903093058463e-18,
+    "max_terminal_current_mixed_tolerance_ratio": 0.013334437374507202,
+    "sentaurus_curve": {
+      "status": "pass",
+      "bias_range_V": [0.2, 0.3],
+      "points_compared": 4,
+      "trend_match": true,
+      "orders_of_magnitude": 0.0018531811087152904,
+      "max_relative_error": 0.004276224260674037
+    },
     "failures": []
   },
   "bv": {
@@ -20,15 +29,47 @@
     "target_reached": true,
     "node_count": 1767,
     "cell_count": 3360,
-    "accepted_points": 59,
+    "solver_profile": "pn2d_sentaurus2018_bv_qualified",
+    "accepted_points": 406,
     "mode": "bv_reverse",
     "last_accepted_bias_V": -19.999999999999996,
-    "max_terminal_current_imbalance": 1.557874806215335,
-    "max_terminal_current_absolute_imbalance_a_per_um": 0.0006474399321579581,
-    "max_terminal_current_mixed_tolerance_ratio": 20.000000007989268,
+    "max_terminal_current_imbalance": 0.11213638958255813,
+    "max_terminal_current_absolute_imbalance_a_per_um": 7.804686060164511e-18,
+    "max_terminal_current_mixed_tolerance_ratio": 1.3632401809173846,
+    "sentaurus_curve_high_field": {
+      "status": "diagnostic_pass_under_one_decade_but_trend_mismatch",
+      "bias_range_V": [-19.9, -5.0],
+      "points_compared": 150,
+      "trend_match": false,
+      "orders_of_magnitude": 0.8701684924510495,
+      "max_relative_error": 0.8651560370608593,
+      "vela_current_at_minus20_A_per_um": -1.1467380650435114e-16,
+      "sentaurus_current_at_minus20_A_per_um": -9.10455666344e-16
+    },
     "failures": [
       "terminal-current imbalance exceeds mixed absolute/relative contract maximum"
     ]
+  },
+  "bv_strict_convergence_followup": {
+    "status": "failed",
+    "target_reached": false,
+    "accepted_points": 7,
+    "last_accepted_bias_V": -2.326689453125e-06,
+    "failed_bias_V": -2.329537109375e-06,
+    "failure_reason": "global_continuity_closure_line_search_rejected",
+    "handoff_fallback": "none",
+    "require_gummel_convergence": true,
+    "global_continuity_closure_mode": "enforce",
+    "max_terminal_current_absolute_imbalance_a_per_um": 7.740484675252933e-28,
+    "last_terminal_current_absolute_imbalance_a_per_um": 1.6040913460756018e-33,
+    "evidence": "build-release/validation/pn2d_bv_strict_20260822/fail_report.json"
+  },
+  "bv_profile_diagnostics": {
+    "global_continuity_closure_mode": "report",
+    "worst_global_electron_ratio": 1.87e-5,
+    "worst_global_hole_ratio": 0.113614,
+    "reltol_1e-10_changed_state": false,
+    "enforce_mode_result": "adaptive step collapse; no repaired branch"
   },
   "sde_oracle": {
     "manifest": "reference_tcad/pn2d_sentaurus2022_oracle/manifest.json",
@@ -36,6 +77,13 @@
     "exit_code": 0,
     "points": 1943,
     "elements": 3680,
-    "regions": 3
+    "regions": 3,
+    "device_pipeline_import": {
+      "status": "qualified",
+      "nodes": 1943,
+      "cells": 3680,
+      "contact_nodes_each": 17,
+      "mesh_source": "sentaurus-official-tdr"
+    }
   }
 }

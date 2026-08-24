@@ -5,9 +5,16 @@ The public entry point is:
 ```powershell
 python scripts/sentaurus_import.py device `
   --sde <sde.cmd> --sdevice <sdevice.cmd> `
-  --output-dir <output> --run `
+  --output-dir <output> --sde-frontend offline-static --run `
   --runner <absolute-path-to-build-release/vela_example_runner.exe>
 ```
+
+`offline-static` is also the CLI default, so the explicit option above is
+documentary rather than required. Public distributions and CI must remain
+license-free and must not invoke Sentaurus. The
+`sentaurus2022-evaluated` frontend is restricted to internal development and
+reviewed oracle generation on licensed infrastructure; it is never a runtime
+dependency for end users.
 
 The command emits frontend provenance, Device IR, Execution IR, mesh, doping,
 mesh qualification, Vela deck, curve, acceptance report, and run manifest.

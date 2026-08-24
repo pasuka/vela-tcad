@@ -2,8 +2,10 @@
   "schema": "vela.sentaurus_sde_capabilities.v1",
   "manual_release": "T-2022.03",
   "frontends": {
-    "authoritative": "sentaurus2022-evaluated",
-    "ci": "offline-static"
+    "default": "offline-static",
+    "public": "offline-static",
+    "ci": "offline-static",
+    "internal_development_oracle": "sentaurus2022-evaluated"
   },
   "supported": {
     "geometry": ["rectangle-2d", "ABA", "BAB"],

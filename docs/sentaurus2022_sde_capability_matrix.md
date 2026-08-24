@@ -5,17 +5,24 @@ This matrix is normative for the paired SDE/SDevice workflow implemented by
 Editor User Guide*, release T-2022.03. A feature marked unsupported must raise a
 source-located error; it must never be silently approximated.
 
+`offline-static` is the license-free default for public users, packaged
+workflows and CI. No public acceptance path may require a Sentaurus executable,
+license server or proprietary installation. `sentaurus2022-evaluated` is an
+explicit opt-in reserved for internal development, reviewed oracle generation
+and compatibility testing. Frozen, provenance-sealed oracle artifacts may be
+consumed by license-free tests after review.
+
 ## Frontends and provenance
 
-| Capability | `sentaurus2022-evaluated` | `offline-static` |
+| Capability | `offline-static` (default) | `sentaurus2022-evaluated` (internal only) |
 |---|---:|---:|
-| Run `sde -e -l wrapper.scm` | yes | no |
-| Enable `(set! evaluate-log-file #t)` before evaluating input | yes | no |
-| Parse variable-expanded `.log.eval` | yes | n/a |
-| Record source/evaluated SHA-256, SDE version, command, stdout/stderr and exit | yes | source hash only |
-| Full Elk Scheme | delegated to installed SDE | no |
-| `define` plus numeric expressions | via evaluated log | yes |
-| `set!`, `if`/`cond`, `do`, `for-each`, `lambda`, `load` | via evaluated log | fail-closed with evaluated-frontend hint |
+| Run `sde -e -l wrapper.scm` | no | yes |
+| Enable `(set! evaluate-log-file #t)` before evaluating input | no | yes |
+| Parse variable-expanded `.log.eval` | n/a | yes |
+| Record source/evaluated SHA-256, SDE version, command, stdout/stderr and exit | source hash only | yes |
+| Full Elk Scheme | no | delegated to installed SDE |
+| `define` plus numeric expressions | yes | via evaluated log |
+| `set!`, `if`/`cond`, `do`, `for-each`, `lambda`, `load` | fail-closed with internal-frontend hint | via evaluated log |
 
 Both paths emit `vela.sentaurus_sde_frontend_manifest.v1`. T-2022.03-SP2 does
 not flatten a nested `load` into `.log.eval`, so the evaluated path uses an

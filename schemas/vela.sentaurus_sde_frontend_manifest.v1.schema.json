@@ -3,7 +3,7 @@
   "$id": "vela.sentaurus_sde_frontend_manifest.v1",
   "title": "Vela Sentaurus SDE frontend provenance manifest v1",
   "type": "object",
-  "required": ["schema", "frontend", "sde_version", "source", "source_sha256", "evaluated_log", "evaluated_log_sha256"],
+  "required": ["schema", "frontend", "sde_version", "source", "source_sha256", "evaluated_log", "evaluated_log_sha256", "official_mesh_tdr", "official_mesh_tdr_sha256"],
   "properties": {
     "schema": {"const": "vela.sentaurus_sde_frontend_manifest.v1"},
     "frontend": {"enum": ["offline-static", "sentaurus2022-evaluated"]},
@@ -12,6 +12,8 @@
     "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "evaluated_log": {"type": ["string", "null"]},
     "evaluated_log_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "official_mesh_tdr": {"type": ["string", "null"]},
+    "official_mesh_tdr_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
     "wrapper": {"type": "string"},
     "command": {"type": "array", "items": {"type": "string"}},
     "exit_code": {"type": "integer"},

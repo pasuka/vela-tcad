@@ -34,9 +34,11 @@ from sentaurus_execution_ir import (  # noqa: E402
 from sentaurus_mesh_builder import (  # noqa: E402
     MeshQualificationError,
     build_mesh_and_doping,
+    qualify_mesh,
     write_doping_csv,
     write_mesh_json,
 )
+from convert_tcad_export import load_mesh as load_exported_mesh  # noqa: E402
 from sentaurus_sde_frontend import (  # noqa: E402
     offline_static_frontend,
     sentaurus2022_evaluated_frontend,
@@ -895,9 +897,10 @@ def plt_command(args: argparse.Namespace) -> None:
 
 
 def default_tdr_importer() -> str:
-    build_dir = Path(__file__).resolve().parents[1] / "build"
+    repo = Path(__file__).resolve().parents[1]
     exe_name = "sentaurus_import.exe" if sys.platform.startswith("win") else "sentaurus_import"
-    return str(build_dir / exe_name)
+    candidates = [repo / "build-release" / exe_name, repo / "build" / exe_name]
+    return str(next((path for path in candidates if path.is_file()), candidates[-1]))
 
 
 def run_command(command: list[str], cwd: Path) -> None:
@@ -1560,6 +1563,102 @@ def project_command(args: argparse.Namespace) -> None:
 E2E_CONTRACT_PATH = REPO / "configs" / "sentaurus_e2e_contract.json"
 
 
+SOLVER_PROFILES: dict[str, dict[str, Any]] = {
+    "pn2d_sentaurus2018_iv_qualified": {
+        "remove_solver_keys": [
+            "quasi_fermi_reference",
+            "gummel_carrier_convergence_norm",
+        ],
+        "solver": {
+            "max_iter": 40,
+            "reltol": 1.0e-8,
+            "abstol": 1.0e-18,
+            "max_update": 5.0,
+            "contact_boundary_minority_electron_relaxation": False,
+            "taun": 1.0e-5,
+            "taup": 3.0e-6,
+            "mobility": {"model": "masetti"},
+            "carrier_row_convergence": {"mode": "report"},
+            "continuity_row_scaling": {"enabled": False},
+            "global_continuity_closure": {
+                "mode": "report", "tolerance": 0.02,
+                "source_floor": 1.0e-20,
+            },
+            "handoff": {
+                "fallback": "none",
+                "require_gummel_convergence": False,
+                "gummel_max_iter": 0,
+                "newton_max_iter": 40,
+            },
+        },
+        "sweep": {"initial_step": 0.02, "max_step": 0.02},
+    },
+    "pn2d_sentaurus2018_bv_qualified": {
+        "remove_solver_keys": [
+            "quasi_fermi_reference",
+            "gummel_carrier_convergence_norm",
+        ],
+        "solver": {
+            "max_iter": 40,
+            "reltol": 1.0e-8,
+            "abstol": 1.0e-9,
+            "max_update": 0.0,
+            "quasi_fermi_update_limit_V": 0.1,
+            "contact_boundary_minority_electron_relaxation": False,
+            "mobility": {
+                "model": "masetti_field",
+                "high_field_driving_force": "quasi_fermi_gradient",
+                "jacobian_field_derivatives": False,
+            },
+            "carrier_row_convergence": {"mode": "report"},
+            "continuity_row_scaling": {"enabled": False},
+            "global_continuity_closure": {
+                "mode": "report", "tolerance": 0.01,
+                "source_floor": 1.0e-14,
+            },
+            "handoff": {
+                "fallback": "none",
+                "require_gummel_convergence": False,
+                "gummel_max_iter": 0,
+                "newton_max_iter": 40,
+            },
+        },
+        "sweep": {
+            "initial_step": 0.05,
+            "max_step": 0.05,
+            "min_step": 1.0e-10,
+            "growth_factor": 1.2,
+            "shrink_factor": 0.5,
+            "max_retries": 29,
+        },
+    },
+}
+
+
+def _deep_update(target: dict[str, Any], update: dict[str, Any]) -> None:
+    for key, value in update.items():
+        if isinstance(value, dict) and isinstance(target.get(key), dict):
+            _deep_update(target[key], value)
+        else:
+            target[key] = json.loads(json.dumps(value))
+
+
+def apply_solver_profile(deck: dict[str, Any], profile_name: str | None) -> None:
+    if profile_name is None:
+        return
+    try:
+        profile = SOLVER_PROFILES[profile_name]
+    except KeyError as error:
+        raise ExecutionIrError(
+            f"unknown E2E solver profile '{profile_name}'") from error
+    solver = deck.setdefault("solver", {})
+    for key in profile.get("remove_solver_keys", []):
+        solver.pop(str(key), None)
+    _deep_update(solver, profile.get("solver", {}))
+    _deep_update(deck.setdefault("sweep", {}), profile.get("sweep", {}))
+    deck["_e2e_solver_profile"] = profile_name
+
+
 def load_e2e_contract(path: Path | None = None) -> dict[str, Any]:
     """Load the versioned end-to-end acceptance contract."""
     contract_path = Path(path) if path is not None else E2E_CONTRACT_PATH
@@ -1754,6 +1853,7 @@ def build_device_deck(device_ir: dict[str, Any],
                       current_contact: str | None = None,
                       stop_voltage: float | None = None,
                       materials_file: str | None = None,
+                      solver_profile: str | None = None,
                       allow_lossy: bool = False) -> tuple[dict[str, Any], list[str]]:
     """Build a Vela ``dc_sweep`` deck from the device and execution IRs."""
     analysis = execution_ir["analysis"]
@@ -1903,6 +2003,7 @@ def build_device_deck(device_ir: dict[str, Any],
         deck, cmd_summary, {}, allow_lossy=allow_lossy)
     if kind != "bv":
         deck["solver"].pop("impact_ionization", None)
+    apply_solver_profile(deck, solver_profile)
     return deck, warnings
 
 
@@ -1953,18 +2054,57 @@ def device_command(args: argparse.Namespace) -> None:
         raise
     write_json(output_dir / "execution_ir.json", execution_ir)
 
+    official_mesh_value = frontend_manifest.get("official_mesh_tdr")
+    mesh_source: dict[str, Any]
     try:
-        generated = build_mesh_and_doping(
-            device_ir,
-            require_non_obtuse=not args.allow_obtuse,
-            node_volume_policy=args.node_volume_policy,
-        )
+        if official_mesh_value:
+            official_mesh = Path(str(official_mesh_value)).resolve()
+            export_dir = output_dir / "official_tdr_export"
+            run_tdr_importer(
+                args.tdr_importer,
+                official_mesh,
+                export_dir / "inventory.json",
+                export_dir,
+            )
+            mesh, _region_nodes = load_exported_mesh(export_dir)
+            write_mesh_json(output_dir / "mesh.json", mesh)
+            shutil.copyfile(export_dir / "doping.csv", output_dir / "doping.csv")
+            qualification = qualify_mesh(
+                mesh,
+                require_non_obtuse=not args.allow_obtuse,
+                node_volume_policy=args.node_volume_policy,
+            )
+            mesh_source = {
+                "kind": "sentaurus-official-tdr",
+                "path": str(official_mesh),
+                "sha256": frontend_manifest.get("official_mesh_tdr_sha256"),
+            }
+        else:
+            generated = build_mesh_and_doping(
+                device_ir,
+                require_non_obtuse=not args.allow_obtuse,
+                node_volume_policy=args.node_volume_policy,
+            )
+            write_mesh_json(output_dir / "mesh.json", generated.mesh)
+            write_doping_csv(output_dir / "doping.csv", generated.doping_rows)
+            qualification = generated.qualification
+            mesh_source = {
+                "kind": "offline-static-approximation",
+                "path": None,
+                "sha256": None,
+            }
     except MeshQualificationError as error:
         _write_fail_report(output_dir, "mesh", str(error), error.report)
         raise
-    write_mesh_json(output_dir / "mesh.json", generated.mesh)
-    write_doping_csv(output_dir / "doping.csv", generated.doping_rows)
-    write_json(output_dir / "mesh_qualification.json", generated.qualification)
+    except (OSError, RuntimeError, ValueError) as error:
+        _write_fail_report(
+            output_dir,
+            "mesh_import",
+            str(error),
+            {"official_mesh_tdr": str(official_mesh_value)},
+        )
+        raise
+    write_json(output_dir / "mesh_qualification.json", qualification)
 
     try:
         contract_stop = (
@@ -1974,6 +2114,15 @@ def device_command(args: argparse.Namespace) -> None:
         effective_stop_voltage = (
             args.stop_voltage if args.stop_voltage is not None else contract_stop
         )
+        selected_case = selected_contract[1] if selected_contract else {}
+        contract_materials = selected_case.get("materials_file")
+        materials_file = args.materials_file
+        if materials_file is None and contract_materials:
+            candidate = (REPO / str(contract_materials)).resolve()
+            if not candidate.is_file():
+                raise ExecutionIrError(
+                    f"E2E contract materials file does not exist: {candidate}")
+            materials_file = str(candidate)
         deck, warnings = build_device_deck(
             device_ir,
             execution_ir,
@@ -1981,9 +2130,11 @@ def device_command(args: argparse.Namespace) -> None:
             mesh_file="mesh.json",
             doping_file="doping.csv",
             output_csv=args.output_csv,
-            current_contact=args.current_contact,
+            current_contact=(
+                args.current_contact or selected_case.get("current_contact")),
             stop_voltage=effective_stop_voltage,
-            materials_file=args.materials_file,
+            materials_file=materials_file,
+            solver_profile=selected_case.get("solver_profile"),
             allow_lossy=args.allow_lossy,
         )
     except ExecutionIrError as error:
@@ -2007,13 +2158,17 @@ def device_command(args: argparse.Namespace) -> None:
             "mesh_qualification.json",
             "simulation.json",
         ],
-        "mesh_qualification": generated.qualification,
+        "mesh_qualification": qualification,
+        "mesh_source": mesh_source,
         "metadata_only": device_ir["metadata_only"],
         "sde_frontend": frontend_manifest,
         "physics_metadata_only": execution_ir["physics"]["metadata_only"],
         "warnings": warnings,
         "e2e_contract_schema": contract["schema"],
         "e2e_contract_case": selected_contract[0] if selected_contract else None,
+        "e2e_solver_profile": (
+            selected_contract[1].get("solver_profile")
+            if selected_contract else None),
         "goal_voltage": execution_ir["analysis"].get("final_voltage"),
         "sweep_stop_voltage": deck["sweep"]["stop"],
         "sweep_stop_overridden": effective_stop_voltage is not None,
@@ -2023,6 +2178,14 @@ def device_command(args: argparse.Namespace) -> None:
             "sdevice"
         ),
     }
+    if official_mesh_value:
+        manifest["generated"].extend([
+            "official_tdr_export/inventory.json",
+            "official_tdr_export/nodes.csv",
+            "official_tdr_export/elements.csv",
+            "official_tdr_export/contacts.csv",
+            "official_tdr_export/doping.csv",
+        ])
 
     if args.run:
         curve_path = output_dir / args.output_csv
@@ -2058,7 +2221,7 @@ def device_command(args: argparse.Namespace) -> None:
             case_name, case = selected_contract
             acceptance = evaluate_e2e_acceptance(
                 case_name, case, execution_ir["analysis"]["kind"],
-                generated.qualification, output_dir / args.output_csv,
+                qualification, output_dir / args.output_csv,
                 output_dir / "terminal_currents.csv")
             write_json(output_dir / "acceptance_report.json", acceptance)
             manifest["generated"].append("acceptance_report.json")
@@ -2133,12 +2296,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--sde-frontend",
         choices=["offline-static", "sentaurus2022-evaluated"],
         default="offline-static",
-        help="Use the strict CI subset or execute Sentaurus 2022 and parse .log.eval",
+        help=(
+            "Frontend policy: offline-static is the license-free public/CI "
+            "default; sentaurus2022-evaluated is reserved for internal "
+            "development oracle generation"
+        ),
     )
     device.add_argument("--sde-executable", default="sde")
     device.add_argument(
         "--sde-build-mesh", action="store_true",
         help="Ask the evaluated frontend to preserve official _bnd.tdr/_msh.cmd artifacts",
+    )
+    device.add_argument(
+        "--tdr-importer", default=None,
+        help="Command used to import an official mesh TDR produced by evaluated SDE",
     )
     device.add_argument("--materials-file", default=None)
     device.add_argument(

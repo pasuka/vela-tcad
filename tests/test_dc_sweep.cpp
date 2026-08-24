@@ -6794,6 +6794,99 @@ TEST_CASE("DCSweep: hybrid fallback can accept converged Gummel when Newton fail
     REQUIRE(point.newtonIterations == 0);
 }
 
+TEST_CASE("DCSweep: hybrid fallback rejects non-converged Gummel when Newton fails",
+          "[dc_sweep][gummel_newton]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    const auto csvPath = dir / "gummel_newton_nonconverged_fallback.csv";
+    const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+        {"start", -1.0},
+        {"stop", -1.0},
+        {"step", 0.25},
+        {"write_vtk", false}
+    }, {
+        {"method", "gummel_newton"},
+        {"max_iter", 20},
+        {"reltol", 0.0},
+        {"abstol", 0.0},
+        {"handoff", {
+            {"fallback", "gummel_on_newton_failure"},
+            {"require_gummel_convergence", false},
+            {"gummel_max_iter", 1},
+            {"newton_max_iter", 0}
+        }},
+        {"verbose", false}
+    });
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+
+    REQUIRE(result.points.size() == 1);
+    const DCSweepPoint& point = result.points.front();
+    REQUIRE_FALSE(point.converged);
+    REQUIRE(point.handoffStage == "gummel_fallback_rejected");
+    REQUIRE(point.failureReason == "gummel_non_convergence");
+    REQUIRE(point.gummelIterations == 1);
+    REQUIRE(point.newtonIterations == 0);
+}
+
+TEST_CASE("DCSweep: global continuity report mode is observationally pure",
+          "[dc_sweep][newton][global_continuity_closure]")
+{
+    const auto offDir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup offCleanup{offDir};
+    std::filesystem::create_directories(offDir);
+    const auto reportDir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup reportCleanup{reportDir};
+    std::filesystem::create_directories(reportDir);
+
+    auto run = [](const std::filesystem::path& dir, const std::string& mode) {
+        const auto meshPath = writePNMesh(dir);
+        const auto csvPath = dir / (mode + ".csv");
+        const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
+            {"start", 0.0},
+            {"stop", -0.05},
+            {"step", -0.05},
+            {"write_vtk", false}
+        }, {
+            {"method", "gummel_newton"},
+            {"max_iter", 40},
+            {"reltol", 1.0e-8},
+            {"abstol", 1.0e-18},
+            {"damping_psi", 0.2},
+            {"line_search", true},
+            {"warm_start", true},
+            {"global_continuity_closure", {
+                {"mode", mode}, {"tolerance", 0.01}, {"source_floor", 1.0e-14}
+            }},
+            {"handoff", {
+                {"fallback", "none"},
+                {"require_gummel_convergence", false},
+                {"gummel_max_iter", 0},
+                {"newton_max_iter", 40}
+            }},
+            {"verbose", false}
+        });
+        DCSweep sweep;
+        return sweep.runWithResult(cfgPath.string());
+    };
+
+    const DCSweepResult off = run(offDir, "off");
+    const DCSweepResult report = run(reportDir, "report");
+    REQUIRE(off.points.size() == report.points.size());
+    REQUIRE_FALSE(off.points.empty());
+    for (std::size_t i = 0; i < off.points.size(); ++i) {
+        REQUIRE(off.points[i].converged);
+        REQUIRE(report.points[i].converged);
+        CHECK(report.points[i].newtonIterations == off.points[i].newtonIterations);
+        CHECK(report.points[i].totalCurrent ==
+              Catch::Approx(off.points[i].totalCurrent).margin(1.0e-24));
+    }
+}
+
 TEST_CASE("DCSweep: hybrid handoff has separate Gummel and Newton iteration budgets",
           "[dc_sweep][gummel_newton]")
 {

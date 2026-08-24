@@ -5034,6 +5034,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     const bool acceptedNewton =
                         result.converged && !(hybrid.newtonMaxIter == 0 && result.iters == 0);
                     if (!acceptedNewton && hybrid.fallbackToGummelOnNewtonFailure) {
+                        if (!gummelInitial.converged) {
+                            attempt.ok = false;
+                            attempt.solution = std::move(gummelInitial);
+                            attempt.newtonIterations = result.iters;
+                            attempt.handoffStage = "gummel_fallback_rejected";
+                            attempt.failureReason = "gummel_non_convergence";
+                            attempt.validationDiagnostics =
+                                gummelValidation.diagnosticsString();
+                            return attempt;
+                        }
                         attempt.ok = true;
                         attempt.solution = std::move(gummelInitial);
                         attempt.newtonIterations = result.iters;

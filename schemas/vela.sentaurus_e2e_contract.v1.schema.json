@@ -33,6 +33,15 @@
       "properties": {
         "sde_cmd": {"type": "string"},
         "sdevice_cmd": {"type": "string"},
+        "solver_profile": {
+          "enum": [
+            "pn2d_sentaurus2018_iv_qualified",
+            "pn2d_sentaurus2018_bv_qualified"
+          ],
+          "description": "Explicit, case-qualified Vela solver/continuation policy."
+        },
+        "materials_file": {"type": "string"},
+        "current_contact": {"type": "string"},
         "analysis": {
           "enum": ["equilibrium", "iv", "bv", "cv"],
           "description": "Analysis kind the frontend must derive from the SDevice file."

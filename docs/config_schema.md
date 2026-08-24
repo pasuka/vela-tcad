@@ -1813,10 +1813,12 @@ factorization on matrices with large row/column norm spreads. The default is
 
 `global_continuity_closure` independently sums the free-node SRH/avalanche
 source and all contact fluxes for electrons and holes. `report` appends the
-metrics without rejecting a solution; `enforce` prevents convergence unless
-each carrier with `|integrated source| >= source_floor` has relative mismatch
-no greater than `tolerance`. The denominator is the largest of the contact
-flux magnitude, integrated-source magnitude, and `source_floor`.
+metrics without changing the Newton line search or rejecting a solution;
+`enforce` applies the same check only after the ordinary Newton convergence
+criterion has been met. Each carrier with
+`|integrated source| >= source_floor` must then have relative mismatch no
+greater than `tolerance`. The denominator is the largest of the contact flux
+magnitude, integrated-source magnitude, and `source_floor`.
 
 `warm_start: true` preserves supplied quasi-Fermi potentials when continuing
 from a previous solution. The default `false` keeps the conservative
