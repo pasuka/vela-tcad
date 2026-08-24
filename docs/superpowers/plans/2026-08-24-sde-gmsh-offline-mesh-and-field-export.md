@@ -2,13 +2,18 @@
 
 ## 计划状态
 
-- 状态：方案已完善，待实施
+- 状态：实施中；阶段 -1 已完成，M0 待开始
 - 更新日期：2026-08-24
 - 计划源文件：`docs/superpowers/plans/2026-08-24-sde-gmsh-offline-mesh-and-field-export.md`
 - 实施 worktree：`D:\code-repo\copilot-worktrees\vela-tcad-dev`
 - 实施分支：`codex/sentaurus2022-sde-workflow`
-- 当前实施基线：`efb590f`；截至本次审计，分支相对 `main` 落后 9 个提交、独有 3 个提交，
-  开发前必须先完成基线同步并重新运行现有 Sentaurus 回归。
+- 审计起点：`efb590f`，当时分支相对 `main` 落后 9 个提交、独有 3 个提交。
+- 同步结果：计划提交 `9d0c77a` 后，通过 merge commit `e1987ef` 合入本地 `main`
+  `f66dbd1`；`main` 现为实施分支祖先，既有分支提交均保留，并已完成合入后的 Release
+  基线回归。
+- 阶段 -1 验证：目标 worktree 独立 Release 配置和 137 个构建步骤成功；Sentaurus 定向
+  回归 10/10 通过；全量 CTest 705/705 通过，耗时 246.90 秒。该结果是 M0 之前的冻结
+  基线，后续新增失败必须相对此基线归因。
 - 产品默认：`offline-static + gmsh`
 - 内部验证：`sentaurus2022-evaluated + tdx`，仅限具有许可证的开发环境
 - 取代范围：本计划取代“离线生成器使用正交张量网格并固定对角线切分三角形”的网格部分；
