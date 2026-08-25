@@ -18,8 +18,8 @@
 (sdedr:define-constant-profile
   "P.Profile" "BoronActiveConcentration" 1.0e16)
 (sdedr:define-constant-profile-region
-  "P.Place" "P.Profile" "R.P" "NoReplace")
+  "P.Place" "P.Profile" "R.P")
 (sdedr:define-constant-profile
   "N.Profile" "PhosphorusActiveConcentration" 2.0e16)
 (sdedr:define-constant-profile-region
-  "N.Place" "N.Profile" "R.N" "NoReplace")
+  "N.Place" "N.Profile" "R.N")

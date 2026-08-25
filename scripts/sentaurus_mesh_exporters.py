@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export every M1 format from one normalized mesh/field bundle."""
+"""Export every Gmsh preprocessing format from one normalized mesh/field bundle."""
 
 from __future__ import annotations
 
@@ -59,18 +59,18 @@ def bundle_to_vela_mesh(bundle: dict[str, Any]) -> dict[str, Any]:
             "cell_ids": [item["vela_id"] for item in cells],
         })
     contacts = []
+    region_id_by_name = {item["name"]: item["id"] for item in bundle["regions"]}
+    contact_owners = bundle.get("provenance", {}).get("contact_owners", {})
     for contact in bundle["contacts"]:
         lines = _contact_lines(bundle, contact)
         node_ids = sorted({node for line in lines for node in line["node_ids"]})
-        touching = {
-            triangle["region_id"] for triangle in bundle["triangles"]
-            if set(triangle["node_ids"]) & set(node_ids)
-        }
-        if len(touching) != 1:
-            raise ValueError(f"contact {contact['name']!r} has ambiguous region ownership")
+        owners = contact_owners.get(contact["name"], [])
+        if len(owners) != 1 or owners[0] not in region_id_by_name:
+            raise ValueError(
+                f"contact {contact['name']!r} has no unique adjacency-audited region owner")
         contacts.append({
             "id": contact["id"], "name": contact["name"],
-            "region_id": next(iter(touching)), "node_ids": node_ids,
+            "region_id": region_id_by_name[owners[0]], "node_ids": node_ids,
         })
     return {
         "_comment": "Derived from vela.mesh_field_bundle.v1; coordinates are micrometres.",
@@ -228,29 +228,35 @@ def write_dfise(path_grd: Path, path_dat: Path, bundle: dict[str, Any]) -> None:
         a, b, c = triangle["node_ids"]
         references = [_edge_reference(edge, edge_ids) for edge in ((a, b), (b, c), (c, a))]
         triangle_rows.append(" 2 " + " ".join(map(str, references)))
-    contact_elements: dict[str, list[int]] = defaultdict(list)
-    contact_name = {item["physical_tag"]: item["name"] for item in bundle["contacts"]}
-    contact_rows = []
+    line_elements: dict[str, list[int]] = defaultdict(list)
+    line_region_name = {
+        item["physical_tag"]: item["name"]
+        for key in ("contacts", "interfaces") for item in bundle[key]
+    }
+    line_rows = []
     for line in bundle["lines"]:
         tag = line["physical_curve_tags"][0]
-        if tag not in contact_name:
-            continue
-        element_id = len(triangle_rows) + len(contact_rows)
-        contact_elements[contact_name[tag]].append(element_id)
-        contact_rows.append(f" 1 {line['node_ids'][0]} {line['node_ids'][1]}")
+        if tag not in line_region_name:
+            raise ValueError(f"line physical tag {tag} has no contact/interface group")
+        element_id = len(triangle_rows) + len(line_rows)
+        line_elements[line_region_name[tag]].append(element_id)
+        line_rows.append(f" 1 {line['node_ids'][0]} {line['node_ids'][1]}")
     device_region_names = [item["name"] for item in bundle["regions"]]
     contact_region_names = [item["name"] for item in bundle["contacts"]]
-    all_regions = device_region_names + contact_region_names
+    interface_region_names = [item["name"] for item in bundle["interfaces"]]
+    all_regions = device_region_names + contact_region_names + interface_region_names
     material_name = {item["id"]: item["name"] for item in bundle["materials"]}
     region_material: dict[int, str] = {}
     region_cells: dict[int, list[int]] = defaultdict(list)
     for triangle in bundle["triangles"]:
         region_cells[triangle["region_id"]].append(triangle["dfise_id"])
         region_material[triangle["region_id"]] = material_name[triangle["material_id"]]
-    materials = [region_material[item["id"]] for item in bundle["regions"]] + ["Contact"] * len(contact_region_names)
+    materials = ([region_material[item["id"]] for item in bundle["regions"]] +
+                 ["Contact"] * len(contact_region_names) +
+                 ["Interface"] * len(interface_region_names))
     vertices = "\n".join(f" {item['x']:.15e} {item['y']:.15e}" for item in bundle["nodes"])
     edge_rows = "\n".join(f" {a} {b}" for a, b in edges)
-    element_rows = "\n".join(triangle_rows + contact_rows)
+    element_rows = "\n".join(triangle_rows + line_rows)
     region_blocks = []
     for region in bundle["regions"]:
         values = " ".join(map(str, region_cells[region["id"]]))
@@ -259,11 +265,17 @@ def write_dfise(path_grd: Path, path_dat: Path, bundle: dict[str, Any]) -> None:
             f'    material = {region_material[region["id"]]}\n'
             f'    Elements ({len(region_cells[region["id"]])}) {{\n {values}\n    }}\n  }}')
     for contact in bundle["contacts"]:
-        values = " ".join(map(str, contact_elements[contact["name"]]))
+        values = " ".join(map(str, line_elements[contact["name"]]))
         region_blocks.append(
             f'  Region ("{contact["name"]}") {{\n'
             f'    material = Contact\n'
-            f'    Elements ({len(contact_elements[contact["name"]])}) {{\n {values}\n    }}\n  }}')
+            f'    Elements ({len(line_elements[contact["name"]])}) {{\n {values}\n    }}\n  }}')
+    for interface in bundle["interfaces"]:
+        values = " ".join(map(str, line_elements[interface["name"]]))
+        region_blocks.append(
+            f'  Region ("{interface["name"]}") {{\n'
+            f'    material = Interface\n'
+            f'    Elements ({len(line_elements[interface["name"]])}) {{\n {values}\n    }}\n  }}')
     quoted_regions = " ".join(f'"{name}"' for name in all_regions)
     grd = f"""DF-ISE text
 
@@ -274,7 +286,7 @@ Info {{
   nb_vertices = {len(bundle['nodes'])}
   nb_edges = {len(edges)}
   nb_faces = 0
-  nb_elements = {len(triangle_rows) + len(contact_rows)}
+  nb_elements = {len(triangle_rows) + len(line_rows)}
   nb_regions = {len(all_regions)}
   regions = [ {quoted_regions} ]
   materials = [ {' '.join(materials)} ]
@@ -294,7 +306,7 @@ Data {{
   Locations ({len(edges)}) {{
 {locations}
   }}
-  Elements ({len(triangle_rows) + len(contact_rows)}) {{
+  Elements ({len(triangle_rows) + len(line_rows)}) {{
 {element_rows}
   }}
 {chr(10).join(region_blocks)}
@@ -322,7 +334,7 @@ Info {{
   nb_vertices = {len(bundle['nodes'])}
   nb_edges = {len(edges)}
   nb_faces = 0
-  nb_elements = {len(triangle_rows) + len(contact_rows)}
+  nb_elements = {len(triangle_rows) + len(line_rows)}
   nb_regions = {len(all_regions)}
   datasets = [ {names} ]
   functions = [ {' '.join(datasets)} ]

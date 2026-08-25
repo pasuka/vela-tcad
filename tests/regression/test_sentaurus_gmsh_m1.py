@@ -69,6 +69,7 @@ class M1GmshIntegrationTest(unittest.TestCase):
                     "--runtime-dir", str(root / "runtime"),
                     "--gmsh-python", str(wrapper), "--gmsh-library", str(library),
                     "--gmsh-executable", str(executable), "--mesh-size", "0.25",
+                    "--capability-level", "M1",
                 ],
                 cwd=REPO, text=True, capture_output=True, check=False,
             )

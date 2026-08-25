@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""M1 Gmsh OCC backend and normalized mesh/field bundle construction."""
+"""Versioned Gmsh OCC backend and normalized mesh/field bundle construction."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from gmsh_runtime import EXPECTED_GMSH_VERSION
+from sentaurus_doping import DopingEvaluationError, evaluate_m2_fields
 
 
 BUNDLE_SCHEMA = "vela.mesh_field_bundle.v1"
@@ -21,7 +22,7 @@ LOG_DOPING_FLOOR_CM3 = 1.0
 
 
 class GmshBackendError(ValueError):
-    """A fail-closed M1 capability, geometry, mesh, or field error."""
+    """A fail-closed capability, geometry, mesh, or field error."""
 
     def __init__(self, message: str, details: dict[str, Any] | None = None):
         super().__init__(message)
@@ -134,6 +135,117 @@ def validate_m1_device_ir(device_ir: dict[str, Any]) -> None:
             )
 
 
+def validate_m2_device_ir(device_ir: dict[str, Any]) -> None:
+    """Validate the M2 rectangle/boolean/contact/doping semantic subset."""
+    if device_ir.get("schema") != "vela.sentaurus_device_ir.v2":
+        raise GmshBackendError(
+            "Gmsh M2 requires vela.sentaurus_device_ir.v2",
+            {"stage": "input", "schema": device_ir.get("schema")},
+        )
+    bodies = device_ir["geometry"]["bodies"]
+    if not bodies:
+        raise GmshBackendError("Device IR contains no bodies", {"stage": "geometry"})
+    orders = [int(body["creation_order"]) for body in bodies]
+    if sorted(orders) != list(range(len(bodies))):
+        raise GmshBackendError(
+            "M2 body creation_order must be unique and continuous",
+            {"stage": "geometry", "creation_orders": orders},
+        )
+    for body in bodies:
+        if body.get("shape") != "rectangle":
+            raise GmshBackendError(
+                "M2 supports Rectangle bodies only; Polygon is not implemented",
+                {"stage": "capability", "capability": "polygon-body",
+                 "body": body["id"], "shape": body.get("shape")},
+            )
+        _rectangle(body)
+        if body.get("boolean_mode") not in {"ABA", "BAB"}:
+            raise GmshBackendError(
+                f"boolean mode {body.get('boolean_mode')!r} is unsupported in M2",
+                {"stage": "capability", "capability": "boolean-mode",
+                 "body": body["id"], "mode": body.get("boolean_mode")},
+            )
+
+    mesh_control = device_ir["mesh_control"]
+    if mesh_control["refinement_functions"] or mesh_control["refinement_placements"]:
+        raise GmshBackendError(
+            "M2 does not support refinement placements or functions; use M3",
+            {"stage": "capability", "capability": "refinement"},
+        )
+    windows = {item["name"]: item for item in device_ir["doping"]["windows"]}
+    profiles = {item["name"]: item for item in device_ir["doping"]["profiles"]}
+    for profile in profiles.values():
+        if profile.get("type") not in {"constant", "gaussian"}:
+            raise GmshBackendError(
+                f"unsupported doping profile type {profile.get('type')!r}",
+                {"stage": "capability", "capability": "doping-profile",
+                 "profile": profile.get("name")},
+            )
+    region_names = {body["region"] for body in bodies}
+    material_names = {body["material"]["sde"] for body in bodies}
+    for placement in device_ir["doping"]["placements"]:
+        profile = profiles.get(placement.get("profile"))
+        if profile is None:
+            raise GmshBackendError(
+                f"placement references unknown profile {placement.get('profile')!r}",
+                {"stage": "doping", "placement": placement.get("name")},
+            )
+        if placement.get("replacement", "NoReplace") not in {
+            "Replace", "LocalReplace", "NoReplace"
+        }:
+            raise GmshBackendError(
+                f"unsupported replacement mode {placement.get('replacement')!r}",
+                {"stage": "doping", "placement": placement.get("name")},
+            )
+        if profile["type"] == "constant" and (
+                abs(float(placement.get("decay_length", 0.0))) > GEOM_TOL or
+                placement.get("decay", "none") != "none"):
+            raise GmshBackendError(
+                "M2 does not implement constant-profile decay; use M3",
+                {"stage": "capability", "capability": "constant-profile-decay",
+                 "placement": placement.get("name"),
+                 "source_location": placement.get("provenance", {}).get(
+                     "source_location")},
+            )
+        kind, target = placement.get("target_kind"), placement.get("target")
+        valid = ((kind == "region" and target in region_names) or
+                 (kind == "material" and target in material_names) or
+                 (kind == "window" and target in windows))
+        if not valid:
+            raise GmshBackendError(
+                f"invalid placement target {kind!r}:{target!r}",
+                {"stage": "doping", "placement": placement.get("name")},
+            )
+        if profile["type"] == "gaussian" and (
+                kind != "window" or windows[target].get("shape") != "line"):
+            raise GmshBackendError(
+                "M2 Gaussian placement requires a Line baseline window",
+                {"stage": "doping", "placement": placement.get("name")},
+            )
+        if profile["type"] == "gaussian" and (
+                abs(float(placement.get("restriction_decay_length", 0.0))) > GEOM_TOL or
+                placement.get("restriction_decay", "none") != "none"):
+            raise GmshBackendError(
+                "M2 does not implement analytical restriction decay; use M3",
+                {"stage": "capability", "capability": "analytical-restriction-decay",
+                 "placement": placement.get("name"),
+                 "source_location": placement.get("provenance", {}).get(
+                     "source_location")},
+            )
+    for contact in device_ir["contacts"]:
+        if not contact["assignments"]:
+            raise GmshBackendError(
+                f"contact {contact['name']!r} has no assignment",
+                {"stage": "contact", "contact": contact["name"]},
+            )
+        if any(item["kind"] != "pick_point" for item in contact["assignments"]):
+            raise GmshBackendError(
+                "M2 supports pick-point contact assignments only",
+                {"stage": "capability", "capability": "contact-entity-list",
+                 "contact": contact["name"]},
+            )
+
+
 def _groups(names: Iterable[str], namespace: str, base: int) -> list[dict[str, Any]]:
     return [
         {"id": index, "name": name, "physical_name": f"{namespace}:{name}",
@@ -164,6 +276,203 @@ def _curve_contains_pick(gmsh, curve: int, x: float, y: float) -> tuple[bool, bo
     free, lo, hi = (y, ymin, ymax) if vertical else (x, xmin, xmax)
     endpoint = abs(free - lo) <= tol or abs(free - hi) <= tol
     return True, endpoint
+
+
+def _boundary_curves(gmsh, surfaces: Iterable[int]) -> list[int]:
+    curves = set()
+    for surface in surfaces:
+        for dimension, tag in gmsh.model.getBoundary(
+                [(2, int(surface))], combined=False, oriented=False):
+            if int(dimension) == 1:
+                curves.add(int(tag))
+    return sorted(curves)
+
+
+def _surface_vertices(gmsh, surface: int) -> list[tuple[float, float]]:
+    vertices = set()
+    for curve in _boundary_curves(gmsh, [surface]):
+        for dimension, tag in gmsh.model.getBoundary(
+                [(1, curve)], combined=False, oriented=False):
+            if int(dimension) != 0:
+                continue
+            values = gmsh.model.getValue(0, int(tag), [])
+            vertices.add((float(values[0]), float(values[1])))
+    if len(vertices) < 3:
+        raise GmshBackendError(
+            "OCC fragment has fewer than three boundary vertices",
+            {"stage": "geometry", "surface": surface, "vertices": sorted(vertices)},
+        )
+    return sorted(vertices)
+
+
+def _point_in_rectangle(bounds: tuple[float, float, float, float],
+                        point: tuple[float, float]) -> bool:
+    x0, y0, x1, y1 = bounds
+    scale = max(x1 - x0, y1 - y0, 1.0)
+    tolerance = 1.0e-7 * scale
+    return (x0 - tolerance <= point[0] <= x1 + tolerance and
+            y0 - tolerance <= point[1] <= y1 + tolerance)
+
+
+def _fragment_m2_geometry(gmsh, bodies: list[dict[str, Any]],
+                          inserted_vertices: list[dict[str, Any]]) -> tuple[
+        dict[int, dict[str, Any]], dict[str, Any]]:
+    """Fragment all source rectangles, audit the map, then replay ABA/BAB."""
+    source_tags = []
+    bounds_by_id = {}
+    for body in bodies:
+        x0, y0, x1, y1 = _rectangle(body)
+        bounds_by_id[body["id"]] = (x0, y0, x1, y1)
+        source_tags.append(gmsh.model.occ.addRectangle(x0, y0, 0.0, x1 - x0, y1 - y0))
+    point_tags = []
+    for record in inserted_vertices:
+        x, y = map(float, record["position"])
+        authored_segments = []
+        for body in bodies:
+            x0, y0, x1, y1 = bounds_by_id[body["id"]]
+            if ((abs(x - x0) <= GEOM_TOL or abs(x - x1) <= GEOM_TOL) and
+                    y0 + GEOM_TOL < y < y1 - GEOM_TOL):
+                authored_segments.append(body["id"])
+            if ((abs(y - y0) <= GEOM_TOL or abs(y - y1) <= GEOM_TOL) and
+                    x0 + GEOM_TOL < x < x1 - GEOM_TOL):
+                authored_segments.append(body["id"])
+        if len(authored_segments) != 1:
+            raise GmshBackendError(
+                "insert-vertex must uniquely select one authored edge interior",
+                {"stage": "contact", "position": [x, y],
+                 "bodies": authored_segments,
+                 "source_location": record["provenance"].get("source_location")},
+            )
+        point_tags.append(gmsh.model.occ.addPoint(x, y, 0.0))
+    if len(source_tags) == 1 and not point_tags:
+        mapped = [[(2, source_tags[0])]]
+        output = [(2, source_tags[0])]
+    else:
+        output, mapped = gmsh.model.occ.fragment(
+            [(2, source_tags[0])],
+            ([(2, tag) for tag in source_tags[1:]] +
+             [(0, tag) for tag in point_tags]),
+            removeObject=True, removeTool=True,
+        )
+    gmsh.model.occ.synchronize()
+    surfaces = sorted(int(tag) for dimension, tag in output if int(dimension) == 2)
+    if not surfaces:
+        raise GmshBackendError("OCC fragment produced no positive-area surface")
+    mapped_surfaces = [
+        {int(tag) for dimension, tag in entries if int(dimension) == 2}
+        for entries in mapped[:len(bodies)]
+    ]
+    if len(mapped_surfaces) != len(bodies):
+        raise GmshBackendError(
+            "OCC fragment source map length is inconsistent",
+            {"stage": "geometry", "sources": len(bodies), "maps": len(mapped_surfaces)},
+        )
+    vertices = {surface: _surface_vertices(gmsh, surface) for surface in surfaces}
+    areas = {surface: float(gmsh.model.occ.getMass(2, surface)) for surface in surfaces}
+    for surface, area in areas.items():
+        if not math.isfinite(area) or area <= GEOM_TOL * GEOM_TOL:
+            raise GmshBackendError(
+                "OCC fragment has zero or non-finite area",
+                {"stage": "geometry", "surface": surface, "area": area},
+            )
+    memberships: dict[int, set[int]] = {surface: set() for surface in surfaces}
+    source_audit = []
+    for index, body in enumerate(bodies):
+        x0, y0, x1, y1 = bounds_by_id[body["id"]]
+        source_area = (x1 - x0) * (y1 - y0)
+        mapped_area = sum(areas[surface] for surface in mapped_surfaces[index])
+        tolerance = 1.0e-8 * max(1.0, source_area)
+        if abs(mapped_area - source_area) > tolerance:
+            raise GmshBackendError(
+                "OCC source-to-fragment area audit failed",
+                {"stage": "geometry", "body": body["id"],
+                 "source_area": source_area, "mapped_area": mapped_area},
+            )
+        for surface in surfaces:
+            contained = all(_point_in_rectangle(bounds_by_id[body["id"]], point)
+                            for point in vertices[surface])
+            mapped_candidate = surface in mapped_surfaces[index]
+            if contained != mapped_candidate:
+                raise GmshBackendError(
+                    "OCC fragment map disagrees with geometric containment audit",
+                    {"stage": "geometry", "body": body["id"], "surface": surface,
+                     "mapped": mapped_candidate, "contained": contained},
+                )
+            if mapped_candidate:
+                memberships[surface].add(index)
+        source_audit.append({
+            "body": body["id"], "source_area": source_area,
+            "mapped_area": mapped_area,
+            "fragments": sorted(mapped_surfaces[index]),
+        })
+    surface_owner: dict[int, dict[str, Any]] = {}
+    for surface, member_indices in memberships.items():
+        if not member_indices:
+            raise GmshBackendError(
+                "OCC fragment has no source body membership",
+                {"stage": "geometry", "surface": surface},
+            )
+        owner = None
+        for index in sorted(member_indices):
+            candidate = bodies[index]
+            if owner is None or candidate["boolean_mode"] == "ABA":
+                owner = candidate
+            elif candidate["boolean_mode"] != "BAB":
+                raise GmshBackendError(
+                    f"unsupported boolean mode {candidate['boolean_mode']!r}",
+                    {"stage": "geometry", "body": candidate["id"]},
+                )
+        assert owner is not None
+        surface_owner[surface] = owner
+    for record in inserted_vertices:
+        x, y = map(float, record["position"])
+        endpoint_curves = []
+        for curve in _boundary_curves(gmsh, surface_owner):
+            contains, endpoint = _curve_contains_pick(gmsh, curve, x, y)
+            if contains and endpoint:
+                endpoint_curves.append(curve)
+        if len(set(endpoint_curves)) < 2:
+            raise GmshBackendError(
+                "OCC fragment did not retain insert-vertex as a split boundary point",
+                {"stage": "contact", "position": [x, y],
+                 "curves": sorted(set(endpoint_curves))},
+            )
+    region_areas: dict[str, float] = defaultdict(float)
+    for surface, owner in surface_owner.items():
+        region_areas[owner["region"]] += areas[surface]
+    return surface_owner, {
+        "algorithm": "occ.fragment+source-map+vertex-containment+boolean-replay",
+        "source_audit": source_audit,
+        "surface_memberships": {
+            str(surface): [bodies[index]["id"] for index in sorted(members)]
+            for surface, members in memberships.items()
+        },
+        "surface_owners": {
+            str(surface): owner["id"] for surface, owner in surface_owner.items()
+        },
+        "region_areas_um2": dict(sorted(region_areas.items())),
+    }
+
+
+def _interface_curve_groups(gmsh, surface_owner: dict[int, dict[str, Any]]) -> dict[str, set[int]]:
+    result: dict[str, set[int]] = defaultdict(set)
+    for curve in _boundary_curves(gmsh, surface_owner):
+        upward, _downward = gmsh.model.getAdjacencies(1, curve)
+        adjacent = [int(surface) for surface in upward if int(surface) in surface_owner]
+        if len(adjacent) > 2:
+            raise GmshBackendError(
+                "non-manifold curve has more than two adjacent device surfaces",
+                {"stage": "geometry", "curve": curve, "surfaces": adjacent},
+            )
+        owners = {
+            surface_owner[surface]["id"]: surface_owner[surface]
+            for surface in adjacent
+        }
+        ordered = sorted(owners.values(), key=lambda body: body["creation_order"])
+        regions = [body["region"] for body in ordered]
+        if len(set(regions)) == 2:
+            result["+".join(regions)].add(curve)
+    return result
 
 
 def configure_gmsh(gmsh, mesh_size: float) -> dict[str, float | int]:
@@ -272,60 +581,93 @@ def _evaluate_constant_fields(
     }
 
 
-def build_m1_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Build OCC rectangles, physical groups, Tri3 mesh, and nodal fields."""
-    validate_m1_device_ir(device_ir)
+def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
+                  capability_level: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Build OCC geometry, physical groups, Tri3 mesh, and nodal fields."""
+    if capability_level == "M1":
+        validate_m1_device_ir(device_ir)
+    elif capability_level == "M2":
+        validate_m2_device_ir(device_ir)
+    else:
+        raise GmshBackendError(f"unknown capability level {capability_level!r}")
     if not math.isfinite(mesh_size) or mesh_size <= 0.0:
         raise GmshBackendError("mesh_size must be positive and finite")
     options = configure_gmsh(gmsh, mesh_size)
-    gmsh.model.add("vela_sentaurus_gmsh_m1")
+    gmsh.model.add(f"vela_sentaurus_gmsh_{capability_level.lower()}")
 
     bodies = sorted(device_ir["geometry"]["bodies"], key=lambda item: item["creation_order"])
-    surface_by_body: dict[str, int] = {}
-    body_by_region = {body["region"]: body for body in bodies}
-    for body in bodies:
-        x0, y0, x1, y1 = _rectangle(body)
-        surface_by_body[body["id"]] = gmsh.model.occ.addRectangle(x0, y0, 0.0, x1 - x0, y1 - y0)
-    gmsh.model.occ.synchronize()
+    if capability_level == "M1":
+        surface_owner = {}
+        for body in bodies:
+            x0, y0, x1, y1 = _rectangle(body)
+            surface = gmsh.model.occ.addRectangle(x0, y0, 0.0, x1 - x0, y1 - y0)
+            surface_owner[surface] = body
+        gmsh.model.occ.synchronize()
+        geometry_audit = {
+            "algorithm": "direct-strictly-separated-rectangles",
+            "surface_owners": {
+                str(surface): body["id"] for surface, body in surface_owner.items()
+            },
+            "region_areas_um2": {
+                body["region"]: (_rectangle(body)[2] - _rectangle(body)[0]) *
+                (_rectangle(body)[3] - _rectangle(body)[1]) for body in bodies
+            },
+        }
+    else:
+        surface_owner, geometry_audit = _fragment_m2_geometry(
+            gmsh, bodies, device_ir["geometry"]["inserted_vertices"])
 
-    regions = _groups((body["region"] for body in bodies), "region", REGION_TAG_BASE)
-    materials = _groups((body["material"]["sde"] for body in bodies), "material", MATERIAL_TAG_BASE)
+    surviving_bodies = {body["id"]: body for body in surface_owner.values()}
+    regions = _groups(
+        (body["region"] for body in surviving_bodies.values()), "region", REGION_TAG_BASE)
+    materials = _groups(
+        (body["material"]["sde"] for body in surviving_bodies.values()),
+        "material", MATERIAL_TAG_BASE)
     contacts = _groups((item["name"] for item in device_ir["contacts"]), "contact", CONTACT_TAG_BASE)
+    interface_curves = _interface_curve_groups(gmsh, surface_owner) if capability_level == "M2" else {}
+    interfaces = _groups(interface_curves, "interface", INTERFACE_TAG_BASE)
     region_by_name = {item["name"]: item for item in regions}
     material_by_name = {item["name"]: item for item in materials}
     contact_by_name = {item["name"]: item for item in contacts}
+    interface_by_name = {item["name"]: item for item in interfaces}
 
     for region in regions:
-        body = body_by_region[region["name"]]
-        gmsh.model.addPhysicalGroup(2, [surface_by_body[body["id"]]], region["physical_tag"])
+        surfaces = sorted(
+            surface for surface, owner in surface_owner.items()
+            if owner["region"] == region["name"])
+        gmsh.model.addPhysicalGroup(2, surfaces, region["physical_tag"])
         gmsh.model.setPhysicalName(2, region["physical_tag"], region["physical_name"])
     for material in materials:
-        surfaces = [surface_by_body[body["id"]] for body in bodies
-                    if body["material"]["sde"] == material["name"]]
+        surfaces = sorted(
+            surface for surface, owner in surface_owner.items()
+            if owner["material"]["sde"] == material["name"])
         gmsh.model.addPhysicalGroup(2, surfaces, material["physical_tag"])
         gmsh.model.setPhysicalName(2, material["physical_tag"], material["physical_name"])
+    for interface in interfaces:
+        curves = sorted(interface_curves[interface["name"]])
+        gmsh.model.addPhysicalGroup(1, curves, interface["physical_tag"])
+        gmsh.model.setPhysicalName(1, interface["physical_tag"], interface["physical_name"])
 
     contact_curves: dict[str, set[int]] = defaultdict(set)
     curve_contact: dict[int, str] = {}
+    contact_owner: dict[str, set[str]] = defaultdict(set)
     for contact in device_ir["contacts"]:
         for assignment in contact["assignments"]:
             x, y = map(float, assignment["position"])
             candidates: list[tuple[int, bool]] = []
-            for surface in surface_by_body.values():
-                boundary = gmsh.model.getBoundary([(2, surface)], combined=False, oriented=False)
-                for dim, curve in boundary:
-                    if dim != 1:
-                        continue
-                    contains, endpoint = _curve_contains_pick(gmsh, int(curve), x, y)
-                    if contains:
-                        candidates.append((int(curve), endpoint))
+            for curve in _boundary_curves(gmsh, surface_owner):
+                contains, endpoint = _curve_contains_pick(gmsh, curve, x, y)
+                if contains:
+                    candidates.append((curve, endpoint))
             candidates = sorted(set(candidates))
-            interior = [curve for curve, endpoint in candidates if not endpoint]
+            interior = sorted({curve for curve, endpoint in candidates if not endpoint})
             if len(interior) != 1:
                 raise GmshBackendError(
                     f"contact {contact['name']!r} pick point does not select one curve interior",
                     {"stage": "contact", "contact": contact["name"],
-                     "pick_point": [x, y], "candidates": candidates},
+                     "pick_point": [x, y], "candidates": candidates,
+                     "source_location": assignment["provenance"].get(
+                         "source_location")},
                 )
             curve = interior[0]
             previous = curve_contact.get(curve)
@@ -337,6 +679,17 @@ def build_m1_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float) -> tuple[
                 )
             curve_contact[curve] = contact["name"]
             contact_curves[contact["name"]].add(curve)
+            upward, _downward = gmsh.model.getAdjacencies(1, curve)
+            adjacent = sorted({int(surface) for surface in upward
+                               if int(surface) in surface_owner})
+            if len(adjacent) != 1:
+                raise GmshBackendError(
+                    "contact curve must have exactly one adjacent device surface",
+                    {"stage": "contact", "contact": contact["name"],
+                     "curve": curve, "surfaces": adjacent,
+                     "source_location": assignment["provenance"].get("source_location")},
+                )
+            contact_owner[contact["name"]].add(surface_owner[adjacent[0]]["region"])
     for contact in contacts:
         curves = sorted(contact_curves[contact["name"]])
         gmsh.model.addPhysicalGroup(1, curves, contact["physical_tag"])
@@ -361,10 +714,9 @@ def build_m1_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float) -> tuple[
     region_id = {item["name"]: item["id"] for item in regions}
     material_id = {item["name"]: item["id"] for item in materials}
     raw_triangles: list[dict[str, Any]] = []
-    for body in bodies:
+    for surface, body in sorted(surface_owner.items()):
         region = region_by_name[body["region"]]
         material = material_by_name[body["material"]["sde"]]
-        surface = surface_by_body[body["id"]]
         for tag, connectivity in _triangles_for_surface(gmsh, surface):
             if _signed_area2(coords_by_tag, connectivity) < 0.0:
                 connectivity[1], connectivity[2] = connectivity[2], connectivity[1]
@@ -390,6 +742,14 @@ def build_m1_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float) -> tuple[
         for tag, connectivity in _lines_for_curve(gmsh, curve):
             raw_lines.append({"gmsh_tag": tag, "node_tags": connectivity,
                               "kind": "contact", "physical_curve_tags": [physical_tag]})
+    for name, curves in sorted(interface_curves.items()):
+        physical_tag = interface_by_name[name]["physical_tag"]
+        for curve in sorted(curves):
+            for tag, connectivity in _lines_for_curve(gmsh, curve):
+                raw_lines.append({
+                    "gmsh_tag": tag, "node_tags": connectivity,
+                    "kind": "interface", "physical_curve_tags": [physical_tag],
+                })
     lines = []
     for index, item in enumerate(sorted(raw_lines, key=lambda entry: entry["gmsh_tag"])):
         lines.append({
@@ -398,7 +758,12 @@ def build_m1_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float) -> tuple[
             "kind": item["kind"], "physical_curve_tags": item["physical_curve_tags"],
         })
 
-    fields = _evaluate_constant_fields(device_ir, nodes, triangles, regions, materials)
+    try:
+        fields = (_evaluate_constant_fields(device_ir, nodes, triangles, regions, materials)
+                  if capability_level == "M1" else evaluate_m2_fields(
+                      device_ir, nodes, triangles, regions))
+    except DopingEvaluationError as error:
+        raise GmshBackendError(str(error), error.details) from error
     bundle = {
         "schema": BUNDLE_SCHEMA,
         "coordinate_unit": "um",
@@ -406,15 +771,26 @@ def build_m1_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float) -> tuple[
         "provenance": {
             "device_ir_schema": device_ir["schema"], "mesh_backend": "gmsh",
             "source": device_ir["source"]["path"],
-            "m1_capability": "strictly-separated-rectangles-constant-doping",
+            "capability_level": capability_level,
+            "capability": ("strictly-separated-rectangles-constant-doping"
+                           if capability_level == "M1" else
+                           "aba-bab-insert-contact-ordered-replacement-gaussian"),
             "log10_abs_floor_cm3": LOG_DOPING_FLOOR_CM3,
+            "geometry_audit": geometry_audit,
+            "contact_owners": {
+                name: sorted(owners) for name, owners in sorted(contact_owner.items())
+            },
+            "node_boundary_policy": (
+                "boolean-replay-last-ABA-first-BAB" if capability_level == "M1" else
+                "sentaurus2022-region-local-sum-at-shared-node"),
             "material_aliases": {
                 body["material"]["sde"]: body["material"]["vela"] for body in bodies
             },
         },
         "gmsh": {"version": EXPECTED_GMSH_VERSION, "msh_version": "4.1", "options": options},
         "nodes": nodes, "triangles": triangles, "lines": lines,
-        "regions": regions, "materials": materials, "contacts": contacts, "interfaces": [],
+        "regions": regions, "materials": materials, "contacts": contacts,
+        "interfaces": interfaces,
         "fields": fields,
         "id_mapping": {
             "gmsh_node_to_vela": {str(item["gmsh_tag"]): item["vela_id"] for item in nodes},
@@ -426,7 +802,18 @@ def build_m1_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float) -> tuple[
         },
     }
     qualification = validate_bundle(bundle)
+    qualification["geometry"] = geometry_audit
     return bundle, qualification
+
+
+def build_m1_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float
+                    ) -> tuple[dict[str, Any], dict[str, Any]]:
+    return _build_bundle(gmsh, device_ir, mesh_size, "M1")
+
+
+def build_m2_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float
+                    ) -> tuple[dict[str, Any], dict[str, Any]]:
+    return _build_bundle(gmsh, device_ir, mesh_size, "M2")
 
 
 def _angles(points: list[tuple[float, float]]) -> list[float]:

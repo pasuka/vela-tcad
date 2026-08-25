@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Public M1 offline SDE -> Gmsh mesh and cross-format export pipeline."""
+"""Public offline SDE -> Gmsh mesh and cross-format export pipeline."""
 
 from __future__ import annotations
 
@@ -28,6 +28,7 @@ from sentaurus_device_ir import SdeParseError, parse_sde_device_ir
 from sentaurus_gmsh_backend import (
     GmshBackendError,
     build_m1_bundle,
+    build_m2_bundle,
     read_msh_roundtrip,
     write_msh_with_node_data,
 )
@@ -271,6 +272,12 @@ def _compare_dfise(bundle: dict[str, Any], grd: dict[str, Any], failures: list[s
             if contact["physical_tag"] in item["physical_curve_tags"]
         ]
         expected_materials.append("Contact")
+    for interface in bundle["interfaces"]:
+        expected_regions[interface["name"]] = [
+            offset + item["dfise_id"] for item in bundle["lines"]
+            if interface["physical_tag"] in item["physical_curve_tags"]
+        ]
+        expected_materials.append("Interface")
     if grd["region_elements"] != expected_regions:
         failures.append("DF-ISE GRD region/contact element ownership mismatch")
     if grd["materials"] != expected_materials:
@@ -307,7 +314,8 @@ def _cross_format_report(work: Path, bundle: dict[str, Any], msh: dict[str, Any]
         failures.append("DF-ISE GRD vertex count mismatch")
     if set(grd["regions"]) != {
             *(item["name"] for item in bundle["regions"]),
-            *(item["name"] for item in bundle["contacts"])}:
+            *(item["name"] for item in bundle["contacts"]),
+            *(item["name"] for item in bundle["interfaces"])}:
         failures.append("DF-ISE GRD region/contact names mismatch")
     _compare_dfise(bundle, grd, failures)
     return {
@@ -337,7 +345,7 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
     initialized = False
     try:
         gmsh, runtime = _load_runtime(args)
-        gmsh.initialize(["vela-sentaurus-gmsh-m1", "-nopopup"], False)
+        gmsh.initialize([f"vela-sentaurus-gmsh-{args.capability_level.lower()}", "-nopopup"], False)
         initialized = True
         library_version = gmsh.option.getString("General.Version")
         if library_version != EXPECTED_GMSH_VERSION:
@@ -351,10 +359,13 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
         except (SdeParseError, ValueError) as error:
             raise PipelineError(str(error), "sde_parse") from error
 
-        with tempfile.TemporaryDirectory(prefix=".vela_gmsh_m1_", dir=output.parent) as tmp:
+        with tempfile.TemporaryDirectory(
+                prefix=f".vela_gmsh_{args.capability_level.lower()}_",
+                dir=output.parent) as tmp:
             work = Path(tmp)
             try:
-                bundle, qualification = build_m1_bundle(gmsh, device_ir, args.mesh_size)
+                builder = build_m1_bundle if args.capability_level == "M1" else build_m2_bundle
+                bundle, qualification = builder(gmsh, device_ir, args.mesh_size)
                 write_json(work / "device_ir.json", device_ir)
                 write_json(work / "mesh_field_bundle.json", bundle)
                 write_json(work / "id_mapping.json", bundle["id_mapping"])
@@ -380,18 +391,28 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
             generated = sorted(path.name for path in work.iterdir() if path.is_file())
             hashes = {name: _file_sha256(work / name) for name in generated}
             manifest = {
-                "schema": RUN_SCHEMA, "status": "generated", "milestone": "M1",
+                "schema": RUN_SCHEMA, "status": "generated",
+                "milestone": args.capability_level,
                 "sde": str(args.sde.resolve()), "sde_sha256": _file_sha256(args.sde.resolve()),
                 "mesh_backend": "gmsh", "gmsh_version": EXPECTED_GMSH_VERSION,
                 "generated": generated, "sha256": hashes,
                 "mesh_qualification": qualification,
                 "cross_format": cross_format,
-                "capability": {
+                "capability": ({
                     "supported": ["strictly-separated Rectangle", "pick-point contact",
                                   "constant NoReplace region/material doping"],
                     "fail_closed": ["overlap/ABA/BAB", "touching interface", "insert-vertex",
                                     "Gaussian", "replacement", "refinement"],
-                },
+                } if args.capability_level == "M1" else {
+                    "supported": ["Rectangle ABA/BAB ownership", "conformal interface",
+                                  "insert-vertex pick-point contact",
+                                  "ordered Replace/LocalReplace/NoReplace",
+                                  "line-baseline Gaussian"],
+                    "fail_closed": ["AB/ABiA/ABiB/XX", "Polygon body",
+                                    "contact entity/body/remove/imprint", "refinement",
+                                    "constant-profile decay",
+                                    "analytical restriction decay"],
+                }),
             }
             write_json(work / "run_manifest.json", manifest)
             for name in generated:
@@ -410,7 +431,7 @@ def write_fail_report(output: Path, error: BaseException) -> Path:
         "schema": FAIL_SCHEMA, "status": "failed", "stage": stage,
         "message": str(error), "details": details,
         "recommendation": (
-            "install/configure Gmsh 4.15.2 or restrict the SDE deck to the M1 "
+            "install/configure Gmsh 4.15.2 or restrict the SDE deck to the selected "
             "capability subset; unsupported semantics require the named later milestone"),
     }
     path = output.resolve() / "fail_report.json"
@@ -431,6 +452,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gmsh-library", type=Path)
     parser.add_argument("--gmsh-executable", type=Path)
     parser.add_argument("--mesh-size", type=float, default=0.2)
+    parser.add_argument("--capability-level", choices=("M1", "M2"), default="M2",
+                        help="freeze the accepted semantic subset (default: M2)")
     return parser
 
 

@@ -20,7 +20,8 @@
           0.5
         ],
         "order": 0,
-        "boolean_mode": "ABA"
+        "boolean_mode": "ABA",
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:6:1"
       }
     ],
     "inserted_vertices": []
@@ -50,9 +51,11 @@
       "pick_points": [
         {
           "x": 0.0,
-          "y": 0.25
+          "y": 0.25,
+          "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:10:1"
         }
-      ]
+      ],
+      "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:7:1"
     },
     {
       "name": "Cathode",
@@ -71,9 +74,11 @@
       "pick_points": [
         {
           "x": 2.0,
-          "y": 0.25
+          "y": 0.25,
+          "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:12:1"
         }
-      ]
+      ],
+      "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:8:1"
     }
   ],
   "doping": {
@@ -83,14 +88,16 @@
         "type": "constant",
         "species": "PhosphorusActiveConcentration",
         "carrier": "donor",
-        "value_cm3": 1e+17
+        "value_cm3": 1e+17,
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:16:1"
       },
       {
         "name": "P.Doping",
         "type": "constant",
         "species": "BoronActiveConcentration",
         "carrier": "acceptor",
-        "value_cm3": 1e+17
+        "value_cm3": 1e+17,
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:15:1"
       }
     ],
     "placements": [
@@ -129,6 +136,7 @@
           1.1,
           0.5
         ],
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:21:1",
         "lower_left": [
           0.9,
           0.0
@@ -149,6 +157,7 @@
           2.0,
           0.5
         ],
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:14:1",
         "lower_left": [
           1.0,
           0.0
@@ -169,6 +178,7 @@
           1.0,
           0.5
         ],
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:13:1",
         "lower_left": [
           0.0,
           0.0
@@ -224,6 +234,7 @@
           1.1,
           0.5
         ],
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:21:1",
         "lower_left": [
           0.9,
           0.0
@@ -244,6 +255,7 @@
           2.0,
           0.5
         ],
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:14:1",
         "lower_left": [
           1.0,
           0.0
@@ -264,6 +276,7 @@
           1.0,
           0.5
         ],
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:13:1",
         "lower_left": [
           0.0,
           0.0

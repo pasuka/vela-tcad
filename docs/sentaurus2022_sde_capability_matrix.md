@@ -12,6 +12,31 @@ explicit opt-in reserved for internal development, reviewed oracle generation
 and compatibility testing. Frozen, provenance-sealed oracle artifacts may be
 consumed by license-free tests after review.
 
+## Public Gmsh preprocessing milestones
+
+`scripts/sentaurus_gmsh_pipeline.py` is the public, license-free SDE-to-mesh
+path. Its default `--capability-level M2` is a frozen semantic subset, not a
+claim that every capability in the broader paired workflow below is already
+available through Gmsh.
+
+| Capability | Gmsh M1 | Gmsh M2 (default) | Later milestone |
+|---|---:|---:|---:|
+| separated Rectangle + pick contact | yes | yes | - |
+| per-body ABA/BAB and conformal interface groups | fail-closed | yes | - |
+| straight-edge `insert-vertex` + complete split-edge contact | fail-closed | yes | - |
+| ordered constant NoReplace/LocalReplace/Replace | NoReplace only | yes | - |
+| directed line-baseline Gaussian + Eval/NoEval | fail-closed | yes | - |
+| nonzero constant or analytical restriction decay | fail-closed | fail-closed | M3 |
+| refinement placement/function | fail-closed | fail-closed | M3 |
+| Polygon body, AB/ABiA/ABiB/XX, 3-D | fail-closed | fail-closed | excluded/unplanned |
+
+For T-2022.03 constant placements, NoReplace is represented by omitting the
+optional replacement argument. Replace or LocalReplace requires the numeric
+decay-length positional slot first; use `0 "LocalReplace"` or `0 "Replace"`
+when no decay is intended. The offline parser rejects the tempting but invalid
+literal `"NoReplace"` form rather than accepting a deck that official SDE
+rejects.
+
 ## Frontends and provenance
 
 | Capability | `offline-static` (default) | `sentaurus2022-evaluated` (internal only) |
@@ -61,7 +86,7 @@ and `_msh.cmd` artifacts. It does not parse TDR as though it were Scheme.
 | Gaussian PeakPos + PeakVal | supported | with ValueAtDepth/Depth, Length, or StdDev |
 | Gaussian Dose | supported | requires Length or StdDev |
 | lateral Gauss/Erf | supported | Factor/Length/StdDev parameters preserved and evaluated |
-| Positive/Negative/Both (`Symm`) | supported | Positive is the right side of the directed baseline |
+| Positive/Negative/Both (`Symm`) | supported | T-2022.03-SP2 oracle: Positive is the left normal of the directed baseline |
 | Eval/NoEval | supported | NoEval excludes the baseline itself |
 | analytic region/material/eval-window restriction | supported | explicit restriction only |
 | Line/Rectangle/Polygon Ref/Eval window | supported | polygon inclusion is boundary-inclusive |

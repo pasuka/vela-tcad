@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import sys
 import unittest
@@ -49,12 +50,21 @@ class DeviceIrV2MigrationTest(unittest.TestCase):
         self.assertEqual("ABA", body["boolean_mode"])
         self.assertEqual(0, body["creation_order"])
 
-    def test_unrecoverable_provenance_is_explicit_and_fail_closed(self) -> None:
-        manifest = self.migrated["capability_manifest"]
+    def test_current_parser_preserves_geometry_and_contact_provenance(self) -> None:
+        self.assertEqual("known", self.migrated["geometry"]["bodies"][0]["provenance"]["status"])
+        self.assertEqual("known", self.migrated["contacts"][0]["provenance"]["status"])
+        self.assertEqual(
+            "known", self.migrated["contacts"][0]["assignments"][0]["provenance"]["status"])
+
+    def test_legacy_v1_without_locations_is_explicit_and_fail_closed(self) -> None:
+        legacy = copy.deepcopy(parse_sde_device_ir(PN2D_SDE))
+        legacy["geometry"]["regions"][0].pop("location")
+        migrated = migrate_device_ir_v1(legacy)
+        manifest = migrated["capability_manifest"]
         self.assertFalse(manifest["provenance_complete"])
         required = ["/geometry/bodies/0/provenance"]
         with self.assertRaises(DeviceIrMigrationError) as context:
-            require_known_provenance(self.migrated, required)
+            require_known_provenance(migrated, required)
         self.assertIn(required[0], str(context.exception))
 
     def test_v1_contact_points_become_typed_assignments(self) -> None:

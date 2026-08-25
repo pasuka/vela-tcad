@@ -2,7 +2,7 @@
 
 ## 计划状态
 
-- 状态：实施中；阶段 -1、M0 和 M1 已完成，下一阶段为 M2
+- 状态：实施中；阶段 -1、M0、M1 和 M2 已完成，下一阶段为 M3
 - 更新日期：2026-08-25
 - 计划源文件：`docs/superpowers/plans/2026-08-24-sde-gmsh-offline-mesh-and-field-export.md`
 - 实施 worktree：`D:\code-repo\copilot-worktrees\vela-tcad-dev`
@@ -27,6 +27,17 @@
   insert-vertex、Gaussian、replacement 与 refinement 继续 fail-closed。验收说明见
   `docs/validation/sentaurus_gmsh_m1_acceptance_2026-08-25.md`。最终 UCRT64 Release
   构建成功，全量 CTest 708/708 通过，耗时 209.44 秒。
+- M2 结果：已实现 per-body ABA/BAB OCC fragment ownership、source-map 与几何包含双重
+  审计、创建顺序界面命名、straight-edge insert-vertex、完整 split-edge contact、曲线
+  邻接 owner、有序 NoReplace/LocalReplace/Replace 和 line-baseline Gaussian。M2 节点场
+  按 Sentaurus region-local 值在共享节点求和，不使用 tag、centroid、last-owner 或单元
+  majority。T-2022.03-SP2 官方 oracle 退出码为 0，得到 7 点/5 单元、`R.P=1 um2`、
+  `R.N=2 um2`、`R.P+R.N` 界面，并将 Positive 左法向、共享节点与 placement 参数顺序
+  冻结到机器可读 golden。验收说明见
+  `docs/validation/sentaurus_gmsh_m2_acceptance_2026-08-25.md`。UCRT64 Release 构建
+  成功；全量 CTest 首轮 708/709 通过，唯一失败为新增 provenance 引起的旧 PN2D IR
+  golden 漂移，更新受哈希封印的 golden 后该 CTest 独立复跑通过，因此 709 项均有
+  Release 通过证据。
 - 产品默认：`offline-static + gmsh`
 - 内部验证：`sentaurus2022-evaluated + tdx`，仅限具有许可证的开发环境
 - 取代范围：本计划取代“离线生成器使用正交张量网格并固定对角线切分三角形”的网格部分；
@@ -338,7 +349,8 @@ Sentaurus SDE .cmd
   最后生成 signed net doping。
 - 实现已规划的 constant 与 Gaussian 子集，包括 PeakPos、PeakVal/Dose、结深参数、
   lateral Gauss/Erf、line baseline、Positive/Negative/Both、Eval/NoEval 和 target 限制。
-- 二维 Positive 方向按 baseline 起点到终点向量右侧定义。
+- 二维 Positive 方向按 T-2022.03-SP2 oracle 定义为 baseline 起点到终点向量的左法向；
+  这取代了实施前未经 oracle 验证的“右侧”假设。
 - 保留 species 数据；可视化派生量不能回写或替代权威 donor/acceptor/net 数据。
 - 对共享 region/material 界面节点先记录 incident membership set。区域定向 placement 在
   界面产生冲突值时，第一版必须 fail-closed 并输出冲突 placement/source location；只有
@@ -502,6 +514,7 @@ Sentaurus SDE .cmd
 
 ### M2 / P0：SDE 核心语义
 
+- 状态：已完成（2026-08-25）。
 - ABA/BAB fragment ownership、insert-vertex/contact、ordered replacement 和 Gaussian。
 - region/material/window 与界面边界规则经过 Sentaurus 2022 oracle 冻结。
 

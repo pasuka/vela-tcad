@@ -623,8 +623,8 @@ def _evaluate_gaussian(profile: dict[str, Any], placement: dict[str, Any],
     dx, dy = x1 - x0, y1 - y0
     length = math.hypot(dx, dy)
     tx, ty = dx / length, dy / length
-    # Sentaurus 2022 defines Positive as the right side from start to end.
-    nx, ny = ty, -tx
+    # T-2022.03-SP2 TDR oracle: Positive is the left normal from start to end.
+    nx, ny = -ty, tx
     along = (x - x0) * tx + (y - y0) * ty
     normal = (x - x0) * nx + (y - y0) * ny
     direction = placement.get("direction", "Both")

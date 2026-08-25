@@ -113,22 +113,34 @@ class ContactSemanticsTest(unittest.TestCase):
 
 
 class ReplacementAndGaussianTest(unittest.TestCase):
+    def test_constant_noreplace_is_omitted_and_replacement_requires_decay_slot(self) -> None:
+        with self.assertRaises(SdeParseError):
+            parse_text(RECT + """
+(sdedr:define-constant-profile "D" "PhosphorusActiveConcentration" 1e16)
+(sdedr:define-constant-profile-region "P" "D" "R.Base" "NoReplace")
+""")
+        with self.assertRaises(SdeParseError):
+            parse_text(RECT + """
+(sdedr:define-constant-profile "D" "PhosphorusActiveConcentration" 1e16)
+(sdedr:define-constant-profile-region "P" "D" "R.Base" "Replace")
+""")
+
     def test_three_replacement_modes_are_species_aware(self) -> None:
         base = RECT + """
 (sdedr:define-constant-profile "D1" "PhosphorusActiveConcentration" 1e16)
 (sdedr:define-constant-profile "D2" "PhosphorusActiveConcentration" 2e16)
 (sdedr:define-constant-profile "A" "BoronActiveConcentration" 3e16)
-(sdedr:define-constant-profile-region "P1" "D1" "R.Base" "NoReplace")
-(sdedr:define-constant-profile-region "P2" "D2" "R.Base" "NoReplace")
+(sdedr:define-constant-profile-region "P1" "D1" "R.Base")
+(sdedr:define-constant-profile-region "P2" "D2" "R.Base")
 """
         self.assertEqual((3e16, 0.0), doping_at(parse_text(base), 1, 0.5))
-        local = base.replace('"P2" "D2" "R.Base" "NoReplace"',
-                             '"P2" "D2" "R.Base" "LocalReplace"')
+        local = base.replace('"P2" "D2" "R.Base"',
+                             '"P2" "D2" "R.Base" 0 "LocalReplace"')
         self.assertEqual((2e16, 0.0), doping_at(parse_text(local), 1, 0.5))
-        replace = base + '(sdedr:define-constant-profile-region "P3" "A" "R.Base" "Replace")\n'
+        replace = base + '(sdedr:define-constant-profile-region "P3" "A" "R.Base" 0 "Replace")\n'
         self.assertEqual((0.0, 3e16), doping_at(parse_text(replace), 1, 0.5))
 
-    def test_gaussian_positive_is_right_side_and_noeval_excludes_baseline(self) -> None:
+    def test_gaussian_positive_is_left_normal_and_noeval_excludes_baseline(self) -> None:
         ir = parse_text("""
 (sdegeo:create-rectangle (position 0 -1 0) (position 1 1 0) "Silicon" "R.Base")
 (sdedr:define-refeval-window "B" "Line" (position 0 0 0) (position 1 0 0))
@@ -136,8 +148,8 @@ class ReplacementAndGaussianTest(unittest.TestCase):
  "PeakPos" 0.2 "PeakVal" 1e18 "ValueAtDepth" 1e16 "Depth" 0.4 "Gauss" "Factor" 1)
 (sdedr:define-analytical-profile-placement "P" "G" "B" "Positive" "NoReplace" "NoEval")
 """)
-        self.assertTrue(math.isclose(doping_at(ir, 0.5, -0.2)[0], 1e18, rel_tol=1e-12))
-        self.assertEqual(0.0, doping_at(ir, 0.5, 0.2)[0])
+        self.assertTrue(math.isclose(doping_at(ir, 0.5, 0.2)[0], 1e18, rel_tol=1e-12))
+        self.assertEqual(0.0, doping_at(ir, 0.5, -0.2)[0])
         self.assertEqual(0.0, doping_at(ir, 0.5, 0.0)[0])
 
 

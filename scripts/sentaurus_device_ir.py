@@ -239,6 +239,7 @@ def _handle_define_contact_set(form: Sexp, builder: DeviceIrBuilder) -> None:
             display.append(eval_scalar(node, builder.env))
     builder.contact_sets[name] = {
         "name": name, "pick_points": [], "display": display,
+        "location": form.location(),
     }
     builder.contact_order.append(name)
 
@@ -249,7 +250,10 @@ def _handle_set_current_contact_set(form: Sexp, builder: DeviceIrBuilder) -> Non
     if name not in builder.contact_sets:
         # Sentaurus 2022 creates/activates the named set when an explicit name
         # has not previously been declared.
-        builder.contact_sets[name] = {"name": name, "pick_points": [], "display": []}
+        builder.contact_sets[name] = {
+            "name": name, "pick_points": [], "display": [],
+            "location": form.location(),
+        }
         builder.contact_order.append(name)
     builder.current_contact = name
 
@@ -315,7 +319,10 @@ def _handle_set_contact(form: Sexp, builder: DeviceIrBuilder) -> None:
     if len(args) >= 2:
         name = expect_string(args[1], builder.env, "contact name")
         if name not in builder.contact_sets:
-            builder.contact_sets[name] = {"name": name, "pick_points": [], "display": []}
+            builder.contact_sets[name] = {
+                "name": name, "pick_points": [], "display": [],
+                "location": form.location(),
+            }
             builder.contact_order.append(name)
         builder.current_contact = name
     elif builder.current_contact is not None:
@@ -377,6 +384,7 @@ def _handle_refeval_window(form: Sexp, builder: DeviceIrBuilder) -> None:
         builder.windows[name] = {
             "name": name, "shape": shape.lower(),
             "start": [lower[0], lower[1]], "end": [upper[0], upper[1]],
+            "location": form.location(),
         }
         if shape == "Rectangle":
             builder.windows[name].update(_rectangle_bounds(lower, upper))
@@ -387,7 +395,10 @@ def _handle_refeval_window(form: Sexp, builder: DeviceIrBuilder) -> None:
         points = [[p[0], p[1]] for p in (parse_position(node, builder.env) for node in nodes)]
         if len(points) < 3:
             raise SdeParseError(f"{form.location()}: Polygon window needs at least 3 points")
-        builder.windows[name] = {"name": name, "shape": "polygon", "points": points}
+        builder.windows[name] = {
+            "name": name, "shape": "polygon", "points": points,
+            "location": form.location(),
+        }
     else:
         raise SdeParseError(
             f"{form.location()}: unsupported refeval window shape '{shape}' in "
@@ -423,6 +434,7 @@ def _handle_constant_profile(form: Sexp, builder: DeviceIrBuilder) -> None:
         "species": species,
         "carrier": kind,
         "value_cm3": value,
+        "location": form.location(),
     }
 
 
@@ -525,23 +537,37 @@ def _handle_constant_profile_placement(form: Sexp,
             f"{form.location()}: doping placement '{name}' is defined more than "
             f"once in '{form.command_text()}'")
     _placement_target(form, builder, target, target_kind)
+    # T-2022.03 pp. 544-546: [decay-length ["Gauss"]] [replace].
+    # Constant placements express NoReplace by omitting ``replace``; unlike an
+    # analytical placement, the literal "NoReplace" is not a valid argument.
     replacement = "NoReplace"
     decay_length = 0.0
     decay = "none"
-    for node in args[3:]:
-        if isinstance(node, Atom) and node.is_string:
-            value = str(node.value)
-            if value in {"Replace", "LocalReplace", "NoReplace"}:
-                replacement = value
-            elif value in {"Gauss", "Gaussian", "Erf"}:
-                decay = "gaussian" if value in {"Gauss", "Gaussian"} else "erf"
-            else:
-                raise SdeParseError(
-                    f"{form.location()}: unsupported placement option '{value}'")
-        else:
-            decay_length = eval_number(node, builder.env)
-            if decay_length < 0.0:
-                raise SdeParseError(f"{form.location()}: negative decay length")
+    options = list(args[3:])
+    if options and isinstance(options[0], Atom) and options[0].is_string:
+        raise SdeParseError(
+            f"{form.location()}: constant placement replacement requires a "
+            "preceding numeric decay length (use 0 for no decay); omit all "
+            "options for NoReplace")
+    if options and not (isinstance(options[0], Atom) and options[0].is_string):
+        decay_length = eval_number(options.pop(0), builder.env)
+        if decay_length < 0.0:
+            raise SdeParseError(f"{form.location()}: negative decay length")
+        decay = "erf" if decay_length > 0.0 else "none"
+        if options and isinstance(options[0], Atom) and options[0].is_string and \
+                str(options[0].value) == "Gauss":
+            options.pop(0)
+            decay = "gaussian" if decay_length > 0.0 else "none"
+    if options:
+        replacement = expect_string(options.pop(0), builder.env, "replacement mode")
+        if replacement not in {"Replace", "LocalReplace"}:
+            raise SdeParseError(
+                f"{form.location()}: constant placement replacement must be "
+                "'Replace' or 'LocalReplace'; omit it for NoReplace")
+    if options:
+        raise SdeParseError(
+            f"{form.location()}: too many constant placement options in "
+            f"'{form.command_text()}'")
     builder.placements.append({
         "name": name,
         "profile": profile,
@@ -580,16 +606,35 @@ def _handle_analytical_profile_placement(form: Sexp, builder: DeviceIrBuilder) -
         raise SdeParseError(f"{form.location()}: unsupported evaluation mode '{evaluation}'")
     restriction_kind = None
     restriction = None
+    restriction_decay_length = 0.0
+    restriction_decay = "none"
     if len(args) > 6:
-        if len(args) != 8:
+        if len(args) not in {9, 10}:
             raise SdeParseError(
-                f"{form.location()}: analytical restriction must be kind/name")
-        raw_kind = expect_string(args[6], builder.env, "restriction kind").lower()
+                f"{form.location()}: analytical restriction must be "
+                "eval-window, decay-length, optional 'Gauss', and window type")
+        restriction = expect_string(args[6], builder.env, "restriction name")
+        restriction_decay_length = eval_number(args[7], builder.env)
+        if restriction_decay_length < 0.0:
+            raise SdeParseError(
+                f"{form.location()}: negative analytical restriction decay length")
+        kind_index = 8
+        if len(args) == 10:
+            decay_name = expect_string(args[8], builder.env, "restriction decay type")
+            if decay_name != "Gauss":
+                raise SdeParseError(
+                    f"{form.location()}: analytical restriction decay type must be 'Gauss'")
+            restriction_decay = (
+                "gaussian" if restriction_decay_length > 0.0 else "none")
+            kind_index = 9
+        elif restriction_decay_length > 0.0:
+            restriction_decay = "erf"
+        raw_kind = expect_string(
+            args[kind_index], builder.env, "restriction kind").lower()
         restriction_kind = {"region": "region", "material": "material",
                             "window": "window", "evalwin": "window"}.get(raw_kind)
         if restriction_kind is None:
             raise SdeParseError(f"{form.location()}: unsupported restriction '{raw_kind}'")
-        restriction = expect_string(args[7], builder.env, "restriction name")
         _placement_target(form, builder, restriction, restriction_kind)
     if any(item["name"] == name for item in builder.placements):
         raise SdeParseError(f"{form.location()}: duplicate placement '{name}'")
@@ -598,7 +643,10 @@ def _handle_analytical_profile_placement(form: Sexp, builder: DeviceIrBuilder) -
         "target": baseline, "priority": len(builder.placements),
         "replacement": replacement, "direction": direction,
         "evaluation": evaluation, "restriction_kind": restriction_kind,
-        "restriction": restriction, "location": form.location(),
+        "restriction": restriction,
+        "restriction_decay_length": restriction_decay_length,
+        "restriction_decay": restriction_decay,
+        "location": form.location(),
     })
 
 
@@ -802,6 +850,7 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
             "upper_right": region["upper_right"],
             "order": region["order"],
             "boolean_mode": region["boolean_mode"],
+            "location": region["location"],
         }
         for region in builder.regions
     ]
@@ -818,9 +867,10 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
             "name": name,
             "display": builder.contact_sets[name]["display"],
             "pick_points": [
-                {"x": point["x"], "y": point["y"]}
+                {"x": point["x"], "y": point["y"], "location": point["location"]}
                 for point in builder.contact_sets[name]["pick_points"]
             ],
+            "location": builder.contact_sets[name]["location"],
         }
         for name in builder.contact_order
     ]
@@ -847,7 +897,7 @@ def build_device_ir(builder: DeviceIrBuilder) -> dict[str, Any]:
         "geometry": {
             "regions": regions,
             "inserted_vertices": [
-                {"x": item["x"], "y": item["y"]}
+                {"x": item["x"], "y": item["y"], "location": item["location"]}
                 for item in builder.inserted_vertices
             ],
         },

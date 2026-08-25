@@ -80,6 +80,9 @@ def migrate_device_ir_v1(document: dict[str, Any]) -> dict[str, Any]:
         if name not in materials:
             raise DeviceIrMigrationError(
                 f"v1 region {name!r} has no material assignment")
+        location = region.get("location")
+        provenance = _known(location) if isinstance(location, str) and location else _unknown(
+            "body source location was not retained by Device IR v1")
         bodies.append({
             "id": f"body:{region['order']}",
             "region": name,
@@ -91,43 +94,55 @@ def migrate_device_ir_v1(document: dict[str, Any]) -> dict[str, Any]:
             },
             "creation_order": region["order"],
             "boolean_mode": region["boolean_mode"],
-            "provenance": _unknown(
-                "body source location was not retained by Device IR v1"),
+            "provenance": provenance,
         })
-        unknown_paths.append(f"/geometry/bodies/{index}/provenance")
+        if provenance["status"] == "unknown":
+            unknown_paths.append(f"/geometry/bodies/{index}/provenance")
 
     inserted_vertices: list[dict[str, Any]] = []
     for index, vertex in enumerate(document["geometry"]["inserted_vertices"]):
+        location = vertex.get("location")
+        provenance = _known(location) if isinstance(location, str) and location else _unknown(
+            "insert-vertex source location was not retained by Device IR v1")
         inserted_vertices.append({
             "position": [vertex["x"], vertex["y"]],
-            "provenance": _unknown(
-                "insert-vertex source location was not retained by Device IR v1"),
+            "provenance": provenance,
         })
-        unknown_paths.append(
-            f"/geometry/inserted_vertices/{index}/provenance")
+        if provenance["status"] == "unknown":
+            unknown_paths.append(
+                f"/geometry/inserted_vertices/{index}/provenance")
 
     contacts: list[dict[str, Any]] = []
     for contact_index, contact in enumerate(document["contacts"]):
         assignments = []
         for pick_index, point in enumerate(contact["pick_points"]):
+            location = point.get("location")
+            provenance = _known(location) if isinstance(location, str) and location else _unknown(
+                "contact assignment source location was not retained by Device IR v1")
             assignments.append({
                 "kind": "pick_point",
                 "position": [point["x"], point["y"]],
                 "entity_ids": [],
-                "provenance": _unknown(
-                    "contact assignment source location was not retained by Device IR v1"),
+                "provenance": provenance,
             })
-            unknown_paths.append(
-                f"/contacts/{contact_index}/assignments/{pick_index}/provenance")
+            if provenance["status"] == "unknown":
+                unknown_paths.append(
+                    f"/contacts/{contact_index}/assignments/{pick_index}/provenance")
+        contact_location = contact.get("location")
+        contact_provenance = (
+            _known(contact_location)
+            if isinstance(contact_location, str) and contact_location
+            else _unknown("contact-set source location was not retained by Device IR v1")
+        )
         contacts.append({
             "name": contact["name"],
             "display": copy.deepcopy(contact["display"]),
-            "current_state": "unknown",
+            "current_state": "active" if assignments else "inactive",
             "assignments": assignments,
-            "provenance": _unknown(
-                "contact-set source location was not retained by Device IR v1"),
+            "provenance": contact_provenance,
         })
-        unknown_paths.append(f"/contacts/{contact_index}/provenance")
+        if contact_provenance["status"] == "unknown":
+            unknown_paths.append(f"/contacts/{contact_index}/provenance")
 
     doping = copy.deepcopy(document["doping"])
     doping["profiles"] = _copy_with_provenance(
