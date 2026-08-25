@@ -38,6 +38,10 @@ from sentaurus_mesh_builder import (  # noqa: E402
     write_doping_csv,
     write_mesh_json,
 )
+from sentaurus_gmsh_pipeline import (  # noqa: E402
+    PipelineError as GmshPipelineError,
+    run_pipeline as run_gmsh_pipeline,
+)
 from convert_tcad_export import load_mesh as load_exported_mesh  # noqa: E402
 from sentaurus_sde_frontend import (  # noqa: E402
     offline_static_frontend,
@@ -1732,13 +1736,15 @@ def _contract_case(contract: dict[str, Any], case_name: str | None,
 
 
 def evaluate_e2e_acceptance(case_name: str, case: dict[str, Any],
-                            analysis_kind: str,
-                            qualification: dict[str, Any], csv_path: Path,
-                            terminal_current_csv: Path | None = None) \
-        -> dict[str, Any]:
+                             analysis_kind: str,
+                             qualification: dict[str, Any], csv_path: Path,
+                             terminal_current_csv: Path | None = None,
+                             mesh_backend: str = "tensor-legacy") \
+         -> dict[str, Any]:
     """Evaluate the checked-in contract and return a machine-readable report."""
     failures: list[str] = []
-    mesh = case["mesh"]
+    mesh = dict(case["mesh"])
+    mesh.update(case.get("mesh_backends", {}).get(mesh_backend, {}))
     if analysis_kind != case["analysis"]:
         failures.append(f"analysis {analysis_kind!r} != {case['analysis']!r}")
     checks = {
@@ -1838,6 +1844,7 @@ def evaluate_e2e_acceptance(case_name: str, case: dict[str, Any],
     return {
         "schema": "vela.sentaurus_device_acceptance.v1",
         "case": case_name,
+        "mesh_backend": mesh_backend,
         "status": "accepted" if not failures else "failed",
         "checks": checks,
         "failures": failures,
@@ -1852,9 +1859,11 @@ def build_device_deck(device_ir: dict[str, Any],
                       output_csv: str,
                       current_contact: str | None = None,
                       stop_voltage: float | None = None,
-                      materials_file: str | None = None,
-                      solver_profile: str | None = None,
-                      allow_lossy: bool = False) -> tuple[dict[str, Any], list[str]]:
+                       materials_file: str | None = None,
+                       solver_profile: str | None = None,
+                       node_volume_policy: str = "mixed_voronoi",
+                       require_non_obtuse: bool = True,
+                       allow_lossy: bool = False) -> tuple[dict[str, Any], list[str]]:
     """Build a Vela ``dc_sweep`` deck from the device and execution IRs."""
     analysis = execution_ir["analysis"]
     kind = analysis["kind"]
@@ -1975,8 +1984,8 @@ def build_device_deck(device_ir: dict[str, Any],
             },
         },
         "mesh_geometry": {
-            "node_volume_policy": "mixed_voronoi",
-            "require_non_obtuse": True,
+            "node_volume_policy": node_volume_policy,
+            "require_non_obtuse": require_non_obtuse,
         },
         "sweep": sweep,
         "_sentaurus_execution_sequence": [
@@ -2007,10 +2016,35 @@ def build_device_deck(device_ir: dict[str, Any],
     return deck, warnings
 
 
+def _validate_device_backend(frontend: str, backend: str) -> None:
+    if backend == "official-tdr" and frontend != "sentaurus2022-evaluated":
+        raise ExecutionIrError(
+            "mesh backend 'official-tdr' requires the internal "
+            "sentaurus2022-evaluated frontend")
+
+
+def _gmsh_pipeline_args(args: argparse.Namespace) -> argparse.Namespace:
+    return argparse.Namespace(
+        sde=args.sde,
+        output_dir=args.output_dir,
+        runtime_dir=args.gmsh_runtime_dir,
+        gmsh_python=args.gmsh_python,
+        gmsh_library=args.gmsh_library,
+        gmsh_executable=args.gmsh_executable,
+        mesh_size=args.gmsh_mesh_size,
+        capability_level="M3",
+    )
+
+
 def device_command(args: argparse.Namespace) -> None:
     output_dir = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     _clear_stale_reports(output_dir)
+    try:
+        _validate_device_backend(args.sde_frontend, args.mesh_backend)
+    except ExecutionIrError as error:
+        _write_fail_report(output_dir, "configuration", str(error))
+        raise
     contract = load_e2e_contract(args.contract)
     selected_contract = _contract_case(
         contract, args.contract_case, args.sde, args.sdevice)
@@ -2020,7 +2054,7 @@ def device_command(args: argparse.Namespace) -> None:
             device_ir, frontend_manifest = sentaurus2022_evaluated_frontend(
                 args.sde, output_dir / "sde_evaluated",
                 executable=args.sde_executable,
-                build_mesh=args.sde_build_mesh,
+                build_mesh=(args.sde_build_mesh or args.mesh_backend == "official-tdr"),
             )
         else:
             device_ir, frontend_manifest = offline_static_frontend(args.sde)
@@ -2056,8 +2090,30 @@ def device_command(args: argparse.Namespace) -> None:
 
     official_mesh_value = frontend_manifest.get("official_mesh_tdr")
     mesh_source: dict[str, Any]
+    preprocess_generated: list[str] = []
     try:
-        if official_mesh_value:
+        if args.mesh_backend == "gmsh":
+            gmsh_manifest = run_gmsh_pipeline(
+                _gmsh_pipeline_args(args),
+                device_ir_override=device_ir,
+                frontend_manifest=frontend_manifest,
+            )
+            qualification = gmsh_manifest["mesh_qualification"]
+            write_json(output_dir / "gmsh_preprocess_manifest.json", gmsh_manifest)
+            preprocess_generated = [
+                *gmsh_manifest["generated"], "gmsh_preprocess_manifest.json"
+            ]
+            mesh_source = {
+                "kind": "gmsh",
+                "frontend": args.sde_frontend,
+                "gmsh_version": gmsh_manifest["gmsh_version"],
+                "sde_sha256": gmsh_manifest["sde_sha256"],
+                "cross_format_status": gmsh_manifest["cross_format"]["status"],
+            }
+        elif args.mesh_backend == "official-tdr":
+            if not official_mesh_value:
+                raise RuntimeError(
+                    "evaluated SDE did not produce an official _msh.tdr artifact")
             official_mesh = Path(str(official_mesh_value)).resolve()
             export_dir = output_dir / "official_tdr_export"
             run_tdr_importer(
@@ -2079,6 +2135,13 @@ def device_command(args: argparse.Namespace) -> None:
                 "path": str(official_mesh),
                 "sha256": frontend_manifest.get("official_mesh_tdr_sha256"),
             }
+            preprocess_generated = [
+                "official_tdr_export/inventory.json",
+                "official_tdr_export/nodes.csv",
+                "official_tdr_export/elements.csv",
+                "official_tdr_export/contacts.csv",
+                "official_tdr_export/doping.csv",
+            ]
         else:
             generated = build_mesh_and_doping(
                 device_ir,
@@ -2089,12 +2152,17 @@ def device_command(args: argparse.Namespace) -> None:
             write_doping_csv(output_dir / "doping.csv", generated.doping_rows)
             qualification = generated.qualification
             mesh_source = {
-                "kind": "offline-static-approximation",
+                "kind": "tensor-legacy",
+                "frontend": args.sde_frontend,
+                "compatibility_only": True,
                 "path": None,
                 "sha256": None,
             }
     except MeshQualificationError as error:
         _write_fail_report(output_dir, "mesh", str(error), error.report)
+        raise
+    except GmshPipelineError as error:
+        _write_fail_report(output_dir, error.stage, str(error), error.details)
         raise
     except (OSError, RuntimeError, ValueError) as error:
         _write_fail_report(
@@ -2105,6 +2173,19 @@ def device_command(args: argparse.Namespace) -> None:
         )
         raise
     write_json(output_dir / "mesh_qualification.json", qualification)
+
+    max_angle = float(qualification.get("max_angle_degrees", math.inf))
+    if args.mesh_quality_profile == "vela-non-obtuse" and max_angle > 90.000001:
+        message = (
+            f"mesh maximum angle {max_angle:.9g} exceeds the explicit "
+            "vela-non-obtuse quality profile")
+        _write_fail_report(output_dir, "mesh_quality", message, qualification)
+        raise MeshQualificationError(message, qualification)
+    effective_volume_policy = (
+        args.node_volume_policy or
+        str(qualification.get("node_volume_policy", "mixed_voronoi"))
+    )
+    require_non_obtuse = args.mesh_quality_profile == "vela-non-obtuse"
 
     try:
         contract_stop = (
@@ -2135,6 +2216,8 @@ def device_command(args: argparse.Namespace) -> None:
             stop_voltage=effective_stop_voltage,
             materials_file=materials_file,
             solver_profile=selected_case.get("solver_profile"),
+            node_volume_policy=effective_volume_policy,
+            require_non_obtuse=require_non_obtuse,
             allow_lossy=args.allow_lossy,
         )
     except ExecutionIrError as error:
@@ -2160,6 +2243,8 @@ def device_command(args: argparse.Namespace) -> None:
         ],
         "mesh_qualification": qualification,
         "mesh_source": mesh_source,
+        "mesh_backend": args.mesh_backend,
+        "mesh_quality_profile": args.mesh_quality_profile,
         "metadata_only": device_ir["metadata_only"],
         "sde_frontend": frontend_manifest,
         "physics_metadata_only": execution_ir["physics"]["metadata_only"],
@@ -2178,14 +2263,7 @@ def device_command(args: argparse.Namespace) -> None:
             "sdevice"
         ),
     }
-    if official_mesh_value:
-        manifest["generated"].extend([
-            "official_tdr_export/inventory.json",
-            "official_tdr_export/nodes.csv",
-            "official_tdr_export/elements.csv",
-            "official_tdr_export/contacts.csv",
-            "official_tdr_export/doping.csv",
-        ])
+    manifest["generated"] = sorted(set(manifest["generated"] + preprocess_generated))
 
     if args.run:
         curve_path = output_dir / args.output_csv
@@ -2222,7 +2300,8 @@ def device_command(args: argparse.Namespace) -> None:
             acceptance = evaluate_e2e_acceptance(
                 case_name, case, execution_ir["analysis"]["kind"],
                 qualification, output_dir / args.output_csv,
-                output_dir / "terminal_currents.csv")
+                output_dir / "terminal_currents.csv",
+                mesh_backend=args.mesh_backend)
             write_json(output_dir / "acceptance_report.json", acceptance)
             manifest["generated"].append("acceptance_report.json")
             manifest["generated"].append("terminal_currents.csv")
@@ -2311,6 +2390,30 @@ def build_parser() -> argparse.ArgumentParser:
         "--tdr-importer", default=None,
         help="Command used to import an official mesh TDR produced by evaluated SDE",
     )
+    device.add_argument(
+        "--mesh-backend",
+        choices=["gmsh", "tensor-legacy", "official-tdr"],
+        default="gmsh",
+        help=(
+            "Mesh backend: the open-source Gmsh Python API is the public default; "
+            "tensor-legacy is compatibility-only and official-tdr is an internal "
+            "Sentaurus 2022 oracle path"
+        ),
+    )
+    device.add_argument(
+        "--mesh-quality-profile",
+        choices=["report-only", "vela-non-obtuse"],
+        default="report-only",
+        help="Report general quality or explicitly require a non-obtuse Vela mesh",
+    )
+    device.add_argument(
+        "--gmsh-runtime-dir", type=Path,
+        default=REPO / "build" / "gmsh-python-runtime",
+    )
+    device.add_argument("--gmsh-python", type=Path)
+    device.add_argument("--gmsh-library", type=Path)
+    device.add_argument("--gmsh-executable", type=Path)
+    device.add_argument("--gmsh-mesh-size", type=float, default=0.2)
     device.add_argument("--materials-file", default=None)
     device.add_argument(
         "--current-contact",
@@ -2327,7 +2430,11 @@ def build_parser() -> argparse.ArgumentParser:
     device.add_argument(
         "--node-volume-policy",
         choices=["mixed_voronoi", "barycentric"],
-        default="mixed_voronoi",
+        default=None,
+        help=(
+            "Override the backend-qualified node-volume policy; Gmsh defaults "
+            "to barycentric while tensor/official meshes retain their qualification"
+        ),
     )
     device.add_argument(
         "--allow-obtuse",

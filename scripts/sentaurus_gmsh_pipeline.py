@@ -334,7 +334,19 @@ def _cross_format_report(work: Path, bundle: dict[str, Any], msh: dict[str, Any]
     }
 
 
-def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
+def run_pipeline(
+    args: argparse.Namespace,
+    *,
+    device_ir_override: dict[str, Any] | None = None,
+    frontend_manifest: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Run the Gmsh/export pipeline from a source deck or a frozen frontend IR.
+
+    ``sentaurus_import.py device`` parses the SDE frontend exactly once and
+    passes the resulting Device IR here.  This keeps evaluated-log semantics
+    intact: the Gmsh backend must never silently reparse the original source
+    with the offline frontend.
+    """
     output = args.output_dir.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
@@ -345,7 +357,11 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
     gmsh = None
     initialized = False
     try:
-        gmsh, runtime = _load_runtime(args)
+        try:
+            gmsh, runtime = _load_runtime(args)
+        except GmshRuntimeError as error:
+            raise PipelineError(
+                str(error), "gmsh_runtime", error.details) from error
         gmsh.initialize([f"vela-sentaurus-gmsh-{args.capability_level.lower()}", "-nopopup"], False)
         initialized = True
         library_version = gmsh.option.getString("General.Version")
@@ -354,11 +370,18 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
                 "loaded Gmsh shared library version does not match the pin",
                 "gmsh_runtime", {"library_version": library_version})
         runtime["versions"]["library"] = library_version
-        try:
-            v1 = parse_sde_device_ir(args.sde.resolve())
-            device_ir = migrate_device_ir_v1(v1)
-        except (SdeParseError, ValueError) as error:
-            raise PipelineError(str(error), "sde_parse") from error
+        if device_ir_override is None:
+            try:
+                v1 = parse_sde_device_ir(args.sde.resolve())
+                device_ir = migrate_device_ir_v1(v1)
+            except (SdeParseError, ValueError) as error:
+                raise PipelineError(str(error), "sde_parse") from error
+        else:
+            frozen = json.loads(json.dumps(device_ir_override, allow_nan=False))
+            device_ir = (
+                frozen if frozen.get("schema") == "vela.device_ir.v2"
+                else migrate_device_ir_v1(frozen)
+            )
 
         with tempfile.TemporaryDirectory(
                 prefix=f".vela_gmsh_{args.capability_level.lower()}_",
@@ -405,6 +428,7 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
                 "milestone": args.capability_level,
                 "sde": str(args.sde.resolve()), "sde_sha256": _file_sha256(args.sde.resolve()),
                 "mesh_backend": "gmsh", "gmsh_version": EXPECTED_GMSH_VERSION,
+                "frontend": frontend_manifest,
                 "generated": generated, "sha256": hashes,
                 "mesh_qualification": qualification,
                 "cross_format": cross_format,

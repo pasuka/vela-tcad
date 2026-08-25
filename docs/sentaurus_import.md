@@ -116,6 +116,49 @@ Example pattern:
 python scripts/sentaurus_import.py --help
 ```
 
+### License-free SDE/SDevice to Gmsh workflow
+
+The public `device` command defaults to `offline-static + gmsh`. It reads the
+paired SDE/SDevice decks, uses the pinned Gmsh 4.15.2 Python API, writes MSH,
+VTU, VTK, DF-ISE GRD/DAT and Vela `mesh.json/doping.csv`, then generates a Vela
+IV or BV deck. Sentaurus, `sde` and `tdx` are not public runtime dependencies.
+
+```bash
+python scripts/sentaurus_import.py device \
+  --sde reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd \
+  --sdevice reference_tcad/pn2d_sentaurus2018/source/pn2d_iv_sdevice.cmd \
+  --output-dir build-release/pn2d-gmsh-iv \
+  --run --runner build-release/vela_example_runner.exe
+```
+
+The default output includes `device.msh`, `device.vtu`, `device.vtk`,
+`device.grd`, `device.dat`, `mesh.json`, `doping.csv`, `id_mapping.json`, the
+cross-format report, the Gmsh runtime manifest, `simulation.json` and the
+versioned run/acceptance reports. Gmsh meshes use the measured, explicitly
+recorded barycentric node-volume policy unless the caller selects the
+`vela-non-obtuse` quality profile and the generated mesh passes it.
+
+Backend selection is explicit:
+
+- `--mesh-backend gmsh`: public default for both offline and evaluated SDE IR;
+- `--mesh-backend tensor-legacy`: compatibility-only legacy tensor generator;
+- `--mesh-backend official-tdr`: internal only and valid only with
+  `--sde-frontend sentaurus2022-evaluated`.
+
+The internal TDX check is a separate opt-in command. It validates a hash-sealed
+Gmsh preprocessing bundle, freezes `tdx -h`, stages GRD/DAT in an isolated VM
+directory, imports the returned TDR and writes a machine-readable comparison:
+
+```bash
+python scripts/sentaurus_gmsh_tdx_gate.py \
+  --preprocess-dir build-release/pn2d-gmsh-iv \
+  --output-dir build-release/pn2d-gmsh-tdx \
+  --run-id pn2d_gmsh_m4 --ssh-target sentaurus
+```
+
+This command is never invoked by the public `device` workflow or CI. Use
+`--dry-run` to inspect the exact remote commands without transferring data.
+
 ### Explicit lossy impact-ionization substitution
 
 The `device` command fails closed when an SDevice deck selects an impact-

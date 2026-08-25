@@ -128,7 +128,17 @@ def discover_runtime_sources(
     )
     if executable is None:
         found = shutil.which("gmsh") or shutil.which("gmsh.exe")
-        executable = Path(found).resolve() if found else None
+        if found:
+            executable = Path(found).resolve()
+        else:
+            python_prefixes = [
+                Path(sys.prefix), Path(sys.executable).resolve().parent.parent,
+            ]
+            executable = _first_file([
+                prefix / "bin" / name
+                for prefix in python_prefixes
+                for name in ("gmsh.exe", "gmsh")
+            ])
 
     prefixes = [Path(sys.prefix), Path(sys.executable).resolve().parent.parent]
     if executable is not None:

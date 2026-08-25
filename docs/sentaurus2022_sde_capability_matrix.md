@@ -17,7 +17,9 @@ consumed by license-free tests after review.
 `scripts/sentaurus_gmsh_pipeline.py` is the public, license-free SDE-to-mesh
 path. Its default `--capability-level M3` is a frozen semantic subset, not a
 claim that every capability in the broader paired workflow below is already
-available through Gmsh.
+available through Gmsh. M4 composes that M3 preprocessor with the SDevice
+execution IR, Vela IV/BV runner and acceptance contract; it does not widen the
+frozen SDE syntax subset.
 
 | Capability | Gmsh M1 | Gmsh M2 | Gmsh M3 (default) | Later milestone |
 |---|---:|---:|---:|---:|
@@ -102,6 +104,18 @@ and `_msh.cmd` artifacts. It does not parse TDR as though it were Scheme.
 
 ## Unified execution and exclusions
 
+The `device` command's backend matrix is:
+
+| SDE frontend | `gmsh` (default) | `tensor-legacy` | `official-tdr` |
+|---|---:|---:|---:|
+| `offline-static` (default) | supported | compatibility only | fail-closed |
+| `sentaurus2022-evaluated` | supported, internal oracle IR | compatibility only | supported, internal only |
+
+`gmsh` always emits and round-trips MSH/VTU/VTK/GRD/DAT plus the normalized
+Vela files before a solver can run. `official-tdr` requires an evaluated SDE
+run that actually produced `_msh.tdr`; it is never selected merely because an
+artifact happens to exist.
+
 `analysis.kind=iv` maps to `sweep.mode=iv`; `analysis.kind=bv` maps to
 `sweep.mode=bv_reverse`. All parsed initial/sweep stages are copied into the
 ordered `_sentaurus_execution_sequence`. Until cross-deck checkpoint handoff is
@@ -120,6 +134,12 @@ contract may shorten the stop bias without changing that normalization.
 Terminal-current acceptance uses a mixed gate,
 `abs(Ia + Ic) <= abs_limit + rel_limit * max(abs(Ia), abs(Ic))`, so roundoff at
 near-zero current does not masquerade as a large physical conservation error.
+
+The internal `sentaurus_gmsh_tdx_gate.py` is opt-in and hash-seals the Gmsh
+GRD/DAT pair before transfer. It freezes `tdx -h`, converts the pair to TDR,
+reimports the returned TDR and compares topology, region/contact ownership and
+datasets. Public CI covers its dry-run and fail-closed behavior only; no public
+test probes a license server or commercial executable.
 
 Excluded: complete Elk reimplementation, ACIS, Sentaurus Mesh reimplementation,
 3-D geometry, process emulation, particle profiles, and arbitrary external TDR
