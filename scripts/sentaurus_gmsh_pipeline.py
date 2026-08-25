@@ -29,6 +29,7 @@ from sentaurus_gmsh_backend import (
     GmshBackendError,
     build_m1_bundle,
     build_m2_bundle,
+    build_m3_bundle,
     read_msh_roundtrip,
     write_msh_with_node_data,
 )
@@ -364,7 +365,11 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
                 dir=output.parent) as tmp:
             work = Path(tmp)
             try:
-                builder = build_m1_bundle if args.capability_level == "M1" else build_m2_bundle
+                builder = {
+                    "M1": build_m1_bundle,
+                    "M2": build_m2_bundle,
+                    "M3": build_m3_bundle,
+                }[args.capability_level]
                 bundle, qualification = builder(gmsh, device_ir, args.mesh_size)
                 write_json(work / "device_ir.json", device_ir)
                 write_json(work / "mesh_field_bundle.json", bundle)
@@ -381,6 +386,11 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
                     raise PipelineError(
                         "cross-format round-trip validation failed", "roundtrip", cross_format)
                 write_json(work / "mesh_qualification.json", qualification)
+                if args.capability_level == "M3":
+                    write_json(
+                        work / "refinement_field_dag.json",
+                        bundle["provenance"]["refinement_field_dag"],
+                    )
                 write_json(work / "cross_format_report.json", cross_format)
                 write_json(work / "gmsh_runtime_manifest.json", runtime)
             except GmshBackendError as error:
@@ -407,9 +417,17 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
                     "supported": ["Rectangle ABA/BAB ownership", "conformal interface",
                                   "insert-vertex pick-point contact",
                                   "ordered Replace/LocalReplace/NoReplace",
-                                  "line-baseline Gaussian"],
+                                  "line-baseline Gaussian"] + (
+                                      ["Line/Rectangle/Polygon refinement window",
+                                       "region/material/window anisotropic placement",
+                                       "MaxLenInt DoubleSide/UseRegionNames",
+                                       "auditable Gmsh field DAG"]
+                                      if args.capability_level == "M3" else []),
                     "fail_closed": ["AB/ABiA/ABiB/XX", "Polygon body",
-                                    "contact entity/body/remove/imprint", "refinement",
+                                    "contact entity/body/remove/imprint"] + (
+                                        ["MaxTransDiff/MaxGradient phase 4B", "MaxInterval",
+                                         "multibox", "offsetting", "MaxLenInt contact interface"]
+                                        if args.capability_level == "M3" else ["refinement"]) + [
                                     "constant-profile decay",
                                     "analytical restriction decay"],
                 }),
@@ -452,8 +470,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gmsh-library", type=Path)
     parser.add_argument("--gmsh-executable", type=Path)
     parser.add_argument("--mesh-size", type=float, default=0.2)
-    parser.add_argument("--capability-level", choices=("M1", "M2"), default="M2",
-                        help="freeze the accepted semantic subset (default: M2)")
+    parser.add_argument("--capability-level", choices=("M1", "M2", "M3"), default="M3",
+                        help="freeze the accepted semantic subset (default: M3)")
     return parser
 
 

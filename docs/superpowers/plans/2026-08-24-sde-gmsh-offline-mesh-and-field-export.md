@@ -2,7 +2,7 @@
 
 ## 计划状态
 
-- 状态：实施中；阶段 -1、M0、M1 和 M2 已完成，下一阶段为 M3
+- 状态：实施中；阶段 -1、M0、M1、M2 和 M3 已完成，下一阶段为 M4
 - 更新日期：2026-08-25
 - 计划源文件：`docs/superpowers/plans/2026-08-24-sde-gmsh-offline-mesh-and-field-export.md`
 - 实施 worktree：`D:\code-repo\copilot-worktrees\vela-tcad-dev`
@@ -38,6 +38,15 @@
   成功；全量 CTest 首轮 708/709 通过，唯一失败为新增 provenance 引起的旧 PN2D IR
   golden 漂移，更新受哈希封印的 golden 后该 CTest 独立复跑通过，因此 709 项均有
   Release 通过证据。
+- M3 结果：阶段 4A 已完成。Line/Rectangle/闭合逆时针 Polygon Ref/Eval window、
+  region/material/window placement、各向异性 max_x/max_y、重叠 MinAniso 最细方向约束及
+  MaxLenInt（含 DoubleSide、UseRegionNames 和 factor）均生成可审计 Gmsh field DAG。
+  各向异性网格遵循 Gmsh 4.15.2 官方 t17，使用 BAMG/Algorithm 7；min spacing 只作为
+  Sentaurus refinement 停止目标记录，不作为 Gmsh 硬下限。完整 PN2D 代表性运行得到
+  1044 点/1954 个 Tri3，全局和结区 P95 边长分量通过 1.35 倍门槛，全部格式节点场差异
+  为 0。MaxTransDiff/MaxGradient 作为 4B 继续 source-located fail-closed。验收说明见
+  `docs/validation/sentaurus_gmsh_m3_acceptance_2026-08-25.md`。UCRT64 Release 构建
+  成功，全量 CTest 710/710 通过，耗时 303.47 秒。
 - 产品默认：`offline-static + gmsh`
 - 内部验证：`sentaurus2022-evaluated + tdx`，仅限具有许可证的开发环境
 - 取代范围：本计划取代“离线生成器使用正交张量网格并固定对角线切分三角形”的网格部分；
@@ -520,6 +529,7 @@ Sentaurus SDE .cmd
 
 ### M3 / P1：refinement 与完整 PN2D 预处理
 
+- 状态：已完成（2026-08-25）。
 - 完成阶段 4A；4B 未证明等价的功能继续 fail-closed。
 - 完整 PN2D 生成、跨格式一致性和 mesh quality contract 通过。
 

@@ -68,8 +68,8 @@
       "sha256": "d2fcb791480e0e670fcc8096ee488d337370bbe3c8d217e7ff0bf04f29bb740f"
     },
     "expected_device_ir.json": {
-      "bytes": 6331,
-      "sha256": "dcefa9e819e0cdc8241895a1718f4e12af6e4195fab37db7473882db7591174d"
+      "bytes": 6627,
+      "sha256": "2fff27227a38fb2335c0fc000bb79f1310d5323eebc5df97996d21537da0e9b7"
     },
     "input/pn2d_sde.cmd": {
       "bytes": 3246,

@@ -369,7 +369,7 @@ def _handle_set_default_boolean(form: Sexp, builder: DeviceIrBuilder) -> None:
 
 def _handle_refeval_window(form: Sexp, builder: DeviceIrBuilder) -> None:
     args = _require_args(
-        form, 4, "(sdedr:define-refeval-window name shape lower upper)")
+        form, 3, "(sdedr:define-refeval-window name shape geometry ...)")
     name = expect_string(args[0], builder.env, "window name")
     shape = expect_string(args[1], builder.env, "window shape")
     if name in builder.windows:
@@ -377,6 +377,10 @@ def _handle_refeval_window(form: Sexp, builder: DeviceIrBuilder) -> None:
             f"{form.location()}: window '{name}' is defined more than once in "
             f"'{form.command_text()}'")
     if shape in {"Rectangle", "Line"}:
+        if len(args) != 4:
+            raise SdeParseError(
+                f"{form.location()}: {shape} Ref/Eval window requires exactly "
+                "two positions")
         lower = parse_position(args[2], builder.env)
         upper = parse_position(args[3], builder.env)
         if lower[:2] == upper[:2]:
@@ -389,14 +393,30 @@ def _handle_refeval_window(form: Sexp, builder: DeviceIrBuilder) -> None:
         if shape == "Rectangle":
             builder.windows[name].update(_rectangle_bounds(lower, upper))
     elif shape == "Polygon":
+        if len(args) not in {3} and not all(
+                isinstance(node, Sexp) and node.head() == "position"
+                for node in args[2:]):
+            raise SdeParseError(
+                f"{form.location()}: Polygon Ref/Eval window requires a position "
+                "list or a sequence of positions")
         raw = args[2]
         nodes = list(raw.items[1:]) if isinstance(raw, Sexp) and raw.head() == "list" \
             else list(args[2:])
         points = [[p[0], p[1]] for p in (parse_position(node, builder.env) for node in nodes)]
-        if len(points) < 3:
-            raise SdeParseError(f"{form.location()}: Polygon window needs at least 3 points")
+        if len(points) < 4 or points[0] != points[-1]:
+            raise SdeParseError(
+                f"{form.location()}: Polygon window needs at least three vertices "
+                "and must repeat its first position at the end")
+        signed_area2 = sum(
+            points[index][0] * points[index + 1][1] -
+            points[index + 1][0] * points[index][1]
+            for index in range(len(points) - 1))
+        if signed_area2 <= 0.0:
+            raise SdeParseError(
+                f"{form.location()}: Polygon Ref/Eval vertices must be "
+                "counterclockwise as required by Sentaurus 2022")
         builder.windows[name] = {
-            "name": name, "shape": "polygon", "points": points,
+            "name": name, "shape": "polygon", "points": points[:-1],
             "location": form.location(),
         }
     else:
@@ -671,6 +691,7 @@ def _handle_refinement_size(form: Sexp, builder: DeviceIrBuilder) -> None:
         "name": name,
         "max_x": values[0],
         "max_y": values[1],
+        "location": form.location(),
     }
     if len(values) >= 4:
         entry["min_x"] = values[2]
@@ -699,6 +720,7 @@ def _handle_refinement_placement(form: Sexp,
         "refinement": refinement,
         "target_kind": target_kind,
         "target": target,
+        "location": form.location(),
     })
 
 
@@ -707,6 +729,18 @@ def _handle_refinement_function(form: Sexp, builder: DeviceIrBuilder) -> None:
         form, 3, "(sdedr:define-refinement-function refinement function ...)")
     refinement = expect_string(args[0], builder.env, "refinement name")
     function = expect_string(args[1], builder.env, "refinement function")
+    value_nodes = list(args[2:])
+    variable = None
+    if function not in {"MaxTransDiff", "MaxGradient", "MaxLenInt"}:
+        # Profile-driven functions use the dataset name before the actual
+        # refinement function, e.g. "DopingConcentration" "MaxTransDiff" 1.
+        variable = function
+        if not value_nodes:
+            raise SdeParseError(
+                f"{form.location()}: missing refinement function after variable "
+                f"{variable!r}")
+        function = expect_string(
+            value_nodes.pop(0), builder.env, "refinement function")
     if refinement not in builder.refinement_sizes:
         raise SdeParseError(f"{form.location()}: unknown refinement '{refinement}'")
     if function not in {"MaxTransDiff", "MaxGradient", "MaxLenInt"}:
@@ -714,20 +748,50 @@ def _handle_refinement_function(form: Sexp, builder: DeviceIrBuilder) -> None:
             f"{form.location()}: refinement function '{function}' is unsupported; "
             "MaxInterval, multibox and offsetting fail closed")
     values: list[Any] = []
-    for node in args[2:]:
+    for node in value_nodes:
         if isinstance(node, Atom) and node.is_string:
             values.append(str(node.value))
         else:
             values.append(eval_number(node, builder.env))
     if function in {"MaxTransDiff", "MaxGradient"} and not values:
         raise SdeParseError(f"{form.location()}: {function} requires a threshold")
-    if function == "MaxLenInt" and len(values) < 4:
-        raise SdeParseError(
-            f"{form.location()}: MaxLenInt requires interface names, length and factor")
-    builder.refinement_functions.append({
+    entry: dict[str, Any] = {
         "refinement": refinement, "function": function, "arguments": values,
         "location": form.location(),
-    })
+    }
+    if variable is not None:
+        entry["variable"] = variable
+    if function == "MaxLenInt":
+        if len(values) < 3 or not all(isinstance(value, str) for value in values[:2]) \
+                or not isinstance(values[2], (int, float)):
+            raise SdeParseError(
+                f"{form.location()}: MaxLenInt requires two interface names and "
+                "a positive target length")
+        target_length = float(values[2])
+        if target_length <= 0.0:
+            raise SdeParseError(f"{form.location()}: MaxLenInt length must be positive")
+        index = 3
+        factor = None
+        if index < len(values) and isinstance(values[index], (int, float)):
+            factor = float(values[index])
+            if factor < 1.0:
+                raise SdeParseError(
+                    f"{form.location()}: MaxLenInt factor must be at least 1")
+            index += 1
+        flags = values[index:]
+        if any(flag not in {"DoubleSide", "UseRegionNames"} for flag in flags) or \
+                len(flags) != len(set(flags)):
+            raise SdeParseError(
+                f"{form.location()}: invalid or duplicate MaxLenInt option in "
+                f"'{form.command_text()}'")
+        entry.update({
+            "interface": [values[0], values[1]],
+            "value": target_length,
+            "factor": factor,
+            "double_side": "DoubleSide" in flags,
+            "use_region_names": "UseRegionNames" in flags,
+        })
+    builder.refinement_functions.append(entry)
 
 
 def _handle_multibox(form: Sexp, builder: DeviceIrBuilder) -> None:

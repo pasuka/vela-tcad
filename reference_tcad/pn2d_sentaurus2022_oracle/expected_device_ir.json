@@ -196,6 +196,7 @@
         "name": "Global.Mesh",
         "max_x": 0.05,
         "max_y": 0.05,
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:19:1",
         "min_x": 0.01,
         "min_y": 0.01
       },
@@ -203,6 +204,7 @@
         "name": "Junction.Mesh",
         "max_x": 0.01,
         "max_y": 0.02,
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:22:1",
         "min_x": 0.005,
         "min_y": 0.005
       }
@@ -212,13 +214,15 @@
         "name": "Global.Mesh.Place",
         "refinement": "Global.Mesh",
         "target_kind": "region",
-        "target": "R.Si"
+        "target": "R.Si",
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:20:1"
       },
       {
         "name": "Junction.Mesh.Place",
         "refinement": "Junction.Mesh",
         "target_kind": "window",
-        "target": "Junction.Window"
+        "target": "Junction.Window",
+        "location": "artifacts/vela_sde_evaluated_wrapper.log.eval:23:1"
       }
     ],
     "refinement_functions": [],

@@ -15,20 +15,24 @@ consumed by license-free tests after review.
 ## Public Gmsh preprocessing milestones
 
 `scripts/sentaurus_gmsh_pipeline.py` is the public, license-free SDE-to-mesh
-path. Its default `--capability-level M2` is a frozen semantic subset, not a
+path. Its default `--capability-level M3` is a frozen semantic subset, not a
 claim that every capability in the broader paired workflow below is already
 available through Gmsh.
 
-| Capability | Gmsh M1 | Gmsh M2 (default) | Later milestone |
-|---|---:|---:|---:|
-| separated Rectangle + pick contact | yes | yes | - |
-| per-body ABA/BAB and conformal interface groups | fail-closed | yes | - |
-| straight-edge `insert-vertex` + complete split-edge contact | fail-closed | yes | - |
-| ordered constant NoReplace/LocalReplace/Replace | NoReplace only | yes | - |
-| directed line-baseline Gaussian + Eval/NoEval | fail-closed | yes | - |
-| nonzero constant or analytical restriction decay | fail-closed | fail-closed | M3 |
-| refinement placement/function | fail-closed | fail-closed | M3 |
-| Polygon body, AB/ABiA/ABiB/XX, 3-D | fail-closed | fail-closed | excluded/unplanned |
+| Capability | Gmsh M1 | Gmsh M2 | Gmsh M3 (default) | Later milestone |
+|---|---:|---:|---:|---:|
+| separated Rectangle + pick contact | yes | yes | yes | - |
+| per-body ABA/BAB and conformal interface groups | fail-closed | yes | yes | - |
+| straight-edge `insert-vertex` + complete split-edge contact | fail-closed | yes | yes | - |
+| ordered constant NoReplace/LocalReplace/Replace | NoReplace only | yes | yes | - |
+| directed line-baseline Gaussian + Eval/NoEval | fail-closed | yes | yes | - |
+| Line/Rectangle/Polygon refinement window | fail-closed | fail-closed | yes | - |
+| anisotropic region/material/window size placement | fail-closed | fail-closed | yes | - |
+| `MaxLenInt`, `DoubleSide`, `UseRegionNames` | fail-closed | fail-closed | yes | - |
+| auditable MathEvalAniso/Distance/MinAniso field DAG | fail-closed | fail-closed | yes | - |
+| `MaxTransDiff`/`MaxGradient` | fail-closed | fail-closed | fail-closed | M3 phase 4B |
+| nonzero constant or analytical restriction decay | fail-closed | fail-closed | fail-closed | later |
+| Polygon body, AB/ABiA/ABiB/XX, 3-D | fail-closed | fail-closed | fail-closed | excluded/unplanned |
 
 For T-2022.03 constant placements, NoReplace is represented by omitting the
 optional replacement argument. Replace or LocalReplace requires the numeric
@@ -60,7 +64,7 @@ and `_msh.cmd` artifacts. It does not parse TDR as though it were Scheme.
 
 | Capability | Status | Notes |
 |---|---:|---|
-| 2-D axis-aligned rectangle | supported | conformal tensor grid |
+| 2-D axis-aligned rectangle | supported | Gmsh OCC/Tri3 by default; tensor grid is explicit legacy mode |
 | ABA (New Replaces Old) | supported | mode captured on each newly created body |
 | BAB (Old Replaces New) | supported | mode captured on each newly created body |
 | AB, ABiA, ABiB, XX | fail-closed | never downgraded to ABA |
@@ -81,7 +85,7 @@ and `_msh.cmd` artifacts. It does not parse TDR as though it were Scheme.
 | NoReplace | supported | accumulates with every active earlier profile |
 | LocalReplace | supported | clears only the same species |
 | Replace | supported | clears all earlier species at the sample point |
-| constant Erf/Gaussian decay length | supported | boundary distance evaluated for line, rectangle and polygon windows |
+| constant Erf/Gaussian decay length | partial | tensor legacy only; Gmsh M3 fails closed |
 | donor and acceptor aggregation | supported | kept separate until final CSV columns |
 | Gaussian PeakPos + PeakVal | supported | with ValueAtDepth/Depth, Length, or StdDev |
 | Gaussian Dose | supported | requires Length or StdDev |
@@ -89,11 +93,11 @@ and `_msh.cmd` artifacts. It does not parse TDR as though it were Scheme.
 | Positive/Negative/Both (`Symm`) | supported | T-2022.03-SP2 oracle: Positive is the left normal of the directed baseline |
 | Eval/NoEval | supported | NoEval excludes the baseline itself |
 | analytic region/material/eval-window restriction | supported | explicit restriction only |
-| Line/Rectangle/Polygon Ref/Eval window | supported | polygon inclusion is boundary-inclusive |
-| refinement region/material/window placement | supported | overlapping placement uses the smallest active spacing |
-| max/min spacing | supported | min is a refinement stopping target, not a hard lower bound |
-| MaxTransDiff/MaxGradient | supported conservatively | full placement refines to its stopping target, a safe superset of adaptive cells |
-| MaxLenInt, DoubleSide, UseRegionNames | supported conservatively | full placement uses the requested interface length, including both sides |
+| Line/Rectangle/Polygon Ref/Eval window | supported | M3 requires closed counterclockwise polygon vertices; boundaries are included |
+| refinement region/material/window placement | supported | M3 uses MinAniso metric intersection, so overlap takes the finest directional constraint |
+| max/min spacing | supported | max_x/max_y map to an anisotropic metric; min remains a stop target, never a hard clamp |
+| MaxTransDiff/MaxGradient | fail-closed in Gmsh M3 | phase 4B requires a frozen variable transform and bounded remesh iteration |
+| MaxLenInt, DoubleSide, UseRegionNames | supported | Distance + anisotropic growth metric; omitted factor means the documented one-layer default |
 | MaxInterval, multibox, offsetting | fail-closed | listed here and in source diagnostic |
 
 ## Unified execution and exclusions
