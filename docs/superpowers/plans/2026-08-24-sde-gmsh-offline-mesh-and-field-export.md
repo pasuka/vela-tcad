@@ -2,8 +2,8 @@
 
 ## 计划状态
 
-- 状态：实施中；阶段 -1 和 M0 已完成，M1 待开始
-- 更新日期：2026-08-24
+- 状态：实施中；阶段 -1、M0 和 M1 已完成，下一阶段为 M2
+- 更新日期：2026-08-25
 - 计划源文件：`docs/superpowers/plans/2026-08-24-sde-gmsh-offline-mesh-and-field-export.md`
 - 实施 worktree：`D:\code-repo\copilot-worktrees\vela-tcad-dev`
 - 实施分支：`codex/sentaurus2022-sde-workflow`
@@ -20,6 +20,13 @@
   实际加载 staged `gmsh-4.15.dll`，并生成 3 节点、1 个 Tri3；拓扑相关选项包含单线程、
   `Mesh.Algorithm=6`、`Mesh.RandomFactor=0`、禁用重组/高阶/优化及 MSH 4.1 ASCII。
   UCRT64 Release 构建成功，最终全量 CTest 707/707 通过，耗时 234.09 秒。
+- M1 结果：已实现独立的公开离线预处理 CLI、严格分离 Rectangle 的 OCC/Tri3 建模、
+  region/material/contact Physical Groups、constant `NoReplace` 节点掺杂以及单一 bundle
+  驱动的 MSH/VTU/VTK/GRD/DAT/mesh.json/doping.csv 导出。所有格式均由独立读回路径与
+  bundle 比较；MSH 严格包含一份网格段和五份 NodeData。重叠、接触界面、ABA/BAB、
+  insert-vertex、Gaussian、replacement 与 refinement 继续 fail-closed。验收说明见
+  `docs/validation/sentaurus_gmsh_m1_acceptance_2026-08-25.md`。最终 UCRT64 Release
+  构建成功，全量 CTest 708/708 通过，耗时 209.44 秒。
 - 产品默认：`offline-static + gmsh`
 - 内部验证：`sentaurus2022-evaluated + tdx`，仅限具有许可证的开发环境
 - 取代范围：本计划取代“离线生成器使用正交张量网格并固定对角线切分三角形”的网格部分；
@@ -487,6 +494,7 @@ Sentaurus SDE .cmd
 
 ### M1 / P0：最小真实跨格式闭环
 
+- 状态：已完成（2026-08-25）。
 - 两个不重叠 Rectangle region、两个 contact、constant doping、无 refinement function。
 - Gmsh OCC + Tri3 + Physical Groups + NodeData。
 - 从同一 bundle 输出 MSH/VTU/VTK/GRD/DAT/mesh.json/doping.csv 并全部回读比较。

@@ -108,9 +108,11 @@ class MeshFieldBundleSchemaTest(unittest.TestCase):
             },
             "id_mapping": {
                 "gmsh_node_to_vela": {"10": 0, "11": 1, "12": 2},
-                "gmsh_element_to_vela": {"20": 0},
+                "gmsh_triangle_to_vela": {"20": 0},
+                "gmsh_line_to_vela": {"30": 0},
                 "vela_node_to_dfise": {"0": 0, "1": 1, "2": 2},
-                "vela_element_to_dfise": {"0": 0},
+                "vela_triangle_to_dfise": {"0": 0},
+                "vela_line_to_dfise": {"0": 0},
             },
         }
         validate_schema(self, document, BUNDLE_SCHEMA)

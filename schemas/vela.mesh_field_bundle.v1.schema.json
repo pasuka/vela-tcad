@@ -66,13 +66,15 @@
     },
     "id_mapping": {
       "type": "object",
-      "required": ["gmsh_node_to_vela", "gmsh_element_to_vela", "vela_node_to_dfise", "vela_element_to_dfise"],
+      "required": ["gmsh_node_to_vela", "gmsh_triangle_to_vela", "gmsh_line_to_vela", "vela_node_to_dfise", "vela_triangle_to_dfise", "vela_line_to_dfise"],
       "additionalProperties": false,
       "properties": {
         "gmsh_node_to_vela": {"$ref": "#/definitions/stringIntegerMap"},
-        "gmsh_element_to_vela": {"$ref": "#/definitions/stringIntegerMap"},
+        "gmsh_triangle_to_vela": {"$ref": "#/definitions/stringIntegerMap"},
+        "gmsh_line_to_vela": {"$ref": "#/definitions/stringIntegerMap"},
         "vela_node_to_dfise": {"$ref": "#/definitions/stringIntegerMap"},
-        "vela_element_to_dfise": {"$ref": "#/definitions/stringIntegerMap"}
+        "vela_triangle_to_dfise": {"$ref": "#/definitions/stringIntegerMap"},
+        "vela_line_to_dfise": {"$ref": "#/definitions/stringIntegerMap"}
       }
     }
   },
