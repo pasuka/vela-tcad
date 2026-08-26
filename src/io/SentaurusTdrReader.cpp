@@ -266,6 +266,7 @@ std::vector<SentaurusTdrRegion> readRegions(hid_t geometry)
         region.index = index;
         region.name = readStringAttribute(group.id, "name", name);
         region.material = readStringAttribute(group.id, "material", "");
+        region.material_type = readIntAttribute(group.id, "material type", -1);
         region.type = regionTypeFromInt(readIntAttribute(group.id, "type", 99));
         parseElements(region, readIntVector(group.id, "elements_0"));
         regions.push_back(std::move(region));
@@ -471,6 +472,12 @@ bool isDopableMaterial(const std::string& material)
         material == "Germanium" || material == "SiliconGermanium";
 }
 
+bool isSemiconductorMaterialRegion(const SentaurusTdrRegion& region)
+{
+    return region.type == SentaurusTdrRegionType::Material &&
+        (region.material_type != 0 || isDopableMaterial(region.material));
+}
+
 const SentaurusTdrRegion* findRegion(const SentaurusTdrInventory& inventory, int index)
 {
     for (const auto& region : inventory.regions) {
@@ -640,6 +647,54 @@ nlohmann::json fieldManifest(const SentaurusTdrInventory& inventory)
     return manifest;
 }
 
+double coordinateScaleToMicrometers(const std::string& unit)
+{
+    if (unit.empty() || unit == "um") {
+        return 1.0;
+    }
+    if (unit == "cm") {
+        return 1.0e4;
+    }
+    if (unit == "mm") {
+        return 1.0e3;
+    }
+    if (unit == "m") {
+        return 1.0e6;
+    }
+    if (unit == "nm") {
+        return 1.0e-3;
+    }
+    throw std::runtime_error(
+        "unsupported Sentaurus TDR coordinate unit for micrometer export: " + unit);
+}
+
+bool containsString(const std::vector<std::string>& values, const std::string& value)
+{
+    return std::find(values.begin(), values.end(), value) != values.end();
+}
+
+std::set<std::size_t> materialNodes(const SentaurusTdrRegion& region)
+{
+    const auto ordered = regionNodeOrder(region);
+    return {ordered.begin(), ordered.end()};
+}
+
+bool fieldCoversRegion(const SentaurusTdrInventory& inventory,
+                       const SentaurusTdrField& field,
+                       const SentaurusTdrRegion& region)
+{
+    return field.component_count == 1 && field.values.size() == field.value_count &&
+        (field.value_count == inventory.vertices.size() ||
+         field.value_count == materialNodes(region).size());
+}
+
+bool fieldValuesAreFiniteAndNonnegative(const SentaurusTdrField& field)
+{
+    return std::all_of(field.values.begin(), field.values.end(), [](double value) {
+        return std::isfinite(value) && value >= 0.0;
+    });
+}
+
 } // namespace
 
 const SentaurusTdrField* SentaurusTdrInventory::findField(const std::string& name, int regionIndex) const
@@ -664,10 +719,227 @@ SentaurusTdrInventory SentaurusTdrReader::readInventory(const std::string& filen
     }
 
     SentaurusTdrInventory inventory;
+    inventory.coordinate_unit = readUnitAttribute(geometry.id);
     inventory.vertices = readVertices(geometry.id);
     inventory.regions = readRegions(geometry.id);
     inventory.fields = readFields(geometry.id);
     return inventory;
+}
+
+SentaurusTdrQualificationReport SentaurusTdrReader::qualify(
+    const SentaurusTdrInventory& inventory,
+    const SentaurusTdrQualificationContract& contract) const
+{
+    SentaurusTdrQualificationReport report;
+    auto addCheck = [&](std::string code, bool passed, std::string message) {
+        report.checks.push_back({std::move(code), passed, std::move(message)});
+    };
+
+    bool coordinateUnitConvertible = false;
+    try {
+        (void)coordinateScaleToMicrometers(inventory.coordinate_unit);
+        coordinateUnitConvertible = !inventory.coordinate_unit.empty();
+    } catch (const std::runtime_error&) {
+        coordinateUnitConvertible = false;
+    }
+    const bool coordinateUnitAccepted = coordinateUnitConvertible &&
+        !inventory.coordinate_unit.empty() &&
+        containsString(contract.acceptedCoordinateUnits, inventory.coordinate_unit);
+    addCheck(
+        "geometry.coordinate_unit",
+        coordinateUnitAccepted,
+        coordinateUnitAccepted
+            ? "coordinate unit '" + inventory.coordinate_unit + "' is explicitly accepted"
+            : "coordinate unit '" + inventory.coordinate_unit + "' is missing or not accepted");
+
+    const bool finiteVertices = !inventory.vertices.empty() &&
+        std::all_of(inventory.vertices.begin(), inventory.vertices.end(), [](const auto& vertex) {
+            return std::isfinite(vertex.x) && std::isfinite(vertex.y);
+        });
+    addCheck(
+        "geometry.vertices",
+        finiteVertices,
+        finiteVertices ? "all vertices are finite" : "geometry has no vertices or non-finite coordinates");
+
+    std::vector<std::string> materialProblems;
+    std::vector<const SentaurusTdrRegion*> materialRegions;
+    for (const auto& region : inventory.regions) {
+        if (region.type != SentaurusTdrRegionType::Material) {
+            continue;
+        }
+        materialRegions.push_back(&region);
+        if (region.name.empty() || region.material.empty()) {
+            materialProblems.push_back("region " + std::to_string(region.index) + " has no name or material");
+        }
+        if (!contract.allowedMaterials.empty() &&
+            !containsString(contract.allowedMaterials, region.material)) {
+            materialProblems.push_back(
+                "region '" + region.name + "' uses unaccepted material '" + region.material + "'");
+        }
+        if (region.material_type >= 0) {
+            const int expectedMaterialType =
+                containsString(contract.semiconductorMaterials, region.material) ? 1 : 0;
+            if (region.material_type != expectedMaterialType) {
+                materialProblems.push_back(
+                    "region '" + region.name + "' has material type " +
+                    std::to_string(region.material_type) + " but contract expects " +
+                    std::to_string(expectedMaterialType));
+            }
+        }
+        if (region.triangles.empty()) {
+            materialProblems.push_back("region '" + region.name + "' has no triangles");
+        }
+        for (const auto& triangle : region.triangles) {
+            if (triangle[0] >= inventory.vertices.size() ||
+                triangle[1] >= inventory.vertices.size() ||
+                triangle[2] >= inventory.vertices.size()) {
+                materialProblems.push_back("region '" + region.name + "' has an out-of-range triangle");
+                break;
+            }
+            const auto& a = inventory.vertices[triangle[0]];
+            const auto& b = inventory.vertices[triangle[1]];
+            const auto& c = inventory.vertices[triangle[2]];
+            const double twiceArea =
+                (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+            if (!std::isfinite(twiceArea) || twiceArea == 0.0) {
+                materialProblems.push_back("region '" + region.name + "' has a degenerate triangle");
+                break;
+            }
+        }
+    }
+    const bool materialsValid = !materialRegions.empty() && materialProblems.empty();
+    addCheck(
+        "geometry.material_regions",
+        materialsValid,
+        materialsValid
+            ? std::to_string(materialRegions.size()) + " material regions are valid"
+            : (materialProblems.empty() ? "geometry has no material regions" : materialProblems.front()));
+
+    std::set<std::string> contactNames;
+    std::vector<std::string> contactProblems;
+    for (const auto& region : inventory.regions) {
+        if (region.type != SentaurusTdrRegionType::Contact) {
+            continue;
+        }
+        const bool inserted = contactNames.insert(region.name).second;
+        if (!inserted) {
+            contactProblems.push_back("duplicate contact '" + region.name + "'");
+        }
+        if (region.name.empty() || region.edges.empty()) {
+            contactProblems.push_back(
+                "contact region " + std::to_string(region.index) + " has no name or edges");
+            continue;
+        }
+        std::set<std::size_t> nodes;
+        bool indicesValid = true;
+        for (const auto& edge : region.edges) {
+            indicesValid = indicesValid && edge[0] < inventory.vertices.size() &&
+                edge[1] < inventory.vertices.size();
+            nodes.insert(edge[0]);
+            nodes.insert(edge[1]);
+        }
+        if (!indicesValid) {
+            contactProblems.push_back("contact '" + region.name + "' has an out-of-range edge");
+            continue;
+        }
+        bool touchesMaterial = false;
+        for (const auto* materialRegion : materialRegions) {
+            const auto supportedNodes = materialNodes(*materialRegion);
+            if (std::any_of(nodes.begin(), nodes.end(), [&](std::size_t node) {
+                    return supportedNodes.contains(node);
+                })) {
+                touchesMaterial = true;
+                break;
+            }
+        }
+        if (!touchesMaterial) {
+            contactProblems.push_back("contact '" + region.name + "' does not touch a material region");
+        }
+    }
+    std::set<std::string> requiredContacts(
+        contract.requiredContactNames.begin(), contract.requiredContactNames.end());
+    std::vector<std::string> missingContacts;
+    std::set_difference(
+        requiredContacts.begin(), requiredContacts.end(),
+        contactNames.begin(), contactNames.end(),
+        std::back_inserter(missingContacts));
+    std::vector<std::string> extraContacts;
+    if (contract.requireExactContactSet) {
+        std::set_difference(
+            contactNames.begin(), contactNames.end(),
+            requiredContacts.begin(), requiredContacts.end(),
+            std::back_inserter(extraContacts));
+    }
+    const bool contactsValid =
+        contactProblems.empty() && missingContacts.empty() && extraContacts.empty();
+    std::string contactMessage = std::to_string(contactNames.size()) + " contact regions are valid";
+    if (!missingContacts.empty()) {
+        contactMessage = "missing required contact '" + missingContacts.front() + "'";
+    } else if (!extraContacts.empty()) {
+        contactMessage = "unexpected contact '" + extraContacts.front() + "'";
+    } else if (!contactProblems.empty()) {
+        contactMessage = contactProblems.front();
+    }
+    addCheck("geometry.contacts", contactsValid, contactMessage);
+
+    std::vector<std::string> dopingCoverageProblems;
+    std::vector<std::string> dopingUnitProblems;
+    std::size_t semiconductorRegionCount = 0;
+    for (const auto* region : materialRegions) {
+        if (!containsString(contract.semiconductorMaterials, region->material)) {
+            continue;
+        }
+        ++semiconductorRegionCount;
+        bool donorCoverage = false;
+        bool acceptorCoverage = false;
+        for (const auto& field : inventory.fields) {
+            if (field.region_index != region->index ||
+                (!isDonorConcentrationField(field.name) &&
+                 !isAcceptorConcentrationField(field.name))) {
+                continue;
+            }
+            if (!containsString(contract.acceptedDopingUnits, field.unit)) {
+                dopingUnitProblems.push_back(
+                    "field '" + field.name + "' has unaccepted unit '" + field.unit + "'");
+                continue;
+            }
+            if (!fieldCoversRegion(inventory, field, *region) ||
+                !fieldValuesAreFiniteAndNonnegative(field)) {
+                dopingCoverageProblems.push_back(
+                    "field '" + field.name + "' does not completely cover region '" +
+                    region->name + "' with finite nonnegative scalar values");
+                continue;
+            }
+            donorCoverage = donorCoverage || isDonorConcentrationField(field.name);
+            acceptorCoverage = acceptorCoverage || isAcceptorConcentrationField(field.name);
+        }
+        if (contract.requireCompleteSemiconductorDoping &&
+            (!donorCoverage || !acceptorCoverage)) {
+            dopingCoverageProblems.push_back(
+                "semiconductor region '" + region->name +
+                "' lacks complete donor and acceptor coverage");
+        }
+    }
+    if (semiconductorRegionCount == 0) {
+        dopingCoverageProblems.push_back("no configured semiconductor material region is present");
+    }
+    addCheck(
+        "doping.units",
+        dopingUnitProblems.empty(),
+        dopingUnitProblems.empty() ? "all selected doping fields use accepted units"
+                                   : dopingUnitProblems.front());
+    addCheck(
+        "doping.coverage",
+        dopingCoverageProblems.empty(),
+        dopingCoverageProblems.empty()
+            ? std::to_string(semiconductorRegionCount) +
+                " semiconductor regions have complete donor and acceptor coverage"
+            : dopingCoverageProblems.front());
+
+    report.passed = std::all_of(report.checks.begin(), report.checks.end(), [](const auto& check) {
+        return check.passed;
+    });
+    return report;
 }
 
 void SentaurusTdrReader::exportNeutral(const std::string& filename, const std::string& outputDirectory) const
@@ -680,13 +952,14 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
                                        const SentaurusTdrExportOptions& options) const
 {
     const SentaurusTdrInventory inventory = readInventory(filename);
-    const double coordinateToUm = options.coordinateUnit == "um"
-        ? 1.0
-        : (options.coordinateUnit == "cm" ? 1.0e4 : 0.0);
-    if (coordinateToUm == 0.0) {
-        throw std::invalid_argument(
-            "SentaurusTdrReader: coordinateUnit must be 'um' or 'cm'.");
+    if (!options.coordinateUnit.empty() && options.coordinateUnit != "um" &&
+        options.coordinateUnit != "cm") {
+        throw std::invalid_argument("SentaurusTdrReader: coordinateUnit override must be 'um' or 'cm'.");
     }
+    const std::string sourceCoordinateUnit = options.coordinateUnit.empty()
+        ? inventory.coordinate_unit : options.coordinateUnit;
+    const double coordinateScale = coordinateScaleToMicrometers(sourceCoordinateUnit);
+    const double coordinateToUm = coordinateScale;
     const std::filesystem::path outDir(outputDirectory);
     std::filesystem::create_directories(outDir);
     std::filesystem::create_directories(outDir / "fields");
@@ -696,8 +969,8 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
         out << std::setprecision(std::numeric_limits<double>::max_digits10);
         out << "id,x_um,y_um\n";
         for (std::size_t i = 0; i < inventory.vertices.size(); ++i) {
-            out << i << "," << inventory.vertices[i].x * coordinateToUm << ","
-                << inventory.vertices[i].y * coordinateToUm << "\n";
+            out << i << "," << inventory.vertices[i].x * coordinateScale << ","
+                << inventory.vertices[i].y * coordinateScale << "\n";
         }
     }
 
@@ -760,6 +1033,10 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
     std::set<int> aggregateDonorRegions;
     std::set<int> aggregateAcceptorRegions;
     for (const auto& field : inventory.fields) {
+        const auto* region = findRegion(inventory, field.region_index);
+        if (region == nullptr || !isSemiconductorMaterialRegion(*region)) {
+            continue;
+        }
         if (isAggregateDonorConcentrationField(field.name)) {
             aggregateDonorRegions.insert(field.region_index);
         } else if (isAggregateAcceptorConcentrationField(field.name)) {
@@ -770,7 +1047,7 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
         const bool donorField = isDonorConcentrationField(field.name);
         const bool acceptorField = isAcceptorConcentrationField(field.name);
         const auto* region = findRegion(inventory, field.region_index);
-        if (region == nullptr || !isDopableMaterial(region->material)) {
+        if (region == nullptr || !isSemiconductorMaterialRegion(*region)) {
             continue;
         }
         const auto nodes = fieldNodeOrder(inventory, field, *region);
@@ -994,7 +1271,10 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
 
     nlohmann::json metadata;
     metadata["source"] = filename;
-    metadata["source_coordinate_unit"] = options.coordinateUnit;
+    metadata["source_coordinate_unit"] = sourceCoordinateUnit;
+    metadata["export_coordinate_unit"] = "um";
+    metadata["coordinate_scale_to_um"] = coordinateScale;
+    metadata["source_coordinate_unit"] = sourceCoordinateUnit;
     metadata["exported_coordinate_unit"] = "um";
     metadata["coordinate_to_um_scale"] = coordinateToUm;
     metadata["vertex_count"] = inventory.vertices.size();
@@ -1006,6 +1286,7 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
             {"index", region.index},
             {"name", region.name},
             {"material", region.material},
+            {"material_type", region.material_type},
             {"type", static_cast<int>(region.type == SentaurusTdrRegionType::Other ? 99 : region.index >= 0 ? static_cast<int>(region.type) : 99)},
             {"triangles", region.triangles.size()},
             {"edges", region.edges.size()},

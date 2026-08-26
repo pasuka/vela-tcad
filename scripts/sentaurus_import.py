@@ -45,6 +45,7 @@ from sentaurus_mesh_builder import (  # noqa: E402
 UNSUPPORTED_PHYSICS = [
     "Thermodynamic",
     "IALMob",
+    "PhuMob",
     "Trap",
     "Traps",
     "eTemperature",
@@ -283,6 +284,43 @@ def parse_models(body: str) -> list[str]:
     return sorted(dict.fromkeys(token for token in tokens if token not in ignored))
 
 
+def parse_model_paths(body: str) -> list[str]:
+    """Preserve the nested Physics scope of each selected model token.
+
+    A flattened model set cannot distinguish ``Mobility(DopingDependence)``
+    from ``Recombination(SRH(DopingDependence))``.  The distinction is
+    physical: the former selects a low-field mobility law, while the latter
+    selects an SRH lifetime law.  Keep the historical flat ``models`` list for
+    compatibility and add these qualified paths for translation decisions.
+    """
+    without_assignments = remove_spans(body, assignment_spans(body))
+    tokens = re.findall(r"[A-Za-z_][A-Za-z0-9_]*|[()]", without_assignments)
+    ignored = {"Conc", "EnergyMid", "BondConc", "ActEnergy"}
+    stack: list[str] = []
+    paths: list[str] = []
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if token == ")":
+            if stack:
+                stack.pop()
+            index += 1
+            continue
+        if token == "(":
+            index += 1
+            continue
+
+        opens_scope = index + 1 < len(tokens) and tokens[index + 1] == "("
+        if token not in ignored:
+            paths.append(".".join([*stack, token]))
+        if opens_scope:
+            stack.append(token)
+            index += 2
+        else:
+            index += 1
+    return sorted(dict.fromkeys(paths))
+
+
 def parse_physics_blocks(text: str) -> list[dict[str, Any]]:
     result = []
     for qualifier, body, _start, _end in iter_named_blocks(text, "Physics"):
@@ -290,6 +328,7 @@ def parse_physics_blocks(text: str) -> list[dict[str, Any]]:
             "scope": parse_scope(qualifier),
             "parameters": parse_assignments(body),
             "models": parse_models(body),
+            "model_paths": parse_model_paths(body),
         })
     return result
 
@@ -513,6 +552,7 @@ def unsupported_report(tokens: list[str]) -> list[dict[str, str]]:
     reasons = {
         "Thermodynamic": "Vela does not yet solve the full self-heating temperature equation from SDevice.",
         "IALMob": "IALMob surface-orientation mobility is not represented by the current mobility model.",
+        "PhuMob": "Philips unified mobility is not implemented.",
         "Trap": "Interface and bulk trap kinetics are imported as metadata only.",
         "Traps": "Interface and bulk trap kinetics are imported as metadata only.",
         "eTemperature": "Carrier temperature transport is not supported in the Vela runner.",
@@ -553,6 +593,34 @@ def sentaurus_models(cmd_summary: dict[str, Any]) -> set[str]:
     return models
 
 
+def sentaurus_model_paths(cmd_summary: dict[str, Any]) -> set[str]:
+    paths: set[str] = set()
+    for physics in cmd_summary.get("physics", []):
+        if not isinstance(physics, dict):
+            continue
+        paths.update(str(path) for path in physics.get("model_paths", []))
+    return paths
+
+
+def model_selected_in_scope(cmd_summary: dict[str, Any],
+                            scope: str,
+                            names: set[str]) -> bool:
+    """Check a selected model within one Physics container.
+
+    Parsed decks carry exact ``model_paths``.  The conservative flat-list
+    fallback preserves callers that construct legacy summaries directly, but
+    requires the requested top-level container to be present.
+    """
+    paths = sentaurus_model_paths(cmd_summary)
+    if paths:
+        prefixes = tuple(f"{scope}.{name}" for name in names)
+        return any(path == prefix or path.startswith(prefix + ".")
+                   for path in paths for prefix in prefixes)
+
+    models = sentaurus_models(cmd_summary)
+    return scope in models and bool(names & models)
+
+
 # Impact-ionization coefficient models that appear in Sentaurus decks and
 # parameter files but have no Vela implementation.  ``ImpactIonizationModel``
 # provides selberherr and van_overstraeten only, so selecting any of these and
@@ -576,7 +644,8 @@ def apply_solver_physics(deck: dict[str, Any],
     solver = deck.setdefault("solver", {})
     warnings: list[str] = []
 
-    has_doping_dependence = bool({"DopingDep", "DopingDependence"} & models)
+    has_doping_dependence = model_selected_in_scope(
+        cmd_summary, "Mobility", {"DopingDep", "DopingDependence"})
     if has_doping_dependence:
         solver["mobility"] = {"model": "masetti"}
     high_field_models = {
@@ -584,8 +653,10 @@ def apply_solver_physics(deck: dict[str, Any],
         "eHighFieldSaturation", "eHighFieldsaturation",
         "hHighFieldSaturation", "hHighFieldsaturation",
     }
-    has_high_field = bool(high_field_models & models)
-    has_enormal = "Enormal" in models
+    has_high_field = model_selected_in_scope(
+        cmd_summary, "Mobility", high_field_models)
+    has_enormal = model_selected_in_scope(
+        cmd_summary, "Mobility", {"Enormal"})
     if has_doping_dependence and (has_high_field or has_enormal):
         solver["mobility"] = {
             "model": (
@@ -603,11 +674,22 @@ def apply_solver_physics(deck: dict[str, Any],
         recombination.append("auger")
     if recombination:
         solver["recombination"] = recombination
-    if "SRH" in models and "DopingDep" in models:
+    has_srh_doping_dependence = (
+        model_selected_in_scope(
+            cmd_summary, "Recombination.SRH", {"DopingDep", "DopingDependence"})
+        or model_selected_in_scope(
+            cmd_summary, "SRH", {"DopingDep", "DopingDependence"})
+    )
+    if "SRH" in models and has_srh_doping_dependence:
         solver["srh_doping_dependence"] = {
             "enabled": True,
             "concentration_basis": "total_impurity",
-            "temperature_dependence": "TempDependence" in models,
+            "temperature_dependence": (
+                model_selected_in_scope(
+                    cmd_summary, "Recombination.SRH", {"TempDependence"})
+                or model_selected_in_scope(
+                    cmd_summary, "SRH", {"TempDependence"})
+            ),
             "reference_temperature_K": 300.0,
             "electron_temperature_exponent": -1.5,
             "hole_temperature_exponent": -1.5,

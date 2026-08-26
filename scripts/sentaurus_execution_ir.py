@@ -67,6 +67,7 @@ KNOWN_UNSUPPORTED_MODELS: dict[str, str] = {
     "eTemperature": "carrier temperature transport is not implemented",
     "hTemperature": "carrier temperature transport is not implemented",
     "IALMob": "IALMob surface-orientation mobility is not implemented",
+    "PhuMob": "Philips unified mobility is not implemented",
     "hQuantumPotential": "hole density-gradient quantum correction is not implemented",
 }
 
@@ -99,6 +100,16 @@ def classify_models(models: Iterable[str]) -> dict[str, list[dict[str, str]]]:
         "metadata_only": metadata_only,
         "unsupported": unsupported,
     }
+
+
+def _model_paths(cmd_summary: dict[str, Any]) -> list[str]:
+    """Return scope-qualified Physics model paths recorded by the parser."""
+    paths: set[str] = set()
+    for physics in cmd_summary.get("physics", []):
+        if not isinstance(physics, dict):
+            continue
+        paths.update(str(path) for path in physics.get("model_paths", []))
+    return sorted(paths)
 
 
 def _numeric(value: Any) -> float | None:
@@ -314,6 +325,7 @@ def build_execution_ir(cmd_summary: dict[str, Any],
         "physics": {
             "supported": classification["supported"],
             "metadata_only": classification["metadata_only"],
+            "model_paths": _model_paths(cmd_summary),
         },
         "unsupported": classification["unsupported"],
         "math": dict(cmd_summary.get("math", {})),

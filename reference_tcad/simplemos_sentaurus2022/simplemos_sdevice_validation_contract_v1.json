@@ -1,0 +1,155 @@
+{
+  "schema": "vela.simplemos.sdevice.validation_contract.v1",
+  "contract_id": "simplemos-sdevice-sentaurus2022-v1",
+  "description": "SDevice-only validation contract for the official T-2022.03-SP2 SimpleMOS deck. Process-generated TDR files are immutable upstream inputs.",
+  "source": {
+    "sentaurus_release": "T-2022.03-SP2",
+    "build": "0.7745337, x86_64, Linux",
+    "path": "/atctools/Synopsys/tcad/T-2022.03/tcad/T-2022.03-SP2/Applications_Library/GettingStarted/swb/SimpleMOS/sdevice_des.cmd",
+    "sha256": "3fd501cad368aa43c55a780253309428872a4b3349aa03727f8a875d04a4b536",
+    "verified_on": "2026-08-26"
+  },
+  "nominal_tdr": {
+    "workbench_process_node": 17,
+    "parameters": {
+      "Lg_um": 0.25,
+      "NWell_cm3": 1e17,
+      "GOxTime_min": 10.0,
+      "LDD_Dose_cm2": 1e14
+    },
+    "expanded_sprocess_sha256": "93e1266cef19fbd19721d11689658124a56c1600bd9c9c90b34d29ef8f65d883",
+    "tdr_filename": "n17_fps.tdr",
+    "tdr_sha256": "a39f6eb1ed1745fad892b4ee74524dfce6f75a9287baeb4383faebb11856ee00",
+    "tdr_size_bytes": 1799958,
+    "binary_commit_policy": "ignored_build_artifact"
+  },
+  "scope": {
+    "included": [
+      "SDevice TDR input",
+      "electrodes and device boundary conditions",
+      "Poisson and electron-hole drift diffusion",
+      "SDevice mobility, recombination, and effective intrinsic density selections",
+      "equilibrium, drain ramp, and gate sweep",
+      "drain terminal current"
+    ],
+    "excluded": [
+      "Sentaurus Process physics and geometry evolution",
+      "oxidation, implantation, diffusion, activation, deposition, etching, and annealing",
+      "SVisual plotting and electrical parameter extraction",
+      "tox, Vtgm, Id, SS, and gm Workbench variables"
+    ],
+    "upstream_tdr_policy": "immutable_input"
+  },
+  "electrodes": [
+    {"name": "source", "initial_voltage_V": 0.0},
+    {"name": "drain", "initial_voltage_V": 0.0},
+    {"name": "gate", "initial_voltage_V": 0.0},
+    {"name": "substrate", "initial_voltage_V": 0.0}
+  ],
+  "physics": {
+    "carrier_statistics": "maxwell_boltzmann",
+    "effective_intrinsic_density": {
+      "model": "OldSlotboom",
+      "fermi_statistics_correction": false
+    },
+    "silicon_mobility": [
+      "PhuMob",
+      "HighFieldSaturation",
+      "Enormal"
+    ],
+    "silicon_recombination": {
+      "model": "SRH",
+      "lifetime_dependence": "DopingDependence"
+    }
+  },
+  "solve": {
+    "initial": [
+      {"equations": ["Poisson"], "iterations": 100},
+      {"equations": ["Poisson", "Electron", "Hole"]}
+    ],
+    "drain_ramp": {
+      "contact": "drain",
+      "goal_parameter": "Vd",
+      "normalized_step_control": {
+        "InitialStep": 0.1,
+        "Increment": 1.5,
+        "MinStep": 1e-5,
+        "MaxStep": 1.0
+      }
+    },
+    "gate_sweep": {
+      "contact": "gate",
+      "start_voltage_V": 0.0,
+      "stop_voltage_V": 2.5,
+      "do_zero": true,
+      "normalized_step_control": {
+        "InitialStep": 0.01,
+        "Increment": 1.5,
+        "MinStep": 1e-5,
+        "MaxStep": 0.05
+      }
+    },
+    "math": {
+      "Extrapolate": true,
+      "Iterations": 20,
+      "ExitOnFailure": true
+    }
+  },
+  "comparison": {
+    "independent_coordinate": "gate OuterVoltage",
+    "response": "drain TotalCurrent",
+    "current_unit": "A/um",
+    "exact_bias_lattice_required": true,
+    "interpolation_for_acceptance_forbidden": true,
+    "deep_off_amplitude_is_diagnostic_only": true
+  },
+  "frontend_contract": {
+    "required_model_paths": [
+      "Mobility.PhuMob",
+      "Mobility.HighFieldSaturation",
+      "Mobility.Enormal",
+      "Recombination.SRH.DopingDependence",
+      "EffectiveIntrinsicDensity.OldSlotboom"
+    ],
+    "phumob_status": "unsupported_until_exact_implementation",
+    "implicit_phumob_substitution_forbidden": true,
+    "srh_doping_dependence_must_not_enable_mobility_doping_dependence": true
+  },
+  "input_tdr_qualification": {
+    "schema": "vela.sentaurus_tdr.qualification.v1",
+    "required_contacts": [
+      "source",
+      "drain",
+      "gate",
+      "substrate"
+    ],
+    "exact_contact_set": true,
+    "allowed_materials": [
+      "Silicon",
+      "Oxide",
+      "Nitride"
+    ],
+    "semiconductor_materials": [
+      "Silicon"
+    ],
+    "accepted_coordinate_units": [
+      "cm"
+    ],
+    "export_coordinate_unit": "um",
+    "accepted_doping_units": [
+      "cm^-3"
+    ],
+    "require_complete_semiconductor_doping": true
+  },
+  "workflow_rules": {
+    "previous_accepted_state_only": true,
+    "pointwise_reclosure_forbidden": true,
+    "generated_binary_outputs_excluded": true,
+    "acceptance_thresholds_frozen_before_original_deck_B1": true
+  },
+  "pending_evidence": [
+    "T-2022.03-SP2 Silicon parameter dump hash",
+    "exact gate-bias lattices for Vd=0.05 V and Vd=1.0 V",
+    "controlled A0-A3 reference curves"
+  ]
+}

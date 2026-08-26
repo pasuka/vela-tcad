@@ -27,6 +27,116 @@ SENTAURUS_IMPORT_SPEC.loader.exec_module(sentaurus_import)
 
 
 class SentaurusImportToolsTest(unittest.TestCase):
+    def test_simplemos_physics_paths_preserve_model_scope(self) -> None:
+        text = """
+File { Grid="mesh.tdr" Plot="out.tdr" Current="out.plt" Output="out.log" }
+Electrode {
+  { Name="source" Voltage=0.0 }
+  { Name="drain" Voltage=0.0 }
+  { Name="gate" Voltage=0.0 }
+  { Name="substrate" Voltage=0.0 }
+}
+Physics { EffectiveIntrinsicDensity(OldSlotboom) }
+Physics(Material="Silicon") {
+  Mobility(PhuMob HighFieldSaturation Enormal)
+  Recombination(SRH(DopingDependence))
+}
+Solve { Coupled { Poisson Electron Hole } }
+"""
+        with tempfile.TemporaryDirectory(prefix="vela_simplemos_scope_") as tmp:
+            path = Path(tmp) / "simplemos_des.cmd"
+            path.write_text(text, encoding="utf-8")
+            summary = sentaurus_import.parse_cmd(path)
+
+        paths = {
+            model_path
+            for block in summary["physics"]
+            for model_path in block["model_paths"]
+        }
+        self.assertTrue({
+            "Mobility.PhuMob",
+            "Mobility.HighFieldSaturation",
+            "Mobility.Enormal",
+            "Recombination.SRH.DopingDependence",
+            "EffectiveIntrinsicDensity.OldSlotboom",
+        }.issubset(paths))
+
+    def test_simplemos_srh_doping_dependence_does_not_enable_masetti(self) -> None:
+        deck = {"solver": {"type": "newton"}}
+        summary = {
+            "physics": [{
+                "models": [
+                    "Mobility", "PhuMob", "HighFieldSaturation", "Enormal",
+                    "Recombination", "SRH", "DopingDependence",
+                    "EffectiveIntrinsicDensity", "OldSlotboom",
+                ],
+                "model_paths": [
+                    "Mobility",
+                    "Mobility.PhuMob",
+                    "Mobility.HighFieldSaturation",
+                    "Mobility.Enormal",
+                    "Recombination",
+                    "Recombination.SRH",
+                    "Recombination.SRH.DopingDependence",
+                    "EffectiveIntrinsicDensity",
+                    "EffectiveIntrinsicDensity.OldSlotboom",
+                ],
+            }],
+        }
+
+        warnings = sentaurus_import.apply_solver_physics(
+            deck, summary, {"name": "idvg", "kind": "iv"},
+        )
+
+        self.assertNotIn("mobility", deck["solver"])
+        self.assertTrue(deck["solver"]["srh_doping_dependence"]["enabled"])
+        self.assertEqual(deck["solver"]["bandgap_narrowing"], "old_slotboom")
+        self.assertEqual(warnings, [])
+
+    def test_simplemos_phumob_fails_closed_and_is_reported_with_scope(self) -> None:
+        summary = {
+            "unresolved_placeholders": [],
+            "files": {"grid": "mesh.tdr"},
+            "electrodes": [
+                {"name": "source", "voltage": 0.0},
+                {"name": "drain", "voltage": 0.0},
+                {"name": "gate", "voltage": 0.0},
+                {"name": "substrate", "voltage": 0.0},
+            ],
+            "thermodes": [],
+            "physics": [{
+                "models": ["Mobility", "PhuMob"],
+                "model_paths": ["Mobility", "Mobility.PhuMob"],
+            }],
+            "math": {},
+            "solve": {"initial_steps": [], "sweeps": []},
+            "sweeps": [],
+        }
+        models = sentaurus_import.sentaurus_models(summary)
+
+        with self.assertRaises(sentaurus_import.ExecutionIrError) as ctx:
+            sentaurus_import.build_execution_ir(
+                summary, source="simplemos_des.cmd", models=models,
+            )
+        self.assertIn("PhuMob", str(ctx.exception))
+        self.assertIn("Philips unified mobility", str(ctx.exception))
+
+        execution_ir = sentaurus_import.build_execution_ir(
+            summary,
+            source="simplemos_des.cmd",
+            models=models,
+            allow_unsupported=True,
+        )
+        self.assertEqual(
+            execution_ir["physics"]["model_paths"],
+            ["Mobility", "Mobility.PhuMob"],
+        )
+        phumob = next(
+            item for item in execution_ir["unsupported"]
+            if item["model"] == "PhuMob"
+        )
+        self.assertIn("Philips unified mobility", phumob["reason"])
+
     def test_solver_physics_ignores_bare_mobility_model(self) -> None:
         deck = {"solver": {"type": "gummel"}}
         warnings = sentaurus_import.apply_solver_physics(
@@ -76,6 +186,7 @@ class SentaurusImportToolsTest(unittest.TestCase):
         )
 
         dependence = deck["solver"]["srh_doping_dependence"]
+        self.assertNotIn("mobility", deck["solver"])
         self.assertEqual(dependence["electron"]["reference_doping_m3"], 1.0e16)
         self.assertEqual(dependence["hole"]["reference_doping_m3"], 1.0e16)
         self.assertEqual(warnings, [])
