@@ -84,3 +84,55 @@ The M2 gate passes only when the TDR has the exact four contacts, valid
 Silicon/Oxide/Nitride material regions, explicit qualified coordinate and
 doping units, and complete donor/acceptor coverage on every Silicon region.
 The TDR binary and generated neutral exports remain ignored build artifacts.
+
+## M3 completion evidence
+
+`scripts/run_simplemos_m3_workflow.py` materializes two independent SDevice
+branches at `Vd=0.05 V` and `Vd=1.0 V`. Each branch is the strict sequence
+equilibrium -> drain ramp -> gate sweep. The equilibrium stage uses Vela's
+Poisson-block initialization, followed by a coupled DD equilibrium point.
+
+The workflow converts Sentaurus normalized sweep-time controls to Vela
+physical-voltage controls by multiplying `InitialStep`, `MinStep`, and
+`MaxStep` by the stage voltage span. It does not manufacture an exact gate
+bias lattice; that remains an M4 deliverable.
+
+Execution is fail-closed. A stage is accepted only when the runner succeeds,
+all output rows are converged, the terminal voltage is reached, and a final
+state file exists. The accepted state's SHA-256 must still match immediately
+before its sole successor starts. This gate validates orchestration and state
+continuity, not original-deck PhuMob physics or current parity.
+
+## M4 controlled-comparison evidence
+
+M4 defines the cumulative A0--A3 ladder `constant`, `masetti`,
+`masetti_field`, and `masetti_field_lombardi`. The corresponding Sentaurus
+decks use no explicit mobility selection, then add `DopingDependence`,
+`HighFieldSaturation`, and `Enormal` one at a time. Carrier statistics,
+OldSlotboom, SRH doping dependence, temperature, electrodes, TDR hash, and
+solve sequence remain fixed.
+
+The acceptance coordinate is exactly 51 direct gate points from 0 V through
+2.5 V in 0.05 V increments at both drain voltages. The comparator rejects
+missing, duplicate, non-finite, non-converged, or interpolated points before
+evaluating its predeclared log-ratio, relative-error, endpoint, and trend
+metrics.
+
+The Vela continuation protocol keeps SRH density coupling, quasi-Fermi
+reference, and continuity-row scaling invariant throughout each restarted
+state chain. The default 1 mV auxiliary drain path, plus the bounded 5 mV
+A3/1.0 V recovery described below, is allowed solely to reach the drain
+operating points and is explicitly excluded from acceptance. The comparison
+lattice and numeric thresholds were not changed after observing results.
+
+The final qualification produced eight qualified Sentaurus reference curves
+and eight Vela candidate curves, with 51 direct points per curve. All eight
+comparisons pass. The matrix-wide worst absolute log10 ratio is 0.0455 dex,
+the worst relative error is 11.1%, the largest absolute endpoint log10 ratio
+is 0.0246 dex, and every curve has a matching nondecreasing trend.
+
+The first A3/1.0 V pilot process exited with code `0xFFFFFFFF` after 302
+accepted 1 mV auxiliary drain points and no Newton failure. Its bounded
+recovery used 201 points at 5 mV, reached 1.0 V, and then converged all 51 gate
+points. This recovery changes neither an acceptance point nor a comparison
+threshold. M4 is complete; PhuMob remains excluded and fail-closed for M5.

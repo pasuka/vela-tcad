@@ -895,6 +895,20 @@ set_tests_properties(simplemos_m2_tdr_gate PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m2_tdr_gate)
 
+add_test(NAME simplemos_m3_workflow
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m3_workflow)
+set_tests_properties(simplemos_m3_workflow PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m3_workflow)
+
+add_test(NAME simplemos_m4_controlled_matrix
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m4_controlled_matrix)
+set_tests_properties(simplemos_m4_controlled_matrix PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m4_controlled_matrix)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)

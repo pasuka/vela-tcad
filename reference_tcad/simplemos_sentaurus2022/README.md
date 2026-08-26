@@ -44,6 +44,18 @@ python scripts/run_simplemos_m2_tdr_gate.py --tdr <n17_fps.tdr> --output-dir <ig
 The command verifies the frozen SHA-256 before invoking `sentaurus_import`, so
 a different binary cannot pass merely because it has a compatible topology.
 
+Materialize the M3 SDevice workflow with:
+
+```text
+python scripts/run_simplemos_m3_workflow.py --base-config <qualified-vela-device-deck.json> --output-dir <ignored-output-dir> --clean
+```
+
+The default branches use `Vd=0.05 V` and `Vd=1.0 V`. Each branch owns an
+independent equilibrium, drain-ramp, and gate-sweep state chain. Add
+`--execute --runner <vela_example_runner>` to run a physics-ready base deck.
+Workflow acceptance proves restart continuity only; it does not waive the
+fail-closed PhuMob gate or claim current parity with the original deck.
+
 ## Current status
 
 M0 freezes provenance and scope. M1 adds scope-aware SDevice model parsing and
@@ -57,5 +69,58 @@ qualifies the nominal node-17 process TDR as an immutable SDevice input:
 - zero exported doping on nodes that belong only to Oxide or Nitride.
 
 The binary TDR remains in an ignored build directory. The neutral M2 evidence
-is recorded in `simplemos_nominal_tdr_m2_evidence.json`. No claim of SimpleMOS
-current parity is made at M2.
+is recorded in `simplemos_nominal_tdr_m2_evidence.json`.
+
+M3 adds a machine-checkable restarted workflow for both target drain voltages.
+Sentaurus sweep-time controls are scaled by the physical voltage span: the
+0.05 V drain branch starts at 0.005 V, the 1.0 V branch at 0.1 V, and both gate
+sweeps start at 0.025 V with a 0.125 V maximum step. A successor is launched
+only after the predecessor reaches its terminal bias with every emitted point
+converged and its final state hash recorded. No claim of SimpleMOS current
+parity is made at M3.
+
+The neutral M3 implementation and regression hashes are recorded in
+`simplemos_m3_workflow_evidence.json`; generated manifests and restart states
+remain ignored build artifacts.
+
+M4 freezes a controlled mobility ladder that deliberately excludes PhuMob:
+
+| Variant | Sentaurus mobility | Vela mobility |
+| --- | --- | --- |
+| A0 | default constant mobility | `constant` |
+| A1 | `DopingDependence` | `masetti` |
+| A2 | A1 + `HighFieldSaturation` | `masetti_field` |
+| A3 | A2 + `Enormal` | `masetti_field_lombardi` |
+
+All eight reference curves use `Vd=0.05 V` or `1.0 V` and the exact direct
+gate lattice `0:0.05:2.5 V` (51 points). Interpolation is forbidden. The Vela
+workflow uses extra drain-ramp points only for continuation; these points have
+no comparison or acceptance role. Solver settings that affect the state-chain
+equations remain invariant across equilibrium, drain, and gate stages.
+
+Prepare or execute the matrix with:
+
+```text
+python scripts/run_simplemos_m4_controlled_matrix.py --execute-vela
+```
+
+Run the fail-closed exact-grid comparison with:
+
+```text
+python scripts/compare_simplemos_m4_controlled_matrix.py --output-dir <ignored-report-dir>
+```
+
+The checked-in `controlled_mobility` directory contains only the qualified
+neutral 51-point reference CSVs and their manifest. Proprietary raw files and
+Vela run outputs remain below ignored build directories.
+
+Final M4 qualification passes all eight curves and all 408 direct points.
+Across the matrix, the worst absolute log10 current ratio is 0.0455 dex, the
+worst relative error is 11.1%, and all eight current-magnitude trends match.
+These results pass the frozen 0.3 dex, 100% relative-error, and trend gates.
+The complete per-case metrics and the bounded A3/1.0 V recovery record are in
+`simplemos_m4_controlled_mobility_evidence.json`.
+
+The device mesh, net-doping, Id-Vg, and direct nodal-field figures are
+documented in `../../docs/validation/simplemos_m4_visual_report.md`. Their
+reproducible comparison inputs are under `controlled_mobility/comparisons`.

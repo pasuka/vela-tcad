@@ -147,6 +147,27 @@
     "generated_binary_outputs_excluded": true,
     "acceptance_thresholds_frozen_before_original_deck_B1": true
   },
+  "m3_workflow": {
+    "schema": "vela.simplemos.sdevice.m3_workflow.v1",
+    "drain_voltages_V": [
+      0.05,
+      1.0
+    ],
+    "branch_stages": [
+      "equilibrium",
+      "drain_ramp",
+      "gate_sweep"
+    ],
+    "stage_acceptance": {
+      "runner_exit_code_zero": true,
+      "all_output_points_converged": true,
+      "terminal_bias_reached": true,
+      "final_state_file_required": true,
+      "final_state_sha256_required": true
+    },
+    "successor_start_gate": "immediate_predecessor_accepted_state_with_matching_sha256",
+    "physics_parity_claimed": false
+  },
   "pending_evidence": [
     "T-2022.03-SP2 Silicon parameter dump hash",
     "exact gate-bias lattices for Vd=0.05 V and Vd=1.0 V",
