@@ -38,6 +38,7 @@ from prepare_templates_ldmos_state_decks import (  # noqa: E402
 from audit_templates_ldmos_oracle import curve_metrics, strong_log_errors  # noqa: E402
 from run_templates_ldmos_cost_probe import mesh_pattern, prepare_deck  # noqa: E402
 from convert_tcad_export import parse_edge_node_ids  # noqa: E402
+from classify_templates_ldmos_states import select_bv, terminal_values  # noqa: E402
 from templates_ldmos_contracts import (  # noqa: E402
     SCHEMA_FILES,
     draft_governance_contracts,
@@ -180,9 +181,18 @@ class TemplatesLdmosStructureAuditTest(unittest.TestCase):
         self.assertIn("state_idvd_vg4", idvd)
         self.assertIn("state_idvd_vg8", idvd)
         self.assertEqual(vd_states["drain_biases_V"][-1], 40.0)
-        bv, states = build_bv("\t){ Coupled { Poisson Electron Hole Temperature } }\n")
+        targets = [
+            {"role": "pre_iadapt", "time": 1.0, "voltage_V": 49.0,
+             "current_A_per_um": 5e-13},
+            {"role": "criterion_post", "time": 2.0, "voltage_V": 50.0,
+             "current_A_per_um": 1.1e-8},
+        ]
+        bv, states = build_bv(
+            "\t){ Coupled { Poisson Electron Hole Temperature } }\n", targets,
+        )
         self.assertIn("state_bv_path", bv)
-        self.assertEqual(states["path_samples"], 31)
+        self.assertEqual(states["requested_times"], [1.0, 2.0])
+        self.assertEqual(states["expected_state_count"], 2)
 
     def test_oracle_curve_and_log_audit_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory(prefix="templates_ldmos_audit_") as directory:
@@ -263,6 +273,27 @@ class TemplatesLdmosStructureAuditTest(unittest.TestCase):
         self.assertEqual(parse_edge_node_ids("1-2|2-3"), [[1, 2], [2, 3]])
         with self.assertRaisesRegex(ValueError, "invalid contact edge pair"):
             parse_edge_node_ids("1-2-3")
+
+    def test_representative_state_classifier_uses_exact_saved_bv_states(self) -> None:
+        document = {
+            "geometry": {"regions": [{"index": 6, "name": "drain"}]},
+            "fields": [
+                {"name": "ContactExternalVoltage", "region": 6, "raw_values": [12.0]},
+                {"name": "ContactCurrentFlux", "region": 6, "raw_values": [1e-10]},
+            ],
+        }
+        self.assertEqual(terminal_values(document)["drain"]["voltage_V"], 12.0)
+        records = [
+            {"name": f"state_{index}.tdr", "terminals": {"drain": {
+                "voltage_V": float(index), "current_A_per_um": current,
+            }}}
+            for index, current in enumerate((1e-14, 5e-13, 7e-13, 1e-10, 9e-9, 1.1e-8))
+        ]
+        selected = select_bv(records, 6.5e-13, 1e-8)
+        self.assertEqual(selected["pre_iadapt"]["state"], "state_1.tdr")
+        self.assertEqual(selected["near_iadapt"]["state"], "state_2.tdr")
+        self.assertEqual(selected["criterion_pre"]["state"], "state_4.tdr")
+        self.assertEqual(selected["criterion_post"]["state"], "state_5.tdr")
 
 
 if __name__ == "__main__":

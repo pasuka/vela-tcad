@@ -49,6 +49,10 @@ def main() -> int:
     repeat = read(repeat_path)
     budget = read(budget_path)
     cost = read(cost_path)
+    # Keep the run-level governance location canonical even when the long VM
+    # runner completed with an older in-memory WP0 schema implementation.
+    # The stage-1 copy remains evidence and is hashed below.
+    write_json(run_dir / "manifest" / "budget_freeze.json", budget, validate=True)
     oracle_pass = all(oracle["gates"].values())
     structure_pass = all(structure["gates"].values()) and repeat["identical"]
     probe_pass = all(item["return_code"] == 0 for item in cost["runs"].values())

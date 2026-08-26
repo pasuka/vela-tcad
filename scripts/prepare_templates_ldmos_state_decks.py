@@ -95,11 +95,50 @@ def build_idvd(text: str) -> tuple[str, dict[str, Any]]:
     return text, {"gate_biases_V": [4.0, 8.0], "drain_biases_V": biases, "normalized_times": times}
 
 
-def build_bv(text: str) -> tuple[str, dict[str, Any]]:
+def bv_target_states(table: Path, iadapt: float = 6.5e-13,
+                     criterion: float = 1.0e-8) -> list[dict[str, float | str]]:
+    with table.open(newline="", encoding="utf-8") as handle:
+        rows = [
+            {
+                "time": float(row["time"]),
+                "voltage_V": float(row["drain InnerVoltage"]),
+                "current_A_per_um": abs(float(row["drain TotalCurrent"])),
+            }
+            for row in csv.DictReader(handle)
+        ]
+    finite = [row for row in rows if all(math.isfinite(float(value)) for value in row.values())]
+    if len(finite) < 5:
+        raise ValueError(f"not enough finite BV points in {table}")
+
+    def log_closest(target: float) -> dict[str, float]:
+        return min(
+            finite,
+            key=lambda row: abs(math.log10(max(row["current_A_per_um"], 1e-300))
+                                - math.log10(target)),
+        )
+
+    below_iadapt = [row for row in finite if row["current_A_per_um"] < iadapt]
+    below_criterion = [row for row in finite if row["current_A_per_um"] < criterion]
+    above_criterion = [row for row in finite if row["current_A_per_um"] >= criterion]
+    if not below_iadapt or not below_criterion or not above_criterion:
+        raise ValueError(f"BV table does not bracket Iadapt and criterion: {table}")
+    selected = (
+        ("pre_iadapt", max(below_iadapt, key=lambda row: row["current_A_per_um"])),
+        ("near_iadapt", log_closest(iadapt)),
+        ("avalanche_growth", log_closest(math.sqrt(iadapt * criterion))),
+        ("criterion_pre", max(below_criterion, key=lambda row: row["current_A_per_um"])),
+        ("criterion_post", min(above_criterion, key=lambda row: row["current_A_per_um"])),
+    )
+    return [{"role": role, **row} for role, row in selected]
+
+
+def build_bv(text: str, targets: list[dict[str, float | str]]) -> tuple[str, dict[str, Any]]:
     marker = '\t){ Coupled { Poisson Electron Hole Temperature } }\n'
+    times = sorted({float(item["time"]) for item in targets})
+    time_text = "; ".join(f"{value:.17g}" for value in times)
     addition = (
         '\t\tPlot(-Loadable FilePrefix="state_bv_path" NoOverWrite '
-        'Time=(Range=(0 1) Intervals=30))\n'
+        f'Time=({time_text}))\n'
     )
     if text.count(marker) != 1:
         raise ValueError(f"BV continuation: expected one insertion marker, found {text.count(marker)}")
@@ -109,7 +148,9 @@ def build_bv(text: str) -> tuple[str, dict[str, Any]]:
         '\t}\n'
     )
     return text.replace(marker, replacement, 1), {
-        "path_samples": 31,
+        "requested_times": times,
+        "target_states": targets,
+        "expected_state_count": len(times),
         "selection_policy": "select exact saved continuation states after matching state terminal current/voltage to the original PLT",
     }
 
@@ -118,6 +159,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle-dir", type=Path, required=True)
     parser.add_argument("--idvg-curve", type=Path, required=True)
+    parser.add_argument("--bv-table", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     return parser.parse_args()
 
@@ -128,15 +170,17 @@ def main() -> int:
         raise FileExistsError(f"refusing to overwrite derivative decks: {args.output_dir}")
     args.output_dir.mkdir(parents=True)
     threshold_v = threshold_neighborhood(args.idvg_curve)
+    bv_targets = bv_target_states(args.bv_table)
     builders = {
         "IdVg.cmd": lambda value: build_idvg(value, threshold_v),
         "IdVd.cmd": build_idvd,
-        "BVdss.cmd": build_bv,
+        "BVdss.cmd": lambda value: build_bv(value, bv_targets),
     }
     manifest: dict[str, Any] = {
         "schema": "vela.templates_ldmos.state_deck_materialization.v1",
         "classification": "derived_output_only_control_not_official_oracle",
         "idvg_curve": {"path": str(args.idvg_curve), "sha256": sha256(args.idvg_curve)},
+        "bv_table": {"path": str(args.bv_table), "sha256": sha256(args.bv_table)},
         "files": [],
     }
     for name, builder in builders.items():

@@ -28,6 +28,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--state-decks", type=Path, required=True)
+    parser.add_argument("--stages", default="idvg,idvd,bv")
+    parser.add_argument("--output-name", default="representative_states")
     parser.add_argument("--ssh-target", default="sentaurus")
     parser.add_argument("--ssh-bin", default=executable("ssh"))
     parser.add_argument("--scp-bin", default=executable("scp"))
@@ -38,7 +40,14 @@ def main() -> int:
     args = parse_args()
     run_dir = args.run_dir.resolve()
     state_decks = args.state_decks.resolve()
-    output = run_dir / "representative_states"
+    requested = [item.strip().lower() for item in args.stages.split(",") if item.strip()]
+    invalid = [item for item in requested if item not in {stage for stage, _ in STAGES}]
+    if invalid or not requested:
+        raise ValueError(f"invalid state-capture stages: {invalid or requested}")
+    stages = [item for item in STAGES if item[0] in requested]
+    if not args.output_name or Path(args.output_name).name != args.output_name:
+        raise ValueError("--output-name must be one directory name")
+    output = run_dir / args.output_name
     sealed_outputs = (
         output / "state_capture_manifest.json",
         output / "state_capture_results.tgz",
@@ -48,7 +57,7 @@ def main() -> int:
         raise FileExistsError(f"refusing to overwrite sealed representative states: {output}")
     run_manifest = json.loads((run_dir / "manifest" / "run_manifest.json").read_text(encoding="utf-8"))
     remote_parent = run_manifest["metadata"]["remote_dir"]
-    remote = f"{remote_parent}/state_capture"
+    remote = f"{remote_parent}/{args.output_name}"
     quoted_remote = shlex.quote(remote)
     quoted_parent = shlex.quote(remote_parent)
     create = (
@@ -56,10 +65,10 @@ def main() -> int:
         f"mkdir -p {quoted_remote}; cp {quoted_parent}/work/n1_fps.tdr {quoted_remote}/"
     )
     run([args.ssh_bin, args.ssh_target, create])
-    upload = [state_decks / name for _, name in STAGES] + [state_decks / "sdevice.par"]
+    upload = [state_decks / name for _, name in stages] + [state_decks / "sdevice.par"]
     run([args.scp_bin, *(str(path) for path in upload), f"{args.ssh_target}:{remote}/"])
     results: list[dict[str, Any]] = []
-    for stage, deck in STAGES:
+    for stage, deck in stages:
         command = (
             f"cd {quoted_remote}; /usr/bin/time -v -o timing_{stage}.txt "
             f"sdevice {shlex.quote(deck)} > run_{stage}.out 2>&1; "

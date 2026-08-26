@@ -23,10 +23,10 @@ from run_templates_ldmos_sentaurus_vm import (
 
 
 # Sentaurus convergence logs routinely emit the success phrase
-# ``Error smaller than 1 (...)``.  Only diagnostic headers with an explicit
-# colon are treated as strong errors here; process exit codes remain a
-# separate fail-closed gate.
-STRONG_ERROR = re.compile(r"^\s*(?:error|fatal)\s*:", re.IGNORECASE)
+# ``Error smaller than 1 (...)``; exclude only that known benign form while
+# retaining other Error/Fatal headers. Process exit codes are a separate gate.
+STRONG_ERROR = re.compile(r"^\s*(?:error|fatal)(?:\s|:)", re.IGNORECASE)
+BENIGN_CONVERGENCE = re.compile(r"^\s*error\s+smaller\s+than\s+1\b", re.IGNORECASE)
 
 
 def curve_metrics(path: Path) -> dict[str, Any]:
@@ -57,7 +57,7 @@ def curve_metrics(path: Path) -> dict[str, Any]:
 def strong_log_errors(path: Path) -> list[dict[str, Any]]:
     result = []
     for number, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
-        if STRONG_ERROR.search(line):
+        if STRONG_ERROR.search(line) and not BENIGN_CONVERGENCE.search(line):
             result.append({"line": number, "text": line.strip()[:500]})
     return result
 
@@ -128,13 +128,25 @@ def audit(run_dir: Path) -> dict[str, Any]:
     exit_codes = {}
     for path in sorted(raw.glob("*.exitcode")):
         exit_codes[path.stem] = int(path.read_text(encoding="utf-8").strip())
-    state_paths = list(raw.glob("*.tdr")) + list(
-        (run_dir / "representative_states" / "raw").glob("*.tdr")
+    final_state_root = run_dir / "representative_states_final"
+    state_root = final_state_root if final_state_root.is_dir() else run_dir / "representative_states"
+    state_paths = list(raw.glob("*.tdr")) + list((state_root / "raw").glob("*.tdr"))
+    capture_manifests = []
+    for state_capture_manifest_path in (
+        run_dir / "representative_states" / "state_capture_manifest.json",
+        run_dir / "representative_states_bv_v2" / "state_capture_manifest.json",
+    ):
+        if state_capture_manifest_path.is_file():
+            capture_manifests.append(json.loads(state_capture_manifest_path.read_text(encoding="utf-8")))
+    consolidation_manifest_path = state_root / "consolidation_manifest.json"
+    consolidation_manifest = (
+        json.loads(consolidation_manifest_path.read_text(encoding="utf-8"))
+        if consolidation_manifest_path.is_file() else None
     )
-    state_capture_manifest_path = run_dir / "representative_states" / "state_capture_manifest.json"
-    state_capture_manifest = (
-        json.loads(state_capture_manifest_path.read_text(encoding="utf-8"))
-        if state_capture_manifest_path.is_file() else None
+    state_inventory_path = state_root / "state_inventory.json"
+    state_inventory = (
+        json.loads(state_inventory_path.read_text(encoding="utf-8"))
+        if state_inventory_path.is_file() else None
     )
     states = [
         {
@@ -186,9 +198,14 @@ def audit(run_dir: Path) -> dict[str, Any]:
         "final_sprocess_tdr_present": any(item["name"] == "n1_fps.tdr" for item in states),
         "representative_state_set_complete": any(
             item["classification"] == "derived_representative_state" for item in states
-        ) and representative_counts_complete and state_capture_manifest is not None and all(
-            item["status"] == "pass" for item in state_capture_manifest["stage_results"]
-        ),
+        ) and representative_counts_complete and bool(capture_manifests) and all(
+            item["status"] == "pass"
+            for manifest in capture_manifests for item in manifest["stage_results"]
+        ) and (state_root == run_dir / "representative_states" or consolidation_manifest is not None)
+        and state_inventory is not None and set(
+            state_inventory["bv_selection"]["representatives"]
+        ) == {"pre_iadapt", "near_iadapt", "avalanche_growth", "criterion_pre", "criterion_post"}
+        and all(state_inventory["exact_bias_contract"]["gates"].values()),
     }
     return {
         "schema": "vela.templates_ldmos.oracle_audit.v1",
@@ -201,6 +218,10 @@ def audit(run_dir: Path) -> dict[str, Any]:
         "logs": logs,
         "tdr_states": states,
         "representative_state_prefix_counts": state_name_counts,
+        "representative_state_inventory": state_inventory,
+        "representative_state_source": state_root.relative_to(run_dir).as_posix(),
+        "state_capture_manifests": capture_manifests,
+        "consolidation_manifest": consolidation_manifest,
         "gates": gates,
         "limitations": [
             "Original and output-only derivative state-capture decks are classified separately.",

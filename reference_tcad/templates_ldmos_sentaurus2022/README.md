@@ -47,15 +47,37 @@ python scripts/audit_templates_ldmos_oracle.py `
 # Output-only derivative state decks; these are never the official oracle
 python scripts/prepare_templates_ldmos_state_decks.py `
   --bundle-dir reference_staging/templates_ldmos_sentaurus2022/<unique-id>/bundle `
-  --idvg-curve <normalized-idvg-drain-curve.csv> --output-dir <derived-dir>
+  --idvg-curve <normalized-idvg-drain-curve.csv> `
+  --bv-table <normalized-bv-full-table.csv> --output-dir <derived-dir>
 python scripts/run_templates_ldmos_state_capture.py `
   --run-dir reference_staging/templates_ldmos_sentaurus2022/<unique-id> `
   --state-decks <derived-dir>
 
+# A corrected or partial BV-only capture can be kept separate, then merged
+# without overwriting either sealed source capture.
+python scripts/run_templates_ldmos_state_capture.py `
+  --run-dir reference_staging/templates_ldmos_sentaurus2022/<unique-id> `
+  --state-decks <derived-dir> --stages bv --output-name representative_states_bv_v2
+python scripts/consolidate_templates_ldmos_states.py `
+  --base-states <representative-states> --bv-states <corrected-bv-states> `
+  --state-decks <derived-dir> --output <representative-states-final>
+python scripts/classify_templates_ldmos_states.py `
+  --states-dir <representative-states-final>/raw `
+  --importer build-release/sentaurus_import.exe `
+  --output <representative-states-final>/state_inventory.json
+
 # Stage 1: reported and dominant-signed doping imports, deterministic repeat,
 # exact topology conversion, and structural audit
 python scripts/analyze_templates_ldmos_structure.py --tdr <n1_fps.tdr> `
+  --source-coordinate-unit cm `
   --output-dir reference_staging/templates_ldmos_sentaurus2022/<unique-id>/stage1
+
+# Structural timing lower bound and unsigned review budget
+python scripts/run_templates_ldmos_cost_probe.py `
+  --stage1-dir reference_staging/templates_ldmos_sentaurus2022/<unique-id>/stage1 `
+  --vela-runner build-release/vela_example_runner.exe `
+  --vela-commit <commit> `
+  --oracle-manifest reference_staging/templates_ldmos_sentaurus2022/<unique-id>/manifest/run_manifest.json
 
 # After the cost probe and state capture, assemble the review summary
 python scripts/finalize_templates_ldmos_phase01.py `
