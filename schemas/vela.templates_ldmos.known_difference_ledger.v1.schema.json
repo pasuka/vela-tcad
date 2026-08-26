@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vela.local/schemas/vela.templates_ldmos.known_difference_ledger.v1.schema.json",
+  "title": "Templates/LDMOS known-difference ledger v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "benchmark", "entries"],
+  "properties": {
+    "schema": {"const": "vela.templates_ldmos.known_difference_ledger.v1"},
+    "benchmark": {"const": "sentaurus_t2022_03_sp2_templates_ldmos"},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "classification", "status", "scope", "observation", "evidence", "approval"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "classification": {"enum": ["external_prior", "candidate_baseline_difference", "accepted_baseline_difference", "rejected"]},
+          "status": {"enum": ["open", "accepted", "rejected", "expired"]},
+          "scope": {"type": "string", "minLength": 1},
+          "observation": {"type": "string", "minLength": 1},
+          "excluded_causes": {"type": "array", "items": {"type": "string"}},
+          "open_causes": {"type": "array", "items": {"type": "string"}},
+          "evidence": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence"}},
+          "expires_when": {"type": "string"},
+          "approval": {"$ref": "#/$defs/approval"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "benchmark_owner", "independent_reviewer"],
+      "properties": {
+        "status": {"enum": ["draft", "approved", "rejected", "expired"]},
+        "benchmark_owner": {"type": ["string", "null"]},
+        "independent_reviewer": {"type": ["string", "null"]},
+        "approved_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    }
+  }
+}

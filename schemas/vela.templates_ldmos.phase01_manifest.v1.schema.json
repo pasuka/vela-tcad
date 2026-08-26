@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vela.local/schemas/vela.templates_ldmos.phase01_manifest.v1.schema.json",
+  "title": "Templates/LDMOS phase 0/1 manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "manifest_type", "benchmark", "run_id", "generated_at", "records"],
+  "properties": {
+    "schema": {"const": "vela.templates_ldmos.phase01_manifest.v1"},
+    "manifest_type": {"enum": ["source", "run", "artifact"]},
+    "benchmark": {"const": "sentaurus_t2022_03_sp2_templates_ldmos"},
+    "run_id": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "metadata": {"type": "object", "additionalProperties": true},
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["path", "size_bytes", "sha256"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    }
+  }
+}

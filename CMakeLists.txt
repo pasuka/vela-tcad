@@ -687,6 +687,13 @@ set_tests_properties(sentaurus_vm_reference_runner PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_vm_reference_runner)
 
+add_test(NAME templates_ldmos_phase01_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_phase01)
+set_tests_properties(templates_ldmos_phase01_regression PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(templates_ldmos_phase01_regression)
+
 add_test(NAME sentaurus_sde_frontend
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_sentaurus_sde_frontend)
