@@ -3214,6 +3214,11 @@ TEST_CASE("DCSweep: terminal balance diagnostics reuse one solution for two cont
     REQUIRE(std::isfinite(csvReal(
         srhRow, csvColumnIndex(srhHeader, "srh_net_current_A_per_um"))));
     REQUIRE(std::isfinite(csvReal(
+        srhRow, csvColumnIndex(srhHeader, "auger_net_current_A_per_um"))));
+    REQUIRE(std::isfinite(csvReal(
+        srhRow,
+        csvColumnIndex(srhHeader, "total_recombination_net_current_A_per_um"))));
+    REQUIRE(std::isfinite(csvReal(
         srhRow, csvColumnIndex(srhHeader, "four_terminal_kcl_residual_A_per_um"))));
     REQUIRE(csvReal(srhRow, csvColumnIndex(srhHeader, "resolution_margin_ratio")) ==
             Catch::Approx(10.0));
@@ -4539,6 +4544,22 @@ TEST_CASE("DCSweep predictor: extrapolates selected coupled variables",
         REQUIRE(predicted.n.isApprox(current.n));
         REQUIRE(predicted.p.isApprox(current.p));
     }
+
+    SECTION("secant without a previous state leaves the warm start unchanged")
+    {
+        SweepPredictorConfig config;
+        config.mode = "secant";
+        config.fields = {"psi", "phin", "phip"};
+
+        const DDSolution predicted = detail::predictDCSweepInitialState(
+            config, nullptr, current, 0.0, 0.2, 0.21);
+
+        REQUIRE(predicted.psi.isApprox(current.psi));
+        REQUIRE(predicted.phin.isApprox(current.phin));
+        REQUIRE(predicted.phip.isApprox(current.phip));
+        REQUIRE(predicted.n.isApprox(current.n));
+        REQUIRE(predicted.p.isApprox(current.p));
+    }
 }
 
 TEST_CASE("DCSweep: continuation predictor writes branch diagnostics",
@@ -4584,7 +4605,9 @@ TEST_CASE("DCSweep: continuation predictor writes branch diagnostics",
 
     REQUIRE(rows.at(1).at(predictorModeCol) == "linear");
     REQUIRE(rows.at(1).at(predictedStateCol) == "0");
-    REQUIRE(rows.at(2).at(predictedStateCol) == "1");
+    // The first nonzero point has only one accepted state, so it is an
+    // ordinary warm start rather than a falsely-labelled constant predictor.
+    REQUIRE(rows.at(2).at(predictedStateCol) == "0");
     REQUIRE(rows.at(3).at(predictedStateCol) == "1");
     REQUIRE(rows.at(3).at(branchStatusCol) == "accepted");
     REQUIRE(rows.at(3).at(branchReasonCol).empty());

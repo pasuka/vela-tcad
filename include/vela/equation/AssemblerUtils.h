@@ -810,6 +810,14 @@ inline Real estimateSurfaceDistance(const DeviceMesh& mesh,
     return std::abs((cx - mx) * normalX + (cy - my) * normalY);
 }
 
+template <typename ValueAt>
+inline Point2 cellScalarGradient(
+    const DeviceMesh& mesh,
+    const Cell&       cell,
+    ValueAt&&         valueAt,
+    bool&             valid,
+    Real&             area);
+
 inline std::pair<Real, Real> nearestSurfaceFieldAndDistanceForCell(
     const DeviceMesh& mesh,
     const std::vector<std::vector<Index>>& edgeCells,
@@ -974,28 +982,17 @@ inline void updateSurfaceMobilityCellGeometry(
         if (!std::isfinite(config.surface.cellNormalX[cellId]) ||
             !std::isfinite(config.surface.cellNormalY[cellId]))
             continue;
-        const Cell& cell = mesh.getCell(cellId);
-        if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+        bool validGradient = false;
+        Real doubleArea = 0.0;
+        const Point2 gradient = cellScalarGradient(
+            mesh, mesh.getCell(cellId), [&](Index node) {
+                return psi(static_cast<int>(node));
+            }, validGradient, doubleArea);
+        if (!validGradient)
             continue;
-        const Node& p0 = mesh.getNode(cell.node_ids[0]);
-        const Node& p1 = mesh.getNode(cell.node_ids[1]);
-        const Node& p2 = mesh.getNode(cell.node_ids[2]);
-        const Real dx10 = p1.x - p0.x;
-        const Real dy10 = p1.y - p0.y;
-        const Real dx20 = p2.x - p0.x;
-        const Real dy20 = p2.y - p0.y;
-        const Real det = dx10 * dy20 - dy10 * dx20;
-        if (std::abs(det) <= 1.0e-300)
-            continue;
-        const Real dv10 = psi(static_cast<int>(cell.node_ids[1])) -
-            psi(static_cast<int>(cell.node_ids[0]));
-        const Real dv20 = psi(static_cast<int>(cell.node_ids[2])) -
-            psi(static_cast<int>(cell.node_ids[0]));
-        const Real gradientX = (dv10 * dy20 - dv20 * dy10) / det;
-        const Real gradientY = (dx10 * dv20 - dx20 * dv10) / det;
         config.surface.cellNormalFields[cellId] = std::abs(
-            gradientX * config.surface.cellNormalX[cellId] +
-            gradientY * config.surface.cellNormalY[cellId]) * fieldFactor;
+            gradient.x() * config.surface.cellNormalX[cellId] +
+            gradient.y() * config.surface.cellNormalY[cellId]) * fieldFactor;
     }
 }
 
@@ -1097,12 +1094,32 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                    mobilityConfig->surface.surfaceRegion == region.name)
                 : surfaceMobilityAppliesToRegionPair(
                     *mobilityConfig, region.name, adjacentRegionNames));
-        const Real surfaceNormalField = (surfaceApplies && psi != nullptr)
-            ? (c < mobilityConfig->surface.cellNormalFields.size()
-                ? mobilityConfig->surface.cellNormalFields[c]
-                : estimateSurfaceNormalField(cells, mesh, *psi, edgeId, c) *
-                    mobilityConfig->surface.coordinateFieldFactor)
-            : std::numeric_limits<Real>::quiet_NaN();
+        Real surfaceNormalField = std::numeric_limits<Real>::quiet_NaN();
+        if (surfaceApplies && psi != nullptr) {
+            const bool hasNormalGeometry =
+                c < mobilityConfig->surface.cellNormalX.size() &&
+                c < mobilityConfig->surface.cellNormalY.size() &&
+                std::isfinite(mobilityConfig->surface.cellNormalX[c]) &&
+                std::isfinite(mobilityConfig->surface.cellNormalY[c]);
+            if (hasNormalGeometry) {
+                bool validGradient = false;
+                Real doubleArea = 0.0;
+                const Point2 gradient = cellScalarGradient(
+                    mesh, mesh.getCell(c), [&](Index node) {
+                        return (*psi)(static_cast<int>(node));
+                    }, validGradient, doubleArea);
+                if (validGradient) {
+                    surfaceNormalField = std::abs(
+                        gradient.x() * mobilityConfig->surface.cellNormalX[c] +
+                        gradient.y() * mobilityConfig->surface.cellNormalY[c]) *
+                        mobilityConfig->surface.coordinateFieldFactor;
+                }
+            } else {
+                surfaceNormalField = estimateSurfaceNormalField(
+                    cells, mesh, *psi, edgeId, c) *
+                    mobilityConfig->surface.coordinateFieldFactor;
+            }
+        }
         const Real surfaceDistance = surfaceApplies
             ? (c < mobilityConfig->surface.cellDistances.size()
                 ? mobilityConfig->surface.cellDistances[c]

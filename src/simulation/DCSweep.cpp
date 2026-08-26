@@ -92,6 +92,9 @@ struct SrhBalanceIntegral {
     Real netParticleFlux = 0.0;
     Real generationParticleFlux = 0.0;
     Real recombinationParticleFlux = 0.0;
+    Real augerNetParticleFlux = 0.0;
+    Real augerGenerationParticleFlux = 0.0;
+    Real augerRecombinationParticleFlux = 0.0;
     std::size_t cellCount = 0;
 };
 
@@ -634,7 +637,7 @@ SrhBalanceIntegral computeMaterialSrhBalanceIntegral(
 {
     SrhBalanceIntegral integral;
     const RecombinationModel recombination(recombinationCfg);
-    if (!recombination.srhEnabled())
+    if (!recombination.srhEnabled() && !recombination.augerEnabled())
         return integral;
 
     const Real Vt = constants::kb * temperature_K / constants::q;
@@ -650,6 +653,8 @@ SrhBalanceIntegral computeMaterialSrhBalanceIntegral(
         scaling.unitSystem().continuitySourceIntegralFactor();
 
     auto srhRateAtNode = [&](Index node) {
+        if (!recombination.srhEnabled())
+            return Real{0.0};
         const int row = static_cast<int>(node);
         const Real ni = effectiveNi[node];
         if (!(ni > 0.0))
@@ -674,6 +679,24 @@ SrhBalanceIntegral computeMaterialSrhBalanceIntegral(
                 doping.donors(node), doping.acceptors(node)));
     };
 
+    auto augerRateAtNode = [&](Index node) {
+        if (!recombination.augerEnabled())
+            return Real{0.0};
+        const int row = static_cast<int>(node);
+        const Real ni = effectiveNi[node];
+        if (!(ni > 0.0))
+            return Real{0.0};
+        const Real dPhi = referencedElectronQf && referencedHoleQf
+            ? sol.holeMinusElectronQuasiFermiAt(row)
+            : sol.phip(row) - sol.phin(row);
+        const GeneralizedSrhCarrierState augerState =
+            generalizedSrhCarrierState(
+                sol.n(row), sol.p(row), ni, Nc[node], Nv[node], dPhi, Vt,
+                carrierStatistics);
+        return recombination.augerRateFromExcessProduct(
+            augerState.excessProduct, sol.n(row), sol.p(row));
+    };
+
     for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
         const Cell& cell = mesh.getCell(cellId);
         if (cell.node_ids.size() < 3)
@@ -693,11 +716,18 @@ SrhBalanceIntegral computeMaterialSrhBalanceIntegral(
         Real netRate = 0.0;
         Real generationRate = 0.0;
         Real recombinationRate = 0.0;
+        Real augerNetRate = 0.0;
+        Real augerGenerationRate = 0.0;
+        Real augerRecombinationRate = 0.0;
         for (int local = 0; local < 3; ++local) {
             const Real rate = srhRateAtNode(cell.node_ids[local]);
             netRate += rate;
             generationRate += std::max(-rate, Real{0.0});
             recombinationRate += std::max(rate, Real{0.0});
+            const Real augerRate = augerRateAtNode(cell.node_ids[local]);
+            augerNetRate += augerRate;
+            augerGenerationRate += std::max(-augerRate, Real{0.0});
+            augerRecombinationRate += std::max(augerRate, Real{0.0});
         }
         const Real lumpedArea = area / 3.0;
         integral.netParticleFlux += netRate * lumpedArea * sourceIntegralFactor;
@@ -705,6 +735,12 @@ SrhBalanceIntegral computeMaterialSrhBalanceIntegral(
             generationRate * lumpedArea * sourceIntegralFactor;
         integral.recombinationParticleFlux +=
             recombinationRate * lumpedArea * sourceIntegralFactor;
+        integral.augerNetParticleFlux +=
+            augerNetRate * lumpedArea * sourceIntegralFactor;
+        integral.augerGenerationParticleFlux +=
+            augerGenerationRate * lumpedArea * sourceIntegralFactor;
+        integral.augerRecombinationParticleFlux +=
+            augerRecombinationRate * lumpedArea * sourceIntegralFactor;
         ++integral.cellCount;
     }
     return integral;
@@ -3132,6 +3168,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             " degenerate_cells=" + std::to_string(report.degenerateCells) +
             " negative_cotangent_count=" + std::to_string(report.negativeCotangentCount) +
             " fallback_count=" + std::to_string(report.fallbackCount) +
+            " edge_aggregation_repair_count=" +
+                std::to_string(report.edgeAggregationRepairCount) +
+            " aggregated_negative_edge_count=" +
+                std::to_string(report.aggregatedNegativeEdgeCount) +
             " min_angle_degrees=" + formatReal(report.minAngleDegrees));
         if (runtimeLogAllows(RuntimeLogProfile::Default)) {
             runtimeLogInfo(
@@ -3305,8 +3345,14 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         "newton_failure_diagnostics_json"};
     if (globalContinuityClosureDiagnosticsEnabled) {
         header.push_back("global_continuity_closure_satisfied");
+        header.push_back("global_electron_continuity_closure_qualified");
+        header.push_back("global_hole_continuity_closure_qualified");
+        header.push_back("global_electron_continuity_closure_criterion");
+        header.push_back("global_hole_continuity_closure_criterion");
         header.push_back("global_electron_continuity_closure_ratio");
         header.push_back("global_hole_continuity_closure_ratio");
+        header.push_back("global_electron_continuity_closure_mismatch");
+        header.push_back("global_hole_continuity_closure_mismatch");
         header.push_back("global_electron_contact_flux");
         header.push_back("global_hole_contact_flux");
         header.push_back("global_electron_integrated_source");
@@ -3496,6 +3542,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "srh_net_current_A_per_um",
             "srh_generation_current_A_per_um",
             "srh_recombination_current_A_per_um",
+            "auger_net_current_A_per_um",
+            "auger_generation_current_A_per_um",
+            "auger_recombination_current_A_per_um",
+            "total_recombination_net_current_A_per_um",
+            "total_generation_current_A_per_um",
+            "total_recombination_current_A_per_um",
             "drain_contact",
             "drain_electron_current_A_per_um",
             "drain_total_current_A_per_um",
@@ -4677,6 +4729,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                           int retryCount = 0) -> SolvePointAttempt {
         if (initial == nullptr ||
             sweep.continuation.predictor.mode == "none" ||
+            !hasPredictorPreviousSolution ||
             retryCount > 0) {
             SolvePointAttempt attempt = solvePoint(
                 voltage, initial, allowContactCurrentQfFloorCapture);
@@ -5071,10 +5124,18 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         point.carrierRowMaxRatio = attempt.carrierRowMaxRatio;
         point.globalContinuityClosureSatisfied =
             attempt.globalContinuityClosure.satisfied;
+        point.globalElectronContinuityClosureQualified =
+            attempt.globalContinuityClosure.electron.qualified;
+        point.globalHoleContinuityClosureQualified =
+            attempt.globalContinuityClosure.hole.qualified;
         point.globalElectronContinuityClosureRatio =
             attempt.globalContinuityClosure.electron.ratio;
         point.globalHoleContinuityClosureRatio =
             attempt.globalContinuityClosure.hole.ratio;
+        point.globalElectronContinuityClosureMismatch =
+            attempt.globalContinuityClosure.electron.mismatch;
+        point.globalHoleContinuityClosureMismatch =
+            attempt.globalContinuityClosure.hole.mismatch;
         point.globalElectronContactFlux =
             attempt.globalContinuityClosure.electron.contactFlux;
         point.globalHoleContactFlux =
@@ -5956,8 +6017,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             point.failureDiagnosticsJson};
         if (globalContinuityClosureDiagnosticsEnabled) {
             row.push_back(point.globalContinuityClosureSatisfied ? "1" : "0");
+            row.push_back(point.globalElectronContinuityClosureQualified ? "1" : "0");
+            row.push_back(point.globalHoleContinuityClosureQualified ? "1" : "0");
+            row.push_back(point.globalElectronContinuityClosureQualified
+                ? "relative" : "absolute");
+            row.push_back(point.globalHoleContinuityClosureQualified
+                ? "relative" : "absolute");
             row.push_back(formatReal(point.globalElectronContinuityClosureRatio));
             row.push_back(formatReal(point.globalHoleContinuityClosureRatio));
+            row.push_back(formatReal(point.globalElectronContinuityClosureMismatch));
+            row.push_back(formatReal(point.globalHoleContinuityClosureMismatch));
             row.push_back(formatReal(point.globalElectronContactFlux));
             row.push_back(formatReal(point.globalHoleContactFlux));
             row.push_back(formatReal(point.globalElectronIntegratedSource));
@@ -6264,6 +6333,22 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             const Real srhRecombination_A_per_um = currentPerInternalDepthToAPerUm(
                 sweep.scaling, constants::q * srhIntegral.recombinationParticleFlux
                     * sourceCurrentLineFactor);
+            const Real augerNet_A_per_um = currentPerInternalDepthToAPerUm(
+                sweep.scaling, constants::q * srhIntegral.augerNetParticleFlux
+                    * sourceCurrentLineFactor);
+            const Real augerGeneration_A_per_um = currentPerInternalDepthToAPerUm(
+                sweep.scaling,
+                constants::q * srhIntegral.augerGenerationParticleFlux
+                    * sourceCurrentLineFactor);
+            const Real augerRecombination_A_per_um = currentPerInternalDepthToAPerUm(
+                sweep.scaling,
+                constants::q * srhIntegral.augerRecombinationParticleFlux
+                    * sourceCurrentLineFactor);
+            const Real totalNet_A_per_um = srhNet_A_per_um + augerNet_A_per_um;
+            const Real totalGeneration_A_per_um =
+                srhGeneration_A_per_um + augerGeneration_A_per_um;
+            const Real totalRecombination_A_per_um =
+                srhRecombination_A_per_um + augerRecombination_A_per_um;
             const Real drainElectron_A_per_um = currentPerInternalDepthToAPerUm(
                 sweep.scaling, drainCurrent.electronCurrent);
             const Real drainTotal_A_per_um = currentPerInternalDepthToAPerUm(
@@ -6298,6 +6383,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 formatReal(srhNet_A_per_um),
                 formatReal(srhGeneration_A_per_um),
                 formatReal(srhRecombination_A_per_um),
+                formatReal(augerNet_A_per_um),
+                formatReal(augerGeneration_A_per_um),
+                formatReal(augerRecombination_A_per_um),
+                formatReal(totalNet_A_per_um),
+                formatReal(totalGeneration_A_per_um),
+                formatReal(totalRecombination_A_per_um),
                 srhCfg.drainContact,
                 formatReal(drainElectron_A_per_um),
                 formatReal(drainTotal_A_per_um),

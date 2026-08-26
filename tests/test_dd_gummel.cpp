@@ -198,6 +198,41 @@ TEST_CASE("GummelSolver: carrier floor config preserves quasi-Fermi consistency"
         std::invalid_argument);
 }
 
+TEST_CASE("GummelSolver: equilibrium quasi-Fermi lock preserves a common QF",
+          "[gummel][equilibrium][bgn]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    const std::unordered_map<std::string, Real> zeroBias = {
+        {"anode", 0.0}, {"cathode", 0.0}};
+
+    GummelConfig cfg;
+    cfg.maxIter = 10;
+    cfg.reltol = 1.0e-8;
+    cfg.dampingPsi = 0.2;
+    cfg.equilibriumQuasiFermiLock = true;
+    cfg.bandgapNarrowing.model = "old_slotboom";
+    const DDSolution solution = runGummel(mesh, matdb, doping, zeroBias, cfg);
+
+    for (int node = 0; node < solution.phin.size(); ++node) {
+        REQUIRE(solution.phin(node) == Catch::Approx(0.0).margin(1.0e-15));
+        REQUIRE(solution.phip(node) == Catch::Approx(0.0).margin(1.0e-15));
+        REQUIRE(solution.n(node) > 0.0);
+        REQUIRE(solution.p(node) > 0.0);
+    }
+
+    const GummelConfig parsed = gummelConfigFromJson(nlohmann::json{
+        {"equilibrium_quasi_fermi_lock", true}});
+    REQUIRE(parsed.equilibriumQuasiFermiLock);
+
+    const std::unordered_map<std::string, Real> unequalBias = {
+        {"anode", 0.1}, {"cathode", 0.0}};
+    REQUIRE_THROWS_AS(
+        runGummel(mesh, matdb, doping, unequalBias, cfg),
+        std::invalid_argument);
+}
+
 TEST_CASE("GummelSolver: no NaN or Inf in any output vector", "[gummel]")
 {
     DeviceMesh       mesh   = makePNMesh();

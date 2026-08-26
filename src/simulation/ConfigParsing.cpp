@@ -160,6 +160,20 @@ BoxGeometryBuilder::Options parseBoxGeometryOptions(const nlohmann::json& cfg)
     }
     options.requireNonObtuse = geometry.value("require_non_obtuse", false);
 
+    const std::string edgePolicy = geometry.value(
+        "edge_coupling_policy", "local_positive_fallback");
+    if (edgePolicy == "local_positive_fallback") {
+        options.edgeCouplingPolicy =
+            BoxGeometryBuilder::EdgeCouplingPolicy::LocalPositiveFallback;
+    } else if (edgePolicy == "assembled_delaunay_fallback") {
+        options.edgeCouplingPolicy =
+            BoxGeometryBuilder::EdgeCouplingPolicy::AssembledDelaunayFallback;
+    } else {
+        throw std::runtime_error(
+            "ConfigParsing: mesh_geometry.edge_coupling_policy must be "
+            "'local_positive_fallback' or 'assembled_delaunay_fallback'.");
+    }
+
     return options;
 }
 

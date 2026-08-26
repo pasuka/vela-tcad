@@ -1,6 +1,7 @@
 #include "vela/solver/GummelSolver.h"
 #include "vela/boundary/BoundaryCondition.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/core/RuntimeLog.h"
 #include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/AssemblerUtils.h"
 #include "vela/equation/DDAssembler.h"
@@ -125,6 +126,8 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (json.contains("statistics"))
         cfg.carrierStatistics.model = json.at("statistics").get<std::string>();
     cfg.dampingPsi = json.value("damping_psi", cfg.dampingPsi);
+    cfg.equilibriumQuasiFermiLock = json.value(
+        "equilibrium_quasi_fermi_lock", cfg.equilibriumQuasiFermiLock);
     cfg.taun = json.value("taun", cfg.taun);
     cfg.taup = json.value("taup", cfg.taup);
     if (json.contains("srh_doping_dependence")) {
@@ -531,6 +534,34 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     for (const auto& [nid, val] : phinBC) phinBCSolve[nid] = scalePotential(val);
     for (const auto& [nid, val] : phipBC) phipBCSolve[nid] = scalePotential(val);
 
+    std::optional<Real> equilibriumQfLock;
+    if (cfg.equilibriumQuasiFermiLock) {
+        const auto acceptLockValue = [&](Real value) {
+            if (!equilibriumQfLock.has_value()) {
+                equilibriumQfLock = value;
+                return;
+            }
+            if (std::abs(value - *equilibriumQfLock) > 1.0e-12) {
+                throw std::invalid_argument(
+                    "runGummel: equilibrium_quasi_fermi_lock requires all "
+                    "transport-contact quasi-Fermi biases to be equal.");
+            }
+        };
+        for (const auto& [nid, value] : phinBCSolve) {
+            (void)nid;
+            acceptLockValue(value);
+        }
+        for (const auto& [nid, value] : phipBCSolve) {
+            (void)nid;
+            acceptLockValue(value);
+        }
+        if (!equilibriumQfLock.has_value()) {
+            throw std::invalid_argument(
+                "runGummel: equilibrium_quasi_fermi_lock requires at least "
+                "one transport contact.");
+        }
+    }
+
 
     // ------------------------------------------------------------------
     // Initial guess: solve linear Poisson (no carriers) for psi
@@ -623,6 +654,10 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     for (const auto& [nid, val] : phipBCSolve) phip(static_cast<int>(nid)) = val;
     for (const auto& [nid, val] : nBCSolve)    n_init(static_cast<int>(nid)) = val;
     for (const auto& [nid, val] : pBCSolve)    p_init(static_cast<int>(nid)) = val;
+    if (equilibriumQfLock.has_value()) {
+        phin.setConstant(*equilibriumQfLock);
+        phip.setConstant(*equilibriumQfLock);
+    }
 
     // ------------------------------------------------------------------
     // Working copies
@@ -654,31 +689,58 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         const VectorXd dpsi_applied = cfg.dampingPsi * dpsi;
         psi += dpsi_applied;
 
-        // ---- b. Solve electron continuity for n ----
-        assembler.assembleElectronContinuity(psi, n, p);
-        assembler.applyDirichlet(nBCSolve);
-        VectorXd n_new = ls.solve(assembler.matrix(), assembler.rhs());
+        VectorXd n_new;
+        VectorXd p_new;
+        if (equilibriumQfLock.has_value()) {
+            n_new.resize(static_cast<int>(N));
+            p_new.resize(static_cast<int>(N));
+            for (Index i = 0; i < N; ++i) {
+                const int ii = static_cast<int>(i);
+                const double psiSi = useScaledUnknowns
+                    ? psi(ii) * ddScaling.V0 : psi(ii);
+                const double qfSi = useScaledUnknowns
+                    ? *equilibriumQfLock * ddScaling.V0
+                    : *equilibriumQfLock;
+                const double nSi = electronDensity(
+                    ni_v[i], Nc[i], psiSi, qfSi, Vt,
+                    cfg.carrierStatistics);
+                const double pSi = holeDensity(
+                    ni_v[i], Nv[i], psiSi, qfSi, Vt,
+                    cfg.carrierStatistics);
+                n_new(ii) = useScaledUnknowns ? nSi / ddScaling.C0 : nSi;
+                p_new(ii) = useScaledUnknowns ? pSi / ddScaling.C0 : pSi;
+            }
+            for (const auto& [nid, val] : nBCSolve)
+                n_new(static_cast<int>(nid)) = val;
+            for (const auto& [nid, val] : pBCSolve)
+                p_new(static_cast<int>(nid)) = val;
+        } else {
+            // ---- b. Solve electron continuity for n ----
+            assembler.assembleElectronContinuity(psi, n, p);
+            assembler.applyDirichlet(nBCSolve);
+            n_new = ls.solve(assembler.matrix(), assembler.rhs());
 
-        // Enforce positivity and keep quasi-Fermi reconstruction well-defined.
-        for (Index i = 0; i < N; ++i) {
-            const int ii = static_cast<int>(i);
-            if (nBCSolve.find(i) == nBCSolve.end() && n_new(ii) < carrierFloorSolve)
-                n_new(ii) = carrierFloorSolve;
-        }
+            // Enforce positivity and keep quasi-Fermi reconstruction well-defined.
+            for (Index i = 0; i < N; ++i) {
+                const int ii = static_cast<int>(i);
+                if (nBCSolve.find(i) == nBCSolve.end() && n_new(ii) < carrierFloorSolve)
+                    n_new(ii) = carrierFloorSolve;
+            }
 
-        // ---- c. Solve hole continuity for p ----
-        assembler.assembleHoleContinuity(psi, n_new, p);
-        assembler.applyDirichlet(pBCSolve);
-        VectorXd p_new = ls.solve(assembler.matrix(), assembler.rhs());
+            // ---- c. Solve hole continuity for p ----
+            assembler.assembleHoleContinuity(psi, n_new, p);
+            assembler.applyDirichlet(pBCSolve);
+            p_new = ls.solve(assembler.matrix(), assembler.rhs());
 
-        for (Index i = 0; i < N; ++i) {
-            const int ii = static_cast<int>(i);
-            if (pBCSolve.find(i) == pBCSolve.end() && p_new(ii) < carrierFloorSolve)
-                p_new(ii) = carrierFloorSolve;
+            for (Index i = 0; i < N; ++i) {
+                const int ii = static_cast<int>(i);
+                if (pBCSolve.find(i) == pBCSolve.end() && p_new(ii) < carrierFloorSolve)
+                    p_new(ii) = carrierFloorSolve;
+            }
         }
 
         // ---- d. Update quasi-Fermi potentials ----
-        for (Index i = 0; i < N; ++i) {
+        for (Index i = 0; i < N && !equilibriumQfLock.has_value(); ++i) {
             const int    ii   = static_cast<int>(i);
             const double ni_i = ni_v[i];
             const double psiSi = useScaledUnknowns ? psi(ii) * ddScaling.V0 : psi(ii);
@@ -717,6 +779,17 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         const double dp_norm = dp.norm();
         const double p_norm  = p.norm();
         const double rel_p   = (p_norm > 1.0e-30) ? dp_norm / p_norm : dp_norm;
+
+        if (runtimeLogAllows(RuntimeLogProfile::Debug)) {
+            runtimeLogInfo(
+                "gummel_iteration: iter=" + std::to_string(iter + 1) +
+                " rel_psi=" + std::to_string(rel_err) +
+                " rel_n=" + std::to_string(rel_n) +
+                " rel_p=" + std::to_string(rel_p) +
+                " abs_psi=" + std::to_string(dpsi_norm) +
+                " abs_n=" + std::to_string(dn_norm) +
+                " abs_p=" + std::to_string(dp_norm));
+        }
 
         n = n_new;
         p = p_new;

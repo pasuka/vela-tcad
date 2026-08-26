@@ -651,6 +651,14 @@ Notes:
   latter preserves the linearized Newton direction and is intended for strongly
   nonlinear avalanche branch correction; it does not relax convergence or
   forcing tolerances.
+- `poisson_only_quasi_fermi_initialization` controls the carrier state held
+  fixed by `solver.method: "poisson_only"`. `contact_basin` (default) rebuilds
+  the interior electron and hole quasi-Fermi fields from the nearest
+  majority-carrier contact biases, matching the ABA initialization path.
+  `preserve_initial` retains the supplied restart quasi-Fermi fields and only
+  projects explicit contact boundary values. Use the latter when correcting
+  the Poisson discretization of an imported biased TCAD state; it also prevents
+  pure-insulator gauge rows from inheriting a nearby terminal bias.
 - For `uniform_trust_region`, `quasi_fermi_trust_region_growth_factor` and
   `quasi_fermi_trust_region_max_multiplier` optionally expand the physical
   update radius after a boundary-limited step. Expansion occurs only when the
@@ -669,6 +677,17 @@ Notes:
   `F + J*dx`, rather than incorrectly assuming that the limited step predicts
   a zero residual. This changes globalization only; the final Newton
   convergence tolerances are unchanged.
+- `line_search_mode: block_closure_filter` extends that filter with electron
+  and hole global-continuity blocks. A trial may improve either the enabled
+  carrier/device blocks or a global-closure block only while every device and
+  closure block remains inside its configured residual envelope. The closure
+  envelope uses the stricter applicable relative or low-source absolute target;
+  final convergence still requires `global_continuity_closure` itself to pass.
+- `return_best_feasible_on_failure` (default `false`) keeps the failure status
+  and diagnostics unchanged but exposes, as the rejected restart state, the
+  lowest-residual accepted iterate that satisfied both enforced local carrier
+  rows and global continuity closure. This is intended for deterministic
+  restart/corrector audits and does not turn a failed solve into convergence.
 - `poisson_line_search_stall_contact_majority_qf_drop_limit_V` is an optional
   non-negative physical-voltage guard for the `poisson_line_search_stall_floor`
   acceptance path. When greater than zero, a Poisson-block line-search stall is
@@ -862,7 +881,11 @@ The source-aware convergence controls are:
 "global_continuity_closure": {
   "mode": "enforce",
   "tolerance": 0.01,
-  "source_floor": 1e-14
+  "source_floor": 1e-14,
+  "absolute_tolerance": 1e-12,
+  "linear_system_stabilization": "off",
+  "feasibility_restoration": "off",
+  "feasibility_restoration_factor": 1.0
 }
 ```
 
@@ -875,9 +898,39 @@ small rows of interest.
 `global_continuity_closure` independently sums the free-node SRH/avalanche
 source and all contact fluxes for electrons and holes. `report` appends the
 metrics without rejecting a solution; `enforce` prevents convergence unless
-each carrier with `|integrated source| >= source_floor` has relative mismatch
-no greater than `tolerance`. The denominator is the largest of the contact
-flux magnitude, integrated-source magnitude, and `source_floor`.
+each carrier with `max(|contact flux|, |integrated source|) >= source_floor`
+has relative mismatch no greater than `tolerance`. Qualifying on both sides
+prevents a large contact-current/small-source state from bypassing the gate.
+The denominator is the largest of the contact-flux magnitude,
+integrated-source magnitude, and `source_floor`. Below that floor the relative
+ratio remains diagnostic and the absolute mismatch must instead be no greater
+than `absolute_tolerance` (default `1e-12`). The IV CSV records each carrier's
+qualification flag, selected `absolute`/`relative` criterion, signed mismatch,
+and relative ratio.
+
+`linear_system_stabilization: "replace_free_row_sum"` is an opt-in
+finite-precision stabilization. For each carrier it replaces one free-node
+continuity row by the sum of all free-node continuity rows. This is an
+invertible row transformation, so the exact Newton equations are unchanged,
+but the solve must directly resolve the global conservation mode. The
+implementation applies the rank-one/rank-two row replacements through a small
+Woodbury border and reuses the original sparse Jacobian factorization; it does
+not factor a matrix containing dense global rows. It is mutually exclusive
+with `continuity_row_scaling`; the default is `"off"`.
+
+`feasibility_restoration: "linear_qf_projection"` is a separate opt-in
+globalization aid for componentwise-limited Newton steps. After the normal
+update caps and Poisson recorrection, it forms the two sums of free electron
+and hole Jacobian rows and applies the minimum-norm correction over only the
+unconstrained electron/hole quasi-Fermi unknowns. The projected direction
+satisfies both global continuity rows to first order without moving contact
+Dirichlet unknowns. The normal QF caps are then reapplied without a second
+Poisson recorrection, so the bounded direction is deliberately an inexact
+feasibility restoration; nonlinear trial acceptance remains responsible for deciding
+whether it is useful. Final local/global convergence gates remain unchanged.
+Rank-deficient or non-finite projections are skipped; the default is `"off"`.
+`feasibility_restoration_factor` selects a fraction in `(0, 1]` of the
+projected correction before QF recapping; it defaults to `1`.
 
 `warm_start: true` preserves supplied quasi-Fermi potentials when continuing
 from a previous solution. The default `false` keeps the conservative
@@ -1315,6 +1368,19 @@ midpoint density, mixed-Voronoi node volumes, and
 barycentric rollback. The generator rejects partially mixed profiles. This
 template policy does not change the global barycentric parser default or the
 PN2D IV template.
+
+For audited imported meshes that contain obtuse triangles but are Delaunay at
+the assembled interior-edge level, `mesh_geometry.edge_coupling_policy` may be
+set to `assembled_delaunay_fallback`. This sums the two raw cotangent
+contributions before testing their sign, preserving a non-negative assembled
+Voronoi dual face when one local contribution is negative. A genuinely
+negative assembled face uses the existing positive barycentric fallback.
+`local_positive_fallback` remains the parser default and preserves legacy
+behavior. The SLOT-LDMOS preparation tool exposes this only through the
+independent atomic `element_edge_sg_gss_laux_delaunay` profile, which also
+binds mixed-Voronoi node volumes, SG/GSS-Laux current support, element-vertex
+box source mapping, and Bernoulli midpoint density. It does not modify the
+existing non-obtuse profile or any global default.
 
 The Sentaurus BVmethods NMOS boundary-control equivalents are stored as
 separate templates because their sweep voltage has different semantics from a

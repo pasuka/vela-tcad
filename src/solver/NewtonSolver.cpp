@@ -11,6 +11,7 @@
 #include <Eigen/SparseLU>
 #include <Eigen/SVD>
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cctype>
 #include <cmath>
@@ -768,8 +769,19 @@ void applyConfiguredStepCapsAndPoissonRecorrection(VectorXd& step,
 {
     const bool clippedQuasiFermi = applyConfiguredStepCaps(
         step, cfg, nodeCount, potentialScale, doping);
-    if (clippedQuasiFermi)
+    if (clippedQuasiFermi) {
         recorrectPoissonStepForClippedQuasiFermi(step, J, residual, nodeCount);
+        // Poisson recorrection replaces the psi block after max_update was
+        // applied above and can therefore reintroduce an arbitrarily large
+        // full-vector update.  Reapply the public whole-step contract to the
+        // recorrected direction; uniform rescaling preserves its block
+        // balance and keeps globalization effective.
+        if (cfg.maxUpdate > 0.0) {
+            const Real maxAbsStep = step.cwiseAbs().maxCoeff();
+            if (maxAbsStep > cfg.maxUpdate)
+                step *= cfg.maxUpdate / maxAbsStep;
+        }
+    }
 }
 
 NewtonCarrierDiagnostics carrierDiagnostics(const CoupledDDAssembler& assembler,
@@ -1056,33 +1068,375 @@ NewtonGlobalContinuityClosureEvaluation evaluateGlobalContinuityClosure(
             holeContact[static_cast<std::size_t>(node)] = true;
     }
 
+    long double electronContactFlux = 0.0L;
+    long double electronIntegratedSource = 0.0L;
+    long double holeContactFlux = 0.0L;
+    long double holeIntegratedSource = 0.0L;
     for (std::size_t i = 0; i < rows.size(); ++i) {
         const auto& row = rows[i];
         if (electronContact[i])
-            evaluation.electron.contactFlux += row.electronFlux;
+            electronContactFlux += static_cast<long double>(row.electronFlux);
         else
-            evaluation.electron.integratedSource +=
-                row.electronRecombination + row.electronImpact;
+            electronIntegratedSource +=
+                static_cast<long double>(row.electronRecombination) +
+                static_cast<long double>(row.electronImpact);
         if (holeContact[i])
-            evaluation.hole.contactFlux += row.holeFlux;
+            holeContactFlux += static_cast<long double>(row.holeFlux);
         else
-            evaluation.hole.integratedSource +=
-                row.holeRecombination + row.holeImpact;
+            holeIntegratedSource +=
+                static_cast<long double>(row.holeRecombination) +
+                static_cast<long double>(row.holeImpact);
     }
+    evaluation.electron.contactFlux = static_cast<Real>(electronContactFlux);
+    evaluation.electron.integratedSource =
+        static_cast<Real>(electronIntegratedSource);
+    evaluation.hole.contactFlux = static_cast<Real>(holeContactFlux);
+    evaluation.hole.integratedSource =
+        static_cast<Real>(holeIntegratedSource);
 
     auto finishCarrier = [&](NewtonGlobalContinuityCarrierClosure& carrier) {
         carrier.mismatch = carrier.contactFlux - carrier.integratedSource;
         const Real sourceMagnitude = std::abs(carrier.integratedSource);
-        carrier.qualified = sourceMagnitude >= cfg.sourceFloor;
-        const Real scale = std::max({
-            std::abs(carrier.contactFlux), sourceMagnitude, cfg.sourceFloor});
+        const Real physicalScale =
+            std::max(std::abs(carrier.contactFlux), sourceMagnitude);
+        carrier.qualified = physicalScale >= cfg.sourceFloor;
+        const Real scale = std::max(physicalScale, cfg.sourceFloor);
         carrier.ratio = scale > 0.0 ? std::abs(carrier.mismatch) / scale : 0.0;
-        if (carrier.qualified && carrier.ratio > cfg.tolerance)
+        carrier.satisfied = carrier.qualified
+            ? carrier.ratio <= cfg.tolerance
+            : std::abs(carrier.mismatch) <= cfg.absoluteTolerance;
+        if (!carrier.satisfied)
             evaluation.satisfied = false;
     };
     finishCarrier(evaluation.electron);
     finishCarrier(evaluation.hole);
     return evaluation;
+}
+
+namespace {
+
+std::array<int, 2> selectGlobalContinuityReplacementRows(
+    const SparseMatrixd&,
+    int nodeCount,
+    const std::vector<bool>& electronContact,
+    const std::vector<bool>& holeContact)
+{
+    auto firstFreeRow = [&](int rowOffset,
+                            const std::vector<bool>& contact) {
+        for (int node = 0; node < nodeCount; ++node) {
+            if (!contact[static_cast<std::size_t>(node)])
+                return rowOffset + node;
+        }
+        return -1;
+    };
+
+    const int electronRow = firstFreeRow(nodeCount, electronContact);
+    const int holeRow = firstFreeRow(2 * nodeCount, holeContact);
+    return {electronRow, holeRow};
+}
+
+} // namespace
+
+bool stabilizeGlobalContinuityLinearSystem(
+    SparseMatrixd& matrix,
+    VectorXd& rhs,
+    int nodeCount,
+    const std::vector<Index>& electronContactNodes,
+    const std::vector<Index>& holeContactNodes)
+{
+    if (nodeCount <= 0 || matrix.rows() != 3 * nodeCount ||
+        matrix.cols() != 3 * nodeCount || rhs.size() != 3 * nodeCount) {
+        throw std::invalid_argument(
+            "stabilizeGlobalContinuityLinearSystem: expected a 3N square system.");
+    }
+
+    std::vector<bool> electronContact(static_cast<std::size_t>(nodeCount), false);
+    std::vector<bool> holeContact(static_cast<std::size_t>(nodeCount), false);
+    for (Index node : electronContactNodes) {
+        if (node < static_cast<Index>(nodeCount))
+            electronContact[static_cast<std::size_t>(node)] = true;
+    }
+    for (Index node : holeContactNodes) {
+        if (node < static_cast<Index>(nodeCount))
+            holeContact[static_cast<std::size_t>(node)] = true;
+    }
+
+    const std::array<int, 2> replacementRows =
+        selectGlobalContinuityReplacementRows(
+            matrix, nodeCount, electronContact, holeContact);
+    const int electronReplacementRow = replacementRows[0];
+    const int holeReplacementRow = replacementRows[1];
+    if (electronReplacementRow < 0 && holeReplacementRow < 0)
+        return false;
+
+    const int systemSize = 3 * nodeCount;
+    std::vector<long double> electronRowSum(
+        static_cast<std::size_t>(systemSize), 0.0L);
+    std::vector<long double> holeRowSum(
+        static_cast<std::size_t>(systemSize), 0.0L);
+    for (int outer = 0; outer < matrix.outerSize(); ++outer) {
+        for (SparseMatrixd::InnerIterator entry(matrix, outer); entry; ++entry) {
+            const int row = entry.row();
+            if (row >= nodeCount && row < 2 * nodeCount &&
+                !electronContact[static_cast<std::size_t>(row - nodeCount)]) {
+                electronRowSum[static_cast<std::size_t>(entry.col())] +=
+                    static_cast<long double>(entry.value());
+            } else if (row >= 2 * nodeCount && row < 3 * nodeCount &&
+                       !holeContact[static_cast<std::size_t>(row - 2 * nodeCount)]) {
+                holeRowSum[static_cast<std::size_t>(entry.col())] +=
+                    static_cast<long double>(entry.value());
+            }
+        }
+    }
+
+    long double electronRhsSum = 0.0L;
+    long double holeRhsSum = 0.0L;
+    for (int node = 0; node < nodeCount; ++node) {
+        if (!electronContact[static_cast<std::size_t>(node)])
+            electronRhsSum += static_cast<long double>(rhs(nodeCount + node));
+        if (!holeContact[static_cast<std::size_t>(node)])
+            holeRhsSum += static_cast<long double>(rhs(2 * nodeCount + node));
+    }
+
+    std::vector<Eigen::Triplet<Real>> triplets;
+    triplets.reserve(static_cast<std::size_t>(matrix.nonZeros()) +
+                     2U * static_cast<std::size_t>(systemSize));
+    for (int outer = 0; outer < matrix.outerSize(); ++outer) {
+        for (SparseMatrixd::InnerIterator entry(matrix, outer); entry; ++entry) {
+            if (entry.row() != electronReplacementRow &&
+                entry.row() != holeReplacementRow) {
+                triplets.emplace_back(entry.row(), entry.col(), entry.value());
+            }
+        }
+    }
+    auto appendReplacementRow = [&](int row,
+                                    const std::vector<long double>& values) {
+        if (row < 0)
+            return;
+        for (int col = 0; col < systemSize; ++col) {
+            const Real value =
+                static_cast<Real>(values[static_cast<std::size_t>(col)]);
+            if (value != 0.0)
+                triplets.emplace_back(row, col, value);
+        }
+    };
+    appendReplacementRow(electronReplacementRow, electronRowSum);
+    appendReplacementRow(holeReplacementRow, holeRowSum);
+
+    SparseMatrixd stabilized(systemSize, systemSize);
+    stabilized.setFromTriplets(triplets.begin(), triplets.end());
+    stabilized.makeCompressed();
+    matrix = std::move(stabilized);
+    if (electronReplacementRow >= 0)
+        rhs(electronReplacementRow) = static_cast<Real>(electronRhsSum);
+    if (holeReplacementRow >= 0)
+        rhs(holeReplacementRow) = static_cast<Real>(holeRhsSum);
+    return true;
+}
+
+VectorXd solveGlobalContinuityStabilizedSystem(
+    LinearSolver& linearSolver,
+    const SparseMatrixd& matrix,
+    const VectorXd& rhs,
+    int nodeCount,
+    const std::vector<Index>& electronContactNodes,
+    const std::vector<Index>& holeContactNodes)
+{
+    SparseMatrixd stabilized = matrix;
+    VectorXd stabilizedRhs = rhs;
+    if (!stabilizeGlobalContinuityLinearSystem(
+            stabilized,
+            stabilizedRhs,
+            nodeCount,
+            electronContactNodes,
+            holeContactNodes)) {
+        return linearSolver.solve(matrix, rhs);
+    }
+
+    std::vector<bool> electronContact(static_cast<std::size_t>(nodeCount), false);
+    std::vector<bool> holeContact(static_cast<std::size_t>(nodeCount), false);
+    for (Index node : electronContactNodes) {
+        if (node < static_cast<Index>(nodeCount))
+            electronContact[static_cast<std::size_t>(node)] = true;
+    }
+    for (Index node : holeContactNodes) {
+        if (node < static_cast<Index>(nodeCount))
+            holeContact[static_cast<std::size_t>(node)] = true;
+    }
+
+    const std::array<int, 2> selectedRows =
+        selectGlobalContinuityReplacementRows(
+            matrix, nodeCount, electronContact, holeContact);
+    std::vector<int> replacementRows;
+    for (int row : selectedRows) {
+        if (row >= 0)
+            replacementRows.push_back(row);
+    }
+
+    const int systemSize = 3 * nodeCount;
+    const int correctionRank = static_cast<int>(replacementRows.size());
+    Eigen::MatrixXd rowUpdates = Eigen::MatrixXd::Zero(
+        systemSize, correctionRank);
+    Eigen::VectorXd rhsUpdates(correctionRank);
+    for (int update = 0; update < correctionRank; ++update) {
+        const int row = replacementRows[static_cast<std::size_t>(update)];
+        rhsUpdates(update) = stabilizedRhs(row) - rhs(row);
+        for (int col = 0; col < systemSize; ++col) {
+            rowUpdates(col, update) =
+                stabilized.coeff(row, col) - matrix.coeff(row, col);
+        }
+    }
+
+    const VectorXd baseSolution = linearSolver.solve(matrix, rhs);
+    Eigen::MatrixXd inverseReplacementColumns(systemSize, correctionRank);
+    for (int update = 0; update < correctionRank; ++update) {
+        VectorXd unit = VectorXd::Zero(systemSize);
+        unit(replacementRows[static_cast<std::size_t>(update)]) = 1.0;
+        inverseReplacementColumns.col(update) =
+            linearSolver.solve(matrix, unit);
+    }
+
+    const Eigen::MatrixXd border =
+        Eigen::MatrixXd::Identity(correctionRank, correctionRank) +
+        rowUpdates.transpose() * inverseReplacementColumns;
+    Eigen::FullPivLU<Eigen::MatrixXd> borderSolver(border);
+    if (!borderSolver.isInvertible()) {
+        throw std::runtime_error(
+            "solveGlobalContinuityStabilizedSystem: singular Woodbury border.");
+    }
+    const Eigen::VectorXd correction = borderSolver.solve(
+        rhsUpdates - rowUpdates.transpose() * baseSolution);
+    return baseSolution + inverseReplacementColumns * correction;
+}
+
+bool restoreGlobalContinuityLinearizedStep(
+    VectorXd& step,
+    const SparseMatrixd& matrix,
+    const VectorXd& residual,
+    int nodeCount,
+    const std::vector<Index>& electronContactNodes,
+    const std::vector<Index>& holeContactNodes)
+{
+    const int systemSize = 3 * nodeCount;
+    if (nodeCount <= 0 || matrix.rows() != systemSize ||
+        matrix.cols() != systemSize || residual.size() != systemSize ||
+        step.size() != systemSize) {
+        return false;
+    }
+
+    std::vector<bool> electronContact(static_cast<std::size_t>(nodeCount), false);
+    std::vector<bool> holeContact(static_cast<std::size_t>(nodeCount), false);
+    for (Index node : electronContactNodes) {
+        if (node < static_cast<Index>(nodeCount))
+            electronContact[static_cast<std::size_t>(node)] = true;
+    }
+    for (Index node : holeContactNodes) {
+        if (node < static_cast<Index>(nodeCount))
+            holeContact[static_cast<std::size_t>(node)] = true;
+    }
+
+    std::array<std::vector<long double>, 2> closureRows{
+        std::vector<long double>(static_cast<std::size_t>(systemSize), 0.0L),
+        std::vector<long double>(static_cast<std::size_t>(systemSize), 0.0L)};
+    for (int outer = 0; outer < matrix.outerSize(); ++outer) {
+        for (SparseMatrixd::InnerIterator entry(matrix, outer); entry; ++entry) {
+            const int row = entry.row();
+            const int col = entry.col();
+            if (row >= nodeCount && row < 2 * nodeCount &&
+                !electronContact[static_cast<std::size_t>(row - nodeCount)]) {
+                closureRows[0][static_cast<std::size_t>(col)] +=
+                    static_cast<long double>(entry.value());
+            } else if (row >= 2 * nodeCount && row < 3 * nodeCount &&
+                       !holeContact[static_cast<std::size_t>(row - 2 * nodeCount)]) {
+                closureRows[1][static_cast<std::size_t>(col)] +=
+                    static_cast<long double>(entry.value());
+            }
+        }
+    }
+
+    // Do not move electrostatic or Dirichlet unknowns. Both free carrier
+    // blocks remain active because recombination and avalanche couple the two
+    // global continuity rows.
+    for (int col = 0; col < systemSize; ++col) {
+        const bool freeElectronQf = col >= nodeCount && col < 2 * nodeCount &&
+            !electronContact[static_cast<std::size_t>(col - nodeCount)];
+        const bool freeHoleQf = col >= 2 * nodeCount && col < 3 * nodeCount &&
+            !holeContact[static_cast<std::size_t>(col - 2 * nodeCount)];
+        if (!freeElectronQf && !freeHoleQf) {
+            closureRows[0][static_cast<std::size_t>(col)] = 0.0L;
+            closureRows[1][static_cast<std::size_t>(col)] = 0.0L;
+        }
+    }
+
+    std::array<long double, 2> rowNorm{0.0L, 0.0L};
+    std::array<long double, 2> predictedSum{0.0L, 0.0L};
+    for (int carrier = 0; carrier < 2; ++carrier) {
+        for (int node = 0; node < nodeCount; ++node) {
+            const bool contact = carrier == 0
+                ? electronContact[static_cast<std::size_t>(node)]
+                : holeContact[static_cast<std::size_t>(node)];
+            if (!contact) {
+                predictedSum[carrier] += static_cast<long double>(
+                    residual((carrier + 1) * nodeCount + node));
+            }
+        }
+        for (int col = 0; col < systemSize; ++col) {
+            const long double value =
+                closureRows[carrier][static_cast<std::size_t>(col)];
+            rowNorm[carrier] = std::hypotl(rowNorm[carrier], value);
+            predictedSum[carrier] +=
+                value * static_cast<long double>(step(col));
+        }
+        if (!(rowNorm[carrier] > 0.0L) ||
+            !std::isfinite(rowNorm[carrier]) ||
+            !std::isfinite(predictedSum[carrier])) {
+            return false;
+        }
+    }
+
+    long double gram00 = 0.0L;
+    long double gram01 = 0.0L;
+    long double gram11 = 0.0L;
+    for (int col = 0; col < systemSize; ++col) {
+        const long double a0 =
+            closureRows[0][static_cast<std::size_t>(col)] / rowNorm[0];
+        const long double a1 =
+            closureRows[1][static_cast<std::size_t>(col)] / rowNorm[1];
+        gram00 += a0 * a0;
+        gram01 += a0 * a1;
+        gram11 += a1 * a1;
+    }
+    const long double determinant = gram00 * gram11 - gram01 * gram01;
+    const long double determinantScale =
+        std::max(std::abs(gram00 * gram11), 1.0L);
+    if (!std::isfinite(determinant) ||
+        std::abs(determinant) <=
+            64.0L * std::numeric_limits<long double>::epsilon() *
+                determinantScale) {
+        return false;
+    }
+
+    const long double rhs0 = -predictedSum[0] / rowNorm[0];
+    const long double rhs1 = -predictedSum[1] / rowNorm[1];
+    const long double multiplier0 =
+        (rhs0 * gram11 - rhs1 * gram01) / determinant;
+    const long double multiplier1 =
+        (gram00 * rhs1 - gram01 * rhs0) / determinant;
+    VectorXd projected = step;
+    for (int col = 0; col < systemSize; ++col) {
+        const long double correction =
+            closureRows[0][static_cast<std::size_t>(col)] / rowNorm[0] *
+                multiplier0 +
+            closureRows[1][static_cast<std::size_t>(col)] / rowNorm[1] *
+                multiplier1;
+        const long double value =
+            static_cast<long double>(projected(col)) + correction;
+        if (!std::isfinite(value))
+            return false;
+        projected(col) = static_cast<Real>(value);
+    }
+    step = std::move(projected);
+    return true;
 }
 
 namespace {
@@ -1555,6 +1909,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.dampingFactor = json.value("damping_factor", cfg.dampingFactor);
     cfg.lineSearch = json.value("line_search", cfg.lineSearch);
     cfg.lineSearchMode = json.value("line_search_mode", cfg.lineSearchMode);
+    cfg.returnBestFeasibleOnFailure = json.value(
+        "return_best_feasible_on_failure", cfg.returnBestFeasibleOnFailure);
     cfg.residualFilterGamma = json.value(
         "residual_filter_gamma", cfg.residualFilterGamma);
     cfg.residualFilterEnvelopeFactor = json.value(
@@ -1810,6 +2166,18 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 value.value("tolerance", cfg.globalContinuityClosure.tolerance);
             cfg.globalContinuityClosure.sourceFloor =
                 value.value("source_floor", cfg.globalContinuityClosure.sourceFloor);
+            cfg.globalContinuityClosure.absoluteTolerance = value.value(
+                "absolute_tolerance",
+                cfg.globalContinuityClosure.absoluteTolerance);
+            cfg.globalContinuityClosure.linearSystemStabilization = value.value(
+                "linear_system_stabilization",
+                cfg.globalContinuityClosure.linearSystemStabilization);
+            cfg.globalContinuityClosure.feasibilityRestoration = value.value(
+                "feasibility_restoration",
+                cfg.globalContinuityClosure.feasibilityRestoration);
+            cfg.globalContinuityClosure.feasibilityRestorationFactor = value.value(
+                "feasibility_restoration_factor",
+                cfg.globalContinuityClosure.feasibilityRestorationFactor);
         } else {
             throw std::invalid_argument(
                 "newtonConfigFromJson: global_continuity_closure must be a boolean or object.");
@@ -1823,15 +2191,44 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         if (!(cfg.globalContinuityClosure.tolerance > 0.0) ||
             !std::isfinite(cfg.globalContinuityClosure.tolerance) ||
             cfg.globalContinuityClosure.sourceFloor < 0.0 ||
-            !std::isfinite(cfg.globalContinuityClosure.sourceFloor)) {
+            !std::isfinite(cfg.globalContinuityClosure.sourceFloor) ||
+            cfg.globalContinuityClosure.absoluteTolerance < 0.0 ||
+            !std::isfinite(cfg.globalContinuityClosure.absoluteTolerance)) {
             throw std::invalid_argument(
                 "newtonConfigFromJson: invalid global_continuity_closure bounds.");
+        }
+        if (cfg.globalContinuityClosure.linearSystemStabilization != "off" &&
+            cfg.globalContinuityClosure.linearSystemStabilization !=
+                "replace_free_row_sum") {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: global_continuity_closure.linear_system_stabilization must be 'off' or 'replace_free_row_sum'.");
+        }
+        if (cfg.globalContinuityClosure.linearSystemStabilization != "off" &&
+            cfg.continuityRowScaling.enabled) {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: global continuity row stabilization and continuity_row_scaling cannot be enabled together.");
+        }
+        if (cfg.globalContinuityClosure.feasibilityRestoration != "off" &&
+            cfg.globalContinuityClosure.feasibilityRestoration !=
+                "linear_qf_projection") {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: global_continuity_closure.feasibility_restoration must be 'off' or 'linear_qf_projection'.");
+        }
+        if (!(cfg.globalContinuityClosure.feasibilityRestorationFactor > 0.0) ||
+            cfg.globalContinuityClosure.feasibilityRestorationFactor > 1.0 ||
+            !std::isfinite(
+                cfg.globalContinuityClosure.feasibilityRestorationFactor)) {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: global_continuity_closure.feasibility_restoration_factor must be in (0, 1].");
         }
     }
     cfg.finiteDifferenceStep = json.value("finite_difference_step", cfg.finiteDifferenceStep);
     cfg.jacobian = json.value("jacobian", cfg.jacobian);
     cfg.quasiFermiReference =
         json.value("quasi_fermi_reference", cfg.quasiFermiReference);
+    cfg.poissonOnlyQuasiFermiInitialization = json.value(
+        "poisson_only_quasi_fermi_initialization",
+        cfg.poissonOnlyQuasiFermiInitialization);
     cfg.residualNorm = json.value("residual_norm", cfg.residualNorm);
     cfg.contactBoundaryReconstruction =
         json.value("contact_boundary_reconstruction", cfg.contactBoundaryReconstruction);
@@ -2073,6 +2470,12 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             "newtonConfigFromJson: quasi_fermi_reference must be 'none', "
             "'contact_majority', or 'contact_basin'.");
     }
+    if (cfg.poissonOnlyQuasiFermiInitialization != "contact_basin" &&
+        cfg.poissonOnlyQuasiFermiInitialization != "preserve_initial") {
+        throw std::invalid_argument(
+            "newtonConfigFromJson: poisson_only_quasi_fermi_initialization "
+            "must be 'contact_basin' or 'preserve_initial'.");
+    }
     if (cfg.maxUpdate < 0.0 || !std::isfinite(cfg.maxUpdate))
         throw std::invalid_argument(
             "newtonConfigFromJson: max_update must be non-negative and finite.");
@@ -2168,9 +2571,12 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (cfg.residualNorm != "block" && cfg.residualNorm != "l2")
         throw std::invalid_argument(
             "newtonConfigFromJson: residual_norm must be 'block' or 'l2'.");
-    if (cfg.lineSearchMode != "merit" && cfg.lineSearchMode != "block_filter")
+    if (cfg.lineSearchMode != "merit" &&
+        cfg.lineSearchMode != "block_filter" &&
+        cfg.lineSearchMode != "block_closure_filter")
         throw std::invalid_argument(
-            "newtonConfigFromJson: line_search_mode must be 'merit' or 'block_filter'.");
+            "newtonConfigFromJson: line_search_mode must be 'merit', "
+            "'block_filter', or 'block_closure_filter'.");
     if (!(cfg.residualFilterGamma > 0.0) ||
         !(cfg.residualFilterGamma < 1.0) ||
         !std::isfinite(cfg.residualFilterGamma)) {
@@ -2418,12 +2824,21 @@ NewtonSolver::NewtonSolver(
             "NewtonSolver: quasi_fermi_reference must be 'none', "
             "'contact_majority', or 'contact_basin'.");
     }
+    if (cfg_.poissonOnlyQuasiFermiInitialization != "contact_basin" &&
+        cfg_.poissonOnlyQuasiFermiInitialization != "preserve_initial") {
+        throw std::invalid_argument(
+            "NewtonSolver: poisson_only_quasi_fermi_initialization must be "
+            "'contact_basin' or 'preserve_initial'.");
+    }
     if (cfg_.residualNorm != "block" && cfg_.residualNorm != "l2")
         throw std::invalid_argument(
             "NewtonSolver: residual_norm must be 'block' or 'l2'.");
-    if (cfg_.lineSearchMode != "merit" && cfg_.lineSearchMode != "block_filter")
+    if (cfg_.lineSearchMode != "merit" &&
+        cfg_.lineSearchMode != "block_filter" &&
+        cfg_.lineSearchMode != "block_closure_filter")
         throw std::invalid_argument(
-            "NewtonSolver: line_search_mode must be 'merit' or 'block_filter'.");
+            "NewtonSolver: line_search_mode must be 'merit', 'block_filter', "
+            "or 'block_closure_filter'.");
     if (cfg_.quasiFermiUpdateLimitMode != "componentwise_poisson_recorrect" &&
         cfg_.quasiFermiUpdateLimitMode != "uniform_trust_region") {
         throw std::invalid_argument(
@@ -5157,10 +5572,12 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
     VectorXd psi = initial.psi;
     VectorXd phin = initial.phin;
     VectorXd phip = initial.phip;
-    for (int i = 0; i < N; ++i) {
-        const Index node = static_cast<Index>(i);
-        phin(i) = nearestBias(node, electronAnchors, initial.phin(i));
-        phip(i) = nearestBias(node, holeAnchors, initial.phip(i));
+    if (cfg_.poissonOnlyQuasiFermiInitialization == "contact_basin") {
+        for (int i = 0; i < N; ++i) {
+            const Index node = static_cast<Index>(i);
+            phin(i) = nearestBias(node, electronAnchors, initial.phin(i));
+            phip(i) = nearestBias(node, holeAnchors, initial.phip(i));
+        }
     }
     for (const auto& [node, value] : bcs.psi)
         psi(static_cast<int>(node)) = value * potentialScale;
@@ -5884,19 +6301,21 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         const Real baseNorm = residualNormFn(residual);
         if (cfg_.globalContinuityClosure.mode == "off")
             return baseNorm;
-        Real electronSum = 0.0;
-        Real holeSum = 0.0;
+        long double electronSum = 0.0L;
+        long double holeSum = 0.0L;
         for (int i = 0; i < N; ++i) {
             const Index node = static_cast<Index>(i);
             if (bcs.phin.find(node) == bcs.phin.end())
-                electronSum += residual(N + i);
+                electronSum += static_cast<long double>(residual(N + i));
             if (bcs.phip.find(node) == bcs.phip.end())
-                holeSum += residual(2 * N + i);
+                holeSum += static_cast<long double>(residual(2 * N + i));
         }
         const Real electronRatio =
-            electronSum / std::max(activeGlobalElectronScale, Real{1.0e-300});
+            static_cast<Real>(electronSum) /
+            std::max(activeGlobalElectronScale, Real{1.0e-300});
         const Real holeRatio =
-            holeSum / std::max(activeGlobalHoleScale, Real{1.0e-300});
+            static_cast<Real>(holeSum) /
+            std::max(activeGlobalHoleScale, Real{1.0e-300});
         return std::sqrt(
             baseNorm * baseNorm
             + electronRatio * electronRatio
@@ -6154,6 +6573,15 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
 
     NewtonCarrierRowConvergenceEvaluation initialRowEval = carrierRowEval(x);
     NewtonGlobalContinuityClosureEvaluation initialGlobalEval = globalClosureEval(x);
+    bool hasBestFeasibleIterate =
+        carrierRowsAcceptConvergence(initialRowEval) &&
+        globalClosureAcceptsConvergence(initialGlobalEval);
+    VectorXd bestFeasibleX = x;
+    VectorXd bestFeasibleR = r;
+    int bestFeasibleIters = 0;
+    Real bestFeasibleNorm = initialNorm;
+    NewtonCarrierRowConvergenceEvaluation bestFeasibleRowEval = initialRowEval;
+    NewtonGlobalContinuityClosureEvaluation bestFeasibleGlobalEval = initialGlobalEval;
     NewtonIterationInfo initialTrace;
     initialTrace.iter = 0;
     initialTrace.residualNorm = initialNorm;
@@ -6184,6 +6612,14 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         if (auto recovered = retryAfterCarrierRowRecovery(x, 0, initialRowEval))
             return *recovered;
     }
+    if (initialNorm <= cfg_.stallResidualFloor &&
+        carrierRowsAcceptConvergence(initialRowEval) &&
+        globalClosureAcceptsConvergence(initialGlobalEval)) {
+        finishConverged(
+            "initial_stall_residual_floor", x, r, 0, initialNorm,
+            initialRowEval, initialGlobalEval);
+        return result;
+    }
 
     LinearSolver linearSolver;
     LineSearchConfig lscfg;
@@ -6211,6 +6647,14 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             candidateStep, jacobian, residual, activeLimits,
             N, potentialScale, doping_);
     };
+    auto capConfiguredQfOnly = [&](VectorXd& candidateStep) {
+        NewtonConfig activeLimits = cfg_;
+        activeLimits.quasiFermiUpdateLimit_V *= quasiFermiTrustRegionMultiplier;
+        activeLimits.quasiFermiUpdateLimitMinority_V *=
+            quasiFermiTrustRegionMultiplier;
+        applyConfiguredQuasiFermiStepCaps(
+            candidateStep, activeLimits, N, potentialScale, doping_);
+    };
 
     VectorXd acceptedX = x;
     VectorXd acceptedR = r;
@@ -6221,11 +6665,13 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
     for (int iter = 1; iter <= cfg_.maxIter; ++iter) {
         ScopedPerformanceTimer iterationTimer("newton.iteration");
         activeGlobalElectronScale = std::max(
-            std::abs(activeGlobalEval.electron.integratedSource),
-            cfg_.globalContinuityClosure.sourceFloor);
+            {std::abs(activeGlobalEval.electron.contactFlux),
+             std::abs(activeGlobalEval.electron.integratedSource),
+             cfg_.globalContinuityClosure.sourceFloor});
         activeGlobalHoleScale = std::max(
-            std::abs(activeGlobalEval.hole.integratedSource),
-            cfg_.globalContinuityClosure.sourceFloor);
+            {std::abs(activeGlobalEval.hole.contactFlux),
+             std::abs(activeGlobalEval.hole.integratedSource),
+             cfg_.globalContinuityClosure.sourceFloor});
         {
             ScopedPerformanceTimer timer("newton.row_weights");
             activeRowWeights = continuityRowWeights(
@@ -6241,7 +6687,18 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         }
         VectorXd step;
         try {
-            if (cfg_.continuityRowScaling.enabled) {
+            if (cfg_.globalContinuityClosure.linearSystemStabilization ==
+                "replace_free_row_sum") {
+                ScopedPerformanceTimer timer(
+                    "newton.global_continuity_linear_stabilization");
+                step = solveGlobalContinuityStabilizedSystem(
+                    linearSolver,
+                    J,
+                    -r,
+                    N,
+                    electronContactNodes,
+                    holeContactNodes);
+            } else if (cfg_.continuityRowScaling.enabled) {
                 ScopedPerformanceTimer timer("newton.linear_row_scaling");
                 const SparseMatrixd scaledJ = leftScaleRows(J, activeRowWeights);
                 step = linearSolver.solve(
@@ -6286,6 +6743,16 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                     " damping=0 step=0 (linear solve failed)");
                 printFailureDiagnostics(result.failureDiagnostics);
             }
+            if (cfg_.returnBestFeasibleOnFailure && hasBestFeasibleIterate) {
+                result.iters = bestFeasibleIters;
+                result.finalResidualNorm = bestFeasibleNorm;
+                result.finalBlockNorms = blockResidualInfo(
+                    bestFeasibleR, mesh_.numNodes());
+                result.finalCarrierRowConvergence = bestFeasibleRowEval;
+                result.finalGlobalContinuityClosure = bestFeasibleGlobalEval;
+                result.solution = makeSolution(
+                    assembler, bestFeasibleX, bestFeasibleIters);
+            }
             return result;
         }
         const VectorXd rawStep = step;
@@ -6293,6 +6760,23 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         {
             ScopedPerformanceTimer timer("newton.update_constraints");
             capConfiguredStep(step, J, r);
+        }
+        if (cfg_.globalContinuityClosure.feasibilityRestoration ==
+            "linear_qf_projection") {
+            ScopedPerformanceTimer timer(
+                "newton.global_continuity_feasibility_restoration");
+            VectorXd restoredStep = step;
+            if (restoreGlobalContinuityLinearizedStep(
+                    restoredStep, J, r, N,
+                    electronContactNodes, holeContactNodes)) {
+                // The unconstrained rank-2 correction can be large when the
+                // two terminal modes are weakly observable. Apply a configured
+                // fraction and then reapply the physical QF bounds; this is an
+                // inexact restoration that the nonlinear filter must accept.
+                step += cfg_.globalContinuityClosure.feasibilityRestorationFactor *
+                    (restoredStep - step);
+                capConfiguredQfOnly(step);
+            }
         }
         VectorXd cappedLinearResidual = J * step + r;
         Real stepNorm = step.norm();
@@ -6302,9 +6786,29 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             ResidualNorm::computeBlocks(r, mesh_.numNodes());
         ResidualBlockNormValue predictedFilterBlocks =
             ResidualNorm::computeBlocks(cappedLinearResidual, mesh_.numNodes());
+        const auto closureResidualRatios = [&](const VectorXd& residual) {
+            long double electronSum = 0.0L;
+            long double holeSum = 0.0L;
+            for (int i = 0; i < N; ++i) {
+                const Index node = static_cast<Index>(i);
+                if (bcs.phin.find(node) == bcs.phin.end())
+                    electronSum += static_cast<long double>(residual(N + i));
+                if (bcs.phip.find(node) == bcs.phip.end())
+                    holeSum += static_cast<long double>(residual(2 * N + i));
+            }
+            return std::array<Real, 2>{
+                std::abs(static_cast<Real>(electronSum)) /
+                    std::max(activeGlobalElectronScale, Real{1.0e-300}),
+                std::abs(static_cast<Real>(holeSum)) /
+                    std::max(activeGlobalHoleScale, Real{1.0e-300})};
+        };
+        const std::array<Real, 2> currentClosureRatios = closureResidualRatios(r);
+        std::array<Real, 2> predictedClosureRatios =
+            closureResidualRatios(cappedLinearResidual);
         const auto blockFilterAccept = [&](const VectorXd& candidateResidual,
                                            Real alpha) {
-            if (cfg_.lineSearchMode != "block_filter")
+            if (cfg_.lineSearchMode != "block_filter" &&
+                cfg_.lineSearchMode != "block_closure_filter")
                 return false;
             const ResidualBlockNormValue candidateBlocks =
                 ResidualNorm::computeBlocks(candidateResidual, mesh_.numNodes());
@@ -6335,8 +6839,12 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                     continue;
                 const Real floor = std::max(
                     cfg_.abstol * scales[block], Real{1.0e-300});
+                const Real envelopeBase =
+                    cfg_.lineSearchMode == "block_closure_filter"
+                        ? std::max({current[block], scales[block], floor})
+                        : std::max(scales[block], floor);
                 const Real envelope = cfg_.residualFilterEnvelopeFactor *
-                    std::max(scales[block], floor);
+                    envelopeBase;
                 if (!std::isfinite(candidate[block]) ||
                     candidate[block] > envelope) {
                     return false;
@@ -6356,7 +6864,37 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             }
             const bool carrierBlocksEnabled =
                 residualWeights.phin > 0.0 || residualWeights.phip > 0.0;
-            return carrierBlocksEnabled ? carrierImproved : anyImproved;
+            const bool deviceImproved =
+                carrierBlocksEnabled ? carrierImproved : anyImproved;
+            if (cfg_.lineSearchMode == "block_filter")
+                return deviceImproved;
+
+            const std::array<Real, 2> candidateClosureRatios =
+                closureResidualRatios(candidateResidual);
+            const Real absoluteClosureTarget =
+                cfg_.globalContinuityClosure.absoluteTolerance /
+                std::max(cfg_.globalContinuityClosure.sourceFloor, Real{1.0e-300});
+            const Real closureTarget = std::max(
+                cfg_.globalContinuityClosure.tolerance,
+                absoluteClosureTarget);
+            bool closureImproved = false;
+            for (int carrier = 0; carrier < 2; ++carrier) {
+                const Real envelope = cfg_.residualFilterEnvelopeFactor *
+                    std::max(currentClosureRatios[carrier], closureTarget);
+                if (!std::isfinite(candidateClosureRatios[carrier]) ||
+                    candidateClosureRatios[carrier] > envelope) {
+                    return false;
+                }
+                const Real predictedDecrease = std::max(
+                    currentClosureRatios[carrier] -
+                        predictedClosureRatios[carrier],
+                    Real{0.0});
+                const Real required = currentClosureRatios[carrier] -
+                    cfg_.residualFilterGamma * alpha * predictedDecrease;
+                closureImproved = closureImproved ||
+                    candidateClosureRatios[carrier] <= required;
+            }
+            return deviceImproved || closureImproved;
         };
 
         const auto runLineSearch = [&](const VectorXd& trialStep) {
@@ -6369,7 +6907,8 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                     return assembler.hasPositiveFiniteCarriers(candidate);
                 },
                 globalClosureLineSearchNorm,
-                cfg_.lineSearchMode == "block_filter"
+                (cfg_.lineSearchMode == "block_filter" ||
+                 cfg_.lineSearchMode == "block_closure_filter")
                     ? BacktrackingLineSearch::DecreaseAcceptFunction(blockFilterAccept)
                     : BacktrackingLineSearch::DecreaseAcceptFunction{});
         };
@@ -6393,6 +6932,18 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             {
                 ScopedPerformanceTimer timer("newton.update_constraints_retry");
                 capConfiguredStep(step, J, r);
+            }
+            if (cfg_.globalContinuityClosure.feasibilityRestoration ==
+                "linear_qf_projection") {
+                VectorXd restoredStep = step;
+                if (restoreGlobalContinuityLinearizedStep(
+                        restoredStep, J, r, N, electronContactNodes,
+                        holeContactNodes)) {
+                    step +=
+                        cfg_.globalContinuityClosure.feasibilityRestorationFactor *
+                        (restoredStep - step);
+                    capConfiguredQfOnly(step);
+                }
             }
             cappedLinearResidual = J * step + r;
             predictedFilterBlocks = ResidualNorm::computeBlocks(
@@ -6530,6 +7081,16 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                     result.failureDiagnostics.failureReason + ")");
                 printFailureDiagnostics(result.failureDiagnostics);
             }
+            if (cfg_.returnBestFeasibleOnFailure && hasBestFeasibleIterate) {
+                result.iters = bestFeasibleIters;
+                result.finalResidualNorm = bestFeasibleNorm;
+                result.finalBlockNorms = blockResidualInfo(
+                    bestFeasibleR, mesh_.numNodes());
+                result.finalCarrierRowConvergence = bestFeasibleRowEval;
+                result.finalGlobalContinuityClosure = bestFeasibleGlobalEval;
+                result.solution = makeSolution(
+                    assembler, bestFeasibleX, bestFeasibleIters);
+            }
             return result;
         }
 
@@ -6588,8 +7149,42 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             info.lineSearchHistory = std::move(ls.history);
         result.trace.push_back(info);
         result.history.push_back(std::move(info));
+        const NewtonGlobalContinuityClosureEvaluation globalEval =
+            globalClosureEval(x);
+        activeGlobalEval = globalEval;
+        if (carrierRowsAcceptConvergence(
+                result.history.back().carrierRowConvergence) &&
+            globalClosureAcceptsConvergence(globalEval) &&
+            (!hasBestFeasibleIterate || residualNorm < bestFeasibleNorm)) {
+            hasBestFeasibleIterate = true;
+            bestFeasibleX = x;
+            bestFeasibleR = r;
+            bestFeasibleIters = iter;
+            bestFeasibleNorm = residualNorm;
+            bestFeasibleRowEval = result.history.back().carrierRowConvergence;
+            bestFeasibleGlobalEval = globalEval;
+        }
         if (cfg_.verbose) {
             const NewtonBlockResidualInfo& blocks = result.history.back().blockResiduals;
+            long double electronFreeResidualSum = 0.0L;
+            long double holeFreeResidualSum = 0.0L;
+            for (int i = 0; i < N; ++i) {
+                const Index node = static_cast<Index>(i);
+                if (bcs.phin.find(node) == bcs.phin.end())
+                    electronFreeResidualSum +=
+                        static_cast<long double>(r(N + i));
+                if (bcs.phip.find(node) == bcs.phip.end())
+                    holeFreeResidualSum +=
+                        static_cast<long double>(r(2 * N + i));
+            }
+            const Real electronClosureScale = std::max(
+                {std::abs(globalEval.electron.contactFlux),
+                 std::abs(globalEval.electron.integratedSource),
+                 cfg_.globalContinuityClosure.sourceFloor});
+            const Real holeClosureScale = std::max(
+                {std::abs(globalEval.hole.contactFlux),
+                 std::abs(globalEval.hole.integratedSource),
+                 cfg_.globalContinuityClosure.sourceFloor});
             emitVerboseLine(
                 "Newton iter " + std::to_string(iter) +
                 " residual=" + std::to_string(residualNorm) +
@@ -6597,7 +7192,20 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                 " damping=" + std::to_string(ls.damping) +
                 " blocks=(" + std::to_string(blocks.psi) + "," +
                 std::to_string(blocks.phin) + "," +
-                std::to_string(blocks.phip) + ")");
+                std::to_string(blocks.phip) + ")" +
+                " global_closure=(e=" +
+                std::to_string(globalEval.electron.ratio) +
+                ",h=" + std::to_string(globalEval.hole.ratio) +
+                ",qualified=" +
+                std::to_string(globalEval.electron.qualified ? 1 : 0) +
+                "/" + std::to_string(globalEval.hole.qualified ? 1 : 0) +
+                ",free_residual_ratio=" +
+                std::to_string(std::abs(static_cast<Real>(electronFreeResidualSum)) /
+                               electronClosureScale) +
+                "/" +
+                std::to_string(std::abs(static_cast<Real>(holeFreeResidualSum)) /
+                               holeClosureScale) +
+                ")");
         }
 
         const Real rel = result.history.back().relativeResidualNorm;
@@ -6605,9 +7213,6 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         const bool relativeConverged = rel <= cfg_.reltol;
         const NewtonCarrierRowConvergenceEvaluation& rowEval =
             result.history.back().carrierRowConvergence;
-        const NewtonGlobalContinuityClosureEvaluation globalEval =
-            globalClosureEval(x);
-        activeGlobalEval = globalEval;
         if ((absoluteConverged || relativeConverged) &&
             carrierRowsAcceptConvergence(rowEval) &&
             globalClosureAcceptsConvergence(globalEval)) {
@@ -6695,6 +7300,16 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             " step=" + std::to_string(
                 result.history.empty() ? 0.0 : result.history.back().stepNorm));
         printFailureDiagnostics(result.failureDiagnostics);
+    }
+    if (cfg_.returnBestFeasibleOnFailure && hasBestFeasibleIterate) {
+        result.iters = bestFeasibleIters;
+        result.finalResidualNorm = bestFeasibleNorm;
+        result.finalBlockNorms = blockResidualInfo(
+            bestFeasibleR, mesh_.numNodes());
+        result.finalCarrierRowConvergence = bestFeasibleRowEval;
+        result.finalGlobalContinuityClosure = bestFeasibleGlobalEval;
+        result.solution = makeSolution(
+            assembler, bestFeasibleX, bestFeasibleIters);
     }
     return result;
 }

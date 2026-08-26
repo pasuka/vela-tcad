@@ -110,6 +110,7 @@ struct GummelConfig {
     double abstol      = 0.0;   ///< Absolute update tolerance across psi, n, and p
     double temperature_K = constants::T0; ///< Lattice temperature [K]
     double dampingPsi  = 1.0;   ///< Damping factor for Poisson update (0 < alpha <= 1)
+    bool equilibriumQuasiFermiLock = false; ///< Keep a common equilibrium QF and rebuild carriers from psi.
     double taun        = 1.0e-5; ///< Electron SRH lifetime [s]
     double taup        = 3.0e-6; ///< Hole SRH lifetime [s]
     double augerCn     = 2.90e-43; ///< Electron Auger coefficient [m^6/s]

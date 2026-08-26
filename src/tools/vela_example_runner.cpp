@@ -53,6 +53,8 @@ nlohmann::json meshReportJson(const vela::GeometryBuildReport& report)
         {"degenerate_cells", report.degenerateCells},
         {"negative_cotangent_count", report.negativeCotangentCount},
         {"fallback_count", report.fallbackCount},
+        {"edge_aggregation_repair_count", report.edgeAggregationRepairCount},
+        {"aggregated_negative_edge_count", report.aggregatedNegativeEdgeCount},
         {"min_angle_degrees", report.minAngleDegrees},
         {"max_angle_degrees", report.maxAngleDegrees},
         {"min_edge_length", report.minEdgeLength},

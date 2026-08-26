@@ -9,6 +9,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace vela {
 
@@ -17,6 +18,7 @@ namespace {
 constexpr Real kDegenerateTol = 1.0e-30;
 constexpr Real kPi = 3.141592653589793238462643383279502884;
 constexpr Real kNonObtuseAngleToleranceDegrees = 1.0e-10;
+constexpr Real kDelaunayCotangentTolerance = 1.0e-12;
 
 std::pair<Index, Index> edgeKey(Index a, Index b)
 {
@@ -99,7 +101,7 @@ void warnNegativeCotangent(Index cellId, Index n0, Index n1, Real cot)
 {
     std::cerr << "Vela warning: negative cotangent contribution " << cot
               << " for edge (" << n0 << ", " << n1 << ") in cell "
-              << cellId << "; using non-negative barycentric box fallback.\n";
+              << cellId << "; applying configured edge coupling policy.\n";
 }
 
 } // namespace
@@ -158,6 +160,11 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
     std::map<std::pair<Index, Index>, Index> edgeMap;
     for (Index e = 0; e < mesh.edges_.size(); ++e)
         edgeMap[edgeKey(mesh.edges_[e].n0, mesh.edges_[e].n1)] = e;
+
+    std::vector<Real> assembledRawCouples(mesh.edges_.size(), 0.0);
+    std::vector<Real> assembledCotangents(mesh.edges_.size(), 0.0);
+    std::vector<Real> assembledFallbackCouples(mesh.edges_.size(), 0.0);
+    std::vector<Index> assembledNegativeContributions(mesh.edges_.size(), 0);
 
     bool hasAngle = false;
     for (const auto& cell : mesh.cells_) {
@@ -235,17 +242,50 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
                 if (options.warnOnNegativeCotangent)
                     warnNegativeCotangent(cell.id, a, b, cot);
 
-                if (options.fallbackNegativeCotangent) {
+                if (options.edgeCouplingPolicy ==
+                    EdgeCouplingPolicy::LocalPositiveFallback &&
+                    options.fallbackNegativeCotangent) {
                     localCouple = area / (3.0 * edge.length);
                     ++report.fallbackCount;
-                } else {
+                } else if (options.edgeCouplingPolicy ==
+                           EdgeCouplingPolicy::LocalPositiveFallback) {
                     localCouple = 0.0;
                 }
             }
 
-            if (localCouple < 0.0)
-                localCouple = 0.0;
-            edge.couple += localCouple;
+            if (options.edgeCouplingPolicy ==
+                EdgeCouplingPolicy::AssembledDelaunayFallback) {
+                assembledRawCouples[it->second] += 0.5 * cot * edge.length;
+                assembledCotangents[it->second] += cot;
+                assembledFallbackCouples[it->second] += area / (3.0 * edge.length);
+                if (cot < 0.0)
+                    ++assembledNegativeContributions[it->second];
+            } else {
+                if (localCouple < 0.0)
+                    localCouple = 0.0;
+                edge.couple += localCouple;
+            }
+        }
+    }
+
+    if (options.edgeCouplingPolicy ==
+        EdgeCouplingPolicy::AssembledDelaunayFallback) {
+        for (Index edgeId = 0; edgeId < mesh.edges_.size(); ++edgeId) {
+            Edge& edge = mesh.edges_[edgeId];
+            if (assembledCotangents[edgeId] >= -kDelaunayCotangentTolerance) {
+                edge.couple = std::max(assembledRawCouples[edgeId], 0.0);
+                if (assembledNegativeContributions[edgeId] > 0)
+                    ++report.edgeAggregationRepairCount;
+                continue;
+            }
+
+            ++report.aggregatedNegativeEdgeCount;
+            if (options.fallbackNegativeCotangent) {
+                edge.couple = assembledFallbackCouples[edgeId];
+                ++report.fallbackCount;
+            } else {
+                edge.couple = 0.0;
+            }
         }
     }
 

@@ -24,6 +24,8 @@
 
 namespace vela {
 
+class LinearSolver;
+
 struct NewtonCarrierRowConvergenceConfig {
     std::string mode = "off"; ///< "off", "report", or "enforce".
     Real epsRow = 1.0e-3;
@@ -59,10 +61,19 @@ struct NewtonGlobalContinuityClosureConfig {
     std::string mode = "off"; ///< "off", "report", or "enforce".
     Real tolerance = 1.0e-2;
     Real sourceFloor = 1.0e-12;
+    Real absoluteTolerance = 1.0e-12;
+    std::string linearSystemStabilization = "off";
+    ///< "off" or mathematically equivalent "replace_free_row_sum".
+    std::string feasibilityRestoration = "off";
+    ///< "off" or "linear_qf_projection". The projection restores the two
+    ///< linearized free-carrier row sums after componentwise update limiting.
+    Real feasibilityRestorationFactor = 1.0;
+    ///< Fraction in (0, 1] of the linear QF projection applied per trial.
 };
 
 struct NewtonGlobalContinuityCarrierClosure {
     bool qualified = false;
+    bool satisfied = true;
     Real contactFlux = 0.0;
     Real integratedSource = 0.0;
     Real mismatch = 0.0;
@@ -126,12 +137,13 @@ struct NewtonConfig {
     Real temperature_K = constants::T0; ///< Lattice temperature [K]
     Real dampingFactor = 1.0;
     bool lineSearch = true;
-    std::string lineSearchMode = "merit"; ///< "merit" or "block_filter".
+    std::string lineSearchMode = "merit"; ///< "merit", "block_filter", or "block_closure_filter".
     Real residualFilterGamma = 1.0e-4;
     Real residualFilterEnvelopeFactor = 2.0;
     bool verbose = true;
     bool warmStart = false; ///< Preserve supplied quasi-Fermi potentials instead of resetting interiors.
     bool diagnostics = false; ///< Store detailed line-search diagnostics in NewtonResult::history.
+    bool returnBestFeasibleOnFailure = false; ///< On failure, expose the lowest-residual iterate that passed carrier-row and global-closure checks.
     Real maxUpdate = 0.0; ///< Optional infinity-norm cap on one Newton update in solver unknown units.
     Real quasiFermiUpdateLimit_V = 0.0; ///< Optional physical-voltage cap on phin/phip Newton updates.
     Real quasiFermiUpdateLimitMinority_V = 0.0; ///< Optional tighter physical-voltage cap on the minority-carrier quasi-Fermi update per node; 0 disables (uses the global cap for both carriers).
@@ -157,6 +169,7 @@ struct NewtonConfig {
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
     std::string quasiFermiReference = "none"; ///< "none", "contact_majority", or "contact_basin"
+    std::string poissonOnlyQuasiFermiInitialization = "contact_basin"; ///< "contact_basin" reconstructs ABA QFs; "preserve_initial" retains the supplied QF field except contact projections.
     std::string residualNorm = "block"; ///< "block" or "l2" convergence/line-search norm
     Real residualWeightPsi = 1.0;
     Real residualWeightPhin = 1.0;
@@ -739,6 +752,40 @@ NewtonGlobalContinuityClosureEvaluation evaluateGlobalContinuityClosure(
     const std::vector<Index>& electronContactNodes,
     const std::vector<Index>& holeContactNodes,
     const NewtonGlobalContinuityClosureConfig& cfg);
+
+/// Replace one free electron and hole continuity row by the corresponding
+/// sum of all free rows. This is an invertible row transformation and therefore
+/// leaves the exact Newton system unchanged while exposing global conservation
+/// directly to a finite-precision linear solve.
+bool stabilizeGlobalContinuityLinearSystem(
+    SparseMatrixd& matrix,
+    VectorXd& rhs,
+    int nodeCount,
+    const std::vector<Index>& electronContactNodes,
+    const std::vector<Index>& holeContactNodes);
+
+/// Solve the row-stabilized system through a rank-one/rank-two Woodbury
+/// correction while retaining the sparse factorization of the original
+/// Jacobian.
+VectorXd solveGlobalContinuityStabilizedSystem(
+    LinearSolver& linearSolver,
+    const SparseMatrixd& matrix,
+    const VectorXd& rhs,
+    int nodeCount,
+    const std::vector<Index>& electronContactNodes,
+    const std::vector<Index>& holeContactNodes);
+
+/// Apply the minimum-norm correction over unconstrained quasi-Fermi unknowns
+/// that restores the electron and hole free-row sums of the linearized trial.
+/// Returns false without modifying step when the two-row projection is rank
+/// deficient or non-finite.
+bool restoreGlobalContinuityLinearizedStep(
+    VectorXd& step,
+    const SparseMatrixd& matrix,
+    const VectorXd& residual,
+    int nodeCount,
+    const std::vector<Index>& electronContactNodes,
+    const std::vector<Index>& holeContactNodes);
 
 NewtonCarrierRowRecoveryResult recoverCarrierRowsWithGummelDensity(
     const DeviceMesh& mesh,

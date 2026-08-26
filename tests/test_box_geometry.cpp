@@ -109,6 +109,24 @@ DeviceMesh makeRefinementTransitionPatch()
     return mesh;
 }
 
+DeviceMesh makeTwoTriangleDelaunayPatch(Real upperY, Real lowerY)
+{
+    DeviceMesh mesh;
+    Node n0; n0.id = 0; n0.x = 0.0; n0.y = 0.0; mesh.addNode(n0);
+    Node n1; n1.id = 1; n1.x = 1.0; n1.y = 0.0; mesh.addNode(n1);
+    Node n2; n2.id = 2; n2.x = 0.2; n2.y = upperY; mesh.addNode(n2);
+    Node n3; n3.id = 3; n3.x = 0.5; n3.y = lowerY; mesh.addNode(n3);
+
+    Cell c0; c0.id = 0; c0.type = CellType::Tri3; c0.region_id = 0;
+    c0.node_ids = {0, 1, 2}; mesh.addCell(c0);
+    Cell c1; c1.id = 1; c1.type = CellType::Tri3; c1.region_id = 0;
+    c1.node_ids = {1, 0, 3}; mesh.addCell(c1);
+    Region r; r.id = 0; r.name = "body"; r.material = "Si"; r.cell_ids = {0, 1};
+    mesh.addRegion(r);
+    mesh.buildEdges();
+    return mesh;
+}
+
 struct CerrRedirectGuard {
     explicit CerrRedirectGuard(std::ostream& stream, std::streambuf* replacement)
         : stream_(stream), original_(stream.rdbuf(replacement))
@@ -218,6 +236,9 @@ TEST_CASE("ConfigParsing: omitted node volume policy preserves explicit barycent
         nlohmann::json{{"mesh_geometry",
                         {{"node_volume_policy", "mixed_voronoi"},
                          {"require_non_obtuse", true}}}});
+    const auto assembledDelaunay = parseBoxGeometryOptions(
+        nlohmann::json{{"mesh_geometry",
+                        {{"edge_coupling_policy", "assembled_delaunay_fallback"}}}});
 
     REQUIRE(omitted.nodeVolumePolicy == BoxGeometryBuilder::NodeVolumePolicy::Barycentric);
     REQUIRE(emptyObject.nodeVolumePolicy == BoxGeometryBuilder::NodeVolumePolicy::Barycentric);
@@ -228,6 +249,10 @@ TEST_CASE("ConfigParsing: omitted node volume policy preserves explicit barycent
     REQUIRE_FALSE(omitted.requireNonObtuse);
     REQUIRE_FALSE(explicitMixed.requireNonObtuse);
     REQUIRE(qualifiedMixed.requireNonObtuse);
+    REQUIRE(omitted.edgeCouplingPolicy ==
+            BoxGeometryBuilder::EdgeCouplingPolicy::LocalPositiveFallback);
+    REQUIRE(assembledDelaunay.edgeCouplingPolicy ==
+            BoxGeometryBuilder::EdgeCouplingPolicy::AssembledDelaunayFallback);
     REQUIRE_THROWS_WITH(
         parseBoxGeometryOptions(
             nlohmann::json{{"mesh_geometry", {{"node_volume_policy", "unknown"}}}}),
@@ -237,6 +262,47 @@ TEST_CASE("ConfigParsing: omitted node volume policy preserves explicit barycent
         parseBoxGeometryOptions(
             nlohmann::json{{"mesh_geometry", {{"require_non_obtuse", "yes"}}}}),
         "ConfigParsing: mesh_geometry.require_non_obtuse must be boolean.");
+    REQUIRE_THROWS_WITH(
+        parseBoxGeometryOptions(
+            nlohmann::json{{"mesh_geometry", {{"edge_coupling_policy", "unknown"}}}}),
+        "ConfigParsing: mesh_geometry.edge_coupling_policy must be "
+        "'local_positive_fallback' or 'assembled_delaunay_fallback'.");
+}
+
+TEST_CASE("BoxGeometryBuilder: assembled Delaunay policy repairs a negative local cotangent",
+          "[box_geometry][delaunay]")
+{
+    DeviceMesh mesh = makeTwoTriangleDelaunayPatch(0.1, -2.0);
+    BoxGeometryBuilder::Options options;
+    options.edgeCouplingPolicy =
+        BoxGeometryBuilder::EdgeCouplingPolicy::AssembledDelaunayFallback;
+    mesh.buildBoxGeometry(options);
+
+    const GeometryBuildReport& report = mesh.lastGeometryBuildReport();
+    REQUIRE(report.negativeCotangentCount == 1);
+    REQUIRE(report.edgeAggregationRepairCount == 1);
+    REQUIRE(report.aggregatedNegativeEdgeCount == 0);
+    REQUIRE(report.fallbackCount == 0);
+    for (const Edge& edge : mesh.edges())
+        REQUIRE(edge.couple >= 0.0);
+}
+
+TEST_CASE("BoxGeometryBuilder: assembled Delaunay policy falls back only on a negative dual face",
+          "[box_geometry][delaunay]")
+{
+    DeviceMesh mesh = makeTwoTriangleDelaunayPatch(0.1, -0.2);
+    BoxGeometryBuilder::Options options;
+    options.edgeCouplingPolicy =
+        BoxGeometryBuilder::EdgeCouplingPolicy::AssembledDelaunayFallback;
+    mesh.buildBoxGeometry(options);
+
+    const GeometryBuildReport& report = mesh.lastGeometryBuildReport();
+    REQUIRE(report.negativeCotangentCount == 2);
+    REQUIRE(report.edgeAggregationRepairCount == 0);
+    REQUIRE(report.aggregatedNegativeEdgeCount == 1);
+    REQUIRE(report.fallbackCount == 1);
+    for (const Edge& edge : mesh.edges())
+        REQUIRE(edge.couple >= 0.0);
 }
 
 TEST_CASE("BoxGeometryBuilder: non-obtuse qualification accepts eligible meshes and rejects obtuse cells",

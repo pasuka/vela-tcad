@@ -2950,8 +2950,15 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     }
 
     const std::uint64_t boundarySignature = booleanMaskHash(constrainedRows);
+    // A transport-cell-vector high-field drive couples an edge flux to every
+    // vertex of the transport cells adjacent to that edge.  Keep those
+    // off-edge quasi-Fermi columns in the fixed pattern even when avalanche
+    // is disabled; otherwise the residual and Jacobian have different
+    // stencils on general triangular meshes.
     const bool includeCellStencil = sgCurrentAvalanche ||
-        recombination_.bandToBandEnabled();
+        recombination_.bandToBandEnabled() ||
+        ((vectorQfMobility || surfaceMobilityEnabled_) &&
+         transportMobilityDerivative);
     if (!hasFixedJacobianPattern_ ||
         boundarySignature != fixedJacobianBoundarySignature_ ||
         includeCellStencil != fixedJacobianIncludesCellStencil_) {
@@ -3901,6 +3908,12 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         return sources;
     };
 
+    // Reuse one surface-potential workspace throughout the serial edge
+    // assembly.  Constructing a full node vector for every local finite
+    // difference makes the surface Jacobian O(edges * nodes) in memory
+    // traffic, even though each trial changes at most three entries.
+    VectorXd surfacePsiWorkspace = surfaceMobilityEnabled_ ? psi : VectorXd{};
+
     auto edgeElectronTransportFlux =
         [&](Index e, int i, int j, Real h,
             Real psi_i, Real psi_j, Real phin_i, Real phin_j,
@@ -3927,19 +3940,21 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             : (qfMobility
                 ? std::abs((phin_j - phin_i) / h) * fieldFactor
                 : electricField);
-        VectorXd psiForSurface;
         const VectorXd* psiForMobility = &psi;
         if (surfaceMobilityEnabled_) {
-            psiForSurface = psi;
-            psiForSurface(i) = psi_i;
-            psiForSurface(j) = psi_j;
-            psiForMobility = &psiForSurface;
+            surfacePsiWorkspace(i) = psi_i;
+            surfacePsiWorkspace(j) = psi_j;
+            psiForMobility = &surfacePsiWorkspace;
         }
         const Real mun = fixedMobility >= 0.0
             ? fixedMobility
             : cachedEdgeMobility(
                 e, CarrierType::Electron, electronMobilityField,
                 psiForMobility);
+        if (surfaceMobilityEnabled_) {
+            surfacePsiWorkspace(i) = psi(i);
+            surfacePsiWorkspace(j) = psi(j);
+        }
         if (mun <= 0.0)
             return 0.0;
         const Real coef = mun * Vt_ * fieldFactor * couple_e / h;
@@ -4006,18 +4021,20 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             : (qfMobility
                 ? std::abs((phip_j - phip_i) / h) * fieldFactor
                 : electricField);
-        VectorXd psiForSurface;
         const VectorXd* psiForMobility = &psi;
         if (surfaceMobilityEnabled_) {
-            psiForSurface = psi;
-            psiForSurface(i) = psi_i;
-            psiForSurface(j) = psi_j;
-            psiForMobility = &psiForSurface;
+            surfacePsiWorkspace(i) = psi_i;
+            surfacePsiWorkspace(j) = psi_j;
+            psiForMobility = &surfacePsiWorkspace;
         }
         const Real mup = fixedMobility >= 0.0
             ? fixedMobility
             : cachedEdgeMobility(
                 e, CarrierType::Hole, holeMobilityField, psiForMobility);
+        if (surfaceMobilityEnabled_) {
+            surfacePsiWorkspace(i) = psi(i);
+            surfacePsiWorkspace(j) = psi(j);
+        }
         if (mup <= 0.0)
             return 0.0;
         const Real coef = mup * Vt_ * fieldFactor * couple_e / h;
@@ -4165,6 +4182,83 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 add(phinOffset() + j, phinOffset() + i, -dF_dphin_i);
                 add(phinOffset() + j, phinOffset() + j, -dF_dphin_j);
             }
+
+            if (transportMobilityDerivative && vectorQfMobility) {
+                const auto basePhinAt = [&](Index node) {
+                    return phinState(static_cast<int>(node));
+                };
+                const EdgeAssemblyKernel& kernel = edgeAssemblyKernels_[e];
+                for (std::size_t stencilIndex = 0;
+                     stencilIndex < kernel.avalancheStencilNodeCount;
+                     ++stencilIndex) {
+                    const Index node =
+                        kernel.avalancheStencilNodes[stencilIndex];
+                    const Real value = phinState(static_cast<int>(node));
+                    const Real step =
+                        1.0e-6 * std::max(Real{1.0}, std::abs(value));
+                    const auto plusPhinAt = [&](Index query) {
+                        return query == node ? value + step : basePhinAt(query);
+                    };
+                    const auto minusPhinAt = [&](Index query) {
+                        return query == node ? value - step : basePhinAt(query);
+                    };
+                    const Real fieldPlus =
+                        transportVectorMobilityField(e, plusPhinAt);
+                    const Real fieldMinus =
+                        transportVectorMobilityField(e, minusPhinAt);
+                    const Real mobilityPlus = cachedEdgeMobility(
+                        e, CarrierType::Electron, fieldPlus, &psi);
+                    const Real mobilityMinus = cachedEdgeMobility(
+                        e, CarrierType::Electron, fieldMinus, &psi);
+                    const Real fluxPlus = edgeElectronTransportFlux(
+                        e, i, j, h, psi_i, psi_j, phin_i, phin_j,
+                        mobilityPlus);
+                    const Real fluxMinus = edgeElectronTransportFlux(
+                        e, i, j, h, psi_i, psi_j, phin_i, phin_j,
+                        mobilityMinus);
+                    const Real derivative =
+                        (fluxPlus - fluxMinus) / (2.0 * step);
+                    const int column =
+                        phinOffset() + static_cast<int>(node);
+                    add(phinOffset() + i, column, derivative);
+                    add(phinOffset() + j, column, -derivative);
+                }
+            }
+
+            if (transportMobilityDerivative && surfaceMobilityEnabled_) {
+                const EdgeAssemblyKernel& kernel = edgeAssemblyKernels_[e];
+                for (std::size_t stencilIndex = 0;
+                     stencilIndex < kernel.avalancheStencilNodeCount;
+                     ++stencilIndex) {
+                    const Index node =
+                        kernel.avalancheStencilNodes[stencilIndex];
+                    if (node == edgeKernel.n0 || node == edgeKernel.n1)
+                        continue;
+                    const Real value = psi(static_cast<int>(node));
+                    const Real step =
+                        1.0e-6 * std::max(Real{1.0}, std::abs(value));
+                    surfacePsiWorkspace(static_cast<int>(node)) = value + step;
+                    const Real mobilityPlus = cachedEdgeMobility(
+                        e, CarrierType::Electron, electronMobilityField,
+                        &surfacePsiWorkspace);
+                    surfacePsiWorkspace(static_cast<int>(node)) = value - step;
+                    const Real mobilityMinus = cachedEdgeMobility(
+                        e, CarrierType::Electron, electronMobilityField,
+                        &surfacePsiWorkspace);
+                    surfacePsiWorkspace(static_cast<int>(node)) = value;
+                    const Real fluxPlus = edgeElectronTransportFlux(
+                        e, i, j, h, psi_i, psi_j, phin_i, phin_j,
+                        mobilityPlus);
+                    const Real fluxMinus = edgeElectronTransportFlux(
+                        e, i, j, h, psi_i, psi_j, phin_i, phin_j,
+                        mobilityMinus);
+                    const Real derivative =
+                        (fluxPlus - fluxMinus) / (2.0 * step);
+                    const int column = psiOffset() + static_cast<int>(node);
+                    add(phinOffset() + i, column, derivative);
+                    add(phinOffset() + j, column, -derivative);
+                }
+            }
         }
 
         const Real mup = cachedEdgeMobility(
@@ -4228,6 +4322,83 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 add(phipOffset() + j, psiOffset() + j, -dF_dpsi_j);
                 add(phipOffset() + j, phipOffset() + i, -dF_dphip_i);
                 add(phipOffset() + j, phipOffset() + j, -dF_dphip_j);
+            }
+
+            if (transportMobilityDerivative && vectorQfMobility) {
+                const auto basePhipAt = [&](Index node) {
+                    return phipState(static_cast<int>(node));
+                };
+                const EdgeAssemblyKernel& kernel = edgeAssemblyKernels_[e];
+                for (std::size_t stencilIndex = 0;
+                     stencilIndex < kernel.avalancheStencilNodeCount;
+                     ++stencilIndex) {
+                    const Index node =
+                        kernel.avalancheStencilNodes[stencilIndex];
+                    const Real value = phipState(static_cast<int>(node));
+                    const Real step =
+                        1.0e-6 * std::max(Real{1.0}, std::abs(value));
+                    const auto plusPhipAt = [&](Index query) {
+                        return query == node ? value + step : basePhipAt(query);
+                    };
+                    const auto minusPhipAt = [&](Index query) {
+                        return query == node ? value - step : basePhipAt(query);
+                    };
+                    const Real fieldPlus =
+                        transportVectorMobilityField(e, plusPhipAt);
+                    const Real fieldMinus =
+                        transportVectorMobilityField(e, minusPhipAt);
+                    const Real mobilityPlus = cachedEdgeMobility(
+                        e, CarrierType::Hole, fieldPlus, &psi);
+                    const Real mobilityMinus = cachedEdgeMobility(
+                        e, CarrierType::Hole, fieldMinus, &psi);
+                    const Real fluxPlus = edgeHoleTransportFlux(
+                        e, i, j, h, psi_i, psi_j, phip_i, phip_j,
+                        mobilityPlus);
+                    const Real fluxMinus = edgeHoleTransportFlux(
+                        e, i, j, h, psi_i, psi_j, phip_i, phip_j,
+                        mobilityMinus);
+                    const Real derivative =
+                        (fluxPlus - fluxMinus) / (2.0 * step);
+                    const int column =
+                        phipOffset() + static_cast<int>(node);
+                    add(phipOffset() + i, column, derivative);
+                    add(phipOffset() + j, column, -derivative);
+                }
+            }
+
+            if (transportMobilityDerivative && surfaceMobilityEnabled_) {
+                const EdgeAssemblyKernel& kernel = edgeAssemblyKernels_[e];
+                for (std::size_t stencilIndex = 0;
+                     stencilIndex < kernel.avalancheStencilNodeCount;
+                     ++stencilIndex) {
+                    const Index node =
+                        kernel.avalancheStencilNodes[stencilIndex];
+                    if (node == edgeKernel.n0 || node == edgeKernel.n1)
+                        continue;
+                    const Real value = psi(static_cast<int>(node));
+                    const Real step =
+                        1.0e-6 * std::max(Real{1.0}, std::abs(value));
+                    surfacePsiWorkspace(static_cast<int>(node)) = value + step;
+                    const Real mobilityPlus = cachedEdgeMobility(
+                        e, CarrierType::Hole, holeMobilityField,
+                        &surfacePsiWorkspace);
+                    surfacePsiWorkspace(static_cast<int>(node)) = value - step;
+                    const Real mobilityMinus = cachedEdgeMobility(
+                        e, CarrierType::Hole, holeMobilityField,
+                        &surfacePsiWorkspace);
+                    surfacePsiWorkspace(static_cast<int>(node)) = value;
+                    const Real fluxPlus = edgeHoleTransportFlux(
+                        e, i, j, h, psi_i, psi_j, phip_i, phip_j,
+                        mobilityPlus);
+                    const Real fluxMinus = edgeHoleTransportFlux(
+                        e, i, j, h, psi_i, psi_j, phip_i, phip_j,
+                        mobilityMinus);
+                    const Real derivative =
+                        (fluxPlus - fluxMinus) / (2.0 * step);
+                    const int column = psiOffset() + static_cast<int>(node);
+                    add(phipOffset() + i, column, derivative);
+                    add(phipOffset() + j, column, -derivative);
+                }
             }
         }
 

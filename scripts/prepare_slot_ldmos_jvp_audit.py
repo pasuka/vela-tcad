@@ -35,15 +35,14 @@ def build_document(
     for contact in document["contacts"]:
         if contact["name"] == "drain":
             contact["bias"] = drain_bias_V
-    document["solver"]["impact_ionization"]["source_jacobian"] = (
-        source_jacobian
-    )
+    impact = document["solver"].get("impact_ionization")
+    if impact is not None:
+        impact["source_jacobian"] = source_jacobian
     if mobility_model is not None:
         document["solver"]["mobility"]["model"] = mobility_model
     if disable_impact:
-        document["solver"]["impact_ionization"]["coupling_mode"] = (
-            "postprocess_only"
-        )
+        if impact is not None:
+            impact["coupling_mode"] = "postprocess_only"
     if disable_recombination:
         document["solver"]["recombination"] = []
     directions: list[dict[str, Any]] = []

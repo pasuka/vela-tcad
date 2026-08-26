@@ -348,8 +348,12 @@ struct DCSweepPoint {
     int carrierRowViolations = 0;
     Real carrierRowMaxRatio = 0.0;
     bool globalContinuityClosureSatisfied = true;
+    bool globalElectronContinuityClosureQualified = false;
+    bool globalHoleContinuityClosureQualified = false;
     Real globalElectronContinuityClosureRatio = 0.0;
     Real globalHoleContinuityClosureRatio = 0.0;
+    Real globalElectronContinuityClosureMismatch = 0.0;
+    Real globalHoleContinuityClosureMismatch = 0.0;
     Real globalElectronContactFlux = 0.0;
     Real globalHoleContactFlux = 0.0;
     Real globalElectronIntegratedSource = 0.0;

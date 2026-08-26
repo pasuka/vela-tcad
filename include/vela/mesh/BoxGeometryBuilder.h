@@ -16,6 +16,8 @@ struct GeometryBuildReport {
     Index degenerateCells = 0;
     Index negativeCotangentCount = 0;
     Index fallbackCount = 0;
+    Index edgeAggregationRepairCount = 0;
+    Index aggregatedNegativeEdgeCount = 0;
     Real minAngleDegrees = 0.0;
     Real maxAngleDegrees = 0.0;
     Real minEdgeLength = 0.0;
@@ -36,11 +38,17 @@ public:
         MixedVoronoi,
     };
 
+    enum class EdgeCouplingPolicy {
+        LocalPositiveFallback,
+        AssembledDelaunayFallback,
+    };
+
     struct Options {
         bool fallbackNegativeCotangent = true;
         bool warnOnNegativeCotangent = false;
         bool requireNonObtuse = false;
         NodeVolumePolicy nodeVolumePolicy = NodeVolumePolicy::Barycentric;
+        EdgeCouplingPolicy edgeCouplingPolicy = EdgeCouplingPolicy::LocalPositiveFallback;
     };
 
     static Real triangleArea(const Node& a, const Node& b, const Node& c);
