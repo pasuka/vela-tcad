@@ -53,6 +53,20 @@ def parse_node_ids(value: str) -> list[int]:
     return [int(part.strip()) for part in value.split(",") if part.strip()]
 
 
+def parse_edge_node_ids(value: str) -> list[list[int]]:
+    if not value:
+        return []
+    result: list[list[int]] = []
+    for item in value.replace("|", ";").split(";"):
+        if not item.strip():
+            continue
+        endpoints = [int(part.strip()) for part in item.split("-")]
+        if len(endpoints) != 2:
+            raise ValueError(f"invalid contact edge pair: {item!r}")
+        result.append(endpoints)
+    return result
+
+
 def load_mesh(input_dir: Path) -> tuple[dict[str, Any], dict[str, set[int]]]:
     nodes_rows = read_csv(input_dir / "nodes.csv")
     element_rows = read_csv(input_dir / "elements.csv")
@@ -105,6 +119,7 @@ def load_mesh(input_dir: Path) -> tuple[dict[str, Any], dict[str, set[int]]]:
             "name": row["name"],
             "region_id": region_ids[row["region"]],
             "node_ids": parse_node_ids(row["node_ids"]),
+            "edge_node_ids": parse_edge_node_ids(row.get("edge_node_ids", "")),
         }
         for idx, row in enumerate(contact_rows)
     ]

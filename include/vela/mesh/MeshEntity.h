@@ -49,6 +49,9 @@ struct Contact {
     std::string        name;
     Index              region_id = 0;
     std::vector<Index> node_ids;
+    /// Optional exact boundary edge pairs. Empty preserves the legacy
+    /// node-set inference used by hand-authored meshes.
+    std::vector<std::array<Index, 2>> edge_node_ids;
 };
 
 } // namespace vela

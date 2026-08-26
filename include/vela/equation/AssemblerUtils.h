@@ -2371,6 +2371,18 @@ inline bool contactBoundaryFaceGeometry(
             const std::size_t next = (local + 1) % 3;
             if (!onContact[local] || !onContact[next])
                 continue;
+            if (!contact.edge_node_ids.empty()) {
+                const Index first = cell.node_ids[local];
+                const Index second = cell.node_ids[next];
+                const bool exactEdge = std::any_of(
+                    contact.edge_node_ids.begin(), contact.edge_node_ids.end(),
+                    [&](const std::array<Index, 2>& edge) {
+                        return (edge[0] == first && edge[1] == second) ||
+                            (edge[0] == second && edge[1] == first);
+                    });
+                if (!exactEdge)
+                    continue;
+            }
             const std::size_t opposite = (local + 2) % 3;
             const Point2 face0 = meshPoint(mesh, cell.node_ids[local]);
             const Point2 face1 = meshPoint(mesh, cell.node_ids[next]);

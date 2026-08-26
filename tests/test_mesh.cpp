@@ -443,6 +443,60 @@ TEST_CASE("JsonMeshReader rejects contacts with missing references", "[mesh][rea
     requireReadThrowsContaining(path, "contact id 0 references missing node id 4");
 }
 
+TEST_CASE("JsonMeshReader preserves exact contact boundary edge pairs", "[mesh][reader][contact]")
+{
+    const auto path = writeMeshReaderTestFile("contact_exact_edges", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 1.0, "y": 0.0},
+    {"id": 2, "x": 0.0, "y": 1.0}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]}
+  ],
+  "regions": [
+    {"id": 0, "name": "Si", "material": "Si", "cell_ids": [0]}
+  ],
+  "contacts": [
+    {"id": 0, "name": "gate", "region_id": 0,
+     "node_ids": [0, 1, 2], "edge_node_ids": [[0, 1], [1, 2]]}
+  ]
+}
+)json");
+
+    const DeviceMesh mesh = JsonMeshReader().read(path.path.string());
+    REQUIRE(mesh.numContacts() == 1);
+    REQUIRE(mesh.getContact(0).edge_node_ids ==
+            std::vector<std::array<Index, 2>>{{0, 1}, {1, 2}});
+}
+
+TEST_CASE("JsonMeshReader rejects contact edges outside the contact node set",
+          "[mesh][reader][contact]")
+{
+    const auto path = writeMeshReaderTestFile("contact_edge_outside_nodes", R"json(
+{
+  "nodes": [
+    {"id": 0, "x": 0.0, "y": 0.0},
+    {"id": 1, "x": 1.0, "y": 0.0},
+    {"id": 2, "x": 0.0, "y": 1.0}
+  ],
+  "triangles": [
+    {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]}
+  ],
+  "regions": [
+    {"id": 0, "name": "Si", "material": "Si", "cell_ids": [0]}
+  ],
+  "contacts": [
+    {"id": 0, "name": "gate", "region_id": 0,
+     "node_ids": [0, 1], "edge_node_ids": [[1, 2]]}
+  ]
+}
+)json");
+
+    requireReadThrowsContaining(path, "edge endpoint is absent from node_ids");
+}
+
 TEST_CASE("JsonMeshReader rejects regions with missing cells", "[mesh][reader]")
 {
     const auto path = writeMeshReaderTestFile("region_missing_cell", R"json(

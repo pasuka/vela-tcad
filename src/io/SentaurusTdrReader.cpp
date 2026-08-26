@@ -436,7 +436,10 @@ bool isDonorConcentrationField(const std::string& name)
     return name == "DonorConcentration" ||
         name == "PhosphorusActiveConcentration" ||
         name == "ArsenicActiveConcentration" ||
-        name == "AntimonyActiveConcentration";
+        name == "AntimonyActiveConcentration" ||
+        name == "PActive" ||
+        name == "AsActive" ||
+        name == "SbActive";
 }
 
 bool isAggregateDonorConcentrationField(const std::string& name)
@@ -449,12 +452,21 @@ bool isAcceptorConcentrationField(const std::string& name)
     return name == "AcceptorConcentration" ||
         name == "BoronActiveConcentration" ||
         name == "AluminumActiveConcentration" ||
-        name == "IndiumActiveConcentration";
+        name == "IndiumActiveConcentration" ||
+        name == "BActive" ||
+        name == "AlActive" ||
+        name == "InActive";
 }
 
 bool isAggregateAcceptorConcentrationField(const std::string& name)
 {
     return name == "AcceptorConcentration";
+}
+
+bool isDopableMaterial(const std::string& material)
+{
+    return material == "Silicon" || material == "PolySilicon" ||
+        material == "Germanium" || material == "SiliconGermanium";
 }
 
 const SentaurusTdrRegion* findRegion(const SentaurusTdrInventory& inventory, int index)
@@ -666,6 +678,13 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
                                        const SentaurusTdrExportOptions& options) const
 {
     const SentaurusTdrInventory inventory = readInventory(filename);
+    const double coordinateToUm = options.coordinateUnit == "um"
+        ? 1.0
+        : (options.coordinateUnit == "cm" ? 1.0e4 : 0.0);
+    if (coordinateToUm == 0.0) {
+        throw std::invalid_argument(
+            "SentaurusTdrReader: coordinateUnit must be 'um' or 'cm'.");
+    }
     const std::filesystem::path outDir(outputDirectory);
     std::filesystem::create_directories(outDir);
     std::filesystem::create_directories(outDir / "fields");
@@ -675,7 +694,8 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
         out << std::setprecision(std::numeric_limits<double>::max_digits10);
         out << "id,x_um,y_um\n";
         for (std::size_t i = 0; i < inventory.vertices.size(); ++i) {
-            out << i << "," << inventory.vertices[i].x << "," << inventory.vertices[i].y << "\n";
+            out << i << "," << inventory.vertices[i].x * coordinateToUm << ","
+                << inventory.vertices[i].y * coordinateToUm << "\n";
         }
     }
 
@@ -698,7 +718,7 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
 
     {
         std::ofstream out(outDir / "contacts.csv");
-        out << "name,node_ids,region\n";
+        out << "name,node_ids,edge_node_ids,region\n";
         for (const auto& region : inventory.regions) {
             if (region.type != SentaurusTdrRegionType::Contact) {
                 continue;
@@ -716,6 +736,14 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
                     out << ";";
                 }
                 out << node;
+                first = false;
+            }
+            out << ",";
+            first = true;
+            for (const auto& edge : region.edges) {
+                if (!first)
+                    out << ";";
+                out << edge[0] << "-" << edge[1];
                 first = false;
             }
             out << "," << (owner != nullptr ? owner->name : "") << "\n";
@@ -740,12 +768,12 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
         const bool donorField = isDonorConcentrationField(field.name);
         const bool acceptorField = isAcceptorConcentrationField(field.name);
         const auto* region = findRegion(inventory, field.region_index);
-        if (region == nullptr) {
+        if (region == nullptr || !isDopableMaterial(region->material)) {
             continue;
         }
         const auto nodes = fieldNodeOrder(inventory, field, *region);
         const std::size_t rows = std::min(nodes.size(), field.value_count);
-        if (field.name == "DopingConcentration") {
+        if (field.name == "DopingConcentration" || field.name == "NetActive") {
             for (std::size_t row = 0; row < rows; ++row) {
                 if (nodes[row] >= inventory.vertices.size() || field.component_count == 0) {
                     continue;
@@ -964,6 +992,9 @@ void SentaurusTdrReader::exportNeutral(const std::string& filename,
 
     nlohmann::json metadata;
     metadata["source"] = filename;
+    metadata["source_coordinate_unit"] = options.coordinateUnit;
+    metadata["exported_coordinate_unit"] = "um";
+    metadata["coordinate_to_um_scale"] = coordinateToUm;
     metadata["vertex_count"] = inventory.vertices.size();
     metadata["region_count"] = inventory.regions.size();
     metadata["dataset_count"] = inventory.fields.size();
