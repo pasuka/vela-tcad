@@ -82,6 +82,17 @@ class TemplatesLdmosContractsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unexpected key"):
             validate_document(invalid)
 
+    def test_tracked_budget_snapshot_is_double_approved_and_valid(self) -> None:
+        budget = read_json(
+            REPO / "reference_tcad" / "templates_ldmos_sentaurus2022" /
+            "budget_freeze.json"
+        )
+        validate_document(budget)
+        self.assertEqual(budget["approval"]["status"], "approved")
+        self.assertTrue(budget["approval"]["benchmark_owner"])
+        self.assertTrue(budget["approval"]["independent_reviewer"])
+        self.assertTrue(budget["approval"]["approved_at"])
+
     def test_validation_summary_renderer_uses_machine_readable_gates(self) -> None:
         summary = {
             "schema": "vela.templates_ldmos.validation_summary.v1",

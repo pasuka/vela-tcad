@@ -4,7 +4,7 @@
 
 WP0、阶段 0 和阶段 1 的技术工作已完成。原始 Sentaurus oracle、代表状态、结构/掺杂/接触导入、确定性复跑和 exact-mesh Poisson 成本下界均通过相应技术门。
 
-当前机器汇总状态为 `unresolved`、最高正式等级为 `L0`，唯一未关闭项是 `budget_freeze.approval.status=draft`：预算仍需 benchmark owner 与 independent reviewer 双签。因此本报告不授权进入阶段 1.5，也不声称经典 DD 或任何新增物理已经通过。
+预算已于 2026-08-26T12:41:25Z 完成双签，当前机器汇总状态为 `pass`、最高正式等级为 `L1`。本次签署关闭阶段 1 的治理门，允许按另行确认的执行范围进入阶段 1.5；它不声称经典 DD 或任何新增物理已经通过。
 
 ## 执行边界与版本
 
@@ -64,13 +64,13 @@ BV 在 `Iadapt=6.5e-13 A/um` 后从电压控制转入电流 continuation，存�
 
 网格不是非钝角/Delaunay 网格：有 1,016 个钝角三角形、13 条非 Delaunay 内边和 1,041 个负的原始 half-cotangent 权重；最小角 0.0630404°、最大角 174.451474°。因此阶段 1 草案将 `legacy_cell_reconstructed`、barycentric control volumes 和精确导入接触边冻结为候选公共离散合同，但仍标记 `physics_use_authorized=false`。PN2D 的 `element_edge_sg_gss_laux` 原子捆绑不得据此推断为 LDMOS 或全局默认。
 
-## 成本试跑与预算草案
+## 成本试跑与已批准预算
 
 成本探针是真正的线性 Poisson exact-mesh 结构下界，不调用 Newton，也不是材料或物理验收：
 
 - 10,241 nodes、30,022 unique edges；Poisson 结构 nnz 上界 70,285；耦合 DD 未知量估计 30,723。
 - 单偏置 1.608393 s；五点合计 4.561418 s；峰值 working set 26.95 MiB。
-- unsigned 草案：方案 A base 0.55 h、worst 1.37 h；方案 B base 4.56 h、worst 11.40 h；组合 base 5.66 h、worst 14.14 h；并发度 1，存储草案 5/15/40 GiB。
+- 已批准入口预算：方案 A base 0.55 h、worst 1.37 h；方案 B base 4.56 h、worst 11.40 h；组合 base 5.66 h、worst 14.14 h；并发度 1，存储预算 5/15/40 GiB。
 
 此前 stage1_v3 曾误用 `dc_sweep + poisson_only`，但该路径仍先进入耦合平衡态并出现 `nonfinite_residual`。它仅作为阶段 1.5 的先验输入，不构成求解器缺陷结论；正式成本数据来自 stage1_v4 的线性 Poisson 探针。
 
@@ -81,9 +81,11 @@ BV 在 `Iadapt=6.5e-13 A/um` 后从电压控制转入电流 continuation，存�
 | official oracle and representative states | pass |
 | exact topology structure | pass |
 | exact-mesh cost probe | pass |
-| budget double approval | unresolved |
+| budget double approval | pass |
 
-建议批准 WP0、阶段 0/1 的技术产物，同时维持阶段 1.5 禁入，直至预算由 benchmark owner 和 independent reviewer 双签。双签后应重新生成 `validation_summary`，正式把最高等级从 L0 提升到 L1；阶段 1.5、经典 DD、hRecVelocity/IALMob/hQP、热和 Okuto 均需另行授权与资格门。
+双签记录：benchmark owner 为 `Ted Chin (explicit Codex task authorization)`；independent reviewer 为 `OpenAI Codex evidence reviewer (non-human)`。复核确认 oracle manifest 哈希一致、探针运行全部成功、三档 scenario 等于 scope 预算求和，且当前约 2.11 GiB staging 小于最低 5 GiB 存储预算。
+
+WP0、阶段 0/1 现以 L1 关闭。阶段 1.5 可在用户明确要求继续后启动；经典 DD、hRecVelocity/IALMob/hQP、热和 Okuto 仍需各自资格门与范围授权。
 
 ## 可复现证据位置
 

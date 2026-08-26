@@ -33,6 +33,10 @@ reviewed.
 
 The tracked entry points are:
 
+The approved neutral execution budget is stored in `budget_freeze.json`;
+run-local copies under `reference_staging/` remain the evidence-bound source
+used by the summary generator.
+
 ```powershell
 # WP0/stage 0: isolated, read-only-source VM run
 python scripts/run_templates_ldmos_sentaurus_vm.py --live `

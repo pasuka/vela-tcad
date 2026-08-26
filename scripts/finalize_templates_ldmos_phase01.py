@@ -86,6 +86,14 @@ def main() -> int:
         status, highest = "unresolved", "L0"
     else:
         status, highest = "pass", "L1"
+    limitations = [
+        "No stage 1.5, classic DD, new physics, or curve acceptance was entered.",
+        "The cost probe is a Poisson-only lower bound and must be re-frozen after the first qualified classic-DD run.",
+    ]
+    if not budget_approved:
+        limitations.append(
+            "L1 remains governance-unresolved until budget_freeze has both required approvals."
+        )
     summary = {
         "schema": "vela.templates_ldmos.validation_summary.v1",
         "benchmark": BENCHMARK,
@@ -103,11 +111,7 @@ def main() -> int:
             evidence(cost_path, run_dir, "exact-mesh structural cost probe"),
             evidence(budget_path, run_dir, "draft or approved execution budget"),
         ],
-        "limitations": [
-            "No stage 1.5, classic DD, new physics, or curve acceptance was entered.",
-            "The cost probe is a Poisson-only lower bound and must be re-frozen after the first qualified classic-DD run.",
-            "L1 remains governance-unresolved until budget_freeze has both required approvals.",
-        ],
+        "limitations": limitations,
     }
     validate_document(summary)
     output = run_dir / "reports" / "validation_summary.json"
