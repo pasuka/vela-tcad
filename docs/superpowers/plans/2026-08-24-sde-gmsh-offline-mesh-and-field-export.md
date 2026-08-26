@@ -2,9 +2,8 @@
 
 ## 计划状态
 
-- 状态：实施中；M4 公开 Gmsh→Vela IV/BV 闭环已完成，内部 live TDX gate 等待对
-  `sentaurus` SSH 目标传输 GRD/DAT 的明确授权
-- 更新日期：2026-08-25
+- 状态：已完成；M0-M4 公开 Gmsh→Vela IV/BV 闭环和内部 live TDX/TDR gate 均已验收
+- 更新日期：2026-08-26
 - 计划源文件：`docs/superpowers/plans/2026-08-24-sde-gmsh-offline-mesh-and-field-export.md`
 - 实施 worktree：`D:\code-repo\copilot-worktrees\vela-tcad-dev`
 - 实施分支：`codex/sentaurus2022-sde-workflow`
@@ -53,9 +52,10 @@
   向 Vela deck 的单命令传递以及独立的内部 TDX gate。完整 PN2D IV 使用真实 Gmsh 网格
   得到 16 个收敛点并覆盖 0–0.3 V，状态 accepted；完整 BV 得到 406 个收敛点并到达
   −20 V，但端子电流混合守恒比 1.043 超过门槛 1，状态如实为 failed。TDX gate 的
-  hash-sealed dry-run 已通过；live SSH 传输因目标信任授权尚未明确而未执行，因此总体
-  状态仍不得改为完成。M4 影响范围 Python 回归 114/114、UCRT64 Release 全量 CTest
-  711/711 通过（157.26 秒）。验收记录见
+  hash-sealed dry-run 已通过；获明确授权后，live TDX T-2022.03-SP2 转换退出码为 0，
+  返回 TDR 的 1062 节点、2010 总单元、1990 个体 Tri3、两个各含 10 条边的 contact 及
+  7 个节点掺杂数据集均通过严格对比，场值最大绝对/相对差为 0。M4 影响范围 Python
+  回归 114/114、UCRT64 Release 全量 CTest 711/711 通过（157.26 秒）。验收记录见
   `docs/validation/sentaurus_gmsh_m4_acceptance_2026-08-25.md`。
 - 产品默认：`offline-static + gmsh`
 - 内部验证：`sentaurus2022-evaluated + tdx`，仅限具有许可证的开发环境
@@ -545,9 +545,10 @@ Sentaurus SDE .cmd
 
 ### M4 / P1：IV/BV 与内部 TDX 收口
 
-- 状态：部分完成；公开 IV/BV 已实跑，内部 live TDX 等待明确的数据传输授权。
+- 状态：已完成（2026-08-26）；公开 IV/BV 已实跑，内部 live TDX/TDR 严格往返通过。
 - Gmsh PN2D 网格参与实际 IV/BV；内部环境完成 TDX/TDR round-trip。
-- 只有 M0-M4 全部验收后，才将总体状态改为完成。
+- M0-M4 已全部验收，总体状态改为完成；PN2D BV 的端子守恒超限继续按 failed 报告，
+  不通过放宽合同伪装为 accepted。
 
 ## 建议提交拆分
 
