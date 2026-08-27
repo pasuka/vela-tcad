@@ -17,6 +17,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 
 import sentaurus_import as device  # noqa: E402
 import sentaurus_gmsh_tdx_gate as tdx_gate  # noqa: E402
+from tests.regression.gmsh_test_runtime import require_gmsh_runtime  # noqa: E402
 
 
 SDE = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "source" / "pn2d_sde.cmd"
@@ -122,12 +123,10 @@ class M4TdxGateUnitTest(unittest.TestCase):
 class M4GmshIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        prefix = Path(sys.prefix)
-        cls.wrapper = prefix / "lib" / "gmsh.py"
-        cls.library = prefix / "bin" / "libgmsh.dll"
-        cls.executable = prefix / "bin" / "gmsh.exe"
-        if not all(path.is_file() for path in (cls.wrapper, cls.library, cls.executable)):
-            raise unittest.SkipTest("Gmsh 4.15.2 UCRT64 runtime is not installed")
+        sources = require_gmsh_runtime()
+        cls.wrapper = sources.wrapper
+        cls.library = sources.library
+        cls.executable = sources.executable
 
     def test_default_device_command_generates_complete_gmsh_pn2d_bundle(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_m4_device_") as tmp:

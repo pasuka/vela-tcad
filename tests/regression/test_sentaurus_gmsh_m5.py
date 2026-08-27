@@ -17,6 +17,7 @@ import sentaurus_gmsh_backend as backend  # noqa: E402
 import sentaurus_gmsh_pipeline as pipeline  # noqa: E402
 from sentaurus_device_ir import parse_sde_device_ir  # noqa: E402
 from sentaurus_ir_v2 import migrate_device_ir_v1  # noqa: E402
+from tests.regression.gmsh_test_runtime import require_gmsh_runtime  # noqa: E402
 
 
 PN2D = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "source" / "pn2d_sde.cmd"
@@ -48,12 +49,10 @@ class M5PolicyUnitTest(unittest.TestCase):
 class M5GmshIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        prefix = Path(sys.prefix)
-        cls.wrapper = prefix / "lib" / "gmsh.py"
-        cls.library = prefix / "bin" / "libgmsh.dll"
-        cls.executable = prefix / "bin" / "gmsh.exe"
-        if not all(path.is_file() for path in (cls.wrapper, cls.library, cls.executable)):
-            raise unittest.SkipTest("Gmsh 4.15.2 UCRT64 runtime is not installed")
+        sources = require_gmsh_runtime()
+        cls.wrapper = sources.wrapper
+        cls.library = sources.library
+        cls.executable = sources.executable
 
     def test_pn2d_auto_generates_exact_right_tri3_contract(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_gmsh_m5_") as tmp:

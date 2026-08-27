@@ -17,6 +17,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 from sentaurus_device_ir import parse_sde_device_ir  # noqa: E402
 from sentaurus_gmsh_backend import GmshBackendError, validate_m1_device_ir  # noqa: E402
 from sentaurus_ir_v2 import migrate_device_ir_v1  # noqa: E402
+from tests.regression.gmsh_test_runtime import require_gmsh_runtime  # noqa: E402
 
 FIXTURE = REPO / "tests" / "fixtures" / "sentaurus_gmsh_m1" / "two_regions_sde.cmd"
 
@@ -53,12 +54,10 @@ class M1CapabilityTest(unittest.TestCase):
 
 class M1GmshIntegrationTest(unittest.TestCase):
     def test_two_region_pipeline_roundtrips_every_m1_format(self) -> None:
-        prefix = Path(sys.prefix)
-        wrapper = prefix / "lib" / "gmsh.py"
-        library = prefix / "bin" / "libgmsh.dll"
-        executable = prefix / "bin" / "gmsh.exe"
-        if not all(path.is_file() for path in (wrapper, library, executable)):
-            self.skipTest("Gmsh 4.15.2 UCRT64 runtime is not installed")
+        sources = require_gmsh_runtime()
+        wrapper = sources.wrapper
+        library = sources.library
+        executable = sources.executable
         with tempfile.TemporaryDirectory(prefix="vela_gmsh_m1_") as tmp:
             root = Path(tmp)
             output = root / "output"

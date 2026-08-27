@@ -15,6 +15,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 from sentaurus_device_ir import SdeParseError, parse_sde_device_ir  # noqa: E402
 from sentaurus_gmsh_backend import GmshBackendError, validate_m3_device_ir  # noqa: E402
 from sentaurus_ir_v2 import migrate_device_ir_v1  # noqa: E402
+from tests.regression.gmsh_test_runtime import require_gmsh_runtime  # noqa: E402
 
 FIXTURE = REPO / "tests" / "fixtures" / "sentaurus_gmsh_m3" / "m3_refinement_sde.cmd"
 PN2D = REPO / "reference_tcad" / "pn2d_sentaurus2022_oracle" / "input" / "pn2d_sde.cmd"
@@ -95,12 +96,10 @@ class M3RefinementUnitTest(unittest.TestCase):
 class M3GmshIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        prefix = Path(sys.prefix)
-        cls.wrapper = prefix / "lib" / "gmsh.py"
-        cls.library = prefix / "bin" / "libgmsh.dll"
-        cls.executable = prefix / "bin" / "gmsh.exe"
-        if not all(path.is_file() for path in (cls.wrapper, cls.library, cls.executable)):
-            raise unittest.SkipTest("Gmsh 4.15.2 UCRT64 runtime is not installed")
+        sources = require_gmsh_runtime()
+        cls.wrapper = sources.wrapper
+        cls.library = sources.library
+        cls.executable = sources.executable
 
     def _run(self, source: Path, output: Path, runtime: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(

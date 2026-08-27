@@ -52,7 +52,8 @@
               "lower_left",
               "upper_right",
               "order",
-              "boolean_mode"
+              "boolean_mode",
+              "location"
             ],
             "additionalProperties": false,
             "properties": {
@@ -77,7 +78,8 @@
               },
               "boolean_mode": {
                 "enum": ["ABA", "BAB"]
-              }
+              },
+              "location": {"type": "string"}
             }
           }
         },
@@ -85,9 +87,13 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["x", "y"],
+            "required": ["x", "y", "location"],
             "additionalProperties": false,
-            "properties": {"x": {"type": "number"}, "y": {"type": "number"}}
+            "properties": {
+              "x": {"type": "number"},
+              "y": {"type": "number"},
+              "location": {"type": "string"}
+            }
           }
         }
       }
@@ -122,7 +128,8 @@
         "required": [
           "name",
           "pick_points",
-          "display"
+          "display",
+          "location"
         ],
         "additionalProperties": false,
         "properties": {
@@ -137,7 +144,8 @@
               "type": "object",
               "required": [
                 "x",
-                "y"
+                "y",
+                "location"
               ],
               "additionalProperties": false,
               "properties": {
@@ -146,10 +154,12 @@
                 },
                 "y": {
                   "type": "number"
-                }
+                },
+                "location": {"type": "string"}
               }
             }
-          }
+          },
+          "location": {"type": "string"}
         }
       }
     },
@@ -170,7 +180,6 @@
               "name",
               "type",
               "species",
-              "carrier",
               "carrier"
             ],
             "additionalProperties": false,
@@ -230,7 +239,8 @@
             "required": [
               "name",
               "max_x",
-              "max_y"
+              "max_y",
+              "location"
             ],
             "additionalProperties": false,
             "properties": {
@@ -252,7 +262,8 @@
               "min_y": {
                 "type": "number",
                 "exclusiveMinimum": 0
-              }
+              },
+              "location": {"type": "string"}
             }
           }
         },
@@ -264,7 +275,8 @@
               "name",
               "refinement",
               "target_kind",
-              "target"
+              "target",
+              "location"
             ],
             "additionalProperties": false,
             "properties": {
@@ -279,7 +291,8 @@
               },
               "target": {
                 "type": "string"
-              }
+              },
+              "location": {"type": "string"}
             }
           }
         },
@@ -293,6 +306,17 @@
               "refinement": {"type": "string"},
               "function": {"enum": ["MaxTransDiff", "MaxGradient", "MaxLenInt"]},
               "arguments": {"type": "array"},
+              "variable": {"type": "string"},
+              "interface": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {"type": "string"}
+              },
+              "value": {"type": "number", "exclusiveMinimum": 0},
+              "factor": {"type": ["number", "null"], "minimum": 1},
+              "double_side": {"type": "boolean"},
+              "use_region_names": {"type": "boolean"},
               "location": {"type": "string"}
             }
           }
@@ -371,7 +395,7 @@
       "required": [
         "name",
         "shape",
-        "shape"
+        "location"
       ],
       "additionalProperties": false,
       "properties": {
@@ -389,7 +413,8 @@
         },
         "start": {"$ref": "#/definitions/point2d"},
         "end": {"$ref": "#/definitions/point2d"},
-        "points": {"type": "array", "minItems": 3, "items": {"$ref": "#/definitions/point2d"}}
+        "points": {"type": "array", "minItems": 3, "items": {"$ref": "#/definitions/point2d"}},
+        "location": {"type": "string"}
       }
     },
     "placement": {
@@ -429,6 +454,8 @@
         "evaluation": {"enum": ["Eval", "NoEval"]},
         "restriction_kind": {"type": ["string", "null"]},
         "restriction": {"type": ["string", "null"]},
+        "restriction_decay_length": {"type": "number", "minimum": 0},
+        "restriction_decay": {"enum": ["none", "gaussian", "erf"]},
         "location": {"type": "string"}
       }
     }

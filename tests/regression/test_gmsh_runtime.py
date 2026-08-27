@@ -20,6 +20,7 @@ from gmsh_runtime import (  # noqa: E402
     stage_runtime,
     wrapper_version,
 )
+from tests.regression.gmsh_test_runtime import require_gmsh_runtime  # noqa: E402
 
 
 class GmshRuntimeUnitTest(unittest.TestCase):
@@ -49,7 +50,9 @@ class GmshRuntimeUnitTest(unittest.TestCase):
                 root / "runtime",
             )
             self.assertEqual(
-                "gmsh-4.15.dll", Path(staged["library"]).name)
+                expected_library_name(EXPECTED_GMSH_VERSION),
+                Path(staged["library"]).name,
+            )
             self.assertTrue(Path(staged["wrapper"]).is_file())
             self.assertTrue(Path(staged["library"]).is_file())
             self.assertEqual(64, len(staged["wrapper_sha256"]))
@@ -83,21 +86,14 @@ class GmshRuntimeUnitTest(unittest.TestCase):
 
 
 class GmshRuntimeIntegrationTest(unittest.TestCase):
-    def test_ucrt64_or_packaged_runtime_generates_tri3(self) -> None:
-        prefix = Path(sys.prefix)
-        wrapper = prefix / "lib" / "gmsh.py"
-        executable = prefix / "bin" / "gmsh.exe"
-        libraries = [
-            prefix / "bin" / "libgmsh.dll",
-            prefix / "bin" / expected_library_name(EXPECTED_GMSH_VERSION),
-        ]
-        library = next((item for item in libraries if item.is_file()), None)
-        if not wrapper.is_file() or not executable.is_file() or library is None:
-            self.skipTest(
-                "Gmsh 4.15.2 Python wrapper, shared library and CLI are not installed")
+    def test_packaged_runtime_generates_tri3(self) -> None:
+        sources = require_gmsh_runtime()
+        wrapper = sources.wrapper
+        library = sources.library
+        executable = sources.executable
 
-        # Run the public entry point in a child process so Windows can unload
-        # the staged DLL before TemporaryDirectory removes it.
+        # Run the public entry point in a child process so a platform can unload
+        # the staged shared library before TemporaryDirectory removes it.
         with tempfile.TemporaryDirectory(prefix="vela_gmsh_probe_") as tmp:
             root = Path(tmp)
             completed = subprocess.run(

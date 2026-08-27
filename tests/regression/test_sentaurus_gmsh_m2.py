@@ -22,6 +22,7 @@ from sentaurus_gmsh_backend import (  # noqa: E402
 )
 from sentaurus_ir_v2 import migrate_device_ir_v1  # noqa: E402
 from sentaurus_mesh_exporters import bundle_to_vela_mesh  # noqa: E402
+from tests.regression.gmsh_test_runtime import require_gmsh_runtime  # noqa: E402
 
 FIXTURE = REPO / "tests" / "fixtures" / "sentaurus_gmsh_m2" / "m2_core_sde.cmd"
 ORACLE = FIXTURE.with_name("sentaurus2022_oracle_summary.json")
@@ -213,12 +214,10 @@ class M2DopingUnitTest(unittest.TestCase):
 class M2GmshIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        prefix = Path(sys.prefix)
-        cls.wrapper = prefix / "lib" / "gmsh.py"
-        cls.library = prefix / "bin" / "libgmsh.dll"
-        cls.executable = prefix / "bin" / "gmsh.exe"
-        if not all(path.is_file() for path in (cls.wrapper, cls.library, cls.executable)):
-            raise unittest.SkipTest("Gmsh 4.15.2 UCRT64 runtime is not installed")
+        sources = require_gmsh_runtime()
+        cls.wrapper = sources.wrapper
+        cls.library = sources.library
+        cls.executable = sources.executable
 
     def _run(self, source: Path, output: Path, runtime: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
