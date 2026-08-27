@@ -33,6 +33,10 @@ M5 在 M3/M4 语义和导出闭环之上增加可选择的 Gmsh Transfinite Rect
 - `69b259b` 后的 UCRT64 Release 全量 CTest 为 712/712 通过，总耗时 798.37 秒；其中
   `sentaurus_device_e2e_contract`、`sentaurus_gmsh_m1` 至 `m5` 和
   `sentaurus_sample_integration` 均通过。
+- 收尾提交 `605cd6c` 后通过双父 merge commit `af01ea2` 合入本地 `main` `270f525`
+  的 4 个后续提交；合并后 UCRT64 Release 增量构建 104/104 成功，全量 CTest
+  712/712 通过，总耗时 795.58 秒。`sentaurus_device_e2e_contract`、M1-M5 及
+  `sentaurus_sample_integration` 在最终合并树上再次通过。
 - M1-M5 定向 Release CTest 全部通过；增量 Release 构建成功，全量 CTest 712/712 通过。
 - 四种对角布置 `Left/Right/AlternateLeft/AlternateRight` 均通过逐单元直角和非钝角验证。
 - 局部 Rectangle refinement window 的轴向投影测试通过；人工分区切点不会截断原始完整
