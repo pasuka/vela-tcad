@@ -88,10 +88,13 @@ Save/Load 结果相对同进程结果处于 double 舍入量级。
 - 最终 hole continuity 块：`4.09691e-9`；
 - 失败前 line search 多数只接受 `1/1024--1/256` 的步长。
 
-在 `0.023155977422 V`，Vela drain current 为 `2.6161e-11 A/um`，而 Sentaurus
+在 `0.023155977422 V`，Vela drain current 为 `2.6161e-17 A/um`，而 Sentaurus
 同点约为 `2.0832e-15 A`。两边 2-D 电流归一化合同仍需在最终定量引用前复核，但
 Vela 的电子 drift/diffusion 分量各约 `2.676e-2 A/um`、靠高位相消得到净电流，
 已经表明深截止区存在严重的通量闭合/状态差异，不能用 continuation 步长修复。
+
+此前记录的 `2.6161e-11` 是 Vela CSV 中尚未乘 `1e-6 m` 默认器件深度的内部电流列，
+不是同一行已经归一化的 `current_A_per_um`；本节现已按后者纠正。
 
 ## 后续决定
 
