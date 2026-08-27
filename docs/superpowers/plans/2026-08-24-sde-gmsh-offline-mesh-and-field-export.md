@@ -48,25 +48,31 @@
   为 0。MaxTransDiff/MaxGradient 作为 4B 继续 source-located fail-closed。验收说明见
   `docs/validation/sentaurus_gmsh_m3_acceptance_2026-08-25.md`。UCRT64 Release 构建
   成功，全量 CTest 710/710 通过，耗时 303.47 秒。
-- M4 当前结果：`sentaurus_import.py device` 已以 `offline-static + gmsh` 为公开默认，
+- M4 阶段结果：`sentaurus_import.py device` 已以 `offline-static + gmsh` 为公开默认，
   完成 2×3 前端/网格后端组合矩阵、Gmsh 专属 barycentric/钝角质量合同、完整跨格式产物
   向 Vela deck 的单命令传递以及独立的内部 TDX gate。完整 PN2D IV 使用真实 Gmsh 网格
   得到 16 个收敛点并覆盖 0–0.3 V，状态 accepted；完整 BV 得到 406 个收敛点并到达
-  −20 V，但端子电流混合守恒比 1.043 超过门槛 1，状态如实为 failed。TDX gate 的
+  −20 V，但当时端子电流混合守恒比 1.043 超过门槛 1，状态如实为 failed；该阶段性
+  缺口已由 M5 后续的原子化 SG/GSS-Laux BV profile 修复。TDX gate 的
   hash-sealed dry-run 已通过；获明确授权后，live TDX T-2022.03-SP2 转换退出码为 0，
   返回 TDR 的 1062 节点、2010 总单元、1990 个体 Tri3、两个各含 10 条边的 contact 及
   7 个节点掺杂数据集均通过严格对比，场值最大绝对/相对差为 0。M4 影响范围 Python
   回归 114/114、UCRT64 Release 全量 CTest 711/711 通过（157.26 秒）。验收记录见
   `docs/validation/sentaurus_gmsh_m4_acceptance_2026-08-25.md`。
-- M5 当前结果：公开 Gmsh 路径新增 `auto | transfinite-rect | unstructured` 网格策略及
+- M5 最终结果：公开 Gmsh 路径新增 `auto | transfinite-rect | unstructured` 网格策略及
   `Left | Right | AlternateLeft | AlternateRight` 对角布置。`auto` 只对单个轴对齐矩形、
   Rectangle refinement window、无 refinement function/insert-vertex 的 Device IR 选择
   Transfinite；其他合法 M3 输入回退非结构 BAMG，显式请求不满足条件时 fail-closed。
   PN2D 的 0.9/1.1 um 结区窗口被分为 18/20/18 个 x 向区间，y 向为 25 个区间，实测
   1482 节点、2800 个 Tri3、两端各 26 个接触节点；每个单元均有一个直角，最大角
-  90.00000000000077 度，MSH/VTU/VTK/DAT 五个节点场差值为 0。完整 IV 已 accepted；
-  完整 BV 的 406 个点已到达 -20 V，但端子电流混合容差比 1.216 超过门槛 1.0，状态
-  如实保持 failed。M1-M5 定向 CTest 全部通过；UCRT64 Release 全量 CTest 712/712 通过。
+  90.00000000000077 度，MSH/VTU/VTK/DAT 五个节点场差值为 0。完整 IV 已 accepted。
+  完整 BV 随后使用原子化 `element_edge_sg_gss_laux + element_vertex_box_measure +
+  bernoulli + mixed_voronoi` 组合重新验收：406 个点到达 -20 V，端子电流混合容差比
+  0.966，小于门槛 1.0；与冻结 Sentaurus BV 曲线比较 213 个点，最大差异 0.0561 decade、
+  最大相对误差 13.78%，最终状态 accepted。参考曲线、LF 归一化 SHA-256 和误差门槛已
+  正式写入 E2E contract，提交为 `69b259b`。M1-M5 定向 CTest 全部通过；原 M5 基线的
+  UCRT64 Release 全量 CTest 712/712 通过。提交 `69b259b` 后再次执行全量 Release
+  CTest，712/712 通过，总耗时 798.37 秒。
   经单独授权后，内部 TDX T-2022.03-SP2 live gate 退出码为 0；返回 TDR 的 1482 节点、
   2850 总单元、2800 个体 Tri3、Anode/Cathode 各 25 条接触边以及 7 个节点数据集全部与
   GRD/DAT 严格匹配，所有场的最大绝对/相对差均为 0。
