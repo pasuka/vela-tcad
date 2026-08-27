@@ -20,6 +20,8 @@ MATERIAL_TAG_BASE = 2000
 CONTACT_TAG_BASE = 3000
 INTERFACE_TAG_BASE = 4000
 LOG_DOPING_FLOOR_CM3 = 1.0
+M5_MESH_STRATEGIES = {"auto", "transfinite-rect", "unstructured"}
+M5_TRANSFINITE_DIAGONALS = {"Left", "Right", "AlternateLeft", "AlternateRight"}
 
 
 class GmshBackendError(ValueError):
@@ -337,6 +339,60 @@ def validate_m3_device_ir(device_ir: dict[str, Any]) -> None:
                 {"stage": "capability", "capability": "maxlenint-contact",
                  "source_location": function["provenance"]["source_location"]},
             )
+
+
+def validate_m5_device_ir(device_ir: dict[str, Any]) -> None:
+    """M5 preserves the complete M3 semantic contract and adds mesh policy."""
+    validate_m3_device_ir(device_ir)
+
+
+def _m5_transfinite_eligibility(device_ir: dict[str, Any]) -> dict[str, Any]:
+    """Return an auditable, deliberately narrow structured-mesh decision."""
+    reasons: list[dict[str, Any]] = []
+    bodies = device_ir["geometry"]["bodies"]
+    if len(bodies) != 1:
+        reasons.append({
+            "code": "body_count", "message": "requires exactly one authored body",
+            "actual": len(bodies),
+        })
+    elif bodies[0].get("shape") != "rectangle":
+        reasons.append({
+            "code": "body_shape", "message": "requires an axis-aligned Rectangle body",
+            "actual": bodies[0].get("shape"),
+        })
+    if device_ir["geometry"].get("inserted_vertices"):
+        reasons.append({
+            "code": "inserted_vertices",
+            "message": "authored insert-vertex topology is not yet mapped to a structured grid",
+        })
+    control = device_ir["mesh_control"]
+    if control.get("refinement_functions"):
+        reasons.append({
+            "code": "refinement_functions",
+            "message": "Transfinite M5 supports spacing placements, not refinement functions",
+            "functions": [item.get("function") for item in control["refinement_functions"]],
+        })
+    windows = {item["name"]: item for item in control.get("windows", [])}
+    for placement in control.get("refinement_placements", []):
+        if placement.get("target_kind") != "window":
+            continue
+        window = windows.get(placement.get("target"))
+        if window is None or window.get("shape") != "rectangle":
+            reasons.append({
+                "code": "window_shape",
+                "message": "Transfinite M5 requires Rectangle refinement windows",
+                "placement": placement.get("name"),
+                "target": placement.get("target"),
+                "shape": None if window is None else window.get("shape"),
+            })
+    return {
+        "eligible": not reasons,
+        "requirements": [
+            "one axis-aligned Rectangle body", "no authored insert-vertex",
+            "Rectangle refinement windows only", "no refinement functions",
+        ],
+        "reasons": reasons,
+    }
 
 
 def _groups(names: Iterable[str], namespace: str, base: int) -> list[dict[str, Any]]:
@@ -1157,8 +1213,209 @@ def _qualify_m3_refinement(
     }
 
 
+def _m5_rectangle_window(window: dict[str, Any]) -> tuple[float, float, float, float]:
+    lower = window.get("lower_left", window.get("start"))
+    upper = window.get("upper_right", window.get("end"))
+    if lower is None or upper is None:
+        raise GmshBackendError(
+            "Rectangle refinement window has no bounds",
+            {"stage": "mesh_strategy", "window": window.get("name")},
+        )
+    x0, y0 = map(float, lower)
+    x1, y1 = map(float, upper)
+    return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
+
+
+def _m5_segment_spacing(device_ir: dict[str, Any], body: dict[str, Any],
+                        axis: str, midpoint: tuple[float, float],
+                        mesh_size: float) -> float:
+    control = device_ir["mesh_control"]
+    sizes = {item["name"]: item for item in control["refinement_sizes"]}
+    windows = {item["name"]: item for item in control["windows"]}
+    spacing = mesh_size
+    for placement in control["refinement_placements"]:
+        applies = False
+        kind, target = placement["target_kind"], placement["target"]
+        if kind == "region":
+            applies = target == body["region"]
+        elif kind == "material":
+            applies = target == body["material"]["sde"]
+        elif kind == "window":
+            x0, y0, x1, y1 = _m5_rectangle_window(windows[target])
+            # A Transfinite tensor grid cannot localize a spacing change to
+            # one tile without producing incompatible opposite-side counts.
+            # Conservatively propagate each Rectangle window along the other
+            # axis instead of missing a window that does not cross the device
+            # centre.
+            applies = (
+                x0 - GEOM_TOL <= midpoint[0] <= x1 + GEOM_TOL
+                if axis == "x" else
+                y0 - GEOM_TOL <= midpoint[1] <= y1 + GEOM_TOL
+            )
+        if applies:
+            spacing = min(spacing, float(sizes[placement["refinement"]][f"max_{axis}"]))
+    return spacing
+
+
+def _m5_transfinite_geometry(gmsh, device_ir: dict[str, Any], mesh_size: float,
+                             diagonal: str) -> tuple[
+                                 dict[int, dict[str, Any]], dict[str, Any], dict[str, Any]]:
+    """Partition one rectangle on refinement-window cuts and transfinite each tile."""
+    body = device_ir["geometry"]["bodies"][0]
+    x0, y0, x1, y1 = _rectangle(body)
+    control = device_ir["mesh_control"]
+    windows = {item["name"]: item for item in control["windows"]}
+    xcuts, ycuts = {x0, x1}, {y0, y1}
+    for placement in control["refinement_placements"]:
+        if placement["target_kind"] != "window":
+            continue
+        wx0, wy0, wx1, wy1 = _m5_rectangle_window(windows[placement["target"]])
+        if wx1 < x0 - GEOM_TOL or wx0 > x1 + GEOM_TOL or \
+                wy1 < y0 - GEOM_TOL or wy0 > y1 + GEOM_TOL:
+            continue
+        for value in (wx0, wx1):
+            if x0 + GEOM_TOL < value < x1 - GEOM_TOL:
+                xcuts.add(value)
+        for value in (wy0, wy1):
+            if y0 + GEOM_TOL < value < y1 - GEOM_TOL:
+                ycuts.add(value)
+    xs, ys = sorted(xcuts), sorted(ycuts)
+    surfaces: list[int] = []
+    for xa, xb in zip(xs, xs[1:]):
+        for ya, yb in zip(ys, ys[1:]):
+            surfaces.append(gmsh.model.occ.addRectangle(xa, ya, 0.0, xb - xa, yb - ya))
+    gmsh.model.occ.fragment(
+        [(2, surfaces[0])], [(2, tag) for tag in surfaces[1:]],
+        removeObject=True, removeTool=True,
+    ) if len(surfaces) > 1 else None
+    gmsh.model.occ.synchronize()
+    final_surfaces = sorted(tag for _dim, tag in gmsh.model.getEntities(2))
+    surface_owner = {int(tag): body for tag in final_surfaces}
+
+    x_intervals = []
+    for xa, xb in zip(xs, xs[1:]):
+        spacing = _m5_segment_spacing(
+            device_ir, body, "x", ((xa + xb) * 0.5, (y0 + y1) * 0.5), mesh_size)
+        x_intervals.append(max(1, int(math.ceil((xb - xa) / spacing - 1.0e-12))))
+    y_intervals = []
+    for ya, yb in zip(ys, ys[1:]):
+        spacing = _m5_segment_spacing(
+            device_ir, body, "y", ((x0 + x1) * 0.5, (ya + yb) * 0.5), mesh_size)
+        y_intervals.append(max(1, int(math.ceil((yb - ya) / spacing - 1.0e-12))))
+
+    curve_nodes: dict[int, int] = {}
+    for surface in final_surfaces:
+        curves = _boundary_curves(gmsh, [surface])
+        if len(curves) != 4:
+            raise GmshBackendError(
+                "Transfinite rectangle tile does not have four boundary curves",
+                {"stage": "mesh_strategy", "surface": surface, "curves": curves},
+            )
+        for curve in curves:
+            xmin, ymin, _zmin, xmax, ymax, _zmax = gmsh.model.getBoundingBox(1, curve)
+            horizontal = (ymax - ymin) <= 1.0e-6 * max(x1 - x0, y1 - y0, 1.0)
+            if horizontal:
+                midpoint = 0.5 * (xmin + xmax)
+                index = next((i for i, (a, b) in enumerate(zip(xs, xs[1:]))
+                              if a - GEOM_TOL <= midpoint <= b + GEOM_TOL), None)
+                count = x_intervals[index] + 1 if index is not None else None
+            else:
+                midpoint = 0.5 * (ymin + ymax)
+                index = next((i for i, (a, b) in enumerate(zip(ys, ys[1:]))
+                              if a - GEOM_TOL <= midpoint <= b + GEOM_TOL), None)
+                count = y_intervals[index] + 1 if index is not None else None
+            if count is None:
+                raise GmshBackendError(
+                    "cannot map a Transfinite curve to an authored axis segment",
+                    {"stage": "mesh_strategy", "curve": curve},
+                )
+            previous = curve_nodes.setdefault(curve, count)
+            if previous != count:
+                raise GmshBackendError(
+                    "shared Transfinite curve received inconsistent node counts",
+                    {"stage": "mesh_strategy", "curve": curve,
+                     "counts": [previous, count]},
+                )
+        gmsh.model.mesh.setTransfiniteSurface(int(surface), diagonal)
+    for curve, count in sorted(curve_nodes.items()):
+        gmsh.model.mesh.setTransfiniteCurve(curve, count)
+
+    expected_nodes = (sum(x_intervals) + 1) * (sum(y_intervals) + 1)
+    expected_cells = 2 * sum(x_intervals) * sum(y_intervals)
+    contract = {
+        "schema": "vela.gmsh_transfinite_mesh_contract.v1",
+        "requested_strategy": "transfinite-rect", "actual_strategy": "transfinite-rect",
+        "diagonal": diagonal, "recombine": False, "element_order": 1,
+        "x_coordinates": xs, "y_coordinates": ys,
+        "x_intervals": x_intervals, "y_intervals": y_intervals,
+        "expected_node_count": expected_nodes, "expected_cell_count": expected_cells,
+        "surface_count": len(final_surfaces),
+    }
+    geometry_audit = {
+        "algorithm": "partitioned-axis-aligned-transfinite-rectangle",
+        "surface_owners": {str(tag): body["id"] for tag in final_surfaces},
+        "region_areas_um2": {body["region"]: (x1 - x0) * (y1 - y0)},
+        "partition": {"x_coordinates": xs, "y_coordinates": ys},
+    }
+    return surface_owner, geometry_audit, contract
+
+
+def _qualify_m5_transfinite(bundle: dict[str, Any], contract: dict[str, Any]) -> dict[str, Any]:
+    coords = {item["vela_id"]: (item["x"], item["y"]) for item in bundle["nodes"]}
+    right_errors = []
+    maximum_angle = 0.0
+    for triangle in bundle["triangles"]:
+        angles = _angles([coords[node] for node in triangle["node_ids"]])
+        maximum_angle = max(maximum_angle, max(angles))
+        right_errors.append(min(abs(value - 90.0) for value in angles))
+    failures = []
+    if len(bundle["nodes"]) != contract["expected_node_count"]:
+        failures.append("node count differs from the Transfinite contract")
+    if len(bundle["triangles"]) != contract["expected_cell_count"]:
+        failures.append("cell count differs from the Transfinite contract")
+    if maximum_angle > 90.000001:
+        failures.append("mesh contains an obtuse triangle")
+    if right_errors and max(right_errors) > 1.0e-6:
+        failures.append("not every Tri3 element has a right angle")
+    return {
+        "status": "passed" if not failures else "failed",
+        "strategy": "transfinite-rect", "diagonal": contract["diagonal"],
+        "expected_node_count": contract["expected_node_count"],
+        "actual_node_count": len(bundle["nodes"]),
+        "expected_cell_count": contract["expected_cell_count"],
+        "actual_cell_count": len(bundle["triangles"]),
+        "max_angle_degrees": maximum_angle,
+        "max_right_angle_error_degrees": max(right_errors, default=0.0),
+        "all_triangles_right": not right_errors or max(right_errors) <= 1.0e-6,
+        "non_obtuse": maximum_angle <= 90.000001,
+        "failures": failures,
+    }
+
+
+def _m5_outer_side(gmsh, curve: int,
+                   bounds: tuple[float, float, float, float]) -> str | None:
+    x0, y0, x1, y1 = bounds
+    xmin, ymin, _zmin, xmax, ymax, _zmax = gmsh.model.getBoundingBox(1, curve)
+    tolerance = 1.0e-6 * max(x1 - x0, y1 - y0, 1.0)
+    if xmax - xmin <= tolerance:
+        coordinate = 0.5 * (xmin + xmax)
+        if abs(coordinate - x0) <= tolerance:
+            return "left"
+        if abs(coordinate - x1) <= tolerance:
+            return "right"
+    if ymax - ymin <= tolerance:
+        coordinate = 0.5 * (ymin + ymax)
+        if abs(coordinate - y0) <= tolerance:
+            return "bottom"
+        if abs(coordinate - y1) <= tolerance:
+            return "top"
+    return None
+
+
 def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
-                  capability_level: str) -> tuple[dict[str, Any], dict[str, Any]]:
+                  capability_level: str, mesh_strategy: str = "unstructured",
+                  transfinite_diagonal: str = "AlternateRight") -> tuple[
+                      dict[str, Any], dict[str, Any]]:
     """Build OCC geometry, physical groups, Tri3 mesh, and nodal fields."""
     if capability_level == "M1":
         validate_m1_device_ir(device_ir)
@@ -1166,15 +1423,41 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
         validate_m2_device_ir(device_ir)
     elif capability_level == "M3":
         validate_m3_device_ir(device_ir)
+    elif capability_level == "M5":
+        validate_m5_device_ir(device_ir)
     else:
         raise GmshBackendError(f"unknown capability level {capability_level!r}")
     if not math.isfinite(mesh_size) or mesh_size <= 0.0:
         raise GmshBackendError("mesh_size must be positive and finite")
-    options = configure_gmsh(gmsh, mesh_size, anisotropic=capability_level == "M3")
+    if mesh_strategy not in M5_MESH_STRATEGIES:
+        raise GmshBackendError(f"unknown M5 mesh strategy {mesh_strategy!r}")
+    if transfinite_diagonal not in M5_TRANSFINITE_DIAGONALS:
+        raise GmshBackendError(
+            f"unknown Transfinite diagonal arrangement {transfinite_diagonal!r}")
+    eligibility = _m5_transfinite_eligibility(device_ir) if capability_level == "M5" else None
+    actual_strategy = mesh_strategy
+    if capability_level == "M5":
+        if mesh_strategy == "auto":
+            actual_strategy = "transfinite-rect" if eligibility["eligible"] else "unstructured"
+        elif mesh_strategy == "transfinite-rect" and not eligibility["eligible"]:
+            raise GmshBackendError(
+                "explicit transfinite-rect strategy is not eligible for this Device IR",
+                {"stage": "mesh_strategy", "strategy": mesh_strategy,
+                 "eligibility": eligibility},
+            )
+    else:
+        actual_strategy = "unstructured"
+    anisotropic = capability_level == "M3" or (
+        capability_level == "M5" and actual_strategy == "unstructured")
+    options = configure_gmsh(gmsh, mesh_size, anisotropic=anisotropic)
     gmsh.model.add(f"vela_sentaurus_gmsh_{capability_level.lower()}")
 
     bodies = sorted(device_ir["geometry"]["bodies"], key=lambda item: item["creation_order"])
-    if capability_level == "M1":
+    transfinite_contract = None
+    if capability_level == "M5" and actual_strategy == "transfinite-rect":
+        surface_owner, geometry_audit, transfinite_contract = _m5_transfinite_geometry(
+            gmsh, device_ir, mesh_size, transfinite_diagonal)
+    elif capability_level == "M1":
         surface_owner = {}
         for body in bodies:
             x0, y0, x1, y1 = _rectangle(body)
@@ -1203,7 +1486,7 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
         "material", MATERIAL_TAG_BASE)
     contacts = _groups((item["name"] for item in device_ir["contacts"]), "contact", CONTACT_TAG_BASE)
     interface_curves = (_interface_curve_groups(gmsh, surface_owner)
-                        if capability_level in {"M2", "M3"} else {})
+                        if capability_level in {"M2", "M3", "M5"} else {})
     interfaces = _groups(interface_curves, "interface", INTERFACE_TAG_BASE)
     region_by_name = {item["name"]: item for item in regions}
     material_by_name = {item["name"]: item for item in materials}
@@ -1240,7 +1523,22 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
                     candidates.append((curve, endpoint))
             candidates = sorted(set(candidates))
             interior = sorted({curve for curve, endpoint in candidates if not endpoint})
-            if len(interior) != 1:
+            selected_curves: list[int] = []
+            if transfinite_contract is not None:
+                bounds = _rectangle(bodies[0])
+                candidate_sides = {
+                    side for curve, _endpoint in candidates
+                    if (side := _m5_outer_side(gmsh, curve, bounds)) is not None
+                }
+                if len(candidate_sides) == 1:
+                    selected_side = next(iter(candidate_sides))
+                    selected_curves = [
+                        curve for curve in _boundary_curves(gmsh, surface_owner)
+                        if _m5_outer_side(gmsh, curve, bounds) == selected_side
+                    ]
+            elif len(interior) == 1:
+                selected_curves = [interior[0]]
+            if not selected_curves:
                 raise GmshBackendError(
                     f"contact {contact['name']!r} pick point does not select one curve interior",
                     {"stage": "contact", "contact": contact["name"],
@@ -1248,34 +1546,35 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
                      "source_location": assignment["provenance"].get(
                          "source_location")},
                 )
-            curve = interior[0]
-            previous = curve_contact.get(curve)
-            if previous is not None and previous != contact["name"]:
-                raise GmshBackendError(
-                    "two contacts select the same complete curve",
-                    {"stage": "contact", "contacts": [previous, contact["name"]],
-                     "curve": curve},
-                )
-            curve_contact[curve] = contact["name"]
-            contact_curves[contact["name"]].add(curve)
-            upward, _downward = gmsh.model.getAdjacencies(1, curve)
-            adjacent = sorted({int(surface) for surface in upward
-                               if int(surface) in surface_owner})
-            if len(adjacent) != 1:
-                raise GmshBackendError(
-                    "contact curve must have exactly one adjacent device surface",
-                    {"stage": "contact", "contact": contact["name"],
-                     "curve": curve, "surfaces": adjacent,
-                     "source_location": assignment["provenance"].get("source_location")},
-                )
-            contact_owner[contact["name"]].add(surface_owner[adjacent[0]]["region"])
+            for curve in selected_curves:
+                previous = curve_contact.get(curve)
+                if previous is not None and previous != contact["name"]:
+                    raise GmshBackendError(
+                        "two contacts select the same complete curve",
+                        {"stage": "contact", "contacts": [previous, contact["name"]],
+                         "curve": curve},
+                    )
+                curve_contact[curve] = contact["name"]
+                contact_curves[contact["name"]].add(curve)
+                upward, _downward = gmsh.model.getAdjacencies(1, curve)
+                adjacent = sorted({int(surface) for surface in upward
+                                   if int(surface) in surface_owner})
+                if len(adjacent) != 1:
+                    raise GmshBackendError(
+                        "contact curve must have exactly one adjacent device surface",
+                        {"stage": "contact", "contact": contact["name"],
+                         "curve": curve, "surfaces": adjacent,
+                         "source_location": assignment["provenance"].get("source_location")},
+                    )
+                contact_owner[contact["name"]].add(surface_owner[adjacent[0]]["region"])
     for contact in contacts:
         curves = sorted(contact_curves[contact["name"]])
         gmsh.model.addPhysicalGroup(1, curves, contact["physical_tag"])
         gmsh.model.setPhysicalName(1, contact["physical_tag"], contact["physical_name"])
 
     refinement_field_dag = None
-    if capability_level == "M3":
+    if capability_level == "M3" or (
+            capability_level == "M5" and actual_strategy == "unstructured"):
         refinement_field_dag = _build_m3_refinement_fields(
             gmsh, device_ir, surface_owner, mesh_size)
     else:
@@ -1360,6 +1659,7 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
                 "M1": "strictly-separated-rectangles-constant-doping",
                 "M2": "aba-bab-insert-contact-ordered-replacement-gaussian",
                 "M3": "m2-core-anisotropic-refinement-maxlenint-pn2d",
+                "M5": "m3-core-selectable-transfinite-rectangle-or-unstructured",
             }[capability_level]),
             "log10_abs_floor_cm3": LOG_DOPING_FLOOR_CM3,
             "geometry_audit": geometry_audit,
@@ -1373,6 +1673,12 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
                 body["material"]["sde"]: body["material"]["vela"] for body in bodies
             },
             "refinement_field_dag": refinement_field_dag,
+            "mesh_strategy": {
+                "requested": mesh_strategy, "actual": actual_strategy,
+                "transfinite_diagonal": transfinite_diagonal,
+                "eligibility": eligibility,
+            },
+            "transfinite_contract": transfinite_contract,
         },
         "gmsh": {"version": EXPECTED_GMSH_VERSION, "msh_version": "4.1", "options": options},
         "nodes": nodes, "triangles": triangles, "lines": lines,
@@ -1390,6 +1696,17 @@ def _build_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
     }
     qualification = validate_bundle(bundle)
     qualification["geometry"] = geometry_audit
+    qualification["mesh_strategy"] = actual_strategy
+    if transfinite_contract is not None:
+        qualification["node_volume_policy"] = "mixed_voronoi"
+        qualification["require_non_obtuse"] = True
+        qualification["non_obtuse"] = qualification["max_angle_degrees"] <= 90.000001
+        qualification["transfinite"] = _qualify_m5_transfinite(bundle, transfinite_contract)
+        if qualification["transfinite"]["status"] != "passed":
+            raise GmshBackendError(
+                "M5 Transfinite right-triangle mesh contract failed",
+                {"stage": "mesh_quality", "transfinite": qualification["transfinite"]},
+            )
     if refinement_field_dag is not None:
         qualification["refinement"] = _qualify_m3_refinement(
             gmsh, device_ir, nodes, triangles, refinement_field_dag)
@@ -1415,6 +1732,14 @@ def build_m2_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float
 def build_m3_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float
                     ) -> tuple[dict[str, Any], dict[str, Any]]:
     return _build_bundle(gmsh, device_ir, mesh_size, "M3")
+
+
+def build_m5_bundle(gmsh, device_ir: dict[str, Any], mesh_size: float,
+                    mesh_strategy: str = "auto",
+                    transfinite_diagonal: str = "AlternateRight"
+                    ) -> tuple[dict[str, Any], dict[str, Any]]:
+    return _build_bundle(
+        gmsh, device_ir, mesh_size, "M5", mesh_strategy, transfinite_diagonal)
 
 
 def _angles(points: list[tuple[float, float]]) -> list[float]:

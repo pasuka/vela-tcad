@@ -78,6 +78,37 @@
             }
           }
         },
+        "mesh_strategies": {
+          "type": "object",
+          "description": "Mesh-strategy overrides applied after backend overrides.",
+          "additionalProperties": false,
+          "properties": {
+            "transfinite-rect": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "require_non_obtuse": {"type": "boolean"},
+                "node_volume_policy": {"enum": ["mixed_voronoi", "barycentric"]},
+                "min_nodes": {"type": "integer", "minimum": 3},
+                "min_cells": {"type": "integer", "minimum": 1},
+                "min_contact_nodes": {"type": "integer", "minimum": 2},
+                "max_angle_degrees": {"type": "number", "exclusiveMinimum": 0}
+              }
+            },
+            "unstructured": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "require_non_obtuse": {"type": "boolean"},
+                "node_volume_policy": {"enum": ["mixed_voronoi", "barycentric"]},
+                "min_nodes": {"type": "integer", "minimum": 3},
+                "min_cells": {"type": "integer", "minimum": 1},
+                "min_contact_nodes": {"type": "integer", "minimum": 2},
+                "max_angle_degrees": {"type": "number", "exclusiveMinimum": 0}
+              }
+            }
+          }
+        },
         "curve": {
           "type": "object",
           "required": ["bias_start", "bias_stop", "min_points"],

@@ -81,6 +81,8 @@ class M4ContractUnitTest(unittest.TestCase):
         self.assertEqual("offline-static", args.sde_frontend)
         self.assertEqual("gmsh", args.mesh_backend)
         self.assertEqual("report-only", args.mesh_quality_profile)
+        self.assertEqual("auto", args.gmsh_mesh_strategy)
+        self.assertEqual("AlternateRight", args.gmsh_transfinite_diagonal)
         self.assertIsNone(args.node_volume_policy)
 
 
@@ -152,8 +154,8 @@ class M4GmshIntegrationTest(unittest.TestCase):
             self.assertEqual("generated", manifest["status"])
             self.assertEqual("gmsh", manifest["mesh_backend"])
             self.assertEqual("passed", manifest["mesh_source"]["cross_format_status"])
-            self.assertEqual("barycentric", deck["mesh_geometry"]["node_volume_policy"])
-            self.assertFalse(deck["mesh_geometry"]["require_non_obtuse"])
+            self.assertEqual("mixed_voronoi", deck["mesh_geometry"]["node_volume_policy"])
+            self.assertTrue(deck["mesh_geometry"]["require_non_obtuse"])
 
 
 if __name__ == "__main__":

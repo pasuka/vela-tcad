@@ -30,6 +30,7 @@ from sentaurus_gmsh_backend import (
     build_m1_bundle,
     build_m2_bundle,
     build_m3_bundle,
+    build_m5_bundle,
     read_msh_roundtrip,
     write_msh_with_node_data,
 )
@@ -392,8 +393,14 @@ def run_pipeline(
                     "M1": build_m1_bundle,
                     "M2": build_m2_bundle,
                     "M3": build_m3_bundle,
+                    "M5": build_m5_bundle,
                 }[args.capability_level]
-                bundle, qualification = builder(gmsh, device_ir, args.mesh_size)
+                if args.capability_level == "M5":
+                    bundle, qualification = builder(
+                        gmsh, device_ir, args.mesh_size,
+                        args.mesh_strategy, args.transfinite_diagonal)
+                else:
+                    bundle, qualification = builder(gmsh, device_ir, args.mesh_size)
                 write_json(work / "device_ir.json", device_ir)
                 write_json(work / "mesh_field_bundle.json", bundle)
                 write_json(work / "id_mapping.json", bundle["id_mapping"])
@@ -414,6 +421,11 @@ def run_pipeline(
                         work / "refinement_field_dag.json",
                         bundle["provenance"]["refinement_field_dag"],
                     )
+                if bundle["provenance"].get("transfinite_contract") is not None:
+                    write_json(
+                        work / "transfinite_mesh_contract.json",
+                        bundle["provenance"]["transfinite_contract"],
+                    )
                 write_json(work / "cross_format_report.json", cross_format)
                 write_json(work / "gmsh_runtime_manifest.json", runtime)
             except GmshBackendError as error:
@@ -428,6 +440,7 @@ def run_pipeline(
                 "milestone": args.capability_level,
                 "sde": str(args.sde.resolve()), "sde_sha256": _file_sha256(args.sde.resolve()),
                 "mesh_backend": "gmsh", "gmsh_version": EXPECTED_GMSH_VERSION,
+                "mesh_strategy": bundle["provenance"].get("mesh_strategy"),
                 "frontend": frontend_manifest,
                 "generated": generated, "sha256": hashes,
                 "mesh_qualification": qualification,
@@ -446,12 +459,19 @@ def run_pipeline(
                                        "region/material/window anisotropic placement",
                                        "MaxLenInt DoubleSide/UseRegionNames",
                                        "auditable Gmsh field DAG"]
-                                      if args.capability_level == "M3" else []),
+                                      if args.capability_level in {"M3", "M5"} else []) + (
+                                      ["auto Transfinite Rectangle selection",
+                                       "first-order right Tri3 structured mesh",
+                                       "Left/Right/AlternateLeft/AlternateRight diagonals"]
+                                      if args.capability_level == "M5" else []),
                     "fail_closed": ["AB/ABiA/ABiB/XX", "Polygon body",
                                     "contact entity/body/remove/imprint"] + (
                                         ["MaxTransDiff/MaxGradient phase 4B", "MaxInterval",
                                          "multibox", "offsetting", "MaxLenInt contact interface"]
-                                        if args.capability_level == "M3" else ["refinement"]) + [
+                                        if args.capability_level in {"M3", "M5"}
+                                        else ["refinement"]) + ([
+                                        "Transfinite multi-body/insert-vertex/function mapping"]
+                                        if args.capability_level == "M5" else []) + [
                                     "constant-profile decay",
                                     "analytical restriction decay"],
                 }),
@@ -494,8 +514,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gmsh-library", type=Path)
     parser.add_argument("--gmsh-executable", type=Path)
     parser.add_argument("--mesh-size", type=float, default=0.2)
-    parser.add_argument("--capability-level", choices=("M1", "M2", "M3"), default="M3",
-                        help="freeze the accepted semantic subset (default: M3)")
+    parser.add_argument("--capability-level", choices=("M1", "M2", "M3", "M5"), default="M5",
+                        help="freeze the accepted semantic subset (default: M5)")
+    parser.add_argument(
+        "--mesh-strategy", choices=("auto", "transfinite-rect", "unstructured"),
+        default="auto", help="M5 mesh selection policy (default: auto)")
+    parser.add_argument(
+        "--transfinite-diagonal",
+        choices=("Left", "Right", "AlternateLeft", "AlternateRight"),
+        default="AlternateRight", help="Gmsh Transfinite surface arrangement")
     return parser
 
 

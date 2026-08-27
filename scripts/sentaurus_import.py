@@ -1739,12 +1739,15 @@ def evaluate_e2e_acceptance(case_name: str, case: dict[str, Any],
                              analysis_kind: str,
                              qualification: dict[str, Any], csv_path: Path,
                              terminal_current_csv: Path | None = None,
-                             mesh_backend: str = "tensor-legacy") \
+                             mesh_backend: str = "tensor-legacy",
+                             mesh_strategy: str | None = None) \
          -> dict[str, Any]:
     """Evaluate the checked-in contract and return a machine-readable report."""
     failures: list[str] = []
     mesh = dict(case["mesh"])
     mesh.update(case.get("mesh_backends", {}).get(mesh_backend, {}))
+    if mesh_strategy is not None:
+        mesh.update(case.get("mesh_strategies", {}).get(mesh_strategy, {}))
     if analysis_kind != case["analysis"]:
         failures.append(f"analysis {analysis_kind!r} != {case['analysis']!r}")
     checks = {
@@ -2032,7 +2035,9 @@ def _gmsh_pipeline_args(args: argparse.Namespace) -> argparse.Namespace:
         gmsh_library=args.gmsh_library,
         gmsh_executable=args.gmsh_executable,
         mesh_size=args.gmsh_mesh_size,
-        capability_level="M3",
+        capability_level="M5",
+        mesh_strategy=args.gmsh_mesh_strategy,
+        transfinite_diagonal=args.gmsh_transfinite_diagonal,
     )
 
 
@@ -2109,6 +2114,7 @@ def device_command(args: argparse.Namespace) -> None:
                 "gmsh_version": gmsh_manifest["gmsh_version"],
                 "sde_sha256": gmsh_manifest["sde_sha256"],
                 "cross_format_status": gmsh_manifest["cross_format"]["status"],
+                "mesh_strategy": gmsh_manifest.get("mesh_strategy"),
             }
         elif args.mesh_backend == "official-tdr":
             if not official_mesh_value:
@@ -2185,7 +2191,11 @@ def device_command(args: argparse.Namespace) -> None:
         args.node_volume_policy or
         str(qualification.get("node_volume_policy", "mixed_voronoi"))
     )
-    require_non_obtuse = args.mesh_quality_profile == "vela-non-obtuse"
+    require_non_obtuse = (
+        (args.mesh_quality_profile == "vela-non-obtuse" or
+         bool(qualification.get("require_non_obtuse", False))) and
+        not args.allow_obtuse
+    )
 
     try:
         contract_stop = (
@@ -2301,7 +2311,9 @@ def device_command(args: argparse.Namespace) -> None:
                 case_name, case, execution_ir["analysis"]["kind"],
                 qualification, output_dir / args.output_csv,
                 output_dir / "terminal_currents.csv",
-                mesh_backend=args.mesh_backend)
+                mesh_backend=args.mesh_backend,
+                mesh_strategy=(qualification.get("mesh_strategy")
+                               if args.mesh_backend == "gmsh" else None))
             write_json(output_dir / "acceptance_report.json", acceptance)
             manifest["generated"].append("acceptance_report.json")
             manifest["generated"].append("terminal_currents.csv")
@@ -2414,6 +2426,17 @@ def build_parser() -> argparse.ArgumentParser:
     device.add_argument("--gmsh-library", type=Path)
     device.add_argument("--gmsh-executable", type=Path)
     device.add_argument("--gmsh-mesh-size", type=float, default=0.2)
+    device.add_argument(
+        "--gmsh-mesh-strategy",
+        choices=["auto", "transfinite-rect", "unstructured"], default="auto",
+        help="M5 Gmsh mesh policy; auto selects Transfinite only for eligible rectangles",
+    )
+    device.add_argument(
+        "--gmsh-transfinite-diagonal",
+        choices=["Left", "Right", "AlternateLeft", "AlternateRight"],
+        default="AlternateRight",
+        help="Gmsh Transfinite surface diagonal arrangement",
+    )
     device.add_argument("--materials-file", default=None)
     device.add_argument(
         "--current-contact",
@@ -2432,8 +2455,8 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["mixed_voronoi", "barycentric"],
         default=None,
         help=(
-            "Override the backend-qualified node-volume policy; Gmsh defaults "
-            "to barycentric while tensor/official meshes retain their qualification"
+            "Override the backend-qualified node-volume policy; M5 Transfinite "
+            "rectangles qualify for mixed_voronoi while unstructured Gmsh uses barycentric"
         ),
     )
     device.add_argument(

@@ -2,8 +2,9 @@
 
 ## 计划状态
 
-- 状态：已完成；M0-M4 公开 Gmsh→Vela IV/BV 闭环和内部 live TDX/TDR gate 均已验收
-- 更新日期：2026-08-26
+- 状态：M0-M4 已完成；M5 可选择 Transfinite Rectangle 直角 Tri3 网格和本地验收已完成；
+  内部 live TDX/TDR 最终门禁等待 M5 文件出站授权
+- 更新日期：2026-08-27
 - 计划源文件：`docs/superpowers/plans/2026-08-24-sde-gmsh-offline-mesh-and-field-export.md`
 - 实施 worktree：`D:\code-repo\copilot-worktrees\vela-tcad-dev`
 - 实施分支：`codex/sentaurus2022-sde-workflow`
@@ -57,6 +58,15 @@
   7 个节点掺杂数据集均通过严格对比，场值最大绝对/相对差为 0。M4 影响范围 Python
   回归 114/114、UCRT64 Release 全量 CTest 711/711 通过（157.26 秒）。验收记录见
   `docs/validation/sentaurus_gmsh_m4_acceptance_2026-08-25.md`。
+- M5 当前结果：公开 Gmsh 路径新增 `auto | transfinite-rect | unstructured` 网格策略及
+  `Left | Right | AlternateLeft | AlternateRight` 对角布置。`auto` 只对单个轴对齐矩形、
+  Rectangle refinement window、无 refinement function/insert-vertex 的 Device IR 选择
+  Transfinite；其他合法 M3 输入回退非结构 BAMG，显式请求不满足条件时 fail-closed。
+  PN2D 的 0.9/1.1 um 结区窗口被分为 18/20/18 个 x 向区间，y 向为 25 个区间，实测
+  1482 节点、2800 个 Tri3、两端各 26 个接触节点；每个单元均有一个直角，最大角
+  90.00000000000077 度，MSH/VTU/VTK/DAT 五个节点场差值为 0。完整 IV 已 accepted；
+  完整 BV 的 406 个点已到达 -20 V，但端子电流混合容差比 1.216 超过门槛 1.0，状态
+  如实保持 failed。M1-M5 定向 CTest 全部通过；UCRT64 Release 全量 CTest 712/712 通过。
 - 产品默认：`offline-static + gmsh`
 - 内部验证：`sentaurus2022-evaluated + tdx`，仅限具有许可证的开发环境
 - 取代范围：本计划取代“离线生成器使用正交张量网格并固定对角线切分三角形”的网格部分；
@@ -336,6 +346,37 @@ Sentaurus SDE .cmd
 - 4B 的迭代达到最大轮数仍不满足边长/场变化门槛时返回 failed，不输出成功 manifest。
 
 ## 阶段 5：网格提取、连续编号与质量门槛
+
+### M5 补充目标：可选择 Transfinite Rectangle 直角三角形网格
+
+- `sentaurus_gmsh_pipeline.py` 的 M5 默认策略为 `auto`；设备入口保持公开默认
+  `offline-static + gmsh + auto`。
+- `transfinite-rect` 将 Rectangle refinement window 边界作为结构化分区线，对每段按
+  所有适用 region/material/window placement 的最小有效 max spacing 计算区间数，并以
+  `ceil(length/spacing)` 冻结节点数。
+- 每个矩形 tile 调用 Gmsh `setTransfiniteCurve` 和 `setTransfiniteSurface`；固定一阶
+  Tri3、`Mesh.RecombineAll=0`，禁止生成四边形或高阶单元。
+- 对角布置提供 `Left`、`Right`、`AlternateLeft`、`AlternateRight`；默认
+  `AlternateRight`。所有布置均须通过“每个 Tri3 有且仅需至少一个 90 度角”和非钝角
+  门槛，不能只凭命令名宣称为直角网格。
+- 输出 `transfinite_mesh_contract.json`，记录分区坐标、每段区间数、预期/实际节点与
+  单元数、对角布置、重组和单元阶次；同样信息进入 bundle provenance、资格报告和
+  run manifest；格式由 `schemas/vela.gmsh_transfinite_mesh_contract.v1.schema.json` 冻结。
+- 第一版资格范围刻意保守：多 body、Polygon body、insert-vertex、Line/Polygon
+  refinement window 或 refinement function 不得进入 Transfinite 路径。`auto` 对其中
+  仍属 M3 能力范围的输入回退 `unstructured`；显式 `transfinite-rect` 返回含原因列表的
+  fail report。
+
+### M5 补充验收
+
+- PN2D `auto` 必须选择 `transfinite-rect`，节点/单元数严格为 1482/2800，接触节点不少于
+  11，最大角不超过 90.000001 度且全部 Tri3 含直角。
+- PN2D refinement 分段必须为 x=[18,20,18]、y=[25]；不得以全域最细网格替代窗口约束。
+- MSH、VTU、VTK、GRD/DAT 和 CSV 的节点掺杂字段继续逐节点一致。
+- 完整 PN2D IV/BV 必须读取策略感知 E2E contract；Transfinite 使用
+  `mixed_voronoi + require_non_obtuse`，非结构 Gmsh 保持 `barycentric`。
+- 在已授权的 Sentaurus 2022 内部环境执行 TDX 转换，回读 TDR 后核对拓扑、接触、区域
+  和全部节点场；公开运行时不得依赖 TDX。
 
 ### 任务
 
