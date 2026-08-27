@@ -59,7 +59,7 @@ fail-closed PhuMob gate or claim current parity with the original deck.
 ## Current status
 
 M0 freezes provenance and scope. M1 adds scope-aware SDevice model parsing and
-keeps PhuMob fail-closed until an exact implementation is available. M2
+keeps PhuMob fail-closed until an exact solver path is available. M2
 qualifies the nominal node-17 process TDR as an immutable SDevice input:
 
 - SHA-256 `a39f6eb1ed1745fad892b4ee74524dfce6f75a9287baeb4383faebb11856ee00`;
@@ -124,3 +124,58 @@ The complete per-case metrics and the bounded A3/1.0 V recovery record are in
 The device mesh, net-doping, Id-Vg, and direct nodal-field figures are
 documented in `../../docs/validation/simplemos_m4_visual_report.md`. Their
 reproducible comparison inputs are under `controlled_mobility/comparisons`.
+
+M5 implements the T-2022.03 PhuMob scalar equations 270--283 and their Silicon
+parameter set. The kernel accepts separate donor, acceptor, electron, and hole
+concentrations plus temperature, and reports lattice, nonlattice, screening,
+and combined mobility components. Golden formula tests and SI/TCAD-unit
+invariance tests are frozen by
+`simplemos_m5_phumob_scalar_contract_v1.json` and recorded in
+`simplemos_m5_phumob_scalar_evidence.json`.
+
+M5 deliberately does not make `Mobility.PhuMob` importable. Parameter coverage
+uses the explicit status `scalar_kernel_only`, and production import remains
+fail-closed until M6 supplies DD assembly and Jacobian coupling.
+
+M6 connects the scalar kernel to both Gummel and coupled-Newton DD transport.
+Each transport edge retains arithmetic endpoint averages of ionized donors,
+ionized acceptors, electrons, and holes; compensated impurities are never
+collapsed to net doping on the PhuMob path. Contact-current and fixed-state
+diagnostics use the same state contract as the production residual.
+
+The coupled Newton Jacobian differentiates the mobility response with respect
+to both endpoint electrostatic potentials and both carriers' endpoint
+quasi-Fermi potentials. This includes the cross-carrier blocks introduced by
+carrier-carrier scattering. `Mobility.PhuMob` and
+`Mobility(PhuMob HighFieldSaturation)` are now production-importable as
+`phumob` and `phumob_field`. The original deck's additional `Enormal` selection
+remains fail-closed until M7 supplies the T-2022.03 spatial closure; the older
+Masetti/Lombardi control model is not substituted for it.
+
+The machine-readable M6 contract and verification record are
+`simplemos_m6_phumob_dd_contract_v1.json` and
+`simplemos_m6_phumob_dd_evidence.json`.
+
+M7 completes the T-2022.03 `EnormalDependence` path. The official Silicon
+parameter export is frozen by SHA-256, and all 16 electron/hole parameter rows
+are mapped in their native cm-based formula units before conversion to Vela's
+active unit system. `Enormal` is composed with PhuMob as a low-field inverse-
+mobility contribution, then the result is passed to high-field saturation.
+
+The spatial closure selects only semiconductor/insulator interfaces, caches
+interface normal and distance, and reconstructs the projected normal electric
+field from the live cell potential. The coupled Newton pattern and Jacobian
+therefore include the off-edge third vertex of each adjacent Tri3 transport
+cell. Gummel assembly, contact current, and fixed-state audit use the same
+geometry and state path.
+
+The production importer now maps the original
+`Mobility(PhuMob HighFieldSaturation Enormal)` selection to
+`phumob_field_lombardi` with quasi-Fermi-gradient high-field drive. The M7
+analytical spatial field, composed-mobility, and full-Jacobian comparisons all
+pass. This makes the original deck executable for M8; it does not claim its
+Id-Vg current parity yet.
+
+The machine-readable M7 contract and verification record are
+`simplemos_m7_enormal_contract_v1.json` and
+`simplemos_m7_enormal_evidence.json`.

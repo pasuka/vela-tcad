@@ -111,7 +111,7 @@
       "Recombination.SRH.DopingDependence",
       "EffectiveIntrinsicDensity.OldSlotboom"
     ],
-    "phumob_status": "unsupported_until_exact_implementation",
+    "phumob_status": "m7_enormal_spatial_closure_complete_m8_original_deck_comparison_pending",
     "implicit_phumob_substitution_forbidden": true,
     "srh_doping_dependence_must_not_enable_mobility_doping_dependence": true
   },
@@ -169,8 +169,7 @@
     "physics_parity_claimed": false
   },
   "pending_evidence": [
-    "T-2022.03-SP2 Silicon parameter dump hash",
-    "exact gate-bias lattices for Vd=0.05 V and Vd=1.0 V",
-    "controlled A0-A3 reference curves"
+    "original-deck B1 reference and candidate curves at Vd=0.05 V and Vd=1.0 V",
+    "eight-TDR by two-drain-voltage original-deck matrix"
   ]
 }

@@ -136,3 +136,75 @@ accepted 1 mV auxiliary drain points and no Newton failure. Its bounded
 recovery used 201 points at 5 mV, reached 1.0 V, and then converged all 51 gate
 points. This recovery changes neither an acceptance point nor a comparison
 threshold. M4 is complete; PhuMob remains excluded and fail-closed for M5.
+
+## M5 completion evidence
+
+M5 implements the Sentaurus Device T-2022.03 Philips unified low-field
+mobility equations 270--283 as a component-resolved scalar kernel. The kernel
+keeps ionized donors, ionized acceptors, electrons, holes, and lattice
+temperature as separate inputs; reducing them to net doping would lose the
+minority-impurity and carrier-carrier scattering terms. It includes the
+documented donor/acceptor clustering functions, F/G screening functions,
+screening-parameter minimum clamp, lattice and nonlattice partial mobilities,
+and Matthiessen composition.
+
+The default Silicon parameter set includes separate arsenic and phosphorus
+electron calibrations, the boron hole calibration, clustering coefficients,
+effective-mass ratios, scattering weights, and the built-in equation-282
+coefficients. Arsenic remains the default because the original SimpleMOS deck
+selects bare `PhuMob`; phosphorus is available only by explicit selection.
+
+The scalar kernel evaluates in physical cm-based formula units behind a
+strict conversion boundary and returns values in the active Vela unit system.
+Formula golden values and complete result invariance are tested in both legacy
+SI and format-version-2 TCAD units. Parameter mapping reports
+`scalar_kernel_only`, so the execution IR and production importer continue to
+fail closed until M6 wires separate donor/acceptor state, self-consistent
+carrier densities, and Jacobian derivatives into DD assembly.
+
+## M6 completion evidence
+
+M6 adds a separate-ionized-impurity mobility interface while preserving the
+legacy net-doping interface for all pre-existing mobility models. PhuMob edge
+evaluation uses the arithmetic endpoint averages of `Nd`, `Na`, `n`, and `p`
+and then averages the result over adjacent transport cells. The same state is
+used by Gummel assembly, the coupled Newton residual, SG diagnostics,
+fixed-state audits, and contact-current extraction.
+
+The coupled Newton edge Jacobian uses local centered directional evaluations
+of the complete carrier flux. For PhuMob, each electron and hole flux is
+differentiated against both endpoint `psi`, both endpoint `phin`, and both
+endpoint `phip` values. The fixed sparse pattern contains the corresponding
+electron-to-hole and hole-to-electron cross blocks. Carrier-density mobility
+derivatives remain active even when optional high-field derivatives are
+frozen through `jacobian_field_derivatives=false`.
+
+The SDevice execution whitelist and parameter matrix now classify bare
+`PhuMob` as exact and importable. `PhuMob + HighFieldSaturation` maps to
+`phumob_field` with the quasi-Fermi-gradient drive. `PhuMob + Enormal` remains
+an explicit blocking combination through M7, so the original SimpleMOS deck
+cannot yet bypass the missing T-2022.03 Enormal closure.
+
+## M7 completion evidence
+
+M7 freezes the T-2022.03-SP2 Silicon `EnormalDependence` export with
+`models.par` SHA-256
+`aab018ee48a57521decb4d70fb3be4f67f02a1c6e082c930330e5a838a810b4f`.
+All 16 electron/hole coefficient rows are exact and importable. The
+temperature-dependent acoustic term and surface-roughness inverse-mobility
+terms use total ionized impurity, and their sum is composed with PhuMob before
+quasi-Fermi-gradient high-field saturation.
+
+Implicit surface discovery is restricted to transport/nontransport material
+interfaces. Normal and centroid-to-interface distance are geometric cache
+entries; the projected normal field is recomputed from the current Tri3
+potential. The coupled Newton sparse pattern includes every adjacent cell's
+third potential node, and the assembled Jacobian passes a global centered
+finite-difference comparison.
+
+The production importer now maps `PhuMob + Enormal` to `phumob_lombardi` and
+the original `PhuMob + HighFieldSaturation + Enormal` combination to
+`phumob_field_lombardi`. A parsed copy of the original SimpleMOS SDevice deck
+produces the complete mobility, SRH doping-lifetime, and OldSlotboom solver
+configuration with no unsupported physics or lossy substitutions. M7 closes
+implementation readiness; original-deck Id-Vg parity remains the M8 gate.

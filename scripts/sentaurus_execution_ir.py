@@ -28,6 +28,7 @@ EXECUTION_IR_SCHEMA = "vela.sentaurus_execution_ir.v1"
 # Models that map onto an implemented Vela physics path.
 SUPPORTED_MODELS: dict[str, str] = {
     "Mobility": "mobility model container",
+    "PhuMob": "Philips unified mobility with carrier-coupled DD Jacobian",
     "DopingDependence": "doping-dependent low-field mobility",
     "DopingDep": "doping-dependent low-field mobility",
     "HighFieldSaturation": "high-field mobility saturation",
@@ -67,7 +68,6 @@ KNOWN_UNSUPPORTED_MODELS: dict[str, str] = {
     "eTemperature": "carrier temperature transport is not implemented",
     "hTemperature": "carrier temperature transport is not implemented",
     "IALMob": "IALMob surface-orientation mobility is not implemented",
-    "PhuMob": "Philips unified mobility is not implemented",
     "hQuantumPotential": "hole density-gradient quantum correction is not implemented",
 }
 
@@ -274,6 +274,7 @@ def build_execution_ir(cmd_summary: dict[str, Any],
             f"{', '.join(unresolved)}; supply --template-var for each")
 
     classification = classify_models(models)
+    model_paths = set(_model_paths(cmd_summary))
     permitted = set(permitted_unsupported_models)
     blocking_unsupported = [
         item for item in classification["unsupported"]

@@ -464,7 +464,11 @@ private:
         Index edgeId,
         CarrierType carrier,
         Real drivingField,
-        const VectorXd* psi) const;
+        const VectorXd* psi,
+        Real electron0 = 0.0,
+        Real electron1 = 0.0,
+        Real hole0 = 0.0,
+        Real hole1 = 0.0) const;
     bool usesSentaurusExponentialQuantumCoupling() const;
     Real electronTransportPotential(Index node, Real psiRelative_V) const;
     Real electronDensityAt(Index node,

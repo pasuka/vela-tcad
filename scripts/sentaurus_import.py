@@ -45,7 +45,6 @@ from sentaurus_mesh_builder import (  # noqa: E402
 UNSUPPORTED_PHYSICS = [
     "Thermodynamic",
     "IALMob",
-    "PhuMob",
     "Trap",
     "Traps",
     "eTemperature",
@@ -552,7 +551,6 @@ def unsupported_report(tokens: list[str]) -> list[dict[str, str]]:
     reasons = {
         "Thermodynamic": "Vela does not yet solve the full self-heating temperature equation from SDevice.",
         "IALMob": "IALMob surface-orientation mobility is not represented by the current mobility model.",
-        "PhuMob": "Philips unified mobility is not implemented.",
         "Trap": "Interface and bulk trap kinetics are imported as metadata only.",
         "Traps": "Interface and bulk trap kinetics are imported as metadata only.",
         "eTemperature": "Carrier temperature transport is not supported in the Vela runner.",
@@ -646,8 +644,8 @@ def apply_solver_physics(deck: dict[str, Any],
 
     has_doping_dependence = model_selected_in_scope(
         cmd_summary, "Mobility", {"DopingDep", "DopingDependence"})
-    if has_doping_dependence:
-        solver["mobility"] = {"model": "masetti"}
+    has_phumob = model_selected_in_scope(
+        cmd_summary, "Mobility", {"PhuMob"})
     high_field_models = {
         "HighFieldSaturation", "HighFieldsaturation",
         "eHighFieldSaturation", "eHighFieldsaturation",
@@ -657,7 +655,20 @@ def apply_solver_physics(deck: dict[str, Any],
         cmd_summary, "Mobility", high_field_models)
     has_enormal = model_selected_in_scope(
         cmd_summary, "Mobility", {"Enormal"})
-    if has_doping_dependence and (has_high_field or has_enormal):
+    if has_phumob:
+        solver["mobility"] = {
+            "model": (
+                "phumob_field_lombardi" if has_high_field and has_enormal
+                else "phumob_lombardi" if has_enormal
+                else "phumob_field" if has_high_field
+                else "phumob"
+            ),
+        }
+        if has_high_field:
+            solver["mobility"]["high_field_driving_force"] = (
+                "quasi_fermi_gradient"
+            )
+    elif has_doping_dependence and (has_high_field or has_enormal):
         solver["mobility"] = {
             "model": (
                 "masetti_field_lombardi" if has_high_field and has_enormal
@@ -666,6 +677,8 @@ def apply_solver_physics(deck: dict[str, Any],
             ),
             "high_field_driving_force": "quasi_fermi_gradient",
         }
+    elif has_doping_dependence:
+        solver["mobility"] = {"model": "masetti"}
 
     recombination = []
     if "SRH" in models:
@@ -806,7 +819,7 @@ def build_runner_deck(summary: dict[str, Any], mesh_json: str, output_csv: str) 
         "write_vtk": False,
     }
     apply_step_control_to_vela_sweep(sweep, step_control)
-    return {
+    deck = {
         "simulation_type": "dc_sweep",
         "mesh_file": mesh_json,
         "output_csv": output_csv,
@@ -829,6 +842,13 @@ def build_runner_deck(summary: dict[str, Any], mesh_json: str, output_csv: str) 
             "solve": summary.get("solve", {}),
         },
     }
+    warnings = apply_solver_physics(
+        deck,
+        summary,
+        {"name": "imported_sdevice", "kind": sweep["mode"]},
+    )
+    deck["sentaurus_import"]["warnings"] = warnings
+    return deck
 
 
 def write_deck_json(deck: dict[str, Any], output_path: Path) -> None:

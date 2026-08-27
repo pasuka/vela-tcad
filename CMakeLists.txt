@@ -694,6 +694,9 @@ add_dependencies(test_external_state vela_example_runner)
 add_executable(test_mobility tests/test_mobility.cpp tests/test_ialmob.cpp tests/test_ialmob_temperature_hfs.cpp tests/test_silicon_thermal.cpp tests/test_ialmob_jacobian.cpp tests/test_ialmob_transport.cpp)
 target_link_libraries(test_mobility PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_phumob tests/test_phumob.cpp)
+target_link_libraries(test_phumob PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_impact_ionization tests/test_impact_ionization.cpp)
 target_link_libraries(test_impact_ionization PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -791,6 +794,7 @@ add_test(NAME device_stability COMMAND test_device_stability [device_stability])
 vela_catch_discover_tests(test_newton_solver)
 vela_catch_discover_tests(test_external_state)
 vela_catch_discover_tests(test_mobility)
+vela_catch_discover_tests(test_phumob)
 vela_catch_discover_tests(test_impact_ionization)
 vela_catch_discover_tests(test_path_ionization_integral)
 vela_catch_discover_tests(test_cell_reconstructed_avalanche)

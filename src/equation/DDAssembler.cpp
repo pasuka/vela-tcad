@@ -169,6 +169,12 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
 {
     (void)usesFermiDirac(carrierStatistics_);
+    if (mobilityConfig_.edgeAveraging != "legacy" || scaling_.regionResolvedInterfaceAssembly.transportEdgeGeometry != "inherit")
+        throw std::invalid_argument("DDAssembler: element box carrier transport requires CoupledDDAssembler (Newton).");
+    if (scaling_.regionResolvedInterfaceAssembly.srhSignedTransportVolumeFraction != 0.0 ||
+        scaling_.regionResolvedInterfaceAssembly.poissonChargeNodeVolume != "inherit" ||
+        !scaling_.regionResolvedInterfaceAssembly.transportEdgeCouplingRatios.empty())
+        throw std::invalid_argument("DDAssembler: explicit charge/transport geometry requires CoupledDDAssembler (Newton).");
     if (usesFermiDirac(carrierStatistics_)) {
         for (Index node = 0; node < mesh_.numNodes(); ++node) {
             if (ni_[node] > 0.0 && (!(Nc_[node] > 0.0) || !(Nv_[node] > 0.0))) {
@@ -227,10 +233,10 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
         const Real  h    = edge.length;
         if (h < 1.0e-30) continue;
 
-        const Real eps = detail::edgeEpsilon(edgeCells_, mesh_, matdb_, e);
-        const Real G   = eps * couple_[e] / h;
+        const Real G = detail::poissonEdgeCoefficient(mesh_, matdb_, edgeCells_, e);
 
         if (!std::isfinite(G)) {
+            const Real eps = detail::edgeEpsilon(edgeCells_, mesh_, matdb_, e);
             std::ostringstream message;
             message << "DDAssembler::assemblePoissonWithCarriers: non-finite edge "
                     << "coefficient at edge " << e << " (nodes " << edge.n0
@@ -332,6 +338,13 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
     const VectorXd psiForMobility = scaling_.enabled ? (psi * scaling_.V0) : psi;
+    if (isSurfaceMobilityModel(mobilityConfig_)) {
+        detail::updateSurfaceMobilityCellGeometry(
+            mobilityConfig_, mesh_, edgeCells_, psiForMobility,
+            mobilityConfig_.surface.coordinateFieldFactor, &cellMaterials);
+    }
+    const VectorXd nForMobility = scaling_.enabled ? (n_old * scaling_.C0) : n_old;
+    const VectorXd pForMobility = scaling_.enabled ? (p_old * scaling_.C0) : p_old;
     const VectorXd phinForMobility =
         electronQuasiFermiFromDensity(
             psiForMobility, n_old, ni_, Nc_, Vt_, scaling_, carrierStatistics_);
@@ -379,11 +392,18 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
                 : std::abs((phinForMobility(static_cast<int>(edge.n1)) -
                             phinForMobility(static_cast<int>(edge.n0))) / h) * fieldFactor,
             electricField, contactElectricMobilityFields);
+        const detail::EdgeMobilityCarrierState mobilityState{
+            nForMobility(static_cast<int>(edge.n0)),
+            nForMobility(static_cast<int>(edge.n1)),
+            pForMobility(static_cast<int>(edge.n0)),
+            pForMobility(static_cast<int>(edge.n1)),
+        };
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electronMobilityField,
             &mobilityConfig_,
-            &psiForMobility);
+            &psiForMobility,
+            &mobilityState);
         if (mun <= 0.0) continue; // skip insulator edges
 
         Real coef = scaling_.enabled
@@ -572,6 +592,13 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
     const VectorXd psiForMobility = scaling_.enabled ? (psi * scaling_.V0) : psi;
+    if (isSurfaceMobilityModel(mobilityConfig_)) {
+        detail::updateSurfaceMobilityCellGeometry(
+            mobilityConfig_, mesh_, edgeCells_, psiForMobility,
+            mobilityConfig_.surface.coordinateFieldFactor, &cellMaterials);
+    }
+    const VectorXd nForMobility = scaling_.enabled ? (n_old * scaling_.C0) : n_old;
+    const VectorXd pForMobility = scaling_.enabled ? (p_old * scaling_.C0) : p_old;
     const VectorXd phipForMobility =
         holeQuasiFermiFromDensity(
             psiForMobility, p_old, ni_, Nv_, Vt_, scaling_, carrierStatistics_);
@@ -619,11 +646,18 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
                 : std::abs((phipForMobility(static_cast<int>(edge.n1)) -
                             phipForMobility(static_cast<int>(edge.n0))) / h) * fieldFactor,
             electricField, contactElectricMobilityFields);
+        const detail::EdgeMobilityCarrierState mobilityState{
+            nForMobility(static_cast<int>(edge.n0)),
+            nForMobility(static_cast<int>(edge.n1)),
+            pForMobility(static_cast<int>(edge.n0)),
+            pForMobility(static_cast<int>(edge.n1)),
+        };
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
             holeMobilityField,
             &mobilityConfig_,
-            &psiForMobility);
+            &psiForMobility,
+            &mobilityState);
         if (mup <= 0.0) continue; // skip insulator edges
 
         Real coef = scaling_.enabled

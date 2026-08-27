@@ -1027,7 +1027,8 @@ inline void updateSurfaceMobilityCellGeometry(
     const DeviceMesh& mesh,
     const std::vector<std::vector<Index>>& edgeCells,
     const VectorXd& psi,
-    Real fieldFactor)
+    Real fieldFactor,
+    const std::vector<Material>* cellMaterials = nullptr)
 {
     if (!isSurfaceMobilityModel(config))
         return;
@@ -1058,6 +1059,23 @@ inline void updateSurfaceMobilityCellGeometry(
                     mesh.getCell(adjacentCell).region_id).name);
             if (regions.size() < 2 || edge.length <= 1.0e-30)
                 continue;
+            // With no explicit selector, Sentaurus Enormal uses the nearest
+            // semiconductor/insulator interface.  Do not treat boundaries
+            // between two transport regions as surface-scattering geometry.
+            if (config.surface.surfaceInterface.empty() &&
+                cellMaterials != nullptr) {
+                bool hasTransport = false;
+                bool hasInsulator = false;
+                for (Index adjacentCell : edgeCells.at(edgeId)) {
+                    const Material& material = cellMaterials->at(
+                        static_cast<std::size_t>(adjacentCell));
+                    const bool transport = material.mun > 0.0 || material.mup > 0.0;
+                    hasTransport = hasTransport || transport;
+                    hasInsulator = hasInsulator || !transport;
+                }
+                if (!hasTransport || !hasInsulator)
+                    continue;
+            }
             // A configured interface is an exact physical selector, not only
             // a per-cell applicability test.  Filter the geometry candidates
             // here so internal same-region edges do not participate in the
@@ -1144,6 +1162,43 @@ inline void updateSurfaceMobilityCellGeometry(
     }
 }
 
+inline Real liveSurfaceNormalFieldForCell(
+    const MobilityModelConfig& config,
+    const DeviceMesh& mesh,
+    const VectorXd& psi,
+    Index cellId)
+{
+    if (cellId >= config.surface.cellNormalX.size() ||
+        cellId >= config.surface.cellNormalY.size() ||
+        !std::isfinite(config.surface.cellNormalX[cellId]) ||
+        !std::isfinite(config.surface.cellNormalY[cellId])) {
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+    const Cell& cell = mesh.getCell(cellId);
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+        return std::numeric_limits<Real>::quiet_NaN();
+    const Node& p0 = mesh.getNode(cell.node_ids[0]);
+    const Node& p1 = mesh.getNode(cell.node_ids[1]);
+    const Node& p2 = mesh.getNode(cell.node_ids[2]);
+    const Real dx10 = p1.x - p0.x;
+    const Real dy10 = p1.y - p0.y;
+    const Real dx20 = p2.x - p0.x;
+    const Real dy20 = p2.y - p0.y;
+    const Real det = dx10 * dy20 - dy10 * dx20;
+    if (std::abs(det) <= 1.0e-300)
+        return std::numeric_limits<Real>::quiet_NaN();
+    const Real dv10 = psi(static_cast<int>(cell.node_ids[1])) -
+        psi(static_cast<int>(cell.node_ids[0]));
+    const Real dv20 = psi(static_cast<int>(cell.node_ids[2])) -
+        psi(static_cast<int>(cell.node_ids[0]));
+    const Real gradientX = (dv10 * dy20 - dv20 * dy10) / det;
+    const Real gradientY = (dx10 * dv20 - dx20 * dv10) / det;
+    return std::abs(
+        gradientX * config.surface.cellNormalX[cellId] +
+        gradientY * config.surface.cellNormalY[cellId]) *
+        config.surface.coordinateFieldFactor;
+}
+
 inline Real cellAverageTotalImpurity(const DeviceMesh& mesh,
                                      const DopingModel& doping,
                                      Index cellId)
@@ -1192,6 +1247,15 @@ inline Real nodeMobilityDopingConcentration(
         return cellAverageTotalImpurity(mesh, doping, cellId);
     return doping.netDoping(nodeId);
 }
+
+/** Endpoint carrier populations used by state-dependent edge mobility. */
+struct EdgeMobilityCarrierState {
+    Real electron0 = 0.0;
+    Real electron1 = 0.0;
+    Real hole0 = 0.0;
+    Real hole1 = 0.0;
+};
+
 /// Return average model mobility [m^2/V/s] for edge @p edgeId.
 inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          const DeviceMesh&                       mesh,
@@ -1202,7 +1266,8 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          CarrierType                             carrier,
                          Real                                    electricField,
                          const MobilityModelConfig*              mobilityConfig = nullptr,
-                         const VectorXd*                         psi = nullptr)
+                         const VectorXd*                         psi = nullptr,
+                         const EdgeMobilityCarrierState*         carrierState = nullptr)
 {
     if (mobilityConfig != nullptr && mobilityConfig->model == "ialmob")
         return ialEdgeMobility(*mobilityConfig,edgeId,carrier,psi==nullptr);
@@ -1237,19 +1302,28 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
         const Region& region = mesh.getRegion(mesh.getCell(c).region_id);
         const bool lombardi = mobilityConfig != nullptr &&
             (mobilityConfig->model == "masetti_lombardi" ||
-             mobilityConfig->model == "masetti_field_lombardi");
+             mobilityConfig->model == "masetti_field_lombardi" ||
+             mobilityConfig->model == "phumob_lombardi" ||
+             mobilityConfig->model == "phumob_field_lombardi");
         const bool surfaceApplies = surfaceEnabled &&
             (lombardi
                 ? (mobilityConfig->surface.surfaceRegion.empty() ||
                    mobilityConfig->surface.surfaceRegion == region.name)
                 : surfaceMobilityAppliesToRegionPair(
                     *mobilityConfig, region.name, adjacentRegionNames));
-        const Real surfaceNormalField = (surfaceApplies && psi != nullptr)
-            ? (c < mobilityConfig->surface.cellNormalFields.size()
-                ? mobilityConfig->surface.cellNormalFields[c]
-                : estimateSurfaceNormalField(cells, mesh, *psi, edgeId, c) *
-                    mobilityConfig->surface.coordinateFieldFactor)
-            : std::numeric_limits<Real>::quiet_NaN();
+        Real surfaceNormalField = std::numeric_limits<Real>::quiet_NaN();
+        if (surfaceApplies && psi != nullptr) {
+            // Re-evaluate the projected field from the live potential.  The
+            // cached normal/distance are geometric; caching the field itself
+            // would omit Enormal derivatives from the Newton Jacobian.
+            surfaceNormalField = liveSurfaceNormalFieldForCell(
+                *mobilityConfig, mesh, *psi, c);
+            if (!std::isfinite(surfaceNormalField)) {
+                surfaceNormalField = estimateSurfaceNormalField(
+                    cells, mesh, *psi, edgeId, c) *
+                    mobilityConfig->surface.coordinateFieldFactor;
+            }
+        }
         const Real surfaceDistance = surfaceApplies
             ? (c < mobilityConfig->surface.cellDistances.size()
                 ? mobilityConfig->surface.cellDistances[c]
@@ -1257,13 +1331,33 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
             : std::numeric_limits<Real>::quiet_NaN();
         const Real mobilityDoping = edgeMobilityDopingConcentration(
             mesh, doping, edge, c, mobilityConfig);
+        const Real donors = 0.5 * (
+            doping.donors(edge.n0) + doping.donors(edge.n1));
+        const Real acceptors = 0.5 * (
+            doping.acceptors(edge.n0) + doping.acceptors(edge.n1));
+        const Real electronDensity = carrierState != nullptr
+            ? 0.5 * (carrierState->electron0 + carrierState->electron1)
+            : 0.0;
+        const Real holeDensity = carrierState != nullptr
+            ? 0.5 * (carrierState->hole0 + carrierState->hole1)
+            : 0.0;
+        const bool phuMob = mobilityConfig != nullptr &&
+            isPhuMobModel(*mobilityConfig);
         const Real modelMobility = (carrier == CarrierType::Electron)
-            ? mobility.electronMobility(
-                material, mobilityDoping, 0.0, 0.0, electricField,
-                surfaceNormalField, surfaceDistance)
-            : mobility.holeMobility(
-                material, mobilityDoping, 0.0, 0.0, electricField,
-                surfaceNormalField, surfaceDistance);
+            ? (phuMob
+                ? mobility.electronMobilityWithIonizedImpurities(
+                    material, donors, acceptors, electronDensity, holeDensity,
+                    electricField, surfaceNormalField, surfaceDistance)
+                : mobility.electronMobility(
+                    material, mobilityDoping, 0.0, 0.0,
+                    electricField, surfaceNormalField, surfaceDistance))
+            : (phuMob
+                ? mobility.holeMobilityWithIonizedImpurities(
+                    material, donors, acceptors, electronDensity, holeDensity,
+                    electricField, surfaceNormalField, surfaceDistance)
+                : mobility.holeMobility(
+                    material, mobilityDoping, 0.0, 0.0,
+                    electricField, surfaceNormalField, surfaceDistance));
         if (modelMobility <= 0.0)
             continue;
 
