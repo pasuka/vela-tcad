@@ -17,6 +17,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from prepare_templates_ldmos_phase23 import (  # noqa: E402
+    SENTAURUS_G3_DRAIN_PREBIAS_POINTS_V,
     classical_solver,
     derive_polysi_flatband,
     exact_bias_points,
@@ -210,6 +211,9 @@ class Phase23DeckTest(unittest.TestCase):
             prebias = json.loads(Path(
                 manifest["decks"]["g3_drain_prebias"]
             ).read_text())
+            sentaurus_path = json.loads(Path(
+                manifest["decks"]["g3_drain_prebias_sentaurus_path"]
+            ).read_text())
             prebias_repeat = json.loads(Path(
                 manifest["decks"]["g3_drain_prebias_repeat"]
             ).read_text())
@@ -226,6 +230,11 @@ class Phase23DeckTest(unittest.TestCase):
                 repeat["solver"]["quasi_fermi_update_limit_V"], 1.0e-12)
             self.assertEqual(
                 prebias["solver"]["quasi_fermi_update_limit_V"], 0.1)
+            self.assertEqual(
+                sentaurus_path["sweep"]["bias_points"],
+                SENTAURUS_G3_DRAIN_PREBIAS_POINTS_V,
+            )
+            self.assertEqual(prebias["sweep"]["bias_points"], [0.0, 0.1])
             self.assertTrue(
                 prebias_repeat["sweep"]["initial_state_file"].endswith(
                     "g3_drain_prebias_state.csv"

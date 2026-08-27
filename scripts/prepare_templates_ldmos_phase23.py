@@ -19,6 +19,29 @@ from typing import Any, Sequence
 
 CONTACTS = ("source", "drain", "gate", "substrate")
 
+# Accepted drain voltages from the sealed T-2022.03-SP2 G3 quasistationary
+# trajectory (InitialStep=0.01, Increment=1.35, MaxStep=0.2, Goal=0.1 V).
+# Preserve this path as an exact-mesh WP1.5 diagnostic: a direct 0->0.1 V jump
+# is not the Sentaurus oracle's numerical contract.  It remains separate from
+# the production prebias until Vela can traverse and reclose the full path.
+SENTAURUS_G3_DRAIN_PREBIAS_POINTS_V = [
+    0.0,
+    0.001,
+    0.00214466666666667,
+    0.00366859955555556,
+    0.00569746220829630,
+    0.00839855468664514,
+    0.0119946091394869,
+    0.0167821563010369,
+    0.0231559774221138,
+    0.0316416579413075,
+    0.0429389272725274,
+    0.0579793585088248,
+    0.0777224312450045,
+    0.0977224312450045,
+    0.1,
+]
+
 
 def read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
@@ -318,6 +341,14 @@ def prepare(stage1_dir: Path, oracle_dir: Path, contracts_dir: Path,
         doping=exact / "doping.csv", materials=materials, physics=physics,
         flatband_V=flatband, gate_V=0.0, drain_V=0.0,
         swept_contact="drain", bias_points=[0.0, 0.1],
+        initial_state=output / "g_contact_polysi_eq_repeat_state.csv",
+        output_dir=output, high_field=True)
+    decks["g3_drain_prebias_sentaurus_path"] = dc_deck(
+        name="g3_drain_prebias_sentaurus_path", mesh=exact / "mesh.json",
+        doping=exact / "doping.csv", materials=materials, physics=physics,
+        flatband_V=flatband, gate_V=0.0, drain_V=0.0,
+        swept_contact="drain",
+        bias_points=list(SENTAURUS_G3_DRAIN_PREBIAS_POINTS_V),
         initial_state=output / "g_contact_polysi_eq_repeat_state.csv",
         output_dir=output, high_field=True)
     decks["g3_drain_prebias_repeat"] = dc_deck(

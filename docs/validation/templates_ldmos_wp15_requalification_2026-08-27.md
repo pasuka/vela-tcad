@@ -9,6 +9,10 @@ WP1.5 的 0 V exact-mesh 平衡态与状态重启资格已经关闭，但有偏�
   `max |dphin|=2.12e-30 V`、`max |dphip|=0 V`，电子/空穴密度逐节点不变；
 - 0→0.1 V 漏压 ramp 可首次相对收敛，但同偏压 repeat 仍以
   `line_search_non_decrease` 失败，并出现 `0.826 V` 接触多数载流子 QF 跃迁；
+- T-2022.03-SP2 的同偏压与 Save/Load 重闭合均通过，逐节点最大势差仅
+  `5.05e-15 V`/`1.11e-16 V` 量级，证明 oracle 固定点和状态重载本身合格；
+- Vela 复刻 Sentaurus 的 15 点 drain 接受路径后只到达 `0.023156 V`，在
+  `0.031642 V` 以 `max_iterations` 失败，故粗步长不是完整根因；
 - `contact_basin` 表示可把该跃迁降到约 `0.217 V`，但严格 repeat 仍失败；关闭
   初态相关的 continuity row scaling 也未关闭该门；
 - 因此不运行 31 点 G3 Id-Vg，不认领阶段 3，也不开始 IALMob 实现。
@@ -73,6 +77,20 @@ Poisson `3.70e-7` 处 line-search 非下降，并测得 `0.826 V` 接触多数�
 这说明首程基于大偏压跳变初态建立的相对范数会接受一个无法在新行权重下重闭合的
 状态；仅调整 QF reference 或移除行缩放不足以关闭问题。完整 G3 曲线必须继续停止。
 
+### Sentaurus exact-mesh 重闭合与路径资格
+
+新增派生任务保持 G3 物理不变，在 `Vd=0.1 V` 依次执行同进程 Coupled、Save/Load
+和再次 Coupled。Sentaurus 使用 `Digits=5`、`ErrRef(Poisson)=0.025852 V`、
+`ErrRef(Electron/Hole)=1e10 cm^-3`、`NotDamped=100` 与 blocked decomposition。
+两次重闭合各只需一次更新；同进程与 Save/Load 结果的最大 `|dpsi|`、`|dphin|`、
+`|dphip|` 分别为 `1.11e-16 V`、`7.77e-16 V`、`1.94e-16 V`。
+
+原始 G3 实际采用 15 个接受漏压点。Vela 的同路径诊断在第 10 个输出点失败，最小
+失败转移为 `0.023155977422 -> 0.031641657941 V`。这把后续定位范围从笼统的
+`0 -> 0.1 V` 收缩到一个可复现的小转移，同时排除了 Sentaurus restart 精度和单纯
+步长过粗两种解释。完整结果见
+`templates_ldmos_sentaurus_g3_reclose_probe_2026-08-27.md`。
+
 ## 代码与证据
 
 - `NewtonSolver`：安全初始 floor、三条 floor 的统一接触 QF 门、Poisson-only 数值
@@ -86,10 +104,10 @@ Poisson `3.70e-7` 处 line-search 非下降，并测得 `0.826 V` 接触多数�
 
 ## 停止决定
 
-阶段 3 入口保持关闭。下一步仍属于 WP1.5：使 continuity row scaling/收敛范数在
-continuation 与同偏压 restart 间具备固定点不变性，并阻止 relative convergence
-接受接触多数载流子 QF 不安全状态。只有 0.1 V strict repeat 通过后，才恢复 G3
-精确点 Id-Vg；IALMob 不得用于掩盖该求解器问题。
+阶段 3 入口保持关闭。下一步仍属于 WP1.5：在已接受的 `0.023155977422 V` 状态上
+对齐 Sentaurus/Vela SG edge flux、continuity RHS 和端口积分，再审计最小失败转移
+`0.023155977422 -> 0.031641657941 V` 的第 0/1 次 Newton 行。只有 0.1 V strict
+repeat 通过后，才恢复 G3 精确点 Id-Vg；IALMob 不得用于掩盖该问题。
 
 ## 回归验证
 

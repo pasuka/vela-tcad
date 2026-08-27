@@ -103,6 +103,12 @@ Poisson/Electron/Hole，没有量子势方程；消融结果证明两项在当�
 `contact_basin` 与关闭 continuity row scaling 的消融均未关闭。因此阶段 2 只通过
 0 V 平衡态/重启子门，偏压入口仍未关闭。
 
+补充 Sentaurus 重闭合探针确认 T-2022.03-SP2 在相同 G3 exact mesh 上的同进程和
+Save/Load 重闭合均只需一次 Newton 更新，Save/Load 前后势/QF 差处于 double 舍入
+量级。Vela 复刻 Sentaurus 实际 15 点漏压路径后仍在
+`0.023155977422 -> 0.031641657941 V` 转移失败，因此 restart 文件精度和单纯粗步长
+均已排除。详见 `templates_ldmos_sentaurus_g3_reclose_probe_2026-08-27.md`。
+
 ## 后续开发项
 
 1. 继续 WP1.5 的有偏压 exact-mesh 资格，使 continuity row scaling 与收敛范数在
