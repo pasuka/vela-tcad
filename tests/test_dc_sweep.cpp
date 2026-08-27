@@ -419,6 +419,52 @@ TEST_CASE("DCSweep ABA Poisson mode runs coupled equilibrium then Poisson-only b
     REQUIRE(result.points.at(1).totalCurrent == Catch::Approx(0.0));
 }
 
+TEST_CASE("DCSweep preserves metal-gate flatband while sweeping gate bias",
+          "[dc_sweep][metal_gate][flatband]")
+{
+    const std::filesystem::path dir = makeUniqueSweepDir();
+    std::filesystem::create_directories(dir);
+    const ScopedDirectoryCleanup cleanup{dir};
+
+    const std::filesystem::path meshPath = writePNMeshWithInterior(dir);
+    const std::filesystem::path csvPath = dir / "metal_gate_sweep.csv";
+    const std::filesystem::path statePath = dir / "metal_gate_sweep_state.csv";
+    nlohmann::json cfg = baseSweepConfig(dir, meshPath, csvPath);
+    cfg["scaling"] = {{"mode", "unit_scaling"}};
+    cfg["contacts"] = {
+        {{"name", "anode"}, {"type", "metal_gate"}, {"bias", 0.0},
+         {"flatband_voltage", -0.01}},
+        {{"name", "cathode"}, {"type", "ohmic"}, {"bias", 0.0}},
+    };
+    cfg["solver"].update({
+        {"method", "poisson_only"},
+        {"max_iter", 100},
+        {"reltol", 1.0e-8},
+        {"abstol", 1.0e-8},
+        {"recombination", nlohmann::json::array()},
+    });
+    cfg["sweep"].update({
+        {"contact", "anode"},
+        {"current_contact", "cathode"},
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false},
+        {"write_state_file", statePath.string()},
+    });
+    const std::filesystem::path cfgPath = dir / "metal_gate_sweep.json";
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    const DDSolution state = readDDSolutionStateCsv(statePath, 5);
+    // psi_gate = applied_bias - flatband_voltage = 0 - (-0.01).
+    REQUIRE(state.psi(0) == Catch::Approx(0.01).margin(1.0e-12));
+    REQUIRE(state.psi(3) == Catch::Approx(0.01).margin(1.0e-12));
+}
+
 TEST_CASE("DCSweep frozen-state mode preserves the supplied diagnostic state",
           "[dc_sweep][frozen_state]")
 {

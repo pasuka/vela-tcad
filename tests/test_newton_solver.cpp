@@ -453,6 +453,48 @@ TEST_CASE("NewtonSolver: PN diode equilibrium converges", "[newton]")
     REQUIRE(result.finalResidualNorm <= result.initialResidualNorm);
 }
 
+TEST_CASE("NewtonSolver: accepts a qualified initial numerical-floor restart",
+          "[newton][restart][stall_floor]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    const NewtonResult equilibrium =
+        runNewton(mesh, matdb, doping, zeroBias(), newtonConfig());
+    REQUIRE(equilibrium.converged);
+
+    DDSolution restart = equilibrium.solution;
+    restart.psi(4) += 1.0e-10;
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.warmStart = true;
+    cfg.abstol = 1.0e-30;
+    NewtonSolver auditSolver(mesh, matdb, doping, zeroBias(), cfg);
+    const NewtonResidualEvaluation audit = auditSolver.evaluateResidual(restart);
+    REQUIRE(audit.blockNorms.combined > cfg.abstol);
+    cfg.stallResidualFloor = 2.0 * audit.blockNorms.combined;
+
+    const NewtonResult reclosed =
+        runNewton(mesh, matdb, doping, zeroBias(), restart, cfg);
+    REQUIRE(reclosed.converged);
+    REQUIRE(reclosed.iters == 0);
+    REQUIRE(reclosed.convergenceReason == "initial_stall_residual_floor");
+
+    DDSolution unsafeRestart = restart;
+    unsafeRestart.phin(4) += 1.0e-3;
+    NewtonSolver unsafeAuditSolver(mesh, matdb, doping, zeroBias(), cfg);
+    const NewtonResidualEvaluation unsafeAudit =
+        unsafeAuditSolver.evaluateResidual(unsafeRestart);
+    NewtonConfig guardedCfg = cfg;
+    guardedCfg.maxIter = 1;
+    guardedCfg.stallResidualFloor = 2.0 * unsafeAudit.blockNorms.combined;
+    const NewtonResult guarded =
+        runNewton(mesh, matdb, doping, zeroBias(), unsafeRestart, guardedCfg);
+    REQUIRE(guarded.convergenceReason != "initial_stall_residual_floor");
+    REQUIRE(guarded.convergenceReason != "max_iter_stall_residual_floor");
+}
+
 TEST_CASE("NewtonSolver: ohmic contact BC resists compensated-node polarity flips",
           "[newton][contact_bc]")
 {
@@ -2924,6 +2966,43 @@ TEST_CASE("NewtonSolver: ABA Poisson solve reconstructs contact-basin QFs",
     REQUIRE((aba.solution.psi - equilibrium.solution.psi).norm() > 0.0);
 }
 
+TEST_CASE("NewtonSolver: Poisson-only accepts a qualified numerical-floor stall",
+          "[newton][poisson_only][stall_floor]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    NewtonConfig equilibriumCfg = newtonConfig();
+    equilibriumCfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    equilibriumCfg.recombination = {"none"};
+    const NewtonResult equilibrium =
+        runNewton(mesh, matdb, doping, zeroBias(), equilibriumCfg);
+    REQUIRE(equilibrium.converged);
+
+    DDSolution restart = equilibrium.solution;
+    restart.psi(4) += 1.0e-5;
+
+    NewtonConfig cfg = equilibriumCfg;
+    cfg.warmStart = true;
+    cfg.maxIter = 20;
+    cfg.reltol = 1.0e-30;
+    cfg.abstol = 1.0e-30;
+    cfg.poissonLineSearchStallResidualFloor = 1.0e-6;
+    cfg.poissonLineSearchStallCarrierResidualFloor = 1.0e-6;
+
+    const NewtonResult result =
+        runNewtonPoissonOnly(mesh, matdb, doping, zeroBias(), restart, cfg);
+    REQUIRE(result.converged);
+    REQUIRE(result.finalBlockNorms.psi <=
+            cfg.poissonLineSearchStallResidualFloor);
+    REQUIRE(result.finalBlockNorms.phin <=
+            cfg.poissonLineSearchStallCarrierResidualFloor);
+    REQUIRE(result.finalBlockNorms.phip <=
+            cfg.poissonLineSearchStallCarrierResidualFloor);
+    REQUIRE(result.convergenceReason == "poisson_only_line_search_stall_floor");
+}
+
 TEST_CASE("NewtonSolver: evaluateRegularizedCarrierStep damps carrier-only correction",
           "[newton][diagnostics]")
 {
@@ -3980,6 +4059,14 @@ TEST_CASE("NewtonSolver: max-iteration exit honors stall residual floor", "[newt
     cfg.abstol = 0.0;
     cfg.stallResidualFloor = 1.0e9;
 
+    const NewtonResult guarded = runNewton(
+        mesh, matdb, doping, {{"anode", 0.05}, {"cathode", 0.0}}, cfg);
+
+    REQUIRE_FALSE(guarded.converged);
+
+    // The floor remains explicitly available for diagnostic workflows that
+    // opt out of the contact-majority QF safety guard.
+    cfg.poissonLineSearchStallContactMajorityQfDropLimit_V = 0.0;
     const NewtonResult result = runNewton(
         mesh, matdb, doping, {{"anode", 0.05}, {"cathode", 0.0}}, cfg);
 

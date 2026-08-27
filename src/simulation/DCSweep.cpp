@@ -3058,6 +3058,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
         return filtered;
     };
+    const auto sweptContactPotential = [&](Real appliedVoltage) {
+        const auto specIt = contactSpecs.find(sweep.contact);
+        if (specIt == contactSpecs.end() ||
+            specIt->second.type != ContactType::MetalGate) {
+            return appliedVoltage;
+        }
+        ContactBoundarySpec sweptSpec = specIt->second;
+        sweptSpec.bias = appliedVoltage;
+        return effectivePoissonDirichletPotential(sweptSpec);
+    };
 
     const nlohmann::json solverCfg = cfg.value("solver", nlohmann::json::object());
     const SolverMethod solverMethod = solverMethodFromJson(cfg);
@@ -4307,7 +4317,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         ScopedPerformanceTimer timer("dc.solve_point");
         incrementPerformanceCounter("dc.solve_point_calls");
         auto biases = baseBiases;
-        biases[sweep.contact] = voltage;
+        biases[sweep.contact] = sweptContactPotential(voltage);
         try {
             bool solverConverged = false;
             DDSolution sol;
@@ -4716,7 +4726,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
     auto qfContactBiasesForVoltage = [&](Real voltage) {
         auto biases = baseBiases;
-        biases[sweep.contact] = voltage;
+        biases[sweep.contact] = sweptContactPotential(voltage);
         return transportContactBiases(biases);
     };
 
@@ -7002,7 +7012,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     } else if (sweep.initialization.mode == "poisson_block") {
         const Real initialBias = !sweep.biasPoints.empty() ? sweep.biasPoints.front() : sweep.start;
         auto initializationBiases = baseBiases;
-        initializationBiases[sweep.contact] = initialBias;
+        initializationBiases[sweep.contact] = sweptContactPotential(initialBias);
         NewtonSolver initializer(
             mesh,
             matdb,
@@ -8336,7 +8346,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             attempt.predictedInitialState = true;
 
             auto arclengthBiases = baseBiases;
-            arclengthBiases[sweep.contact] = stepResult.state.lambda;
+            arclengthBiases[sweep.contact] =
+                sweptContactPotential(stepResult.state.lambda);
             const DDSolutionValidationResult validation = validateDDSolution(
                 attempt.solution,
                 mesh,

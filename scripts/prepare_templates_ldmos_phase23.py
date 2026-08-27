@@ -75,7 +75,7 @@ def classical_solver(physics: dict[str, Any], *, high_field: bool) -> dict[str, 
         "max_iter": 100,
         "reltol": 1.0e-7,
         "abstol": 1.0e-12,
-        "damping_psi": 0.35,
+        "damping_factor": 1.0,
         "warm_start": True,
         "carrier_statistics": {"model": physics["carrier_statistics"]["model"]},
         "bandgap_narrowing": {
@@ -142,7 +142,12 @@ def classical_solver(physics: dict[str, Any], *, high_field: bool) -> dict[str, 
         "auger_cn_m6_per_s": recombination["auger_cn_m6_per_s"],
         "auger_cp_m6_per_s": recombination["auger_cp_m6_per_s"],
         "quasi_fermi_update_limit_V": 0.1,
-        "line_search_mode": "block_filter",
+        # The exact-mesh qualification matrix showed that block_filter can
+        # force carrier-block decrease after those rows have reached their
+        # numerical floor, reducing an otherwise full Newton step to tiny
+        # damping factors.  The standard merit globalization is qualified for
+        # this template after a fixed-QF Poisson equilibrium bootstrap.
+        "line_search_mode": "merit",
         "residual_filter_gamma": 1.0e-4,
         "residual_filter_envelope_factor": 2.0,
         # The exact imported mesh has a measured scaled residual floor near
@@ -273,12 +278,25 @@ def prepare(stage1_dir: Path, oracle_dir: Path, contracts_dir: Path,
         flatband_V=0.0, gate_V=0.0, drain_V=0.0, swept_contact="drain",
         bias_points=[0.0], initial_state=classical_eq, output_dir=output,
         high_field=False)
-    decks["g_contact_polysi_eq"] = dc_deck(
-        name="g_contact_polysi_eq", mesh=exact / "mesh.json",
+    decks["g_contact_polysi_poisson_eq"] = dc_deck(
+        name="g_contact_polysi_poisson_eq", mesh=exact / "mesh.json",
         doping=exact / "doping.csv", materials=materials, physics=physics,
         flatband_V=flatband, gate_V=0.0, drain_V=0.0,
         swept_contact="drain", bias_points=[0.0], initial_state=classical_eq,
         output_dir=output, high_field=False)
+    decks["g_contact_polysi_poisson_eq"]["solver"]["method"] = "poisson_only"
+    decks["g_contact_polysi_eq"] = dc_deck(
+        name="g_contact_polysi_eq", mesh=exact / "mesh.json",
+        doping=exact / "doping.csv", materials=materials, physics=physics,
+        flatband_V=flatband, gate_V=0.0, drain_V=0.0,
+        swept_contact="drain", bias_points=[0.0],
+        initial_state=output / "g_contact_polysi_poisson_eq_state.csv",
+        output_dir=output, high_field=False)
+    # At zero applied bias, the Poisson bootstrap already fixes the physical
+    # equilibrium carrier basins.  Keep any coupled cleanup at the serialization
+    # noise scale so a depleted minority-QF direction cannot manufacture a
+    # spurious contact majority-carrier drop.
+    decks["g_contact_polysi_eq"]["solver"]["quasi_fermi_update_limit_V"] = 1.0e-12
     decks["g0_contact_polysi_replay_diagnostic"] = dc_deck(
         name="g0_contact_polysi_replay_diagnostic", mesh=exact / "mesh.json",
         doping=exact / "doping.csv", materials=materials, physics=physics,
@@ -292,12 +310,22 @@ def prepare(stage1_dir: Path, oracle_dir: Path, contracts_dir: Path,
         swept_contact="drain", bias_points=[0.0],
         initial_state=output / "g_contact_polysi_eq_state.csv",
         output_dir=output, high_field=False)
+    decks["g_contact_polysi_eq_repeat"]["solver"][
+        "quasi_fermi_update_limit_V"
+    ] = 1.0e-12
     decks["g3_drain_prebias"] = dc_deck(
         name="g3_drain_prebias", mesh=exact / "mesh.json",
         doping=exact / "doping.csv", materials=materials, physics=physics,
         flatband_V=flatband, gate_V=0.0, drain_V=0.0,
         swept_contact="drain", bias_points=[0.0, 0.1],
         initial_state=output / "g_contact_polysi_eq_repeat_state.csv",
+        output_dir=output, high_field=True)
+    decks["g3_drain_prebias_repeat"] = dc_deck(
+        name="g3_drain_prebias_repeat", mesh=exact / "mesh.json",
+        doping=exact / "doping.csv", materials=materials, physics=physics,
+        flatband_V=flatband, gate_V=0.0, drain_V=0.1,
+        swept_contact="gate", bias_points=[0.0],
+        initial_state=output / "g3_drain_prebias_state.csv",
         output_dir=output, high_field=True)
     # A second, independently qualified route starts from the exact Sentaurus
     # Vg=0/Vd=0.1 state.  It is the production seed when the deep-off drain
@@ -323,7 +351,7 @@ def prepare(stage1_dir: Path, oracle_dir: Path, contracts_dir: Path,
         materials=materials, physics=physics, flatband_V=flatband,
         gate_V=0.0, drain_V=0.1, swept_contact="gate",
         bias_points=idvg_points,
-        initial_state=output / "g3_idvg_seed_repeat_state.csv",
+        initial_state=output / "g3_drain_prebias_repeat_state.csv",
         output_dir=output, high_field=True, write_every_point=True)
 
     paths: dict[str, str] = {}

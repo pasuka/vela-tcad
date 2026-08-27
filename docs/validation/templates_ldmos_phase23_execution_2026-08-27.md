@@ -3,13 +3,15 @@
 ## 结论
 
 本轮完成了 WP2 所需的 T-2022.03 参数合同、PolySi gate 控制、G4 经典平衡态
-oracle、G0--G4 Id-Vg 单因素链和 Vela 生产算子固定状态回放。Sentaurus 侧全部运行
-成功，但 Vela 在正确 G4 状态与完整 T-2022.03 经典合同下无法通过 0 V 同偏压
-reclose，因此依总方案停止规则，阶段 2 判为失败，阶段 3 的 Vela 自洽曲线未启动。
+oracle、G0--G4 Id-Vg 单因素链和 Vela 生产算子固定状态回放。后续 WP1.5 重新资格
+通过 Poisson bootstrap + 近冻结 QF coupled merit 关闭了 0 V 同偏压 reclose；同时
+修复了 gate sweep 丢失 PolySi flatband 的边界映射缺陷。但 G3 的 0.1 V 状态仍不能
+通过严格 repeat，因此阶段 3 的 Vela 自洽曲线未启动。详细证据见
+`templates_ldmos_wp15_requalification_2026-08-27.md`。
 
 - 当前最高正式等级：`L1`；
 - WP2：部分完成，`stop_rule_triggered=true`；
-- 阶段 2：失败（平衡态未关闭）；
+- 阶段 2：0 V 平衡态/重启子门通过，偏压入口未关闭；
 - 阶段 3：Sentaurus 消融完成，Vela 曲线未运行、未评分；
 - 不认领 `L2`、`L3`、A+ 或方案 B。
 
@@ -74,7 +76,7 @@ Poisson/Electron/Hole，没有量子势方程；消融结果证明两项在当�
 固定电流 Vth 的具体电流水平，因此本轮只报告 `1e-12/1e-10/1e-8 A/um` 的诊断
 交点，不能正式签署 `hqp_secondary`。
 
-## Vela 阶段 2 结果与停止门
+## Vela 阶段 2 首次结果与后续重新资格
 
 完整 revision-2 合同从 G4 经典状态启动时：
 
@@ -94,16 +96,20 @@ Poisson/Electron/Hole，没有量子势方程；消融结果证明两项在当�
 - 固定状态公式重建相对 Sentaurus 密度的中位误差为电子 `0.1203 dex`、空穴
   `0.1269 dex`，P95 分别为 `0.4330 dex`、`0.1290 dex`。
 
-上述公式差异和势块 reclose 失败互相一致地指向阶段 2 尚未关闭；不得以连续性残差小
-或 Sentaurus 曲线完整为由越过平衡态门。
+后续 WP1.5 已关闭 0 V 子门：Poisson bootstrap 后的 coupled/repeat 在 10241 个节点
+上除 `2.12e-30 V` 的电子 QF 舍入差外完全一致。执行 gate 扫描 repeat 时还发现并
+修复了 DCSweep 覆盖 metal-gate flatband 的缺陷。修复后，0→0.1 V 首程可收敛，
+但严格 repeat 在 `3.70e-7` Poisson 块和 `0.826 V` 接触多数载流子 QF 跃迁处失败；
+`contact_basin` 与关闭 continuity row scaling 的消融均未关闭。因此阶段 2 只通过
+0 V 平衡态/重启子门，偏压入口仍未关闭。
 
 ## 后续开发项
 
-1. 重新打开 WP1.5 的 exact-mesh solver 资格，定位 G4 状态上重掺杂接触邻域的势块
-   residual/Jacobian 缩放和 line-search 非下降；修复后必须先通过 0 V 同偏压 repeat。
+1. 继续 WP1.5 的有偏压 exact-mesh 资格，使 continuity row scaling 与收敛范数在
+   continuation/restart 间保持固定点不变，并阻止接触 QF 不安全的 relative convergence。
 2. 对 split-ni、constant-reference potential、OldSlotboom/Fermi 和 TDR potential/QF
    参考零点做逐节点公式审计，关闭约 `0.12 dex` 的固定状态密度中位差。
-3. 阶段 2 通过后才运行 G3 exact-point Id-Vg。IALMob 是当前最大的已证实功能缺口，
+3. 0.1 V strict repeat 通过后才运行 G3 exact-point Id-Vg。IALMob 是当前最大的已证实功能缺口，
    应以 G2-G3 的约 84% 强反型增量为 WP 优先级依据；不得先调 bulk mobility 拟合。
 4. 在 hQP 决策前补齐并双签固定电流 Vth 电流水平。若继续沿用官方 Solve 序列，应把
    “QP 已声明但量子方程未耦合”写入 physics contract 和差异账本。

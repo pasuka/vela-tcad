@@ -5382,6 +5382,22 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
             },
             poissonNorm);
         if (!searched.accepted) {
+            // Poisson-only initialization keeps both quasi-Fermi potentials
+            // fixed at their contact-basin values.  Once the Poisson block and
+            // the induced carrier residuals are below the qualified stall
+            // floors, another Newton correction can be dominated by floating-
+            // point noise and fail the strict-decrease line search.  Reuse the
+            // same bounded stall contract as the coupled solver instead of
+            // discarding this physically safe equilibrium state.
+            const NewtonBlockResidualInfo stalledBlocks =
+                blockResidualInfo(residual, mesh_.numNodes());
+            if (isPoissonLineSearchStall(
+                    searched, stalledBlocks, poissonNorm(residual), 0.0, cfg_)) {
+                finish(
+                    true, "poisson_only_line_search_stall_floor", iter - 1,
+                    x, residual);
+                return result;
+            }
             finish(false, "poisson_only_line_search_rejected", iter - 1, x, residual);
             result.failureDiagnostics.stepNorm = rawStepNorm;
             return result;
@@ -6242,6 +6258,16 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         writeCarrierRowDiagnosticCsv(rowEval, iterations, reason);
         writeCarrierRowTraceCsv(state, rowEval, iterations, norm, reason);
     };
+    const auto contactMajorityQfAcceptsFloor = [&](const VectorXd& state,
+                                                    int iterations) {
+        if (cfg_.poissonLineSearchStallContactMajorityQfDropLimit_V <= 0.0)
+            return true;
+        const DDSolution floorSolution =
+            makeSolution(assembler, state, iterations);
+        const Real drop = maxContactMajorityQuasiFermiDrop(floorSolution);
+        return std::isfinite(drop) &&
+            drop <= cfg_.poissonLineSearchStallContactMajorityQfDropLimit_V;
+    };
 
     auto retryAfterCarrierRowRecovery = [&](const VectorXd& state,
                                             int iterations,
@@ -6325,6 +6351,15 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         globalClosureAcceptsConvergence(initialGlobalEval)) {
         finishConverged(
             "initial_abstol", x, r, 0, initialNorm,
+            initialRowEval, initialGlobalEval);
+        return result;
+    }
+    if (initialNorm <= cfg_.stallResidualFloor &&
+        carrierRowsAcceptConvergence(initialRowEval) &&
+        globalClosureAcceptsConvergence(initialGlobalEval) &&
+        contactMajorityQfAcceptsFloor(x, 0)) {
+        finishConverged(
+            "initial_stall_residual_floor", x, r, 0, initialNorm,
             initialRowEval, initialGlobalEval);
         return result;
     }
@@ -6601,7 +6636,8 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             result.trace.push_back(std::move(rejectedTrace));
             if (stalledNorm <= stallResidualFloor &&
                 carrierRowsAcceptConvergence(stalledRowEval) &&
-                globalClosureAcceptsConvergence(stalledGlobalEval)) {
+                globalClosureAcceptsConvergence(stalledGlobalEval) &&
+                contactMajorityQfAcceptsFloor(acceptedX, acceptedIters)) {
                 finishConverged("stall_residual_floor", acceptedX, acceptedR,
                                 acceptedIters, stalledNorm, stalledRowEval,
                                 stalledGlobalEval);
@@ -6804,9 +6840,17 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
     result.finalBlockNorms = blockResidualInfo(acceptedR, mesh_.numNodes());
     result.finalCarrierRowConvergence = finalRowEval;
     result.finalGlobalContinuityClosure = finalGlobalEval;
+    const Real finalContactMajorityQfDrop =
+        maxContactMajorityQuasiFermiDrop(result.solution);
+    const bool finalContactMajorityQfAcceptsFloor =
+        cfg_.poissonLineSearchStallContactMajorityQfDropLimit_V <= 0.0 ||
+        (std::isfinite(finalContactMajorityQfDrop) &&
+         finalContactMajorityQfDrop <=
+             cfg_.poissonLineSearchStallContactMajorityQfDropLimit_V);
     if (result.finalResidualNorm <= stallResidualFloor &&
         carrierRowsAcceptConvergence(finalRowEval) &&
-        globalClosureAcceptsConvergence(finalGlobalEval)) {
+        globalClosureAcceptsConvergence(finalGlobalEval) &&
+        finalContactMajorityQfAcceptsFloor) {
         finishConverged("max_iter_stall_residual_floor", acceptedX, acceptedR,
                         acceptedIters, result.finalResidualNorm, finalRowEval,
                         finalGlobalEval);
@@ -6839,7 +6883,8 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         result.history.empty() ? 0.0 : result.history.back().stepNorm,
         result.history.empty() ? 0.0 : result.history.back().dampingFactor,
         result.history.empty() ? 0 : result.history.back().lineSearchAttempts,
-        {});
+        {},
+        finalContactMajorityQfDrop);
     if (cfg_.verbose) {
         emitVerboseErrorLine(
             "Newton failed after " + std::to_string(cfg_.maxIter) +

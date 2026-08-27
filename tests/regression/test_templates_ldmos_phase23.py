@@ -20,6 +20,10 @@ from prepare_templates_ldmos_phase23 import (  # noqa: E402
     classical_solver,
     derive_polysi_flatband,
     exact_bias_points,
+    prepare as prepare_phase23,
+)
+from prepare_templates_ldmos_wp15_diagnostics import (  # noqa: E402
+    prepare as prepare_wp15_diagnostics,
 )
 from prepare_templates_ldmos_sentaurus_ablation import (  # noqa: E402
     prepare as prepare_ablation,
@@ -144,6 +148,9 @@ class Phase23DeckTest(unittest.TestCase):
         self.assertAlmostEqual(
             solver["mobility"]["electron_saturation_velocity_m_s"], 1.07e5)
         self.assertEqual(solver["impact_ionization"]["model"], "none")
+        self.assertEqual(solver["line_search_mode"], "merit")
+        self.assertEqual(solver["damping_factor"], 1.0)
+        self.assertNotIn("damping_psi", solver)
         self.assertEqual(solver["recombination"], ["srh", "auger"])
         self.assertTrue(solver["srh_doping_dependence"]["enabled"])
         self.assertEqual(
@@ -159,6 +166,152 @@ class Phase23DeckTest(unittest.TestCase):
             curve.write_text("bias_V,current_A_per_um\n0,0\n0,1\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "strictly increasing"):
                 exact_bias_points(curve)
+
+    def test_phase23_zero_bias_handoff_uses_poisson_and_near_frozen_qf(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stage1 = root / "stage1"
+            exact = stage1 / "vela_exact_topology"
+            qualification = stage1 / "qualification"
+            oracle = root / "oracle"
+            contracts = root / "contracts"
+            output = root / "output"
+            for path in (exact, qualification / "sentaurus_eq_0v_export" / "fields",
+                         oracle, contracts):
+                path.mkdir(parents=True, exist_ok=True)
+            (exact / "mesh.json").write_text(json.dumps({
+                "contacts": [{"name": "gate", "region_id": 7, "node_ids": [0]}]
+            }), encoding="utf-8")
+            (exact / "doping.csv").write_text("node_id,net_doping_m3\n0,0\n",
+                                                encoding="utf-8")
+            (qualification / "sentaurus_eq_0v_export" / "fields" /
+             "ElectrostaticPotential_region7.csv").write_text(
+                "node_id,component0\n0,0.5\n", encoding="utf-8")
+            (qualification / "sentaurus_eq_0v_state.csv").write_text(
+                "node_id,psi,phin,phip,n,p\n", encoding="utf-8")
+            (oracle / "IdVg_n2_des_drain_curve.csv").write_text(
+                "bias_V,current_A_per_um\n0,0\n1,1\n", encoding="utf-8")
+            (contracts / "physics_contract.json").write_text(json.dumps({
+                "materials_file": "materials.json",
+                **physics_contract(),
+            }), encoding="utf-8")
+            (contracts / "materials.json").write_text("{}\n", encoding="utf-8")
+
+            manifest = prepare_phase23(stage1, oracle, contracts, output)
+            poisson = json.loads(Path(
+                manifest["decks"]["g_contact_polysi_poisson_eq"]
+            ).read_text())
+            equilibrium = json.loads(Path(
+                manifest["decks"]["g_contact_polysi_eq"]
+            ).read_text())
+            repeat = json.loads(Path(
+                manifest["decks"]["g_contact_polysi_eq_repeat"]
+            ).read_text())
+            prebias = json.loads(Path(
+                manifest["decks"]["g3_drain_prebias"]
+            ).read_text())
+            prebias_repeat = json.loads(Path(
+                manifest["decks"]["g3_drain_prebias_repeat"]
+            ).read_text())
+            idvg = json.loads(Path(
+                manifest["decks"]["g3_idvg"]
+            ).read_text())
+
+            self.assertEqual(poisson["solver"]["method"], "poisson_only")
+            self.assertTrue(equilibrium["sweep"]["initial_state_file"].endswith(
+                "g_contact_polysi_poisson_eq_state.csv"))
+            self.assertEqual(
+                equilibrium["solver"]["quasi_fermi_update_limit_V"], 1.0e-12)
+            self.assertEqual(
+                repeat["solver"]["quasi_fermi_update_limit_V"], 1.0e-12)
+            self.assertEqual(
+                prebias["solver"]["quasi_fermi_update_limit_V"], 0.1)
+            self.assertTrue(
+                prebias_repeat["sweep"]["initial_state_file"].endswith(
+                    "g3_drain_prebias_state.csv"
+                )
+            )
+            self.assertTrue(idvg["sweep"]["initial_state_file"].endswith(
+                "g3_drain_prebias_repeat_state.csv"
+            ))
+
+    def test_wp15_matrix_preserves_physics_and_exposes_solver_controls(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = {
+                "simulation_type": "dc_sweep",
+                "mesh_file": "mesh.json",
+                "node_doping_file": "doping.csv",
+                "materials_file": "materials.json",
+                "output_csv": "base.csv",
+                "contacts": [{"name": "drain", "type": "ohmic", "bias": 0.0}],
+                "solver": {
+                    "method": "newton",
+                    "line_search_mode": "block_filter",
+                    "stall_residual_floor": 1.0e-7,
+                    "mobility": {"model": "masetti"},
+                },
+                "sweep": {
+                    "bias_points": [0.0],
+                    "initial_state_file": "state.csv",
+                    "write_state_file": "base_state.csv",
+                    "diagnostics": {
+                        "terminal_balance": {"enabled": True, "csv_file": "terminal.csv"},
+                        "srh_balance": {"enabled": True, "csv_file": "srh.csv"},
+                    },
+                },
+            }
+            base_path = root / "base.json"
+            base_path.write_text(json.dumps(base), encoding="utf-8")
+            paths = prepare_wp15_diagnostics(base_path, root / "matrix")
+            baseline = json.loads(Path(paths["baseline_block_filter"]).read_text())
+            merit = json.loads(Path(paths["merit"]).read_text())
+            guard = json.loads(
+                Path(paths["merit_contact_basin_reclose_guard"]).read_text()
+            )
+            frozen_qf = json.loads(
+                Path(paths["poisson_handoff_newton_qf_1e_12"]).read_text()
+            )
+            frozen_qf_repeat = json.loads(
+                Path(paths["poisson_handoff_newton_qf_1e_12_repeat"]).read_text()
+            )
+            frozen_qf_guard = json.loads(
+                Path(paths["poisson_handoff_newton_qf_1e_12_guard"]).read_text()
+            )
+            last_bias_repeat = json.loads(
+                Path(paths["merit_contact_basin_last_bias_repeat"]).read_text()
+            )
+            unscaled_repeat = json.loads(Path(
+                paths["merit_contact_basin_no_row_scaling_repeat"]
+            ).read_text())
+            self.assertEqual(baseline["solver"]["mobility"], merit["solver"]["mobility"])
+            self.assertEqual(baseline["contacts"], merit["contacts"])
+            self.assertEqual(merit["solver"]["line_search_mode"], "merit")
+            self.assertEqual(guard["solver"]["max_iter"], 0)
+            self.assertEqual(guard["solver"]["quasi_fermi_reference"], "contact_basin")
+            self.assertEqual(
+                frozen_qf["solver"]["quasi_fermi_update_limit_V"], 1.0e-12
+            )
+            self.assertTrue(
+                frozen_qf["sweep"]["initial_state_file"].endswith(
+                    "poisson_only_state.csv"
+                )
+            )
+            self.assertTrue(
+                frozen_qf_repeat["sweep"]["initial_state_file"].endswith(
+                    "poisson_handoff_newton_qf_1e_12_state.csv"
+                )
+            )
+            self.assertEqual(frozen_qf_guard["solver"]["max_iter"], 0)
+            self.assertEqual(last_bias_repeat["sweep"]["bias_points"], [0.0])
+            self.assertTrue(
+                last_bias_repeat["sweep"]["initial_state_file"].endswith(
+                    "merit_contact_basin_state.csv"
+                )
+            )
+            self.assertFalse(
+                unscaled_repeat["solver"]["continuity_row_scaling"]["enabled"]
+            )
 
 
 class SentaurusAblationTest(unittest.TestCase):
