@@ -517,15 +517,29 @@ def separate_thermal_contacts(converted: Path, audit: dict[str, Any]) -> None:
         "electrical_use_authorized": False,
     })
     thermal_names = {item["name"] for item in thermal}
+    contact_audit = {item["name"]: item for item in audit["contacts"]}
     for path in sorted(converted.glob("simulation_*.json")):
         deck = json.loads(path.read_text(encoding="utf-8"))
         deck["contacts"] = [
             contact for contact in deck.get("contacts", [])
             if contact.get("name") not in thermal_names
         ]
+        for contact in deck["contacts"]:
+            audit_entry = contact_audit.get(contact.get("name"), {})
+            owner = str(audit_entry.get("owner_region", "")).lower()
+            if contact.get("name") == "gate" and "oxide" in owner:
+                # The imported gate boundary is on the oxide and must not be
+                # interpreted as an Ohmic carrier contact.  Zero flat-band is
+                # only the stage-1.5 solver-qualification reference; the
+                # Sentaurus PolySi work-function mapping is a stage-2 physics
+                # control and remains deliberately unresolved here.
+                contact["type"] = "metal_gate"
+                contact["flatband_voltage"] = 0.0
         deck["_comment"] = (
             str(deck.get("_comment", "")) + " Thermal-only contacts are retained in "
-            "mesh.json/thermal_contacts.json but deliberately omitted from electrical biases."
+            "mesh.json/thermal_contacts.json but deliberately omitted from electrical biases. "
+            "The oxide-owned gate is a metal_gate with a provisional 0 V flat-band value for "
+            "stage-1.5 solver qualification only; stage 2 owns the PolySi work-function mapping."
         ).strip()
         write_json(path, deck)
 

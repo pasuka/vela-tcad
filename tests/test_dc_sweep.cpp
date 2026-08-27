@@ -4109,6 +4109,56 @@ TEST_CASE("DDSolution CSV shared IO roundtrips restart state", "[dc_sweep]")
     REQUIRE((loaded.p - solution.p).norm() == Catch::Approx(0.0));
 }
 
+TEST_CASE("DDSolution CSV uses round-trip precision for every persistent field",
+          "[dc_sweep][restart][precision]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto path = dir / "full_precision_state.csv";
+
+    DDSolution solution;
+    solution.psi.resize(2);
+    solution.psi << -0.12345678901234566, 0.98765432109876539;
+    solution.phin.resize(2);
+    solution.phin << 0.012345678901234567, 1.1000000000000001;
+    solution.phip.resize(2);
+    solution.phip << -0.023456789012345678, -0.20000000000000001;
+    solution.n.resize(2);
+    solution.n << 1.234567890123456e16, 9.876543210987654e19;
+    solution.p.resize(2);
+    solution.p << 7.654321098765432e12, 3.210987654321098e18;
+    solution.electronQuantumPotential.resize(2);
+    solution.electronQuantumPotential << 0.003456789012345678, -0.004567890123456789;
+    solution.electronQuantumPotentialLike.resize(2);
+    solution.electronQuantumPotentialLike << -4.123456789012345, -3.987654321098765;
+    solution.phinIncrement.resize(2);
+    solution.phinIncrement << 1.2345678901234567e-17, -2.3456789012345678e-17;
+    solution.phipIncrement.resize(2);
+    solution.phipIncrement << -3.4567890123456789e-17, 4.567890123456789e-17;
+    solution.electronQfReference = solution.phin - solution.phinIncrement;
+    solution.holeQfReference = solution.phip - solution.phipIncrement;
+
+    writeDDSolutionStateCsv(path, solution);
+    const DDSolution loaded = readDDSolutionStateCsv(path, 2);
+
+    REQUIRE((loaded.psi.array() == solution.psi.array()).all());
+    REQUIRE((loaded.phin.array() == solution.phin.array()).all());
+    REQUIRE((loaded.phip.array() == solution.phip.array()).all());
+    REQUIRE((loaded.n.array() == solution.n.array()).all());
+    REQUIRE((loaded.p.array() == solution.p.array()).all());
+    REQUIRE((loaded.electronQuantumPotential.array() ==
+             solution.electronQuantumPotential.array()).all());
+    REQUIRE((loaded.electronQuantumPotentialLike.array() ==
+             solution.electronQuantumPotentialLike.array()).all());
+    REQUIRE((loaded.phinIncrement.array() == solution.phinIncrement.array()).all());
+    REQUIRE((loaded.phipIncrement.array() == solution.phipIncrement.array()).all());
+    REQUIRE((loaded.electronQfReference.array() ==
+             solution.electronQfReference.array()).all());
+    REQUIRE((loaded.holeQfReference.array() ==
+             solution.holeQfReference.array()).all());
+}
+
 TEST_CASE("DDSolution CSV writes physical m3 densities in unit scaling mode", "[dc_sweep][scaling]")
 {
     const auto dir = makeUniqueSweepDir();

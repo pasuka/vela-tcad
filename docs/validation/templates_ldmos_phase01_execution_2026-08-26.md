@@ -1,10 +1,10 @@
-# Templates/LDMOS WP0、阶段 0/1 执行报告（2026-08-26）
+# Templates/LDMOS WP0、阶段 0/1、阶段 1.5 与 WP1.75 执行报告（2026-08-26）
 
 ## 结论
 
-WP0、阶段 0 和阶段 1 的技术工作已完成。原始 Sentaurus oracle、代表状态、结构/掺杂/接触导入、确定性复跑和 exact-mesh Poisson 成本下界均通过相应技术门。
+WP0、阶段 0、阶段 1、阶段 1.5 和 WP1.75 的技术工作已完成。原始 Sentaurus oracle、代表状态、结构/掺杂/接触导入、确定性复跑、exact-mesh Poisson 成本下界、状态重启/回放资格和版本化配置合同均通过相应技术门。
 
-预算已于 2026-08-26T12:41:25Z 完成双签，当前机器汇总状态为 `pass`、最高正式等级为 `L1`。本次签署关闭阶段 1 的治理门，允许按另行确认的执行范围进入阶段 1.5；它不声称经典 DD 或任何新增物理已经通过。
+预算已于 2026-08-26T12:41:25Z 完成双签，当前机器汇总状态为 `pass`、最高正式等级仍为 `L1`。阶段 1.5 与 WP1.75 已关闭进入经典 DD 前的资格门；它们不声称经典 DD 曲线或任何新增物理已经通过。
 
 ## 执行边界与版本
 
@@ -74,6 +74,34 @@ BV 在 `Iadapt=6.5e-13 A/um` 后从电压控制转入电流 continuation，存�
 
 此前 stage1_v3 曾误用 `dc_sweep + poisson_only`，但该路径仍先进入耦合平衡态并出现 `nonfinite_residual`。它仅作为阶段 1.5 的先验输入，不构成求解器缺陷结论；正式成本数据来自 stage1_v4 的线性 Poisson 探针。
 
+## 阶段 1.5：重启、冻结回放和同偏压重闭合
+
+资格运行使用 10,241 节点 exact mesh、真实节点掺杂和三个代表状态：0 V 平衡态、Vg=0/Vd=0.1 V 的 IdVg 低漏压点，以及 Vg=4/Vd=0.1 V 的可分辨 IdVd 预偏置点。状态 CSV 使用完整 double 精度（17 位有效数字）。oxide-owned gate 在本阶段按 `metal_gate`、临时 `flatband_voltage=0` 处理；这只用于求解器资格，PolySi 功函数映射仍由阶段 2 的 `G-contact/poly` 控制负责。
+
+| 资格门 | 结果 | 门槛 |
+| --- | ---: | ---: |
+| 五个经典持久化场 binary64 round-trip 最大差 | 0 | 0 |
+| `frozen_state` 最大变化 | 0 | 0 |
+| 0 V Vela→Vela `psi` 最大差 | 3.3014052 µV | ≤10 µV |
+| IdVg settled→repeat `psi` 最大差 | 0.0020366 µV | ≤10 µV |
+| IdVd Vela→Vela `psi` 最大差 | 0.0226950 µV | ≤10 µV |
+| IdVd 漏极电流相对差 | 8.6705685e-9 | ≤1e-3 |
+| IdVd 归一化 KCL 不平衡 | 1.9775148e-9 → 7.3097225e-11 | 不恶化 |
+
+IdVg 首次 imported→settled 的 `psi` 变化为 80.8376 µV；首次求解由相对步长条件提前结束，后续 residual-floor 收敛后再次重闭合仅变化 2.04 nV。因此资格门使用 settled→repeat，不把 Sentaurus→Vela 的边界、物理和离散差异误判为序列化误差。该 IdVg 点的电流约 1.58e-19 A/um，低于预注册的 1e-15 A/um 绝对分辨率地板，其相对电流和 KCL 只报告、不评分。
+
+重掺杂 exact mesh 的冷 Gummel 初始化仍可在 Silicon/Oxide 共享节点产生空穴密度溢出；现在会报告具体节点、载流子和缩放量，而非下游非有限残差。使用仓库既有的 Fermi、OldSlotboom、准费米更新限幅、block-filter line search 和 continuity row scaling 后，从 Sentaurus 保存状态进入 Vela 固定点的三组 Newton 运行全部收敛。本阶段没有修改核心 Newton 算法。
+
+## WP1.75：版本化材料、物理和离散合同
+
+已新增并通过三份 `additionalProperties:false` 的版本化 schema 和 golden 合同：
+
+- `materials.json`：浓度固定为 `cm^-3`、迁移率固定为 `cm^2/(V*s)`，能量、温度和三类热参数也显式声明单位；C++ `MaterialDatabase` 会拒绝未知字段、错误单位和越界值，并在 legacy SI 与 TCAD internal 两套内部单位下正确换算。
+- `physics_contract.json`：分开记录 Fermi、OldSlotboom、SRH/Auger、bulk/high-field mobility、电子/空穴量子、Okuto 和 thermal 的启用状态与实现状态；待开发功能不能伪装成已实现运行时键。
+- `discretization_contract.json`：冻结 phase-A classical 的 SG edge flux、barycentric control volume、cell-reconstructed field/source 和精确接触边积分为一个原子 profile；明确禁止在 phase A 启用 avalanche，也不从 PN2D profile 推断全局默认。
+
+校验器覆盖单位、范围、未知键、canonical JSON round-trip 和显式版本迁移。legacy material 迁移必须由调用者声明源单位为 `legacy_si` 或 `tcad_internal`，不允许猜测；并包含针对历史上迁移率单位误写导致约 3000 倍电流坍缩风险的数量级回归。
+
 ## 最终 gate 与后续动作
 
 | Gate | 状态 |
@@ -82,10 +110,12 @@ BV 在 `Iadapt=6.5e-13 A/um` 后从电压控制转入电流 continuation，存�
 | exact topology structure | pass |
 | exact-mesh cost probe | pass |
 | budget double approval | pass |
+| exact-mesh restart qualification | pass |
+| WP1.75 versioned contracts | pass |
 
 双签记录：benchmark owner 为 `Ted Chin (explicit Codex task authorization)`；independent reviewer 为 `OpenAI Codex evidence reviewer (non-human)`。复核确认 oracle manifest 哈希一致、探针运行全部成功、三档 scenario 等于 scope 预算求和，且当前约 2.11 GiB staging 小于最低 5 GiB 存储预算。
 
-WP0、阶段 0/1 现以 L1 关闭。阶段 1.5 可在用户明确要求继续后启动；经典 DD、hRecVelocity/IALMob/hQP、热和 Okuto 仍需各自资格门与范围授权。
+WP0、阶段 0/1、阶段 1.5 和 WP1.75 现以 L1 关闭。方案 A 的下一执行项是 WP2 / 阶段 2–3 的经典低压 DD、`G-contact/poly` 控制和单因素曲线校核；hRecVelocity/IALMob/hQP、热和 Okuto 仍需各自证据门与范围约束。
 
 ## 可复现证据位置
 
@@ -96,5 +126,7 @@ WP0、阶段 0/1 现以 L1 关闭。阶段 1.5 可在用户明确要求继续后
 - 最终代表状态：`representative_states_final/state_inventory.json`
 - 阶段 1 v4：`stage1_v4/reports/structure_audit.json`
 - 成本与预算：`stage1_v4/cost_probe/cost_probe.json`、`stage1_v4/contracts/budget_freeze.json`
+- 阶段 1.5：`stage1_v4/qualification/qualification_summary.json`
+- WP1.75：`stage1_v4/contracts/wp175/qualification_report.json`
 
 这些路径仅用于本地复核；其中的专有或大型产物不进入 Git。

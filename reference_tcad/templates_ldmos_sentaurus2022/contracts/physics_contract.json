@@ -1,0 +1,118 @@
+{
+  "schema": "vela.templates_ldmos.physics_contract.v1",
+  "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
+  "revision": 1,
+  "materials_file": "materials.json",
+  "temperature_K": 300.0,
+  "carrier_statistics": {
+    "model": "fermi_dirac",
+    "implementation_status": "implemented"
+  },
+  "bandgap_narrowing": {
+    "model": "old_slotboom",
+    "reference_doping_cm3": 1e17,
+    "coefficient_eV": 0.009,
+    "smoothing": 0.5,
+    "offset_eV": 0.0,
+    "fermi_statistics_correction": true,
+    "parameter_source": "vela_compiled_defaults_pending_t2022_ablation",
+    "implementation_status": "implemented"
+  },
+  "recombination": {
+    "mechanisms": ["srh", "auger"],
+    "taun_s": 1e-5,
+    "taup_s": 3e-6,
+    "auger_cn_m6_per_s": 2.9e-43,
+    "auger_cp_m6_per_s": 1.028e-43,
+    "srh_doping_dependence": {
+      "enabled": false,
+      "concentration_basis": "total_impurity",
+      "density_coupling": "sentaurus_default",
+      "parameter_status": "pending_t2022_extraction"
+    },
+    "parameter_source": "vela_compiled_defaults_pending_t2022_ablation",
+    "implementation_status": "implemented"
+  },
+  "mobility": {
+    "model": "caughey_thomas_field",
+    "doping_concentration_basis": "net_doping",
+    "high_field_driving_force": "quasi_fermi_gradient",
+    "high_field_gradient_discretization": "edge_projection",
+    "surface_model": "ialmob_pending",
+    "electron": {
+      "mu_min_cm2_per_V_s": 52.2,
+      "reference_doping_cm3": 9.68e16,
+      "doping_exponent": 0.68,
+      "saturation_velocity_cm_per_s": 1.07e7,
+      "high_field_exponent": 1.109
+    },
+    "hole": {
+      "mu_min_cm2_per_V_s": 44.9,
+      "reference_doping_cm3": 2.23e17,
+      "doping_exponent": 0.70,
+      "saturation_velocity_cm_per_s": 8.37e6,
+      "high_field_exponent": 1.213
+    },
+    "parameter_source": "vela_compiled_defaults_pending_t2022_ablation",
+    "implementation_status": "partial"
+  },
+  "electron_quantum_potential": {
+    "enabled": false,
+    "implementation_status": "implemented",
+    "decision": "disabled_classical_baseline",
+    "parameters": {
+      "gamma": null,
+      "dos_mass_ratio": null,
+      "coefficient_mass_ratio": null
+    },
+    "parameter_source": "pending_t2022_parameter_extraction"
+  },
+  "hole_quantum_potential": {
+    "enabled": false,
+    "implementation_status": "not_implemented",
+    "decision": "pending_sentaurus_ablation",
+    "parameters": {
+      "gamma": null,
+      "dos_mass_ratio": null,
+      "coefficient_mass_ratio": null
+    },
+    "parameter_source": "pending_t2022_parameter_extraction"
+  },
+  "impact_ionization": {
+    "enabled": false,
+    "model": "okuto_pending",
+    "driving_force": "pending_t2022_query",
+    "electron": {
+      "a_per_V": null,
+      "b_V_per_cm": null,
+      "c_per_K": null,
+      "d_per_K": null,
+      "gamma": null,
+      "delta": null,
+      "beta": null,
+      "lambda_cm": null
+    },
+    "hole": {
+      "a_per_V": null,
+      "b_V_per_cm": null,
+      "c_per_K": null,
+      "d_per_K": null,
+      "gamma": null,
+      "delta": null,
+      "beta": null,
+      "lambda_cm": null
+    },
+    "parameter_source": "pending_t2022_sdevice_parameter_query",
+    "implementation_status": "pending_phase_b"
+  },
+  "thermal": {
+    "enabled": false,
+    "model": "lattice_temperature_pending",
+    "heat_sources": ["joule", "recombination", "generation", "peltier_thomson"],
+    "thermode_boundary": "pending_t2022_mapping",
+    "material_parameters": "pending_t2022_extraction",
+    "parameter_source": "pending_phase_b_thermal_contract",
+    "implementation_status": "pending_phase_b"
+  },
+  "discretization_profile": "templates_ldmos_exact_topology_phase_a_classical_v1"
+}

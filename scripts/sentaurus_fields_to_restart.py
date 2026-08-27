@@ -17,8 +17,8 @@ FIELDS = {
     "phip": "hQuasiFermiPotential",
     "electrons_m3": "eDensity",
     "holes_m3": "hDensity",
-    "electron_quantum_potential_V": "eQuantumPotential",
 }
+QUANTUM_FIELD = "eQuantumPotential"
 CONDUCTION_BAND_FIELD = "ConductionBandEnergy"
 AFFINITY_FIELD = "ElectronAffinity"
 ELECTROSTATIC_FIELD = "ElectrostaticPotential"
@@ -72,39 +72,55 @@ def main() -> int:
     for output_name, sentaurus_name in FIELDS.items():
         columns[output_name], units[output_name] = merge_field(
             args.export_dir, manifest, sentaurus_name)
-    conduction_band, conduction_band_unit = merge_field(
-        args.export_dir, manifest, CONDUCTION_BAND_FIELD)
-    affinity, affinity_unit = merge_field(
-        args.export_dir, manifest, AFFINITY_FIELD)
+    quantum, quantum_unit = merge_field(args.export_dir, manifest, QUANTUM_FIELD)
+    quantum_available = bool(quantum)
+    conduction_band: dict[int, float] = {}
+    affinity: dict[int, float] = {}
+    conduction_band_unit = ""
+    affinity_unit = ""
+    if quantum_available:
+        conduction_band, conduction_band_unit = merge_field(
+            args.export_dir, manifest, CONDUCTION_BAND_FIELD)
+        affinity, affinity_unit = merge_field(
+            args.export_dir, manifest, AFFINITY_FIELD)
 
-    required_all_nodes = ("psi", "phin", "phip", "electron_quantum_potential_V")
+    required_all_nodes = ("psi", "phin", "phip")
     for name in required_all_nodes:
         missing = set(range(node_count)) - columns[name].keys()
         if missing:
             raise ValueError(f"{name} is missing {len(missing)} nodes")
-    missing_conduction_band = set(range(node_count)) - conduction_band.keys()
-    if missing_conduction_band:
-        raise ValueError(
-            "ConductionBandEnergy is missing "
-            f"{len(missing_conduction_band)} nodes")
-    if conduction_band_unit not in {"", "eV", "V"}:
-        raise ValueError(
-            "unsupported ConductionBandEnergy unit: " + conduction_band_unit)
-    if affinity_unit not in {"", "eV", "V"}:
-        raise ValueError("unsupported ElectronAffinity unit: " + affinity_unit)
+    if quantum_available:
+        missing_quantum = set(range(node_count)) - quantum.keys()
+        if missing_quantum:
+            raise ValueError(
+                f"electron_quantum_potential_V is missing {len(missing_quantum)} nodes")
+        missing_conduction_band = set(range(node_count)) - conduction_band.keys()
+        if missing_conduction_band:
+            raise ValueError(
+                "ConductionBandEnergy is missing "
+                f"{len(missing_conduction_band)} nodes")
+        if quantum_unit not in {"", "eV", "V"}:
+            raise ValueError("unsupported eQuantumPotential unit: " + quantum_unit)
+        if conduction_band_unit not in {"", "eV", "V"}:
+            raise ValueError(
+                "unsupported ConductionBandEnergy unit: " + conduction_band_unit)
+        if affinity_unit not in {"", "eV", "V"}:
+            raise ValueError("unsupported ElectronAffinity unit: " + affinity_unit)
 
     # Sentaurus band energies carry an arbitrary global energy origin. Recover
     # and remove it before constructing Phi/q; otherwise the constant appears
     # as a several-volt quantum correction in Vela's reaction term.
-    band_origins = [
-        conduction_band[node] + columns["psi"][node] + affinity[node]
-        for node in range(node_count)
-    ]
-    band_origin = statistics.median(band_origins)
-    if max(abs(value - band_origin) for value in band_origins) > 1.0e-8:
-        raise ValueError(
-            "ConductionBandEnergy + ElectrostaticPotential + "
-            "ElectronAffinity is not a single global energy origin")
+    band_origin = 0.0
+    if quantum_available:
+        band_origins = [
+            conduction_band[node] + columns["psi"][node] + affinity[node]
+            for node in range(node_count)
+        ]
+        band_origin = statistics.median(band_origins)
+        if max(abs(value - band_origin) for value in band_origins) > 1.0e-8:
+            raise ValueError(
+                "ConductionBandEnergy + ElectrostaticPotential + "
+                "ElectronAffinity is not a single global energy origin")
 
     transport_nodes: set[int] = set()
     with (args.export_dir / "elements.csv").open(newline="") as stream:
@@ -124,8 +140,13 @@ def main() -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", newline="") as handle:
         writer = csv.writer(handle)
-        writer.writerow([
-            "node_id", *FIELDS, "electron_quantum_potential_like_V"])
+        header = ["node_id", *FIELDS]
+        if quantum_available:
+            header.extend([
+                "electron_quantum_potential_V",
+                "electron_quantum_potential_like_V",
+            ])
+        writer.writerow(header)
         for node in range(node_count):
             # Sentaurus may carry arbitrary quasi-Fermi placeholders through
             # insulators.  Vela represents those non-transport rows as pinned
@@ -135,30 +156,38 @@ def main() -> int:
                 node in columns["electrons_m3"] or
                 node in columns["holes_m3"]
             )
-            writer.writerow([
+            row: list[int | str] = [
                 node,
-                columns["psi"][node],
-                columns["phin"][node] if has_carrier_support else 0.0,
-                columns["phip"][node] if has_carrier_support else 0.0,
-                columns["electrons_m3"].get(node, 0.0) * density_scale["electrons_m3"],
-                columns["holes_m3"].get(node, 0.0) * density_scale["holes_m3"],
-                (columns["electron_quantum_potential_V"][node]
-                 if (has_carrier_support or
-                     args.preserve_insulator_quantum_potential) else 0.0),
-                # Phi/q = Ec/q + Phi_m/q + Lambda. Vela uses the transport
-                # trace at shared nodes.  Nc scales as m_DOS^(3/2), hence
-                # Phi_m/q = -1.5*Vt*ln(m_DOS/m0); the stored primary subtracts
-                # the corresponding +1.5*Vt*ln(m_DOS/m0) band-drive term.
-                # Ec+Lambda has a conforming node trace in the TDR. Vela's
-                # cell-side material drive supplies affinity, BGN, and the DOS
-                # mass term; only the arbitrary energy origin is removed here.
-                conduction_band[node] +
-                columns["electron_quantum_potential_V"][node] -
-                band_origin -
-                1.5 * THERMAL_VOLTAGE_300K_V * math.log(
-                    (SILICON_ELECTRON_DOS_MASS_RATIO
-                     if node in transport_nodes else 0.42)),
-            ])
+                format(columns["psi"][node], ".17g"),
+                format(columns["phin"][node] if has_carrier_support else 0.0, ".17g"),
+                format(columns["phip"][node] if has_carrier_support else 0.0, ".17g"),
+                format(columns["electrons_m3"].get(node, 0.0) *
+                       density_scale["electrons_m3"], ".17g"),
+                format(columns["holes_m3"].get(node, 0.0) *
+                       density_scale["holes_m3"], ".17g"),
+            ]
+            if quantum_available:
+                quantum_value = (
+                    quantum[node]
+                    if (has_carrier_support or
+                        args.preserve_insulator_quantum_potential) else 0.0)
+                row.extend([
+                    format(quantum_value, ".17g"),
+                    # Phi/q = Ec/q + Phi_m/q + Lambda. Vela uses the transport
+                    # trace at shared nodes. Nc scales as m_DOS^(3/2), hence
+                    # Phi_m/q = -1.5*Vt*ln(m_DOS/m0); the stored primary
+                    # subtracts the matching band-drive term. Ec+Lambda has a
+                    # conforming node trace in the TDR. Vela's cell-side drive
+                    # supplies affinity, BGN and DOS mass; only the arbitrary
+                    # energy origin is removed here.
+                    format(
+                        conduction_band[node] + quantum[node] - band_origin -
+                        1.5 * THERMAL_VOLTAGE_300K_V * math.log(
+                            (SILICON_ELECTRON_DOS_MASS_RATIO
+                             if node in transport_nodes else 0.42)),
+                        ".17g"),
+                ])
+            writer.writerow(row)
     return 0
 
 

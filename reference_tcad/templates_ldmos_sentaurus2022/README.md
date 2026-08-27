@@ -10,8 +10,11 @@ The executable plan is defined by:
 - `docs/superpowers/plans/2026-08-26-templates-ldmos-sentaurus-vela-validation-plan.md`
 - `docs/superpowers/plans/2026-08-26-templates-ldmos-phase-a-oracle-classical-validation-plan.md`
 
-The initial approved scope is WP0 plus stages 0 and 1. It does not authorize
-new device physics, state-restart work, or solver changes.
+WP0, stages 0/1, stage 1.5 and WP1.75 are complete.  Stage 1.5 qualifies
+state serialization, frozen replay and same-bias closure; WP1.75 defines the
+strict material, solver-physics and phase-A discretization contracts.  Neither
+result is a classic DD curve acceptance or authorization to treat pending
+hRecVelocity, hQP, IALMob, thermal or Okuto physics as implemented.
 
 Expected persistent local layout:
 
@@ -83,7 +86,19 @@ python scripts/run_templates_ldmos_cost_probe.py `
   --vela-commit <commit> `
   --oracle-manifest reference_staging/templates_ldmos_sentaurus2022/<unique-id>/manifest/run_manifest.json
 
-# After the cost probe and state capture, assemble the review summary
+# Stage 1.5: generate exact-mesh qualification decks after exporting the
+# three declared Sentaurus state CSV files, run the decks in dependency order,
+# then score frozen replay and settled same-bias reclose.
+python scripts/prepare_templates_ldmos_restart_qualification.py `
+  --stage1-dir reference_staging/templates_ldmos_sentaurus2022/<unique-id>/stage1
+python scripts/summarize_templates_ldmos_restart_qualification.py `
+  --qualification-dir reference_staging/templates_ldmos_sentaurus2022/<unique-id>/stage1/qualification
+
+# WP1.75: validate/materialize versioned contracts next to the run evidence
+python scripts/prepare_templates_ldmos_wp175_contracts.py `
+  --stage1-dir reference_staging/templates_ldmos_sentaurus2022/<unique-id>/stage1
+
+# Assemble or refresh the review summary after all available prerequisite gates.
 python scripts/finalize_templates_ldmos_phase01.py `
   --run-dir reference_staging/templates_ldmos_sentaurus2022/<unique-id> `
   --stage1-dir reference_staging/templates_ldmos_sentaurus2022/<unique-id>/stage1

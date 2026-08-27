@@ -25,6 +25,14 @@ SCHEMA_FILES = {
         "vela.templates_ldmos.budget_freeze.v1.schema.json",
     "vela.templates_ldmos.phase01_manifest.v1":
         "vela.templates_ldmos.phase01_manifest.v1.schema.json",
+    "vela.templates_ldmos.materials.v1":
+        "vela.templates_ldmos.materials.v1.schema.json",
+    "vela.templates_ldmos.physics_contract.v1":
+        "vela.templates_ldmos.physics_contract.v1.schema.json",
+    "vela.templates_ldmos.discretization_contract.v1":
+        "vela.templates_ldmos.discretization_contract.v1.schema.json",
+    "vela.templates_ldmos.restart_qualification.v1":
+        "vela.templates_ldmos.restart_qualification.v1.schema.json",
 }
 
 
@@ -102,6 +110,11 @@ def validate_instance(value: Any,
     if isinstance(value, list):
         if len(value) < int(schema.get("minItems", 0)):
             raise ValueError(f"{path}: too few items")
+        if "maxItems" in schema and len(value) > int(schema["maxItems"]):
+            raise ValueError(f"{path}: too many items")
+        if schema.get("uniqueItems") and len({json.dumps(item, sort_keys=True)
+                                               for item in value}) != len(value):
+            raise ValueError(f"{path}: array items must be unique")
         item_schema = schema.get("items")
         if isinstance(item_schema, dict):
             for index, item in enumerate(value):
@@ -114,6 +127,14 @@ def validate_instance(value: Any,
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         if "minimum" in schema and value < schema["minimum"]:
             raise ValueError(f"{path}: value is below minimum {schema['minimum']}")
+        if "maximum" in schema and value > schema["maximum"]:
+            raise ValueError(f"{path}: value is above maximum {schema['maximum']}")
+        if "exclusiveMinimum" in schema and value <= schema["exclusiveMinimum"]:
+            raise ValueError(
+                f"{path}: value must exceed {schema['exclusiveMinimum']}")
+        if "exclusiveMaximum" in schema and value >= schema["exclusiveMaximum"]:
+            raise ValueError(
+                f"{path}: value must be below {schema['exclusiveMaximum']}")
 
 
 def validate_document(document: dict[str, Any], schema_dir: Path = SCHEMA_DIR) -> None:
@@ -122,6 +143,127 @@ def validate_document(document: dict[str, Any], schema_dir: Path = SCHEMA_DIR) -
         raise ValueError(f"unsupported Templates/LDMOS schema: {schema_name!r}")
     schema = read_json(schema_dir / SCHEMA_FILES[str(schema_name)])
     validate_instance(document, schema)
+
+
+def canonical_round_trip(document: dict[str, Any]) -> dict[str, Any]:
+    """Validate a contract and prove canonical JSON serialization is lossless."""
+    validate_document(document)
+    restored = json.loads(json.dumps(
+        document, sort_keys=True, separators=(",", ":"), allow_nan=False))
+    if restored != document:
+        raise ValueError("contract changed during canonical JSON round-trip")
+    validate_document(restored)
+    return restored
+
+
+def migrate_materials_v0(document: dict[str, Any],
+                         source_unit_system: str) -> dict[str, Any]:
+    """Migrate an explicitly identified legacy material file to v1 units."""
+    if source_unit_system not in {"legacy_si", "tcad_internal"}:
+        raise ValueError(
+            "source_unit_system must be 'legacy_si' or 'tcad_internal'")
+    if set(document) != {"materials"} or not isinstance(document["materials"], list):
+        raise ValueError(
+            "legacy material migration accepts only an object containing a materials array")
+    allowed = {
+        "name", "eps_r", "ni", "mun", "mup", "bandgap_eV",
+        "electron_affinity_eV", "Nc_m3", "Nv_m3", "temperature_K",
+        "electron_quantum_gamma", "electron_quantum_dos_mass_ratio",
+        "electron_quantum_coefficient_mass_ratio",
+        "thermal_conductivity_W_per_m_K", "specific_heat_J_per_kg_K",
+        "mass_density_kg_per_m3",
+    }
+    key_map = {
+        "ni": "intrinsic_carrier_density_cm3",
+        "mun": "electron_mobility_cm2_per_V_s",
+        "mup": "hole_mobility_cm2_per_V_s",
+        "Nc_m3": "conduction_band_density_of_states_cm3",
+        "Nv_m3": "valence_band_density_of_states_cm3",
+    }
+    migrated_materials = []
+    for index, source in enumerate(document["materials"]):
+        if not isinstance(source, dict):
+            raise ValueError(f"legacy material {index} must be an object")
+        unexpected = sorted(set(source) - allowed)
+        if unexpected:
+            raise ValueError(f"legacy material {index} has unknown keys {unexpected}")
+        name = source.get("name")
+        if not isinstance(name, str) or not name:
+            raise ValueError(f"legacy material {index} requires a non-empty name")
+        target: dict[str, Any] = {
+            "name": name,
+            "role": "dielectric" if name in {"SiO2", "Oxide"}
+                    else "transport_semiconductor",
+            "provenance": f"migrated_from_{source_unit_system}_v0",
+        }
+        for key, value in source.items():
+            if key == "name":
+                continue
+            target_key = key_map.get(key, key)
+            converted = value
+            if source_unit_system == "legacy_si":
+                if key in {"ni", "Nc_m3", "Nv_m3"}:
+                    converted = value / 1.0e6
+                elif key in {"mun", "mup"}:
+                    converted = value / 1.0e-4
+            target[target_key] = converted
+        migrated_materials.append(target)
+    migrated = {
+        "schema": "vela.templates_ldmos.materials.v1",
+        "benchmark": BENCHMARK,
+        "revision": 1,
+        "unit_system": {
+            "concentration": "cm^-3",
+            "mobility": "cm^2/(V*s)",
+            "energy": "eV",
+            "temperature": "K",
+            "thermal_conductivity": "W/(m*K)",
+            "specific_heat": "J/(kg*K)",
+            "mass_density": "kg/m^3",
+        },
+        "materials": migrated_materials,
+    }
+    return canonical_round_trip(migrated)
+
+
+def migrate_discretization_draft(document: dict[str, Any]) -> dict[str, Any]:
+    expected = {
+        "schema", "profile_name", "applicable_mesh", "current_support",
+        "control_volume", "field_recovery", "volume_source_mapping",
+        "contact_edge_integration", "obtuse_policy", "require_non_obtuse",
+        "non_delaunay_policy", "avalanche_profile", "forbidden_inference",
+        "physics_use_authorized", "status",
+    }
+    unexpected = sorted(set(document) - expected)
+    if unexpected:
+        raise ValueError(f"discretization draft has unknown keys {unexpected}")
+    if document.get("schema") != \
+            "vela.templates_ldmos.discretization_contract.v1-draft-unvalidated":
+        raise ValueError("input is not the recognized stage-1 discretization draft")
+    migrated = {
+        "schema": "vela.templates_ldmos.discretization_contract.v1",
+        "benchmark": BENCHMARK,
+        "revision": 1,
+        "profile_name": "templates_ldmos_exact_topology_phase_a_classical_v1",
+        "applicable_mesh": document["applicable_mesh"],
+        "scope": ["stage_1_5", "L2", "L3"],
+        "current_support": document["current_support"],
+        "control_volume": document["control_volume"],
+        "field_recovery": document["field_recovery"],
+        "volume_source_mapping": document["volume_source_mapping"],
+        "contact_edge_integration": document["contact_edge_integration"],
+        "obtuse_policy": document["obtuse_policy"],
+        "non_delaunay_policy": "qualified_for_phase_a_classical_only",
+        "avalanche_profile": "not_authorized_in_phase_a",
+        "atomic_constraints": [
+            "current_support, control_volume, field_recovery, volume_source_mapping and contact_edge_integration are one profile and must change together",
+            "avalanche and thermal source mappings require a separately versioned phase-B profile",
+        ],
+        "forbidden_inference": document["forbidden_inference"],
+        "physics_use_authorized": True,
+        "status": "qualified_for_phase_a_classical_baseline",
+    }
+    return canonical_round_trip(migrated)
 
 
 def draft_governance_contracts(vela_commit: str,
@@ -263,15 +405,33 @@ def main(argv: Sequence[str] | None = None) -> int:
     render_parser = subparsers.add_parser("render")
     render_parser.add_argument("summary", type=Path)
     render_parser.add_argument("output", type=Path)
+    migrate_parser = subparsers.add_parser("migrate")
+    migrate_parser.add_argument("kind", choices=("materials_v0", "discretization_draft"))
+    migrate_parser.add_argument("source", type=Path)
+    migrate_parser.add_argument("output", type=Path)
+    migrate_parser.add_argument(
+        "--source-unit-system", choices=("legacy_si", "tcad_internal"))
     args = parser.parse_args(argv)
     if args.command == "validate":
         for path in args.documents:
             validate_document(read_json(path))
             print(f"validated {path}")
         return 0
-    document = read_json(args.summary)
+    if args.command == "render":
+        document = read_json(args.summary)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(render_summary(document), encoding="utf-8")
+        print(args.output)
+        return 0
+    source = read_json(args.source)
+    if args.kind == "materials_v0":
+        if args.source_unit_system is None:
+            parser.error("materials_v0 migration requires --source-unit-system")
+        document = migrate_materials_v0(source, args.source_unit_system)
+    else:
+        document = migrate_discretization_draft(source)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(render_summary(document), encoding="utf-8")
+    args.output.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     print(args.output)
     return 0
 

@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vela.local/schemas/vela.templates_ldmos.restart_qualification.v1.schema.json",
+  "title": "Templates LDMOS restart qualification v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "benchmark", "generated_at", "status", "thresholds", "gates", "cases", "interpretation", "evidence"],
+  "properties": {
+    "schema": {"const": "vela.templates_ldmos.restart_qualification.v1"},
+    "benchmark": {"const": "sentaurus_t2022_03_sp2_templates_ldmos"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["pass", "fail"]},
+    "thresholds": {
+      "type": "object", "additionalProperties": false,
+      "required": ["psi_reclose_limit_V", "resolved_current_relative_limit", "current_resolution_floor_A_per_um"],
+      "properties": {
+        "psi_reclose_limit_V": {"type": "number", "exclusiveMinimum": 0.0},
+        "resolved_current_relative_limit": {"type": "number", "exclusiveMinimum": 0.0},
+        "current_resolution_floor_A_per_um": {"type": "number", "exclusiveMinimum": 0.0}
+      }
+    },
+    "gates": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/gate"}},
+    "cases": {
+      "type": "object", "additionalProperties": false,
+      "required": ["frozen_equilibrium", "equilibrium_reclose", "idvg_low_drain_reclose", "idvd_prebias_reclose"],
+      "properties": {
+        "frozen_equilibrium": {
+          "type": "object", "additionalProperties": false,
+          "required": ["max_abs_delta"],
+          "properties": {"max_abs_delta": {"$ref": "#/$defs/state_delta"}}
+        },
+        "equilibrium_reclose": {
+          "type": "object", "additionalProperties": false,
+          "required": ["max_abs_delta", "sweep_points"],
+          "properties": {
+            "max_abs_delta": {"$ref": "#/$defs/state_delta"},
+            "sweep_points": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/sweep_point"}}
+          }
+        },
+        "idvg_low_drain_reclose": {
+          "type": "object", "additionalProperties": false,
+          "required": ["max_abs_imported_to_settled_delta", "max_abs_settled_reclose_delta", "sweep_points", "current_relative_delta", "current_resolved", "classification"],
+          "properties": {
+            "max_abs_imported_to_settled_delta": {"$ref": "#/$defs/state_delta"},
+            "max_abs_settled_reclose_delta": {"$ref": "#/$defs/state_delta"},
+            "sweep_points": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/sweep_point"}},
+            "current_relative_delta": {"type": "number", "minimum": 0.0},
+            "current_resolved": {"type": "boolean"},
+            "classification": {"enum": ["resolved_current", "below_absolute_current_resolution_floor_non_gating"]}
+          }
+        },
+        "idvd_prebias_reclose": {
+          "type": "object", "additionalProperties": false,
+          "required": ["max_abs_delta", "sweep_points", "current_relative_delta", "kcl_before", "kcl_after"],
+          "properties": {
+            "max_abs_delta": {"$ref": "#/$defs/state_delta"},
+            "sweep_points": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/sweep_point"}},
+            "current_relative_delta": {"type": "number", "minimum": 0.0},
+            "kcl_before": {"$ref": "#/$defs/kcl"},
+            "kcl_after": {"$ref": "#/$defs/kcl"}
+          }
+        }
+      }
+    },
+    "interpretation": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "evidence": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence"}}
+  },
+  "$defs": {
+    "gate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "status", "metric", "limit", "unit", "summary"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["pass", "fail"]},
+        "metric": {"type": ["number", "null"]},
+        "limit": {"type": ["number", "null"]},
+        "unit": {"type": "string", "minLength": 1},
+        "summary": {"type": "string", "minLength": 1}
+      }
+    },
+    "state_delta": {
+      "type": "object", "additionalProperties": false,
+      "required": ["psi", "phin", "phip", "electrons_m3", "holes_m3"],
+      "properties": {
+        "psi": {"type": "number", "minimum": 0.0},
+        "phin": {"type": "number", "minimum": 0.0},
+        "phip": {"type": "number", "minimum": 0.0},
+        "electrons_m3": {"type": "number", "minimum": 0.0},
+        "holes_m3": {"type": "number", "minimum": 0.0}
+      }
+    },
+    "sweep_point": {
+      "type": "object", "additionalProperties": false,
+      "required": ["converged", "iterations", "convergence_reason", "final_psi_residual_norm", "current_total_A_per_um"],
+      "properties": {
+        "converged": {"type": "boolean"},
+        "iterations": {"type": "integer", "minimum": 0},
+        "convergence_reason": {"type": "string"},
+        "final_psi_residual_norm": {"type": "number", "minimum": 0.0},
+        "current_total_A_per_um": {"type": "number"}
+      }
+    },
+    "kcl": {
+      "type": "object", "additionalProperties": false,
+      "required": ["terminal_current_sum_A_per_um", "terminal_current_scale_A_per_um", "normalized_imbalance"],
+      "properties": {
+        "terminal_current_sum_A_per_um": {"type": "number"},
+        "terminal_current_scale_A_per_um": {"type": "number", "minimum": 0.0},
+        "normalized_imbalance": {"type": "number", "minimum": 0.0}
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["role", "path", "sha256"],
+      "properties": {
+        "role": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

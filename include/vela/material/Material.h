@@ -30,6 +30,13 @@ struct Material {
     /// the DOS mass preserves the legacy shared-mass behavior.
     std::optional<Real> electron_quantum_coefficient_mass_ratio;
 
+    /// Optional thermal properties reserved for the lattice-temperature
+    /// equation.  Keeping them in the material contract prevents phase-B
+    /// implementations from silently sourcing unit-ambiguous defaults.
+    std::optional<Real> thermal_conductivity_W_per_m_K;
+    std::optional<Real> specific_heat_J_per_kg_K;
+    std::optional<Real> mass_density_kg_per_m3;
+
     /// Return a copy with ni and low-field mobilities scaled to temperature_K.
     Material atTemperature(Real targetTemperature_K) const;
 };

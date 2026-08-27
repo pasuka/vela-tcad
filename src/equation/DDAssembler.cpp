@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -225,6 +226,15 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
         const Real eps = detail::edgeEpsilon(edgeCells_, mesh_, matdb_, e);
         const Real G   = eps * couple_[e] / h;
 
+        if (!std::isfinite(G)) {
+            std::ostringstream message;
+            message << "DDAssembler::assemblePoissonWithCarriers: non-finite edge "
+                    << "coefficient at edge " << e << " (nodes " << edge.n0
+                    << ',' << edge.n1 << ", eps_F_per_m=" << eps
+                    << ", couple=" << couple_[e] << ", length=" << h << ')';
+            throw std::runtime_error(message.str());
+        }
+
         auto i = static_cast<int>(edge.n0);
         auto j = static_cast<int>(edge.n1);
 
@@ -261,11 +271,32 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
         const Real matrixScale = scaling_.enabled
             ? (1.0 / scaling_.permittivityReference_F_per_m)
             : 1.0;
+        if (!std::isfinite(diagCarrier) || !std::isfinite(matrixScale)) {
+            std::ostringstream message;
+            message << "DDAssembler::assemblePoissonWithCarriers: non-finite carrier "
+                    << "diagonal at node " << i << " (n=" << ni_v
+                    << ", p=" << pi_v << ", dn_deta=" << electronDerivativeEta
+                    << ", dp_deta=" << holeDerivativeEta << ", Vt=" << Vt_
+                    << ", volume=" << vol_i << ", charge_area_factor="
+                    << chargeAreaFactor << ", matrix_scale=" << matrixScale
+                    << ", concentration_scale=" << scaling_.C0 << ')';
+            throw std::runtime_error(message.str());
+        }
         A_.coeffRef(ii, ii) += diagCarrier * matrixScale;
 
         const Real rhs_si = constants::q *
                  (pi_v - ni_v + doping_.netDoping(i)) * vol_i * chargeAreaFactor
                  + diagCarrier * psi_v;
+        if (!std::isfinite(rhs_si)) {
+            std::ostringstream message;
+            message << "DDAssembler::assemblePoissonWithCarriers: non-finite Poisson "
+                    << "RHS at node " << i << " (n=" << ni_v << ", p=" << pi_v
+                    << ", net_doping=" << doping_.netDoping(i) << ", volume="
+                    << vol_i << ", charge_area_factor=" << chargeAreaFactor
+                    << ", carrier_diagonal=" << diagCarrier << ", psi=" << psi_v
+                    << ')';
+            throw std::runtime_error(message.str());
+        }
         b_(ii) = scaling_.enabled
             ? rhs_si / (scaling_.permittivityReference_F_per_m * scaling_.V0)
             : rhs_si;

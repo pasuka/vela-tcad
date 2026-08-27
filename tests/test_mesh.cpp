@@ -284,6 +284,108 @@ TEST_CASE("MaterialDatabase reads material-specific electron quantum parameters"
             Catch::Approx(1.09));
 }
 
+TEST_CASE("MaterialDatabase reads strict Templates LDMOS material units",
+          "[material][templates_ldmos][schema]")
+{
+    const auto path = writeMeshReaderTestFile(
+        "templates_ldmos_material_v1",
+        R"json({
+  "schema":"vela.templates_ldmos.materials.v1",
+  "benchmark":"sentaurus_t2022_03_sp2_templates_ldmos",
+  "revision":1,
+  "unit_system":{
+    "concentration":"cm^-3","mobility":"cm^2/(V*s)","energy":"eV",
+    "temperature":"K","thermal_conductivity":"W/(m*K)",
+    "specific_heat":"J/(kg*K)","mass_density":"kg/m^3"
+  },
+  "materials":[{
+    "name":"Si","role":"transport_semiconductor","eps_r":11.7,
+    "intrinsic_carrier_density_cm3":1e10,
+    "electron_mobility_cm2_per_V_s":1350,
+    "hole_mobility_cm2_per_V_s":480,
+    "conduction_band_density_of_states_cm3":2.8e19,
+    "valence_band_density_of_states_cm3":1.04e19,
+    "electron_quantum_gamma":4.5,
+    "electron_quantum_dos_mass_ratio":1.07,
+    "electron_quantum_coefficient_mass_ratio":1.09,
+    "thermal_conductivity_W_per_m_K":148,
+    "specific_heat_J_per_kg_K":705,
+    "mass_density_kg_per_m3":2329,
+    "provenance":"unit_test"
+  }]
+})json");
+
+    MaterialDatabase legacy;
+    legacy.loadJson(path.path.string());
+    const Material& legacySi = legacy.getMaterial("Si");
+    REQUIRE(legacySi.ni == Catch::Approx(1.0e16));
+    REQUIRE(legacySi.mun == Catch::Approx(0.135));
+    REQUIRE(legacySi.mup == Catch::Approx(0.048));
+    REQUIRE(*legacySi.Nc_m3 == Catch::Approx(2.8e25));
+    REQUIRE(*legacySi.thermal_conductivity_W_per_m_K == Catch::Approx(148.0));
+    REQUIRE(*legacySi.specific_heat_J_per_kg_K == Catch::Approx(705.0));
+    REQUIRE(*legacySi.mass_density_kg_per_m3 == Catch::Approx(2329.0));
+
+    const UnitScalingConfig scaling{UnitScalingMode::UnitScaling};
+    MaterialDatabase tcad(scaling);
+    tcad.loadJson(path.path.string(), scaling);
+    const Material& tcadSi = tcad.getMaterial("Si");
+    REQUIRE(tcadSi.ni == Catch::Approx(1.0e10));
+    REQUIRE(tcadSi.mun == Catch::Approx(1350.0));
+    REQUIRE(tcadSi.mup == Catch::Approx(480.0));
+    REQUIRE(*tcadSi.Nc_m3 == Catch::Approx(2.8e19));
+    REQUIRE(scaling.unitSystem().internalMobilityToM2PerVS(tcadSi.mun) ==
+            Catch::Approx(0.135));
+}
+
+TEST_CASE("MaterialDatabase rejects unknown versioned material keys and units",
+          "[material][templates_ldmos][schema]")
+{
+    const auto unknown = writeMeshReaderTestFile(
+        "templates_ldmos_material_unknown",
+        R"json({
+  "schema":"vela.templates_ldmos.materials.v1",
+  "benchmark":"benchmark","revision":1,
+  "unit_system":{
+    "concentration":"cm^-3","mobility":"cm^2/(V*s)","energy":"eV",
+    "temperature":"K","thermal_conductivity":"W/(m*K)",
+    "specific_heat":"J/(kg*K)","mass_density":"kg/m^3"
+  },
+  "materials":[{"name":"Si","role":"transport_semiconductor","eps_r":11.7,
+    "provenance":"unit_test","mun":1350}]
+})json");
+    MaterialDatabase db;
+    try {
+        db.loadJson(unknown.path.string());
+        FAIL("expected an unknown versioned material key to throw");
+    } catch (const std::runtime_error& error) {
+        REQUIRE(std::string(error.what()).find("unexpected key 'mun'") !=
+                std::string::npos);
+    }
+
+    const auto units = writeMeshReaderTestFile(
+        "templates_ldmos_material_wrong_units",
+        R"json({
+  "schema":"vela.templates_ldmos.materials.v1",
+  "benchmark":"benchmark","revision":1,
+  "unit_system":{
+    "concentration":"cm^-3","mobility":"m^2/(V*s)","energy":"eV",
+    "temperature":"K","thermal_conductivity":"W/(m*K)",
+    "specific_heat":"J/(kg*K)","mass_density":"kg/m^3"
+  },
+  "materials":[{"name":"Si","role":"transport_semiconductor","eps_r":11.7,
+    "provenance":"unit_test"}]
+})json");
+    try {
+        db.loadJson(units.path.string());
+        FAIL("expected a wrong versioned unit to throw");
+    } catch (const std::runtime_error& error) {
+        REQUIRE(std::string(error.what()).find(
+                    "unit_system.mobility must be 'cm^2/(V*s)'") !=
+                std::string::npos);
+    }
+}
+
 static void requireReadThrowsContaining(const std::filesystem::path& path,
                                         const std::string& expected)
 {

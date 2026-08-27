@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vela.local/schemas/vela.templates_ldmos.materials.v1.schema.json",
+  "title": "Templates LDMOS material contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "benchmark", "revision", "unit_system", "materials"],
+  "properties": {
+    "schema": {"const": "vela.templates_ldmos.materials.v1"},
+    "benchmark": {"type": "string", "minLength": 1},
+    "revision": {"type": "integer", "minimum": 1},
+    "unit_system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["concentration", "mobility", "energy", "temperature", "thermal_conductivity", "specific_heat", "mass_density"],
+      "properties": {
+        "concentration": {"const": "cm^-3"},
+        "mobility": {"const": "cm^2/(V*s)"},
+        "energy": {"const": "eV"},
+        "temperature": {"const": "K"},
+        "thermal_conductivity": {"const": "W/(m*K)"},
+        "specific_heat": {"const": "J/(kg*K)"},
+        "mass_density": {"const": "kg/m^3"}
+      }
+    },
+    "materials": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "role", "eps_r", "provenance"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "role": {"enum": ["transport_semiconductor", "dielectric", "electrostatic_only_semiconductor_poly"]},
+          "eps_r": {"type": "number", "minimum": 1.0, "maximum": 1000.0},
+          "intrinsic_carrier_density_cm3": {"type": "number", "minimum": 0.0, "maximum": 1e30},
+          "electron_mobility_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
+          "hole_mobility_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
+          "bandgap_eV": {"type": "number", "minimum": 0.0, "maximum": 100.0},
+          "electron_affinity_eV": {"type": "number", "minimum": 0.0, "maximum": 100.0},
+          "conduction_band_density_of_states_cm3": {"type": "number", "minimum": 0.0, "maximum": 1e30},
+          "valence_band_density_of_states_cm3": {"type": "number", "minimum": 0.0, "maximum": 1e30},
+          "temperature_K": {"type": "number", "minimum": 1.0, "maximum": 1e5},
+          "electron_quantum_gamma": {"type": "number", "minimum": 0.0, "maximum": 1e6},
+          "electron_quantum_dos_mass_ratio": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e6},
+          "electron_quantum_coefficient_mass_ratio": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e6},
+          "thermal_conductivity_W_per_m_K": {"type": "number", "minimum": 0.0, "maximum": 1e7},
+          "specific_heat_J_per_kg_K": {"type": "number", "minimum": 0.0, "maximum": 1e9},
+          "mass_density_kg_per_m3": {"type": "number", "minimum": 0.0, "maximum": 1e8},
+          "provenance": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

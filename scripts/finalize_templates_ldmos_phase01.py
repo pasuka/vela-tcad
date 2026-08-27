@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assemble the final WP0/stage-0/stage-1 validation summary."""
+"""Assemble the Templates/LDMOS phase-A prerequisite validation summary."""
 
 from __future__ import annotations
 
@@ -49,6 +49,10 @@ def main() -> int:
     repeat = read(repeat_path)
     budget = read(budget_path)
     cost = read(cost_path)
+    restart_path = stage1 / "qualification" / "qualification_summary.json"
+    wp175_path = stage1 / "contracts" / "wp175" / "qualification_report.json"
+    restart = read(restart_path) if restart_path.is_file() else None
+    wp175 = read(wp175_path) if wp175_path.is_file() else None
     # Keep the run-level governance location canonical even when the long VM
     # runner completed with an older in-memory WP0 schema implementation.
     # The stage-1 copy remains evidence and is hashed below.
@@ -79,7 +83,28 @@ def main() -> int:
             "summary": f"budget_freeze approval.status={budget['approval']['status']}",
         },
     ]
-    technical_pass = oracle_pass and structure_pass and probe_pass
+    if restart is not None:
+        gates.append({
+            "id": "exact_mesh_restart_qualification",
+            "status": restart["status"],
+            "summary": (
+                "17-digit round-trip, frozen replay, equilibrium/IdVg/IdVd "
+                "same-bias reclose, resolved current and KCL gates."
+            ),
+        })
+    if wp175 is not None:
+        gates.append({
+            "id": "wp175_versioned_contracts",
+            "status": wp175["status"],
+            "summary": (
+                "Strict material, solver-physics and phase-A discretization "
+                "schemas, migration, unit and round-trip checks."
+            ),
+        })
+    restart_pass = restart is None or restart["status"] == "pass"
+    wp175_pass = wp175 is None or wp175["status"] == "pass"
+    technical_pass = (
+        oracle_pass and structure_pass and probe_pass and restart_pass and wp175_pass)
     if not technical_pass:
         status, highest = "fail", ("L0" if oracle_pass else "none")
     elif not budget_approved:
@@ -87,9 +112,13 @@ def main() -> int:
     else:
         status, highest = "pass", "L1"
     limitations = [
-        "No stage 1.5, classic DD, new physics, or curve acceptance was entered.",
+        "No classic DD curve acceptance or new phase-A/phase-B physics acceptance was entered.",
         "The cost probe is a Poisson-only lower bound and must be re-frozen after the first qualified classic-DD run.",
     ]
+    if restart is None:
+        limitations.append("Stage 1.5 restart qualification has not been attached.")
+    if wp175 is None:
+        limitations.append("WP1.75 versioned contracts have not been attached.")
     if not budget_approved:
         limitations.append(
             "L1 remains governance-unresolved until budget_freeze has both required approvals."
@@ -110,7 +139,11 @@ def main() -> int:
             evidence(repeat_path, run_dir, "deterministic repeat audit"),
             evidence(cost_path, run_dir, "exact-mesh structural cost probe"),
             evidence(budget_path, run_dir, "draft or approved execution budget"),
-        ],
+        ] + ([evidence(
+            restart_path, run_dir, "exact-mesh restart and reclose qualification")]
+             if restart is not None else []) + ([evidence(
+            wp175_path, run_dir, "WP1.75 contract qualification")]
+             if wp175 is not None else []),
         "limitations": limitations,
     }
     validate_document(summary)
