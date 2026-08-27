@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import importlib.util
 import json
 import subprocess
@@ -128,6 +129,15 @@ class UnifiedDeckTest(unittest.TestCase):
         self.assertEqual("none", solver["handoff"]["fallback"])
         self.assertFalse(solver["handoff"]["require_gummel_convergence"])
         self.assertFalse(solver["mobility"]["jacobian_field_derivatives"])
+        impact = solver["impact_ionization"]
+        self.assertEqual("element_edge_sg_gss_laux",
+                         impact["current_approximation"])
+        self.assertEqual("element_vertex_box_measure",
+                         impact["source_mapping_mode"])
+        self.assertEqual("bernoulli",
+                         impact["cell_reconstructed_midpoint_density"])
+        self.assertEqual("cell_gradient",
+                         impact["quasi_fermi_gradient_discretization"])
         self.assertNotIn("quasi_fermi_reference", solver)
         self.assertEqual("report", solver["global_continuity_closure"]["mode"])
         self.assertEqual(0.05, deck["sweep"]["initial_step"])
@@ -150,6 +160,109 @@ class ContractGateTest(unittest.TestCase):
                          case["solver_profile"])
         self.assertEqual(-20.0, case["curve"]["bias_stop"])
         self.assertGreaterEqual(case["curve"]["min_points"], 20)
+        reference = case["reference_curve"]
+        self.assertTrue((REPO / reference["path"]).is_file())
+        self.assertEqual("log_current", reference["interpolation"])
+        self.assertGreaterEqual(reference["min_points"], 200)
+        self.assertLessEqual(reference["max_orders_of_magnitude"], 0.08)
+        self.assertLessEqual(reference["max_relative_error"], 0.2)
+        self.assertFalse(reference["require_trend_match"])
+        reference_path = REPO / reference["path"]
+        metadata = json.loads(reference_path.with_suffix(".meta.json").read_text())
+        normalized = reference_path.read_text(encoding="utf-8").replace(
+            "\r\n", "\n").encode("utf-8")
+        self.assertEqual(
+            metadata["curve_content_sha256_lf"],
+            hashlib.sha256(normalized).hexdigest())
+        self.assertEqual(
+            reference["content_sha256_lf"],
+            metadata["curve_content_sha256_lf"])
+
+    def test_full_bv_contract_compares_frozen_sentaurus_curve(self) -> None:
+        contract = MODULE.load_e2e_contract()
+        case = contract["cases"]["pn2d_sentaurus2018_bv"]
+        reference_path = REPO / case["reference_curve"]["path"]
+        with reference_path.open(encoding="utf-8", newline="") as handle:
+            reference_rows = list(csv.DictReader(handle))
+        qualification = {
+            "node_count": 1482, "cell_count": 2800,
+            "max_angle_degrees": 90.0,
+            "node_volume_policy": "mixed_voronoi",
+            "contacts": [{"node_count": 26}, {"node_count": 26}],
+        }
+        with tempfile.TemporaryDirectory(prefix="vela_bv_reference_gate_") as tmp:
+            curve = Path(tmp) / "bv.csv"
+            terminal = Path(tmp) / "terminal.csv"
+            with curve.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=[
+                    "mode", "bias_V", "converged", "current_total_A_per_um"])
+                writer.writeheader()
+                for row in reference_rows:
+                    candidate_bias = (
+                        -19.999999999999996
+                        if float(row["bias_V"]) == -20.0
+                        else row["bias_V"]
+                    )
+                    writer.writerow({
+                        "mode": "bv_reverse", "bias_V": candidate_bias,
+                        "converged": 1,
+                        "current_total_A_per_um": row["current_total"],
+                    })
+            with terminal.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=[
+                    "bias_V", "contact", "I_sgflux_A_per_um"])
+                writer.writeheader()
+                for row in reference_rows:
+                    current = float(row["current_total"])
+                    writer.writerow({"bias_V": row["bias_V"],
+                                     "contact": "Anode",
+                                     "I_sgflux_A_per_um": current})
+                    writer.writerow({"bias_V": row["bias_V"],
+                                     "contact": "Cathode",
+                                     "I_sgflux_A_per_um": -current})
+            report = MODULE.evaluate_e2e_acceptance(
+                "pn2d_sentaurus2018_bv", case, "bv", qualification,
+                curve, terminal, mesh_strategy="transfinite-rect")
+        self.assertEqual("accepted", report["status"])
+        self.assertGreaterEqual(
+            report["checks"]["reference_curve"]["points_compared"], 200)
+        self.assertEqual(
+            0.0, report["checks"]["reference_curve"]["orders_of_magnitude"])
+
+    def test_full_bv_contract_rejects_curve_shape_regression(self) -> None:
+        contract = MODULE.load_e2e_contract()
+        case = json.loads(json.dumps(
+            contract["cases"]["pn2d_sentaurus2018_bv"]))
+        case["curve"].pop("max_terminal_current_imbalance", None)
+        reference_path = REPO / case["reference_curve"]["path"]
+        with reference_path.open(encoding="utf-8", newline="") as handle:
+            reference_rows = list(csv.DictReader(handle))
+        qualification = {
+            "node_count": 1482, "cell_count": 2800,
+            "max_angle_degrees": 90.0,
+            "node_volume_policy": "mixed_voronoi",
+            "contacts": [{"node_count": 26}, {"node_count": 26}],
+        }
+        with tempfile.TemporaryDirectory(prefix="vela_bv_reference_reject_") as tmp:
+            curve = Path(tmp) / "bv.csv"
+            with curve.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=[
+                    "mode", "bias_V", "converged", "current_total_A_per_um"])
+                writer.writeheader()
+                for row in reference_rows:
+                    writer.writerow({
+                        "mode": "bv_reverse", "bias_V": row["bias_V"],
+                        "converged": 1,
+                        "current_total_A_per_um":
+                            0.1 * float(row["current_total"]),
+                    })
+            report = MODULE.evaluate_e2e_acceptance(
+                "pn2d_sentaurus2018_bv", case, "bv", qualification,
+                curve, mesh_strategy="transfinite-rect")
+        self.assertEqual("failed", report["status"])
+        self.assertIn(
+            "Sentaurus reference curve log error exceeds contract maximum",
+            report["failures"])
 
     def test_partial_curve_reports_last_converged_bias(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_partial_curve_") as tmp:

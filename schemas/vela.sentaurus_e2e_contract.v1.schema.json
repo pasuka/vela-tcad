@@ -148,13 +148,34 @@
         },
         "reference_curve": {
           "type": "object",
-          "description": "Optional comparison against a frozen Sentaurus curve when the raw artifact is available locally.",
-          "required": ["path"],
+          "description": "Optional mandatory comparison against a checked-in frozen Sentaurus curve. When present, a missing or malformed reference fails closed.",
+          "required": [
+            "path",
+            "content_sha256_lf",
+            "reference_column",
+            "candidate_column",
+            "interpolation",
+            "min_points",
+            "max_orders_of_magnitude",
+            "max_relative_error"
+          ],
           "additionalProperties": false,
           "properties": {
             "path": {"type": "string"},
+            "content_sha256_lf": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
             "reference_column": {"type": "string"},
             "candidate_column": {"type": "string"},
+            "candidate_scale": {"type": "number"},
+            "interpolation": {
+              "type": "string",
+              "enum": ["linear", "log_current"]
+            },
+            "bias_min": {"type": "number"},
+            "bias_max": {"type": "number"},
+            "min_points": {"type": "integer", "minimum": 2},
             "max_orders_of_magnitude": {"type": "number", "minimum": 0},
             "max_relative_error": {"type": "number", "minimum": 0},
             "require_trend_match": {"type": "boolean"}

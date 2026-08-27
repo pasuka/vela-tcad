@@ -137,6 +137,14 @@ class Pn2dConfigTemplatesTest(unittest.TestCase):
             {"node_volume_policy": "mixed_voronoi", "require_non_obtuse": True},
         )
         self.assertEqual(
+            config["solver"]["carrier_row_convergence"]["mode"], "report"
+        )
+        self.assertFalse(config["solver"]["continuity_row_scaling"]["enabled"])
+        self.assertEqual(
+            config["solver"]["global_continuity_closure"]["mode"], "report"
+        )
+        self.assertNotIn("quasi_fermi_reference", config["solver"])
+        self.assertEqual(
             manifest["overrides"],
             {"avalanche_current_support_profile": "element_edge_sg_gss_laux"},
         )

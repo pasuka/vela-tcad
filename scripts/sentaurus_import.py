@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import re
@@ -43,6 +44,7 @@ from sentaurus_gmsh_pipeline import (  # noqa: E402
     run_pipeline as run_gmsh_pipeline,
 )
 from convert_tcad_export import load_mesh as load_exported_mesh  # noqa: E402
+from compare_reference_curves import compare_series, read_csv  # noqa: E402
 from sentaurus_sde_frontend import (  # noqa: E402
     offline_static_frontend,
     sentaurus2022_evaluated_frontend,
@@ -1614,6 +1616,15 @@ SOLVER_PROFILES: dict[str, dict[str, Any]] = {
                 "high_field_driving_force": "quasi_fermi_gradient",
                 "jacobian_field_derivatives": False,
             },
+            "impact_ionization": {
+                "model": "van_overstraeten",
+                "driving_force": "quasi_fermi_gradient",
+                "generation": "current_density",
+                "current_approximation": "element_edge_sg_gss_laux",
+                "source_mapping_mode": "element_vertex_box_measure",
+                "cell_reconstructed_midpoint_density": "bernoulli",
+                "quasi_fermi_gradient_discretization": "cell_gradient",
+            },
             "carrier_row_convergence": {"mode": "report"},
             "continuity_row_scaling": {"enabled": False},
             "global_continuity_closure": {
@@ -1844,6 +1855,81 @@ def evaluate_e2e_acceptance(case_name: str, case: dict[str, Any],
                 failures.append(
                     "terminal-current imbalance exceeds mixed absolute/relative "
                     "contract maximum")
+    reference_contract = case.get("reference_curve")
+    if reference_contract is not None:
+        reference_path = Path(str(reference_contract["path"]))
+        if not reference_path.is_absolute():
+            reference_path = REPO / reference_path
+        reference_check: dict[str, Any] = {
+            "path": str(reference_path),
+            "available": False,
+        }
+        checks["reference_curve"] = reference_check
+        if not reference_path.is_file():
+            failures.append("frozen Sentaurus reference curve is missing")
+        else:
+            try:
+                reference_bytes = reference_path.read_text(
+                    encoding="utf-8").replace("\r\n", "\n").encode("utf-8")
+                reference_sha256 = hashlib.sha256(reference_bytes).hexdigest()
+                reference_check["content_sha256_lf"] = reference_sha256
+                if reference_sha256 != reference_contract["content_sha256_lf"]:
+                    failures.append(
+                        "frozen Sentaurus reference curve hash mismatch")
+                comparison_rows = [dict(row) for row in accepted]
+                for row in comparison_rows:
+                    bias = float(row["bias_V"])
+                    for endpoint in (float(curve["bias_start"]),
+                                     float(curve["bias_stop"])):
+                        if abs(bias - endpoint) <= tolerance:
+                            row["bias_V"] = str(endpoint)
+                            break
+                comparison = compare_series(
+                    "iv",
+                    read_csv(reference_path),
+                    comparison_rows,
+                    candidate_scale=float(reference_contract.get(
+                        "candidate_scale", 1.0)),
+                    candidate_bias_scale=1.0,
+                    candidate_bias_offset=0.0,
+                    bias_min=reference_contract.get("bias_min"),
+                    bias_max=reference_contract.get("bias_max"),
+                    reference_column=reference_contract.get("reference_column"),
+                    candidate_column=reference_contract.get("candidate_column"),
+                    interpolation=str(reference_contract.get(
+                        "interpolation", "log_current")),
+                )
+                reference_check.update(comparison)
+            except (OSError, ValueError, KeyError) as error:
+                reference_check["error"] = str(error)
+                failures.append("Sentaurus reference curve comparison failed")
+            else:
+                if not comparison.get("available", False):
+                    failures.append(
+                        "Sentaurus reference curve columns are unavailable")
+                points = int(comparison.get("points_compared", 0))
+                if points < int(reference_contract.get("min_points", 2)):
+                    failures.append(
+                        "Sentaurus reference curve point count below contract minimum")
+                max_orders = comparison.get("orders_of_magnitude")
+                if max_orders is None or not math.isfinite(float(max_orders)):
+                    failures.append(
+                        "Sentaurus reference curve log error is unavailable")
+                elif float(max_orders) > float(reference_contract[
+                        "max_orders_of_magnitude"]):
+                    failures.append(
+                        "Sentaurus reference curve log error exceeds contract maximum")
+                max_relative = comparison.get("max_relative_error")
+                if max_relative is None or not math.isfinite(float(max_relative)):
+                    failures.append(
+                        "Sentaurus reference curve relative error is unavailable")
+                elif float(max_relative) > float(reference_contract[
+                        "max_relative_error"]):
+                    failures.append(
+                        "Sentaurus reference curve relative error exceeds contract maximum")
+                if (reference_contract.get("require_trend_match", False) and
+                        not comparison.get("trend_match", False)):
+                    failures.append("Sentaurus reference curve trend mismatch")
     return {
         "schema": "vela.sentaurus_device_acceptance.v1",
         "case": case_name,
