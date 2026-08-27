@@ -208,3 +208,23 @@ the original `PhuMob + HighFieldSaturation + Enormal` combination to
 produces the complete mobility, SRH doping-lifetime, and OldSlotboom solver
 configuration with no unsupported physics or lossy substitutions. M7 closes
 implementation readiness; original-deck Id-Vg parity remains the M8 gate.
+
+## M8 execution evidence
+
+M8 completed the nominal two-curve gate and the full eight-TDR by two-drain-
+bias matrix with the original `OldSlotboom`, `PhuMob`,
+`HighFieldSaturation`, `Enormal`, and `SRH(DopingDependence)` physics. All 16
+Sentaurus references qualified at the exact 51-point gate lattice, and all 16
+Vela curves completed with every gate point converged.
+
+The M8 parity gate does not pass. The eight cases for `NWell=1e17 cm^-3`
+(n17--n20) pass; the eight cases for `NWell=2e17 cm^-3` (n21--n24) fail only
+at `Vg=0` and/or `0.05 V`. All 16 trends match, and the largest absolute
+`Vg=2.5 V` endpoint log-ratio is 0.0132 dex, but the frozen all-points limits
+cannot exclude the deep-off violations. The matrix-wide worst error is 0.5778
+dex and 278.25%. Thresholds, current floor, and lattice were not changed.
+
+The detailed report is
+`docs/validation/simplemos_m8_original_physics_validation_2026-08-27.md`.
+M9 remains gated on diagnosing and resolving the high-NWell deep-off parity
+gap.

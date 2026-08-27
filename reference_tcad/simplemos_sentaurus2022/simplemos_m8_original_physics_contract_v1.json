@@ -1,0 +1,89 @@
+{
+  "schema": "vela.simplemos.sdevice.m8_original_physics.v1",
+  "contract_id": "simplemos-sdevice-m8-original-physics-v1",
+  "scope": "SDevice-only original-physics comparison; TDR generation is an upstream input activity and is not process-model validation",
+  "sentaurus_release": "T-2022.03-SP2",
+  "source_deck": {
+    "path": "/atctools/Synopsys/tcad/T-2022.03/tcad/T-2022.03-SP2/Applications_Library/GettingStarted/swb/SimpleMOS/sdevice_des.cmd",
+    "sha256": "3fd501cad368aa43c55a780253309428872a4b3349aa03727f8a875d04a4b536"
+  },
+  "physics": {
+    "carrier_statistics": "maxwell_boltzmann",
+    "effective_intrinsic_density": "OldSlotboom",
+    "mobility": ["PhuMob", "HighFieldSaturation", "Enormal"],
+    "vela_mobility_model": "phumob_field_lombardi",
+    "vela_high_field_driving_force": "quasi_fermi_gradient",
+    "vela_high_field_gradient_discretization": "transport_cell_vector",
+    "recombination": "SRH(DopingDependence)"
+  },
+  "devices": [
+    {"id": "n17", "workbench_process_node": 17, "nominal": true,  "Lg_um": 0.25, "NWell_cm3": 1e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 1e14},
+    {"id": "n18", "workbench_process_node": 18, "nominal": false, "Lg_um": 0.25, "NWell_cm3": 1e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 2e14},
+    {"id": "n19", "workbench_process_node": 19, "nominal": false, "Lg_um": 0.25, "NWell_cm3": 1e17, "GOxTime_min": 15.0, "LDD_Dose_cm2": 1e14},
+    {"id": "n20", "workbench_process_node": 20, "nominal": false, "Lg_um": 0.25, "NWell_cm3": 1e17, "GOxTime_min": 15.0, "LDD_Dose_cm2": 2e14},
+    {"id": "n21", "workbench_process_node": 21, "nominal": false, "Lg_um": 0.25, "NWell_cm3": 2e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 1e14},
+    {"id": "n22", "workbench_process_node": 22, "nominal": false, "Lg_um": 0.25, "NWell_cm3": 2e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 2e14},
+    {"id": "n23", "workbench_process_node": 23, "nominal": false, "Lg_um": 0.25, "NWell_cm3": 2e17, "GOxTime_min": 15.0, "LDD_Dose_cm2": 1e14},
+    {"id": "n24", "workbench_process_node": 24, "nominal": false, "Lg_um": 0.25, "NWell_cm3": 2e17, "GOxTime_min": 15.0, "LDD_Dose_cm2": 2e14}
+  ],
+  "bias_matrix": {
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_lattice": {
+      "start_V": 0.0,
+      "stop_V": 2.5,
+      "step_V": 0.05,
+      "point_count": 51,
+      "values_V": [
+        0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45,
+        0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
+        1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45,
+        1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95,
+        2.0, 2.05, 2.1, 2.15, 2.2, 2.25, 2.3, 2.35, 2.4, 2.45,
+        2.5
+      ]
+    }
+  },
+  "execution_gates": {
+    "nominal_device": "n17",
+    "nominal_two_curve_gate_must_pass_before_matrix": true,
+    "previous_accepted_state_only": true,
+    "auxiliary_drain_points_have_no_acceptance_role": true,
+    "interpolation_forbidden": true
+  },
+  "vela_execution_protocol": {
+    "equilibrium_quasi_fermi_update_limit_V": 0.1,
+    "transport_quasi_fermi_update_limit_V": 0.025,
+    "quasi_fermi_reference": "contact_basin",
+    "srh_density_coupling": "sentaurus_default",
+    "continuity_row_scaling": true,
+    "auxiliary_drain_initial_step_V": 0.005,
+    "auxiliary_drain_max_step_V": 0.01,
+    "gate_acceptance_lattice_unchanged": true
+  },
+  "comparison": {
+    "reference_bias_column": "gate_voltage_V",
+    "reference_current_column": "drain_total_current_A_per_um",
+    "candidate_bias_column": "bias_V",
+    "candidate_current_column": "current_total_A_per_um",
+    "current_sign_policy": "compare_absolute_magnitude",
+    "interpolation": "forbidden",
+    "exact_bias_tolerance_V": 1e-10,
+    "current_floor_A_per_um": 1e-18,
+    "qualification_gates": {
+      "exact_51_point_lattice": true,
+      "unique_bias_rows": true,
+      "all_values_finite": true,
+      "all_candidate_points_converged": true
+    },
+    "numeric_parity": {
+      "maximum_absolute_log10_ratio": 0.3,
+      "maximum_relative_error": 1.0,
+      "trend_match_required": true
+    },
+    "deep_off_below_floor": "diagnostic_only"
+  },
+  "artifact_policy": {
+    "checked_in": ["contract", "neutral reference curves", "comparison CSV", "reports", "hash manifests"],
+    "ignored": ["TDR", "PLT", "Sentaurus logs", "Vela restart states", "generated mesh and doping exports"]
+  }
+}

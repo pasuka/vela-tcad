@@ -1,0 +1,189 @@
+{
+  "schema": "vela.simplemos.sdevice.m8_reference_curves.v1",
+  "status": "qualified",
+  "sentaurus_banner": "****************************************************************************\n***                           Sentaurus Device                           ***\n***                        Version T-2022.03-SP2                         ***\n***                      (0.7745337, x86_64, Linux)                      ***\n***                                                                      ***",
+  "contract": "../simplemos_m8_original_physics_contract_v1.json",
+  "contract_sha256": "8096b0d4874b090df110096e239fb53041f9cc5af47bbad72d4b8eb8f90ba8e3",
+  "inputs": [
+    {
+      "device": "n17",
+      "workbench_process_node": 17,
+      "tdr_sha256": "a39f6eb1ed1745fad892b4ee74524dfce6f75a9287baeb4383faebb11856ee00",
+      "tdr_size_bytes": 1799958
+    },
+    {
+      "device": "n18",
+      "workbench_process_node": 18,
+      "tdr_sha256": "1ede4c89920ea42cba8d05e3b9ee5be889cafb65a8e0e826acde50904b4dac7a",
+      "tdr_size_bytes": 1799855
+    },
+    {
+      "device": "n19",
+      "workbench_process_node": 19,
+      "tdr_sha256": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+      "tdr_size_bytes": 1803602
+    },
+    {
+      "device": "n20",
+      "workbench_process_node": 20,
+      "tdr_sha256": "db64cf83d8d024596878388f3b42632d7ac622035e4c0f3b74553468a5a75d13",
+      "tdr_size_bytes": 1803647
+    },
+    {
+      "device": "n21",
+      "workbench_process_node": 21,
+      "tdr_sha256": "26f30f62d977079a2976e38dfc27ef729e7f30db37e7a8f8280da2d400fbc193",
+      "tdr_size_bytes": 1819139
+    },
+    {
+      "device": "n22",
+      "workbench_process_node": 22,
+      "tdr_sha256": "b50143646f5df599bbcb3f02d8ea7babf40886144962d3876d1037ba2af44564",
+      "tdr_size_bytes": 1819063
+    },
+    {
+      "device": "n23",
+      "workbench_process_node": 23,
+      "tdr_sha256": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+      "tdr_size_bytes": 1801504
+    },
+    {
+      "device": "n24",
+      "workbench_process_node": 24,
+      "tdr_sha256": "336f0dac984a1821674c7fb558e59d59c5f347ba1f487cd7d513527a142ad128",
+      "tdr_size_bytes": 1801389
+    }
+  ],
+  "interpolation": "forbidden",
+  "artifacts": [
+    {
+      "case": "n17_vd_0p05",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "path": "n17_vd_0p05_reference.csv",
+      "sha256": "4ce4a5e9f75dabc567a5da6e71ec831a9518b687771203cd6ea1dbdac82c05d7",
+      "point_count": 51
+    },
+    {
+      "case": "n17_vd_1",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "path": "n17_vd_1_reference.csv",
+      "sha256": "72d221291535de98e5bc31a740ccd45bc66b652ca2dc99490ac59f50ae98fd4b",
+      "point_count": 51
+    },
+    {
+      "case": "n18_vd_0p05",
+      "device": "n18",
+      "drain_voltage_V": 0.05,
+      "path": "n18_vd_0p05_reference.csv",
+      "sha256": "b4f202c5c9bfb7beb549b7fb0c35fbd7a24509cc4ce66884f637f84b4fccb2e0",
+      "point_count": 51
+    },
+    {
+      "case": "n18_vd_1",
+      "device": "n18",
+      "drain_voltage_V": 1.0,
+      "path": "n18_vd_1_reference.csv",
+      "sha256": "b8ec54eab312e712d596eed882fb328468c6e0945aa8e57ef968d640141bc7f3",
+      "point_count": 51
+    },
+    {
+      "case": "n19_vd_0p05",
+      "device": "n19",
+      "drain_voltage_V": 0.05,
+      "path": "n19_vd_0p05_reference.csv",
+      "sha256": "6b6aff229df60361635478c84b2290d12b6fc67eb4494ff79d81f0e875ccb50f",
+      "point_count": 51
+    },
+    {
+      "case": "n19_vd_1",
+      "device": "n19",
+      "drain_voltage_V": 1.0,
+      "path": "n19_vd_1_reference.csv",
+      "sha256": "f24e248f7fe9e19abfac0f5854bf6121897aa9a991cf71415cb75d9943c5b410",
+      "point_count": 51
+    },
+    {
+      "case": "n20_vd_0p05",
+      "device": "n20",
+      "drain_voltage_V": 0.05,
+      "path": "n20_vd_0p05_reference.csv",
+      "sha256": "2c60434ad358f698f78b91bfb1eae457fdbe6fe4c9bb54a11e47ba31664bcf83",
+      "point_count": 51
+    },
+    {
+      "case": "n20_vd_1",
+      "device": "n20",
+      "drain_voltage_V": 1.0,
+      "path": "n20_vd_1_reference.csv",
+      "sha256": "24d96354b1f05ba80808d2a4f8d2769e55b43a196e306a4a77ed57c0a2c424ca",
+      "point_count": 51
+    },
+    {
+      "case": "n21_vd_0p05",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "path": "n21_vd_0p05_reference.csv",
+      "sha256": "a12aac8596f809fead27c2492806f498e534c37b860d0316e8cbe59e883e1de5",
+      "point_count": 51
+    },
+    {
+      "case": "n21_vd_1",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "path": "n21_vd_1_reference.csv",
+      "sha256": "6419de2da8e2f4419ec62e22e0ac210eb29b83678f840baa683d138276c11d34",
+      "point_count": 51
+    },
+    {
+      "case": "n22_vd_0p05",
+      "device": "n22",
+      "drain_voltage_V": 0.05,
+      "path": "n22_vd_0p05_reference.csv",
+      "sha256": "ea0a663c84eb8ef9b34bfddda2e37c5f43e12e1e0df029114291fba627660eea",
+      "point_count": 51
+    },
+    {
+      "case": "n22_vd_1",
+      "device": "n22",
+      "drain_voltage_V": 1.0,
+      "path": "n22_vd_1_reference.csv",
+      "sha256": "7f4308f03c5c9e1653af43b2f1ff749404cce125e3418dd15ce6db30ee19a8cf",
+      "point_count": 51
+    },
+    {
+      "case": "n23_vd_0p05",
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "path": "n23_vd_0p05_reference.csv",
+      "sha256": "76fd1d5f668f299ebd21a71126e8ad4f0d1a80f38140342360194a1efe181f04",
+      "point_count": 51
+    },
+    {
+      "case": "n23_vd_1",
+      "device": "n23",
+      "drain_voltage_V": 1.0,
+      "path": "n23_vd_1_reference.csv",
+      "sha256": "bbe4d69cab6dec029be98846c2077a49f743dcdf49c8bfceb008f6db333657db",
+      "point_count": 51
+    },
+    {
+      "case": "n24_vd_0p05",
+      "device": "n24",
+      "drain_voltage_V": 0.05,
+      "path": "n24_vd_0p05_reference.csv",
+      "sha256": "b9e43436540f6d7fc4986c03e2cdf0354b9078ebdee879975c0cea117f44a8c4",
+      "point_count": 51
+    },
+    {
+      "case": "n24_vd_1",
+      "device": "n24",
+      "drain_voltage_V": 1.0,
+      "path": "n24_vd_1_reference.csv",
+      "sha256": "52e959c17bb7b762230959770c4c59931b9a69be93b94daab22f83ed688b17b4",
+      "point_count": 51
+    }
+  ],
+  "raw_binary_commit_policy": "excluded"
+}
