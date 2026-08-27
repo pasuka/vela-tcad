@@ -24,7 +24,22 @@ M5 在 M3/M4 语义和导出闭环之上增加可选择的 Gmsh Transfinite Rect
 - 局部 Rectangle refinement window 的轴向投影测试通过；人工分区切点不会截断原始完整
   contact 边。
 
-## 待完成门禁
+## 内部 TDX/TDR live gate
 
-- 将 M5 GRD/DAT 上传到已授权的 Sentaurus 2022 主机，执行 TDX 转换并回读 TDR 对比。
-  该步骤需要对 M5 新文件单独授予出站授权；M4 授权不会被扩大解释。
+- 授权日期：2026-08-27；目标：SSH `sentaurus`；远端隔离目录：
+  `~/sentaurus_runs/vela_gmsh_tdx/pn2d_gmsh_m5_20260827`。
+- Sentaurus Data Explorer：`T-2022.03-SP2`；`tdx -d device.grd device.dat device.tdr`
+  退出码为 0，stderr 为空。
+- 返回 TDR SHA-256：
+  `6ae5439f0562c9c6180470a762cc9e80029361d76300cb5be43292ac367d0ad1`。
+- 拓扑严格匹配：1482 节点、2850 总单元、2800 个体 Tri3；区域集合为
+  `Anode/Cathode/R.Si`，Anode/Cathode 各 25 条接触边。
+- 7 个数据集均比较 1482 个节点：Donor、Acceptor、Doping、AbsDoping、Log10AbsDoping、
+  BoronActive 和 PhosphorusActive；每个数据集的最大绝对差和最大相对差均为 0。
+- 机器可读清单位于忽略的 Release 产物目录
+  `build-release/m5-tdx-live-20260827/tdx_gate_manifest.json`，状态为 `passed`。
+
+## 已知未通过项
+
+- 完整 PN2D BV 已到达 -20 V，但端子电流混合守恒合同仍失败；不得把 TDX 文件兼容性
+  门禁通过解释为 BV 数值合同通过。

@@ -2,8 +2,8 @@
 
 ## 计划状态
 
-- 状态：M0-M4 已完成；M5 可选择 Transfinite Rectangle 直角 Tri3 网格和本地验收已完成；
-  内部 live TDX/TDR 最终门禁等待 M5 文件出站授权
+- 状态：已完成；M0-M5 公开 Gmsh→Vela IV/BV 工作流、本地 Release 回归和内部 live
+  TDX/TDR 最终门禁均已执行并形成可审计结果
 - 更新日期：2026-08-27
 - 计划源文件：`docs/superpowers/plans/2026-08-24-sde-gmsh-offline-mesh-and-field-export.md`
 - 实施 worktree：`D:\code-repo\copilot-worktrees\vela-tcad-dev`
@@ -67,6 +67,9 @@
   90.00000000000077 度，MSH/VTU/VTK/DAT 五个节点场差值为 0。完整 IV 已 accepted；
   完整 BV 的 406 个点已到达 -20 V，但端子电流混合容差比 1.216 超过门槛 1.0，状态
   如实保持 failed。M1-M5 定向 CTest 全部通过；UCRT64 Release 全量 CTest 712/712 通过。
+  经单独授权后，内部 TDX T-2022.03-SP2 live gate 退出码为 0；返回 TDR 的 1482 节点、
+  2850 总单元、2800 个体 Tri3、Anode/Cathode 各 25 条接触边以及 7 个节点数据集全部与
+  GRD/DAT 严格匹配，所有场的最大绝对/相对差均为 0。
 - 产品默认：`offline-static + gmsh`
 - 内部验证：`sentaurus2022-evaluated + tdx`，仅限具有许可证的开发环境
 - 取代范围：本计划取代“离线生成器使用正交张量网格并固定对角线切分三角形”的网格部分；
