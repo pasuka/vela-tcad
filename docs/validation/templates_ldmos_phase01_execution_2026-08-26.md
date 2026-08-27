@@ -130,3 +130,7 @@ WP0、阶段 0/1、阶段 1.5 和 WP1.75 现以 L1 关闭。方案 A 的下一�
 - WP1.75：`stage1_v4/contracts/wp175/qualification_report.json`
 
 这些路径仅用于本地复核；其中的专有或大型产物不进入 Git。
+
+后续执行结果见
+`docs/validation/templates_ldmos_phase23_execution_2026-08-27.md`：Sentaurus 单因素链已完成，
+但 Vela G4 经典平衡态同偏压 reclose 触发停止门，当前仍只认领 L1。

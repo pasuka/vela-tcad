@@ -16,7 +16,7 @@
       "required": ["model", "implementation_status"],
       "properties": {
         "model": {"enum": ["boltzmann", "fermi_dirac"]},
-        "implementation_status": {"enum": ["implemented", "pending"]}
+        "implementation_status": {"enum": ["implemented", "partial", "pending"]}
       }
     },
     "bandgap_narrowing": {
@@ -44,16 +44,23 @@
         "auger_cp_m6_per_s": {"type": "number", "minimum": 0.0, "maximum": 1.0},
         "srh_doping_dependence": {
           "type": "object", "additionalProperties": false,
-          "required": ["enabled", "concentration_basis", "density_coupling", "parameter_status"],
+          "required": ["enabled", "concentration_basis", "density_coupling", "temperature_dependence", "temperature_K", "reference_temperature_K", "electron_temperature_exponent", "hole_temperature_exponent", "electron", "hole", "parameter_status"],
           "properties": {
             "enabled": {"type": "boolean"},
             "concentration_basis": {"enum": ["total_impurity", "net_doping"]},
             "density_coupling": {"enum": ["quantum", "sentaurus_default"]},
-            "parameter_status": {"enum": ["vela_compiled_defaults", "pending_t2022_extraction"]}
+            "temperature_dependence": {"type": "boolean"},
+            "temperature_K": {"type": "number", "exclusiveMinimum": 0.0},
+            "reference_temperature_K": {"type": "number", "exclusiveMinimum": 0.0},
+            "electron_temperature_exponent": {"type": "number"},
+            "hole_temperature_exponent": {"type": "number"},
+            "electron": {"$ref": "#/$defs/srh_carrier"},
+            "hole": {"$ref": "#/$defs/srh_carrier"},
+            "parameter_status": {"enum": ["vela_compiled_defaults", "t2022_parameter_query", "pending_t2022_extraction"]}
           }
         },
         "parameter_source": {"type": "string", "minLength": 1},
-        "implementation_status": {"enum": ["implemented", "pending"]}
+        "implementation_status": {"enum": ["implemented", "partial", "pending"]}
       }
     },
     "mobility": {
@@ -123,13 +130,29 @@
     },
     "mobility_carrier": {
       "type": "object", "additionalProperties": false,
-      "required": ["mu_min_cm2_per_V_s", "reference_doping_cm3", "doping_exponent", "saturation_velocity_cm_per_s", "high_field_exponent"],
+      "required": ["mu_const_cm2_per_V_s", "mu_min_cm2_per_V_s", "mu_min2_cm2_per_V_s", "mu1_cm2_per_V_s", "pc_cm3", "reference_doping_cm3", "cs_cm3", "doping_exponent", "masetti_beta", "saturation_velocity_cm_per_s", "high_field_exponent"],
       "properties": {
+        "mu_const_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
         "mu_min_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
+        "mu_min2_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
+        "mu1_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
+        "pc_cm3": {"type": "number", "minimum": 0.0, "maximum": 1e30},
         "reference_doping_cm3": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e30},
+        "cs_cm3": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e30},
         "doping_exponent": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 100.0},
+        "masetti_beta": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 100.0},
         "saturation_velocity_cm_per_s": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e20},
         "high_field_exponent": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 100.0}
+      }
+    },
+    "srh_carrier": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tau_min_s", "tau_max_s", "reference_doping_cm3", "gamma"],
+      "properties": {
+        "tau_min_s": {"type": "number", "minimum": 0.0},
+        "tau_max_s": {"type": "number", "exclusiveMinimum": 0.0},
+        "reference_doping_cm3": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e30},
+        "gamma": {"type": "number", "exclusiveMinimum": 0.0}
       }
     },
     "okuto_carrier": {

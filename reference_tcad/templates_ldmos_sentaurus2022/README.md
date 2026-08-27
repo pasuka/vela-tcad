@@ -16,6 +16,10 @@ strict material, solver-physics and phase-A discretization contracts.  Neither
 result is a classic DD curve acceptance or authorization to treat pending
 hRecVelocity, hQP, IALMob, thermal or Okuto physics as implemented.
 
+WP2 and phase-2/3 execution status is recorded in
+`docs/validation/templates_ldmos_phase23_execution_2026-08-27.md`. Generated
+TDR/PLT and exact-mesh products remain under ignored `reference_staging`.
+
 Expected persistent local layout:
 
 ```text

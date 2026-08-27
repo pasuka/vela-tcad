@@ -1,7 +1,7 @@
 {
   "schema": "vela.templates_ldmos.physics_contract.v1",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
-  "revision": 1,
+  "revision": 2,
   "materials_file": "materials.json",
   "temperature_K": 300.0,
   "carrier_statistics": {
@@ -15,7 +15,7 @@
     "smoothing": 0.5,
     "offset_eV": 0.0,
     "fermi_statistics_correction": true,
-    "parameter_source": "vela_compiled_defaults_pending_t2022_ablation",
+    "parameter_source": "T-2022.03 sdevice -P query; dEg0(OldSlotboom)=-0.01595 eV is frozen into materials[].intrinsic_carrier_density_cm3 and is not double-counted here",
     "implementation_status": "implemented"
   },
   "recombination": {
@@ -25,35 +25,64 @@
     "auger_cn_m6_per_s": 2.9e-43,
     "auger_cp_m6_per_s": 1.028e-43,
     "srh_doping_dependence": {
-      "enabled": false,
+      "enabled": true,
       "concentration_basis": "total_impurity",
       "density_coupling": "sentaurus_default",
-      "parameter_status": "pending_t2022_extraction"
+      "temperature_dependence": true,
+      "temperature_K": 300.0,
+      "reference_temperature_K": 300.0,
+      "electron_temperature_exponent": -1.5,
+      "hole_temperature_exponent": -1.5,
+      "electron": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 1e-5,
+        "reference_doping_cm3": 1e16,
+        "gamma": 1.0
+      },
+      "hole": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 3e-6,
+        "reference_doping_cm3": 1e16,
+        "gamma": 1.0
+      },
+      "parameter_status": "t2022_parameter_query"
     },
-    "parameter_source": "vela_compiled_defaults_pending_t2022_ablation",
-    "implementation_status": "implemented"
+    "parameter_source": "T-2022.03 sdevice -P query at 300 K; Auger A+B+C frozen to scalar Vela coefficients",
+    "implementation_status": "partial"
   },
   "mobility": {
-    "model": "caughey_thomas_field",
+    "model": "masetti_field",
     "doping_concentration_basis": "net_doping",
     "high_field_driving_force": "quasi_fermi_gradient",
     "high_field_gradient_discretization": "edge_projection",
     "surface_model": "ialmob_pending",
     "electron": {
+      "mu_const_cm2_per_V_s": 1417.0,
       "mu_min_cm2_per_V_s": 52.2,
+      "mu_min2_cm2_per_V_s": 52.2,
+      "mu1_cm2_per_V_s": 43.4,
+      "pc_cm3": 0.0,
       "reference_doping_cm3": 9.68e16,
+      "cs_cm3": 3.43e20,
       "doping_exponent": 0.68,
+      "masetti_beta": 2.0,
       "saturation_velocity_cm_per_s": 1.07e7,
       "high_field_exponent": 1.109
     },
     "hole": {
+      "mu_const_cm2_per_V_s": 470.5,
       "mu_min_cm2_per_V_s": 44.9,
+      "mu_min2_cm2_per_V_s": 0.0,
+      "mu1_cm2_per_V_s": 29.0,
+      "pc_cm3": 9.23e16,
       "reference_doping_cm3": 2.23e17,
-      "doping_exponent": 0.70,
+      "cs_cm3": 6.10e20,
+      "doping_exponent": 0.719,
+      "masetti_beta": 2.0,
       "saturation_velocity_cm_per_s": 8.37e6,
       "high_field_exponent": 1.213
     },
-    "parameter_source": "vela_compiled_defaults_pending_t2022_ablation",
+    "parameter_source": "T-2022.03 sdevice -P query: DopingDependence Formula=1 and HighFieldDependence Vsat_Formula=1 at 300 K",
     "implementation_status": "partial"
   },
   "electron_quantum_potential": {
