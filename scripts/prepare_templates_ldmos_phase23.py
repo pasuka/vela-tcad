@@ -129,7 +129,10 @@ def classical_solver(physics: dict[str, Any], *, high_field: bool) -> dict[str, 
         "carrier_statistics": {"model": physics["carrier_statistics"]["model"]},
         "bandgap_narrowing": {
             "model": bgn["model"],
-            "reference_doping_m3": bgn["reference_doping_cm3"] * 1.0e6,
+            # Legacy unit_scaling decks store concentrations in the TCAD
+            # internal cm^-3 unit even though the transitional key retains
+            # its historical ``_m3`` suffix.
+            "reference_doping_m3": bgn["reference_doping_cm3"],
             "coefficient_eV": bgn["coefficient_eV"],
             "smoothing": bgn["smoothing"],
             "offset_eV": bgn["offset_eV"],
@@ -151,13 +154,13 @@ def classical_solver(physics: dict[str, Any], *, high_field: bool) -> dict[str, 
             "electron": {
                 "tau_min_s": srh["electron"]["tau_min_s"],
                 "tau_max_s": srh["electron"]["tau_max_s"],
-                "reference_doping_m3": srh["electron"]["reference_doping_cm3"] * 1.0e6,
+                "reference_doping_m3": srh["electron"]["reference_doping_cm3"],
                 "gamma": srh["electron"]["gamma"],
             },
             "hole": {
                 "tau_min_s": srh["hole"]["tau_min_s"],
                 "tau_max_s": srh["hole"]["tau_max_s"],
-                "reference_doping_m3": srh["hole"]["reference_doping_cm3"] * 1.0e6,
+                "reference_doping_m3": srh["hole"]["reference_doping_cm3"],
                 "gamma": srh["hole"]["gamma"],
             },
         },

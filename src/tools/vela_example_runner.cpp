@@ -958,8 +958,12 @@ void writePoissonTermProbeCsv(
     }
     out << std::setprecision(17);
     out << "node_id,x,y,psi,phin,phip,net_doping_m3,"
+        << "ni_eff_m3,Nc_m3,Nv_m3,"
         << "input_electron_density_m3,input_hole_density_m3,"
         << "reconstructed_electron_density_m3,reconstructed_hole_density_m3,"
+        << "electron_required_qf_V,hole_required_qf_V,"
+        << "electron_qf_mapping_error_V,hole_qf_mapping_error_V,"
+        << "has_supplied_carrier_state,"
         << "dielectric_flux,electron_charge,hole_charge,doping_charge,"
         << "fixed_interface_charge,unconstrained_residual,"
         << "boundary_replacement,production_residual,closure_error,constrained\n";
@@ -970,12 +974,21 @@ void writePoissonTermProbeCsv(
         out << row.nodeId << ',' << node.x << ',' << node.y << ','
             << state.psi(i) << ',' << state.phin(i) << ',' << state.phip(i) << ','
             << units.internalConcentrationToM3(doping.netDoping(row.nodeId)) << ','
+            << units.internalConcentrationToM3(row.intrinsicDensity) << ','
+            << units.internalConcentrationToM3(
+                   row.electronDensityOfStates) << ','
+            << units.internalConcentrationToM3(row.holeDensityOfStates) << ','
             << units.internalConcentrationToM3(state.n(i)) << ','
             << units.internalConcentrationToM3(state.p(i)) << ','
             << units.internalConcentrationToM3(
                    row.reconstructedElectronDensity) << ','
             << units.internalConcentrationToM3(
                    row.reconstructedHoleDensity) << ','
+            << row.electronRequiredQuasiFermiPotential << ','
+            << row.holeRequiredQuasiFermiPotential << ','
+            << row.electronQuasiFermiMappingError << ','
+            << row.holeQuasiFermiMappingError << ','
+            << (row.hasSuppliedCarrierState ? 1 : 0) << ','
             << row.dielectricFlux << ',' << row.electronCharge << ','
             << row.holeCharge << ',' << row.dopingCharge << ','
             << row.fixedInterfaceCharge << ',' << row.unconstrainedResidual << ','

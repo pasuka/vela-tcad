@@ -3398,7 +3398,8 @@ NewtonPoissonTermEvaluation NewtonSolver::evaluatePoissonTerms(
     const VectorXd x = packReferencedSolution(assembler, state, bcs);
 
     NewtonPoissonTermEvaluation evaluation;
-    evaluation.rows = assembler.poissonTermDiagnostics(x, bcs);
+    evaluation.rows = assembler.poissonTermDiagnostics(
+        x, bcs, state.n, state.p);
     evaluation.scaledState = assembler.usesScaledState();
     evaluation.potentialScale = potentialScale;
     return evaluation;

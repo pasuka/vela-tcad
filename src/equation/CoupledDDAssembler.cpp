@@ -1104,11 +1104,29 @@ CoupledDDAssembler::poissonTermDiagnostics(
     const VectorXd& x,
     const CoupledDDBoundaryConditions& bcs) const
 {
+    return poissonTermDiagnostics(x, bcs, VectorXd{}, VectorXd{});
+}
+
+std::vector<CoupledDDPoissonTermDiagnostic>
+CoupledDDAssembler::poissonTermDiagnostics(
+    const VectorXd& x,
+    const CoupledDDBoundaryConditions& bcs,
+    const VectorXd& suppliedElectronDensity,
+    const VectorXd& suppliedHoleDensity) const
+{
     const Index Nidx = mesh_.numNodes();
     const int N = static_cast<int>(Nidx);
     if (x.size() != 3 * N) {
         throw std::invalid_argument(
             "CoupledDDAssembler::poissonTermDiagnostics: vector size mismatch.");
+    }
+    const bool hasSuppliedCarrierState =
+        suppliedElectronDensity.size() != 0 || suppliedHoleDensity.size() != 0;
+    if (hasSuppliedCarrierState &&
+        (suppliedElectronDensity.size() != N ||
+         suppliedHoleDensity.size() != N)) {
+        throw std::invalid_argument(
+            "CoupledDDAssembler::poissonTermDiagnostics: supplied density size mismatch.");
     }
 
     std::vector<CoupledDDPoissonTermDiagnostic> terms(Nidx);
@@ -1138,8 +1156,41 @@ CoupledDDAssembler::poissonTermDiagnostics(
         const int i = static_cast<int>(node);
         const Real chargeMeasure =
             constants::q * vol_[node] * chargeAreaFactor;
+        terms[node].intrinsicDensity = ni_[node];
+        terms[node].electronDensityOfStates = Nc_[node];
+        terms[node].holeDensityOfStates = Nv_[node];
         terms[node].reconstructedElectronDensity = n(i);
         terms[node].reconstructedHoleDensity = p(i);
+        if (hasSuppliedCarrierState &&
+            suppliedElectronDensity(i) > 0.0 &&
+            suppliedHoleDensity(i) > 0.0 && ni_[node] > 0.0) {
+            const Real psiPhysical =
+                x(psiOffset() + i) * potentialScale;
+            const Real electronReference =
+                electronQuasiFermiReferenceAt(node);
+            const Real holeReference = holeQuasiFermiReferenceAt(node);
+            const Real electronCurrentQf = electronReference +
+                x(phinOffset() + i) * potentialScale;
+            const Real holeCurrentQf = holeReference +
+                x(phipOffset() + i) * potentialScale;
+            const Real electronRequiredIncrement = electronQuasiFermiPotential(
+                ni_[node], Nc_[node], psiPhysical - electronReference,
+                suppliedElectronDensity(i), Vt_, carrierStatistics_);
+            const Real holeRequiredIncrement = holeQuasiFermiPotential(
+                ni_[node], Nv_[node], psiPhysical - holeReference,
+                suppliedHoleDensity(i), Vt_, carrierStatistics_);
+            terms[node].suppliedElectronDensity = suppliedElectronDensity(i);
+            terms[node].suppliedHoleDensity = suppliedHoleDensity(i);
+            terms[node].electronRequiredQuasiFermiPotential =
+                electronReference + electronRequiredIncrement;
+            terms[node].holeRequiredQuasiFermiPotential =
+                holeReference + holeRequiredIncrement;
+            terms[node].electronQuasiFermiMappingError = electronCurrentQf -
+                terms[node].electronRequiredQuasiFermiPotential;
+            terms[node].holeQuasiFermiMappingError = holeCurrentQf -
+                terms[node].holeRequiredQuasiFermiPotential;
+            terms[node].hasSuppliedCarrierState = true;
+        }
         terms[node].electronCharge = chargeMeasure * n(i);
         terms[node].holeCharge = -chargeMeasure * p(i);
         terms[node].dopingCharge =

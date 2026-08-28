@@ -137,6 +137,16 @@ TEST_CASE("CoupledDDAssembler: Poisson term diagnostics close production rows",
     const VectorXd x = assembler.pack(state);
     const VectorXd production = assembler.residual(x, bcs);
     const auto rows = assembler.poissonTermDiagnostics(x, bcs);
+    VectorXd suppliedN(N);
+    VectorXd suppliedP(N);
+    for (const auto& row : rows) {
+        suppliedN(static_cast<int>(row.nodeId)) =
+            row.reconstructedElectronDensity;
+        suppliedP(static_cast<int>(row.nodeId)) =
+            row.reconstructedHoleDensity;
+    }
+    const auto mappedRows = assembler.poissonTermDiagnostics(
+        x, bcs, suppliedN, suppliedP);
 
     REQUIRE(rows.size() == static_cast<std::size_t>(N));
     for (const auto& row : rows) {
@@ -155,6 +165,19 @@ TEST_CASE("CoupledDDAssembler: Poisson term diagnostics close production rows",
     REQUIRE_FALSE(rows[1].constrained);
     REQUIRE(rows[1].fixedInterfaceCharge != 0.0);
     REQUIRE(rows[2].fixedInterfaceCharge != 0.0);
+    for (const auto& row : mappedRows) {
+        if (row.intrinsicDensity == 0.0 ||
+            row.suppliedElectronDensity <= 0.0 ||
+            row.suppliedHoleDensity <= 0.0) {
+            REQUIRE_FALSE(row.hasSuppliedCarrierState);
+            continue;
+        }
+        REQUIRE(row.hasSuppliedCarrierState);
+        REQUIRE(row.electronQuasiFermiMappingError ==
+                Catch::Approx(0.0).margin(2.0e-12));
+        REQUIRE(row.holeQuasiFermiMappingError ==
+                Catch::Approx(0.0).margin(2.0e-12));
+    }
 }
 
 TEST_CASE("ConfigParsing: interface trap occupancy outside unit interval is rejected", "[interface][traps][config]")

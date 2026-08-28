@@ -1,7 +1,7 @@
 {
   "schema": "vela.templates_ldmos.materials.v1",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
-  "revision": 2,
+  "revision": 3,
   "unit_system": {
     "concentration": "cm^-3",
     "mobility": "cm^2/(V*s)",
@@ -16,7 +16,7 @@
       "name": "Si",
       "role": "transport_semiconductor",
       "eps_r": 11.7,
-      "intrinsic_carrier_density_cm3": 14638914958.767616,
+      "intrinsic_carrier_density_cm3": 10753127231.7754,
       "electron_mobility_cm2_per_V_s": 1417.0,
       "hole_mobility_cm2_per_V_s": 470.5,
       "bandgap_eV": 1.1241592307692307,
@@ -24,7 +24,7 @@
       "conduction_band_density_of_states_cm3": 2.8566652281655894e19,
       "valence_band_density_of_states_cm3": 3.10464190834412e19,
       "temperature_K": 300.0,
-      "provenance": "T-2022.03 sdevice -P query frozen at 300 K; ni includes OldSlotboom dEg0=-0.01595 eV per the Vela split-ni mapping contract"
+      "provenance": "T-2022.03 300 K baseline with OldSlotboom dEg0=-0.01595 eV removed from ni; the production BGN field carries dEg0 exactly once"
     },
     {
       "name": "SiO2",

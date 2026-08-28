@@ -1,7 +1,7 @@
 {
   "schema": "vela.templates_ldmos.physics_contract.v1",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
-  "revision": 3,
+  "revision": 4,
   "materials_file": "materials.json",
   "temperature_K": 300.0,
   "carrier_statistics": {
@@ -15,7 +15,9 @@
     "smoothing": 0.5,
     "offset_eV": 0.0,
     "fermi_statistics_correction": true,
-    "parameter_source": "T-2022.03 sdevice -P query; dEg0(OldSlotboom)=-0.01595 eV is frozen into materials[].intrinsic_carrier_density_cm3 and is not double-counted here",
+    "sentaurus_dEg0_eV": -0.01595,
+    "sentaurus_qf_reference_mapping": "identity; preserve physical contact quasi-Fermi potentials",
+    "parameter_source": "T-2022.03 sdevice -P query; dEg0(OldSlotboom)=-0.01595 eV is carried by the production BGN field, while materials[].intrinsic_carrier_density_cm3 excludes it",
     "implementation_status": "implemented"
   },
   "recombination": {

@@ -2,6 +2,10 @@
 
 ## 结论
 
+> 后续状态：本报告提出的 Fermi/BGN 映射问题已由 revision 4 审计关闭，详见
+> `templates_ldmos_g3_fermi_oldslotboom_mapping_audit_2026-08-28.md`。本报告保留为
+> revision 3 的问题快照，不再代表当前合同。
+
 revision 3 已按 Sentaurus 接受的无 predictor 精确偏压前缀保存
 `Vd=0.0231559774221138 V` checkpoint，9/9 点全部由 Vela 标记为收敛。
 该状态可作为诊断 checkpoint，但尚不能作为 G3 曲线验收状态：终点电子 continuity
@@ -137,4 +141,3 @@ CSV round-trip 与探针读取没有制造该差异。
 - ignored 审计汇总：
   `reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/`
   `stage1_v4/reports/g3_revision3_vd0p023_poisson_audit_20260828/summary.json`
-

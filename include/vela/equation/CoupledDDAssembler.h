@@ -88,8 +88,18 @@ struct CoupledDDCarrierTermDiagnostic {
 // the unconstrained physical equation.
 struct CoupledDDPoissonTermDiagnostic {
     Index nodeId = 0;
+    Real intrinsicDensity = 0.0;
+    Real electronDensityOfStates = 0.0;
+    Real holeDensityOfStates = 0.0;
+    Real suppliedElectronDensity = 0.0;
+    Real suppliedHoleDensity = 0.0;
     Real reconstructedElectronDensity = 0.0;
     Real reconstructedHoleDensity = 0.0;
+    Real electronRequiredQuasiFermiPotential = 0.0;
+    Real holeRequiredQuasiFermiPotential = 0.0;
+    Real electronQuasiFermiMappingError = 0.0;
+    Real holeQuasiFermiMappingError = 0.0;
+    bool hasSuppliedCarrierState = false;
     Real dielectricFlux = 0.0;
     Real electronCharge = 0.0;
     Real holeCharge = 0.0;
@@ -264,6 +274,11 @@ public:
     std::vector<CoupledDDPoissonTermDiagnostic> poissonTermDiagnostics(
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs) const;
+    std::vector<CoupledDDPoissonTermDiagnostic> poissonTermDiagnostics(
+        const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs,
+        const VectorXd& suppliedElectronDensity,
+        const VectorXd& suppliedHoleDensity) const;
 
     SparseMatrixd assembleJacobian(
         const VectorXd& x,

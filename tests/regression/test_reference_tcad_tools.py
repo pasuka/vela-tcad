@@ -11287,6 +11287,9 @@ LOOKUP_TABLE default
         for row in poisson_rows:
             self.assertIn("input_electron_density_m3", row)
             self.assertIn("reconstructed_electron_density_m3", row)
+            self.assertIn("ni_eff_m3", row)
+            self.assertIn("electron_qf_mapping_error_V", row)
+            self.assertEqual(row["has_supplied_carrier_state"], "0")
             component_sum = sum(float(row[name]) for name in (
                 "dielectric_flux", "electron_charge", "hole_charge",
                 "doping_charge", "fixed_interface_charge",

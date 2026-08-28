@@ -23,6 +23,11 @@ from prepare_templates_ldmos_phase23 import (  # noqa: E402
     exact_bias_points,
     prepare as prepare_phase23,
 )
+from audit_templates_ldmos_fermi_bgn_mapping import (  # noqa: E402
+    summarize_variant,
+    variants as fermi_bgn_variants,
+    write_reference_aligned_state,
+)
 from prepare_templates_ldmos_wp15_diagnostics import (  # noqa: E402
     prepare as prepare_wp15_diagnostics,
 )
@@ -50,6 +55,7 @@ def physics_contract() -> dict:
             "smoothing": 0.5,
             "offset_eV": 0.0,
             "fermi_statistics_correction": True,
+            "sentaurus_dEg0_eV": -0.01595,
         },
         "recombination": {
             "mechanisms": ["srh", "auger"],
@@ -110,6 +116,70 @@ def physics_contract() -> dict:
 
 
 class Phase23DeckTest(unittest.TestCase):
+    def test_fermi_bgn_audit_matrix_is_single_factor_explicit(self) -> None:
+        base = {
+            "carrier_statistics": {"model": "fermi_dirac"},
+            "bandgap_narrowing": {
+                "model": "old_slotboom",
+                "coefficient_eV": 0.009,
+                "offset_eV": 0.0,
+                "fermi_statistics_correction": True,
+            },
+        }
+        matrix = dict(fermi_bgn_variants(base))
+        self.assertEqual(len(matrix), 6)
+        self.assertTrue(matrix["fermi_oldslotboom_correction"]
+                        ["bandgap_narrowing"]["fermi_statistics_correction"])
+        self.assertFalse(matrix["fermi_oldslotboom_no_correction"]
+                         ["bandgap_narrowing"]["fermi_statistics_correction"])
+        self.assertEqual(matrix["fermi_no_bgn"]["bandgap_narrowing"],
+                         {"model": "none"})
+        self.assertEqual(matrix["boltzmann_oldslotboom"]
+                         ["carrier_statistics"]["model"], "boltzmann")
+
+    def test_fermi_bgn_audit_summarizes_heavy_majority_mapping(self) -> None:
+        def row(node: int, doping: float, electron_error: float,
+                hole_error: float) -> dict[str, str]:
+            return {
+                "node_id": str(node), "net_doping_m3": str(doping),
+                "constrained": "0", "production_residual": "2.0",
+                "input_electron_density_m3": "100",
+                "reconstructed_electron_density_m3": "10",
+                "input_hole_density_m3": "100",
+                "reconstructed_hole_density_m3": "10",
+                "electron_qf_mapping_error_V": str(electron_error),
+                "hole_qf_mapping_error_V": str(hole_error),
+            }
+
+        summary = summarize_variant(
+            [row(1, 2.0e25, 0.01, 0.5), row(2, -3.0e25, 0.6, 0.02)],
+            {1, 2},
+        )
+        self.assertEqual(summary["heavy_majority_density_abs_error_dex"]
+                         ["median"], 1.0)
+        self.assertAlmostEqual(
+            summary["heavy_majority_qf_mapping_abs_error_V"]["median"],
+            0.015,
+        )
+
+    def test_fermi_bgn_reference_alignment_uses_half_deg0_band_centre_shift(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "state.csv"
+            destination = root / "aligned.csv"
+            source.write_text(
+                "node_id,psi,phin,phip,electrons_m3,holes_m3\n"
+                "0,0.1,0.02,-0.03,1e20,2e10\n",
+                encoding="utf-8")
+            transform = write_reference_aligned_state(
+                source, destination, -0.01595)
+            with destination.open(newline="", encoding="utf-8") as stream:
+                row = next(csv.DictReader(stream))
+            self.assertAlmostEqual(float(row["phin"]), 0.027975)
+            self.assertAlmostEqual(float(row["phip"]), -0.037975)
+            self.assertAlmostEqual(transform["electron_qf_offset_V"], 0.007975)
+            self.assertAlmostEqual(transform["hole_qf_offset_V"], -0.007975)
+
     def test_polysi_mapping_uses_the_sealed_boundary_value(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -163,8 +233,16 @@ class Phase23DeckTest(unittest.TestCase):
         self.assertEqual(solver["recombination"], ["srh", "auger"])
         self.assertTrue(solver["srh_doping_dependence"]["enabled"])
         self.assertEqual(
+            solver["bandgap_narrowing"]["reference_doping_m3"],
+            1.0e17,
+        )
+        self.assertEqual(
             solver["srh_doping_dependence"]["electron"]["reference_doping_m3"],
-            1.0e22,
+            1.0e16,
+        )
+        self.assertEqual(
+            solver["srh_doping_dependence"]["hole"]["reference_doping_m3"],
+            1.0e16,
         )
 
     def test_currentplot_points_must_be_strictly_increasing(self) -> None:
@@ -197,7 +275,8 @@ class Phase23DeckTest(unittest.TestCase):
              "ElectrostaticPotential_region7.csv").write_text(
                 "node_id,component0\n0,0.5\n", encoding="utf-8")
             (qualification / "sentaurus_eq_0v_state.csv").write_text(
-                "node_id,psi,phin,phip,n,p\n", encoding="utf-8")
+                "node_id,psi,phin,phip,n,p\n"
+                "0,0.1,0.02,-0.03,1e20,2e10\n", encoding="utf-8")
             (oracle / "IdVg_n2_des_drain_curve.csv").write_text(
                 "bias_V,current_A_per_um\n0,0\n1,1\n", encoding="utf-8")
             (contracts / "physics_contract.json").write_text(json.dumps({
@@ -233,6 +312,8 @@ class Phase23DeckTest(unittest.TestCase):
             ).read_text())
 
             self.assertEqual(poisson["solver"]["method"], "poisson_only")
+            self.assertTrue(poisson["sweep"]["initial_state_file"].endswith(
+                "sentaurus_eq_0v_state.csv"))
             self.assertTrue(equilibrium["sweep"]["initial_state_file"].endswith(
                 "g_contact_polysi_poisson_eq_state.csv"))
             self.assertEqual(
