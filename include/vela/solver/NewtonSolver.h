@@ -16,6 +16,7 @@
 #include "vela/simulation/PseudoArclength.h"
 #include "vela/solver/GummelSolver.h"
 #include <functional>
+#include <limits>
 #include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include <string>
@@ -129,6 +130,14 @@ struct NewtonCarrierRowRecoveryResult {
     Real maxPsiDelta_V = 0.0;
     Real maxCarrierDensityRatio = 0.0;
 };
+
+struct NewtonBlockAbsoluteConvergenceConfig {
+    std::string mode = "off"; ///< "off" or "enforce".
+    Real psiResidualCeiling = 0.0;
+    Real electronResidualCeiling = 0.0;
+    Real holeResidualCeiling = 0.0;
+};
+
 struct NewtonConfig {
     int maxIter = 20;
     Real reltol = 1.0e-8;
@@ -156,6 +165,9 @@ struct NewtonConfig {
     Real poissonLineSearchStallRelativeIncrease = 1.0e-5; ///< Allowed best rejected residual increase at the Poisson floor.
     Real poissonLineSearchStallCarrierResidualFloor = 1.0e-6; ///< Carrier-block ceiling for Poisson-floor stall acceptance.
     Real poissonLineSearchStallContactMajorityQfDropLimit_V = 5.0e-11; ///< Maximum contact-edge majority-carrier quasi-Fermi drop allowed for Poisson-floor stall acceptance; 0 disables.
+    NewtonBlockAbsoluteConvergenceConfig blockAbsoluteConvergence{}; ///< Optional authoritative per-block absolute convergence contract.
+    Real contactMajorityQfBranchDropLimit_V = 0.0; ///< Maximum contact-edge majority-carrier quasi-Fermi drop allowed for every convergence path and best-iterate eligibility; 0 disables.
+    std::vector<std::string> contactMajorityQfBranchGuardContacts; ///< Optional contact scope for the branch guard; empty means all transport contacts.
     bool carrierRowQualifiedStallAcceptance = false; ///< Accept a non-decreasing line-search stall within the configured block/contact floors only when enforced local carrier rows are all satisfied.
     Real carrierRegularizationScale = 0.0; ///< Optional carrier-row diagonal regularization scale.
     CarrierDiagonalFloorRegularizationConfig carrierDiagonalFloor{}; ///< Optional absolute floor for depleted minority carrier-row diagonals.
@@ -217,6 +229,7 @@ struct NewtonIterationInfo {
     Real stepNorm = 0.0;
     Real dampingFactor = 0.0;
     Real relativeResidualNorm = 0.0;
+    Real contactMajorityQfDrop = 0.0;
     Real rawStepNorm = 0.0;
     int lineSearchAttempts = 0;
     bool lineSearchAccepted = false;
@@ -295,6 +308,12 @@ struct DensityGradientOuterIterationInfo {
 
 struct NewtonResult {
     DDSolution solution;
+    DDSolution bestSolution; ///< Lowest-residual accepted iterate that passes the configured branch guard.
+    bool hasBestSolution = false;
+    int bestIteration = 0;
+    Real bestResidualNorm = std::numeric_limits<Real>::infinity();
+    NewtonBlockResidualInfo bestBlockNorms;
+    Real bestContactMajorityQfDrop = std::numeric_limits<Real>::infinity();
     bool converged = false;
     int iters = 0;
     Real initialResidualNorm = 0.0;
@@ -652,6 +671,9 @@ public:
     NewtonPoissonTermEvaluation evaluatePoissonTerms(
         const DDSolution& state) const;
     Real maxContactMajorityQuasiFermiDrop(const DDSolution& state) const;
+    Real maxContactMajorityQuasiFermiDrop(
+        const DDSolution& state,
+        const std::vector<std::string>& contacts) const;
     NewtonStepEvaluation evaluateStep(const DDSolution& state) const;
     std::vector<NewtonFeedbackSubstitutionEvaluation>
     evaluateFeedbackSubstitutions(

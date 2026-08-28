@@ -61,6 +61,39 @@
     "solver": {
       "additionalProperties": true,
       "properties": {
+        "block_absolute_convergence": {
+          "additionalProperties": false,
+          "properties": {
+            "electron_residual_ceiling": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "hole_residual_ceiling": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "mode": {
+              "enum": ["off", "enforce"]
+            },
+            "psi_residual_ceiling": {
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "contact_majority_qf_branch_drop_limit_V": {
+          "minimum": 0,
+          "type": "number"
+        },
+        "contact_majority_qf_branch_guard_contacts": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
         "impact_ionization": {
           "additionalProperties": true,
           "properties": {

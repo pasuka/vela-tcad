@@ -5239,6 +5239,12 @@ TEST_CASE("DCSweep: nonlinear trace records rejected attempts before determinist
         csvColumnIndex(attemptHeader, "rejected_initial_state_file");
     const std::size_t rejectedFinalStateCol =
         csvColumnIndex(attemptHeader, "rejected_final_state_file");
+    const std::size_t rejectedBestStateCol =
+        csvColumnIndex(attemptHeader, "rejected_best_state_file");
+    const std::size_t bestIterationCol =
+        csvColumnIndex(attemptHeader, "best_newton_iteration");
+    const std::size_t bestResidualCol =
+        csvColumnIndex(attemptHeader, "best_newton_residual_norm");
 
     std::string retrySegment;
     std::string retryParentHash;
@@ -5274,6 +5280,9 @@ TEST_CASE("DCSweep: nonlinear trace records rejected attempts before determinist
         REQUIRE(std::filesystem::exists(row.at(rejectedParentStateCol)));
         REQUIRE(std::filesystem::exists(row.at(rejectedInitialStateCol)));
         REQUIRE(std::filesystem::exists(row.at(rejectedFinalStateCol)));
+        REQUIRE(std::filesystem::exists(row.at(rejectedBestStateCol)));
+        REQUIRE_FALSE(row.at(bestIterationCol).empty());
+        REQUIRE(std::isfinite(std::stod(row.at(bestResidualCol))));
         REQUIRE(readTextFile(row.at(rejectedParentStateCol)) ==
                 readTextFile(row.at(rejectedInitialStateCol)));
         if (firstRejectedAttemptId.empty()) {

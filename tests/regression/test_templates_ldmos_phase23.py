@@ -34,6 +34,7 @@ from audit_templates_ldmos_g3_continuity_sg_contact import (  # noqa: E402
     reconstruct_divergence,
     sentaurus_plt_current,
     sg_contact_cut,
+    wp15_block_reclose_config,
 )
 from prepare_templates_ldmos_wp15_diagnostics import (  # noqa: E402
     prepare as prepare_wp15_diagnostics,
@@ -505,6 +506,27 @@ class Phase23SummaryMathTest(unittest.TestCase):
 
 
 class G3ContinuitySgContactAuditTest(unittest.TestCase):
+    def test_wp15_reclose_uses_block_contract_and_drain_scoped_guard(self) -> None:
+        baseline = {
+            "solver": {},
+            "contacts": [
+                {"name": "gate"}, {"name": "drain"},
+                {"name": "source"}, {"name": "substrate"},
+            ],
+        }
+        config = wp15_block_reclose_config(
+            baseline, Path("state.csv"), Path("out"), 0.0231559774221138
+        )
+        solver = config["solver"]
+        self.assertEqual(solver["block_absolute_convergence"]["mode"], "enforce")
+        self.assertEqual(
+            solver["contact_majority_qf_branch_guard_contacts"], ["drain"]
+        )
+        self.assertEqual(
+            solver["contact_majority_qf_branch_drop_limit_V"], 5.0e-11
+        )
+        self.assertNotIn("predictor", config["sweep"])
+
     def test_sg_cut_uses_production_contact_orientation(self) -> None:
         rows = [
             {

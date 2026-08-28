@@ -1650,6 +1650,28 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.poissonLineSearchStallContactMajorityQfDropLimit_V = json.value(
         "poisson_line_search_stall_contact_majority_qf_drop_limit_V",
         cfg.poissonLineSearchStallContactMajorityQfDropLimit_V);
+    if (json.contains("block_absolute_convergence")) {
+        const auto& value = json.at("block_absolute_convergence");
+        if (!value.is_object()) {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: block_absolute_convergence must be an object.");
+        }
+        cfg.blockAbsoluteConvergence.mode = value.value(
+            "mode", cfg.blockAbsoluteConvergence.mode);
+        cfg.blockAbsoluteConvergence.psiResidualCeiling = value.value(
+            "psi_residual_ceiling", cfg.blockAbsoluteConvergence.psiResidualCeiling);
+        cfg.blockAbsoluteConvergence.electronResidualCeiling = value.value(
+            "electron_residual_ceiling",
+            cfg.blockAbsoluteConvergence.electronResidualCeiling);
+        cfg.blockAbsoluteConvergence.holeResidualCeiling = value.value(
+            "hole_residual_ceiling", cfg.blockAbsoluteConvergence.holeResidualCeiling);
+    }
+    cfg.contactMajorityQfBranchDropLimit_V = json.value(
+        "contact_majority_qf_branch_drop_limit_V",
+        cfg.contactMajorityQfBranchDropLimit_V);
+    cfg.contactMajorityQfBranchGuardContacts = json.value(
+        "contact_majority_qf_branch_guard_contacts",
+        cfg.contactMajorityQfBranchGuardContacts);
     cfg.carrierRowQualifiedStallAcceptance = json.value(
         "carrier_row_qualified_stall_acceptance",
         cfg.carrierRowQualifiedStallAcceptance);
@@ -2228,6 +2250,39 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         !std::isfinite(cfg.poissonLineSearchStallContactMajorityQfDropLimit_V))
         throw std::invalid_argument(
             "newtonConfigFromJson: poisson_line_search_stall_contact_majority_qf_drop_limit_V must be non-negative and finite.");
+    if (cfg.blockAbsoluteConvergence.mode != "off" &&
+        cfg.blockAbsoluteConvergence.mode != "enforce") {
+        throw std::invalid_argument(
+            "newtonConfigFromJson: block_absolute_convergence.mode must be 'off' or 'enforce'.");
+    }
+    const auto validateBlockCeiling = [](Real value, const char* name) {
+        if (value < 0.0 || !std::isfinite(value)) {
+            throw std::invalid_argument(
+                std::string("newtonConfigFromJson: block_absolute_convergence.") +
+                name + " must be non-negative and finite.");
+        }
+    };
+    validateBlockCeiling(
+        cfg.blockAbsoluteConvergence.psiResidualCeiling,
+        "psi_residual_ceiling");
+    validateBlockCeiling(
+        cfg.blockAbsoluteConvergence.electronResidualCeiling,
+        "electron_residual_ceiling");
+    validateBlockCeiling(
+        cfg.blockAbsoluteConvergence.holeResidualCeiling,
+        "hole_residual_ceiling");
+    if (cfg.blockAbsoluteConvergence.mode == "enforce" &&
+        (!(cfg.blockAbsoluteConvergence.psiResidualCeiling > 0.0) ||
+         !(cfg.blockAbsoluteConvergence.electronResidualCeiling > 0.0) ||
+         !(cfg.blockAbsoluteConvergence.holeResidualCeiling > 0.0))) {
+        throw std::invalid_argument(
+            "newtonConfigFromJson: enforced block_absolute_convergence requires positive psi, electron, and hole ceilings.");
+    }
+    if (cfg.contactMajorityQfBranchDropLimit_V < 0.0 ||
+        !std::isfinite(cfg.contactMajorityQfBranchDropLimit_V)) {
+        throw std::invalid_argument(
+            "newtonConfigFromJson: contact_majority_qf_branch_drop_limit_V must be non-negative and finite.");
+    }
     if (cfg.carrierRegularizationScale < 0.0 || !std::isfinite(cfg.carrierRegularizationScale))
         throw std::invalid_argument(
             "newtonConfigFromJson: carrier_regularization_scale must be non-negative and finite.");
@@ -2564,6 +2619,42 @@ NewtonSolver::NewtonSolver(
         !std::isfinite(cfg_.poissonLineSearchStallContactMajorityQfDropLimit_V)) {
         throw std::invalid_argument(
             "NewtonSolver: poisson_line_search_stall_contact_majority_qf_drop_limit_V must be non-negative and finite.");
+    }
+    if (cfg_.blockAbsoluteConvergence.mode != "off" &&
+        cfg_.blockAbsoluteConvergence.mode != "enforce") {
+        throw std::invalid_argument(
+            "NewtonSolver: block_absolute_convergence.mode must be 'off' or 'enforce'.");
+    }
+    const auto validBlockCeiling = [](Real value) {
+        return value >= 0.0 && std::isfinite(value);
+    };
+    if (!validBlockCeiling(cfg_.blockAbsoluteConvergence.psiResidualCeiling) ||
+        !validBlockCeiling(cfg_.blockAbsoluteConvergence.electronResidualCeiling) ||
+        !validBlockCeiling(cfg_.blockAbsoluteConvergence.holeResidualCeiling) ||
+        (cfg_.blockAbsoluteConvergence.mode == "enforce" &&
+         (!(cfg_.blockAbsoluteConvergence.psiResidualCeiling > 0.0) ||
+          !(cfg_.blockAbsoluteConvergence.electronResidualCeiling > 0.0) ||
+          !(cfg_.blockAbsoluteConvergence.holeResidualCeiling > 0.0)))) {
+        throw std::invalid_argument(
+            "NewtonSolver: invalid block_absolute_convergence ceilings.");
+    }
+    if (cfg_.contactMajorityQfBranchDropLimit_V < 0.0 ||
+        !std::isfinite(cfg_.contactMajorityQfBranchDropLimit_V)) {
+        throw std::invalid_argument(
+            "NewtonSolver: contact_majority_qf_branch_drop_limit_V must be non-negative and finite.");
+    }
+    for (const std::string& requestedContact :
+         cfg_.contactMajorityQfBranchGuardContacts) {
+        const bool exists = std::any_of(
+            mesh_.contacts().begin(), mesh_.contacts().end(),
+            [&](const Contact& contact) {
+                return contact.name == requestedContact;
+            });
+        if (!exists) {
+            throw std::invalid_argument(
+                "NewtonSolver: contact_majority_qf_branch_guard_contacts contains unknown contact '" +
+                requestedContact + "'.");
+        }
     }
     if (cfg_.carrierRegularizationScale < 0.0 ||
         !std::isfinite(cfg_.carrierRegularizationScale)) {
@@ -3256,6 +3347,13 @@ ArclengthScalarFunctional NewtonSolver::makeArclengthContactCurrentFunctional(
 
 Real NewtonSolver::maxContactMajorityQuasiFermiDrop(const DDSolution& state) const
 {
+    return maxContactMajorityQuasiFermiDrop(state, {});
+}
+
+Real NewtonSolver::maxContactMajorityQuasiFermiDrop(
+    const DDSolution& state,
+    const std::vector<std::string>& contacts) const
+{
     if (state.phin.size() < static_cast<int>(mesh_.numNodes()) ||
         state.phip.size() < static_cast<int>(mesh_.numNodes()) ||
         state.n.size() < static_cast<int>(mesh_.numNodes()) ||
@@ -3263,8 +3361,26 @@ Real NewtonSolver::maxContactMajorityQuasiFermiDrop(const DDSolution& state) con
         return std::numeric_limits<Real>::infinity();
     }
 
+    std::vector<bool> isAnyTransportContactNode(mesh_.numNodes(), false);
+    for (const Contact& contact : mesh_.contacts()) {
+        const auto specIt = contactSpecs_.find(contact.name);
+        if (specIt != contactSpecs_.end() &&
+            specIt->second.type == ContactType::MetalGate) {
+            continue;
+        }
+        for (Index node : contact.node_ids) {
+            if (node < mesh_.numNodes())
+                isAnyTransportContactNode[node] = true;
+        }
+    }
+
     Real maxDrop = 0.0;
     for (const Contact& contact : mesh_.contacts()) {
+        if (!contacts.empty() &&
+            std::find(contacts.begin(), contacts.end(), contact.name) ==
+                contacts.end()) {
+            continue;
+        }
         const auto specIt = contactSpecs_.find(contact.name);
         if (specIt != contactSpecs_.end() &&
             specIt->second.type == ContactType::MetalGate) {
@@ -3292,6 +3408,13 @@ Real NewtonSolver::maxContactMajorityQuasiFermiDrop(const DDSolution& state) con
             const bool n1Contact = isContactNode[edge.n1];
             if (n0Contact == n1Contact)
                 continue;
+            // A boundary edge connecting two different contacts has no
+            // contact-to-interior transport drop and must not contaminate a
+            // contact-scoped branch guard.
+            if (isAnyTransportContactNode[edge.n0] &&
+                isAnyTransportContactNode[edge.n1]) {
+                continue;
+            }
             const int i = static_cast<int>(edge.n0);
             const int j = static_cast<int>(edge.n1);
             const bool electronTransportEdge =
@@ -6041,6 +6164,54 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
     result.finalResidualNorm = initialNorm;
     result.finalBlockNorms = blockResidualInfo(r, mesh_.numNodes());
 
+    const auto blockAbsoluteConvergenceSatisfied = [&](const VectorXd& residual) {
+        if (cfg_.blockAbsoluteConvergence.mode != "enforce")
+            return true;
+        const NewtonBlockResidualInfo blocks =
+            blockResidualInfo(residual, mesh_.numNodes());
+        return blocks.psi <=
+                   cfg_.blockAbsoluteConvergence.psiResidualCeiling &&
+            blocks.phin <=
+                   cfg_.blockAbsoluteConvergence.electronResidualCeiling &&
+            blocks.phip <=
+                   cfg_.blockAbsoluteConvergence.holeResidualCeiling;
+    };
+    const auto contactMajorityQfBranchDrop = [&](const VectorXd& state,
+                                                  int iterations) {
+        return maxContactMajorityQuasiFermiDrop(
+            makeSolution(assembler, state, iterations),
+            cfg_.contactMajorityQfBranchGuardContacts);
+    };
+    const auto contactMajorityQfBranchAccepts = [&](const VectorXd& state,
+                                                    int iterations) {
+        if (cfg_.contactMajorityQfBranchDropLimit_V <= 0.0)
+            return true;
+        const Real drop = contactMajorityQfBranchDrop(state, iterations);
+        return std::isfinite(drop) &&
+            drop <= cfg_.contactMajorityQfBranchDropLimit_V;
+    };
+    const auto updateBestAcceptedIterate = [&](const VectorXd& state,
+                                               const VectorXd& residual,
+                                               int iterations,
+                                               Real norm) {
+        const Real drop = contactMajorityQfBranchDrop(state, iterations);
+        const bool branchEligible =
+            cfg_.contactMajorityQfBranchDropLimit_V <= 0.0 ||
+            (std::isfinite(drop) &&
+             drop <= cfg_.contactMajorityQfBranchDropLimit_V);
+        if (!branchEligible || !std::isfinite(norm) ||
+            (result.hasBestSolution && !(norm < result.bestResidualNorm))) {
+            return;
+        }
+        result.hasBestSolution = true;
+        result.bestIteration = iterations;
+        result.bestResidualNorm = norm;
+        result.bestBlockNorms = blockResidualInfo(residual, mesh_.numNodes());
+        result.bestContactMajorityQfDrop = drop;
+        result.bestSolution = makeSolution(assembler, state, iterations);
+    };
+    updateBestAcceptedIterate(x, r, 0, initialNorm);
+
     auto carrierRowEval = [&](const VectorXd& state) {
         ScopedPerformanceTimer timer("newton.carrier_row_evaluation");
         if (cfg_.carrierRowConvergence.mode == "off")
@@ -6279,6 +6450,7 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                                Real norm,
                                const NewtonCarrierRowConvergenceEvaluation& rowEval,
                                const NewtonGlobalContinuityClosureEvaluation& globalEval) {
+        updateBestAcceptedIterate(state, residual, iterations, norm);
         result.converged = true;
         result.iters = iterations;
         result.finalResidualNorm = norm;
@@ -6370,6 +6542,8 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
     initialTrace.iter = 0;
     initialTrace.residualNorm = initialNorm;
     initialTrace.relativeResidualNorm = 1.0;
+    initialTrace.contactMajorityQfDrop =
+        contactMajorityQfBranchDrop(x, 0);
     initialTrace.lineSearchAccepted = true;
     initialTrace.event = "initial";
     initialTrace.carrierRowConvergence = initialRowEval;
@@ -6378,24 +6552,37 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         cfg_.diagnostics);
     result.trace.push_back(std::move(initialTrace));
     writeCarrierRowTraceCsv(x, initialRowEval, 0, initialNorm, "initial");
-    if (initialNorm <= cfg_.abstol &&
+    const bool initialBlockAbsoluteConverged =
+        cfg_.blockAbsoluteConvergence.mode == "enforce" &&
+        blockAbsoluteConvergenceSatisfied(r);
+    const bool initialPrimaryToleranceConverged =
+        initialBlockAbsoluteConverged ||
+        (cfg_.blockAbsoluteConvergence.mode == "off" &&
+         initialNorm <= cfg_.abstol);
+    if (initialPrimaryToleranceConverged &&
         carrierRowsAcceptConvergence(initialRowEval) &&
-        globalClosureAcceptsConvergence(initialGlobalEval)) {
+        globalClosureAcceptsConvergence(initialGlobalEval) &&
+        contactMajorityQfBranchAccepts(x, 0)) {
         finishConverged(
-            "initial_abstol", x, r, 0, initialNorm,
+            initialBlockAbsoluteConverged
+                ? "initial_block_abstol"
+                : "initial_abstol",
+            x, r, 0, initialNorm,
             initialRowEval, initialGlobalEval);
         return result;
     }
     if (initialNorm <= cfg_.stallResidualFloor &&
+        blockAbsoluteConvergenceSatisfied(r) &&
         carrierRowsAcceptConvergence(initialRowEval) &&
         globalClosureAcceptsConvergence(initialGlobalEval) &&
+        contactMajorityQfBranchAccepts(x, 0) &&
         contactMajorityQfAcceptsFloor(x, 0)) {
         finishConverged(
             "initial_stall_residual_floor", x, r, 0, initialNorm,
             initialRowEval, initialGlobalEval);
         return result;
     }
-    if (initialNorm <= cfg_.abstol && initialRowEval.enforced &&
+    if (initialPrimaryToleranceConverged && initialRowEval.enforced &&
         !initialRowEval.satisfied) {
         writeCarrierRowDiagnosticCsv(
             initialRowEval, 0, "carrier_row_convergence_initial_abstol_rejected");
@@ -6646,6 +6833,8 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             rejectedTrace.residualNorm = stalledNorm;
             rejectedTrace.relativeResidualNorm =
                 ResidualNorm::relative(stalledNorm, initialNorm);
+            rejectedTrace.contactMajorityQfDrop =
+                contactMajorityQfBranchDrop(acceptedX, acceptedIters);
             rejectedTrace.rawStepNorm = stepNorm;
             rejectedTrace.stepNorm = 0.0;
             rejectedTrace.dampingFactor = ls.damping;
@@ -6666,9 +6855,24 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                 assembler,
                 cfg_.diagnostics);
             result.trace.push_back(std::move(rejectedTrace));
-            if (stalledNorm <= stallResidualFloor &&
+            const bool stalledBlockAbsoluteConverged =
+                cfg_.blockAbsoluteConvergence.mode == "enforce" &&
+                blockAbsoluteConvergenceSatisfied(acceptedR);
+            if (stalledBlockAbsoluteConverged &&
                 carrierRowsAcceptConvergence(stalledRowEval) &&
                 globalClosureAcceptsConvergence(stalledGlobalEval) &&
+                contactMajorityQfBranchAccepts(acceptedX, acceptedIters)) {
+                finishConverged(
+                    "block_abstol_line_search_stall", acceptedX, acceptedR,
+                    acceptedIters, stalledNorm, stalledRowEval,
+                    stalledGlobalEval);
+                return result;
+            }
+            if (stalledNorm <= stallResidualFloor &&
+                blockAbsoluteConvergenceSatisfied(acceptedR) &&
+                carrierRowsAcceptConvergence(stalledRowEval) &&
+                globalClosureAcceptsConvergence(stalledGlobalEval) &&
+                contactMajorityQfBranchAccepts(acceptedX, acceptedIters) &&
                 contactMajorityQfAcceptsFloor(acceptedX, acceptedIters)) {
                 finishConverged("stall_residual_floor", acceptedX, acceptedR,
                                 acceptedIters, stalledNorm, stalledRowEval,
@@ -6684,8 +6888,10 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             }
 
             if (isPoissonLineSearchStall(ls, stalledBlocks, stalledNorm, stalledContactMajorityQfDrop, cfg_) &&
+                blockAbsoluteConvergenceSatisfied(acceptedR) &&
                 carrierRowsAcceptConvergence(stalledRowEval) &&
-                globalClosureAcceptsConvergence(stalledGlobalEval)) {
+                globalClosureAcceptsConvergence(stalledGlobalEval) &&
+                contactMajorityQfBranchAccepts(acceptedX, acceptedIters)) {
                 finishConverged("poisson_line_search_stall_floor", acceptedX, acceptedR,
                                 acceptedIters, stalledNorm, stalledRowEval,
                                 stalledGlobalEval);
@@ -6694,7 +6900,9 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             if (isCarrierRowQualifiedLineSearchStall(
                     ls, stalledBlocks, stalledNorm,
                     stalledContactMajorityQfDrop, stalledRowEval, cfg_) &&
-                globalClosureAcceptsConvergence(stalledGlobalEval)) {
+                blockAbsoluteConvergenceSatisfied(acceptedR) &&
+                globalClosureAcceptsConvergence(stalledGlobalEval) &&
+                contactMajorityQfBranchAccepts(acceptedX, acceptedIters)) {
                 finishConverged(
                     "carrier_row_qualified_stall_floor",
                     acceptedX, acceptedR, acceptedIters, stalledNorm,
@@ -6718,11 +6926,18 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             result.finalCarrierRowConvergence = stalledRowEval;
             result.finalGlobalContinuityClosure = stalledGlobalEval;
             result.solution = makeSolution(assembler, acceptedX, acceptedIters);
+            const bool stalledBranchGuardSatisfied =
+                contactMajorityQfBranchAccepts(acceptedX, acceptedIters);
             const std::string rejectedFailureReason =
                 (stalledGlobalEval.enforced && !stalledGlobalEval.satisfied)
                     ? std::string("global_continuity_closure_line_search_rejected")
                     : (stalledRowEval.enforced && !stalledRowEval.satisfied)
                     ? std::string("carrier_row_convergence_line_search_rejected")
+                    : (!stalledBranchGuardSatisfied)
+                    ? std::string("contact_majority_qf_branch_guard_line_search_rejected")
+                    : (cfg_.blockAbsoluteConvergence.mode == "enforce" &&
+                       !blockAbsoluteConvergenceSatisfied(acceptedR))
+                    ? std::string("block_absolute_convergence_line_search_rejected")
                     : (ls.failureReason.empty()
                         ? std::string("line_search_rejected")
                         : ls.failureReason);
@@ -6765,6 +6980,7 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         // per-iteration metrics are consistent with the accepted solution.
         const Real appliedStepNorm = ls.damping * stepNorm;
         const Real residualNorm = residualNormFn(r);
+        updateBestAcceptedIterate(x, r, iter, residualNorm);
         if (cfg_.quasiFermiUpdateLimitMode == "uniform_trust_region" &&
             ls.damping < 1.0 - 1.0e-12 &&
             cfg_.quasiFermiTrustRegionShrinkFactor < 1.0) {
@@ -6797,6 +7013,8 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         info.stepNorm = appliedStepNorm;
         info.dampingFactor = ls.damping;
         info.relativeResidualNorm = ResidualNorm::relative(residualNorm, initialNorm);
+        info.contactMajorityQfDrop =
+            contactMajorityQfBranchDrop(x, iter);
         info.rawStepNorm = stepNorm;
         info.lineSearchAttempts = ls.attempts;
         info.lineSearchAccepted = ls.accepted;
@@ -6825,16 +7043,26 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         const Real rel = result.history.back().relativeResidualNorm;
         const bool absoluteConverged = residualNorm <= cfg_.abstol;
         const bool relativeConverged = rel <= cfg_.reltol;
+        const bool blockAbsoluteConverged =
+            cfg_.blockAbsoluteConvergence.mode == "enforce" &&
+            blockAbsoluteConvergenceSatisfied(r);
+        const bool primaryToleranceConverged =
+            blockAbsoluteConverged ||
+            (cfg_.blockAbsoluteConvergence.mode == "off" &&
+             (absoluteConverged || relativeConverged));
         const NewtonCarrierRowConvergenceEvaluation& rowEval =
             result.history.back().carrierRowConvergence;
         const NewtonGlobalContinuityClosureEvaluation globalEval =
             globalClosureEval(x);
         activeGlobalEval = globalEval;
-        if ((absoluteConverged || relativeConverged) &&
+        if (primaryToleranceConverged &&
             carrierRowsAcceptConvergence(rowEval) &&
-            globalClosureAcceptsConvergence(globalEval)) {
+            globalClosureAcceptsConvergence(globalEval) &&
+            contactMajorityQfBranchAccepts(x, iter)) {
             finishConverged(
-                absoluteConverged ? "abstol" : "reltol",
+                blockAbsoluteConverged
+                    ? "block_abstol"
+                    : (absoluteConverged ? "abstol" : "reltol"),
                 x,
                 r,
                 iter,
@@ -6846,6 +7074,8 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         if (cfg_.carrierRowQualifiedStallAcceptance &&
             rowEval.enforced && rowEval.satisfied &&
             residualNorm <= stallResidualFloor &&
+            blockAbsoluteConvergenceSatisfied(r) &&
+            contactMajorityQfBranchAccepts(x, iter) &&
             globalClosureAcceptsConvergence(globalEval)) {
             const DDSolution floorSolution =
                 makeSolution(assembler, x, iter);
@@ -6880,8 +7110,10 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
          finalContactMajorityQfDrop <=
              cfg_.poissonLineSearchStallContactMajorityQfDropLimit_V);
     if (result.finalResidualNorm <= stallResidualFloor &&
+        blockAbsoluteConvergenceSatisfied(acceptedR) &&
         carrierRowsAcceptConvergence(finalRowEval) &&
         globalClosureAcceptsConvergence(finalGlobalEval) &&
+        contactMajorityQfBranchAccepts(acceptedX, acceptedIters) &&
         finalContactMajorityQfAcceptsFloor) {
         finishConverged("max_iter_stall_residual_floor", acceptedX, acceptedR,
                         acceptedIters, result.finalResidualNorm, finalRowEval,
@@ -6890,11 +7122,18 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
     }
 
     result.converged = false;
+    const bool finalBranchGuardSatisfied =
+        contactMajorityQfBranchAccepts(acceptedX, acceptedIters);
     const std::string finalFailureReason =
         (finalGlobalEval.enforced && !finalGlobalEval.satisfied)
             ? std::string("global_continuity_closure")
             : (finalRowEval.enforced && !finalRowEval.satisfied)
             ? std::string("carrier_row_convergence")
+            : (!finalBranchGuardSatisfied)
+            ? std::string("contact_majority_qf_branch_guard")
+            : (cfg_.blockAbsoluteConvergence.mode == "enforce" &&
+               !blockAbsoluteConvergenceSatisfied(acceptedR))
+            ? std::string("block_absolute_convergence")
             : std::string("max_iterations");
     writeCarrierRowDiagnosticCsv(finalRowEval, acceptedIters, finalFailureReason);
     writeCarrierRowTraceCsv(acceptedX, finalRowEval, acceptedIters,

@@ -674,6 +674,24 @@ Notes:
   acceptance path. When greater than zero, a Poisson-block line-search stall is
   accepted only if the maximum majority-carrier quasi-Fermi drop across contact-to-interior edges
   is below this value. The default is `5e-11` V; `0` disables this guard.
+- `block_absolute_convergence` is an optional authoritative per-block Newton
+  convergence contract. With `mode: enforce`, scalar `reltol`, `abstol`, and
+  numerical-floor acceptance no longer bypass the block contract: the raw
+  `psi`, electron-continuity, and hole-continuity L2 norms must be at or below
+  `psi_residual_ceiling`, `electron_residual_ceiling`, and
+  `hole_residual_ceiling`. All three ceilings must be positive. The default
+  mode is `off`, preserving existing solver behavior.
+- `contact_majority_qf_branch_drop_limit_V` is an optional non-negative guard
+  applied to every formal Newton convergence path and to best-iterate
+  eligibility. `contact_majority_qf_branch_guard_contacts` may restrict the
+  maximum contact-to-interior majority-carrier QF drop to named transport
+  contacts; an empty list checks all non-metal-gate contacts. Unknown contact
+  names are rejected. The default limit is `0`, so this guard is opt-in.
+- A failed Newton attempt retains the lowest-residual accepted iterate that
+  passes the configured QF branch guard. When rejected-state capture is
+  enabled, `newton_attempts.csv` records its iteration, residual, and QF drop,
+  and writes an additional `*_best.csv` full-precision restart beside the
+  parent, initial, and final snapshots.
 - `carrier_regularization_scale` is an experimental non-negative Newton
   stabilization knob. When greater than zero, Vela adds
   `sign(diagonal) * scale * carrier_row_abs_sum` to each carrier continuity

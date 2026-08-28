@@ -495,6 +495,109 @@ TEST_CASE("NewtonSolver: accepts a qualified initial numerical-floor restart",
     REQUIRE(guarded.convergenceReason != "max_iter_stall_residual_floor");
 }
 
+TEST_CASE("NewtonSolver: enforced block absolute convergence prevents scalar tolerance masking",
+          "[newton][convergence][block_absolute]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    const NewtonResult equilibrium =
+        runNewton(mesh, matdb, doping, zeroBias(), newtonConfig());
+    REQUIRE(equilibrium.converged);
+
+    DDSolution restart = equilibrium.solution;
+    restart.phin(4) += 1.0e-7;
+    NewtonConfig cfg = newtonConfig();
+    cfg.warmStart = true;
+    cfg.maxIter = 0;
+    cfg.stallResidualFloor = 0.0;
+    const NewtonResidualEvaluation audit =
+        NewtonSolver(mesh, matdb, doping, zeroBias(), cfg).evaluateResidual(restart);
+    cfg.abstol = 1.0e100;
+
+    const NewtonResult scalarAccepted =
+        runNewton(mesh, matdb, doping, zeroBias(), restart, cfg);
+    REQUIRE(scalarAccepted.converged);
+    REQUIRE(scalarAccepted.convergenceReason == "initial_abstol");
+
+    cfg.blockAbsoluteConvergence.mode = "enforce";
+    cfg.blockAbsoluteConvergence.psiResidualCeiling = 1.0e100;
+    cfg.blockAbsoluteConvergence.electronResidualCeiling =
+        std::max(0.5 * audit.blockNorms.phin, 1.0e-30);
+    cfg.blockAbsoluteConvergence.holeResidualCeiling = 1.0e100;
+    const NewtonResult blockRejected =
+        runNewton(mesh, matdb, doping, zeroBias(), restart, cfg);
+    REQUIRE_FALSE(blockRejected.converged);
+    REQUIRE(blockRejected.failureDiagnostics.failureReason ==
+            "block_absolute_convergence");
+
+    cfg.blockAbsoluteConvergence.electronResidualCeiling = 1.0e100;
+    const NewtonResult blockAccepted =
+        runNewton(mesh, matdb, doping, zeroBias(), restart, cfg);
+    REQUIRE(blockAccepted.converged);
+    REQUIRE(blockAccepted.convergenceReason == "initial_block_abstol");
+}
+
+TEST_CASE("NewtonSolver: preserves the best accepted iterate on failure",
+          "[newton][diagnostics][best_iterate]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    const NewtonResult equilibrium =
+        runNewton(mesh, matdb, doping, zeroBias(), newtonConfig());
+    REQUIRE(equilibrium.converged);
+
+    DDSolution restart = equilibrium.solution;
+    restart.psi(4) += 1.0e-7;
+    NewtonConfig cfg = newtonConfig();
+    cfg.warmStart = true;
+    cfg.maxIter = 0;
+    cfg.abstol = 0.0;
+    cfg.stallResidualFloor = 0.0;
+    const NewtonResult failed =
+        runNewton(mesh, matdb, doping, zeroBias(), restart, cfg);
+    REQUIRE_FALSE(failed.converged);
+    REQUIRE(failed.hasBestSolution);
+    REQUIRE(failed.bestIteration == 0);
+    REQUIRE(failed.bestResidualNorm == Catch::Approx(failed.initialResidualNorm));
+    REQUIRE((failed.bestSolution.psi - failed.solution.psi).norm() ==
+            Catch::Approx(0.0).margin(1.0e-20));
+}
+
+TEST_CASE("NewtonSolver: contact-majority branch guard rejects unsafe convergence",
+          "[newton][contact][branch_guard]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    for (Index node = 0; node < mesh.numNodes(); ++node)
+        doping.setNodeDoping(node, 1.0e21, 0.0);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.warmStart = true;
+    cfg.maxIter = 0;
+    cfg.abstol = 1.0e100;
+    cfg.stallResidualFloor = 0.0;
+    cfg.contactMajorityQfBranchDropLimit_V = 1.0e-6;
+
+    const int n = static_cast<int>(mesh.numNodes());
+    DDSolution unsafe;
+    unsafe.psi = VectorXd::Zero(n);
+    unsafe.phin = VectorXd::Zero(n);
+    unsafe.phip = VectorXd::Zero(n);
+    unsafe.n = VectorXd::Constant(n, 1.0e21);
+    unsafe.p = VectorXd::Constant(n, 1.0e21);
+    unsafe.phin(4) = 1.0e-3;
+
+    const NewtonResult rejected =
+        runNewton(mesh, matdb, doping, zeroBias(), unsafe, cfg);
+    REQUIRE_FALSE(rejected.converged);
+    REQUIRE(rejected.failureDiagnostics.failureReason ==
+            "contact_majority_qf_branch_guard");
+    REQUIRE_FALSE(rejected.hasBestSolution);
+}
+
 TEST_CASE("NewtonSolver: ohmic contact BC resists compensated-node polarity flips",
           "[newton][contact_bc]")
 {
@@ -3501,6 +3604,10 @@ TEST_CASE("NewtonSolver: reports maximum contact majority quasi-Fermi drop", "[n
     state.phin(1) = 1.2e-10;
     state.phip(1) = 1.0e-5;
     REQUIRE(solver.maxContactMajorityQuasiFermiDrop(state) == Catch::Approx(1.2e-10));
+    REQUIRE(solver.maxContactMajorityQuasiFermiDrop(state, {"cathode"}) ==
+            Catch::Approx(1.2e-10));
+    REQUIRE(solver.maxContactMajorityQuasiFermiDrop(state, {"anode"}) ==
+            Catch::Approx(0.0));
 
     // A contact may share mesh nodes/edges with an insulator.  A quasi-Fermi
     // value on a zero-density edge is not a transport contact drop and must not
@@ -3522,6 +3629,14 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
         {"poisson_line_search_stall_relative_increase", 2.0e-5},
         {"poisson_line_search_stall_carrier_residual_floor", 4.0e-8},
         {"poisson_line_search_stall_contact_majority_qf_drop_limit_V", 7.0e-11},
+        {"block_absolute_convergence", {
+            {"mode", "enforce"},
+            {"psi_residual_ceiling", 8.0e-8},
+            {"electron_residual_ceiling", 9.0e-9},
+            {"hole_residual_ceiling", 1.0e-9}
+        }},
+        {"contact_majority_qf_branch_drop_limit_V", 6.0e-10},
+        {"contact_majority_qf_branch_guard_contacts", {"anode"}},
         {"carrier_row_qualified_stall_acceptance", true},
         {"auger_cn_m6_per_s", 4.0e-43},
         {"auger_cp_m6_per_s", 2.0e-43},
@@ -3540,6 +3655,13 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
     REQUIRE(cfg.poissonLineSearchStallRelativeIncrease == Catch::Approx(2.0e-5));
     REQUIRE(cfg.poissonLineSearchStallCarrierResidualFloor == Catch::Approx(4.0e-8));
     REQUIRE(cfg.poissonLineSearchStallContactMajorityQfDropLimit_V == Catch::Approx(7.0e-11));
+    REQUIRE(cfg.blockAbsoluteConvergence.mode == "enforce");
+    REQUIRE(cfg.blockAbsoluteConvergence.psiResidualCeiling == Catch::Approx(8.0e-8));
+    REQUIRE(cfg.blockAbsoluteConvergence.electronResidualCeiling == Catch::Approx(9.0e-9));
+    REQUIRE(cfg.blockAbsoluteConvergence.holeResidualCeiling == Catch::Approx(1.0e-9));
+    REQUIRE(cfg.contactMajorityQfBranchDropLimit_V == Catch::Approx(6.0e-10));
+    REQUIRE(cfg.contactMajorityQfBranchGuardContacts ==
+            std::vector<std::string>{"anode"});
     REQUIRE(cfg.carrierRowQualifiedStallAcceptance);
     REQUIRE(cfg.residualWeightPsi == Catch::Approx(0.25));
     REQUIRE(cfg.residualWeightPhin == Catch::Approx(2.0));
@@ -3622,6 +3744,26 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
         std::invalid_argument);
     REQUIRE_THROWS_AS(
         newtonConfigFromJson(nlohmann::json{{"poisson_line_search_stall_residual_floor", -1.0}}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{
+            "block_absolute_convergence", {{"mode", "unknown"}}
+        }}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{
+            "block_absolute_convergence", {
+                {"mode", "enforce"},
+                {"psi_residual_ceiling", 1.0e-8},
+                {"electron_residual_ceiling", 0.0},
+                {"hole_residual_ceiling", 1.0e-9}
+            }
+        }}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{
+            "contact_majority_qf_branch_drop_limit_V", -1.0
+        }}),
         std::invalid_argument);
     REQUIRE_THROWS_AS(
         newtonConfigFromJson(nlohmann::json{{"poisson_line_search_stall_relative_increase", -1.0}}),

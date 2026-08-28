@@ -4055,9 +4055,13 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "final_state_hash",
             "newton_iterations",
             "iteration_trace_rows",
+            "best_newton_iteration",
+            "best_newton_residual_norm",
+            "best_newton_contact_majority_qf_drop_V",
             "rejected_parent_state_file",
             "rejected_initial_state_file",
-            "rejected_final_state_file"});
+            "rejected_final_state_file",
+            "rejected_best_state_file"});
 
         const std::filesystem::path iterationsPath(
             sweep.diagnostics.newtonHistory.iterationsCsvFile);
@@ -4073,6 +4077,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             "event",
             "residual_norm",
             "relative_residual_norm",
+            "contact_majority_qf_drop_V",
             "block_psi",
             "block_phin",
             "block_phip",
@@ -4144,6 +4149,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         std::uint64_t attemptId = 0;
         bool ok = false;
         DDSolution solution;
+        DDSolution bestNewtonSolution;
+        bool hasBestNewtonSolution = false;
+        int bestNewtonIteration = 0;
+        Real bestNewtonResidualNorm = std::numeric_limits<Real>::infinity();
+        Real bestNewtonContactMajorityQfDrop =
+            std::numeric_limits<Real>::infinity();
         std::string failureReason;
         std::string validationDiagnostics;
         std::string solverMethod;
@@ -4366,6 +4377,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 attempt.newtonFailureDiagnostics = result.failureDiagnostics;
                 attempt.newtonHistory = result.history;
                 attempt.newtonTrace = result.trace;
+                attempt.bestNewtonSolution = result.bestSolution;
+                attempt.hasBestNewtonSolution = result.hasBestSolution;
+                attempt.bestNewtonIteration = result.bestIteration;
+                attempt.bestNewtonResidualNorm = result.bestResidualNorm;
+                attempt.bestNewtonContactMajorityQfDrop =
+                    result.bestContactMajorityQfDrop;
                 attempt.initialResidualNorm = result.initialResidualNorm;
                 attempt.finalResidualNorm = result.finalResidualNorm;
                 attempt.newtonConvergenceReason = result.convergenceReason;
@@ -4409,6 +4426,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 attempt.newtonFailureDiagnostics = result.failureDiagnostics;
                 attempt.newtonHistory = result.history;
                 attempt.newtonTrace = result.trace;
+                attempt.bestNewtonSolution = result.bestSolution;
+                attempt.hasBestNewtonSolution = result.hasBestSolution;
+                attempt.bestNewtonIteration = result.bestIteration;
+                attempt.bestNewtonResidualNorm = result.bestResidualNorm;
+                attempt.bestNewtonContactMajorityQfDrop =
+                    result.bestContactMajorityQfDrop;
                 attempt.initialResidualNorm = result.initialResidualNorm;
                 attempt.finalResidualNorm = result.finalResidualNorm;
                 attempt.newtonConvergenceReason = result.convergenceReason;
@@ -4446,6 +4469,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     attempt.newtonFailureDiagnostics = result.failureDiagnostics;
                     attempt.newtonHistory = result.history;
                     attempt.newtonTrace = result.trace;
+                    attempt.bestNewtonSolution = result.bestSolution;
+                    attempt.hasBestNewtonSolution = result.hasBestSolution;
+                    attempt.bestNewtonIteration = result.bestIteration;
+                    attempt.bestNewtonResidualNorm = result.bestResidualNorm;
+                    attempt.bestNewtonContactMajorityQfDrop =
+                        result.bestContactMajorityQfDrop;
                     attempt.initialResidualNorm = result.initialResidualNorm;
                     attempt.finalResidualNorm = result.finalResidualNorm;
                     attempt.newtonConvergenceReason = result.convergenceReason;
@@ -4499,6 +4528,12 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     attempt.newtonFailureDiagnostics = result.failureDiagnostics;
                     attempt.newtonHistory = result.history;
                     attempt.newtonTrace = result.trace;
+                    attempt.bestNewtonSolution = result.bestSolution;
+                    attempt.hasBestNewtonSolution = result.hasBestSolution;
+                    attempt.bestNewtonIteration = result.bestIteration;
+                    attempt.bestNewtonResidualNorm = result.bestResidualNorm;
+                    attempt.bestNewtonContactMajorityQfDrop =
+                        result.bestContactMajorityQfDrop;
                     attempt.initialResidualNorm = result.initialResidualNorm;
                     attempt.finalResidualNorm = result.finalResidualNorm;
                     attempt.newtonConvergenceReason = result.convergenceReason;
@@ -4917,6 +4952,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         std::string rejectedParentStateFile;
         std::string rejectedInitialStateFile;
         std::string rejectedFinalStateFile;
+        std::string rejectedBestStateFile;
         if (!attempt.ok &&
             !sweep.diagnostics.newtonHistory.rejectedStateDirectory.empty()) {
             const std::filesystem::path stateDir(
@@ -4945,6 +4981,14 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 writeDDSolutionStateCsv(
                     path.string(), attempt.solution, sweep.scaling);
                 rejectedFinalStateFile = path.string();
+            }
+            if (attempt.hasBestNewtonSolution &&
+                attempt.bestNewtonSolution.psi.size() == mesh.numNodes()) {
+                const std::filesystem::path path =
+                    stateDir / (stem + "_best.csv");
+                writeDDSolutionStateCsv(
+                    path.string(), attempt.bestNewtonSolution, sweep.scaling);
+                rejectedBestStateFile = path.string();
             }
         }
 
@@ -4977,9 +5021,19 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             finalHash,
             std::to_string(attempt.newtonIterations),
             std::to_string(attempt.newtonTrace.size()),
+            attempt.hasBestNewtonSolution
+                ? std::to_string(attempt.bestNewtonIteration)
+                : std::string(),
+            attempt.hasBestNewtonSolution
+                ? formatReal(attempt.bestNewtonResidualNorm)
+                : std::string(),
+            attempt.hasBestNewtonSolution
+                ? formatReal(attempt.bestNewtonContactMajorityQfDrop)
+                : std::string(),
             rejectedParentStateFile,
             rejectedInitialStateFile,
-            rejectedFinalStateFile});
+            rejectedFinalStateFile,
+            rejectedBestStateFile});
 
         for (const NewtonIterationInfo& info : attempt.newtonTrace) {
             newtonIterationsCsv->writeRow({
@@ -4990,6 +5044,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 info.event,
                 formatReal(info.residualNorm),
                 formatReal(info.relativeResidualNorm),
+                formatReal(info.contactMajorityQfDrop),
                 formatReal(info.blockResiduals.psi),
                 formatReal(info.blockResiduals.phin),
                 formatReal(info.blockResiduals.phip),

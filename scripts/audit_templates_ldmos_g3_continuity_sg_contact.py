@@ -258,6 +258,26 @@ def strict_reclose_config(
     return config
 
 
+def wp15_block_reclose_config(
+    baseline: dict[str, Any], state: Path, output_dir: Path, bias: float
+) -> dict[str, Any]:
+    """WP1.5 qualification with authoritative absolute block ceilings."""
+    config = strict_reclose_config(baseline, state, output_dir, bias)
+    config["solver"]["block_absolute_convergence"] = {
+        "mode": "enforce",
+        "psi_residual_ceiling": 5.0e-8,
+        "electron_residual_ceiling": 2.0e-9,
+        "hole_residual_ceiling": 3.0e-10,
+    }
+    config["solver"]["contact_majority_qf_branch_drop_limit_V"] = 5.0e-11
+    config["solver"]["contact_majority_qf_branch_guard_contacts"] = ["drain"]
+    config["_comment"] = (
+        "WP1.5 block-absolute qualification: unchanged revision-4 physics, "
+        "authoritative psi/phin/phip ceilings, no IALMob and no predictor."
+    )
+    return config
+
+
 def mesh_topology(mesh_path: Path) -> dict[str, Any]:
     mesh = json.loads(mesh_path.read_text(encoding="utf-8"))
     nodes = {int(node["id"]): (float(node["x"]), float(node["y"])) for node in mesh["nodes"]}
@@ -615,6 +635,7 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--bias", type=float, default=0.0231559774221138)
     parser.add_argument("--run-strict-reclose", action="store_true")
+    parser.add_argument("--run-wp15-block-reclose", action="store_true")
     parser.add_argument("--sentaurus-reference-plt", type=Path)
     args = parser.parse_args()
 
@@ -668,6 +689,41 @@ def main() -> int:
                 controls["strict_reclose"]["final_state_replay_statuses"] = final_statuses
                 controls["strict_reclose"]["final_state_replay"] = final_summary
 
+    if args.run_wp15_block_reclose:
+        reclose_dir = args.output_dir / "vela_wp15_block_reclose"
+        reclose_status = run_config(
+            args.runner.resolve(),
+            wp15_block_reclose_config(
+                baseline, args.vela_state, reclose_dir, args.bias
+            ),
+            reclose_dir,
+            "wp15_block_reclose",
+            allow_failure=True,
+        )
+        controls["wp15_block_reclose"] = {
+            "status": reclose_status,
+            "config": str((reclose_dir / "wp15_block_reclose.json").resolve()),
+            "curve": str((reclose_dir / "curve.csv").resolve()),
+            "state": str((reclose_dir / "state.csv").resolve()),
+        }
+        accepted_state = reclose_dir / "state.csv"
+        if accepted_state.is_file():
+            accepted_dir = reclose_dir / "accepted_state_replay"
+            accepted_statuses, _ = replay_state(
+                args.runner.resolve(),
+                baseline,
+                accepted_state,
+                accepted_dir,
+                args.bias,
+                topology,
+            )
+            controls["wp15_block_reclose"]["accepted_state_replay_statuses"] = (
+                accepted_statuses
+            )
+            controls["wp15_block_reclose"]["accepted_state_replay"] = state_summary(
+                "wp15_block_reclose_accepted", accepted_dir, topology
+            )
+
     sentaurus_reference = (
         sentaurus_plt_current(args.sentaurus_reference_plt, args.bias)
         if args.sentaurus_reference_plt is not None
@@ -687,6 +743,26 @@ def main() -> int:
                 "electron_residual_improvement": (
                     vela["electron_continuity_residual_l2"]
                     / final_replay["electron_continuity_residual_l2"]
+                ),
+            }
+    if sentaurus_reference is not None and "wp15_block_reclose" in controls:
+        accepted_replay = controls["wp15_block_reclose"].get(
+            "accepted_state_replay"
+        )
+        if accepted_replay is not None:
+            candidate = abs(float(accepted_replay["current_A_per_um"]))
+            reference = abs(float(sentaurus_reference["drain_total_A_per_um"]))
+            controls["wp15_block_reclose"]["accepted_vs_sentaurus_plt"] = {
+                "candidate_A_per_um": candidate,
+                "reference_A_per_um": reference,
+                "signed_ratio": candidate / reference,
+                "relative_error": relative_error(candidate, reference),
+                "magnitude_error_dex": abs(
+                    math.log10(candidate) - math.log10(reference)
+                ),
+                "electron_residual_improvement": (
+                    vela["electron_continuity_residual_l2"]
+                    / accepted_replay["electron_continuity_residual_l2"]
                 ),
             }
 
