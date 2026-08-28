@@ -77,6 +77,8 @@ struct LombardiParameters {
 };
 
 struct MobilityModelConfig {
+    /// ``constant_field`` uses the material low-field mobility and applies
+    /// only the configured high-field saturation limiter.
     std::string model = "constant";
     std::string highFieldDrivingForce = "electric_field";
     /// Spatial discretization for a quasi-Fermi-gradient high-field drive.

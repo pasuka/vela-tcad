@@ -1,5 +1,9 @@
 # Templates/LDMOS G3 最小失败转移算子对齐（2026-08-27）
 
+> 2026-08-28 后续：本报告识别的 G3 mobility 合同/单位问题已由 revision 3 的
+> `constant_field` 模型关闭；exact-mesh 无 predictor 路径已到达 `0.1 V`，但电流
+> 曲线仍未通过。详见 `templates_ldmos_wp175_g3_mobility_revision3_2026-08-28.md`。
+
 ## 结论
 
 本轮完成了 `Vd=0.0231559774221138 V` 固定状态上的 Sentaurus/Vela SG edge
@@ -73,17 +77,17 @@ Vela secant predictor 控制只改变
 写为 `1.07e5`。但 `unit_scaling` 的 `mobilityToInternal()` 是恒等映射，现有单测也
 以 `1417`、`9.68e16` 和 `1.07e7` 作为内部输入。固定 Sentaurus 状态回放显示：
 
-| 指标 | 当前 `masetti_field` | HFS-only 可表示代理控制 |
+| 指标 | 当前 `masetti_field` | HFS-only 单因素控制 |
 | --- | ---: | ---: |
 | 全部可比边电子 mobility 中位误差 | `4.0000 dex` | `0.0000 dex` |
 | 主载流边电子 mobility 中位误差 | `4.0000 dex` | `0.0000 dex` |
 | 主载流边 SG 线电流中位误差 | `3.8843 dex` | `0.1193 dex` |
 | 主载流边 SG 线电流 p95 误差 | `4.2702 dex` | `0.9027 dex` |
 
-代理控制使用现有 `caughey_thomas_field`，令 `mu_min` 等于材料低场 mobility，
-从而消除 doping limiter，仅保留 high-field limiter。它不是最终生产语义，但足以证明
-当前约四个数量级的局部 SG 差异主要来自生成 deck 的 mobility 合同，而不是 SG
-公式本身。
+本报告执行时的控制使用 `caughey_thomas_field`，令 `mu_min` 等于材料低场
+mobility，从而消除 doping limiter，仅保留 high-field limiter。revision 3 随后新增
+语义明确、公式等价的生产 `constant_field` 模型。该结果证明当前约四个数量级的局部
+SG 差异主要来自生成 deck 的 mobility 合同，而不是 SG 公式本身。
 
 ## Continuity RHS 与固定状态闭合
 

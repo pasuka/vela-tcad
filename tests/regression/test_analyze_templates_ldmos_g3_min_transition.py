@@ -150,10 +150,10 @@ class TemplatesLdmosG3MinTransitionTests(unittest.TestCase):
                 "mobility"
             ]
 
-        self.assertEqual(mobility["model"], "caughey_thomas_field")
-        self.assertEqual(mobility["electron_mu_min_m2_V_s"], 1417.0)
+        self.assertEqual(mobility["model"], "constant_field")
+        self.assertNotIn("electron_mu_min_m2_V_s", mobility)
         self.assertEqual(mobility["electron_saturation_velocity_m_s"], 1.07e7)
-        self.assertEqual(mobility["hole_mu_min_m2_V_s"], 470.5)
+        self.assertNotIn("hole_mu_min_m2_V_s", mobility)
 
     def test_newton_state_delta_separates_predictor_state_fields(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_ldmos_g3_predictor_") as tmp:

@@ -82,6 +82,65 @@ TEST_CASE("Masetti mobility matches Sentaurus silicon DopingDependence formula",
             Catch::Approx(0.03190980929489245).epsilon(1.0e-12));
 }
 
+TEST_CASE("Constant-field mobility applies HighFieldSaturation without doping dependence",
+          "[mobility][constant-field]")
+{
+    MobilityModelConfig config = mobilityModelConfig("constant_field");
+    config.electronField = {1.07e5, 1.109};
+    config.holeField = {8.37e4, 1.213};
+    DopingDependentMobility mobility(config);
+    MaterialDatabase matdb;
+    const Material& si = matdb.getMaterial("Si");
+
+    const Real field = 2.5e5;
+    const auto expected = [field](Real lowField, const FieldMobilityParameters& p) {
+        const Real ratio = lowField * field / p.saturationVelocity;
+        return lowField /
+            std::pow(1.0 + std::pow(ratio, p.beta), 1.0 / p.beta);
+    };
+
+    const Real electronLowDoping =
+        mobility.electronMobility(si, 1.0e18, 0.0, 0.0, field);
+    const Real electronHighDoping =
+        mobility.electronMobility(si, 1.0e26, 0.0, 0.0, field);
+    const Real holeLowDoping =
+        mobility.holeMobility(si, 1.0e18, 0.0, 0.0, field);
+    const Real holeHighDoping =
+        mobility.holeMobility(si, 1.0e26, 0.0, 0.0, field);
+
+    REQUIRE(electronLowDoping == Catch::Approx(
+        expected(si.mun, config.electronField)).epsilon(1.0e-13));
+    REQUIRE(electronHighDoping == Catch::Approx(electronLowDoping));
+    REQUIRE(holeLowDoping == Catch::Approx(
+        expected(si.mup, config.holeField)).epsilon(1.0e-13));
+    REQUIRE(holeHighDoping == Catch::Approx(holeLowDoping));
+    REQUIRE_NOTHROW(makeMobilityModel(config));
+}
+
+TEST_CASE("Constant-field JSON preserves TCAD internal high-field parameters",
+          "[mobility][constant-field][json][scaling]")
+{
+    const nlohmann::json json = {
+        {"model", "constant_field"},
+        {"electron_saturation_velocity_m_s", 1.07e7},
+        {"electron_high_field_beta", 1.109},
+        {"hole_saturation_velocity_m_s", 8.37e6},
+        {"hole_high_field_beta", 1.213},
+    };
+    const auto scaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    const MobilityModelConfig config = mobilityModelConfigFromJson(json, scaling);
+    DopingDependentMobility mobility(config);
+    MaterialDatabase matdb(scaling);
+    const Material& si = matdb.getMaterial("Si");
+
+    REQUIRE(config.electronField.saturationVelocity == Catch::Approx(1.07e7));
+    REQUIRE(config.holeField.saturationVelocity == Catch::Approx(8.37e6));
+    REQUIRE(mobility.electronMobility(si, 1.0e23, 0.0, 0.0) ==
+            Catch::Approx(si.mun));
+    REQUIRE(mobility.holeMobility(si, 1.0e23, 0.0, 0.0) ==
+            Catch::Approx(si.mup));
+}
+
 TEST_CASE("JSON mobility object parses Masetti parameters with unit scaling",
           "[mobility][masetti][json][scaling]")
 {

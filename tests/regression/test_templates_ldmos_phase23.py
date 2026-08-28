@@ -73,6 +73,9 @@ def physics_contract() -> dict:
             },
         },
         "mobility": {
+            "g3_model": "constant_field",
+            "doping_dependence_enabled": False,
+            "high_field_saturation_enabled": True,
             "doping_concentration_basis": "net_doping",
             "high_field_driving_force": "quasi_fermi_gradient",
             "high_field_gradient_discretization": "edge_projection",
@@ -144,10 +147,15 @@ class Phase23DeckTest(unittest.TestCase):
 
     def test_classical_solver_materializes_units_and_physics_layer(self) -> None:
         solver = classical_solver(physics_contract(), high_field=True)
-        self.assertEqual(solver["mobility"]["model"], "masetti_field")
-        self.assertAlmostEqual(solver["mobility"]["electron_mumin1_m2_V_s"], 0.00522)
+        self.assertEqual(solver["mobility"]["model"], "constant_field")
         self.assertAlmostEqual(
-            solver["mobility"]["electron_saturation_velocity_m_s"], 1.07e5)
+            solver["mobility"]["electron_saturation_velocity_m_s"], 1.07e7)
+        self.assertAlmostEqual(
+            solver["mobility"]["hole_saturation_velocity_m_s"], 8.37e6)
+        self.assertNotIn("electron_mumin1_m2_V_s", solver["mobility"])
+        self.assertNotIn("electron_cr_m3", solver["mobility"])
+        low_field = classical_solver(physics_contract(), high_field=False)
+        self.assertEqual(low_field["mobility"], {"model": "constant"})
         self.assertEqual(solver["impact_ionization"]["model"], "none")
         self.assertEqual(solver["line_search_mode"], "merit")
         self.assertEqual(solver["damping_factor"], 1.0)

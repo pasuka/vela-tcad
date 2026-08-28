@@ -68,7 +68,8 @@ bool isMasettiModel(const std::string& model)
 
 bool isFieldMobilityModel(const std::string& model)
 {
-    return model == "caughey_thomas_field" ||
+    return model == "constant_field" ||
+           model == "caughey_thomas_field" ||
            model == "caughey_thomas_field_surface" ||
            model == "masetti_field" ||
            model == "masetti_field_surface" ||
@@ -202,9 +203,11 @@ Real DopingDependentMobility::electronMobility(const Material& material,
                                                Real surfaceNormalField,
                                                Real surfaceDistance) const
 {
-    Real mobility = isMasettiModel(config_.model)
-        ? masetti(netDoping, config_.electronMasetti)
-        : caugheyThomas(material.mun, netDoping, config_.electronCT);
+    Real mobility = config_.model == "constant_field"
+        ? material.mun
+        : (isMasettiModel(config_.model)
+            ? masetti(netDoping, config_.electronMasetti)
+            : caugheyThomas(material.mun, netDoping, config_.electronCT));
     if (isFieldMobilityModel(config_.model))
         mobility = fieldLimit(mobility, electricField, config_.electronField);
     if (isSurfaceMobilityModel(config_))
@@ -225,9 +228,11 @@ Real DopingDependentMobility::holeMobility(const Material& material,
                                            Real surfaceNormalField,
                                            Real surfaceDistance) const
 {
-    Real mobility = isMasettiModel(config_.model)
-        ? masetti(netDoping, config_.holeMasetti)
-        : caugheyThomas(material.mup, netDoping, config_.holeCT);
+    Real mobility = config_.model == "constant_field"
+        ? material.mup
+        : (isMasettiModel(config_.model)
+            ? masetti(netDoping, config_.holeMasetti)
+            : caugheyThomas(material.mup, netDoping, config_.holeCT));
     if (isFieldMobilityModel(config_.model))
         mobility = fieldLimit(mobility, electricField, config_.holeField);
     if (isSurfaceMobilityModel(config_))
@@ -511,7 +516,8 @@ std::unique_ptr<MobilityModel> makeMobilityModel(const MobilityModelConfig& conf
 {
     if (config.model == "constant")
         return std::make_unique<ConstantMobility>();
-    if (config.model == "caughey_thomas" ||
+    if (config.model == "constant_field" ||
+        config.model == "caughey_thomas" ||
         config.model == "caughey_thomas_field" ||
         isMasettiModel(config.model) ||
         isSurfaceMobilityModel(config))

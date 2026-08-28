@@ -1,7 +1,7 @@
 {
   "schema": "vela.templates_ldmos.physics_contract.v1",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
-  "revision": 2,
+  "revision": 3,
   "materials_file": "materials.json",
   "temperature_K": 300.0,
   "carrier_statistics": {
@@ -51,7 +51,10 @@
     "implementation_status": "partial"
   },
   "mobility": {
-    "model": "masetti_field",
+    "model": "constant_field",
+    "g3_model": "constant_field",
+    "doping_dependence_enabled": false,
+    "high_field_saturation_enabled": true,
     "doping_concentration_basis": "net_doping",
     "high_field_driving_force": "quasi_fermi_gradient",
     "high_field_gradient_discretization": "edge_projection",
@@ -82,8 +85,8 @@
       "saturation_velocity_cm_per_s": 8.37e6,
       "high_field_exponent": 1.213
     },
-    "parameter_source": "T-2022.03 sdevice -P query: DopingDependence Formula=1 and HighFieldDependence Vsat_Formula=1 at 300 K",
-    "implementation_status": "partial"
+    "parameter_source": "G3-no-IALMob deck enables HighFieldSaturation only; T-2022.03 sdevice -P query supplies HighFieldDependence Vsat_Formula=1 at 300 K; retained Masetti values are inactive until a deck explicitly enables DopingDependence",
+    "implementation_status": "implemented"
   },
   "electron_quantum_potential": {
     "enabled": false,

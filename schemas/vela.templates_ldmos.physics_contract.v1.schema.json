@@ -65,9 +65,12 @@
     },
     "mobility": {
       "type": "object", "additionalProperties": false,
-      "required": ["model", "doping_concentration_basis", "high_field_driving_force", "high_field_gradient_discretization", "surface_model", "electron", "hole", "parameter_source", "implementation_status"],
+      "required": ["model", "g3_model", "doping_dependence_enabled", "high_field_saturation_enabled", "doping_concentration_basis", "high_field_driving_force", "high_field_gradient_discretization", "surface_model", "electron", "hole", "parameter_source", "implementation_status"],
       "properties": {
-        "model": {"enum": ["constant", "caughey_thomas", "caughey_thomas_field", "masetti", "masetti_field"]},
+        "model": {"enum": ["constant", "constant_field", "caughey_thomas", "caughey_thomas_field", "masetti", "masetti_field"]},
+        "g3_model": {"const": "constant_field"},
+        "doping_dependence_enabled": {"const": false},
+        "high_field_saturation_enabled": {"const": true},
         "doping_concentration_basis": {"enum": ["total_impurity", "net_doping"]},
         "high_field_driving_force": {"enum": ["electric_field", "quasi_fermi_gradient"]},
         "high_field_gradient_discretization": {"enum": ["edge_projection", "transport_cell_vector"]},

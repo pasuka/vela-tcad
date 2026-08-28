@@ -138,6 +138,10 @@ class TemplatesLdmosContractsTest(unittest.TestCase):
         physics = documents["physics_contract.json"]
         discretization = documents["discretization_contract.json"]
         self.assertEqual(physics["materials_file"], "materials.json")
+        self.assertEqual(physics["revision"], 3)
+        self.assertEqual(physics["mobility"]["g3_model"], "constant_field")
+        self.assertFalse(physics["mobility"]["doping_dependence_enabled"])
+        self.assertTrue(physics["mobility"]["high_field_saturation_enabled"])
         self.assertEqual(
             physics["discretization_profile"], discretization["profile_name"])
         self.assertFalse(physics["impact_ionization"]["enabled"])

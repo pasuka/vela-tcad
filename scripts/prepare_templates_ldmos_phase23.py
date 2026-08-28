@@ -93,6 +93,25 @@ def classical_solver(physics: dict[str, Any], *, high_field: bool) -> dict[str, 
     recombination = physics["recombination"]
     srh = recombination["srh_doping_dependence"]
     bgn = physics["bandgap_narrowing"]
+    mobility_config: dict[str, Any] = {
+        "model": mobility["g3_model"] if high_field else "constant",
+    }
+    if high_field:
+        if not mobility["high_field_saturation_enabled"]:
+            raise ValueError("G3 requires high_field_saturation_enabled=true")
+        if mobility["doping_dependence_enabled"]:
+            raise ValueError("G3-no-IALMob must not enable DopingDependence")
+        mobility_config.update({
+            "high_field_driving_force": mobility["high_field_driving_force"],
+            "high_field_gradient_discretization": mobility["high_field_gradient_discretization"],
+            # Legacy unit_scaling keys consume TCAD internal cm-based values.
+            # Do not convert these contract values to SI despite the historical
+            # key suffixes; format-version-2 migration will rename them later.
+            "electron_saturation_velocity_m_s": electron["saturation_velocity_cm_per_s"],
+            "electron_high_field_beta": electron["high_field_exponent"],
+            "hole_saturation_velocity_m_s": hole["saturation_velocity_cm_per_s"],
+            "hole_high_field_beta": hole["high_field_exponent"],
+        })
     return {
         "method": "newton",
         "max_iter": 100,
@@ -109,34 +128,7 @@ def classical_solver(physics: dict[str, Any], *, high_field: bool) -> dict[str, 
             "offset_eV": bgn["offset_eV"],
             "fermi_statistics_correction": bgn["fermi_statistics_correction"],
         },
-        "mobility": {
-            "model": "masetti_field" if high_field else "masetti",
-            "doping_concentration_basis": mobility["doping_concentration_basis"],
-            "high_field_driving_force": mobility["high_field_driving_force"],
-            "high_field_gradient_discretization": mobility["high_field_gradient_discretization"],
-            "electron_mu_const_m2_V_s": electron["mu_const_cm2_per_V_s"] * 1.0e-4,
-            "electron_mumin1_m2_V_s": electron["mu_min_cm2_per_V_s"] * 1.0e-4,
-            "electron_mumin2_m2_V_s": electron["mu_min2_cm2_per_V_s"] * 1.0e-4,
-            "electron_mu1_m2_V_s": electron["mu1_cm2_per_V_s"] * 1.0e-4,
-            "electron_pc_m3": electron["pc_cm3"] * 1.0e6,
-            "electron_cr_m3": electron["reference_doping_cm3"] * 1.0e6,
-            "electron_cs_m3": electron["cs_cm3"] * 1.0e6,
-            "electron_masetti_alpha": electron["doping_exponent"],
-            "electron_masetti_beta": electron["masetti_beta"],
-            "electron_saturation_velocity_m_s": electron["saturation_velocity_cm_per_s"] * 1.0e-2,
-            "electron_high_field_beta": electron["high_field_exponent"],
-            "hole_mu_const_m2_V_s": hole["mu_const_cm2_per_V_s"] * 1.0e-4,
-            "hole_mumin1_m2_V_s": hole["mu_min_cm2_per_V_s"] * 1.0e-4,
-            "hole_mumin2_m2_V_s": hole["mu_min2_cm2_per_V_s"] * 1.0e-4,
-            "hole_mu1_m2_V_s": hole["mu1_cm2_per_V_s"] * 1.0e-4,
-            "hole_pc_m3": hole["pc_cm3"] * 1.0e6,
-            "hole_cr_m3": hole["reference_doping_cm3"] * 1.0e6,
-            "hole_cs_m3": hole["cs_cm3"] * 1.0e6,
-            "hole_masetti_alpha": hole["doping_exponent"],
-            "hole_masetti_beta": hole["masetti_beta"],
-            "hole_saturation_velocity_m_s": hole["saturation_velocity_cm_per_s"] * 1.0e-2,
-            "hole_high_field_beta": hole["high_field_exponent"],
-        },
+        "mobility": mobility_config,
         "recombination": list(recombination["mechanisms"]),
         "taun": recombination["taun_s"],
         "taup": recombination["taup_s"],

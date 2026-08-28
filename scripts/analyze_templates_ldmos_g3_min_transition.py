@@ -348,27 +348,20 @@ def sentaurus_newton_state_delta(left: Path, right: Path) -> dict[str, Any]:
 
 
 def constant_high_field_control(baseline: Path, output: Path) -> Path:
-    """Materialize the closest current Vela proxy for HFS without DopingDep.
+    """Materialize Vela HFS without DopingDependence.
 
     Unit-scaling decks consume cm/um TCAD internal values even though legacy
-    key spellings contain SI-looking suffixes.  Setting CT mu_min equal to the
-    material mobility makes its doping factor identically constant, leaving
-    only the high-field limiter active.
+    key spellings contain SI-looking suffixes.  The explicit constant-field
+    model takes low-field mobility from the material contract and applies only
+    the high-field limiter.
     """
     config = json.loads(baseline.read_text(encoding="utf-8"))
     config["solver"]["mobility"] = {
-        "model": "caughey_thomas_field",
-        "doping_concentration_basis": "net_doping",
+        "model": "constant_field",
         "high_field_driving_force": "quasi_fermi_gradient",
         "high_field_gradient_discretization": "edge_projection",
-        "electron_mu_min_m2_V_s": 1417.0,
-        "electron_nref_m3": 1.0e17,
-        "electron_alpha": 1.0,
         "electron_saturation_velocity_m_s": 1.07e7,
         "electron_high_field_beta": 1.109,
-        "hole_mu_min_m2_V_s": 470.5,
-        "hole_nref_m3": 1.0e17,
-        "hole_alpha": 1.0,
         "hole_saturation_velocity_m_s": 8.37e6,
         "hole_high_field_beta": 1.213,
     }
