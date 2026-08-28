@@ -42,6 +42,13 @@ SENTAURUS_G3_DRAIN_PREBIAS_POINTS_V = [
     0.1,
 ]
 
+# The first accepted Sentaurus point at which the G3 transition discrepancy is
+# audited.  Keep this as a prefix of the sealed trajectory so the checkpoint is
+# reproducible without relying on a later-state restart or interpolation.
+SENTAURUS_G3_VD0P023_CHECKPOINT_POINTS_V = (
+    SENTAURUS_G3_DRAIN_PREBIAS_POINTS_V[:9]
+)
+
 
 def read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
@@ -341,6 +348,14 @@ def prepare(stage1_dir: Path, oracle_dir: Path, contracts_dir: Path,
         flatband_V=flatband, gate_V=0.0, drain_V=0.0,
         swept_contact="drain",
         bias_points=list(SENTAURUS_G3_DRAIN_PREBIAS_POINTS_V),
+        initial_state=output / "g_contact_polysi_eq_repeat_state.csv",
+        output_dir=output, high_field=True)
+    decks["g3_drain_prebias_vd0p023_checkpoint"] = dc_deck(
+        name="g3_drain_prebias_vd0p023_checkpoint",
+        mesh=exact / "mesh.json", doping=exact / "doping.csv",
+        materials=materials, physics=physics, flatband_V=flatband,
+        gate_V=0.0, drain_V=0.0, swept_contact="drain",
+        bias_points=list(SENTAURUS_G3_VD0P023_CHECKPOINT_POINTS_V),
         initial_state=output / "g_contact_polysi_eq_repeat_state.csv",
         output_dir=output, high_field=True)
     decks["g3_drain_prebias_repeat"] = dc_deck(

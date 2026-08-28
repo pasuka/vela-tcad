@@ -3373,6 +3373,37 @@ NewtonResidualEvaluation NewtonSolver::evaluateResidual(const DDSolution& state)
     return evaluation;
 }
 
+NewtonPoissonTermEvaluation NewtonSolver::evaluatePoissonTerms(
+    const DDSolution& state) const
+{
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(
+            cfg_.recombination, cfg_.taun, cfg_.taup,
+            cfg_.srhDopingDependence);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.bandToBand = cfg_.bandToBand;
+    CoupledDDAssembler assembler(
+        mesh_, matdb_, doping_, Vt, mobilityConfig, recombinationConfig,
+        cfg_.bandgapNarrowing, cfg_.impactIonization, fixedCharges_,
+        sheetCharges_, buildScalingSpec(), cfg_.carrierDiagonalFloor,
+        cfg_.carrierStatistics, cfg_.electronQuantumPotential);
+    restoreElectronQuantumPotential(assembler, state);
+    configureQuasiFermiReferences(assembler);
+    const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const VectorXd x = packReferencedSolution(assembler, state, bcs);
+
+    NewtonPoissonTermEvaluation evaluation;
+    evaluation.rows = assembler.poissonTermDiagnostics(x, bcs);
+    evaluation.scaledState = assembler.usesScaledState();
+    evaluation.potentialScale = potentialScale;
+    return evaluation;
+}
+
 NewtonStepEvaluation NewtonSolver::evaluateStep(const DDSolution& state) const
 {
     const double Vt = thermalVoltage(cfg_.temperature_K);

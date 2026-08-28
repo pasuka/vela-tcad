@@ -116,6 +116,47 @@ TEST_CASE("CoupledDDAssembler: Newton Poisson residual consumes fixed trap occup
     REQUIRE(r1(2) - r0(2) == Catch::Approx(expectedEndpointResidualShift).epsilon(1e-12));
 }
 
+TEST_CASE("CoupledDDAssembler: Poisson term diagnostics close production rows",
+          "[interface][newton][diagnostic]")
+{
+    DeviceMesh mesh = makeMOSInterfaceMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makeZeroDoping(mesh);
+    CoupledDDAssembler assembler(
+        mesh, matdb, doping, constants::Vt_300, 1.0e-7, 1.0e-7, {},
+        {InterfaceSheetChargeSpec{
+            "silicon", "oxide", 2.0e15, 0.0, 4.0e15, 0.25}});
+
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi = VectorXd::LinSpaced(N, -0.05, 0.10);
+    state.phin = VectorXd::Zero(N);
+    state.phip = VectorXd::Zero(N);
+    CoupledDDBoundaryConditions bcs;
+    bcs.psi[0] = 0.025;
+    const VectorXd x = assembler.pack(state);
+    const VectorXd production = assembler.residual(x, bcs);
+    const auto rows = assembler.poissonTermDiagnostics(x, bcs);
+
+    REQUIRE(rows.size() == static_cast<std::size_t>(N));
+    for (const auto& row : rows) {
+        const Real componentSum =
+            row.dielectricFlux + row.electronCharge + row.holeCharge +
+            row.dopingCharge + row.fixedInterfaceCharge +
+            row.boundaryReplacement;
+        REQUIRE(row.productionResidual == Catch::Approx(
+            production(static_cast<int>(row.nodeId))).epsilon(1.0e-13));
+        REQUIRE(componentSum == Catch::Approx(row.productionResidual)
+            .epsilon(1.0e-13).margin(1.0e-30));
+        REQUIRE(std::abs(row.closureError) <= 1.0e-30);
+    }
+    REQUIRE(rows[0].constrained);
+    REQUIRE(rows[0].boundaryReplacement != 0.0);
+    REQUIRE_FALSE(rows[1].constrained);
+    REQUIRE(rows[1].fixedInterfaceCharge != 0.0);
+    REQUIRE(rows[2].fixedInterfaceCharge != 0.0);
+}
+
 TEST_CASE("ConfigParsing: interface trap occupancy outside unit interval is rejected", "[interface][traps][config]")
 {
     const nlohmann::json cfg = {

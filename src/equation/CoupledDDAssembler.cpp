@@ -1099,6 +1099,84 @@ VectorXd CoupledDDAssembler::feedbackSubstitutionResidual(
     return residualImpl(x, bcs, &substitution);
 }
 
+std::vector<CoupledDDPoissonTermDiagnostic>
+CoupledDDAssembler::poissonTermDiagnostics(
+    const VectorXd& x,
+    const CoupledDDBoundaryConditions& bcs) const
+{
+    const Index Nidx = mesh_.numNodes();
+    const int N = static_cast<int>(Nidx);
+    if (x.size() != 3 * N) {
+        throw std::invalid_argument(
+            "CoupledDDAssembler::poissonTermDiagnostics: vector size mismatch.");
+    }
+
+    std::vector<CoupledDDPoissonTermDiagnostic> terms(Nidx);
+    for (Index node = 0; node < Nidx; ++node)
+        terms[node].nodeId = node;
+
+    const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
+    for (Index edgeId = 0; edgeId < mesh_.numEdges(); ++edgeId) {
+        const Edge& edge = mesh_.getEdge(edgeId);
+        if (edge.length < 1.0e-30)
+            continue;
+        const Real eps = detail::edgeEpsilon(
+            edgeCells_, mesh_, matdb_, edgeId);
+        const Real conductance = eps * couple_[edgeId] / edge.length;
+        const Real flux = conductance * potentialScale *
+            (x(psiOffset() + static_cast<int>(edge.n0)) -
+             x(psiOffset() + static_cast<int>(edge.n1)));
+        terms[edge.n0].dielectricFlux += flux;
+        terms[edge.n1].dielectricFlux -= flux;
+    }
+
+    const VectorXd n = electronDensity(x);
+    const VectorXd p = holeDensity(x);
+    const Real chargeAreaFactor =
+        scaling_.enabled ? scaling_.chargeAreaFactor : 1.0;
+    for (Index node = 0; node < Nidx; ++node) {
+        const int i = static_cast<int>(node);
+        const Real chargeMeasure =
+            constants::q * vol_[node] * chargeAreaFactor;
+        terms[node].reconstructedElectronDensity = n(i);
+        terms[node].reconstructedHoleDensity = p(i);
+        terms[node].electronCharge = chargeMeasure * n(i);
+        terms[node].holeCharge = -chargeMeasure * p(i);
+        terms[node].dopingCharge =
+            -chargeMeasure * doping_.netDoping(node);
+        terms[node].fixedInterfaceCharge = -fixedInterfaceChargeRhs_(i);
+    }
+
+    if (scaling_.enabled) {
+        const Real poissonScale =
+            scaling_.permittivityReference_F_per_m * scaling_.V0;
+        for (auto& term : terms) {
+            term.dielectricFlux /= poissonScale;
+            term.electronCharge /= poissonScale;
+            term.holeCharge /= poissonScale;
+            term.dopingCharge /= poissonScale;
+            term.fixedInterfaceCharge /= poissonScale;
+        }
+    }
+
+    const VectorXd production = residual(x, bcs);
+    for (Index node = 0; node < Nidx; ++node) {
+        auto& term = terms[node];
+        term.unconstrainedResidual =
+            term.dielectricFlux + term.electronCharge + term.holeCharge +
+            term.dopingCharge + term.fixedInterfaceCharge;
+        term.productionResidual =
+            production(psiOffset() + static_cast<int>(node));
+        term.constrained = bcs.psi.find(node) != bcs.psi.end();
+        term.boundaryReplacement = term.constrained
+            ? term.productionResidual - term.unconstrainedResidual
+            : 0.0;
+        term.closureError = term.productionResidual -
+            (term.unconstrainedResidual + term.boundaryReplacement);
+    }
+    return terms;
+}
+
 VectorXd CoupledDDAssembler::residualImpl(
     const VectorXd& x,
     const CoupledDDBoundaryConditions& bcs,

@@ -82,6 +82,26 @@ struct CoupledDDCarrierTermDiagnostic {
     Real holeResidual = 0.0;
 };
 
+// Diagnostic-only decomposition of the Poisson row assembled by residual().
+// All contribution fields use the production residual's scaled coordinates;
+// boundaryReplacement is the amount by which a Dirichlet contact row replaces
+// the unconstrained physical equation.
+struct CoupledDDPoissonTermDiagnostic {
+    Index nodeId = 0;
+    Real reconstructedElectronDensity = 0.0;
+    Real reconstructedHoleDensity = 0.0;
+    Real dielectricFlux = 0.0;
+    Real electronCharge = 0.0;
+    Real holeCharge = 0.0;
+    Real dopingCharge = 0.0;
+    Real fixedInterfaceCharge = 0.0;
+    Real unconstrainedResidual = 0.0;
+    Real boundaryReplacement = 0.0;
+    Real productionResidual = 0.0;
+    Real closureError = 0.0;
+    bool constrained = false;
+};
+
 struct CoupledDDEdgeFluxDiagnostic {
     Index edgeId = 0;
     Index node0 = 0;
@@ -240,6 +260,10 @@ public:
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs,
         const CoupledDDFeedbackStateSubstitution& substitution) const;
+
+    std::vector<CoupledDDPoissonTermDiagnostic> poissonTermDiagnostics(
+        const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs) const;
 
     SparseMatrixd assembleJacobian(
         const VectorXd& x,

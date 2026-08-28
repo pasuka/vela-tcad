@@ -318,6 +318,12 @@ struct NewtonResidualEvaluation {
     Real potentialScale = 1.0;
 };
 
+struct NewtonPoissonTermEvaluation {
+    std::vector<CoupledDDPoissonTermDiagnostic> rows;
+    bool scaledState = false;
+    Real potentialScale = 1.0;
+};
+
 struct NewtonStepEvaluation {
     NewtonResidualEvaluation residual;
     NewtonResidualEvaluation trialResidual;
@@ -643,6 +649,8 @@ public:
     /// potential extrapolation observed in Sentaurus ABA after equilibrium.
     NewtonResult solvePoissonOnly(const DDSolution& initial) const;
     NewtonResidualEvaluation evaluateResidual(const DDSolution& state) const;
+    NewtonPoissonTermEvaluation evaluatePoissonTerms(
+        const DDSolution& state) const;
     Real maxContactMajorityQuasiFermiDrop(const DDSolution& state) const;
     NewtonStepEvaluation evaluateStep(const DDSolution& state) const;
     std::vector<NewtonFeedbackSubstitutionEvaluation>

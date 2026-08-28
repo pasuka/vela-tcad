@@ -11255,6 +11255,24 @@ LOOKUP_TABLE default
             rows = self._read_csv(output)
             status = json.loads(result.stdout)
 
+            poisson_output = root / "poisson_terms.csv"
+            poisson_config = json.loads(config.read_text())
+            poisson_config["simulation_type"] = "newton_poisson_term_probe"
+            poisson_config["output_csv"] = str(poisson_output)
+            config.write_text(json.dumps(poisson_config, indent=2) + "\n")
+            poisson_result = subprocess.run(
+                [str(runner), "--config", str(config)],
+                cwd=REPO,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(
+                poisson_result.returncode, 0, poisson_result.stderr)
+            poisson_rows = self._read_csv(poisson_output)
+            poisson_status = json.loads(poisson_result.stdout)
+
         self.assertEqual(len(rows), 4)
         self.assertIn("block_residuals", status)
         self.assertIn("psi_residual", rows[0])
@@ -11263,6 +11281,20 @@ LOOKUP_TABLE default
         self.assertIn("ni_eff_m3", rows[0])
         self.assertAlmostEqual(float(rows[0]["donors_m3"]), 2.0e23)
         self.assertAlmostEqual(float(rows[3]["acceptors_m3"]), 2.0e23)
+        self.assertEqual(len(poisson_rows), 4)
+        self.assertEqual(poisson_status["constrained_rows"], 4)
+        self.assertLessEqual(poisson_status["max_abs_closure_error"], 1.0e-12)
+        for row in poisson_rows:
+            self.assertIn("input_electron_density_m3", row)
+            self.assertIn("reconstructed_electron_density_m3", row)
+            component_sum = sum(float(row[name]) for name in (
+                "dielectric_flux", "electron_charge", "hole_charge",
+                "doping_charge", "fixed_interface_charge",
+                "boundary_replacement",
+            ))
+            self.assertAlmostEqual(
+                component_sum, float(row["production_residual"]), places=12)
+            self.assertEqual(row["constrained"], "1")
 
     def test_runner_writes_newton_step_probe_for_external_state(self) -> None:
         exe_name = "vela_example_runner.exe" if sys.platform.startswith("win") else "vela_example_runner"

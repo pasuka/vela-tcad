@@ -222,6 +222,9 @@ class Phase23DeckTest(unittest.TestCase):
             sentaurus_path = json.loads(Path(
                 manifest["decks"]["g3_drain_prebias_sentaurus_path"]
             ).read_text())
+            checkpoint = json.loads(Path(
+                manifest["decks"]["g3_drain_prebias_vd0p023_checkpoint"]
+            ).read_text())
             prebias_repeat = json.loads(Path(
                 manifest["decks"]["g3_drain_prebias_repeat"]
             ).read_text())
@@ -241,6 +244,20 @@ class Phase23DeckTest(unittest.TestCase):
             self.assertEqual(
                 sentaurus_path["sweep"]["bias_points"],
                 SENTAURUS_G3_DRAIN_PREBIAS_POINTS_V,
+            )
+            self.assertEqual(
+                checkpoint["sweep"]["bias_points"],
+                SENTAURUS_G3_DRAIN_PREBIAS_POINTS_V[:9],
+            )
+            self.assertEqual(
+                checkpoint["sweep"]["bias_points"][-1],
+                0.0231559774221138,
+            )
+            self.assertNotIn("predictor", checkpoint["sweep"])
+            self.assertTrue(
+                checkpoint["sweep"]["write_state_file"].endswith(
+                    "g3_drain_prebias_vd0p023_checkpoint_state.csv"
+                )
             )
             self.assertEqual(prebias["sweep"]["bias_points"], [0.0, 0.1])
             self.assertTrue(

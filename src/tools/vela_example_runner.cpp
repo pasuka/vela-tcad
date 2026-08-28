@@ -943,6 +943,47 @@ void writeResidualProbeCsv(const std::filesystem::path& path,
     }
 }
 
+void writePoissonTermProbeCsv(
+    const std::filesystem::path& path,
+    const vela::DeviceMesh& mesh,
+    const vela::DopingModel& doping,
+    const vela::DDSolution& state,
+    const vela::NewtonPoissonTermEvaluation& evaluation,
+    const vela::UnitScalingConfig& scaling)
+{
+    std::ofstream out(path);
+    if (!out.is_open()) {
+        throw std::runtime_error(
+            "Cannot write Poisson term probe CSV: " + path.string());
+    }
+    out << std::setprecision(17);
+    out << "node_id,x,y,psi,phin,phip,net_doping_m3,"
+        << "input_electron_density_m3,input_hole_density_m3,"
+        << "reconstructed_electron_density_m3,reconstructed_hole_density_m3,"
+        << "dielectric_flux,electron_charge,hole_charge,doping_charge,"
+        << "fixed_interface_charge,unconstrained_residual,"
+        << "boundary_replacement,production_residual,closure_error,constrained\n";
+    const auto& units = scaling.unitSystem();
+    for (const auto& row : evaluation.rows) {
+        const auto& node = mesh.getNode(row.nodeId);
+        const int i = static_cast<int>(row.nodeId);
+        out << row.nodeId << ',' << node.x << ',' << node.y << ','
+            << state.psi(i) << ',' << state.phin(i) << ',' << state.phip(i) << ','
+            << units.internalConcentrationToM3(doping.netDoping(row.nodeId)) << ','
+            << units.internalConcentrationToM3(state.n(i)) << ','
+            << units.internalConcentrationToM3(state.p(i)) << ','
+            << units.internalConcentrationToM3(
+                   row.reconstructedElectronDensity) << ','
+            << units.internalConcentrationToM3(
+                   row.reconstructedHoleDensity) << ','
+            << row.dielectricFlux << ',' << row.electronCharge << ','
+            << row.holeCharge << ',' << row.dopingCharge << ','
+            << row.fixedInterfaceCharge << ',' << row.unconstrainedResidual << ','
+            << row.boundaryReplacement << ',' << row.productionResidual << ','
+            << row.closureError << ',' << (row.constrained ? 1 : 0) << '\n';
+    }
+}
+
 nlohmann::json runNewtonResidualProbe(const std::string& configFile, const nlohmann::json& cfg)
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
@@ -968,6 +1009,44 @@ nlohmann::json runNewtonResidualProbe(const std::string& configFile, const nlohm
             {"phip", residual.blockNorms.phip},
             {"combined", residual.blockNorms.combined},
         }},
+    };
+}
+
+nlohmann::json runNewtonPoissonTermProbe(
+    const std::string& configFile,
+    const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    const vela::DDSolution state =
+        readExternalState(cfgDir, cfg, problem.mesh.numNodes());
+    const vela::NewtonSolver solver = makeNewtonSolver(problem);
+    const vela::NewtonPoissonTermEvaluation evaluation =
+        solver.evaluatePoissonTerms(state);
+    writePoissonTermProbeCsv(
+        resolvePath(cfgDir, cfg.at("output_csv").get<std::string>()),
+        problem.mesh, problem.doping, state, evaluation,
+        problem.newton.inputScaling);
+
+    vela::Real maxClosureError = 0.0;
+    vela::Real maxProductionResidual = 0.0;
+    vela::Index constrainedRows = 0;
+    for (const auto& row : evaluation.rows) {
+        maxClosureError = std::max(maxClosureError, std::abs(row.closureError));
+        maxProductionResidual = std::max(
+            maxProductionResidual, std::abs(row.productionResidual));
+        if (row.constrained)
+            ++constrainedRows;
+    }
+    return {
+        {"nodes", problem.mesh.numNodes()},
+        {"scaled_state", evaluation.scaledState},
+        {"potential_scale", evaluation.potentialScale},
+        {"constrained_rows", constrainedRows},
+        {"max_abs_production_residual", maxProductionResidual},
+        {"max_abs_closure_error", maxClosureError},
+        {"output_csv", resolvePath(
+            cfgDir, cfg.at("output_csv").get<std::string>())}
     };
 }
 
@@ -3111,6 +3190,8 @@ int main(int argc, char** argv)
             status.update(runNewtonSolveFromState(configFile, cfg));
         } else if (type == "newton_residual_probe") {
             status.update(runNewtonResidualProbe(configFile, cfg));
+        } else if (type == "newton_poisson_term_probe") {
+            status.update(runNewtonPoissonTermProbe(configFile, cfg));
         } else if (type == "newton_step_probe") {
             status.update(runNewtonStepProbe(configFile, cfg));
         } else if (type == "newton_feedback_substitution_probe") {

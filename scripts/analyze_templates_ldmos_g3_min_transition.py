@@ -101,6 +101,7 @@ def probe_suite(
         "sg_edge_flux_probe",
         "edge_mobility_probe",
         "newton_residual_probe",
+        "newton_poisson_term_probe",
         "newton_carrier_term_probe",
     ):
         csv_path, status = base.run_probe(
@@ -138,6 +139,8 @@ def probe_suite(
         "endpoint_density": base.endpoint_density_metrics(sentaurus_export, sg_rows),
         "contact_cut_currents_A_per_um": contact_cut_currents(sentaurus_export, sg_rows),
         "residual_extrema": residual_extrema(rows["newton_residual"]),
+        "poisson_term_extrema": poisson_term_extrema(
+            rows["newton_poisson_term"]),
         "carrier_term_extrema": carrier_term_extrema(rows["newton_carrier_term"]),
         "first_step_extrema": step_extrema(rows["newton_step"]),
     }
@@ -213,6 +216,49 @@ def residual_extrema(rows: list[dict[str, str]]) -> dict[str, Any]:
                 "node_id": int(top["node_id"]),
                 # Probe node coordinates preserve the unit-scaling mesh's um
                 # coordinates; unlike SG edge rows they are not exported in m.
+                "x_um": float(top["x"]),
+                "y_um": float(top["y"]),
+                "value": float(top[column]),
+            },
+        }
+    return result
+
+
+def poisson_term_extrema(rows: list[dict[str, str]]) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "nodes": len(rows),
+        "constrained_rows": sum(int(row["constrained"]) for row in rows),
+    }
+    for carrier in ("electron", "hole"):
+        supplied = f"input_{carrier}_density_m3"
+        reconstructed = f"reconstructed_{carrier}_density_m3"
+        errors = (
+            abs(math.log10(max(float(row[supplied]), 1.0)) -
+                math.log10(max(float(row[reconstructed]), 1.0)))
+            for row in rows
+        )
+        result[f"{carrier}_density_reconstruction_abs_error_dex"] = (
+            distribution(errors)
+        )
+    for column in (
+        "dielectric_flux",
+        "electron_charge",
+        "hole_charge",
+        "doping_charge",
+        "fixed_interface_charge",
+        "unconstrained_residual",
+        "boundary_replacement",
+        "production_residual",
+        "closure_error",
+    ):
+        ranked = sorted(
+            rows, key=lambda row: abs(float(row[column])), reverse=True)
+        top = ranked[0]
+        result[column] = {
+            "absolute": distribution(abs(float(row[column])) for row in rows),
+            "signed_sum": sum(float(row[column]) for row in rows),
+            "top": {
+                "node_id": int(top["node_id"]),
                 "x_um": float(top["x"]),
                 "y_um": float(top["y"]),
                 "value": float(top[column]),
