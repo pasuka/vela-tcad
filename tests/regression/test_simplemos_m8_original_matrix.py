@@ -36,6 +36,10 @@ class SimpleMosM8OriginalMatrixTest(unittest.TestCase):
             ["PhuMob", "HighFieldSaturation", "Enormal"],
             physics["mobility"])
         self.assertEqual("SRH(DopingDependence)", physics["recombination"])
+        srh = physics["srh_scharfetter_defaults"]
+        self.assertEqual(1.0e-5, srh["electron"]["tau_max_s"])
+        self.assertEqual(3.0e-6, srh["hole"]["tau_max_s"])
+        self.assertEqual(1.0e16, srh["electron"]["reference_doping_cm3"])
         self.assertEqual(list(range(17, 25)), [
             item["workbench_process_node"] for item in self.contract["devices"]
         ])
@@ -82,6 +86,19 @@ class SimpleMosM8OriginalMatrixTest(unittest.TestCase):
                 manifest["inputs"][0]["tdr_sha256"],
                 manifest["inputs"][1]["tdr_sha256"])
 
+    def test_vela_base_uses_simplemos_default_srh_lifetimes(self) -> None:
+        config = MODULE.m4.base_config(
+            Path("mesh.json"), Path("doping.csv"), Path("materials.json"),
+            {"model": "phumob_field_lombardi"})
+        MODULE.apply_simplemos_srh_defaults(config, self.contract)
+        srh_config = config["solver"]["srh_doping_dependence"]
+        self.assertEqual(1.0e-5, srh_config["electron"]["tau_max_s"])
+        self.assertEqual(3.0e-6, srh_config["hole"]["tau_max_s"])
+
+    def test_parallel_execution_rejects_zero_workers(self) -> None:
+        with self.assertRaisesRegex(ValueError, "at least one"):
+            MODULE.execute_vela([], Path("unused"), Path("runner"), jobs=0)
+
     def test_tdr_spec_and_device_selection_reject_ambiguous_inputs(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_simplemos_m8_") as temporary:
             path = Path(temporary) / "input.tdr"
@@ -106,9 +123,9 @@ class SimpleMosM8OriginalMatrixTest(unittest.TestCase):
             }), encoding="utf-8")
             MODULE.require_nominal_gate(CONTRACT_PATH, devices, root)
 
-    def test_checked_in_evidence_records_complete_failed_matrix(self) -> None:
+    def test_checked_in_evidence_records_complete_accepted_matrix(self) -> None:
         evidence = MODULE.read_json(EVIDENCE_PATH)
-        self.assertEqual("failed", evidence["status"])
+        self.assertEqual("accepted", evidence["status"])
         self.assertEqual(
             hashlib.sha256(CONTRACT_PATH.read_bytes()).hexdigest(),
             evidence["contract_sha256"])
@@ -128,7 +145,7 @@ class SimpleMosM8OriginalMatrixTest(unittest.TestCase):
 
         comparison_path = EVIDENCE_PATH.parent / evidence["comparison"]["report"]
         comparison = MODULE.read_json(comparison_path)
-        self.assertEqual("fail", comparison["status"])
+        self.assertEqual("pass", comparison["status"])
         self.assertEqual(
             evidence["comparison"]["report_sha256"],
             hashlib.sha256(comparison_path.read_bytes()).hexdigest())
@@ -137,9 +154,12 @@ class SimpleMosM8OriginalMatrixTest(unittest.TestCase):
                   if item["status"] == "pass"}
         failed = {item["device"] for item in comparison["cases"]
                   if item["status"] == "fail"}
-        self.assertEqual({"n17", "n18", "n19", "n20"}, passed)
-        self.assertEqual({"n21", "n22", "n23", "n24"}, failed)
+        self.assertEqual({f"n{index}" for index in range(17, 25)}, passed)
+        self.assertEqual(set(), failed)
         self.assertTrue(all(item["trend_match"] for item in comparison["cases"]))
+        repair_path = EVIDENCE_PATH.parent / evidence["repair"]["evidence"]
+        self.assertEqual(
+            evidence["repair"]["evidence_sha256"], MODULE.sha256(repair_path))
         for item in comparison["cases"]:
             comparison_csv = Path(item["comparison_csv"])
             self.assertFalse(comparison_csv.is_absolute())
@@ -147,6 +167,12 @@ class SimpleMosM8OriginalMatrixTest(unittest.TestCase):
                 comparison_csv = ROOT / comparison_csv
             self.assertEqual(item["comparison_csv_sha256"],
                              MODULE.sha256(comparison_csv))
+        self.assertEqual("generated", evidence["visualization"]["status"])
+        self.assertEqual(4, len(evidence["visualization"]["figures"]))
+        for figure in evidence["visualization"]["figures"]:
+            figure_path = ROOT / figure["path"]
+            self.assertTrue(figure_path.is_file())
+            self.assertEqual(figure["sha256"], MODULE.sha256(figure_path))
         for relative, expected_hash in evidence["implementation_sha256"].items():
             self.assertEqual(expected_hash, MODULE.sha256(ROOT / relative))
 

@@ -1,10 +1,10 @@
 {
   "schema": "vela.simplemos.sdevice.m8_evidence.v1",
-  "status": "failed",
+  "status": "accepted",
   "scope": "SDevice-only original SimpleMOS physics comparison",
-  "qualification_date": "2026-08-27",
+  "qualification_date": "2026-08-28",
   "contract": "simplemos_m8_original_physics_contract_v1.json",
-  "contract_sha256": "8096b0d4874b090df110096e239fb53041f9cc5af47bbad72d4b8eb8f90ba8e3",
+  "contract_sha256": "3ea9d39250675e533edfd6bac350eace8cc55473133d3a52c6dc8d82b53f235e",
   "source_deck": {
     "path": "/atctools/Synopsys/tcad/T-2022.03/tcad/T-2022.03-SP2/Applications_Library/GettingStarted/swb/SimpleMOS/sdevice_des.cmd",
     "sha256": "3fd501cad368aa43c55a780253309428872a4b3349aa03727f8a875d04a4b536"
@@ -86,14 +86,14 @@
     "auxiliary_drain_points_have_acceptance_role": false
   },
   "comparison": {
-    "status": "fail",
+    "status": "pass",
     "report": "original_physics/comparisons/comparison_report.json",
-    "report_sha256": "69c5220e416e968f43a8b33857eb5b2290404f9754997dcfb94ba4f10c88f2cf",
+    "report_sha256": "310abd8a1c7dea901daa15ac1aa96fb7cad5f421c6016a5b480701b87ab4598f",
     "case_count": 16,
-    "passed_cases": 8,
-    "maximum_absolute_log10_ratio_observed": 0.5777755075583471,
-    "maximum_relative_error_observed": 2.782470133953869,
-    "maximum_absolute_endpoint_log10_ratio_observed": 0.013174412340316003,
+    "passed_cases": 16,
+    "maximum_absolute_log10_ratio_observed": 0.10941868092427424,
+    "maximum_relative_error_observed": 0.28652633602019956,
+    "maximum_absolute_endpoint_log10_ratio_observed": 0.013174412341053722,
     "trend_matches": 16,
     "limits": {
       "maximum_absolute_log10_ratio": 0.3,
@@ -104,136 +104,165 @@
       {
         "case": "n17_vd_0p05",
         "status": "pass",
-        "max_log10_ratio": 0.04218228372382824,
-        "median_log10_ratio": 0.010523488003512944,
-        "max_relative_error": 0.10200174883153848,
-        "endpoint_log10_ratio": -0.012470687694979169
+        "max_log10_ratio": 0.04172703523666418,
+        "median_log10_ratio": 0.010523488004350455,
+        "max_relative_error": 0.1008471825252534,
+        "endpoint_log10_ratio": -0.012470687695711476
       },
       {
         "case": "n17_vd_1",
         "status": "pass",
-        "max_log10_ratio": 0.0322235074087284,
-        "median_log10_ratio": 0.004836749171839322,
-        "max_relative_error": 0.07701935346439483,
-        "endpoint_log10_ratio": 0.00013602382020517633
+        "max_log10_ratio": 0.0322235035136669,
+        "median_log10_ratio": 0.004836749169218508,
+        "max_relative_error": 0.07701934380491994,
+        "endpoint_log10_ratio": 0.00013602381938093453
       },
       {
         "case": "n18_vd_0p05",
         "status": "pass",
-        "max_log10_ratio": 0.04207316641847823,
-        "median_log10_ratio": 0.011387341690195672,
-        "max_relative_error": 0.10172490360002351,
-        "endpoint_log10_ratio": -0.013174412340316003
+        "max_log10_ratio": 0.04148372764472475,
+        "median_log10_ratio": 0.011387341691047175,
+        "max_relative_error": 0.10023062055147056,
+        "endpoint_log10_ratio": -0.013174412341053722
       },
       {
         "case": "n18_vd_1",
         "status": "pass",
-        "max_log10_ratio": 0.03292572981019346,
-        "median_log10_ratio": 0.004532166787241162,
-        "max_relative_error": 0.07876222362433995,
-        "endpoint_log10_ratio": 0.00016312356953024823
+        "max_log10_ratio": 0.03292572642896659,
+        "median_log10_ratio": 0.004532166784768337,
+        "max_relative_error": 0.07876221522556916,
+        "endpoint_log10_ratio": 0.00016312356220391896
       },
       {
         "case": "n19_vd_0p05",
         "status": "pass",
-        "max_log10_ratio": 0.03986460020063145,
-        "median_log10_ratio": 0.008846353935922868,
-        "max_relative_error": 0.09613640090228448,
-        "endpoint_log10_ratio": -0.00964135176046826
+        "max_log10_ratio": 0.037075268367692364,
+        "median_log10_ratio": 0.008846353936664048,
+        "max_relative_error": 0.08911883414634526,
+        "endpoint_log10_ratio": -0.00964135176113892
       },
       {
         "case": "n19_vd_1",
         "status": "pass",
-        "max_log10_ratio": 0.027452089672251746,
-        "median_log10_ratio": 0.005230629229592974,
-        "max_relative_error": 0.06525134120702944,
-        "endpoint_log10_ratio": 0.0014486481426424377
+        "max_log10_ratio": 0.02745208678107426,
+        "median_log10_ratio": 0.0052306292257140044,
+        "max_relative_error": 0.06525133411545735,
+        "endpoint_log10_ratio": 0.0014486481410140185
       },
       {
         "case": "n20_vd_0p05",
         "status": "pass",
-        "max_log10_ratio": 0.04572430400910805,
-        "median_log10_ratio": 0.009747229202344923,
-        "max_relative_error": 0.11102620895623853,
-        "endpoint_log10_ratio": -0.010641638353404355
+        "max_log10_ratio": 0.045587315934851394,
+        "median_log10_ratio": 0.009747229203109685,
+        "max_relative_error": 0.11067581689249885,
+        "endpoint_log10_ratio": -0.010641638354081454
       },
       {
         "case": "n20_vd_1",
         "status": "pass",
-        "max_log10_ratio": 0.028021907733472146,
-        "median_log10_ratio": 0.004890334788594002,
-        "max_relative_error": 0.06664992641059016,
-        "endpoint_log10_ratio": 0.0014127543370707591
+        "max_log10_ratio": 0.028021899776939717,
+        "median_log10_ratio": 0.004890334785243776,
+        "max_relative_error": 0.0666499068689312,
+        "endpoint_log10_ratio": 0.0014127543342920387
       },
       {
         "case": "n21_vd_0p05",
-        "status": "fail",
-        "max_log10_ratio": 0.3497203674450056,
-        "median_log10_ratio": 0.00977220456939799,
-        "max_relative_error": 1.237280139796147,
-        "endpoint_log10_ratio": -0.00977220456939799
+        "status": "pass",
+        "max_log10_ratio": 0.07374837507777213,
+        "median_log10_ratio": 0.009772204570424353,
+        "max_relative_error": 0.18508192721389366,
+        "endpoint_log10_ratio": -0.009772204570424353
       },
       {
         "case": "n21_vd_1",
-        "status": "fail",
-        "max_log10_ratio": 0.4834657084209611,
-        "median_log10_ratio": 0.012355699690224086,
-        "max_relative_error": 2.0441476168327077,
-        "endpoint_log10_ratio": 0.0011422312877579389
+        "status": "pass",
+        "max_log10_ratio": 0.05808652051250995,
+        "median_log10_ratio": 0.010875419335348888,
+        "max_relative_error": 0.1431060426556481,
+        "endpoint_log10_ratio": 0.0011422312412581546
       },
       {
         "case": "n22_vd_0p05",
-        "status": "fail",
-        "max_log10_ratio": 0.3210703882185177,
-        "median_log10_ratio": 0.009645355289612854,
-        "max_relative_error": 1.0944518863454462,
-        "endpoint_log10_ratio": -0.01002463571078324
+        "status": "pass",
+        "max_log10_ratio": 0.0644330815366874,
+        "median_log10_ratio": 0.009645355290542341,
+        "max_relative_error": 0.1599334734993115,
+        "endpoint_log10_ratio": -0.010024635711691088
       },
       {
         "case": "n22_vd_1",
-        "status": "fail",
-        "max_log10_ratio": 0.44695672584067087,
-        "median_log10_ratio": 0.012190560071425414,
-        "max_relative_error": 1.7987024362169826,
-        "endpoint_log10_ratio": 0.0012244219441444534
+        "status": "pass",
+        "max_log10_ratio": 0.05896965729853152,
+        "median_log10_ratio": 0.012190560063274175,
+        "max_relative_error": 0.14543291108715872,
+        "endpoint_log10_ratio": 0.001224422065146178
       },
       {
         "case": "n23_vd_0p05",
-        "status": "fail",
-        "max_log10_ratio": 0.5371203380038353,
-        "median_log10_ratio": 0.01511468897409998,
-        "max_relative_error": 2.444453593874535,
-        "endpoint_log10_ratio": -0.0059078401815650695
+        "status": "pass",
+        "max_log10_ratio": 0.10941868092427424,
+        "median_log10_ratio": 0.01511468896334343,
+        "max_relative_error": 0.28652633602019956,
+        "endpoint_log10_ratio": -0.005907840182972818
       },
       {
         "case": "n23_vd_1",
-        "status": "fail",
-        "max_log10_ratio": 0.5777755075583471,
-        "median_log10_ratio": 0.015752141936220206,
-        "max_relative_error": 2.782470133953869,
-        "endpoint_log10_ratio": 0.002879785582592324
+        "status": "pass",
+        "max_log10_ratio": 0.05051539544259388,
+        "median_log10_ratio": 0.013666295153586581,
+        "max_relative_error": 0.12335079098636223,
+        "endpoint_log10_ratio": 0.002879785566491125
       },
       {
         "case": "n24_vd_0p05",
-        "status": "fail",
-        "max_log10_ratio": 0.47315086166650727,
-        "median_log10_ratio": 0.014838240687920107,
-        "max_relative_error": 1.9726984841010387,
-        "endpoint_log10_ratio": -0.006478639008834247
+        "status": "pass",
+        "max_log10_ratio": 0.0586034579756191,
+        "median_log10_ratio": 0.014838240678896724,
+        "max_relative_error": 0.14446748329654896,
+        "endpoint_log10_ratio": -0.006478639010003252
       },
       {
         "case": "n24_vd_1",
-        "status": "fail",
-        "max_log10_ratio": 0.5510027034954307,
-        "median_log10_ratio": 0.015484604765027858,
-        "max_relative_error": 2.5563353239089035,
-        "endpoint_log10_ratio": 0.0028800496546650444
+        "status": "pass",
+        "max_log10_ratio": 0.05136243663536683,
+        "median_log10_ratio": 0.013448962116764508,
+        "max_relative_error": 0.12554389487399262,
+        "endpoint_log10_ratio": 0.0028800497111542284
       }
     ]
   },
-  "implementation_sha256": {
-    "scripts/run_simplemos_m8_original_matrix.py": "7c2191e19b95d2ee9aa4321440ceea6c0dac7c7c088f569d004265be0a61d0a1",
-    "tests/regression/test_simplemos_m8_original_matrix.py": "382ae3bcab71b60d7be62d56d06f1fddd96d9db5319c0840efb00a1d15f681c7"
+  "repair": {
+    "status": "confirmed",
+    "root_cause": "SimpleMOS default electron SRH lifetime was replaced by a TransportModels-specific override",
+    "evidence": "simplemos_m8_srh_repair_evidence.json",
+    "evidence_sha256": "3fe53703a7642e4be70eec2136dab7421a1a95c69165d4b26909811f42b7811d"
   },
-  "raw_artifact_policy": "Sentaurus TDR/PLT/log and generated Vela states remain ignored"
+  "implementation_sha256": {
+    "scripts/run_simplemos_m8_original_matrix.py": "e4948b5e6c80e4866c99e2c5df31a7d26c73b478f4713cef4f4c525bff0f89f9",
+    "scripts/run_simplemos_m8_deep_off_diagnostics.py": "52ce54f8023d4d263b934ef421a3e49cb7134a893b3279499e7151fc98db04cd",
+    "scripts/plot_simplemos_m8_validation.py": "5f134309a19ceff39f53c3a0d3fd300b11d9805a8d46af22cbd919ab3df1166e",
+    "tests/regression/test_simplemos_m8_original_matrix.py": "203dae9e0b683f81e6c8b035f0b3112a78400711442b9cc62ef1f04a593f67c3"
+  },
+  "raw_artifact_policy": "Sentaurus TDR/PLT/log and generated Vela states remain ignored",
+  "visualization": {
+    "status": "generated",
+    "figures": [
+      {
+        "path": "docs/validation/figures/simplemos_m8/simplemos-m8-idvg-matrix.png",
+        "sha256": "9ecb795d355c50fb3c433926ce02ad49334f8dbac17870171056e7679740feb0"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8/simplemos-m8-error-localization.png",
+        "sha256": "93fc02753a895e848c57bada680678eb7a43bf5d9cf8c00fefdff21e8348fd52"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8/simplemos-m8-n17-n21-physical-state-contrast.png",
+        "sha256": "e180c573e3fff3a27f758bac5fdd004688baed97614e0d7ba2388301ea5d3b2e"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m8/simplemos-m8-srh-repair-evidence.png",
+        "sha256": "c27526d5e44097eb4272ce307ac31cafafc245cf7b33dfb07d11eb73771a059a"
+      }
+    ]
+  }
 }

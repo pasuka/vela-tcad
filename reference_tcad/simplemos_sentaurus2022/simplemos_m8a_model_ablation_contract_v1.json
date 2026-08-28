@@ -1,0 +1,132 @@
+{
+  "schema": "vela.simplemos.sdevice.m8a_model_ablation.v1",
+  "contract_id": "simplemos-sdevice-m8a-model-ablation-v1",
+  "scope": "SDevice-only paired model ablation on the frozen n23 TDR; the accepted M8 baseline remains immutable",
+  "sentaurus_release": "T-2022.03-SP2",
+  "source_baseline_contract": "simplemos_m8_original_physics_contract_v1.json",
+  "source_baseline_case": "n23_vd_0p05",
+  "device": {
+    "id": "n23",
+    "workbench_process_node": 23,
+    "tdr_sha256": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "Lg_um": 0.25,
+    "NWell_cm3": 2e17,
+    "GOxTime_min": 15.0,
+    "LDD_Dose_cm2": 1e14
+  },
+  "variants": [
+    {
+      "id": "full",
+      "change": "accepted M8 full-physics baseline",
+      "old_slotboom": true,
+      "sentaurus_mobility": ["PhuMob", "HighFieldSaturation", "Enormal"],
+      "vela_mobility": "phumob_field_lombardi",
+      "recombination": "srh_doping_dependence"
+    },
+    {
+      "id": "no_srh",
+      "change": "remove all SRH recombination and generation",
+      "old_slotboom": true,
+      "sentaurus_mobility": ["PhuMob", "HighFieldSaturation", "Enormal"],
+      "vela_mobility": "phumob_field_lombardi",
+      "recombination": "none"
+    },
+    {
+      "id": "plain_srh",
+      "change": "retain SRH with constant default lifetimes; remove DopingDependence",
+      "old_slotboom": true,
+      "sentaurus_mobility": ["PhuMob", "HighFieldSaturation", "Enormal"],
+      "vela_mobility": "phumob_field_lombardi",
+      "recombination": "srh_plain"
+    },
+    {
+      "id": "no_bgn",
+      "change": "remove EffectiveIntrinsicDensity(OldSlotboom)",
+      "old_slotboom": false,
+      "sentaurus_mobility": ["PhuMob", "HighFieldSaturation", "Enormal"],
+      "vela_mobility": "phumob_field_lombardi",
+      "recombination": "srh_doping_dependence"
+    },
+    {
+      "id": "no_enormal",
+      "change": "remove interface-normal mobility degradation",
+      "old_slotboom": true,
+      "sentaurus_mobility": ["PhuMob", "HighFieldSaturation"],
+      "vela_mobility": "phumob_field",
+      "recombination": "srh_doping_dependence"
+    },
+    {
+      "id": "no_hfs",
+      "change": "remove lateral high-field saturation",
+      "old_slotboom": true,
+      "sentaurus_mobility": ["PhuMob", "Enormal"],
+      "vela_mobility": "phumob_lombardi",
+      "recombination": "srh_doping_dependence"
+    },
+    {
+      "id": "phumob_only",
+      "change": "retain only low-field PhuMob mobility",
+      "old_slotboom": true,
+      "sentaurus_mobility": ["PhuMob"],
+      "vela_mobility": "phumob",
+      "recombination": "srh_doping_dependence"
+    },
+    {
+      "id": "constant_mu",
+      "change": "use default constant mobility in both solvers",
+      "old_slotboom": true,
+      "sentaurus_mobility": [],
+      "vela_mobility": "constant",
+      "recombination": "srh_doping_dependence"
+    }
+  ],
+  "bias_matrix": {
+    "drain_voltages_V": [0.05],
+    "gate_lattice": {
+      "start_V": 0.0,
+      "stop_V": 2.5,
+      "step_V": 0.05,
+      "point_count": 51,
+      "values_V": [
+        0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45,
+        0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
+        1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45,
+        1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95,
+        2.0, 2.05, 2.1, 2.15, 2.2, 2.25, 2.3, 2.35, 2.4, 2.45,
+        2.5
+      ]
+    }
+  },
+  "srh_defaults": {
+    "electron_lifetime_s": 1e-5,
+    "hole_lifetime_s": 3e-6,
+    "reference_doping_cm3": 1e16,
+    "gamma": 1.0
+  },
+  "diagnostic_windows": {
+    "deep_off_gate_voltages_V": [0.0, 0.05],
+    "weak_inversion_min_V": 0.65,
+    "weak_inversion_max_V": 0.95,
+    "strong_inversion_gate_voltage_V": 2.5
+  },
+  "comparison": {
+    "reference_bias_column": "gate_voltage_V",
+    "reference_current_column": "drain_total_current_A_per_um",
+    "candidate_bias_column": "bias_V",
+    "candidate_current_column": "current_total_A_per_um",
+    "current_sign_policy": "compare_absolute_magnitude",
+    "interpolation": "forbidden",
+    "exact_bias_tolerance_V": 1e-10,
+    "current_floor_A_per_um": 1e-18,
+    "numeric_parity": {
+      "maximum_absolute_log10_ratio": 0.3,
+      "maximum_relative_error": 1.0,
+      "trend_match_required": true
+    }
+  },
+  "claim_policy": {
+    "paired_configuration_required": true,
+    "single_ablation_is_diagnostic_not_causal": true,
+    "confirm_material_drivers_on_n17_n21_and_vd_1": true
+  }
+}

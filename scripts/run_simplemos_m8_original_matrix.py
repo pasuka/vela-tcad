@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import csv
 import hashlib
 import json
@@ -174,6 +175,14 @@ def validate_contract(contract: dict[str, Any]) -> None:
         raise ValueError("M8 must use the original mobility combination")
     if physics["recombination"] != "SRH(DopingDependence)":
         raise ValueError("M8 must use the original SRH model")
+    srh = physics.get("srh_scharfetter_defaults", {})
+    if (srh.get("electron", {}).get("tau_max_s") != 1.0e-5 or
+            srh.get("hole", {}).get("tau_max_s") != 3.0e-6 or
+            srh.get("electron", {}).get("reference_doping_cm3") != 1.0e16 or
+            srh.get("hole", {}).get("reference_doping_cm3") != 1.0e16 or
+            srh.get("electron", {}).get("gamma") != 1.0 or
+            srh.get("hole", {}).get("gamma") != 1.0):
+        raise ValueError("M8 must use the T-2022.03-SP2 default Scharfetter parameters")
     devices = contract["devices"]
     if [item["workbench_process_node"] for item in devices] != list(range(17, 25)):
         raise ValueError("M8 device matrix must be Workbench nodes 17 through 24")
@@ -389,6 +398,21 @@ def import_tdr(tdr: Path, neutral_dir: Path, importer: Path) -> None:
         raise RuntimeError(f"TDR qualification failed for {tdr}")
 
 
+def apply_simplemos_srh_defaults(config: dict[str, Any],
+                                 contract: dict[str, Any]) -> None:
+    """Apply the Silicon defaults used when SimpleMOS has no Parameter file."""
+    srh_contract = contract["physics"]["srh_scharfetter_defaults"]
+    srh_config = config["solver"]["srh_doping_dependence"]
+    for carrier in ("electron", "hole"):
+        source = srh_contract[carrier]
+        srh_config[carrier].update({
+            "tau_min_s": float(source["tau_min_s"]),
+            "tau_max_s": float(source["tau_max_s"]),
+            "reference_doping_m3": float(source["reference_doping_cm3"]),
+            "gamma": float(source["gamma"]),
+        })
+
+
 def prepare_vela_workflows(contract: dict[str, Any], devices: list[dict[str, Any]],
                            tdrs: dict[str, Path], output_dir: Path,
                            materials: Path, importer: Path) -> dict[str, Any]:
@@ -411,8 +435,13 @@ def prepare_vela_workflows(contract: dict[str, Any], devices: list[dict[str, Any
             "high_field_gradient_discretization": "transport_cell_vector",
         }
         base = device_root / "base.json"
-        write_json(base, m4.base_config(
-            mesh, neutral / "doping.csv", materials, mobility))
+        base_config = m4.base_config(
+            mesh, neutral / "doping.csv", materials, mobility)
+        # SimpleMOS does not name a Parameter file.  Use the T-2022.03-SP2
+        # Silicon defaults printed by ``sdevice -P`` rather than the
+        # TransportModels example's electron-lifetime override.
+        apply_simplemos_srh_defaults(base_config, contract)
+        write_json(base, base_config)
         workflow_dir = device_root / "workflow"
         workflow = m3.materialize(
             base, DEFAULT_VALIDATION_CONTRACT, workflow_dir,
@@ -470,21 +499,34 @@ def prepare_vela_workflows(contract: dict[str, Any], devices: list[dict[str, Any
 
 
 def execute_vela(devices: list[dict[str, Any]], output_dir: Path,
-                 runner: Path) -> dict[str, Any]:
-    results: list[dict[str, Any]] = []
-    for index, device in enumerate(devices, start=1):
+                 runner: Path, jobs: int = 1) -> dict[str, Any]:
+    if jobs < 1:
+        raise ValueError("jobs must be at least one")
+
+    def execute_device(index_device: tuple[int, dict[str, Any]]) -> dict[str, Any]:
+        index, device = index_device
         device_id = str(device["id"])
         print(f"[{index}/{len(devices)}] Vela {device_id}", flush=True)
         workflow_dir = output_dir / "vela" / device_id / "workflow"
         manifest_path = workflow_dir / "workflow_manifest.json"
         workflow = m3.execute(read_json(manifest_path), runner, workflow_dir)
-        results.append({
+        return {
             "device": device_id, "status": workflow["status"],
             "manifest": str(manifest_path.resolve()),
             "manifest_sha256": sha256(manifest_path),
-        })
-        if workflow["status"] != "accepted":
-            break
+        }
+
+    indexed = list(enumerate(devices, start=1))
+    if jobs == 1:
+        results = []
+        for item in indexed:
+            result = execute_device(item)
+            results.append(result)
+            if result["status"] != "accepted":
+                break
+    else:
+        with ThreadPoolExecutor(max_workers=min(jobs, len(devices))) as executor:
+            results = list(executor.map(execute_device, indexed))
     report = {
         "schema": "vela.simplemos.sdevice.m8_vela_execution.v1",
         "status": "accepted" if len(results) == len(devices) and all(
@@ -556,12 +598,14 @@ def freeze_evidence(contract: dict[str, Any], contract_path: Path,
             len(reference_manifest.get("artifacts", [])) != expected_cases):
         raise RuntimeError("M8 evidence requires sixteen qualified references")
     comparison_report = reference_dir / "comparisons" / "comparison_report.json"
+    repair_evidence_path = (
+        contract_path.parent / "simplemos_m8_srh_repair_evidence.json")
     cases = comparison["cases"]
     evidence = {
         "schema": "vela.simplemos.sdevice.m8_evidence.v1",
         "status": "accepted" if comparison["status"] == "pass" else "failed",
         "scope": "SDevice-only original SimpleMOS physics comparison",
-        "qualification_date": "2026-08-27",
+        "qualification_date": "2026-08-28",
         "contract": contract_path.name,
         "contract_sha256": sha256(contract_path),
         "source_deck": contract["source_deck"],
@@ -611,8 +655,20 @@ def freeze_evidence(contract: dict[str, Any], contract_path: Path,
                 "endpoint_log10_ratio": item["endpoint_log10_ratio"],
             } for item in cases],
         },
+        "repair": {
+            "status": "confirmed",
+            "root_cause": (
+                "SimpleMOS default electron SRH lifetime was replaced by a "
+                "TransportModels-specific override"),
+            "evidence": repair_evidence_path.name,
+            "evidence_sha256": sha256(repair_evidence_path),
+        },
         "implementation_sha256": {
             "scripts/run_simplemos_m8_original_matrix.py": sha256(Path(__file__)),
+            "scripts/run_simplemos_m8_deep_off_diagnostics.py": sha256(
+                REPO / "scripts/run_simplemos_m8_deep_off_diagnostics.py"),
+            "scripts/plot_simplemos_m8_validation.py": sha256(
+                REPO / "scripts/plot_simplemos_m8_validation.py"),
             "tests/regression/test_simplemos_m8_original_matrix.py": sha256(
                 REPO / "tests/regression/test_simplemos_m8_original_matrix.py"),
         },
@@ -641,6 +697,8 @@ def main() -> int:
     parser.add_argument("--live-sentaurus", action="store_true")
     parser.add_argument("--extract-existing", action="store_true")
     parser.add_argument("--execute-vela", action="store_true")
+    parser.add_argument("--jobs", type=int, default=1,
+                        help="parallel Vela devices; stages within a device remain serial")
     parser.add_argument("--compare", action="store_true")
     parser.add_argument("--comparison-dir", type=Path)
     parser.add_argument("--reuse-prepared", action="store_true")
@@ -674,7 +732,8 @@ def main() -> int:
             args.importer.resolve())
     vela_report = None
     if args.execute_vela:
-        vela_report = execute_vela(devices, output_dir, args.runner.resolve())
+        vela_report = execute_vela(
+            devices, output_dir, args.runner.resolve(), args.jobs)
     banner = ""
     if args.live_sentaurus:
         banner = run_sentaurus_vm(

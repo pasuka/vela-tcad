@@ -14,7 +14,13 @@
     "vela_mobility_model": "phumob_field_lombardi",
     "vela_high_field_driving_force": "quasi_fermi_gradient",
     "vela_high_field_gradient_discretization": "transport_cell_vector",
-    "recombination": "SRH(DopingDependence)"
+    "recombination": "SRH(DopingDependence)",
+    "srh_scharfetter_defaults": {
+      "source": "T-2022.03-SP2 sdevice -P without a deck Parameter file",
+      "electron": {"tau_min_s": 0.0, "tau_max_s": 1e-5, "reference_doping_cm3": 1e16, "gamma": 1.0},
+      "hole": {"tau_min_s": 0.0, "tau_max_s": 3e-6, "reference_doping_cm3": 1e16, "gamma": 1.0},
+      "trap_energy_eV": 0.0
+    }
   },
   "devices": [
     {"id": "n17", "workbench_process_node": 17, "nominal": true,  "Lg_um": 0.25, "NWell_cm3": 1e17, "GOxTime_min": 10.0, "LDD_Dose_cm2": 1e14},

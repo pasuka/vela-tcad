@@ -1,0 +1,717 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "SimpleMOS M8-A 器件模型误差归因报告",
+    "description": "SimpleMOS SDevice-only paired model-ablation diagnosis.",
+    "generatedAt": "2026-08-28T06:58:34Z",
+    "cards": [
+      {
+        "id": "full_error",
+        "description": "n23、Vd=0.05 V 全物理基线的最大逐点误差。",
+        "dataset": "headline",
+        "sourceId": "first_round",
+        "metrics": [
+          {
+            "label": "Full 最大误差",
+            "field": "full_max_dex",
+            "format": "number",
+            "unit": "dex"
+          }
+        ]
+      },
+      {
+        "id": "no_hfs_error",
+        "description": "成对关闭 HFS 后的 n23 最大误差。",
+        "dataset": "headline",
+        "sourceId": "first_round",
+        "metrics": [
+          {
+            "label": "No HFS 最大误差",
+            "field": "no_hfs_max_dex",
+            "format": "number",
+            "unit": "dex"
+          }
+        ]
+      },
+      {
+        "id": "hfs_gain",
+        "description": "相对 full 的最大误差下降量。",
+        "dataset": "headline",
+        "sourceId": "first_round",
+        "metrics": [
+          {
+            "label": "HFS 关闭改善",
+            "field": "no_hfs_improvement_dex",
+            "format": "number",
+            "unit": "dex"
+          }
+        ]
+      },
+      {
+        "id": "no_bgn_error",
+        "description": "关闭 OldSlotboom 后的最大跨求解器误差。",
+        "dataset": "headline",
+        "sourceId": "first_round",
+        "metrics": [
+          {
+            "label": "No OldSlotboom",
+            "field": "no_bgn_max_dex",
+            "format": "number",
+            "unit": "dex"
+          }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "first_round_chart",
+        "title": "第一轮模型消融的误差变化",
+        "subtitle": "n23、Vd=0.05 V；为显示小差异，图中不含 1.600 dex 的 No OldSlotboom 离群项",
+        "type": "bar",
+        "dataset": "first_round_zoom",
+        "sourceId": "first_round",
+        "valueFormat": "number",
+        "encodings": {
+          "x": {
+            "field": "variant_label",
+            "type": "nominal",
+            "label": "模型变体"
+          },
+          "y": {
+            "field": "maximum_change_vs_full_dex",
+            "type": "quantitative",
+            "label": "最大绝对对数误差相对 full 的变化, dex"
+          },
+          "tooltip": [
+            {
+              "field": "maximum_absolute_log10_ratio",
+              "type": "quantitative",
+              "label": "最大误差, dex"
+            },
+            {
+              "field": "maximum_relative_error",
+              "type": "quantitative",
+              "label": "最大相对误差"
+            }
+          ]
+        }
+      },
+      {
+        "id": "confirmation_chart",
+        "title": "HFS 候选源的跨工况确认",
+        "subtitle": "n17/n21 与 Vd=0.05/1 V；负值表示相对 full 改善",
+        "type": "bar",
+        "dataset": "confirmation_chart",
+        "sourceId": "confirmation",
+        "valueFormat": "number",
+        "encodings": {
+          "x": {
+            "field": "condition",
+            "type": "nominal",
+            "label": "器件与漏压"
+          },
+          "y": {
+            "field": "maximum_change_vs_full_dex",
+            "type": "quantitative",
+            "label": "最大绝对对数误差变化, dex"
+          },
+          "color": {
+            "field": "variant_label",
+            "type": "nominal",
+            "label": "变体"
+          },
+          "tooltip": [
+            {
+              "field": "maximum_absolute_log10_ratio",
+              "type": "quantitative",
+              "label": "最大误差, dex"
+            },
+            {
+              "field": "maximum_relative_error",
+              "type": "quantitative",
+              "label": "最大相对误差"
+            }
+          ]
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "confirmation_table",
+        "title": "第二轮逐工况结果",
+        "subtitle": "12 条曲线，均为 51 个直接栅压点且禁止插值",
+        "dataset": "confirmation",
+        "sourceId": "confirmation",
+        "defaultSort": {
+          "field": "maximum_absolute_log10_ratio",
+          "direction": "desc"
+        },
+        "columns": [
+          {
+            "field": "device",
+            "label": "器件",
+            "type": "text"
+          },
+          {
+            "field": "drain_voltage_V",
+            "label": "Vd, V",
+            "format": "number"
+          },
+          {
+            "field": "variant",
+            "label": "变体",
+            "type": "text"
+          },
+          {
+            "field": "maximum_absolute_log10_ratio",
+            "label": "最大误差, dex",
+            "format": "number"
+          },
+          {
+            "field": "maximum_relative_error",
+            "label": "最大相对误差",
+            "format": "number"
+          },
+          {
+            "field": "maximum_change_vs_full_dex",
+            "label": "相对 full 变化, dex",
+            "format": "number"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "first_round",
+        "label": "M8-A 第一轮冻结汇总",
+        "path": "reference_tcad/simplemos_sentaurus2022/model_ablation/first_round/ablation_summary.csv"
+      },
+      {
+        "id": "confirmation",
+        "label": "M8-A 第二轮冻结汇总",
+        "path": "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/confirmation_summary.csv"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# SimpleMOS M8-A 器件模型误差归因报告"
+      },
+      {
+        "id": "technical_summary",
+        "type": "markdown",
+        "body": "## 技术摘要\n\n本实验在不改变网格、器件结构与偏置格点的前提下，对 Sentaurus Device 与 Vela 同时关闭或简化同一组物理模型。第一轮识别出 HFS 为唯一降低 n23 最大误差的单项关闭项；HFS 关闭在四个控制工况中均降低最大误差，支持其为剩余误差的稳定贡献源。"
+      },
+      {
+        "id": "metrics",
+        "type": "metric-strip",
+        "cardIds": [
+          "full_error",
+          "no_hfs_error",
+          "hfs_gain",
+          "no_bgn_error"
+        ]
+      },
+      {
+        "id": "first_heading",
+        "type": "markdown",
+        "body": "## 第一轮：模型开关定位\n\n八种成对配置覆盖 SRH、OldSlotboom、Enormal、HighFieldSaturation、PhuMob 与常数迁移率。负值代表误差下降。"
+      },
+      {
+        "id": "first_chart",
+        "type": "chart",
+        "chartId": "first_round_chart"
+      },
+      {
+        "id": "first_interpretation",
+        "type": "markdown",
+        "body": "No HFS 的改善最大，PhuMob only 次之；关闭 SRH、Enormal 或采用常数迁移率均使误差增大。关闭 OldSlotboom 后误差剧增，说明该模型是当前一致性的必要条件，而不是可通过关闭消除的残差来源。"
+      },
+      {
+        "id": "confirmation_heading",
+        "type": "markdown",
+        "body": "## 第二轮：跨器件与漏压确认\n\n控制矩阵固定 n17/n21 两种 NWell 掺杂，并在 Vd=0.05 V 与 1 V 下比较 full、No HFS 和 PhuMob only。"
+      },
+      {
+        "id": "confirmation_chart_block",
+        "type": "chart",
+        "chartId": "confirmation_chart"
+      },
+      {
+        "id": "confirmation_interpretation",
+        "type": "markdown",
+        "body": "HFS 关闭在四个控制工况中均降低最大误差，支持其为剩余误差的稳定贡献源。 这一区分了“n23 单点改善”与“跨工况稳定贡献”，但仍不能把公开模型名称直接等同于 Sentaurus 内部某一条私有公式。"
+      },
+      {
+        "id": "scope_method",
+        "type": "markdown",
+        "body": "## 范围、数据与方法\n\n范围仅限 SDevice 器件仿真，不包含 SProcess。全部比较使用相同上游 TDR、相同接触、相同 Vg=0:0.05:2.5 V 的 51 点格点、绝对电流幅值和 1e-18 A/um 电流门槛；禁止插值。单项消融用于诊断，不单独构成因果证明。"
+      },
+      {
+        "id": "confirmation_table_block",
+        "type": "table",
+        "tableId": "confirmation_table"
+      },
+      {
+        "id": "limitations",
+        "type": "markdown",
+        "body": "## 局限性与不确定性\n\nSentaurus 的内部平滑、默认参数组合、驱动力计算与极限处理没有完全公开。成对关闭 HFS 只能说明 HFS 模型族相关差异对误差有贡献，无法进一步区分是驱动力离散、参数、平滑函数还是极限处理。No OldSlotboom 变体超出原数值一致性阈值，因此只用于敏感性诊断。"
+      },
+      {
+        "id": "recommendations",
+        "type": "markdown",
+        "body": "## 建议的下一步\n\n1. 若 No HFS 在四个控制工况均改善，优先细分 HFS 驱动力与速度饱和参数实验。\n2. 保持 OldSlotboom 与已修正 SRH 默认寿命，不将其作为下一轮关闭项。\n3. 对 HFS 进一步使用固定迁移率场或参数扫描时，继续采用双端成对配置与精确偏置格点。"
+      },
+      {
+        "id": "questions",
+        "type": "markdown",
+        "body": "## 后续问题\n\n需要进一步回答：误差改善主要来自 Vela 的 quasi-Fermi-gradient 驱动力离散，还是来自 Sentaurus 未公开的 HFS 参数与平滑；以及该贡献在更高漏压或不同沟道长度下是否保持。"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-28T06:58:34Z",
+    "status": "ready",
+    "datasets": {
+      "headline": [
+        {
+          "full_max_dex": 0.10941868092427424,
+          "no_hfs_max_dex": 0.09039871358507992,
+          "no_hfs_improvement_dex": 0.019019967339194324,
+          "no_bgn_max_dex": 1.7093291766585752,
+          "consistent_conditions": 4,
+          "condition_count": 4
+        }
+      ],
+      "first_round": [
+        {
+          "variant": "full",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.10941868092427424,
+          "maximum_relative_error": 0.28652633602019956,
+          "maximum_change_vs_full_dex": 0.0,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.0,
+          "weak_inversion_change_vs_full_dex": 0.0
+        },
+        {
+          "variant": "no_srh",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.13460255514506203,
+          "maximum_relative_error": 0.3633349087604277,
+          "maximum_change_vs_full_dex": 0.025183874220787786,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.025183874220787786,
+          "weak_inversion_change_vs_full_dex": 2.8758696812847262e-11
+        },
+        {
+          "variant": "plain_srh",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.1335273402347603,
+          "maximum_relative_error": 0.35996377468435187,
+          "maximum_change_vs_full_dex": 0.024108659310486044,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.024108659310486044,
+          "weak_inversion_change_vs_full_dex": -2.1321638205007432e-10
+        },
+        {
+          "variant": "no_bgn",
+          "status": "fail",
+          "maximum_absolute_log10_ratio": 1.7093291766585752,
+          "maximum_relative_error": 50.2069815523495,
+          "maximum_change_vs_full_dex": 1.5999104957343009,
+          "deep_off_vg_0p05_change_vs_full_dex": 1.5999104957343009,
+          "weak_inversion_change_vs_full_dex": 0.15023710234092763
+        },
+        {
+          "variant": "no_enormal",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.12092635143435476,
+          "maximum_relative_error": 0.3210715851101399,
+          "maximum_change_vs_full_dex": 0.011507670510080517,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.011507670510080517,
+          "weak_inversion_change_vs_full_dex": 0.002814138204354187
+        },
+        {
+          "variant": "no_hfs",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.09039871358507992,
+          "maximum_relative_error": 0.2313987646993851,
+          "maximum_change_vs_full_dex": -0.019019967339194324,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.019019967339194324,
+          "weak_inversion_change_vs_full_dex": -0.0028762333087847466
+        },
+        {
+          "variant": "phumob_only",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.09447886188424356,
+          "maximum_relative_error": 0.2430221336133268,
+          "maximum_change_vs_full_dex": -0.01493981904003068,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.01493981904003068,
+          "weak_inversion_change_vs_full_dex": -0.0005527274587937836
+        },
+        {
+          "variant": "constant_mu",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.13749806430466563,
+          "maximum_relative_error": 0.37245484382102384,
+          "maximum_change_vs_full_dex": 0.028079383380391384,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.028079383380391384,
+          "weak_inversion_change_vs_full_dex": 0.0012465942038013822
+        }
+      ],
+      "first_round_zoom": [
+        {
+          "variant": "no_srh",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.13460255514506203,
+          "maximum_relative_error": 0.3633349087604277,
+          "maximum_change_vs_full_dex": 0.025183874220787786,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.025183874220787786,
+          "weak_inversion_change_vs_full_dex": 2.8758696812847262e-11,
+          "variant_label": "No SRH"
+        },
+        {
+          "variant": "plain_srh",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.1335273402347603,
+          "maximum_relative_error": 0.35996377468435187,
+          "maximum_change_vs_full_dex": 0.024108659310486044,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.024108659310486044,
+          "weak_inversion_change_vs_full_dex": -2.1321638205007432e-10,
+          "variant_label": "Plain SRH"
+        },
+        {
+          "variant": "no_enormal",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.12092635143435476,
+          "maximum_relative_error": 0.3210715851101399,
+          "maximum_change_vs_full_dex": 0.011507670510080517,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.011507670510080517,
+          "weak_inversion_change_vs_full_dex": 0.002814138204354187,
+          "variant_label": "No Enormal"
+        },
+        {
+          "variant": "no_hfs",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.09039871358507992,
+          "maximum_relative_error": 0.2313987646993851,
+          "maximum_change_vs_full_dex": -0.019019967339194324,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.019019967339194324,
+          "weak_inversion_change_vs_full_dex": -0.0028762333087847466,
+          "variant_label": "No HFS"
+        },
+        {
+          "variant": "phumob_only",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.09447886188424356,
+          "maximum_relative_error": 0.2430221336133268,
+          "maximum_change_vs_full_dex": -0.01493981904003068,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.01493981904003068,
+          "weak_inversion_change_vs_full_dex": -0.0005527274587937836,
+          "variant_label": "PhuMob only"
+        },
+        {
+          "variant": "constant_mu",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.13749806430466563,
+          "maximum_relative_error": 0.37245484382102384,
+          "maximum_change_vs_full_dex": 0.028079383380391384,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.028079383380391384,
+          "weak_inversion_change_vs_full_dex": 0.0012465942038013822,
+          "variant_label": "Constant mobility"
+        }
+      ],
+      "confirmation": [
+        {
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "variant": "full",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.04172703523666418,
+          "maximum_relative_error": 0.1008471825252534,
+          "maximum_change_vs_full_dex": 0.0,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.0,
+          "weak_inversion_change_vs_full_dex": 0.0
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "variant": "full",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.0322235035136669,
+          "maximum_relative_error": 0.07701934380491994,
+          "maximum_change_vs_full_dex": 0.0,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.0,
+          "weak_inversion_change_vs_full_dex": 0.0
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "variant": "no_hfs",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.039104362153602974,
+          "maximum_relative_error": 0.09421927857143698,
+          "maximum_change_vs_full_dex": -0.0026226730830612027,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.0019003247070686242,
+          "weak_inversion_change_vs_full_dex": -0.0020986796363294744
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "variant": "no_hfs",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.030280956047437423,
+          "maximum_relative_error": 0.07221272235586275,
+          "maximum_change_vs_full_dex": -0.001942547466229478,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.0016201997118976304,
+          "weak_inversion_change_vs_full_dex": -0.0018564478749962567
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "variant": "phumob_only",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.04148135746269656,
+          "maximum_relative_error": 0.10022461600884686,
+          "maximum_change_vs_full_dex": -0.00024567777396761886,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.000936822943323895,
+          "weak_inversion_change_vs_full_dex": 0.0003423844180088717
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "variant": "phumob_only",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.032408526566109555,
+          "maximum_relative_error": 0.077478285535062,
+          "maximum_change_vs_full_dex": 0.00018502305244265382,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.0011388587870381946,
+          "weak_inversion_change_vs_full_dex": 0.00037766565818995665
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "variant": "full",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.07374837507777213,
+          "maximum_relative_error": 0.18508192721389366,
+          "maximum_change_vs_full_dex": 0.0,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.0,
+          "weak_inversion_change_vs_full_dex": 0.0
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "variant": "full",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.05808652051250995,
+          "maximum_relative_error": 0.1431060426556481,
+          "maximum_change_vs_full_dex": 0.0,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.0,
+          "weak_inversion_change_vs_full_dex": 0.0
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "variant": "no_hfs",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.06353270989103554,
+          "maximum_relative_error": 0.1575312109433035,
+          "maximum_change_vs_full_dex": -0.010215665186736583,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.010215665186736583,
+          "weak_inversion_change_vs_full_dex": -0.0026499805997573095
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "variant": "no_hfs",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.05480949483548596,
+          "maximum_relative_error": 0.1345130474205984,
+          "maximum_change_vs_full_dex": -0.0032770256770239883,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.0009187153403273154,
+          "weak_inversion_change_vs_full_dex": -0.0032770256770239883
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "variant": "phumob_only",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.0669626022317967,
+          "maximum_relative_error": 0.1667091456097159,
+          "maximum_change_vs_full_dex": -0.006785772845975424,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.006785772845975424,
+          "weak_inversion_change_vs_full_dex": -0.000289725155173462
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "variant": "phumob_only",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.05716130146860669,
+          "maximum_relative_error": 0.14067336679792913,
+          "maximum_change_vs_full_dex": -0.000925219043903254,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.0033183578587587664,
+          "weak_inversion_change_vs_full_dex": -0.000925219043903254
+        }
+      ],
+      "confirmation_chart": [
+        {
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "variant": "no_hfs",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.039104362153602974,
+          "maximum_relative_error": 0.09421927857143698,
+          "maximum_change_vs_full_dex": -0.0026226730830612027,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.0019003247070686242,
+          "weak_inversion_change_vs_full_dex": -0.0020986796363294744,
+          "condition": "n17, Vd=0.05 V",
+          "variant_label": "No HFS"
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "variant": "no_hfs",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.030280956047437423,
+          "maximum_relative_error": 0.07221272235586275,
+          "maximum_change_vs_full_dex": -0.001942547466229478,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.0016201997118976304,
+          "weak_inversion_change_vs_full_dex": -0.0018564478749962567,
+          "condition": "n17, Vd=1 V",
+          "variant_label": "No HFS"
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "variant": "phumob_only",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.04148135746269656,
+          "maximum_relative_error": 0.10022461600884686,
+          "maximum_change_vs_full_dex": -0.00024567777396761886,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.000936822943323895,
+          "weak_inversion_change_vs_full_dex": 0.0003423844180088717,
+          "condition": "n17, Vd=0.05 V",
+          "variant_label": "PhuMob only"
+        },
+        {
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "variant": "phumob_only",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.032408526566109555,
+          "maximum_relative_error": 0.077478285535062,
+          "maximum_change_vs_full_dex": 0.00018502305244265382,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.0011388587870381946,
+          "weak_inversion_change_vs_full_dex": 0.00037766565818995665,
+          "condition": "n17, Vd=1 V",
+          "variant_label": "PhuMob only"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "variant": "no_hfs",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.06353270989103554,
+          "maximum_relative_error": 0.1575312109433035,
+          "maximum_change_vs_full_dex": -0.010215665186736583,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.010215665186736583,
+          "weak_inversion_change_vs_full_dex": -0.0026499805997573095,
+          "condition": "n21, Vd=0.05 V",
+          "variant_label": "No HFS"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "variant": "no_hfs",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.05480949483548596,
+          "maximum_relative_error": 0.1345130474205984,
+          "maximum_change_vs_full_dex": -0.0032770256770239883,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.0009187153403273154,
+          "weak_inversion_change_vs_full_dex": -0.0032770256770239883,
+          "condition": "n21, Vd=1 V",
+          "variant_label": "No HFS"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "variant": "phumob_only",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.0669626022317967,
+          "maximum_relative_error": 0.1667091456097159,
+          "maximum_change_vs_full_dex": -0.006785772845975424,
+          "deep_off_vg_0p05_change_vs_full_dex": -0.006785772845975424,
+          "weak_inversion_change_vs_full_dex": -0.000289725155173462,
+          "condition": "n21, Vd=0.05 V",
+          "variant_label": "PhuMob only"
+        },
+        {
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "variant": "phumob_only",
+          "status": "pass",
+          "maximum_absolute_log10_ratio": 0.05716130146860669,
+          "maximum_relative_error": 0.14067336679792913,
+          "maximum_change_vs_full_dex": -0.000925219043903254,
+          "deep_off_vg_0p05_change_vs_full_dex": 0.0033183578587587664,
+          "weak_inversion_change_vs_full_dex": -0.000925219043903254,
+          "condition": "n21, Vd=1 V",
+          "variant_label": "PhuMob only"
+        }
+      ]
+    },
+    "accessIssues": []
+  },
+  "sources": [
+    {
+      "id": "first_round",
+      "query": {
+        "language": "sql",
+        "engine": "duckdb",
+        "sql": "SELECT * FROM read_csv_auto('reference_tcad/simplemos_sentaurus2022/model_ablation/first_round/ablation_summary.csv', header=true)",
+        "description": "Paired 51-point comparison of eight n23 model variants.",
+        "executed_at": "2026-08-28T06:58:34Z",
+        "tables_used": [
+          "reference_tcad/simplemos_sentaurus2022/model_ablation/first_round/ablation_summary.csv"
+        ],
+        "metric_definitions": [
+          "maximum_absolute_log10_ratio is max abs(log10(abs(Id,Vela)/abs(Id,Sentaurus))) above 1e-18 A/um",
+          "maximum_change_vs_full_dex subtracts the full-physics maximum from the variant maximum"
+        ],
+        "filters": [
+          "device n23",
+          "Vd=0.05 V",
+          "Vg=0:0.05:2.5 V",
+          "no interpolation"
+        ]
+      }
+    },
+    {
+      "id": "confirmation",
+      "query": {
+        "language": "sql",
+        "engine": "duckdb",
+        "sql": "SELECT * FROM read_csv_auto('reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/confirmation_summary.csv', header=true)",
+        "description": "Paired confirmation for n17/n21, two drain biases, and three mobility variants.",
+        "executed_at": "2026-08-28T06:58:34Z",
+        "tables_used": [
+          "reference_tcad/simplemos_sentaurus2022/model_ablation/confirmation/confirmation_summary.csv"
+        ],
+        "metric_definitions": [
+          "maximum_absolute_log10_ratio is max abs(log10(abs(Id,Vela)/abs(Id,Sentaurus))) above 1e-18 A/um",
+          "negative maximum_change_vs_full_dex indicates improved paired agreement"
+        ],
+        "filters": [
+          "devices n17 and n21",
+          "Vd in 0.05 and 1 V",
+          "Vg=0:0.05:2.5 V",
+          "no interpolation"
+        ]
+      }
+    }
+  ]
+}
