@@ -28,6 +28,13 @@ from audit_templates_ldmos_fermi_bgn_mapping import (  # noqa: E402
     variants as fermi_bgn_variants,
     write_reference_aligned_state,
 )
+from audit_templates_ldmos_g3_continuity_sg_contact import (  # noqa: E402
+    Q_C,
+    contact_summary,
+    reconstruct_divergence,
+    sentaurus_plt_current,
+    sg_contact_cut,
+)
 from prepare_templates_ldmos_wp15_diagnostics import (  # noqa: E402
     prepare as prepare_wp15_diagnostics,
 )
@@ -495,6 +502,75 @@ class Phase23SummaryMathTest(unittest.TestCase):
         self.assertEqual(metrics["semiconductor_node_count"], 2)
         self.assertAlmostEqual(metrics["psi_abs_error_V"]["median"], 0.0015)
         self.assertAlmostEqual(metrics["electron_abs_error_dex"]["max"], 1.0)
+
+
+class G3ContinuitySgContactAuditTest(unittest.TestCase):
+    def test_sg_cut_uses_production_contact_orientation(self) -> None:
+        rows = [
+            {
+                "node0": "1", "node1": "2",
+                "electron_particle_line_flux_per_m_s": "3.0",
+                "hole_particle_line_flux_per_m_s": "1.0",
+            },
+            {
+                "node0": "3", "node1": "1",
+                "electron_particle_line_flux_per_m_s": "5.0",
+                "hole_particle_line_flux_per_m_s": "2.0",
+            },
+            {
+                "node0": "2", "node1": "3",
+                "electron_particle_line_flux_per_m_s": "100.0",
+                "hole_particle_line_flux_per_m_s": "100.0",
+            },
+        ]
+        result = sg_contact_cut(rows, {1})
+        self.assertEqual(result["crossing_edge_count"], 2)
+        self.assertAlmostEqual(result["electron_A_per_um"], 2.0 * Q_C / 1.0e6)
+        self.assertAlmostEqual(result["hole_A_per_um"], 1.0 * Q_C / 1.0e6)
+        self.assertAlmostEqual(result["total_A_per_um"], 1.0 * Q_C / 1.0e6)
+
+    def test_edge_divergence_matches_node0_plus_node1_minus_contract(self) -> None:
+        rows = [
+            {"node0": "0", "node1": "1", "electron_flux": "2.5"},
+            {"node0": "1", "node1": "2", "electron_flux": "-1.0"},
+        ]
+        self.assertEqual(
+            reconstruct_divergence(rows, "electron"),
+            {0: 2.5, 1: -3.5, 2: 1.0},
+        )
+
+    def test_contact_summary_separates_stable_and_drift_diffusion_currents(self) -> None:
+        row = {
+            "current_contact": "drain", "edge_id": "7", "node0": "1", "node1": "2",
+            "current_electron": "2e-6", "current_electron_long_double_reference": "2e-6",
+            "current_electron_drift": "10", "current_electron_diffusion": "-9.999998",
+            "current_hole": "0", "current_total": "2e-6", "phin0": "0.1",
+            "phin1": "0.100000001", "psi0": "0.2", "psi1": "0.3",
+            "n0": "1e20", "n1": "2e20",
+        }
+        result = contact_summary([row], "drain", {1})
+        self.assertEqual(result["edge_count"], 1)
+        self.assertAlmostEqual(result["electron_A_per_um"], 2.0e-12)
+        self.assertGreater(result["drift_diffusion_cancellation_condition"], 1.0e6)
+
+    def test_dfise_reference_selects_highest_time_at_exact_bias(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "reference.plt"
+            path.write_text(
+                '''DF-ISE text
+Info { datasets = [ "time" "drain OuterVoltage" "drain eCurrent"
+  "drain hCurrent" "drain TotalCurrent" ] }
+Data {
+  0 2.31559774221138E-02 1.0E-15 2.0E-20 1.00002E-15
+  1 2.31559774221138E-02 2.0E-15 3.0E-20 2.00003E-15
+}
+''',
+                encoding="utf-8",
+            )
+            result = sentaurus_plt_current(path, 0.0231559774221138)
+            self.assertEqual(result["matching_rows"], 2)
+            self.assertEqual(result["time"], 1.0)
+            self.assertAlmostEqual(result["drain_total_A_per_um"], 2.00003e-15)
 
 
 class SentaurusAblationSummaryTest(unittest.TestCase):
