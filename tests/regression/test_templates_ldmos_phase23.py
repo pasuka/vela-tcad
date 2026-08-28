@@ -237,6 +237,19 @@ class Phase23DeckTest(unittest.TestCase):
         self.assertEqual(solver["impact_ionization"]["model"], "none")
         self.assertEqual(solver["line_search_mode"], "merit")
         self.assertEqual(solver["damping_factor"], 1.0)
+        self.assertEqual(solver["reltol"], 1.0e-10)
+        self.assertEqual(solver["abstol"], 1.0e-14)
+        self.assertEqual(solver["stall_residual_floor"], 1.0e-12)
+        self.assertEqual(solver["block_absolute_convergence"], {
+            "mode": "enforce",
+            "psi_residual_ceiling": 5.0e-8,
+            "electron_residual_ceiling": 2.0e-9,
+            "hole_residual_ceiling": 3.0e-10,
+        })
+        self.assertEqual(
+            solver["contact_majority_qf_branch_guard_contacts"], ["drain"])
+        self.assertEqual(
+            solver["contact_majority_qf_branch_drop_limit_V"], 5.0e-11)
         self.assertNotIn("damping_psi", solver)
         self.assertEqual(solver["recombination"], ["srh", "auger"])
         self.assertTrue(solver["srh_doping_dependence"]["enabled"])
@@ -351,12 +364,37 @@ class Phase23DeckTest(unittest.TestCase):
             self.assertEqual(prebias["sweep"]["bias_points"], [0.0, 0.1])
             self.assertTrue(
                 prebias_repeat["sweep"]["initial_state_file"].endswith(
-                    "g3_drain_prebias_state.csv"
+                    "g3_drain_prebias_sentaurus_path_state.csv"
                 )
             )
             self.assertTrue(idvg["sweep"]["initial_state_file"].endswith(
-                "g3_drain_prebias_repeat_state.csv"
+                "g3_idvg_seed_repeat_state.csv"
             ))
+            for deck in (prebias, sentaurus_path, checkpoint, prebias_repeat):
+                self.assertNotIn("predictor", deck["sweep"])
+                self.assertEqual(
+                    deck["solver"]["block_absolute_convergence"]["mode"],
+                    "enforce",
+                )
+                self.assertEqual(
+                    deck["solver"]["contact_majority_qf_branch_guard_contacts"],
+                    ["drain"],
+                )
+                self.assertTrue(
+                    deck["sweep"]["diagnostics"]["newton_history"]["enabled"])
+            self.assertNotIn("predictor", idvg["sweep"])
+            self.assertEqual(
+                idvg["solver"]["block_absolute_convergence"]["mode"],
+                "enforce",
+            )
+            self.assertNotIn(
+                "contact_majority_qf_branch_drop_limit_V", idvg["solver"])
+            self.assertNotIn(
+                "contact_majority_qf_branch_guard_contacts", idvg["solver"])
+            self.assertEqual(
+                manifest["wp15_contract"]["contact_majority_qf_branch_guard"],
+                "deep_off_seed_and_drain_prebias_only",
+            )
 
     def test_wp15_matrix_preserves_physics_and_exposes_solver_controls(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

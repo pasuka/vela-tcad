@@ -93,7 +93,10 @@ def derive_polysi_flatband(mesh_path: Path, sentaurus_export: Path) -> dict[str,
     }
 
 
-def classical_solver(physics: dict[str, Any], *, high_field: bool) -> dict[str, Any]:
+def classical_solver(
+    physics: dict[str, Any], *, high_field: bool,
+    guard_contact_branch: bool = True,
+) -> dict[str, Any]:
     mobility = physics["mobility"]
     electron = mobility["electron"]
     hole = mobility["hole"]
@@ -119,7 +122,7 @@ def classical_solver(physics: dict[str, Any], *, high_field: bool) -> dict[str, 
             "hole_saturation_velocity_m_s": hole["saturation_velocity_cm_per_s"],
             "hole_high_field_beta": hole["high_field_exponent"],
         })
-    return {
+    solver = {
         "method": "newton",
         "max_iter": 100,
         "reltol": 1.0e-7,
@@ -190,6 +193,29 @@ def classical_solver(physics: dict[str, Any], *, high_field: bool) -> dict[str, 
         },
         "impact_ionization": {"model": "none"},
     }
+    if high_field:
+        # WP1.5 exact-mesh qualification contract.  Relative convergence alone
+        # admitted a false G3 deep-off branch because the large contact flux
+        # cancellation hid unresolved carrier rows.  Require the independently
+        # qualified raw block ceilings and protect the drain-majority QF branch.
+        # This is deliberately not a sweep predictor and changes no physics.
+        solver.update({
+            "reltol": 1.0e-10,
+            "abstol": 1.0e-14,
+            "stall_residual_floor": 1.0e-12,
+            "block_absolute_convergence": {
+                "mode": "enforce",
+                "psi_residual_ceiling": 5.0e-8,
+                "electron_residual_ceiling": 2.0e-9,
+                "hole_residual_ceiling": 3.0e-10,
+            },
+        })
+        if guard_contact_branch:
+            solver.update({
+                "contact_majority_qf_branch_drop_limit_V": 5.0e-11,
+                "contact_majority_qf_branch_guard_contacts": ["drain"],
+            })
+    return solver
 
 
 def contacts(flatband_V: float, gate_V: float, drain_V: float) -> list[dict[str, Any]]:
@@ -221,6 +247,13 @@ def sweep_diagnostics(stem: str, *, transport: bool = False) -> dict[str, Any]:
     }
     if transport:
         result["transport"] = {"enabled": True}
+        result["newton_history"] = {
+            "enabled": True,
+            "csv_file": f"{stem}_newton_history.csv",
+            "attempts_csv_file": f"{stem}_newton_attempts.csv",
+            "iterations_csv_file": f"{stem}_newton_iterations.csv",
+            "rejected_state_directory": f"{stem}_rejected_states",
+        }
     return result
 
 
@@ -229,6 +262,7 @@ def dc_deck(
     physics: dict[str, Any], flatband_V: float, gate_V: float, drain_V: float,
     swept_contact: str, bias_points: list[float], initial_state: Path,
     output_dir: Path, high_field: bool, write_every_point: bool = False,
+    guard_contact_branch: bool = True,
 ) -> dict[str, Any]:
     sweep: dict[str, Any] = {
         "mode": "iv",
@@ -258,7 +292,9 @@ def dc_deck(
         "output_csv": str((output_dir / f"{name}.csv").resolve()),
         "scaling": {"mode": "unit_scaling"},
         "contacts": contacts(flatband_V, gate_V, drain_V),
-        "solver": classical_solver(physics, high_field=high_field),
+        "solver": classical_solver(
+            physics, high_field=high_field,
+            guard_contact_branch=guard_contact_branch),
         "sweep": sweep,
     }
 
@@ -366,7 +402,7 @@ def prepare(stage1_dir: Path, oracle_dir: Path, contracts_dir: Path,
         doping=exact / "doping.csv", materials=materials, physics=physics,
         flatband_V=flatband, gate_V=0.0, drain_V=0.1,
         swept_contact="gate", bias_points=[0.0],
-        initial_state=output / "g3_drain_prebias_state.csv",
+        initial_state=output / "g3_drain_prebias_sentaurus_path_state.csv",
         output_dir=output, high_field=True)
     # A second, independently qualified route starts from the exact Sentaurus
     # Vg=0/Vd=0.1 state.  It is the production seed when the deep-off drain
@@ -392,8 +428,13 @@ def prepare(stage1_dir: Path, oracle_dir: Path, contracts_dir: Path,
         materials=materials, physics=physics, flatband_V=flatband,
         gate_V=0.0, drain_V=0.1, swept_contact="gate",
         bias_points=idvg_points,
-        initial_state=output / "g3_drain_prebias_repeat_state.csv",
-        output_dir=output, high_field=True, write_every_point=True)
+        initial_state=output / "g3_idvg_seed_repeat_state.csv",
+        output_dir=output, high_field=True, write_every_point=True,
+        # The 5e-11 V majority-QF guard is a deep-off branch-qualification
+        # contract.  A conducting Id-Vg state necessarily has a finite drain
+        # quasi-Fermi gradient, so the full curve retains the block-absolute
+        # contract but releases this seed-only guard.
+        guard_contact_branch=False)
 
     paths: dict[str, str] = {}
     for name, deck in decks.items():
@@ -420,6 +461,12 @@ def prepare(stage1_dir: Path, oracle_dir: Path, contracts_dir: Path,
             "qualified_for_spatial_scoring": classical_eq == sentaurus_g4_eq,
         },
         "idvg_bias_points_V": idvg_points,
+        "wp15_contract": {
+            "block_absolute_convergence": "all_G3_decks",
+            "contact_majority_qf_branch_guard":
+                "deep_off_seed_and_drain_prebias_only",
+            "predictor": "disabled",
+        },
         "decks": paths,
         "limitations": [
             "T-2022.03 parameter values still marked pending in physics_contract.json are not inferred here.",

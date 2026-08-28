@@ -138,7 +138,13 @@ class TemplatesLdmosContractsTest(unittest.TestCase):
         physics = documents["physics_contract.json"]
         discretization = documents["discretization_contract.json"]
         self.assertEqual(physics["materials_file"], "materials.json")
-        self.assertEqual(physics["revision"], 3)
+        self.assertEqual(physics["revision"], 4)
+        self.assertEqual(
+            physics["bandgap_narrowing"]["sentaurus_dEg0_eV"], -0.01595)
+        self.assertIn(
+            "preserve physical contact quasi-Fermi potentials",
+            physics["bandgap_narrowing"]["sentaurus_qf_reference_mapping"],
+        )
         self.assertEqual(physics["mobility"]["g3_model"], "constant_field")
         self.assertFalse(physics["mobility"]["doping_dependence_enabled"])
         self.assertTrue(physics["mobility"]["high_field_saturation_enabled"])

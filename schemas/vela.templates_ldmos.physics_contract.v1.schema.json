@@ -21,7 +21,7 @@
     },
     "bandgap_narrowing": {
       "type": "object", "additionalProperties": false,
-      "required": ["model", "reference_doping_cm3", "coefficient_eV", "smoothing", "offset_eV", "fermi_statistics_correction", "parameter_source", "implementation_status"],
+      "required": ["model", "reference_doping_cm3", "coefficient_eV", "smoothing", "offset_eV", "fermi_statistics_correction", "sentaurus_dEg0_eV", "sentaurus_qf_reference_mapping", "parameter_source", "implementation_status"],
       "properties": {
         "model": {"enum": ["none", "slotboom", "old_slotboom"]},
         "reference_doping_cm3": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e30},
@@ -29,6 +29,8 @@
         "smoothing": {"type": "number", "minimum": 0.0, "maximum": 1e6},
         "offset_eV": {"type": "number", "minimum": 0.0, "maximum": 100.0},
         "fermi_statistics_correction": {"type": "boolean"},
+        "sentaurus_dEg0_eV": {"type": "number", "minimum": -100.0, "maximum": 100.0},
+        "sentaurus_qf_reference_mapping": {"type": "string", "minLength": 1},
         "parameter_source": {"type": "string", "minLength": 1},
         "implementation_status": {"enum": ["implemented", "pending"]}
       }
