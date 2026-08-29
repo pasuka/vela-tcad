@@ -1,0 +1,149 @@
+{
+  "schema": "vela.simplemos.sdevice.m9_hfs_diagnostics.v1",
+  "contract_id": "simplemos-sdevice-m9-hfs-diagnostics-v1",
+  "scope": "SDevice-only HighFieldSaturation parameter, reference-density, and per-edge diagnostic study",
+  "sentaurus_release": "T-2022.03-SP2",
+  "default_model_policy": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "m8_baseline_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json",
+    "m8_baseline_evidence_sha256": "de83d5dbafb8c055de239732578431dc0176d77f248b1c1ca537b2a52bf4b7f1",
+    "m8_comparison_report": "reference_tcad/simplemos_sentaurus2022/original_physics/comparisons/comparison_report.json",
+    "m8_comparison_report_sha256": "310abd8a1c7dea901daa15ac1aa96fb7cad5f421c6016a5b480701b87ab4598f",
+    "required_case_count": 16,
+    "required_direct_bias_points": 816
+  },
+  "parameter_audit": {
+    "sentaurus_section": "HighFieldDependence",
+    "sentaurus_parameter_source": "sdevice -P on an exact SimpleMOS full-physics deck",
+    "temperature_K": 300.0,
+    "required_parameters": [
+      "beta0", "betaexp", "alpha", "K_dT", "E0_TrEf",
+      "Ksmooth_TrEf", "Vsat_Formula", "vsat0", "vsatexp", "ku", "kv"
+    ],
+    "vela_source": "include/vela/physics/MobilityModel.h and src/physics/MobilityModel.cpp"
+  },
+  "devices": [
+    {
+      "id": "n17",
+      "tdr_sha256": "a39f6eb1ed1745fad892b4ee74524dfce6f75a9287baeb4383faebb11856ee00",
+      "NWell_cm3": 1e17
+    },
+    {
+      "id": "n21",
+      "tdr_sha256": "26f30f62d977079a2976e38dfc27ef729e7f30db37e7a8f8280da2d400fbc193",
+      "NWell_cm3": 2e17
+    }
+  ],
+  "variants": [
+    {
+      "id": "explicit_gradqf",
+      "refdens_cm3": 0.0,
+      "dimension": "default-equivalence guard",
+      "hfs_option": "HighFieldSaturation(GradQuasiFermi)",
+      "math_options": []
+    },
+    {
+      "id": "refdens_1e2",
+      "refdens_cm3": 1e2,
+      "dimension": "low-density interpolation",
+      "hfs_option": "HighFieldSaturation(GradQuasiFermi)",
+      "math_options": [
+        "RefDens_eGradQuasiFermi_ElectricField_HFS=1e2",
+        "RefDens_hGradQuasiFermi_ElectricField_HFS=1e2"
+      ]
+    },
+    {
+      "id": "refdens_1e4",
+      "refdens_cm3": 1e4,
+      "dimension": "low-density interpolation",
+      "hfs_option": "HighFieldSaturation(GradQuasiFermi)",
+      "math_options": [
+        "RefDens_eGradQuasiFermi_ElectricField_HFS=1e4",
+        "RefDens_hGradQuasiFermi_ElectricField_HFS=1e4"
+      ]
+    },
+    {
+      "id": "refdens_1e6",
+      "refdens_cm3": 1e6,
+      "dimension": "low-density interpolation",
+      "hfs_option": "HighFieldSaturation(GradQuasiFermi)",
+      "math_options": [
+        "RefDens_eGradQuasiFermi_ElectricField_HFS=1e6",
+        "RefDens_hGradQuasiFermi_ElectricField_HFS=1e6"
+      ]
+    },
+    {
+      "id": "refdens_1e8",
+      "refdens_cm3": 1e8,
+      "dimension": "low-density interpolation",
+      "hfs_option": "HighFieldSaturation(GradQuasiFermi)",
+      "math_options": [
+        "RefDens_eGradQuasiFermi_ElectricField_HFS=1e8",
+        "RefDens_hGradQuasiFermi_ElectricField_HFS=1e8"
+      ]
+    },
+    {
+      "id": "refdens_1e10",
+      "refdens_cm3": 1e10,
+      "dimension": "low-density interpolation",
+      "hfs_option": "HighFieldSaturation(GradQuasiFermi)",
+      "math_options": [
+        "RefDens_eGradQuasiFermi_ElectricField_HFS=1e10",
+        "RefDens_hGradQuasiFermi_ElectricField_HFS=1e10"
+      ]
+    }
+  ],
+  "bias_matrix": {
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_lattice": {
+      "start_V": 0.0,
+      "stop_V": 2.5,
+      "step_V": 0.05,
+      "point_count": 51,
+      "values_V": [
+        0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45,
+        0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95,
+        1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.45,
+        1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95,
+        2.0, 2.05, 2.1, 2.15, 2.2, 2.25, 2.3, 2.35, 2.4, 2.45,
+        2.5
+      ]
+    }
+  },
+  "comparison": {
+    "reference_bias_column": "gate_voltage_V",
+    "reference_current_column": "drain_total_current_A_per_um",
+    "candidate_bias_column": "bias_V",
+    "candidate_current_column": "current_total_A_per_um",
+    "current_sign_policy": "compare_absolute_magnitude",
+    "interpolation": "forbidden",
+    "exact_bias_tolerance_V": 1e-10,
+    "current_floor_A_per_um": 1e-18,
+    "numeric_parity": {
+      "maximum_absolute_log10_ratio": 0.3,
+      "maximum_relative_error": 1.0,
+      "trend_match_required": true
+    }
+  },
+  "attribution_policy": {
+    "null_control_max_response_dex": 1e-10,
+    "material_response_min_dex": 1e-4,
+    "stable_direction_requires_all_four_conditions": true,
+    "scan_is_diagnostic_not_a_default_parameter_fit": true
+  },
+  "edge_probe": {
+    "devices": ["n17", "n21"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05, 0.8, 2.5],
+    "required_columns": [
+      "electron_mobility_field_V_m", "hole_mobility_field_V_m",
+      "electron_low_field_mobility_m2_V_s", "hole_low_field_mobility_m2_V_s",
+      "electron_saturation_velocity_m_s", "hole_saturation_velocity_m_s",
+      "electron_field_beta", "hole_field_beta",
+      "electron_high_field_ratio", "hole_high_field_ratio",
+      "electron_mobility_limiter", "hole_mobility_limiter",
+      "electron_limiter_reconstruction_error", "hole_limiter_reconstruction_error"
+    ]
+  }
+}

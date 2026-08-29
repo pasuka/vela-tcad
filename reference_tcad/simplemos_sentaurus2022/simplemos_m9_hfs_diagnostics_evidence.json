@@ -1,0 +1,115 @@
+{
+  "schema": "vela.simplemos.sdevice.m9_hfs_diagnostics_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only HFS reference-density, parameter, and edge diagnostics",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "sentaurus_curves": 24,
+    "points_per_curve": 51,
+    "total_direct_bias_points": 1224,
+    "devices": [
+      "n17",
+      "n21"
+    ],
+    "drain_voltages_V": [
+      0.05,
+      1.0
+    ],
+    "refdens_cm3": [
+      0.0,
+      100.0,
+      10000.0,
+      1000000.0,
+      100000000.0,
+      10000000000.0
+    ],
+    "interpolation": "forbidden",
+    "vela_edge_probe_states": 16,
+    "default_model_changed": false
+  },
+  "baseline_guard": {
+    "status": "unchanged",
+    "case_count": 16,
+    "direct_bias_points": 816,
+    "evidence_sha256": "de83d5dbafb8c055de239732578431dc0176d77f248b1c1ca537b2a52bf4b7f1",
+    "comparison_report_sha256": "310abd8a1c7dea901daa15ac1aa96fb7cad5f421c6016a5b480701b87ab4598f"
+  },
+  "findings": {
+    "null_control_pass": true,
+    "best_positive_refdens_by_mean_error_change_cm3": 100.0,
+    "best_positive_mean_error_change_dex": -2.2477060126792348e-06,
+    "material_response_from_refdens_cm3": 1000000.0,
+    "worsens_all_conditions": [
+      1000000.0,
+      100000000.0,
+      10000000000.0
+    ],
+    "maximum_scan_response_dex": 0.65577679987537,
+    "parameter_core_formula_equivalent_at_300K": true,
+    "maximum_edge_limiter_reconstruction_error": 2.2204181469492177e-16,
+    "maximum_edge_mean_mobility_aggregation_error": 0.006187598475432752
+  },
+  "interpretation": {
+    "supported": [
+      "Sentaurus HFS reference-density interpolation materially changes Id-Vg from 1e6 cm^-3 upward in all four conditions",
+      "The exported 300 K Caughey-Thomas core vsat0, beta0, and alpha match Vela",
+      "Vela per-edge diagnostics reproduce the production effective limiter to floating-point precision"
+    ],
+    "not_supported": [
+      "Using reference density as a Vela default-model fit parameter",
+      "Attributing the remaining baseline residual to one proprietary Sentaurus formula"
+    ]
+  },
+  "artifacts": {
+    "comparison_report": {
+      "path": "reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/comparisons/comparison_report.json",
+      "sha256": "e6541ad14c0dcdb00df2d45d7cd4dac986b98d81bca9d9737a75aa27d985e667"
+    },
+    "scan_summary": {
+      "path": "reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/refdens_scan_summary.csv",
+      "sha256": "03ba0be3f4e5e997add810192770ab05e5c398fc5fb6576e14e8fb3ef9750e26"
+    },
+    "parameter_audit": {
+      "path": "reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/parameter_audit/hfs_parameter_audit.json",
+      "sha256": "3aef98a8c251597d203f2a54bd97c200353b8b6b3b79423a548400af7a42fb95"
+    },
+    "edge_report": {
+      "path": "reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/vela_edge_probes/edge_hfs_report.json",
+      "sha256": "70465e9abf8cee95b9cafb5dc94f84c6a53eaa413d4df181ad11234a478f3ef8"
+    },
+    "edge_summary": {
+      "path": "reference_tcad/simplemos_sentaurus2022/hfs_diagnostics/vela_edge_probes/edge_hfs_summary.csv",
+      "sha256": "1f580b847bb4739e182da050900c6f9d802919f98dc8a4b8b1ad28079ee6f5bb"
+    },
+    "figures": [
+      {
+        "path": "docs/validation/figures/simplemos_m9/simplemos_m9_refdens_error_change.png",
+        "sha256": "afb2d97cb9b43c0e57874912cfd1fdd33fbf781d8f3688670541fd8e5b3a3f47"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m9/simplemos_m9_refdens_pointwise_response.png",
+        "sha256": "61ce0c2d16f7bb331c23de3e4ba112abbc5266483cc66dba9408ee1c30278c91"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m9/simplemos_m9_refdens_sentaurus_response.png",
+        "sha256": "6665e60fa0fbc786fb379bacb6f5147d5e6d1f8a05f116167bd991c19398e9ca"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m9/simplemos_m9_vela_edge_limiter.png",
+        "sha256": "35d1eed5351170fdcee86bf0e8c72d886a91183a3520e5ede4948bd5f6748b61"
+      }
+    ]
+  },
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m9_hfs_diagnostics_contract_v1.json": "1ed8de6fa7919565bec9b9fd8ed40400b816bcd1fe278774833dcef31ba0398e",
+    "src/tools/vela_example_runner.cpp": "d26091964ed59d5d1d3c1cfc761d7e9b42735aea59f3ac63e395525284a0c3a8",
+    "scripts/run_simplemos_m9_refdens_scan.py": "92d4964e5c3ae6b43aa23a41298ba7b9892f8bd62f0f9240d2bf1a4e556fd843",
+    "scripts/audit_simplemos_m9_hfs_parameters.py": "a8ec18cb6c96e9473967ae371d897aa02652b67adbbfbf114af3f27b1e88d35e",
+    "scripts/run_simplemos_m9_edge_hfs_diagnostics.py": "9fd90393e893e2aa596427b1d654228994697798072dfc2892087734bf207cf6",
+    "scripts/plot_simplemos_m9_hfs_diagnostics.py": "fd33ecf2ab58f1e9ba43d9496d9adbf9ab1d2eef7e751009eaea4c39f5d4abb7",
+    "scripts/freeze_simplemos_m9_hfs_diagnostics_evidence.py": "d32b48c65d1988e009d09459260f7070b708e1336be4e66b3606fe4ebf2d0eca",
+    "scripts/build_simplemos_m9_report_artifact.py": "a9e01359e0e9e18ebefa807c5765f624e48e90aa7406c086453a68f24b02c7a9",
+    "tests/regression/test_reference_tcad_tools.py": "1844ca453be92c527c3ef8b84ecf92c4dd63c3c07aee279c024ee637a7d9b21b",
+    "tests/regression/test_simplemos_m9_hfs_diagnostics.py": "79903fe14eca5b5dcdf3f3ec86e0c1849a055b586f6ec2f3160a4c3035622a76"
+  }
+}
