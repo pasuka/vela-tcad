@@ -1301,7 +1301,9 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
         // factor while preserving any high-field velocity saturation.
         const Region& region = mesh.getRegion(mesh.getCell(c).region_id);
         const bool lombardi = mobilityConfig != nullptr &&
-            (mobilityConfig->model == "masetti_lombardi" ||
+            (mobilityConfig->model == "constant_lombardi" ||
+             mobilityConfig->model == "constant_field_lombardi" ||
+             mobilityConfig->model == "masetti_lombardi" ||
              mobilityConfig->model == "masetti_field_lombardi" ||
              mobilityConfig->model == "phumob_lombardi" ||
              mobilityConfig->model == "phumob_field_lombardi");

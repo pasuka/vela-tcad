@@ -1,0 +1,169 @@
+{
+  "schema": "vela.simplemos.sdevice.m11_self_consistent_factorial.v1",
+  "status": "complete",
+  "curve_count": 32,
+  "direct_bias_points_per_solver": 1632,
+  "effect_definition": "mean response at coded product +1 minus mean response at coded product -1",
+  "conditions": [
+    {
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "effects": {
+        "maximum_absolute_log10_ratio_above_floor": {
+          "phumob": -0.0017481901187550095,
+          "enormal": -0.0015614721639506945,
+          "hfs": 0.004941556884801461,
+          "phumob:enormal": -0.0017824316265493828,
+          "phumob:hfs": -0.0013519753203337578,
+          "enormal:hfs": 0.0014227341825327824,
+          "phumob:enormal:hfs": -0.002389642663939283
+        },
+        "median_absolute_log10_ratio_above_floor": {
+          "phumob": 0.002818292252142047,
+          "enormal": 0.0015132035716872577,
+          "hfs": -0.0003620311666812648,
+          "phumob:enormal": 0.0016234673640657012,
+          "phumob:hfs": -0.0013959683713334128,
+          "enormal:hfs": 0.0004672783958567465,
+          "phumob:enormal:hfs": -2.3604105829463234e-05
+        }
+      }
+    },
+    {
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "effects": {
+        "maximum_absolute_log10_ratio_above_floor": {
+          "phumob": 0.0006726719752869342,
+          "enormal": -0.003360177332031755,
+          "hfs": 0.0007288768468100559,
+          "phumob:enormal": 0.0014448743482301102,
+          "phumob:hfs": 0.0010014030845489352,
+          "enormal:hfs": -0.0006750948892151054,
+          "phumob:enormal:hfs": 0.0008873624240855887
+        },
+        "median_absolute_log10_ratio_above_floor": {
+          "phumob": -0.00046096161431558817,
+          "enormal": -0.0013288117915039796,
+          "hfs": -0.00016491023288211625,
+          "phumob:enormal": 0.0014262941085830755,
+          "phumob:hfs": -0.001582170290011807,
+          "enormal:hfs": -0.0005102608110338115,
+          "phumob:enormal:hfs": -0.0017196088329452346
+        }
+      }
+    },
+    {
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "effects": {
+        "maximum_absolute_log10_ratio_above_floor": {
+          "phumob": -0.025823032404580143,
+          "enormal": -0.013804551950152025,
+          "hfs": 0.019531640613631454,
+          "phumob:enormal": 0.008722532605322311,
+          "phumob:hfs": -0.0076638484228263165,
+          "enormal:hfs": -0.006135711855073445,
+          "phumob:enormal:hfs": 0.0044835848510048765
+        },
+        "median_absolute_log10_ratio_above_floor": {
+          "phumob": -0.0002779716633771103,
+          "enormal": -0.0019539444471847,
+          "hfs": 0.0008272615019805172,
+          "phumob:enormal": 0.0025998976924054683,
+          "phumob:hfs": -0.0003942426904492268,
+          "enormal:hfs": -0.000593221669184971,
+          "phumob:enormal:hfs": -0.0007117415836296551
+        }
+      }
+    },
+    {
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "effects": {
+        "maximum_absolute_log10_ratio_above_floor": {
+          "phumob": 0.00036467938413568823,
+          "enormal": -0.004330930599384615,
+          "hfs": 0.0019708804316007564,
+          "phumob:enormal": 0.002059612963488909,
+          "phumob:hfs": 0.0012256562481982106,
+          "enormal:hfs": -0.0010798278188463642,
+          "phumob:enormal:hfs": 0.0011603168160713856
+        },
+        "median_absolute_log10_ratio_above_floor": {
+          "phumob": -0.0011468999555403828,
+          "enormal": -0.0039009136241217202,
+          "hfs": -0.0008415930620193322,
+          "phumob:enormal": 0.0016267401433119697,
+          "phumob:hfs": 0.0012154858888431107,
+          "enormal:hfs": -0.0003752550367283943,
+          "phumob:enormal:hfs": 0.0006888050662799648
+        }
+      }
+    }
+  ],
+  "aggregate_effects": {
+    "maximum_absolute_log10_ratio_above_floor": {
+      "phumob": -0.006633467790978134,
+      "enormal": -0.005764283011379781,
+      "hfs": 0.006793238694210932,
+      "phumob:enormal": 0.002611147072622985,
+      "phumob:hfs": -0.0016971911026032321,
+      "enormal:hfs": -0.001616975095150533,
+      "phumob:enormal:hfs": 0.0010354053568056437
+    },
+    "median_absolute_log10_ratio_above_floor": {
+      "phumob": 0.00023311475472724032,
+      "enormal": -0.0014176165727807864,
+      "hfs": -0.00013531823990054793,
+      "phumob:enormal": 0.0018190998270915543,
+      "phumob:hfs": -0.000539223865737834,
+      "enormal:hfs": -0.00025286478027260716,
+      "phumob:enormal:hfs": -0.00044153736403109746
+    }
+  },
+  "variant_aggregate": [
+    {
+      "variant": "p0_e0_h0",
+      "maximum_absolute_log10_ratio_above_floor": 0.056015465336494624,
+      "median_absolute_log10_ratio_above_floor": 0.010763322691820742
+    },
+    {
+      "variant": "p0_e0_h1",
+      "maximum_absolute_log10_ratio_above_floor": 0.06715827558526496,
+      "median_absolute_log10_ratio_above_floor": 0.010978555733899538
+    },
+    {
+      "variant": "p0_e1_h0",
+      "maximum_absolute_log10_ratio_above_floor": 0.050292415704448035,
+      "median_absolute_log10_ratio_above_floor": 0.007337933708189913
+    },
+    {
+      "variant": "p0_e1_h1",
+      "maximum_absolute_log10_ratio_above_floor": 0.05613046504930602,
+      "median_absolute_log10_ratio_above_floor": 0.007930511917785687
+    },
+    {
+      "variant": "p1_e0_h0",
+      "maximum_absolute_log10_ratio_above_floor": 0.04950344693230238,
+      "median_absolute_log10_ratio_above_floor": 0.009275024121163166
+    },
+    {
+      "variant": "p1_e0_h1",
+      "maximum_absolute_log10_ratio_above_floor": 0.05518106426225496,
+      "median_absolute_log10_ratio_above_floor": 0.009294884159828487
+    },
+    {
+      "variant": "p1_e1_h0",
+      "maximum_absolute_log10_ratio_above_floor": 0.046931880731890474,
+      "median_absolute_log10_ratio_above_floor": 0.010370909519777639
+    },
+    {
+      "variant": "p1_e1_h1",
+      "maximum_absolute_log10_ratio_above_floor": 0.051446358585153285,
+      "median_absolute_log10_ratio_above_floor": 0.00900196526983555
+    }
+  ],
+  "comparison_report": "build-release/reference_tcad/simplemos_sentaurus2022/m11_mobility_factorial/comparisons/comparison_report.json",
+  "interpretation": "Paired self-consistent Sentaurus/Vela effects include both direct mobility-model response and nonlinear electrostatic/carrier-state feedback."
+}

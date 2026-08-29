@@ -1,0 +1,533 @@
+{
+  "schema": "vela.simplemos.sdevice.m11_mobility_factorial_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only 2^3 PhuMob x Enormal x HFS factorial",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "devices": [
+      "n17",
+      "n21"
+    ],
+    "drain_voltages_V": [
+      0.05,
+      1.0
+    ],
+    "gate_sweep_V": {
+      "start": 0.0,
+      "step": 0.05,
+      "stop": 2.5
+    },
+    "variants": 8,
+    "self_consistent_curves": 32,
+    "interpolation": "forbidden",
+    "default_model_changed": false
+  },
+  "data_quality": {
+    "curve_count": 32,
+    "direct_bias_points_per_solver": 1632,
+    "points_above_floor": 1632,
+    "all_cases_pass": true,
+    "all_trends_match": true,
+    "all_finite": true,
+    "frozen_state_count": 16,
+    "frozen_variant_evaluations": 128
+  },
+  "findings": {
+    "self_consistent_aggregate_effects_dex": {
+      "maximum_absolute_log10_ratio_above_floor": {
+        "phumob": -0.006633467790978134,
+        "enormal": -0.005764283011379781,
+        "hfs": 0.006793238694210932,
+        "phumob:enormal": 0.002611147072622985,
+        "phumob:hfs": -0.0016971911026032321,
+        "enormal:hfs": -0.001616975095150533,
+        "phumob:enormal:hfs": 0.0010354053568056437
+      },
+      "median_absolute_log10_ratio_above_floor": {
+        "phumob": 0.00023311475472724032,
+        "enormal": -0.0014176165727807864,
+        "hfs": -0.00013531823990054793,
+        "phumob:enormal": 0.0018190998270915543,
+        "phumob:hfs": -0.000539223865737834,
+        "enormal:hfs": -0.00025286478027260716,
+        "phumob:enormal:hfs": -0.00044153736403109746
+      }
+    },
+    "self_consistent_variant_aggregate_dex": [
+      {
+        "variant": "p0_e0_h0",
+        "maximum_absolute_log10_ratio_above_floor": 0.056015465336494624,
+        "median_absolute_log10_ratio_above_floor": 0.010763322691820742
+      },
+      {
+        "variant": "p0_e0_h1",
+        "maximum_absolute_log10_ratio_above_floor": 0.06715827558526496,
+        "median_absolute_log10_ratio_above_floor": 0.010978555733899538
+      },
+      {
+        "variant": "p0_e1_h0",
+        "maximum_absolute_log10_ratio_above_floor": 0.050292415704448035,
+        "median_absolute_log10_ratio_above_floor": 0.007337933708189913
+      },
+      {
+        "variant": "p0_e1_h1",
+        "maximum_absolute_log10_ratio_above_floor": 0.05613046504930602,
+        "median_absolute_log10_ratio_above_floor": 0.007930511917785687
+      },
+      {
+        "variant": "p1_e0_h0",
+        "maximum_absolute_log10_ratio_above_floor": 0.04950344693230238,
+        "median_absolute_log10_ratio_above_floor": 0.009275024121163166
+      },
+      {
+        "variant": "p1_e0_h1",
+        "maximum_absolute_log10_ratio_above_floor": 0.05518106426225496,
+        "median_absolute_log10_ratio_above_floor": 0.009294884159828487
+      },
+      {
+        "variant": "p1_e1_h0",
+        "maximum_absolute_log10_ratio_above_floor": 0.046931880731890474,
+        "median_absolute_log10_ratio_above_floor": 0.010370909519777639
+      },
+      {
+        "variant": "p1_e1_h1",
+        "maximum_absolute_log10_ratio_above_floor": 0.051446358585153285,
+        "median_absolute_log10_ratio_above_floor": 0.00900196526983555
+      }
+    ],
+    "self_consistent_condition_effects_dex": [
+      {
+        "device": "n17",
+        "drain_voltage_V": 0.05,
+        "effects": {
+          "maximum_absolute_log10_ratio_above_floor": {
+            "phumob": -0.0017481901187550095,
+            "enormal": -0.0015614721639506945,
+            "hfs": 0.004941556884801461,
+            "phumob:enormal": -0.0017824316265493828,
+            "phumob:hfs": -0.0013519753203337578,
+            "enormal:hfs": 0.0014227341825327824,
+            "phumob:enormal:hfs": -0.002389642663939283
+          },
+          "median_absolute_log10_ratio_above_floor": {
+            "phumob": 0.002818292252142047,
+            "enormal": 0.0015132035716872577,
+            "hfs": -0.0003620311666812648,
+            "phumob:enormal": 0.0016234673640657012,
+            "phumob:hfs": -0.0013959683713334128,
+            "enormal:hfs": 0.0004672783958567465,
+            "phumob:enormal:hfs": -2.3604105829463234e-05
+          }
+        }
+      },
+      {
+        "device": "n17",
+        "drain_voltage_V": 1.0,
+        "effects": {
+          "maximum_absolute_log10_ratio_above_floor": {
+            "phumob": 0.0006726719752869342,
+            "enormal": -0.003360177332031755,
+            "hfs": 0.0007288768468100559,
+            "phumob:enormal": 0.0014448743482301102,
+            "phumob:hfs": 0.0010014030845489352,
+            "enormal:hfs": -0.0006750948892151054,
+            "phumob:enormal:hfs": 0.0008873624240855887
+          },
+          "median_absolute_log10_ratio_above_floor": {
+            "phumob": -0.00046096161431558817,
+            "enormal": -0.0013288117915039796,
+            "hfs": -0.00016491023288211625,
+            "phumob:enormal": 0.0014262941085830755,
+            "phumob:hfs": -0.001582170290011807,
+            "enormal:hfs": -0.0005102608110338115,
+            "phumob:enormal:hfs": -0.0017196088329452346
+          }
+        }
+      },
+      {
+        "device": "n21",
+        "drain_voltage_V": 0.05,
+        "effects": {
+          "maximum_absolute_log10_ratio_above_floor": {
+            "phumob": -0.025823032404580143,
+            "enormal": -0.013804551950152025,
+            "hfs": 0.019531640613631454,
+            "phumob:enormal": 0.008722532605322311,
+            "phumob:hfs": -0.0076638484228263165,
+            "enormal:hfs": -0.006135711855073445,
+            "phumob:enormal:hfs": 0.0044835848510048765
+          },
+          "median_absolute_log10_ratio_above_floor": {
+            "phumob": -0.0002779716633771103,
+            "enormal": -0.0019539444471847,
+            "hfs": 0.0008272615019805172,
+            "phumob:enormal": 0.0025998976924054683,
+            "phumob:hfs": -0.0003942426904492268,
+            "enormal:hfs": -0.000593221669184971,
+            "phumob:enormal:hfs": -0.0007117415836296551
+          }
+        }
+      },
+      {
+        "device": "n21",
+        "drain_voltage_V": 1.0,
+        "effects": {
+          "maximum_absolute_log10_ratio_above_floor": {
+            "phumob": 0.00036467938413568823,
+            "enormal": -0.004330930599384615,
+            "hfs": 0.0019708804316007564,
+            "phumob:enormal": 0.002059612963488909,
+            "phumob:hfs": 0.0012256562481982106,
+            "enormal:hfs": -0.0010798278188463642,
+            "phumob:enormal:hfs": 0.0011603168160713856
+          },
+          "median_absolute_log10_ratio_above_floor": {
+            "phumob": -0.0011468999555403828,
+            "enormal": -0.0039009136241217202,
+            "hfs": -0.0008415930620193322,
+            "phumob:enormal": 0.0016267401433119697,
+            "phumob:hfs": 0.0012154858888431107,
+            "enormal:hfs": -0.0003752550367283943,
+            "phumob:enormal:hfs": 0.0006888050662799648
+          }
+        }
+      }
+    ],
+    "frozen_vela_aggregate_effects": {
+      "median_log10_electron_mobility_cm2_V_s": {
+        "phumob": -1.1304227597167804,
+        "enormal": -0.008400508682839813,
+        "hfs": -0.02163775018151526,
+        "phumob:enormal": 0.006683893167455324,
+        "phumob:hfs": -0.01119682823015733,
+        "enormal:hfs": -0.0008747442817238493,
+        "phumob:enormal:hfs": 0.0008362109361987891
+      },
+      "mobility_active_median_error_dex": {
+        "phumob": -1.0048419194893372,
+        "enormal": -0.024560419608011697,
+        "hfs": -0.033376092046655814,
+        "phumob:enormal": 0.0019888429304014688,
+        "phumob:hfs": 0.020719556312738585,
+        "enormal:hfs": 0.0041617068290175085,
+        "phumob:enormal:hfs": -0.0022898950530531037
+      },
+      "mobility_active_p95_error_dex": {
+        "phumob": -1.2032784984235352,
+        "enormal": -0.040940167774614844,
+        "hfs": -0.17643278288624953,
+        "phumob:enormal": -0.04093732937837635,
+        "phumob:hfs": -0.17448615802767142,
+        "enormal:hfs": 0.01618403341850594,
+        "phumob:enormal:hfs": 0.01618410686797045
+      },
+      "log10_terminal_current_A_per_um": {
+        "phumob": -1.5725308211509361,
+        "enormal": -6.591896131169506e-05,
+        "hfs": -0.0006714568623262807,
+        "phumob:enormal": 6.232917032988894e-05,
+        "phumob:hfs": 0.0006473100496329209,
+        "enormal:hfs": 6.351603598631073e-07,
+        "phumob:enormal:hfs": -6.343621485882522e-07
+      },
+      "terminal_current_error_dex": {
+        "phumob": -1.53191223292,
+        "enormal": -6.563866438202837e-05,
+        "hfs": -0.000671455607282212,
+        "phumob:enormal": 6.260946725933358e-05,
+        "phumob:hfs": 0.0006473113046767676,
+        "enormal:hfs": 6.35160301021287e-07,
+        "phumob:enormal:hfs": -6.343622080962064e-07
+      }
+    },
+    "frozen_vela_variant_aggregate": [
+      {
+        "variant": "p0_e0_h0",
+        "median_log10_electron_mobility_cm2_V_s": 3.1513698502474603,
+        "mobility_active_median_error_dex": 1.0732261963330902,
+        "mobility_active_p95_error_dex": 1.5639855510744367,
+        "log10_terminal_current_A_per_um": -7.6416435503168945,
+        "terminal_current_error_dex": 2.289882993753417
+      },
+      {
+        "variant": "p0_e0_h1",
+        "median_log10_electron_mobility_cm2_V_s": 3.1426398835140246,
+        "mobility_active_median_error_dex": 1.0126789460916252,
+        "mobility_active_p95_error_dex": 1.562038999665323,
+        "log10_terminal_current_A_per_um": -7.642963586751362,
+        "terminal_current_error_dex": 2.2885629573189488
+      },
+      {
+        "variant": "p0_e1_h0",
+        "median_log10_electron_mobility_cm2_V_s": 3.137996403615088,
+        "mobility_active_median_error_dex": 1.0402253319126065,
+        "mobility_active_p95_error_dex": 1.5639827861276627,
+        "log10_terminal_current_A_per_um": -7.6417730679710445,
+        "terminal_current_error_dex": 2.2897534760992664
+      },
+      {
+        "variant": "p0_e1_h1",
+        "median_log10_electron_mobility_cm2_V_s": 3.1258445264458077,
+        "mobility_active_median_error_dex": 0.9925812854352827,
+        "mobility_active_p95_error_dex": 1.56203608781962,
+        "log10_terminal_current_A_per_um": -7.643090565360494,
+        "terminal_current_error_dex": 2.2884359787098165
+      },
+      {
+        "variant": "p1_e0_h0",
+        "median_log10_electron_mobility_cm2_V_s": 2.0262962365295807,
+        "mobility_active_median_error_dex": 0.043385982547560056,
+        "mobility_active_p95_error_dex": 0.5923146469249198,
+        "log10_terminal_current_A_per_um": -9.21488464504994,
+        "terminal_current_error_dex": 0.7572602056992728
+      },
+      {
+        "variant": "p1_e0_h1",
+        "median_log10_electron_mobility_cm2_V_s": 1.993500191463433,
+        "mobility_active_median_error_dex": 0.02885763503767824,
+        "mobility_active_p95_error_dex": 0.20902756572452236,
+        "log10_terminal_current_A_per_um": -9.214908792660847,
+        "terminal_current_error_dex": 0.7572360605985745
+      },
+      {
+        "variant": "p1_e1_h0",
+        "median_log10_electron_mobility_cm2_V_s": 2.0246181543597213,
+        "mobility_active_median_error_dex": 0.018942594093985285,
+        "mobility_active_p95_error_dex": 0.4780690094854522,
+        "log10_terminal_current_A_per_um": -9.214888235639133,
+        "terminal_current_error_dex": 0.7572571757040574
+      },
+      {
+        "variant": "p1_e1_h1",
+        "median_log10_electron_mobility_cm2_V_s": 1.9917450426025234,
+        "mobility_active_median_error_dex": 0.008157870136032424,
+        "mobility_active_p95_error_dex": 0.15951820885800766,
+        "log10_terminal_current_A_per_um": -9.214912381653617,
+        "terminal_current_error_dex": 0.7572330321995446
+      }
+    ]
+  },
+  "interpretation": {
+    "supported": [
+      "In paired self-consistent maximum Id error, Enormal improves agreement in all four device/drain conditions",
+      "In paired self-consistent maximum Id error, HFS increases mismatch in all four conditions and has the largest positive aggregate main effect",
+      "PhuMob strongly improves the n21 low-drain condition but is nearly neutral at high drain",
+      "On the same full-physics Sentaurus state, enabling all three Vela mobility components reduces mobility residual, with PhuMob the dominant low-field contribution",
+      "Opposite HFS signs in self-consistent Id error and frozen-state mobility error identify drive construction, limiting, discretization, and nonlinear state feedback as the remaining investigation boundary"
+    ],
+    "not_supported": [
+      "Treating the frozen Vela matrix as a frozen Sentaurus model re-evaluation",
+      "Attributing all remaining mismatch to a single private Sentaurus HFS formula",
+      "Changing the default Vela mobility stack from this diagnostic matrix alone"
+    ]
+  },
+  "artifacts": {
+    "self_consistent_report": {
+      "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/self_consistent_factorial_report.json",
+      "sha256": "bfa7786fc0524b4d03aba4bba5e34f353466d2fd4840fccb3ed2595d02d6cbe3"
+    },
+    "self_consistent_effects": {
+      "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/self_consistent_factorial_effects.csv",
+      "sha256": "aa661166235e680a873140f7a72c0ef8807140e459f99a1d7ea76a21804f2fb5"
+    },
+    "frozen_report": {
+      "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/frozen_factorial_report.json",
+      "sha256": "22fc9706d3294ebb9cc52a2639b53a1ec564571b40962e327258c246c30c97b8"
+    },
+    "frozen_metrics": {
+      "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/frozen_factorial_metrics.csv",
+      "sha256": "7ce4e0ca19c1278b02345c433c40f17c86e550905ec242ad0683672fafebffc0"
+    },
+    "frozen_effects": {
+      "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/frozen_factorial_effects.csv",
+      "sha256": "4ee74e594c72c6497e1d51368aad4f369c75f6ae310743a2b798fdd4fd867fda"
+    },
+    "comparison_report": {
+      "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparison_report.json",
+      "sha256": "e6f3331aadcc2b1cebe80d801bf10784af274fc5955fd515a7352b4cc3743918"
+    },
+    "comparison_curves": [
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p0_e0_h0_vd_0p05_comparison.csv",
+        "sha256": "583bb5b98a499e59ccc49de4e01102aa4bee400e09d848d7bf9d48845eee4537"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p0_e0_h0_vd_1_comparison.csv",
+        "sha256": "1b5a7a493b6cbdbfaac7e060129d23d8d12071510e7c767dd5ec5ffa0fc5acc2"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p0_e0_h1_vd_0p05_comparison.csv",
+        "sha256": "11e1ec053d3a5e6f33ca9e60dc4ec7bd058fc1a7e5947431862475f31367bac7"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p0_e0_h1_vd_1_comparison.csv",
+        "sha256": "35576afcbf5f2d9f28a1f1e01d0652e1d36d2807505b23659c0451cac17c0a8a"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p0_e1_h0_vd_0p05_comparison.csv",
+        "sha256": "f02177f8e418398b86653327c5b9edbb1d83af4ed57a32803aa680a9435d7e23"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p0_e1_h0_vd_1_comparison.csv",
+        "sha256": "0397b7362feb35cb261c84d3539e38a4487363ec63041ba5c52b287f25e55e2f"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p0_e1_h1_vd_0p05_comparison.csv",
+        "sha256": "d59530afd2579024915970535c9ad997de83a70fcfdbed0f9c253907d8c7bafc"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p0_e1_h1_vd_1_comparison.csv",
+        "sha256": "fe345596005c9ec2d73dd31bdc36cfd3cb99bbf76fe170bcd1dab30e18075aec"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p1_e0_h0_vd_0p05_comparison.csv",
+        "sha256": "80fc2fb42babe71a695653a118f467f2d15d16de2c8d0c1742cdb7e4f33afd41"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p1_e0_h0_vd_1_comparison.csv",
+        "sha256": "08b522d0711c2299624b483a7be31a5ea705812c0440cb08ee792845d106d9af"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p1_e0_h1_vd_0p05_comparison.csv",
+        "sha256": "eb1824e4f8049a9a93a09b17462338aa0fa02f03be919ae487b4eadcbbe9f811"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p1_e0_h1_vd_1_comparison.csv",
+        "sha256": "7210e649d5e751e1fe1b4dedaa99d946e95d7ef5c8a1bf4788e628b35d60c45e"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p1_e1_h0_vd_0p05_comparison.csv",
+        "sha256": "5af6468af3e03956e12f6bdb5759f157aa7b28e43a6b7107a2c700e33676d494"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p1_e1_h0_vd_1_comparison.csv",
+        "sha256": "fb15272c263a4400d44d865e9be405f63daf8fe1202a5c19965821e68540aeae"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p1_e1_h1_vd_0p05_comparison.csv",
+        "sha256": "13a0343a94ef35650ac9125358069565b66b5c0cc2f61b882bdefa68f4957df6"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n17_p1_e1_h1_vd_1_comparison.csv",
+        "sha256": "4bfb07291446fa582b8489a39c04c654f7d75ae56f93d49de57f7f45753f9195"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p0_e0_h0_vd_0p05_comparison.csv",
+        "sha256": "54526825552c80b2880f934f82c29a9014b8ff5afb693a078478c6f7c1aec6de"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p0_e0_h0_vd_1_comparison.csv",
+        "sha256": "ad8e12f57e7f092bd1cafb3c5de2c4be9d7358d3e7cdb360fc7f1a8b14fb6ad1"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p0_e0_h1_vd_0p05_comparison.csv",
+        "sha256": "119bf0911ea9652953e8e433118694b6daf5393418aa8acbd35464b98cb1efb9"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p0_e0_h1_vd_1_comparison.csv",
+        "sha256": "65f05dd403e8026697ee9b2476fda79fbe834378afc4269968618c80c79a2cb6"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p0_e1_h0_vd_0p05_comparison.csv",
+        "sha256": "20aa1c9df48f9ace677c0b15b0375c2bc16d169b153878d2d2188e354c1eb188"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p0_e1_h0_vd_1_comparison.csv",
+        "sha256": "b4aa22150b621112bb0ab3f7965130c3ce81078f3f7c579a677448dba1332279"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p0_e1_h1_vd_0p05_comparison.csv",
+        "sha256": "03dfb4c39b1cfdc8ab8a13a76cd9f5d1af7bcaa89cf09bc94f87bf5d81445dac"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p0_e1_h1_vd_1_comparison.csv",
+        "sha256": "462beef3a9365bffbc04cac23449d33711181d87c8be123adb4e617b3eb076a9"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p1_e0_h0_vd_0p05_comparison.csv",
+        "sha256": "0946fa003d81c72b96a82684b633cdcb9469bbb6bdf3df8d720ebbaa2ea4240f"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p1_e0_h0_vd_1_comparison.csv",
+        "sha256": "ab0379885b18aebbed787378a7cf9a44dbd164401ed08930f6f17c09ad793254"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p1_e0_h1_vd_0p05_comparison.csv",
+        "sha256": "b224b302e97f51b89bdcc3693914567a7cda4287b5171c5fda796cd633c5b14a"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p1_e0_h1_vd_1_comparison.csv",
+        "sha256": "c2b29bad391ad8fe474f8d4e3356ef25a85dd6ccfa51b7ca7abf3c4e4ec8b0a4"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p1_e1_h0_vd_0p05_comparison.csv",
+        "sha256": "68afc12aa446b5128f943a6c6f322d7e400f3fa9eb3d966796ef1852447ffd58"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p1_e1_h0_vd_1_comparison.csv",
+        "sha256": "53dc91f30b71192683606631c246f075c81e2592d8490758b7f6adc7cec241bc"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p1_e1_h1_vd_0p05_comparison.csv",
+        "sha256": "2138403be046dc67e4a3cceb65ee8a11e1552218e97b41ad519e214d2bb4f566"
+      },
+      {
+        "path": "reference_tcad/simplemos_sentaurus2022/mobility_factorial/comparisons/n21_p1_e1_h1_vd_1_comparison.csv",
+        "sha256": "455ec485209dae866da878475b8e03733e9fdad5bce6e4f27dff07ebec169c66"
+      }
+    ],
+    "figures": [
+      {
+        "path": "docs/validation/figures/simplemos_m11/simplemos_m11_aggregate_effects.png",
+        "sha256": "729dedf6821a15a1cc00707013e6b125636c29ccb6b37df41ee64fdb8c61a863"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m11/simplemos_m11_condition_effect_heatmap.png",
+        "sha256": "20e4c32b0802460c312a5093bf0191e3e2cf40b2c4ee205e8e5164676a9dd9b0"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m11/simplemos_m11_n21_vd0p05_residuals.png",
+        "sha256": "4f9f1a1c4f81de06cab65ad9d0701dc0770a9851b1baa9d55ac26640b962f7d7"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m11/simplemos_m11_variant_errors.png",
+        "sha256": "8e492e99ae667f8044f04b2acbf0bf83ad16ef940ad9485e0cf1de1e78f8731c"
+      }
+    ],
+    "portable_report": [
+      {
+        "path": "docs/validation/reports/simplemos_m11/artifact.json",
+        "sha256": "94d4d2df46d7dd8ef315598f6cffc42c73be0dd237a25d1eba42fee7f3a2a34e"
+      },
+      {
+        "path": "docs/validation/reports/simplemos_m11/CHART_MAP.md",
+        "sha256": "ff545900fc0692700c9f4eb9a1b2668ca4716000738b8281eca7718947e7e036"
+      },
+      {
+        "path": "docs/validation/reports/simplemos_m11/simplemos_m11_mobility_factorial_report.html",
+        "sha256": "c90bb0a72c53fca9ea79ccdb132c48cbb80f8f1ad4c7fb9b2bbd05cd0485b6ee"
+      }
+    ]
+  },
+  "source_integrity": {
+    "sentaurus_reference_manifest_sha256": "f3336b9d52a21138fbabcb22226a88006bb945147e46a704fb43b369cde10cb3",
+    "sentaurus_reference_curve_count": 32,
+    "sentaurus_reference_all_51_points": true,
+    "raw_self_consistent_report_sha256": "bfa7786fc0524b4d03aba4bba5e34f353466d2fd4840fccb3ed2595d02d6cbe3",
+    "raw_frozen_report_sha256": "22fc9706d3294ebb9cc52a2639b53a1ec564571b40962e327258c246c30c97b8"
+  },
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m11_mobility_factorial_contract_v1.json": "449f03ae43d712ea40328bc0d122029ac18a7e4ea0b2853c72471124ae393c98",
+    "CMakeLists.txt": "1f40d4543ec5517e5f3037e1e2d5fee02f2dd6a0a17ea1be9de581d110e18b2b",
+    "src/physics/MobilityModel.cpp": "ab515aada77b7c6f3b36adb67974f08162a30651f439e27fe305169d40ef52f3",
+    "src/equation/CoupledDDAssembler.cpp": "6041601dd97f9636b8d5d73c10481b2920de0fe8d4330fb2b429d3314507ddda",
+    "include/vela/equation/AssemblerUtils.h": "4cf2db64b240c7c86fa6c8f86ac814819a1e08f42b004ae8a6a8ce7a539fe0df",
+    "include/vela/equation/ElementEdgeGssLauxAD.inl": "0e68ab26a262e2fc8ee2e1f39787bda1e6015a08f00e422ecd2b58c1e7825136",
+    "tests/test_mobility.cpp": "892b305bd823fa6407c3185e9a52620ccebd7eb6b62afae36b728ee897acafad",
+    "scripts/run_simplemos_m11_mobility_factorial.py": "2952636162667721ef6ebe1c0bf419fae7286f433ae3fb98fc1fe8fb9d3b254e",
+    "scripts/plot_simplemos_m11_mobility_factorial.py": "ef69cf35d287dae06f0b2d57ed9d580acae6cdec75ab45be40992fdf00d57c19",
+    "scripts/freeze_simplemos_m11_mobility_factorial_evidence.py": "02452dd15722b861c13d770dfafb7fa90a251ac8a454c9f774dbc64aae04e2a9",
+    "scripts/build_simplemos_m11_report_artifact.py": "cb22dc6b1b8e8287ff71e2446a8941a2c4d51abc46204d7117942a66b471606d",
+    "tests/regression/test_simplemos_m11_mobility_factorial.py": "4507db5522da2b0d7a50cfad1634e2d6458e778550f0e038a71140b5fcb5b9ac"
+  }
+}

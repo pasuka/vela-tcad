@@ -540,6 +540,35 @@ TEST_CASE("Caughey-Thomas field mobility rolls off toward velocity saturation", 
     REQUIRE(highField * 1.0e8 <= config.electronField.saturationVelocity * 1.01);
 }
 
+TEST_CASE("Constant mobility composes orthogonally with HFS and Lombardi",
+          "[mobility][field][surface][lombardi][factorial]")
+{
+    const Material silicon = MaterialDatabase{}.getMaterial("Si");
+    const auto constant = makeMobilityModel(mobilityModelConfig("constant"));
+    const auto field = makeMobilityModel(mobilityModelConfig("constant_field"));
+    const auto lombardi = makeMobilityModel(
+        mobilityModelConfig("constant_lombardi"));
+    const auto combined = makeMobilityModel(
+        mobilityModelConfig("constant_field_lombardi"));
+    const Real doping = 1.0e23;
+    const Real parallelField = 3.0e6;
+    const Real normalField = 2.0e7;
+    const Real baseline = constant->electronMobility(
+        silicon, doping, 2.0e21, 1.0e15, parallelField, normalField, 0.0);
+    const Real fieldValue = field->electronMobility(
+        silicon, doping, 2.0e21, 1.0e15, parallelField, normalField, 0.0);
+    const Real lombardiValue = lombardi->electronMobility(
+        silicon, doping, 2.0e21, 1.0e15, parallelField, normalField, 0.0);
+    const Real combinedValue = combined->electronMobility(
+        silicon, doping, 2.0e21, 1.0e15, parallelField, normalField, 0.0);
+
+    REQUIRE(baseline == Catch::Approx(silicon.mun));
+    REQUIRE(fieldValue < baseline);
+    REQUIRE(lombardiValue < baseline);
+    REQUIRE(combinedValue < fieldValue);
+    REQUIRE(combinedValue < lombardiValue);
+}
+
 TEST_CASE("High-field mobility defaults match Sentaurus 2018 Silicon parameters",
           "[mobility][field][sentaurus]")
 {

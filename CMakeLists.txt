@@ -920,6 +920,27 @@ set_tests_properties(simplemos_m8_original_matrix PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m8_original_matrix)
 
+add_test(NAME simplemos_m9_hfs_diagnostics
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m9_hfs_diagnostics)
+set_tests_properties(simplemos_m9_hfs_diagnostics PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m9_hfs_diagnostics)
+
+add_test(NAME simplemos_m10_fixed_state_replay
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m10_fixed_state_replay)
+set_tests_properties(simplemos_m10_fixed_state_replay PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m10_fixed_state_replay)
+
+add_test(NAME simplemos_m11_mobility_factorial
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m11_mobility_factorial)
+set_tests_properties(simplemos_m11_mobility_factorial PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m11_mobility_factorial)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)
