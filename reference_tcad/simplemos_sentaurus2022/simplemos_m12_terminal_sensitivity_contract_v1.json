@@ -1,0 +1,60 @@
+{
+  "schema": "vela.simplemos.sdevice.m12_terminal_sensitivity.v1",
+  "contract_id": "simplemos-sdevice-m12-terminal-sensitivity-v1",
+  "scope": "SDevice-only frozen-state contact-cut current attribution and residual-spectrum analysis",
+  "sentaurus_release": "T-2022.03-SP2",
+  "default_model_policy": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "modify_cpp": false,
+    "source_evidence": [
+      "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json",
+      "reference_tcad/simplemos_sentaurus2022/simplemos_m10_fixed_state_replay_evidence.json"
+    ]
+  },
+  "frozen_state_matrix": {
+    "devices": ["n17", "n21"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05, 0.8, 2.5],
+    "state_count": 16,
+    "interpolation": "forbidden"
+  },
+  "contact_cut_definition": {
+    "contacts": ["source", "drain", "substrate"],
+    "rule": "a finite-volume edge with exactly one endpoint in the named contact node set",
+    "orientation": "positive edge sign when node0 belongs to the contact, negative when node1 belongs",
+    "terminal_identity": "sum of signed contact-cut SG line fluxes"
+  },
+  "mobility_variants": [
+    "vela_transport_cell_vector_drive",
+    "sentaurus_mean_endpoint_gradqf_magnitude",
+    "sentaurus_magnitude_of_mean_endpoint_gradqf_vector"
+  ],
+  "residual_spectrum": {
+    "signed_metric": "log10(abs(Vela Id) / abs(Sentaurus Id))",
+    "regimes_V": {
+      "deep_off": [0.0, 0.1],
+      "subthreshold": [0.15, 0.6],
+      "weak_inversion": [0.65, 0.95],
+      "on_state": [1.0, 2.45]
+    }
+  },
+  "h1": {
+    "statement": "The active-edge mobility improvement is concentrated away from source and drain contact cuts, so frozen-state terminal current is insensitive to the drive substitution.",
+    "contact_to_active_reduction_ratio_threshold": 0.1,
+    "decision_contacts": ["source", "drain"],
+    "decision_rule": "all 16 states must satisfy the threshold and the drain-cut replay identity",
+    "identity_relative_tolerance": 1e-9,
+    "identity_absolute_tolerance_A_per_um": 1e-24
+  },
+  "conditioning": {
+    "report_separately": ["kappa_electron", "kappa_hole", "kappa_total"],
+    "contacts": ["source", "drain", "substrate"],
+    "deep_off_kappa_indicator": 100.0,
+    "interpretation_guard": "large kappa proves sensitivity to component errors but does not by itself close the observed terminal-current error"
+  },
+  "continuity_scope": {
+    "frozen_state": "report the source plus drain plus substrate contact-flux imbalance without claiming self-consistent SRH closure",
+    "self_consistent_context": "reuse M8 deep-off SRH and four-terminal KCL diagnostics only as separately labelled context"
+  }
+}

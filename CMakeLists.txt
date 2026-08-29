@@ -941,6 +941,20 @@ set_tests_properties(simplemos_m11_mobility_factorial PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m11_mobility_factorial)
 
+add_test(NAME simplemos_m12_terminal_sensitivity
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m12_terminal_sensitivity)
+set_tests_properties(simplemos_m12_terminal_sensitivity PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m12_terminal_sensitivity)
+
+add_test(NAME simplemos_m13_spatial_attribution
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m13_spatial_attribution)
+set_tests_properties(simplemos_m13_spatial_attribution PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m13_spatial_attribution)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)

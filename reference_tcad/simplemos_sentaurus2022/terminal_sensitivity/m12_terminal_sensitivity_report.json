@@ -1,0 +1,1715 @@
+{
+  "schema": "vela.simplemos.sdevice.m12_terminal_sensitivity_report.v1",
+  "status": "complete",
+  "scope": "SDevice-only frozen-state contact-cut current attribution and residual-spectrum analysis",
+  "execution": {
+    "state_count": 16,
+    "residual_curve_count": 16,
+    "residual_fit_count": 64,
+    "cpp_changed": false,
+    "default_model_changed": false
+  },
+  "findings": {
+    "drain_replay_identity_pass_count": 16,
+    "h1_state_pass_count": 16,
+    "h1_all_states_pass": true,
+    "maximum_contact_to_active_reduction_ratio": 0.00018652075895086154,
+    "maximum_abs_terminal_drive_shift_dex": 1.0273741391094392e-05,
+    "deep_off_contact_kappa_maxima": {
+      "source": {
+        "kappa_electron": 1.0000002881568746,
+        "kappa_hole": 91.66862245865714,
+        "kappa_total": 1.0000002881568746
+      },
+      "drain": {
+        "kappa_electron": 2.9639591758014716,
+        "kappa_hole": 1.0,
+        "kappa_total": 2.963956733135062
+      },
+      "substrate": {
+        "kappa_electron": 1.0,
+        "kappa_hole": 1.0,
+        "kappa_total": 1.0
+      }
+    },
+    "deep_off_any_component_kappa_ge_100_count": 0,
+    "high_nwell_low_drain_vg_le_0p95": {
+      "point_count": 80,
+      "all_vela_above_sentaurus": true,
+      "mean_signed_error_dex": 0.051096304466763776,
+      "maximum_signed_error_dex": 0.10941868092427424
+    }
+  },
+  "interpretation_guards": [
+    "Contact-cut delta-current reconstruction is an exact frozen-state mobility scaling identity.",
+    "Internal edges have no unique direct terminal-current contribution under a frozen state.",
+    "The frozen source-drain-substrate contact sum is a mapped-state continuity residual, not an SRH closure.",
+    "M8 self-consistent deep-off SRH rows are included only as separately labelled context.",
+    "Large current condition number proves amplification potential, not complete attribution by itself."
+  ],
+  "cases": [
+    {
+      "state": "n17_vd_0p05_vg_0",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "active_edge_p95": {
+        "before_dex": 0.24291581412310176,
+        "after_dex": 0.14456394366062633,
+        "reduction_dex": 0.09835187046247543
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 922,
+        "before_dex": 0.04801591753521807,
+        "after_dex": 0.02683559823000089,
+        "reduction_dex": 0.02118031930521718
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 916,
+        "before_dex": 0.05560442435981844,
+        "after_dex": 0.03106084391463893,
+        "reduction_dex": 0.02454358044517951
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -5.6192442568486345e-14,
+          "baseline_hole_A_per_um": -2.006681331032385e-32,
+          "baseline_total_A_per_um": -5.6192442568486345e-14,
+          "sentaurus_drive_electron_A_per_um": -5.619234296116898e-14,
+          "sentaurus_drive_hole_A_per_um": -2.0064162987111384e-32,
+          "sentaurus_drive_total_A_per_um": -5.619234296116898e-14,
+          "delta_electron_A_per_um": 9.96073173674723e-20,
+          "delta_hole_A_per_um": 2.6503232124665765e-36,
+          "delta_total_A_per_um": 9.96073173674723e-20,
+          "kappa_electron": 1.0,
+          "kappa_hole": 5.177148823667785,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.029109418452203e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00021650339940635038,
+          "projected_current_weighted_mobility_error_after_dex": 0.000216934335625361,
+          "projected_current_weighted_mobility_error_reduction_dex": -4.309362190106224e-07
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -5.5580879089212647e-14,
+          "baseline_hole_A_per_um": 3.2460240492510266e-20,
+          "baseline_total_A_per_um": -5.5580846628972154e-14,
+          "sentaurus_drive_electron_A_per_um": -5.5580773352579685e-14,
+          "sentaurus_drive_hole_A_per_um": 3.2397443656230214e-20,
+          "sentaurus_drive_total_A_per_um": -5.558074095513603e-14,
+          "delta_electron_A_per_um": 1.0573663296169133e-19,
+          "delta_hole_A_per_um": -6.279683628005274e-23,
+          "delta_total_A_per_um": 1.0567383612478243e-19,
+          "kappa_electron": 1.0001033304704743,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0001044985677425,
+          "current_weighted_abs_log10_mobility_change_dex": 1.0340413386100941e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.0002392648667311693,
+          "projected_current_weighted_mobility_error_after_dex": 0.00023987650796681022,
+          "projected_current_weighted_mobility_error_reduction_dex": -6.116412356409185e-07
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -4.260806548741849e-19,
+          "baseline_hole_A_per_um": -2.1490435086871182e-17,
+          "baseline_total_A_per_um": -2.1916515741745367e-17,
+          "sentaurus_drive_electron_A_per_um": -4.2587242422259973e-19,
+          "sentaurus_drive_hole_A_per_um": -2.149044557018977e-17,
+          "sentaurus_drive_total_A_per_um": -2.191631799441237e-17,
+          "delta_electron_A_per_um": 2.0823065158515297e-22,
+          "delta_hole_A_per_um": -1.0483318588868177e-23,
+          "delta_total_A_per_um": 1.9774733299700702e-22,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.00024008285266855726,
+          "projected_current_weighted_mobility_error_before_dex": 0.0018443213896673668,
+          "projected_current_weighted_mobility_error_after_dex": 0.0020648615454895987,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00022054015582223183
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 1.0567383612478243e-19,
+        "reported_delta_A_per_um": 1.0567383611216066e-19,
+        "absolute_error_A_per_um": 1.262177448353619e-29,
+        "relative_error": 1.1944086584149428e-10,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": -8.257090403538762e-07,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": -1.1179520571320025e-13,
+      "h1": {
+        "contact_to_active_reduction_ratio": 6.218908016337933e-06,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n17_vd_0p05_vg_0p05",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "active_edge_p95": {
+        "before_dex": 0.24313643864623996,
+        "after_dex": 0.15936723260321156,
+        "reduction_dex": 0.0837692060430284
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 1124,
+        "before_dex": 0.05652065559520273,
+        "after_dex": 0.03608218706040897,
+        "reduction_dex": 0.02043846853479376
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 1118,
+        "before_dex": 0.05921141466458258,
+        "after_dex": 0.0377961316182238,
+        "reduction_dex": 0.021415283046358778
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -5.62003167037138e-14,
+          "baseline_hole_A_per_um": 2.184005175959655e-32,
+          "baseline_total_A_per_um": -5.62003167037138e-14,
+          "sentaurus_drive_electron_A_per_um": -5.6200224396977357e-14,
+          "sentaurus_drive_hole_A_per_um": 2.184547086338269e-32,
+          "sentaurus_drive_total_A_per_um": -5.6200224396977357e-14,
+          "delta_electron_A_per_um": 9.230673644214967e-20,
+          "delta_hole_A_per_um": 5.41910378614157e-36,
+          "delta_total_A_per_um": 9.230673644214967e-20,
+          "kappa_electron": 1.0,
+          "kappa_hole": 6.675995142928135,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.0853551823489476e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00021134900322084297,
+          "projected_current_weighted_mobility_error_after_dex": 0.00021172769038689787,
+          "projected_current_weighted_mobility_error_reduction_dex": -3.7868716605489504e-07
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -5.557300495260849e-14,
+          "baseline_hole_A_per_um": 3.245976362359432e-20,
+          "baseline_total_A_per_um": -5.557297249284487e-14,
+          "sentaurus_drive_electron_A_per_um": -5.5572891915393305e-14,
+          "sentaurus_drive_hole_A_per_um": 3.239697719155429e-20,
+          "sentaurus_drive_total_A_per_um": -5.557285951841611e-14,
+          "delta_electron_A_per_um": 1.1303721518705674e-19,
+          "delta_hole_A_per_um": -6.278643204003082e-23,
+          "delta_total_A_per_um": 1.129744287568009e-19,
+          "kappa_electron": 1.0003867250225589,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.000387893433701,
+          "current_weighted_abs_log10_mobility_change_dex": 1.0908993313486415e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.0002294711109271277,
+          "projected_current_weighted_mobility_error_after_dex": 0.00022996680877178561,
+          "projected_current_weighted_mobility_error_reduction_dex": -4.956978446579155e-07
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -4.2609714646380586e-19,
+          "baseline_hole_A_per_um": -2.1553980759963166e-17,
+          "baseline_total_A_per_um": -2.1980077906426972e-17,
+          "sentaurus_drive_electron_A_per_um": -4.258888855498386e-19,
+          "sentaurus_drive_hole_A_per_um": -2.1553991281814193e-17,
+          "sentaurus_drive_total_A_per_um": -2.1979880167364032e-17,
+          "delta_electron_A_per_um": 2.0826091396725112e-22,
+          "delta_hole_A_per_um": -1.052185102671813e-23,
+          "delta_total_A_per_um": 1.9773906293981077e-22,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.0002401066564251834,
+          "projected_current_weighted_mobility_error_before_dex": 0.0018444100524779164,
+          "projected_current_weighted_mobility_error_after_dex": 0.0020649737482262434,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00022056369574832702
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 1.129744287568009e-19,
+        "reported_delta_A_per_um": 1.129744287568009e-19,
+        "absolute_error_A_per_um": 0.0,
+        "relative_error": 0.0,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": -8.828791888743126e-07,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": -1.1179526927446509e-13,
+      "h1": {
+        "contact_to_active_reduction_ratio": 5.917423216394079e-06,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n17_vd_0p05_vg_0p8",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "active_edge_p95": {
+        "before_dex": 0.17588551317059664,
+        "after_dex": 0.16695366568435366,
+        "reduction_dex": 0.008931847486242983
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 1066,
+        "before_dex": 0.043911574199013426,
+        "after_dex": 0.02511997899058627,
+        "reduction_dex": 0.018791595208427155
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 1060,
+        "before_dex": 0.04557365661513932,
+        "after_dex": 0.026067596088318917,
+        "reduction_dex": 0.019506060526820402
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -1.7097958420904778e-06,
+          "baseline_hole_A_per_um": -1.4157815933311387e-25,
+          "baseline_total_A_per_um": -1.7097958420904778e-06,
+          "sentaurus_drive_electron_A_per_um": -1.7097977237057932e-06,
+          "sentaurus_drive_hole_A_per_um": -1.4158825145874112e-25,
+          "sentaurus_drive_total_A_per_um": -1.7097977237057932e-06,
+          "delta_electron_A_per_um": -1.881615315379003e-12,
+          "delta_hole_A_per_um": -1.0092125627247162e-29,
+          "delta_total_A_per_um": -1.881615315379003e-12,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 9.226939963804864e-07,
+          "projected_current_weighted_mobility_error_before_dex": 0.00019591929137298793,
+          "projected_current_weighted_mobility_error_after_dex": 0.00019624761237390512,
+          "projected_current_weighted_mobility_error_reduction_dex": -3.283210009171866e-07
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": 1.7098024921717474e-06,
+          "baseline_hole_A_per_um": 3.245682253985779e-20,
+          "baseline_total_A_per_um": 1.7098024921717798e-06,
+          "sentaurus_drive_electron_A_per_um": 1.7098053551037122e-06,
+          "sentaurus_drive_hole_A_per_um": 3.2394182343648346e-20,
+          "sentaurus_drive_total_A_per_um": 1.7098053551037446e-06,
+          "delta_electron_A_per_um": 2.8629319647348507e-12,
+          "delta_hole_A_per_um": -6.264019620944616e-23,
+          "delta_total_A_per_um": 2.8629319647348507e-12,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.1716812944119446e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00019681305308721613,
+          "projected_current_weighted_mobility_error_after_dex": 0.00019717021043453228,
+          "projected_current_weighted_mobility_error_reduction_dex": -3.5715734731614924e-07
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -4.279551753817572e-19,
+          "baseline_hole_A_per_um": -2.2153947690133503e-17,
+          "baseline_total_A_per_um": -2.258190286551526e-17,
+          "sentaurus_drive_electron_A_per_um": -4.2774531460129922e-19,
+          "sentaurus_drive_hole_A_per_um": -2.2153958526489783e-17,
+          "sentaurus_drive_total_A_per_um": -2.258170384109108e-17,
+          "delta_electron_A_per_um": 2.0986078045795367e-22,
+          "delta_hole_A_per_um": -1.083635628026806e-23,
+          "delta_total_A_per_um": 1.990244241781671e-22,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.00024083603310586733,
+          "projected_current_weighted_mobility_error_before_dex": 0.001851280099498025,
+          "projected_current_weighted_mobility_error_after_dex": 0.0020725443516855222,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00022126425218749733
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 2.8629319647348507e-12,
+        "reported_delta_A_per_um": 2.8629319645230925e-12,
+        "absolute_error_A_per_um": 2.117582368135751e-22,
+        "relative_error": 7.396551487146046e-11,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": 7.27191894415035e-07,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": 6.650058720113455e-12,
+      "h1": {
+        "contact_to_active_reduction_ratio": 3.998695094897785e-05,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n17_vd_0p05_vg_2p5",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 2.5,
+      "active_edge_p95": {
+        "before_dex": 0.36283370925471903,
+        "after_dex": 0.1586521838590529,
+        "reduction_dex": 0.20418152539566614
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 1053,
+        "before_dex": 0.07021686802997196,
+        "after_dex": 0.024627792950969087,
+        "reduction_dex": 0.045589075079002866
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 1047,
+        "before_dex": 0.07260531495345703,
+        "after_dex": 0.02546137555568868,
+        "reduction_dex": 0.04714393939776834
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -5.656089257477068e-05,
+          "baseline_hole_A_per_um": -4.7059493299925245e-24,
+          "baseline_total_A_per_um": -5.656089257477068e-05,
+          "sentaurus_drive_electron_A_per_um": -5.65605543946993e-05,
+          "sentaurus_drive_hole_A_per_um": -4.7064291964440704e-24,
+          "sentaurus_drive_total_A_per_um": -5.65605543946993e-05,
+          "delta_electron_A_per_um": 3.381800713826732e-10,
+          "delta_hole_A_per_um": -4.798664515459274e-28,
+          "delta_total_A_per_um": 3.381800713826732e-10,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 5.691136755710706e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00017969477229506087,
+          "projected_current_weighted_mobility_error_after_dex": 0.00017666490291165973,
+          "projected_current_weighted_mobility_error_reduction_dex": 3.0298693834011404e-06
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": 5.656867795113939e-05,
+          "baseline_hole_A_per_um": 3.252965589778937e-20,
+          "baseline_total_A_per_um": 5.6568677951139425e-05,
+          "sentaurus_drive_electron_A_per_um": 5.656872135663164e-05,
+          "sentaurus_drive_hole_A_per_um": 3.246778557231941e-20,
+          "sentaurus_drive_total_A_per_um": 5.656872135663167e-05,
+          "delta_electron_A_per_um": 4.3405492247065424e-11,
+          "delta_hole_A_per_um": -6.187032546996349e-23,
+          "delta_total_A_per_um": 4.3405492247065424e-11,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 3.4053388364494756e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00020270419517200725,
+          "projected_current_weighted_mobility_error_after_dex": 0.0002014466507000402,
+          "projected_current_weighted_mobility_error_reduction_dex": 1.2575444719670561e-06
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -4.369776167837247e-19,
+          "baseline_hole_A_per_um": -2.2255734156276645e-17,
+          "baseline_total_A_per_um": -2.269271177306037e-17,
+          "sentaurus_drive_electron_A_per_um": -4.367638452289912e-19,
+          "sentaurus_drive_hole_A_per_um": -2.2255745044247867e-17,
+          "sentaurus_drive_total_A_per_um": -2.2692508889476857e-17,
+          "delta_electron_A_per_um": 2.1377155473352735e-22,
+          "delta_hole_A_per_um": -1.0887971221266566e-23,
+          "delta_total_A_per_um": 2.0288358351399412e-22,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.00024027856971147097,
+          "projected_current_weighted_mobility_error_before_dex": 0.0018776771332438668,
+          "projected_current_weighted_mobility_error_after_dex": 0.0020982081216359225,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00022053098839205573
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 4.3405492247065424e-11,
+        "reported_delta_A_per_um": 4.3405492247065424e-11,
+        "absolute_error_A_per_um": 0.0,
+        "relative_error": 0.0,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": 3.3323668184201773e-07,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": 7.785376346052547e-09,
+      "h1": {
+        "contact_to_active_reduction_ratio": 1.4839096620175661e-05,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_0",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.0,
+      "active_edge_p95": {
+        "before_dex": 0.22731123114081114,
+        "after_dex": 0.1709678342350336,
+        "reduction_dex": 0.056343396905777554
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 886,
+        "before_dex": 0.06118666835561882,
+        "after_dex": 0.06145316668794533,
+        "reduction_dex": -0.0002664983323265105
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 880,
+        "before_dex": 0.06465865122168843,
+        "after_dex": 0.06494029244040254,
+        "reduction_dex": -0.0002816412187141154
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -5.621323028548684e-14,
+          "baseline_hole_A_per_um": -2.4094634114861113e-31,
+          "baseline_total_A_per_um": -5.621323028548684e-14,
+          "sentaurus_drive_electron_A_per_um": -5.6213149951703085e-14,
+          "sentaurus_drive_hole_A_per_um": -2.4095594069574183e-31,
+          "sentaurus_drive_total_A_per_um": -5.6213149951703085e-14,
+          "delta_electron_A_per_um": 8.033378375213601e-20,
+          "delta_hole_A_per_um": -9.599547130699164e-36,
+          "delta_total_A_per_um": 8.033378375213601e-20,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.1775641233475848e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00020419785409928566,
+          "projected_current_weighted_mobility_error_after_dex": 0.00020459362962735596,
+          "projected_current_weighted_mobility_error_reduction_dex": -3.9577552807029594e-07
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": 2.93445208402677e-14,
+          "baseline_hole_A_per_um": 3.649717641669744e-20,
+          "baseline_total_A_per_um": 2.934455733744412e-14,
+          "sentaurus_drive_electron_A_per_um": 2.934468096316624e-14,
+          "sentaurus_drive_hole_A_per_um": 3.6403419858127904e-20,
+          "sentaurus_drive_total_A_per_um": 2.93447173665861e-14,
+          "delta_electron_A_per_um": 1.6012289854274928e-19,
+          "delta_hole_A_per_um": -9.375655856953343e-23,
+          "delta_total_A_per_um": 1.6002914198240165e-19,
+          "kappa_electron": 2.9639591758014716,
+          "kappa_hole": 1.0,
+          "kappa_total": 2.963956733135062,
+          "current_weighted_abs_log10_mobility_change_dex": 7.994860181034802e-07,
+          "projected_current_weighted_mobility_error_before_dex": 0.0002104880923834172,
+          "projected_current_weighted_mobility_error_after_dex": 0.00021091576780687526,
+          "projected_current_weighted_mobility_error_reduction_dex": -4.2767542345804963e-07
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -5.237198840321705e-19,
+          "baseline_hole_A_per_um": -1.2057599151604377e-16,
+          "baseline_total_A_per_um": -1.2109971140007594e-16,
+          "sentaurus_drive_electron_A_per_um": -5.233223412408197e-19,
+          "sentaurus_drive_hole_A_per_um": -1.2057605242121624e-16,
+          "sentaurus_drive_total_A_per_um": -1.2109937476245707e-16,
+          "delta_electron_A_per_um": 3.975427913508144e-22,
+          "delta_hole_A_per_um": -6.090517246913278e-23,
+          "delta_total_A_per_um": 3.366376188739779e-22,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.00036253716160348186,
+          "projected_current_weighted_mobility_error_before_dex": 0.0022867254241898303,
+          "projected_current_weighted_mobility_error_after_dex": 0.0026287715487323835,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.0003420461245425533
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 1.6002914198240165e-19,
+        "reported_delta_A_per_um": 1.6002914198240165e-19,
+        "absolute_error_A_per_um": 0.0,
+        "relative_error": 0.0,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": 2.3683977577724948e-06,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": -2.6989772659442796e-14,
+      "h1": {
+        "contact_to_active_reduction_ratio": 7.590515427624049e-06,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_0p05",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.05,
+      "active_edge_p95": {
+        "before_dex": 0.24545402979948405,
+        "after_dex": 0.19158813213160686,
+        "reduction_dex": 0.053865897667877194
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 1041,
+        "before_dex": 0.04854949724384368,
+        "after_dex": 0.03938181241054519,
+        "reduction_dex": 0.009167684833298488
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 1035,
+        "before_dex": 0.05061386130982158,
+        "after_dex": 0.04105474530391237,
+        "reduction_dex": 0.00955911600590921
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -1.3379128174375934e-13,
+          "baseline_hole_A_per_um": -2.8295673280739396e-31,
+          "baseline_total_A_per_um": -1.3379128174375934e-13,
+          "sentaurus_drive_electron_A_per_um": -1.337913338721333e-13,
+          "sentaurus_drive_hole_A_per_um": -2.8297152013629685e-31,
+          "sentaurus_drive_total_A_per_um": -1.337913338721333e-13,
+          "delta_electron_A_per_um": -5.212837396369534e-20,
+          "delta_hole_A_per_um": -1.4787328902892518e-35,
+          "delta_total_A_per_um": -5.212837396369534e-20,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 9.246529300534612e-07,
+          "projected_current_weighted_mobility_error_before_dex": 0.00019548155275060056,
+          "projected_current_weighted_mobility_error_after_dex": 0.000195876657752841,
+          "projected_current_weighted_mobility_error_reduction_dex": -3.951050022404489e-07
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": 2.940790763993003e-14,
+          "baseline_hole_A_per_um": 3.649694515952626e-20,
+          "baseline_total_A_per_um": 2.940794413687519e-14,
+          "sentaurus_drive_electron_A_per_um": 2.9408126532516005e-14,
+          "sentaurus_drive_hole_A_per_um": 3.6403195202134263e-20,
+          "sentaurus_drive_total_A_per_um": 2.9408162935711207e-14,
+          "delta_electron_A_per_um": 2.18892585977589e-19,
+          "delta_hole_A_per_um": -9.374995739199893e-23,
+          "delta_total_A_per_um": 2.1879883601842943e-19,
+          "kappa_electron": 2.9597259917087517,
+          "kappa_hole": 1.0,
+          "kappa_total": 2.9597235595764095,
+          "current_weighted_abs_log10_mobility_change_dex": 1.0920071559363796e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00020162637196844516,
+          "projected_current_weighted_mobility_error_after_dex": 0.00020201075408655625,
+          "projected_current_weighted_mobility_error_reduction_dex": -3.8438211811108055e-07
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -5.238518814149782e-19,
+          "baseline_hole_A_per_um": -1.2094731244249802e-16,
+          "baseline_total_A_per_um": -1.21471164323913e-16,
+          "sentaurus_drive_electron_A_per_um": -5.234541293486441e-19,
+          "sentaurus_drive_hole_A_per_um": -1.2094737240783566e-16,
+          "sentaurus_drive_total_A_per_um": -1.214708265371843e-16,
+          "delta_electron_A_per_um": 3.9775206633414164e-22,
+          "delta_hole_A_per_um": -5.996533763823734e-23,
+          "delta_total_A_per_um": 3.3778672869157096e-22,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.0003626375173043157,
+          "projected_current_weighted_mobility_error_before_dex": 0.0022872273077622863,
+          "projected_current_weighted_mobility_error_after_dex": 0.002629364778798085,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00034213747103579864
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 2.1879883601842943e-19,
+        "reported_delta_A_per_um": 2.1879883601211854e-19,
+        "absolute_error_A_per_um": 6.310887241768095e-30,
+        "relative_error": 2.8843330963774088e-11,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": 3.2311940336815053e-06,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": -1.0450480877120806e-13,
+      "h1": {
+        "contact_to_active_reduction_ratio": 7.334974804960298e-06,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_0p8",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "active_edge_p95": {
+        "before_dex": 0.19759016378717506,
+        "after_dex": 0.18537332460900832,
+        "reduction_dex": 0.012216839178166738
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 1039,
+        "before_dex": 0.03783270730390103,
+        "after_dex": 0.02834975241632897,
+        "reduction_dex": 0.00948295488757206
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 1033,
+        "before_dex": 0.039288614614057596,
+        "after_dex": 0.029438835274334805,
+        "reduction_dex": 0.009849779339722791
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -6.635518231483791e-06,
+          "baseline_hole_A_per_um": -5.497317583438738e-25,
+          "baseline_total_A_per_um": -6.635518231483791e-06,
+          "sentaurus_drive_electron_A_per_um": -6.63551556660947e-06,
+          "sentaurus_drive_hole_A_per_um": -5.497610658912738e-25,
+          "sentaurus_drive_total_A_per_um": -6.63551556660947e-06,
+          "delta_electron_A_per_um": 2.664874321306964e-12,
+          "delta_hole_A_per_um": -2.930754739996078e-29,
+          "delta_total_A_per_um": 2.664874321306964e-12,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 6.544563473113193e-07,
+          "projected_current_weighted_mobility_error_before_dex": 0.0001936955472393203,
+          "projected_current_weighted_mobility_error_after_dex": 0.00019382102227851196,
+          "projected_current_weighted_mobility_error_reduction_dex": -1.2547503919167475e-07
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": 6.635622606523677e-06,
+          "baseline_hole_A_per_um": 3.650285421240137e-20,
+          "baseline_total_A_per_um": 6.635622606523713e-06,
+          "sentaurus_drive_electron_A_per_um": 6.635635053997005e-06,
+          "sentaurus_drive_hole_A_per_um": 3.6409314910018746e-20,
+          "sentaurus_drive_total_A_per_um": 6.635635053997041e-06,
+          "delta_electron_A_per_um": 1.2447473327881187e-11,
+          "delta_hole_A_per_um": -9.353930238262512e-23,
+          "delta_total_A_per_um": 1.2447473327881187e-11,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.2571494722000348e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00019712650657085218,
+          "projected_current_weighted_mobility_error_after_dex": 0.00019735647641996632,
+          "projected_current_weighted_mobility_error_reduction_dex": -2.299698491141323e-07
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -5.29040525986819e-19,
+          "baseline_hole_A_per_um": -1.1683137196953035e-16,
+          "baseline_total_A_per_um": -1.1736041249551717e-16,
+          "sentaurus_drive_electron_A_per_um": -5.286361572895732e-19,
+          "sentaurus_drive_hole_A_per_um": -1.168314298120102e-16,
+          "sentaurus_drive_total_A_per_um": -1.1736006596929978e-16,
+          "delta_electron_A_per_um": 4.0436869724576376e-22,
+          "delta_hole_A_per_um": -5.784247985943338e-23,
+          "delta_total_A_per_um": 3.4652621738960446e-22,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.00036518960999975186,
+          "projected_current_weighted_mobility_error_before_dex": 0.0023052215893650716,
+          "projected_current_weighted_mobility_error_after_dex": 0.002649517320572729,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00034429573120765746
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 1.2447473327881187e-11,
+        "reported_delta_A_per_um": 1.2447473327034154e-11,
+        "absolute_error_A_per_um": 8.470329472543003e-22,
+        "relative_error": 6.804858503749712e-11,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": 8.146732009313886e-07,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": 1.0437492256162267e-10,
+      "h1": {
+        "contact_to_active_reduction_ratio": 1.8824005600820363e-05,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n17_vd_1_vg_2p5",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 2.5,
+      "active_edge_p95": {
+        "before_dex": 0.20529052902587203,
+        "after_dex": 0.13472984716635822,
+        "reduction_dex": 0.07056068185951381
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 1047,
+        "before_dex": 0.05942059337875983,
+        "after_dex": 0.023136249603979624,
+        "reduction_dex": 0.03628434377478021
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 1041,
+        "before_dex": 0.061433356209108496,
+        "after_dex": 0.023915472653068377,
+        "reduction_dex": 0.03751788355604012
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -0.0003334073038934626,
+          "baseline_hole_A_per_um": -2.81100537092786e-23,
+          "baseline_total_A_per_um": -0.0003334073038934626,
+          "sentaurus_drive_electron_A_per_um": -0.0003333975446122285,
+          "sentaurus_drive_hole_A_per_um": -2.812712971998867e-23,
+          "sentaurus_drive_total_A_per_um": -0.0003333975446122285,
+          "delta_electron_A_per_um": 9.759281234110895e-09,
+          "delta_hole_A_per_um": -1.707601071007025e-26,
+          "delta_total_A_per_um": 9.759281234110895e-09,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 2.104307494878679e-05,
+          "projected_current_weighted_mobility_error_before_dex": 0.00020959784836697474,
+          "projected_current_weighted_mobility_error_after_dex": 0.00019643681643444794,
+          "projected_current_weighted_mobility_error_reduction_dex": 1.3161031932526805e-05
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": 0.00033360853106676483,
+          "baseline_hole_A_per_um": 3.699643439873285e-20,
+          "baseline_total_A_per_um": 0.0003336085310667649,
+          "sentaurus_drive_electron_A_per_um": 0.00033360063926206205,
+          "sentaurus_drive_hole_A_per_um": 3.6903597457730833e-20,
+          "sentaurus_drive_total_A_per_um": 0.0003336006392620621,
+          "delta_electron_A_per_um": -7.891804702786498e-09,
+          "delta_hole_A_per_um": -9.283694100201584e-23,
+          "delta_total_A_per_um": -7.891804702786498e-09,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.884757175446761e-05,
+          "projected_current_weighted_mobility_error_before_dex": 0.0002624447249610088,
+          "projected_current_weighted_mobility_error_after_dex": 0.00025091536595837254,
+          "projected_current_weighted_mobility_error_reduction_dex": 1.1529359002636244e-05
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -5.7254638894101235e-19,
+          "baseline_hole_A_per_um": -1.224597738077164e-16,
+          "baseline_total_A_per_um": -1.2303232019665743e-16,
+          "sentaurus_drive_electron_A_per_um": -5.721038396362294e-19,
+          "sentaurus_drive_hole_A_per_um": -1.2245983455397733e-16,
+          "sentaurus_drive_total_A_per_um": -1.2303193839361357e-16,
+          "delta_electron_A_per_um": 4.425493047829917e-22,
+          "delta_hole_A_per_um": -6.07462609264224e-23,
+          "delta_total_A_per_um": 3.818030438605175e-22,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.00036999518205100667,
+          "projected_current_weighted_mobility_error_before_dex": 0.002437423219483655,
+          "projected_current_weighted_mobility_error_after_dex": 0.0027842684920588623,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00034684527257520734
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": -7.891804702786498e-09,
+        "reported_delta_A_per_um": -7.891804702840708e-09,
+        "absolute_error_A_per_um": 5.421010862427522e-20,
+        "relative_error": 6.869164996538995e-12,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": -1.0273741391094392e-05,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": 2.0122717317923908e-07,
+      "h1": {
+        "contact_to_active_reduction_ratio": 0.00018652075895086154,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_0",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "active_edge_p95": {
+        "before_dex": 0.23565426925822114,
+        "after_dex": 0.14287678397905068,
+        "reduction_dex": 0.09277748527917046
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 549,
+        "before_dex": 0.01279014237290045,
+        "after_dex": 0.008954297829586486,
+        "reduction_dex": 0.003835844543313963
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 543,
+        "before_dex": 0.017886676659617472,
+        "after_dex": 0.012509659304022848,
+        "reduction_dex": 0.0053770173555946245
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -1.7071585707644977e-13,
+          "baseline_hole_A_per_um": 4.100067542936225e-33,
+          "baseline_total_A_per_um": -1.7071585707644977e-13,
+          "sentaurus_drive_electron_A_per_um": -1.70715426747837e-13,
+          "sentaurus_drive_hole_A_per_um": 4.100684542973854e-33,
+          "sentaurus_drive_total_A_per_um": -1.70715426747837e-13,
+          "delta_electron_A_per_um": 4.303286127816185e-19,
+          "delta_hole_A_per_um": 6.1700003762899164e-37,
+          "delta_total_A_per_um": 4.303286127816185e-19,
+          "kappa_electron": 1.0000002881568746,
+          "kappa_hole": 91.66485521177364,
+          "kappa_total": 1.0000002881568746,
+          "current_weighted_abs_log10_mobility_change_dex": 1.1474779673777318e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.0001068248926955514,
+          "projected_current_weighted_mobility_error_after_dex": 0.0001063743773084199,
+          "projected_current_weighted_mobility_error_reduction_dex": 4.5051538713150206e-07
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -5.549832448643918e-14,
+          "baseline_hole_A_per_um": 3.278405135902561e-20,
+          "baseline_total_A_per_um": -5.549829170238782e-14,
+          "sentaurus_drive_electron_A_per_um": -5.5498223571165204e-14,
+          "sentaurus_drive_hole_A_per_um": 3.271977494946833e-20,
+          "sentaurus_drive_total_A_per_um": -5.5498190851390256e-14,
+          "delta_electron_A_per_um": 1.0091527397294504e-19,
+          "delta_hole_A_per_um": -6.427640955727872e-23,
+          "delta_total_A_per_um": 1.0085099756114409e-19,
+          "kappa_electron": 1.7785214329798824,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.778523074313094,
+          "current_weighted_abs_log10_mobility_change_dex": 1.07875663465884e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00010683317989611508,
+          "projected_current_weighted_mobility_error_after_dex": 0.00010638161600843748,
+          "projected_current_weighted_mobility_error_reduction_dex": 4.5156388767759927e-07
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -2.351436021675577e-19,
+          "baseline_hole_A_per_um": -3.0453585777769924e-17,
+          "baseline_total_A_per_um": -3.068872937993748e-17,
+          "sentaurus_drive_electron_A_per_um": -2.3506824430846376e-19,
+          "sentaurus_drive_hole_A_per_um": -3.0453595918537436e-17,
+          "sentaurus_drive_total_A_per_um": -3.06886641628459e-17,
+          "delta_electron_A_per_um": 7.53578590939641e-23,
+          "delta_hole_A_per_um": -1.0140767512059773e-23,
+          "delta_total_A_per_um": 6.521709158200063e-23,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.00016021226610210058,
+          "projected_current_weighted_mobility_error_before_dex": 0.0013867212152217662,
+          "projected_current_weighted_mobility_error_after_dex": 0.001531096557946538,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.0001443753427247717
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 1.0085099756114409e-19,
+        "reported_delta_A_per_um": 1.0085099757376586e-19,
+        "absolute_error_A_per_um": 1.262177448353619e-29,
+        "relative_error": 1.2515269840840388e-10,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": -7.891967516811066e-07,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": -2.2624483750821753e-13,
+      "h1": {
+        "contact_to_active_reduction_ratio": 4.867171020197723e-06,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_0p05",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "active_edge_p95": {
+        "before_dex": 0.244379243930849,
+        "after_dex": 0.1578438936769582,
+        "reduction_dex": 0.08653535025389081
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 838,
+        "before_dex": 0.0602251780343065,
+        "after_dex": 0.05472056373921306,
+        "reduction_dex": 0.005504614295093441
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 832,
+        "before_dex": 0.06374617880124295,
+        "after_dex": 0.05791934867546827,
+        "reduction_dex": 0.0058268301257746805
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -1.7071617191131574e-13,
+          "baseline_hole_A_per_um": 4.099900863360513e-33,
+          "baseline_total_A_per_um": -1.7071617191131574e-13,
+          "sentaurus_drive_electron_A_per_um": -1.7071574187387904e-13,
+          "sentaurus_drive_hole_A_per_um": 4.100513982093023e-33,
+          "sentaurus_drive_total_A_per_um": -1.7071574187387904e-13,
+          "delta_electron_A_per_um": 4.3003743669892383e-19,
+          "delta_hole_A_per_um": 6.131187325102649e-37,
+          "delta_total_A_per_um": 4.3003743669892383e-19,
+          "kappa_electron": 1.0,
+          "kappa_hole": 91.66862245865714,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.1481008917074477e-06,
+          "projected_current_weighted_mobility_error_before_dex": 7.711551818921895e-05,
+          "projected_current_weighted_mobility_error_after_dex": 7.654260618918263e-05,
+          "projected_current_weighted_mobility_error_reduction_dex": 5.729120000363161e-07
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -5.5498009651518166e-14,
+          "baseline_hole_A_per_um": 3.2783646177811255e-20,
+          "baseline_total_A_per_um": -5.549797686787199e-14,
+          "sentaurus_drive_electron_A_per_um": -5.549790844506807e-14,
+          "sentaurus_drive_hole_A_per_um": 3.2719378931366675e-20,
+          "sentaurus_drive_total_A_per_um": -5.549787572568914e-14,
+          "delta_electron_A_per_um": 1.0120645009350503e-19,
+          "delta_hole_A_per_um": -6.426724644457975e-23,
+          "delta_total_A_per_um": 1.0114218285142324e-19,
+          "kappa_electron": 1.7785371952672395,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.7785388365987878,
+          "current_weighted_abs_log10_mobility_change_dex": 1.080033750915645e-06,
+          "projected_current_weighted_mobility_error_before_dex": 8.382600237346489e-05,
+          "projected_current_weighted_mobility_error_after_dex": 8.318411016512777e-05,
+          "projected_current_weighted_mobility_error_reduction_dex": 6.418922083371143e-07
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -2.3514851472486087e-19,
+          "baseline_hole_A_per_um": -3.060993881762214e-17,
+          "baseline_total_A_per_um": -3.0845087332347005e-17,
+          "sentaurus_drive_electron_A_per_um": -2.3507315148127835e-19,
+          "sentaurus_drive_hole_A_per_um": -3.0609949055882027e-17,
+          "sentaurus_drive_total_A_per_um": -3.08450222073633e-17,
+          "delta_electron_A_per_um": 7.536324358251738e-23,
+          "delta_hole_A_per_um": -1.0238259885433595e-23,
+          "delta_total_A_per_um": 6.512498370199491e-23,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.00016021976142215454,
+          "projected_current_weighted_mobility_error_before_dex": 0.0013867555053915003,
+          "projected_current_weighted_mobility_error_after_dex": 0.0015311381428364985,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00014438263744499824
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 1.0114218285142324e-19,
+        "reported_delta_A_per_um": 1.0114218286404501e-19,
+        "absolute_error_A_per_um": 1.262177448353619e-29,
+        "relative_error": 1.2479238756891707e-10,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": -7.914798774877838e-07,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": -2.2624499386652007e-13,
+      "h1": {
+        "contact_to_active_reduction_ratio": 7.4176877594397155e-06,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_0p8",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "active_edge_p95": {
+        "before_dex": 0.182154136244836,
+        "after_dex": 0.15706347207165727,
+        "reduction_dex": 0.025090664173178734
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 1051,
+        "before_dex": 0.05067101426577549,
+        "after_dex": 0.02283143199807846,
+        "reduction_dex": 0.027839582267697033
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 1045,
+        "before_dex": 0.05253967146263573,
+        "after_dex": 0.023669441663055277,
+        "reduction_dex": 0.028870229799580455
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -2.509069891821098e-08,
+          "baseline_hole_A_per_um": -2.0310987760289938e-27,
+          "baseline_total_A_per_um": -2.509069891821098e-08,
+          "sentaurus_drive_electron_A_per_um": -2.5090737823589697e-08,
+          "sentaurus_drive_hole_A_per_um": -2.031256193688665e-27,
+          "sentaurus_drive_total_A_per_um": -2.5090737823589697e-08,
+          "delta_electron_A_per_um": -3.890537871628302e-14,
+          "delta_hole_A_per_um": -1.5741765967135959e-31,
+          "delta_total_A_per_um": -3.890537871628302e-14,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.1146708332222905e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.0001957719772284206,
+          "projected_current_weighted_mobility_error_after_dex": 0.00019616327317195745,
+          "projected_current_weighted_mobility_error_reduction_dex": -3.9129594353685135e-07
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": 2.5090641842970826e-08,
+          "baseline_hole_A_per_um": 3.2779181380346456e-20,
+          "baseline_total_A_per_um": 2.5090641843003606e-08,
+          "sentaurus_drive_electron_A_per_um": 2.5090680968931586e-08,
+          "sentaurus_drive_hole_A_per_um": 3.27150161540603e-20,
+          "sentaurus_drive_total_A_per_um": 2.5090680968964303e-08,
+          "delta_electron_A_per_um": 3.912596076000594e-14,
+          "delta_hole_A_per_um": -6.416522628615544e-23,
+          "delta_total_A_per_um": 3.912596069714021e-14,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.1183562153615563e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00019578371072962518,
+          "projected_current_weighted_mobility_error_after_dex": 0.00019617542883573557,
+          "projected_current_weighted_mobility_error_reduction_dex": -3.917181061103864e-07
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -2.354042484988768e-19,
+          "baseline_hole_A_per_um": -3.1745213388118704e-17,
+          "baseline_total_A_per_um": -3.198061763661758e-17,
+          "sentaurus_drive_electron_A_per_um": -2.3532870180682126e-19,
+          "sentaurus_drive_hole_A_per_um": -3.174522403225801e-17,
+          "sentaurus_drive_total_A_per_um": -3.1980552734064827e-17,
+          "delta_electron_A_per_um": 7.55466920555538e-23,
+          "delta_hole_A_per_um": -1.0644139304391679e-23,
+          "delta_total_A_per_um": 6.490255275255842e-23,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.00016041604007288238,
+          "projected_current_weighted_mobility_error_before_dex": 0.001388214046680327,
+          "projected_current_weighted_mobility_error_after_dex": 0.0015327872978729165,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00014457325119258957
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 3.912596069714021e-14,
+        "reported_delta_A_per_um": 3.9125960700448936e-14,
+        "absolute_error_A_per_um": 3.308722450212111e-24,
+        "relative_error": 8.456590946210673e-11,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": 6.772316025302318e-07,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": -5.710718799305285e-14,
+      "h1": {
+        "contact_to_active_reduction_ratio": 1.5612105897504415e-05,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n21_vd_0p05_vg_2p5",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 2.5,
+      "active_edge_p95": {
+        "before_dex": 0.35448230156456345,
+        "after_dex": 0.15345565712067033,
+        "reduction_dex": 0.20102664444389312
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 1034,
+        "before_dex": 0.07220100478911912,
+        "after_dex": 0.02345968526507882,
+        "reduction_dex": 0.048741319524040295
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 1028,
+        "before_dex": 0.07460949238298693,
+        "after_dex": 0.024238039961876096,
+        "reduction_dex": 0.05037145242111084
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -4.968559460858714e-05,
+          "baseline_hole_A_per_um": -4.040146476153567e-24,
+          "baseline_total_A_per_um": -4.968559460858714e-05,
+          "sentaurus_drive_electron_A_per_um": -4.968530840103384e-05,
+          "sentaurus_drive_hole_A_per_um": -4.04049302282214e-24,
+          "sentaurus_drive_total_A_per_um": -4.968530840103384e-05,
+          "delta_electron_A_per_um": 2.8620755330337807e-10,
+          "delta_hole_A_per_um": -3.4654666857274598e-28,
+          "delta_total_A_per_um": 2.8620755330337807e-10,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 5.342249734361035e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00018033188877464765,
+          "projected_current_weighted_mobility_error_after_dex": 0.00017750649911775856,
+          "projected_current_weighted_mobility_error_reduction_dex": 2.8253896568890854e-06
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": 4.969158645529337e-05,
+          "baseline_hole_A_per_um": 3.284409453172449e-20,
+          "baseline_total_A_per_um": 4.96915864552934e-05,
+          "sentaurus_drive_electron_A_per_um": 4.969164006305343e-05,
+          "sentaurus_drive_hole_A_per_um": 3.2780667133889685e-20,
+          "sentaurus_drive_total_A_per_um": 4.9691640063053464e-05,
+          "delta_electron_A_per_um": 5.3607760063163236e-11,
+          "delta_hole_A_per_um": -6.342739783480322e-23,
+          "delta_total_A_per_um": 5.3607760063163236e-11,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 3.0691502226294105e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00020094292945903224,
+          "projected_current_weighted_mobility_error_after_dex": 0.00019988989879021307,
+          "projected_current_weighted_mobility_error_reduction_dex": 1.0530306688191738e-06
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -2.4151883912099413e-19,
+          "baseline_hole_A_per_um": -3.2600938250369177e-17,
+          "baseline_total_A_per_um": -3.2842457089490173e-17,
+          "sentaurus_drive_electron_A_per_um": -2.414410703984425e-19,
+          "sentaurus_drive_hole_A_per_um": -3.26009491784932e-17,
+          "sentaurus_drive_total_A_per_um": -3.284239024889164e-17,
+          "delta_electron_A_per_um": 7.776872255161169e-23,
+          "delta_hole_A_per_um": -1.0928124022556674e-23,
+          "delta_total_A_per_um": 6.684059853425503e-23,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.00016109130206985045,
+          "projected_current_weighted_mobility_error_before_dex": 0.0014155558228761658,
+          "projected_current_weighted_mobility_error_after_dex": 0.0015604524034583788,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.000144896580582213
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 5.3607760063163236e-11,
+        "reported_delta_A_per_um": 5.3607760063163236e-11,
+        "absolute_error_A_per_um": 0.0,
+        "relative_error": 0.0,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": 4.685207996702633e-07,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": 5.991846673416039e-09,
+      "h1": {
+        "contact_to_active_reduction_ratio": 1.4054801863230903e-05,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_0",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.0,
+      "active_edge_p95": {
+        "before_dex": 0.2066762375423912,
+        "after_dex": 0.1900152959438413,
+        "reduction_dex": 0.01666094159854989
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 437,
+        "before_dex": 0.013300579003731427,
+        "after_dex": 0.011982599974967569,
+        "reduction_dex": 0.001317979028763858
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 431,
+        "before_dex": 0.020848223304971897,
+        "after_dex": 0.018768000044061765,
+        "reduction_dex": 0.002080223260910133
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -1.7071617191131574e-13,
+          "baseline_hole_A_per_um": -1.4170608191507162e-31,
+          "baseline_total_A_per_um": -1.7071617191131574e-13,
+          "sentaurus_drive_electron_A_per_um": -1.7071574187387904e-13,
+          "sentaurus_drive_hole_A_per_um": -1.4171232541123552e-31,
+          "sentaurus_drive_total_A_per_um": -1.7071574187387904e-13,
+          "delta_electron_A_per_um": 4.3003743669892383e-19,
+          "delta_hole_A_per_um": -6.243496163899274e-36,
+          "delta_total_A_per_um": 4.3003743669892383e-19,
+          "kappa_electron": 1.0,
+          "kappa_hole": 3.6811281498304473,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.148100891707449e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.0001068715352536766,
+          "projected_current_weighted_mobility_error_after_dex": 0.00010641511862701612,
+          "projected_current_weighted_mobility_error_reduction_dex": 4.5641662666048193e-07
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -7.884027730112063e-14,
+          "baseline_hole_A_per_um": 3.677418269246421e-20,
+          "baseline_total_A_per_um": -7.884024052693793e-14,
+          "sentaurus_drive_electron_A_per_um": -7.8840147093355e-14,
+          "sentaurus_drive_hole_A_per_um": 3.667900823392182e-20,
+          "sentaurus_drive_total_A_per_um": -7.884011041434677e-14,
+          "delta_electron_A_per_um": 1.302077656305947e-19,
+          "delta_hole_A_per_um": -9.517445854239028e-23,
+          "delta_total_A_per_um": 1.3011259116534515e-19,
+          "kappa_electron": 1.73071040413463,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.730711677845144,
+          "current_weighted_abs_log10_mobility_change_dex": 1.0559601681552138e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.0002815713815360468,
+          "projected_current_weighted_mobility_error_after_dex": 0.00028242335410416,
+          "projected_current_weighted_mobility_error_reduction_dex": -8.519725681132391e-07
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -2.798268782249833e-19,
+          "baseline_hole_A_per_um": -1.8918397876031847e-16,
+          "baseline_total_A_per_um": -1.8946380563854347e-16,
+          "sentaurus_drive_electron_A_per_um": -2.796971263496995e-19,
+          "sentaurus_drive_hole_A_per_um": -1.8918404337810741e-16,
+          "sentaurus_drive_total_A_per_um": -1.8946374050445712e-16,
+          "delta_electron_A_per_um": 1.2975187528378508e-22,
+          "delta_hole_A_per_um": -6.461778894180488e-23,
+          "delta_total_A_per_um": 6.513408634949132e-23,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.0002257568195676677,
+          "projected_current_weighted_mobility_error_before_dex": 0.00167015456567756,
+          "projected_current_weighted_mobility_error_after_dex": 0.0018787632135433584,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00020860864786579844
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 1.3011259116534515e-19,
+        "reported_delta_A_per_um": 1.3011259116534515e-19,
+        "absolute_error_A_per_um": 0.0,
+        "relative_error": 0.0,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": -7.167307788657499e-07,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": -2.497458762438922e-13,
+      "h1": {
+        "contact_to_active_reduction_ratio": 5.113591948412999e-05,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_0p05",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.05,
+      "active_edge_p95": {
+        "before_dex": 0.24004866052908969,
+        "after_dex": 0.18592676153529847,
+        "reduction_dex": 0.05412189899379122
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 738,
+        "before_dex": 0.048237078355019496,
+        "after_dex": 0.04332112519726837,
+        "reduction_dex": 0.004915953157751125
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 732,
+        "before_dex": 0.05627989424110956,
+        "after_dex": 0.050540280556074735,
+        "reduction_dex": 0.005739613685034825
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -1.707164867461817e-13,
+          "baseline_hole_A_per_um": -1.4170641527422307e-31,
+          "baseline_total_A_per_um": -1.707164867461817e-13,
+          "sentaurus_drive_electron_A_per_um": -1.7071605699992106e-13,
+          "sentaurus_drive_hole_A_per_um": -1.4171266653299713e-31,
+          "sentaurus_drive_total_A_per_um": -1.7071605699992106e-13,
+          "delta_electron_A_per_um": 4.297462606414727e-19,
+          "delta_hole_A_per_um": -6.251258774057357e-36,
+          "delta_total_A_per_um": 4.297462606414727e-19,
+          "kappa_electron": 1.0,
+          "kappa_hole": 3.6811218425746803,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.1488391698841635e-06,
+          "projected_current_weighted_mobility_error_before_dex": 6.995295944644395e-05,
+          "projected_current_weighted_mobility_error_after_dex": 6.919087141595278e-05,
+          "projected_current_weighted_mobility_error_reduction_dex": 7.620880304911714e-07
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -7.883988375746936e-14,
+          "baseline_hole_A_per_um": 3.678343295244341e-20,
+          "baseline_total_A_per_um": -7.883984697403641e-14,
+          "sentaurus_drive_electron_A_per_um": -7.883975318573358e-14,
+          "sentaurus_drive_hole_A_per_um": 3.668825176204088e-20,
+          "sentaurus_drive_total_A_per_um": -7.883971649748182e-14,
+          "delta_electron_A_per_um": 1.3057173577813925e-19,
+          "delta_hole_A_per_um": -9.518119040252893e-23,
+          "delta_total_A_per_um": 1.304765545854839e-19,
+          "kappa_electron": 1.7307240349733855,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.7307253090170107,
+          "current_weighted_abs_log10_mobility_change_dex": 1.0571150345185545e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.00026667381470920915,
+          "projected_current_weighted_mobility_error_after_dex": 0.00026738812057851746,
+          "projected_current_weighted_mobility_error_reduction_dex": -7.143058693083091e-07
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -2.7984524172908577e-19,
+          "baseline_hole_A_per_um": -1.893596721969417e-16,
+          "baseline_total_A_per_um": -1.8963951743867077e-16,
+          "sentaurus_drive_electron_A_per_um": -2.797154694061711e-19,
+          "sentaurus_drive_hole_A_per_um": -1.8935973687037548e-16,
+          "sentaurus_drive_total_A_per_um": -1.8963945233978165e-16,
+          "delta_electron_A_per_um": 1.2977232291464915e-22,
+          "delta_hole_A_per_um": -6.467343378490068e-23,
+          "delta_total_A_per_um": 6.50988891261855e-23,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.00022577725448482455,
+          "projected_current_weighted_mobility_error_before_dex": 0.0016702627469034048,
+          "projected_current_weighted_mobility_error_after_dex": 0.0018788903017309768,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00020862755482757198
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 1.304765545854839e-19,
+        "reported_delta_A_per_um": 1.304765545854839e-19,
+        "absolute_error_A_per_um": 0.0,
+        "relative_error": 0.0,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": -7.187392763928293e-07,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": -2.497459732376568e-13,
+      "h1": {
+        "contact_to_active_reduction_ratio": 1.4080955115388633e-05,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_0p8",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.8,
+      "active_edge_p95": {
+        "before_dex": 0.2139919537578906,
+        "after_dex": 0.1829143132546278,
+        "reduction_dex": 0.031077640503262782
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 1033,
+        "before_dex": 0.04819329648916533,
+        "after_dex": 0.03188116018482865,
+        "reduction_dex": 0.01631213630433668
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 1027,
+        "before_dex": 0.049993996251429786,
+        "after_dex": 0.033069882939071836,
+        "reduction_dex": 0.01692411331235795
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -9.601038872198558e-08,
+          "baseline_hole_A_per_um": -7.772121128092962e-27,
+          "baseline_total_A_per_um": -9.601038872198558e-08,
+          "sentaurus_drive_electron_A_per_um": -9.601053595350109e-08,
+          "sentaurus_drive_hole_A_per_um": -7.772721619998504e-27,
+          "sentaurus_drive_total_A_per_um": -9.601053595350109e-08,
+          "delta_electron_A_per_um": -1.472315155091474e-13,
+          "delta_hole_A_per_um": -6.004919055416296e-31,
+          "delta_total_A_per_um": -1.472315155091474e-13,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.1072452792768017e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.0001957418392621906,
+          "projected_current_weighted_mobility_error_after_dex": 0.00019613091218669595,
+          "projected_current_weighted_mobility_error_reduction_dex": -3.8907292450535494e-07
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": 9.601028692999267e-08,
+          "baseline_hole_A_per_um": 3.678003500197061e-20,
+          "baseline_total_A_per_um": 9.601028693002945e-08,
+          "sentaurus_drive_electron_A_per_um": 9.601043771335868e-08,
+          "sentaurus_drive_hole_A_per_um": 3.668496582658887e-20,
+          "sentaurus_drive_total_A_per_um": 9.601043771339536e-08,
+          "delta_electron_A_per_um": 1.5078336600843508e-13,
+          "delta_hole_A_per_um": -9.50691753817378e-23,
+          "delta_total_A_per_um": 1.5078336591579085e-13,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.1215569825158977e-06,
+          "projected_current_weighted_mobility_error_before_dex": 0.0001957692148350674,
+          "projected_current_weighted_mobility_error_after_dex": 0.0001961598351441941,
+          "projected_current_weighted_mobility_error_reduction_dex": -3.906203091266975e-07
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -2.811083367525918e-19,
+          "baseline_hole_A_per_um": -1.878217825153528e-16,
+          "baseline_total_A_per_um": -1.881028908521054e-16,
+          "sentaurus_drive_electron_A_per_um": -2.8097746573914096e-19,
+          "sentaurus_drive_hole_A_per_um": -1.878218466552385e-16,
+          "sentaurus_drive_total_A_per_um": -1.8810282412097764e-16,
+          "delta_electron_A_per_um": 1.3087101345082735e-22,
+          "delta_hole_A_per_um": -6.413988569019838e-23,
+          "delta_total_A_per_um": 6.673112775793266e-23,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.00022667349333090856,
+          "projected_current_weighted_mobility_error_before_dex": 0.00167679077652507,
+          "projected_current_weighted_mobility_error_after_dex": 0.00188620797950711,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00020941720298203997
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": 1.5078336591579085e-13,
+        "reported_delta_A_per_um": 1.5078336590255597e-13,
+        "absolute_error_A_per_um": 1.3234889800848443e-23,
+        "relative_error": 8.777420321177757e-11,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": 6.820553760140491e-07,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": -1.0198005902528859e-13,
+      "h1": {
+        "contact_to_active_reduction_ratio": 1.256917522698311e-05,
+        "threshold": 0.1,
+        "pass": true
+      }
+    },
+    {
+      "state": "n21_vd_1_vg_2p5",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 2.5,
+      "active_edge_p95": {
+        "before_dex": 0.2056256920480771,
+        "after_dex": 0.14256631209168105,
+        "reduction_dex": 0.06305937995639604
+      },
+      "active_edge_projected_current_weighted": {
+        "edge_count": 1022,
+        "before_dex": 0.06402879211855916,
+        "after_dex": 0.023820612574947882,
+        "reduction_dex": 0.04020817954361128
+      },
+      "internal_active_edge_projected_current_weighted": {
+        "edge_count": 1016,
+        "before_dex": 0.06615700648103408,
+        "after_dex": 0.024608048648216408,
+        "reduction_dex": 0.04154895783281767
+      },
+      "contacts": {
+        "source": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": -0.00027833575593317174,
+          "baseline_hole_A_per_um": -2.286049433394945e-23,
+          "baseline_total_A_per_um": -0.00027833575593317174,
+          "sentaurus_drive_electron_A_per_um": -0.00027832916546361927,
+          "sentaurus_drive_hole_A_per_um": -2.2872532945807226e-23,
+          "sentaurus_drive_total_A_per_um": -0.00027832916546361927,
+          "delta_electron_A_per_um": 6.590469552470585e-09,
+          "delta_hole_A_per_um": -1.2038611857777489e-26,
+          "delta_total_A_per_um": 6.590469552470585e-09,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.7906896655017387e-05,
+          "projected_current_weighted_mobility_error_before_dex": 0.00019756623478383898,
+          "projected_current_weighted_mobility_error_after_dex": 0.0001865436867418261,
+          "projected_current_weighted_mobility_error_reduction_dex": 1.1022548042012885e-05
+        },
+        "drain": {
+          "edge_count": 7,
+          "baseline_electron_A_per_um": 0.0002784948698989484,
+          "baseline_hole_A_per_um": 3.7194189271249234e-20,
+          "baseline_total_A_per_um": 0.00027849486989894845,
+          "sentaurus_drive_electron_A_per_um": 0.00027848987270128893,
+          "sentaurus_drive_hole_A_per_um": 3.71000137918036e-20,
+          "sentaurus_drive_total_A_per_um": 0.000278489872701289,
+          "delta_electron_A_per_um": -4.997197659470896e-09,
+          "delta_hole_A_per_um": -9.417547944563128e-23,
+          "delta_total_A_per_um": -4.997197659470896e-09,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 1.5675917708875778e-05,
+          "projected_current_weighted_mobility_error_before_dex": 0.0002486424642816812,
+          "projected_current_weighted_mobility_error_after_dex": 0.00023927936177964705,
+          "projected_current_weighted_mobility_error_reduction_dex": 9.363102502034175e-06
+        },
+        "substrate": {
+          "edge_count": 57,
+          "baseline_electron_A_per_um": -3.057279538779789e-19,
+          "baseline_hole_A_per_um": -1.9695311850237028e-16,
+          "baseline_total_A_per_um": -1.9725884645624826e-16,
+          "sentaurus_drive_electron_A_per_um": -3.05581952555167e-19,
+          "sentaurus_drive_hole_A_per_um": -1.9695318586355479e-16,
+          "sentaurus_drive_total_A_per_um": -1.9725876781610995e-16,
+          "delta_electron_A_per_um": 1.460013228119178e-22,
+          "delta_hole_A_per_um": -6.736118450413402e-23,
+          "delta_total_A_per_um": 7.864013831043192e-23,
+          "kappa_electron": 1.0,
+          "kappa_hole": 1.0,
+          "kappa_total": 1.0,
+          "current_weighted_abs_log10_mobility_change_dex": 0.000232309896495166,
+          "projected_current_weighted_mobility_error_before_dex": 0.0017884969976880878,
+          "projected_current_weighted_mobility_error_after_dex": 0.002002463599402769,
+          "projected_current_weighted_mobility_error_reduction_dex": -0.00021396660171468123
+        }
+      },
+      "drain_replay_identity": {
+        "reconstructed_delta_A_per_um": -4.997197659470896e-09,
+        "reported_delta_A_per_um": -4.9971976595251065e-09,
+        "absolute_error_A_per_um": 5.421010862427522e-20,
+        "relative_error": 1.0848101739771268e-11,
+        "pass": true
+      },
+      "terminal_current_drive_substitution_signed_shift_dex": -7.792871878115796e-06,
+      "frozen_source_drain_substrate_contact_sum_A_per_um": 1.5911396557945387e-07,
+      "h1": {
+        "contact_to_active_reduction_ratio": 0.0001747963276777332,
+        "threshold": 0.1,
+        "pass": true
+      }
+    }
+  ],
+  "self_consistent_deep_off_context": [
+    {
+      "state": "n17_vd_0p05_vg_0",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "srh_net_current_A_per_um": -1.1443038724372285e-16,
+      "srh_generation_current_A_per_um": 1.1443038724372312e-16,
+      "srh_recombination_current_A_per_um": 2.8683520449208246e-31,
+      "four_terminal_kcl_residual_A_per_um": 2.3656596499540856e-25,
+      "numerical_status": "resolved",
+      "scope": "M8 self-consistent Vela state; context only"
+    },
+    {
+      "state": "n17_vd_0p05_vg_0p05",
+      "device": "n17",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "srh_net_current_A_per_um": -1.158056763177285e-16,
+      "srh_generation_current_A_per_um": 1.1580567631772866e-16,
+      "srh_recombination_current_A_per_um": 1.3720406502417508e-31,
+      "four_terminal_kcl_residual_A_per_um": 2.0362733573551438e-25,
+      "numerical_status": "resolved",
+      "scope": "M8 self-consistent Vela state; context only"
+    },
+    {
+      "state": "n17_vd_1_vg_0",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.0,
+      "srh_net_current_A_per_um": -5.424026608307569e-16,
+      "srh_generation_current_A_per_um": 5.424026608307588e-16,
+      "srh_recombination_current_A_per_um": 1.837321295826919e-30,
+      "four_terminal_kcl_residual_A_per_um": 1.0176464966164518e-24,
+      "numerical_status": "resolved",
+      "scope": "M8 self-consistent Vela state; context only"
+    },
+    {
+      "state": "n17_vd_1_vg_0p05",
+      "device": "n17",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.05,
+      "srh_net_current_A_per_um": -5.448665565320498e-16,
+      "srh_generation_current_A_per_um": 5.448665565320508e-16,
+      "srh_recombination_current_A_per_um": 8.758043404330995e-31,
+      "four_terminal_kcl_residual_A_per_um": -7.62366968714254e-24,
+      "numerical_status": "resolved",
+      "scope": "M8 self-consistent Vela state; context only"
+    },
+    {
+      "state": "n21_vd_0p05_vg_0",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "srh_net_current_A_per_um": -1.4181866187029193e-16,
+      "srh_generation_current_A_per_um": 1.4181866187029208e-16,
+      "srh_recombination_current_A_per_um": 1.2782693393102193e-31,
+      "four_terminal_kcl_residual_A_per_um": -2.0555950556934636e-24,
+      "numerical_status": "resolved",
+      "scope": "M8 self-consistent Vela state; context only"
+    },
+    {
+      "state": "n21_vd_0p05_vg_0p05",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "srh_net_current_A_per_um": -1.4287928450123248e-16,
+      "srh_generation_current_A_per_um": 1.4287928450123263e-16,
+      "srh_recombination_current_A_per_um": 1.2540350374146195e-31,
+      "four_terminal_kcl_residual_A_per_um": 3.824257080119074e-25,
+      "numerical_status": "resolved",
+      "scope": "M8 self-consistent Vela state; context only"
+    },
+    {
+      "state": "n21_vd_1_vg_0",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.0,
+      "srh_net_current_A_per_um": -8.578506142736426e-16,
+      "srh_generation_current_A_per_um": 8.578506142737462e-16,
+      "srh_recombination_current_A_per_um": 1.034869429046075e-28,
+      "four_terminal_kcl_residual_A_per_um": 8.00927967862126e-27,
+      "numerical_status": "resolved",
+      "scope": "M8 self-consistent Vela state; context only"
+    },
+    {
+      "state": "n21_vd_1_vg_0p05",
+      "device": "n21",
+      "drain_voltage_V": 1.0,
+      "gate_voltage_V": 0.05,
+      "srh_net_current_A_per_um": -8.600362506934141e-16,
+      "srh_generation_current_A_per_um": 8.600362506935181e-16,
+      "srh_recombination_current_A_per_um": 1.0389121429639882e-28,
+      "four_terminal_kcl_residual_A_per_um": -1.7317592750789037e-21,
+      "numerical_status": "resolved",
+      "scope": "M8 self-consistent Vela state; context only"
+    }
+  ],
+  "inputs": {
+    "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m12_terminal_sensitivity_contract_v1.json",
+    "m10_report": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/fixed_state_replay_report.json",
+    "m10_report_sha256": "adcc4ee3bf32630255735f99f2964cc407316c80510378b78f55cea469a8e6be",
+    "m8_comparison_report": "reference_tcad/simplemos_sentaurus2022/original_physics/comparisons/comparison_report.json",
+    "m8_comparison_report_sha256": "310abd8a1c7dea901daa15ac1aa96fb7cad5f421c6016a5b480701b87ab4598f"
+  },
+  "artifacts": {
+    "state_summary": {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_sensitivity/m12_state_summary.csv",
+      "sha256": "f077a9b419965e78b4435c304519a181aa3f3c18e5c079baedf92d845cca964e"
+    },
+    "contact_summary": {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_sensitivity/m12_contact_summary.csv",
+      "sha256": "a1574fb512e1c43d1bbeca15620dd84cbdc5b7c6284e4fd45310b19f0d488be5"
+    },
+    "error_spectrum": {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_sensitivity/m12_error_spectrum.csv",
+      "sha256": "6febf336a56c212ce522decaaa3d4e7767ba4317dae8f2856c26e2f326559767"
+    },
+    "error_spectrum_points": {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_sensitivity/m12_error_spectrum_points.csv",
+      "sha256": "386fd310483f1406af68c41f2a096d503da7d705f43e076f09e2b341ddc73524"
+    },
+    "deep_off_context": {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_sensitivity/m12_deep_off_context.csv",
+      "sha256": "c400d927c1ce3a82c0a86d246dc48571d870a5bdea3c2b72aca710c69c924e32"
+    }
+  }
+}

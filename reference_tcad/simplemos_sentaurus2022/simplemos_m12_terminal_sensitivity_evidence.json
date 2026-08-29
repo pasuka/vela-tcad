@@ -1,0 +1,121 @@
+{
+  "schema": "vela.simplemos.sdevice.m12_terminal_sensitivity_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only frozen-state contact-cut current attribution and residual-spectrum analysis",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "state_count": 16,
+    "residual_curve_count": 16,
+    "residual_fit_count": 64,
+    "cpp_changed": false,
+    "default_model_changed": false
+  },
+  "findings": {
+    "drain_replay_identity_pass_count": 16,
+    "h1_state_pass_count": 16,
+    "h1_all_states_pass": true,
+    "maximum_contact_to_active_reduction_ratio": 0.00018652075895086154,
+    "maximum_abs_terminal_drive_shift_dex": 1.0273741391094392e-05,
+    "deep_off_contact_kappa_maxima": {
+      "source": {
+        "kappa_electron": 1.0000002881568746,
+        "kappa_hole": 91.66862245865714,
+        "kappa_total": 1.0000002881568746
+      },
+      "drain": {
+        "kappa_electron": 2.9639591758014716,
+        "kappa_hole": 1.0,
+        "kappa_total": 2.963956733135062
+      },
+      "substrate": {
+        "kappa_electron": 1.0,
+        "kappa_hole": 1.0,
+        "kappa_total": 1.0
+      }
+    },
+    "deep_off_any_component_kappa_ge_100_count": 0,
+    "high_nwell_low_drain_vg_le_0p95": {
+      "point_count": 80,
+      "all_vela_above_sentaurus": true,
+      "mean_signed_error_dex": 0.051096304466763776,
+      "maximum_signed_error_dex": 0.10941868092427424
+    }
+  },
+  "conclusions": {
+    "h1": "accepted",
+    "supported": [
+      "The drain-cut delta-current reconstruction exactly matches the M10 frozen replay in all 16 states.",
+      "The source/drain contact-cut mobility response is far smaller than the all-active-edge P95 improvement.",
+      "The M10 mobility improvement and frozen terminal-current response are spatially disconnected.",
+      "The high-NWell low-drain residual remains a smooth, same-sign weak-current bias."
+    ],
+    "not_supported": [
+      "Attributing the weak-current Id mismatch directly to the improved internal-edge HFS mobility residual.",
+      "Attributing the deep-off terminal mismatch to large cancellation within the drain contact cut.",
+      "Treating the frozen mapped-state contact sum as a self-consistent SRH continuity closure."
+    ]
+  },
+  "continuity_scope": {
+    "frozen_state": "contact-flux residual only",
+    "self_consistent_context": "M8 SRH/KCL rows kept separate"
+  },
+  "source_integrity": {
+    "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m12_terminal_sensitivity_contract_v1.json",
+    "m10_report": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/fixed_state_replay_report.json",
+    "m10_report_sha256": "adcc4ee3bf32630255735f99f2964cc407316c80510378b78f55cea469a8e6be",
+    "m8_comparison_report": "reference_tcad/simplemos_sentaurus2022/original_physics/comparisons/comparison_report.json",
+    "m8_comparison_report_sha256": "310abd8a1c7dea901daa15ac1aa96fb7cad5f421c6016a5b480701b87ab4598f"
+  },
+  "artifacts": {
+    "state_summary": {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_sensitivity/m12_state_summary.csv",
+      "sha256": "f077a9b419965e78b4435c304519a181aa3f3c18e5c079baedf92d845cca964e"
+    },
+    "contact_summary": {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_sensitivity/m12_contact_summary.csv",
+      "sha256": "a1574fb512e1c43d1bbeca15620dd84cbdc5b7c6284e4fd45310b19f0d488be5"
+    },
+    "error_spectrum": {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_sensitivity/m12_error_spectrum.csv",
+      "sha256": "6febf336a56c212ce522decaaa3d4e7767ba4317dae8f2856c26e2f326559767"
+    },
+    "error_spectrum_points": {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_sensitivity/m12_error_spectrum_points.csv",
+      "sha256": "386fd310483f1406af68c41f2a096d503da7d705f43e076f09e2b341ddc73524"
+    },
+    "deep_off_context": {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_sensitivity/m12_deep_off_context.csv",
+      "sha256": "c400d927c1ce3a82c0a86d246dc48571d870a5bdea3c2b72aca710c69c924e32"
+    },
+    "report": {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_sensitivity/m12_terminal_sensitivity_report.json",
+      "sha256": "c14b3b07e032540a61ffd7f8fb85df97980510908597e065c6764a473ec5a342"
+    }
+  },
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m12/simplemos_m12_residual_spectrum.png",
+      "sha256": "b04b05e0297618b1c31a1dca518379b4ea405ecbfe490aa780cde544cdd87562"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m12/simplemos_m12_h1_contact_ratio.png",
+      "sha256": "c243faf8e4ab74d9a1d302513ba7841e8978ee81e8e011e96096a9a93c88f500"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m12/simplemos_m12_terminal_shift.png",
+      "sha256": "fe87dbbf1b8fa2532b0e4d1f0dfeb0d37fb746129c4a91615ed0a9969fcffec7"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m12/simplemos_m12_contact_conditioning.png",
+      "sha256": "659b27b6adce8be10c0468c073563dbab00cfa80ed20cebda92e7fc6480aa061"
+    }
+  ],
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m12_terminal_sensitivity_contract_v1.json": "a13916634bd8a191776da88eef6b684db491af1afbe25cd26e2c14327645e091",
+    "scripts/run_simplemos_m12_terminal_sensitivity.py": "4910345afe662772708a75e3650976530c4711802e82ed7982aa96d5d1bfa789",
+    "scripts/plot_simplemos_m12_terminal_sensitivity.py": "d7ee2e06d8063e9c2b77d31cad208bcca686caed58e23f52a2f646e1f44ca017",
+    "scripts/freeze_simplemos_m12_terminal_sensitivity_evidence.py": "e85616147df89a533412510ee94bfc5650f2b064e50a5463218d2301be8a5ba2",
+    "tests/regression/test_simplemos_m12_terminal_sensitivity.py": "e2e045413b43c6fcf5375c88373ec07832a775fa09b327330bc75e295d6ae829",
+    "CMakeLists.txt": "abe2c00b85707b688339eec356512fb665b15588fc937606dd50bb331790ad2f"
+  }
+}

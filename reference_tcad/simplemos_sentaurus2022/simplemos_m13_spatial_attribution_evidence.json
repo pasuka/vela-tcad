@@ -1,0 +1,113 @@
+{
+  "schema": "vela.simplemos.sdevice.m13_spatial_attribution_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only spatial attribution on 16 exact frozen/self-consistent states",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "state_count": 16,
+    "edge_projection_probe_count": 16,
+    "new_self_consistent_vg0p8_state_count": 4,
+    "required_local_outputs_verified": 20,
+    "new_sentaurus_execution": false,
+    "cpp_changed": false,
+    "default_model_changed": false,
+    "runs_executed_this_invocation": 0
+  },
+  "findings": {
+    "edge_projection_improves_active_p95_state_count": 8,
+    "transport_cell_vector_better_or_equal_state_count": 8,
+    "edge_projection_low_drain_improves_state_count": 8,
+    "edge_projection_high_drain_worsens_state_count": 8,
+    "mean_active_p95_mobility_error_dex": {
+      "transport_cell_vector": 0.23646437023899486,
+      "edge_projection": 0.262947243074646,
+      "sentaurus_drive": 0.16405366585143977
+    },
+    "sentaurus_drive_improves_active_p95_state_count": 16,
+    "maximum_abs_edge_projection_p95_change_dex": 0.25050845784564263,
+    "source_barrier_difference_mV": {
+      "minimum": -1.2972551725226045,
+      "maximum": 9.579821273683176,
+      "mean": 1.9318410635149077,
+      "same_positive_sign_count": 6
+    },
+    "high_nwell_low_drain_weak_region_barrier": {
+      "representative_state_count": 3,
+      "sign_consistent_with_terminal_error_count": 3,
+      "mean_absolute_prediction_residual_dex": 0.0325847076105126
+    },
+    "maximum_surface_psi_p95_difference_mV": 16.611789467822714,
+    "maximum_surface_phin_p95_difference_mV": 7.357437213438455,
+    "maximum_old_slotboom_p95_difference_meV": 3.469446951953614e-15
+  },
+  "conclusions": {
+    "supported": [
+      "Sentaurus GradQuasiFermi drive replay improves active-edge mobility P95 in all 16 states.",
+      "Reference-aware edge projection improves all eight low-drain states but worsens all eight high-drain states.",
+      "The source-barrier proxy has the correct current-error sign in all three high-NWell low-drain representative weak-current states, but does not close their magnitude.",
+      "Vela OldSlotboom evaluated on total ionized impurity reproduces the Sentaurus BandgapNarrowing field to floating-point precision.",
+      "Surface electrostatic state differences reach a P95 of more than 16 mV and remain a viable self-consistent residual source."
+    ],
+    "not_supported": [
+      "Replacing transport_cell_vector globally with edge_projection.",
+      "Attributing the residual platform to an OldSlotboom formula mismatch.",
+      "Treating the source-barrier proxy as a complete quantitative terminal-current model.",
+      "Inferring a default-model change from these read-only diagnostics."
+    ]
+  },
+  "diagnostic_scope": {
+    "edge_projection": "contact-basin-reference-aware drive reconstructed from M10 SG endpoint quasi-Fermi potentials",
+    "barrier_proxy": "maximum(phin-psi) on source-side exact Silicon/Oxide interface nodes",
+    "bgn": "production total-ionized-impurity OldSlotboom replay"
+  },
+  "source_integrity": {
+    "m10_report": "build-release/reference_tcad/simplemos_sentaurus2022/m10_fixed_state_replay/fixed_state_replay_report.json",
+    "m10_report_sha256": "adcc4ee3bf32630255735f99f2964cc407316c80510378b78f55cea469a8e6be",
+    "m12_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m12_terminal_sensitivity_evidence.json",
+    "m12_evidence_sha256": "0a75db391e3e072facd0081e9d08cd0fd2167fcb210caa6eddd18073f49efe45"
+  },
+  "artifacts": {
+    "state_summary": {
+      "path": "reference_tcad/simplemos_sentaurus2022/spatial_attribution/m13_state_summary.csv",
+      "sha256": "0bcf21280739b7bcf297f4bd7cac19526ab903346456790cb2d904f059da3f7c"
+    },
+    "surface_profiles": {
+      "path": "reference_tcad/simplemos_sentaurus2022/spatial_attribution/m13_surface_profiles.csv",
+      "sha256": "3050752c4aefee1cd6ac0eff91d2367ef1bcb38b7451154d18e7608bc4514bfd"
+    },
+    "report": {
+      "path": "reference_tcad/simplemos_sentaurus2022/spatial_attribution/m13_spatial_attribution_report.json",
+      "sha256": "b75349154f1d33d4a00a74d7781a46b928c6e56ce32525fdefea6981f17d0f78"
+    }
+  },
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m13/m13_drive_discretization_p95.png",
+      "sha256": "b843058038b2a66803975b1dff385193aaa33b1afbc645ad60df6b06ab2d8fdf"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m13/m13_barrier_current_attribution.png",
+      "sha256": "45f6b37d8621efd9417391985b8677bd8a9ddb54f45d7e98612135dafdf5f9f6"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m13/m13_surface_profile_n21_vd0p05.png",
+      "sha256": "7bebf530bc996755aa0e4cd2c425b5f1f29dcb7eef5f1b6ebe60bf7079e6e0dc"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m13/m13_old_slotboom_replay.png",
+      "sha256": "9ca7011f3c3ef487b44535ea30078febce733fcf38576b3aa447ad7b5459659b"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m13/m13_mobility_stage_chain.png",
+      "sha256": "2035440d30d6ebe9333f3edb1948e3d47b20d187750532fb3624f8ec9ae54218"
+    }
+  ],
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m13_spatial_attribution_contract_v1.json": "49d079a8bbf7f99b8050a1c86c3b142c10b22bebfec7c5184a5b1802086b6f55",
+    "scripts/run_simplemos_m13_spatial_attribution.py": "b100e189ef73669edc6ea1ff9015118e95eb4a612212dfbba807bc9e5333c51e",
+    "scripts/plot_simplemos_m13_spatial_attribution.py": "374b32567ed090675710f46e6dfcf83100d4fe8404d3026129e0a57c30ae4fc3",
+    "scripts/freeze_simplemos_m13_spatial_attribution_evidence.py": "eb9664da1e2753cb1aea14d0b15fed842ef5bd915de742068b2442ed7a905efd",
+    "tests/regression/test_simplemos_m13_spatial_attribution.py": "9993fb09f6a1a3cf4e3d6836de1a1a4b8bf6fd266c3312b0f0c9f7598431afbc",
+    "CMakeLists.txt": "abe2c00b85707b688339eec356512fb665b15588fc937606dd50bb331790ad2f"
+  }
+}
