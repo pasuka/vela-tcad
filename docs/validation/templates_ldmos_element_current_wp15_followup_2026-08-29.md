@@ -34,15 +34,19 @@ Jacobian/finite-difference 一致性。但在三个 Sentaurus 固定状态上的
 | 0.500000 | 6.46225e-11 | 1.04443 | 1.05700 | 11.4026 |
 | 0.833333 | 9.88947e-8 | 1.04392 | 1.05653 | 11.3902 |
 
-几何实现与使用 Vela bulk mobility 的独立手工积分一致。资格失败的直接原因
-不是几何或单位错误，而是 Sentaurus 接触单元保存的 nodal electron mobility
-约为 `58--528 cm2/(V s)`，当前 G3-no-IALMob Vela 合同只提供 bulk/HFS
-mobility，单元值仍接近 `1417 cm2/(V s)`。因此不能把早期使用 Sentaurus
-mobility 的 `1.72x` Python 重构当作 Vela 自洽 profile 的结果。
+几何实现与使用 Vela bulk mobility 的独立手工积分一致。早期仅抽取少数样本后
+写下的 `58--528 cm2/(V s)` 区间不完整，完整 G3 nodal 范围为
+`22.66--1014.32 cm2/(V s)`，接触一环 element 范围为
+`20.78--1015.71 cm2/(V s)`。deck 原文、日志声明、G4 平衡态全域
+`1417 cm2/(V s)` 和全场 Masetti 拟合共同排除了 DopingDependence；低值来自
+HighFieldSaturation 的接触支撑语义。因此不能把早期使用 Sentaurus mobility
+的 `1.72x` Python 重构当作 Vela 自洽 profile 的结果，但原因也不能再表述为
+缺少 low-field mobility spatial support。
 
 按停止规则，本 profile 没有进入自洽 G3 曲线。它保留为实验 profile，后续若要
-继续资格，必须先开发有来源的 mobility spatial support；不得通过标定 bulk
-mobility 数值取得表面拟合。
+继续资格，必须先实现有来源的“硅体 GradQF + 接触边界 ElectricField 回退”
+HFS 支撑并做 G3/G4 单因素回放；不得全局切换 ElectricField、启用 Masetti 或
+标定 bulk mobility 数值取得表面拟合。
 
 固定状态生成物位于 ignored 路径：
 
@@ -90,8 +94,9 @@ Sentaurus seed reclose、Save/Load repeat 和无 predictor 31 点 Id-Vg 均完�
 曲线结果保持物理差异不变：median log error `0.00666064 dex`，P95
 `0.287023 dex`，固定电流 Vth error `29.6262 mV`，强反型端点相对误差
 `1.45137%`。除 P95 `0.20 dex` 门外，其余 L2 指标均通过。因此 WP1.5 数值
-阻塞已关闭，但阶段 3 总状态仍为 fail；剩余问题是已独立复现的 carrier-current
-spatial support 差异，不能再归因于低电流 KCL 或 line-search 地板。
+阻塞已关闭，但阶段 3 总状态仍为 fail；剩余问题首先是已独立复现的接触 HFS
+支撑语义，其次才是 G4 自洽状态下仍存在的 coefficient/current-support 差异；
+不能再归因于低电流 KCL 或 line-search 地板。
 
 本轮 ignored 资格目录：
 

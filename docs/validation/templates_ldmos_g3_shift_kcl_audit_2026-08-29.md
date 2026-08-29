@@ -2,7 +2,8 @@
 
 日期：2026-08-29
 
-状态：根因已定位；阶段 3 仍未通过 L2 硬门；形成候选已知离散差异，等待审批。
+状态：WP1.5 KCL 根因已关闭；早期 edge-only 根因归因已被后续 G4/HFS
+固定状态审计修订；阶段 3 仍未通过 L2 P95 硬门，ledger 保持 draft。
 
 ## 范围与不变量
 
@@ -85,28 +86,41 @@ QF-gradient 重构约为 `1.72x`，均保持原生量级；edge-SG 则约为 `11
 从 cell gradient 到 edge-SG 额外放大约 `6.4x`。
 
 Sentaurus 状态在 edge-SG 下的主导 drain 边具有 `couple/length=18--83`，
-而 Vela 自洽状态的主导边约为 `6--9`；两者 drain 邻域 electron mobility
-均约为 `0.1417 m2/(V s)`。关闭负局部 cotangent 的正 barycentric 回退后，
-中点误差只从 `1.04443` 变为 `1.04398 dex`，说明 1,042 个负局部
-cotangent 回退不是主因，差异集中在细长、强正耦合边上的 edge-only
-current support。
+而 Vela 自洽状态的主导边约为 `6--9`。早期“双方 drain 邻域 mobility 均约
+`0.1417 m2/(V s)`”的表述在获得完整 element 导出后撤回：G3 Sentaurus
+全 nodal mobility 范围实际为 `22.66--1014.32 cm2/(V s)`，接触一环 element
+mobility 为 `20.78--1015.71 cm2/(V s)`。关闭负局部 cotangent 的正
+barycentric 回退后，中点误差只从 `1.04443` 变为 `1.04398 dex`；该零结果
+只排除现有 fallback 开关，不能据此把剩余差异归为引擎固有 edge-only 地板。
+
+后续 G4 三点固定状态回放给出决定性控制：移除 HighFieldSaturation 后，
+Vela SG/Sentaurus terminal 在 `Vg=0.5/0.8333 V` 仅为 `1.0623/1.0592`，
+不再是 G3 的 `11.08/11.06`。G3 element 全场拟合进一步证明，接触一环保存
+mobility 与 ElectricField-Caughey--Thomas 公式的中位误差约 `1e-16 dex`，
+而 element GradQF 公式误差为 `1.295 dex`；硅体内部仍主要符合 GradQF。
+因此当前证据支持“内部 GradQF、接触边界 ElectricField 回退”的混合 HFS
+支撑语义，而不是全局 ElectricField 驱动，也不是 DopingDependence/Masetti。
 
 ## 结论与处置
 
-1. `29.6261 mV` 是终端曲线对 exact-mesh 电流离散差异的等效表示，不是
-   需要修改 flatband、BGN、Fermi 或 mobility 参数的物理阈值偏移。
-2. G3 HighFieldSaturation 关闭控制没有改善亚阈值误差；IALMob 和 predictor
-   继续保持关闭。
-3. 当前 SG+barycentric profile 在该极端非正交网格上可完成 31 点运行并在
-   强反型收敛，但亚阈值 P95 误差构成候选引擎固有离散地板。
+1. `29.6261 mV` 仍不是可用固定 flatband/BGN/Fermi 平移关闭的均匀物理
+   阈值偏移；但“与 mobility 无关”的早期结论需限定为“不修改 low-field
+   参数或启用 Masetti”。接触 HFS 支撑语义尚需实现与资格验证。
+2. G4 自洽曲线没有改善亚阈值 P95，不代表 HFS 语义无关；G4 固定状态回放
+   已将 G3 的 `11--24.5x` 算子差异坍缩到中高偏压约 `1.06x`。IALMob 和
+   predictor 继续保持关闭。
+3. 现有 barycentric 与 truncated-Voronoi coefficient A/B 只改变 1,042 条边，
+   对三点固定状态端口电流影响不超过约 `0.17%`（中高偏压约 `0.07%`）；
+   mixed-Voronoi 节点体积对固定 SG
+   严格不变。剩余 G4 自洽 `~1.9x` 平台尚未解释，不能批准为引擎固有地板。
 4. 阶段 3 仍为 **fail**：在 independent reviewer 批准 known-difference
    ledger 前，不修改 `0.20 dex` P95 和 `1%` KCL 硬门。
 
 后续开发应拆成两个独立任务：
 
-- 为一般 Tri3/非正交网格开发并资格验证 element/cell-aware carrier current
-  support，使同状态 current replay 接近 Sentaurus native Jn；这属于新的
-  discretization profile，不得静默替换现有 SG profile；
+- 先开发并资格验证 LDMOS 接触边界 HFS 回退语义；不得把全局驱动力改成
+  ElectricField，也不得启用 Masetti；通过 G3/G4 固定状态后，再继续一般
+  Tri3/非正交 coefficient/current-support profile；
 - 继续 WP1.5 的低电流 electron-continuity line-search/残差地板工作，并增加
   可选 terminal-KCL acceptance 诊断；不得用放宽 KCL 门或 predictor 掩盖。
 
