@@ -1,0 +1,75 @@
+{
+  "case_count": 16,
+  "mobility_active_edge_mean_statistics_dex": {
+    "vela_drive": {
+      "median": 0.022962365764159796,
+      "p90": 0.16411828332753478,
+      "p95": 0.23646437023899486,
+      "maximum": 0.5917880367557116
+    },
+    "sentaurus_drive": {
+      "median": 0.008377828311760135,
+      "p90": 0.113966563411075,
+      "p95": 0.1640536658514398,
+      "maximum": 0.41280955489779547
+    },
+    "sentaurus_drive_sensitivity": {
+      "median": 0.008370532981850885,
+      "p90": 0.11396517150719995,
+      "p95": 0.16400969993583117,
+      "maximum": 0.412095624539789
+    }
+  },
+  "mobility_improvement": {
+    "median_reduction_dex": 0.014584537452399661,
+    "median_reduction_fraction": 0.6351496009685358,
+    "p95_reduction_dex": 0.07241070438755506,
+    "p95_reduction_fraction": 0.306222473662182,
+    "sentaurus_drive_improves_all_states_at_p95": true
+  },
+  "terminal_current_all_states": {
+    "vela_drive_vela_hfs": {
+      "mean_dex": 0.7572330321995445,
+      "median_dex": 0.11797842125819735,
+      "maximum_dex": 2.7734029061666536,
+      "maximum_state": "n21_vd_0p05_vg_0"
+    },
+    "sentaurus_drive_vela_hfs": {
+      "mean_dex": 0.7572317852473632,
+      "median_dex": 0.11797446858638039,
+      "maximum_dex": 2.773402116969903,
+      "maximum_state": "n21_vd_0p05_vg_0"
+    },
+    "sentaurus_drive_vela_hfs_sensitivity": {
+      "mean_dex": 0.7572318064359764,
+      "median_dex": 0.11797454933498308,
+      "maximum_dex": 2.7734021169656238,
+      "maximum_state": "n21_vd_0p05_vg_0"
+    },
+    "sentaurus_final_mobility": {
+      "mean_dex": 0.7572943367251704,
+      "median_dex": 0.11784612412752171,
+      "maximum_dex": 2.7737954594704135,
+      "maximum_state": "n21_vd_0p05_vg_0"
+    }
+  },
+  "terminal_current_strong_inversion": {
+    "vela_drive_vela_hfs": {
+      "mean_dex": 0.0004031901840356178,
+      "maximum_dex": 0.0004282309655736505
+    },
+    "sentaurus_drive_vela_hfs": {
+      "mean_dex": 0.00040139472107147967,
+      "maximum_dex": 0.00041795722418269676
+    },
+    "sentaurus_drive_vela_hfs_sensitivity": {
+      "mean_dex": 0.00040143710156609336,
+      "maximum_dex": 0.0004181187091223393
+    },
+    "sentaurus_final_mobility": {
+      "mean_dex": 0.0003364277337978283,
+      "maximum_dex": 0.0003578472732375104
+    }
+  },
+  "mapping_sensitivity_max_p95_difference_dex": 0.0003338737256650681
+}

@@ -1,0 +1,1016 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "SimpleMOS M10 冻结状态中间物理量交叉回放报告",
+    "description": "SDevice-only fixed-state replay of Sentaurus GradQuasiFermi and mobility in Vela.",
+    "generatedAt": "2026-08-28T14:41:34Z",
+    "cards": [
+      {
+        "id": "states",
+        "description": "2 个网格、2 档漏压、4 个栅压。",
+        "dataset": "headline",
+        "sourceId": "m10_summary",
+        "metrics": [
+          {
+            "label": "精确冻结状态",
+            "field": "states",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "median",
+        "description": "活跃边迁移率误差的平均中位数降幅。",
+        "dataset": "headline",
+        "sourceId": "m10_summary",
+        "metrics": [
+          {
+            "label": "中位误差降幅",
+            "field": "median_reduction_percent",
+            "format": "number",
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "id": "p95",
+        "description": "活跃边迁移率误差的平均 P95 降幅。",
+        "dataset": "headline",
+        "sourceId": "m10_summary",
+        "metrics": [
+          {
+            "label": "P95 误差降幅",
+            "field": "p95_reduction_percent",
+            "format": "number",
+            "unit": "%"
+          }
+        ]
+      },
+      {
+        "id": "mapping",
+        "description": "两种节点到边映射的最大 P95 差。",
+        "dataset": "headline",
+        "sourceId": "m10_summary",
+        "metrics": [
+          {
+            "label": "映射敏感度",
+            "field": "mapping_sensitivity_dex",
+            "format": "number",
+            "unit": "dex"
+          }
+        ]
+      },
+      {
+        "id": "terminal",
+        "description": "Vg≥0.8 V 的冻结状态 SG 端电流。",
+        "dataset": "headline",
+        "sourceId": "m10_summary",
+        "metrics": [
+          {
+            "label": "强反型最大端电流误差",
+            "field": "strong_inversion_max_terminal_error_dex",
+            "format": "number",
+            "unit": "dex"
+          }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "mobility",
+        "title": "逐状态活跃边电子迁移率 P95 误差",
+        "subtitle": "相同 Sentaurus 状态，只替换 HFS 驱动力",
+        "type": "bar",
+        "dataset": "mobility_rows",
+        "sourceId": "m10_summary",
+        "valueFormat": "number",
+        "encodings": {
+          "x": {
+            "field": "condition",
+            "type": "nominal",
+            "label": "冻结状态"
+          },
+          "y": {
+            "field": "p95_error_dex",
+            "type": "quantitative",
+            "label": "P95 误差, dex"
+          },
+          "color": {
+            "field": "stage",
+            "type": "nominal",
+            "label": "回放阶段"
+          }
+        }
+      },
+      {
+        "id": "terminal",
+        "title": "端电流回放误差",
+        "subtitle": "深关断点反映极小电流条件数，不用于 HFS 定量归因",
+        "type": "bar",
+        "dataset": "terminal_rows",
+        "sourceId": "m10_summary",
+        "valueFormat": "number",
+        "encodings": {
+          "x": {
+            "field": "condition",
+            "type": "nominal",
+            "label": "冻结状态"
+          },
+          "y": {
+            "field": "error_dex",
+            "type": "quantitative",
+            "label": "端电流误差, dex"
+          },
+          "color": {
+            "field": "stage",
+            "type": "nominal",
+            "label": "回放阶段"
+          }
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "states_table",
+        "title": "16 个冻结状态的核心指标",
+        "subtitle": "所有栅压均来自直接求解快照，未插值",
+        "dataset": "state_rows",
+        "sourceId": "m10_summary",
+        "columns": [
+          {
+            "field": "device",
+            "label": "网格",
+            "type": "text"
+          },
+          {
+            "field": "drain_voltage_V",
+            "label": "Vd, V",
+            "format": "number"
+          },
+          {
+            "field": "gate_voltage_V",
+            "label": "Vg, V",
+            "format": "number"
+          },
+          {
+            "field": "mobility_vela_drive_active_p95_error_dex",
+            "label": "Vela 驱动 P95, dex",
+            "format": "number"
+          },
+          {
+            "field": "mobility_sentaurus_drive_active_p95_error_dex",
+            "label": "Sentaurus 驱动 P95, dex",
+            "format": "number"
+          },
+          {
+            "field": "terminal_vela_drive_error_dex",
+            "label": "端电流误差, dex",
+            "format": "number"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "m10_summary",
+        "label": "M10 冻结状态汇总",
+        "path": "reference_tcad/simplemos_sentaurus2022/fixed_state_replay/fixed_state_replay_summary.csv"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# SimpleMOS M10 冻结状态中间物理量交叉回放报告"
+      },
+      {
+        "id": "summary",
+        "type": "markdown",
+        "body": "## 技术摘要\n\n16 个冻结状态全部完成直接快照、字段导出和交叉回放。用 Sentaurus 的 GradQuasiFermi 驱动力替换 Vela 自身驱动力后，活跃边电子迁移率的平均中位误差从 0.0230 dex 降至 0.00838 dex，平均 P95 从 0.2365 dex 降至 0.1641 dex，且 16/16 状态均改善。这证明驱动力构造/离散是剩余误差的稳定贡献源，但不能解释全部残差。"
+      },
+      {
+        "id": "metrics",
+        "type": "metric-strip",
+        "cardIds": [
+          "states",
+          "median",
+          "p95",
+          "mapping",
+          "terminal"
+        ]
+      },
+      {
+        "id": "finding",
+        "type": "markdown",
+        "sourceId": "m10_summary",
+        "body": "## 替换驱动力产生稳定、可重复的迁移率改善\n\n回放保留 Sentaurus 电势、准费米势和载流子浓度状态，并调用 Vela 生产 HFS 公式。两种节点到边映射的最大 P95 差低于 3.3e-4 dex，说明改善不是某一种映射选择的偶然结果。"
+      },
+      {
+        "id": "mobility_chart",
+        "type": "chart",
+        "chartId": "mobility"
+      },
+      {
+        "id": "terminal_note",
+        "type": "markdown",
+        "body": "## 端电流提供一致性检查，而非全偏置 HFS 归因\n\nVg≥0.8 V 的八个强反型状态最大端电流误差低于 4.3e-4 dex。深关断状态的 Sentaurus 电流处于亚飞安量级，净电流由大分量抵消得到，节点到边映射和离散差异会被放大至 0.2–2.8 dex；这些点不适合衡量 HFS 参数优劣。"
+      },
+      {
+        "id": "terminal_chart",
+        "type": "chart",
+        "chartId": "terminal"
+      },
+      {
+        "id": "scope",
+        "type": "markdown",
+        "body": "## 范围、数据与方法\n\n范围仅限 SDevice。使用 n17/n21 两个 SimpleMOS 网格、Vd=0.05/1 V、Vg=0/0.05/0.8/2.5 V。Sentaurus T-2022.03-SP2 依次求解并保存 16 个精确状态，导出电势、准费米势、载流子、GradQuasiFermi、迁移率、速度与电流密度；Vela 的外部驱动力接口仅用于只读诊断，不改变默认模型或方程。"
+      },
+      {
+        "id": "table",
+        "type": "table",
+        "tableId": "states_table"
+      },
+      {
+        "id": "limitations",
+        "type": "markdown",
+        "body": "## 局限性与剩余误差\n\nSentaurus 输出的是节点后处理量，Vela 使用有限体积边量，因此必须做节点到边映射。Sentaurus 未单独导出 HFS 前的低场迁移率，当前无法把剩余迁移率误差严格拆成 PhuMob/Enormal 与 HFS 私有平滑两部分。投影的 Sentaurus 节点电流仅用于空间定位，不是严格的离散恒等式。"
+      },
+      {
+        "id": "next",
+        "type": "markdown",
+        "body": "## 结论与下一步\n\nGradQuasiFermi 驱动力构造/离散已被确认是稳定贡献源；替换最终 Sentaurus 迁移率并未改善深关断端电流，说明这些点的主导问题不在 HFS。若继续缩小迁移率残差，应增加 Sentaurus 低场迁移率对照输出或关闭 HFS 的同状态配对快照，再将 PhuMob、Enormal 和 HFS 限制逐层拆分。"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-28T14:41:34Z",
+    "status": "ready",
+    "datasets": {
+      "headline": [
+        {
+          "states": 16,
+          "median_reduction_percent": 63.51496009685358,
+          "p95_reduction_percent": 30.622247366218204,
+          "mapping_sensitivity_dex": 0.0003338737256650681,
+          "strong_inversion_max_terminal_error_dex": 0.0004282309655736505
+        }
+      ],
+      "state_rows": [
+        {
+          "state": "n17_vd_0p05_vg_0",
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.0,
+          "active_current_edge_count": 922.0,
+          "drive_active_p95_error_dex": 1.6836549512537362,
+          "mobility_vela_drive_active_p95_error_dex": 0.24291581412310176,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.14456394366062633,
+          "sentaurus_terminal_current_A_per_um": 2.2133369170465e-15,
+          "terminal_vela_drive_error_dex": 1.3998776299987927,
+          "terminal_sentaurus_drive_error_dex": 1.399876804289752,
+          "terminal_sentaurus_mobility_error_dex": 1.3998855048138061,
+          "condition": "n17, Vd=0.05 V, Vg=0 V"
+        },
+        {
+          "state": "n17_vd_0p05_vg_0p05",
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.05,
+          "active_current_edge_count": 1124.0,
+          "drive_active_p95_error_dex": 1.5427569484251764,
+          "mobility_vela_drive_active_p95_error_dex": 0.24313643864623996,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.15936723260321156,
+          "sentaurus_terminal_current_A_per_um": 7.98385153345127e-15,
+          "terminal_vela_drive_error_dex": 0.8426511747173713,
+          "terminal_sentaurus_drive_error_dex": 0.8426502918381829,
+          "terminal_sentaurus_mobility_error_dex": 0.8426585845022228,
+          "condition": "n17, Vd=0.05 V, Vg=0.05 V"
+        },
+        {
+          "state": "n17_vd_0p05_vg_0p8",
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.8,
+          "active_current_edge_count": 1066.0,
+          "drive_active_p95_error_dex": 0.1417714968008234,
+          "mobility_vela_drive_active_p95_error_dex": 0.17588551317059664,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.16695366568435366,
+          "sentaurus_terminal_current_A_per_um": 1.70824403547326e-06,
+          "terminal_vela_drive_error_dex": 0.00039603275489685785,
+          "terminal_sentaurus_drive_error_dex": 0.00039675994679111426,
+          "terminal_sentaurus_mobility_error_dex": 0.0003578472732375104,
+          "condition": "n17, Vd=0.05 V, Vg=0.8 V"
+        },
+        {
+          "state": "n17_vd_0p05_vg_2p5",
+          "device": "n17",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 2.5,
+          "active_current_edge_count": 1053.0,
+          "drive_active_p95_error_dex": 0.10605325029704063,
+          "mobility_vela_drive_active_p95_error_dex": 0.36283370925471903,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.1586521838590529,
+          "sentaurus_terminal_current_A_per_um": 5.65164409930179e-05,
+          "terminal_vela_drive_error_dex": 0.0004012238655084488,
+          "terminal_sentaurus_drive_error_dex": 0.0004015571021902531,
+          "terminal_sentaurus_mobility_error_dex": 0.00035102213605320287,
+          "condition": "n17, Vd=0.05 V, Vg=2.5 V"
+        },
+        {
+          "state": "n17_vd_1_vg_0",
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 0.0,
+          "active_current_edge_count": 886.0,
+          "drive_active_p95_error_dex": 1.8426255191213465,
+          "mobility_vela_drive_active_p95_error_dex": 0.22731123114081114,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.1709678342350336,
+          "sentaurus_terminal_current_A_per_um": 1.70607826818451e-14,
+          "terminal_vela_drive_error_dex": 0.23552861155082105,
+          "terminal_sentaurus_drive_error_dex": 0.23553097994857808,
+          "terminal_sentaurus_mobility_error_dex": 0.2353344009818059,
+          "condition": "n17, Vd=1 V, Vg=0 V"
+        },
+        {
+          "state": "n17_vd_1_vg_0p05",
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 0.05,
+          "active_current_edge_count": 1041.0,
+          "drive_active_p95_error_dex": 1.6310067091383962,
+          "mobility_vela_drive_active_p95_error_dex": 0.24545402979948405,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.19158813213160686,
+          "sentaurus_terminal_current_A_per_um": 6.21463494830537e-14,
+          "terminal_vela_drive_error_dex": 0.3249509582628125,
+          "terminal_sentaurus_drive_error_dex": 0.32494772706878017,
+          "terminal_sentaurus_mobility_error_dex": 0.3251376557434238,
+          "condition": "n17, Vd=1 V, Vg=0.05 V"
+        },
+        {
+          "state": "n17_vd_1_vg_0p8",
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 0.8,
+          "active_current_edge_count": 1039.0,
+          "drive_active_p95_error_dex": 0.17847151090407884,
+          "mobility_vela_drive_active_p95_error_dex": 0.19759016378717506,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.18537332460900832,
+          "sentaurus_terminal_current_A_per_um": 6.62955965342489e-06,
+          "terminal_vela_drive_error_dex": 0.00039699526272762853,
+          "terminal_sentaurus_drive_error_dex": 0.0003978099359285281,
+          "terminal_sentaurus_mobility_error_dex": 0.00035783881862361255,
+          "condition": "n17, Vd=1 V, Vg=0.8 V"
+        },
+        {
+          "state": "n17_vd_1_vg_2p5",
+          "device": "n17",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 2.5,
+          "active_current_edge_count": 1047.0,
+          "drive_active_p95_error_dex": 0.12855284420222685,
+          "mobility_vela_drive_active_p95_error_dex": 0.20529052902587203,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.13472984716635822,
+          "sentaurus_terminal_current_A_per_um": 0.00033327974242444,
+          "terminal_vela_drive_error_dex": 0.0004282309655736505,
+          "terminal_sentaurus_drive_error_dex": 0.00041795722418269676,
+          "terminal_sentaurus_mobility_error_dex": 0.00027009478700668055,
+          "condition": "n17, Vd=1 V, Vg=2.5 V"
+        },
+        {
+          "state": "n21_vd_0p05_vg_0",
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.0,
+          "active_current_edge_count": 549.0,
+          "drive_active_p95_error_dex": 2.1094836025330155,
+          "mobility_vela_drive_active_p95_error_dex": 0.23565426925822114,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.14287678397905068,
+          "sentaurus_terminal_current_A_per_um": 9.35140161603241e-17,
+          "terminal_vela_drive_error_dex": 2.7734029061666536,
+          "terminal_sentaurus_drive_error_dex": 2.773402116969903,
+          "terminal_sentaurus_mobility_error_dex": 2.7737954594704135,
+          "condition": "n21, Vd=0.05 V, Vg=0 V"
+        },
+        {
+          "state": "n21_vd_0p05_vg_0p05",
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.05,
+          "active_current_edge_count": 838.0,
+          "drive_active_p95_error_dex": 1.5256143692021054,
+          "mobility_vela_drive_active_p95_error_dex": 0.244379243930849,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.1578438936769582,
+          "sentaurus_terminal_current_A_per_um": 4.74153376013846e-16,
+          "terminal_vela_drive_error_dex": 2.0683583044494345,
+          "terminal_sentaurus_drive_error_dex": 2.0683575129695573,
+          "terminal_sentaurus_mobility_error_dex": 2.068750841338943,
+          "condition": "n21, Vd=0.05 V, Vg=0.05 V"
+        },
+        {
+          "state": "n21_vd_0p05_vg_0p8",
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 0.8,
+          "active_current_edge_count": 1051.0,
+          "drive_active_p95_error_dex": 0.27085230329653254,
+          "mobility_vela_drive_active_p95_error_dex": 0.182154136244836,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.15706347207165727,
+          "sentaurus_terminal_current_A_per_um": 2.50679477323319e-08,
+          "terminal_vela_drive_error_dex": 0.0003929906240349723,
+          "terminal_sentaurus_drive_error_dex": 0.0003936678556373252,
+          "terminal_sentaurus_mobility_error_dex": 0.00035783593953819803,
+          "condition": "n21, Vd=0.05 V, Vg=0.8 V"
+        },
+        {
+          "state": "n21_vd_0p05_vg_2p5",
+          "device": "n21",
+          "drain_voltage_V": 0.05,
+          "gate_voltage_V": 2.5,
+          "active_current_edge_count": 1034.0,
+          "drive_active_p95_error_dex": 0.10602014710088355,
+          "mobility_vela_drive_active_p95_error_dex": 0.35448230156456345,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.15345565712067033,
+          "sentaurus_terminal_current_A_per_um": 4.96461008572384e-05,
+          "terminal_vela_drive_error_dex": 0.0003977170428735022,
+          "terminal_sentaurus_drive_error_dex": 0.0003981855636734366,
+          "terminal_sentaurus_mobility_error_dex": 0.0003520520730759813,
+          "condition": "n21, Vd=0.05 V, Vg=2.5 V"
+        },
+        {
+          "state": "n21_vd_1_vg_0",
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 0.0,
+          "active_current_edge_count": 437.0,
+          "drive_active_p95_error_dex": 2.9644555475063745,
+          "mobility_vela_drive_active_p95_error_dex": 0.2066762375423912,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.1900152959438413,
+          "sentaurus_terminal_current_A_per_um": 3.3188074243741e-16,
+          "terminal_vela_drive_error_dex": 2.3757658875977086,
+          "terminal_sentaurus_drive_error_dex": 2.375765170866929,
+          "terminal_sentaurus_mobility_error_dex": 2.376126950054049,
+          "condition": "n21, Vd=1 V, Vg=0 V"
+        },
+        {
+          "state": "n21_vd_1_vg_0p05",
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 0.05,
+          "active_current_edge_count": 738.0,
+          "drive_active_p95_error_dex": 2.3192574305677995,
+          "mobility_vela_drive_active_p95_error_dex": 0.24004866052908969,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.18592676153529847,
+          "sentaurus_terminal_current_A_per_um": 6.37937675626451e-16,
+          "terminal_vela_drive_error_dex": 2.0919675209768336,
+          "terminal_sentaurus_drive_error_dex": 2.0919668022375575,
+          "terminal_sentaurus_mobility_error_dex": 2.0923285688276803,
+          "condition": "n21, Vd=1 V, Vg=0.05 V"
+        },
+        {
+          "state": "n21_vd_1_vg_0p8",
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 0.8,
+          "active_current_edge_count": 1033.0,
+          "drive_active_p95_error_dex": 0.28502697192766174,
+          "mobility_vela_drive_active_p95_error_dex": 0.2139919537578906,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.1829143132546278,
+          "sentaurus_terminal_current_A_per_um": 9.59235490600595e-08,
+          "terminal_vela_drive_error_dex": 0.0003925288177573094,
+          "terminal_sentaurus_drive_error_dex": 0.0003932108731339312,
+          "terminal_sentaurus_mobility_error_dex": 0.0003571220120877072,
+          "condition": "n21, Vd=1 V, Vg=0.8 V"
+        },
+        {
+          "state": "n21_vd_1_vg_2p5",
+          "device": "n21",
+          "drain_voltage_V": 1.0,
+          "gate_voltage_V": 2.5,
+          "active_current_edge_count": 1022.0,
+          "drive_active_p95_error_dex": 0.15154039609935516,
+          "mobility_vela_drive_active_p95_error_dex": 0.2056256920480771,
+          "mobility_sentaurus_drive_active_p95_error_dex": 0.14256631209168105,
+          "sentaurus_terminal_current_A_per_um": 0.000278225798429149,
+          "terminal_vela_drive_error_dex": 0.0004198021389125728,
+          "terminal_sentaurus_drive_error_dex": 0.0004120092670345521,
+          "terminal_sentaurus_mobility_error_dex": 0.00028760883075973354,
+          "condition": "n21, Vd=1 V, Vg=2.5 V"
+        }
+      ],
+      "mobility_rows": [
+        {
+          "state": "n17_vd_0p05_vg_0",
+          "condition": "n17, Vd=0.05 V, Vg=0 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.24291581412310176
+        },
+        {
+          "state": "n17_vd_0p05_vg_0",
+          "condition": "n17, Vd=0.05 V, Vg=0 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.14456394366062633
+        },
+        {
+          "state": "n17_vd_0p05_vg_0p05",
+          "condition": "n17, Vd=0.05 V, Vg=0.05 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.24313643864623996
+        },
+        {
+          "state": "n17_vd_0p05_vg_0p05",
+          "condition": "n17, Vd=0.05 V, Vg=0.05 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.15936723260321156
+        },
+        {
+          "state": "n17_vd_0p05_vg_0p8",
+          "condition": "n17, Vd=0.05 V, Vg=0.8 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.17588551317059664
+        },
+        {
+          "state": "n17_vd_0p05_vg_0p8",
+          "condition": "n17, Vd=0.05 V, Vg=0.8 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.16695366568435366
+        },
+        {
+          "state": "n17_vd_0p05_vg_2p5",
+          "condition": "n17, Vd=0.05 V, Vg=2.5 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.36283370925471903
+        },
+        {
+          "state": "n17_vd_0p05_vg_2p5",
+          "condition": "n17, Vd=0.05 V, Vg=2.5 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.1586521838590529
+        },
+        {
+          "state": "n17_vd_1_vg_0",
+          "condition": "n17, Vd=1 V, Vg=0 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.22731123114081114
+        },
+        {
+          "state": "n17_vd_1_vg_0",
+          "condition": "n17, Vd=1 V, Vg=0 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.1709678342350336
+        },
+        {
+          "state": "n17_vd_1_vg_0p05",
+          "condition": "n17, Vd=1 V, Vg=0.05 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.24545402979948405
+        },
+        {
+          "state": "n17_vd_1_vg_0p05",
+          "condition": "n17, Vd=1 V, Vg=0.05 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.19158813213160686
+        },
+        {
+          "state": "n17_vd_1_vg_0p8",
+          "condition": "n17, Vd=1 V, Vg=0.8 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.19759016378717506
+        },
+        {
+          "state": "n17_vd_1_vg_0p8",
+          "condition": "n17, Vd=1 V, Vg=0.8 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.18537332460900832
+        },
+        {
+          "state": "n17_vd_1_vg_2p5",
+          "condition": "n17, Vd=1 V, Vg=2.5 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.20529052902587203
+        },
+        {
+          "state": "n17_vd_1_vg_2p5",
+          "condition": "n17, Vd=1 V, Vg=2.5 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.13472984716635822
+        },
+        {
+          "state": "n21_vd_0p05_vg_0",
+          "condition": "n21, Vd=0.05 V, Vg=0 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.23565426925822114
+        },
+        {
+          "state": "n21_vd_0p05_vg_0",
+          "condition": "n21, Vd=0.05 V, Vg=0 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.14287678397905068
+        },
+        {
+          "state": "n21_vd_0p05_vg_0p05",
+          "condition": "n21, Vd=0.05 V, Vg=0.05 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.244379243930849
+        },
+        {
+          "state": "n21_vd_0p05_vg_0p05",
+          "condition": "n21, Vd=0.05 V, Vg=0.05 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.1578438936769582
+        },
+        {
+          "state": "n21_vd_0p05_vg_0p8",
+          "condition": "n21, Vd=0.05 V, Vg=0.8 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.182154136244836
+        },
+        {
+          "state": "n21_vd_0p05_vg_0p8",
+          "condition": "n21, Vd=0.05 V, Vg=0.8 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.15706347207165727
+        },
+        {
+          "state": "n21_vd_0p05_vg_2p5",
+          "condition": "n21, Vd=0.05 V, Vg=2.5 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.35448230156456345
+        },
+        {
+          "state": "n21_vd_0p05_vg_2p5",
+          "condition": "n21, Vd=0.05 V, Vg=2.5 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.15345565712067033
+        },
+        {
+          "state": "n21_vd_1_vg_0",
+          "condition": "n21, Vd=1 V, Vg=0 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.2066762375423912
+        },
+        {
+          "state": "n21_vd_1_vg_0",
+          "condition": "n21, Vd=1 V, Vg=0 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.1900152959438413
+        },
+        {
+          "state": "n21_vd_1_vg_0p05",
+          "condition": "n21, Vd=1 V, Vg=0.05 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.24004866052908969
+        },
+        {
+          "state": "n21_vd_1_vg_0p05",
+          "condition": "n21, Vd=1 V, Vg=0.05 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.18592676153529847
+        },
+        {
+          "state": "n21_vd_1_vg_0p8",
+          "condition": "n21, Vd=1 V, Vg=0.8 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.2139919537578906
+        },
+        {
+          "state": "n21_vd_1_vg_0p8",
+          "condition": "n21, Vd=1 V, Vg=0.8 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.1829143132546278
+        },
+        {
+          "state": "n21_vd_1_vg_2p5",
+          "condition": "n21, Vd=1 V, Vg=2.5 V",
+          "stage": "Vela drive",
+          "p95_error_dex": 0.2056256920480771
+        },
+        {
+          "state": "n21_vd_1_vg_2p5",
+          "condition": "n21, Vd=1 V, Vg=2.5 V",
+          "stage": "Sentaurus drive",
+          "p95_error_dex": 0.14256631209168105
+        }
+      ],
+      "terminal_rows": [
+        {
+          "state": "n17_vd_0p05_vg_0",
+          "condition": "n17, Vd=0.05 V, Vg=0 V",
+          "stage": "Vela drive",
+          "error_dex": 1.3998776299987927
+        },
+        {
+          "state": "n17_vd_0p05_vg_0",
+          "condition": "n17, Vd=0.05 V, Vg=0 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 1.399876804289752
+        },
+        {
+          "state": "n17_vd_0p05_vg_0",
+          "condition": "n17, Vd=0.05 V, Vg=0 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 1.3998855048138061
+        },
+        {
+          "state": "n17_vd_0p05_vg_0p05",
+          "condition": "n17, Vd=0.05 V, Vg=0.05 V",
+          "stage": "Vela drive",
+          "error_dex": 0.8426511747173713
+        },
+        {
+          "state": "n17_vd_0p05_vg_0p05",
+          "condition": "n17, Vd=0.05 V, Vg=0.05 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 0.8426502918381829
+        },
+        {
+          "state": "n17_vd_0p05_vg_0p05",
+          "condition": "n17, Vd=0.05 V, Vg=0.05 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 0.8426585845022228
+        },
+        {
+          "state": "n17_vd_0p05_vg_0p8",
+          "condition": "n17, Vd=0.05 V, Vg=0.8 V",
+          "stage": "Vela drive",
+          "error_dex": 0.00039603275489685785
+        },
+        {
+          "state": "n17_vd_0p05_vg_0p8",
+          "condition": "n17, Vd=0.05 V, Vg=0.8 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 0.00039675994679111426
+        },
+        {
+          "state": "n17_vd_0p05_vg_0p8",
+          "condition": "n17, Vd=0.05 V, Vg=0.8 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 0.0003578472732375104
+        },
+        {
+          "state": "n17_vd_0p05_vg_2p5",
+          "condition": "n17, Vd=0.05 V, Vg=2.5 V",
+          "stage": "Vela drive",
+          "error_dex": 0.0004012238655084488
+        },
+        {
+          "state": "n17_vd_0p05_vg_2p5",
+          "condition": "n17, Vd=0.05 V, Vg=2.5 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 0.0004015571021902531
+        },
+        {
+          "state": "n17_vd_0p05_vg_2p5",
+          "condition": "n17, Vd=0.05 V, Vg=2.5 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 0.00035102213605320287
+        },
+        {
+          "state": "n17_vd_1_vg_0",
+          "condition": "n17, Vd=1 V, Vg=0 V",
+          "stage": "Vela drive",
+          "error_dex": 0.23552861155082105
+        },
+        {
+          "state": "n17_vd_1_vg_0",
+          "condition": "n17, Vd=1 V, Vg=0 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 0.23553097994857808
+        },
+        {
+          "state": "n17_vd_1_vg_0",
+          "condition": "n17, Vd=1 V, Vg=0 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 0.2353344009818059
+        },
+        {
+          "state": "n17_vd_1_vg_0p05",
+          "condition": "n17, Vd=1 V, Vg=0.05 V",
+          "stage": "Vela drive",
+          "error_dex": 0.3249509582628125
+        },
+        {
+          "state": "n17_vd_1_vg_0p05",
+          "condition": "n17, Vd=1 V, Vg=0.05 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 0.32494772706878017
+        },
+        {
+          "state": "n17_vd_1_vg_0p05",
+          "condition": "n17, Vd=1 V, Vg=0.05 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 0.3251376557434238
+        },
+        {
+          "state": "n17_vd_1_vg_0p8",
+          "condition": "n17, Vd=1 V, Vg=0.8 V",
+          "stage": "Vela drive",
+          "error_dex": 0.00039699526272762853
+        },
+        {
+          "state": "n17_vd_1_vg_0p8",
+          "condition": "n17, Vd=1 V, Vg=0.8 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 0.0003978099359285281
+        },
+        {
+          "state": "n17_vd_1_vg_0p8",
+          "condition": "n17, Vd=1 V, Vg=0.8 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 0.00035783881862361255
+        },
+        {
+          "state": "n17_vd_1_vg_2p5",
+          "condition": "n17, Vd=1 V, Vg=2.5 V",
+          "stage": "Vela drive",
+          "error_dex": 0.0004282309655736505
+        },
+        {
+          "state": "n17_vd_1_vg_2p5",
+          "condition": "n17, Vd=1 V, Vg=2.5 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 0.00041795722418269676
+        },
+        {
+          "state": "n17_vd_1_vg_2p5",
+          "condition": "n17, Vd=1 V, Vg=2.5 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 0.00027009478700668055
+        },
+        {
+          "state": "n21_vd_0p05_vg_0",
+          "condition": "n21, Vd=0.05 V, Vg=0 V",
+          "stage": "Vela drive",
+          "error_dex": 2.7734029061666536
+        },
+        {
+          "state": "n21_vd_0p05_vg_0",
+          "condition": "n21, Vd=0.05 V, Vg=0 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 2.773402116969903
+        },
+        {
+          "state": "n21_vd_0p05_vg_0",
+          "condition": "n21, Vd=0.05 V, Vg=0 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 2.7737954594704135
+        },
+        {
+          "state": "n21_vd_0p05_vg_0p05",
+          "condition": "n21, Vd=0.05 V, Vg=0.05 V",
+          "stage": "Vela drive",
+          "error_dex": 2.0683583044494345
+        },
+        {
+          "state": "n21_vd_0p05_vg_0p05",
+          "condition": "n21, Vd=0.05 V, Vg=0.05 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 2.0683575129695573
+        },
+        {
+          "state": "n21_vd_0p05_vg_0p05",
+          "condition": "n21, Vd=0.05 V, Vg=0.05 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 2.068750841338943
+        },
+        {
+          "state": "n21_vd_0p05_vg_0p8",
+          "condition": "n21, Vd=0.05 V, Vg=0.8 V",
+          "stage": "Vela drive",
+          "error_dex": 0.0003929906240349723
+        },
+        {
+          "state": "n21_vd_0p05_vg_0p8",
+          "condition": "n21, Vd=0.05 V, Vg=0.8 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 0.0003936678556373252
+        },
+        {
+          "state": "n21_vd_0p05_vg_0p8",
+          "condition": "n21, Vd=0.05 V, Vg=0.8 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 0.00035783593953819803
+        },
+        {
+          "state": "n21_vd_0p05_vg_2p5",
+          "condition": "n21, Vd=0.05 V, Vg=2.5 V",
+          "stage": "Vela drive",
+          "error_dex": 0.0003977170428735022
+        },
+        {
+          "state": "n21_vd_0p05_vg_2p5",
+          "condition": "n21, Vd=0.05 V, Vg=2.5 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 0.0003981855636734366
+        },
+        {
+          "state": "n21_vd_0p05_vg_2p5",
+          "condition": "n21, Vd=0.05 V, Vg=2.5 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 0.0003520520730759813
+        },
+        {
+          "state": "n21_vd_1_vg_0",
+          "condition": "n21, Vd=1 V, Vg=0 V",
+          "stage": "Vela drive",
+          "error_dex": 2.3757658875977086
+        },
+        {
+          "state": "n21_vd_1_vg_0",
+          "condition": "n21, Vd=1 V, Vg=0 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 2.375765170866929
+        },
+        {
+          "state": "n21_vd_1_vg_0",
+          "condition": "n21, Vd=1 V, Vg=0 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 2.376126950054049
+        },
+        {
+          "state": "n21_vd_1_vg_0p05",
+          "condition": "n21, Vd=1 V, Vg=0.05 V",
+          "stage": "Vela drive",
+          "error_dex": 2.0919675209768336
+        },
+        {
+          "state": "n21_vd_1_vg_0p05",
+          "condition": "n21, Vd=1 V, Vg=0.05 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 2.0919668022375575
+        },
+        {
+          "state": "n21_vd_1_vg_0p05",
+          "condition": "n21, Vd=1 V, Vg=0.05 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 2.0923285688276803
+        },
+        {
+          "state": "n21_vd_1_vg_0p8",
+          "condition": "n21, Vd=1 V, Vg=0.8 V",
+          "stage": "Vela drive",
+          "error_dex": 0.0003925288177573094
+        },
+        {
+          "state": "n21_vd_1_vg_0p8",
+          "condition": "n21, Vd=1 V, Vg=0.8 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 0.0003932108731339312
+        },
+        {
+          "state": "n21_vd_1_vg_0p8",
+          "condition": "n21, Vd=1 V, Vg=0.8 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 0.0003571220120877072
+        },
+        {
+          "state": "n21_vd_1_vg_2p5",
+          "condition": "n21, Vd=1 V, Vg=2.5 V",
+          "stage": "Vela drive",
+          "error_dex": 0.0004198021389125728
+        },
+        {
+          "state": "n21_vd_1_vg_2p5",
+          "condition": "n21, Vd=1 V, Vg=2.5 V",
+          "stage": "Sentaurus drive",
+          "error_dex": 0.0004120092670345521
+        },
+        {
+          "state": "n21_vd_1_vg_2p5",
+          "condition": "n21, Vd=1 V, Vg=2.5 V",
+          "stage": "Sentaurus final mobility",
+          "error_dex": 0.00028760883075973354
+        }
+      ]
+    },
+    "accessIssues": []
+  },
+  "sources": [
+    {
+      "id": "m10_summary",
+      "query": {
+        "language": "sql",
+        "engine": "duckdb",
+        "sql": "SELECT * FROM read_csv_auto('reference_tcad/simplemos_sentaurus2022/fixed_state_replay/fixed_state_replay_summary.csv', header=true)",
+        "description": "Sixteen exact SimpleMOS fixed-state replay summaries.",
+        "executed_at": "2026-08-28T14:41:34Z",
+        "tables_used": [
+          "reference_tcad/simplemos_sentaurus2022/fixed_state_replay/fixed_state_replay_summary.csv"
+        ],
+        "metric_definitions": [
+          "mobility errors are absolute log10 ratios on active transport edges",
+          "active edges exceed 0.1 percent of the state maximum projected Sentaurus current",
+          "terminal-current error is absolute log10 ratio in A/um"
+        ],
+        "filters": [
+          "n17 and n21",
+          "Vd=0.05 and 1 V",
+          "Vg=0,0.05,0.8,2.5 V",
+          "no interpolation"
+        ]
+      }
+    }
+  ]
+}

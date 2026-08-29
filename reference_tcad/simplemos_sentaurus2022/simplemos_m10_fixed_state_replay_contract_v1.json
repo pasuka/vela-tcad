@@ -1,0 +1,56 @@
+{
+  "schema": "vela.simplemos.sdevice.m10_fixed_state_replay.v1",
+  "contract_id": "simplemos-sdevice-m10-fixed-state-replay-v1",
+  "scope": "SDevice-only fixed-state substitution of Sentaurus intermediate transport quantities into Vela production formulas",
+  "sentaurus_release": "T-2022.03-SP2",
+  "default_model_policy": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "m8_baseline_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json",
+    "m8_baseline_evidence_sha256": "de83d5dbafb8c055de239732578431dc0176d77f248b1c1ca537b2a52bf4b7f1",
+    "m8_comparison_report": "reference_tcad/simplemos_sentaurus2022/original_physics/comparisons/comparison_report.json",
+    "m8_comparison_report_sha256": "310abd8a1c7dea901daa15ac1aa96fb7cad5f421c6016a5b480701b87ab4598f",
+    "required_case_count": 16,
+    "required_direct_bias_points": 816
+  },
+  "devices": [
+    {"id": "n17", "NWell_cm3": 1e17},
+    {"id": "n21", "NWell_cm3": 2e17}
+  ],
+  "bias_matrix": {
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05, 0.8, 2.5],
+    "state_count": 16,
+    "interpolation": "forbidden"
+  },
+  "sentaurus_physics": {
+    "effective_intrinsic_density": "OldSlotboom",
+    "mobility": ["PhuMob", "HighFieldSaturation", "Enormal"],
+    "hfs_driving_force": "GradQuasiFermi",
+    "recombination": "SRH(DopingDependence)"
+  },
+  "required_sentaurus_fields": [
+    "ElectrostaticPotential", "eQuasiFermiPotential", "hQuasiFermiPotential",
+    "eDensity", "hDensity", "ElectricField", "eGradQuasiFermi",
+    "hGradQuasiFermi", "eMobility", "hMobility", "eVelocity",
+    "hVelocity", "eCurrentDensity", "hCurrentDensity"
+  ],
+  "replay_stages": [
+    "sentaurus_state_vela_drive_vela_hfs",
+    "sentaurus_state_sentaurus_mean_nodal_gradqf_vela_hfs",
+    "sentaurus_final_nodal_mobility_vela_sg_flux",
+    "sentaurus_terminal_current"
+  ],
+  "edge_mapping": {
+    "primary_sentaurus_drive": "arithmetic mean of endpoint vector magnitudes",
+    "sensitivity_sentaurus_drive": "magnitude of arithmetic mean endpoint vector",
+    "sentaurus_mobility_to_edge": "arithmetic mean of endpoint nodal mobilities",
+    "active_edge_threshold_fraction_of_max_sentaurus_projected_current": 0.001
+  },
+  "metrics": {
+    "positive_floor_relative_to_state_max": 1e-10,
+    "absolute_log10_ratio_unit": "dex",
+    "spatial_percentiles": [0.5, 0.9, 0.95, 1.0],
+    "terminal_current_unit": "A/um"
+  }
+}

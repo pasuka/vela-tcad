@@ -1,0 +1,165 @@
+{
+  "schema": "vela.simplemos.sdevice.m10_fixed_state_replay_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only 16-state intermediate-quantity cross replay",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "devices": [
+      "n17",
+      "n21"
+    ],
+    "drain_voltages_V": [
+      0.05,
+      1.0
+    ],
+    "gate_voltages_V": [
+      0.0,
+      0.05,
+      0.8,
+      2.5
+    ],
+    "state_count": 16,
+    "interpolation": "forbidden",
+    "default_model_changed": false
+  },
+  "baseline_guard": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "m8_baseline_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json",
+    "m8_baseline_evidence_sha256": "de83d5dbafb8c055de239732578431dc0176d77f248b1c1ca537b2a52bf4b7f1",
+    "m8_comparison_report": "reference_tcad/simplemos_sentaurus2022/original_physics/comparisons/comparison_report.json",
+    "m8_comparison_report_sha256": "310abd8a1c7dea901daa15ac1aa96fb7cad5f421c6016a5b480701b87ab4598f",
+    "required_case_count": 16,
+    "required_direct_bias_points": 816
+  },
+  "findings": {
+    "case_count": 16,
+    "mobility_active_edge_mean_statistics_dex": {
+      "vela_drive": {
+        "median": 0.022962365764159796,
+        "p90": 0.16411828332753478,
+        "p95": 0.23646437023899486,
+        "maximum": 0.5917880367557116
+      },
+      "sentaurus_drive": {
+        "median": 0.008377828311760135,
+        "p90": 0.113966563411075,
+        "p95": 0.1640536658514398,
+        "maximum": 0.41280955489779547
+      },
+      "sentaurus_drive_sensitivity": {
+        "median": 0.008370532981850885,
+        "p90": 0.11396517150719995,
+        "p95": 0.16400969993583117,
+        "maximum": 0.412095624539789
+      }
+    },
+    "mobility_improvement": {
+      "median_reduction_dex": 0.014584537452399661,
+      "median_reduction_fraction": 0.6351496009685358,
+      "p95_reduction_dex": 0.07241070438755506,
+      "p95_reduction_fraction": 0.306222473662182,
+      "sentaurus_drive_improves_all_states_at_p95": true
+    },
+    "terminal_current_all_states": {
+      "vela_drive_vela_hfs": {
+        "mean_dex": 0.7572330321995445,
+        "median_dex": 0.11797842125819735,
+        "maximum_dex": 2.7734029061666536,
+        "maximum_state": "n21_vd_0p05_vg_0"
+      },
+      "sentaurus_drive_vela_hfs": {
+        "mean_dex": 0.7572317852473632,
+        "median_dex": 0.11797446858638039,
+        "maximum_dex": 2.773402116969903,
+        "maximum_state": "n21_vd_0p05_vg_0"
+      },
+      "sentaurus_drive_vela_hfs_sensitivity": {
+        "mean_dex": 0.7572318064359764,
+        "median_dex": 0.11797454933498308,
+        "maximum_dex": 2.7734021169656238,
+        "maximum_state": "n21_vd_0p05_vg_0"
+      },
+      "sentaurus_final_mobility": {
+        "mean_dex": 0.7572943367251704,
+        "median_dex": 0.11784612412752171,
+        "maximum_dex": 2.7737954594704135,
+        "maximum_state": "n21_vd_0p05_vg_0"
+      }
+    },
+    "terminal_current_strong_inversion": {
+      "vela_drive_vela_hfs": {
+        "mean_dex": 0.0004031901840356178,
+        "maximum_dex": 0.0004282309655736505
+      },
+      "sentaurus_drive_vela_hfs": {
+        "mean_dex": 0.00040139472107147967,
+        "maximum_dex": 0.00041795722418269676
+      },
+      "sentaurus_drive_vela_hfs_sensitivity": {
+        "mean_dex": 0.00040143710156609336,
+        "maximum_dex": 0.0004181187091223393
+      },
+      "sentaurus_final_mobility": {
+        "mean_dex": 0.0003364277337978283,
+        "maximum_dex": 0.0003578472732375104
+      }
+    },
+    "mapping_sensitivity_max_p95_difference_dex": 0.0003338737256650681
+  },
+  "interpretation": {
+    "supported": [
+      "Sentaurus GradQuasiFermi drive substitution reduces Vela-to-Sentaurus active-edge electron-mobility residuals in all 16 states at P95",
+      "The two documented node-to-edge drive mappings have negligible sensitivity at the aggregate P95 level",
+      "Strong-inversion terminal-current replay is nearly identical after the frozen Sentaurus state is mapped into Vela"
+    ],
+    "not_supported": [
+      "Attributing all remaining mobility residual to the HFS formula alone because Sentaurus low-field mobility is not separately exported",
+      "Using deep-off-state terminal-current replay for HFS attribution because cancellation and sub-fA current magnify mapping/discretization residuals",
+      "Treating projected Sentaurus nodal current as an exact finite-volume edge-current identity"
+    ]
+  },
+  "artifacts": {
+    "report": {
+      "path": "reference_tcad/simplemos_sentaurus2022/fixed_state_replay/fixed_state_replay_report.json",
+      "sha256": "adcc4ee3bf32630255735f99f2964cc407316c80510378b78f55cea469a8e6be"
+    },
+    "summary": {
+      "path": "reference_tcad/simplemos_sentaurus2022/fixed_state_replay/fixed_state_replay_summary.csv",
+      "sha256": "1d2e61c9b4f5df0ab633826e5245db28e1b104bfc26a341f28285c6d64e7be5b"
+    },
+    "aggregate": {
+      "path": "reference_tcad/simplemos_sentaurus2022/fixed_state_replay/aggregate_summary.json",
+      "sha256": "1ff923ad506c797b94ed85d9e967b1584065a1dd88e70e473a468704834d160a"
+    },
+    "figures": [
+      {
+        "path": "docs/validation/figures/simplemos_m10/simplemos_m10_mapping_sensitivity.png",
+        "sha256": "250952e7f65bf5c32b35834ae4e0dd1e90e0c4b508e7fddbeb6ca9c7ad3e0937"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m10/simplemos_m10_mobility_p95_replay.png",
+        "sha256": "81a32ef324dcb6ff575b5c9da4d3d007429b0fe618a257da014f94cec4c0864f"
+      },
+      {
+        "path": "docs/validation/figures/simplemos_m10/simplemos_m10_terminal_error_heatmap.png",
+        "sha256": "069cd6d1e0b66d5ebb3f47ee6f6ca75a2138363528853813cecb66b8caac9de8"
+      }
+    ]
+  },
+  "source_integrity": {
+    "sentaurus_manifest_sha256": "73a088f1ee95705f2daf943921177f19d8cc4da713b5753c01e6d91f7edb0fa9",
+    "sentaurus_export_manifest_sha256": "7a04f21586fd89db5a82722cd5553cc29d55d951835090bdeac1913245f65de8",
+    "raw_report_sha256": "adcc4ee3bf32630255735f99f2964cc407316c80510378b78f55cea469a8e6be"
+  },
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m10_fixed_state_replay_contract_v1.json": "8219e4bcc86dbef2da4cd01ea7c02e519249eb7f4ff4dc16631d41cb9e12aa23",
+    "src/tools/vela_example_runner.cpp": "d26091964ed59d5d1d3c1cfc761d7e9b42735aea59f3ac63e395525284a0c3a8",
+    "scripts/run_simplemos_m10_fixed_state_replay.py": "fe3a379a1e684f3767212f391a9f67fd5995a625ee1c7b0794f51c3dba85d675",
+    "scripts/plot_simplemos_m10_fixed_state_replay.py": "d9eb23a6f748521a1e77d010e2d632b6f3132a44ff714992f1883cc5c8067713",
+    "scripts/freeze_simplemos_m10_fixed_state_replay_evidence.py": "7e2981adde4ea501598236314d0be28ed357bb8c5cb3e9975d81438d40f8f22b",
+    "scripts/build_simplemos_m10_report_artifact.py": "a5905eef06a7ec2e8dc2e7127d13a27660ec8ec2be91a3e3884b59033be6843b",
+    "tests/regression/test_reference_tcad_tools.py": "1844ca453be92c527c3ef8b84ecf92c4dd63c3c07aee279c024ee637a7d9b21b",
+    "tests/regression/test_simplemos_m10_fixed_state_replay.py": "3c6b4a18b9328a2a7fd5917921a229774ecc0f7561e63ba3eee53b120ee2ff4c"
+  }
+}
