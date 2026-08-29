@@ -2362,6 +2362,89 @@ nlohmann::json runNewtonCarrierRowProbe(const std::string& configFile, const nlo
     };
 }
 
+void writeNewtonPoissonLinearProbeCsv(
+    const std::filesystem::path& path,
+    const vela::DeviceMesh& mesh,
+    const vela::DopingModel& doping,
+    const vela::NewtonPoissonLinearDiagnosticsEvaluation& diagnostics)
+{
+    if (!path.parent_path().empty())
+        std::filesystem::create_directories(path.parent_path());
+    std::ofstream out(path);
+    if (!out.is_open())
+        throw std::runtime_error(
+            "Cannot write Newton Poisson-linear probe CSV: " + path.string());
+    out << std::setprecision(17);
+    out << "node_id,x,y,poisson_residual,diagonal,"
+        << "poisson_row_l2_norm,poisson_column_l2_norm,"
+        << "full_row_l2_norm,full_column_l2_norm,"
+        << "raw_delta_psi_V,equilibrated_delta_psi_V,"
+        << "donors_m3,acceptors_m3,net_doping_m3,ni_eff_m3\n";
+    for (const auto& row : diagnostics.rows) {
+        const vela::Node& node = mesh.getNode(row.nodeId);
+        out << row.nodeId << ',' << node.x << ',' << node.y << ','
+            << row.residual << ',' << row.diagonal << ','
+            << row.poissonRowL2Norm << ',' << row.poissonColumnL2Norm << ','
+            << row.fullRowL2Norm << ',' << row.fullColumnL2Norm << ','
+            << row.rawDeltaPsi_V << ',' << row.equilibratedDeltaPsi_V << ','
+            << doping.donors(row.nodeId) << ','
+            << doping.acceptors(row.nodeId) << ','
+            << doping.netDoping(row.nodeId) << ','
+            << diagnostics.residual.intrinsicDensity[
+                static_cast<std::size_t>(row.nodeId)] << '\n';
+    }
+}
+
+nlohmann::json runNewtonPoissonLinearProbe(
+    const std::string& configFile,
+    const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    const vela::DDSolution state =
+        readExternalState(cfgDir, cfg, problem.mesh.numNodes());
+    const auto focusNode = static_cast<vela::Index>(cfg.at("focus_node").get<int>());
+    const vela::NewtonSolver solver = makeNewtonSolver(problem);
+    const auto diagnostics =
+        solver.evaluatePoissonLinearDiagnostics(state, focusNode);
+    const std::filesystem::path outputPath =
+        resolvePath(cfgDir, cfg.at("output_csv").get<std::string>());
+    writeNewtonPoissonLinearProbeCsv(
+        outputPath, problem.mesh, problem.doping, diagnostics);
+
+    nlohmann::json patchNodes = nlohmann::json::array();
+    for (const vela::Index node : diagnostics.focusPatchNodes)
+        patchNodes.push_back(node);
+    return {
+        {"nodes", problem.mesh.numNodes()},
+        {"focus_node", diagnostics.focusNode},
+        {"focus_patch_nodes", patchNodes},
+        {"focus_patch_raw_condition", matrixConditionJson(
+            diagnostics.focusPatchRawCondition)},
+        {"focus_patch_l2_equilibrated_condition", matrixConditionJson(
+            diagnostics.focusPatchEquilibratedCondition)},
+        {"poisson_row_norm_spread", diagnostics.poissonRowNormSpread},
+        {"poisson_column_norm_spread", diagnostics.poissonColumnNormSpread},
+        {"full_row_norm_spread", diagnostics.fullRowNormSpread},
+        {"full_column_norm_spread", diagnostics.fullColumnNormSpread},
+        {"raw_step_norm", diagnostics.rawStepNorm},
+        {"equilibrated_step_norm", diagnostics.equilibratedStepNorm},
+        {"raw_linear_closure_norm", diagnostics.rawLinearClosureNorm},
+        {"equilibrated_linear_closure_norm", diagnostics.equilibratedLinearClosureNorm},
+        {"raw_relative_linear_closure", diagnostics.rawRelativeLinearClosure},
+        {"equilibrated_relative_linear_closure",
+            diagnostics.equilibratedRelativeLinearClosure},
+        {"relative_step_difference", diagnostics.relativeStepDifference},
+        {"block_residuals", {
+            {"psi", diagnostics.residual.blockNorms.psi},
+            {"phin", diagnostics.residual.blockNorms.phin},
+            {"phip", diagnostics.residual.blockNorms.phip},
+            {"combined", diagnostics.residual.blockNorms.combined},
+        }},
+        {"output_csv", outputPath.string()},
+    };
+}
+
 void writeNewtonCarrierBlockColumnsCsv(
     const std::filesystem::path& path,
     const vela::DeviceMesh& mesh,
@@ -3219,6 +3302,8 @@ int main(int argc, char** argv)
             status.update(runNewtonRegularizedCarrierStepProbe(configFile, cfg));
         } else if (type == "newton_carrier_row_probe") {
             status.update(runNewtonCarrierRowProbe(configFile, cfg));
+        } else if (type == "newton_poisson_linear_probe") {
+            status.update(runNewtonPoissonLinearProbe(configFile, cfg));
         } else if (type == "newton_carrier_block_decomposition_probe") {
             status.update(runNewtonCarrierBlockDecompositionProbe(configFile, cfg));
         } else if (type == "newton_carrier_term_probe") {

@@ -203,6 +203,11 @@ def classical_solver(
             "reltol": 1.0e-10,
             "abstol": 1.0e-14,
             "stall_residual_floor": 1.0e-12,
+            # WP1.5 node-4601 audit found 1e21--1e31 row/column norm
+            # spreads in the exact-mesh coupled Jacobian.  One-pass two-sided
+            # L2 equilibration reduced fixed-state linear closure by 2--3
+            # orders without changing the assembled equations.
+            "linear_equilibration": {"mode": "l2_row_column"},
             "block_absolute_convergence": {
                 "mode": "enforce",
                 "psi_residual_ceiling": 5.0e-8,
@@ -463,6 +468,7 @@ def prepare(stage1_dir: Path, oracle_dir: Path, contracts_dir: Path,
         "idvg_bias_points_V": idvg_points,
         "wp15_contract": {
             "block_absolute_convergence": "all_G3_decks",
+            "linear_equilibration": "l2_row_column_on_all_G3_decks",
             "contact_majority_qf_branch_guard":
                 "deep_off_seed_and_drain_prebias_only",
             "predictor": "disabled",

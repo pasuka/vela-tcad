@@ -456,6 +456,7 @@ Newton-specific keys:
 - quasi_fermi_reference (`none` or `contact_majority`)
 - carrier_row_convergence
 - continuity_row_scaling
+- linear_equilibration (`off` or `l2_row_column`)
 - global_continuity_closure
 - residual_norm (`block` or `l2`)
 - residual_weights
@@ -882,6 +883,9 @@ The source-aware convergence controls are:
   "min_weight": 1e-12,
   "max_weight": 1e18
 },
+"linear_equilibration": {
+  "mode": "l2_row_column"
+},
 "global_continuity_closure": {
   "mode": "enforce",
   "tolerance": 0.01,
@@ -894,6 +898,13 @@ larger of their configured flux/source measures. It changes conditioning only,
 not the nonlinear equations. `min_source_scale` supplies an absolute scale for
 low-current problems where a fraction of the largest source would suppress the
 small rows of interest.
+
+`linear_equilibration: {"mode": "l2_row_column"}` applies one pass of L2 row
+and column scaling to the complete linearized Newton system after any
+continuity-row scaling. The recovered physical Newton increment solves the
+same equations; this option only improves finite-precision sparse
+factorization on matrices with large row/column norm spreads. The default is
+`off`. Boolean `true` is accepted as shorthand for `l2_row_column`.
 
 `global_continuity_closure` independently sums the free-node SRH/avalanche
 source and all contact fluxes for electrons and holes. `report` appends the

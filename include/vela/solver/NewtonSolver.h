@@ -60,6 +60,10 @@ struct NewtonContinuityRowScalingConfig {
     Real maxWeight = 1.0e12;
 };
 
+struct NewtonLinearEquilibrationConfig {
+    std::string mode = "off"; ///< "off" or one-pass "l2_row_column".
+};
+
 struct NewtonGlobalContinuityClosureConfig {
     std::string mode = "off"; ///< "off", "report", or "enforce".
     Real tolerance = 1.0e-2;
@@ -175,6 +179,7 @@ struct NewtonConfig {
     NewtonLocalUpdateDiagnosticsConfig localUpdateDiagnostics{}; ///< Opt-in raw/capped/applied Newton-step trace.
     NewtonCarrierRowRecoveryConfig carrierRowRecovery{}; ///< Optional recovery pass for locally unbalanced carrier rows.
     NewtonContinuityRowScalingConfig continuityRowScaling{}; ///< Optional source-aware left row equilibration.
+    NewtonLinearEquilibrationConfig linearEquilibration{}; ///< Optional two-sided scaling of the linear system.
     NewtonGlobalContinuityClosureConfig globalContinuityClosure{}; ///< Optional contact-flux versus integrated-source convergence check.
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
@@ -525,6 +530,39 @@ struct NewtonCarrierRowDiagnosticsEvaluation {
     Real cappedCarrierStepNorm = 0.0;
 };
 
+struct NewtonPoissonLinearRowDiagnostic {
+    Index nodeId = 0;
+    Real residual = 0.0;
+    Real diagonal = 0.0;
+    Real poissonRowL2Norm = 0.0;
+    Real poissonColumnL2Norm = 0.0;
+    Real fullRowL2Norm = 0.0;
+    Real fullColumnL2Norm = 0.0;
+    Real rawDeltaPsi_V = 0.0;
+    Real equilibratedDeltaPsi_V = 0.0;
+};
+
+struct NewtonPoissonLinearDiagnosticsEvaluation {
+    NewtonResidualEvaluation residual;
+    std::vector<NewtonPoissonLinearRowDiagnostic> rows;
+    std::vector<Index> focusPatchNodes;
+    NewtonMatrixConditionEstimate focusPatchRawCondition;
+    NewtonMatrixConditionEstimate focusPatchEquilibratedCondition;
+    Index focusNode = 0;
+    Real potentialScale = 1.0;
+    Real poissonRowNormSpread = 0.0;
+    Real poissonColumnNormSpread = 0.0;
+    Real fullRowNormSpread = 0.0;
+    Real fullColumnNormSpread = 0.0;
+    Real rawStepNorm = 0.0;
+    Real equilibratedStepNorm = 0.0;
+    Real rawLinearClosureNorm = 0.0;
+    Real equilibratedLinearClosureNorm = 0.0;
+    Real rawRelativeLinearClosure = 0.0;
+    Real equilibratedRelativeLinearClosure = 0.0;
+    Real relativeStepDifference = 0.0;
+};
+
 struct NewtonCarrierBlockColumnDiagnostic {
     std::string carrier;
     Index nodeId = 0;
@@ -694,6 +732,13 @@ public:
         Real regularizationScale) const;
     NewtonCarrierRowDiagnosticsEvaluation evaluateCarrierRowDiagnostics(
         const DDSolution& state) const;
+
+    /// Diagnose Poisson rows and compare the production linear solve with a
+    /// mathematically equivalent one-pass two-sided L2 equilibration.  This is
+    /// read-only and does not alter solve().
+    NewtonPoissonLinearDiagnosticsEvaluation evaluatePoissonLinearDiagnostics(
+        const DDSolution& state,
+        Index focusNode) const;
     NewtonCarrierBlockDecompositionEvaluation
     evaluateCarrierBlockDecomposition(const DDSolution& state) const;
     NewtonCarrierTermDiagnosticsEvaluation evaluateCarrierTermDiagnostics(

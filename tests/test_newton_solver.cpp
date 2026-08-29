@@ -3188,6 +3188,46 @@ TEST_CASE("NewtonSolver: evaluateCarrierRowDiagnostics reports carrier row stiff
             cfg.maxUpdate * rows.potentialScale + 1.0e-12);
 }
 
+TEST_CASE("NewtonSolver: Poisson linear diagnostics compare equivalent equilibrated solve",
+          "[newton][diagnostics][linear_equilibration]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.1}, {"cathode", 0.0}};
+
+    NewtonConfig cfg;
+    cfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    cfg.recombination = {"none"};
+    cfg.warmStart = true;
+
+    const int N = static_cast<int>(mesh.numNodes());
+    DDSolution state;
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.02);
+    state.phin = VectorXd::Constant(N, -0.01);
+    state.phip = VectorXd::Constant(N, 0.01);
+
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const auto diagnostics =
+        solver.evaluatePoissonLinearDiagnostics(state, 4);
+
+    REQUIRE(diagnostics.rows.size() == static_cast<std::size_t>(N));
+    REQUIRE(diagnostics.focusNode == 4);
+    REQUIRE(std::find(
+        diagnostics.focusPatchNodes.begin(),
+        diagnostics.focusPatchNodes.end(), 4) !=
+        diagnostics.focusPatchNodes.end());
+    REQUIRE(diagnostics.focusPatchRawCondition.numericalRank > 0);
+    REQUIRE(diagnostics.focusPatchEquilibratedCondition.numericalRank > 0);
+    REQUIRE(diagnostics.rawStepNorm > 0.0);
+    REQUIRE(diagnostics.equilibratedStepNorm > 0.0);
+    REQUIRE(diagnostics.equilibratedRelativeLinearClosure <=
+            diagnostics.rawRelativeLinearClosure * 1.01 + 1.0e-12);
+    REQUIRE(diagnostics.rows[4].poissonRowL2Norm > 0.0);
+    REQUIRE(diagnostics.rows[4].poissonColumnL2Norm > 0.0);
+}
+
 TEST_CASE("NewtonSolver: carrier block decomposition separates scale and coupling",
           "[newton][diagnostics]")
 {
@@ -3637,6 +3677,7 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
         }},
         {"contact_majority_qf_branch_drop_limit_V", 6.0e-10},
         {"contact_majority_qf_branch_guard_contacts", {"anode"}},
+        {"linear_equilibration", {{"mode", "l2_row_column"}}},
         {"carrier_row_qualified_stall_acceptance", true},
         {"auger_cn_m6_per_s", 4.0e-43},
         {"auger_cp_m6_per_s", 2.0e-43},
@@ -3662,6 +3703,7 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
     REQUIRE(cfg.contactMajorityQfBranchDropLimit_V == Catch::Approx(6.0e-10));
     REQUIRE(cfg.contactMajorityQfBranchGuardContacts ==
             std::vector<std::string>{"anode"});
+    REQUIRE(cfg.linearEquilibration.mode == "l2_row_column");
     REQUIRE(cfg.carrierRowQualifiedStallAcceptance);
     REQUIRE(cfg.residualWeightPsi == Catch::Approx(0.25));
     REQUIRE(cfg.residualWeightPhin == Catch::Approx(2.0));
@@ -3694,6 +3736,9 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
         std::invalid_argument);
     REQUIRE_THROWS_AS(
         newtonConfigFromJson(nlohmann::json{{"line_search_mode", "unknown"}}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        newtonConfigFromJson(nlohmann::json{{"linear_equilibration", "unknown"}}),
         std::invalid_argument);
     REQUIRE_THROWS_AS(
         newtonConfigFromJson(nlohmann::json{{"residual_filter_gamma", 0.0}}),

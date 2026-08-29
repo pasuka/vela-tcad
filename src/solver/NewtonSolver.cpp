@@ -1188,6 +1188,75 @@ SparseMatrixd leftScaleRows(const SparseMatrixd& matrix, const VectorXd& weights
     return scaled;
 }
 
+struct TwoSidedL2EquilibratedSystem {
+    SparseMatrixd matrix;
+    VectorXd rhs;
+    VectorXd rowScale;
+    VectorXd columnScale;
+};
+
+VectorXd sparseRowL2Norms(const SparseMatrixd& matrix)
+{
+    VectorXd squared = VectorXd::Zero(matrix.rows());
+    for (int outer = 0; outer < matrix.outerSize(); ++outer) {
+        for (SparseMatrixd::InnerIterator entry(matrix, outer); entry; ++entry)
+            squared(entry.row()) += entry.value() * entry.value();
+    }
+    return squared.cwiseSqrt();
+}
+
+VectorXd sparseColumnL2Norms(const SparseMatrixd& matrix)
+{
+    VectorXd squared = VectorXd::Zero(matrix.cols());
+    for (int outer = 0; outer < matrix.outerSize(); ++outer) {
+        for (SparseMatrixd::InnerIterator entry(matrix, outer); entry; ++entry)
+            squared(entry.col()) += entry.value() * entry.value();
+    }
+    return squared.cwiseSqrt();
+}
+
+Real positiveNormSpread(const VectorXd& norms)
+{
+    Real minimum = std::numeric_limits<Real>::infinity();
+    Real maximum = 0.0;
+    for (int i = 0; i < norms.size(); ++i) {
+        const Real value = norms(i);
+        if (!std::isfinite(value) || value <= 0.0)
+            continue;
+        minimum = std::min(minimum, value);
+        maximum = std::max(maximum, value);
+    }
+    return std::isfinite(minimum) && minimum > 0.0 ? maximum / minimum : 0.0;
+}
+
+TwoSidedL2EquilibratedSystem twoSidedL2Equilibrate(
+    const SparseMatrixd& matrix,
+    const VectorXd& rhs)
+{
+    TwoSidedL2EquilibratedSystem result;
+    result.rowScale = VectorXd::Ones(matrix.rows());
+    const VectorXd rowNorms = sparseRowL2Norms(matrix);
+    for (int row = 0; row < rowNorms.size(); ++row) {
+        if (std::isfinite(rowNorms(row)) && rowNorms(row) > 0.0)
+            result.rowScale(row) = 1.0 / rowNorms(row);
+    }
+
+    result.matrix = leftScaleRows(matrix, result.rowScale);
+    result.rhs = rhs.cwiseProduct(result.rowScale);
+    result.columnScale = VectorXd::Ones(matrix.cols());
+    const VectorXd columnNorms = sparseColumnL2Norms(result.matrix);
+    for (int column = 0; column < columnNorms.size(); ++column) {
+        if (std::isfinite(columnNorms(column)) && columnNorms(column) > 0.0)
+            result.columnScale(column) = 1.0 / columnNorms(column);
+    }
+    for (int outer = 0; outer < result.matrix.outerSize(); ++outer) {
+        for (SparseMatrixd::InnerIterator entry(result.matrix, outer); entry; ++entry)
+            entry.valueRef() *= result.columnScale(entry.col());
+    }
+    result.matrix.makeCompressed();
+    return result;
+}
+
 DDScalingSpec buildRecoveryScalingSpec(const DeviceMesh& mesh,
                                        const MaterialDatabase& matdb,
                                        const DopingModel& doping,
@@ -1897,6 +1966,28 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "newtonConfigFromJson: invalid continuity_row_scaling bounds.");
         }
     }
+    if (json.contains("linear_equilibration")) {
+        const auto& value = json.at("linear_equilibration");
+        if (value.is_boolean()) {
+            cfg.linearEquilibration.mode =
+                value.get<bool>() ? "l2_row_column" : "off";
+        } else if (value.is_string()) {
+            cfg.linearEquilibration.mode = value.get<std::string>();
+        } else if (value.is_object()) {
+            cfg.linearEquilibration.mode = value.value(
+                "mode", cfg.linearEquilibration.mode);
+            if (value.contains("enabled") && !value.at("enabled").get<bool>())
+                cfg.linearEquilibration.mode = "off";
+        } else {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: linear_equilibration must be a boolean, string, or object.");
+        }
+        if (cfg.linearEquilibration.mode != "off" &&
+            cfg.linearEquilibration.mode != "l2_row_column") {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: linear_equilibration.mode must be 'off' or 'l2_row_column'.");
+        }
+    }
     if (json.contains("global_continuity_closure")) {
         const auto& value = json.at("global_continuity_closure");
         if (value.is_boolean()) {
@@ -2562,6 +2653,11 @@ NewtonSolver::NewtonSolver(
     if (cfg_.residualNorm != "block" && cfg_.residualNorm != "l2")
         throw std::invalid_argument(
             "NewtonSolver: residual_norm must be 'block' or 'l2'.");
+    if (cfg_.linearEquilibration.mode != "off" &&
+        cfg_.linearEquilibration.mode != "l2_row_column") {
+        throw std::invalid_argument(
+            "NewtonSolver: linear_equilibration.mode must be 'off' or 'l2_row_column'.");
+    }
     if (cfg_.lineSearchMode != "merit" && cfg_.lineSearchMode != "block_filter")
         throw std::invalid_argument(
             "NewtonSolver: line_search_mode must be 'merit' or 'block_filter'.");
@@ -4476,6 +4572,136 @@ NewtonCarrierRowDiagnosticsEvaluation NewtonSolver::evaluateCarrierRowDiagnostic
         row.rawDeltaPhip_V = rawStep(2 * N + i) * potentialScale;
         row.cappedDeltaPhin_V = cappedStep(N + i) * potentialScale;
         row.cappedDeltaPhip_V = cappedStep(2 * N + i) * potentialScale;
+        evaluation.rows.push_back(row);
+    }
+    return evaluation;
+}
+
+NewtonPoissonLinearDiagnosticsEvaluation
+NewtonSolver::evaluatePoissonLinearDiagnostics(
+    const DDSolution& state,
+    Index focusNode) const
+{
+    const int N = static_cast<int>(mesh_.numNodes());
+    if (focusNode < 0 || focusNode >= N)
+        throw std::invalid_argument(
+            "NewtonSolver::evaluatePoissonLinearDiagnostics: focus node is out of range.");
+
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    const MobilityModelConfig mobilityConfig = cfg_.mobility;
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(
+            cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.bandToBand = cfg_.bandToBand;
+    const DDScalingSpec scaling = buildScalingSpec();
+    CoupledDDAssembler assembler(
+        mesh_, matdb_, doping_, Vt, mobilityConfig, recombinationConfig,
+        cfg_.bandgapNarrowing, cfg_.impactIonization, fixedCharges_,
+        sheetCharges_, scaling, cfg_.carrierDiagonalFloor,
+        cfg_.carrierStatistics, cfg_.electronQuantumPotential);
+    restoreElectronQuantumPotential(assembler, state);
+    configureQuasiFermiReferences(assembler);
+    const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
+    const Real potentialScale =
+        assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
+    const VectorXd x = packReferencedSolution(assembler, state, bcs);
+    const VectorXd raw = assembler.residual(x, bcs);
+    SparseMatrixd J = (cfg_.jacobian == "finite_difference")
+        ? assembler.finiteDifferenceJacobian(x, bcs, cfg_.finiteDifferenceStep)
+        : assembler.assembleJacobian(x, bcs);
+    addCarrierRowRegularization(J, N, cfg_.carrierRegularizationScale);
+
+    const VectorXd rowWeights = continuityRowWeights(
+        assembler, x, bcs, cfg_.continuityRowScaling);
+    const SparseMatrixd productionMatrix = cfg_.continuityRowScaling.enabled
+        ? leftScaleRows(J, rowWeights)
+        : J;
+    VectorXd productionRhs = -raw;
+    if (cfg_.continuityRowScaling.enabled)
+        productionRhs = -raw.cwiseProduct(rowWeights);
+
+    LinearSolver rawSolver;
+    const VectorXd rawStep = rawSolver.solve(productionMatrix, productionRhs);
+    const TwoSidedL2EquilibratedSystem equilibrated =
+        twoSidedL2Equilibrate(productionMatrix, productionRhs);
+    LinearSolver equilibratedSolver;
+    const VectorXd equilibratedCoordinates =
+        equilibratedSolver.solve(equilibrated.matrix, equilibrated.rhs);
+    const VectorXd equilibratedStep =
+        equilibratedCoordinates.cwiseProduct(equilibrated.columnScale);
+
+    const VectorXd rawClosure = J * rawStep + raw;
+    const VectorXd equilibratedClosure = J * equilibratedStep + raw;
+    const Real closureScale = std::max<Real>(1.0, raw.norm());
+    const SparseMatrixd poissonBlock = sparseBlock(J, 0, 0, N, N);
+    const VectorXd poissonRows = sparseRowL2Norms(poissonBlock);
+    const VectorXd poissonColumns = sparseColumnL2Norms(poissonBlock);
+    const VectorXd fullRows = sparseRowL2Norms(J);
+    const VectorXd fullColumns = sparseColumnL2Norms(J);
+
+    std::vector<Index> patchNodes;
+    patchNodes.push_back(focusNode);
+    for (SparseMatrixd::InnerIterator entry(poissonBlock, focusNode); entry; ++entry) {
+        if (entry.row() != focusNode)
+            patchNodes.push_back(static_cast<Index>(entry.row()));
+    }
+    for (int column = 0; column < poissonBlock.outerSize(); ++column) {
+        if (column != focusNode && poissonBlock.coeff(focusNode, column) != 0.0)
+            patchNodes.push_back(static_cast<Index>(column));
+    }
+    std::sort(patchNodes.begin(), patchNodes.end());
+    patchNodes.erase(std::unique(patchNodes.begin(), patchNodes.end()), patchNodes.end());
+
+    Eigen::MatrixXd patch = Eigen::MatrixXd::Zero(
+        static_cast<int>(patchNodes.size()), static_cast<int>(patchNodes.size()));
+    for (int row = 0; row < patch.rows(); ++row) {
+        for (int column = 0; column < patch.cols(); ++column) {
+            patch(row, column) = poissonBlock.coeff(
+                patchNodes[static_cast<std::size_t>(row)],
+                patchNodes[static_cast<std::size_t>(column)]);
+        }
+    }
+
+    NewtonPoissonLinearDiagnosticsEvaluation evaluation;
+    evaluation.residual.raw = raw;
+    evaluation.residual.blockNorms = blockResidualInfo(raw, mesh_.numNodes());
+    evaluation.residual.intrinsicDensity = assembler.intrinsicDensity();
+    evaluation.residual.scaledState = assembler.usesScaledState();
+    evaluation.residual.potentialScale = potentialScale;
+    evaluation.focusNode = focusNode;
+    evaluation.focusPatchNodes = patchNodes;
+    evaluation.focusPatchRawCondition = matrixConditionEstimate(patch);
+    evaluation.focusPatchEquilibratedCondition =
+        matrixConditionEstimate(l2Equilibrated(patch));
+    evaluation.potentialScale = potentialScale;
+    evaluation.poissonRowNormSpread = positiveNormSpread(poissonRows);
+    evaluation.poissonColumnNormSpread = positiveNormSpread(poissonColumns);
+    evaluation.fullRowNormSpread = positiveNormSpread(fullRows);
+    evaluation.fullColumnNormSpread = positiveNormSpread(fullColumns);
+    evaluation.rawStepNorm = rawStep.norm();
+    evaluation.equilibratedStepNorm = equilibratedStep.norm();
+    evaluation.rawLinearClosureNorm = rawClosure.norm();
+    evaluation.equilibratedLinearClosureNorm = equilibratedClosure.norm();
+    evaluation.rawRelativeLinearClosure = rawClosure.norm() / closureScale;
+    evaluation.equilibratedRelativeLinearClosure =
+        equilibratedClosure.norm() / closureScale;
+    evaluation.relativeStepDifference =
+        (rawStep - equilibratedStep).norm() /
+        std::max<Real>(1.0, std::max(rawStep.norm(), equilibratedStep.norm()));
+    evaluation.rows.reserve(static_cast<std::size_t>(N));
+    for (int node = 0; node < N; ++node) {
+        NewtonPoissonLinearRowDiagnostic row;
+        row.nodeId = static_cast<Index>(node);
+        row.residual = raw(node);
+        row.diagonal = J.coeff(node, node);
+        row.poissonRowL2Norm = poissonRows(node);
+        row.poissonColumnL2Norm = poissonColumns(node);
+        row.fullRowL2Norm = fullRows(node);
+        row.fullColumnL2Norm = fullColumns(node);
+        row.rawDeltaPsi_V = rawStep(node) * potentialScale;
+        row.equilibratedDeltaPsi_V = equilibratedStep(node) * potentialScale;
         evaluation.rows.push_back(row);
     }
     return evaluation;
@@ -6649,14 +6875,26 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         }
         VectorXd step;
         try {
+            const auto solveProductionSystem = [&linearSolver, this](
+                const SparseMatrixd& matrix,
+                const VectorXd& rhs) -> VectorXd {
+                if (cfg_.linearEquilibration.mode != "l2_row_column")
+                    return linearSolver.solve(matrix, rhs);
+                ScopedPerformanceTimer timer("newton.linear_l2_row_column");
+                const TwoSidedL2EquilibratedSystem equilibrated =
+                    twoSidedL2Equilibrate(matrix, rhs);
+                const VectorXd equilibratedCoordinates =
+                    linearSolver.solve(equilibrated.matrix, equilibrated.rhs);
+                return equilibratedCoordinates.cwiseProduct(
+                    equilibrated.columnScale).eval();
+            };
             if (cfg_.continuityRowScaling.enabled) {
                 ScopedPerformanceTimer timer("newton.linear_row_scaling");
                 const SparseMatrixd scaledJ = leftScaleRows(J, activeRowWeights);
-                step = linearSolver.solve(
-                    scaledJ,
-                    -r.cwiseProduct(activeRowWeights));
+                step = solveProductionSystem(
+                    scaledJ, -r.cwiseProduct(activeRowWeights));
             } else {
-                step = linearSolver.solve(J, -r);
+                step = solveProductionSystem(J, -r);
             }
         } catch (const std::runtime_error&) {
             NewtonIterationInfo failedTrace;

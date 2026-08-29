@@ -240,6 +240,8 @@ class Phase23DeckTest(unittest.TestCase):
         self.assertEqual(solver["reltol"], 1.0e-10)
         self.assertEqual(solver["abstol"], 1.0e-14)
         self.assertEqual(solver["stall_residual_floor"], 1.0e-12)
+        self.assertEqual(
+            solver["linear_equilibration"], {"mode": "l2_row_column"})
         self.assertEqual(solver["block_absolute_convergence"], {
             "mode": "enforce",
             "psi_residual_ceiling": 5.0e-8,
@@ -394,6 +396,10 @@ class Phase23DeckTest(unittest.TestCase):
             self.assertEqual(
                 manifest["wp15_contract"]["contact_majority_qf_branch_guard"],
                 "deep_off_seed_and_drain_prebias_only",
+            )
+            self.assertEqual(
+                manifest["wp15_contract"]["linear_equilibration"],
+                "l2_row_column_on_all_G3_decks",
             )
 
     def test_wp15_matrix_preserves_physics_and_exposes_solver_controls(self) -> None:
