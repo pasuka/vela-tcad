@@ -218,6 +218,9 @@ TEST_CASE("ConfigParsing: omitted node volume policy preserves explicit barycent
         nlohmann::json{{"mesh_geometry",
                         {{"node_volume_policy", "mixed_voronoi"},
                          {"require_non_obtuse", true}}}});
+    const auto noNegativeFallback = parseBoxGeometryOptions(
+        nlohmann::json{{"mesh_geometry",
+                        {{"fallback_negative_cotangent", false}}}});
 
     REQUIRE(omitted.nodeVolumePolicy == BoxGeometryBuilder::NodeVolumePolicy::Barycentric);
     REQUIRE(emptyObject.nodeVolumePolicy == BoxGeometryBuilder::NodeVolumePolicy::Barycentric);
@@ -228,6 +231,8 @@ TEST_CASE("ConfigParsing: omitted node volume policy preserves explicit barycent
     REQUIRE_FALSE(omitted.requireNonObtuse);
     REQUIRE_FALSE(explicitMixed.requireNonObtuse);
     REQUIRE(qualifiedMixed.requireNonObtuse);
+    REQUIRE(omitted.fallbackNegativeCotangent);
+    REQUIRE_FALSE(noNegativeFallback.fallbackNegativeCotangent);
     REQUIRE_THROWS_WITH(
         parseBoxGeometryOptions(
             nlohmann::json{{"mesh_geometry", {{"node_volume_policy", "unknown"}}}}),
@@ -237,6 +242,10 @@ TEST_CASE("ConfigParsing: omitted node volume policy preserves explicit barycent
         parseBoxGeometryOptions(
             nlohmann::json{{"mesh_geometry", {{"require_non_obtuse", "yes"}}}}),
         "ConfigParsing: mesh_geometry.require_non_obtuse must be boolean.");
+    REQUIRE_THROWS_WITH(
+        parseBoxGeometryOptions(nlohmann::json{
+            {"mesh_geometry", {{"fallback_negative_cotangent", "yes"}}}}),
+        "ConfigParsing: mesh_geometry.fallback_negative_cotangent must be boolean.");
 }
 
 TEST_CASE("BoxGeometryBuilder: non-obtuse qualification accepts eligible meshes and rejects obtuse cells",

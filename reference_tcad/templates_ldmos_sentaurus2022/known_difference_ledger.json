@@ -1,0 +1,41 @@
+{
+  "schema": "vela.templates_ldmos.known_difference_ledger.v1",
+  "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
+  "entries": [
+    {
+      "id": "g3_exact_mesh_subthreshold_edge_current_support_20260829",
+      "classification": "candidate_baseline_difference",
+      "status": "open",
+      "scope": "G3 no-IALMob Id-Vg, Vd=0.1 V, exact SProcess topology, Vg=0.1667--0.8333 V",
+      "observation": "Vela resolved P95 current error is 0.287219 dex and the fixed-current equivalent threshold shift is 29.6261 mV. On identical Sentaurus states, Vela edge-SG is 11.06--24.50 times the Sentaurus terminal current, while native current-density and cell-QF-gradient reconstructions remain at the Sentaurus current scale.",
+      "excluded_causes": [
+        "uniform electrostatic, flatband, or reference-energy offset",
+        "terminal floating-point summation",
+        "electron-density reconstruction from psi and QF",
+        "high-field mobility saturation",
+        "negative local cotangent barycentric fallback"
+      ],
+      "open_causes": [
+        "edge-only carrier current support on slender, strongly coupled non-orthogonal Tri3 edges",
+        "exact-mesh low-current electron-continuity Newton residual floor affecting the 1 percent KCL gate"
+      ],
+      "evidence": [
+        {
+          "path": "docs/validation/templates_ldmos_g3_shift_kcl_audit_2026-08-29.md",
+          "sha256": "5bdc0a34c9eb989b60701c1d86c37b8e8e1e231b3d1c6e2b447fde839d9e51d0"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_idvg_shift_kcl.py",
+          "sha256": "c4456d15b5d5c0a5967ffa5ea1ada90a7595df2e69925f8015ccb69770121b70"
+        }
+      ],
+      "expires_when": "An element/cell-aware current-support profile passes identical-state replay and the full 31-point G3 curve is rerun, or the exact mesh/discretization contract changes.",
+      "approval": {
+        "status": "draft",
+        "benchmark_owner": null,
+        "independent_reviewer": null,
+        "approved_at": null
+      }
+    }
+  ]
+}

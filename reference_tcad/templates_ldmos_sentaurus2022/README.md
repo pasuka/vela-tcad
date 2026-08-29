@@ -19,6 +19,11 @@ hRecVelocity, hQP, IALMob, thermal or Okuto physics as implemented.
 WP2 and phase-2/3 execution status is recorded in
 `docs/validation/templates_ldmos_phase23_execution_2026-08-27.md`. Generated
 TDR/PLT and exact-mesh products remain under ignored `reference_staging`.
+The G3 subthreshold/KCL follow-up is recorded in
+`docs/validation/templates_ldmos_g3_shift_kcl_audit_2026-08-29.md`; its
+candidate engine-difference entry is intentionally draft in
+`known_difference_ledger.json` until benchmark-owner and independent-reviewer
+approval.
 
 Expected persistent local layout:
 

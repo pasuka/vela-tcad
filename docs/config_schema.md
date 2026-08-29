@@ -206,7 +206,8 @@ the input mesh. Omit it to keep the legacy default.
 
 ```json
 "mesh_geometry": {
-  "node_volume_policy": "mixed_voronoi"
+  "node_volume_policy": "mixed_voronoi",
+  "fallback_negative_cotangent": true
 }
 ```
 
@@ -217,6 +218,13 @@ Supported `node_volume_policy` values:
   area; obtuse triangles assign half the area to the obtuse vertex and one
   quarter to each other vertex. Edge couplings still use the existing
   cotangent box coefficients and negative-cotangent fallback policy.
+
+`fallback_negative_cotangent` defaults to `true`. For an obtuse-cell local
+cotangent contribution, `true` substitutes the existing positive barycentric
+box contribution. `false` removes that local contribution (zero weight); it
+does not retain a signed negative edge coupling. The option is intended for
+explicit mesh/discretization qualification and should not be changed as an
+implicit physics calibration.
 
 This option changes the mesh node control volumes used by Poisson charge,
 carrier continuity volume terms, stored/terminal charge, and SG avalanche

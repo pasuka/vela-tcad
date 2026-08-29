@@ -160,6 +160,14 @@ BoxGeometryBuilder::Options parseBoxGeometryOptions(const nlohmann::json& cfg)
     }
     options.requireNonObtuse = geometry.value("require_non_obtuse", false);
 
+    if (geometry.contains("fallback_negative_cotangent") &&
+        !geometry.at("fallback_negative_cotangent").is_boolean()) {
+        throw std::runtime_error(
+            "ConfigParsing: mesh_geometry.fallback_negative_cotangent must be boolean.");
+    }
+    options.fallbackNegativeCotangent =
+        geometry.value("fallback_negative_cotangent", true);
+
     return options;
 }
 
