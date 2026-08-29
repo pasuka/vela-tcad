@@ -212,6 +212,30 @@ TEST_CASE("mobility doping concentration basis parses and validates",
         std::invalid_argument);
 }
 
+TEST_CASE("carrier current discretization parses and validates",
+          "[mobility][json][element-current]")
+{
+    const MobilityModelConfig defaultConfig = mobilityModelConfigFromJson(
+        nlohmann::json{{"model", "masetti"}});
+    REQUIRE(defaultConfig.carrierCurrentDiscretization ==
+            "scharfetter_gummel_edge");
+
+    const MobilityModelConfig elementConfig = mobilityModelConfigFromJson(
+        nlohmann::json{
+            {"model", "masetti"},
+            {"carrier_current_discretization", "element_qf_gradient"},
+        });
+    REQUIRE(elementConfig.carrierCurrentDiscretization ==
+            "element_qf_gradient");
+
+    REQUIRE_THROWS_AS(
+        mobilityModelConfigFromJson(nlohmann::json{
+            {"model", "masetti"},
+            {"carrier_current_discretization", "unsupported"},
+        }),
+        std::invalid_argument);
+}
+
 TEST_CASE("JSON solver config selects mobility and recombination models", "[mobility][json]")
 {
     const nlohmann::json json = {

@@ -461,7 +461,7 @@ Newton-specific keys:
 - diagnostics / diagnostic_history
 - jacobian (`analytic` or `finite_difference`)
 - finite_difference_step
-- quasi_fermi_reference (`none` or `contact_majority`)
+- quasi_fermi_reference (`none`, `contact_majority`, or `contact_basin`)
 - carrier_row_convergence
 - continuity_row_scaling
 - linear_equilibration (`off` or `l2_row_column`)
@@ -676,8 +676,13 @@ Notes:
   remains inside `residual_filter_envelope_factor`. For a limited direction,
   `residual_filter_gamma` multiplies the block decrease predicted by
   `F + J*dx`, rather than incorrectly assuming that the limited step predicts
-  a zero residual. This changes globalization only; the final Newton
-  convergence tolerances are unchanged.
+  a zero residual. When authoritative `block_absolute_convergence` is enforced,
+  the sufficient-decrease test applies to blocks that currently exceed their
+  absolute ceiling, and an already-qualified block uses that ceiling as the
+  lower bound of its envelope. This lets a Poisson boundary update proceed
+  without demanding artificial improvement from a carrier block already below
+  its hard gate. This changes globalization only; the final Newton convergence
+  tolerances are unchanged.
 - `poisson_line_search_stall_contact_majority_qf_drop_limit_V` is an optional
   non-negative physical-voltage guard for the `poisson_line_search_stall_floor`
   acceptance path. When greater than zero, a Poisson-block line-search stall is
@@ -860,7 +865,8 @@ Newton configs can opt into diagnostic history with either
 
 - `jacobian`: `analytic` or `finite_difference`
 - `finite_difference_step`
-- `quasi_fermi_reference`: `none` (default) or `contact_majority`
+- `quasi_fermi_reference`: `none` (default), `contact_majority`, or
+  `contact_basin`
 - `residual_norm`: `block` or `l2`
 - `residual_weights`: object with `psi`, `phin`, and `phip`
 - `residual_scales`: object with `psi`, `phin`, and `phip`
@@ -1152,6 +1158,7 @@ Object form:
 ```json
 "mobility": {
   "model": "caughey_thomas_field_surface",
+  "carrier_current_discretization": "scharfetter_gummel_edge",
   "high_field_driving_force": "electric_field",
   "high_field_gradient_discretization": "edge_projection",
   "electron_mu_min_m2_V_s": 0.00522,
@@ -1176,6 +1183,16 @@ Object form:
   }
 }
 ```
+
+`carrier_current_discretization` selects the continuity-equation current
+support. `scharfetter_gummel_edge` is the default and preserves existing Vela
+behavior. `element_qf_gradient` is an explicit experimental Tri3 profile: it
+reconstructs the P1 quasi-Fermi gradient in each semiconductor cell, evaluates
+the cell current from area-averaged density and mobility, and assembles the
+conservative P1 divergence. It is currently restricted to bulk mobility with
+self-consistent impact ionization disabled. It must not be used as a silent
+replacement for the SG profile; Templates/LDMOS fixed-state qualification on
+2026-08-29 did not show an accuracy improvement.
 
 Supported `model` values are `constant`, `caughey_thomas`,
 `caughey_thomas_field`, `caughey_thomas_surface`,

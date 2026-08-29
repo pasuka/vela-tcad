@@ -1,6 +1,7 @@
 #include "vela/post/ContactCurrent.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/discretization/Bernoulli.h"
+#include "vela/discretization/ElementQfGradient.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/equation/AssemblerUtils.h"
 #include <unordered_set>
@@ -188,6 +189,164 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
     NeumaierSum holeCurrentCompensated;
     long double electronCurrentLongDouble = 0.0L;
     long double holeCurrentLongDouble = 0.0L;
+    if (mobilityConfig_.carrierCurrentDiscretization ==
+        "element_qf_gradient") {
+        if (contact->edge_node_ids.empty()) {
+            throw std::invalid_argument(
+                "ContactCurrent: element_qf_gradient requires exact "
+                "contact edge_node_ids.");
+        }
+        const Real currentLineFactor = scaling_.enabled
+            ? scaling_.currentDensityLineIntegralFactor : 1.0;
+        for (const auto& boundaryNodes : contact->edge_node_ids) {
+            Index edgeId = mesh_.numEdges();
+            for (Index candidate = 0; candidate < mesh_.numEdges(); ++candidate) {
+                const Edge& edge = mesh_.getEdge(candidate);
+                if ((edge.n0 == boundaryNodes[0] && edge.n1 == boundaryNodes[1]) ||
+                    (edge.n0 == boundaryNodes[1] && edge.n1 == boundaryNodes[0])) {
+                    edgeId = candidate;
+                    break;
+                }
+            }
+            if (edgeId == mesh_.numEdges())
+                throw std::invalid_argument(
+                    "ContactCurrent: exact contact edge is absent from mesh topology.");
+
+            Index transportCell = mesh_.numCells();
+            for (const Index cellId : edgeCells_[edgeId]) {
+                if (detail::isTransportMaterial(cellMaterials[cellId])) {
+                    transportCell = cellId;
+                    break;
+                }
+            }
+            if (transportCell == mesh_.numCells())
+                continue;
+            const Cell& cell = mesh_.getCell(transportCell);
+            if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+                throw std::invalid_argument(
+                    "ContactCurrent: element_qf_gradient supports Tri3 transport cells only.");
+
+            bool valid = false;
+            Real area = 0.0;
+            const Point2 psiGradient = detail::cellScalarGradient(
+                mesh_, cell,
+                [&](Index node) { return solution.psi(static_cast<int>(node)); },
+                valid, area);
+            const Point2 electronGradient = detail::cellScalarGradient(
+                mesh_, cell,
+                [&](Index node) { return electronQf(static_cast<int>(node)); },
+                valid, area);
+            const Point2 holeGradient = detail::cellScalarGradient(
+                mesh_, cell,
+                [&](Index node) { return holeQf(static_cast<int>(node)); },
+                valid, area);
+            if (!valid)
+                continue;
+
+            Real averageElectronDensity = 0.0;
+            Real averageHoleDensity = 0.0;
+            Real mobilityDoping = 0.0;
+            for (const Index node : cell.node_ids) {
+                averageElectronDensity += solution.n(static_cast<int>(node));
+                averageHoleDensity += solution.p(static_cast<int>(node));
+                mobilityDoping +=
+                    mobilityConfig_.dopingConcentrationBasis == "total_impurity"
+                    ? doping_.totalImpurity(node) : doping_.netDoping(node);
+            }
+            averageElectronDensity /= 3.0;
+            averageHoleDensity /= 3.0;
+            mobilityDoping /= 3.0;
+            if (mobilityConfig_.dopingConcentrationBasis ==
+                "cell_reconstructed_total_impurity") {
+                mobilityDoping = detail::cellAverageTotalImpurity(
+                    mesh_, doping_, transportCell);
+            }
+            const Real electricField = psiGradient.norm() * fieldFactor;
+            const bool qfDrive =
+                mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
+            const Real mun = mobility_->electronMobility(
+                cellMaterials[transportCell], mobilityDoping,
+                averageElectronDensity, averageHoleDensity,
+                qfDrive ? electronGradient.norm() * fieldFactor : electricField);
+            const Real mup = mobility_->holeMobility(
+                cellMaterials[transportCell], mobilityDoping,
+                averageElectronDensity, averageHoleDensity,
+                qfDrive ? holeGradient.norm() * fieldFactor : electricField);
+            const auto current = elementQfGradientCellCurrent(
+                mesh_, cell,
+                [&](Index node) { return electronQf(static_cast<int>(node)); },
+                [&](Index node) { return holeQf(static_cast<int>(node)); },
+                [&](Index node) { return solution.n(static_cast<int>(node)); },
+                [&](Index node) { return solution.p(static_cast<int>(node)); },
+                mun, mup, fieldFactor);
+            if (!current.valid)
+                continue;
+
+            const Node& node0 = mesh_.getNode(boundaryNodes[0]);
+            const Node& node1 = mesh_.getNode(boundaryNodes[1]);
+            const Point2 tangent{node1.x - node0.x, node1.y - node0.y};
+            const Real length = tangent.norm();
+            if (length <= 1.0e-30)
+                continue;
+            Point2 outward{tangent.y() / length, -tangent.x() / length};
+            Point2 centroid = Point2::Zero();
+            for (const Index node : cell.node_ids) {
+                const Node& point = mesh_.getNode(node);
+                centroid += Point2{point.x, point.y};
+            }
+            centroid /= 3.0;
+            const Point2 midpoint{
+                0.5 * (node0.x + node1.x),
+                0.5 * (node0.y + node1.y)};
+            if (outward.dot(centroid - midpoint) > 0.0)
+                outward = -outward;
+
+            const Real electronCurrent = constants::q *
+                current.electronParticleCurrent.dot(outward) * length *
+                currentLineFactor;
+            const Real holeCurrent = constants::q *
+                current.holeParticleCurrent.dot(outward) * length *
+                currentLineFactor;
+            detailed.totals.electronCurrent += electronCurrent;
+            detailed.totals.holeCurrent += holeCurrent;
+            electronCurrentCompensated.add(electronCurrent);
+            holeCurrentCompensated.add(holeCurrent);
+            electronCurrentLongDouble += electronCurrent;
+            holeCurrentLongDouble += holeCurrent;
+
+            ContactCurrentEdgeDiagnostic edgeDiag;
+            edgeDiag.edgeId = edgeId;
+            edgeDiag.node0 = boundaryNodes[0];
+            edgeDiag.node1 = boundaryNodes[1];
+            edgeDiag.edgeLength_m =
+                scaling_.unitSystem.internalLengthToMeters(length);
+            edgeDiag.edgeCouple_m = edgeDiag.edgeLength_m;
+            edgeDiag.electronUsedQuasiFermi = true;
+            edgeDiag.holeUsedQuasiFermi = true;
+            edgeDiag.mun = mun;
+            edgeDiag.mup = mup;
+            edgeDiag.electronCurrent = electronCurrent;
+            edgeDiag.holeCurrent = holeCurrent;
+            edgeDiag.totalCurrent = electronCurrent - holeCurrent;
+            detailed.edges.push_back(std::move(edgeDiag));
+        }
+        detailed.totals.totalCurrent =
+            detailed.totals.electronCurrent - detailed.totals.holeCurrent;
+        detailed.precision.electronCurrentCompensated =
+            electronCurrentCompensated.value();
+        detailed.precision.holeCurrentCompensated =
+            holeCurrentCompensated.value();
+        detailed.precision.totalCurrentCompensated =
+            detailed.precision.electronCurrentCompensated -
+            detailed.precision.holeCurrentCompensated;
+        detailed.precision.electronCurrentLongDoubleReference =
+            static_cast<Real>(electronCurrentLongDouble);
+        detailed.precision.holeCurrentLongDoubleReference =
+            static_cast<Real>(holeCurrentLongDouble);
+        detailed.precision.totalCurrentLongDoubleReference =
+            static_cast<Real>(electronCurrentLongDouble - holeCurrentLongDouble);
+        return detailed;
+    }
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
         const Edge& edge = mesh_.getEdge(e);
         const bool n0OnContact = contactNodes.count(edge.n0) > 0;

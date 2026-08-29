@@ -3,6 +3,7 @@
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/discretization/Bernoulli.h"
+#include "vela/discretization/ElementQfGradient.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include "vela/equation/AssemblerUtils.h"
@@ -366,6 +367,18 @@ CoupledDDAssembler::CoupledDDAssembler(
         }
     }
     surfaceMobilityEnabled_ = isSurfaceMobilityModel(mobilityConfig_);
+    if (mobilityConfig_.carrierCurrentDiscretization ==
+            "element_qf_gradient" && surfaceMobilityEnabled_) {
+        throw std::invalid_argument(
+            "CoupledDDAssembler: element_qf_gradient does not yet support "
+            "surface mobility.");
+    }
+    if (mobilityConfig_.carrierCurrentDiscretization ==
+            "element_qf_gradient" && impactIonizationCoupled_) {
+        throw std::invalid_argument(
+            "CoupledDDAssembler: element_qf_gradient must be qualified "
+            "without coupled impact ionization.");
+    }
     highFieldMobilityEnabled_ = usesHighFieldMobility(mobilityConfig_);
     qfMobilityEnabled_ =
         mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
@@ -1333,6 +1346,9 @@ VectorXd CoupledDDAssembler::residualImpl(
         : nodeElectricFields;
     const bool qfMobility = qfMobilityEnabled_;
     const bool vectorQfMobility = vectorQfMobilityEnabled_;
+    const bool elementQfCurrent =
+        mobilityConfig_.carrierCurrentDiscretization ==
+            "element_qf_gradient";
     const std::vector<Real> electronVectorMobilityFields = vectorQfMobility
         ? detail::transportCellVectorEdgeGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials_, phinPhysical, fieldFactor)
@@ -1477,6 +1493,9 @@ VectorXd CoupledDDAssembler::residualImpl(
         r(psiOffset() + i) += psiFlux;
         r(psiOffset() + j) -= psiFlux;
 
+        if (elementQfCurrent)
+            continue;
+
         const Real mun = detail::edgeMobility(
             edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
             electronMobilityField,
@@ -1570,6 +1589,87 @@ VectorXd CoupledDDAssembler::residualImpl(
             }
             r(phipOffset() + i) += pFlux;
             r(phipOffset() + j) -= pFlux;
+        }
+    }
+
+    if (elementQfCurrent) {
+        for (Index cellId = 0; cellId < mesh_.numCells(); ++cellId) {
+            const Cell& cell = mesh_.getCell(cellId);
+            if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3 ||
+                !detail::isTransportMaterial(cellMaterials_[cellId])) {
+                continue;
+            }
+
+            bool electronGradientValid = false;
+            bool holeGradientValid = false;
+            Real electronArea = 0.0;
+            Real holeArea = 0.0;
+            const Point2 electronGradient = detail::cellScalarGradient(
+                mesh_, cell,
+                [&](Index node) { return phinPhysical(static_cast<int>(node)); },
+                electronGradientValid, electronArea);
+            const Point2 holeGradient = detail::cellScalarGradient(
+                mesh_, cell,
+                [&](Index node) { return phipPhysical(static_cast<int>(node)); },
+                holeGradientValid, holeArea);
+            if (!electronGradientValid || !holeGradientValid)
+                continue;
+
+            Real averageElectronDensity = 0.0;
+            Real averageHoleDensity = 0.0;
+            Real mobilityDoping = 0.0;
+            for (const Index node : cell.node_ids) {
+                averageElectronDensity += n(static_cast<int>(node));
+                averageHoleDensity += p(static_cast<int>(node));
+                mobilityDoping += mobilityDopingBasis_ == MobilityDopingBasis::TotalImpurity
+                    ? doping_.totalImpurity(node) : doping_.netDoping(node);
+            }
+            averageElectronDensity /= 3.0;
+            averageHoleDensity /= 3.0;
+            mobilityDoping /= 3.0;
+            if (mobilityDopingBasis_ ==
+                MobilityDopingBasis::CellReconstructedTotalImpurity) {
+                mobilityDoping = detail::cellAverageTotalImpurity(
+                    mesh_, doping_, cellId);
+            }
+            const Real electricField = detail::cellScalarGradient(
+                mesh_, cell,
+                [&](Index node) { return psi(static_cast<int>(node)); },
+                electronGradientValid, electronArea).norm() * fieldFactor;
+            const Real electronDrive = qfMobility
+                ? electronGradient.norm() * fieldFactor : electricField;
+            const Real holeDrive = qfMobility
+                ? holeGradient.norm() * fieldFactor : electricField;
+            const Material& material = cellMaterials_[cellId];
+            const Real mun = mobility_->electronMobility(
+                material, mobilityDoping, averageElectronDensity,
+                averageHoleDensity, electronDrive);
+            const Real mup = mobility_->holeMobility(
+                material, mobilityDoping, averageElectronDensity,
+                averageHoleDensity, holeDrive);
+            const auto current = elementQfGradientCellCurrent(
+                mesh_, cell,
+                [&](Index node) { return phinPhysical(static_cast<int>(node)); },
+                [&](Index node) { return phipPhysical(static_cast<int>(node)); },
+                [&](Index node) { return n(static_cast<int>(node)); },
+                [&](Index node) { return p(static_cast<int>(node)); },
+                mun, mup, fieldFactor);
+            if (!current.valid)
+                continue;
+            for (int local = 0; local < 3; ++local) {
+                const int node = static_cast<int>(
+                    cell.node_ids[static_cast<std::size_t>(local)]);
+                if (mun > 0.0) {
+                    r(phinOffset() + node) +=
+                        current.electronResidual[static_cast<std::size_t>(local)];
+                    hasElectronContribution[static_cast<std::size_t>(node)] = true;
+                }
+                if (mup > 0.0) {
+                    r(phipOffset() + node) +=
+                        current.holeResidual[static_cast<std::size_t>(local)];
+                    hasHoleContribution[static_cast<std::size_t>(node)] = true;
+                }
+            }
         }
     }
 
@@ -3041,6 +3141,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         : nodeElectricFields;
     const bool qfMobility = qfMobilityEnabled_;
     const bool vectorQfMobility = vectorQfMobilityEnabled_;
+    const bool elementQfCurrent =
+        mobilityConfig_.carrierCurrentDiscretization ==
+            "element_qf_gradient";
     const std::vector<Real> electronVectorMobilityFields = vectorQfMobility
         ? detail::transportCellVectorEdgeGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials_, phinState, fieldFactor)
@@ -3094,7 +3197,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     }
 
     const std::uint64_t boundarySignature = booleanMaskHash(constrainedRows);
-    const bool includeCellStencil = sgCurrentAvalanche ||
+    const bool includeCellStencil = elementQfCurrent || sgCurrentAvalanche ||
         recombination_.bandToBandEnabled();
     if (!hasFixedJacobianPattern_ ||
         boundarySignature != fixedJacobianBoundarySignature_ ||
@@ -4242,7 +4345,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         add(psiOffset() + j, psiOffset() + i, -G);
         add(psiOffset() + j, psiOffset() + j,  G);
 
-        const Real mun = cachedEdgeMobility(
+        const Real mun = elementQfCurrent ? 0.0 : cachedEdgeMobility(
             e, CarrierType::Electron, electronMobilityField, &psi);
         if (mun > 0.0) {
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
@@ -4311,7 +4414,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             }
         }
 
-        const Real mup = cachedEdgeMobility(
+        const Real mup = elementQfCurrent ? 0.0 : cachedEdgeMobility(
             e, CarrierType::Hole, holeMobilityField, &psi);
         if (mup > 0.0) {
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
@@ -4560,6 +4663,201 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     incrementPerformanceCounter(
         "jacobian.edge_avalanche_preparsed_config_evaluations",
         avalancheSourceEvaluations);
+
+    if (elementQfCurrent) {
+        for (Index cellId = 0; cellId < mesh_.numCells(); ++cellId) {
+            activeCell = cellId;
+            const Cell& cell = mesh_.getCell(cellId);
+            if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3 ||
+                !detail::isTransportMaterial(cellMaterials_[cellId])) {
+                continue;
+            }
+
+            std::array<Real, 3> localPsi{};
+            std::array<Real, 3> localPhin{};
+            std::array<Real, 3> localPhip{};
+            Real mobilityDoping = 0.0;
+            for (int local = 0; local < 3; ++local) {
+                const Index node = cell.node_ids[static_cast<std::size_t>(local)];
+                localPsi[static_cast<std::size_t>(local)] =
+                    psi(static_cast<int>(node));
+                localPhin[static_cast<std::size_t>(local)] =
+                    phinState(static_cast<int>(node));
+                localPhip[static_cast<std::size_t>(local)] =
+                    phipState(static_cast<int>(node));
+                mobilityDoping +=
+                    mobilityDopingBasis_ == MobilityDopingBasis::TotalImpurity
+                    ? doping_.totalImpurity(node) : doping_.netDoping(node);
+            }
+            mobilityDoping /= 3.0;
+            if (mobilityDopingBasis_ ==
+                MobilityDopingBasis::CellReconstructedTotalImpurity) {
+                mobilityDoping = detail::cellAverageTotalImpurity(
+                    mesh_, doping_, cellId);
+            }
+
+            const auto evaluate = [&](const std::array<Real, 3>& psiValues,
+                                      const std::array<Real, 3>& phinValues,
+                                      const std::array<Real, 3>& phipValues) {
+                std::array<Real, 3> electronDensityValues{};
+                std::array<Real, 3> holeDensityValues{};
+                for (int local = 0; local < 3; ++local) {
+                    const Index node =
+                        cell.node_ids[static_cast<std::size_t>(local)];
+                    electronDensityValues[static_cast<std::size_t>(local)] =
+                        vela::electronDensity(
+                            ni_[node], Nc_[node],
+                            psiValues[static_cast<std::size_t>(local)],
+                            phinValues[static_cast<std::size_t>(local)],
+                            Vt_, carrierStatisticsModel_);
+                    holeDensityValues[static_cast<std::size_t>(local)] =
+                        vela::holeDensity(
+                            ni_[node], Nv_[node],
+                            psiValues[static_cast<std::size_t>(local)],
+                            phipValues[static_cast<std::size_t>(local)],
+                            Vt_, carrierStatisticsModel_);
+                }
+
+                bool valid = false;
+                Real area = 0.0;
+                const Point2 psiGradient = detail::cellScalarGradient(
+                    mesh_, cell,
+                    [&](Index node) {
+                        for (int local = 0; local < 3; ++local) {
+                            if (cell.node_ids[static_cast<std::size_t>(local)] == node)
+                                return psiValues[static_cast<std::size_t>(local)];
+                        }
+                        return Real{0.0};
+                    }, valid, area);
+                const Point2 electronGradient = detail::cellScalarGradient(
+                    mesh_, cell,
+                    [&](Index node) {
+                        for (int local = 0; local < 3; ++local) {
+                            if (cell.node_ids[static_cast<std::size_t>(local)] == node)
+                                return phinValues[static_cast<std::size_t>(local)];
+                        }
+                        return Real{0.0};
+                    }, valid, area);
+                const Point2 holeGradient = detail::cellScalarGradient(
+                    mesh_, cell,
+                    [&](Index node) {
+                        for (int local = 0; local < 3; ++local) {
+                            if (cell.node_ids[static_cast<std::size_t>(local)] == node)
+                                return phipValues[static_cast<std::size_t>(local)];
+                        }
+                        return Real{0.0};
+                    }, valid, area);
+                Real averageElectronDensity = 0.0;
+                Real averageHoleDensity = 0.0;
+                for (int local = 0; local < 3; ++local) {
+                    averageElectronDensity +=
+                        electronDensityValues[static_cast<std::size_t>(local)];
+                    averageHoleDensity +=
+                        holeDensityValues[static_cast<std::size_t>(local)];
+                }
+                averageElectronDensity /= 3.0;
+                averageHoleDensity /= 3.0;
+                const Real electricField = psiGradient.norm() * fieldFactor;
+                const Real electronDrive = qfMobility
+                    ? electronGradient.norm() * fieldFactor : electricField;
+                const Real holeDrive = qfMobility
+                    ? holeGradient.norm() * fieldFactor : electricField;
+                const Material& material = cellMaterials_[cellId];
+                const Real mun = mobility_->electronMobility(
+                    material, mobilityDoping, averageElectronDensity,
+                    averageHoleDensity, electronDrive);
+                const Real mup = mobility_->holeMobility(
+                    material, mobilityDoping, averageElectronDensity,
+                    averageHoleDensity, holeDrive);
+                return elementQfGradientCellCurrent(
+                    mesh_, cell,
+                    [&](Index node) {
+                        for (int local = 0; local < 3; ++local)
+                            if (cell.node_ids[static_cast<std::size_t>(local)] == node)
+                                return phinValues[static_cast<std::size_t>(local)];
+                        return Real{0.0};
+                    },
+                    [&](Index node) {
+                        for (int local = 0; local < 3; ++local)
+                            if (cell.node_ids[static_cast<std::size_t>(local)] == node)
+                                return phipValues[static_cast<std::size_t>(local)];
+                        return Real{0.0};
+                    },
+                    [&](Index node) {
+                        for (int local = 0; local < 3; ++local)
+                            if (cell.node_ids[static_cast<std::size_t>(local)] == node)
+                                return electronDensityValues[static_cast<std::size_t>(local)];
+                        return Real{0.0};
+                    },
+                    [&](Index node) {
+                        for (int local = 0; local < 3; ++local)
+                            if (cell.node_ids[static_cast<std::size_t>(local)] == node)
+                                return holeDensityValues[static_cast<std::size_t>(local)];
+                        return Real{0.0};
+                    },
+                    mun, mup, fieldFactor);
+            };
+
+            const auto base = evaluate(localPsi, localPhin, localPhip);
+            if (!base.valid)
+                continue;
+            for (const Index node : cell.node_ids) {
+                hasElectronContribution[static_cast<std::size_t>(node)] = true;
+                hasHoleContribution[static_cast<std::size_t>(node)] = true;
+            }
+
+            for (int variableBlock = 0; variableBlock < 3; ++variableBlock) {
+                for (int localColumn = 0; localColumn < 3; ++localColumn) {
+                    std::array<Real, 3> psiPlus = localPsi;
+                    std::array<Real, 3> psiMinus = localPsi;
+                    std::array<Real, 3> phinPlus = localPhin;
+                    std::array<Real, 3> phinMinus = localPhin;
+                    std::array<Real, 3> phipPlus = localPhip;
+                    std::array<Real, 3> phipMinus = localPhip;
+                    const Real value = variableBlock == 0
+                        ? localPsi[static_cast<std::size_t>(localColumn)]
+                        : (variableBlock == 1
+                            ? localPhin[static_cast<std::size_t>(localColumn)]
+                            : localPhip[static_cast<std::size_t>(localColumn)]);
+                    const Real step = 1.0e-7 * std::max(Real{1.0}, std::abs(value));
+                    if (variableBlock == 0) {
+                        psiPlus[static_cast<std::size_t>(localColumn)] += step;
+                        psiMinus[static_cast<std::size_t>(localColumn)] -= step;
+                    } else if (variableBlock == 1) {
+                        phinPlus[static_cast<std::size_t>(localColumn)] += step;
+                        phinMinus[static_cast<std::size_t>(localColumn)] -= step;
+                    } else {
+                        phipPlus[static_cast<std::size_t>(localColumn)] += step;
+                        phipMinus[static_cast<std::size_t>(localColumn)] -= step;
+                    }
+                    const auto plus = evaluate(psiPlus, phinPlus, phipPlus);
+                    const auto minus = evaluate(psiMinus, phinMinus, phipMinus);
+                    const int columnNode = static_cast<int>(
+                        cell.node_ids[static_cast<std::size_t>(localColumn)]);
+                    const int columnOffset = variableBlock == 0
+                        ? psiOffset() : (variableBlock == 1
+                            ? phinOffset() : phipOffset());
+                    for (int localRow = 0; localRow < 3; ++localRow) {
+                        const int rowNode = static_cast<int>(
+                            cell.node_ids[static_cast<std::size_t>(localRow)]);
+                        const Real electronDerivative =
+                            (plus.electronResidual[static_cast<std::size_t>(localRow)] -
+                             minus.electronResidual[static_cast<std::size_t>(localRow)]) /
+                            (2.0 * step);
+                        const Real holeDerivative =
+                            (plus.holeResidual[static_cast<std::size_t>(localRow)] -
+                             minus.holeResidual[static_cast<std::size_t>(localRow)]) /
+                            (2.0 * step);
+                        add(phinOffset() + rowNode,
+                            columnOffset + columnNode, electronDerivative);
+                        add(phipOffset() + rowNode,
+                            columnOffset + columnNode, holeDerivative);
+                    }
+                }
+            }
+        }
+        activeCell = mesh_.numCells();
+    }
 
     {
         ScopedPerformanceTimer cellPhysicsTimer("jacobian.cell_physics");

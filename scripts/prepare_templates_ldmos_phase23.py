@@ -170,11 +170,10 @@ def classical_solver(
         "auger_cn_m6_per_s": recombination["auger_cn_m6_per_s"],
         "auger_cp_m6_per_s": recombination["auger_cp_m6_per_s"],
         "quasi_fermi_update_limit_V": 0.1,
-        # The exact-mesh qualification matrix showed that block_filter can
-        # force carrier-block decrease after those rows have reached their
-        # numerical floor, reducing an otherwise full Newton step to tiny
-        # damping factors.  The standard merit globalization is qualified for
-        # this template after a fixed-QF Poisson equilibrium bootstrap.
+        # Low-current exact-mesh qualification showed that a scalar merit
+        # globalization can reject a carrier-block improvement when the
+        # Poisson block remains the largest term.  The G3 specialization below
+        # therefore opts into the independently qualified block filter.
         "line_search_mode": "merit",
         "residual_filter_gamma": 1.0e-4,
         "residual_filter_envelope_factor": 2.0,
@@ -208,10 +207,15 @@ def classical_solver(
             # L2 equilibration reduced fixed-state linear closure by 2--3
             # orders without changing the assembled equations.
             "linear_equilibration": {"mode": "l2_row_column"},
+            # Store QF unknowns as contact-basin-relative increments.  This
+            # preserves sub-ULP gradients near the 0.1 V drain reference on
+            # the imported LDMOS mesh without changing the physical QF field.
+            "quasi_fermi_reference": "contact_basin",
+            "line_search_mode": "block_filter",
             "block_absolute_convergence": {
                 "mode": "enforce",
                 "psi_residual_ceiling": 5.0e-8,
-                "electron_residual_ceiling": 2.0e-9,
+                "electron_residual_ceiling": 1.0e-11,
                 "hole_residual_ceiling": 3.0e-10,
             },
         })
@@ -469,6 +473,8 @@ def prepare(stage1_dir: Path, oracle_dir: Path, contracts_dir: Path,
         "wp15_contract": {
             "block_absolute_convergence": "all_G3_decks",
             "linear_equilibration": "l2_row_column_on_all_G3_decks",
+            "quasi_fermi_reference": "contact_basin_on_all_G3_decks",
+            "line_search_mode": "block_filter_on_all_G3_decks",
             "contact_majority_qf_branch_guard":
                 "deep_off_seed_and_drain_prebias_only",
             "predictor": "disabled",

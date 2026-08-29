@@ -113,6 +113,16 @@ void validateHighFieldGradientDiscretization(const std::string& value)
     }
 }
 
+void validateCarrierCurrentDiscretization(const std::string& value)
+{
+    if (value != "scharfetter_gummel_edge" &&
+        value != "element_qf_gradient") {
+        throw std::invalid_argument(
+            "mobility.carrier_current_discretization must be "
+            "'scharfetter_gummel_edge' or 'element_qf_gradient'.");
+    }
+}
+
 void validateDopingConcentrationBasis(const std::string& value)
 {
     if (value != "net_doping" && value != "total_impurity" &&
@@ -397,6 +407,8 @@ MobilityModelConfig mobilityModelConfig(std::string modelName)
     validateHighFieldDrivingForce(config.highFieldDrivingForce);
     validateHighFieldGradientDiscretization(
         config.highFieldGradientDiscretization);
+    validateCarrierCurrentDiscretization(
+        config.carrierCurrentDiscretization);
     validateDopingConcentrationBasis(config.dopingConcentrationBasis);
     return config;
 }
@@ -414,6 +426,8 @@ MobilityModelConfig mobilityModelConfigFromJson(
         validateHighFieldDrivingForce(config.highFieldDrivingForce);
         validateHighFieldGradientDiscretization(
             config.highFieldGradientDiscretization);
+        validateCarrierCurrentDiscretization(
+            config.carrierCurrentDiscretization);
         validateDopingConcentrationBasis(config.dopingConcentrationBasis);
         return config;
     }
@@ -428,6 +442,9 @@ MobilityModelConfig mobilityModelConfigFromJson(
     config.highFieldGradientDiscretization = value.value(
         "high_field_gradient_discretization",
         config.highFieldGradientDiscretization);
+    config.carrierCurrentDiscretization = value.value(
+        "carrier_current_discretization",
+        config.carrierCurrentDiscretization);
     config.dopingConcentrationBasis = value.value(
         "doping_concentration_basis", config.dopingConcentrationBasis);
     config.jacobianFieldDerivatives = value.value(
@@ -435,6 +452,8 @@ MobilityModelConfig mobilityModelConfigFromJson(
     validateHighFieldDrivingForce(config.highFieldDrivingForce);
     validateHighFieldGradientDiscretization(
         config.highFieldGradientDiscretization);
+    validateCarrierCurrentDiscretization(
+        config.carrierCurrentDiscretization);
     validateDopingConcentrationBasis(config.dopingConcentrationBasis);
 
     parseCaugheyThomas(value, config.electronCT, "electron", scaling);

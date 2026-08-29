@@ -86,6 +86,11 @@ struct MobilityModelConfig {
     /// ``transport_cell_vector`` recovers the full vector gradient from
     /// adjacent transport cells before evaluating the edge mobility.
     std::string highFieldGradientDiscretization = "edge_projection";
+    /// Spatial support used by the carrier continuity operator and terminal
+    /// current integration. ``scharfetter_gummel_edge`` preserves the
+    /// historical edge flux. ``element_qf_gradient`` uses a Tri3 P1
+    /// quasi-Fermi-gradient current reconstructed inside each transport cell.
+    std::string carrierCurrentDiscretization = "scharfetter_gummel_edge";
     std::string dopingConcentrationBasis = "net_doping";
     bool jacobianFieldDerivatives = true;
 

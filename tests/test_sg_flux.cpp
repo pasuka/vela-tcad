@@ -2,6 +2,7 @@
 #include <catch2/catch_approx.hpp>
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/discretization/Bernoulli.h"
+#include "vela/discretization/ElementQfGradient.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/AssemblerUtils.h"
@@ -532,6 +533,79 @@ static DeviceMesh makeSingleSiliconTriangleMesh()
     return mesh;
 }
 
+TEST_CASE("element quasi-Fermi-gradient cell current is conservative and affine exact",
+          "[element-current][sg]")
+{
+    DeviceMesh mesh;
+    Node n0; n0.id = 0; n0.x = 0.0; n0.y = 0.0; mesh.addNode(n0);
+    Node n1; n1.id = 1; n1.x = 1.0; n1.y = 0.0; mesh.addNode(n1);
+    Node n2; n2.id = 2; n2.x = 0.0; n2.y = 1.0; mesh.addNode(n2);
+    Cell cell; cell.id = 0; cell.type = CellType::Tri3;
+    cell.node_ids = {0, 1, 2}; mesh.addCell(cell);
+
+    const auto current = elementQfGradientCellCurrent(
+        mesh, mesh.getCell(0),
+        [&](Index node) {
+            const Node& point = mesh.getNode(node);
+            return point.x + 2.0 * point.y;
+        },
+        [&](Index node) {
+            const Node& point = mesh.getNode(node);
+            return point.x + 2.0 * point.y;
+        },
+        [](Index) { return 4.0; },
+        [](Index) { return 5.0; },
+        2.0, 3.0, 1.0);
+
+    REQUIRE(current.valid);
+    REQUIRE(current.area == Approx(0.5));
+    REQUIRE(current.electronParticleCurrent.x() == Approx(8.0));
+    REQUIRE(current.electronParticleCurrent.y() == Approx(16.0));
+    REQUIRE(current.holeParticleCurrent.x() == Approx(15.0));
+    REQUIRE(current.holeParticleCurrent.y() == Approx(30.0));
+    REQUIRE(current.electronResidual[0] == Approx(12.0));
+    REQUIRE(current.electronResidual[1] == Approx(-4.0));
+    REQUIRE(current.electronResidual[2] == Approx(-8.0));
+    REQUIRE(current.holeResidual[0] == Approx(-22.5));
+    REQUIRE(current.holeResidual[1] == Approx(7.5));
+    REQUIRE(current.holeResidual[2] == Approx(15.0));
+    REQUIRE(current.electronResidual[0] + current.electronResidual[1] +
+            current.electronResidual[2] == Approx(0.0).margin(1.0e-14));
+    REQUIRE(current.holeResidual[0] + current.holeResidual[1] +
+            current.holeResidual[2] == Approx(0.0).margin(1.0e-14));
+}
+
+TEST_CASE("element quasi-Fermi-gradient analytic Jacobian matches finite difference",
+          "[element-current][coupled][jacobian]")
+{
+    DeviceMesh mesh = makeSingleSiliconTriangleMesh();
+    MaterialDatabase matdb;
+    DopingModel doping(mesh.numNodes());
+    MobilityModelConfig mobility;
+    mobility.carrierCurrentDiscretization = "element_qf_gradient";
+    CoupledDDAssembler coupled(
+        mesh, matdb, doping, constants::Vt_300, mobility,
+        recombinationModelConfig({"none"}));
+
+    CoupledDDState state;
+    state.psi.resize(3);
+    state.phin.resize(3);
+    state.phip.resize(3);
+    state.psi << 0.020, -0.010, 0.030;
+    state.phin << 0.005, -0.002, 0.010;
+    state.phip << -0.004, 0.006, -0.008;
+    const VectorXd x = coupled.pack(state);
+    const CoupledDDBoundaryConditions bcs;
+    const SparseMatrixd analytic = coupled.assembleJacobian(x, bcs);
+    const SparseMatrixd finiteDifference =
+        coupled.finiteDifferenceJacobian(x, bcs, 1.0e-7);
+    const Eigen::MatrixXd delta =
+        Eigen::MatrixXd(analytic) - Eigen::MatrixXd(finiteDifference);
+    const Real scale = std::max(
+        Real{1.0}, Eigen::MatrixXd(finiteDifference).norm());
+    REQUIRE(delta.norm() / scale < 2.0e-6);
+}
+
 TEST_CASE("mobility doping bases distinguish net, total, and cell reconstruction",
           "[sg][mobility][doping-basis]")
 {
@@ -919,8 +993,10 @@ static DeviceMesh makeContactedSiliconSquareMesh(Real sideLength)
     mesh.addRegion(r0);
 
     Contact left; left.id = 0; left.name = "left"; left.region_id = 0; left.node_ids = {0, 3};
+    left.edge_node_ids = {{{0, 3}}};
     mesh.addContact(left);
     Contact right; right.id = 1; right.name = "right"; right.region_id = 0; right.node_ids = {1, 2};
+    right.edge_node_ids = {{{1, 2}}};
     mesh.addContact(right);
 
     mesh.buildEdges();
@@ -1013,6 +1089,39 @@ TEST_CASE("ContactCurrent unit scaling terminal current matches legacy SI",
             Approx(legacyLeft.holeCurrent / scale).epsilon(1.0e-12).margin(1.0e-12));
     REQUIRE(scaledLeft.totalCurrent / scale ==
             Approx(legacyLeft.totalCurrent / scale).epsilon(1.0e-12).margin(1.0e-12));
+}
+
+TEST_CASE("ContactCurrent integrates element quasi-Fermi-gradient current on exact boundary cells",
+          "[element-current][contact_current]")
+{
+    const Real side = 1.0e-6;
+    DeviceMesh mesh = makeContactedSiliconSquareMesh(side);
+    MaterialDatabase materials;
+    DopingModel doping(mesh.numNodes());
+    MobilityModelConfig mobility = mobilityModelConfig("constant");
+    mobility.carrierCurrentDiscretization = "element_qf_gradient";
+
+    DDSolution solution;
+    solution.psi = VectorXd::Zero(4);
+    solution.phin.resize(4);
+    solution.phip = VectorXd::Zero(4);
+    solution.n = VectorXd::Constant(4, 2.0e21);
+    solution.p = VectorXd::Constant(4, 1.0e10);
+    for (int node = 0; node < 4; ++node)
+        solution.phin(node) = mesh.getNode(static_cast<Index>(node)).x;
+
+    const ContactCurrentDetailedResult left = ContactCurrent(
+        mesh, materials, doping, mobility, constants::T0).computeDetailed(
+            solution, "left");
+    const Real mun = materials.getMaterial("Si").mun;
+    const Real expectedElectron =
+        -constants::q * mun * 2.0e21 * side;
+    REQUIRE(left.edges.size() == 1);
+    REQUIRE(left.totals.electronCurrent ==
+            Approx(expectedElectron).epsilon(1.0e-12));
+    REQUIRE(left.totals.holeCurrent == Approx(0.0).margin(1.0e-30));
+    REQUIRE(left.totals.totalCurrent ==
+            Approx(expectedElectron).epsilon(1.0e-12));
 }
 TEST_CASE("Slotboom BGN uses total impurity density for compensated nodes", "[sg][coupled][bgn]")
 {

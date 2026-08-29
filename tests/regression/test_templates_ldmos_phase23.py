@@ -235,7 +235,8 @@ class Phase23DeckTest(unittest.TestCase):
         low_field = classical_solver(physics_contract(), high_field=False)
         self.assertEqual(low_field["mobility"], {"model": "constant"})
         self.assertEqual(solver["impact_ionization"]["model"], "none")
-        self.assertEqual(solver["line_search_mode"], "merit")
+        self.assertEqual(solver["line_search_mode"], "block_filter")
+        self.assertEqual(solver["quasi_fermi_reference"], "contact_basin")
         self.assertEqual(solver["damping_factor"], 1.0)
         self.assertEqual(solver["reltol"], 1.0e-10)
         self.assertEqual(solver["abstol"], 1.0e-14)
@@ -245,7 +246,7 @@ class Phase23DeckTest(unittest.TestCase):
         self.assertEqual(solver["block_absolute_convergence"], {
             "mode": "enforce",
             "psi_residual_ceiling": 5.0e-8,
-            "electron_residual_ceiling": 2.0e-9,
+            "electron_residual_ceiling": 1.0e-11,
             "hole_residual_ceiling": 3.0e-10,
         })
         self.assertEqual(
@@ -375,6 +376,12 @@ class Phase23DeckTest(unittest.TestCase):
             for deck in (prebias, sentaurus_path, checkpoint, prebias_repeat):
                 self.assertNotIn("predictor", deck["sweep"])
                 self.assertEqual(
+                    deck["solver"]["quasi_fermi_reference"],
+                    "contact_basin",
+                )
+                self.assertEqual(
+                    deck["solver"]["line_search_mode"], "block_filter")
+                self.assertEqual(
                     deck["solver"]["block_absolute_convergence"]["mode"],
                     "enforce",
                 )
@@ -400,6 +407,14 @@ class Phase23DeckTest(unittest.TestCase):
             self.assertEqual(
                 manifest["wp15_contract"]["linear_equilibration"],
                 "l2_row_column_on_all_G3_decks",
+            )
+            self.assertEqual(
+                manifest["wp15_contract"]["quasi_fermi_reference"],
+                "contact_basin_on_all_G3_decks",
+            )
+            self.assertEqual(
+                manifest["wp15_contract"]["line_search_mode"],
+                "block_filter_on_all_G3_decks",
             )
 
     def test_wp15_matrix_preserves_physics_and_exposes_solver_controls(self) -> None:

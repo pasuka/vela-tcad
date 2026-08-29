@@ -6974,15 +6974,30 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                 residualWeights.psi,
                 residualWeights.phin,
                 residualWeights.phip};
+            const bool absoluteBlocksEnforced =
+                cfg_.blockAbsoluteConvergence.mode == "enforce";
+            const Real ceilings[3] = {
+                cfg_.blockAbsoluteConvergence.psiResidualCeiling,
+                cfg_.blockAbsoluteConvergence.electronResidualCeiling,
+                cfg_.blockAbsoluteConvergence.holeResidualCeiling};
             bool carrierImproved = false;
             bool anyImproved = false;
+            bool anyActiveImproved = false;
             for (int block = 0; block < 3; ++block) {
                 if (weights[block] <= 0.0)
                     continue;
                 const Real floor = std::max(
                     cfg_.abstol * scales[block], Real{1.0e-300});
+                // An already-qualified block is allowed to move inside its
+                // authoritative absolute ceiling while another block is being
+                // corrected.  Using only its often sub-ULP initial norm as the
+                // envelope makes a Poisson boundary update impossible even
+                // though the carrier block remains converged.
+                const Real envelopeBaseline = absoluteBlocksEnforced
+                    ? std::max({scales[block], floor, ceilings[block]})
+                    : std::max(scales[block], floor);
                 const Real envelope = cfg_.residualFilterEnvelopeFactor *
-                    std::max(scales[block], floor);
+                    envelopeBaseline;
                 if (!std::isfinite(candidate[block]) ||
                     candidate[block] > envelope) {
                     return false;
@@ -6999,7 +7014,12 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                 anyImproved = anyImproved || improved;
                 if (block > 0)
                     carrierImproved = carrierImproved || improved;
+                const bool active = !absoluteBlocksEnforced ||
+                    current[block] > ceilings[block];
+                anyActiveImproved = anyActiveImproved || (active && improved);
             }
+            if (absoluteBlocksEnforced)
+                return anyActiveImproved;
             const bool carrierBlocksEnabled =
                 residualWeights.phin > 0.0 || residualWeights.phip > 0.0;
             return carrierBlocksEnabled ? carrierImproved : anyImproved;
