@@ -79,17 +79,26 @@ the device floor, carrier rows, and enforced global closure all pass.
 |---|---:|---:|---:|---:|
 | provisional 0.5 V -> strict 0.5 V | 13 accepted device steps in restartable chunks plus one final validation step | correction norm `2.98276e-14`, alpha 1 | `3.05359e-16` | `5.29563e-13 / 3.58819e-13` |
 | strict 0.5 V -> 0.625 V | 8 accepted steps; initial electron block `584.627` reduced to `9.98001e-10` | correction norm `4.23558e-14`, alpha 1 | `3.72073e-16` | `3.20996e-13 / 5.11552e-13` |
+| strict 0.625 V -> 1 V | adaptive accepted ladder `0.8125`, `0.90625`, `1.0` V | final 1 V closure passed | `5.17728e-16` | `8.98421e-13 / 7.52880e-13` |
 
 The strict 0.5 V current differs from the provisional value by approximately
 `0.0196` decade, below the contract limit of `0.05` decade. The 0.625 V run no
 longer fails on its first nonlinear step, directly validating the corrected
 globalization semantics on the previously blocked transition.
 
+The strict 1 V result differs from the direct-voltage Sentaurus reference
+`5.90523e-16 A/um` by `-0.0571` decade, inside the `0.3` decade
+pre-breakdown-current gate. Direct `0.625 -> 1.0 V` attempts needed more than
+the configured ten Newton iterations or failed final closure, while the
+adaptive intermediate states made the same 1 V target converge without
+loosening any physical or closure tolerance.
+
 Generated simulation outputs remain under ignored `build/` directories. The
 authoritative strict states for this run are:
 
 1. `build/slot_ldmos_globalization_debug_final_restore01/.../final_state.csv`
 2. `build/slot_ldmos_globalization_debug_0p625/.../final_state.csv`
+3. `build/slot_ldmos_noavalanche_1v_post_globalization/.../attempt_005_v_1/final_state.csv`
 
 They are local validation artifacts and are not repository deliverables.
 

@@ -75,6 +75,16 @@
       "current_A_per_um": 3.7207300754e-16,
       "global_electron_closure_mismatch": 3.2099644464e-13,
       "global_hole_closure_mismatch": 5.1155202461e-13
+    },
+    "strict_1V": {
+      "converged": true,
+      "convergence_reason": "final_global_continuity_restoration",
+      "accepted_intermediate_biases_V": [0.8125, 0.90625],
+      "current_A_per_um": 5.1772757291e-16,
+      "sentaurus_direct_current_A_per_um": 5.90523e-16,
+      "current_error_decades": -0.0571355223,
+      "global_electron_closure_mismatch": 8.9842103337e-13,
+      "global_hole_closure_mismatch": 7.5287951731e-13
     }
   }
 }
