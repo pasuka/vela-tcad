@@ -171,6 +171,31 @@ struct CoupledDDEdgeFluxDiagnostic {
     Real holeParticleLineFluxPerInternalCouple_per_m_s = 0.0;
 };
 
+// Diagnostic-only four-factor evaluation of the production electron transport
+// term. `mask` uses bits 0..3 for mobility state, mobility drive, Bernoulli
+// weights, and carrier population respectively. Each row is already scaled
+// and contact-eliminated exactly like the solved electron continuity equation.
+struct CoupledDDElectronTransportFactorDiagnostic {
+    int mask = 0;
+    Index nodeId = 0;
+    Real electronFlux = 0.0;
+};
+
+struct CoupledDDElectronTransportSecantEdgeDiagnostic {
+    int mask = 0;
+    Index edgeId = 0;
+    Index node0 = 0;
+    Index node1 = 0;
+    Real electronFlux = 0.0;
+    bool node0Constrained = false;
+    bool node1Constrained = false;
+};
+
+struct CoupledDDElectronTransportSecantFactorEvaluation {
+    std::vector<CoupledDDElectronTransportFactorDiagnostic> nodes;
+    std::vector<CoupledDDElectronTransportSecantEdgeDiagnostic> edges;
+};
+
 // Diagnostic-only decomposition of one transport edge derivative with respect
 // to one same-carrier quasi-Fermi endpoint.  The record is emitted once for
 // each endpoint row so contact-row replacement can be audited independently
@@ -368,6 +393,16 @@ public:
 
     std::vector<CoupledDDEdgeFluxDiagnostic> sgEdgeFluxDiagnostics(
         const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs) const;
+    std::vector<CoupledDDElectronTransportFactorDiagnostic>
+    electronTransportFactorDiagnostics(
+        const VectorXd& baseline,
+        const VectorXd& replacement,
+        const CoupledDDBoundaryConditions& bcs) const;
+    CoupledDDElectronTransportSecantFactorEvaluation
+    electronTransportSecantFactorDiagnostics(
+        const VectorXd& baseline,
+        const VectorXd& replacement,
         const CoupledDDBoundaryConditions& bcs) const;
     std::vector<CoupledDDTransportEdgeJacobianDiagnostic>
     transportEdgeJacobianDiagnostics(

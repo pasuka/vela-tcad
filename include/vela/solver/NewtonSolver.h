@@ -664,6 +664,24 @@ struct NewtonCarrierTermDiagnosticsEvaluation {
     std::vector<CoupledDDCarrierTermDiagnostic> rows;
 };
 
+/// First-order terminal-current sensitivity evaluated on the production
+/// drift-diffusion Jacobian.  The packed vectors use the solver ordering
+/// [psi, phin, phip].  `stateDerivative` is the direct functional gradient
+/// dI/dx, while `adjoint` solves J^T lambda = dI/dx with the same boundary
+/// conditions and scaling as the Newton solve.
+struct NewtonTerminalCurrentAdjointEvaluation {
+    Real current = 0.0;
+    Real contactBias_V = 0.0;
+    Real potentialScale_V = 1.0;
+    Real stateDerivativeNorm = 0.0;
+    Real adjointNorm = 0.0;
+    Real adjointResidualNorm = 0.0;
+    Real adjointRelativeResidual = 0.0;
+    int nodeCount = 0;
+    VectorXd stateDerivative;
+    VectorXd adjoint;
+};
+
 struct NewtonJacobianBlockAuditRow {
     std::string block;
     std::string configurationFingerprint;
@@ -769,6 +787,14 @@ public:
         std::vector<Index> columnNodes = {}) const;
     std::vector<CoupledDDEdgeFluxDiagnostic> evaluateSgEdgeFluxDiagnostics(
         const DDSolution& state) const;
+    std::vector<CoupledDDElectronTransportFactorDiagnostic>
+    evaluateElectronTransportFactorDiagnostics(
+        const DDSolution& state,
+        const DDSolution& replacementState) const;
+    CoupledDDElectronTransportSecantFactorEvaluation
+    evaluateElectronTransportSecantFactorDiagnostics(
+        const DDSolution& state,
+        const DDSolution& replacementState) const;
     std::vector<CoupledDDTransportEdgeJacobianDiagnostic>
     evaluateTransportEdgeJacobianDiagnostics(
         const DDSolution& state,
@@ -799,6 +825,13 @@ public:
     /// internal current-per-depth units (excluding its line factor) to the
     /// caller's signed terminal-current units.
     ArclengthScalarFunctional makeArclengthContactCurrentFunctional(
+        const std::string& contactName,
+        Real currentScale) const;
+
+    /// Solve J^T lambda = dI/dx for one terminal-current functional without
+    /// changing the device state or any configured physical model.
+    NewtonTerminalCurrentAdjointEvaluation evaluateTerminalCurrentAdjoint(
+        const DDSolution& state,
         const std::string& contactName,
         Real currentScale) const;
 

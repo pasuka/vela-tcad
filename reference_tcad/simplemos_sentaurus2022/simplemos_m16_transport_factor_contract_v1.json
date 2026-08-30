@@ -1,0 +1,52 @@
+{
+  "schema": "vela.simplemos.sdevice.m16_transport_factor.v1",
+  "contract_id": "simplemos-sdevice-m16-transport-factor-v1",
+  "scope": "SDevice-only four-factor decomposition of the M15 electron SG transport response",
+  "sentaurus_release": "T-2022.03-SP2",
+  "default_model_policy": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "modify_cpp": "diagnostic-only production-equation factor probe",
+    "new_sentaurus_execution": false
+  },
+  "state_matrix": {
+    "devices": ["n17", "n21"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05, 0.8, 2.5],
+    "state_count": 16,
+    "interpolation": "forbidden"
+  },
+  "factors": {
+    "mobility_state": "Vela edge-mobility response to replacing the baseline state inputs while holding the mobility drive fixed",
+    "mobility_drive": "Vela edge-mobility response to replacing the transport-cell-vector quasi-Fermi-gradient drive while holding the state inputs fixed",
+    "bernoulli_weights": "replacement of the variable-ni SG Bernoulli argument and weights",
+    "carrier_population": "replacement of the electron populations at the two edge endpoints"
+  },
+  "factorization": {
+    "edge_flux": "mu(state,drive) * C_edge * [B(-eta(psi,ni))*n0 - B(eta(psi,ni))*n1]",
+    "allocation": "exact four-factor Shapley value over all 16 binary subsets",
+    "endpoint_policy": "reuse production solved-equation electron-flux terms for the empty and full subsets",
+    "mixed_kernel_policy": "evaluate variable-ni Bernoulli-density products in boost cpp_dec_float_100 arithmetic inside the production assembler",
+    "mobility_crosses": "evaluate all state-drive combinations inside the same production assembler"
+  },
+  "adjoint_weighting": {
+    "source": "M14 production terminal-current adjoint",
+    "edge_weight": "lambda_electron(node1)-lambda_electron(node0), with constrained continuity rows set to zero",
+    "closure_reference": "M15 electron_transport adjoint_weighted_current_A_per_um"
+  },
+  "acceptance": {
+    "state_count": 16,
+    "factor_probe_count": 16,
+    "maximum_absolute_closure_A_per_um": 1e-12,
+    "maximum_relative_closure": 1e-4,
+    "maximum_strong_state_relative_closure": 1e-8,
+    "endpoint_node_terms_match_production": true,
+    "default_model_unchanged": true
+  },
+  "interpretation_limits": [
+    "The factors partition the Vela SG operator response; they are not native Sentaurus residual terms.",
+    "Mobility-drive contribution covers Vela transport-cell-vector GradQuasiFermi construction and its HFS response, not an unpublished Sentaurus HFS formula.",
+    "Mobility-state contribution may contain PhuMob, Enormal, carrier-population, electrostatic, and HFS interactions inside the Vela mobility evaluation.",
+    "Sub-fA relative responses remain conditioning-sensitive and are not used for headline attribution."
+  ]
+}

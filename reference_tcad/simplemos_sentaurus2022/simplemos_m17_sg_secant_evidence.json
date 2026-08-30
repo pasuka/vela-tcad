@@ -1,0 +1,144 @@
+{
+  "schema": "vela.simplemos.sdevice.m17_sg_secant_evidence.v1",
+  "status": "complete_with_bias_regime_separation",
+  "scope": "SDevice-only stable SG secant-factor attribution of the M15 electron transport response",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "state_count": 16,
+    "factor_probe_count": 16,
+    "probe_variant_count": 8,
+    "probes_executed_this_run": 0,
+    "new_sentaurus_execution": false,
+    "cpp_change_scope": "diagnostic-only production-equation secant-factor probe",
+    "default_model_changed": false
+  },
+  "closure": {
+    "maximum_absolute_A_per_um": 5.204170427930421e-18,
+    "maximum_relative": 1.797338152915072e-15,
+    "maximum_strong_state_relative": 1.786389514494699e-15,
+    "maximum_endpoint_absolute_A_per_um": 0.0,
+    "maximum_node_shapley_flux_closure": 4.440892098500626e-16,
+    "reference": "M15 electron_transport adjoint response"
+  },
+  "key_state": {
+    "state": "n21_vd_0p05_vg_0p8",
+    "factor_relative_to_baseline_current": {
+      "mobility": -0.003108508614059112,
+      "sg_secant_conductance": -0.007413541243536472,
+      "qf_log_imbalance": 0.1375143104595058
+    },
+    "factor_absolute_contribution_fraction": {
+      "mobility": 0.020998277770410793,
+      "sg_secant_conductance": 0.05007919154224201,
+      "qf_log_imbalance": 0.9289225306873472
+    },
+    "region_relative_to_baseline_current": {
+      "source": 2.0913285481314644e-09,
+      "channel": 0.12949594480446655,
+      "drain": -0.0025036862938785432,
+      "body": -6.295423252034722e-15
+    },
+    "cancellation_amplification": {
+      "m16_ungrouped_four_factor": 461.0570805606357,
+      "m17_stable_three_factor": 1.1657116710533981,
+      "reduction_factor": 395.515539570776
+    }
+  },
+  "strong_state_fraction_range": {
+    "mobility": {
+      "minimum": 0.007381265989307258,
+      "maximum": 0.1607413539968712
+    },
+    "sg_secant_conductance": {
+      "minimum": 0.05007919154224201,
+      "maximum": 0.9304040472845039
+    },
+    "qf_log_imbalance": {
+      "minimum": 0.0046519469364331096,
+      "maximum": 0.9289225306873472
+    }
+  },
+  "interpretation_limits": [
+    "The factors partition the Vela SG operator response; they are not native Sentaurus residual terms.",
+    "The positive secant conductance retains coupled electrostatic, variable-ni, carrier-population, and quasi-Fermi common-mode effects.",
+    "The quasi-Fermi log imbalance is distinct from the HFS mobility driving field.",
+    "Sub-fA relative responses remain conditioning-sensitive and are not used for headline attribution."
+  ],
+  "conclusions": {
+    "supported": [
+      "The stable mobility-times-secant-conductance-times-QF-imbalance factorization closes all 16 production endpoint responses.",
+      "At n21, Vd=0.05 V, Vg=0.8 V, QF log imbalance supplies 92.89 percent of absolute factor response.",
+      "At the key state, mobility supplies 2.10 percent and SG secant conductance supplies 5.01 percent of absolute factor response.",
+      "The key-state cancellation amplification falls from 461.1x in the ungrouped M16 split to 1.166x in M17.",
+      "At Vg=2.5 V, SG secant conductance dominates all four paired states with 75.16 to 93.04 percent of absolute response.",
+      "Standalone Enormal diagnostics initialize the same interface geometry as the production residual, independent of diagnostic call order.",
+      "The n21 low-drain weak-current discrepancy should next be localized through the channel quasi-Fermi imbalance and continuity state."
+    ],
+    "not_supported": [
+      "Claiming a single Sentaurus-internal formula causes the QF-imbalance response.",
+      "Relabeling the coupled SG secant conductance as a single electrostatic or carrier-density model.",
+      "Claiming HFS has zero effect or changing a production model default.",
+      "Using sub-fA relative responses as headline root-cause evidence.",
+      "Treating pre-fix call-order-dependent M17 factor allocations as frozen evidence."
+    ]
+  },
+  "artifacts": {
+    "m17_sg_secant_report.json": {
+      "path": "reference_tcad/simplemos_sentaurus2022/sg_secant/m17_sg_secant_report.json",
+      "sha256": "6a317ff2db86269f93d5c8306c5f1351be1c160a545ce826d5fa13c7bc8c4931"
+    },
+    "m17_state_summary.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/sg_secant/m17_state_summary.csv",
+      "sha256": "a15bb16abf29f583393fb84c8dff2927fc34e7625a93cb576060279bb6b535a7"
+    },
+    "m17_factor_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/sg_secant/m17_factor_contributions.csv",
+      "sha256": "2ad867e51f79c0d88c14defab9497b0579af5a9330f25bb5b4723168f79af55b"
+    },
+    "m17_region_factor_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/sg_secant/m17_region_factor_contributions.csv",
+      "sha256": "4626b2b69e5f5751312c3ca754fe1843171ae6096aca68559066cb49df9b1f04"
+    },
+    "m17_key_state_node_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/sg_secant/m17_key_state_node_contributions.csv",
+      "sha256": "d8080033576847df6f6692f850f86c0ba20c8b481bde324825ee32b6418f0ba9"
+    }
+  },
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m17/m17_factor_response_n21_vg0p8.png",
+      "sha256": "c4799ee280b1b07514ca78feca50692e90a9e129f484ba73ac064c69732f0e96"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m17/m17_factor_fraction_16_states.png",
+      "sha256": "fb4b96dc39e1c955a73a0599e494d4baed571723b6b9f355c90f07c6e9ec78ee"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m17/m17_cancellation_reduction_n21_vg0p8.png",
+      "sha256": "f6befe33ec4ef4a3ecac91556368b67c5ff6c50a642ff904a557c67b8ed1643c"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m17/m17_region_response_n21_vg0p8.png",
+      "sha256": "75002f58da52fed096adc679e6eedd3c03c7ea073e6a120b773e9762a7fdc149"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m17/m17_nodal_qf_imbalance_n21_vg0p8.png",
+      "sha256": "8c030e6545e794f4a424da8854fa30a3268bef5f81458813c32e938ed849d10e"
+    }
+  ],
+  "implementation_sha256": {
+    "include/vela/equation/CoupledDDAssembler.h": "4504650326c947a68510b5d9f1913839ee5181a28688346fcf0286c14e41d667",
+    "include/vela/solver/NewtonSolver.h": "eb8db90077ea3571a7c0870e2eab08ceccb74622bc58daef8b8839f7d0a7b6ce",
+    "src/equation/CoupledDDAssembler.cpp": "b3d078995b6b949efc7a0ec5c492c6e20e6dd9f3d1363e1003c257248513c882",
+    "src/solver/NewtonSolver.cpp": "3c1e08370a3eb989be724bcedb8f28bebc495c691692859de663337d10299769",
+    "src/tools/vela_example_runner.cpp": "64bbb593799c8c8fa4fa4988eb765bbbd5336c8bc046136b48402166d93a7059",
+    "tests/test_newton_solver.cpp": "53d626efe3874b54450a80ddfe31c72aa50152752e276fc5641582b82764d8e7",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m17_sg_secant_contract_v1.json": "78d0ac60bb8e181519b42d7177533540ea97841fc00f81d6b29df1b4961f6442",
+    "scripts/run_simplemos_m17_sg_secant.py": "381599a558c1e97f001e4d6eff37810f69eb2924640e4cceabb1c76c66805fde",
+    "scripts/plot_simplemos_m17_sg_secant.py": "3d8abbc246ebca78b0363f00e994bd990d58ad209b1cdd680954e3f753e7ec16",
+    "scripts/freeze_simplemos_m17_sg_secant_evidence.py": "9bcc4e633c68b6ba6c693ca430c5af39afdaff2ce3187b9ec46dec02a999e9bd",
+    "tests/regression/test_simplemos_m17_sg_secant.py": "0a8c47377ead3c1465541585c3d5473930633c747c88c7ed66d33982e015aa9c",
+    "docs/validation/simplemos_m17_sg_secant_2026-08-29.md": "f5e7cc475c2adb4cf4130e710aa4474fe7af50af741baf492240fabe68b4850f",
+    "CMakeLists.txt": "43ad178b411ab4263637e52aab95936e8e8af7617106e43691e8d23e83978710"
+  }
+}

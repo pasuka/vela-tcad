@@ -1,0 +1,146 @@
+{
+  "schema": "vela.simplemos.sdevice.m16_transport_factor_evidence.v1",
+  "status": "complete_with_grouped_kernel_interpretation",
+  "scope": "SDevice-only Shapley decomposition of the M15 electron SG transport response",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "state_count": 16,
+    "factor_probe_count": 16,
+    "probe_variant_count": 16,
+    "probes_executed_this_run": 0,
+    "new_sentaurus_execution": false,
+    "cpp_change_scope": "diagnostic-only production-equation factor probe",
+    "default_model_changed": false
+  },
+  "closure": {
+    "maximum_absolute_A_per_um": 9.867323971790576e-16,
+    "maximum_relative": 3.1768142962468244e-05,
+    "maximum_strong_state_relative": 1.497562478148901e-11,
+    "maximum_endpoint_absolute_A_per_um": 8.673617379884035e-19,
+    "maximum_node_shapley_flux_closure": 4.907827616529303e-13,
+    "maximum_grouped_node_shapley_flux_closure": 4.440892098500626e-16,
+    "reference": "M15 electron_transport adjoint response",
+    "strong_state_definition": "Vg >= 0.8 V"
+  },
+  "key_state": {
+    "state": "n21_vd_0p05_vg_0p8",
+    "factor_relative_to_baseline_current": {
+      "mobility_state": -0.0005214769127961865,
+      "mobility_drive": -0.0025890692763628174,
+      "bernoulli_weights": -29.20873378740303,
+      "carrier_population": 29.338836594196
+    },
+    "factor_absolute_contribution_fraction": {
+      "mobility_state": 8.906419268451125e-06,
+      "mobility_drive": 4.421928550337394e-05,
+      "bernoulli_weights": 0.49886240987405056,
+      "carrier_population": 0.5010844644211775
+    },
+    "grouped_factor_relative_to_baseline_current": {
+      "mobility_state": -0.0005210004482502183,
+      "mobility_drive": -0.0025877759640011533,
+      "sg_state_kernel": 0.13010103701416173
+    },
+    "grouped_factor_absolute_contribution_fraction": {
+      "mobility_state": 0.003911126626853403,
+      "mobility_drive": 0.019426316255826567,
+      "sg_state_kernel": 0.9766625571173201
+    },
+    "region_relative_to_baseline_current": {
+      "source": 2.091328548155496e-09,
+      "channel": 0.12949594479365384,
+      "drain": -0.0025036862940140204,
+      "body": -6.295423252034707e-15
+    }
+  },
+  "interpretation_limits": [
+    "The factors partition the Vela SG operator response; they are not native Sentaurus residual terms.",
+    "Mobility-drive contribution covers Vela transport-cell-vector GradQuasiFermi construction and its HFS response, not an unpublished Sentaurus HFS formula.",
+    "Mobility-state contribution retains low-field mobility, state, and HFS interactions.",
+    "Sub-fA relative responses remain conditioning-sensitive and are not used for headline attribution."
+  ],
+  "conclusions": {
+    "supported": [
+      "All 16 states and all 16 four-factor vertices per state are complete.",
+      "Production endpoint terms close exactly and the adjoint-weighted factor sum closes to M15 below 1e-12 A/um.",
+      "At n21, Vd=0.05 V, Vg=0.8 V, the grouped SG state kernel contributes +13.0101 percent of baseline current and 97.67 percent of absolute grouped response.",
+      "At the key state, mobility state contributes -0.0521 percent and mobility drive contributes -0.2588 percent of baseline current.",
+      "Across Vg at or above 0.8 V, the SG state kernel supplies 80.50 to 98.68 percent of absolute grouped response.",
+      "Independent Bernoulli and population interventions are cancellation-dominated and must be interpreted as a coupled kernel."
+    ],
+    "not_supported": [
+      "Ranking standalone Bernoulli and carrier-population Shapley values as independent physical error sources.",
+      "Claiming HFS has no interaction through the mobility-state factor.",
+      "Treating Vela factor terms as native Sentaurus residual terms.",
+      "Changing a default physical model from this diagnostic.",
+      "Treating pre-fix call-order-dependent Enormal allocations as frozen evidence."
+    ]
+  },
+  "artifacts": {
+    "m16_transport_factor_report.json": {
+      "path": "reference_tcad/simplemos_sentaurus2022/transport_factor/m16_transport_factor_report.json",
+      "sha256": "7728ae4842d3f22868660a5abb790bd5d6c9cd7a706c38b2e54514a7ccd5cbd8"
+    },
+    "m16_state_summary.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/transport_factor/m16_state_summary.csv",
+      "sha256": "6411af404ebb0ef97f99eaf01c8726977510122311e95913ecfaf34b8fee93f8"
+    },
+    "m16_factor_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/transport_factor/m16_factor_contributions.csv",
+      "sha256": "bcb752a88b16fb417d423c7f113c29c5a48010c9de791df63d5abd47afa6f0af"
+    },
+    "m16_region_factor_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/transport_factor/m16_region_factor_contributions.csv",
+      "sha256": "5aa942cec7d12df127083e1607c3f228308e907a78809c068568ea5d7be08f58"
+    },
+    "m16_grouped_factor_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/transport_factor/m16_grouped_factor_contributions.csv",
+      "sha256": "4efb95917885dbeacf09245416f80a0790c0732bb1a7c4be2a8e18ffe7f5ae60"
+    },
+    "m16_grouped_region_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/transport_factor/m16_grouped_region_contributions.csv",
+      "sha256": "187f7c89d8d87d3c5e6069cee4eb9806f9b651d5aaa195dc974e1d9b758da37f"
+    },
+    "m16_key_state_node_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/transport_factor/m16_key_state_node_contributions.csv",
+      "sha256": "4eb34e96588ddb2f2bb89408f8cec45c9f62c34ecc7c57904b6be18f133d0469"
+    }
+  },
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m16/m16_grouped_factor_response_n21_vg0p8.png",
+      "sha256": "2acc4765f5277634adb17769917039547d9bc2968aea3eccf324cf978d4f6741"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m16/m16_four_factor_cancellation_n21_vg0p8.png",
+      "sha256": "5601575b1f3dcfc643c6e0cd4e045bcb61aab294a0f287fc3be4812bcd7e40d5"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m16/m16_grouped_factor_fraction_16_states.png",
+      "sha256": "e56a8bdd216f02811e6e73ea359a9c38fe5644a0f4d7f6f056d29d9e4b63314f"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m16/m16_region_response_n21_vg0p8.png",
+      "sha256": "f451031d7d7716958e15cf6a2c9968336f04ccbe0333aa12b7c37a8ec3048b69"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m16/m16_nodal_sg_kernel_response_n21_vg0p8.png",
+      "sha256": "89b2df95bdf25bf3fac2858b35424a45fd6e007d3a9a6773963d54ebffa549f8"
+    }
+  ],
+  "implementation_sha256": {
+    "include/vela/equation/CoupledDDAssembler.h": "4504650326c947a68510b5d9f1913839ee5181a28688346fcf0286c14e41d667",
+    "include/vela/solver/NewtonSolver.h": "eb8db90077ea3571a7c0870e2eab08ceccb74622bc58daef8b8839f7d0a7b6ce",
+    "src/equation/CoupledDDAssembler.cpp": "b3d078995b6b949efc7a0ec5c492c6e20e6dd9f3d1363e1003c257248513c882",
+    "src/solver/NewtonSolver.cpp": "3c1e08370a3eb989be724bcedb8f28bebc495c691692859de663337d10299769",
+    "src/tools/vela_example_runner.cpp": "64bbb593799c8c8fa4fa4988eb765bbbd5336c8bc046136b48402166d93a7059",
+    "tests/test_newton_solver.cpp": "53d626efe3874b54450a80ddfe31c72aa50152752e276fc5641582b82764d8e7",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m16_transport_factor_contract_v1.json": "c228a55d4183f53ad595a581b130c37d18a9d151c01aa7fe471f03c8cf83214d",
+    "scripts/run_simplemos_m16_transport_factor.py": "0427013de5b85b999ff4c7f431e15907f756446abf585c6c8af7bf6756f0261a",
+    "scripts/plot_simplemos_m16_transport_factor.py": "834d373e06ef5a6dec8e0ddadbb675b14960a5bfc7b4f48a0ad5f7c5f4b2567c",
+    "scripts/freeze_simplemos_m16_transport_factor_evidence.py": "bd94cc29d40a276a14b9e7110d086fe79c4c0320cacee39fc3130f748d94ef5b",
+    "tests/regression/test_simplemos_m16_transport_factor.py": "af5798c82185dd7ec556d67a5c6b0f2bb1eaa0cf86f1504435b74374f3399053",
+    "docs/validation/simplemos_m16_transport_factor_2026-08-29.md": "87cd283ec1767486ab291cc88d81b76a89fde81772a23e8eb0d8bca80ffdc79f",
+    "CMakeLists.txt": "43ad178b411ab4263637e52aab95936e8e8af7617106e43691e8d23e83978710"
+  }
+}

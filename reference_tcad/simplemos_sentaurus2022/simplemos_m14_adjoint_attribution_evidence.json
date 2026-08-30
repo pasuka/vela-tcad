@@ -1,0 +1,115 @@
+{
+  "schema": "vela.simplemos.sdevice.m14_adjoint_attribution_evidence.v1",
+  "status": "complete_with_declared_field_coverage",
+  "scope": "SDevice-only two-layer frozen-state and adjoint terminal-current attribution",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "weak_region_terminal_point_count": 80,
+    "paired_spatial_state_count": 16,
+    "adjoint_solve_count": 16,
+    "substitution_variant_count_per_state": 8,
+    "new_sentaurus_execution": false,
+    "default_model_changed": false,
+    "cpp_changed": true
+  },
+  "coverage_boundary": {
+    "terminal_error_spectrum": "complete 80/80",
+    "paired_nodal_field_attribution": "16 representative states only",
+    "missing_for_80_point_spatial_extension": "Sentaurus nodal field exports for n21-n24 at every Vg=0..0.95 point"
+  },
+  "adjoint_quality": {
+    "maximum_relative_residual": 2.3061337740005625e-16
+  },
+  "weak_region": {
+    "all_vela_above_sentaurus": true,
+    "mean_signed_error_dex": 0.051096304466763776,
+    "maximum_absolute_error_dex": 0.10941868092427424,
+    "linear_fits_by_device": {
+      "n21": {
+        "slope_dex_per_V": 0.022528407525405393,
+        "intercept_dex": 0.04237941711546712,
+        "rmse_dex": 0.010065236224156256
+      },
+      "n22": {
+        "slope_dex_per_V": 0.029367770190497525,
+        "intercept_dex": 0.03822461320122941,
+        "rmse_dex": 0.006702787048427745
+      },
+      "n23": {
+        "slope_dex_per_V": 0.013453158891506448,
+        "intercept_dex": 0.04440524913816629,
+        "rmse_dex": 0.01615434421987113
+      },
+      "n24": {
+        "slope_dex_per_V": 0.028779345318512253,
+        "intercept_dex": 0.03466481449737951,
+        "rmse_dex": 0.005996753645130993
+      }
+    }
+  },
+  "conclusions": {
+    "supported": [
+      "All 80 high-NWell low-drain weak-region terminal-error points are covered and have Vela current above Sentaurus.",
+      "All 16 production terminal-current adjoint solves close below a 1e-12 relative residual.",
+      "Electron quasi-Fermi potential is the dominant frozen direct terminal-current state coordinate in the representative n21 low-drain states.",
+      "At n21, Vd=0.05 V, Vg=0.8 V, self-consistent relaxation cancels 97.45 percent of the full-field frozen response and the remaining response is localized to the channel partition.",
+      "The M10 mobility-to-current disconnect is mathematically consistent with terminal-low-sensitivity edge changes and self-consistent cancellation."
+    ],
+    "not_supported": [
+      "Treating an independent carrier-density substitution as a production Newton coordinate.",
+      "Claiming that phin, HFS, electrostatics, or SRH is the unique remaining cross-code root cause.",
+      "Using the sub-fA Vg=0.05 V relative response for headline quantitative attribution.",
+      "Extending the 16-state spatial result to all 80 points without additional Sentaurus nodal field exports.",
+      "Changing a default physical model from these read-only diagnostics."
+    ]
+  },
+  "artifacts": {
+    "m14_adjoint_attribution_report.json": {
+      "path": "reference_tcad/simplemos_sentaurus2022/adjoint_attribution/m14_adjoint_attribution_report.json",
+      "sha256": "1e45a9848368bd9f3364320827671233397ac00112e6432861e2f6e8995f38e6"
+    },
+    "m14_state_summary.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/adjoint_attribution/m14_state_summary.csv",
+      "sha256": "6b5b971ee9ae02ac8a876a655fd7ecfbb255b1efc3fed86425420f1cf4a87ef8"
+    },
+    "m14_substitution_summary.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/adjoint_attribution/m14_substitution_summary.csv",
+      "sha256": "ea53cf5c10719c2f3d196b50ba7825a0b2638e1a925f294e1687783e6ecb3a06"
+    },
+    "m14_weak_region_80_points.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/adjoint_attribution/m14_weak_region_80_points.csv",
+      "sha256": "e2bd1150b399c366cec765894a910862aa6beda7ef8a2971957dbe0bbddce686"
+    }
+  },
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m14/m14_weak_region_80_points.png",
+      "sha256": "06bd03e2f090849610587be285c5953100c4fa5be948b4e043079b1de159f062"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m14/m14_field_cancellation.png",
+      "sha256": "e704af740376154c46e6a5d93b3972eb816edf35f59148c0b32d73c3cb524bd2"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m14/m14_region_response_n21_vg0p8.png",
+      "sha256": "1484bfd8c3c70974c3954485ba9b674ce8190a96e970d99a0a9eeed010dc7591"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m14/m14_adjoint_quality.png",
+      "sha256": "a3e99fdaa52c9e8a227b81c1860e6fb74646dfdef8f1d23293665c7fef263ba0"
+    }
+  ],
+  "implementation_sha256": {
+    "include/vela/solver/NewtonSolver.h": "eb8db90077ea3571a7c0870e2eab08ceccb74622bc58daef8b8839f7d0a7b6ce",
+    "src/solver/NewtonSolver.cpp": "3c1e08370a3eb989be724bcedb8f28bebc495c691692859de663337d10299769",
+    "src/tools/vela_example_runner.cpp": "64bbb593799c8c8fa4fa4988eb765bbbd5336c8bc046136b48402166d93a7059",
+    "tests/test_newton_solver.cpp": "53d626efe3874b54450a80ddfe31c72aa50152752e276fc5641582b82764d8e7",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m14_adjoint_attribution_contract_v1.json": "b374815661f4e181deca9e209700d6eb5dc817887465e72c4bdcb8f362336a9b",
+    "scripts/run_simplemos_m14_adjoint_attribution.py": "eac0f3c9a1ad6dd556b9342bb97f728d3fcdd93ef81aa20ec826dec2dbcc58f4",
+    "scripts/plot_simplemos_m14_adjoint_attribution.py": "a56faa2c741476890e821fb73f82440d6ec805ef7bc2af87adfc3e15907d9fb0",
+    "scripts/freeze_simplemos_m14_adjoint_attribution_evidence.py": "6ee4d25358daed4af711dcd5265d1b5dcca966a54538841c5c144faa481d6ab4",
+    "tests/regression/test_simplemos_m14_adjoint_attribution.py": "5ea694423a7860391a9a4b62048c322db14dd8d113f9db8c8c7da857b429b3b4",
+    "docs/validation/simplemos_m14_adjoint_attribution_2026-08-29.md": "d62a3062e8de8cda758617cc44c5d3fefbec87c7e97b272d23a8a7ba8b62faeb",
+    "CMakeLists.txt": "43ad178b411ab4263637e52aab95936e8e8af7617106e43691e8d23e83978710"
+  }
+}

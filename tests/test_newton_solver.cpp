@@ -33,6 +33,7 @@
 using namespace vela;
 
 static DeviceMesh makePNMesh();
+static DopingModel makePNDoping(const DeviceMesh& mesh);
 
 TEST_CASE("Newton JSON parses opt-in initial-state QF recentering",
           "[newton][quasi_fermi_reference]")
@@ -448,6 +449,62 @@ TEST_CASE("SG edge diagnostic converts native line flux to particles per metre",
     }
     REQUIRE(foundNonzero);
     REQUIRE(foundZeroCoupleResponse);
+}
+
+TEST_CASE("Surface-mobility SG diagnostics are independent of residual call order",
+          "[newton][sg][surface_mobility][diagnostic]")
+{
+    const DeviceMesh mesh = makePNMesh();
+    MaterialDatabase materials;
+    DopingModel doping = makePNDoping(mesh);
+    MobilityModelConfig mobility = mobilityModelConfig("phumob_lombardi");
+    mobility.surface.surfaceRegion = "n_region";
+    mobility.surface.surfaceInterface = {"n_region", "p_region"};
+    mobility.surface.thetaElectron = 2.0e-6;
+    mobility.surface.thetaHole = 1.0e-6;
+    const RecombinationModelConfig recombination =
+        recombinationModelConfig({"none"});
+
+    auto makeAssembler = [&]() {
+        return CoupledDDAssembler(
+            mesh, materials, doping, constants::Vt_300, mobility,
+            recombination);
+    };
+    CoupledDDState state;
+    state.psi = VectorXd::LinSpaced(
+        static_cast<int>(mesh.numNodes()), -0.15, 0.20);
+    state.phin = VectorXd::LinSpaced(
+        static_cast<int>(mesh.numNodes()), -0.02, 0.03);
+    state.phip = VectorXd::LinSpaced(
+        static_cast<int>(mesh.numNodes()), 0.01, -0.015);
+    CoupledDDBoundaryConditions boundaries;
+
+    CoupledDDAssembler direct = makeAssembler();
+    const VectorXd directState = direct.pack(state);
+    const auto directEdges = direct.sgEdgeFluxDiagnostics(
+        directState, boundaries);
+
+    CoupledDDAssembler afterResidual = makeAssembler();
+    const VectorXd residualState = afterResidual.pack(state);
+    static_cast<void>(afterResidual.residual(residualState, boundaries));
+    const auto residualFirstEdges = afterResidual.sgEdgeFluxDiagnostics(
+        residualState, boundaries);
+
+    REQUIRE(directEdges.size() == residualFirstEdges.size());
+    bool foundSurfaceResponse = false;
+    for (std::size_t edge = 0; edge < directEdges.size(); ++edge) {
+        const auto& lhs = directEdges[edge];
+        const auto& rhs = residualFirstEdges[edge];
+        CHECK(lhs.edgeId == rhs.edgeId);
+        CHECK(lhs.electronFlux == Catch::Approx(rhs.electronFlux)
+            .epsilon(1.0e-13).margin(1.0e-24));
+        CHECK(lhs.electronMobility_m2_V_s ==
+              Catch::Approx(rhs.electronMobility_m2_V_s)
+                  .epsilon(1.0e-13).margin(1.0e-24));
+        foundSurfaceResponse = foundSurfaceResponse ||
+            lhs.electronMobility_m2_V_s > 0.0;
+    }
+    REQUIRE(foundSurfaceResponse);
 }
 
 static DeviceMesh makePNMesh()
@@ -882,6 +939,141 @@ TEST_CASE("NewtonSolver: pseudo-arclength corrector advances a converged device 
     REQUIRE(std::abs(result.state.lambda) > 1.0e-6);
     const VectorXd f1 = system.residual(result.state.x, result.state.lambda);
     REQUIRE(f1.lpNorm<Eigen::Infinity>() < 1.0e-6);
+}
+
+TEST_CASE("NewtonSolver: terminal-current adjoint closes the transpose system",
+          "[newton][adjoint][terminal-current]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+
+    NewtonConfig cfg = newtonConfig();
+    cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    NewtonSolver solver(mesh, matdb, doping, zeroBias(), cfg);
+    const NewtonResult equilibrium = solver.solve();
+    REQUIRE(equilibrium.converged);
+
+    const auto evaluation = solver.evaluateTerminalCurrentAdjoint(
+        equilibrium.solution, "anode", 1.0e-6);
+    REQUIRE(evaluation.nodeCount == static_cast<int>(mesh.numNodes()));
+    REQUIRE(evaluation.stateDerivative.size() ==
+            3 * static_cast<int>(mesh.numNodes()));
+    REQUIRE(evaluation.adjoint.size() == evaluation.stateDerivative.size());
+    REQUIRE(evaluation.stateDerivative.allFinite());
+    REQUIRE(evaluation.adjoint.allFinite());
+    REQUIRE(evaluation.adjointRelativeResidual < 1.0e-9);
+
+    const VectorXd x = solver.packArclengthState(equilibrium.solution);
+    const SparseMatrixd jacobian =
+        solver.makeArclengthSystem("anode").jacobian(x, 0.0);
+    VectorXd direction = VectorXd::LinSpaced(x.size(), -0.3, 0.4);
+    const Real direct = evaluation.stateDerivative.dot(direction);
+    const Real adjoint = evaluation.adjoint.dot(jacobian * direction);
+    REQUIRE(adjoint == Catch::Approx(direct).epsilon(1.0e-9).margin(1.0e-20));
+
+    const ArclengthScalarFunctional current =
+        solver.makeArclengthContactCurrentFunctional("anode", 1.0e-6);
+    constexpr Real h = 1.0e-7;
+    const Real finiteDifference =
+        (current.value(x + h * direction, 0.0) -
+         current.value(x - h * direction, 0.0)) / (2.0 * h);
+    REQUIRE(finiteDifference ==
+            Catch::Approx(direct).epsilon(2.0e-5).margin(1.0e-20));
+}
+
+TEST_CASE("NewtonSolver: electron transport factor endpoints equal production terms",
+          "[newton][transport_factor][diagnostic]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg = newtonConfig();
+    cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    NewtonSolver solver(mesh, matdb, doping, zeroBias(), cfg);
+    const NewtonResult equilibrium = solver.solve();
+    REQUIRE(equilibrium.converged);
+
+    DDSolution replacement = equilibrium.solution;
+    replacement.psi(4) += 1.0e-3;
+    replacement.phin(4) += 4.0e-4;
+    replacement.phip(4) -= 2.0e-4;
+    const auto rows = solver.evaluateElectronTransportFactorDiagnostics(
+        equilibrium.solution, replacement);
+    const int nodeCount = static_cast<int>(mesh.numNodes());
+    REQUIRE(rows.size() == static_cast<std::size_t>(16 * nodeCount));
+
+    const auto baseline = solver.evaluateCarrierTermDiagnostics(
+        equilibrium.solution, true);
+    const auto changed = solver.evaluateCarrierTermDiagnostics(replacement, true);
+    for (int node = 0; node < nodeCount; ++node) {
+        const auto& empty = rows[static_cast<std::size_t>(node)];
+        const auto& full = rows[static_cast<std::size_t>(15 * nodeCount + node)];
+        CHECK(empty.mask == 0);
+        CHECK(full.mask == 15);
+        CHECK(empty.electronFlux == Catch::Approx(
+            baseline.rows[static_cast<std::size_t>(node)].electronFlux));
+        CHECK(full.electronFlux == Catch::Approx(
+            changed.rows[static_cast<std::size_t>(node)].electronFlux));
+    }
+}
+
+TEST_CASE("NewtonSolver: SG secant factors close production transport endpoints",
+          "[newton][sg_secant][diagnostic]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg = newtonConfig();
+    cfg.inputScaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    NewtonSolver solver(mesh, matdb, doping, zeroBias(), cfg);
+    const NewtonResult equilibrium = solver.solve();
+    REQUIRE(equilibrium.converged);
+
+    DDSolution replacement = equilibrium.solution;
+    replacement.psi(4) += 1.0e-3;
+    replacement.phin(4) += 4.0e-4;
+    replacement.phip(4) -= 2.0e-4;
+    const auto evaluation = solver.evaluateElectronTransportSecantFactorDiagnostics(
+        equilibrium.solution, replacement);
+    const auto& rows = evaluation.nodes;
+    const int nodeCount = static_cast<int>(mesh.numNodes());
+    REQUIRE(rows.size() == static_cast<std::size_t>(8 * nodeCount));
+    REQUIRE(evaluation.edges.size() ==
+            static_cast<std::size_t>(8 * mesh.numEdges()));
+
+    const auto baseline = solver.evaluateCarrierTermDiagnostics(
+        equilibrium.solution, true);
+    const auto changed = solver.evaluateCarrierTermDiagnostics(replacement, true);
+    for (int node = 0; node < nodeCount; ++node) {
+        const auto& empty = rows[static_cast<std::size_t>(node)];
+        const auto& full = rows[static_cast<std::size_t>(7 * nodeCount + node)];
+        CHECK(empty.mask == 0);
+        CHECK(full.mask == 7);
+        CHECK(empty.electronFlux == Catch::Approx(
+            baseline.rows[static_cast<std::size_t>(node)].electronFlux));
+        CHECK(full.electronFlux == Catch::Approx(
+            changed.rows[static_cast<std::size_t>(node)].electronFlux));
+    }
+    for (const auto& row : rows)
+        CHECK(std::isfinite(row.electronFlux));
+    for (int mask = 0; mask < 8; ++mask) {
+        VectorXd reconstructed = VectorXd::Zero(nodeCount);
+        for (const auto& edge : evaluation.edges) {
+            if (edge.mask != mask)
+                continue;
+            CHECK(std::isfinite(edge.electronFlux));
+            if (!edge.node0Constrained)
+                reconstructed(static_cast<int>(edge.node0)) += edge.electronFlux;
+            if (!edge.node1Constrained)
+                reconstructed(static_cast<int>(edge.node1)) -= edge.electronFlux;
+        }
+        for (int node = 0; node < nodeCount; ++node) {
+            CHECK(reconstructed(node) == Catch::Approx(
+                rows[static_cast<std::size_t>(mask * nodeCount + node)]
+                    .electronFlux));
+        }
+    }
 }
 
 TEST_CASE("NewtonSolver: arclength quasi-Fermi cap uniformly scales bordered update",

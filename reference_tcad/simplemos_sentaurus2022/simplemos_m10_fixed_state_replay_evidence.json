@@ -154,7 +154,7 @@
   },
   "implementation_sha256": {
     "reference_tcad/simplemos_sentaurus2022/simplemos_m10_fixed_state_replay_contract_v1.json": "8219e4bcc86dbef2da4cd01ea7c02e519249eb7f4ff4dc16631d41cb9e12aa23",
-    "src/tools/vela_example_runner.cpp": "d26091964ed59d5d1d3c1cfc761d7e9b42735aea59f3ac63e395525284a0c3a8",
+    "src/tools/vela_example_runner.cpp": "64bbb593799c8c8fa4fa4988eb765bbbd5336c8bc046136b48402166d93a7059",
     "scripts/run_simplemos_m10_fixed_state_replay.py": "fe3a379a1e684f3767212f391a9f67fd5995a625ee1c7b0794f51c3dba85d675",
     "scripts/plot_simplemos_m10_fixed_state_replay.py": "d9eb23a6f748521a1e77d010e2d632b6f3132a44ff714992f1883cc5c8067713",
     "scripts/freeze_simplemos_m10_fixed_state_replay_evidence.py": "7e2981adde4ea501598236314d0be28ed357bb8c5cb3e9975d81438d40f8f22b",

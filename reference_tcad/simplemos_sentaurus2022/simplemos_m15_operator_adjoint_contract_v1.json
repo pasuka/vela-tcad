@@ -1,0 +1,61 @@
+{
+  "schema": "vela.simplemos.sdevice.m15_operator_adjoint.v1",
+  "contract_id": "simplemos-sdevice-m15-operator-adjoint-v1",
+  "scope": "SDevice-only adjoint weighting of Vela equation-term residuals on paired Vela and mapped Sentaurus states",
+  "sentaurus_release": "T-2022.03-SP2",
+  "default_model_policy": {
+    "modify_vela_default_model": false,
+    "diagnostics_are_read_only": true,
+    "modify_cpp": false,
+    "new_sentaurus_execution": false
+  },
+  "state_matrix": {
+    "devices": ["n17", "n21"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": [0.0, 0.05, 0.8, 2.5],
+    "state_count": 16,
+    "interpolation": "forbidden"
+  },
+  "residual_difference": "F_vela(x_sentaurus_mapped) - F_vela(x_vela_converged)",
+  "adjoint": {
+    "source": "M14 production terminal-current adjoint evaluated at x_vela_converged",
+    "weighted_response": "-lambda^T deltaF",
+    "closure_reference": "M14 field_all adjoint_relaxation_current_change_A_per_um"
+  },
+  "operator_terms": [
+    "poisson",
+    "electron_transport",
+    "electron_srh",
+    "electron_impact",
+    "electron_gauge",
+    "electron_boundary",
+    "hole_transport",
+    "hole_srh",
+    "hole_impact",
+    "hole_gauge",
+    "hole_boundary"
+  ],
+  "spatial_partition": {
+    "reuse": "simplemos-sdevice-m14-adjoint-attribution-v1",
+    "body": "x_um > 0.25",
+    "source": "x_um <= 0.25 and y_um < -0.3",
+    "drain": "x_um <= 0.25 and y_um > 0.3",
+    "channel": "x_um <= 0.25 and -0.3 <= y_um <= 0.3"
+  },
+  "cross_checks": {
+    "m11": "frozen PhuMob x Enormal x HFS factorial effects on log10 terminal current",
+    "m14": "field_all adjoint relaxation and terminal-error spectrum"
+  },
+  "acceptance": {
+    "state_count": 16,
+    "maximum_absolute_adjoint_closure_A_per_um": 1e-12,
+    "maximum_relative_adjoint_closure": 1e-8,
+    "default_model_unchanged": true
+  },
+  "decision_questions": [
+    "Which Vela equation term reacts most strongly when the mapped Sentaurus state is inserted?",
+    "Which spatial region carries the non-cancelled adjoint-weighted operator residual?",
+    "Does electron-transport dominance identify HFS specifically, or only the broader transport operator?",
+    "Can the M14 two-layer response be reconstructed exactly from equation terms?"
+  ]
+}

@@ -3460,6 +3460,53 @@ ArclengthScalarFunctional NewtonSolver::makeArclengthContactCurrentFunctional(
     return functional;
 }
 
+NewtonTerminalCurrentAdjointEvaluation
+NewtonSolver::evaluateTerminalCurrentAdjoint(
+    const DDSolution& state,
+    const std::string& contactName,
+    Real currentScale) const
+{
+    const auto biasIt = contactBiases_.find(contactName);
+    if (biasIt == contactBiases_.end()) {
+        throw std::invalid_argument(
+            "NewtonSolver::evaluateTerminalCurrentAdjoint: contact '" +
+            contactName + "' is not present in the contact bias map.");
+    }
+
+    const VectorXd x = packArclengthState(state);
+    ArclengthSystem system = makeArclengthSystem(contactName);
+    ArclengthScalarFunctional functional =
+        makeArclengthContactCurrentFunctional(contactName, currentScale);
+    const ArclengthScalarLinearization linearization =
+        functional.linearize(x, biasIt->second);
+    const SparseMatrixd jacobian = system.jacobian(x, biasIt->second);
+    SparseMatrixd transpose = jacobian.transpose();
+    transpose.makeCompressed();
+
+    LinearSolver linearSolver;
+    const VectorXd adjoint =
+        linearSolver.solve(transpose, linearization.stateDerivative);
+    const VectorXd residual =
+        transpose * adjoint - linearization.stateDerivative;
+    const Real derivativeNorm = linearization.stateDerivative.norm();
+
+    NewtonTerminalCurrentAdjointEvaluation result;
+    result.current = linearization.value;
+    result.contactBias_V = biasIt->second;
+    result.nodeCount = static_cast<int>(mesh_.numNodes());
+    result.potentialScale_V = cfg_.inputScaling.isUnitScaling()
+        ? buildScalingSpec().V0
+        : 1.0;
+    result.stateDerivativeNorm = derivativeNorm;
+    result.adjointNorm = adjoint.norm();
+    result.adjointResidualNorm = residual.norm();
+    result.adjointRelativeResidual = result.adjointResidualNorm /
+        std::max(derivativeNorm, std::numeric_limits<Real>::min());
+    result.stateDerivative = linearization.stateDerivative;
+    result.adjoint = adjoint;
+    return result;
+}
+
 Real NewtonSolver::maxContactMajorityQuasiFermiDrop(const DDSolution& state) const
 {
     return maxContactMajorityQuasiFermiDrop(state, {});
@@ -5553,6 +5600,88 @@ std::vector<CoupledDDEdgeFluxDiagnostic> NewtonSolver::evaluateSgEdgeFluxDiagnos
         assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
     const VectorXd x = packReferencedSolution(assembler, state, bcs);
     return assembler.sgEdgeFluxDiagnostics(x, bcs);
+}
+
+std::vector<CoupledDDElectronTransportFactorDiagnostic>
+NewtonSolver::evaluateElectronTransportFactorDiagnostics(
+    const DDSolution& state,
+    const DDSolution& replacementState) const
+{
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(
+            cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.bandToBand = cfg_.bandToBand;
+    CoupledDDAssembler assembler(
+        mesh_, matdb_, doping_, Vt, cfg_.mobility, recombinationConfig,
+        cfg_.bandgapNarrowing, cfg_.impactIonization, fixedCharges_,
+        sheetCharges_, buildScalingSpec(), cfg_.carrierDiagonalFloor,
+        cfg_.carrierStatistics, cfg_.electronQuantumPotential);
+    restoreElectronQuantumPotential(assembler, state);
+    configureQuasiFermiReferences(assembler);
+    const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
+    const VectorXd baseline = packReferencedSolution(assembler, state, bcs);
+    const VectorXd replacement =
+        packReferencedSolution(assembler, replacementState, bcs);
+    std::vector<CoupledDDElectronTransportFactorDiagnostic> rows =
+        assembler.electronTransportFactorDiagnostics(
+            baseline, replacement, bcs);
+    // Freeze the Shapley endpoints to independently evaluated production
+    // equation terms. The fourteen mixed interventions are diagnostic states;
+    // evaluating both endpoints on fresh production paths makes their role as
+    // authoritative vertices explicit and independent of intervention order.
+    const auto baselineTerms = evaluateCarrierTermDiagnostics(state, true).rows;
+    const auto replacementTerms =
+        evaluateCarrierTermDiagnostics(replacementState, true).rows;
+    for (auto& row : rows) {
+        if (row.mask == 0)
+            row.electronFlux = baselineTerms[row.nodeId].electronFlux;
+        else if (row.mask == 15)
+            row.electronFlux = replacementTerms[row.nodeId].electronFlux;
+    }
+    return rows;
+}
+
+CoupledDDElectronTransportSecantFactorEvaluation
+NewtonSolver::evaluateElectronTransportSecantFactorDiagnostics(
+    const DDSolution& state,
+    const DDSolution& replacementState) const
+{
+    const double Vt = thermalVoltage(cfg_.temperature_K);
+    RecombinationModelConfig recombinationConfig =
+        recombinationModelConfig(
+            cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.augerCn = cfg_.augerCn;
+    recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.bandToBand = cfg_.bandToBand;
+    CoupledDDAssembler assembler(
+        mesh_, matdb_, doping_, Vt, cfg_.mobility, recombinationConfig,
+        cfg_.bandgapNarrowing, cfg_.impactIonization, fixedCharges_,
+        sheetCharges_, buildScalingSpec(), cfg_.carrierDiagonalFloor,
+        cfg_.carrierStatistics, cfg_.electronQuantumPotential);
+    restoreElectronQuantumPotential(assembler, state);
+    configureQuasiFermiReferences(assembler);
+    const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
+    const VectorXd baseline = packReferencedSolution(assembler, state, bcs);
+    const VectorXd replacement =
+        packReferencedSolution(assembler, replacementState, bcs);
+    CoupledDDElectronTransportSecantFactorEvaluation evaluation =
+        assembler.electronTransportSecantFactorDiagnostics(
+            baseline, replacement, bcs);
+    // Keep both Shapley endpoints authoritative and independent of the mixed
+    // secant-factor arithmetic.
+    const auto baselineTerms = evaluateCarrierTermDiagnostics(state, true).rows;
+    const auto replacementTerms =
+        evaluateCarrierTermDiagnostics(replacementState, true).rows;
+    for (auto& row : evaluation.nodes) {
+        if (row.mask == 0)
+            row.electronFlux = baselineTerms[row.nodeId].electronFlux;
+        else if (row.mask == 7)
+            row.electronFlux = replacementTerms[row.nodeId].electronFlux;
+    }
+    return evaluation;
 }
 
 std::vector<CoupledDDTransportEdgeJacobianDiagnostic>

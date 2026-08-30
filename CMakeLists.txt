@@ -955,6 +955,41 @@ set_tests_properties(simplemos_m13_spatial_attribution PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m13_spatial_attribution)
 
+add_test(NAME simplemos_m14_adjoint_attribution
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m14_adjoint_attribution)
+set_tests_properties(simplemos_m14_adjoint_attribution PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m14_adjoint_attribution)
+
+add_test(NAME simplemos_m15_operator_adjoint
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m15_operator_adjoint)
+set_tests_properties(simplemos_m15_operator_adjoint PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m15_operator_adjoint)
+
+add_test(NAME simplemos_m16_transport_factor
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m16_transport_factor)
+set_tests_properties(simplemos_m16_transport_factor PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m16_transport_factor)
+
+add_test(NAME simplemos_m17_sg_secant
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m17_sg_secant)
+set_tests_properties(simplemos_m17_sg_secant PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m17_sg_secant)
+
+add_test(NAME simplemos_m18_qf_edge_localization
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m18_qf_edge_localization)
+set_tests_properties(simplemos_m18_qf_edge_localization PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m18_qf_edge_localization)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)

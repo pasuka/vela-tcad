@@ -1,0 +1,138 @@
+{
+  "schema": "vela.simplemos.sdevice.m18_qf_edge_localization_evidence.v1",
+  "status": "complete_with_bias_regime_separation",
+  "scope": "SDevice-only native-edge localization of M17 QF imbalance and complete M15 feedback ledger",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "state_count": 16,
+    "edge_probe_count": 16,
+    "probe_variant_count": 8,
+    "probes_executed_this_run": 0,
+    "new_sentaurus_execution": false,
+    "cpp_change_scope": "diagnostic-only edge output for the M17 secant-factor probe",
+    "default_model_changed": false
+  },
+  "closure": {
+    "maximum_edge_to_node_absolute_A_per_um": 6.938893903907228e-18,
+    "maximum_edge_to_node_relative": 1.0589819391669299e-11,
+    "maximum_feedback_ledger_absolute_A_per_um": 9.974659986866641e-18,
+    "maximum_edge_shapley_flux_closure": 4.440892098500626e-16
+  },
+  "key_state": {
+    "state": "n21_vd_0p05_vg_0p8",
+    "qf_bucket_relative_to_baseline_current": {
+      "source_contact_cut": -1.8714371906308356e-09,
+      "drain_contact_cut": 0.13622821353532993,
+      "substrate_contact_cut": -4.5295623358725896e-15,
+      "gate_contact_cut": 0.0,
+      "internal_source": -6.895128655224726e-08,
+      "internal_channel": 0.0012861822570835613,
+      "internal_drain": -1.451019031295796e-08,
+      "internal_body": 1.0913925581476214e-14
+    },
+    "qf_bucket_absolute_edge_support_fraction": {
+      "source_contact_cut": 1.1077421353785018e-08,
+      "drain_contact_cut": 0.8063627938779857,
+      "substrate_contact_cut": 2.681141039298347e-14,
+      "gate_contact_cut": 0.0,
+      "internal_source": 4.0813683640294973e-07,
+      "internal_channel": 0.1936367010188401,
+      "internal_drain": 8.588879955823011e-08,
+      "internal_body": 9.242455286559055e-14
+    },
+    "combined_contact_cut_absolute_edge_support_fraction": 0.8063628049554339,
+    "internal_channel_absolute_edge_support_fraction": 0.1936367010188401,
+    "top_edge_count_for_50_percent_absolute_qf_support": 1,
+    "feedback_ledger_relative_to_baseline_current": {
+      "mobility": -0.003108508614059141,
+      "sg_secant_conductance": -0.0074135412435365,
+      "qf_log_imbalance": 0.1375143104595058,
+      "poisson": 0.0057591010019365715,
+      "srh": 4.0989940750180246e-11,
+      "boundary_gauge": 4.142261158562036e-15,
+      "other_carrier": 2.6330022405628004e-14
+    }
+  },
+  "interpretation_limits": [
+    "The adjoint edge response is first-order self-consistent sensitivity around the converged Vela state.",
+    "A negligible direct SRH operator response does not prove SRH had no historical influence on the converged state.",
+    "The edge partition localizes Vela operator response and is not a native Sentaurus residual decomposition.",
+    "Sub-fA relative responses remain conditioning-sensitive and are not headline root-cause evidence."
+  ],
+  "conclusions": {
+    "supported": [
+      "All 16 native-edge Shapley games close to the regenerated M17 node-factor results.",
+      "At n21, Vd=0.05 V, Vg=0.8 V, contact cuts carry 80.6363 percent of absolute QF response and the internal channel carries 19.3637 percent.",
+      "The drain cut supplies effectively all material contact-cut response; one drain-cut edge supplies 66.5945 percent and the leading two supply 79.4133 percent of absolute QF support.",
+      "The complete key-state feedback ledger is dominated by QF log imbalance, with smaller Poisson feedback and opposing mobility and SG conductance responses.",
+      "Direct SRH operator response is negligible at the key state.",
+      "The diagnostic Enormal geometry path is now independent of whether residual evaluation occurred first."
+    ],
+    "not_supported": [
+      "Claiming SRH had no historical effect on the converged state.",
+      "Equating the localized Vela edge response with a native Sentaurus residual decomposition.",
+      "Claiming a private Sentaurus formula is the unique root cause.",
+      "Changing production HFS, Enormal, SRH, or other model defaults.",
+      "Using sub-fA off-state relative localization as headline evidence."
+    ]
+  },
+  "artifacts": {
+    "m18_qf_edge_localization_report.json": {
+      "path": "reference_tcad/simplemos_sentaurus2022/qf_edge_localization/m18_qf_edge_localization_report.json",
+      "sha256": "a56b396b284884100ae201149384037b697432ec872a3da1221c652ef740bf41"
+    },
+    "m18_state_summary.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/qf_edge_localization/m18_state_summary.csv",
+      "sha256": "ebdf481c5b2ba1b9822c3aaa25e1d53ff099bd338e54e2dfb2587cbdfe644c20"
+    },
+    "m18_bucket_factor_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/qf_edge_localization/m18_bucket_factor_contributions.csv",
+      "sha256": "5b65aeb9c9321e8ea81b10eb2e8283947ef4e2c337afe1db5898ee7ae7b66970"
+    },
+    "m18_key_state_edge_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/qf_edge_localization/m18_key_state_edge_contributions.csv",
+      "sha256": "8df43ff6c43cf4bfa69aadf4188e5fcada346357171ae14f0b7c20ccb2270d5e"
+    },
+    "m18_feedback_ledger.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/qf_edge_localization/m18_feedback_ledger.csv",
+      "sha256": "168021f0ec9591157974a1b3505784381384e08e57df7193093b5c221673faa3"
+    }
+  },
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m18/m18_qf_bucket_support_n21_vg0p8.png",
+      "sha256": "23b6f89c875cce240601f99e0a1e8967bd2c0590230a9d1816c87b8f1c7d4cbd"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m18/m18_qf_edge_map_n21_vg0p8.png",
+      "sha256": "114124f9d75317cd20021cd7a239f06618f3b39ac025d35dce471854981a513f"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m18/m18_qf_edge_pareto_n21_vg0p8.png",
+      "sha256": "36ec4360a6837723ce08b852010b41b61b3ca9250f98930b2707cf0470970dee"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m18/m18_feedback_ledger_n21_vg0p8.png",
+      "sha256": "16ec693ff8a0eeb51a0b01394c0fd973688c700ae1c3802a2f2f773bcd8da3be"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m18/m18_qf_contact_fraction_16_states.png",
+      "sha256": "7acb3fda4d1bcd3e87f3ad6ab42cbb1087c47ff41b3754ca4df188727416b98f"
+    }
+  ],
+  "implementation_sha256": {
+    "include/vela/equation/CoupledDDAssembler.h": "4504650326c947a68510b5d9f1913839ee5181a28688346fcf0286c14e41d667",
+    "include/vela/solver/NewtonSolver.h": "eb8db90077ea3571a7c0870e2eab08ceccb74622bc58daef8b8839f7d0a7b6ce",
+    "src/equation/CoupledDDAssembler.cpp": "b3d078995b6b949efc7a0ec5c492c6e20e6dd9f3d1363e1003c257248513c882",
+    "src/solver/NewtonSolver.cpp": "3c1e08370a3eb989be724bcedb8f28bebc495c691692859de663337d10299769",
+    "src/tools/vela_example_runner.cpp": "64bbb593799c8c8fa4fa4988eb765bbbd5336c8bc046136b48402166d93a7059",
+    "tests/test_newton_solver.cpp": "53d626efe3874b54450a80ddfe31c72aa50152752e276fc5641582b82764d8e7",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m18_qf_edge_localization_contract_v1.json": "9a1044f30844fc1891908d708bd2404cc384a4dd9fbd133867d62b9f0bc21f90",
+    "scripts/run_simplemos_m18_qf_edge_localization.py": "2d8af039bb47a11ebf41040e2c7304a871dc2382e93b06ed463fff0ed51c032d",
+    "scripts/plot_simplemos_m18_qf_edge_localization.py": "7d7277f2410eec991b61e0e7ee00f1676fe36f77e6cdf9678b05c5c546a21d07",
+    "scripts/freeze_simplemos_m18_qf_edge_localization_evidence.py": "0d69b006ceefd64e71140e37a9dd8b5386cdf81212e45cfd02165516e93e4e5f",
+    "tests/regression/test_simplemos_m18_qf_edge_localization.py": "ed32a5fab3aaacb56c30308cd22482631aa6e3e62ea91149584183d290f52f75",
+    "docs/validation/simplemos_m18_qf_edge_localization_2026-08-30.md": "367413f70d22075dffaf1db1507210db56b70038b38551df78d8d9abd5f43428",
+    "CMakeLists.txt": "43ad178b411ab4263637e52aab95936e8e8af7617106e43691e8d23e83978710"
+  }
+}

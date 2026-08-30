@@ -1,0 +1,124 @@
+{
+  "schema": "vela.simplemos.sdevice.m15_operator_adjoint_evidence.v1",
+  "status": "complete_with_declared_operator_boundary",
+  "scope": "SDevice-only Vela operator-residual attribution using the M14 terminal-current adjoint",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "state_count": 16,
+    "carrier_term_probe_count": 32,
+    "new_sentaurus_execution": false,
+    "cpp_changed": false,
+    "default_model_changed": false
+  },
+  "closure": {
+    "maximum_absolute_A_per_um": 8.61940727125976e-18,
+    "maximum_relative": 4.254330518892175e-14,
+    "reference": "M14 field_all adjoint relaxation"
+  },
+  "key_state": {
+    "state": "n21_vd_0p05_vg_0p8",
+    "terminal_signed_log10_error_dex": 0.06399183621494026,
+    "component_relative_to_baseline_current": {
+      "poisson": 0.0057591010019365715,
+      "electron_transport": 0.1269922606019102,
+      "electron_srh": 4.098288323801466e-11,
+      "electron_impact": 0.0,
+      "electron_gauge": 0.0,
+      "electron_boundary": 4.3399377255752426e-15,
+      "hole_transport": 2.6330022405628004e-14,
+      "hole_srh": 7.057512165582859e-15,
+      "hole_impact": 0.0,
+      "hole_gauge": 0.0,
+      "hole_boundary": -1.976765670132065e-16
+    },
+    "region_relative_to_baseline_current": {
+      "source": 4.988252176705786e-07,
+      "channel": 0.13525399930103885,
+      "drain": -0.002503136537435597,
+      "body": 5.604621416211008e-11
+    },
+    "m11_frozen_log10_current_factorial_effect_dex": {
+      "phumob": -1.5731491379587554,
+      "enormal": -3.6596640052621865e-05,
+      "hfs": -1.390038182336184e-07
+    }
+  },
+  "interpretation_limits": [
+    "This decomposes the Vela residual response to a mapped Sentaurus state; Sentaurus equation-term residuals are not available.",
+    "Electron-transport dominance identifies the broad transport operator, not HFS uniquely.",
+    "M11 factorial effects are cross-checks on frozen Vela formula response and are not Sentaurus operator terms.",
+    "Sub-fA states remain conditioning-sensitive and are retained but not used for headline attribution."
+  ],
+  "conclusions": {
+    "supported": [
+      "All 16 paired states and 32 solved-equation carrier-term probes are complete.",
+      "The equation-term sum reconstructs the M14 full-field adjoint relaxation within the frozen absolute and relative closure ceilings.",
+      "At n21, Vd=0.05 V, Vg=0.8 V, electron transport supplies 95.66 percent of absolute equation-component response and Poisson supplies 4.34 percent.",
+      "At the key state, channel response is +13.5254 percent of baseline current and drain response is -0.250314 percent; SRH is negligible.",
+      "Electron-transport dominance identifies a broad Vela transport-operator mismatch, not HFS uniquely."
+    ],
+    "not_supported": [
+      "Interpreting Vela residual terms at a mapped Sentaurus state as native Sentaurus equation residuals.",
+      "Claiming HFS, PhuMob, electrostatics, or SRH as the unique cross-code root cause.",
+      "Using sub-fA relative contributions as headline quantitative attribution.",
+      "Changing a default physical model from this read-only diagnostic."
+    ]
+  },
+  "artifacts": {
+    "m15_operator_adjoint_report.json": {
+      "path": "reference_tcad/simplemos_sentaurus2022/operator_adjoint/m15_operator_adjoint_report.json",
+      "sha256": "381e85463d6bcab53b78d026c22a45a5da1f85fc948bdbe6f391281e7cf87426"
+    },
+    "m15_state_summary.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/operator_adjoint/m15_state_summary.csv",
+      "sha256": "0992ef8ae3b3ded47023a668faf095e39cd65687c85a2bb944c3a045dacb0ff7"
+    },
+    "m15_component_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/operator_adjoint/m15_component_contributions.csv",
+      "sha256": "0475870cd4d8a4d6a4f7dbf77bea1c36a66d72fb6d4481a52728ae2d26bab928"
+    },
+    "m15_region_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/operator_adjoint/m15_region_contributions.csv",
+      "sha256": "dd505d5eb052fbd4c59bfae8f8901f197b7dfdd714fd6ea74dd68bc92378714b"
+    },
+    "m15_key_state_node_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/operator_adjoint/m15_key_state_node_contributions.csv",
+      "sha256": "9b616afac17ac5bbaad3cc4f371fda8ab729f8f14752f6aaec5add5fee5b49b8"
+    },
+    "m15_m11_mobility_crosscheck.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/operator_adjoint/m15_m11_mobility_crosscheck.csv",
+      "sha256": "a4be2fc9ac08b31a444873a07c3d044dd7419d86b3a785766cc66604a7a29a6f"
+    }
+  },
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m15/m15_component_response_n21_vg0p8.png",
+      "sha256": "951e653cb1ac9ba5fccbe40a0cccfbb3e96410024441d8017cf6f6d8a9555d8b"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m15/m15_region_response_n21_vg0p8.png",
+      "sha256": "68f1950ac41c59cff4b222b94578def044e42c6f66223a597a8e4f169eb0dcc3"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m15/m15_component_fraction_16_states.png",
+      "sha256": "741c5ac5dbce50ddec526d6c537a7826abc94c01402cd897317d04601d801026"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m15/m15_m11_mobility_crosscheck_n21_vg0p8.png",
+      "sha256": "fd8bad4beba663da2d7c21b26e794a890b7503c5ac4ae56b5defe0e4f0f2f48d"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m15/m15_nodal_response_n21_vg0p8.png",
+      "sha256": "e3369eb56c81d92d61965a1741298a0e408d47a456b1a39242008c140410b89c"
+    }
+  ],
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m15_operator_adjoint_contract_v1.json": "901d159b9442c914d707a56a8bcd5d8863d55c422ee1e27a224d2cb48cbe1d51",
+    "scripts/run_simplemos_m15_operator_adjoint.py": "edf635da8e5b2cfa82b34449e560a52642d12d661e771feb43d900f685616e4d",
+    "scripts/plot_simplemos_m15_operator_adjoint.py": "1893f31d7714d4250ad6609e076ca0ca854379ab26fe96435dcf31b3a053de04",
+    "scripts/freeze_simplemos_m15_operator_adjoint_evidence.py": "0a167547b91faf59061333d046457cefa71927eab425801f39d0f060741cfe16",
+    "tests/regression/test_simplemos_m15_operator_adjoint.py": "9adeecc1aa3b8475bc5791652e4bd1594416ca4a0752f0ec6a5b4035a7a405bd",
+    "docs/validation/simplemos_m15_operator_adjoint_2026-08-29.md": "590d5de77e803a02962034e3bed7c19a045044e3b857f0c60bf4278dc78c3c17",
+    "CMakeLists.txt": "43ad178b411ab4263637e52aab95936e8e8af7617106e43691e8d23e83978710"
+  }
+}
