@@ -4628,14 +4628,47 @@ NewtonCarrierRowDiagnosticsEvaluation NewtonSolver::evaluateCarrierRowDiagnostic
     std::vector<Real> holeRowAbs(static_cast<std::size_t>(N), 0.0);
     std::vector<Real> electronRowL2Sq(static_cast<std::size_t>(N), 0.0);
     std::vector<Real> holeRowL2Sq(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> electronPsiColumnAbs(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> electronPhinColumnAbs(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> electronPhipColumnAbs(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> electronContactColumnAbs(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> electronFreeColumnAbs(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> electronPsiContactColumnAbs(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> electronPsiFreeColumnAbs(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> electronPhinContactColumnAbs(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> electronPhinFreeColumnAbs(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> electronPhipContactColumnAbs(static_cast<std::size_t>(N), 0.0);
+    std::vector<Real> electronPhipFreeColumnAbs(static_cast<std::size_t>(N), 0.0);
+    const std::vector<bool> contactNodes = detail::contactNodeMask(mesh_);
     for (int col = 0; col < J.outerSize(); ++col) {
         for (SparseMatrixd::InnerIterator it(J, col); it; ++it) {
             const int row = static_cast<int>(it.row());
             const Real value = it.value();
             if (row >= N && row < 2 * N) {
                 const std::size_t node = static_cast<std::size_t>(row - N);
-                electronRowAbs[node] += std::abs(value);
+                const Real absValue = std::abs(value);
+                electronRowAbs[node] += absValue;
                 electronRowL2Sq[node] += value * value;
+                const std::size_t columnNode =
+                    static_cast<std::size_t>(col % N);
+                const bool contactColumn = contactNodes[columnNode];
+                if (col < N) {
+                    electronPsiColumnAbs[node] += absValue;
+                    (contactColumn ? electronPsiContactColumnAbs
+                                   : electronPsiFreeColumnAbs)[node] += absValue;
+                } else if (col < 2 * N) {
+                    electronPhinColumnAbs[node] += absValue;
+                    (contactColumn ? electronPhinContactColumnAbs
+                                   : electronPhinFreeColumnAbs)[node] += absValue;
+                } else {
+                    electronPhipColumnAbs[node] += absValue;
+                    (contactColumn ? electronPhipContactColumnAbs
+                                   : electronPhipFreeColumnAbs)[node] += absValue;
+                }
+                if (contactColumn)
+                    electronContactColumnAbs[node] += absValue;
+                else
+                    electronFreeColumnAbs[node] += absValue;
             } else if (row >= 2 * N && row < 3 * N) {
                 const std::size_t node = static_cast<std::size_t>(row - 2 * N);
                 holeRowAbs[node] += std::abs(value);
@@ -4673,6 +4706,28 @@ NewtonCarrierRowDiagnosticsEvaluation NewtonSolver::evaluateCarrierRowDiagnostic
             std::sqrt(electronRowL2Sq[static_cast<std::size_t>(i)]);
         row.holeRowL2Norm =
             std::sqrt(holeRowL2Sq[static_cast<std::size_t>(i)]);
+        row.electronPsiColumnAbsSum =
+            electronPsiColumnAbs[static_cast<std::size_t>(i)];
+        row.electronPhinColumnAbsSum =
+            electronPhinColumnAbs[static_cast<std::size_t>(i)];
+        row.electronPhipColumnAbsSum =
+            electronPhipColumnAbs[static_cast<std::size_t>(i)];
+        row.electronContactColumnAbsSum =
+            electronContactColumnAbs[static_cast<std::size_t>(i)];
+        row.electronFreeColumnAbsSum =
+            electronFreeColumnAbs[static_cast<std::size_t>(i)];
+        row.electronPsiContactColumnAbsSum =
+            electronPsiContactColumnAbs[static_cast<std::size_t>(i)];
+        row.electronPsiFreeColumnAbsSum =
+            electronPsiFreeColumnAbs[static_cast<std::size_t>(i)];
+        row.electronPhinContactColumnAbsSum =
+            electronPhinContactColumnAbs[static_cast<std::size_t>(i)];
+        row.electronPhinFreeColumnAbsSum =
+            electronPhinFreeColumnAbs[static_cast<std::size_t>(i)];
+        row.electronPhipContactColumnAbsSum =
+            electronPhipContactColumnAbs[static_cast<std::size_t>(i)];
+        row.electronPhipFreeColumnAbsSum =
+            electronPhipFreeColumnAbs[static_cast<std::size_t>(i)];
         row.rawDeltaPhin_V = rawStep(N + i) * potentialScale;
         row.rawDeltaPhip_V = rawStep(2 * N + i) * potentialScale;
         row.cappedDeltaPhin_V = cappedStep(N + i) * potentialScale;

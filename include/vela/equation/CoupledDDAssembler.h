@@ -23,6 +23,8 @@
 
 namespace vela {
 
+class SplitDDRuntime;
+
 struct CoupledDDState {
     VectorXd psi;
     VectorXd phin;
@@ -140,6 +142,10 @@ struct CoupledDDEdgeFluxDiagnostic {
     Real phip0_V = 0.0;
     Real phip1_V = 0.0;
     Real electricField_V_m = 0.0;
+    // Exact mobility driving-field magnitude used by the production edge
+    // mobility path. For transport_cell_vector this is the reconstructed
+    // vector quasi-Fermi gradient, not the endpoint secant.
+    Real electronMobilityDriveInternal = 0.0;
     Real electronMobilityField_V_m = 0.0;
     Real electronMobility_m2_V_s = 0.0;
     Real holeMobility_m2_V_s = 0.0;
@@ -167,6 +173,28 @@ struct CoupledDDEdgeFluxDiagnostic {
     // (particles per metre of out-of-plane depth per second).
     Real electronParticleLineFlux_per_m_s = 0.0;
     Real holeParticleLineFlux_per_m_s = 0.0;
+    // Boltzmann variable-ni SG decomposition evaluated with the same endpoint
+    // potentials, coefficient, and BGN policy as the production flux.  For an
+    // opt-out legacy equal-ni production path, stableFactorizedFlux remains
+    // the compensated algebraic reference used by M41 diagnostics.
+    bool electronSgBoltzmannDecompositionAvailable = false;
+    Real electronSgEta = 0.0;
+    Real electronSgBernoulliMinusEta = 0.0;
+    Real electronSgBernoulliEta = 0.0;
+    Real electronSgLeftTermInternal = 0.0;
+    Real electronSgRightTermInternal = 0.0;
+    Real electronSgSignedDifferenceInternal = 0.0;
+    Real electronSgReconstructedFluxScaled = 0.0;
+    Real electronSgStableFluxScaled = 0.0;
+    Real electronSgHighPrecisionReferenceFluxScaled = 0.0;
+    Real electronSgHighPrecisionReferenceTermScaleScaled = 0.0;
+    Real electronSgLogLeftOverRight = 0.0;
+    Real electronSgRightFactorFluxScaled = 0.0;
+    Real electronSgPhin0Relative_V = 0.0;
+    Real electronSgPhin1Relative_V = 0.0;
+    Real electronQfReference0_V = 0.0;
+    Real electronQfReference1_V = 0.0;
+    Real electronSgCancellationCondition = 0.0;
     Real electronParticleLineFluxPerInternalCouple_per_m_s = 0.0;
     Real holeParticleLineFluxPerInternalCouple_per_m_s = 0.0;
 };
@@ -291,6 +319,10 @@ public:
                        CarrierStatisticsConfig carrierStatistics = {},
                        DensityGradientQuantumPotentialConfig electronQuantumPotential = {});
 
+    /// Opt-in binary128 Poisson evaluation from packed Boltzmann coordinates.
+    void setExtendedPoissonResidual(bool enabled);
+    bool usesExtendedPoissonResidual() const { return extendedPoissonResidual_; }
+
     VectorXd pack(const CoupledDDState& state) const;
     CoupledDDState unpack(const VectorXd& x) const;
 
@@ -326,8 +358,18 @@ public:
         return electronQuantumPotentialConfig_.enabled;
     }
 
+    void enableSplitDDState(bool enabled);
+    std::shared_ptr<SplitDDRuntime> splitRuntime() const;
+
     VectorXd residual(const VectorXd& x,
                       const CoupledDDBoundaryConditions& bcs) const;
+
+    /// Return the physical, unconstrained Poisson residual at every node in
+    /// C/m of out-of-plane depth.  At an electrostatic Dirichlet node this is
+    /// the algebraic reaction charge which is removed when the production
+    /// residual row is replaced by the boundary identity.  A positive value
+    /// is positive charge on the Dirichlet electrode.
+    VectorXd poissonDirichletReactionChargePerMeter(const VectorXd& x) const;
 
     VectorXd feedbackSubstitutionResidual(
         const VectorXd& x,
@@ -424,6 +466,10 @@ public:
     std::string impactIonizationActiveBranchFingerprint(const VectorXd& x) const;
 
 private:
+    bool splitDDEnabled_ = false;
+    mutable std::shared_ptr<SplitDDRuntime> splitRuntime_;
+    std::shared_ptr<SplitDDRuntime> buildSplitRuntime() const;
+
     VectorXd residualImpl(
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs,
@@ -503,7 +549,10 @@ private:
         Real electron0 = 0.0,
         Real electron1 = 0.0,
         Real hole0 = 0.0,
-        Real hole1 = 0.0) const;
+        Real hole1 = 0.0,
+        const VectorXd* electrons = nullptr,
+        const VectorXd* holes = nullptr,
+        const VectorXd* phin = nullptr,const VectorXd* phip = nullptr) const;
     bool usesSentaurusExponentialQuantumCoupling() const;
     Real electronTransportPotential(Index node, Real psiRelative_V) const;
     Real electronDensityAt(Index node,
@@ -549,6 +598,7 @@ private:
     bool impactIonizationEnabled_ = false;
     bool impactIonizationCoupled_ = false;
     bool bgnEnabled_ = false;
+    bool compensatedEqualNiFlux_ = false;
     CarrierStatisticsConfig carrierStatistics_;
     DensityGradientQuantumPotentialConfig electronQuantumPotentialConfig_;
     VectorXd electronQuantumPotential_V_;
@@ -556,6 +606,7 @@ private:
     /// string-valued configuration. Numerically identical: only the model lookup is hoisted.
     CarrierStatisticsModel carrierStatisticsModel_ = CarrierStatisticsModel::Boltzmann;
     bool usesFermiDirac_ = false;
+    bool extendedPoissonResidual_ = false;
     std::vector<Real> ni_;
     std::vector<Real> Nc_;
     std::vector<Real> Nv_;
@@ -571,6 +622,10 @@ private:
     std::vector<NodalCurrentReconstructionKernel>
         nodalCurrentReconstructionKernels_;
     std::vector<Real> vol_;
+    std::vector<Real> srhVol_;
+    std::vector<Real> poissonElectronVol_;
+    std::vector<Real> poissonHoleVol_;
+    std::vector<Real> poissonDopantVol_;
     std::vector<Real> poissonChargeVol_;
     std::vector<Real> poissonCouple_;
     std::vector<Real> couple_;

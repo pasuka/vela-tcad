@@ -1,0 +1,152 @@
+{
+  "schema": "vela.simplemos.sdevice.m19_drain_cut_audit_evidence.v1",
+  "status": "complete_with_bias_regime_separation",
+  "scope": "SDevice-only drain boundary, endpoint-QF, SG cut flux, and self-consistent feedback audit",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "state_count": 16,
+    "sg_probe_count": 144,
+    "probe_variants_per_state": 9,
+    "probes_executed_this_run": 0,
+    "new_sentaurus_execution": false,
+    "cpp_changed": false,
+    "default_model_changed": false
+  },
+  "closure": {
+    "maximum_contact_phin_bias_error_V": 6.661338147750939e-16,
+    "maximum_all_state_sg_cut_current_reconstruction_relative_error_guarded": 0.9998295750419667,
+    "maximum_strong_state_sg_cut_current_reconstruction_relative_error": 1.1108211592452936e-07,
+    "maximum_shapley_closure_A_per_um": 2.117582368135751e-22
+  },
+  "findings": {
+    "contact_boundary_phin_matches_bias_all_states": true,
+    "strong_state_max_abs_sentaurus_state_vela_sg_error_dex": 0.00044345537059110537,
+    "vg_0p8_full_state_gap_closed_fraction_range": [
+      0.9753951636820754,
+      0.9942692696597333
+    ],
+    "key_state": {
+      "state": "n21_vd_0p05_vg_0p8",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "drain_contact_node_count": 3,
+      "drain_cut_edge_count": 7,
+      "drain_adjacent_interior_node_count": 5,
+      "max_vela_contact_phin_bias_error_V": 0.0,
+      "max_sentaurus_contact_phin_bias_error_V": 1.942890293094024e-16,
+      "max_contact_phin_difference_V": 1.942890293094024e-16,
+      "vela_self_consistent_current_A_per_um": 2.9047621030227967e-08,
+      "m8_vela_curve_current_A_per_um": 2.9047622774605885e-08,
+      "sentaurus_current_A_per_um": 2.50679465361738e-08,
+      "terminal_signed_log10_error_dex": 0.06399181013453661,
+      "sentaurus_state_vela_sg_current_A_per_um": 2.5090752977541262e-08,
+      "sentaurus_state_vela_sg_error_dex": 0.00039493497304864345,
+      "cut_endpoint_state_current_A_per_um": 2.5090752977541262e-08,
+      "cut_endpoint_state_gap_closed_fraction": 0.9942692696597333,
+      "full_sentaurus_state_gap_closed_fraction": 0.9942692696597333,
+      "sg_cut_reconstruction_relative_error": 6.005234684230059e-08,
+      "cut_game_shapley_closure_A_per_um": 8.271806125530277e-25,
+      "m18_drain_cut_qf_response_relative_to_Id": 0.13622821353532993,
+      "m18_full_feedback_relative_to_Id": 0.13275136164486714,
+      "frozen_drain_contact_endpoint_state_relative_to_Id": 1.8233615096290647e-06,
+      "frozen_drain_adjacent_interior_phin_relative_to_Id": -0.13622715360799728,
+      "frozen_drain_adjacent_interior_other_state_relative_to_Id": 5.291828572160904e-06,
+      "frozen_factor_absolute_shares": {
+        "drain_contact_endpoint_state": 1.3384015091911838e-05,
+        "drain_adjacent_interior_phin": 0.9999477723913038,
+        "drain_adjacent_interior_other_state": 3.8843593604221835e-05
+      },
+      "top_adjacent_phin_edges": [
+        {
+          "edge_id": 2107,
+          "direct_A_per_um": -3.2680142289367327e-09,
+          "vela_phin_drop_V": 2.2274782018882888e-10,
+          "sentaurus_phin_drop_V": 1.917583453137084e-10
+        },
+        {
+          "edge_id": 2114,
+          "direct_A_per_um": -6.290175779052273e-10,
+          "vela_phin_drop_V": 2.0724498506208278e-11,
+          "sentaurus_phin_drop_V": 1.8106439958476273e-11
+        },
+        {
+          "edge_id": 2118,
+          "direct_A_per_um": -5.429443360116356e-11,
+          "vela_phin_drop_V": -3.424496797244103e-12,
+          "sentaurus_phin_drop_V": -3.078426402680634e-12
+        }
+      ]
+    }
+  },
+  "interpretation_limits": [
+    "The imported Sentaurus state uses exact original TDR node IDs without spatial interpolation.",
+    "The exported Sentaurus GradQuasiFermi vector is diagnostic and is not treated as a disclosed private SG face formula.",
+    "Frozen endpoint Shapley values and M18 adjoint responses are different mathematical layers and are reported separately.",
+    "SG cut-current closure is accepted on Vg>=0.8 V states; sub-fA and weak-current mapped-state cancellation is not headline attribution evidence."
+  ],
+  "conclusions": {
+    "supported": [
+      "Vela and imported Sentaurus drain-contact electron quasi-Fermi values equal the configured drain bias in all 16 states.",
+      "At Vg=0.8 V, the unchanged Vela drain-cut SG operator replaying the imported Sentaurus state is within 0.000444 dex of Sentaurus terminal current.",
+      "The imported state closes 97.54 to 99.43 percent of the four Vg=0.8 V terminal-current gaps.",
+      "At n21, Vd=0.05 V, Vg=0.8 V, the drain-adjacent free-node electron quasi-Fermi factor carries more than 99.99 percent of the frozen cut-state correction.",
+      "The exact frozen adjacent-QF correction and the M18 self-consistent drain-cut QF response agree in magnitude."
+    ],
+    "not_supported": [
+      "Claiming every private Sentaurus internal SG face formula is identical to Vela.",
+      "Using the guarded sub-fA mapped-state current reconstruction as headline evidence.",
+      "Attributing the remaining adjacent-node QF state difference to one model before auditing its complete continuity-row balance.",
+      "Changing HFS, Enormal, SRH, reference density, or another production default."
+    ]
+  },
+  "artifacts": {
+    "m19_drain_cut_audit_report.json": {
+      "path": "reference_tcad/simplemos_sentaurus2022/drain_cut_audit/m19_drain_cut_audit_report.json",
+      "sha256": "a3f079668dd301653b5a270a8c4103d86c2122c24cd938f172a9927dba63f6e0"
+    },
+    "m19_state_summary.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/drain_cut_audit/m19_state_summary.csv",
+      "sha256": "7447e862b42fafdb7bd9e503a7d1710034fd345f3d837f24c31e38ee2d6d4fa8"
+    },
+    "m19_drain_cut_edges.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/drain_cut_audit/m19_drain_cut_edges.csv",
+      "sha256": "27e22f3f3d8ede2e6f8edd298a0152856cfde8ebf84bcc5f45bbddec5c8a8c22"
+    },
+    "m19_frozen_factor_contributions.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/drain_cut_audit/m19_frozen_factor_contributions.csv",
+      "sha256": "30b9a0512a61f1468a622cafe5efe33bf690392eba9f49f5aee661bf2ec89a5d"
+    },
+    "m19_key_state_drain_cut_edges.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/drain_cut_audit/m19_key_state_drain_cut_edges.csv",
+      "sha256": "e089f4004fbc593e7e78cdf8788b2724fa97aa1eaf213fdf16f8dde9e25e535b"
+    }
+  },
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m19/m19_vg0p8_gap_closure.png",
+      "sha256": "10b97656ba49e8e589efa7eb936f76785c0f3a87b3ad5039b9a6b879eaa5c481"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m19/m19_key_state_frozen_factors.png",
+      "sha256": "5987cb811f30b3f203a1a7e217bc21f07080ebcdb974ad69152895e47fb7cdd7"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m19/m19_key_state_edge_concentration.png",
+      "sha256": "ff8acdddfc16e97399c326f4fe66bfac99a5b70be24cf93467182d2f986f577d"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m19/m19_contact_boundary_error.png",
+      "sha256": "fc5b42ac510dc2131a4792dbe5b338dbf00fef4a7664ed3a0b4177b98f1c37b5"
+    }
+  ],
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m19_drain_cut_audit_contract_v1.json": "1cc68b366102a8cd416e781c1722ddb3ffb9029cce2d290eabaa0cdf883236b5",
+    "scripts/run_simplemos_m19_drain_cut_audit.py": "50df7d32cd781f8c77d2bf8d04e6389df3658dd16b49e6029566bf8217c8ec16",
+    "scripts/plot_simplemos_m19_drain_cut_audit.py": "ba3f06a69542cdc4220506549cedef0702d2eb4503d14ba5273462db7af938c1",
+    "scripts/freeze_simplemos_m19_drain_cut_audit_evidence.py": "0b000542016710c14e20d217d56a95bf35dd9f073062ee4c2a1ba61bae9fb6ba",
+    "tests/regression/test_simplemos_m19_drain_cut_audit.py": "b6a860047442401f56302d63b038037a361c25b68c9300993e57a6125522705c",
+    "docs/validation/simplemos_m19_drain_cut_audit_2026-08-30.md": "24fe70f592d5defad3ff79e511e527af207254e97f3a419ac30f6762e5c3565c",
+    "CMakeLists.txt": "de2df31d71e94baba37ec868649326a8feeb93e81217243287fb2a16620e07b1"
+  }
+}

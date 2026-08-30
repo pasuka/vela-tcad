@@ -129,18 +129,18 @@
     }
   ],
   "implementation_sha256": {
-    "include/vela/equation/CoupledDDAssembler.h": "4504650326c947a68510b5d9f1913839ee5181a28688346fcf0286c14e41d667",
-    "include/vela/solver/NewtonSolver.h": "eb8db90077ea3571a7c0870e2eab08ceccb74622bc58daef8b8839f7d0a7b6ce",
-    "src/equation/CoupledDDAssembler.cpp": "b3d078995b6b949efc7a0ec5c492c6e20e6dd9f3d1363e1003c257248513c882",
-    "src/solver/NewtonSolver.cpp": "3c1e08370a3eb989be724bcedb8f28bebc495c691692859de663337d10299769",
-    "src/tools/vela_example_runner.cpp": "64bbb593799c8c8fa4fa4988eb765bbbd5336c8bc046136b48402166d93a7059",
-    "tests/test_newton_solver.cpp": "53d626efe3874b54450a80ddfe31c72aa50152752e276fc5641582b82764d8e7",
+    "include/vela/equation/CoupledDDAssembler.h": "cd4461c190b7edbd6a24eec05f9262c0bb3fb5dd916ff84c58ea95970cbd7445",
+    "include/vela/solver/NewtonSolver.h": "5f87eda4e0882a52e3ee3cecb87246a22c983cd9dd382f6ef7c645612a7a021c",
+    "src/equation/CoupledDDAssembler.cpp": "250e57d6eb0aa949e4d122ff444464ad6b2d3fb3a132ac4ce4e36b9d24a3cda5",
+    "src/solver/NewtonSolver.cpp": "186c522f3df635b214e0d50453680e7ee19201047ab3cf20729e173772cf95d6",
+    "src/tools/vela_example_runner.cpp": "ee1137d5e6bf2d437274afc872e0b70435e310f0d1f281a39e11574ac09f5c20",
+    "tests/test_newton_solver.cpp": "7f14c015d3f48627b5b1e79940fccbb9bb67c25b6a14bfc2f7d23847d37a0b1e",
     "reference_tcad/simplemos_sentaurus2022/simplemos_m16_transport_factor_contract_v1.json": "c228a55d4183f53ad595a581b130c37d18a9d151c01aa7fe471f03c8cf83214d",
     "scripts/run_simplemos_m16_transport_factor.py": "0427013de5b85b999ff4c7f431e15907f756446abf585c6c8af7bf6756f0261a",
     "scripts/plot_simplemos_m16_transport_factor.py": "834d373e06ef5a6dec8e0ddadbb675b14960a5bfc7b4f48a0ad5f7c5f4b2567c",
     "scripts/freeze_simplemos_m16_transport_factor_evidence.py": "bd94cc29d40a276a14b9e7110d086fe79c4c0320cacee39fc3130f748d94ef5b",
     "tests/regression/test_simplemos_m16_transport_factor.py": "af5798c82185dd7ec556d67a5c6b0f2bb1eaa0cf86f1504435b74374f3399053",
     "docs/validation/simplemos_m16_transport_factor_2026-08-29.md": "87cd283ec1767486ab291cc88d81b76a89fde81772a23e8eb0d8bca80ffdc79f",
-    "CMakeLists.txt": "43ad178b411ab4263637e52aab95936e8e8af7617106e43691e8d23e83978710"
+    "CMakeLists.txt": "db5a4b7ca862e7db523e5985906f0b8314be38637e2fdf18a6924d8e9ab3d11a"
   }
 }

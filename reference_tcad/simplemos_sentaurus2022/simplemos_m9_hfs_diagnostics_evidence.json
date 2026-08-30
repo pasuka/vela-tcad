@@ -102,7 +102,7 @@
   },
   "implementation_sha256": {
     "reference_tcad/simplemos_sentaurus2022/simplemos_m9_hfs_diagnostics_contract_v1.json": "1ed8de6fa7919565bec9b9fd8ed40400b816bcd1fe278774833dcef31ba0398e",
-    "src/tools/vela_example_runner.cpp": "64bbb593799c8c8fa4fa4988eb765bbbd5336c8bc046136b48402166d93a7059",
+    "src/tools/vela_example_runner.cpp": "ee1137d5e6bf2d437274afc872e0b70435e310f0d1f281a39e11574ac09f5c20",
     "scripts/run_simplemos_m9_refdens_scan.py": "92d4964e5c3ae6b43aa23a41298ba7b9892f8bd62f0f9240d2bf1a4e556fd843",
     "scripts/audit_simplemos_m9_hfs_parameters.py": "a8ec18cb6c96e9473967ae371d897aa02652b67adbbfbf114af3f27b1e88d35e",
     "scripts/run_simplemos_m9_edge_hfs_diagnostics.py": "9fd90393e893e2aa596427b1d654228994697798072dfc2892087734bf207cf6",

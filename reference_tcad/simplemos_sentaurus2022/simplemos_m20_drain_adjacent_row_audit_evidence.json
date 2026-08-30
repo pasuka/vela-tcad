@@ -1,0 +1,320 @@
+{
+  "schema": "vela.simplemos.sdevice.m20_drain_adjacent_row_audit_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only drain-adjacent electron-continuity and production-Jacobian audit",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "state_count": 16,
+    "variant_count": 2,
+    "probe_types_per_variant": 3,
+    "probe_count": 96,
+    "new_sentaurus_execution": false,
+    "diagnostic_cpp_changed": true,
+    "default_model_changed": false
+  },
+  "closure": {
+    "maximum_raw_edge_flux_closure": 9.688430613330468e-16,
+    "maximum_raw_term_sum_closure": 9.688430613330468e-16,
+    "maximum_exact_jacobian_partition_relative_error": 2.0380961484404336e-16
+  },
+  "findings": {
+    "key_state": {
+      "state": "n21_vd_0p05_vg_0p8",
+      "device": "n21",
+      "drain_voltage_V": "0.05",
+      "gate_voltage_V": "0.8",
+      "adjacent_node_count": 5,
+      "adjacent_nodes": "990;991;992;995;997",
+      "dominant_absolute_residual_delta_component": "internal_flux",
+      "absolute_contact_flux_delta_sum": 0.00020863154223803106,
+      "absolute_internal_flux_delta_sum": 0.0002092316500233625,
+      "absolute_srh_delta_sum": 2.827586210268352e-22,
+      "absolute_other_source_delta_sum": 0.0,
+      "signed_contact_flux_delta_sum": -0.00020863154223803106,
+      "signed_internal_flux_delta_sum": 0.0002092316500233625,
+      "signed_srh_delta_sum": -1.906648126934352e-22,
+      "signed_other_source_delta_sum": 0.0,
+      "absolute_contact_flux_delta_share": 0.4992819327037591,
+      "absolute_internal_flux_delta_share": 0.5007180672962408,
+      "absolute_srh_delta_share": 6.766775017837802e-19,
+      "absolute_other_source_delta_share": 0.0,
+      "primary_990_992_absolute_contact_flux_delta_sum": 0.00020546714056150702,
+      "primary_990_992_absolute_internal_flux_delta_sum": 0.00020602356730682096,
+      "primary_990_992_absolute_srh_delta_sum": 2.4798576615342523e-22,
+      "primary_990_992_absolute_other_source_delta_sum": 0.0
+    },
+    "key_state_primary_nodes": [
+      {
+        "state": "n21_vd_0p05_vg_0p8",
+        "device": "n21",
+        "drain_voltage_V": "0.05",
+        "gate_voltage_V": "0.8",
+        "node_id": 990,
+        "delta_contact_flux": 0.0,
+        "delta_internal_flux": 2.1891425208255094e-07,
+        "delta_srh": -2.122156083734699e-22,
+        "delta_other_source": 0.0,
+        "delta_component_sum": 2.1891425208255073e-07,
+        "delta_raw_residual": 2.1891425208255052e-07,
+        "delta_closure": 2.117582368135751e-22,
+        "baseline_raw_residual": 1.8401123813297224e-11,
+        "sentaurus_state_raw_residual": 2.189326532063638e-07,
+        "baseline_production_residual": 1.840112381329722e-11,
+        "sentaurus_state_production_residual": 2.1893265320636378e-07,
+        "baseline_flux_condition_number": 2177140.8786919387,
+        "sentaurus_flux_condition_number": 156.13829987844687,
+        "sentaurus_psi_jacobian_share": 1.111285140523108e-10,
+        "sentaurus_phin_jacobian_share": 0.9999999998888713,
+        "sentaurus_phip_jacobian_share": 5.35677970966576e-25,
+        "sentaurus_contact_column_share": 5.016412849080817e-15,
+        "sentaurus_phin_contact_column_share": 0.0,
+        "sentaurus_phin_free_column_share": 0.9999999998888713
+      },
+      {
+        "state": "n21_vd_0p05_vg_0p8",
+        "device": "n21",
+        "drain_voltage_V": "0.05",
+        "gate_voltage_V": "0.8",
+        "node_id": 991,
+        "delta_contact_flux": -0.00017230072014311356,
+        "delta_internal_flux": 0.00017257114408258598,
+        "delta_srh": 2.082598555779137e-23,
+        "delta_other_source": 0.0,
+        "delta_component_sum": 2.7042393947241707e-07,
+        "delta_raw_residual": 2.704239394725457e-07,
+        "delta_closure": -1.2864312886424686e-19,
+        "baseline_raw_residual": 1.4964143898483365e-11,
+        "sentaurus_state_raw_residual": 2.704389036164442e-07,
+        "baseline_production_residual": 1.4964143898483365e-11,
+        "sentaurus_state_production_residual": 2.704389036164442e-07,
+        "baseline_flux_condition_number": 165536221.8767668,
+        "sentaurus_flux_condition_number": 7884.342410014431,
+        "sentaurus_psi_jacobian_share": 6.1405011946495146e-09,
+        "sentaurus_phin_jacobian_share": 0.9999999938594987,
+        "sentaurus_phip_jacobian_share": 7.084832577669805e-25,
+        "sentaurus_contact_column_share": 0.44421103271777224,
+        "sentaurus_phin_contact_column_share": 0.44421102964726134,
+        "sentaurus_phin_free_column_share": 0.5557889642122373
+      },
+      {
+        "state": "n21_vd_0p05_vg_0p8",
+        "device": "n21",
+        "drain_voltage_V": "0.05",
+        "gate_voltage_V": "0.8",
+        "node_id": 992,
+        "delta_contact_flux": -3.316642041839346e-05,
+        "delta_internal_flux": 3.323350897215243e-05,
+        "delta_srh": 1.494417222216397e-23,
+        "delta_other_source": 0.0,
+        "delta_component_sum": 6.708855375896868e-08,
+        "delta_raw_residual": 6.708855375893844e-08,
+        "delta_closure": 3.024172319493869e-20,
+        "baseline_raw_residual": -3.3685862528658456e-11,
+        "sentaurus_state_raw_residual": 6.705486789640979e-08,
+        "baseline_production_residual": -3.368586252865845e-11,
+        "sentaurus_state_production_residual": 6.705486789640979e-08,
+        "baseline_flux_condition_number": 15588699.303251788,
+        "sentaurus_flux_condition_number": 6840.94587412455,
+        "sentaurus_psi_jacobian_share": 5.799336454101024e-10,
+        "sentaurus_phin_jacobian_share": 0.9999999994200663,
+        "sentaurus_phip_jacobian_share": 7.7024771944619075e-25,
+        "sentaurus_contact_column_share": 0.44422673564209636,
+        "sentaurus_phin_contact_column_share": 0.44422673535207147,
+        "sentaurus_phin_free_column_share": 0.5557732640679948
+      }
+    ],
+    "dominant_component_counts": {
+      "contact_flux": 8,
+      "internal_flux": 8,
+      "other_source": 0,
+      "srh": 0
+    },
+    "all_drain_adjacent_nodes": {
+      "n17_vd_0p05_vg_0": [
+        991,
+        992,
+        993,
+        996,
+        998
+      ],
+      "n17_vd_0p05_vg_0p05": [
+        991,
+        992,
+        993,
+        996,
+        998
+      ],
+      "n17_vd_0p05_vg_0p8": [
+        991,
+        992,
+        993,
+        996,
+        998
+      ],
+      "n17_vd_0p05_vg_2p5": [
+        991,
+        992,
+        993,
+        996,
+        998
+      ],
+      "n17_vd_1_vg_0": [
+        991,
+        992,
+        993,
+        996,
+        998
+      ],
+      "n17_vd_1_vg_0p05": [
+        991,
+        992,
+        993,
+        996,
+        998
+      ],
+      "n17_vd_1_vg_0p8": [
+        991,
+        992,
+        993,
+        996,
+        998
+      ],
+      "n17_vd_1_vg_2p5": [
+        991,
+        992,
+        993,
+        996,
+        998
+      ],
+      "n21_vd_0p05_vg_0": [
+        990,
+        991,
+        992,
+        995,
+        997
+      ],
+      "n21_vd_0p05_vg_0p05": [
+        990,
+        991,
+        992,
+        995,
+        997
+      ],
+      "n21_vd_0p05_vg_0p8": [
+        990,
+        991,
+        992,
+        995,
+        997
+      ],
+      "n21_vd_0p05_vg_2p5": [
+        990,
+        991,
+        992,
+        995,
+        997
+      ],
+      "n21_vd_1_vg_0": [
+        990,
+        991,
+        992,
+        995,
+        997
+      ],
+      "n21_vd_1_vg_0p05": [
+        990,
+        991,
+        992,
+        995,
+        997
+      ],
+      "n21_vd_1_vg_0p8": [
+        990,
+        991,
+        992,
+        995,
+        997
+      ],
+      "n21_vd_1_vg_2p5": [
+        990,
+        991,
+        992,
+        995,
+        997
+      ]
+    }
+  },
+  "interpretation_limits": [
+    "The audit evaluates both frozen states with the unchanged Vela operator; it does not expose a private Sentaurus Jacobian.",
+    "Raw continuity terms are separated before row weighting; the production Jacobian and residual retain configured row scaling.",
+    "The existing per-edge Jacobian probe constructs an edge-projection mobility drive and therefore is not used to reconstruct a transport-cell-vector production row.",
+    "Deep-off cancellation is retained as a condition-number diagnostic and is not used for headline HFS attribution."
+  ],
+  "conclusions": {
+    "supported": [
+      "The exact incident SG edge sum and raw electron-continuity terms close across all audited drain-adjacent rows.",
+      "At n21, Vd=0.05 V, Vg=0.8 V, the imported-state residual is a contact-versus-internal electron-flux imbalance; local SRH is negligible.",
+      "Nodes 991 and 992 amplify the small remaining imbalance through roughly 1275x and 990x state-difference cancellation.",
+      "The exact production Jacobian rows are almost entirely electron-quasi-Fermi coupled, with about 44.42 percent contact-column stiffness at the directly connected key nodes."
+    ],
+    "not_supported": [
+      "Attributing the residual to a wrong drain Dirichlet value, local SRH, or direct psi/phip row coupling.",
+      "Using the edge-projection transport-Jacobian probe to reconstruct a transport-cell-vector production row.",
+      "Claiming that the audit exposes the private Sentaurus Jacobian or face interpolation.",
+      "Changing any production mobility, recombination, or contact default."
+    ]
+  },
+  "artifacts": {
+    "m20_drain_adjacent_row_audit_report.json": {
+      "path": "reference_tcad/simplemos_sentaurus2022/drain_adjacent_row_audit/m20_drain_adjacent_row_audit_report.json",
+      "sha256": "bf036e331fb8b663b3dd8e5c9c7bb9df99c59b3f760e7b723e0233d62ba5fe7f"
+    },
+    "m20_state_summary.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/drain_adjacent_row_audit/m20_state_summary.csv",
+      "sha256": "42a86814fc8e97421ffbecd877baf19074b645cf83d851b27a59b5218a384eee"
+    },
+    "m20_node_balance.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/drain_adjacent_row_audit/m20_node_balance.csv",
+      "sha256": "795920f208fd0a4e686e0140d5408294f080746651523f1a0fb0b0f1ed23f8c7"
+    },
+    "m20_node_delta.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/drain_adjacent_row_audit/m20_node_delta.csv",
+      "sha256": "4df5c77bd1c411d415a6d8da80f116ad1d31cbc9b7f851ace32ed34b4a8f6226"
+    },
+    "m20_incident_edge_jacobian.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/drain_adjacent_row_audit/m20_incident_edge_jacobian.csv",
+      "sha256": "e80e98e3206ed0b16b0ae20e7cb532b1601d89fa36fbb8c4a5bd8ee5e39c3417"
+    },
+    "m20_key_state_node_ledger.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/drain_adjacent_row_audit/m20_key_state_node_ledger.csv",
+      "sha256": "ef017c78c4b1bed24e8c357b8920bd1de998c84eb4f47eaba98e95cc101548e3"
+    }
+  },
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m20/m20_key_state_flux_balance.png",
+      "sha256": "c8e42ae5c0a4ba1ce478b2a8ec3fcaaa8b81a2434481fd04bb4202db32318a53"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m20/m20_key_state_flux_conditioning.png",
+      "sha256": "7c4d04320314b0f9d3e7b6f2f38083bf8b517fd24e37a458f2553fe18116d601"
+    },
+    {
+      "path": "docs/validation/figures/simplemos_m20/m20_key_state_jacobian_partition.png",
+      "sha256": "a3465bc5f2ad63007251199dddb77618297f02fe55cf63312794f1dafdaf81ec"
+    }
+  ],
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m20_drain_adjacent_row_audit_contract_v1.json": "243734679c3d967eadead016e0e2b08478f369a0f2d0f22aa2563f962077ea25",
+    "include/vela/solver/NewtonSolver.h": "5f87eda4e0882a52e3ee3cecb87246a22c983cd9dd382f6ef7c645612a7a021c",
+    "src/solver/NewtonSolver.cpp": "186c522f3df635b214e0d50453680e7ee19201047ab3cf20729e173772cf95d6",
+    "src/tools/vela_example_runner.cpp": "ee1137d5e6bf2d437274afc872e0b70435e310f0d1f281a39e11574ac09f5c20",
+    "tests/test_newton_solver.cpp": "7f14c015d3f48627b5b1e79940fccbb9bb67c25b6a14bfc2f7d23847d37a0b1e",
+    "scripts/run_simplemos_m20_drain_adjacent_row_audit.py": "18caebb296eb048fd1ef6294104b838480b2a7b500c1acb5715e18624ffc32ac",
+    "scripts/plot_simplemos_m20_drain_adjacent_row_audit.py": "c386dffb58b809e4c63177bac388256964b7a86bec7d5a610d268e5a6475cf5c",
+    "scripts/freeze_simplemos_m20_drain_adjacent_row_audit_evidence.py": "b33c7e73f4de33927d298ffbb9b9c005bf0ca2ab24a481fe02bc25f8a7afffbe",
+    "tests/regression/test_simplemos_m20_drain_adjacent_row_audit.py": "57e4efd6fd88660e282ce510fc7a43bc3c1be92b4d8823bd111b6d7b06db393f",
+    "docs/validation/simplemos_m20_drain_adjacent_row_audit_2026-08-30.md": "3f3deff0cf5dd365b228a97dfca0ae645fe1644df7274058e171177e782b7929",
+    "CMakeLists.txt": "de2df31d71e94baba37ec868649326a8feeb93e81217243287fb2a16620e07b1"
+  }
+}

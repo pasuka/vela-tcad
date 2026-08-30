@@ -990,6 +990,34 @@ set_tests_properties(simplemos_m18_qf_edge_localization PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m18_qf_edge_localization)
 
+add_test(NAME simplemos_m19_drain_cut_audit
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_simplemos_m19_drain_cut_audit)
+set_tests_properties(simplemos_m19_drain_cut_audit PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m19_drain_cut_audit)
+
+add_test(NAME simplemos_m20_drain_adjacent_row_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m20_drain_adjacent_row_audit)
+set_tests_properties(simplemos_m20_drain_adjacent_row_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m20_drain_adjacent_row_audit)
+
+add_test(NAME simplemos_m21_incident_edge_balance
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m21_incident_edge_balance)
+set_tests_properties(simplemos_m21_incident_edge_balance PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m21_incident_edge_balance)
+
+add_test(NAME simplemos_m22_n23_hfs_deep_off
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m22_n23_hfs_deep_off)
+set_tests_properties(simplemos_m22_n23_hfs_deep_off PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m22_n23_hfs_deep_off)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)

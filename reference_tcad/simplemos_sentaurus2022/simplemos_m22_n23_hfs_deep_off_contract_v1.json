@@ -1,0 +1,48 @@
+{
+  "schema": "vela.simplemos.sdevice.m22_n23_hfs_deep_off.v1",
+  "contract_id": "simplemos-sdevice-m22-n23-hfs-deep-off-v1",
+  "scope": "SDevice-only targeted n23 low-drain HFS self-consistent and frozen-state attribution",
+  "sentaurus_release": "T-2022.03-SP2",
+  "source_case": {
+    "device": "n23",
+    "drain_voltage_V": 0.05,
+    "tdr_sha256": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "accepted_curve_evidence": "reference_tcad/simplemos_sentaurus2022/model_ablation/first_round/comparisons"
+  },
+  "gate_voltages_V": [0.0, 0.05, 0.1, 0.15],
+  "key_gate_voltage_V": 0.05,
+  "variants": [
+    {
+      "id": "full",
+      "hfs": true,
+      "vela_mobility": "phumob_field_lombardi",
+      "sentaurus_mobility": ["PhuMob", "HighFieldSaturation", "Enormal"]
+    },
+    {
+      "id": "no_hfs",
+      "hfs": false,
+      "vela_mobility": "phumob_lombardi",
+      "sentaurus_mobility": ["PhuMob", "Enormal"]
+    }
+  ],
+  "frozen_state_matrix": {
+    "source_state_variants": ["full", "no_hfs"],
+    "evaluation_variants": ["full", "no_hfs"],
+    "state_count": 8,
+    "formula_evaluations": 16
+  },
+  "drain_cut_definition": "edge with exactly one endpoint in the drain contact node set",
+  "required_outputs": [
+    "paired self-consistent current response",
+    "same-state direct HFS current response",
+    "drain-cut electron, hole, and total cancellation condition numbers",
+    "per-edge mobility, quasi-Fermi drop, carrier density, SG weights, and flux response"
+  ],
+  "claim_policy": {
+    "self_consistent_response_includes_state_feedback": true,
+    "frozen_response_is_direct_vela_formula_response": true,
+    "sub_fA_relative_error_is_conditioning_sensitive": true,
+    "no_private_sentaurus_face_formula_claim": true,
+    "no_default_model_change": true
+  }
+}

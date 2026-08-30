@@ -1,0 +1,119 @@
+{
+  "schema": "vela.simplemos.sdevice.m22_n23_hfs_deep_off_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only n23 deep-off HFS state-feedback attribution",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "device": "n23",
+    "drain_voltage_V": 0.05,
+    "gate_voltages_V": [
+      0.0,
+      0.05,
+      0.1,
+      0.15
+    ],
+    "state_count": 8,
+    "frozen_formula_evaluations": 16,
+    "new_sentaurus_execution": false,
+    "default_model_changed": false
+  },
+  "key_state": {
+    "gate_voltage_V": 0.05,
+    "sentaurus_full_current_A_per_um": 8.58625099702983e-17,
+    "sentaurus_no_hfs_current_A_per_um": 1.12874484001395e-16,
+    "sentaurus_hfs_self_consistent_effect_dex": -0.11879219816170544,
+    "vela_full_current_A_per_um": 1.1046438035358572e-16,
+    "vela_no_hfs_current_A_per_um": 1.3899350016539832e-16,
+    "vela_hfs_self_consistent_effect_dex": -0.09977223082251109,
+    "cross_solver_full_error_dex": 0.10941868092427424,
+    "cross_solver_no_hfs_error_dex": 0.09039871358507992,
+    "cross_solver_full_absolute_error_A_per_um": 2.4601870383287426e-17,
+    "cross_solver_no_hfs_absolute_error_A_per_um": 2.6119016164003313e-17,
+    "cross_solver_error_improvement_dex": 0.019019967339194324,
+    "full_state_frozen_hfs_effect_dex": -4.311819507600958e-06,
+    "no_hfs_state_frozen_hfs_effect_dex": -3.4285383821453817e-06,
+    "full_state_direct_hfs_delta_A_per_um": -1.0970581393467128e-21,
+    "no_hfs_state_direct_hfs_delta_A_per_um": -1.0976849598773321e-21,
+    "full_state_total_condition_number": 1.0,
+    "no_hfs_state_total_condition_number": 1.0,
+    "full_state_electron_condition_number": 1.0,
+    "no_hfs_state_electron_condition_number": 1.0,
+    "rerun_full_current_A_per_um": 1.1046438035358572e-16,
+    "rerun_no_hfs_current_A_per_um": 1.3899350016539832e-16
+  },
+  "findings": {
+    "key_cross_solver_gap_closed_by_no_hfs_fraction": 0.17382742305546103,
+    "key_self_consistent_hfs_effect_mismatch_dex": 0.019019967339194352,
+    "key_absolute_error_change_no_hfs_minus_full_A_per_um": 1.5171457807158861e-18,
+    "key_full_state_frozen_hfs_effect_dex": -4.311819507600958e-06,
+    "key_total_condition_number": 1.0,
+    "key_electron_condition_number": 1.0,
+    "key_max_per_edge_sg_cancellation_condition": 1979426197951810.5,
+    "key_max_frozen_drain_cut_mobility_effect_dex": 0.0,
+    "key_max_self_consistent_drain_cut_mobility_change_dex": 0.0,
+    "key_max_self_consistent_phin_drop_delta_V": 9.020562075079397e-17,
+    "key_max_self_consistent_endpoint_density_change_dex": 0.0
+  },
+  "interpretation_limits": {
+    "self_consistent_response_includes_state_feedback": true,
+    "frozen_response_is_direct_vela_formula_response": true,
+    "sub_fA_relative_error_is_conditioning_sensitive": true,
+    "no_private_sentaurus_face_formula_claim": true,
+    "no_default_model_change": true
+  },
+  "conclusions": {
+    "supported": [
+      "At Vg=0.05 V, removing HFS reduces the cross-solver log error by 0.01902 dex, closing 17.38 percent of the log gap.",
+      "The same-state direct Vela HFS response is only about 4.31e-6 dex, so the observed self-consistent HFS response is state-feedback dominated.",
+      "Drain-cut mobility and endpoint carrier density are unchanged to exported precision between the full and no-HFS states.",
+      "Individual drain-cut SG fluxes have cancellation condition numbers up to about 1.98e15, and the controlling quasi-Fermi drops are at binary64-resolution scale.",
+      "Removing HFS slightly increases, rather than decreases, the absolute cross-solver current error at the key sub-fA point."
+    ],
+    "not_supported": [
+      "Claiming that direct HFS mobility degradation causes the n23 deep-off spike.",
+      "Using the 0.01902 dex log-gap reduction as a stable physical calibration target below the sub-fA numerical floor.",
+      "Changing the production HFS default from this diagnostic."
+    ]
+  },
+  "artifacts": {
+    "m22_n23_hfs_deep_off_report.json": {
+      "path": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_n23_hfs_deep_off_report.json",
+      "sha256": "68811209c12a644b53990c01e295c114afd20fc0b4b482dc7d098d9a5884aefb"
+    },
+    "m22_summary.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_summary.csv",
+      "sha256": "31e3d0f9eac3203a63149dc5012444b18aff52b23405b0519e22a916595433c9"
+    },
+    "m22_drain_cut_frozen_edges.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_drain_cut_frozen_edges.csv",
+      "sha256": "dc160ec5c7eff7299bb208b70f2e48f4985cbfd55360fbd283f8eeb31bc50d03"
+    },
+    "m22_key_state_drain_cut_edges.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_key_state_drain_cut_edges.csv",
+      "sha256": "ecadb0ce05ad8033abb8b3690d2443e6843877a2bd93f537cb22c9573006a259"
+    },
+    "m22_drain_cut_self_consistent_edges.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_drain_cut_self_consistent_edges.csv",
+      "sha256": "36553d6907f40d4292a4f38fa135aa4c9e8567352a4cd8b12857572b39d48c9c"
+    },
+    "m22_key_state_self_consistent_edges.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_key_state_self_consistent_edges.csv",
+      "sha256": "71ff92ffab5544193ffdf3a117ed1ee0b639ecaf1a4a06a84a269c1face324a7"
+    }
+  },
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m22/simplemos_m22_n23_hfs_deep_off.png",
+      "sha256": "a7dd3ce11ce48535599fb0c67348ee5868cab00fd9ff51cd3788b3f4f5ff3575"
+    }
+  ],
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m22_n23_hfs_deep_off_contract_v1.json": "ec69fe0d2f1c490398bed6b1b44ce467e6f60c1f4a6a7367fd5384686f51b088",
+    "scripts/run_simplemos_m22_n23_hfs_deep_off.py": "87f8abc228cc2302918026972793bfde8f10c12e3da480b5fe2a6ace449fd5dd",
+    "scripts/plot_simplemos_m22_n23_hfs_deep_off.py": "b7dc9e7af5471d5bd2c7182294095ae34075481e7e53e400555e8dca4e8a2b97",
+    "scripts/freeze_simplemos_m22_n23_hfs_deep_off_evidence.py": "349691b81f1f139023fc53652f90e0c9c08c805e377f9b2ac656149f443d312a",
+    "tests/regression/test_simplemos_m22_n23_hfs_deep_off.py": "9e8d5d532d2c27da8d236ab879310c60c156113e3981af2bf67c7f78bc8565b1",
+    "docs/validation/simplemos_m22_n23_hfs_deep_off_2026-08-30.md": "de46c88193ac416c08880aebb093d4e95bacf8f16191439a3d31d24714089ff7",
+    "CMakeLists.txt": "de2df31d71e94baba37ec868649326a8feeb93e81217243287fb2a16620e07b1"
+  }
+}

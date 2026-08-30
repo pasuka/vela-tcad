@@ -532,6 +532,17 @@ struct NewtonCarrierRowDiagnostic {
     Real holeOffdiagAbsSum = 0.0;
     Real electronRowL2Norm = 0.0;
     Real holeRowL2Norm = 0.0;
+    Real electronPsiColumnAbsSum = 0.0;
+    Real electronPhinColumnAbsSum = 0.0;
+    Real electronPhipColumnAbsSum = 0.0;
+    Real electronContactColumnAbsSum = 0.0;
+    Real electronFreeColumnAbsSum = 0.0;
+    Real electronPsiContactColumnAbsSum = 0.0;
+    Real electronPsiFreeColumnAbsSum = 0.0;
+    Real electronPhinContactColumnAbsSum = 0.0;
+    Real electronPhinFreeColumnAbsSum = 0.0;
+    Real electronPhipContactColumnAbsSum = 0.0;
+    Real electronPhipFreeColumnAbsSum = 0.0;
     Real rawDeltaPhin_V = 0.0;
     Real rawDeltaPhip_V = 0.0;
     Real cappedDeltaPhin_V = 0.0;
