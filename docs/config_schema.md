@@ -683,6 +683,12 @@ Notes:
   closure block remains inside its configured residual envelope. The closure
   envelope uses the stricter applicable relative or low-source absolute target;
   final convergence still requires `global_continuity_closure` itself to pass.
+- `local_update_diagnostics` is an opt-in per-node Newton transformation trace.
+  In addition to raw, capped, applied, and selected node updates, it records
+  aggregate current/raw-predicted/capped-predicted/selected block norms, the
+  number and largest physical magnitude of quasi-Fermi cap changes, and the
+  signed free electron/hole residual sums. This allows a rejected lift to be
+  classified without making those diagnostic quantities part of acceptance.
 - `return_best_feasible_on_failure` (default `false`) keeps the failure status
   and diagnostics unchanged but exposes, as the rejected restart state, the
   lowest-residual accepted iterate that satisfied both enforced local carrier
@@ -897,16 +903,29 @@ small rows of interest.
 
 `global_continuity_closure` independently sums the free-node SRH/avalanche
 source and all contact fluxes for electrons and holes. `report` appends the
-metrics without rejecting a solution; `enforce` prevents convergence unless
-each carrier with `max(|contact flux|, |integrated source|) >= source_floor`
-has relative mismatch no greater than `tolerance`. Qualifying on both sides
-prevents a large contact-current/small-source state from bypassing the gate.
+metrics without changing the ordinary merit line-search trajectory or
+rejecting a solution; `enforce` preserves that same trajectory and prevents
+final convergence unless each carrier with
+`max(|contact flux|, |integrated source|) >= source_floor` has relative
+mismatch no greater than `tolerance`. Qualifying on both sides prevents a
+large contact-current/small-source state from bypassing the gate.
 The denominator is the largest of the contact-flux magnitude,
 integrated-source magnitude, and `source_floor`. Below that floor the relative
 ratio remains diagnostic and the absolute mismatch must instead be no greater
 than `absolute_tolerance` (default `1e-12`). The IV CSV records each carrier's
 qualification flag, selected `absolute`/`relative` criterion, signed mismatch,
 and relative ratio.
+
+Global closure shapes intermediate line-search acceptance only when
+`line_search_mode: "block_closure_filter"` is selected explicitly. Ordinary
+`merit` and `block_filter` modes use the device residual alone; this keeps the
+conservation identity as a final solution invariant instead of imposing it as
+an implicit continuation-path constraint.
+
+In `block_closure_filter`, the electron and hole closure normalizers are
+frozen from the bias-point restart state, with `source_floor` as their lower
+bound. They are not recomputed from intermediate iterates, so closure ratios
+remain comparable while terminal current is rebalanced.
 
 `linear_system_stabilization: "replace_free_row_sum"` is an opt-in
 finite-precision stabilization. For each carrier it replaces one free-node
@@ -931,6 +950,16 @@ whether it is useful. Final local/global convergence gates remain unchanged.
 Rank-deficient or non-finite projections are skipped; the default is `"off"`.
 `feasibility_restoration_factor` selects a fraction in `(0, 1]` of the
 projected correction before QF recapping; it defaults to `1`.
+
+`feasibility_restoration: "final_linear_qf_projection"` uses the same
+minimum-norm QF construction only after the accepted device residual is at or
+below `stall_residual_floor`, carrier-row convergence passes, and the enforced
+final closure gate fails. It recomputes the Jacobian at that accepted state,
+applies the configured QF bounds, and backtracks the correction. A trial is
+accepted only if its nonlinear device residual remains below the stall floor
+and both carrier-row and global-closure gates pass. This mode therefore cannot
+turn an unconverged device iterate into an accepted solution and does not
+constrain intermediate Newton steps.
 
 `warm_start: true` preserves supplied quasi-Fermi potentials when continuing
 from a previous solution. The default `false` keeps the conservative

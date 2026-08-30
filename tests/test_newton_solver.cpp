@@ -4447,6 +4447,67 @@ TEST_CASE("NewtonSolver: global continuity closure survives strongly cancelling 
     CHECK(evaluation.electron.ratio == Catch::Approx(0.0));
 }
 
+TEST_CASE("NewtonSolver: closure reporting and final enforcement do not change merit trajectory",
+          "[newton][global_continuity_closure][line_search]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.05}, {"cathode", 0.0}};
+
+    NewtonConfig baseCfg = newtonConfig();
+    baseCfg.lineSearchMode = "merit";
+    baseCfg.diagnostics = true;
+    baseCfg.globalContinuityClosure.mode = "off";
+    const NewtonResult baseline = runNewton(
+        mesh, matdb, doping, biases, baseCfg);
+    REQUIRE(baseline.converged);
+    REQUIRE_FALSE(baseline.history.empty());
+
+    auto requireSameTrajectory = [&](const NewtonResult& candidate) {
+        REQUIRE(candidate.converged);
+        REQUIRE(candidate.history.size() == baseline.history.size());
+        CHECK(candidate.initialResidualNorm ==
+              Catch::Approx(baseline.initialResidualNorm).margin(1.0e-18));
+        for (std::size_t i = 0; i < baseline.history.size(); ++i) {
+            CHECK(candidate.history[i].dampingFactor ==
+                  Catch::Approx(baseline.history[i].dampingFactor).margin(1.0e-18));
+            CHECK(candidate.history[i].residualNorm ==
+                  Catch::Approx(baseline.history[i].residualNorm).margin(1.0e-18));
+            CHECK(candidate.history[i].lineSearchAttempts ==
+                  baseline.history[i].lineSearchAttempts);
+        }
+        CHECK((candidate.solution.psi - baseline.solution.psi).norm() ==
+              Catch::Approx(0.0).margin(1.0e-15));
+        CHECK((candidate.solution.phin - baseline.solution.phin).norm() ==
+              Catch::Approx(0.0).margin(1.0e-15));
+        CHECK((candidate.solution.phip - baseline.solution.phip).norm() ==
+              Catch::Approx(0.0).margin(1.0e-15));
+    };
+
+    NewtonConfig reportCfg = baseCfg;
+    reportCfg.globalContinuityClosure.mode = "report";
+    const NewtonResult reported = runNewton(
+        mesh, matdb, doping, biases, reportCfg);
+    requireSameTrajectory(reported);
+    REQUIRE(reported.finalGlobalContinuityClosure.enabled);
+    REQUIRE_FALSE(reported.finalGlobalContinuityClosure.enforced);
+
+    NewtonConfig enforceCfg = baseCfg;
+    enforceCfg.globalContinuityClosure.mode = "enforce";
+    // Make the final gate deliberately permissive here: this test isolates
+    // the Newton path, while the evaluator tests above cover gate rejection.
+    enforceCfg.globalContinuityClosure.sourceFloor = 1.0e30;
+    enforceCfg.globalContinuityClosure.absoluteTolerance = 1.0e30;
+    const NewtonResult enforced = runNewton(
+        mesh, matdb, doping, biases, enforceCfg);
+    requireSameTrajectory(enforced);
+    REQUIRE(enforced.finalGlobalContinuityClosure.enabled);
+    REQUIRE(enforced.finalGlobalContinuityClosure.enforced);
+    REQUIRE(enforced.finalGlobalContinuityClosure.satisfied);
+}
+
 TEST_CASE("NewtonSolver: global continuity row stabilization preserves the exact solution",
           "[newton][global_continuity_closure][linear_stabilization]")
 {
@@ -4515,6 +4576,12 @@ TEST_CASE("NewtonSolver: global continuity row stabilization preserves the exact
           "linear_qf_projection");
     CHECK(parsed.globalContinuityClosure.feasibilityRestorationFactor ==
           Catch::Approx(0.05));
+    const NewtonConfig finalRestorationParsed = newtonConfigFromJson(
+        nlohmann::json{{
+            "global_continuity_closure",
+            {{"feasibility_restoration", "final_linear_qf_projection"}}}});
+    CHECK(finalRestorationParsed.globalContinuityClosure.feasibilityRestoration ==
+          "final_linear_qf_projection");
     CHECK(parsed.globalContinuityClosure.absoluteTolerance ==
           Catch::Approx(1.0e-13));
     REQUIRE_THROWS_AS(

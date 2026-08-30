@@ -65,8 +65,9 @@ struct NewtonGlobalContinuityClosureConfig {
     std::string linearSystemStabilization = "off";
     ///< "off" or mathematically equivalent "replace_free_row_sum".
     std::string feasibilityRestoration = "off";
-    ///< "off" or "linear_qf_projection". The projection restores the two
-    ///< linearized free-carrier row sums after componentwise update limiting.
+    ///< "off", per-step "linear_qf_projection", or
+    ///< "final_linear_qf_projection". The final-only mode is attempted only
+    ///< after the device residual reaches the configured stall floor.
     Real feasibilityRestorationFactor = 1.0;
     ///< Fraction in (0, 1] of the linear QF projection applied per trial.
 };

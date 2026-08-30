@@ -2210,9 +2210,11 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         }
         if (cfg.globalContinuityClosure.feasibilityRestoration != "off" &&
             cfg.globalContinuityClosure.feasibilityRestoration !=
-                "linear_qf_projection") {
+                "linear_qf_projection" &&
+            cfg.globalContinuityClosure.feasibilityRestoration !=
+                "final_linear_qf_projection") {
             throw std::invalid_argument(
-                "newtonConfigFromJson: global_continuity_closure.feasibility_restoration must be 'off' or 'linear_qf_projection'.");
+                "newtonConfigFromJson: global_continuity_closure.feasibility_restoration must be 'off', 'linear_qf_projection', or 'final_linear_qf_projection'.");
         }
         if (!(cfg.globalContinuityClosure.feasibilityRestorationFactor > 0.0) ||
             cfg.globalContinuityClosure.feasibilityRestorationFactor > 1.0 ||
@@ -6295,12 +6297,7 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         [](const NewtonGlobalContinuityClosureEvaluation& evaluation) {
             return !evaluation.enforced || evaluation.satisfied;
         };
-    Real activeGlobalElectronScale = cfg_.globalContinuityClosure.sourceFloor;
-    Real activeGlobalHoleScale = cfg_.globalContinuityClosure.sourceFloor;
-    auto globalClosureLineSearchNorm = [&](const VectorXd& residual) {
-        const Real baseNorm = residualNormFn(residual);
-        if (cfg_.globalContinuityClosure.mode == "off")
-            return baseNorm;
+    auto freeCarrierResidualSums = [&](const VectorXd& residual) {
         long double electronSum = 0.0L;
         long double holeSum = 0.0L;
         for (int i = 0; i < N; ++i) {
@@ -6310,11 +6307,26 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             if (bcs.phip.find(node) == bcs.phip.end())
                 holeSum += static_cast<long double>(residual(2 * N + i));
         }
+        return std::array<long double, 2>{electronSum, holeSum};
+    };
+    Real activeGlobalElectronScale = cfg_.globalContinuityClosure.sourceFloor;
+    Real activeGlobalHoleScale = cfg_.globalContinuityClosure.sourceFloor;
+    auto globalClosureLineSearchNorm = [&](const VectorXd& residual) {
+        const Real baseNorm = residualNormFn(residual);
+        // Global closure is a convergence invariant, not an implicit path
+        // constraint.  Keep ordinary merit and device-block line searches on
+        // the device residual alone.  A caller that deliberately wants
+        // closure to shape the nonlinear path must opt in through the
+        // block_closure_filter mode.
+        if (cfg_.globalContinuityClosure.mode == "off" ||
+            cfg_.lineSearchMode != "block_closure_filter")
+            return baseNorm;
+        const auto sums = freeCarrierResidualSums(residual);
         const Real electronRatio =
-            static_cast<Real>(electronSum) /
+            static_cast<Real>(sums[0]) /
             std::max(activeGlobalElectronScale, Real{1.0e-300});
         const Real holeRatio =
-            static_cast<Real>(holeSum) /
+            static_cast<Real>(sums[1]) /
             std::max(activeGlobalHoleScale, Real{1.0e-300});
         return std::sqrt(
             baseNorm * baseNorm
@@ -6430,6 +6442,14 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                 << "raw_linear_residual,capped_linear_residual,selected_trial_residual,"
                 << "raw_linear_residual_l2,raw_linear_residual_inf,"
                 << "capped_linear_residual_l2,capped_linear_residual_inf,"
+                << "current_psi_block,current_electron_block,current_hole_block,"
+                << "raw_predicted_psi_block,raw_predicted_electron_block,raw_predicted_hole_block,"
+                << "capped_predicted_psi_block,capped_predicted_electron_block,capped_predicted_hole_block,"
+                << "selected_psi_block,selected_electron_block,selected_hole_block,"
+                << "raw_step_l2,capped_step_l2,applied_step_l2,"
+                << "qf_capped_dofs,qf_max_cap_delta_V,"
+                << "current_electron_free_sum,current_hole_free_sum,"
+                << "selected_electron_free_sum,selected_hole_free_sum,"
                 << "qf_update_limit_V,qf_update_limit_minority_V,max_update,"
                 << "carrier_regularization_scale,carrier_diagonal_floor_enabled,"
                 << "carrier_diagonal_floor_scale\n";
@@ -6450,6 +6470,27 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             ? rawLinearResidual.lpNorm<Eigen::Infinity>() : 0.0;
         const Real cappedLinearResidualInf = cappedLinearResidual.size() > 0
             ? cappedLinearResidual.lpNorm<Eigen::Infinity>() : 0.0;
+        const ResidualBlockNormValue currentBlocks =
+            ResidualNorm::computeBlocks(currentResidual, mesh_.numNodes());
+        const ResidualBlockNormValue rawPredictedBlocks =
+            ResidualNorm::computeBlocks(rawLinearResidual, mesh_.numNodes());
+        const ResidualBlockNormValue cappedPredictedBlocks =
+            ResidualNorm::computeBlocks(cappedLinearResidual, mesh_.numNodes());
+        const ResidualBlockNormValue selectedBlocks =
+            ResidualNorm::computeBlocks(selectedResidual, mesh_.numNodes());
+        int qfCappedDofs = 0;
+        Real qfMaxCapDelta_V = 0.0;
+        for (int row = N; row < 3 * N; ++row) {
+            const Real difference = std::abs(rawStep(row) - cappedStep(row));
+            const Real scale = std::max(
+                {Real{1.0}, std::abs(rawStep(row)), std::abs(cappedStep(row))});
+            if (difference > 64.0 * std::numeric_limits<Real>::epsilon() * scale)
+                ++qfCappedDofs;
+            qfMaxCapDelta_V = std::max(
+                qfMaxCapDelta_V, difference * potentialScale);
+        }
+        const auto currentFreeSums = freeCarrierResidualSums(currentResidual);
+        const auto selectedFreeSums = freeCarrierResidualSums(selectedResidual);
         out << std::setprecision(17);
         for (Index node : cfg_.localUpdateDiagnostics.nodes) {
             if (node < 0 || node >= mesh_.numNodes())
@@ -6481,6 +6522,19 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                     << selectedResidual(row) << ','
                     << rawLinearResidual.norm() << ',' << rawLinearResidualInf << ','
                     << cappedLinearResidual.norm() << ',' << cappedLinearResidualInf << ','
+                    << currentBlocks.psi << ',' << currentBlocks.phin << ','
+                    << currentBlocks.phip << ',' << rawPredictedBlocks.psi << ','
+                    << rawPredictedBlocks.phin << ',' << rawPredictedBlocks.phip << ','
+                    << cappedPredictedBlocks.psi << ',' << cappedPredictedBlocks.phin << ','
+                    << cappedPredictedBlocks.phip << ',' << selectedBlocks.psi << ','
+                    << selectedBlocks.phin << ',' << selectedBlocks.phip << ','
+                    << rawStep.norm() << ',' << cappedStep.norm() << ','
+                    << appliedStep.norm() << ',' << qfCappedDofs << ','
+                    << qfMaxCapDelta_V << ','
+                    << static_cast<Real>(currentFreeSums[0]) << ','
+                    << static_cast<Real>(currentFreeSums[1]) << ','
+                    << static_cast<Real>(selectedFreeSums[0]) << ','
+                    << static_cast<Real>(selectedFreeSums[1]) << ','
                     << cfg_.quasiFermiUpdateLimit_V << ','
                     << cfg_.quasiFermiUpdateLimitMinority_V << ','
                     << cfg_.maxUpdate << ',' << cfg_.carrierRegularizationScale << ','
@@ -6573,6 +6627,18 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
 
     NewtonCarrierRowConvergenceEvaluation initialRowEval = carrierRowEval(x);
     NewtonGlobalContinuityClosureEvaluation initialGlobalEval = globalClosureEval(x);
+    // A closure-filter run compares all trial iterates against one physical
+    // current scale for this bias point. Recomputing the denominator after
+    // every accepted step creates a moving target while contact current is
+    // being rebalanced, so freeze it from the supplied restart state.
+    activeGlobalElectronScale = std::max(
+        {std::abs(initialGlobalEval.electron.contactFlux),
+         std::abs(initialGlobalEval.electron.integratedSource),
+         cfg_.globalContinuityClosure.sourceFloor});
+    activeGlobalHoleScale = std::max(
+        {std::abs(initialGlobalEval.hole.contactFlux),
+         std::abs(initialGlobalEval.hole.integratedSource),
+         cfg_.globalContinuityClosure.sourceFloor});
     bool hasBestFeasibleIterate =
         carrierRowsAcceptConvergence(initialRowEval) &&
         globalClosureAcceptsConvergence(initialGlobalEval);
@@ -6664,14 +6730,6 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
 
     for (int iter = 1; iter <= cfg_.maxIter; ++iter) {
         ScopedPerformanceTimer iterationTimer("newton.iteration");
-        activeGlobalElectronScale = std::max(
-            {std::abs(activeGlobalEval.electron.contactFlux),
-             std::abs(activeGlobalEval.electron.integratedSource),
-             cfg_.globalContinuityClosure.sourceFloor});
-        activeGlobalHoleScale = std::max(
-            {std::abs(activeGlobalEval.hole.contactFlux),
-             std::abs(activeGlobalEval.hole.integratedSource),
-             cfg_.globalContinuityClosure.sourceFloor});
         {
             ScopedPerformanceTimer timer("newton.row_weights");
             activeRowWeights = continuityRowWeights(
@@ -6787,19 +6845,11 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         ResidualBlockNormValue predictedFilterBlocks =
             ResidualNorm::computeBlocks(cappedLinearResidual, mesh_.numNodes());
         const auto closureResidualRatios = [&](const VectorXd& residual) {
-            long double electronSum = 0.0L;
-            long double holeSum = 0.0L;
-            for (int i = 0; i < N; ++i) {
-                const Index node = static_cast<Index>(i);
-                if (bcs.phin.find(node) == bcs.phin.end())
-                    electronSum += static_cast<long double>(residual(N + i));
-                if (bcs.phip.find(node) == bcs.phip.end())
-                    holeSum += static_cast<long double>(residual(2 * N + i));
-            }
+            const auto sums = freeCarrierResidualSums(residual);
             return std::array<Real, 2>{
-                std::abs(static_cast<Real>(electronSum)) /
+                std::abs(static_cast<Real>(sums[0])) /
                     std::max(activeGlobalElectronScale, Real{1.0e-300}),
-                std::abs(static_cast<Real>(holeSum)) /
+                std::abs(static_cast<Real>(sums[1])) /
                     std::max(activeGlobalHoleScale, Real{1.0e-300})};
         };
         const std::array<Real, 2> currentClosureRatios = closureResidualRatios(r);
@@ -7262,6 +7312,80 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                         acceptedIters, result.finalResidualNorm, finalRowEval,
                         finalGlobalEval);
         return result;
+    }
+
+    // Closure is a property of the converged device state, not a required
+    // invariant of its Newton path.  When explicitly requested, apply one
+    // bounded minimum-norm QF restoration only after the device residual has
+    // reached its accepted numerical floor.  Nonlinear backtracking accepts
+    // the correction only when closure, carrier rows, and the device floor all
+    // pass simultaneously.
+    if (cfg_.globalContinuityClosure.feasibilityRestoration ==
+            "final_linear_qf_projection" &&
+        result.finalResidualNorm <= stallResidualFloor &&
+        carrierRowsAcceptConvergence(finalRowEval) &&
+        finalGlobalEval.enforced && !finalGlobalEval.satisfied) {
+        SparseMatrixd finalJacobian;
+        {
+            ScopedPerformanceTimer timer(
+                "newton.final_global_continuity_restoration_jacobian");
+            finalJacobian = (cfg_.jacobian == "finite_difference")
+                ? assembler.finiteDifferenceJacobian(
+                    acceptedX, bcs, cfg_.finiteDifferenceStep)
+                : assembler.assembleJacobian(acceptedX, bcs);
+            addCarrierRowRegularization(
+                finalJacobian, N, cfg_.carrierRegularizationScale);
+        }
+        VectorXd correction = VectorXd::Zero(acceptedX.size());
+        if (restoreGlobalContinuityLinearizedStep(
+                correction, finalJacobian, acceptedR, N,
+                electronContactNodes, holeContactNodes)) {
+            capConfiguredQfOnly(correction);
+            const Real correctionNorm = correction.norm();
+            Real damping =
+                cfg_.globalContinuityClosure.feasibilityRestorationFactor;
+            for (int trial = 0; trial < 13; ++trial, damping *= 0.5) {
+                const VectorXd candidateX = acceptedX + damping * correction;
+                const VectorXd candidateR = assembler.residual(
+                    candidateX, bcs);
+                const Real candidateNorm = residualNormFn(candidateR);
+                if (!std::isfinite(candidateNorm) ||
+                    candidateNorm > stallResidualFloor)
+                    continue;
+                const NewtonCarrierRowConvergenceEvaluation candidateRowEval =
+                    carrierRowEval(candidateX);
+                const NewtonGlobalContinuityClosureEvaluation candidateGlobalEval =
+                    globalClosureEval(candidateX);
+                if (!carrierRowsAcceptConvergence(candidateRowEval) ||
+                    !globalClosureAcceptsConvergence(candidateGlobalEval))
+                    continue;
+
+                NewtonIterationInfo restorationTrace;
+                restorationTrace.iter = acceptedIters;
+                restorationTrace.event =
+                    "final_global_continuity_restoration";
+                restorationTrace.residualNorm = candidateNorm;
+                restorationTrace.relativeResidualNorm =
+                    ResidualNorm::relative(candidateNorm, initialNorm);
+                restorationTrace.rawStepNorm = correctionNorm;
+                restorationTrace.stepNorm = damping * correctionNorm;
+                restorationTrace.dampingFactor = damping;
+                restorationTrace.lineSearchAttempts = trial + 1;
+                restorationTrace.lineSearchAccepted = true;
+                restorationTrace.carrierRowConvergence = candidateRowEval;
+                fillNewtonIterationResidualTrace(
+                    restorationTrace, candidateX, candidateR,
+                    activeRowWeights, mesh_.numNodes(), assembler,
+                    cfg_.diagnostics);
+                result.trace.push_back(restorationTrace);
+                result.history.push_back(std::move(restorationTrace));
+                finishConverged(
+                    "final_global_continuity_restoration",
+                    candidateX, candidateR, acceptedIters, candidateNorm,
+                    candidateRowEval, candidateGlobalEval);
+                return result;
+            }
+        }
     }
 
     result.converged = false;

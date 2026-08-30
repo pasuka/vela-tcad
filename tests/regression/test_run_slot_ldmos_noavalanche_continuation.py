@@ -86,6 +86,75 @@ class SlotAdaptiveContinuationTest(unittest.TestCase):
             self.assertIn("prewarm_008_v_0p246875", str(run_dir))
             self.assertIn("prewarm_008", config.name)
 
+    def test_local_update_diagnostics_are_opt_in_and_run_relative(self) -> None:
+        document = {"solver": {"max_iter": 7}}
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp) / "attempt"
+            MODULE.enable_local_update_diagnostics(
+                document, run_dir, [6097, 10163])
+            diagnostics = document["solver"]["local_update_diagnostics"]
+            self.assertTrue(document["solver"]["diagnostic_history"])
+            self.assertTrue(diagnostics["enabled"])
+            self.assertEqual(diagnostics["nodes"], [6097, 10163])
+            self.assertEqual(diagnostics["first_iterations"], 7)
+            self.assertEqual(diagnostics["every_iterations"], 1)
+            self.assertEqual(
+                Path(diagnostics["csv_file"]),
+                (run_dir / "local_updates.csv").resolve())
+
+    def test_qf_limit_overrides_support_explicit_disable(self) -> None:
+        document = {
+            "solver": {
+                "quasi_fermi_update_limit_V": 0.1,
+                "quasi_fermi_update_limit_minority_V": 0.05,
+            }
+        }
+        MODULE.apply_qf_limit_overrides(document, 0.0, 0.0)
+        self.assertEqual(document["solver"]["quasi_fermi_update_limit_V"], 0.0)
+        self.assertEqual(
+            document["solver"]["quasi_fermi_update_limit_minority_V"], 0.0)
+
+    def test_carrier_diagonal_floor_override_is_explicit(self) -> None:
+        document = {"solver": {}}
+        MODULE.apply_carrier_diagonal_floor_override(
+            document, 2.0, 0.25)
+        floor = document["solver"]["carrier_diagonal_floor"]
+        self.assertTrue(floor["enabled"])
+        self.assertEqual(floor["scale"], 2.0)
+        self.assertEqual(floor["minority_density_ratio"], 0.25)
+
+    def test_rejected_final_state_is_exposed_for_chunked_restart(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state = root / "rejected_states" / "attempt_final.csv"
+            state.parent.mkdir()
+            state.write_text("node_id,psi\n0,0\n", encoding="utf-8")
+            attempts = root / "attempts.csv"
+            with attempts.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(
+                    stream, fieldnames=["status", "rejected_final_state_file"])
+                writer.writeheader()
+                writer.writerow({
+                    "status": "rejected",
+                    "rejected_final_state_file": str(state),
+                })
+            self.assertEqual(
+                MODULE.load_rejected_final_state(attempts), state.resolve())
+
+            state.unlink()
+            self.assertIsNone(MODULE.load_rejected_final_state(attempts))
+
+    def test_failure_state_policy_overrides_base_deck(self) -> None:
+        document = {
+            "solver": {"return_best_feasible_on_failure": True},
+        }
+        MODULE.apply_failure_state_policy(document, False)
+        self.assertFalse(
+            document["solver"]["return_best_feasible_on_failure"])
+        MODULE.apply_failure_state_policy(document, True)
+        self.assertTrue(
+            document["solver"]["return_best_feasible_on_failure"])
+
     def test_batch_predictor_keeps_secant_history_in_one_sweep(self) -> None:
         base = {
             "output_csv": "old.csv",

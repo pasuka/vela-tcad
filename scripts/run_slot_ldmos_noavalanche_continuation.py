@@ -27,6 +27,15 @@ def load_last_row(path: Path) -> dict[str, str]:
     return rows[-1] if rows else {}
 
 
+def load_rejected_final_state(path: Path) -> Path | None:
+    """Return the solver's persisted final accepted iterate for a failed point."""
+    value = load_last_row(path).get("rejected_final_state_file", "").strip()
+    if not value:
+        return None
+    candidate = Path(value)
+    return candidate.resolve() if candidate.exists() else None
+
+
 def write_secant_restart(previous_path: Path, current_path: Path,
                           output_path: Path, previous_bias: float,
                           current_bias: float, target_bias: float,
@@ -190,6 +199,49 @@ def execute_config(runner: Path, repo_root: Path, config_path: Path,
     return exit_code, timed_out, time.monotonic() - started
 
 
+def enable_local_update_diagnostics(document: dict, run_dir: Path,
+                                    nodes: list[int] | None) -> None:
+    if not nodes:
+        return
+    solver = document["solver"]
+    solver["diagnostic_history"] = True
+    solver["local_update_diagnostics"] = {
+        "enabled": True,
+        "csv_file": str((run_dir / "local_updates.csv").resolve()),
+        "nodes": nodes,
+        "first_iterations": solver.get("max_iter", 10),
+        "every_iterations": 1,
+    }
+
+
+def apply_qf_limit_overrides(document: dict, majority_V: float | None,
+                             minority_V: float | None) -> None:
+    solver = document["solver"]
+    if majority_V is not None:
+        solver["quasi_fermi_update_limit_V"] = majority_V
+    if minority_V is not None:
+        solver["quasi_fermi_update_limit_minority_V"] = minority_V
+
+
+def apply_carrier_diagonal_floor_override(
+        document: dict, scale: float | None,
+        minority_density_ratio: float | None) -> None:
+    if scale is None and minority_density_ratio is None:
+        return
+    floor = document["solver"].setdefault("carrier_diagonal_floor", {})
+    floor["enabled"] = True
+    if scale is not None:
+        floor["scale"] = scale
+    if minority_density_ratio is not None:
+        floor["minority_density_ratio"] = minority_density_ratio
+
+
+def apply_failure_state_policy(document: dict, return_best_feasible: bool) -> None:
+    """Make the CLI policy authoritative even when the base deck enables it."""
+    document["solver"]["return_best_feasible_on_failure"] = (
+        return_best_feasible)
+
+
 def run(args: argparse.Namespace) -> int:
     base_config = args.base_config.resolve()
     bundle = base_config.parent
@@ -212,6 +264,16 @@ def run(args: argparse.Namespace) -> int:
             document["solver"].setdefault("global_continuity_closure", {})[
                 "feasibility_restoration_factor"] = (
                     args.closure_feasibility_restoration_factor)
+        enable_local_update_diagnostics(
+            document, run_dir, args.local_update_node)
+        apply_qf_limit_overrides(
+            document, args.qf_update_limit_V,
+            args.qf_update_limit_minority_V)
+        apply_carrier_diagonal_floor_override(
+            document, args.carrier_diagonal_floor_scale,
+            args.carrier_diagonal_floor_minority_density_ratio)
+        apply_failure_state_policy(
+            document, args.return_best_feasible_on_failure)
         config_path.write_text(json.dumps(document, indent=2), encoding="utf-8")
         exit_code, timed_out, elapsed = execute_config(
             runner, args.repo_root, config_path, run_dir, args.timeout_seconds)
@@ -302,8 +364,8 @@ def run(args: argparse.Namespace) -> int:
                 "rejected_state_directory": str(
                     run_dir.relative_to(bundle) / "rejected_states"),
             }
-        if args.return_best_feasible_on_failure:
-            document["solver"]["return_best_feasible_on_failure"] = True
+        apply_failure_state_policy(
+            document, args.return_best_feasible_on_failure)
         if args.closure_feasibility_restoration is not None:
             document["solver"].setdefault("global_continuity_closure", {})[
                 "feasibility_restoration"] = args.closure_feasibility_restoration
@@ -311,12 +373,21 @@ def run(args: argparse.Namespace) -> int:
             document["solver"].setdefault("global_continuity_closure", {})[
                 "feasibility_restoration_factor"] = (
                     args.closure_feasibility_restoration_factor)
+        enable_local_update_diagnostics(
+            document, run_dir, args.local_update_node)
+        apply_qf_limit_overrides(
+            document, args.qf_update_limit_V,
+            args.qf_update_limit_minority_V)
+        apply_carrier_diagonal_floor_override(
+            document, args.carrier_diagonal_floor_scale,
+            args.carrier_diagonal_floor_minority_density_ratio)
         config_path.write_text(json.dumps(document, indent=2), encoding="utf-8")
         exit_code, timed_out, elapsed = execute_config(
             runner, args.repo_root, config_path, run_dir, args.timeout_seconds)
         iv_row = load_last_row(run_dir / "iv.csv")
         next_state = run_dir / "final_state.csv"
         converged = exit_code == 0 and iv_row.get("converged") == "1" and next_state.exists()
+        rejected_final_state = load_rejected_final_state(run_dir / "attempts.csv")
         attempts.append({
             "attempt": attempt_index, "start_bias_V": current_bias,
             "target_bias_V": target, "elapsed_s": elapsed,
@@ -329,6 +400,11 @@ def run(args: argparse.Namespace) -> int:
             "iterations": iv_row.get("iterations", ""),
             "current_A_per_um": iv_row.get("current_total_A_per_um", ""),
             "state_file": str(next_state.resolve()) if converged else "",
+            "rejected_final_state_file": (
+                str(rejected_final_state) if rejected_final_state is not None else ""),
+            "rejected_state_policy": (
+                "best_feasible" if args.return_best_feasible_on_failure
+                else "last_accepted_iterate"),
             "config_file": str(config_path.resolve()),
         })
         if converged:
@@ -391,12 +467,17 @@ def main() -> int:
     parser.add_argument(
         "--qf-update-limit-mode",
         choices=("componentwise_poisson_recorrect", "uniform_trust_region"))
+    parser.add_argument("--qf-update-limit-V", type=float)
+    parser.add_argument("--qf-update-limit-minority-V", type=float)
+    parser.add_argument("--carrier-diagonal-floor-scale", type=float)
+    parser.add_argument(
+        "--carrier-diagonal-floor-minority-density-ratio", type=float)
     parser.add_argument(
         "--line-search-mode",
         choices=("merit", "block_filter", "block_closure_filter"))
     parser.add_argument(
         "--closure-feasibility-restoration",
-        choices=("off", "linear_qf_projection"))
+        choices=("off", "linear_qf_projection", "final_linear_qf_projection"))
     parser.add_argument(
         "--closure-feasibility-restoration-factor", type=float)
     parser.add_argument(
@@ -412,6 +493,9 @@ def main() -> int:
     parser.add_argument("--secant-max-ratio", type=float, default=2.0)
     parser.add_argument("--save-rejected-states", action="store_true")
     parser.add_argument("--return-best-feasible-on-failure", action="store_true")
+    parser.add_argument(
+        "--local-update-node", type=int, action="append", default=[],
+        help="Node id to include in opt-in raw/capped/applied Newton diagnostics; repeatable")
     args = parser.parse_args()
     return run(args)
 
