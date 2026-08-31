@@ -7,7 +7,7 @@
       "classification": "candidate_baseline_difference",
       "status": "open",
       "scope": "G3 no-IALMob Id-Vg, Vd=0.1 V, exact SProcess topology, Vg=0--5 V; remaining failed metric is maximum gm on Vg=1.0--1.1667 V",
-      "observation": "The qualified contact-boundary ElectricField HFS fallback and cached-mobility Jacobian repair allow all 31 no-predictor G3 points to converge, but the former production P95 current error was 0.432753 dex. At Vg=0.5 V the production curve and independent Sentaurus-seed reclose reconcile exactly at Id=1.736470037555399e-10 A/um, excluding a warm-start multiple-solution discrepancy. A complete T-2022.03-SP2 MeasureCoefficients.debug replay over 5674 active electron rows reduces fixed-state electron residual L2 and maximum to 0.0173075x and 0.0433710x without changing the initial Poisson residual. A 2x2 same-bias factorial then identifies two nearly orthogonal correctable contracts: external AverageBox carrier couples close 0.136312--0.140239 dex, while explicit legacy_node_local reconstruction of the physical p+/n+ source short closes 0.276004--0.279931 dex and removes the spurious 1.0818503857 V psi family. Their combination closes the Vg=0.5 V point to 0.013041 dex. The exact no-predictor 31-point confirmation converges all points in 177 full Newton steps and passes median log error, P95 log error, endpoint current, Vth and KCL gates. P95 improves to 0.099697 dex and Vth error to 0.0387 mV. A same-contract frozen replay proves contact HFS remains necessary: at Vg=0.5 and 0.833333 V, HFS off gives 11.00098x and 10.98829x current while HFS on gives 1.00071x and 1.00020x. The corrected eight-state replay reduces median self-consistent feedback from the old 0.403147 dex to 0.005615 dex, so the former phin-amplified platform is closed rather than reclassified as an engine floor. Stage 3 remains failed solely because maximum gm differs by 24.3076% versus the frozen 20% limit; both curves locate maximum gm on the same exact Vg=1.0--1.1667 V segment, excluding interpolation or peak-location artifacts. The ledger therefore remains draft and the residual slope difference is not an approved engine floor.",
+      "observation": "The qualified contact-boundary ElectricField HFS fallback and cached-mobility Jacobian repair allow all 31 no-predictor G3 points to converge, but the former production P95 current error was 0.432753 dex. At Vg=0.5 V the production curve and independent Sentaurus-seed reclose reconcile exactly at Id=1.736470037555399e-10 A/um, excluding a warm-start multiple-solution discrepancy. A complete T-2022.03-SP2 MeasureCoefficients.debug replay over 5674 active electron rows reduces fixed-state electron residual L2 and maximum to 0.0173075x and 0.0433710x without changing the initial Poisson residual. A 2x2 same-bias factorial then identifies two nearly orthogonal correctable contracts: external AverageBox carrier couples close 0.136312--0.140239 dex, while explicit legacy_node_local reconstruction of the physical p+/n+ source short closes 0.276004--0.279931 dex and removes the spurious 1.0818503857 V psi family. Their combination closes the Vg=0.5 V point to 0.013041 dex. The exact no-predictor 31-point confirmation converges all points in 177 full Newton steps and passes median log error, P95 log error, endpoint current, Vth and KCL gates. P95 improves to 0.099697 dex and Vth error to 0.0387 mV. A same-contract frozen replay proves contact HFS remains necessary: at Vg=0.5 and 0.833333 V, HFS off gives 11.00098x and 10.98829x current while HFS on gives 1.00071x and 1.00020x. The corrected eight-state replay reduces median self-consistent feedback from the old 0.403147 dex to 0.005615 dex, so the former phin-amplified platform is closed rather than reclassified as an engine floor. Stage 3 remains failed solely because maximum gm differs by 24.3076% versus the frozen 20% limit; both curves locate maximum gm on the same exact Vg=1.0--1.1667 V segment, excluding interpolation or peak-location artifacts. A new T-2022.03-SP2 endpoint state at Vg=1.1667 V enables an exact two-endpoint frozen replay: the AverageBox plus qualified-HFS operator gives gm=9.444475139e-6 A/(um V), only +0.0202% from the Sentaurus 9.442565684e-6, while self-consistent Vela remains -24.3076%. The feedback becomes -0.0890742 to -0.1065699 dex and is dominated by phin (-0.0904882 to -0.1079843 dex); psi stays near +0.001399 dex and phip is zero. The ledger therefore remains draft: the fixed-state coefficient/mobility slope is closed, but the bias-dependent electron-QF feedback is not an approved engine floor.",
       "excluded_causes": [
         "uniform electrostatic, flatband, or reference-energy offset",
         "terminal floating-point summation",
@@ -32,11 +32,12 @@
         "missing contact-boundary ElectricField fallback as the sole remaining cause",
         "constant_field cached-mobility Jacobian mismatch as a physical curve-amplitude cause",
         "the former 0.403147 dex phin state-feedback amplification as a remaining platform under the corrected node-local plus AverageBox contract",
-        "contact HFS as the cause of the former self-consistent 2.6--2.7x platform; it remains a required fixed-state operator correction"
+        "contact HFS as the cause of the former self-consistent 2.6--2.7x platform; it remains a required fixed-state operator correction",
+        "AverageBox carrier coefficients or qualified HFS mobility amplitude as the cause of the Vg=1.0--1.1667 V maximum-gm deficit"
       ],
       "open_causes": [
-        "fixed-state coefficient and mobility replay at Vg=1.0 and 1.16666666666667 V to separate the remaining HFS support and self-consistent slope feedback",
-        "whether the residual maximum-gm difference requires a full per-region Poisson AverageBox coefficient and Measure contract; deferred until the fixed-state slope replay provides evidence",
+        "two-endpoint electron-continuity and Jacobian reclose audit of the phin feedback that grows from -0.0904882 to -0.1079843 dex across Vg=1.0--1.16666666666667 V",
+        "whether the residual maximum-gm difference requires any per-region Poisson AverageBox coefficient and Measure work; deprioritized because the frozen psi effect is nearly bias independent",
         "generalized SRH hole-QF reference convention after removal of the source-short contact reconstruction artifact; low expected impact on Id-Vg but material for recombination qualification"
       ],
       "evidence": [
@@ -110,7 +111,7 @@
         },
         {
           "path": "reference_tcad/templates_ldmos_sentaurus2022/contracts/diagnostics/templates_ldmos_external_averagebox_profile.json",
-          "sha256": "8bcc26ccad97a2212432e1e2f3aa5b03ebc3f570b196d70d884a856f977bef1a"
+          "sha256": "034bb9d13b13eb8b243dba2c7db76c05a826f852240df993fc67a94b44ddd1da"
         },
         {
           "path": "scripts/prepare_templates_ldmos_phase23.py",
@@ -118,7 +119,7 @@
         },
         {
           "path": "docs/validation/templates_ldmos_g3_averagebox_curve_qualification_2026-08-31.md",
-          "sha256": "f9fa7f1045a8da7069cd2e1e5814ca2449ce9930affa715ccfc0f5c8f8ddfe22"
+          "sha256": "39b7e05885f8344e094c02ce948ae2afa852b67a3a676161eb81a3a5a7c7836f"
         },
         {
           "path": "scripts/run_templates_ldmos_g3_averagebox_curve.py",
@@ -127,9 +128,17 @@
         {
           "path": "scripts/run_templates_ldmos_g3_contact_hfs_replay.py",
           "sha256": "8920e5f27eda49d748a99e9ea97393bb237f1bfb3136a7f92a7524745d95ba8b"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_gm_segment_fixed_state_audit_2026-08-31.md",
+          "sha256": "162864754cac08a597b2a28f00deb396cae20dbd31d63edb4622627f5f317eb0"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_gm_operator.py",
+          "sha256": "9a7ede00b266adb348320874750324626d1e42039be7ed56387581395f7fd84b"
         }
       ],
-      "expires_when": "The Vg=1.0 and 1.16666666666667 V fixed-state slope replay closes or classifies the remaining maximum-gm difference, generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
+      "expires_when": "The Vg=1.0 and 1.16666666666667 V electron-QF reclose audit closes or classifies the remaining maximum-gm difference, generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
       "approval": {
         "status": "draft",
         "benchmark_owner": null,

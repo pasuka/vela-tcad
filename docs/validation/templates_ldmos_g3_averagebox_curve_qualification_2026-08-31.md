@@ -89,10 +89,11 @@ corrected contract.
 2. Stage-3 remains **failed** solely on the frozen 20% maximum-gm gate. The
    gate is not relaxed, and no mobility, flatband or threshold calibration is
    authorized.
-3. The known-difference ledger remains draft. Before IALMob, the next minimal
-   experiment is a fixed-state coefficient/mobility replay at the exact
-   `1.0 V` and `1.1667 V` states to separate AverageBox transport support from
-   the remaining HFS/state-feedback slope difference.
+3. The follow-up fixed-state coefficient/mobility replay at the exact `1.0 V`
+   and `1.1667 V` states closes the operator slope to `+0.0202%`, while the
+   self-consistent slope remains `-24.3076%`. The remaining failure is
+   electron-QF state feedback, not AverageBox or HFS operator amplitude. See
+   `templates_ldmos_g3_gm_segment_fixed_state_audit_2026-08-31.md`.
 4. A full per-region Poisson AverageBox implementation remains deferred: the
    present run does not provide evidence that it is the gm root cause.
 
@@ -104,6 +105,8 @@ corrected contract.
   `scripts/run_templates_ldmos_g3_contact_hfs_replay.py`.
 - Corrected state-feedback replay:
   `scripts/audit_templates_ldmos_g3_state_feedback.py`.
+- Maximum-gm segment replay report:
+  `docs/validation/templates_ldmos_g3_gm_segment_fixed_state_audit_2026-08-31.md`.
 - Frozen profile contract:
   `reference_tcad/templates_ldmos_sentaurus2022/contracts/diagnostics/templates_ldmos_external_averagebox_profile.json`.
 - Ignored run directory:
@@ -116,3 +119,7 @@ corrected contract.
   `reference_staging/templates_ldmos_g3_contact_hfs_replay_averagebox_node_local_v2_20260831/`
   and
   `reference_staging/templates_ldmos_g3_state_feedback_averagebox_node_local_20260831/`.
+- Ignored maximum-gm endpoint evidence:
+  `reference_staging/templates_ldmos_g3_averagebox_state_feedback_vg1_20260831/`,
+  `reference_staging/templates_ldmos_g3_averagebox_state_feedback_vg1p166667_20260831/`
+  and `reference_staging/templates_ldmos_g3_gm_state_capture_20260831/`.

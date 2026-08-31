@@ -2,7 +2,7 @@
   "schema": "vela.templates_ldmos.external_averagebox_profile.v1",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
   "profile_name": "templates_ldmos_external_averagebox",
-  "status": "qualified_diagnostic_curve_stage3_gm_open",
+  "status": "qualified_diagnostic_curve_stage3_phin_feedback_open",
   "default_enabled": false,
   "scope": {
     "device": "Templates/LDMOS exact SProcess topology",
@@ -120,6 +120,60 @@
       "median_feedback_amplification_dex": 0.00561467626862835,
       "median_feedback_amplification_factor": 1.013012201265015,
       "interpretation": "the former 0.403147 dex self-consistent platform amplification is closed; contact HFS remains a required fixed-state operator term"
+    },
+    "maximum_gm_segment_fixed_state_replay": {
+      "bias_points_V": [
+        1.0,
+        1.1666666666666667
+      ],
+      "sentaurus_terminal_A_per_um": [
+        1.25415516282614e-6,
+        2.82791611008207e-6
+      ],
+      "vela_operator_on_sentaurus_state_A_per_um": [
+        1.2544086857135972e-6,
+        2.8284878755373677e-6
+      ],
+      "self_consistent_vela_A_per_um": [
+        1.0217975494382006e-6,
+        2.2130153345223984e-6
+      ],
+      "operator_log10_ratio_dex": [
+        8.778217185720857e-5,
+        8.779945126110073e-5
+      ],
+      "self_consistent_feedback_dex": [
+        -0.08907419570136067,
+        -0.10656989815017437
+      ],
+      "sentaurus_gm_A_per_um_V": 9.442565683535577e-6,
+      "fixed_state_operator_gm_A_per_um_V": 9.44447513894262e-6,
+      "fixed_state_operator_gm_ratio": 1.0002022178580523,
+      "self_consistent_vela_gm_A_per_um_V": 7.147306710505183e-6,
+      "self_consistent_vela_gm_ratio": 0.7569242248393891,
+      "dominant_state_family": "phin",
+      "phin_effect_dex": [
+        -0.09048819944094559,
+        -0.10798431203425732
+      ],
+      "vela_state_operator_ab": {
+        "variants": [
+          "qualified",
+          "mesh_default",
+          "contact_hfs_off",
+          "global_hfs_off",
+          "mesh_default_global_hfs_off"
+        ],
+        "endpoint_growth_ratio_range": [
+          2.165795497381398,
+          2.165974745960519
+        ],
+        "operator_log_slope_span_dex_per_V": 0.00021565317957117358,
+        "qualified_log_slope_gap_to_sentaurus_dex_per_V": 0.10497411131707501,
+        "operator_span_over_qualified_log_slope_gap": 0.002054346322778496
+      },
+      "interpretation": "AverageBox plus qualified HFS closes the frozen-state segment slope; the remaining maximum-gm deficit is electron-QF self-consistent feedback",
+      "passed": true
     }
   },
   "comparison_masks": {
@@ -142,6 +196,6 @@
       "max_gm_relative_error": 0.24307577516061074,
       "worst_kcl_relative_error": 1.1429698478423298e-9
     },
-    "next_gate": "fixed-state coefficient and mobility replay at Vg=1.0 and 1.16666666666667 V before IALMob or any threshold change"
+    "next_gate": "two-endpoint electron-continuity and Jacobian reclose audit of the bias-dependent phin feedback before IALMob or any threshold change"
   }
 }
