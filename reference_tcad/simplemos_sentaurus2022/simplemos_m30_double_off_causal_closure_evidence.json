@@ -45,6 +45,6 @@
     "tests/regression/test_simplemos_m30_double_off_causal_closure.py": "50bc5308d877ba8cd8278d5f9b0fee4da2ddadbfea48606fbdbae07764ee959d",
     "docs/validation/simplemos_m30_double_off_causal_closure_2026-08-31.md": "e0515cbedd0b3a3c7c7d5e0217447fa702c445ceec02c4a55ff30275f433c2a3",
     "docs/validation/figures/simplemos_m30/simplemos_m30_double_off_causal_closure.png": "084efc3ba6034dcad659f3a383bb054f38e92c49a2dd0a9e656ec07ac5b9eeb5",
-    "CMakeLists.txt": "b0b8c774c179a3f7feb0066fe7e1ec3b9dfc8b751054c971b982acb648925158"
+    "CMakeLists.txt": "32437c71e983e21e73c44a4c998e260f8d93aaad10eaea9431c9b1e62a29d90d"
   }
 }

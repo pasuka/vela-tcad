@@ -1,0 +1,43 @@
+{
+  "artifact_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_interface_edge_coefficients.csv": "258c30698fe6f46d45e4a74674db28bd463241ce8e737ae5e7f9b128523dc88b",
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_interface_node_measures.csv": "3fd28c893c54b10d3f5e020177adca8807c1c08c57ced4fcba20f3ef7ae0ac30",
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_sentaurus_interface_box_probe_report.json": "c909b6c13cac1d9a847e78ae2a4bb268dedbaff5cf0fe86848a83c1eec56744d",
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_vertex_mapping_summary.csv": "20c69eb879622974f3396cefef53898e2a416f1fcb4f4f301d0141e90fcb5af5"
+  },
+  "raw_oracle_hashes": {
+    "MeasureCoefficients.debug": "c68b10722aa9a8256a2c4dfe99b8915c182ef062366d51c0347a2798dd9d759d",
+    "input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "m34_box_probe.console.log": "6c1c2f8e4cf30c37203c66683f1d2a879877eb45c3b1883e8975155b81f9fcb9"
+  },
+  "schema": "vela.simplemos.sdevice.m34_sentaurus_interface_box_probe_evidence.v1",
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m34_sentaurus_interface_box_probe_contract_v1.json": "94ff2355227cff3691336859b6f7ffb1f081e64f01918226269fd4635adeaa51",
+    "scripts/freeze_simplemos_m34_sentaurus_interface_box_probe_evidence.py": "71daa323b2f5cc1828464ddcce2e1fe546b12b168e41300a3600330d20a078bd",
+    "scripts/run_simplemos_m34_sentaurus_interface_box_probe.py": "35979b5b4636c012cc74f2e9fbb4841a53b002c9c57f3e225ce861129311d551",
+    "tests/regression/test_simplemos_m34_sentaurus_interface_box_probe.py": "3063e40565fae00990efe753094597d01cbaac09c428506a12f0ec16f1663e57"
+  },
+  "status": "passed",
+  "summary": {
+    "barycentric_total_over_si_measure_median": 4.833725646523527,
+    "double_edges": 0,
+    "explicit_si_oxide_double_nodes_supported": false,
+    "input_grid_vertices": 1482,
+    "input_to_debug_local_permutation": [
+      1,
+      0,
+      2
+    ],
+    "internal_vertex_delta": 82,
+    "legacy_poisson_ratio_median": 1.4272691926338965,
+    "production_default_changed": false,
+    "region_poisson_ratio_max": 1.0000000000000056,
+    "region_poisson_ratio_min": 0.999999999999995,
+    "sdevice_internal_vertices": 1564,
+    "sentaurus_total_over_si_measure_median": 4.760654569439349,
+    "si_oxide_interface_edges": 20,
+    "si_oxide_interface_nodes": 21,
+    "triangle_records": 2746,
+    "unique_contact_nodes": 82
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "claim_policy": [
+    "Input-grid shared node ids and SDevice internal vertex counts are reported separately.",
+    "An internal vertex-count increase is not attributed to material double points unless contact expansion is excluded.",
+    "Measure and Coefficients are interpreted as region-local element contributions, not as independent electrostatic degrees of freedom.",
+    "No production model default is changed by this probe."
+  ],
+  "conclusions": {
+    "explicit_si_oxide_double_nodes_supported": false,
+    "input_si_oxide_topology": "shared_node_ids",
+    "internal_vertex_expansion": "fully_explained_by_unique_contact_nodes",
+    "production_default_changed": false,
+    "region_local_box_contributions_supported": true
+  },
+  "debug_sha256": "c68b10722aa9a8256a2c4dfe99b8915c182ef062366d51c0347a2798dd9d759d",
+  "input_tdr_sha256": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+  "log_sha256": "6c1c2f8e4cf30c37203c66683f1d2a879877eb45c3b1883e8975155b81f9fcb9",
+  "probe": {
+    "coefficient_record_count": 2746,
+    "debug_info": {
+      "dimension": 2,
+      "nb_des_elements": 2746,
+      "nb_grd_elements": 2824,
+      "nb_vertices": 1482
+    },
+    "input_to_debug_local_permutation": [
+      1,
+      0,
+      2
+    ],
+    "interface_permutation_max_abs_coefficient_error": 1.5631940186722204e-13,
+    "log_stats": {
+      "average_box_method": true,
+      "double_edges": 0,
+      "geometrical_edges": 4227,
+      "input_grid_points": 1482,
+      "internal_edges": 4309,
+      "internal_elements": 2746,
+      "internal_vertices": 1564,
+      "non_delaunay_elements": 0,
+      "obtuse_elements": 76
+    },
+    "measure_record_count": 2746,
+    "triangle_des_ids_complete": true,
+    "triangle_grd_des_identity_count": 2746,
+    "triangle_record_count": 2746
+  },
+  "schema": "vela.simplemos.sdevice.m34_sentaurus_interface_box_probe_report.v1",
+  "sentaurus_banner": "****************************************************************************\n***                           Sentaurus Device                           ***\n***                        Version T-2022.03-SP2                         ***\n***                      (0.7745337, x86_64, Linux)                      ***\n***                                                                      ***",
+  "si_oxide_interface": {
+    "barycentric_total_over_si_measure_max": 11.287500485296782,
+    "barycentric_total_over_si_measure_median": 4.833725646523527,
+    "barycentric_total_over_si_measure_min": 3.656055920809001,
+    "edge_count": 20,
+    "node_count": 21,
+    "sentaurus_total_over_si_measure_max": 12.952251643640542,
+    "sentaurus_total_over_si_measure_median": 4.760654569439349,
+    "sentaurus_total_over_si_measure_min": 2.992041940606738,
+    "sentaurus_vs_raw_max_abs_oxide_coefficient": 1.0269562977782698e-15,
+    "sentaurus_vs_raw_max_abs_si_coefficient": 2.42861286636753e-16,
+    "vela_legacy_over_sentaurus_region_poisson_max": 1.4272691926339056,
+    "vela_legacy_over_sentaurus_region_poisson_median": 1.4272691926338965,
+    "vela_legacy_over_sentaurus_region_poisson_min": 1.4272691926338903,
+    "vela_region_over_sentaurus_region_poisson_max": 1.0000000000000056,
+    "vela_region_over_sentaurus_region_poisson_median": 0.9999999999999991,
+    "vela_region_over_sentaurus_region_poisson_min": 0.999999999999995
+  },
+  "status": "qualified",
+  "vertex_mapping": {
+    "contact_nodes_explain_delta": true,
+    "debug_grid_vertices": 1482,
+    "double_edges": 0,
+    "geometrical_edges": 4227,
+    "input_duplicate_coordinate_groups": 0,
+    "input_grid_vertices": 1482,
+    "internal_edge_delta": 82,
+    "internal_edges": 4309,
+    "internal_vertex_delta": 82,
+    "material_interface_nodes": 21,
+    "no_material_double_node_evidence": true,
+    "sdevice_internal_vertices": 1564,
+    "unique_contact_nodes": 82
+  }
+}
