@@ -1,0 +1,74 @@
+{
+  "schema": "vela.simplemos.sdevice.m37_measure_contact_qf_ablation_report.v1",
+  "status": "complete",
+  "execution": {
+    "new_sentaurus_execution": false,
+    "new_self_consistent_workflows": 1,
+    "cpp_changed": true,
+    "default_model_changed": false
+  },
+  "acceptance": {
+    "checks": {
+      "boundary_variants": true,
+      "boundary_converged": true,
+      "existing_endpoint_replay": true,
+      "drain_cut": true,
+      "contact_mobility": true,
+      "m26_first_order": true,
+      "finite": true
+    },
+    "all_checks_pass": true
+  },
+  "boundary_measure_ablation": {
+    "variants": [
+      {
+        "variant": "historical_node_volume",
+        "converged": true,
+        "current_A_per_um": 1.0552456893367724e-16,
+        "log_current_shift_vs_historical_dex": 0.0,
+        "absolute_error_dex": 0.08955000692897094
+      },
+      {
+        "variant": "external_boundary_contact_support_signed",
+        "converged": true,
+        "current_A_per_um": 1.0548062813155578e-16,
+        "log_current_shift_vs_historical_dex": -0.00018087941371138985,
+        "absolute_error_dex": 0.08936912751525959
+      },
+      {
+        "variant": "all_transport_nodes_signed",
+        "converged": true,
+        "current_A_per_um": 1.0428196013000024e-16,
+        "log_current_shift_vs_historical_dex": -0.005144400978631938,
+        "absolute_error_dex": 0.08440560595033898
+      }
+    ],
+    "boundary_scope_fraction_of_all_signed_log_response": 0.035160442287197356
+  },
+  "contact_sg_ablation": {
+    "drain_cut_edge_count": 7,
+    "maximum_mobility_log10_response_dex": 0.0,
+    "signed_direct_electron_current_delta_A_per_um": 0.0,
+    "maximum_absolute_direct_electron_edge_delta_A_per_um": 0.0,
+    "global_frozen_operator_delta_A_per_um": -1.0970581393467128e-21,
+    "global_frozen_operator_effect_dex": -4.311819507600958e-06
+  },
+  "quasi_fermi_feedback_ablation": {
+    "actual_self_consistent_current_change_A_per_um": -2.854760289011566e-17,
+    "direct_frozen_operator_current_change_A_per_um": -1.0976849598773321e-21,
+    "adjoint_relaxation_current_change_A_per_um": -2.697514366044037e-17,
+    "direct_fraction_of_actual": 3.8451037871813583e-05,
+    "adjoint_relaxation_fraction_of_actual": 0.9449179941402458,
+    "first_order_relative_error": 0.055043554821882404,
+    "electron_equation_signed_fraction": 0.9999969602546505
+  },
+  "claim_policy": [
+    "Boundary measure, direct contact SG response, and self-consistent quasi-Fermi relaxation are reported as separate causal layers.",
+    "A same-state contact-cut replacement measures only the direct SG contribution and excludes self-consistent state relaxation.",
+    "The M26 adjoint is a first-order feedback attribution and retains its measured nonlinear error envelope.",
+    "No default geometry, HFS, contact, SG, or solver setting is changed by M37."
+  ],
+  "artifacts": {
+    "boundary_measure_response": "reference_tcad/simplemos_sentaurus2022/measure_contact_qf_ablation/m37_boundary_measure_response.csv"
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "schema": "vela.simplemos.sdevice.m36_boundary_contact_measure_audit_report.v1",
+  "status": "complete",
+  "execution": {
+    "new_sentaurus_execution": false,
+    "raw_oracle_reused": "build-release/reference_tcad/simplemos_sentaurus2022/m34_interface_box_probe/sentaurus_raw/sentaurus_bundle/n23/MeasureCoefficients.debug",
+    "cpp_changed": false,
+    "default_model_changed": false
+  },
+  "mesh": {
+    "node_count": 1482,
+    "triangle_count": 2746,
+    "external_edge_count": 216,
+    "material_interface_edge_count": 56,
+    "contacts": {
+      "substrate": 29,
+      "source": 3,
+      "drain": 3,
+      "gate": 47
+    },
+    "contact_edges": {
+      "substrate": 28,
+      "source": 2,
+      "drain": 2,
+      "gate": 46
+    },
+    "contact_first_layer_nodes": {
+      "substrate": 29,
+      "source": 5,
+      "drain": 5,
+      "gate": 47
+    }
+  },
+  "acceptance": {
+    "checks": {
+      "triangles": true,
+      "source_nodes": true,
+      "drain_nodes": true,
+      "substrate_nodes": true,
+      "required_classes": true,
+      "assembled_si_node_measure": true,
+      "finite": true
+    },
+    "all_checks_pass": true
+  },
+  "node_class_summary": [
+    {
+      "node_class": "contact_first_layer",
+      "relative_error_count": 39,
+      "relative_error_minimum": 0.0,
+      "relative_error_median": 2.0218822516227607e-16,
+      "relative_error_p95": 2.182686455182585e-15,
+      "relative_error_maximum": 2.182686455182585e-15,
+      "sentaurus_si_measure_sum_um2": 0.18470245402439822,
+      "raw_si_measure_sum_um2": 0.1847024540243982
+    },
+    {
+      "node_class": "direct_contact",
+      "relative_error_count": 35,
+      "relative_error_minimum": 0.0,
+      "relative_error_median": 2.266003099213054e-16,
+      "relative_error_p95": 1.7805734357699924e-15,
+      "relative_error_maximum": 1.7805734357699924e-15,
+      "sentaurus_si_measure_sum_um2": 0.1040166087170095,
+      "raw_si_measure_sum_um2": 0.1040166087170095
+    },
+    {
+      "node_class": "external_boundary",
+      "relative_error_count": 52,
+      "relative_error_minimum": 0.0,
+      "relative_error_median": 3.779578496511407e-16,
+      "relative_error_p95": 2.409945707947253e-15,
+      "relative_error_maximum": 2.412087267591069e-15,
+      "sentaurus_si_measure_sum_um2": 0.09213678141894766,
+      "raw_si_measure_sum_um2": 0.09213678141894768
+    },
+    {
+      "node_class": "interior",
+      "relative_error_count": 777,
+      "relative_error_minimum": 0.0,
+      "relative_error_median": 2.7933494473414263e-16,
+      "relative_error_p95": 9.032856929231007e-16,
+      "relative_error_maximum": 3.993714693623299e-15,
+      "sentaurus_si_measure_sum_um2": 0.6140723182912484,
+      "raw_si_measure_sum_um2": 0.6140723182912484
+    },
+    {
+      "node_class": "material_interface",
+      "relative_error_count": 39,
+      "relative_error_minimum": 3.5551657462492364e-16,
+      "relative_error_median": 1.732607626348276e-15,
+      "relative_error_p95": 3.910682320874127e-15,
+      "relative_error_maximum": 4.0291878457491e-15,
+      "sentaurus_si_measure_sum_um2": 2.589937757875927e-05,
+      "raw_si_measure_sum_um2": 2.5899377578759227e-05
+    }
+  ],
+  "contact_support_summary": [
+    {
+      "contact": "drain",
+      "support_class": "direct_contact",
+      "relative_error_count": 3,
+      "relative_error_minimum": 1.305066848314028e-15,
+      "relative_error_median": 1.40013072400725e-15,
+      "relative_error_p95": 1.7805734357699924e-15,
+      "relative_error_maximum": 1.7805734357699924e-15,
+      "sentaurus_si_measure_sum_um2": 1.3579358504782543e-05,
+      "raw_si_measure_sum_um2": 1.3579358504782523e-05
+    },
+    {
+      "contact": "drain",
+      "support_class": "first_layer",
+      "relative_error_count": 5,
+      "relative_error_minimum": 0.0,
+      "relative_error_median": 3.4894346382039634e-16,
+      "relative_error_p95": 2.182686455182585e-15,
+      "relative_error_maximum": 2.182686455182585e-15,
+      "sentaurus_si_measure_sum_um2": 9.887701219911767e-05,
+      "raw_si_measure_sum_um2": 9.887701219911769e-05
+    },
+    {
+      "contact": "source",
+      "support_class": "direct_contact",
+      "relative_error_count": 3,
+      "relative_error_minimum": 1.305066848314028e-15,
+      "relative_error_median": 1.40013072400725e-15,
+      "relative_error_p95": 1.7805734357699924e-15,
+      "relative_error_maximum": 1.7805734357699924e-15,
+      "sentaurus_si_measure_sum_um2": 1.3579358504782543e-05,
+      "raw_si_measure_sum_um2": 1.3579358504782523e-05
+    },
+    {
+      "contact": "source",
+      "support_class": "first_layer",
+      "relative_error_count": 5,
+      "relative_error_minimum": 0.0,
+      "relative_error_median": 3.4894346382039634e-16,
+      "relative_error_p95": 2.182686455182585e-15,
+      "relative_error_maximum": 2.182686455182585e-15,
+      "sentaurus_si_measure_sum_um2": 9.887701219911767e-05,
+      "raw_si_measure_sum_um2": 9.887701219911769e-05
+    },
+    {
+      "contact": "substrate",
+      "support_class": "direct_contact",
+      "relative_error_count": 29,
+      "relative_error_minimum": 0.0,
+      "relative_error_median": 1.6810036665468233e-16,
+      "relative_error_p95": 4.026667310899147e-16,
+      "relative_error_maximum": 4.026667310899147e-16,
+      "sentaurus_si_measure_sum_um2": 0.10398944999999994,
+      "raw_si_measure_sum_um2": 0.10398944999999993
+    },
+    {
+      "contact": "substrate",
+      "support_class": "first_layer",
+      "relative_error_count": 29,
+      "relative_error_minimum": 0.0,
+      "relative_error_median": 1.8012926147026117e-16,
+      "relative_error_p95": 4.538972925821197e-16,
+      "relative_error_maximum": 4.641477717081637e-16,
+      "sentaurus_si_measure_sum_um2": 0.18450469999999997,
+      "raw_si_measure_sum_um2": 0.18450469999999997
+    }
+  ],
+  "maximum_local_relative_error": 132.8714036686624,
+  "maximum_si_node_relative_error": 4.0291878457491e-15,
+  "claim_policy": [
+    "The audit distinguishes direct contact nodes from neighbouring free nodes.",
+    "A raw circumcentric share is not called Sentaurus-equivalent outside classes that close against MeasureCoefficients.debug.",
+    "Contact vertex expansion and geometric boundary clipping remain separate candidate mechanisms.",
+    "No production model or geometry default is changed by M36."
+  ],
+  "artifacts": {
+    "local_measure_ledger": "reference_tcad/simplemos_sentaurus2022/boundary_contact_measure_audit/m36_local_measure_ledger.csv",
+    "node_measure_ledger": "reference_tcad/simplemos_sentaurus2022/boundary_contact_measure_audit/m36_node_measure_ledger.csv",
+    "node_class_summary": "reference_tcad/simplemos_sentaurus2022/boundary_contact_measure_audit/m36_node_class_summary.csv",
+    "contact_support_summary": "reference_tcad/simplemos_sentaurus2022/boundary_contact_measure_audit/m36_contact_support_summary.csv"
+  }
+}

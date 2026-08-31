@@ -45,14 +45,14 @@
     "scripts/plot_simplemos_m35_signed_average_box_assembly.py": "740b94b167d50e28cd9eb568a41cb47766537834a7ccc8cb519e11fad8f6f50b",
     "scripts/freeze_simplemos_m35_signed_average_box_assembly_evidence.py": "2b0066dda483433f2c3a1a387b83bb72fefcc5b4dbfb89229c1ee1a4ce0ce8e2",
     "tests/regression/test_simplemos_m35_signed_average_box_assembly.py": "f75b0a0f7dce0d9cffdd631c1f043307658ced0298226ff495802008568257a1",
-    "tests/test_mos_mixed_material.cpp": "e25809b1edfc22207c5037ee0927d9cfe8228795a7c4b831a1b4e16cf1603910",
-    "tests/test_newton_solver.cpp": "70b55cd2622fae396e3315d7ce0f7dc6ca07b994cbb828bd33e8b11cdd15b13a",
+    "tests/test_mos_mixed_material.cpp": "6e6a96ce074a04c58f76781a241d8cd2369c52978f02f7de25fee8ab15b2e794",
+    "tests/test_newton_solver.cpp": "94bc0c2d4dbbe1c8a13214164229d393ae90fa75ecc94e0080f35b694c858334",
     "docs/validation/simplemos_m35_signed_average_box_assembly_2026-08-31.md": "f8b66f8bf1ddf4befbc0745011a9a6ce03d9f4c5a726eacad9c69c97d0766d3f",
     "docs/validation/figures/simplemos_m35/simplemos_m35_signed_average_box_assembly.png": "b0bee57e882e97fb5bc10e07f65bce2e9578ee3780ff84c564272dab8d637ef7",
-    "include/vela/equation/AssemblerUtils.h": "174d0ca83228075cd43e6103a4aa8ac227f4be0b3c7494e214520dc22936c932",
-    "include/vela/equation/DDAssembler.h": "4069a40e3296649c00ab9051c2862b7764172623aa9eadb12a5abd3a27c6b17b",
-    "src/equation/CoupledDDAssembler.cpp": "754997b9e3fde81f9e81f8b9ff065d50a752bffd30942a3d80e4312abb028090",
-    "src/solver/NewtonSolver.cpp": "c39486321bec187317798d55222adced11e083503586d69a52c2eb0afe2ea872",
-    "CMakeLists.txt": "b6e283907f18e155f7bc97bc6eb1f5f2066c4001893d7aa45ffbe7d7b49d6955"
+    "include/vela/equation/AssemblerUtils.h": "f5646b1eec6efbc16fa858dc8f8b618d6496bfc810c5ba767c9cc2531f2e93f7",
+    "include/vela/equation/DDAssembler.h": "c9d86a177cb7a32df842483cbfcdf5fbf89c1c747d7d932e50d09dc61081e58c",
+    "src/equation/CoupledDDAssembler.cpp": "0e4103dd04d9aa6ead577d64a88507566c4c019112fc214051dfe851e65a1f18",
+    "src/solver/NewtonSolver.cpp": "dd39eb5568ad68b3a9cc9a3566a359f4a8b7a3f1d50753adb41892c8e9d2b30c",
+    "CMakeLists.txt": "5d95711a76a836cefbb5cb17687fae4939ba7b020a0223350e9420169ebb37c3"
   }
 }

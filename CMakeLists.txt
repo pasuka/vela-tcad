@@ -1109,6 +1109,27 @@ set_tests_properties(simplemos_m35_signed_average_box_assembly PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m35_signed_average_box_assembly)
 
+add_test(NAME simplemos_m36_boundary_contact_measure_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m36_boundary_contact_measure_audit)
+set_tests_properties(simplemos_m36_boundary_contact_measure_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m36_boundary_contact_measure_audit)
+
+add_test(NAME simplemos_m37_measure_contact_qf_ablation
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m37_measure_contact_qf_ablation)
+set_tests_properties(simplemos_m37_measure_contact_qf_ablation PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m37_measure_contact_qf_ablation)
+
+add_test(NAME simplemos_m38_ldmos_mechanism_crosscheck
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m38_ldmos_mechanism_crosscheck)
+set_tests_properties(simplemos_m38_ldmos_mechanism_crosscheck PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m38_ldmos_mechanism_crosscheck)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)

@@ -418,6 +418,54 @@ inline std::vector<Real> computeTransportSignedAverageBoxNodeVolumes(
     return volume;
 }
 
+/// Replace historical node volumes by signed transport measures only on a
+/// diagnostic topology support.  The boundary/contact scope contains every
+/// external-boundary node plus the complete one-ring of every contact node.
+inline std::vector<Real> computeScopedTransportSignedAverageBoxNodeVolumes(
+    const DeviceMesh& mesh,
+    const std::vector<Material>& cellMaterials,
+    const std::string& scope)
+{
+    const auto signedVolume =
+        computeTransportSignedAverageBoxNodeVolumes(mesh, cellMaterials);
+    if (scope == "all_transport_nodes")
+        return signedVolume;
+    if (scope != "external_boundary_contact_support") {
+        throw std::invalid_argument(
+            "signed AverageBox node-volume scope must be "
+            "'all_transport_nodes' or "
+            "'external_boundary_contact_support'");
+    }
+
+    std::vector<Real> volume = computeNodeVolumes(mesh);
+    std::vector<bool> selected(mesh.numNodes(), false);
+    const auto edgeCells = buildEdgeCellMap(mesh);
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        if (edgeCells.at(edgeId).size() == 1) {
+            selected.at(edge.n0) = true;
+            selected.at(edge.n1) = true;
+        }
+    }
+    std::vector<bool> contactNodes(mesh.numNodes(), false);
+    for (const Contact& contact : mesh.contacts()) {
+        for (Index node : contact.node_ids)
+            contactNodes.at(node) = true;
+    }
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        if (contactNodes.at(edge.n0) || contactNodes.at(edge.n1)) {
+            selected.at(edge.n0) = true;
+            selected.at(edge.n1) = true;
+        }
+    }
+    for (Index node = 0; node < mesh.numNodes(); ++node) {
+        if (selected.at(node))
+            volume.at(node) = signedVolume.at(node);
+    }
+    return volume;
+}
+
 /// Return sum_c epsilon_c * couple_c for one edge [F].
 inline Real regionResolvedPermittivityCoupling(
     const DeviceMesh& mesh,

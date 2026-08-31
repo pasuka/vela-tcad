@@ -28,17 +28,17 @@
   ],
   "source_hashes": {
     "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_contract_v1.json": "6bb1c782291dae53efbd2f1593839dea68911f0eeb78d699db432292da362a6a",
-    "reference_tcad/simplemos_sentaurus2022/simplemos_m30_double_off_causal_closure_evidence.json": "9a386b74b73e41758bcc60cffb3df787593c928e2411b658bc288c47fad9a4ac",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m30_double_off_causal_closure_evidence.json": "91073be5868e9e9b983fdeadf458f90c2a7e456c24e87462f1ac2def03713359",
     "include/vela/solver/NewtonSolver.h": "65753c3ed686b59566a3a66df8a1837b71dd0e5a9f80dc1c44d17a2c9f0412ba",
-    "src/solver/NewtonSolver.cpp": "c39486321bec187317798d55222adced11e083503586d69a52c2eb0afe2ea872",
+    "src/solver/NewtonSolver.cpp": "dd39eb5568ad68b3a9cc9a3566a359f4a8b7a3f1d50753adb41892c8e9d2b30c",
     "src/tools/vela_example_runner.cpp": "cc5ca8d7ee8a710e83808eee363b878957901de9bff18b39bc3f3a5c85cf52b4",
-    "tests/test_newton_solver.cpp": "70b55cd2622fae396e3315d7ce0f7dc6ca07b994cbb828bd33e8b11cdd15b13a",
+    "tests/test_newton_solver.cpp": "94bc0c2d4dbbe1c8a13214164229d393ae90fa75ecc94e0080f35b694c858334",
     "scripts/run_simplemos_m31_minority_poisson_perturbation.py": "73c6a43e034c73c3af245b2955577eb3eb13a6ba3b5e316a62a174271d444d2b",
     "scripts/plot_simplemos_m31_minority_poisson_perturbation.py": "8e65b7f1339ec59efecd0f47036c4fa1f7f61916dc84576d4ad5f5b4b65b8a0f",
     "scripts/freeze_simplemos_m31_minority_poisson_perturbation_evidence.py": "f3531cd038d145141f623eafa79161d95c243ab62d627876cb2656b637defc81",
     "tests/regression/test_simplemos_m31_minority_poisson_perturbation.py": "d9d3670916e99853fa250649bc19db602f04902ee8767d3dbd7bb244c6c19b47",
     "docs/validation/simplemos_m31_minority_poisson_perturbation_2026-08-31.md": "461d7f0b70edcfb750e2be0033dee32fc59af1e199c0a2808b78111858b6237d",
     "docs/validation/figures/simplemos_m31/simplemos_m31_minority_poisson_perturbation.png": "6cd26314a59b50e345432439095933b9102389d1d724652b5cd65adabfba7e29",
-    "CMakeLists.txt": "b6e283907f18e155f7bc97bc6eb1f5f2066c4001893d7aa45ffbe7d7b49d6955"
+    "CMakeLists.txt": "5d95711a76a836cefbb5cb17687fae4939ba7b020a0223350e9420169ebb37c3"
   }
 }

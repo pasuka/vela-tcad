@@ -1,0 +1,39 @@
+{
+  "schema": "vela.simplemos.sdevice.m37_measure_contact_qf_ablation_evidence.v1",
+  "status": "frozen",
+  "summary": {
+    "boundary_scope_fraction_of_all_signed_log_response": 0.035160442287197356,
+    "contact_sg_direct_electron_delta_A_per_um": 0.0,
+    "qf_adjoint_relaxation_fraction_of_actual": 0.9449179941402458,
+    "qf_first_order_relative_error": 0.055043554821882404,
+    "default_model_changed": false
+  },
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/measure_contact_qf_ablation/m37_measure_contact_qf_ablation_report.json",
+      "sha256": "6900cec9db63d0da331f118fed8c347336b39569be53eff17b10cae4027237d9"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/measure_contact_qf_ablation/m37_boundary_measure_response.csv",
+      "sha256": "28cfa8047df429192b7dc6e54dd001fb29d503b1601adf4c00f58e05065fcb7b"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m37_measure_contact_qf_ablation_contract_v1.json": "f17f454963d0c892d5349e179c9c327d440734292caa5f41f424fd6b74447fa2",
+    "reference_tcad/simplemos_sentaurus2022/signed_average_box_assembly/m35_signed_average_box_assembly_report.json": "4d8eb73c8bb39d3117da3fd883e9328a015db7c64008e3db9ab08c8117526061",
+    "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_n23_hfs_deep_off_report.json": "68811209c12a644b53990c01e295c114afd20fc0b4b482dc7d098d9a5884aefb",
+    "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_key_state_drain_cut_edges.csv": "ecadb0ce05ad8033abb8b3690d2443e6843877a2bd93f537cb22c9573006a259",
+    "reference_tcad/simplemos_sentaurus2022/first_layer_feedback_audit/m26_first_layer_feedback_audit_report.json": "011fb4e66ca9fbeeb70d2c4e10fa64c36adac105c4e1c01e48d0f76b4159023e",
+    "scripts/run_simplemos_m37_measure_contact_qf_ablation.py": "82b5f4f4a935be0c367161cbf34d991a7356c9b4c62e4414e2715af0387955b1",
+    "scripts/freeze_simplemos_m37_measure_contact_qf_ablation_evidence.py": "1c6856642711cd23d5f4302acce9d01129dfa7d6f317b9af324bd906917b23cf",
+    "tests/regression/test_simplemos_m37_measure_contact_qf_ablation.py": "7b6ddbf679916c7c3ef3b580147d83461cd2e1a3ab3a695a86a914f1dcac16dd",
+    "tests/test_mos_mixed_material.cpp": "6e6a96ce074a04c58f76781a241d8cd2369c52978f02f7de25fee8ab15b2e794",
+    "tests/test_newton_solver.cpp": "94bc0c2d4dbbe1c8a13214164229d393ae90fa75ecc94e0080f35b694c858334",
+    "docs/validation/simplemos_m37_measure_contact_qf_ablation_2026-08-31.md": "232da39984ab1b46ac676f31d473d3d1ebb1aa1c37cfa15173d4633ae4c7ab8e",
+    "include/vela/equation/AssemblerUtils.h": "f5646b1eec6efbc16fa858dc8f8b618d6496bfc810c5ba767c9cc2531f2e93f7",
+    "include/vela/equation/DDAssembler.h": "c9d86a177cb7a32df842483cbfcdf5fbf89c1c747d7d932e50d09dc61081e58c",
+    "src/equation/CoupledDDAssembler.cpp": "0e4103dd04d9aa6ead577d64a88507566c4c019112fc214051dfe851e65a1f18",
+    "src/solver/NewtonSolver.cpp": "dd39eb5568ad68b3a9cc9a3566a359f4a8b7a3f1d50753adb41892c8e9d2b30c",
+    "CMakeLists.txt": "5d95711a76a836cefbb5cb17687fae4939ba7b020a0223350e9420169ebb37c3"
+  }
+}

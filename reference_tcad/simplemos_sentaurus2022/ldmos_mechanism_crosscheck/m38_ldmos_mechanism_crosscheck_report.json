@@ -1,0 +1,80 @@
+{
+  "schema": "vela.simplemos.sdevice.m38_ldmos_mechanism_crosscheck_report.v1",
+  "status": "qualified_read_only_snapshot",
+  "execution": {
+    "ldmos_worktree": "D:\\code-repo\\vela-tcad\\.worktrees\\templates-ldmos-phase-a",
+    "ldmos_branch_observed": "codex/templates-ldmos-phase-a",
+    "ldmos_worktree_dirty_observed": true,
+    "ldmos_files_modified": false,
+    "new_sentaurus_execution": false,
+    "default_model_changed": false
+  },
+  "acceptance": {
+    "checks": {
+      "signed_cotangent_invariant": true,
+      "ldmos_phin_dominant": true,
+      "ldmos_contact_operator_material": true,
+      "finite": true
+    },
+    "all_checks_pass": true
+  },
+  "simplemos": {
+    "boundary_scope_fraction_of_all_signed_log_response": 0.035160442287197356,
+    "contact_sg_direct_electron_delta_A_per_um": 0.0,
+    "qf_adjoint_relaxation_fraction_of_actual": 0.9449179941402458,
+    "qf_electron_equation_signed_fraction": 0.9999969602546505
+  },
+  "ldmos": {
+    "transport_nodes": 5723,
+    "averagebox_electron_residual_l2_ratio": 0.017307518590021404,
+    "averagebox_electron_residual_max_ratio": 0.04337104844138826,
+    "averagebox_candidate_reclose_current_error_dex": 0.29297178554691944,
+    "contact_hfs_baseline_fixed_error_dex": 1.0444301476938929,
+    "contact_hfs_corrected_fixed_error_dex": 0.019616828633726158,
+    "contact_hfs_operator_improvement_dex": 1.0248133190601667,
+    "operator_error_dex": 0.019616828633726834,
+    "self_consistent_error_dex": 0.42928063428743557,
+    "feedback_amplification_dex": 0.40966380565370875,
+    "feedback_fraction_of_self_consistent_error": 0.9543030198269045,
+    "psi_recovery_dex": 0.0014456817464040816,
+    "phin_recovery_dex": 0.4081834309468202,
+    "phip_recovery_dex": -2.827876821598352e-11,
+    "phin_fraction_of_feedback": 0.9963863668538491,
+    "signed_cotangent_operator_change_dex": -9.445070468825506e-05,
+    "signed_cotangent_self_consistent_change_dex": -9.60266416992206e-05,
+    "signed_cotangent_feedback_change_dex": -1.575937011000228e-06
+  },
+  "cross_device_conclusion": {
+    "shared_mechanism": "After contact-operator correction, electron quasi-Fermi self-consistent feedback dominates both devices.",
+    "device_specific_difference": "Direct contact HFS/SG correction is material in LDMOS but zero on the SimpleMOS drain cut.",
+    "geometry_interpretation": "AverageBox geometry strongly closes the LDMOS frozen residual but does not by itself close the self-consistent current."
+  },
+  "ldmos_source_hashes": {
+    "averagebox_full_mesh": {
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\templates-ldmos-phase-a\\reference_staging\\templates_ldmos_averagebox_full_mesh_20260831\\summary.json",
+      "sha256": "b3c87712d70f3f02770dd5f7be9db106a5d53b48308565461f6f4a39a29b269a"
+    },
+    "averagebox_newton_ab": {
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\templates-ldmos-phase-a\\reference_staging\\templates_ldmos_averagebox_newton_ab_release_20260831\\summary.json",
+      "sha256": "8af7efbe6d364fd4b1b357e9a794652ce00d4e8de828ab3e115f7d3a6de87a1f"
+    },
+    "contact_hfs_replay": {
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\templates-ldmos-phase-a\\reference_staging\\templates_ldmos_g3_contact_hfs_replay_release_20260831\\summary.json",
+      "sha256": "f83a3eda4558f08ef2c2ce0abcffaa9b3c04eada2d6e9f2c74c21351f1439e84"
+    },
+    "state_feedback": {
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\templates-ldmos-phase-a\\reference_staging\\templates_ldmos_g3_state_feedback_20260831\\summary.json",
+      "sha256": "42e2eaaaf4b8800845bf87368a7177ede18d33bea1aa7141ecf73ef38e672214"
+    },
+    "state_feedback_signed": {
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\templates-ldmos-phase-a\\reference_staging\\templates_ldmos_g3_state_feedback_signed_cotangent_20260831\\summary.json",
+      "sha256": "9d4bd0db0076cef3e33cbae9919d83441c71f5c999f6bdb14ccab255676a7569"
+    }
+  },
+  "claim_policy": [
+    "The LDMOS source worktree is read-only and dirty; M38 is a qualified snapshot, not frozen final LDMOS evidence.",
+    "A shared dominant quasi-Fermi feedback pathway does not imply identical direct contact-HFS behavior across devices.",
+    "AverageBox residual improvement is not called sufficient unless the self-consistent current also closes.",
+    "No LDMOS or SimpleMOS production default is changed by this crosscheck."
+  ]
+}

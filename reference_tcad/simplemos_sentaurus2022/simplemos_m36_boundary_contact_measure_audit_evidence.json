@@ -1,0 +1,41 @@
+{
+  "schema": "vela.simplemos.sdevice.m36_boundary_contact_measure_audit_evidence.v1",
+  "status": "frozen",
+  "summary": {
+    "node_count": 1482,
+    "triangle_count": 2746,
+    "maximum_si_node_relative_error": 4.0291878457491e-15,
+    "maximum_local_relative_error": 132.8714036686624,
+    "default_model_changed": false
+  },
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/boundary_contact_measure_audit/m36_boundary_contact_measure_audit_report.json",
+      "sha256": "a54e11fccdc9cdd5629488bef19cf7bb3475d56cbc6698db506d1c03625f9324"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/boundary_contact_measure_audit/m36_local_measure_ledger.csv",
+      "sha256": "a6636ee42352ff5a72ae75529f9569db0503b1745ea371ba6407ff0606e614d2"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/boundary_contact_measure_audit/m36_node_measure_ledger.csv",
+      "sha256": "bbb24c118900d70b18d9d4cc9f3e8de188b8009fca07b00333fff0e9767334ed"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/boundary_contact_measure_audit/m36_node_class_summary.csv",
+      "sha256": "7194990d11206de138153a0a05d9601e8bd8b1c4c47c54c9802a70f73762aae2"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/boundary_contact_measure_audit/m36_contact_support_summary.csv",
+      "sha256": "fbf223decaacd94b3e769562306a8e73f482355c5452892f9762821e4407796b"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m36_boundary_contact_measure_audit_contract_v1.json": "3a8938bfa9da0d787732f96a51d4fe09faf9fbe7aee864ac5bba18134fb19d47",
+    "scripts/run_simplemos_m36_boundary_contact_measure_audit.py": "cae379c26c2926d0b8e7c20149582fe94eb2fcac1014ef5916499032976b58c9",
+    "scripts/freeze_simplemos_m36_boundary_contact_measure_audit_evidence.py": "85fddd9476d44e1e88dbe34da33fb0bb7417dde88539d3ef14194516c1b6169e",
+    "tests/regression/test_simplemos_m36_boundary_contact_measure_audit.py": "686237346c9fbd93af0cf80995d9d7ea83b40b126375d221849bed2f83b6cdb9",
+    "docs/validation/simplemos_m36_boundary_contact_measure_audit_2026-08-31.md": "b627b20d55ed3539474093707bc8098ea52347054d3f2baf3255db5efac46cf6",
+    "CMakeLists.txt": "5d95711a76a836cefbb5cb17687fae4939ba7b020a0223350e9420169ebb37c3"
+  }
+}
