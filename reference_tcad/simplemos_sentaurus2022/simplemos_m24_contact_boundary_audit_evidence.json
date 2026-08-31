@@ -88,6 +88,6 @@
     "scripts/freeze_simplemos_m24_contact_boundary_audit_evidence.py": "63a7e4a9f649ab7ed3e5ac1c60a97b8078298e01fbb98c85c2d41f54a79dd429",
     "tests/regression/test_simplemos_m24_contact_boundary_audit.py": "aee6e5759f99542bc81655d18431e765d540212b85382ebfa1541489a1680f95",
     "docs/validation/simplemos_m24_contact_boundary_audit_2026-08-30.md": "1b655d6b537d3b92f7be1b70c85a79e1aea506a2cb930f0bbe9c1a7c5809ac07",
-    "CMakeLists.txt": "ae59f71bbadbeb6cf149b6e6181f1191a9d712c5c7a85f27e4f82cfa4f3221d9"
+    "CMakeLists.txt": "4cbf57537eef8c792cb9b51b71a1e4a763718185e7eaf6795ca97b8a680e8631"
   }
 }

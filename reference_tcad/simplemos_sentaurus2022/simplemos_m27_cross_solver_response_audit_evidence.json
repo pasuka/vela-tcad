@@ -162,11 +162,11 @@
   "upstream_inputs": [
     {
       "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m22_n23_hfs_deep_off_evidence.json",
-      "sha256": "d09b799193c6635d2397d0fa12e49f4d856f44078f0dcb5227c9728b5d820fb0"
+      "sha256": "19cc2c73b6df9ac1067fbb8f053198252809c8304d3e543820dd24bddf651f20"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m26_first_layer_feedback_audit_evidence.json",
-      "sha256": "d70c56e3d1641a4a7ce5d565763fc06f3228c1eb45348eb93e688dd0f16c07a2"
+      "sha256": "b6be329fabea67d03f1b5f60f267420a61dec87f366b4c1a8f62b8d72dceeaae"
     }
   ],
   "figures": [
@@ -199,6 +199,6 @@
     "scripts/freeze_simplemos_m27_cross_solver_response_audit_evidence.py": "da50b30e884bcc38e139c51ede18a26709e3d13be68fb1a31c2725f96f240fff",
     "tests/regression/test_simplemos_m27_cross_solver_response_audit.py": "5e03ffba91aebcd4101d6e39ea0246038e1ac3ed57e16d8b410fa0b7245bdb8b",
     "docs/validation/simplemos_m27_cross_solver_response_audit_2026-08-31.md": "6423d5a889789fd689274a1e2e3b879277359b2d9b65a26bc2d967b6ac26fe9e",
-    "CMakeLists.txt": "ae59f71bbadbeb6cf149b6e6181f1191a9d712c5c7a85f27e4f82cfa4f3221d9"
+    "CMakeLists.txt": "4cbf57537eef8c792cb9b51b71a1e4a763718185e7eaf6795ca97b8a680e8631"
   }
 }

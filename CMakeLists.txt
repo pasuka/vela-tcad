@@ -1053,6 +1053,13 @@ set_tests_properties(simplemos_m27_cross_solver_response_audit PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m27_cross_solver_response_audit)
 
+add_test(NAME simplemos_m28_exact_bias_path_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m28_exact_bias_path_audit)
+set_tests_properties(simplemos_m28_exact_bias_path_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m28_exact_bias_path_audit)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)

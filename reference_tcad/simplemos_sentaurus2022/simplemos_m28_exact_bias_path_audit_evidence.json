@@ -1,0 +1,40 @@
+{
+  "schema": "vela.simplemos.sdevice.m28_exact_bias_path_audit_evidence.v1",
+  "status": "frozen",
+  "summary": {
+    "new_sentaurus_state_count": 6,
+    "maximum_hfs_response_relative_difference_from_m8": 0.014612117142231072,
+    "maximum_common_mode_offset_A_per_um": 2.5702977125093036e-16,
+    "maximum_differential_offset_A_per_um": 3.9470212878526415e-19,
+    "default_model_changed": false
+  },
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/exact_bias_path_audit/m28_exact_bias_path_audit_report.json",
+      "sha256": "72a050996e5546c65ae2b899f6a24c0ba813e2d9ed43a35c39516c7516c1cf41"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/exact_bias_path_audit/m28_terminal_route_ledger.csv",
+      "sha256": "2bd343cf4b5d3c2428cd9eec3ac4d4a06e68e1cde280e4623abda96134478ed9"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/exact_bias_path_audit/m28_state_route_ledger.csv",
+      "sha256": "d20fc1491cb4a0d89302bd8aacae9238663c30124480f69582e192e0aa817016"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/exact_bias_path_audit/m28_state_route_summary.csv",
+      "sha256": "67079c537703524f53137b33f58e70fcd55a612a9d5e3ff9f09abd81f72337d2"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m28_exact_bias_path_audit_contract_v1.json": "a4dabbb8a82109303b2a2678784ebc324115b88706be330f9676bc2efc8f5572",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m27_cross_solver_response_audit_evidence.json": "ea950db84a254f66f439af25bc504a9494e4a5d8bb869e04e9757148e3e6e00c",
+    "scripts/run_simplemos_m28_exact_bias_path_audit.py": "4f1e7fb6d693374eb89126e460dda06ab573ec2396b2a1f50d7d41d59c91a355",
+    "scripts/plot_simplemos_m28_exact_bias_path_audit.py": "b204384e1286a8ca0c1e080977d48516c262cfe640778bc51a641b8b84de1eab",
+    "scripts/freeze_simplemos_m28_exact_bias_path_audit_evidence.py": "4b7817e4ddf569a56af165c756372f8c6b30b057e1edebadbb8671f47a70a6ec",
+    "tests/regression/test_simplemos_m28_exact_bias_path_audit.py": "1d6c7b194f010db96ed9f4b3c7465c189f370821f2f347e7de0340a3f4a2abcd",
+    "docs/validation/simplemos_m28_exact_bias_path_audit_2026-08-31.md": "904560e00c169a7a902097364b67367d489ba7da93f311bdc2e5a788dbc93697",
+    "docs/validation/figures/simplemos_m28/simplemos_m28_exact_bias_path_audit.png": "570746a29bfaa7f61525b6c58ea9b2ccc3acfae24f8f4d1cbfdb283ca878ea3c",
+    "CMakeLists.txt": "4cbf57537eef8c792cb9b51b71a1e4a763718185e7eaf6795ca97b8a680e8631"
+  }
+}

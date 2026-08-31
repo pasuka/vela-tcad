@@ -1,0 +1,62 @@
+{
+  "schema": "vela.simplemos.sdevice.m28_exact_bias_path_audit.v1",
+  "scope": "SDevice-only n23 exact-bias continuation-path audit for the deep-off HFS pair",
+  "device": "n23",
+  "drain_voltage_V": 0.05,
+  "gate_voltage_V": 0.05,
+  "physics_variants": [
+    "full",
+    "no_hfs"
+  ],
+  "new_sentaurus_routes": [
+    {
+      "id": "tiny_dozero",
+      "description": "M27 normalized step schedule with DoZero enabled",
+      "initial_step": 0.01,
+      "increment": 1.5,
+      "min_step": 1e-5,
+      "max_step": 0.05,
+      "do_zero": true
+    },
+    {
+      "id": "original_initial_dozero",
+      "description": "short endpoint run whose first absolute gate step matches the original 2.5 V sweep",
+      "initial_step": 0.5,
+      "increment": 1.5,
+      "min_step": 0.0005,
+      "max_step": 1.0,
+      "do_zero": true
+    },
+    {
+      "id": "direct_dozero",
+      "description": "single exact 0.05 V gate step with DoZero enabled",
+      "initial_step": 1.0,
+      "increment": 1.0,
+      "min_step": 0.0005,
+      "max_step": 1.0,
+      "do_zero": true
+    }
+  ],
+  "reused_routes": {
+    "m8_currentplot": "original 0 to 2.5 V sweep sampled by CurrentPlot at Vg=0.05 V",
+    "m27_tiny_endpoint": "exact Vg=0.05 V endpoint with InitialStep=0.01 and no DoZero"
+  },
+  "required_sentaurus_fields": [
+    "ElectrostaticPotential",
+    "eQuasiFermiPotential",
+    "eDensity"
+  ],
+  "acceptance": {
+    "sentaurus_release": "T-2022.03-SP2",
+    "new_state_count": 6,
+    "minimum_common_silicon_nodes": 900,
+    "maximum_bias_error_V": 1e-10,
+    "maximum_nonfinite_fraction": 0.0
+  },
+  "claim_policy": [
+    "M8 CurrentPlot values and exact endpoint states are distinct numerical observables until this audit establishes equivalence.",
+    "A route-dependent common-mode current shift must not be attributed to HFS when the full-minus-no_hfs response remains stable.",
+    "No production HFS, contact, SG, recombination, band-gap-narrowing, or solver default may be changed from this audit alone.",
+    "BGN and SRH causal ablations are deferred until exact-bias route reproducibility is quantified."
+  ]
+}
