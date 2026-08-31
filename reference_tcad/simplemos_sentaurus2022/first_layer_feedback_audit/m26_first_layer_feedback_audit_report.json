@@ -1,0 +1,231 @@
+{
+  "schema": "vela.simplemos.sdevice.m26_first_layer_feedback_audit_report.v1",
+  "status": "complete",
+  "execution": {
+    "first_layer_node_count": 5,
+    "first_layer_nodes": [
+      1089,
+      1090,
+      1092,
+      1099,
+      1100
+    ],
+    "perturbation_column_count": 12,
+    "perturbation_columns": [
+      1087,
+      1088,
+      1089,
+      1090,
+      1092,
+      1093,
+      1094,
+      1097,
+      1098,
+      1099,
+      1100,
+      1108
+    ],
+    "central_perturbation_state_count": 48,
+    "read_only_probe_count": 150,
+    "new_sentaurus_execution": false,
+    "default_model_changed": false
+  },
+  "closure": {
+    "maximum_adjoint_relative_residual": 1.2552420339010386e-16,
+    "maximum_direct_gradient_relative_disagreement": 6.092609554712303e-07,
+    "maximum_functional_cut_gradient_relative_disagreement": 2.892368688147403e-16,
+    "maximum_fd_term_closure_relative": 2.6378235873669974e-16,
+    "maximum_first_order_relative_error": 0.07115492993258798,
+    "maximum_cut_prediction_relative_error": 0.0006478622516253486,
+    "maximum_reference_current_relative_disagreement": 0.0002992798779555634,
+    "all_acceptance_checks_pass": true
+  },
+  "operator_directions": [
+    {
+      "direction": "turn_on",
+      "source_state": "no_hfs",
+      "target_state": "full",
+      "source_current_A_per_um": 1.390447909680338e-16,
+      "target_current_A_per_um": 1.1049718807791815e-16,
+      "actual_self_consistent_current_change_A_per_um": -2.854760289011566e-17,
+      "direct_frozen_operator_current_change_A_per_um": -1.0976849598773321e-21,
+      "adjoint_relaxation_current_change_A_per_um": -2.697514366044037e-17,
+      "first_order_total_current_change_A_per_um": -2.6976241345400248e-17,
+      "first_order_relative_error": 0.055043554821882404,
+      "first_layer_signed_relaxation_A_per_um": -1.6388557968385867e-24,
+      "first_layer_absolute_contribution_fraction": 1.1841855889630166e-07,
+      "relaxation_condition_number": 1.7304189832902608,
+      "adjoint_relative_residual": 1.2552420339010386e-16
+    },
+    {
+      "direction": "turn_off",
+      "source_state": "full",
+      "target_state": "no_hfs",
+      "source_current_A_per_um": 1.1049718807791815e-16,
+      "target_current_A_per_um": 1.390447909680338e-16,
+      "actual_self_consistent_current_change_A_per_um": 2.854760289011566e-17,
+      "direct_frozen_operator_current_change_A_per_um": 1.0970581393590387e-21,
+      "adjoint_relaxation_current_change_A_per_um": 3.0577808515365824e-17,
+      "first_order_total_current_change_A_per_um": 3.0578905573505184e-17,
+      "first_order_relative_error": 0.07115492993258798,
+      "first_layer_signed_relaxation_A_per_um": 1.7330365900062243e-24,
+      "first_layer_absolute_contribution_fraction": 9.769444199378706e-08,
+      "relaxation_condition_number": 1.9594732136757698,
+      "adjoint_relative_residual": 8.66061440372977e-17
+    }
+  ],
+  "perturbation_summaries": [
+    {
+      "baseline_variant": "full",
+      "first_layer_node_count": 5,
+      "perturbation_column_count": 12,
+      "predicted_cut_electron_delta_A_per_um": -2.8527926092038044e-17,
+      "first_layer_predicted_cut_electron_delta_A_per_um": -2.8527926092038044e-17,
+      "actual_cut_electron_delta_A_per_um": -2.854642024013066e-17,
+      "cut_prediction_relative_error": 0.0006478622516253486,
+      "predicted_total_current_delta_A_per_um": -2.8527926092038044e-17,
+      "maximum_direct_gradient_relative_disagreement": 6.092609554712303e-07,
+      "maximum_functional_cut_gradient_relative_disagreement": 2.892368688147403e-16,
+      "maximum_fd_term_closure_relative": 2.325148939826063e-16
+    },
+    {
+      "baseline_variant": "no_hfs",
+      "first_layer_node_count": 5,
+      "perturbation_column_count": 12,
+      "predicted_cut_electron_delta_A_per_um": -2.852794341471044e-17,
+      "first_layer_predicted_cut_electron_delta_A_per_um": -2.852794341471044e-17,
+      "actual_cut_electron_delta_A_per_um": -2.854642024013066e-17,
+      "cut_prediction_relative_error": 0.0006472554269428847,
+      "predicted_total_current_delta_A_per_um": -2.852794341471044e-17,
+      "maximum_direct_gradient_relative_disagreement": 8.884388077324295e-10,
+      "maximum_functional_cut_gradient_relative_disagreement": 1.446183470606926e-16,
+      "maximum_fd_term_closure_relative": 2.6378235873669974e-16
+    }
+  ],
+  "findings": {
+    "reference_aware_arclength_pack_enabled": true,
+    "functional_default_current_scale_includes_line_factor": true,
+    "functional_vs_m24_cut_current_relative_disagreement": {
+      "full": 0.0002992798779555634,
+      "no_hfs": 0.00024633957668551357
+    },
+    "turn_on_direct_frozen_fraction_of_actual": 3.8451037871813583e-05,
+    "turn_on_adjoint_relaxation_fraction_of_actual": 0.9449179941402458,
+    "turn_off_adjoint_relaxation_fraction_of_actual": 1.0711165008517443,
+    "turn_on_electron_equation_signed_fraction": 0.9999969602546505,
+    "turn_on_first_layer_operator_absolute_fraction": 1.1841855889630166e-07,
+    "first_layer_cut_current_fraction_by_node_no_hfs_linearization": {
+      "1089": 0.0022577145344374115,
+      "1090": -0.0,
+      "1092": 0.8025894095291282,
+      "1099": 0.020155002228689385,
+      "1100": 0.1749978737077451
+    },
+    "maximum_qf_only_contact_support_row_imbalance_relative": 5.089962032656202e-07,
+    "top_turn_on_operator_relaxation_nodes": [
+      {
+        "node_id": 1051,
+        "x_m": 1.0351489999999999e-08,
+        "y_m": 4.650150000000001e-08,
+        "relaxation_current_A_per_um": -6.3646912408999715e-18,
+        "absolute_contribution_sum_A_per_um": 6.3646912408999715e-18
+      },
+      {
+        "node_id": 1061,
+        "x_m": 7.7636175e-09,
+        "y_m": 4.650150000000001e-08,
+        "relaxation_current_A_per_um": -4.591626878468268e-18,
+        "absolute_contribution_sum_A_per_um": 4.591626878468268e-18
+      },
+      {
+        "node_id": 1048,
+        "x_m": 1.59416e-08,
+        "y_m": 4.650150000000001e-08,
+        "relaxation_current_A_per_um": -3.291582513798123e-18,
+        "absolute_contribution_sum_A_per_um": 3.291582513798123e-18
+      },
+      {
+        "node_id": 1064,
+        "x_m": 6.46968125e-09,
+        "y_m": 4.650150000000001e-08,
+        "relaxation_current_A_per_um": -2.7943707002065916e-18,
+        "absolute_contribution_sum_A_per_um": 2.7943707002065916e-18
+      },
+      {
+        "node_id": 1070,
+        "x_m": 5.822713125000001e-09,
+        "y_m": 4.650150000000001e-08,
+        "relaxation_current_A_per_um": -2.0508669807119402e-18,
+        "absolute_contribution_sum_A_per_um": 2.0508669807119402e-18
+      },
+      {
+        "node_id": 1062,
+        "x_m": 1.0351489999999999e-08,
+        "y_m": 2.4592270000000003e-08,
+        "relaxation_current_A_per_um": -2.039792640197678e-18,
+        "absolute_contribution_sum_A_per_um": 2.039792640197678e-18
+      },
+      {
+        "node_id": 1031,
+        "x_m": 2.1531709999999997e-08,
+        "y_m": 4.650150000000001e-08,
+        "relaxation_current_A_per_um": -2.005390947320582e-18,
+        "absolute_contribution_sum_A_per_um": 2.005390947320582e-18
+      },
+      {
+        "node_id": 323,
+        "x_m": 1.0351489999999999e-08,
+        "y_m": 0.0,
+        "relaxation_current_A_per_um": 1.8274188959093783e-18,
+        "absolute_contribution_sum_A_per_um": 1.8274188959093783e-18
+      },
+      {
+        "node_id": 1063,
+        "x_m": 7.7636175e-09,
+        "y_m": 2.4592270000000003e-08,
+        "relaxation_current_A_per_um": -1.5834971882902416e-18,
+        "absolute_contribution_sum_A_per_um": 1.5834971882902416e-18
+      },
+      {
+        "node_id": 333,
+        "x_m": 7.7636175e-09,
+        "y_m": 0.0,
+        "relaxation_current_A_per_um": 1.4632285601020802e-18,
+        "absolute_contribution_sum_A_per_um": 1.4632285601020802e-18
+      }
+    ]
+  },
+  "conclusions": {
+    "supported": [
+      "The frozen HFS operator switch contributes only a negligible direct drain-current change; the observed response is predominantly self-consistent relaxation.",
+      "The reference-aware adjoint predicts the finite HFS-on/off current change within the bidirectional first-order error envelope reported here.",
+      "The drain-first-layer QF increments reproduce the electron cut-current change to better than 0.1 percent, so the first layer is the terminal-current conduit.",
+      "Node 1092 carries the dominant first-layer cut sensitivity, followed by node 1100; node 1090 has zero drain-cut support.",
+      "The direct HFS operator residual is not localized at the drain contact or its first free-node layer; its adjoint-weighted source is distributed upstream and dominated by the electron equation.",
+      "Including the complete noncontact one-ring makes QF-only contact and internal flux changes nearly cancel in each first-layer continuity row."
+    ],
+    "not_supported": [
+      "Treating the drain-first-layer rows as the physical origin of the HFS operator response merely because they control terminal extraction.",
+      "Claiming exact finite-switch attribution from a local adjoint; the turn-on and turn-off linearizations retain finite nonlinear error.",
+      "Equating the Vela feedback path with Sentaurus without matching Sentaurus node-level QF, mobility, and residual exports.",
+      "Changing a default HFS, contact, SG, mobility, or solver setting from this audit alone."
+    ]
+  },
+  "artifacts": {
+    "operator_adjoint_ledger_csv": "reference_tcad/simplemos_sentaurus2022/first_layer_feedback_audit/m26_operator_adjoint_ledger.csv",
+    "operator_zone_summary_csv": "reference_tcad/simplemos_sentaurus2022/first_layer_feedback_audit/m26_operator_zone_summary.csv",
+    "direction_summary_csv": "reference_tcad/simplemos_sentaurus2022/first_layer_feedback_audit/m26_direction_summary.csv",
+    "first_layer_fd_ledger_csv": "reference_tcad/simplemos_sentaurus2022/first_layer_feedback_audit/m26_first_layer_fd_ledger.csv",
+    "first_layer_jacobian_ledger_csv": "reference_tcad/simplemos_sentaurus2022/first_layer_feedback_audit/m26_first_layer_jacobian_ledger.csv",
+    "first_layer_response_ledger_csv": "reference_tcad/simplemos_sentaurus2022/first_layer_feedback_audit/m26_first_layer_response_ledger.csv",
+    "perturbation_summary_csv": "reference_tcad/simplemos_sentaurus2022/first_layer_feedback_audit/m26_perturbation_summary.csv"
+  },
+  "claim_policy": [
+    "Finite-difference perturbations are read-only frozen-state diagnostics and do not alter a converged branch.",
+    "Direct terminal sensitivity and adjoint relaxation sensitivity must be reported separately.",
+    "First-order adjoint predictions may diagnose a pathway but do not replace the finite self-consistent HFS-on/off difference.",
+    "Node IDs are derived from the current n23 drain-cut topology rather than inherited from an earlier mesh.",
+    "The response rows are the five drain-first-layer nodes; the perturbation columns include their complete noncontact one-ring so internal-edge cancellation is not truncated.",
+    "No contact, HFS, SG, mobility, or solver default may be changed from this diagnostic alone."
+  ]
+}

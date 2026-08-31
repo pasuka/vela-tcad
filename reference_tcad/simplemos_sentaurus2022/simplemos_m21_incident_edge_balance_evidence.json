@@ -590,15 +590,15 @@
   ],
   "implementation_sha256": {
     "reference_tcad/simplemos_sentaurus2022/simplemos_m21_incident_edge_balance_contract_v1.json": "85f1ec798cef5d4475b5995bbf103ed5ea950ce42b972b760d6d78e16c37a0b2",
-    "include/vela/equation/CoupledDDAssembler.h": "cd4461c190b7edbd6a24eec05f9262c0bb3fb5dd916ff84c58ea95970cbd7445",
-    "src/equation/CoupledDDAssembler.cpp": "250e57d6eb0aa949e4d122ff444464ad6b2d3fb3a132ac4ce4e36b9d24a3cda5",
-    "src/tools/vela_example_runner.cpp": "ee1137d5e6bf2d437274afc872e0b70435e310f0d1f281a39e11574ac09f5c20",
-    "tests/test_newton_solver.cpp": "7f14c015d3f48627b5b1e79940fccbb9bb67c25b6a14bfc2f7d23847d37a0b1e",
+    "include/vela/equation/CoupledDDAssembler.h": "676a372dc51fb7c6cf83292e7e07fc198c3628ca3fa72620b127ad35a4e54c27",
+    "src/equation/CoupledDDAssembler.cpp": "9b1d2b6e8732a1b148bf9dcf7112d4d9d4dd3dc31b73f0423d66670cab377ab3",
+    "src/tools/vela_example_runner.cpp": "3e46f783821747b8d143fb373a1cc70580a4b6e580a16be3e345be9d1cc41f56",
+    "tests/test_newton_solver.cpp": "c606caee00c9dfedce36cb72958e7bbd0f6ab8be9e0b3588cfa0b2670cc204e0",
     "scripts/run_simplemos_m21_incident_edge_balance.py": "b877528a91febd5547e2444bd49d0e19411927ba7ab8e30736474d770f63fe4d",
     "scripts/plot_simplemos_m21_incident_edge_balance.py": "41369cad28f88f8dc6a7719695629ff2b33afc1ac39a3322de4274294636e3e8",
     "scripts/freeze_simplemos_m21_incident_edge_balance_evidence.py": "972fcb0ca6742a7522cbdfe6652b0d0558a82e3a0681c5115cd1970135f701e3",
     "tests/regression/test_simplemos_m21_incident_edge_balance.py": "8af0f2df7678a09dba38e01f4c06119f7b073a6bb594b808b3bcaf054f3ecf34",
     "docs/validation/simplemos_m21_incident_edge_balance_2026-08-30.md": "c557fcbfd843ce32973e69f79f7bad6b144187a3c5e680cf595243a47684ba9a",
-    "CMakeLists.txt": "de2df31d71e94baba37ec868649326a8feeb93e81217243287fb2a16620e07b1"
+    "CMakeLists.txt": "ef77fc651332722cad7924c031cff1ce390007f233ead26440ea5e496c8f3f45"
   }
 }

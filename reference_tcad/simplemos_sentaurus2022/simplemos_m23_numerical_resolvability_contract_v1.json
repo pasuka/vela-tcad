@@ -1,0 +1,58 @@
+{
+  "schema": "vela.simplemos.sdevice.m23_numerical_resolvability.v1",
+  "scope": "SDevice-only numerical resolvability audit; no SProcess claims and no production default changes",
+  "source_stages": [
+    "M21",
+    "M22"
+  ],
+  "cases": [
+    {
+      "id": "m21_stable_weak_inversion",
+      "device": "n21",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.8,
+      "state_variants": [
+        "baseline",
+        "sentaurus_import"
+      ]
+    },
+    {
+      "id": "m22_deep_off",
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "state_variants": [
+        "full",
+        "no_hfs"
+      ]
+    }
+  ],
+  "solver_path_controls": [
+    "baseline_repeat",
+    "tight_tolerance",
+    "same_state_reclosure",
+    "reverse_from_vg_0p1"
+  ],
+  "tight_tolerance": {
+    "reltol": 1e-10,
+    "abstol": 1e-15,
+    "max_iter": 200
+  },
+  "precision": {
+    "decimal_digits": 100,
+    "endpoint_ulp_steps": [
+      -1,
+      0,
+      1
+    ],
+    "maximum_production_vs_decimal_relative_error": 1e-12,
+    "maximum_ulp_flux_relative_envelope_for_resolved": 1e-6,
+    "minimum_qf_drop_ulps_for_resolved": 1000000.0
+  },
+  "claim_policy": [
+    "A large subtractive SG condition number does not by itself prove that the production factorized flux is unresolved.",
+    "Multiprecision replay of binary64 snapshots can audit formula evaluation but cannot recover state information that was never stored.",
+    "Absolute exported quasi-Fermi potentials and contact-basin increments must be reported separately.",
+    "No HFS or solver default may be changed from this diagnostic alone."
+  ]
+}

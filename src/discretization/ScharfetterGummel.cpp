@@ -335,6 +335,7 @@ sgElectronContinuityFluxFromQuasiFermiVariableNiDecomposition(
         logLeftOverRight +=
             (clampedExponent0 - endpointExponent0)
             - (clampedExponent1 - endpointExponent1);
+        result.logLeftOverRight = logLeftOverRight;
         result.stableFactorizedFlux = stableBernoulliDensityDifferenceFlux(
             ni1, clampedExponent1, result.eta, coef, logLeftOverRight);
     } else {

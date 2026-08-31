@@ -1,0 +1,101 @@
+{
+  "schema": "vela.simplemos.sdevice.m23_numerical_resolvability_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only SG/QF numerical resolvability at M21/M22 key states",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "edge_evaluation_count": 36,
+    "solver_control_count": 8,
+    "new_sentaurus_execution": false,
+    "default_model_changed": false,
+    "decimal_digits": 100
+  },
+  "findings": {
+    "maximum_raw_subtractive_sg_condition": 1979426197951810.5,
+    "maximum_production_vs_decimal_relative_error": 4.4902674778984784e-15,
+    "maximum_one_ulp_flux_relative_envelope": 2.5160075895207333e-16,
+    "absolute_export_collapsed_edge_count": 10,
+    "all_edges_resolved_in_production_representation": true,
+    "solver_path_spread": {
+      "full": {
+        "minimum_current_A_per_um": 1.1046055986506674e-16,
+        "maximum_current_A_per_um": 1.1046472845209762e-16,
+        "spread_dex": 1.6389199795529203e-05,
+        "maximum_absolute_relative_change_from_baseline": 3.458570542602679e-05
+      },
+      "no_hfs": {
+        "minimum_current_A_per_um": 1.3899350016539832e-16,
+        "maximum_current_A_per_um": 1.3899350034798933e-16,
+        "spread_dex": 5.705178262061873e-10,
+        "maximum_absolute_relative_change_from_baseline": 1.3136658427725934e-09
+      }
+    }
+  },
+  "conclusions": {
+    "supported": [
+      "The production contact-basin QF increments must be distinguished from rounded absolute QF exports.",
+      "A large raw SG subtraction condition number does not imply equal loss in the factorized production flux.",
+      "The Decimal-100 replay and endpoint-ULP envelope quantify formula evaluation and stored-state resolution separately."
+    ],
+    "not_supported": [
+      "Treating the raw subtractive SG condition number times machine epsilon as the production current error bound.",
+      "Recovering missing state digits by applying multiprecision only after an absolute binary64 QF snapshot was written.",
+      "Changing an HFS or solver default from this diagnostic."
+    ]
+  },
+  "claim_policy": [
+    "A large subtractive SG condition number does not by itself prove that the production factorized flux is unresolved.",
+    "Multiprecision replay of binary64 snapshots can audit formula evaluation but cannot recover state information that was never stored.",
+    "Absolute exported quasi-Fermi potentials and contact-basin increments must be reported separately.",
+    "No HFS or solver default may be changed from this diagnostic alone."
+  ],
+  "artifacts": {
+    "m23_numerical_resolvability_report.json": {
+      "path": "reference_tcad/simplemos_sentaurus2022/numerical_resolvability/m23_numerical_resolvability_report.json",
+      "sha256": "2aa03f967a028fb5c37afba4a705cd7d24d5729c128094179a1969fb404ff23e"
+    },
+    "m23_edge_resolvability.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/numerical_resolvability/m23_edge_resolvability.csv",
+      "sha256": "83867207943b7975b6ef5f52e6471cb5b3c0b85a3b538986b93d35f4ed910ca7"
+    },
+    "m23_state_summary.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/numerical_resolvability/m23_state_summary.csv",
+      "sha256": "e3de36ebd7ece766397b13141fb474f4eb08a741eec52775786a45fd19fa5201"
+    },
+    "m23_solver_path_reproducibility.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/numerical_resolvability/m23_solver_path_reproducibility.csv",
+      "sha256": "8b23f9d1426856479eb559f18561ad779530cec6bcd0e024f6ce1680953c2423"
+    }
+  },
+  "upstream_inputs": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/incident_edge_balance/m21_key_state_incident_edges.csv",
+      "sha256": "b11299f2442388ec53a3f8790f43fab29c100a49f077638ca4232da39b4f4b26"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_key_state_self_consistent_edges.csv",
+      "sha256": "71ff92ffab5544193ffdf3a117ed1ee0b639ecaf1a4a06a84a269c1face324a7"
+    }
+  ],
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m23/simplemos_m23_numerical_resolvability.png",
+      "sha256": "7ca98cf5b775c0c0cc4049a80580dde6fae9979f4e9401f5788dfe1c1e86b819"
+    }
+  ],
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m23_numerical_resolvability_contract_v1.json": "63c5e6e36b3f40ebf2f788cb5cd51904607739241ae14064ada17cdbce10e4c6",
+    "scripts/run_simplemos_m23_numerical_resolvability.py": "2aab6ce85097b8366bf1c472421901cb7597aefe8da15ff32ba20f0622af8e22",
+    "scripts/plot_simplemos_m23_numerical_resolvability.py": "ec8259e8ea45ede5370912945a2f5fb217d8fb794042b76a39b620caa0789619",
+    "scripts/freeze_simplemos_m23_numerical_resolvability_evidence.py": "2f0b634256cc62d3ac894acbbe1f5f83ae513db4e06d2f22642f25ad460caa02",
+    "tests/regression/test_simplemos_m23_numerical_resolvability.py": "2f29f575fe4a3cdfb6cb8dc948e25ef0d73983cb983a7666b2fb5aac11a4ad47",
+    "docs/validation/simplemos_m23_numerical_resolvability_2026-08-30.md": "cb3f8342d7c937a38a5ca0bf803ec5db5651fb3d17e346d3559848b1148e994d",
+    "include/vela/discretization/ScharfetterGummel.h": "d56e7b7d5c5ad7c7d608f862e1ac5e5d55e59273bd7a319f7b8e96fdd2c41965",
+    "include/vela/equation/CoupledDDAssembler.h": "676a372dc51fb7c6cf83292e7e07fc198c3628ca3fa72620b127ad35a4e54c27",
+    "src/discretization/ScharfetterGummel.cpp": "db65726458e28ca4e865aa0d9fc3bb427a326de756b7fb922d5cf9fee6c7bc5a",
+    "src/equation/CoupledDDAssembler.cpp": "9b1d2b6e8732a1b148bf9dcf7112d4d9d4dd3dc31b73f0423d66670cab377ab3",
+    "src/tools/vela_example_runner.cpp": "3e46f783821747b8d143fb373a1cc70580a4b6e580a16be3e345be9d1cc41f56",
+    "tests/test_newton_solver.cpp": "c606caee00c9dfedce36cb72958e7bbd0f6ab8be9e0b3588cfa0b2670cc204e0",
+    "CMakeLists.txt": "ef77fc651332722cad7924c031cff1ce390007f233ead26440ea5e496c8f3f45"
+  }
+}

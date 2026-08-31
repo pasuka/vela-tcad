@@ -1,0 +1,104 @@
+{
+  "schema": "vela.simplemos.sdevice.m25_qf_reference_transform_audit_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only n23 QF-reference and SG-log audit",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "read_only_state_count": 2,
+    "edge_evaluation_count": 116,
+    "new_sentaurus_execution": false,
+    "default_model_changed": false,
+    "decimal_digits": 100
+  },
+  "topology": {
+    "unique_selected_edges": 58,
+    "drain_cut_edge_count": 7,
+    "drain_cut_reference_transition_edge_count": 0,
+    "reference_transition_edge_count": 51,
+    "finite_couple_reference_transition_edge_count": 26,
+    "reference_jump_values_V": [
+      0.05
+    ]
+  },
+  "closure": {
+    "maximum_endpoint_transform_error_V": 3.469446951953614e-18,
+    "maximum_physical_drop_closure_error_V": 3.469446951953614e-18,
+    "maximum_sg_log_state_closure_error": 1.7474832016035768e-16,
+    "maximum_factorized_flux_relative_error": 5.116429536880849e-15,
+    "all_acceptance_checks_pass": true
+  },
+  "findings": {
+    "maximum_naive_increment_only_error_on_reference_transition_V": 0.05,
+    "maximum_reference_jump_thermal_voltages": 1.9340863535916804,
+    "maximum_full_no_hfs_reference_transition_qf_drop_delta_V": 0.0023660677192794896,
+    "maximum_full_no_hfs_drain_cut_qf_drop_delta_V": 9.394977088878401e-17,
+    "maximum_absolute_drain_cut_qf_drop_V": 4.466211682862112e-16
+  },
+  "conclusions": {
+    "supported": [
+      "The seven drain-cut edges remain inside the drain reference basin; no cross-basin transform occurs on the terminal-current cut.",
+      "Across all 51 reference-transition edges, the production anchored endpoints, physical QF drop, SG log imbalance, and factorized flux close to the frozen state at the stated numerical tolerances.",
+      "Using increments without the reference jump would introduce an approximately 0.05 V artificial QF drop on every reference-transition edge.",
+      "The HFS-on/off terminal response cannot be attributed to a cross-reference transform located on the drain cut."
+    ],
+    "not_supported": [
+      "Equating this Vela reference-coordinate closure with an undocumented Sentaurus contact-basin implementation.",
+      "Using the cross-reference edges as an additive terminal-current cut; zero-couple and internal edges are included for coordinate closure only.",
+      "Assigning the remaining deep-off current difference to a contact reference transform without a corresponding Sentaurus node-level export."
+    ]
+  },
+  "claim_policy": [
+    "Drain-cut edges and cross-reference edges must be reported as separate populations.",
+    "Reference-coordinate closure is a Vela implementation audit and does not establish private Sentaurus coordinate equivalence.",
+    "Zero-couple edges remain in the coordinate audit but must not be counted as current-bearing support.",
+    "HFS-on/off comparisons use independently converged states and therefore include self-consistent feedback.",
+    "No contact, HFS, SG, or solver default may be changed from this diagnostic alone."
+  ],
+  "artifacts": {
+    "m25_qf_reference_transform_audit_report.json": {
+      "path": "reference_tcad/simplemos_sentaurus2022/qf_reference_transform_audit/m25_qf_reference_transform_audit_report.json",
+      "sha256": "1ee6d62946fdefacc9a0b3db45edfe3e909db72374a9216cb5ede447b36734bf"
+    },
+    "m25_edge_reference_transform_ledger.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/qf_reference_transform_audit/m25_edge_reference_transform_ledger.csv",
+      "sha256": "1414d46da1841c7f8f903fc78b52eb785aee235d332edf730f72b605e4e5cc70"
+    },
+    "m25_variant_edge_delta_ledger.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/qf_reference_transform_audit/m25_variant_edge_delta_ledger.csv",
+      "sha256": "fd023b34354340a9d943d38cf46c38ee954331eff4512fbd58cb604dfe53947e"
+    },
+    "m25_class_summary.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/qf_reference_transform_audit/m25_class_summary.csv",
+      "sha256": "16562a4bc033228ca639a6eaf83d9887c73e99dc4a7a56e25d97e3d08fae358b"
+    }
+  },
+  "upstream_inputs": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_summary.csv",
+      "sha256": "31e3d0f9eac3203a63149dc5012444b18aff52b23405b0519e22a916595433c9"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/contact_boundary_audit/m24_drain_cut_edge_ledger.csv",
+      "sha256": "c0286dd58e72d07603ab1799a7451f3f0f9e3796bba2ac2ed1f786fb0e269c20"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m23_numerical_resolvability_evidence.json",
+      "sha256": "356adcacac3904793a845d76d3775a649201c37498b82e484231cd81d7b5ca74"
+    }
+  ],
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m25/simplemos_m25_qf_reference_transform_audit.png",
+      "sha256": "afbf2a89472b1ef1f2f84d950c8fc2f904e8a84e4ed2dd494fbee3ea3315960e"
+    }
+  ],
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m25_qf_reference_transform_audit_contract_v1.json": "a370d93d7885a7500da81afdddbe5ef585ca4dc93c19bcc0451d22355a8760b5",
+    "scripts/run_simplemos_m25_qf_reference_transform_audit.py": "01eb40d2fdddc258ab5dddb460a35fe431df5506d471f9568439b557f398f654",
+    "scripts/plot_simplemos_m25_qf_reference_transform_audit.py": "3dd9fd658ae4a77bae078deee7de9ab9286ab047e3ca0f598326517863044abf",
+    "scripts/freeze_simplemos_m25_qf_reference_transform_audit_evidence.py": "2a7bbf7dc90649f55f66b712b1089580066275de5fa16926dc73f29acb4fc875",
+    "tests/regression/test_simplemos_m25_qf_reference_transform_audit.py": "b66c976313319a0c69208d15a8581e34d48dcca159b635d05a0624ff35453955",
+    "docs/validation/simplemos_m25_qf_reference_transform_audit_2026-08-30.md": "c7eb00c3b752d8ed5d1b571808d53e27f1a7a07bf46df83e542b00db265ca72b",
+    "CMakeLists.txt": "ef77fc651332722cad7924c031cff1ce390007f233ead26440ea5e496c8f3f45"
+  }
+}

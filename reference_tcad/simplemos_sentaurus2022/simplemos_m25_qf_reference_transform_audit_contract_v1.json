@@ -1,0 +1,30 @@
+{
+  "schema": "vela.simplemos.sdevice.m25_qf_reference_transform_audit.v1",
+  "scope": "SDevice-only n23 quasi-Fermi reference-coordinate and SG log-imbalance audit",
+  "device": "n23",
+  "drain_voltage_V": 0.05,
+  "gate_voltage_V": 0.05,
+  "temperature_K": 300.0,
+  "state_variants": [
+    "full",
+    "no_hfs"
+  ],
+  "edge_classes": [
+    "drain_cut",
+    "reference_transition"
+  ],
+  "precision": {
+    "decimal_digits": 100,
+    "maximum_endpoint_transform_error_V": 1e-16,
+    "maximum_physical_drop_closure_error_V": 1e-16,
+    "maximum_sg_log_closure_error": 1e-12,
+    "maximum_factorized_flux_relative_error": 1e-12
+  },
+  "claim_policy": [
+    "Drain-cut edges and cross-reference edges must be reported as separate populations.",
+    "Reference-coordinate closure is a Vela implementation audit and does not establish private Sentaurus coordinate equivalence.",
+    "Zero-couple edges remain in the coordinate audit but must not be counted as current-bearing support.",
+    "HFS-on/off comparisons use independently converged states and therefore include self-consistent feedback.",
+    "No contact, HFS, SG, or solver default may be changed from this diagnostic alone."
+  ]
+}

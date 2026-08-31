@@ -1018,6 +1018,34 @@ set_tests_properties(simplemos_m22_n23_hfs_deep_off PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m22_n23_hfs_deep_off)
 
+add_test(NAME simplemos_m23_numerical_resolvability
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m23_numerical_resolvability)
+set_tests_properties(simplemos_m23_numerical_resolvability PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m23_numerical_resolvability)
+
+add_test(NAME simplemos_m24_contact_boundary_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m24_contact_boundary_audit)
+set_tests_properties(simplemos_m24_contact_boundary_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m24_contact_boundary_audit)
+
+add_test(NAME simplemos_m25_qf_reference_transform_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m25_qf_reference_transform_audit)
+set_tests_properties(simplemos_m25_qf_reference_transform_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m25_qf_reference_transform_audit)
+
+add_test(NAME simplemos_m26_first_layer_feedback_audit
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m26_first_layer_feedback_audit)
+set_tests_properties(simplemos_m26_first_layer_feedback_audit PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m26_first_layer_feedback_audit)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)

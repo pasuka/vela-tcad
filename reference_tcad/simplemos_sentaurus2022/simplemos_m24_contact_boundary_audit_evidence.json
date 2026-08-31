@@ -1,0 +1,93 @@
+{
+  "schema": "vela.simplemos.sdevice.m24_contact_boundary_audit_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only n23 drain-contact boundary audit",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "contact_node_count": 3,
+    "drain_cut_edge_count": 7,
+    "first_layer_node_count": 5,
+    "read_only_probe_count": 4,
+    "new_sentaurus_execution": false,
+    "default_model_changed": false
+  },
+  "closure": {
+    "maximum_contact_qf_bias_error_V": 3.00000013988e-18,
+    "maximum_sg_cut_current_relative_disagreement": 0.00036897060541553665,
+    "maximum_sg_cut_current_absolute_disagreement_A_per_um": 5.1290802635486806e-20,
+    "maximum_continuity_term_absolute_closure": 1.7946585593778019e-28
+  },
+  "findings": {
+    "maximum_full_no_hfs_contact_physical_state_delta": 0.0,
+    "maximum_full_no_hfs_contact_qf_increment_delta_V": 9.47261455263292e-26,
+    "full_cut_electron_current_A_per_um": 1.1046411849295576e-16,
+    "no_hfs_cut_electron_current_A_per_um": 1.3901053873308642e-16,
+    "self_consistent_cut_current_effect_dex": -0.099826495218532,
+    "maximum_first_layer_contact_column_share": 0.41647017505538897,
+    "maximum_first_layer_qf_increment_delta_V": 9.394977098351018e-17,
+    "signed_first_layer_contact_flux_delta_sum": -1.49963578427903e-12,
+    "signed_first_layer_internal_flux_delta_sum": 1.4964462126203687e-12,
+    "signed_first_layer_source_delta_sum": -1.4823725961827987e-21
+  },
+  "conclusions": {
+    "supported": [
+      "The Vela drain-contact physical state is identical between the self-consistent HFS-on and HFS-off states.",
+      "The drain electron quasi-Fermi target remains pinned to the applied drain bias in both states.",
+      "The approximately 0.10 dex current response is carried by tiny first-layer quasi-Fermi increment changes and balanced contact/internal flux changes, not by a changed contact boundary value."
+    ],
+    "not_supported": [
+      "Claiming that the Vela ohmic contact target directly causes the HFS-on/off response.",
+      "Claiming Vela/Sentaurus n23 contact-boundary equivalence without an n23 Sentaurus node-state export.",
+      "Changing a contact or transport default from this audit."
+    ]
+  },
+  "claim_policy": [
+    "Identical Vela HFS-on/off contact states exclude a direct contact-boundary response, not a private Sentaurus contact implementation difference.",
+    "Contact and internal flux terms must be reported together at the first free-node layer.",
+    "Sub-fA relative changes must be accompanied by absolute current and quasi-Fermi increment changes.",
+    "No contact, HFS, SG, or solver default may be changed from this diagnostic alone."
+  ],
+  "artifacts": {
+    "m24_contact_boundary_audit_report.json": {
+      "path": "reference_tcad/simplemos_sentaurus2022/contact_boundary_audit/m24_contact_boundary_audit_report.json",
+      "sha256": "a79d785b908d774a2ee056ee990a4a8153f157c2798f1e97be22100e06353ae3"
+    },
+    "m24_contact_node_ledger.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/contact_boundary_audit/m24_contact_node_ledger.csv",
+      "sha256": "e5fc9c78c64038237c3a7e7d4cf58f7f13d6fcca8c7f81e4ea811028bad86d70"
+    },
+    "m24_drain_cut_edge_ledger.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/contact_boundary_audit/m24_drain_cut_edge_ledger.csv",
+      "sha256": "c0286dd58e72d07603ab1799a7451f3f0f9e3796bba2ac2ed1f786fb0e269c20"
+    },
+    "m24_first_layer_continuity_ledger.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/contact_boundary_audit/m24_first_layer_continuity_ledger.csv",
+      "sha256": "231458f38472a14fb2746986bd556dad721c0f0c6ae3733a84bdc95212498661"
+    }
+  },
+  "upstream_inputs": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_summary.csv",
+      "sha256": "31e3d0f9eac3203a63149dc5012444b18aff52b23405b0519e22a916595433c9"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_key_state_self_consistent_edges.csv",
+      "sha256": "71ff92ffab5544193ffdf3a117ed1ee0b639ecaf1a4a06a84a269c1face324a7"
+    }
+  ],
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m24/simplemos_m24_contact_boundary_audit.png",
+      "sha256": "63b813d2b9e541847f734b3fffb33008b66dd58f2d847181d538c2391e5822ae"
+    }
+  ],
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m24_contact_boundary_audit_contract_v1.json": "f42bb02e5414bed049acc5a3ef4c366cfbe1c420c16b5712e4c043b62c3ecf54",
+    "scripts/run_simplemos_m24_contact_boundary_audit.py": "9369d7d4e48623362a6f324237b119638771788c7509a8eb4d7ea2b613d7da00",
+    "scripts/plot_simplemos_m24_contact_boundary_audit.py": "8c415210ba0218f269ef6630fce7bbcd9f597be7483ac43aa0216fe51438ceb1",
+    "scripts/freeze_simplemos_m24_contact_boundary_audit_evidence.py": "63a7e4a9f649ab7ed3e5ac1c60a97b8078298e01fbb98c85c2d41f54a79dd429",
+    "tests/regression/test_simplemos_m24_contact_boundary_audit.py": "aee6e5759f99542bc81655d18431e765d540212b85382ebfa1541489a1680f95",
+    "docs/validation/simplemos_m24_contact_boundary_audit_2026-08-30.md": "1b655d6b537d3b92f7be1b70c85a79e1aea506a2cb930f0bbe9c1a7c5809ac07",
+    "CMakeLists.txt": "ef77fc651332722cad7924c031cff1ce390007f233ead26440ea5e496c8f3f45"
+  }
+}

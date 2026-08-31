@@ -3376,12 +3376,8 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
 VectorXd NewtonSolver::packArclengthState(const DDSolution& state) const
 {
     auto assembler = makeArclengthAssembler();
-    const Real potentialScale =
-        assembler->usesScaledState() ? assembler->potentialScale() : 1.0;
-    return assembler->pack({
-        state.psi / potentialScale,
-        state.phin / potentialScale,
-        state.phip / potentialScale});
+    return packReferencedSolution(
+        *assembler, state, CoupledDDBoundaryConditions{});
 }
 
 DDSolution NewtonSolver::unpackArclengthState(const VectorXd& x) const
