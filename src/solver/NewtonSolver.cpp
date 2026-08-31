@@ -3941,7 +3941,8 @@ NewtonSolver::evaluateFeedbackSubstitutions(
 NewtonPoissonQfpCrossBlockEvaluation
 NewtonSolver::evaluatePoissonQfpCrossBlockDecomposition(
     const DDSolution& state,
-    const DDSolution& replacementState) const
+    const DDSolution& replacementState,
+    bool computeConditionEstimates) const
 {
     const int N = static_cast<int>(mesh_.numNodes());
     const auto requireSize = [N](const VectorXd& values, const char* name) {
@@ -4247,19 +4248,21 @@ NewtonSolver::evaluatePoissonQfpCrossBlockDecomposition(
     evaluation.analyticQfpPsiDirectionalDerivative = analyticQfpPsi;
     evaluation.finiteDifferenceQfpPsiDirectionalDerivative =
         finiteDifferenceQfpPsi;
-    evaluation.jacobianPsiPsiCondition =
-        matrixConditionEstimate(Eigen::MatrixXd(A));
-    evaluation.jacobianPsiPsiEquilibratedCondition =
-        matrixConditionEstimate(l2Equilibrated(Eigen::MatrixXd(A)));
-    evaluation.jacobianQfpQfpCondition =
-        matrixConditionEstimate(Eigen::MatrixXd(D));
-    evaluation.jacobianQfpQfpEquilibratedCondition =
-        matrixConditionEstimate(l2Equilibrated(Eigen::MatrixXd(D)));
-    evaluation.schurCondition = matrixConditionEstimate(schur);
-    evaluation.schurEquilibratedCondition =
-        matrixConditionEstimate(l2Equilibrated(schur));
-    evaluation.effectiveSchurLoopCondition =
-        matrixConditionEstimate(effectiveLoop);
+    if (computeConditionEstimates) {
+        evaluation.jacobianPsiPsiCondition =
+            matrixConditionEstimate(Eigen::MatrixXd(A));
+        evaluation.jacobianPsiPsiEquilibratedCondition =
+            matrixConditionEstimate(l2Equilibrated(Eigen::MatrixXd(A)));
+        evaluation.jacobianQfpQfpCondition =
+            matrixConditionEstimate(Eigen::MatrixXd(D));
+        evaluation.jacobianQfpQfpEquilibratedCondition =
+            matrixConditionEstimate(l2Equilibrated(Eigen::MatrixXd(D)));
+        evaluation.schurCondition = matrixConditionEstimate(schur);
+        evaluation.schurEquilibratedCondition =
+            matrixConditionEstimate(l2Equilibrated(schur));
+        evaluation.effectiveSchurLoopCondition =
+            matrixConditionEstimate(effectiveLoop);
+    }
     evaluation.jacobianPsiPsiNorm = A.norm();
     evaluation.jacobianPsiQfpNorm = B.norm();
     evaluation.jacobianQfpPsiNorm = C.norm();

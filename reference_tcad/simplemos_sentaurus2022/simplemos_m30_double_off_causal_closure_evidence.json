@@ -1,0 +1,50 @@
+{
+  "schema": "vela.simplemos.sdevice.m30_double_off_causal_closure_evidence.v1",
+  "status": "frozen",
+  "summary": {
+    "native_gap_dex": 1.3212392857887345,
+    "state_contribution_dex": 0.8825886389719867,
+    "operator_extraction_contribution_dex": 0.43844371351571293,
+    "decomposition_closure_dex": 0.0,
+    "solver_control_count": 6,
+    "converged_solver_control_count": 0,
+    "default_model_changed": false
+  },
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/double_off_causal_closure/m30_double_off_causal_closure_report.json",
+      "sha256": "90015d222cff2cad4cb05054c921f706bbf1ee970f16fb9c34d855f0f7e88e5a"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/double_off_causal_closure/m30_state_operator_matrix.csv",
+      "sha256": "17d8e598ed886904a9300fd307a71d5b9b38188311def7e78ed31f628626e150"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/double_off_causal_closure/m30_native_gap_decomposition.csv",
+      "sha256": "abd6b64b4f56d340b12e31e91472d6531a72faba9b4535b32d75da240560be7a"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/double_off_causal_closure/m30_nodal_interaction.csv",
+      "sha256": "20f20719eacc4ae373772ddcfc5d425a67842b110f75ed07fc24152912be2d6a"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/double_off_causal_closure/m30_nodal_interaction_summary.csv",
+      "sha256": "34e1fb3c511f39b2b52424871b0a2f7da1e954eae4ca9f650ec7af40c8fdb265"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/double_off_causal_closure/m30_solver_control_summary.csv",
+      "sha256": "bd211771fc24b1d56922c39e150c088892dd39a243d444bfa5c9617c21af6360"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m30_double_off_causal_closure_contract_v1.json": "d613cce688b8d11f71d02c07efc2daabc557a16fe6b47b821ca601745bef525b",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m29_bgn_srh_factorial_evidence.json": "37c379047a275d66c00670f556ae3245f324fb0471ad64b83069ba633c785865",
+    "scripts/run_simplemos_m30_double_off_causal_closure.py": "46263d34fda3d66a8ff065247749becc79a8bdd0a6aae192aa00a2b6f42a8e1b",
+    "scripts/plot_simplemos_m30_double_off_causal_closure.py": "2e96bedd0d5b5a368c1e215f8b3008e224ce1732e5f16e84802b9d30c0d9fb21",
+    "scripts/freeze_simplemos_m30_double_off_causal_closure_evidence.py": "005fb96c16904514388a20ec5fc0569380a53e407d7244cd4882f3bbdfe93694",
+    "tests/regression/test_simplemos_m30_double_off_causal_closure.py": "50bc5308d877ba8cd8278d5f9b0fee4da2ddadbfea48606fbdbae07764ee959d",
+    "docs/validation/simplemos_m30_double_off_causal_closure_2026-08-31.md": "e0515cbedd0b3a3c7c7d5e0217447fa702c445ceec02c4a55ff30275f433c2a3",
+    "docs/validation/figures/simplemos_m30/simplemos_m30_double_off_causal_closure.png": "084efc3ba6034dcad659f3a383bb054f38e92c49a2dd0a9e656ec07ac5b9eeb5",
+    "CMakeLists.txt": "21739c3aff2b1ae4820a697f2ba2dfa43506dc799bfaf31af5ec5331349be80a"
+  }
+}

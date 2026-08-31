@@ -765,7 +765,8 @@ public:
     NewtonPoissonQfpCrossBlockEvaluation
     evaluatePoissonQfpCrossBlockDecomposition(
         const DDSolution& state,
-        const DDSolution& replacementState) const;
+        const DDSolution& replacementState,
+        bool computeConditionEstimates = true) const;
     NewtonDirectionalDerivativeEvaluation evaluateDirectionalDerivative(
         const DDSolution& state,
         const DDSolution& physicalPerturbation,

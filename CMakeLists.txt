@@ -1067,6 +1067,20 @@ set_tests_properties(simplemos_m29_bgn_srh_factorial PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m29_bgn_srh_factorial)
 
+add_test(NAME simplemos_m30_double_off_causal_closure
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m30_double_off_causal_closure)
+set_tests_properties(simplemos_m30_double_off_causal_closure PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m30_double_off_causal_closure)
+
+add_test(NAME simplemos_m31_minority_poisson_perturbation
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m31_minority_poisson_perturbation)
+set_tests_properties(simplemos_m31_minority_poisson_perturbation PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m31_minority_poisson_perturbation)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)

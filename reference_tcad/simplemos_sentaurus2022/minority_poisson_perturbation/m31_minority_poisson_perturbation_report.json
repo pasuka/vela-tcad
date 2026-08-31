@@ -1,0 +1,260 @@
+{
+  "schema": "vela.simplemos.sdevice.m31_minority_poisson_perturbation_report.v1",
+  "status": "complete",
+  "execution": {
+    "new_sentaurus_execution": false,
+    "cpp_changed": true,
+    "diagnostic_only_cpp_changed": true,
+    "default_model_changed": false
+  },
+  "acceptance": {
+    "state_variant_count": 8,
+    "cross_block_variant_count": 3,
+    "common_silicon_node_count": 942,
+    "free_silicon_node_count": 907,
+    "poisson_top10_l2_share": 0.9963151534049625,
+    "adjoint_relative_residual": 1.5668395376836534e-16,
+    "condition_estimates_skipped_count": 3,
+    "nonfinite_fraction": 0.0,
+    "checks": {
+      "state_variants": true,
+      "cross_block_variants": true,
+      "common_nodes": true,
+      "poisson_concentration": true,
+      "adjoint": true,
+      "condition_estimates_skipped": true,
+      "finite": true
+    },
+    "all_checks_pass": true
+  },
+  "minority_hole": {
+    "selected_node_count": 20,
+    "top20_exact_delta_current_A_per_um": 0.0,
+    "full_exact_delta_current_A_per_um": -2.2520363198031057e-22,
+    "full_current_shift_dex": 0.00040723625189330266,
+    "full_psi_residual_norm": 5.212261636165663e-09
+  },
+  "poisson_floor": {
+    "top_node_ids": [
+      286,
+      285,
+      284,
+      1029,
+      270,
+      1015,
+      307,
+      287,
+      1030,
+      269
+    ],
+    "top10_l2_share": 0.9963151534049625,
+    "baseline_psi_residual_norm": 5.121832833150603e-09,
+    "top10_step_psi_residual_norm": 5.328402369559565e-09,
+    "full_step_psi_residual_norm": 6.253108220572806e-11,
+    "top10_step_current_shift_dex": 0.0,
+    "full_step_current_shift_dex": 0.0
+  },
+  "state_variants": [
+    {
+      "variant": "vela_baseline",
+      "current_A_per_um": 2.4027958445896837e-19,
+      "exact_delta_current_A_per_um": 0.0,
+      "absolute_log10_current_shift_dex": 0.0,
+      "adjoint_predicted_delta_current_A_per_um": 0.0,
+      "prediction_error_A_per_um": 0.0,
+      "psi_residual_norm": 5.121832833150603e-09,
+      "phin_residual_norm": 3.4678678998684004e-11,
+      "phip_residual_norm": 1.4653305647619821e-15,
+      "top10_psi_residual_l2": 5.102959655586863e-09
+    },
+    {
+      "variant": "hole_top20_replace",
+      "current_A_per_um": 2.4027958445896837e-19,
+      "exact_delta_current_A_per_um": 0.0,
+      "absolute_log10_current_shift_dex": 0.0,
+      "adjoint_predicted_delta_current_A_per_um": 0.0,
+      "prediction_error_A_per_um": 0.0,
+      "psi_residual_norm": 5.1218332577897535e-09,
+      "phin_residual_norm": 2.44560549465198e-11,
+      "phip_residual_norm": 1.469946158948212e-15,
+      "top10_psi_residual_l2": 5.102959655586863e-09
+    },
+    {
+      "variant": "hole_full_replace",
+      "current_A_per_um": 2.4005438082698806e-19,
+      "exact_delta_current_A_per_um": -2.2520363198031057e-22,
+      "absolute_log10_current_shift_dex": 0.00040723625189330266,
+      "adjoint_predicted_delta_current_A_per_um": -2.2477618013673906e-22,
+      "prediction_error_A_per_um": 4.274518435715095e-25,
+      "psi_residual_norm": 5.212261636165663e-09,
+      "phin_residual_norm": 2.44560549465198e-11,
+      "phip_residual_norm": 1.7487903168658833e-10,
+      "top10_psi_residual_l2": 5.19580998912949e-09
+    },
+    {
+      "variant": "electron_full_replace",
+      "current_A_per_um": 3.731589195848652e-15,
+      "exact_delta_current_A_per_um": 3.731348916264193e-15,
+      "absolute_log10_current_shift_dex": 4.191176954778976,
+      "adjoint_predicted_delta_current_A_per_um": -2.4437400313546082e-14,
+      "prediction_error_A_per_um": -2.8168749229810277e-14,
+      "psi_residual_norm": 5.1374077949200656e-09,
+      "phin_residual_norm": 6.195146576408293e-09,
+      "phip_residual_norm": 1.4653305647619821e-15,
+      "top10_psi_residual_l2": 5.1029596935979875e-09
+    },
+    {
+      "variant": "qf_full_replace",
+      "current_A_per_um": 3.7315889706450245e-15,
+      "exact_delta_current_A_per_um": 3.7313486910605655e-15,
+      "absolute_log10_current_shift_dex": 4.191176928569045,
+      "adjoint_predicted_delta_current_A_per_um": -2.4437400538322262e-14,
+      "prediction_error_A_per_um": -2.8168749229382828e-14,
+      "psi_residual_norm": 5.227566642740541e-09,
+      "phin_residual_norm": 6.195146576408293e-09,
+      "phip_residual_norm": 1.7487903168658833e-10,
+      "top10_psi_residual_l2": 5.195809902501006e-09
+    },
+    {
+      "variant": "sentaurus_full_replace",
+      "current_A_per_um": 5.4610229083293656e-17,
+      "exact_delta_current_A_per_um": 5.436994949883469e-17,
+      "absolute_log10_current_shift_dex": 2.356557126147745,
+      "adjoint_predicted_delta_current_A_per_um": -2.443796282734599e-14,
+      "prediction_error_A_per_um": -2.4492332776844826e-14,
+      "psi_residual_norm": 32816.51577806473,
+      "phin_residual_norm": 1.4024727272701316e-10,
+      "phip_residual_norm": 2.3047251505199098e-10,
+      "top10_psi_residual_l2": 1.790711886682849
+    },
+    {
+      "variant": "poisson_top10_step",
+      "current_A_per_um": 2.4027958445896837e-19,
+      "exact_delta_current_A_per_um": 0.0,
+      "absolute_log10_current_shift_dex": 0.0,
+      "adjoint_predicted_delta_current_A_per_um": 0.0,
+      "prediction_error_A_per_um": 0.0,
+      "psi_residual_norm": 5.328402369559565e-09,
+      "phin_residual_norm": 2.44560549465198e-11,
+      "phip_residual_norm": 1.4653305647441823e-15,
+      "top10_psi_residual_l2": 3.1145597701403197e-09
+    },
+    {
+      "variant": "poisson_full_step",
+      "current_A_per_um": 2.4027958445896837e-19,
+      "exact_delta_current_A_per_um": 0.0,
+      "absolute_log10_current_shift_dex": 0.0,
+      "adjoint_predicted_delta_current_A_per_um": -9.695248823057323e-38,
+      "prediction_error_A_per_um": -9.695248823057323e-38,
+      "psi_residual_norm": 6.253108220572806e-11,
+      "phin_residual_norm": 2.4456054946519807e-11,
+      "phip_residual_norm": 1.4653305647133327e-15,
+      "top10_psi_residual_l2": 1.4385157641786912e-14
+    }
+  ],
+  "cross_block": [
+    {
+      "variant": "hole_full_replace",
+      "condition_estimates_computed": false,
+      "target_delta_phin_l2_V": 0.0,
+      "target_delta_phip_l2_V": 0.22807524761319528,
+      "psi_qfp_product_l2": 1.417901588627595e-10,
+      "full_raw_delta_psi_l2_V": 1.292199211347467e-10,
+      "full_raw_delta_phin_l2_V": 3.2070558240855566e-11,
+      "full_raw_delta_phip_l2_V": 0.3819153893271406,
+      "schur_relative_closure": 5.1426749338915507e-23,
+      "j_psi_qfp_fd_relative_error": 9.597830459440834e-12,
+      "j_qfp_psi_fd_relative_error": 5.415462906186748e-19,
+      "transport_boundary_loop_norm": 4.8323627137866555e-11,
+      "srh_auger_loop_norm": 0.0,
+      "sg_avalanche_loop_norm": 0.0
+    },
+    {
+      "variant": "electron_full_replace",
+      "condition_estimates_computed": false,
+      "target_delta_phin_l2_V": 0.002655817919970216,
+      "target_delta_phip_l2_V": 0.0,
+      "psi_qfp_product_l2": 3.8751859091881547e-10,
+      "full_raw_delta_psi_l2_V": 1.3068378111287077e-10,
+      "full_raw_delta_phin_l2_V": 0.0026356536758972266,
+      "full_raw_delta_phip_l2_V": 0.01952911158070031,
+      "schur_relative_closure": 4.497497282881111e-23,
+      "j_psi_qfp_fd_relative_error": 5.08375496627814e-10,
+      "j_qfp_psi_fd_relative_error": 1.6179112585279392e-18,
+      "transport_boundary_loop_norm": 4.8323627137866555e-11,
+      "srh_auger_loop_norm": 0.0,
+      "sg_avalanche_loop_norm": 0.0
+    },
+    {
+      "variant": "qf_full_replace",
+      "condition_estimates_computed": false,
+      "target_delta_phin_l2_V": 0.002655817919970216,
+      "target_delta_phip_l2_V": 0.22807524761319528,
+      "psi_qfp_product_l2": 4.126306645507298e-10,
+      "full_raw_delta_psi_l2_V": 1.2922197729071412e-10,
+      "full_raw_delta_phin_l2_V": 0.0026356536757674316,
+      "full_raw_delta_phip_l2_V": 0.38191538931813057,
+      "schur_relative_closure": 3.221469348185226e-23,
+      "j_psi_qfp_fd_relative_error": 2.7930463486748925e-11,
+      "j_qfp_psi_fd_relative_error": 8.0062318647552395e-19,
+      "transport_boundary_loop_norm": 4.8323627137866555e-11,
+      "srh_auger_loop_norm": 0.0,
+      "sg_avalanche_loop_norm": 0.0
+    }
+  ],
+  "block_step_status": {
+    "block_step_count": 2,
+    "block_steps": [
+      {
+        "block_residuals": {
+          "combined": 5.121950232237598e-09,
+          "phin": 3.4678678998684004e-11,
+          "phip": 1.4653305647619821e-15,
+          "psi": 5.121832833150603e-09
+        },
+        "mode": "poisson_only",
+        "raw_step_norm": 5.054994935349471e-09,
+        "step_norm": 5.054994935349471e-09,
+        "trial_block_residuals": {
+          "combined": 7.567103643407878e-11,
+          "phin": 3.4678678998684e-11,
+          "phip": 1.4653305647133329e-15,
+          "psi": 6.72569325480037e-11
+        }
+      },
+      {
+        "block_residuals": {
+          "combined": 5.121950232237598e-09,
+          "phin": 3.4678678998684004e-11,
+          "phip": 1.4653305647619821e-15,
+          "psi": 5.121832833150603e-09
+        },
+        "mode": "carrier_only",
+        "raw_step_norm": 0.7554197644609031,
+        "step_norm": 0.7554197644609031,
+        "trial_block_residuals": {
+          "combined": 5.121872132002593e-09,
+          "phin": 3.104977379445847e-11,
+          "phip": 3.3793974477854577e-15,
+          "psi": 5.121778016286988e-09
+        }
+      }
+    ],
+    "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m31_minority_poisson_perturbation\\baseline\\block_step.json",
+    "converged": true,
+    "nodes": 1482,
+    "simulation_type": "newton_block_step_probe"
+  },
+  "artifacts": {
+    "state_variant_response": "reference_tcad/simplemos_sentaurus2022/minority_poisson_perturbation/m31_state_variant_response.csv",
+    "poisson_node_audit": "reference_tcad/simplemos_sentaurus2022/minority_poisson_perturbation/m31_poisson_node_audit.csv",
+    "cross_block_summary": "reference_tcad/simplemos_sentaurus2022/minority_poisson_perturbation/m31_cross_block_summary.csv"
+  },
+  "claim_policy": [
+    "A frozen hole or electron replacement is a directional perturbation, not a self-consistent alternative solution.",
+    "The terminal-current functional gives the exact frozen direct response; the adjoint prediction is first order only.",
+    "A frozen psi-only perturbation can have zero direct terminal-current response while retaining an indirect self-consistent response through the Poisson-QFP cross blocks.",
+    "Poisson-only block steps diagnose the residual floor and do not change production solver defaults.",
+    "No default BGN, SRH, mobility, contact, SG, or convergence setting may be changed from this audit alone."
+  ]
+}
