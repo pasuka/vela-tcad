@@ -108,10 +108,18 @@ coefficient/mobility switch generates the observed slope deficit.
    ledger remains draft.
 3. No IALMob, low-field mobility, flatband or threshold adjustment is
    authorized by this result.
-4. The next minimal diagnostic is a two-endpoint electron-continuity/Jacobian
-   reclose audit focused on the edges whose `phin` drop changes with bias. A
-   full per-region Poisson AverageBox implementation remains deferred because
-   the `psi` contribution is nearly bias independent on the failed segment.
+4. The subsequent two-endpoint electron-continuity/Jacobian reclose audit is
+   complete. Full Sentaurus states converge to the independent Vela branch in
+   five Newton iterations. More decisively, after first replacing only `phin`
+   on the Vela electrostatic state, a fixed-psi carrier reclose reproduces both
+   Vela endpoints in four full steps; its first step is `0.9997--0.99995`
+   cosine-aligned and removes `91--96%` of phin RMSE. (The earlier small
+   carrier-only response was evaluated on the complete Sentaurus state and is
+   a different block experiment.) The bias-growing residual is concentrated
+   in the gate-channel Si/dielectric interface one-ring (`91.9--95.2%` of
+   residual energy), and extended localized JVP errors remain below
+   `1.07e-6`. The next target is interface-box electron row balance, not
+   Poisson AverageBox work.
 
 ## Reproducibility artifacts
 
@@ -125,6 +133,9 @@ coefficient/mobility switch generates the observed slope deficit.
   `reference_staging/templates_ldmos_g3_averagebox_state_feedback_vg1p166667_20260831/`.
 - Operator A/B output:
   `reference_staging/templates_ldmos_g3_gm_operator_20260831/`.
+- Reclose/Jacobian follow-up:
+  `docs/validation/templates_ldmos_g3_gm_reclose_jacobian_2026-08-31.md`;
+  driver: `scripts/audit_templates_ldmos_g3_gm_reclose.py`.
 - VM capture and imported endpoint:
   `reference_staging/templates_ldmos_g3_gm_state_capture_20260831/`.
 - The large TDR, imported fields, hybrid states and edge probes remain ignored

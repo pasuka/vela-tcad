@@ -174,6 +174,52 @@
       },
       "interpretation": "AverageBox plus qualified HFS closes the frozen-state segment slope; the remaining maximum-gm deficit is electron-QF self-consistent feedback",
       "passed": true
+    },
+    "maximum_gm_phin_continuity_reclose": {
+      "bias_points_V": [
+        1.0,
+        1.1666666666666667
+      ],
+      "state_variant": "Vela psi and phip with Sentaurus phin",
+      "reclose": "carrier block with psi fixed",
+      "accepted_full_newton_steps": [
+        4,
+        4
+      ],
+      "initial_electron_residual_l2": [
+        0.0065458944708829325,
+        0.0180544142580966
+      ],
+      "final_electron_residual_l2": [
+        2.3712162493904615e-10,
+        4.68780306951133e-10
+      ],
+      "first_step_phin_target_cosine": [
+        0.999951235444038,
+        0.999706158986007
+      ],
+      "first_step_phin_rmse_improvement_fraction": [
+        0.961306744550865,
+        0.914755389703934
+      ],
+      "final_current_ratio_to_independent_vela": [
+        0.9999999999629744,
+        1.000000000078429
+      ],
+      "fixed_psi_carrier_reclose_gm_ratio_to_vela": 1.0000000001774596,
+      "fixed_psi_carrier_reclose_gm_ratio_to_sentaurus": 0.7569242249737127,
+      "interface_one_ring_residual_energy_fraction": [
+        0.919153804526712,
+        0.952021271382086
+      ],
+      "contact_one_ring_residual_energy_fraction": [
+        0.0130778733328369,
+        0.00873930545926646
+      ],
+      "electron_residual_l2_growth_high_over_low": 2.7581279133669434,
+      "maximum_localized_jvp_relative_error": 1.0658760378471736e-6,
+      "classification": "electron continuity fixed-point difference at the gate-channel interface one-ring",
+      "passed": true
     }
   },
   "comparison_masks": {
@@ -196,6 +242,6 @@
       "max_gm_relative_error": 0.24307577516061074,
       "worst_kcl_relative_error": 1.1429698478423298e-9
     },
-    "next_gate": "two-endpoint electron-continuity and Jacobian reclose audit of the bias-dependent phin feedback before IALMob or any threshold change"
+    "next_gate": "coefficient-level gate-channel interface-box electron-row balance audit before IALMob or any threshold or mobility change"
   }
 }
