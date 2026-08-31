@@ -1,0 +1,41 @@
+{
+  "schema": "vela.simplemos.sdevice.m35_signed_average_box_assembly.v1",
+  "scope": "SDevice-only shared-node Si/SiO2 region-local signed AverageBox assembly diagnostic",
+  "device": "n23",
+  "bias": {
+    "drain_voltage_V": 0.05,
+    "gate_voltage_V": 0.05
+  },
+  "physics": {
+    "bandgap_narrowing": "OldSlotboom",
+    "recombination": "SRH(DopingDependence)",
+    "mobility": "PhuMob + Enormal + HighFieldSaturation(GradQuasiFermi)",
+    "high_field_gradient_discretization": "transport_cell_vector"
+  },
+  "factors": [
+    "poisson_edge_coupling",
+    "transport_edge_coupling",
+    "transport_signed_average_box_node_volume"
+  ],
+  "variants": "complete 2^3 factorial matrix",
+  "workflow": [
+    "self-consistent equilibrium",
+    "self-consistent drain ramp to 0.05 V",
+    "self-consistent gate ramp to 0.05 V"
+  ],
+  "acceptance": {
+    "variant_count": 8,
+    "maximum_baseline_replay_relative_error": 1e-10,
+    "minimum_si_oxide_interface_edges": 1,
+    "minimum_sentaurus_interface_nodes": 20,
+    "maximum_sentaurus_measure_relative_error": 1e-10,
+    "require_all_runs_converged": true,
+    "require_finite_results": true
+  },
+  "claim_policy": [
+    "The diagnostic retains one shared electrostatic degree of freedom at each material-interface node.",
+    "The signed node measure is summed only over transport-material cells and is disabled by default.",
+    "The M34 MeasureCoefficients.debug export is the direct geometry oracle.",
+    "A terminal-current improvement measures one coherent geometry response; it does not prove equivalence to all Sentaurus interface equations."
+  ]
+}

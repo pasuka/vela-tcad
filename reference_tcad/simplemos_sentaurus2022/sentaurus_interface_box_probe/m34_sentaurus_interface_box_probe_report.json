@@ -23,12 +23,23 @@
       "nb_grd_elements": 2824,
       "nb_vertices": 1482
     },
+    "input_to_debug_coefficient_local_permutation": [
+      1,
+      0,
+      2
+    ],
     "input_to_debug_local_permutation": [
       1,
       0,
       2
     ],
+    "input_to_debug_measure_local_permutation": [
+      0,
+      2,
+      1
+    ],
     "interface_permutation_max_abs_coefficient_error": 1.5631940186722204e-13,
+    "interface_permutation_max_abs_measure_error": 2.117582368135751e-21,
     "log_stats": {
       "average_box_method": true,
       "double_edges": 0,
@@ -53,9 +64,9 @@
     "barycentric_total_over_si_measure_min": 3.656055920809001,
     "edge_count": 20,
     "node_count": 21,
-    "sentaurus_total_over_si_measure_max": 12.952251643640542,
-    "sentaurus_total_over_si_measure_median": 4.760654569439349,
-    "sentaurus_total_over_si_measure_min": 2.992041940606738,
+    "sentaurus_total_over_si_measure_max": 8.97395368860193,
+    "sentaurus_total_over_si_measure_median": 4.984083881213514,
+    "sentaurus_total_over_si_measure_min": 4.984083881213513,
     "sentaurus_vs_raw_max_abs_oxide_coefficient": 1.0269562977782698e-15,
     "sentaurus_vs_raw_max_abs_si_coefficient": 2.42861286636753e-16,
     "vela_legacy_over_sentaurus_region_poisson_max": 1.4272691926339056,

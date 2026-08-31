@@ -1,0 +1,4 @@
+factor,mean_enabled_log_current_shift_dex,mean_disabled_log_current_shift_dex,main_effect_log_current_dex
+poisson_edge_coupling,-0.013084434854383922,-0.011921332522605113,-0.0011631023317788085
+transport_edge_coupling,-0.02186297765570105,-0.0031427897212879838,-0.018720187934413067
+transport_signed_average_box_node_volume,-0.01506778491137337,-0.009937982465615664,-0.005129802445757706

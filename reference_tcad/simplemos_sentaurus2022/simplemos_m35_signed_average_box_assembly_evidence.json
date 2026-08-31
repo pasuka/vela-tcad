@@ -1,0 +1,58 @@
+{
+  "schema": "vela.simplemos.sdevice.m35_signed_average_box_assembly_evidence.v1",
+  "status": "frozen",
+  "summary": {
+    "variant_count": 8,
+    "converged_count": 8,
+    "interface_node_count": 21,
+    "maximum_measure_relative_error": 2.9187578442462076e-15,
+    "baseline_error_dex": 0.10941868092427424,
+    "all_region_resolved_error_dex": 0.08440560595033898,
+    "all_region_resolved_gap_closure_fraction": 0.22859967569199766,
+    "best_factorial_variant": "p1_t1_v1",
+    "default_model_changed": false
+  },
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/signed_average_box_assembly/m35_signed_average_box_assembly_report.json",
+      "sha256": "4d8eb73c8bb39d3117da3fd883e9328a015db7c64008e3db9ab08c8117526061"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/signed_average_box_assembly/m35_factorial_response.csv",
+      "sha256": "e5ad67b6eda855dd66317c0514ba64b2c0ecbf217166254b4d6af9002441ceb9"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/signed_average_box_assembly/m35_factorial_main_effects.csv",
+      "sha256": "c6c2523d61cf3d2e86eaa71a7960a20f267e5daa0d0696d3e1fe73b7209d944e"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/signed_average_box_assembly/m35_interface_state_response.csv",
+      "sha256": "f41f86efbe439679215620acb5457f973cb51fdd4481f9531bda32ed4155708f"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/signed_average_box_assembly/m35_sentaurus_measure_oracle.csv",
+      "sha256": "db2409a0805309c3b0677b8cbf765598202c40f1af51b5f01f81765076f82d47"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/signed_average_box_assembly/m35_m33_barycentric_comparison.csv",
+      "sha256": "d041e2f3a4f8ed69f248a44abb357f21a960c63bb0a4eda739f04dd535df22fe"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m35_signed_average_box_assembly_contract_v1.json": "67810ec0107e6725e2ab14cf0b1d9f856f7799211024d1330ca15b40d97cebf1",
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_interface_node_measures.csv": "8b8116543ab6d5159b9ecfa25bb6ba56264586a48d4d236e8d09a136c356e718",
+    "scripts/run_simplemos_m35_signed_average_box_assembly.py": "29d25928c729e6745a0154c3143c715e4f055f1b32eefa384fa202e46dffae0b",
+    "scripts/plot_simplemos_m35_signed_average_box_assembly.py": "740b94b167d50e28cd9eb568a41cb47766537834a7ccc8cb519e11fad8f6f50b",
+    "scripts/freeze_simplemos_m35_signed_average_box_assembly_evidence.py": "2b0066dda483433f2c3a1a387b83bb72fefcc5b4dbfb89229c1ee1a4ce0ce8e2",
+    "tests/regression/test_simplemos_m35_signed_average_box_assembly.py": "f75b0a0f7dce0d9cffdd631c1f043307658ced0298226ff495802008568257a1",
+    "tests/test_mos_mixed_material.cpp": "e25809b1edfc22207c5037ee0927d9cfe8228795a7c4b831a1b4e16cf1603910",
+    "tests/test_newton_solver.cpp": "70b55cd2622fae396e3315d7ce0f7dc6ca07b994cbb828bd33e8b11cdd15b13a",
+    "docs/validation/simplemos_m35_signed_average_box_assembly_2026-08-31.md": "f8b66f8bf1ddf4befbc0745011a9a6ce03d9f4c5a726eacad9c69c97d0766d3f",
+    "docs/validation/figures/simplemos_m35/simplemos_m35_signed_average_box_assembly.png": "b0bee57e882e97fb5bc10e07f65bce2e9578ee3780ff84c564272dab8d637ef7",
+    "include/vela/equation/AssemblerUtils.h": "174d0ca83228075cd43e6103a4aa8ac227f4be0b3c7494e214520dc22936c932",
+    "include/vela/equation/DDAssembler.h": "4069a40e3296649c00ab9051c2862b7764172623aa9eadb12a5abd3a27c6b17b",
+    "src/equation/CoupledDDAssembler.cpp": "754997b9e3fde81f9e81f8b9ff065d50a752bffd30942a3d80e4312abb028090",
+    "src/solver/NewtonSolver.cpp": "c39486321bec187317798d55222adced11e083503586d69a52c2eb0afe2ea872",
+    "CMakeLists.txt": "b6e283907f18e155f7bc97bc6eb1f5f2066c4001893d7aa45ffbe7d7b49d6955"
+  }
+}

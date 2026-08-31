@@ -350,6 +350,74 @@ inline std::vector<Real> computeTransportNodeVolumes(
     return volume;
 }
 
+/// Return the signed circumcentric (Sentaurus AverageBox) shares of a Tri3 cell.
+inline std::array<Real, 3> signedAverageBoxTriangleNodeMeasures(
+    const DeviceMesh& mesh,
+    const Cell& cell)
+{
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3) {
+        throw std::invalid_argument(
+            "signed AverageBox node measures require a Tri3 cell");
+    }
+
+    const std::array<const Node*, 3> nodes = {
+        &mesh.getNode(cell.node_ids[0]),
+        &mesh.getNode(cell.node_ids[1]),
+        &mesh.getNode(cell.node_ids[2])};
+    const auto squaredDistance = [&](int a, int b) {
+        const Real dx = nodes[static_cast<std::size_t>(b)]->x -
+                        nodes[static_cast<std::size_t>(a)]->x;
+        const Real dy = nodes[static_cast<std::size_t>(b)]->y -
+                        nodes[static_cast<std::size_t>(a)]->y;
+        return dx * dx + dy * dy;
+    };
+    const auto cotangent = [&](int vertex, int a, int b) {
+        const Node& center = *nodes[static_cast<std::size_t>(vertex)];
+        const Node& first = *nodes[static_cast<std::size_t>(a)];
+        const Node& second = *nodes[static_cast<std::size_t>(b)];
+        const Real uX = first.x - center.x;
+        const Real uY = first.y - center.y;
+        const Real vX = second.x - center.x;
+        const Real vY = second.y - center.y;
+        const Real cross = std::abs(uX * vY - uY * vX);
+        if (cross <= 1.0e-300) {
+            throw std::invalid_argument(
+                "degenerate triangle cannot form signed AverageBox measure");
+        }
+        return (uX * vX + uY * vY) / cross;
+    };
+
+    std::array<Real, 3> measures{};
+    for (int i = 0; i < 3; ++i) {
+        const int j = (i + 1) % 3;
+        const int k = (i + 2) % 3;
+        measures[static_cast<std::size_t>(i)] = 0.125 * (
+            squaredDistance(i, k) * cotangent(j, i, k) +
+            squaredDistance(i, j) * cotangent(k, i, j));
+    }
+    return measures;
+}
+
+/// Sum signed AverageBox shares only over transport-material cells.
+inline std::vector<Real> computeTransportSignedAverageBoxNodeVolumes(
+    const DeviceMesh& mesh,
+    const std::vector<Material>& cellMaterials)
+{
+    std::vector<Real> volume(mesh.numNodes(), 0.0);
+    for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
+        const Material& material = cellMaterials.at(cellId);
+        if (material.ni <= 0.0 && material.mun <= 0.0 &&
+            material.mup <= 0.0) {
+            continue;
+        }
+        const Cell& cell = mesh.getCell(cellId);
+        const auto measures = signedAverageBoxTriangleNodeMeasures(mesh, cell);
+        for (std::size_t local = 0; local < 3; ++local)
+            volume.at(cell.node_ids[local]) += measures[local];
+    }
+    return volume;
+}
+
 /// Return sum_c epsilon_c * couple_c for one edge [F].
 inline Real regionResolvedPermittivityCoupling(
     const DeviceMesh& mesh,

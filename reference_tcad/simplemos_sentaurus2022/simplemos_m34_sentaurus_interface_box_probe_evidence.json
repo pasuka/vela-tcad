@@ -1,8 +1,8 @@
 {
   "artifact_hashes": {
     "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_interface_edge_coefficients.csv": "258c30698fe6f46d45e4a74674db28bd463241ce8e737ae5e7f9b128523dc88b",
-    "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_interface_node_measures.csv": "3fd28c893c54b10d3f5e020177adca8807c1c08c57ced4fcba20f3ef7ae0ac30",
-    "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_sentaurus_interface_box_probe_report.json": "c909b6c13cac1d9a847e78ae2a4bb268dedbaff5cf0fe86848a83c1eec56744d",
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_interface_node_measures.csv": "8b8116543ab6d5159b9ecfa25bb6ba56264586a48d4d236e8d09a136c356e718",
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_sentaurus_interface_box_probe_report.json": "2c1c690ff8851565f659a4cb77bbf941c8adc57f11e1895ccf9493b21f2499a5",
     "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_vertex_mapping_summary.csv": "20c69eb879622974f3396cefef53898e2a416f1fcb4f4f301d0141e90fcb5af5"
   },
   "raw_oracle_hashes": {
@@ -13,9 +13,9 @@
   "schema": "vela.simplemos.sdevice.m34_sentaurus_interface_box_probe_evidence.v1",
   "source_hashes": {
     "reference_tcad/simplemos_sentaurus2022/simplemos_m34_sentaurus_interface_box_probe_contract_v1.json": "94ff2355227cff3691336859b6f7ffb1f081e64f01918226269fd4635adeaa51",
-    "scripts/freeze_simplemos_m34_sentaurus_interface_box_probe_evidence.py": "71daa323b2f5cc1828464ddcce2e1fe546b12b168e41300a3600330d20a078bd",
-    "scripts/run_simplemos_m34_sentaurus_interface_box_probe.py": "35979b5b4636c012cc74f2e9fbb4841a53b002c9c57f3e225ce861129311d551",
-    "tests/regression/test_simplemos_m34_sentaurus_interface_box_probe.py": "3063e40565fae00990efe753094597d01cbaac09c428506a12f0ec16f1663e57"
+    "scripts/freeze_simplemos_m34_sentaurus_interface_box_probe_evidence.py": "d35421b865602aa92e4e7093a00484db4dde18996f0bc4675384ef0699420c1b",
+    "scripts/run_simplemos_m34_sentaurus_interface_box_probe.py": "971869ff9301beb9a610ae899f0e27981038b8c75752477820b16b03cdef7b89",
+    "tests/regression/test_simplemos_m34_sentaurus_interface_box_probe.py": "a0e49c177e4f2ea5b13e572c6a57df91e49d303fe34768f704dfd809a3c5f6d0"
   },
   "status": "passed",
   "summary": {
@@ -28,13 +28,18 @@
       0,
       2
     ],
+    "input_to_debug_measure_local_permutation": [
+      0,
+      2,
+      1
+    ],
     "internal_vertex_delta": 82,
     "legacy_poisson_ratio_median": 1.4272691926338965,
     "production_default_changed": false,
     "region_poisson_ratio_max": 1.0000000000000056,
     "region_poisson_ratio_min": 0.999999999999995,
     "sdevice_internal_vertices": 1564,
-    "sentaurus_total_over_si_measure_median": 4.760654569439349,
+    "sentaurus_total_over_si_measure_median": 4.984083881213514,
     "si_oxide_interface_edges": 20,
     "si_oxide_interface_nodes": 21,
     "triangle_records": 2746,

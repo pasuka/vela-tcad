@@ -62,6 +62,8 @@ def main() -> int:
         raise ValueError("M34 triangle coverage changed")
     if probe["input_to_debug_local_permutation"] != [1, 0, 2]:
         raise ValueError("M34 local permutation changed")
+    if probe["input_to_debug_measure_local_permutation"] != [0, 2, 1]:
+        raise ValueError("M34 Measure local permutation changed")
     if not mapping["contact_nodes_explain_delta"] or mapping["double_edges"] != 0:
         raise ValueError("M34 vertex expansion is no longer contact-closed")
     if interface["edge_count"] != 20 or interface["node_count"] != 21:
@@ -96,6 +98,9 @@ def main() -> int:
             "triangle_records": probe["triangle_record_count"],
             "input_to_debug_local_permutation": probe[
                 "input_to_debug_local_permutation"
+            ],
+            "input_to_debug_measure_local_permutation": probe[
+                "input_to_debug_measure_local_permutation"
             ],
             "input_grid_vertices": mapping["input_grid_vertices"],
             "sdevice_internal_vertices": mapping["sdevice_internal_vertices"],

@@ -38,15 +38,15 @@
     "scripts/plot_simplemos_m33_region_resolved_interface_assembly.py": "d8538bef790f161721ba12f6e14eede12c1c7aa28de8305c5948359fe582639f",
     "scripts/freeze_simplemos_m33_region_resolved_interface_assembly_evidence.py": "937474d03dc7ca7ca2924232c942fb54350dd7a09b7208380718800b0c547246",
     "tests/regression/test_simplemos_m33_region_resolved_interface_assembly.py": "e50777ee922d677e3d5ad616055072d71ae291c3f559a7c6ad60f8517e004c55",
-    "tests/test_mos_mixed_material.cpp": "bb476aa6df39cf5cc16545e7aa066d60fea59693fac488c9975605174d9cfd69",
+    "tests/test_mos_mixed_material.cpp": "e25809b1edfc22207c5037ee0927d9cfe8228795a7c4b831a1b4e16cf1603910",
     "docs/validation/simplemos_m33_region_resolved_interface_assembly_2026-08-31.md": "0ca0941ed471eb31e2cbe523ba4b2bfeecde1ab1786abe8eefbc291f7e667700",
     "docs/validation/figures/simplemos_m33/simplemos_m33_region_resolved_interface_assembly.png": "55df52866b2846faf8623d4a41cf1d1d5039a980ed8043c0e3e51562e638587d",
-    "include/vela/equation/AssemblerUtils.h": "34d9cbaa20276d28c1a5f8026a05ae1b56d91fd35ba61c4d11da95182bd9df21",
-    "include/vela/equation/DDAssembler.h": "9471c36ef657948bb25596acb27d98369aef823352692d42f053e73ef6b637c7",
+    "include/vela/equation/AssemblerUtils.h": "174d0ca83228075cd43e6103a4aa8ac227f4be0b3c7494e214520dc22936c932",
+    "include/vela/equation/DDAssembler.h": "4069a40e3296649c00ab9051c2862b7764172623aa9eadb12a5abd3a27c6b17b",
     "include/vela/solver/NewtonSolver.h": "65753c3ed686b59566a3a66df8a1837b71dd0e5a9f80dc1c44d17a2c9f0412ba",
-    "src/equation/CoupledDDAssembler.cpp": "85bef66282d98f7981139bcb461acbb746431ae3c606cd0accc27624a21b3248",
-    "src/solver/NewtonSolver.cpp": "26396508a3e35c3e97a025a61f07152660464044b169b9d3036bd27e763bd5a1",
+    "src/equation/CoupledDDAssembler.cpp": "754997b9e3fde81f9e81f8b9ff065d50a752bffd30942a3d80e4312abb028090",
+    "src/solver/NewtonSolver.cpp": "c39486321bec187317798d55222adced11e083503586d69a52c2eb0afe2ea872",
     "src/simulation/DCSweep.cpp": "b1bf23e732e0774b3001237b5a1f122db7dac3c13a2c8e39cab6cb1ff1b0c584",
-    "CMakeLists.txt": "32437c71e983e21e73c44a4c998e260f8d93aaad10eaea9431c9b1e62a29d90d"
+    "CMakeLists.txt": "b6e283907f18e155f7bc97bc6eb1f5f2066c4001893d7aa45ffbe7d7b49d6955"
   }
 }

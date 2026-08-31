@@ -47,8 +47,15 @@ identical to the barycentric Si subvolume used by the first M33 diagnostic:
 
 | Total/Si ratio over 21 interface nodes | Minimum | Median | Maximum |
 |---|---:|---:|---:|
-| Sentaurus direct `Measure` | 2.99204 | 4.76065 | 12.95225 |
+| Sentaurus direct `Measure` | 4.98408 | 4.98408 | 8.97395 |
 | M33 barycentric diagnostic | 3.65606 | 4.83373 | 11.28750 |
+
+The `Measure` and `Coefficients` blocks use different local-slot orders.  The
+input-to-debug permutations are `[0, 2, 1]` for `Measure` and `[1, 0, 2]` for
+`Coefficients`.  Inferring them independently makes the signed circumcentric
+Si measure agree with all 21 interface-node oracle values to within
+`2.92e-15` relative error.  Reusing the coefficient permutation for `Measure`
+would silently assign element shares to the wrong vertices.
 
 Consequently, M33 proves the direction of the edge correction but its
 `transport_node_volume` corner is not an exact Sentaurus node-volume oracle.

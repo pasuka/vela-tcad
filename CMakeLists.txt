@@ -1102,6 +1102,13 @@ set_tests_properties(simplemos_m34_sentaurus_interface_box_probe PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m34_sentaurus_interface_box_probe)
 
+add_test(NAME simplemos_m35_signed_average_box_assembly
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m35_signed_average_box_assembly)
+set_tests_properties(simplemos_m35_signed_average_box_assembly PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m35_signed_average_box_assembly)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)

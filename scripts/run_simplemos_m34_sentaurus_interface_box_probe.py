@@ -315,6 +315,23 @@ def vela_positive_coefficient(points: list[tuple[float, float]], local: int) -> 
     return area(points) / (3.0 * length2)
 
 
+def signed_average_box_measures(
+    points: list[tuple[float, float]],
+) -> list[float]:
+    def distance_squared(a: int, b: int) -> float:
+        return sum((points[b][axis] - points[a][axis]) ** 2 for axis in (0, 1))
+
+    result = []
+    for local in range(3):
+        j = (local + 1) % 3
+        k = (local + 2) % 3
+        result.append(0.25 * (
+            distance_squared(local, k) * raw_coefficient(points, j)
+            + distance_squared(local, j) * raw_coefficient(points, k)
+        ))
+    return result
+
+
 def infer_input_to_debug_local_permutation(
     element_ids: set[int],
     elements: dict[int, dict[str, Any]],
@@ -334,6 +351,30 @@ def infer_input_to_debug_local_permutation(
                         float(coefficients[element]["values"][permutation[local]])
                         - raw_coefficient(points, local)
                     ),
+                )
+        candidates.append((maximum, permutation))
+    maximum, permutation = min(candidates)
+    return permutation, maximum
+
+
+def infer_input_to_debug_measure_permutation(
+    element_ids: set[int],
+    elements: dict[int, dict[str, Any]],
+    nodes: dict[int, tuple[float, float]],
+    measures: dict[int, dict[str, Any]],
+) -> tuple[tuple[int, int, int], float]:
+    """Map input local vertices to Measure slots using signed AverageBox shares."""
+    candidates: list[tuple[float, tuple[int, int, int]]] = []
+    for permutation in itertools.permutations(range(3)):
+        maximum = 0.0
+        for element in element_ids:
+            points = [nodes[node] for node in elements[element]["nodes"]]
+            expected = signed_average_box_measures(points)
+            for local in range(3):
+                maximum = max(
+                    maximum,
+                    abs(float(measures[element]["values"][permutation[local]])
+                        - expected[local]),
                 )
         candidates.append((maximum, permutation))
     maximum, permutation = min(candidates)
@@ -408,9 +449,14 @@ def analyze(contract: dict[str, Any], output: Path, banner: str) -> dict[str, An
         element for adjacent in interface_adjacency.values()
         for element, _ in adjacent
     }
-    local_permutation, local_permutation_max_error = (
+    coefficient_permutation, coefficient_permutation_max_error = (
         infer_input_to_debug_local_permutation(
             interface_element_ids, elements, nodes, coefficients
+        )
+    )
+    measure_permutation, measure_permutation_max_error = (
+        infer_input_to_debug_measure_permutation(
+            interface_element_ids, elements, nodes, measures
         )
     )
 
@@ -429,7 +475,7 @@ def analyze(contract: dict[str, Any], output: Path, banner: str) -> dict[str, An
                 "element": element,
                 "local": local,
                 "sent": float(
-                    coefficients[element]["values"][local_permutation[local]]
+                    coefficients[element]["values"][coefficient_permutation[local]]
                 ),
                 "raw": raw_coefficient(points, local),
                 "vela": vela_positive_coefficient(points, local),
@@ -472,7 +518,7 @@ def analyze(contract: dict[str, Any], output: Path, banner: str) -> dict[str, An
             material = elements[element]["material"]
             bucket = material if material in ("Si", "SiO2") else "other"
             sums[bucket] += float(
-                measures[element]["values"][local_permutation[local]]
+                measures[element]["values"][measure_permutation[local]]
             )
             points = [nodes[item] for item in elements[element]["nodes"]]
             bary[bucket] += area(points) / 3.0
@@ -564,9 +610,18 @@ def analyze(contract: dict[str, Any], output: Path, banner: str) -> dict[str, An
             "triangle_record_count": len(triangle_debug_ids),
             "triangle_grd_des_identity_count": identity_count,
             "triangle_des_ids_complete": sorted(des_ids) == list(range(len(elements))),
-            "input_to_debug_local_permutation": list(local_permutation),
+            "input_to_debug_local_permutation": list(coefficient_permutation),
+            "input_to_debug_coefficient_local_permutation": list(
+                coefficient_permutation
+            ),
+            "input_to_debug_measure_local_permutation": list(
+                measure_permutation
+            ),
             "interface_permutation_max_abs_coefficient_error": (
-                local_permutation_max_error
+                coefficient_permutation_max_error
+            ),
+            "interface_permutation_max_abs_measure_error": (
+                measure_permutation_max_error
             ),
         },
         "vertex_mapping": mapping_rows[0],

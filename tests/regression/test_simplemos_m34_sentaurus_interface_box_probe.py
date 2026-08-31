@@ -9,10 +9,12 @@ import unittest
 from scripts.run_simplemos_m34_sentaurus_interface_box_probe import (
     deck,
     infer_input_to_debug_local_permutation,
+    infer_input_to_debug_measure_permutation,
     parse_debug_block,
     parse_debug_info,
     parse_log_stats,
     raw_coefficient,
+    signed_average_box_measures,
     vela_positive_coefficient,
 )
 
@@ -114,6 +116,17 @@ class SimpleMosM34ProbeTests(unittest.TestCase):
         self.assertEqual(permutation, (1, 0, 2))
         self.assertLess(error, 1e-15)
 
+    def test_measure_permutation_is_inferred_independently(self) -> None:
+        points = {0: (0.0, 0.0), 1: (2.0, 0.0), 2: (0.2, 1.0)}
+        elements = {0: {"nodes": [0, 1, 2]}}
+        raw = signed_average_box_measures([points[i] for i in range(3)])
+        measures = {0: {"values": [raw[0], raw[2], raw[1]]}}
+        permutation, error = infer_input_to_debug_measure_permutation(
+            {0}, elements, points, measures
+        )
+        self.assertEqual(permutation, (0, 2, 1))
+        self.assertLess(error, 1e-15)
+
     def test_frozen_oracle_closes_interface_geometry_without_double_nodes(self) -> None:
         evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
         report = json.loads(REPORT.read_text(encoding="utf-8"))
@@ -122,6 +135,9 @@ class SimpleMosM34ProbeTests(unittest.TestCase):
         self.assertEqual(evidence["status"], "passed")
         self.assertEqual(summary["triangle_records"], 2746)
         self.assertEqual(summary["input_to_debug_local_permutation"], [1, 0, 2])
+        self.assertEqual(
+            summary["input_to_debug_measure_local_permutation"], [0, 2, 1]
+        )
         self.assertEqual(summary["internal_vertex_delta"], 82)
         self.assertEqual(summary["unique_contact_nodes"], 82)
         self.assertEqual(summary["double_edges"], 0)
