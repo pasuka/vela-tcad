@@ -2807,8 +2807,12 @@ void writeSgEdgeFluxProbeCsv(
         << "psi0_V,psi1_V,phin0_V,phin1_V,"
         << "phip0_V,phip1_V,electric_field_V_m,electron_mobility_m2_V_s,"
         << "hole_mobility_m2_V_s,electron_flux,hole_flux,"
-        << "electron_particle_line_flux_per_m_s,hole_particle_line_flux_per_m_s\n";
+        << "electron_scaled_flux_per_couple_m,hole_scaled_flux_per_couple_m,"
+        << "electron_particle_line_flux_per_m_s,hole_particle_line_flux_per_m_s,"
+        << "electron_particle_flux_density_per_couple_m2_s,"
+        << "hole_particle_flux_density_per_couple_m2_s\n";
     const vela::PhysicalUnitSystem& units = scaling.unitSystem();
+    const vela::Real internalLength_m = units.internalLengthToMeters(1.0);
     out << std::setprecision(17);
     for (const auto& edge : edges) {
         out << edge.edgeId << ','
@@ -2838,8 +2842,14 @@ void writeSgEdgeFluxProbeCsv(
             << units.internalMobilityToM2PerVS(edge.holeMobility_m2_V_s) << ','
             << edge.electronFlux << ','
             << edge.holeFlux << ','
+            << edge.electronFluxPerInternalCouple / internalLength_m << ','
+            << edge.holeFluxPerInternalCouple / internalLength_m << ','
             << edge.electronParticleLineFlux_per_m_s << ','
-            << edge.holeParticleLineFlux_per_m_s << '\n';
+            << edge.holeParticleLineFlux_per_m_s << ','
+            << edge.electronParticleLineFluxPerInternalCouple_per_m_s
+                   / internalLength_m << ','
+            << edge.holeParticleLineFluxPerInternalCouple_per_m_s
+                   / internalLength_m << '\n';
     }
 }
 

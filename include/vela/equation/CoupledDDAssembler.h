@@ -142,10 +142,17 @@ struct CoupledDDEdgeFluxDiagnostic {
     // and subtracted from node1's), identical to the residual edge loop.
     Real electronFlux = 0.0;
     Real holeFlux = 0.0;
+    // Diagnostic response to one internal length unit of edge coupling.  This
+    // remains defined when the production coupling is zero, allowing a direct
+    // fixed-state replay of an external box-coefficient oracle.
+    Real electronFluxPerInternalCouple = 0.0;
+    Real holeFluxPerInternalCouple = 0.0;
     // The same integrated particle line flux before residual nondimensionalization
     // (particles per metre of out-of-plane depth per second).
     Real electronParticleLineFlux_per_m_s = 0.0;
     Real holeParticleLineFlux_per_m_s = 0.0;
+    Real electronParticleLineFluxPerInternalCouple_per_m_s = 0.0;
+    Real holeParticleLineFluxPerInternalCouple_per_m_s = 0.0;
 };
 
 // Diagnostic-only decomposition of one transport edge derivative with respect

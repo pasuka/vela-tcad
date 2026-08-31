@@ -332,15 +332,28 @@ TEST_CASE("SG edge diagnostic converts native line flux to particles per metre",
     const auto diagnostics = assembler.sgEdgeFluxDiagnostics(
         assembler.pack(state), boundaries);
     bool foundNonzero = false;
+    bool foundZeroCoupleResponse = false;
     for (const auto& edge : diagnostics) {
+        if (edge.couple_m == 0.0 &&
+            std::abs(edge.electronFluxPerInternalCouple) > 1.0e-30) {
+            foundZeroCoupleResponse = true;
+            REQUIRE(edge.electronFlux == 0.0);
+            REQUIRE(edge.electronParticleLineFlux_per_m_s == 0.0);
+        }
         if (std::abs(edge.electronFlux) < 1.0e-30)
             continue;
         foundNonzero = true;
+        REQUIRE(edge.electronFluxPerInternalCouple ==
+                Catch::Approx(edge.electronFlux / edge.couple_m));
         REQUIRE(edge.electronParticleLineFlux_per_m_s ==
                 Catch::Approx(
                     edge.electronFlux * scaling.currentDensityLineIntegralFactor));
+        REQUIRE(edge.electronParticleLineFluxPerInternalCouple_per_m_s ==
+                Catch::Approx(
+                    edge.electronParticleLineFlux_per_m_s / edge.couple_m));
     }
     REQUIRE(foundNonzero);
+    REQUIRE(foundZeroCoupleResponse);
 }
 
 static DeviceMesh makePNMesh()

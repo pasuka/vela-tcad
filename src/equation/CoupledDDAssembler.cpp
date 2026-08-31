@@ -2425,6 +2425,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
             CarrierType::Hole, holeMobilityField, &mobilityConfig_, &psi);
 
         Real nFlux = 0.0;
+        Real nFluxPerInternalCouple = 0.0;
         if (mun > 0.0) {
             const Real coef = mun * Vt_ * fieldFactor * couple_[e] / h;
             if (usesFermiDirac_) {
@@ -2447,8 +2448,38 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                     electronPsiRelative_j,
                     phin_i, phin_j, Vt_, coef, bgnEnabled_);
             }
+            if (couple_[e] > 0.0) {
+                nFluxPerInternalCouple = nFlux / couple_[e];
+            } else {
+                const Real unitCoef = mun * Vt_ * fieldFactor / h;
+                if (usesFermiDirac_) {
+                    const Real etaI = (electronPsiRelative_i - phin_i) / Vt_
+                        + std::log(ni_[idxI] / Nc_[idxI]);
+                    const Real etaJ = (electronPsiRelative_j - phin_j) / Vt_
+                        + std::log(ni_[idxJ] / Nc_[idxJ]);
+                    const Real drift = (electronPsi_j - electronPsi_i)
+                        + Vt_ * std::log(
+                            (ni_[idxJ] / Nc_[idxJ]) /
+                            (ni_[idxI] / Nc_[idxI]));
+                    nFluxPerInternalCouple =
+                        sgElectronFermiDiracQuantumContinuityFlux(
+                            n(i), n(j),
+                            Nc_[idxI] * fermiDiracHalf(etaI),
+                            Nc_[idxJ] * fermiDiracHalf(etaJ),
+                            etaI, etaJ, drift,
+                            phin_i, phin_j, Vt_, unitCoef);
+                } else {
+                    nFluxPerInternalCouple =
+                        sgElectronContinuityFluxFromQuasiFermiVariableNi(
+                            ni_[idxI], ni_[idxJ],
+                            electronPsiRelative_i,
+                            electronPsiRelative_j,
+                            phin_i, phin_j, Vt_, unitCoef, bgnEnabled_);
+                }
+            }
         }
         Real pFlux = 0.0;
+        Real pFluxPerInternalCouple = 0.0;
         if (mup > 0.0) {
             const Real coef = mup * Vt_ * fieldFactor * couple_[e] / h;
             if (usesFermiDirac_) {
@@ -2467,6 +2498,30 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
                     holePsiRelative_i,
                     holePsiRelative_j,
                     phip_i, phip_j, Vt_, coef, bgnEnabled_);
+            }
+            if (couple_[e] > 0.0) {
+                pFluxPerInternalCouple = pFlux / couple_[e];
+            } else {
+                const Real unitCoef = mup * Vt_ * fieldFactor / h;
+                if (usesFermiDirac_) {
+                    const Real etaI = (phip_i - holePsiRelative_i) / Vt_
+                        + std::log(ni_[idxI] / Nv_[idxI]);
+                    const Real etaJ = (phip_j - holePsiRelative_j) / Vt_
+                        + std::log(ni_[idxJ] / Nv_[idxJ]);
+                    const Real drift = dpsi + Vt_ * std::log(
+                        (ni_[idxI] / Nv_[idxI]) /
+                        (ni_[idxJ] / Nv_[idxJ]));
+                    pFluxPerInternalCouple =
+                        sgHoleFermiDiracContinuityFlux(
+                            p(i), p(j), etaI, etaJ, drift,
+                            phip_i, phip_j, Vt_, unitCoef);
+                } else {
+                    pFluxPerInternalCouple =
+                        sgHoleContinuityFluxFromQuasiFermiVariableNi(
+                            ni_[idxI], ni_[idxJ],
+                            holePsiRelative_i, holePsiRelative_j,
+                            phip_i, phip_j, Vt_, unitCoef, bgnEnabled_);
+                }
             }
         }
 
@@ -2501,6 +2556,10 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
         record.holeMobility_m2_V_s = mup;
         record.electronFlux = nFlux / continuityScale;
         record.holeFlux = pFlux / continuityScale;
+        record.electronFluxPerInternalCouple =
+            nFluxPerInternalCouple / continuityScale;
+        record.holeFluxPerInternalCouple =
+            pFluxPerInternalCouple / continuityScale;
         const Real physicalLineFluxFactor = scaling_.enabled
             ? scaling_.currentDensityLineIntegralFactor
             : 1.0;
@@ -2508,6 +2567,10 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
             nFlux * physicalLineFluxFactor;
         record.holeParticleLineFlux_per_m_s =
             pFlux * physicalLineFluxFactor;
+        record.electronParticleLineFluxPerInternalCouple_per_m_s =
+            nFluxPerInternalCouple * physicalLineFluxFactor;
+        record.holeParticleLineFluxPerInternalCouple_per_m_s =
+            pFluxPerInternalCouple * physicalLineFluxFactor;
         edges.push_back(record);
     }
 
