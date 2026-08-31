@@ -102,10 +102,10 @@ Sentaurus 电子密度相对更新仅 `1.70e-15`，一环更新后的 `psi/phin/
 
 1. node 4492 的“状态/密度错误”假设关闭；直接证据支持 Box 系数语义差。
 2. 局部一环实现门失败，不增加生产配置，不启动同偏压 reclose 或 31 点曲线。
-3. 下一最小实验应使用完整 `MeasureCoefficients.debug` 对全部硅输运边做只读
-   fixed-state external-coefficient replay，并以全自由电子行 L2、maximum 和热点
-   不转移为门；通过后才实现可选的全网格 external AverageBox 诊断 profile 和
-   真正的 Newton A/B。
+3. 后续全网格只读实验已经完成并通过：全自由电子行 L2 和 maximum 分别降到
+   baseline 的 `0.0173075x` 和 `0.0433710x`，没有实质热点转移。完整结论见
+   `templates_ldmos_g3_averagebox_full_mesh_audit_2026-08-31.md`。下一步才实现可选
+   的全网格 external AverageBox 诊断 profile 和真正的 Newton A/B。
 4. 不继承 PN2D 私有 `element_edge_sg_gss_laux` 捆绑；IALMob 与 predictor 继续
    关闭；ledger 仍为 draft。
 
