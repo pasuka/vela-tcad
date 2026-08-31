@@ -199,6 +199,24 @@ inline std::vector<Real> computeEdgeCouplings(const DeviceMesh& mesh)
     return couple;
 }
 
+/// Return carrier-transport couplings, honoring explicit per-edge diagnostic
+/// overrides while leaving the mesh electrostatic geometry untouched.
+inline Real transportEdgeCouple(const Edge& edge)
+{
+    return edge.transport_couple >= 0.0
+        ? edge.transport_couple
+        : edge.couple;
+}
+
+inline std::vector<Real> computeTransportEdgeCouplings(const DeviceMesh& mesh)
+{
+    const Index E = mesh.numEdges();
+    std::vector<Real> couple(E, 0.0);
+    for (Index e = 0; e < E; ++e)
+        couple[e] = transportEdgeCouple(mesh.getEdge(e));
+    return couple;
+}
+
 /// Return a per-node max adjacent-edge scalar-gradient magnitude [scalar unit/m].
 inline std::vector<Real> computeNodeScalarGradientMagnitudes(const VectorXd& value,
                                                             const DeviceMesh& mesh)

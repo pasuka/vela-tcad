@@ -1,0 +1,99 @@
+{
+  "schema": "vela.templates_ldmos.external_averagebox_profile.v1",
+  "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
+  "profile_name": "templates_ldmos_external_averagebox",
+  "status": "qualified_diagnostic_single_bias_not_stage3_curve",
+  "default_enabled": false,
+  "scope": {
+    "device": "Templates/LDMOS exact SProcess topology",
+    "physics_layer": "G3 classical no-IALMob",
+    "bias": "Vd=0.1 V, Vg=0.5 V",
+    "predictor": "off",
+    "impact_ionization": "off",
+    "surface_mobility_ialmob": "off",
+    "quantum_potential": "off",
+    "node_volume_policy": "barycentric",
+    "pn2d_atomic_profile_inherited": false
+  },
+  "operator_delta": {
+    "carrier_transport_edge_couple": "external AverageBox Coefficients",
+    "poisson_edge_couple": "unchanged mesh default",
+    "source_volume": "unchanged barycentric",
+    "csv_header": "node0,node1,couple_m",
+    "records": 16237,
+    "zero_couple_records_required": true
+  },
+  "oracle": {
+    "source": "T-2022.03-SP2 MeasureCoefficients.debug",
+    "sha256": "05ec1a43936e0ff71bea7cdfd956d80c7d692b228187ccae8625ec53ce58d49e",
+    "runtime_csv_sha256": "758161f73f570511ccd914628451ebcad58b5f8e58dd6b6351f00669e18b36cb"
+  },
+  "qualification": {
+    "fixed_state_candidate_over_baseline": {
+      "electron_residual_l2": 0.01730751859004184,
+      "electron_residual_maximum_abs": 0.04337104844139535,
+      "maximum_initial_psi_residual_difference": 0.0,
+      "passed": true
+    },
+    "one_newton_residual_decrease": {
+      "dominant_signed_contact_mean": true,
+      "legacy_node_local": true
+    },
+    "same_bias_factorial": [
+      {
+        "contact_boundary_reconstruction": "dominant_signed_contact_mean",
+        "transport_couple": "mesh_default",
+        "drain_current_A_per_um": 1.736470037555399e-10,
+        "ratio_to_sentaurus": 2.687099001239368,
+        "log_error_dex": 0.42928366751240205
+      },
+      {
+        "contact_boundary_reconstruction": "dominant_signed_contact_mean",
+        "transport_couple": "external_averagebox",
+        "drain_current_A_per_um": 1.2686896943587066e-10,
+        "ratio_to_sentaurus": 1.9632327289639162,
+        "log_error_dex": 0.29297178554691944
+      },
+      {
+        "contact_boundary_reconstruction": "legacy_node_local",
+        "transport_couple": "mesh_default",
+        "drain_current_A_per_um": 9.197365884670488e-11,
+        "ratio_to_sentaurus": 1.4232455584159565,
+        "log_error_dex": 0.15327983716410448
+      },
+      {
+        "contact_boundary_reconstruction": "legacy_node_local",
+        "transport_couple": "external_averagebox",
+        "drain_current_A_per_um": 6.65923465680782e-11,
+        "ratio_to_sentaurus": 1.0304826693421136,
+        "log_error_dex": 0.01304069221190445
+      }
+    ],
+    "sentaurus_drain_current_A_per_um": 6.46224808521937e-11,
+    "single_bias_stage3_limit_dex": 0.2,
+    "qualified_combination": {
+      "contact_boundary_reconstruction": "legacy_node_local",
+      "transport_couple": "external_averagebox",
+      "newton_iterations": 3,
+      "terminal_kcl_relative_error": 1.0961531399229997e-11,
+      "maximum_state_delta_V": {
+        "psi": 0.029228693585174992,
+        "phin": 0.0052468646238588434,
+        "phip": 0.00023092944085371936
+      },
+      "passed": true
+    }
+  },
+  "comparison_masks": {
+    "policy": "stratify rather than silently discard",
+    "transport_active_interior": "Silicon nodes excluding Ohmic Dirichlet rows",
+    "ohmic_contact_rows": "reported separately by terminal and local doping polarity",
+    "oxide_only_nodes": "reported separately and excluded from carrier-density statistics",
+    "near_zero_density_nodes": "excluded from logarithmic carrier-density statistics"
+  },
+  "authorization": {
+    "production_global_default_change": false,
+    "phase3_31_point_curve": false,
+    "next_gate": "regenerate the exact G3 deck with explicit legacy_node_local and this diagnostic profile, then run the no-predictor 31-point curve"
+  }
+}

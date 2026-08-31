@@ -25,6 +25,11 @@ struct Edge {
     Index  n1     = 0;  ///< Second node id
     Real   length = 0.0; ///< Euclidean length [m]
     Real   couple = 0.0; ///< Voronoi coupling length [m] (computed later)
+    /// Optional carrier-transport-only coupling override. A negative value
+    /// means that carrier transport uses `couple`. Poisson always uses
+    /// `couple`, so an external transport oracle cannot silently alter the
+    /// electrostatic discretization.
+    Real   transport_couple = -1.0;
 };
 
 /// A triangular (or higher-order) mesh cell.

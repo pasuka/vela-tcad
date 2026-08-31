@@ -493,6 +493,7 @@ private:
     std::vector<NodalCurrentReconstructionKernel>
         nodalCurrentReconstructionKernels_;
     std::vector<Real> vol_;
+    std::vector<Real> poissonCouple_;
     std::vector<Real> couple_;
     VectorXd fixedInterfaceChargeRhs_;
     DDScalingSpec scaling_;

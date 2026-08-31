@@ -152,8 +152,10 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
 
     for (auto& node : mesh.nodes_)
         node.volume = 0.0;
-    for (auto& edge : mesh.edges_)
+    for (auto& edge : mesh.edges_) {
         edge.couple = 0.0;
+        edge.transport_couple = -1.0;
+    }
 
     std::map<std::pair<Index, Index>, Index> edgeMap;
     for (Index e = 0; e < mesh.edges_.size(); ++e)

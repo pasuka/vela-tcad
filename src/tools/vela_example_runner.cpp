@@ -354,6 +354,8 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
         resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>()),
         scaling);
     mesh.buildBoxGeometry(vela::parseBoxGeometryOptions(cfg));
+    const vela::CarrierTransportCoupleProfileReport transportProfile =
+        vela::applyCarrierTransportCoupleProfile(mesh, cfg, cfgDir, scaling);
 
     vela::MaterialDatabase matdb(scaling);
     if (cfg.contains("materials_file"))
@@ -370,6 +372,14 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
         ? vela::newtonConfigFromJson(cfg.at("solver"), scaling)
         : vela::NewtonConfig{};
     newton.unitScalingRefs = vela::parseUnitScalingReferenceConfig(cfg);
+    if (transportProfile.profile != "mesh_default" &&
+        (newton.impactIonization.model != "none" ||
+         vela::isSurfaceMobilityModel(newton.mobility) ||
+         newton.electronQuantumPotential.enabled)) {
+        throw std::invalid_argument(
+            "templates_ldmos_external_averagebox is qualified only with "
+            "impact ionization, surface mobility/IALMob, and quantum potential off.");
+    }
     std::vector<vela::RegionFixedChargeSpec> fixedCharges =
         vela::parseRegionFixedChargeSpecs(cfg, scaling);
     std::vector<vela::InterfaceSheetChargeSpec> sheetCharges =

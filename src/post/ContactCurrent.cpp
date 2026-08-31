@@ -53,7 +53,7 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
     , matdb_(matdb)
     , doping_(doping)
     , edgeCells_(detail::buildEdgeCellMap(mesh))
-    , couple_(detail::computeEdgeCouplings(mesh))
+    , couple_(detail::computeTransportEdgeCouplings(mesh))
     , mobilityConfig_(mobilityConfig)
     , mobility_(makeMobilityModel(mobilityConfig))
     , thermalVoltage_(validatedThermalVoltage(temperature_K))

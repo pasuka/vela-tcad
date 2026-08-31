@@ -150,7 +150,7 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , nodeCells_(detail::buildNodeCellMap(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
-    , couple_(detail::computeEdgeCouplings(mesh))
+    , couple_(detail::computeTransportEdgeCouplings(mesh))
     , fixedInterfaceChargeRhs_(detail::computeFixedAndInterfaceChargeRhs(
           mesh,
           edgeCells_,

@@ -92,6 +92,9 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     JsonMeshReader reader;
     DeviceMesh mesh = reader.read(meshFile, scaling);
     mesh.buildBoxGeometry(parseBoxGeometryOptions(cfg));
+    // Validate an explicitly supplied carrier-only profile even though the
+    // Poisson operator intentionally continues to use mesh electrostatics.
+    (void)applyCarrierTransportCoupleProfile(mesh, cfg, cfgDir, scaling);
     if (runtimeLog.active()) {
         const auto& report = mesh.lastGeometryBuildReport();
         runtimeLogInfo(

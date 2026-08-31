@@ -4,9 +4,12 @@
 
 #include "vela/mesh/BoxGeometryBuilder.h"
 #include "vela/mesh/DeviceMesh.h"
+#include "vela/equation/AssemblerUtils.h"
 #include "vela/simulation/ConfigParsing.h"
 
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <sstream>
@@ -246,6 +249,73 @@ TEST_CASE("ConfigParsing: omitted node volume policy preserves explicit barycent
         parseBoxGeometryOptions(nlohmann::json{
             {"mesh_geometry", {{"fallback_negative_cotangent", "yes"}}}}),
         "ConfigParsing: mesh_geometry.fallback_negative_cotangent must be boolean.");
+}
+
+TEST_CASE("External AverageBox carrier profile is explicit and leaves Poisson couples unchanged",
+          "[box_geometry][carrier_transport_profile]")
+{
+    DeviceMesh mesh = makeSingleEquilateralTriangle();
+    const Real original = mesh.getEdge(0).couple;
+    const auto path = std::filesystem::temp_directory_path() /
+        "vela_external_averagebox_transport_profile.csv";
+    {
+        std::ofstream output(path);
+        REQUIRE(output.is_open());
+        output << "node0,node1,couple_m\n";
+        output << mesh.getEdge(0).n0 << ',' << mesh.getEdge(0).n1
+               << ",2e-7\n";
+    }
+    const nlohmann::json cfg{{"mesh_geometry", {
+        {"carrier_transport_couple_profile", "templates_ldmos_external_averagebox"},
+        {"external_averagebox_couples_file", path.string()},
+        {"external_averagebox_expected_edges", 1},
+    }}};
+    const CarrierTransportCoupleProfileReport report =
+        applyCarrierTransportCoupleProfile(
+            mesh, cfg, path.parent_path(), UnitScalingConfig{UnitScalingMode::UnitScaling});
+    std::filesystem::remove(path);
+
+    REQUIRE(report.profile == "templates_ldmos_external_averagebox");
+    REQUIRE(report.records == 1);
+    REQUIRE(mesh.getEdge(0).couple == Catch::Approx(original));
+    REQUIRE(mesh.getEdge(0).transport_couple == Catch::Approx(0.2));
+    REQUIRE(detail::computeEdgeCouplings(mesh).at(0) == Catch::Approx(original));
+    REQUIRE(detail::computeTransportEdgeCouplings(mesh).at(0) == Catch::Approx(0.2));
+    REQUIRE(mesh.getEdge(1).transport_couple < 0.0);
+}
+
+TEST_CASE("External AverageBox fields cannot be silently ignored by the default profile",
+          "[box_geometry][carrier_transport_profile]")
+{
+    DeviceMesh mesh = makeSingleEquilateralTriangle();
+    REQUIRE_THROWS_WITH(
+        applyCarrierTransportCoupleProfile(
+            mesh,
+            nlohmann::json{{"mesh_geometry", {
+                {"external_averagebox_couples_file", "unused.csv"},
+            }}},
+            std::filesystem::current_path()),
+        Catch::Matchers::ContainsSubstring(
+            "external AverageBox fields require"));
+}
+
+TEST_CASE("Templates LDMOS AverageBox profile rejects non-barycentric source geometry",
+          "[box_geometry][carrier_transport_profile]")
+{
+    DeviceMesh mesh = makeSingleEquilateralTriangle();
+    REQUIRE_THROWS_WITH(
+        applyCarrierTransportCoupleProfile(
+            mesh,
+            nlohmann::json{{"mesh_geometry", {
+                {"node_volume_policy", "mixed_voronoi"},
+                {"carrier_transport_couple_profile",
+                 "templates_ldmos_external_averagebox"},
+                {"external_averagebox_couples_file", "unused.csv"},
+                {"external_averagebox_expected_edges", 1},
+            }}},
+            std::filesystem::current_path()),
+        Catch::Matchers::ContainsSubstring(
+            "requires mesh_geometry.node_volume_policy='barycentric'"));
 }
 
 TEST_CASE("BoxGeometryBuilder: non-obtuse qualification accepts eligible meshes and rejects obtuse cells",

@@ -928,7 +928,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
             drivingField, &mobilityConfig, &sol.psi);
         if (mu <= 0.0)
             return Real{0.0};
-        const Real coef = mu * Vt * edge.couple / h;
+        const Real coef = mu * Vt * detail::transportEdgeCouple(edge) / h;
         if (carrier == CarrierType::Electron) {
             if (usesFermiDirac(carrierStatistics)) {
                 const Real etaI = (sol.psi(i) - sol.phin(i)) / Vt
@@ -3045,6 +3045,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     JsonMeshReader reader;
     DeviceMesh mesh = reader.read(resolve(cfg.at("mesh_file").get<std::string>()), scaling);
     mesh.buildBoxGeometry(parseBoxGeometryOptions(cfg));
+    const CarrierTransportCoupleProfileReport transportCoupleProfile =
+        applyCarrierTransportCoupleProfile(mesh, cfg, cfgDir, scaling);
     MaterialDatabase matdb(scaling);
     if (cfg.contains("materials_file"))
         matdb.loadJson(resolve(cfg.at("materials_file").get<std::string>()), scaling);
@@ -3164,6 +3166,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             " negative_cotangent_count=" + std::to_string(report.negativeCotangentCount) +
             " fallback_count=" + std::to_string(report.fallbackCount) +
             " min_angle_degrees=" + formatReal(report.minAngleDegrees));
+        runtimeLogInfo(
+            "carrier_transport_couple_profile: profile=" +
+            transportCoupleProfile.profile +
+            " records=" + std::to_string(transportCoupleProfile.records) +
+            " zero_couples=" + std::to_string(transportCoupleProfile.zeroCouples));
         if (runtimeLogAllows(RuntimeLogProfile::Default)) {
             runtimeLogInfo(
                 "solver_settings: max_iter=" + std::to_string(
@@ -3200,6 +3207,15 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         sweepRecombinationConfig.bandToBand = gummel.bandToBand;
         sweepBgnConfig = gummel.bandgapNarrowing;
         sweepImpactIonizationConfig = gummel.impactIonization;
+    }
+    if (transportCoupleProfile.profile != "mesh_default" &&
+        (sweepImpactIonizationConfig.model != "none" ||
+         isSurfaceMobilityModel(mobilityConfig) ||
+         sweepQuantumPotential.enabled)) {
+        throw std::invalid_argument(
+            "DCSweep: templates_ldmos_external_averagebox is qualified only "
+            "with impact ionization, surface mobility/IALMob, and quantum "
+            "potential off.");
     }
     // Use the same transport-material ownership and BGN implementation as the
     // coupled DD assembler.  In particular, a Si/insulator shared node must

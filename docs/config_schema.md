@@ -231,6 +231,27 @@ carrier continuity volume terms, stored/terminal charge, and SG avalanche
 source density normalization. It does not change donor/acceptor values used for
 Ohmic contact boundary conditions.
 
+The template-private `templates_ldmos_external_averagebox` carrier-transport
+profile is an explicit, default-off diagnostic. It replaces only the SG carrier
+edge couple; Poisson geometry and source volumes remain unchanged:
+
+```json
+"mesh_geometry": {
+  "node_volume_policy": "barycentric",
+  "carrier_transport_couple_profile":
+    "templates_ldmos_external_averagebox",
+  "external_averagebox_couples_file": "transport_couples.csv",
+  "external_averagebox_expected_edges": 16237
+}
+```
+
+The CSV header must be exactly `node0,node1,couple_m`; every mesh edge must be
+listed exactly once, including zero-couple records. The profile is qualified
+only for the exact Templates/LDMOS classical G3 diagnostic with impact
+ionization, surface mobility/IALMob, quantum potential, and predictor disabled.
+It requires barycentric node volumes, is not a production/global default, and
+does not inherit the PN2D `element_edge_sg_gss_laux` bundle.
+
 ## Doping, regions, interfaces
 
 ### doping[] entries
@@ -618,7 +639,11 @@ Notes:
   `dominant_signed_contact_mean` (default, current behavior) and
   `legacy_node_local` (uses each node's local signed doping without
   contact-mean polarity alignment). This is a boundary reconstruction policy,
-  not a mobility calibration knob.
+  not a mobility calibration knob. Use `legacy_node_local` for a physical
+  multi-polarity terminal such as the Templates/LDMOS source metal that shorts
+  a p+ body pickup to the n+ source. `dominant_signed_contact_mean` is intended
+  for isolated compensated/tie-node sign outliers; applying it to a real p+/n+
+  terminal replaces the minority segment with the terminal-average polarity.
 - `contact_boundary_minority_electron_relaxation` controls whether Newton
   relaxes minority-electron quasi-Fermi pinning on p-side Ohmic contacts at
   higher applied bias. Default is `true` (current behavior).

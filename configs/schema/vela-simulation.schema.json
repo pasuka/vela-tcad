@@ -31,6 +31,23 @@
     "mesh_geometry": {
       "additionalProperties": true,
       "properties": {
+        "carrier_transport_couple_profile": {
+          "enum": [
+            "mesh_default",
+            "templates_ldmos_external_averagebox"
+          ]
+        },
+        "external_averagebox_couples_file": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "external_averagebox_expected_edges": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "fallback_negative_cotangent": {
+          "type": "boolean"
+        },
         "node_volume_policy": {
           "enum": [
             "barycentric",

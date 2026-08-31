@@ -176,6 +176,12 @@ def classical_solver(
         "auger_cn_m6_per_s": recombination["auger_cn_m6_per_s"],
         "auger_cp_m6_per_s": recombination["auger_cp_m6_per_s"],
         "quasi_fermi_update_limit_V": 0.1,
+        # The Templates/LDMOS source metal intentionally shorts a p+ body
+        # pickup to the n+ source. Its contact nodes therefore contain two
+        # physical doping polarities. Reconstruct every Ohmic node from its
+        # local signed doping; the PN2D-oriented dominant-contact-mean policy
+        # would incorrectly turn the p+ segment into n+ boundary data.
+        "contact_boundary_reconstruction": "legacy_node_local",
         # Low-current exact-mesh qualification showed that a scalar merit
         # globalization can reject a carrier-block improvement when the
         # Poisson block remains the largest term.  The G3 specialization below
@@ -481,6 +487,8 @@ def prepare(stage1_dir: Path, oracle_dir: Path, contracts_dir: Path,
             "linear_equilibration": "l2_row_column_on_all_G3_decks",
             "quasi_fermi_reference": "contact_basin_on_all_G3_decks",
             "line_search_mode": "block_filter_on_all_G3_decks",
+            "contact_boundary_reconstruction":
+                "legacy_node_local_for_multipolarity_source_short",
             "contact_majority_qf_branch_guard":
                 "deep_off_seed_and_drain_prebias_only",
             "predictor": "disabled",

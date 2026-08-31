@@ -7,7 +7,7 @@
       "classification": "candidate_baseline_difference",
       "status": "open",
       "scope": "G3 no-IALMob Id-Vg, Vd=0.1 V, exact SProcess topology, Vg=0--5 V; dominant unresolved interval Vg=0--0.6667 V",
-      "observation": "The qualified contact-boundary ElectricField HFS fallback reduces the three-point fixed-state median error from 1.04443 dex to 0.0196168 dex. After repairing the constant_field cached-mobility Jacobian, all 31 no-predictor points converge and the worst KCL relative error is 7.96e-6, but the self-consistent P95 current error is 0.432753 dex and the fixed-current equivalent threshold shift is 43.2055 mV. Vg=0.1667--0.6667 V retains a nearly multiplicative Vela/Sentaurus current factor of 2.61--2.73. An eight-combination psi/phin/phip frozen-state audit attributes a median 0.403147 dex, or 2.53015x, amplification to self-consistent state feedback; phin is the dominant single family at all four audited biases. At Vg=0.3333--0.6667 V the fixed Sentaurus-state operator ratio is only 1.046--1.049, while the full self-consistent ratio is 2.606--2.731. A Vg=0.5 V read-only region-local interface-pair probe removes oxide-side box contributions from carrier flux only: interface hotspots 3747, 10233, and 4538 improve locally, but the full free-row residual L2 and maximum improve only to 0.650x and 0.895x because silicon-only node 4492 is unchanged. A direct T-2022.03-SP2 MeasureCoefficients.debug audit closes node 4492 from 5.40895e-7 to 1.31409e-10 by replaying the AverageBox edge coefficients; the local one-ring experiment transfers the maximum to node 10235 because coefficients outside the ring remain unchanged. The completed full-Silicon-mesh read-only replay removes that artificial boundary: across 5674 active electron rows, coefficient-only residual L2 and maximum fall to 0.0173075x and 0.0433710x of baseline, respectively, and all frozen hotspots 3747, 10233, 4492, and 4538 pass the 0.5x gate. Candidate Top-12 rankings change, but the new global maximum is only 4.34% of the old maximum, so no material hotspot transfer is detected. Replacing source volumes by direct AverageBox Measure produces no visible additional L2 or maximum improvement, identifying transport couple coefficients as the dominant fixed-state cause. This qualifies an explicit, default-off external AverageBox diagnostic profile and one-Newton A/B; it does not yet authorize a production default, self-consistent reclose, or an approved engine floor.",
+      "observation": "The qualified contact-boundary ElectricField HFS fallback and cached-mobility Jacobian repair allow all 31 no-predictor G3 points to converge, but the production P95 current error remains 0.432753 dex. At Vg=0.5 V the production curve and independent Sentaurus-seed reclose reconcile exactly at Id=1.736470037555399e-10 A/um, 2.687099x or 0.429284 dex above Sentaurus; no warm-start multiple-solution discrepancy is present. A complete T-2022.03-SP2 MeasureCoefficients.debug replay over 5674 active electron rows reduces fixed-state electron residual L2 and maximum to 0.0173075x and 0.0433710x, respectively, without changing the initial Poisson residual. The explicit, default-off templates_ldmos_external_averagebox transport profile passes analytic-Jacobian, fixed-state and one-Newton gates. A subsequent 2x2 same-bias factorial identifies two nearly orthogonal contract defects. AverageBox transport closes 0.136312--0.140239 dex independent of the Ohmic-contact policy. The Templates/LDMOS source terminal physically shorts p+ body pickup and n+ source nodes, but the default dominant_signed_contact_mean treats the real p+ segment as opposite-sign outliers and reconstructs it as n+ boundary data. This produces the bias-independent 1.0818503857 V maximum psi family and a 40.84 mV hole-QF offset. Explicit legacy_node_local reconstruction restores the local p+/n+ polarity, closes 0.276004--0.279931 dex independent of transport couple, and reduces maximum state differences to psi/phin/phip=29.23/5.247/0.231 mV. The qualified node-local plus AverageBox reclose converges in three Newton iterations with KCL relative error 1.10e-11 and Id=6.65923465680782e-11 A/um, only 1.030483x or 0.013041 dex above Sentaurus. These are correctable template contact and discretization contracts, not an engine floor; a 31-point confirmation has not yet been run.",
       "excluded_causes": [
         "uniform electrostatic, flatband, or reference-energy offset",
         "terminal floating-point summation",
@@ -22,6 +22,9 @@
         "a uniform node-4492 incident-edge scaling as a sufficient one-ring closure",
         "AverageBox source Measure as the dominant Vg=0.5 V fixed-state electron-continuity cause",
         "full-mesh direct AverageBox coefficient replay as causing material residual hotspot transfer",
+        "different Vg=0.5 V production and Sentaurus-seed reclose baselines or warm-start multiple solutions",
+        "the 1.0818503857 V psi family as a harmless gate or oxide-only comparison outlier",
+        "external AverageBox transport couple alone as sufficient to close the self-consistent current gate under dominant-contact-mean reconstruction",
         "uniform psi or hole-QF state feedback as the subthreshold current-amplitude cause",
         "SRH or Auger recombination magnitude as the electron-continuity hotspot cause",
         "drain-side anomalous couple-over-length edges as the dominant remaining feedback location",
@@ -30,9 +33,9 @@
         "constant_field cached-mobility Jacobian mismatch as a physical curve-amplitude cause"
       ],
       "open_causes": [
-        "production representation and Jacobian qualification of an explicit default-off LDMOS direct AverageBox transport-couple profile, including region-local Si/SiO2 carrier semantics",
-        "whether the fixed-state AverageBox residual closure also removes the electron-QF-dominant amplification during one-Newton and same-bias self-consistent reclose",
-        "generalized SRH hole-QF reference convention; low impact on current Id-Vg but material for recombination qualification"
+        "31-point no-predictor confirmation of the explicit LDMOS legacy_node_local plus external AverageBox diagnostic contract",
+        "whether residual curve-level error after the 31-point confirmation requires a full per-region Poisson AverageBox coefficient and Measure contract",
+        "generalized SRH hole-QF reference convention after removal of the source-short contact reconstruction artifact; low expected impact on Id-Vg but material for recombination qualification"
       ],
       "evidence": [
         {
@@ -89,14 +92,30 @@
         },
         {
           "path": "docs/validation/templates_ldmos_g3_averagebox_full_mesh_audit_2026-08-31.md",
-          "sha256": "644c8a04c8f971bcd1ebe5d8dad4d58c50bc8bc37cdbdd87ca424676002f20eb"
+          "sha256": "cd281567a72a7771655d188e2a6f72e45af180510c95df2f1a2baec8ef52927c"
         },
         {
           "path": "scripts/audit_templates_ldmos_averagebox_full_mesh.py",
-          "sha256": "262183c2b003e6986dc52f7faf97a09f797d014c63e48daffd496138c0bb140b"
+          "sha256": "80499a1486be9d5723136e66db7e630dedeb6cf1c30be0714232e4457672bb5a"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_averagebox_newton_ab_2026-08-31.md",
+          "sha256": "90eaef6b3db7562312fd6c66eaca4843f5b6eeb7eda1f8cb59dadaaec444a12f"
+        },
+        {
+          "path": "scripts/run_templates_ldmos_averagebox_newton_ab.py",
+          "sha256": "8a69ef598fc6a33e7b868f13752401f0dca31912ee68f8b97870d8fe972c3971"
+        },
+        {
+          "path": "reference_tcad/templates_ldmos_sentaurus2022/contracts/diagnostics/templates_ldmos_external_averagebox_profile.json",
+          "sha256": "fec946a74c3bd329b1029e87046414389e643fd9d226de885ae2dad5d716db0e"
+        },
+        {
+          "path": "scripts/prepare_templates_ldmos_phase23.py",
+          "sha256": "2c55e70b98ce472cab776fda0cd29d94020fc7060593b5ced914d6244803a611"
         }
       ],
-      "expires_when": "An explicit default-off LDMOS direct AverageBox transport-couple profile is Jacobian-qualified and a one-Newton plus same-bias self-consistent reclose either closes the phin feedback without hotspot transfer or proves a mesh-converged engine difference; generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
+      "expires_when": "The exact 31-point no-predictor G3 curve is rerun with explicit legacy_node_local source-short reconstruction and the qualified external AverageBox transport profile, generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
       "approval": {
         "status": "draft",
         "benchmark_owner": null,

@@ -84,16 +84,15 @@ Sentaurus 固定状态上，已使用完整 T-2022.03-SP2
    external-profile 配置、Jacobian 测试和一次 Newton 资格。
 5. IALMob 与 predictor 继续关闭；不通过下一资格门前不运行高成本 31 点曲线。
 
-## 决策与下一步
+## 决策与后续结果
 
-全网格只读回放任务完成，结论为“通过，无实质热点转移”。下一最小开发项是实现
-**显式选择、默认关闭**的 LDMOS external AverageBox 诊断 profile，并在同一
-fixed state 上执行一次 Newton A/B：验证 residual、线性增量、block-filter 决策
-以及保存后的最佳状态。只有该 A/B 仍通过冻结门，才可执行同偏压 reclose；31 点
-曲线继续后置。
+全网格只读回放任务完成，结论为“通过，无实质热点转移”。后续已实现
+**显式选择、默认关闭**的 LDMOS external AverageBox 诊断 profile，并完成同一
+fixed state 上的一次 Newton A/B 与同偏压 reclose。实现与接触 BC 两因素结果见
+`templates_ldmos_g3_averagebox_newton_ab_2026-08-31.md`。
 
-known-difference ledger 仍为 draft：本轮识别的是一个可关闭 fixed-state 差异，
-不是可批准的引擎固有地板。
+known-difference ledger 仍为 draft：本轮识别的是可关闭的输运 couple 与 LDMOS
+source-short 接触合同差异，不是可批准的引擎固有地板；31 点曲线继续后置。
 
 ## 可复现工件
 

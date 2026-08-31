@@ -242,9 +242,13 @@ class Phase23DeckTest(unittest.TestCase):
         self.assertNotIn("electron_cr_m3", solver["mobility"])
         low_field = classical_solver(physics_contract(), high_field=False)
         self.assertEqual(low_field["mobility"], {"model": "constant"})
+        self.assertEqual(
+            low_field["contact_boundary_reconstruction"], "legacy_node_local")
         self.assertEqual(solver["impact_ionization"]["model"], "none")
         self.assertEqual(solver["line_search_mode"], "block_filter")
         self.assertEqual(solver["quasi_fermi_reference"], "contact_basin")
+        self.assertEqual(
+            solver["contact_boundary_reconstruction"], "legacy_node_local")
         self.assertEqual(solver["damping_factor"], 1.0)
         self.assertEqual(solver["reltol"], 1.0e-10)
         self.assertEqual(solver["abstol"], 1.0e-14)
@@ -423,6 +427,10 @@ class Phase23DeckTest(unittest.TestCase):
             self.assertEqual(
                 manifest["wp15_contract"]["line_search_mode"],
                 "block_filter_on_all_G3_decks",
+            )
+            self.assertEqual(
+                manifest["wp15_contract"]["contact_boundary_reconstruction"],
+                "legacy_node_local_for_multipolarity_source_short",
             )
 
     def test_wp15_matrix_preserves_physics_and_exposes_solver_controls(self) -> None:

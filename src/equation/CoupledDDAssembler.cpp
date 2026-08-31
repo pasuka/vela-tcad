@@ -320,7 +320,8 @@ CoupledDDAssembler::CoupledDDAssembler(
     , nodeEdges_(detail::buildNodeEdgeMap(mesh))
     , contactNodes_(detail::contactNodeMask(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
-    , couple_(detail::computeEdgeCouplings(mesh))
+    , poissonCouple_(detail::computeEdgeCouplings(mesh))
+    , couple_(detail::computeTransportEdgeCouplings(mesh))
     , fixedInterfaceChargeRhs_(detail::computeFixedAndInterfaceChargeRhs(
           mesh,
           edgeCells_,
@@ -441,7 +442,7 @@ void CoupledDDAssembler::buildEdgeAssemblyKernels()
         if (edge.length > 1.0e-30) {
             kernel.poissonCoupling =
                 detail::edgeEpsilon(edgeCells_, mesh_, matdb_, edgeId) *
-                kernel.coupling / edge.length;
+                poissonCouple_[edgeId] / edge.length;
         }
 
         const auto appendStencilNode = [&](Index node) {
@@ -1156,7 +1157,7 @@ CoupledDDAssembler::poissonTermDiagnostics(
             continue;
         const Real eps = detail::edgeEpsilon(
             edgeCells_, mesh_, matdb_, edgeId);
-        const Real conductance = eps * couple_[edgeId] / edge.length;
+        const Real conductance = eps * poissonCouple_[edgeId] / edge.length;
         const Real flux = conductance * potentialScale *
             (x(psiOffset() + static_cast<int>(edge.n0)) -
              x(psiOffset() + static_cast<int>(edge.n1)));
@@ -1455,6 +1456,7 @@ VectorXd CoupledDDAssembler::residualImpl(
     const auto& edgeCells = edgeCells_;
     const auto& vol = vol_;
     const auto& couple = couple_;
+    const auto& poissonCouple = poissonCouple_;
 
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
         const Edge& edge = mesh_.getEdge(e);
@@ -1500,7 +1502,7 @@ VectorXd CoupledDDAssembler::residualImpl(
             electricField, contactElectricMobilityFields);
 
         const Real eps = detail::edgeEpsilon(edgeCells, mesh_, matdb_, e);
-        const Real G = eps * couple[e] / h;
+        const Real G = eps * poissonCouple[e] / h;
         const Real psiFlux = G * (psi_i - psi_j);
         r(psiOffset() + i) += psiFlux;
         r(psiOffset() + j) -= psiFlux;

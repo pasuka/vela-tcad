@@ -248,6 +248,71 @@ TEST_CASE("Frozen electron quantum potential shifts density and preserves flat-Q
     REQUIRE((analytic - finiteDifference).norm() / denominator < 5.0e-5);
 }
 
+TEST_CASE("Carrier transport couple override changes SG residual and Jacobian but not Poisson",
+          "[newton][sg][carrier_transport_profile][jacobian]")
+{
+    DeviceMesh baselineMesh = makePNMesh();
+    DeviceMesh candidateMesh = makePNMesh();
+    const Edge target = candidateMesh.getEdge(0);
+    candidateMesh.setTransportCouple(0, 0.5 * target.couple);
+
+    MaterialDatabase materials;
+    DopingModel baselineDoping(baselineMesh.numNodes());
+    DopingModel candidateDoping(candidateMesh.numNodes());
+    const RecombinationModelConfig noRecombination =
+        recombinationModelConfig({"none"});
+    CoupledDDAssembler baseline(
+        baselineMesh, materials, baselineDoping, constants::Vt_300,
+        MobilityModelConfig{}, noRecombination);
+    CoupledDDAssembler candidate(
+        candidateMesh, materials, candidateDoping, constants::Vt_300,
+        MobilityModelConfig{}, noRecombination);
+
+    const int n = static_cast<int>(candidateMesh.numNodes());
+    CoupledDDState state;
+    state.psi = VectorXd::LinSpaced(n, -0.02, 0.03);
+    state.phin = VectorXd::LinSpaced(n, -0.01, 0.02);
+    state.phip = VectorXd::LinSpaced(n, 0.015, -0.01);
+    CoupledDDBoundaryConditions boundaries;
+    const VectorXd baselineX = baseline.pack(state);
+    const VectorXd candidateX = candidate.pack(state);
+
+    const auto baselinePoisson = baseline.poissonTermDiagnostics(
+        baselineX, boundaries);
+    const auto candidatePoisson = candidate.poissonTermDiagnostics(
+        candidateX, boundaries);
+    for (Index node = 0; node < candidateMesh.numNodes(); ++node) {
+        REQUIRE(candidatePoisson[node].dielectricFlux ==
+                Catch::Approx(baselinePoisson[node].dielectricFlux));
+    }
+
+    const auto baselineEdges = baseline.sgEdgeFluxDiagnostics(
+        baselineX, boundaries);
+    const auto candidateEdges = candidate.sgEdgeFluxDiagnostics(
+        candidateX, boundaries);
+    const auto matchesTarget = [&](const CoupledDDEdgeFluxDiagnostic& edge) {
+        return edge.node0 == target.n0 && edge.node1 == target.n1;
+    };
+    const auto baselineTarget = std::find_if(
+        baselineEdges.begin(), baselineEdges.end(), matchesTarget);
+    const auto candidateTarget = std::find_if(
+        candidateEdges.begin(), candidateEdges.end(), matchesTarget);
+    REQUIRE(baselineTarget != baselineEdges.end());
+    REQUIRE(candidateTarget != candidateEdges.end());
+    REQUIRE(candidateTarget->couple_m == Catch::Approx(0.5 * baselineTarget->couple_m));
+    REQUIRE(candidateTarget->electronFlux ==
+            Catch::Approx(0.5 * baselineTarget->electronFlux));
+    REQUIRE(candidateTarget->holeFlux ==
+            Catch::Approx(0.5 * baselineTarget->holeFlux));
+
+    const SparseMatrixd analytic = candidate.assembleJacobian(
+        candidateX, boundaries);
+    const SparseMatrixd finiteDifference = candidate.finiteDifferenceJacobian(
+        candidateX, boundaries, 1.0e-7);
+    REQUIRE((analytic - finiteDifference).norm() /
+            std::max<Real>(finiteDifference.norm(), 1.0e-30) < 5.0e-5);
+}
+
 TEST_CASE("Sentaurus exponential DG coupling multiplies classical Fermi density",
           "[newton][density_gradient][fermi]")
 {

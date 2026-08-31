@@ -77,6 +77,7 @@ void DeviceMesh::buildEdgesOnly()
                 Real dy = nb.y - na.y;
                 edge.length = std::sqrt(dx*dx + dy*dy);
                 edge.couple = 0.0; // Box coupling computed after edge generation
+                edge.transport_couple = -1.0;
 
                 edgeMap[key] = edge.id;
                 edges_.push_back(std::move(edge));
@@ -104,6 +105,23 @@ void DeviceMesh::buildBoxGeometry(const BoxGeometryBuilder::Options& options)
     if (edges_.empty() && !cells_.empty())
         buildEdgesOnly();
     lastGeometryBuildReport_ = BoxGeometryBuilder::buildWithReport(*this, options);
+}
+
+void DeviceMesh::setTransportCouple(Index edgeId, Real couple)
+{
+    if (edgeId >= edges_.size())
+        throw std::out_of_range(
+            "Transport couple edge id out of range: " + std::to_string(edgeId));
+    if (!std::isfinite(couple) || couple < 0.0)
+        throw std::invalid_argument(
+            "Transport couple must be finite and non-negative.");
+    edges_[edgeId].transport_couple = couple;
+}
+
+void DeviceMesh::clearTransportCoupleOverrides()
+{
+    for (auto& edge : edges_)
+        edge.transport_couple = -1.0;
 }
 
 // ------------------------------------------------------------------

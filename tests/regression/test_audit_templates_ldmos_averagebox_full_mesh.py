@@ -4,6 +4,7 @@ from scripts.audit_templates_ldmos_averagebox_full_mesh import (
     audit,
     averagebox_geometry,
     ratio,
+    transport_profile_rows,
 )
 
 
@@ -48,6 +49,17 @@ class TemplatesLdmosAverageBoxFullMeshAuditTest(unittest.TestCase):
             ),
             {"l1": 0.5, "l2": 0.5, "maximum_abs": 0.5},
         )
+
+    def test_runtime_profile_aggregates_cell_local_couples_in_metres(self) -> None:
+        rows = transport_profile_rows([
+            {"node0": 2, "node1": 1, "averagebox_local_couple_um": 0.25},
+            {"node0": 1, "node1": 2, "averagebox_local_couple_um": 0.75},
+            {"node0": 0, "node1": 1, "averagebox_local_couple_um": 0.0},
+        ])
+        self.assertEqual(rows[0], {"node0": 0, "node1": 1, "couple_m": 0.0})
+        self.assertEqual(rows[1]["node0"], 1)
+        self.assertEqual(rows[1]["node1"], 2)
+        self.assertAlmostEqual(rows[1]["couple_m"], 1.0e-6)
 
     def test_full_replay_gate_uses_all_active_rows_and_frozen_hotspots(self) -> None:
         mesh = {

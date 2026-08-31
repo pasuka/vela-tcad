@@ -124,6 +124,18 @@ def ratio(candidate: dict[str, float], baseline: dict[str, float]) -> dict[str, 
     }
 
 
+def transport_profile_rows(cell_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Aggregate qualified cell-local couples into the strict runtime CSV."""
+    couples_um: dict[tuple[int, int], float] = defaultdict(float)
+    for row in cell_rows:
+        key = edge_key(int(row["node0"]), int(row["node1"]))
+        couples_um[key] += float(row["averagebox_local_couple_um"])
+    return [
+        {"node0": node0, "node1": node1, "couple_m": value * 1.0e-6}
+        for (node0, node1), value in sorted(couples_um.items())
+    ]
+
+
 def audit(
     mesh: dict[str, Any],
     sg_rows: list[dict[str, str]],
@@ -369,11 +381,15 @@ def main() -> int:
     write_csv(output / "cell_coefficients.csv", cells)
     write_csv(output / "edge_replay.csv", edges)
     write_csv(output / "node_residuals.csv", nodes)
+    profile = transport_profile_rows(cells)
+    write_csv(output / "transport_couples.csv", profile)
     summary["oracle"] = {"path": str(debug), "sha256": sha256(debug)}
     summary["artifacts"] = {
         "cell_coefficients": str((output / "cell_coefficients.csv").resolve()),
         "edge_replay": str((output / "edge_replay.csv").resolve()),
         "node_residuals": str((output / "node_residuals.csv").resolve()),
+        "transport_couples": str((output / "transport_couples.csv").resolve()),
+        "transport_couple_records": len(profile),
     }
     (output / "summary.json").write_text(
         json.dumps(summary, indent=2) + "\n", encoding="utf-8"
