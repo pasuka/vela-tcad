@@ -7,7 +7,7 @@
       "classification": "candidate_baseline_difference",
       "status": "open",
       "scope": "G3 no-IALMob Id-Vg, Vd=0.1 V, exact SProcess topology, Vg=0--5 V; dominant unresolved interval Vg=0--0.6667 V",
-      "observation": "The qualified contact-boundary ElectricField HFS fallback reduces the three-point fixed-state median error from 1.04443 dex to 0.0196168 dex. After repairing the constant_field cached-mobility Jacobian, all 31 no-predictor points converge and the worst KCL relative error is 7.96e-6, but the self-consistent P95 current error is 0.432753 dex and the fixed-current equivalent threshold shift is 43.2055 mV. Vg=0.1667--0.6667 V retains a nearly multiplicative Vela/Sentaurus current factor of 2.61--2.73, while the strong-inversion endpoint error is only 1.51 percent. The contact-HFS support and WP1.5 numerical trajectory are therefore closed, but the remaining coefficient/state-feedback difference is not yet an approved engine floor.",
+      "observation": "The qualified contact-boundary ElectricField HFS fallback reduces the three-point fixed-state median error from 1.04443 dex to 0.0196168 dex. After repairing the constant_field cached-mobility Jacobian, all 31 no-predictor points converge and the worst KCL relative error is 7.96e-6, but the self-consistent P95 current error is 0.432753 dex and the fixed-current equivalent threshold shift is 43.2055 mV. Vg=0.1667--0.6667 V retains a nearly multiplicative Vela/Sentaurus current factor of 2.61--2.73. An eight-combination psi/phin/phip frozen-state audit attributes a median 0.403147 dex, or 2.53015x, amplification to self-consistent state feedback; phin is the dominant single family at all four audited biases. At Vg=0.3333--0.6667 V the fixed Sentaurus-state operator ratio is only 1.046--1.049, while the full self-consistent ratio is 2.606--2.731. The residual hotspots localize to source-side/channel-side electron continuity and Si/SiO2 interface neighborhoods. This is not yet an approved engine floor.",
       "excluded_causes": [
         "uniform electrostatic, flatband, or reference-energy offset",
         "terminal floating-point summation",
@@ -16,13 +16,18 @@
         "global low-field mobility parameter mismatch",
         "negative local cotangent barycentric fallback",
         "mixed-Voronoi node volume in fixed-state SG replay",
+        "barycentric versus truncated negative-cotangent coupling in same-bias reclose",
+        "uniform psi or hole-QF state feedback as the subthreshold current-amplitude cause",
+        "SRH or Auger recombination magnitude as the electron-continuity hotspot cause",
+        "drain-side anomalous couple-over-length edges as the dominant remaining feedback location",
         "WP1.5 low-current KCL and line-search floor",
         "missing contact-boundary ElectricField fallback as the sole remaining cause",
         "constant_field cached-mobility Jacobian mismatch as a physical curve-amplitude cause"
       ],
       "open_causes": [
-        "LDMOS-specific SG box-coefficient or edge-coupling semantics beyond the existing cotangent and mixed-volume controls",
-        "self-consistent state feedback associated with the remaining coefficient difference",
+        "source-side and channel-side Si/SiO2 electron-continuity boundary or interface semantics",
+        "electron-QF edge support and density-averaging semantics that create the localized self-consistent feedback",
+        "direct LDMOS AverageBox per-edge coefficients at nodes 3747, 10233, 4492, and 4538; no direct MeasureCoefficients oracle is archived yet",
         "generalized SRH hole-QF reference convention; low impact on current Id-Vg but material for recombination qualification"
       ],
       "evidence": [
@@ -45,9 +50,21 @@
         {
           "path": "docs/validation/templates_ldmos_g3_contact_hfs_qualification_2026-08-31.md",
           "sha256": "88843a7a1253791211d97f29e7e08e8c81bdda8a28fa9e4c40be949a8741a328"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_coefficient_state_feedback_audit_2026-08-31.md",
+          "sha256": "f6ea6820110cee8e36df5aa9d0f17b7407d4631acd735414b75bf56725be9d52"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_state_feedback.py",
+          "sha256": "7bdb9bacfb3da7a150441a83eea9469bc1272bef04b4c7644eb62700bf8fee1b"
+        },
+        {
+          "path": "scripts/run_templates_ldmos_g3_same_bias_reclose.py",
+          "sha256": "f598de740ac0b58a8afc11e9f34acd6eccc0e04bc402fd0318917ebfe03f6973"
         }
       ],
-      "expires_when": "An LDMOS-specific coefficient/edge-coupling A/B and matched self-consistent state audit either closes the 2.61--2.73 current factor or proves a mesh-converged engine difference; generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
+      "expires_when": "A direct LDMOS AverageBox per-edge oracle plus source-side Si/SiO2 electron-continuity and first-Newton-step audit either closes the phin feedback or proves a mesh-converged engine difference; generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
       "approval": {
         "status": "draft",
         "benchmark_owner": null,
