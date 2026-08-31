@@ -1,5 +1,13 @@
 # Templates/LDMOS G3 contact-HFS qualification (2026-08-31)
 
+> 2026-08-31 correction: the fixed-state contact-HFS replay has now been
+> repeated with the same node-local + external-AverageBox operator on both
+> sides of the HFS switch. At Vg=0.5/0.833333 V, HFS off gives
+> 11.00098x/10.98829x and HFS on gives 1.00071x/1.00020x. The HFS conclusion
+> remains valid, but the earlier mesh-default baseline must not be mixed with
+> AverageBox when assigning effect size. See
+> `templates_ldmos_g3_averagebox_curve_qualification_2026-08-31.md`.
+
 ## Scope and frozen controls
 
 This qualification tests one physics change only: the G3 electron/hole

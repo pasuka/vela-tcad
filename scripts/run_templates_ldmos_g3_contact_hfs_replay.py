@@ -11,7 +11,10 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from audit_templates_ldmos_g3_idvg_shift_kcl import run_sg_probe
+try:
+    from scripts.audit_templates_ldmos_g3_idvg_shift_kcl import run_sg_probe
+except ModuleNotFoundError:
+    from audit_templates_ldmos_g3_idvg_shift_kcl import run_sg_probe
 
 
 BIAS_LABELS = (
@@ -19,6 +22,23 @@ BIAS_LABELS = (
     (0.5, "vg_0p500000"),
     (5.0 / 6.0, "vg_0p833333"),
 )
+
+
+def contact_hfs_variants(baseline: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Build a same-contract frozen-state pair differing only at contact HFS."""
+    hfs_off = deepcopy(baseline)
+    hfs_on = deepcopy(baseline)
+    off_mobility = hfs_off["solver"]["mobility"]
+    on_mobility = hfs_on["solver"]["mobility"]
+    off_mobility["contact_electric_field_fallback"] = False
+    off_mobility.pop("contact_electric_field_fallback_scope", None)
+    off_mobility.pop("contact_electric_field_fallback_mode", None)
+    on_mobility.update({
+        "contact_electric_field_fallback": True,
+        "contact_electric_field_fallback_scope": "contact_node_cell",
+        "contact_electric_field_fallback_mode": "cell_gradient_magnitude",
+    })
+    return hfs_off, hfs_on
 
 
 def replay(
@@ -34,11 +54,7 @@ def replay(
         raise ValueError("G3 contact-HFS replay requires a GradQF baseline")
     if "ialmob" in json.dumps(mobility).lower():
         raise ValueError("G3 contact-HFS replay requires IALMob disabled")
-    mobility.update({
-        "contact_electric_field_fallback": True,
-        "contact_electric_field_fallback_scope": "contact_node_cell",
-        "contact_electric_field_fallback_mode": "cell_gradient_magnitude",
-    })
+    hfs_off, hfs_on = contact_hfs_variants(baseline)
 
     archived = json.loads(archived_summary.read_text(encoding="utf-8"))[
         "sentaurus_state_sg_replay"
@@ -51,8 +67,14 @@ def replay(
     for bias, label in BIAS_LABELS:
         old = archived_by_bias[round(bias, 12)]
         state = archived_replay / label / "sentaurus_state.csv"
+        baseline_probe = run_sg_probe(
+            runner, deepcopy(hfs_off), state, bias,
+            output_dir / label / "contact_hfs_off")
         probe = run_sg_probe(
-            runner, deepcopy(baseline), state, bias, output_dir / label)
+            runner, deepcopy(hfs_on), state, bias,
+            output_dir / label / "contact_hfs_on")
+        baseline_current = float(
+            baseline_probe["drain_cut"]["total_A_per_um"])
         current = float(probe["drain_cut"]["total_A_per_um"])
         terminal = float(old["sentaurus_terminal_A_per_um"])
         ratio = current / terminal
@@ -60,23 +82,30 @@ def replay(
             math.log10(max(abs(current), 1.0e-300))
             - math.log10(max(abs(terminal), 1.0e-300))
         )
-        old_error = float(old["magnitude_error_dex"])
+        baseline_ratio = baseline_current / terminal
+        old_error = abs(math.log10(max(abs(baseline_ratio), 1.0e-300)))
         points.append({
             "bias_V": bias,
             "sentaurus_terminal_A_per_um": terminal,
-            "baseline_vela_sg_A_per_um": float(
+            "archived_mesh_default_baseline_vela_sg_A_per_um": float(
                 old["vela_sg_on_sentaurus_state_A_per_um"]),
-            "baseline_signed_ratio": float(old["signed_ratio"]),
-            "baseline_magnitude_error_dex": old_error,
+            "archived_mesh_default_baseline_signed_ratio": float(
+                old["signed_ratio"]),
+            "archived_mesh_default_baseline_magnitude_error_dex": float(
+                old["magnitude_error_dex"]),
+            "same_contract_hfs_off_vela_sg_A_per_um": baseline_current,
+            "same_contract_hfs_off_signed_ratio": baseline_ratio,
+            "same_contract_hfs_off_magnitude_error_dex": old_error,
             "contact_fallback_vela_sg_A_per_um": current,
             "contact_fallback_signed_ratio": ratio,
             "contact_fallback_magnitude_error_dex": error,
             "improvement_dex": old_error - error,
+            "hfs_off_probe": baseline_probe,
             "probe": probe,
         })
 
     old_median = statistics.median(
-        point["baseline_magnitude_error_dex"] for point in points)
+        point["same_contract_hfs_off_magnitude_error_dex"] for point in points)
     new_median = statistics.median(
         point["contact_fallback_magnitude_error_dex"] for point in points)
     high_points = points[1:]
@@ -87,7 +116,7 @@ def replay(
         for point in high_points
     )
     return {
-        "schema": "vela.templates_ldmos.g3_contact_hfs_replay.v1",
+        "schema": "vela.templates_ldmos.g3_contact_hfs_replay.v2",
         "status": "pass" if clear_improvement else "fail",
         "decision": {
             "clear_improvement": clear_improvement,
@@ -103,6 +132,10 @@ def replay(
             "contact_hfs_drive": "cell_gradient_magnitude",
             "ialmob": "disabled",
             "predictor": "disabled",
+            "comparison": "same_frozen_state_and_same_non_hfs_operator",
+            "carrier_transport_couple_profile": baseline.get(
+                "mesh_geometry", {}
+            ).get("carrier_transport_couple_profile", "mesh_default"),
         },
         "baseline_median_magnitude_error_dex": old_median,
         "contact_fallback_median_magnitude_error_dex": new_median,

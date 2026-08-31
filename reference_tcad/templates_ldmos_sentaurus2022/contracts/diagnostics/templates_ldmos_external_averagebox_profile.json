@@ -2,12 +2,12 @@
   "schema": "vela.templates_ldmos.external_averagebox_profile.v1",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
   "profile_name": "templates_ldmos_external_averagebox",
-  "status": "qualified_diagnostic_single_bias_not_stage3_curve",
+  "status": "qualified_diagnostic_curve_stage3_gm_open",
   "default_enabled": false,
   "scope": {
     "device": "Templates/LDMOS exact SProcess topology",
     "physics_layer": "G3 classical no-IALMob",
-    "bias": "Vd=0.1 V, Vg=0.5 V",
+    "bias": "Vd=0.1 V, exact 31-point Vg=0--5 V curve",
     "predictor": "off",
     "impact_ionization": "off",
     "surface_mobility_ialmob": "off",
@@ -82,6 +82,44 @@
         "phip": 0.00023092944085371936
       },
       "passed": true
+    },
+    "same_contract_contact_hfs_frozen_replay": {
+      "state_owner": "Sentaurus",
+      "non_hfs_operator": "legacy_node_local plus external AverageBox",
+      "bias_points_V": [
+        0.16666666666666666,
+        0.5,
+        0.8333333333333334
+      ],
+      "hfs_off_signed_ratios": [
+        24.66598725738119,
+        11.00098326059278,
+        10.988293983187976
+      ],
+      "contact_hfs_on_signed_ratios": [
+        1.747307658931699,
+        1.000710097079461,
+        1.000202475146385
+      ],
+      "median_error_improvement_dex": 1.0411232220448319,
+      "passed": true
+    },
+    "corrected_state_feedback_replay": {
+      "bias_points_V": [
+        0.16666666666666666,
+        0.3333333333333333,
+        0.5,
+        0.6666666666666666
+      ],
+      "feedback_amplification_dex": [
+        -0.25397080000401323,
+        0.0021777148433342088,
+        0.012727236078769221,
+        0.009051637693922492
+      ],
+      "median_feedback_amplification_dex": 0.00561467626862835,
+      "median_feedback_amplification_factor": 1.013012201265015,
+      "interpretation": "the former 0.403147 dex self-consistent platform amplification is closed; contact HFS remains a required fixed-state operator term"
     }
   },
   "comparison_masks": {

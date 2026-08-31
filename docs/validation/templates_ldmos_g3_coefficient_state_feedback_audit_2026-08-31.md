@@ -1,5 +1,12 @@
 # Templates/LDMOS G3 box 系数与状态反馈审计（2026-08-31）
 
+> 2026-08-31 更正：本报告的 `0.403147 dex / 2.530x` phin 反馈只适用于旧的
+> dominant-contact-mean + mesh-default 自洽状态。使用已资格化的
+> `legacy_node_local + external AverageBox` 31 点状态重跑后，中位反馈仅为
+> `0.005615 dex / 1.0130x`；旧平台归因不再适用于修正合同。contact HFS 在同合同
+> 冻结回放中仍是必要算子项。新证据见
+> `templates_ldmos_g3_averagebox_curve_qualification_2026-08-31.md`。
+
 ## 结论
 
 在 IALMob 与 predictor 持续关闭、接触 HFS 与 WP1.5 Jacobian 修复保持不变的

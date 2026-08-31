@@ -69,7 +69,11 @@ class TemplatesLdmosAverageBoxNewtonAbTest(unittest.TestCase):
         self.assertFalse(contract["default_enabled"])
         self.assertFalse(
             contract["authorization"]["production_global_default_change"])
-        self.assertFalse(contract["authorization"]["phase3_31_point_curve"])
+        self.assertTrue(contract["authorization"]["phase3_31_point_curve"])
+        self.assertEqual(
+            contract["authorization"]["curve_gate_status"],
+            "fail_maximum_gm_only",
+        )
         self.assertEqual(
             len(contract["qualification"]["same_bias_factorial"]), 4)
         qualified = contract["qualification"]["qualified_combination"]
@@ -81,6 +85,13 @@ class TemplatesLdmosAverageBoxNewtonAbTest(unittest.TestCase):
             ],
             contract["qualification"]["single_bias_stage3_limit_dex"],
         )
+        replay = contract["qualification"][
+            "same_contract_contact_hfs_frozen_replay"
+        ]
+        self.assertTrue(replay["passed"])
+        self.assertGreater(replay["median_error_improvement_dex"], 1.0)
+        feedback = contract["qualification"]["corrected_state_feedback_replay"]
+        self.assertLess(feedback["median_feedback_amplification_dex"], 0.01)
 
     def test_public_schema_names_the_template_private_profile(self) -> None:
         root = Path(__file__).resolve().parents[2]

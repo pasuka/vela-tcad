@@ -125,6 +125,11 @@ def curve_map(path: Path) -> dict[float, float]:
     return result
 
 
+def vela_state_path(root: Path, prefix: str, bias: float) -> Path:
+    """Return the exact per-bias state emitted by the selected curve runner."""
+    return root / (prefix + "_bias_" + f"{bias:.6f}".replace(".", "p") + ".csv")
+
+
 def percentile(values: list[float], fraction: float) -> float:
     ordered = sorted(values)
     if not ordered:
@@ -164,13 +169,15 @@ def attribution(variant_currents: dict[str, float], reference: float) -> dict[st
         "phip": error("VVV") - error("VVS"),
     }
     qf_pair = error("VVV") - error("VSS")
+    dominant = max(single_sentaurus, key=lambda name: abs(single_sentaurus[name]))
     return {
         "operator_log10_ratio_dex": error("SSS"),
         "self_consistent_log10_ratio_dex": error("VVV"),
         "feedback_amplification_dex": full_feedback,
         "single_sentaurus_family_error_recovery_dex": single_sentaurus,
         "joint_qf_error_recovery_dex": qf_pair,
-        "dominant_single_family": max(single_sentaurus, key=single_sentaurus.get),
+        "dominant_single_family": dominant,
+        "dominant_single_family_abs_effect_dex": abs(single_sentaurus[dominant]),
     }
 
 
@@ -260,6 +267,14 @@ def main() -> int:
         "--sentaurus-export-root", type=Path, action="append", required=True
     )
     parser.add_argument("--vela-state-root", type=Path, required=True)
+    parser.add_argument(
+        "--vela-state-prefix",
+        default="g3_contact_hfs_point",
+        help=(
+            "Per-bias state filename prefix. Use g3_averagebox_point for the "
+            "node-local plus external-AverageBox curve."
+        ),
+    )
     parser.add_argument("--reference-curve", type=Path, required=True)
     parser.add_argument("--vela-curve", type=Path, required=True)
     parser.add_argument("--mesh", type=Path, required=True)
@@ -295,8 +310,8 @@ def main() -> int:
             args.mesh,
             point_dir / "sentaurus_state.csv",
         )
-        vela_path = args.vela_state_root / (
-            "g3_contact_hfs_point_bias_" + f"{bias:.6f}".replace(".", "p") + ".csv"
+        vela_path = vela_state_path(
+            args.vela_state_root, args.vela_state_prefix, bias
         )
         if not vela_path.is_file():
             raise FileNotFoundError(vela_path)
@@ -367,11 +382,17 @@ def main() -> int:
 
     feedback = [point["attribution"]["feedback_amplification_dex"] for point in points]
     summary = {
-        "schema": "vela.templates_ldmos.g3_state_feedback.v1",
+        "schema": "vela.templates_ldmos.g3_state_feedback.v2",
         "contracts": {
             "ialmob": "disabled",
             "predictor": "disabled",
             "operator": "qualified_contact_hfs_g3",
+            "contact_boundary_reconstruction": baseline["solver"].get(
+                "contact_boundary_reconstruction", "global_default"
+            ),
+            "carrier_transport_couple_profile": baseline.get(
+                "mesh_geometry", {}
+            ).get("carrier_transport_couple_profile", "mesh_default"),
             "state_substitution": "read_only_psi_phin_phip_factorial",
             "pn2d_atomic_profile_inherited": False,
         },

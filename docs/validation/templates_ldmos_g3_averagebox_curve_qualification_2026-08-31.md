@@ -45,6 +45,42 @@ Both curves place maximum gm on the same exact segment,
 therefore not caused by peak-position selection, curve interpolation or an
 unresolved bias point.
 
+## Contact-HFS frozen replay and state feedback
+
+The contact-HFS decision was rerun as a true same-contract pair. Each point
+uses the same frozen Sentaurus state, node-local contact contract, and external
+AverageBox transport couples; the only switch is the contact-node-cell
+ElectricField fallback. This removes the previous comparison's mesh-default
+coefficient confounder.
+
+| Vg (V) | Contact HFS off / Sentaurus | Contact HFS on / Sentaurus | Error improvement (dex) |
+|---:|---:|---:|---:|
+| 0.166667 | 24.66599 | 1.74731 | 1.14973 |
+| 0.500000 | 11.00098 | 1.00071 | 1.04112 |
+| 0.833333 | 10.98829 | 1.00020 | 1.04084 |
+
+The median frozen-state error falls from `1.04143 dex` to `0.000308 dex`.
+Contact HFS therefore remains a necessary operator correction; it was not the
+cause of the former self-consistent `2.6--2.7x` current platform.
+
+The eight-combination `psi/phin/phip` replay was then repeated at
+`Vg=1/6, 1/3, 1/2, 2/3 V` using the new 31-point states and the same corrected
+operator:
+
+| Vg (V) | VVV/Sentaurus | SSS/Sentaurus | Feedback (dex) | Largest state-family effect |
+|---:|---:|---:|---:|:---:|
+| 0.166667 | 0.97364 | 1.74731 | -0.253971 | phin (cancels operator excess) |
+| 0.333333 | 1.00860 | 1.00356 | 0.002178 | psi |
+| 0.500000 | 1.03047 | 1.00071 | 0.012727 | phin |
+| 0.666667 | 1.02125 | 1.00018 | 0.009052 | phin |
+
+The median feedback is now only `0.005615 dex` (`1.0130x`), versus the old
+`0.403147 dex` (`2.530x`). At `Vg=1/6 V`, a signed `phin` feedback term cancels
+most of the remaining fixed-state operator excess, so reporting only unsigned
+"error recovery" would be misleading. The old conclusion that `phin`
+self-consistency generated the curve-wide platform is withdrawn for the
+corrected contract.
+
 ## Decision
 
 1. The node-local source-short and carrier-only AverageBox contracts are
@@ -64,6 +100,10 @@ unresolved bias point.
 
 - Curve runner: `scripts/run_templates_ldmos_g3_averagebox_curve.py`.
 - Exact-point scorer: `scripts/analyze_templates_ldmos_g3_idvg.py`.
+- Same-contract contact-HFS replay:
+  `scripts/run_templates_ldmos_g3_contact_hfs_replay.py`.
+- Corrected state-feedback replay:
+  `scripts/audit_templates_ldmos_g3_state_feedback.py`.
 - Frozen profile contract:
   `reference_tcad/templates_ldmos_sentaurus2022/contracts/diagnostics/templates_ldmos_external_averagebox_profile.json`.
 - Ignored run directory:
@@ -72,3 +112,7 @@ unresolved bias point.
   `qualification.md`; curve: `g3_averagebox_idvg.csv`; numerical evidence:
   `newton_history.csv`, `newton_iterations.csv`, `terminal_balance.csv` and
   `srh_balance.csv`.
+- Ignored replay directories:
+  `reference_staging/templates_ldmos_g3_contact_hfs_replay_averagebox_node_local_v2_20260831/`
+  and
+  `reference_staging/templates_ldmos_g3_state_feedback_averagebox_node_local_20260831/`.

@@ -1,8 +1,10 @@
 import unittest
+from pathlib import Path
 
 from scripts.audit_templates_ldmos_g3_state_feedback import (
     attribution,
     merge_state_rows,
+    vela_state_path,
 )
 
 
@@ -32,6 +34,23 @@ class TemplatesLdmosG3StateFeedbackAuditTest(unittest.TestCase):
         self.assertAlmostEqual(result["operator_log10_ratio_dex"], math_log10(1.05))
         self.assertEqual(result["dominant_single_family"], "phin")
         self.assertGreater(result["feedback_amplification_dex"], 0.4)
+
+    def test_dominant_family_uses_effect_magnitude(self) -> None:
+        currents = {
+            "VVV": 1.0, "SSS": 2.0, "SVV": 1.01, "VSV": 2.0,
+            "VVS": 1.0, "SSV": 2.0, "SVS": 1.01, "VSS": 2.0,
+        }
+        result = attribution(currents, 1.0)
+        self.assertEqual(result["dominant_single_family"], "phin")
+        self.assertAlmostEqual(
+            result["dominant_single_family_abs_effect_dex"], math_log10(2.0)
+        )
+
+    def test_state_prefix_selects_the_curve_family_explicitly(self) -> None:
+        self.assertEqual(
+            vela_state_path(Path("states"), "g3_averagebox_point", 1.0 / 6.0),
+            Path("states/g3_averagebox_point_bias_0p166667.csv"),
+        )
 
 
 def math_log10(value: float) -> float:
