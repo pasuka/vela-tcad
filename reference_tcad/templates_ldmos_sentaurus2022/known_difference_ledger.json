@@ -6,8 +6,8 @@
       "id": "g3_exact_mesh_subthreshold_edge_current_support_20260829",
       "classification": "candidate_baseline_difference",
       "status": "open",
-      "scope": "G3 no-IALMob Id-Vg, Vd=0.1 V, exact SProcess topology, Vg=0--5 V; dominant unresolved interval Vg=0--0.6667 V",
-      "observation": "The qualified contact-boundary ElectricField HFS fallback and cached-mobility Jacobian repair allow all 31 no-predictor G3 points to converge, but the production P95 current error remains 0.432753 dex. At Vg=0.5 V the production curve and independent Sentaurus-seed reclose reconcile exactly at Id=1.736470037555399e-10 A/um, 2.687099x or 0.429284 dex above Sentaurus; no warm-start multiple-solution discrepancy is present. A complete T-2022.03-SP2 MeasureCoefficients.debug replay over 5674 active electron rows reduces fixed-state electron residual L2 and maximum to 0.0173075x and 0.0433710x, respectively, without changing the initial Poisson residual. The explicit, default-off templates_ldmos_external_averagebox transport profile passes analytic-Jacobian, fixed-state and one-Newton gates. A subsequent 2x2 same-bias factorial identifies two nearly orthogonal contract defects. AverageBox transport closes 0.136312--0.140239 dex independent of the Ohmic-contact policy. The Templates/LDMOS source terminal physically shorts p+ body pickup and n+ source nodes, but the default dominant_signed_contact_mean treats the real p+ segment as opposite-sign outliers and reconstructs it as n+ boundary data. This produces the bias-independent 1.0818503857 V maximum psi family and a 40.84 mV hole-QF offset. Explicit legacy_node_local reconstruction restores the local p+/n+ polarity, closes 0.276004--0.279931 dex independent of transport couple, and reduces maximum state differences to psi/phin/phip=29.23/5.247/0.231 mV. The qualified node-local plus AverageBox reclose converges in three Newton iterations with KCL relative error 1.10e-11 and Id=6.65923465680782e-11 A/um, only 1.030483x or 0.013041 dex above Sentaurus. These are correctable template contact and discretization contracts, not an engine floor; a 31-point confirmation has not yet been run.",
+      "scope": "G3 no-IALMob Id-Vg, Vd=0.1 V, exact SProcess topology, Vg=0--5 V; remaining failed metric is maximum gm on Vg=1.0--1.1667 V",
+      "observation": "The qualified contact-boundary ElectricField HFS fallback and cached-mobility Jacobian repair allow all 31 no-predictor G3 points to converge, but the production P95 current error is 0.432753 dex. At Vg=0.5 V the production curve and independent Sentaurus-seed reclose reconcile exactly at Id=1.736470037555399e-10 A/um, excluding a warm-start multiple-solution discrepancy. A complete T-2022.03-SP2 MeasureCoefficients.debug replay over 5674 active electron rows reduces fixed-state electron residual L2 and maximum to 0.0173075x and 0.0433710x without changing the initial Poisson residual. A 2x2 same-bias factorial then identifies two nearly orthogonal correctable contracts: external AverageBox carrier couples close 0.136312--0.140239 dex, while explicit legacy_node_local reconstruction of the physical p+/n+ source short closes 0.276004--0.279931 dex and removes the spurious 1.0818503857 V psi family. Their combination closes the Vg=0.5 V point to 0.013041 dex. The exact no-predictor 31-point confirmation subsequently converges all points in 177 Newton iterations and passes median log error, P95 log error, endpoint current, Vth and KCL gates. P95 improves to 0.099697 dex and Vth error to 0.0387 mV. Stage 3 remains failed solely because maximum gm differs by 24.3076% versus the frozen 20% limit; both curves locate maximum gm on the same exact Vg=1.0--1.1667 V segment, excluding interpolation or peak-location artifacts. The ledger therefore remains draft and the residual slope difference is not an approved engine floor.",
       "excluded_causes": [
         "uniform electrostatic, flatband, or reference-energy offset",
         "terminal floating-point summation",
@@ -33,8 +33,8 @@
         "constant_field cached-mobility Jacobian mismatch as a physical curve-amplitude cause"
       ],
       "open_causes": [
-        "31-point no-predictor confirmation of the explicit LDMOS legacy_node_local plus external AverageBox diagnostic contract",
-        "whether residual curve-level error after the 31-point confirmation requires a full per-region Poisson AverageBox coefficient and Measure contract",
+        "fixed-state coefficient and mobility replay at Vg=1.0 and 1.16666666666667 V to separate the remaining HFS support and self-consistent slope feedback",
+        "whether the residual maximum-gm difference requires a full per-region Poisson AverageBox coefficient and Measure contract; deferred until the fixed-state slope replay provides evidence",
         "generalized SRH hole-QF reference convention after removal of the source-short contact reconstruction artifact; low expected impact on Id-Vg but material for recombination qualification"
       ],
       "evidence": [
@@ -100,7 +100,7 @@
         },
         {
           "path": "docs/validation/templates_ldmos_g3_averagebox_newton_ab_2026-08-31.md",
-          "sha256": "90eaef6b3db7562312fd6c66eaca4843f5b6eeb7eda1f8cb59dadaaec444a12f"
+          "sha256": "c349cb7a4197f1fb974561ae6bce994e1d91ff8dd380a56f92aa4bbe464b1f66"
         },
         {
           "path": "scripts/run_templates_ldmos_averagebox_newton_ab.py",
@@ -108,14 +108,22 @@
         },
         {
           "path": "reference_tcad/templates_ldmos_sentaurus2022/contracts/diagnostics/templates_ldmos_external_averagebox_profile.json",
-          "sha256": "fec946a74c3bd329b1029e87046414389e643fd9d226de885ae2dad5d716db0e"
+          "sha256": "8854daeddddf1c715eb1d3ac4ebeeb6bd8ae18e4617509d47dac85c935d62475"
         },
         {
           "path": "scripts/prepare_templates_ldmos_phase23.py",
           "sha256": "2c55e70b98ce472cab776fda0cd29d94020fc7060593b5ced914d6244803a611"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_averagebox_curve_qualification_2026-08-31.md",
+          "sha256": "8717325010ffe048e7eaff5a0fc96a695294bdd26c5a7182fbbcd9f754870505"
+        },
+        {
+          "path": "scripts/run_templates_ldmos_g3_averagebox_curve.py",
+          "sha256": "71cfd747cccef53917c17903e3727f8b4dcd6cafd8dfba38206bc7133e4cee40"
         }
       ],
-      "expires_when": "The exact 31-point no-predictor G3 curve is rerun with explicit legacy_node_local source-short reconstruction and the qualified external AverageBox transport profile, generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
+      "expires_when": "The Vg=1.0 and 1.16666666666667 V fixed-state slope replay closes or classifies the remaining maximum-gm difference, generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
       "approval": {
         "status": "draft",
         "benchmark_owner": null,

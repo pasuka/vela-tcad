@@ -93,7 +93,17 @@
   },
   "authorization": {
     "production_global_default_change": false,
-    "phase3_31_point_curve": false,
-    "next_gate": "regenerate the exact G3 deck with explicit legacy_node_local and this diagnostic profile, then run the no-predictor 31-point curve"
+    "phase3_31_point_curve": true,
+    "curve_gate_status": "fail_maximum_gm_only",
+    "curve_metrics": {
+      "resolved_points": 31,
+      "median_abs_log_error_dex": 0.06989008412951178,
+      "p95_abs_log_error_dex": 0.09969667142251995,
+      "strong_inversion_endpoint_relative_error": 0.13326750002341395,
+      "vth_absolute_error_V": 0.00003869905064968204,
+      "max_gm_relative_error": 0.24307577516061074,
+      "worst_kcl_relative_error": 1.1429698478423298e-9
+    },
+    "next_gate": "fixed-state coefficient and mobility replay at Vg=1.0 and 1.16666666666667 V before IALMob or any threshold change"
   }
 }

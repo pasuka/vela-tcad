@@ -142,8 +142,10 @@ Sentaurus source 接触多数载流子状态。
 2. external AverageBox profile 保持模板私有、显式选择、默认关闭。
 3. known-difference ledger 继续为 draft；本轮关闭的是可修复合同缺口，不登记为
    引擎固有地板。
-4. 不在本任务启动 31 点曲线。下一资格任务使用显式 node-local + AverageBox、
-   IALMob/predictor 关闭，运行精确 31 点并重新计算 P95、Vth、gm 和 KCL。
+4. 后续精确 31 点任务已完成，结果见
+   `templates_ldmos_g3_averagebox_curve_qualification_2026-08-31.md`：P95、
+   Vth、端点电流和 KCL 门通过，但最大 gm 相对误差 `24.31%` 超过冻结的
+   `20%` 门，因此阶段 3 仍未通过。
 5. Poisson AverageBox P1/P2/P3 暂不开发。当前组合已达 `0.013 dex`，应先由 31 点
    判断剩余误差是否具有系统性，再决定是否需要全一致 Poisson/Measure 合同。
 
