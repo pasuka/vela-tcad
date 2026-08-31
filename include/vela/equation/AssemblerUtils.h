@@ -267,6 +267,107 @@ inline std::vector<std::vector<Index>> buildEdgeCellMap(const DeviceMesh& mesh)
     return edgeCells;
 }
 
+/// Return one triangle's positive box-couple contribution to an edge.
+/// This mirrors BoxGeometryBuilder's default cotangent plus barycentric
+/// fallback policy, but keeps the contribution region-local for interface
+/// assembly diagnostics.
+inline Real cellLocalEdgeCoupling(const DeviceMesh& mesh,
+                                  Index cellId,
+                                  Index edgeId)
+{
+    const Cell& cell = mesh.getCell(cellId);
+    const Edge& edge = mesh.getEdge(edgeId);
+    if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3 ||
+        edge.length <= 1.0e-30) {
+        return 0.0;
+    }
+
+    Index opposite = mesh.numNodes();
+    bool hasNode0 = false;
+    bool hasNode1 = false;
+    for (Index node : cell.node_ids) {
+        hasNode0 = hasNode0 || node == edge.n0;
+        hasNode1 = hasNode1 || node == edge.n1;
+        if (node != edge.n0 && node != edge.n1)
+            opposite = node;
+    }
+    if (!hasNode0 || !hasNode1 || opposite >= mesh.numNodes())
+        return 0.0;
+
+    const Node& a = mesh.getNode(edge.n0);
+    const Node& b = mesh.getNode(edge.n1);
+    const Node& o = mesh.getNode(opposite);
+    const Real uX = a.x - o.x;
+    const Real uY = a.y - o.y;
+    const Real vX = b.x - o.x;
+    const Real vY = b.y - o.y;
+    const Real cross = std::abs(uX * vY - uY * vX);
+    if (cross <= 1.0e-300)
+        return 0.0;
+    const Real cotangent = (uX * vX + uY * vY) / cross;
+    if (cotangent < 0.0)
+        return triangleArea(mesh, cell) / (3.0 * edge.length);
+    return 0.5 * cotangent * edge.length;
+}
+
+/// Sum only transport-material cell contributions to every primal edge.
+inline std::vector<Real> computeTransportEdgeCouplings(
+    const DeviceMesh& mesh,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<Material>& cellMaterials)
+{
+    std::vector<Real> coupling(mesh.numEdges(), 0.0);
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        for (Index cellId : edgeCells.at(edgeId)) {
+            const Material& material = cellMaterials.at(cellId);
+            if (material.ni <= 0.0 && material.mun <= 0.0 &&
+                material.mup <= 0.0) {
+                continue;
+            }
+            coupling[edgeId] += cellLocalEdgeCoupling(mesh, cellId, edgeId);
+        }
+    }
+    return coupling;
+}
+
+/// Sum barycentric node-volume shares only over transport-material cells.
+inline std::vector<Real> computeTransportNodeVolumes(
+    const DeviceMesh& mesh,
+    const std::vector<Material>& cellMaterials)
+{
+    std::vector<Real> volume(mesh.numNodes(), 0.0);
+    for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
+        const Material& material = cellMaterials.at(cellId);
+        if (material.ni <= 0.0 && material.mun <= 0.0 &&
+            material.mup <= 0.0) {
+            continue;
+        }
+        const Cell& cell = mesh.getCell(cellId);
+        const Real share = triangleArea(mesh, cell) / 3.0;
+        for (Index node : cell.node_ids)
+            volume.at(node) += share;
+    }
+    return volume;
+}
+
+/// Return sum_c epsilon_c * couple_c for one edge [F].
+inline Real regionResolvedPermittivityCoupling(
+    const DeviceMesh& mesh,
+    const MaterialDatabase& matdb,
+    const std::vector<std::vector<Index>>& edgeCells,
+    Index edgeId)
+{
+    Real weighted = 0.0;
+    for (Index cellId : edgeCells.at(edgeId)) {
+        const Cell& cell = mesh.getCell(cellId);
+        const Region& region = mesh.getRegion(cell.region_id);
+        const Real epsilon =
+            matdb.getMaterial(region.material).eps_r * constants::eps0;
+        weighted += epsilon * cellLocalEdgeCoupling(mesh, cellId, edgeId);
+    }
+    return weighted;
+}
+
 inline std::vector<std::vector<Index>> buildCellEdgeMap(
     const std::vector<std::vector<Index>>& edgeCells,
     const DeviceMesh&                      mesh)

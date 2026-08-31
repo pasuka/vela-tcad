@@ -1,0 +1,52 @@
+{
+  "schema": "vela.simplemos.sdevice.m33_region_resolved_interface_assembly_evidence.v1",
+  "status": "frozen",
+  "summary": {
+    "variant_count": 8,
+    "interface_edge_count": 20,
+    "baseline_error_dex": 0.10941868092427424,
+    "all_region_resolved_error_dex": 0.10476463269852927,
+    "all_region_resolved_gap_closure_fraction": 0.04253431120199589,
+    "best_factorial_variant": "p1_t1_v0",
+    "default_model_changed": false
+  },
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/region_resolved_interface_assembly/m33_region_resolved_interface_assembly_report.json",
+      "sha256": "a8a02257178167208fc870a6a88112ebf8841662c8785e96b66041f43dcaa90e"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/region_resolved_interface_assembly/m33_factorial_response.csv",
+      "sha256": "afa9172c222600189e8042fe64df7f53cd00ecde798a90d45782ac58b699188b"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/region_resolved_interface_assembly/m33_factorial_main_effects.csv",
+      "sha256": "99691c6ee2d878594ae659aef5134f1448bbd94703585a3838660a10ec516732"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/region_resolved_interface_assembly/m33_interface_geometry.csv",
+      "sha256": "6ec37ab619ad24844c3d5dda9ceffae59c9f0b2521df644b758f3a841dd910af"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/region_resolved_interface_assembly/m33_interface_state_response.csv",
+      "sha256": "a760737d3594da3875a86f05791c09b4944fe9a02c2623ceeb1ee9700390ba7d"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m33_region_resolved_interface_assembly_contract_v1.json": "f5f4f354e9fa919222681d3335d393428a1f775bdb0fba63adb053a22f844a02",
+    "scripts/run_simplemos_m33_region_resolved_interface_assembly.py": "82e40e33ea907e564addd26fcd9dcbc64a5b38827f46298fc08381f44cb5053c",
+    "scripts/plot_simplemos_m33_region_resolved_interface_assembly.py": "d8538bef790f161721ba12f6e14eede12c1c7aa28de8305c5948359fe582639f",
+    "scripts/freeze_simplemos_m33_region_resolved_interface_assembly_evidence.py": "937474d03dc7ca7ca2924232c942fb54350dd7a09b7208380718800b0c547246",
+    "tests/regression/test_simplemos_m33_region_resolved_interface_assembly.py": "e50777ee922d677e3d5ad616055072d71ae291c3f559a7c6ad60f8517e004c55",
+    "tests/test_mos_mixed_material.cpp": "bb476aa6df39cf5cc16545e7aa066d60fea59693fac488c9975605174d9cfd69",
+    "docs/validation/simplemos_m33_region_resolved_interface_assembly_2026-08-31.md": "0ca0941ed471eb31e2cbe523ba4b2bfeecde1ab1786abe8eefbc291f7e667700",
+    "docs/validation/figures/simplemos_m33/simplemos_m33_region_resolved_interface_assembly.png": "55df52866b2846faf8623d4a41cf1d1d5039a980ed8043c0e3e51562e638587d",
+    "include/vela/equation/AssemblerUtils.h": "34d9cbaa20276d28c1a5f8026a05ae1b56d91fd35ba61c4d11da95182bd9df21",
+    "include/vela/equation/DDAssembler.h": "9471c36ef657948bb25596acb27d98369aef823352692d42f053e73ef6b637c7",
+    "include/vela/solver/NewtonSolver.h": "65753c3ed686b59566a3a66df8a1837b71dd0e5a9f80dc1c44d17a2c9f0412ba",
+    "src/equation/CoupledDDAssembler.cpp": "85bef66282d98f7981139bcb461acbb746431ae3c606cd0accc27624a21b3248",
+    "src/solver/NewtonSolver.cpp": "26396508a3e35c3e97a025a61f07152660464044b169b9d3036bd27e763bd5a1",
+    "src/simulation/DCSweep.cpp": "b1bf23e732e0774b3001237b5a1f122db7dac3c13a2c8e39cab6cb1ff1b0c584",
+    "CMakeLists.txt": "b0b8c774c179a3f7feb0066fe7e1ec3b9dfc8b751054c971b982acb648925158"
+  }
+}

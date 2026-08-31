@@ -1,0 +1,50 @@
+{
+  "schema": "vela.simplemos.sdevice.m32_electron_qf_scaled_perturbation_evidence.v1",
+  "status": "frozen",
+  "summary": {
+    "fraction_count": 6,
+    "probe_count": 18,
+    "largest_tested_valid_fraction": null,
+    "full_fraction_current_shift_dex": 4.191176954778976,
+    "full_fraction_drain_cut_condition": 11.506252762619933,
+    "maximum_schur_relative_closure": 6.780244484565793e-23,
+    "default_model_changed": false
+  },
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_electron_qf_scaled_perturbation_report.json",
+      "sha256": "d4061317a46b9283f62b1f88aa557aa7e5a942af80c09ec03b295cd1ccc723ec"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_fraction_response.csv",
+      "sha256": "b03d338638b4bccd9aed0597a7dc723c1fe041022131076a4afe5f13ac5ddca7"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_cross_block_scaling.csv",
+      "sha256": "a4533609dce253f60b18da7629f5002739bd309b6a73cafd3b4cc71dee36cf03"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_drain_cut_edge_response.csv",
+      "sha256": "d763d6a7631c0f47d6ab0a44db1a5a77400b307c4c84900b7f9be5be5a88f768"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_cross_block_node_localization.csv",
+      "sha256": "b2a279c2ea545746ff68c322ed04a1ebc5e8f2e3bb6348a2992ab564565adeed"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_top_transport_edges.csv",
+      "sha256": "267f40235f2db34897e623beb18050220d26b91162b996301390cc97f61b250a"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m32_electron_qf_scaled_perturbation_contract_v1.json": "e3d12b13fd3b74153981eb568acc2f9eac09d254b513e1cd7dc21b27c612fae3",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_evidence.json": "448f42193cf7edf865a8d6337e8d22b8265801891281128e5fcfbaca8a022022",
+    "scripts/run_simplemos_m32_electron_qf_scaled_perturbation.py": "a3b7415a24440cd01c671bfa8f7faae227a55b13540a305655dc84d841f6c148",
+    "scripts/plot_simplemos_m32_electron_qf_scaled_perturbation.py": "c04d1c1192499e3be0565793b8a75fe2ec9bf609786c9f651556bdbcf931a6c9",
+    "scripts/freeze_simplemos_m32_electron_qf_scaled_perturbation_evidence.py": "a09686151ce905a8ff1485d9e1036d4477fd8dab0c5d9584ac37974d026458e8",
+    "tests/regression/test_simplemos_m32_electron_qf_scaled_perturbation.py": "56888a4fb285187e38968fd90eb1c13d19789b686cfb50d3a783bd38695a01e0",
+    "docs/validation/simplemos_m32_electron_qf_scaled_perturbation_2026-08-31.md": "7728723bae10d5a8bbc871aa8a0ffb51deed70d60fe3c6e86188eeda0b820d3a",
+    "docs/validation/figures/simplemos_m32/simplemos_m32_electron_qf_scaled_perturbation.png": "14e13e764dce5b6bfbef3668c33fabb412734d48e0ecece0e375b396dbbee87d",
+    "CMakeLists.txt": "b0b8c774c179a3f7feb0066fe7e1ec3b9dfc8b751054c971b982acb648925158"
+  }
+}

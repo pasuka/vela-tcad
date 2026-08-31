@@ -1081,6 +1081,20 @@ set_tests_properties(simplemos_m31_minority_poisson_perturbation PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m31_minority_poisson_perturbation)
 
+add_test(NAME simplemos_m32_electron_qf_scaled_perturbation
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m32_electron_qf_scaled_perturbation)
+set_tests_properties(simplemos_m32_electron_qf_scaled_perturbation PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m32_electron_qf_scaled_perturbation)
+
+add_test(NAME simplemos_m33_region_resolved_interface_assembly
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m33_region_resolved_interface_assembly)
+set_tests_properties(simplemos_m33_region_resolved_interface_assembly PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m33_region_resolved_interface_assembly)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)

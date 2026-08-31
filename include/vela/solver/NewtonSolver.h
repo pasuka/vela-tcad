@@ -184,6 +184,7 @@ struct NewtonConfig {
     bool carrierRowQualifiedStallAcceptance = false; ///< Accept a non-decreasing line-search stall within the configured block/contact floors only when enforced local carrier rows are all satisfied.
     Real carrierRegularizationScale = 0.0; ///< Optional carrier-row diagonal regularization scale.
     CarrierDiagonalFloorRegularizationConfig carrierDiagonalFloor{}; ///< Optional absolute floor for depleted minority carrier-row diagonals.
+    RegionResolvedInterfaceAssemblyConfig regionResolvedInterfaceAssembly{}; ///< Diagnostic region-local interface geometry with shared potential nodes.
     NewtonCarrierRowConvergenceConfig carrierRowConvergence{}; ///< Optional per-carrier-row local residual convergence check.
     NewtonLocalUpdateDiagnosticsConfig localUpdateDiagnostics{}; ///< Opt-in raw/capped/applied Newton-step trace.
     NewtonCarrierRowRecoveryConfig carrierRowRecovery{}; ///< Optional recovery pass for locally unbalanced carrier rows.
