@@ -6,8 +6,8 @@
       "id": "g3_exact_mesh_subthreshold_edge_current_support_20260829",
       "classification": "candidate_baseline_difference",
       "status": "open",
-      "scope": "G3 no-IALMob Id-Vg, Vd=0.1 V, exact SProcess topology, Vg=0.1667--0.8333 V",
-      "observation": "Vela resolved P95 current error is 0.287023 dex and the fixed-current equivalent threshold shift is 29.6262 mV. G3 identical-state edge-SG differs by 11.06--24.50 times, but G4 no-HFS replay collapses to about 1.06 times at the two resolved representative points. Sentaurus element fields identify an interior GradQF plus contact-boundary ElectricField fallback HFS support. The remaining G4 self-consistent midrange current factor is about 1.9 and is not explained by the existing cotangent or node-volume controls.",
+      "scope": "G3 no-IALMob Id-Vg, Vd=0.1 V, exact SProcess topology, Vg=0--5 V; dominant unresolved interval Vg=0--0.6667 V",
+      "observation": "The qualified contact-boundary ElectricField HFS fallback reduces the three-point fixed-state median error from 1.04443 dex to 0.0196168 dex. After repairing the constant_field cached-mobility Jacobian, all 31 no-predictor points converge and the worst KCL relative error is 7.96e-6, but the self-consistent P95 current error is 0.432753 dex and the fixed-current equivalent threshold shift is 43.2055 mV. Vg=0.1667--0.6667 V retains a nearly multiplicative Vela/Sentaurus current factor of 2.61--2.73, while the strong-inversion endpoint error is only 1.51 percent. The contact-HFS support and WP1.5 numerical trajectory are therefore closed, but the remaining coefficient/state-feedback difference is not yet an approved engine floor.",
       "excluded_causes": [
         "uniform electrostatic, flatband, or reference-energy offset",
         "terminal floating-point summation",
@@ -16,11 +16,13 @@
         "global low-field mobility parameter mismatch",
         "negative local cotangent barycentric fallback",
         "mixed-Voronoi node volume in fixed-state SG replay",
-        "WP1.5 low-current KCL and line-search floor"
+        "WP1.5 low-current KCL and line-search floor",
+        "missing contact-boundary ElectricField fallback as the sole remaining cause",
+        "constant_field cached-mobility Jacobian mismatch as a physical curve-amplitude cause"
       ],
       "open_causes": [
-        "missing contact-boundary ElectricField fallback in the otherwise GradQF-driven HFS support",
-        "G4 self-consistent state feedback or box-coefficient semantics beyond the existing cotangent fallback control",
+        "LDMOS-specific SG box-coefficient or edge-coupling semantics beyond the existing cotangent and mixed-volume controls",
+        "self-consistent state feedback associated with the remaining coefficient difference",
         "generalized SRH hole-QF reference convention; low impact on current Id-Vg but material for recombination qualification"
       ],
       "evidence": [
@@ -39,9 +41,13 @@
         {
           "path": "scripts/audit_templates_ldmos_phip_srh.py",
           "sha256": "1200311dc5de8d08232a4973748fa30f8970fb11eda670c79f8626fe12bd2206"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_contact_hfs_qualification_2026-08-31.md",
+          "sha256": "88843a7a1253791211d97f29e7e08e8c81bdda8a28fa9e4c40be949a8741a328"
         }
       ],
-      "expires_when": "A contact-boundary HFS fallback passes G3/G4 identical-state replay and the full 31-point G3 curve is rerun; remaining G4 coefficient/state feedback and SRH reference semantics are then requalified, or the exact mesh/discretization contract changes.",
+      "expires_when": "An LDMOS-specific coefficient/edge-coupling A/B and matched self-consistent state audit either closes the 2.61--2.73 current factor or proves a mesh-converged engine difference; generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
       "approval": {
         "status": "draft",
         "benchmark_owner": null,

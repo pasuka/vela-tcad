@@ -148,6 +148,19 @@ class TemplatesLdmosContractsTest(unittest.TestCase):
         self.assertEqual(physics["mobility"]["g3_model"], "constant_field")
         self.assertFalse(physics["mobility"]["doping_dependence_enabled"])
         self.assertTrue(physics["mobility"]["high_field_saturation_enabled"])
+        self.assertTrue(physics["mobility"]["contact_electric_field_fallback"])
+        self.assertEqual(
+            physics["mobility"]["contact_electric_field_fallback_scope"],
+            "contact_node_cell",
+        )
+        self.assertEqual(
+            physics["mobility"]["contact_electric_field_fallback_mode"],
+            "cell_gradient_magnitude",
+        )
+        self.assertEqual(
+            physics["mobility"]["contact_electric_field_fallback_status"],
+            "qualified_g3_numerical",
+        )
         self.assertEqual(
             physics["discretization_profile"], discretization["profile_name"])
         self.assertFalse(physics["impact_ionization"]["enabled"])

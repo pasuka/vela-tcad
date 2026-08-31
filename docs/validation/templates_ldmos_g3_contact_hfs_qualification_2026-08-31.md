@@ -2,18 +2,19 @@
 
 ## Scope and frozen controls
 
-This qualification tests one change only: the G3 electron/hole high-field
-mobility drive remains `GradQuasiFermi` in the device interior and falls back
-to the Tri3 cell electrostatic-gradient magnitude for transport cells touching
-a contact node. IALMob, predictor, impact ionization, and threshold changes are
-out of scope and remain disabled. The original 31 Sentaurus CurrentPlot biases
-are the only curve-scoring points.
+This qualification tests one physics change only: the G3 electron/hole
+high-field mobility drive remains `GradQuasiFermi` in the device interior and
+falls back to the Tri3 cell electrostatic-gradient magnitude for transport
+cells touching a contact node. IALMob, predictor, impact ionization, and all
+acceptance thresholds remain disabled or unchanged. The original 31
+Sentaurus CurrentPlot biases are the only curve-scoring points.
 
 ## Three-point fixed-state decision gate
 
 The archived Sentaurus states at Vg = 1/6, 1/2, and 5/6 V were replayed through
-the Vela SG operator before any self-consistent curve was attempted. The gate
-passed and therefore authorized the more expensive curve run.
+the production Vela SG operator before and after the Jacobian repair. The
+repeated result is unchanged because the repair affects only Newton
+linearization, not the residual operator.
 
 | Vg (V) | Baseline Vela/Sentaurus | Contact-HFS Vela/Sentaurus | Error improvement (dex) |
 |---:|---:|---:|---:|
@@ -21,61 +22,83 @@ passed and therefore authorized the more expensive curve run.
 | 0.500000 | 11.0772 | 1.04621 | 1.02481 |
 | 0.833333 | 11.0647 | 1.04570 | 1.02453 |
 
-The median magnitude error fell from 1.04443 dex to 0.01962 dex. This is a
-decisive fixed-state coefficient/operator improvement; it does not by itself
-qualify the self-consistent state trajectory.
+The median magnitude error falls from 1.04443 dex to 0.01962 dex. This closes
+the fixed-state contact-HFS coefficient/operator decision gate.
 
-## Self-consistent 31-point qualification result
+## WP1.5 node-702 root cause and repair
 
-The Release run used the original 31 exact biases, no predictor, and the
-frozen block absolute convergence ceilings:
+The first 400-iteration curve stopped at Vg = 2/3 V with electron continuity
+residual 1.57e-10. Psi and hole continuity were already inside their frozen
+ceilings, every block-filter step was accepted at damping 1, and the maximum
+electron row stayed at interior node 702 next to two drain contact nodes.
 
-- psi: 5e-8;
-- electron continuity: 1e-11;
-- hole continuity: 3e-10.
+The frozen final state was replayed through carrier-row, carrier-term,
+edge-mobility, and directional-Jacobian probes. The decisive observations
+were:
 
-The baseline 100-iteration budget failed at Vg = 1/6 V. Increasing only the
-iteration budget allowed 1/6 V to pass at iteration 126. A 400-iteration run
-then accepted 0, 1/6, 1/3, and 1/2 V, but stopped at 2/3 V:
+- node 702 electron residual: -1.52e-10, entirely from cancellation of edge
+  fluxes whose absolute sum is 1.38e-5;
+- 400/400 full Newton steps accepted, with no line-search rejection;
+- the node-702 electron-QF JVP had analytic/finite-difference norms
+  13.448/1.234 at a 1e-6 V direction;
+- disabling HFS while preserving the state reduced maximum JVP relative error
+  to 8.3e-8, excluding contact-basin storage and block-filter logic.
 
-| Vg (V) | Status | Newton iterations | Vela/Sentaurus current | log error (dex) |
-|---:|:---:|---:|---:|---:|
-| 0.000000 | pass | 19 | 2.1184 | 0.32601 |
-| 0.166667 | pass | 126 | 2.7198 | 0.43453 |
-| 0.333333 | pass | 243 | 2.7304 | 0.43623 |
-| 0.500000 | pass | 368 | 2.6871 | 0.42928 |
-| 0.666667 | fail | 400 | not scored | not scored |
+The residual mobility path treats `constant_field` as a high-field model, but
+the Jacobian's cached mobility predicate omitted `constant_field`. The
+Jacobian therefore differentiated edge fluxes with low-field mobility while
+the residual used velocity-saturated mobility. Adding `constant_field` to the
+cached high-field predicate reduces the node-702 electron diagonal from
+-3.47e5 to -2.59e4 and makes the 1e-6 V QF JVP agree to about 1.1e-13. A
+dedicated NewtonSolver regression test freezes this contract. No convergence
+threshold, predictor, mobility calibration, or third-vertex experiment is
+part of the retained repair.
 
-At the failed point, psi (1.00e-9) and hole continuity (4.70e-13) were already
-inside their ceilings, while electron continuity remained 1.57e-10, 15.7x
-above its ceiling. The maximum row remained node 702 in the contact-neighbour
-region. The final linear/state increment was approximately 1.5e-13 while the
-electron residual continued to decay only about 2.8 percent per iteration.
-Consequently, raising `max_iter` again was rejected: it would mask a contact
-branch/Jacobian slow mode rather than close the qualification honestly.
+## Self-consistent 31-point result
 
-An unscored 1/12 V warm-start experiment and an explicit adjacent-cell
-third-vertex mobility-Jacobian experiment did not remove the slow mode. The
-third-vertex experiment was therefore not retained as a claimed fix.
+The repaired Release run used all 31 exact biases, no predictor, and the
+frozen block absolute ceilings: psi 5e-8, electron continuity 1e-11, and hole
+continuity 3e-10. All points converge in 186 total Newton iterations (5--8 per
+point, median 6). The worst final block residuals are 1.16e-8, 8.82e-12, and
+2.41e-11 respectively.
+
+| Metric | Result | L2 limit | Status |
+|---|---:|---:|:---:|
+| Exact resolved points | 31/31 | 31/31 | pass |
+| Median absolute log-current error | 0.007462 dex | 0.10 dex | pass |
+| P95 absolute log-current error | 0.432753 dex | 0.20 dex | **fail** |
+| Strong-inversion endpoint relative error | 1.513% | 20% | pass |
+| Diagnostic 1e-8 A/um Vth error | 43.206 mV | 100 mV | pass |
+| Maximum-gm relative error | 6.592% | 20% | pass |
+| Worst resolved KCL relative error | 7.96e-6 | 1% | pass |
+
+The maximum log-current error is 0.436285 dex at Vg = 1/3 V. The four points
+from 1/6 through 2/3 V retain a nearly multiplicative 2.61--2.73x current
+factor. Thus the Jacobian repair closes the numerical trajectory and KCL but
+does not close the remaining low-current coefficient/state-feedback
+difference.
 
 ## Decision
 
-- The contact ElectricField fallback is **qualified for fixed-state G3 SG
-  replay**.
-- The self-consistent 31-point G3 curve is **not qualified** and has no P95,
-  Vth, gm, or final KCL acceptance result.
-- The known-difference ledger remains draft. The four accepted self-consistent
-  points already show a roughly 0.43 dex current factor, so the fixed-state
-  improvement must not be presented as curve closure.
-- The next WP1.5 task is to audit node 702's contact-neighbour electron row,
-  including contact-basin branch protection, mobility-field Jacobian support,
-  and block-filter envelope decisions. IALMob and predictor remain disabled.
+- The contact ElectricField fallback is qualified for fixed-state G3 SG replay.
+- The WP1.5 `constant_field` HFS Jacobian repair is qualified; the 31-point
+  no-predictor trajectory passes every frozen numerical convergence and KCL
+  gate.
+- Stage-3 L2 remains **failed** solely on the 0.20 dex P95 curve gate. IALMob
+  remains disabled and no threshold shift or mobility calibration is allowed.
+- The known-difference ledger remains draft. The remaining 2.6--2.7x
+  subthreshold factor must be tested at the coefficient/discretization and
+  self-consistent state-feedback levels before it can be classified as an
+  engine floor.
 
 ## Reproducibility artifacts
 
+- Node-702 audit: `scripts/audit_templates_ldmos_g3_contact_hfs_node702.py`.
 - Fixed-state runner: `scripts/run_templates_ldmos_g3_contact_hfs_replay.py`.
 - Curve runner: `scripts/run_templates_ldmos_g3_contact_hfs_curve.py`.
 - Fixed-state evidence (ignored staging):
-  `reference_staging/templates_ldmos_g3_contact_hfs_replay_release_20260831/summary.json`.
-- Final partial curve and diagnostics (ignored staging):
-  `reference_staging/templates_ldmos_g3_contact_hfs_curve_release_iter400_20260831/`.
+  `reference_staging/templates_ldmos_g3_contact_hfs_replay_jacobian_fix_20260831/summary.json`.
+- Node-702 evidence (ignored staging):
+  `reference_staging/templates_ldmos_g3_contact_hfs_node702_audit_fixed_20260831/summary.json`.
+- Final curve, Newton history, KCL, and exact-point score (ignored staging):
+  `reference_staging/templates_ldmos_g3_contact_hfs_curve_jacobian_fix_20260831/`.

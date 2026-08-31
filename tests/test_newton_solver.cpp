@@ -2535,6 +2535,47 @@ TEST_CASE("NewtonSolver: evaluateDirectionalDerivative compares analytic and fin
             1.0e-8 * std::max<Real>(1.0, jvp.finiteDifferenceJv.norm()));
 }
 
+TEST_CASE("NewtonSolver: constant-field contact HFS Jacobian uses limited mobility",
+          "[newton][diagnostics][mobility][contact]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg;
+    cfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    cfg.recombination = {"none"};
+    cfg.warmStart = true;
+    cfg.mobility.model = "constant_field";
+    cfg.mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+    cfg.mobility.contactElectricFieldFallback = true;
+    cfg.mobility.electronField.saturationVelocity = 1.0e4;
+    cfg.mobility.holeField.saturationVelocity = 1.0e4;
+
+    const int N = static_cast<int>(mesh.numNodes());
+    DDSolution state;
+    state.psi = VectorXd::LinSpaced(N, -0.2, 0.2);
+    state.phin = VectorXd::Constant(N, -0.01);
+    state.phip = VectorXd::Constant(N, 0.01);
+
+    DDSolution perturbation;
+    perturbation.psi = VectorXd::Zero(N);
+    perturbation.phin = VectorXd::Zero(N);
+    perturbation.phip = VectorXd::Zero(N);
+    perturbation.phin(4) = 1.0e-7;
+
+    NewtonSolver solver(
+        mesh, matdb, doping,
+        {{"anode", -0.1}, {"cathode", 0.0}}, cfg);
+    const NewtonDirectionalDerivativeEvaluation jvp =
+        solver.evaluateDirectionalDerivative(state, perturbation);
+
+    INFO("analytic norm: " << jvp.analyticNorm);
+    INFO("finite-difference norm: " << jvp.finiteDifferenceNorm);
+    INFO("relative error: " << jvp.relativeError);
+    REQUIRE(jvp.finiteDifferenceNorm > 0.0);
+    REQUIRE(jvp.relativeError < 1.0e-6);
+}
+
 TEST_CASE("NewtonSolver: evaluateJacobianBlockAudit reports finite block rows",
           "[newton][diagnostics][coupled]")
 {

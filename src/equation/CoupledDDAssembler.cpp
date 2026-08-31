@@ -81,7 +81,8 @@ bool transportMobilityDependsOnPotentials(const MobilityModelConfig& config)
 
 bool usesHighFieldMobility(const MobilityModelConfig& config)
 {
-    return config.model == "caughey_thomas_field" ||
+    return config.model == "constant_field" ||
+           config.model == "caughey_thomas_field" ||
            config.model == "masetti_field" ||
            config.model == "caughey_thomas_field_surface" ||
            config.model == "masetti_field_surface" ||

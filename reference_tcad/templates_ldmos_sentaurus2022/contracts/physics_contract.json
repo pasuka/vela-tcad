@@ -63,7 +63,7 @@
     "contact_electric_field_fallback": true,
     "contact_electric_field_fallback_scope": "contact_node_cell",
     "contact_electric_field_fallback_mode": "cell_gradient_magnitude",
-    "contact_electric_field_fallback_status": "experimental_g3_qualification",
+    "contact_electric_field_fallback_status": "qualified_g3_numerical",
     "surface_model": "ialmob_pending",
     "electron": {
       "mu_const_cm2_per_V_s": 1417.0,
