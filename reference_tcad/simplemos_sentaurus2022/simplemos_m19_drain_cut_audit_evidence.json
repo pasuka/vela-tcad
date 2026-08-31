@@ -147,6 +147,6 @@
     "scripts/freeze_simplemos_m19_drain_cut_audit_evidence.py": "0b000542016710c14e20d217d56a95bf35dd9f073062ee4c2a1ba61bae9fb6ba",
     "tests/regression/test_simplemos_m19_drain_cut_audit.py": "b6a860047442401f56302d63b038037a361c25b68c9300993e57a6125522705c",
     "docs/validation/simplemos_m19_drain_cut_audit_2026-08-30.md": "24fe70f592d5defad3ff79e511e527af207254e97f3a419ac30f6762e5c3565c",
-    "CMakeLists.txt": "de2df31d71e94baba37ec868649326a8feeb93e81217243287fb2a16620e07b1"
+    "CMakeLists.txt": "8a2ded7c8e8fe183950555a80ca0263f76d91b2a7a4c97cadaafb6e575d19b4b"
   }
 }

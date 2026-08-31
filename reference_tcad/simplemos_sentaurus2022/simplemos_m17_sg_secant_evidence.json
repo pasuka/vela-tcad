@@ -127,18 +127,18 @@
     }
   ],
   "implementation_sha256": {
-    "include/vela/equation/CoupledDDAssembler.h": "cd4461c190b7edbd6a24eec05f9262c0bb3fb5dd916ff84c58ea95970cbd7445",
+    "include/vela/equation/CoupledDDAssembler.h": "676a372dc51fb7c6cf83292e7e07fc198c3628ca3fa72620b127ad35a4e54c27",
     "include/vela/solver/NewtonSolver.h": "5f87eda4e0882a52e3ee3cecb87246a22c983cd9dd382f6ef7c645612a7a021c",
-    "src/equation/CoupledDDAssembler.cpp": "250e57d6eb0aa949e4d122ff444464ad6b2d3fb3a132ac4ce4e36b9d24a3cda5",
-    "src/solver/NewtonSolver.cpp": "186c522f3df635b214e0d50453680e7ee19201047ab3cf20729e173772cf95d6",
-    "src/tools/vela_example_runner.cpp": "ee1137d5e6bf2d437274afc872e0b70435e310f0d1f281a39e11574ac09f5c20",
-    "tests/test_newton_solver.cpp": "7f14c015d3f48627b5b1e79940fccbb9bb67c25b6a14bfc2f7d23847d37a0b1e",
+    "src/equation/CoupledDDAssembler.cpp": "9b1d2b6e8732a1b148bf9dcf7112d4d9d4dd3dc31b73f0423d66670cab377ab3",
+    "src/solver/NewtonSolver.cpp": "d5133fef422913775df0d146699a50adccc7fb0770a3267b3ef131d44e10cff6",
+    "src/tools/vela_example_runner.cpp": "3e46f783821747b8d143fb373a1cc70580a4b6e580a16be3e345be9d1cc41f56",
+    "tests/test_newton_solver.cpp": "c606caee00c9dfedce36cb72958e7bbd0f6ab8be9e0b3588cfa0b2670cc204e0",
     "reference_tcad/simplemos_sentaurus2022/simplemos_m17_sg_secant_contract_v1.json": "78d0ac60bb8e181519b42d7177533540ea97841fc00f81d6b29df1b4961f6442",
     "scripts/run_simplemos_m17_sg_secant.py": "381599a558c1e97f001e4d6eff37810f69eb2924640e4cceabb1c76c66805fde",
     "scripts/plot_simplemos_m17_sg_secant.py": "3d8abbc246ebca78b0363f00e994bd990d58ad209b1cdd680954e3f753e7ec16",
     "scripts/freeze_simplemos_m17_sg_secant_evidence.py": "9bcc4e633c68b6ba6c693ca430c5af39afdaff2ce3187b9ec46dec02a999e9bd",
     "tests/regression/test_simplemos_m17_sg_secant.py": "0a8c47377ead3c1465541585c3d5473930633c747c88c7ed66d33982e015aa9c",
     "docs/validation/simplemos_m17_sg_secant_2026-08-29.md": "f5e7cc475c2adb4cf4130e710aa4474fe7af50af741baf492240fabe68b4850f",
-    "CMakeLists.txt": "db5a4b7ca862e7db523e5985906f0b8314be38637e2fdf18a6924d8e9ab3d11a"
+    "CMakeLists.txt": "8a2ded7c8e8fe183950555a80ca0263f76d91b2a7a4c97cadaafb6e575d19b4b"
   }
 }

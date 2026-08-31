@@ -307,14 +307,14 @@
   "implementation_sha256": {
     "reference_tcad/simplemos_sentaurus2022/simplemos_m20_drain_adjacent_row_audit_contract_v1.json": "243734679c3d967eadead016e0e2b08478f369a0f2d0f22aa2563f962077ea25",
     "include/vela/solver/NewtonSolver.h": "5f87eda4e0882a52e3ee3cecb87246a22c983cd9dd382f6ef7c645612a7a021c",
-    "src/solver/NewtonSolver.cpp": "186c522f3df635b214e0d50453680e7ee19201047ab3cf20729e173772cf95d6",
-    "src/tools/vela_example_runner.cpp": "ee1137d5e6bf2d437274afc872e0b70435e310f0d1f281a39e11574ac09f5c20",
-    "tests/test_newton_solver.cpp": "7f14c015d3f48627b5b1e79940fccbb9bb67c25b6a14bfc2f7d23847d37a0b1e",
+    "src/solver/NewtonSolver.cpp": "d5133fef422913775df0d146699a50adccc7fb0770a3267b3ef131d44e10cff6",
+    "src/tools/vela_example_runner.cpp": "3e46f783821747b8d143fb373a1cc70580a4b6e580a16be3e345be9d1cc41f56",
+    "tests/test_newton_solver.cpp": "c606caee00c9dfedce36cb72958e7bbd0f6ab8be9e0b3588cfa0b2670cc204e0",
     "scripts/run_simplemos_m20_drain_adjacent_row_audit.py": "18caebb296eb048fd1ef6294104b838480b2a7b500c1acb5715e18624ffc32ac",
     "scripts/plot_simplemos_m20_drain_adjacent_row_audit.py": "c386dffb58b809e4c63177bac388256964b7a86bec7d5a610d268e5a6475cf5c",
     "scripts/freeze_simplemos_m20_drain_adjacent_row_audit_evidence.py": "b33c7e73f4de33927d298ffbb9b9c005bf0ca2ab24a481fe02bc25f8a7afffbe",
     "tests/regression/test_simplemos_m20_drain_adjacent_row_audit.py": "57e4efd6fd88660e282ce510fc7a43bc3c1be92b4d8823bd111b6d7b06db393f",
     "docs/validation/simplemos_m20_drain_adjacent_row_audit_2026-08-30.md": "3f3deff0cf5dd365b228a97dfca0ae645fe1644df7274058e171177e782b7929",
-    "CMakeLists.txt": "de2df31d71e94baba37ec868649326a8feeb93e81217243287fb2a16620e07b1"
+    "CMakeLists.txt": "8a2ded7c8e8fe183950555a80ca0263f76d91b2a7a4c97cadaafb6e575d19b4b"
   }
 }

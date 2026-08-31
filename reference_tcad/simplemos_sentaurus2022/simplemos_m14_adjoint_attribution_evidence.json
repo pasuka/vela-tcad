@@ -101,15 +101,15 @@
   ],
   "implementation_sha256": {
     "include/vela/solver/NewtonSolver.h": "5f87eda4e0882a52e3ee3cecb87246a22c983cd9dd382f6ef7c645612a7a021c",
-    "src/solver/NewtonSolver.cpp": "186c522f3df635b214e0d50453680e7ee19201047ab3cf20729e173772cf95d6",
-    "src/tools/vela_example_runner.cpp": "ee1137d5e6bf2d437274afc872e0b70435e310f0d1f281a39e11574ac09f5c20",
-    "tests/test_newton_solver.cpp": "7f14c015d3f48627b5b1e79940fccbb9bb67c25b6a14bfc2f7d23847d37a0b1e",
+    "src/solver/NewtonSolver.cpp": "d5133fef422913775df0d146699a50adccc7fb0770a3267b3ef131d44e10cff6",
+    "src/tools/vela_example_runner.cpp": "3e46f783821747b8d143fb373a1cc70580a4b6e580a16be3e345be9d1cc41f56",
+    "tests/test_newton_solver.cpp": "c606caee00c9dfedce36cb72958e7bbd0f6ab8be9e0b3588cfa0b2670cc204e0",
     "reference_tcad/simplemos_sentaurus2022/simplemos_m14_adjoint_attribution_contract_v1.json": "b374815661f4e181deca9e209700d6eb5dc817887465e72c4bdcb8f362336a9b",
     "scripts/run_simplemos_m14_adjoint_attribution.py": "eac0f3c9a1ad6dd556b9342bb97f728d3fcdd93ef81aa20ec826dec2dbcc58f4",
     "scripts/plot_simplemos_m14_adjoint_attribution.py": "a56faa2c741476890e821fb73f82440d6ec805ef7bc2af87adfc3e15907d9fb0",
     "scripts/freeze_simplemos_m14_adjoint_attribution_evidence.py": "6ee4d25358daed4af711dcd5265d1b5dcca966a54538841c5c144faa481d6ab4",
     "tests/regression/test_simplemos_m14_adjoint_attribution.py": "5ea694423a7860391a9a4b62048c322db14dd8d113f9db8c8c7da857b429b3b4",
     "docs/validation/simplemos_m14_adjoint_attribution_2026-08-29.md": "d62a3062e8de8cda758617cc44c5d3fefbec87c7e97b272d23a8a7ba8b62faeb",
-    "CMakeLists.txt": "db5a4b7ca862e7db523e5985906f0b8314be38637e2fdf18a6924d8e9ab3d11a"
+    "CMakeLists.txt": "8a2ded7c8e8fe183950555a80ca0263f76d91b2a7a4c97cadaafb6e575d19b4b"
   }
 }

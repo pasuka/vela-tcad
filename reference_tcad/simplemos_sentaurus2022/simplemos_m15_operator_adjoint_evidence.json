@@ -119,6 +119,6 @@
     "scripts/freeze_simplemos_m15_operator_adjoint_evidence.py": "0a167547b91faf59061333d046457cefa71927eab425801f39d0f060741cfe16",
     "tests/regression/test_simplemos_m15_operator_adjoint.py": "9adeecc1aa3b8475bc5791652e4bd1594416ca4a0752f0ec6a5b4035a7a405bd",
     "docs/validation/simplemos_m15_operator_adjoint_2026-08-29.md": "590d5de77e803a02962034e3bed7c19a045044e3b857f0c60bf4278dc78c3c17",
-    "CMakeLists.txt": "db5a4b7ca862e7db523e5985906f0b8314be38637e2fdf18a6924d8e9ab3d11a"
+    "CMakeLists.txt": "8a2ded7c8e8fe183950555a80ca0263f76d91b2a7a4c97cadaafb6e575d19b4b"
   }
 }

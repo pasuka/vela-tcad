@@ -28,13 +28,13 @@
   ],
   "source_hashes": {
     "reference_tcad/simplemos_sentaurus2022/simplemos_m28_exact_bias_path_audit_contract_v1.json": "a4dabbb8a82109303b2a2678784ebc324115b88706be330f9676bc2efc8f5572",
-    "reference_tcad/simplemos_sentaurus2022/simplemos_m27_cross_solver_response_audit_evidence.json": "ea950db84a254f66f439af25bc504a9494e4a5d8bb869e04e9757148e3e6e00c",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m27_cross_solver_response_audit_evidence.json": "c84f2ffbd4fbfd042f9b4086c23d1c3c01e7bfe5e4aab197b9e407f17e4cc3ea",
     "scripts/run_simplemos_m28_exact_bias_path_audit.py": "4f1e7fb6d693374eb89126e460dda06ab573ec2396b2a1f50d7d41d59c91a355",
     "scripts/plot_simplemos_m28_exact_bias_path_audit.py": "b204384e1286a8ca0c1e080977d48516c262cfe640778bc51a641b8b84de1eab",
     "scripts/freeze_simplemos_m28_exact_bias_path_audit_evidence.py": "4b7817e4ddf569a56af165c756372f8c6b30b057e1edebadbb8671f47a70a6ec",
     "tests/regression/test_simplemos_m28_exact_bias_path_audit.py": "1d6c7b194f010db96ed9f4b3c7465c189f370821f2f347e7de0340a3f4a2abcd",
     "docs/validation/simplemos_m28_exact_bias_path_audit_2026-08-31.md": "904560e00c169a7a902097364b67367d489ba7da93f311bdc2e5a788dbc93697",
     "docs/validation/figures/simplemos_m28/simplemos_m28_exact_bias_path_audit.png": "570746a29bfaa7f61525b6c58ea9b2ccc3acfae24f8f4d1cbfdb283ca878ea3c",
-    "CMakeLists.txt": "4cbf57537eef8c792cb9b51b71a1e4a763718185e7eaf6795ca97b8a680e8631"
+    "CMakeLists.txt": "8a2ded7c8e8fe183950555a80ca0263f76d91b2a7a4c97cadaafb6e575d19b4b"
   }
 }
