@@ -93,6 +93,9 @@ def physics_contract() -> dict:
             "doping_concentration_basis": "net_doping",
             "high_field_driving_force": "quasi_fermi_gradient",
             "high_field_gradient_discretization": "edge_projection",
+            "contact_electric_field_fallback": True,
+            "contact_electric_field_fallback_scope": "contact_node_cell",
+            "contact_electric_field_fallback_mode": "cell_gradient_magnitude",
             "electron": {
                 "mu_const_cm2_per_V_s": 1417.0,
                 "mu_min_cm2_per_V_s": 52.2,
@@ -230,6 +233,11 @@ class Phase23DeckTest(unittest.TestCase):
             solver["mobility"]["electron_saturation_velocity_m_s"], 1.07e7)
         self.assertAlmostEqual(
             solver["mobility"]["hole_saturation_velocity_m_s"], 8.37e6)
+        self.assertTrue(
+            solver["mobility"]["contact_electric_field_fallback"])
+        self.assertEqual(
+            solver["mobility"]["contact_electric_field_fallback_scope"],
+            "contact_node_cell")
         self.assertNotIn("electron_mumin1_m2_V_s", solver["mobility"])
         self.assertNotIn("electron_cr_m3", solver["mobility"])
         low_field = classical_solver(physics_contract(), high_field=False)

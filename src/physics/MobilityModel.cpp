@@ -113,6 +113,26 @@ void validateHighFieldGradientDiscretization(const std::string& value)
     }
 }
 
+void validateContactElectricFieldFallback(const MobilityModelConfig& config)
+{
+    if (config.contactElectricFieldFallbackScope != "contact_node_cell") {
+        throw std::invalid_argument(
+            "mobility.contact_electric_field_fallback_scope must be "
+            "'contact_node_cell'.");
+    }
+    if (config.contactElectricFieldFallbackMode != "cell_gradient_magnitude") {
+        throw std::invalid_argument(
+            "mobility.contact_electric_field_fallback_mode must be "
+            "'cell_gradient_magnitude'.");
+    }
+    if (config.contactElectricFieldFallback &&
+        config.highFieldDrivingForce != "quasi_fermi_gradient") {
+        throw std::invalid_argument(
+            "mobility.contact_electric_field_fallback requires "
+            "high_field_driving_force='quasi_fermi_gradient'.");
+    }
+}
+
 void validateCarrierCurrentDiscretization(const std::string& value)
 {
     if (value != "scharfetter_gummel_edge" &&
@@ -407,6 +427,7 @@ MobilityModelConfig mobilityModelConfig(std::string modelName)
     validateHighFieldDrivingForce(config.highFieldDrivingForce);
     validateHighFieldGradientDiscretization(
         config.highFieldGradientDiscretization);
+    validateContactElectricFieldFallback(config);
     validateCarrierCurrentDiscretization(
         config.carrierCurrentDiscretization);
     validateDopingConcentrationBasis(config.dopingConcentrationBasis);
@@ -426,6 +447,7 @@ MobilityModelConfig mobilityModelConfigFromJson(
         validateHighFieldDrivingForce(config.highFieldDrivingForce);
         validateHighFieldGradientDiscretization(
             config.highFieldGradientDiscretization);
+        validateContactElectricFieldFallback(config);
         validateCarrierCurrentDiscretization(
             config.carrierCurrentDiscretization);
         validateDopingConcentrationBasis(config.dopingConcentrationBasis);
@@ -442,6 +464,15 @@ MobilityModelConfig mobilityModelConfigFromJson(
     config.highFieldGradientDiscretization = value.value(
         "high_field_gradient_discretization",
         config.highFieldGradientDiscretization);
+    config.contactElectricFieldFallback = value.value(
+        "contact_electric_field_fallback",
+        config.contactElectricFieldFallback);
+    config.contactElectricFieldFallbackScope = value.value(
+        "contact_electric_field_fallback_scope",
+        config.contactElectricFieldFallbackScope);
+    config.contactElectricFieldFallbackMode = value.value(
+        "contact_electric_field_fallback_mode",
+        config.contactElectricFieldFallbackMode);
     config.carrierCurrentDiscretization = value.value(
         "carrier_current_discretization",
         config.carrierCurrentDiscretization);
@@ -452,6 +483,7 @@ MobilityModelConfig mobilityModelConfigFromJson(
     validateHighFieldDrivingForce(config.highFieldDrivingForce);
     validateHighFieldGradientDiscretization(
         config.highFieldGradientDiscretization);
+    validateContactElectricFieldFallback(config);
     validateCarrierCurrentDiscretization(
         config.carrierCurrentDiscretization);
     validateDopingConcentrationBasis(config.dopingConcentrationBasis);

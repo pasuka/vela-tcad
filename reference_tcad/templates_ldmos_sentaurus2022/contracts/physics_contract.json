@@ -60,6 +60,10 @@
     "doping_concentration_basis": "net_doping",
     "high_field_driving_force": "quasi_fermi_gradient",
     "high_field_gradient_discretization": "edge_projection",
+    "contact_electric_field_fallback": true,
+    "contact_electric_field_fallback_scope": "contact_node_cell",
+    "contact_electric_field_fallback_mode": "cell_gradient_magnitude",
+    "contact_electric_field_fallback_status": "experimental_g3_qualification",
     "surface_model": "ialmob_pending",
     "electron": {
       "mu_const_cm2_per_V_s": 1417.0,
@@ -87,7 +91,7 @@
       "saturation_velocity_cm_per_s": 8.37e6,
       "high_field_exponent": 1.213
     },
-    "parameter_source": "G3-no-IALMob deck enables HighFieldSaturation only; T-2022.03 sdevice -P query supplies HighFieldDependence Vsat_Formula=1 at 300 K; retained Masetti values are inactive until a deck explicitly enables DopingDependence",
+    "parameter_source": "G3-no-IALMob deck enables HighFieldSaturation only; T-2022.03 sdevice -P query supplies HighFieldDependence Vsat_Formula=1 at 300 K; retained Masetti values are inactive until a deck explicitly enables DopingDependence; element eMobility audit identifies ElectricField HFS support in contact-node transport cells and GradQF support in the interior",
     "implementation_status": "implemented"
   },
   "electron_quantum_potential": {

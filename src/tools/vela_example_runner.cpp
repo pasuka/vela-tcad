@@ -2972,6 +2972,12 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
         ? vela::detail::transportCellVectorEdgeGradientMagnitudes(
               mesh, edgeCells, cellMaterials, state.phip, fieldFactor)
         : std::vector<vela::Real>{};
+    const std::vector<vela::Real> contactElectricFields =
+        newton.mobility.contactElectricFieldFallback
+        ? vela::detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              newton.mobility, mesh, edgeCells, cellMaterials,
+              state.psi, fieldFactor)
+        : std::vector<vela::Real>{};
 
     std::ofstream out(path);
     if (!out.is_open())
@@ -2997,17 +3003,15 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
         const vela::Real electronQfField = std::abs(state.phin(i1) - state.phin(i0)) / length * fieldFactor;
         const vela::Real holeQfField = std::abs(state.phip(i1) - state.phip(i0)) / length * fieldFactor;
         const vela::Real electronMobilityField =
-            vectorQfMobility
-            ? electronVectorFields[edgeId]
-            : newton.mobility.highFieldDrivingForce == "quasi_fermi_gradient"
-            ? electronQfField
-            : electricField;
+            vela::detail::mobilityHighFieldDrivingField(
+                newton.mobility, edgeId,
+                vectorQfMobility ? electronVectorFields[edgeId] : electronQfField,
+                electricField, contactElectricFields);
         const vela::Real holeMobilityField =
-            vectorQfMobility
-            ? holeVectorFields[edgeId]
-            : newton.mobility.highFieldDrivingForce == "quasi_fermi_gradient"
-            ? holeQfField
-            : electricField;
+            vela::detail::mobilityHighFieldDrivingField(
+                newton.mobility, edgeId,
+                vectorQfMobility ? holeVectorFields[edgeId] : holeQfField,
+                electricField, contactElectricFields);
         const vela::Real electronLowField = vela::detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId,
             vela::CarrierType::Electron, 0.0, &newton.mobility, nullptr);

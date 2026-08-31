@@ -339,6 +339,12 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         ? detail::transportCellVectorEdgeGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials, phinForMobility, fieldFactor)
         : std::vector<Real>{};
+    const std::vector<Real> contactElectricMobilityFields =
+        mobilityConfig_.contactElectricFieldFallback
+        ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              mobilityConfig_, mesh_, edgeCells_, cellMaterials,
+              psiForMobility, fieldFactor)
+        : std::vector<Real>{};
     const Real sourceIntegralFactor = scaling_.enabled
         ? scaling_.unitSystem.continuitySourceIntegralFactor()
         : 1.0;
@@ -356,12 +362,12 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
             ? psi(static_cast<int>(edge.n1)) * scaling_.V0
             : psi(static_cast<int>(edge.n1));
         const Real electricField = std::abs((psi1 - psi0) / h) * fieldFactor;
-        const Real electronMobilityField = vectorQfMobility
-            ? electronVectorMobilityFields[e]
-            : qfMobility
-            ? std::abs((phinForMobility(static_cast<int>(edge.n1)) -
-                        phinForMobility(static_cast<int>(edge.n0))) / h) * fieldFactor
-            : electricField;
+        const Real electronMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? electronVectorMobilityFields[e]
+                : std::abs((phinForMobility(static_cast<int>(edge.n1)) -
+                            phinForMobility(static_cast<int>(edge.n0))) / h) * fieldFactor,
+            electricField, contactElectricMobilityFields);
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electronMobilityField,
@@ -566,6 +572,12 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         ? detail::transportCellVectorEdgeGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials, phipForMobility, fieldFactor)
         : std::vector<Real>{};
+    const std::vector<Real> contactElectricMobilityFields =
+        mobilityConfig_.contactElectricFieldFallback
+        ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              mobilityConfig_, mesh_, edgeCells_, cellMaterials,
+              psiForMobility, fieldFactor)
+        : std::vector<Real>{};
     const Real sourceIntegralFactor = scaling_.enabled
         ? scaling_.unitSystem.continuitySourceIntegralFactor()
         : 1.0;
@@ -583,12 +595,12 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
             ? psi(static_cast<int>(edge.n1)) * scaling_.V0
             : psi(static_cast<int>(edge.n1));
         const Real electricField = std::abs((psi1 - psi0) / h) * fieldFactor;
-        const Real holeMobilityField = vectorQfMobility
-            ? holeVectorMobilityFields[e]
-            : qfMobility
-            ? std::abs((phipForMobility(static_cast<int>(edge.n1)) -
-                        phipForMobility(static_cast<int>(edge.n0))) / h) * fieldFactor
-            : electricField;
+        const Real holeMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? holeVectorMobilityFields[e]
+                : std::abs((phipForMobility(static_cast<int>(edge.n1)) -
+                            phipForMobility(static_cast<int>(edge.n0))) / h) * fieldFactor,
+            electricField, contactElectricMobilityFields);
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
             holeMobilityField,

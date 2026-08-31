@@ -71,6 +71,8 @@ bool transportMobilityDependsOnPotentials(const MobilityModelConfig& config)
 {
     if (!config.jacobianFieldDerivatives)
         return false;
+    if (config.contactElectricFieldFallback)
+        return true;
     return config.model == "caughey_thomas_field" ||
            config.model == "masetti_field" ||
            config.model == "caughey_thomas_field_surface" ||
@@ -1357,6 +1359,11 @@ VectorXd CoupledDDAssembler::residualImpl(
         ? detail::transportCellVectorEdgeGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials_, phipPhysical, fieldFactor)
         : std::vector<Real>{};
+    const std::vector<Real> contactElectricMobilityFields =
+        mobilityConfig_.contactElectricFieldFallback
+        ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              mobilityConfig_, mesh_, edgeCells_, cellMaterials_, psi, fieldFactor)
+        : std::vector<Real>{};
     const Real chargeAreaFactor = scaling_.enabled ? scaling_.chargeAreaFactor : 1.0;
     const Real sourceIntegralFactor = scaling_.enabled
         ? scaling_.unitSystem.continuitySourceIntegralFactor()
@@ -1480,12 +1487,16 @@ VectorXd CoupledDDAssembler::residualImpl(
         const Real dpsi = psi_j - psi_i;
         const Real electronDpsi = electronPsi_j - electronPsi_i;
         const Real electricField = std::abs(dpsi / h) * fieldFactor;
-        const Real electronMobilityField =
-            vectorQfMobility ? electronVectorMobilityFields[e] :
-            (qfMobility ? std::abs((phin_j - phin_i) / h) * fieldFactor : electricField);
-        const Real holeMobilityField =
-            vectorQfMobility ? holeVectorMobilityFields[e] :
-            (qfMobility ? std::abs((phip_j - phip_i) / h) * fieldFactor : electricField);
+        const Real electronMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? electronVectorMobilityFields[e]
+                             : std::abs((phin_j - phin_i) / h) * fieldFactor,
+            electricField, contactElectricMobilityFields);
+        const Real holeMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? holeVectorMobilityFields[e]
+                             : std::abs((phip_j - phip_i) / h) * fieldFactor,
+            electricField, contactElectricMobilityFields);
 
         const Real eps = detail::edgeEpsilon(edgeCells, mesh_, matdb_, e);
         const Real G = eps * couple[e] / h;
@@ -1987,6 +1998,11 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
         ? detail::transportCellVectorEdgeGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials_, phipPhysical, fieldFactor)
         : std::vector<Real>{};
+    const std::vector<Real> contactElectricMobilityFields =
+        mobilityConfig_.contactElectricFieldFallback
+        ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              mobilityConfig_, mesh_, edgeCells_, cellMaterials_, psi, fieldFactor)
+        : std::vector<Real>{};
     const Real sourceIntegralFactor = scaling_.enabled
         ? scaling_.unitSystem.continuitySourceIntegralFactor()
         : 1.0;
@@ -2051,12 +2067,16 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
         const Real holePsiRelative_j = psi_j - holeReference_i;
         const Real dpsi = psi_j - psi_i;
         const Real electricField = std::abs(dpsi / h) * fieldFactor;
-        const Real electronMobilityField =
-            vectorQfMobility ? electronVectorMobilityFields[e] :
-            (qfMobility ? std::abs((phin_j - phin_i) / h) * fieldFactor : electricField);
-        const Real holeMobilityField =
-            vectorQfMobility ? holeVectorMobilityFields[e] :
-            (qfMobility ? std::abs((phip_j - phip_i) / h) * fieldFactor : electricField);
+        const Real electronMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? electronVectorMobilityFields[e]
+                             : std::abs((phin_j - phin_i) / h) * fieldFactor,
+            electricField, contactElectricMobilityFields);
+        const Real holeMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? holeVectorMobilityFields[e]
+                             : std::abs((phip_j - phip_i) / h) * fieldFactor,
+            electricField, contactElectricMobilityFields);
 
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
@@ -2336,6 +2356,11 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
         ? detail::transportCellVectorEdgeGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials_, phipField, fieldFactor)
         : std::vector<Real>{};
+    const std::vector<Real> contactElectricMobilityFields =
+        mobilityConfig_.contactElectricFieldFallback
+        ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              mobilityConfig_, mesh_, edgeCells_, cellMaterials_, psi, fieldFactor)
+        : std::vector<Real>{};
     const Real continuityScale =
         scaling_.enabled ? (scaling_.C0 * scaling_.D0) : 1.0;
 
@@ -2380,12 +2405,16 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
         const Real holePsiRelative_j = psi_j - holeReference_i;
         const Real dpsi = psi_j - psi_i;
         const Real electricField = std::abs(dpsi / h) * fieldFactor;
-        const Real electronMobilityField =
-            vectorQfMobility ? electronVectorMobilityFields[e] :
-            (qfMobility ? std::abs((phin_j - phin_i) / h) * fieldFactor : electricField);
-        const Real holeMobilityField =
-            vectorQfMobility ? holeVectorMobilityFields[e] :
-            (qfMobility ? std::abs((phip_j - phip_i) / h) * fieldFactor : electricField);
+        const Real electronMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? electronVectorMobilityFields[e]
+                             : std::abs((phin_j - phin_i) / h) * fieldFactor,
+            electricField, contactElectricMobilityFields);
+        const Real holeMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? holeVectorMobilityFields[e]
+                             : std::abs((phip_j - phip_i) / h) * fieldFactor,
+            electricField, contactElectricMobilityFields);
 
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e,
@@ -3152,6 +3181,11 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         ? detail::transportCellVectorEdgeGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials_, phipState, fieldFactor)
         : std::vector<Real>{};
+    const std::vector<Real> contactElectricMobilityFields =
+        mobilityConfig_.contactElectricFieldFallback
+        ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              mobilityConfig_, mesh_, edgeCells_, cellMaterials_, psi, fieldFactor)
+        : std::vector<Real>{};
     const Real chargeAreaFactor = scaling_.enabled ? scaling_.chargeAreaFactor : 1.0;
     const Real sourceIntegralFactor = scaling_.enabled
         ? scaling_.unitSystem.continuitySourceIntegralFactor()
@@ -3735,18 +3769,30 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             vectorQfMobility &&
             perturbation.holeQfNode < mesh_.numNodes() &&
             edgeStencilContainsNode(e, perturbation.holeQfNode);
-        const Real electronMobilityField = evaluateElectronCarrier && vectorQfMobility
+        const Real electronQfMobilityField = vectorQfMobility
             ? (electronVectorMobilityFieldAffected
                 ? transportVectorMobilityField(e, phinAt)
                 : electronVectorMobilityFields[e])
-            : (evaluateElectronCarrier
-                ? (qfMobility ? electronQfField : electricField) : 0.0);
-        const Real holeMobilityField = evaluateHoleCarrier && vectorQfMobility
+            : electronQfField;
+        const Real holeQfMobilityField = vectorQfMobility
             ? (holeVectorMobilityFieldAffected
                 ? transportVectorMobilityField(e, phipAt)
                 : holeVectorMobilityFields[e])
-            : (evaluateHoleCarrier
-                ? (qfMobility ? holeQfField : electricField) : 0.0);
+            : holeQfField;
+        const Real electronMobilityField = evaluateElectronCarrier
+            ? detail::contactCellElectricFieldMagnitudeForMobility(
+                mobilityConfig_, mesh_, edgeCells_, cellMaterials_, e,
+                psiAt, fieldFactor,
+                qfMobility ? electronQfMobilityField : electricField,
+                nullptr, &contactNodes)
+            : 0.0;
+        const Real holeMobilityField = evaluateHoleCarrier
+            ? detail::contactCellElectricFieldMagnitudeForMobility(
+                mobilityConfig_, mesh_, edgeCells_, cellMaterials_, e,
+                psiAt, fieldFactor,
+                qfMobility ? holeQfMobilityField : electricField,
+                nullptr, &contactNodes)
+            : 0.0;
         const Real nAvg = 0.5 * (n_i + n_j);
         const Real pAvg = 0.5 * (p_i + p_j);
         const Real nMid = avalancheFluxProxyUsesMidpoint
@@ -4169,11 +4215,19 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real electronPsi_i = electronTransportPotential(idxI, psi_i);
         const Real electronPsi_j = electronTransportPotential(idxJ, psi_j);
         const Real electricField = std::abs(dpsi / h) * fieldFactor;
-        const Real electronMobilityField = vectorQfMobility
+        const Real electronQfMobilityField = vectorQfMobility
             ? electronVectorMobilityFields[e]
-            : (qfMobility
-                ? std::abs((phin_j - phin_i) / h) * fieldFactor
-                : electricField);
+            : std::abs((phin_j - phin_i) / h) * fieldFactor;
+        const Real electronMobilityField =
+            detail::contactCellElectricFieldMagnitudeForMobility(
+                mobilityConfig_, mesh_, edgeCells_, cellMaterials_, e,
+                [&](Index node) {
+                    return node == idxI ? psi_i
+                        : (node == idxJ ? psi_j : psi(static_cast<int>(node)));
+                },
+                fieldFactor,
+                qfMobility ? electronQfMobilityField : electricField,
+                nullptr, &contactNodes);
         VectorXd psiForSurface;
         const VectorXd* psiForMobility = &psi;
         if (surfaceMobilityEnabled_) {
@@ -4248,11 +4302,19 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             holeReferenceJ, phip_j, holeReferenceI);
         const Real dpsi = psi_j - psi_i;
         const Real electricField = std::abs(dpsi / h) * fieldFactor;
-        const Real holeMobilityField = vectorQfMobility
+        const Real holeQfMobilityField = vectorQfMobility
             ? holeVectorMobilityFields[e]
-            : (qfMobility
-                ? std::abs((phip_j - phip_i) / h) * fieldFactor
-                : electricField);
+            : std::abs((phip_j - phip_i) / h) * fieldFactor;
+        const Real holeMobilityField =
+            detail::contactCellElectricFieldMagnitudeForMobility(
+                mobilityConfig_, mesh_, edgeCells_, cellMaterials_, e,
+                [&](Index node) {
+                    return node == idxI ? psi_i
+                        : (node == idxJ ? psi_j : psi(static_cast<int>(node)));
+                },
+                fieldFactor,
+                qfMobility ? holeQfMobilityField : electricField,
+                nullptr, &contactNodes);
         VectorXd psiForSurface;
         const VectorXd* psiForMobility = &psi;
         if (surfaceMobilityEnabled_) {
@@ -4327,12 +4389,16 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             holeQuasiFermiReferenceAt(edgeKernel.n0));
         const Real dpsi = psi_j - psi_i;
         const Real electricField = std::abs(dpsi / h) * fieldFactor;
-        const Real electronMobilityField =
-            vectorQfMobility ? electronVectorMobilityFields[e] :
-            (qfMobility ? std::abs((phin_j_from_i - phin_i) / h) * fieldFactor : electricField);
-        const Real holeMobilityField =
-            vectorQfMobility ? holeVectorMobilityFields[e] :
-            (qfMobility ? std::abs((phip_j_from_i - phip_i) / h) * fieldFactor : electricField);
+        const Real electronMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? electronVectorMobilityFields[e]
+                             : std::abs((phin_j_from_i - phin_i) / h) * fieldFactor,
+            electricField, contactElectricMobilityFields);
+        const Real holeMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? holeVectorMobilityFields[e]
+                             : std::abs((phip_j_from_i - phip_i) / h) * fieldFactor,
+            electricField, contactElectricMobilityFields);
         const Real u = dpsi / Vt_;
         const Real Bu = bernoulli(u);
         const Real dBu = bernoulliDerivative(u);
@@ -4357,7 +4423,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     psiOffset() + i, psiOffset() + j,
                     phinOffset() + i, phinOffset() + j,
                 };
-                const Real fixedMobility = vectorQfMobility ? mun : -1.0;
+                const Real fixedMobility =
+                    vectorQfMobility && !mobilityConfig_.contactElectricFieldFallback
+                    ? mun : -1.0;
                 for (int k = 0; k < 4; ++k) {
                     const Real step = 1.0e-6 * std::max(1.0, std::abs(vals[k]));
                     Real vp[4] = {vals[0], vals[1], vals[2], vals[3]};
@@ -4426,7 +4494,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     psiOffset() + i, psiOffset() + j,
                     phipOffset() + i, phipOffset() + j,
                 };
-                const Real fixedMobility = vectorQfMobility ? mup : -1.0;
+                const Real fixedMobility =
+                    vectorQfMobility && !mobilityConfig_.contactElectricFieldFallback
+                    ? mup : -1.0;
                 for (int k = 0; k < 4; ++k) {
                     const Real step = 1.0e-6 * std::max(1.0, std::abs(vals[k]));
                     Real vp[4] = {vals[0], vals[1], vals[2], vals[3]};

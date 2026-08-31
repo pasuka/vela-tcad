@@ -183,6 +183,12 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         ? detail::transportCellVectorEdgeGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials, holeQf, fieldFactor)
         : std::vector<Real>{};
+    const std::vector<Real> contactElectricMobilityFields =
+        mobilityConfig_.contactElectricFieldFallback
+        ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              mobilityConfig_, mesh_, edgeCells_, cellMaterials,
+              solution.psi, fieldFactor)
+        : std::vector<Real>{};
 
     ContactCurrentDetailedResult detailed;
     NeumaierSum electronCurrentCompensated;
@@ -438,18 +444,16 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             : holeQfDropLong;
         const Real holeQfDropForFlux =
             static_cast<Real>(holeQfDropForFluxLong);
-        const Real electronMobilityField =
-            vectorQfMobility
-            ? electronVectorMobilityFields[e]
-            : mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient"
-            ? std::abs(electronQfDrop / edgeLength) * fieldFactor
-            : electricField;
-        const Real holeMobilityField =
-            vectorQfMobility
-            ? holeVectorMobilityFields[e]
-            : mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient"
-            ? std::abs(holeQfDrop / edgeLength) * fieldFactor
-            : electricField;
+        const Real electronMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? electronVectorMobilityFields[e]
+                             : std::abs(electronQfDrop / edgeLength) * fieldFactor,
+            electricField, contactElectricMobilityFields);
+        const Real holeMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? holeVectorMobilityFields[e]
+                             : std::abs(holeQfDrop / edgeLength) * fieldFactor,
+            electricField, contactElectricMobilityFields);
 
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,

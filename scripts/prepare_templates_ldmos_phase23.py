@@ -114,6 +114,12 @@ def classical_solver(
         mobility_config.update({
             "high_field_driving_force": mobility["high_field_driving_force"],
             "high_field_gradient_discretization": mobility["high_field_gradient_discretization"],
+            "contact_electric_field_fallback": mobility.get(
+                "contact_electric_field_fallback", False),
+            "contact_electric_field_fallback_scope": mobility.get(
+                "contact_electric_field_fallback_scope", "contact_node_cell"),
+            "contact_electric_field_fallback_mode": mobility.get(
+                "contact_electric_field_fallback_mode", "cell_gradient_magnitude"),
             # Legacy unit_scaling keys consume TCAD internal cm-based values.
             # Do not convert these contract values to SI despite the historical
             # key suffixes; format-version-2 migration will rename them later.

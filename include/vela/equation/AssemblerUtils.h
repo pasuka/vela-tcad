@@ -2323,6 +2323,17 @@ inline bool cellTouchesContact(const DeviceMesh& mesh, const Cell& cell)
     return false;
 }
 
+inline bool cellTouchesContact(
+    const Cell& cell,
+    const std::vector<bool>& contactNodes)
+{
+    return std::any_of(
+        cell.node_ids.begin(), cell.node_ids.end(),
+        [&](Index node) {
+            return node < contactNodes.size() && contactNodes[node];
+        });
+}
+
 inline bool cellTouchesContactBoundaryFace(
     const DeviceMesh& mesh,
     const Cell& cell)
@@ -2923,6 +2934,112 @@ inline std::vector<Real> transportCellVectorEdgeGradientMagnitudes(
             fields[edgeId] = (weightedGradient / totalArea).norm() * fieldFactor;
     }
     return fields;
+}
+
+template <typename ValueAt>
+inline Real contactCellElectricFieldMagnitudeForMobility(
+    const MobilityModelConfig&               config,
+    const DeviceMesh&                        mesh,
+    const std::vector<std::vector<Index>>&   edgeCells,
+    const std::vector<Material>&             cellMaterials,
+    Index                                    edgeId,
+    ValueAt&&                                potentialAt,
+    Real                                     fieldFactor,
+    Real                                     fallbackField,
+    bool*                                    applied = nullptr,
+    const std::vector<bool>*                 contactNodes = nullptr)
+{
+    if (applied != nullptr)
+        *applied = false;
+    if (!config.contactElectricFieldFallback ||
+        config.highFieldDrivingForce != "quasi_fermi_gradient" ||
+        edgeId >= edgeCells.size()) {
+        return fallbackField;
+    }
+
+    Point2 weightedGradient = Point2::Zero();
+    Real totalArea = 0.0;
+    for (const Index cellId : edgeCells[edgeId]) {
+        if (cellId >= cellMaterials.size() ||
+            !isTransportMaterial(cellMaterials[cellId])) {
+            continue;
+        }
+        const Cell& cell = mesh.getCell(cellId);
+        const bool touchesContact = contactNodes != nullptr
+            ? cellTouchesContact(cell, *contactNodes)
+            : cellTouchesContact(mesh, cell);
+        if (!touchesContact)
+            continue;
+        bool valid = false;
+        Real area = 0.0;
+        const Point2 gradient = cellScalarGradient(
+            mesh, cell, potentialAt, valid, area);
+        if (!valid || area <= 0.0)
+            continue;
+        weightedGradient += area * gradient;
+        totalArea += area;
+    }
+    if (totalArea <= 0.0)
+        return fallbackField;
+    if (applied != nullptr)
+        *applied = true;
+    return (weightedGradient / totalArea).norm() * fieldFactor;
+}
+
+inline std::vector<Real> contactCellElectricFieldEdgeMagnitudesForMobility(
+    const MobilityModelConfig&               config,
+    const DeviceMesh&                        mesh,
+    const std::vector<std::vector<Index>>&   edgeCells,
+    const std::vector<Material>&             cellMaterials,
+    const VectorXd&                          potential,
+    Real                                     fieldFactor)
+{
+    std::vector<Real> fields(mesh.numEdges(), 0.0);
+    if (!config.contactElectricFieldFallback ||
+        config.highFieldDrivingForce != "quasi_fermi_gradient") {
+        return fields;
+    }
+    const std::vector<bool> contactNodes = contactNodeMask(mesh);
+    const CellScalarGradientCache gradients = computeCellScalarGradientCache(
+        mesh, [&](Index node) { return potential(static_cast<int>(node)); });
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        if (edgeId >= edgeCells.size())
+            continue;
+        Point2 weightedGradient = Point2::Zero();
+        Real totalArea = 0.0;
+        for (const Index cellId : edgeCells[edgeId]) {
+            if (cellId >= cellMaterials.size() ||
+                !isTransportMaterial(cellMaterials[cellId]) ||
+                cellId >= gradients.valid.size() || !gradients.valid[cellId] ||
+                gradients.areas[cellId] <= 0.0 ||
+                !cellTouchesContact(mesh.getCell(cellId), contactNodes)) {
+                continue;
+            }
+            const Real area = gradients.areas[cellId];
+            weightedGradient += area * gradients.gradients[cellId];
+            totalArea += area;
+        }
+        if (totalArea > 0.0)
+            fields[edgeId] = (weightedGradient / totalArea).norm() * fieldFactor;
+    }
+    return fields;
+}
+
+inline Real mobilityHighFieldDrivingField(
+    const MobilityModelConfig& config,
+    Index edgeId,
+    Real quasiFermiField,
+    Real electricField,
+    const std::vector<Real>& contactElectricFields)
+{
+    if (config.highFieldDrivingForce != "quasi_fermi_gradient")
+        return electricField;
+    if (config.contactElectricFieldFallback &&
+        edgeId < contactElectricFields.size() &&
+        contactElectricFields[edgeId] > 0.0) {
+        return contactElectricFields[edgeId];
+    }
+    return quasiFermiField;
 }
 
 /**

@@ -729,6 +729,12 @@ SweepTransportDiagnostics computeSweepTransportDiagnostics(
         detail::buildCellMaterials(mesh, matdb, temperature_K);
     const std::unique_ptr<MobilityModel> mobility = makeMobilityModel(mobilityConfig);
     const Real fieldFactor = scaling.unitSystem().fieldFromCoordinateDeltaFactor();
+    const std::vector<Real> contactElectricMobilityFields =
+        mobilityConfig.contactElectricFieldFallback
+        ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              mobilityConfig, mesh, edgeCells, cellMaterials,
+              sol.psi, fieldFactor)
+        : std::vector<Real>{};
 
     Real electronMobilitySum = 0.0;
     Real holeMobilitySum = 0.0;
@@ -765,14 +771,14 @@ SweepTransportDiagnostics computeSweepTransportDiagnostics(
         diagnostics.maxElectricField_V_per_cm =
             std::max(diagnostics.maxElectricField_V_per_cm,
                      internalElectricFieldToVPerCm(scaling, electricField));
-        const Real electronMobilityField =
-            mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient"
-            ? std::abs(sol.phin(i1) - sol.phin(i0)) / length * fieldFactor
-            : electricField;
-        const Real holeMobilityField =
-            mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient"
-            ? std::abs(sol.phip(i1) - sol.phip(i0)) / length * fieldFactor
-            : electricField;
+        const Real electronMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig, e,
+            std::abs(sol.phin(i1) - sol.phin(i0)) / length * fieldFactor,
+            electricField, contactElectricMobilityFields);
+        const Real holeMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig, e,
+            std::abs(sol.phip(i1) - sol.phip(i0)) / length * fieldFactor,
+            electricField, contactElectricMobilityFields);
         electronHighFieldDriveSum += internalElectricFieldToVPerCm(scaling, electronMobilityField);
         holeHighFieldDriveSum += internalElectricFieldToVPerCm(scaling, holeMobilityField);
         ++highFieldDriveCount;
@@ -882,6 +888,12 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
         detail::buildCellMaterials(mesh, matdb, temperature_K);
     const std::unique_ptr<MobilityModel> mobility = makeMobilityModel(mobilityConfig);
     const Real fieldFactor = scaling.unitSystem().fieldFromCoordinateDeltaFactor();
+    const std::vector<Real> contactElectricMobilityFields =
+        mobilityConfig.contactElectricFieldFallback
+        ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              mobilityConfig, mesh, edgeCells, cellMaterials,
+              sol.psi, fieldFactor)
+        : std::vector<Real>{};
     const RecombinationModel recombination(recombinationCfg);
     const Real Vt = constants::kb * temperature_K / constants::q;
     const std::vector<Real> Nc =
@@ -905,11 +917,12 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
         const int i = static_cast<int>(edge.n0);
         const int j = static_cast<int>(edge.n1);
         const Real electricField = std::abs(sol.psi(j) - sol.psi(i)) / h * fieldFactor;
-        const Real drivingField = mobilityConfig.highFieldDrivingForce == "quasi_fermi_gradient"
-            ? ((carrier == CarrierType::Electron)
-                ? std::abs(sol.phin(j) - sol.phin(i)) / h * fieldFactor
-                : std::abs(sol.phip(j) - sol.phip(i)) / h * fieldFactor)
-            : electricField;
+        const Real qfField = (carrier == CarrierType::Electron)
+            ? std::abs(sol.phin(j) - sol.phin(i)) / h * fieldFactor
+            : std::abs(sol.phip(j) - sol.phip(i)) / h * fieldFactor;
+        const Real drivingField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig, edgeId, qfField, electricField,
+            contactElectricMobilityFields);
         const Real mu = detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId, carrier,
             drivingField, &mobilityConfig, &sol.psi);

@@ -86,6 +86,14 @@ struct MobilityModelConfig {
     /// ``transport_cell_vector`` recovers the full vector gradient from
     /// adjacent transport cells before evaluating the edge mobility.
     std::string highFieldGradientDiscretization = "edge_projection";
+    /// Experimental Sentaurus-compatible HFS support: retain the configured
+    /// quasi-Fermi-gradient drive in the device interior, but use the P1
+    /// electrostatic-field magnitude in transport cells touching a contact.
+    /// This is deliberately independent of the impact-ionization contact
+    /// fallback and remains disabled unless a template opts in explicitly.
+    bool contactElectricFieldFallback = false;
+    std::string contactElectricFieldFallbackScope = "contact_node_cell";
+    std::string contactElectricFieldFallbackMode = "cell_gradient_magnitude";
     /// Spatial support used by the carrier continuity operator and terminal
     /// current integration. ``scharfetter_gummel_edge`` preserves the
     /// historical edge flux. ``element_qf_gradient`` uses a Tri3 P1

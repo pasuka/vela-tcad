@@ -383,6 +383,7 @@ TEST_CASE("JSON mobility object parses high-field quasi-Fermi driving force",
     REQUIRE(cfg.model == "masetti_field");
     REQUIRE(cfg.highFieldDrivingForce == "quasi_fermi_gradient");
     REQUIRE(cfg.highFieldGradientDiscretization == "edge_projection");
+    REQUIRE_FALSE(cfg.contactElectricFieldFallback);
     REQUIRE(cfg.jacobianFieldDerivatives);
 
     const MobilityModelConfig vectorCfg = mobilityModelConfigFromJson(nlohmann::json{
@@ -391,6 +392,16 @@ TEST_CASE("JSON mobility object parses high-field quasi-Fermi driving force",
         {"high_field_gradient_discretization", "transport_cell_vector"},
     });
     REQUIRE(vectorCfg.highFieldGradientDiscretization == "transport_cell_vector");
+
+    const MobilityModelConfig contactFallbackCfg = mobilityModelConfigFromJson(
+        nlohmann::json{
+            {"model", "constant_field"},
+            {"high_field_driving_force", "quasi_fermi_gradient"},
+            {"contact_electric_field_fallback", true},
+            {"contact_electric_field_fallback_scope", "contact_node_cell"},
+            {"contact_electric_field_fallback_mode", "cell_gradient_magnitude"},
+        });
+    REQUIRE(contactFallbackCfg.contactElectricFieldFallback);
 
     const MobilityModelConfig frozenJacobianCfg = mobilityModelConfigFromJson(nlohmann::json{
         {"model", "masetti_field"},
@@ -407,6 +418,16 @@ TEST_CASE("JSON mobility object parses high-field quasi-Fermi driving force",
     REQUIRE_THROWS_AS(mobilityModelConfigFromJson(nlohmann::json{
         {"model", "masetti_field"},
         {"high_field_gradient_discretization", "unsupported"},
+    }), std::invalid_argument);
+    REQUIRE_THROWS_AS(mobilityModelConfigFromJson(nlohmann::json{
+        {"model", "constant_field"},
+        {"contact_electric_field_fallback", true},
+    }), std::invalid_argument);
+    REQUIRE_THROWS_AS(mobilityModelConfigFromJson(nlohmann::json{
+        {"model", "constant_field"},
+        {"high_field_driving_force", "quasi_fermi_gradient"},
+        {"contact_electric_field_fallback", true},
+        {"contact_electric_field_fallback_scope", "contact_boundary_face"},
     }), std::invalid_argument);
 }
 
@@ -430,6 +451,35 @@ TEST_CASE("transport cell-vector quasi-Fermi recovery is orientation independent
     REQUIRE(fields.size() == mesh.numEdges());
     for (const Real field : fields)
         REQUIRE(field == Catch::Approx(5.0).epsilon(1.0e-12));
+}
+
+TEST_CASE("contact mobility fallback uses transport-cell electrostatic gradient",
+          "[mobility][field][contact]")
+{
+    const DeviceMesh mesh = makePNMesh();
+    const MaterialDatabase matdb;
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, 300.0);
+    VectorXd potential(static_cast<int>(mesh.numNodes()));
+    for (Index node = 0; node < mesh.numNodes(); ++node) {
+        const Node& point = mesh.getNode(node);
+        potential(static_cast<int>(node)) = 2.0 * point.x + 3.0 * point.y;
+    }
+
+    MobilityModelConfig config = mobilityModelConfig("constant_field");
+    config.highFieldDrivingForce = "quasi_fermi_gradient";
+    config.contactElectricFieldFallback = true;
+    const std::vector<Real> fields =
+        detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+            config, mesh, edgeCells, cellMaterials, potential, 1.0);
+
+    REQUIRE(fields.size() == mesh.numEdges());
+    for (Index edge = 0; edge < mesh.numEdges(); ++edge) {
+        REQUIRE(fields[edge] == Catch::Approx(std::sqrt(13.0)).epsilon(1.0e-12));
+        REQUIRE(detail::mobilityHighFieldDrivingField(
+                    config, edge, 0.25, 0.5, fields) ==
+                Catch::Approx(std::sqrt(13.0)).epsilon(1.0e-12));
+    }
 }
 
 
