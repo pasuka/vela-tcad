@@ -7,7 +7,7 @@
       "classification": "candidate_baseline_difference",
       "status": "open",
       "scope": "G3 no-IALMob Id-Vg, Vd=0.1 V, exact SProcess topology, Vg=0--5 V; dominant unresolved interval Vg=0--0.6667 V",
-      "observation": "The qualified contact-boundary ElectricField HFS fallback reduces the three-point fixed-state median error from 1.04443 dex to 0.0196168 dex. After repairing the constant_field cached-mobility Jacobian, all 31 no-predictor points converge and the worst KCL relative error is 7.96e-6, but the self-consistent P95 current error is 0.432753 dex and the fixed-current equivalent threshold shift is 43.2055 mV. Vg=0.1667--0.6667 V retains a nearly multiplicative Vela/Sentaurus current factor of 2.61--2.73. An eight-combination psi/phin/phip frozen-state audit attributes a median 0.403147 dex, or 2.53015x, amplification to self-consistent state feedback; phin is the dominant single family at all four audited biases. At Vg=0.3333--0.6667 V the fixed Sentaurus-state operator ratio is only 1.046--1.049, while the full self-consistent ratio is 2.606--2.731. The residual hotspots localize to source-side/channel-side electron continuity and Si/SiO2 interface neighborhoods. This is not yet an approved engine floor.",
+      "observation": "The qualified contact-boundary ElectricField HFS fallback reduces the three-point fixed-state median error from 1.04443 dex to 0.0196168 dex. After repairing the constant_field cached-mobility Jacobian, all 31 no-predictor points converge and the worst KCL relative error is 7.96e-6, but the self-consistent P95 current error is 0.432753 dex and the fixed-current equivalent threshold shift is 43.2055 mV. Vg=0.1667--0.6667 V retains a nearly multiplicative Vela/Sentaurus current factor of 2.61--2.73. An eight-combination psi/phin/phip frozen-state audit attributes a median 0.403147 dex, or 2.53015x, amplification to self-consistent state feedback; phin is the dominant single family at all four audited biases. At Vg=0.3333--0.6667 V the fixed Sentaurus-state operator ratio is only 1.046--1.049, while the full self-consistent ratio is 2.606--2.731. A Vg=0.5 V read-only region-local interface-pair probe removes oxide-side box contributions from carrier flux only: interface hotspots 3747, 10233, and 4538 improve to 2.04e-5x, 0.157x, and 5.37e-4x of baseline, respectively, proving a local interface-coupling semantic gap. However, the full free-row residual L2 and maximum improve only to 0.650x and 0.895x because silicon-only node 4492 is unchanged. The frozen 2x gate therefore fails and no self-consistent reclose is authorized. This is not yet an approved engine floor.",
       "excluded_causes": [
         "uniform electrostatic, flatband, or reference-energy offset",
         "terminal floating-point summation",
@@ -17,6 +17,7 @@
         "negative local cotangent barycentric fallback",
         "mixed-Voronoi node volume in fixed-state SG replay",
         "barycentric versus truncated negative-cotangent coupling in same-bias reclose",
+        "removing oxide-side box contributions from interface carrier edges as a sufficient global closure for the Vg=0.5 V fixed state",
         "uniform psi or hole-QF state feedback as the subthreshold current-amplitude cause",
         "SRH or Auger recombination magnitude as the electron-continuity hotspot cause",
         "drain-side anomalous couple-over-length edges as the dominant remaining feedback location",
@@ -25,7 +26,8 @@
         "constant_field cached-mobility Jacobian mismatch as a physical curve-amplitude cause"
       ],
       "open_causes": [
-        "source-side and channel-side Si/SiO2 electron-continuity boundary or interface semantics",
+        "production representation of region-local Si/SiO2 interface carrier degrees of freedom; a read-only pair probe proves local benefit but fails the global reclose gate",
+        "silicon-only node 4492 AverageBox coefficient, density-averaging, and first-Newton-step semantics",
         "electron-QF edge support and density-averaging semantics that create the localized self-consistent feedback",
         "direct LDMOS AverageBox per-edge coefficients at nodes 3747, 10233, 4492, and 4538; no direct MeasureCoefficients oracle is archived yet",
         "generalized SRH hole-QF reference convention; low impact on current Id-Vg but material for recombination qualification"
@@ -62,9 +64,17 @@
         {
           "path": "scripts/run_templates_ldmos_g3_same_bias_reclose.py",
           "sha256": "f598de740ac0b58a8afc11e9f34acd6eccc0e04bc402fd0318917ebfe03f6973"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_interface_pair_box_audit_2026-08-31.md",
+          "sha256": "e22ae9e2c62b14bbe72661ad06f72c0a02df9160c04abc56b1dd710aa60d6ed7"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_interface_pair_box.py",
+          "sha256": "abb6db077b46bd43b429d003d3ba27c4d044694d01121eea3069026d1930553c"
         }
       ],
-      "expires_when": "A direct LDMOS AverageBox per-edge oracle plus source-side Si/SiO2 electron-continuity and first-Newton-step audit either closes the phin feedback or proves a mesh-converged engine difference; generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
+      "expires_when": "A direct LDMOS AverageBox per-edge oracle plus the silicon-only node 4492 and source-side Si/SiO2 electron-continuity first-Newton-step audits either close the phin feedback or prove a mesh-converged engine difference; generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
       "approval": {
         "status": "draft",
         "benchmark_owner": null,
