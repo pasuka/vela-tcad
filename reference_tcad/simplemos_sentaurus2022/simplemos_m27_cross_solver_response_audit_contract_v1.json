@@ -1,0 +1,52 @@
+{
+  "schema": "vela.simplemos.sdevice.m27_cross_solver_response_audit.v1",
+  "scope": "SDevice-only n23 Sentaurus-Vela HFS self-consistent response audit",
+  "device": "n23",
+  "drain_voltage_V": 0.05,
+  "gate_voltage_V": 0.05,
+  "state_variants": [
+    "full",
+    "no_hfs"
+  ],
+  "required_sentaurus_fields": [
+    "ElectrostaticPotential",
+    "eQuasiFermiPotential",
+    "hQuasiFermiPotential",
+    "eDensity",
+    "hDensity",
+    "eMobility",
+    "hMobility",
+    "eGradQuasiFermi",
+    "hGradQuasiFermi",
+    "eCurrentDensity",
+    "hCurrentDensity",
+    "srhRecombination"
+  ],
+  "response_definition": "HFS-on self-consistent state minus HFS-off self-consistent state on the shared n23 mesh",
+  "zones": {
+    "drain_first_layer": [
+      1089,
+      1090,
+      1092,
+      1099,
+      1100
+    ],
+    "upstream_operator_source": "top ten turn-on adjoint-weighted electron-continuity nodes from M26"
+  },
+  "acceptance": {
+    "sentaurus_release": "T-2022.03-SP2",
+    "sentaurus_state_count": 2,
+    "minimum_common_silicon_nodes": 900,
+    "minimum_common_silicon_edges": 2500,
+    "maximum_bias_error_V": 1e-10,
+    "maximum_nonfinite_fraction": 0.0,
+    "maximum_terminal_reconstruction_relative_error": 0.001
+  },
+  "claim_policy": [
+    "Cross-solver agreement is a measured result and is not an acceptance prerequisite.",
+    "Sentaurus nodal current density projected onto Vela edges is a localization diagnostic, not a private Sentaurus face-flux identity.",
+    "Sentaurus does not expose its nonlinear residual rows or Jacobian; M26 adjoint rows remain Vela-only diagnostics.",
+    "Only HFS is switched; OldSlotboom, SRH(DopingDependence), PhuMob, and Enormal remain enabled in both solvers.",
+    "No production contact, HFS, SG, mobility, recombination, or solver default may be changed from this audit alone."
+  ]
+}

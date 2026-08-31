@@ -83,7 +83,7 @@
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m23_numerical_resolvability_evidence.json",
-      "sha256": "356adcacac3904793a845d76d3775a649201c37498b82e484231cd81d7b5ca74"
+      "sha256": "147761c76726e75798d56f7016c01d67a39dc936296ec87aba5aace7341521f1"
     }
   ],
   "figures": [
@@ -99,6 +99,6 @@
     "scripts/freeze_simplemos_m25_qf_reference_transform_audit_evidence.py": "2a7bbf7dc90649f55f66b712b1089580066275de5fa16926dc73f29acb4fc875",
     "tests/regression/test_simplemos_m25_qf_reference_transform_audit.py": "b66c976313319a0c69208d15a8581e34d48dcca159b635d05a0624ff35453955",
     "docs/validation/simplemos_m25_qf_reference_transform_audit_2026-08-30.md": "c7eb00c3b752d8ed5d1b571808d53e27f1a7a07bf46df83e542b00db265ca72b",
-    "CMakeLists.txt": "ef77fc651332722cad7924c031cff1ce390007f233ead26440ea5e496c8f3f45"
+    "CMakeLists.txt": "ae59f71bbadbeb6cf149b6e6181f1191a9d712c5c7a85f27e4f82cfa4f3221d9"
   }
 }

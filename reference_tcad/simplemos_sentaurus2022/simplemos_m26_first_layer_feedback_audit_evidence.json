@@ -266,11 +266,11 @@
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m24_contact_boundary_audit_evidence.json",
-      "sha256": "c15c300bbed441cf71d1ddf75e38b169107deb4761bbfc8632cfb099a8d17786"
+      "sha256": "395901e092f38924a0500024371c61f6f168c4e05b88b4f0f4577b568d4f4747"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m25_qf_reference_transform_audit_evidence.json",
-      "sha256": "9f60bbaca02dee44dcd34ee35d979b3f23ac6a197680da5dae4662a9a39b6b82"
+      "sha256": "32cb4291c490530e32c83ee1a8502627826cac1684a577e629ccd1c1b062049d"
     }
   ],
   "figures": [
@@ -289,6 +289,6 @@
     "src/solver/NewtonSolver.cpp": "d5133fef422913775df0d146699a50adccc7fb0770a3267b3ef131d44e10cff6",
     "src/tools/vela_example_runner.cpp": "3e46f783821747b8d143fb373a1cc70580a4b6e580a16be3e345be9d1cc41f56",
     "docs/validation/simplemos_m26_first_layer_feedback_audit_2026-08-31.md": "c26ce58bdaee604cff7ddb985286d19b2a15178b436cf94d7b6f575205f544b9",
-    "CMakeLists.txt": "ef77fc651332722cad7924c031cff1ce390007f233ead26440ea5e496c8f3f45"
+    "CMakeLists.txt": "ae59f71bbadbeb6cf149b6e6181f1191a9d712c5c7a85f27e4f82cfa4f3221d9"
   }
 }

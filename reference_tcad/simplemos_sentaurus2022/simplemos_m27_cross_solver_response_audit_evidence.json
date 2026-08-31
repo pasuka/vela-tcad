@@ -1,0 +1,204 @@
+{
+  "schema": "vela.simplemos.sdevice.m27_cross_solver_response_audit_evidence.v1",
+  "status": "complete",
+  "scope": "SDevice-only n23 Sentaurus-Vela HFS self-consistent response audit",
+  "sentaurus_release": "T-2022.03-SP2",
+  "execution": {
+    "sentaurus_release": "T-2022.03-SP2",
+    "sentaurus_state_count": 2,
+    "common_silicon_node_count": 942,
+    "common_silicon_edge_count": 2691,
+    "responsive_node_count": 415,
+    "active_current_edge_count": 730,
+    "responsive_active_mobility_edge_count": 133,
+    "responsive_active_drive_edge_count": 723,
+    "responsive_active_projected_current_edge_count": 725,
+    "new_sentaurus_execution": true,
+    "default_model_changed": false
+  },
+  "acceptance": {
+    "checks": {
+      "sentaurus_state_count": true,
+      "common_silicon_nodes": true,
+      "common_silicon_edges": true,
+      "bias_error": true,
+      "finite_values": true
+    },
+    "maximum_bias_error_V": 0.0,
+    "nonfinite_fraction": 0.0,
+    "derived_response_nonfinite_fraction": 0.07918157629140288,
+    "all_checks_pass": true
+  },
+  "terminal_response": {
+    "vela": {
+      "solver": "vela",
+      "full_current_A_per_um": 1.1046438035358572e-16,
+      "no_hfs_current_A_per_um": 1.3899350016539832e-16,
+      "hfs_response_A_per_um": -2.85291198118126e-17,
+      "hfs_response_relative_to_no_hfs": -0.20525506428619866,
+      "hfs_response_dex": -0.09977223082251109
+    },
+    "sentaurus": {
+      "solver": "sentaurus",
+      "full_current_A_per_um": 3.42694930156836e-16,
+      "no_hfs_current_A_per_um": 3.70101606316718e-16,
+      "hfs_response_A_per_um": -2.7406676159882002e-17,
+      "hfs_response_relative_to_no_hfs": -0.07405176225154904,
+      "hfs_response_dex": -0.03341329051951903
+    },
+    "response_ratio_sentaurus_per_vela": 0.9606562116414876,
+    "response_relative_disagreement": 0.03934378835851238,
+    "cross_solver_current_gap_full_A_per_um": 2.322305498032503e-16,
+    "cross_solver_current_gap_no_hfs_A_per_um": 2.311081061513197e-16,
+    "hfs_induced_cross_solver_gap_change_A_per_um": 1.1224436519305973e-18,
+    "hfs_induced_gap_change_fraction_of_full_gap": 0.004833316085594901
+  },
+  "cross_solver_response": {
+    "responsive_node_phin": {
+      "count": 415,
+      "pearson": 0.9987473875583093,
+      "sign_agreement_fraction": 0.9975903614457832,
+      "median_absolute_difference": 7.080731784236526e-06,
+      "p95_absolute_difference": 4.62268195756404e-05,
+      "origin_slope_sentaurus_per_vela": 1.0208972133821934
+    },
+    "active_edge_mobility": {
+      "count": 133,
+      "pearson": 0.9839802730267472,
+      "sign_agreement_fraction": 0.8796992481203008,
+      "median_absolute_difference": 0.0010307095432612453,
+      "p95_absolute_difference": 0.03367781110251276,
+      "origin_slope_sentaurus_per_vela": 0.8184858528607479
+    },
+    "active_edge_drive": {
+      "count": 723,
+      "pearson": 0.019742955315240788,
+      "sign_agreement_fraction": 0.669432918395574,
+      "median_absolute_difference": 0.11218402161403987,
+      "p95_absolute_difference": 0.3875324377095252,
+      "origin_slope_sentaurus_per_vela": 0.2437566905805442
+    },
+    "active_edge_projected_current": {
+      "count": 725,
+      "pearson": -0.035221917570184336,
+      "sign_agreement_fraction": 0.6896551724137931,
+      "median_absolute_difference": 0.09597974133655184,
+      "p95_absolute_difference": 0.2773161734204517,
+      "origin_slope_sentaurus_per_vela": 0.35866039052141324
+    }
+  },
+  "zones": {
+    "all": {
+      "zone": "all",
+      "node_count": 942,
+      "edge_count": 2691,
+      "vela_phin_response_abs_max_V": 0.0021563162795506623,
+      "sentaurus_phin_response_abs_max_V": 0.002207294494540749,
+      "vela_mobility_response_abs_p95_dex": 0.06904611094107754,
+      "sentaurus_mobility_response_abs_p95_dex": 0.061643543216314406
+    },
+    "upstream_operator_source": {
+      "zone": "upstream_operator_source",
+      "node_count": 10,
+      "edge_count": 46,
+      "vela_phin_response_abs_max_V": 0.002086081176413089,
+      "sentaurus_phin_response_abs_max_V": 0.002143638257840263,
+      "vela_mobility_response_abs_p95_dex": 0.18095245286576467,
+      "sentaurus_mobility_response_abs_p95_dex": 0.143661503440158
+    },
+    "drain_first_layer": {
+      "zone": "drain_first_layer",
+      "node_count": 5,
+      "edge_count": 22,
+      "vela_phin_response_abs_max_V": 9.71445146547012e-17,
+      "sentaurus_phin_response_abs_max_V": 0.0,
+      "vela_mobility_response_abs_p95_dex": 0.0,
+      "sentaurus_mobility_response_abs_p95_dex": 0.00015203053522272925
+    }
+  },
+  "conclusions": {
+    "supported": [
+      "Sentaurus and Vela predict the same sign and nearly the same absolute terminal-current response to the HFS switch; their response magnitudes differ by less than four percent.",
+      "The responsive-node electron quasi-Fermi change is strongly aligned across solvers, including sign, spatial shape, and amplitude.",
+      "Active-edge mobility response is strongly correlated even though Sentaurus nodal mobility and Vela edge mobility are different discretization observables.",
+      "Both solvers place millivolt-scale HFS state response in the M26 upstream operator-source zone while the drain-first-layer quasi-Fermi state remains pinned.",
+      "The large absolute deep-off current gap is almost unchanged when HFS is removed; HFS therefore does not explain the dominant Sentaurus-Vela baseline offset in this state."
+    ],
+    "not_supported": [
+      "Equating Sentaurus nodal GradQuasiFermi or projected current density with Vela transport-cell-vector drive or SG face flux.",
+      "Claiming equality of nonlinear residual rows or Jacobians because Sentaurus does not export those private solver quantities.",
+      "Changing the default HFS model to reduce the remaining absolute deep-off current offset."
+    ]
+  },
+  "claim_policy": [
+    "Cross-solver agreement is a measured result and is not an acceptance prerequisite.",
+    "Sentaurus nodal current density projected onto Vela edges is a localization diagnostic, not a private Sentaurus face-flux identity.",
+    "Sentaurus does not expose its nonlinear residual rows or Jacobian; M26 adjoint rows remain Vela-only diagnostics.",
+    "Only HFS is switched; OldSlotboom, SRH(DopingDependence), PhuMob, and Enormal remain enabled in both solvers.",
+    "No production contact, HFS, SG, mobility, recombination, or solver default may be changed from this audit alone."
+  ],
+  "artifacts": {
+    "m27_cross_solver_response_audit_report.json": {
+      "path": "reference_tcad/simplemos_sentaurus2022/cross_solver_response_audit/m27_cross_solver_response_audit_report.json",
+      "sha256": "b2e622181cd2912c0b26f30b4e7713ea6b918bab4058f373f8d57563da1ab677"
+    },
+    "m27_node_response_ledger.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/cross_solver_response_audit/m27_node_response_ledger.csv",
+      "sha256": "54db5c0a872c40721e27f1128a0081c4768c9e2b5a2a074000fb54fc96ac3bdb"
+    },
+    "m27_edge_response_ledger.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/cross_solver_response_audit/m27_edge_response_ledger.csv",
+      "sha256": "7d99e6cce64f1ebb9fdfefaff538fd4b09d9843f6d7d5e5370c960ab5d969530"
+    },
+    "m27_zone_summary.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/cross_solver_response_audit/m27_zone_summary.csv",
+      "sha256": "1f660c2bfb3261e8fc0ec28cd19f124860e39575c719aed33757cb410d6bfc52"
+    },
+    "m27_terminal_response.csv": {
+      "path": "reference_tcad/simplemos_sentaurus2022/cross_solver_response_audit/m27_terminal_response.csv",
+      "sha256": "32bcb846642ee4c830bf1a1755ea15916d461208a97c2797c169c9068965a48c"
+    }
+  },
+  "upstream_inputs": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m22_n23_hfs_deep_off_evidence.json",
+      "sha256": "d09b799193c6635d2397d0fa12e49f4d856f44078f0dcb5227c9728b5d820fb0"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m26_first_layer_feedback_audit_evidence.json",
+      "sha256": "d70c56e3d1641a4a7ce5d565763fc06f3228c1eb45348eb93e688dd0f16c07a2"
+    }
+  ],
+  "figures": [
+    {
+      "path": "docs/validation/figures/simplemos_m27/simplemos_m27_cross_solver_response_audit.png",
+      "sha256": "649f887d1d276ac79a697e92a2653c56c2d36a88776250562c8bc97e022faaaa"
+    }
+  ],
+  "source_integrity": {
+    "sentaurus_manifest_sha256": "c28ec3c7ffea511ab995b299e484cd49a22e3721423ebbf64602eb135bef55a0",
+    "sentaurus_export_manifest_sha256": "75f8620e3d130c561a078c20bd696ae61e29bf5eb59002d2e18f8a2f905bec44",
+    "sentaurus_banner_sha256": null,
+    "sentaurus_states": {
+      "full": {
+        "tdr_sha256": "2da35a01e4513d4e1082bd7d738408e84c2fdcaf094d826ec6188be73aec43cc",
+        "current_file_sha256": "d511ebf582c2a481ada6a94c21fc1101339447c61cdc53c85c7396a319abd7ee",
+        "field_manifest_sha256": "cf52e61ab642ac12f47363d6f27f6b9325e7fedee23a7e69e94c1f1b2a5aed6d"
+      },
+      "no_hfs": {
+        "tdr_sha256": "c49050b9a50359c75e9e38860055f43aed49882bca6e2f1f0cf02006bea5b989",
+        "current_file_sha256": "8a8859fdd210428b45102f51ceeff920c0628cfbce823d51cbb50d541c0ca4d0",
+        "field_manifest_sha256": "cf52e61ab642ac12f47363d6f27f6b9325e7fedee23a7e69e94c1f1b2a5aed6d"
+      }
+    }
+  },
+  "implementation_sha256": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m27_cross_solver_response_audit_contract_v1.json": "69ef4883183070fd767355388e6f6e1463a3e4267a1c9233d3d4394309c47c59",
+    "scripts/run_simplemos_m27_cross_solver_response_audit.py": "1a890dea1bdbe710442aa529f1e20daf526856b3e81916278ebe4659b012b59f",
+    "scripts/plot_simplemos_m27_cross_solver_response_audit.py": "0858494bbbfc2211a9bbbd59d9f911e0ef8407404532c37d392cb0353c5fdfab",
+    "scripts/freeze_simplemos_m27_cross_solver_response_audit_evidence.py": "da50b30e884bcc38e139c51ede18a26709e3d13be68fb1a31c2725f96f240fff",
+    "tests/regression/test_simplemos_m27_cross_solver_response_audit.py": "5e03ffba91aebcd4101d6e39ea0246038e1ac3ed57e16d8b410fa0b7245bdb8b",
+    "docs/validation/simplemos_m27_cross_solver_response_audit_2026-08-31.md": "6423d5a889789fd689274a1e2e3b879277359b2d9b65a26bc2d967b6ac26fe9e",
+    "CMakeLists.txt": "ae59f71bbadbeb6cf149b6e6181f1191a9d712c5c7a85f27e4f82cfa4f3221d9"
+  }
+}
