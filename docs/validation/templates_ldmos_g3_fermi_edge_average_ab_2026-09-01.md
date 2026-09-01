@@ -87,6 +87,16 @@ argument 与 quasi-Fermi argument。候选包括：
    element/edge current 导出，用同一七节点簇对齐逐边 QF drive、密度支撑与残差。
 5. 在直接跨引擎算子证据取得前，差异账本不批准为固有引擎地板。
 
+## 后续进展
+
+同日已取得两个端点 complete Sentaurus state 的原生 NewtonPlot
+`eContinuityRhs`。七节点原生 RHS 位于 `3.51e-15--4.42e-15 A`，而 Vela 在
+同一 SSS 状态的七节点物理化余量为 `1.24e-9--6.98e-9 A/um`，确认稳定的局部
+同状态算子差；详见
+`docs/validation/templates_ldmos_g3_sentaurus_equation_balance_2026-09-01.md`。
+收敛行和仍不能唯一反演逐边 QF-drive，因此下一门槛收窄为“相同 VSV 状态的
+Sentaurus iteration-0 equation-balance 或受支持的装配级 element-edge current”。
+
 ## 可复现工件
 
 - 审计脚本：`scripts/audit_templates_ldmos_g3_fermi_edge_average_ab.py`；

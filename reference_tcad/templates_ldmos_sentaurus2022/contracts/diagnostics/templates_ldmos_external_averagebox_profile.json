@@ -344,6 +344,55 @@
       "classification": "enumerated generalized-Einstein factor averages do not materially close the seven-node frozen-state residual",
       "scope_limit": "does not establish equivalence of the complete Sentaurus and Vela SG edge operators",
       "passed": true
+    },
+    "maximum_gm_sentaurus_equation_balance": {
+      "bias_points_V": [
+        1.0,
+        1.1666666666666667
+      ],
+      "state": "SSS (Sentaurus psi, phin and phip) in both engines",
+      "selected_nodes": [
+        3721,
+        3974,
+        3973,
+        4091,
+        3727,
+        4021,
+        3771
+      ],
+      "maximum_coordinate_error_um": 0.0,
+      "sentaurus_native_seven_node_rhs_l2_A": [
+        3.506906934593973e-15,
+        4.41779220820054e-15
+      ],
+      "sentaurus_native_seven_node_rhs_l2_over_terminal": [
+        2.7962305132097325e-9,
+        1.5622076597146052e-9
+      ],
+      "vela_same_state_seven_node_residual_l2_scaled": [
+        2.8110258402796512e-5,
+        1.5801752229933495e-4
+      ],
+      "vela_same_state_seven_node_residual_l2_A_per_um": [
+        1.2414695045217722e-9,
+        6.978731120280181e-9
+      ],
+      "vela_same_state_seven_node_residual_l2_over_terminal": [
+        9.898850966129408e-4,
+        2.467799909410201e-3
+      ],
+      "vela_residual_l2_growth_high_over_low": 5.621347197705404,
+      "vela_residual_vector_cosine": 0.9909837993111859,
+      "same_state_terminal_current_ratios": [
+        1.0002021463491693,
+        1.0002021861445107
+      ],
+      "classification": "native Sentaurus balance confirms a same-state local continuity-operator mismatch; converged row sums do not uniquely identify the element-edge QF-drive rule",
+      "element_edge_export_limit": "TDR eCurrentDensity is a vertex post-processing field; ElementEdgeCurrent selects an alternative current-density reconstruction but does not export assembly edge currents",
+      "production_solver_changed": false,
+      "self_consistent_reclose_run": false,
+      "ledger_status": "draft",
+      "passed": true
     }
   },
   "comparison_masks": {
@@ -366,6 +415,6 @@
       "max_gm_relative_error": 0.24307577516061074,
       "worst_kcl_relative_error": 1.1429698478423298e-9
     },
-    "next_gate": "obtain Sentaurus electron equation-balance or direct element-edge current evidence at Vg=1.0 and 1.166667 V, then align QF-drive and density support on the same seven-node cluster; keep IALMob, predictor and production defaults unchanged"
+    "next_gate": "run Sentaurus iteration-0 equation-balance on the identical VSV state, or obtain a supported assembly-level element-edge current export, to distinguish QF-drive placement from density support on the same seven-node cluster; the copied VSV TDR requires explicit data-transfer authorization before VM upload; keep IALMob, predictor and production defaults unchanged"
   }
 }
