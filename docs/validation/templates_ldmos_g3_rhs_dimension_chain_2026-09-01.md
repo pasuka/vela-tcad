@@ -70,10 +70,12 @@ NewtonPlot RHS 的 TDR unit 标签不能直接当作端口安培真值。它没�
 `33.7806x` 本身是任意值：未扰动双偏压行模式和 node-3721 Jacobian 列仍
 稳定落在同一标量附近，说明其来源依然是稳定的均匀内部合同。
 
-下一最小任务应查询或构造 Sentaurus 的方程缩放诊断，重点对照 Electron
-`ErrRef=1e10 cm^-3`、控制盒 Measure、连续性行 norm/预条件以及输出前的
-归一化顺序。若没有受支持的 assembly-level 输出，只能把 NewtonPlot RHS
-用于形状/相对变化比较，不能把其绝对幅值作为跨引擎物理电流门。
+该下一门已完成：Electron `ErrRef=1e10 -> 1e8 cm^-3` 只改变 update error，
+不改变 RHS 或 Newton 增量；五节点 Measure 跨 `14.61x` 而行比例只跨
+`1.005x`；iteration-0 NewtonPlot 又在第一次线性求解前写出。详见
+`templates_ldmos_g3_internal_equation_scaling_2026-09-01.md`。现有公开合同仍不能
+推导绝对标量，因此 NewtonPlot RHS 只能用于形状/相对变化比较，不能把其绝对
+幅值作为跨引擎物理电流门。
 
 ## 可复跑工件
 

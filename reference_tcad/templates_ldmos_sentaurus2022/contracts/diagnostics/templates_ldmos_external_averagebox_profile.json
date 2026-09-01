@@ -493,6 +493,24 @@
       "self_consistent_reclose_run": false,
       "ledger_status": "draft",
       "passed": true
+    },
+    "maximum_gm_internal_equation_scaling_audit": {
+      "state": "same high-endpoint VSV node-3721 symmetric QF pair",
+      "baseline_electron_errref_cm3": 10000000000.0,
+      "candidate_electron_errref_cm3": 100000000.0,
+      "iteration0_and_iteration1_rhs_byte_identical": true,
+      "iteration1_electron_update_byte_identical": true,
+      "density_error_formula_maximum_relative_error": 4.440892098500626e-16,
+      "silicon_averagebox_measure_range_factor": 14.60712616219951,
+      "row_scalar_range_factor": 1.004957483451676,
+      "log_measure_log_scalar_pearson": -0.07624739103683917,
+      "iteration0_newtonplot_precedes_first_linear_solve": true,
+      "simple_inverse_thermal_voltage_relative_error": 0.1267039060927173,
+      "classification": "Electron ErrRef, per-row control-box Measure, the linear-solver preconditioner and simple 1/Vt scaling do not explain the 33.7806x scalar; absolute NewtonPlot RHS remains an implementation-dependent internal quantity while normalized shape and relative changes remain diagnostic",
+      "production_solver_changed": false,
+      "self_consistent_reclose_run": false,
+      "ledger_status": "draft",
+      "passed": true
     }
   },
   "comparison_masks": {
@@ -515,6 +533,6 @@
       "max_gm_relative_error": 0.24307577516061074,
       "worst_kcl_relative_error": 1.1429698478423298e-9
     },
-    "next_gate": "seek supported Sentaurus equation-scaling evidence for NewtonPlot eContinuityRhs, including Electron ErrRef, control-box Measure, row norm or preconditioning order; treat the absolute RHS magnitude as implementation-dependent and keep IALMob, predictor and production defaults unchanged"
+    "next_gate": "do not use the absolute NewtonPlot eContinuityRhs magnitude as a cross-engine gate; only a supported Sentaurus assembly-level element-edge current or explicit version-specific row-scale disclosure can identify the remaining uniform scalar, while IALMob, predictor and production defaults remain unchanged"
   }
 }
