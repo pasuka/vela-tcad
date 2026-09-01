@@ -115,9 +115,14 @@ NewtonPlot 的内部数字再人为调整 Vela 的物理量纲链。
 - 不启用 IALMob，不调整阈值/迁移率参数，不修改 production default；31 点
   曲线仍不因本轮内部标量而重跑。
 
-若后续要继续追查绝对标量，唯一有辨识力的证据是受支持的 assembly-level
-element-edge current/row-scale 导出或 Synopsys 对该版本内部格式的明确说明；
-重复改变收敛参数、线性 Method 或器件 AreaFactor 不再具有诊断价值。
+后续的受支持接口审计已经完成：`Math { ElementEdgeCurrent }` 在同一 VSV
+单模扰动状态上激活后，iteration 0/1、终态的全部归一化字段和端口电流均与
+基线相同；Tcl/PMI 对 edge-vector `eCurrentDensity` 的请求则给出原生
+undefined-data 错误。详见
+`templates_ldmos_g3_supported_element_edge_current_2026-09-01.md`。因此该版本
+没有可用的公开 assembly-level edge-current 或普通 DD row-scale 出口；若仍要
+追查绝对标量，只剩 Synopsys 版本专属内部说明这一条路径。重复改变收敛参数、
+线性 Method、器件 AreaFactor 或 `ElementEdgeCurrent` 不再具有诊断价值。
 
 ## 可复跑工件
 

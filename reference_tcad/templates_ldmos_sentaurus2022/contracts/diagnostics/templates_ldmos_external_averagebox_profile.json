@@ -2,7 +2,7 @@
   "schema": "vela.templates_ldmos.external_averagebox_profile.v1",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
   "profile_name": "templates_ldmos_external_averagebox",
-  "status": "qualified_diagnostic_curve_stage3_internal_rhs_normalization_open",
+  "status": "qualified_diagnostic_curve_stage3_public_rhs_interface_exhausted",
   "default_enabled": false,
   "scope": {
     "device": "Templates/LDMOS exact SProcess topology",
@@ -511,6 +511,34 @@
       "self_consistent_reclose_run": false,
       "ledger_status": "draft",
       "passed": true
+    },
+    "maximum_gm_supported_element_edge_current_audit": {
+      "state": "same high-endpoint VSV node-3721 symmetric QF pair",
+      "only_changed_sentaurus_input": "Math.ElementEdgeCurrent",
+      "element_edge_current_log_activation_confirmed": true,
+      "normalized_field_identity": {
+        "minus_iteration0": "20/20 byte-identical",
+        "minus_iteration1": "20/20 byte-identical",
+        "minus_final_state": "36/36 byte-identical",
+        "plus_iteration0": "20/20 byte-identical",
+        "plus_iteration1": "20/20 byte-identical",
+        "plus_final_state": "36/36 byte-identical"
+      },
+      "final_vertex_eCurrentDensity_byte_identical": true,
+      "terminal_currents_identical_at_log_precision": true,
+      "central_difference_scalar_before": 33.78060115741988,
+      "central_difference_scalar_after": 33.78060115741988,
+      "tcl_pmi_edge_vector_request": "ReadVector(des_data_edge, eCurrentDensity)",
+      "tcl_pmi_native_error": "Tried to read undefined Edge-Vector eCurrentDensity !",
+      "supported_public_element_edge_current_export_available": false,
+      "supported_public_general_dd_row_scale_available": false,
+      "classification": "ElementEdgeCurrent is not the VSV row-scalar cause and T-2022.03-SP2 exposes no supported public assembly-level edge-current or general DD row-scale dataset; exact scalar attribution now requires vendor-internal version-specific disclosure",
+      "production_solver_changed": false,
+      "self_consistent_reclose_run": false,
+      "absolute_newtonplot_rhs_cross_engine_gate_valid": false,
+      "normalized_shape_and_relative_change_diagnostics_valid": true,
+      "ledger_status": "draft",
+      "passed": true
     }
   },
   "comparison_masks": {
@@ -533,6 +561,6 @@
       "max_gm_relative_error": 0.24307577516061074,
       "worst_kcl_relative_error": 1.1429698478423298e-9
     },
-    "next_gate": "do not use the absolute NewtonPlot eContinuityRhs magnitude as a cross-engine gate; only a supported Sentaurus assembly-level element-edge current or explicit version-specific row-scale disclosure can identify the remaining uniform scalar, while IALMob, predictor and production defaults remain unchanged"
+    "next_gate": "supported T-2022.03-SP2 public interface search is exhausted: keep the absolute NewtonPlot eContinuityRhs magnitude excluded from cross-engine gates and either request Synopsys version-specific internal row-scale disclosure or maintain the evidence-based stop classification; maximum gm remains failed and IALMob, predictor and production defaults remain unchanged"
   }
 }
