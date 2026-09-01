@@ -302,6 +302,48 @@
       "maximum_candidate_localized_jvp_relative_error": 9.071723462799034e-8,
       "classification": "phin edge-drive state closure; region-local AverageBox Poisson P1 does not improve maximum gm",
       "passed": true
+    },
+    "maximum_gm_fermi_edge_average_ab": {
+      "bias_points_V": [
+        1.0,
+        1.1666666666666667
+      ],
+      "state": "VSV (Vela psi, Sentaurus phin, Vela phip)",
+      "selected_nodes": [
+        3721,
+        3974,
+        3973,
+        4091,
+        3727,
+        4021,
+        3771
+      ],
+      "unique_incident_edges": 40,
+      "active_incident_edges": 24,
+      "production_factor": "Bessemoulin-Chatard eta/log-density secant",
+      "maximum_production_factor_reconstruction_relative_error": 2.1091831448371537e-14,
+      "maximum_production_flux_reconstruction_relative_error": 1.2998944890114032e-16,
+      "candidate_count": 10,
+      "gate": "both endpoints L2, maximum and every selected-node residual <=0.5x production",
+      "best_candidate": "classical",
+      "best_candidate_l2_ratios": [
+        0.9831163639196381,
+        0.9728155574649195
+      ],
+      "best_candidate_maximum_abs_ratios": [
+        0.9859365260776284,
+        0.9786518906698194
+      ],
+      "best_candidate_maximum_node_ratios": [
+        1.0208978043250863,
+        1.0339536564760605
+      ],
+      "passing_candidates": [],
+      "production_solver_changed": false,
+      "self_consistent_reclose_run": false,
+      "classification": "enumerated generalized-Einstein factor averages do not materially close the seven-node frozen-state residual",
+      "scope_limit": "does not establish equivalence of the complete Sentaurus and Vela SG edge operators",
+      "passed": true
     }
   },
   "comparison_masks": {
@@ -324,6 +366,6 @@
       "max_gm_relative_error": 0.24307577516061074,
       "worst_kcl_relative_error": 1.1429698478423298e-9
     },
-    "next_gate": "fixed-state Fermi-Dirac generalized-Einstein/SG edge-averaging semantics A/B on the seven-node interface cluster; keep IALMob and production defaults unchanged"
+    "next_gate": "obtain Sentaurus electron equation-balance or direct element-edge current evidence at Vg=1.0 and 1.166667 V, then align QF-drive and density support on the same seven-node cluster; keep IALMob, predictor and production defaults unchanged"
   }
 }
