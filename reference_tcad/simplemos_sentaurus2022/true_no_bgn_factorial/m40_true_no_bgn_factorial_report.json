@@ -1,0 +1,199 @@
+{
+  "schema": "vela.simplemos.sdevice.m40_true_no_bgn_factorial_report.v1",
+  "status": "complete",
+  "execution": {
+    "new_sentaurus_state_count": 4,
+    "new_vela_state_count": 4,
+    "default_model_changed": false
+  },
+  "manual_confirmation": {
+    "schema": "vela.simplemos.sdevice.m40_manual_probe.v1",
+    "status": "confirmed",
+    "release": "T-2022.03-SP2",
+    "manual_path": "/atctools/Synopsys/tcad/T-2022.03/tcad/T-2022.03-SP2/manuals/PDFManual/data/sdevice_ug.pdf",
+    "manual_sha256": "f33068f5040c1c8c7993bdc1c86a0d777925792780ab4405752accd682706e88",
+    "manual_page": 305,
+    "confirmed_keyword": "NoBandGapNarrowing",
+    "confirmed_syntax": "EffectiveIntrinsicDensity(NoBandGapNarrowing)",
+    "confirmation": "The manual identifies BGN as active by default and requires the explicit NoBandGapNarrowing keyword to disable it."
+  },
+  "sentaurus_model_observability": [
+    {
+      "cell": "bgn_on_srh_on",
+      "expected_model": "old_slotboom",
+      "solver_log_line": "OldSlotboom with bandgap narrowing (no Fermi)",
+      "solver_log_sha256": "2420d0631c2c1e918827d4611521da7108241643532d3fa3226c191985c34695",
+      "tdr_sha256": "bb24f74b092fd26e3e20904f195ad3e99ce19e1336a324a94e7595aa9212a587",
+      "current_file_sha256": "e785f1510168ec72b8ef68b031babf95e7e9bdb58e5a6f0884c98304a5249042",
+      "bandgap_narrowing_max_abs_eV": 0.14581095390376295,
+      "doping_common_node_count": 942,
+      "doping_max_relative_difference": 0.0
+    },
+    {
+      "cell": "bgn_on_srh_off",
+      "expected_model": "old_slotboom",
+      "solver_log_line": "OldSlotboom with bandgap narrowing (no Fermi)",
+      "solver_log_sha256": "f0cfa8f7e8de2514a275d8b1d1c1f5ae43918a5055bceb78a55b7c7cd589b7c1",
+      "tdr_sha256": "71421ce3a7469ed8263e6115f84482bdcac526435888c2032addbc270337d6da",
+      "current_file_sha256": "9f2db53153089fea40e61536520aa7a7f1c15b719c964374e3075d28e2a3cddd",
+      "bandgap_narrowing_max_abs_eV": 0.14581095390376295,
+      "doping_common_node_count": 942,
+      "doping_max_relative_difference": 0.0
+    },
+    {
+      "cell": "bgn_off_srh_on",
+      "expected_model": "none",
+      "solver_log_line": "Bennett/Wilson without bandgap narrowing",
+      "solver_log_sha256": "cb4f9a5e49e96ebcedf98afc88df102b1cb948327590a4f9bb958d732addb8ea",
+      "tdr_sha256": "c56bb94bcf80a1b8b2068572fc91ac0da8352c6739975ee9275e11840250f9ab",
+      "current_file_sha256": "f97acd14aedd8076be1e2dced749d773d89581965c4f13bfc643a8c4bd1ec297",
+      "bandgap_narrowing_max_abs_eV": 0.0,
+      "doping_common_node_count": 942,
+      "doping_max_relative_difference": 0.0
+    },
+    {
+      "cell": "bgn_off_srh_off",
+      "expected_model": "none",
+      "solver_log_line": "Bennett/Wilson without bandgap narrowing",
+      "solver_log_sha256": "68ee91448719a1a3d7a007fe4d603b92508c779a1f18f1ed1815aaf77051a984",
+      "tdr_sha256": "169ba730ae72a565980c0075cef6120364db04d8d5210295359362ee404ee717",
+      "current_file_sha256": "0130626dc150ebea4770754935407cff2a9334f9c718acc18538a6b9ea011ee9",
+      "bandgap_narrowing_max_abs_eV": 0.0,
+      "doping_common_node_count": 942,
+      "doping_max_relative_difference": 0.0
+    }
+  ],
+  "matrix": [
+    {
+      "cell": "bgn_on_srh_on",
+      "bgn_model": "old_slotboom",
+      "srh": true,
+      "sentaurus_current_A_per_um": 1.12874484001395e-16,
+      "vela_current_A_per_um": 1.3899350016539832e-16,
+      "signed_log10_vela_over_sentaurus": 0.09039871358507992,
+      "absolute_log10_ratio": 0.09039871358507992,
+      "relative_error": 0.2313987646993851,
+      "sentaurus_bgn_field_max_abs_eV": 0.14581095390376295,
+      "doping_max_relative_difference": 0.0
+    },
+    {
+      "cell": "bgn_on_srh_off",
+      "bgn_model": "old_slotboom",
+      "srh": false,
+      "sentaurus_current_A_per_um": 9.58829785725555e-17,
+      "vela_current_A_per_um": 1.2222870353190991e-16,
+      "signed_log10_vela_over_sentaurus": 0.10543168848230958,
+      "absolute_log10_ratio": 0.10543168848230958,
+      "relative_error": 0.2747695717380992,
+      "sentaurus_bgn_field_max_abs_eV": 0.14581095390376295,
+      "doping_max_relative_difference": 0.0
+    },
+    {
+      "cell": "bgn_off_srh_on",
+      "bgn_model": "none",
+      "srh": true,
+      "sentaurus_current_A_per_um": 2.636340697032e-17,
+      "vela_current_A_per_um": 2.703162381140761e-17,
+      "signed_log10_vela_over_sentaurus": 0.010870601028172609,
+      "absolute_log10_ratio": 0.010870601028172609,
+      "relative_error": 0.025346376583265228,
+      "sentaurus_bgn_field_max_abs_eV": 0.0,
+      "doping_max_relative_difference": 0.0
+    },
+    {
+      "cell": "bgn_off_srh_off",
+      "bgn_model": "none",
+      "srh": false,
+      "sentaurus_current_A_per_um": 1.93876893086985e-17,
+      "vela_current_A_per_um": 4.169361680781519e-16,
+      "signed_log10_vela_over_sentaurus": 1.332543519167879,
+      "absolute_log10_ratio": 1.332543519167879,
+      "relative_error": 20.505201648300034,
+      "sentaurus_bgn_field_max_abs_eV": 0.0,
+      "doping_max_relative_difference": 0.0
+    }
+  ],
+  "factor_effects": {
+    "sentaurus": {
+      "bgn_main_effect_dex": 0.6629048547145624,
+      "srh_main_effect_dex": 0.1021648718044128,
+      "bgn_srh_interaction_dex": -0.06262122122349467,
+      "bgn_effect_srh_on_dex": 0.631594244102816,
+      "bgn_effect_srh_off_dex": 0.6942154653263088
+    },
+    "vela": {
+      "bgn_main_effect_dex": 0.08911299565023079,
+      "srh_main_effect_dex": -0.566188074714054,
+      "bgn_srh_interaction_dex": 1.244018722018982,
+      "bgn_effect_srh_on_dex": 0.7111223566597218,
+      "bgn_effect_srh_off_dex": -0.5328963653592602
+    },
+    "cross_solver": [
+      {
+        "effect": "bgn_main_effect_dex",
+        "sentaurus_dex": 0.6629048547145624,
+        "vela_dex": 0.08911299565023079,
+        "vela_minus_sentaurus_dex": -0.5737918590643316
+      },
+      {
+        "effect": "srh_main_effect_dex",
+        "sentaurus_dex": 0.1021648718044128,
+        "vela_dex": -0.566188074714054,
+        "vela_minus_sentaurus_dex": -0.6683529465184668
+      },
+      {
+        "effect": "bgn_srh_interaction_dex",
+        "sentaurus_dex": -0.06262122122349467,
+        "vela_dex": 1.244018722018982,
+        "vela_minus_sentaurus_dex": 1.3066399432424767
+      },
+      {
+        "effect": "bgn_effect_srh_on_dex",
+        "sentaurus_dex": 0.631594244102816,
+        "vela_dex": 0.7111223566597218,
+        "vela_minus_sentaurus_dex": 0.07952811255690584
+      },
+      {
+        "effect": "bgn_effect_srh_off_dex",
+        "sentaurus_dex": 0.6942154653263088,
+        "vela_dex": -0.5328963653592602,
+        "vela_minus_sentaurus_dex": -1.227111830685569
+      }
+    ]
+  },
+  "causal_result": {
+    "production_gap_dex": 0.09039871358507992,
+    "true_no_bgn_srh_on_gap_dex": 0.010870601028172609,
+    "gap_change_dex": -0.07952811255690731,
+    "bgn_response_mismatch_srh_on_dex": 0.07952811255690584,
+    "bgn_related_fraction_of_production_gap": 0.8797482774138918,
+    "remaining_fraction_of_production_gap": 0.12025172258609192,
+    "m29_bennett_wilson_labelled_off_gap_dex": 0.0023104383154259477,
+    "true_no_bgn_minus_m29_bennett_wilson_gap_dex": 0.008560162712746662,
+    "primary_contrast": "BGN conditional effect with SRH enabled",
+    "factorial_main_effect_qualified": false,
+    "interaction_warning": "The no-BGN/SRH-off Vela corner has a 1.33254 dex parity gap; the 2x2 main effects are not used as a single-cause estimate."
+  },
+  "acceptance": {
+    "manual_keyword_confirmed": true,
+    "sentaurus_state_count": true,
+    "vela_state_count": true,
+    "solver_log_models_match": true,
+    "no_bgn_fields_zero": true,
+    "doping_fields_observable": true,
+    "doping_identity_exact": true,
+    "bias_exact": true,
+    "all_checks_pass": true
+  },
+  "claim_policy": [
+    "The solver log, not the deck label, is authoritative for the effective BGN model.",
+    "A no-BGN cell is accepted only when NoBandGapNarrowing is explicit and both log and exported field confirm it.",
+    "Donor and acceptor observability is mandatory; missing fields fail the run instead of being treated as zero.",
+    "Only BGN and SRH are varied; HFS remains disabled in all four cells.",
+    "No production default is changed."
+  ],
+  "artifacts": {
+    "factorial_matrix": "reference_tcad/simplemos_sentaurus2022/true_no_bgn_factorial/m40_factorial_matrix.csv",
+    "factor_effects": "reference_tcad/simplemos_sentaurus2022/true_no_bgn_factorial/m40_factor_effects.csv"
+  }
+}

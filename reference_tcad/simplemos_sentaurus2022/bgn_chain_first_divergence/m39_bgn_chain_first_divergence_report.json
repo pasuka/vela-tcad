@@ -1,0 +1,71 @@
+{
+  "schema": "vela.simplemos.sdevice.m39_bgn_chain_first_divergence_report.v1",
+  "status": "complete",
+  "scope": "read_only_frozen_state_audit_no_solver_rerun",
+  "first_divergence": {
+    "stage": "C-1_model_selection_contract",
+    "state": "m29_bgn_off_srh_on",
+    "declared": "none",
+    "observed": "BennettWilson",
+    "finding": "Omitting EffectiveIntrinsicDensity(OldSlotboom) selected the Sentaurus default Bennett/Wilson BGN model; the M29 cell is not a no-BGN control.",
+    "impact": "M29 terminal currents remain measured data, but the prior BGN-on versus BGN-off causal label and effect estimate are invalid.",
+    "m27_oldslotboom_chain": "C0 input doping, C1 total-impurity OldSlotboom deltaEg, C3 frozen density identity, and C5 symmetric band split all pass."
+  },
+  "m27_qualified_oldslotboom_chain": {
+    "states": [
+      "m27_full",
+      "m27_no_hfs"
+    ],
+    "silicon_nodes_per_state": 942,
+    "mesh_id_identity": true,
+    "c0_max_relative_difference": 0.0,
+    "c1_total_impurity_max_abs_difference_eV": 2.7755575615628914e-17,
+    "c1_abs_net_max_abs_difference_eV": 0.025401133654722532,
+    "c1_best_convention": "total",
+    "c3_max_joint_fit_rms": 1.3620070590630167e-14,
+    "c5_conduction_share": 0.5000000000000002,
+    "c5_valence_share": 0.49999999999999956,
+    "c5_gap_slope": -1.0
+  },
+  "m29_contract_audit": {
+    "bgn_on_effective_model": "OldSlotboom",
+    "bgn_on_solver_log_line": "OldSlotboom with bandgap narrowing (no Fermi)",
+    "bgn_on_solver_log_sha256": "b32adfb058ef7805de26418c6951209375d7bc810213c3c26aeefb23f749a062",
+    "bgn_off_label_effective_model": "BennettWilson",
+    "bgn_off_solver_log_line": "Bennett/Wilson with bandgap narrowing (no Fermi)",
+    "bgn_off_solver_log_sha256": "4614061cf766f4545f6099800ac7d753710181e97a2df8a09be85b835e11c30c",
+    "bgn_off_deck_sha256": "749268050ecf86df98597a1dee95ff756fd19e1337aad5cffc1e8a2e3ff02a04",
+    "bgn_off_label_matches_expected": false,
+    "bgn_off_c1_status": "diagnostic_cross_model_not_parity",
+    "native_c0_status": "not_scored_missing_fields",
+    "downstream_doping_source": "m27_full_same_mesh_input_oracle",
+    "oracle_mesh_identity": {
+      "same_node_ids": true,
+      "shared_node_count": 1482,
+      "max_coord_diff_um": 0.0,
+      "qualified": true
+    },
+    "bennett_wilson_vs_vela_oldslotboom_total_max_abs_difference_eV": 0.07447303945180146
+  },
+  "input_provenance": {
+    "export_dir": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\reference_tcad\\simplemos_sentaurus2022\\m27_cross_solver_response_audit\\sentaurus_exports\\full",
+    "nodes_sha256": "9b64bd4a514ac285fe546be069d582dcc6f6ccb92e3eba36ed8dc77a5186b59b",
+    "doping_sha256": "289fb746dd06a07001a4c96c8e099d626b4118f82a7eb1b2f2e344ecdd8f25b9"
+  },
+  "acceptance": {
+    "m27_models_are_oldslotboom": true,
+    "m27_c0_exact": true,
+    "m27_c1_total_exact": true,
+    "m27_c3_joint_fit_closes": true,
+    "m27_c5_symmetric_split": true,
+    "m29_off_label_mismatch_detected": true,
+    "m29_missing_doping_not_silently_scored": true,
+    "all_checks_pass": true
+  },
+  "claim_limits": [
+    "M29 currents are retained as measured results, but its BGN off causal label is invalid.",
+    "The M29 downstream C1 result uses a mesh-identical M27 input-doping oracle because M29 omitted donor/acceptor exports.",
+    "The Bennett/Wilson versus OldSlotboom C1 difference is diagnostic and is not a same-model parity score.",
+    "M39 does not change a Vela default and does not rerun Sentaurus or Vela."
+  ]
+}

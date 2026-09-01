@@ -36,6 +36,6 @@
     "scripts/freeze_simplemos_m36_boundary_contact_measure_audit_evidence.py": "85fddd9476d44e1e88dbe34da33fb0bb7417dde88539d3ef14194516c1b6169e",
     "tests/regression/test_simplemos_m36_boundary_contact_measure_audit.py": "686237346c9fbd93af0cf80995d9d7ea83b40b126375d221849bed2f83b6cdb9",
     "docs/validation/simplemos_m36_boundary_contact_measure_audit_2026-08-31.md": "b627b20d55ed3539474093707bc8098ea52347054d3f2baf3255db5efac46cf6",
-    "CMakeLists.txt": "5d95711a76a836cefbb5cb17687fae4939ba7b020a0223350e9420169ebb37c3"
+    "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
   }
 }

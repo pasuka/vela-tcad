@@ -1130,6 +1130,20 @@ set_tests_properties(simplemos_m38_ldmos_mechanism_crosscheck PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m38_ldmos_mechanism_crosscheck)
 
+add_test(NAME simplemos_m39_bgn_chain_first_divergence
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m39_bgn_chain_first_divergence)
+set_tests_properties(simplemos_m39_bgn_chain_first_divergence PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m39_bgn_chain_first_divergence)
+
+add_test(NAME simplemos_m40_true_no_bgn_factorial
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m40_true_no_bgn_factorial)
+set_tests_properties(simplemos_m40_true_no_bgn_factorial PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m40_true_no_bgn_factorial)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)

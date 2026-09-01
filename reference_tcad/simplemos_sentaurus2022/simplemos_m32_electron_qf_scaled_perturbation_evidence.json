@@ -38,13 +38,13 @@
   ],
   "source_hashes": {
     "reference_tcad/simplemos_sentaurus2022/simplemos_m32_electron_qf_scaled_perturbation_contract_v1.json": "e3d12b13fd3b74153981eb568acc2f9eac09d254b513e1cd7dc21b27c612fae3",
-    "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_evidence.json": "cabe3dd80d702e8a61e5b28f1066bbd5527b38fd3cd6ee84f128486b5b6f6a99",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_evidence.json": "3fac8605553ac8bfe216a1d78853bb575fedfd95b7af25dfe6772e8020255e8d",
     "scripts/run_simplemos_m32_electron_qf_scaled_perturbation.py": "a3b7415a24440cd01c671bfa8f7faae227a55b13540a305655dc84d841f6c148",
     "scripts/plot_simplemos_m32_electron_qf_scaled_perturbation.py": "c04d1c1192499e3be0565793b8a75fe2ec9bf609786c9f651556bdbcf931a6c9",
     "scripts/freeze_simplemos_m32_electron_qf_scaled_perturbation_evidence.py": "a09686151ce905a8ff1485d9e1036d4477fd8dab0c5d9584ac37974d026458e8",
     "tests/regression/test_simplemos_m32_electron_qf_scaled_perturbation.py": "56888a4fb285187e38968fd90eb1c13d19789b686cfb50d3a783bd38695a01e0",
     "docs/validation/simplemos_m32_electron_qf_scaled_perturbation_2026-08-31.md": "7728723bae10d5a8bbc871aa8a0ffb51deed70d60fe3c6e86188eeda0b820d3a",
     "docs/validation/figures/simplemos_m32/simplemos_m32_electron_qf_scaled_perturbation.png": "14e13e764dce5b6bfbef3668c33fabb412734d48e0ecece0e375b396dbbee87d",
-    "CMakeLists.txt": "5d95711a76a836cefbb5cb17687fae4939ba7b020a0223350e9420169ebb37c3"
+    "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
   }
 }

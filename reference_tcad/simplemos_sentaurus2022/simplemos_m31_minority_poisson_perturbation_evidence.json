@@ -28,7 +28,7 @@
   ],
   "source_hashes": {
     "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_contract_v1.json": "6bb1c782291dae53efbd2f1593839dea68911f0eeb78d699db432292da362a6a",
-    "reference_tcad/simplemos_sentaurus2022/simplemos_m30_double_off_causal_closure_evidence.json": "91073be5868e9e9b983fdeadf458f90c2a7e456c24e87462f1ac2def03713359",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m30_double_off_causal_closure_evidence.json": "3f1e7a815f01c213c55ed717c2b483016cd1c62c9ce02fbf9e887219bc737be9",
     "include/vela/solver/NewtonSolver.h": "65753c3ed686b59566a3a66df8a1837b71dd0e5a9f80dc1c44d17a2c9f0412ba",
     "src/solver/NewtonSolver.cpp": "dd39eb5568ad68b3a9cc9a3566a359f4a8b7a3f1d50753adb41892c8e9d2b30c",
     "src/tools/vela_example_runner.cpp": "cc5ca8d7ee8a710e83808eee363b878957901de9bff18b39bc3f3a5c85cf52b4",
@@ -39,6 +39,6 @@
     "tests/regression/test_simplemos_m31_minority_poisson_perturbation.py": "d9d3670916e99853fa250649bc19db602f04902ee8767d3dbd7bb244c6c19b47",
     "docs/validation/simplemos_m31_minority_poisson_perturbation_2026-08-31.md": "461d7f0b70edcfb750e2be0033dee32fc59af1e199c0a2808b78111858b6237d",
     "docs/validation/figures/simplemos_m31/simplemos_m31_minority_poisson_perturbation.png": "6cd26314a59b50e345432439095933b9102389d1d724652b5cd65adabfba7e29",
-    "CMakeLists.txt": "5d95711a76a836cefbb5cb17687fae4939ba7b020a0223350e9420169ebb37c3"
+    "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
   }
 }
