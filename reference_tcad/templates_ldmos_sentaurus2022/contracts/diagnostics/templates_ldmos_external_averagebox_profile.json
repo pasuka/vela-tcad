@@ -446,6 +446,36 @@
       "self_consistent_reclose_run": false,
       "ledger_status": "draft",
       "passed": true
+    },
+    "maximum_gm_qf_single_mode_perturbation": {
+      "bias_V": 1.1666666666666667,
+      "drain_bias_V": 0.1,
+      "state": "VSV (Vela psi, Sentaurus phin, Vela phip) in both engines",
+      "target_node": 3721,
+      "amplitude_V": 1e-6,
+      "difference": "symmetric_central",
+      "pre_registered_silicon_one_ring": [
+        3714,
+        3720,
+        3721,
+        3722,
+        3723
+      ],
+      "loaded_target_phin_delta_V": 2.000000000002e-6,
+      "maximum_unintended_loaded_pair_delta_V": 0.0,
+      "sentaurus_vela_derivative_cosine": -0.9999998310951898,
+      "signed_sentaurus_over_vela_least_squares": -33.78060115741988,
+      "relative_l2_after_scalar_fit": 0.0005812138950491479,
+      "scale_drift_from_unperturbed_high_endpoint": 0.009582941964547453,
+      "sentaurus_even_over_odd_l2": 0.00018691947460579224,
+      "vela_even_over_odd_l2": 0.00019999562511093324,
+      "active_support_equals_pre_registered_one_ring": true,
+      "classification": "the approximately 33.5x factor multiplies a controlled local electron-QF Jacobian column; QF-drive spatial shape is excluded as the primary cause",
+      "remaining_open_scalar": "NewtonPlot RHS normalization, 2-D width/current convention, or a uniform assembly coefficient",
+      "production_solver_changed": false,
+      "self_consistent_reclose_run": false,
+      "ledger_status": "draft",
+      "passed": true
     }
   },
   "comparison_masks": {
@@ -468,6 +498,6 @@
       "max_gm_relative_error": 0.24307577516061074,
       "worst_kcl_relative_error": 1.1429698478423298e-9
     },
-    "next_gate": "calibrate the bias-stable approximately 33.5x Sentaurus NewtonPlot eContinuityRhs scalar with a controlled single-mode QF perturbation or obtain a supported assembly-level element-edge current export; keep IALMob, predictor and production defaults unchanged"
+    "next_gate": "audit the Sentaurus eContinuityRhs dimensional chain using 2-D AreaFactor/default device width and NewtonPlot row normalization; use a controlled width A/B only if documentation cannot predict the observed 33.7806x scalar; keep IALMob, predictor and production defaults unchanged"
   }
 }

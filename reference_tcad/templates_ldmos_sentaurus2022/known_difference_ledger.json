@@ -41,10 +41,11 @@
         "carrier couple, mobility or generalized-Einstein amplitude drift as the cause of the seven-node VSV residual growth",
         "material-weighted region-local AverageBox Poisson P1 edge couples as a correction for the maximum-gm deficit",
         "classical, eta-midpoint, log-density-midpoint, endpoint arithmetic/geometric/harmonic/density-weighted, Simpson eta-integral, or endpoint-bound generalized-Einstein factor averaging as a sufficient closure of the seven-node VSV residual",
-        "a different seven-node QF-drive spatial mode as the dominant VSV row mismatch; two nonzero identical-state row vectors align to one bias-stable scalar"
+        "a different seven-node QF-drive spatial mode as the dominant VSV row mismatch; two nonzero identical-state row vectors align to one bias-stable scalar",
+        "baseline-residual leakage or a different local electron-QF Jacobian-column shape as the approximately 33.5x cause; a symmetric 1 uV node-3721 perturbation aligns the complete silicon one-ring derivative with cosine -0.999999831 and only 0.0581% residual after one scalar"
       ],
       "open_causes": [
-        "whether the approximately 33.5x VSV electron-row magnitude belongs to Sentaurus NewtonPlot RHS normalization, the 2-D width/current convention, or a uniform assembly coefficient; a controlled single-mode QF perturbation is the next calibration gate",
+        "whether the calibrated approximately 33.5x VSV electron-row and single-mode Jacobian-column magnitude belongs to Sentaurus NewtonPlot RHS normalization, the 2-D width/current convention, or a uniform assembly coefficient; the next gate is a dimensional-chain audit and, only if needed, a controlled width A/B",
         "the individual element-edge current rule, which row-mode alignment cannot uniquely recover without a supported assembly-level element-edge export",
         "generalized SRH hole-QF reference convention after removal of the source-short contact reconstruction artifact; low expected impact on Id-Vg but material for recombination qualification"
       ],
@@ -207,7 +208,7 @@
         },
         {
           "path": "docs/validation/templates_ldmos_g3_sentaurus_equation_balance_2026-09-01.md",
-          "sha256": "115db5e74245996d00e864f8daa35d424ae094d88103805d64ad1e0128443a0a"
+          "sha256": "4df3820dadb17f941ec817b46a34f25297d0bff24b411ab9269468ad2848249b"
         },
         {
           "path": "scripts/audit_templates_ldmos_g3_sentaurus_equation_balance.py",
@@ -218,8 +219,24 @@
           "sha256": "76b2056573bc321a2e517114bf970cd61c45589f8c4f47185e5f73a6e4f83a82"
         },
         {
+          "path": "docs/validation/templates_ldmos_g3_qf_single_mode_perturbation_2026-09-01.md",
+          "sha256": "7289b1e85aa5d6cf52ab22db9ca5243f7b5b6e1c47b550a53c63700b4ff5cc02"
+        },
+        {
+          "path": "scripts/prepare_templates_ldmos_g3_qf_single_mode_perturbation.py",
+          "sha256": "4daa069e2a3ba39d189123c42c4a5f7629c1279109608b01e710f1bdb6d46fda"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_qf_single_mode_perturbation.py",
+          "sha256": "77e68287bb48dae971edcaeab2e83a472fd8680b26b73889018520001065e999"
+        },
+        {
+          "path": "tests/regression/test_audit_templates_ldmos_g3_qf_single_mode_perturbation.py",
+          "sha256": "7894b9dff855359248df2810f522af94270b0b713933c381ee24c0668101fadb"
+        },
+        {
           "path": "reference_tcad/templates_ldmos_sentaurus2022/contracts/diagnostics/templates_ldmos_external_averagebox_profile.json",
-          "sha256": "c7fabb1ab1e541676dfb7b27952699d5af7ebf4ad77f6461515439385270e40d"
+          "sha256": "7e42ff5607c5f6c91415142e0ef0141a15d40ceb941248399795bde525076f60"
         }
       ],
       "expires_when": "The gate-channel interface-box electron-row semantic difference is closed or classified, generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
