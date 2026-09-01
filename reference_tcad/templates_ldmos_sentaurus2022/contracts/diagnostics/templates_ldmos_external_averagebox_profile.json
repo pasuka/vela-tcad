@@ -2,7 +2,7 @@
   "schema": "vela.templates_ldmos.external_averagebox_profile.v1",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
   "profile_name": "templates_ldmos_external_averagebox",
-  "status": "qualified_diagnostic_curve_stage3_phin_feedback_open",
+  "status": "qualified_diagnostic_curve_stage3_rhs_scalar_open",
   "default_enabled": false,
   "scope": {
     "device": "Templates/LDMOS exact SProcess topology",
@@ -393,6 +393,59 @@
       "self_consistent_reclose_run": false,
       "ledger_status": "draft",
       "passed": true
+    },
+    "maximum_gm_vsv_sentaurus_equation_balance": {
+      "bias_points_V": [
+        1.0,
+        1.1666666666666667
+      ],
+      "state": "VSV (Vela psi, Sentaurus phin, Vela phip) loaded identically in both engines",
+      "selected_nodes": [
+        3721,
+        3974,
+        3973,
+        4091,
+        3727,
+        4021,
+        3771
+      ],
+      "loaded_state_seven_node_max_abs_error_V": {
+        "psi": [0.0, 0.0],
+        "phin": [0.0, 0.0],
+        "phip": [0.0, 0.0]
+      },
+      "sentaurus_seven_node_rhs_l2_A": [
+        4.687383504341149e-6,
+        1.3932165026216753e-5
+      ],
+      "vela_seven_node_residual_l2_A_per_um": [
+        1.395242629052613e-7,
+        4.163457929711873e-7
+      ],
+      "sentaurus_vela_row_vector_cosine": [
+        -0.9999796610342824,
+        -0.9999100662378297
+      ],
+      "signed_sentaurus_over_vela_least_squares": [
+        -33.59478896506678,
+        -33.45995633769942
+      ],
+      "relative_l2_after_scalar_fit": [
+        0.0063778928935441775,
+        0.013411168340568165
+      ],
+      "absolute_scale_high_over_low_minus_one": 0.004029671348239283,
+      "whole_silicon_vector_cosine": [
+        -0.976684658544324,
+        -0.9830018965003314
+      ],
+      "classification": "the nonzero seven-node assembled electron-row mode is cross-engine aligned up to opposite sign convention and one bias-stable scalar; a different local QF-drive spatial mode is not the dominant cause",
+      "remaining_open_scalar": "NewtonPlot RHS normalization, 2-D width/current convention, or a uniform assembly coefficient",
+      "individual_element_edge_rule_identified": false,
+      "production_solver_changed": false,
+      "self_consistent_reclose_run": false,
+      "ledger_status": "draft",
+      "passed": true
     }
   },
   "comparison_masks": {
@@ -415,6 +468,6 @@
       "max_gm_relative_error": 0.24307577516061074,
       "worst_kcl_relative_error": 1.1429698478423298e-9
     },
-    "next_gate": "run Sentaurus iteration-0 equation-balance on the identical VSV state, or obtain a supported assembly-level element-edge current export, to distinguish QF-drive placement from density support on the same seven-node cluster; the copied VSV TDR requires explicit data-transfer authorization before VM upload; keep IALMob, predictor and production defaults unchanged"
+    "next_gate": "calibrate the bias-stable approximately 33.5x Sentaurus NewtonPlot eContinuityRhs scalar with a controlled single-mode QF perturbation or obtain a supported assembly-level element-edge current export; keep IALMob, predictor and production defaults unchanged"
   }
 }

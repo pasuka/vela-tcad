@@ -6,6 +6,7 @@ from pathlib import Path
 
 from scripts.audit_templates_ldmos_g3_sentaurus_equation_balance import (
     analyze_endpoint,
+    analyze_vsv_endpoint,
     cosine,
     current_scale_from_sg,
 )
@@ -102,6 +103,99 @@ class SentaurusEquationBalanceAuditTest(unittest.TestCase):
     def test_cosine(self) -> None:
         self.assertAlmostEqual(cosine([1.0, -2.0], [2.0, -4.0]), 1.0)
         self.assertIsNone(cosine([0.0], [1.0]))
+
+    def test_vsv_row_mode_alignment_and_state_check(self) -> None:
+        with tempfile.TemporaryDirectory() as root_text:
+            root = Path(root_text)
+            newton = root / "newton"
+            loaded = root / "loaded"
+            nodes = [
+                {"id": 1, "x_um": 2.0, "y_um": 3.0},
+                {"id": 2, "x_um": 4.0, "y_um": 5.0},
+            ]
+            write_csv(newton / "nodes.csv", ["id", "x_um", "y_um"], nodes)
+            write_csv(
+                newton / "fields" / "eContinuityRhs_region0.csv",
+                ["node_id", "component0"],
+                [
+                    {"node_id": 1, "component0": -30.0},
+                    {"node_id": 2, "component0": -40.0},
+                ],
+            )
+            state = root / "state.csv"
+            write_csv(state, ["node_id", "psi", "phin", "phip"], [
+                {"node_id": 1, "psi": 0.1, "phin": 0.2, "phip": 0.3},
+                {"node_id": 2, "psi": 0.4, "phin": 0.5, "phip": 0.6},
+            ])
+            for field, values in {
+                "ElectrostaticPotential": (0.1, 0.4),
+                "eQuasiFermiPotential": (0.2, 0.5),
+                "hQuasiFermiPotential": (0.3, 0.6),
+            }.items():
+                write_csv(
+                    loaded / "fields" / f"{field}_region0.csv",
+                    ["node_id", "component0"],
+                    [
+                        {"node_id": 1, "component0": values[0]},
+                        {"node_id": 2, "component0": values[1]},
+                    ],
+                )
+            carrier = root / "carrier.csv"
+            write_csv(carrier, [
+                "node_id", "x", "y", "electron_residual",
+                "electron_flux_abs_sum", "electron_recombination",
+            ], [
+                {
+                    "node_id": 1, "x": 2.0, "y": 3.0,
+                    "electron_residual": 3.0,
+                    "electron_flux_abs_sum": 6.0,
+                    "electron_recombination": 0.0,
+                },
+                {
+                    "node_id": 2, "x": 4.0, "y": 5.0,
+                    "electron_residual": 4.0,
+                    "electron_flux_abs_sum": 8.0,
+                    "electron_recombination": 0.0,
+                },
+            ])
+            sg = root / "sg.csv"
+            write_csv(sg, [
+                "electron_flux", "electron_particle_line_flux_per_m_s",
+            ], [
+                {"electron_flux": 2.0, "electron_particle_line_flux_per_m_s": 20.0},
+                {"electron_flux": -3.0, "electron_particle_line_flux_per_m_s": -30.0},
+            ])
+
+            endpoint, rows = analyze_vsv_endpoint(
+                name="fixture",
+                sentaurus_newton_export=newton,
+                sentaurus_loaded_export=loaded,
+                target_state_csv=state,
+                vela_carrier_csv=carrier,
+                vela_sg_csv=sg,
+                selected_nodes=(1, 2),
+            )
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(
+                endpoint["loaded_state_seven_node_max_abs_error_V"],
+                {"psi": 0.0, "phin": 0.0, "phip": 0.0},
+            )
+            self.assertAlmostEqual(
+                endpoint["cross_engine_row_mode"]["cosine"], -1.0
+            )
+            expected_scale = -10.0 / (
+                10.0 * 1.602176634e-19 * 1.0e-6
+            )
+            self.assertAlmostEqual(
+                endpoint["cross_engine_row_mode"][
+                    "signed_sentaurus_over_vela_least_squares"
+                ] / expected_scale,
+                1.0,
+            )
+            self.assertAlmostEqual(
+                endpoint["cross_engine_row_mode"]["relative_l2_after_scalar_fit"],
+                0.0,
+            )
 
 
 if __name__ == "__main__":

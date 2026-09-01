@@ -97,6 +97,13 @@ argument 与 quasi-Fermi argument。候选包括：
 收敛行和仍不能唯一反演逐边 QF-drive，因此下一门槛收窄为“相同 VSV 状态的
 Sentaurus iteration-0 equation-balance 或受支持的装配级 element-edge current”。
 
+该 VSV 门槛现已执行：两个端点的 `psi/phin/phip` Load 回读在七节点逐点零误差；
+Sentaurus/Vela 七节点行向量余弦为 `-0.999980/-0.999910`，去符号后的最小二乘
+倍率为 `33.5948/33.4600`，跨偏压只漂移 `0.403%`。因此已枚举 Einstein 平均的
+负结果得到加强：剩余差异不是一个不同的七节点 QF-drive 空间模态，而是尚待标定
+归属的统一 RHS/宽度/装配标量。下一门槛改为受控单模 QF 微扰或装配级 edge-current
+导出；详见更新后的 equation-balance 报告。
+
 ## 可复现工件
 
 - 审计脚本：`scripts/audit_templates_ldmos_g3_fermi_edge_average_ab.py`；
