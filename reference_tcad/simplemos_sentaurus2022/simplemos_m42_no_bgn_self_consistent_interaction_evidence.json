@@ -1,22 +1,22 @@
 {
   "schema": "vela.simplemos.sdevice.m42_no_bgn_self_consistent_interaction_evidence.v1",
-  "status": "frozen",
+  "status": "failed",
   "artifacts": [
     {
       "path": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_no_bgn_self_consistent_interaction_report.json",
-      "sha256": "200fb9ebc7b4c37515fe4f39604d132b2da6e47f22b27b3a3699f30f0f6271c5"
+      "sha256": "ccea537cc37604ecc58d2c5ca6fab9e5c9f652d72df00afdc9c1c3b24284c7dc"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_self_consistent_matrix.csv",
-      "sha256": "28b7b0710bccf902199f8c42ea78f13ae7c1abb4953600a45d40003a6d1d08e0"
+      "sha256": "82b49fa022070db1dd65587c31a2b3d0626d31e964a244b4435a0599e58f643c"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_frozen_operator_matrix.csv",
-      "sha256": "7d90250f5d4ccc8e6f071711feea3fda24a863247a525c5f114e904e370f5a7d"
+      "sha256": "c3c6da8046302c8b890e7b90bd7c8de5a53d7f9e22b5964d6b3f8cb0f9aeaa03"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_qf_state_substitution.csv",
-      "sha256": "cc87849753a4caab5f875b7fa80480c4e2b90498541d6787a928efcc8b53e4bf"
+      "sha256": "9a6e2ae66be5c57a377bccd7d4a5846adff67ee5801098a6c32a534ece2ee38d"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_contact_reconstruction_response.csv",
@@ -26,9 +26,9 @@
   "source_hashes": {
     "reference_tcad/simplemos_sentaurus2022/simplemos_m42_no_bgn_self_consistent_interaction_contract_v1.json": "e1577bb5391ee973a7ea12929e59d09b096c24b002208fb7cf032cfaf7cc798c",
     "scripts/run_simplemos_m42_no_bgn_self_consistent_interaction.py": "572550a9351898a879fcfaad4d54635f7d340e093adbf998818e2e9d4a85f541",
-    "reference_tcad/simplemos_sentaurus2022/simplemos_m41_equal_ni_flux_ablation_evidence.json": "fe0721371e77d0507d742eda41c8213b7f3829d6597125981328ca7b007b8ee1",
-    "src/equation/CoupledDDAssembler.cpp": "e525d828d0199dafdea947377dc6faed7cea419b5cb76fc1f51ae05d3dfe64ed",
-    "src/solver/NewtonSolver.cpp": "95de9308e18bdd428f62df47cbc1f6e1658f50188d2ffe45f5757ab7e9248b73"
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m41_equal_ni_flux_ablation_evidence.json": "a2a77b8e49842c85ef7dfafc9f9d9ac7260b3b79e39c4a7c1fe588f04634af11",
+    "src/equation/CoupledDDAssembler.cpp": "62db5a538ee95439feeea88a0d860b8bd51d22ef88db9829743dd41bcb0d67f2",
+    "src/solver/NewtonSolver.cpp": "cb37eb85dd21e7faad9d7f85f0eb1d775be231a8b0b79a47adb731e17374a065"
   },
   "default_model_changed": false,
   "acceptance": {
@@ -37,10 +37,10 @@
     "frozen_operator_pair_count": true,
     "qf_substitution_count": true,
     "compensated_cut_reported_closure": true,
-    "legacy_cut_reported_mismatch_reproduced": true,
+    "legacy_cut_reported_mismatch_reproduced": false,
     "srh_frozen_cut_is_null": true,
     "contact_frozen_cut_is_null": true,
     "qf_reference_increment_required": true,
-    "all_checks_pass": true
+    "all_checks_pass": false
   }
 }

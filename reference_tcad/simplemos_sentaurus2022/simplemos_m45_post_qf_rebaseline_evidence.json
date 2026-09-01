@@ -1,0 +1,102 @@
+{
+  "schema": "vela.simplemos.sdevice.m45_post_qf_rebaseline_evidence.v1",
+  "status": "frozen",
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/post_qf_rebaseline/m45_post_qf_rebaseline_report.json",
+      "sha256": "a976a59f8033970f0b65ed2aa0e7861954b21d36dccb9871499c4ab1bdb2d677"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/post_qf_rebaseline/m45_stage_impact_matrix.csv",
+      "sha256": "fc1a670ce090458d511d93bdcaf0066d285cb9ba6683957814848796e116ec1e"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/post_qf_rebaseline/m45_key_metric_delta.csv",
+      "sha256": "dacd5df631e0e058d35e4542d80687712ea91423ec27db193bbf469ea92356d4"
+    },
+    {
+      "path": "docs/validation/simplemos_m45_post_qf_rebaseline_2026-09-01.md",
+      "sha256": "5f6a3395b2fd34c45cef94c884356a6781b5a3a533ef86965940a80709fc4cce"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/minority_poisson_perturbation/m31_minority_poisson_perturbation_report.json",
+      "sha256": "2677734b62750fcad13ad47bd4ed7567b812198602965233b96ddd4992930513"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_electron_qf_scaled_perturbation_report.json",
+      "sha256": "fdc13a4926fc0caac6de5ab048b37734bf29a216d3b8e5946e74d9717ee2121c"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/measure_contact_qf_ablation/m37_measure_contact_qf_ablation_report.json",
+      "sha256": "6900cec9db63d0da331f118fed8c347336b39569be53eff17b10cae4027237d9"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_equal_ni_flux_ablation_report.json",
+      "sha256": "f57e51756dd5dca465f7ec82ff09fe2aa61c363915f240ec4409d12bbe8253b9"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_no_bgn_self_consistent_interaction_report.json",
+      "sha256": "ccea537cc37604ecc58d2c5ca6fab9e5c9f652d72df00afdc9c1c3b24284c7dc"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_evidence.json",
+      "sha256": "f9cc15740915235cc92bc48a88ac28391b3428baff112fd6ae0653d88cf7670a"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m32_electron_qf_scaled_perturbation_evidence.json",
+      "sha256": "f5809b86a90b667fd8f5a314915609ee1115270fe5ce488aef16eae53005854f"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m41_equal_ni_flux_ablation_evidence.json",
+      "sha256": "a2a77b8e49842c85ef7dfafc9f9d9ac7260b3b79e39c4a7c1fe588f04634af11"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m42_no_bgn_self_consistent_interaction_evidence.json",
+      "sha256": "ef6d1aa87d638523576dfa0564dee452d1fffaa5e8f93a31be0bb2e3c38ea82c"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m45_post_qf_rebaseline_contract_v1.json": "7f5203a8b3f120a808fce78e62713895806cba7ce0d4cdeaf1c643507232aaa7",
+    "scripts/run_simplemos_m45_post_qf_rebaseline.py": "ca9a8ae2a594f0b2d7105a8b26b7ccf98c573e5875a9c7b22e7d89bb33751f1d",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m44_qf_coordinate_consistency_evidence.json": "9194b3edabed2545214e5cc32f06cc7e24e0610a4e160ddfd72356d22152ed29",
+    "CMakeLists.txt": "f5dbf208763fb701b3af63d6a88f0cff5691d6413fcd575b18bd395aa8ba202c",
+    "scripts/run_simplemos_m31_minority_poisson_perturbation.py": "73c6a43e034c73c3af245b2955577eb3eb13a6ba3b5e316a62a174271d444d2b",
+    "scripts/run_simplemos_m32_electron_qf_scaled_perturbation.py": "a3b7415a24440cd01c671bfa8f7faae227a55b13540a305655dc84d841f6c148",
+    "scripts/run_simplemos_m37_measure_contact_qf_ablation.py": "82b5f4f4a935be0c367161cbf34d991a7356c9b4c62e4414e2715af0387955b1",
+    "scripts/run_simplemos_m41_equal_ni_flux_ablation.py": "36f35a72bee1bec249af392c313eef7b7d8608efb3e2c03b04cb1350cd73e292",
+    "scripts/run_simplemos_m42_no_bgn_self_consistent_interaction.py": "572550a9351898a879fcfaad4d54635f7d340e093adbf998818e2e9d4a85f541",
+    "tests/regression/simplemos_evidence_chain.py": "d5eed59e6613194d567b6c2007dee778458b86bafdc60a44f475b39e4a57988e",
+    "tests/regression/test_simplemos_m9_hfs_diagnostics.py": "2c25e474d0c8baeadbe91f0eb809994ba3235b251b8d945fadc6bc4a550c7b92",
+    "tests/regression/test_simplemos_m10_fixed_state_replay.py": "7c1e5bc8b53e2e4c886168c138d619ce1643b17608ddbcfadf34440c913ffb95",
+    "tests/regression/test_simplemos_m12_terminal_sensitivity.py": "ce2cf5dd1b45649bd99265a7c648a213d9fb7f9706795bda1b5879280b56b4ff",
+    "tests/regression/test_simplemos_m30_double_off_causal_closure.py": "dc0f4c808c935d419ee399a7b3e9930eefa02a9c9d866bbe661e721113fa1fb5",
+    "tests/regression/test_simplemos_m31_minority_poisson_perturbation.py": "99bd8e3c0832b4e6683585bf8300f8d8fa874be5ebd0cd104588918883823166",
+    "tests/regression/test_simplemos_m32_electron_qf_scaled_perturbation.py": "6aa7b041f428a7f0b325c2494dec9fc2814fad4ec5bb7a84b5f982d3c78b7cb0",
+    "tests/regression/test_simplemos_m37_measure_contact_qf_ablation.py": "044235fedb3823e16c3c7b0bb98bd98faf29911eb7a4209029c6efc2130b4d38",
+    "tests/regression/test_simplemos_m41_equal_ni_flux_ablation.py": "064046c63d5d1971a536a32a72682d4ec5198e8f8f4213c4e4f4ad6137b71c7a",
+    "tests/regression/test_simplemos_m42_no_bgn_self_consistent_interaction.py": "cd6ba165ccb0fb42f4ab7c0d4799a287c458ad7f4fe82ab1307b0e6d1392ec7d",
+    "tests/regression/test_simplemos_m45_post_qf_rebaseline.py": "c9e54512e56bdcdb119398967452bdcfca1b21c72d1aad952ca5aab809bc447f"
+  },
+  "default_physics_model_changed": false,
+  "default_hfs_model_changed": false,
+  "default_equal_ni_flux_evaluation_changed": false,
+  "new_sentaurus_execution": false,
+  "acceptance": {
+    "m44_complete": true,
+    "m31_complete": true,
+    "m32_complete": true,
+    "m37_complete_and_bitwise_unchanged": true,
+    "m41_workflows_converged": true,
+    "m41_historical_contract_superseded": true,
+    "m42_matrix_complete": true,
+    "m42_operator_cut_reported_closure": true,
+    "m42_historical_legacy_mismatch_superseded": true,
+    "m42_srh_feedback_retained": true,
+    "m42_contact_null_retained": true,
+    "m42_qf_reference_increment_requirement_retained": true,
+    "m42_compensated_residual_resolved": true,
+    "defaults_unchanged": true,
+    "no_new_sentaurus_execution": true,
+    "all_checks_pass": true
+  }
+}

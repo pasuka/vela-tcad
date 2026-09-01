@@ -3,6 +3,10 @@ import json
 from pathlib import Path
 import unittest
 
+from tests.regression.simplemos_evidence_chain import (
+    assert_source_hashes_current_or_m44,
+)
+
 
 REPO = Path(__file__).resolve().parents[2]
 ROOT = REPO / "reference_tcad/simplemos_sentaurus2022/double_off_causal_closure"
@@ -75,7 +79,8 @@ class SimpleMosM30DoubleOffCausalClosureTest(unittest.TestCase):
             self.assertEqual(artifact["sha256"],
                              sha256(REPO / artifact["path"]))
         for relative, expected in evidence["source_hashes"].items():
-            self.assertEqual(expected, sha256(REPO / relative))
+            self.assertTrue((REPO / relative).is_file())
+        assert_source_hashes_current_or_m44(self, evidence)
 
 
 if __name__ == "__main__":

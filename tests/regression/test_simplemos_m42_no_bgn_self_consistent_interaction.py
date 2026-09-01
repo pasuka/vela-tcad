@@ -17,6 +17,10 @@ M43_EVIDENCE = (REPO / "reference_tcad/simplemos_sentaurus2022"
                 / "simplemos_m43_sg_kernel_consistency_evidence.json")
 M44_EVIDENCE = (REPO / "reference_tcad/simplemos_sentaurus2022"
                 / "simplemos_m44_qf_coordinate_consistency_evidence.json")
+M45_REPORT = (REPO / "reference_tcad/simplemos_sentaurus2022"
+              / "post_qf_rebaseline/m45_post_qf_rebaseline_report.json")
+M45_EVIDENCE = (REPO / "reference_tcad/simplemos_sentaurus2022"
+                / "simplemos_m45_post_qf_rebaseline_evidence.json")
 
 
 def sha256(path: Path) -> str:
@@ -38,11 +42,18 @@ class SimpleMosM42NoBgnSelfConsistentInteractionTest(unittest.TestCase):
             M43_EVIDENCE.read_text(encoding="utf-8"))
         cls.m44_evidence = json.loads(
             M44_EVIDENCE.read_text(encoding="utf-8"))
+        cls.m45_report = json.loads(M45_REPORT.read_text(encoding="utf-8"))
+        cls.m45_evidence = json.loads(
+            M45_EVIDENCE.read_text(encoding="utf-8"))
 
     def test_matrix_is_complete_and_defaults_are_unchanged(self) -> None:
-        self.assertEqual(self.report["status"], "complete")
-        self.assertTrue(self.report["acceptance"]["all_checks_pass"])
-        self.assertTrue(all(self.report["acceptance"].values()))
+        self.assertEqual(self.report["status"], "failed")
+        self.assertFalse(self.report["acceptance"]["all_checks_pass"])
+        self.assertFalse(self.report["acceptance"][
+            "legacy_cut_reported_mismatch_reproduced"])
+        self.assertEqual(self.m45_report["status"], "complete")
+        self.assertTrue(self.m45_report["findings"][
+            "m42_historical_legacy_mismatch_hypothesis_superseded"])
         execution = self.report["execution"]
         self.assertEqual(execution["self_consistent_state_count"], 8)
         self.assertEqual(execution["frozen_operator_pair_count"], 32)
@@ -82,18 +93,20 @@ class SimpleMosM42NoBgnSelfConsistentInteractionTest(unittest.TestCase):
         self.assertTrue(
             interpretation["electron_qf_density_is_primary_srh_feedback_path"])
 
-    def test_legacy_residual_and_terminal_paths_are_not_consistent(self) -> None:
+    def test_legacy_and_compensated_terminal_paths_are_consistent(self) -> None:
         finding = self.report["findings"]
-        self.assertGreater(finding["minimum_legacy_cut_reported_gap_dex"], 2.0)
+        self.assertLess(finding["minimum_legacy_cut_reported_gap_dex"], 1e-12)
         self.assertLess(
-            finding["maximum_compensated_cut_reported_gap_dex"], 0.002)
+            finding["maximum_compensated_cut_reported_gap_dex"], 1e-12)
         self.assertGreater(
             finding["legacy_to_compensated_residual_separation_min_ratio"],
-            800.0)
+            1e9)
+        self.assertLess(
+            finding["maximum_compensated_free_electron_residual_l2"], 2e-20)
         self.assertGreater(
             finding["maximum_transport_direct_frozen_cut_shift_abs_dex"],
             3.2)
-        self.assertTrue(self.report["causal_interpretation"][
+        self.assertFalse(self.report["causal_interpretation"][
             "legacy_state_terminal_extraction_is_operator_inconsistent"])
 
     def test_reference_increment_is_required_in_deep_off_state(self) -> None:
@@ -111,7 +124,7 @@ class SimpleMosM42NoBgnSelfConsistentInteractionTest(unittest.TestCase):
         self.assertGreater(baseline / absolute_only, 400.0)
 
     def test_frozen_artifact_and_source_hashes_match(self) -> None:
-        self.assertEqual(self.evidence["status"], "frozen")
+        self.assertEqual(self.evidence["status"], "failed")
         self.assertFalse(self.evidence["default_model_changed"])
         for artifact in self.evidence["artifacts"]:
             self.assertEqual(artifact["sha256"], sha256(REPO / artifact["path"]))
@@ -119,12 +132,13 @@ class SimpleMosM42NoBgnSelfConsistentInteractionTest(unittest.TestCase):
             current = sha256(REPO / relative)
             if expected == current:
                 continue
-            superseding = (self.m44_evidence, self.m43_evidence)
+            superseding = (self.m45_evidence, self.m44_evidence,
+                           self.m43_evidence)
             self.assertTrue(
                 any(evidence["status"] == "frozen" and
                     evidence["source_hashes"].get(relative) == current
                     for evidence in superseding),
-                f"changed M42 source is not frozen by M43/M44: {relative}")
+                f"changed M42 source is not frozen by M43/M44/M45: {relative}")
 
 
 if __name__ == "__main__":

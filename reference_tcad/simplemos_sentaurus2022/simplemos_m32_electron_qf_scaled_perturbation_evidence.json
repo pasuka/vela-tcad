@@ -13,32 +13,32 @@
   "artifacts": [
     {
       "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_electron_qf_scaled_perturbation_report.json",
-      "sha256": "d4061317a46b9283f62b1f88aa557aa7e5a942af80c09ec03b295cd1ccc723ec"
+      "sha256": "fdc13a4926fc0caac6de5ab048b37734bf29a216d3b8e5946e74d9717ee2121c"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_fraction_response.csv",
-      "sha256": "b03d338638b4bccd9aed0597a7dc723c1fe041022131076a4afe5f13ac5ddca7"
+      "sha256": "102c331eaaae9b35a7187beb60bd55adf24104401fc4a0948919c4d9bc69e867"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_cross_block_scaling.csv",
-      "sha256": "a4533609dce253f60b18da7629f5002739bd309b6a73cafd3b4cc71dee36cf03"
+      "sha256": "c0750f7c1673d805591cde77ab97d3c74e7c1c8bdf1a51c7c12d04fdca2c885c"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_drain_cut_edge_response.csv",
-      "sha256": "d763d6a7631c0f47d6ab0a44db1a5a77400b307c4c84900b7f9be5be5a88f768"
+      "sha256": "204bb7b8127d3f95203df1445023a58bf68dbbec608fa0c68942c61bc39c39d9"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_cross_block_node_localization.csv",
-      "sha256": "b2a279c2ea545746ff68c322ed04a1ebc5e8f2e3bb6348a2992ab564565adeed"
+      "sha256": "d0241807fd369aadbe5fa2c301e1b4f8f3fe0c1d036da37cad65711967a8c3fe"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/electron_qf_scaled_perturbation/m32_top_transport_edges.csv",
-      "sha256": "267f40235f2db34897e623beb18050220d26b91162b996301390cc97f61b250a"
+      "sha256": "ea734d9cfc5beafcf585ae7a1d113420d61cd52f06c789268a1f9f86ed846026"
     }
   ],
   "source_hashes": {
     "reference_tcad/simplemos_sentaurus2022/simplemos_m32_electron_qf_scaled_perturbation_contract_v1.json": "e3d12b13fd3b74153981eb568acc2f9eac09d254b513e1cd7dc21b27c612fae3",
-    "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_evidence.json": "1d55418d034282dac5f32a4562061a176d263cbf9aed956c08d0e7ff6a7b5494",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_evidence.json": "f9cc15740915235cc92bc48a88ac28391b3428baff112fd6ae0653d88cf7670a",
     "scripts/run_simplemos_m32_electron_qf_scaled_perturbation.py": "a3b7415a24440cd01c671bfa8f7faae227a55b13540a305655dc84d841f6c148",
     "scripts/plot_simplemos_m32_electron_qf_scaled_perturbation.py": "c04d1c1192499e3be0565793b8a75fe2ec9bf609786c9f651556bdbcf931a6c9",
     "scripts/freeze_simplemos_m32_electron_qf_scaled_perturbation_evidence.py": "a09686151ce905a8ff1485d9e1036d4477fd8dab0c5d9584ac37974d026458e8",
@@ -46,5 +46,10 @@
     "docs/validation/simplemos_m32_electron_qf_scaled_perturbation_2026-08-31.md": "7728723bae10d5a8bbc871aa8a0ffb51deed70d60fe3c6e86188eeda0b820d3a",
     "docs/validation/figures/simplemos_m32/simplemos_m32_electron_qf_scaled_perturbation.png": "14e13e764dce5b6bfbef3668c33fabb412734d48e0ecece0e375b396dbbee87d",
     "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+  },
+  "m45_refresh": {
+    "stage": "M32",
+    "reason": "post-M43/M44 quasi-Fermi frozen-state rebaseline",
+    "historical_contract_rewritten": false
   }
 }

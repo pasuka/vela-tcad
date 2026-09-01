@@ -11,7 +11,7 @@
   "artifacts": [
     {
       "path": "reference_tcad/simplemos_sentaurus2022/minority_poisson_perturbation/m31_minority_poisson_perturbation_report.json",
-      "sha256": "f8ad7f6aa785e76190c307dec7d4edfb073708080504cbb185ce103681b1fd1e"
+      "sha256": "2677734b62750fcad13ad47bd4ed7567b812198602965233b96ddd4992930513"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/minority_poisson_perturbation/m31_state_variant_response.csv",
@@ -23,7 +23,7 @@
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/minority_poisson_perturbation/m31_cross_block_summary.csv",
-      "sha256": "0d2b7be407b74530e99b4eb3026d5d72d158b77d57f8f62d9b982ae5f5562350"
+      "sha256": "077997c6ea0ca94723d5cf6a66d08a2561d2d1e2d7688499eef274c10295b241"
     }
   ],
   "source_hashes": {
@@ -40,5 +40,10 @@
     "docs/validation/simplemos_m31_minority_poisson_perturbation_2026-08-31.md": "461d7f0b70edcfb750e2be0033dee32fc59af1e199c0a2808b78111858b6237d",
     "docs/validation/figures/simplemos_m31/simplemos_m31_minority_poisson_perturbation.png": "6cd26314a59b50e345432439095933b9102389d1d724652b5cd65adabfba7e29",
     "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+  },
+  "m45_refresh": {
+    "stage": "M31",
+    "reason": "post-M43/M44 quasi-Fermi frozen-state rebaseline",
+    "historical_contract_rewritten": false
   }
 }

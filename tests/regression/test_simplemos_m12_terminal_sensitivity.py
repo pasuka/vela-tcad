@@ -5,6 +5,10 @@ import json
 from pathlib import Path
 import unittest
 
+from tests.regression.simplemos_evidence_chain import (
+    assert_hash_mapping_current_or_superseded,
+)
+
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT = (ROOT / "reference_tcad/simplemos_sentaurus2022"
@@ -67,7 +71,9 @@ class SimpleMosM12TerminalSensitivityTest(unittest.TestCase):
         for figure in evidence["figures"]:
             self.assertEqual(figure["sha256"], sha256(ROOT / figure["path"]))
         for relative, expected in evidence["implementation_sha256"].items():
-            self.assertEqual(expected, sha256(ROOT / relative))
+            self.assertTrue((ROOT / relative).is_file())
+        assert_hash_mapping_current_or_superseded(
+            self, evidence["implementation_sha256"])
 
 
 if __name__ == "__main__":

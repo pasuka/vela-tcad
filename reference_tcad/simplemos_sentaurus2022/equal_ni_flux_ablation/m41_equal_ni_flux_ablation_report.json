@@ -1,6 +1,6 @@
 {
   "schema": "vela.simplemos.sdevice.m41_equal_ni_flux_ablation_report.v1",
-  "status": "complete",
+  "status": "failed",
   "execution": {
     "default_model_changed": false,
     "new_sentaurus_execution": false,
@@ -33,8 +33,8 @@
       "equal_ni_flux_evaluation": "compensated_log_expm1",
       "edge_count": 4227,
       "converged": true,
-      "drain_cut_total_A_per_um": 2.6960414159181746e-17,
-      "drain_cut_electron_A_per_um": 2.6960170738514815e-17,
+      "drain_cut_total_A_per_um": 2.7031623811407274e-17,
+      "drain_cut_electron_A_per_um": 2.7031380390740343e-17,
       "config": "build-release/reference_tcad/simplemos_sentaurus2022/m41_equal_ni_flux_ablation/frozen/bgn_off_srh_on/compensated/config.json",
       "edges": "build-release/reference_tcad/simplemos_sentaurus2022/m41_equal_ni_flux_ablation/frozen/bgn_off_srh_on/compensated/edges.csv"
     },
@@ -55,8 +55,8 @@
       "equal_ni_flux_evaluation": "compensated_log_expm1",
       "edge_count": 4227,
       "converged": true,
-      "drain_cut_total_A_per_um": 4.167375530150823e-16,
-      "drain_cut_electron_A_per_um": 4.1673730632989084e-16,
+      "drain_cut_total_A_per_um": 4.169361680781501e-16,
+      "drain_cut_electron_A_per_um": 4.169359213929587e-16,
       "config": "build-release/reference_tcad/simplemos_sentaurus2022/m41_equal_ni_flux_ablation/frozen/bgn_off_srh_off/compensated/config.json",
       "edges": "build-release/reference_tcad/simplemos_sentaurus2022/m41_equal_ni_flux_ablation/frozen/bgn_off_srh_off/compensated/edges.csv"
     }
@@ -66,17 +66,17 @@
       "cell": "bgn_off_srh_on",
       "m40_reported_vela_current_A_per_um": 2.703162381140761e-17,
       "legacy_continuity_cut_A_per_um": 2.5601618218150004e-19,
-      "compensated_contact_semantics_cut_A_per_um": 2.6960414159181746e-17,
+      "compensated_contact_semantics_cut_A_per_um": 2.7031623811407274e-17,
       "legacy_cut_vs_reported_dex": 2.0236047179880567,
-      "compensated_cut_vs_reported_dex": 0.001145575463124962
+      "compensated_cut_vs_reported_dex": 5.4002338126984414e-15
     },
     {
       "cell": "bgn_off_srh_off",
       "m40_reported_vela_current_A_per_um": 4.169361680781519e-16,
       "legacy_continuity_cut_A_per_um": 2.402795844589683e-19,
-      "compensated_contact_semantics_cut_A_per_um": 4.167375530150823e-16,
+      "compensated_contact_semantics_cut_A_per_um": 4.169361680781501e-16,
       "legacy_cut_vs_reported_dex": 3.2393526984207455,
-      "compensated_cut_vs_reported_dex": 0.00020693330103493466
+      "compensated_cut_vs_reported_dex": 1.8322221864512493e-15
     }
   ],
   "frozen_edge_analysis": [
@@ -105,7 +105,7 @@
       "legacy_error": {
         "count": 4227,
         "median": 0.0,
-        "p95": 7.6741838730801e-17,
+        "p95": 7.674269880763129e-17,
         "maximum": 3.752733546805918e-16
       },
       "compensated_error": {
@@ -124,32 +124,32 @@
       "cell": "bgn_off_srh_on",
       "srh": true,
       "sentaurus_current_A_per_um": 2.636340697032e-17,
-      "legacy_current_A_per_um": 2.703162381140761e-17,
+      "legacy_current_A_per_um": 2.560161821815002e-19,
       "compensated_current_A_per_um": 1.1536542832544485e-16,
-      "legacy_gap_dex": 0.010870601028172609,
+      "legacy_gap_dex": 2.0127341169598836,
       "compensated_gap_dex": 0.641074148976339,
-      "gap_improvement_dex": -0.6302035479481664,
-      "compensated_log_current_shift_dex": 0.6302035479481665
+      "gap_improvement_dex": 1.3716599679835446,
+      "compensated_log_current_shift_dex": 2.653808265936223
     },
     {
       "cell": "bgn_off_srh_off",
       "srh": false,
       "sentaurus_current_A_per_um": 1.93876893086985e-17,
-      "legacy_current_A_per_um": 4.169361680781519e-16,
+      "legacy_current_A_per_um": 2.402795844589684e-19,
       "compensated_current_A_per_um": 1.0573010245980102e-16,
-      "legacy_gap_dex": 1.332543519167879,
+      "legacy_gap_dex": 1.906809179252866,
       "compensated_gap_dex": 0.7366726016113289,
-      "gap_improvement_dex": 0.5958709175565501,
-      "compensated_log_current_shift_dex": -0.5958709175565501
+      "gap_improvement_dex": 1.1701365776415371,
+      "compensated_log_current_shift_dex": 2.643481780864195
     }
   ],
   "causal_result": {
-    "srh_off_legacy_gap_dex": 1.332543519167879,
+    "srh_off_legacy_gap_dex": 1.906809179252866,
     "srh_off_compensated_gap_dex": 0.7366726016113289,
-    "srh_off_gap_improvement_dex": 0.5958709175565501,
-    "srh_on_legacy_gap_dex": 0.010870601028172609,
+    "srh_off_gap_improvement_dex": 1.1701365776415371,
+    "srh_on_legacy_gap_dex": 2.0127341169598836,
     "srh_on_compensated_gap_dex": 0.641074148976339,
-    "srh_on_gap_improvement_dex": -0.6302035479481664,
+    "srh_on_gap_improvement_dex": 1.3716599679835446,
     "hypothesis_supported": false,
     "m40_no_bgn_factorial_clean": false,
     "m40_srh_on_close_parity_survives_consistent_flux": false,
@@ -161,8 +161,8 @@
     "all_workflows_converged": true,
     "compensated_frozen_cut_replays_m40_terminal": true,
     "historical_legacy_cut_differs_from_reported_terminal": true,
-    "legacy_m40_reproduced": true,
-    "all_checks_pass": true
+    "legacy_m40_reproduced": false,
+    "all_checks_pass": false
   },
   "artifacts": {
     "self_consistent_response": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_self_consistent_response.csv"

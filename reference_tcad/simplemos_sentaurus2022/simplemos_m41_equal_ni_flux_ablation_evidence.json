@@ -1,22 +1,22 @@
 {
   "schema": "vela.simplemos.sdevice.m41_equal_ni_flux_ablation_evidence.v1",
-  "status": "frozen",
+  "status": "failed",
   "artifacts": [
     {
       "path": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_equal_ni_flux_ablation_report.json",
-      "sha256": "246ff1c059d822afb4a1adb620094c39189efbc7a2f0f5ee7d5e988a103a312b"
+      "sha256": "f57e51756dd5dca465f7ec82ff09fe2aa61c363915f240ec4409d12bbe8253b9"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_self_consistent_response.csv",
-      "sha256": "c08fe7a63764e8b8ed40e80b02b41529daec0224de5febfe77263eb07d86c651"
+      "sha256": "27bc3a4d73af9a36cc75b408caf4deddee192c41bb403487b80deb87e4d9df25"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_bgn_off_srh_on_frozen_edge_ledger.csv",
-      "sha256": "8cbe01c7e569fba4ec8e37e471ab11f51338305cad57b9932ced4bdefc929e7e"
+      "sha256": "989ec28f9b92a05aba9e81a68e5a08ddd2c312bfc33de0bc884a2dad040ef4ab"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_bgn_off_srh_off_frozen_edge_ledger.csv",
-      "sha256": "edbba0492b6b9be176e2ed489c190f763aab9b57a4db246cd49f67a32624b502"
+      "sha256": "3a6a5939c91c7df51590653c06bc50d054c6740c5ae8fbc2d71da38d497e5e71"
     }
   ],
   "source_hashes": {
@@ -25,8 +25,8 @@
     "reference_tcad/simplemos_sentaurus2022/true_no_bgn_factorial/m40_true_no_bgn_factorial_report.json": "1bffb4582a2dc39944b988c8a58956fbcd3677e47179a748ba670228ef59c455",
     "include/vela/physics/BandgapNarrowing.h": "ea7c9ac8a0355e8ab6af83eb59f95dbaf0d7a6d7c919bb57e36391d5ae06ac46",
     "include/vela/equation/CoupledDDAssembler.h": "863c80342ce717642500df37ae554685204981b6757bf8e89b571c99255c47be",
-    "src/equation/CoupledDDAssembler.cpp": "e525d828d0199dafdea947377dc6faed7cea419b5cb76fc1f51ae05d3dfe64ed",
-    "src/solver/NewtonSolver.cpp": "95de9308e18bdd428f62df47cbc1f6e1658f50188d2ffe45f5757ab7e9248b73",
+    "src/equation/CoupledDDAssembler.cpp": "62db5a538ee95439feeea88a0d860b8bd51d22ef88db9829743dd41bcb0d67f2",
+    "src/solver/NewtonSolver.cpp": "cb37eb85dd21e7faad9d7f85f0eb1d775be231a8b0b79a47adb731e17374a065",
     "src/solver/GummelSolver.cpp": "63221ade6ee484ace604cd2c6971a32625cbda20fe45360cf30cf26ac9f187f3"
   },
   "default_model_changed": false,
@@ -36,7 +36,7 @@
     "all_workflows_converged": true,
     "compensated_frozen_cut_replays_m40_terminal": true,
     "historical_legacy_cut_differs_from_reported_terminal": true,
-    "legacy_m40_reproduced": true,
-    "all_checks_pass": true
+    "legacy_m40_reproduced": false,
+    "all_checks_pass": false
   }
 }

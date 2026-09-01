@@ -1,0 +1,23 @@
+{
+  "schema": "vela.simplemos.sdevice.m45_post_qf_rebaseline_contract.v1",
+  "objective": "Re-run and rebaseline every SimpleMOS diagnostic materially affected by M43 SG-kernel unification or M44 quasi-Fermi reference/increment preservation, while retaining failed historical acceptance checks as explicit superseded hypotheses.",
+  "baseline_revision": "9f64952",
+  "stages": ["M31", "M32", "M37", "M41", "M42"],
+  "acceptance": {
+    "maximum_operator_cut_reported_gap_dex": 1e-12,
+    "maximum_electron_qf_srh_fraction_error": 0.001,
+    "maximum_compensated_free_electron_residual_l2": 2e-20,
+    "minimum_legacy_to_compensated_residual_ratio": 1e9,
+    "require_m31_m32_complete": true,
+    "require_m37_bitwise_unchanged": true,
+    "require_m41_m42_historical_contracts_superseded": true
+  },
+  "policy": {
+    "default_physics_model_changed": false,
+    "default_hfs_model_changed": false,
+    "default_equal_ni_flux_evaluation_changed": false,
+    "new_sentaurus_execution": false,
+    "rewrite_historical_contracts": false,
+    "retain_failed_historical_acceptance_as_evidence": true
+  }
+}

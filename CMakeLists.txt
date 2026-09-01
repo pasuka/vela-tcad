@@ -1172,6 +1172,13 @@ set_tests_properties(simplemos_m44_qf_coordinate_consistency PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m44_qf_coordinate_consistency)
 
+add_test(NAME simplemos_m45_post_qf_rebaseline
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m45_post_qf_rebaseline)
+set_tests_properties(simplemos_m45_post_qf_rebaseline PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m45_post_qf_rebaseline)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)
