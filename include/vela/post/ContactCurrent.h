@@ -142,6 +142,8 @@ private:
     std::unique_ptr<MobilityModel> mobility_;
     Real thermalVoltage_;
     DDScalingSpec scaling_;
+    bool bgnEnabled_ = false;
+    bool compensatedEqualNiFlux_ = false;
     std::vector<Real> ni_;
     std::vector<Real> Nc_;
     std::vector<Real> Nv_;

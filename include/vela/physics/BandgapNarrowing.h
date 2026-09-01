@@ -9,6 +9,12 @@ namespace vela {
 
 struct BandgapNarrowingConfig {
     std::string model = "none"; ///< "none", "slotboom", or "old_slotboom"
+    /// Numerical evaluation used on Boltzmann, equal-ni transport edges when
+    /// BGN is disabled.  The legacy path subtracts two quasi-Fermi
+    /// exponentials; the compensated path uses the algebraically equivalent
+    /// log/expm1 VariableNi kernel.  The legacy default preserves existing
+    /// solver results unless a diagnostic deck opts in explicitly.
+    std::string equalNiFluxEvaluation = "legacy_factor_difference";
     Real referenceDoping = 1.0e23; ///< Slotboom reference concentration [m^-3]
     Real coefficient = 9.0e-3; ///< Slotboom narrowing coefficient [eV]
     Real smoothing = 0.5; ///< Dimensionless Slotboom smoothing term

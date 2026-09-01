@@ -14,6 +14,21 @@ struct SGEdgeWeights {
     Real b_minus = 0.0;
 };
 
+/**
+ * @brief Select the Boltzmann SG algebra used on an edge.
+ *
+ * Variable intrinsic density is a physical drift term and always uses the
+ * logarithmic VariableNi kernel.  On equal-ni edges, callers may retain the
+ * historical separated-factor subtraction or opt into the cancellation-
+ * robust log/expm1 evaluation.  Keeping this policy next to the numerical
+ * primitive lets residual, Jacobian diagnostics, probes, and terminal-current
+ * extraction share exactly the same decision tree.
+ */
+struct SGBoltzmannFluxPolicy {
+    bool includeNiGradientDrift = false;
+    bool compensatedEqualNi = false;
+};
+
 SGEdgeWeights sgEdgeWeights(Real dpsi, Real Vt);
 
 /**
@@ -103,6 +118,23 @@ Real sgElectronContinuityFluxFromQuasiFermiVariableNi(Real ni0,
                                                       Real Vt,
                                                       Real coef,
                                                       bool includeNiGradientDrift = true);
+
+/**
+ * @brief Production Boltzmann electron SG dispatcher.
+ *
+ * This is the single policy-aware entry point for solver and reporting paths.
+ * It preserves the historical equal-ni result unless compensatedEqualNi is
+ * requested, while variable-ni drift always uses the stable logarithmic form.
+ */
+Real sgElectronBoltzmannContinuityFlux(Real ni0,
+                                       Real ni1,
+                                       Real psi0,
+                                       Real psi1,
+                                       Real phin0,
+                                       Real phin1,
+                                       Real Vt,
+                                       Real coef,
+                                       SGBoltzmannFluxPolicy policy = {});
 
 /**
  * @brief Read-only term decomposition of the production variable-ni electron SG flux.
@@ -226,6 +258,17 @@ Real sgHoleContinuityFluxFromQuasiFermiVariableNi(Real ni0,
                                                   Real Vt,
                                                   Real coef,
                                                   bool includeNiGradientDrift = true);
+
+/** @brief Hole counterpart of sgElectronBoltzmannContinuityFlux. */
+Real sgHoleBoltzmannContinuityFlux(Real ni0,
+                                   Real ni1,
+                                   Real psi0,
+                                   Real psi1,
+                                   Real phip0,
+                                   Real phip1,
+                                   Real Vt,
+                                   Real coef,
+                                   SGBoltzmannFluxPolicy policy = {});
 
 /**
  * @brief Generalized SG flux for Fermi-Dirac electrons.

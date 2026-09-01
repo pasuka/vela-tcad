@@ -172,6 +172,9 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             cfg.bandgapNarrowing.fermiStatisticsCorrection = value.value(
                 "fermi_statistics_correction",
                 cfg.bandgapNarrowing.fermiStatisticsCorrection);
+            cfg.bandgapNarrowing.equalNiFluxEvaluation = value.value(
+                "equal_ni_flux_evaluation",
+                cfg.bandgapNarrowing.equalNiFluxEvaluation);
         } else {
             throw std::invalid_argument(
                 "gummelConfigFromJson: bandgap_narrowing must be a string or object.");

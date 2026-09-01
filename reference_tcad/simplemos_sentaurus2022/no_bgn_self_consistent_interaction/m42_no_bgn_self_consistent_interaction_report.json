@@ -1,0 +1,60 @@
+{
+  "schema": "vela.simplemos.sdevice.m42_no_bgn_self_consistent_interaction_report.v1",
+  "status": "complete",
+  "execution": {
+    "default_model_changed": false,
+    "new_sentaurus_execution": false,
+    "self_consistent_state_count": 8,
+    "frozen_operator_pair_count": 32,
+    "qf_substitution_count": 14
+  },
+  "findings": {
+    "maximum_compensated_cut_reported_gap_dex": 0.0013470765785430444,
+    "minimum_legacy_cut_reported_gap_dex": 2.0236047179880567,
+    "maximum_srh_direct_frozen_cut_delta_A_per_um": 0.0,
+    "maximum_contact_direct_frozen_cut_delta_A_per_um": 0.0,
+    "maximum_contact_self_consistent_cut_shift_abs_dex": 0.0,
+    "maximum_contact_state_phin_delta_V": 0.0,
+    "electron_qf_density_fraction_of_srh_shift": {
+      "legacy": 1.0002141707385497,
+      "compensated": 1.0000003361910648
+    },
+    "maximum_transport_direct_frozen_cut_shift_abs_dex": 3.2391457651197104,
+    "maximum_srh_recombination_operator_change_l2": 1.9221061897343396e-13,
+    "minimum_legacy_free_electron_residual_l2": 1.9483667355390105e-11,
+    "maximum_compensated_free_electron_residual_l2": 2.2584398929745626e-14,
+    "legacy_to_compensated_residual_separation_min_ratio": 862.7047111591894,
+    "compensated_absolute_qf_roundtrip_loss_dex": 2.654591831436156
+  },
+  "causal_interpretation": {
+    "srh_terminal_effect_is_state_feedback_not_direct_operator": true,
+    "contact_reconstruction_is_null_for_simplemos": true,
+    "electron_qf_density_is_primary_srh_feedback_path": true,
+    "legacy_state_terminal_extraction_is_operator_inconsistent": true,
+    "qf_reference_increment_representation_is_required": true
+  },
+  "acceptance": {
+    "self_consistent_state_count": true,
+    "all_self_consistent_workflows_converged": true,
+    "frozen_operator_pair_count": true,
+    "qf_substitution_count": true,
+    "compensated_cut_reported_closure": true,
+    "legacy_cut_reported_mismatch_reproduced": true,
+    "srh_frozen_cut_is_null": true,
+    "contact_frozen_cut_is_null": true,
+    "qf_reference_increment_required": true,
+    "all_checks_pass": true
+  },
+  "artifacts": {
+    "self_consistent_matrix": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_self_consistent_matrix.csv",
+    "frozen_operator_matrix": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_frozen_operator_matrix.csv",
+    "qf_state_substitution": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_qf_state_substitution.csv",
+    "contact_response": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_contact_reconstruction_response.csv"
+  },
+  "claim_policy": [
+    "M42 changes no production default.",
+    "M42 reuses the frozen M40 Sentaurus reference and performs no new Sentaurus execution.",
+    "Operator-direct and self-consistent feedback effects are reported separately.",
+    "A failed hypothesis is retained as a completed causal result."
+  ]
+}

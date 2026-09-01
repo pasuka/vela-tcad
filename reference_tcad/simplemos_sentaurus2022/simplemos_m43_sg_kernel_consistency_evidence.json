@@ -1,0 +1,34 @@
+{
+  "schema": "vela.simplemos.sdevice.m43_sg_kernel_consistency_evidence.v1",
+  "status": "frozen",
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/sg_kernel_consistency/m43_sg_kernel_consistency_report.json",
+      "sha256": "f5d1e44aef960b69c9ad0868a2c29c50d4a6ef828abcbf227c39655bb99755a0"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/sg_kernel_consistency/m43_sg_kernel_consistency_matrix.csv",
+      "sha256": "58e004d3490352b055d6997e693133fa1048e740631ab0dc0e194a28bdad12bd"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m43_sg_kernel_consistency_contract_v1.json": "cdfe0d9fe9ba6ef5afbf7c3c5ac2a1256c7b2f36c384e22b2c40a284d0776193",
+    "scripts/run_simplemos_m43_sg_kernel_consistency.py": "808851647d41859f8b4386fc71a5e2c08d7bc73ad3a3e3a35b036c357b3477b1",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m42_no_bgn_self_consistent_interaction_evidence.json": "11882ee1e61b709e50dbdd7ed9d21a3105f370b8878b47b487aaf6726205be71",
+    "include/vela/discretization/ScharfetterGummel.h": "46f4aad05e5665e1f4285b1541b6145fe2708215500357613ba6fe5ead7dc9cd",
+    "src/discretization/ScharfetterGummel.cpp": "9400db72cfffd9661620b2647b891d200c6f85ee5c8522e5a1062e3640541eff",
+    "src/equation/CoupledDDAssembler.cpp": "62db5a538ee95439feeea88a0d860b8bd51d22ef88db9829743dd41bcb0d67f2",
+    "src/post/ContactCurrent.cpp": "2ab66d37a8e28a840a224cdbf6a2642d46f34063796c1c6b4d18594495cf662d",
+    "src/tools/vela_example_runner.cpp": "f74b393728614061f65c6db2e95d1cad0774920fc3a0879188c2c1f76c42825e"
+  },
+  "default_physics_model_changed": false,
+  "default_equal_ni_flux_evaluation_changed": false,
+  "acceptance": {
+    "state_count": true,
+    "both_numerical_modes": true,
+    "cut_matches_terminal_functional": true,
+    "terminal_functional_matches_contact_extractor": true,
+    "all_contact_cuts_nonempty": true,
+    "all_checks_pass": true
+  }
+}

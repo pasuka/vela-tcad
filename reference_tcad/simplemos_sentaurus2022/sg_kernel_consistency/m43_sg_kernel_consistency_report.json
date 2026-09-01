@@ -1,0 +1,34 @@
+{
+  "schema": "vela.simplemos.sdevice.m43_sg_kernel_consistency_report.v1",
+  "status": "complete",
+  "execution": {
+    "frozen_state_replay": true,
+    "state_count": 4,
+    "default_physics_model_changed": false,
+    "default_equal_ni_flux_evaluation_changed": false,
+    "new_sentaurus_execution": false
+  },
+  "findings": {
+    "maximum_cut_vs_terminal_functional_gap_dex": 0.0,
+    "maximum_terminal_functional_vs_contact_extractor_gap_dex": 0.0013470765785434935,
+    "legacy_gap_closed": true,
+    "compensated_gap_not_regressed": true
+  },
+  "acceptance": {
+    "state_count": true,
+    "both_numerical_modes": true,
+    "cut_matches_terminal_functional": true,
+    "terminal_functional_matches_contact_extractor": true,
+    "all_contact_cuts_nonempty": true,
+    "all_checks_pass": true
+  },
+  "artifacts": {
+    "matrix": "reference_tcad/simplemos_sentaurus2022/sg_kernel_consistency/m43_sg_kernel_consistency_matrix.csv"
+  },
+  "policy": {
+    "default_physics_model_changed": false,
+    "default_equal_ni_flux_evaluation_changed": false,
+    "contact_current_now_matches_configured_solver_kernel": true,
+    "new_sentaurus_execution": false
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "schema": "vela.simplemos.sdevice.m41_equal_ni_flux_ablation_report.v1",
+  "status": "complete",
+  "execution": {
+    "default_model_changed": false,
+    "new_sentaurus_execution": false,
+    "frozen_state_count": 2,
+    "self_consistent_workflow_count": 4,
+    "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m41_equal_ni_flux_ablation_contract_v1.json",
+    "contract_sha256": "5ecf335627e5d23cdaa8537b837318cff0a6abeac7ee8d04f56f3a1e4dfabaa3"
+  },
+  "numerical_contract": {
+    "legacy": "legacy_factor_difference",
+    "compensated": "compensated_log_expm1",
+    "physical_equivalence": "For ni0 == ni1, the VariableNi logarithmic density-gradient term is zero; only floating-point evaluation changes.",
+    "historical_mixed_semantics": "M40 continuity residuals used legacy factor subtraction while ContactCurrent used the compensated VariableNi kernel."
+  },
+  "frozen_probes": [
+    {
+      "cell": "bgn_off_srh_on",
+      "mode": "legacy",
+      "equal_ni_flux_evaluation": "legacy_factor_difference",
+      "edge_count": 4227,
+      "converged": true,
+      "drain_cut_total_A_per_um": 2.5601618218150004e-19,
+      "drain_cut_electron_A_per_um": 2.557727615145691e-19,
+      "config": "build-release/reference_tcad/simplemos_sentaurus2022/m41_equal_ni_flux_ablation/frozen/bgn_off_srh_on/legacy/config.json",
+      "edges": "build-release/reference_tcad/simplemos_sentaurus2022/m41_equal_ni_flux_ablation/frozen/bgn_off_srh_on/legacy/edges.csv"
+    },
+    {
+      "cell": "bgn_off_srh_on",
+      "mode": "compensated",
+      "equal_ni_flux_evaluation": "compensated_log_expm1",
+      "edge_count": 4227,
+      "converged": true,
+      "drain_cut_total_A_per_um": 2.6960414159181746e-17,
+      "drain_cut_electron_A_per_um": 2.6960170738514815e-17,
+      "config": "build-release/reference_tcad/simplemos_sentaurus2022/m41_equal_ni_flux_ablation/frozen/bgn_off_srh_on/compensated/config.json",
+      "edges": "build-release/reference_tcad/simplemos_sentaurus2022/m41_equal_ni_flux_ablation/frozen/bgn_off_srh_on/compensated/edges.csv"
+    },
+    {
+      "cell": "bgn_off_srh_off",
+      "mode": "legacy",
+      "equal_ni_flux_evaluation": "legacy_factor_difference",
+      "edge_count": 4227,
+      "converged": true,
+      "drain_cut_total_A_per_um": 2.402795844589683e-19,
+      "drain_cut_electron_A_per_um": 2.4003289926751873e-19,
+      "config": "build-release/reference_tcad/simplemos_sentaurus2022/m41_equal_ni_flux_ablation/frozen/bgn_off_srh_off/legacy/config.json",
+      "edges": "build-release/reference_tcad/simplemos_sentaurus2022/m41_equal_ni_flux_ablation/frozen/bgn_off_srh_off/legacy/edges.csv"
+    },
+    {
+      "cell": "bgn_off_srh_off",
+      "mode": "compensated",
+      "equal_ni_flux_evaluation": "compensated_log_expm1",
+      "edge_count": 4227,
+      "converged": true,
+      "drain_cut_total_A_per_um": 4.167375530150823e-16,
+      "drain_cut_electron_A_per_um": 4.1673730632989084e-16,
+      "config": "build-release/reference_tcad/simplemos_sentaurus2022/m41_equal_ni_flux_ablation/frozen/bgn_off_srh_off/compensated/config.json",
+      "edges": "build-release/reference_tcad/simplemos_sentaurus2022/m41_equal_ni_flux_ablation/frozen/bgn_off_srh_off/compensated/edges.csv"
+    }
+  ],
+  "frozen_cut_reconciliation": [
+    {
+      "cell": "bgn_off_srh_on",
+      "m40_reported_vela_current_A_per_um": 2.703162381140761e-17,
+      "legacy_continuity_cut_A_per_um": 2.5601618218150004e-19,
+      "compensated_contact_semantics_cut_A_per_um": 2.6960414159181746e-17,
+      "legacy_cut_vs_reported_dex": 2.0236047179880567,
+      "compensated_cut_vs_reported_dex": 0.001145575463124962
+    },
+    {
+      "cell": "bgn_off_srh_off",
+      "m40_reported_vela_current_A_per_um": 4.169361680781519e-16,
+      "legacy_continuity_cut_A_per_um": 2.402795844589683e-19,
+      "compensated_contact_semantics_cut_A_per_um": 4.167375530150823e-16,
+      "legacy_cut_vs_reported_dex": 3.2393526984207455,
+      "compensated_cut_vs_reported_dex": 0.00020693330103493466
+    }
+  ],
+  "frozen_edge_analysis": [
+    {
+      "cell": "bgn_off_srh_on",
+      "common_edge_count": 4227,
+      "legacy_error": {
+        "count": 4227,
+        "median": 0.0,
+        "p95": 7.719935039547883e-17,
+        "maximum": 4.969786527348741e-16
+      },
+      "compensated_error": {
+        "count": 4227,
+        "median": 0.0,
+        "p95": 9.574776694947456e-17,
+        "maximum": 1.70803634907152e-15
+      },
+      "edges_delta_phin_over_vt_below_1e_minus_12": 2720,
+      "maximum_cancellation_condition": 1.7976931348623157e+308,
+      "ledger": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_bgn_off_srh_on_frozen_edge_ledger.csv"
+    },
+    {
+      "cell": "bgn_off_srh_off",
+      "common_edge_count": 4227,
+      "legacy_error": {
+        "count": 4227,
+        "median": 0.0,
+        "p95": 7.6741838730801e-17,
+        "maximum": 3.752733546805918e-16
+      },
+      "compensated_error": {
+        "count": 4227,
+        "median": 0.0,
+        "p95": 9.673765462299106e-17,
+        "maximum": 2.2942100878251545e-15
+      },
+      "edges_delta_phin_over_vt_below_1e_minus_12": 2723,
+      "maximum_cancellation_condition": 1.7976931348623157e+308,
+      "ledger": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_bgn_off_srh_off_frozen_edge_ledger.csv"
+    }
+  ],
+  "self_consistent_response": [
+    {
+      "cell": "bgn_off_srh_on",
+      "srh": true,
+      "sentaurus_current_A_per_um": 2.636340697032e-17,
+      "legacy_current_A_per_um": 2.703162381140761e-17,
+      "compensated_current_A_per_um": 1.1536542832544485e-16,
+      "legacy_gap_dex": 0.010870601028172609,
+      "compensated_gap_dex": 0.641074148976339,
+      "gap_improvement_dex": -0.6302035479481664,
+      "compensated_log_current_shift_dex": 0.6302035479481665
+    },
+    {
+      "cell": "bgn_off_srh_off",
+      "srh": false,
+      "sentaurus_current_A_per_um": 1.93876893086985e-17,
+      "legacy_current_A_per_um": 4.169361680781519e-16,
+      "compensated_current_A_per_um": 1.0573010245980102e-16,
+      "legacy_gap_dex": 1.332543519167879,
+      "compensated_gap_dex": 0.7366726016113289,
+      "gap_improvement_dex": 0.5958709175565501,
+      "compensated_log_current_shift_dex": -0.5958709175565501
+    }
+  ],
+  "causal_result": {
+    "srh_off_legacy_gap_dex": 1.332543519167879,
+    "srh_off_compensated_gap_dex": 0.7366726016113289,
+    "srh_off_gap_improvement_dex": 0.5958709175565501,
+    "srh_on_legacy_gap_dex": 0.010870601028172609,
+    "srh_on_compensated_gap_dex": 0.641074148976339,
+    "srh_on_gap_improvement_dex": -0.6302035479481664,
+    "hypothesis_supported": false,
+    "m40_no_bgn_factorial_clean": false,
+    "m40_srh_on_close_parity_survives_consistent_flux": false,
+    "srh_off_anomaly_partially_closed": true
+  },
+  "acceptance": {
+    "frozen_probe_count": true,
+    "self_consistent_workflow_count": true,
+    "all_workflows_converged": true,
+    "compensated_frozen_cut_replays_m40_terminal": true,
+    "historical_legacy_cut_differs_from_reported_terminal": true,
+    "legacy_m40_reproduced": true,
+    "all_checks_pass": true
+  },
+  "artifacts": {
+    "self_consistent_response": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_self_consistent_response.csv"
+  },
+  "claim_policy": [
+    "M41 changes no production default.",
+    "The frozen comparison changes only equal-ni floating-point evaluation.",
+    "A causal root claim requires both frozen edge evidence and self-consistent closure.",
+    "M40 no-BGN causal fractions are superseded because continuity and terminal extraction used different equal-ni numerical paths."
+  ]
+}

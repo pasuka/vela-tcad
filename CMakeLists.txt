@@ -1144,6 +1144,27 @@ set_tests_properties(simplemos_m40_true_no_bgn_factorial PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m40_true_no_bgn_factorial)
 
+add_test(NAME simplemos_m41_equal_ni_flux_ablation
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m41_equal_ni_flux_ablation)
+set_tests_properties(simplemos_m41_equal_ni_flux_ablation PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m41_equal_ni_flux_ablation)
+
+add_test(NAME simplemos_m42_no_bgn_self_consistent_interaction
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m42_no_bgn_self_consistent_interaction)
+set_tests_properties(simplemos_m42_no_bgn_self_consistent_interaction PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m42_no_bgn_self_consistent_interaction)
+
+add_test(NAME simplemos_m43_sg_kernel_consistency
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m43_sg_kernel_consistency)
+set_tests_properties(simplemos_m43_sg_kernel_consistency PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m43_sg_kernel_consistency)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)

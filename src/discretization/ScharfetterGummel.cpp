@@ -218,6 +218,32 @@ Real sgElectronContinuityFluxFromQuasiFermiVariableNi(Real ni0,
         ni1, clampedExponent1, eta, coef, logLeftOverRight);
 }
 
+Real sgElectronBoltzmannContinuityFlux(Real ni0,
+                                       Real ni1,
+                                       Real psi0,
+                                       Real psi1,
+                                       Real phin0,
+                                       Real phin1,
+                                       Real Vt,
+                                       Real coef,
+                                       SGBoltzmannFluxPolicy policy)
+{
+    if (policy.includeNiGradientDrift ||
+        (policy.compensatedEqualNi && ni0 == ni1)) {
+        return sgElectronContinuityFluxFromQuasiFermiVariableNi(
+            ni0, ni1, psi0, psi1, phin0, phin1, Vt, coef,
+            policy.includeNiGradientDrift);
+    }
+    if (ni0 == ni1) {
+        return sgElectronContinuityFluxFromQuasiFermiStable(
+            ni0, psi0, psi1, phin0, phin1, Vt, coef);
+    }
+    return sgElectronContinuityFlux(
+        ni0 * limitedExp((psi0 - phin0) / Vt),
+        ni1 * limitedExp((psi1 - phin1) / Vt),
+        psi1 - psi0, Vt, coef);
+}
+
 SgElectronVariableNiFluxDecomposition
 sgElectronContinuityFluxFromQuasiFermiVariableNiDecomposition(
     Real ni0,
@@ -429,6 +455,32 @@ Real sgHoleContinuityFluxFromQuasiFermiVariableNi(Real ni0,
         - (clampedExponent1 - endpointExponent1);
     return stableBernoulliDensityDifferenceFlux(
         ni1, clampedExponent1, -eta, coef, logLeftOverRight);
+}
+
+Real sgHoleBoltzmannContinuityFlux(Real ni0,
+                                   Real ni1,
+                                   Real psi0,
+                                   Real psi1,
+                                   Real phip0,
+                                   Real phip1,
+                                   Real Vt,
+                                   Real coef,
+                                   SGBoltzmannFluxPolicy policy)
+{
+    if (policy.includeNiGradientDrift ||
+        (policy.compensatedEqualNi && ni0 == ni1)) {
+        return sgHoleContinuityFluxFromQuasiFermiVariableNi(
+            ni0, ni1, psi0, psi1, phip0, phip1, Vt, coef,
+            policy.includeNiGradientDrift);
+    }
+    if (ni0 == ni1) {
+        return sgHoleContinuityFluxFromQuasiFermiStable(
+            ni0, psi0, psi1, phip0, phip1, Vt, coef);
+    }
+    return sgHoleContinuityFlux(
+        ni0 * limitedExp((phip0 - psi0) / Vt),
+        ni1 * limitedExp((phip1 - psi1) / Vt),
+        psi1 - psi0, Vt, coef);
 }
 
 Real sgGeneralizedEinsteinFactor(Real density0,

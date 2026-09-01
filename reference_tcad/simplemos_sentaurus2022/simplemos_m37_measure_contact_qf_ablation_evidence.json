@@ -28,12 +28,12 @@
     "scripts/freeze_simplemos_m37_measure_contact_qf_ablation_evidence.py": "1c6856642711cd23d5f4302acce9d01129dfa7d6f317b9af324bd906917b23cf",
     "tests/regression/test_simplemos_m37_measure_contact_qf_ablation.py": "7b6ddbf679916c7c3ef3b580147d83461cd2e1a3ab3a695a86a914f1dcac16dd",
     "tests/test_mos_mixed_material.cpp": "6e6a96ce074a04c58f76781a241d8cd2369c52978f02f7de25fee8ab15b2e794",
-    "tests/test_newton_solver.cpp": "94bc0c2d4dbbe1c8a13214164229d393ae90fa75ecc94e0080f35b694c858334",
+    "tests/test_newton_solver.cpp": "47d5f3cf33b12d00a23a2373ed8c9b1137945c3bf37d1cde7ed7b39b27809df0",
     "docs/validation/simplemos_m37_measure_contact_qf_ablation_2026-08-31.md": "232da39984ab1b46ac676f31d473d3d1ebb1aa1c37cfa15173d4633ae4c7ab8e",
     "include/vela/equation/AssemblerUtils.h": "f5646b1eec6efbc16fa858dc8f8b618d6496bfc810c5ba767c9cc2531f2e93f7",
     "include/vela/equation/DDAssembler.h": "c9d86a177cb7a32df842483cbfcdf5fbf89c1c747d7d932e50d09dc61081e58c",
-    "src/equation/CoupledDDAssembler.cpp": "0e4103dd04d9aa6ead577d64a88507566c4c019112fc214051dfe851e65a1f18",
-    "src/solver/NewtonSolver.cpp": "dd39eb5568ad68b3a9cc9a3566a359f4a8b7a3f1d50753adb41892c8e9d2b30c",
+    "src/equation/CoupledDDAssembler.cpp": "e525d828d0199dafdea947377dc6faed7cea419b5cb76fc1f51ae05d3dfe64ed",
+    "src/solver/NewtonSolver.cpp": "95de9308e18bdd428f62df47cbc1f6e1658f50188d2ffe45f5757ab7e9248b73",
     "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
   }
 }

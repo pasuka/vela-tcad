@@ -46,13 +46,13 @@
     "scripts/freeze_simplemos_m35_signed_average_box_assembly_evidence.py": "2b0066dda483433f2c3a1a387b83bb72fefcc5b4dbfb89229c1ee1a4ce0ce8e2",
     "tests/regression/test_simplemos_m35_signed_average_box_assembly.py": "f75b0a0f7dce0d9cffdd631c1f043307658ced0298226ff495802008568257a1",
     "tests/test_mos_mixed_material.cpp": "6e6a96ce074a04c58f76781a241d8cd2369c52978f02f7de25fee8ab15b2e794",
-    "tests/test_newton_solver.cpp": "94bc0c2d4dbbe1c8a13214164229d393ae90fa75ecc94e0080f35b694c858334",
+    "tests/test_newton_solver.cpp": "47d5f3cf33b12d00a23a2373ed8c9b1137945c3bf37d1cde7ed7b39b27809df0",
     "docs/validation/simplemos_m35_signed_average_box_assembly_2026-08-31.md": "f8b66f8bf1ddf4befbc0745011a9a6ce03d9f4c5a726eacad9c69c97d0766d3f",
     "docs/validation/figures/simplemos_m35/simplemos_m35_signed_average_box_assembly.png": "b0bee57e882e97fb5bc10e07f65bce2e9578ee3780ff84c564272dab8d637ef7",
     "include/vela/equation/AssemblerUtils.h": "f5646b1eec6efbc16fa858dc8f8b618d6496bfc810c5ba767c9cc2531f2e93f7",
     "include/vela/equation/DDAssembler.h": "c9d86a177cb7a32df842483cbfcdf5fbf89c1c747d7d932e50d09dc61081e58c",
-    "src/equation/CoupledDDAssembler.cpp": "0e4103dd04d9aa6ead577d64a88507566c4c019112fc214051dfe851e65a1f18",
-    "src/solver/NewtonSolver.cpp": "dd39eb5568ad68b3a9cc9a3566a359f4a8b7a3f1d50753adb41892c8e9d2b30c",
+    "src/equation/CoupledDDAssembler.cpp": "e525d828d0199dafdea947377dc6faed7cea419b5cb76fc1f51ae05d3dfe64ed",
+    "src/solver/NewtonSolver.cpp": "95de9308e18bdd428f62df47cbc1f6e1658f50188d2ffe45f5757ab7e9248b73",
     "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
   }
 }

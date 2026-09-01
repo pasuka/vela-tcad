@@ -1,0 +1,28 @@
+{
+  "schema": "vela.simplemos.sdevice.m43_sg_kernel_consistency_contract.v1",
+  "objective": "Require the configured Boltzmann SG kernel to be identical in the coupled residual, Jacobian diagnostics, edge probes, terminal functional, and ContactCurrent extraction.",
+  "upstream_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m42_no_bgn_self_consistent_interaction_evidence.json",
+  "matrix": {
+    "device": "n23",
+    "drain_voltage_V": 0.05,
+    "gate_voltage_V": 0.05,
+    "equal_ni_flux_evaluations": [
+      "legacy_factor_difference",
+      "compensated_log_expm1"
+    ],
+    "srh": [true, false],
+    "state_count": 4
+  },
+  "acceptance": {
+    "maximum_cut_vs_terminal_functional_gap_dex": 0.005,
+    "maximum_terminal_functional_vs_contact_extractor_gap_dex": 0.005,
+    "require_both_numerical_modes": true,
+    "require_read_only_frozen_state_replay": true
+  },
+  "policy": {
+    "default_physics_model_changed": false,
+    "default_equal_ni_flux_evaluation_changed": false,
+    "contact_current_now_matches_configured_solver_kernel": true,
+    "new_sentaurus_execution": false
+  }
+}

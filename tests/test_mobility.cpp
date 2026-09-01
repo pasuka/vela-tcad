@@ -249,7 +249,8 @@ TEST_CASE("JSON solver config selects mobility and recombination models", "[mobi
         {"bandgap_narrowing", {
             {"model", "slotboom"},
             {"coefficient_eV", 0.010},
-            {"fermi_statistics_correction", true}
+            {"fermi_statistics_correction", true},
+            {"equal_ni_flux_evaluation", "compensated_log_expm1"}
         }},
     };
 
@@ -266,6 +267,8 @@ TEST_CASE("JSON solver config selects mobility and recombination models", "[mobi
     REQUIRE(cfg.bandgapNarrowing.model == "slotboom");
     REQUIRE(cfg.bandgapNarrowing.coefficient == Catch::Approx(0.010));
     REQUIRE(cfg.bandgapNarrowing.fermiStatisticsCorrection);
+    REQUIRE(cfg.bandgapNarrowing.equalNiFluxEvaluation ==
+            "compensated_log_expm1");
 
     REQUIRE_THROWS_AS(
         gummelConfigFromJson(nlohmann::json{

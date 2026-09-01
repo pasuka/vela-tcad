@@ -1,0 +1,42 @@
+{
+  "schema": "vela.simplemos.sdevice.m41_equal_ni_flux_ablation_evidence.v1",
+  "status": "frozen",
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_equal_ni_flux_ablation_report.json",
+      "sha256": "246ff1c059d822afb4a1adb620094c39189efbc7a2f0f5ee7d5e988a103a312b"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_self_consistent_response.csv",
+      "sha256": "c08fe7a63764e8b8ed40e80b02b41529daec0224de5febfe77263eb07d86c651"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_bgn_off_srh_on_frozen_edge_ledger.csv",
+      "sha256": "8cbe01c7e569fba4ec8e37e471ab11f51338305cad57b9932ced4bdefc929e7e"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/equal_ni_flux_ablation/m41_bgn_off_srh_off_frozen_edge_ledger.csv",
+      "sha256": "edbba0492b6b9be176e2ed489c190f763aab9b57a4db246cd49f67a32624b502"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m41_equal_ni_flux_ablation_contract_v1.json": "5ecf335627e5d23cdaa8537b837318cff0a6abeac7ee8d04f56f3a1e4dfabaa3",
+    "scripts/run_simplemos_m41_equal_ni_flux_ablation.py": "36f35a72bee1bec249af392c313eef7b7d8608efb3e2c03b04cb1350cd73e292",
+    "reference_tcad/simplemos_sentaurus2022/true_no_bgn_factorial/m40_true_no_bgn_factorial_report.json": "1bffb4582a2dc39944b988c8a58956fbcd3677e47179a748ba670228ef59c455",
+    "include/vela/physics/BandgapNarrowing.h": "ea7c9ac8a0355e8ab6af83eb59f95dbaf0d7a6d7c919bb57e36391d5ae06ac46",
+    "include/vela/equation/CoupledDDAssembler.h": "863c80342ce717642500df37ae554685204981b6757bf8e89b571c99255c47be",
+    "src/equation/CoupledDDAssembler.cpp": "e525d828d0199dafdea947377dc6faed7cea419b5cb76fc1f51ae05d3dfe64ed",
+    "src/solver/NewtonSolver.cpp": "95de9308e18bdd428f62df47cbc1f6e1658f50188d2ffe45f5757ab7e9248b73",
+    "src/solver/GummelSolver.cpp": "63221ade6ee484ace604cd2c6971a32625cbda20fe45360cf30cf26ac9f187f3"
+  },
+  "default_model_changed": false,
+  "acceptance": {
+    "frozen_probe_count": true,
+    "self_consistent_workflow_count": true,
+    "all_workflows_converged": true,
+    "compensated_frozen_cut_replays_m40_terminal": true,
+    "historical_legacy_cut_differs_from_reported_terminal": true,
+    "legacy_m40_reproduced": true,
+    "all_checks_pass": true
+  }
+}

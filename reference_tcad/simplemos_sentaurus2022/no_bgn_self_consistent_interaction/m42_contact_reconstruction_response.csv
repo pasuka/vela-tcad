@@ -1,0 +1,5 @@
+mode,srh_name,operator_cut_log_shift_dex,reported_current_log_shift_dex,maximum_abs_psi_delta_V,maximum_abs_phin_delta_V,maximum_abs_phip_delta_V,maximum_abs_logn_delta_dex,maximum_abs_logp_delta_dex
+legacy,srh_on,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+legacy,srh_off,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+compensated,srh_on,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+compensated,srh_off,0.0,0.0,0.0,0.0,0.0,0.0,0.0

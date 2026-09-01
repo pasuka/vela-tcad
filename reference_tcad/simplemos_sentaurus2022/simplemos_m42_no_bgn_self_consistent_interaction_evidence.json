@@ -1,0 +1,46 @@
+{
+  "schema": "vela.simplemos.sdevice.m42_no_bgn_self_consistent_interaction_evidence.v1",
+  "status": "frozen",
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_no_bgn_self_consistent_interaction_report.json",
+      "sha256": "200fb9ebc7b4c37515fe4f39604d132b2da6e47f22b27b3a3699f30f0f6271c5"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_self_consistent_matrix.csv",
+      "sha256": "28b7b0710bccf902199f8c42ea78f13ae7c1abb4953600a45d40003a6d1d08e0"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_frozen_operator_matrix.csv",
+      "sha256": "7d90250f5d4ccc8e6f071711feea3fda24a863247a525c5f114e904e370f5a7d"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_qf_state_substitution.csv",
+      "sha256": "cc87849753a4caab5f875b7fa80480c4e2b90498541d6787a928efcc8b53e4bf"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/no_bgn_self_consistent_interaction/m42_contact_reconstruction_response.csv",
+      "sha256": "42ab12967e887f89630d6cbd02f71e1a5cd618d156613626654ab54d57ba06b3"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m42_no_bgn_self_consistent_interaction_contract_v1.json": "e1577bb5391ee973a7ea12929e59d09b096c24b002208fb7cf032cfaf7cc798c",
+    "scripts/run_simplemos_m42_no_bgn_self_consistent_interaction.py": "572550a9351898a879fcfaad4d54635f7d340e093adbf998818e2e9d4a85f541",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m41_equal_ni_flux_ablation_evidence.json": "fe0721371e77d0507d742eda41c8213b7f3829d6597125981328ca7b007b8ee1",
+    "src/equation/CoupledDDAssembler.cpp": "e525d828d0199dafdea947377dc6faed7cea419b5cb76fc1f51ae05d3dfe64ed",
+    "src/solver/NewtonSolver.cpp": "95de9308e18bdd428f62df47cbc1f6e1658f50188d2ffe45f5757ab7e9248b73"
+  },
+  "default_model_changed": false,
+  "acceptance": {
+    "self_consistent_state_count": true,
+    "all_self_consistent_workflows_converged": true,
+    "frozen_operator_pair_count": true,
+    "qf_substitution_count": true,
+    "compensated_cut_reported_closure": true,
+    "legacy_cut_reported_mismatch_reproduced": true,
+    "srh_frozen_cut_is_null": true,
+    "contact_frozen_cut_is_null": true,
+    "qf_reference_increment_required": true,
+    "all_checks_pass": true
+  }
+}
