@@ -1,0 +1,43 @@
+{
+  "schema": "vela.simplemos.sdevice.m46_full_matrix_requalification_contract.v1",
+  "objective": "Requalify the complete production-configuration SimpleMOS Id-Vg matrix after M43/M44, and separate cross-TCAD accuracy from change relative to the frozen M8 Vela baseline.",
+  "upstream_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m45_post_qf_rebaseline_evidence.json",
+  "historical_baseline": {
+    "evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json",
+    "comparison_report": "reference_tcad/simplemos_sentaurus2022/original_physics/comparisons/comparison_report.json",
+    "curve_count": 16,
+    "points_per_curve": 51,
+    "direct_bias_point_count": 816,
+    "maximum_absolute_log10_ratio_dex": 0.10941868092427424,
+    "maximum_relative_error": 0.28652633602019956,
+    "maximum_absolute_endpoint_log10_ratio_dex": 0.013174412341053722
+  },
+  "matrix": {
+    "devices": ["n17", "n18", "n19", "n20", "n21", "n22", "n23", "n24"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": {
+      "start": 0.0,
+      "stop": 2.5,
+      "step": 0.05,
+      "count": 51
+    }
+  },
+  "acceptance": {
+    "required_passing_curves": 16,
+    "required_direct_bias_points": 816,
+    "maximum_absolute_log10_ratio_dex": 0.3,
+    "maximum_relative_error": 1.0,
+    "maximum_allowed_global_error_increase_vs_m8_dex": 0.005,
+    "trend_match_required": true,
+    "interpolation": "forbidden",
+    "all_gate_points_must_converge": true
+  },
+  "policy": {
+    "default_physics_model_changed": false,
+    "default_hfs_model_changed": false,
+    "default_solver_policy_changed": false,
+    "new_sentaurus_execution": false,
+    "sentaurus_references_reused_read_only": true,
+    "historical_m8_artifacts_rewritten": false
+  }
+}

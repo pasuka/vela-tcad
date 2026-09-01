@@ -1179,6 +1179,13 @@ set_tests_properties(simplemos_m45_post_qf_rebaseline PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m45_post_qf_rebaseline)
 
+add_test(NAME simplemos_m46_full_matrix_requalification
+         COMMAND ${Python3_EXECUTABLE} -m unittest
+                 tests.regression.test_simplemos_m46_full_matrix_requalification)
+set_tests_properties(simplemos_m46_full_matrix_requalification PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_m46_full_matrix_requalification)
+
 add_test(NAME transportmodels_fixed_contract
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_transportmodels_fixed_contract)
