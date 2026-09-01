@@ -299,6 +299,70 @@ TEST_CASE("External AverageBox fields cannot be silently ignored by the default 
             "external AverageBox fields require"));
 }
 
+TEST_CASE("Templates LDMOS region AverageBox changes Poisson but preserves transport override",
+          "[box_geometry][poisson_profile]")
+{
+    DeviceMesh mesh = makeSingleEquilateralTriangle();
+    const auto transportPath = std::filesystem::temp_directory_path() /
+        "vela_external_averagebox_transport_for_poisson.csv";
+    const auto poissonPath = std::filesystem::temp_directory_path() /
+        "vela_external_averagebox_poisson_profile.csv";
+    {
+        std::ofstream output(transportPath);
+        REQUIRE(output.is_open());
+        output << "node0,node1,couple_m\n";
+        output << mesh.getEdge(0).n0 << ',' << mesh.getEdge(0).n1
+               << ",2e-7\n";
+    }
+    {
+        std::ofstream output(poissonPath);
+        REQUIRE(output.is_open());
+        output << "node0,node1,couple_m\n";
+        output << mesh.getEdge(0).n0 << ',' << mesh.getEdge(0).n1
+               << ",3e-7\n";
+    }
+    const nlohmann::json cfg{{"mesh_geometry", {
+        {"node_volume_policy", "barycentric"},
+        {"carrier_transport_couple_profile", "templates_ldmos_external_averagebox"},
+        {"external_averagebox_couples_file", transportPath.string()},
+        {"external_averagebox_expected_edges", 1},
+        {"poisson_couple_profile", "templates_ldmos_region_averagebox"},
+        {"external_averagebox_poisson_couples_file", poissonPath.string()},
+        {"external_averagebox_poisson_expected_edges", 1},
+    }}};
+    const UnitScalingConfig scaling{UnitScalingMode::UnitScaling};
+    applyCarrierTransportCoupleProfile(
+        mesh, cfg, transportPath.parent_path(), scaling);
+    const PoissonCoupleProfileReport report = applyPoissonCoupleProfile(
+        mesh, cfg, poissonPath.parent_path(), scaling);
+    std::filesystem::remove(transportPath);
+    std::filesystem::remove(poissonPath);
+
+    REQUIRE(report.profile == "templates_ldmos_region_averagebox");
+    REQUIRE(report.records == 1);
+    REQUIRE(mesh.getEdge(0).couple == Catch::Approx(0.3));
+    REQUIRE(mesh.getEdge(0).transport_couple == Catch::Approx(0.2));
+    REQUIRE(detail::computeEdgeCouplings(mesh).at(0) == Catch::Approx(0.3));
+    REQUIRE(detail::computeTransportEdgeCouplings(mesh).at(0) == Catch::Approx(0.2));
+}
+
+TEST_CASE("Templates LDMOS region AverageBox requires qualified transport profile",
+          "[box_geometry][poisson_profile]")
+{
+    DeviceMesh mesh = makeSingleEquilateralTriangle();
+    REQUIRE_THROWS_WITH(
+        applyPoissonCoupleProfile(
+            mesh,
+            nlohmann::json{{"mesh_geometry", {
+                {"poisson_couple_profile", "templates_ldmos_region_averagebox"},
+                {"external_averagebox_poisson_couples_file", "unused.csv"},
+                {"external_averagebox_poisson_expected_edges", 1},
+            }}},
+            std::filesystem::current_path()),
+        Catch::Matchers::ContainsSubstring(
+            "requires the qualified templates_ldmos_external_averagebox"));
+}
+
 TEST_CASE("Templates LDMOS AverageBox profile rejects non-barycentric source geometry",
           "[box_geometry][carrier_transport_profile]")
 {

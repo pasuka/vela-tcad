@@ -49,6 +49,10 @@ public:
     void setTransportCouple(Index edgeId, Real couple);
     void clearTransportCoupleOverrides();
 
+    /// Install an explicit electrostatic edge coupling. Carrier transport
+    /// remains on its independent override when one has already been set.
+    void setPoissonCouple(Index edgeId, Real couple);
+
     // ------------------------------------------------------------------
     // Queries
     // ------------------------------------------------------------------

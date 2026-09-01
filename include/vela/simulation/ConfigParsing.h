@@ -42,4 +42,21 @@ CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
     const std::filesystem::path& configDirectory,
     UnitScalingConfig scaling = {});
 
+struct PoissonCoupleProfileReport {
+    std::string profile = "mesh_default";
+    std::string sourceFile;
+    Index records = 0;
+    Index zeroCouples = 0;
+    Real minimumCouple = 0.0;
+    Real maximumCouple = 0.0;
+};
+
+/// Apply the explicit, Templates/LDMOS-only region-local AverageBox
+/// electrostatic couple oracle. The default leaves Poisson geometry intact.
+PoissonCoupleProfileReport applyPoissonCoupleProfile(
+    DeviceMesh& mesh,
+    const nlohmann::json& cfg,
+    const std::filesystem::path& configDirectory,
+    UnitScalingConfig scaling = {});
+
 } // namespace vela

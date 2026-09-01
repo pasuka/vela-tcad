@@ -2426,22 +2426,42 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e,
             CarrierType::Hole, holeMobilityField, &mobilityConfig_, &psi);
 
+        Real electronEtaI = 0.0;
+        Real electronEtaJ = 0.0;
+        Real electronDriftPotential =
+            electronPsiRelative_j - electronPsiRelative_i;
+        Real electronGeneralizedEinsteinFactor = 1.0;
+        Real electronFermiDensityI = n(i);
+        Real electronFermiDensityJ = n(j);
+        if (usesFermiDirac_) {
+            electronEtaI = (electronPsiRelative_i - phin_i) / Vt_
+                + std::log(ni_[idxI] / Nc_[idxI]);
+            electronEtaJ = (electronPsiRelative_j - phin_j) / Vt_
+                + std::log(ni_[idxJ] / Nc_[idxJ]);
+            electronDriftPotential += Vt_ * std::log(
+                (ni_[idxJ] / Nc_[idxJ]) / (ni_[idxI] / Nc_[idxI]));
+            electronFermiDensityI = Nc_[idxI] * fermiDiracHalf(electronEtaI);
+            electronFermiDensityJ = Nc_[idxJ] * fermiDiracHalf(electronEtaJ);
+            electronGeneralizedEinsteinFactor = sgGeneralizedEinsteinFactor(
+                electronFermiDensityI, electronFermiDensityJ,
+                electronEtaI, electronEtaJ);
+        } else if (bgnEnabled_) {
+            electronDriftPotential += Vt_ * std::log(ni_[idxI] / ni_[idxJ]);
+        }
+        const Real electronBernoulliArgument = electronDriftPotential /
+            (Vt_ * electronGeneralizedEinsteinFactor);
+        const Real electronQuasiFermiArgument = (phin_j - phin_i) /
+            (Vt_ * electronGeneralizedEinsteinFactor);
+
         Real nFlux = 0.0;
         Real nFluxPerInternalCouple = 0.0;
         if (mun > 0.0) {
             const Real coef = mun * Vt_ * fieldFactor * couple_[e] / h;
             if (usesFermiDirac_) {
-                const Real etaI = (electronPsiRelative_i - phin_i) / Vt_
-                    + std::log(ni_[idxI] / Nc_[idxI]);
-                const Real etaJ = (electronPsiRelative_j - phin_j) / Vt_
-                    + std::log(ni_[idxJ] / Nc_[idxJ]);
-                const Real drift = (electronPsi_j - electronPsi_i) + Vt_ * std::log(
-                    (ni_[idxJ] / Nc_[idxJ]) / (ni_[idxI] / Nc_[idxI]));
                 nFlux = sgElectronFermiDiracQuantumContinuityFlux(
                     n(i), n(j),
-                    Nc_[idxI] * fermiDiracHalf(etaI),
-                    Nc_[idxJ] * fermiDiracHalf(etaJ),
-                    etaI, etaJ, drift,
+                    electronFermiDensityI, electronFermiDensityJ,
+                    electronEtaI, electronEtaJ, electronDriftPotential,
                     phin_i, phin_j, Vt_, coef);
             } else {
                 nFlux = sgElectronContinuityFluxFromQuasiFermiVariableNi(
@@ -2455,20 +2475,12 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
             } else {
                 const Real unitCoef = mun * Vt_ * fieldFactor / h;
                 if (usesFermiDirac_) {
-                    const Real etaI = (electronPsiRelative_i - phin_i) / Vt_
-                        + std::log(ni_[idxI] / Nc_[idxI]);
-                    const Real etaJ = (electronPsiRelative_j - phin_j) / Vt_
-                        + std::log(ni_[idxJ] / Nc_[idxJ]);
-                    const Real drift = (electronPsi_j - electronPsi_i)
-                        + Vt_ * std::log(
-                            (ni_[idxJ] / Nc_[idxJ]) /
-                            (ni_[idxI] / Nc_[idxI]));
                     nFluxPerInternalCouple =
                         sgElectronFermiDiracQuantumContinuityFlux(
                             n(i), n(j),
-                            Nc_[idxI] * fermiDiracHalf(etaI),
-                            Nc_[idxJ] * fermiDiracHalf(etaJ),
-                            etaI, etaJ, drift,
+                            electronFermiDensityI, electronFermiDensityJ,
+                            electronEtaI, electronEtaJ,
+                            electronDriftPotential,
                             phin_i, phin_j, Vt_, unitCoef);
                 } else {
                     nFluxPerInternalCouple =
@@ -2554,8 +2566,18 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
         record.phip0_V = phip_i + holeReference_i;
         record.phip1_V = phip_j + holeReference_i;
         record.electricField_V_m = electricField;
+        record.electronMobilityField_V_m = electronMobilityField;
         record.electronMobility_m2_V_s = mun;
         record.holeMobility_m2_V_s = mup;
+        record.electronEta0 = electronEtaI;
+        record.electronEta1 = electronEtaJ;
+        record.electronDriftPotential_V = electronDriftPotential;
+        record.electronGeneralizedEinsteinFactor =
+            electronGeneralizedEinsteinFactor;
+        record.electronBernoulliArgument = electronBernoulliArgument;
+        record.electronQuasiFermiArgument = electronQuasiFermiArgument;
+        record.electronBernoulliPlus = bernoulli(electronBernoulliArgument);
+        record.electronBernoulliMinus = bernoulli(-electronBernoulliArgument);
         record.electronFlux = nFlux / continuityScale;
         record.holeFlux = pFlux / continuityScale;
         record.electronFluxPerInternalCouple =

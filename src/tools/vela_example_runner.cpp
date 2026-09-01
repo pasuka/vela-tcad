@@ -356,6 +356,8 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
     mesh.buildBoxGeometry(vela::parseBoxGeometryOptions(cfg));
     const vela::CarrierTransportCoupleProfileReport transportProfile =
         vela::applyCarrierTransportCoupleProfile(mesh, cfg, cfgDir, scaling);
+    const vela::PoissonCoupleProfileReport poissonProfile =
+        vela::applyPoissonCoupleProfile(mesh, cfg, cfgDir, scaling);
 
     vela::MaterialDatabase matdb(scaling);
     if (cfg.contains("materials_file"))
@@ -378,6 +380,14 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
          newton.electronQuantumPotential.enabled)) {
         throw std::invalid_argument(
             "templates_ldmos_external_averagebox is qualified only with "
+            "impact ionization, surface mobility/IALMob, and quantum potential off.");
+    }
+    if (poissonProfile.profile != "mesh_default" &&
+        (newton.impactIonization.model != "none" ||
+         vela::isSurfaceMobilityModel(newton.mobility) ||
+         newton.electronQuantumPotential.enabled)) {
+        throw std::invalid_argument(
+            "templates_ldmos_region_averagebox is qualified only with "
             "impact ionization, surface mobility/IALMob, and quantum potential off.");
     }
     std::vector<vela::RegionFixedChargeSpec> fixedCharges =
@@ -2815,8 +2825,12 @@ void writeSgEdgeFluxProbeCsv(
         << "electron_density0_m3,electron_density1_m3,"
         << "hole_density0_m3,hole_density1_m3,"
         << "psi0_V,psi1_V,phin0_V,phin1_V,"
-        << "phip0_V,phip1_V,electric_field_V_m,electron_mobility_m2_V_s,"
-        << "hole_mobility_m2_V_s,electron_flux,hole_flux,"
+        << "phip0_V,phip1_V,electric_field_V_m,electron_mobility_field_V_m,"
+        << "electron_mobility_m2_V_s,hole_mobility_m2_V_s,"
+        << "electron_eta0,electron_eta1,electron_drift_potential_V,"
+        << "electron_generalized_einstein_factor,electron_bernoulli_argument,"
+        << "electron_quasi_fermi_argument,electron_bernoulli_plus,"
+        << "electron_bernoulli_minus,electron_flux,hole_flux,"
         << "electron_scaled_flux_per_couple_m,hole_scaled_flux_per_couple_m,"
         << "electron_particle_line_flux_per_m_s,hole_particle_line_flux_per_m_s,"
         << "electron_particle_flux_density_per_couple_m2_s,"
@@ -2848,8 +2862,18 @@ void writeSgEdgeFluxProbeCsv(
             << edge.phip0_V << ','
             << edge.phip1_V << ','
             << units.internalElectricFieldToVPerM(edge.electricField_V_m) << ','
+            << units.internalElectricFieldToVPerM(
+                   edge.electronMobilityField_V_m) << ','
             << units.internalMobilityToM2PerVS(edge.electronMobility_m2_V_s) << ','
             << units.internalMobilityToM2PerVS(edge.holeMobility_m2_V_s) << ','
+            << edge.electronEta0 << ','
+            << edge.electronEta1 << ','
+            << edge.electronDriftPotential_V << ','
+            << edge.electronGeneralizedEinsteinFactor << ','
+            << edge.electronBernoulliArgument << ','
+            << edge.electronQuasiFermiArgument << ','
+            << edge.electronBernoulliPlus << ','
+            << edge.electronBernoulliMinus << ','
             << edge.electronFlux << ','
             << edge.holeFlux << ','
             << edge.electronFluxPerInternalCouple / internalLength_m << ','

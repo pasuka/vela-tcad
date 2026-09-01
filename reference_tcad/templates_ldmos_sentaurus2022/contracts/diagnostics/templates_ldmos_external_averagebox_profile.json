@@ -220,6 +220,88 @@
       "maximum_localized_jvp_relative_error": 1.0658760378471736e-6,
       "classification": "electron continuity fixed-point difference at the gate-channel interface one-ring",
       "passed": true
+    },
+    "maximum_gm_seven_node_interface_ablation": {
+      "bias_points_V": [
+        1.0,
+        1.1666666666666667
+      ],
+      "nodes": [
+        3721,
+        3974,
+        3973,
+        4091,
+        3727,
+        4021,
+        3771
+      ],
+      "direct_si_dielectric_interface_nodes": 6,
+      "interface_one_ring_only_nodes": [
+        4021
+      ],
+      "level_a_residual_l2": [
+        0.0031592101694333874,
+        0.009427205245646083
+      ],
+      "level_b_over_level_a_l2": [
+        1.0,
+        1.0
+      ],
+      "level_c_over_level_b_l2": [
+        1.0,
+        1.0
+      ],
+      "seven_node_residual_l2_growth_high_over_low": 2.9840386489186557,
+      "maximum_relative_row_change_from_silicon_local_source_measure": 0.0,
+      "maximum_absolute_electron_source_term": 4.276535602963287e-23,
+      "maximum_source_over_maximum_level_a_residual": 8.287989218457438e-21,
+      "maximum_exported_sentaurus_si_oxide_potential_split_V": 0.0,
+      "classification": "neither continuity source volume nor an exactly constrained potential double-node explains the seven-node frozen-state residual",
+      "scope_limit": "full self-consistent explicit double-node degrees of freedom were not implemented",
+      "passed": true
+    },
+    "maximum_gm_interface_edge_and_poisson_ab": {
+      "bias_points_V": [
+        1.0,
+        1.1666666666666667
+      ],
+      "selected_nodes": [
+        3721,
+        3974,
+        3973,
+        4091,
+        3727,
+        4021,
+        3771
+      ],
+      "unique_incident_edges": 40,
+      "maximum_sg_factor_product_reconstruction_relative_error": 1.341561407913703e-14,
+      "same_bias_vsv_to_vvv_qf_drive_held_initial_l2_fraction": [
+        0.9228745316422734,
+        0.8087275963050196
+      ],
+      "same_bias_vsv_to_vvv_maximum_non_qf_single_factor_l2_fraction": [
+        0.0034512075504000888,
+        0.009083435225975952
+      ],
+      "region_averagebox_poisson_profile": {
+        "profile_name": "templates_ldmos_region_averagebox",
+        "default_enabled": false,
+        "records": 30022,
+        "heterogeneous_material_edges": 760,
+        "zero_couple_records": 5853,
+        "source_volume": "unchanged barycentric",
+        "carrier_transport": "qualified external AverageBox"
+      },
+      "poisson_candidate_iterations": [
+        4,
+        4
+      ],
+      "baseline_gm_ratio_to_sentaurus": 0.7569242248395032,
+      "candidate_gm_ratio_to_sentaurus": 0.7559670732837552,
+      "maximum_candidate_localized_jvp_relative_error": 9.071723462799034e-8,
+      "classification": "phin edge-drive state closure; region-local AverageBox Poisson P1 does not improve maximum gm",
+      "passed": true
     }
   },
   "comparison_masks": {
@@ -242,6 +324,6 @@
       "max_gm_relative_error": 0.24307577516061074,
       "worst_kcl_relative_error": 1.1429698478423298e-9
     },
-    "next_gate": "coefficient-level gate-channel interface-box electron-row balance audit before IALMob or any threshold or mobility change"
+    "next_gate": "fixed-state Fermi-Dirac generalized-Einstein/SG edge-averaging semantics A/B on the seven-node interface cluster; keep IALMob and production defaults unchanged"
   }
 }

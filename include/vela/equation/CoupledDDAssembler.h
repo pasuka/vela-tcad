@@ -136,8 +136,20 @@ struct CoupledDDEdgeFluxDiagnostic {
     Real phip0_V = 0.0;
     Real phip1_V = 0.0;
     Real electricField_V_m = 0.0;
+    Real electronMobilityField_V_m = 0.0;
     Real electronMobility_m2_V_s = 0.0;
     Real holeMobility_m2_V_s = 0.0;
+    // Exact dimensionless factors used by the production electron SG branch.
+    // For Fermi statistics, eta0/eta1 are reduced chemical potentials and
+    // generalizedEinsteinFactor modifies both drift and quasi-Fermi arguments.
+    Real electronEta0 = 0.0;
+    Real electronEta1 = 0.0;
+    Real electronDriftPotential_V = 0.0;
+    Real electronGeneralizedEinsteinFactor = 1.0;
+    Real electronBernoulliArgument = 0.0;
+    Real electronQuasiFermiArgument = 0.0;
+    Real electronBernoulliPlus = 1.0;
+    Real electronBernoulliMinus = 1.0;
     // Signed Scharfetter-Gummel continuity edge flux (added to node0's residual
     // and subtracted from node1's), identical to the residual edge loop.
     Real electronFlux = 0.0;

@@ -124,6 +124,17 @@ void DeviceMesh::clearTransportCoupleOverrides()
         edge.transport_couple = -1.0;
 }
 
+void DeviceMesh::setPoissonCouple(Index edgeId, Real couple)
+{
+    if (edgeId >= edges_.size())
+        throw std::out_of_range(
+            "Poisson couple edge id out of range: " + std::to_string(edgeId));
+    if (!std::isfinite(couple) || couple < 0.0)
+        throw std::invalid_argument(
+            "Poisson couple must be finite and non-negative.");
+    edges_[edgeId].couple = couple;
+}
+
 // ------------------------------------------------------------------
 // Accessors
 // ------------------------------------------------------------------

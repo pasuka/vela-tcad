@@ -3047,6 +3047,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     mesh.buildBoxGeometry(parseBoxGeometryOptions(cfg));
     const CarrierTransportCoupleProfileReport transportCoupleProfile =
         applyCarrierTransportCoupleProfile(mesh, cfg, cfgDir, scaling);
+    const PoissonCoupleProfileReport poissonCoupleProfile =
+        applyPoissonCoupleProfile(mesh, cfg, cfgDir, scaling);
     MaterialDatabase matdb(scaling);
     if (cfg.contains("materials_file"))
         matdb.loadJson(resolve(cfg.at("materials_file").get<std::string>()), scaling);
@@ -3214,6 +3216,15 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
          sweepQuantumPotential.enabled)) {
         throw std::invalid_argument(
             "DCSweep: templates_ldmos_external_averagebox is qualified only "
+            "with impact ionization, surface mobility/IALMob, and quantum "
+            "potential off.");
+    }
+    if (poissonCoupleProfile.profile != "mesh_default" &&
+        (sweepImpactIonizationConfig.model != "none" ||
+         isSurfaceMobilityModel(mobilityConfig) ||
+         sweepQuantumPotential.enabled)) {
+        throw std::invalid_argument(
+            "DCSweep: templates_ldmos_region_averagebox is qualified only "
             "with impact ionization, surface mobility/IALMob, and quantum "
             "potential off.");
     }

@@ -399,6 +399,16 @@ TEST_CASE("SG edge diagnostic converts native line flux to particles per metre",
     bool foundNonzero = false;
     bool foundZeroCoupleResponse = false;
     for (const auto& edge : diagnostics) {
+        REQUIRE(std::isfinite(edge.electronMobilityField_V_m));
+        REQUIRE(edge.electronGeneralizedEinsteinFactor >= 1.0);
+        REQUIRE(edge.electronBernoulliArgument == Catch::Approx(
+            edge.electronDriftPotential_V /
+            (constants::Vt_300 * edge.electronGeneralizedEinsteinFactor)));
+        REQUIRE(edge.electronQuasiFermiArgument == Catch::Approx(
+            (edge.phin1_V - edge.phin0_V) /
+            (constants::Vt_300 * edge.electronGeneralizedEinsteinFactor)));
+        REQUIRE(std::isfinite(edge.electronBernoulliPlus));
+        REQUIRE(std::isfinite(edge.electronBernoulliMinus));
         if (edge.couple_m == 0.0 &&
             std::abs(edge.electronFluxPerInternalCouple) > 1.0e-30) {
             foundZeroCoupleResponse = true;
