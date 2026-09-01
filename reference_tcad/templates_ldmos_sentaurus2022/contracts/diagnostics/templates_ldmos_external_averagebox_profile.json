@@ -2,7 +2,7 @@
   "schema": "vela.templates_ldmos.external_averagebox_profile.v1",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
   "profile_name": "templates_ldmos_external_averagebox",
-  "status": "qualified_diagnostic_curve_stage3_rhs_scalar_open",
+  "status": "qualified_diagnostic_curve_stage3_internal_rhs_normalization_open",
   "default_enabled": false,
   "scope": {
     "device": "Templates/LDMOS exact SProcess topology",
@@ -440,7 +440,7 @@
         -0.9830018965003314
       ],
       "classification": "the nonzero seven-node assembled electron-row mode is cross-engine aligned up to opposite sign convention and one bias-stable scalar; a different local QF-drive spatial mode is not the dominant cause",
-      "remaining_open_scalar": "NewtonPlot RHS normalization, 2-D width/current convention, or a uniform assembly coefficient",
+      "remaining_open_scalar": "NewtonPlot internal RHS normalization or a uniform assembly coefficient; 2-D width and AreaFactor are excluded",
       "individual_element_edge_rule_identified": false,
       "production_solver_changed": false,
       "self_consistent_reclose_run": false,
@@ -471,7 +471,24 @@
       "vela_even_over_odd_l2": 0.00019999562511093324,
       "active_support_equals_pre_registered_one_ring": true,
       "classification": "the approximately 33.5x factor multiplies a controlled local electron-QF Jacobian column; QF-drive spatial shape is excluded as the primary cause",
-      "remaining_open_scalar": "NewtonPlot RHS normalization, 2-D width/current convention, or a uniform assembly coefficient",
+      "remaining_open_scalar": "NewtonPlot internal RHS normalization or a uniform assembly coefficient; 2-D width and AreaFactor are excluded",
+      "production_solver_changed": false,
+      "self_consistent_reclose_run": false,
+      "ledger_status": "draft",
+      "passed": true
+    },
+    "maximum_gm_rhs_dimension_chain_area_factor_ab": {
+      "state": "same high-endpoint VSV node-3721 symmetric QF pair",
+      "baseline_area_factor": 1.0,
+      "candidate_area_factor": 2.0,
+      "common_silicon_nodes": 5723,
+      "active_derivative_nodes": 5,
+      "minus_rhs_csv_byte_identical": true,
+      "plus_rhs_csv_byte_identical": true,
+      "candidate_over_baseline_derivative_scale": 1.0,
+      "relative_l2_after_scale": 0.0,
+      "terminal_current_scale": 2.0,
+      "classification": "Sentaurus NewtonPlot eContinuityRhs is invariant to AreaFactor even though physical terminal current follows it exactly; 2-D width and AreaFactor do not explain the 33.7806x scalar",
       "production_solver_changed": false,
       "self_consistent_reclose_run": false,
       "ledger_status": "draft",
@@ -498,6 +515,6 @@
       "max_gm_relative_error": 0.24307577516061074,
       "worst_kcl_relative_error": 1.1429698478423298e-9
     },
-    "next_gate": "audit the Sentaurus eContinuityRhs dimensional chain using 2-D AreaFactor/default device width and NewtonPlot row normalization; use a controlled width A/B only if documentation cannot predict the observed 33.7806x scalar; keep IALMob, predictor and production defaults unchanged"
+    "next_gate": "seek supported Sentaurus equation-scaling evidence for NewtonPlot eContinuityRhs, including Electron ErrRef, control-box Measure, row norm or preconditioning order; treat the absolute RHS magnitude as implementation-dependent and keep IALMob, predictor and production defaults unchanged"
   }
 }

@@ -116,8 +116,12 @@ Sentaurus Load 后立即 Plot 的回读确认七节点三个未知量完全一�
 `-33.7806`，相对本节未扰动高端点标量只漂移 `0.958%`。因此 `33.5x` 已从
 “基线行共线”提升为“受控局部 Jacobian 列上的统一标量”；详见
 `templates_ldmos_g3_qf_single_mode_perturbation_2026-09-01.md`。下一门是审计
-NewtonPlot RHS、二维宽度/AreaFactor 与 Vela `A/um` 的量纲链。在该标量归属
-明确前，不应把它当成迁移率、SG 空间支撑或物理参数误差。
+NewtonPlot RHS、二维宽度/AreaFactor 与 Vela `A/um` 的量纲链。后续
+`AreaFactor=1 -> 2` 单因素实验使端口电流精确翻倍，却使完整
+`eContinuityRhs` 场逐字节不变，已经排除二维宽度/AreaFactor 归因；详见
+`templates_ldmos_g3_rhs_dimension_chain_2026-09-01.md`。剩余归属是 Sentaurus
+内部 RHS 归一化或均匀 assembly coefficient，不应把它当成迁移率、SG 空间
+支撑或物理参数误差。
 
 ## 可复现工件
 

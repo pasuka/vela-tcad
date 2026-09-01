@@ -72,9 +72,12 @@ Vela continuity 物理化仍使用 SG edge probe 冻结的转换：particle scal
    先前实验中闭合到约 `0.02%`；
 4. 31 点曲线、IALMob 和 predictor 继续暂缓，本轮不改生产 C++ 默认。
 
-下一最小任务是审计 `eContinuityRhs` 的量纲链：Sentaurus 2-D AreaFactor/默认
-器件宽度、NewtonPlot 行缩放与 Vela `A/um` 转换。只有能由文档或额外宽度 A/B
-独立预测 `33.78x`，才可关闭该标量并决定是否更新 ledger。
+后续量纲链与 `AreaFactor=1 -> 2` A/B 已完成。端口电流精确变为 `2.0x`，
+但正、负两个完整 NewtonPlot `eContinuityRhs` CSV 均逐字节不变，中央差分
+候选/基线比例为 `1.0`。因此二维宽度与 AreaFactor 已被排除；NewtonPlot RHS
+必须视为实现相关内部归一化量。详见
+`templates_ldmos_g3_rhs_dimension_chain_2026-09-01.md`。ledger 仍保持 draft，
+下一门转为 Sentaurus 方程缩放/控制盒 Measure/行预条件顺序审计。
 
 ## 可复现工件
 
