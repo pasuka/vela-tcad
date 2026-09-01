@@ -4015,6 +4015,52 @@ void writeContactCurrentEdgeProbeCsv(
     }
 }
 
+void writeContactCurrentEdgeProbeCsv(
+    const std::filesystem::path& path,
+    const vela::ContactCurrentDetailedResult& detailed,
+    const vela::PhysicalUnitSystem& units)
+{
+    std::ofstream out(path);
+    if (!out.is_open())
+        throw std::runtime_error(
+            "Cannot write contact-current edge probe CSV: " + path.string());
+    out << std::setprecision(17);
+    out << "edge_id,node0,node1,length_m,couple_m,outward_sign,"
+        << "electron_qf_reference0_V,electron_qf_reference1_V,"
+        << "electron_sg_phin0_relative_V,electron_sg_phin1_relative_V,"
+        << "electron_sg_psi0_relative_V,electron_sg_psi1_relative_V,"
+        << "electron_mobility_drive_V_m,hole_mobility_drive_V_m,"
+        << "electron_mobility_m2_V_s,hole_mobility_m2_V_s,"
+        << "electron_continuity_flux,hole_continuity_flux,"
+        << "electron_current_A_per_um,hole_current_A_per_um,"
+        << "total_current_A_per_um\n";
+    for (const auto& edge : detailed.edges) {
+        out << edge.edgeId << ','
+            << edge.node0 << ','
+            << edge.node1 << ','
+            << edge.edgeLength_m << ','
+            << edge.edgeCouple_m << ','
+            << edge.outwardSign << ','
+            << edge.electronQfReference0 << ','
+            << edge.electronQfReference1 << ','
+            << edge.electronSgPhin0Relative << ','
+            << edge.electronSgPhin1Relative << ','
+            << edge.electronSgPsi0Relative << ','
+            << edge.electronSgPsi1Relative << ','
+            << units.internalElectricFieldToVPerM(
+                edge.electronMobilityDriveInternal) << ','
+            << units.internalElectricFieldToVPerM(
+                edge.holeMobilityDriveInternal) << ','
+            << units.internalMobilityToM2PerVS(edge.mun) << ','
+            << units.internalMobilityToM2PerVS(edge.mup) << ','
+            << edge.electronContinuityFlux << ','
+            << edge.holeContinuityFlux << ','
+            << edge.electronCurrent * 1.0e-6 << ','
+            << edge.holeCurrent * 1.0e-6 << ','
+            << edge.totalCurrent * 1.0e-6 << '\n';
+    }
+}
+
 nlohmann::json runTerminalCurrentFunctionalProbe(const std::string& configFile,
                                                  const nlohmann::json& cfg)
 {

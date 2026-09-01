@@ -13,6 +13,8 @@ CONTRACT = (REPO / "reference_tcad/simplemos_sentaurus2022"
             / "simplemos_m41_equal_ni_flux_ablation_contract_v1.json")
 M43_EVIDENCE = (REPO / "reference_tcad/simplemos_sentaurus2022"
                 / "simplemos_m43_sg_kernel_consistency_evidence.json")
+M44_EVIDENCE = (REPO / "reference_tcad/simplemos_sentaurus2022"
+                / "simplemos_m44_qf_coordinate_consistency_evidence.json")
 
 
 def sha256(path: Path) -> str:
@@ -27,6 +29,8 @@ class SimpleMosM41EqualNiFluxAblationTest(unittest.TestCase):
         cls.contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
         cls.m43_evidence = json.loads(
             M43_EVIDENCE.read_text(encoding="utf-8"))
+        cls.m44_evidence = json.loads(
+            M44_EVIDENCE.read_text(encoding="utf-8"))
 
     def test_report_is_complete_without_changing_default(self) -> None:
         self.assertEqual(self.report["status"], "complete")
@@ -80,10 +84,12 @@ class SimpleMosM41EqualNiFluxAblationTest(unittest.TestCase):
             current = sha256(REPO / relative)
             if expected == current:
                 continue
-            self.assertEqual(self.m43_evidence["status"], "frozen")
-            self.assertEqual(
-                self.m43_evidence["source_hashes"].get(relative), current,
-                f"changed M41 source is not frozen by superseding M43: {relative}")
+            superseding = (self.m44_evidence, self.m43_evidence)
+            self.assertTrue(
+                any(evidence["status"] == "frozen" and
+                    evidence["source_hashes"].get(relative) == current
+                    for evidence in superseding),
+                f"changed M41 source is not frozen by M43/M44: {relative}")
 
 
 if __name__ == "__main__":

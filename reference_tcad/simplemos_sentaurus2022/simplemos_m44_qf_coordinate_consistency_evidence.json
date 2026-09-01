@@ -1,0 +1,55 @@
+{
+  "schema": "vela.simplemos.sdevice.m44_qf_coordinate_consistency_evidence.v1",
+  "status": "frozen",
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/qf_coordinate_consistency/m44_qf_coordinate_consistency_report.json",
+      "sha256": "a838f38b80be8c60fa04d2263114ab17918b052859b6432c33e784026b6cd6fc"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/qf_coordinate_consistency/m44_qf_coordinate_consistency_matrix.csv",
+      "sha256": "b6aedf994ac459167ea95899547cfee78bb556084d66ce9143ffb2ac0909aba7"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/qf_coordinate_consistency/m44_qf_coordinate_edge_matrix.csv",
+      "sha256": "617893db76e1f39000f1fc618157a609f95448988f23da1914d140924a64876e"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m44_qf_coordinate_consistency_contract_v1.json": "831c241c1066f3637910403a6570c43bb57a46fad7a861c5fdf09f32bc8daf54",
+    "scripts/run_simplemos_m44_qf_coordinate_consistency.py": "39e8880a22471ab681242a64a172efb672da9020dbfebc6cdddd26f8561ec4ba",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m43_sg_kernel_consistency_evidence.json": "447999a6cd88fda709bc16892edd3c533c2e4127cec9b6bb31775b5a4f5c0c4a",
+    "CMakeLists.txt": "b3fd48f32e206d1519e89ab2b01808c10e379f87df9442eede91e64ecaf04496",
+    "src/equation/CoupledDDAssembler.cpp": "62db5a538ee95439feeea88a0d860b8bd51d22ef88db9829743dd41bcb0d67f2",
+    "src/solver/NewtonSolver.cpp": "cb37eb85dd21e7faad9d7f85f0eb1d775be231a8b0b79a47adb731e17374a065",
+    "src/simulation/DCSweep.cpp": "d1227c1e198d82c3314c353925734321bd9e1f4292c352b7541c938dbd41aadf",
+    "include/vela/post/ContactCurrent.h": "76a89db51104e793cafc48d30772d7f488fb0467f700d100658d6d6674a95bd0",
+    "src/post/ContactCurrent.cpp": "88697626e17dc45ca5eb39d2df1131a766d2aedce9e76aa9a286178f8117772f",
+    "src/tools/vela_example_runner.cpp": "73d32d07bd73b97655e0b4d6b37035646300c7b85ce94838a3fbe066926aabaa",
+    "tests/test_newton_solver.cpp": "9881914ae36a886081f4a5d279c8726829cabc791502f7a7754354f5e124ead5",
+    "tests/regression/simplemos_evidence_chain.py": "f3ad5d51b329bb25a10051d6d4543ba39848284489a252f36b61084a637ed59c",
+    "tests/regression/test_simplemos_m31_minority_poisson_perturbation.py": "99bd8e3c0832b4e6683585bf8300f8d8fa874be5ebd0cd104588918883823166",
+    "tests/regression/test_simplemos_m32_electron_qf_scaled_perturbation.py": "6aa7b041f428a7f0b325c2494dec9fc2814fad4ec5bb7a84b5f982d3c78b7cb0",
+    "tests/regression/test_simplemos_m33_region_resolved_interface_assembly.py": "7301f8b4276673f0803b4ca4520386d16bb586b871d96d6e405f85cec75a2138",
+    "tests/regression/test_simplemos_m35_signed_average_box_assembly.py": "6e49e1272072fb2a3a566cc15362e7718021b4836f98ae1bbb331d53216a3323",
+    "tests/regression/test_simplemos_m36_boundary_contact_measure_audit.py": "b4114233086c9e1aaf46a66e4b3322dd13da2ca6cc31ff2929a5b45035818540",
+    "tests/regression/test_simplemos_m37_measure_contact_qf_ablation.py": "044235fedb3823e16c3c7b0bb98bd98faf29911eb7a4209029c6efc2130b4d38",
+    "tests/regression/test_simplemos_m39_bgn_chain_first_divergence.py": "467bd2808c36112716160814bb1032d9816772e1474697adc9f2c3bdddb7992f",
+    "tests/regression/test_simplemos_m40_true_no_bgn_factorial.py": "a108afe387b3ac58c13a9bcd752028b45e2836f192bd6a44e76751c190635d14"
+  },
+  "default_physics_model_changed": false,
+  "default_hfs_model_changed": false,
+  "default_equal_ni_flux_evaluation_changed": false,
+  "acceptance": {
+    "state_count": true,
+    "both_numerical_modes": true,
+    "cut_matches_terminal_functional": true,
+    "terminal_functional_matches_contact_extractor": true,
+    "contact_edges_match": true,
+    "qf_relative_coordinates_match": true,
+    "mobility_drives_match": true,
+    "mobilities_match": true,
+    "all_contact_cuts_nonempty": true,
+    "all_checks_pass": true
+  }
+}

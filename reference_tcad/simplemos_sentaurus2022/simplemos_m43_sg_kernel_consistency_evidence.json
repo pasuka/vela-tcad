@@ -4,11 +4,11 @@
   "artifacts": [
     {
       "path": "reference_tcad/simplemos_sentaurus2022/sg_kernel_consistency/m43_sg_kernel_consistency_report.json",
-      "sha256": "f5d1e44aef960b69c9ad0868a2c29c50d4a6ef828abcbf227c39655bb99755a0"
+      "sha256": "bf6fa0433b296492ff2ef836bb3b7ca272505edd7a6cc73a4eb48dcd180d06ac"
     },
     {
       "path": "reference_tcad/simplemos_sentaurus2022/sg_kernel_consistency/m43_sg_kernel_consistency_matrix.csv",
-      "sha256": "58e004d3490352b055d6997e693133fa1048e740631ab0dc0e194a28bdad12bd"
+      "sha256": "df9aff3114fcfd63131aed87d415c2d0b6a8a4a9b3a3e320206897c186f2540f"
     }
   ],
   "source_hashes": {
@@ -18,8 +18,8 @@
     "include/vela/discretization/ScharfetterGummel.h": "46f4aad05e5665e1f4285b1541b6145fe2708215500357613ba6fe5ead7dc9cd",
     "src/discretization/ScharfetterGummel.cpp": "9400db72cfffd9661620b2647b891d200c6f85ee5c8522e5a1062e3640541eff",
     "src/equation/CoupledDDAssembler.cpp": "62db5a538ee95439feeea88a0d860b8bd51d22ef88db9829743dd41bcb0d67f2",
-    "src/post/ContactCurrent.cpp": "2ab66d37a8e28a840a224cdbf6a2642d46f34063796c1c6b4d18594495cf662d",
-    "src/tools/vela_example_runner.cpp": "f74b393728614061f65c6db2e95d1cad0774920fc3a0879188c2c1f76c42825e"
+    "src/post/ContactCurrent.cpp": "88697626e17dc45ca5eb39d2df1131a766d2aedce9e76aa9a286178f8117772f",
+    "src/tools/vela_example_runner.cpp": "73d32d07bd73b97655e0b4d6b37035646300c7b85ce94838a3fbe066926aabaa"
   },
   "default_physics_model_changed": false,
   "default_equal_ni_flux_evaluation_changed": false,

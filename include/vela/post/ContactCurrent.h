@@ -49,6 +49,12 @@ struct ContactCurrentEdgeDiagnostic {
     Real phin1 = 0.0;
     Real phip0 = 0.0;
     Real phip1 = 0.0;
+    Real electronQfReference0 = 0.0;
+    Real electronQfReference1 = 0.0;
+    Real electronSgPhin0Relative = 0.0;
+    Real electronSgPhin1Relative = 0.0;
+    Real electronSgPsi0Relative = 0.0;
+    Real electronSgPsi1Relative = 0.0;
     bool holeQfDropOverrideApplied = false;
     Real n0 = 0.0;
     Real n1 = 0.0;
@@ -56,6 +62,8 @@ struct ContactCurrentEdgeDiagnostic {
     Real p1 = 0.0;
     Real ni0 = 0.0;
     Real ni1 = 0.0;
+    Real electronMobilityDriveInternal = 0.0;
+    Real holeMobilityDriveInternal = 0.0;
     Real mun = 0.0;
     Real mup = 0.0;
     Real electronContinuityFlux = 0.0;

@@ -3,6 +3,10 @@ import json
 from pathlib import Path
 import unittest
 
+from tests.regression.simplemos_evidence_chain import (
+    assert_source_hashes_current_or_m44,
+)
+
 
 REPO = Path(__file__).resolve().parents[2]
 ROOT = REPO / "reference_tcad/simplemos_sentaurus2022/signed_average_box_assembly"
@@ -65,8 +69,7 @@ class SimpleMosM35SignedAverageBoxAssemblyTest(unittest.TestCase):
         self.assertEqual(evidence["status"], "frozen")
         for artifact in evidence["artifacts"]:
             self.assertEqual(artifact["sha256"], sha256(REPO / artifact["path"]))
-        for relative, expected in evidence["source_hashes"].items():
-            self.assertEqual(expected, sha256(REPO / relative))
+        assert_source_hashes_current_or_m44(self, evidence)
 
 
 if __name__ == "__main__":

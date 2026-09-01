@@ -10,7 +10,7 @@
   },
   "findings": {
     "maximum_cut_vs_terminal_functional_gap_dex": 0.0,
-    "maximum_terminal_functional_vs_contact_extractor_gap_dex": 0.0013470765785434935,
+    "maximum_terminal_functional_vs_contact_extractor_gap_dex": 3.552713678800501e-15,
     "legacy_gap_closed": true,
     "compensated_gap_not_regressed": true
   },

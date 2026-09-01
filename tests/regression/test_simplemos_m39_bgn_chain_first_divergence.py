@@ -3,6 +3,10 @@ import json
 from pathlib import Path
 import unittest
 
+from tests.regression.simplemos_evidence_chain import (
+    assert_source_hashes_current_or_m44,
+)
+
 
 REPO = Path(__file__).resolve().parents[2]
 REPORT = (REPO / "reference_tcad/simplemos_sentaurus2022"
@@ -61,8 +65,7 @@ class SimpleMosM39BgnChainFirstDivergenceTest(unittest.TestCase):
         self.assertEqual(self.evidence["status"], "frozen")
         for artifact in self.evidence["artifacts"]:
             self.assertEqual(artifact["sha256"], sha256(REPO / artifact["path"]))
-        for relative, expected in self.evidence["source_hashes"].items():
-            self.assertEqual(expected, sha256(REPO / relative))
+        assert_source_hashes_current_or_m44(self, self.evidence)
 
 
 if __name__ == "__main__":
