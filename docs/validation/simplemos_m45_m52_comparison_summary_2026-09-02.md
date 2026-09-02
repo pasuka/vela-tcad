@@ -1,8 +1,8 @@
-# SimpleMOS M45-M53 对比进展与 Sentaurus 导出量汇总
+# SimpleMOS M45-M56 对比进展与 Sentaurus 导出量汇总
 
 ## 结论摘要
 
-截至 M53，SimpleMOS 官方原始 deck 的默认端口观测仍保持 M8/M46 基线：8 个器件、2 个漏压、16 条 Id-Vg 曲线、816 个直接偏压点全部通过，M46 的 16 份逐点比较 CSV 与 M8 位级一致。默认基线的最大 Vela-Sentaurus 差异仍位于 n23、Vd=0.05 V、Vg=0.05 V，为 0.109418680924 dex（Vela 高 28.653%）。
+截至 M56，SimpleMOS 官方原始 deck 的默认端口观测仍保持 M8/M46 基线：8 个器件、2 个漏压、16 条 Id-Vg 曲线、816 个直接偏压点全部通过，M46 的 16 份逐点比较 CSV 与 M8 位级一致。默认基线的最大 Vela-Sentaurus 差异仍位于 n23、Vd=0.05 V、Vg=0.05 V，为 0.109418680924 dex（Vela 高 28.653%）。
 
 M47-M52 已把该目标点的主要异常从“求解状态差异”收缩到“Sentaurus 默认 substrate 端口电流的观测定义”：
 
@@ -11,6 +11,8 @@ M47-M52 已把该目标点的主要异常从“求解状态差异”收缩到“
 - Sentaurus 原生接触面 `eCurrentDensity · ContactSurfaceNormal` 积分与独立节点场边界积分逐点一致，但与默认 substrate `eCurrent` 明显不同。
 - 仅切换 Sentaurus 的 `CurrentWeighting` 或 `DirectCurrent` 时，六状态求解场逐值不变；两种端口算法在六状态内最多相差 9.260e-31 A/um，并消除目标点默认端口与原生面通量差异的 99.999854401%。
 - M53 把 `DirectCurrent` 扩展到完整16曲线后否证了“可直接替换默认 Id-Vg 观测”的假设：全局最大误差增至 2.126075 dex，只有3/16条曲线保持原资格门槛通过；72个 M52 共享端口分量仍逐值完全回放。
+- M54 表明 M53 目标点和最差点的漏端变化分别有93.38%和99.40%来自source/drain共模，但全816状态共模分数中位数仅43.08%，因此完整矩阵属于混合端口观测变化。
+- M56 证明本算例的Si/SiO2界面使用共享几何节点/边和分区域场记录：零坐标重复节点、界面电势严格连续、载流子密度/电流只支持在Silicon；gate电压通过附着在Oxide边界上的电极施加。
 
 因此，现有证据不支持重新调节 HFS、SG、BGN、SRH、迁移率、接触模型或网格。剩余约 2.876e-4 的 Direct/Weighted 对原生 Tcl 面积分相对差，已限定为内部离散接触积分与绘图节点场后处理积分之间的定义差异，而不是自洽状态变化。
 
@@ -41,6 +43,8 @@ M47-M52 已把该目标点的主要异常从“求解状态差异”收缩到“
 | M51 | `CurrentWeighting` 单变量回放 | 六状态场完全不变；目标端口变为 -2.376113673567e-19 A/um，消除默认-原生差的 99.999854401% | `weighted_third_observable` |
 | M52 | `DirectCurrent` 单变量回放 | 与 `CurrentWeighting` 在舍入尺度一致；六状态场完全不变 | `direct_matches_weighted` |
 | M53 | `DirectCurrent` 完整矩阵回放 | 16曲线、816点完整；全局误差由0.109419增至2.126075 dex，原门槛3/16通过 | `direct_increases_global_error` |
+| M54 | 完整矩阵四端共模/反对称分解 | 816状态、9792端口分量；目标共模93.38%，全矩阵中位43.08% | `direct_shift_mixed` |
+| M56 | Si/SiO2双节点、场支持和接触拓扑审计 | 8个TDR零重复坐标；20条共享边、21个界面节点；六状态电势差为0 | `shared_topology_continuous_potential_insulator` |
 
 ## Sentaurus 脚本与导出量
 
@@ -75,6 +79,12 @@ M47-M53 共用 T-2022.03-SP2 的同一输入 TDR、网格和默认 BGN-on 物理
 栅扫的 `CurrentPlot(Time=(Range=(0 1) Intervals=50))` 导出完整 51 点端口曲线；`Plot(... Time=(0;0.02;0.04))` 在 0-2.5 V 栅扫中保存 Vg=0.00、0.05、0.10 V 三个状态 TDR。M47-M50 的共节点分析不做插值。
 
 M51 和 M52 各对六状态的 17 个导出文件进行逐值不变性检查，共 102 个状态-字段文件：四个材料区域的静电势和电子/空穴准费米势，以及 Silicon 的电子/空穴浓度、电子/空穴电流密度和 SRH。两次检查的节点、坐标和全部数值均完全一致，最大绝对差和最大对称相对差均为 0。
+
+### Si/SiO2界面与gate边界
+
+M56对8个输入TDR和n19/n23六个求解状态进行了只读审计。所有TDR均以相同全局节点ID连接Si和SiO2界面，没有为同一坐标创建两个全局节点；每个器件有20条共享界面边和21个界面节点。求解结果在同一界面节点上分别保存Silicon和Oxide区域电势记录，六状态最大跨区域差为0 V。
+
+`eDensity`、`hDensity`、`eCurrentDensity`和`hCurrentDensity`只存在于`Silicon_1`。gate接触附着于`Oxide_1`，source、drain、substrate附着于`Silicon_1`。所以SiO2绝缘表示不在氧化层求解电子/空穴漂移扩散，并不妨碍在氧化层外边界的gate电极施加静电势。默认deck不需要显式双节点、`HeteroInterface`、`Thermionic`或`Discontinuity`设置来建立本算例的标准Si/SiO2静电耦合。
 
 ### 端口量与原生接触面通量
 
@@ -141,6 +151,8 @@ M53 证明该局部结论不能外推为“完整 drain Id-Vg 应统一采用 `D
 仍保留的边界：
 
 - M53 已完成 `DirectCurrent` 的完整16曲线诊断，但结果否证了其作为官方默认 Id-Vg 基线替代项；
+- M54将目标/最差点定位为强共模变化，但完整矩阵仍是共模与反对称项混合，不能采用单一全局修正；
+- M56只证明当前SimpleMOS的标准Si/SiO2表示，不外推到需要能带不连续、热发射、隧穿或界面陷阱的其他异质结；
 - Direct/Weighted 与 Tcl 节点场面积分之间仍有约 2.876e-4 的相对离散定义差；
 - 现有证据定位了 Sentaurus 端口观测差异，但不据此声明 Sentaurus 或 Vela 存在生产代码缺陷；
 - 所有生产默认物理、网格和接触设置均未修改。
@@ -156,5 +168,7 @@ M53 证明该局部结论不能外推为“完整 drain Id-Vg 应统一采用 `D
 - M51：`docs/validation/simplemos_m51_current_weighting_attribution_2026-09-01.md`
 - M52：`docs/validation/simplemos_m52_direct_current_attribution_2026-09-02.md`
 - M53：`docs/validation/simplemos_m53_direct_current_full_matrix_2026-09-02.md`
+- M54：`docs/validation/simplemos_m54_terminal_common_mode_attribution_2026-09-02.md`
+- M56：`docs/validation/simplemos_m56_si_oxide_interface_topology_2026-09-02.md`
 - M46 机器报告：`reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_full_matrix_requalification_report.json`
-- M47-M53 机器报告：各自位于 `reference_tcad/simplemos_sentaurus2022/{default_bgn_state_attribution,terminal_partition_continuity_closure,substrate_electron_transport_attribution,native_substrate_face_flux_export,current_weighting_attribution,direct_current_attribution,direct_current_full_matrix}/`。
+- M47-M56 机器报告：相关目录位于 `reference_tcad/simplemos_sentaurus2022/{default_bgn_state_attribution,terminal_partition_continuity_closure,substrate_electron_transport_attribution,native_substrate_face_flux_export,current_weighting_attribution,direct_current_attribution,direct_current_full_matrix,terminal_common_mode_attribution,si_oxide_interface_topology}/`。

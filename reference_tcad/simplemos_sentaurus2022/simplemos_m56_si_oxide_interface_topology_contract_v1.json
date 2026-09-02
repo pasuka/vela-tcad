@@ -1,0 +1,96 @@
+{
+  "schema": "vela.simplemos.sdevice.m56_si_oxide_interface_topology_contract.v1",
+  "contract_id": "simplemos-sdevice-m56-si-oxide-interface-topology-v1",
+  "objective": "Audit how the SimpleMOS TDR and solved SDevice states represent the Silicon/SiO2 interface, determine whether geometric nodes are duplicated or shared with region-specific field support, verify electrostatic-potential continuity and semiconductor-only carrier support, and identify how the gate voltage boundary is attached without changing the deck.",
+  "upstream": {
+    "m8_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json",
+    "m52_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m52_direct_current_attribution_evidence.json",
+    "m52_report": "reference_tcad/simplemos_sentaurus2022/direct_current_attribution/m52_direct_current_attribution_report.json",
+    "required_m52_classification": "direct_matches_weighted",
+    "required_m52_state_field_comparison_count": 102,
+    "required_m52_maximum_state_field_difference": 0.0,
+    "closed_topics": [
+      "SG current kernel consistency",
+      "general Vela contact-current extraction consistency",
+      "quasi-Fermi reference and increment preservation",
+      "global HFS calibration",
+      "default-BGN self-consistent state attribution",
+      "DirectCurrent and CurrentWeighting terminal attribution"
+    ]
+  },
+  "scope": {
+    "input_tdr_devices": ["n17", "n18", "n19", "n20", "n21", "n22", "n23", "n24"],
+    "solved_state_devices": ["n19", "n23"],
+    "solved_state_gate_voltages_V": [0.0, 0.05, 0.1],
+    "solved_state_drain_voltage_V": 0.05,
+    "input_topology_count": 8,
+    "solved_state_count": 6,
+    "interface": {"left_region": "Silicon_1", "left_material": "Si", "right_region": "Oxide_1", "right_material": "SiO2"},
+    "contacts": ["source", "drain", "gate", "substrate"]
+  },
+  "definitions": {
+    "geometric_duplicate_nodes": "different global node IDs with exactly equal exported x and y coordinates",
+    "shared_topology_interface_edge": "an undirected edge that is a boundary edge of both Silicon_1 and Oxide_1 using the same global endpoint IDs",
+    "region_specific_field_support": "separate per-region field records keyed by the same shared global interface node ID",
+    "potential_continuity": "Silicon_1 and Oxide_1 ElectrostaticPotential values at every shared interface node agree within the frozen tolerance",
+    "carrier_transport_support": "eDensity, hDensity, eCurrentDensity, and hCurrentDensity are present only on Silicon_1",
+    "gate_boundary_attachment": "the gate contact node set is attached to Oxide_1 while source, drain, and substrate are attached to Silicon_1"
+  },
+  "analysis": {
+    "topology": [
+      "count global nodes and exact duplicate-coordinate groups",
+      "count shared Silicon/SiO2 interface edges and nodes",
+      "verify contact-to-region attachments for all eight TDRs"
+    ],
+    "solved_states": [
+      "verify separate Silicon and SiO2 electrostatic-potential field supports on shared interface node IDs",
+      "measure interface electrostatic-potential mismatch",
+      "verify carrier density and current-density fields are Silicon-only",
+      "record quasi-Fermi plot-field supports without treating insulating-region plot values as active carrier equations"
+    ],
+    "deck_audit": "verify the frozen M8 deck has no explicit HeteroInterface, Thermionic, Discontinuity, CurrentWeighting, or DirectCurrent interface/current override",
+    "classifications": {
+      "shared_topology_continuous_potential_insulator": "no exact geometric duplicates, a nonempty shared-edge Si/SiO2 interface, region-specific potential supports with continuous values, gate on Oxide_1, other contacts on Silicon_1, and carrier density/current support only on Silicon_1",
+      "explicit_geometric_double_nodes": "the Si/SiO2 interface uses exact co-located nodes with different global IDs",
+      "potential_discontinuity_observed": "shared interface topology is complete but the regional electrostatic potentials exceed the continuity tolerance",
+      "support_or_topology_incomplete": "required topology, contact attachment, solved field support, or state count is missing"
+    },
+    "claim_guard": "M56 describes the representation used by this frozen SimpleMOS TDR/deck. It does not claim that every Sentaurus heterointerface uses the same strategy and does not authorize adding interface physics."
+  },
+  "acceptance": {
+    "required_input_topology_count": 8,
+    "required_solved_state_count": 6,
+    "minimum_interface_edge_count_per_input": 1,
+    "minimum_interface_node_count_per_state": 2,
+    "maximum_interface_potential_absolute_mismatch_V": 1e-12,
+    "exact_coordinate_duplicate_tolerance_um": 0.0,
+    "carrier_support_regions": ["Silicon_1"],
+    "gate_contact_region": "Oxide_1",
+    "other_contact_region": "Silicon_1",
+    "contract_hash_unchanged_during_analysis": true,
+    "all_required_values_finite": true,
+    "outcome_must_match_one_declared_classification": true,
+    "historical_artifacts_rewritten": false
+  },
+  "forbidden_work": [
+    "new Sentaurus or Vela execution",
+    "adding or testing HeteroInterface, Thermionic, Discontinuity, tunneling, fixed charge, trap, or interface-recombination physics",
+    "changing gate, source, drain, or substrate boundary conditions",
+    "mesh modification or interface-node duplication",
+    "HFS, SG, quasi-Fermi, BGN, SRH, mobility, contact-model, or production-default changes",
+    "interpreting oxide quasi-Fermi plot records as evidence of active oxide carrier transport equations",
+    "rewriting M8 through M54 artifacts",
+    "changing thresholds after analysis"
+  ],
+  "deliverables": [
+    "machine-readable M56 report",
+    "8-row input topology ledger",
+    "6-row solved-state interface ledger",
+    "shared interface-node potential ledger",
+    "solved field-support ledger",
+    "human-readable technical report",
+    "portable report artifact",
+    "frozen evidence manifest",
+    "regression test for topology, field support, and evidence hashes"
+  ]
+}

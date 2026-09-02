@@ -1,0 +1,93 @@
+{
+  "schema": "vela.simplemos.sdevice.m54_terminal_common_mode_attribution_contract.v1",
+  "contract_id": "simplemos-sdevice-m54-terminal-common-mode-attribution-v1",
+  "objective": "Use the frozen M8 default and M53 DirectCurrent full-matrix terminal files to determine whether the M53 drain-current degradation is produced primarily by a source-drain common-mode shift, an antisymmetric transport shift, or another terminal/component redistribution.",
+  "upstream": {
+    "m8_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json",
+    "m53_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m53_direct_current_full_matrix_evidence.json",
+    "m53_report": "reference_tcad/simplemos_sentaurus2022/direct_current_full_matrix/m53_direct_current_full_matrix_report.json",
+    "required_status": "frozen",
+    "required_m53_classification": "direct_increases_global_error",
+    "required_m53_curve_count": 16,
+    "required_m53_point_count": 816,
+    "required_m53_default_maximum_error_dex": 0.10941868092427424,
+    "required_m53_direct_maximum_error_dex": 2.1260750688881966,
+    "closed_topics": [
+      "SG current kernel consistency",
+      "general Vela contact-current extraction consistency",
+      "quasi-Fermi reference and increment preservation",
+      "global HFS calibration",
+      "default-BGN self-consistent state attribution",
+      "M53 DirectCurrent full-matrix execution"
+    ]
+  },
+  "scope": {
+    "devices": ["n17", "n18", "n19", "n20", "n21", "n22", "n23", "n24"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_lattice": {"start_V": 0.0, "stop_V": 2.5, "step_V": 0.05, "point_count": 51},
+    "contacts": ["source", "drain", "gate", "substrate"],
+    "components": ["electron", "hole", "total"],
+    "state_count": 816,
+    "terminal_component_row_count": 9792,
+    "interpolation": "forbidden"
+  },
+  "definitions": {
+    "source_drain_common_mode": "0.5 * (drain current + source current)",
+    "source_drain_antisymmetric_transport": "0.5 * (drain current - source current)",
+    "exact_drain_identity": "drain = common_mode + antisymmetric_transport",
+    "direct_drain_shift_identity": "Delta drain = Delta common_mode + Delta antisymmetric_transport, with every Delta defined as DirectCurrent minus default",
+    "four_terminal_sum": "source + drain + gate + substrate in the native Sentaurus conventional terminal-current orientation",
+    "common_mode_fraction": "abs(Delta common_mode) / (abs(Delta common_mode) + abs(Delta antisymmetric_transport))"
+  },
+  "analysis": {
+    "target": {"device": "n23", "drain_voltage_V": 0.05, "gate_voltage_V": 0.05},
+    "m53_worst": {"device": "n24", "drain_voltage_V": 0.05, "gate_voltage_V": 0.0},
+    "per_state": [
+      "four-terminal electron, hole, and total ledgers for default and DirectCurrent",
+      "source-drain common-mode and antisymmetric components",
+      "exact DirectCurrent-minus-default drain-shift identity",
+      "source/drain sign relationship",
+      "four-terminal sum change"
+    ],
+    "classifications": {
+      "direct_shift_common_mode_dominated": "the target and M53 worst point both have common-mode fractions of at least 0.9 and the median matrix fraction is at least 0.5",
+      "direct_shift_mixed": "neither the common-mode nor antisymmetric classification rule is satisfied",
+      "direct_shift_antisymmetric_dominated": "the target and M53 worst point both have common-mode fractions of at most 0.1 and the median matrix fraction is at most 0.5",
+      "identity_or_replay_failure": "the input matrix is incomplete or any exact drain-shift identity exceeds tolerance"
+    },
+    "claim_guard": "M54 is a fixed-result terminal-observation decomposition. It does not infer a solved-state defect and does not authorize changing any production current definition."
+  },
+  "acceptance": {
+    "required_state_count": 816,
+    "required_terminal_component_row_count": 9792,
+    "required_case_count": 16,
+    "required_points_per_case": 51,
+    "exact_bias_tolerance_V": 1e-10,
+    "drain_identity_absolute_tolerance_A_per_um": 1e-27,
+    "drain_identity_relative_tolerance": 1e-12,
+    "all_values_finite": true,
+    "contract_hash_unchanged_during_execution": true,
+    "outcome_must_match_one_declared_classification": true,
+    "closed_topics_not_reopened": true,
+    "historical_artifacts_rewritten": false
+  },
+  "forbidden_work": [
+    "new Sentaurus or Vela execution",
+    "HFS, SG, quasi-Fermi, BGN, SRH, mobility, contact-model, mesh, electrode, solve-path, or production-default changes",
+    "terminal sign fitting by device or bias",
+    "interpolation between gate points",
+    "rewriting M8 through M53 artifacts",
+    "changing classification thresholds after analysis"
+  ],
+  "deliverables": [
+    "machine-readable M54 report",
+    "816-row state decomposition ledger",
+    "9792-row terminal component ledger",
+    "16-row case summary",
+    "8-row NWell pair summary",
+    "human-readable technical report",
+    "portable report artifact",
+    "frozen evidence manifest",
+    "regression test for identities and evidence hashes"
+  ]
+}

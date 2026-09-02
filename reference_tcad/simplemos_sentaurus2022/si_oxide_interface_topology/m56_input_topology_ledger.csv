@@ -1,0 +1,9 @@
+device,global_node_count,element_count,silicon_region,oxide_region,silicon_oxide_shared_edge_count,silicon_oxide_interface_node_count,shared_region_node_count,duplicate_coordinate_group_count,duplicate_coordinate_node_count,duplicate_interface_coordinate_group_count,gate_contact_region,source_contact_region,drain_contact_region,substrate_contact_region,contact_attachment_ok
+n17,1542,2864,Silicon_1,Oxide_1,20,21,21,0,0,0,Oxide_1,Silicon_1,Silicon_1,Silicon_1,True
+n18,1542,2864,Silicon_1,Oxide_1,20,21,21,0,0,0,Oxide_1,Silicon_1,Silicon_1,Silicon_1,True
+n19,1480,2742,Silicon_1,Oxide_1,20,21,21,0,0,0,Oxide_1,Silicon_1,Silicon_1,Silicon_1,True
+n20,1480,2742,Silicon_1,Oxide_1,20,21,21,0,0,0,Oxide_1,Silicon_1,Silicon_1,Silicon_1,True
+n21,1540,2862,Silicon_1,Oxide_1,20,21,21,0,0,0,Oxide_1,Silicon_1,Silicon_1,Silicon_1,True
+n22,1540,2862,Silicon_1,Oxide_1,20,21,21,0,0,0,Oxide_1,Silicon_1,Silicon_1,Silicon_1,True
+n23,1482,2746,Silicon_1,Oxide_1,20,21,21,0,0,0,Oxide_1,Silicon_1,Silicon_1,Silicon_1,True
+n24,1482,2746,Silicon_1,Oxide_1,20,21,21,0,0,0,Oxide_1,Silicon_1,Silicon_1,Silicon_1,True

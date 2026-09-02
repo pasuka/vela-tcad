@@ -1,0 +1,97 @@
+{
+  "schema": "vela.simplemos.sdevice.m54_terminal_common_mode_attribution_evidence.v1",
+  "status": "frozen",
+  "contract_sha256": "ca17c04edaa6adb237560e19ae6718f300250edb5292ac2efc0824378f23a3a7",
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_terminal_common_mode_attribution_report.json",
+      "sha256": "3915b6501e4ea7a5fe0a9c3e5f53f9ee24c0466862369af89cd7a44d3162d843"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_state_decomposition_ledger.csv",
+      "sha256": "acb5cac9540821a60389c20a1882825b5601f76515e7c1216965b9edf8690815"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_terminal_component_ledger.csv",
+      "sha256": "53abf1031067a55b468fc1e354501485c79d03087bb37783ff5540395c5b982a"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_case_summary.csv",
+      "sha256": "025212eb66db1342ed6aafd0c4e33218ce6b587d0fe05a2bb0c48e038a214f87"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_nwell_pair_summary.csv",
+      "sha256": "ef7a9208870787d18e561f8ba650386956b7ae0c940cdc8cb8ae9dbeb6b84f68"
+    },
+    {
+      "path": "docs/validation/simplemos_m54_terminal_common_mode_attribution_2026-09-02.md",
+      "sha256": "704cb317c2d984e997e55943bef02e9ee518d9720e693242a16765f8b8e4d2d5"
+    },
+    {
+      "path": "docs/validation/reports/simplemos_m54/artifact.json",
+      "sha256": "246d5b893874b17ba1dfbbf9d47988952db194b6438e9d40787bc550fd2e9d9a"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m54_terminal_common_mode_attribution_contract_v1.json": "ca17c04edaa6adb237560e19ae6718f300250edb5292ac2efc0824378f23a3a7",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m54_terminal_common_mode_attribution_contract_freeze.json": "3a1dea5f5756552f14e9c5f8c7db65b000f3f7af8ca2285878bafd423226ee58",
+    "scripts/run_simplemos_m54_terminal_common_mode_attribution.py": "5d84fd08c7302345834dd0a7702e967614bf09c89103c3124f7a6166314d8b82",
+    "tests/regression/test_simplemos_m54_terminal_common_mode_attribution.py": "c5e59ac944f0b9e8fd296587f53cf322b5b2bd325bd3043440391591a26abdef",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json": "de83d5dbafb8c055de239732578431dc0176d77f248b1c1ca537b2a52bf4b7f1",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m53_direct_current_full_matrix_evidence.json": "7bfcc92c3732d5ed216f0080071b72ffcfe7bb21efd545c4819cf907aa25b678",
+    "reference_tcad/simplemos_sentaurus2022/direct_current_full_matrix/m53_direct_current_full_matrix_report.json": "4c91a0a7eef0439b46aa6319d891c189e05ef954628ecb332f90ab32710587f2"
+  },
+  "raw_terminal_input_hashes": {
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n17/IdVg_n17_vd_0p05_des.plt": "b2d0f985ec1401b24a9d7fc0d679fb5a11c24308708a4a85eaeccd4125de56ca",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n17/IdVg_n17_vd_1_des.plt": "b7444ddd1952e44d919c90240e1f014ad3ee6725b5d5368769b864372b0cb168",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n18/IdVg_n18_vd_0p05_des.plt": "92890ef4b3dfb82f585d3166e5ca50d70dcbeb62efc2581ef68ca2ce186ec50c",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n18/IdVg_n18_vd_1_des.plt": "ceb2131345ab95933a5e2dce076bd84426f7b42793360ea0178f0dc09b6810af",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n19/IdVg_n19_vd_0p05_des.plt": "3a06af15df6e36ae0a04d5006e96c1aa3ff2da74a81b09ae86018910397de4f6",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n19/IdVg_n19_vd_1_des.plt": "c2beb835c5d24dda544e7cd958339ab22a22771bc7485926985934cd9cb303df",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n20/IdVg_n20_vd_0p05_des.plt": "dfd6126d8d7500d03b69ba2293fb61f04a653e9e92a3d8f335bff1d13d393087",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n20/IdVg_n20_vd_1_des.plt": "60678c57b81311ac3d4ac2b5dd53cdf2d8be1bb21d6197491d08242aa7229b09",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n21/IdVg_n21_vd_0p05_des.plt": "37af7acc4d1b9f86e1ec4643cdcb590d0856fe479abfd50a3508d99a69a9121f",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n21/IdVg_n21_vd_1_des.plt": "50fad045d376e6b4d9cd35b944c20a819b558cc638a06ca72f3aebd1d521e0db",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n22/IdVg_n22_vd_0p05_des.plt": "4d7abe28b1392dd5d01d5849d4c2188d694e4bacca2409e620be178b768f6e38",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n22/IdVg_n22_vd_1_des.plt": "09c366feb0719fd37421507e590ab3a1bc03a59fac79ce9d5a5105009463733a",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n23/IdVg_n23_vd_0p05_des.plt": "1fccd7fa269657ebe2b4f996db9ecf94a9e64cf73de48f93a0c830d0a97ff1a7",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n23/IdVg_n23_vd_1_des.plt": "0b2d3886a038cb056371239602bf642b42c106b2b479e203796b73faacaf4342",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n24/IdVg_n24_vd_0p05_des.plt": "6458ab1cf9d723ca2f25147e5c83fb113d4990da094e7dc0b5ee8d704516af86",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m8_original_physics/sentaurus_raw/sentaurus_bundle/n24/IdVg_n24_vd_1_des.plt": "6e0e7c83123c4f5852e7b723c0890ddf350272b423303d8d47c74b7f50c120a2",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n17/IdVg_n17_vd_0p05_des.plt": "527f70b93e5950627061b6854c3c00c7e12a2ab86f4815a03f1f43a2374452a6",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n17/IdVg_n17_vd_1_des.plt": "ed452a8fe5ffe2348706ed4e080feb01090d187ac8cf7aad547dbf640e96b8b4",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n18/IdVg_n18_vd_0p05_des.plt": "f769a64f38fa44c2db5db90eb6608fb732afd9f4b8e5a317500f3133d7c51153",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n18/IdVg_n18_vd_1_des.plt": "1238c01d4d747c186a07d5c2c5a0ffa6903da41399a9f649be920a43f38e2c5d",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n19/IdVg_n19_vd_0p05_des.plt": "1b9c809a6c8ae498fc2e5f8e159f7b170d41eb56849f87800f4c4eb8ccda4e28",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n19/IdVg_n19_vd_1_des.plt": "2da1f2e20139f2d534a8ef8402c3184c10a8370dd2c832e20756d150b886c14a",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n20/IdVg_n20_vd_0p05_des.plt": "dc0b1c2db75d6e1c28ffb41e2e312a5c794eac60ae84436c422b6d528a5faf3a",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n20/IdVg_n20_vd_1_des.plt": "ecf6010e554f90f3793824a4a370da6499b26bac5df7d4a5b711af5b73993def",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n21/IdVg_n21_vd_0p05_des.plt": "9f8cd840380358dc458a831c5b0ffa282d7442fbd1a2860c189d5a3baa4a506d",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n21/IdVg_n21_vd_1_des.plt": "d5c4857bc65a8350cda52f2e9926e7c9e9aa6830f33080e44cf258a440c077dc",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n22/IdVg_n22_vd_0p05_des.plt": "ce6945517b243d61b42b1b2ea4e5dd441714c51b9ec620b72765af385991c52f",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n22/IdVg_n22_vd_1_des.plt": "2ba3ef99e40942e814ab2c8f7a3902d9d67eb4f6c352b47ec080a5e532064386",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n23/IdVg_n23_vd_0p05_des.plt": "6209c60cc37091d54ffd0011de80c46b4c9d91e804766a5b6ce72d0a92371716",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n23/IdVg_n23_vd_1_des.plt": "cf4d90e57012824f2e6ae1e6d3c39b9eedda89596234f2ea24b12c64a8780e37",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n24/IdVg_n24_vd_0p05_des.plt": "d23cf749f568a2fb2637bec1b33ed2529d0e6ad2ea2fe135da5593aac94e6468",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m53_direct_current_full_matrix/sentaurus_raw/sentaurus_bundle/n24/IdVg_n24_vd_1_des.plt": "22d555259931844b3d45cd8641e8f23b978b2b7c4befc90c04c53e253f288d64"
+  },
+  "new_sentaurus_execution": false,
+  "new_vela_execution": false,
+  "historical_artifacts_rewritten": false,
+  "closed_topics_reinvestigated": false,
+  "classification": "direct_shift_mixed",
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "state_count": true,
+    "terminal_component_row_count": true,
+    "case_count": true,
+    "points_per_case": true,
+    "all_values_finite": true,
+    "drain_identities_close": true,
+    "classification_declared": true,
+    "no_new_solver_execution": true,
+    "historical_artifacts_preserved": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": true
+  }
+}
