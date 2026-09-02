@@ -1,0 +1,23 @@
+{
+  "schema": "vela.simplemos.sdevice.contract_freeze.v1",
+  "contract_id": "simplemos-sdevice-m55-doping-well-terminal-attribution-v1",
+  "status": "frozen_before_execution",
+  "frozen_at": "2026-09-02",
+  "contract_path": "reference_tcad/simplemos_sentaurus2022/simplemos_m55_doping_well_terminal_attribution_contract_v1.json",
+  "contract_sha256": "72f6c8ced723ca7ce0e0031caf8bc4d7fb3b579513ec23508a10232ca30692cc",
+  "upstream_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_contract_v1.json": "3ea9d39250675e533edfd6bac350eace8cc55473133d3a52c6dc8d82b53f235e",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m46_full_matrix_requalification_evidence.json": "cc4eab4af3f33dc5d57c15eb984c475447b0aee10c8dedd3f1f7be82237ccd28",
+    "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_full_matrix_requalification_report.json": "b7bdf3deb49e8cfd924196405cd918bfb84d855ac12409bb258a5f46995f12ed",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m53_direct_current_full_matrix_evidence.json": "7bfcc92c3732d5ed216f0080071b72ffcfe7bb21efd545c4819cf907aa25b678",
+    "reference_tcad/simplemos_sentaurus2022/direct_current_full_matrix/m53_direct_current_full_matrix_report.json": "4c91a0a7eef0439b46aa6319d891c189e05ef954628ecb332f90ab32710587f2",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m54_terminal_common_mode_attribution_evidence.json": "b981877fc789960d6ade385c94d8965c5052b69100f93b1d68e32afac4989afc",
+    "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_terminal_common_mode_attribution_report.json": "3915b6501e4ea7a5fe0a9c3e5f53f9ee24c0466862369af89cd7a44d3162d843"
+  },
+  "freeze_guards": {
+    "contract_must_not_change_after_this_manifest": true,
+    "upstream_evidence_must_not_change": true,
+    "thresholds_must_not_change_after_execution": true,
+    "production_defaults_must_not_change": true
+  }
+}

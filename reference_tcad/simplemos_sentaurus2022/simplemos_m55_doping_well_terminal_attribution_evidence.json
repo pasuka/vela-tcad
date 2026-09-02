@@ -1,0 +1,41 @@
+{
+  "schema": "vela.simplemos.sdevice.m55_doping_well_terminal_attribution_evidence.v1",
+  "status": "frozen",
+  "classification": "nwell_changes_well_topology_surface_redistribution",
+  "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m55_doping_well_terminal_attribution_contract_v1.json",
+  "contract_sha256": "72f6c8ced723ca7ce0e0031caf8bc4d7fb3b579513ec23508a10232ca30692cc",
+  "report": "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_doping_well_terminal_attribution_report.json",
+  "report_sha256": "91c253bbdb364a096056549cc5359f62aad4895cadefe7b1f4b5bf7689c500a9",
+  "new_sentaurus_execution": true,
+  "new_vela_execution": false,
+  "historical_artifacts_rewritten": false,
+  "closed_topics_reinvestigated": false,
+  "sentaurus_release": "****************************************************************************\n***                           Sentaurus Device                           ***\n***                        Version T-2022.03-SP2                         ***\n***                      (0.7745337, x86_64, Linux)                      ***\n***                                                                      ***",
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m55_doping_well_terminal_attribution_contract_v1.json": "72f6c8ced723ca7ce0e0031caf8bc4d7fb3b579513ec23508a10232ca30692cc",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m55_doping_well_terminal_attribution_contract_freeze.json": "21ed66f0d865d4c8cc9d0bad71cef99a4d56be88f43e4ded86cba57eb2636d44",
+    "scripts/run_simplemos_m55_doping_well_terminal_attribution.py": "2d1f246fb34ae6416bb57646c0abfb00cc481966047b8ed0b8bbaf54f5f29993"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_default_terminal_replay_ledger.csv": "4d681abdc60cbe68df8cf667ec842ad46e4809dc449761556b49c3c68b3d1467",
+    "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_doping_well_ledger.csv": "f090c1fed9d8ece7b2b5c17cd5a10aac83947a5f0d94876fc2a699351a828c27",
+    "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_terminal_component_attribution_ledger.csv": "426557b168ffa3c9bee1aa57eac1a74f6302c8b0cb9402c1b7dad8a55092e6b9",
+    "reference_tcad/simplemos_sentaurus2022/doping_well_terminal_attribution/m55_nwell_pair_summary.csv": "6aacd4504b310be88de0a5e1b54cb0b2eddf0fc2cddf86b78edf8da9531afa0f",
+    "docs/validation/simplemos_m55_doping_well_terminal_attribution_2026-09-02.md": "3c51e4c8f238e9857c75877ebbf26a3e5b8f154bb038f19c64d7a6ed45d29fa9"
+  },
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "case_count": true,
+    "state_count": true,
+    "default_replay_row_count": true,
+    "default_terminal_replay": true,
+    "shared_m47_fields_pointwise_identical": true,
+    "well_row_count": true,
+    "terminal_component_row_count": true,
+    "srh_charge_terms_cancel": true,
+    "total_surface_identity": true,
+    "classification_declared": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": true
+  }
+}

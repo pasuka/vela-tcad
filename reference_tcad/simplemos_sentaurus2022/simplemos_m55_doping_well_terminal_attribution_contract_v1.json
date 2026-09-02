@@ -1,0 +1,124 @@
+{
+  "schema": "vela.simplemos.sdevice.m55_doping_well_terminal_attribution_contract.v1",
+  "contract_id": "simplemos-sdevice-m55-doping-well-terminal-attribution-v1",
+  "objective": "At fixed M8/M46 default solved physics, attribute the low-gate default-versus-DirectCurrent terminal shift and its matched-NWell trend to Sentaurus contact-associated doping-well topology, well-volume SRH charge generation, and the remaining doping-well-surface versus contact-surface redistribution.",
+  "created_at": "2026-09-02",
+  "upstream": {
+    "required_m46_classification": "qualified",
+    "required_m46_curve_count": 16,
+    "required_m46_point_count": 816,
+    "required_m53_classification": "direct_increases_global_error",
+    "required_m54_classification": "direct_shift_mixed",
+    "closed_topics": [
+      "SG current-kernel consistency",
+      "general Vela contact-current extraction consistency",
+      "quasi-Fermi reference and increment packing",
+      "M46 bitwise identity to M8",
+      "M47 default-BGN-on six-state attribution",
+      "M50 native contact-face observability",
+      "M51 CurrentWeighting and M52 DirectCurrent six-state attribution",
+      "M53 DirectCurrent full-matrix qualification",
+      "M54 source-drain common-mode decomposition"
+    ]
+  },
+  "matrix": {
+    "devices": ["n17", "n18", "n19", "n20", "n21", "n22", "n23", "n24"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_control_voltages_V": [0.0, 0.05, 0.1],
+    "matched_nwell_pairs": [
+      {"low": "n17", "high": "n21", "GOxTime_min": 10.0, "LDD_Dose_cm2": 1e14},
+      {"low": "n18", "high": "n22", "GOxTime_min": 10.0, "LDD_Dose_cm2": 2e14},
+      {"low": "n19", "high": "n23", "GOxTime_min": 15.0, "LDD_Dose_cm2": 1e14},
+      {"low": "n20", "high": "n24", "GOxTime_min": 15.0, "LDD_Dose_cm2": 2e14}
+    ],
+    "nwell_cm3": {"n17": 1e17, "n18": 1e17, "n19": 1e17, "n20": 1e17, "n21": 2e17, "n22": 2e17, "n23": 2e17, "n24": 2e17},
+    "required_case_count": 16,
+    "required_state_count": 48
+  },
+  "fixed_state_policy": {
+    "input_tdr": "the exact frozen M8 input_fps.tdr for each device",
+    "physics": "EffectiveIntrinsicDensity(OldSlotboom); Silicon Mobility(PhuMob HighFieldSaturation Enormal); Silicon Recombination(SRH(DopingDependence))",
+    "solve_path": "Poisson, coupled Poisson/Electron/Hole, drain continuation to the contracted drain bias, then gate continuation from 0 V to 2.5 V",
+    "terminal_current_algorithm": "Sentaurus default; CurrentWeighting and DirectCurrent are both absent",
+    "allowed_deck_changes": [
+      "add a top-level diagnostic CurrentPlot Tcl block",
+      "add a Plot block containing the M47 state fields plus DopingWells",
+      "add NoOverWrite snapshots only at Vg=0.00, 0.05, and 0.10 V",
+      "change diagnostic output prefixes only"
+    ],
+    "full_terminal_replay": "all 816 default Id-Vg points must reproduce the frozen M8/M46 terminal files",
+    "shared_state_field_replay": "the n19/n23, Vd=0.05 V, Vg=0.00/0.05/0.10 V fields shared with M47 must remain pointwise identical"
+  },
+  "doping_well_diagnostics": {
+    "contacts": ["source", "drain", "substrate"],
+    "seed_coordinates_um": {
+      "source": [0.01, -0.4],
+      "drain": [0.01, 0.4],
+      "substrate": [0.99, 0.0]
+    },
+    "seed_rule": "each fixed seed must lie inside the semiconductor doping well uniquely associated with the named contact in every input TDR; no state-specific or device-specific seed fitting",
+    "authoritative_domain": "Sentaurus CurrentPlot Operation=Integrate DopingWell=(x y) with IntegrationUnit=cm",
+    "well_area_formula": "integral of constant one over the contact-associated doping well",
+    "well_srh_formula": "integral of srhRecombination over the contact-associated doping well",
+    "electron_srh_charge_current_A_per_um": "-q times the 2-D cm-domain SRH integral times 1e-4",
+    "hole_srh_charge_current_A_per_um": "+q times the 2-D cm-domain SRH integral times 1e-4",
+    "surface_redistribution_definition": "for each carrier and contact, default terminal current minus frozen M53 DirectCurrent terminal current minus that carrier's signed well SRH charge-current term",
+    "total_identity": "default-minus-Direct total current equals electron plus hole surface redistribution because the opposite signed SRH charge-current terms cancel",
+    "plot_field": "DopingWells integer-valued contact-associated well index and support"
+  },
+  "analysis": {
+    "target": {"device": "n23", "drain_voltage_V": 0.05, "gate_voltage_V": 0.05},
+    "controls": [
+      "n23 adjacent Vg=0.00 and 0.10 V",
+      "matched low-NWell n19 at Vg=0.00, 0.05, and 0.10 V",
+      "all four matched NWell pairs at both drain voltages"
+    ],
+    "well_topology_metrics": ["well index at seed", "well node count", "well element count", "well area", "well bounding box"],
+    "terminal_metrics": ["electron, hole, and total default-minus-Direct shifts", "signed well SRH charge current", "surface redistribution residual", "source-drain common-mode and antisymmetric components"],
+    "classifications": {
+      "stable_well_topology_surface_redistribution": "all diagnostics and invariants pass, matched low/high NWell devices retain equivalent contact-associated well topology within the frozen area tolerance, and the total default-minus-Direct shift is exactly carried by the surface redistribution residual",
+      "nwell_changes_well_topology_surface_redistribution": "all diagnostics and invariants pass, at least one matched low/high NWell pair changes a contact-associated well support or area beyond tolerance, while the total shift remains surface-redistribution carried",
+      "well_generation_material_for_carrier_components": "well SRH is material relative to one or more electron or hole default-minus-Direct shifts but cancels from total current; topology is reported separately",
+      "mixed_well_attribution": "the required observables exist but no preceding classification rule is satisfied",
+      "internal_well_observable_unavailable": "Sentaurus does not expose one or more frozen DopingWell domain or field observables needed by the contract",
+      "state_or_terminal_replay_mismatch": "the diagnostic replay changes a frozen terminal curve or any shared M47 field"
+    },
+    "claim_guard": "M55 attributes the frozen default terminal observation only. It does not declare a Sentaurus or Vela defect and does not authorize a production current-definition change."
+  },
+  "acceptance": {
+    "required_case_count": 16,
+    "required_state_count": 48,
+    "required_well_row_count": 144,
+    "required_terminal_component_row_count": 576,
+    "exact_bias_tolerance_V": 1e-10,
+    "terminal_replay_absolute_tolerance_A_per_um": 1e-24,
+    "terminal_replay_relative_tolerance": 1e-10,
+    "shared_field_absolute_tolerance": 0.0,
+    "shared_field_relative_tolerance": 0.0,
+    "well_seed_index_rounding_tolerance": 1e-9,
+    "matched_well_area_relative_tolerance": 1e-6,
+    "srh_electron_hole_cancellation_absolute_tolerance_A_per_um": 1e-30,
+    "total_surface_identity_absolute_tolerance_A_per_um": 1e-24,
+    "total_surface_identity_relative_tolerance": 1e-10,
+    "classification_must_be_declared": true,
+    "contract_hash_must_remain_unchanged": true,
+    "closed_topics_must_remain_closed": true
+  },
+  "forbidden_work": [
+    "HFS, SG, quasi-Fermi, BGN, SRH-model, mobility, contact-model, mesh, electrode, or solve-path changes",
+    "CurrentWeighting or DirectCurrent in the M55 replay deck",
+    "device-specific, bias-specific, or state-specific doping-well seed fitting",
+    "terminal sign or magnitude fitting",
+    "changing classification thresholds after execution",
+    "modifying any production default"
+  ],
+  "required_artifacts": [
+    "frozen contract and upstream hash manifest",
+    "16-case Sentaurus execution manifest and banner",
+    "816-point default terminal replay ledger",
+    "144-row doping-well geometry and SRH ledger",
+    "576-row terminal component attribution ledger",
+    "matched-NWell pair summary",
+    "machine-readable report, evidence manifest, regression test, and human-readable report"
+  ]
+}
