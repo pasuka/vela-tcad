@@ -1,8 +1,8 @@
-# SimpleMOS M45-M57 对比进展与 Sentaurus 导出量汇总
+# SimpleMOS M45-M58 对比进展与 Sentaurus 导出量汇总
 
 ## 结论摘要
 
-截至 M57，SimpleMOS 官方原始 deck 的默认端口观测仍保持 M8/M46 基线：8 个器件、2 个漏压、16 条 Id-Vg 曲线、816 个直接偏压点全部通过，M46 的 16 份逐点比较 CSV 与 M8 位级一致。默认基线的最大 Vela-Sentaurus 差异仍位于 n23、Vd=0.05 V、Vg=0.05 V，为 0.109418680924 dex（Vela 高 28.653%）。
+截至 M58，SimpleMOS 官方原始 deck 的默认端口观测仍保持 M8/M46 基线：8 个器件、2 个漏压、16 条 Id-Vg 曲线、816 个直接偏压点全部通过，M46 的 16 份逐点比较 CSV 与 M8 位级一致。默认基线的最大 Vela-Sentaurus 差异仍位于 n23、Vd=0.05 V、Vg=0.05 V，为 0.109418680924 dex（Vela 高 28.653%）。
 
 M47-M52 已把该目标点的主要异常从“求解状态差异”收缩到“Sentaurus 默认 substrate 端口电流的观测定义”：
 
@@ -15,6 +15,7 @@ M47-M52 已把该目标点的主要异常从“求解状态差异”收缩到“
 - M55 以默认端口算法回放完整816点并导出48个低栅压状态的接触关联 `DopingWell`：匹配NWell对的source/drain阱面积变化最高12.56%，SRH阱体电荷项在电子/空穴总电流中严格抵消，总默认/Direct差由阱表面相对接触面的重分配承担。
 - M56 证明本算例的Si/SiO2界面使用共享几何节点/边和分区域场记录：零坐标重复节点、界面电势严格连续、载流子密度/电流只支持在Silicon；gate电压通过附着在Oxide边界上的电极施加。
 - M57 对 M55 的48个冻结TDR只读重构完整接触关联阱边界；节点标签分区无歧义、内部界面对置通量严格抵消，但导出节点电流密度只在144/288个载流子-接触状态通过物理接触面的DirectCurrent锚点，因此按冻结合同归为节点场边界求积受限，不能用该重构逐项复刻Sentaurus内部默认阱面积分。
+- M58 对8个冻结输入TDR的Boron/Arsenic/Phosphorus活性掺杂、净掺杂零等值线和同号连通域进行了只读审计：提高Workbench参数`NWell`时8/8条匹配曲线误差均增大，但仅3/4器件对的最大补偿度增强、仅2/4器件对出现额外浮置同号分量或零等值线更贴近网格顶点；两项拓扑变化均只出现在低LDD组合，故不存在跨四组器件一致的冻结TDR补偿/网格关系。
 
 因此，现有证据不支持重新调节 HFS、SG、BGN、SRH、迁移率、接触模型或网格。剩余约 2.876e-4 的 Direct/Weighted 对原生 Tcl 面积分相对差，已限定为内部离散接触积分与绘图节点场后处理积分之间的定义差异，而不是自洽状态变化。
 
@@ -49,6 +50,7 @@ M47-M52 已把该目标点的主要异常从“求解状态差异”收缩到“
 | M55 | 默认端口接触关联掺杂阱归因 | 816点默认端口逐值回放；48状态、144阱域；最大配对阱面积差12.56%，总电流SRH项抵消 | `nwell_changes_well_topology_surface_redistribution` |
 | M56 | Si/SiO2双节点、场支持和接触拓扑审计 | 8个TDR零重复坐标；20条共享边、21个界面节点；六状态电势差为0 | `shared_topology_continuous_potential_insulator` |
 | M57 | 完整DopingWell边界通量重构 | 48状态、144阱、288载流子闭合行；分区无歧义，但物理接触面节点场锚点仅144/288通过 | `boundary_quadrature_limited` |
+| M58 | 冻结输入TDR补偿零等值线与网格审计 | 8/8误差随NWell增大，但补偿增强仅3/4、拓扑/近顶点变化仅2/4且限于低LDD | `no_systematic_frozen_tdr_relation` |
 
 ## Sentaurus 脚本与导出量
 
@@ -91,6 +93,8 @@ M55保持Sentaurus默认端口算法不变，在source、drain和substrate接触
 默认端口与 `DirectCurrent` 的载流子分量差被固定分成“带符号阱内SRH电荷项”和“阱表面相对物理接触面的剩余重分配”。SRH项对电子和空穴符号相反，所以总电流中严格抵消；576行端口分量账本的最大总表面恒等式残差为9.595e-28 A/um。该分解不修改SRH模型，也不把外部节点场后处理冒充为Sentaurus内部单元贡献。
 
 M57进一步把`DopingWells`整数节点标签按冻结的分片线性中点规则划分为`physical_contact`、`interior_doping_well_interface`和`other_semiconductor_exterior`三类边界，使用固定几何外法向和节点电流密度梯形积分。48个状态的硅三角形最多含两个阱标签，没有三标签歧义；n21/n23的浮置附加阱保持独立；所有内部界面的两侧通量抵消残差为0。物理接触面相对`DirectCurrent`仅144/288行通过冻结容差，失败集中在source/drain的导出节点场重构，所以完整阱表面加SRH项的未闭合残差不能被解释为新的自洽物理差异。
+
+M58不执行新的Sentaurus或Vela求解，而是从M8冻结输入TDR导出`NetActive`、`BActive`、`AsActive`和`PActive`。八个器件均逐节点满足`AsActive + PActive - BActive = NetActive`，最大残差为0。低/高NWell公共坐标上的受主变化中位数为0.30103 dex，而施主P95变化约为0.0011-0.0012 dex，确认Workbench脚本中的`NWell`实为全局Boron背景参数，不是另建的常规掩膜n阱。审计同时保留零等值线段、同号连通分量、临界栅边节点和公共坐标物种差异的机器账本。
 
 ### Si/SiO2界面与gate边界
 
@@ -150,6 +154,8 @@ M53 证明该局部结论不能外推为“完整 drain Id-Vg 应统一采用 `D
 
 M55进一步给出默认端口域的几何桥梁：四组匹配NWell器件的source、drain和substrate关联阱支持均发生离散变化。最大变化位于n20/n24的drain阱，面积由5.742488e-10减至5.021391e-10 cm2，缩小12.557%；目标n19/n23的source/drain阱面积由5.824327e-10减至5.108676e-10 cm2，缩小12.287%，而substrate阱面积增加1.629%。这说明提高NWell会改变Sentaurus默认端口算法所使用的关联阱分区，进而改变源漏/衬底电流的共模分配。由于SRH电荷项从总电流中抵消，该趋势不是SRH体源项直接加到Id上；但阱拓扑变化本身仍不能被外推为Vela或Sentaurus的生产代码缺陷。
 
+M58把该解释进一步限制到冻结输入结构层。n19/n23低LDD控制对中，最大补偿度由68.337升至99.906，浮置n型同号分量由0增至2，零等值线到最近网格顶点的最小距离由4.552107e-5降至2.233663e-5 um；n23两个浮置分量都只是单节点。临界点位于x=0.005045938 um、y=±0.125 um，`AsActive=7.965630e16`、`PActive=9.012476e14`、`BActive=7.896086e16`、`NetActive=+1.596681e15 cm^-3`，表现为近完全补偿。可是n20/n24高LDD控制对在误差同样增大的同时，最大补偿度反而由71.65降至26.03，且无额外浮置分量、拓扑改变或更近的零等值线。因此，n23的局部补偿/网格邻近性是受支持的器件特异触发条件，但不能作为八种工况共同的NWell误差增长机制。
+
 ## 已闭环、未闭环与使用边界
 
 已闭环：
@@ -170,6 +176,7 @@ M55进一步给出默认端口域的几何桥梁：四组匹配NWell器件的sou
 - M55证明NWell会改变默认端口关联阱支持，但该账本不逐项复刻Sentaurus内部阱表面单元积分，也不证明阱几何是全部跨TCAD误差的唯一原因；
 - M56只证明当前SimpleMOS的标准Si/SiO2表示，不外推到需要能带不连续、热发射、隧穿或界面陷阱的其他异质结；
 - M57证明导出的`DopingWells`节点标签可无歧义重构，但source/drain稀疏接触节点上的电流密度线积分不能普遍复现内部`DirectCurrent`接触积分；因此不能用该外部重构对Sentaurus默认阱面账本作逐项定量闭合；
+- M58证明n23存在近完全补偿单节点和更贴近网格顶点的净掺杂零等值线，但该特征受LDD条件调制且未跨四组器件一致出现；不能据此启动全局网格、掺杂或物理模型调参；
 - Direct/Weighted 与 Tcl 节点场面积分之间仍有约 2.876e-4 的相对离散定义差；
 - 现有证据定位了 Sentaurus 端口观测差异，但不据此声明 Sentaurus 或 Vela 存在生产代码缺陷；
 - 所有生产默认物理、网格和接触设置均未修改。
@@ -189,5 +196,6 @@ M55进一步给出默认端口域的几何桥梁：四组匹配NWell器件的sou
 - M55：`docs/validation/simplemos_m55_doping_well_terminal_attribution_2026-09-02.md`
 - M56：`docs/validation/simplemos_m56_si_oxide_interface_topology_2026-09-02.md`
 - M57：`docs/validation/simplemos_m57_doping_well_boundary_flux_closure_2026-09-02.md`
+- M58：`docs/validation/simplemos_m58_compensation_contour_mesh_audit_2026-09-02.md`
 - M46 机器报告：`reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_full_matrix_requalification_report.json`
-- M47-M57 机器报告：相关目录位于 `reference_tcad/simplemos_sentaurus2022/{default_bgn_state_attribution,terminal_partition_continuity_closure,substrate_electron_transport_attribution,native_substrate_face_flux_export,current_weighting_attribution,direct_current_attribution,direct_current_full_matrix,terminal_common_mode_attribution,doping_well_terminal_attribution,si_oxide_interface_topology,doping_well_boundary_flux_closure}/`。
+- M47-M58 机器报告：相关目录位于 `reference_tcad/simplemos_sentaurus2022/{default_bgn_state_attribution,terminal_partition_continuity_closure,substrate_electron_transport_attribution,native_substrate_face_flux_export,current_weighting_attribution,direct_current_attribution,direct_current_full_matrix,terminal_common_mode_attribution,doping_well_terminal_attribution,si_oxide_interface_topology,doping_well_boundary_flux_closure,compensation_contour_mesh_audit}/`。
