@@ -106,6 +106,12 @@ class TemplatesLdmosAverageBoxNewtonAbTest(unittest.TestCase):
         )
         self.assertEqual(
             geometry["external_averagebox_expected_edges"]["minimum"], 1)
+        charge_volume = schema["properties"]["discretization"][
+            "properties"
+        ]["poisson_charge_volume_policy"]
+        self.assertEqual(
+            charge_volume["enum"], ["global", "material_local"]
+        )
 
 
 if __name__ == "__main__":

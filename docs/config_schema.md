@@ -252,6 +252,30 @@ ionization, surface mobility/IALMob, quantum potential, and predictor disabled.
 It requires barycentric node volumes, is not a production/global default, and
 does not inherit the PN2D `element_edge_sg_gss_laux` bundle.
 
+## discretization.poisson_charge_volume_policy
+
+The optional Poisson charge-volume policy is independent of the pure mesh
+geometry contract:
+
+```json
+"discretization": {
+  "poisson_charge_volume_policy": "material_local"
+}
+```
+
+Supported values are `global` (default) and `material_local`. `global` uses
+the mesh node volume. `material_local` sums one-third of each adjacent Tri3
+transport-cell area and uses that volume only for the Poisson mobile-carrier
+and ionized-dopant charge terms, including their Jacobian entries. It does not
+change continuity source volumes, fixed/interface charge integration, BTBT,
+SRH/Auger, impact ionization, stored charge, or the carrier SG couple.
+
+The material-local policy is explicit and default-off. Its first qualified
+implementation requires `mesh_geometry.node_volume_policy: "barycentric"`;
+mixed-Voronoi composition is rejected rather than inferred. A mesh containing
+only transport material is returned to the existing node-volume vector so the
+single-material path remains bitwise unchanged.
+
 ## Doping, regions, interfaces
 
 ### doping[] entries

@@ -53,6 +53,24 @@ class G3AverageBoxCurveTest(unittest.TestCase):
             )
             self.assertEqual(geometry["external_averagebox_expected_edges"], 2)
             self.assertNotIn("predictor", config["sweep"])
+            self.assertEqual(
+                config["discretization"]["poisson_charge_volume_policy"],
+                "global",
+            )
+
+            material_local, _ = prepare(
+                baseline_path,
+                profile,
+                root / "material-local",
+                400,
+                "material_local",
+            )
+            self.assertEqual(
+                material_local["discretization"][
+                    "poisson_charge_volume_policy"
+                ],
+                "material_local",
+            )
 
 
 if __name__ == "__main__":

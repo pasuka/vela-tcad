@@ -320,6 +320,8 @@ CoupledDDAssembler::CoupledDDAssembler(
     , nodeEdges_(detail::buildNodeEdgeMap(mesh))
     , contactNodes_(detail::contactNodeMask(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
+    , poissonChargeVol_(detail::computePoissonChargeVolumes(
+          mesh, cellMaterials_, scaling.poissonChargeVolumePolicy))
     , poissonCouple_(detail::computeEdgeCouplings(mesh))
     , couple_(detail::computeTransportEdgeCouplings(mesh))
     , fixedInterfaceChargeRhs_(detail::computeFixedAndInterfaceChargeRhs(
@@ -1172,7 +1174,7 @@ CoupledDDAssembler::poissonTermDiagnostics(
     for (Index node = 0; node < Nidx; ++node) {
         const int i = static_cast<int>(node);
         const Real chargeMeasure =
-            constants::q * vol_[node] * chargeAreaFactor;
+            constants::q * poissonChargeVol_[node] * chargeAreaFactor;
         terms[node].intrinsicDensity = ni_[node];
         terms[node].electronDensityOfStates = Nc_[node];
         terms[node].holeDensityOfStates = Nv_[node];
@@ -1454,7 +1456,7 @@ VectorXd CoupledDDAssembler::residualImpl(
     std::vector<bool> hasHoleContribution(static_cast<std::size_t>(N), false);
 
     const auto& edgeCells = edgeCells_;
-    const auto& vol = vol_;
+    const auto& poissonChargeVol = poissonChargeVol_;
     const auto& couple = couple_;
     const auto& poissonCouple = poissonCouple_;
 
@@ -1690,7 +1692,8 @@ VectorXd CoupledDDAssembler::residualImpl(
     for (Index i = 0; i < Nidx; ++i) {
         const int ii = static_cast<int>(i);
         r(psiOffset() + ii) -= constants::q *
-            (p(ii) - n(ii) + doping_.netDoping(i)) * vol[i] * chargeAreaFactor;
+            (p(ii) - n(ii) + doping_.netDoping(i)) *
+            poissonChargeVol[i] * chargeAreaFactor;
 
         const Real ni = ni_[i];
         if (ni <= 0.0)
@@ -1718,8 +1721,8 @@ VectorXd CoupledDDAssembler::residualImpl(
             const Real R = nodeRecombinationRate(
                 i, n(ii), nSrh, p(ii), dPhi);
             if (R != 0.0) {
-                r(phinOffset() + ii) += R * vol[i] * sourceIntegralFactor;
-                r(phipOffset() + ii) += R * vol[i] * sourceIntegralFactor;
+                r(phinOffset() + ii) += R * vol_[i] * sourceIntegralFactor;
+                r(phipOffset() + ii) += R * vol_[i] * sourceIntegralFactor;
                 hasElectronContribution[static_cast<std::size_t>(ii)] = true;
                 hasHoleContribution[static_cast<std::size_t>(ii)] = true;
             }
@@ -1760,8 +1763,8 @@ VectorXd CoupledDDAssembler::residualImpl(
                 n(ii),
                 p(ii));
             if (G != 0.0) {
-                r(phinOffset() + ii) -= G * vol[i] * sourceIntegralFactor;
-                r(phipOffset() + ii) -= G * vol[i] * sourceIntegralFactor;
+                r(phinOffset() + ii) -= G * vol_[i] * sourceIntegralFactor;
+                r(phipOffset() + ii) -= G * vol_[i] * sourceIntegralFactor;
                 hasElectronContribution[static_cast<std::size_t>(ii)] = true;
                 hasHoleContribution[static_cast<std::size_t>(ii)] = true;
             }
@@ -5266,11 +5269,11 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real dpi_dphip = dpDeta / Vt_;
 
         add(psiOffset() + ii, psiOffset() + ii,
-            -constants::q * (dpi_dpsi - dni_dpsi) * vol_[i] * chargeAreaFactor);
+            -constants::q * (dpi_dpsi - dni_dpsi) * poissonChargeVol_[i] * chargeAreaFactor);
         add(psiOffset() + ii, phinOffset() + ii,
-            -constants::q * (-dni_dphin) * vol_[i] * chargeAreaFactor);
+            -constants::q * (-dni_dphin) * poissonChargeVol_[i] * chargeAreaFactor);
         add(psiOffset() + ii, phipOffset() + ii,
-            -constants::q * dpi_dphip * vol_[i] * chargeAreaFactor);
+            -constants::q * dpi_dphip * poissonChargeVol_[i] * chargeAreaFactor);
 
         if (const auto boundaryIt = bcs.thermionic.find(i);
             boundaryIt != bcs.thermionic.end()) {

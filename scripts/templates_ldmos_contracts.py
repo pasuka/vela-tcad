@@ -31,8 +31,12 @@ SCHEMA_FILES = {
         "vela.templates_ldmos.physics_contract.v1.schema.json",
     "vela.templates_ldmos.discretization_contract.v1":
         "vela.templates_ldmos.discretization_contract.v1.schema.json",
+    "vela.templates_ldmos.discretization_contract.v2":
+        "vela.templates_ldmos.discretization_contract.v2.schema.json",
     "vela.templates_ldmos.restart_qualification.v1":
         "vela.templates_ldmos.restart_qualification.v1.schema.json",
+    "vela.templates_ldmos_g3_interface_charge_volume_audit.v1":
+        "vela.templates_ldmos_g3_interface_charge_volume_audit.v1.schema.json",
 }
 
 
@@ -241,27 +245,34 @@ def migrate_discretization_draft(document: dict[str, Any]) -> dict[str, Any]:
             "vela.templates_ldmos.discretization_contract.v1-draft-unvalidated":
         raise ValueError("input is not the recognized stage-1 discretization draft")
     migrated = {
-        "schema": "vela.templates_ldmos.discretization_contract.v1",
+        "schema": "vela.templates_ldmos.discretization_contract.v2",
         "benchmark": BENCHMARK,
-        "revision": 1,
-        "profile_name": "templates_ldmos_exact_topology_phase_a_classical_v1",
+        "revision": 2,
+        "profile_name": "templates_ldmos_exact_topology_phase_a_classical_v2",
         "applicable_mesh": document["applicable_mesh"],
         "scope": ["stage_1_5", "L2", "L3"],
-        "current_support": document["current_support"],
-        "control_volume": document["control_volume"],
+        "current_support":
+            "scharfetter_gummel_edge_flux_external_averagebox_couple",
+        "control_volume": "mesh_barycentric",
+        "poisson_charge_volume": "transport_material_local_barycentric",
+        "continuity_source_volume": "mesh_barycentric",
+        "poisson_edge_support":
+            "mesh_default_edge_average_epsilon_cotangent_fallback",
         "field_recovery": document["field_recovery"],
-        "volume_source_mapping": document["volume_source_mapping"],
+        "volume_source_mapping": "cell_reconstructed_unchanged",
         "contact_edge_integration": document["contact_edge_integration"],
         "obtuse_policy": document["obtuse_policy"],
         "non_delaunay_policy": "qualified_for_phase_a_classical_only",
         "avalanche_profile": "not_authorized_in_phase_a",
         "atomic_constraints": [
-            "current_support, control_volume, field_recovery, volume_source_mapping and contact_edge_integration are one profile and must change together",
+            "carrier transport uses the exact 16237-edge archived AverageBox profile only on the qualified mesh",
+            "material-local volume changes only Poisson mobile-carrier and ionized-dopant charge residual and Jacobian terms",
+            "continuity source volumes, fixed/interface charge, BTBT, SRH/Auger, impact ionization and stored charge remain on their existing mappings",
             "avalanche and thermal source mappings require a separately versioned phase-B profile",
         ],
         "forbidden_inference": document["forbidden_inference"],
         "physics_use_authorized": True,
-        "status": "qualified_for_phase_a_classical_baseline",
+        "status": "qualified_for_phase_a_classical_stage3",
     }
     return canonical_round_trip(migrated)
 

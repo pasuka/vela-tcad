@@ -162,8 +162,12 @@ def endpoint(
     profile: Path,
     profile_records: int,
     output: Path,
+    poisson_charge_volume_policy: str,
 ) -> dict[str, Any]:
     baseline = json.loads(baseline_config_path.read_text(encoding="utf-8"))
+    baseline.setdefault("discretization", {})[
+        "poisson_charge_volume_policy"
+    ] = poisson_charge_volume_policy
     baseline["state_file"] = str(initial_state.resolve())
     baseline_state = output / "baseline_state.csv"
     baseline["output_state_file"] = str(baseline_state.resolve())
@@ -234,6 +238,11 @@ def main() -> int:
     parser.add_argument("--initial-state", type=Path, action="append", required=True)
     parser.add_argument("--sentaurus-current", type=float, action="append", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--poisson-charge-volume-policy",
+        choices=("global", "material_local"),
+        default="global",
+    )
     args = parser.parse_args()
     if not (
         len(args.baseline_config) == len(args.initial_state)
@@ -259,6 +268,7 @@ def main() -> int:
             args.runner.resolve(), args.baseline_config[index],
             args.initial_state[index], profile, len(profile_rows),
             output / f"endpoint_{index}",
+            args.poisson_charge_volume_policy,
         )
         for index in range(2)
     ]
@@ -280,7 +290,8 @@ def main() -> int:
             "carrier_transport": "qualified external AverageBox",
             "baseline_poisson": "mesh default barycentric/cotangent-fallback",
             "candidate_poisson": "region-local material-weighted AverageBox couples",
-            "source_volume": "unchanged barycentric",
+            "poisson_charge_volume_policy":
+                args.poisson_charge_volume_policy,
             "initial_state": "independent converged Vela endpoint",
             "ialmob": "disabled",
             "predictor": "disabled",

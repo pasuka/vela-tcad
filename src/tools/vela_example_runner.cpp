@@ -374,6 +374,8 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
         ? vela::newtonConfigFromJson(cfg.at("solver"), scaling)
         : vela::NewtonConfig{};
     newton.unitScalingRefs = vela::parseUnitScalingReferenceConfig(cfg);
+    newton.poissonChargeVolumePolicy =
+        vela::parsePoissonChargeVolumePolicy(cfg);
     if (transportProfile.profile != "mesh_default" &&
         (newton.impactIonization.model != "none" ||
          vela::isSurfaceMobilityModel(newton.mobility) ||
@@ -463,6 +465,8 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
     // model setup mirror DCSweep so the value is directly comparable to a dc_sweep
     // terminal current.
     vela::DDScalingSpec ddScaling;
+    ddScaling.poissonChargeVolumePolicy =
+        problem.newton.poissonChargeVolumePolicy;
     if (problem.newton.inputScaling.isUnitScaling()) {
         const vela::UnitScalingSystem sc = vela::UnitScalingSystem::fromInputs(
             problem.newton.temperature_K,

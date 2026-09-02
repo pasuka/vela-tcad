@@ -1,7 +1,7 @@
 {
   "schema": "vela.templates_ldmos.physics_contract.v1",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
-  "revision": 4,
+  "revision": 5,
   "materials_file": "materials.json",
   "temperature_K": 300.0,
   "carrier_statistics": {
@@ -152,5 +152,5 @@
     "parameter_source": "pending_phase_b_thermal_contract",
     "implementation_status": "pending_phase_b"
   },
-  "discretization_profile": "templates_ldmos_exact_topology_phase_a_classical_v1"
+  "discretization_profile": "templates_ldmos_exact_topology_phase_a_classical_v2"
 }

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vela.templates_ldmos_g3_interface_charge_volume_audit.v1.schema.json",
+  "title": "Templates LDMOS G3 interface charge-volume audit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "contract",
+    "inputs",
+    "masks",
+    "geometry",
+    "coverage",
+    "points",
+    "window_sensitivity",
+    "gates",
+    "verdict"
+  ],
+  "properties": {
+    "schema": {
+      "const": "vela.templates_ldmos_g3_interface_charge_volume_audit.v1"
+    },
+    "contract": {"type": "object"},
+    "inputs": {"type": "object"},
+    "masks": {"type": "object"},
+    "geometry": {"type": "object"},
+    "coverage": {
+      "type": "object",
+      "required": [
+        "matched_state_count",
+        "requested_state_count",
+        "missing_biases_V",
+        "coverage_complete"
+      ],
+      "properties": {
+        "matched_state_count": {"type": "integer", "minimum": 0},
+        "requested_state_count": {"type": "integer", "minimum": 1},
+        "missing_biases_V": {"type": "array", "items": {"type": "number"}},
+        "coverage_complete": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "points": {
+      "type": "object",
+      "additionalProperties": {"type": "object"}
+    },
+    "window_sensitivity": {
+      "type": "object",
+      "additionalProperties": {"type": "object"}
+    },
+    "gates": {
+      "type": "object",
+      "required": [
+        "operator_replica_median_le_1e-10",
+        "endpoint_volume_ab_median_p95_reduction_ge_0p90",
+        "whole_channel_accounting_and_current_tracking",
+        "coverage_eight_matched_states"
+      ],
+      "properties": {
+        "operator_replica_median_le_1e-10": {"type": "boolean"},
+        "endpoint_volume_ab_median_p95_reduction_ge_0p90": {"type": "boolean"},
+        "whole_channel_accounting_and_current_tracking": {"type": "boolean"},
+        "coverage_eight_matched_states": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "verdict": {
+      "enum": ["P0_CORE_PASS_COVERAGE_INCOMPLETE", "P0_CORE_PASS", "P0_CORE_FAIL"]
+    }
+  }
+}

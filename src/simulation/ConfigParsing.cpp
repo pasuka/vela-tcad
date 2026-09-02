@@ -178,6 +178,35 @@ BoxGeometryBuilder::Options parseBoxGeometryOptions(const nlohmann::json& cfg)
     return options;
 }
 
+PoissonChargeVolumePolicy parsePoissonChargeVolumePolicy(
+    const nlohmann::json& cfg)
+{
+    if (!cfg.contains("discretization"))
+        return PoissonChargeVolumePolicy::Global;
+    const auto& discretization = cfg.at("discretization");
+    if (!discretization.is_object()) {
+        throw std::runtime_error(
+            "ConfigParsing: discretization must be an object.");
+    }
+    const std::string policy = discretization.value(
+        "poisson_charge_volume_policy", "global");
+    if (policy == "global")
+        return PoissonChargeVolumePolicy::Global;
+    if (policy != "material_local") {
+        throw std::runtime_error(
+            "ConfigParsing: discretization.poisson_charge_volume_policy must be "
+            "'global' or 'material_local'.");
+    }
+    if (cfg.contains("mesh_geometry") &&
+        cfg.at("mesh_geometry").value("node_volume_policy", "barycentric") !=
+            "barycentric") {
+        throw std::runtime_error(
+            "ConfigParsing: material_local Poisson charge volume is qualified "
+            "only with mesh_geometry.node_volume_policy='barycentric'.");
+    }
+    return PoissonChargeVolumePolicy::MaterialLocalBarycentric;
+}
+
 CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
     DeviceMesh& mesh,
     const nlohmann::json& cfg,

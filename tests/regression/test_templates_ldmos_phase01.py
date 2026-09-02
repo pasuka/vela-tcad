@@ -138,7 +138,7 @@ class TemplatesLdmosContractsTest(unittest.TestCase):
         physics = documents["physics_contract.json"]
         discretization = documents["discretization_contract.json"]
         self.assertEqual(physics["materials_file"], "materials.json")
-        self.assertEqual(physics["revision"], 4)
+        self.assertEqual(physics["revision"], 5)
         self.assertEqual(
             physics["bandgap_narrowing"]["sentaurus_dEg0_eV"], -0.01595)
         self.assertIn(
@@ -163,6 +163,13 @@ class TemplatesLdmosContractsTest(unittest.TestCase):
         )
         self.assertEqual(
             physics["discretization_profile"], discretization["profile_name"])
+        self.assertEqual(discretization["revision"], 2)
+        self.assertEqual(
+            discretization["poisson_charge_volume"],
+            "transport_material_local_barycentric",
+        )
+        self.assertEqual(
+            discretization["continuity_source_volume"], "mesh_barycentric")
         self.assertFalse(physics["impact_ionization"]["enabled"])
         self.assertEqual(
             discretization["avalanche_profile"], "not_authorized_in_phase_a")

@@ -1,23 +1,28 @@
 {
-  "schema": "vela.templates_ldmos.discretization_contract.v1",
+  "schema": "vela.templates_ldmos.discretization_contract.v2",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
-  "revision": 1,
-  "profile_name": "templates_ldmos_exact_topology_phase_a_classical_v1",
+  "revision": 2,
+  "profile_name": "templates_ldmos_exact_topology_phase_a_classical_v2",
   "applicable_mesh": "exact T-2022.03-SP2 Templates/LDMOS SProcess topology",
   "scope": ["stage_1_5", "L2", "L3"],
-  "current_support": "scharfetter_gummel_edge_flux",
-  "control_volume": "barycentric",
+  "current_support": "scharfetter_gummel_edge_flux_external_averagebox_couple",
+  "control_volume": "mesh_barycentric",
+  "poisson_charge_volume": "transport_material_local_barycentric",
+  "continuity_source_volume": "mesh_barycentric",
+  "poisson_edge_support": "mesh_default_edge_average_epsilon_cotangent_fallback",
   "field_recovery": "cell_reconstructed",
-  "volume_source_mapping": "cell_reconstructed",
+  "volume_source_mapping": "cell_reconstructed_unchanged",
   "contact_edge_integration": "exact_imported_contact_boundary_edges",
   "obtuse_policy": "accepted_and_listed_with_barycentric_positive_control_volumes",
   "non_delaunay_policy": "qualified_for_phase_a_classical_only",
   "avalanche_profile": "not_authorized_in_phase_a",
   "atomic_constraints": [
-    "current_support, control_volume, field_recovery, volume_source_mapping and contact_edge_integration are one profile and must change together",
+    "carrier transport uses the exact 16237-edge archived AverageBox profile only on the qualified mesh",
+    "material-local volume changes only Poisson mobile-carrier and ionized-dopant charge residual and Jacobian terms",
+    "continuity source volumes, fixed/interface charge, BTBT, SRH/Auger, impact ionization and stored charge remain on their existing mappings",
     "avalanche and thermal source mappings require a separately versioned phase-B profile"
   ],
   "forbidden_inference": "Do not apply PN2D element_edge_sg_gss_laux as a global or device default.",
   "physics_use_authorized": true,
-  "status": "qualified_for_phase_a_classical_baseline"
+  "status": "qualified_for_phase_a_classical_stage3"
 }

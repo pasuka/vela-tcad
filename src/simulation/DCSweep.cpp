@@ -3087,6 +3087,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     };
 
     const nlohmann::json solverCfg = cfg.value("solver", nlohmann::json::object());
+    const PoissonChargeVolumePolicy poissonChargeVolumePolicy =
+        parsePoissonChargeVolumePolicy(cfg);
     const SolverMethod solverMethod = solverMethodFromJson(cfg);
     if (solverMethod == SolverMethod::FrozenState && sweep.initialStateFile.empty()) {
         throw std::invalid_argument(
@@ -3120,6 +3122,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         gummel.unitScalingRefs = scalingRefs;
         mobilityConfig = gummel.mobility;
     }
+    newton.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
+    gummel.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
     const Real temperature_K = (solverMethod == SolverMethod::Newton ||
                                 solverMethod == SolverMethod::PoissonOnly ||
                                 solverMethod == SolverMethod::GummelNewton)
@@ -3140,6 +3144,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     if (sweep.initialization.mode == "poisson_block") {
         initializationNewton = newtonConfigFromJson(solverCfg, scaling);
         initializationNewton->unitScalingRefs = scalingRefs;
+        initializationNewton->poissonChargeVolumePolicy =
+            poissonChargeVolumePolicy;
     }
     const bool recombinationDiagnosticsEnabled =
         (solverMethod == SolverMethod::Newton ||
@@ -3173,6 +3179,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             transportCoupleProfile.profile +
             " records=" + std::to_string(transportCoupleProfile.records) +
             " zero_couples=" + std::to_string(transportCoupleProfile.zeroCouples));
+        runtimeLogInfo(
+            "poisson_charge_volume_policy: policy=" +
+            std::string(poissonChargeVolumePolicyName(poissonChargeVolumePolicy)));
         if (runtimeLogAllows(RuntimeLogProfile::Default)) {
             runtimeLogInfo(
                 "solver_settings: max_iter=" + std::to_string(
@@ -3290,6 +3299,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     }
     // Build DDScalingSpec for contact current post-processing.
     DDScalingSpec ddScaling;
+    ddScaling.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
     if (sweep.scaling.isUnitScaling()) {
         // Derive DDScalingSpec from the unit scaling system.
         UnitScalingSystem sc = UnitScalingSystem::fromInputs(

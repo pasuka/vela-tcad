@@ -147,9 +147,13 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
           mesh, matdb, Vt * constants::q / constants::kb, true))
     , Nv_(detail::buildNodeDensityOfStates(
           mesh, matdb, Vt * constants::q / constants::kb, false))
+    , cellMaterials_(detail::buildCellMaterials(
+          mesh, matdb, Vt * constants::q / constants::kb))
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , nodeCells_(detail::buildNodeCellMap(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
+    , poissonChargeVol_(detail::computePoissonChargeVolumes(
+          mesh, cellMaterials_, scaling.poissonChargeVolumePolicy))
     , couple_(detail::computeTransportEdgeCouplings(mesh))
     , fixedInterfaceChargeRhs_(detail::computeFixedAndInterfaceChargeRhs(
           mesh,
@@ -257,7 +261,7 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
         const Real ni_v   = scaling_.enabled ? n(ii) * scaling_.C0 : n(ii);
         const Real pi_v   = scaling_.enabled ? p(ii) * scaling_.C0 : p(ii);
         const Real psi_v  = scaling_.enabled ? psi(ii) * scaling_.V0 : psi(ii);
-        const Real vol_i  = vol_[i];
+        const Real vol_i  = poissonChargeVol_[i];
         const Real chargeAreaFactor = scaling_.enabled ? scaling_.chargeAreaFactor : 1.0;
 
         Real electronDerivativeEta = ni_v;

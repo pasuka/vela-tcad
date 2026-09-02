@@ -24,6 +24,7 @@ def runner_environment() -> dict[str, str]:
 
 def prepare(
     baseline: dict[str, Any], state: Path, bias: float, output: Path,
+    poisson_charge_volume_policy: str = "global",
 ) -> dict[str, Any]:
     config = deepcopy(baseline)
     mobility = config["solver"]["mobility"]
@@ -36,12 +37,20 @@ def prepare(
     config["output_state_file"] = str((output / "reclosed_state.csv").resolve())
     config.pop("sweep", None)
     config.pop("output_csv", None)
+    if poisson_charge_volume_policy not in {"global", "material_local"}:
+        raise ValueError(
+            "poisson_charge_volume_policy must be 'global' or 'material_local'")
+    discretization = config.setdefault("discretization", {})
+    discretization["poisson_charge_volume_policy"] = (
+        poisson_charge_volume_policy
+    )
     for contact in config["contacts"]:
         if contact["name"].lower() == "gate":
             contact["bias"] = bias
     config["_comment"] = (
         "Single-bias G3 reclose from a Sentaurus frozen state; IALMob and "
-        "predictor disabled; all convergence ceilings retained."
+        "predictor disabled; all convergence ceilings retained; Poisson "
+        f"charge volume={poisson_charge_volume_policy}."
     )
     return config
 
@@ -53,12 +62,23 @@ def main() -> int:
     parser.add_argument("--state", type=Path, required=True)
     parser.add_argument("--bias", type=float, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--poisson-charge-volume-policy",
+        choices=("global", "material_local"),
+        default="global",
+    )
     args = parser.parse_args()
 
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=True)
     baseline = json.loads(args.baseline_config.read_text(encoding="utf-8"))
-    config = prepare(baseline, args.state, args.bias, output)
+    config = prepare(
+        baseline,
+        args.state,
+        args.bias,
+        output,
+        args.poisson_charge_volume_policy,
+    )
     config_path = output / "reclose.json"
     config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
     completed = subprocess.run(

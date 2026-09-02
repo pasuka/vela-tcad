@@ -159,6 +159,8 @@ PoissonResult PoissonSimulation::runWithResult(const std::string& configFile)
     // Assemble Poisson equation
     // ------------------------------------------------------------------
     PoissonScalingSpec poissonScaling;
+    poissonScaling.poissonChargeVolumePolicy =
+        parsePoissonChargeVolumePolicy(cfg);
     if (scaling.isUnitScaling()) {
         const UnitScalingReferenceConfig refs = parseUnitScalingReferenceConfig(cfg);
 

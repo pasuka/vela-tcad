@@ -13,6 +13,7 @@
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/UnitScaling.h"
 #include "vela/equation/ChargeSpec.h"
+#include "vela/equation/PoissonChargeVolume.h"
 #include "vela/equation/Tri3LocalForwardAD.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/mesh/DeviceMesh.h"
@@ -2920,6 +2921,46 @@ inline Real bandToBandGenerationRateInternal(
 inline bool isTransportMaterial(const Material& material)
 {
     return material.ni > 0.0 || material.mun > 0.0 || material.mup > 0.0;
+}
+
+/// Return the control-volume area used only for mobile and ionized-dopant
+/// charge in Poisson.  The material-local diagnostic intentionally remains
+/// barycentric in P1 so its single changed factor is the material ownership;
+/// Sentaurus Measure/mixed-Voronoi semantics are a later, independent profile.
+inline std::vector<Real> computePoissonChargeVolumes(
+    const DeviceMesh& mesh,
+    const std::vector<Material>& cellMaterials,
+    PoissonChargeVolumePolicy policy)
+{
+    if (policy == PoissonChargeVolumePolicy::Global)
+        return computeNodeVolumes(mesh);
+    if (cellMaterials.size() != mesh.numCells()) {
+        throw std::invalid_argument(
+            "computePoissonChargeVolumes: cell material count does not match mesh.");
+    }
+
+    bool allCellsTransport = true;
+    for (const Material& material : cellMaterials)
+        allCellsTransport = allCellsTransport && isTransportMaterial(material);
+    // Preserve the legacy arithmetic and bit pattern on a one-material
+    // semiconductor mesh instead of recomputing an equivalent area sum.
+    if (allCellsTransport)
+        return computeNodeVolumes(mesh);
+
+    std::vector<Real> volume(mesh.numNodes(), 0.0);
+    for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
+        if (!isTransportMaterial(cellMaterials[cellId]))
+            continue;
+        const Cell& cell = mesh.getCell(cellId);
+        if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3) {
+            throw std::invalid_argument(
+                "computePoissonChargeVolumes: material_local supports Tri3 cells only.");
+        }
+        const Real share = triangleArea(mesh, cell) / 3.0;
+        for (Index node : cell.node_ids)
+            volume.at(static_cast<std::size_t>(node)) += share;
+    }
+    return volume;
 }
 
 inline std::vector<Real> transportCellVectorEdgeGradientMagnitudes(

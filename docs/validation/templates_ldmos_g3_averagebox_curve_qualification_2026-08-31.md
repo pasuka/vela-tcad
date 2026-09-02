@@ -1,5 +1,10 @@
 # Templates/LDMOS G3 node-local + AverageBox 31-point qualification (2026-08-31)
 
+> Historical result: the remaining maximum-gm failure documented here was
+> closed on 2026-09-02 by the independently qualified material-local Poisson
+> charge-volume policy. See
+> `templates_ldmos_g3_material_local_charge_volume_qualification_2026-09-02.md`.
+
 ## Scope and frozen controls
 
 This run executes the exact 31 Sentaurus CurrentPlot gate biases at

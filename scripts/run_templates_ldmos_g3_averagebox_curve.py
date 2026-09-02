@@ -38,6 +38,7 @@ def prepare(
     profile_csv: Path,
     output_dir: Path,
     max_iter: int | None = None,
+    poisson_charge_volume_policy: str = "global",
 ) -> tuple[dict[str, Any], int]:
     config = deepcopy(json.loads(baseline_path.read_text(encoding="utf-8")))
     if config.get("simulation_type") != "dc_sweep":
@@ -75,6 +76,13 @@ def prepare(
     )
     geometry["external_averagebox_couples_file"] = str(profile_csv)
     geometry["external_averagebox_expected_edges"] = expected_edges
+
+    if poisson_charge_volume_policy not in {"global", "material_local"}:
+        raise ValueError("unsupported Poisson charge-volume policy")
+    discretization = config.setdefault("discretization", {})
+    discretization["poisson_charge_volume_policy"] = (
+        poisson_charge_volume_policy
+    )
 
     output_dir.mkdir(parents=True, exist_ok=True)
     config["_comment"] = (
@@ -120,10 +128,19 @@ def main() -> int:
     parser.add_argument("--profile-csv", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--max-iter", type=int)
+    parser.add_argument(
+        "--poisson-charge-volume-policy",
+        choices=("global", "material_local"),
+        default="global",
+    )
     args = parser.parse_args()
 
     config, expected_edges = prepare(
-        args.baseline_config, args.profile_csv, args.output_dir, args.max_iter
+        args.baseline_config,
+        args.profile_csv,
+        args.output_dir,
+        args.max_iter,
+        args.poisson_charge_volume_policy,
     )
     config_path = args.output_dir / "g3_averagebox_idvg.json"
     config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
@@ -153,6 +170,7 @@ def main() -> int:
             "templates_ldmos_external_averagebox",
         "external_averagebox_edges": expected_edges,
         "external_averagebox_sha256": sha256(args.profile_csv),
+        "poisson_charge_volume_policy": args.poisson_charge_volume_policy,
     }
     (args.output_dir / "run_summary.json").write_text(
         json.dumps(summary, indent=2) + "\n", encoding="utf-8"

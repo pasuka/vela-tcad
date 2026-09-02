@@ -30,6 +30,19 @@ class TemplatesLdmosG3SameBiasRecloseTest(unittest.TestCase):
         self.assertNotIn("sweep", config)
         self.assertNotIn("output_csv", config)
         self.assertIn("sweep", baseline)
+        self.assertEqual(
+            config["discretization"]["poisson_charge_volume_policy"],
+            "global",
+        )
+
+    def test_prepare_enables_material_local_poisson_charge_volume(self) -> None:
+        config = prepare(
+            self.baseline(), Path("state.csv"), 1.0, Path("out"),
+            "material_local")
+        self.assertEqual(
+            config["discretization"]["poisson_charge_volume_policy"],
+            "material_local",
+        )
 
     def test_prepare_fails_closed_on_unqualified_mobility(self) -> None:
         ialmob = self.baseline()

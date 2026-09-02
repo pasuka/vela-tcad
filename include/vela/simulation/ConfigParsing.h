@@ -2,6 +2,7 @@
 
 #include "vela/core/UnitScaling.h"
 #include "vela/equation/ChargeSpec.h"
+#include "vela/equation/PoissonChargeVolume.h"
 #include "vela/mesh/BoxGeometryBuilder.h"
 #include "vela/physics/DopingModel.h"
 #include <nlohmann/json_fwd.hpp>
@@ -24,6 +25,9 @@ std::vector<InterfaceSheetChargeSpec> parseInterfaceSheetChargeSpecs(
     UnitScalingConfig scaling = {});
 
 BoxGeometryBuilder::Options parseBoxGeometryOptions(const nlohmann::json& cfg);
+
+PoissonChargeVolumePolicy parsePoissonChargeVolumePolicy(
+    const nlohmann::json& cfg);
 
 struct CarrierTransportCoupleProfileReport {
     std::string profile = "mesh_default";

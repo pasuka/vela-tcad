@@ -1263,6 +1263,7 @@ DDScalingSpec buildRecoveryScalingSpec(const DeviceMesh& mesh,
                                        const NewtonConfig& cfg)
 {
     DDScalingSpec scaling;
+    scaling.poissonChargeVolumePolicy = cfg.poissonChargeVolumePolicy;
     if (!cfg.inputScaling.isUnitScaling())
         return scaling;
 
@@ -2784,6 +2785,7 @@ NewtonSolver::NewtonSolver(
 DDScalingSpec NewtonSolver::buildScalingSpec() const
 {
     DDScalingSpec scaling;
+    scaling.poissonChargeVolumePolicy = cfg_.poissonChargeVolumePolicy;
     if (!cfg_.inputScaling.isUnitScaling())
         return scaling;
 

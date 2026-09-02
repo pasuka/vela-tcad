@@ -24,6 +24,18 @@
       "minItems": 2,
       "type": "array"
     },
+    "discretization": {
+      "additionalProperties": true,
+      "properties": {
+        "poisson_charge_volume_policy": {
+          "enum": [
+            "global",
+            "material_local"
+          ]
+        }
+      },
+      "type": "object"
+    },
     "materials_file": {
       "minLength": 1,
       "type": "string"

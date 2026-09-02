@@ -378,6 +378,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
 
     const bool useScaledUnknowns = cfg.inputScaling.isUnitScaling();
     DDScalingSpec ddScaling;
+    ddScaling.poissonChargeVolumePolicy = cfg.poissonChargeVolumePolicy;
     if (useScaledUnknowns) {
         const Real epsRef = constants::eps0 *
             maxRelativePermittivityAcrossRegions(mesh, matdb, cfg.temperature_K);

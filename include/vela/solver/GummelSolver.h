@@ -5,6 +5,7 @@
 #include "vela/core/UnitScaling.h"
 #include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/ChargeSpec.h"
+#include "vela/equation/PoissonChargeVolume.h"
 #include "vela/core/Types.h"
 #include "vela/core/UnitScaling.h"
 #include "vela/mesh/DeviceMesh.h"
@@ -111,6 +112,8 @@ struct GummelConfig {
     double reltol      = 1.0e-6; ///< Relative convergence tolerance (||dpsi||/||psi||)
     double abstol      = 0.0;   ///< Absolute update tolerance across psi, n, and p
     double temperature_K = constants::T0; ///< Lattice temperature [K]
+    PoissonChargeVolumePolicy poissonChargeVolumePolicy =
+        PoissonChargeVolumePolicy::Global;
     double dampingPsi  = 1.0;   ///< Damping factor for Poisson update (0 < alpha <= 1)
     double taun        = 1.0e-5; ///< Electron SRH lifetime [s]
     double taup        = 3.0e-6; ///< Hole SRH lifetime [s]
