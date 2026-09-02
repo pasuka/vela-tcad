@@ -1,0 +1,14 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M63 smooth NWell attribution",
+  "status": "accepted",
+  "classification": "threshold_like_horizontal_shift_dominant",
+  "summary": "Burst-free curve-shape, constant-current threshold, and fixed-state mobility attribution",
+  "report": "reference_tcad/simplemos_sentaurus2022/smooth_nwell_attribution/m63_smooth_nwell_attribution_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/smooth_nwell_attribution/m63_curve_shape_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/smooth_nwell_attribution/m63_constant_current_threshold_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/smooth_nwell_attribution/m63_nwell_pair_attribution_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/smooth_nwell_attribution/m63_m13_mobility_crosscheck_ledger.csv"
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "schema": "vela.simplemos.sdevice.m59_port_observable_decomposition_contract.v1",
+  "contract_id": "simplemos-sdevice-m59-port-observable-decomposition-v1",
+  "objective": "Using only frozen M46, M54, and M58 ledgers, separate smooth matched-background-Boron Id-Vg error growth from low-current default-minus-Direct substrate electron-current bursts, without treating the observable difference as an independently measured continuity residual or changing any historical artifact.",
+  "created_at": "2026-09-02",
+  "upstream": {
+    "required_m46_point_count": 816,
+    "required_m54_state_count": 816,
+    "required_m54_component_count": 9792,
+    "required_m58_status": "accepted",
+    "required_m58_classification": "no_systematic_frozen_tdr_relation",
+    "closed_topics": [
+      "SG current-kernel consistency",
+      "general Vela contact-current extraction consistency",
+      "quasi-Fermi reference and increment packing",
+      "M46 bitwise identity to M8",
+      "M47 default-BGN-on low-gate state attribution",
+      "M50-M55 default, CurrentWeighting, DirectCurrent, and DopingWell observable attribution",
+      "M56 Si/SiO2 topology",
+      "M57 exported nodal boundary quadrature",
+      "M58 frozen compensation-contour topology audit"
+    ]
+  },
+  "matrix": {
+    "devices": ["n17", "n18", "n19", "n20", "n21", "n22", "n23", "n24"],
+    "matched_pairs": [
+      {"low": "n17", "high": "n21", "GOxTime_min": 10.0, "LDD_Dose_cm2": 1e14},
+      {"low": "n18", "high": "n22", "GOxTime_min": 10.0, "LDD_Dose_cm2": 2e14},
+      {"low": "n19", "high": "n23", "GOxTime_min": 15.0, "LDD_Dose_cm2": 1e14},
+      {"low": "n20", "high": "n24", "GOxTime_min": 15.0, "LDD_Dose_cm2": 2e14}
+    ],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": {"start": 0.0, "stop": 2.5, "step": 0.05, "count": 51}
+  },
+  "frozen_analysis_rules": {
+    "observable_gap": "substrate eCurrent default minus substrate eCurrent Direct at the same frozen state",
+    "observable_fraction": "observable_gap / Sentaurus default drain Id; signed value retained",
+    "interpretation_guard": "observable_gap is directly measured from M54; inferred p-well continuity residual is a box-method hypothesis, not an independent ledger column, until M60",
+    "primary_burst_absolute_fraction": 0.02,
+    "clean_neighbor_absolute_fraction": 0.005,
+    "baseline_window_V": 0.10,
+    "threshold_sensitivity_absolute_fractions": [0.005, 0.01, 0.015, 0.02, 0.03, 0.05],
+    "curve_metric": "maximum absolute Vela-Sentaurus log10 current ratio before and after excluding points at or above the selected absolute observable fraction",
+    "local_excess": "10**(point_dex - mean clean-neighbor dex within plus-or-minus 0.10 V) - 1",
+    "slope": "zero-intercept least-squares local_excess versus signed observable_fraction",
+    "correlation": "Pearson correlation reported descriptively; low- and high-drain scopes must be reported separately",
+    "roughness": "log10(Id) at an interior gate point minus the cubic through the two previous and two next lattice points; no claim at Vg=0.05 V where two previous points do not exist",
+    "historical_artifact_policy": "write new M59 ledgers only; do not add columns to or rewrite M46/M54/M58 files"
+  },
+  "classifications": {
+    "port_observable_burst_association_plus_smooth_nwell_growth": "All eight matched pair/drain rows retain a positive 0.020-0.027 dex burst-free maximum-error growth over the frozen threshold range, low-drain local excess is strongly associated with the default-minus-Direct substrate observable fraction, and large default KCL sums stratify with the frozen floating-component devices; continuity-residual causality remains pending M60.",
+    "smooth_nwell_growth_without_port_burst_association": "Burst-free growth is systematic but the low-drain observable association or KCL/topology stratification fails.",
+    "port_burst_without_systematic_smooth_growth": "The low-drain observable association passes but burst-free matched growth is not systematic.",
+    "upstream_or_analysis_mismatch": "An input hash, matrix size, exact state join, threshold sensitivity, or required field check fails."
+  },
+  "acceptance": {
+    "required_point_count": 816,
+    "required_curve_count": 16,
+    "required_pair_row_count": 8,
+    "required_component_count": 9792,
+    "primary_threshold": 0.02,
+    "sensitivity_threshold_max": 0.03,
+    "burst_free_growth_min_dex": 0.020,
+    "burst_free_growth_max_dex": 0.027,
+    "low_drain_slope_min": 0.35,
+    "low_drain_slope_max": 0.39,
+    "low_drain_pearson_min": 0.99,
+    "floating_devices": ["n21", "n23"],
+    "nonfloating_to_floating_median_kcl_ratio_min": 100.0,
+    "contract_hash_must_remain_unchanged": true,
+    "upstream_hashes_must_remain_unchanged": true
+  },
+  "next_gate": {
+    "milestone": "M60",
+    "hypothesis": "tightening Sentaurus nonlinear convergence controls reduces the default-minus-Direct substrate observable burst while preserving non-burst curve points",
+    "claim_guard": "M59 authorizes a frozen M60 convergence-control experiment but does not establish Sentaurus residual causality, a solver defect, or a production-reference change."
+  },
+  "forbidden_work": [
+    "new Sentaurus or Vela solve",
+    "historical M46, M54, or M58 artifact rewrite",
+    "calling default-minus-Direct an independently exported nodal residual",
+    "using the global mixed-drain slope as a universal drain partition coefficient",
+    "claiming the smooth component is already attributed to BGN, electrostatics, or mobility",
+    "HFS, SG, BGN, SRH, mobility, contact, interface, mesh, doping, or production-default change"
+  ],
+  "required_artifacts": [
+    "frozen contract and upstream hash manifest",
+    "816-row pointwise observable ledger",
+    "16-row curve decomposition ledger",
+    "8-row matched-pair decomposition ledger",
+    "threshold and drain-scope sensitivity ledger",
+    "KCL and frozen topology stratification ledger",
+    "machine-readable report, evidence manifest, regression test, and corrected human report"
+  ]
+}

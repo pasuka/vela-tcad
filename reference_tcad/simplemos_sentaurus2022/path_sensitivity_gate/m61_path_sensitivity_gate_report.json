@@ -1,0 +1,27 @@
+{
+  "schema": "vela.simplemos.sdevice.m61_path_sensitivity_gate_report.v1",
+  "status": "accepted",
+  "decision": "not_required_m60_decisive",
+  "reason": "M61/E2 was conditional on an uncertain or negative M60/E1 result. M60 instead eliminated all 15 burst flags, reduced the n23 target observable gap by 98.8585 percent, and reduced its Vela error to 0.0243983 dex, so path-sensitivity replay would not discriminate the already-decided convergence mechanism.",
+  "sequence_closure": {
+    "m60": "tight_convergence_suppresses_port_bursts",
+    "m63": "threshold_like_horizontal_shift_dominant",
+    "m62": "e3_stopped_no_identity_preserving_writer",
+    "m61": "not_required_m60_decisive"
+  },
+  "execution": {
+    "new_sentaurus_execution": false,
+    "new_vela_execution": false,
+    "deck_count": 0
+  },
+  "acceptance": {
+    "m60_evidence_frozen": true,
+    "m60_classification_decisive": true,
+    "m60_zero_remaining_bursts": true,
+    "m62_stop_result_frozen": true,
+    "m63_independent_track_frozen": true,
+    "m61_e2_not_executed": true,
+    "production_defaults_not_changed": true,
+    "all_checks_pass": true
+  }
+}

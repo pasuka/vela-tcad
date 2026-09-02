@@ -1,0 +1,47 @@
+{
+  "schema": "vela.simplemos.sdevice.m63_smooth_nwell_attribution_report.v1",
+  "status": "accepted",
+  "classification": "threshold_like_horizontal_shift_dominant",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m63_smooth_nwell_attribution_contract_v1.json",
+    "sha256": "045827a15c28d8f9d51b251f6f935f988204435eb45fe09e01df114275714266"
+  },
+  "summary": {
+    "curve_count": 16,
+    "pair_count": 8,
+    "smooth_point_count": 128,
+    "all_nwell_growth_positive": true,
+    "median_curve_horizontal_shift_explained_fraction": 0.9979615484418857,
+    "minimum_curve_horizontal_shift_explained_fraction": 0.9972453685233263,
+    "median_pair_growth_horizontal_shift_explained_fraction": 0.9732003829740016,
+    "minimum_pair_growth_horizontal_shift_explained_fraction": 0.93335324967988,
+    "mobility_sign_support_count": 0,
+    "mobility_crosscheck_count": 2,
+    "fitted_horizontal_shift_mV_range": [
+      2.709322692261919,
+      5.673461283857467
+    ],
+    "subthreshold_swing_difference_mV_per_dec_range": [
+      -0.2694206389249132,
+      0.1251289539717817
+    ]
+  },
+  "causal_scope": {
+    "closed": "The smooth paired growth is predominantly threshold-like at curve level.",
+    "not_closed": "BGN, electrostatics, carrier statistics, and other self-consistent causes of the horizontal shift remain unseparated.",
+    "m40_context_only": "M40 completed the deep-off true-NoBGN x SRH factorial; it is not a smooth-window intervention"
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "input_point_count": true,
+    "curve_count": true,
+    "pair_count": true,
+    "mobility_crosscheck_count": true,
+    "smooth_point_completeness": true,
+    "constant_current_completeness": true,
+    "classification_declared": true,
+    "no_new_solve": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

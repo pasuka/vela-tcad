@@ -1,0 +1,41 @@
+{
+  "schema": "vela.simplemos.sdevice.m63_smooth_nwell_attribution_evidence.v1",
+  "status": "frozen",
+  "classification": "threshold_like_horizontal_shift_dominant",
+  "contract_sha256": "045827a15c28d8f9d51b251f6f935f988204435eb45fe09e01df114275714266",
+  "new_sentaurus_execution": false,
+  "new_vela_execution": false,
+  "production_reference_replaced": false,
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m60_tight_convergence_port_burst_evidence.json": "dd9e4866f953e6e1051bb42f0bbf06db4fffa5736a476308f524c443f9bae96c",
+    "reference_tcad/simplemos_sentaurus2022/tight_convergence_port_burst/m60_tight_default_direct_point_ledger.csv": "52ec0f51a7f2b0095b4718e61ed288eb477fc013c6d432404cdf06ef196d2164",
+    "reference_tcad/simplemos_sentaurus2022/spatial_attribution/m13_state_summary.csv": "0bcf21280739b7bcf297f4bd7cac19526ab903346456790cb2d904f059da3f7c",
+    "reference_tcad/simplemos_sentaurus2022/true_no_bgn_factorial/m40_true_no_bgn_factorial_report.json": "1bffb4582a2dc39944b988c8a58956fbcd3677e47179a748ba670228ef59c455"
+  },
+  "implementation_hashes": {
+    "scripts/run_simplemos_m63_smooth_nwell_attribution.py": "7a18bdfae2276e860d7e02d92626cfb3f6f8a875ea3ed1714e5959286c45c1d3"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/smooth_nwell_attribution/m63_smooth_nwell_attribution_report.json": "1df662da67cca14d1fb11671845e6fc67b2d05584a629a76fd0fec73fd15f1c3",
+    "reference_tcad/simplemos_sentaurus2022/smooth_nwell_attribution/m63_smooth_window_point_ledger.csv": "c1d86b97a5d35759938f8a05cdf5c8ddbba8de991335e3f61e7cdbcea4456219",
+    "reference_tcad/simplemos_sentaurus2022/smooth_nwell_attribution/m63_curve_shape_ledger.csv": "08ded08a401c2416fc85373bd497eb0ad0701274e9e477350697bc92fbfcb974",
+    "reference_tcad/simplemos_sentaurus2022/smooth_nwell_attribution/m63_constant_current_threshold_ledger.csv": "02f72479fc2dc47e2fd4cb7f781121db1a23298607eefb877ec2ee293ac3c0b8",
+    "reference_tcad/simplemos_sentaurus2022/smooth_nwell_attribution/m63_nwell_pair_attribution_ledger.csv": "4e49daf2e7893ccacf2367081d4b4f9ae318156d044358e6b20b2db2899a6ef8",
+    "reference_tcad/simplemos_sentaurus2022/smooth_nwell_attribution/m63_m13_mobility_crosscheck_ledger.csv": "0c0e198851d0c3aec1416830666da6d45b000290ffff4cf5c3a8d5eaf361e0ec",
+    "docs/validation/simplemos_m63_smooth_nwell_attribution_2026-09-02.md": "129c97b6c39b3cc72d08a24ddd179956b08788e4a1b4b508575660211978b584",
+    "docs/validation/reports/simplemos_m63/artifact.json": "809fa9abe5847306e6c43b85b9f4cfb4ddb51071012e4f9bc1a7a9ab181a426e"
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "input_point_count": true,
+    "curve_count": true,
+    "pair_count": true,
+    "mobility_crosscheck_count": true,
+    "smooth_point_completeness": true,
+    "constant_current_completeness": true,
+    "classification_declared": true,
+    "no_new_solve": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

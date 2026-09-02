@@ -1,0 +1,5 @@
+environment,tool,available,documented_nodal_dataset_write,roundtrip_attempted,roundtrip_preserves_unrelated_fields,decision
+local Windows,tdx,False,False,False,False,not a candidate
+Sentaurus T-2022.03-SP2,tdx Tcl interface,True,True,True,False,rejected: no-edit save changes unrelated fields
+Sentaurus T-2022.03-SP2,tdr2ascii/ascii2tdr,False,False,False,False,not a candidate
+repository,sentaurus_import.exe,True,False,False,False,read-only verifier only

@@ -1,0 +1,8 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M61 path-sensitivity execution gate",
+  "status": "accepted",
+  "classification": "not_required_m60_decisive",
+  "summary": "M61/E2 not required because M60/E1 was decisive",
+  "report": "reference_tcad/simplemos_sentaurus2022/path_sensitivity_gate/m61_path_sensitivity_gate_report.json"
+}

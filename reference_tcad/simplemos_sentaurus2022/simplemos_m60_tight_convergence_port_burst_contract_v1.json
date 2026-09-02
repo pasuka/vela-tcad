@@ -1,0 +1,107 @@
+{
+  "schema": "vela.simplemos.sdevice.m60_tight_convergence_port_burst_contract.v1",
+  "contract_id": "simplemos-sdevice-m60-tight-convergence-port-burst-v1",
+  "objective": "Test the M59 box-residual hypothesis by rerunning the immutable SimpleMOS matrix with one frozen tight nonlinear-convergence bundle, comparing default and DirectCurrent observables at every exact bias while retaining CNormPrint logs and keeping all device physics, meshes, contacts, and bias paths unchanged.",
+  "created_at": "2026-09-02",
+  "upstream": {
+    "required_m59_status": "frozen",
+    "required_m59_classification": "port_observable_burst_association_plus_smooth_nwell_growth",
+    "required_m46_point_count": 816,
+    "required_m8_curve_count": 16,
+    "closed_topics": [
+      "SG current-kernel consistency",
+      "general Vela contact-current extraction",
+      "quasi-Fermi packing",
+      "HFS calibration",
+      "BGN and SRH model selection",
+      "M50-M55 terminal-observable definitions",
+      "M56-M58 interface, boundary quadrature, and frozen topology audits"
+    ]
+  },
+  "matrix": {
+    "devices": ["n17", "n18", "n19", "n20", "n21", "n22", "n23", "n24"],
+    "drain_voltages_V": [0.05, 1.0],
+    "gate_voltages_V": {"start": 0.0, "stop": 2.5, "step": 0.05, "count": 51},
+    "current_algorithms": ["default", "DirectCurrent"],
+    "sentaurus_case_count": 32,
+    "terminal_state_count": 1632,
+    "core_controls": [
+      {"device": "n23", "role": "target"},
+      {"device": "n19", "role": "low-background control"},
+      {"device": "n24", "role": "high-LDD control"}
+    ]
+  },
+  "intervention": {
+    "baseline_math": "Math { Extrapolate Iterations=20 ExitOnFailure }",
+    "tight_math": "Math { Extrapolate RelErrControl Digits=8 ErrRef(Electron)=1e2 ErrRef(Hole)=1e2 Iterations=20 ExitOnFailure CNormPrint }",
+    "single_conceptual_axis": "nonlinear convergence accuracy bundle",
+    "current_observer_pair": "the DirectCurrent flag is added only to the paired observer deck; both paired decks use the identical tight convergence bundle",
+    "physics_change": false,
+    "mesh_change": false,
+    "bias_path_change": false,
+    "production_default_change": false,
+    "reference_policy": "tight-convergence results are diagnostic secondary references and do not replace M8/M46"
+  },
+  "diagnostics": {
+    "cnormprint": "retain complete console log for every case",
+    "exact_terminal_components": ["eCurrent", "hCurrent", "TotalCurrent"],
+    "contacts": ["source", "drain", "gate", "substrate"],
+    "core_snapshot_gate_voltages_V": [0.0, 0.05, 0.1, 0.15, 0.8],
+    "core_snapshot_fields": [
+      "Potential", "eDensity", "hDensity", "eQuasiFermi", "hQuasiFermi",
+      "eCurrent", "hCurrent", "SRH"
+    ],
+    "snapshot_interpolation": "forbidden"
+  },
+  "analysis": {
+    "observable_gap": "tight default substrate eCurrent minus tight DirectCurrent substrate eCurrent",
+    "observable_fraction": "observable_gap divided by tight default drain TotalCurrent",
+    "burst_flag": "absolute observable_fraction at or above 0.02",
+    "baseline_comparison": "compare tight default drain current with frozen M46 default and Vela values at every exact bias",
+    "target": {"device": "n23", "drain_voltage_V": 0.05, "gate_voltage_V": 0.05},
+    "classifications": {
+      "tight_convergence_suppresses_port_bursts": "The n23 target burst fraction falls below 0.02, its default-Vela error falls at or below 0.035 dex, at least 90 percent of its frozen default-minus-Direct gap is removed, no full-matrix point remains burst-flagged, and non-burst M46 points remain within 0.005 dex.",
+      "tight_convergence_reduces_but_does_not_suppress_port_bursts": "The target observable gap is reduced by at least 50 percent but one or more suppression, full-matrix, or stability gates fail.",
+      "tight_convergence_no_material_burst_effect": "The target observable gap reduction is below 50 percent while paired runs and invariance checks are complete.",
+      "tight_convergence_changes_solved_state_between_observers": "Default and DirectCurrent paired core snapshots differ beyond frozen tolerances.",
+      "execution_or_replay_mismatch": "A deck, exact bias, terminal component, CNormPrint log, source hash, or required state is missing or inconsistent."
+    },
+    "claim_guard": "Only the first classification supports the M59 continuity-residual hypothesis and a sub-fA secondary-reference qualification rule; no outcome authorizes changing production defaults or applying an empirical current correction."
+  },
+  "acceptance": {
+    "required_sentaurus_release": "T-2022.03-SP2",
+    "required_case_count": 32,
+    "required_terminal_state_count": 1632,
+    "required_algorithm_point_count": 816,
+    "exact_bias_tolerance_V": 1e-10,
+    "burst_absolute_fraction": 0.02,
+    "target_default_vela_error_suppression_dex": 0.035,
+    "target_observable_gap_reduction_fraction": 0.90,
+    "material_gap_reduction_fraction": 0.50,
+    "maximum_nonburst_default_current_log_shift_dex": 0.005,
+    "state_scalar_absolute_tolerance": 1e-20,
+    "state_scalar_symmetric_relative_tolerance": 1e-12,
+    "state_vector_absolute_tolerance": 1e-20,
+    "state_vector_symmetric_relative_tolerance": 1e-12,
+    "cnormprint_log_required_per_case": true,
+    "contract_hash_must_remain_unchanged": true,
+    "upstream_hashes_must_remain_unchanged": true,
+    "classification_must_be_declared": true,
+    "historical_artifacts_must_not_be_rewritten": true
+  },
+  "conditional_next_steps": {
+    "tight_convergence_suppresses_port_bursts": "freeze a diagnostic sub-fA qualification rule and proceed to M63",
+    "tight_convergence_reduces_but_does_not_suppress_port_bursts": "proceed to M63 and retain M61 as a later path-sensitivity discriminator",
+    "tight_convergence_no_material_burst_effect": "proceed to M63, then execute M61 after M62",
+    "tight_convergence_changes_solved_state_between_observers": "stop observer attribution and audit deck pairing",
+    "execution_or_replay_mismatch": "repair only the execution mismatch under an explicit erratum"
+  },
+  "forbidden_work": [
+    "changing Digits, ErrRef, RelErrControl, Iterations, or the frozen bundle after seeing results",
+    "changing HFS, SG, BGN, SRH, mobility, interface, contact, mesh, doping, or bias path",
+    "using a global empirical k correction",
+    "rewriting or replacing M8/M46 references",
+    "claiming a Sentaurus defect without a passing suppression classification",
+    "interpolating terminal or field states"
+  ]
+}

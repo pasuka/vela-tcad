@@ -1,0 +1,20 @@
+{
+  "schema": "vela.simplemos.sdevice.m59_port_observable_decomposition_contract_freeze.v1",
+  "status": "frozen_before_execution",
+  "frozen_at": "2026-09-02",
+  "contract_path": "reference_tcad/simplemos_sentaurus2022/simplemos_m59_port_observable_decomposition_contract_v1.json",
+  "contract_sha256": "5479ea7835ac60eeef1b26c3733fbfa2148f53aed2bd16ae08cfdb88142f0a3e",
+  "upstream_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/full_matrix_requalification/m46_pointwise_delta.csv": "346b2b28d17eb26d5b29d4457ab493a37379d14c9700fa843f82b4b563ef9d9e",
+    "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_terminal_component_ledger.csv": "53abf1031067a55b468fc1e354501485c79d03087bb37783ff5540395c5b982a",
+    "reference_tcad/simplemos_sentaurus2022/terminal_common_mode_attribution/m54_state_decomposition_ledger.csv": "acb5cac9540821a60389c20a1882825b5601f76515e7c1216965b9edf8690815",
+    "reference_tcad/simplemos_sentaurus2022/compensation_contour_mesh_audit/m58_device_compensation_mesh_ledger.csv": "25e10dcf942e54b6897b8ebaf0070fb89c1e866ac239f00a0a2ee91a5d16505d",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m58_compensation_contour_mesh_audit_evidence.json": "ff2b1e08f0c9e0f8304f792ddaf23821c97ec1ed438f26c3fe1a49a9fe4b685b"
+  },
+  "execution_policy": {
+    "new_sentaurus_execution": false,
+    "new_vela_execution": false,
+    "historical_artifact_rewrite": false,
+    "threshold_or_classification_changes_after_freeze": false
+  }
+}

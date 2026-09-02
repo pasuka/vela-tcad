@@ -1,0 +1,20 @@
+{
+  "schema": "vela.simplemos.sdevice.m63_smooth_nwell_attribution_contract_freeze.v1",
+  "status": "frozen_before_analysis",
+  "frozen_at": "2026-09-02",
+  "contract_path": "reference_tcad/simplemos_sentaurus2022/simplemos_m63_smooth_nwell_attribution_contract_v1.json",
+  "contract_sha256": "045827a15c28d8f9d51b251f6f935f988204435eb45fe09e01df114275714266",
+  "upstream_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m60_tight_convergence_port_burst_evidence.json": "dd9e4866f953e6e1051bb42f0bbf06db4fffa5736a476308f524c443f9bae96c",
+    "reference_tcad/simplemos_sentaurus2022/tight_convergence_port_burst/m60_tight_default_direct_point_ledger.csv": "52ec0f51a7f2b0095b4718e61ed288eb477fc013c6d432404cdf06ef196d2164",
+    "reference_tcad/simplemos_sentaurus2022/spatial_attribution/m13_state_summary.csv": "0bcf21280739b7bcf297f4bd7cac19526ab903346456790cb2d904f059da3f7c",
+    "reference_tcad/simplemos_sentaurus2022/true_no_bgn_factorial/m40_true_no_bgn_factorial_report.json": "1bffb4582a2dc39944b988c8a58956fbcd3677e47179a748ba670228ef59c455"
+  },
+  "execution_policy": {
+    "new_sentaurus_execution": false,
+    "new_vela_execution": false,
+    "read_only_analysis": true,
+    "production_reference_replacement": false,
+    "threshold_or_classification_changes_after_freeze": false
+  }
+}
