@@ -1,0 +1,50 @@
+{
+  "schema": "vela.simplemos.sdevice.m52_artifact.v1",
+  "title": "SimpleMOS M52 DirectCurrent attribution",
+  "status": "complete",
+  "classification": "direct_matches_weighted",
+  "report": "reference_tcad/simplemos_sentaurus2022/direct_current_attribution/m52_direct_current_attribution_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/direct_current_attribution/m52_direct_current_state_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/direct_current_attribution/m52_terminal_component_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/direct_current_attribution/m52_field_invariance_ledger.csv"
+  ],
+  "document": "docs/validation/simplemos_m52_direct_current_attribution_2026-09-02.md",
+  "target": {
+    "state": "n23_vd_0p05_vg_0p05",
+    "device": "n23",
+    "gate_voltage_V": 0.05,
+    "drain_voltage_V": 0.05,
+    "m50_default_substrate_electron_A_per_um": 4.67098440284444e-17,
+    "m51_weighted_substrate_electron_A_per_um": -2.37611367356691e-19,
+    "m52_direct_substrate_electron_A_per_um": -2.37611367355765e-19,
+    "m50_native_normal_A_per_um": -2.37679722302952e-19,
+    "m50_native_negative_normal_A_per_um": 2.37679722302952e-19,
+    "m52_native_normal_A_per_um": -2.37679722302952e-19,
+    "direct_minus_default_A_per_um": -4.694745539580017e-17,
+    "direct_minus_weighted_A_per_um": 9.25987117261383e-31,
+    "direct_minus_native_normal_A_per_um": 6.835494718702424e-23,
+    "direct_minus_nearest_native_A_per_um": 6.835494718702424e-23,
+    "absolute_default_native_gap_reduction_fraction": 0.9999985440137897,
+    "direct_native_normal_relative_difference": 0.0002875926752383927,
+    "native_flux_replays": true,
+    "direct_matches_default": false,
+    "direct_matches_weighted": true,
+    "direct_matches_native_normal": false,
+    "direct_matches_native_negative_normal": false,
+    "direct_matches_either_native_orientation": false
+  },
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "exact_state_count": true,
+    "terminal_component_row_count": true,
+    "all_biases_exact": true,
+    "all_values_finite": true,
+    "state_fields_invariant": true,
+    "native_flux_replays": true,
+    "classification_declared": true,
+    "defaults_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": true
+  }
+}
