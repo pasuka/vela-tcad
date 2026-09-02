@@ -9,9 +9,9 @@ Sentaurus/Vela current comparison are complete. Both Vela collector sweeps
 converged through 3 V. The exact 31 requested collector voltages, direct
 three-terminal currents, and KCL operational gates pass for M0 and M1.
 
-Numerical parity is reported as characterization-only. WP0-WP2 intentionally
-reserved the Vela thresholds, so this first run must not invent a post-hoc
-tolerance.
+The M1 numerical-parity gate also passes after aligning the electron
+Scharfetter maximum lifetime with the T-2022.03-SP2 Silicon default. M0 remains
+an intentionally minimal characterization-only baseline.
 
 ## Common input
 
@@ -39,13 +39,28 @@ iterations. No M1 physics term was disabled or weakened.
 | Model | Points | Max relative Vela KCL | Sentaurus Ic @ 3 V (A/um) | Vela Ic @ 3 V (A/um) | Ic ratio | Sentaurus Ib @ 3 V (A/um) | Vela Ib @ 3 V (A/um) | Ib ratio | Sentaurus beta | Vela beta |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | M0 | 31 | 2.086e-9 | 1.843315e-6 | 3.397337e-6 | 1.84306 | 1.603892e-8 | 7.127638e-9 | 0.444397 | 114.928 | 476.643 |
-| M1 | 31 | 3.889e-9 | 2.807532e-6 | 2.679006e-6 | 0.954221 | 6.018761e-8 | 2.741779e-7 | 4.55539 | 46.6464 | 9.77105 |
+| M1 | 31 | 2.738e-9 | 2.807532e-6 | 2.790669e-6 | 0.993993 | 6.018761e-8 | 6.332852e-8 | 1.05219 | 46.6464 | 44.0665 |
 
-Over VCE=0.5-3.0 V, the M1 median absolute log10 error is 0.0204 decades for
-Ic and 0.6603 decades for Ib. Thus M1 collector transport is already close to
-the Sentaurus oracle, while base-current/recombination behavior is the primary
-remaining discrepancy. M0 is useful as a numerical baseline but does not show
-comparable quantitative agreement.
+Over VCE=0.5-3.0 V, the M1 maximum absolute log10 errors are 0.002694 decades
+for Ic, 0.022092 decades for Ib, and 0.024735 decades for beta. All are below
+the pre-registered 0.05-decade limit. This corresponds to maximum magnitude
+ratio deviations of about 0.62%, 5.21%, and 5.54%, respectively. M0 is useful
+as a numerical baseline but does not show comparable quantitative agreement.
+
+## M1 SRH parameter closure
+
+The original Vela M1 deck used an electron `tau_max` of `3e-8 s`. A direct
+`sdevice -P:Silicon` export from T-2022.03-SP2 gives the Scharfetter pair
+`taumax = 1e-5, 3e-6 s` for electrons and holes. The remaining Scharfetter
+inputs already matched: `taumin=0`, `Nref=1e16 cm^-3`, `gamma=1`, and
+`Etrap=0 eV`. The exported `models.par` diagnostic has SHA-256
+`aab018ee48a57521decb4d70fb3be4f67f02a1c6e082c930330e5a838a810b4f`.
+
+The numerical gate was registered before the full rerun in
+`contracts/comparison_thresholds.json`: over VCE=0.5-3.0 V, the maximum
+absolute log10 errors for Ic, Ib, and beta must each be no greater than 0.05
+decades. The comparison command now returns failure when any asserted gate
+fails.
 
 ## Reproduction
 

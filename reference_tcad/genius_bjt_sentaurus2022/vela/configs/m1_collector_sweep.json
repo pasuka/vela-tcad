@@ -41,7 +41,7 @@
       "reference_temperature_K": 300.0,
       "electron_temperature_exponent": -1.5,
       "hole_temperature_exponent": -1.5,
-      "electron": {"tau_min_s": 0.0, "tau_max_s": 3e-8, "reference_doping_m3": 1e16, "gamma": 1.0},
+      "electron": {"tau_min_s": 0.0, "tau_max_s": 1e-5, "reference_doping_m3": 1e16, "gamma": 1.0},
       "hole": {"tau_min_s": 0.0, "tau_max_s": 3e-6, "reference_doping_m3": 1e16, "gamma": 1.0}
     },
     "impact_ionization": {"model": "none"},

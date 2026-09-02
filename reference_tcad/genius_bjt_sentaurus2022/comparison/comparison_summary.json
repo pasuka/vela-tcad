@@ -1,6 +1,6 @@
 {
-  "schema_version": 1,
-  "comparison_scope": "WP3-WP5 first common-input characterization",
+  "schema_version": 2,
+  "comparison_scope": "WP3-WP5 common-input comparison with pre-registered M1 numerical parity",
   "M0": {
     "model": "M0",
     "sentaurus_input": "reference_tcad\\genius_bjt_sentaurus2022\\reference_curves\\bjt_m0_output.csv",
@@ -22,6 +22,10 @@
       "median": 0.3500614772111583,
       "maximum": 0.3522293591173015
     },
+    "active_region_beta_absolute_log10_error": {
+      "median": 0.6156438567623895,
+      "maximum": 0.6177684550064049
+    },
     "at_VCE_3V": {
       "sentaurus_Ic_A_per_um": 1.84331503939666e-06,
       "vela_Ic_A_per_um": 3.39733726092001e-06,
@@ -34,7 +38,8 @@
     },
     "numerical_parity_gate": {
       "status": "characterization_only",
-      "reason": "WP3-WP5 records the first common-input comparison; no numerical parity tolerance was pre-registered."
+      "reason": "M0 is the intentionally minimal numerical baseline and is not expected to match the M1 physics oracle.",
+      "pass": null
     },
     "operational_pass": true
   },
@@ -45,35 +50,52 @@
     "compared_point_count": 31,
     "maximum_voltage_selection_error_V": 3.1086244689504383e-15,
     "all_vela_points_converged": true,
-    "maximum_vela_absolute_kcl_residual_A_per_um": 1.1357357628755745e-14,
-    "maximum_vela_relative_kcl_residual": 3.889265195353946e-09,
+    "maximum_vela_absolute_kcl_residual_A_per_um": 7.750867575139522e-15,
+    "maximum_vela_relative_kcl_residual": 2.7383681774782544e-09,
     "active_region_VCE_range_V": [
       0.5,
       3.0
     ],
     "active_region_Ic_absolute_log10_error": {
-      "median": 0.020405130807991848,
-      "maximum": 0.02046408184098335
+      "median": 0.0026585350046444455,
+      "maximum": 0.0026936807556736594
     },
     "active_region_Ib_absolute_log10_error": {
-      "median": 0.6602869944070853,
-      "maximum": 0.6626480377375714
+      "median": 0.022069185808629852,
+      "maximum": 0.022092206348029615
+    },
+    "active_region_beta_absolute_log10_error": {
+      "median": 0.02472772081327427,
+      "maximum": 0.024734608871204083
     },
     "at_VCE_3V": {
       "sentaurus_Ic_A_per_um": 2.80753243397542e-06,
-      "vela_Ic_A_per_um": 2.679005863798149e-06,
-      "Ic_magnitude_ratio_vela_over_sentaurus": 0.9542208066336461,
+      "vela_Ic_A_per_um": 2.790668781343734e-06,
+      "Ic_magnitude_ratio_vela_over_sentaurus": 0.9939934255335361,
       "sentaurus_Ib_A_per_um": 6.01876121735591e-08,
-      "vela_Ib_A_per_um": 2.741779032535308e-07,
-      "Ib_magnitude_ratio_vela_over_sentaurus": 4.555387618018503,
+      "vela_Ib_A_per_um": 6.332851732094051e-08,
+      "Ib_magnitude_ratio_vela_over_sentaurus": 1.0521852426762537,
       "sentaurus_beta_abs": 46.64635018049099,
-      "vela_beta_abs": 9.771049497453072
+      "vela_beta_abs": 44.066542205638505
     },
     "numerical_parity_gate": {
-      "status": "characterization_only",
-      "reason": "WP3-WP5 records the first common-input comparison; no numerical parity tolerance was pre-registered."
+      "status": "asserted",
+      "reason": "Pre-registered before the full M1 rerun after importing the T-2022.03-SP2 Silicon Scharfetter lifetime parameters.",
+      "thresholds_maximum_absolute_log10_error": {
+        "Ic": 0.05,
+        "Ib": 0.05,
+        "beta": 0.05
+      },
+      "observed_maximum_absolute_log10_error": {
+        "Ic": 0.0026936807556736594,
+        "Ib": 0.022092206348029615,
+        "beta": 0.024734608871204083
+      },
+      "pass": true
     },
     "operational_pass": true
   },
-  "operational_pass": true
+  "operational_pass": true,
+  "numerical_parity_pass": true,
+  "overall_pass": true
 }

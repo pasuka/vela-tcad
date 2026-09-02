@@ -82,7 +82,7 @@ Run-local raw TDR, PLT, and log files are retained outside source control at
 The remote copy is under
 `/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2`.
 
-## Validated WP3-WP5 result
+## Validated WP3-WP5 and M1 parity result
 
 Both Vela collector sweeps reached 3 V with 74 accepted/internal points. The
 comparison tool extracts only the exact 31 requested 0.1 V points and reads
@@ -90,9 +90,15 @@ collector, base, and emitter currents directly. Convergence, voltage matching,
 and three-terminal KCL pass for both model ladders.
 
 At VCE=3 V, M0 gives an Ic magnitude ratio Vela/Sentaurus of 1.8431 and beta
-values of 476.64 versus 114.93. M1 gives an Ic ratio of 0.95422 and beta values
-of 9.771 versus 46.646; its remaining mismatch is dominated by Vela base
-current being 4.555 times the Sentaurus value. These are characterization
-results, not a numerical-parity pass: no Vela error tolerance was registered
-before WP3-WP5. See `comparison/comparison_summary.md` and
-`reports/wp3_wp5_execution_report.md`.
+values of 476.64 versus 114.93; it remains a characterization-only numerical
+baseline. The original M1 base-current excess was traced to an electron
+Scharfetter `tau_max` of `3e-8 s` instead of the T-2022.03-SP2 Silicon default
+`1e-5 s`. After correcting that input and rerunning all 31 comparison points,
+M1 gives Ic and Ib ratios of 0.993993 and 1.05219 at 3 V, with beta values of
+44.067 versus 46.646.
+
+The asserted M1 gate covers VCE=0.5-3.0 V and limits the maximum absolute
+log10 error of Ic, Ib, and beta to 0.05 decades each. Observed maxima are
+0.002694, 0.022092, and 0.024735 decades, so operational and M1 numerical
+parity gates pass. See `contracts/comparison_thresholds.json`,
+`comparison/comparison_summary.md`, and `reports/wp3_wp5_execution_report.md`.

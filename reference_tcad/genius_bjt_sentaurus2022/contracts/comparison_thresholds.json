@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "wp1_structure": {
     "contact_endpoint_tolerance_um": 1e-8,
     "coordinate_tolerance_um": 1e-8,
@@ -15,7 +15,7 @@
     "required_terminal_currents": ["collector", "base", "emitter"]
   },
   "wp3_wp5_vela_comparison": {
-    "status": "operational gates asserted; numerical parity is characterization-only",
+    "status": "operational gates asserted; M1 numerical parity gate asserted",
     "primary_observables": ["Ic-Vce", "Ib-Vce", "beta-Vce", "terminal KCL"],
     "secondary_observables": ["electrostatic potential", "electron density", "hole density"],
     "required_collector_points": 31,
@@ -23,7 +23,21 @@
     "maximum_relative_kcl_residual": 1e-6,
     "maximum_absolute_kcl_residual_A_per_um": 1e-18,
     "required_terminal_currents": ["collector", "base", "emitter"],
-    "numerical_parity_tolerance": null,
-    "numerical_parity_reason": "No Vela error tolerance was pre-registered before the first common-input run."
+    "numerical_parity": {
+      "active_region_VCE_range_V": [0.5, 3.0],
+      "models": {
+        "M0": {
+          "status": "characterization_only",
+          "reason": "M0 is the intentionally minimal numerical baseline and is not expected to match the M1 physics oracle."
+        },
+        "M1": {
+          "status": "asserted",
+          "maximum_Ic_absolute_log10_error": 0.05,
+          "maximum_Ib_absolute_log10_error": 0.05,
+          "maximum_beta_absolute_log10_error": 0.05,
+          "reason": "Pre-registered before the full M1 rerun after importing the T-2022.03-SP2 Silicon Scharfetter lifetime parameters."
+        }
+      }
+    }
   }
 }

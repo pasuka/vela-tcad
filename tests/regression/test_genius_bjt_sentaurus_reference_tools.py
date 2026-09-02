@@ -81,6 +81,38 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing contacts"):
             COMPARISON.select_vela_terminals(rows, 0.3)
 
+    def test_asserted_numerical_parity_checks_all_three_observables(self) -> None:
+        rows = [
+            {
+                "Ic_absolute_log10_error": 0.01,
+                "Ib_absolute_log10_error": 0.04,
+                "beta_absolute_log10_error": 0.03,
+            },
+            {
+                "Ic_absolute_log10_error": 0.02,
+                "Ib_absolute_log10_error": 0.06,
+                "beta_absolute_log10_error": 0.04,
+            },
+        ]
+        contract = {
+            "status": "asserted",
+            "maximum_Ic_absolute_log10_error": 0.05,
+            "maximum_Ib_absolute_log10_error": 0.05,
+            "maximum_beta_absolute_log10_error": 0.05,
+            "reason": "test",
+        }
+        result = COMPARISON.evaluate_numerical_parity(rows, contract)
+        self.assertFalse(result["pass"])
+        self.assertEqual(
+            result["observed_maximum_absolute_log10_error"]["Ib"], 0.06
+        )
+
+    def test_characterization_only_parity_is_not_asserted(self) -> None:
+        result = COMPARISON.evaluate_numerical_parity(
+            [], {"status": "characterization_only", "reason": "baseline"}
+        )
+        self.assertIsNone(result["pass"])
+
 
 if __name__ == "__main__":
     unittest.main()
