@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "device": "Genius NPN BJT",
+  "bias": {
+    "VBE_V": 0.7,
+    "VCE_V": 3.0
+  },
+  "mesh": {
+    "nodes": 5611,
+    "triangles": 10940
+  },
+  "maximum_sentaurus_vela_coordinate_error_um": 0.0,
+  "spatial_error_metrics": {
+    "Potential": {
+      "rmse": 1.1413171169968304,
+      "maximum_absolute_error": 15.08032608860821,
+      "difference_unit_scale": 1000.0
+    },
+    "log\u2081\u2080 electron density": {
+      "rmse": 0.0037687336179630967,
+      "maximum_absolute_error": 0.036136403931896766,
+      "difference_unit_scale": 1.0
+    },
+    "log\u2081\u2080 hole density": {
+      "rmse": 0.3232003916441748,
+      "maximum_absolute_error": 1.6835999745417674,
+      "difference_unit_scale": 1.0
+    }
+  },
+  "sources_sha256": {
+    "mesh": "b0b541a5db3fd3d6805e6615ade420c8f62d85fb01b8c161a1ba1fb8b4ee3104",
+    "doping": "312bd1f60d9019b403e73720321a38709dbb0cb7722829601e3415cc87173f1a",
+    "vela_m1_vce3_state": "2f01db379d32330a26c2085de9e987720fcf2c2d27e29144da5225d05682bc66",
+    "sentaurus_m1_vce3_nodes": "b93f00e70a5be270c414dc1838c4c8eb9048c71b234fee158bb9c50c998e8e60",
+    "sentaurus_potential": "4f076d42bcb4953686d56330c8c7dd587e519b6c817fb50b8a8e7595908c443d",
+    "sentaurus_electron_density": "ef5266a24d43887bad31020bcab806f136ed44c9015559b1e6065027699655c3",
+    "sentaurus_hole_density": "75e277cd89a2d183e77c91adeeb9af9c8798fe2464de93a7bdf7cfd21c0b73ac",
+    "m0_comparison": "1cc43ae5707b5f299bc5c859269e63e33d579835f34b002d6ec730103baf6dff",
+    "m1_comparison": "b64ed1486b884ee70e50d4772387bb0feec92432c88bccfe85b149653c064014"
+  },
+  "outputs_sha256": {
+    "mesh": "4e1adbacc5b0fa5a5db8e16c5bfcf6809f7d4810c13ddec2c6e1c70a241ad3d8",
+    "fields": "e24502162ef73b21e473b76ff47004fa13b58f9eedf4c84b52d771c176f4dfbc",
+    "curves": "7385854dc2de3e3f4d50ed684bf3774f8a3e745ed43d6824cfd9b8048ef9588f",
+    "parity": "b23bb3925de5a86d300497162e9661acd9d45125dede790951d6ef5c7c79ffdf"
+  }
+}

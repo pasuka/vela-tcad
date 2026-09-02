@@ -102,3 +102,10 @@ log10 error of Ic, Ib, and beta to 0.05 decades each. Observed maxima are
 0.002694, 0.022092, and 0.024735 decades, so operational and M1 numerical
 parity gates pass. See `contracts/comparison_thresholds.json`,
 `comparison/comparison_summary.md`, and `reports/wp3_wp5_execution_report.md`.
+
+## Comparison figures
+
+Publication-ready mesh, M1 spatial-field, terminal-curve, and parity-error
+figures are stored in `figures/`. Their source/output hashes and field-error
+metrics are recorded in `figures/figure_manifest.json`; see
+`figures/README.md` for plotting conventions and the reproduction command.
