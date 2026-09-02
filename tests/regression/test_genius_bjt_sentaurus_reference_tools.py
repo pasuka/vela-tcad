@@ -29,6 +29,30 @@ assert COMPARISON_SPEC is not None and COMPARISON_SPEC.loader is not None
 COMPARISON = importlib.util.module_from_spec(COMPARISON_SPEC)
 COMPARISON_SPEC.loader.exec_module(COMPARISON)
 
+SPATIAL_SCRIPT = (
+    Path(__file__).resolve().parents[2]
+    / "scripts"
+    / "compare_genius_bjt_spatial_fields.py"
+)
+SPATIAL_SPEC = importlib.util.spec_from_file_location(
+    "compare_genius_bjt_spatial_fields", SPATIAL_SCRIPT
+)
+assert SPATIAL_SPEC is not None and SPATIAL_SPEC.loader is not None
+SPATIAL = importlib.util.module_from_spec(SPATIAL_SPEC)
+SPATIAL_SPEC.loader.exec_module(SPATIAL)
+
+TRANSPORT_SCRIPT = (
+    Path(__file__).resolve().parents[2]
+    / "scripts"
+    / "compare_genius_bjt_transport_fields.py"
+)
+TRANSPORT_SPEC = importlib.util.spec_from_file_location(
+    "compare_genius_bjt_transport_fields", TRANSPORT_SCRIPT
+)
+assert TRANSPORT_SPEC is not None and TRANSPORT_SPEC.loader is not None
+TRANSPORT = importlib.util.module_from_spec(TRANSPORT_SPEC)
+TRANSPORT_SPEC.loader.exec_module(TRANSPORT)
+
 
 class GeniusBjtReferenceToolsTest(unittest.TestCase):
     def test_outside_distance_is_zero_inside_and_distance_outside(self) -> None:
@@ -81,16 +105,18 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing contacts"):
             COMPARISON.select_vela_terminals(rows, 0.3)
 
-    def test_asserted_numerical_parity_checks_all_three_observables(self) -> None:
+    def test_asserted_numerical_parity_checks_all_four_observables(self) -> None:
         rows = [
             {
                 "Ic_absolute_log10_error": 0.01,
                 "Ib_absolute_log10_error": 0.04,
+                "Ie_absolute_log10_error": 0.02,
                 "beta_absolute_log10_error": 0.03,
             },
             {
                 "Ic_absolute_log10_error": 0.02,
                 "Ib_absolute_log10_error": 0.06,
+                "Ie_absolute_log10_error": 0.03,
                 "beta_absolute_log10_error": 0.04,
             },
         ]
@@ -98,6 +124,7 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
             "status": "asserted",
             "maximum_Ic_absolute_log10_error": 0.05,
             "maximum_Ib_absolute_log10_error": 0.05,
+            "maximum_Ie_absolute_log10_error": 0.05,
             "maximum_beta_absolute_log10_error": 0.05,
             "reason": "test",
         }
@@ -107,11 +134,95 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
             result["observed_maximum_absolute_log10_error"]["Ib"], 0.06
         )
 
+    def test_asserted_numerical_parity_fails_on_emitter_current(self) -> None:
+        rows = [
+            {
+                "Ic_absolute_log10_error": 0.01,
+                "Ib_absolute_log10_error": 0.01,
+                "Ie_absolute_log10_error": 0.051,
+                "beta_absolute_log10_error": 0.01,
+            }
+        ]
+        contract = {
+            "status": "asserted",
+            "maximum_Ic_absolute_log10_error": 0.05,
+            "maximum_Ib_absolute_log10_error": 0.05,
+            "maximum_Ie_absolute_log10_error": 0.05,
+            "maximum_beta_absolute_log10_error": 0.05,
+            "reason": "test",
+        }
+        result = COMPARISON.evaluate_numerical_parity(rows, contract)
+        self.assertFalse(result["pass"])
+        self.assertEqual(
+            result["observed_maximum_absolute_log10_error"]["Ie"], 0.051
+        )
+
     def test_characterization_only_parity_is_not_asserted(self) -> None:
         result = COMPARISON.evaluate_numerical_parity(
             [], {"status": "characterization_only", "reason": "baseline"}
         )
         self.assertIsNone(result["pass"])
+
+    def test_spatial_density_gate_uses_sentaurus_reference_floor(self) -> None:
+        contract = {
+            "units": "decade",
+            "error": "log10_vela_minus_log10_sentaurus",
+            "mask": {"type": "sentaurus_reference_min_cm3", "minimum_cm3": 1e10},
+            "maximum_rmse": 0.05,
+            "maximum_p95_absolute_error": 0.05,
+            "maximum_absolute_error": 0.05,
+        }
+        result = SPATIAL.evaluate_gate([4.0, 0.04], [1.0, 1.0e12], contract)
+        self.assertEqual(result["selected_node_count"], 1)
+        self.assertEqual(result["excluded_node_count"], 1)
+        self.assertTrue(result["pass"])
+
+    def test_spatial_gate_checks_rmse_p95_and_maximum(self) -> None:
+        contract = {
+            "units": "V",
+            "error": "vela_minus_sentaurus",
+            "mask": {"type": "all_common_nodes"},
+            "maximum_rmse": 0.1,
+            "maximum_p95_absolute_error": 0.1,
+            "maximum_absolute_error": 0.1,
+        }
+        result = SPATIAL.evaluate_gate([0.0, 0.11], [0.0, 0.0], contract)
+        self.assertFalse(result["checks"]["maximum_absolute_error"])
+        self.assertFalse(result["pass"])
+
+    def test_transport_vector_metric_is_exact_for_equal_fields(self) -> None:
+        result = TRANSPORT.vector_metrics(
+            [(1.0, 0.0), (0.0, 2.0)],
+            [(1.0, 0.0, 0.0), (0.0, 2.0, 0.0)],
+            1e-6,
+        )
+        self.assertEqual(result["normalized_vector_rmse"], 0.0)
+        self.assertAlmostEqual(result["global_vector_cosine_similarity"], 1.0)
+
+    def test_transport_source_metric_preserves_equal_integrals(self) -> None:
+        result = TRANSPORT.source_metrics([1.0, -0.5], [1.0, -0.5], [2.0, 1.0], 1e-6)
+        self.assertEqual(result["normalized_l1_error"], 0.0)
+        self.assertEqual(result["absolute_shape_total_variation"], 0.0)
+        self.assertAlmostEqual(
+            result["signed_integral_A_per_um"]["ratio_vela_over_sentaurus"], 1.0
+        )
+
+    def test_overall_acceptance_requires_terminal_and_spatial_gates(self) -> None:
+        self.assertTrue(COMPARISON.combine_acceptance(True, True, True))
+        self.assertFalse(COMPARISON.combine_acceptance(True, True, False))
+        self.assertFalse(COMPARISON.combine_acceptance(True, False, True))
+        self.assertFalse(COMPARISON.combine_acceptance(False, True, True))
+
+    def test_spatial_summary_rejects_inconsistent_overall_flag(self) -> None:
+        summary = {
+            "fields": {
+                "potential": {"gate": {"pass": True}},
+                "holes": {"gate": {"pass": False}},
+            },
+            "overall_pass": True,
+        }
+        with self.assertRaisesRegex(ValueError, "inconsistent"):
+            COMPARISON.validated_spatial_state_pass(summary)
 
 
 if __name__ == "__main__":

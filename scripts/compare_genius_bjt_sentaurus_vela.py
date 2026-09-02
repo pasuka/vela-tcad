@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -12,6 +13,14 @@ from pathlib import Path
 
 TERMINALS = ("collector", "base", "emitter")
 TARGET_VCE = tuple(index / 10.0 for index in range(31))
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -88,6 +97,7 @@ def evaluate_numerical_parity(
     metric_columns = {
         "Ic": "Ic_absolute_log10_error",
         "Ib": "Ib_absolute_log10_error",
+        "Ie": "Ie_absolute_log10_error",
         "beta": "beta_absolute_log10_error",
     }
     thresholds = {
@@ -159,6 +169,8 @@ def compare_model(
                 "Ib_absolute_log10_error": log_magnitude_error(vib, sib),
                 "sentaurus_Ie_A_per_um": sie,
                 "vela_Ie_A_per_um": vie,
+                "Ie_magnitude_ratio_vela_over_sentaurus": magnitude_ratio(vie, sie),
+                "Ie_absolute_log10_error": log_magnitude_error(vie, sie),
                 "sentaurus_beta_abs": sbeta,
                 "vela_beta_abs": vbeta,
                 "beta_magnitude_ratio_vela_over_sentaurus": magnitude_ratio(vbeta, sbeta),
@@ -201,6 +213,9 @@ def compare_model(
         "active_region_Ib_absolute_log10_error": finite_stats(
             [float(row["Ib_absolute_log10_error"]) for row in active]
         ),
+        "active_region_Ie_absolute_log10_error": finite_stats(
+            [float(row["Ie_absolute_log10_error"]) for row in active]
+        ),
         "active_region_beta_absolute_log10_error": finite_stats(
             [float(row["beta_absolute_log10_error"]) for row in active]
         ),
@@ -214,6 +229,11 @@ def compare_model(
             "vela_Ib_A_per_um": final["vela_Ib_A_per_um"],
             "Ib_magnitude_ratio_vela_over_sentaurus": final[
                 "Ib_magnitude_ratio_vela_over_sentaurus"
+            ],
+            "sentaurus_Ie_A_per_um": final["sentaurus_Ie_A_per_um"],
+            "vela_Ie_A_per_um": final["vela_Ie_A_per_um"],
+            "Ie_magnitude_ratio_vela_over_sentaurus": final[
+                "Ie_magnitude_ratio_vela_over_sentaurus"
             ],
             "sentaurus_beta_abs": final["sentaurus_beta_abs"],
             "vela_beta_abs": final["vela_beta_abs"],
@@ -235,6 +255,29 @@ def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
 def write_text_lf(path: Path, text: str) -> None:
     with path.open("w", newline="\n", encoding="utf-8") as handle:
         handle.write(text)
+
+
+def combine_acceptance(
+    operational_pass: bool,
+    numerical_parity_pass: bool,
+    spatial_state_pass: bool,
+) -> bool:
+    return bool(operational_pass and numerical_parity_pass and spatial_state_pass)
+
+
+def validated_spatial_state_pass(summary: dict[str, object]) -> bool:
+    fields = summary.get("fields")
+    if not isinstance(fields, dict) or not fields:
+        raise ValueError("spatial-state summary has no field gates")
+    field_pass = all(
+        isinstance(field, dict)
+        and isinstance(field.get("gate"), dict)
+        and field["gate"].get("pass") is True
+        for field in fields.values()
+    )
+    if summary.get("overall_pass") is not field_pass:
+        raise ValueError("spatial-state overall_pass is inconsistent with field gates")
+    return field_pass
 
 
 def write_markdown(path: Path, summary: dict[str, object]) -> None:
@@ -268,7 +311,7 @@ def write_markdown(path: Path, summary: dict[str, object]) -> None:
         ]
     )
     gate = summary["M1"]["numerical_parity_gate"]
-    for name in ("Ic", "Ib", "beta"):
+    for name in ("Ic", "Ib", "Ie", "beta"):
         threshold = gate["thresholds_maximum_absolute_log10_error"][name]
         observed = gate["observed_maximum_absolute_log10_error"][name]
         lines.append(
@@ -279,6 +322,7 @@ def write_markdown(path: Path, summary: dict[str, object]) -> None:
             "",
             f"Overall operational pass: **{summary['operational_pass']}**",
             f"Asserted numerical parity pass: **{summary['numerical_parity_pass']}**",
+            f"Asserted spatial-state pass: **{summary['spatial_state_pass']}**",
             f"Overall pass: **{summary['overall_pass']}**",
             "",
         ]
@@ -291,21 +335,23 @@ def main() -> int:
     parser.add_argument("--reference-root", type=Path, required=True)
     parser.add_argument("--vela-run-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--spatial-summary",
+        type=Path,
+        help="Asserted spatial-state summary; defaults to OUTPUT_DIR/spatial_comparison_summary.json",
+    )
     args = parser.parse_args()
 
-    threshold_document = json.loads(
-        (args.reference_root / "contracts" / "comparison_thresholds.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    threshold_path = args.reference_root / "contracts" / "comparison_thresholds.json"
+    threshold_document = json.loads(threshold_path.read_text(encoding="utf-8"))
     parity = threshold_document["wp3_wp5_vela_comparison"]["numerical_parity"]
     active_region = tuple(float(value) for value in parity["active_region_VCE_range_V"])
     if len(active_region) != 2 or active_region[0] > active_region[1]:
         raise ValueError("numerical parity active-region range must contain ordered bounds")
 
     summaries: dict[str, object] = {
-        "schema_version": 2,
-        "comparison_scope": "WP3-WP5 common-input comparison with pre-registered M1 numerical parity",
+        "schema_version": 3,
+        "comparison_scope": "WP3-WP5 common-input comparison with pre-registered terminal and spatial-state gates",
     }
     for model, stem in (("M0", "m0"), ("M1", "m1")):
         rows, model_summary = compare_model(
@@ -328,8 +374,39 @@ def main() -> int:
     summaries["numerical_parity_pass"] = bool(asserted_gates) and all(
         gate["pass"] for gate in asserted_gates
     )
-    summaries["overall_pass"] = bool(
-        summaries["operational_pass"] and summaries["numerical_parity_pass"]
+    spatial_summary_path = (
+        args.spatial_summary
+        if args.spatial_summary is not None
+        else args.output_dir / "spatial_comparison_summary.json"
+    )
+    spatial_summary = json.loads(spatial_summary_path.read_text(encoding="utf-8"))
+    spatial_state_pass = validated_spatial_state_pass(spatial_summary)
+    expected_hashes = {
+        "threshold_contract": sha256(threshold_path),
+        "vela_state": sha256(args.vela_run_root / "m1_vce300_state.csv"),
+    }
+    reported_hashes = spatial_summary.get("source_sha256", {})
+    for name, expected in expected_hashes.items():
+        if reported_hashes.get(name) != expected:
+            raise ValueError(f"stale spatial-state summary: {name} hash mismatch")
+    summaries["spatial_state_gate"] = {
+        "input": str(spatial_summary_path),
+        "common_node_count": spatial_summary.get("common_node_count"),
+        "fields": {
+            name: {
+                "pass": field["gate"]["pass"],
+                "selected_node_count": field["gate"]["selected_node_count"],
+                "thresholds": field["gate"]["thresholds"],
+                "observed": field["gate"]["observed"],
+            }
+            for name, field in spatial_summary["fields"].items()
+        },
+    }
+    summaries["spatial_state_pass"] = spatial_state_pass
+    summaries["overall_pass"] = combine_acceptance(
+        summaries["operational_pass"],
+        summaries["numerical_parity_pass"],
+        summaries["spatial_state_pass"],
     )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     write_text_lf(

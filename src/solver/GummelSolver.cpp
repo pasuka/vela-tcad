@@ -1141,6 +1141,8 @@ void writeDDSolutionVTK(const std::string& filename,
 
     std::vector<Real> srh(N, 0.0);
     std::vector<Real> srh_cm3_s(N, 0.0);
+    std::vector<Real> auger(N, 0.0);
+    std::vector<Real> auger_cm3_s(N, 0.0);
     std::vector<Real> spaceCharge_cm3(N, 0.0);
     std::vector<Real> bandGap_eV(N, std::numeric_limits<Real>::quiet_NaN());
     std::vector<Real> bandgapNarrowing_eV(
@@ -1301,6 +1303,10 @@ void writeDDSolutionVTK(const std::string& filename,
                 doping.donors(i), doping.acceptors(i)));
         srh_cm3_s[i] =
             srh[i] * units.concentrationM3PerInternal() / 1.0e6;
+        auger[i] = recombination.augerRateFromExcessProduct(
+            srhState.excessProduct, n, p);
+        auger_cm3_s[i] =
+            auger[i] * units.concentrationM3PerInternal() / 1.0e6;
         bandToBandGeneration[i] = transportNodeAreas[i] > 0.0
             ? bandToBandSourceIntegrals[i] / transportNodeAreas[i]
             : 0.0;
@@ -1477,6 +1483,8 @@ void writeDDSolutionVTK(const std::string& filename,
         static_cast<std::size_t>(N), sol.psi, pathIonizationSamples);
     writer.addNodeScalar("SRHRecombination", srh);
     writer.addNodeScalar("SRHRecombinationCm3PerS", srh_cm3_s);
+    writer.addNodeScalar("AugerRecombination", auger);
+    writer.addNodeScalar("AugerRecombinationCm3PerS", auger_cm3_s);
     writer.addNodeScalar("SpaceCharge", spaceCharge_cm3);
     writer.addNodeScalar("BandGap", bandGap_eV);
     writer.addNodeScalar("BandgapNarrowing", bandgapNarrowing_eV);

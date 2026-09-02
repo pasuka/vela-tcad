@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "wp1_structure": {
     "contact_endpoint_tolerance_um": 1e-8,
     "coordinate_tolerance_um": 1e-8,
@@ -15,9 +15,9 @@
     "required_terminal_currents": ["collector", "base", "emitter"]
   },
   "wp3_wp5_vela_comparison": {
-    "status": "operational gates asserted; M1 numerical parity gate asserted",
-    "primary_observables": ["Ic-Vce", "Ib-Vce", "beta-Vce", "terminal KCL"],
-    "secondary_observables": ["electrostatic potential", "electron density", "hole density"],
+    "status": "operational, M1 terminal-parity, and spatial-state gates asserted; transport/source fields characterized",
+    "primary_observables": ["Ic-Vce", "Ib-Vce", "Ie-Vce", "beta-Vce", "terminal KCL", "electrostatic potential", "electron density", "hole density"],
+    "diagnostic_observables": ["electron current density", "hole current density", "SRH recombination", "Auger recombination"],
     "required_collector_points": 31,
     "collector_voltage_tolerance_V": 1e-8,
     "maximum_relative_kcl_residual": 1e-6,
@@ -34,10 +34,54 @@
           "status": "asserted",
           "maximum_Ic_absolute_log10_error": 0.05,
           "maximum_Ib_absolute_log10_error": 0.05,
+          "maximum_Ie_absolute_log10_error": 0.05,
           "maximum_beta_absolute_log10_error": 0.05,
           "reason": "Pre-registered before the full M1 rerun after importing the T-2022.03-SP2 Silicon Scharfetter lifetime parameters."
         }
       }
+    },
+    "spatial_state_gate": {
+      "status": "asserted",
+      "bias": {"VBE_V": 0.7, "VCE_V": 3.0},
+      "sampling": "common_mesh_nodes",
+      "reason": "Pre-registered before the masked spatial-state acceptance calculation. Density gates exclude reference carrier concentrations below 1e10 cm^-3, where decade errors amplify physically negligible absolute differences.",
+      "fields": {
+        "electrostatic_potential": {
+          "units": "V",
+          "error": "vela_minus_sentaurus",
+          "mask": {"type": "all_common_nodes"},
+          "maximum_rmse": 0.005,
+          "maximum_p95_absolute_error": 0.01,
+          "maximum_absolute_error": 0.025
+        },
+        "electron_density": {
+          "units": "decade",
+          "error": "log10_vela_minus_log10_sentaurus",
+          "mask": {"type": "sentaurus_reference_min_cm3", "minimum_cm3": 1e10},
+          "maximum_rmse": 0.01,
+          "maximum_p95_absolute_error": 0.02,
+          "maximum_absolute_error": 0.05
+        },
+        "hole_density": {
+          "units": "decade",
+          "error": "log10_vela_minus_log10_sentaurus",
+          "mask": {"type": "sentaurus_reference_min_cm3", "minimum_cm3": 1e10},
+          "maximum_rmse": 0.02,
+          "maximum_p95_absolute_error": 0.05,
+          "maximum_absolute_error": 0.15
+        }
+      }
+    },
+    "transport_source_comparison": {
+      "status": "characterization_only",
+      "bias": {"VBE_V": 0.7, "VCE_V": 3.0},
+      "current_density_reference_fraction": 1e-6,
+      "source_rate_reference_fraction": 1e-6,
+      "vela_current_density_fields": {
+        "electron": "SentaurusElectronCurrentDensityVector",
+        "hole": "SentaurusHoleCurrentDensityVector"
+      },
+      "reason": "Current-density vectors are nodal gradient reconstructions and recombination rates cross or approach zero. They are reported as diagnostic characterization until discretization-aware thresholds are separately registered."
     }
   }
 }

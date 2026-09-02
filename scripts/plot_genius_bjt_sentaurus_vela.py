@@ -280,20 +280,24 @@ def comparison_arrays(path: Path) -> dict[str, np.ndarray]:
         "vela_Ic_A_per_um",
         "sentaurus_Ib_A_per_um",
         "vela_Ib_A_per_um",
+        "sentaurus_Ie_A_per_um",
+        "vela_Ie_A_per_um",
         "sentaurus_beta_abs",
         "vela_beta_abs",
         "Ic_absolute_log10_error",
         "Ib_absolute_log10_error",
+        "Ie_absolute_log10_error",
         "beta_absolute_log10_error",
     )
     return {name: np.asarray([float(row[name]) for row in rows]) for name in columns}
 
 
 def plot_curves(m0: dict[str, np.ndarray], m1: dict[str, np.ndarray], output: Path) -> None:
-    figure, axes = plt.subplots(2, 3, figsize=(14.8, 8.0), sharex=True, constrained_layout=True)
+    figure, axes = plt.subplots(2, 4, figsize=(18.2, 8.0), sharex=True, constrained_layout=True)
     observables = [
         ("Ic", "Collector current magnitude [A/µm]", "sentaurus_Ic_A_per_um", "vela_Ic_A_per_um", True),
         ("Ib", "Base current magnitude [A/µm]", "sentaurus_Ib_A_per_um", "vela_Ib_A_per_um", True),
+        ("Ie", "Emitter current magnitude [A/µm]", "sentaurus_Ie_A_per_um", "vela_Ie_A_per_um", True),
         ("β", "Common-emitter gain |Ic/Ib|", "sentaurus_beta_abs", "vela_beta_abs", False),
     ]
 
@@ -356,6 +360,7 @@ def plot_m1_parity_error(m1: dict[str, np.ndarray], output: Path) -> None:
     series = [
         ("Ic", m1["Ic_absolute_log10_error"], VELA, "o"),
         ("Ib", m1["Ib_absolute_log10_error"], ORANGE, "s"),
+        ("Ie", m1["Ie_absolute_log10_error"], PINK, "D"),
         ("β", m1["beta_absolute_log10_error"], OLIVE, "^"),
     ]
     for name, values, color, marker in series:
@@ -376,7 +381,7 @@ def plot_m1_parity_error(m1: dict[str, np.ndarray], output: Path) -> None:
     axis.set_ylabel("Absolute log₁₀ magnitude error [decade]")
     axis.set_title("M1 numerical-parity errors in the asserted active region")
     axis.grid(True, alpha=0.85)
-    axis.legend(ncol=4, loc="upper center")
+    axis.legend(ncol=5, loc="upper center")
     figure.savefig(
         output,
         dpi=240,

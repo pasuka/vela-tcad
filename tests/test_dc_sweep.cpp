@@ -1802,6 +1802,7 @@ TEST_CASE("DCSweep: VTK transport diagnostics include mobility decomposition fie
     REQUIRE(content.find("ElectronMobilityCm2PerVs") != std::string::npos);
     REQUIRE(content.find("HoleMobilityCm2PerVs") != std::string::npos);
     REQUIRE(content.find("SRHRecombinationCm3PerS") != std::string::npos);
+    REQUIRE(content.find("AugerRecombinationCm3PerS") != std::string::npos);
     REQUIRE(content.find("SpaceCharge") != std::string::npos);
     REQUIRE(content.find("BandGap") != std::string::npos);
     REQUIRE(content.find("BandgapNarrowing") != std::string::npos);

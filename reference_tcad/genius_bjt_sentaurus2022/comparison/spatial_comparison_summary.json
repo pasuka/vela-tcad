@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "device": "Genius NPN BJT",
+  "bias": {
+    "VBE_V": 0.7,
+    "VCE_V": 3.0
+  },
+  "sampling": "common_mesh_nodes",
+  "contract_reason": "Pre-registered before the masked spatial-state acceptance calculation. Density gates exclude reference carrier concentrations below 1e10 cm^-3, where decade errors amplify physically negligible absolute differences.",
+  "common_node_count": 5611,
+  "fields": {
+    "electrostatic_potential": {
+      "gate": {
+        "units": "V",
+        "error": "vela_minus_sentaurus",
+        "mask": {
+          "type": "all_common_nodes"
+        },
+        "selected_node_count": 5611,
+        "excluded_node_count": 0,
+        "thresholds": {
+          "rmse": 0.005,
+          "p95_absolute_error": 0.01,
+          "maximum_absolute_error": 0.025
+        },
+        "observed": {
+          "node_count": 5611,
+          "rmse": 0.0011413171169968306,
+          "p95_absolute_error": 0.0022810702688604856,
+          "maximum_absolute_error": 0.015080326088608209
+        },
+        "checks": {
+          "rmse": true,
+          "p95_absolute_error": true,
+          "maximum_absolute_error": true
+        },
+        "pass": true
+      },
+      "full_domain_characterization": {
+        "node_count": 5611,
+        "rmse": 0.0011413171169968306,
+        "p95_absolute_error": 0.0022810702688604856,
+        "maximum_absolute_error": 0.015080326088608209
+      }
+    },
+    "electron_density": {
+      "gate": {
+        "units": "decade",
+        "error": "log10_vela_minus_log10_sentaurus",
+        "mask": {
+          "type": "sentaurus_reference_min_cm3",
+          "minimum_cm3": 10000000000.0
+        },
+        "selected_node_count": 5196,
+        "excluded_node_count": 415,
+        "thresholds": {
+          "rmse": 0.01,
+          "p95_absolute_error": 0.02,
+          "maximum_absolute_error": 0.05
+        },
+        "observed": {
+          "node_count": 5196,
+          "rmse": 0.003505841570859393,
+          "p95_absolute_error": 0.007462524417363614,
+          "maximum_absolute_error": 0.036136403931896766
+        },
+        "checks": {
+          "rmse": true,
+          "p95_absolute_error": true,
+          "maximum_absolute_error": true
+        },
+        "pass": true
+      },
+      "full_domain_characterization": {
+        "node_count": 5611,
+        "rmse": 0.0037687336179630963,
+        "p95_absolute_error": 0.008254299988894154,
+        "maximum_absolute_error": 0.036136403931896766
+      }
+    },
+    "hole_density": {
+      "gate": {
+        "units": "decade",
+        "error": "log10_vela_minus_log10_sentaurus",
+        "mask": {
+          "type": "sentaurus_reference_min_cm3",
+          "minimum_cm3": 10000000000.0
+        },
+        "selected_node_count": 2207,
+        "excluded_node_count": 3404,
+        "thresholds": {
+          "rmse": 0.02,
+          "p95_absolute_error": 0.05,
+          "maximum_absolute_error": 0.15
+        },
+        "observed": {
+          "node_count": 2207,
+          "rmse": 0.01134543033764906,
+          "p95_absolute_error": 0.025641598657014153,
+          "maximum_absolute_error": 0.1007931430785245
+        },
+        "checks": {
+          "rmse": true,
+          "p95_absolute_error": true,
+          "maximum_absolute_error": true
+        },
+        "pass": true
+      },
+      "full_domain_characterization": {
+        "node_count": 5611,
+        "rmse": 0.32320039164417486,
+        "p95_absolute_error": 0.15289324368240131,
+        "maximum_absolute_error": 1.6835999745417674
+      }
+    }
+  },
+  "hole_density_localization": {
+    "full_domain": {
+      "node_count": 5611,
+      "rmse": 0.32320039164417486,
+      "p95_absolute_error": 0.15289324368240131,
+      "maximum_absolute_error": 1.6835999745417674
+    },
+    "by_sentaurus_reference_density": [
+      {
+        "reference_log10_cm3_range": "[-inf, 0)",
+        "node_count": 6,
+        "rmse_decade": 1.1672838601533533,
+        "p95_absolute_error_decade": 1.6702865522302157,
+        "maximum_absolute_error_decade": 1.679546456744286
+      },
+      {
+        "reference_log10_cm3_range": "[0, 2)",
+        "node_count": 1468,
+        "rmse_decade": 0.620640087190962,
+        "p95_absolute_error_decade": 1.679091288988268,
+        "maximum_absolute_error_decade": 1.6835999745417674
+      },
+      {
+        "reference_log10_cm3_range": "[2, 4)",
+        "node_count": 1488,
+        "rmse_decade": 0.08847738877664388,
+        "p95_absolute_error_decade": 0.04527536225847051,
+        "maximum_absolute_error_decade": 1.6791982925677291
+      },
+      {
+        "reference_log10_cm3_range": "[4, 6)",
+        "node_count": 182,
+        "rmse_decade": 0.029361243175555107,
+        "p95_absolute_error_decade": 0.056771052757494854,
+        "maximum_absolute_error_decade": 0.15016114162948124
+      },
+      {
+        "reference_log10_cm3_range": "[6, 8)",
+        "node_count": 133,
+        "rmse_decade": 0.04263383606651342,
+        "p95_absolute_error_decade": 0.07793514816020916,
+        "maximum_absolute_error_decade": 0.2529679186108602
+      },
+      {
+        "reference_log10_cm3_range": "[8, 10)",
+        "node_count": 127,
+        "rmse_decade": 0.03380920570616206,
+        "p95_absolute_error_decade": 0.06920196218781757,
+        "maximum_absolute_error_decade": 0.19137813272437754
+      },
+      {
+        "reference_log10_cm3_range": "[10, 12)",
+        "node_count": 124,
+        "rmse_decade": 0.01449553767996894,
+        "p95_absolute_error_decade": 0.032755741406484504,
+        "maximum_absolute_error_decade": 0.058587978549592634
+      },
+      {
+        "reference_log10_cm3_range": "[12, 14)",
+        "node_count": 238,
+        "rmse_decade": 0.021596618978476975,
+        "p95_absolute_error_decade": 0.0353239955515465,
+        "maximum_absolute_error_decade": 0.1007931430785245
+      },
+      {
+        "reference_log10_cm3_range": "[14, 16)",
+        "node_count": 610,
+        "rmse_decade": 0.015284798779450947,
+        "p95_absolute_error_decade": 0.03901905784688803,
+        "maximum_absolute_error_decade": 0.07675349920651797
+      },
+      {
+        "reference_log10_cm3_range": "[16, 18)",
+        "node_count": 921,
+        "rmse_decade": 0.0022117403135524273,
+        "p95_absolute_error_decade": 0.0036376835728297863,
+        "maximum_absolute_error_decade": 0.021377367644806355
+      },
+      {
+        "reference_log10_cm3_range": "[18, +inf)",
+        "node_count": 314,
+        "rmse_decade": 0.00011639196420814173,
+        "p95_absolute_error_decade": 7.869715956054769e-05,
+        "maximum_absolute_error_decade": 0.0009801018408630569
+      }
+    ],
+    "by_geometric_region": {
+      "top_device_y_le_0p5um": {
+        "node_count": 2196,
+        "rmse": 0.24227849655115027,
+        "p95_absolute_error": 0.04527536225847051,
+        "maximum_absolute_error": 1.6805495310118619
+      },
+      "bulk_y_gt_0p5um": {
+        "node_count": 3415,
+        "rmse": 0.3659016368611875,
+        "p95_absolute_error": 0.482427177610984,
+        "maximum_absolute_error": 1.6835999745417674
+      },
+      "emitter_window_x2p75_4p25_y_le_0p5um": {
+        "node_count": 643,
+        "rmse": 0.01514000440580955,
+        "p95_absolute_error": 0.04527536225847051,
+        "maximum_absolute_error": 0.04527536225847051
+      },
+      "outside_emitter_window_y_le_0p5um": {
+        "node_count": 1553,
+        "rmse": 0.2879366053951678,
+        "p95_absolute_error": 0.06375570589334013,
+        "maximum_absolute_error": 1.6805495310118619
+      }
+    }
+  },
+  "overall_pass": true,
+  "source_paths": {
+    "threshold_contract": "reference_tcad\\genius_bjt_sentaurus2022\\contracts\\comparison_thresholds.json",
+    "sentaurus_field_manifest": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\m1_current_diagnosis\\sentaurus_vce3\\field_manifest.json",
+    "sentaurus_nodes": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\m1_current_diagnosis\\sentaurus_vce3\\nodes.csv",
+    "vela_state": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\vela_wp3_wp5\\m1_vce300_state.csv"
+  },
+  "source_sha256": {
+    "threshold_contract": "38e92d4f241074b919cfbc90e6978676da892601a030ee9ad7d10ab96f590b99",
+    "sentaurus_field_manifest": "f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159",
+    "sentaurus_nodes": "b93f00e70a5be270c414dc1838c4c8eb9048c71b234fee158bb9c50c998e8e60",
+    "vela_state": "2f01db379d32330a26c2085de9e987720fcf2c2d27e29144da5225d05682bc66"
+  }
+}

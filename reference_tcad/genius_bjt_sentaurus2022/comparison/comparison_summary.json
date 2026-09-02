@@ -1,6 +1,6 @@
 {
-  "schema_version": 2,
-  "comparison_scope": "WP3-WP5 common-input comparison with pre-registered M1 numerical parity",
+  "schema_version": 3,
+  "comparison_scope": "WP3-WP5 common-input comparison with pre-registered terminal and spatial-state gates",
   "M0": {
     "model": "M0",
     "sentaurus_input": "reference_tcad\\genius_bjt_sentaurus2022\\reference_curves\\bjt_m0_output.csv",
@@ -22,6 +22,10 @@
       "median": 0.3500614772111583,
       "maximum": 0.3522293591173015
     },
+    "active_region_Ie_absolute_log10_error": {
+      "median": 0.2626521928455977,
+      "maximum": 0.26268678869543766
+    },
     "active_region_beta_absolute_log10_error": {
       "median": 0.6156438567623895,
       "maximum": 0.6177684550064049
@@ -33,6 +37,9 @@
       "sentaurus_Ib_A_per_um": 1.6038915270621e-08,
       "vela_Ib_A_per_um": 7.127637991223058e-09,
       "Ib_magnitude_ratio_vela_over_sentaurus": 0.4443965112951861,
+      "sentaurus_Ie_A_per_um": -1.85935395466729e-06,
+      "vela_Ie_A_per_um": -3.4044648964674257e-06,
+      "Ie_magnitude_ratio_vela_over_sentaurus": 1.8309934415239488,
       "sentaurus_beta_abs": 114.92766239454609,
       "vela_beta_abs": 476.64279037508305
     },
@@ -64,6 +71,10 @@
       "median": 0.022069185808629852,
       "maximum": 0.022092206348029615
     },
+    "active_region_Ie_absolute_log10_error": {
+      "median": 0.002106769430177336,
+      "maximum": 0.002120446802043853
+    },
     "active_region_beta_absolute_log10_error": {
       "median": 0.02472772081327427,
       "maximum": 0.024734608871204083
@@ -75,6 +86,9 @@
       "sentaurus_Ib_A_per_um": 6.01876121735591e-08,
       "vela_Ib_A_per_um": 6.332851732094051e-08,
       "Ib_magnitude_ratio_vela_over_sentaurus": 1.0521852426762537,
+      "sentaurus_Ie_A_per_um": -2.86772004614901e-06,
+      "vela_Ie_A_per_um": -2.853997290913807e-06,
+      "Ie_magnitude_ratio_vela_over_sentaurus": 0.9952147507377398,
       "sentaurus_beta_abs": 46.64635018049099,
       "vela_beta_abs": 44.066542205638505
     },
@@ -84,11 +98,13 @@
       "thresholds_maximum_absolute_log10_error": {
         "Ic": 0.05,
         "Ib": 0.05,
+        "Ie": 0.05,
         "beta": 0.05
       },
       "observed_maximum_absolute_log10_error": {
         "Ic": 0.0026936807556736594,
         "Ib": 0.022092206348029615,
+        "Ie": 0.002120446802043853,
         "beta": 0.024734608871204083
       },
       "pass": true
@@ -97,5 +113,57 @@
   },
   "operational_pass": true,
   "numerical_parity_pass": true,
+  "spatial_state_gate": {
+    "input": "reference_tcad\\genius_bjt_sentaurus2022\\comparison\\spatial_comparison_summary.json",
+    "common_node_count": 5611,
+    "fields": {
+      "electrostatic_potential": {
+        "pass": true,
+        "selected_node_count": 5611,
+        "thresholds": {
+          "rmse": 0.005,
+          "p95_absolute_error": 0.01,
+          "maximum_absolute_error": 0.025
+        },
+        "observed": {
+          "node_count": 5611,
+          "rmse": 0.0011413171169968306,
+          "p95_absolute_error": 0.0022810702688604856,
+          "maximum_absolute_error": 0.015080326088608209
+        }
+      },
+      "electron_density": {
+        "pass": true,
+        "selected_node_count": 5196,
+        "thresholds": {
+          "rmse": 0.01,
+          "p95_absolute_error": 0.02,
+          "maximum_absolute_error": 0.05
+        },
+        "observed": {
+          "node_count": 5196,
+          "rmse": 0.003505841570859393,
+          "p95_absolute_error": 0.007462524417363614,
+          "maximum_absolute_error": 0.036136403931896766
+        }
+      },
+      "hole_density": {
+        "pass": true,
+        "selected_node_count": 2207,
+        "thresholds": {
+          "rmse": 0.02,
+          "p95_absolute_error": 0.05,
+          "maximum_absolute_error": 0.15
+        },
+        "observed": {
+          "node_count": 2207,
+          "rmse": 0.01134543033764906,
+          "p95_absolute_error": 0.025641598657014153,
+          "maximum_absolute_error": 0.1007931430785245
+        }
+      }
+    }
+  },
+  "spatial_state_pass": true,
   "overall_pass": true
 }

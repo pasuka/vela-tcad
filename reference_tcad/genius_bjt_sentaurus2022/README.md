@@ -42,7 +42,7 @@ for source control.
   node doping converted to Vela input.
 - `vela/materials_sentaurus2022.json`: explicit 300 K silicon material values.
 - `vela/configs/`: M0 base ramp and collector sweep, plus M1 fixed-bias model
-  relaxation and collector sweep.
+  relaxation, collector sweep, and reproducible 3 V spatial export.
 - `comparison/`: exact 31-point all-terminal comparison tables and the
   machine-readable/human-readable summaries.
 
@@ -82,7 +82,7 @@ Run-local raw TDR, PLT, and log files are retained outside source control at
 The remote copy is under
 `/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2`.
 
-## Validated WP3-WP5 and M1 parity result
+## Validated WP3-WP5 terminal and spatial result
 
 Both Vela collector sweeps reached 3 V with 74 accepted/internal points. The
 comparison tool extracts only the exact 31 requested 0.1 V points and reads
@@ -98,9 +98,22 @@ M1 gives Ic and Ib ratios of 0.993993 and 1.05219 at 3 V, with beta values of
 44.067 versus 46.646.
 
 The asserted M1 gate covers VCE=0.5-3.0 V and limits the maximum absolute
-log10 error of Ic, Ib, and beta to 0.05 decades each. Observed maxima are
-0.002694, 0.022092, and 0.024735 decades, so operational and M1 numerical
-parity gates pass. See `contracts/comparison_thresholds.json`,
+log10 error of Ic, Ib, Ie, and beta to 0.05 decades each. Observed maxima are
+0.002694, 0.022092, 0.002120, and 0.024735 decades.
+
+The spatial-state gate uses the exact common mesh at VBE=0.70 V and VCE=3.00 V.
+Potential is checked on all 5611 nodes. Electron and hole decade errors are
+checked where the Sentaurus reference density is at least 1e10 cm^-3. The
+potential, electron-density, and hole-density gates all pass. The former
+1.6836-decade full-domain hole outlier is confined to nodes with reference
+hole concentrations of roughly 1-100 cm^-3; the asserted hole-density maximum
+is 0.10079 decade.
+
+Electron/hole current-density vectors plus SRH and Auger rates are exported and
+compared separately as diagnostic characterization. These reconstructed or
+near-zero-crossing fields do not yet carry asserted thresholds. The final
+`overall_pass` now requires operational, M1 terminal-parity, and spatial-state
+gates simultaneously. See `contracts/comparison_thresholds.json`,
 `comparison/comparison_summary.md`, and `reports/wp3_wp5_execution_report.md`.
 
 ## Comparison figures

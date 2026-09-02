@@ -15,8 +15,10 @@ M1 numerical parity is evaluated over VCE=0.5-3.0 V against the pre-registered m
 |---|---:|---:|---:|
 | Ic | 0.05 | 0.00269368076 | True |
 | Ib | 0.05 | 0.0220922063 | True |
+| Ie | 0.05 | 0.0021204468 | True |
 | beta | 0.05 | 0.0247346089 | True |
 
 Overall operational pass: **True**
 Asserted numerical parity pass: **True**
+Asserted spatial-state pass: **True**
 Overall pass: **True**

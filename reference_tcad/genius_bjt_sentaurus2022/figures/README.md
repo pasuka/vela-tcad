@@ -11,10 +11,10 @@ at VBE=0.70 V and VCE=3.00 V; carrier densities are shown in cm^-3.
 - `genius_bjt_m1_vce3_field_comparison.png`: common-scale Sentaurus and Vela
   maps for potential, electron density, and hole density, plus Vela-minus-
   Sentaurus differences.
-- `genius_bjt_terminal_curve_comparison.png`: M0/M1 Ic, Ib, and beta curves at
+- `genius_bjt_terminal_curve_comparison.png`: M0/M1 Ic, Ib, Ie, and beta curves at
   all 31 requested collector biases. Current panels use magnitude and a
   logarithmic vertical scale.
-- `genius_bjt_m1_parity_error.png`: M1 active-region absolute log10 errors and
+- `genius_bjt_m1_parity_error.png`: M1 active-region Ic, Ib, Ie, and beta absolute log10 errors and
   the pre-registered 0.05-decade gate.
 
 `figure_manifest.json` records source and output hashes, mesh counts, coordinate

@@ -35,13 +35,13 @@
     "sentaurus_potential": "4f076d42bcb4953686d56330c8c7dd587e519b6c817fb50b8a8e7595908c443d",
     "sentaurus_electron_density": "ef5266a24d43887bad31020bcab806f136ed44c9015559b1e6065027699655c3",
     "sentaurus_hole_density": "75e277cd89a2d183e77c91adeeb9af9c8798fe2464de93a7bdf7cfd21c0b73ac",
-    "m0_comparison": "1cc43ae5707b5f299bc5c859269e63e33d579835f34b002d6ec730103baf6dff",
-    "m1_comparison": "b64ed1486b884ee70e50d4772387bb0feec92432c88bccfe85b149653c064014"
+    "m0_comparison": "f392642c15455a47275745fad912486d4328577779e8167713209454f91222f1",
+    "m1_comparison": "8a70575c3d51d33a3a873c9fcf0bd8a33d897fddc4e7abbfe81dc2bbdd4c5aad"
   },
   "outputs_sha256": {
     "mesh": "4e1adbacc5b0fa5a5db8e16c5bfcf6809f7d4810c13ddec2c6e1c70a241ad3d8",
     "fields": "e24502162ef73b21e473b76ff47004fa13b58f9eedf4c84b52d771c176f4dfbc",
-    "curves": "7385854dc2de3e3f4d50ed684bf3774f8a3e745ed43d6824cfd9b8048ef9588f",
-    "parity": "b23bb3925de5a86d300497162e9661acd9d45125dede790951d6ef5c7c79ffdf"
+    "curves": "6d5c6227d84db9dbddeab2789ae0930ef5ec48ed50556701f0998e9f2bd4f52c",
+    "parity": "e1067ec558bfab7361cdee8b4332eabea9e5b5ca61ede8edb7d8479037a4c2d6"
   }
 }

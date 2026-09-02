@@ -11,7 +11,9 @@ three-terminal currents, and KCL operational gates pass for M0 and M1.
 
 The M1 numerical-parity gate also passes after aligning the electron
 Scharfetter maximum lifetime with the T-2022.03-SP2 Silicon default. M0 remains
-an intentionally minimal characterization-only baseline.
+an intentionally minimal characterization-only baseline. A newly registered
+spatial-state gate also passes for potential, electron density, and hole
+density. The final acceptance now requires both terminal and spatial gates.
 
 ## Common input
 
@@ -42,10 +44,48 @@ iterations. No M1 physics term was disabled or weakened.
 | M1 | 31 | 2.738e-9 | 2.807532e-6 | 2.790669e-6 | 0.993993 | 6.018761e-8 | 6.332852e-8 | 1.05219 | 46.6464 | 44.0665 |
 
 Over VCE=0.5-3.0 V, the M1 maximum absolute log10 errors are 0.002694 decades
-for Ic, 0.022092 decades for Ib, and 0.024735 decades for beta. All are below
-the pre-registered 0.05-decade limit. This corresponds to maximum magnitude
-ratio deviations of about 0.62%, 5.21%, and 5.54%, respectively. M0 is useful
+for Ic, 0.022092 decades for Ib, 0.002120 decades for Ie, and 0.024735 decades
+for beta. All are below the pre-registered 0.05-decade limit. This corresponds
+to maximum magnitude-ratio deviations of about 0.62%, 5.21%, 0.49%, and 5.54%,
+respectively. M0 is useful
 as a numerical baseline but does not show comparable quantitative agreement.
+
+## Spatial-state acceptance and hole-density localization
+
+The exact common mesh at VBE=0.70 V and VCE=3.00 V is used without
+interpolation. Potential is gated on all nodes. Density gates use only nodes
+where the Sentaurus reference carrier concentration is at least 1e10 cm^-3;
+full-domain metrics remain visible as characterization.
+
+| Field | Selected nodes | RMSE | P95 absolute error | Maximum absolute error | Gate |
+|---|---:|---:|---:|---:|---:|
+| Potential (V) | 5611 | 0.0011413 | 0.0022811 | 0.0150803 | pass |
+| Electron density (decade) | 5196 | 0.0035058 | 0.0074625 | 0.0361364 | pass |
+| Hole density (decade) | 2207 | 0.0113454 | 0.0256416 | 0.100793 | pass |
+
+The full-domain hole-density maximum of 1.6836 decades is caused by reference
+concentrations of roughly 1-100 cm^-3, primarily outside the emitter window and
+in the bulk. At the largest-error node Sentaurus gives 13.23 cm^-3 and Vela
+0.274 cm^-3. Both are physically negligible compared with the registered
+1e10 cm^-3 relevance floor. The emitter-window P95 error is 0.04528 decades.
+
+## Transport and recombination characterization
+
+The reproducible 3 V Vela export contains electron and hole current-density
+vectors, SRH rate, and a new independently named Auger rate. These quantities
+are characterized but not asserted because nodal current density depends on
+gradient reconstruction and recombination rates can cross or approach zero.
+
+| Quantity | Main diagnostic result |
+|---|---|
+| Electron current density | global vector cosine 0.897; normalized vector RMSE 0.563 |
+| Hole current density | global vector cosine 0.791; normalized vector RMSE 0.861 |
+| SRH recombination | spatial integral ratio Vela/Sentaurus 0.768; shape TV 0.110 |
+| Auger recombination | spatial integral ratio Vela/Sentaurus 0.560; shape TV 0.096 |
+
+This records an important residual: terminal currents agree within the asserted
+limits, while local reconstructed transport/source fields are not yet close
+enough to justify a separate numerical-parity claim.
 
 ## M1 SRH parameter closure
 
@@ -58,7 +98,7 @@ inputs already matched: `taumin=0`, `Nref=1e16 cm^-3`, `gamma=1`, and
 
 The numerical gate was registered before the full rerun in
 `contracts/comparison_thresholds.json`: over VCE=0.5-3.0 V, the maximum
-absolute log10 errors for Ic, Ib, and beta must each be no greater than 0.05
+absolute log10 errors for Ic, Ib, Ie, and beta must each be no greater than 0.05
 decades. The comparison command now returns failure when any asserted gate
 fails.
 
@@ -71,7 +111,16 @@ Run the four Vela stages in order with `build-release/vela_example_runner.exe`:
 3. `vela/configs/m1_model_relaxation.json`
 4. `vela/configs/m1_collector_sweep.json`
 
-Then run `scripts/compare_genius_bjt_sentaurus_vela.py` with the fixture root,
-the ignored Vela run directory, and `comparison/` as its three arguments. Raw
-Vela states, diagnostics, and adaptive-step curves remain under
-`build-release/reference_tcad/genius_bjt_sentaurus2022/vela_wp3_wp5`.
+Generate the accepted 3 V state comparison, the diagnostic transport/source
+comparison, and the final combined acceptance in this order:
+
+1. `scripts/compare_genius_bjt_spatial_fields.py`
+2. `vela/configs/m1_spatial_vce3.json`
+3. `scripts/compare_genius_bjt_transport_fields.py`
+4. `scripts/compare_genius_bjt_sentaurus_vela.py`
+
+The script CLIs require the fixture, ignored Sentaurus/Vela data, and output
+paths shown in their `--help` text. Raw Vela states, diagnostics, VTK exports,
+and adaptive-step curves remain under
+`build-release/reference_tcad/genius_bjt_sentaurus2022/`, including the
+`vela_wp3_wp5` run directory.

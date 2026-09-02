@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "device": "Genius NPN BJT",
+  "bias": {
+    "VBE_V": 0.7,
+    "VCE_V": 3.0
+  },
+  "status": "characterization_only",
+  "reason": "Current-density vectors are nodal gradient reconstructions and recombination rates cross or approach zero. They are reported as diagnostic characterization until discretization-aware thresholds are separately registered.",
+  "common_node_count": 5611,
+  "current_density": {
+    "electron": {
+      "units": "A/cm^2",
+      "mask": {
+        "type": "sentaurus_reference_magnitude_fraction_of_peak",
+        "fraction": 1e-06,
+        "minimum_A_per_cm2": 0.00038286683977012956
+      },
+      "selected_node_count": 5611,
+      "reference_peak_A_per_cm2": 382.86683977012956,
+      "vela_peak_A_per_cm2": 739.4901196273619,
+      "log10_magnitude_error": {
+        "node_count": 5611,
+        "rmse": 0.48197760901370135,
+        "p95_absolute_error": 0.2703318348153989,
+        "maximum_absolute_error": 9.006111739076845
+      },
+      "normalized_vector_rmse": 0.5632507137999122,
+      "global_vector_cosine_similarity": 0.8973233621637468
+    },
+    "hole": {
+      "units": "A/cm^2",
+      "mask": {
+        "type": "sentaurus_reference_magnitude_fraction_of_peak",
+        "fraction": 1e-06,
+        "minimum_A_per_cm2": 4.4168952211452037e-05
+      },
+      "selected_node_count": 2121,
+      "reference_peak_A_per_cm2": 44.16895221145204,
+      "vela_peak_A_per_cm2": 116.34384845043094,
+      "log10_magnitude_error": {
+        "node_count": 2121,
+        "rmse": 1.2695503504014611,
+        "p95_absolute_error": 1.4623081882578488,
+        "maximum_absolute_error": 9.788331000476026
+      },
+      "normalized_vector_rmse": 0.8608037123020912,
+      "global_vector_cosine_similarity": 0.7909354988602992
+    }
+  },
+  "recombination": {
+    "srh": {
+      "units": "cm^-3 s^-1",
+      "mask": {
+        "type": "sentaurus_reference_absolute_fraction_of_peak",
+        "fraction": 1e-06,
+        "minimum_cm3_per_s": 1.4114440442322593e+18
+      },
+      "selected_node_count": 1807,
+      "reference_peak_absolute_cm3_per_s": 1.4114440442322595e+24,
+      "vela_peak_absolute_cm3_per_s": 1.2834428211773282e+24,
+      "log10_magnitude_error": {
+        "node_count": 1807,
+        "rmse": 0.10256102673296628,
+        "p95_absolute_error": 0.3063235748247456,
+        "maximum_absolute_error": 0.398050125564679
+      },
+      "signed_integral_A_per_um": {
+        "sentaurus": 1.900627854475198e-08,
+        "vela": 1.4599634069756514e-08,
+        "ratio_vela_over_sentaurus": 0.7681479588642444
+      },
+      "absolute_integral_A_per_um": {
+        "sentaurus": 1.9006278985116918e-08,
+        "vela": 1.4599634509651731e-08,
+        "ratio_vela_over_sentaurus": 0.7681479642114135
+      },
+      "normalized_l1_error": 0.23187586185296538,
+      "absolute_shape_total_variation": 0.11011974978132417
+    },
+    "auger": {
+      "units": "cm^-3 s^-1",
+      "mask": {
+        "type": "sentaurus_reference_absolute_fraction_of_peak",
+        "fraction": 1e-06,
+        "minimum_cm3_per_s": 1.0626467498313067e+17
+      },
+      "selected_node_count": 1627,
+      "reference_peak_absolute_cm3_per_s": 1.0626467498313068e+23,
+      "vela_peak_absolute_cm3_per_s": 5.1224353814028564e+22,
+      "log10_magnitude_error": {
+        "node_count": 1627,
+        "rmse": 0.6031903920432752,
+        "p95_absolute_error": 0.9039769585870978,
+        "maximum_absolute_error": 0.9392137443366461
+      },
+      "signed_integral_A_per_um": {
+        "sentaurus": 2.707637436709313e-09,
+        "vela": 1.5163297441669113e-09,
+        "ratio_vela_over_sentaurus": 0.56001949286451
+      },
+      "absolute_integral_A_per_um": {
+        "sentaurus": 2.707637436709313e-09,
+        "vela": 1.5163297441686743e-09,
+        "ratio_vela_over_sentaurus": 0.5600194928651611
+      },
+      "normalized_l1_error": 0.4399805071354899,
+      "absolute_shape_total_variation": 0.09642213618217015
+    }
+  },
+  "source_sha256": {
+    "sentaurus_field_manifest": "f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159",
+    "vela_vtk": "7ee09cd3dfb206ec2bfc6d7ac42a31a4fd4ed1c4a6cb62ccd1c493c74c11f5e3"
+  }
+}
