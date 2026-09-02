@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "run_date": "2026-09-02",
+  "local": {
+    "worktree": "D:/code-repo/vela-tcad/.worktrees/genius-bjt-sentaurus2022",
+    "branch": "codex/genius-bjt-sentaurus2022",
+    "base_commit": "270f5258a3c6354b2b3564af98ae4ab9434de2ca",
+    "raw_artifact_root": "build-release/reference_tcad/genius_bjt_sentaurus2022/wp0_wp2_20260902/run_v2"
+  },
+  "remote": {
+    "host": "tcad",
+    "user": "root",
+    "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+    "license_environment": "27000@tcad",
+    "sde_version": "T-2022.03-SP2",
+    "sdevice_version": "T-2022.03-SP2"
+  },
+  "genius_source": {
+    "repository": "D:/code-repo/Genius-TCAD-Open",
+    "commit": "543da8452d5dfd33e6f8c457f962f6f670f0fce7",
+    "files": {
+      "examples/BJT/step1.inp": "1fb80eae1d236ac3f75a81ddefa9d86e1e79d6ca4f8506d6ef2ec67c40373d04",
+      "examples/BJT/step2.inp": "829d68893716f7d8405e210dd8b71aec927e2da43ce9a1ee0c7c35b56e7792b2"
+    }
+  },
+  "accepted_results": {
+    "mesh_nodes": 5611,
+    "mesh_elements": 10940,
+    "M0_points": 31,
+    "M1_points": 31,
+    "M0_max_kcl_abs_A_per_um": 1.6103552165182343e-20,
+    "M0_max_kcl_relative": 8.92656962350735e-15,
+    "M1_max_kcl_abs_A_per_um": 4.6282409633567004e-20,
+    "M1_max_kcl_relative": 1.694401008698443e-14
+  },
+  "tracked_sha256": {
+    "README.md": "066b19d8b792fcae1075d56e02c93938d8daa0a46abfc5f83b78af6ce33cc979",
+    "contracts/geometry_contract.json": "04344dca4c0aa42ef252b68e616e9c519f679c87554d533a7f17acca812ce45c",
+    "contracts/physics_contract.json": "ff2e5bdcca81fdc2f46ab9582548d41ff7a75f2891728b4b89276930ccc86d54",
+    "contracts/comparison_thresholds.json": "ce320d48782285dc5d6c95db8c1c39770d320da74e3c786c384d1ee273bba9bd",
+    "source/bjt_sde.cmd": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05",
+    "source/bjt_m0_des.cmd": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068",
+    "source/bjt_m1_des.cmd": "40d4321accae1b6651cee8e3c481bc35dd2ae5ddc7d44abb63149f36c59895c6",
+    "reference_curves/bjt_m0_output.csv": "851ddf00ad043d1d688fc83fd010074a8bc6d9cde317f5320d4ef28772745c99",
+    "reference_curves/bjt_m1_output.csv": "d26107bc771613d1b8f3140ce0ec9fff602e8b4357fcc3a5ea5213efbc653ded",
+    "reports/structure_audit.json": "44a432c6234c7b211ec11b1d39f380feee72576dd7455ff27be9d17635426ded",
+    "reports/wp0_wp2_validation.json": "9893d05d23667d57d24107de1c7260343e61851e4410437ba7bac9a2fb0e26d2",
+    "reports/execution_report.md": "8b690034686ce38b0283f1e4475f84861804c212784b58c05a06360104bac70d",
+    "scripts/audit_genius_bjt_sentaurus_reference.py": "9c1afadf446531e38b8031fb6bd87d5b54ee0ce05e4303999a8619cbfee404aa",
+    "tests/regression/test_genius_bjt_sentaurus_reference_tools.py": "3e4f908d3e1ba0a37ae2a5a8e142bfb5ad1cd794c3a483e25640bfc971494b5c"
+  },
+  "raw_sha256": {
+    "bjt_msh.tdr": "3077a2e3d49826fba4db95e00837ace77dd3e05ea36dd3e3c522e0529155d21e",
+    "bjt_m0_collector_bjt_m0_des.plt": "0aff50fa989d04249b606e9b811a1fd655a7ea545ab4dcefe2e8293bfae0ed9b",
+    "bjt_m1_collector_bjt_m1_des.plt": "545709fb8507bc50413ac004886a5389d52d9bdb80c7dea45ad5e8f21cdbea9d",
+    "states/bjt_m0_vce_0000_des.tdr": "dcf8895c00b92f91936db13d984f0348827c36f1ef666c5dd7b50f12fcaaf146",
+    "states/bjt_m0_vce_0001_des.tdr": "a3768e9e36d4cdd194e2ac800d36c1908f60fec9cfc19b7c0fa40414c3ce0b5c",
+    "states/bjt_m0_vce_0002_des.tdr": "6170bfc41753e7f85c1df086d94b2b03c29b8b58c6ef226f79913c26ce9a3725",
+    "states/bjt_m0_vce_0003_des.tdr": "eb4f37736f6a1540051204c0f1c7a3640a6727402cef3c689a4be184415dc105",
+    "states/bjt_m1_vce_0000_des.tdr": "7249f9ec0002e8998047fac25746c27762667a4c17bfb1a2773b46aff13e6d0c",
+    "states/bjt_m1_vce_0001_des.tdr": "dd12608c733ee5dfa91546bbe3825b59dcf5fb4f080774604843aabd1e1753f5",
+    "states/bjt_m1_vce_0002_des.tdr": "1f0c2a80fec4c6498bd2730fa7aee7fe2d6de7c6e7c4f3e8b7982fe1ad596d6c",
+    "states/bjt_m1_vce_0003_des.tdr": "ca95952950728810bfb596b1ed31d3e1759fda2b8fc73e1136351bb11fe394d9"
+  },
+  "representative_state_bias_V": {
+    "0000": 0.0,
+    "0001": 0.1,
+    "0002": 1.0,
+    "0003": 3.0
+  },
+  "rejected_attempt": {
+    "directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run",
+    "reason": "coordinate-dependent General profile terms were incorrectly evaluated in init; this produced spatially constant unphysical doping and was rejected before reference use"
+  }
+}

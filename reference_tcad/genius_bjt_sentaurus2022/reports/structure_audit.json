@@ -1,0 +1,63 @@
+{
+  "mesh": {
+    "node_count": 5611,
+    "bounds_um": {
+      "xmin": -0.0,
+      "ymin": -0.0,
+      "xmax": 6.0,
+      "ymax": 2.0
+    },
+    "minimum_node_count": 1000,
+    "pass": true
+  },
+  "contacts": {
+    "base": {
+      "present": true,
+      "node_count": 18,
+      "xmin_um": 1.25,
+      "xmax_um": 2.0,
+      "ymin_um": -0.0,
+      "ymax_um": -0.0,
+      "maximum_coordinate_error_um": 0.0,
+      "pass": true
+    },
+    "emitter": {
+      "present": true,
+      "node_count": 34,
+      "xmin_um": 2.75,
+      "xmax_um": 4.25,
+      "ymin_um": -0.0,
+      "ymax_um": -0.0,
+      "maximum_coordinate_error_um": 0.0,
+      "pass": true
+    },
+    "collector": {
+      "present": true,
+      "node_count": 65,
+      "xmin_um": -0.0,
+      "xmax_um": 6.0,
+      "ymin_um": 2.0,
+      "ymax_um": 2.0,
+      "maximum_coordinate_error_um": 0.0,
+      "pass": true
+    }
+  },
+  "contact_pass": true,
+  "doping": {
+    "maximum_donor_relative_error": 3.5999999999995465e-15,
+    "maximum_acceptor_relative_error": 3.614864687182031e-15,
+    "worst_node": {
+      "node_id": 657,
+      "x_um": 1.21875,
+      "y_um": 0.71875,
+      "relative_error": 3.614864687182031e-15,
+      "actual_donor_cm3": 5000001660819215.0,
+      "expected_donor_cm3": 5000001660819206.0,
+      "actual_acceptor_cm3": 2766355276162624.0,
+      "expected_acceptor_cm3": 2766355276162634.0
+    },
+    "tolerance": 1e-06,
+    "pass": true
+  },
+  "pass": true
+}

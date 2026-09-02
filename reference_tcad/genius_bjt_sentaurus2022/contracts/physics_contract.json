@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "common": {
+    "dimension": 2,
+    "temperature_K": 300.0,
+    "equations": ["Poisson", "Electron", "Hole"],
+    "high_field_mobility": false,
+    "impact_ionization": false,
+    "thermodynamic": false,
+    "quantum_correction": false,
+    "contact_resistance": false
+  },
+  "M0": {
+    "purpose": "minimal common drift-diffusion baseline",
+    "statistics": "Boltzmann",
+    "intrinsic_density": "Sentaurus default without explicit band-gap narrowing",
+    "mobility": ["Sentaurus default low-field mobility"],
+    "recombination": ["SRH with Sentaurus default parameters"]
+  },
+  "M1": {
+    "purpose": "realistic common drift-diffusion baseline",
+    "statistics": "Fermi",
+    "intrinsic_density": "EffectiveIntrinsicDensity(OldSlotboom)",
+    "mobility": ["DopingDependence"],
+    "recombination": ["SRH(DopingDependence)", "Auger"]
+  },
+  "solve_sequence": [
+    "Poisson",
+    "coupled equilibrium Poisson Electron Hole",
+    "quasistationary base ramp 0.0 to 0.70 V",
+    "quasistationary collector ramp 0.0 to 3.0 V with 31 requested points"
+  ],
+  "current_contract": {
+    "raw_source": "direct Sentaurus electrode currents",
+    "normalization": "A/um",
+    "terminals": ["collector", "base", "emitter"],
+    "base_current_reconstructed_from_kcl": false,
+    "reported_derived_values": ["beta=abs(Ic/Ib)", "alpha=abs(Ic/Ie)", "KCL residual"]
+  }
+}

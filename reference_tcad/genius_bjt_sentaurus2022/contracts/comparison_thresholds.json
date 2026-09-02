@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "wp1_structure": {
+    "contact_endpoint_tolerance_um": 1e-8,
+    "coordinate_tolerance_um": 1e-8,
+    "doping_relative_tolerance_at_mesh_nodes": 1e-6,
+    "minimum_nodes_per_contact": 2,
+    "minimum_total_mesh_nodes": 1000
+  },
+  "wp2_sentaurus": {
+    "required_collector_points": 31,
+    "collector_voltage_tolerance_V": 1e-6,
+    "maximum_relative_kcl_residual": 1e-6,
+    "maximum_absolute_kcl_residual_A_per_um": 1e-18,
+    "required_terminal_currents": ["collector", "base", "emitter"]
+  },
+  "future_vela_comparison": {
+    "status": "reserved for WP3+; not asserted by WP0-WP2",
+    "primary_observables": ["Ic-Vce", "Ib-Vce", "beta-Vce", "terminal KCL"],
+    "secondary_observables": ["electrostatic potential", "electron density", "hole density"]
+  }
+}
