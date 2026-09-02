@@ -1,0 +1,8 @@
+{
+  "schema": "vela.simplemos.sdevice.m50_native_substrate_face_flux_export_contract_freeze.v1",
+  "status": "frozen_before_execution",
+  "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m50_native_substrate_face_flux_export_contract_v1.json",
+  "contract_sha256": "8c2e7aa6db645ebd1b9c1285828958d8b40195ac5469feb5784a8e6d3bf73b53",
+  "frozen_at": "2026-09-01T00:00:00+08:00",
+  "execution_may_not_modify_contract": true
+}

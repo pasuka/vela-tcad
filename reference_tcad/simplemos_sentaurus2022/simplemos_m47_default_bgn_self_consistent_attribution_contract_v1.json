@@ -1,0 +1,158 @@
+{
+  "schema": "vela.simplemos.sdevice.m47_default_bgn_self_consistent_attribution_contract.v1",
+  "contract_id": "simplemos-sdevice-m47-default-bgn-self-consistent-attribution-v1",
+  "objective": "Attribute the unchanged M46 cross-TCAD peak at n23, Vd=0.05 V, Vg=0.05 V using default BGN-on self-consistent states, adjacent-gate controls, and a matched low-NWell device control.",
+  "upstream": {
+    "m45_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m45_post_qf_rebaseline_evidence.json",
+    "m46_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m46_full_matrix_requalification_evidence.json",
+    "required_m45_status": "frozen",
+    "required_m46_status": "frozen",
+    "m46_required_bitwise_identical_curve_count": 16,
+    "m46_required_maximum_log_shift_vs_m8_dex": 0.0,
+    "closed_topics": [
+      "SG current kernel consistency",
+      "contact-current extraction consistency",
+      "quasi-Fermi reference and increment preservation"
+    ]
+  },
+  "scope": {
+    "target": {
+      "device": "n23",
+      "NWell_cm3": 2e17,
+      "GOxTime_min": 15.0,
+      "LDD_Dose_cm2": 1e14,
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05
+    },
+    "adjacent_gate_controls_V": [0.0, 0.1],
+    "matched_low_nwell_control": {
+      "device": "n19",
+      "NWell_cm3": 1e17,
+      "GOxTime_min": 15.0,
+      "LDD_Dose_cm2": 1e14,
+      "matching_rule": "same Lg, GOxTime, and LDD dose as n23; NWell is the only process-grid factor changed"
+    },
+    "devices": ["n23", "n19"],
+    "drain_voltages_V": [0.05],
+    "gate_voltages_V": [0.0, 0.05, 0.1],
+    "state_count_per_solver": 6,
+    "interpolation": "forbidden"
+  },
+  "frozen_physics": {
+    "sentaurus_release": "T-2022.03-SP2",
+    "carrier_statistics": "maxwell_boltzmann",
+    "effective_intrinsic_density": "OldSlotboom",
+    "bandgap_narrowing": "enabled_default_production_path",
+    "sentaurus_mobility": ["PhuMob", "HighFieldSaturation", "Enormal"],
+    "vela_mobility_model": "phumob_field_lombardi",
+    "vela_high_field_driving_force": "quasi_fermi_gradient",
+    "vela_high_field_gradient_discretization": "transport_cell_vector",
+    "recombination": "SRH(DopingDependence)",
+    "impact_ionization": "none",
+    "contact_type": "ohmic",
+    "temperature_K": 300.0
+  },
+  "execution_protocol": {
+    "sentaurus": {
+      "input_tdr_source": "frozen M8 per-device process TDR",
+      "sequence": [
+        "Poisson equilibrium",
+        "coupled Poisson Electron Hole equilibrium",
+        "drain continuation to 0.05 V at Vg=0 V",
+        "gate continuation on the exact 0.00, 0.05, 0.10 V lattice"
+      ],
+      "state_export_at_every_gate_point": true,
+      "terminal_current_components": ["source eCurrent", "source hCurrent", "source TotalCurrent", "drain eCurrent", "drain hCurrent", "drain TotalCurrent"]
+    },
+    "vela": {
+      "base_config_source": "frozen M8 production gate-sweep configuration",
+      "initial_state_source": "frozen M8 Vd=0.05 V drain-ramp accepted state for each device",
+      "exact_gate_bias_points_V": [0.0, 0.05, 0.1],
+      "write_state_at_every_gate_point": true,
+      "write_vtk_at_every_gate_point": true,
+      "required_diagnostics": ["terminal_balance", "srh_balance", "contact_edge"]
+    },
+    "new_sentaurus_execution": true,
+    "historical_artifacts_rewritten": false,
+    "production_defaults_changed": false
+  },
+  "required_observables": {
+    "terminal_anchor": {
+      "source": "frozen M46 pointwise comparison",
+      "require_exact_bias_match": true,
+      "quantities": ["signed_log10_vela_over_sentaurus_dex", "relative_error", "current_A_per_um"]
+    },
+    "potential_barrier": {
+      "support": "Silicon/Oxide interface nodes with lateral coordinate in [-0.3, 0.0] um",
+      "electrostatic_proxy": "source-contact median electrostatic potential minus minimum interface electrostatic potential",
+      "qf_referenced_proxy": "maximum(electron quasi-Fermi potential minus electrostatic potential)",
+      "report_cross_solver_difference_mV": true
+    },
+    "carrier_concentrations": {
+      "fields": ["electron density", "hole density"],
+      "supports": ["all common Silicon nodes", "channel interface", "source-side barrier support"],
+      "comparison": "signed log10(Vela/Sentaurus) with median, p95 absolute, maximum absolute, and barrier-node values"
+    },
+    "srh_source": {
+      "sentaurus_field": "srhRecombination",
+      "vela_field": "SRHRecombinationCm3PerS",
+      "supports": ["all common Silicon nodes", "channel interface", "source-side barrier support"],
+      "comparison": "signed source, absolute magnitude, spatial correlation, and integrated generation/recombination current"
+    },
+    "quasi_fermi_state": {
+      "fields": ["electron quasi-Fermi potential", "hole quasi-Fermi potential"],
+      "supports": ["all common Silicon nodes", "channel interface", "source-side barrier support"],
+      "vela_coordinate_requirement": "absolute quasi-Fermi value plus preserved reference and increment columns"
+    },
+    "contact_flux": {
+      "contacts": ["source", "drain"],
+      "components": ["electron", "hole", "total"],
+      "comparison": "signed A/um, magnitude ratio, and source-plus-drain balance"
+    }
+  },
+  "attribution_rules": {
+    "primary_comparison": "Vela minus Sentaurus at n23, Vd=0.05 V, Vg=0.05 V",
+    "adjacent_gate_test": "compare the target discrepancy with the exact Vg=0.00 V and 0.10 V states in each solver",
+    "nwell_control_test": "compare n23 against matched n19 at every gate point and difference the cross-solver discrepancies",
+    "target_localization": "a metric may be called target-localized only when the n23 Vg=0.05 discrepancy is an interior extremum relative to both adjacent gates and exceeds the matched n19 discrepancy in the same direction",
+    "barrier_current_proxy": "-Delta(qf-referenced barrier)/(Vt*ln(10))",
+    "causal_claim_guard": "state correlation alone is descriptive; the report must separate observed state mismatch, current-consistent mechanism, and unresolved residual",
+    "outcome_policy": "a null or mixed attribution is a valid completed result"
+  },
+  "acceptance": {
+    "required_sentaurus_state_count": 6,
+    "required_vela_state_count": 6,
+    "all_biases_exact": true,
+    "all_states_converged": true,
+    "common_node_ids_required_within_each_cross_solver_case": true,
+    "maximum_coordinate_difference_um": 1e-12,
+    "all_required_fields_present": true,
+    "all_values_finite": true,
+    "m46_point_currents_reproduced": true,
+    "maximum_allowed_log_current_anchor_difference_dex": 1e-10,
+    "contract_hash_unchanged_during_execution": true,
+    "default_physics_unchanged": true,
+    "default_hfs_unchanged": true,
+    "no_sg_or_contact_extraction_reinvestigation": true,
+    "all_required_artifacts_frozen": true
+  },
+  "forbidden_work": [
+    "global HFS parameter scans or default tuning",
+    "SG current-kernel re-investigation",
+    "contact-current extraction re-investigation",
+    "quasi-Fermi packing or reference-coordinate re-investigation",
+    "BGN, SRH, mobility, contact, solver, or production-default changes",
+    "interpolation between gate points",
+    "rewriting M8, M45, or M46 artifacts"
+  ],
+  "deliverables": [
+    "machine-readable M47 report",
+    "six-state summary ledger",
+    "node-level state comparison ledger",
+    "source/drain contact-flux ledger",
+    "attribution contrast ledger",
+    "human-readable validation report",
+    "frozen evidence manifest",
+    "regression test for contract and evidence invariants"
+  ]
+}

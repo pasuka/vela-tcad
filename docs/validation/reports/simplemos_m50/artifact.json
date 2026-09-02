@@ -1,0 +1,53 @@
+{
+  "schema": "vela.simplemos.sdevice.m50_artifact.v1",
+  "title": "SimpleMOS M50 native substrate electron face-flux export",
+  "status": "complete",
+  "classification": "native_observable_mismatch",
+  "report": "reference_tcad/simplemos_sentaurus2022/native_substrate_face_flux_export/m50_native_substrate_face_flux_export_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/native_substrate_face_flux_export/m50_native_substrate_face_flux_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/native_substrate_face_flux_export/m50_terminal_replay_ledger.csv"
+  ],
+  "execution_attempts": "reference_tcad/simplemos_sentaurus2022/native_substrate_face_flux_export/m50_sentaurus_execution_attempts.json",
+  "document": "docs/validation/simplemos_m50_native_substrate_face_flux_export_2026-09-01.md",
+  "target": {
+    "state": "n23_vd_0p05_vg_0p05",
+    "device": "n23",
+    "gate_voltage_V": 0.05,
+    "drain_voltage_V": 0.05,
+    "dataset": "M50_SubstrateElectronFaceFlux",
+    "raw_current_plot_numeric_value": -2.37679722302952e-19,
+    "contract_literal_conversion_A_per_um": -2.3767972230295205e-23,
+    "contact_surface_normal_integral_A_per_um": -2.37679722302952e-19,
+    "negative_contact_surface_normal_integral_A_per_um": 2.37679722302952e-19,
+    "m49_external_boundary_export_A_per_um": 2.376797223029523e-19,
+    "negative_native_minus_m49_boundary_A_per_um": -2.8888949165808538e-34,
+    "same_run_substrate_electron_terminal_A_per_um": 4.67098440284444e-17,
+    "direct_residual_A_per_um": -4.694752375074735e-17,
+    "opposite_residual_A_per_um": -4.647216430614145e-17,
+    "orientation": "no_terminal_closing_orientation",
+    "native_to_terminal_closes": false,
+    "terminal_oriented_native_flux_A_per_um": -2.37679722302952e-19,
+    "frozen_m48_vela_substrate_electron_A_per_um": -2.37190916886233e-19,
+    "vela_minus_native_sentaurus_A_per_um": 4.888054167190248e-22,
+    "frozen_m48_vela_minus_sentaurus_A_per_um": -4.6947034945330634e-17,
+    "native_bridge_identity_error_A_per_um": 4.694752375074735e-17,
+    "native_bridge_identity_closes": false
+  },
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "exact_state_count": true,
+    "all_biases_exact": true,
+    "all_values_finite": true,
+    "terminal_replay_closes": true,
+    "native_face_flux_orientation_reported": true,
+    "native_to_same_run_terminal_closes": false,
+    "native_bridge_identity_closes": false,
+    "native_matches_m49_exported_boundary": true,
+    "target_control_localization": false,
+    "outcome_is_contract_reportable": true,
+    "defaults_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": false
+  }
+}

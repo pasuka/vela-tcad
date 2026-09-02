@@ -1,0 +1,65 @@
+{
+  "schema": "vela.simplemos.sdevice.m49_substrate_electron_transport_attribution_evidence.v1",
+  "status": "frozen",
+  "contract_sha256": "77169ce197bd8d2fb21cbd184fe18ef6ea9b3d8e881535ba9317049931ce713c",
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/substrate_electron_transport_attribution/m49_substrate_electron_transport_attribution_report.json",
+      "sha256": "1b69d53b2b8fb3ca2cbb65b529ac67ea908e4d5efd0c05b48b037bb77f38d031"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/substrate_electron_transport_attribution/m49_substrate_boundary_edge_transport_ledger.csv",
+      "sha256": "22a1957136db4e69f5701a4abd20eb524c200ac0d13c3c545eef9ffcb822466c"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/substrate_electron_transport_attribution/m49_substrate_graph_distance_row_ledger.csv",
+      "sha256": "f4b24fa5592b9bfdacc8864660aabd90fb9f39f75b034c728e80d2a965cadd13"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/substrate_electron_transport_attribution/m49_transport_factor_bridge_ledger.csv",
+      "sha256": "aced728527488d1523dbc582f6bd415de7191bf2fd24a101875cb711ecde5cf6"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/substrate_electron_transport_attribution/m49_control_localization_ledger.csv",
+      "sha256": "9d0a56422c2e5f7d516db5a3c18db24101dcfbb8c88592a7a2e7cb98969c32f7"
+    },
+    {
+      "path": "docs/validation/simplemos_m49_substrate_electron_transport_attribution_2026-09-01.md",
+      "sha256": "63897defb34a20a56c2047eecb573bf23bfe2d577bfa2ddc668a3d14f0a25c3e"
+    },
+    {
+      "path": "docs/validation/reports/simplemos_m49/artifact.json",
+      "sha256": "eb5a4ea4b39e51255f0a633cfc2395db2a55968f8410f29dda58f2026f7768ba"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m49_substrate_electron_transport_attribution_contract_v1.json": "77169ce197bd8d2fb21cbd184fe18ef6ea9b3d8e881535ba9317049931ce713c",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m49_substrate_electron_transport_attribution_contract_freeze.json": "be9e7182783a32ef4cb96d90529d1574f32b84577c3a6e08232e28c658033fbb",
+    "scripts/run_simplemos_m49_substrate_electron_transport_attribution.py": "aec1b90a30788c9d6efc586d03b5802971053083505847e3fc1544e7397fac31",
+    "tests/regression/test_simplemos_m49_substrate_electron_transport_attribution.py": "e594205a7b7024caadd18dc6a5d0137590ddc6dbf397e129003b37c5881753b1",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_contract_v1.json": "03ed032143c31cf6f58bfc870ad501d5ea95b9214b36042c8ac7540bdd83d244",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_evidence.json": "ab160b2657faa9525eeedeb4c5c73c8d8f293065d9147455aaf3422f3bb18026",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_contract_v1.json": "ab32861c940c2d899cdf8401bd2779ee0a1fb4985efe6265fe79c43b73538f25",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_evidence.json": "ba3b091ca0e9953a7f0f8c73382f86b4d373f161c57a3dd4ac529891a0a97a78"
+  },
+  "analysis_only": true,
+  "new_sentaurus_execution": false,
+  "new_vela_execution": false,
+  "default_physics_model_changed": false,
+  "closed_topics_reinvestigated": false,
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "solver_state_count": true,
+    "cross_solver_state_count": true,
+    "all_biases_exact": true,
+    "common_node_ids_and_coordinates": true,
+    "all_required_fields_present": true,
+    "all_values_finite": true,
+    "m48_terminal_anchors_reproduced": true,
+    "shapley_identities_close": true,
+    "exact_bridges_close": true,
+    "defaults_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": true
+  }
+}

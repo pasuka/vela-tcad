@@ -1,0 +1,107 @@
+{
+  "schema": "vela.simplemos.sdevice.m50_native_substrate_face_flux_export_contract.v1",
+  "contract_id": "simplemos-sdevice-m50-native-substrate-face-flux-export-v1",
+  "objective": "Close the M49 substrate boundary-observability gap by exporting Sentaurus-native substrate-contact electron face flux on diagnostic-only replays of the unchanged M47 default-BGN-on states.",
+  "upstream": {
+    "m47_contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_contract_v1.json",
+    "m47_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_evidence.json",
+    "m48_contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_contract_v1.json",
+    "m48_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_evidence.json",
+    "m49_contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m49_substrate_electron_transport_attribution_contract_v1.json",
+    "m49_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m49_substrate_electron_transport_attribution_evidence.json",
+    "required_status": "frozen",
+    "required_m49_classification": "boundary_observable_limited",
+    "required_m48_target_substrate_electron_difference_A_per_um": -4.6947034945330634e-17,
+    "closed_topics": [
+      "SG current kernel consistency",
+      "general contact-current extraction consistency",
+      "quasi-Fermi reference and increment preservation",
+      "global HFS calibration",
+      "M48 four-terminal bookkeeping identity",
+      "M49 exported-node boundary reconstruction"
+    ]
+  },
+  "scope": {
+    "target": {
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "contact": "substrate",
+      "carrier": "electron"
+    },
+    "devices": ["n23", "n19"],
+    "gate_voltages_V": [0.0, 0.05, 0.1],
+    "drain_voltages_V": [0.05],
+    "cross_state_count": 6,
+    "interpolation": "forbidden"
+  },
+  "diagnostic_replay": {
+    "sentaurus_release": "T-2022.03-SP2",
+    "input_tdrs": "exact M47 input_fps.tdr files inherited from the frozen M8 process outputs",
+    "deck_rule": "byte-equivalent M47 File, Electrode, Physics, Plot, Math solver controls, and Solve bias schedule, with only one top-level CurrentPlot Tcl diagnostic section added",
+    "new_sentaurus_execution": true,
+    "new_vela_execution": false,
+    "state_mutation": false,
+    "production_defaults_changed": false,
+    "historical_artifacts_rewritten": false,
+    "terminal_replay_anchor": "M47 and M48 exact terminal component rows"
+  },
+  "native_observable": {
+    "sentaurus_interface": "CurrentPlot Tcl contact-domain integration",
+    "integrand": "sum_d(eCurrentDensity[d] * ContactSurfaceNormal[d])",
+    "operation": "Integrate Contact=\"substrate\" Region=\"Silicon_1\" IntegrationUnit=cm",
+    "raw_unit": "A/cm in a two-dimensional device",
+    "conversion_to_A_per_um": 0.0001,
+    "orientation": "ContactSurfaceNormal orientation reported without post-hoc sign fitting; both outward integral and its signed residual to the native terminal eCurrent are retained",
+    "required_same_run_observables": [
+      "gate OuterVoltage",
+      "drain OuterVoltage",
+      "substrate eCurrent",
+      "substrate hCurrent",
+      "substrate TotalCurrent",
+      "M50 substrate electron face-flux integral"
+    ]
+  },
+  "analysis": {
+    "primary_bridge": "Vela-minus-Sentaurus substrate electron difference using the M50 native Sentaurus face flux and the frozen M48 Vela substrate electron terminal current",
+    "same_solver_closure": "compare the M50 contact-domain face integral with the same-run Sentaurus substrate eCurrent",
+    "state_replay_check": "compare all six same-run Sentaurus source, drain, and substrate carrier components with frozen M47/M48 rows",
+    "target_localization": "the absolute Vela-minus-native-Sentaurus substrate difference at n23 Vg=0.05 exceeds both adjacent n23 gates and matched n19 Vg=0.05",
+    "outcome_policy": "native-bridge-closed, native-observable-mismatch, or replay-state-mismatch are all reportable outcomes; only the first permits the M49 observability gap to be declared closed",
+    "claim_guard": "M50 validates observability and terminal localization only; it does not identify a production-code defect or authorize physics/default changes"
+  },
+  "acceptance": {
+    "required_exact_state_count": 6,
+    "all_biases_exact": true,
+    "all_values_finite": true,
+    "maximum_replay_terminal_absolute_difference_A_per_um": 1e-24,
+    "maximum_replay_terminal_relative_difference": 1e-10,
+    "native_face_flux_orientation_must_be_reported": true,
+    "maximum_native_to_same_run_terminal_relative_difference_for_closure": 1e-6,
+    "maximum_native_to_same_run_terminal_absolute_difference_A_per_um_for_closure": 1e-24,
+    "maximum_native_bridge_identity_absolute_error_A_per_um": 1e-30,
+    "contract_hash_unchanged_during_execution": true,
+    "default_physics_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "all_required_artifacts_frozen": true
+  },
+  "forbidden_work": [
+    "global HFS parameter scans or default tuning",
+    "SG current-kernel re-investigation",
+    "general contact-current extraction re-investigation",
+    "quasi-Fermi packing or reference-coordinate re-investigation",
+    "BGN, SRH, mobility, contact, solver, mesh, or production-default changes",
+    "adding HeteroInterface, Thermionic, or Discontinuity physics",
+    "interpolation between gate points",
+    "rewriting M8 or M45 through M49 artifacts"
+  ],
+  "deliverables": [
+    "machine-readable M50 report",
+    "six-state native substrate face-flux ledger",
+    "same-run terminal replay ledger",
+    "human-readable technical report",
+    "portable report artifact",
+    "frozen evidence manifest",
+    "regression test for contract and evidence invariants"
+  ]
+}

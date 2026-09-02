@@ -1,0 +1,124 @@
+{
+  "schema": "vela.simplemos.sdevice.m51_current_weighting_attribution_contract.v1",
+  "contract_id": "simplemos-sdevice-m51-current-weighting-attribution-v1",
+  "objective": "Determine whether Sentaurus CurrentWeighting changes the M50 gap between substrate electron field-derived contact-face flux and the reported substrate eCurrent while preserving the solved six-state device fields.",
+  "upstream": {
+    "m47_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_evidence.json",
+    "m48_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_evidence.json",
+    "m49_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m49_substrate_electron_transport_attribution_evidence.json",
+    "m50_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m50_native_substrate_face_flux_export_evidence.json",
+    "required_status": "frozen",
+    "required_m50_classification": "native_observable_mismatch",
+    "required_m50_target_default_substrate_electron_A_per_um": 4.67098440284444e-17,
+    "required_m50_target_contact_surface_normal_A_per_um": -2.37679722302952e-19,
+    "required_m50_target_negative_contact_surface_normal_A_per_um": 2.37679722302952e-19,
+    "closed_topics": [
+      "SG current kernel consistency",
+      "general Vela contact-current extraction consistency",
+      "quasi-Fermi reference and increment preservation",
+      "global HFS calibration",
+      "M50 native eCurrentDensity contact-domain export"
+    ]
+  },
+  "manual_basis": {
+    "release": "T-2022.03-SP2",
+    "default_contact_current": "sum of current-density integral over the surface of the doping well associated with the contact and charge-generation integral over that doping-well volume",
+    "CurrentWeighting": "domain-integration method using a solution-dependent weighting function to minimize numeric errors",
+    "DirectCurrent": "surface integral over the contact area",
+    "scope_guard": "DirectCurrent is documented for interpretation but is not executed in M51"
+  },
+  "scope": {
+    "target": {
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.05,
+      "contact": "substrate",
+      "carrier": "electron"
+    },
+    "devices": ["n23", "n19"],
+    "gate_voltages_V": [0.0, 0.05, 0.1],
+    "drain_voltages_V": [0.05],
+    "cross_state_count": 6,
+    "baseline": "frozen M50 CurrentWeighting-off replay",
+    "intervention": "add the CurrentWeighting flag to the otherwise byte-equivalent M50 global Math section",
+    "interpolation": "forbidden"
+  },
+  "diagnostic_replay": {
+    "sentaurus_release": "T-2022.03-SP2",
+    "input_tdrs": "exact M50 input_fps.tdr copies inherited from frozen M8 process outputs",
+    "deck_rule": "M50 deck with diagnostic output names changed from M50 to M51 and the single CurrentWeighting flag added to Math; no other semantic change",
+    "native_face_observable": "CurrentPlot Tcl Integrate Contact=substrate IntegrationUnit=cm of eCurrentDensity dot ContactSurfaceNormal",
+    "new_sentaurus_execution": true,
+    "new_vela_execution": false,
+    "production_defaults_changed": false,
+    "historical_artifacts_rewritten": false
+  },
+  "state_invariance": {
+    "baseline_snapshots": "six frozen M50 m50_state TDR files",
+    "weighted_snapshots": "six new M51 m51_state TDR files",
+    "required_fields": [
+      "ElectrostaticPotential",
+      "eDensity",
+      "hDensity",
+      "eQuasiFermiPotential",
+      "hQuasiFermiPotential",
+      "eCurrentDensity",
+      "hCurrentDensity",
+      "srhRecombination"
+    ],
+    "node_ids_and_coordinates": "exact",
+    "maximum_scalar_absolute_difference": 1e-20,
+    "maximum_scalar_relative_difference": 1e-12,
+    "maximum_vector_component_absolute_difference": 1e-20,
+    "maximum_vector_component_relative_difference": 1e-12,
+    "rule": "each compared value passes when either its absolute or symmetric relative difference is within threshold"
+  },
+  "analysis": {
+    "terminal_comparison": "compare CurrentWeighting-on source, drain, gate, and substrate electron, hole, and total currents with frozen M50 default values",
+    "native_flux_comparison": "compare CurrentWeighting-on substrate electron contact-domain flux in both normal orientations with frozen M50 native flux",
+    "classifications": {
+      "weighted_matches_native_face": "state invariant and weighted substrate eCurrent closes to either fixed native-face orientation at all six states",
+      "weighted_matches_default": "state invariant and weighted substrate eCurrent closes to frozen M50 default eCurrent at all six states but not native face",
+      "weighted_third_observable": "state invariant but weighted substrate eCurrent closes to neither frozen default nor either native-face orientation",
+      "state_perturbed": "any required solved field exceeds the frozen state-invariance threshold",
+      "replay_incomplete": "required states or observables are missing"
+    },
+    "target_localization": "report weighted-minus-default and weighted-minus-nearest-native residuals at the target, adjacent n23 gates, and matched n19 gate",
+    "claim_guard": "M51 attributes a Sentaurus observation algorithm only; it does not authorize changing Vela or Sentaurus production defaults"
+  },
+  "acceptance": {
+    "required_exact_state_count": 6,
+    "required_terminal_component_row_count": 72,
+    "all_biases_exact": true,
+    "all_values_finite": true,
+    "maximum_terminal_closure_absolute_difference_A_per_um": 1e-24,
+    "maximum_terminal_closure_relative_difference": 1e-6,
+    "maximum_native_flux_replay_absolute_difference_A_per_um": 1e-30,
+    "maximum_native_flux_replay_relative_difference": 1e-10,
+    "contract_hash_unchanged_during_execution": true,
+    "default_physics_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "outcome_must_match_one_declared_classification": true,
+    "all_required_artifacts_frozen": true
+  },
+  "forbidden_work": [
+    "HFS parameter scans or tuning",
+    "SG current-kernel re-investigation",
+    "quasi-Fermi packing or reference-coordinate re-investigation",
+    "BGN, SRH, mobility, contact model, mesh, or production-default changes",
+    "DirectCurrent execution",
+    "adding HeteroInterface, Thermionic, or Discontinuity physics",
+    "interpolation between gate points",
+    "rewriting M8 or M45 through M50 artifacts"
+  ],
+  "deliverables": [
+    "machine-readable M51 report",
+    "six-state CurrentWeighting comparison ledger",
+    "72-row terminal component ledger",
+    "field-invariance ledger",
+    "human-readable technical report",
+    "portable report artifact",
+    "frozen evidence manifest",
+    "regression test for contract and evidence invariants"
+  ]
+}

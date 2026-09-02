@@ -1,0 +1,630 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "SimpleMOS M48 terminal partition and continuity closure",
+    "description": "Fixed-state four-terminal and volumetric-SRH decomposition of the M47 residual.",
+    "generatedAt": "2026-09-01T00:00:00+08:00",
+    "sources": [
+      {
+        "id": "src_m48",
+        "label": "Frozen M48 terminal partition report and ledgers",
+        "path": "reference_tcad/simplemos_sentaurus2022/terminal_partition_continuity_closure/m48_terminal_partition_continuity_closure_report.json",
+        "query": {
+          "engine": "SQLite",
+          "language": "SQL",
+          "description": "Literal reviewed rows generated from the frozen M48 terminal-identity ledger.",
+          "sql": "WITH partition_chart(state_label,device,gate_voltage_V,term,signed_gap_fraction,drain_gap_A_per_um,srh_absolute_gap_fraction) AS (\n  VALUES ('n23 / 0.00 V','n23',0,'Substrate',-0.11345401359562274,2.0524921088631883e-18,0.18875105608067713),\n('n23 / 0.00 V','n23',0,'Source',1.1216494790388014,2.0524921088631883e-18,0.18875105608067713),\n('n23 / 0.00 V','n23',0,'KCL residual',-0.0081954654431787496,2.0524921088631883e-18,0.18875105608067713),\n('n23 / 0.05 V','n23',0.050000000000000003,'Substrate',1.892080354346817,2.4601870383287426e-17,0.015712874687052961),\n('n23 / 0.05 V','n23',0.050000000000000003,'Source',-1.0141598870504875,2.4601870383287426e-17,0.015712874687052961),\n('n23 / 0.05 V','n23',0.050000000000000003,'KCL residual',0.12207953270367052,2.4601870383287426e-17,0.015712874687052961),\n('n23 / 0.10 V','n23',0.10000000000000001,'Substrate',0.41620860904534823,2.3518669720846707e-17,0.016342561089038476),\n('n23 / 0.10 V','n23',0.10000000000000001,'Source',0.54166583801025769,2.3518669720846707e-17,0.016342561089038476),\n('n23 / 0.10 V','n23',0.10000000000000001,'KCL residual',0.042125552944394004,2.3518669720846707e-17,0.016342561089038476),\n('n19 / 0.00 V','n19',0,'Substrate',-0.0086368594678490323,9.4837675310339264e-17,0.0021589690411082385),\n('n19 / 0.00 V','n19',0,'Source',1.0086368576981593,9.4837675310339264e-17,0.0021589690411082385),\n('n19 / 0.00 V','n19',0,'KCL residual',1.7696897041540142e-09,9.4837675310339264e-17,0.0021589690411082385),\n('n19 / 0.05 V','n19',0.050000000000000003,'Substrate',0.048934871146799931,3.3113156507386897e-16,0.00061709627648735583),\n('n19 / 0.05 V','n19',0.050000000000000003,'Source',0.95106512768200602,3.3113156507386897e-16,0.00061709627648735583),\n('n19 / 0.05 V','n19',0.050000000000000003,'KCL residual',1.1711940194129397e-09,3.3113156507386897e-16,0.00061709627648735583),\n('n19 / 0.10 V','n19',0.10000000000000001,'Substrate',0.0033980447292465258,1.1357295438344045e-15,0.00017989243775596943),\n('n19 / 0.10 V','n19',0.10000000000000001,'Source',0.99660195560362652,1.1357295438344045e-15,0.00017989243775596943),\n('n19 / 0.10 V','n19',0.10000000000000001,'KCL residual',-3.3287308119711758e-10,1.1357295438344045e-15,0.00017989243775596943)\n) SELECT * FROM partition_chart ORDER BY device DESC, gate_voltage_V, term;",
+          "tables_used": [
+            "partition_chart"
+          ],
+          "filters": [
+            "Exact n23/n19 states at Vd=0.05 V and Vg=0.00/0.05/0.10 V",
+            "No interpolation"
+          ],
+          "metric_definitions": [
+            "signed_gap_fraction = terminal-identity contribution / (Vela drain current - Sentaurus drain current)",
+            "SRH fraction uses the absolute cross-solver integrated-SRH difference divided by the absolute drain-current gap"
+          ]
+        }
+      },
+      {
+        "id": "src_contract",
+        "label": "Frozen M48 analysis contract",
+        "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_contract_v1.json"
+      }
+    ],
+    "charts": [
+      {
+        "id": "chart_partition_fractions",
+        "title": "Terminal partition fractions across six exact states",
+        "subtitle": "Signed fraction of the Vela-minus-Sentaurus drain gap; Vd=0.05 V; no interpolation",
+        "type": "bar",
+        "dataset": "partition_chart",
+        "sourceId": "src_m48",
+        "question": "Is the substrate/source/KCL partition at n23 Vg=0.05 V distinct from adjacent gates and the low-NWell control?",
+        "rationale": "Grouped signed bars expose the target-localized substrate overshoot and its source compensation; the adjacent table preserves exact audit values.",
+        "encodings": {
+          "x": {
+            "field": "state_label",
+            "type": "ordinal",
+            "label": "Device / Vg"
+          },
+          "y": {
+            "field": "signed_gap_fraction",
+            "type": "quantitative",
+            "label": "Signed fraction of drain gap",
+            "format": "percent"
+          },
+          "color": {
+            "field": "term",
+            "type": "nominal",
+            "label": "Identity term"
+          },
+          "tooltip": [
+            {
+              "field": "drain_gap_A_per_um",
+              "type": "quantitative",
+              "label": "Drain gap (A/um)"
+            },
+            {
+              "field": "srh_absolute_gap_fraction",
+              "type": "quantitative",
+              "label": "Absolute SRH/gap",
+              "format": "percent"
+            }
+          ]
+        },
+        "valueFormat": "percent",
+        "layout": "full",
+        "maxRows": 6,
+        "palette": {
+          "kind": "categorical"
+        },
+        "legend": {
+          "position": "bottom",
+          "sort": "spec",
+          "title": "Identity term"
+        },
+        "labels": {
+          "values": "auto"
+        },
+        "referenceLines": [
+          {
+            "axis": "y",
+            "value": 0,
+            "label": "Zero",
+            "color": "neutral"
+          }
+        ],
+        "settings": {
+          "groupMode": "grouped",
+          "orientation": "vertical",
+          "sort": "none"
+        },
+        "surface": {
+          "viewMode": "both",
+          "interactiveLegend": true,
+          "showControls": true
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "table_terms",
+        "title": "Target terminal-identity contributions",
+        "subtitle": "Signed A/um terms; compensating fractions can exceed 100%",
+        "dataset": "target_terms",
+        "sourceId": "src_m48",
+        "defaultSort": {
+          "field": "order",
+          "direction": "asc"
+        },
+        "density": "spacious",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "term",
+            "label": "Identity term",
+            "type": "text"
+          },
+          {
+            "field": "contribution_A_per_um",
+            "label": "Contribution (A/um)",
+            "format": "number"
+          },
+          {
+            "field": "signed_gap_fraction",
+            "label": "Signed fraction of gap",
+            "format": "percent"
+          },
+          {
+            "field": "order",
+            "label": "Order",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "table_controls",
+        "title": "Six-state terminal partition controls",
+        "subtitle": "Exact n23/n19 states at Vd=0.05 V; no interpolation",
+        "dataset": "state_controls",
+        "sourceId": "src_m48",
+        "defaultSort": {
+          "field": "drain_gap_A_per_um",
+          "direction": "desc"
+        },
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "device",
+            "label": "Device",
+            "type": "text"
+          },
+          {
+            "field": "gate_voltage_V",
+            "label": "Vg (V)",
+            "format": "number"
+          },
+          {
+            "field": "drain_gap_A_per_um",
+            "label": "Drain gap (A/um)",
+            "format": "number"
+          },
+          {
+            "field": "substrate_gap_fraction",
+            "label": "Substrate/gap",
+            "format": "percent"
+          },
+          {
+            "field": "source_gap_fraction",
+            "label": "Source/gap",
+            "format": "percent"
+          },
+          {
+            "field": "kcl_gap_fraction",
+            "label": "KCL/gap",
+            "format": "percent"
+          },
+          {
+            "field": "srh_absolute_gap_fraction",
+            "label": "Absolute SRH/gap",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "table_closure",
+        "title": "Target carrier-continuity closure",
+        "subtitle": "n23, Vd=0.05 V, Vg=0.05 V; signed A/um",
+        "dataset": "target_closure",
+        "sourceId": "src_m48",
+        "defaultSort": {
+          "field": "solver",
+          "direction": "asc"
+        },
+        "density": "spacious",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "solver",
+            "label": "Solver",
+            "type": "text"
+          },
+          {
+            "field": "electron_residual_A_per_um",
+            "label": "Electron closure",
+            "format": "number"
+          },
+          {
+            "field": "hole_residual_A_per_um",
+            "label": "Hole closure",
+            "format": "number"
+          },
+          {
+            "field": "four_terminal_kcl_A_per_um",
+            "label": "Four-terminal KCL",
+            "format": "number"
+          },
+          {
+            "field": "id_to_kcl",
+            "label": "Id/|KCL|",
+            "format": "number"
+          },
+          {
+            "field": "resolved",
+            "label": "Resolved",
+            "type": "text"
+          }
+        ]
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# SimpleMOS M48 terminal partition and continuity closure"
+      },
+      {
+        "id": "summary",
+        "type": "markdown",
+        "sourceId": "src_m48",
+        "body": "## Technical summary\nThe M47 target drain-current gap is exactly balanced by a target-localized substrate term (189.2%), a compensating source term (-101.4%), and a smaller KCL-residual difference (12.2%). Integrated SRH differs by only 1.57% of the gap. This identifies the terminal manifestation in the electron partition; it does not prove the physical operator that caused the state."
+      },
+      {
+        "id": "terms_title",
+        "type": "markdown",
+        "body": "## Substrate rebalancing dominates the exact terminal identity"
+      },
+      {
+        "id": "terms",
+        "type": "table",
+        "tableId": "table_terms"
+      },
+      {
+        "id": "controls_title",
+        "type": "markdown",
+        "sourceId": "src_m48",
+        "body": "## The substrate fraction is localized at the n23 0.05 V peak\nThe target absolute fraction exceeds both adjacent n23 gates and matched n19. Exact lookup values remain in the adjacent table because the frozen contract forbids interpolation. Read bars relative to the zero line; signs show compensating terminal terms."
+      },
+      {
+        "id": "controls_chart",
+        "type": "chart",
+        "chartId": "chart_partition_fractions"
+      },
+      {
+        "id": "controls",
+        "type": "table",
+        "tableId": "table_controls"
+      },
+      {
+        "id": "closure_title",
+        "type": "markdown",
+        "sourceId": "src_m48",
+        "body": "## Numerical nonclosure is visible but does not dominate\nBoth target states pass Id/|KCL| >= 10. The KCL difference is itself target-localized, so it remains a stated 12.2% limitation rather than being discarded."
+      },
+      {
+        "id": "closure",
+        "type": "table",
+        "tableId": "table_closure"
+      },
+      {
+        "id": "scope",
+        "type": "markdown",
+        "sourceId": "src_contract",
+        "body": "## Scope and definitions\nM48 reuses the six exact M47 n23/n19 states at Vd=0.05 V and Vg=0.00/0.05/0.10 V. Every delta is Vela minus Sentaurus. The identity is Delta Id = Delta KCL - Delta Isource - Delta Isubstrate - Delta Igate."
+      },
+      {
+        "id": "method",
+        "type": "markdown",
+        "sourceId": "src_m48",
+        "body": "## Methodology\nThe analysis reads M47 CurrentPlot, terminal_balance, SRH balance, and frozen state ledgers without executing either solver. Sentaurus hole current already has conventional orientation; the Vela native hole column is sign-flipped before component and KCL identities are evaluated."
+      },
+      {
+        "id": "limitations",
+        "type": "markdown",
+        "sourceId": "src_m48",
+        "body": "## Limitations and robustness\nAll 144 terminal rows, 12 continuity rows, and 84 contribution rows pass frozen identity and finiteness checks. Sentaurus carrier closure uses exported nodal SRH with common-volume quadrature and is not its native Newton residual. The M47 0.087729 dex barrier residual is logarithmic and cannot be added directly to the A/um partition terms."
+      },
+      {
+        "id": "next",
+        "type": "markdown",
+        "body": "## Recommended next step\nIf another milestone is opened, compare substrate-side electron quasi-Fermi and continuity rows on the same frozen states. Keep SG/contact extraction, quasi-Fermi packing, global HFS, and production defaults closed."
+      },
+      {
+        "id": "questions",
+        "type": "markdown",
+        "body": "## Further question\nWhich substrate-side electron-continuity rows first create the localized partition, and is their response tied to BGN-dependent equilibrium state or another fixed production operator?"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-09-01T00:00:00+08:00",
+    "status": "ready",
+    "datasets": {
+      "target_terms": [
+        {
+          "order": 1,
+          "term": "Substrate rebalancing",
+          "contribution_A_per_um": 4.6548715632404935e-17,
+          "signed_gap_fraction": 1.892080354346817
+        },
+        {
+          "order": 2,
+          "term": "Source rebalancing",
+          "contribution_A_per_um": -2.495023008914551e-17,
+          "signed_gap_fraction": -1.0141598870504875
+        },
+        {
+          "order": 3,
+          "term": "KCL residual difference",
+          "contribution_A_per_um": 3.0033848400280003e-18,
+          "signed_gap_fraction": 0.12207953270367052
+        },
+        {
+          "order": 4,
+          "term": "Gate rebalancing",
+          "contribution_A_per_um": -0.0,
+          "signed_gap_fraction": -0.0
+        }
+      ],
+      "state_controls": [
+        {
+          "state_label": "n23 / 0.00 V",
+          "device": "n23",
+          "gate_voltage_V": 0.0,
+          "drain_gap_A_per_um": 2.0524921088631883e-18,
+          "substrate_gap_fraction": -0.11345401359562274,
+          "source_gap_fraction": 1.1216494790388014,
+          "kcl_gap_fraction": -0.00819546544317875,
+          "srh_absolute_gap_fraction": 0.18875105608067713
+        },
+        {
+          "state_label": "n23 / 0.05 V",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "drain_gap_A_per_um": 2.4601870383287426e-17,
+          "substrate_gap_fraction": 1.892080354346817,
+          "source_gap_fraction": -1.0141598870504875,
+          "kcl_gap_fraction": 0.12207953270367052,
+          "srh_absolute_gap_fraction": 0.01571287468705296
+        },
+        {
+          "state_label": "n23 / 0.10 V",
+          "device": "n23",
+          "gate_voltage_V": 0.1,
+          "drain_gap_A_per_um": 2.3518669720846707e-17,
+          "substrate_gap_fraction": 0.41620860904534823,
+          "source_gap_fraction": 0.5416658380102577,
+          "kcl_gap_fraction": 0.042125552944394004,
+          "srh_absolute_gap_fraction": 0.016342561089038476
+        },
+        {
+          "state_label": "n19 / 0.00 V",
+          "device": "n19",
+          "gate_voltage_V": 0.0,
+          "drain_gap_A_per_um": 9.483767531033926e-17,
+          "substrate_gap_fraction": -0.008636859467849032,
+          "source_gap_fraction": 1.0086368576981593,
+          "kcl_gap_fraction": 1.7696897041540142e-09,
+          "srh_absolute_gap_fraction": 0.0021589690411082385
+        },
+        {
+          "state_label": "n19 / 0.05 V",
+          "device": "n19",
+          "gate_voltage_V": 0.05,
+          "drain_gap_A_per_um": 3.3113156507386897e-16,
+          "substrate_gap_fraction": 0.04893487114679993,
+          "source_gap_fraction": 0.951065127682006,
+          "kcl_gap_fraction": 1.1711940194129397e-09,
+          "srh_absolute_gap_fraction": 0.0006170962764873558
+        },
+        {
+          "state_label": "n19 / 0.10 V",
+          "device": "n19",
+          "gate_voltage_V": 0.1,
+          "drain_gap_A_per_um": 1.1357295438344045e-15,
+          "substrate_gap_fraction": 0.003398044729246526,
+          "source_gap_fraction": 0.9966019556036265,
+          "kcl_gap_fraction": -3.328730811971176e-10,
+          "srh_absolute_gap_fraction": 0.00017989243775596943
+        }
+      ],
+      "partition_chart": [
+        {
+          "state_label": "n23 / 0.00 V",
+          "device": "n23",
+          "gate_voltage_V": 0.0,
+          "term": "Substrate",
+          "signed_gap_fraction": -0.11345401359562274,
+          "drain_gap_A_per_um": 2.0524921088631883e-18,
+          "srh_absolute_gap_fraction": 0.18875105608067713
+        },
+        {
+          "state_label": "n23 / 0.00 V",
+          "device": "n23",
+          "gate_voltage_V": 0.0,
+          "term": "Source",
+          "signed_gap_fraction": 1.1216494790388014,
+          "drain_gap_A_per_um": 2.0524921088631883e-18,
+          "srh_absolute_gap_fraction": 0.18875105608067713
+        },
+        {
+          "state_label": "n23 / 0.00 V",
+          "device": "n23",
+          "gate_voltage_V": 0.0,
+          "term": "KCL residual",
+          "signed_gap_fraction": -0.00819546544317875,
+          "drain_gap_A_per_um": 2.0524921088631883e-18,
+          "srh_absolute_gap_fraction": 0.18875105608067713
+        },
+        {
+          "state_label": "n23 / 0.05 V",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "term": "Substrate",
+          "signed_gap_fraction": 1.892080354346817,
+          "drain_gap_A_per_um": 2.4601870383287426e-17,
+          "srh_absolute_gap_fraction": 0.01571287468705296
+        },
+        {
+          "state_label": "n23 / 0.05 V",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "term": "Source",
+          "signed_gap_fraction": -1.0141598870504875,
+          "drain_gap_A_per_um": 2.4601870383287426e-17,
+          "srh_absolute_gap_fraction": 0.01571287468705296
+        },
+        {
+          "state_label": "n23 / 0.05 V",
+          "device": "n23",
+          "gate_voltage_V": 0.05,
+          "term": "KCL residual",
+          "signed_gap_fraction": 0.12207953270367052,
+          "drain_gap_A_per_um": 2.4601870383287426e-17,
+          "srh_absolute_gap_fraction": 0.01571287468705296
+        },
+        {
+          "state_label": "n23 / 0.10 V",
+          "device": "n23",
+          "gate_voltage_V": 0.1,
+          "term": "Substrate",
+          "signed_gap_fraction": 0.41620860904534823,
+          "drain_gap_A_per_um": 2.3518669720846707e-17,
+          "srh_absolute_gap_fraction": 0.016342561089038476
+        },
+        {
+          "state_label": "n23 / 0.10 V",
+          "device": "n23",
+          "gate_voltage_V": 0.1,
+          "term": "Source",
+          "signed_gap_fraction": 0.5416658380102577,
+          "drain_gap_A_per_um": 2.3518669720846707e-17,
+          "srh_absolute_gap_fraction": 0.016342561089038476
+        },
+        {
+          "state_label": "n23 / 0.10 V",
+          "device": "n23",
+          "gate_voltage_V": 0.1,
+          "term": "KCL residual",
+          "signed_gap_fraction": 0.042125552944394004,
+          "drain_gap_A_per_um": 2.3518669720846707e-17,
+          "srh_absolute_gap_fraction": 0.016342561089038476
+        },
+        {
+          "state_label": "n19 / 0.00 V",
+          "device": "n19",
+          "gate_voltage_V": 0.0,
+          "term": "Substrate",
+          "signed_gap_fraction": -0.008636859467849032,
+          "drain_gap_A_per_um": 9.483767531033926e-17,
+          "srh_absolute_gap_fraction": 0.0021589690411082385
+        },
+        {
+          "state_label": "n19 / 0.00 V",
+          "device": "n19",
+          "gate_voltage_V": 0.0,
+          "term": "Source",
+          "signed_gap_fraction": 1.0086368576981593,
+          "drain_gap_A_per_um": 9.483767531033926e-17,
+          "srh_absolute_gap_fraction": 0.0021589690411082385
+        },
+        {
+          "state_label": "n19 / 0.00 V",
+          "device": "n19",
+          "gate_voltage_V": 0.0,
+          "term": "KCL residual",
+          "signed_gap_fraction": 1.7696897041540142e-09,
+          "drain_gap_A_per_um": 9.483767531033926e-17,
+          "srh_absolute_gap_fraction": 0.0021589690411082385
+        },
+        {
+          "state_label": "n19 / 0.05 V",
+          "device": "n19",
+          "gate_voltage_V": 0.05,
+          "term": "Substrate",
+          "signed_gap_fraction": 0.04893487114679993,
+          "drain_gap_A_per_um": 3.3113156507386897e-16,
+          "srh_absolute_gap_fraction": 0.0006170962764873558
+        },
+        {
+          "state_label": "n19 / 0.05 V",
+          "device": "n19",
+          "gate_voltage_V": 0.05,
+          "term": "Source",
+          "signed_gap_fraction": 0.951065127682006,
+          "drain_gap_A_per_um": 3.3113156507386897e-16,
+          "srh_absolute_gap_fraction": 0.0006170962764873558
+        },
+        {
+          "state_label": "n19 / 0.05 V",
+          "device": "n19",
+          "gate_voltage_V": 0.05,
+          "term": "KCL residual",
+          "signed_gap_fraction": 1.1711940194129397e-09,
+          "drain_gap_A_per_um": 3.3113156507386897e-16,
+          "srh_absolute_gap_fraction": 0.0006170962764873558
+        },
+        {
+          "state_label": "n19 / 0.10 V",
+          "device": "n19",
+          "gate_voltage_V": 0.1,
+          "term": "Substrate",
+          "signed_gap_fraction": 0.003398044729246526,
+          "drain_gap_A_per_um": 1.1357295438344045e-15,
+          "srh_absolute_gap_fraction": 0.00017989243775596943
+        },
+        {
+          "state_label": "n19 / 0.10 V",
+          "device": "n19",
+          "gate_voltage_V": 0.1,
+          "term": "Source",
+          "signed_gap_fraction": 0.9966019556036265,
+          "drain_gap_A_per_um": 1.1357295438344045e-15,
+          "srh_absolute_gap_fraction": 0.00017989243775596943
+        },
+        {
+          "state_label": "n19 / 0.10 V",
+          "device": "n19",
+          "gate_voltage_V": 0.1,
+          "term": "KCL residual",
+          "signed_gap_fraction": -3.328730811971176e-10,
+          "drain_gap_A_per_um": 1.1357295438344045e-15,
+          "srh_absolute_gap_fraction": 0.00017989243775596943
+        }
+      ],
+      "target_closure": [
+        {
+          "solver": "sentaurus",
+          "electron_residual_A_per_um": -2.9823329099641163e-18,
+          "hole_residual_A_per_um": -2.1054948468834875e-20,
+          "four_terminal_kcl_A_per_um": -3.003387858433102e-18,
+          "id_to_kcl": 28.588552001103725,
+          "resolved": true
+        },
+        {
+          "solver": "vela",
+          "electron_residual_A_per_um": 9.350292078938605e-21,
+          "hole_residual_A_per_um": -9.353310484046594e-21,
+          "four_terminal_kcl_A_per_um": -3.018405101826648e-24,
+          "id_to_kcl": 36596936.66921514,
+          "resolved": true
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "src_m48",
+      "label": "Frozen M48 terminal partition report and ledgers",
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_partition_continuity_closure/m48_terminal_partition_continuity_closure_report.json",
+      "query": {
+        "engine": "SQLite",
+        "language": "SQL",
+        "description": "Literal reviewed rows generated from the frozen M48 terminal-identity ledger.",
+        "sql": "WITH partition_chart(state_label,device,gate_voltage_V,term,signed_gap_fraction,drain_gap_A_per_um,srh_absolute_gap_fraction) AS (\n  VALUES ('n23 / 0.00 V','n23',0,'Substrate',-0.11345401359562274,2.0524921088631883e-18,0.18875105608067713),\n('n23 / 0.00 V','n23',0,'Source',1.1216494790388014,2.0524921088631883e-18,0.18875105608067713),\n('n23 / 0.00 V','n23',0,'KCL residual',-0.0081954654431787496,2.0524921088631883e-18,0.18875105608067713),\n('n23 / 0.05 V','n23',0.050000000000000003,'Substrate',1.892080354346817,2.4601870383287426e-17,0.015712874687052961),\n('n23 / 0.05 V','n23',0.050000000000000003,'Source',-1.0141598870504875,2.4601870383287426e-17,0.015712874687052961),\n('n23 / 0.05 V','n23',0.050000000000000003,'KCL residual',0.12207953270367052,2.4601870383287426e-17,0.015712874687052961),\n('n23 / 0.10 V','n23',0.10000000000000001,'Substrate',0.41620860904534823,2.3518669720846707e-17,0.016342561089038476),\n('n23 / 0.10 V','n23',0.10000000000000001,'Source',0.54166583801025769,2.3518669720846707e-17,0.016342561089038476),\n('n23 / 0.10 V','n23',0.10000000000000001,'KCL residual',0.042125552944394004,2.3518669720846707e-17,0.016342561089038476),\n('n19 / 0.00 V','n19',0,'Substrate',-0.0086368594678490323,9.4837675310339264e-17,0.0021589690411082385),\n('n19 / 0.00 V','n19',0,'Source',1.0086368576981593,9.4837675310339264e-17,0.0021589690411082385),\n('n19 / 0.00 V','n19',0,'KCL residual',1.7696897041540142e-09,9.4837675310339264e-17,0.0021589690411082385),\n('n19 / 0.05 V','n19',0.050000000000000003,'Substrate',0.048934871146799931,3.3113156507386897e-16,0.00061709627648735583),\n('n19 / 0.05 V','n19',0.050000000000000003,'Source',0.95106512768200602,3.3113156507386897e-16,0.00061709627648735583),\n('n19 / 0.05 V','n19',0.050000000000000003,'KCL residual',1.1711940194129397e-09,3.3113156507386897e-16,0.00061709627648735583),\n('n19 / 0.10 V','n19',0.10000000000000001,'Substrate',0.0033980447292465258,1.1357295438344045e-15,0.00017989243775596943),\n('n19 / 0.10 V','n19',0.10000000000000001,'Source',0.99660195560362652,1.1357295438344045e-15,0.00017989243775596943),\n('n19 / 0.10 V','n19',0.10000000000000001,'KCL residual',-3.3287308119711758e-10,1.1357295438344045e-15,0.00017989243775596943)\n) SELECT * FROM partition_chart ORDER BY device DESC, gate_voltage_V, term;",
+        "tables_used": [
+          "partition_chart"
+        ],
+        "filters": [
+          "Exact n23/n19 states at Vd=0.05 V and Vg=0.00/0.05/0.10 V",
+          "No interpolation"
+        ],
+        "metric_definitions": [
+          "signed_gap_fraction = terminal-identity contribution / (Vela drain current - Sentaurus drain current)",
+          "SRH fraction uses the absolute cross-solver integrated-SRH difference divided by the absolute drain-current gap"
+        ]
+      }
+    },
+    {
+      "id": "src_contract",
+      "label": "Frozen M48 analysis contract",
+      "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_contract_v1.json"
+    }
+  ]
+}

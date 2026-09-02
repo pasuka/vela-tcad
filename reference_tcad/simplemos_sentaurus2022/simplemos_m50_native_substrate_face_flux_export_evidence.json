@@ -1,0 +1,68 @@
+{
+  "schema": "vela.simplemos.sdevice.m50_native_substrate_face_flux_export_evidence.v1",
+  "status": "frozen",
+  "contract_sha256": "8c2e7aa6db645ebd1b9c1285828958d8b40195ac5469feb5784a8e6d3bf73b53",
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/native_substrate_face_flux_export/m50_native_substrate_face_flux_export_report.json",
+      "sha256": "18fb509fbad7b6166e948f0b2ed715a24b1349d85ef43db27edfed2b564ea81e"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/native_substrate_face_flux_export/m50_native_substrate_face_flux_ledger.csv",
+      "sha256": "0ff8bdd4870e261feefaa55ff715f0b93d034faba16fc9566ce5d7d905b1a093"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/native_substrate_face_flux_export/m50_terminal_replay_ledger.csv",
+      "sha256": "4cd9ca1f651b12be87cb5ea56e705dd626ec1d1d73f943fd6ca4146ebd8ef6ac"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/native_substrate_face_flux_export/m50_sentaurus_execution_attempts.json",
+      "sha256": "56cd9667d226fb1c1818729f03451ee3c3acd7d51431cf1c23c71d05e0274e31"
+    },
+    {
+      "path": "docs/validation/simplemos_m50_native_substrate_face_flux_export_2026-09-01.md",
+      "sha256": "134f6d4c37a4d61b6be8757d19235abb46a38d5a0b7cd4ddff166e53c700f321"
+    },
+    {
+      "path": "docs/validation/reports/simplemos_m50/artifact.json",
+      "sha256": "2f5e81724679af199912b046de53879f62450ebd4d4e47015f632ad5f83a256f"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m50_native_substrate_face_flux_export_contract_v1.json": "8c2e7aa6db645ebd1b9c1285828958d8b40195ac5469feb5784a8e6d3bf73b53",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m50_native_substrate_face_flux_export_contract_freeze.json": "71726a0aa6bd42a65690c863550ea6c830f14b9b7cb96f609b74b0f93c259026",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m50_native_substrate_face_flux_export_contract_execution_erratum_v1.json": "227ea0b8edfe88a637c8e51e6a1f2461f0512db76c2bb262959a75c5dd71afd2",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m50_native_substrate_face_flux_export_contract_execution_erratum_freeze.json": "1678c736800b71f078cb432efb4bb377b65d6ee80d709204dc9d6d0a309efc43",
+    "scripts/run_simplemos_m50_native_substrate_face_flux_export.py": "2ae5d1a559755ddf5e411987267a3de53f368c3de007b45640f08f6eec4cbde8",
+    "tests/regression/test_simplemos_m50_native_substrate_face_flux_export.py": "22d487fa27905c8eb130b0404596c0468e46be44a46e0b6df12b0010c16e596e",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_evidence.json": "ab160b2657faa9525eeedeb4c5c73c8d8f293065d9147455aaf3422f3bb18026",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_evidence.json": "ba3b091ca0e9953a7f0f8c73382f86b4d373f161c57a3dd4ac529891a0a97a78",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m49_substrate_electron_transport_attribution_evidence.json": "b561838705a68127846421cc6c38c4310bbb65d09b53e69f668c4899967ec01c",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m50_native_substrate_face_flux_export/sentaurus_manifest.json": "f1ee9ad65bb6cbc3732fd926108908e144910fa89fba383cbba673dac59949f4",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m50_native_substrate_face_flux_export/sentaurus_banner.txt": "a78e8454935480693b2930f4ccfeef2205167c178afd8718ec702218a8171d9b",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m50_native_substrate_face_flux_export/sentaurus_bundle/n23/n23_vd_0p05_des.cmd": "67351e1e3ed88e3045e4feb71dcd2ddf009f4d11a7a46cf695a92e22bb244e8f",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m50_native_substrate_face_flux_export/sentaurus_raw/sentaurus_bundle/n23/IdVg_n23_vd_0p05_des.plt": "77370b8400df1b7a71128714eb61a91fd4523c8356191428f97d06cfeb8db53e",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m50_native_substrate_face_flux_export/sentaurus_bundle/n19/n19_vd_0p05_des.cmd": "2ea4026c73aa3b7dac6f64a7b4c36e4563dc264bf06ffef1bc8dfffab67cc5b2",
+    "build-release/reference_tcad/simplemos_sentaurus2022/m50_native_substrate_face_flux_export/sentaurus_raw/sentaurus_bundle/n19/IdVg_n19_vd_0p05_des.plt": "ec795d68e5424380d25b73d5c6bbbdb1271be36da0ee425d57e97a54a45f3a1d"
+  },
+  "new_sentaurus_execution": true,
+  "new_vela_execution": false,
+  "default_physics_model_changed": false,
+  "closed_topics_reinvestigated": false,
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "exact_state_count": true,
+    "all_biases_exact": true,
+    "all_values_finite": true,
+    "terminal_replay_closes": true,
+    "native_face_flux_orientation_reported": true,
+    "native_to_same_run_terminal_closes": false,
+    "native_bridge_identity_closes": false,
+    "native_matches_m49_exported_boundary": true,
+    "target_control_localization": false,
+    "outcome_is_contract_reportable": true,
+    "defaults_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": false
+  }
+}

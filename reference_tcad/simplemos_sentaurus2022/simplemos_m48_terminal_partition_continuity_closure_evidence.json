@@ -1,0 +1,64 @@
+{
+  "schema": "vela.simplemos.sdevice.m48_terminal_partition_continuity_closure_evidence.v1",
+  "status": "frozen",
+  "contract_sha256": "ab32861c940c2d899cdf8401bd2779ee0a1fb4985efe6265fe79c43b73538f25",
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_partition_continuity_closure/m48_terminal_partition_continuity_closure_report.json",
+      "sha256": "296a645780bedf3b2d25362b5f2f51f8f3924fd1c7f6bb1794328df343635ac4"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_partition_continuity_closure/m48_four_terminal_component_ledger.csv",
+      "sha256": "3992d716397e57d6b5815e730d20ea8869702a06a884c17fdb6bacdcd9ed6ed4"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_partition_continuity_closure/m48_carrier_continuity_closure_ledger.csv",
+      "sha256": "6d51d5cdef906e5178b3812a77c924413fb575732ddf4eb584c486d90f0a6744"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_partition_continuity_closure/m48_terminal_identity_contribution_ledger.csv",
+      "sha256": "beab1402b05ad9d719a007a0fcffc29ec0403dc7f3c0c9c9b45d4d089cd10cb3"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/terminal_partition_continuity_closure/m48_control_contrast_ledger.csv",
+      "sha256": "d730dfead90a446e62168bdd658116b7bd1e822b6ef80b0b0773968866fbf696"
+    },
+    {
+      "path": "docs/validation/simplemos_m48_terminal_partition_continuity_closure_2026-09-01.md",
+      "sha256": "68fa8f28f99ce1b979cbbd1f2a996cb8074a28ab9a2d893fb10e393d593f3938"
+    },
+    {
+      "path": "docs/validation/reports/simplemos_m48/artifact.json",
+      "sha256": "b91043f0355cff9ec88e4dd856a732e1c667d7ab064159bf521c0bfa74a3429f"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_contract_v1.json": "ab32861c940c2d899cdf8401bd2779ee0a1fb4985efe6265fe79c43b73538f25",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m48_terminal_partition_continuity_closure_contract_freeze.json": "2d336b69c10b22122290c3ecb28ab2e2c7460440ded71721f4b197d80e6fe3c0",
+    "scripts/run_simplemos_m48_terminal_partition_continuity_closure.py": "7ffcaa8246eafb90bc4335f40ab50b0f36c42304166a208477d36be3781eb559",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_contract_v1.json": "03ed032143c31cf6f58bfc870ad501d5ea95b9214b36042c8ac7540bdd83d244",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_evidence.json": "ab160b2657faa9525eeedeb4c5c73c8d8f293065d9147455aaf3422f3bb18026",
+    "tests/regression/test_simplemos_m48_terminal_partition_continuity_closure.py": "f960935f8d6d01ef4c716ffef5ba4f21dac4090975db0e249afcc54e43bce178"
+  },
+  "analysis_only": true,
+  "new_sentaurus_execution": false,
+  "new_vela_execution": false,
+  "default_physics_model_changed": false,
+  "closed_topics_reinvestigated": false,
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "solver_state_count": true,
+    "terminal_row_count": true,
+    "continuity_row_count": true,
+    "contribution_row_count": true,
+    "all_biases_exact": true,
+    "all_values_finite": true,
+    "component_identities_close": true,
+    "terminal_identities_close": true,
+    "m47_currents_reproduced": true,
+    "resolution_status_reported": true,
+    "defaults_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": true
+  }
+}

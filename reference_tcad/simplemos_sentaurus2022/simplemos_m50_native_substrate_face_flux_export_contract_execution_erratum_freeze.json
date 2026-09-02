@@ -1,0 +1,9 @@
+{
+  "schema": "vela.simplemos.sdevice.m50_native_substrate_face_flux_export_contract_execution_erratum_freeze.v1",
+  "status": "frozen_before_retry_execution",
+  "erratum": "reference_tcad/simplemos_sentaurus2022/simplemos_m50_native_substrate_face_flux_export_contract_execution_erratum_v1.json",
+  "erratum_sha256": "227ea0b8edfe88a637c8e51e6a1f2461f0512db76c2bb262959a75c5dd71afd2",
+  "parent_contract_sha256": "8c2e7aa6db645ebd1b9c1285828958d8b40195ac5469feb5784a8e6d3bf73b53",
+  "frozen_at": "2026-09-01T00:00:01+08:00",
+  "retry_execution_may_not_modify_erratum": true
+}

@@ -1,0 +1,62 @@
+{
+  "schema": "vela.simplemos.sdevice.m47_default_bgn_self_consistent_attribution_evidence.v1",
+  "status": "frozen",
+  "contract_sha256": "03ed032143c31cf6f58bfc870ad501d5ea95b9214b36042c8ac7540bdd83d244",
+  "artifacts": [
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/default_bgn_state_attribution/m47_default_bgn_self_consistent_attribution_report.json",
+      "sha256": "3ba3069f6a23e08f71a386b7f40db149225ec9e4bf6ef4559247a9b1531532f1"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/default_bgn_state_attribution/m47_state_summary.csv",
+      "sha256": "4f8e46779b0c6b4a201b916dc63be859c7504dcd6d1dad623915c660d611ee25"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/default_bgn_state_attribution/m47_node_state_ledger.csv",
+      "sha256": "7940eb9d9fe3d86176ddbb269ea2124f59db578354b975b3659f0a4f07a4cfe3"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/default_bgn_state_attribution/m47_contact_flux_ledger.csv",
+      "sha256": "1e2d78df1a2f329386faf50294b228cacf91a0bf00061ea20d17e51e0880f2f7"
+    },
+    {
+      "path": "reference_tcad/simplemos_sentaurus2022/default_bgn_state_attribution/m47_attribution_contrasts.csv",
+      "sha256": "7dde5dee146ea270d67fb929e144a80164a55604f6017fc7b0c66f8d705d3569"
+    },
+    {
+      "path": "docs/validation/simplemos_m47_default_bgn_self_consistent_attribution_2026-09-01.md",
+      "sha256": "f2068cfaccd7e007087eb4437b14ae3ebbbb5b35b82649a556549889dd4b7ddd"
+    }
+  ],
+  "source_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_contract_v1.json": "03ed032143c31cf6f58bfc870ad501d5ea95b9214b36042c8ac7540bdd83d244",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m47_default_bgn_self_consistent_attribution_contract_freeze.json": "6ef304e9929899d94bc31d28eeeddae173411cec1fce354e2409a566603756fa",
+    "scripts/run_simplemos_m47_default_bgn_self_consistent_attribution.py": "c8f01d7f58e2befe61bcd52ee161fcd89e2ba3a5078d0146be2dacff2766591c",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m45_post_qf_rebaseline_evidence.json": "7af4f931cca68009b92c3b14cd0d7fe880439dd4659795ceb3a16f2f841616b4",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m46_full_matrix_requalification_evidence.json": "cc4eab4af3f33dc5d57c15eb984c475447b0aee10c8dedd3f1f7be82237ccd28",
+    "tests/regression/test_simplemos_m47_default_bgn_self_consistent_attribution.py": "45e9dcb7fe7da340512d73faac65a791e27a21ad308eab5da93b18b6b5dabdaf",
+    "CMakeLists.txt": "d0405e1972c95a008f2b3f246e93a490cec147fa4e820934b81d35830034b118"
+  },
+  "runner_sha256": "98f0b7ecb95aafbdb2a271ba27afb650adba6b4f12ea1de2bc2bf07cde0a4a4c",
+  "default_physics_model_changed": false,
+  "default_hfs_model_changed": false,
+  "sg_or_contact_extraction_reinvestigated": false,
+  "qf_packing_reinvestigated": false,
+  "new_sentaurus_execution": true,
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "sentaurus_state_count": true,
+    "vela_state_count": true,
+    "all_biases_exact": true,
+    "all_states_converged": true,
+    "common_node_ids": true,
+    "coordinate_identity": true,
+    "required_fields_present": true,
+    "contact_flux_complete": true,
+    "m46_point_currents_reproduced": true,
+    "qf_reference_increment_preserved": true,
+    "defaults_unchanged": true,
+    "closed_topics_not_reopened": true,
+    "all_checks_pass": true
+  }
+}
