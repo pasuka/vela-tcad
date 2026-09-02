@@ -14,9 +14,16 @@
     "maximum_absolute_kcl_residual_A_per_um": 1e-18,
     "required_terminal_currents": ["collector", "base", "emitter"]
   },
-  "future_vela_comparison": {
-    "status": "reserved for WP3+; not asserted by WP0-WP2",
+  "wp3_wp5_vela_comparison": {
+    "status": "operational gates asserted; numerical parity is characterization-only",
     "primary_observables": ["Ic-Vce", "Ib-Vce", "beta-Vce", "terminal KCL"],
-    "secondary_observables": ["electrostatic potential", "electron density", "hole density"]
+    "secondary_observables": ["electrostatic potential", "electron density", "hole density"],
+    "required_collector_points": 31,
+    "collector_voltage_tolerance_V": 1e-8,
+    "maximum_relative_kcl_residual": 1e-6,
+    "maximum_absolute_kcl_residual_A_per_um": 1e-18,
+    "required_terminal_currents": ["collector", "base", "emitter"],
+    "numerical_parity_tolerance": null,
+    "numerical_parity_reason": "No Vela error tolerance was pre-registered before the first common-input run."
   }
 }

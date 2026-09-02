@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import shutil
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -179,6 +178,7 @@ def choose_sweep_contact(contacts: list[dict[str, Any]], device: str) -> str:
         "pmos2d": ["drain", "gate"],
         "ldmos2d": ["drain", "gate"],
         "igbt2d": ["collector", "anode", "drain"],
+        "bjt2d": ["collector", "base", "emitter"],
     }.get(device, [])
     names = [contact["name"] for contact in contacts]
     for name in preferred:
@@ -228,7 +228,14 @@ def base_deck(mesh_file: str,
 
 
 def write_json(path: Path, data: dict[str, Any]) -> None:
-    path.write_text(json.dumps(data, indent=2) + "\n")
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(json.dumps(data, indent=2) + "\n")
+
+
+def copy_text_lf(source: Path, destination: Path) -> None:
+    text = source.read_text(encoding="utf-8")
+    with destination.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text.replace("\r\n", "\n").replace("\r", "\n"))
 
 
 def parse_args() -> argparse.Namespace:
@@ -237,7 +244,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument(
         "--device",
-        choices=["pn_diode", "nmos2d", "pmos2d", "ldmos2d", "igbt2d"],
+        choices=["pn_diode", "nmos2d", "pmos2d", "ldmos2d", "igbt2d", "bjt2d"],
         required=True,
     )
     parser.add_argument(
@@ -261,7 +268,7 @@ def main() -> int:
     mesh, region_nodes = load_mesh(args.input_dir)
     doping = load_region_doping(args.input_dir, region_nodes)
     write_json(args.output_dir / "mesh.json", mesh)
-    shutil.copyfile(args.input_dir / "doping.csv", args.output_dir / "doping.csv")
+    copy_text_lf(args.input_dir / "doping.csv", args.output_dir / "doping.csv")
 
     generated = ["mesh.json", "doping.csv"]
     for sim_type in simulation_types:

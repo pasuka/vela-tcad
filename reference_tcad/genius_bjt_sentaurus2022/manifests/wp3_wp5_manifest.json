@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "run_id": "genius_bjt_vela_wp3_wp5_20260902",
+  "date": "2026-09-02",
+  "source_commit": "5afdc6c90e92be6ee65253902e9534a12984458a",
+  "toolchain": {
+    "platform": "Windows MSYS2 UCRT64",
+    "compiler": "g++.exe (Rev3, Built by MSYS2 project) 16.2.0",
+    "vela_example_runner_sha256": "d5e3110e8c65a99dc46d042303c8abd82371fc5a4e2465131623aed39797aed7"
+  },
+  "raw_artifact_root": "build-release/reference_tcad/genius_bjt_sentaurus2022/vela_wp3_wp5",
+  "execution_order": [
+    "vela/configs/m0_base_ramp.json",
+    "vela/configs/m0_collector_sweep.json",
+    "vela/configs/m1_model_relaxation.json",
+    "vela/configs/m1_collector_sweep.json"
+  ],
+  "results": {
+    "m0_collector_internal_points": 74,
+    "m1_collector_internal_points": 74,
+    "comparison_points_per_model": 31,
+    "operational_pass": true,
+    "numerical_parity_status": "characterization_only"
+  },
+  "sha256": {
+    "vela/input/mesh.json": "b0b541a5db3fd3d6805e6615ade420c8f62d85fb01b8c161a1ba1fb8b4ee3104",
+    "vela/input/doping.csv": "312bd1f60d9019b403e73720321a38709dbb0cb7722829601e3415cc87173f1a",
+    "vela/materials_sentaurus2022.json": "3b970fa9efc7f5ef4d72c7e82f8d8c552d2caa7afba8bd338e75f444912f9915",
+    "vela/configs/m0_base_ramp.json": "ff35ee4a44ed93a9a2f1394f0b6be8213feba9b80ec791ef9e4fec0753e1c2fb",
+    "vela/configs/m0_collector_sweep.json": "7c920fc0608955f59dc30afd1bc516bc6ea6df46f2dba1524e5a2671ccd0201e",
+    "vela/configs/m1_model_relaxation.json": "3c15aa60cbe9bd55fc46a86e65062b7bc0e5891a896bfdf7235b223087a88463",
+    "vela/configs/m1_collector_sweep.json": "3ac342a4d951bc3f52b96300a7c980361c31c9c214d5e492514b2acad83a42bd",
+    "comparison/m0_sentaurus_vela.csv": "b7b50164be120a7778f26cc2762ac7cec017dbba75b8bc7691278fc821f14a72",
+    "comparison/m1_sentaurus_vela.csv": "613f762ef0e2465be3db77c8ee8ce5fc74480c7882680f9032803f7339af5929",
+    "comparison/comparison_summary.json": "3e7e505bb76ea8e5b15e8008af9e916459c1183e8cd7a44b64a377632a2acc11"
+  }
+}

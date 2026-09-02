@@ -1,0 +1,94 @@
+{
+  "_comment": "Genius BJT M1: collector sweep from the accepted VBE=0.70 V state.",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "../input/mesh.json",
+  "node_doping_file": "../input/doping.csv",
+  "materials_file": "../materials_sentaurus2022.json",
+  "output_csv": "../../../../build-release/reference_tcad/genius_bjt_sentaurus2022/vela_wp3_wp5/m1_collector.csv",
+  "scaling": {"mode": "unit_scaling"},
+  "doping": [{"region": "R.Silicon", "donors": 5e15, "acceptors": 0.0}],
+  "contacts": [
+    {"name": "emitter", "type": "ohmic", "bias": 0.0},
+    {"name": "base", "type": "ohmic", "bias": 0.7},
+    {"name": "collector", "type": "ohmic", "bias": 0.0}
+  ],
+  "solver": {
+    "method": "gummel_newton",
+    "max_iter": 80,
+    "reltol": 1e-8,
+    "abstol": 1e-9,
+    "damping_factor": 1.0,
+    "damping_psi": 0.2,
+    "line_search": true,
+    "warm_start": true,
+    "quasi_fermi_reference": "contact_majority",
+    "quasi_fermi_update_limit_V": 0.1,
+    "mobility": {
+      "model": "masetti",
+      "doping_concentration_basis": "total_impurity"
+    },
+    "carrier_statistics": {"model": "fermi_dirac"},
+    "bandgap_narrowing": {
+      "model": "old_slotboom",
+      "fermi_statistics_correction": true
+    },
+    "recombination": ["srh", "auger"],
+    "srh_density_coupling": "sentaurus_default",
+    "srh_doping_dependence": {
+      "enabled": true,
+      "concentration_basis": "total_impurity",
+      "temperature_dependence": true,
+      "reference_temperature_K": 300.0,
+      "electron_temperature_exponent": -1.5,
+      "hole_temperature_exponent": -1.5,
+      "electron": {"tau_min_s": 0.0, "tau_max_s": 3e-8, "reference_doping_m3": 1e16, "gamma": 1.0},
+      "hole": {"tau_min_s": 0.0, "tau_max_s": 3e-6, "reference_doping_m3": 1e16, "gamma": 1.0}
+    },
+    "impact_ionization": {"model": "none"},
+    "handoff": {
+      "gummel_max_iter": 20,
+      "newton_max_iter": 80,
+      "require_gummel_convergence": false,
+      "fallback": "none"
+    },
+    "carrier_row_convergence": {
+      "mode": "report",
+      "eps_row": 0.001,
+      "scale_floor": 1e-30,
+      "min_source_scale": 1e-18,
+      "min_source_scale_fraction": 0.0
+    },
+    "continuity_row_scaling": {
+      "enabled": true,
+      "flux_fraction": 0.0,
+      "scale_floor": 1e-30,
+      "min_source_scale": 1e-18,
+      "min_weight": 1e-12,
+      "max_weight": 1e18
+    }
+  },
+  "sweep": {
+    "mode": "iv",
+    "contact": "collector",
+    "current_contact": "collector",
+    "start": 0.0,
+    "stop": 3.0,
+    "step": 0.1,
+    "initial_step": 0.001,
+    "min_step": 1e-8,
+    "max_step": 0.05,
+    "growth_factor": 1.3,
+    "shrink_factor": 0.5,
+    "max_retries": 20,
+    "write_vtk": false,
+    "initial_state_file": "../../../../build-release/reference_tcad/genius_bjt_sentaurus2022/vela_wp3_wp5/m1_vbe070_state.csv",
+    "write_state_file": "../../../../build-release/reference_tcad/genius_bjt_sentaurus2022/vela_wp3_wp5/m1_vce300_state.csv",
+    "diagnostics": {
+      "terminal_balance": {
+        "enabled": true,
+        "contacts": ["collector", "base", "emitter"],
+        "csv_file": "../../../../build-release/reference_tcad/genius_bjt_sentaurus2022/vela_wp3_wp5/m1_collector_terminal_balance.csv"
+      }
+    }
+  }
+}

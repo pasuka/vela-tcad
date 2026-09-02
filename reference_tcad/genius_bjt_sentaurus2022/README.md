@@ -1,8 +1,8 @@
 # Genius NPN BJT / Sentaurus 2022 reference
 
 This fixture reproduces the two-dimensional NPN BJT shipped with Genius TCAD
-(`examples/BJT/step1.inp` and `step2.inp`) as a Sentaurus SDE/SDevice project.
-It is the WP0-WP2 oracle for a later, separately scoped Vela import and
+(`examples/BJT/step1.inp` and `step2.inp`) as a Sentaurus SDE/SDevice project,
+then imports the accepted structure into Vela for the WP3-WP5 common-input
 comparison.
 
 ## Frozen source contract
@@ -36,6 +36,22 @@ Large/raw Sentaurus products are deliberately kept under
 `build-release/reference_tcad/genius_bjt_sentaurus2022/` and are not intended
 for source control.
 
+## WP3-WP5 Vela contents
+
+- `vela/input/`: the exact 5611-node/10940-triangle Sentaurus structure and
+  node doping converted to Vela input.
+- `vela/materials_sentaurus2022.json`: explicit 300 K silicon material values.
+- `vela/configs/`: M0 base ramp and collector sweep, plus M1 fixed-bias model
+  relaxation and collector sweep.
+- `comparison/`: exact 31-point all-terminal comparison tables and the
+  machine-readable/human-readable summaries.
+
+The M1 path deliberately relaxes the converged M0 state at VBE=0.70 V before
+its collector sweep. A direct M1 ramp from zero bias was rejected near 2 mV by
+the continuity line search after the adaptive step fell to approximately
+1e-8 V. The fixed-bias model ladder reaches the identical requested boundary
+condition without changing mesh, doping, contacts, or M1 physics.
+
 ## Model ladder
 
 M0 intentionally uses Boltzmann statistics, default low-field mobility, and
@@ -66,3 +82,17 @@ Run-local raw TDR, PLT, and log files are retained outside source control at
 The remote copy is under
 `/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2`.
 
+## Validated WP3-WP5 result
+
+Both Vela collector sweeps reached 3 V with 74 accepted/internal points. The
+comparison tool extracts only the exact 31 requested 0.1 V points and reads
+collector, base, and emitter currents directly. Convergence, voltage matching,
+and three-terminal KCL pass for both model ladders.
+
+At VCE=3 V, M0 gives an Ic magnitude ratio Vela/Sentaurus of 1.8431 and beta
+values of 476.64 versus 114.93. M1 gives an Ic ratio of 0.95422 and beta values
+of 9.771 versus 46.646; its remaining mismatch is dominated by Vela base
+current being 4.555 times the Sentaurus value. These are characterization
+results, not a numerical-parity pass: no Vela error tolerance was registered
+before WP3-WP5. See `comparison/comparison_summary.md` and
+`reports/wp3_wp5_execution_report.md`.
