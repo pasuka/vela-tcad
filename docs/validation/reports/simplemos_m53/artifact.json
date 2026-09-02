@@ -1,0 +1,53 @@
+{
+  "schema": "vela.simplemos.sdevice.m53_artifact.v1",
+  "title": "SimpleMOS M53 DirectCurrent full-matrix attribution",
+  "status": "complete",
+  "classification": "direct_increases_global_error",
+  "report": "reference_tcad/simplemos_sentaurus2022/direct_current_full_matrix/m53_direct_current_full_matrix_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/direct_current_full_matrix/m53_case_summary.csv",
+    "reference_tcad/simplemos_sentaurus2022/direct_current_full_matrix/m53_pointwise_comparison.csv",
+    "reference_tcad/simplemos_sentaurus2022/direct_current_full_matrix/m53_nwell_pair_summary.csv",
+    "reference_tcad/simplemos_sentaurus2022/direct_current_full_matrix/m53_terminal_replay_ledger.csv"
+  ],
+  "direct_references": "reference_tcad/simplemos_sentaurus2022/direct_current_full_matrix/m53_direct_references",
+  "document": "docs/validation/simplemos_m53_direct_current_full_matrix_2026-09-02.md",
+  "global_findings": {
+    "default_maximum_absolute_log10_ratio_dex": 0.10941868092427424,
+    "direct_maximum_absolute_log10_ratio_dex": 2.1260750688881966,
+    "direct_minus_default_global_maximum_error_dex": 2.0166563879639225,
+    "direct_original_parity_passing_curve_count": 3,
+    "direct_original_parity_failing_curve_count": 13,
+    "worst_direct_point": {
+      "case": "n24_vd_0p05",
+      "device": "n24",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.0,
+      "default_sentaurus_current_A_per_um": 5.37808527271603e-17,
+      "direct_sentaurus_current_A_per_um": -7.46560245346714e-15,
+      "vela_current_A_per_um": 5.584570668175017e-17,
+      "direct_minus_default_A_per_um": -7.5193833061943e-15,
+      "absolute_default_to_direct_log10_ratio_dex": 2.1424371759013696,
+      "default_vela_above_floor": 1,
+      "default_vela_absolute_log10_ratio_dex": 0.0163621070131729,
+      "default_vela_relative_error": 0.03839384929549627,
+      "direct_vela_above_floor": 1,
+      "direct_vela_absolute_log10_ratio_dex": 2.1260750688881966,
+      "direct_vela_relative_error": 0.9925195981128335
+    }
+  },
+  "acceptance": {
+    "contract_hash_unchanged": true,
+    "curve_count": true,
+    "point_count": true,
+    "points_per_curve": true,
+    "terminal_replay_row_count": true,
+    "terminal_replay_within_tolerance": true,
+    "all_values_finite": true,
+    "classification_declared": true,
+    "only_direct_current_intervention": true,
+    "closed_topics_not_reopened": true,
+    "hypothesis_rejection_is_valid_completion": true,
+    "all_checks_pass": true
+  }
+}
