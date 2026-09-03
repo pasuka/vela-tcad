@@ -42,6 +42,9 @@ from prepare_templates_ldmos_wp15_diagnostics import (  # noqa: E402
 from prepare_templates_ldmos_sentaurus_ablation import (  # noqa: E402
     prepare as prepare_ablation,
 )
+from prepare_templates_ldmos_idvd_ablation import (  # noqa: E402
+    prepare as prepare_idvd_ablation,
+)
 from summarize_templates_ldmos_phase23 import (  # noqa: E402
     field_metrics,
     percentile,
@@ -50,6 +53,20 @@ from summarize_templates_ldmos_sentaurus_ablation import (  # noqa: E402
     compare as compare_ablation,
     crossing,
     wall_seconds,
+)
+from summarize_templates_ldmos_idvd_ablation import (  # noqa: E402
+    compare_curve as compare_idvd_curve,
+    hrec_decision,
+)
+from run_templates_ldmos_stage4_d5 import (  # noqa: E402
+    make_drain_zero_prebias,
+    make_gate_prebias_vd0,
+    make_gate8_prebias,
+    make_idvd,
+)
+from analyze_templates_ldmos_stage4_d5 import (  # noqa: E402
+    curve_error as stage4_curve_error,
+    ratio_error as stage4_ratio_error,
 )
 
 
@@ -558,6 +575,50 @@ Solve {
             with self.assertRaisesRegex(ValueError, "expected exactly one match"):
                 prepare_ablation(source, root / "out", -0.5)
 
+    def test_idvd_chain_is_strictly_cumulative_and_single_factor(self) -> None:
+        source_text = '''Electrode {
+ { Name= "drain" Voltage= 0 hRecVelocity= 1.93E6 }
+ { Name= "source" Voltage= 0 hRecVelocity= 1.93E6 }
+}
+Thermode {
+ { Name= "th_lat" Temperature= 300 }
+}
+Physics(Material="Silicon") {
+ eQuantumPotential(density) hQuantumPotential(density)
+ Mobility(HighFieldSaturation Enormal (IALMob(AutoOrientation)))
+}
+Solve {
+ Coupled { Poisson Electron Hole Temperature }
+ Coupled { Poisson Electron Hole Temperature }
+ Coupled { Poisson Electron Hole Temperature }
+ Coupled { Poisson Electron Hole Temperature }
+}
+'''
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "IdVd.cmd"
+            parameter = root / "sdevice.par"
+            source.write_text(source_text, encoding="utf-8")
+            parameter.write_text("parameter\n", encoding="utf-8")
+            manifest = prepare_idvd_ablation(source, parameter, root / "out")
+            records = {item["id"]: item for item in manifest["single_factor_chain"]}
+            self.assertEqual(records["D2-no-hRecVelocity"]["parent"], "D1-isothermal")
+            d1 = (root / "out" / "D1-isothermal" / "IdVd.cmd").read_text()
+            self.assertNotIn("Thermode", d1)
+            self.assertNotIn("Hole Temperature", d1)
+            self.assertIn("hRecVelocity", d1)
+            d2 = (root / "out" / "D2-no-hRecVelocity" / "IdVd.cmd").read_text()
+            self.assertNotIn("hRecVelocity", d2)
+            self.assertIn("hQuantumPotential", d2)
+            d5 = (root / "out" / "D5-no-IALMob" / "IdVd.cmd").read_text()
+            self.assertNotIn("QuantumPotential", d5)
+            self.assertNotIn("IALMob", d5)
+            self.assertIn("HighFieldSaturation", d5)
+            self.assertEqual(
+                (root / "out" / "D5-no-IALMob" / "sdevice.par").read_text(),
+                "parameter\n",
+            )
+
 
 class Phase23SummaryMathTest(unittest.TestCase):
     def test_percentile_is_linear_between_order_statistics(self) -> None:
@@ -695,6 +756,82 @@ class SentaurusAblationSummaryTest(unittest.TestCase):
                 encoding="utf-8",
             )
             self.assertAlmostEqual(wall_seconds(timing), 403.91)
+
+    def test_idvd_curve_metrics_and_hrec_gate_use_exact_points(self) -> None:
+        parent = [(0.0, 0.0), (1.0, 1.0), (40.0, 2.0)]
+        child = [(0.0, 0.0), (1.0, 1.005), (40.0, 2.01)]
+        metric = compare_idvd_curve(parent, child)
+        self.assertAlmostEqual(
+            metric["low_vd_differential_resistance_change_percent"],
+            abs(1.0 / 1.005 - 1.0) * 100.0,
+        )
+        decision = hrec_decision({
+            "Vg4": metric,
+            "Vg8": metric,
+            "gate_ratio_change_percent": {"count": 2, "median": 0.0,
+                                            "p95": 0.0, "max": 0.0},
+        })
+        self.assertFalse(decision["implementation_required_by_curve"])
+        with self.assertRaisesRegex(ValueError, "exact Id-Vd grids differ"):
+            compare_idvd_curve(parent, [(0.0, 0.0), (1.1, 1.0), (40.0, 2.0)])
+
+    def test_stage4_d5_configs_preserve_qualified_contract(self) -> None:
+        base = {
+            "solver": {"impact_ionization": {"model": "none"}},
+            "contacts": [
+                {"name": "gate", "bias": 0.0}, {"name": "drain", "bias": 0.1},
+                {"name": "source", "bias": 0.0}, {"name": "substrate", "bias": 0.0},
+            ],
+            "sweep": {"bias_points": [0.0], "diagnostics": {}},
+            "mesh_geometry": {
+                "carrier_transport_couple_profile": "templates_ldmos_external_averagebox"
+            },
+            "discretization": {"poisson_charge_volume_policy": "material_local"},
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            gate8 = make_gate8_prebias(base, root / "vg5.csv", root)
+            self.assertEqual(gate8["sweep"]["bias_points"][-1], 8.0)
+            self.assertNotIn("predictor", gate8["sweep"])
+            gate_vd0 = make_gate_prebias_vd0(base, root / "eq.csv", root)
+            self.assertEqual(gate_vd0["sweep"]["bias_points"][8], 4.0)
+            self.assertEqual(gate_vd0["sweep"]["bias_points"][-1], 8.0)
+            self.assertEqual(next(item for item in gate_vd0["contacts"]
+                                  if item["name"] == "drain")["bias"], 0.0)
+            idvd = make_idvd(base, 4.0, root / "vg4.csv", [0.0, 1.0, 2.0], root)
+            self.assertEqual(idvd["sweep"]["contact"], "drain")
+            self.assertTrue({0.0, 0.01, 0.8, 1.0, 2.0}.issubset(
+                set(idvd["sweep"]["bias_points"])))
+            self.assertEqual(next(item for item in idvd["contacts"]
+                                  if item["name"] == "gate")["bias"], 4.0)
+            self.assertEqual(
+                idvd["solver"]["contact_majority_qf_branch_guard_contacts"],
+                ["drain"],
+            )
+            self.assertEqual(
+                idvd["solver"]["contact_majority_qf_branch_drop_limit_V"],
+                5.0e-11,
+            )
+            zero = make_drain_zero_prebias(base, 4.0, root / "vg4.csv", root)
+            self.assertEqual(zero["sweep"]["bias_points"],
+                             [0.1, 0.075, 0.05, 0.025, 0.0])
+            self.assertLess(zero["sweep"]["step"], 0.0)
+
+    def test_stage4_d5_metrics_use_exact_grid_and_endpoint_gate_ratio(self) -> None:
+        reference = [(0.0, 0.0), (1.0, 1.0), (40.0, 2.0)]
+        candidate = [(0.0, 0.0), (1.0, 1.1), (40.0, 2.2)]
+        metric = stage4_curve_error(reference, candidate)
+        self.assertAlmostEqual(metric["relative_error_percent"]["median"], 10.0)
+        ratios = stage4_ratio_error(
+            {"Vg4": reference, "Vg8": [(0.0, 0.0), (1.0, 2.0), (40.0, 4.0)]},
+            {"Vg4": candidate, "Vg8": [(0.0, 0.0), (1.0, 2.42), (40.0, 4.84)]},
+        )
+        self.assertAlmostEqual(ratios["endpoint"], 10.0)
+        with_bridge = [(0.0, 0.0), (0.1, 0.02), (1.0, 1.1), (40.0, 2.2)]
+        self.assertAlmostEqual(
+            stage4_curve_error(reference, with_bridge)["relative_error_percent"]["median"],
+            10.0,
+        )
 
 
 if __name__ == "__main__":

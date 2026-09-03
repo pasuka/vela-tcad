@@ -25,6 +25,13 @@ candidate engine-difference entry is intentionally draft in
 `known_difference_ledger.json` until benchmark-owner and independent-reviewer
 approval.
 
+Phase-A Stage 4 execution is recorded in
+`docs/validation/templates_ldmos_stage4_idvd_execution_2026-09-03.md`.  The
+Sentaurus D1--D5 ablation is complete and hRecVelocity is closed as
+non-required, while the Vela D5 curve remains blocked at the first 10 mV drain
+step.  `stage4_decision_summary.json` is the neutral machine-readable status;
+it does not claim Stage-4 or L2 acceptance.
+
 Expected persistent local layout:
 
 ```text
