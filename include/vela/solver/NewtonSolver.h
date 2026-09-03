@@ -176,6 +176,7 @@ struct NewtonConfig {
     Real taup = 3.0e-6;
     Real augerCn = 2.90e-43; ///< Electron Auger coefficient [m^6/s]
     Real augerCp = 1.028e-43; ///< Hole Auger coefficient [m^6/s]
+    std::string augerExcessProduct = "generalized_fermi"; ///< "generalized_fermi" or "classical_np".
     MobilityModelConfig mobility{}; ///< Mobility model configuration
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
     SRHDopingDependenceConfig srhDopingDependence{}; ///< Sentaurus SRH(DopingDep).
@@ -662,7 +663,8 @@ public:
         const DDSolution& state,
         Real finiteDifferenceStep = 1.0e-7,
         std::vector<std::string> blocks = {},
-        const std::string& finiteDifferenceMode = "double_symmetric") const;
+        const std::string& finiteDifferenceMode = "double_symmetric",
+        std::vector<Index> columnNodes = {}) const;
     std::vector<CoupledDDEdgeFluxDiagnostic> evaluateSgEdgeFluxDiagnostics(
         const DDSolution& state) const;
     std::vector<CoupledDDTransportEdgeJacobianDiagnostic>

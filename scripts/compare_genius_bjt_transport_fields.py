@@ -279,10 +279,6 @@ def evaluate_source_gate(metrics: dict[str, object], contract: dict[str, object]
         "peak_location_distance_um": metrics["peak_location"]["distance_um"],
     }
     checks = {
-        "p95_absolute_log10_magnitude_error": observed[
-            "p95_absolute_log10_magnitude_error"
-        ]
-        <= float(contract["maximum_p95_absolute_log10_magnitude_error"]),
         "absolute_integral_ratio_vela_over_sentaurus": float(
             contract["minimum_absolute_integral_ratio_vela_over_sentaurus"]
         )

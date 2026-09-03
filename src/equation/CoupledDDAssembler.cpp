@@ -1019,11 +1019,16 @@ Real CoupledDDAssembler::nodeRecombinationRate(
             dopingConcentration);
     }
     if (recombination_.augerEnabled()) {
-        const GeneralizedSrhCarrierState state = generalizedSrhCarrierState(
-            electronTransportDensity, holeDensity, ni, Nc_[node], Nv_[node],
-            quasiFermiSplitting_V, Vt_, carrierStatisticsModel_);
-        rate += recombination_.augerRateFromExcessProduct(
-            state.excessProduct, electronTransportDensity, holeDensity);
+        if (recombination_.usesClassicalAugerExcessProduct()) {
+            rate += recombination_.augerRate(
+                electronTransportDensity, holeDensity, ni);
+        } else {
+            const GeneralizedSrhCarrierState state = generalizedSrhCarrierState(
+                electronTransportDensity, holeDensity, ni, Nc_[node], Nv_[node],
+                quasiFermiSplitting_V, Vt_, carrierStatisticsModel_);
+            rate += recombination_.augerRateFromExcessProduct(
+                state.excessProduct, electronTransportDensity, holeDensity);
+        }
     }
     return rate;
 }
@@ -4770,9 +4775,13 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     srhState.electronDegeneracy,
                     srhState.holeDegeneracy,
                     dopingConcentration);
+            const Real augerExcessProduct =
+                recombination_.usesClassicalAugerExcessProduct()
+                ? n(ii) * p(ii) - ni * ni
+                : augerState.excessProduct;
             const auto augerDerivatives =
                 recombination_.augerRateDerivativesFromExcessProduct(
-                    augerState.excessProduct, n(ii), p(ii));
+                    augerExcessProduct, n(ii), p(ii));
             const int columns[3] = {
                 psiOffset() + ii, phinOffset() + ii, phipOffset() + ii};
             const Real recombinationRate = nodeRecombinationRate(
@@ -4795,9 +4804,12 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                         + srhDerivatives.dRateDHoleDegeneracy * dGammaP[k];
                 }
                 if (recombination_.augerEnabled()) {
-                    const Real dExcess = excessDerivative(
-                        augerState, dGammaNAuger[k], dGammaP[k],
-                        dNormalizedSplitting[k]);
+                    const Real dExcess =
+                        recombination_.usesClassicalAugerExcessProduct()
+                        ? p(ii) * dnTransport[k] + n(ii) * dp[k]
+                        : excessDerivative(
+                            augerState, dGammaNAuger[k], dGammaP[k],
+                            dNormalizedSplitting[k]);
                     derivative += augerDerivatives.dRateDn * dnTransport[k]
                         + augerDerivatives.dRateDp * dp[k]
                         + augerDerivatives.dRateDExcess * dExcess;

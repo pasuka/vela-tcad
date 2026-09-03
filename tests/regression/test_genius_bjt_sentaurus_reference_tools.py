@@ -269,7 +269,6 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
             [(0.0, 0.0), (1.0, 0.0)],
         )
         contract = {
-            "maximum_p95_absolute_log10_magnitude_error": 0.01,
             "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.99,
             "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.01,
             "maximum_normalized_l1_error": 0.01,
@@ -278,6 +277,8 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
         result = TRANSPORT.evaluate_source_gate(metrics, contract)
         self.assertTrue(result["pass"])
         self.assertEqual(result["observed"]["peak_location_distance_um"], 0.0)
+        self.assertIn("p95_absolute_log10_magnitude_error", result["observed"])
+        self.assertNotIn("p95_absolute_log10_magnitude_error", result["checks"])
         self.assertNotIn("peak_location_distance_um", result["checks"])
 
 

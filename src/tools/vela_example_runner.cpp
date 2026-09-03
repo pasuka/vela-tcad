@@ -272,6 +272,7 @@ void writeNewtonSolutionVtk(const std::filesystem::path& path,
             problem.newton.srhDopingDependence);
     recombination.augerCn = problem.newton.augerCn;
     recombination.augerCp = problem.newton.augerCp;
+    recombination.augerExcessProduct = problem.newton.augerExcessProduct;
     recombination.bandToBand = problem.newton.bandToBand;
     vela::writeDDSolutionVTK(
         path.string(),
@@ -2651,10 +2652,20 @@ nlohmann::json runNewtonJacobianBlockProbe(const std::string& configFile,
         for (const auto& value : cfg.at("blocks"))
             blocks.push_back(value.get<std::string>());
     }
+    std::vector<vela::Index> columnNodes;
+    if (cfg.contains("column_nodes")) {
+        if (!cfg.at("column_nodes").is_array()) {
+            throw std::invalid_argument(
+                "newton_jacobian_block_probe column_nodes must be an array.");
+        }
+        for (const auto& value : cfg.at("column_nodes"))
+            columnNodes.push_back(value.get<vela::Index>());
+    }
 
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
     const auto rows =
-        solver.evaluateJacobianBlockAudit(state, fdStep, blocks, fdMode);
+        solver.evaluateJacobianBlockAudit(
+            state, fdStep, blocks, fdMode, columnNodes);
 
     const std::filesystem::path outputPath =
         resolvePath(cfgDir, cfg.at("output_csv").get<std::string>());
@@ -2711,6 +2722,7 @@ nlohmann::json runNewtonJacobianBlockProbe(const std::string& configFile,
     nlohmann::json result = {
         {"nodes", problem.mesh.numNodes()},
         {"blocks", rows.size()},
+        {"column_nodes", columnNodes},
         {"finite_difference_mode", fdMode},
         {"output_csv", outputPath.string()},
     };

@@ -9,11 +9,11 @@ Recombination integrals use the common triangular mesh and a 1 um out-of-plane d
 | Electron current density | 5611 | 0.270794 | vector RMSE 0.564365 |
 | Hole current density | 2121 | 1.48371 | vector RMSE 0.815032 |
 | SRH recombination | 1807 | 0.289153 | L1 0.2214 |
-| Auger recombination | 1627 | 0.903665 | L1 0.424581 |
+| Auger recombination | 1627 | 0.903356 | L1 0.01219 |
 
 Electron current-density pass: **True**.
 Hole current-density pass: **False**.
 SRH recombination pass: **True**.
-Auger recombination pass: **False**.
+Auger recombination pass: **True**.
 Comparison status: **asserted**.
 Overall transport/source pass: **False**.

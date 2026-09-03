@@ -25,9 +25,9 @@
         },
         "observed": {
           "node_count": 5611,
-          "rmse": 0.0010965184592234174,
-          "p95_absolute_error": 0.0022880984631787893,
-          "maximum_absolute_error": 0.015060897190139366
+          "rmse": 0.0010965184592207984,
+          "p95_absolute_error": 0.0022880984631689083,
+          "maximum_absolute_error": 0.015060897190098066
         },
         "checks": {
           "rmse": true,
@@ -38,9 +38,9 @@
       },
       "full_domain_characterization": {
         "node_count": 5611,
-        "rmse": 0.0010965184592234174,
-        "p95_absolute_error": 0.0022880984631787893,
-        "maximum_absolute_error": 0.015060897190139366
+        "rmse": 0.0010965184592207984,
+        "p95_absolute_error": 0.0022880984631689083,
+        "maximum_absolute_error": 0.015060897190098066
       }
     },
     "electron_density": {
@@ -60,9 +60,9 @@
         },
         "observed": {
           "node_count": 5196,
-          "rmse": 0.0029782004030305784,
-          "p95_absolute_error": 0.006525197504930524,
-          "maximum_absolute_error": 0.02324100270372753
+          "rmse": 0.002978200402987853,
+          "p95_absolute_error": 0.006525197505945712,
+          "maximum_absolute_error": 0.023241002702610203
         },
         "checks": {
           "rmse": true,
@@ -73,9 +73,9 @@
       },
       "full_domain_characterization": {
         "node_count": 5611,
-        "rmse": 0.0032395333737299716,
-        "p95_absolute_error": 0.007233810988104494,
-        "maximum_absolute_error": 0.027157298318938317
+        "rmse": 0.00323953337371248,
+        "p95_absolute_error": 0.007233810988576117,
+        "maximum_absolute_error": 0.027157298319254508
       }
     },
     "hole_density": {
@@ -95,9 +95,9 @@
         },
         "observed": {
           "node_count": 2207,
-          "rmse": 0.006938239507374787,
-          "p95_absolute_error": 0.007765845372724895,
-          "maximum_absolute_error": 0.1006674021818803
+          "rmse": 0.0069382395212846575,
+          "p95_absolute_error": 0.007765845372715303,
+          "maximum_absolute_error": 0.10066740222922732
         },
         "checks": {
           "rmse": true,
@@ -108,122 +108,122 @@
       },
       "full_domain_characterization": {
         "node_count": 5611,
-        "rmse": 0.17501026892107946,
-        "p95_absolute_error": 0.3146742186889069,
-        "maximum_absolute_error": 2.2614174721076985
+        "rmse": 0.600949290551483,
+        "p95_absolute_error": 1.964404147975689,
+        "maximum_absolute_error": 2.8708274599854278
       }
     }
   },
   "hole_density_localization": {
     "full_domain": {
       "node_count": 5611,
-      "rmse": 0.17501026892107946,
-      "p95_absolute_error": 0.3146742186889069,
-      "maximum_absolute_error": 2.2614174721076985
+      "rmse": 0.600949290551483,
+      "p95_absolute_error": 1.964404147975689,
+      "maximum_absolute_error": 2.8708274599854278
     },
     "by_sentaurus_reference_density": [
       {
         "reference_log10_cm3_range": "[-inf, 0)",
         "node_count": 6,
-        "rmse_decade": 0.5778756847403518,
-        "p95_absolute_error_decade": 0.8385547842822343,
-        "maximum_absolute_error_decade": 0.8424658383894259
+        "rmse_decade": 1.5047533146417085,
+        "p95_absolute_error_decade": 2.2493636200716254,
+        "maximum_absolute_error_decade": 2.3311787516683187
       },
       {
         "reference_log10_cm3_range": "[0, 2)",
         "node_count": 1468,
-        "rmse_decade": 0.3207527626832439,
-        "p95_absolute_error_decade": 0.7680641890442078,
-        "maximum_absolute_error_decade": 2.2614174721076985
+        "rmse_decade": 1.0527887213274298,
+        "p95_absolute_error_decade": 2.6131524180051375,
+        "maximum_absolute_error_decade": 2.8708274599854278
       },
       {
         "reference_log10_cm3_range": "[2, 4)",
         "node_count": 1488,
-        "rmse_decade": 0.11051121807158591,
-        "p95_absolute_error_decade": 0.07306702649279007,
-        "maximum_absolute_error_decade": 1.297565674918681
+        "rmse_decade": 0.508690238341346,
+        "p95_absolute_error_decade": 1.4533223408301836,
+        "maximum_absolute_error_decade": 2.633647879136221
       },
       {
         "reference_log10_cm3_range": "[4, 6)",
         "node_count": 182,
-        "rmse_decade": 0.029350964859087118,
-        "p95_absolute_error_decade": 0.05681778276834173,
-        "maximum_absolute_error_decade": 0.1501971630825265
+        "rmse_decade": 0.02931292139999305,
+        "p95_absolute_error_decade": 0.05685776545438826,
+        "maximum_absolute_error_decade": 0.15019716415273265
       },
       {
         "reference_log10_cm3_range": "[6, 8)",
         "node_count": 133,
-        "rmse_decade": 0.04261908811229992,
-        "p95_absolute_error_decade": 0.07780793908557192,
-        "maximum_absolute_error_decade": 0.25298050168293607
+        "rmse_decade": 0.04261937507964344,
+        "p95_absolute_error_decade": 0.07780879357646862,
+        "maximum_absolute_error_decade": 0.25298050169479147
       },
       {
         "reference_log10_cm3_range": "[8, 10)",
         "node_count": 127,
-        "rmse_decade": 0.033787190504636806,
-        "p95_absolute_error_decade": 0.06905494649478533,
-        "maximum_absolute_error_decade": 0.19146418382928054
+        "rmse_decade": 0.033787195248823725,
+        "p95_absolute_error_decade": 0.0690549477479438,
+        "maximum_absolute_error_decade": 0.19146413369032267
       },
       {
         "reference_log10_cm3_range": "[10, 12)",
         "node_count": 124,
-        "rmse_decade": 0.01445419431668416,
-        "p95_absolute_error_decade": 0.03267170073831796,
-        "maximum_absolute_error_decade": 0.058647997181893174
+        "rmse_decade": 0.014454194472964806,
+        "p95_absolute_error_decade": 0.032671700861173554,
+        "maximum_absolute_error_decade": 0.05864799718174929
       },
       {
         "reference_log10_cm3_range": "[12, 14)",
         "node_count": 238,
-        "rmse_decade": 0.015117253570458499,
-        "p95_absolute_error_decade": 0.02535380760122353,
-        "maximum_absolute_error_decade": 0.1006674021818803
+        "rmse_decade": 0.015117253556364469,
+        "p95_absolute_error_decade": 0.025353807601474706,
+        "maximum_absolute_error_decade": 0.10066740222922732
       },
       {
         "reference_log10_cm3_range": "[14, 16)",
         "node_count": 610,
-        "rmse_decade": 0.005984905755847992,
-        "p95_absolute_error_decade": 0.005466833833019622,
-        "maximum_absolute_error_decade": 0.07649783573465463
+        "rmse_decade": 0.005984905751368213,
+        "p95_absolute_error_decade": 0.005466833833065897,
+        "maximum_absolute_error_decade": 0.07649783573468305
       },
       {
         "reference_log10_cm3_range": "[16, 18)",
         "node_count": 921,
-        "rmse_decade": 0.002108907360595097,
-        "p95_absolute_error_decade": 0.0031702780387234952,
-        "maximum_absolute_error_decade": 0.02101199966590883
+        "rmse_decade": 0.0021089073605726517,
+        "p95_absolute_error_decade": 0.0031702780387199425,
+        "maximum_absolute_error_decade": 0.021011999665898173
       },
       {
         "reference_log10_cm3_range": "[18, +inf)",
         "node_count": 314,
-        "rmse_decade": 3.335787191755932e-05,
-        "p95_absolute_error_decade": 8.725335655590525e-06,
+        "rmse_decade": 3.3357871918420534e-05,
+        "p95_absolute_error_decade": 8.725335654347075e-06,
         "maximum_absolute_error_decade": 0.0004389491427545522
       }
     ],
     "by_geometric_region": {
       "top_device_y_le_0p5um": {
         "node_count": 2196,
-        "rmse": 0.11608112042155734,
-        "p95_absolute_error": 0.033405246408357625,
-        "maximum_absolute_error": 0.8446701114472444
+        "rmse": 0.3525368469824234,
+        "p95_absolute_error": 0.04002837969627082,
+        "maximum_absolute_error": 2.6216322721020724
       },
       "bulk_y_gt_0p5um": {
         "node_count": 3415,
-        "rmse": 0.20410596620419566,
-        "p95_absolute_error": 0.7100389933013509,
-        "maximum_absolute_error": 2.2614174721076985
+        "rmse": 0.716554519512308,
+        "p95_absolute_error": 2.3738951668926016,
+        "maximum_absolute_error": 2.8708274599854278
       },
       "emitter_window_x2p75_4p25_y_le_0p5um": {
         "node_count": 643,
-        "rmse": 0.001821696369448664,
-        "p95_absolute_error": 0.002892962342941274,
-        "maximum_absolute_error": 0.002945455763178728
+        "rmse": 0.0018216963149835551,
+        "p95_absolute_error": 0.0028929622736692195,
+        "maximum_absolute_error": 0.002945455722244361
       },
       "outside_emitter_window_y_le_0p5um": {
         "node_count": 1553,
-        "rmse": 0.13803091656259692,
-        "p95_absolute_error": 0.06179515641424563,
-        "maximum_absolute_error": 0.8446701114472444
+        "rmse": 0.41921156786670033,
+        "p95_absolute_error": 0.07615951723281192,
+        "maximum_absolute_error": 2.6216322721020724
       }
     }
   },
@@ -235,9 +235,9 @@
     "vela_state": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\m1_accepted_states\\states\\vce_030.csv"
   },
   "source_sha256": {
-    "threshold_contract": "35ce6e98ce03989617270dec4ec0b4bfcf605ad09ee2f9eeea92b6ede45ef400",
+    "threshold_contract": "883bea0efaf84361413dc1370002c603bbfbef93eb845d6ab8b3f72f7f8d8352",
     "sentaurus_field_manifest": "f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159",
     "sentaurus_nodes": "b93f00e70a5be270c414dc1838c4c8eb9048c71b234fee158bb9c50c998e8e60",
-    "vela_state": "3e3d833a3c2d577595bad4ea32ef026210e50681eceefb9466f4ee0ec5dc7ec5"
+    "vela_state": "2eab730ae9393f048affdea7113974237669de1574f705699687f661f2ad4bc1"
   }
 }

@@ -108,14 +108,19 @@ checked where the Sentaurus reference density is at least 1e10 cm^-3. The
 potential, electron-density, and hole-density gates all pass. The former
 1.6836-decade full-domain hole outlier is confined to nodes with reference
 hole concentrations of roughly 1-100 cm^-3; the asserted hole-density maximum
-is 0.10079 decade.
+is 0.10067 decade. With the classical-Auger accepted state the unmasked
+full-domain maximum is 2.8708 decades at only 32.03 cm^-3 reference hole
+density; this remains outside the pre-registered physical-relevance mask.
 
 The accepted-state VTK path now exports separate SRH, Auger, total electron and
 hole current density, and legacy-scale Vela drift/diffusion diagnostics. At 3 V the electron
 current-density gate passes. The hole current-density gate fails, while SRH
-passes its magnitude, integral, and normalized-shape checks. Auger fails its
-magnitude and integral checks. Peak locations remain reported for diagnosis
-but are not gated because a single-node argmax is unstable on a flat peak.
+passes its integral and normalized-shape checks. The M1 fixture now selects the
+classical `n*p-ni_eff^2` Auger excess product: its integral ratio improves from
+0.5754 to 0.9878 and its normalized L1 error from 0.4246 to 0.0122, so Auger
+also passes. Node-log P95 and peak locations remain reported for diagnosis but
+are not source gates because low-contribution tails and flat peaks can dominate
+them without materially changing the integrated source.
 Consequently the final `overall_pass` is now false and depends on all
 terminal, KCL, spatial-state, current-density, SRH, and Auger gates. See
 `contracts/comparison_thresholds.json`, `comparison/comparison_summary.md`, and
@@ -126,6 +131,16 @@ support direct comparisons at 0, 1, and 3 V; the 2 V SDevice state remains
 missing because the earlier deck saved 0.1 V instead and the VM currently
 rejects the documented SSH key. The updated deck now requests 0, 1, 2, and 3 V
 states on its next trusted rerun.
+
+The classical Auger analytic Jacobian matches a centered finite difference on
+the real 3 V state at the two former peak nodes to `5.07e-9` relative error.
+The base-collector hole-current edge audit finds that Vela's nodal reconstruction
+matches the SDevice nodal projection in that window (normalized RMSE 0.0628),
+while the production SG edge magnitude is about 3.4-3.5 times smaller than the
+nodal recovery despite matching direction. The remaining hole-current failure
+is therefore localized to current recovery/semantics rather than carrier-state
+or terminal-current parity. Reproduce with
+`scripts/diagnose_genius_bjt_hole_current_edges.py`.
 
 ## Comparison figures
 

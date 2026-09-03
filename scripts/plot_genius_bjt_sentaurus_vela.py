@@ -27,7 +27,7 @@ DEFAULT_RUN = (
     / "build-release"
     / "reference_tcad"
     / "genius_bjt_sentaurus2022"
-    / "vela_wp3_wp5"
+    / "m1_accepted_states"
 )
 DEFAULT_SENT_FIELDS = (
     REPO
@@ -401,7 +401,10 @@ def main() -> int:
 
     mesh_path = fixture / "vela" / "input" / "mesh.json"
     doping_path = fixture / "vela" / "input" / "doping.csv"
-    state_path = run_root / "m1_vce300_state.csv"
+    state_path = run_root / "states" / "vce_030.csv"
+    if not state_path.is_file():
+        # Compatibility with the pre-accepted-state plotting layout.
+        state_path = run_root / "m1_vce300_state.csv"
     m0_comparison_path = fixture / "comparison" / "m0_sentaurus_vela.csv"
     m1_comparison_path = fixture / "comparison" / "m1_sentaurus_vela.csv"
     sent_nodes_path = sent_root / "nodes.csv"

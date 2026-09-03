@@ -162,6 +162,7 @@ TEST_CASE("JSON solver config selects mobility and recombination models", "[mobi
         {"taup", 3.0e-7},
         {"auger_cn_m6_per_s", 3.1e-43},
         {"auger_cp_m6_per_s", 1.2e-43},
+        {"auger_excess_product", "classical_np"},
         {"bandgap_narrowing", {
             {"model", "slotboom"},
             {"coefficient_eV", 0.010},
@@ -178,9 +179,16 @@ TEST_CASE("JSON solver config selects mobility and recombination models", "[mobi
     REQUIRE(cfg.taup == Catch::Approx(3.0e-7));
     REQUIRE(cfg.augerCn == Catch::Approx(3.1e-43));
     REQUIRE(cfg.augerCp == Catch::Approx(1.2e-43));
+    REQUIRE(cfg.augerExcessProduct == "classical_np");
     REQUIRE(cfg.bandgapNarrowing.model == "slotboom");
     REQUIRE(cfg.bandgapNarrowing.coefficient == Catch::Approx(0.010));
     REQUIRE(cfg.bandgapNarrowing.fermiStatisticsCorrection);
+
+    REQUIRE_THROWS_AS(
+        gummelConfigFromJson(nlohmann::json{
+            {"auger_excess_product", "unsupported"},
+        }),
+        std::invalid_argument);
 }
 
 TEST_CASE("JSON solver config unit_scaling default mobility and impact parameters are TCAD internal",

@@ -62,6 +62,10 @@ struct RecombinationModelConfig {
     // Cn = A + B + C in cm^6/s and Cp = A + B + C in cm^6/s.
     Real augerCn = 2.90e-43;
     Real augerCp = 1.028e-43;
+    /// Excess-product model used by Auger under Fermi statistics:
+    /// ``generalized_fermi`` preserves the historical Vela behavior;
+    /// ``classical_np`` uses n*p-ni_eff^2, matching the conventional model.
+    std::string augerExcessProduct = "generalized_fermi";
     SRHDopingDependenceConfig srhDopingDependence{};
     BandToBandTunnelingConfig bandToBand{};
 };
@@ -72,6 +76,10 @@ public:
 
     bool srhEnabled() const { return srhEnabled_; }
     bool augerEnabled() const { return augerEnabled_; }
+    bool usesClassicalAugerExcessProduct() const
+    {
+        return config_.augerExcessProduct == "classical_np";
+    }
     bool bandToBandEnabled() const { return bandToBand_.enabled(); }
     const BandToBandTunnelingModel& bandToBand() const { return bandToBand_; }
 

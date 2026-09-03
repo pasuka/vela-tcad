@@ -33,6 +33,7 @@
       "fermi_statistics_correction": true
     },
     "recombination": ["srh", "auger"],
+    "auger_excess_product": "classical_np",
     "srh_density_coupling": "sentaurus_default",
     "srh_doping_dependence": {
       "enabled": true,

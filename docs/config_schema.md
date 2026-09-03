@@ -420,6 +420,7 @@ Commonly used controls:
 - recombination
 - auger_cn_m6_per_s
 - auger_cp_m6_per_s
+- auger_excess_product
 - impact_ionization
 
 Gummel-specific keys:
@@ -699,6 +700,11 @@ Notes:
   With `scaling.mode: "unit_scaling"` the compiled defaults are expressed in
   the internal unit system (`2.90e-31` and `1.028e-31 cm^6/s`), and an explicit
   deck value is read and kept internally as `cm^6/s`.
+- `auger_excess_product` selects the Auger excess-carrier product under Fermi
+  statistics. `generalized_fermi` is the compatibility default and reuses the
+  generalized SRH product. `classical_np` uses `n*p-ni_eff^2`; its analytic
+  Jacobian differentiates the transport carrier densities while treating the
+  node material/BGN `ni_eff` as fixed during one Newton assembly.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 - With `scaling.mode: "unit_scaling"`, `bandgap_narrowing.reference_doping_m3`
   is read and kept internally as `cm^-3`.

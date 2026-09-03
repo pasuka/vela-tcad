@@ -14,6 +14,6 @@ Overall spatial-state pass: **True**
 
 ## Hole-density localization
 
-The largest full-domain error is 2.26142 decade; the registered reference-significant mask reduces it to 0.100667 decade.
+The largest full-domain error is 2.87083 decade; the registered reference-significant mask reduces it to 0.100667 decade.
 
 The highest errors are concentrated in reference-low-density nodes; see `hole_density_top_errors.csv` and the density-bin table in the JSON report.

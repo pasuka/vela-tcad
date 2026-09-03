@@ -32,4 +32,4 @@ D:\msys64\ucrt64\bin\python.exe scripts\plot_genius_bjt_sentaurus_vela.py
 The field plot requires the ignored TDR export under
 `build-release/reference_tcad/genius_bjt_sentaurus2022/m1_current_diagnosis/sentaurus_vce3`
 and the corrected Vela state under
-`build-release/reference_tcad/genius_bjt_sentaurus2022/vela_wp3_wp5`.
+`build-release/reference_tcad/genius_bjt_sentaurus2022/m1_accepted_states`.

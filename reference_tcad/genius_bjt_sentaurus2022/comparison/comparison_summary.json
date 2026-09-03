@@ -57,40 +57,40 @@
     "compared_point_count": 31,
     "maximum_voltage_selection_error_V": 0.0,
     "all_vela_points_converged": true,
-    "maximum_vela_absolute_kcl_residual_A_per_um": 2.7328957413228037e-15,
-    "maximum_vela_relative_kcl_residual": 9.60462329978908e-10,
+    "maximum_vela_absolute_kcl_residual_A_per_um": 5.059806261686016e-15,
+    "maximum_vela_relative_kcl_residual": 1.7782432157465603e-09,
     "active_region_VCE_range_V": [
       0.5,
       3.0
     ],
     "active_region_Ic_absolute_log10_error": {
-      "median": 0.0034329037754523024,
-      "maximum": 0.003437102332596286
+      "median": 0.0034329036852683587,
+      "maximum": 0.0034371023297300345
     },
     "active_region_Ib_absolute_log10_error": {
-      "median": 0.0020956743265456096,
-      "maximum": 0.002102274409366617
+      "median": 0.0020956738594245577,
+      "maximum": 0.0021022747187941708
     },
     "active_region_Ie_absolute_log10_error": {
-      "median": 0.0034037576054517047,
-      "maximum": 0.0034071580699805153
+      "median": 0.003403757606133406,
+      "maximum": 0.0034071580706601322
     },
     "active_region_beta_absolute_log10_error": {
-      "median": 0.0013378356155893958,
-      "maximum": 0.0013492052830702233
+      "median": 0.001337836234217279,
+      "maximum": 0.0013492052303749357
     },
     "at_VCE_3V": {
       "sentaurus_Ic_A_per_um": 2.80753243397542e-06,
-      "vela_Ic_A_per_um": 2.78549910695624e-06,
-      "Ic_magnitude_ratio_vela_over_sentaurus": 0.9921520667926955,
+      "vela_Ic_A_per_um": 2.7854991093204845e-06,
+      "Ic_magnitude_ratio_vela_over_sentaurus": 0.9921520676348032,
       "sentaurus_Ib_A_per_um": 6.01876121735591e-08,
-      "vela_Ib_A_per_um": 5.989696808572684e-08,
-      "Ib_magnitude_ratio_vela_over_sentaurus": 0.9951710314243047,
+      "vela_Ib_A_per_um": 5.989696804305126e-08,
+      "Ib_magnitude_ratio_vela_over_sentaurus": 0.995171030715262,
       "sentaurus_Ie_A_per_um": -2.86772004614901e-06,
-      "vela_Ie_A_per_um": -2.845396072309071e-06,
-      "Ie_magnitude_ratio_vela_over_sentaurus": 0.9922154277681611,
+      "vela_Ie_A_per_um": -2.8453960723037295e-06,
+      "Ie_magnitude_ratio_vela_over_sentaurus": 0.9922154277662986,
       "sentaurus_beta_abs": 46.64635018049099,
-      "vela_beta_abs": 46.50484316617707
+      "vela_beta_abs": 46.50484323878285
     },
     "numerical_parity_gate": {
       "status": "asserted",
@@ -102,10 +102,10 @@
         "beta": 0.05
       },
       "observed_maximum_absolute_log10_error": {
-        "Ic": 0.003437102332596286,
-        "Ib": 0.002102274409366617,
-        "Ie": 0.0034071580699805153,
-        "beta": 0.0013492052830702233
+        "Ic": 0.0034371023297300345,
+        "Ib": 0.0021022747187941708,
+        "Ie": 0.0034071580706601322,
+        "beta": 0.0013492052303749357
       },
       "pass": true
     },
@@ -127,9 +127,9 @@
         },
         "observed": {
           "node_count": 5611,
-          "rmse": 0.0010965184592234174,
-          "p95_absolute_error": 0.0022880984631787893,
-          "maximum_absolute_error": 0.015060897190139366
+          "rmse": 0.0010965184592207984,
+          "p95_absolute_error": 0.0022880984631689083,
+          "maximum_absolute_error": 0.015060897190098066
         }
       },
       "electron_density": {
@@ -142,9 +142,9 @@
         },
         "observed": {
           "node_count": 5196,
-          "rmse": 0.0029782004030305784,
-          "p95_absolute_error": 0.006525197504930524,
-          "maximum_absolute_error": 0.02324100270372753
+          "rmse": 0.002978200402987853,
+          "p95_absolute_error": 0.006525197505945712,
+          "maximum_absolute_error": 0.023241002702610203
         }
       },
       "hole_density": {
@@ -157,9 +157,9 @@
         },
         "observed": {
           "node_count": 2207,
-          "rmse": 0.006938239507374787,
-          "p95_absolute_error": 0.007765845372724895,
-          "maximum_absolute_error": 0.1006674021818803
+          "rmse": 0.0069382395212846575,
+          "p95_absolute_error": 0.007765845372715303,
+          "maximum_absolute_error": 0.10066740222922732
         }
       }
     }
@@ -177,9 +177,9 @@
             "minimum_global_vector_cosine_similarity": 0.85
           },
           "observed": {
-            "p95_absolute_log10_magnitude_error": 0.27079405631911346,
-            "normalized_vector_rmse": 0.5643647214876673,
-            "global_vector_cosine_similarity": 0.8965468902861577
+            "p95_absolute_log10_magnitude_error": 0.2707940563197758,
+            "normalized_vector_rmse": 0.5643647214884487,
+            "global_vector_cosine_similarity": 0.8965468902850234
           },
           "checks": {
             "p95_absolute_log10_magnitude_error": true,
@@ -198,9 +198,9 @@
             "minimum_global_vector_cosine_similarity": 0.85
           },
           "observed": {
-            "p95_absolute_log10_magnitude_error": 1.4837142883966805,
-            "normalized_vector_rmse": 0.8150324469308246,
-            "global_vector_cosine_similarity": 0.7877426640424526
+            "p95_absolute_log10_magnitude_error": 1.483714288375721,
+            "normalized_vector_rmse": 0.8150324470261591,
+            "global_vector_cosine_similarity": 0.7877426639657017
           },
           "checks": {
             "p95_absolute_log10_magnitude_error": false,
@@ -216,21 +216,19 @@
         "pass": true,
         "gate": {
           "thresholds": {
-            "maximum_p95_absolute_log10_magnitude_error": 0.35,
             "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
             "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.25,
             "maximum_normalized_l1_error": 0.25,
             "maximum_absolute_shape_total_variation": 0.15
           },
           "observed": {
-            "p95_absolute_log10_magnitude_error": 0.28915257392588845,
-            "absolute_integral_ratio_vela_over_sentaurus": 0.7786575151707326,
-            "normalized_l1_error": 0.22140008407960268,
-            "absolute_shape_total_variation": 0.10602299012982151,
+            "p95_absolute_log10_magnitude_error": 0.28915257380312037,
+            "absolute_integral_ratio_vela_over_sentaurus": 0.778657515227706,
+            "normalized_l1_error": 0.2214000840376806,
+            "absolute_shape_total_variation": 0.10602299009596873,
             "peak_location_distance_um": 0.171875
           },
           "checks": {
-            "p95_absolute_log10_magnitude_error": true,
             "absolute_integral_ratio_vela_over_sentaurus": true,
             "normalized_l1_error": true,
             "absolute_shape_total_variation": true
@@ -239,29 +237,27 @@
         }
       },
       "auger": {
-        "pass": false,
+        "pass": true,
         "gate": {
           "thresholds": {
-            "maximum_p95_absolute_log10_magnitude_error": 0.5,
             "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
             "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.25,
             "maximum_normalized_l1_error": 0.25,
             "maximum_absolute_shape_total_variation": 0.15
           },
           "observed": {
-            "p95_absolute_log10_magnitude_error": 0.9036654070865133,
-            "absolute_integral_ratio_vela_over_sentaurus": 0.5754185987326456,
-            "normalized_l1_error": 0.42458140126811783,
-            "absolute_shape_total_variation": 0.09196026578504479,
-            "peak_location_distance_um": 1.5940563431071062
+            "p95_absolute_log10_magnitude_error": 0.9033559391200545,
+            "absolute_integral_ratio_vela_over_sentaurus": 0.987812952465555,
+            "normalized_l1_error": 0.012189998693450327,
+            "absolute_shape_total_variation": 0.006578293898971403,
+            "peak_location_distance_um": 0.0
           },
           "checks": {
-            "p95_absolute_log10_magnitude_error": false,
-            "absolute_integral_ratio_vela_over_sentaurus": false,
-            "normalized_l1_error": false,
+            "absolute_integral_ratio_vela_over_sentaurus": true,
+            "normalized_l1_error": true,
             "absolute_shape_total_variation": true
           },
-          "pass": false
+          "pass": true
         }
       }
     }

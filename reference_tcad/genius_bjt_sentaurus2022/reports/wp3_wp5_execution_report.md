@@ -14,7 +14,8 @@ Scharfetter maximum lifetime and Nc/Nv with T-2022.03-SP2 Silicon. M0 remains
 an intentionally minimal characterization-only baseline. A newly registered
 spatial-state gate also passes for potential, electron density, and hole
 density. Transport and recombination gates are now asserted as well; the final
-acceptance is false because three of those four field groups still fail.
+acceptance is false only because the global hole-current-density gate still
+fails. Electron current density, SRH, and Auger pass.
 
 ## Common input
 
@@ -64,10 +65,10 @@ full-domain metrics remain visible as characterization.
 | Electron density (decade) | 5196 | 0.0029782 | 0.0065252 | 0.0232410 | pass |
 | Hole density (decade) | 2207 | 0.0069382 | 0.0077658 | 0.100667 | pass |
 
-The full-domain hole-density maximum of 2.2614 decades is caused by reference
+The full-domain hole-density maximum of 2.8708 decades is caused by reference
 concentrations of roughly 1-100 cm^-3, primarily outside the emitter window and
-in the bulk. At the largest-error node Sentaurus gives 36.38 cm^-3 and Vela
-6641.60 cm^-3. Both are physically negligible compared with the registered
+in the bulk. At the largest-error node Sentaurus gives 32.03 cm^-3 and Vela
+2.3793e4 cm^-3. Both are physically negligible compared with the registered
 1e10 cm^-3 relevance floor. The emitter-window P95 error is 0.00289 decade.
 
 ## Transport and recombination acceptance
@@ -83,19 +84,27 @@ only because a nearly flat maximum makes `argmax` location unstable.
 | Electron current density | cosine 0.897; normalized RMSE 0.564; pass |
 | Hole current density | cosine 0.788; normalized RMSE 0.815; fail |
 | SRH recombination | integral ratio 0.779; shape TV 0.106; pass |
-| Auger recombination | integral ratio 0.575; shape TV 0.092; fail |
+| Auger recombination | integral ratio 0.988; shape TV 0.00658; pass |
 
 This records an important residual: terminal currents agree within the asserted
 limits, while local reconstructed transport/source fields are not yet close
 enough to justify a separate numerical-parity claim.
 
-A two-node Auger audit shows that SDevice and Vela carrier densities agree
-within about 0.4% at both reported argmax nodes, whereas the Vela Auger rate is
-about one half of SDevice. The classical `n*p-ni_eff^2` expression with the
-configured electron coefficient predicts approximately the SDevice rate;
-Vela currently supplies its Fermi-generalized SRH excess product to Auger.
-This strongly identifies an Auger formulation mismatch as the next A/B target,
-while ruling out the apparent hotspot displacement as the primary cause.
+A two-node Auger audit showed that SDevice and Vela carrier densities agreed
+within about 0.4% while the former Vela rate was about one half of SDevice.
+The new opt-in classical `n*p-ni_eff^2` mode raises the Auger integral ratio
+from 0.575 to 0.988 and reduces normalized L1 from 0.425 to 0.0122. The full
+31-point curve remains accepted. On the real 3 V state, the source-only
+analytic Jacobian agrees with centered finite differences to `5.07e-9`
+relative error.
+
+The base-collector current audit covers 516 vertically oriented edges. Vela's
+nodal hole-current reconstruction agrees with the SDevice nodal projection in
+this window (normalized RMSE 0.0628; cosine 0.99925), but the production SG
+edge flux has RMSE 0.7189 and requires a 3.53 fitted scale. Direction is already
+consistent. The remaining hole-current failure is therefore assigned to nodal
+current recovery/semantics; a conservative dual-face recovery is the next
+implementation target.
 
 ## M1 SRH parameter closure
 

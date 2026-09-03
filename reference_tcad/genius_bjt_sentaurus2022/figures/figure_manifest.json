@@ -12,36 +12,36 @@
   "maximum_sentaurus_vela_coordinate_error_um": 0.0,
   "spatial_error_metrics": {
     "Potential": {
-      "rmse": 1.1413171169968304,
-      "maximum_absolute_error": 15.08032608860821,
+      "rmse": 1.0965184592207984,
+      "maximum_absolute_error": 15.060897190098066,
       "difference_unit_scale": 1000.0
     },
     "log\u2081\u2080 electron density": {
-      "rmse": 0.0037687336179630967,
-      "maximum_absolute_error": 0.036136403931896766,
+      "rmse": 0.0032395333737124804,
+      "maximum_absolute_error": 0.027157298319254508,
       "difference_unit_scale": 1.0
     },
     "log\u2081\u2080 hole density": {
-      "rmse": 0.3232003916441748,
-      "maximum_absolute_error": 1.6835999745417674,
+      "rmse": 0.600949290551483,
+      "maximum_absolute_error": 2.8708274599854278,
       "difference_unit_scale": 1.0
     }
   },
   "sources_sha256": {
     "mesh": "b0b541a5db3fd3d6805e6615ade420c8f62d85fb01b8c161a1ba1fb8b4ee3104",
     "doping": "312bd1f60d9019b403e73720321a38709dbb0cb7722829601e3415cc87173f1a",
-    "vela_m1_vce3_state": "2f01db379d32330a26c2085de9e987720fcf2c2d27e29144da5225d05682bc66",
+    "vela_m1_vce3_state": "2eab730ae9393f048affdea7113974237669de1574f705699687f661f2ad4bc1",
     "sentaurus_m1_vce3_nodes": "b93f00e70a5be270c414dc1838c4c8eb9048c71b234fee158bb9c50c998e8e60",
     "sentaurus_potential": "4f076d42bcb4953686d56330c8c7dd587e519b6c817fb50b8a8e7595908c443d",
     "sentaurus_electron_density": "ef5266a24d43887bad31020bcab806f136ed44c9015559b1e6065027699655c3",
     "sentaurus_hole_density": "75e277cd89a2d183e77c91adeeb9af9c8798fe2464de93a7bdf7cfd21c0b73ac",
     "m0_comparison": "f392642c15455a47275745fad912486d4328577779e8167713209454f91222f1",
-    "m1_comparison": "8a70575c3d51d33a3a873c9fcf0bd8a33d897fddc4e7abbfe81dc2bbdd4c5aad"
+    "m1_comparison": "c263bff35ffaf78cd68142eb98921e27318554dfc160e86ae01287dcc9aca9f5"
   },
   "outputs_sha256": {
     "mesh": "4e1adbacc5b0fa5a5db8e16c5bfcf6809f7d4810c13ddec2c6e1c70a241ad3d8",
-    "fields": "e24502162ef73b21e473b76ff47004fa13b58f9eedf4c84b52d771c176f4dfbc",
-    "curves": "6d5c6227d84db9dbddeab2789ae0930ef5ec48ed50556701f0998e9f2bd4f52c",
-    "parity": "e1067ec558bfab7361cdee8b4332eabea9e5b5ca61ede8edb7d8479037a4c2d6"
+    "fields": "a7effbb90a8433d3b49635e76366dbf187c18975fd54341bbc0ec4b264e8838b",
+    "curves": "58d9d5f74a364765ede1e8d134a619060b6694b86d1a2a5eaa319f3c189f3b7a",
+    "parity": "a2206a67b12a15a06418a49e821c2a74a81454485cf3c646e9b0e726ae3a40ca"
   }
 }

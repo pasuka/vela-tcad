@@ -141,6 +141,8 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         json.value("auger_cn_m6_per_s", cfg.augerCn));
     cfg.augerCp = scaling.augerCoefficientToInternal(
         json.value("auger_cp_m6_per_s", cfg.augerCp));
+    cfg.augerExcessProduct = json.value(
+        "auger_excess_product", cfg.augerExcessProduct);
     cfg.carrierFloor = json.value("carrier_floor_m3", cfg.carrierFloor);
     if (json.contains("mobility"))
         cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"), scaling);
@@ -327,6 +329,12 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (cfg.carrierFloor < 0.0 || !std::isfinite(cfg.carrierFloor))
         throw std::invalid_argument(
             "gummelConfigFromJson: carrier_floor_m3 must be non-negative and finite.");
+    if (cfg.augerExcessProduct != "generalized_fermi" &&
+        cfg.augerExcessProduct != "classical_np") {
+        throw std::invalid_argument(
+            "gummelConfigFromJson: auger_excess_product must be "
+            "'generalized_fermi' or 'classical_np'.");
+    }
 
     return cfg;
 }
@@ -541,6 +549,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
             cfg.recombination, cfg.taun, cfg.taup, cfg.srhDopingDependence);
     recombinationConfig.augerCn = cfg.augerCn;
     recombinationConfig.augerCp = cfg.augerCp;
+    recombinationConfig.augerExcessProduct = cfg.augerExcessProduct;
     recombinationConfig.bandToBand = cfg.bandToBand;
     DDAssembler assembler(
         mesh,
@@ -1303,8 +1312,10 @@ void writeDDSolutionVTK(const std::string& filename,
                 doping.donors(i), doping.acceptors(i)));
         srh_cm3_s[i] =
             srh[i] * units.concentrationM3PerInternal() / 1.0e6;
-        auger[i] = recombination.augerRateFromExcessProduct(
-            srhState.excessProduct, n, p);
+        auger[i] = recombination.usesClassicalAugerExcessProduct()
+            ? recombination.augerRate(n, p, ni)
+            : recombination.augerRateFromExcessProduct(
+                srhState.excessProduct, n, p);
         auger_cm3_s[i] =
             auger[i] * units.concentrationM3PerInternal() / 1.0e6;
         bandToBandGeneration[i] = transportNodeAreas[i] > 0.0
