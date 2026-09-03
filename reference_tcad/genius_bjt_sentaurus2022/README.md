@@ -151,6 +151,18 @@ SDevice directed-edge oracle. Reproduce with
 `scripts/diagnose_genius_bjt_hole_current_edges.py` and
 `scripts/diagnose_genius_bjt_hole_current_tail.py`.
 
+The local mesh-sensitivity rerun refines the base/base-collector band and the
+two emitter-base junction flanks without changing geometry, doping, physics,
+or bias.  The common mesh grows from 5611/10940 to 15561/30780
+nodes/triangles.  At 3 V the hole-current log-magnitude P95 error falls from
+0.82799 to 0.27000 decade and the normalized vector RMSE falls from 0.06221 to
+0.02244; all refined terminal, spatial-state, current-density, SRH, and Auger
+gates pass.  This demonstrates that local discretization resolution is a
+material contributor to the former weak-current tail and prevents assigning
+that residual solely to SDevice node-field construction semantics.  See
+`reports/mesh_sensitivity_validation.md` and reproduce with
+`scripts/run_genius_bjt_mesh_sensitivity.py`.
+
 ## Comparison figures
 
 Publication-ready mesh, M1 spatial-field, terminal-curve, and parity-error
