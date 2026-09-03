@@ -417,18 +417,14 @@ inline std::vector<std::vector<Index>> buildNodeEdgeMap(
     return nodeEdges;
 }
 
-/// Recover a nodal current vector from all active incident SG edge-flux
-/// projections.  The edge-length weight is the discrete analogue of the
-/// element support used when Sentaurus interpolates current density to mesh
-/// vertices.  A one-dimensional boundary stencil falls back to its resolved
-/// tangential projection instead of returning zero.
-template <typename FluxAccessor, typename ActiveAccessor>
-inline Point2 nodalLeastSquaresCurrentVector(
+template <typename FluxAccessor, typename ActiveAccessor, typename WeightAccessor>
+inline Point2 nodalWeightedLeastSquaresCurrentVector(
     Index                                  node,
     const std::vector<std::vector<Index>>& nodeEdges,
     const DeviceMesh&                      mesh,
     FluxAccessor&&                         signedFlux,
-    ActiveAccessor&&                       activeEdge)
+    ActiveAccessor&&                       activeEdge,
+    WeightAccessor&&                       edgeWeight)
 {
     if (node >= nodeEdges.size())
         return Point2::Zero();
@@ -451,7 +447,9 @@ inline Point2 nodalLeastSquaresCurrentVector(
         const Point2 tangent{
             (node1.x - node0.x) / edge.length,
             (node1.y - node0.y) / edge.length};
-        const Real weight = edge.length;
+        const Real weight = edgeWeight(edgeId);
+        if (!(weight > 0.0) || !std::isfinite(weight))
+            continue;
         const Real flux = signedFlux(edgeId);
         a00 += weight * tangent.x() * tangent.x();
         a01 += weight * tangent.x() * tangent.y();
@@ -473,6 +471,46 @@ inline Point2 nodalLeastSquaresCurrentVector(
     if (fallbackWeight > 0.0)
         return fallback / fallbackWeight;
     return Point2::Zero();
+}
+
+/// Recover a nodal current vector from all active incident SG edge-flux
+/// projections.  The edge-length weight is the discrete analogue of the
+/// element support used when Sentaurus interpolates current density to mesh
+/// vertices.  A one-dimensional boundary stencil falls back to its resolved
+/// tangential projection instead of returning zero.
+template <typename FluxAccessor, typename ActiveAccessor>
+inline Point2 nodalLeastSquaresCurrentVector(
+    Index                                  node,
+    const std::vector<std::vector<Index>>& nodeEdges,
+    const DeviceMesh&                      mesh,
+    FluxAccessor&&                         signedFlux,
+    ActiveAccessor&&                       activeEdge)
+{
+    return nodalWeightedLeastSquaresCurrentVector(
+        node, nodeEdges, mesh,
+        std::forward<FluxAccessor>(signedFlux),
+        std::forward<ActiveAccessor>(activeEdge),
+        [&](Index edgeId) { return mesh.getEdge(edgeId).length; });
+}
+
+/// Recover a diagnostic nodal current from the conservative SG fluxes crossing
+/// the box-method dual faces.  Weighting the edge-normal projection by the
+/// corresponding dual-face length is the boundary-L2 fit of the finite-volume
+/// current trace.  The authoritative conservative quantities remain the SG
+/// line fluxes; this vector is their vertex representation for field output.
+template <typename FluxAccessor, typename ActiveAccessor>
+inline Point2 nodalDualFaceSgCurrentVector(
+    Index                                  node,
+    const std::vector<std::vector<Index>>& nodeEdges,
+    const DeviceMesh&                      mesh,
+    FluxAccessor&&                         signedFlux,
+    ActiveAccessor&&                       activeEdge)
+{
+    return nodalWeightedLeastSquaresCurrentVector(
+        node, nodeEdges, mesh,
+        std::forward<FluxAccessor>(signedFlux),
+        std::forward<ActiveAccessor>(activeEdge),
+        [&](Index edgeId) { return mesh.getEdge(edgeId).couple; });
 }
 
 struct EdgeAveragedNodalCurrent {

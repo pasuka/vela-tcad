@@ -21,7 +21,7 @@ blind independent validation.
   `f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159`.
 - Vela authority: the classical-Auger 31/31 accepted-state manifest under
   `build-release/` (SHA-256
-  `e7cb321bd2640b0f9f6c56ee56ee1093e8786ca87294c64b9ff0472b78cc851e`).
+  `7fc5286a3a0edc2e0449394dc129a9c4ac6e082557917051c5838a20672a43dd`).
 - Comparison contract: schema 4; all source paths and hashes are repeated in
   the generated JSON summaries.
 
@@ -36,7 +36,10 @@ exports:
 - the corresponding signed electron and hole continuity source contribution;
 - electron and hole drift, diffusion, and total vectors in Vela's legacy
   diagnostic scale, for algebraic closure only;
-- the Sentaurus-style nodal total current-density reconstruction.
+- electron, hole, and total current-density vectors recovered directly from
+  the production SG line fluxes by a dual-face-weighted nodal least-squares
+  projection. The SG line fluxes remain the conservative authority; these
+  node vectors are comparison diagnostics.
 
 All four exports contain 5611 common-mesh nodes. SRH+Auger closure and
 drift+diffusion closure are exact at the precision of the exported values.
@@ -57,16 +60,17 @@ was generated in this task.
 
 | Quantity | Main observations | Gate |
 |---|---|---:|
-| Electron current density | P95 log error 0.27079 decade; normalized vector RMSE 0.56436; cosine 0.89655 | pass |
-| Hole current density | P95 log error 1.48371 decades; normalized vector RMSE 0.81503; cosine 0.78774 | fail |
+| Electron current density | P95 log error 0.01577 decade; normalized vector RMSE 0.03515; cosine 0.99939 | pass |
+| Hole current density | P95 log error 0.82799 decade; normalized vector RMSE 0.06221; cosine 0.99810 | fail (P95 only) |
 | SRH | integral ratio 0.77866; normalized L1 0.22140; peak offset 0.171875 um (diagnostic only) | pass |
 | Auger | integral ratio 0.98781; normalized L1 0.01219; shape TV 0.00658; peak offset 0 | pass |
 
-At 0 V, the P95 current-density magnitude errors are 0.06905 decade
-(electron) and 0.08265 decade (hole). At 1 V they are 0.21464 and 0.50063
-decade. The rapid increase of the hole-current discrepancy with collector bias
-points to high-field/current-reconstruction or carrier-statistics spatial
-alignment rather than a bias-independent unit conversion error.
+At 0 V, the P95 current-density magnitude errors are 0.01778 decade
+(electron) and 0.01642 decade (hole). At 1 V they are 0.01445 and 0.24744
+decade. At 3 V, the electron field and the hole-field normalized RMSE/cosine
+gates pass; only the hole log-magnitude P95 gate remains. Its increase with
+collector bias is localized to the low-current tail rather than a global
+direction or scale mismatch.
 
 ## Nc/Nv and BGN-Fermi A/B result
 
@@ -127,10 +131,18 @@ the 86 edges above 1e-3 of the SDevice projected-current peak:
 - Production SG flux versus Vela nodal reconstruction has normalized RMSE
   0.70322, cosine 0.99889, and fitted scale 3.3605.
 
-Thus the junction-region direction is consistent, but the nodal reconstruction
-does not preserve the production SG edge magnitude. This is a post-processing
-semantics/recovery discrepancy, not evidence that the accepted carrier state
-or terminal current is wrong. The remaining global hole-current gate should be
-resolved by a conservative nodal recovery from dual-face SG fluxes, then
-recompared with SDevice. SDevice exposes only nodal current vectors here, so
-its internal directed-edge flux remains unavailable as a strict edge oracle.
+This evidence motivated the implemented recovery. Each production SG line
+flux is divided by its dual-face length to obtain an edge-normal current
+density, then the incident edge values are fitted at each node using the same
+dual-face lengths as least-squares weights. An independent Python replay and
+the C++ VTK output agree to `1.88e-13 A/cm^2` maximum absolute difference.
+
+At 3 V, the new recovery reduces electron normalized RMSE from 0.56436 to
+0.03515 and hole normalized RMSE from 0.81503 to 0.06221; cosine similarities
+rise to 0.99939 and 0.99810. The pre-registered hole-current mask and 0.5-decade
+P95 limit were deliberately retained. Hole P95 is still 0.82799 decade at the
+`1e-6` peak-relative mask, but falls to 0.35064 at `1e-4` and 0.04269 at `1e-2`.
+The remaining failure is therefore a low-current-tail magnitude discrepancy,
+not a principal-current-vector recovery failure. SDevice exposes only nodal
+current vectors here, so its internal directed-edge flux remains unavailable
+as a strict edge oracle.

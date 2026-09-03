@@ -23,6 +23,8 @@
 
 namespace vela {
 
+struct CoupledDDEdgeFluxDiagnostic;
+
 /// Per-contact physics metadata routed to the DD solvers.
 ///
 /// Bias for each contact is still passed through ``contactBiases`` so the
@@ -232,6 +234,8 @@ void writeDDSolutionVTK(const std::string& filename,
                         const BandgapNarrowingConfig& bandgapNarrowingConfig,
                         Real temperature_K = constants::T0,
                         UnitScalingConfig scaling = {},
-                        const CarrierStatisticsConfig& carrierStatistics = {});
+                        const CarrierStatisticsConfig& carrierStatistics = {},
+                        const std::vector<CoupledDDEdgeFluxDiagnostic>*
+                            sgEdgeFluxDiagnostics = nullptr);
 
 } // namespace vela

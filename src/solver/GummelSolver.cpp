@@ -3,6 +3,7 @@
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/AssemblerUtils.h"
+#include "vela/equation/CoupledDDAssembler.h"
 #include "vela/equation/DDAssembler.h"
 #include "vela/solver/LinearSolver.h"
 #include "vela/physics/CarrierStatistics.h"
@@ -956,7 +957,9 @@ void writeDDSolutionVTK(const std::string& filename,
                         const BandgapNarrowingConfig& bandgapNarrowingConfig,
                         Real temperature_K,
                         UnitScalingConfig scaling,
-                        const CarrierStatisticsConfig& carrierStatistics)
+                        const CarrierStatisticsConfig& carrierStatistics,
+                        const std::vector<CoupledDDEdgeFluxDiagnostic>*
+                            sgEdgeFluxDiagnostics)
 {
     const Index N = mesh.numNodes();
     VTKWriter writer(filename, mesh);
@@ -1576,6 +1579,77 @@ void writeDDSolutionVTK(const std::string& filename,
     writer.addNodeVector(
         "NodeReconstructedTotalCurrentDensityVector",
         totalCurrentDensity_A_cm2);
+    if (sgEdgeFluxDiagnostics != nullptr) {
+        std::vector<Real> electronProjection_A_cm2(
+            static_cast<std::size_t>(mesh.numEdges()), 0.0);
+        std::vector<Real> holeProjection_A_cm2(
+            static_cast<std::size_t>(mesh.numEdges()), 0.0);
+        std::vector<bool> activeElectron(
+            static_cast<std::size_t>(mesh.numEdges()), false);
+        std::vector<bool> activeHole(
+            static_cast<std::size_t>(mesh.numEdges()), false);
+        for (const CoupledDDEdgeFluxDiagnostic& edge : *sgEdgeFluxDiagnostics) {
+            if (edge.edgeId >= mesh.numEdges())
+                throw std::out_of_range(
+                    "writeDDSolutionVTK: SG diagnostic edge is outside the mesh.");
+            const Real dualFace_m =
+                units.internalLengthToMeters(edge.couple_m);
+            if (!(dualFace_m > 0.0))
+                continue;
+            const std::size_t edgeId = static_cast<std::size_t>(edge.edgeId);
+            electronProjection_A_cm2[edgeId] =
+                -constants::q * edge.electronParticleLineFlux_per_m_s /
+                dualFace_m / 1.0e4;
+            holeProjection_A_cm2[edgeId] =
+                constants::q * edge.holeParticleLineFlux_per_m_s /
+                dualFace_m / 1.0e4;
+            activeElectron[edgeId] = std::isfinite(
+                electronProjection_A_cm2[edgeId]);
+            activeHole[edgeId] = std::isfinite(
+                holeProjection_A_cm2[edgeId]);
+        }
+        const auto nodeEdges = detail::buildNodeEdgeMap(mesh);
+        std::vector<Point3> dualFaceElectronCurrent_A_cm2(
+            N, Point3::Zero());
+        std::vector<Point3> dualFaceHoleCurrent_A_cm2(
+            N, Point3::Zero());
+        std::vector<Point3> dualFaceTotalCurrent_A_cm2(
+            N, Point3::Zero());
+        for (Index node = 0; node < N; ++node) {
+            const Point2 electron = detail::nodalDualFaceSgCurrentVector(
+                node, nodeEdges, mesh,
+                [&](Index edgeId) {
+                    return electronProjection_A_cm2[static_cast<std::size_t>(edgeId)];
+                },
+                [&](Index edgeId) {
+                    return activeElectron[static_cast<std::size_t>(edgeId)];
+                });
+            const Point2 hole = detail::nodalDualFaceSgCurrentVector(
+                node, nodeEdges, mesh,
+                [&](Index edgeId) {
+                    return holeProjection_A_cm2[static_cast<std::size_t>(edgeId)];
+                },
+                [&](Index edgeId) {
+                    return activeHole[static_cast<std::size_t>(edgeId)];
+                });
+            dualFaceElectronCurrent_A_cm2[node] =
+                Point3{electron.x(), electron.y(), 0.0};
+            dualFaceHoleCurrent_A_cm2[node] =
+                Point3{hole.x(), hole.y(), 0.0};
+            dualFaceTotalCurrent_A_cm2[node] =
+                dualFaceElectronCurrent_A_cm2[node] +
+                dualFaceHoleCurrent_A_cm2[node];
+        }
+        writer.addNodeVector(
+            "DualFaceSgElectronCurrentDensityVector",
+            dualFaceElectronCurrent_A_cm2);
+        writer.addNodeVector(
+            "DualFaceSgHoleCurrentDensityVector",
+            dualFaceHoleCurrent_A_cm2);
+        writer.addNodeVector(
+            "DualFaceSgTotalCurrentDensityVector",
+            dualFaceTotalCurrent_A_cm2);
+    }
     writer.addNodeScalar("ElectronMobility", electronMobility);
     writer.addNodeScalar("HoleMobility", holeMobility);
     writer.addNodeScalar("ElectronMobilityCm2PerVs", electronMobility_cm2_V_s);

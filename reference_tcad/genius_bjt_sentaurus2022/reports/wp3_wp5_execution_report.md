@@ -81,14 +81,16 @@ only because a nearly flat maximum makes `argmax` location unstable.
 
 | Quantity | Main diagnostic result |
 |---|---|
-| Electron current density | cosine 0.897; normalized RMSE 0.564; pass |
-| Hole current density | cosine 0.788; normalized RMSE 0.815; fail |
+| Electron current density | P95 0.0158 decade; cosine 0.9994; normalized RMSE 0.0351; pass |
+| Hole current density | P95 0.8280 decade; cosine 0.9981; normalized RMSE 0.0622; fail on P95 only |
 | SRH recombination | integral ratio 0.779; shape TV 0.106; pass |
 | Auger recombination | integral ratio 0.988; shape TV 0.00658; pass |
 
-This records an important residual: terminal currents agree within the asserted
-limits, while local reconstructed transport/source fields are not yet close
-enough to justify a separate numerical-parity claim.
+The production SG line flux is now converted to an edge-normal current density
+with the corresponding dual-face length and recovered at nodes using a
+dual-face-weighted least-squares fit. The principal vector magnitude and
+direction now agree closely; the remaining transport failure is confined to
+the hole-current low-magnitude tail counted by the P95 log-error gate.
 
 A two-node Auger audit showed that SDevice and Vela carrier densities agreed
 within about 0.4% while the former Vela rate was about one half of SDevice.
@@ -98,13 +100,12 @@ from 0.575 to 0.988 and reduces normalized L1 from 0.425 to 0.0122. The full
 analytic Jacobian agrees with centered finite differences to `5.07e-9`
 relative error.
 
-The base-collector current audit covers 516 vertically oriented edges. Vela's
-nodal hole-current reconstruction agrees with the SDevice nodal projection in
-this window (normalized RMSE 0.0628; cosine 0.99925), but the production SG
-edge flux has RMSE 0.7189 and requires a 3.53 fitted scale. Direction is already
-consistent. The remaining hole-current failure is therefore assigned to nodal
-current recovery/semantics; a conservative dual-face recovery is the next
-implementation target.
+The base-collector current audit covers 516 vertically oriented edges and led
+to the dual-face recovery above. An independent Python implementation matches
+the C++ VTK vectors to `1.88e-13 A/cm^2`. At the unchanged `1e-6` peak-relative
+mask, the hole P95 remains 0.828 decade; it falls to 0.351 decade at `1e-4` and
+0.0427 decade at `1e-2`. The original mask and 0.5-decade threshold remain in
+force so the report does not move the acceptance goalpost.
 
 ## M1 SRH parameter closure
 

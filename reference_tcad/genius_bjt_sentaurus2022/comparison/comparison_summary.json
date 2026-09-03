@@ -177,9 +177,9 @@
             "minimum_global_vector_cosine_similarity": 0.85
           },
           "observed": {
-            "p95_absolute_log10_magnitude_error": 0.2707940563197758,
-            "normalized_vector_rmse": 0.5643647214884487,
-            "global_vector_cosine_similarity": 0.8965468902850234
+            "p95_absolute_log10_magnitude_error": 0.015772805968731436,
+            "normalized_vector_rmse": 0.03514884751720666,
+            "global_vector_cosine_similarity": 0.9993886648422103
           },
           "checks": {
             "p95_absolute_log10_magnitude_error": true,
@@ -198,14 +198,14 @@
             "minimum_global_vector_cosine_similarity": 0.85
           },
           "observed": {
-            "p95_absolute_log10_magnitude_error": 1.483714288375721,
-            "normalized_vector_rmse": 0.8150324470261591,
-            "global_vector_cosine_similarity": 0.7877426639657017
+            "p95_absolute_log10_magnitude_error": 0.8279870492481883,
+            "normalized_vector_rmse": 0.06220531291413024,
+            "global_vector_cosine_similarity": 0.9981042175081616
           },
           "checks": {
             "p95_absolute_log10_magnitude_error": false,
-            "normalized_vector_rmse": false,
-            "global_vector_cosine_similarity": false
+            "normalized_vector_rmse": true,
+            "global_vector_cosine_similarity": true
           },
           "pass": false
         }

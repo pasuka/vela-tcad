@@ -274,6 +274,9 @@ void writeNewtonSolutionVtk(const std::filesystem::path& path,
     recombination.augerCp = problem.newton.augerCp;
     recombination.augerExcessProduct = problem.newton.augerExcessProduct;
     recombination.bandToBand = problem.newton.bandToBand;
+    const vela::NewtonSolver diagnosticSolver = makeNewtonSolver(problem);
+    const std::vector<vela::CoupledDDEdgeFluxDiagnostic> edgeFluxDiagnostics =
+        diagnosticSolver.evaluateSgEdgeFluxDiagnostics(solution);
     vela::writeDDSolutionVTK(
         path.string(),
         problem.mesh,
@@ -286,7 +289,8 @@ void writeNewtonSolutionVtk(const std::filesystem::path& path,
         problem.newton.bandgapNarrowing,
         problem.newton.temperature_K,
         problem.newton.inputScaling,
-        problem.newton.carrierStatistics);
+        problem.newton.carrierStatistics,
+        &edgeFluxDiagnostics);
 }
 
 vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,

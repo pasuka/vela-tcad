@@ -78,8 +78,8 @@
       "current_density_reference_fraction": 1e-6,
       "source_rate_reference_fraction": 1e-6,
       "vela_current_density_fields": {
-        "electron": "SentaurusElectronCurrentDensityVector",
-        "hole": "SentaurusHoleCurrentDensityVector"
+        "electron": "DualFaceSgElectronCurrentDensityVector",
+        "hole": "DualFaceSgHoleCurrentDensityVector"
       },
       "gates": {
         "current_density": {
@@ -109,7 +109,7 @@
           }
         }
       },
-      "reason": "Initial engineering regression gates registered after the original characterization, not a blind validation. Current-density vector gates retain magnitude and direction sensitivity. Recombination acceptance uses signed/absolute integral and normalized-shape checks; unweighted node-log P95 and single-node argmax remain diagnostic-only because low-contribution tails and flat peaks can dominate them without materially changing the integrated source."
+      "reason": "Initial engineering regression gates registered after the original characterization, not a blind validation. Current-density comparison uses the dual-face-length-weighted nodal representation of the production SG line fluxes; the line fluxes remain the conservative finite-volume authority. Current-density vector gates retain magnitude and direction sensitivity. Recombination acceptance uses signed/absolute integral and normalized-shape checks; unweighted node-log P95 and single-node argmax remain diagnostic-only because low-contribution tails and flat peaks can dominate them without materially changing the integrated source."
     }
   }
 }

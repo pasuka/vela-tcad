@@ -72,6 +72,111 @@ def projection_metrics(reference: list[float], actual: list[float]) -> dict[str,
     }
 
 
+def vector_metrics(
+    reference: list[tuple[float, float]],
+    actual: list[tuple[float, float]],
+    reference_fraction: float = 1.0e-6,
+) -> dict[str, float | int]:
+    if len(reference) != len(actual) or not reference:
+        raise ValueError("vector metrics require equal non-empty arrays")
+    magnitudes = [math.hypot(x, y) for x, y in reference]
+    peak = max(magnitudes)
+    selected = [value >= peak * reference_fraction for value in magnitudes]
+    pairs = [
+        (r, a)
+        for r, a, keep in zip(reference, actual, selected, strict=True)
+        if keep
+    ]
+    rr = sum(rx * rx + ry * ry for (rx, ry), _ in pairs)
+    aa = sum(ax * ax + ay * ay for _, (ax, ay) in pairs)
+    dot = sum(rx * ax + ry * ay for (rx, ry), (ax, ay) in pairs)
+    log_errors = [
+        abs(math.log10(math.hypot(ax, ay) / math.hypot(rx, ry)))
+        for (rx, ry), (ax, ay) in pairs
+        if math.hypot(ax, ay) > 0.0 and math.hypot(rx, ry) > 0.0
+    ]
+    return {
+        "selected_node_count": len(pairs),
+        "reference_fraction_of_peak": reference_fraction,
+        "reference_peak_A_per_cm2": peak,
+        "p95_absolute_log10_magnitude_error": sorted(log_errors)[
+            round(0.95 * (len(log_errors) - 1))
+        ],
+        "normalized_vector_rmse": math.sqrt(
+            sum(
+                (ax - rx) ** 2 + (ay - ry) ** 2
+                for (rx, ry), (ax, ay) in pairs
+            )
+            / rr
+        ),
+        "signed_cosine_similarity": dot / math.sqrt(rr * aa),
+    }
+
+
+def recover_nodal_current(
+    edge_rows: list[dict[str, str]],
+    node_count: int,
+    weight_mode: str,
+    carrier: str,
+) -> list[tuple[float, float]]:
+    terms: list[list[tuple[float, float, float, float]]] = [
+        [] for _ in range(node_count)
+    ]
+    line_flux_key = f"{carrier}_particle_line_flux_per_m_s"
+    for edge in edge_rows:
+        length = float(edge["length_m"])
+        couple = float(edge["couple_m"])
+        if length <= 0.0 or couple <= 0.0:
+            continue
+        tx = (float(edge["x1"]) - float(edge["x0"])) / length
+        ty = (float(edge["y1"]) - float(edge["y0"])) / length
+        conventional_current_sign = -1.0 if carrier == "electron" else 1.0
+        current_density = (
+            conventional_current_sign
+            * Q_C
+            * float(edge[line_flux_key])
+            / couple
+            / 1.0e4
+        )
+        if weight_mode == "uniform":
+            weight = 1.0
+        elif weight_mode == "primal_length":
+            weight = length
+        elif weight_mode == "dual_face":
+            weight = couple
+        elif weight_mode == "dual_face_squared":
+            weight = couple * couple
+        elif weight_mode == "dual_area":
+            weight = length * couple
+        else:
+            raise ValueError(f"unsupported reconstruction weight {weight_mode}")
+        term = (weight, tx, ty, current_density)
+        terms[int(edge["node0"])].append(term)
+        terms[int(edge["node1"])].append(term)
+
+    result: list[tuple[float, float]] = []
+    for node_terms in terms:
+        a00 = sum(w * tx * tx for w, tx, _, _ in node_terms)
+        a01 = sum(w * tx * ty for w, tx, ty, _ in node_terms)
+        a11 = sum(w * ty * ty for w, _, ty, _ in node_terms)
+        b0 = sum(w * tx * flux for w, tx, _, flux in node_terms)
+        b1 = sum(w * ty * flux for w, _, ty, flux in node_terms)
+        determinant = a00 * a11 - a01 * a01
+        scale = max(abs(a00 * a11), abs(a01 * a01), 1.0e-300)
+        if len(node_terms) >= 2 and abs(determinant) > 1.0e-24 * scale:
+            result.append(
+                (
+                    (b0 * a11 - b1 * a01) / determinant,
+                    (a00 * b1 - a01 * b0) / determinant,
+                )
+            )
+        elif a00 + a11 > 0.0:
+            result.append((b0 / (a00 + a11), b1 / (a00 + a11)))
+        else:
+            result.append((0.0, 0.0))
+    return result
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runner", type=Path, default=REPO / "build-release" / "vela_example_runner.exe")
@@ -118,11 +223,16 @@ def main() -> int:
     sentaurus = sentaurus_vector(args.sentaurus_root / "fields" / "hCurrentDensity_region0.csv")
     _, _, vectors = read_vtk_point_data(BUILD_ROOT / "m1_accepted_states" / "fields" / "vce_030.vtk")
     vela = vectors["SentaurusHoleCurrentDensityVector"]
+    cpp_dual_face_hole = [
+        (x, y)
+        for x, y, _ in vectors["DualFaceSgHoleCurrentDensityVector"]
+    ]
     doping = read_csv(FIXTURE / "vela" / "input" / "doping.csv")
     net_doping = [float(row["donors_cm3"]) - float(row["acceptors_cm3"]) for row in doping]
 
+    edge_rows = read_csv(output / "sg_edges.csv")
     rows: list[dict[str, object]] = []
-    for edge in read_csv(output / "sg_edges.csv"):
+    for edge in edge_rows:
         n0, n1 = int(edge["node0"]), int(edge["node1"])
         x0, y0 = float(edge["x0"]), float(edge["y0"])
         x1, y1 = float(edge["x1"]), float(edge["y1"])
@@ -174,6 +284,44 @@ def main() -> int:
     sg = [float(row["sg_hole_projection_A_cm2"]) for row in rows]
     vela_node = [float(row["vela_node_projection_A_cm2"]) for row in rows]
     crossing = [row for row in rows if bool(row["crosses_net_doping_sign"])]
+    sentaurus_all = [(x, y) for x, y in sentaurus]
+    sentaurus_electron_all = sentaurus_vector(
+        args.sentaurus_root / "fields" / "eCurrentDensity_region0.csv"
+    )
+    reconstruction_ab = {}
+    electron_reconstruction_ab = {}
+    reconstructions = {}
+    for weight_mode in (
+        "uniform",
+        "primal_length",
+        "dual_face",
+        "dual_face_squared",
+        "dual_area",
+    ):
+        recovered = recover_nodal_current(
+            edge_rows, len(sentaurus_all), weight_mode, "hole"
+        )
+        reconstructions[weight_mode] = recovered
+        reconstruction_ab[weight_mode] = vector_metrics(sentaurus_all, recovered)
+        electron_reconstruction_ab[weight_mode] = vector_metrics(
+            sentaurus_electron_all,
+            recover_nodal_current(
+                edge_rows, len(sentaurus_electron_all), weight_mode, "electron"
+            ),
+        )
+    dual_face_mask_sensitivity = {
+        f"{fraction:.0e}": vector_metrics(
+            sentaurus_all, reconstructions["dual_face"], fraction
+        )
+        for fraction in (1.0e-6, 1.0e-5, 1.0e-4, 1.0e-3, 1.0e-2)
+    }
+    python_dual_face_hole = reconstructions["dual_face"]
+    cpp_python_max_difference_A_cm2 = max(
+        math.hypot(cx - px, cy - py)
+        for (cx, cy), (px, py) in zip(
+            cpp_dual_face_hole, python_dual_face_hole, strict=True
+        )
+    )
     summary = {
         "schema_version": 1,
         "bias": {"VBE_V": 0.7, "VCE_V": 3.0},
@@ -194,6 +342,16 @@ def main() -> int:
             "vela_sg_vs_sentaurus_node_projection": projection_metrics(sent, sg),
             "vela_node_reconstruction_vs_sentaurus_node_projection": projection_metrics(sent, vela_node),
             "vela_sg_vs_vela_node_reconstruction": projection_metrics(vela_node, sg),
+        },
+        "global_nodal_reconstruction_ab": reconstruction_ab,
+        "global_electron_nodal_reconstruction_ab": electron_reconstruction_ab,
+        "dual_face_reference_mask_sensitivity": dual_face_mask_sensitivity,
+        "cpp_dual_face_output": {
+            "metrics_vs_sentaurus": vector_metrics(
+                sentaurus_all, cpp_dual_face_hole
+            ),
+            "maximum_difference_from_independent_python_replay_A_per_cm2":
+                cpp_python_max_difference_A_cm2,
         },
         "source_sha256": {
             "accepted_state": sha256(BUILD_ROOT / "m1_accepted_states" / "states" / "vce_030.csv"),

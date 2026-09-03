@@ -73,6 +73,8 @@ def export_point(
         "J_p_total",
         "SentaurusElectronCurrentDensityVector",
         "SentaurusHoleCurrentDensityVector",
+        "DualFaceSgElectronCurrentDensityVector",
+        "DualFaceSgHoleCurrentDensityVector",
     )
     missing = [name for name in required_scalars if name not in scalars]
     missing.extend(name for name in required_vectors if name not in vectors)
@@ -140,9 +142,9 @@ def export_point(
                 row[f"{carrier}_diffusion_{axis}_legacy_diagnostic"] = diffusion[component]
                 row[f"{carrier}_total_{axis}_legacy_diagnostic"] = total_vector[component]
             physical = vectors[
-                "SentaurusElectronCurrentDensityVector"
+                "DualFaceSgElectronCurrentDensityVector"
                 if carrier == "electron"
-                else "SentaurusHoleCurrentDensityVector"
+                else "DualFaceSgHoleCurrentDensityVector"
             ][node_id]
             row[f"{carrier}_physical_total_x_A_per_cm2"] = physical[0]
             row[f"{carrier}_physical_total_y_A_per_cm2"] = physical[1]
@@ -189,12 +191,12 @@ def export_point(
         "current_density": {
             "electron": vector_metrics(
                 sentaurus_vector(fields / "eCurrentDensity_region0.csv"),
-                vectors["SentaurusElectronCurrentDensityVector"],
+                vectors["DualFaceSgElectronCurrentDensityVector"],
                 1.0e-6,
             ),
             "hole": vector_metrics(
                 sentaurus_vector(fields / "hCurrentDensity_region0.csv"),
-                vectors["SentaurusHoleCurrentDensityVector"],
+                vectors["DualFaceSgHoleCurrentDensityVector"],
                 1.0e-6,
             ),
         },
@@ -255,7 +257,7 @@ def main() -> int:
         "state_contract": "derived only from unique fixed-bias accepted Vela states",
         "unit_contract": {
             "rate": "cm^-3 s^-1",
-            "physical_current_density": "A/cm^2",
+            "physical_current_density": "A/cm^2, dual-face-length-weighted nodal representation of production SG line flux",
             "drift_diffusion_decomposition": "legacy Vela diagnostic scale; algebraic closure only",
             "integrated_source": "A/um for 1 um out-of-plane depth",
             "continuity_sign": "positive recombination is a negative source in both carrier continuity residuals",

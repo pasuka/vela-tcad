@@ -2099,6 +2099,71 @@ TEST_CASE("VTK exports direct avalanche velocity alpha ion integral and impact d
     std::filesystem::remove(vtkPath, removeError);
 }
 
+TEST_CASE("VTK exports dual-face nodal currents from supplied production SG fluxes",
+          "[impact][diagnostic][vtk][dual_face]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const std::vector<RegionDopingSpec> specs = {
+        {"n_region", 5.0e22, 0.0},
+        {"p_region", 0.0, 5.0e22},
+    };
+    DopingModel doping = DopingModel::fromMeshAndRegions(mesh, specs);
+
+    DDSolution sol;
+    sol.psi = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    sol.phin = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    sol.phip = VectorXd::Zero(static_cast<int>(mesh.numNodes()));
+    sol.n = VectorXd::Constant(static_cast<int>(mesh.numNodes()), 1.0e21);
+    sol.p = VectorXd::Constant(static_cast<int>(mesh.numNodes()), 2.0e21);
+
+    std::vector<CoupledDDEdgeFluxDiagnostic> edgeFluxes;
+    edgeFluxes.reserve(static_cast<std::size_t>(mesh.numEdges()));
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        CoupledDDEdgeFluxDiagnostic diagnostic;
+        diagnostic.edgeId = edgeId;
+        diagnostic.couple_m = edge.couple;
+        diagnostic.electronParticleLineFlux_per_m_s =
+            -2.0 * edge.couple * 1.0e4 / constants::q;
+        diagnostic.holeParticleLineFlux_per_m_s =
+            3.0 * edge.couple * 1.0e4 / constants::q;
+        edgeFluxes.push_back(diagnostic);
+    }
+
+    const auto vtkPath = std::filesystem::temp_directory_path() /
+        "vela_dual_face_sg_current_vectors.vtk";
+    writeDDSolutionVTK(
+        vtkPath.string(),
+        mesh,
+        matdb,
+        doping,
+        sol,
+        mobilityModelConfig("constant"),
+        recombinationModelConfig({"none"}),
+        ImpactIonizationModelConfig{},
+        BandgapNarrowingConfig{},
+        constants::T0,
+        UnitScalingConfig{},
+        CarrierStatisticsConfig{},
+        &edgeFluxes);
+
+    std::ifstream input(vtkPath);
+    REQUIRE(input.good());
+    const std::string vtkText(
+        (std::istreambuf_iterator<char>(input)),
+        std::istreambuf_iterator<char>());
+    REQUIRE(vtkText.find("VECTORS DualFaceSgElectronCurrentDensityVector") !=
+            std::string::npos);
+    REQUIRE(vtkText.find("VECTORS DualFaceSgHoleCurrentDensityVector") !=
+            std::string::npos);
+    REQUIRE(vtkText.find("VECTORS DualFaceSgTotalCurrentDensityVector") !=
+            std::string::npos);
+
+    std::error_code removeError;
+    std::filesystem::remove(vtkPath, removeError);
+}
+
 TEST_CASE("Genius-style avalanche source volume truncates obtuse Tri3 edge support",
           "[impact][diagnostic]")
 {
@@ -2967,6 +3032,37 @@ TEST_CASE("Nodal SG least-squares reconstruction preserves a constant vector fie
     const auto active = [](Index) { return true; };
     for (Index node = 0; node < mesh.numNodes(); ++node) {
         const Point2 recovered = detail::nodalLeastSquaresCurrentVector(
+            node, nodeEdges, mesh, flux, active);
+        REQUIRE(recovered.x() == Catch::Approx(expected.x()).margin(1.0e-12));
+        REQUIRE(recovered.y() == Catch::Approx(expected.y()).margin(1.0e-12));
+    }
+}
+
+TEST_CASE("Dual-face SG nodal reconstruction preserves a constant vector field",
+          "[impact][eparallel][dual_face]")
+{
+    DeviceMesh mesh = makePNMesh(false);
+    const Point2 expected{-2.5, 6.0};
+    std::vector<Real> signedFlux(
+        static_cast<std::size_t>(mesh.numEdges()), 0.0);
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        const Node& node0 = mesh.getNode(edge.n0);
+        const Node& node1 = mesh.getNode(edge.n1);
+        const Point2 tangent{
+            (node1.x - node0.x) / edge.length,
+            (node1.y - node0.y) / edge.length};
+        signedFlux[static_cast<std::size_t>(edgeId)] = expected.dot(tangent);
+    }
+    const auto nodeEdges = detail::buildNodeEdgeMap(mesh);
+    const auto flux = [&](Index edgeId) {
+        return signedFlux[static_cast<std::size_t>(edgeId)];
+    };
+    const auto active = [&](Index edgeId) {
+        return mesh.getEdge(edgeId).couple > 0.0;
+    };
+    for (Index node = 0; node < mesh.numNodes(); ++node) {
+        const Point2 recovered = detail::nodalDualFaceSgCurrentVector(
             node, nodeEdges, mesh, flux, active);
         REQUIRE(recovered.x() == Catch::Approx(expected.x()).margin(1.0e-12));
         REQUIRE(recovered.y() == Catch::Approx(expected.y()).margin(1.0e-12));

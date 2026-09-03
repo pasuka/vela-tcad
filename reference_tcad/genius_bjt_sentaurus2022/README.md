@@ -112,9 +112,10 @@ is 0.10067 decade. With the classical-Auger accepted state the unmasked
 full-domain maximum is 2.8708 decades at only 32.03 cm^-3 reference hole
 density; this remains outside the pre-registered physical-relevance mask.
 
-The accepted-state VTK path now exports separate SRH, Auger, total electron and
-hole current density, and legacy-scale Vela drift/diffusion diagnostics. At 3 V the electron
-current-density gate passes. The hole current-density gate fails, while SRH
+The accepted-state VTK path now exports separate SRH, Auger, dual-face SG
+electron/hole/total current density, and legacy-scale Vela drift/diffusion
+diagnostics. At 3 V the electron current-density gate passes. The hole
+current-density gate fails only its log-magnitude P95 check, while SRH
 passes its integral and normalized-shape checks. The M1 fixture now selects the
 classical `n*p-ni_eff^2` Auger excess product: its integral ratio improves from
 0.5754 to 0.9878 and its normalized L1 error from 0.4246 to 0.0122, so Auger
@@ -134,12 +135,13 @@ states on its next trusted rerun.
 
 The classical Auger analytic Jacobian matches a centered finite difference on
 the real 3 V state at the two former peak nodes to `5.07e-9` relative error.
-The base-collector hole-current edge audit finds that Vela's nodal reconstruction
-matches the SDevice nodal projection in that window (normalized RMSE 0.0628),
-while the production SG edge magnitude is about 3.4-3.5 times smaller than the
-nodal recovery despite matching direction. The remaining hole-current failure
-is therefore localized to current recovery/semantics rather than carrier-state
-or terminal-current parity. Reproduce with
+The base-collector hole-current edge audit motivated a dual-face-weighted node
+recovery directly from the production SG line flux. At 3 V it reduces electron
+and hole normalized vector RMSE to 0.0351 and 0.0622, with cosine similarities
+of 0.9994 and 0.9981. The original hole P95 gate still fails at 0.828 decade,
+but mask sensitivity localizes that residual to low-current-tail nodes rather
+than the principal current field, carrier state, or terminal-current parity.
+Reproduce with
 `scripts/diagnose_genius_bjt_hole_current_edges.py`.
 
 ## Comparison figures

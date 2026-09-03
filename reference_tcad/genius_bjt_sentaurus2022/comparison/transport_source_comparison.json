@@ -6,7 +6,7 @@
     "VCE_V": 3.0
   },
   "status": "asserted",
-  "reason": "Initial engineering regression gates registered after the original characterization, not a blind validation. Current-density vector gates retain magnitude and direction sensitivity. Recombination acceptance uses signed/absolute integral and normalized-shape checks; unweighted node-log P95 and single-node argmax remain diagnostic-only because low-contribution tails and flat peaks can dominate them without materially changing the integrated source.",
+  "reason": "Initial engineering regression gates registered after the original characterization, not a blind validation. Current-density comparison uses the dual-face-length-weighted nodal representation of the production SG line fluxes; the line fluxes remain the conservative finite-volume authority. Current-density vector gates retain magnitude and direction sensitivity. Recombination acceptance uses signed/absolute integral and normalized-shape checks; unweighted node-log P95 and single-node argmax remain diagnostic-only because low-contribution tails and flat peaks can dominate them without materially changing the integrated source.",
   "common_node_count": 5611,
   "current_density": {
     "electron": {
@@ -18,15 +18,15 @@
       },
       "selected_node_count": 5611,
       "reference_peak_A_per_cm2": 382.86683977012956,
-      "vela_peak_A_per_cm2": 738.08872193268,
+      "vela_peak_A_per_cm2": 479.6163608407483,
       "log10_magnitude_error": {
         "node_count": 5611,
-        "rmse": 0.4820415399483422,
-        "p95_absolute_error": 0.2707940563197758,
-        "maximum_absolute_error": 9.006205475065595
+        "rmse": 0.008894775442002371,
+        "p95_absolute_error": 0.015772805968731436,
+        "maximum_absolute_error": 0.13400410068561971
       },
-      "normalized_vector_rmse": 0.5643647214884487,
-      "global_vector_cosine_similarity": 0.8965468902850234,
+      "normalized_vector_rmse": 0.03514884751720666,
+      "global_vector_cosine_similarity": 0.9993886648422103,
       "gate": {
         "thresholds": {
           "maximum_p95_absolute_log10_magnitude_error": 0.3,
@@ -34,9 +34,9 @@
           "minimum_global_vector_cosine_similarity": 0.85
         },
         "observed": {
-          "p95_absolute_log10_magnitude_error": 0.2707940563197758,
-          "normalized_vector_rmse": 0.5643647214884487,
-          "global_vector_cosine_similarity": 0.8965468902850234
+          "p95_absolute_log10_magnitude_error": 0.015772805968731436,
+          "normalized_vector_rmse": 0.03514884751720666,
+          "global_vector_cosine_similarity": 0.9993886648422103
         },
         "checks": {
           "p95_absolute_log10_magnitude_error": true,
@@ -55,15 +55,15 @@
       },
       "selected_node_count": 2121,
       "reference_peak_A_per_cm2": 44.16895221145204,
-      "vela_peak_A_per_cm2": 112.5938103679125,
+      "vela_peak_A_per_cm2": 55.44272871360205,
       "log10_magnitude_error": {
         "node_count": 2121,
-        "rmse": 1.276238249695361,
-        "p95_absolute_error": 1.483714288375721,
-        "maximum_absolute_error": 9.83331446198872
+        "rmse": 0.3740199656965646,
+        "p95_absolute_error": 0.8279870492481883,
+        "maximum_absolute_error": 2.8625238636248445
       },
-      "normalized_vector_rmse": 0.8150324470261591,
-      "global_vector_cosine_similarity": 0.7877426639657017,
+      "normalized_vector_rmse": 0.06220531291413024,
+      "global_vector_cosine_similarity": 0.9981042175081616,
       "gate": {
         "thresholds": {
           "maximum_p95_absolute_log10_magnitude_error": 0.5,
@@ -71,14 +71,14 @@
           "minimum_global_vector_cosine_similarity": 0.85
         },
         "observed": {
-          "p95_absolute_log10_magnitude_error": 1.483714288375721,
-          "normalized_vector_rmse": 0.8150324470261591,
-          "global_vector_cosine_similarity": 0.7877426639657017
+          "p95_absolute_log10_magnitude_error": 0.8279870492481883,
+          "normalized_vector_rmse": 0.06220531291413024,
+          "global_vector_cosine_similarity": 0.9981042175081616
         },
         "checks": {
           "p95_absolute_log10_magnitude_error": false,
-          "normalized_vector_rmse": false,
-          "global_vector_cosine_similarity": false
+          "normalized_vector_rmse": true,
+          "global_vector_cosine_similarity": true
         },
         "pass": false
       }
@@ -214,8 +214,8 @@
   },
   "overall_pass": false,
   "source_sha256": {
-    "threshold_contract": "883bea0efaf84361413dc1370002c603bbfbef93eb845d6ab8b3f72f7f8d8352",
+    "threshold_contract": "d0c3fb0a4bee34acf5e4509775c0403f756199a0b60da94301a33611ec4e15ec",
     "sentaurus_field_manifest": "f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159",
-    "vela_vtk": "dff8c701746f2f6838750112990c8ed7773a79d2938c618bbdaccfd51eddb621"
+    "vela_vtk": "08e457e8f76d86f2f60e016bad0ca3610301eca403b1d76e99edf4337db8283e"
   }
 }

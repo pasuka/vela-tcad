@@ -1698,6 +1698,17 @@ ionization coefficients use inverse centimeters. The separate
 `ElectronPathIonIntegral`, `HolePathIonIntegral`, and `MeanPathIonIntegral`
 VTK fields contain the ranked field-path result rather than the local proxy.
 
+When the full VTK writer receives exact coupled-DD edge-flux diagnostics, it
+also writes `DualFaceSgElectronCurrentDensityVector`,
+`DualFaceSgHoleCurrentDensityVector`, and
+`DualFaceSgTotalCurrentDensityVector` in A/cm^2. For each carrier, the signed
+production SG particle line flux is divided by the edge's finite-volume
+dual-face length and converted to conventional current density. Incident edge
+normal components are then recovered at each node by a dual-face-length-
+weighted least-squares fit. These node vectors are spatial-comparison
+diagnostics; the original SG line flux remains the conservative transport
+authority. The fields are omitted when exact edge diagnostics are unavailable.
+
 For Sentaurus BV parity work, compare both the `.plt` terminal current and the
 TDR-exported `ContactCurrentFlux` when judging the remaining terminal-current
 gap. Near high reverse bias these two Sentaurus outputs can differ by
