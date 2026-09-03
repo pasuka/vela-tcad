@@ -1,0 +1,449 @@
+{
+  "schema": "vela.genius_bjt_sdevice_current_semantics.v1",
+  "node_count": 5611,
+  "cell_count": 10940,
+  "main_current_mask_count": 2121,
+  "dominant_current_count": 1700,
+  "original_tail_count": 180,
+  "native_sdevice_tail_vs_vela": {
+    "count": 180,
+    "magnitude_log10_ratio_median": 1.241134405728321,
+    "magnitude_ratio_median": 17.42346012296157,
+    "magnitude_abs_dex_median": 1.241134405728321,
+    "magnitude_abs_dex_p95": 1.8695554459940282,
+    "magnitude_abs_dex_max": 2.862523864135964,
+    "normalized_vector_rmse": 11.56239992891783,
+    "cosine_similarity": 0.6142643897324259
+  },
+  "variants": {
+    "element_edge_current": {
+      "state_max_absolute_delta": {
+        "potential_V": 0.0,
+        "hole_density_cm3": 0.0,
+        "hole_quasi_fermi_V": 0.0
+      },
+      "node_current": {
+        "all_nodes": {
+          "count": 5611,
+          "magnitude_log10_ratio_median": 0.0,
+          "magnitude_ratio_median": 1.0,
+          "magnitude_abs_dex_median": 0.0,
+          "magnitude_abs_dex_p95": 0.0,
+          "magnitude_abs_dex_max": 0.0,
+          "normalized_vector_rmse": 0.0,
+          "cosine_similarity": 1.0
+        },
+        "main_current_mask": {
+          "count": 2121,
+          "magnitude_log10_ratio_median": 0.0,
+          "magnitude_ratio_median": 1.0,
+          "magnitude_abs_dex_median": 0.0,
+          "magnitude_abs_dex_p95": 0.0,
+          "magnitude_abs_dex_max": 0.0,
+          "normalized_vector_rmse": 0.0,
+          "cosine_similarity": 1.0
+        },
+        "original_tail_nodes": {
+          "count": 180,
+          "magnitude_log10_ratio_median": 0.0,
+          "magnitude_ratio_median": 1.0,
+          "magnitude_abs_dex_median": 0.0,
+          "magnitude_abs_dex_p95": 0.0,
+          "magnitude_abs_dex_max": 0.0,
+          "normalized_vector_rmse": 0.0,
+          "cosine_similarity": 1.0
+        }
+      },
+      "cell_current": {
+        "count": 10940,
+        "magnitude_log10_ratio_median": 0.0,
+        "magnitude_ratio_median": 1.0,
+        "magnitude_abs_dex_median": 0.0,
+        "magnitude_abs_dex_p95": 0.0,
+        "magnitude_abs_dex_max": 0.0,
+        "normalized_vector_rmse": 0.0,
+        "cosine_similarity": 1.0
+      }
+    },
+    "element_edge_mobility": {
+      "state_max_absolute_delta": {
+        "potential_V": 0.0,
+        "hole_density_cm3": 0.0,
+        "hole_quasi_fermi_V": 0.0
+      },
+      "node_current": {
+        "all_nodes": {
+          "count": 5611,
+          "magnitude_log10_ratio_median": -4.497515974080283e-05,
+          "magnitude_ratio_median": 0.9998964462296877,
+          "magnitude_abs_dex_median": 0.00031825953748692263,
+          "magnitude_abs_dex_p95": 0.00640852544010399,
+          "magnitude_abs_dex_max": 0.023775879506880235,
+          "normalized_vector_rmse": 0.003936135519916567,
+          "cosine_similarity": 0.9999944896204491
+        },
+        "main_current_mask": {
+          "count": 2121,
+          "magnitude_log10_ratio_median": -0.0005735979882650673,
+          "magnitude_ratio_median": 0.9986801136400686,
+          "magnitude_abs_dex_median": 0.000923180636004186,
+          "magnitude_abs_dex_p95": 0.008701943626023828,
+          "magnitude_abs_dex_max": 0.023775879506880235,
+          "normalized_vector_rmse": 0.003936135519913691,
+          "cosine_similarity": 0.9999944896204491
+        },
+        "original_tail_nodes": {
+          "count": 180,
+          "magnitude_log10_ratio_median": -0.00869013787497509,
+          "magnitude_ratio_median": 0.980189085121802,
+          "magnitude_abs_dex_median": 0.00869013787497509,
+          "magnitude_abs_dex_p95": 0.01637475052513656,
+          "magnitude_abs_dex_max": 0.023775879506880235,
+          "normalized_vector_rmse": 0.0198253207169512,
+          "cosine_similarity": 0.9999995249958289
+        }
+      },
+      "cell_current": {
+        "count": 10940,
+        "magnitude_log10_ratio_median": 0.0,
+        "magnitude_ratio_median": 1.0,
+        "magnitude_abs_dex_median": 0.0,
+        "magnitude_abs_dex_p95": 0.0,
+        "magnitude_abs_dex_max": 0.0,
+        "normalized_vector_rmse": 0.0,
+        "cosine_similarity": 1.0
+      }
+    }
+  },
+  "convergence_variants": {
+    "no_extrapolate": {
+      "state_max_absolute_delta": {
+        "potential_V": 8.881784197001252e-16,
+        "hole_density_cm3": 31232.0,
+        "hole_quasi_fermi_V": 8.881784197001252e-16
+      },
+      "node_current": {
+        "all_nodes": {
+          "count": 5611,
+          "magnitude_log10_ratio_median": 0.0,
+          "magnitude_ratio_median": 1.0,
+          "magnitude_abs_dex_median": 9.836140158843418e-15,
+          "magnitude_abs_dex_p95": 2.3990815957058906e-10,
+          "magnitude_abs_dex_max": 8.225146127922342e-08,
+          "normalized_vector_rmse": 4.7767173169971945e-11,
+          "cosine_similarity": 1.0
+        },
+        "main_current_mask": {
+          "count": 2121,
+          "magnitude_log10_ratio_median": 0.0,
+          "magnitude_ratio_median": 1.0,
+          "magnitude_abs_dex_median": 3.4182515706779845e-12,
+          "magnitude_abs_dex_p95": 5.209369302005172e-10,
+          "magnitude_abs_dex_max": 2.4469878813270427e-08,
+          "normalized_vector_rmse": 4.7767173115478546e-11,
+          "cosine_similarity": 1.0
+        },
+        "original_tail_nodes": {
+          "count": 180,
+          "magnitude_log10_ratio_median": 7.184239625821382e-14,
+          "magnitude_ratio_median": 1.0000000000001654,
+          "magnitude_abs_dex_median": 2.376707993137596e-11,
+          "magnitude_abs_dex_p95": 2.2379387587475117e-09,
+          "magnitude_abs_dex_max": 2.4469878813270427e-08,
+          "normalized_vector_rmse": 9.711730426831427e-11,
+          "cosine_similarity": 0.9999999999999999
+        }
+      }
+    },
+    "digits8_ep128": {
+      "state_max_absolute_delta": {
+        "potential_V": 1.3322676295501878e-15,
+        "hole_density_cm3": 37376.0,
+        "hole_quasi_fermi_V": 1.3322676295501878e-15
+      },
+      "node_current": {
+        "all_nodes": {
+          "count": 5611,
+          "magnitude_log10_ratio_median": 4.243040852834442e-15,
+          "magnitude_ratio_median": 1.0000000000000098,
+          "magnitude_abs_dex_median": 1.7068596157992848e-14,
+          "magnitude_abs_dex_p95": 2.500736658476386e-10,
+          "magnitude_abs_dex_max": 8.396721304584703e-08,
+          "normalized_vector_rmse": 4.989893368741019e-11,
+          "cosine_similarity": 1.0
+        },
+        "main_current_mask": {
+          "count": 2121,
+          "magnitude_log10_ratio_median": -1.3018420798469396e-15,
+          "magnitude_ratio_median": 0.999999999999997,
+          "magnitude_abs_dex_median": 3.733393786777098e-12,
+          "magnitude_abs_dex_p95": 5.047060447070198e-10,
+          "magnitude_abs_dex_max": 2.3402972207284982e-08,
+          "normalized_vector_rmse": 4.989893362917237e-11,
+          "cosine_similarity": 1.0
+        },
+        "original_tail_nodes": {
+          "count": 180,
+          "magnitude_log10_ratio_median": 1.6813049379352664e-13,
+          "magnitude_ratio_median": 1.000000000000387,
+          "magnitude_abs_dex_median": 2.1732132002648305e-11,
+          "magnitude_abs_dex_p95": 1.9297928365728042e-09,
+          "magnitude_abs_dex_max": 2.3402972207284982e-08,
+          "normalized_vector_rmse": 9.641469257702823e-11,
+          "cosine_similarity": 1.0
+        }
+      }
+    }
+  },
+  "cell_to_node_reconstruction": {
+    "uniform": {
+      "least_squares_scale_from_main_mask": 7.082685313198109e-07,
+      "scale_ratio_to_1e_minus_6_over_sqrt_2": 1.0016429627945498,
+      "all_nodes": {
+        "count": 5611,
+        "magnitude_log10_ratio_median": 0.004324205894260123,
+        "magnitude_ratio_median": 1.0100065864112477,
+        "magnitude_abs_dex_median": 0.004378571777887268,
+        "magnitude_abs_dex_p95": 0.03243141244279239,
+        "magnitude_abs_dex_max": 1.2393711364219193,
+        "normalized_vector_rmse": 0.04239472269736436,
+        "cosine_similarity": 0.9991009395888953
+      },
+      "main_current_mask": {
+        "count": 2121,
+        "magnitude_log10_ratio_median": 0.003873418681910262,
+        "magnitude_ratio_median": 1.008958767799607,
+        "magnitude_abs_dex_median": 0.004571307383584259,
+        "magnitude_abs_dex_p95": 0.04829578206596364,
+        "magnitude_abs_dex_max": 0.3180927197101354,
+        "normalized_vector_rmse": 0.042394722695773074,
+        "cosine_similarity": 0.999100939588963
+      },
+      "original_tail_nodes": {
+        "count": 180,
+        "magnitude_log10_ratio_median": 0.0161014915383964,
+        "magnitude_ratio_median": 1.0377709071789922,
+        "magnitude_abs_dex_median": 0.04162847674615436,
+        "magnitude_abs_dex_p95": 0.11529419511167044,
+        "magnitude_abs_dex_max": 0.12196658391415835,
+        "normalized_vector_rmse": 0.29000154751258045,
+        "cosine_similarity": 0.9726623327705289
+      },
+      "tail_vs_vela": {
+        "count": 180,
+        "magnitude_log10_ratio_median": 1.262443838814928,
+        "magnitude_ratio_median": 18.29969446849658,
+        "magnitude_abs_dex_median": 1.262443838814928,
+        "magnitude_abs_dex_p95": 1.790275127495955,
+        "magnitude_abs_dex_max": 2.7405572802218057,
+        "normalized_vector_rmse": 9.061744805941476,
+        "cosine_similarity": 0.6754250793652509
+      },
+      "fixed_unit_scale": {
+        "factor": 7.071067811865475e-07,
+        "main_current_mask": {
+          "count": 2121,
+          "magnitude_log10_ratio_median": 0.003160474516393303,
+          "magnitude_ratio_median": 1.007303805124978,
+          "magnitude_abs_dex_median": 0.004198077144208201,
+          "magnitude_abs_dex_p95": 0.04833262821682139,
+          "magnitude_abs_dex_max": 0.3173797755446185,
+          "normalized_vector_rmse": 0.0424263851345964,
+          "cosine_similarity": 0.999100939588963
+        },
+        "original_tail_nodes": {
+          "count": 180,
+          "magnitude_log10_ratio_median": 0.015388547372879504,
+          "magnitude_ratio_median": 1.036068684877141,
+          "magnitude_abs_dex_median": 0.04091553258063747,
+          "magnitude_abs_dex_p95": 0.11600713927718735,
+          "magnitude_abs_dex_max": 0.12267952807967522,
+          "normalized_vector_rmse": 0.2907884010025018,
+          "cosine_similarity": 0.972662332770529
+        }
+      }
+    },
+    "area": {
+      "least_squares_scale_from_main_mask": 7.071617065117977e-07,
+      "scale_ratio_to_1e_minus_6_over_sqrt_2": 1.0000776761398866,
+      "all_nodes": {
+        "count": 5611,
+        "magnitude_log10_ratio_median": 0.0036454334229748236,
+        "magnitude_ratio_median": 1.0084292483861144,
+        "magnitude_abs_dex_median": 0.0036939626583670274,
+        "magnitude_abs_dex_p95": 0.024610898464574336,
+        "magnitude_abs_dex_max": 1.4116224791870695,
+        "normalized_vector_rmse": 0.021153021329153254,
+        "cosine_similarity": 0.9997762498122509
+      },
+      "main_current_mask": {
+        "count": 2121,
+        "magnitude_log10_ratio_median": 0.0036636703242758943,
+        "magnitude_ratio_median": 1.0084715952534438,
+        "magnitude_abs_dex_median": 0.004164929394947767,
+        "magnitude_abs_dex_p95": 0.023910350534610873,
+        "magnitude_abs_dex_max": 0.3549688341188634,
+        "normalized_vector_rmse": 0.021153021324098176,
+        "cosine_similarity": 0.9997762498123579
+      },
+      "original_tail_nodes": {
+        "count": 180,
+        "magnitude_log10_ratio_median": 0.01871793188262587,
+        "magnitude_ratio_median": 1.044041908529718,
+        "magnitude_abs_dex_median": 0.01871793188262587,
+        "magnitude_abs_dex_p95": 0.04540053884972825,
+        "magnitude_abs_dex_max": 0.12041180827916065,
+        "normalized_vector_rmse": 0.22175204666860268,
+        "cosine_similarity": 0.9763741390523679
+      },
+      "tail_vs_vela": {
+        "count": 180,
+        "magnitude_log10_ratio_median": 1.2617646276582315,
+        "magnitude_ratio_median": 18.27109718523306,
+        "magnitude_abs_dex_median": 1.2617646276582315,
+        "magnitude_abs_dex_p95": 1.877507837210786,
+        "magnitude_abs_dex_max": 2.864732032790723,
+        "normalized_vector_rmse": 11.883103935080655,
+        "cosine_similarity": 0.6110527625037471
+      },
+      "fixed_unit_scale": {
+        "factor": 7.071067811865475e-07,
+        "main_current_mask": {
+          "count": 2121,
+          "magnitude_log10_ratio_median": 0.0036299373154554727,
+          "magnitude_ratio_median": 1.008393267156963,
+          "magnitude_abs_dex_median": 0.004131196386127447,
+          "magnitude_abs_dex_p95": 0.023944083543431218,
+          "magnitude_abs_dex_max": 0.354935101110043,
+          "normalized_vector_rmse": 0.02115316385517611,
+          "cosine_similarity": 0.9997762498123579
+        },
+        "original_tail_nodes": {
+          "count": 180,
+          "magnitude_log10_ratio_median": 0.018684198873805555,
+          "magnitude_ratio_median": 1.0439608176832074,
+          "magnitude_abs_dex_median": 0.018684198873805555,
+          "magnitude_abs_dex_p95": 0.0453668058409079,
+          "magnitude_abs_dex_max": 0.12037807527034042,
+          "normalized_vector_rmse": 0.22173415947090638,
+          "cosine_similarity": 0.9763741390523679
+        }
+      }
+    }
+  },
+  "cell_continuum_identity_using_fixed_1e_minus_6_over_sqrt_2_scale": {
+    "arithmetic": {
+      "count": 10940,
+      "magnitude_log10_ratio_median": 0.007806252377526853,
+      "magnitude_ratio_median": 1.018137075016257,
+      "magnitude_abs_dex_median": 0.01872355890199403,
+      "magnitude_abs_dex_p95": 1.3364488167201556,
+      "magnitude_abs_dex_max": 3.6686568359918224,
+      "normalized_vector_rmse": 0.8370715391708817,
+      "cosine_similarity": 0.7763193280208821,
+      "tail_adjacent_cells": {
+        "count": 598,
+        "magnitude_log10_ratio_median": 0.6704677938667047,
+        "magnitude_ratio_median": 4.682392267000333,
+        "magnitude_abs_dex_median": 0.6704677938667047,
+        "magnitude_abs_dex_p95": 1.9913268387481042,
+        "magnitude_abs_dex_max": 3.6373777384398664,
+        "normalized_vector_rmse": 0.5070575504215588,
+        "cosine_similarity": 0.8710123532586773
+      }
+    },
+    "geometric": {
+      "count": 10940,
+      "magnitude_log10_ratio_median": 0.004383596977391722,
+      "magnitude_ratio_median": 1.0101447173095555,
+      "magnitude_abs_dex_median": 0.019766592515751698,
+      "magnitude_abs_dex_p95": 0.517474610214474,
+      "magnitude_abs_dex_max": 6.008637227016116,
+      "normalized_vector_rmse": 0.14319351927486274,
+      "cosine_similarity": 0.9896947683471243,
+      "tail_adjacent_cells": {
+        "count": 598,
+        "magnitude_log10_ratio_median": -0.1812599579221032,
+        "magnitude_ratio_median": 0.6587794481391638,
+        "magnitude_abs_dex_median": 0.3545572840629244,
+        "magnitude_abs_dex_p95": 0.7940040855682445,
+        "magnitude_abs_dex_max": 1.4944913512047886,
+        "normalized_vector_rmse": 0.7622458850070258,
+        "cosine_similarity": 0.919534637466358
+      }
+    }
+  },
+  "vela_sg_edge_to_cell_comparison": {
+    "valid_cell_count": 10940,
+    "all_valid_cells": {
+      "count": 10940,
+      "magnitude_log10_ratio_median": -0.0011707188878514307,
+      "magnitude_ratio_median": 0.9973079502231192,
+      "magnitude_abs_dex_median": 0.011060411144050245,
+      "magnitude_abs_dex_p95": 2.177393986614891,
+      "magnitude_abs_dex_max": 3.249133874259357,
+      "normalized_vector_rmse": 0.06592208803032477,
+      "cosine_similarity": 0.99784323872148
+    },
+    "tail_adjacent_cells": {
+      "count": 598,
+      "magnitude_log10_ratio_median": 0.028380986358553163,
+      "magnitude_ratio_median": 1.0675322069533981,
+      "magnitude_abs_dex_median": 0.1296669607457144,
+      "magnitude_abs_dex_p95": 0.42422211069564764,
+      "magnitude_abs_dex_max": 0.9867248435415711,
+      "normalized_vector_rmse": 0.3903037134871219,
+      "cosine_similarity": 0.9714754219121231
+    },
+    "area_projected_nodes_vs_sdevice_tail": {
+      "count": 180,
+      "magnitude_log10_ratio_median": 0.10336913702792247,
+      "magnitude_ratio_median": 1.2687297892122469,
+      "magnitude_abs_dex_median": 0.10336913702792247,
+      "magnitude_abs_dex_p95": 0.12190647259191321,
+      "magnitude_abs_dex_max": 0.13011725543275313,
+      "normalized_vector_rmse": 0.2876405891784862,
+      "cosine_similarity": 0.9998249328776718
+    },
+    "area_projected_nodes_vs_sdevice_main_mask": {
+      "count": 2121,
+      "magnitude_log10_ratio_median": -0.0020654719704632143,
+      "magnitude_ratio_median": 0.9952553665343639,
+      "magnitude_abs_dex_median": 0.003948189313928084,
+      "magnitude_abs_dex_p95": 0.098542491990599,
+      "magnitude_abs_dex_max": 0.13011725543275313,
+      "normalized_vector_rmse": 0.030807146174534592,
+      "cosine_similarity": 0.9995957153825207
+    },
+    "area_projected_nodes_vs_vela_tail": {
+      "count": 180,
+      "magnitude_log10_ratio_median": 1.3435667230207922,
+      "magnitude_ratio_median": 22.058029998604397,
+      "magnitude_abs_dex_median": 1.3435667230207922,
+      "magnitude_abs_dex_p95": 1.9801219419758291,
+      "magnitude_abs_dex_max": 2.9923095716013757,
+      "normalized_vector_rmse": 15.056449126451517,
+      "cosine_similarity": 0.5997547099461505
+    },
+    "area_projected_nodes_vs_vela_main_mask": {
+      "count": 2121,
+      "magnitude_log10_ratio_median": 1.6135784240629086e-05,
+      "magnitude_ratio_median": 1.0000371547064753,
+      "magnitude_abs_dex_median": 0.005100005250642889,
+      "magnitude_abs_dex_p95": 0.9498478913618713,
+      "magnitude_abs_dex_max": 2.9923095716013757,
+      "normalized_vector_rmse": 0.07116042125270787,
+      "cosine_similarity": 0.9976075106010619
+    },
+    "area_projected_nodes_vs_vela_dominant_current": {
+      "count": 1700,
+      "magnitude_log10_ratio_median": -2.3351833636644216e-05,
+      "magnitude_ratio_median": 0.9999462318615323,
+      "magnitude_abs_dex_median": 0.00377044027380204,
+      "magnitude_abs_dex_p95": 0.045584945673590144,
+      "magnitude_abs_dex_max": 0.44592555565600506,
+      "normalized_vector_rmse": 0.07108760625122314,
+      "cosine_similarity": 0.9976129746828621
+    }
+  }
+}
