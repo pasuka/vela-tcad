@@ -1,0 +1,60 @@
+{
+  "schema": "vela.simplemos.sdevice.m64_bgn_smooth_nwell_intervention_report.v1",
+  "status": "accepted",
+  "classification": "bgn_independent_threshold_shift_dominant",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m64_bgn_smooth_nwell_intervention_contract_v1.json",
+    "sha256": "813342dc329bf5a5bff1b2571174a914a6bb62beae12e96ebed6cd5cc33b03ae"
+  },
+  "execution": {
+    "new_sentaurus_execution": true,
+    "new_vela_execution": true,
+    "sentaurus_case_count": 16,
+    "vela_workflow_count": 16,
+    "full_gate_path_retained": true,
+    "production_default_changed": false
+  },
+  "summary": {
+    "median_pair_closure_fraction": 0.0,
+    "minimum_pair_closure_fraction": 0.0,
+    "maximum_pair_closure_fraction": 0.0,
+    "pair_closure_at_or_above_0p8_count": 0,
+    "pair_count": 8,
+    "median_bgn_on_nwell_growth_dex": 0.0382634955880968,
+    "median_bgn_off_nwell_growth_dex": 0.11121963243727909,
+    "median_bgn_explained_nwell_growth_dex": -0.07328177398494239,
+    "median_bgn_suppression_fraction_of_no_bgn_growth": 0.6670839021386088,
+    "bgn_counteracts_nwell_growth_pair_count": 8,
+    "bgn_on_fitted_shift_mV_range": [
+      2.709322692261919,
+      5.673461283857467
+    ],
+    "bgn_off_fitted_shift_mV_range": [
+      13.171160833737787,
+      19.911962746347537
+    ],
+    "smooth_regime_comparable": true,
+    "maximum_identity_residual_dex": 4.440892098500626e-16,
+    "maximum_m63_anchor_replay_error_dex": 0.0
+  },
+  "causal_scope": {
+    "closed": "The M63 paired smooth NWell growth is not caused by enabling OldSlotboom BGN; removing BGN increases the growth in all eight pairs, so the measured BGN response counteracts a larger BGN-independent threshold-like mismatch.",
+    "not_closed": "M64 does not separate carrier statistics, base intrinsic-density conventions, electrostatics, and other self-consistent causes inside the larger no-BGN threshold-like mismatch.",
+    "formula_claim": "M64 does not identify an error in the shared OldSlotboom delta-Eg formula; the M39 formula-level closure remains intact."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "sentaurus_release": true,
+    "sentaurus_case_count": true,
+    "vela_workflow_count": true,
+    "sentaurus_no_bgn_log_qualified": true,
+    "full_curve_point_count": true,
+    "smooth_point_count": true,
+    "pair_count": true,
+    "difference_in_differences_identity": true,
+    "m63_anchor_replay": true,
+    "classification_declared": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}
