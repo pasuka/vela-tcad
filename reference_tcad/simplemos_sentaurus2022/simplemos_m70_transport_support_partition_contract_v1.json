@@ -1,0 +1,23 @@
+{
+  "schema": "vela.simplemos.sdevice.m70_transport_support_partition_contract.v1",
+  "milestone": "M70",
+  "status": "draft_before_freeze",
+  "objective": "Conditionally test whether the current residual left after M67 is represented by electron density, mobility, and electron quasi-Fermi-gradient support on the native source-side channel.",
+  "activation": {"required_m67_median_pair_closure_below": 0.8, "required_m69_status": "frozen"},
+  "execution": {"new_sentaurus_solves": 0, "new_vela_solves": 0, "state_count": 16, "production_default_changed": false},
+  "support": {
+    "nodes": "M47 source-half Silicon/oxide interface nodes common to both solvers.",
+    "active_filter": "Sentaurus electron-current-density magnitude at least 1e-3 of the per-state source-support maximum.",
+    "proxy": "q*n*mu*|grad(phin)| in A/cm2 for each solver.",
+    "identity": "log10(proxy_vela/proxy_sentaurus)=log10(n ratio)+log10(mu ratio)+log10(gradient ratio).",
+    "claim_limit": "This is a state-support diagnostic, not an SG/current-extraction intervention or a pointwise equality claim for a finite-volume current."
+  },
+  "analysis": {
+    "dominant_minimum_median_pair_closure_fraction": 0.8,
+    "material_minimum_median_pair_closure_fraction": 0.3,
+    "classifications": ["transport_support_proxy_dominant", "transport_support_proxy_material_but_not_complete", "transport_support_proxy_not_material", "execution_or_identity_failure"]
+  },
+  "acceptance": {"required_state_count": 16, "required_pair_count": 8, "minimum_active_node_count_per_state": 2,
+                 "maximum_component_identity_residual_dex": 1e-12, "production_reference_must_not_be_replaced": true},
+  "closed_topic_guards": ["no HFS tuning", "no SG investigation", "no contact-current extraction investigation", "no quasi-Fermi packing, BGN, mesh, or convergence tuning"]
+}

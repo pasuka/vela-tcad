@@ -1,0 +1,41 @@
+{
+  "schema": "vela.simplemos.sdevice.m67_residual_barrier_partition_contract.v1",
+  "milestone": "M67",
+  "status": "draft_before_freeze",
+  "objective": "Partition the M65 matched-ni residual source-side quasi-Fermi barrier into electrostatic-potential, electron-quasi-Fermi, and controlling-node-migration terms on the common native mesh.",
+  "upstream": {
+    "required_m66_status": "frozen",
+    "required_m66_classification": "matched_ni_full_curve_material_but_not_complete",
+    "state_source": "M65 matched-ni Vela states and explicit-no-BGN Sentaurus exports",
+    "current_source": "M65 matched-ni current and NWell-pair ledgers"
+  },
+  "execution": {"new_sentaurus_solves": 0, "new_vela_solves": 0, "state_count": 16,
+                "production_default_changed": false},
+  "definitions": {
+    "source_support": "Common Silicon nodes on the source half of the Silicon_1/Oxide_1 interface, identical to M47/M65.",
+    "fixed_control_node": "For each state, the Sentaurus node maximizing phin-psi on source_support.",
+    "fixed_node_barrier_delta": "(phin_vela-phin_sentaurus) - (psi_vela-psi_sentaurus) at fixed_control_node.",
+    "current_proxy_dex": "-fixed_node_barrier_delta/(Vt*ln(10)).",
+    "pair_closure": "clamp(1-abs(proxy_pair_growth-current_pair_growth)/abs(current_pair_growth),0,1).",
+    "node_migration": "Distance between the independent Sentaurus and Vela argmax nodes; reported separately and never folded into the fixed-node identity."
+  },
+  "analysis": {
+    "dominant_minimum_median_pair_closure_fraction": 0.8,
+    "material_minimum_median_pair_closure_fraction": 0.3,
+    "classifications": [
+      "residual_qf_barrier_dominant",
+      "residual_qf_barrier_material_but_not_complete",
+      "residual_qf_barrier_not_material",
+      "state_identity_or_execution_failure"
+    ]
+  },
+  "acceptance": {
+    "required_state_count": 16,
+    "required_pair_count": 8,
+    "maximum_fixed_node_partition_identity_residual_V": 1e-14,
+    "maximum_coordinate_error_um": 1e-10,
+    "maximum_boltzmann_density_identity_residual_dex": 5e-4,
+    "production_reference_must_not_be_replaced": true
+  },
+  "closed_topic_guards": ["no HFS, SG, contact extraction, quasi-Fermi packing, BGN, mesh, or convergence tuning"]
+}

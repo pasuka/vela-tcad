@@ -1,0 +1,28 @@
+{
+  "schema": "vela.simplemos.sdevice.m68_dos_intrinsic_level_evidence.v1",
+  "status": "frozen",
+  "classification": "dos_ratio_inactive_in_frozen_boltzmann_path",
+  "contract_sha256": "d9beb419f45ed9f5ef8905995e0d488936d5c9d0ec281b69fa6cedd1abe8412e",
+  "implementation_hashes": {
+    "scripts/run_simplemos_m68_dos_intrinsic_level.py": "88a3162e1cc13741b94d6ca14952288bb48fac17fa68722793671125862dede2"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/dos_intrinsic_level/m68_dos_intrinsic_level_report.json": "a43b45fe66da538e99aca6bfabe394ef9107b509c496feec1b427bda07529552",
+    "reference_tcad/simplemos_sentaurus2022/dos_intrinsic_level/m68_dos_null_intervention_ledger.csv": "9e5f0432832a1b4de4bea24fddbdf14fddf0cf996b91c98809691f9ae7de1b9f",
+    "docs/validation/simplemos_m68_dos_intrinsic_level_2026-09-03.md": "c53877731639a1ed3dfce493cf58b8e869fe7f84ea34fb99ba45f52ee9d0592a",
+    "docs/validation/reports/simplemos_m68/artifact.json": "346f5720c3a6bea8b170a6b30a7ae30797745c7c228b9495b44ec1e706d16c88"
+  },
+  "new_sentaurus_execution": false,
+  "new_vela_single_point_newton_execution": true,
+  "production_reference_replaced": false,
+  "acceptance": {
+    "contract_frozen": true,
+    "replay_count": true,
+    "all_code_path_anchors_present": true,
+    "current_bit_identity": true,
+    "state_hash_identity": true,
+    "ni_unchanged": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

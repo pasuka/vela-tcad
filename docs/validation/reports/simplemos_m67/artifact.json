@@ -1,0 +1,11 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M67 residual barrier partition",
+  "status": "accepted",
+  "classification": "residual_qf_barrier_material_but_not_complete",
+  "report": "reference_tcad/simplemos_sentaurus2022/residual_barrier_partition/m67_residual_barrier_partition_report.json",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/residual_barrier_partition/m67_fixed_node_state_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/residual_barrier_partition/m67_pair_partition_ledger.csv"
+  ]
+}

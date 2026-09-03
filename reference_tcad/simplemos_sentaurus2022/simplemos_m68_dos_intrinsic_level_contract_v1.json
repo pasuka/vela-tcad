@@ -1,0 +1,29 @@
+{
+  "schema": "vela.simplemos.sdevice.m68_dos_intrinsic_level_contract.v1",
+  "milestone": "M68",
+  "status": "draft_before_freeze",
+  "objective": "Determine whether the remaining no-BGN NWell trend can be represented by Vela's Nc/Nv density-of-states ratio or intrinsic-level allocation under the frozen Boltzmann statistics path.",
+  "upstream": {"required_m67_status": "frozen", "required_m67_classification": "residual_qf_barrier_material_but_not_complete"},
+  "code_hypothesis": "In Vela's Boltzmann branch, n, p, equilibrium carrier state, and generalized SRH equilibrium product depend on ni but not Nc or Nv; Nc/Nv enter only the Fermi-Dirac branch.",
+  "intervention": {
+    "device": "n23", "drain_voltage_V": 0.05, "gate_voltage_V": 0.9,
+    "state": "M65 matched-ni accepted state",
+    "solver": "single-point Newton restart from the same M65 accepted state",
+    "silicon_Nc_multiplier": 4.0, "silicon_Nv_multiplier": 0.25,
+    "silicon_ni_multiplier": 1.0,
+    "implied_Nv_over_Nc_ratio_multiplier": 0.0625,
+    "purpose": "A deliberately large ratio perturbation makes a null response decisive without claiming these values are Sentaurus defaults.",
+    "production_default_changed": false
+  },
+  "analysis": {
+    "classifications": ["dos_ratio_inactive_in_frozen_boltzmann_path", "dos_ratio_active_in_frozen_boltzmann_path", "execution_failure"]
+  },
+  "acceptance": {
+    "required_replay_count": 2,
+    "maximum_absolute_current_difference_A_per_um": 0.0,
+    "maximum_absolute_log_current_difference_dex": 0.0,
+    "required_state_hash_identity": true,
+    "production_reference_must_not_be_replaced": true
+  },
+  "closed_topic_guards": ["no Fermi statistics activation", "no BGN/HFS/SG/contact/mesh/convergence changes", "no production material change"]
+}

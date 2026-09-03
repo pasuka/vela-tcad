@@ -1,0 +1,40 @@
+{
+  "schema": "vela.simplemos.sdevice.m67_residual_barrier_partition_report.v1",
+  "status": "accepted",
+  "classification": "residual_qf_barrier_material_but_not_complete",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m67_residual_barrier_partition_contract_v1.json",
+    "sha256": "8dcccb58f6ef52597a2c209cfb4fae565999671d581cae9bdb3f0b23b695b22b"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_solves": 0,
+    "production_default_changed": false
+  },
+  "summary": {
+    "median_pair_closure_fraction": 0.6893892881155113,
+    "minimum_pair_closure_fraction": 0.6186725323383029,
+    "maximum_pair_closure_fraction": 0.7608882092564351,
+    "median_current_pair_growth_dex": 0.03702897509661555,
+    "median_fixed_node_qf_barrier_pair_proxy_dex": 0.023523917340993582,
+    "median_phin_component_dex": 0.004484361267017255,
+    "median_psi_component_dex": 0.018960471153605912,
+    "maximum_control_node_migration_um": 0.0,
+    "maximum_boltzmann_density_identity_residual_dex": 1.26217699367593e-06
+  },
+  "causal_scope": {
+    "closed": "The residual barrier observable is exactly partitioned at a common fixed node.",
+    "not_closed": "A barrier-current proxy is diagnostic rather than a causal transport intervention; any unclosed current growth remains for M68-M70."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "state_count": true,
+    "pair_count": true,
+    "partition_identity": true,
+    "coordinate_identity_reused_from_m65": true,
+    "boltzmann_density_identity": true,
+    "classification_declared": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

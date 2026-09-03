@@ -1,0 +1,15 @@
+{
+  "schema": "vela.simplemos.sdevice.m68_dos_intrinsic_level_contract_freeze.v1",
+  "status": "frozen_before_execution",
+  "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m68_dos_intrinsic_level_contract_v1.json",
+  "contract_sha256": "d9beb419f45ed9f5ef8905995e0d488936d5c9d0ec281b69fa6cedd1abe8412e",
+  "upstream_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m67_residual_barrier_partition_evidence.json": "fc574df03213886534340f42d229bccfd7459b3c4a45bb075b282837da8b7deb",
+    "build-release/m65_ni/vela/n23/vd_0p050000/20_gate_sweep/config.json": "2109cf7c4c8cdd7eca6a4f4d8c85f3ab79423e99ade7231465d48ab1950483b7",
+    "build-release/m65_ni/vela/n23/vd_0p050000/20_gate_sweep/state.csv": "234fe70655f443ec788cfec80ae8f0c7e0e4815fa04ef70f0bef6b86532201f1",
+    "build-release/m65_ni/vela/matched_materials.json": "3fe16b4e1e3ffb3b087ceb661ee87768694667779dca7d684ef314023891d78b",
+    "src/physics/CarrierStatistics.cpp": "da8c1a68f6a633a162af4ac315af2132a8e261378304cafdff90a532dd23d2ac",
+    "src/equation/CoupledDDAssembler.cpp": "62db5a538ee95439feeea88a0d860b8bd51d22ef88db9829743dd41bcb0d67f2",
+    "build-release/vela_example_runner.exe": "98f0b7ecb95aafbdb2a271ba27afb650adba6b4f12ea1de2bc2bf07cde0a4a4c"
+  }
+}
