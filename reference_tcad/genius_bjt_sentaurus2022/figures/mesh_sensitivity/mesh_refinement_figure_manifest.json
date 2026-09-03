@@ -1,0 +1,75 @@
+{
+  "schema": "vela.genius_bjt_mesh_refinement_figure.v1",
+  "baseline": {
+    "nodes": 5611,
+    "triangles": 10940,
+    "window_counts": {
+      "base_collector": {
+        "nodes": 1747,
+        "triangles_by_centroid": 3382
+      },
+      "emitter_base_left": {
+        "nodes": 266,
+        "triangles_by_centroid": 509
+      },
+      "emitter_base_right": {
+        "nodes": 280,
+        "triangles_by_centroid": 514
+      }
+    },
+    "mesh_sha256": "b0b541a5db3fd3d6805e6615ade420c8f62d85fb01b8c161a1ba1fb8b4ee3104"
+  },
+  "refined": {
+    "nodes": 15561,
+    "triangles": 30780,
+    "window_counts": {
+      "base_collector": {
+        "nodes": 6948,
+        "triangles_by_centroid": 13410
+      },
+      "emitter_base_left": {
+        "nodes": 2770,
+        "triangles_by_centroid": 5500
+      },
+      "emitter_base_right": {
+        "nodes": 2770,
+        "triangles_by_centroid": 5500
+      }
+    },
+    "mesh_sha256": "bc0db1584d38a8b4de7be785917f5ecd9074321265ec61ccac126ec347cdfaec"
+  },
+  "windows": {
+    "base_collector": {
+      "label": "基区—基集结加密区",
+      "bounds": [
+        0.75,
+        0.42,
+        5.25,
+        0.88
+      ],
+      "color": "#E68613"
+    },
+    "emitter_base_left": {
+      "label": "左侧发射结加密区",
+      "bounds": [
+        2.52,
+        0.0,
+        2.98,
+        0.55
+      ],
+      "color": "#8C5AAE"
+    },
+    "emitter_base_right": {
+      "label": "右侧发射结加密区",
+      "bounds": [
+        4.02,
+        0.0,
+        4.48,
+        0.55
+      ],
+      "color": "#8C5AAE"
+    }
+  },
+  "output": "D:\\code-repo\\vela-tcad\\.worktrees\\genius-bjt-sentaurus2022\\reference_tcad\\genius_bjt_sentaurus2022\\figures\\mesh_sensitivity\\mesh_refinement_comparison.png",
+  "output_sha256": "4119d7ebff7b5c2e9ed2858c86d64f4c3cb08d90aeefe93f2991661e7a0cbbfa"
+}
