@@ -1,6 +1,6 @@
 # Genius BJT Vela WP3-WP5 execution report
 
-Date: 2026-09-02
+Date: 2026-09-03
 
 ## Outcome
 
@@ -10,10 +10,11 @@ converged through 3 V. The exact 31 requested collector voltages, direct
 three-terminal currents, and KCL operational gates pass for M0 and M1.
 
 The M1 numerical-parity gate also passes after aligning the electron
-Scharfetter maximum lifetime with the T-2022.03-SP2 Silicon default. M0 remains
+Scharfetter maximum lifetime and Nc/Nv with T-2022.03-SP2 Silicon. M0 remains
 an intentionally minimal characterization-only baseline. A newly registered
 spatial-state gate also passes for potential, electron density, and hole
-density. The final acceptance now requires both terminal and spatial gates.
+density. Transport and recombination gates are now asserted as well; the final
+acceptance is false because three of those four field groups still fail.
 
 ## Common input
 
@@ -41,12 +42,12 @@ iterations. No M1 physics term was disabled or weakened.
 | Model | Points | Max relative Vela KCL | Sentaurus Ic @ 3 V (A/um) | Vela Ic @ 3 V (A/um) | Ic ratio | Sentaurus Ib @ 3 V (A/um) | Vela Ib @ 3 V (A/um) | Ib ratio | Sentaurus beta | Vela beta |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | M0 | 31 | 2.086e-9 | 1.843315e-6 | 3.397337e-6 | 1.84306 | 1.603892e-8 | 7.127638e-9 | 0.444397 | 114.928 | 476.643 |
-| M1 | 31 | 2.738e-9 | 2.807532e-6 | 2.790669e-6 | 0.993993 | 6.018761e-8 | 6.332852e-8 | 1.05219 | 46.6464 | 44.0665 |
+| M1 | 31 | 9.605e-10 | 2.807532e-6 | 2.785499e-6 | 0.992152 | 6.018761e-8 | 5.989697e-8 | 0.995171 | 46.6464 | 46.5048 |
 
-Over VCE=0.5-3.0 V, the M1 maximum absolute log10 errors are 0.002694 decades
-for Ic, 0.022092 decades for Ib, 0.002120 decades for Ie, and 0.024735 decades
+Over VCE=0.5-3.0 V, the M1 maximum absolute log10 errors are 0.003437 decades
+for Ic, 0.002102 decades for Ib, 0.003407 decades for Ie, and 0.001349 decades
 for beta. All are below the pre-registered 0.05-decade limit. This corresponds
-to maximum magnitude-ratio deviations of about 0.62%, 5.21%, 0.49%, and 5.54%,
+to maximum magnitude-ratio deviations of about 0.79%, 0.49%, 0.78%, and 0.31%,
 respectively. M0 is useful
 as a numerical baseline but does not show comparable quantitative agreement.
 
@@ -59,29 +60,29 @@ full-domain metrics remain visible as characterization.
 
 | Field | Selected nodes | RMSE | P95 absolute error | Maximum absolute error | Gate |
 |---|---:|---:|---:|---:|---:|
-| Potential (V) | 5611 | 0.0011413 | 0.0022811 | 0.0150803 | pass |
-| Electron density (decade) | 5196 | 0.0035058 | 0.0074625 | 0.0361364 | pass |
-| Hole density (decade) | 2207 | 0.0113454 | 0.0256416 | 0.100793 | pass |
+| Potential (V) | 5611 | 0.0010965 | 0.0022881 | 0.0150609 | pass |
+| Electron density (decade) | 5196 | 0.0029782 | 0.0065252 | 0.0232410 | pass |
+| Hole density (decade) | 2207 | 0.0069382 | 0.0077658 | 0.100667 | pass |
 
-The full-domain hole-density maximum of 1.6836 decades is caused by reference
+The full-domain hole-density maximum of 2.2614 decades is caused by reference
 concentrations of roughly 1-100 cm^-3, primarily outside the emitter window and
-in the bulk. At the largest-error node Sentaurus gives 13.23 cm^-3 and Vela
-0.274 cm^-3. Both are physically negligible compared with the registered
-1e10 cm^-3 relevance floor. The emitter-window P95 error is 0.04528 decades.
+in the bulk. At the largest-error node Sentaurus gives 36.38 cm^-3 and Vela
+6641.60 cm^-3. Both are physically negligible compared with the registered
+1e10 cm^-3 relevance floor. The emitter-window P95 error is 0.00289 decade.
 
-## Transport and recombination characterization
+## Transport and recombination acceptance
 
 The reproducible 3 V Vela export contains electron and hole current-density
-vectors, SRH rate, and a new independently named Auger rate. These quantities
-are characterized but not asserted because nodal current density depends on
-gradient reconstruction and recombination rates can cross or approach zero.
+vectors and independent SRH/Auger rates. Reference-relative masks plus
+integral, shape, direction, and peak-location metrics now form asserted initial
+engineering regression gates.
 
 | Quantity | Main diagnostic result |
 |---|---|
-| Electron current density | global vector cosine 0.897; normalized vector RMSE 0.563 |
-| Hole current density | global vector cosine 0.791; normalized vector RMSE 0.861 |
-| SRH recombination | spatial integral ratio Vela/Sentaurus 0.768; shape TV 0.110 |
-| Auger recombination | spatial integral ratio Vela/Sentaurus 0.560; shape TV 0.096 |
+| Electron current density | cosine 0.897; normalized RMSE 0.564; pass |
+| Hole current density | cosine 0.788; normalized RMSE 0.815; fail |
+| SRH recombination | integral ratio 0.779; shape TV 0.106; fail on peak offset |
+| Auger recombination | integral ratio 0.575; shape TV 0.092; fail |
 
 This records an important residual: terminal currents agree within the asserted
 limits, while local reconstructed transport/source fields are not yet close
@@ -111,13 +112,14 @@ Run the four Vela stages in order with `build-release/vela_example_runner.exe`:
 3. `vela/configs/m1_model_relaxation.json`
 4. `vela/configs/m1_collector_sweep.json`
 
-Generate the accepted 3 V state comparison, the diagnostic transport/source
-comparison, and the final combined acceptance in this order:
+Generate the unique accepted-state chain and its transport/source products in
+this order:
 
-1. `scripts/compare_genius_bjt_spatial_fields.py`
-2. `vela/configs/m1_spatial_vce3.json`
-3. `scripts/compare_genius_bjt_transport_fields.py`
-4. `scripts/compare_genius_bjt_sentaurus_vela.py`
+1. `scripts/run_genius_bjt_accepted_state_pipeline.py`
+2. `scripts/export_genius_bjt_accepted_transport_sources.py`
+3. `scripts/compare_genius_bjt_spatial_fields.py`
+4. `scripts/compare_genius_bjt_transport_fields.py`
+5. `scripts/compare_genius_bjt_sentaurus_vela.py`
 
 The script CLIs require the fixture, ignored Sentaurus/Vela data, and output
 paths shown in their `--help` text. Raw Vela states, diagnostics, VTK exports,

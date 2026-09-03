@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -105,6 +106,19 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing contacts"):
             COMPARISON.select_vela_terminals(rows, 0.3)
 
+    def test_comparison_expands_unique_accepted_terminal_row(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "terminals.csv"
+            path.write_text(
+                "index,vce_V,collector_A_per_um,base_A_per_um,emitter_A_per_um\n"
+                "3,0.3,2e-6,1e-8,-2.01e-6\n",
+                encoding="utf-8",
+            )
+            rows = COMPARISON.read_vela_terminal_rows(path)
+        terminals, error = COMPARISON.select_vela_terminals(rows, 0.3)
+        self.assertEqual(error, 0.0)
+        self.assertEqual(set(terminals), {"collector", "base", "emitter"})
+
     def test_asserted_numerical_parity_checks_all_four_observables(self) -> None:
         rows = [
             {
@@ -200,15 +214,23 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
         self.assertAlmostEqual(result["global_vector_cosine_similarity"], 1.0)
 
     def test_transport_source_metric_preserves_equal_integrals(self) -> None:
-        result = TRANSPORT.source_metrics([1.0, -0.5], [1.0, -0.5], [2.0, 1.0], 1e-6)
+        result = TRANSPORT.source_metrics(
+            [1.0, -0.5],
+            [1.0, -0.5],
+            [2.0, 1.0],
+            1e-6,
+            [(0.0, 0.0), (1.0, 0.0)],
+        )
         self.assertEqual(result["normalized_l1_error"], 0.0)
         self.assertEqual(result["absolute_shape_total_variation"], 0.0)
+        self.assertEqual(result["peak_location"]["distance_um"], 0.0)
         self.assertAlmostEqual(
             result["signed_integral_A_per_um"]["ratio_vela_over_sentaurus"], 1.0
         )
 
     def test_overall_acceptance_requires_terminal_and_spatial_gates(self) -> None:
         self.assertTrue(COMPARISON.combine_acceptance(True, True, True))
+        self.assertFalse(COMPARISON.combine_acceptance(True, True, True, False))
         self.assertFalse(COMPARISON.combine_acceptance(True, True, False))
         self.assertFalse(COMPARISON.combine_acceptance(True, False, True))
         self.assertFalse(COMPARISON.combine_acceptance(False, True, True))
@@ -223,6 +245,38 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
         }
         with self.assertRaisesRegex(ValueError, "inconsistent"):
             COMPARISON.validated_spatial_state_pass(summary)
+
+    def test_transport_summary_requires_every_asserted_metric(self) -> None:
+        summary = {
+            "current_density": {
+                "electron": {"gate": {"pass": True}},
+                "hole": {"gate": {"pass": False}},
+            },
+            "recombination": {
+                "srh": {"gate": {"pass": True}},
+                "auger": {"gate": {"pass": True}},
+            },
+            "overall_pass": False,
+        }
+        self.assertFalse(COMPARISON.validated_transport_source_pass(summary))
+
+    def test_source_gate_checks_integral_shape_and_peak_location(self) -> None:
+        metrics = TRANSPORT.source_metrics(
+            [1.0, 0.5],
+            [1.0, 0.5],
+            [1.0, 1.0],
+            1e-6,
+            [(0.0, 0.0), (1.0, 0.0)],
+        )
+        contract = {
+            "maximum_p95_absolute_log10_magnitude_error": 0.01,
+            "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.99,
+            "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.01,
+            "maximum_normalized_l1_error": 0.01,
+            "maximum_absolute_shape_total_variation": 0.01,
+            "maximum_peak_location_distance_um": 0.01,
+        }
+        self.assertTrue(TRANSPORT.evaluate_source_gate(metrics, contract)["pass"])
 
 
 if __name__ == "__main__":

@@ -28,6 +28,24 @@ def read_csv(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
+def read_vela_terminal_rows(path: Path) -> list[dict[str, str]]:
+    rows = read_csv(path)
+    if not rows or "collector_A_per_um" not in rows[0]:
+        return rows
+    expanded: list[dict[str, str]] = []
+    for row in rows:
+        for terminal in TERMINALS:
+            expanded.append(
+                {
+                    "bias_V": row["vce_V"],
+                    "contact": terminal,
+                    "current_total_A_per_um": row[f"{terminal}_A_per_um"],
+                    "converged": "1",
+                }
+            )
+    return expanded
+
+
 def select_sentaurus(rows: list[dict[str, str]], target: float) -> dict[str, str]:
     row = min(rows, key=lambda item: abs(float(item["VCE_V"]) - target))
     if abs(float(row["VCE_V"]) - target) > 1.0e-8:
@@ -128,7 +146,7 @@ def compare_model(
     parity_contract: dict[str, object],
 ) -> tuple[list[dict[str, object]], dict[str, object]]:
     sentaurus = read_csv(sentaurus_path)
-    vela = read_csv(vela_balance_path)
+    vela = read_vela_terminal_rows(vela_balance_path)
     output: list[dict[str, object]] = []
     max_voltage_error = 0.0
     all_converged = True
@@ -261,8 +279,14 @@ def combine_acceptance(
     operational_pass: bool,
     numerical_parity_pass: bool,
     spatial_state_pass: bool,
+    transport_source_pass: bool = True,
 ) -> bool:
-    return bool(operational_pass and numerical_parity_pass and spatial_state_pass)
+    return bool(
+        operational_pass
+        and numerical_parity_pass
+        and spatial_state_pass
+        and transport_source_pass
+    )
 
 
 def validated_spatial_state_pass(summary: dict[str, object]) -> bool:
@@ -278,6 +302,22 @@ def validated_spatial_state_pass(summary: dict[str, object]) -> bool:
     if summary.get("overall_pass") is not field_pass:
         raise ValueError("spatial-state overall_pass is inconsistent with field gates")
     return field_pass
+
+
+def validated_transport_source_pass(summary: dict[str, object]) -> bool:
+    groups = (summary.get("current_density"), summary.get("recombination"))
+    if any(not isinstance(group, dict) or not group for group in groups):
+        raise ValueError("transport/source summary is missing asserted metric groups")
+    metric_pass = all(
+        isinstance(metric, dict)
+        and isinstance(metric.get("gate"), dict)
+        and metric["gate"].get("pass") is True
+        for group in groups
+        for metric in group.values()
+    )
+    if summary.get("overall_pass") is not metric_pass:
+        raise ValueError("transport/source overall_pass is inconsistent with metric gates")
+    return metric_pass
 
 
 def write_markdown(path: Path, summary: dict[str, object]) -> None:
@@ -323,6 +363,7 @@ def write_markdown(path: Path, summary: dict[str, object]) -> None:
             f"Overall operational pass: **{summary['operational_pass']}**",
             f"Asserted numerical parity pass: **{summary['numerical_parity_pass']}**",
             f"Asserted spatial-state pass: **{summary['spatial_state_pass']}**",
+            f"Asserted transport/source pass: **{summary['transport_source_pass']}**",
             f"Overall pass: **{summary['overall_pass']}**",
             "",
         ]
@@ -340,6 +381,26 @@ def main() -> int:
         type=Path,
         help="Asserted spatial-state summary; defaults to OUTPUT_DIR/spatial_comparison_summary.json",
     )
+    parser.add_argument(
+        "--transport-source-summary",
+        type=Path,
+        help="Asserted transport/source summary; defaults to OUTPUT_DIR/transport_source_comparison.json",
+    )
+    parser.add_argument(
+        "--accepted-state",
+        type=Path,
+        help="Unique accepted VCE=3 V state used by the spatial gate",
+    )
+    parser.add_argument(
+        "--accepted-vtk",
+        type=Path,
+        help="Unique accepted VCE=3 V VTK used by the transport/source gate",
+    )
+    parser.add_argument(
+        "--accepted-terminal-currents",
+        type=Path,
+        help="31-point current table from the unique accepted-state chain",
+    )
     args = parser.parse_args()
 
     threshold_path = args.reference_root / "contracts" / "comparison_thresholds.json"
@@ -350,14 +411,17 @@ def main() -> int:
         raise ValueError("numerical parity active-region range must contain ordered bounds")
 
     summaries: dict[str, object] = {
-        "schema_version": 3,
-        "comparison_scope": "WP3-WP5 common-input comparison with pre-registered terminal and spatial-state gates",
+        "schema_version": 4,
+        "comparison_scope": "WP3-WP5 common-input comparison with terminal, spatial-state, transport, and recombination gates",
     }
     for model, stem in (("M0", "m0"), ("M1", "m1")):
+        vela_balance_path = args.vela_run_root / f"{stem}_collector_terminal_balance.csv"
+        if model == "M1" and args.accepted_terminal_currents is not None:
+            vela_balance_path = args.accepted_terminal_currents
         rows, model_summary = compare_model(
             model,
             args.reference_root / "reference_curves" / f"bjt_{stem}_output.csv",
-            args.vela_run_root / f"{stem}_collector_terminal_balance.csv",
+            vela_balance_path,
             active_region,
             parity["models"][model],
         )
@@ -381,9 +445,14 @@ def main() -> int:
     )
     spatial_summary = json.loads(spatial_summary_path.read_text(encoding="utf-8"))
     spatial_state_pass = validated_spatial_state_pass(spatial_summary)
+    accepted_state_path = (
+        args.accepted_state
+        if args.accepted_state is not None
+        else args.vela_run_root / "m1_vce300_state.csv"
+    )
     expected_hashes = {
         "threshold_contract": sha256(threshold_path),
-        "vela_state": sha256(args.vela_run_root / "m1_vce300_state.csv"),
+        "vela_state": sha256(accepted_state_path),
     }
     reported_hashes = spatial_summary.get("source_sha256", {})
     for name, expected in expected_hashes.items():
@@ -403,10 +472,36 @@ def main() -> int:
         },
     }
     summaries["spatial_state_pass"] = spatial_state_pass
+    transport_summary_path = (
+        args.transport_source_summary
+        if args.transport_source_summary is not None
+        else args.output_dir / "transport_source_comparison.json"
+    )
+    transport_summary = json.loads(transport_summary_path.read_text(encoding="utf-8"))
+    transport_source_pass = validated_transport_source_pass(transport_summary)
+    expected_transport_hashes = {"threshold_contract": sha256(threshold_path)}
+    if args.accepted_vtk is not None:
+        expected_transport_hashes["vela_vtk"] = sha256(args.accepted_vtk)
+    for name, expected in expected_transport_hashes.items():
+        if transport_summary.get("source_sha256", {}).get(name) != expected:
+            raise ValueError(f"stale transport/source summary: {name} hash mismatch")
+    summaries["transport_source_gate"] = {
+        "input": str(transport_summary_path),
+        "current_density": {
+            name: {"pass": metric["gate"]["pass"], "gate": metric["gate"]}
+            for name, metric in transport_summary["current_density"].items()
+        },
+        "recombination": {
+            name: {"pass": metric["gate"]["pass"], "gate": metric["gate"]}
+            for name, metric in transport_summary["recombination"].items()
+        },
+    }
+    summaries["transport_source_pass"] = transport_source_pass
     summaries["overall_pass"] = combine_acceptance(
         summaries["operational_pass"],
         summaries["numerical_parity_pass"],
         summaries["spatial_state_pass"],
+        summaries["transport_source_pass"],
     )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     write_text_lf(

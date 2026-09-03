@@ -1,6 +1,6 @@
 {
-  "schema_version": 3,
-  "comparison_scope": "WP3-WP5 common-input comparison with pre-registered terminal and spatial-state gates",
+  "schema_version": 4,
+  "comparison_scope": "WP3-WP5 common-input comparison with terminal, spatial-state, transport, and recombination gates",
   "M0": {
     "model": "M0",
     "sentaurus_input": "reference_tcad\\genius_bjt_sentaurus2022\\reference_curves\\bjt_m0_output.csv",
@@ -53,44 +53,44 @@
   "M1": {
     "model": "M1",
     "sentaurus_input": "reference_tcad\\genius_bjt_sentaurus2022\\reference_curves\\bjt_m1_output.csv",
-    "vela_terminal_balance_input": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\vela_wp3_wp5\\m1_collector_terminal_balance.csv",
+    "vela_terminal_balance_input": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\m1_accepted_states\\terminal_currents.csv",
     "compared_point_count": 31,
-    "maximum_voltage_selection_error_V": 3.1086244689504383e-15,
+    "maximum_voltage_selection_error_V": 0.0,
     "all_vela_points_converged": true,
-    "maximum_vela_absolute_kcl_residual_A_per_um": 7.750867575139522e-15,
-    "maximum_vela_relative_kcl_residual": 2.7383681774782544e-09,
+    "maximum_vela_absolute_kcl_residual_A_per_um": 2.7328957413228037e-15,
+    "maximum_vela_relative_kcl_residual": 9.60462329978908e-10,
     "active_region_VCE_range_V": [
       0.5,
       3.0
     ],
     "active_region_Ic_absolute_log10_error": {
-      "median": 0.0026585350046444455,
-      "maximum": 0.0026936807556736594
+      "median": 0.0034329037754523024,
+      "maximum": 0.003437102332596286
     },
     "active_region_Ib_absolute_log10_error": {
-      "median": 0.022069185808629852,
-      "maximum": 0.022092206348029615
+      "median": 0.0020956743265456096,
+      "maximum": 0.002102274409366617
     },
     "active_region_Ie_absolute_log10_error": {
-      "median": 0.002106769430177336,
-      "maximum": 0.002120446802043853
+      "median": 0.0034037576054517047,
+      "maximum": 0.0034071580699805153
     },
     "active_region_beta_absolute_log10_error": {
-      "median": 0.02472772081327427,
-      "maximum": 0.024734608871204083
+      "median": 0.0013378356155893958,
+      "maximum": 0.0013492052830702233
     },
     "at_VCE_3V": {
       "sentaurus_Ic_A_per_um": 2.80753243397542e-06,
-      "vela_Ic_A_per_um": 2.790668781343734e-06,
-      "Ic_magnitude_ratio_vela_over_sentaurus": 0.9939934255335361,
+      "vela_Ic_A_per_um": 2.78549910695624e-06,
+      "Ic_magnitude_ratio_vela_over_sentaurus": 0.9921520667926955,
       "sentaurus_Ib_A_per_um": 6.01876121735591e-08,
-      "vela_Ib_A_per_um": 6.332851732094051e-08,
-      "Ib_magnitude_ratio_vela_over_sentaurus": 1.0521852426762537,
+      "vela_Ib_A_per_um": 5.989696808572684e-08,
+      "Ib_magnitude_ratio_vela_over_sentaurus": 0.9951710314243047,
       "sentaurus_Ie_A_per_um": -2.86772004614901e-06,
-      "vela_Ie_A_per_um": -2.853997290913807e-06,
-      "Ie_magnitude_ratio_vela_over_sentaurus": 0.9952147507377398,
+      "vela_Ie_A_per_um": -2.845396072309071e-06,
+      "Ie_magnitude_ratio_vela_over_sentaurus": 0.9922154277681611,
       "sentaurus_beta_abs": 46.64635018049099,
-      "vela_beta_abs": 44.066542205638505
+      "vela_beta_abs": 46.50484316617707
     },
     "numerical_parity_gate": {
       "status": "asserted",
@@ -102,10 +102,10 @@
         "beta": 0.05
       },
       "observed_maximum_absolute_log10_error": {
-        "Ic": 0.0026936807556736594,
-        "Ib": 0.022092206348029615,
-        "Ie": 0.002120446802043853,
-        "beta": 0.024734608871204083
+        "Ic": 0.003437102332596286,
+        "Ib": 0.002102274409366617,
+        "Ie": 0.0034071580699805153,
+        "beta": 0.0013492052830702233
       },
       "pass": true
     },
@@ -127,9 +127,9 @@
         },
         "observed": {
           "node_count": 5611,
-          "rmse": 0.0011413171169968306,
-          "p95_absolute_error": 0.0022810702688604856,
-          "maximum_absolute_error": 0.015080326088608209
+          "rmse": 0.0010965184592234174,
+          "p95_absolute_error": 0.0022880984631787893,
+          "maximum_absolute_error": 0.015060897190139366
         }
       },
       "electron_density": {
@@ -142,9 +142,9 @@
         },
         "observed": {
           "node_count": 5196,
-          "rmse": 0.003505841570859393,
-          "p95_absolute_error": 0.007462524417363614,
-          "maximum_absolute_error": 0.036136403931896766
+          "rmse": 0.0029782004030305784,
+          "p95_absolute_error": 0.006525197504930524,
+          "maximum_absolute_error": 0.02324100270372753
         }
       },
       "hole_density": {
@@ -157,13 +157,119 @@
         },
         "observed": {
           "node_count": 2207,
-          "rmse": 0.01134543033764906,
-          "p95_absolute_error": 0.025641598657014153,
-          "maximum_absolute_error": 0.1007931430785245
+          "rmse": 0.006938239507374787,
+          "p95_absolute_error": 0.007765845372724895,
+          "maximum_absolute_error": 0.1006674021818803
         }
       }
     }
   },
   "spatial_state_pass": true,
-  "overall_pass": true
+  "transport_source_gate": {
+    "input": "reference_tcad\\genius_bjt_sentaurus2022\\comparison\\transport_source_comparison.json",
+    "current_density": {
+      "electron": {
+        "pass": true,
+        "gate": {
+          "thresholds": {
+            "maximum_p95_absolute_log10_magnitude_error": 0.3,
+            "maximum_normalized_vector_rmse": 0.6,
+            "minimum_global_vector_cosine_similarity": 0.85
+          },
+          "observed": {
+            "p95_absolute_log10_magnitude_error": 0.27079405631911346,
+            "normalized_vector_rmse": 0.5643647214876673,
+            "global_vector_cosine_similarity": 0.8965468902861577
+          },
+          "checks": {
+            "p95_absolute_log10_magnitude_error": true,
+            "normalized_vector_rmse": true,
+            "global_vector_cosine_similarity": true
+          },
+          "pass": true
+        }
+      },
+      "hole": {
+        "pass": false,
+        "gate": {
+          "thresholds": {
+            "maximum_p95_absolute_log10_magnitude_error": 0.5,
+            "maximum_normalized_vector_rmse": 0.6,
+            "minimum_global_vector_cosine_similarity": 0.85
+          },
+          "observed": {
+            "p95_absolute_log10_magnitude_error": 1.4837142883966805,
+            "normalized_vector_rmse": 0.8150324469308246,
+            "global_vector_cosine_similarity": 0.7877426640424526
+          },
+          "checks": {
+            "p95_absolute_log10_magnitude_error": false,
+            "normalized_vector_rmse": false,
+            "global_vector_cosine_similarity": false
+          },
+          "pass": false
+        }
+      }
+    },
+    "recombination": {
+      "srh": {
+        "pass": false,
+        "gate": {
+          "thresholds": {
+            "maximum_p95_absolute_log10_magnitude_error": 0.35,
+            "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
+            "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.25,
+            "maximum_normalized_l1_error": 0.25,
+            "maximum_absolute_shape_total_variation": 0.15,
+            "maximum_peak_location_distance_um": 0.15
+          },
+          "observed": {
+            "p95_absolute_log10_magnitude_error": 0.28915257392588845,
+            "absolute_integral_ratio_vela_over_sentaurus": 0.7786575151707326,
+            "normalized_l1_error": 0.22140008407960268,
+            "absolute_shape_total_variation": 0.10602299012982151,
+            "peak_location_distance_um": 0.171875
+          },
+          "checks": {
+            "p95_absolute_log10_magnitude_error": true,
+            "absolute_integral_ratio_vela_over_sentaurus": true,
+            "normalized_l1_error": true,
+            "absolute_shape_total_variation": true,
+            "peak_location_distance_um": false
+          },
+          "pass": false
+        }
+      },
+      "auger": {
+        "pass": false,
+        "gate": {
+          "thresholds": {
+            "maximum_p95_absolute_log10_magnitude_error": 0.5,
+            "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
+            "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.25,
+            "maximum_normalized_l1_error": 0.25,
+            "maximum_absolute_shape_total_variation": 0.15,
+            "maximum_peak_location_distance_um": 0.15
+          },
+          "observed": {
+            "p95_absolute_log10_magnitude_error": 0.9036654070865133,
+            "absolute_integral_ratio_vela_over_sentaurus": 0.5754185987326456,
+            "normalized_l1_error": 0.42458140126811783,
+            "absolute_shape_total_variation": 0.09196026578504479,
+            "peak_location_distance_um": 1.5940563431071062
+          },
+          "checks": {
+            "p95_absolute_log10_magnitude_error": false,
+            "absolute_integral_ratio_vela_over_sentaurus": false,
+            "normalized_l1_error": false,
+            "absolute_shape_total_variation": true,
+            "peak_location_distance_um": false
+          },
+          "pass": false
+        }
+      }
+    }
+  },
+  "transport_source_pass": false,
+  "overall_pass": false
 }

@@ -156,6 +156,7 @@ def source_metrics(
     actual: list[float],
     node_areas_um2: list[float],
     reference_fraction: float,
+    nodes_um: list[tuple[float, float]] | None = None,
 ) -> dict[str, object]:
     if not (len(reference) == len(actual) == len(node_areas_um2)):
         raise ValueError("source-rate field length mismatch")
@@ -183,6 +184,22 @@ def source_metrics(
         )
         for value, target, weight in zip(actual, reference, weights, strict=True)
     )
+    reference_peak_node = max(range(len(reference)), key=lambda index: abs(reference[index]))
+    actual_peak_node = max(range(len(actual)), key=lambda index: abs(actual[index]))
+    peak_locations: dict[str, object] = {
+        "sentaurus_node_id": reference_peak_node,
+        "vela_node_id": actual_peak_node,
+    }
+    if nodes_um is not None:
+        reference_xy = nodes_um[reference_peak_node]
+        actual_xy = nodes_um[actual_peak_node]
+        peak_locations.update(
+            {
+                "sentaurus_xy_um": list(reference_xy),
+                "vela_xy_um": list(actual_xy),
+                "distance_um": math.dist(reference_xy, actual_xy),
+            }
+        )
     return {
         "units": "cm^-3 s^-1",
         "mask": {
@@ -210,6 +227,7 @@ def source_metrics(
         },
         "normalized_l1_error": normalized_l1,
         "absolute_shape_total_variation": shape_tv,
+        "peak_location": peak_locations,
     }
 
 
@@ -221,15 +239,79 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def evaluate_vector_gate(metrics: dict[str, object], contract: dict[str, object]) -> dict[str, object]:
+    observed = {
+        "p95_absolute_log10_magnitude_error": metrics["log10_magnitude_error"][
+            "p95_absolute_error"
+        ],
+        "normalized_vector_rmse": metrics["normalized_vector_rmse"],
+        "global_vector_cosine_similarity": metrics["global_vector_cosine_similarity"],
+    }
+    checks = {
+        "p95_absolute_log10_magnitude_error": observed[
+            "p95_absolute_log10_magnitude_error"
+        ]
+        <= float(contract["maximum_p95_absolute_log10_magnitude_error"]),
+        "normalized_vector_rmse": observed["normalized_vector_rmse"]
+        <= float(contract["maximum_normalized_vector_rmse"]),
+        "global_vector_cosine_similarity": observed[
+            "global_vector_cosine_similarity"
+        ]
+        >= float(contract["minimum_global_vector_cosine_similarity"]),
+    }
+    return {
+        "thresholds": contract,
+        "observed": observed,
+        "checks": checks,
+        "pass": all(checks.values()),
+    }
+
+
+def evaluate_source_gate(metrics: dict[str, object], contract: dict[str, object]) -> dict[str, object]:
+    ratio = metrics["absolute_integral_A_per_um"]["ratio_vela_over_sentaurus"]
+    observed = {
+        "p95_absolute_log10_magnitude_error": metrics["log10_magnitude_error"][
+            "p95_absolute_error"
+        ],
+        "absolute_integral_ratio_vela_over_sentaurus": ratio,
+        "normalized_l1_error": metrics["normalized_l1_error"],
+        "absolute_shape_total_variation": metrics["absolute_shape_total_variation"],
+        "peak_location_distance_um": metrics["peak_location"]["distance_um"],
+    }
+    checks = {
+        "p95_absolute_log10_magnitude_error": observed[
+            "p95_absolute_log10_magnitude_error"
+        ]
+        <= float(contract["maximum_p95_absolute_log10_magnitude_error"]),
+        "absolute_integral_ratio_vela_over_sentaurus": float(
+            contract["minimum_absolute_integral_ratio_vela_over_sentaurus"]
+        )
+        <= ratio
+        <= float(contract["maximum_absolute_integral_ratio_vela_over_sentaurus"]),
+        "normalized_l1_error": observed["normalized_l1_error"]
+        <= float(contract["maximum_normalized_l1_error"]),
+        "absolute_shape_total_variation": observed["absolute_shape_total_variation"]
+        <= float(contract["maximum_absolute_shape_total_variation"]),
+        "peak_location_distance_um": observed["peak_location_distance_um"]
+        <= float(contract["maximum_peak_location_distance_um"]),
+    }
+    return {
+        "thresholds": contract,
+        "observed": observed,
+        "checks": checks,
+        "pass": all(checks.values()),
+    }
+
+
 def write_markdown(path: Path, report: dict[str, object]) -> None:
     electron = report["current_density"]["electron"]
     hole = report["current_density"]["hole"]
     srh = report["recombination"]["srh"]
     auger = report["recombination"]["auger"]
     lines = [
-        "# Genius NPN BJT transport/source spatial characterization",
+        "# Genius NPN BJT transport/source spatial acceptance",
         "",
-        "These quantities are diagnostic characterization, not asserted acceptance gates.",
+        "The initial engineering gates below were registered after the original characterization run; they are regression gates, not an independent blind validation.",
         "Current-density comparison uses Vela's Sentaurus-style nodal quasi-Fermi-gradient reconstruction in A/cm^2.",
         "Recombination integrals use the common triangular mesh and a 1 um out-of-plane depth.",
         "",
@@ -240,7 +322,12 @@ def write_markdown(path: Path, report: dict[str, object]) -> None:
         f"| SRH recombination | {srh['selected_node_count']} | {srh['log10_magnitude_error']['p95_absolute_error']:.6g} | L1 {srh['normalized_l1_error']:.6g} |",
         f"| Auger recombination | {auger['selected_node_count']} | {auger['log10_magnitude_error']['p95_absolute_error']:.6g} | L1 {auger['normalized_l1_error']:.6g} |",
         "",
+        f"Electron current-density pass: **{electron['gate']['pass']}**.",
+        f"Hole current-density pass: **{hole['gate']['pass']}**.",
+        f"SRH recombination pass: **{srh['gate']['pass']}**.",
+        f"Auger recombination pass: **{auger['gate']['pass']}**.",
         f"Comparison status: **{report['status']}**.",
+        f"Overall transport/source pass: **{report['overall_pass']}**.",
         "",
     ]
     path.write_text("\n".join(lines), encoding="utf-8", newline="\n")
@@ -260,8 +347,8 @@ def main() -> int:
         )
     )
     contract = threshold_document["wp3_wp5_vela_comparison"]["transport_source_comparison"]
-    if contract["status"] != "characterization_only":
-        raise ValueError("transport/source comparison unexpectedly asserts a gate")
+    if contract["status"] != "asserted":
+        raise ValueError("transport/source comparison must use asserted gates")
     fields_root = args.sentaurus_fields_root / "fields"
     nodes_rows = read_csv(args.sentaurus_fields_root / "nodes.csv")
     nodes = [(float(row["x_um"]), float(row["y_um"])) for row in nodes_rows]
@@ -276,40 +363,54 @@ def main() -> int:
 
     electron_field = contract["vela_current_density_fields"]["electron"]
     hole_field = contract["vela_current_density_fields"]["hole"]
+    electron = vector_metrics(
+        sentaurus_vector(fields_root / "eCurrentDensity_region0.csv"),
+        vtk_vectors[electron_field],
+        float(contract["current_density_reference_fraction"]),
+    )
+    hole = vector_metrics(
+        sentaurus_vector(fields_root / "hCurrentDensity_region0.csv"),
+        vtk_vectors[hole_field],
+        float(contract["current_density_reference_fraction"]),
+    )
+    srh = source_metrics(
+        sentaurus_scalar(fields_root / "srhRecombination_region0.csv"),
+        vtk_scalars["SRHRecombinationCm3PerS"],
+        node_areas,
+        float(contract["source_rate_reference_fraction"]),
+        nodes,
+    )
+    auger = source_metrics(
+        sentaurus_scalar(fields_root / "AugerRecombination_region0.csv"),
+        vtk_scalars["AugerRecombinationCm3PerS"],
+        node_areas,
+        float(contract["source_rate_reference_fraction"]),
+        nodes,
+    )
+    electron["gate"] = evaluate_vector_gate(
+        electron, contract["gates"]["current_density"]["electron"]
+    )
+    hole["gate"] = evaluate_vector_gate(
+        hole, contract["gates"]["current_density"]["hole"]
+    )
+    srh["gate"] = evaluate_source_gate(srh, contract["gates"]["recombination"]["srh"])
+    auger["gate"] = evaluate_source_gate(
+        auger, contract["gates"]["recombination"]["auger"]
+    )
+    overall_pass = all(item["gate"]["pass"] for item in (electron, hole, srh, auger))
+    threshold_path = args.reference_root / "contracts" / "comparison_thresholds.json"
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "device": "Genius NPN BJT",
         "bias": contract["bias"],
         "status": contract["status"],
         "reason": contract["reason"],
         "common_node_count": count,
-        "current_density": {
-            "electron": vector_metrics(
-                sentaurus_vector(fields_root / "eCurrentDensity_region0.csv"),
-                vtk_vectors[electron_field],
-                float(contract["current_density_reference_fraction"]),
-            ),
-            "hole": vector_metrics(
-                sentaurus_vector(fields_root / "hCurrentDensity_region0.csv"),
-                vtk_vectors[hole_field],
-                float(contract["current_density_reference_fraction"]),
-            ),
-        },
-        "recombination": {
-            "srh": source_metrics(
-                sentaurus_scalar(fields_root / "srhRecombination_region0.csv"),
-                vtk_scalars["SRHRecombinationCm3PerS"],
-                node_areas,
-                float(contract["source_rate_reference_fraction"]),
-            ),
-            "auger": source_metrics(
-                sentaurus_scalar(fields_root / "AugerRecombination_region0.csv"),
-                vtk_scalars["AugerRecombinationCm3PerS"],
-                node_areas,
-                float(contract["source_rate_reference_fraction"]),
-            ),
-        },
+        "current_density": {"electron": electron, "hole": hole},
+        "recombination": {"srh": srh, "auger": auger},
+        "overall_pass": overall_pass,
         "source_sha256": {
+            "threshold_contract": sha256(threshold_path),
             "sentaurus_field_manifest": sha256(args.sentaurus_fields_root / "field_manifest.json"),
             "vela_vtk": sha256(args.vela_vtk),
         },
@@ -323,7 +424,7 @@ def main() -> int:
     )
     write_markdown(args.output_dir / "transport_source_comparison.md", report)
     print(json.dumps(report, indent=2, allow_nan=False))
-    return 0
+    return 0 if report["overall_pass"] else 1
 
 
 if __name__ == "__main__":

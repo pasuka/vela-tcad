@@ -1,6 +1,6 @@
 {
-  "schema": "vela.genius_bjt.sentaurus2022.materials.v1",
-  "_comment": "Silicon material contract shared with the frozen Sentaurus 2022 TransportModels fixture.",
+  "schema": "vela.genius_bjt.sentaurus2022.materials.v2",
+  "_comment": "Silicon material contract aligned to the T-2022.03-SP2 Silicon parameter dump; concentration-valued inputs use the fixture's cm^-3 convention.",
   "materials": [
     {
       "name": "Si",
@@ -10,8 +10,8 @@
       "mup": 470.5,
       "bandgap_eV": 1.12,
       "electron_affinity_eV": 4.0727403846153845,
-      "Nc_m3": 2.8e19,
-      "Nv_m3": 1.04e19,
+      "Nc_m3": 2.8567e19,
+      "Nv_m3": 3.1046e19,
       "temperature_K": 300.0
     }
   ]

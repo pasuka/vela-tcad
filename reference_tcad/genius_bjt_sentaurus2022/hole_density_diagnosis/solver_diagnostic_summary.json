@@ -1,0 +1,113 @@
+{
+  "baseline_plateau": {
+    "node_count": 200,
+    "hole_row_ratio": {
+      "node_count": 200,
+      "rmse": 0.6612052458030067,
+      "p95_absolute": 1.4875717616642614,
+      "maximum_absolute": 1.9780658885280629
+    },
+    "raw_delta_phip_V": {
+      "node_count": 200,
+      "rmse": 1.2104693826927224,
+      "p95_absolute": 1.2110105,
+      "maximum_absolute": 1.21135
+    },
+    "capped_delta_phip_V": {
+      "node_count": 200,
+      "rmse": 0.10000000000000002,
+      "p95_absolute": 0.1,
+      "maximum_absolute": 0.1
+    }
+  },
+  "cap_one_step_ab": [
+    {
+      "variant": "cap_0.025V",
+      "quasi_fermi_update_limit_V": 0.025,
+      "plateau_trial_hole_error": {
+        "node_count": 200,
+        "rmse": 1.2590165054058295,
+        "p95_absolute": 1.2602454038038533,
+        "maximum_absolute": 1.2636184590971862
+      },
+      "initial_combined_residual": 6.551078381352788e-09,
+      "trial_combined_residual": 4.2631469938740487e-10,
+      "raw_step_norm": 666.3825422684846,
+      "limited_step_norm": 14.852436372313758
+    },
+    {
+      "variant": "cap_0.05V",
+      "quasi_fermi_update_limit_V": 0.05,
+      "plateau_trial_hole_error": {
+        "node_count": 200,
+        "rmse": 0.8390351822736878,
+        "p95_absolute": 0.8402638883592258,
+        "maximum_absolute": 0.843636943652565
+      },
+      "initial_combined_residual": 6.551078381352788e-09,
+      "trial_combined_residual": 4.263100812095371e-10,
+      "raw_step_norm": 666.3825422684846,
+      "limited_step_norm": 28.401980372609806
+    },
+    {
+      "variant": "cap_0.1V",
+      "quasi_fermi_update_limit_V": 0.1,
+      "plateau_trial_hole_error": {
+        "node_count": 200,
+        "rmse": 0.001352553689628059,
+        "p95_absolute": 0.002407445435459154,
+        "maximum_absolute": 0.006751689276091778
+      },
+      "initial_combined_residual": 6.551078381352788e-09,
+      "trial_combined_residual": 4.263116716646664e-10,
+      "raw_step_norm": 666.3825422684846,
+      "limited_step_norm": 55.797562305204444
+    },
+    {
+      "variant": "cap_disabled",
+      "quasi_fermi_update_limit_V": 0.0,
+      "plateau_trial_hole_error": {
+        "node_count": 200,
+        "rmse": 18.16422201343812,
+        "p95_absolute": 18.561195178538885,
+        "maximum_absolute": 18.604322570547755
+      },
+      "initial_combined_residual": 6.551078381352788e-09,
+      "trial_combined_residual": 154769.2926586575,
+      "raw_step_norm": 666.3825422684846,
+      "limited_step_norm": 666.3825422684846
+    }
+  ],
+  "strict_row_run": {
+    "converged": false,
+    "iterations": 80,
+    "failure_reason": "carrier_row_convergence",
+    "final_combined_residual": 3.212279509086526e-10,
+    "row_max_ratio": 0.882284914123636,
+    "row_max_node": 2672,
+    "row_violation_count": 148,
+    "contact_currents_A_per_um": {
+      "base": 6.332851732095768e-08,
+      "collector": 2.790668773523265e-06,
+      "emitter": -2.853997290913812e-06
+    },
+    "full_domain_hole_error": {
+      "node_count": 5611,
+      "rmse": 0.013307919617419783,
+      "p95_absolute": 0.02480139989652666,
+      "maximum_absolute": 0.2529679186108478
+    },
+    "low_lt_1e2_hole_error": {
+      "node_count": 1474,
+      "rmse": 0.0022853784637512538,
+      "p95_absolute": 0.004864155263846509,
+      "maximum_absolute": 0.01643569968028933
+    },
+    "significant_ge_1e10_hole_error": {
+      "node_count": 2207,
+      "rmse": 0.01134543033760664,
+      "p95_absolute": 0.02564159865701298,
+      "maximum_absolute": 0.10079314307843096
+    }
+  }
+}

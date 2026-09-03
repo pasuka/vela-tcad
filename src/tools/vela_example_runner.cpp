@@ -260,6 +260,34 @@ vela::NewtonSolver makeNewtonSolver(const NewtonProblem& problem)
         problem.contactSpecs);
 }
 
+void writeNewtonSolutionVtk(const std::filesystem::path& path,
+                            const NewtonProblem& problem,
+                            const vela::DDSolution& solution)
+{
+    vela::RecombinationModelConfig recombination =
+        vela::recombinationModelConfig(
+            problem.newton.recombination,
+            problem.newton.taun,
+            problem.newton.taup,
+            problem.newton.srhDopingDependence);
+    recombination.augerCn = problem.newton.augerCn;
+    recombination.augerCp = problem.newton.augerCp;
+    recombination.bandToBand = problem.newton.bandToBand;
+    vela::writeDDSolutionVTK(
+        path.string(),
+        problem.mesh,
+        problem.matdb,
+        problem.doping,
+        solution,
+        problem.newton.mobility,
+        recombination,
+        problem.newton.impactIonization,
+        problem.newton.bandgapNarrowing,
+        problem.newton.temperature_K,
+        problem.newton.inputScaling,
+        problem.newton.carrierStatistics);
+}
+
 vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,
                                     vela::Index nodeCount,
                                     vela::UnitScalingConfig scaling);
@@ -326,12 +354,10 @@ NewtonCliResult runNewtonConfig(const std::string& configFile, const nlohmann::j
         problem.contactSpecs);
 
     if (cfg.contains("output_vtk")) {
-        vela::writeDDSolutionVTK(
+        writeNewtonSolutionVtk(
             resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>()),
-            problem.mesh,
-            problem.doping,
-            result.solution,
-            problem.newton.inputScaling);
+            problem,
+            result.solution);
     }
 
     return NewtonCliResult{std::move(problem.mesh), std::move(result)};
@@ -354,12 +380,10 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
             problem.newton.inputScaling);
     }
     if (cfg.contains("output_vtk")) {
-        vela::writeDDSolutionVTK(
+        writeNewtonSolutionVtk(
             resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>()),
-            problem.mesh,
-            problem.doping,
-            result.solution,
-            problem.newton.inputScaling);
+            problem,
+            result.solution);
     }
 
     // On-state terminal current extraction (no re-solve). Computing ContactCurrent
@@ -1454,6 +1478,86 @@ void writeNewtonJvpProbeCsv(const std::filesystem::path& path,
     }
 }
 
+struct JvpSampleRow {
+    std::string name;
+    std::string block;
+    int node = 0;
+    int residualIndex = 0;
+};
+
+std::vector<JvpSampleRow> parseJvpSampleRows(const nlohmann::json& cfg,
+                                             int nodeCount)
+{
+    std::vector<JvpSampleRow> rows;
+    if (!cfg.contains("sample_rows"))
+        return rows;
+    if (!cfg.at("sample_rows").is_array()) {
+        throw std::invalid_argument(
+            "newton_jvp_probe sample_rows must be an array.");
+    }
+    for (const auto& value : cfg.at("sample_rows")) {
+        const std::string block = value.at("block").get<std::string>();
+        const int node = value.at("node_id").get<int>();
+        if (node < 0 || node >= nodeCount) {
+            throw std::out_of_range(
+                "newton_jvp_probe sample row node id is outside the mesh.");
+        }
+        int blockIndex = -1;
+        if (block == "psi")
+            blockIndex = 0;
+        else if (block == "phin")
+            blockIndex = 1;
+        else if (block == "phip")
+            blockIndex = 2;
+        else {
+            throw std::invalid_argument(
+                "newton_jvp_probe sample row block must be psi, phin, or phip.");
+        }
+        rows.push_back({
+            value.value("name", block + "_" + std::to_string(node)),
+            block,
+            node,
+            blockIndex * nodeCount + node,
+        });
+    }
+    return rows;
+}
+
+void writeNewtonJvpSampleRowCsv(const std::filesystem::path& path,
+                                const std::vector<nlohmann::json>& rows)
+{
+    std::ofstream out(path);
+    if (!out.is_open()) {
+        throw std::runtime_error(
+            "Cannot write Newton JVP sample-row CSV: " + path.string());
+    }
+    out << std::setprecision(17);
+    out << "direction,direction_mode,amplitude_V,sample_name,row_block,row_node,"
+        << "residual_index,base_residual,forward_residual,backward_residual,"
+        << "analytic_change,finite_difference_change,analytic_derivative,"
+        << "finite_difference_derivative,absolute_derivative_error,"
+        << "relative_derivative_error\n";
+    for (const auto& row : rows) {
+        out << row.at("direction").get<std::string>() << ','
+            << row.at("direction_mode").get<std::string>() << ','
+            << row.at("amplitude_V").get<vela::Real>() << ','
+            << row.at("sample_name").get<std::string>() << ','
+            << row.at("row_block").get<std::string>() << ','
+            << row.at("row_node").get<int>() << ','
+            << row.at("residual_index").get<int>() << ','
+            << row.at("base_residual").get<vela::Real>() << ','
+            << row.at("forward_residual").get<vela::Real>() << ','
+            << row.at("backward_residual").get<vela::Real>() << ','
+            << row.at("analytic_change").get<vela::Real>() << ','
+            << row.at("finite_difference_change").get<vela::Real>() << ','
+            << row.at("analytic_derivative").get<vela::Real>() << ','
+            << row.at("finite_difference_derivative").get<vela::Real>() << ','
+            << row.at("absolute_derivative_error").get<vela::Real>() << ','
+            << row.at("relative_derivative_error").get<vela::Real>()
+            << '\n';
+    }
+}
+
 nlohmann::json runNewtonJvpProbe(const std::string& configFile, const nlohmann::json& cfg)
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
@@ -1465,7 +1569,9 @@ nlohmann::json runNewtonJvpProbe(const std::string& configFile, const nlohmann::
         throw std::invalid_argument("newton_jvp_probe requires a directions array.");
 
     const int n = static_cast<int>(problem.mesh.numNodes());
+    const std::vector<JvpSampleRow> sampleRows = parseJvpSampleRows(cfg, n);
     std::vector<nlohmann::json> rows;
+    std::vector<nlohmann::json> sampledRows;
     vela::Real maxRelativeError = 0.0;
     for (const auto& directionConfig : cfg.at("directions")) {
         const JvpProbeDirection direction = makeJvpProbeDirection(
@@ -1518,15 +1624,66 @@ nlohmann::json runNewtonJvpProbe(const std::string& configFile, const nlohmann::
             {"finite_difference_at_max_error", maxErrorIndex >= 0
                 ? jvp.finiteDifferenceJv(maxErrorIndex) : 0.0},
         });
+
+        for (const JvpSampleRow& sample : sampleRows) {
+            const int index = sample.residualIndex;
+            const vela::Real analyticChange = jvp.analyticJv(index);
+            const vela::Real finiteDifferenceChange =
+                jvp.finiteDifferenceJv(index);
+            const vela::Real analyticDerivative =
+                analyticChange / direction.amplitude_V;
+            const vela::Real finiteDifferenceDerivative =
+                finiteDifferenceChange / direction.amplitude_V;
+            const vela::Real absoluteError =
+                std::abs(analyticDerivative - finiteDifferenceDerivative);
+            const vela::Real reference = std::max(
+                std::abs(analyticDerivative),
+                std::abs(finiteDifferenceDerivative));
+            sampledRows.push_back({
+                {"direction", direction.name},
+                {"direction_mode", direction.mode},
+                {"amplitude_V", direction.amplitude_V},
+                {"sample_name", sample.name},
+                {"row_block", sample.block},
+                {"row_node", sample.node},
+                {"residual_index", index},
+                {"base_residual", jvp.residual.raw(index)},
+                {"forward_residual", jvp.forwardResidual(index)},
+                {"backward_residual", jvp.backwardResidual(index)},
+                {"analytic_change", analyticChange},
+                {"finite_difference_change", finiteDifferenceChange},
+                {"analytic_derivative", analyticDerivative},
+                {"finite_difference_derivative", finiteDifferenceDerivative},
+                {"absolute_derivative_error", absoluteError},
+                {"relative_derivative_error",
+                 reference > 0.0 ? absoluteError / reference : 0.0},
+            });
+        }
     }
 
     writeNewtonJvpProbeCsv(
         resolvePath(cfgDir, cfg.at("output_csv").get<std::string>()),
         rows);
+    std::optional<std::filesystem::path> sampleOutputPath;
+    if (!sampleRows.empty()) {
+        if (!cfg.contains("row_output_csv")) {
+            throw std::invalid_argument(
+                "newton_jvp_probe row_output_csv is required when sample_rows are provided.");
+        }
+        sampleOutputPath =
+            resolvePath(cfgDir, cfg.at("row_output_csv").get<std::string>());
+        if (!sampleOutputPath->parent_path().empty())
+            std::filesystem::create_directories(sampleOutputPath->parent_path());
+        writeNewtonJvpSampleRowCsv(*sampleOutputPath, sampledRows);
+    }
     return {
         {"nodes", problem.mesh.numNodes()},
         {"direction_count", rows.size()},
         {"max_relative_error", maxRelativeError},
+        {"sample_row_count", sampleRows.size()},
+        {"sample_record_count", sampledRows.size()},
+        {"row_output_csv",
+         sampleOutputPath.has_value() ? sampleOutputPath->string() : std::string{}},
         {"directions", rows},
     };
 }

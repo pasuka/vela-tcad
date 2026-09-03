@@ -6,14 +6,14 @@ Full-domain density statistics remain available as characterization and cannot o
 
 | Field | Masked nodes | RMSE | P95 | Maximum | Pass |
 |---|---:|---:|---:|---:|---:|
-| Electrostatic potential [V] | 5611 | 0.00114132 | 0.00228107 | 0.0150803 | True |
-| Electron density [decade] | 5196 | 0.00350584 | 0.00746252 | 0.0361364 | True |
-| Hole density [decade] | 2207 | 0.0113454 | 0.0256416 | 0.100793 | True |
+| Electrostatic potential [V] | 5611 | 0.00109652 | 0.0022881 | 0.0150609 | True |
+| Electron density [decade] | 5196 | 0.0029782 | 0.0065252 | 0.023241 | True |
+| Hole density [decade] | 2207 | 0.00693824 | 0.00776585 | 0.100667 | True |
 
 Overall spatial-state pass: **True**
 
 ## Hole-density localization
 
-The largest full-domain error is 1.6836 decade; the registered reference-significant mask reduces it to 0.100793 decade.
+The largest full-domain error is 2.26142 decade; the registered reference-significant mask reduces it to 0.100667 decade.
 
 The highest errors are concentrated in reference-low-density nodes; see `hole_density_top_errors.csv` and the density-bin table in the JSON report.

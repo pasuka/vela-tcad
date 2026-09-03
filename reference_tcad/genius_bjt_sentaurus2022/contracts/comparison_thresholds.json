@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "wp1_structure": {
     "contact_endpoint_tolerance_um": 1e-8,
     "coordinate_tolerance_um": 1e-8,
@@ -15,9 +15,9 @@
     "required_terminal_currents": ["collector", "base", "emitter"]
   },
   "wp3_wp5_vela_comparison": {
-    "status": "operational, M1 terminal-parity, and spatial-state gates asserted; transport/source fields characterized",
-    "primary_observables": ["Ic-Vce", "Ib-Vce", "Ie-Vce", "beta-Vce", "terminal KCL", "electrostatic potential", "electron density", "hole density"],
-    "diagnostic_observables": ["electron current density", "hole current density", "SRH recombination", "Auger recombination"],
+    "status": "operational, M1 terminal-parity, spatial-state, transport, and recombination gates asserted",
+    "primary_observables": ["Ic-Vce", "Ib-Vce", "Ie-Vce", "beta-Vce", "terminal KCL", "electrostatic potential", "electron density", "hole density", "electron current density", "hole current density", "SRH recombination", "Auger recombination"],
+    "diagnostic_observables": ["electron drift/diffusion decomposition", "hole drift/diffusion decomposition"],
     "required_collector_points": 31,
     "collector_voltage_tolerance_V": 1e-8,
     "maximum_relative_kcl_residual": 1e-6,
@@ -73,7 +73,7 @@
       }
     },
     "transport_source_comparison": {
-      "status": "characterization_only",
+      "status": "asserted",
       "bias": {"VBE_V": 0.7, "VCE_V": 3.0},
       "current_density_reference_fraction": 1e-6,
       "source_rate_reference_fraction": 1e-6,
@@ -81,7 +81,39 @@
         "electron": "SentaurusElectronCurrentDensityVector",
         "hole": "SentaurusHoleCurrentDensityVector"
       },
-      "reason": "Current-density vectors are nodal gradient reconstructions and recombination rates cross or approach zero. They are reported as diagnostic characterization until discretization-aware thresholds are separately registered."
+      "gates": {
+        "current_density": {
+          "electron": {
+            "maximum_p95_absolute_log10_magnitude_error": 0.3,
+            "maximum_normalized_vector_rmse": 0.6,
+            "minimum_global_vector_cosine_similarity": 0.85
+          },
+          "hole": {
+            "maximum_p95_absolute_log10_magnitude_error": 0.5,
+            "maximum_normalized_vector_rmse": 0.6,
+            "minimum_global_vector_cosine_similarity": 0.85
+          }
+        },
+        "recombination": {
+          "srh": {
+            "maximum_p95_absolute_log10_magnitude_error": 0.35,
+            "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
+            "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.25,
+            "maximum_normalized_l1_error": 0.25,
+            "maximum_absolute_shape_total_variation": 0.15,
+            "maximum_peak_location_distance_um": 0.15
+          },
+          "auger": {
+            "maximum_p95_absolute_log10_magnitude_error": 0.5,
+            "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
+            "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.25,
+            "maximum_normalized_l1_error": 0.25,
+            "maximum_absolute_shape_total_variation": 0.15,
+            "maximum_peak_location_distance_um": 0.15
+          }
+        }
+      },
+      "reason": "Initial engineering regression gates registered after the original characterization, not a blind validation. Reference-relative masks avoid near-zero sign crossings; integral, shape, direction, and peak-location checks retain physical sensitivity."
     }
   }
 }

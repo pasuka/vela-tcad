@@ -25,9 +25,9 @@
         },
         "observed": {
           "node_count": 5611,
-          "rmse": 0.0011413171169968306,
-          "p95_absolute_error": 0.0022810702688604856,
-          "maximum_absolute_error": 0.015080326088608209
+          "rmse": 0.0010965184592234174,
+          "p95_absolute_error": 0.0022880984631787893,
+          "maximum_absolute_error": 0.015060897190139366
         },
         "checks": {
           "rmse": true,
@@ -38,9 +38,9 @@
       },
       "full_domain_characterization": {
         "node_count": 5611,
-        "rmse": 0.0011413171169968306,
-        "p95_absolute_error": 0.0022810702688604856,
-        "maximum_absolute_error": 0.015080326088608209
+        "rmse": 0.0010965184592234174,
+        "p95_absolute_error": 0.0022880984631787893,
+        "maximum_absolute_error": 0.015060897190139366
       }
     },
     "electron_density": {
@@ -60,9 +60,9 @@
         },
         "observed": {
           "node_count": 5196,
-          "rmse": 0.003505841570859393,
-          "p95_absolute_error": 0.007462524417363614,
-          "maximum_absolute_error": 0.036136403931896766
+          "rmse": 0.0029782004030305784,
+          "p95_absolute_error": 0.006525197504930524,
+          "maximum_absolute_error": 0.02324100270372753
         },
         "checks": {
           "rmse": true,
@@ -73,9 +73,9 @@
       },
       "full_domain_characterization": {
         "node_count": 5611,
-        "rmse": 0.0037687336179630963,
-        "p95_absolute_error": 0.008254299988894154,
-        "maximum_absolute_error": 0.036136403931896766
+        "rmse": 0.0032395333737299716,
+        "p95_absolute_error": 0.007233810988104494,
+        "maximum_absolute_error": 0.027157298318938317
       }
     },
     "hole_density": {
@@ -95,9 +95,9 @@
         },
         "observed": {
           "node_count": 2207,
-          "rmse": 0.01134543033764906,
-          "p95_absolute_error": 0.025641598657014153,
-          "maximum_absolute_error": 0.1007931430785245
+          "rmse": 0.006938239507374787,
+          "p95_absolute_error": 0.007765845372724895,
+          "maximum_absolute_error": 0.1006674021818803
         },
         "checks": {
           "rmse": true,
@@ -108,122 +108,122 @@
       },
       "full_domain_characterization": {
         "node_count": 5611,
-        "rmse": 0.32320039164417486,
-        "p95_absolute_error": 0.15289324368240131,
-        "maximum_absolute_error": 1.6835999745417674
+        "rmse": 0.17501026892107946,
+        "p95_absolute_error": 0.3146742186889069,
+        "maximum_absolute_error": 2.2614174721076985
       }
     }
   },
   "hole_density_localization": {
     "full_domain": {
       "node_count": 5611,
-      "rmse": 0.32320039164417486,
-      "p95_absolute_error": 0.15289324368240131,
-      "maximum_absolute_error": 1.6835999745417674
+      "rmse": 0.17501026892107946,
+      "p95_absolute_error": 0.3146742186889069,
+      "maximum_absolute_error": 2.2614174721076985
     },
     "by_sentaurus_reference_density": [
       {
         "reference_log10_cm3_range": "[-inf, 0)",
         "node_count": 6,
-        "rmse_decade": 1.1672838601533533,
-        "p95_absolute_error_decade": 1.6702865522302157,
-        "maximum_absolute_error_decade": 1.679546456744286
+        "rmse_decade": 0.5778756847403518,
+        "p95_absolute_error_decade": 0.8385547842822343,
+        "maximum_absolute_error_decade": 0.8424658383894259
       },
       {
         "reference_log10_cm3_range": "[0, 2)",
         "node_count": 1468,
-        "rmse_decade": 0.620640087190962,
-        "p95_absolute_error_decade": 1.679091288988268,
-        "maximum_absolute_error_decade": 1.6835999745417674
+        "rmse_decade": 0.3207527626832439,
+        "p95_absolute_error_decade": 0.7680641890442078,
+        "maximum_absolute_error_decade": 2.2614174721076985
       },
       {
         "reference_log10_cm3_range": "[2, 4)",
         "node_count": 1488,
-        "rmse_decade": 0.08847738877664388,
-        "p95_absolute_error_decade": 0.04527536225847051,
-        "maximum_absolute_error_decade": 1.6791982925677291
+        "rmse_decade": 0.11051121807158591,
+        "p95_absolute_error_decade": 0.07306702649279007,
+        "maximum_absolute_error_decade": 1.297565674918681
       },
       {
         "reference_log10_cm3_range": "[4, 6)",
         "node_count": 182,
-        "rmse_decade": 0.029361243175555107,
-        "p95_absolute_error_decade": 0.056771052757494854,
-        "maximum_absolute_error_decade": 0.15016114162948124
+        "rmse_decade": 0.029350964859087118,
+        "p95_absolute_error_decade": 0.05681778276834173,
+        "maximum_absolute_error_decade": 0.1501971630825265
       },
       {
         "reference_log10_cm3_range": "[6, 8)",
         "node_count": 133,
-        "rmse_decade": 0.04263383606651342,
-        "p95_absolute_error_decade": 0.07793514816020916,
-        "maximum_absolute_error_decade": 0.2529679186108602
+        "rmse_decade": 0.04261908811229992,
+        "p95_absolute_error_decade": 0.07780793908557192,
+        "maximum_absolute_error_decade": 0.25298050168293607
       },
       {
         "reference_log10_cm3_range": "[8, 10)",
         "node_count": 127,
-        "rmse_decade": 0.03380920570616206,
-        "p95_absolute_error_decade": 0.06920196218781757,
-        "maximum_absolute_error_decade": 0.19137813272437754
+        "rmse_decade": 0.033787190504636806,
+        "p95_absolute_error_decade": 0.06905494649478533,
+        "maximum_absolute_error_decade": 0.19146418382928054
       },
       {
         "reference_log10_cm3_range": "[10, 12)",
         "node_count": 124,
-        "rmse_decade": 0.01449553767996894,
-        "p95_absolute_error_decade": 0.032755741406484504,
-        "maximum_absolute_error_decade": 0.058587978549592634
+        "rmse_decade": 0.01445419431668416,
+        "p95_absolute_error_decade": 0.03267170073831796,
+        "maximum_absolute_error_decade": 0.058647997181893174
       },
       {
         "reference_log10_cm3_range": "[12, 14)",
         "node_count": 238,
-        "rmse_decade": 0.021596618978476975,
-        "p95_absolute_error_decade": 0.0353239955515465,
-        "maximum_absolute_error_decade": 0.1007931430785245
+        "rmse_decade": 0.015117253570458499,
+        "p95_absolute_error_decade": 0.02535380760122353,
+        "maximum_absolute_error_decade": 0.1006674021818803
       },
       {
         "reference_log10_cm3_range": "[14, 16)",
         "node_count": 610,
-        "rmse_decade": 0.015284798779450947,
-        "p95_absolute_error_decade": 0.03901905784688803,
-        "maximum_absolute_error_decade": 0.07675349920651797
+        "rmse_decade": 0.005984905755847992,
+        "p95_absolute_error_decade": 0.005466833833019622,
+        "maximum_absolute_error_decade": 0.07649783573465463
       },
       {
         "reference_log10_cm3_range": "[16, 18)",
         "node_count": 921,
-        "rmse_decade": 0.0022117403135524273,
-        "p95_absolute_error_decade": 0.0036376835728297863,
-        "maximum_absolute_error_decade": 0.021377367644806355
+        "rmse_decade": 0.002108907360595097,
+        "p95_absolute_error_decade": 0.0031702780387234952,
+        "maximum_absolute_error_decade": 0.02101199966590883
       },
       {
         "reference_log10_cm3_range": "[18, +inf)",
         "node_count": 314,
-        "rmse_decade": 0.00011639196420814173,
-        "p95_absolute_error_decade": 7.869715956054769e-05,
-        "maximum_absolute_error_decade": 0.0009801018408630569
+        "rmse_decade": 3.335787191755932e-05,
+        "p95_absolute_error_decade": 8.725335655590525e-06,
+        "maximum_absolute_error_decade": 0.0004389491427545522
       }
     ],
     "by_geometric_region": {
       "top_device_y_le_0p5um": {
         "node_count": 2196,
-        "rmse": 0.24227849655115027,
-        "p95_absolute_error": 0.04527536225847051,
-        "maximum_absolute_error": 1.6805495310118619
+        "rmse": 0.11608112042155734,
+        "p95_absolute_error": 0.033405246408357625,
+        "maximum_absolute_error": 0.8446701114472444
       },
       "bulk_y_gt_0p5um": {
         "node_count": 3415,
-        "rmse": 0.3659016368611875,
-        "p95_absolute_error": 0.482427177610984,
-        "maximum_absolute_error": 1.6835999745417674
+        "rmse": 0.20410596620419566,
+        "p95_absolute_error": 0.7100389933013509,
+        "maximum_absolute_error": 2.2614174721076985
       },
       "emitter_window_x2p75_4p25_y_le_0p5um": {
         "node_count": 643,
-        "rmse": 0.01514000440580955,
-        "p95_absolute_error": 0.04527536225847051,
-        "maximum_absolute_error": 0.04527536225847051
+        "rmse": 0.001821696369448664,
+        "p95_absolute_error": 0.002892962342941274,
+        "maximum_absolute_error": 0.002945455763178728
       },
       "outside_emitter_window_y_le_0p5um": {
         "node_count": 1553,
-        "rmse": 0.2879366053951678,
-        "p95_absolute_error": 0.06375570589334013,
-        "maximum_absolute_error": 1.6805495310118619
+        "rmse": 0.13803091656259692,
+        "p95_absolute_error": 0.06179515641424563,
+        "maximum_absolute_error": 0.8446701114472444
       }
     }
   },
@@ -232,12 +232,12 @@
     "threshold_contract": "reference_tcad\\genius_bjt_sentaurus2022\\contracts\\comparison_thresholds.json",
     "sentaurus_field_manifest": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\m1_current_diagnosis\\sentaurus_vce3\\field_manifest.json",
     "sentaurus_nodes": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\m1_current_diagnosis\\sentaurus_vce3\\nodes.csv",
-    "vela_state": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\vela_wp3_wp5\\m1_vce300_state.csv"
+    "vela_state": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\m1_accepted_states\\states\\vce_030.csv"
   },
   "source_sha256": {
-    "threshold_contract": "38e92d4f241074b919cfbc90e6978676da892601a030ee9ad7d10ab96f590b99",
+    "threshold_contract": "58facd3bda1a002e4e4918bfbd8131bc1408e7d3fd059697166651b8778808ae",
     "sentaurus_field_manifest": "f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159",
     "sentaurus_nodes": "b93f00e70a5be270c414dc1838c4c8eb9048c71b234fee158bb9c50c998e8e60",
-    "vela_state": "2f01db379d32330a26c2085de9e987720fcf2c2d27e29144da5225d05682bc66"
+    "vela_state": "3e3d833a3c2d577595bad4ea32ef026210e50681eceefb9466f4ee0ec5dc7ec5"
   }
 }

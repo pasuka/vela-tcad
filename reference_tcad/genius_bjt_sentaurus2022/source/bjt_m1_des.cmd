@@ -60,6 +60,6 @@ Solve {
   ) {
     Coupled { Poisson Electron Hole }
     CurrentPlot(Time=(Range=(0 1) Intervals=30))
-    Plot(FilePrefix="bjt_m1_vce" Time=(0; 0.0333333333333; 0.333333333333; 1) NoOverWrite)
+    Plot(FilePrefix="bjt_m1_vce" Time=(0; 0.333333333333; 0.666666666667; 1) NoOverWrite)
   }
 }

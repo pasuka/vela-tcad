@@ -93,13 +93,14 @@ At VCE=3 V, M0 gives an Ic magnitude ratio Vela/Sentaurus of 1.8431 and beta
 values of 476.64 versus 114.93; it remains a characterization-only numerical
 baseline. The original M1 base-current excess was traced to an electron
 Scharfetter `tau_max` of `3e-8 s` instead of the T-2022.03-SP2 Silicon default
-`1e-5 s`. After correcting that input and rerunning all 31 comparison points,
-M1 gives Ic and Ib ratios of 0.993993 and 1.05219 at 3 V, with beta values of
-44.067 versus 46.646.
+`1e-5 s`. After correcting that input and aligning the effective density of
+states to the T-2022.03-SP2 Silicon values (`Nc=2.8567e19 cm^-3`,
+`Nv=3.1046e19 cm^-3`), the unique accepted-state chain gives Ic and Ib ratios
+of 0.992152 and 0.995171 at 3 V, with beta values of 46.505 versus 46.646.
 
 The asserted M1 gate covers VCE=0.5-3.0 V and limits the maximum absolute
 log10 error of Ic, Ib, Ie, and beta to 0.05 decades each. Observed maxima are
-0.002694, 0.022092, 0.002120, and 0.024735 decades.
+0.003437, 0.002102, 0.003407, and 0.001349 decades.
 
 The spatial-state gate uses the exact common mesh at VBE=0.70 V and VCE=3.00 V.
 Potential is checked on all 5611 nodes. Electron and hole decade errors are
@@ -109,12 +110,21 @@ potential, electron-density, and hole-density gates all pass. The former
 hole concentrations of roughly 1-100 cm^-3; the asserted hole-density maximum
 is 0.10079 decade.
 
-Electron/hole current-density vectors plus SRH and Auger rates are exported and
-compared separately as diagnostic characterization. These reconstructed or
-near-zero-crossing fields do not yet carry asserted thresholds. The final
-`overall_pass` now requires operational, M1 terminal-parity, and spatial-state
-gates simultaneously. See `contracts/comparison_thresholds.json`,
-`comparison/comparison_summary.md`, and `reports/wp3_wp5_execution_report.md`.
+The accepted-state VTK path now exports separate SRH, Auger, total electron and
+hole current density, and legacy-scale Vela drift/diffusion diagnostics. At 3 V the electron
+current-density gate passes. The hole current-density gate fails, while SRH
+passes its magnitude, integral, and shape checks but misses the peak-location
+tolerance by 0.021875 um. Auger fails magnitude, integral, and peak-location
+checks. Consequently the final `overall_pass` is now false and depends on all
+terminal, KCL, spatial-state, current-density, SRH, and Auger gates. See
+`contracts/comparison_thresholds.json`, `comparison/comparison_summary.md`, and
+`reports/transport_source_acceptance_report.md`.
+
+Vela representative exports cover VCE=0, 1, 2, and 3 V. Existing SDevice TDRs
+support direct comparisons at 0, 1, and 3 V; the 2 V SDevice state remains
+missing because the earlier deck saved 0.1 V instead and the VM currently
+rejects the documented SSH key. The updated deck now requests 0, 1, 2, and 3 V
+states on its next trusted rerun.
 
 ## Comparison figures
 
@@ -122,3 +132,23 @@ Publication-ready mesh, M1 spatial-field, terminal-curve, and parity-error
 figures are stored in `figures/`. Their source/output hashes and field-error
 metrics are recorded in `figures/figure_manifest.json`; see
 `figures/README.md` for plotting conventions and the reproduction command.
+
+## Hole-density solver diagnosis
+
+The historical pre-Nc/Nv-alignment full-domain low-hole outlier is localized in
+`hole_density_diagnosis/`. Five exact-mesh state-difference maps show that the
+1.6836-decade density error is explained by a -100 mV `hQF-psi` plateau to
+within 0.0003 decade RMSE where the Sentaurus hole density is below 1e2 cm^-3.
+Carrier-term and Newton-step probes show that a further limited +0.1 V hQF
+update removes this plateau, whereas disabling the update limit is unstable.
+
+Strict `carrier_row_convergence=enforce` with `eps_row=1e-4` removes the
+original plateau but does not converge globally: after 80 iterations, 148
+negligible-density rows still violate the local relative criterion. This is a
+diagnostic result, not a replacement baseline. Reproduce the solver probes and
+figures with:
+
+```powershell
+D:\msys64\ucrt64\bin\python.exe scripts\run_genius_bjt_hole_density_diagnostics.py --phase all
+D:\msys64\ucrt64\bin\python.exe scripts\diagnose_genius_bjt_hole_density.py
+```

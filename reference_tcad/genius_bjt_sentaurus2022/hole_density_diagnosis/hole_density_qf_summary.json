@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "bias": {
+    "vbe_V": 0.7,
+    "vce_V": 3.0
+  },
+  "temperature_K": 300.0,
+  "thermal_decade_voltage_V": 0.05952642933233049,
+  "populations": {
+    "all_nodes": {
+      "delta_log10_holes": {
+        "node_count": 5611,
+        "rmse": 0.3232003916441748,
+        "p95_absolute": 0.15289324368240154,
+        "maximum_absolute": 1.6835999745417674
+      },
+      "qf_predicted_delta_log10_holes": {
+        "node_count": 5611,
+        "rmse": 0.3231486590454412,
+        "p95_absolute": 0.1530610997035581,
+        "maximum_absolute": 1.6835934184992922
+      },
+      "density_relation_residual": {
+        "node_count": 5611,
+        "rmse": 0.005833887592748517,
+        "p95_absolute": 0.017179459309534812,
+        "maximum_absolute": 0.02547209304372431
+      },
+      "delta_psi_V": {
+        "node_count": 5611,
+        "rmse": 0.0011413171169968306,
+        "p95_absolute": 0.0022810702688604856,
+        "maximum_absolute": 0.015080326088608209
+      },
+      "delta_phip_V": {
+        "node_count": 5611,
+        "rmse": 0.01924203949559258,
+        "p95_absolute": 0.009128732715586896,
+        "maximum_absolute": 0.10022021502645462
+      },
+      "delta_phip_minus_psi_V": {
+        "node_count": 5611,
+        "rmse": 0.019235885816505816,
+        "p95_absolute": 0.009111180735032642,
+        "maximum_absolute": 0.10021830465067483
+      }
+    },
+    "sentaurus_holes_lt_1e2_cm3": {
+      "delta_log10_holes": {
+        "node_count": 1474,
+        "rmse": 0.6238369230298707,
+        "p95_absolute": 1.67909434276426,
+        "maximum_absolute": 1.6835999745417674
+      },
+      "qf_predicted_delta_log10_holes": {
+        "node_count": 1474,
+        "rmse": 0.6238118705892459,
+        "p95_absolute": 1.6790736327426128,
+        "maximum_absolute": 1.6835934184992922
+      },
+      "density_relation_residual": {
+        "node_count": 1474,
+        "rmse": 0.00029435007410702724,
+        "p95_absolute": 0.0007347631206379082,
+        "maximum_absolute": 0.0007675261183257565
+      },
+      "delta_psi_V": {
+        "node_count": 1474,
+        "rmse": 0.0004967334516317287,
+        "p95_absolute": 0.0010820605852245645,
+        "maximum_absolute": 0.00306345164517019
+      },
+      "delta_phip_V": {
+        "node_count": 1474,
+        "rmse": 0.03713867876947228,
+        "p95_absolute": 0.09995131406338613,
+        "maximum_absolute": 0.10022021502645462
+      },
+      "delta_phip_minus_psi_V": {
+        "node_count": 1474,
+        "rmse": 0.03713329323129963,
+        "p95_absolute": 0.09994925794323258,
+        "maximum_absolute": 0.10021830465067483
+      }
+    },
+    "sentaurus_holes_lt_1e10_cm3": {
+      "delta_log10_holes": {
+        "node_count": 3404,
+        "rmse": 0.4148508299950357,
+        "p95_absolute": 1.6785276507079867,
+        "maximum_absolute": 1.6835999745417674
+      },
+      "qf_predicted_delta_log10_holes": {
+        "node_count": 3404,
+        "rmse": 0.41481389793450096,
+        "p95_absolute": 1.678358846753453,
+        "maximum_absolute": 1.6835934184992922
+      },
+      "density_relation_residual": {
+        "node_count": 3404,
+        "rmse": 0.002563052570365149,
+        "p95_absolute": 0.00067477169300137,
+        "maximum_absolute": 0.02547209304372431
+      },
+      "delta_psi_V": {
+        "node_count": 3404,
+        "rmse": 0.0013757037588349819,
+        "p95_absolute": 0.00296028918739869,
+        "maximum_absolute": 0.015080326088608209
+      },
+      "delta_phip_V": {
+        "node_count": 3404,
+        "rmse": 0.024703824519114893,
+        "p95_absolute": 0.09988851497309865,
+        "maximum_absolute": 0.10022021502645462
+      },
+      "delta_phip_minus_psi_V": {
+        "node_count": 3404,
+        "rmse": 0.02469239018146662,
+        "p95_absolute": 0.09990670928556111,
+        "maximum_absolute": 0.10021830465067483
+      }
+    },
+    "sentaurus_holes_ge_1e10_cm3": {
+      "delta_log10_holes": {
+        "node_count": 2207,
+        "rmse": 0.011345430337649051,
+        "p95_absolute": 0.025641598657014063,
+        "maximum_absolute": 0.10079314307852508
+      },
+      "qf_predicted_delta_log10_holes": {
+        "node_count": 2207,
+        "rmse": 0.009537760976212199,
+        "p95_absolute": 0.02079528970135722,
+        "maximum_absolute": 0.10080175492860798
+      },
+      "density_relation_residual": {
+        "node_count": 2207,
+        "rmse": 0.008740441288055555,
+        "p95_absolute": 0.02223683074211999,
+        "maximum_absolute": 0.025401748615829577
+      },
+      "delta_psi_V": {
+        "node_count": 2207,
+        "rmse": 0.000626639487971046,
+        "p95_absolute": 0.0012585781520955952,
+        "maximum_absolute": 0.006000406269760394
+      },
+      "delta_phip_V": {
+        "node_count": 2207,
+        "rmse": 0.00023059515745617974,
+        "p95_absolute": 0.0006857436670889774,
+        "maximum_absolute": 0.0010924902459413799
+      },
+      "delta_phip_minus_psi_V": {
+        "node_count": 2207,
+        "rmse": 0.000567748854739155,
+        "p95_absolute": 0.0012378693428531807,
+        "maximum_absolute": 0.006000368541332679
+      }
+    },
+    "minus_100mV_plateau": {
+      "delta_log10_holes": {
+        "node_count": 200,
+        "rmse": 1.6789979247472762,
+        "p95_absolute": 1.6802269192484158,
+        "maximum_absolute": 1.6835999745417674
+      },
+      "qf_predicted_delta_log10_holes": {
+        "node_count": 200,
+        "rmse": 1.6789172914882815,
+        "p95_absolute": 1.6802205152190735,
+        "maximum_absolute": 1.6835934184992922
+      },
+      "density_relation_residual": {
+        "node_count": 200,
+        "rmse": 0.00018963002585791895,
+        "p95_absolute": 0.0004879073815593358,
+        "maximum_absolute": 0.0007675261183257565
+      },
+      "delta_psi_V": {
+        "node_count": 200,
+        "rmse": 0.0001315919981483472,
+        "p95_absolute": 0.0003414615189687883,
+        "maximum_absolute": 0.0007506876192864276
+      },
+      "delta_phip_V": {
+        "node_count": 200,
+        "rmse": 0.09994191443647471,
+        "p95_absolute": 0.10010359307603081,
+        "maximum_absolute": 0.10022021502645462
+      },
+      "delta_phip_minus_psi_V": {
+        "node_count": 200,
+        "rmse": 0.0999399515066049,
+        "p95_absolute": 0.1000175277619201,
+        "maximum_absolute": 0.10021830465067483
+      }
+    }
+  },
+  "plateau": {
+    "node_count": 200,
+    "large_error_node_count": 204,
+    "overlap_node_count": 200,
+    "x_um_min": -0.0,
+    "x_um_max": 0.84375,
+    "y_um_min": -0.0,
+    "y_um_max": 1.625
+  },
+  "maximum_error_node": {
+    "node_id": 589,
+    "x_um": 0.84375,
+    "y_um": 1.0,
+    "sentaurus_holes_cm3": 13.225299818786423,
+    "vela_holes_cm3": 0.27403469518433166,
+    "delta_log10_holes_decade": -1.6835999745417674,
+    "delta_psi_V": 0.0007506876192864276,
+    "delta_phip_V": -0.0994676170313884,
+    "delta_phip_minus_psi_V": -0.10021830465067483,
+    "predicted_delta_log10_holes_decade": -1.6835934184992922,
+    "density_relation_residual_decade": -6.556042475125423e-06,
+    "minus_100mV_plateau": 1
+  }
+}

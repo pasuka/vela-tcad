@@ -179,6 +179,7 @@ RunnerCase makeRunnerCase(const std::string& name)
         {"mesh_file", "mesh.json"},
         {"state_fields_dir", "fields"},
         {"output_state_file", "out/state.csv"},
+        {"output_vtk", "out/state.vtk"},
         {"contacts", nlohmann::json::array({
             {{"name", "anode"}, {"bias", 0.0}},
             {{"name", "cathode"}, {"bias", 0.0}},
@@ -195,6 +196,7 @@ RunnerCase makeRunnerCase(const std::string& name)
             {"line_search", true},
             {"warm_start", true},
             {"verbose", false},
+            {"recombination", nlohmann::json::array({"srh", "auger"})},
         }},
     };
     writeText(c.configPath, config.dump(2));
@@ -255,6 +257,12 @@ TEST_CASE("newton_solve_from_state accepts a converged external field state",
     REQUIRE(status.at("iterations").get<int>() == 0);
     REQUIRE(status.at("initial_residual").get<double>() <= 1.0e-6);
     REQUIRE(std::filesystem::exists(c.dir / "out" / "state.csv"));
+    const std::string vtk = readFile(c.dir / "out" / "state.vtk");
+    REQUIRE(vtk.find("SRHRecombinationCm3PerS") != std::string::npos);
+    REQUIRE(vtk.find("AugerRecombinationCm3PerS") != std::string::npos);
+    REQUIRE(vtk.find("J_n_drift") != std::string::npos);
+    REQUIRE(vtk.find("J_n_diffusion") != std::string::npos);
+    REQUIRE(vtk.find("SentaurusElectronCurrentDensityVector") != std::string::npos);
 }
 
 TEST_CASE("newton_solve_from_state returns nonzero when Newton does not converge",
