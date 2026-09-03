@@ -235,7 +235,7 @@
     "vela_state": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\m1_accepted_states\\states\\vce_030.csv"
   },
   "source_sha256": {
-    "threshold_contract": "58facd3bda1a002e4e4918bfbd8131bc1408e7d3fd059697166651b8778808ae",
+    "threshold_contract": "35ce6e98ce03989617270dec4ec0b4bfcf605ad09ee2f9eeea92b6ede45ef400",
     "sentaurus_field_manifest": "f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159",
     "sentaurus_nodes": "b93f00e70a5be270c414dc1838c4c8eb9048c71b234fee158bb9c50c998e8e60",
     "vela_state": "3e3d833a3c2d577595bad4ea32ef026210e50681eceefb9466f4ee0ec5dc7ec5"

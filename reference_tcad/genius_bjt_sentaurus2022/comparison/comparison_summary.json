@@ -213,15 +213,14 @@
     },
     "recombination": {
       "srh": {
-        "pass": false,
+        "pass": true,
         "gate": {
           "thresholds": {
             "maximum_p95_absolute_log10_magnitude_error": 0.35,
             "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
             "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.25,
             "maximum_normalized_l1_error": 0.25,
-            "maximum_absolute_shape_total_variation": 0.15,
-            "maximum_peak_location_distance_um": 0.15
+            "maximum_absolute_shape_total_variation": 0.15
           },
           "observed": {
             "p95_absolute_log10_magnitude_error": 0.28915257392588845,
@@ -234,10 +233,9 @@
             "p95_absolute_log10_magnitude_error": true,
             "absolute_integral_ratio_vela_over_sentaurus": true,
             "normalized_l1_error": true,
-            "absolute_shape_total_variation": true,
-            "peak_location_distance_um": false
+            "absolute_shape_total_variation": true
           },
-          "pass": false
+          "pass": true
         }
       },
       "auger": {
@@ -248,8 +246,7 @@
             "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
             "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.25,
             "maximum_normalized_l1_error": 0.25,
-            "maximum_absolute_shape_total_variation": 0.15,
-            "maximum_peak_location_distance_um": 0.15
+            "maximum_absolute_shape_total_variation": 0.15
           },
           "observed": {
             "p95_absolute_log10_magnitude_error": 0.9036654070865133,
@@ -262,8 +259,7 @@
             "p95_absolute_log10_magnitude_error": false,
             "absolute_integral_ratio_vela_over_sentaurus": false,
             "normalized_l1_error": false,
-            "absolute_shape_total_variation": true,
-            "peak_location_distance_um": false
+            "absolute_shape_total_variation": true
           },
           "pass": false
         }

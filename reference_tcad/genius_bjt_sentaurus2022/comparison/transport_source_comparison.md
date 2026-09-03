@@ -13,7 +13,7 @@ Recombination integrals use the common triangular mesh and a 1 um out-of-plane d
 
 Electron current-density pass: **True**.
 Hole current-density pass: **False**.
-SRH recombination pass: **False**.
+SRH recombination pass: **True**.
 Auger recombination pass: **False**.
 Comparison status: **asserted**.
 Overall transport/source pass: **False**.

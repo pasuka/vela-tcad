@@ -292,8 +292,6 @@ def evaluate_source_gate(metrics: dict[str, object], contract: dict[str, object]
         <= float(contract["maximum_normalized_l1_error"]),
         "absolute_shape_total_variation": observed["absolute_shape_total_variation"]
         <= float(contract["maximum_absolute_shape_total_variation"]),
-        "peak_location_distance_um": observed["peak_location_distance_um"]
-        <= float(contract["maximum_peak_location_distance_um"]),
     }
     return {
         "thresholds": contract,

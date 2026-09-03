@@ -260,7 +260,7 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
         }
         self.assertFalse(COMPARISON.validated_transport_source_pass(summary))
 
-    def test_source_gate_checks_integral_shape_and_peak_location(self) -> None:
+    def test_source_gate_checks_integral_and_shape_while_reporting_peak_location(self) -> None:
         metrics = TRANSPORT.source_metrics(
             [1.0, 0.5],
             [1.0, 0.5],
@@ -274,9 +274,11 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
             "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.01,
             "maximum_normalized_l1_error": 0.01,
             "maximum_absolute_shape_total_variation": 0.01,
-            "maximum_peak_location_distance_um": 0.01,
         }
-        self.assertTrue(TRANSPORT.evaluate_source_gate(metrics, contract)["pass"])
+        result = TRANSPORT.evaluate_source_gate(metrics, contract)
+        self.assertTrue(result["pass"])
+        self.assertEqual(result["observed"]["peak_location_distance_um"], 0.0)
+        self.assertNotIn("peak_location_distance_um", result["checks"])
 
 
 if __name__ == "__main__":

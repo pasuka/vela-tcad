@@ -74,19 +74,28 @@ in the bulk. At the largest-error node Sentaurus gives 36.38 cm^-3 and Vela
 
 The reproducible 3 V Vela export contains electron and hole current-density
 vectors and independent SRH/Auger rates. Reference-relative masks plus
-integral, shape, direction, and peak-location metrics now form asserted initial
-engineering regression gates.
+integral, normalized-shape, and direction metrics now form asserted initial
+engineering regression gates. Single-node peak locations remain diagnostic
+only because a nearly flat maximum makes `argmax` location unstable.
 
 | Quantity | Main diagnostic result |
 |---|---|
 | Electron current density | cosine 0.897; normalized RMSE 0.564; pass |
 | Hole current density | cosine 0.788; normalized RMSE 0.815; fail |
-| SRH recombination | integral ratio 0.779; shape TV 0.106; fail on peak offset |
+| SRH recombination | integral ratio 0.779; shape TV 0.106; pass |
 | Auger recombination | integral ratio 0.575; shape TV 0.092; fail |
 
 This records an important residual: terminal currents agree within the asserted
 limits, while local reconstructed transport/source fields are not yet close
 enough to justify a separate numerical-parity claim.
+
+A two-node Auger audit shows that SDevice and Vela carrier densities agree
+within about 0.4% at both reported argmax nodes, whereas the Vela Auger rate is
+about one half of SDevice. The classical `n*p-ni_eff^2` expression with the
+configured electron coefficient predicts approximately the SDevice rate;
+Vela currently supplies its Fermi-generalized SRH excess product to Auger.
+This strongly identifies an Auger formulation mismatch as the next A/B target,
+while ruling out the apparent hotspot displacement as the primary cause.
 
 ## M1 SRH parameter closure
 

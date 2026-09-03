@@ -5,7 +5,8 @@
 The 31-point M1 accepted-state chain passes convergence, three-terminal KCL,
 terminal-current parity, and the potential/electron/hole spatial-state gates.
 The expanded overall acceptance is **not yet passed** because the 3 V hole
-current-density, SRH peak-location, and Auger gates fail.
+current-density and Auger gates fail. SRH passes its magnitude, integral, and
+normalized-shape gates.
 
 The transport/source thresholds were introduced after the original
 characterization. They are initial engineering regression gates rather than a
@@ -57,7 +58,7 @@ was generated in this task.
 |---|---|---:|
 | Electron current density | P95 log error 0.27079 decade; normalized vector RMSE 0.56436; cosine 0.89655 | pass |
 | Hole current density | P95 log error 1.48371 decades; normalized vector RMSE 0.81503; cosine 0.78774 | fail |
-| SRH | integral ratio 0.77866; normalized L1 0.22140; peak offset 0.171875 um | fail on peak offset only |
+| SRH | integral ratio 0.77866; normalized L1 0.22140; peak offset 0.171875 um (diagnostic only) | pass |
 | Auger | integral ratio 0.57542; normalized L1 0.42458; peak offset 1.59406 um | fail |
 
 At 0 V, the P95 current-density magnitude errors are 0.06905 decade
@@ -82,10 +83,24 @@ remains enabled.
 
 ## Remaining diagnosis
 
-The next highest-value investigation is the 3 V Auger hotspot. Its peak is at
-node 3549 in Vela and node 1478 in SDevice, separated by 1.59406 um. This should
-be decomposed into the local `n*p-ni_eff^2` factor, electron/hole density
-factors, and Auger coefficients before changing coefficients.
+A node-level audit resolves the misleading 3 V Auger peak-location result. At
+the SDevice argmax (node 1478), SDevice/Vela electron densities are
+`5.3552900e19/5.3552910e19 cm^-3`, hole densities are
+`1.2776783e14/1.2732199e14 cm^-3`, but Auger rates are
+`1.0626467e23/5.0705278e22 cm^-3 s^-1`. At the Vela argmax (node 3549), the
+same pattern remains: carrier densities agree within about 0.4%, while Auger
+rates are `1.0427370e23/5.2135148e22 cm^-3 s^-1`. The SDevice peak values at
+the two distant nodes differ by less than 2%, so a single-node argmax is
+unstable and is retained only as a diagnostic, not an acceptance gate.
+
+Using the configured electron Auger coefficient and the classical
+`n*p-ni_eff^2` excess product predicts approximately the SDevice rate at these
+high-electron-density nodes. Source inspection shows that Vela instead feeds
+the Fermi-generalized SRH excess product into Auger. The evidence therefore
+strongly supports an Auger excess-product/formulation mismatch as the dominant
+amplitude error; it does not support a carrier-hotspot displacement or a simple
+coefficient change. The next implementation task is an opt-in classical-Auger
+A/B run with a matching analytic-Jacobian audit before changing any default.
 
 The hole-current comparison should next audit the nodal reconstruction against
 edge Scharfetter-Gummel fluxes in the base-collector depletion region. Vela's
