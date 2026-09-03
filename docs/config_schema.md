@@ -1983,6 +1983,14 @@ Diagnostics fields:
 - `diagnostics.terminal_balance.enabled`: writes per-contact terminal current
   balance rows. Optional `contacts` selects contacts and `csv_file` overrides
   the default `<sweep csv stem>_terminal_balance.csv`.
+- `diagnostics.poisson_dirichlet_reaction.enabled`: writes the physical
+  unconstrained Poisson reaction at every node of each selected electrostatic
+  Dirichlet contact, together with the summed contact charge in `C/m` of
+  out-of-plane depth. Positive reaction denotes positive electrode charge.
+  This reads the production mixed-material Poisson row before Dirichlet row
+  replacement; it does not reconstruct a P1 boundary gradient. Optional
+  `contacts` defaults to the swept contact and `csv_file` overrides
+  `<sweep csv stem>_poisson_dirichlet_reaction.csv`.
 - `diagnostics.srh_balance.enabled`: integrates the net, generation, and
   recombination parts of SRH over triangular cells in `material` (default
   `"Si"`). It compares the generated current with the electron current at

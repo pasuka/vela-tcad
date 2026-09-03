@@ -1,0 +1,14 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M72 native gate reaction",
+  "status": "accepted",
+  "classification": "native_charge_qualified_full_profile_material_but_not_dominant",
+  "report": "reference_tcad/simplemos_sentaurus2022/native_gate_reaction/m72_native_gate_reaction_report.json",
+  "document": "docs/validation/simplemos_m72_native_gate_reaction_2026-09-03.md",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/native_gate_reaction/m72_native_gate_reaction_stage_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/native_gate_reaction/m72_interface_profile_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/native_gate_reaction/m72_interface_response_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/native_gate_reaction/m72_native_gate_reaction_pair_ledger.csv"
+  ]
+}

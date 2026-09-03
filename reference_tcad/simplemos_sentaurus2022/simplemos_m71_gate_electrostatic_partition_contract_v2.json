@@ -1,0 +1,85 @@
+{
+  "schema": "vela.simplemos.sdevice.m71_gate_electrostatic_partition_contract.v2",
+  "milestone": "M71",
+  "status": "draft_before_freeze",
+  "supersedes": {
+    "contract": "reference_tcad/simplemos_sentaurus2022/simplemos_m71_gate_electrostatic_partition_contract_v1.json",
+    "failure_evidence": "reference_tcad/simplemos_sentaurus2022/simplemos_m71_gate_electrostatic_partition_evidence_v1_failed.json",
+    "reason": "The v1 voltage analysis was valid, but its oxide-only gate-charge observer omitted the two nitride-facing portions of the physical gate boundary and its edge-count acceptance was therefore structurally impossible."
+  },
+  "objective": "Quantify the remaining matched-ni high-NWell error carried by gate-induced Si surface-potential/oxide-drop partition, while auditing full-dielectric gate charge and semiconductor charge only as separately qualified support observables.",
+  "upstream": {
+    "required_m69_status": "frozen",
+    "required_m69_classification": "gate_stage_dominant",
+    "required_m70_status": "frozen",
+    "required_m70_classification": "transport_support_proxy_not_material",
+    "required_m71_v1_status": "failed"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_solves": 0,
+    "state_source": "M69 drain and gate stages on the M65 matched-ni no-BGN path",
+    "dielectric_relative_permittivity": {"SiO2": 3.9, "Nitride": 7.5},
+    "gate_footprint_lateral_um": [-0.125, 0.125],
+    "gate_charge_observer": "Sum of P1 outward displacement flux over every gate boundary edge adjacent to SiO2 or Nitride; the oxide-only component remains separately reported.",
+    "production_default_changed": false
+  },
+  "matrix": {
+    "pair_count": 8,
+    "case_count": 16,
+    "stage_count_per_case": 2,
+    "stages": ["drain", "gate"],
+    "pairs": [
+      {"low_device": "n17", "high_device": "n21", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n17", "high_device": "n21", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.75},
+      {"low_device": "n18", "high_device": "n22", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n18", "high_device": "n22", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.75},
+      {"low_device": "n19", "high_device": "n23", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.9},
+      {"low_device": "n19", "high_device": "n23", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n20", "high_device": "n24", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.85},
+      {"low_device": "n20", "high_device": "n24", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.8}
+    ]
+  },
+  "analysis": {
+    "primary_metric": "median closure of M65 matched-ni NWell current-pair growth by the fixed-node gate-stage surface-potential pair proxy",
+    "pair_closure": "clamp(1-abs(current_pair_growth_dex-surface_pair_proxy_dex)/abs(current_pair_growth_dex),0,1)",
+    "classification_thresholds": {
+      "surface_partition_dominant_minimum_median_closure": 0.8,
+      "surface_partition_material_minimum_median_closure": 0.3,
+      "gate_charge_proxy_maximum_native_relative_error": 0.25
+    },
+    "charge_qualification_policy": "Gate-charge qualification is reported independently. Failure forbids causal use of charge metrics but does not invalidate coordinate, voltage, or surface/oxide partition results.",
+    "classifications": [
+      "gate_surface_partition_dominant_charge_proxy_qualified",
+      "gate_surface_partition_dominant_charge_proxy_unqualified",
+      "gate_surface_partition_material_but_not_dominant_charge_proxy_qualified",
+      "gate_surface_partition_material_but_not_dominant_charge_proxy_unqualified",
+      "gate_surface_partition_not_material_charge_proxy_qualified",
+      "gate_surface_partition_not_material_charge_proxy_unqualified",
+      "execution_or_identity_failure"
+    ]
+  },
+  "acceptance": {
+    "required_case_count": 16,
+    "required_stage_count": 32,
+    "required_pair_count": 8,
+    "maximum_coordinate_error_um": 1e-10,
+    "maximum_gate_partition_identity_error_V": 1e-10,
+    "maximum_sentaurus_gate_voltage_error_V": 1e-10,
+    "minimum_full_dielectric_gate_boundary_edge_count": 40,
+    "production_reference_must_not_be_replaced": true
+  },
+  "interpretation_guards": [
+    "surface potential and oxide drop are complementary voltage-partition views, not independent causal knobs",
+    "unqualified gate-charge or integrated semiconductor-charge proxies cannot be used as causal closure",
+    "no production reference replacement"
+  ],
+  "closed_topic_guards": [
+    "no HFS tuning",
+    "no SG current-kernel investigation",
+    "no contact-current extraction investigation",
+    "no quasi-Fermi packing investigation",
+    "no BGN or Nc/Nv tuning",
+    "no mesh or convergence tuning"
+  ]
+}

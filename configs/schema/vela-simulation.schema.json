@@ -222,6 +222,23 @@
               },
               "type": "object"
             },
+            "poisson_dirichlet_reaction": {
+              "additionalProperties": false,
+              "properties": {
+                "contacts": {
+                  "items": {"minLength": 1, "type": "string"},
+                  "type": "array"
+                },
+                "csv_file": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "enabled": {
+                  "type": "boolean"
+                }
+              },
+              "type": "object"
+            },
             "newton_history": {
               "additionalProperties": false,
               "properties": {
