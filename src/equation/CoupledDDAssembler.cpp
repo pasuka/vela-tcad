@@ -4515,7 +4515,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     phinOffset() + i, phinOffset() + j,
                 };
                 const Real fixedMobility =
-                    vectorQfMobility && !mobilityConfig_.contactElectricFieldFallback
+                    !transportMobilityDerivative ||
+                        (vectorQfMobility &&
+                         !mobilityConfig_.contactElectricFieldFallback)
                     ? mun : -1.0;
                 for (int k = 0; k < 4; ++k) {
                     const Real step = 1.0e-6 * std::max(1.0, std::abs(vals[k]));
@@ -4586,7 +4588,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     phipOffset() + i, phipOffset() + j,
                 };
                 const Real fixedMobility =
-                    vectorQfMobility && !mobilityConfig_.contactElectricFieldFallback
+                    !transportMobilityDerivative ||
+                        (vectorQfMobility &&
+                         !mobilityConfig_.contactElectricFieldFallback)
                     ? mup : -1.0;
                 for (int k = 0; k < 4; ++k) {
                     const Real step = 1.0e-6 * std::max(1.0, std::abs(vals[k]));

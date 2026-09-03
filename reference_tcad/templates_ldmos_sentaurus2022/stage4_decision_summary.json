@@ -2,7 +2,7 @@
   "schema": "vela.templates_ldmos.stage4_decision_summary.v1",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
   "generated_on": "2026-09-03",
-  "status": "blocked_at_vela_d5_first_nonzero_drain_bias",
+  "status": "vela_d5_vg4_full_curve_running_after_first_step_reclose",
   "sentaurus_ablation": {
     "status": "pass",
     "variants": [
@@ -63,6 +63,16 @@
       "top_poisson_node": 695,
       "top_poisson_node_x_um": -9.976355,
       "top_poisson_node_y_um": 10.119157
+    },
+    "lagged_mobility_jacobian_reclose": {
+      "status": "pass",
+      "jacobian_field_derivatives": false,
+      "drain_V": 0.01,
+      "newton_iterations": 4,
+      "final_poisson_block": 7.693212818810222e-10,
+      "final_electron_block": 9.271133321828182e-13,
+      "drain_current_A_per_um": 9.254405994855323e-7,
+      "full_vg4_curve": "running_not_yet_qualified"
     }
   },
   "evidence_sha256": {

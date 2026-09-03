@@ -2664,6 +2664,52 @@ TEST_CASE("NewtonSolver: constant-field contact HFS Jacobian uses limited mobili
     REQUIRE(jvp.relativeError < 1.0e-6);
 }
 
+TEST_CASE("NewtonSolver: Fermi contact HFS honors frozen field Jacobian",
+          "[newton][diagnostics][mobility][contact]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg;
+    cfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    cfg.recombination = {"none"};
+    cfg.warmStart = true;
+    cfg.carrierStatistics.model = "fermi_dirac";
+    cfg.mobility.model = "constant_field";
+    cfg.mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+    cfg.mobility.contactElectricFieldFallback = true;
+    cfg.mobility.electronField.saturationVelocity = 1.0e4;
+    cfg.mobility.holeField.saturationVelocity = 1.0e4;
+
+    const int N = static_cast<int>(mesh.numNodes());
+    DDSolution state;
+    state.psi = VectorXd::LinSpaced(N, -0.2, 0.2);
+    state.phin = VectorXd::LinSpaced(N, -0.03, 0.02);
+    state.phip = VectorXd::LinSpaced(N, 0.025, -0.015);
+
+    DDSolution perturbation;
+    perturbation.psi = VectorXd::Zero(N);
+    perturbation.phin = VectorXd::Zero(N);
+    perturbation.phip = VectorXd::Zero(N);
+    perturbation.psi(4) = 1.0e-7;
+
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.1}, {"cathode", 0.0}};
+    NewtonSolver liveSolver(mesh, matdb, doping, biases, cfg);
+    const NewtonDirectionalDerivativeEvaluation live =
+        liveSolver.evaluateDirectionalDerivative(state, perturbation);
+
+    cfg.mobility.jacobianFieldDerivatives = false;
+    NewtonSolver frozenSolver(mesh, matdb, doping, biases, cfg);
+    const NewtonDirectionalDerivativeEvaluation frozen =
+        frozenSolver.evaluateDirectionalDerivative(state, perturbation);
+
+    REQUIRE((live.finiteDifferenceJv - frozen.finiteDifferenceJv).norm() ==
+            Catch::Approx(0.0).margin(1.0e-12));
+    REQUIRE((live.analyticJv - frozen.analyticJv).norm() > 1.0e-12);
+    REQUIRE(live.relativeError < frozen.relativeError);
+}
+
 TEST_CASE("NewtonSolver: evaluateJacobianBlockAudit reports finite block rows",
           "[newton][diagnostics][coupled]")
 {

@@ -1,0 +1,50 @@
+{
+  "schema": "vela.templates_ldmos.stage4_vd10mv_newton_audit_summary.v1",
+  "generated_on": "2026-09-03",
+  "contract": {
+    "gate_bias_V": 4.0,
+    "drain_bias_V": 0.01,
+    "predictor": false,
+    "ialmob": false,
+    "carrier_transport_couples": "templates_ldmos_external_averagebox",
+    "contact_boundary_reconstruction": "legacy_node_local"
+  },
+  "failed_live_jacobian_run": {
+    "iteration_0": {"psi_block": 66.54108453599615, "electron_block": 14497.560342210165},
+    "best_iteration_3": {"psi_block": 2.2093013453285506, "electron_block": 3229.0777009936396},
+    "final_iteration_40": {"psi_block": 18.129383589302556, "electron_block": 20034.7160797921},
+    "final_top_electron_nodes": [687, 682, 683, 675, 702, 713, 695]
+  },
+  "row_scaling": {
+    "classification": "inactive_at_hotspots",
+    "reason": "recombination/source magnitudes are far below the configured flux-fraction threshold, so hotspot continuity weights remain one"
+  },
+  "hotspot_jvp": {
+    "one_ring_nodes": 60,
+    "best_max_electron_relative_error": 0.000722436693286827,
+    "final_max_electron_relative_error": 0.00228226077872241,
+    "final_directions_over_1e_4": 7,
+    "classification": "contact-cell ElectricField fallback has omitted non-endpoint potential derivatives, but the observed global JVP error is secondary"
+  },
+  "configuration_contract_fix": {
+    "defect": "jacobian_field_derivatives=false was ignored by the Fermi-Dirac transport branch",
+    "fix": "freeze edge mobility whenever transport mobility derivatives are disabled",
+    "regression_test": "NewtonSolver: Fermi contact HFS honors frozen field Jacobian",
+    "test_status": "pass"
+  },
+  "fixed_state_mobility_jacobian_ab": {
+    "best": {"frozen_over_live_raw_step": 0.2073473587869958, "frozen_over_live_trial_electron_residual": 0.1654469011144118},
+    "final": {"frozen_over_live_trial_electron_residual": 0.25335196442989777}
+  },
+  "frozen_mobility_reclose": {
+    "status": "pass",
+    "newton_iterations_at_10mV": 4,
+    "final_psi_block": 7.693212818810222e-10,
+    "final_electron_block": 9.271133321828182e-13,
+    "drain_current_A_per_um": 9.254405994855323e-7
+  },
+  "full_curve": {
+    "status": "running_not_yet_qualified",
+    "policy": "do not declare the 31-point gate passed until the run and curve comparison both finish"
+  }
+}
