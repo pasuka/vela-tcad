@@ -146,3 +146,39 @@ The remaining failure is therefore a low-current-tail magnitude discrepancy,
 not a principal-current-vector recovery failure. SDevice exposes only nodal
 current vectors here, so its internal directed-edge flux remains unavailable
 as a strict edge oracle.
+
+## Low-current tail localization
+
+The unchanged `1e-6` mask selects 2121 nodes; 180 nodes (8.49%) exceed
+0.5 decade. All 180 have lower Vela magnitude and lie in the p-type base; 179
+are interior nodes, and 144 lie at `y=0.50..0.75 um`. By SDevice current
+direction, 141 are `+x`, 27 are `-y`, and 12 are `+y`. No n-type emitter-side,
+contact, contact-one-ring, or emitter-base-junction node exceeds 0.5 decade.
+
+The discrepancies are explicitly confined to weak currents. All 1700 nodes at
+or above `1e-2` of the SDevice peak stay below 0.5 decade and contain 99.991%
+of the reference-current squared magnitude. In the `[1e-5,1e-4)` and
+`[1e-6,1e-5)` peak-relative bins, 53/63 and 50/52 nodes exceed 0.5 decade,
+respectively.
+
+Three checks distinguish the remaining hypotheses:
+
+- Five nodal recovery weights change global P95 by only 0.0069 decade, so the
+  choice among uniform/primal/dual weighting does not explain the tail.
+- On the 180 tail nodes, SDevice/Vela hole density, mobility, and common-mesh
+  quasi-Fermi-gradient P95 differences are only 0.0322, 0.0043, and 0.0070
+  decade. These local model factors are too close to explain the median
+  1.241-decade current ratio directly.
+- SDevice current on these nodes is a median 22.2 times its own
+  `q*mu*p*|grad(phi_p)|` nodal proxy, while Vela is 1.000 times its proxy. A
+  SDevice nodal-vector projection/recovery round trip has only 0.0461-decade
+  global P95 and does not make the Vela comparison closer.
+
+The strongest current evidence therefore favors an SDevice-specific
+weak-current element-to-node construction or extrapolation effect, rather than a
+Vela local-state, mobility, or SG recovery-weight defect. This remains a
+best-supported working hypothesis rather than a strict proof because the stored
+SDevice TDR does not expose its directed-edge transport flux. The formal gate
+is intentionally unchanged and remains failed. Reproduce with
+`scripts/diagnose_genius_bjt_hole_current_tail.py`; full strata and source
+hashes are recorded in `reports/hole_current_tail_diagnosis.json`.

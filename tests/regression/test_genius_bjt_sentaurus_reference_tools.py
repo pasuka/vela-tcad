@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -53,6 +54,16 @@ TRANSPORT_SPEC = importlib.util.spec_from_file_location(
 assert TRANSPORT_SPEC is not None and TRANSPORT_SPEC.loader is not None
 TRANSPORT = importlib.util.module_from_spec(TRANSPORT_SPEC)
 TRANSPORT_SPEC.loader.exec_module(TRANSPORT)
+
+SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "scripts"
+sys.path.insert(0, str(SCRIPTS_DIR))
+TAIL_SCRIPT = SCRIPTS_DIR / "diagnose_genius_bjt_hole_current_tail.py"
+TAIL_SPEC = importlib.util.spec_from_file_location(
+    "diagnose_genius_bjt_hole_current_tail", TAIL_SCRIPT
+)
+assert TAIL_SPEC is not None and TAIL_SPEC.loader is not None
+TAIL = importlib.util.module_from_spec(TAIL_SPEC)
+TAIL_SPEC.loader.exec_module(TAIL)
 
 
 class GeniusBjtReferenceToolsTest(unittest.TestCase):
@@ -280,6 +291,23 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
         self.assertIn("p95_absolute_log10_magnitude_error", result["observed"])
         self.assertNotIn("p95_absolute_log10_magnitude_error", result["checks"])
         self.assertNotIn("peak_location_distance_um", result["checks"])
+
+    def test_hole_current_tail_uses_fixed_reference_magnitude_bins(self) -> None:
+        self.assertEqual(TAIL.magnitude_bin(1.0e-6), "[1e-6,1e-5)")
+        self.assertEqual(TAIL.magnitude_bin(1.0e-4), "[1e-4,1e-3)")
+        self.assertEqual(TAIL.magnitude_bin(1.0e-2), "[1e-2,1]")
+
+    def test_hole_current_tail_region_prefers_doping_polarity(self) -> None:
+        self.assertEqual(TAIL.electrical_region(3.5, 0.2, -1.0e17), "p_base")
+        self.assertEqual(TAIL.electrical_region(3.5, 0.2, 1.0e19), "n_emitter_side")
+        self.assertEqual(TAIL.electrical_region(3.5, 1.8, 1.0e19), "nplus_collector")
+
+    def test_hole_current_tail_weighted_recovery_solves_two_components(self) -> None:
+        recovered, condition = TAIL.solve_weighted_vector(
+            [(2.0, 1.0, 0.0, 3.0), (4.0, 0.0, 1.0, -2.0)]
+        )
+        self.assertEqual(recovered, (3.0, -2.0))
+        self.assertEqual(condition, 2.0)
 
 
 if __name__ == "__main__":

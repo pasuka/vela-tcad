@@ -141,8 +141,15 @@ and hole normalized vector RMSE to 0.0351 and 0.0622, with cosine similarities
 of 0.9994 and 0.9981. The original hole P95 gate still fails at 0.828 decade,
 but mask sensitivity localizes that residual to low-current-tail nodes rather
 than the principal current field, carrier state, or terminal-current parity.
-Reproduce with
-`scripts/diagnose_genius_bjt_hole_current_edges.py`.
+The follow-up stratification finds 180 nodes over 0.5 decade: all are in the
+p-type base, 179 are interior, 144 are at y=0.50-0.75 um, and all have lower
+Vela magnitude. On these nodes, density/mobility/QF-gradient P95 differences
+remain at 0.0322/0.0043/0.0070 decade, while SDevice current is a median 22.2
+times its own local transport proxy and Vela is 1.000 times. This favors a
+SDevice weak-current node-field construction effect, subject to the missing
+SDevice directed-edge oracle. Reproduce with
+`scripts/diagnose_genius_bjt_hole_current_edges.py` and
+`scripts/diagnose_genius_bjt_hole_current_tail.py`.
 
 ## Comparison figures
 

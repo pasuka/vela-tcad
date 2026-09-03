@@ -107,6 +107,15 @@ mask, the hole P95 remains 0.828 decade; it falls to 0.351 decade at `1e-4` and
 0.0427 decade at `1e-2`. The original mask and 0.5-decade threshold remain in
 force so the report does not move the acceptance goalpost.
 
+The follow-up tail audit finds 180 nodes above 0.5 decade, all in the p-type
+base and 179 in the interior; 144 lie at y=0.50-0.75 um. All 180 have lower
+Vela magnitude. Density, mobility, and common-mesh hole-QF-gradient P95
+differences on these nodes are only 0.0322, 0.0043, and 0.0070 decade. SDevice
+current is nevertheless a median 22.2 times its local `q*mu*p*|grad(phi_p)|`
+proxy, compared with 1.000 for Vela. This makes SDevice weak-current
+element-to-node field construction the leading explanation; it remains an
+inference until an SDevice directed-edge current oracle is available.
+
 ## M1 SRH parameter closure
 
 The original Vela M1 deck used an electron `tau_max` of `3e-8 s`. A direct
