@@ -5,7 +5,7 @@ by Vela. It describes fields currently parsed by the C++ Poisson, DC sweep, and
 single-bias Newton paths.
 
 Use this file as the field-level reference. Use
-[examples.md](examples.md) for deck support status and
+[reference_tcad/README.md](../reference_tcad/README.md) for validated fixture status and
 [architecture.md](architecture.md) for solver path boundaries.
 
 Scope and conventions:
@@ -41,7 +41,6 @@ Scope and conventions:
 | boundaries | array | Optional | Explicit Poisson boundary segments (Neumann/insulating/symmetry); see below. |
 | solver | object | Optional | Gummel/Newton settings for DD sweep and Newton solve. |
 | sweep | object | Required for dc_sweep | Sweep mode, range, outputs, and diagnostics controls. |
-| regression | object | Optional | Regression assertions consumed by `scripts/run_regression.py`. |
 
 ## Simulation type dispatch
 
@@ -1955,182 +1954,6 @@ Minimal contact and sweep fragments:
 
 For off-state high-field diagnostics, set `sweep.mode` to `bv_reverse` and add
 `breakdown.max_electric_field_V_per_m`, `breakdown.current_jump_ratio`, and
-`breakdown.non_convergence` under the sweep block. See
-`examples/nmos2d_mos_dd/simulation_bv.json` for the CI smoke deck. This example
-family is an engineering prototype and is not a calibrated MOSFET model.
-
-## regression block
-
-Regression fields are optional and consumed by the regression runner.
-
-### regression.dc_sweep
-
-Supported fields include:
-- expected_rows
-- max_abs_attempted_step
-- max_abs_accepted_step
-- max_retry_count
-- require_monotone_abs_current
-- require_monotone_max_field
-- min_converged_rows
-
-Also supported:
-- allow_nonconverged_final_bv_point
-- current_monotone_abs_tolerance
-- current_monotone_rel_tolerance
-- max_field_monotone_abs_tolerance
-- max_field_monotone_rel_tolerance
-- min_max_electric_field_V_per_m
-- max_max_electric_field_V_per_m
-- allow_zero_capacitance
-- expected_zero_capacitance_rows
-- min_nonzero_capacitance_rows
-
-### regression (top-level)
-
-Common fields used by examples:
-- declared_converged
-- dc_sweep: { ... }
-- example-specific keys used by dedicated checks (for example MOS interface probes)
-- ldmos_iv: optional regression-runner settings for the LDMOS DD-IV smoke check,
-  including `drain_current_sign`, `current_monotone_abs_tolerance`, and
-  `current_monotone_rel_tolerance`
-- mos: optional Id-Vd / generated Id-Vg trend settings for MOS examples,
-  including `device`, `drain_current_sign`, and nested `idvg` sweep controls.
-- surface_mobility: optional comparison block for a surface-mobility variant
-  against a baseline Id-Vg deck. Fields include `baseline_config`,
-  `baseline_csv`, and `current_ratio_tolerance`.
-- schottky_iv: optional Schottky IV trend block with current sign and monotonic
-  tolerance fields.
-- ldmos_fieldplate_trend: optional LDMOS field-plate comparison block with
-  `baseline_config`, optional baseline/variant field columns, and
-  `max_field_ratio_limit`.
-- igbt_high_injection: optional high-injection IV comparison block with
-  baseline CSV/config fields and stored-charge monotonicity settings.
-- igbt_charge_cv: optional stored-charge and multi-terminal CV trend checks.
-- igbt_bv: optional BV/impact-ionization comparison block with baseline config,
-  bias-match tolerance, and current multiplier tolerance.
-
-## Minimal examples
-
-Poisson with explicit boundary/contact types:
-
-```json
-{
-  "simulation_type": "poisson",
-  "mesh_file": "mesh.json",
-  "output_vtk": "outputs/result.vtk",
-  "doping": [
-    { "region": "silicon", "donors": 1e21, "acceptors": 0.0 }
-  ],
-  "contacts": [
-    { "name": "anode", "type": "ohmic", "bias": 0.0 },
-    { "name": "gate", "type": "metal_gate", "bias": 1.0 }
-  ],
-  "boundaries": [
-    { "name": "left", "type": "symmetry", "node_ids": [0, 3, 6] },
-    { "name": "right", "type": "insulating", "node_ids": [2, 5, 8] }
-  ]
-}
-```
-
-Newton solve initialized from external scalar fields:
-
-```json
-{
-  "simulation_type": "newton_solve_from_state",
-  "mesh_file": "mesh.json",
-  "state_fields_dir": "path/to/state_fields",
-  "output_state_file": "outputs/minus20_from_state.csv",
-  "output_vtk": "outputs/minus20_from_state.vtk",
-  "doping": [
-    { "region": "n_region", "donors": 1e23, "acceptors": 0.0 },
-    { "region": "p_region", "donors": 0.0, "acceptors": 1e23 }
-  ],
-  "contacts": [
-    { "name": "anode", "type": "ohmic", "bias": -20.0 },
-    { "name": "cathode", "type": "ohmic", "bias": 0.0 }
-  ],
-  "solver": {
-    "method": "newton",
-    "max_iter": 40,
-    "warm_start": true,
-    "line_search": true
-  }
-}
-```
-
-DC sweep with Gummel:
-
-```json
-{
-  "simulation_type": "dc_sweep",
-  "mesh_file": "mesh.json",
-  "output_csv": "outputs/iv.csv",
-  "doping": [
-    { "region": "n_region", "donors": 1e23, "acceptors": 0.0 },
-    { "region": "p_region", "donors": 0.0, "acceptors": 1e23 }
-  ],
-  "contacts": [
-    { "name": "anode", "type": "ohmic", "bias": 0.0 },
-    { "name": "cathode", "type": "ohmic", "bias": 0.0 }
-  ],
-  "solver": {
-    "method": "gummel",
-    "max_iter": 80,
-    "reltol": 1e-5,
-    "damping_psi": 0.5,
-    "temperature_K": 300.0
-  },
-  "sweep": {
-    "mode": "iv",
-    "contact": "anode",
-    "start": 0.0,
-    "stop": 0.5,
-    "step": 0.25,
-    "current_contact": "anode",
-    "write_vtk": true,
-    "vtk_prefix": "outputs/iv"
-  }
-}
-```
-
-
-## power-device regression block examples
-
-LDMOS/IGBT decks can combine `regression.dc_sweep` with device-specific trend
-blocks while staying explicitly prototype-level:
-
-```json
-"regression": {
-  "dc_sweep": {
-    "expected_rows": 7,
-    "min_converged_rows": 6,
-    "require_monotone_abs_current": true,
-    "require_monotone_max_field": true
-  },
-  "ldmos_fieldplate_trend": {
-    "baseline_config": "simulation_bv.json",
-    "max_field_ratio_limit": 1.20
-  },
-  "igbt_high_injection": {
-    "baseline_config": "simulation_iv.json",
-    "baseline_csv": "outputs/igbt2d_iv_baseline.csv",
-    "baseline_final_current_min_ratio": 1.0,
-    "require_stored_charge_monotone": true,
-    "stored_charge_monotone_direction": "either",
-    "stored_charge_monotone_abs_tolerance": 1e-24,
-    "stored_charge_monotone_rel_tolerance": 1e-8
-  },
-  "igbt_charge_cv": {
-    "require_stored_charge_monotone": true,
-    "stored_charge_monotone_direction": "either",
-    "stored_charge_monotone_abs_tolerance": 1e-24,
-    "stored_charge_monotone_rel_tolerance": 1e-8
-  }
-}
-```
-
-These checks are trend validation guards (finite outputs + directional checks),
-not calibrated silicon sign-off criteria. `stored_charge_monotone_direction` accepts
-`"nondecreasing"`, `"nonincreasing"`, or `"either"`.
+`breakdown.non_convergence` under the sweep block. The corresponding fields are
+exercised by focused unit tests. This configuration family is an engineering
+prototype and is not a calibrated MOSFET model.

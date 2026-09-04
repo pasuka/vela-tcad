@@ -87,17 +87,6 @@ ctest --test-dir build --output-on-failure -R sentaurus
 
 ## Checked-In Validation Chains
 
-- `pn_diode`: 2D abrupt silicon PN diode with forward IV, reverse
-  quasi-static CV, and reverse BV/max-field diagnostics.
-- `nmos2d`: mixed Si/SiO2 NMOS prototype with interface charge, surface
-  mobility, Id-Vd, Id-Vg, multi-terminal CV, and BV diagnostics.
-- `pmos2d`: mixed Si/SiO2 PMOS prototype with the complementary polarity
-  checks.
-- `ldmos2d`: mixed Si/SiO2 LDMOS-like engineering trend validation for
-  low-bias DD-IV, BV diagnostics, and field-plate max-field comparison.
-- `igbt2d`: IGBT-like engineering trend validation for low-current IV,
-  high-injection IV, stored charge proxy CV, BV diagnostics, and
-  impact-ionization smoke diagnostics.
 - `bvmethods_sentaurus2018`: Sentaurus Training NMOS BV method inputs covering
   ABA, external resistor, voltage-to-current, continuation, and transient
   approaches, plus the corresponding supported Vela template mapping.
@@ -109,5 +98,11 @@ ctest --test-dir build --output-on-failure -R sentaurus
   TransportModels inputs for matched DD/electron-DG Id-Vg and Id-Vd runs,
   including SDE/SDevice sources, neutral mesh/doping inputs, frozen Vela
   contracts, and the strict 12-stage continuous-scan configurations.
+- `genius_bjt_sentaurus2022`: the Genius TCAD two-dimensional NPN BJT rebuilt
+  with Sentaurus SDE/SDevice T-2022.03-SP2 and imported on common meshes into
+  Vela.  The reusable fixture covers 31-point terminal curves, common-mesh
+  potential/carrier fields, conservative section fluxes, SRH/Auger sources,
+  local mesh sensitivity, and diagnostic current-vector recovery.  See its
+  `CASE_SUMMARY.md` for the current acceptance boundary.
 
 See `docs/validation/` for the hand-written validation summaries.

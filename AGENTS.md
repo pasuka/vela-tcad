@@ -121,7 +121,6 @@ ctest --test-dir build --output-on-failure -R python_api
 For Windows debugging, use UCRT64 GDB from `D:\msys64\ucrt64\bin` against the Debug build:
 
 ```bash
-gdb --args build/vela_example_runner.exe --config examples/pn_diode/simulation.json
 gdb --args build/test_poisson.exe
 ```
 

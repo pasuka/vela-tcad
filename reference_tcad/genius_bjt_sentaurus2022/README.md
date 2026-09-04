@@ -5,6 +5,10 @@ This fixture reproduces the two-dimensional NPN BJT shipped with Genius TCAD
 then imports the accepted structure into Vela for the WP3-WP5 common-input
 comparison.
 
+For a concise Chinese status summary, acceptance boundary, reproduction
+entry points, and report index, start with `CASE_SUMMARY.md`.  The checked-in
+machine inventory is `genius_bjt_sentaurus2022_reference.json`.
+
 ## Frozen source contract
 
 - Device: 6 um x 2 um silicon rectangle, 300 K.

@@ -1,8 +1,8 @@
 # Vela Documentation
 
 This directory is organized around current project behavior: build it, choose
-a configuration schema, run examples, import reference fixtures, and inspect
-validation evidence.
+a configuration schema, import reference fixtures, and inspect validation
+evidence.
 
 ## Current References
 
@@ -11,8 +11,6 @@ validation evidence.
 - [Config schema](config_schema.md): implementation-aligned JSON field
   reference for Poisson, DC sweeps, Newton, unit-scaling input mode, contacts,
   boundaries, solver options, and regression blocks.
-- [Examples](examples.md): support matrix for every checked-in example deck and
-  the regression expectations tied to those decks.
 - [Sentaurus import](sentaurus_import.md): HDF5/TDR import prerequisites,
   `sentaurus_import` CLI usage, and end-to-end conversion workflow.
 - [Sentaurus VMware SSH workflow](sentaurus_vm_ssh_workflow.md): Host-only
@@ -50,6 +48,6 @@ summary first, then follow its links to the relevant evidence. Design specs and
 the small number of execution plans still referenced by retained evidence are
 provenance records, not active work queues.
 
-Treat the root `README.md`, this index, `config_schema.md`, `examples.md`,
-configuration templates, CMake targets, tests, and current source code as the
-source of truth for current behavior.
+Treat the root `README.md`, this index, `config_schema.md`, checked-in
+`reference_tcad/` fixtures, CMake targets, tests, and current source code as
+the source of truth for current behavior.

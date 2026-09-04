@@ -1151,43 +1151,6 @@ TEST_CASE("QfBoundsGuard ignores finite QF excursions below the carrier density 
     REQUIRE_FALSE(eval.valid());
     CHECK(eval.violations.at(0).variable == "phin");
 }
-Real runMosExampleDrainCurrentAtGate(const std::string& exampleName, Real gateBias, Real drainBias)
-{
-    const auto dir = makeUniqueSweepDir();
-    const ScopedDirectoryCleanup cleanup{dir};
-    const std::filesystem::path src = std::filesystem::path(VELA_SOURCE_DIR) / "examples" / exampleName;
-    std::filesystem::copy(src, dir, std::filesystem::copy_options::recursive);
-    std::filesystem::create_directories(dir / "outputs");
-
-    const auto cfgPath = dir / "simulation_iv.json";
-    std::ifstream input(cfgPath);
-    nlohmann::json cfg;
-    input >> cfg;
-    bool foundGateContact = false;
-    for (auto& contact : cfg["contacts"]) {
-        if (contact.at("name").get<std::string>() == "gate") {
-            contact["bias"] = gateBias;
-            foundGateContact = true;
-        }
-    }
-    REQUIRE(foundGateContact);
-    cfg["output_csv"] = "outputs/mos_idvd_test.csv";
-    cfg["sweep"]["start"] = drainBias;
-    cfg["sweep"]["stop"] = drainBias;
-    cfg["sweep"]["step"] = (drainBias >= 0.0) ? 0.05 : -0.05;
-    cfg["sweep"]["write_vtk"] = false;
-    std::ofstream(cfgPath) << cfg.dump(2);
-
-    DCSweep sweep;
-    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
-    REQUIRE(result.points.size() == 1);
-    const DCSweepPoint& point = result.points.front();
-    REQUIRE(point.converged);
-    REQUIRE(std::isfinite(point.totalCurrent));
-    REQUIRE(point.iterations > 0);
-    return point.totalCurrent;
-}
-
 } // namespace
 
 TEST_CASE("DCSweep: PN diode forward sweep writes CSV and finite monotonic IV data", "[dc_sweep]")
@@ -3493,42 +3456,6 @@ TEST_CASE("DCSweep: contact current reporting policy preserves initial endpoint 
             Catch::Approx(edgeHoleCurrent).margin(1.0e-18));
 }
 
-TEST_CASE("DCSweep: NMOS and PMOS unit_scaling low-bias smoke sweeps converge",
-          "[dc_sweep][scaling][dd_gummel]")
-{
-    const std::vector<std::string> devices = {"nmos2d_dd", "pmos2d_dd"};
-
-    for (const std::string& device : devices) {
-        INFO(device);
-        const auto dir = makeUniqueSweepDir();
-        const ScopedDirectoryCleanup cleanup{dir};
-        const std::filesystem::path src = std::filesystem::path(VELA_SOURCE_DIR) / "examples" / device;
-        std::filesystem::copy(src, dir, std::filesystem::copy_options::recursive);
-        std::filesystem::create_directories(dir / "outputs");
-
-        const auto meshPath = dir / "mesh.json";
-        const auto cfgPath = dir / "simulation_iv.json";
-        convertMeshToMicrometersInPlace(meshPath);
-
-        std::ifstream cfgIn(cfgPath);
-        nlohmann::json cfg;
-        cfgIn >> cfg;
-        cfg["scaling"] = { {"mode", "unit_scaling"} };
-        convertDopingToCm3InPlace(cfg);
-        cfg["sweep"]["write_vtk"] = false;
-        cfg["output_csv"] = (dir / "outputs" / (device + "_unit_scaling_iv.csv")).string();
-        std::ofstream(cfgPath) << cfg.dump(2);
-
-        DCSweep sweep;
-        const DCSweepResult result = sweep.runWithResult(cfgPath.string());
-        REQUIRE_FALSE(result.points.empty());
-        for (const DCSweepPoint& point : result.points) {
-            REQUIRE(point.converged);
-            REQUIRE(std::isfinite(point.totalCurrent));
-        }
-    }
-}
-
 TEST_CASE("DCSweep: unit_scaling CV CSV appends per-micron charge and capacitance",
           "[dc_sweep][scaling]")
 {
@@ -3816,59 +3743,6 @@ TEST_CASE("DCSweep: curve output schemas distinguish IV, CV, and BV modes", "[dc
 }
 
 
-
-
-TEST_CASE("DCSweep: LDMOS BV diagnostic deck writes complete schema", "[dc_sweep][ldmos]")
-{
-    const auto dir = makeUniqueSweepDir();
-    const ScopedDirectoryCleanup cleanup{dir};
-    const std::filesystem::path src = std::filesystem::path(VELA_SOURCE_DIR) / "examples" / "ldmos2d";
-    std::filesystem::copy(src, dir, std::filesystem::copy_options::recursive);
-    std::filesystem::create_directories(dir / "outputs");
-
-    DCSweep sweep;
-    const DCSweepResult result = sweep.runWithResult((dir / "simulation_bv.json").string());
-
-    REQUIRE(result.points.size() == 3);
-    Real previousMaxField = -1.0;
-    for (const DCSweepPoint& point : result.points) {
-        REQUIRE(point.converged);
-        REQUIRE(std::isfinite(point.maxElectricField));
-        REQUIRE(point.maxElectricField >= 0.0);
-        REQUIRE(point.maxElectricField + 1.0e-9 >= previousMaxField);
-        previousMaxField = point.maxElectricField;
-    }
-
-    const auto rows = readCsvRows(dir / "outputs" / "ldmos2d_bv.csv");
-    REQUIRE(rows.size() == 4);
-    REQUIRE(rows.front() == std::vector<std::string>{"mode", "bias_contact", "bias_V",
-                                                     "current_contact", "current_electron", "current_electron_drift",
-                                                     "current_electron_diffusion", "current_hole", "current_hole_drift",
-                                                     "current_hole_diffusion", "current_total", "converged", "iterations",
-                                                     "solver_method", "gummel_iterations", "newton_iterations",
-                                                     "handoff_stage", "newton_convergence_reason",
-                                                     "final_psi_residual_norm",
-                                                     "final_electron_continuity_residual_norm",
-                                                     "final_hole_continuity_residual_norm",
-                                                     "carrier_row_violations", "carrier_row_max_ratio",
-                                                     "carrier_row_recovery_attempted",
-                                                     "carrier_row_recovery_electron_rows",
-                                                     "carrier_row_recovery_hole_rows",
-                                                     "carrier_row_recovery_density_passes",
-                                                     "carrier_row_recovery_cycles",
-                                                     "carrier_row_recovery_max_density_relative_change",
-                                                     "carrier_row_recovery_max_psi_delta_V",
-                                                     "carrier_row_recovery_max_density_ratio",
-                                                     "step_diagnostics", "validation_diagnostics",
-                                                     "qf_bounds_violations", "failure_reason", "newton_failure_class",
-                                                     "newton_failure_diagnostics_json", "max_electric_field_V_per_m",
-                                                     "current_jump_ratio", "breakdown_detected",
-                                                     "breakdown_voltage", "criterion", "last_stable_bias",
-                                                     "failed_bias", "breakdown_failure_reason"});
-    REQUIRE(rows.at(1).at(0) == "bv_reverse");
-    REQUIRE(rows.at(1).at(1) == "drain");
-    REQUIRE(rows.at(1).at(3) == "drain");
-}
 
 
 TEST_CASE("DCSweep: BV reverse start failure records failed diagnostic row", "[dc_sweep]")
@@ -5878,16 +5752,4 @@ TEST_CASE("DCSweep: hybrid strict policy rejects Newton failure",
     const std::size_t newtonFailureColumn = csvColumnIndex(rows.front(), "newton_failure_class");
     REQUIRE(rows.at(1).at(failureReasonColumn) == "newton_non_convergence");
     REQUIRE(rows.at(1).at(newtonFailureColumn).empty());
-}
-
-
-TEST_CASE("DCSweep: NMOS and PMOS DD examples increase drain current with stronger gate drive", "[dc_sweep][mos]")
-{
-    const Real nmosOff = std::abs(runMosExampleDrainCurrentAtGate("nmos2d_dd", 0.0, 0.1));
-    const Real nmosOn = std::abs(runMosExampleDrainCurrentAtGate("nmos2d_dd", 0.05, 0.1));
-    REQUIRE(nmosOn > nmosOff);
-
-    const Real pmosOff = std::abs(runMosExampleDrainCurrentAtGate("pmos2d_dd", 0.0, -0.1));
-    const Real pmosOn = std::abs(runMosExampleDrainCurrentAtGate("pmos2d_dd", -0.05, -0.1));
-    REQUIRE(pmosOn > pmosOff);
 }
