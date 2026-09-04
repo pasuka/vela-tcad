@@ -76,8 +76,41 @@ assert RECOVERY_TOPOLOGY_SPEC is not None and RECOVERY_TOPOLOGY_SPEC.loader is n
 RECOVERY_TOPOLOGY = importlib.util.module_from_spec(RECOVERY_TOPOLOGY_SPEC)
 RECOVERY_TOPOLOGY_SPEC.loader.exec_module(RECOVERY_TOPOLOGY)
 
+CELL_FIRST_AB_SCRIPT = SCRIPTS_DIR / "run_genius_bjt_cell_first_recovery_ab.py"
+CELL_FIRST_AB_SPEC = importlib.util.spec_from_file_location(
+    "run_genius_bjt_cell_first_recovery_ab", CELL_FIRST_AB_SCRIPT
+)
+assert CELL_FIRST_AB_SPEC is not None and CELL_FIRST_AB_SPEC.loader is not None
+CELL_FIRST_AB = importlib.util.module_from_spec(CELL_FIRST_AB_SPEC)
+CELL_FIRST_AB_SPEC.loader.exec_module(CELL_FIRST_AB)
+
 
 class GeniusBjtReferenceToolsTest(unittest.TestCase):
+    def test_cell_first_ab_candidate_is_opt_in(self) -> None:
+        config = {"simulation_type": "dc", "output_diagnostics": {}}
+        output = Path("diagnostic.vtk")
+        CELL_FIRST_AB.enable_candidate(config, output)
+        self.assertEqual(config["simulation_type"], "write_dd_state_vtk")
+        self.assertTrue(
+            config["output_diagnostics"]["cell_first_sg_current_recovery"]
+        )
+        self.assertEqual(Path(config["output_vtk"]).name, output.name)
+
+    def test_cell_first_ab_gate_checks_all_three_vector_metrics(self) -> None:
+        metrics = {
+            "log10_magnitude_error": {"p95_absolute_error": 0.5},
+            "normalized_vector_rmse": 0.1,
+            "global_vector_cosine_similarity": 0.99,
+        }
+        gate = {
+            "maximum_p95_absolute_log10_magnitude_error": 0.5,
+            "maximum_normalized_vector_rmse": 0.1,
+            "minimum_global_vector_cosine_similarity": 0.99,
+        }
+        self.assertTrue(CELL_FIRST_AB.gate_pass(metrics, gate))
+        metrics["global_vector_cosine_similarity"] = 0.989
+        self.assertFalse(CELL_FIRST_AB.gate_pass(metrics, gate))
+
     def test_recovery_topology_condition_number_distinguishes_stencils(self) -> None:
         orthogonal = [(1.0, 1.0, 0.0, 2.0), (1.0, 0.0, 1.0, 3.0)]
         collinear = [(1.0, 1.0, 0.0, 2.0), (1.0, -1.0, 0.0, -2.0)]

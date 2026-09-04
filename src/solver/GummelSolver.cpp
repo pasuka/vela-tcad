@@ -959,7 +959,8 @@ void writeDDSolutionVTK(const std::string& filename,
                         UnitScalingConfig scaling,
                         const CarrierStatisticsConfig& carrierStatistics,
                         const std::vector<CoupledDDEdgeFluxDiagnostic>*
-                            sgEdgeFluxDiagnostics)
+                            sgEdgeFluxDiagnostics,
+                        bool writeCellFirstSgCurrentDiagnostics)
 {
     const Index N = mesh.numNodes();
     VTKWriter writer(filename, mesh);
@@ -1654,6 +1655,56 @@ void writeDDSolutionVTK(const std::string& filename,
         writer.addNodeVector(
             "DualFaceSgTotalCurrentDensityVector",
             dualFaceTotalCurrent_A_cm2);
+        if (writeCellFirstSgCurrentDiagnostics) {
+            const auto cellFirstElectron =
+                detail::cellFirstAreaWeightedSgCurrentVectors(
+                    mesh,
+                    [&](Index edgeId) {
+                        return electronProjection_A_cm2[
+                            static_cast<std::size_t>(edgeId)];
+                    },
+                    [&](Index edgeId) {
+                        return activeElectron[static_cast<std::size_t>(edgeId)];
+                    });
+            const auto cellFirstHole =
+                detail::cellFirstAreaWeightedSgCurrentVectors(
+                    mesh,
+                    [&](Index edgeId) {
+                        return holeProjection_A_cm2[
+                            static_cast<std::size_t>(edgeId)];
+                    },
+                    [&](Index edgeId) {
+                        return activeHole[static_cast<std::size_t>(edgeId)];
+                    });
+            std::vector<Point3> cellFirstElectron_A_cm2(
+                N, Point3::Zero());
+            std::vector<Point3> cellFirstHole_A_cm2(
+                N, Point3::Zero());
+            std::vector<Point3> cellFirstTotal_A_cm2(
+                N, Point3::Zero());
+            for (Index node = 0; node < N; ++node) {
+                cellFirstElectron_A_cm2[node] = Point3{
+                    cellFirstElectron[node].x(),
+                    cellFirstElectron[node].y(),
+                    0.0};
+                cellFirstHole_A_cm2[node] = Point3{
+                    cellFirstHole[node].x(),
+                    cellFirstHole[node].y(),
+                    0.0};
+                cellFirstTotal_A_cm2[node] =
+                    cellFirstElectron_A_cm2[node] +
+                    cellFirstHole_A_cm2[node];
+            }
+            writer.addNodeVector(
+                "CellFirstSgElectronCurrentDensityVector",
+                cellFirstElectron_A_cm2);
+            writer.addNodeVector(
+                "CellFirstSgHoleCurrentDensityVector",
+                cellFirstHole_A_cm2);
+            writer.addNodeVector(
+                "CellFirstSgTotalCurrentDensityVector",
+                cellFirstTotal_A_cm2);
+        }
     }
     writer.addNodeScalar("ElectronMobility", electronMobility);
     writer.addNodeScalar("HoleMobility", holeMobility);

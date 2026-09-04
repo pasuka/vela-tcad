@@ -289,9 +289,22 @@ vela::NewtonSolver makeNewtonSolver(const NewtonProblem& problem)
         problem.contactSpecs);
 }
 
+bool writeCellFirstSgCurrentDiagnostics(const nlohmann::json& cfg)
+{
+    if (!cfg.contains("output_diagnostics"))
+        return false;
+    const auto& diagnostics = cfg.at("output_diagnostics");
+    if (!diagnostics.is_object()) {
+        throw std::invalid_argument(
+            "output_diagnostics must be an object.");
+    }
+    return diagnostics.value("cell_first_sg_current_recovery", false);
+}
+
 void writeNewtonSolutionVtk(const std::filesystem::path& path,
                             const NewtonProblem& problem,
-                            const vela::DDSolution& solution)
+                            const vela::DDSolution& solution,
+                            bool writeCellFirstSgCurrent)
 {
     vela::RecombinationModelConfig recombination =
         vela::recombinationModelConfig(
@@ -319,7 +332,8 @@ void writeNewtonSolutionVtk(const std::filesystem::path& path,
         problem.newton.temperature_K,
         problem.newton.inputScaling,
         problem.newton.carrierStatistics,
-        &edgeFluxDiagnostics);
+        &edgeFluxDiagnostics,
+        writeCellFirstSgCurrent);
 }
 
 vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,
@@ -391,7 +405,8 @@ NewtonCliResult runNewtonConfig(const std::string& configFile, const nlohmann::j
         writeNewtonSolutionVtk(
             resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>()),
             problem,
-            result.solution);
+            result.solution,
+            writeCellFirstSgCurrentDiagnostics(cfg));
     }
 
     return NewtonCliResult{std::move(problem.mesh), std::move(result)};
@@ -417,7 +432,8 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
         writeNewtonSolutionVtk(
             resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>()),
             problem,
-            result.solution);
+            result.solution,
+            writeCellFirstSgCurrentDiagnostics(cfg));
     }
 
     // On-state terminal current extraction (no re-solve). Computing ContactCurrent
@@ -838,10 +854,14 @@ nlohmann::json writeDdStateVtk(const std::string& configFile,
         resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>());
     if (!outputPath.parent_path().empty())
         std::filesystem::create_directories(outputPath.parent_path());
-    writeNewtonSolutionVtk(outputPath, problem, state);
+    const bool writeCellFirstSgCurrent =
+        writeCellFirstSgCurrentDiagnostics(cfg);
+    writeNewtonSolutionVtk(
+        outputPath, problem, state, writeCellFirstSgCurrent);
     return {
         {"nodes", problem.mesh.numNodes()},
         {"output_vtk", outputPath.string()},
+        {"cell_first_sg_current_recovery", writeCellFirstSgCurrent},
     };
 }
 

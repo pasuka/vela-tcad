@@ -236,6 +236,7 @@ void writeDDSolutionVTK(const std::string& filename,
                         UnitScalingConfig scaling = {},
                         const CarrierStatisticsConfig& carrierStatistics = {},
                         const std::vector<CoupledDDEdgeFluxDiagnostic>*
-                            sgEdgeFluxDiagnostics = nullptr);
+                            sgEdgeFluxDiagnostics = nullptr,
+                        bool writeCellFirstSgCurrentDiagnostics = false);
 
 } // namespace vela

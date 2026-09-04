@@ -2159,9 +2159,44 @@ TEST_CASE("VTK exports dual-face nodal currents from supplied production SG flux
             std::string::npos);
     REQUIRE(vtkText.find("VECTORS DualFaceSgTotalCurrentDensityVector") !=
             std::string::npos);
+    REQUIRE(vtkText.find("VECTORS CellFirstSgHoleCurrentDensityVector") ==
+            std::string::npos);
+
+    const auto candidateVtkPath = std::filesystem::temp_directory_path() /
+        "vela_cell_first_sg_current_vectors.vtk";
+    writeDDSolutionVTK(
+        candidateVtkPath.string(),
+        mesh,
+        matdb,
+        doping,
+        sol,
+        mobilityModelConfig("constant"),
+        recombinationModelConfig({"none"}),
+        ImpactIonizationModelConfig{},
+        BandgapNarrowingConfig{},
+        constants::T0,
+        UnitScalingConfig{},
+        CarrierStatisticsConfig{},
+        &edgeFluxes,
+        true);
+    std::ifstream candidateInput(candidateVtkPath);
+    REQUIRE(candidateInput.good());
+    const std::string candidateVtkText(
+        (std::istreambuf_iterator<char>(candidateInput)),
+        std::istreambuf_iterator<char>());
+    REQUIRE(candidateVtkText.find(
+                "VECTORS CellFirstSgElectronCurrentDensityVector") !=
+            std::string::npos);
+    REQUIRE(candidateVtkText.find(
+                "VECTORS CellFirstSgHoleCurrentDensityVector") !=
+            std::string::npos);
+    REQUIRE(candidateVtkText.find(
+                "VECTORS CellFirstSgTotalCurrentDensityVector") !=
+            std::string::npos);
 
     std::error_code removeError;
     std::filesystem::remove(vtkPath, removeError);
+    std::filesystem::remove(candidateVtkPath, removeError);
 }
 
 TEST_CASE("Genius-style avalanche source volume truncates obtuse Tri3 edge support",
@@ -3067,6 +3102,58 @@ TEST_CASE("Dual-face SG nodal reconstruction preserves a constant vector field",
         REQUIRE(recovered.x() == Catch::Approx(expected.x()).margin(1.0e-12));
         REQUIRE(recovered.y() == Catch::Approx(expected.y()).margin(1.0e-12));
     }
+}
+
+TEST_CASE("Cell-first SG recovery preserves a constant vector and widens vertex support",
+          "[impact][diagnostic][cell_first]")
+{
+    DeviceMesh mesh = makePNMesh(false);
+    const auto active = [&](Index edgeId) {
+        return mesh.getEdge(edgeId).couple > 0.0;
+    };
+
+    const Point2 expected{1.75, -3.25};
+    std::vector<Real> constantFlux(
+        static_cast<std::size_t>(mesh.numEdges()), 0.0);
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        const Node& node0 = mesh.getNode(edge.n0);
+        const Node& node1 = mesh.getNode(edge.n1);
+        const Point2 tangent{
+            (node1.x - node0.x) / edge.length,
+            (node1.y - node0.y) / edge.length};
+        constantFlux[static_cast<std::size_t>(edgeId)] = expected.dot(tangent);
+    }
+    const auto constant = detail::cellFirstAreaWeightedSgCurrentVectors(
+        mesh,
+        [&](Index edgeId) {
+            return constantFlux[static_cast<std::size_t>(edgeId)];
+        },
+        active);
+    for (const Point2& recovered : constant) {
+        REQUIRE(recovered.x() == Catch::Approx(expected.x()).margin(1.0e-12));
+        REQUIRE(recovered.y() == Catch::Approx(expected.y()).margin(1.0e-12));
+    }
+
+    std::vector<Real> oppositeEdgeFlux(
+        static_cast<std::size_t>(mesh.numEdges()), 0.0);
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        if ((edge.n0 == 1 && edge.n1 == 2) ||
+            (edge.n0 == 2 && edge.n1 == 1)) {
+            oppositeEdgeFlux[static_cast<std::size_t>(edgeId)] = 1.0;
+        }
+    }
+    const auto nodeEdges = detail::buildNodeEdgeMap(mesh);
+    const auto flux = [&](Index edgeId) {
+        return oppositeEdgeFlux[static_cast<std::size_t>(edgeId)];
+    };
+    const Point2 direct = detail::nodalDualFaceSgCurrentVector(
+        0, nodeEdges, mesh, flux, active);
+    const auto cellFirst = detail::cellFirstAreaWeightedSgCurrentVectors(
+        mesh, flux, active);
+    REQUIRE(direct.norm() == Catch::Approx(0.0).margin(1.0e-15));
+    REQUIRE(cellFirst[0].norm() > 0.0);
 }
 
 TEST_CASE("Eparallel nodal vertex-star recovery widens the electric-field stencil",

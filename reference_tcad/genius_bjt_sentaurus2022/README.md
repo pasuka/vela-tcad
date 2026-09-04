@@ -127,11 +127,11 @@ terminal, KCL, spatial-state, current-density, SRH, and Auger gates. See
 `contracts/comparison_thresholds.json`, `comparison/comparison_summary.md`, and
 `reports/transport_source_acceptance_report.md`.
 
-Vela representative exports cover VCE=0, 1, 2, and 3 V. Existing SDevice TDRs
-support direct comparisons at 0, 1, and 3 V; the 2 V SDevice state remains
-missing because the earlier deck saved 0.1 V instead and the VM currently
-rejects the documented SSH key. The updated deck now requests 0, 1, 2, and 3 V
-states on its next trusted rerun.
+Vela representative exports cover VCE=0, 1, 2, and 3 V. The trusted VM rerun
+with Sentaurus T-2022.03-SP2 now provides matching locally refined SDevice TDRs
+at all four biases. Their common 15561-node/30780-triangle mesh is byte-identical
+to the refined Vela mesh fixture after import. The raw TDR and accepted-state
+hashes are recorded by `scripts/run_genius_bjt_cell_first_recovery_ab.py`.
 
 The classical Auger analytic Jacobian matches a centered finite difference on
 the real 3 V state at the two former peak nodes to `5.07e-9` relative error.
@@ -167,10 +167,22 @@ The conservative-section follow-up sums the production SG line flux directly
 across full-width cuts at `y=0.45 um` and `y=0.85 um`. At VCE=0, 1, 2, and
 3 V, section-to-terminal closure, cross-section total-current drift, and
 electron/hole source closure all pass the asserted thresholds in
-`contracts/comparison_thresholds.json`. A separate frozen-state SRH audit
-confirms exact Scharfetter parameter and node-area alignment, while retaining
-an approximately 0.7803 Vela/SDevice integral ratio at 1-3 V. See
-`reports/conservative_flux_srh_alignment_report.md`.
+`contracts/comparison_thresholds.json`. The frozen-state SRH audit showed that
+the former approximately 0.7803 ratio was a postprocessing omission of the
+Fermi correction in effective intrinsic density, not a production SRH-model
+gap. After the fix, formal SRH integrals pass the tightened 0.98-1.02 ratio
+gate. See `reports/conservative_flux_srh_alignment_report.md`.
+
+The opt-in cell-first SG current diagnostic reconstructs one vector per
+triangle from the unchanged production edge fluxes and then area-projects the
+cell vectors to nodes. Across coarse/refined meshes, VCE=0/1/2/3 V, and both
+carriers, all 16 candidate comparisons pass the existing current-density
+gates. In the limiting coarse 3 V hole case, P95 log-magnitude error falls from
+0.827987 to 0.0985425 decade; the refined 3 V value falls from 0.270003 to
+0.0615538 decade. The candidate remains disabled by default because this A/B
+does not identify SDevice's proprietary element-to-vertex weights and does not
+replace conservative-flux or terminal-current acceptance. See
+`reports/cell_first_recovery_ab.md`.
 
 ## Comparison figures
 

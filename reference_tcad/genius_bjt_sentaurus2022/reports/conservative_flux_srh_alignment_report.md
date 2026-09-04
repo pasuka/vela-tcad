@@ -68,9 +68,10 @@ SDevice 的 `srhRecombination` 仍是节点绘图场，并非其内部单元积�
 
 ## 后续任务
 
-1. 将“先单元拟合、再按面积投影”的恢复方式实现为默认关闭的诊断候选，并在粗/细网格及 0–3 V 上做回归，确认其稳定性后再决定是否替换绘图默认值。
-2. 为固定状态探针增加长期回归夹具，锁定 Fermi–BGN 和经典/广义 SRH 的分解结果。
-3. 在更多器件和偏置上验证 SDevice 节点 SRH 场与经典公式的一致性，避免将本算例结论过度推广。
+1. 已完成默认关闭的“先单元拟合、再按面积投影”诊断候选及粗/细网格 0–3 V A/B；16 组载流子比较全部通过，详见 `reports/cell_first_recovery_ab.md`。
+2. 在 PN 二极管、MOSFET 等不同拓扑上做交叉器件回归，再决定是否替换节点电流绘图默认值。
+3. 为固定状态探针增加长期回归夹具，锁定 Fermi–BGN 和经典/广义 SRH 的分解结果。
+4. 在更多器件和偏置上验证 SDevice 节点 SRH 场与经典公式的一致性，避免将本算例结论过度推广。
 
 ## 可复现入口
 
@@ -78,5 +79,6 @@ SDevice 的 `srhRecombination` 仍是节点绘图场，并非其内部单元积�
 - 正式接受态复合率刷新：`scripts/refresh_genius_bjt_recombination_exports.py`
 - 守恒截面：`scripts/audit_genius_bjt_conservative_sections.py`
 - 空穴电流恢复拓扑：`scripts/diagnose_genius_bjt_hole_current_recovery_topology.py`
+- 节点电流恢复 A/B：`scripts/run_genius_bjt_cell_first_recovery_ab.py`
 - 最终验收：`scripts/compare_genius_bjt_sentaurus_vela.py`
 - 机器可读结果：忽略目录 `build-release/reference_tcad/genius_bjt_sentaurus2022/m1_p0_multibias/` 下的 `srh_fixed_state/`、`transport/`、`conservative_sections/` 和 `overall/`

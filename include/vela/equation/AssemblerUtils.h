@@ -513,6 +513,93 @@ inline Point2 nodalDualFaceSgCurrentVector(
         [&](Index edgeId) { return mesh.getEdge(edgeId).couple; });
 }
 
+/// Recover a diagnostic nodal current by first fitting one constant vector in
+/// every triangle from its three SG edge projections, then area-averaging the
+/// incident cell vectors at each vertex.  This deliberately uses the edge
+/// opposite a target vertex and therefore has a wider support than the direct
+/// nodal fit above.  The SG edge fluxes remain the conservative oracle; this
+/// helper changes only their point-field representation.
+template <typename FluxAccessor, typename ActiveAccessor>
+inline std::vector<Point2> cellFirstAreaWeightedSgCurrentVectors(
+    const DeviceMesh& mesh,
+    FluxAccessor&&    signedFlux,
+    ActiveAccessor&&  activeEdge)
+{
+    const auto edgeCells = buildEdgeCellMap(mesh);
+    const auto cellEdges = buildCellEdgeMap(edgeCells, mesh);
+    std::vector<Point2> sums(
+        static_cast<std::size_t>(mesh.numNodes()), Point2::Zero());
+    std::vector<Real> weights(
+        static_cast<std::size_t>(mesh.numNodes()), 0.0);
+
+    for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
+        const Cell& cell = mesh.getCell(cellId);
+        if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+            continue;
+
+        Real a00 = 0.0;
+        Real a01 = 0.0;
+        Real a11 = 0.0;
+        Real b0 = 0.0;
+        Real b1 = 0.0;
+        int used = 0;
+        for (Index edgeId : cellEdges[static_cast<std::size_t>(cellId)]) {
+            if (!activeEdge(edgeId))
+                continue;
+            const Edge& edge = mesh.getEdge(edgeId);
+            if (!(edge.length > 1.0e-30) ||
+                !(edge.couple > 0.0) || !std::isfinite(edge.couple)) {
+                continue;
+            }
+            const Node& node0 = mesh.getNode(edge.n0);
+            const Node& node1 = mesh.getNode(edge.n1);
+            const Real tx = (node1.x - node0.x) / edge.length;
+            const Real ty = (node1.y - node0.y) / edge.length;
+            const Real projection = signedFlux(edgeId);
+            if (!std::isfinite(projection))
+                continue;
+            const Real weight = edge.couple;
+            a00 += weight * tx * tx;
+            a01 += weight * tx * ty;
+            a11 += weight * ty * ty;
+            b0 += weight * tx * projection;
+            b1 += weight * ty * projection;
+            ++used;
+        }
+
+        const Real determinant = a00 * a11 - a01 * a01;
+        const Real matrixScale = std::max({
+            std::abs(a00 * a11), std::abs(a01 * a01), Real{1.0e-300}});
+        if (used < 2 ||
+            std::abs(determinant) <= 1.0e-24 * matrixScale) {
+            continue;
+        }
+        const Point2 cellCurrent{
+            (b0 * a11 - b1 * a01) / determinant,
+            (a00 * b1 - a01 * b0) / determinant};
+
+        const Node& first = mesh.getNode(cell.node_ids[0]);
+        const Node& second = mesh.getNode(cell.node_ids[1]);
+        const Node& third = mesh.getNode(cell.node_ids[2]);
+        const Real area = 0.5 * std::abs(
+            (second.x - first.x) * (third.y - first.y) -
+            (second.y - first.y) * (third.x - first.x));
+        if (!(area > 0.0) || !std::isfinite(area))
+            continue;
+        for (Index nodeId : cell.node_ids) {
+            sums[static_cast<std::size_t>(nodeId)] += area * cellCurrent;
+            weights[static_cast<std::size_t>(nodeId)] += area;
+        }
+    }
+
+    for (Index node = 0; node < mesh.numNodes(); ++node) {
+        const Real weight = weights[static_cast<std::size_t>(node)];
+        if (weight > 0.0)
+            sums[static_cast<std::size_t>(node)] /= weight;
+    }
+    return sums;
+}
+
 struct EdgeAveragedNodalCurrent {
     Point2 vector = Point2::Zero();
     Real magnitude = 0.0;
