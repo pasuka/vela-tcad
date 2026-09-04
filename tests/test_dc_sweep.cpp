@@ -4064,11 +4064,13 @@ TEST_CASE("DCSweep: explicit bias_points solve only requested biases", "[dc_swee
     std::filesystem::create_directories(dir);
     const auto meshPath = writePNMesh(dir);
     const auto csvPath = dir / "bias_points.csv";
+    const auto acceptedPrefix = dir / "accepted" / "state";
     const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
         {"start", 0.0},
         {"stop", 0.5},
         {"step", 0.25},
         {"bias_points", {0.0, 0.125, 0.4}},
+        {"write_state_every_accepted_step_prefix", acceptedPrefix.string()},
         {"write_vtk", false}
     });
 
@@ -4083,6 +4085,14 @@ TEST_CASE("DCSweep: explicit bias_points solve only requested biases", "[dc_swee
     REQUIRE(points[1].acceptedStep == Catch::Approx(0.125));
     REQUIRE(points[2].attemptedStep == Catch::Approx(0.025));
     REQUIRE(points[2].acceptedStep == Catch::Approx(0.025));
+    REQUIRE(std::filesystem::exists(
+        dir / "accepted" / "state_bias_0p000000.csv"));
+    REQUIRE(std::filesystem::exists(
+        dir / "accepted" / "state_bias_0p125000.csv"));
+    REQUIRE(std::filesystem::exists(
+        dir / "accepted" / "state_bias_0p375000.csv"));
+    REQUIRE(std::filesystem::exists(
+        dir / "accepted" / "state_bias_0p400000.csv"));
 }
 
 TEST_CASE("DCSweep: write_state_file stores latest converged restart state", "[dc_sweep]")

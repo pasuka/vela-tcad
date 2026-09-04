@@ -2,7 +2,7 @@
   "schema": "vela.templates_ldmos.stage4_decision_summary.v1",
   "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
   "generated_on": "2026-09-03",
-  "status": "vela_d5_vg4_full_curve_running_after_first_step_reclose",
+  "status": "vela_d5_vg4_partial_through_0p8_after_qf_recenter",
   "sentaurus_ablation": {
     "status": "pass",
     "variants": [
@@ -72,7 +72,33 @@
       "final_poisson_block": 7.693212818810222e-10,
       "final_electron_block": 9.271133321828182e-13,
       "drain_current_A_per_um": 9.254405994855323e-7,
-      "full_vg4_curve": "running_not_yet_qualified"
+      "full_vg4_curve": "partial_through_0p8_not_yet_qualified"
+    },
+    "complete_contact_hfs_stencil": {
+      "status": "pass",
+      "device_jvp_max_relative_error": 2.5216865011599766e-10,
+      "historical_max_relative_error": 0.00228226077872241
+    },
+    "initial_state_qf_recenter": {
+      "status": "pass",
+      "representation_only": true,
+      "original_failed_bias_V": 0.1625,
+      "live_hfs_explicit_points_to_0p2": 25,
+      "lagged_vs_live_endpoint_current_relative_difference": 5.924150059399835e-13,
+      "production_min_step_V": 0.001,
+      "production_initial_step_V": 0.0025,
+      "production_growth_factor": 1.0,
+      "production_max_retries": 12
+    },
+    "no_predictor_continuation_cost": {
+      "highest_accepted_drain_bias_V": 0.8,
+      "accepted_internal_substeps_0p4_to_0p6": 64,
+      "accepted_step_checkpointing_status": "pass",
+      "checkpoint_test_persisted_states_0p6_to_0p65": 17,
+      "rolling_checkpoint_updated_each_internal_step": true,
+      "growth_factor_2_control": "rejected_for_repeated_growth_shrink_cost",
+      "production_growth_factor": 1.0,
+      "classification": "runtime blocker; accepted internal steps are resumable; no partial curve score"
     }
   },
   "evidence_sha256": {

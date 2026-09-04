@@ -28,9 +28,12 @@ approval.
 Phase-A Stage 4 execution is recorded in
 `docs/validation/templates_ldmos_stage4_idvd_execution_2026-09-03.md`.  The
 Sentaurus D1--D5 ablation is complete and hRecVelocity is closed as
-non-required, while the Vela D5 curve remains blocked at the first 10 mV drain
-step.  `stage4_decision_summary.json` is the neutral machine-readable status;
-it does not claim Stage-4 or L2 acceptance.
+non-required.  The former 10 mV Vela D5 blocker is closed; the no-predictor
+curve has passed through 0.8 V after completing the contact-cell HFS Jacobian
+stencil and adding representation-only QF recentering.  The 31-point run is
+still incomplete because the strict path requires millivolt-scale internal
+steps; accepted internal states are now restartable.  `stage4_decision_summary.json` is the
+neutral machine-readable status; it does not claim Stage-4 or L2 acceptance.
 
 Expected persistent local layout:
 

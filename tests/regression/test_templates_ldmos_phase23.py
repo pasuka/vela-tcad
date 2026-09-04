@@ -802,6 +802,16 @@ class SentaurusAblationSummaryTest(unittest.TestCase):
             self.assertEqual(idvd["sweep"]["contact"], "drain")
             self.assertTrue({0.0, 0.01, 0.8, 1.0, 2.0}.issubset(
                 set(idvd["sweep"]["bias_points"])))
+            self.assertEqual(idvd["sweep"]["min_step"], 1.0e-3)
+            self.assertEqual(idvd["sweep"]["max_retries"], 12)
+            self.assertEqual(idvd["sweep"]["initial_step"], 2.5e-3)
+            self.assertEqual(idvd["sweep"]["growth_factor"], 1.0)
+            self.assertTrue(
+                idvd["solver"]["quasi_fermi_recenter_on_initial_state"]
+            )
+            self.assertFalse(
+                idvd["solver"]["mobility"]["jacobian_field_derivatives"]
+            )
             self.assertEqual(next(item for item in idvd["contacts"]
                                   if item["name"] == "gate")["bias"], 4.0)
             self.assertEqual(

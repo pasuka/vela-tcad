@@ -4,6 +4,15 @@ Date: 2026-09-03
 Sentaurus: T-2022.03-SP2  
 Scope: Phase A Stage 4, WP3-D decision, D5 classical isothermal entry
 
+> 2026-09-04 status update: the 10 mV blocker described below has been closed.
+> A complete contact-cell HFS Jacobian stencil and opt-in warm-start QF
+> recentering now pass through `Vd=0.8 V` with no predictor.  Accepted internal
+> states are now persisted for restart; the remaining 31-point blocker is run
+> cost from millivolt-scale internal steps, not failure at 10 mV.  See
+> `templates_ldmos_stage4_vd10mv_newton_audit_2026-09-03.md` for the current
+> evidence and do not interpret the historical status section below as the
+> present decision state.
+
 ## Outcome
 
 The complete Sentaurus D1--D5 single-factor chain ran successfully on the

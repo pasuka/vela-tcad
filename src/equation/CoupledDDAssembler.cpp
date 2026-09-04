@@ -4288,7 +4288,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     auto edgeElectronTransportFlux =
         [&](Index e, int i, int j, Real h,
             Real psi_i, Real psi_j, Real phin_i, Real phin_j,
-            Real fixedMobility) -> Real {
+            Real fixedMobility, Index perturbedPsiNode,
+            Real perturbedPsiValue) -> Real {
         const EdgeAssemblyKernel& edgeKernel = edgeAssemblyKernels_[e];
         const Real couple_e = couple_[e];
         if (h <= 1.0e-30 || couple_e <= 0.0)
@@ -4314,7 +4315,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 mobilityConfig_, mesh_, edgeCells_, cellMaterials_, e,
                 [&](Index node) {
                     return node == idxI ? psi_i
-                        : (node == idxJ ? psi_j : psi(static_cast<int>(node)));
+                        : (node == idxJ ? psi_j
+                        : (node == perturbedPsiNode ? perturbedPsiValue
+                                                   : psi(static_cast<int>(node))));
                 },
                 fieldFactor,
                 qfMobility ? electronQfMobilityField : electricField,
@@ -4325,6 +4328,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             psiForSurface = psi;
             psiForSurface(i) = psi_i;
             psiForSurface(j) = psi_j;
+            if (perturbedPsiNode < mesh_.numNodes())
+                psiForSurface(static_cast<int>(perturbedPsiNode)) =
+                    perturbedPsiValue;
             psiForMobility = &psiForSurface;
         }
         const Real mun = fixedMobility >= 0.0
@@ -4380,7 +4386,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     auto edgeHoleTransportFlux =
         [&](Index e, int i, int j, Real h,
             Real psi_i, Real psi_j, Real phip_i, Real phip_j,
-            Real fixedMobility) -> Real {
+            Real fixedMobility, Index perturbedPsiNode,
+            Real perturbedPsiValue) -> Real {
         const EdgeAssemblyKernel& edgeKernel = edgeAssemblyKernels_[e];
         const Real couple_e = couple_[e];
         if (h <= 1.0e-30 || couple_e <= 0.0)
@@ -4401,7 +4408,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 mobilityConfig_, mesh_, edgeCells_, cellMaterials_, e,
                 [&](Index node) {
                     return node == idxI ? psi_i
-                        : (node == idxJ ? psi_j : psi(static_cast<int>(node)));
+                        : (node == idxJ ? psi_j
+                        : (node == perturbedPsiNode ? perturbedPsiValue
+                                                   : psi(static_cast<int>(node))));
                 },
                 fieldFactor,
                 qfMobility ? holeQfMobilityField : electricField,
@@ -4412,6 +4421,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             psiForSurface = psi;
             psiForSurface(i) = psi_i;
             psiForSurface(j) = psi_j;
+            if (perturbedPsiNode < mesh_.numNodes())
+                psiForSurface(static_cast<int>(perturbedPsiNode)) =
+                    perturbedPsiValue;
             psiForMobility = &psiForSurface;
         }
         const Real mup = fixedMobility >= 0.0
@@ -4490,6 +4502,20 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             vectorQfMobility ? holeVectorMobilityFields[e]
                              : std::abs((phip_j_from_i - phip_i) / h) * fieldFactor,
             electricField, contactElectricMobilityFields);
+        bool contactMobilityFallbackActive = false;
+        if (transportMobilityDerivative &&
+            mobilityConfig_.contactElectricFieldFallback &&
+            mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient") {
+            for (Index cellId : edgeCells_[e]) {
+                if (cellId < cellMaterials_.size() &&
+                    detail::isTransportMaterial(cellMaterials_[cellId]) &&
+                    detail::cellTouchesContact(
+                        mesh_.getCell(cellId), contactNodes)) {
+                    contactMobilityFallbackActive = true;
+                    break;
+                }
+            }
+        }
         const Real u = dpsi / Vt_;
         const Real Bu = bernoulli(u);
         const Real dBu = bernoulliDerivative(u);
@@ -4527,13 +4553,37 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     vm[k] -= step;
                     const Real fp = edgeElectronTransportFlux(
                         e, i, j, h, vp[0], vp[1], vp[2], vp[3],
-                        fixedMobility);
+                        fixedMobility, noPerturbedNode, 0.0);
                     const Real fm = edgeElectronTransportFlux(
                         e, i, j, h, vm[0], vm[1], vm[2], vm[3],
-                        fixedMobility);
+                        fixedMobility, noPerturbedNode, 0.0);
                     const Real dF = (fp - fm) / (2.0 * step);
                     add(phinOffset() + i, cols[k], dF);
                     add(phinOffset() + j, cols[k], -dF);
+                }
+                if (contactMobilityFallbackActive) {
+                    for (std::size_t stencilIndex = 0;
+                         stencilIndex < edgeKernel.avalancheStencilNodeCount;
+                         ++stencilIndex) {
+                        const Index node =
+                            edgeKernel.avalancheStencilNodes[stencilIndex];
+                        if (node == static_cast<Index>(i) ||
+                            node == static_cast<Index>(j)) {
+                            continue;
+                        }
+                        const Real value = psi(static_cast<int>(node));
+                        const Real step =
+                            1.0e-6 * std::max(1.0, std::abs(value));
+                        const Real fp = edgeElectronTransportFlux(
+                            e, i, j, h, psi_i, psi_j, phin_i, phin_j,
+                            -1.0, node, value + step);
+                        const Real fm = edgeElectronTransportFlux(
+                            e, i, j, h, psi_i, psi_j, phin_i, phin_j,
+                            -1.0, node, value - step);
+                        const Real dF = (fp - fm) / (2.0 * step);
+                        add(phinOffset() + i, psiOffset() + node, dF);
+                        add(phinOffset() + j, psiOffset() + node, -dF);
+                    }
                 }
             } else {
                 const Real coef = mun * Vt_ * fieldFactor * couple_[e] / h;
@@ -4600,13 +4650,37 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     vm[k] -= step;
                     const Real fp = edgeHoleTransportFlux(
                         e, i, j, h, vp[0], vp[1], vp[2], vp[3],
-                        fixedMobility);
+                        fixedMobility, noPerturbedNode, 0.0);
                     const Real fm = edgeHoleTransportFlux(
                         e, i, j, h, vm[0], vm[1], vm[2], vm[3],
-                        fixedMobility);
+                        fixedMobility, noPerturbedNode, 0.0);
                     const Real dF = (fp - fm) / (2.0 * step);
                     add(phipOffset() + i, cols[k], dF);
                     add(phipOffset() + j, cols[k], -dF);
+                }
+                if (contactMobilityFallbackActive) {
+                    for (std::size_t stencilIndex = 0;
+                         stencilIndex < edgeKernel.avalancheStencilNodeCount;
+                         ++stencilIndex) {
+                        const Index node =
+                            edgeKernel.avalancheStencilNodes[stencilIndex];
+                        if (node == static_cast<Index>(i) ||
+                            node == static_cast<Index>(j)) {
+                            continue;
+                        }
+                        const Real value = psi(static_cast<int>(node));
+                        const Real step =
+                            1.0e-6 * std::max(1.0, std::abs(value));
+                        const Real fp = edgeHoleTransportFlux(
+                            e, i, j, h, psi_i, psi_j, phip_i, phip_j,
+                            -1.0, node, value + step);
+                        const Real fm = edgeHoleTransportFlux(
+                            e, i, j, h, psi_i, psi_j, phip_i, phip_j,
+                            -1.0, node, value - step);
+                        const Real dF = (fp - fm) / (2.0 * step);
+                        add(phipOffset() + i, psiOffset() + node, dF);
+                        add(phipOffset() + j, psiOffset() + node, -dF);
+                    }
                 }
             } else {
                 const Real coef = mup * Vt_ * fieldFactor * couple_[e] / h;

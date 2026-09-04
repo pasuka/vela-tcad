@@ -31,6 +31,19 @@ using namespace vela;
 
 static DeviceMesh makePNMesh();
 
+TEST_CASE("Newton JSON parses opt-in initial-state QF recentering",
+          "[newton][quasi_fermi_reference]")
+{
+    const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
+        {"warm_start", true},
+        {"quasi_fermi_reference", "contact_basin"},
+        {"quasi_fermi_recenter_on_initial_state", true},
+    });
+    REQUIRE(cfg.warmStart);
+    REQUIRE(cfg.quasiFermiReference == "contact_basin");
+    REQUIRE(cfg.quasiFermiRecenterOnInitialState);
+}
+
 TEST_CASE("Newton JSON parses Sentaurus electron density-gradient controls",
           "[newton][density_gradient]")
 {
@@ -2707,6 +2720,7 @@ TEST_CASE("NewtonSolver: Fermi contact HFS honors frozen field Jacobian",
     REQUIRE((live.finiteDifferenceJv - frozen.finiteDifferenceJv).norm() ==
             Catch::Approx(0.0).margin(1.0e-12));
     REQUIRE((live.analyticJv - frozen.analyticJv).norm() > 1.0e-12);
+    REQUIRE(live.relativeError < 1.0e-10);
     REQUIRE(live.relativeError < frozen.relativeError);
 }
 

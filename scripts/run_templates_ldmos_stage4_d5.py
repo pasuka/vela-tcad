@@ -14,6 +14,14 @@ from pathlib import Path
 from typing import Any, Sequence
 
 
+IDVD_MIN_INTERNAL_STEP_V = 1.0e-3
+IDVD_MAX_RETRIES = 12
+IDVD_INITIAL_INTERNAL_STEP_V = 2.5e-3
+# A 2x-growth control repeatedly overshot the qualified 2.5--3.125 mV
+# transfer size and spent more time shrinking than the fixed-step path.
+IDVD_GROWTH_FACTOR = 1.0
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -121,6 +129,16 @@ def make_idvd(base: dict[str, Any], gate_V: float, initial_state: Path,
               points: list[float], output: Path,
               drain_branch_guard: bool = True) -> dict[str, Any]:
     config = deepcopy(base)
+    # Rebase the internally stored QF increments at every accepted warm-start
+    # state. The absolute QF values are unchanged; this preserves sub-ULP
+    # Newton corrections once the drain sweep leaves equilibrium.
+    config["solver"]["quasi_fermi_recenter_on_initial_state"] = True
+    # Use a lagged HFS field in the nonlinear Jacobian. The converged residual
+    # still evaluates the live HFS mobility; this only selects the qualified,
+    # substantially cheaper quasi-Newton linearisation for production.
+    config["solver"].setdefault("mobility", {})[
+        "jacobian_field_derivatives"
+    ] = False
     if drain_branch_guard:
         enable_drain_branch_guard(config)
     stem = f"d5_idvd_vg{int(gate_V)}"
@@ -138,6 +156,14 @@ def make_idvd(base: dict[str, Any], gate_V: float, initial_state: Path,
         "contact": "drain", "current_contact": "drain", "start": points[0],
         "stop": points[-1], "step": points[1] - points[0],
         "bias_points": solver_points,
+        # bias_points defines the exact reporting grid.  Keep retry subdivision
+        # independent of its coarse CurrentPlot spacing so a failed transfer
+        # can qualify through the 10--100 mV startup region without weakening
+        # the frozen nonlinear residual ceilings.
+        "min_step": IDVD_MIN_INTERNAL_STEP_V,
+        "max_retries": IDVD_MAX_RETRIES,
+        "initial_step": IDVD_INITIAL_INTERNAL_STEP_V,
+        "growth_factor": IDVD_GROWTH_FACTOR,
         "initial_state_file": str(initial_state.resolve()),
         "write_state_file": str((output / f"{stem}_state.csv").resolve()),
         "write_state_every_point_prefix": str((output / f"{stem}_point").resolve()),

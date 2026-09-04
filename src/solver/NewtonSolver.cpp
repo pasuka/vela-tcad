@@ -2024,6 +2024,9 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.jacobian = json.value("jacobian", cfg.jacobian);
     cfg.quasiFermiReference =
         json.value("quasi_fermi_reference", cfg.quasiFermiReference);
+    cfg.quasiFermiRecenterOnInitialState = json.value(
+        "quasi_fermi_recenter_on_initial_state",
+        cfg.quasiFermiRecenterOnInitialState);
     cfg.residualNorm = json.value("residual_norm", cfg.residualNorm);
     cfg.contactBoundaryReconstruction =
         json.value("contact_boundary_reconstruction", cfg.contactBoundaryReconstruction);
@@ -2650,6 +2653,12 @@ NewtonSolver::NewtonSolver(
         throw std::invalid_argument(
             "NewtonSolver: quasi_fermi_reference must be 'none', "
             "'contact_majority', or 'contact_basin'.");
+    }
+    if (cfg_.quasiFermiRecenterOnInitialState &&
+        (!cfg_.warmStart || cfg_.quasiFermiReference == "none")) {
+        throw std::invalid_argument(
+            "NewtonSolver: quasi_fermi_recenter_on_initial_state requires "
+            "warm_start=true and a non-'none' quasi_fermi_reference.");
     }
     if (cfg_.residualNorm != "block" && cfg_.residualNorm != "l2")
         throw std::invalid_argument(
@@ -6275,6 +6284,9 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         cfg_.electronQuantumPotential);
     assembler.setElectronQuantumPotential(electronQuantumPotential_V);
     configureQuasiFermiReferences(assembler);
+    if (cfg_.quasiFermiRecenterOnInitialState) {
+        assembler.setQuasiFermiReferenceFields(initial.phin, initial.phip);
+    }
     const CoupledDDBoundaryConditions bcs = buildBoundaryConditions(assembler);
 
     // By default Newton uses a conservative cold start for quasi-Fermi

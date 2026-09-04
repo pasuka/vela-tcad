@@ -303,6 +303,9 @@ struct DCSweepConfig {
     VoltageToCurrentControlConfig voltageToCurrent;
     BoundaryControlPersistenceConfig boundaryControl;
     std::string writeStateEveryPointPrefix;
+    /// Optional diagnostic history for accepted adaptive steps between
+    /// requested bias points. writeStateFile remains the rolling checkpoint.
+    std::string writeStateEveryAcceptedStepPrefix;
     std::string chargeContact;
     std::vector<std::string> chargeRegions;
     Real chargeContactRadius = 0.0;

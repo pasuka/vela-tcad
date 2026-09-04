@@ -186,6 +186,9 @@ struct NewtonConfig {
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
     std::string quasiFermiReference = "none"; ///< "none", "contact_majority", or "contact_basin"
+    /// Recenter warm-start QF coordinates on the supplied physical state so
+    /// sub-ULP corrections are represented as local increments.
+    bool quasiFermiRecenterOnInitialState = false;
     std::string residualNorm = "block"; ///< "block" or "l2" convergence/line-search norm
     Real residualWeightPsi = 1.0;
     Real residualWeightPhin = 1.0;

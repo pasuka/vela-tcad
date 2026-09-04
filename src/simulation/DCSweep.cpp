@@ -1894,6 +1894,8 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     }
     sweep.writeStateEveryPointPrefix =
         j.value("write_state_every_point_prefix", std::string{});
+    sweep.writeStateEveryAcceptedStepPrefix =
+        j.value("write_state_every_accepted_step_prefix", std::string{});
     parseSweepContinuationConfig(j, sweep);
 
     const auto chargeCfg = j.value("terminal_charge", nlohmann::json::object());
@@ -2334,6 +2336,9 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         sweep.initialization.writeStateFile = resolve(sweep.initialization.writeStateFile);
     if (!sweep.writeStateEveryPointPrefix.empty())
         sweep.writeStateEveryPointPrefix = resolve(sweep.writeStateEveryPointPrefix);
+    if (!sweep.writeStateEveryAcceptedStepPrefix.empty())
+        sweep.writeStateEveryAcceptedStepPrefix =
+            resolve(sweep.writeStateEveryAcceptedStepPrefix);
     const bool boundaryControlEnabled =
         sweep.externalResistor.enabled || sweep.voltageToCurrent.enabled;
     if (boundaryControlEnabled) {
@@ -5121,6 +5126,18 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
     };
 
+    auto writeAcceptedState = [&](const std::string& prefixString,
+                                  Real voltage,
+                                  const DDSolution& solution) {
+        if (prefixString.empty())
+            return;
+        const std::filesystem::path prefix(prefixString);
+        const std::filesystem::path path =
+            prefix.parent_path() /
+            (prefix.filename().string() + "_bias_" + biasToken(voltage) + ".csv");
+        writeDDSolutionStateCsv(path, solution, sweep.scaling);
+    };
+
     auto recordPoint = [&](Real voltage, const SolvePointAttempt& attempt, bool converged,
                            Real attemptedStep, Real acceptedStep, int retryCount,
                            const std::string& failureReason = std::string(),
@@ -7039,13 +7056,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         }
         if (converged && !sweep.writeStateFile.empty())
             writeDDSolutionStateCsv(sweep.writeStateFile, sol, sweep.scaling);
-        if (converged && !sweep.writeStateEveryPointPrefix.empty()) {
-            const std::filesystem::path prefix(sweep.writeStateEveryPointPrefix);
-            const std::filesystem::path path =
-                prefix.parent_path() /
-                (prefix.filename().string() + "_bias_" + biasToken(voltage) + ".csv");
-            writeDDSolutionStateCsv(path, sol, sweep.scaling);
-        }
+        if (converged)
+            writeAcceptedState(sweep.writeStateEveryPointPrefix, voltage, sol);
+        if (converged)
+            writeAcceptedState(sweep.writeStateEveryAcceptedStepPrefix, voltage, sol);
 
         points.push_back(std::move(point));
         const DCSweepPoint& loggedPoint = points.back();
@@ -8207,6 +8221,16 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                 return;
                             }
                             failureReason.clear();
+                            if (!sweep.writeStateFile.empty()) {
+                                writeDDSolutionStateCsv(
+                                    sweep.writeStateFile,
+                                    attempt.solution,
+                                    sweep.scaling);
+                            }
+                            writeAcceptedState(
+                                sweep.writeStateEveryAcceptedStepPrefix,
+                                event.voltage,
+                                attempt.solution);
                             localPreviousSolution = attempt.solution;
                             localPreviousBias = event.voltage;
                         },
