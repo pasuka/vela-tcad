@@ -75,6 +75,24 @@ def common_config() -> dict:
     cfg["mesh_file"] = absolute(FIXTURE / "vela" / "input" / "mesh.json")
     cfg["node_doping_file"] = absolute(FIXTURE / "vela" / "input" / "doping.csv")
     cfg["materials_file"] = absolute(FIXTURE / "vela" / "materials_sentaurus2022.json")
+    cfg["solver"]["carrier_row_qualified_stall_acceptance"] = True
+    cfg["solver"]["carrier_row_convergence"] = {
+        "mode": "enforce",
+        "eps_row": 1.0e-3,
+        "scale_floor": 1.0e-30,
+        "min_source_scale": 1.0e-18,
+        "min_source_scale_fraction": 1.0e-3,
+        "min_source_global_fraction": 1.0e-6,
+        "min_carrier_density_m3": ACTIVE_CARRIER_DENSITY_M3,
+        "min_flux_scale_fraction": 1.0e-6,
+        "min_flux_scale": 0.0,
+        "min_newton_max_iter": 200,
+    }
+    cfg["solver"]["global_continuity_closure"] = {
+        "mode": "enforce",
+        "tolerance": 1.0e-6,
+        "source_floor": 1.0e-18,
+    }
     return cfg
 
 
@@ -114,13 +132,19 @@ def step_summary(path: Path, state_rows: list[dict[str, str]]) -> dict:
     keys = ("delta_psi_V", "delta_phin_V", "delta_phip_V")
     maxima = {key: max(abs(float(row[key])) for row in rows) for key in keys}
     l2 = math.sqrt(sum(float(row[key]) ** 2 for row in rows for key in keys))
+    active_phip = [
+        abs(float(row["delta_phip_V"]) - float(row["delta_psi_V"])) for row in rows
+        if float(state[int(row["node_id"])]["holes_m3"]) >= ACTIVE_CARRIER_DENSITY_M3
+    ]
     active_phin = [
-        abs(float(row["delta_phin_V"])) for row in rows
+        abs(float(row["delta_phin_V"]) - float(row["delta_psi_V"])) for row in rows
         if float(state[int(row["node_id"])]["electrons_m3"]) >= ACTIVE_CARRIER_DENSITY_M3
     ]
-    active_phip = [
-        abs(float(row["delta_phip_V"])) for row in rows
-        if float(state[int(row["node_id"])]["holes_m3"]) >= ACTIVE_CARRIER_DENSITY_M3
+    driving_electron = [
+        abs(float(row["delta_phin_V"]) - float(row["delta_psi_V"])) for row in rows
+    ]
+    driving_hole = [
+        abs(float(row["delta_phip_V"]) - float(row["delta_psi_V"])) for row in rows
     ]
     return {
         "row_count": len(rows),
@@ -128,6 +152,8 @@ def step_summary(path: Path, state_rows: list[dict[str, str]]) -> dict:
         "max_abs_delta_phin_V": maxima["delta_phin_V"],
         "max_abs_delta_phip_V": maxima["delta_phip_V"],
         "max_abs_delta_any_V": max(maxima.values()),
+        "max_abs_delta_phin_minus_psi_V": max(driving_electron, default=0.0),
+        "max_abs_delta_phip_minus_psi_V": max(driving_hole, default=0.0),
         "max_abs_delta_relevant_V": max(
             maxima["delta_psi_V"], max(active_phin, default=0.0), max(active_phip, default=0.0)
         ),
@@ -201,7 +227,9 @@ def main() -> int:
         rows, currents = read_csv(state), status["contact_currents_A_per_um"]
         finite = len(rows) == NODE_COUNT and all(math.isfinite(float(row[key])) for row in rows for key in ("psi", "phin", "phip", "electrons_m3", "holes_m3"))
         kcl = sum(float(value) for value in currents.values())
-        record = {"index": index, "vce_V": bias, "solver_converged": True, "iterations": status["iterations"], "convergence_reason": status["convergence_reason"], "final_residual": status["final_residual"], "state_row_count": len(rows), "finite_primary_fields": finite, "state_sha256": sha256(state), "parent_state_sha256": sha256(previous), "kcl_A_per_um": kcl, "state_file": state.relative_to(output).as_posix(), "field_file": vtk.relative_to(output).as_posix(), "recombination_file": f"recombination/{token}.csv"}
+        carrier_rows = status["carrier_row_convergence"]
+        closure = status["global_continuity_closure"]
+        record = {"index": index, "vce_V": bias, "solver_converged": True, "iterations": status["iterations"], "convergence_reason": status["convergence_reason"], "final_residual": status["final_residual"], "carrier_rows_satisfied": carrier_rows["satisfied"], "carrier_rows_qualified": carrier_rows["qualified_row_count"], "carrier_rows_ignored": carrier_rows["ignored_row_count"], "carrier_row_max_ratio": carrier_rows["max_ratio"], "global_continuity_satisfied": closure["satisfied"], "global_electron_closure_ratio": closure["electron"]["ratio"], "global_hole_closure_ratio": closure["hole"]["ratio"], "state_row_count": len(rows), "finite_primary_fields": finite, "state_sha256": sha256(state), "parent_state_sha256": sha256(previous), "kcl_A_per_um": kcl, "state_file": state.relative_to(output).as_posix(), "field_file": vtk.relative_to(output).as_posix(), "recombination_file": f"recombination/{token}.csv"}
         records.append(record)
         terminal_rows.append({"index": index, "vce_V": bias, "collector_A_per_um": currents["collector"], "base_A_per_um": currents["base"], "emitter_A_per_um": currents["emitter"], "kcl_A_per_um": kcl, "state_sha256": record["state_sha256"]})
         write_csv(output / "state_solve_ledger.csv", records); write_csv(output / "terminal_currents.csv", terminal_rows)
@@ -222,11 +250,11 @@ def main() -> int:
         record["raw_max_update_V"] = update["raw_max_abs_delta_any_V"]
         record["raw_max_relevant_update_V"] = update["raw_max_abs_delta_relevant_V"]
         record["capped_max_update_V"] = update["capped_max_abs_delta_any_V"]
-        record["accepted"] = record["finite_primary_fields"] and abs(record["kcl_A_per_um"]) <= MAX_KCL_A_PER_UM and record["raw_max_relevant_update_V"] <= MAX_POST_ACCEPT_UPDATE_V
+        record["accepted"] = record["finite_primary_fields"] and record["carrier_rows_satisfied"] and record["global_continuity_satisfied"] and abs(record["kcl_A_per_um"]) <= MAX_KCL_A_PER_UM and record["raw_max_relevant_update_V"] <= MAX_POST_ACCEPT_UPDATE_V
     write_csv(output / "accepted_states.csv", records)
 
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "contract": {
             "biases": "VBE=0.70 V; VCE=0.00..3.00 V in exact 0.10 V increments",
             "state_lineage": "each fixed-bias state starts from the immediately preceding accepted state",
@@ -234,7 +262,10 @@ def main() -> int:
             "state_rows_required": NODE_COUNT,
             "finite_primary_fields_required": True,
             "max_post_accept_raw_update_V": MAX_POST_ACCEPT_UPDATE_V,
+            "post_accept_update_definition": "max |delta_psi| and active-carrier |delta_phi_carrier-delta_psi|",
             "carrier_update_density_mask_m3": ACTIVE_CARRIER_DENSITY_M3,
+            "carrier_row_convergence_required": True,
+            "global_continuity_closure_required": True,
             "max_terminal_kcl_A_per_um": MAX_KCL_A_PER_UM,
         },
         "accepted_count": sum(bool(row["accepted"]) for row in records),

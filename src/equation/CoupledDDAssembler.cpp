@@ -1689,6 +1689,10 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
             substitution->holeDensity, "hole density", true);
         p = substitution->holeDensity;
     }
+    for (int i = 0; i < N; ++i) {
+        terms[static_cast<std::size_t>(i)].electronDensity_m3 = n(i);
+        terms[static_cast<std::size_t>(i)].holeDensity_m3 = p(i);
+    }
     const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
     const Real fieldFactor = scaling_.enabled ? scaling_.fieldFromCoordinateDeltaFactor : 1.0;
     const VectorXd psi = x.segment(psiOffset(), N) * potentialScale;
@@ -2002,6 +2006,10 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
 
     for (Index i = 0; i < Nidx; ++i) {
         const int ii = static_cast<int>(i);
+        terms[i].electronContinuityActive =
+            hasElectronContribution[static_cast<std::size_t>(ii)];
+        terms[i].holeContinuityActive =
+            hasHoleContribution[static_cast<std::size_t>(ii)];
         if (!hasElectronContribution[static_cast<std::size_t>(ii)])
             terms[i].electronGauge = x(phinOffset() + ii)
                 + electronQuasiFermiReferenceAt(i) / potentialScale;
@@ -2023,6 +2031,7 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
 
     auto applyElectronBoundary = [&](Index node, Real value) {
         CoupledDDCarrierTermDiagnostic& term = terms[node];
+        term.electronContinuityActive = false;
         term.electronFlux = 0.0;
         term.electronFluxAbsSum = 0.0;
         term.electronRecombination = 0.0;
@@ -2038,6 +2047,7 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
     };
     auto applyHoleBoundary = [&](Index node, Real value) {
         CoupledDDCarrierTermDiagnostic& term = terms[node];
+        term.holeContinuityActive = false;
         term.holeFlux = 0.0;
         term.holeFluxAbsSum = 0.0;
         term.holeRecombination = 0.0;

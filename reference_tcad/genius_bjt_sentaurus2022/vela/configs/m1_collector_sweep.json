@@ -21,6 +21,7 @@
     "damping_psi": 0.2,
     "line_search": true,
     "warm_start": true,
+    "carrier_row_qualified_stall_acceptance": true,
     "quasi_fermi_reference": "contact_majority",
     "quasi_fermi_update_limit_V": 0.1,
     "mobility": {
@@ -53,11 +54,16 @@
       "fallback": "none"
     },
     "carrier_row_convergence": {
-      "mode": "report",
+      "mode": "enforce",
       "eps_row": 0.001,
       "scale_floor": 1e-30,
       "min_source_scale": 1e-18,
-      "min_source_scale_fraction": 0.0
+      "min_source_scale_fraction": 0.001,
+      "min_source_global_fraction": 1e-6,
+      "min_carrier_density_m3": 1e16,
+      "min_flux_scale_fraction": 1e-6,
+      "min_flux_scale": 0.0,
+      "min_newton_max_iter": 200
     },
     "continuity_row_scaling": {
       "enabled": true,
@@ -66,6 +72,11 @@
       "min_source_scale": 1e-18,
       "min_weight": 1e-12,
       "max_weight": 1e18
+    },
+    "global_continuity_closure": {
+      "mode": "enforce",
+      "tolerance": 1e-6,
+      "source_floor": 1e-18
     }
   },
   "sweep": {

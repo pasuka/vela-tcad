@@ -4304,6 +4304,93 @@ TEST_CASE("NewtonSolver: carrier row convergence ignores sources below absolute 
     REQUIRE(enforced.violations.size() == 1);
 }
 
+TEST_CASE("NewtonSolver: carrier row convergence qualifies active density and flux rows",
+          "[newton][carrier_row_convergence]")
+{
+    CoupledDDCarrierTermDiagnostic activeDensity;
+    activeDensity.nodeId = 10;
+    activeDensity.holeDensity_m3 = 1.0e16;
+    activeDensity.holeResidual = 2.0e-29;
+
+    CoupledDDCarrierTermDiagnostic activeFlux;
+    activeFlux.nodeId = 11;
+    activeFlux.holeDensity_m3 = 1.0;
+    activeFlux.holeFluxAbsSum = 1.0e-3;
+    activeFlux.holeResidual = 2.0e-5;
+
+    CoupledDDCarrierTermDiagnostic inactive;
+    inactive.nodeId = 12;
+    inactive.holeDensity_m3 = 1.0;
+    inactive.holeFluxAbsSum = 1.0e-9;
+    inactive.holeResidual = 1.0e-9;
+
+    NewtonCarrierRowConvergenceConfig cfg;
+    cfg.mode = "enforce";
+    cfg.epsRow = 1.0e-3;
+    cfg.minSourceScale = 1.0;
+    cfg.minCarrierDensity_m3 = 1.0e16;
+    cfg.minFluxScaleFraction = 1.0e-4;
+
+    const auto evaluation = evaluateCarrierRowConvergence(
+        {activeDensity, activeFlux, inactive}, cfg);
+
+    REQUIRE_FALSE(evaluation.satisfied);
+    REQUIRE(evaluation.violations.size() == 2);
+    CHECK(evaluation.qualifiedRowCount == 2);
+    CHECK(evaluation.ignoredRowCount == 4);
+    CHECK(evaluation.violations[0].densityQualified);
+    CHECK_FALSE(evaluation.violations[0].fluxQualified);
+    CHECK_FALSE(evaluation.violations[1].densityQualified);
+    CHECK(evaluation.violations[1].fluxQualified);
+}
+
+TEST_CASE("NewtonSolver: parses carrier row physical qualification controls",
+          "[newton][carrier_row_convergence][config]")
+{
+    const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
+        {"carrier_row_convergence", {
+            {"mode", "report"},
+            {"min_source_global_fraction", 1.0e-5},
+            {"min_carrier_density_m3", 1.0e16},
+            {"min_flux_scale_fraction", 1.0e-6},
+            {"min_flux_scale", 1.0e-20},
+        }}
+    });
+    CHECK(cfg.carrierRowConvergence.minSourceGlobalFraction == Catch::Approx(1.0e-5));
+    CHECK(cfg.carrierRowConvergence.minCarrierDensity_m3 == Catch::Approx(1.0e16));
+    CHECK(cfg.carrierRowConvergence.minFluxScaleFraction == Catch::Approx(1.0e-6));
+    CHECK(cfg.carrierRowConvergence.minFluxScale == Catch::Approx(1.0e-20));
+
+    REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
+        {"carrier_row_convergence", {{"min_carrier_density_m3", -1.0}}}
+    }), std::invalid_argument);
+}
+
+TEST_CASE("NewtonSolver: carrier row convergence ignores globally negligible sources",
+          "[newton][carrier_row_convergence]")
+{
+    CoupledDDCarrierTermDiagnostic dominant;
+    dominant.nodeId = 20;
+    dominant.holeRecombination = 1.0;
+    dominant.holeResidual = 0.0;
+
+    CoupledDDCarrierTermDiagnostic negligible;
+    negligible.nodeId = 21;
+    negligible.holeRecombination = 1.0e-9;
+    negligible.holeResidual = 1.0e-9;
+
+    NewtonCarrierRowConvergenceConfig cfg;
+    cfg.mode = "enforce";
+    cfg.epsRow = 1.0e-3;
+    cfg.minSourceScaleFraction = 0.0;
+    cfg.minSourceGlobalFraction = 1.0e-6;
+
+    const auto evaluation = evaluateCarrierRowConvergence({dominant, negligible}, cfg);
+    REQUIRE(evaluation.satisfied);
+    CHECK(evaluation.qualifiedRowCount == 1);
+    CHECK(evaluation.ignoredRowCount == 3);
+}
+
 TEST_CASE("NewtonSolver: global continuity closure compares contact flux with free-node source",
           "[newton][global_continuity_closure]")
 {

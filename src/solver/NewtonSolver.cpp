@@ -992,43 +992,90 @@ NewtonCarrierRowConvergenceEvaluation evaluateCarrierRowConvergence(
 
     const Real eps = cfg.epsRow;
     const Real floor = std::max<Real>(cfg.scaleFloor, 0.0);
+    Real maxElectronFluxScale = 0.0;
+    Real maxHoleFluxScale = 0.0;
+    Real maxElectronSourceScale = 0.0;
+    Real maxHoleSourceScale = 0.0;
+    for (const CoupledDDCarrierTermDiagnostic& row : rows) {
+        maxElectronFluxScale = std::max(maxElectronFluxScale, std::abs(row.electronFluxAbsSum));
+        maxHoleFluxScale = std::max(maxHoleFluxScale, std::abs(row.holeFluxAbsSum));
+        maxElectronSourceScale = std::max(maxElectronSourceScale,
+            std::max(std::abs(row.electronRecombination), std::abs(row.electronImpact)));
+        maxHoleSourceScale = std::max(maxHoleSourceScale,
+            std::max(std::abs(row.holeRecombination), std::abs(row.holeImpact)));
+    }
     auto checkCarrier = [&](const CoupledDDCarrierTermDiagnostic& row,
                             const std::string& carrier,
+                            bool continuityActive,
+                            Real carrierDensity,
                             Real residual,
                             Real flux,
                             Real fluxAbsSum,
                             Real recombination,
-                            Real impact) {
+                            Real impact,
+                            Real maxFluxScale,
+                            Real maxSourceScale) {
+        if (!continuityActive) {
+            ++evaluation.ignoredRowCount;
+            return;
+        }
         const Real sourceScale = std::max(std::abs(recombination), std::abs(impact));
         const Real scale = std::max({std::abs(fluxAbsSum), sourceScale, floor});
-        const bool sourceQualified = scale > 0.0 &&
+        const bool sourceQualified = sourceScale > 0.0 && scale > 0.0 &&
             sourceScale >= cfg.minSourceScale &&
-            sourceScale >= cfg.minSourceScaleFraction * scale;
+            sourceScale >= cfg.minSourceScaleFraction * scale &&
+            sourceScale >= cfg.minSourceGlobalFraction * maxSourceScale;
+        const bool densityQualified = cfg.minCarrierDensity_m3 > 0.0 &&
+            carrierDensity >= cfg.minCarrierDensity_m3;
+        const bool fluxQualificationEnabled =
+            cfg.minFluxScale > 0.0 || cfg.minFluxScaleFraction > 0.0;
+        const Real fluxThreshold = std::max(
+            cfg.minFluxScale,
+            cfg.minFluxScaleFraction * maxFluxScale);
+        const bool fluxQualified = fluxQualificationEnabled &&
+            fluxAbsSum > 0.0 && fluxAbsSum >= fluxThreshold;
+        const bool qualified = sourceQualified || densityQualified || fluxQualified;
         const Real ratio = scale > 0.0 ? std::abs(residual) / scale : 0.0;
-        if (sourceQualified && ratio > evaluation.maxRatio) {
+        if (qualified)
+            ++evaluation.qualifiedRowCount;
+        else
+            ++evaluation.ignoredRowCount;
+        if (qualified && ratio > evaluation.maxRatio) {
             evaluation.maxRatio = ratio;
             evaluation.maxRatioNode = row.nodeId;
             evaluation.maxRatioCarrier = carrier;
         }
-        if (sourceQualified && ratio > eps) {
+        if (qualified && ratio > eps) {
             NewtonCarrierRowConvergenceViolation violation;
             violation.nodeId = row.nodeId;
             violation.carrier = carrier;
             violation.residual = residual;
             violation.scale = scale;
             violation.ratio = ratio;
+            violation.carrierDensity_m3 = carrierDensity;
             violation.flux = flux;
             violation.recombination = recombination;
             violation.impact = impact;
+            violation.densityQualified = densityQualified;
+            violation.fluxQualified = fluxQualified;
+            violation.sourceQualified = sourceQualified;
             evaluation.violations.push_back(std::move(violation));
         }
     };
 
     for (const CoupledDDCarrierTermDiagnostic& row : rows) {
-        checkCarrier(row, "electron", row.electronResidual, row.electronFlux,
-                     row.electronFluxAbsSum, row.electronRecombination, row.electronImpact);
-        checkCarrier(row, "hole", row.holeResidual, row.holeFlux,
-                     row.holeFluxAbsSum, row.holeRecombination, row.holeImpact);
+        checkCarrier(row, "electron", row.electronContinuityActive,
+                     row.electronDensity_m3,
+                     row.electronResidual, row.electronFlux,
+                     row.electronFluxAbsSum, row.electronRecombination,
+                     row.electronImpact, maxElectronFluxScale,
+                     maxElectronSourceScale);
+        checkCarrier(row, "hole", row.holeContinuityActive,
+                     row.holeDensity_m3,
+                     row.holeResidual, row.holeFlux,
+                     row.holeFluxAbsSum, row.holeRecombination,
+                     row.holeImpact, maxHoleFluxScale,
+                     maxHoleSourceScale);
     }
     evaluation.satisfied = evaluation.violations.empty();
     return evaluation;
@@ -1679,6 +1726,15 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "min_source_scale_fraction", cfg.carrierRowConvergence.minSourceScaleFraction);
             cfg.carrierRowConvergence.minSourceScale = value.value(
                 "min_source_scale", cfg.carrierRowConvergence.minSourceScale);
+            cfg.carrierRowConvergence.minSourceGlobalFraction = value.value(
+                "min_source_global_fraction",
+                cfg.carrierRowConvergence.minSourceGlobalFraction);
+            cfg.carrierRowConvergence.minCarrierDensity_m3 = value.value(
+                "min_carrier_density_m3", cfg.carrierRowConvergence.minCarrierDensity_m3);
+            cfg.carrierRowConvergence.minFluxScaleFraction = value.value(
+                "min_flux_scale_fraction", cfg.carrierRowConvergence.minFluxScaleFraction);
+            cfg.carrierRowConvergence.minFluxScale = value.value(
+                "min_flux_scale", cfg.carrierRowConvergence.minFluxScale);
             cfg.carrierRowConvergence.minEnforceMaxIter = value.value(
                 "min_newton_max_iter", cfg.carrierRowConvergence.minEnforceMaxIter);
             cfg.carrierRowConvergence.diagnosticCsvFile = value.value(
@@ -1740,6 +1796,26 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             !std::isfinite(cfg.carrierRowConvergence.minSourceScale)) {
             throw std::invalid_argument(
                 "newtonConfigFromJson: carrier_row_convergence.min_source_scale must be finite and nonnegative.");
+        }
+        if (cfg.carrierRowConvergence.minSourceGlobalFraction < 0.0 ||
+            !std::isfinite(cfg.carrierRowConvergence.minSourceGlobalFraction)) {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: carrier_row_convergence.min_source_global_fraction must be finite and nonnegative.");
+        }
+        if (cfg.carrierRowConvergence.minCarrierDensity_m3 < 0.0 ||
+            !std::isfinite(cfg.carrierRowConvergence.minCarrierDensity_m3)) {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: carrier_row_convergence.min_carrier_density_m3 must be finite and nonnegative.");
+        }
+        if (cfg.carrierRowConvergence.minFluxScaleFraction < 0.0 ||
+            !std::isfinite(cfg.carrierRowConvergence.minFluxScaleFraction)) {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: carrier_row_convergence.min_flux_scale_fraction must be finite and nonnegative.");
+        }
+        if (cfg.carrierRowConvergence.minFluxScale < 0.0 ||
+            !std::isfinite(cfg.carrierRowConvergence.minFluxScale)) {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: carrier_row_convergence.min_flux_scale must be finite and nonnegative.");
         }
         if (cfg.carrierRowRecovery.mode != "off" &&
             cfg.carrierRowRecovery.mode != "gummel_density") {
@@ -5986,13 +6062,18 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         const bool writeHeader = !std::filesystem::exists(path);
         std::ofstream out(path, std::ios::app);
         if (writeHeader) {
-            out << "event,iteration,node_id,carrier,residual,scale,ratio,flux,srh,impact\n";
+            out << "event,iteration,node_id,carrier,residual,scale,ratio,carrier_density_m3,"
+                << "flux,srh,impact,density_qualified,flux_qualified,source_qualified\n";
         }
         out << std::setprecision(17);
         for (const auto& row : evaluation.violations) {
             out << event << ',' << iteration << ',' << row.nodeId << ',' << row.carrier << ','
                 << row.residual << ',' << row.scale << ',' << row.ratio << ','
-                << row.flux << ',' << row.recombination << ',' << row.impact << '\n';
+                << row.carrierDensity_m3 << ',' << row.flux << ','
+                << row.recombination << ',' << row.impact << ','
+                << (row.densityQualified ? 1 : 0) << ','
+                << (row.fluxQualified ? 1 : 0) << ','
+                << (row.sourceQualified ? 1 : 0) << '\n';
         }
     };
     auto shouldWriteCarrierRowTrace = [&](int iteration) {

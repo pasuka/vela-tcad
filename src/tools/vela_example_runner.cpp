@@ -192,9 +192,13 @@ nlohmann::json carrierRowConvergenceJson(
             {"residual", row.residual},
             {"scale", row.scale},
             {"ratio", row.ratio},
+            {"carrier_density_m3", row.carrierDensity_m3},
             {"flux", row.flux},
             {"srh", row.recombination},
             {"impact", row.impact},
+            {"density_qualified", row.densityQualified},
+            {"flux_qualified", row.fluxQualified},
+            {"source_qualified", row.sourceQualified},
         });
     }
     return {
@@ -206,7 +210,29 @@ nlohmann::json carrierRowConvergenceJson(
         {"max_ratio", evaluation.maxRatio},
         {"max_ratio_node", evaluation.maxRatioNode},
         {"max_ratio_carrier", evaluation.maxRatioCarrier},
+        {"qualified_row_count", evaluation.qualifiedRowCount},
+        {"ignored_row_count", evaluation.ignoredRowCount},
         {"violations", std::move(violations)},
+    };
+}
+nlohmann::json globalContinuityClosureJson(
+    const vela::NewtonGlobalContinuityClosureEvaluation& evaluation)
+{
+    const auto carrier = [](const vela::NewtonGlobalContinuityCarrierClosure& value) {
+        return nlohmann::json{
+            {"qualified", value.qualified},
+            {"contact_flux", value.contactFlux},
+            {"integrated_source", value.integratedSource},
+            {"mismatch", value.mismatch},
+            {"ratio", value.ratio},
+        };
+    };
+    return {
+        {"enabled", evaluation.enabled},
+        {"enforced", evaluation.enforced},
+        {"satisfied", evaluation.satisfied},
+        {"electron", carrier(evaluation.electron)},
+        {"hole", carrier(evaluation.hole)},
     };
 }
 nlohmann::json carrierRowRecoveryJson(
@@ -456,6 +482,7 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
         {"failure_reason", result.failureDiagnostics.failureReason},
         {"final_block_residuals", blockResidualsJson(result.finalBlockNorms)},
         {"carrier_row_convergence", carrierRowConvergenceJson(result.finalCarrierRowConvergence)},
+        {"global_continuity_closure", globalContinuityClosureJson(result.finalGlobalContinuityClosure)},
         {"carrier_row_recovery", carrierRowRecoveryJson(result.carrierRowRecovery)},
         {"contact_currents_A_per_um", contactCurrentsJson},
         {"current_total_A_per_um", drivenCurrentPerMicron},
@@ -2834,6 +2861,8 @@ int main(int argc, char** argv)
             status["final_block_residuals"] = blockResidualsJson(result.result.finalBlockNorms);
             status["carrier_row_convergence"] =
                 carrierRowConvergenceJson(result.result.finalCarrierRowConvergence);
+            status["global_continuity_closure"] =
+                globalContinuityClosureJson(result.result.finalGlobalContinuityClosure);
             status["carrier_row_recovery"] =
                 carrierRowRecoveryJson(result.result.carrierRowRecovery);
             if (includeMeshReport)

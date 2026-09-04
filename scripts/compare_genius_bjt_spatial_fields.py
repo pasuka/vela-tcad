@@ -191,10 +191,13 @@ def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
 
 
 def write_markdown(path: Path, report: dict[str, object]) -> None:
+    bias = report["bias"]
+    status = report["comparison_status"]
     lines = [
         "# Genius NPN BJT spatial-state acceptance",
         "",
-        "The asserted gate uses the exact common mesh at VBE=0.70 V and VCE=3.00 V.",
+        f"This {status.replace('_', ' ')} comparison uses the exact common mesh at "
+        f"VBE={bias['VBE_V']:.2f} V and VCE={bias['VCE_V']:.2f} V.",
         "Potential is checked on all nodes. Carrier-density decade errors are gated only where the Sentaurus reference density is at least 1e10 cm^-3.",
         "Full-domain density statistics remain available as characterization and cannot override the registered gate.",
         "",
@@ -239,6 +242,12 @@ def main() -> int:
     parser.add_argument("--sentaurus-fields-root", type=Path, required=True)
     parser.add_argument("--vela-state", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--vce", type=float, default=3.0)
+    parser.add_argument(
+        "--characterization-only",
+        action="store_true",
+        help="Report the registered metrics without treating threshold misses as process failure",
+    )
     args = parser.parse_args()
 
     threshold_path = args.reference_root / "contracts" / "comparison_thresholds.json"
@@ -298,7 +307,10 @@ def main() -> int:
     report = {
         "schema_version": 1,
         "device": "Genius NPN BJT",
-        "bias": contract["bias"],
+        "bias": {"VBE_V": 0.7, "VCE_V": args.vce},
+        "comparison_status": (
+            "characterization_only" if args.characterization_only else "asserted"
+        ),
         "sampling": contract["sampling"],
         "contract_reason": contract["reason"],
         "common_node_count": len(coordinates),
@@ -331,7 +343,7 @@ def main() -> int:
     )
     write_csv(args.output_dir / "hole_density_top_errors.csv", top_rows)
     print(json.dumps(report, indent=2, allow_nan=False))
-    return 0 if report["overall_pass"] else 1
+    return 0 if report["overall_pass"] or args.characterization_only else 1
 
 
 if __name__ == "__main__":

@@ -182,11 +182,28 @@ def main() -> int:
     parser.add_argument("--runner", type=Path, default=REPO / "build-release" / "vela_example_runner.exe")
     parser.add_argument("--output-root", type=Path, default=BUILD_ROOT / "m1_hole_current_edge_audit")
     parser.add_argument(
+        "--accepted-root",
+        type=Path,
+        default=BUILD_ROOT / "m1_accepted_states",
+        help="Root containing states/vce_NNN.csv and fields/vce_NNN.vtk",
+    )
+    parser.add_argument(
+        "--index",
+        type=int,
+        default=30,
+        help="Collector-bias index in 0.1 V units (0, 10, 20, or 30)",
+    )
+    parser.add_argument(
         "--sentaurus-root",
         type=Path,
         default=BUILD_ROOT / "m1_current_diagnosis" / "sentaurus_vce3",
     )
     args = parser.parse_args()
+    if args.index < 0:
+        raise ValueError("--index must be non-negative")
+    token = f"vce_{args.index:03d}"
+    accepted_state = args.accepted_root / "states" / f"{token}.csv"
+    accepted_vtk = args.accepted_root / "fields" / f"{token}.vtk"
     output = args.output_root.resolve()
     output.mkdir(parents=True, exist_ok=True)
 
@@ -200,7 +217,7 @@ def main() -> int:
             "mesh_file": absolute(FIXTURE / "vela" / "input" / "mesh.json"),
             "node_doping_file": absolute(FIXTURE / "vela" / "input" / "doping.csv"),
             "materials_file": absolute(FIXTURE / "vela" / "materials_sentaurus2022.json"),
-            "state_file": absolute(BUILD_ROOT / "m1_accepted_states" / "states" / "vce_030.csv"),
+            "state_file": absolute(accepted_state),
             "output_csv": absolute(output / "sg_edges.csv"),
         }
     )
@@ -221,7 +238,7 @@ def main() -> int:
         raise RuntimeError(process.stderr or process.stdout)
 
     sentaurus = sentaurus_vector(args.sentaurus_root / "fields" / "hCurrentDensity_region0.csv")
-    _, _, vectors = read_vtk_point_data(BUILD_ROOT / "m1_accepted_states" / "fields" / "vce_030.vtk")
+    _, _, vectors = read_vtk_point_data(accepted_vtk)
     vela = vectors["SentaurusHoleCurrentDensityVector"]
     cpp_dual_face_hole = [
         (x, y)
@@ -324,7 +341,7 @@ def main() -> int:
     )
     summary = {
         "schema_version": 1,
-        "bias": {"VBE_V": 0.7, "VCE_V": 3.0},
+        "bias": {"VBE_V": 0.7, "VCE_V": args.index / 10.0},
         "selection": {
             "midpoint_x_um": [2.5, 4.5],
             "midpoint_y_um": [0.55, 0.85],
@@ -354,8 +371,8 @@ def main() -> int:
                 cpp_python_max_difference_A_cm2,
         },
         "source_sha256": {
-            "accepted_state": sha256(BUILD_ROOT / "m1_accepted_states" / "states" / "vce_030.csv"),
-            "accepted_vtk": sha256(BUILD_ROOT / "m1_accepted_states" / "fields" / "vce_030.vtk"),
+            "accepted_state": sha256(accepted_state),
+            "accepted_vtk": sha256(accepted_vtk),
             "sentaurus_field_manifest": sha256(args.sentaurus_root / "field_manifest.json"),
             "sg_edges": sha256(output / "sg_edges.csv"),
         },
