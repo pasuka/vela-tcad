@@ -110,6 +110,21 @@
         }
       },
       "reason": "Initial engineering regression gates registered after the original characterization, not a blind validation. Current-density comparison uses the dual-face-length-weighted nodal representation of the production SG line fluxes; the line fluxes remain the conservative finite-volume authority. Current-density vector gates retain magnitude and direction sensitivity. Recombination acceptance uses signed/absolute integral and normalized-shape checks; unweighted node-log P95 and single-node argmax remain diagnostic-only because low-contribution tails and flat peaks can dominate them without materially changing the integrated source."
+    },
+    "conservative_section_flux_gate": {
+      "status": "asserted",
+      "biases_VCE_V": [0.0, 1.0, 2.0, 3.0],
+      "sections": [
+        {"name": "base_side", "axis": "y", "coordinate_um": 0.45},
+        {"name": "collector_side", "axis": "y", "coordinate_um": 0.85}
+      ],
+      "thresholds": {
+        "maximum_section_to_vela_terminal_relative_error": 1e-8,
+        "maximum_section_to_sdevice_terminal_absolute_log10_error": 0.05,
+        "maximum_carrier_continuity_relative_error": 0.01,
+        "maximum_section_total_current_spread_relative_to_terminal": 1e-8
+      },
+      "reason": "The finite-volume authority is the oriented production SG particle line flux. Full-width cuts on the base and collector sides avoid proprietary SDevice nodal-vector reconstruction. Electron and hole changes across the intervening slab are closed independently against the signed recombination integral."
     }
   }
 }

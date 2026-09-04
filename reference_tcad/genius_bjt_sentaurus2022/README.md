@@ -163,6 +163,15 @@ that residual solely to SDevice node-field construction semantics.  See
 `reports/mesh_sensitivity_validation.md` and reproduce with
 `scripts/run_genius_bjt_mesh_sensitivity.py`.
 
+The conservative-section follow-up sums the production SG line flux directly
+across full-width cuts at `y=0.45 um` and `y=0.85 um`. At VCE=0, 1, 2, and
+3 V, section-to-terminal closure, cross-section total-current drift, and
+electron/hole source closure all pass the asserted thresholds in
+`contracts/comparison_thresholds.json`. A separate frozen-state SRH audit
+confirms exact Scharfetter parameter and node-area alignment, while retaining
+an approximately 0.7803 Vela/SDevice integral ratio at 1-3 V. See
+`reports/conservative_flux_srh_alignment_report.md`.
+
 ## Comparison figures
 
 Publication-ready mesh, M1 spatial-field, terminal-curve, and parity-error
