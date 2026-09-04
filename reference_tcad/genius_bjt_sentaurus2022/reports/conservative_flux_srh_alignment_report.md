@@ -44,6 +44,16 @@
 
 目前粗网格最终 `overall_pass` 仍为 false，唯一失败项是低幅值空穴节点电流的 P95 对数误差 `0.828 decade` 大于 `0.5 decade` 门槛；端口曲线、三端 KCL、空间场、SRH、Auger 和守恒截面均已通过。加密网格 3 V 的空穴电流 P95 降至 `0.270 decade`，对应单点输运/复合验收通过。
 
+## 弱空穴节点电流的后续定位
+
+使用正式接受态保存的 SG 边通量逐点重放生产节点恢复公式，与 Vela 正式导出的节点电流矢量最大绝对差为 `1.85e-13 A/cm²`，P95 对数差为 `2.15e-15 decade`。因此 `0.828 decade` 不是导出文件错位、旧状态混用或边通量读取错误，而是生产恢复公式本身的结果。
+
+保持状态、迁移率和每条 SG 边通量完全不变，只把恢复顺序从“在节点上直接拟合所有入射边”改成“每个三角形先用三条边拟合单元电流，再按面积投影到节点”，共同 2121 节点掩膜的 P95 从 `0.8280` 降至 `0.0985 decade`，超过 `0.5 decade` 的节点由 180 个降为 0 个；归一化矢量 RMSE 从 `0.0622` 降至 `0.0308`，余弦相似度从 `0.99810` 提高到 `0.99960`。原始 180 个尾部节点的 P95 从 `1.8696` 降至 `0.1219 decade`。
+
+拓扑统计进一步排除了两个简单解释：尾部节点拟合矩阵条件数中位数仅为 `2.0`，并未病态；入射单元矢量的幅值抵消因子中位数为 `1.00009`，也不存在约 22 倍的直接矢量抵消。真正显著的分组特征是单元电流矢量离散度：尾部中位数 `1.847`，主电流区仅 `0.108`。这说明弱电流基区的顶点邻域不能由一个平滑电流矢量充分代表，而“先单元、后节点”的较大支撑域保留了目标节点对边提供的信息，更接近 SDevice 的单元导向绘图语义。
+
+上述结果已将原因定位到恢复支撑域和运算顺序，但尚未得到 SDevice 专有的精确单元到节点权重。详细数据见 `reports/hole_current_recovery_topology.md`。
+
 ## 方法与实现
 
 新增 `srh_fixed_state_probe`，直接读取 SDevice 的 `eDensity`、`hDensity`、`EffectiveIntrinsicDensity`、电势、电子/空穴准费米势和 `srhRecombination`，并以生产代码路径输出五种 SRH 候选场。新增 `write_dd_state_vtk`，从已签名的正式接受态只做导出、不重复求解，避免比较产物来自不同状态。
@@ -58,7 +68,7 @@ SDevice 的 `srhRecombination` 仍是节点绘图场，并非其内部单元积�
 
 ## 后续任务
 
-1. 继续定位粗网格弱空穴节点电流 P95 失败，重点比较守恒边通量与 SDevice 节点矢量构造语义。
+1. 将“先单元拟合、再按面积投影”的恢复方式实现为默认关闭的诊断候选，并在粗/细网格及 0–3 V 上做回归，确认其稳定性后再决定是否替换绘图默认值。
 2. 为固定状态探针增加长期回归夹具，锁定 Fermi–BGN 和经典/广义 SRH 的分解结果。
 3. 在更多器件和偏置上验证 SDevice 节点 SRH 场与经典公式的一致性，避免将本算例结论过度推广。
 
@@ -67,5 +77,6 @@ SDevice 的 `srhRecombination` 仍是节点绘图场，并非其内部单元积�
 - 固定状态分解：`scripts/audit_genius_bjt_srh_fixed_state.py`
 - 正式接受态复合率刷新：`scripts/refresh_genius_bjt_recombination_exports.py`
 - 守恒截面：`scripts/audit_genius_bjt_conservative_sections.py`
+- 空穴电流恢复拓扑：`scripts/diagnose_genius_bjt_hole_current_recovery_topology.py`
 - 最终验收：`scripts/compare_genius_bjt_sentaurus_vela.py`
 - 机器可读结果：忽略目录 `build-release/reference_tcad/genius_bjt_sentaurus2022/m1_p0_multibias/` 下的 `srh_fixed_state/`、`transport/`、`conservative_sections/` 和 `overall/`

@@ -65,8 +65,33 @@ assert TAIL_SPEC is not None and TAIL_SPEC.loader is not None
 TAIL = importlib.util.module_from_spec(TAIL_SPEC)
 TAIL_SPEC.loader.exec_module(TAIL)
 
+RECOVERY_TOPOLOGY_SCRIPT = (
+    SCRIPTS_DIR / "diagnose_genius_bjt_hole_current_recovery_topology.py"
+)
+RECOVERY_TOPOLOGY_SPEC = importlib.util.spec_from_file_location(
+    "diagnose_genius_bjt_hole_current_recovery_topology",
+    RECOVERY_TOPOLOGY_SCRIPT,
+)
+assert RECOVERY_TOPOLOGY_SPEC is not None and RECOVERY_TOPOLOGY_SPEC.loader is not None
+RECOVERY_TOPOLOGY = importlib.util.module_from_spec(RECOVERY_TOPOLOGY_SPEC)
+RECOVERY_TOPOLOGY_SPEC.loader.exec_module(RECOVERY_TOPOLOGY)
+
 
 class GeniusBjtReferenceToolsTest(unittest.TestCase):
+    def test_recovery_topology_condition_number_distinguishes_stencils(self) -> None:
+        orthogonal = [(1.0, 1.0, 0.0, 2.0), (1.0, 0.0, 1.0, 3.0)]
+        collinear = [(1.0, 1.0, 0.0, 2.0), (1.0, -1.0, 0.0, -2.0)]
+        self.assertAlmostEqual(RECOVERY_TOPOLOGY.condition_number(orthogonal), 1.0)
+        self.assertTrue(RECOVERY_TOPOLOGY.math.isinf(
+            RECOVERY_TOPOLOGY.condition_number(collinear)
+        ))
+
+    def test_recovery_topology_pearson_handles_exact_linear_relation(self) -> None:
+        self.assertAlmostEqual(
+            RECOVERY_TOPOLOGY.pearson([1.0, 2.0, 3.0], [2.0, 4.0, 6.0]),
+            1.0,
+        )
+
     def test_outside_distance_is_zero_inside_and_distance_outside(self) -> None:
         self.assertEqual(MODULE.outside_distance(2.0, 1.25, 4.75), 0.0)
         self.assertEqual(MODULE.outside_distance(1.0, 1.25, 4.75), 0.25)
