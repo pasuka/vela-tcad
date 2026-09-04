@@ -280,12 +280,14 @@ def combine_acceptance(
     numerical_parity_pass: bool,
     spatial_state_pass: bool,
     transport_source_pass: bool = True,
+    conservative_section_pass: bool = True,
 ) -> bool:
     return bool(
         operational_pass
         and numerical_parity_pass
         and spatial_state_pass
         and transport_source_pass
+        and conservative_section_pass
     )
 
 
@@ -318,6 +320,20 @@ def validated_transport_source_pass(summary: dict[str, object]) -> bool:
     if summary.get("overall_pass") is not metric_pass:
         raise ValueError("transport/source overall_pass is inconsistent with metric gates")
     return metric_pass
+
+
+def validated_conservative_section_pass(
+    summary: dict[str, object], contract: dict[str, object]
+) -> bool:
+    checks = summary.get("checks")
+    if not isinstance(checks, dict) or not checks:
+        raise ValueError("conservative-section summary has no checks")
+    if summary.get("thresholds") != contract.get("thresholds"):
+        raise ValueError("stale conservative-section summary: thresholds mismatch")
+    check_pass = all(value is True for value in checks.values())
+    if summary.get("pass") is not check_pass:
+        raise ValueError("conservative-section pass is inconsistent with checks")
+    return check_pass
 
 
 def write_markdown(path: Path, summary: dict[str, object]) -> None:
@@ -364,6 +380,7 @@ def write_markdown(path: Path, summary: dict[str, object]) -> None:
             f"Asserted numerical parity pass: **{summary['numerical_parity_pass']}**",
             f"Asserted spatial-state pass: **{summary['spatial_state_pass']}**",
             f"Asserted transport/source pass: **{summary['transport_source_pass']}**",
+            f"Asserted conservative-section pass: **{summary['conservative_section_pass']}**",
             f"Overall pass: **{summary['overall_pass']}**",
             "",
         ]
@@ -385,6 +402,12 @@ def main() -> int:
         "--transport-source-summary",
         type=Path,
         help="Asserted transport/source summary; defaults to OUTPUT_DIR/transport_source_comparison.json",
+    )
+    parser.add_argument(
+        "--conservative-section-summary",
+        type=Path,
+        required=True,
+        help="Asserted conservative finite-volume section-current summary",
     )
     parser.add_argument(
         "--accepted-state",
@@ -412,7 +435,7 @@ def main() -> int:
 
     summaries: dict[str, object] = {
         "schema_version": 4,
-        "comparison_scope": "WP3-WP5 common-input comparison with terminal, spatial-state, transport, and recombination gates",
+        "comparison_scope": "WP3-WP5 common-input comparison with terminal, spatial-state, transport, recombination, and conservative-section gates",
     }
     for model, stem in (("M0", "m0"), ("M1", "m1")):
         vela_balance_path = args.vela_run_root / f"{stem}_collector_terminal_balance.csv"
@@ -497,11 +520,27 @@ def main() -> int:
         },
     }
     summaries["transport_source_pass"] = transport_source_pass
+    conservative_summary = json.loads(
+        args.conservative_section_summary.read_text(encoding="utf-8")
+    )
+    conservative_contract = threshold_document["wp3_wp5_vela_comparison"][
+        "conservative_section_flux_gate"
+    ]
+    conservative_section_pass = validated_conservative_section_pass(
+        conservative_summary, conservative_contract
+    )
+    summaries["conservative_section_gate"] = {
+        "input": str(args.conservative_section_summary),
+        "observed_maxima": conservative_summary.get("observed_maxima"),
+        "checks": conservative_summary.get("checks"),
+    }
+    summaries["conservative_section_pass"] = conservative_section_pass
     summaries["overall_pass"] = combine_acceptance(
         summaries["operational_pass"],
         summaries["numerical_parity_pass"],
         summaries["spatial_state_pass"],
         summaries["transport_source_pass"],
+        summaries["conservative_section_pass"],
     )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     write_text_lf(

@@ -242,6 +242,7 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
     def test_overall_acceptance_requires_terminal_and_spatial_gates(self) -> None:
         self.assertTrue(COMPARISON.combine_acceptance(True, True, True))
         self.assertFalse(COMPARISON.combine_acceptance(True, True, True, False))
+        self.assertFalse(COMPARISON.combine_acceptance(True, True, True, True, False))
         self.assertFalse(COMPARISON.combine_acceptance(True, True, False))
         self.assertFalse(COMPARISON.combine_acceptance(True, False, True))
         self.assertFalse(COMPARISON.combine_acceptance(False, True, True))
@@ -270,6 +271,20 @@ class GeniusBjtReferenceToolsTest(unittest.TestCase):
             "overall_pass": False,
         }
         self.assertFalse(COMPARISON.validated_transport_source_pass(summary))
+
+    def test_conservative_summary_requires_matching_thresholds_and_checks(self) -> None:
+        contract = {"thresholds": {"maximum_error": 1.0e-8}}
+        summary = {
+            "thresholds": {"maximum_error": 1.0e-8},
+            "checks": {"section": True, "continuity": True},
+            "pass": True,
+        }
+        self.assertTrue(
+            COMPARISON.validated_conservative_section_pass(summary, contract)
+        )
+        summary["thresholds"] = {"maximum_error": 1.0e-6}
+        with self.assertRaisesRegex(ValueError, "thresholds mismatch"):
+            COMPARISON.validated_conservative_section_pass(summary, contract)
 
     def test_source_gate_checks_integral_and_shape_while_reporting_peak_location(self) -> None:
         metrics = TRANSPORT.source_metrics(

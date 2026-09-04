@@ -3,7 +3,10 @@
 #include "vela/io/DDSolutionCsv.h"
 #include "vela/io/MeshReader.h"
 #include "vela/material/MaterialDatabase.h"
+#include "vela/core/PhysicalConstants.h"
 #include "vela/physics/DopingModel.h"
+#include "vela/physics/CarrierStatistics.h"
+#include "vela/physics/RecombinationModel.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/core/RuntimeLog.h"
 #include "vela/core/UnitScalingSystem.h"
@@ -623,6 +626,223 @@ vela::DDSolution readExternalState(const std::filesystem::path& cfgDir,
         state.phip(i) = phip[static_cast<std::size_t>(i)];
     }
     return state;
+}
+
+nlohmann::json runSrhFixedStateProbe(const std::string& configFile,
+                                     const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    const vela::Index nodeCount = problem.mesh.numNodes();
+    const std::filesystem::path fieldsDir = resolvePath(
+        cfgDir, cfg.at("fixed_state_fields_dir").get<std::string>());
+    const auto read = [&](const char* field) {
+        return readNodeScalarCsv(
+            fieldsDir / (std::string(field) + "_region0.csv"), nodeCount);
+    };
+
+    const std::vector<vela::Real> electronsCm3 = read("eDensity");
+    const std::vector<vela::Real> holesCm3 = read("hDensity");
+    const std::vector<vela::Real> sdeviceNiCm3 = read("EffectiveIntrinsicDensity");
+    const std::vector<vela::Real> electrostaticPotentialV = read("ElectrostaticPotential");
+    const std::vector<vela::Real> electronQfV = read("eQuasiFermiPotential");
+    const std::vector<vela::Real> holeQfV = read("hQuasiFermiPotential");
+    const std::vector<vela::Real> sdeviceSrhCm3S = read("srhRecombination");
+
+    const vela::UnitScalingConfig scaling = vela::parseUnitScalingConfig(cfg);
+    const vela::PhysicalUnitSystem& units = scaling.unitSystem();
+    const vela::Real temperatureK = problem.newton.temperature_K;
+    const vela::Real thermalVoltageV =
+        vela::constants::kb * temperatureK / vela::constants::q;
+    const std::vector<vela::Real> productionNi =
+        vela::detail::buildValidatedEffectiveNodeNi(
+            "srh_fixed_state_probe", problem.mesh, problem.matdb,
+            problem.doping, problem.newton.bandgapNarrowing, thermalVoltageV);
+    const std::vector<vela::Real> electronDensityOfStates =
+        vela::detail::buildNodeDensityOfStates(
+            problem.mesh, problem.matdb, temperatureK, true);
+    const std::vector<vela::Real> holeDensityOfStates =
+        vela::detail::buildNodeDensityOfStates(
+            problem.mesh, problem.matdb, temperatureK, false);
+
+    const vela::RecombinationModel model(vela::recombinationModelConfig(
+        {"srh"}, problem.newton.taun, problem.newton.taup,
+        problem.newton.srhDopingDependence));
+
+    const std::filesystem::path outputPath =
+        resolvePath(cfgDir, cfg.at("output_csv").get<std::string>());
+    if (!outputPath.parent_path().empty())
+        std::filesystem::create_directories(outputPath.parent_path());
+    std::ofstream out(outputPath);
+    if (!out.is_open())
+        throw std::runtime_error(
+            "Cannot write SRH fixed-state probe CSV: " + outputPath.string());
+    out << std::setprecision(17);
+    out << "node_id,x,y,lumped_area_um2,donors_cm3,acceptors_cm3,"
+        << "electron_density_cm3,hole_density_cm3,"
+        << "qf_reconstructed_electron_density_cm3,"
+        << "qf_reconstructed_hole_density_cm3,"
+        << "sdevice_ni_eff_cm3,production_ni_eff_cm3,"
+        << "electron_qf_V,hole_qf_V,qf_splitting_V,"
+        << "electron_degeneracy_sdevice_ni,hole_degeneracy_sdevice_ni,"
+        << "generalized_np_closure_ratio,"
+        << "sdevice_srh_cm3_s,"
+        << "qf_reconstructed_production_ni_generalized_srh_cm3_s,"
+        << "exact_np_production_ni_generalized_srh_cm3_s,"
+        << "exact_np_production_ni_classical_srh_cm3_s,"
+        << "exact_np_sdevice_ni_generalized_srh_cm3_s,"
+        << "exact_np_sdevice_ni_classical_srh_cm3_s\n";
+
+    constexpr vela::Real centimetersCubedPerMetersCubed = 1.0e-6;
+    constexpr vela::Real centimetersMinus3ToMetersMinus3 = 1.0e6;
+    constexpr vela::Real sourceAreaToCurrentPerMicron = 1.0e-12;
+    const vela::Real internalLengthUm = units.internalLengthToMeters(1.0) * 1.0e6;
+    const vela::Real internalAreaUm2 = internalLengthUm * internalLengthUm;
+    auto toInternal = [&](vela::Real valueCm3) {
+        return units.m3ToInternalConcentration(
+            valueCm3 * centimetersMinus3ToMetersMinus3);
+    };
+    auto toCm3 = [&](vela::Real internal) {
+        return units.internalConcentrationToM3(internal)
+            * centimetersCubedPerMetersCubed;
+    };
+
+    vela::Real sdeviceIntegral = 0.0;
+    vela::Real qfReconstructedIntegral = 0.0;
+    vela::Real productionNiGeneralizedIntegral = 0.0;
+    vela::Real productionNiClassicalIntegral = 0.0;
+    vela::Real sdeviceNiGeneralizedIntegral = 0.0;
+    vela::Real sdeviceNiClassicalIntegral = 0.0;
+    for (vela::Index node = 0; node < nodeCount; ++node) {
+        const std::size_t i = static_cast<std::size_t>(node);
+        const vela::Real n = toInternal(electronsCm3[i]);
+        const vela::Real p = toInternal(holesCm3[i]);
+        const vela::Real niExact = toInternal(sdeviceNiCm3[i]);
+        const vela::Real niProduction = productionNi[i];
+        const vela::Real splittingV = holeQfV[i] - electronQfV[i];
+        const vela::Real qfElectron = vela::electronDensity(
+            niProduction, electronDensityOfStates[i], electrostaticPotentialV[i],
+            electronQfV[i], thermalVoltageV, problem.newton.carrierStatistics);
+        const vela::Real qfHole = vela::holeDensity(
+            niProduction, holeDensityOfStates[i], electrostaticPotentialV[i],
+            holeQfV[i], thermalVoltageV, problem.newton.carrierStatistics);
+        const vela::Real dopingConcentration = model.srhDopingConcentration(
+            problem.doping.donors(node), problem.doping.acceptors(node));
+        const vela::GeneralizedSrhCarrierState productionState =
+            vela::generalizedSrhCarrierState(
+                n, p, niProduction, electronDensityOfStates[i],
+                holeDensityOfStates[i], splittingV, thermalVoltageV,
+                problem.newton.carrierStatistics);
+        const vela::GeneralizedSrhCarrierState exactState =
+            vela::generalizedSrhCarrierState(
+                n, p, niExact, electronDensityOfStates[i],
+                holeDensityOfStates[i], splittingV, thermalVoltageV,
+                problem.newton.carrierStatistics);
+        const vela::GeneralizedSrhCarrierState qfState =
+            vela::generalizedSrhCarrierState(
+                qfElectron, qfHole, niProduction, electronDensityOfStates[i],
+                holeDensityOfStates[i], splittingV, thermalVoltageV,
+                problem.newton.carrierStatistics);
+        const vela::Real qfReconstructed =
+            model.srhRateGeneralizedFromExcessProduct(
+                qfState.excessProduct, qfElectron, qfHole,
+                niProduction, niProduction,
+                qfState.electronDegeneracy,
+                qfState.holeDegeneracy, dopingConcentration);
+        const vela::Real productionNiGeneralized =
+            model.srhRateGeneralizedFromExcessProduct(
+                productionState.excessProduct, n, p,
+                niProduction, niProduction,
+                productionState.electronDegeneracy,
+                productionState.holeDegeneracy, dopingConcentration);
+        const vela::Real productionNiClassical =
+            model.srhRate(n, p, niProduction, dopingConcentration);
+        const vela::Real sdeviceNiGeneralized =
+            model.srhRateGeneralizedFromExcessProduct(
+                exactState.excessProduct, n, p, niExact, niExact,
+                exactState.electronDegeneracy,
+                exactState.holeDegeneracy, dopingConcentration);
+        const vela::Real sdeviceNiClassical =
+            model.srhRate(n, p, niExact, dopingConcentration);
+        const vela::Real closureRatio = n * p != 0.0
+            ? (exactState.equilibriumProduct + exactState.excessProduct) / (n * p)
+            : 0.0;
+        const vela::Real areaUm2 = problem.mesh.getNode(node).volume * internalAreaUm2;
+        const vela::Real productionNiGeneralizedCm3S = toCm3(productionNiGeneralized);
+        const vela::Real qfReconstructedCm3S = toCm3(qfReconstructed);
+        const vela::Real productionNiClassicalCm3S = toCm3(productionNiClassical);
+        const vela::Real sdeviceNiGeneralizedCm3S = toCm3(sdeviceNiGeneralized);
+        const vela::Real sdeviceNiClassicalCm3S = toCm3(sdeviceNiClassical);
+        const vela::Real currentWeight =
+            vela::constants::q * areaUm2 * sourceAreaToCurrentPerMicron;
+        sdeviceIntegral += sdeviceSrhCm3S[i] * currentWeight;
+        qfReconstructedIntegral += qfReconstructedCm3S * currentWeight;
+        productionNiGeneralizedIntegral +=
+            productionNiGeneralizedCm3S * currentWeight;
+        productionNiClassicalIntegral += productionNiClassicalCm3S * currentWeight;
+        sdeviceNiGeneralizedIntegral += sdeviceNiGeneralizedCm3S * currentWeight;
+        sdeviceNiClassicalIntegral += sdeviceNiClassicalCm3S * currentWeight;
+
+        const vela::Node& meshNode = problem.mesh.getNode(node);
+        out << node << ',' << meshNode.x << ',' << meshNode.y << ',' << areaUm2 << ','
+            << toCm3(problem.doping.donors(node)) << ','
+            << toCm3(problem.doping.acceptors(node)) << ','
+            << electronsCm3[i] << ',' << holesCm3[i] << ','
+            << toCm3(qfElectron) << ',' << toCm3(qfHole) << ','
+            << sdeviceNiCm3[i] << ',' << toCm3(niProduction) << ','
+            << electronQfV[i] << ',' << holeQfV[i] << ',' << splittingV << ','
+            << exactState.electronDegeneracy << ','
+            << exactState.holeDegeneracy << ',' << closureRatio << ','
+            << sdeviceSrhCm3S[i] << ','
+            << qfReconstructedCm3S << ','
+            << productionNiGeneralizedCm3S << ','
+            << productionNiClassicalCm3S << ','
+            << sdeviceNiGeneralizedCm3S << ','
+            << sdeviceNiClassicalCm3S << '\n';
+    }
+
+    nlohmann::json summary = {
+        {"nodes", nodeCount},
+        {"temperature_K", temperatureK},
+        {"integrated_A_per_um", {
+            {"sdevice_exported", sdeviceIntegral},
+            {"qf_reconstructed_production_ni_generalized", qfReconstructedIntegral},
+            {"exact_np_production_ni_generalized", productionNiGeneralizedIntegral},
+            {"exact_np_production_ni_classical", productionNiClassicalIntegral},
+            {"exact_np_sdevice_ni_generalized", sdeviceNiGeneralizedIntegral},
+            {"exact_np_sdevice_ni_classical", sdeviceNiClassicalIntegral},
+        }},
+    };
+    if (cfg.contains("output_summary")) {
+        const std::filesystem::path summaryPath = resolvePath(
+            cfgDir, cfg.at("output_summary").get<std::string>());
+        if (!summaryPath.parent_path().empty())
+            std::filesystem::create_directories(summaryPath.parent_path());
+        std::ofstream summaryOut(summaryPath);
+        if (!summaryOut.is_open())
+            throw std::runtime_error(
+                "Cannot write SRH fixed-state summary: " + summaryPath.string());
+        summaryOut << std::setw(2) << summary << '\n';
+    }
+    return summary;
+}
+
+nlohmann::json writeDdStateVtk(const std::string& configFile,
+                               const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    const vela::DDSolution state =
+        readExternalState(cfgDir, cfg, problem.mesh.numNodes());
+    const std::filesystem::path outputPath =
+        resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>());
+    if (!outputPath.parent_path().empty())
+        std::filesystem::create_directories(outputPath.parent_path());
+    writeNewtonSolutionVtk(outputPath, problem, state);
+    return {
+        {"nodes", problem.mesh.numNodes()},
+        {"output_vtk", outputPath.string()},
+    };
 }
 
 vela::DDSolution readFeedbackReplacementState(
@@ -2889,6 +3109,10 @@ int main(int argc, char** argv)
             status.update(runNewtonCarrierBlockDecompositionProbe(configFile, cfg));
         } else if (type == "newton_carrier_term_probe") {
             status.update(runNewtonCarrierTermProbe(configFile, cfg));
+        } else if (type == "srh_fixed_state_probe") {
+            status.update(runSrhFixedStateProbe(configFile, cfg));
+        } else if (type == "write_dd_state_vtk") {
+            status.update(writeDdStateVtk(configFile, cfg));
         } else if (type == "sg_edge_flux_probe") {
             status.update(runSgEdgeFluxProbe(configFile, cfg));
         } else if (type == "transport_edge_jacobian_probe") {

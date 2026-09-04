@@ -1292,7 +1292,12 @@ void writeDDSolutionVTK(const std::string& filename,
             valenceBandEnergy_eV[i] =
                 conductionBandEnergy_eV[i] - transportBandgap;
         }
-        const Real ni = effectiveIntrinsicDensity(nodeMaterials[i].ni, Vt, deltaEg);
+        // Use the same effective intrinsic density as the solver.  Rebuilding
+        // it from DeltaEg alone drops the optional Fermi-statistics BGN
+        // correction and makes exported SRH/Auger fields inconsistent with
+        // the continuity equations even though EffectiveIntrinsicDensity is
+        // exported correctly above.
+        const Real ni = effectiveNi[i];
         // Match the cancellation-free source used by CoupledDDAssembler.
         // Re-forming n*p-ni^2 from rounded output densities can create a
         // completely artificial SRH rate in deep depletion.  Referenced

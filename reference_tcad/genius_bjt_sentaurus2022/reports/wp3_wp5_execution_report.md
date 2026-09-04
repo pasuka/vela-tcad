@@ -1,6 +1,6 @@
 # Genius BJT Vela WP3-WP5 execution report
 
-Date: 2026-09-03
+Date: 2026-09-04
 
 ## Outcome
 
@@ -15,7 +15,8 @@ an intentionally minimal characterization-only baseline. A newly registered
 spatial-state gate also passes for potential, electron density, and hole
 density. Transport and recombination gates are now asserted as well; the final
 acceptance is false only because the global hole-current-density gate still
-fails. Electron current density, SRH, and Auger pass.
+fails. Electron current density, the tightened SRH gate, Auger, and the new
+conservative-section gate pass.
 
 ## Common input
 
@@ -83,7 +84,7 @@ only because a nearly flat maximum makes `argmax` location unstable.
 |---|---|
 | Electron current density | P95 0.0158 decade; cosine 0.9994; normalized RMSE 0.0351; pass |
 | Hole current density | P95 0.8280 decade; cosine 0.9981; normalized RMSE 0.0622; fail on P95 only |
-| SRH recombination | integral ratio 0.779; shape TV 0.106; pass |
+| SRH recombination | integral ratio 0.996; normalized L1 0.00439; shape TV 0.00104; pass |
 | Auger recombination | integral ratio 0.988; shape TV 0.00658; pass |
 
 The production SG line flux is now converted to an edge-normal current density
@@ -99,6 +100,15 @@ from 0.575 to 0.988 and reduces normalized L1 from 0.425 to 0.0122. The full
 31-point curve remains accepted. On the real 3 V state, the source-only
 analytic Jacobian agrees with centered finite differences to `5.07e-9`
 relative error.
+
+An exact fixed-state SRH decomposition corrected the former provisional
+`0.779` interpretation. Directly replaying the production operator on SDevice
+fields gives an integral ratio of `0.9982` at 3 V. Using exact SDevice `n`,
+`p`, and `ni_eff` gives `1.00127` with generalized SRH and `0.999999999` with
+the classical expression. The old ratio is reproduced by omitting the Fermi
+correction from `ni_eff`, which exposed and fixed a VTK-only recombination
+postprocessing inconsistency. The production residual and exported fields now
+use the same Fermi-BGN effective intrinsic density.
 
 The base-collector current audit covers 516 vertically oriented edges and led
 to the dual-face recovery above. An independent Python implementation matches
@@ -147,7 +157,9 @@ this order:
 2. `scripts/export_genius_bjt_accepted_transport_sources.py`
 3. `scripts/compare_genius_bjt_spatial_fields.py`
 4. `scripts/compare_genius_bjt_transport_fields.py`
-5. `scripts/compare_genius_bjt_sentaurus_vela.py`
+5. `scripts/audit_genius_bjt_conservative_sections.py`
+6. `scripts/compare_genius_bjt_sentaurus_vela.py` with
+   `--conservative-section-summary` pointing to the preceding audit JSON
 
 The script CLIs require the fixture, ignored Sentaurus/Vela data, and output
 paths shown in their `--help` text. Raw Vela states, diagnostics, VTK exports,

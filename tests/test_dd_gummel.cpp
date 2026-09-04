@@ -7,6 +7,8 @@
 #include "vela/solver/GummelSolver.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/physics/CarrierStatistics.h"
+#include "vela/equation/AssemblerUtils.h"
+#include "vela/physics/RecombinationModel.h"
 
 #include <cmath>
 #include <filesystem>
@@ -14,6 +16,7 @@
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <unordered_map>
+#include <vector>
 
 using namespace vela;
 
@@ -75,6 +78,31 @@ static DopingModel makePNDoping(const DeviceMesh& mesh)
         { "p_region", 0.0,    1.0e23 }
     };
     return DopingModel::fromMeshAndRegions(mesh, specs);
+}
+
+static std::vector<Real> readVtkScalar(const std::filesystem::path& path,
+                                       const std::string& name,
+                                       std::size_t count)
+{
+    std::ifstream input(path);
+    REQUIRE(input.is_open());
+    std::string line;
+    const std::string marker = "SCALARS " + name + " ";
+    while (std::getline(input, line)) {
+        if (line.rfind(marker, 0) != 0)
+            continue;
+        REQUIRE(std::getline(input, line));
+        REQUIRE(line == "LOOKUP_TABLE default");
+        std::vector<Real> values;
+        values.reserve(count);
+        Real value = 0.0;
+        while (values.size() < count && input >> value)
+            values.push_back(value);
+        REQUIRE(values.size() == count);
+        return values;
+    }
+    FAIL("VTK scalar not found: " + name);
+    return {};
 }
 
 // ---------------------------------------------------------------------------
@@ -272,6 +300,56 @@ TEST_CASE("GummelSolver: VTK output is written successfully", "[gummel][vtk]")
     REQUIRE(content.find("VECTORS J_p_diffusion double") != std::string::npos);
     REQUIRE(content.find("VECTORS J_p_total double") != std::string::npos);
     REQUIRE(content.find("VECTORS TotalCurrentDensityVector double") != std::string::npos);
+}
+
+TEST_CASE("GummelSolver: VTK recombination uses Fermi-corrected effective intrinsic density",
+          "[gummel][vtk][fermi_dirac][bgn]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    const int count = static_cast<int>(mesh.numNodes());
+    DDSolution sol;
+    sol.psi = VectorXd::Zero(count);
+    sol.phin = VectorXd::Zero(count);
+    sol.phip = VectorXd::Constant(count, 0.1);
+    sol.n = VectorXd::Constant(count, 1.0e22);
+    sol.p = VectorXd::Constant(count, 2.0e21);
+
+    BandgapNarrowingConfig bgn = bandgapNarrowingConfig("old_slotboom");
+    bgn.fermiStatisticsCorrection = true;
+    CarrierStatisticsConfig statistics;
+    statistics.model = "fermi_dirac";
+    RecombinationModelConfig recombination = recombinationModelConfig({"srh"});
+    const std::filesystem::path vtkPath =
+        std::filesystem::temp_directory_path() / "test_dd_gummel_fermi_bgn_srh.vtk";
+    writeDDSolutionVTK(
+        vtkPath.string(), mesh, matdb, doping, sol,
+        mobilityModelConfig("constant"), recombination,
+        ImpactIonizationModelConfig{}, bgn, constants::T0,
+        UnitScalingConfig{}, statistics);
+
+    const auto effectiveNi = detail::buildValidatedEffectiveNodeNi(
+        "test", mesh, matdb, doping, bgn, constants::Vt_300);
+    const auto Nc = detail::buildNodeDensityOfStates(
+        mesh, matdb, constants::T0, true);
+    const auto Nv = detail::buildNodeDensityOfStates(
+        mesh, matdb, constants::T0, false);
+    const RecombinationModel model(recombination);
+    const GeneralizedSrhCarrierState state = generalizedSrhCarrierState(
+        sol.n(0), sol.p(0), effectiveNi[0], Nc[0], Nv[0],
+        sol.phip(0) - sol.phin(0), constants::Vt_300, statistics);
+    const Real expected = model.srhRateGeneralizedFromExcessProduct(
+        state.excessProduct, sol.n(0), sol.p(0), effectiveNi[0], effectiveNi[0],
+        state.electronDegeneracy, state.holeDegeneracy,
+        model.srhDopingConcentration(doping.donors(0), doping.acceptors(0))) / 1.0e6;
+
+    const std::vector<Real> exportedNi = readVtkScalar(
+        vtkPath, "EffectiveIntrinsicDensity", mesh.numNodes());
+    const std::vector<Real> exportedSrh = readVtkScalar(
+        vtkPath, "SRHRecombinationCm3PerS", mesh.numNodes());
+    REQUIRE(exportedNi[0] == Catch::Approx(effectiveNi[0]).epsilon(1.0e-12));
+    REQUIRE(exportedSrh[0] == Catch::Approx(expected).epsilon(1.0e-12));
 }
 
 TEST_CASE("GummelSolver: forward bias converges without crash", "[gummel]")

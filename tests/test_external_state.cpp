@@ -284,6 +284,25 @@ TEST_CASE("newton_solve_from_state returns nonzero when Newton does not converge
     REQUIRE_FALSE(status.at("converged").get<bool>());
 }
 
+TEST_CASE("write_dd_state_vtk exports an external state without solving",
+          "[external_state][vtk]")
+{
+    RunnerCase c = makeRunnerCase("write_vtk_only");
+    nlohmann::json config = nlohmann::json::parse(readFile(c.configPath));
+    config["simulation_type"] = "write_dd_state_vtk";
+    config.erase("output_state_file");
+    config["output_vtk"] = "out/export_only.vtk";
+    writeText(c.configPath, config.dump(2));
+
+    const RunnerOutput run = runCase(c.configPath);
+
+    REQUIRE(run.exitCode == 0);
+    const auto status = nlohmann::json::parse(run.out);
+    REQUIRE(status.at("simulation_type") == "write_dd_state_vtk");
+    REQUIRE(status.at("nodes").get<int>() == 5);
+    REQUIRE(std::filesystem::exists(c.dir / "out" / "export_only.vtk"));
+}
+
 TEST_CASE("external state field reader rejects malformed scalar CSVs",
           "[external_state][csv]")
 {

@@ -96,10 +96,10 @@
         },
         "recombination": {
           "srh": {
-            "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
-            "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.25,
-            "maximum_normalized_l1_error": 0.25,
-            "maximum_absolute_shape_total_variation": 0.15
+            "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.98,
+            "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.02,
+            "maximum_normalized_l1_error": 0.01,
+            "maximum_absolute_shape_total_variation": 0.005
           },
           "auger": {
             "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
@@ -109,7 +109,7 @@
           }
         }
       },
-      "reason": "Initial engineering regression gates registered after the original characterization, not a blind validation. Current-density comparison uses the dual-face-length-weighted nodal representation of the production SG line fluxes; the line fluxes remain the conservative finite-volume authority. Current-density vector gates retain magnitude and direction sensitivity. Recombination acceptance uses signed/absolute integral and normalized-shape checks; unweighted node-log P95 and single-node argmax remain diagnostic-only because low-contribution tails and flat peaks can dominate them without materially changing the integrated source."
+      "reason": "Current-density comparison uses the dual-face-length-weighted nodal representation of the production SG line fluxes; the line fluxes remain the conservative finite-volume authority. Current-density vector gates retain magnitude and direction sensitivity. The SRH bounds were tightened after a fixed-state n/p/ni_eff decomposition exposed and corrected a VTK-only omission of the Fermi-statistics BGN correction; the retained margins cover both coarse and locally refined meshes. Recombination acceptance uses signed/absolute integral and normalized-shape checks; unweighted node-log P95 and single-node argmax remain diagnostic-only because low-contribution tails and flat peaks can dominate them without materially changing the integrated source."
     },
     "conservative_section_flux_gate": {
       "status": "asserted",
