@@ -1,5 +1,184 @@
 # Config Schema Reference
 
+Explicit element-box transport and the restricted PhuMob candidate:
+
+- `mesh_geometry.cell_box_policy`: `legacy_positive` (default) or
+  `delaunay_transfer`. The latter requires `poisson_permittivity_policy:
+  cell_material` and no supplied `poisson_cell_edge_coefficients`. It computes
+  signed Tri3 cotangents in long double and transfers a negative local edge
+  contribution to its same-region neighbor, preserving the signed edge sum.
+  It rejects globally non-Delaunay, nonmanifold and obtuse region-boundary
+  edges, subject only to a 128-double-epsilon roundoff bound. This implements
+  the unweighted 2-D Delaunay subset, not the general native non-Delaunay
+  intersection algorithm. Mesh node volumes and historical whole-edge
+  couplings remain unchanged; explicit Poisson/transport policies consume
+  the generated per-cell geometry.
+- `solver.region_resolved_interface_assembly.transport_edge_geometry`:
+  `inherit` (default) or `element_box`. The latter sums only transport-cell
+  local coefficients times edge length. It rejects combination with the old
+  `transport_edge_coupling` flag or explicit edge ratios.
+- `solver.mobility.edge_averaging`: `legacy` (default), `element_box`, or
+  the explicit experimental `element_box_phumob` candidate.
+  The new option requires `model: constant` or `masetti`,
+  `doping_concentration_basis: total_impurity`, `element_box` transport and
+  `cell_material` geometry. It first averages each node's model mobility with
+  `M(T,i)=sum_j(g(T,ij)*length(ij)^2)/4`, divided by the actual sum of these
+  measures. Edge mobility is `sum_T(g(T,e)*mu_T)/sum_T(g(T,e))` over transport
+  cells. Zero transport geometry yields zero mobility. Field-dependent,
+  surface and carrier-dependent models are rejected for this averaging mode.
+
+These two carrier controls currently require coupled Newton; Gummel's carrier
+assembler rejects them. Coupled residuals, analytic Jacobian, conservative
+port extraction and edge mobility probes share the new constitutive function.
+For the supported doping-only models, mobility has no state derivatives.
+This does not change SRH quadrature or Poisson charge volumes. The existing
+`signed_transport` Poisson charge policy remains independently selected.
+`simulation_type: element_box_probe` with `output_csv` exports per-cell local
+coefficients, node measures in m² and electron/hole mobility in m²/(V s).
+
+For plain low-field `solver.mobility.model: phumob` with `edge_averaging:
+legacy` and Boltzmann statistics, coupled Newton uses explicit carrier chain
+derivatives of the PhuMob scalar equations. It differentiates the screening
+functions, carrier scattering and Matthiessen combination, using zero `dG/dP`
+on the existing G-floor branch. Log-density partials preserve weak populations
+without subtracting two complete edge fluxes. These mobility terms are added
+to fixed-mobility SG derivatives, including the doping-only BGN potential
+partials and both electron/hole cross blocks. This changes the Jacobian only;
+the residual, mobility values, G-floor rule and numerical acceptance are unchanged.
+The density-exponent clamp boundary/outside range, Fermi statistics and
+PhuMob field/surface variants retain their existing finite-difference paths.
+The original `element_box` mode still rejects PhuMob. The separate
+`element_box_phumob` candidate requires plain `model: phumob`, nodal
+`total_impurity`, `element_box` transport geometry and `cell_material`
+permittivity geometry. Coupled Newton currently restricts it to Boltzmann
+statistics, disabled avalanche and smooth (unclamped) density exponents.
+It evaluates PhuMob from each vertex's live ND, NA, n and p, averages these
+values using the same box measures above, and assembles every adjacent
+cell vertex's psi, electron and hole columns conservatively. It uses the
+unchanged precise G minimum; native cutoff discrepancies are not fitted away.
+Full nodal carrier vectors are mandatory in the constitutive interface;
+endpoint-only fallback is rejected. `element_box_probe` additionally requires
+`state_file` for this mode. HDF5 states are read with the explicit mesh/reference
+context and reject incompatible mesh identities. The cell probe evaluates the
+stored double physical fields; it does not restore split low components. Its
+JSON reports `state_evaluation: physical_double_fields`, `input_has_split_state`
+and `split_low_components_used: false`. Compare with a full-split edge ledger
+separately before treating the cell result as a production-state reconstruction.
+Coupled residuals, SG edge diagnostics, contact
+currents and the cell/edge mobility probes consume the same live populations.
+The old endpoint-only `transport_edge_jacobian_probe` rejects this candidate;
+use `newton_jvp_probe` to inspect its full cell stencil. Gummel remains
+unsupported. This candidate does not change any global model default.
+
+Poisson permittivity assembly can be selected independently of node volumes
+and carrier transport with `mesh_geometry.poisson_permittivity_policy`:
+
+- `legacy_average` (default): retain the arithmetic material permittivity
+  average multiplied by the existing whole-edge box geometry.
+- `cell_material`: sum `epsilon_cell * (d/l)_cell` over adjacent Tri3 cells.
+  Poisson-only, Gummel Poisson, coupled Newton residual/Jacobian, and the
+  coupled electrode reaction-charge diagnostic share this coefficient.
+  Without additional data, each local geometry contribution uses the existing
+  box builder's cotangent/fallback policy. This does not reproduce arbitrary
+  external TCAD box modifications automatically.
+
+With `cell_material`, optional `mesh_geometry.poisson_cell_edge_coefficients`
+accepts a nonempty array of records in sequential mesh cell-id order:
+`{"cell_id":0,"node_ids":[0,1,2],"coefficients":[0.2,0.3,0.4]}`.
+Provide exactly one record per cell. The three finite nonnegative,
+dimensionless coefficients are `d/l` along local edges `(0,1)`, `(1,2)`,
+`(2,0)`. Node order must exactly match that mesh cell. These values supply
+geometry, not permittivity; current material parameters still supply epsilon.
+Degenerate or non-Tri3 meshes, topology/value/count mismatches, and combination
+with the legacy `solver.region_resolved_interface_assembly.poisson_edge_coupling`
+flag in coupled Newton are rejected. Data are mesh-specific and require
+independent provenance and qualification. Empty/missing data in the C++ options
+select computed local geometry; an explicitly empty JSON array is rejected.
+Carrier couplings, charge/SRH volumes, units, and convergence gates remain
+independent. Existing decks and global defaults are unchanged.
+
+Newton numerical and geometry controls added for explicit validation profiles:
+
+- `solver.linear_refinement_iterations`: integer 0--10, default 0. After the
+  direct Newton solve, recompute the linear defect in 100-digit arithmetic and
+  solve each correction with the same row weights and backend. This does not
+  alter nonlinear acceptance criteria or enable refinement in other solvers.
+- `solver.poisson_residual_precision`: `double` (default) or `binary128`.
+  The latter forms physical potential and Boltzmann charge from the packed
+  state and retained quasi-Fermi references in software binary128 arithmetic,
+  then assembles the Poisson edge and charge terms before rounding the residual
+  to double. State storage, geometry, source volumes and material coefficients
+  keep their existing precision. This explicit option currently excludes
+  Fermi-Dirac statistics, quantum potentials, thermionic contacts and feedback
+  substitutions. Residual probes use the same assembler option as Newton.
+- `solver.stable_merit_comparison`: boolean, default `false`. For `l2` or `block`
+  residual norms, preserving the configured weights and resolved block scales,
+  with `merit` line search and global-continuity merit `off`, compare the sign
+  of the residual squared-norm difference without losing weak block changes.
+  A compensated estimate falls back to exact binary integer arithmetic, or
+  rational arithmetic for weighted blocks, when necessary. Existing zero-residual
+  handling and convergence thresholds remain. Read-only residual probes may
+  disable this unused line-search option when reporting global closure.
+- `solver.split_dd_state`: boolean, default `false`. Experimental, explicit
+  production integration of the qualified three-block split-coordinate state.
+  Classical warm-start Newton accumulates low components for potential and both
+  quasi-Fermi increments. The residual, live PhuMob mobility, SRH, conservative
+  edge/row probes and terminal current consume the same state using 100 decimal
+  digits before projecting public values to double. Directional residual
+  differences are formed before that projection. The existing analytic double
+  Jacobian, linear backend, update caps and acceptance thresholds are retained
+  and require independent qualification. This option supports only 300 K plain
+  `phumob` with `element_box_phumob`, Boltzmann carriers and SRH, without quantum,
+  avalanche, thermionic contacts, feedback substitution or Gummel recovery.
+  Arclength updates are not supported. Geometry and source-volume policies are
+  configured separately; this option does not select a geometry bundle.
+- `solver.exact_dirichlet_updates`: boolean, default `false`. After the direct
+  solve and optional refinement, set the step of each Dirichlet identity row
+  to minus that row's residual. Free-row updates are unchanged before the
+  existing update caps and line search. Nonzero `carrier_regularization_scale`
+  is rejected for this option. It does not add a new convergence criterion.
+
+Warm restarts subtract the old and new quasi-Fermi references before adding
+the stored increment. This preserves sub-reference-rounding increments and
+does not change the CSV state format.
+
+With `poisson_residual_precision: binary128`, Newton additionally retains its
+original normalized coordinates in the optional restart CSV columns
+`packed_psi`, `packed_electron_qf_increment`, `packed_hole_qf_increment`, and
+`packed_potential_scale_V`. These four columns require the existing QF reference
+and increment columns. Loading validates their consistency with physical fields;
+Newton and residual probes reuse them when the potential scale and references
+match. Changed physical fields invalidate the hint; the writer omits stale hints.
+Ordinary restart files and their subnormal-to-zero convention remain supported.
+Packed hints are omitted for subnormal coordinates or physical increments.
+
+Split-state CSV checkpoints additionally require `packed_psi_low`,
+`packed_electron_qf_increment_low`, `packed_hole_qf_increment_low`,
+`split_state_schema` (`vela.split-dd-state.v1`) and `split_mesh_fingerprint`.
+These columns must appear together with the packed coordinates and QF reference
+fields. Low components retain finite subnormal values. A stale or incomplete
+split payload is rejected rather than omitted. Resume requires the same mesh,
+potential scale and QF reference frame, with `split_dd_state` enabled. Physical
+columns remain rounded projections; the complete packed payload defines the
+state. Split-mode contact diagnostic fields named `*LongDoubleReference` project
+the same wide evaluator and do not constitute an independent reference.
+
+- `solver.region_resolved_interface_assembly.poisson_charge_node_volume`:
+  `inherit` (default) or `signed_transport`. The latter assigns signed
+  transport-material AverageBox volume to all three Poisson charge terms
+  (electrons, holes, dopants). Dielectric edge coupling and continuity/SRH
+  volume are unchanged. Cannot combine with the per-term Poisson volume flags.
+- `solver.region_resolved_interface_assembly.transport_edge_coupling_ratios`:
+  optional array of finite nonnegative multipliers in mesh edge-id order,
+  exactly one per edge. Coupled assembly, terminal integration, and mobility
+  probes use the same effective coupling. Cannot combine with
+  `transport_edge_coupling`. The array is mesh-specific; an empty array keeps
+  the existing policy. There is no global mesh-volume or model default change.
+
+The two explicit geometry controls require the coupled Newton assembler;
+passing them directly to the Gummel DD assembler raises an error. Their use
+does not by itself qualify arbitrary meshes or signed negative node measures.
+
 This document is the implementation-aligned reference for JSON config files used
 by Vela. It describes fields currently parsed by the C++ Poisson, DC sweep, and
 single-bias Newton paths.
@@ -1288,10 +1467,12 @@ Supported `model` values:
 - `slotboom`
 - `old_slotboom`
 
-The Slotboom and OldSlotboom prototypes compute the positive effective
-bandgap-narrowing term from the maximum of absolute net doping and local
-carrier densities, then feed the resulting effective intrinsic density into
-the drift-diffusion statistics path. For Sentaurus `OldSlotboom` parity, the
+The low-level Slotboom and OldSlotboom prototypes compute the positive
+bandgap-narrowing term from the maximum of the supplied impurity concentration
+and supplied carrier densities. Coupled Newton builds its effective intrinsic
+density from **total impurity** (donors plus acceptors), passing zero carrier
+arguments. Thus its BGN `ni_eff` varies between nodes but is held fixed during
+one state/Jacobian evaluation. For Sentaurus `OldSlotboom` parity, the
 `models.par` `Bandgap.dEg0(OldSlotboom) = -1.595e-2 eV` term is handled by the
 material intrinsic-density override, while the `old_slotboom` BGN term uses
 `Ebgn = 9e-3 eV`, `Nref = 1e17 cm^-3`, and `C = 0.5`. This is implemented in
@@ -1300,6 +1481,19 @@ Gummel and Newton configurations. With
 `cm^-3` and kept internally as `cm^-3`. The compiled `Nref` default of both
 `slotboom` and `old_slotboom` is likewise expressed in the internal unit
 system (`1e23 m^-3` in `legacy_si`, `1e17 cm^-3` in `unit_scaling`).
+
+For state-independent-mobility Boltzmann transport, the coupled Jacobian's BGN potential
+partials differentiate the same stable, variable-ni SG flux used by the
+residual. This avoids subtracting large drift and diffusion derivatives near
+flat quasi-Fermi equilibrium. It applies with either value of the separate
+`equal_ni_flux_evaluation` control, which selects the no-BGN equal-ni residual
+evaluation (`legacy_factor_difference` or `compensated_log_expm1`). The stable
+partial requires both population exponents inside the existing ±500 clamps
+and a positive effective Bernoulli factor; other branches retain their
+existing treatment. Mobility chain derivatives and Fermi-statistics paths
+remain separate. Field/surface models with deliberately disabled mobility
+chain derivatives retain their existing approximate-Jacobian protocol until
+separately qualified. This change does not alter ni, the flux, or convergence gates.
 
 Set `fermi_statistics_correction: true` to reproduce the additional bandgap-
 narrowing correction that Sentaurus applies by default when `Fermi` and
@@ -1328,6 +1522,21 @@ hole unknown relative to the most strongly p-type biased contact. Because each
 carrier uses one constant reference, edge differences and the physical model
 are unchanged. This avoids losing sub-femtovolt current-carrying increments
 when an absolute quasi-Fermi potential is tens of volts from zero.
+
+For the explicit `split_dd_state` path, Newton warm starts transform saved QF
+increments into the new contact-reference frame using multiprecision arithmetic
+before splitting the result into binary64 high/low components. The mesh identity
+and potential scale must match. Unchanged references retain their original pairs;
+changed references incur the rounding of the new pair, not a lossless guarantee.
+Ordinary diagnostic checkpoint restoration still requires identical references.
+The DC linear predictor extrapolates the complete split state and refreshes its
+projected potentials, increments and 300 K Boltzmann initial-guess densities.
+New contact constraints are applied by the solver; rejected-step retries use the
+previous accepted state without extrapolation. This does not change convergence
+gates or enable split arithmetic by default.
+With explicit `bias_points`, accepted intermediate steps also advance the
+predictor's state and bias history together; selecting fewer output points does
+not change which accepted states define the next extrapolation.
 
 The source-aware convergence controls are:
 
@@ -1759,6 +1968,47 @@ damping, and combines them with the bulk mobility using Matthiessen's rule.
 `surface.surface_interface` should identify the semiconductor/insulator pair;
 the normal field is the electric-field projection along that interface normal.
 
+The explicit SimpleMOS element-box candidate adds
+`model: "phumob_lombardi"`, `edge_averaging: "element_box_phumob"`,
+`doping_concentration_basis: "total_impurity"`, and
+`surface.discretization: "element_distance_gradient"`. It uses true vertex
+distances to the default semiconductor/insulator interface and the **nonunit**
+gradient of their linear triangle interpolant. The cell field is shared by the
+cell's vertices; each vertex retains its own distance, impurities and live
+carrier densities before box averaging. The option requires element-box
+transport and cell-material Poisson geometry. Custom interface selectors,
+nonzero Lombardi `alpha`, and high-field saturation are outside this candidate.
+Its numerical/self-consistent qualification is tracked in the SimpleMOS branch
+status; selecting it does not assert that those checks passed.
+
+`surface.acoustic_factor` and `surface.roughness_factor` multiply the respective
+inverse-mobility terms for both carriers. They default to 1 and must be finite
+and nonnegative. Setting both to zero recovers the bulk model. To reproduce a
+common factor `f` in native Lombardi without stress, divide B, C, delta and eta
+by `f`. Native `a_ac`/`a_sr` are stress-enhancement parameters and are inactive
+without the corresponding stress model; they are not these direct multipliers.
+Existing surface models retain
+`surface.discretization: "legacy_cell_centroid"` by default. The explicit split
+state runtime supports the candidate's 300 K, alpha-zero, Boltzmann/SRH scope;
+potential and population chain derivatives include every adjacent cell vertex.
+
+An additional explicit HFS candidate uses `model: "phumob_field_lombardi"`
+with the same element-distance/box settings, plus
+`high_field_driving_force: "quasi_fermi_gradient"`,
+`high_field_gradient_discretization: "element_vertex_partial_layer"`, and
+`jacobian_field_derivatives: true`. It currently requires 300 K and alpha zero.
+Each vertex receives its Canali correction **before** box integration. The
+drive is the linear cell quasi-Fermi gradient projected parallel to true
+semiconductor boundary edges (PartialLayer); two nonparallel boundaries give
+zero projection. Any contact vertex instead selects the full electric gradient.
+Raw drives below 1 V/cm disable saturation on both branches. This cutoff is
+discontinuous: the Jacobian is branch-local, not a smooth derivative across it.
+The residual, split-state evaluator and analytic chain use the same geometry.
+No global default changes. Numerical qualification is recorded separately in
+the SimpleMOS branch status. A single edge drive cannot represent this nonlinear
+mixture: split edge/port diagnostics report NaN for that field, and the legacy
+single-drive factorization probe rejects this profile; use `element_box_probe`.
+
 ### SRH doping-dependent lifetime
 
 `solver.srh_doping_dependence` enables the Sentaurus
@@ -1858,6 +2108,11 @@ Output and current fields:
   temperature from a default. See the [storage interface](state_archive.md),
   [production migration contract](validation/templates_ldmos_hdf5_production_migration_plan_2026-09-23.md)
   and [current qualification scope](validation/templates_ldmos_hdf5_migration_execution_2026-09-23.md).
+  Explicit split-DD checkpoints additionally preserve the three normalized
+  high/low coordinate blocks, their potential scale and split mesh identity.
+  These optional DD-only bundles are validated against the physical state;
+  partial or inconsistent bundles are rejected. Historical CSV migration is a
+  separate utility and does not restore a production CSV fallback.
 - `initialization.mode`: optional first-point initialization mode. `none`
   preserves the baseline cold-start path; `poisson_block` runs one Newton
   Poisson block solve before the first coupled Newton solve and uses that state
@@ -2669,3 +2924,14 @@ checks KCL and heat balance before accepting a state. Full qualification uses
 `scripts/analyze_templates_ldmos_d0.py` and both 31-point native curves and all
 62 native temperature fields. No prescribed native heat source enters this
 four-equation solve.
+
+The explicit Newton-only diagnostic
+`solver.region_resolved_interface_assembly.srh_signed_transport_volume_fraction`
+defaults to 0 (unchanged SRH measure). It blends the inherited SRH area with
+signed transport-material area: `V_SRH = V_old + f*(V_signed - V_old)`;
+`f=1` uses the signed area directly. Fractions in [-1,1] permit independent
+small positive/negative response calibration. Nonfinite values, negative
+assembled areas, global continuity-volume flags, disabled SRH, and enabled
+Auger are rejected. This option changes SRH residuals, Jacobian entries and
+split-state source evaluation together; mesh volumes, Poisson charge, edge
+transport, BTBT and avalanche measures are unchanged. It is not a global default.

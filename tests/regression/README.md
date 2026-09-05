@@ -34,10 +34,23 @@ Many reference cases have additional focused test modules in this directory.
 Each case README or machine-readable `*_reference.json` inventory identifies
 its authoritative scripts, reports, and acceptance boundary.
 
+`simplemos_evidence_archive` checks the selected historical evidence, archive
+manifest and safe restoration with temporary fixtures. It needs no VM access;
+full external archive verification is a separate explicit command documented in
+[the recovery guide](../../reference_tcad/simplemos_sentaurus2022/local_evidence_20260930/README.md).
+
 Generated TDR, VTK, accepted-state, and log files remain under ignored
 `build*/reference_tcad/` directories.  Tests should use checked-in neutral
 inputs or explicitly generated temporary fixtures and must not present
 synthetic smoke data as commercial-tool calibration evidence.
+
+SimpleMOS historical M9/M10/M12 and M30–M46 checks validate original report
+and artifact bytes against archived source provenance, not the evolving live
+source tree. See `tests/fixtures/simplemos_historical_sources/README.md` for
+the 132 recovered source revisions and the one explicitly unrecovered source
+hash shared by M33/M35/M37. The archive-integrity test asserts this gap; it does
+not imply complete historical reproducibility. Current solver qualification
+uses numerical/property tests and a separately sealed engineering campaign.
 
 The retired custom NMOS, coarse7x3, Minimal6, and skewed-Tri3 reference cases
 are no longer regression inputs. Import/contact and mesh invariants remain

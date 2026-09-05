@@ -19,6 +19,9 @@
 #include "vela/physics/RecombinationModel.h"
 #include <nlohmann/json_fwd.hpp>
 #include <string>
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include <unordered_map>
 #include <vector>
 
@@ -55,6 +58,15 @@ struct DDSolution {
     /// When absent, the scalar references above apply to every node.
     VectorXd electronQfReference;
     VectorXd holeQfReference;
+    /// Optional original normalized coordinates for extended-Poisson restart.
+    /// A hint is usable only while its physical fields and scale still match.
+    VectorXd packedState;
+    VectorXd packedLow; ///< Optional tails of all three normalized blocks.
+    std::string packedMeshFingerprint;
+    bool hasConsistentSplitPackedState() const;
+    Real splitPotentialAt(int block,int node) const;
+    Real splitQuasiFermiDifferenceAt(int node) const;
+    Real packedPotentialScale_V = 0.0;
     VectorXd n;     ///< Electron concentration [m^-3]
     VectorXd p;     ///< Hole concentration [m^-3]
     int      iters = 0; ///< Number of Gummel iterations performed
@@ -63,6 +75,32 @@ struct DDSolution {
     bool hasReferencedElectronQuasiFermi() const
     {
         return phinIncrement.size() == phin.size();
+    }
+    bool hasConsistentPackedState() const
+    {
+        if(packedLow.size()!=0)return hasConsistentSplitPackedState();
+        const int count=static_cast<int>(psi.size());
+        if(count==0 || packedState.size()!=3*count ||
+           !std::isfinite(packedPotentialScale_V) || packedPotentialScale_V<=0. ||
+           !packedState.allFinite() || !hasReferencedElectronQuasiFermi() ||
+           !hasReferencedHoleQuasiFermi() || phin.size()!=count || phip.size()!=count)
+            return false;
+        // Physical CSV values historically canonicalize subnormals to zero.
+        // Do not emit a competing exact-coordinate hint for that case.
+        const auto normal=[](Real z){return z==0. || std::isnormal(z);};
+        for(int i=0;i<count;++i) {
+            const Real en=electronQuasiFermiAt(i),hp=holeQuasiFermiAt(i);
+            const Real tol=32.*std::numeric_limits<Real>::epsilon();
+            if(!std::isfinite(en) || !std::isfinite(hp) ||
+               std::abs(phin(i)-en)>tol*std::max({Real{1.},std::abs(phin(i)),std::abs(en)}) ||
+               std::abs(phip(i)-hp)>tol*std::max({Real{1.},std::abs(phip(i)),std::abs(hp)}))return false;
+            if(!normal(psi(i)) || !normal(phinIncrement(i)) || !normal(phipIncrement(i)))return false;
+            for(int b=0;b<3;++b)if(!normal(packedState(b*count+i)))return false;
+            if(psi(i)!=packedState(i)*packedPotentialScale_V ||
+               phinIncrement(i)!=packedState(count+i)*packedPotentialScale_V ||
+               phipIncrement(i)!=packedState(2*count+i)*packedPotentialScale_V)return false;
+        }
+        return true;
     }
     bool hasReferencedHoleQuasiFermi() const
     {
@@ -80,18 +118,21 @@ struct DDSolution {
     }
     Real electronQuasiFermiAt(int node) const
     {
+        if(packedLow.size()!=0)return splitPotentialAt(1,node);
         return hasReferencedElectronQuasiFermi()
             ? electronQuasiFermiReferenceAt(node) + phinIncrement(node)
             : phin(node);
     }
     Real holeQuasiFermiAt(int node) const
     {
+        if(packedLow.size()!=0)return splitPotentialAt(2,node);
         return hasReferencedHoleQuasiFermi()
             ? holeQuasiFermiReferenceAt(node) + phipIncrement(node)
             : phip(node);
     }
     Real holeMinusElectronQuasiFermiAt(int node) const
     {
+        if(packedLow.size()!=0)return splitQuasiFermiDifferenceAt(node);
         if (hasReferencedElectronQuasiFermi() &&
             hasReferencedHoleQuasiFermi()) {
             return static_cast<Real>(

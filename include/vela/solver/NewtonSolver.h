@@ -173,6 +173,12 @@ struct NewtonConfig {
     Real quasiFermiTrustRegionExpansionThreshold = 0.75; ///< Minimum actual/predicted residual decrease ratio for radius expansion.
     Real quasiFermiTrustRegionShrinkFactor = 1.0; ///< Radius contraction after a backtracked accepted step; 1 disables contraction.
     Real quasiFermiTrustRegionMinMultiplier = 1.0; ///< Positive minimum multiplier used by adaptive contraction.
+    // Zero preserves the direct-solve path; each correction recomputes F+J dx in MP100.
+    int linearRefinementIterations = 0;
+    std::string poissonResidualPrecision = "double"; ///< "double" or opt-in "binary128" packed Boltzmann evaluation.
+    bool splitDDState = false; ///< Opt-in unified hi/lo plain-PhuMob state.
+    bool stableMeritComparison = false; ///< Exact-sign squared-norm comparison for unweighted L2 merit searches.
+    bool exactDirichletUpdates = false; ///< Remove direct-solve roundoff from exact Dirichlet identity-row updates.
     Real stallResidualFloor = 1.0e-9; ///< Residual floor for accepting line-search stalls as solved.
     Real poissonLineSearchStallResidualFloor = 1.0e-6; ///< Poisson-block floor for near-flat line-search stalls.
     Real poissonLineSearchStallRelativeIncrease = 1.0e-5; ///< Allowed best rejected residual increase at the Poisson floor.
@@ -841,6 +847,10 @@ public:
         const std::string& contactName,
         Real currentScale) const;
 
+    /// State-aware terminal residual sum; retains split coordinate tails.
+    Real evaluateStateTerminalCurrent(const DDSolution& state,
+        const std::string& contactName,Real currentScale) const;
+
     /// Solve J^T lambda = dI/dx for one terminal-current functional without
     /// changing the device state or any configured physical model.
     NewtonTerminalCurrentAdjointEvaluation evaluateTerminalCurrentAdjoint(
@@ -849,7 +859,7 @@ public:
         Real currentScale) const;
 
 private:
-    void configureQuasiFermiReferences(CoupledDDAssembler& assembler) const;
+    void configureAssemblerNumerics(CoupledDDAssembler& assembler) const;
     CoupledDDBoundaryConditions buildBoundaryConditions(
         const CoupledDDAssembler& assembler) const;
     CoupledDDBoundaryConditions buildBoundaryConditions(

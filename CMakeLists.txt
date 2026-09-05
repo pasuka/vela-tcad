@@ -290,6 +290,7 @@ add_library(vela_core STATIC
     src/post/StoredCharge.cpp
     src/solver/NewtonSolver.cpp
     src/equation/CoupledDDAssembler.cpp
+    src/equation/SplitDDRuntime.cpp
     src/numerics/ResidualNorm.cpp
     src/numerics/LineSearch.cpp
     src/simulation/PoissonSimulation.cpp
@@ -667,6 +668,17 @@ target_link_libraries(test_csv_utils PRIVATE vela_core Catch2::Catch2WithMain)
 add_executable(test_bernoulli tests/test_bernoulli.cpp)
 target_link_libraries(test_bernoulli PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_production_numerics tests/test_production_numerics.cpp)
+target_link_libraries(test_production_numerics PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_split_dd_runtime tests/test_split_dd_runtime.cpp)
+target_link_libraries(test_split_dd_runtime PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_split_dd_state tests/test_split_dd_state.cpp)
+target_link_libraries(test_split_dd_state PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_permittivity_assembly tests/test_permittivity_assembly.cpp)
+target_link_libraries(test_permittivity_assembly PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_element_box_transport tests/test_element_box_transport.cpp)
+target_link_libraries(test_element_box_transport PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_sg_flux tests/test_sg_flux.cpp)
 target_link_libraries(test_sg_flux PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -756,6 +768,9 @@ target_link_libraries(test_poisson_neumann PRIVATE vela_core Catch2::Catch2WithM
 add_executable(test_mos_interface_charge tests/test_mos_interface_charge.cpp)
 target_link_libraries(test_mos_interface_charge PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_poisson_charge_volume tests/test_poisson_charge_volume.cpp)
+target_link_libraries(test_poisson_charge_volume PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_material_local_poisson_charge tests/test_material_local_poisson_charge.cpp)
 target_link_libraries(test_material_local_poisson_charge PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -785,6 +800,11 @@ vela_catch_discover_tests(test_performance_profiler)
 vela_catch_discover_tests(test_box_geometry)
 vela_catch_discover_tests(test_csv_utils)
 vela_catch_discover_tests(test_bernoulli)
+vela_catch_discover_tests(test_production_numerics)
+vela_catch_discover_tests(test_split_dd_state)
+vela_catch_discover_tests(test_split_dd_runtime)
+vela_catch_discover_tests(test_permittivity_assembly)
+vela_catch_discover_tests(test_element_box_transport)
 vela_catch_discover_tests(test_sg_flux)
 vela_catch_discover_tests(test_dd_gummel)
 add_test(NAME dd COMMAND test_dd_gummel [gummel])
@@ -823,6 +843,7 @@ vela_catch_discover_tests(test_schottky_contact)
 add_test(NAME schottky COMMAND test_schottky_contact [schottky])
 vela_catch_discover_tests(test_poisson_neumann)
 vela_catch_discover_tests(test_mos_interface_charge)
+vela_catch_discover_tests(test_poisson_charge_volume)
 add_test(NAME interface COMMAND test_mos_interface_charge [interface])
 vela_catch_discover_tests(test_material_local_poisson_charge)
 
@@ -898,6 +919,29 @@ add_test(NAME simplemos_m2_tdr_gate
 set_tests_properties(simplemos_m2_tdr_gate PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m2_tdr_gate)
+
+foreach(_simplemos_contract IN ITEMS historical_provenance engineering_join regression_exit_capture engineering_codespaces reference_package mobility_field_audit evidence_archive)
+    add_test(NAME simplemos_${_simplemos_contract}
+        COMMAND ${Python3_EXECUTABLE} -m unittest
+                tests.regression.test_simplemos_${_simplemos_contract})
+    set_tests_properties(simplemos_${_simplemos_contract} PROPERTIES
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    vela_set_windows_msys2_test_path(simplemos_${_simplemos_contract})
+endforeach()
+
+add_test(NAME simplemos_engineering_evidence_audit
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_simplemos_engineering_audit.py)
+set_tests_properties(simplemos_engineering_evidence_audit PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_engineering_evidence_audit)
+
+add_test(NAME simplemos_engineering_matrix_contract
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_simplemos_engineering_matrix.py)
+set_tests_properties(simplemos_engineering_matrix_contract PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(simplemos_engineering_matrix_contract)
 
 add_test(NAME simplemos_m3_workflow
     COMMAND ${Python3_EXECUTABLE} -m unittest
