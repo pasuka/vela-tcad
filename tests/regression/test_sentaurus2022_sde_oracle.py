@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -33,7 +34,7 @@ class Sentaurus2022SdeOracleTest(unittest.TestCase):
             (ORACLE / "manifest.json").read_text(encoding="utf-8")
         )
 
-    def test_manifest_seals_every_generated_input_and_artifact(self) -> None:
+    def test_manifest_seals_public_files_and_available_local_evidence(self) -> None:
         self.assertEqual(
             self.manifest["schema"], "vela.sentaurus2022_sde_oracle.v1"
         )
@@ -44,15 +45,52 @@ class Sentaurus2022SdeOracleTest(unittest.TestCase):
             self.manifest["mesh_summary"],
             {"points": 1943, "elements": 3680, "regions": 3},
         )
+        local_only = set(self.manifest["local_validation_files"])
+        self.assertEqual(local_only, {
+            "artifacts/pn2d_bnd.tdr", "artifacts/pn2d_msh.tdr",
+            "artifacts/sde.exit_code.txt", "artifacts/sde.stderr.txt",
+            "artifacts/sde.stdout.txt", "artifacts/sde.version.txt",
+            "artifacts/vela_sde_evaluated_wrapper.log.eval",
+        })
+        self.assertTrue(local_only.issubset(self.manifest["files"]))
         for relative, metadata in self.manifest["files"].items():
             with self.subTest(file=relative):
                 path = ORACLE / relative
+                if relative in local_only and not path.is_file():
+                    if os.environ.get("VELA_REQUIRE_LOCAL_SDE_ORACLE") == "1":
+                        self.fail(f"required local oracle evidence missing: {relative}")
+                    continue
                 self.assertTrue(path.is_file())
                 self.assertEqual(path.stat().st_size, metadata["bytes"])
                 self.assertEqual(sha256_file(path), metadata["sha256"])
 
+    def test_owned_source_matches_frozen_semantics_without_raw_logs(self) -> None:
+        actual = parse_sde_device_ir(ORACLE / "input" / "pn2d_sde.cmd")
+        expected = json.loads(
+            (ORACLE / self.manifest["expected_device_ir"]).read_text(encoding="utf-8")
+        )
+
+        def semantics(value):
+            if isinstance(value, dict):
+                return {key: semantics(item) for key, item in value.items()
+                        if key not in {"source", "location"}}
+            if isinstance(value, list):
+                return [semantics(item) for item in value]
+            return value
+
+        self.assertEqual(actual.pop("metadata_only"), [])
+        wrapper_control = expected.pop("metadata_only")
+        self.assertEqual(len(wrapper_control), 1)
+        self.assertEqual(wrapper_control[0]["command"], "set!")
+        self.assertEqual(wrapper_control[0]["text"], "(set! evaluate-log-file #t)")
+        self.assertEqual(semantics(actual), semantics(expected))
+
     def test_evaluated_log_is_flattened_and_matches_golden_ir(self) -> None:
         evaluated = ORACLE / "artifacts" / self.manifest["evaluated_logs"][0]
+        if not evaluated.is_file():
+            if os.environ.get("VELA_REQUIRE_LOCAL_SDE_ORACLE") == "1":
+                self.fail("required local evaluated log missing")
+            self.skipTest("raw evaluated log is local validation evidence")
         text = evaluated.read_text(encoding="utf-8")
         self.assertIn('(sdegeo:create-rectangle', text)
         self.assertIn('(sde:build-mesh "snmesh" "" "pn2d")', text)

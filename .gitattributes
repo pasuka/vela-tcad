@@ -4,6 +4,10 @@ scripts/remote-vm/*.sh text eol=lf
 
 tests/fixtures/pn2d_minimal6_synthetic/states/**/export/vela_*.csv binary
 
+# Workflow files use LF without renormalizing provenance-bound fixtures.
+*.yml text eol=lf
+*.yaml text eol=lf
+
 # The SimpleMOS delivery copies preserve the frozen Windows CRLF bytes.
 reference_tcad/simplemos_sentaurus2022/engineering/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 

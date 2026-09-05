@@ -1,4 +1,5 @@
 {
+  "historical_snapshot_note": "Historical 2026-08-22 status; PN2D BV superseded by M5 acceptance. Current corpus plan: docs/superpowers/plans/2026-09-05-reference-sde-modeling-development-plan.md",
   "schema": "vela.sentaurus2022_remaining_tasks_validation.v1",
   "validation_date": "2026-08-22",
   "build_type": "Release",

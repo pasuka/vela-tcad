@@ -1,2 +1,10 @@
-artifacts/** -diff -text
-input/** -diff -text
+artifacts/** -text
+input/** -text
+*.cmd diff
+*.scm diff
+*.txt diff
+*.tdr -diff
+
+# Preserve sealed original bytes while allowing text review and diff --check.
+input/vela_sde_evaluated_wrapper.scm whitespace=cr-at-eol
+artifacts/pn2d_msh.cmd whitespace=-blank-at-eof

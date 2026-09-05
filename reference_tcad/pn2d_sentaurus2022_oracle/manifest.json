@@ -4,17 +4,10 @@
   "run_id": "T2022_03_SP2_oracle_v1",
   "created_utc": "2026-08-22T04:11:45.107930+00:00",
   "dry_run": false,
-  "ssh_target": "sentaurus",
-  "remote_run_dir": "~/sentaurus_runs/vela_sde_fixtures/pn2d_sentaurus2022_T2022_03_SP2_oracle_v1",
   "source_original": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd",
   "source_sha256": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
   "wrapper_sha256": "0e174abead17e48e4ac86d06e20b7fcca9d56a6aa0a07a17ba4806facd3fdb17",
-  "commands": [
-    "mkdir -p ~/sentaurus_runs/vela_sde_fixtures/pn2d_sentaurus2022_T2022_03_SP2_oracle_v1",
-    "cd ~/sentaurus_runs/vela_sde_fixtures/pn2d_sentaurus2022_T2022_03_SP2_oracle_v1 && sde -v > sde.version.txt 2>&1",
-    "cd ~/sentaurus_runs/vela_sde_fixtures/pn2d_sentaurus2022_T2022_03_SP2_oracle_v1 && sde -e -l vela_sde_evaluated_wrapper.scm > sde.stdout.txt 2> sde.stderr.txt; code=$?; printf '%s\\n' \"$code\" > sde.exit_code.txt; exit $code"
-  ],
-  "sde_version": "****************************************************************************\n***                      Sentaurus Structure Editor                      ***\n***                        Version T-2022.03-SP2                         ***\n***                      (0.7745337, x86_64, Linux)                      ***\n***                                                                      ***\n***               Copyright (C) 1994-2022 Synopsys, Inc.                 ***\n***        Portions of this software are owned by Spatial Corp.          ***\n***            Copyright (C) 1986-2022. All Rights Reserved.             ***\n***                                                                      ***\n***  This software and the associated documentation are confidential     ***\n***  and proprietary to Synopsys, Inc.  Your use or disclosure of this   ***\n***  software is subject to the terms and conditions of a written        ***\n***  license agreement between you, or your company, and Synopsys, Inc.  ***\n****************************************************************************\n\nCompiled Fri Aug  5 13:04:55 PDT 2022 on: swe-vm-kcr-tcad01\nRunning on: tcad\nHardware type: x86_64\nOS name: Linux\nOS release: 3.10.0-1160.el7.x86_64\nOS version: #1 SMP Tue Aug 18 14:50:17 EDT 2020\nProcess ID: 47864",
+  "sde_version": "Version T-2022.03-SP2",
   "exit_code": 0,
   "evaluated_logs": [
     "vela_sde_evaluated_wrapper.log.eval"
@@ -80,5 +73,15 @@
       "sha256": "0e174abead17e48e4ac86d06e20b7fcca9d56a6aa0a07a17ba4806facd3fdb17"
     }
   },
-  "warnings": []
+  "warnings": [],
+  "local_validation_files": [
+    "artifacts/pn2d_bnd.tdr",
+    "artifacts/pn2d_msh.tdr",
+    "artifacts/sde.exit_code.txt",
+    "artifacts/sde.stderr.txt",
+    "artifacts/sde.stdout.txt",
+    "artifacts/sde.version.txt",
+    "artifacts/vela_sde_evaluated_wrapper.log.eval"
+  ],
+  "artifact_policy": "TDR and raw logs are local validation only; hashes are retained, bytes are not distributed. Missing local evidence is not a live validation pass."
 }

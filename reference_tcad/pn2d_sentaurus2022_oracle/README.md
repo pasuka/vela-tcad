@@ -1,16 +1,24 @@
 # PN2D Sentaurus 2022 SDE oracle
 
-This frozen oracle was generated from
-`reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd` by the licensed
-Sentaurus Structure Editor T-2022.03-SP2 VM using
-`scripts/run_sentaurus2022_sde_fixture_vm.py`.
+The owned source and wrapper, frozen Device IR, generated mesh command and
+hash manifest describe the historical T-2022.03-SP2 validation run (1943 points,
+3680 elements, 3 regions). These small reviewable fixtures remain in Git.
 
-`manifest.json` is the provenance root. It seals the owned input, evaluated
-wrapper, official variable-expanded command log, boundary TDR, generated mesh
-command, mesh TDR, diagnostics, version output and expected Vela Device IR.
-The official mesh summary is 1943 points, 3680 elements and 3 regions.
+TDR files, evaluated logs, stdout/stderr, version output and exit-code files
+are local validation evidence only. They are ignored and untracked. The
+manifest retains their original SHA-256 and byte counts in `files`; entries
+listed in `local_validation_files` are not required by a public checkout.
+The public manifest contains only a concise version identifier, not raw output.
 
-The source is intentionally not modernized inside this fixture. The preserved
-stdout contains T-2022.03's warning that `sdegeo:define-2d-contact` is obsolete
-and should be replaced by `sdegeo:set-contact`; changing the owned source must
-create a reviewed oracle revision with new hashes.
+Public tests always compare the owned SDE source with the frozen IR semantics
+and verify hashes of distributed files. Raw evidence is hash-checked whenever
+present; log replay is explicitly skipped when absent. For a required internal
+oracle audit, restore the original bytes under `artifacts/` and set
+`VELA_REQUIRE_LOCAL_SDE_ORACLE=1`; missing evidence then fails the test.
+Absence of local evidence never establishes a fresh live Sentaurus/TDX pass.
+
+During the 2026-09-05 cleanup, original bytes and the original manifest were
+also preserved under ignored `build-release/private-sde-oracle-20260905/`.
+Historical Git objects were not rewritten; a separate history-cleaning decision
+is needed if publishing must exclude those objects as well as the current tree.
+Do not use `git add -f` for validation evidence or bulk-renormalize sealed files.

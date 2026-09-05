@@ -1,0 +1,625 @@
+{
+  "schema": "vela.reference_sde_audit.v1",
+  "date": "2026-09-05",
+  "merge_commit": "505e1ea",
+  "main_commit": "8e99e57",
+  "command": "python scripts/sentaurus_gmsh_pipeline.py --sde SOURCE --output-dir IGNORED_DIR --runtime-dir build-release/gmsh-python-runtime",
+  "device_source_count": 10,
+  "device_source_generated": 4,
+  "device_source_failed": 6,
+  "cases": [
+    {
+      "source": "reference_tcad/bvmethods_sentaurus2018/source/bvmethods_nmos_sde.cmd",
+      "exit_code": 2,
+      "status": "failed",
+      "stage": "sde_parse",
+      "message": "reference_tcad\\bvmethods_sentaurus2018\\source\\bvmethods_nmos_sde.cmd:32:1: unsupported SDE material 'PolySi' in '(sdegeo:create-rectangle (position 0.0 Ygox 0.0) (position Xg Ypol 0.0) \"PolySi\" \"R.Polygate\")'; supported materials: Nitride, Oxide, PolySilicon, SiO2, Silicon",
+      "cross_format": null,
+      "mesh_strategy": null,
+      "sha256": "7cfb1748b85e6a095fa18321e9d4ecc12ae2f80f9c7e817153bcdcc076ea5f37",
+      "category": "device_source"
+    },
+    {
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde.cmd",
+      "exit_code": 2,
+      "status": "failed",
+      "stage": "sde_parse",
+      "message": "reference_tcad\\genius_bjt_sentaurus2022\\source\\bjt_sde.cmd:6:3: unsupported SDE expression operator 'sdegeo:create-rectangle' in '(sdegeo:create-rectangle (position 0.0 0.0 0.0) (position 6.0 2.0 0.0) \"Silicon\" \"R.Silicon\")'",
+      "cross_format": null,
+      "mesh_strategy": null,
+      "sha256": "99949a88906c09383490870326e1ac82b9b43c8a9bc2aad1a36c8b8196096f3d",
+      "category": "device_source"
+    },
+    {
+      "source": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde_local_refined.cmd",
+      "exit_code": 2,
+      "status": "failed",
+      "stage": "sde_parse",
+      "message": "reference_tcad\\genius_bjt_sentaurus2022\\source\\bjt_sde_local_refined.cmd:7:3: unsupported SDE expression operator 'sdegeo:create-rectangle' in '(sdegeo:create-rectangle (position 0.0 0.0 0.0) (position 6.0 2.0 0.0) \"Silicon\" \"R.Silicon\")'",
+      "cross_format": null,
+      "mesh_strategy": null,
+      "sha256": "ce3f55f004608386e8a1d5b238b2f619371e5c5d7410eef441d3a8c6681793fe",
+      "category": "device_source"
+    },
+    {
+      "source": "reference_tcad/nmos2d_sentaurus2018/source/nmos2d_sde.cmd",
+      "exit_code": 0,
+      "status": "generated",
+      "stage": null,
+      "message": null,
+      "cross_format": {
+        "schema": "vela.sentaurus_gmsh_cross_format.v1",
+        "status": "passed",
+        "failures": [],
+        "nodal_fields": {
+          "status": "passed",
+          "max_abs_difference": {
+            "msh": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "vtu": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "vtk": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "dat": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            }
+          },
+          "failures": []
+        },
+        "msh_physical_names": [
+          "contact:Body",
+          "contact:Drain",
+          "contact:Gate",
+          "contact:Source",
+          "interface:R.Body+R.Drain",
+          "interface:R.Body+R.Ox",
+          "interface:R.Source+R.Body",
+          "material:Oxide",
+          "material:Silicon",
+          "region:R.Body",
+          "region:R.Drain",
+          "region:R.Ox",
+          "region:R.Source"
+        ],
+        "vtu": {
+          "point_count": 1308,
+          "cell_count": 2665,
+          "cell_type_counts": {
+            "5": 2461,
+            "3": 204
+          }
+        },
+        "vtk": {
+          "point_count": 1308,
+          "cell_count": 2665,
+          "cell_type_counts": {
+            "5": 2461,
+            "3": 204
+          }
+        },
+        "dfise": {
+          "vertex_count": 1308,
+          "regions": [
+            "R.Body",
+            "R.Drain",
+            "R.Ox",
+            "R.Source",
+            "Body",
+            "Drain",
+            "Gate",
+            "Source",
+            "R.Body+R.Drain",
+            "R.Body+R.Ox",
+            "R.Source+R.Body"
+          ],
+          "datasets": [
+            "AbsDopingConcentration",
+            "AcceptorConcentration",
+            "BoronActiveConcentration",
+            "DonorConcentration",
+            "DopingConcentration",
+            "Log10AbsDopingConcentration",
+            "PhosphorusActiveConcentration"
+          ]
+        }
+      },
+      "mesh_strategy": {
+        "requested": "auto",
+        "actual": "unstructured",
+        "transfinite_diagonal": "AlternateRight",
+        "eligibility": {
+          "eligible": false,
+          "requirements": [
+            "one axis-aligned Rectangle body",
+            "no authored insert-vertex",
+            "Rectangle refinement windows only",
+            "no refinement functions"
+          ],
+          "reasons": [
+            {
+              "code": "body_count",
+              "message": "requires exactly one authored body",
+              "actual": 4
+            }
+          ]
+        }
+      },
+      "sha256": "483d948be1a5202a101f8dd4951df3d58a9a56d0414015daa4e6b5ee51159f78",
+      "category": "device_source"
+    },
+    {
+      "source": "reference_tcad/pn2d_sentaurus2018/source/pn2d_sde.cmd",
+      "exit_code": 0,
+      "status": "generated",
+      "stage": null,
+      "message": null,
+      "cross_format": {
+        "schema": "vela.sentaurus_gmsh_cross_format.v1",
+        "status": "passed",
+        "failures": [],
+        "nodal_fields": {
+          "status": "passed",
+          "max_abs_difference": {
+            "msh": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "vtu": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "vtk": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "dat": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            }
+          },
+          "failures": []
+        },
+        "msh_physical_names": [
+          "contact:Anode",
+          "contact:Cathode",
+          "material:Silicon",
+          "region:R.Si"
+        ],
+        "vtu": {
+          "point_count": 1482,
+          "cell_count": 2850,
+          "cell_type_counts": {
+            "5": 2800,
+            "3": 50
+          }
+        },
+        "vtk": {
+          "point_count": 1482,
+          "cell_count": 2850,
+          "cell_type_counts": {
+            "5": 2800,
+            "3": 50
+          }
+        },
+        "dfise": {
+          "vertex_count": 1482,
+          "regions": [
+            "R.Si",
+            "Anode",
+            "Cathode"
+          ],
+          "datasets": [
+            "AbsDopingConcentration",
+            "AcceptorConcentration",
+            "BoronActiveConcentration",
+            "DonorConcentration",
+            "DopingConcentration",
+            "Log10AbsDopingConcentration",
+            "PhosphorusActiveConcentration"
+          ]
+        }
+      },
+      "mesh_strategy": {
+        "requested": "auto",
+        "actual": "transfinite-rect",
+        "transfinite_diagonal": "AlternateRight",
+        "eligibility": {
+          "eligible": true,
+          "requirements": [
+            "one axis-aligned Rectangle body",
+            "no authored insert-vertex",
+            "Rectangle refinement windows only",
+            "no refinement functions"
+          ],
+          "reasons": []
+        }
+      },
+      "sha256": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
+      "category": "device_source"
+    },
+    {
+      "source": "reference_tcad/pn2d_sentaurus2018_coarse7x3/source/pn2d_sde.cmd",
+      "exit_code": 0,
+      "status": "generated",
+      "stage": null,
+      "message": null,
+      "cross_format": {
+        "schema": "vela.sentaurus_gmsh_cross_format.v1",
+        "status": "passed",
+        "failures": [],
+        "nodal_fields": {
+          "status": "passed",
+          "max_abs_difference": {
+            "msh": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "vtu": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "vtk": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "dat": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            }
+          },
+          "failures": []
+        },
+        "msh_physical_names": [
+          "contact:Anode",
+          "contact:Cathode",
+          "material:Silicon",
+          "region:R.Si"
+        ],
+        "vtu": {
+          "point_count": 44,
+          "cell_count": 66,
+          "cell_type_counts": {
+            "5": 60,
+            "3": 6
+          }
+        },
+        "vtk": {
+          "point_count": 44,
+          "cell_count": 66,
+          "cell_type_counts": {
+            "5": 60,
+            "3": 6
+          }
+        },
+        "dfise": {
+          "vertex_count": 44,
+          "regions": [
+            "R.Si",
+            "Anode",
+            "Cathode"
+          ],
+          "datasets": [
+            "AbsDopingConcentration",
+            "AcceptorConcentration",
+            "BoronActiveConcentration",
+            "DonorConcentration",
+            "DopingConcentration",
+            "Log10AbsDopingConcentration",
+            "PhosphorusActiveConcentration"
+          ]
+        }
+      },
+      "mesh_strategy": {
+        "requested": "auto",
+        "actual": "transfinite-rect",
+        "transfinite_diagonal": "AlternateRight",
+        "eligibility": {
+          "eligible": true,
+          "requirements": [
+            "one axis-aligned Rectangle body",
+            "no authored insert-vertex",
+            "Rectangle refinement windows only",
+            "no refinement functions"
+          ],
+          "reasons": []
+        }
+      },
+      "sha256": "688622ef97b55ff96b95e1d83e0492b169f229e568206cc8c458e78dcd230a62",
+      "category": "device_source"
+    },
+    {
+      "source": "reference_tcad/pn2d_sentaurus2018_skewed_tri3/source/pn2d_sde.cmd",
+      "exit_code": 2,
+      "status": "failed",
+      "stage": "sde_parse",
+      "message": "reference_tcad\\pn2d_sentaurus2018_skewed_tri3\\source\\pn2d_sde.cmd:27:1: 'sdegeo:create-polygon' is not supported by the Vela SDE frontend; only axis-aligned rectangles can be meshed conformally today. Offending command: '(sdegeo:create-polygon (list (position 0.0 0.0 0.0) (position 1.0 0.0 0.0) (position 0.4 0.18 0.0)) \"Silicon\" \"R.P0\")'",
+      "cross_format": null,
+      "mesh_strategy": null,
+      "sha256": "062c8663e9b06de12691e286b6e464619d27906e061aa9dc625f02b618f21bb5",
+      "category": "device_source"
+    },
+    {
+      "source": "reference_tcad/pn2d_sentaurus2022_oracle/input/pn2d_sde.cmd",
+      "exit_code": 0,
+      "status": "generated",
+      "stage": null,
+      "message": null,
+      "cross_format": {
+        "schema": "vela.sentaurus_gmsh_cross_format.v1",
+        "status": "passed",
+        "failures": [],
+        "nodal_fields": {
+          "status": "passed",
+          "max_abs_difference": {
+            "msh": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "vtu": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "vtk": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "dat": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            }
+          },
+          "failures": []
+        },
+        "msh_physical_names": [
+          "contact:Anode",
+          "contact:Cathode",
+          "material:Silicon",
+          "region:R.Si"
+        ],
+        "vtu": {
+          "point_count": 1482,
+          "cell_count": 2850,
+          "cell_type_counts": {
+            "5": 2800,
+            "3": 50
+          }
+        },
+        "vtk": {
+          "point_count": 1482,
+          "cell_count": 2850,
+          "cell_type_counts": {
+            "5": 2800,
+            "3": 50
+          }
+        },
+        "dfise": {
+          "vertex_count": 1482,
+          "regions": [
+            "R.Si",
+            "Anode",
+            "Cathode"
+          ],
+          "datasets": [
+            "AbsDopingConcentration",
+            "AcceptorConcentration",
+            "BoronActiveConcentration",
+            "DonorConcentration",
+            "DopingConcentration",
+            "Log10AbsDopingConcentration",
+            "PhosphorusActiveConcentration"
+          ]
+        }
+      },
+      "mesh_strategy": {
+        "requested": "auto",
+        "actual": "transfinite-rect",
+        "transfinite_diagonal": "AlternateRight",
+        "eligibility": {
+          "eligible": true,
+          "requirements": [
+            "one axis-aligned Rectangle body",
+            "no authored insert-vertex",
+            "Rectangle refinement windows only",
+            "no refinement functions"
+          ],
+          "reasons": []
+        }
+      },
+      "sha256": "407d1326942245995ec4336ac268851f17afefca8d6c4f123b0a13a5fef299ac",
+      "category": "oracle_duplicate"
+    },
+    {
+      "source": "reference_tcad/pn2d_sentaurus2022_oracle/input/vela_sde_evaluated_wrapper.scm",
+      "exit_code": 2,
+      "status": "failed",
+      "stage": "sde_parse",
+      "message": "reference_tcad\\pn2d_sentaurus2022_oracle\\input\\vela_sde_evaluated_wrapper.scm:1:1: 'set!' is outside the declarative offline-static Scheme subset in '(set! evaluate-log-file #t)'; use the sentaurus2022-evaluated frontend",
+      "cross_format": null,
+      "mesh_strategy": null,
+      "sha256": "0e174abead17e48e4ac86d06e20b7fcca9d56a6aa0a07a17ba4806facd3fdb17",
+      "category": "oracle_wrapper"
+    },
+    {
+      "source": "reference_tcad/schottky_charon_sentaurus2018/source/schottky_n_sde.cmd",
+      "exit_code": 0,
+      "status": "generated",
+      "stage": null,
+      "message": null,
+      "cross_format": {
+        "schema": "vela.sentaurus_gmsh_cross_format.v1",
+        "status": "passed",
+        "failures": [],
+        "nodal_fields": {
+          "status": "passed",
+          "max_abs_difference": {
+            "msh": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "vtu": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "vtk": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            },
+            "dat": {
+              "DonorConcentration": 0.0,
+              "AcceptorConcentration": 0.0,
+              "DopingConcentration": 0.0,
+              "AbsDopingConcentration": 0.0,
+              "Log10AbsDopingConcentration": 0.0
+            }
+          },
+          "failures": []
+        },
+        "msh_physical_names": [
+          "contact:anode",
+          "contact:cathode",
+          "material:Silicon",
+          "region:R.Silicon"
+        ],
+        "vtu": {
+          "point_count": 319,
+          "cell_count": 580,
+          "cell_type_counts": {
+            "5": 560,
+            "3": 20
+          }
+        },
+        "vtk": {
+          "point_count": 319,
+          "cell_count": 580,
+          "cell_type_counts": {
+            "5": 560,
+            "3": 20
+          }
+        },
+        "dfise": {
+          "vertex_count": 319,
+          "regions": [
+            "R.Silicon",
+            "anode",
+            "cathode"
+          ],
+          "datasets": [
+            "AbsDopingConcentration",
+            "AcceptorConcentration",
+            "DonorConcentration",
+            "DopingConcentration",
+            "Log10AbsDopingConcentration",
+            "PhosphorusActiveConcentration"
+          ]
+        }
+      },
+      "mesh_strategy": {
+        "requested": "auto",
+        "actual": "transfinite-rect",
+        "transfinite_diagonal": "AlternateRight",
+        "eligibility": {
+          "eligible": true,
+          "requirements": [
+            "one axis-aligned Rectangle body",
+            "no authored insert-vertex",
+            "Rectangle refinement windows only",
+            "no refinement functions"
+          ],
+          "reasons": []
+        }
+      },
+      "sha256": "c381e21dc3bbc2fd9e56ba39db919c26ad0c8cf596d10fa64a03b631a2d56208",
+      "category": "device_source"
+    },
+    {
+      "source": "reference_tcad/singledevice_sentaurus2018/source/singledevice_sde.cmd",
+      "exit_code": 2,
+      "status": "failed",
+      "stage": "sde_parse",
+      "message": "reference_tcad\\singledevice_sentaurus2018\\source\\singledevice_sde.cmd:57:1: (define ...) requires a symbol name in '(define (position-2d x y) (position x y 0) )'",
+      "cross_format": null,
+      "mesh_strategy": null,
+      "sha256": "4dd6d4e2ee76651a59c349e7b05da823366230b20815efe0f08c442677451c83",
+      "category": "device_source"
+    },
+    {
+      "source": "reference_tcad/transportmodels_sentaurus2022/source/nMOS_dvs.cmd",
+      "exit_code": 2,
+      "status": "failed",
+      "stage": "sde_parse",
+      "message": "reference_tcad\\transportmodels_sentaurus2022\\source\\nMOS_dvs.cmd:57:1: (define ...) requires a symbol name in '(define (position-2d x y) (position x y 0) )'",
+      "cross_format": null,
+      "mesh_strategy": null,
+      "sha256": "da49ed3026d1bb51ec9faf19939f1e3206e50e6df86a61b0e472ce46d1363081",
+      "category": "device_source"
+    }
+  ],
+  "notes": [
+    "First failure only; later blockers require implementation and rerun.",
+    "Cross-format passed is not an official SDE equivalence or solver acceptance claim."
+  ]
+}

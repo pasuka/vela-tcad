@@ -1,5 +1,10 @@
 # Sentaurus 2022 workflow validation report
 
+> Historical snapshot: PN2D BV status was superseded by the M5 acceptance record
+> (`docs/validation/sentaurus_gmsh_m5_acceptance_2026-08-26.md`). New main sync and
+> reference-script coverage are tracked in the 2026-09-05 reference SDE plan.
+
+
 Validation date: 2026-08-22
 
 Machine-readable closeout: `docs/validation/sentaurus2022_remaining_tasks_20260822.json`.
