@@ -1,8 +1,8 @@
 # Architecture
 
 Vela is a C++20 CMake project centered on the `vela_core` static library.
-`vela_example_runner` is the command-line executable used by examples and the
-regression suite. Optional pybind11 bindings expose a thin Python API when
+`vela_example_runner` is the command-line executable used by JSON simulation
+decks and reference-case workflows. Optional pybind11 bindings expose a thin Python API when
 `VELA_ENABLE_PYTHON=ON`.
 
 ## Source Layout
@@ -72,9 +72,8 @@ physical voltage before returning or writing output.
 
 ## Implementation Boundaries
 
-- Mixed-material MOS and power-device examples are engineering smoke tests.
-- LDMOS and IGBT decks validate signs, trends, finite outputs, and diagnostic
-  fields; they are not calibrated device models.
+- Device-level calibration and cross-tool claims require a checked-in
+  `reference_tcad/` fixture with an explicit acceptance boundary.
 - BV sweeps report diagnostic max field/current jump/non-convergence markers,
   not calibrated breakdown voltages.
 - CV sweeps use finite-difference terminal charge, not AC small-signal

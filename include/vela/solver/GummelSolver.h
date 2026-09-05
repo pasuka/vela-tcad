@@ -23,6 +23,8 @@
 
 namespace vela {
 
+struct CoupledDDEdgeFluxDiagnostic;
+
 /// Per-contact physics metadata routed to the DD solvers.
 ///
 /// Bias for each contact is still passed through ``contactBiases`` so the
@@ -115,6 +117,7 @@ struct GummelConfig {
     double taup        = 3.0e-6; ///< Hole SRH lifetime [s]
     double augerCn     = 2.90e-43; ///< Electron Auger coefficient [m^6/s]
     double augerCp     = 1.028e-43; ///< Hole Auger coefficient [m^6/s]
+    std::string augerExcessProduct = "generalized_fermi"; ///< "generalized_fermi" or "classical_np".
     double carrierFloor = 1.0; ///< Minimum solved carrier concentration [m^-3] for quasi-Fermi consistency.
     MobilityModelConfig mobility{}; ///< Mobility model configuration
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
@@ -232,6 +235,9 @@ void writeDDSolutionVTK(const std::string& filename,
                         const BandgapNarrowingConfig& bandgapNarrowingConfig,
                         Real temperature_K = constants::T0,
                         UnitScalingConfig scaling = {},
-                        const CarrierStatisticsConfig& carrierStatistics = {});
+                        const CarrierStatisticsConfig& carrierStatistics = {},
+                        const std::vector<CoupledDDEdgeFluxDiagnostic>*
+                            sgEdgeFluxDiagnostics = nullptr,
+                        bool writeCellFirstSgCurrentDiagnostics = false);
 
 } // namespace vela

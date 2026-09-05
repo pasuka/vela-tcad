@@ -1,0 +1,15 @@
+{
+  "schema": "vela.transportmodels.dd.numerical_contract.v1",
+  "contract_id": "transportmodels-dd-contact-basin-v1",
+  "description": "Numerical-coordinate overlay for the frozen Sentaurus 2022 TransportModels DD contract. It preserves the physical contract and fixes nodewise contact-basin quasi-Fermi references for deep-off current resolution.",
+  "base_contract": "transportmodels_dd_dg_sentaurus2022_v1.json",
+  "solver_numerics": {
+    "quasi_fermi_reference": "contact_basin"
+  },
+  "acceptance": {
+    "idvg_transition_max_absolute_log_error_dex": 0.15,
+    "idvg_on_max_absolute_relative_error": 0.10,
+    "deep_off_max_absolute_log_error_dex": 0.15,
+    "deep_off_min_id_to_kcl_ratio": 10.0
+  }
+}

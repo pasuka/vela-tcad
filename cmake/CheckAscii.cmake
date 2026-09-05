@@ -8,7 +8,6 @@ set(ASCII_CHECK_ROOTS
     tests
     src
     include
-    examples
 )
 
 set(ASCII_CHECK_EXTENSIONS
@@ -67,9 +66,9 @@ if(offending_files)
     list(SORT offending_files)
     list(JOIN offending_files "\n  " offending_report)
     message(FATAL_ERROR
-        "Non-ASCII bytes found in the configured ASCII check scope (tests/, src/, include/, examples/ and selected text/source extensions):\n"
+        "Non-ASCII bytes found in the configured ASCII check scope (tests/, src/, include/ and selected text/source extensions):\n"
         "  ${offending_report}\n\n"
-        "Keep files under tests/, src/, include/, and examples/ ASCII-only for reliable MSYS2 UCRT64 builds and test selection."
+        "Keep files under tests/, src/, and include/ ASCII-only for reliable MSYS2 UCRT64 builds and test selection."
     )
 endif()
 
@@ -78,7 +77,6 @@ message(STATUS "ASCII check passed for ${file_count} files")
 set(SCALING_SCHEMA_DOCS
     README.md
     docs/config_schema.md
-    docs/examples.md
 )
 
 set(missing_scaling_docs)

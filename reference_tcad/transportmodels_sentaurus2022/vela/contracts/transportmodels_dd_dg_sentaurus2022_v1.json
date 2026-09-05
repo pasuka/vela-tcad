@@ -1,0 +1,121 @@
+{
+  "schema": "vela.transportmodels.dd_dg.fixed_contract.v1",
+  "contract_id": "transportmodels-dd-dg-sentaurus2022-v1",
+  "description": "Frozen DD/DG TransportModels MOS comparison contract. DD and DG share mesh, doping, materials, classical physics, bias lattice and numerical workflow; electron_quantum_potential is the only branch delta.",
+  "materials_file": "transportmodels_sentaurus2022_materials_v1.json",
+  "common_solver_physics": {
+    "mobility": {
+      "model": "masetti_field_lombardi",
+      "high_field_driving_force": "quasi_fermi_gradient",
+      "high_field_gradient_discretization": "transport_cell_vector"
+    },
+    "recombination": [
+      "srh"
+    ],
+    "srh_doping_dependence": {
+      "enabled": true,
+      "concentration_basis": "total_impurity",
+      "temperature_dependence": true,
+      "reference_temperature_K": 300.0,
+      "electron_temperature_exponent": -1.5,
+      "hole_temperature_exponent": -1.5,
+      "electron": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 3e-8,
+        "reference_doping_m3": 1e16,
+        "gamma": 1.0
+      },
+      "hole": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 3e-6,
+        "reference_doping_m3": 1e16,
+        "gamma": 1.0
+      }
+    },
+    "bandgap_narrowing": {
+      "model": "old_slotboom",
+      "fermi_statistics_correction": true
+    },
+    "carrier_statistics": {
+      "model": "fermi_dirac"
+    },
+    "srh_density_coupling": "sentaurus_default"
+  },
+  "dg_quantum_contract": {
+    "enabled": true,
+    "gamma": 3.6,
+    "effective_mass_ratio": 1.0618016171622988,
+    "include_insulators": true,
+    "insulator_gamma": 1.0,
+    "insulator_effective_mass_ratio": 0.42,
+    "interface_boundary": "homogeneous_neumann",
+    "theta": 0.5,
+    "conduction_band_narrowing_fraction": 0.5,
+    "outer_max_iterations": 80,
+    "max_iterations": 60,
+    "damping": 0.5,
+    "coupling_mode": "outer",
+    "formulation": "potential_based",
+    "global_discretization": "sentaurus_box",
+    "coefficient_mass_ratio": 1.0906506732296395,
+    "outer_absolute_tolerance_V": 0.01,
+    "outer_acceleration": "none",
+    "outer_relaxation": 1.0,
+    "outer_relaxation_min": 0.1,
+    "outer_relaxation_max": 1.0,
+    "sentaurus_interface_insulator_half_jump_offset": 0.0,
+    "sentaurus_interface_silicon_half_jump_offset": 0.0,
+    "sentaurus_interface_polysilicon_half_jump_offset": 0.0,
+    "sentaurus_interface_silicon_reaction_weight": 1.0,
+    "sentaurus_interface_polysilicon_reaction_weight": 1.0,
+    "sentaurus_interface_insulator_at_silicon_reaction_weight": 1.0,
+    "sentaurus_interface_insulator_at_polysilicon_reaction_weight": 1.0,
+    "sentaurus_interface_silicon_reaction_offset_V": 0.0,
+    "sentaurus_interface_polysilicon_reaction_offset_V": 0.0,
+    "sentaurus_interface_insulator_at_silicon_reaction_offset_V": 0.0,
+    "sentaurus_interface_insulator_at_polysilicon_reaction_offset_V": 0.0,
+    "sentaurus_insulator_reentrant_corner_reaction_weight": 1.0
+  },
+  "workflow_numerics": {
+    "max_iter": 100,
+    "reltol": 1e-7,
+    "abstol": 1e-12,
+    "damping_psi": 0.35,
+    "warm_start": true
+  },
+  "stage_numerics": {
+    "cold_start": {
+      "quasi_fermi_update_limit_V": 0.1
+    },
+    "restarted": {
+      "quasi_fermi_update_limit_V": 0.025
+    }
+  },
+  "bias_contract": {
+    "idvg": {
+      "gate_bias_V": [
+        -1.0, -0.84, -0.68, -0.52, -0.36, -0.2, -0.04,
+        0.12, 0.28, 0.44, 0.6, 0.76, 0.92, 1.08,
+        1.24, 1.4, 1.56, 1.72, 1.88, 2.04, 2.2
+      ],
+      "drain_bias_V": 1.1,
+      "initialization": "equilibrium at Vg=-1 V and Vd=0 V, drain ramp to 1.1 V, then increasing gate sweep"
+    },
+    "idvd": {
+      "drain_bias_V": [
+        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6,
+        0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3,
+        1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0
+      ],
+      "gate_bias_V": 1.0,
+      "initialization": "independent equilibrium at Vg=1 V and Vd=0 V, then increasing drain sweep"
+    }
+  },
+  "acceptance": {
+    "idvg_transition_max_absolute_log_error_dex": 0.15,
+    "idvg_on_max_absolute_relative_error": 0.10,
+    "idvd_max_absolute_relative_error": 0.05,
+    "idvd_2V_max_absolute_relative_error": 0.03,
+    "deep_off_min_id_to_kcl_ratio": 10.0
+  }
+}

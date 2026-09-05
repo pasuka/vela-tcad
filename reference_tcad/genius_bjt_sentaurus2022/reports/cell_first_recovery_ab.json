@@ -1,0 +1,1229 @@
+{
+  "schema": "vela.genius_bjt_cell_first_recovery_ab.v1",
+  "scope": "VBE=0.70 V; VCE=0,1,2,3 V; common coarse and locally refined meshes",
+  "postprocess_only": true,
+  "candidate_default_enabled": false,
+  "metric_definition": {
+    "mask": "SDevice carrier-current magnitude >= 1e-6 of its per-bias peak",
+    "p95": "95th percentile of absolute log10 magnitude error",
+    "vector_rmse": "L2 vector error normalized by SDevice vector L2 norm",
+    "cosine": "global selected-node vector cosine similarity"
+  },
+  "thresholds_sha256": "b94f7aee6b6914d34a08d6e0942f4bc89d699c653c5f61bfd899794b00fa6874",
+  "sentaurus_provenance": {
+    "version": "T-2022.03-SP2",
+    "sde_deck": {
+      "path": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_sde_local_refined.cmd",
+      "sha256": "1c3b0f0dd39f4b106399f01a6744b83e78ebad5a83f78b8b8b1aee923381c9ca"
+    },
+    "sdevice_deck": {
+      "path": "reference_tcad/genius_bjt_sentaurus2022/source/bjt_m1_des.cmd",
+      "sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+    },
+    "raw_tdr_sha256": {
+      "bjt_m1_vce_0000_des.tdr": "4c9bfb156b4b6df12973f9191cf3db2ca5c168a85a32c35ceaf56c33cbd6a723",
+      "bjt_m1_vce_0001_des.tdr": "d03b53d4aed61c64fa61ce5407971390133c004c852132a70ab0b593f7ee1e35",
+      "bjt_m1_vce_0002_des.tdr": "dd3e825ff5d45850eca16d6d6129238195347b261ffb7bdfc0ba648585f95397",
+      "bjt_m1_vce_0003_des.tdr": "71aa2080f8afbcdb9db411f718f319881b277a597b95543f64a61ba925ca61d4",
+      "bjt_msh.tdr": "5ff641b2740f170b7627a18d18e7c34801fd51c77aeb7e30ee788bdbd81ca078"
+    },
+    "expected_refined_mesh": {
+      "nodes_sha256": "8e2bc18b9e8538a8676d4f4c7db89746f6271c7cb79b367d4a6d22afd4e4063f",
+      "elements_sha256": "39aef64a32fb4652a5a0ecdbf6883836c8887b4900780e9952b1b3e8490238e7"
+    }
+  },
+  "state_manifests": {
+    "coarse": {
+      "path": "build-release/reference_tcad/genius_bjt_sentaurus2022/cell_first_recovery_ab/coarse/run_manifest.json",
+      "sha256": "c13e8045975dcc1135f7ef499992565c61150a2a1ea89ba4e89e7b440487dfe0"
+    },
+    "refined": {
+      "path": "build-release/reference_tcad/genius_bjt_sentaurus2022/cell_first_recovery_ab/refined/run_manifest.json",
+      "sha256": "c8f7effdfd02b49b6920b663b5f113501f2d3d940acfb7d3d5107fb629b755ec"
+    }
+  },
+  "rows": [
+    {
+      "grid": "coarse",
+      "VCE_V": 0,
+      "carrier": "electron",
+      "recovery": "direct",
+      "selected_nodes": 5611,
+      "p95_error_decade": 0.017779370136619135,
+      "normalized_vector_rmse": 0.0463459315138226,
+      "cosine_similarity": 0.9989338025836823,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 0,
+      "carrier": "electron",
+      "recovery": "cell_first",
+      "selected_nodes": 5611,
+      "p95_error_decade": 0.011713002373828049,
+      "normalized_vector_rmse": 0.016388544574029155,
+      "cosine_similarity": 0.9998786437029841,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 0,
+      "carrier": "hole",
+      "recovery": "direct",
+      "selected_nodes": 5611,
+      "p95_error_decade": 0.016420252657477118,
+      "normalized_vector_rmse": 0.06583528527741644,
+      "cosine_similarity": 0.997892772081192,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 0,
+      "carrier": "hole",
+      "recovery": "cell_first",
+      "selected_nodes": 5611,
+      "p95_error_decade": 0.009257478966616793,
+      "normalized_vector_rmse": 0.030058333995112377,
+      "cosine_similarity": 0.999590758528854,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 1,
+      "carrier": "electron",
+      "recovery": "direct",
+      "selected_nodes": 5611,
+      "p95_error_decade": 0.01445026933746434,
+      "normalized_vector_rmse": 0.035690590571339866,
+      "cosine_similarity": 0.9993692186463179,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 1,
+      "carrier": "electron",
+      "recovery": "cell_first",
+      "selected_nodes": 5611,
+      "p95_error_decade": 0.009840377585667217,
+      "normalized_vector_rmse": 0.01620829235341323,
+      "cosine_similarity": 0.9999088169510963,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 1,
+      "carrier": "hole",
+      "recovery": "direct",
+      "selected_nodes": 2492,
+      "p95_error_decade": 0.24744056570854625,
+      "normalized_vector_rmse": 0.06239530623966027,
+      "cosine_similarity": 0.9980846916363849,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 1,
+      "carrier": "hole",
+      "recovery": "cell_first",
+      "selected_nodes": 2492,
+      "p95_error_decade": 0.057227508281087885,
+      "normalized_vector_rmse": 0.030655869228311254,
+      "cosine_similarity": 0.9995971941692635,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 2,
+      "carrier": "electron",
+      "recovery": "direct",
+      "selected_nodes": 5611,
+      "p95_error_decade": 0.015657103894948614,
+      "normalized_vector_rmse": 0.03536680778996515,
+      "cosine_similarity": 0.9993809010381826,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 2,
+      "carrier": "electron",
+      "recovery": "cell_first",
+      "selected_nodes": 5611,
+      "p95_error_decade": 0.009759728317056352,
+      "normalized_vector_rmse": 0.016103090853794647,
+      "cosine_similarity": 0.9999105054285985,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 2,
+      "carrier": "hole",
+      "recovery": "direct",
+      "selected_nodes": 2257,
+      "p95_error_decade": 0.6166523685509258,
+      "normalized_vector_rmse": 0.06216373878608074,
+      "cosine_similarity": 0.9981030646711389,
+      "pass": false
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 2,
+      "carrier": "hole",
+      "recovery": "cell_first",
+      "selected_nodes": 2257,
+      "p95_error_decade": 0.08720065976810908,
+      "normalized_vector_rmse": 0.030699263065349078,
+      "cosine_similarity": 0.999597404607366,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 3,
+      "carrier": "electron",
+      "recovery": "direct",
+      "selected_nodes": 5611,
+      "p95_error_decade": 0.015772805968731436,
+      "normalized_vector_rmse": 0.03514884751720666,
+      "cosine_similarity": 0.9993886648422103,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 3,
+      "carrier": "electron",
+      "recovery": "cell_first",
+      "selected_nodes": 5611,
+      "p95_error_decade": 0.009816594116464024,
+      "normalized_vector_rmse": 0.016034108344265725,
+      "cosine_similarity": 0.999911500312978,
+      "pass": true
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 3,
+      "carrier": "hole",
+      "recovery": "direct",
+      "selected_nodes": 2121,
+      "p95_error_decade": 0.8279870492481883,
+      "normalized_vector_rmse": 0.06220531291413024,
+      "cosine_similarity": 0.9981042175081616,
+      "pass": false
+    },
+    {
+      "grid": "coarse",
+      "VCE_V": 3,
+      "carrier": "hole",
+      "recovery": "cell_first",
+      "selected_nodes": 2121,
+      "p95_error_decade": 0.09854248951784857,
+      "normalized_vector_rmse": 0.030807146175509455,
+      "cosine_similarity": 0.9995957153824931,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 0,
+      "carrier": "electron",
+      "recovery": "direct",
+      "selected_nodes": 15561,
+      "p95_error_decade": 0.009859853597827619,
+      "normalized_vector_rmse": 0.03699839882791996,
+      "cosine_similarity": 0.9993170342447006,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 0,
+      "carrier": "electron",
+      "recovery": "cell_first",
+      "selected_nodes": 15561,
+      "p95_error_decade": 0.008282992617148217,
+      "normalized_vector_rmse": 0.012317240215088262,
+      "cosine_similarity": 0.9999321780373127,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 0,
+      "carrier": "hole",
+      "recovery": "direct",
+      "selected_nodes": 15561,
+      "p95_error_decade": 0.008601194758305473,
+      "normalized_vector_rmse": 0.02530173145859872,
+      "cosine_similarity": 0.9996804754501033,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 0,
+      "carrier": "hole",
+      "recovery": "cell_first",
+      "selected_nodes": 15561,
+      "p95_error_decade": 0.004257605617124603,
+      "normalized_vector_rmse": 0.008850125674689265,
+      "cosine_similarity": 0.9999684919222946,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 1,
+      "carrier": "electron",
+      "recovery": "direct",
+      "selected_nodes": 15561,
+      "p95_error_decade": 0.005874857690426679,
+      "normalized_vector_rmse": 0.030532170651021165,
+      "cosine_similarity": 0.9995360017542289,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 1,
+      "carrier": "electron",
+      "recovery": "cell_first",
+      "selected_nodes": 15561,
+      "p95_error_decade": 0.00474320620823859,
+      "normalized_vector_rmse": 0.009655920626470424,
+      "cosine_similarity": 0.9999555583046881,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 1,
+      "carrier": "hole",
+      "recovery": "direct",
+      "selected_nodes": 9928,
+      "p95_error_decade": 0.14968335390536142,
+      "normalized_vector_rmse": 0.02262591302052329,
+      "cosine_similarity": 0.9997442741466446,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 1,
+      "carrier": "hole",
+      "recovery": "cell_first",
+      "selected_nodes": 9928,
+      "p95_error_decade": 0.044977945218027345,
+      "normalized_vector_rmse": 0.008969455776068455,
+      "cosine_similarity": 0.9999740348801439,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 2,
+      "carrier": "electron",
+      "recovery": "direct",
+      "selected_nodes": 15561,
+      "p95_error_decade": 0.006515760376738096,
+      "normalized_vector_rmse": 0.03036573095729418,
+      "cosine_similarity": 0.9995407527916335,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 2,
+      "carrier": "electron",
+      "recovery": "cell_first",
+      "selected_nodes": 15561,
+      "p95_error_decade": 0.00471907773119723,
+      "normalized_vector_rmse": 0.00962006897860236,
+      "cosine_similarity": 0.9999561693017743,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 2,
+      "carrier": "hole",
+      "recovery": "direct",
+      "selected_nodes": 9481,
+      "p95_error_decade": 0.21998787290302443,
+      "normalized_vector_rmse": 0.022458976804906383,
+      "cosine_similarity": 0.9997480647165191,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 2,
+      "carrier": "hole",
+      "recovery": "cell_first",
+      "selected_nodes": 9481,
+      "p95_error_decade": 0.05392059300143913,
+      "normalized_vector_rmse": 0.009016767185648705,
+      "cosine_similarity": 0.9999742931751575,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 3,
+      "carrier": "electron",
+      "recovery": "direct",
+      "selected_nodes": 15561,
+      "p95_error_decade": 0.006820008071922566,
+      "normalized_vector_rmse": 0.030236910973964894,
+      "cosine_similarity": 0.9995444364321207,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 3,
+      "carrier": "electron",
+      "recovery": "cell_first",
+      "selected_nodes": 15561,
+      "p95_error_decade": 0.004811449223019499,
+      "normalized_vector_rmse": 0.009604986614334203,
+      "cosine_similarity": 0.9999565177272699,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 3,
+      "carrier": "hole",
+      "recovery": "direct",
+      "selected_nodes": 9212,
+      "p95_error_decade": 0.2700034544780882,
+      "normalized_vector_rmse": 0.022439190510291165,
+      "cosine_similarity": 0.9997485054598427,
+      "pass": true
+    },
+    {
+      "grid": "refined",
+      "VCE_V": 3,
+      "carrier": "hole",
+      "recovery": "cell_first",
+      "selected_nodes": 9212,
+      "p95_error_decade": 0.06155384597575094,
+      "normalized_vector_rmse": 0.00896407237461989,
+      "cosine_similarity": 0.999975176748697,
+      "pass": true
+    }
+  ],
+  "detail": {
+    "coarse": {
+      "vce_000": {
+        "node_count": 5611,
+        "state_sha256": "a94cfbcb48257a663ac1cb6ce215b41f467fd71534425bbf67a1bf09764d1f14",
+        "vtk_sha256": "63611dd1f46a8473ebe57b9e1068ee4eae5407bef1c01ebc2b5f15423ddfb6f2",
+        "sentaurus_nodes_sha256": "b93f00e70a5be270c414dc1838c4c8eb9048c71b234fee158bb9c50c998e8e60",
+        "sentaurus_elements_sha256": "133fc71124d2f1c0a8d6066f8a3e374a3268f7fab195ca20231ef6bcd7350e76",
+        "sentaurus_field_manifest_sha256": "f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159",
+        "carriers": {
+          "electron": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 2.7143245102157507e-05
+                },
+                "selected_node_count": 5611,
+                "reference_peak_A_per_cm2": 27.143245102157508,
+                "vela_peak_A_per_cm2": 31.81773861314727,
+                "log10_magnitude_error": {
+                  "node_count": 5611,
+                  "rmse": 0.009269165331957768,
+                  "p95_absolute_error": 0.017779370136619135,
+                  "maximum_absolute_error": 0.12866360014389608
+                },
+                "normalized_vector_rmse": 0.0463459315138226,
+                "global_vector_cosine_similarity": 0.9989338025836823
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 2.7143245102157507e-05
+                },
+                "selected_node_count": 5611,
+                "reference_peak_A_per_cm2": 27.143245102157508,
+                "vela_peak_A_per_cm2": 26.40525225742336,
+                "log10_magnitude_error": {
+                  "node_count": 5611,
+                  "rmse": 0.006755239673311196,
+                  "p95_absolute_error": 0.011713002373828049,
+                  "maximum_absolute_error": 0.12160938110517686
+                },
+                "normalized_vector_rmse": 0.016388544574029155,
+                "global_vector_cosine_similarity": 0.9998786437029841
+              },
+              "pass": true
+            }
+          },
+          "hole": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.00014479709797525037
+                },
+                "selected_node_count": 5611,
+                "reference_peak_A_per_cm2": 144.79709797525038,
+                "vela_peak_A_per_cm2": 183.10915657311628,
+                "log10_magnitude_error": {
+                  "node_count": 5611,
+                  "rmse": 0.013975874878438562,
+                  "p95_absolute_error": 0.016420252657477118,
+                  "maximum_absolute_error": 0.20046011623873
+                },
+                "normalized_vector_rmse": 0.06583528527741644,
+                "global_vector_cosine_similarity": 0.997892772081192
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.00014479709797525037
+                },
+                "selected_node_count": 5611,
+                "reference_peak_A_per_cm2": 144.79709797525038,
+                "vela_peak_A_per_cm2": 131.94970136816622,
+                "log10_magnitude_error": {
+                  "node_count": 5611,
+                  "rmse": 0.007157936449076481,
+                  "p95_absolute_error": 0.009257478966616793,
+                  "maximum_absolute_error": 0.12239677013919084
+                },
+                "normalized_vector_rmse": 0.030058333995112377,
+                "global_vector_cosine_similarity": 0.999590758528854
+              },
+              "pass": true
+            }
+          }
+        }
+      },
+      "vce_010": {
+        "node_count": 5611,
+        "state_sha256": "f2d1501b4dc35c3ac48b903895a109b08c2cc872d042dbb0c7a54519e3dd4f31",
+        "vtk_sha256": "afea88a9d5ff64126009cba9fe62d22488a385a5d82786412b9b270592abb0c3",
+        "sentaurus_nodes_sha256": "b93f00e70a5be270c414dc1838c4c8eb9048c71b234fee158bb9c50c998e8e60",
+        "sentaurus_elements_sha256": "133fc71124d2f1c0a8d6066f8a3e374a3268f7fab195ca20231ef6bcd7350e76",
+        "sentaurus_field_manifest_sha256": "f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159",
+        "carriers": {
+          "electron": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.00036704138665603133
+                },
+                "selected_node_count": 5611,
+                "reference_peak_A_per_cm2": 367.04138665603136,
+                "vela_peak_A_per_cm2": 458.9385111508859,
+                "log10_magnitude_error": {
+                  "node_count": 5611,
+                  "rmse": 0.008452438493709764,
+                  "p95_absolute_error": 0.01445026933746434,
+                  "maximum_absolute_error": 0.13365586583109795
+                },
+                "normalized_vector_rmse": 0.035690590571339866,
+                "global_vector_cosine_similarity": 0.9993692186463179
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.00036704138665603133
+                },
+                "selected_node_count": 5611,
+                "reference_peak_A_per_cm2": 367.04138665603136,
+                "vela_peak_A_per_cm2": 356.8079791314248,
+                "log10_magnitude_error": {
+                  "node_count": 5611,
+                  "rmse": 0.005556014699896663,
+                  "p95_absolute_error": 0.009840377585667217,
+                  "maximum_absolute_error": 0.07217152121097001
+                },
+                "normalized_vector_rmse": 0.01620829235341323,
+                "global_vector_cosine_similarity": 0.9999088169510963
+              },
+              "pass": true
+            }
+          },
+          "hole": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 4.396820345402689e-05
+                },
+                "selected_node_count": 2492,
+                "reference_peak_A_per_cm2": 43.96820345402689,
+                "vela_peak_A_per_cm2": 55.20171752673407,
+                "log10_magnitude_error": {
+                  "node_count": 2492,
+                  "rmse": 0.11421394482037277,
+                  "p95_absolute_error": 0.24744056570854625,
+                  "maximum_absolute_error": 0.900984999177423
+                },
+                "normalized_vector_rmse": 0.06239530623966027,
+                "global_vector_cosine_similarity": 0.9980846916363849
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 4.396820345402689e-05
+                },
+                "selected_node_count": 2492,
+                "reference_peak_A_per_cm2": 43.96820345402689,
+                "vela_peak_A_per_cm2": 40.07618313759679,
+                "log10_magnitude_error": {
+                  "node_count": 2492,
+                  "rmse": 0.02704815199581906,
+                  "p95_absolute_error": 0.057227508281087885,
+                  "maximum_absolute_error": 0.1530734556467246
+                },
+                "normalized_vector_rmse": 0.030655869228311254,
+                "global_vector_cosine_similarity": 0.9995971941692635
+              },
+              "pass": true
+            }
+          }
+        }
+      },
+      "vce_020": {
+        "node_count": 5611,
+        "state_sha256": "3ff3fc7275bd7fb7f2e6fbca2508ffce0b107cc3da210cba78d6161f3659965e",
+        "vtk_sha256": "80d7f8cc487867eee864afd08e2fbce77edecd1bc88cb7d5fc3b137ecb0041bd",
+        "sentaurus_nodes_sha256": "b93f00e70a5be270c414dc1838c4c8eb9048c71b234fee158bb9c50c998e8e60",
+        "sentaurus_elements_sha256": "133fc71124d2f1c0a8d6066f8a3e374a3268f7fab195ca20231ef6bcd7350e76",
+        "sentaurus_field_manifest_sha256": "f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159",
+        "carriers": {
+          "electron": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.0003753728088410155
+                },
+                "selected_node_count": 5611,
+                "reference_peak_A_per_cm2": 375.3728088410155,
+                "vela_peak_A_per_cm2": 469.73784969251045,
+                "log10_magnitude_error": {
+                  "node_count": 5611,
+                  "rmse": 0.008737158979206535,
+                  "p95_absolute_error": 0.015657103894948614,
+                  "maximum_absolute_error": 0.13383742264026646
+                },
+                "normalized_vector_rmse": 0.03536680778996515,
+                "global_vector_cosine_similarity": 0.9993809010381826
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.0003753728088410155
+                },
+                "selected_node_count": 5611,
+                "reference_peak_A_per_cm2": 375.3728088410155,
+                "vela_peak_A_per_cm2": 364.91068371141364,
+                "log10_magnitude_error": {
+                  "node_count": 5611,
+                  "rmse": 0.005449941195233297,
+                  "p95_absolute_error": 0.009759728317056352,
+                  "maximum_absolute_error": 0.07243315496487351
+                },
+                "normalized_vector_rmse": 0.016103090853794647,
+                "global_vector_cosine_similarity": 0.9999105054285985
+              },
+              "pass": true
+            }
+          },
+          "hole": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 4.4079033252844843e-05
+                },
+                "selected_node_count": 2257,
+                "reference_peak_A_per_cm2": 44.079033252844845,
+                "vela_peak_A_per_cm2": 55.33491900406783,
+                "log10_magnitude_error": {
+                  "node_count": 2257,
+                  "rmse": 0.24443309611856523,
+                  "p95_absolute_error": 0.6166523685509258,
+                  "maximum_absolute_error": 2.157939990283264
+                },
+                "normalized_vector_rmse": 0.06216373878608074,
+                "global_vector_cosine_similarity": 0.9981030646711389
+              },
+              "pass": false
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 4.4079033252844843e-05
+                },
+                "selected_node_count": 2257,
+                "reference_peak_A_per_cm2": 44.079033252844845,
+                "vela_peak_A_per_cm2": 40.17923455333183,
+                "log10_magnitude_error": {
+                  "node_count": 2257,
+                  "rmse": 0.03323771127818189,
+                  "p95_absolute_error": 0.08720065976810908,
+                  "maximum_absolute_error": 0.18662601742661644
+                },
+                "normalized_vector_rmse": 0.030699263065349078,
+                "global_vector_cosine_similarity": 0.999597404607366
+              },
+              "pass": true
+            }
+          }
+        }
+      },
+      "vce_030": {
+        "node_count": 5611,
+        "state_sha256": "2eab730ae9393f048affdea7113974237669de1574f705699687f661f2ad4bc1",
+        "vtk_sha256": "14dd28b1880b21d6c506d1f634671823006ac65f008083511237a639f56d7059",
+        "sentaurus_nodes_sha256": "b93f00e70a5be270c414dc1838c4c8eb9048c71b234fee158bb9c50c998e8e60",
+        "sentaurus_elements_sha256": "133fc71124d2f1c0a8d6066f8a3e374a3268f7fab195ca20231ef6bcd7350e76",
+        "sentaurus_field_manifest_sha256": "f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159",
+        "carriers": {
+          "electron": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.00038286683977012956
+                },
+                "selected_node_count": 5611,
+                "reference_peak_A_per_cm2": 382.86683977012956,
+                "vela_peak_A_per_cm2": 479.6163608407483,
+                "log10_magnitude_error": {
+                  "node_count": 5611,
+                  "rmse": 0.008894775442002371,
+                  "p95_absolute_error": 0.015772805968731436,
+                  "maximum_absolute_error": 0.13400410068561971
+                },
+                "normalized_vector_rmse": 0.03514884751720666,
+                "global_vector_cosine_similarity": 0.9993886648422103
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.00038286683977012956
+                },
+                "selected_node_count": 5611,
+                "reference_peak_A_per_cm2": 382.86683977012956,
+                "vela_peak_A_per_cm2": 372.20204493387115,
+                "log10_magnitude_error": {
+                  "node_count": 5611,
+                  "rmse": 0.005441109252387827,
+                  "p95_absolute_error": 0.009816594116464024,
+                  "maximum_absolute_error": 0.07200249100811974
+                },
+                "normalized_vector_rmse": 0.016034108344265725,
+                "global_vector_cosine_similarity": 0.999911500312978
+              },
+              "pass": true
+            }
+          },
+          "hole": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 4.4168952211452037e-05
+                },
+                "selected_node_count": 2121,
+                "reference_peak_A_per_cm2": 44.16895221145204,
+                "vela_peak_A_per_cm2": 55.44272871360205,
+                "log10_magnitude_error": {
+                  "node_count": 2121,
+                  "rmse": 0.3740199656965646,
+                  "p95_absolute_error": 0.8279870492481883,
+                  "maximum_absolute_error": 2.8625238636248445
+                },
+                "normalized_vector_rmse": 0.06220531291413024,
+                "global_vector_cosine_similarity": 0.9981042175081616
+              },
+              "pass": false
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 4.4168952211452037e-05
+                },
+                "selected_node_count": 2121,
+                "reference_peak_A_per_cm2": 44.16895221145204,
+                "vela_peak_A_per_cm2": 40.26272019134771,
+                "log10_magnitude_error": {
+                  "node_count": 2121,
+                  "rmse": 0.034176060203553786,
+                  "p95_absolute_error": 0.09854248951784857,
+                  "maximum_absolute_error": 0.1301172550565928
+                },
+                "normalized_vector_rmse": 0.030807146175509455,
+                "global_vector_cosine_similarity": 0.9995957153824931
+              },
+              "pass": true
+            }
+          }
+        }
+      }
+    },
+    "refined": {
+      "vce_000": {
+        "node_count": 15561,
+        "state_sha256": "2304a8fa68f796f1929bb7ede879abcf6635f3e36214c6a2bb47f77f89778dd3",
+        "vtk_sha256": "2c92b05c23773a6486b7c0da7832b3c49b1b5d7fdc5982c4424174dfb826150e",
+        "sentaurus_nodes_sha256": "8e2bc18b9e8538a8676d4f4c7db89746f6271c7cb79b367d4a6d22afd4e4063f",
+        "sentaurus_elements_sha256": "39aef64a32fb4652a5a0ecdbf6883836c8887b4900780e9952b1b3e8490238e7",
+        "sentaurus_field_manifest_sha256": "675f7b1a8de37662da82bc736508c44016f3606e84ab05081791ac8a992e1a87",
+        "carriers": {
+          "electron": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 2.7141251188099102e-05
+                },
+                "selected_node_count": 15561,
+                "reference_peak_A_per_cm2": 27.141251188099105,
+                "vela_peak_A_per_cm2": 31.815386399873542,
+                "log10_magnitude_error": {
+                  "node_count": 15561,
+                  "rmse": 0.005357377029088657,
+                  "p95_absolute_error": 0.009859853597827619,
+                  "maximum_absolute_error": 0.12871077001761083
+                },
+                "normalized_vector_rmse": 0.03699839882791996,
+                "global_vector_cosine_similarity": 0.9993170342447006
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 2.7141251188099102e-05
+                },
+                "selected_node_count": 15561,
+                "reference_peak_A_per_cm2": 27.141251188099105,
+                "vela_peak_A_per_cm2": 26.403543204495424,
+                "log10_magnitude_error": {
+                  "node_count": 15561,
+                  "rmse": 0.004573019429521339,
+                  "p95_absolute_error": 0.008282992617148217,
+                  "maximum_absolute_error": 0.09419289269830572
+                },
+                "normalized_vector_rmse": 0.012317240215088262,
+                "global_vector_cosine_similarity": 0.9999321780373127
+              },
+              "pass": true
+            }
+          },
+          "hole": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.00014517060239606087
+                },
+                "selected_node_count": 15561,
+                "reference_peak_A_per_cm2": 145.17060239606087,
+                "vela_peak_A_per_cm2": 183.44559782179098,
+                "log10_magnitude_error": {
+                  "node_count": 15561,
+                  "rmse": 0.007680303936690205,
+                  "p95_absolute_error": 0.008601194758305473,
+                  "maximum_absolute_error": 0.1761118322008434
+                },
+                "normalized_vector_rmse": 0.02530173145859872,
+                "global_vector_cosine_similarity": 0.9996804754501033
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.00014517060239606087
+                },
+                "selected_node_count": 15561,
+                "reference_peak_A_per_cm2": 145.17060239606087,
+                "vela_peak_A_per_cm2": 132.19605056050446,
+                "log10_magnitude_error": {
+                  "node_count": 15561,
+                  "rmse": 0.0032767744714442904,
+                  "p95_absolute_error": 0.004257605617124603,
+                  "maximum_absolute_error": 0.07145612383906814
+                },
+                "normalized_vector_rmse": 0.008850125674689265,
+                "global_vector_cosine_similarity": 0.9999684919222946
+              },
+              "pass": true
+            }
+          }
+        }
+      },
+      "vce_010": {
+        "node_count": 15561,
+        "state_sha256": "00b67e844af683da81f000d56920babd918ed2a60df4eb4c7649679e1bd955ad",
+        "vtk_sha256": "228aa706cd35bec50249c36387eaca8c0ca99cec6e12657cf0a0caee866411a5",
+        "sentaurus_nodes_sha256": "8e2bc18b9e8538a8676d4f4c7db89746f6271c7cb79b367d4a6d22afd4e4063f",
+        "sentaurus_elements_sha256": "39aef64a32fb4652a5a0ecdbf6883836c8887b4900780e9952b1b3e8490238e7",
+        "sentaurus_field_manifest_sha256": "675f7b1a8de37662da82bc736508c44016f3606e84ab05081791ac8a992e1a87",
+        "carriers": {
+          "electron": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.0007473049702691429
+                },
+                "selected_node_count": 15561,
+                "reference_peak_A_per_cm2": 747.3049702691429,
+                "vela_peak_A_per_cm2": 946.7835354228363,
+                "log10_magnitude_error": {
+                  "node_count": 15561,
+                  "rmse": 0.004363172489089158,
+                  "p95_absolute_error": 0.005874857690426679,
+                  "maximum_absolute_error": 0.12022967329696752
+                },
+                "normalized_vector_rmse": 0.030532170651021165,
+                "global_vector_cosine_similarity": 0.9995360017542289
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.0007473049702691429
+                },
+                "selected_node_count": 15561,
+                "reference_peak_A_per_cm2": 747.3049702691429,
+                "vela_peak_A_per_cm2": 730.7542075457444,
+                "log10_magnitude_error": {
+                  "node_count": 15561,
+                  "rmse": 0.002939696929533815,
+                  "p95_absolute_error": 0.00474320620823859,
+                  "maximum_absolute_error": 0.07130650705730049
+                },
+                "normalized_vector_rmse": 0.009655920626470424,
+                "global_vector_cosine_similarity": 0.9999555583046881
+              },
+              "pass": true
+            }
+          },
+          "hole": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 4.419656129866076e-05
+                },
+                "selected_node_count": 9928,
+                "reference_peak_A_per_cm2": 44.19656129866076,
+                "vela_peak_A_per_cm2": 55.488060186219,
+                "log10_magnitude_error": {
+                  "node_count": 9928,
+                  "rmse": 0.0589168765807608,
+                  "p95_absolute_error": 0.14968335390536142,
+                  "maximum_absolute_error": 0.7660594571140087
+                },
+                "normalized_vector_rmse": 0.02262591302052329,
+                "global_vector_cosine_similarity": 0.9997442741466446
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 4.419656129866076e-05
+                },
+                "selected_node_count": 9928,
+                "reference_peak_A_per_cm2": 44.19656129866076,
+                "vela_peak_A_per_cm2": 40.28752342936318,
+                "log10_magnitude_error": {
+                  "node_count": 9928,
+                  "rmse": 0.015637024969390876,
+                  "p95_absolute_error": 0.044977945218027345,
+                  "maximum_absolute_error": 0.15792077298474613
+                },
+                "normalized_vector_rmse": 0.008969455776068455,
+                "global_vector_cosine_similarity": 0.9999740348801439
+              },
+              "pass": true
+            }
+          }
+        }
+      },
+      "vce_020": {
+        "node_count": 15561,
+        "state_sha256": "dec0f7bacd6e63a812dbe83a398332a4d0f3ab1e18720a04dd5caf689fe2c810",
+        "vtk_sha256": "cf9b9f372941749d5d14b3e6d91cd00a2ee196a981e6f6fbcf14b4317fb199ea",
+        "sentaurus_nodes_sha256": "8e2bc18b9e8538a8676d4f4c7db89746f6271c7cb79b367d4a6d22afd4e4063f",
+        "sentaurus_elements_sha256": "39aef64a32fb4652a5a0ecdbf6883836c8887b4900780e9952b1b3e8490238e7",
+        "sentaurus_field_manifest_sha256": "675f7b1a8de37662da82bc736508c44016f3606e84ab05081791ac8a992e1a87",
+        "carriers": {
+          "electron": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.0007624679928653667
+                },
+                "selected_node_count": 15561,
+                "reference_peak_A_per_cm2": 762.4679928653668,
+                "vela_peak_A_per_cm2": 966.3820607388387,
+                "log10_magnitude_error": {
+                  "node_count": 15561,
+                  "rmse": 0.004656036387034645,
+                  "p95_absolute_error": 0.006515760376738096,
+                  "maximum_absolute_error": 0.120346302983118
+                },
+                "normalized_vector_rmse": 0.03036573095729418,
+                "global_vector_cosine_similarity": 0.9995407527916335
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.0007624679928653667
+                },
+                "selected_node_count": 15561,
+                "reference_peak_A_per_cm2": 762.4679928653668,
+                "vela_peak_A_per_cm2": 745.4964487338125,
+                "log10_magnitude_error": {
+                  "node_count": 15561,
+                  "rmse": 0.0028427188130601836,
+                  "p95_absolute_error": 0.00471907773119723,
+                  "maximum_absolute_error": 0.07267640330023993
+                },
+                "normalized_vector_rmse": 0.00962006897860236,
+                "global_vector_cosine_similarity": 0.9999561693017743
+              },
+              "pass": true
+            }
+          },
+          "hole": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 4.430856291270658e-05
+                },
+                "selected_node_count": 9481,
+                "reference_peak_A_per_cm2": 44.30856291270658,
+                "vela_peak_A_per_cm2": 55.622940631666715,
+                "log10_magnitude_error": {
+                  "node_count": 9481,
+                  "rmse": 0.10134487545917623,
+                  "p95_absolute_error": 0.21998787290302443,
+                  "maximum_absolute_error": 1.3225488239385401
+                },
+                "normalized_vector_rmse": 0.022458976804906383,
+                "global_vector_cosine_similarity": 0.9997480647165191
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 4.430856291270658e-05
+                },
+                "selected_node_count": 9481,
+                "reference_peak_A_per_cm2": 44.30856291270658,
+                "vela_peak_A_per_cm2": 40.391799871816986,
+                "log10_magnitude_error": {
+                  "node_count": 9481,
+                  "rmse": 0.019064134124980682,
+                  "p95_absolute_error": 0.05392059300143913,
+                  "maximum_absolute_error": 0.1404528260186977
+                },
+                "normalized_vector_rmse": 0.009016767185648705,
+                "global_vector_cosine_similarity": 0.9999742931751575
+              },
+              "pass": true
+            }
+          }
+        }
+      },
+      "vce_030": {
+        "node_count": 15561,
+        "state_sha256": "c0a9b065568c6e1e2aec39d56a2c1f5bdc6d4f96f1a2517b0bfb5d6f054a249f",
+        "vtk_sha256": "138c75523ab725d6737f42f0319303c8033bb3b5d3a362aa85151286064a90e5",
+        "sentaurus_nodes_sha256": "8e2bc18b9e8538a8676d4f4c7db89746f6271c7cb79b367d4a6d22afd4e4063f",
+        "sentaurus_elements_sha256": "39aef64a32fb4652a5a0ecdbf6883836c8887b4900780e9952b1b3e8490238e7",
+        "sentaurus_field_manifest_sha256": "675f7b1a8de37662da82bc736508c44016f3606e84ab05081791ac8a992e1a87",
+        "carriers": {
+          "electron": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.0007761377522918511
+                },
+                "selected_node_count": 15561,
+                "reference_peak_A_per_cm2": 776.1377522918511,
+                "vela_peak_A_per_cm2": 984.2699200813055,
+                "log10_magnitude_error": {
+                  "node_count": 15561,
+                  "rmse": 0.004677955591661948,
+                  "p95_absolute_error": 0.006820008071922566,
+                  "maximum_absolute_error": 0.12044741186373609
+                },
+                "normalized_vector_rmse": 0.030236910973964894,
+                "global_vector_cosine_similarity": 0.9995444364321207
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 0.0007761377522918511
+                },
+                "selected_node_count": 15561,
+                "reference_peak_A_per_cm2": 776.1377522918511,
+                "vela_peak_A_per_cm2": 758.7966823650055,
+                "log10_magnitude_error": {
+                  "node_count": 15561,
+                  "rmse": 0.0028627456802062783,
+                  "p95_absolute_error": 0.004811449223019499,
+                  "maximum_absolute_error": 0.072618743928262
+                },
+                "normalized_vector_rmse": 0.009604986614334203,
+                "global_vector_cosine_similarity": 0.9999565177272699
+              },
+              "pass": true
+            }
+          },
+          "hole": {
+            "direct": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 4.439906463634086e-05
+                },
+                "selected_node_count": 9212,
+                "reference_peak_A_per_cm2": 44.39906463634087,
+                "vela_peak_A_per_cm2": 55.73178087643566,
+                "log10_magnitude_error": {
+                  "node_count": 9212,
+                  "rmse": 0.12637223525099092,
+                  "p95_absolute_error": 0.2700034544780882,
+                  "maximum_absolute_error": 1.831520086336244
+                },
+                "normalized_vector_rmse": 0.022439190510291165,
+                "global_vector_cosine_similarity": 0.9997485054598427
+              },
+              "pass": true
+            },
+            "cell_first": {
+              "metrics": {
+                "units": "A/cm^2",
+                "mask": {
+                  "type": "sentaurus_reference_magnitude_fraction_of_peak",
+                  "fraction": 1e-06,
+                  "minimum_A_per_cm2": 4.439906463634086e-05
+                },
+                "selected_node_count": 9212,
+                "reference_peak_A_per_cm2": 44.39906463634087,
+                "vela_peak_A_per_cm2": 40.47602882377234,
+                "log10_magnitude_error": {
+                  "node_count": 9212,
+                  "rmse": 0.020885637276862868,
+                  "p95_absolute_error": 0.06155384597575094,
+                  "maximum_absolute_error": 0.13187655494083542
+                },
+                "normalized_vector_rmse": 0.00896407237461989,
+                "global_vector_cosine_similarity": 0.999975176748697
+              },
+              "pass": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "checks": {
+    "all_grid_bias_carrier_pairs_present": true,
+    "candidate_all_current_gates_pass": true,
+    "direct_all_current_gates_pass": false,
+    "candidate_never_worsens_p95": true,
+    "refined_reference_mesh_matches_vela_fixture": true
+  },
+  "overall_pass": true
+}

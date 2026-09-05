@@ -26,20 +26,15 @@ Core solver capabilities:
 - Contact-current, terminal-charge, stored-charge, and electric-field
   diagnostics.
 - Mobility, recombination, impact-ionization, and Slotboom bandgap-narrowing
-  model hooks used by the current examples.
+  model hooks used by the validated reference cases and focused tests.
 - CSV and VTK outputs for regression and visualization.
 - Optional Python API for the implemented C++ paths.
 - Optional HDF5 inventory and neutral export tooling.
 
-Current example coverage:
-
-- PN diode IV/CV/BV smoke decks.
-- All-silicon NMOS/PMOS drift-diffusion IV, Id-Vg, and CV decks.
-- Mixed Si/SiO2 NMOS/PMOS MOS DD prototypes with multi-terminal CV, BV
-  diagnostics, and surface-mobility smoke coverage where present.
-- Schottky diode IV prototype.
-- LDMOS and IGBT power-device trend fixtures using `unit_scaling`.
-- Reference TCAD CSV fixtures for PN, MOS, LDMOS, and IGBT trend comparison.
+Current device-level validation coverage is maintained under `reference_tcad/`.
+It includes Sentaurus-backed PN, NMOS, Schottky, breakdown-method,
+TransportModels, and Genius NPN BJT fixtures with explicit acceptance
+boundaries.
 
 Input unit modes:
 
@@ -47,10 +42,8 @@ Input unit modes:
 - `"scaling": {"mode": "unit_scaling"}` enables common external TCAD input
   units at the schema boundary.
 
-Prototype boundaries:
+Implementation boundaries:
 
-- Power-device decks are engineering trend validations, not calibrated
-  LDMOS/IGBT models.
 - BV output is a diagnostic sweep with maximum edge-field and convergence
   indicators, not a calibrated avalanche breakdown prediction.
 - Quasi-static CV is finite-difference terminal-charge extraction, not an AC
@@ -76,7 +69,6 @@ Start here:
 - [docs/README.md](docs/README.md): documentation index and reading paths.
 - [docs/architecture.md](docs/architecture.md): implementation and module map.
 - [docs/config_schema.md](docs/config_schema.md): JSON configuration reference.
-- [docs/examples.md](docs/examples.md): supported example and regression matrix.
 - [docs/validation/pn2d_bv_validation.md](docs/validation/pn2d_bv_validation.md):
   current PN2D BV validation decision, scope, and evidence map.
 - [tests/regression/README.md](tests/regression/README.md): regression runner
@@ -194,7 +186,6 @@ Useful focused groups:
 ```bash
 ctest --preset windows-ucrt64-poisson
 ctest --test-dir build --output-on-failure -R "dd|newton|dc_sweep"
-ctest --test-dir build --output-on-failure -R regression
 ctest --test-dir build --output-on-failure -R reference_tcad_regression
 ctest --test-dir build --output-on-failure -R import
 ```
@@ -206,52 +197,29 @@ Named CTest targets exposed by `CMakeLists.txt`:
 | `poisson` | Yes | Poisson-focused Catch2 entry |
 | `dd` | Yes | DD/Gummel-focused Catch2 entry |
 | `device_stability` | Yes | Device stability checks |
-| `ldmos` | Yes | LDMOS smoke/trend checks |
-| `mos_solver_crosscheck` | Yes | MOS solver cross-check |
-| `mos_mixed` | Yes | Mixed-material MOS checks |
 | `dc_sweep` | Yes | DC sweep behavior |
 | `electric_field_diagnostics` | Yes | Electric-field diagnostics |
 | `boundary` | Yes | Boundary-condition checks |
 | `schottky` | Yes | Schottky contact prototype checks |
 | `interface` | Yes | Interface charge checks |
-| `regression` | Yes | Runs `scripts/run_regression.py` |
 | `reference_tcad_regression` | Yes | Reference TCAD conversion/comparison tools |
 | `import_tools` | Yes | Python-level import-tool checks |
 | `python_api` | Conditional | Present when `VELA_ENABLE_PYTHON=ON` |
 | `import_tdr` | Conditional | Present when HDF5 target is found |
 | `import_sample_integration` | Conditional | Present when HDF5 target is found |
 
-The `regression` CTest target runs `scripts/run_regression.py` against the
-engineering examples with `vela_example_runner`. The
-`reference_tcad_regression` target verifies the neutral CSV conversion and
-comparison tools.
+The `reference_tcad_regression` target verifies the neutral CSV conversion and
+comparison tools used by checked-in cross-TCAD fixtures.
 
 For HDF5 import workflows and tool usage, see the documentation index and the
 reference fixture workflow docs under `docs/` and `reference_tcad/`.
 
-## Run Examples
+## Run Reference Cases
 
-After building:
-
-```bash
-build/vela_example_runner --config examples/pn_diode/simulation_iv.json
-build/vela_example_runner --config examples/pn_diode/simulation_cv.json
-build/vela_example_runner --config examples/pn_diode/simulation_bv.json
-build/vela_example_runner --config examples/pn_diode/newton_simulation.json
-build/vela_example_runner --config examples/pn_diode/simulation_iv.json --log off
-```
-
-On Windows, use `build\vela_example_runner.exe`.
-
-Run the complete engineering example suite:
-
-```bash
-python scripts/run_regression.py --runner build/vela_example_runner
-```
-
-The script copies examples to `build/regression_output/`, runs each configured
-deck, verifies CSV/VTK files, checks finite outputs and trend assertions, and
-writes `build/regression_output/regression_summary.json`.
+Validated device inputs, comparison reports, and reproduction entry points are
+listed in [reference_tcad/README.md](reference_tcad/README.md).  Each fixture
+documents the required run order because multi-stage continuation cases cannot
+in general be launched from a single standalone deck.
 
 ## Optional Python API
 
@@ -281,18 +249,6 @@ The generated package is placed under `build-python/python/<config>/vela`, for e
 `build-python/python/Debug/vela`. The CTest `python_api` target sets `PYTHONPATH`
 automatically.
 
-Python examples:
-
-```python
-import vela
-
-mesh = vela.load_mesh("examples/pn_diode/mesh.json")
-potential = vela.run_poisson("examples/pn_poisson_2d.json")
-iv_points = vela.run_iv_curve("examples/pn_diode/simulation_iv.json")
-cv_points = vela.run_cv_curve("examples/pn_diode/simulation_cv.json")
-bv_points = vela.run_bv_curve("examples/pn_diode/simulation_bv.json")
-```
-
 The Python API is intentionally thin and only documents behavior exercised by
 the C++ core and tests.
 
@@ -303,7 +259,6 @@ Use a Debug build and the debugger from the same toolchain as the build.
 Windows/MSYS2 UCRT64:
 
 ```bash
-gdb --args build/vela_example_runner.exe --config examples/pn_diode/simulation_iv.json
 gdb --args build/test_poisson.exe
 ```
 

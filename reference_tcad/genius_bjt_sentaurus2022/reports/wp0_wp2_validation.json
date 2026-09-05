@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "structure": {
+    "mesh": {
+      "node_count": 5611,
+      "bounds_um": {
+        "xmin": -0.0,
+        "ymin": -0.0,
+        "xmax": 6.0,
+        "ymax": 2.0
+      },
+      "minimum_node_count": 1000,
+      "pass": true
+    },
+    "contacts": {
+      "base": {
+        "present": true,
+        "node_count": 18,
+        "xmin_um": 1.25,
+        "xmax_um": 2.0,
+        "ymin_um": -0.0,
+        "ymax_um": -0.0,
+        "maximum_coordinate_error_um": 0.0,
+        "pass": true
+      },
+      "emitter": {
+        "present": true,
+        "node_count": 34,
+        "xmin_um": 2.75,
+        "xmax_um": 4.25,
+        "ymin_um": -0.0,
+        "ymax_um": -0.0,
+        "maximum_coordinate_error_um": 0.0,
+        "pass": true
+      },
+      "collector": {
+        "present": true,
+        "node_count": 65,
+        "xmin_um": -0.0,
+        "xmax_um": 6.0,
+        "ymin_um": 2.0,
+        "ymax_um": 2.0,
+        "maximum_coordinate_error_um": 0.0,
+        "pass": true
+      }
+    },
+    "contact_pass": true,
+    "doping": {
+      "maximum_donor_relative_error": 3.5999999999995465e-15,
+      "maximum_acceptor_relative_error": 3.614864687182031e-15,
+      "worst_node": {
+        "node_id": 657,
+        "x_um": 1.21875,
+        "y_um": 0.71875,
+        "relative_error": 3.614864687182031e-15,
+        "actual_donor_cm3": 5000001660819215.0,
+        "expected_donor_cm3": 5000001660819206.0,
+        "actual_acceptor_cm3": 2766355276162624.0,
+        "expected_acceptor_cm3": 2766355276162634.0
+      },
+      "tolerance": 1e-06,
+      "pass": true
+    },
+    "pass": true
+  },
+  "M0": {
+    "input": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\wp0_wp2_20260902\\run_v2\\raw\\bjt_m0_collector_bjt_m0_des.plt",
+    "raw_row_count": 31,
+    "normalized_row_count": 31,
+    "selected_datasets": {
+      "collector_voltage": "collector OuterVoltage",
+      "collector_current": "collector TotalCurrent",
+      "base_voltage": "base OuterVoltage",
+      "base_current": "base TotalCurrent",
+      "emitter_voltage": "emitter OuterVoltage",
+      "emitter_current": "emitter TotalCurrent"
+    },
+    "maximum_collector_voltage_selection_error_V": 0.0,
+    "maximum_absolute_kcl_residual_A_per_um": 1.6103552165182343e-20,
+    "maximum_relative_kcl_residual": 8.92656962350735e-15,
+    "pass": true
+  },
+  "M1": {
+    "input": "build-release\\reference_tcad\\genius_bjt_sentaurus2022\\wp0_wp2_20260902\\run_v2\\raw\\bjt_m1_collector_bjt_m1_des.plt",
+    "raw_row_count": 31,
+    "normalized_row_count": 31,
+    "selected_datasets": {
+      "collector_voltage": "collector OuterVoltage",
+      "collector_current": "collector TotalCurrent",
+      "base_voltage": "base OuterVoltage",
+      "base_current": "base TotalCurrent",
+      "emitter_voltage": "emitter OuterVoltage",
+      "emitter_current": "emitter TotalCurrent"
+    },
+    "maximum_collector_voltage_selection_error_V": 0.0,
+    "maximum_absolute_kcl_residual_A_per_um": 4.6282409633567004e-20,
+    "maximum_relative_kcl_residual": 1.694401008698443e-14,
+    "pass": true
+  },
+  "pass": true
+}

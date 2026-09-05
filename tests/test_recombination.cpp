@@ -395,6 +395,20 @@ TEST_CASE("Auger recombination rejects negative coefficients", "[recombination]"
     REQUIRE_THROWS_AS(RecombinationModel(cfg), std::invalid_argument);
 }
 
+TEST_CASE("Auger excess-product mode is validated and defaults to compatibility",
+          "[recombination][auger]")
+{
+    RecombinationModelConfig cfg = recombinationModelConfig({"auger"});
+    REQUIRE(cfg.augerExcessProduct == "generalized_fermi");
+    REQUIRE_FALSE(RecombinationModel(cfg).usesClassicalAugerExcessProduct());
+
+    cfg.augerExcessProduct = "classical_np";
+    REQUIRE(RecombinationModel(cfg).usesClassicalAugerExcessProduct());
+
+    cfg.augerExcessProduct = "unsupported";
+    REQUIRE_THROWS_AS(RecombinationModel(cfg), std::invalid_argument);
+}
+
 TEST_CASE("Auger linearization remains finite for extreme initializer carriers",
           "[recombination]")
 {
@@ -432,6 +446,7 @@ TEST_CASE("Default recombination parameters match Sentaurus 2018 silicon at 300 
     REQUIRE(cfg.taup == Catch::Approx(3.0e-6));
     REQUIRE(cfg.augerCn == Catch::Approx(2.90e-43).epsilon(1.0e-12));
     REQUIRE(cfg.augerCp == Catch::Approx(1.028e-43).epsilon(1.0e-12));
+    REQUIRE(cfg.augerExcessProduct == "generalized_fermi");
 }
 
 TEST_CASE("Default bandgap narrowing interface returns zero", "[bgn]")

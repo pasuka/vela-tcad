@@ -28,7 +28,7 @@ public:
  * @brief JSON-based mesh reader for the current prototype stage.
  *
  * Reads a simple JSON mesh file produced by the example scripts.
- * The expected JSON schema is documented in examples/pn_diode_2d.json.
+ * The expected JSON schema is documented in docs/config_schema.md.
  */
 class JsonMeshReader : public MeshReader {
 public:

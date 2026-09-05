@@ -32,6 +32,10 @@ struct NewtonCarrierRowConvergenceConfig {
     Real scaleFloor = 1.0e-300;
     Real minSourceScaleFraction = 1.0e-3;
     Real minSourceScale = 0.0;
+    Real minSourceGlobalFraction = 0.0; ///< Optional fraction of the maximum carrier source scale; 0 disables.
+    Real minCarrierDensity_m3 = 0.0; ///< Optional density qualification; 0 disables.
+    Real minFluxScaleFraction = 0.0; ///< Optional fraction of the maximum carrier flux scale; 0 disables.
+    Real minFluxScale = 0.0; ///< Optional absolute carrier flux qualification; 0 disables.
     int minEnforceMaxIter = 200;
     std::string diagnosticCsvFile;
     std::string traceCsvFile;
@@ -95,9 +99,13 @@ struct NewtonCarrierRowConvergenceViolation {
     Real residual = 0.0;
     Real scale = 0.0;
     Real ratio = 0.0;
+    Real carrierDensity_m3 = 0.0;
     Real flux = 0.0;
     Real recombination = 0.0;
     Real impact = 0.0;
+    bool densityQualified = false;
+    bool fluxQualified = false;
+    bool sourceQualified = false;
 };
 
 struct NewtonCarrierRowConvergenceEvaluation {
@@ -108,6 +116,8 @@ struct NewtonCarrierRowConvergenceEvaluation {
     Real maxRatio = 0.0;
     Index maxRatioNode = -1;
     std::string maxRatioCarrier;
+    std::size_t qualifiedRowCount = 0;
+    std::size_t ignoredRowCount = 0;
     std::vector<NewtonCarrierRowConvergenceViolation> violations;
 };
 
@@ -190,6 +200,7 @@ struct NewtonConfig {
     Real taup = 3.0e-6;
     Real augerCn = 2.90e-43; ///< Electron Auger coefficient [m^6/s]
     Real augerCp = 1.028e-43; ///< Hole Auger coefficient [m^6/s]
+    std::string augerExcessProduct = "generalized_fermi"; ///< "generalized_fermi" or "classical_np".
     MobilityModelConfig mobility{}; ///< Mobility model configuration
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
     SRHDopingDependenceConfig srhDopingDependence{}; ///< Sentaurus SRH(DopingDep).
@@ -676,7 +687,8 @@ public:
         const DDSolution& state,
         Real finiteDifferenceStep = 1.0e-7,
         std::vector<std::string> blocks = {},
-        const std::string& finiteDifferenceMode = "double_symmetric") const;
+        const std::string& finiteDifferenceMode = "double_symmetric",
+        std::vector<Index> columnNodes = {}) const;
     std::vector<CoupledDDEdgeFluxDiagnostic> evaluateSgEdgeFluxDiagnostics(
         const DDSolution& state) const;
     std::vector<CoupledDDTransportEdgeJacobianDiagnostic>

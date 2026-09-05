@@ -1,0 +1,62 @@
+{
+  "schema": "vela.transportmodels.sentaurus2022.materials.v1",
+  "_comment": "Frozen Sentaurus 2022 TransportModels MOS material contract. Concentration-valued legacy fields are interpreted in cm^-3 when scaling.mode=unit_scaling.",
+  "materials": [
+    {
+      "name": "Si",
+      "eps_r": 11.7,
+      "ni": 14638914958.767616,
+      "mun": 1417.0,
+      "mup": 470.5,
+      "bandgap_eV": 1.12,
+      "electron_affinity_eV": 4.0727403846153845,
+      "electron_quantum_gamma": 3.6,
+      "electron_quantum_dos_mass_ratio": 1.0618016171622988,
+      "electron_quantum_coefficient_mass_ratio": 1.0906506732296395,
+      "Nc_m3": 2.8e19,
+      "Nv_m3": 1.04e19,
+      "temperature_K": 300.0
+    },
+    {
+      "name": "SiO2",
+      "eps_r": 3.9,
+      "ni": 0.0,
+      "mun": 0.0,
+      "mup": 0.0,
+      "bandgap_eV": 9.0,
+      "electron_affinity_eV": 0.9,
+      "electron_quantum_gamma": 1.0,
+      "electron_quantum_dos_mass_ratio": 0.42,
+      "electron_quantum_coefficient_mass_ratio": 0.42,
+      "temperature_K": 300.0
+    },
+    {
+      "name": "PolySilicon",
+      "eps_r": 11.7,
+      "ni": 14638914958.767616,
+      "mun": 1417.0,
+      "mup": 470.5,
+      "bandgap_eV": 1.12,
+      "electron_affinity_eV": 4.0727403846153845,
+      "electron_quantum_gamma": 3.6,
+      "electron_quantum_dos_mass_ratio": 1.0618016171622988,
+      "electron_quantum_coefficient_mass_ratio": 1.0906506732296395,
+      "Nc_m3": 2.8e19,
+      "Nv_m3": 1.04e19,
+      "temperature_K": 300.0
+    },
+    {
+      "name": "Nitride",
+      "eps_r": 7.5,
+      "ni": 0.0,
+      "mun": 0.0,
+      "mup": 0.0,
+      "bandgap_eV": 5.0,
+      "electron_affinity_eV": 1.9,
+      "temperature_K": 300.0,
+      "electron_quantum_gamma": 1.0,
+      "electron_quantum_dos_mass_ratio": 0.42,
+      "electron_quantum_coefficient_mass_ratio": 0.42
+    }
+  ]
+}

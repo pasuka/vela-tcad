@@ -1866,6 +1866,58 @@ TEST_CASE("CoupledDDAssembler: Sentaurus-default Fermi SRH source has analytic D
             Catch::Approx(0.0).margin(1.0e-18));
 }
 
+TEST_CASE("CoupledDDAssembler: classical Fermi Auger source has analytic Jacobian",
+          "[newton][coupled][auger][fermi][jacobian]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    const CarrierStatisticsConfig statistics{"fermi_dirac"};
+
+    RecombinationModelConfig classical = recombinationModelConfig({"auger"});
+    classical.augerExcessProduct = "classical_np";
+    // Amplify the source above transport subtraction round-off in this
+    // source-only analytic-versus-finite-difference comparison.
+    classical.augerCn = 2.9e-28;
+    classical.augerCp = 1.028e-28;
+    RecombinationModelConfig generalized = classical;
+    generalized.augerExcessProduct = "generalized_fermi";
+    const RecombinationModelConfig none = recombinationModelConfig({"none"});
+
+    CoupledDDAssembler withClassical(
+        mesh, matdb, doping, constants::Vt_300, {}, classical, {}, {}, {}, {},
+        {}, {}, statistics);
+    CoupledDDAssembler withGeneralized(
+        mesh, matdb, doping, constants::Vt_300, {}, generalized, {}, {}, {}, {},
+        {}, {}, statistics);
+    CoupledDDAssembler withoutAuger(
+        mesh, matdb, doping, constants::Vt_300, {}, none, {}, {}, {}, {}, {}, {},
+        statistics);
+
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi = VectorXd::LinSpaced(N, -0.06, 0.08);
+    state.phin = VectorXd::LinSpaced(N, 0.03, -0.025);
+    state.phip = VectorXd::LinSpaced(N, -0.04, 0.02);
+    const VectorXd x = withClassical.pack(state);
+    const CoupledDDBoundaryConditions bcs;
+
+    const Eigen::MatrixXd analyticSource = Eigen::MatrixXd(
+        withClassical.assembleJacobian(x, bcs) -
+        withoutAuger.assembleJacobian(x, bcs));
+    const Eigen::MatrixXd finiteDifferenceSource = Eigen::MatrixXd(
+        withClassical.finiteDifferenceJacobian(x, bcs, 1.0e-8) -
+        withoutAuger.finiteDifferenceJacobian(x, bcs, 1.0e-8));
+    const Real relativeError =
+        (analyticSource - finiteDifferenceSource).norm() /
+        std::max<Real>(1.0e-30, finiteDifferenceSource.norm());
+
+    REQUIRE(finiteDifferenceSource.norm() > 0.0);
+    REQUIRE(relativeError < 2.0e-4);
+    REQUIRE((withClassical.residual(x, bcs) -
+             withGeneralized.residual(x, bcs)).norm() > 0.0);
+}
+
 TEST_CASE("CoupledDDAssembler: analytic Jacobian matches finite differences with varying intrinsic density",
           "[newton][coupled][bgn]")
 {
@@ -2505,6 +2557,20 @@ TEST_CASE("NewtonSolver: evaluateJacobianBlockAudit can restrict expensive block
     REQUIRE(std::isfinite(rows.front().fdNorm));
     REQUIRE(std::isfinite(rows.front().diffNorm));
     REQUIRE(std::isfinite(rows.front().relDiff));
+
+    cfg.recombination = {"auger"};
+    cfg.augerExcessProduct = "classical_np";
+    cfg.carrierStatistics.model = "fermi_dirac";
+    NewtonSolver sourceSolver(mesh, matdb, doping, biases, cfg);
+    const auto sourceRows = sourceSolver.evaluateJacobianBlockAudit(
+        state,
+        1.0e-7,
+        std::vector<std::string>{"srh_auger"},
+        "double_symmetric",
+        std::vector<Index>{1});
+    REQUIRE(sourceRows.size() == 1);
+    REQUIRE(sourceRows.front().block == "srh_auger");
+    REQUIRE(sourceRows.front().relDiff < 1.0e-5);
 }
 
 
@@ -3500,6 +3566,7 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
         {"carrier_row_qualified_stall_acceptance", true},
         {"auger_cn_m6_per_s", 4.0e-43},
         {"auger_cp_m6_per_s", 2.0e-43},
+        {"auger_excess_product", "classical_np"},
         {"residual_weights", {{"psi", 0.25}, {"phin", 2.0}, {"phip", 3.0}}},
         {"residual_scales", {{"psi", 1.0e-18}, {"phin", 2.0e4}, {"phip", 3.0e4}}}
     });
@@ -3523,6 +3590,7 @@ TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]
     REQUIRE(cfg.residualScalePhip == Catch::Approx(3.0e4));
     REQUIRE(cfg.augerCn == Catch::Approx(4.0e-43));
     REQUIRE(cfg.augerCp == Catch::Approx(2.0e-43));
+    REQUIRE(cfg.augerExcessProduct == "classical_np");
 
     const NewtonConfig closureFilterCfg = newtonConfigFromJson(
         nlohmann::json{
@@ -4363,6 +4431,93 @@ TEST_CASE("NewtonSolver: carrier row convergence ignores sources below absolute 
         evaluateCarrierRowConvergence({row}, cfg);
     REQUIRE_FALSE(enforced.satisfied);
     REQUIRE(enforced.violations.size() == 1);
+}
+
+TEST_CASE("NewtonSolver: carrier row convergence qualifies active density and flux rows",
+          "[newton][carrier_row_convergence]")
+{
+    CoupledDDCarrierTermDiagnostic activeDensity;
+    activeDensity.nodeId = 10;
+    activeDensity.holeDensity_m3 = 1.0e16;
+    activeDensity.holeResidual = 2.0e-29;
+
+    CoupledDDCarrierTermDiagnostic activeFlux;
+    activeFlux.nodeId = 11;
+    activeFlux.holeDensity_m3 = 1.0;
+    activeFlux.holeFluxAbsSum = 1.0e-3;
+    activeFlux.holeResidual = 2.0e-5;
+
+    CoupledDDCarrierTermDiagnostic inactive;
+    inactive.nodeId = 12;
+    inactive.holeDensity_m3 = 1.0;
+    inactive.holeFluxAbsSum = 1.0e-9;
+    inactive.holeResidual = 1.0e-9;
+
+    NewtonCarrierRowConvergenceConfig cfg;
+    cfg.mode = "enforce";
+    cfg.epsRow = 1.0e-3;
+    cfg.minSourceScale = 1.0;
+    cfg.minCarrierDensity_m3 = 1.0e16;
+    cfg.minFluxScaleFraction = 1.0e-4;
+
+    const auto evaluation = evaluateCarrierRowConvergence(
+        {activeDensity, activeFlux, inactive}, cfg);
+
+    REQUIRE_FALSE(evaluation.satisfied);
+    REQUIRE(evaluation.violations.size() == 2);
+    CHECK(evaluation.qualifiedRowCount == 2);
+    CHECK(evaluation.ignoredRowCount == 4);
+    CHECK(evaluation.violations[0].densityQualified);
+    CHECK_FALSE(evaluation.violations[0].fluxQualified);
+    CHECK_FALSE(evaluation.violations[1].densityQualified);
+    CHECK(evaluation.violations[1].fluxQualified);
+}
+
+TEST_CASE("NewtonSolver: parses carrier row physical qualification controls",
+          "[newton][carrier_row_convergence][config]")
+{
+    const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{
+        {"carrier_row_convergence", {
+            {"mode", "report"},
+            {"min_source_global_fraction", 1.0e-5},
+            {"min_carrier_density_m3", 1.0e16},
+            {"min_flux_scale_fraction", 1.0e-6},
+            {"min_flux_scale", 1.0e-20},
+        }}
+    });
+    CHECK(cfg.carrierRowConvergence.minSourceGlobalFraction == Catch::Approx(1.0e-5));
+    CHECK(cfg.carrierRowConvergence.minCarrierDensity_m3 == Catch::Approx(1.0e16));
+    CHECK(cfg.carrierRowConvergence.minFluxScaleFraction == Catch::Approx(1.0e-6));
+    CHECK(cfg.carrierRowConvergence.minFluxScale == Catch::Approx(1.0e-20));
+
+    REQUIRE_THROWS_AS(newtonConfigFromJson(nlohmann::json{
+        {"carrier_row_convergence", {{"min_carrier_density_m3", -1.0}}}
+    }), std::invalid_argument);
+}
+
+TEST_CASE("NewtonSolver: carrier row convergence ignores globally negligible sources",
+          "[newton][carrier_row_convergence]")
+{
+    CoupledDDCarrierTermDiagnostic dominant;
+    dominant.nodeId = 20;
+    dominant.holeRecombination = 1.0;
+    dominant.holeResidual = 0.0;
+
+    CoupledDDCarrierTermDiagnostic negligible;
+    negligible.nodeId = 21;
+    negligible.holeRecombination = 1.0e-9;
+    negligible.holeResidual = 1.0e-9;
+
+    NewtonCarrierRowConvergenceConfig cfg;
+    cfg.mode = "enforce";
+    cfg.epsRow = 1.0e-3;
+    cfg.minSourceScaleFraction = 0.0;
+    cfg.minSourceGlobalFraction = 1.0e-6;
+
+    const auto evaluation = evaluateCarrierRowConvergence({dominant, negligible}, cfg);
+    REQUIRE(evaluation.satisfied);
+    CHECK(evaluation.qualifiedRowCount == 1);
+    CHECK(evaluation.ignoredRowCount == 3);
 }
 
 TEST_CASE("NewtonSolver: global continuity closure compares contact flux with free-node source",

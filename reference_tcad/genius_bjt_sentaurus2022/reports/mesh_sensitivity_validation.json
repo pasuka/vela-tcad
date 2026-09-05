@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "date": "2026-09-03",
+  "scope": "Genius NPN BJT M1 local mesh-refinement sensitivity at VBE=0.70 V and VCE=0.0..3.0 V",
+  "mesh": {
+    "baseline": {"nodes": 5611, "triangles": 10940},
+    "local_refined": {"nodes": 15561, "triangles": 30780},
+    "node_ratio": 2.7733024416325073,
+    "triangle_ratio": 2.813528336380256,
+    "minimum_edge_um": 0.00390625,
+    "refinement_windows": [
+      {"name": "base_collector", "bounds_um": [0.75, 0.42, 5.25, 0.88]},
+      {"name": "emitter_base_left", "bounds_um": [2.52, 0.0, 2.98, 0.55]},
+      {"name": "emitter_base_right", "bounds_um": [4.02, 0.0, 4.48, 0.55]}
+    ]
+  },
+  "structure_audit": {
+    "pass": true,
+    "bounds_um": [0.0, 0.0, 6.0, 2.0],
+    "maximum_contact_coordinate_error_um": 0.0,
+    "maximum_donor_relative_error": 3.644573217796476e-15,
+    "maximum_acceptor_relative_error": 3.614864687182031e-15
+  },
+  "sdevice": {
+    "version": "T-2022.03-SP2",
+    "curve_points": 31,
+    "maximum_voltage_selection_error_V": 0.0,
+    "maximum_absolute_kcl_A_per_um": 6.650532124926343e-20,
+    "maximum_relative_kcl": 2.387029216157768e-14,
+    "maximum_mesh_sensitivity_error_decade_vce_0p5_to_3": {
+      "Ic": 0.01089331107919991,
+      "Ib": 0.0013207358115905092,
+      "Ie": 0.010633402078300097,
+      "beta": 0.012214046890790458
+    }
+  },
+  "refined_vela_vs_sdevice": {
+    "maximum_terminal_error_decade_vce_0p5_to_3": {
+      "Ic": 0.0011801549860531932,
+      "Ib": 0.0016988027230038492,
+      "Ie": 0.0011913376346281608,
+      "beta": 0.0006126367190820261
+    },
+    "vce3": {
+      "sdevice": {
+        "Ic_A_per_um": 2.73798756296798e-6,
+        "Ib_A_per_um": 6.03709277174441e-8,
+        "Ie_A_per_um": -2.79835849068546e-6,
+        "beta": 45.35274951848788
+      },
+      "vela": {
+        "Ic_A_per_um": 2.730557435549806e-6,
+        "Ib_A_per_um": 6.013523977645076e-8,
+        "Ie_A_per_um": -2.7906926750951595e-6,
+        "beta": 45.4069435110011,
+        "kcl_abs_A_per_um": 2.3109738866281985e-16
+      }
+    }
+  },
+  "coarse_to_refined_vce3": {
+    "hole_current_p95_error_decade": {"coarse": 0.8279870492481883, "refined": 0.2700034544780934},
+    "hole_current_normalized_vector_rmse": {"coarse": 0.06220531291413024, "refined": 0.02243919051029097},
+    "hole_current_global_cosine": {"coarse": 0.9981042175081616, "refined": 0.9997485054598417},
+    "potential_rmse_V": {"coarse": 0.0010965184592207984, "refined": 0.0006358111871981727},
+    "electron_density_rmse_decade": {"coarse": 0.002978200402987853, "refined": 0.0023861859818494206},
+    "hole_density_rmse_decade": {"coarse": 0.0069382395212846575, "refined": 0.003415311552506393},
+    "hole_density_full_domain_max_decade": {"coarse": 2.8708274599854278, "refined": 0.517302657581473}
+  },
+  "gates": {
+    "sdevice_curve_and_kcl": true,
+    "refined_terminal_curves": true,
+    "refined_spatial_state": true,
+    "refined_transport_and_sources": true,
+    "hole_current_p95_threshold_decade": 0.5,
+    "overall_pass": true
+  },
+  "interpretation": "Local refinement materially reduces the weak-current and low-density discrepancies. The residual cannot be attributed solely to proprietary SDevice node interpolation semantics; local discretization resolution is a significant contributor."
+}

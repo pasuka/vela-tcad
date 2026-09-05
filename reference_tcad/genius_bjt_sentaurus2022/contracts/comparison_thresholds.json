@@ -1,0 +1,130 @@
+{
+  "schema_version": 4,
+  "wp1_structure": {
+    "contact_endpoint_tolerance_um": 1e-8,
+    "coordinate_tolerance_um": 1e-8,
+    "doping_relative_tolerance_at_mesh_nodes": 1e-6,
+    "minimum_nodes_per_contact": 2,
+    "minimum_total_mesh_nodes": 1000
+  },
+  "wp2_sentaurus": {
+    "required_collector_points": 31,
+    "collector_voltage_tolerance_V": 1e-6,
+    "maximum_relative_kcl_residual": 1e-6,
+    "maximum_absolute_kcl_residual_A_per_um": 1e-18,
+    "required_terminal_currents": ["collector", "base", "emitter"]
+  },
+  "wp3_wp5_vela_comparison": {
+    "status": "operational, M1 terminal-parity, spatial-state, transport, and recombination gates asserted",
+    "primary_observables": ["Ic-Vce", "Ib-Vce", "Ie-Vce", "beta-Vce", "terminal KCL", "electrostatic potential", "electron density", "hole density", "electron current density", "hole current density", "SRH recombination", "Auger recombination"],
+    "diagnostic_observables": ["electron drift/diffusion decomposition", "hole drift/diffusion decomposition"],
+    "required_collector_points": 31,
+    "collector_voltage_tolerance_V": 1e-8,
+    "maximum_relative_kcl_residual": 1e-6,
+    "maximum_absolute_kcl_residual_A_per_um": 1e-18,
+    "required_terminal_currents": ["collector", "base", "emitter"],
+    "numerical_parity": {
+      "active_region_VCE_range_V": [0.5, 3.0],
+      "models": {
+        "M0": {
+          "status": "characterization_only",
+          "reason": "M0 is the intentionally minimal numerical baseline and is not expected to match the M1 physics oracle."
+        },
+        "M1": {
+          "status": "asserted",
+          "maximum_Ic_absolute_log10_error": 0.05,
+          "maximum_Ib_absolute_log10_error": 0.05,
+          "maximum_Ie_absolute_log10_error": 0.05,
+          "maximum_beta_absolute_log10_error": 0.05,
+          "reason": "Pre-registered before the full M1 rerun after importing the T-2022.03-SP2 Silicon Scharfetter lifetime parameters."
+        }
+      }
+    },
+    "spatial_state_gate": {
+      "status": "asserted",
+      "bias": {"VBE_V": 0.7, "VCE_V": 3.0},
+      "sampling": "common_mesh_nodes",
+      "reason": "Pre-registered before the masked spatial-state acceptance calculation. Density gates exclude reference carrier concentrations below 1e10 cm^-3, where decade errors amplify physically negligible absolute differences.",
+      "fields": {
+        "electrostatic_potential": {
+          "units": "V",
+          "error": "vela_minus_sentaurus",
+          "mask": {"type": "all_common_nodes"},
+          "maximum_rmse": 0.005,
+          "maximum_p95_absolute_error": 0.01,
+          "maximum_absolute_error": 0.025
+        },
+        "electron_density": {
+          "units": "decade",
+          "error": "log10_vela_minus_log10_sentaurus",
+          "mask": {"type": "sentaurus_reference_min_cm3", "minimum_cm3": 1e10},
+          "maximum_rmse": 0.01,
+          "maximum_p95_absolute_error": 0.02,
+          "maximum_absolute_error": 0.05
+        },
+        "hole_density": {
+          "units": "decade",
+          "error": "log10_vela_minus_log10_sentaurus",
+          "mask": {"type": "sentaurus_reference_min_cm3", "minimum_cm3": 1e10},
+          "maximum_rmse": 0.02,
+          "maximum_p95_absolute_error": 0.05,
+          "maximum_absolute_error": 0.15
+        }
+      }
+    },
+    "transport_source_comparison": {
+      "status": "asserted",
+      "bias": {"VBE_V": 0.7, "VCE_V": 3.0},
+      "current_density_reference_fraction": 1e-6,
+      "source_rate_reference_fraction": 1e-6,
+      "vela_current_density_fields": {
+        "electron": "DualFaceSgElectronCurrentDensityVector",
+        "hole": "DualFaceSgHoleCurrentDensityVector"
+      },
+      "gates": {
+        "current_density": {
+          "electron": {
+            "maximum_p95_absolute_log10_magnitude_error": 0.3,
+            "maximum_normalized_vector_rmse": 0.6,
+            "minimum_global_vector_cosine_similarity": 0.85
+          },
+          "hole": {
+            "maximum_p95_absolute_log10_magnitude_error": 0.5,
+            "maximum_normalized_vector_rmse": 0.6,
+            "minimum_global_vector_cosine_similarity": 0.85
+          }
+        },
+        "recombination": {
+          "srh": {
+            "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.98,
+            "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.02,
+            "maximum_normalized_l1_error": 0.01,
+            "maximum_absolute_shape_total_variation": 0.005
+          },
+          "auger": {
+            "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
+            "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.25,
+            "maximum_normalized_l1_error": 0.25,
+            "maximum_absolute_shape_total_variation": 0.15
+          }
+        }
+      },
+      "reason": "Current-density comparison uses the dual-face-length-weighted nodal representation of the production SG line fluxes; the line fluxes remain the conservative finite-volume authority. Current-density vector gates retain magnitude and direction sensitivity. The SRH bounds were tightened after a fixed-state n/p/ni_eff decomposition exposed and corrected a VTK-only omission of the Fermi-statistics BGN correction; the retained margins cover both coarse and locally refined meshes. Recombination acceptance uses signed/absolute integral and normalized-shape checks; unweighted node-log P95 and single-node argmax remain diagnostic-only because low-contribution tails and flat peaks can dominate them without materially changing the integrated source."
+    },
+    "conservative_section_flux_gate": {
+      "status": "asserted",
+      "biases_VCE_V": [0.0, 1.0, 2.0, 3.0],
+      "sections": [
+        {"name": "base_side", "axis": "y", "coordinate_um": 0.45},
+        {"name": "collector_side", "axis": "y", "coordinate_um": 0.85}
+      ],
+      "thresholds": {
+        "maximum_section_to_vela_terminal_relative_error": 1e-8,
+        "maximum_section_to_sdevice_terminal_absolute_log10_error": 0.05,
+        "maximum_carrier_continuity_relative_error": 0.01,
+        "maximum_section_total_current_spread_relative_to_terminal": 1e-8
+      },
+      "reason": "The finite-volume authority is the oriented production SG particle line flux. Full-width cuts on the base and collector sides avoid proprietary SDevice nodal-vector reconstruction. Electron and hole changes across the intervening slab are closed independently against the signed recombination integral."
+    }
+  }
+}

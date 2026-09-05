@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "scope": {
+    "mesh": "coarse",
+    "nodes": 5611,
+    "triangles": 10940,
+    "VBE_V": 0.7,
+    "spatial_VCE_V": 3.0
+  },
+  "current_field": "CellFirstSg*CurrentDensityVector (opt-in diagnostic)",
+  "current_mask": "SDevice magnitude >= 1e-6 of per-carrier peak",
+  "metrics": {
+    "potential": {
+      "Electrostatic potential": {
+        "selected_nodes": 5611,
+        "rmse": 1.0965184592207984,
+        "p95_absolute_error": 2.2880984631689083,
+        "maximum_absolute_error": 15.060897190098066
+      }
+    },
+    "density": {
+      "log\u2081\u2080 electron density": {
+        "selected_nodes": 5611,
+        "rmse": 0.0032395333737124804,
+        "p95_absolute_error": 0.007233810988576117,
+        "maximum_absolute_error": 0.027157298319254508
+      },
+      "log\u2081\u2080 hole density": {
+        "selected_nodes": 5611,
+        "rmse": 0.600949290551483,
+        "p95_absolute_error": 1.964404147975689,
+        "maximum_absolute_error": 2.8708274599854278
+      }
+    },
+    "quasi_fermi": {
+      "Electron quasi-Fermi potential": {
+        "selected_nodes": 5611,
+        "rmse": 1.0762607991461781,
+        "p95_absolute_error": 2.2243001904068693,
+        "maximum_absolute_error": 14.403763838702233
+      },
+      "Hole quasi-Fermi potential": {
+        "selected_nodes": 5611,
+        "rmse": 35.7793214308552,
+        "p95_absolute_error": 116.93344140782979,
+        "maximum_absolute_error": 170.88939010281345
+      }
+    },
+    "current_density": {
+      "log\u2081\u2080 electron current magnitude": {
+        "selected_nodes": 5611,
+        "rmse": 0.005441109252387829,
+        "p95_absolute_error": 0.009816594116464183,
+        "maximum_absolute_error": 0.07200249100811977
+      },
+      "log\u2081\u2080 hole current magnitude": {
+        "selected_nodes": 2121,
+        "rmse": 0.034176060203553786,
+        "p95_absolute_error": 0.09854248951784861,
+        "maximum_absolute_error": 0.130117255056593
+      }
+    },
+    "current_vector_gate": {
+      "electron": {
+        "units": "A/cm^2",
+        "mask": {
+          "type": "sentaurus_reference_magnitude_fraction_of_peak",
+          "fraction": 1e-06,
+          "minimum_A_per_cm2": 0.00038286683977012956
+        },
+        "selected_node_count": 5611,
+        "reference_peak_A_per_cm2": 382.86683977012956,
+        "vela_peak_A_per_cm2": 372.20204493387115,
+        "log10_magnitude_error": {
+          "node_count": 5611,
+          "rmse": 0.005441109252387827,
+          "p95_absolute_error": 0.009816594116464024,
+          "maximum_absolute_error": 0.07200249100811974
+        },
+        "normalized_vector_rmse": 0.016034108344265725,
+        "global_vector_cosine_similarity": 0.999911500312978
+      },
+      "hole": {
+        "units": "A/cm^2",
+        "mask": {
+          "type": "sentaurus_reference_magnitude_fraction_of_peak",
+          "fraction": 1e-06,
+          "minimum_A_per_cm2": 4.4168952211452037e-05
+        },
+        "selected_node_count": 2121,
+        "reference_peak_A_per_cm2": 44.16895221145204,
+        "vela_peak_A_per_cm2": 40.26272019134771,
+        "log10_magnitude_error": {
+          "node_count": 2121,
+          "rmse": 0.034176060203553786,
+          "p95_absolute_error": 0.09854248951784857,
+          "maximum_absolute_error": 0.1301172550565928
+        },
+        "normalized_vector_rmse": 0.030807146175509455,
+        "global_vector_cosine_similarity": 0.9995957153824931
+      }
+    }
+  },
+  "sources_sha256": {
+    "mesh": "b0b541a5db3fd3d6805e6615ade420c8f62d85fb01b8c161a1ba1fb8b4ee3104",
+    "vela_vtk": "14dd28b1880b21d6c506d1f634671823006ac65f008083511237a639f56d7059",
+    "sentaurus_field_manifest": "f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159",
+    "terminal_comparison": "c263bff35ffaf78cd68142eb98921e27318554dfc160e86ae01287dcc9aca9f5",
+    "current_recovery_ab": "35dca0bf204ed33c3ca06f9d569a315804dca83dda2d17637a9d4598ef66b383"
+  },
+  "outputs_sha256": {
+    "potential": "a662775896a11a36126663e34f794f855b0dbd2bcb6aeb8d3f783ac17c8245df",
+    "density": "74017524a496ce3ba875cdf2beeb3638f32a0934fb1651cb52faade496a11801",
+    "quasi_fermi": "0b8447a9206fec39ffe3b76604acb2474cb649928c17b82eb96ed87196a005bd",
+    "current_density": "a28a7a67a587c4422f4f9d840f083443970203c6439866e7b982d9f1f9d44896",
+    "centerline": "ec7bf492b5c3c8bab753dc71b6e1fad970aae8b759f23ca5747a94d64b2c1ac5",
+    "terminal_curves": "21739750421bd0b15c9054460b7c32fd9d25a6fc67d2149c74d35210beea452d",
+    "current_p95": "60b06a909b6e6a1d01817f5f7cf16695e33a8c74b119f19db40301eea5df5a69"
+  }
+}

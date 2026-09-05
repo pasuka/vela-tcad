@@ -21,6 +21,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <queue>
 #include <stdexcept>
@@ -1003,43 +1004,90 @@ NewtonCarrierRowConvergenceEvaluation evaluateCarrierRowConvergence(
 
     const Real eps = cfg.epsRow;
     const Real floor = std::max<Real>(cfg.scaleFloor, 0.0);
+    Real maxElectronFluxScale = 0.0;
+    Real maxHoleFluxScale = 0.0;
+    Real maxElectronSourceScale = 0.0;
+    Real maxHoleSourceScale = 0.0;
+    for (const CoupledDDCarrierTermDiagnostic& row : rows) {
+        maxElectronFluxScale = std::max(maxElectronFluxScale, std::abs(row.electronFluxAbsSum));
+        maxHoleFluxScale = std::max(maxHoleFluxScale, std::abs(row.holeFluxAbsSum));
+        maxElectronSourceScale = std::max(maxElectronSourceScale,
+            std::max(std::abs(row.electronRecombination), std::abs(row.electronImpact)));
+        maxHoleSourceScale = std::max(maxHoleSourceScale,
+            std::max(std::abs(row.holeRecombination), std::abs(row.holeImpact)));
+    }
     auto checkCarrier = [&](const CoupledDDCarrierTermDiagnostic& row,
                             const std::string& carrier,
+                            bool continuityActive,
+                            Real carrierDensity,
                             Real residual,
                             Real flux,
                             Real fluxAbsSum,
                             Real recombination,
-                            Real impact) {
+                            Real impact,
+                            Real maxFluxScale,
+                            Real maxSourceScale) {
+        if (!continuityActive) {
+            ++evaluation.ignoredRowCount;
+            return;
+        }
         const Real sourceScale = std::max(std::abs(recombination), std::abs(impact));
         const Real scale = std::max({std::abs(fluxAbsSum), sourceScale, floor});
-        const bool sourceQualified = scale > 0.0 &&
+        const bool sourceQualified = sourceScale > 0.0 && scale > 0.0 &&
             sourceScale >= cfg.minSourceScale &&
-            sourceScale >= cfg.minSourceScaleFraction * scale;
+            sourceScale >= cfg.minSourceScaleFraction * scale &&
+            sourceScale >= cfg.minSourceGlobalFraction * maxSourceScale;
+        const bool densityQualified = cfg.minCarrierDensity_m3 > 0.0 &&
+            carrierDensity >= cfg.minCarrierDensity_m3;
+        const bool fluxQualificationEnabled =
+            cfg.minFluxScale > 0.0 || cfg.minFluxScaleFraction > 0.0;
+        const Real fluxThreshold = std::max(
+            cfg.minFluxScale,
+            cfg.minFluxScaleFraction * maxFluxScale);
+        const bool fluxQualified = fluxQualificationEnabled &&
+            fluxAbsSum > 0.0 && fluxAbsSum >= fluxThreshold;
+        const bool qualified = sourceQualified || densityQualified || fluxQualified;
         const Real ratio = scale > 0.0 ? std::abs(residual) / scale : 0.0;
-        if (sourceQualified && ratio > evaluation.maxRatio) {
+        if (qualified)
+            ++evaluation.qualifiedRowCount;
+        else
+            ++evaluation.ignoredRowCount;
+        if (qualified && ratio > evaluation.maxRatio) {
             evaluation.maxRatio = ratio;
             evaluation.maxRatioNode = row.nodeId;
             evaluation.maxRatioCarrier = carrier;
         }
-        if (sourceQualified && ratio > eps) {
+        if (qualified && ratio > eps) {
             NewtonCarrierRowConvergenceViolation violation;
             violation.nodeId = row.nodeId;
             violation.carrier = carrier;
             violation.residual = residual;
             violation.scale = scale;
             violation.ratio = ratio;
+            violation.carrierDensity_m3 = carrierDensity;
             violation.flux = flux;
             violation.recombination = recombination;
             violation.impact = impact;
+            violation.densityQualified = densityQualified;
+            violation.fluxQualified = fluxQualified;
+            violation.sourceQualified = sourceQualified;
             evaluation.violations.push_back(std::move(violation));
         }
     };
 
     for (const CoupledDDCarrierTermDiagnostic& row : rows) {
-        checkCarrier(row, "electron", row.electronResidual, row.electronFlux,
-                     row.electronFluxAbsSum, row.electronRecombination, row.electronImpact);
-        checkCarrier(row, "hole", row.holeResidual, row.holeFlux,
-                     row.holeFluxAbsSum, row.holeRecombination, row.holeImpact);
+        checkCarrier(row, "electron", row.electronContinuityActive,
+                     row.electronDensity_m3,
+                     row.electronResidual, row.electronFlux,
+                     row.electronFluxAbsSum, row.electronRecombination,
+                     row.electronImpact, maxElectronFluxScale,
+                     maxElectronSourceScale);
+        checkCarrier(row, "hole", row.holeContinuityActive,
+                     row.holeDensity_m3,
+                     row.holeResidual, row.holeFlux,
+                     row.holeFluxAbsSum, row.holeRecombination,
+                     row.holeImpact, maxHoleFluxScale,
+                     maxHoleSourceScale);
     }
     evaluation.satisfied = evaluation.violations.empty();
     return evaluation;
@@ -1577,6 +1625,7 @@ NewtonCarrierRowRecoveryResult recoverCarrierRowsWithGummelDensity(
             cfg.recombination, cfg.taun, cfg.taup, cfg.srhDopingDependence);
     recombinationConfig.augerCn = cfg.augerCn;
     recombinationConfig.augerCp = cfg.augerCp;
+    recombinationConfig.augerExcessProduct = cfg.augerExcessProduct;
     recombinationConfig.bandToBand = cfg.bandToBand;
     const DDScalingSpec scaling = buildRecoveryScalingSpec(mesh, matdb, doping, cfg);
 
@@ -2033,6 +2082,15 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
                 "min_source_scale_fraction", cfg.carrierRowConvergence.minSourceScaleFraction);
             cfg.carrierRowConvergence.minSourceScale = value.value(
                 "min_source_scale", cfg.carrierRowConvergence.minSourceScale);
+            cfg.carrierRowConvergence.minSourceGlobalFraction = value.value(
+                "min_source_global_fraction",
+                cfg.carrierRowConvergence.minSourceGlobalFraction);
+            cfg.carrierRowConvergence.minCarrierDensity_m3 = value.value(
+                "min_carrier_density_m3", cfg.carrierRowConvergence.minCarrierDensity_m3);
+            cfg.carrierRowConvergence.minFluxScaleFraction = value.value(
+                "min_flux_scale_fraction", cfg.carrierRowConvergence.minFluxScaleFraction);
+            cfg.carrierRowConvergence.minFluxScale = value.value(
+                "min_flux_scale", cfg.carrierRowConvergence.minFluxScale);
             cfg.carrierRowConvergence.minEnforceMaxIter = value.value(
                 "min_newton_max_iter", cfg.carrierRowConvergence.minEnforceMaxIter);
             cfg.carrierRowConvergence.diagnosticCsvFile = value.value(
@@ -2094,6 +2152,26 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             !std::isfinite(cfg.carrierRowConvergence.minSourceScale)) {
             throw std::invalid_argument(
                 "newtonConfigFromJson: carrier_row_convergence.min_source_scale must be finite and nonnegative.");
+        }
+        if (cfg.carrierRowConvergence.minSourceGlobalFraction < 0.0 ||
+            !std::isfinite(cfg.carrierRowConvergence.minSourceGlobalFraction)) {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: carrier_row_convergence.min_source_global_fraction must be finite and nonnegative.");
+        }
+        if (cfg.carrierRowConvergence.minCarrierDensity_m3 < 0.0 ||
+            !std::isfinite(cfg.carrierRowConvergence.minCarrierDensity_m3)) {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: carrier_row_convergence.min_carrier_density_m3 must be finite and nonnegative.");
+        }
+        if (cfg.carrierRowConvergence.minFluxScaleFraction < 0.0 ||
+            !std::isfinite(cfg.carrierRowConvergence.minFluxScaleFraction)) {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: carrier_row_convergence.min_flux_scale_fraction must be finite and nonnegative.");
+        }
+        if (cfg.carrierRowConvergence.minFluxScale < 0.0 ||
+            !std::isfinite(cfg.carrierRowConvergence.minFluxScale)) {
+            throw std::invalid_argument(
+                "newtonConfigFromJson: carrier_row_convergence.min_flux_scale must be finite and nonnegative.");
         }
         if (cfg.carrierRowRecovery.mode != "off" &&
             cfg.carrierRowRecovery.mode != "gummel_density") {
@@ -2267,6 +2345,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         json.value("auger_cn_m6_per_s", cfg.augerCn));
     cfg.augerCp = scaling.augerCoefficientToInternal(
         json.value("auger_cp_m6_per_s", cfg.augerCp));
+    cfg.augerExcessProduct = json.value(
+        "auger_excess_product", cfg.augerExcessProduct);
     if (json.contains("mobility"))
         cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"), scaling);
     if (json.contains("bandgap_narrowing")) {
@@ -2464,6 +2544,12 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         throw std::invalid_argument(
             "newtonConfigFromJson: srh_density_coupling must be 'quantum' or "
             "'sentaurus_default'.");
+    }
+    if (cfg.augerExcessProduct != "generalized_fermi" &&
+        cfg.augerExcessProduct != "classical_np") {
+        throw std::invalid_argument(
+            "newtonConfigFromJson: auger_excess_product must be "
+            "'generalized_fermi' or 'classical_np'.");
     }
     if (cfg.quasiFermiReference != "none" &&
         cfg.quasiFermiReference != "contact_majority" &&
@@ -3368,6 +3454,7 @@ std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler() const
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     auto assembler = std::make_shared<CoupledDDAssembler>(
@@ -3667,6 +3754,7 @@ NewtonResidualEvaluation NewtonSolver::evaluateResidual(const DDSolution& state)
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -3711,6 +3799,7 @@ NewtonStepEvaluation NewtonSolver::evaluateStep(const DDSolution& state) const
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -3798,6 +3887,7 @@ NewtonSolver::evaluateFeedbackSubstitutions(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -3971,6 +4061,7 @@ NewtonSolver::evaluatePoissonQfpCrossBlockDecomposition(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -4301,6 +4392,7 @@ NewtonDirectionalDerivativeEvaluation NewtonSolver::evaluateDirectionalDerivativ
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -4376,6 +4468,7 @@ NewtonBlockStepEvaluation NewtonSolver::evaluateBlockStep(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -4462,6 +4555,7 @@ NewtonRegularizedCarrierStepEvaluation NewtonSolver::evaluateRegularizedCarrierS
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -4553,6 +4647,7 @@ NewtonCarrierRowDiagnosticsEvaluation NewtonSolver::evaluateCarrierRowDiagnostic
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -4668,6 +4763,7 @@ NewtonSolver::evaluateCarrierBlockDecomposition(const DDSolution& state) const
                     models, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
             config.augerCn = cfg_.augerCn;
             config.augerCp = cfg_.augerCp;
+            config.augerExcessProduct = cfg_.augerExcessProduct;
             if (models.size() != 1 || models.front() != "none")
                 config.bandToBand = cfg_.bandToBand;
             return config;
@@ -5054,6 +5150,7 @@ NewtonCarrierTermDiagnosticsEvaluation NewtonSolver::evaluateCarrierTermDiagnost
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -5095,7 +5192,8 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
     const DDSolution& state,
     Real finiteDifferenceStep,
     std::vector<std::string> blocks,
-    const std::string& finiteDifferenceMode) const
+    const std::string& finiteDifferenceMode,
+    std::vector<Index> columnNodes) const
 {
     const int N = static_cast<int>(mesh_.numNodes());
     if (state.psi.size() != N || state.phin.size() != N || state.phip.size() != N) {
@@ -5124,6 +5222,7 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
                     models, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
             config.augerCn = cfg_.augerCn;
             config.augerCp = cfg_.augerCp;
+            config.augerExcessProduct = cfg_.augerExcessProduct;
             if (models.size() != 1 || models.front() != "none")
                 config.bandToBand = cfg_.bandToBand;
             return config;
@@ -5164,6 +5263,32 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
     const Real potentialScale =
         baseAssembler.usesScaledState() ? baseAssembler.potentialScale() : 1.0;
     const VectorXd x = packReferencedSolution(baseAssembler, state, bcs);
+    std::vector<int> selectedColumns;
+    if (!columnNodes.empty()) {
+        std::sort(columnNodes.begin(), columnNodes.end());
+        columnNodes.erase(std::unique(columnNodes.begin(), columnNodes.end()), columnNodes.end());
+        selectedColumns.reserve(3 * columnNodes.size());
+        for (Index node : columnNodes) {
+            if (node >= mesh_.numNodes()) {
+                throw std::out_of_range(
+                    "NewtonSolver::evaluateJacobianBlockAudit: column node is outside the mesh.");
+            }
+            for (int block = 0; block < 3; ++block)
+                selectedColumns.push_back(block * N + static_cast<int>(node));
+        }
+    }
+    const auto filterSelectedColumns = [&](const SparseMatrixd& matrix) {
+        if (selectedColumns.empty())
+            return matrix;
+        std::vector<Eigen::Triplet<double>> triplets;
+        for (int col : selectedColumns) {
+            for (SparseMatrixd::InnerIterator entry(matrix, col); entry; ++entry)
+                triplets.emplace_back(entry.row(), entry.col(), entry.value());
+        }
+        SparseMatrixd filtered(matrix.rows(), matrix.cols());
+        filtered.setFromTriplets(triplets.begin(), triplets.end());
+        return filtered;
+    };
 
     const auto matrixPair =
         [&](CoupledDDAssembler& assembler) {
@@ -5189,12 +5314,14 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
                     : withTerm.impactIonizationSourceFiniteDifferenceJacobian(
                         x, bcs, finiteDifferenceStep);
                 return std::pair<SparseMatrixd, SparseMatrixd>{
-                    withTerm.impactIonizationSourceJacobian(x, bcs),
-                    reference};
+                    filterSelectedColumns(
+                        withTerm.impactIonizationSourceJacobian(x, bcs)),
+                    filterSelectedColumns(reference)};
             }
             SparseMatrixd analytic =
                 withTerm.assembleJacobian(x, bcs) -
                 withoutTerm.assembleJacobian(x, bcs);
+            analytic = filterSelectedColumns(analytic);
             const int unknowns = static_cast<int>(x.size());
             auto diagnosticResidual =
                 [&](CoupledDDAssembler& assembler,
@@ -5224,7 +5351,14 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
                 [&](auto&& residualEvaluator, Real relativeStep) {
                     std::vector<Eigen::Triplet<double>> triplets;
                     triplets.reserve(static_cast<std::size_t>(unknowns) * 7);
-                    for (int col = 0; col < unknowns; ++col) {
+                    std::vector<int> allColumns;
+                    const std::vector<int>* columns = &selectedColumns;
+                    if (selectedColumns.empty()) {
+                        allColumns.resize(static_cast<std::size_t>(unknowns));
+                        std::iota(allColumns.begin(), allColumns.end(), 0);
+                        columns = &allColumns;
+                    }
+                    for (int col : *columns) {
                         const Real step = relativeStep *
                             std::max<Real>(1.0, std::abs(x(col)));
                         VectorXd plus = x;
@@ -5275,12 +5409,21 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
     if (blocks.empty())
         blocks = defaultBlocks;
 
+    if (!columnNodes.empty() && std::any_of(
+            blocks.begin(), blocks.end(), [](const std::string& block) {
+                return block == "poisson" || block == "transport" ||
+                       block == "dirichlet_or_gauge";
+            })) {
+        throw std::invalid_argument(
+            "NewtonSolver::evaluateJacobianBlockAudit: column_nodes currently "
+            "supports only srh_auger and sg_avalanche blocks.");
+    }
+
     const auto wants = [&](const std::string& block) {
         return std::find(blocks.begin(), blocks.end(), block) != blocks.end();
     };
     const bool needsBase =
-        wants("poisson") || wants("transport") || wants("srh_auger") ||
-        wants("sg_avalanche") || wants("dirichlet_or_gauge");
+        wants("poisson") || wants("transport") || wants("dirichlet_or_gauge");
     const bool needsRecombination = wants("srh_auger");
     const bool needsImpact = wants("sg_avalanche");
 
@@ -5353,6 +5496,7 @@ std::vector<CoupledDDEdgeFluxDiagnostic> NewtonSolver::evaluateSgEdgeFluxDiagnos
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -5390,6 +5534,7 @@ NewtonSolver::evaluateTransportEdgeJacobianDiagnostics(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     CoupledDDAssembler assembler(
         mesh_, matdb_, doping_, Vt, cfg_.mobility, recombinationConfig,
@@ -5430,6 +5575,7 @@ NewtonResult NewtonSolver::solve() const
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -5460,6 +5606,7 @@ NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization()
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -5499,6 +5646,7 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     CoupledDDAssembler assembler(
         mesh_, matdb_, doping_, Vt, cfg_.mobility, recombinationConfig,
@@ -6127,6 +6275,7 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
+    recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -6344,13 +6493,18 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         const bool writeHeader = !std::filesystem::exists(path);
         std::ofstream out(path, std::ios::app);
         if (writeHeader) {
-            out << "event,iteration,node_id,carrier,residual,scale,ratio,flux,srh,impact\n";
+            out << "event,iteration,node_id,carrier,residual,scale,ratio,carrier_density_m3,"
+                << "flux,srh,impact,density_qualified,flux_qualified,source_qualified\n";
         }
         out << std::setprecision(17);
         for (const auto& row : evaluation.violations) {
             out << event << ',' << iteration << ',' << row.nodeId << ',' << row.carrier << ','
                 << row.residual << ',' << row.scale << ',' << row.ratio << ','
-                << row.flux << ',' << row.recombination << ',' << row.impact << '\n';
+                << row.carrierDensity_m3 << ',' << row.flux << ','
+                << row.recombination << ',' << row.impact << ','
+                << (row.densityQualified ? 1 : 0) << ','
+                << (row.fluxQualified ? 1 : 0) << ','
+                << (row.sourceQualified ? 1 : 0) << '\n';
         }
     };
     auto shouldWriteCarrierRowTrace = [&](int iteration) {

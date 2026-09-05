@@ -598,12 +598,16 @@ SweepRecombinationDiagnostics computeSweepRecombinationDiagnostics(
                 dopingConcentration);
         }
         if (recombination.augerEnabled()) {
-            const GeneralizedSrhCarrierState augerState =
-                generalizedSrhCarrierState(
-                    n, p, ni, Nc[i], Nv[i], dPhi, Vt,
-                    carrierStatistics);
-            rate += recombination.augerRateFromExcessProduct(
-                augerState.excessProduct, n, p);
+            if (recombination.usesClassicalAugerExcessProduct()) {
+                rate += recombination.augerRate(n, p, ni);
+            } else {
+                const GeneralizedSrhCarrierState augerState =
+                    generalizedSrhCarrierState(
+                        n, p, ni, Nc[i], Nv[i], dPhi, Vt,
+                        carrierStatistics);
+                rate += recombination.augerRateFromExcessProduct(
+                    augerState.excessProduct, n, p);
+            }
         }
         const Real absRate = std::abs(rate);
         if (std::isfinite(absRate)) {
@@ -1033,12 +1037,16 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
                 dopingConcentration);
         }
         if (recombination.augerEnabled()) {
-            const GeneralizedSrhCarrierState augerState =
-                generalizedSrhCarrierState(
-                    sol.n(row), sol.p(row), ni, Nc[node], Nv[node], dPhi, Vt,
-                    carrierStatistics);
-            rate += recombination.augerRateFromExcessProduct(
-                augerState.excessProduct, sol.n(row), sol.p(row));
+            if (recombination.usesClassicalAugerExcessProduct()) {
+                rate += recombination.augerRate(sol.n(row), sol.p(row), ni);
+            } else {
+                const GeneralizedSrhCarrierState augerState =
+                    generalizedSrhCarrierState(
+                        sol.n(row), sol.p(row), ni, Nc[node], Nv[node], dPhi, Vt,
+                        carrierStatistics);
+                rate += recombination.augerRateFromExcessProduct(
+                    augerState.excessProduct, sol.n(row), sol.p(row));
+            }
         }
         return rate * mesh.getNode(node).volume;
     };
@@ -3195,6 +3203,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             newton.srhDopingDependence);
         sweepRecombinationConfig.augerCn = newton.augerCn;
         sweepRecombinationConfig.augerCp = newton.augerCp;
+        sweepRecombinationConfig.augerExcessProduct = newton.augerExcessProduct;
         sweepRecombinationConfig.bandToBand = newton.bandToBand;
         sweepBgnConfig = newton.bandgapNarrowing;
         sweepImpactIonizationConfig = newton.impactIonization;
@@ -3204,6 +3213,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             gummel.srhDopingDependence);
         sweepRecombinationConfig.augerCn = gummel.augerCn;
         sweepRecombinationConfig.augerCp = gummel.augerCp;
+        sweepRecombinationConfig.augerExcessProduct = gummel.augerExcessProduct;
         sweepRecombinationConfig.bandToBand = gummel.bandToBand;
         sweepBgnConfig = gummel.bandgapNarrowing;
         sweepImpactIonizationConfig = gummel.impactIonization;

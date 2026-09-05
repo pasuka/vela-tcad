@@ -66,6 +66,12 @@ RecombinationModel::RecombinationModel(RecombinationModelConfig config)
             "RecombinationModel: SRH density coupling must be 'quantum' or "
             "'sentaurus_default'.");
     }
+    if (config_.augerExcessProduct != "generalized_fermi" &&
+        config_.augerExcessProduct != "classical_np") {
+        throw std::invalid_argument(
+            "RecombinationModel: Auger excess product must be "
+            "'generalized_fermi' or 'classical_np'.");
+    }
     for (const std::string& mechanism : config_.mechanisms) {
         if (mechanism == "srh") {
             srhEnabled_ = true;

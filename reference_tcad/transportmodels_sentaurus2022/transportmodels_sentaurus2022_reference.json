@@ -1,0 +1,94 @@
+{
+  "schema": "vela.reference_tcad.checked_in.v1",
+  "case": "transportmodels_sentaurus2022",
+  "device": "symmetric_50nm_nmos",
+  "source": "Sentaurus Applications Library GettingStarted/sdevice/TransportModels",
+  "sentaurus_version": "T-2022.03-SP2",
+  "mesh_inventory": {
+    "vertices": 3315,
+    "triangles": 6456,
+    "material_regions": 7,
+    "contacts": [
+      "gate",
+      "substrate",
+      "drain",
+      "source"
+    ]
+  },
+  "simulations": [
+    {
+      "mode": "dd",
+      "curve": "idvg",
+      "sdevice_cmd": "source/pp6_des.cmd",
+      "vela_config": "vela/configs/03_dd_idvg_curve.json"
+    },
+    {
+      "mode": "dg",
+      "curve": "idvg",
+      "sdevice_cmd": "source/pp7_des.cmd",
+      "vela_config": "vela/configs/09_dg_idvg_curve.json"
+    },
+    {
+      "mode": "dd",
+      "curve": "idvd",
+      "sdevice_cmd": "source/pp12_des.cmd",
+      "vela_config": "vela/configs/05_dd_idvd_curve.json"
+    },
+    {
+      "mode": "dg",
+      "curve": "idvd",
+      "sdevice_cmd": "source/pp13_des.cmd",
+      "vela_config": "vela/configs/11_dg_idvd_curve.json"
+    }
+  ],
+  "contracts": [
+    "vela/contracts/transportmodels_sentaurus2022_materials_v1.json",
+    "vela/contracts/transportmodels_dd_dg_sentaurus2022_v1.json",
+    "vela/contracts/transportmodels_dd_dg_continuous_v1.json",
+    "vela/contracts/transportmodels_dd_contact_basin_v1.json"
+  ],
+  "workflow_rules": {
+    "one_process_per_curve": true,
+    "immutable_curve_config": true,
+    "previous_accepted_state_only": true,
+    "pointwise_reclosure_forbidden": true,
+    "interpolation_forbidden": true,
+    "deep_off_min_current_to_kcl_ratio": 10.0
+  },
+  "binary_policy": "Sentaurus TDR/PLT files and generated Vela results are excluded",
+  "sha256": {
+    "source/nMOS_dvs.cmd": "da49ed3026d1bb51ec9faf19939f1e3206e50e6df86a61b0e472ce46d1363081",
+    "source/n1_half_msh.cmd": "97c4c91d2332c4504dbecec7cc3f58c227b167aadb3d094cfb8191c785661729",
+    "source/IdVgs_des.cmd": "276f7e3c9d4fd5ac61e694c581d8bff868804771d73a1fc1fef76776f90fe5fe",
+    "source/IdVds_des.cmd": "3dc9f3a16eda804c0537b803afec2416fdbe7dc199bd5c8d416688fcd2af5545",
+    "source/pp6_des.cmd": "179b4c47b70f36a648969d1e90b3c490c81f49ba452f736afccf7932ed4ee7de",
+    "source/pp7_des.cmd": "9d99ed20738b66aabe1f44342218401ed327524a7074685c26befa3530d78b2e",
+    "source/pp12_des.cmd": "0967787ab0780e04a3eeb6b1b1a719bc8cfa09ad2490b500d8b5aa63c2be7586",
+    "source/pp13_des.cmd": "b5c06cc6a3b0ae2c71e869253936758b094657efe85baf3371996748b48e9bf1",
+    "source/pp6_des.par": "24853dd561a526c0802be60ddaae30bfd481e9fad6b168857d79803d25979a81",
+    "source/pp7_des.par": "24853dd561a526c0802be60ddaae30bfd481e9fad6b168857d79803d25979a81",
+    "source/pp12_des.par": "24853dd561a526c0802be60ddaae30bfd481e9fad6b168857d79803d25979a81",
+    "source/pp13_des.par": "24853dd561a526c0802be60ddaae30bfd481e9fad6b168857d79803d25979a81",
+    "source/Silicon.par": "c760d501ae9040aae4b5b5a3d4c57e1930e1cb14164bfd66ac37bcd12e695c97",
+    "source/sdevice.par": "21600adddc156a920c348891c9604deaa94aaec1378f716970f15a1d33239259",
+    "vela/mesh.json": "53eeb68c75082d254f2c12a668ac8c50e803baa4c831aa189b75ebc8c6079f61",
+    "vela/doping.csv": "e5641169e6145eb34eb2d9329d14f6fd6a94fdf263c54bedbff46d48d649a3fe",
+    "vela/materials_sentaurus2022.json": "e00fa2d0585aa75d624d8275b91e76b7e412ca0d60c33bf591ba9ffa44bac12f",
+    "vela/contracts/transportmodels_sentaurus2022_materials_v1.json": "e00fa2d0585aa75d624d8275b91e76b7e412ca0d60c33bf591ba9ffa44bac12f",
+    "vela/contracts/transportmodels_dd_dg_sentaurus2022_v1.json": "0513b486661fb7ae788f108782d79a5ded75e3f3c7f55216c51eaf0eec14cbec",
+    "vela/contracts/transportmodels_dd_dg_continuous_v1.json": "cbd40c071d273dc6da597a0428f59434d66762c84aa304635592f0465ac7f777",
+    "vela/contracts/transportmodels_dd_contact_basin_v1.json": "0e96fe6240ccca93368da3a097ccd96efb6dae2e293f5932400a7516556fd094",
+    "vela/configs/00_dd_idvg_equilibrium.json": "f4497ebd023076b84734469bfccff0052ffbd3043c2b2dafb2cab44ce4b568ab",
+    "vela/configs/01_dd_idvg_drain_ramp.json": "b300a1125e2cfe6527d83362157259e5d17cfbb74ba1504fb6dd584f12814a32",
+    "vela/configs/02_dd_idvg_final_bias_relax.json": "c9f2f265a663d7e4a3056f32b7bfe04b421f37997f739b96c1885487d0819b42",
+    "vela/configs/03_dd_idvg_curve.json": "453a4041bd83fda834237beaeb8111c085d79f82add27626ddae40632ef7fbfb",
+    "vela/configs/04_dd_idvd_equilibrium.json": "1a8ad16dafda38c3f728aa1abf51e79263c53f0d050b319f04184467af1292c5",
+    "vela/configs/05_dd_idvd_curve.json": "649e92589185db90d9dc9de481524e3eba83c7aa28a99b0a57ebcb452a66be47",
+    "vela/configs/06_dg_idvg_equilibrium.json": "1708a79e455b8b3b70be142bc59167d93ad93ee298e38d6b24acf556fadb0bed",
+    "vela/configs/07_dg_idvg_drain_ramp.json": "f831608c5e528fd285ded3d3c35fdce0f6ad5d3c9c9672c46c95f54ff9834129",
+    "vela/configs/08_dg_idvg_final_bias_relax.json": "9f95737d91e9866211467ba44985a32ec2e8b72ba820aee9208444bf1db7ed74",
+    "vela/configs/09_dg_idvg_curve.json": "334cb3f195d1c6928925276b65ec96aefdbc61688d0ef342d116a3aaf8a72e77",
+    "vela/configs/10_dg_idvd_equilibrium.json": "4fb69211066e11979a0b915054d32bef36604adcf461ed7c954d535f159a437e",
+    "vela/configs/11_dg_idvd_curve.json": "d386044ef7f07d0b2aeed9be01d90f375db3cd9093d40674cd50ea490c5f15e2"
+  }
+}

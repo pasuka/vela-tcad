@@ -417,17 +417,13 @@ add_custom_target(check_ascii
             -DVELA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -P ${VELA_ASCII_CHECK_SCRIPT}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Checking tests/src/include/examples for non-ASCII bytes"
+    COMMENT "Checking tests/src/include for non-ASCII bytes"
     VERBATIM)
 
 add_test(NAME ascii_sources
     COMMAND ${CMAKE_COMMAND}
             -DVELA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
             -P ${VELA_ASCII_CHECK_SCRIPT})
-
-add_test(NAME example_runner_newton
-    COMMAND $<TARGET_FILE:vela_example_runner>
-            --config ${CMAKE_CURRENT_SOURCE_DIR}/examples/pn_diode/newton_simulation.json)
 
 add_executable(test_scaling tests/test_scaling.cpp)
 target_link_libraries(test_scaling PRIVATE vela_core Catch2::Catch2WithMain)
@@ -468,10 +464,6 @@ target_link_libraries(test_gummel_high_doping PRIVATE vela_core Catch2::Catch2Wi
 add_executable(test_device_stability tests/test_device_stability.cpp)
 target_link_libraries(test_device_stability PRIVATE vela_core Catch2::Catch2WithMain)
 
-add_executable(test_ldmos_dd tests/test_ldmos_dd.cpp)
-target_link_libraries(test_ldmos_dd PRIVATE vela_core Catch2::Catch2WithMain)
-target_compile_definitions(test_ldmos_dd PRIVATE VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-
 add_executable(test_newton_solver tests/test_newton_solver.cpp)
 target_link_libraries(test_newton_solver PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -480,14 +472,6 @@ target_link_libraries(test_external_state PRIVATE vela_core Catch2::Catch2WithMa
 target_compile_definitions(test_external_state PRIVATE
     VELA_EXAMPLE_RUNNER_EXE="$<TARGET_FILE:vela_example_runner>")
 add_dependencies(test_external_state vela_example_runner)
-
-add_executable(test_mos_solver_crosscheck tests/test_mos_solver_crosscheck.cpp)
-target_link_libraries(test_mos_solver_crosscheck PRIVATE vela_core Catch2::Catch2WithMain)
-target_compile_definitions(test_mos_solver_crosscheck PRIVATE VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-
-add_executable(test_mos_mixed_material tests/test_mos_mixed_material.cpp)
-target_link_libraries(test_mos_mixed_material PRIVATE vela_core Catch2::Catch2WithMain)
-target_compile_definitions(test_mos_mixed_material PRIVATE VELA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_executable(test_mobility tests/test_mobility.cpp)
 target_link_libraries(test_mobility PRIVATE vela_core Catch2::Catch2WithMain)
@@ -581,14 +565,8 @@ add_test(NAME dd COMMAND test_dd_gummel [gummel])
 vela_catch_discover_tests(test_gummel_high_doping)
 vela_catch_discover_tests(test_device_stability)
 add_test(NAME device_stability COMMAND test_device_stability [device_stability])
-vela_catch_discover_tests(test_ldmos_dd)
-add_test(NAME ldmos COMMAND test_ldmos_dd [ldmos])
 vela_catch_discover_tests(test_newton_solver)
 vela_catch_discover_tests(test_external_state)
-vela_catch_discover_tests(test_mos_solver_crosscheck)
-add_test(NAME mos_solver_crosscheck COMMAND test_mos_solver_crosscheck [mos_solver_crosscheck])
-vela_catch_discover_tests(test_mos_mixed_material)
-add_test(NAME mos_mixed COMMAND test_mos_mixed_material [mos_mixed])
 vela_catch_discover_tests(test_mobility)
 vela_catch_discover_tests(test_impact_ionization)
 vela_catch_discover_tests(test_path_ionization_integral)
@@ -626,13 +604,9 @@ if(VELA_HDF5_TARGET)
 endif()
 
 foreach(_vela_manual_cpp_test IN ITEMS
-    example_runner_newton
     poisson
     dd
     device_stability
-    ldmos
-    mos_solver_crosscheck
-    mos_mixed
     dc_sweep
     electric_field_diagnostics
     boundary
@@ -642,14 +616,6 @@ foreach(_vela_manual_cpp_test IN ITEMS
     vela_set_windows_msys2_test_path(${_vela_manual_cpp_test})
 endforeach()
 
-
-add_test(NAME regression
-    COMMAND ${Python3_EXECUTABLE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run_regression.py
-            --repo ${CMAKE_CURRENT_SOURCE_DIR}
-            --runner $<TARGET_FILE:vela_example_runner>
-            --workdir ${CMAKE_CURRENT_BINARY_DIR}/regression_output)
-vela_set_windows_msys2_test_path(regression)
 
 add_test(NAME reference_tcad_regression
     COMMAND ${Python3_EXECUTABLE}

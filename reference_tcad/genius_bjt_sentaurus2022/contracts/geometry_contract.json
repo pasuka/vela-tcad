@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "source": {
+    "repository": "D:/code-repo/Genius-TCAD-Open",
+    "commit": "543da8452d5dfd33e6f8c457f962f6f670f0fce7",
+    "step1": {
+      "path": "examples/BJT/step1.inp",
+      "sha256": "1fb80eae1d236ac3f75a81ddefa9d86e1e79d6ca4f8506d6ef2ec67c40373d04"
+    },
+    "step2": {
+      "path": "examples/BJT/step2.inp",
+      "sha256": "829d68893716f7d8405e210dd8b71aec927e2da43ce9a1ee0c7c35b56e7792b2"
+    }
+  },
+  "dimension": 2,
+  "length_unit": "um",
+  "concentration_unit": "cm^-3",
+  "temperature_K": 300.0,
+  "extrusion_width_um_metadata": 100.0,
+  "region": {
+    "name": "R.Silicon",
+    "material": "Silicon",
+    "bounds_um": [0.0, 0.0, 6.0, 2.0]
+  },
+  "contacts": [
+    {"name": "base", "kind": "ohmic", "edge": "top", "span_um": [1.25, 2.0]},
+    {"name": "emitter", "kind": "ohmic", "edge": "top", "span_um": [2.75, 4.25]},
+    {"name": "collector", "kind": "ohmic", "edge": "bottom", "span_um": [0.0, 6.0]}
+  ],
+  "profiles": [
+    {
+      "name": "BackgroundDonor",
+      "species": "donor",
+      "peak_cm3": 5e15,
+      "window_um": [0.0, 0.0, 6.0, 2.0],
+      "char_um": null
+    },
+    {
+      "name": "BaseBulkAcceptor",
+      "species": "acceptor",
+      "peak_cm3": 6e17,
+      "window_um": [1.25, 0.0, 4.75, 0.35],
+      "char_um": [0.12, 0.16]
+    },
+    {
+      "name": "BaseSurfaceAcceptor",
+      "species": "acceptor",
+      "peak_cm3": 4e18,
+      "window_um": [1.25, 0.0, 4.75, 0.0],
+      "char_um": [0.12, 0.16]
+    },
+    {
+      "name": "EmitterDonor",
+      "species": "donor",
+      "peak_cm3": 7e19,
+      "window_um": [2.75, 0.0, 4.25, 0.0],
+      "char_um": [0.1275, 0.17]
+    },
+    {
+      "name": "CollectorDonor",
+      "species": "donor",
+      "peak_cm3": 1e19,
+      "window_um": [0.0, 2.0, 6.0, 2.0],
+      "char_um": [0.27, 0.27]
+    }
+  ],
+  "profile_formula": "peak*exp(-(outside_distance(x,[xmin,xmax])/xchar)^2-(outside_distance(y,[ymin,ymax])/ychar)^2)",
+  "outside_distance_formula": "max(abs(q-(qmin+qmax)/2)-(qmax-qmin)/2,0)",
+  "overlap_policy": "sum profiles of the same species; net doping is donors minus acceptors",
+  "bias": {
+    "emitter_V": 0.0,
+    "base_V": 0.7,
+    "collector_start_V": 0.0,
+    "collector_stop_V": 3.0,
+    "collector_step_V": 0.1
+  }
+}

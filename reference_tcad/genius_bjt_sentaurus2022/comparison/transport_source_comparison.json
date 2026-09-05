@@ -1,0 +1,221 @@
+{
+  "schema_version": 2,
+  "device": "Genius NPN BJT",
+  "bias": {
+    "VBE_V": 0.7,
+    "VCE_V": 3.0
+  },
+  "status": "asserted",
+  "reason": "Initial engineering regression gates registered after the original characterization, not a blind validation. Current-density comparison uses the dual-face-length-weighted nodal representation of the production SG line fluxes; the line fluxes remain the conservative finite-volume authority. Current-density vector gates retain magnitude and direction sensitivity. Recombination acceptance uses signed/absolute integral and normalized-shape checks; unweighted node-log P95 and single-node argmax remain diagnostic-only because low-contribution tails and flat peaks can dominate them without materially changing the integrated source.",
+  "common_node_count": 5611,
+  "current_density": {
+    "electron": {
+      "units": "A/cm^2",
+      "mask": {
+        "type": "sentaurus_reference_magnitude_fraction_of_peak",
+        "fraction": 1e-06,
+        "minimum_A_per_cm2": 0.00038286683977012956
+      },
+      "selected_node_count": 5611,
+      "reference_peak_A_per_cm2": 382.86683977012956,
+      "vela_peak_A_per_cm2": 479.6163608407483,
+      "log10_magnitude_error": {
+        "node_count": 5611,
+        "rmse": 0.008894775442002371,
+        "p95_absolute_error": 0.015772805968731436,
+        "maximum_absolute_error": 0.13400410068561971
+      },
+      "normalized_vector_rmse": 0.03514884751720666,
+      "global_vector_cosine_similarity": 0.9993886648422103,
+      "gate": {
+        "thresholds": {
+          "maximum_p95_absolute_log10_magnitude_error": 0.3,
+          "maximum_normalized_vector_rmse": 0.6,
+          "minimum_global_vector_cosine_similarity": 0.85
+        },
+        "observed": {
+          "p95_absolute_log10_magnitude_error": 0.015772805968731436,
+          "normalized_vector_rmse": 0.03514884751720666,
+          "global_vector_cosine_similarity": 0.9993886648422103
+        },
+        "checks": {
+          "p95_absolute_log10_magnitude_error": true,
+          "normalized_vector_rmse": true,
+          "global_vector_cosine_similarity": true
+        },
+        "pass": true
+      }
+    },
+    "hole": {
+      "units": "A/cm^2",
+      "mask": {
+        "type": "sentaurus_reference_magnitude_fraction_of_peak",
+        "fraction": 1e-06,
+        "minimum_A_per_cm2": 4.4168952211452037e-05
+      },
+      "selected_node_count": 2121,
+      "reference_peak_A_per_cm2": 44.16895221145204,
+      "vela_peak_A_per_cm2": 55.44272871360205,
+      "log10_magnitude_error": {
+        "node_count": 2121,
+        "rmse": 0.3740199656965646,
+        "p95_absolute_error": 0.8279870492481883,
+        "maximum_absolute_error": 2.8625238636248445
+      },
+      "normalized_vector_rmse": 0.06220531291413024,
+      "global_vector_cosine_similarity": 0.9981042175081616,
+      "gate": {
+        "thresholds": {
+          "maximum_p95_absolute_log10_magnitude_error": 0.5,
+          "maximum_normalized_vector_rmse": 0.6,
+          "minimum_global_vector_cosine_similarity": 0.85
+        },
+        "observed": {
+          "p95_absolute_log10_magnitude_error": 0.8279870492481883,
+          "normalized_vector_rmse": 0.06220531291413024,
+          "global_vector_cosine_similarity": 0.9981042175081616
+        },
+        "checks": {
+          "p95_absolute_log10_magnitude_error": false,
+          "normalized_vector_rmse": true,
+          "global_vector_cosine_similarity": true
+        },
+        "pass": false
+      }
+    }
+  },
+  "recombination": {
+    "srh": {
+      "units": "cm^-3 s^-1",
+      "mask": {
+        "type": "sentaurus_reference_absolute_fraction_of_peak",
+        "fraction": 1e-06,
+        "minimum_cm3_per_s": 1.4114440442322593e+18
+      },
+      "selected_node_count": 1807,
+      "reference_peak_absolute_cm3_per_s": 1.4114440442322595e+24,
+      "vela_peak_absolute_cm3_per_s": 1.3086500591043466e+24,
+      "log10_magnitude_error": {
+        "node_count": 1807,
+        "rmse": 0.09614860597099949,
+        "p95_absolute_error": 0.28915257380312037,
+        "maximum_absolute_error": 0.383208890615642
+      },
+      "signed_integral_A_per_um": {
+        "sentaurus": 1.900627854475198e-08,
+        "vela": 1.4799381528194327e-08,
+        "ratio_vela_over_sentaurus": 0.7786575101142426
+      },
+      "absolute_integral_A_per_um": {
+        "sentaurus": 1.9006278985116918e-08,
+        "vela": 1.4799381968275706e-08,
+        "ratio_vela_over_sentaurus": 0.778657515227706
+      },
+      "normalized_l1_error": 0.2214000840376806,
+      "absolute_shape_total_variation": 0.10602299009596873,
+      "peak_location": {
+        "sentaurus_node_id": 3590,
+        "vela_node_id": 3624,
+        "sentaurus_xy_um": [
+          4.453125,
+          -0.0
+        ],
+        "vela_xy_um": [
+          4.453125,
+          0.171875
+        ],
+        "distance_um": 0.171875
+      },
+      "gate": {
+        "thresholds": {
+          "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
+          "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.25,
+          "maximum_normalized_l1_error": 0.25,
+          "maximum_absolute_shape_total_variation": 0.15
+        },
+        "observed": {
+          "p95_absolute_log10_magnitude_error": 0.28915257380312037,
+          "absolute_integral_ratio_vela_over_sentaurus": 0.778657515227706,
+          "normalized_l1_error": 0.2214000840376806,
+          "absolute_shape_total_variation": 0.10602299009596873,
+          "peak_location_distance_um": 0.171875
+        },
+        "checks": {
+          "absolute_integral_ratio_vela_over_sentaurus": true,
+          "normalized_l1_error": true,
+          "absolute_shape_total_variation": true
+        },
+        "pass": true
+      }
+    },
+    "auger": {
+      "units": "cm^-3 s^-1",
+      "mask": {
+        "type": "sentaurus_reference_absolute_fraction_of_peak",
+        "fraction": 1e-06,
+        "minimum_cm3_per_s": 1.0626467498313067e+17
+      },
+      "selected_node_count": 1627,
+      "reference_peak_absolute_cm3_per_s": 1.0626467498313068e+23,
+      "vela_peak_absolute_cm3_per_s": 1.0589316670254627e+23,
+      "log10_magnitude_error": {
+        "node_count": 1627,
+        "rmse": 0.5878252357384057,
+        "p95_absolute_error": 0.9033559391200545,
+        "maximum_absolute_error": 0.9394323404729128
+      },
+      "signed_integral_A_per_um": {
+        "sentaurus": 2.707637436709313e-09,
+        "vela": 2.6746393305605603e-09,
+        "ratio_vela_over_sentaurus": 0.9878129524649886
+      },
+      "absolute_integral_A_per_um": {
+        "sentaurus": 2.707637436709313e-09,
+        "vela": 2.674639330562094e-09,
+        "ratio_vela_over_sentaurus": 0.987812952465555
+      },
+      "normalized_l1_error": 0.012189998693450327,
+      "absolute_shape_total_variation": 0.006578293898971403,
+      "peak_location": {
+        "sentaurus_node_id": 1478,
+        "vela_node_id": 1478,
+        "sentaurus_xy_um": [
+          2.71875,
+          0.0625
+        ],
+        "vela_xy_um": [
+          2.71875,
+          0.0625
+        ],
+        "distance_um": 0.0
+      },
+      "gate": {
+        "thresholds": {
+          "minimum_absolute_integral_ratio_vela_over_sentaurus": 0.75,
+          "maximum_absolute_integral_ratio_vela_over_sentaurus": 1.25,
+          "maximum_normalized_l1_error": 0.25,
+          "maximum_absolute_shape_total_variation": 0.15
+        },
+        "observed": {
+          "p95_absolute_log10_magnitude_error": 0.9033559391200545,
+          "absolute_integral_ratio_vela_over_sentaurus": 0.987812952465555,
+          "normalized_l1_error": 0.012189998693450327,
+          "absolute_shape_total_variation": 0.006578293898971403,
+          "peak_location_distance_um": 0.0
+        },
+        "checks": {
+          "absolute_integral_ratio_vela_over_sentaurus": true,
+          "normalized_l1_error": true,
+          "absolute_shape_total_variation": true
+        },
+        "pass": true
+      }
+    }
+  },
+  "overall_pass": false,
+  "source_sha256": {
+    "threshold_contract": "d0c3fb0a4bee34acf5e4509775c0403f756199a0b60da94301a33611ec4e15ec",
+    "sentaurus_field_manifest": "f728ffb14003d9d81840d4f2f99a07cf2e9a4c8ec8ebc857e6be9e20df115159",
+    "vela_vtk": "08e457e8f76d86f2f60e016bad0ca3610301eca403b1d76e99edf4337db8283e"
+  }
+}

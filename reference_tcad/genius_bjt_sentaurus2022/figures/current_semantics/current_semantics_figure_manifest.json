@@ -1,0 +1,41 @@
+{
+  "schema": "vela.genius_bjt_current_semantics_figures.v1",
+  "bias": {
+    "VBE_V": 0.7,
+    "VCE_V": 3.0
+  },
+  "mesh": {
+    "nodes": 5611,
+    "triangles": 10940
+  },
+  "metrics": {
+    "figure1": {
+      "all_node_p95_abs_log_error_decade": 0.024577165455753995,
+      "tail_p95_abs_log_error_decade": 0.0453668058409079,
+      "tail_max_abs_log_error_decade": 0.12037807527034042
+    },
+    "figure2": {
+      "selected_node_count": 2121,
+      "tail_node_count": 180,
+      "selected_p95_abs_log_error_decade": 0.8279870492481883
+    },
+    "figure3": {
+      "tail_p95_abs_log_error_decade": 1.929792879967541e-09,
+      "tail_max_abs_log_error_decade": 2.3402972207284982e-08,
+      "all_node_max_abs_log_error_decade": 8.396721304584703e-08
+    }
+  },
+  "sources_sha256": {
+    "nodes": "b93f00e70a5be270c414dc1838c4c8eb9048c71b234fee158bb9c50c998e8e60",
+    "elements": "133fc71124d2f1c0a8d6066f8a3e374a3268f7fab195ca20231ef6bcd7350e76",
+    "sdevice_node_current": "a1009a946266200c60930575e7db6711864e2835c452d73e7567d79da08b100e",
+    "sdevice_cell_current": "04bf0195c90466e83ae65dbb5e3ebc1a9e0389b84d4993553c6f937cda482275",
+    "vela_tail_diagnostics": "3b7b6fe1e230ec551a5a6494878adc9b0a5cb82ff46dd229fb8b85dbb6f03569",
+    "sdevice_digits8_ep128_current": "e5c447ec709ac6585607c74245a49d2c5389646efdc11011ecf5d56f0fad11e6"
+  },
+  "outputs_sha256": {
+    "figure1": "a170c5cfef22587aaadb83dca5b1540f5919ab36576d4482672a1564633fd65d",
+    "figure2": "e3a9d404bd2ab8f597030f935b7df131b4933efccc7eaba2c92158c5afbc507b",
+    "figure3": "0f413e5033615ecf728f0093d7ba35a1f24bdb3b858608f89751afcdf370309a"
+  }
+}

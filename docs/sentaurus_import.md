@@ -109,6 +109,5 @@ ctest --test-dir build --output-on-failure -R reference_tcad_regression
 ## Related Documents
 
 - `README.md`
-- `docs/examples.md`
 - `reference_tcad/README.md`
 - `tests/regression/README.md`

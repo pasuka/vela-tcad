@@ -1,0 +1,148 @@
+{
+  "schema": "vela.reference_tcad.checked_in.v1",
+  "case": "genius_bjt_sentaurus2022",
+  "device": "two_dimensional_npn_bjt",
+  "source": "Genius TCAD examples/BJT/step1.inp and step2.inp",
+  "reference_solver": "Sentaurus SDE/SDevice T-2022.03-SP2",
+  "candidate_solver": "Vela TCAD drift-diffusion",
+  "snapshot_date": "2026-09-04",
+  "reference_role": {
+    "terminal": "accepted_31_point_m1_baseline",
+    "coarse_spatial_state": "accepted_at_vce_3V",
+    "refined_spatial_transport_source": "accepted_at_vce_3V",
+    "coarse_default_node_current": "diagnostic_known_limitation"
+  },
+  "device_contract": {
+    "temperature_K": 300.0,
+    "bounds_um": [0.0, 0.0, 6.0, 2.0],
+    "contacts": ["base", "emitter", "collector"],
+    "bias": {
+      "emitter_V": 0.0,
+      "base_V": 0.7,
+      "collector_start_V": 0.0,
+      "collector_stop_V": 3.0,
+      "collector_step_V": 0.1
+    },
+    "current_unit": "A_per_um",
+    "genius_extrusion_width_um": 100.0
+  },
+  "meshes": {
+    "coarse": {
+      "nodes": 5611,
+      "triangles": 10940,
+      "sde_cmd": "source/bjt_sde.cmd",
+      "vela_mesh": "vela/input/mesh.json",
+      "vela_doping": "vela/input/doping.csv"
+    },
+    "local_refined": {
+      "nodes": 15561,
+      "triangles": 30780,
+      "sde_cmd": "source/bjt_sde_local_refined.cmd",
+      "status": "accepted_vce3_spatial_transport_source"
+    }
+  },
+  "simulations": [
+    {
+      "name": "m0_characterization",
+      "purpose": "minimal_physics_numerical_diagnostic",
+      "sdevice_cmd": "source/bjt_m0_des.cmd",
+      "vela_config": "vela/configs/m0_collector_sweep.json",
+      "numerical_parity_asserted": false
+    },
+    {
+      "name": "m1_formal_comparison",
+      "purpose": "aligned_physics_reference_comparison",
+      "sdevice_cmd": "source/bjt_m1_des.cmd",
+      "vela_model_relaxation": "vela/configs/m1_model_relaxation.json",
+      "vela_config": "vela/configs/m1_collector_sweep.json",
+      "reference_curve": "reference_curves/bjt_m1_output.csv",
+      "numerical_parity_asserted": true
+    }
+  ],
+  "contracts": [
+    "contracts/geometry_contract.json",
+    "contracts/physics_contract.json",
+    "contracts/comparison_thresholds.json"
+  ],
+  "validation_status": {
+    "structure_and_doping": true,
+    "sdevice_curve_and_kcl": true,
+    "m1_terminal_31_point": true,
+    "coarse_spatial_state_vce3": true,
+    "coarse_srh_auger_and_conservative_sections": true,
+    "coarse_default_current_density": false,
+    "coarse_default_current_density_failure": "hole_current_log_magnitude_p95_0.827987_decade_gt_0.5",
+    "local_refined_vce3_overall": true,
+    "cell_first_bjt_ab": true,
+    "cell_first_promoted_to_global_default": false
+  },
+  "headline_metrics": {
+    "m1_maximum_terminal_error_decade_vce_0p5_to_3": {
+      "Ic": 0.0034371023297300345,
+      "Ib": 0.0021022747187941708,
+      "Ie": 0.0034071580706601322,
+      "beta": 0.0013492052303749357
+    },
+    "coarse_vce3_spatial": {
+      "potential_rmse_V": 0.0010965184592207984,
+      "electron_density_rmse_decade": 0.002978200402987853,
+      "hole_density_effective_region_rmse_decade": 0.0069382395212846575
+    },
+    "hole_current_p95_error_decade": {
+      "coarse_default": 0.8279870492481883,
+      "local_refined_default": 0.2700034544780934,
+      "coarse_cell_first_diagnostic": 0.09854248951784857
+    },
+    "coarse_vce3_source_integral_ratio": {
+      "srh": 0.996126,
+      "auger": 0.98781
+    }
+  },
+  "reports": [
+    "reports/wp0_wp2_validation.json",
+    "comparison/comparison_summary.md",
+    "comparison/spatial_comparison_summary.md",
+    "reports/conservative_flux_srh_alignment_report.md",
+    "reports/mesh_sensitivity_validation.md",
+    "reports/cell_first_recovery_ab.md",
+    "reports/cell_first_cross_device_validation.md"
+  ],
+  "reproduction_scripts": [
+    "scripts/compare_genius_bjt_sentaurus_vela.py",
+    "scripts/audit_genius_bjt_conservative_sections.py",
+    "scripts/run_genius_bjt_mesh_sensitivity.py",
+    "scripts/run_genius_bjt_cell_first_recovery_ab.py",
+    "scripts/run_cell_first_cross_device_validation.py",
+    "scripts/plot_genius_bjt_coarse_comparison_suite.py"
+  ],
+  "figures": [
+    "figures/genius_bjt_device_mesh.png",
+    "figures/genius_bjt_terminal_curve_comparison.png",
+    "figures/genius_bjt_m1_vce3_field_comparison.png",
+    "figures/coarse_m1_comparison/coarse_terminal_curve_comparison.png",
+    "figures/coarse_m1_comparison/coarse_vce3_carrier_density_comparison.png",
+    "figures/coarse_m1_comparison/coarse_vce3_current_density_comparison.png"
+  ],
+  "binary_policy": "Generated Sentaurus TDR/PLT, Vela states, VTK files, and logs are excluded from source control",
+  "sha256": {
+    "source/bjt_sde.cmd": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05",
+    "source/bjt_sde_local_refined.cmd": "1c3b0f0dd39f4b106399f01a6744b83e78ebad5a83f78b8b8b1aee923381c9ca",
+    "source/bjt_m0_des.cmd": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068",
+    "source/bjt_m1_des.cmd": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27",
+    "contracts/geometry_contract.json": "04344dca4c0aa42ef252b68e616e9c519f679c87554d533a7f17acca812ce45c",
+    "contracts/physics_contract.json": "ff2e5bdcca81fdc2f46ab9582548d41ff7a75f2891728b4b89276930ccc86d54",
+    "contracts/comparison_thresholds.json": "b94f7aee6b6914d34a08d6e0942f4bc89d699c653c5f61bfd899794b00fa6874",
+    "vela/input/mesh.json": "b0b541a5db3fd3d6805e6615ade420c8f62d85fb01b8c161a1ba1fb8b4ee3104",
+    "vela/input/doping.csv": "312bd1f60d9019b403e73720321a38709dbb0cb7722829601e3415cc87173f1a",
+    "vela/materials_sentaurus2022.json": "c200f4d116b7ce38e8bac9b434b58d4423170c7139c8d381ef2b0d056369d435",
+    "vela/configs/m1_collector_sweep.json": "92b366ae9062e82807dcd1a4d2a0a7b33c1a63411953aae8c91b5f47865d696e",
+    "reference_curves/bjt_m1_output.csv": "d26107bc771613d1b8f3140ce0ec9fff602e8b4357fcc3a5ea5213efbc653ded",
+    "reports/wp0_wp2_validation.json": "9893d05d23667d57d24107de1c7260343e61851e4410437ba7bac9a2fb0e26d2",
+    "comparison/comparison_summary.json": "efa3834f2fa981235d739d1f157039d0520e15334caba2006088f65be591bbc3",
+    "comparison/spatial_comparison_summary.json": "e603db9f63b8a64c6ebd3bcb020376b984bc3169e55a23b90dff2f30437e5a61",
+    "reports/conservative_flux_srh_alignment_report.md": "1437f4d7b207c8ea71b129685956143416d5a8830767bd6207c8ad3d5b2584f4",
+    "reports/mesh_sensitivity_validation.json": "3444da6806607539b45aab463dcd5869d12fb6b280de4fbf5e8bd84d8ea8c287",
+    "reports/cell_first_recovery_ab.json": "35dca0bf204ed33c3ca06f9d569a315804dca83dda2d17637a9d4598ef66b383",
+    "reports/cell_first_cross_device_validation.json": "a1f37f7b30e298ea3a4e3e8394c94bd71c729c9d09ea5bdcb0590716c2a6d454"
+  }
+}

@@ -13,10 +13,28 @@ class PythonApiTest(unittest.TestCase):
         source_dir_env = os.environ.get("VELA_SOURCE_DIR")
         if source_dir_env is None:
             raise unittest.SkipTest("VELA_SOURCE_DIR must point to the repository root")
-        source_dir = Path(source_dir_env)
         self.tmpdir = Path(tempfile.mkdtemp(prefix="vela_python_api_"))
         self.mesh_file = self.tmpdir / "mesh.json"
-        shutil.copyfile(source_dir / "examples" / "pn_diode" / "mesh.json", self.mesh_file)
+        self.mesh_file.write_text(json.dumps({
+            "nodes": [
+                {"id": 0, "x": 0.0, "y": 0.0},
+                {"id": 1, "x": 1.0e-6, "y": 0.0},
+                {"id": 2, "x": 1.0e-6, "y": 1.0e-6},
+                {"id": 3, "x": 0.0, "y": 1.0e-6},
+            ],
+            "triangles": [
+                {"id": 0, "region_id": 0, "node_ids": [0, 1, 2]},
+                {"id": 1, "region_id": 1, "node_ids": [0, 2, 3]},
+            ],
+            "regions": [
+                {"id": 0, "name": "n_region", "material": "Si", "cell_ids": [0]},
+                {"id": 1, "name": "p_region", "material": "Si", "cell_ids": [1]},
+            ],
+            "contacts": [
+                {"id": 0, "name": "anode", "region_id": 1, "node_ids": [0, 3]},
+                {"id": 1, "name": "cathode", "region_id": 0, "node_ids": [1, 2]},
+            ],
+        }), encoding="utf-8")
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)

@@ -59,6 +59,10 @@ struct CoupledDDFeedbackStateSubstitution {
 
 struct CoupledDDCarrierTermDiagnostic {
     Index nodeId = 0;
+    Real electronDensity_m3 = 0.0;
+    Real holeDensity_m3 = 0.0;
+    bool electronContinuityActive = true;
+    bool holeContinuityActive = true;
     Real electronFlux = 0.0;
     Real holeFlux = 0.0;
     Real electronFluxAbsSum = 0.0;

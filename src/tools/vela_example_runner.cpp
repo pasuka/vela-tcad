@@ -3,7 +3,10 @@
 #include "vela/io/DDSolutionCsv.h"
 #include "vela/io/MeshReader.h"
 #include "vela/material/MaterialDatabase.h"
+#include "vela/core/PhysicalConstants.h"
 #include "vela/physics/DopingModel.h"
+#include "vela/physics/CarrierStatistics.h"
+#include "vela/physics/RecombinationModel.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/core/RuntimeLog.h"
 #include "vela/core/UnitScalingSystem.h"
@@ -194,9 +197,13 @@ nlohmann::json carrierRowConvergenceJson(
             {"residual", row.residual},
             {"scale", row.scale},
             {"ratio", row.ratio},
+            {"carrier_density_m3", row.carrierDensity_m3},
             {"flux", row.flux},
             {"srh", row.recombination},
             {"impact", row.impact},
+            {"density_qualified", row.densityQualified},
+            {"flux_qualified", row.fluxQualified},
+            {"source_qualified", row.sourceQualified},
         });
     }
     return {
@@ -208,7 +215,29 @@ nlohmann::json carrierRowConvergenceJson(
         {"max_ratio", evaluation.maxRatio},
         {"max_ratio_node", evaluation.maxRatioNode},
         {"max_ratio_carrier", evaluation.maxRatioCarrier},
+        {"qualified_row_count", evaluation.qualifiedRowCount},
+        {"ignored_row_count", evaluation.ignoredRowCount},
         {"violations", std::move(violations)},
+    };
+}
+nlohmann::json globalContinuityClosureJson(
+    const vela::NewtonGlobalContinuityClosureEvaluation& evaluation)
+{
+    const auto carrier = [](const vela::NewtonGlobalContinuityCarrierClosure& value) {
+        return nlohmann::json{
+            {"qualified", value.qualified},
+            {"contact_flux", value.contactFlux},
+            {"integrated_source", value.integratedSource},
+            {"mismatch", value.mismatch},
+            {"ratio", value.ratio},
+        };
+    };
+    return {
+        {"enabled", evaluation.enabled},
+        {"enforced", evaluation.enforced},
+        {"satisfied", evaluation.satisfied},
+        {"electron", carrier(evaluation.electron)},
+        {"hole", carrier(evaluation.hole)},
     };
 }
 nlohmann::json carrierRowRecoveryJson(
@@ -260,6 +289,53 @@ vela::NewtonSolver makeNewtonSolver(const NewtonProblem& problem)
         problem.fixedCharges,
         problem.sheetCharges,
         problem.contactSpecs);
+}
+
+bool writeCellFirstSgCurrentDiagnostics(const nlohmann::json& cfg)
+{
+    if (!cfg.contains("output_diagnostics"))
+        return false;
+    const auto& diagnostics = cfg.at("output_diagnostics");
+    if (!diagnostics.is_object()) {
+        throw std::invalid_argument(
+            "output_diagnostics must be an object.");
+    }
+    return diagnostics.value("cell_first_sg_current_recovery", false);
+}
+
+void writeNewtonSolutionVtk(const std::filesystem::path& path,
+                            const NewtonProblem& problem,
+                            const vela::DDSolution& solution,
+                            bool writeCellFirstSgCurrent)
+{
+    vela::RecombinationModelConfig recombination =
+        vela::recombinationModelConfig(
+            problem.newton.recombination,
+            problem.newton.taun,
+            problem.newton.taup,
+            problem.newton.srhDopingDependence);
+    recombination.augerCn = problem.newton.augerCn;
+    recombination.augerCp = problem.newton.augerCp;
+    recombination.augerExcessProduct = problem.newton.augerExcessProduct;
+    recombination.bandToBand = problem.newton.bandToBand;
+    const vela::NewtonSolver diagnosticSolver = makeNewtonSolver(problem);
+    const std::vector<vela::CoupledDDEdgeFluxDiagnostic> edgeFluxDiagnostics =
+        diagnosticSolver.evaluateSgEdgeFluxDiagnostics(solution);
+    vela::writeDDSolutionVTK(
+        path.string(),
+        problem.mesh,
+        problem.matdb,
+        problem.doping,
+        solution,
+        problem.newton.mobility,
+        recombination,
+        problem.newton.impactIonization,
+        problem.newton.bandgapNarrowing,
+        problem.newton.temperature_K,
+        problem.newton.inputScaling,
+        problem.newton.carrierStatistics,
+        &edgeFluxDiagnostics,
+        writeCellFirstSgCurrent);
 }
 
 vela::DopingModel readNodeDopingCsv(const std::filesystem::path& path,
@@ -328,12 +404,11 @@ NewtonCliResult runNewtonConfig(const std::string& configFile, const nlohmann::j
         problem.contactSpecs);
 
     if (cfg.contains("output_vtk")) {
-        vela::writeDDSolutionVTK(
+        writeNewtonSolutionVtk(
             resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>()),
-            problem.mesh,
-            problem.doping,
+            problem,
             result.solution,
-            problem.newton.inputScaling);
+            writeCellFirstSgCurrentDiagnostics(cfg));
     }
 
     return NewtonCliResult{std::move(problem.mesh), std::move(result)};
@@ -356,12 +431,11 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
             problem.newton.inputScaling);
     }
     if (cfg.contains("output_vtk")) {
-        vela::writeDDSolutionVTK(
+        writeNewtonSolutionVtk(
             resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>()),
-            problem.mesh,
-            problem.doping,
+            problem,
             result.solution,
-            problem.newton.inputScaling);
+            writeCellFirstSgCurrentDiagnostics(cfg));
     }
 
     // On-state terminal current extraction (no re-solve). Computing ContactCurrent
@@ -429,6 +503,7 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
         {"failure_reason", result.failureDiagnostics.failureReason},
         {"final_block_residuals", blockResidualsJson(result.finalBlockNorms)},
         {"carrier_row_convergence", carrierRowConvergenceJson(result.finalCarrierRowConvergence)},
+        {"global_continuity_closure", globalContinuityClosureJson(result.finalGlobalContinuityClosure)},
         {"carrier_row_recovery", carrierRowRecoveryJson(result.carrierRowRecovery)},
         {"contact_currents_A_per_um", contactCurrentsJson},
         {"current_total_A_per_um", drivenCurrentPerMicron},
@@ -569,6 +644,227 @@ vela::DDSolution readExternalState(const std::filesystem::path& cfgDir,
         state.phip(i) = phip[static_cast<std::size_t>(i)];
     }
     return state;
+}
+
+nlohmann::json runSrhFixedStateProbe(const std::string& configFile,
+                                     const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    const vela::Index nodeCount = problem.mesh.numNodes();
+    const std::filesystem::path fieldsDir = resolvePath(
+        cfgDir, cfg.at("fixed_state_fields_dir").get<std::string>());
+    const auto read = [&](const char* field) {
+        return readNodeScalarCsv(
+            fieldsDir / (std::string(field) + "_region0.csv"), nodeCount);
+    };
+
+    const std::vector<vela::Real> electronsCm3 = read("eDensity");
+    const std::vector<vela::Real> holesCm3 = read("hDensity");
+    const std::vector<vela::Real> sdeviceNiCm3 = read("EffectiveIntrinsicDensity");
+    const std::vector<vela::Real> electrostaticPotentialV = read("ElectrostaticPotential");
+    const std::vector<vela::Real> electronQfV = read("eQuasiFermiPotential");
+    const std::vector<vela::Real> holeQfV = read("hQuasiFermiPotential");
+    const std::vector<vela::Real> sdeviceSrhCm3S = read("srhRecombination");
+
+    const vela::UnitScalingConfig scaling = vela::parseUnitScalingConfig(cfg);
+    const vela::PhysicalUnitSystem& units = scaling.unitSystem();
+    const vela::Real temperatureK = problem.newton.temperature_K;
+    const vela::Real thermalVoltageV =
+        vela::constants::kb * temperatureK / vela::constants::q;
+    const std::vector<vela::Real> productionNi =
+        vela::detail::buildValidatedEffectiveNodeNi(
+            "srh_fixed_state_probe", problem.mesh, problem.matdb,
+            problem.doping, problem.newton.bandgapNarrowing, thermalVoltageV);
+    const std::vector<vela::Real> electronDensityOfStates =
+        vela::detail::buildNodeDensityOfStates(
+            problem.mesh, problem.matdb, temperatureK, true);
+    const std::vector<vela::Real> holeDensityOfStates =
+        vela::detail::buildNodeDensityOfStates(
+            problem.mesh, problem.matdb, temperatureK, false);
+
+    const vela::RecombinationModel model(vela::recombinationModelConfig(
+        {"srh"}, problem.newton.taun, problem.newton.taup,
+        problem.newton.srhDopingDependence));
+
+    const std::filesystem::path outputPath =
+        resolvePath(cfgDir, cfg.at("output_csv").get<std::string>());
+    if (!outputPath.parent_path().empty())
+        std::filesystem::create_directories(outputPath.parent_path());
+    std::ofstream out(outputPath);
+    if (!out.is_open())
+        throw std::runtime_error(
+            "Cannot write SRH fixed-state probe CSV: " + outputPath.string());
+    out << std::setprecision(17);
+    out << "node_id,x,y,lumped_area_um2,donors_cm3,acceptors_cm3,"
+        << "electron_density_cm3,hole_density_cm3,"
+        << "qf_reconstructed_electron_density_cm3,"
+        << "qf_reconstructed_hole_density_cm3,"
+        << "sdevice_ni_eff_cm3,production_ni_eff_cm3,"
+        << "electron_qf_V,hole_qf_V,qf_splitting_V,"
+        << "electron_degeneracy_sdevice_ni,hole_degeneracy_sdevice_ni,"
+        << "generalized_np_closure_ratio,"
+        << "sdevice_srh_cm3_s,"
+        << "qf_reconstructed_production_ni_generalized_srh_cm3_s,"
+        << "exact_np_production_ni_generalized_srh_cm3_s,"
+        << "exact_np_production_ni_classical_srh_cm3_s,"
+        << "exact_np_sdevice_ni_generalized_srh_cm3_s,"
+        << "exact_np_sdevice_ni_classical_srh_cm3_s\n";
+
+    constexpr vela::Real centimetersCubedPerMetersCubed = 1.0e-6;
+    constexpr vela::Real centimetersMinus3ToMetersMinus3 = 1.0e6;
+    constexpr vela::Real sourceAreaToCurrentPerMicron = 1.0e-12;
+    const vela::Real internalLengthUm = units.internalLengthToMeters(1.0) * 1.0e6;
+    const vela::Real internalAreaUm2 = internalLengthUm * internalLengthUm;
+    auto toInternal = [&](vela::Real valueCm3) {
+        return units.m3ToInternalConcentration(
+            valueCm3 * centimetersMinus3ToMetersMinus3);
+    };
+    auto toCm3 = [&](vela::Real internal) {
+        return units.internalConcentrationToM3(internal)
+            * centimetersCubedPerMetersCubed;
+    };
+
+    vela::Real sdeviceIntegral = 0.0;
+    vela::Real qfReconstructedIntegral = 0.0;
+    vela::Real productionNiGeneralizedIntegral = 0.0;
+    vela::Real productionNiClassicalIntegral = 0.0;
+    vela::Real sdeviceNiGeneralizedIntegral = 0.0;
+    vela::Real sdeviceNiClassicalIntegral = 0.0;
+    for (vela::Index node = 0; node < nodeCount; ++node) {
+        const std::size_t i = static_cast<std::size_t>(node);
+        const vela::Real n = toInternal(electronsCm3[i]);
+        const vela::Real p = toInternal(holesCm3[i]);
+        const vela::Real niExact = toInternal(sdeviceNiCm3[i]);
+        const vela::Real niProduction = productionNi[i];
+        const vela::Real splittingV = holeQfV[i] - electronQfV[i];
+        const vela::Real qfElectron = vela::electronDensity(
+            niProduction, electronDensityOfStates[i], electrostaticPotentialV[i],
+            electronQfV[i], thermalVoltageV, problem.newton.carrierStatistics);
+        const vela::Real qfHole = vela::holeDensity(
+            niProduction, holeDensityOfStates[i], electrostaticPotentialV[i],
+            holeQfV[i], thermalVoltageV, problem.newton.carrierStatistics);
+        const vela::Real dopingConcentration = model.srhDopingConcentration(
+            problem.doping.donors(node), problem.doping.acceptors(node));
+        const vela::GeneralizedSrhCarrierState productionState =
+            vela::generalizedSrhCarrierState(
+                n, p, niProduction, electronDensityOfStates[i],
+                holeDensityOfStates[i], splittingV, thermalVoltageV,
+                problem.newton.carrierStatistics);
+        const vela::GeneralizedSrhCarrierState exactState =
+            vela::generalizedSrhCarrierState(
+                n, p, niExact, electronDensityOfStates[i],
+                holeDensityOfStates[i], splittingV, thermalVoltageV,
+                problem.newton.carrierStatistics);
+        const vela::GeneralizedSrhCarrierState qfState =
+            vela::generalizedSrhCarrierState(
+                qfElectron, qfHole, niProduction, electronDensityOfStates[i],
+                holeDensityOfStates[i], splittingV, thermalVoltageV,
+                problem.newton.carrierStatistics);
+        const vela::Real qfReconstructed =
+            model.srhRateGeneralizedFromExcessProduct(
+                qfState.excessProduct, qfElectron, qfHole,
+                niProduction, niProduction,
+                qfState.electronDegeneracy,
+                qfState.holeDegeneracy, dopingConcentration);
+        const vela::Real productionNiGeneralized =
+            model.srhRateGeneralizedFromExcessProduct(
+                productionState.excessProduct, n, p,
+                niProduction, niProduction,
+                productionState.electronDegeneracy,
+                productionState.holeDegeneracy, dopingConcentration);
+        const vela::Real productionNiClassical =
+            model.srhRate(n, p, niProduction, dopingConcentration);
+        const vela::Real sdeviceNiGeneralized =
+            model.srhRateGeneralizedFromExcessProduct(
+                exactState.excessProduct, n, p, niExact, niExact,
+                exactState.electronDegeneracy,
+                exactState.holeDegeneracy, dopingConcentration);
+        const vela::Real sdeviceNiClassical =
+            model.srhRate(n, p, niExact, dopingConcentration);
+        const vela::Real closureRatio = n * p != 0.0
+            ? (exactState.equilibriumProduct + exactState.excessProduct) / (n * p)
+            : 0.0;
+        const vela::Real areaUm2 = problem.mesh.getNode(node).volume * internalAreaUm2;
+        const vela::Real productionNiGeneralizedCm3S = toCm3(productionNiGeneralized);
+        const vela::Real qfReconstructedCm3S = toCm3(qfReconstructed);
+        const vela::Real productionNiClassicalCm3S = toCm3(productionNiClassical);
+        const vela::Real sdeviceNiGeneralizedCm3S = toCm3(sdeviceNiGeneralized);
+        const vela::Real sdeviceNiClassicalCm3S = toCm3(sdeviceNiClassical);
+        const vela::Real currentWeight =
+            vela::constants::q * areaUm2 * sourceAreaToCurrentPerMicron;
+        sdeviceIntegral += sdeviceSrhCm3S[i] * currentWeight;
+        qfReconstructedIntegral += qfReconstructedCm3S * currentWeight;
+        productionNiGeneralizedIntegral +=
+            productionNiGeneralizedCm3S * currentWeight;
+        productionNiClassicalIntegral += productionNiClassicalCm3S * currentWeight;
+        sdeviceNiGeneralizedIntegral += sdeviceNiGeneralizedCm3S * currentWeight;
+        sdeviceNiClassicalIntegral += sdeviceNiClassicalCm3S * currentWeight;
+
+        const vela::Node& meshNode = problem.mesh.getNode(node);
+        out << node << ',' << meshNode.x << ',' << meshNode.y << ',' << areaUm2 << ','
+            << toCm3(problem.doping.donors(node)) << ','
+            << toCm3(problem.doping.acceptors(node)) << ','
+            << electronsCm3[i] << ',' << holesCm3[i] << ','
+            << toCm3(qfElectron) << ',' << toCm3(qfHole) << ','
+            << sdeviceNiCm3[i] << ',' << toCm3(niProduction) << ','
+            << electronQfV[i] << ',' << holeQfV[i] << ',' << splittingV << ','
+            << exactState.electronDegeneracy << ','
+            << exactState.holeDegeneracy << ',' << closureRatio << ','
+            << sdeviceSrhCm3S[i] << ','
+            << qfReconstructedCm3S << ','
+            << productionNiGeneralizedCm3S << ','
+            << productionNiClassicalCm3S << ','
+            << sdeviceNiGeneralizedCm3S << ','
+            << sdeviceNiClassicalCm3S << '\n';
+    }
+
+    nlohmann::json summary = {
+        {"nodes", nodeCount},
+        {"temperature_K", temperatureK},
+        {"integrated_A_per_um", {
+            {"sdevice_exported", sdeviceIntegral},
+            {"qf_reconstructed_production_ni_generalized", qfReconstructedIntegral},
+            {"exact_np_production_ni_generalized", productionNiGeneralizedIntegral},
+            {"exact_np_production_ni_classical", productionNiClassicalIntegral},
+            {"exact_np_sdevice_ni_generalized", sdeviceNiGeneralizedIntegral},
+            {"exact_np_sdevice_ni_classical", sdeviceNiClassicalIntegral},
+        }},
+    };
+    if (cfg.contains("output_summary")) {
+        const std::filesystem::path summaryPath = resolvePath(
+            cfgDir, cfg.at("output_summary").get<std::string>());
+        if (!summaryPath.parent_path().empty())
+            std::filesystem::create_directories(summaryPath.parent_path());
+        std::ofstream summaryOut(summaryPath);
+        if (!summaryOut.is_open())
+            throw std::runtime_error(
+                "Cannot write SRH fixed-state summary: " + summaryPath.string());
+        summaryOut << std::setw(2) << summary << '\n';
+    }
+    return summary;
+}
+
+nlohmann::json writeDdStateVtk(const std::string& configFile,
+                               const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    const vela::DDSolution state =
+        readExternalState(cfgDir, cfg, problem.mesh.numNodes());
+    const std::filesystem::path outputPath =
+        resolvePath(cfgDir, cfg.at("output_vtk").get<std::string>());
+    if (!outputPath.parent_path().empty())
+        std::filesystem::create_directories(outputPath.parent_path());
+    const bool writeCellFirstSgCurrent =
+        writeCellFirstSgCurrentDiagnostics(cfg);
+    writeNewtonSolutionVtk(
+        outputPath, problem, state, writeCellFirstSgCurrent);
+    return {
+        {"nodes", problem.mesh.numNodes()},
+        {"output_vtk", outputPath.string()},
+        {"cell_first_sg_current_recovery", writeCellFirstSgCurrent},
+    };
 }
 
 vela::DDSolution readFeedbackReplacementState(
@@ -1456,6 +1752,86 @@ void writeNewtonJvpProbeCsv(const std::filesystem::path& path,
     }
 }
 
+struct JvpSampleRow {
+    std::string name;
+    std::string block;
+    int node = 0;
+    int residualIndex = 0;
+};
+
+std::vector<JvpSampleRow> parseJvpSampleRows(const nlohmann::json& cfg,
+                                             int nodeCount)
+{
+    std::vector<JvpSampleRow> rows;
+    if (!cfg.contains("sample_rows"))
+        return rows;
+    if (!cfg.at("sample_rows").is_array()) {
+        throw std::invalid_argument(
+            "newton_jvp_probe sample_rows must be an array.");
+    }
+    for (const auto& value : cfg.at("sample_rows")) {
+        const std::string block = value.at("block").get<std::string>();
+        const int node = value.at("node_id").get<int>();
+        if (node < 0 || node >= nodeCount) {
+            throw std::out_of_range(
+                "newton_jvp_probe sample row node id is outside the mesh.");
+        }
+        int blockIndex = -1;
+        if (block == "psi")
+            blockIndex = 0;
+        else if (block == "phin")
+            blockIndex = 1;
+        else if (block == "phip")
+            blockIndex = 2;
+        else {
+            throw std::invalid_argument(
+                "newton_jvp_probe sample row block must be psi, phin, or phip.");
+        }
+        rows.push_back({
+            value.value("name", block + "_" + std::to_string(node)),
+            block,
+            node,
+            blockIndex * nodeCount + node,
+        });
+    }
+    return rows;
+}
+
+void writeNewtonJvpSampleRowCsv(const std::filesystem::path& path,
+                                const std::vector<nlohmann::json>& rows)
+{
+    std::ofstream out(path);
+    if (!out.is_open()) {
+        throw std::runtime_error(
+            "Cannot write Newton JVP sample-row CSV: " + path.string());
+    }
+    out << std::setprecision(17);
+    out << "direction,direction_mode,amplitude_V,sample_name,row_block,row_node,"
+        << "residual_index,base_residual,forward_residual,backward_residual,"
+        << "analytic_change,finite_difference_change,analytic_derivative,"
+        << "finite_difference_derivative,absolute_derivative_error,"
+        << "relative_derivative_error\n";
+    for (const auto& row : rows) {
+        out << row.at("direction").get<std::string>() << ','
+            << row.at("direction_mode").get<std::string>() << ','
+            << row.at("amplitude_V").get<vela::Real>() << ','
+            << row.at("sample_name").get<std::string>() << ','
+            << row.at("row_block").get<std::string>() << ','
+            << row.at("row_node").get<int>() << ','
+            << row.at("residual_index").get<int>() << ','
+            << row.at("base_residual").get<vela::Real>() << ','
+            << row.at("forward_residual").get<vela::Real>() << ','
+            << row.at("backward_residual").get<vela::Real>() << ','
+            << row.at("analytic_change").get<vela::Real>() << ','
+            << row.at("finite_difference_change").get<vela::Real>() << ','
+            << row.at("analytic_derivative").get<vela::Real>() << ','
+            << row.at("finite_difference_derivative").get<vela::Real>() << ','
+            << row.at("absolute_derivative_error").get<vela::Real>() << ','
+            << row.at("relative_derivative_error").get<vela::Real>()
+            << '\n';
+    }
+}
+
 nlohmann::json runNewtonJvpProbe(const std::string& configFile, const nlohmann::json& cfg)
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
@@ -1467,7 +1843,9 @@ nlohmann::json runNewtonJvpProbe(const std::string& configFile, const nlohmann::
         throw std::invalid_argument("newton_jvp_probe requires a directions array.");
 
     const int n = static_cast<int>(problem.mesh.numNodes());
+    const std::vector<JvpSampleRow> sampleRows = parseJvpSampleRows(cfg, n);
     std::vector<nlohmann::json> rows;
+    std::vector<nlohmann::json> sampledRows;
     vela::Real maxRelativeError = 0.0;
     for (const auto& directionConfig : cfg.at("directions")) {
         const JvpProbeDirection direction = makeJvpProbeDirection(
@@ -1520,15 +1898,66 @@ nlohmann::json runNewtonJvpProbe(const std::string& configFile, const nlohmann::
             {"finite_difference_at_max_error", maxErrorIndex >= 0
                 ? jvp.finiteDifferenceJv(maxErrorIndex) : 0.0},
         });
+
+        for (const JvpSampleRow& sample : sampleRows) {
+            const int index = sample.residualIndex;
+            const vela::Real analyticChange = jvp.analyticJv(index);
+            const vela::Real finiteDifferenceChange =
+                jvp.finiteDifferenceJv(index);
+            const vela::Real analyticDerivative =
+                analyticChange / direction.amplitude_V;
+            const vela::Real finiteDifferenceDerivative =
+                finiteDifferenceChange / direction.amplitude_V;
+            const vela::Real absoluteError =
+                std::abs(analyticDerivative - finiteDifferenceDerivative);
+            const vela::Real reference = std::max(
+                std::abs(analyticDerivative),
+                std::abs(finiteDifferenceDerivative));
+            sampledRows.push_back({
+                {"direction", direction.name},
+                {"direction_mode", direction.mode},
+                {"amplitude_V", direction.amplitude_V},
+                {"sample_name", sample.name},
+                {"row_block", sample.block},
+                {"row_node", sample.node},
+                {"residual_index", index},
+                {"base_residual", jvp.residual.raw(index)},
+                {"forward_residual", jvp.forwardResidual(index)},
+                {"backward_residual", jvp.backwardResidual(index)},
+                {"analytic_change", analyticChange},
+                {"finite_difference_change", finiteDifferenceChange},
+                {"analytic_derivative", analyticDerivative},
+                {"finite_difference_derivative", finiteDifferenceDerivative},
+                {"absolute_derivative_error", absoluteError},
+                {"relative_derivative_error",
+                 reference > 0.0 ? absoluteError / reference : 0.0},
+            });
+        }
     }
 
     writeNewtonJvpProbeCsv(
         resolvePath(cfgDir, cfg.at("output_csv").get<std::string>()),
         rows);
+    std::optional<std::filesystem::path> sampleOutputPath;
+    if (!sampleRows.empty()) {
+        if (!cfg.contains("row_output_csv")) {
+            throw std::invalid_argument(
+                "newton_jvp_probe row_output_csv is required when sample_rows are provided.");
+        }
+        sampleOutputPath =
+            resolvePath(cfgDir, cfg.at("row_output_csv").get<std::string>());
+        if (!sampleOutputPath->parent_path().empty())
+            std::filesystem::create_directories(sampleOutputPath->parent_path());
+        writeNewtonJvpSampleRowCsv(*sampleOutputPath, sampledRows);
+    }
     return {
         {"nodes", problem.mesh.numNodes()},
         {"direction_count", rows.size()},
         {"max_relative_error", maxRelativeError},
+        {"sample_row_count", sampleRows.size()},
+        {"sample_record_count", sampledRows.size()},
+        {"row_output_csv",
+         sampleOutputPath.has_value() ? sampleOutputPath->string() : std::string{}},
         {"directions", rows},
     };
 }
@@ -2496,10 +2925,20 @@ nlohmann::json runNewtonJacobianBlockProbe(const std::string& configFile,
         for (const auto& value : cfg.at("blocks"))
             blocks.push_back(value.get<std::string>());
     }
+    std::vector<vela::Index> columnNodes;
+    if (cfg.contains("column_nodes")) {
+        if (!cfg.at("column_nodes").is_array()) {
+            throw std::invalid_argument(
+                "newton_jacobian_block_probe column_nodes must be an array.");
+        }
+        for (const auto& value : cfg.at("column_nodes"))
+            columnNodes.push_back(value.get<vela::Index>());
+    }
 
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
     const auto rows =
-        solver.evaluateJacobianBlockAudit(state, fdStep, blocks, fdMode);
+        solver.evaluateJacobianBlockAudit(
+            state, fdStep, blocks, fdMode, columnNodes);
 
     const std::filesystem::path outputPath =
         resolvePath(cfgDir, cfg.at("output_csv").get<std::string>());
@@ -2556,6 +2995,7 @@ nlohmann::json runNewtonJacobianBlockProbe(const std::string& configFile,
     nlohmann::json result = {
         {"nodes", problem.mesh.numNodes()},
         {"blocks", rows.size()},
+        {"column_nodes", columnNodes},
         {"finite_difference_mode", fdMode},
         {"output_csv", outputPath.string()},
     };
@@ -2663,6 +3103,8 @@ int main(int argc, char** argv)
             status["final_block_residuals"] = blockResidualsJson(result.result.finalBlockNorms);
             status["carrier_row_convergence"] =
                 carrierRowConvergenceJson(result.result.finalCarrierRowConvergence);
+            status["global_continuity_closure"] =
+                globalContinuityClosureJson(result.result.finalGlobalContinuityClosure);
             status["carrier_row_recovery"] =
                 carrierRowRecoveryJson(result.result.carrierRowRecovery);
             if (includeMeshReport)
@@ -2689,6 +3131,10 @@ int main(int argc, char** argv)
             status.update(runNewtonCarrierBlockDecompositionProbe(configFile, cfg));
         } else if (type == "newton_carrier_term_probe") {
             status.update(runNewtonCarrierTermProbe(configFile, cfg));
+        } else if (type == "srh_fixed_state_probe") {
+            status.update(runSrhFixedStateProbe(configFile, cfg));
+        } else if (type == "write_dd_state_vtk") {
+            status.update(writeDdStateVtk(configFile, cfg));
         } else if (type == "sg_edge_flux_probe") {
             status.update(runSgEdgeFluxProbe(configFile, cfg));
         } else if (type == "transport_edge_jacobian_probe") {

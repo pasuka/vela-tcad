@@ -1,0 +1,705 @@
+{
+  "_comment": "Generated from explicit reference TCAD CSV export. Coordinates, doping, mobility-like inputs, fields, and sheet densities use scaling.mode = unit_scaling conventions.",
+  "simulation_type": "dc_sweep",
+  "mesh_file": "../mesh.json",
+  "output_csv": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dg_idvd_curve.csv",
+  "scaling": {
+    "mode": "unit_scaling"
+  },
+  "node_doping_file": "../doping.csv",
+  "doping": [
+    {
+      "region": "R.Gateox",
+      "donors": 2.8820530107209128e+20,
+      "acceptors": 1.1076923076923095e+18
+    },
+    {
+      "region": "R.PolyReox",
+      "donors": 1.0000000000000008e+20,
+      "acceptors": 0.0
+    },
+    {
+      "region": "R.PolyReox_mirrored",
+      "donors": 1.0000000000000008e+20,
+      "acceptors": 0.0
+    },
+    {
+      "region": "R.Substrate",
+      "donors": 2.3980975447627448e+20,
+      "acceptors": 1.5000000000000023e+18
+    },
+    {
+      "region": "R.Polygate",
+      "donors": 1.0000000000000008e+20,
+      "acceptors": 0.0
+    },
+    {
+      "region": "R.Spacer",
+      "donors": 0.0,
+      "acceptors": 0.0
+    },
+    {
+      "region": "R.Spacer_mirrored",
+      "donors": 0.0,
+      "acceptors": 0.0
+    }
+  ],
+  "contacts": [
+    {
+      "name": "gate",
+      "bias": 1.0,
+      "type": "ohmic"
+    },
+    {
+      "name": "substrate",
+      "bias": 0.0,
+      "type": "ohmic"
+    },
+    {
+      "name": "drain",
+      "bias": 0.0,
+      "type": "ohmic"
+    },
+    {
+      "name": "source",
+      "bias": 0.0,
+      "type": "ohmic"
+    }
+  ],
+  "solver": {
+    "method": "newton",
+    "max_iter": 100,
+    "reltol": 1e-07,
+    "damping_psi": 0.35,
+    "mobility": {
+      "model": "masetti_field_lombardi",
+      "high_field_driving_force": "quasi_fermi_gradient",
+      "high_field_gradient_discretization": "transport_cell_vector"
+    },
+    "recombination": [
+      "srh"
+    ],
+    "srh_doping_dependence": {
+      "enabled": true,
+      "concentration_basis": "total_impurity",
+      "temperature_dependence": true,
+      "reference_temperature_K": 300.0,
+      "electron_temperature_exponent": -1.5,
+      "hole_temperature_exponent": -1.5,
+      "electron": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 3e-08,
+        "reference_doping_m3": 1e+16,
+        "gamma": 1.0
+      },
+      "hole": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 3e-06,
+        "reference_doping_m3": 1e+16,
+        "gamma": 1.0
+      }
+    },
+    "electron_quantum_potential": {
+      "enabled": true,
+      "gamma": 3.6,
+      "effective_mass_ratio": 1.0618016171622988,
+      "include_insulators": true,
+      "insulator_gamma": 1.0,
+      "insulator_effective_mass_ratio": 0.42,
+      "interface_boundary": "homogeneous_neumann",
+      "theta": 0.5,
+      "conduction_band_narrowing_fraction": 0.5,
+      "outer_max_iterations": 80,
+      "max_iterations": 60,
+      "damping": 0.5,
+      "coupling_mode": "outer",
+      "formulation": "potential_based",
+      "global_discretization": "sentaurus_box",
+      "coefficient_mass_ratio": 1.0906506732296395,
+      "outer_absolute_tolerance_V": 0.01,
+      "outer_acceleration": "none",
+      "outer_relaxation": 1.0,
+      "outer_relaxation_min": 0.1,
+      "outer_relaxation_max": 1.0,
+      "sentaurus_interface_insulator_half_jump_offset": 0.0,
+      "sentaurus_interface_silicon_half_jump_offset": 0.0,
+      "sentaurus_interface_polysilicon_half_jump_offset": 0.0,
+      "sentaurus_interface_silicon_reaction_weight": 1.0,
+      "sentaurus_interface_polysilicon_reaction_weight": 1.0,
+      "sentaurus_interface_insulator_at_silicon_reaction_weight": 1.0,
+      "sentaurus_interface_insulator_at_polysilicon_reaction_weight": 1.0,
+      "sentaurus_interface_silicon_reaction_offset_V": 0.0,
+      "sentaurus_interface_polysilicon_reaction_offset_V": 0.0,
+      "sentaurus_interface_insulator_at_silicon_reaction_offset_V": 0.0,
+      "sentaurus_interface_insulator_at_polysilicon_reaction_offset_V": 0.0,
+      "sentaurus_insulator_reentrant_corner_reaction_weight": 1.0
+    },
+    "bandgap_narrowing": {
+      "model": "old_slotboom",
+      "fermi_statistics_correction": true
+    },
+    "carrier_statistics": {
+      "model": "fermi_dirac"
+    },
+    "abstol": 1e-12,
+    "warm_start": true,
+    "verbose": false,
+    "quasi_fermi_update_limit_V": 0.025,
+    "srh_density_coupling": "sentaurus_default",
+    "quasi_fermi_reference": "contact_basin",
+    "line_search_mode": "block_filter",
+    "residual_filter_gamma": 0.0001,
+    "residual_filter_envelope_factor": 2.0,
+    "continuity_row_scaling": {
+      "enabled": true,
+      "flux_fraction": 0.001,
+      "scale_floor": 1e-30,
+      "min_source_scale": 1e-18,
+      "min_weight": 1e-12,
+      "max_weight": 1000000000000.0
+    }
+  },
+  "sweep": {
+    "mode": "iv",
+    "contact": "drain",
+    "current_contact": "drain",
+    "start": 0.1,
+    "stop": 2.0,
+    "step": 0.1,
+    "write_vtk": false,
+    "write_state_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dg_idvd_curve_final_state.csv",
+    "write_state_every_point_prefix": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dg_idvd_curve_state",
+    "diagnostics": {
+      "transport": {
+        "enabled": true
+      },
+      "terminal_balance": {
+        "enabled": true,
+        "contacts": [
+          "source",
+          "drain",
+          "gate",
+          "substrate"
+        ],
+        "csv_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dg_idvd_curve_terminal_balance.csv"
+      }
+    },
+    "initial_state_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dg_idvd_equilibrium_final_state.csv",
+    "initial_step": 0.1,
+    "min_step": 1e-05,
+    "max_step": 0.1,
+    "shrink_factor": 0.5,
+    "growth_factor": 1.5,
+    "max_retries": 20,
+    "stop_on_failure": true
+  },
+  "sentaurus_import": {
+    "cmd_summary": {
+      "template_variables": {},
+      "unresolved_placeholders": [],
+      "files": {
+        "Grid": "n1_msh.tdr",
+        "Plot": "n13_des.tdr",
+        "Parameter": "pp13_des.par",
+        "Current": "n13_des.plt",
+        "Output": "n13_des.log"
+      },
+      "electrodes": [
+        {
+          "name": "source",
+          "voltage": 0.0
+        },
+        {
+          "name": "drain",
+          "voltage": 0.0
+        },
+        {
+          "name": "gate",
+          "voltage": 1.0
+        },
+        {
+          "name": "substrate",
+          "voltage": 0.0
+        }
+      ],
+      "thermodes": [
+        {
+          "name": "substrate",
+          "temperature": 300.0,
+          "surface_resistance": 0.0005
+        },
+        {
+          "name": "drain",
+          "temperature": 300.0,
+          "surface_resistance": 0.001
+        },
+        {
+          "name": "source",
+          "temperature": 300.0,
+          "surface_resistance": 0.001
+        }
+      ],
+      "physics": [
+        {
+          "scope": {
+            "kind": "global"
+          },
+          "parameters": {},
+          "models": [
+            "DopingDep",
+            "DriftDiffusion",
+            "EffectiveIntrinsicDensity",
+            "Enormal",
+            "Fermi",
+            "GradQuasiFermi",
+            "Mobility",
+            "OldSlotboom",
+            "Recombination",
+            "SRH",
+            "TempDependence",
+            "eHighFieldsaturation",
+            "eQuantumPotential",
+            "hHighFieldsaturation"
+          ]
+        }
+      ],
+      "plot_fields": [
+        {
+          "name": "Density",
+          "vector": false
+        },
+        {
+          "name": "and",
+          "vector": false
+        },
+        {
+          "name": "Currents",
+          "vector": false
+        },
+        {
+          "name": "etc",
+          "vector": false
+        },
+        {
+          "name": "eDensity",
+          "vector": false
+        },
+        {
+          "name": "hDensity",
+          "vector": false
+        },
+        {
+          "name": "TotalCurrent",
+          "vector": true
+        },
+        {
+          "name": "eCurrent",
+          "vector": true
+        },
+        {
+          "name": "hCurrent",
+          "vector": true
+        },
+        {
+          "name": "eMobility",
+          "vector": false
+        },
+        {
+          "name": "hMobility",
+          "vector": false
+        },
+        {
+          "name": "eVelocity",
+          "vector": false
+        },
+        {
+          "name": "hVelocity",
+          "vector": false
+        },
+        {
+          "name": "eQuasiFermi",
+          "vector": false
+        },
+        {
+          "name": "hQuasiFermi",
+          "vector": false
+        },
+        {
+          "name": "Temperature",
+          "vector": false
+        },
+        {
+          "name": "eTemperature",
+          "vector": false
+        },
+        {
+          "name": "Temperature",
+          "vector": false
+        },
+        {
+          "name": "hTemperature",
+          "vector": false
+        },
+        {
+          "name": "Fields",
+          "vector": false
+        },
+        {
+          "name": "and",
+          "vector": false
+        },
+        {
+          "name": "charges",
+          "vector": false
+        },
+        {
+          "name": "ElectricField",
+          "vector": true
+        },
+        {
+          "name": "Potential",
+          "vector": false
+        },
+        {
+          "name": "SpaceCharge",
+          "vector": false
+        },
+        {
+          "name": "Doping",
+          "vector": false
+        },
+        {
+          "name": "Profiles",
+          "vector": false
+        },
+        {
+          "name": "Doping",
+          "vector": false
+        },
+        {
+          "name": "DonorConcentration",
+          "vector": false
+        },
+        {
+          "name": "AcceptorConcentration",
+          "vector": false
+        },
+        {
+          "name": "Generation",
+          "vector": false
+        },
+        {
+          "name": "Recombination",
+          "vector": false
+        },
+        {
+          "name": "SRH",
+          "vector": false
+        },
+        {
+          "name": "Band2Band",
+          "vector": false
+        },
+        {
+          "name": "Auger",
+          "vector": false
+        },
+        {
+          "name": "ImpactIonization",
+          "vector": false
+        },
+        {
+          "name": "eImpactIonization",
+          "vector": false
+        },
+        {
+          "name": "hImpactIonization",
+          "vector": false
+        },
+        {
+          "name": "Driving",
+          "vector": false
+        },
+        {
+          "name": "forces",
+          "vector": false
+        },
+        {
+          "name": "eGradQuasiFermi",
+          "vector": true
+        },
+        {
+          "name": "hGradQuasiFermi",
+          "vector": true
+        },
+        {
+          "name": "eEparallel",
+          "vector": false
+        },
+        {
+          "name": "hEparallel",
+          "vector": false
+        },
+        {
+          "name": "eENormal",
+          "vector": false
+        },
+        {
+          "name": "hENormal",
+          "vector": false
+        },
+        {
+          "name": "Band",
+          "vector": false
+        },
+        {
+          "name": "structure",
+          "vector": false
+        },
+        {
+          "name": "Composition",
+          "vector": false
+        },
+        {
+          "name": "BandGap",
+          "vector": false
+        },
+        {
+          "name": "BandGapNarrowing",
+          "vector": false
+        },
+        {
+          "name": "Affinity",
+          "vector": false
+        },
+        {
+          "name": "ConductionBand",
+          "vector": false
+        },
+        {
+          "name": "ValenceBand",
+          "vector": false
+        },
+        {
+          "name": "eQuantumPotential",
+          "vector": false
+        }
+      ],
+      "math": {
+        "parameters": {
+          "Iterations": 20.0,
+          "Notdamped": 100.0,
+          "Method": "Blocked",
+          "SubMethod": "Pardiso"
+        },
+        "flags": [
+          "Extrapolate"
+        ]
+      },
+      "solve": {
+        "initial_steps": [
+          {
+            "type": "Coupled",
+            "parameters": {
+              "Iterations": 100.0
+            },
+            "equations": [
+              "Poisson",
+              "eQuantumPotential"
+            ]
+          },
+          {
+            "type": "Coupled",
+            "parameters": {},
+            "equations": [
+              "Poisson",
+              "Electron",
+              "Hole",
+              "eQuantumPotential"
+            ]
+          }
+        ],
+        "new_current_files": [
+          "init_",
+          "IdVds_"
+        ],
+        "sweeps": [
+          {
+            "mode": "quasistationary",
+            "contact": "drain",
+            "stop": 2.0,
+            "step_control": {
+              "InitialStep": 0.001,
+              "MinStep": 1e-05,
+              "MaxStep": 1.0
+            },
+            "equations": [
+              "Poisson",
+              "Electron",
+              "Hole",
+              "eQuantumPotential"
+            ],
+            "current_plot": {
+              "raw": "Time=(Range=(0 1) Intervals=20)",
+              "intervals": 20,
+              "range": [
+                0.0,
+                1.0
+              ]
+            },
+            "current_file_prefix": "IdVds_"
+          }
+        ],
+        "events": [
+          {
+            "phase": "initial",
+            "type": "Coupled",
+            "parameters": {
+              "Iterations": 100.0
+            },
+            "equations": [
+              "Poisson",
+              "eQuantumPotential"
+            ]
+          },
+          {
+            "phase": "initial",
+            "type": "Coupled",
+            "parameters": {},
+            "equations": [
+              "Poisson",
+              "Electron",
+              "Hole",
+              "eQuantumPotential"
+            ]
+          },
+          {
+            "phase": "sweep",
+            "type": "Quasistationary",
+            "contact": "drain",
+            "goal_voltage": 2.0,
+            "step_control": {
+              "InitialStep": 0.001,
+              "MinStep": 1e-05,
+              "MaxStep": 1.0
+            },
+            "equations": [
+              "Poisson",
+              "Electron",
+              "Hole",
+              "eQuantumPotential"
+            ],
+            "current_prefix": "IdVds_",
+            "current_plot": {
+              "raw": "Time=(Range=(0 1) Intervals=20)",
+              "intervals": 20,
+              "range": [
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "sweeps": [
+        {
+          "mode": "quasistationary",
+          "contact": "drain",
+          "stop": 2.0,
+          "step_control": {
+            "InitialStep": 0.001,
+            "MinStep": 1e-05,
+            "MaxStep": 1.0
+          },
+          "equations": [
+            "Poisson",
+            "Electron",
+            "Hole",
+            "eQuantumPotential"
+          ],
+          "current_plot": {
+            "raw": "Time=(Range=(0 1) Intervals=20)",
+            "intervals": 20,
+            "range": [
+              0.0,
+              1.0
+            ]
+          },
+          "current_file_prefix": "IdVds_"
+        }
+      ],
+      "unsupported_physics": [],
+      "unsupported_report": []
+    },
+    "source_simulation": {
+      "name": "dg_idvd",
+      "kind": "iv",
+      "execute": false,
+      "tdr": "n13_des.tdr",
+      "cmd": "pp13_des.cmd",
+      "plt": "IdVds_n13_des.plt",
+      "bias_column": "drain OuterVoltage",
+      "current_column": "drain TotalCurrent",
+      "vela_current_contact": "drain",
+      "vela_start": 0.0,
+      "vela_stop": 2.0,
+      "vela_step": 0.1,
+      "vela_materials_file": "materials_sentaurus2022.json",
+      "vela_contact_overrides": [
+        {
+          "name": "source",
+          "type": "ohmic",
+          "bias": 0.0
+        },
+        {
+          "name": "drain",
+          "type": "ohmic",
+          "bias": 0.0
+        },
+        {
+          "name": "gate",
+          "type": "ohmic",
+          "bias": 1.0
+        },
+        {
+          "name": "substrate",
+          "type": "ohmic",
+          "bias": 0.0
+        }
+      ],
+      "comparison": {
+        "candidate_column": "current_total_A_per_um",
+        "interpolation": "log_current",
+        "bias_min": 0.1,
+        "bias_max": 2.0,
+        "max_orders_of_magnitude": 0.2,
+        "max_relative_error": 0.1,
+        "require_trend_match": true,
+        "min_points": 20
+      }
+    }
+  },
+  "materials_file": "../materials_sentaurus2022.json",
+  "log_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dg_idvd_curve.log",
+  "fixed_regression_contract": {
+    "id": "transportmodels-dd-dg-sentaurus2022-v1",
+    "path": "../../../../configs/regression/transportmodels_dd_dg_sentaurus2022_v1.json",
+    "sha256": "0513b486661fb7ae788f108782d79a5ded75e3f3c7f55216c51eaf0eec14cbec",
+    "materials_sha256": "e00fa2d0585aa75d624d8275b91e76b7e412ca0d60c33bf591ba9ffa44bac12f",
+    "branch": "dg"
+  },
+  "continuous_baseline_contract": {
+    "id": "transportmodels-dd-dg-continuous-contact-basin-v1",
+    "path": "../../../../configs/regression/transportmodels_dd_dg_continuous_v1.json",
+    "sha256": "cbd40c071d273dc6da597a0428f59434d66762c84aa304635592f0465ac7f777",
+    "rules": {
+      "one_process_per_curve": true,
+      "immutable_curve_config": true,
+      "previous_accepted_state_only": true,
+      "external_restart_forbidden": true,
+      "historical_same_bias_seed_forbidden": true,
+      "pointwise_reclosure_forbidden": true,
+      "interpolation_forbidden": true
+    }
+  }
+}

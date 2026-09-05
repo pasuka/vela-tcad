@@ -1,0 +1,29 @@
+Material = "Silicon" {
+**************************  Recombination Models:
+*****************************
+* Variable = electron value ,   hole value      #[units]                     *
+*******************************************************************************
+Scharfetter * relation and trap level for SRH recombination:
+{ * tau = taumin + ( taumax - taumin ) / ( 1 + ( N/Nref )^gamma)
+  * tau(T) = tau * ( (T/300)^Talpha )          (TempDep)
+  * tau(T) = tau * exp( Tcoeff * ((T/300)-1) ) (ExpTempDep)
+	taumin	= 0.0000e+00 ,	0.0000e+00	# [s]
+	taumax	= 3.0000e-08 ,	3.0000e-06	# [s]
+	Nref	= 1.0000e+16 ,	1.0000e+16	# [cm^(-3)]
+	gamma	= 1 ,	1	# [1]
+	Talpha	= -1.5000e+00 ,	-1.5000e+00	# [1]
+	Tcoeff	= 2.55 ,	2.55	# [1]
+	Etrap	= 0.0000e+00	# [eV]
+}
+
+
+EnergyRelaxationTime
+{ *  Energy relaxation times in picoseconds
+	(tau_w)_ele	= 0.2	# [ps]
+	(tau_w)_hol	= 0.2	# [ps]
+}
+
+
+
+
+}

@@ -1,0 +1,63 @@
+{
+  "schema": "vela.transportmodels.dd_dg.continuous_numerical_contract.v1",
+  "contract_id": "transportmodels-dd-dg-continuous-contact-basin-v1",
+  "description": "Strict single-pass continuation overlay for the frozen Sentaurus 2022 TransportModels DD/DG baseline. Each curve is solved by one process, one immutable configuration and only the last accepted state; no external restart, historical same-bias seed or pointwise reclosure is allowed.",
+  "base_contract": "transportmodels_dd_dg_sentaurus2022_v1.json",
+  "solver_numerics": {
+    "quasi_fermi_reference": "contact_basin",
+    "line_search_mode": "block_filter",
+    "residual_filter_gamma": 0.0001,
+    "residual_filter_envelope_factor": 2.0,
+    "continuity_row_scaling": {
+      "enabled": true,
+      "flux_fraction": 0.001,
+      "scale_floor": 1e-30,
+      "min_source_scale": 1e-18,
+      "min_weight": 1e-12,
+      "max_weight": 1e12
+    }
+  },
+  "adaptive_sweep": {
+    "shrink_factor": 0.5,
+    "growth_factor": 1.5,
+    "max_retries": 20,
+    "min_step_V": 1e-5,
+    "stop_on_failure": true
+  },
+  "deep_off_kcl_acceptance": {
+    "contacts": [
+      "source",
+      "drain",
+      "gate",
+      "substrate"
+    ],
+    "min_current_to_kcl_ratio": 10.0,
+    "global_continuity_closure": {
+      "mode": "enforce",
+      "tolerance": 0.1,
+      "source_floor": 1e-12
+    }
+  },
+  "idvd_initialization": {
+    "dd": {
+      "mode": "direct_equilibrium",
+      "gate_bias_V": 1.0
+    },
+    "dg": {
+      "mode": "continuous_gate_ramp",
+      "gate_start_V": -1.0,
+      "gate_stop_V": 1.0,
+      "gate_step_V": 0.1
+    },
+    "description": "DD retains its verified direct Vg=1 V equilibrium. DG starts from its verified Vg=-1 V cold equilibrium and, in the same process, monotonically ramps the gate to Vg=1 V before the drain sweep. Each branch uses only its immediately preceding accepted state."
+  },
+  "rules": {
+    "one_process_per_curve": true,
+    "immutable_curve_config": true,
+    "previous_accepted_state_only": true,
+    "external_restart_forbidden": true,
+    "historical_same_bias_seed_forbidden": true,
+    "pointwise_reclosure_forbidden": true,
+    "interpolation_forbidden": true
+  }
+}

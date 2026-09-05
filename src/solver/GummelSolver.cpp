@@ -4,6 +4,7 @@
 #include "vela/core/RuntimeLog.h"
 #include "vela/core/UnitScalingSystem.h"
 #include "vela/equation/AssemblerUtils.h"
+#include "vela/equation/CoupledDDAssembler.h"
 #include "vela/equation/DDAssembler.h"
 #include "vela/solver/LinearSolver.h"
 #include "vela/physics/CarrierStatistics.h"
@@ -144,6 +145,8 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         json.value("auger_cn_m6_per_s", cfg.augerCn));
     cfg.augerCp = scaling.augerCoefficientToInternal(
         json.value("auger_cp_m6_per_s", cfg.augerCp));
+    cfg.augerExcessProduct = json.value(
+        "auger_excess_product", cfg.augerExcessProduct);
     cfg.carrierFloor = json.value("carrier_floor_m3", cfg.carrierFloor);
     if (json.contains("mobility"))
         cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"), scaling);
@@ -330,6 +333,12 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     if (cfg.carrierFloor < 0.0 || !std::isfinite(cfg.carrierFloor))
         throw std::invalid_argument(
             "gummelConfigFromJson: carrier_floor_m3 must be non-negative and finite.");
+    if (cfg.augerExcessProduct != "generalized_fermi" &&
+        cfg.augerExcessProduct != "classical_np") {
+        throw std::invalid_argument(
+            "gummelConfigFromJson: auger_excess_product must be "
+            "'generalized_fermi' or 'classical_np'.");
+    }
 
     return cfg;
 }
@@ -572,6 +581,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
             cfg.recombination, cfg.taun, cfg.taup, cfg.srhDopingDependence);
     recombinationConfig.augerCn = cfg.augerCn;
     recombinationConfig.augerCp = cfg.augerCp;
+    recombinationConfig.augerExcessProduct = cfg.augerExcessProduct;
     recombinationConfig.bandToBand = cfg.bandToBand;
     DDAssembler assembler(
         mesh,
@@ -1020,7 +1030,10 @@ void writeDDSolutionVTK(const std::string& filename,
                         const BandgapNarrowingConfig& bandgapNarrowingConfig,
                         Real temperature_K,
                         UnitScalingConfig scaling,
-                        const CarrierStatisticsConfig& carrierStatistics)
+                        const CarrierStatisticsConfig& carrierStatistics,
+                        const std::vector<CoupledDDEdgeFluxDiagnostic>*
+                            sgEdgeFluxDiagnostics,
+                        bool writeCellFirstSgCurrentDiagnostics)
 {
     const Index N = mesh.numNodes();
     VTKWriter writer(filename, mesh);
@@ -1214,6 +1227,8 @@ void writeDDSolutionVTK(const std::string& filename,
 
     std::vector<Real> srh(N, 0.0);
     std::vector<Real> srh_cm3_s(N, 0.0);
+    std::vector<Real> auger(N, 0.0);
+    std::vector<Real> auger_cm3_s(N, 0.0);
     std::vector<Real> spaceCharge_cm3(N, 0.0);
     std::vector<Real> bandGap_eV(N, std::numeric_limits<Real>::quiet_NaN());
     std::vector<Real> bandgapNarrowing_eV(
@@ -1351,7 +1366,12 @@ void writeDDSolutionVTK(const std::string& filename,
             valenceBandEnergy_eV[i] =
                 conductionBandEnergy_eV[i] - transportBandgap;
         }
-        const Real ni = effectiveIntrinsicDensity(nodeMaterials[i].ni, Vt, deltaEg);
+        // Use the same effective intrinsic density as the solver.  Rebuilding
+        // it from DeltaEg alone drops the optional Fermi-statistics BGN
+        // correction and makes exported SRH/Auger fields inconsistent with
+        // the continuity equations even though EffectiveIntrinsicDensity is
+        // exported correctly above.
+        const Real ni = effectiveNi[i];
         // Match the cancellation-free source used by CoupledDDAssembler.
         // Re-forming n*p-ni^2 from rounded output densities can create a
         // completely artificial SRH rate in deep depletion.  Referenced
@@ -1374,6 +1394,12 @@ void writeDDSolutionVTK(const std::string& filename,
                 doping.donors(i), doping.acceptors(i)));
         srh_cm3_s[i] =
             srh[i] * units.concentrationM3PerInternal() / 1.0e6;
+        auger[i] = recombination.usesClassicalAugerExcessProduct()
+            ? recombination.augerRate(n, p, ni)
+            : recombination.augerRateFromExcessProduct(
+                srhState.excessProduct, n, p);
+        auger_cm3_s[i] =
+            auger[i] * units.concentrationM3PerInternal() / 1.0e6;
         bandToBandGeneration[i] = transportNodeAreas[i] > 0.0
             ? bandToBandSourceIntegrals[i] / transportNodeAreas[i]
             : 0.0;
@@ -1550,6 +1576,8 @@ void writeDDSolutionVTK(const std::string& filename,
         static_cast<std::size_t>(N), sol.psi, pathIonizationSamples);
     writer.addNodeScalar("SRHRecombination", srh);
     writer.addNodeScalar("SRHRecombinationCm3PerS", srh_cm3_s);
+    writer.addNodeScalar("AugerRecombination", auger);
+    writer.addNodeScalar("AugerRecombinationCm3PerS", auger_cm3_s);
     writer.addNodeScalar("SpaceCharge", spaceCharge_cm3);
     writer.addNodeScalar("BandGap", bandGap_eV);
     writer.addNodeScalar("BandgapNarrowing", bandgapNarrowing_eV);
@@ -1630,6 +1658,127 @@ void writeDDSolutionVTK(const std::string& filename,
     writer.addNodeVector(
         "NodeReconstructedTotalCurrentDensityVector",
         totalCurrentDensity_A_cm2);
+    if (sgEdgeFluxDiagnostics != nullptr) {
+        std::vector<Real> electronProjection_A_cm2(
+            static_cast<std::size_t>(mesh.numEdges()), 0.0);
+        std::vector<Real> holeProjection_A_cm2(
+            static_cast<std::size_t>(mesh.numEdges()), 0.0);
+        std::vector<bool> activeElectron(
+            static_cast<std::size_t>(mesh.numEdges()), false);
+        std::vector<bool> activeHole(
+            static_cast<std::size_t>(mesh.numEdges()), false);
+        for (const CoupledDDEdgeFluxDiagnostic& edge : *sgEdgeFluxDiagnostics) {
+            if (edge.edgeId >= mesh.numEdges())
+                throw std::out_of_range(
+                    "writeDDSolutionVTK: SG diagnostic edge is outside the mesh.");
+            const Real dualFace_m =
+                units.internalLengthToMeters(edge.couple_m);
+            if (!(dualFace_m > 0.0))
+                continue;
+            const std::size_t edgeId = static_cast<std::size_t>(edge.edgeId);
+            electronProjection_A_cm2[edgeId] =
+                -constants::q * edge.electronParticleLineFlux_per_m_s /
+                dualFace_m / 1.0e4;
+            holeProjection_A_cm2[edgeId] =
+                constants::q * edge.holeParticleLineFlux_per_m_s /
+                dualFace_m / 1.0e4;
+            activeElectron[edgeId] = std::isfinite(
+                electronProjection_A_cm2[edgeId]);
+            activeHole[edgeId] = std::isfinite(
+                holeProjection_A_cm2[edgeId]);
+        }
+        const auto nodeEdges = detail::buildNodeEdgeMap(mesh);
+        std::vector<Point3> dualFaceElectronCurrent_A_cm2(
+            N, Point3::Zero());
+        std::vector<Point3> dualFaceHoleCurrent_A_cm2(
+            N, Point3::Zero());
+        std::vector<Point3> dualFaceTotalCurrent_A_cm2(
+            N, Point3::Zero());
+        for (Index node = 0; node < N; ++node) {
+            const Point2 electron = detail::nodalDualFaceSgCurrentVector(
+                node, nodeEdges, mesh,
+                [&](Index edgeId) {
+                    return electronProjection_A_cm2[static_cast<std::size_t>(edgeId)];
+                },
+                [&](Index edgeId) {
+                    return activeElectron[static_cast<std::size_t>(edgeId)];
+                });
+            const Point2 hole = detail::nodalDualFaceSgCurrentVector(
+                node, nodeEdges, mesh,
+                [&](Index edgeId) {
+                    return holeProjection_A_cm2[static_cast<std::size_t>(edgeId)];
+                },
+                [&](Index edgeId) {
+                    return activeHole[static_cast<std::size_t>(edgeId)];
+                });
+            dualFaceElectronCurrent_A_cm2[node] =
+                Point3{electron.x(), electron.y(), 0.0};
+            dualFaceHoleCurrent_A_cm2[node] =
+                Point3{hole.x(), hole.y(), 0.0};
+            dualFaceTotalCurrent_A_cm2[node] =
+                dualFaceElectronCurrent_A_cm2[node] +
+                dualFaceHoleCurrent_A_cm2[node];
+        }
+        writer.addNodeVector(
+            "DualFaceSgElectronCurrentDensityVector",
+            dualFaceElectronCurrent_A_cm2);
+        writer.addNodeVector(
+            "DualFaceSgHoleCurrentDensityVector",
+            dualFaceHoleCurrent_A_cm2);
+        writer.addNodeVector(
+            "DualFaceSgTotalCurrentDensityVector",
+            dualFaceTotalCurrent_A_cm2);
+        if (writeCellFirstSgCurrentDiagnostics) {
+            const auto cellFirstElectron =
+                detail::cellFirstAreaWeightedSgCurrentVectors(
+                    mesh,
+                    [&](Index edgeId) {
+                        return electronProjection_A_cm2[
+                            static_cast<std::size_t>(edgeId)];
+                    },
+                    [&](Index edgeId) {
+                        return activeElectron[static_cast<std::size_t>(edgeId)];
+                    });
+            const auto cellFirstHole =
+                detail::cellFirstAreaWeightedSgCurrentVectors(
+                    mesh,
+                    [&](Index edgeId) {
+                        return holeProjection_A_cm2[
+                            static_cast<std::size_t>(edgeId)];
+                    },
+                    [&](Index edgeId) {
+                        return activeHole[static_cast<std::size_t>(edgeId)];
+                    });
+            std::vector<Point3> cellFirstElectron_A_cm2(
+                N, Point3::Zero());
+            std::vector<Point3> cellFirstHole_A_cm2(
+                N, Point3::Zero());
+            std::vector<Point3> cellFirstTotal_A_cm2(
+                N, Point3::Zero());
+            for (Index node = 0; node < N; ++node) {
+                cellFirstElectron_A_cm2[node] = Point3{
+                    cellFirstElectron[node].x(),
+                    cellFirstElectron[node].y(),
+                    0.0};
+                cellFirstHole_A_cm2[node] = Point3{
+                    cellFirstHole[node].x(),
+                    cellFirstHole[node].y(),
+                    0.0};
+                cellFirstTotal_A_cm2[node] =
+                    cellFirstElectron_A_cm2[node] +
+                    cellFirstHole_A_cm2[node];
+            }
+            writer.addNodeVector(
+                "CellFirstSgElectronCurrentDensityVector",
+                cellFirstElectron_A_cm2);
+            writer.addNodeVector(
+                "CellFirstSgHoleCurrentDensityVector",
+                cellFirstHole_A_cm2);
+            writer.addNodeVector(
+                "CellFirstSgTotalCurrentDensityVector",
+                cellFirstTotal_A_cm2);
+        }
+    }
     writer.addNodeScalar("ElectronMobility", electronMobility);
     writer.addNodeScalar("HoleMobility", holeMobility);
     writer.addNodeScalar("ElectronMobilityCm2PerVs", electronMobility_cm2_V_s);

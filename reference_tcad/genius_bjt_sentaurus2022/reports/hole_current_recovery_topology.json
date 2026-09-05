@@ -1,0 +1,305 @@
+{
+  "schema": "vela.genius_bjt_hole_current_recovery_topology.v1",
+  "scope": "VBE=0.70 V, VCE=3.00 V, coarse common mesh, formal accepted Vela state",
+  "node_count": 5611,
+  "cell_count": 10940,
+  "source_files": {
+    "formal_vela_transport": {
+      "path": "build-release/reference_tcad/genius_bjt_sentaurus2022/m1_p0_multibias/transport_sources/transport/vce_030.csv",
+      "sha256": "0cf79c8baab37cead618ce65565128bdec0284daac49ea500c471579bedd8c5f"
+    },
+    "formal_sdevice_node_current": {
+      "path": "build-release/reference_tcad/genius_bjt_sentaurus2022/m1_p0_multibias/sentaurus/vce_030/fields/hCurrentDensity_region0.csv",
+      "sha256": "40829678722175b1e1c91723093820cfe0946e32859a96ab506fe1b482425bf7"
+    },
+    "sdevice_element_export_manifest": {
+      "path": "build-release/reference_tcad/genius_bjt_sentaurus2022/sdevice_current_semantics_probe/default_export/field_manifest.json",
+      "sha256": "c392e6170e3b7c35fc1e510158f14ab3d160ac09cd07d4acecbeae976d7e836c"
+    },
+    "sg_edges": {
+      "path": "build-release/reference_tcad/genius_bjt_sentaurus2022/m1_p0_multibias/edge_audit/vce_030/sg_edges.csv",
+      "sha256": "4eb5fa3054cadd489daa0afd2782027bcbf5388ff5f5ddcc34bcd84c129b7b92",
+      "row_count": 16550
+    },
+    "tail_diagnostics": {
+      "path": "build-release/reference_tcad/genius_bjt_sentaurus2022/m1_hole_current_tail_diagnosis/node_diagnostics.csv",
+      "sha256": "3b7b6fe1e230ec551a5a6494878adc9b0a5cb82ff46dd229fb8b85dbb6f03569",
+      "row_count": 5611
+    }
+  },
+  "source_reconciliation": {
+    "sdevice_node_current_max_absolute_difference_A_per_cm2": 3.841842249302839e-09,
+    "metrics": {
+      "count": 5611,
+      "magnitude_log10_ratio_median": -4.821637332766436e-17,
+      "magnitude_ratio_median": 0.9999999999999999,
+      "magnitude_abs_dex_median": 9.787923785515974e-15,
+      "magnitude_abs_dex_p95": 2.3216087318318396e-10,
+      "magnitude_abs_dex_max": 7.84015917630354e-08,
+      "normalized_vector_rmse": 4.7968988728145904e-11,
+      "cosine_similarity": 1.0
+    }
+  },
+  "production_replay": {
+    "formula": "dual-face-weighted least squares over all active incident SG edge projections",
+    "maximum_absolute_vector_difference_A_per_cm2": 1.8474965127735084e-13,
+    "metrics": {
+      "count": 5611,
+      "magnitude_log10_ratio_median": -1.446491199829931e-16,
+      "magnitude_ratio_median": 0.9999999999999997,
+      "magnitude_abs_dex_median": 3.857309866213147e-16,
+      "magnitude_abs_dex_p95": 2.1456286130810694e-15,
+      "magnitude_abs_dex_max": 6.65385951921763e-15,
+      "normalized_vector_rmse": 2.412793198073447e-15,
+      "cosine_similarity": 1.0
+    }
+  },
+  "groups": [
+    {
+      "name": "main_current",
+      "node_count": 2121,
+      "sdevice_vs_direct_node_fit": {
+        "count": 2121,
+        "magnitude_log10_ratio_median": -0.0026242522383734903,
+        "magnitude_ratio_median": 0.9939756554899017,
+        "magnitude_abs_dex_median": 0.0046170821927602424,
+        "magnitude_abs_dex_p95": 0.8279865143800226,
+        "magnitude_abs_dex_max": 2.862523864135773,
+        "normalized_vector_rmse": 0.06220531291651333,
+        "cosine_similarity": 0.9981042175080407
+      },
+      "sdevice_vs_cell_first_area_projection": {
+        "count": 2121,
+        "magnitude_log10_ratio_median": -0.002065471970465249,
+        "magnitude_ratio_median": 0.9952553665343592,
+        "magnitude_abs_dex_median": 0.00394818931381155,
+        "magnitude_abs_dex_p95": 0.09854252924691882,
+        "magnitude_abs_dex_max": 0.13011715674242078,
+        "normalized_vector_rmse": 0.030807146173925704,
+        "cosine_similarity": 0.9995957153825149
+      },
+      "nodes_above_0p5_decade": {
+        "direct_node_fit": 180,
+        "cell_first_area_projection": 0
+      },
+      "cell_first_error_improvement_decade": {
+        "count": 2121,
+        "median": 0.0006443210036952453,
+        "p95": 0.7242876043044191,
+        "maximum": 2.7327381566702416
+      },
+      "direct_fit_normalized_residual": {
+        "count": 2121,
+        "median": 0.05467642880048771,
+        "p95": 0.41979826886888183,
+        "maximum": 0.7676212231982016
+      },
+      "incident_cell_cancellation_factor": {
+        "count": 2121,
+        "median": 1.0011443289143431,
+        "p95": 1.043802273560662,
+        "maximum": 1.3171672033918094
+      },
+      "incident_cell_vector_dispersion": {
+        "count": 2121,
+        "median": 0.14264281971011367,
+        "p95": 1.83561201761494,
+        "maximum": 2.220556290615999
+      },
+      "nodal_fit_condition_number": {
+        "count": 2121,
+        "median": 1.5000000000000018,
+        "p95": 2.999999999999995,
+        "maximum": 3.1330946703586418
+      }
+    },
+    {
+      "name": "dominant_current",
+      "node_count": 1700,
+      "sdevice_vs_direct_node_fit": {
+        "count": 1700,
+        "magnitude_log10_ratio_median": -0.0022582983530670376,
+        "magnitude_ratio_median": 0.9948135720789297,
+        "magnitude_abs_dex_median": 0.003278036198301048,
+        "magnitude_abs_dex_p95": 0.04274845534996858,
+        "magnitude_abs_dex_max": 0.37736123195256877,
+        "normalized_vector_rmse": 0.06215546317575189,
+        "cosine_similarity": 0.9981073626698308
+      },
+      "sdevice_vs_cell_first_area_projection": {
+        "count": 1700,
+        "magnitude_log10_ratio_median": -0.002235270523530699,
+        "magnitude_ratio_median": 0.9948663220116729,
+        "magnitude_abs_dex_median": 0.0027382840182432018,
+        "magnitude_abs_dex_p95": 0.023535838702229063,
+        "magnitude_abs_dex_max": 0.1221756898044377,
+        "normalized_vector_rmse": 0.030798862800223512,
+        "cosine_similarity": 0.9995960140527522
+      },
+      "nodes_above_0p5_decade": {
+        "direct_node_fit": 0,
+        "cell_first_area_projection": 0
+      },
+      "cell_first_error_improvement_decade": {
+        "count": 1700,
+        "median": 7.374515297458532e-05,
+        "p95": 0.029074519830393216,
+        "maximum": 0.3087969082491345
+      },
+      "direct_fit_normalized_residual": {
+        "count": 1700,
+        "median": 0.03992602359260061,
+        "p95": 0.18234593192864643,
+        "maximum": 0.593045479337216
+      },
+      "incident_cell_cancellation_factor": {
+        "count": 1700,
+        "median": 1.0009751897240313,
+        "p95": 1.0382824980703738,
+        "maximum": 1.293635207306739
+      },
+      "incident_cell_vector_dispersion": {
+        "count": 1700,
+        "median": 0.10825880619113859,
+        "p95": 0.592929106956413,
+        "maximum": 1.6004250892866858
+      },
+      "nodal_fit_condition_number": {
+        "count": 1700,
+        "median": 1.5000000000000024,
+        "p95": 2.999999999999995,
+        "maximum": 3.1330946703586418
+      }
+    },
+    {
+      "name": "weak_main_current",
+      "node_count": 421,
+      "sdevice_vs_direct_node_fit": {
+        "count": 421,
+        "magnitude_log10_ratio_median": -0.3205462203389148,
+        "magnitude_ratio_median": 0.47802848865597986,
+        "magnitude_abs_dex_median": 0.3205462203389148,
+        "magnitude_abs_dex_p95": 1.6634149327226662,
+        "magnitude_abs_dex_max": 2.862523864135773,
+        "normalized_vector_rmse": 0.2759253521152175,
+        "cosine_similarity": 0.9623308548392577
+      },
+      "sdevice_vs_cell_first_area_projection": {
+        "count": 421,
+        "magnitude_log10_ratio_median": 0.05774883676134095,
+        "magnitude_ratio_median": 1.1422175710726605,
+        "magnitude_abs_dex_median": 0.061080721679028505,
+        "magnitude_abs_dex_p95": 0.11439448667751227,
+        "magnitude_abs_dex_max": 0.13011715674242078,
+        "normalized_vector_rmse": 0.08305219498179539,
+        "cosine_similarity": 0.9969722867025399
+      },
+      "nodes_above_0p5_decade": {
+        "direct_node_fit": 180,
+        "cell_first_area_projection": 0
+      },
+      "cell_first_error_improvement_decade": {
+        "count": 421,
+        "median": 0.2642431631635138,
+        "p95": 1.5480484734866153,
+        "maximum": 2.7327381566702416
+      },
+      "direct_fit_normalized_residual": {
+        "count": 421,
+        "median": 0.1511238208318309,
+        "p95": 0.6695342975016254,
+        "maximum": 0.7676212231982016
+      },
+      "incident_cell_cancellation_factor": {
+        "count": 421,
+        "median": 1.0027361018613696,
+        "p95": 1.0594504343623716,
+        "maximum": 1.3171672033918094
+      },
+      "incident_cell_vector_dispersion": {
+        "count": 421,
+        "median": 1.4948126768181587,
+        "p95": 2.110659599898026,
+        "maximum": 2.220556290615999
+      },
+      "nodal_fit_condition_number": {
+        "count": 421,
+        "median": 1.5000000000000009,
+        "p95": 3.0000000000000195,
+        "maximum": 3.0000000000000213
+      }
+    },
+    {
+      "name": "original_tail",
+      "node_count": 180,
+      "sdevice_vs_direct_node_fit": {
+        "count": 180,
+        "magnitude_log10_ratio_median": -1.2411344057284381,
+        "magnitude_ratio_median": 0.05739388117758978,
+        "magnitude_abs_dex_median": 1.2411344057284381,
+        "magnitude_abs_dex_p95": 1.869552256785235,
+        "magnitude_abs_dex_max": 2.862523864135773,
+        "normalized_vector_rmse": 0.9516608830515431,
+        "cosine_similarity": 0.6142643897294102
+      },
+      "sdevice_vs_cell_first_area_projection": {
+        "count": 180,
+        "magnitude_log10_ratio_median": 0.10336921896197954,
+        "magnitude_ratio_median": 1.2687300285710073,
+        "magnitude_abs_dex_median": 0.10336921896197954,
+        "magnitude_abs_dex_p95": 0.12190632668301292,
+        "magnitude_abs_dex_max": 0.13011715674242078,
+        "normalized_vector_rmse": 0.28764058917546503,
+        "cosine_similarity": 0.9998249328776119
+      },
+      "nodes_above_0p5_decade": {
+        "direct_node_fit": 180,
+        "cell_first_area_projection": 0
+      },
+      "cell_first_error_improvement_decade": {
+        "count": 180,
+        "median": 1.138702088436082,
+        "p95": 1.7402479457476707,
+        "maximum": 2.7327381566702416
+      },
+      "direct_fit_normalized_residual": {
+        "count": 180,
+        "median": 0.1078649898942221,
+        "p95": 0.6902646598707153,
+        "maximum": 0.7676212231982016
+      },
+      "incident_cell_cancellation_factor": {
+        "count": 180,
+        "median": 1.0000867643910993,
+        "p95": 1.0560565080523066,
+        "maximum": 1.3171672033918094
+      },
+      "incident_cell_vector_dispersion": {
+        "count": 180,
+        "median": 1.8469082786695916,
+        "p95": 2.1980356126448797,
+        "maximum": 2.220556290615999
+      },
+      "nodal_fit_condition_number": {
+        "count": 180,
+        "median": 2.000000000000011,
+        "p95": 3.0000000000000195,
+        "maximum": 3.0000000000000213
+      }
+    }
+  ],
+  "tail_correlations": {
+    "direct_error_vs_log10_cell_cancellation": 0.10223819297797211,
+    "direct_error_vs_log10_cell_vector_dispersion": 0.08265978929541647,
+    "direct_error_vs_log10_direct_fit_residual": 0.2167867728097835,
+    "direct_error_vs_log10_fit_condition_number": -0.3997108737286277
+  },
+  "interpretation": {
+    "verified": [
+      "saved SG edges reproduce the formal Vela node-current export under the production formula",
+      "cell-first recovery improves the same-edge-flux comparison without changing the device state or transport operator"
+    ],
+    "strongly_supported": "recovery support/order is the principal cause of the weak-current node-field tail",
+    "unresolved": "the exact proprietary SDevice element-to-vertex reconstruction weights"
+  }
+}
