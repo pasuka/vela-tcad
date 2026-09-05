@@ -1,0 +1,13 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M73 material-partitioned Poisson ledger",
+  "status": "accepted",
+  "classification": "material_partition_material_but_not_dominant",
+  "report": "reference_tcad/simplemos_sentaurus2022/material_partitioned_poisson_ledger/m73_material_partitioned_poisson_ledger_report.json",
+  "document": "docs/validation/simplemos_m73_material_partitioned_poisson_ledger_2026-09-03.md",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/material_partitioned_poisson_ledger/m73_poisson_stage_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/material_partitioned_poisson_ledger/m73_poisson_pair_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/material_partitioned_poisson_ledger/m73_variant_summary.csv"
+  ]
+}

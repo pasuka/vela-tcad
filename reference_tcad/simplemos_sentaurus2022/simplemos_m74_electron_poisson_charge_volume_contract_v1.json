@@ -1,0 +1,84 @@
+{
+  "schema": "vela.simplemos.sdevice.m74_electron_poisson_charge_volume_contract.v1",
+  "milestone": "M74",
+  "status": "draft_before_freeze",
+  "objective": "Run a self-consistent A/B on the M65 matched-ni no-BGN path in which only the mobile-electron charge term in Poisson uses the semiconductor-only barycentric node measure.",
+  "upstream": {
+    "required_m73_status": "frozen",
+    "required_m73_classification": "material_partition_material_but_not_dominant",
+    "baseline": "M65 matched-ni no-BGN Vela workflows and T-2022.03-SP2 endpoint currents",
+    "m73_prediction_variant": "region_local_barycentric_si"
+  },
+  "intervention": {
+    "json_path": "solver.region_resolved_interface_assembly.poisson_electron_transport_node_volume",
+    "baseline_value": false,
+    "candidate_value": true,
+    "electron_poisson_measure": "semiconductor-only barycentric",
+    "hole_poisson_measure": "production all-cell",
+    "dopant_poisson_measure": "production all-cell",
+    "continuity_and_recombination_measure": "production all-cell",
+    "poisson_edge_coupling": "production legacy",
+    "transport_edge_coupling": "production legacy",
+    "production_default_changed": false
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_candidate_workflows": 16,
+    "candidate_stages_per_workflow": 3,
+    "reuse_vela_baseline": true,
+    "reuse_sentaurus_reference": true
+  },
+  "matrix": {
+    "pair_count": 8,
+    "case_count": 16,
+    "pairs": [
+      {"low_device": "n17", "high_device": "n21", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n17", "high_device": "n21", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.75},
+      {"low_device": "n18", "high_device": "n22", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n18", "high_device": "n22", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.75},
+      {"low_device": "n19", "high_device": "n23", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.9},
+      {"low_device": "n19", "high_device": "n23", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.8},
+      {"low_device": "n20", "high_device": "n24", "drain_voltage_V": 0.05, "diagnostic_gate_voltage_V": 0.85},
+      {"low_device": "n20", "high_device": "n24", "drain_voltage_V": 1.0, "diagnostic_gate_voltage_V": 0.8}
+    ]
+  },
+  "analysis": {
+    "baseline_pair_growth": "M65 high-NWell signed log-current error minus paired low-NWell signed log-current error.",
+    "candidate_pair_growth": "M74 candidate high-NWell signed log-current error minus paired low-NWell signed log-current error.",
+    "pair_closure": "clamp(1-abs(candidate_pair_growth)/abs(baseline_pair_growth),0,1).",
+    "predicted_reduction": "M73 attributed total pair proxy for region_local_barycentric_si; the M73 dielectric contribution is independently known to be negligible.",
+    "dominant_minimum_improved_pair_count": 6,
+    "dominant_minimum_median_pair_closure_fraction": 0.8,
+    "material_minimum_median_pair_closure_fraction": 0.3,
+    "classifications": [
+      "electron_poisson_volume_dominant",
+      "electron_poisson_volume_material_but_not_dominant",
+      "electron_poisson_volume_not_material",
+      "execution_or_identity_failure"
+    ]
+  },
+  "acceptance": {
+    "required_case_count": 16,
+    "required_pair_count": 8,
+    "required_converged_candidate_count": 16,
+    "exact_bias_tolerance_V": 1e-12,
+    "maximum_baseline_manifest_hash_error_count": 0,
+    "maximum_unapproved_config_diff_count": 0,
+    "electron_volume_unit_test_required": true,
+    "production_reference_must_not_be_replaced": true
+  },
+  "interpretation_guards": [
+    "The candidate is diagnostic and default-off even if it improves the matrix.",
+    "M74 does not change dopant or hole Poisson charge volume, any continuity volume, dielectric coupling, or transport geometry.",
+    "M73 is a frozen linear prediction; M74 self-consistent response is authoritative for qualification.",
+    "No production-reference replacement."
+  ],
+  "closed_topic_guards": [
+    "no HFS tuning",
+    "no SG current-kernel investigation",
+    "no contact-current extraction investigation",
+    "no quasi-Fermi packing investigation",
+    "no BGN or Nc/Nv tuning",
+    "no mesh or convergence tuning"
+  ]
+}

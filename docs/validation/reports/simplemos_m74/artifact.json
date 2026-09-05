@@ -1,0 +1,14 @@
+{
+  "schema": "vela.validation.artifact.v1",
+  "title": "SimpleMOS M74 electron Poisson charge volume",
+  "status": "accepted",
+  "classification": "electron_poisson_volume_material_but_not_dominant",
+  "report": "reference_tcad/simplemos_sentaurus2022/electron_poisson_charge_volume/m74_electron_poisson_charge_volume_report.json",
+  "document": "docs/validation/simplemos_m74_electron_poisson_charge_volume_2026-09-03.md",
+  "ledgers": [
+    "reference_tcad/simplemos_sentaurus2022/electron_poisson_charge_volume/m74_case_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/electron_poisson_charge_volume/m74_pair_ledger.csv",
+    "reference_tcad/simplemos_sentaurus2022/electron_poisson_charge_volume/m74_curve_response_ledger.csv"
+  ],
+  "manifest": "reference_tcad/simplemos_sentaurus2022/electron_poisson_charge_volume/m74_execution_manifest.json"
+}

@@ -1,0 +1,35 @@
+{
+  "schema": "vela.simplemos.sdevice.m77_poisson_charge_volume_evidence.v1",
+  "status": "frozen",
+  "milestone": "M77",
+  "classification": "combined_poisson_volume_not_material",
+  "contract_sha256": "078c9afa451a721a52622a3212272991ecf783060af63780d14bc5a9a2cdc099",
+  "implementation_hashes": {
+    "scripts/run_simplemos_m75_m77_poisson_charge_volume_decomposition.py": "d8682f1d88ebf5b1ca63f82562b343ea85e59a3849f4100ec8838629a561e923"
+  },
+  "artifacts": {
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume/m77_combined_poisson_charge_volume_report.json": "587e0b43e99b3d192099bde41747d04a413ce742e88794fbf6374152ae7d9c5e",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume/m77_case_ledger.csv": "86af7a0c1ba830339a8b428d2519f50c60f42766455c1a987c2cfb73eeb684e1",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume/m77_pair_ledger.csv": "5a1189249d62aab74f245c7f8812d2155e120b78a1eb814c3c5febd1f1a3b28d",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume/m77_curve_response_ledger.csv": "185e4afe591eb58ccb457243985ff1b9f25ed828e5e34ec964de4217f859400a",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume/m77_charge_volume_decomposition_ledger.csv": "98762456c22d958b729d2043059f71285b7c9d796c2cdf02b064a1921744232c",
+    "reference_tcad/simplemos_sentaurus2022/combined_poisson_charge_volume/m77_execution_manifest.json": "0703786b3e7f95a3f61a0ab5884b4938fe7a6c18910b3ce059e62cae16cd7bc4",
+    "docs/validation/simplemos_m77_combined_poisson_charge_volume_2026-09-03.md": "275967c0ce80da83efbde34254f106e0f273accc7254c4bf3923170cef206f25",
+    "docs/validation/reports/simplemos_m77/artifact.json": "bc8909dad1f3bf48a410321b3ca0210d68ce8220889615687f8721e82bb1edad"
+  },
+  "new_sentaurus_execution": false,
+  "new_vela_self_consistent_execution": true,
+  "production_reference_replaced": false,
+  "acceptance": {
+    "contract_frozen": true,
+    "case_count": true,
+    "pair_count": true,
+    "candidate_convergence": true,
+    "baseline_manifest_identity": true,
+    "single_axis_config_identity": true,
+    "charge_volume_unit_tests": true,
+    "decomposition_ledger": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

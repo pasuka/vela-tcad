@@ -1,0 +1,49 @@
+{
+  "schema": "vela.simplemos.sdevice.m76_poisson_charge_volume_report.v1",
+  "status": "accepted",
+  "milestone": "M76",
+  "classification": "dopant_poisson_volume_not_material",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m76_dopant_poisson_charge_volume_contract_v1.json",
+    "sha256": "d78472945c32809d7ca1dc4d91081d70ecdc248ce9fab418a330ac04513016cb"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_candidate_workflows": 16,
+    "reused_vela_baseline_workflows": 16,
+    "production_default_changed": false
+  },
+  "summary": {
+    "improved_pair_count": 0,
+    "median_pair_closure_fraction": 0.0,
+    "minimum_pair_closure_fraction": 0.0,
+    "maximum_pair_closure_fraction": 0.0,
+    "median_baseline_pair_growth_dex": 0.03702897509661555,
+    "median_candidate_pair_growth_dex": 0.05179642180943528,
+    "median_self_consistent_pair_reduction_dex": -0.014887182489802336,
+    "median_m73_predicted_pair_reduction_dex": 0.0,
+    "m73_prediction_self_consistent_reduction_pearson": 0.0,
+    "maximum_m73_prediction_error_dex": 0.01620839794451831,
+    "high_nwell_median_baseline_absolute_error_dex": 0.05827133687010588,
+    "high_nwell_median_candidate_absolute_error_dex": 0.07959794189335881,
+    "high_nwell_maximum_baseline_absolute_error_dex": 0.06446948029244777,
+    "high_nwell_maximum_candidate_absolute_error_dex": 0.08505240060362657,
+    "maximum_curve_candidate_over_baseline_abs_log_shift_dex": 3.138009236131492
+  },
+  "causal_scope": {
+    "closed": "Self-consistent M76 charge-volume intervention on all 16 M65 cases.",
+    "not_closed": "Diagnostic default-off result; no production-wide volume policy is qualified."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "case_count": true,
+    "pair_count": true,
+    "candidate_convergence": true,
+    "baseline_manifest_identity": true,
+    "single_axis_config_identity": true,
+    "charge_volume_unit_tests": true,
+    "decomposition_ledger": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

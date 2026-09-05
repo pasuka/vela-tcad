@@ -1,0 +1,47 @@
+{
+  "schema": "vela.simplemos.sdevice.m74_electron_poisson_charge_volume_report.v1",
+  "status": "accepted",
+  "classification": "electron_poisson_volume_material_but_not_dominant",
+  "contract": {
+    "path": "reference_tcad/simplemos_sentaurus2022/simplemos_m74_electron_poisson_charge_volume_contract_v1.json",
+    "sha256": "bf1e9c4b089c35bb45339f27e1e66a35298d3c0dc1ad06faf54b9b85ace35960"
+  },
+  "execution": {
+    "new_sentaurus_solves": 0,
+    "new_vela_candidate_workflows": 16,
+    "reused_vela_baseline_workflows": 16,
+    "production_default_changed": false
+  },
+  "summary": {
+    "improved_pair_count": 8,
+    "median_pair_closure_fraction": 0.41050625694732173,
+    "minimum_pair_closure_fraction": 0.3814714606960342,
+    "maximum_pair_closure_fraction": 0.5180063819611737,
+    "median_baseline_pair_growth_dex": 0.03702897509661555,
+    "median_candidate_pair_growth_dex": 0.019842902622230613,
+    "median_self_consistent_pair_reduction_dex": 0.014540770411374557,
+    "median_m73_predicted_pair_reduction_dex": 0.02911003917305198,
+    "m73_prediction_self_consistent_reduction_pearson": 0.9209464988109614,
+    "maximum_m73_prediction_error_dex": 0.03942149619576905,
+    "high_nwell_median_baseline_absolute_error_dex": 0.05827133687010588,
+    "high_nwell_median_candidate_absolute_error_dex": 0.060029711620859044,
+    "high_nwell_maximum_baseline_absolute_error_dex": 0.06446948029244777,
+    "high_nwell_maximum_candidate_absolute_error_dex": 0.06655944908992201,
+    "maximum_curve_candidate_over_baseline_abs_log_shift_dex": 3.3983428516628305
+  },
+  "causal_scope": {
+    "closed": "Tests the electron-only Poisson charge-volume intervention self-consistently on all 16 M65 cases.",
+    "not_closed": "The diagnostic remains default-off; qualification does not establish a production-wide volume policy."
+  },
+  "acceptance": {
+    "contract_frozen": true,
+    "case_count": true,
+    "pair_count": true,
+    "candidate_convergence": true,
+    "baseline_manifest_identity": true,
+    "single_axis_config_identity": true,
+    "electron_volume_unit_test": true,
+    "production_reference_not_replaced": true,
+    "all_checks_pass": true
+  }
+}

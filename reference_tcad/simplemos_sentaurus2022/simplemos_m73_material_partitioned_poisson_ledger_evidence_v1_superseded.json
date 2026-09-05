@@ -1,0 +1,8 @@
+{
+  "schema": "vela.simplemos.sdevice.m73_material_partitioned_poisson_ledger_evidence.v1",
+  "status": "superseded",
+  "contract_sha256": "a216cf98a611cfb0aa7f9a6fa6d67b497c868a9003bf7487e3542037038a5d84",
+  "execution_acceptance_passed": true,
+  "superseded_report": "reference_tcad/simplemos_sentaurus2022/material_partitioned_poisson_ledger/m73_material_partitioned_poisson_ledger_report_v1_superseded.json",
+  "reason": "The offline responses and identity gates were valid, but the candidate attribution was scored with the wrong direction."
+}
