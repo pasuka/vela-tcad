@@ -1,6 +1,6 @@
 {
-  "schema": "vela.templates_ldmos.stage4_vd10mv_newton_audit_summary.v2",
-  "generated_on": "2026-09-04",
+  "schema": "vela.templates_ldmos.stage4_vd10mv_newton_audit_summary.v3",
+  "generated_on": "2026-09-05",
   "contract": {
     "gate_bias_V": 4.0,
     "drain_bias_V": 0.01,
@@ -76,8 +76,8 @@
     "production_growth_factor": 1.0
   },
   "full_curve": {
-    "status": "partial_through_0p8_not_yet_qualified",
-    "highest_accepted_drain_bias_V": 0.8,
+    "status": "partial_through_first_nonzero_reference_point_not_yet_qualified",
+    "highest_accepted_drain_bias_V": 1.33333333333333,
     "accepted_internal_substeps_0p4_to_0p6": 64,
     "accepted_step_checkpointing": {
       "status": "pass",
@@ -91,6 +91,45 @@
       "growth_factor_2": "fail_cost_gate_due_to_repeated_growth_and_shrink",
       "growth_factor_1": "pass_0p68_to_0p8_with_49_persisted_states",
       "production_value": 1.0
+    },
+    "post_main_continuation": {
+      "git_commit": "15a013e0767677885e5fdfcfd9a3dec323489898",
+      "main_commit": "8e99e57",
+      "intervals": [
+        {
+          "start_V": 0.8,
+          "stop_V": 0.9,
+          "accepted_attempts": 41,
+          "rejected_attempts": 1,
+          "note": "initial 5 mV proposal rejected; 2.5 mV fallback completed"
+        },
+        {
+          "start_V": 0.9,
+          "stop_V": 1.0,
+          "accepted_attempts": 41,
+          "rejected_attempts": 0
+        },
+        {
+          "start_V": 1.0,
+          "stop_V": 1.33333333333333,
+          "accepted_attempts": 135,
+          "rejected_attempts": 0
+        }
+      ],
+      "first_nonzero_reference_point": {
+        "drain_bias_V": 1.33333333333333,
+        "vela_current_A_per_um": 9.8036143619173745e-05,
+        "sentaurus_current_A_per_um": 9.3972532439272e-05,
+        "vela_over_sentaurus": 1.04324254198989,
+        "relative_error": 0.0432425419898925,
+        "absolute_log10_error_decade": 0.0183852886780545,
+        "newton_iterations": 24,
+        "final_psi_block": 8.4139175126259966e-10,
+        "final_electron_block": 6.8901951110720947e-12,
+        "final_hole_block": 1.9736894499909398e-25,
+        "relative_kcl": 5.11727700409882e-14,
+        "pointwise_status": "passes_final_current_and_kcl_limits_but_does_not_qualify_curve"
+      }
     },
     "runtime_classification": "strict no-predictor continuation requires millivolt-scale internal steps; accepted steps are now resumable",
     "policy": "do not declare the 31-point gate passed until the run and curve comparison both finish"
