@@ -127,12 +127,36 @@ failures and report checks that could not run.
 
 ## Numerical and repository constraints
 
-- Keep code compatible with C++20. Numerical tests should check physical or
-  numerical properties rather than mirror the implementation. Explain changes
-  to tolerances, reference baselines, or model defaults; do not relax them merely
-  to make a failing test pass.
-- Keep generated build artifacts in `build/` or another ignored out-of-tree
-  build directory. Do not commit generated simulation outputs unless requested.
+To run only the Poisson tests:
+
+```bash
+ctest --test-dir build --output-on-failure -R poisson
+```
+
+When configured with `-DVELA_ENABLE_PYTHON=ON`, run the Python API test with:
+
+```bash
+ctest --test-dir build --output-on-failure -R python_api
+```
+
+## Debug
+
+For Windows debugging, use UCRT64 GDB from `D:\msys64\ucrt64\bin` against the Debug build:
+
+```bash
+gdb --args build/test_poisson.exe
+```
+
+Avoid mixing MSYS2 UCRT64, MSYS2 CLANG64/MINGW64, and Visual Studio build outputs in the same build directory.
+
+For VS Code or another MI-compatible debugger, point `miDebuggerPath` at `D:\msys64\ucrt64\bin\gdb.exe`.
+
+## Code style and workflow
+
+- Keep the code compatible with C++20.
+- Prefer adding or updating Catch2 tests when changing solver, mesh, physics, or discretization behavior.
+- Keep generated build artifacts inside `build/` or another ignored out-of-tree build directory.
+- Do not commit generated simulation outputs unless a task explicitly asks for them.
 - Treat the PN2D BV template's `element_edge_sg_gss_laux` profile as one
   atomic bundle: SG/GSS-Laux current support, element-vertex box source
   mapping, Bernoulli midpoint density, mixed-Voronoi node volumes, and

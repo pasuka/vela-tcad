@@ -527,6 +527,9 @@ target_link_libraries(test_poisson_neumann PRIVATE vela_core Catch2::Catch2WithM
 add_executable(test_mos_interface_charge tests/test_mos_interface_charge.cpp)
 target_link_libraries(test_mos_interface_charge PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_material_local_poisson_charge tests/test_material_local_poisson_charge.cpp)
+target_link_libraries(test_material_local_poisson_charge PRIVATE vela_core Catch2::Catch2WithMain)
+
 if(VELA_HDF5_TARGET)
     add_executable(test_sentaurus_tdr_reader tests/test_sentaurus_tdr_reader.cpp)
     target_link_libraries(test_sentaurus_tdr_reader PRIVATE vela_sentaurus Catch2::Catch2WithMain)
@@ -590,6 +593,7 @@ add_test(NAME schottky COMMAND test_schottky_contact [schottky])
 vela_catch_discover_tests(test_poisson_neumann)
 vela_catch_discover_tests(test_mos_interface_charge)
 add_test(NAME interface COMMAND test_mos_interface_charge [interface])
+vela_catch_discover_tests(test_material_local_poisson_charge)
 
 if(VELA_HDF5_TARGET)
     vela_catch_discover_tests(test_sentaurus_tdr_reader)

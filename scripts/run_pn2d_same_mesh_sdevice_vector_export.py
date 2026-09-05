@@ -19,6 +19,7 @@ from typing import Any, Iterable, Sequence
 
 
 WORKTREE = Path(__file__).resolve().parents[1]
+DEFAULT_DATA_REPO = Path(r"D:\code-repo\vela-tcad")
 DEFAULT_OUTPUT = (
     WORKTREE
     / "build-release/reference_tcad/pn2d_sentaurus2022/sentaurus_vm_runs"
@@ -561,9 +562,9 @@ def run_live(
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mesh-file", type=Path, required=True)
-    parser.add_argument("--doping-file", type=Path, required=True)
-    parser.add_argument("--models-file", type=Path, required=True)
+    parser.add_argument("--data-repo", type=Path, default=DEFAULT_DATA_REPO)
+    parser.add_argument("--mesh-file", type=Path, default=None)
+    parser.add_argument("--doping-file", type=Path, default=None)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--run-id", default=None)
     parser.add_argument("--target-bias", type=float, default=-20.0)
@@ -585,9 +586,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     remote_root = args.remote_root.rstrip("/")
     if not _SAFE_REMOTE.fullmatch(remote_root):
         raise ValueError("remote root contains unsupported characters")
-    mesh = args.mesh_file
-    doping = args.doping_file
-    models = args.models_file
+    source = args.data_repo / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/imported_reference/vela"
+    mesh = args.mesh_file or (source / "mesh.json")
+    doping = args.doping_file or (source / "doping.csv")
+    models = WORKTREE / "reference_tcad/pn2d_sentaurus2018_coarse7x3/source/models.par"
     run_root = (args.output_dir / run_id).resolve()
     bundle = run_root / "source"
     artifacts = run_root / "artifacts"

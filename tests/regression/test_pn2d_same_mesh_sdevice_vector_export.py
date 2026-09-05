@@ -100,25 +100,5 @@ class Pn2dSameMeshSdeviceVectorExportTest(unittest.TestCase):
             self.assertEqual(float(row["holes_m3"]), 5.0e6)
 
 
-class ExplicitInputContractTest(unittest.TestCase):
-    def test_mesh_doping_and_material_model_paths_are_required(self) -> None:
-        import contextlib
-        import io
-
-        inputs = [
-            ("--mesh-file", "mesh.json"),
-            ("--doping-file", "doping.csv"),
-            ("--models-file", "models.par"),
-        ]
-        for omitted in range(len(inputs)):
-            argv = [value for i, pair in enumerate(inputs) if i != omitted for value in pair]
-            with self.subTest(missing=inputs[omitted][0]):
-                with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
-                    MODULE.parse_args(argv)
-                self.assertEqual(error.exception.code, 2)
-        args = MODULE.parse_args([value for pair in inputs for value in pair])
-        self.assertEqual(args.models_file, Path("models.par"))
-
-
 if __name__ == "__main__":
     unittest.main()

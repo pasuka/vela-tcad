@@ -81,5 +81,15 @@ class CellFirstCrossDeviceValidationTest(unittest.TestCase):
         )[0]
         self.assertFalse(large["p95_not_materially_worse"])
 
+    def test_same_mesh_case_is_exact_21_node_sdevice_export(self) -> None:
+        cases = MODULE.pn_same_mesh_cases(MODULE.DEFAULT_DATA_REPO)
+        self.assertEqual(len(cases), 1)
+        case = cases[0]
+        self.assertEqual(case["case"], "reverse_m20V")
+        manifest = MODULE.read_json(case["sdevice_export_manifest"])
+        self.assertEqual(manifest["topology_gate"]["node_count"], 21)
+        self.assertEqual(manifest["topology_gate"]["triangle_count"], 24)
+
+
 if __name__ == "__main__":
     unittest.main()

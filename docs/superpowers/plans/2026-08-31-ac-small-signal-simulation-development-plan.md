@@ -1,16 +1,10 @@
 # Vela TCAD AC 小信号仿真功能开发方案
 
-创建日期：2026-08-31；本次复核：2026-09-10
+日期：2026-08-31
 
-状态：外部审核修订稿 v4；按 2026-09-10 审核修订。设计修订不等于物理策略已批准或功能已实现
+状态：外部审核修订稿 v2；5 个阻塞项已纳入冻结决策，仍不授权直接实施
 
-代码复核基线：`d76434089dcd8564069be4b822260d7aa9c72662`。
-
-文档基线：本轮开始时该计划已有未提交的 v3 修改，v4 在其上增量修订；不能再将
-工作区称为干净。代码基线与文档修订版本分别标识，文档提交不表示求解器已经改变。
-
-证据边界：本次复核了当前源码、配置/回归文档与公开一手资料；未重新运行 VM、
-Sentaurus 或数值回归。下文“验收标准”均为未来必须执行的门，不是已经通过的结果。
+Vela 基线：`270f5258a3c6354b2b3564af98ae4ab9434de2ca`
 
 Sentaurus 版本：T-2022.03-SP2
 
@@ -53,11 +47,10 @@ Vela 已经具备 DC 工作点、耦合漂移扩散残差与解析 Jacobian、�
 ```text
 P0a Sentaurus oracle、符号/单位/强制落点/schema 冻结
 P0b 公开解析 fixture（与 P0a 并行）
-  -> P0 合同：材料/多晶栅/有效 AC 导数设置、DC 与 A/C 分离阈值
-  -> P0.5 = WP-R：材料体积决策、独立装配器快照复现、物理导数和接触接口
+  -> WP-R 统一的未约束残差/J/M 接触行访问接口
   -> [P1 残差行电极电荷与准静态 C
       || P2 装配器内动态储存 M
-      || WP3a 人工矩阵与等价表示 builder]
+      || WP3a 人工矩阵实块 builder]
   -> [P1 + WP3a] P2.5 纯介电 Poisson AC
   -> [P2 + P2.5 + WP3b/3c] P3 单器件隐式 AC 核心 J+jwM
   -> P4 全 Y/A/C、频扫、配置与输出
@@ -72,36 +65,41 @@ P0b 公开解析 fixture（与 P0a 并行）
    不包含频率、相位、位移电流或完整多端口响应。
 2. **先做单器件隐式系统，再做一般 MixedMode。** `AC1_des.cmd` 是 AC 数值核心的
    第一验收对象，`AC_des.cmd` 是一般电路耦合的下一阶段验收对象。
-3. **P3 比较三种表示再选生产路径。** real stacked、real interleaved 与局部
-   complex SparseLU 使用同一工作点/方程/验收门；不改全局 `Types.h`。
+3. **MVP 使用实数 2x2 块系统，但不预先冻结内存排列。** 暂不要求把全仓库
+   数值类型改成复数；stacked 和 interleaved 由 P3 的 fill ratio 实测决定。
 4. **储存算子与未来瞬态共享设计，但不先实现完整瞬态积分器。** AC 只要求
    状态储存项及其一致线性化。
 5. **端口语义先于曲线拟合。** 先冻结端口顺序、参考端、正方向、二维宽度归一化、
    A/C/Y 定义和输出 schema，再比较 Sentaurus 数值。
 6. **所有跨工具数值门槛先标为暂定。** P0 导出官方 oracle 后必须生成并审核
    `threshold_freeze.json`，不得为通过最终曲线临时改门槛。
-7. **端口响应统一复用同一装配器。** Essential 接触提取未覆盖的物理行反力；
-   Robin 接触提取同一装配器的边界通量 stamp，不能对已满足平衡的完整自然边界
-   残差求和充当端电流。独立 SG 电流和显式 `D dot n` 只作交叉验证 oracle。
+7. **端电流和端电荷的生产主路径统一为装配一致的反力提取。** 在保留自然边界项、
+   但不覆盖 essential 行的物理残差/J/M 上，对接触节点对应方程行加权求和；独立
+   SG 电流和显式 `D dot n` 只作交叉验证 oracle。
 8. **AC 目标偏压必须强制落点。** 自适应 DC 步长应裁剪到下一个待计算 AC 目标，
    中间接受点可以存在但不替代目标点，也不允许靠插值评分。
 9. **AC 线性化快照冻结数值坐标。** QF reference field、DD scaling、残差诊断尺度
    和 frozen quantum correction 在 J/M/dRdu/FD oracle 之间不得重分配或重算。
 
-### 1.1 文档导航与修订范围
+### 1.1 外部审核意见处置记录
 
-| 文档 | 唯一职责 |
-| --- | --- |
-| 本文 | 背景/目标、P0--P7、工作包、测试和阶段验收 |
-| [规范合同](../specs/2026-08-31-ac-small-signal-contract.md) | §4.1--4.9 的数学/数据合同与 §11.1 checklist |
-| [审核附录](2026-09-10-ac-small-signal-review-appendix.md) | 审核处置、当前源码锚点、独立工作树来源、审核问题/文献 |
-| [预登记差异账本](2026-09-10-ac-known-difference-ledger.json) | 体积/DC/多晶栅/参考导数的 open 项，不是已执行的数值结果 |
+| 编号 | 处置 | v2 决定 |
+| --- | --- | --- |
+| B1 | 采纳，改变 P4 核心架构 | 端电流和线性化改为未约束连续性残差/J/M 接触行提取；SG kernel 降为 oracle |
+| B2 | 采纳，改变 P1 核心架构 | 电极电荷改为未约束 Poisson 残差/J 接触行反力；不独立重推生产 `D dot n` |
+| B3 | 采纳并前移到 P0 | ACCompute 目标偏压成为强制 DC 落点；P5 只比较精确共同目标点 |
+| B4 | 采纳，设为 P3 前置硬任务 | `LinearSolver` 必须新增 `numericFactorizationCount()`；AC 使用专用 solver 和不可变块矩阵 |
+| B5 | 采纳 | 冻结 QF reference/scales/QP；FD 只局部扰动 BC，不经过 Newton 重求解；QP 默认 fail-closed |
+| N1 | 采纳 | 储存项实现归属 `CoupledDDAssembler`，独立头文件只承载接口/结果类型 |
+| N2 | 采纳 | 增加 essential、thermionic/Schottky、insulating pin、sheet charge 等边界行分类表 |
+| N3 | 采纳 | P3 前新增 P2.5 纯介电 Poisson AC |
+| N4 | 采纳 | stacked/interleaved 块布局由 fill ratio 决策，不在方案阶段冻结 |
+| N5 | 采纳 | 单位激励只是导数归一化；不暴露为具有非线性含义的物理旋钮 |
+| N6 | 采纳 | P3 增加 `1e3--1e12 Hz` 重掺杂 MOS 调理扫描 |
+| N7 | 采纳 | 测试矩阵增加 avalanche-on 近击穿二极管 AC |
+| N8 | 采纳 | 使用只读 `onAcceptedPoint` 观察者，避免侵入式重构 `DCSweep.cpp` |
 
-本次改变：WP-R 前移材料支持决策和快照残差复现；P3 三路后端比较；P4 正交 sweep.ac
-及路由边界；P5 逐目标 DC 门和独立 A/C 门。原规范条号保留用于外部审核引用，
-本文提及“合同 §4.x/§11.1”均指规范合同，不是本文件中的重复定义。
-审核附录区分历史决定与 v4；当前未决项见 §11.2。
-
+这张表记录的是方案修订决定，不是功能已经实现的声明。
 
 ## 2. 背景与问题定义
 
@@ -145,44 +143,79 @@ Q(x, u)
 ```text
 (Jx + j*omega*Mx) * x_hat = -(Ju + j*omega*Mu) * u_hat
 
-i_hat = (H + j*omega*K) * x_hat + (D + j*omega*E) * u_hat
+i_hat = (Ix + j*omega*Qx) * x_hat
+      + (Iu + j*omega*Qu) * u_hat
 ```
 
 其中：
 
 - `Jx = dR/dx`，Vela 已有主要实现；
 - `Mx = dS/dx`，当前缺失；
-- `H/D` 是端口稳态导电响应的状态/电压导数，来自同一装配器；
-- `K/E` 包含接触连续性储存反力与 Poisson 反力导数，不能一概写成电极 `Qx/Qu`；
-- 当前 `TerminalCharge` 不能直接替代 Poisson 反力；具体公式见 4.3；
+- `Ix/Iu` 不另写平行 SG 导数，而由接触连续性反力对未约束 J/M 的行提取得到；
+- `Qx/Qu` 由接触 Poisson 反力对同一未约束 J 的行提取得到，当前 `TerminalCharge`
+  不能直接替代；
 - 对每个被激励端口求解一次，可得到 Y 的一列；
 - 同一频率的所有端口列应复用同一次数值分解。
 
-准静态电极 `dQ/dV` 只描述电荷随 DC 状态的变化。导通器件的低频总电流还包含
-载流子响应滞后引起的导电项；即使 `omega -> 0`，它也不必等于 `Im(Y)/omega`。
-P1 的 `C_Q` 是位移电荷资格门；只有适用的阻挡端口/纯介电 fixture 可直接作低频
-电容 oracle。一般器件使用 4.8 的完整低频展开。
+准静态 `dQ/dV` 只描述 `omega -> 0` 的储存响应，不能给出一般频率下的载流子滞后、
+导电跨导或相位。因此 P1 的全端口准静态 C 是 AC 的资格门和低频 oracle，不是最终
+AC 求解器。
 
-### 2.3 当前能力与实施缺口
+### 2.3 Vela 当前代码基线
 
-代码仍是 DC 基线，尚无 AC 执行路径。可复用 residual/J、端电流、参考坐标、现有
-实数求解缓存和 DC 步进器；需开发统一接触接口、S/M、局部频域求解与工作流。
+| 能力 | 当前证据 | 结论 |
+| --- | --- | --- |
+| DC 偏压扫描与延续 | `include/vela/simulation/DCSweep.h`、`src/simulation/DCSweep.cpp` | 可复用 |
+| 耦合 DD 残差和解析 Jacobian | `CoupledDDAssembler::residual/assembleJacobian` | 可复用 |
+| 未知量布局 | `psi, phin, phip`，共 `3*N` | AC 储存导数必须尊重现有缩放和参考坐标 |
+| 实数稀疏直接求解 | `LinearSolver` 支持模式和相同矩阵数值分解复用 | 可复用；MVP 用实块系统 |
+| 多端接触和稳态电流 | `ContactCurrent` | 可复用，但需增加线性化 |
+| 区域体电荷 C--V | `TerminalCharge` 和 `cv_quasistatic` | 仅为 legacy/prototype，不能直接认领 AC |
+| 单变量 DC 外接负载 | `CoupledLoadLine` | 只能参考 bordered-system 设计，不是一般 MNA |
+| Fermi/OldSlotboom/迁移率/SRH | 已有相关模型 | 可复用；须审计 AC 所需导数 |
+| 复数稀疏类型 | `Types.h` 只有 `double` | 缺失；MVP 不要求新增全局复数类型 |
+| 动态储存/质量矩阵 | 核心中无对应算子 | 缺失 |
+| 频扫、Y 矩阵、ACExtract | 无执行路径 | 缺失 |
+| SDE 高斯植入 | 前端 fail-closed，内部 mesh builder 仅常数掺杂 | 非 AC 核心；短期用 TDR 绕过 |
 
-高风险前置缺口：共享 Si/oxide 节点的材料支持体积、完整物理导数、装配模式缓存/
-快照复现、多晶栅建模和参考有效 AC 导数。源码表及 SimpleMOS/LDMOS 方法来源见
-[附录 §2.3](2026-09-10-ac-small-signal-review-appendix.md)。独立工作树候选不是当前主线已实现功能。
+`ContactCurrent::computeFromResidual` 已经证明接触连续性残差行求和可产生端电流；
+`NewtonSolver::makeArclengthContactCurrentFunctional` 也已经通过
+`J.transpose()*residualWeights` 构造过同一函数的状态导数。AC 应把这个先例升级为
+受支持的统一接触反力接口，而不是为 mobility/Fermi/BGN/high-field/avalanche 再写
+第二份 SG 导数。现有方法传入空边界条件，P1 前必须扩展为“保留 thermionic 等自然
+边界，但跳过 Dirichlet essential 行覆盖”的明确装配模式。
 
+v2 审核时已复核的代码事实：
+
+| 事实 | 当前符号/位置 | 对方案的约束 |
+| --- | --- | --- |
+| DC 残差行端电流 | `ContactCurrent::computeFromResidual` | B1 有仓库内先例 |
+| 残差函数状态导数 | `NewtonSolver::makeArclengthContactCurrentFunctional` | 可用 `J^T*w`，无需第二套 SG 导数 |
+| per-node QF reference | `CoupledDDAssembler::setQuasiFermiReferenceFields` | AC FD 必须冻结 reference field |
+| contact-basin repartition | `NewtonSolver` warm-start/repartition 路径 | FD 不得经过正常 Newton solve |
+| thermionic natural flux | `CoupledDDBoundaryConditions::thermionic` 和 assembler residual/J | physical view 不能传空 bcs |
+| numeric factor cache | `LinearSolver::valuesMatchFactorization` | 同矩阵值必须 bitwise 不变 |
+| 可见对象计数器 | 只有 `patternAnalysisCount()` | P3 必须新增 numeric count getter |
+
+现有 `cv_quasistatic` 在相邻 DC 点计算：
+
+```text
+C = (Q[k] - Q[k-1]) / (V[k] - V[k-1])
+```
+
+其中 Q 是用户指定区域中的 `q*(p-n+Nd-Na)` 体积分，还可按接触距离裁剪。它既不是
+严格的金属电极高斯通量电荷，也不保证所有端电荷闭合。开发 AC 时不得悄悄改变
+现有输出语义；应新增明确的电极电荷方法，并保留 legacy 模式兼容性测试。
 
 ### 2.4 开源实现和文献基线
 
 - Sentaurus Training 定义 `Y=A+j*omega*C`，并说明显式/隐式 AC 系统、Node、
   Exclude 和 ACCompute；
-- DEVSIM 支持 DC 工作点上的 small-signal AC；其二极管示例从电压源支路电流虚部
-  提取电容，带负号是源电流与器件电流方向相反，不能直接照搬到 Vela 端口；
+- DEVSIM 支持 DC 工作点上的 small-signal AC，并在二极管示例中由端口电流虚部
+  除以 `omega` 得到电容；
 - Genius-TCAD-Open 提供 DDMAC、ACSWEEP 和器件--电路混合模式；
 - Laux 1985 比较瞬态 FFT、增量电荷分区和正弦稳态方法；
-- Lin 等 SISPAD 1999 讨论 Boltzmann--Poisson 小信号频域求解，是“DC 点线性化 +
-  `j*omega`”方法参考，不是 Vela DD 储存符号或 THz 物理有效性的直接证明。
+- SISPAD 1999 给出将时间导数写为 `j*omega` 项并在 DC 点解复线性系统的路径。
 
 这些来源用于约束数值架构，不用于假定与 Sentaurus 私有离散完全相同。
 
@@ -219,24 +252,235 @@ P1 的 `C_Q` 是位移电荷资格门；只有适用的阻挡端口/纯介电 fi
 
 | 等级 | 定义 |
 | --- | --- |
-| AC-L0 | P0：参考工件、材料/多晶栅/有效导数合同、目标点及阈值分区冻结 |
-| AC-L1 | P0.5=WP-R + P1：材料策略、快照复现/物理导数资格、电极 Q/C_Q 通过 |
-| AC-L2 | P2 + P2.5：S/M 审计及纯介电端到端 AC 通过；P1 为共同前置 |
-| AC-L3 | P3 数值核心和 P4 工作流均通过：隐式 AC 单频/频扫、完整 Y/A/C |
-| AC-L4 | P5：全目标 DC 前置门、DEVSIM/原始 AC1 分合同 A/C 门、适用低频极限通过 |
+| AC-L0 | Sentaurus 官方工程、输入、输出、哈希、端口和单位已封存，阈值已冻结 |
+| AC-L1 | 物理电极电荷和全端口准静态 C 通过解析与守恒测试 |
+| AC-L2 | 动态储存算子及其 Jacobian 通过有限差分和缩放审计 |
+| AC-L3 | 单器件隐式 AC 可解单频和频扫，并输出完整 Y/A/C |
+| AC-L4 | DEVSIM、Sentaurus `AC1_des.cmd` 和低频准静态极限通过 |
 | AC-L5 | 显式 MixedMode V/R/C 系统通过，复现 `AC_des.cmd` |
 | AC-L6 | 性能、文档、CI、错误诊断和长期回归全部固化 |
 
 报告和发布说明必须声明达到的最高等级，不得仅写“已支持 AC”。
 
-## 4. 数学与数据合同入口
+## 4. 必须先冻结的数学和数据契约
 
-[规范合同 §4.1--4.9](../specs/2026-08-31-ac-small-signal-contract.md) 是唯一公式/单位/误差定义来源：
-端口与二维单位、接触反力及储存抵消、材料支持、S/M、三种等价表示、冻结快照、
-输出 schema、C_Q/C_AC 低频区别和可计算误差指标。
+### 4.1 端口方向和矩阵索引
 
-统一采用其中 §11.1 gate_id checklist；实现者不在不同阶段另写一套符号/单位或例外。
+建议冻结如下约定：
 
+- `Y[row_terminal, column_terminal] = dI_row / dV_column`；
+- 端电流流入器件为正；
+- 每列激励幅值默认为 `1 V` 复幅值，其他端口 AC 电压为零；
+- 输出始终带显式端口顺序；
+- 用户可指定参考端用于 reduced matrix，但生产结果保留 full matrix；
+- `A = Re(Y)`；
+- `C = Im(Y)/omega`，仅允许 `frequency_Hz > 0`；
+- `omega=0` 使用单独的准静态接口，不在 AC 中除零；
+- 不假定 `Yij=Yji` 或 `Cij=Cji`，除非 fixture 本身是平衡无源互易系统。
+
+### 4.2 二维单位
+
+二维器件的规范输出使用每米器件宽度：
+
+- 电流：`A_per_m`；
+- 电荷：`C_per_m`；
+- 导纳/电导：`S_per_m`；
+- 电容：`F_per_m`。
+
+可同时输出 `*_per_um` 便利列，换算必须为规范每米值乘 `1e-6`。如果用户提供有限
+`depth_m`，则另输出总量并在 manifest 中记录归一化方式。禁止在同一列中混用
+总量和每宽度量。
+
+### 4.3 物理电极电荷
+
+生产 AC 不使用区域归属电荷，也不另写一套独立边界几何积分作为端电荷。冻结定义为
+接触 essential Poisson 方程的离散反力：
+
+```text
+Q_k = s_Q * w_psi,k^T * R_physical_unconstrained(x, natural_bcs)
+
+dQ_k/dx = s_Q * J_physical_unconstrained^T * w_psi,k
+```
+
+`w_psi,k` 在接触 k 的 Poisson 行为 1，其余行为 0；`s_Q` 恢复装配器的物理单位和
+最终正号。这里的 `unconstrained` 是“保留体电荷、FVM 边耦合、fixed/interface
+sheet charge 和自然边界，跳过 essential Dirichlet 行替换”，不是简单传空 bcs。
+
+这个反力与显式 `integral(D dot n)` 在连续层面等价，但生产实现直接复用
+`CoupledDDAssembler` 的 node volume、mixed-Voronoi/非钝角策略、边 coupling 和
+缩放。独立 `D dot n` 计算仅作为规则网格解析 fixture 的 oracle，不得成为生产主
+路径。
+
+具体 `s_Q` 正号由“电流流入器件为正”约定、平行板电容器和全域 Gauss 闭合冻结。
+对半导体 ohmic 端口，总端电流包含连续性反力和 Poisson 反力的时间导数；对绝缘
+栅，连续性分量应为零而位移分量非零。
+
+v2 的候选离散端口公式为：
+
+```text
+i_carrier,k_hat = s_I * w_cont,k^T
+                  * ((J_phys + j*omega*M_phys) * x_hat
+                     + (Ju_phys + j*omega*Mu_phys) * u_hat)
+
+i_displacement,k_hat = j*omega * s_Q * w_psi,k^T
+                       * (Jpsi_phys * x_hat + Jpsi_u_phys * u_hat)
+
+i_total,k_hat = i_carrier,k_hat + i_displacement,k_hat
+```
+
+这里 `w_cont,k` 内含电子/空穴符号组合。P0.5 必须从现有 residual 单位推导
+`s_I/s_Q`，P2.5/P4 必须用解析平板和 DC `computeFromResidual` 锁定符号。还必须由
+外部审核或 manufactured transient fixture 排除“接触控制体 M 反力”和 Poisson
+位移项的双计数；在这一点关闭前，公式是候选冻结式而不是完成声明。
+
+区域体电荷可保留为诊断量，用于检查：
+
+```text
+sum_k Q_electrode,k + Q_domain = 0
+```
+
+但不能用任意“接触半径”分区替代电极电荷。
+
+### 4.4 动态储存算子
+
+储存算子归属 `CoupledDDAssembler`，因为它必须共享 node volume、CarrierStatistics、
+BGN、frozen QP、DDScalingSpec 和 QF reference。可用独立头文件声明结果类型，但
+生产实现不得在独立类中复制这些状态。装配器应返回与稳态残差行单位和缩放一致的
+`S(x,u)` 及：
+
+```text
+M = dS/dx
+Mu = dS/du
+```
+
+原则：
+
+- Poisson 内部行没有载流子时间储存项；
+- 电子和空穴连续性物理行包含各自控制体储存；
+- essential Dirichlet 行在 solved system 中是代数约束，对应 M 行为零，但未约束
+  physical row 的 M 必须保留供接触反力提取；
+- thermionic/Schottky 是自然通量边界，不替换连续性物理行，储存项必须保留；
+- 绝缘材料中为消除零行而生成的 phin/phip pin 是代数 gauge 行，M 为零；
+- fixed/interface sheet charge 进入 Poisson 反力，但静态 sheet charge 不产生 M；
+- `psi/phin/phip` 使用现有缩放和 quasi-Fermi reference 坐标；
+- n、p 对三个未知量的导数必须复用 CarrierStatistics 的一致导数；
+- 具体电子/空穴符号以 Vela 残差定义和 manufactured transient identity 冻结，
+  不允许仅凭教科书符号手填；
+- inactive 模型不得改变 M；未来动态陷阱/热/量子方程通过独立 block 扩展。
+
+边界行冻结表：
+
+| 行类型 | solved J 行 | solved M 行 | physical reaction J/M |
+| --- | --- | --- | --- |
+| Ohmic/metal-gate essential Dirichlet | 替换为代数约束 | 0 | 跳过替换，保留物理行供端口提取 |
+| Thermionic/Schottky Robin | 保留自然通量 | 保留连续性储存 | 与 solved physical row 相同 |
+| 绝缘区内部 phin/phip pin | 代数 gauge | 0 | 不认作端口电流 |
+| Fixed/interface sheet charge | 进入 Poisson 行 | 0 | 进入 Poisson 端口反力和 Gauss closure |
+| 未接触内部 DD 行 | 正常物理行 | 正常储存 | 不直接进入端口权重 |
+
+### 4.5 实数块系统
+
+MVP 将：
+
+```text
+(J + j*omega*M) z = b
+```
+
+在数学上可展开为：
+
+```text
+[ J       -omega*M ] [Re(z)] = [Re(b)]
+[ omega*M  J       ] [Im(z)]   [Im(b)]
+```
+
+这只是数学排列，不冻结内存布局。P3 必须对至少一个重掺杂 MOS fixture 比较：
+
+- stacked `[Re(all); Im(all)]`；
+- interleaved `[Re(x0), Im(x0), Re(x1), Im(x1), ...]`。
+
+以 symbolic fill、numeric fill、factor time、solve time、实现复杂度和残差共同冻结
+布局。两种布局必须代表同一个块系统，不能以改变方程缩放换取 fill 优势。
+
+隐式理想 Dirichlet 激励下 `Mu=0`，单位 phasor RHS 是实向量，且只在被激励接触的
+essential BC 行非零。实现必须提供独立单元测试确认块符号，不能依赖最终 Cgg 曲线
+间接发现错误。
+
+是否在 AC-L6 后引入 `SparseMatrix<std::complex<double>>`，应由性能数据决定，不在
+MVP 中预先扩散复数类型。
+
+### 4.6 AC 工作点冻结快照
+
+每次 AC 计算必须从已接受的 DC 点创建不可变 `ACOperatingPointSnapshot`，至少包含：
+
+- packed `x` 和物理 `psi/phin/phip/n/p`；
+- per-node electron/hole quasi-Fermi reference fields；
+- `DDScalingSpec`、单位系统和装配行恢复物理单位所需 scale；
+- Newton 残差诊断使用的固定 block scales；
+- frozen electron quantum correction field 及其来源；
+- essential 和 natural boundary conditions；
+- mesh/material/doping/physics/discretization identity；
+- DC bias 和收敛摘要。
+
+J、M、接触反力、解析 `dR/du` 和 finite-difference oracle 必须复用同一个 snapshot。
+FD oracle 只在快照内对 BC 数值做 `+/-delta V` 局部算子评估，不运行 Newton，不
+重新建立 contact-basin partition，不重新分配 QF reference，也不重新选择 residual
+scale。
+
+Density-gradient quantum potential 当前在 `CoupledDDAssembler` 中是外层迭代给定的
+冻结修正，不是 AC 自洽动态未知量。因此：
+
+- P3 默认对 `electronQuantumPotentialEnabled()==true` fail-closed；
+- 后续若允许显式 `quantum_response="frozen"`，必须在 manifest 和每行输出中标记
+  `frozen_qp_approximation=true`；
+- frozen-QP 结果不能用于认领自洽量子 AC 等价；
+- `quantum_response="self_consistent"` 在增加 QP 动态/线性方程前保持未支持。
+
+### 4.7 输出 schema
+
+建议至少生成：
+
+1. `ac_matrix.csv`，长表，一行一个矩阵元素；
+2. `ac_bias_summary.csv`，每个 DC/频率点一行的求解和守恒摘要；
+3. `ac_manifest.json`，记录版本、输入哈希、物理合同、端口顺序、单位和门槛；
+4. 可选的复数状态场输出，默认关闭。
+
+`ac_matrix.csv` 最小列：
+
+```text
+dc_sweep_contact
+dc_bias_V
+ac_target_index
+is_forced_target
+landing_error_V
+frequency_Hz
+row_terminal
+column_terminal
+y_real_S_per_m
+y_imag_S_per_m
+a_S_per_m
+c_F_per_m
+y_real_S_per_um
+y_imag_S_per_um
+c_F_per_um
+solve_residual_norm
+terminal_kcl_residual_S_per_m
+qf_reference_snapshot_id
+frozen_qp_approximation
+```
+
+`ac_manifest.json` 必须记录：
+
+- Vela 提交、构建类型、线性后端和平台；
+- 输入配置、网格/TDR、材料和参数文件哈希；
+- 端口排序、参考端、激励幅值和正方向；
+- 二维归一化；
+- DC 工作点状态来源和是否插值；
+- 频率列表与 ACCompute 选点规则；
+- AC 目标 bias 列表、每个目标是否强制落点及落点误差；
+- 物理模型和离散 profile；
+- QF reference/scaling snapshot identity 和 `frozen_qp_approximation`；
+- 每频率分解次数、右端数、矩阵维度和非零元；
+- KCL、charge closure、row/column sum 等质量指标。
 
 ## 5. 目标软件架构
 
@@ -246,10 +490,10 @@ P1 的 `C_Q` 是位移电荷资格门；只有适用的阻挡端口/纯介电 fi
 物理/离散层
   CoupledDDAssembler physical/solved row views
   CoupledDDAssembler storage S/M
-  ContactReactionFunctional (essential row weights + natural boundary stamps)
+  ContactReactionFunctional (Poisson + continuity row weights)
 
 频域数值层
-  ACFrequencySystemBuilder (real block / local complex candidates)
+  ACBlockSystemBuilder
   ACSmallSignalSolver
 
 工作流层
@@ -274,12 +518,10 @@ P1 的 `C_Q` 是位移电荷资格门；只有适用的阻挡端口/纯介电 fi
 | 文件 | 责任 |
 | --- | --- |
 | `include/vela/equation/CoupledDDStorage.h` | `S/M/Mu` 结果类型和行分类合同 |
-| `include/vela/post/ContactReactionFunctional.h` | 按方程的接触行权重、自然边界 stamp、单位和反力接口 |
-| `src/post/ContactReactionFunctional.cpp` | Essential 提取 residual/J/M；Robin 提取装配器 boundary stamp |
-| `include/vela/simulation/ACOperatingPointSnapshot.h` | WP-R 冻结快照和导数资格元数据；名字为拟新增 |
-| `include/vela/solver/ACBlockSystem.h` | 实块等价表示与 oracle，不预定为生产后端 |
-| `src/solver/ACBlockSystem.cpp` | 实块装配和质量检查 |
-| `include/vela/solver/ComplexLinearSolver.h` / `src/solver/ComplexLinearSolver.cpp` | P3 局部 complex SparseLU 候选及同等计数合同 |
+| `include/vela/post/ContactReactionFunctional.h` | Poisson/连续性接触行权重、物理单位和反力接口 |
+| `src/post/ContactReactionFunctional.cpp` | 从装配器 physical residual/J/M 提取 Q/I 及导数 |
+| `include/vela/solver/ACBlockSystem.h` | 实 2x2 频域块矩阵构造 |
+| `src/solver/ACBlockSystem.cpp` | 频率块装配和质量检查 |
 | `include/vela/simulation/ACSmallSignal.h` | 配置、结果和单器件 solver API |
 | `src/simulation/ACSmallSignal.cpp` | 多端激励、频扫和 Y/A/C 提取 |
 | `include/vela/io/ACWriter.h` | AC CSV/JSON 输出契约 |
@@ -305,8 +547,7 @@ tests/regression/test_devsim_ac.py
 - `CMakeLists.txt`：加入新源码和测试；
 - `include/vela/simulation/DCSweep.h`：仅增加共享工作点/选点接口或 AC 配置挂接；
 - `src/simulation/DCSweep.cpp`：只增加只读 `onAcceptedPoint` 观察者和目标偏压强制落点，
-  不侵入式重构当前约 8680 行的求解流程；复用现有 `runDCSweepStepControl`，
-  并按需扩展 `include/vela/simulation/DCSweepStepControl.h` 的目标接口；
+  不侵入式重构约 8400 行的求解循环；
 - `include/vela/solver/LinearSolver.h`、`src/solver/LinearSolver.cpp`：P3 前必须增加对象级
   `numericFactorizationCount()`；如需显式 `factorize/solveFactored` 或矩阵 RHS API，
   另以测试和性能证据决定；
@@ -315,38 +556,38 @@ tests/regression/test_devsim_ac.py
 - `include/vela/post/ContactCurrent.h`、`src/post/ContactCurrent.cpp`：使既有
   `computeFromResidual` 委托统一 `ContactReactionFunctional`，SG edge 实现继续作为
   独立 DC oracle；
-- `include/vela/simulation/CurveSweep.h`、`src/simulation/CurveSweep.cpp`：保持 DC mode
-  枚举，新增正交 `sweep.ac` 配置和显式支持组合校验；不新增 AC sweep mode；
+- `include/vela/simulation/CurveSweep.h`、`src/simulation/CurveSweep.cpp`：增加
+  `ac_small_signal` 类型，或由独立 analysis type 路由；
 - `src/tools/vela_example_runner.cpp`：接入 AC 工作流；
-- `reference_tcad/ac_small_signal/`：加入可公开的 MOSCAP/PN 基准；
-- `configs/schema/vela-simulation.schema.json`、`docs/config_schema.md`：实现阶段同步
-  JSON schema、运行时解析和文档，不只给 runner 增加私有字段。
+- `examples/`：加入无授权限制的小型 MOSCAP/PN AC 示例。
 
 不建议把所有新功能继续堆入已经很大的 `DCSweep.cpp`。
 
-### 5.4 建议配置草案：AC 是正交分析块
-
-以下为拟新增字段的局部示意，不是当前可运行 deck；mesh/material 和前置偏置路径省略。
-接触名必须解析到实际网格名称，`substrate` 仅是官方器件映射后的示例，不能自动改成 body。
+### 5.4 建议配置草案
 
 ```json
 {
-  "simulation_type": "dc_sweep",
-  "solver": { "method": "newton" },
   "sweep": {
-    "mode": "iv",
+    "mode": "ac_small_signal",
     "contact": "gate",
     "start": -3.0,
     "stop": 3.0,
-    "step": 0.15,
     "initial_step": 0.02,
     "ac": {
-      "enabled": true,
       "system": "implicit",
-      "nodes": ["source", "drain", "gate", "substrate"],
-      "reference_node": "substrate",
-      "frequencies_Hz": [1000000.0],
-      "compute": { "mode": "normalized_intervals", "intervals": 40, "landing": "force" },
+      "nodes": ["source", "drain", "gate", "body"],
+      "reference_node": "body",
+      "frequencies": {
+        "start_Hz": 1000000.0,
+        "stop_Hz": 1000000.0,
+        "points": 1,
+        "spacing": "decade"
+      },
+      "compute": {
+        "mode": "normalized_intervals",
+        "intervals": 40,
+        "landing": "force"
+      },
       "output": {
         "matrix_csv": "ac_matrix.csv",
         "summary_csv": "ac_bias_summary.csv",
@@ -357,25 +598,22 @@ tests/regression/test_devsim_ac.py
 }
 ```
 
-- `sweep.mode` 保持 `iv` 或 `bv_reverse`；AC 作为 `sweep.ac` 附加，不复制两种
-  DC 模式的雪崩/停止/延续语义。单工作点先用 P3 snapshot API；P4 可用已支持的
-  显式 bias_points 单点路径，但不能绕过 DC 接受和快照门。
-- P4 初版支持电压驱动 Newton、普通规则目标循环及显式 bias_points 外层接受点；
-  排除 arclength、外接电阻/电流控制、Gummel、legacy CV 混用。后续逐条资格化，
-  schema 与运行时必须一致拒绝不支持组合。受限 bv_reverse 仍可覆盖近击穿前
-  稳定支路的 avalanche-on fixture，不代表支持跨 snapback 的 AC。
-- 端口名唯一且覆盖全部电极，reference 在 nodes 中；只对已资格化的接触/材料/
-  导数配置开放。reduced 为 full 的派生视图，不因选择 reference 丢掉端口。
-- 显式 frequencies_Hz 与范围对象二选一，有限且正，重复报错。范围 points 指总点数，
-  start=stop 仅允许 points=1；linear/decade 仅定义间隔，不隐式改变点数。
-- intervals=N 在 Vela 中是含两端 N+1 个目标；在扫描前用索引生成物理列表。
-  `ac.compute.bias_points_V` 是 AC 选点请求，与 DC 已有 `sweep.bias_points` 区分；
-  显式 DC 列表模式下 AC 目标必须来自该列表，否则报错，不静默插点重排 DC 路径。
-- 普通循环合并原 DC 规则目标与 AC 目标，保留方向和 target_id；步长裁剪只改变
-  接受点序列，不改变方程或收敛标准。频率可升序调度，bias 不统一升序重排。
-- P3 只验收给定工作点 API；JSON/输出/调度在 P4 交付。QP 与未支持模型 fail-closed；
-  单位 phasor 是导数归一化，有限差分步长只在 diagnostics 中。
+配置规则：
 
+- `frequencies_Hz` 显式数组和范围对象二选一；
+- 所有频率必须有限且大于零；
+- `nodes` 不得重复，必须解析为真实电接触；
+- `reference_node` 必须在 nodes 中；
+- AC 求导内部固定使用单位 phasor，不提供会暗示大信号含义的 excitation amplitude
+  物理旋钮；有限差分步长只存在于 diagnostics/test 配置；
+- P3 仅接受 `system=implicit`，其他值 fail-closed；
+- P6 才接受显式 circuit/netlist；
+- `compute` 生成强制 AC 目标偏压；DC 自适应步必须裁剪到下一个待命中目标。中间
+  接受点仍可用于延续，但不得替代目标或参与 P5 评分；
+- `normalized_intervals` 在开始 DC 扫描前解析为不可变物理 bias 列表，并写入
+  manifest；还应支持显式 `bias_points_V`，两者二选一；
+- 输出默认 full matrix，reduced matrix 只是派生视图；
+- legacy `cv_quasistatic` 的默认和列名在迁移期保持不变。
 
 ## 6. 分阶段实施内容和验收标准
 
@@ -401,18 +639,8 @@ tests/regression/test_devsim_ac.py
 10. 创建 `ac_contract.schema.json`、`threshold_freeze.json` 和读取器测试；
 11. 建立一个不依赖 Sentaurus 的公开解析 fixture 数据集供 CI 使用；该任务与 VM
     复跑并行，不等待受许可 oracle；
-12. 冻结 Vela 的目标落点状态机合同及测试输入：未来由自适应步裁剪命中目标、接受后
-    才触发 AC。P0 不实现 DCSweep 回调/步长裁剪，其端到端验收属于 P4。
-13. 从 `nMOS_dvs.cmd`、预处理 deck 和 TDR 核对 gate 接触所属区域/材料、栅掺杂、
-    厚度、是否求电子/空穴以及 WorkFunction。交付 `gate_material_contract.json`：
-    明确 retained_semiconductor_poly 或 metal_equivalent，不凭 quantum 模块的 poly
-    名称识别推断 DD 栅支持。金属替代须另列模型差异并禁止认领原始多晶栅等价。
-14. 封存原始及有效 Math 段、全局/Device scope、Derivatives/AvalDerivatives 等设置、
-    版本默认、AC 专用设置和有效模型导数；交付 `reference_derivative_contract.json`。
-    不能假定 Newton 开关完全决定 AC/IFM 的导数默认。对缺少有效设置证据的分支标
-    unknown；若需受控开关 A/B 则单独冻结输入，保留原始 oracle，不覆盖原 deck。
-15. 在 P0 预登记多材料体积、多晶栅替代、DC 状态未对齐及有效导数差异账本；数值
-    影响未量化填 pending，不虚填预计百分比作为豁免。
+12. 冻结 Vela 的目标落点规则：自适应步裁剪到待命中 AC bias，精确接受后才触发
+    `onAcceptedPoint`，严禁用插值结果触发 AC。
 
 ### 必须交付
 
@@ -424,9 +652,6 @@ sentaurus_ac1_full_matrix.csv
 sentaurus_explicit_implicit_compare.json
 ac_contract.schema.json
 threshold_freeze.json
-gate_material_contract.json
-reference_derivative_contract.json
-known_difference_ledger.json
 ```
 
 ### 验收标准
@@ -438,73 +663,44 @@ known_difference_ledger.json
   此值，必须先解释并按实测冻结，不能扩大 Vela 容差掩盖；
 - `A + j*omega*C` 重建值与导出的复 Y（若可导出）在输出精度内闭合；
 - schema 对缺端口、重复端口、非正频率、混合单位和缺哈希 fail-closed；
-- 交付初始步约 `0.03 V`、目标不在自然步长网格上的调度测试规格和目标清单；
-  本阶段只验证清单/索引/容差，实际裁剪和观察者测试在 P4 执行；
+- 用初始步约 `0.03 V`、目标点不在自然步长网格上的 fixture，证明所有 AC 目标均
+  被步长裁剪精确命中，且中间 DC 接受点不改变目标顺序；
+- `onAcceptedPoint` 是只读观察者；回调不得改写接受状态、下一步预测器或 retry
+  决策；
 - P0 未通过不得进入最终跨工具等价声明。
 
-阈值文件分区管理：解析/结构硬门、Sentaurus 自身一致性门、跨工具物理差异门、
-性能目标分别记录来源。P0 可依据参考自身的重跑噪声和输出精度冻结 floor，但不能
-用尚未出现的最终 Vela 结果调门；未知值保持 pending 并阻止相关等价声明。
-
-## P0.5（即 WP-R）：材料策略、快照资格和接触接口
+## P0.5：统一 physical row view 和接触反力接口
 
 ### 目标
 
-先冻结材料支持体积和 B1/B2 的共同接口，使 P1 电荷和 P2 储存可以安全并行。
-本阶段明确登记独立工作树候选与当前主线的差异，不把 DC-only 材料局部修正直接
-当成 AC 实现。材料策略未决时可以做接口/解析诊断，不能冻结生产 P1/P2 数值门。
+先冻结 B1/B2 的共同基础，使 P1 电荷和 P2 储存可以安全并行。
 
 ### 实施内容
 
-1. 先交付材料体积决策，按合同 4.3.4 审计 Poisson/S/M/连续性源项及固定电荷支持；
-   如选择改动，另批准物理子工作包并重收敛 DC，保持 legacy 默认和专项回归边界。
-2. 为 `CoupledDDAssembler` 明确区分：
+1. 为 `CoupledDDAssembler` 明确区分：
    - `solved` view：包含 essential 行替换，供 Newton/AC 内部状态求解；
    - `physical` view：保留体项、边通量、自然边界和静态 sheet charge，跳过
-     essential 行替换，供 essential 端口反力提取；
-   - `boundary stamps`：同一装配过程按外部接触分组的自然通量 residual/J/du；
-   - 内部 insulating pin 只保留在 solved 代数行，physical 的无载流子贡献行为零；
-3. physical view 接受完整 bcs，跳过 essential replacement 和内部 gauge pin，保留
-   真实体项与自然边界；不能用 `CoupledDDBoundaryConditions{}` 代替；
-4. 定义 `ContactReactionFunctional` 的 Poisson、electron continuity、hole continuity
+     essential 行替换，供端口反力提取；
+2. physical view 必须接受完整 bcs，并只移除 essential row replacement，不能用
+   `CoupledDDBoundaryConditions{}` 代替；
+3. 定义 `ContactReactionFunctional` 的 Poisson、electron continuity、hole continuity
    权重和物理单位恢复因子；
-5. 增加接收完整 bcs 和 `ResidualView::Physical` 的
+4. 增加接收完整 bcs 和 `ResidualView::Physical` 的
    `ContactCurrent::computeFromResidual` overload 并委托统一接口；保留旧 overload
    供无自然边界的兼容调用，但不得在 AC 中使用；
-6. 暴露 `value`、`stateDerivative` 和后续 `storageDerivative`，不暴露第二套 SG
+5. 暴露 `value`、`stateDerivative` 和后续 `storageDerivative`，不暴露第二套 SG
    production derivative；
-7. 为 ohmic、metal gate、thermionic/Schottky、insulating pin 和 interface sheet
+6. 为 ohmic、metal gate、thermionic/Schottky、insulating pin 和 interface sheet
    charge 建立行分类测试。
-8. 在 P1/P2 之前定义不可变 snapshot、物理单位恢复和状态/方程坐标变换；不能把
-   两阶段都依赖的类型留到 WP3c 才设计；
-9. 逐模型/配置登记 `physical_derivative`、`newton_only_approximation` 或
-   `unsupported_ac`，审计对角 floor、冻结 mobility、源项和非局部分支；
-10. 现有模式构建提前屏蔽 essential 行，physical J 需要独立模式或联合模式，
-    不能仅关闭最后一次行覆盖；测试保留接触行 off-diagonal 与完整导数支撑集。
-11. 建立独立 AC 装配工厂：参考 makeArclengthAssembler 配置路径，floor 关闭构造，
-    精确恢复终态 state/reference/bcs；先过 solved residual bitwise replay 再做任何 AC。
-12. physical J 一次装配、派生 solved J 或固定两视图缓存；按 snapshot 隔离模式计数，
-    不在频率/端口循环切换 signature。完整处理缩放前后两处 insulating pin。
 
 ### 验收标准
 
-- `snapshot_residual_replay`：同构建、同 snapshot 的 AC solved residual 与捕获的
-  DC 原始终态 residual bitwise 一致；失败前不允许计算 Y；
-- `ac.jacobian_pattern_builds<=2`/snapshot；重复频率/RHS 增量为 0，DC 计数不混入；
-- 不对称 Si/oxide MOSCAP 先交付面积/电荷支持审计及策略决策，选中 DC 路径可复现；
-  本阶段用 manufactured 支持测度 oracle 验证粒子数/电荷恒等式。生产 C_Q 敏感度
-  在 P1 验收、生产 S/M 在 P2、AC Cgg/Cgs/Cgd 在 P5，避免 WP-R 反向依赖 P1/P2；
 - 现有 ohmic fixture 中，统一反力端电流与 `computeFromResidual` 逐接触一致到机器
   舍入；
 - 统一反力端电流与独立 SG `computeDetailed` 在适用 DC fixture 上通过现有 KCL
   门；
 - natural thermionic 项在 physical view 中保留，essential replacement 不存在；
-- `bulk+boundary=physical` 逐行重建一致，Robin 收敛全残差为零但 boundary stamp
-  允许非零端电流；不会把“零残差”误验成“零电流”；
-- 物理 J directional FD 通过 4.9；构造会触发 Newton floor 的 fixture，证明 floor
-  不进入 AC J，且去除迭代正则后重新检查 DC 物理残差；
-- 冻结坐标不冻结物理 mobility；live residual 方向导数必须与申报的 AC J 匹配；
-- 原有 Newton solved view 的默认行为/兼容测试不变，新 AC 物理导数模式单独验收；
+- solved view 的现有 residual/Jacobian 测试字节语义不变；
 - 接触权重、block offset、行类型和物理 scale 都有显式 API，不由调用者手写 `N`
   和 `2*N`；
 - P0.5 未冻结前，P1/P2 不进入生产实现。
@@ -513,7 +709,7 @@ known_difference_ledger.json
 
 ### 目标
 
-建立不依赖区域人为分区的端电荷定义，为位移响应提供 oracle；低频使用范围见 4.8。
+建立不依赖区域人为分区的端电荷定义，为位移电流和低频极限提供 oracle。
 
 ### 实施内容
 
@@ -524,8 +720,7 @@ known_difference_ledger.json
    Gauss closure；
 5. 使用冻结 snapshot 的中心有限差分作为 Qx oracle；
 6. 独立规则网格 `D dot n` 只作为平行板 oracle；
-7. 对 `J*x0=-B*e_l` 求 DC 状态灵敏度，生成 `C_Q=Qx*x0+Qu*e_l`，并用受控 DC
-   重求解差分检查总导数；这种 DC 灵敏度测试与固定 x 的 Qx/BC FD 必须分别命名；
+7. 由每个端口单位扰动生成 full quasi-static C matrix；
 8. 保留当前 `TerminalCharge` 和 legacy `cv_quasistatic`，新增明确的
    `charge_method=poisson_reaction`；
 9. 为 full/reduced C 矩阵增加输出和守恒诊断。
@@ -547,8 +742,7 @@ known_difference_ledger.json
 - 每个 fixture 的 `|sum(Q_electrode)+Q_domain|` 归一残差不大于 `1e-10`；
 - Poisson reaction J 行提取的 Qx 与中心差分在显著元素上相对误差不大于 `1e-6`，全局归一
   误差不大于 `1e-8`；
-- `C_Q` 共同模式行和、含 `dQ_domain/dV` 的 Gauss 微分恒等式归一残差不大于
-  `1e-8`；仅纯介电等适用 fixture 才要求 `C_Q` 列和为零；
+- C 矩阵共同模式/电荷守恒行列和归一残差不大于 `1e-8`；
 - 逐次减半扰动时，中心差分在截断误差区呈二阶收敛；
 - legacy `cv_quasistatic` 测试全部通过；
 - 无接触半径、区域归属参数或独立复制的 FVM geometry 参与生产电极电荷定义；
@@ -573,8 +767,7 @@ known_difference_ledger.json
    清零，thermionic/Schottky physical 行保留储存；
 6. 提供 finite-difference storage Jacobian；
 7. 输出每个 block 的范数、非零元和非有限值诊断；
-8. 建立 MB、Fermi、OldSlotboom on/off 和混合材料测试；frozen QP storage 的单元
-   诊断如保留须标记非生产 AC，不能据此开放 QP AC 配置；
+8. 建立 MB、Fermi、OldSlotboom on/off、混合材料和量子势 frozen correction 测试；
 9. 明确 SRH、迁移率和雪崩不直接产生瞬态储存项，但会通过 J 影响 AC。
 10. 所有 FD 在同一冻结 `ACOperatingPointSnapshot` 上执行，不允许调用 Newton
     重新分配 contact-basin reference 或重算尺度。
@@ -585,13 +778,10 @@ known_difference_ledger.json
 - 约束行的 M 行严格为零；
 - 解析 M 与中心差分在显著元素上相对误差不大于 `1e-6`，全局归一误差不大于
   `1e-8`；
-- scaling on/off 按 4.6 同时恢复行和列坐标后算子作用一致，归一差异不大于 `1e-9`；
-  P2 不依赖尚未实现的 AC solve，最终响应不变性在 P3/P4 再验；
-- quasi-Fermi reference 整体和逐节点重分配后，重新打包同一物理状态的 M 作用不变，
-  归一差异不大于 `1e-9`；最终 AC 响应在 P3/P4 再验；
+- scaling on/off 转回物理单位后矩阵和响应一致，归一差异不大于 `1e-9`；
+- quasi-Fermi reference 整体变换不改变物理 M 和最终响应，归一差异不大于
+  `1e-9`；
 - 电子/空穴储存符号通过 manufactured conservation test，而不是只靠源码审阅；
-- 在任意光滑 manufactured 状态/方向上验证
-  `-q*ds_n+q*ds_p=d rho_mobile` 及 4.3 的接触抵消，覆盖非零接触体积和单位版本；
 - thermionic/Schottky fixture 的连续性 M 行保留，essential 和 insulating pin 行为零；
 - frozen reference FD M 与解析 M 的归一差异满足同一 `1e-6/1e-8` 门；
 - 现有 full test suite 无回归。
@@ -611,12 +801,10 @@ P1 和 P2 在 P0.5 接触行接口冻结后可以并行；二者不得各自复�
 1. 建立带两个金属电极的均匀氧化层平板 fixture；
 2. 求解 DC Poisson 工作点；
 3. 由 physical Poisson reaction/J 得到 Q/Qx；
-4. 默认沿用完整 3N solved 系统：纯介电网格的 phin/phip 已由单位 gauge 行固定，
-   gauge M=0 即可；无需为本阶段先开发 Poisson-only N 自由度路径。检查至少一个
-   电势参考/Dirichlet、介电图连通和 gauge 完整，不能把全 Neumann Poisson 称为非奇异；
+4. 以 M=0 通过 AC block 路径求状态扰动；
 5. 输出 `Y=j*omega*C`；
-6. 实块最小路径先完成端到端资格；P3 再加入 complex 三路对比，不据这个小 fixture
-   冻结最终后端，保留它作为选中生产路径的回归。
+6. 对 stacked/interleaved 两种候选布局采集 fill ratio 和解残差，但暂不据单一小
+   fixture 冻结最终布局。
 
 ### 验收标准
 
@@ -625,54 +813,58 @@ P1 和 P2 在 P0.5 接触行接口冻结后可以并行；二者不得各自复�
 - `Y_imag=omega*C` 的归一误差不大于 `1e-11`；
 - 两端电流等大反向，KCL 归一残差不大于 `1e-10`；
 - 从 `1e3` 到 `1e12 Hz`，C 与频率无关、Y_imag 与频率成正比；
-- 增加双介质串联平板和固定 sheet charge fixture；静态 sheet 改变 Q 的偏置项，
-  在固定线性介电常数下不产生额外 M 或 AC 电容；
 - P2.5 未通过不得进入含载流子的 P3。
 
-## P3：单器件隐式 AC 核心与三路后端决策
+## P3：单器件隐式 AC 数值核心
 
-### 目标和前置
+### 目标
 
-在 WP-R 已复现的 DC snapshot 上求解 `J+j*omega*M`。P1/P2/P2.5 通过后进入。
-本阶段交付 C++ 单点 API、frequency/RHS 调度和 backend_decision，不提前开放 JSON。
+在给定收敛 DC 工作点上构造和求解实数 2x2 频域块系统，并支持多端 RHS。
 
 ### 实施内容
 
-1. 给现有 LinearSolver 增加对象级数值分解计数，并在局部 ComplexLinearSolver 候选
-   提供同一语义：attempt 含失败，success/failure/cache_hit 独立；清缓存不归零
-   生命周期计数。修正现有头文件“每次 solve 都分解”的过期注释。
-2. AC 装配器和求解器均为独立实例；三种表示消费完全相同的物理 J/M/B 和快照。
-   real stacked、real interleaved、complex Ndof 均比较，不扩散全局复数类型。
-3. 使用合同 4.5 的 scaled BC RHS：单位电压对应 `+1/V0`，不一律置 1；
-   frozen-reference 仿射增量 FD 和一般物理工作点 FD 分别验收。
-4. 按合同 4.5 固定三路 benchmark：均匀介电、PN、代表性重掺杂 MOS，以及小型 dense
-   complex oracle。固定 Release/主机/ordering，测 factor bytes/峰值内存和 time，
-   不用不同标量大小的 fill ratio 单独选型。所有正确性门通过后才按成本选择生产路径。
-5. 每 snapshot 批量装配 J/M/端口算子，每频率一次建立数值矩阵，多 RHS 使用同一
-   immutable compressed 矩阵/分解。新 bias 或物理/缩放/布局变更使相应缓存失效。
-6. 三种路径都报告 count、backend、ordering、矩阵哈希、backward error；非受支持的
-   环境变量诊断后端不能绕过计数门后自称支持 AC。
+1. 先给 `LinearSolver` 增加对象级 `numericFactorizationCount()` 和精确单元测试；
+2. AC solver 持有专用 `LinearSolver`，不得与 3N DC Newton solver 共享实例；
+3. 实现 `ACBlockSystemBuilder`；
+4. 组装 `J`、`M` 和实块矩阵；
+5. 对 stacked/interleaved 采集 fill 和时间，以代表性 MOS 而非平板 fixture 冻结布局；
+6. 为 implicit contact excitation 建立解析 `dR/du`；隐式 Dirichlet 下 `Mu=0`，
+   单位 RHS 为实且仅在被激励 essential BC 行非零；
+7. 以同一冻结 snapshot 上的局部边界有限差分作为 RHS oracle；不得通过正常
+   Newton `+/-delta V` 重求解；
+8. 每个频率只装配一次块矩阵并数值分解一次，对每个端口顺序求解 RHS；
+9. 多 RHS 循环持有同一个 `const SparseMatrixd`，不得 coeffRef、compress、copy-back
+   或以任何方式触碰矩阵值；
+10. 返回复状态扰动、线性残差、条件/失败诊断和性能计数；
+11. 支持单频、显式频率数组、linear 和 decade 频扫；
+12. QP 默认 fail-closed；非正频率、未知端口、重复端口、未收敛工作点和奇异系统
+    同样 fail-closed。
+
+### 测试
+
+- 人工 1x1 和 2x2 `J+j*omega*M`；
+- M=0 的纯电阻极限；
+- J=0、适当约束下的纯电容极限；
+- 多 RHS 与逐列独立求解一致；
+- 稀疏模式相同而 omega 改变时只复用 symbolic analysis，不误复用 numeric factor；
+- 同一 omega 多端 RHS 只做一次 numeric factorization；
+- 边界解析 RHS 与中心差分 RHS 对照。
+- 冻结 per-node QF reference、DD scaling、residual diagnostic scales 和 frozen QP
+  field 后的 FD RHS 对照；
+- 重掺杂 MOS 在 `1e3--1e12 Hz` 的块矩阵调理扫描；
+- `AC + density-gradient QP` 默认配置 fail-closed 并给出明确错误。
 
 ### 验收标准
 
-- 首先满足 `snapshot_residual_replay` 和 `ac.jacobian_pattern_builds<=2`。
-- well-scaled 人工系统及三种表示在原复方程上的 backward error `<=1e-11`；
-  与 dense complex oracle 的全局误差 `<=1e-11`。
-- 新建求解器首次新矩阵所有 RHS 合计 1 次分解；后续 RHS 0 次；改变矩阵值 1 次，
-  bitwise 相同缓存命中 0 次。M=0 可跨频复用；失败/显式重试单列而非隐藏。
-- 模式不变时 symbolic count 不增加；同矩阵仅改 RHS 不分解，改一个值必须重分解。
-  实/复选中后端均接受上述精确计数测试，未选路径不作生产性能承诺。
-- 仿射 BC 增量 FD 与 stamping 归一差 `<=1e-12`，覆盖 V0!=1、非零逐节点 reference；
-  普通 DC 基线 FD 按合同 4.9 的 `1e-6/1e-8` 与步长扫描门。
-- 重掺杂 MOS `f in [1e3,1e12] Hz` 的原复方程 backward error `<=1e-10`；
-  记录 componentwise error、可得条件/pivot 诊断和后端实际字节数。三路测试使用相同
-  等化策略，不通过新增假导电/储存项改善调理；缺失诊断写 unavailable。
-- 纯介电 3N solved carrier gauge 为单位 J、零 M；选中后端重跑 P2.5。
-- scaling/reference 变换后物理响应不变；QP、未收敛 DC、奇异系统、未知端口、
-  非有限/非正频率和未审计模型给出具体错误。
-- 交付 `backend_decision.json`，列出三路正确性/性能数据及选择理由；
-  高频扫描只作数值压力测试，不是 DD/电静态近似在 THz 的物理有效性声明。
-
+- well-scaled 人工系统的相对线性残差不大于 `1e-11`；
+- 实块解与 Eigen dense complex reference 的归一差异不大于 `1e-11`；
+- 每频率专用 solver 的 `numericFactorizationCount()` 增量严格等于 1；
+- 每频率 RHS 数等于实际激励端口数；
+- 改变频率会重新数值分解但不重复 symbolic analysis（稀疏模式不变时）；
+- 冻结 snapshot 上解析边界 RHS 与有限差分归一差异不大于 `1e-12`；
+- 重掺杂 MOS 全频段相对线性残差不大于 `1e-10`，无未登记 pivot/奇异告警；
+- 布局决策报告同时给出 stacked/interleaved 的 fill ratio、factor/solve time 和残差；
+- 所有失败都包含 bias、frequency、矩阵维度、零行/列、非有限值和后端信息。
 
 ## P4：端口线性化、完整 Y/A/C、配置和输出
 
@@ -683,8 +875,8 @@ P1 和 P2 在 P0.5 接触行接口冻结后可以并行；二者不得各自复�
 ### 实施内容
 
 1. 使用 P0.5 `ContactReactionFunctional`，不实现第二套生产 SG 导数 kernel；
-2. Essential 载流子接触从 physical residual/J/M 提取反力；自然接触必须按 4.3.2
-   使用 boundary stamp，尚未资格化则拒绝该配置；
+2. 从 physical electron/hole continuity residual、J 和 M 接触行提取端口载流子反力
+   及其小信号响应；
 3. 从 physical Poisson residual/J 接触行提取 Q/Qx，并形成位移项
    `j*omega*dQ`；
 4. 按冻结符号组合电子、空穴和位移响应，得到总端口复电流；
@@ -692,9 +884,8 @@ P1 和 P2 在 P0.5 接触行接口冻结后可以并行；二者不得各自复�
    交叉验证，不作为 AC production derivative；
 6. 逐端单位 phasor 激励生成 full Y，再派生 A 和 C；
 7. 计算 terminal KCL、Y row/column sum、charge closure 和共同模式检查；
-   对 closed fixture，端口提取必须覆盖全部边界反力/自然通量。离散守恒提供结构
-   保证，但仍需检查内部解残差、完整物理导数、源项配对和激励 stamp，不能仅凭
-   “同一装配器”宣称 KCL 已自动通过；
+   对 closed fixture，接触 reaction weights 的并集必须覆盖全部物理边界反力，使 KCL
+   成为装配/激励 stamping 验证，而不是独立 SG 导数能否偶然闭合的测试；
 8. 实现 `ACSmallSignalSolver` 和 `ACSweepRunner`；
 9. 在 DCSweep 只增加只读 `onAcceptedPoint` 观察者，并把 P0 冻结的 AC 目标注册为
    forced landing points；自适应步先裁剪到目标，精确接受后才触发 AC；
@@ -702,25 +893,6 @@ P1 和 P2 在 P0.5 接触行接口冻结后可以并行；二者不得各自复�
 11. 实现配置解析、long-form CSV、summary 和 manifest；
 12. 支持保存失败前已完成的 bias/frequency 数据，并明确 partial 状态；
 13. 可选输出复 `psi/phin/phip` 场，默认关闭以控制体积。
-
-当前步进器已对规则 `nominalTarget` 和终点做裁剪；AC 扩展范围按下表固定。P4 优先扩展该接口以合并原 DC 目标与不可变 AC 目标（保留两类 ID），
-复用 `DCSweepStepControlState` 的 adaptiveStep、retry 和 stopRequested；recorder
-还会接收失败事件，不能直接把它当成 AC 的 onAcceptedPoint。AC 快照应在接受状态
-更新完成后只读发布；初始 DC 点在循环外接受的路径也必须发布一次。
-现有内部终点容差为 `1e-12`，并以 `nominalTarget += step` 浮点累加；AC 目标应由
-索引生成且独立判定完成，不改变 AC 关闭时的 legacy 语义。
-
-| 当前调用点（HEAD 行号，仅定位） | 路径 | P4 初版 AC 处理 |
-| --- | --- | --- |
-| DCSweep.cpp:7300 | 外边界控制的内部电压延续 | 不挂 AC；external resistor/current-control 组合明确拒绝 |
-| DCSweep.cpp:7731 | 耦合外电阻的 outer voltage 延续 | 不挂 AC；P6/后续资格化再支持 |
-| DCSweep.cpp:8038 | 显式 bias_points 间的内部延续 | 内部点不触发 AC；在外层已接受请求点发布快照 |
-| DCSweep.cpp:8430 | 普通 iv/bv_reverse 电压扫描 | 合并 DC/AC 目标，在最终接受后触发，覆盖循环外初始点 |
-
-arclength 是另一条路径，不由上述四处调用自动覆盖；初版拒绝该组合。测试必须记录
-`dc_execution_path`、target_id、observer_count，证明实际进入哪条路径，不能只测试
-helper 而遗漏 runner 分派。已有 breakdown/stopRequested 提前停止时剩余 AC 目标
-记录 incomplete，未执行目标不进入评分。
 
 ### 验收标准
 
@@ -730,102 +902,74 @@ helper 而遗漏 runner 分派。已有 breakdown/stopRequested 提前停止时�
   `1e-6`；
 - 每个电压列的 terminal KCL 归一残差不大于 `1e-8`；
 - 共同模式电压激励的端口响应归一残差不大于 `1e-8`；
-- full/reduced 转换按 4.8 条件验证；保存原始全矩阵，禁止用重建算法掩盖 KCL 误差；
+- full matrix 与指定参考端生成的 reduced matrix 可相互一致转换；
 - CSV 中 `Y_real=A`、`Y_imag=omega*C` 在 17 位有效数字写回后闭合；
 - 每米与每微米列换算精确到输出舍入误差；
-- bias/frequency/terminal 排序确定，固定平台/后端重复运行数值表字节级稳定；
-  时间戳、耗时和内存等非确定性遥测分离，不要求跨平台 bitwise 相等；
+- bias/frequency/terminal 排序确定，重复运行文件字节级稳定，时间戳字段除外；
 - ACCompute 不改变 DC 方程、接受判据、预测器或 retry 语义，但会
   通过步长裁剪**受控改变接受点序列**以强制命中目标；测试必须证明所有目标精确
   落点且观察者只读；
-- Forced landing 专项：覆盖升/降扫、起终点、相邻目标小于通常 min_step、目标处
-  Newton 失败后退步重试、重复请求、恢复运行和多段 bias ramp；目标失败不得标为
-  已完成/已评分。剩余距离过小时允许专门的终点裁剪，但不放宽 DC 收敛判据；
-- 落点以不可变 target_id 和目标 BC 赋值为准，不能把邻近状态重命名成目标。
-  `landing_tolerance_V` 建议 `32*epsilon*max(1 V,abs(Vtarget))`，按序列化精度在 P0
-  冻结；完整 DC 电压向量也必须满足合同。观察者只读、拒绝点不触发、每目标恰好一次；
-- 观察者失败默认令 AC 分析 fail-closed，保留已接受 DC 状态和 partial 产物；继续
-  DC/跳过 AC 需显式策略并标记失败，不能将 AC 错误伪装成 DC 重试来改变结果；
-- 相同强制目标清单下，观察者开/关的 DC 接受状态一致；AC 关闭且无目标时保持 legacy
-  自适应流程。比较时不能要求“有强制目标”和“无强制目标”的 DC 路径完全相同；
 - 第一版 `system=explicit` 必须明确报“尚未支持”，不能静默按 implicit 运行。
 
-## P5：分层验证，DC 对齐先于 A/C 评分
+## P5：解析、DEVSIM 和 Sentaurus 分层验证
 
-### 目标和复用依据
+### 目标
 
-解析/DEVSIM/原始 Sentaurus AC1 是三类不同证据。先通过每个强制落点的 DC 前置门，
-再分别评分 A 与 C。复用 SimpleMOS 的不可变 TDR、精确偏压网格、独立偏置状态链、
-模型消融、状态身份/残差回放和误差账本方法，不新建一套含义不同的比较器。
-具体来源/commit 及适用范围见审核附录；SimpleMOS 不同于本 AC 器件，其阈值与
-“已通过”状态不能直接继承。0.1 dex 的历史电流误差不是 AC 导数误差的数学下界。
+证明 Vela 的 AC 不仅能运行，而且在物理、数值和端口语义上可与独立实现比较。
 
-### L-A / L-B：解析和开源资格
+### 验证层次
 
-- 纯介电平板、双介质/sheet charge、线性 RC 等价系统。
-- MOSCAP 低/高频极限明确少数载流子供给/G-R/工作点条件；PN 和导通 MOS 使用合同
-  4.8 的完整低频展开，不强制所有端口 `C_Q=C_AC`。
-- avalanche-on 近击穿稳定电压支路：同快照 M 不受源开关直接影响；重收敛的不同
-  状态 M 可以不同。通过 live residual Jv、KCL 和频率趋势，不能只看 Re(Y) 改变。
-- 无源平衡 fixture 才要求互易/无源；导通或近击穿器件不强制电容元素非负。
-- DEVSIM 至少一个 PN 和一个 MOSCAP，固定代码版本、脚本、网格/材料/参数/
-  单位/端口。公开固化 fixture 用于离线 CI；带许可运行独立管理。
+#### L-A：解析和 manufactured fixtures
 
-### L-C0：每个强制落点的 DC 前置门
+- 平行板电容；
+- 线性 RC 网络等价块；
+- 平衡 MOSCAP 低频/高频极限；
+- 低注入 PN 结 small-signal conductance/capacitance；
+- avalanche-on 近击穿二极管：雪崩只进入 J，不进入 M；
+- 对称无源结构的互易性；
+- 偏置晶体管只检查 KCL/gauge，不强制互易。
 
-先检查输入映射/物理合同和本工具收敛，再按相同物理电压、共同电势参考和节点/
-区域映射对比，不插值、不经验平移 Vth/psi。交付 `dc_alignment_gate.json`：
+#### L-B：DEVSIM 开源交叉验证
 
-| 指标 | 定义及要求 |
-| --- | --- |
-| 端电流 | 有信号时分别检查符号和 `abs(log10(abs(Iv)/abs(Is)))`；近零使用预冻结 A/m floor 与绝对误差，不能把符号吞进 log |
-| 电势 | 同物理参考下 psi 的 max/P95/RMS（V）；不通过拟合常数偏移消除差异 |
-| 载流子 | 各已匹配半导体区域的 log10(n)、log10(p) 差（dex），冻结密度 floor、活动掩码、覆盖率 |
-| 状态身份 | 记录原始导出 psi/QF/n/p 与 Vela 重建密度的区别，审计 ni/Vt/参考电位，不混同物理差异与坐标差异 |
-| 残差/路径 | DC 物理残差合格、snapshot replay 通过、target 命中、状态链与模型 fingerprint 一致 |
-| DC 灵敏度诊断 | 在预定相邻点/独立小扰动上检查 gm/gds 和导数信号/数值噪声；DC 电流吻合不单独证明 A 合格 |
+- 使用公开可提交的 PN 二极管和 MOSCAP；
+- 固定网格、材料参数、边界、DC 点和频率；
+- 比较 DC 状态、端电流、Y、C 和频率趋势；
+- 保存 DEVSIM 版本、脚本和输出，不依赖联网运行 CI。
 
-每项容差以单位/区域/端口写入 `threshold_freeze.json.dc`，P0 建合同、P5 评分前批准；
-未知容差保持 pending，不把 SimpleMOS 的宽松历史曲线门直接当作本器件 DC 门。
+#### L-C：Sentaurus `AC1_des.cmd`
 
-若任一强制点 DC 门失败，该点 A/C 为 `blocked_dc_alignment`，不得标为通过或纳入
-正式误差统计；仍可计算并保存明确标记的诊断 AC。报告所有目标、DC 通过数、AC
-可评分数及缺失原因；不能只挑通过点集合认领 AC-L4。DC 前置门也不保证 AC 等价。
+- 使用同一 TDR、端口、偏压和 1 MHz；
+- 使用 P0 冻结的强制目标 bias；若任一工具未在目标上收敛，该点记为失败而不是
+  插值；
+- 先比较 DC 工作点，再比较 full A/C；
+- 按显著元素、全局矩阵、Cgg 曲线和守恒分别评分；
+- 不用最终 Cgg 一条曲线替代全矩阵比较；
+- 不在陡峭区跨不同 bias 点插值后评分。
 
-### L-C1：材料、栅和导数语义资格
+### 暂定跨工具门槛
 
-- 材料支持体积必须是 WP-R 冻结的策略；后续变更触发 DC/P1/P2/AC 全链重验。
-- Gate 从 P0 的材料合同确认：若保留多晶半导体栅，核对 DD 材料参数、掺杂、电极
-  位置、载流子未知量与 poly depletion MOSCAP/解析极限；若替换为 metal_gate，
-  另建 metal-equivalent fixture 和差异项，不认领原始 poly AC1 等价。
-- 完整记录 Fermi、OldSlotboom、迁移率/高场 driving force/Enormal、SRH、温度和
-  接触功函数。模型同名不证明参数、离散和导数语义相同。
-- P0 的原始/effective Math 与 AC derivative 合同必须明确。只凭 Derivatives/
-  AvalDerivatives 文本出现或缺席不能推断有效 AC J。若参考有效导数与完整物理
-  Vela J 不同，作为受控 derivative-matched 变体单列比较；原始 oracle 不覆盖，
-  Vela 不静默丢导数“追平”。无法确认时原始等价门 pending。
+P0 后必须冻结；以下仅作为 v2 审核起点：
 
-### L-C2：A/C 独立阈值与最终验收
+- 只在双方共同的精确 bias/frequency 点评分；
+- “共同精确点”来自强制落点合同，不是两个自适应接受点集合的偶然交集；
+- 对 `|X_ref| >= 1e-4 * max|X_ref|` 的显著矩阵元素，复 Y、A、C 相对误差不大于
+  `5%`；
+- 全矩阵 `max|X-Xref|/max|Xref|` 不大于 `2%`；
+- Cgg 曲线显著区中位相对误差不大于 `3%`、P95 不大于 `5%`；
+- 接近零的元素用全局归一绝对误差，不报告失真的巨大相对误差；
+- 频率趋势、符号、拐点顺序、KCL 和低/高频极限是独立硬门；
+- 任何拟接受差异必须进入 `known_difference_ledger.json`，注明范围、证据和到期条件。
 
-P0/P5 按合同 4.9 的带单位 floor 定义独立键，不再用一个全矩阵门覆盖所有模型/区间：
+### 验收标准
 
-| 阈值命名 | 冻结依据 |
-| --- | --- |
-| `A.significant/global` | DC 与模型/导数对齐、gm/gds 信号和参考数值噪声 |
-| `C.cox_dominated` | 已资格化的积累/强反型条件、几何/介电/栅模型；可比 A 更严，但非普适 |
-| `C.transition` / `C.off_diagonal` | 体积/多晶耗尽/电荷分配敏感度，独立 floor 和网格趋势 |
-| `Y.complex` | 与独立 A/C 门联合验收，不能用大的电导淹没小的正交响应 |
-| `Cgg.curve` | 分区间的中位/P95 和完整目标覆盖率 |
-
-v3 的显著元素 5%、全矩阵 2%、Cgg 中位 3%/P95 5% 仅保留为历史起点，不是已批准
-的统一新门；最终值在查看目标 Vela AC 曲线前按对应合同冻结，变更有版本和理由。
-
-验收：L-A 硬门通过、DEVSIM PN/MOSCAP 合格；原始 AC1 所有目标 DC 前置门通过，
-原始材料/导数合同闭合，全 A/C/Y 及 Cgg 分区指标达标；适用低频与合同 4.8 展开
-差异目标 1% 并验证频率趋近。未关闭的 legacy volume、metal substitution 或未知
-reference derivative 差异不能凭“已入账本”豁免 AC-L4。报告显示参考/Vela 值、误差、
-阈值、资格状态和数据覆盖，保留失败点及部分产物。
-
+- L-A 所有解析硬门通过；
+- DEVSIM 至少一个二极管和一个 MOSCAP 通过冻结门槛；
+- Sentaurus 隐式工程的全部端口矩阵和 Cgg 曲线通过冻结门槛；
+- 低频 AC C 与 P1 的准静态全端口 C 在选定低频 fixture 上归一差异不大于 `1%`；
+- 提高/降低频率时结果连续，无非物理符号翻转或数值尖峰；
+- avalanche-on fixture 的 M 与 avalanche-off 完全一致，而 Re(Y) 按冻结 J 路径
+  响应；对应边级 avalanche Jacobian 审计必须通过；
+- 所有比较报告同时展示参考值、Vela 值、差异、阈值和 pass/fail，禁止只输出结论。
 
 ## P6：显式 MixedMode V/R/C
 
@@ -851,15 +995,10 @@ reference derivative 差异不能凭“已入账本”豁免 AC-L4。报告显�
 1. 定义 `CircuitMNA` 节点、支路未知量和 element stamping；
 2. 为 V/R/C 建立 DC、J 和 M stamps；
 3. 将器件端口电压扰动和端电流响应接入 MNA；
-4. 区分 DUT Y 提取与受源驱动网络分析：前者排除 DC 钳位偏置源，后者理想 AC
-   电压源本来就是合法 MNA 支路，不能把所有未 Exclude 电压源都视作配置错误；
+4. 明确理想电压源为什么必须从 AC unknown/equation 提取集合中 Exclude；
 5. 实现显式 system 配置和 fail-closed parser；
 6. 先验证解析 RC，再验证单器件显式/隐式等价；
 7. 最后复现 Sentaurus `AC_des.cmd`。
-8. 电路含电阻负载时先求一致的 device+circuit DC 工作点（可复用器件 DC 内核），
-   不能把无负载器件偏压直接当成网络内部电压；将 per-m Y 乘实例物理宽度后 stamping；
-9. Node 端口选择与内部节点消元分别定义。内部块非奇异时可用 Schur complement，
-   含理想源/浮空约束时按完整 MNA 求解并诊断秩，不对奇异 Y 子块直接求逆。
 
 ### 验收标准
 
@@ -867,8 +1006,7 @@ reference derivative 差异不能凭“已入账本”豁免 AC-L4。报告显�
 - MNA 每个非 ground 节点 KCL 归一残差不大于 `1e-10`；
 - Vela 显式系统与 Vela implicit 系统全矩阵归一差异不大于 `1e-9`；
 - Sentaurus `AC_des.cmd` 和 `AC1_des.cmd` 在同一冻结门槛内分别通过；
-- 错误 Node、未约束的浮空网络、冲突理想源给出可诊断错误；合法 AC 源正常求解，
-  DUT Y 提取中的偏置源钳位冲突有专门错误与测试；
+- 错误 Node、浮空电路、重复源、未 Exclude 的理想源给出可诊断错误；
 - 多器件实例的端口命名无碰撞，输出包含 instance 和 node 标识。
 
 ## P7：性能、文档、CI 和长期扩展
@@ -878,7 +1016,7 @@ reference derivative 差异不能凭“已入账本”豁免 AC-L4。报告显�
 1. 为 J/M/block build、symbolic analysis、numeric factor、RHS solve、terminal extraction
    增加分阶段计时；
 2. 记录矩阵维度、非零元、fill ratio、内存、频率数和端口数；
-3. 维护 P3 已选后端与三路基准证据；后续更换表示/后端须重新验收，不重复后置选型；
+3. 比较实块与可选 complex backend spike，只有有证据时才决定迁移；
 4. 将小型解析/DEVSIM fixture 放入常规 CI；
 5. 将 Sentaurus 对照放入人工或夜间回归，不把受许可文件提交仓库；
 6. 编写用户配置、输出 schema、端口符号、错误诊断和示例文档；
@@ -888,21 +1026,18 @@ reference derivative 差异不能凭“已入账本”豁免 AC-L4。报告显�
 
 ### 性能验收
 
-- 同一不可变矩阵不得随每个新增端口重复 numeric factorization，计数规则按 P3；
+- 同一频率 N 个端口不允许做 N 次 numeric factorization；
 - AC 单频单工作点峰值内存暂定不超过同状态 DC Jacobian 求解峰值的 `3x`；
-- real 路径为 `2*Ndof`、complex 为 `Ndof`，报告实际存储字节和非零元；dense 仅限小型 oracle；
-- 1 个频率、4 个端口的 nMOS AC wall time 相对固定初始猜测/接受条件下同点 DC
-  Newton 求解暂定目标为 `2x`；同时报告 DC 迭代数，不能用已收敛零迭代状态作分母。
-  性能比例在 P3 实测后冻结，不作为物理正确性的替代门；
-- 100 个频率时分别报告装配、分解、RHS 和端口提取耗时；非零 M 的新矩阵预期
-  主要增加分解成本，M=0 允许跨频复用，不能强制要求其耗时随频率线性增长；
+- 实块矩阵维度为 `2*Ndof`，非零元增长须有报告，禁止无界 dense 转换；
+- 1 个频率、4 个端口的 nMOS AC wall time 暂定不超过一次同点 DC Newton 完整求解的
+  `2x`；该值在 P3 性能实测后冻结；
+- 100 个频率时，运行时间应主要随 numeric factorization 线性增长，端口 RHS 不得
+  主导；
 - 所有性能指标都在固定 Release 构建、固定主机、固定网格上测量。
 
 ### AC-L6 验收
 
 - Debug 和 Release 全测试通过；
-- 实现开始先记录现有失败基线；任何预存失败单列，不能认作新回归或静默豁免。
-  若尚未达到全通过，只报告无新增回归和明确限制，不认领完整 AC-L6；
 - ASan/UBSan 可用平台无新错误；
 - 示例配置从干净构建可运行；
 - schema、配置错误和部分输出恢复有测试；
@@ -919,23 +1054,23 @@ reference derivative 差异不能凭“已入账本”豁免 AC-L4。报告显�
 | --- | --- | --- |
 | WP0a | Sentaurus oracle、schema、目标 bias、读取器、比较报告 | 与 WP0b 并行；不改求解器 |
 | WP0b | 公开解析 fixture | 与 VM 复跑并行，可提交 CI |
-| WP-R (=P0.5) | 材料体积决策、独立装配器/replay、视图/导数资格 | P1/P2 共同前置；策略变化先重收敛 DC |
+| WP-R | physical/solved row view、边界分类、接触反力权重 | P1/P2 共同前置 |
 | WP1a | Poisson 接触反力 Q 和 Gauss closure | 不含独立生产 D-flux kernel |
 | WP1b | Qx、full quasi-static C 和 FD oracle | 不含动态 AC |
 | WP2a | 装配器内 `S(x)` 和 finite-difference M | 可与 P1 并行 |
 | WP2b | 解析 M、边界行和 snapshot 审计 | 不含频域 solve |
 | WP2.5 | 纯介电 Poisson AC | P1 + 最小 AC block；P3 资格门 |
 | WP3a | 人工矩阵实块 builder | 不接器件 |
-| WP3b | stacked/interleaved/complex 三路比较及统一计数 | P3 冻结生产后端，不后置到 AC-L6 |
-| WP3c | 复用 WP-R snapshot 的 implicit RHS | 给定工作点 API；不后置设计共享快照 |
-| WP4a | essential 反力/已资格化自然通量端口响应 | SG 路径仅作 oracle；含动态抵消和低频展开 |
-| WP4b | Y/A/C、频扫、forced landing、输出/schema | 接入工作流并验收状态机 |
+| WP3b | solver factorization 计数、布局 spike、immutable multi-RHS | AC 专用 solver |
+| WP3c | frozen snapshot implicit RHS | 给定工作点 API |
+| WP4a | continuity/Poisson 反力端口响应 | SG 路径仅作 oracle |
+| WP4b | Y/A/C、频扫和输出 | 接入工作流 |
 | WP5a | DEVSIM 基准 | 公开 fixture |
-| WP5b | Sentaurus AC1：逐点 DC 门 -> 材料/导数合同 -> 分离 A/C 门 | 复用 SimpleMOS 方法；保留全部目标覆盖率 |
+| WP5b | Sentaurus AC1 基准 | 受许可工件留在 staging |
 | WP6a | V/R/C MNA | 解析电路测试 |
 | WP6b | device--circuit coupling | Vela explicit/implicit 对照 |
 | WP6c | Sentaurus AC 显式验收 | 最后进入 |
-| WP7 | 已选后端性能、CI、文档 | 不改变已冻结物理合同 |
+| WP7 | 性能、CI、文档、可选 complex spike | 不改变已冻结物理合同 |
 
 每个提交至少包含：
 
@@ -946,15 +1081,6 @@ reference derivative 差异不能凭“已入账本”豁免 AC-L4。报告显�
 - 相关 manifest/schema 版本变更；
 - 若涉及数值门槛，附批准记录。
 
-每阶段另交付 `stage_acceptance.json`：阶段 ID、输入/提交哈希、已实现接口、实际选择
-的测试数、逐门结果、未支持模型、回归变化和审阅决定。WP-R 交付导数资格矩阵与
-离散合同；P1/P2 交付 Q/M 数值审计；P3 交付计数/布局报告；P4 交付状态机和输出
-合同报告；P5 交付完整覆盖率及差异账本。没有实际执行证据的门保持 pending。
-
-本计划不将“纯介电一天”等估计当作交付承诺。WP-R 的物理导数补齐、P0 的许可/VM
-可用性和 P6 的一致 DC 电路工作点是工期主要不确定项；实现团队在 WP-R 审计完成
-后再按缺口估时，不能只按文件数量估算 P1/P4。
-
 ## 8. 测试矩阵和命令
 
 ### 8.1 测试矩阵
@@ -963,16 +1089,16 @@ reference derivative 差异不能凭“已入账本”豁免 AC-L4。报告显�
 | --- | --- |
 | 统计 | Maxwell--Boltzmann、Fermi |
 | BGN | off、OldSlotboom |
-| 材料 | 纯半导体、不对称 Si/oxide MOSCAP、已资格化多晶半导体栅与金属替代对照 |
+| 材料 | 纯半导体、半导体/氧化层/金属栅 |
 | 端口 | 2 端、3 端、4 端 |
 | 频率 | 单频、linear、decade、重复频率拒绝/去重策略 |
-| 工作点 | 平衡、低偏置、导通晶体管；每个跨工具目标先过 DC 对齐门 |
+| 工作点 | 平衡、低偏置、导通晶体管 |
 | 边界行 | Ohmic/metal-gate Dirichlet、thermionic/Schottky、insulating pin、sheet charge |
 | 缩放 | on/off、quasi-Fermi reference 变化 |
 | QP | off；on 默认 fail-closed；显式 frozen approximation 仅在后续单独测试 |
-| 雪崩 | off/on；同状态下无直接 M 项，重收敛状态的 M 可不同 |
+| 雪崩 | off、avalanche-on 近击穿二极管（只改变 J，不改变 M） |
 | 调理 | 重掺杂 MOS，`1e3--1e12 Hz` |
-| 线性表示/后端 | real stacked、real interleaved、local complex SparseLU；选择后端统一计数验收 |
+| 线性后端 | SparseLU；可选 UMFPACK/QR 仅作兼容和诊断 |
 | 输出 | per-m、per-um、finite depth、full/reduced matrix |
 | 失败 | 非正频率、未知端口、奇异矩阵、非有限值、未收敛 DC |
 
@@ -980,45 +1106,30 @@ reference derivative 差异不能凭“已入账本”豁免 AC-L4。报告显�
 
 | Fixture | 预期关系 | 所属阶段 |
 | --- | --- | --- |
-| 纯介电氧化层平板 AC | `Y=j*omega*C_analytic`，`A=0`；完整 3N solved gauge J=1/M=0 | P2.5 |
-| 不对称 Si/oxide MOSCAP | 分离几何/材料策略；报告 Cgg 过渡区及 Cgs/Cgd 敏感度，登记差异 | WP-R/P1/P5 |
-| 快照残差复现 | AC solved residual 与捕获的 DC 终态向量 bitwise 相同 | WP-R |
-| 模式重建计数 | 每 snapshot AC pattern builds<=2，后续 RHS/频率为0 | WP-R/P3 |
-| 多晶栅 MOSCAP | 半导体模型验证耗尽/串联电容极限；金属替代单独账本、不等价声明 | P0/P5 |
-| DC 前置门 | 端电流符号/dex、psi、log n/p 和全部目标覆盖满足冻结合同 | P5 |
-| V0!=1 的 BC 激励 | 指定方程行 RHS=1/V0；非零 reference 不改变该导数 | P3 |
-| DC 路由覆盖 | 普通循环/显式 bias_points 各实际触发；受限控制/arclength 明确拒绝 | P4 |
-| frozen reference FD RHS vs analytic stamping | 仿射增量 fixture `1e-12`；一般 FD 按 4.9 | P3 |
+| 纯介电氧化层平板 AC | `Y=j*omega*C_analytic`，`A=0` | P2.5 |
+| frozen reference FD RHS vs analytic stamping | 归一差不大于 `1e-12` | P3 |
 | continuity reaction DC current vs `computeFromResidual` | 逐接触机器精度一致 | P0.5/P4 |
-| 同频多 RHS / M=0 跨频 | 首次新矩阵 1 次；缓存命中 0 次；失败单计 | P3 |
-| 重掺杂 MOS `1e3--1e12 Hz` | backward error 不大于 `1e-10`；条件诊断如实报告 | P3 |
+| 同频多 RHS | `numericFactorizationCount()` 增量严格为 1 | P3 |
+| 重掺杂 MOS `1e3--1e12 Hz` | 相对解残差不大于 `1e-10`，无未登记 pivot 告警 | P3 |
 | AC + density-gradient QP 默认配置 | fail-closed，明确说明 frozen QP 非自洽 | P3 |
 | thermionic/Schottky 和 insulating fixture | 自然通量行保留 M；essential/gauge 行 M=0 | P2 |
-| avalanche-on 近击穿二极管 | 同快照 M 相同；全物理 J directional FD 与 Y 守恒通过 | P5 |
-| 自适应 DC 强制 AC 落点 | P0 冻结清单；P4 验收命中、失败重试、只读观察者、恢复 | P0/P4 |
-| 非零接触体积 manufactured 状态 | 接触 M 与 Q 中局部电荷导数抵消 | P2/P4 |
-| Robin 自然接触 | 完整残差为零但边界电流非零；boundary stamp/J/du 一致 | P0.5/开放该功能前 |
-| 触发 carrier diagonal floor 的 DC 状态 | AC J 不含 Newton floor；live residual FD 匹配 | P0.5/P3 |
-| 导通器件低频展开 | `C_AC,0=H*x1+K*x0+E`；不强制等于 `C_Q` | P4/P5 |
-| 电极电荷微分 Gauss | `sum C_Q[:,l]+dQ_domain/dV_l=0` | P1 |
-| 缺列/失败的输出 | manifest 为 partial，失败列不填零，不参与完整矩阵评分 | P4 |
+| avalanche-on 近击穿二极管 | M 与 avalanche-off 相同；Re(Y) 消费已审计 J | P5 |
+| 自适应 DC 强制 AC 落点 | 每个目标精确命中；中间点不触发 AC；无插值 | P0/P4 |
 
 ### 8.3 Windows UCRT64 基本命令
 
 ```powershell
 $env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
+Set-Location "D:\code-repo\vela-tcad"
 cmake --preset windows-ucrt64-debug
 cmake --build --preset windows-ucrt64-debug
 ctest --preset windows-ucrt64-debug
 ```
 
-从当前 checkout/worktree 根目录运行，不跳回固定主目录。文档修改本身不需要构建
-求解器。下列 AC 测试名/正则是拟新增的注册约定，当前尚不存在；先检查 `ctest -N`
-确实选中预期测试，零测试不算通过：
+AC 定向测试建议：
 
 ```powershell
-ctest --test-dir build -N -R "contact_reaction|coupled_dd_storage|ac_"
-ctest --test-dir build --output-on-failure -R "contact_reaction|coupled_dd_storage|ac_"
+ctest --test-dir build --output-on-failure -R "terminal_electrode_charge|dynamic_storage|ac_"
 ```
 
 Release 性能：
@@ -1039,7 +1150,7 @@ reference_staging/sentaurus_ac_t2022_03_sp2/
   normalized/        # 统一 long-form CSV
   manifests/         # 哈希、版本、合同、阈值
 
-reference_tcad/ac_small_signal/  # 拟新增的公开器件基准，遵循当前回归目录规范
+examples/ac_*/       # 可公开、可提交的小型 Vela fixture
 tests/fixtures/ac/   # 小型解析/DEVSIM 固化数据
 build*/ac_runs/      # 可再生运行缓存
 ```
@@ -1076,15 +1187,7 @@ build*/ac_runs/      # 可再生运行缓存
 | 风险 | 影响 | 缓解 |
 | --- | --- | --- |
 | 接触反力权重或物理 scale 错误 | Q/I 符号和单位全错 | 统一 residual/J/M 行提取 + 解析 fixture + 既有 DC current 对照 |
-| solved/physical 行视图混淆 | essential 行掩盖真实端口反力 | P0.5 独立 AC 装配器、视图与缓存门 |
-| Si/oxide 材料支持体积混用 | 反型电荷、S/M、Cgg/端口分配与 A 偏差 | WP-R 前置策略决策，Poisson/S/M 联合资格；AC-DIFF-001 |
-| DC 未对齐仍评分 A/C | AC 错误归因/选择性统计 | 每目标 DC 前置门、A/C 分合同、完整覆盖率；AC-DIFF-002 |
-| 多晶栅被金属替代 | 栅耗尽与 Cgg/过渡区不等价 | P0 Gate 材料合同、poly fixture；AC-DIFF-003 |
-| 参考有效导数未知 | 合法模型差异被误判为代码缺陷 | 原始/effective Math 与受控变体；AC-DIFF-004 |
-| solved/physical 反复切换同一签名缓存 | 接触行被漏装或每频重复 rebuild | snapshot 独立作用域，每快照模式重建<=2 |
-| 对 Robin 全残差提取端电流 | 收敛后错误输出零电流 | 同装配器 boundary stamp 分解和导数资格门 |
-| Newton J 冒充物理 J | 遗漏物理响应或引入假电导 | 剥离迭代正则，按模型分支检验 live residual FD |
-| 把 C_Q 当作所有端口低频 AC C | 错误验收/错误守恒约束 | 4.8 低频展开和 Gauss 微分测试 |
+| solved/physical 行视图混淆 | essential 行掩盖真实端口反力 | P0.5 双 view API 和边界分类测试 |
 | 连续性储存符号错误 | 频率响应相位错误 | assembler-owned S/M + manufactured conservation + FD M |
 | 缩放/reference 未进入 M | scaling on/off 不一致 | P2 强制 invariance 测试 |
 | 用区域体电荷或独立几何替代电极反力 | 多端 C 不守恒 | physical Poisson residual/J 接触行提取 |
@@ -1102,16 +1205,16 @@ build*/ac_runs/      # 可再生运行缓存
 
 ### 10.2 阶段阻塞条件
 
-统一由规范合同 §11.1 的 required checklist 判定；下列风险出现时对应门为 fail/blocked：
+遇到以下任一情况应停止进入下一阶段：
 
 - Sentaurus explicit/implicit 结果自身不能解释；
 - 端口方向或二维单位尚未冻结；
-- 材料支持体积尚未决策，或 P1 Gauss closure/P2 M 与移动电荷支持不一致；
+- P1 Gauss closure 或 P2 M finite-difference gate 失败；
 - physical/solved row view 或自然边界分类尚未通过；
 - scaling/reference invariance 失败；
 - 同频率发生多次不必要 numeric factorization；
 - KCL 只能通过删掉某个端口或经验缩放满足；
-- 跨工具目标未通过 DC 前置门，或依赖不同物理电压/未经批准的插值；
+- 跨工具比较依赖不同 DC 工作点或未经批准的插值；
 - AC FD oracle 经过 Newton、重新分配 reference 或重新选择 scale；
 - 阈值在看过最终结果后被临时放宽；
 - 生产代码只能依靠受许可 Sentaurus 文件才能通过常规 CI。
@@ -1124,35 +1227,95 @@ build*/ac_runs/      # 可再生运行缓存
 - P5 Sentaurus 未达门槛但解析/DEVSIM 通过：登记差异，状态为 AC-L3，不认领
   Sentaurus 等价；
 - P6 失败：保留隐式 AC，显式 MixedMode 继续标记未支持；
-- 三路后端均达正确性门后按 P3 实测选择；某候选失败不以放宽门槛掩盖。
+- complex backend 无收益：继续使用实块系统，不因“架构美观”迁移。
 
 ## 11. 已冻结决策和剩余批准项
 
-### 11.1 统一阶段纪律
+### 11.1 v2 已冻结，不得由实现者改写
 
-见 [规范合同 §11.1](../specs/2026-08-31-ac-small-signal-contract.md)。
-阶段产物 stage_acceptance.json 引用 required_gates 和证据哈希；pending/fail/blocked
-不放行。入差异账本不是容差豁免，修改材料支持或导数合同会使旧数值证据失效。
-
-
+1. **电极电荷**：生产定义是未做 essential 行替换的 physical Poisson residual/J
+   接触行反力；显式 `D dot n` 仅作解析 fixture oracle。
+2. **端电流**：生产定义是 physical electron/hole continuity residual/J/M 接触行
+   反力；SG `computeDetailed` 仅作独立 DC oracle。
+3. **离散一致性**：Q/I/S/M 必须共享 `CoupledDDAssembler` 的 node volume、edge
+   coupling、mixed-Voronoi 策略、CarrierStatistics、BGN、QP、scale 和 QF reference。
+4. **边界视图**：solved view 执行 essential replacement；physical view 保留自然
+   边界并跳过 essential replacement。空 bcs 不等于 physical view。
+5. **动态储存**：实现在 `CoupledDDAssembler` 内；独立文件只定义结果类型/接口。
+6. **工作点快照**：J/M/dRdu/FD 固定 QF reference fields、scaling、residual diagnostic
+   scales 和 frozen QP field；FD 不经过 Newton。
+7. **QP**：默认 fail-closed；显式 frozen-QP 只能作为带 manifest 标记的近似，不能
+   认领自洽量子 AC。
+8. **ACCompute**：目标 bias 是强制落点；自适应步裁剪命中目标，中间接受点不评分，
+   禁止插值。
+9. **DCSweep 接入**：只读 `onAcceptedPoint` 观察者加 forced landing，不做侵入式
+   operating-point 循环重构。
+10. **线性求解**：AC 使用专用 `LinearSolver`；P3 前新增
+    `numericFactorizationCount()`；同频多 RHS 使用不可变同一矩阵对象。
+11. **块系统**：采用实 2x2 数学系统，但 stacked/interleaved 由 P3 fill/time 数据
+    冻结。
+12. **激励幅值**：内部单位 phasor 仅用于导数归一化，不作为用户大信号物理旋钮。
+13. **2D 单位**：规范值使用 per-meter，per-um 和 finite depth 是显式派生量。
+14. **矩阵输出**：full matrix 始终保存，reference 只生成 reduced view；manifest
+    必须保存端口顺序。
+15. **P6 范围**：V/R/C、独立电压源、ground、device instance、Node/Exclude 是第一
+    版最小充分 MixedMode。
 
 ### 11.2 仍需在对应阶段批准
 
-1. WP-R 的 legacy_global/material_local 选择、适用材料/几何组合、是否实施物理子包；
-2. P0 的 poly 栅映射与有效 reference AC derivative 语义，不能以 unknown 进入原始等价门；
-3. 每点 DC 前置门、A/C 分区 floor 和最终阈值；参考变体与原始 AC1 的声明范围；
-4. Robin AC 开放阶段、导数补齐范围、首个公开 DEVSIM fixture；legacy CV 默认保留；
-5. P3 三路实测后的生产后端；P6 电路配置格式及额外 DC 路径资格；
-6. Sentaurus 工件存储/访问/备份责任与中性证据移植，独立工作树结果需固定来源；
-7. 独立数值测试证据与阶段放行。本文修订不替代这些批准。
+1. `s_Q`、电子/空穴 reaction 的最终正号和物理 scale 数值；由 P0.5/P1 fixture
+   冻结，不允许凭源码直觉决定；
+2. legacy `cv_quasistatic` 的弃用周期和新 `poisson_reaction` 方法何时成为默认；
+3. P0 后跨工具显著元素 floor 和最终误差门槛；
+4. 首个公开 DEVSIM fixture 的网格、材料和参数；
+5. stacked 或 interleaved 的最终块布局；
+6. P6 的具体配置/网表格式；
+7. AC-L6 后是否值得增加 native complex backend；
+8. Sentaurus oracle 的存储、访问权限和长期备份责任人。
 
+## 12. 供其他大模型重点审核的问题
 
-## 12. 外部审核
+请审核者以 v2 已冻结决策为前提，不要重复建议平行 SG/D-flux 生产 kernel。应逐项
+给出“接受 / 修改 / 阻塞”及证据。重点问题如下：
 
-请将本文、[规范合同](../specs/2026-08-31-ac-small-signal-contract.md)、[审核附录](2026-09-10-ac-small-signal-review-appendix.md) 和
-[差异账本](2026-09-10-ac-known-difference-ledger.json) 一起交给其他模型；附录 §12 提供审核问题和回复格式。
+1. physical/solved 双 view 是否足以覆盖 essential、thermionic/Schottky、insulating
+   pin、metal gate 和 static sheet charge，是否还缺其他行类型？
+2. continuity reaction 使用 `J+j*omega*M` 接触行、Poisson reaction 使用
+   `j*omega*Qx` 时，是否存在接触控制体储存或位移电流双计数？请给出离散推导。
+3. physical Poisson reaction 的符号和 scale 应如何从现有 residual 单位严格推导？
+4. `S/M` 对 electron/hole continuity 的符号是否与现有 residual 定义一致？
+5. frozen snapshot 还需要封存哪些会影响装配的可变缓存或 branch choice？
+6. QF reference field 变化的 gauge invariance 测试是否还应覆盖 contact-basin 边界
+   节点重新归属？
+7. P1/P2 finite-difference 步长和 `1e-6/1e-8` 门是否足以区分截断与舍入误差？
+8. KCL、Gauss closure、row/column sum、互易和 passivity 在哪些 fixture/偏置下才是
+   合法硬门？
+9. P2.5 纯介电路径是否还需要显式测试多介质界面和 interface sheet charge？
+10. stacked/interleaved 的评测器件和 freeze 指标是否足够，是否需要 ordering 交叉项？
+11. heavy-doping `1e3--1e12 Hz` 扫描应使用何种无量纲条件指标和 pivot 告警标准？
+12. forced landing 与 retry/step growth/预测器交互还需要哪些状态机测试？
+13. long-form 输出与 manifest 是否足以重建 full/reduced matrix 和 frozen snapshot？
+14. P0 暂定 Sentaurus self-check 与 P5 跨工具门槛是否合理？
+15. P1/P2 并行后，哪一个共同接口变更必须触发双方重新评审？
+16. 是否存在本方案仍遗漏的守恒律、规范自由度、接触反力或 2D 单位风险？
 
+审核回复建议使用：
 
+```text
+总体结论：接受 / 有条件接受 / 阻塞
+
+阻塞项：
+- [章节] 问题、证据、建议修订
+
+非阻塞改进：
+- [章节] 建议和收益
+
+建议新增测试：
+- fixture、预期关系、容差依据
+
+建议调整依赖：
+- 原顺序 -> 建议顺序，原因
+```
 
 ## 13. 实施批准后的首轮任务
 
@@ -1170,17 +1333,15 @@ build*/ac_runs/      # 可再生运行缓存
 
 ## 14. 新任务启动指令
 
-以下模板仅供用户批准首轮实施后使用；阅读本计划本身不触发执行：
+可将下面内容直接交给后续实现代理：
 
 ```text
 请阅读：
 docs/superpowers/plans/2026-08-31-ac-small-signal-simulation-development-plan.md
-docs/superpowers/specs/2026-08-31-ac-small-signal-contract.md
-docs/superpowers/plans/2026-09-10-ac-small-signal-review-appendix.md
 
 当前只执行 P0a/P0b：Sentaurus oracle、强制目标 bias、合同/阈值冻结和公开解析
-fixture。只冻结强制落点合同，不实现 DCSweep 观察者/裁剪。不要实现 physical row
-view、AC solver、动态储存矩阵、MixedMode 或修改 cv_quasistatic 语义。
+fixture。不要实现 physical row view、AC solver、动态储存矩阵、MixedMode 或修改
+cv_quasistatic 语义。
 
 开始前：
 1. 记录 git commit 和 dirty 状态；
@@ -1193,7 +1354,16 @@ view、AC solver、动态储存矩阵、MixedMode 或修改 cv_quasistatic 语�
 8. 先提交 P0 产物和审计报告，等待审批后再进入 WP-R。
 ```
 
-## 15. 证据入口
+## 15. 参考资料
 
-公开资料和当前源码/独立工作树来源集中在 [审核附录 §2.3、§2.5、§15](2026-09-10-ac-small-signal-review-appendix.md)。
-本轮只修订文档并核对来源；未构建求解器、未运行 VM 或宣称数值门通过。
+- Sentaurus Device Training, MixedMode and Small-Signal AC Simulation：
+  <https://ghzphy.github.io/Sentaurus_Training/sd/sd_3.html>
+- DEVSIM solver documentation：<https://devsim.net/solver.html>
+- DEVSIM small-signal diode example：
+  <https://github.com/devsim/devsim/blob/main/examples/diode/ssac_diode.py>
+- Genius-TCAD-Open：<https://github.com/cogenda/Genius-TCAD-Open>
+- S. E. Laux, “Techniques for Small-Signal Analysis of Semiconductor Devices,”
+  IEEE TCAD, 1985, DOI `10.1109/TCAD.1985.1270145`：
+  <https://research.ibm.com/publications/techniques-for-small-signal-analysis-of-semiconductor-devices--1>
+- SISPAD 1999 frequency-domain small-signal paper：
+  <https://in4.iue.tuwien.ac.at/pdfs/sispad1999/00799254.pdf>

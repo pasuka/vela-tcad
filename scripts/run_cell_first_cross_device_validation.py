@@ -315,6 +315,74 @@ def singledevice_cases(data_repo: Path) -> list[dict[str, Any]]:
     return result
 
 
+def pn_minimal6_cases(data_repo: Path) -> list[dict[str, Any]]:
+    fixture = WORKTREE / "reference_tcad/pn2d_sentaurus2018_minimal6"
+    state_root = (
+        data_repo
+        / "build-release/reference_tcad/pn2d_sentaurus2018_minimal6/state_exports"
+        / "minimal6_states_v2_sealed_20260717_000955/states"
+    )
+    result = []
+    for topology in ("sketch", "mirror"):
+        for token, bias in (("m12V", -12.0), ("m19V", -19.0)):
+            export = state_root / topology / token / "export"
+            result.append(
+                {
+                    "device": "pn2d_sentaurus2018_minimal6",
+                    "topology": f"pn_diode_{topology}_triangulation",
+                    "case": f"{topology}_{token}",
+                    "swept_bias_V": bias,
+                    "drain_bias_V": 0.0,
+                    "config": fixture / "vela/pn2d_minimal6_sweep_template.json",
+                    "state": export / "state.csv",
+                    "sentaurus_export": export,
+                    "region_index": 0,
+                    "region_name": "R.Si",
+                    "mesh_override": export / "mesh.json",
+                    "doping_override": export / "doping.csv",
+                    "materials_override": fixture / "vela/pn2d_minimal6_materials.json",
+                    "bias_contact": "Anode",
+                }
+            )
+    return result
+
+
+def pn_same_mesh_cases(data_repo: Path) -> list[dict[str, Any]]:
+    vela = (
+        data_repo
+        / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3"
+        / "imported_reference/vela"
+    )
+    run = (
+        WORKTREE
+        / "build-release/reference_tcad/pn2d_sentaurus2022/sentaurus_vm_runs"
+        / "pn2d_same_mesh_vector_20260904"
+    )
+    manifest = read_json(run / "manifest.json")
+    if not manifest.get("passed") or not manifest.get("topology_gate", {}).get("passed"):
+        raise ValueError("same-mesh PN SDevice vector export did not pass its gates")
+    artifacts = run / "artifacts"
+    return [
+        {
+            "device": "pn2d_sentaurus2022_same_mesh",
+            "topology": "pn_diode_coarse7x3_exact_21_node_mesh",
+            "case": "reverse_m20V",
+            "swept_bias_V": -20.0,
+            "drain_bias_V": 0.0,
+            "config": vela / "simulation_bv.json",
+            "state": artifacts / "sdevice_state.csv",
+            "sentaurus_export": artifacts / "aligned_export",
+            "region_index": 0,
+            "region_name": "R.Si",
+            "mesh_override": vela / "mesh.json",
+            "doping_override": vela / "doping.csv",
+            "materials_override": vela / "pn2d_sentaurus2018_iv_materials.json",
+            "bias_contact": "Anode",
+            "sdevice_export_manifest": run / "manifest.json",
+        }
+    ]
+
+
 def validate_case(
     runner: Path, output_root: Path, case: dict[str, Any]
 ) -> tuple[list[dict[str, object]], dict[str, Any]]:
@@ -456,6 +524,8 @@ def write_markdown(path: Path, report: dict[str, Any]) -> None:
             "",
             "- `transportmodels_sentaurus2022` 覆盖普通漂移扩散 NMOS 的关断、阈值和导通状态。",
             "- `singledevice_sentaurus2018` 覆盖含电子量子势状态的 NMOS，分别检查低漏压线性区和高漏压饱和区。",
+            "- `pn2d_sentaurus2018_minimal6` 是 6 节点 PN 二极管算法微夹具；`sketch/mirror` 两种三角剖分用于检查方向敏感性，不代表生产网格精度。",
+            "- `pn2d_sentaurus2022_same_mesh` 使用显式 DF-ISE 21 节点、24 三角形网格；SDevice 状态与电流矢量逐节点映射，无插值。",
             "- 绝对误差同时包含 Vela 与 SDevice 输运模型差异；本报告主要用同一冻结状态下 direct/cell-first 的相对变化判断恢复方法的可迁移性。",
         ]
     )
@@ -478,6 +548,8 @@ def main() -> int:
     cases = (
         transportmodels_cases(args.data_repo)
         + singledevice_cases(args.data_repo)
+        + pn_minimal6_cases(args.data_repo)
+        + pn_same_mesh_cases(args.data_repo)
     )
     rows: list[dict[str, object]] = []
     manifests: list[dict[str, Any]] = []
@@ -490,16 +562,43 @@ def main() -> int:
     p95_safe = sum(bool(row["p95_not_materially_worse"]) for row in assessment)
     rmse_safe = sum(bool(row["vector_rmse_not_materially_worse"]) for row in assessment)
     mos = [row for row in assessment if not str(row["device"]).startswith("pn2d_")]
+    pn = [row for row in assessment if str(row["device"]).startswith("pn2d_")]
+    pn_micro = [
+        row for row in pn if row["device"] == "pn2d_sentaurus2018_minimal6"
+    ]
+    mos_p95_improved = sum(bool(row["p95_improved"]) for row in mos)
+    pn_p95_improved = sum(bool(row["p95_improved"]) for row in pn)
+    pn_rmse_improved = sum(
+        float(row["normalized_vector_rmse_delta"]) < 0.0 for row in pn
+    )
+    pn_symmetry_differences = []
+    for token in ("m12V", "m19V"):
+        for carrier in ("electron", "hole"):
+            pair = [
+                row
+                for row in pn_micro
+                if str(row["case"]).endswith(token) and row["carrier"] == carrier
+            ]
+            pn_symmetry_differences.extend(
+                [
+                    abs(float(pair[0]["direct_p95_decade"]) - float(pair[1]["direct_p95_decade"])),
+                    abs(float(pair[0]["cell_first_p95_decade"]) - float(pair[1]["cell_first_p95_decade"])),
+                ]
+            )
+    pn_mirror_symmetric = max(pn_symmetry_differences) <= 1.0e-12
     strict_pass = p95_safe == len(assessment) and rmse_safe == len(assessment)
     conclusion = (
         f"共完成 {len(cases)} 个工况、{len(assessment)} 个载流子 A/B。"
-        f"MOSFET 中 {p95_improved}/{len(mos)} 组 P95 改善。"
-        "该报告仅覆盖保留的 MOSFET 工况，尚不具备替换全局默认值的证据，"
+        f"MOSFET 中 {mos_p95_improved}/{len(mos)} 组 P95 改善，且全部无实质退化；"
+        f"PN 中 {pn_p95_improved}/{len(pn)} 组 P95 改善、"
+        f"{pn_rmse_improved}/{len(pn)} 组矢量 RMSE 改善。"
+        "六节点微夹具存在点态 P95 与全局矢量 RMSE 的权衡；候选有明显跨 MOSFET 收益，"
+        "但尚不具备替换全局默认值的证据，"
         "应保持默认关闭。"
     )
     report = {
         "schema": "vela.cell_first_cross_device_validation.v1",
-        "scope": "reference_tcad MOSFET fixed-state current-vector A/B",
+        "scope": "reference_tcad MOSFET and PN fixed-state current-vector A/B",
         "postprocess_only": True,
         "candidate_default_enabled": False,
         "metric_definition": {
@@ -521,12 +620,16 @@ def main() -> int:
             "p95_not_materially_worse_count": p95_safe,
             "vector_rmse_not_materially_worse_count": rmse_safe,
             "mos_carrier_pair_count": len(mos),
-            "mos_p95_improved_count": p95_improved,
+            "mos_p95_improved_count": mos_p95_improved,
             "mos_all_metrics_not_materially_worse": all(
                 bool(row["p95_not_materially_worse"])
                 and bool(row["vector_rmse_not_materially_worse"])
                 for row in mos
             ),
+            "pn_carrier_pair_count": len(pn),
+            "pn_p95_improved_count": pn_p95_improved,
+            "pn_vector_rmse_improved_count": pn_rmse_improved,
+            "pn_mirrored_topologies_metric_symmetric": pn_mirror_symmetric,
             "strict_ab_pass": strict_pass,
             "promote_to_global_default": strict_pass,
         },
