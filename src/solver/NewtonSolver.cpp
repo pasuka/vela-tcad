@@ -4218,7 +4218,8 @@ NewtonSolver::evaluatePoissonQfpCrossBlockDecomposition(
 
 NewtonDirectionalDerivativeEvaluation NewtonSolver::evaluateDirectionalDerivative(
     const DDSolution& state,
-    const DDSolution& physicalPerturbation) const
+    const DDSolution& physicalPerturbation,
+    bool freezeTransportMobility) const
 {
     const int N = static_cast<int>(mesh_.numNodes());
     if (state.psi.size() != N || state.phin.size() != N || state.phip.size() != N ||
@@ -4275,8 +4276,28 @@ NewtonDirectionalDerivativeEvaluation NewtonSolver::evaluateDirectionalDerivativ
     const VectorXd raw = assembler.residual(x, bcs);
     const SparseMatrixd J = assembler.assembleJacobian(x, bcs);
     const VectorXd analytic = J * dx;
-    const VectorXd forward = assembler.residual(x + dx, bcs);
-    const VectorXd backward = assembler.residual(x - dx, bcs);
+    CoupledDDFeedbackStateSubstitution frozen;
+    if (freezeTransportMobility) {
+        if (cfg_.mobility.jacobianFieldDerivatives) {
+            throw std::invalid_argument(
+                "Frozen mobility JVP requires jacobian_field_derivatives=false.");
+        }
+        frozen.replaceTransportMobility = true;
+        frozen.electronEdgeMobility = VectorXd::Zero(mesh_.numEdges());
+        frozen.holeEdgeMobility = VectorXd::Zero(mesh_.numEdges());
+        for (const auto& edge : assembler.sgEdgeFluxDiagnostics(x, bcs)) {
+            frozen.electronEdgeMobility(static_cast<int>(edge.edgeId)) =
+                edge.electronMobility_m2_V_s;
+            frozen.holeEdgeMobility(static_cast<int>(edge.edgeId)) =
+                edge.holeMobility_m2_V_s;
+        }
+    }
+    const VectorXd forward = freezeTransportMobility
+        ? assembler.feedbackSubstitutionResidual(x + dx, bcs, frozen)
+        : assembler.residual(x + dx, bcs);
+    const VectorXd backward = freezeTransportMobility
+        ? assembler.feedbackSubstitutionResidual(x - dx, bcs, frozen)
+        : assembler.residual(x - dx, bcs);
     const VectorXd finiteDifference = 0.5 * (forward - backward);
     const VectorXd error = analytic - finiteDifference;
 
@@ -6611,6 +6632,7 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                                         const LineSearchResult& lineSearchResult) {
         if (!shouldWriteLocalUpdateTrace(iteration))
             return;
+        ScopedPerformanceTimer diagnosticTimer("newton.local_update_diagnostics");
         const std::filesystem::path path(cfg_.localUpdateDiagnostics.csvFile);
         if (!path.parent_path().empty())
             std::filesystem::create_directories(path.parent_path());
@@ -6626,7 +6648,11 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                 << "capped_linear_residual_l2,capped_linear_residual_inf,"
                 << "qf_update_limit_V,qf_update_limit_minority_V,max_update,"
                 << "carrier_regularization_scale,carrier_diagonal_floor_enabled,"
-                << "carrier_diagonal_floor_scale\n";
+                << "carrier_diagonal_floor_scale,jacobian_inf_norm,raw_step_inf_norm,"
+                << "rhs_inf_norm,raw_linear_relative_residual_inf,"
+                << "raw_linear_backward_error_inf,raw_linear_componentwise_backward_error,"
+                << "componentwise_max_row,componentwise_max_linear_residual,"
+                << "componentwise_max_denominator,componentwise_max_rhs\n";
         }
         VectorXd appliedStep = VectorXd::Zero(state.size());
         VectorXd selectedResidual = currentResidual;
@@ -6644,6 +6670,32 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             ? rawLinearResidual.lpNorm<Eigen::Infinity>() : 0.0;
         const Real cappedLinearResidualInf = cappedLinearResidual.size() > 0
             ? cappedLinearResidual.lpNorm<Eigen::Infinity>() : 0.0;
+        VectorXd rowAbsSums = VectorXd::Zero(jacobian.rows());
+        VectorXd componentDenominator = currentResidual.cwiseAbs();
+        for (int column = 0; column < jacobian.outerSize(); ++column) {
+            for (SparseMatrixd::InnerIterator entry(jacobian, column); entry; ++entry) {
+                const Real magnitude = std::abs(entry.value());
+                rowAbsSums(entry.row()) += magnitude;
+                componentDenominator(entry.row()) += magnitude * std::abs(rawStep(entry.col()));
+            }
+        }
+        const Real jacobianInf = rowAbsSums.maxCoeff();
+        const Real rawStepInf = rawStep.lpNorm<Eigen::Infinity>();
+        const Real rhsInf = currentResidual.lpNorm<Eigen::Infinity>();
+        const auto safeRatio = [](Real numerator, Real denominator) {
+            return denominator > 0.0 ? numerator / denominator
+                : (numerator == 0.0 ? 0.0 : std::numeric_limits<Real>::infinity());
+        };
+        Real componentBackwardError = 0.0;
+        int componentMaxRow = 0;
+        for (int row = 0; row < rawLinearResidual.size(); ++row) {
+            const Real candidate =
+                safeRatio(std::abs(rawLinearResidual(row)), componentDenominator(row));
+            if (candidate > componentBackwardError) {
+                componentBackwardError = candidate;
+                componentMaxRow = row;
+            }
+        }
         out << std::setprecision(17);
         for (Index node : cfg_.localUpdateDiagnostics.nodes) {
             if (node < 0 || node >= mesh_.numNodes())
@@ -6679,7 +6731,14 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                     << cfg_.quasiFermiUpdateLimitMinority_V << ','
                     << cfg_.maxUpdate << ',' << cfg_.carrierRegularizationScale << ','
                     << (cfg_.carrierDiagonalFloor.enabled ? 1 : 0) << ','
-                    << cfg_.carrierDiagonalFloor.scale << '\n';
+                    << cfg_.carrierDiagonalFloor.scale << ',' << jacobianInf << ','
+                    << rawStepInf << ',' << rhsInf << ','
+                    << safeRatio(rawLinearResidualInf, rhsInf) << ','
+                    << safeRatio(rawLinearResidualInf, jacobianInf * rawStepInf + rhsInf) << ','
+                    << componentBackwardError << ',' << componentMaxRow << ','
+                    << rawLinearResidual(componentMaxRow) << ','
+                    << componentDenominator(componentMaxRow) << ','
+                    << -currentResidual(componentMaxRow) << '\n';
             }
         }
     };
@@ -7039,7 +7098,37 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             return carrierBlocksEnabled ? carrierImproved : anyImproved;
         };
 
+        const bool localRowCorrectionEligible =
+            cfg_.lineSearchMode == "block_filter" &&
+            cfg_.blockAbsoluteConvergence.mode == "enforce" &&
+            cfg_.carrierRowConvergence.mode == "enforce" &&
+            blockAbsoluteConvergenceSatisfied(r);
+        const NewtonCarrierRowConvergenceEvaluation currentLocalRows =
+            localRowCorrectionEligible ? carrierRowEval(x)
+                                       : NewtonCarrierRowConvergenceEvaluation{};
         const auto runLineSearch = [&](const VectorXd& trialStep) {
+            const auto decreaseAccept = [&](const VectorXd& candidateResidual,
+                                            Real alpha) {
+                if (blockFilterAccept(candidateResidual, alpha))
+                    return true;
+                // Global blocks can already be qualified while a depleted
+                // carrier row still needs correction. Preserve every absolute
+                // ceiling and require local progress in that otherwise inactive
+                // filter; reporting-only rows do not change the search.
+                if (!localRowCorrectionEligible || currentLocalRows.satisfied ||
+                    !blockAbsoluteConvergenceSatisfied(candidateResidual)) {
+                    return false;
+                }
+                const VectorXd candidate = x + alpha * trialStep;
+                if (!candidate.allFinite())
+                    return false;
+                const auto candidateRows = carrierRowEval(candidate);
+                return std::isfinite(candidateRows.maxRatio) &&
+                    candidateRows.maxRatio < currentLocalRows.maxRatio &&
+                    candidateRows.maxRatio <=
+                        (1.0 - cfg_.residualFilterGamma * alpha) *
+                            currentLocalRows.maxRatio;
+            };
             return lineSearch.search(
                 x, trialStep, r,
                 [&](const VectorXd& candidate) {
@@ -7050,7 +7139,7 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                 },
                 globalClosureLineSearchNorm,
                 cfg_.lineSearchMode == "block_filter"
-                    ? BacktrackingLineSearch::DecreaseAcceptFunction(blockFilterAccept)
+                    ? BacktrackingLineSearch::DecreaseAcceptFunction(decreaseAccept)
                     : BacktrackingLineSearch::DecreaseAcceptFunction{});
         };
 

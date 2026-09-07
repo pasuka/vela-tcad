@@ -55,6 +55,10 @@ struct CoupledDDFeedbackStateSubstitution {
     VectorXd holeDensity;
     VectorXd electronQuasiFermi_V;
     VectorXd holeQuasiFermi_V;
+    // JVP diagnostics: hold each edge's mobility at the unperturbed state.
+    bool replaceTransportMobility = false;
+    VectorXd electronEdgeMobility;
+    VectorXd holeEdgeMobility;
 };
 
 struct CoupledDDCarrierTermDiagnostic {

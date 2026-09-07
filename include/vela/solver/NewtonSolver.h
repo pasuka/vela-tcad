@@ -728,7 +728,8 @@ public:
         const DDSolution& replacementState) const;
     NewtonDirectionalDerivativeEvaluation evaluateDirectionalDerivative(
         const DDSolution& state,
-        const DDSolution& physicalPerturbation) const;
+        const DDSolution& physicalPerturbation,
+        bool freezeTransportMobility = false) const;
     NewtonBlockStepEvaluation evaluateBlockStep(
         const DDSolution& state,
         const std::string& mode) const;

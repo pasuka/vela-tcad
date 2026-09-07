@@ -73,7 +73,8 @@ bool transportMobilityDependsOnPotentials(const MobilityModelConfig& config)
         return false;
     if (config.contactElectricFieldFallback)
         return true;
-    return config.model == "caughey_thomas_field" ||
+    return config.model == "constant_field" ||
+           config.model == "caughey_thomas_field" ||
            config.model == "masetti_field" ||
            config.model == "caughey_thomas_field_surface" ||
            isSurfaceMobilityModel(config);
@@ -1259,6 +1260,25 @@ VectorXd CoupledDDAssembler::residualImpl(
     if (x.size() != 3 * N)
         throw std::invalid_argument("CoupledDDAssembler::residualImpl: vector size mismatch.");
 
+    const bool frozenTransportMobility =
+        substitution != nullptr && substitution->replaceTransportMobility;
+    if (frozenTransportMobility) {
+        if (mobilityConfig_.carrierCurrentDiscretization == "element_qf_gradient" ||
+            impactIonizationCoupled_) {
+            throw std::invalid_argument(
+                "Frozen transport mobility diagnostic requires edge SG and uncoupled avalanche.");
+        }
+        const auto validMobility = [&](const VectorXd& values) {
+            return values.size() == static_cast<int>(mesh_.numEdges()) &&
+                values.allFinite() && (values.array() >= 0.0).all();
+        };
+        if (!validMobility(substitution->electronEdgeMobility) ||
+            !validMobility(substitution->holeEdgeMobility)) {
+            throw std::invalid_argument(
+                "Frozen transport mobility diagnostic requires finite nonnegative edge mobilities.");
+        }
+    }
+
     // n and p are needed for Poisson source and configured recombination.
     VectorXd n = electronDensity(x);
     VectorXd p = holeDensity(x);
@@ -1512,7 +1532,9 @@ VectorXd CoupledDDAssembler::residualImpl(
         if (elementQfCurrent)
             continue;
 
-        const Real mun = detail::edgeMobility(
+        const Real mun = frozenTransportMobility
+            ? substitution->electronEdgeMobility(static_cast<int>(e))
+            : detail::edgeMobility(
             edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
             electronMobilityField,
             &mobilityConfig_,
@@ -1564,7 +1586,9 @@ VectorXd CoupledDDAssembler::residualImpl(
             r(phinOffset() + j) -= nFlux;
         }
 
-        const Real mup = detail::edgeMobility(
+        const Real mup = frozenTransportMobility
+            ? substitution->holeEdgeMobility(static_cast<int>(e))
+            : detail::edgeMobility(
             edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Hole,
             holeMobilityField,
             &mobilityConfig_,
@@ -4468,6 +4492,36 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         return sgHoleContinuityFlux(p_i, p_j, dpsi, Vt_, coef);
     };
 
+    // For the edge-projected QF drive, differentiate the HFS multiplier
+    // explicitly. A finite difference of the entire live flux can straddle
+    // its narrow low-field transition even when the frozen-mobility flux is
+    // smooth on the same perturbation scale. Preserve the residual model and
+    // the lagged-Jacobian path; surface/vector/contact-field paths keep their
+    // existing stencils below.
+    const auto qfMobilityFluxDerivative = [&](
+        const std::vector<Real>& lowFields,
+        const FieldMobilityParameters& parameters,
+        Real drivingField, Real qfDrop, Real mobility, Real flux) {
+        if (!highFieldMobilityEnabled_ || lowFields.empty() ||
+            qfDrop == 0.0 || mobility <= 0.0)
+            return Real{0.0};
+        Real response = 0.0;
+        for (Real lowField : lowFields) {
+            const Real power = std::pow(
+                lowField * drivingField / parameters.saturationVelocity,
+                parameters.beta);
+            const Real fraction = power <= 1.0
+                ? power / (1.0 + power) : 1.0 / (1.0 + 1.0 / power);
+            response += applyFieldMobilityLimit(
+                lowField, drivingField, parameters) * fraction;
+        }
+        // d(mu)/d(drop) = -mean(mu_k * r_k^beta/(1+r_k^beta))/drop.
+        // At zero drop the base SG flux vanishes; its mobility-feedback term
+        // has zero limit, including for beta <= 1.
+        return -(flux / qfDrop) *
+            (response / static_cast<Real>(lowFields.size()) / mobility);
+    };
+
     {
         ScopedPerformanceTimer edgePhysicsTimer("jacobian.edge_physics");
         for (Index e = 0; e < mesh_.numEdges(); ++e) {
@@ -4516,6 +4570,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 }
             }
         }
+        const bool analyticQfMobilityFeedback =
+            transportMobilityDerivative && qfMobility && !vectorQfMobility &&
+            !surfaceMobilityEnabled_ && !contactMobilityFallbackActive;
         const Real u = dpsi / Vt_;
         const Real Bu = bernoulli(u);
         const Real dBu = bernoulliDerivative(u);
@@ -4541,10 +4598,19 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     phinOffset() + i, phinOffset() + j,
                 };
                 const Real fixedMobility =
-                    !transportMobilityDerivative ||
+                    analyticQfMobilityFeedback || !transportMobilityDerivative ||
                         (vectorQfMobility &&
                          !mobilityConfig_.contactElectricFieldFallback)
                     ? mun : -1.0;
+                const Real mobilityFeedback = analyticQfMobilityFeedback
+                    ? qfMobilityFluxDerivative(
+                        edgeKernel.electronLowFieldMobilities,
+                        mobilityConfig_.electronField, electronMobilityField,
+                        phin_j_from_i - phin_i, mun,
+                        edgeElectronTransportFlux(
+                            e, i, j, h, psi_i, psi_j, phin_i, phin_j,
+                            mun, noPerturbedNode, 0.0))
+                    : 0.0;
                 for (int k = 0; k < 4; ++k) {
                     const Real step = 1.0e-6 * std::max(1.0, std::abs(vals[k]));
                     Real vp[4] = {vals[0], vals[1], vals[2], vals[3]};
@@ -4557,7 +4623,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     const Real fm = edgeElectronTransportFlux(
                         e, i, j, h, vm[0], vm[1], vm[2], vm[3],
                         fixedMobility, noPerturbedNode, 0.0);
-                    const Real dF = (fp - fm) / (2.0 * step);
+                    const Real dF = (fp - fm) / (2.0 * step) +
+                        (k == 2 ? -mobilityFeedback :
+                         k == 3 ? mobilityFeedback : 0.0);
                     add(phinOffset() + i, cols[k], dF);
                     add(phinOffset() + j, cols[k], -dF);
                 }
@@ -4638,10 +4706,19 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     phipOffset() + i, phipOffset() + j,
                 };
                 const Real fixedMobility =
-                    !transportMobilityDerivative ||
+                    analyticQfMobilityFeedback || !transportMobilityDerivative ||
                         (vectorQfMobility &&
                          !mobilityConfig_.contactElectricFieldFallback)
                     ? mup : -1.0;
+                const Real mobilityFeedback = analyticQfMobilityFeedback
+                    ? qfMobilityFluxDerivative(
+                        edgeKernel.holeLowFieldMobilities,
+                        mobilityConfig_.holeField, holeMobilityField,
+                        phip_j_from_i - phip_i, mup,
+                        edgeHoleTransportFlux(
+                            e, i, j, h, psi_i, psi_j, phip_i, phip_j,
+                            mup, noPerturbedNode, 0.0))
+                    : 0.0;
                 for (int k = 0; k < 4; ++k) {
                     const Real step = 1.0e-6 * std::max(1.0, std::abs(vals[k]));
                     Real vp[4] = {vals[0], vals[1], vals[2], vals[3]};
@@ -4654,7 +4731,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     const Real fm = edgeHoleTransportFlux(
                         e, i, j, h, vm[0], vm[1], vm[2], vm[3],
                         fixedMobility, noPerturbedNode, 0.0);
-                    const Real dF = (fp - fm) / (2.0 * step);
+                    const Real dF = (fp - fm) / (2.0 * step) +
+                        (k == 2 ? -mobilityFeedback :
+                         k == 3 ? mobilityFeedback : 0.0);
                     add(phipOffset() + i, cols[k], dF);
                     add(phipOffset() + j, cols[k], -dF);
                 }

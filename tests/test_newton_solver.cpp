@@ -639,6 +639,66 @@ TEST_CASE("NewtonSolver: enforced block absolute convergence prevents scalar tol
     REQUIRE(blockAccepted.convergenceReason == "initial_block_abstol");
 }
 
+TEST_CASE("NewtonSolver: block filter corrects local rows inside absolute ceilings",
+          "[newton][block_filter][carrier_row_convergence]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg = newtonConfig();
+    cfg.verbose = false;
+    const NewtonResult equilibrium = runNewton(mesh, matdb, doping, zeroBias(), cfg);
+    REQUIRE(equilibrium.converged);
+    DDSolution restart = equilibrium.solution;
+    restart.phin(4) += 1.0e-6;
+    REQUIRE(restart.hasReferencedElectronQuasiFermi());
+    restart.phinIncrement(4) += 1.0e-6;
+    cfg.warmStart = true;
+    cfg.lineSearchMode = "block_filter";
+    cfg.stallResidualFloor = 0.0;
+    const auto terms = NewtonSolver(mesh, matdb, doping, zeroBias(), cfg)
+                           .evaluateCarrierTermDiagnostics(restart);
+    // Deliberately qualify all global blocks to isolate the additional local
+    // contract. Device regression controls retain their physical ceilings.
+    cfg.blockAbsoluteConvergence.mode = "enforce";
+    cfg.blockAbsoluteConvergence.psiResidualCeiling = 1e100;
+    cfg.blockAbsoluteConvergence.electronResidualCeiling = 1e100;
+    cfg.blockAbsoluteConvergence.holeResidualCeiling = 1e100;
+    cfg.carrierRowConvergence.mode = "enforce";
+    cfg.carrierRowConvergence.epsRow = 1e-3;
+    // At zero bias every equilibrium flux vanishes. Use the perturbed flux
+    // scale so the local criterion measures correction of that perturbation,
+    // rather than division by a vanishing equilibrium current.
+    cfg.carrierRowConvergence.scaleFloor =
+        1e-3 * terms.rows[4].electronFluxAbsSum;
+    REQUIRE(cfg.carrierRowConvergence.scaleFloor > 0.0);
+    cfg.carrierRowConvergence.minCarrierDensity_m3 = 1.0;
+
+    SECTION("enforced local imbalance must receive a correcting update") {
+        const NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), restart, cfg);
+        INFO(result.failureDiagnostics.failureReason);
+        INFO(result.finalCarrierRowConvergence.maxRatio);
+        REQUIRE_FALSE(result.trace.front().carrierRowConvergence.satisfied);
+        REQUIRE(result.converged);
+        REQUIRE(result.iters > 0);
+        REQUIRE(result.trace.back().carrierRowConvergence.satisfied);
+        CHECK(std::abs(result.solution.phin(4) - equilibrium.solution.phin(4)) < 1e-8);
+        for (const auto& iteration : result.trace) {
+            CHECK(iteration.blockResiduals.psi <= cfg.blockAbsoluteConvergence.psiResidualCeiling);
+            CHECK(iteration.blockResiduals.phin <= cfg.blockAbsoluteConvergence.electronResidualCeiling);
+            CHECK(iteration.blockResiduals.phip <= cfg.blockAbsoluteConvergence.holeResidualCeiling);
+        }
+    }
+    SECTION("reporting alone preserves initial block acceptance") {
+        cfg.carrierRowConvergence.mode = "report";
+        const NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), restart, cfg);
+        REQUIRE(result.converged);
+        REQUIRE(result.iters == 0);
+        REQUIRE(result.convergenceReason == "initial_block_abstol");
+        REQUIRE_FALSE(result.trace.front().carrierRowConvergence.satisfied);
+    }
+}
+
 TEST_CASE("NewtonSolver: preserves the best accepted iterate on failure",
           "[newton][diagnostics][best_iterate]")
 {
@@ -2722,6 +2782,72 @@ TEST_CASE("NewtonSolver: Fermi contact HFS honors frozen field Jacobian",
     REQUIRE((live.analyticJv - frozen.analyticJv).norm() > 1.0e-12);
     REQUIRE(live.relativeError < 1.0e-10);
     REQUIRE(live.relativeError < frozen.relativeError);
+
+    // Match the differentiated residual to the intentionally lagged Jacobian.
+    // Both retain the same nonlinear base residual and Jacobian; only the
+    // diagnostic perturbations hold transport mobility fixed.
+    const auto matched =
+        frozenSolver.evaluateDirectionalDerivative(state, perturbation, true);
+    REQUIRE((matched.residual.raw - frozen.residual.raw).norm() == 0.0);
+    REQUIRE((matched.analyticJv - frozen.analyticJv).norm() == 0.0);
+    REQUIRE(matched.absoluteError / matched.finiteDifferenceNorm < 1.0e-5);
+    REQUIRE(matched.absoluteError < frozen.absoluteError);
+    REQUIRE_THROWS_AS(
+        liveSolver.evaluateDirectionalDerivative(state, perturbation, true),
+        std::invalid_argument);
+
+    perturbation.psi.setZero();
+    perturbation.phin(4) = 1.0e-7;
+    const auto matchedCarrier =
+        frozenSolver.evaluateDirectionalDerivative(state, perturbation, true);
+    REQUIRE(matchedCarrier.absoluteError / matchedCarrier.finiteDifferenceNorm < 1.0e-5);
+}
+
+TEST_CASE("NewtonSolver: edge QF HFS feedback resolves narrow mobility transitions",
+          "[newton][diagnostics][mobility][hfs-chain-rule]")
+{
+    const DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    const DopingModel doping = makePNDoping(mesh);
+    const int N = static_cast<int>(mesh.numNodes());
+    NewtonConfig cfg;
+    cfg.inputScaling.mode = UnitScalingMode::UnitScaling;
+    cfg.carrierStatistics.model = "fermi_dirac";
+    cfg.recombination = {"none"};
+    cfg.warmStart = true;
+    cfg.mobility.model = "constant_field";
+    cfg.mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+    // An intentionally narrow HFS transition makes the production whole-flux
+    // 1e-6 V secant distinguishable from an independent local derivative.
+    cfg.mobility.electronField.saturationVelocity = 0.1;
+    cfg.mobility.holeField.saturationVelocity = 0.1;
+    cfg.mobility.contactElectricFieldFallback = false;
+    for (Real sign : {-1.0, 1.0}) {
+        DDSolution state;
+        state.psi = VectorXd::Zero(N);
+        state.phin = VectorXd::Zero(N);
+        state.phip = VectorXd::Zero(N);
+        state.phin(4) = sign * 2.0e-7;
+        state.phip(4) = -sign * 2.0e-7;
+        NewtonSolver solver(mesh, matdb, doping, zeroBias(), cfg);
+        for (int carrier : {1, 2}) {
+            for (Real amplitude : {1.0e-9, 1.0e-10}) {
+                DDSolution direction;
+                direction.psi = VectorXd::Zero(N);
+                direction.phin = VectorXd::Zero(N);
+                direction.phip = VectorXd::Zero(N);
+                (carrier == 1 ? direction.phin : direction.phip)(4) = amplitude;
+                const auto evaluation =
+                    solver.evaluateDirectionalDerivative(state, direction);
+                const VectorXd analytic = evaluation.analyticJv.segment(carrier * N, N);
+                const VectorXd numeric = evaluation.finiteDifferenceJv.segment(carrier * N, N);
+                REQUIRE(numeric.norm() > 0.0);
+                INFO("carrier=" << carrier << " sign=" << sign
+                     << " h=" << amplitude);
+                REQUIRE((analytic - numeric).norm() / numeric.norm() < 2.0e-6);
+            }
+        }
+    }
 }
 
 TEST_CASE("NewtonSolver: evaluateJacobianBlockAudit reports finite block rows",

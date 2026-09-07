@@ -1965,7 +1965,9 @@ nlohmann::json runNewtonJvpProbe(const std::string& configFile, const nlohmann::
         const JvpProbeDirection direction = makeJvpProbeDirection(
             problem.mesh, directionConfig);
         const vela::NewtonDirectionalDerivativeEvaluation jvp =
-            solver.evaluateDirectionalDerivative(state, direction.perturbation);
+            solver.evaluateDirectionalDerivative(
+                state, direction.perturbation,
+                cfg.value("freeze_transport_mobility", false));
         const vela::VectorXd error = jvp.analyticJv - jvp.finiteDifferenceJv;
         const vela::Real psiFd = vectorBlockNorm(jvp.finiteDifferenceJv, 0, n);
         const vela::Real phinFd = vectorBlockNorm(jvp.finiteDifferenceJv, n, n);

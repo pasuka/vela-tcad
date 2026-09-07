@@ -744,6 +744,28 @@ Notes:
   `psi_residual_ceiling`, `electron_residual_ceiling`, and
   `hole_residual_ceiling`. All three ceilings must be positive. The default
   mode is `off`, preserving existing solver behavior.
+- With `line_search_mode: block_filter` and both block and carrier-row
+  convergence enforced, an iterate that already meets every block ceiling
+  may still correct unbalanced local carrier rows. Such a trial must remain
+  within every original block ceiling and decrease the maximum qualified
+  carrier-row residual ratio by the configured filter sufficient-decrease
+  factor. Carrier-row `off` and `report` modes retain the usual block filter.
+- `local_update_diagnostics` optionally writes selected carrier rows and linear
+  solve diagnostics (`enabled`, `csv_file`, `nodes`, `first_iterations`,
+  `every_iterations`). The CSV includes the uncapped raw system's infinity-norm
+  relative residual, normwise backward error
+  `||J dx + r||inf / (||J||inf ||dx||inf + ||r||inf)`, and maximum componentwise
+  backward error `max_i |J dx+r|_i / (|J| |dx|+|r|)_i`. These are measured before
+  continuity row weighting and equilibration, after mapping the linear solution
+  back to the original coordinates. Profiling records this diagnostic's cost
+  as `newton.local_update_diagnostics`; it does not change Newton acceptance.
+- For `simulation_type: newton_jvp_probe`, top-level
+  `freeze_transport_mobility: true` holds each edge's mobility at the supplied
+  base state for the positive/negative perturbations. This diagnostic requires
+  `solver.mobility.jacobian_field_derivatives: false`, edge SG transport, and
+  no coupled avalanche. The default remains a finite difference of the live
+  residual. This option permits a matched audit of a deliberately lagged
+  mobility Jacobian without changing the production residual or its root.
 - `contact_majority_qf_branch_drop_limit_V` is an optional non-negative guard
   applied to every formal Newton convergence path and to best-iterate
   eligibility. `contact_majority_qf_branch_guard_contacts` may restrict the
@@ -1243,7 +1265,16 @@ self-consistent impact ionization disabled. It must not be used as a silent
 replacement for the SG profile; Templates/LDMOS fixed-state qualification on
 2026-08-29 did not show an accuracy improvement.
 
-Supported `model` values are `constant`, `caughey_thomas`,
+`jacobian_field_derivatives` defaults to `true`. Setting it to `false`
+holds the base-state mobility fixed only while forming the transport
+Jacobian; the nonlinear residual still evaluates the live mobility model.
+For bulk edge-projected quasi-Fermi HFS away from contact-field fallback,
+the Jacobian applies the analytic mobility chain rule to the frozen-mobility
+SG flux derivative. Surface, cell-vector and contact-field paths retain
+their respective derivative stencils. `constant_field` participates in the
+field-derivative path even when contact fallback is disabled.
+
+Supported `model` values are `constant`, `constant_field`, `caughey_thomas`,
 `caughey_thomas_field`, `caughey_thomas_surface`,
 `caughey_thomas_field_surface`, `masetti`, `masetti_field`,
 `masetti_surface`, and `masetti_field_surface`.
