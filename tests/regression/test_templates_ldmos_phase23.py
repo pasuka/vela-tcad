@@ -66,6 +66,7 @@ from run_templates_ldmos_stage4_d5 import (  # noqa: E402
 )
 from analyze_templates_ldmos_stage4_d5 import (  # noqa: E402
     curve_error as stage4_curve_error,
+    kcl_audit as stage4_kcl_audit,
     ratio_error as stage4_ratio_error,
 )
 
@@ -732,6 +733,37 @@ Data {
 
 
 class SentaurusAblationSummaryTest(unittest.TestCase):
+    def test_stage4_kcl_uses_maximum_terminal_current_and_keeps_zero_bias(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "balance.csv"
+            with path.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.writer(stream)
+                writer.writerow(["point_index", "bias_V", "contact", "current_total_A_per_um"])
+                for index, bias, currents in [(0, 0.0, [3e-26, 2e-26, 0.0, 0.0]),
+                                              (1, 1.0, [-0.99, 1.0, 0.0, 0.0])]:
+                    for contact, current in zip(("source", "drain", "gate", "substrate"), currents):
+                        writer.writerow([index, bias, contact, current])
+            result = stage4_kcl_audit(path)
+            # Sum-absolute normalization would understate the 1 V error by ~2x.
+            self.assertAlmostEqual(result["max_nonzero_bias_normalized_kcl_percent"], 1.0)
+            zero = result["zero_bias_points"][0]
+            self.assertAlmostEqual(zero["absolute_kcl_A_per_um"] / 1e-26, 5.0)
+            self.assertAlmostEqual(zero["normalized_kcl_percent"], 500.0 / 3.0)
+            self.assertEqual(result["max_normalized_kcl_percent"], zero["normalized_kcl_percent"])
+
+    def test_stage4_kcl_rejects_missing_or_nonfinite_terminal_data(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "balance.csv"
+            for currents in ([1.0, -1.0, 0.0], [1.0, float("nan"), 0.0, 0.0]):
+                with self.subTest(currents=currents):
+                    with path.open("w", newline="", encoding="utf-8") as stream:
+                        writer = csv.writer(stream)
+                        writer.writerow(["point_index", "bias_V", "contact", "current_total_A_per_um"])
+                        for contact, current in zip(("drain", "source", "gate", "substrate"), currents):
+                            writer.writerow([0, 1.0, contact, current])
+                    with self.assertRaises(ValueError):
+                        stage4_kcl_audit(path)
+
     def test_comparison_requires_the_exact_same_bias_grid(self) -> None:
         with self.assertRaisesRegex(ValueError, "bias grids differ"):
             compare_ablation([(0.0, 1.0), (1.0, 2.0)],

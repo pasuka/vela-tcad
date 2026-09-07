@@ -76,8 +76,9 @@
     "production_growth_factor": 1.0
   },
   "full_curve": {
-    "status": "partial_through_first_nonzero_reference_point_not_yet_qualified",
-    "highest_accepted_drain_bias_V": 1.33333333333333,
+    "status": "partial_through_second_nonzero_reference_point_not_yet_qualified",
+    "highest_accepted_drain_bias_V": 3.369166666666683,
+    "highest_completed_reference_drain_bias_V": 2.66666666666667,
     "accepted_internal_substeps_0p4_to_0p6": 64,
     "accepted_step_checkpointing": {
       "status": "pass",
@@ -129,6 +130,74 @@
         "final_hole_block": 1.9736894499909398e-25,
         "relative_kcl": 5.11727700409882e-14,
         "pointwise_status": "passes_final_current_and_kcl_limits_but_does_not_qualify_curve"
+      }
+    },
+    "sequential_continuation_20260905": {
+      "solver_git_commit": "345fda30d541003f4aa3a08341dca59418f06ded",
+      "last_completed_interval_V": [1.6483333333333232, 2.66666666666667],
+      "accepted_attempts": 409,
+      "rejected_attempts": 0,
+      "accepted_step_checkpoints": 409,
+      "prior_interval_interruption": {
+        "classification": "process_interrupted_without_completion_summary_no_rejection_observed",
+        "recovered_bias_V": 1.6483333333333232,
+        "recovered_state_sha256": "671fd0100e307e7bde4370ad896341c0257db41780a20e7f992f4052d733c104"
+      },
+      "second_nonzero_reference_point": {
+        "drain_bias_V": 2.66666666666667,
+        "vela_current_A_per_um": 0.00015378988888696833,
+        "sentaurus_current_A_per_um": 0.00014179418763901,
+        "relative_error_percent": 8.459938624915896,
+        "absolute_log10_error_decade": 0.03526935434184918,
+        "newton_iterations": 50,
+        "final_psi_block": 8.70552657587233e-10,
+        "final_electron_block": 8.540644918018925e-12,
+        "final_hole_block": 3.4761723414310205e-25,
+        "relative_kcl_over_max_terminal_current": 8.540928242623689e-15,
+        "relative_kcl_over_sum_absolute_terminal_currents": 4.270464121311863e-15,
+        "qf_bounds_violations": 0,
+        "state_sha256": "bb6556482df88c9b13edfcf7f4fce8ca8eabeffa7af3bcf6a653d95c0149ba21",
+        "pointwise_status": "converged_with_frozen_residual_and_kcl_limits_curve_accuracy_not_yet_qualified"
+      },
+      "evidence_directory": "reference_staging/templates_ldmos_stage4_sequence_20260905/vg4_interval_02",
+      "next_requested_interval_V": [2.66666666666667, 4.0],
+      "next_interval_initial_reclose_iterations": 1,
+      "live_status_file": "reference_staging/templates_ldmos_stage4_sequence_budget160_20260905/status.json",
+      "scoring_audit_items": [
+        "Existing analyzer includes the unresolved near-zero equilibrium current in its normalized KCL maximum; no exemption introduced",
+        "KCL scorer corrected to the frozen maximum-absolute-terminal-current denominator; zero-point raw ratio retained and reported separately"
+      ],
+      "vg8_and_ialmob_status": "not_started_pending_vg4_qualification"
+    },
+    "iteration_budget_repair_20260905": {
+      "classification": "slow_convergence_cut_off_by_80_iteration_budget",
+      "failed_bias_V": 3.369166666666683,
+      "last_original_accepted_bias_V": 3.367916666666683,
+      "original_checkpoint_sha256": "f7bb2ec10c99e11f07932f42451815724be6509c79afb16bf129cd5f1282e17b",
+      "fresh_recenter_80_final_electron_block": 1.055218834688413e-11,
+      "accepted_with_budget_160_at_iteration": 81,
+      "identical_prefix_trace_rows": 83,
+      "previously_accepted_control_files_bitwise_identical": true,
+      "control_iterations": 54,
+      "only_numerical_setting_amendment": {"max_iter_before": 80, "max_iter_after": 160},
+      "physical_and_residual_acceptance_contract_unchanged": true,
+      "accepted_replay": {
+        "current_A_per_um": 0.00017265845733373104,
+        "psi_block": 8.87975385836046e-10,
+        "electron_block": 8.928110286173847e-12,
+        "hole_block": 3.2111993710217456e-25,
+        "kcl_over_max_terminal_current": 3.711395103693046e-13,
+        "qf_bounds_violations": 0,
+        "state_sha256": "d748971a29980be73d52f260c0c233921ddad8e205d275483316f3a076c72c3a",
+        "reference_curve_scored": false
+      },
+      "evidence_directory": "reference_staging/templates_ldmos_stage4_blocker_3p369167_20260905",
+      "resumed_sequence_directory": "reference_staging/templates_ldmos_stage4_sequence_budget160_20260905",
+      "zero_bias_kcl_audit": {
+        "absolute_imbalance_A_per_um": 5.294309596804935e-26,
+        "raw_normalized_percent": 156.06831522756892,
+        "denominator": "maximum_absolute_terminal_current",
+        "policy": "raw ratio retained; no equilibrium exemption or absolute floor inferred; qualification unresolved"
       }
     },
     "runtime_classification": "strict no-predictor continuation requires millivolt-scale internal steps; accepted steps are now resumable",

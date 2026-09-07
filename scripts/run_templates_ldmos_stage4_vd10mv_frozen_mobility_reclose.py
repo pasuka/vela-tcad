@@ -32,6 +32,10 @@ def main() -> int:
     )
     parser.add_argument("--recenter-qf", action="store_true")
     parser.add_argument(
+        "--max-iter", type=int, default=80,
+        help="Newton iteration budget; does not change residual acceptance ceilings.",
+    )
+    parser.add_argument(
         "--min-step",
         type=float,
         default=1.0e-3,
@@ -46,6 +50,8 @@ def main() -> int:
     parser.add_argument("--initial-step", type=float, default=2.5e-3)
     parser.add_argument("--growth-factor", type=float, default=1.0)
     args = parser.parse_args()
+    if args.max_iter < 1:
+        parser.error("--max-iter must be positive")
     output = args.output_dir.resolve()
     if output.exists():
         raise FileExistsError(output)
@@ -57,7 +63,7 @@ def main() -> int:
     config["solver"]["quasi_fermi_recenter_on_initial_state"] = (
         args.recenter_qf
     )
-    config["solver"]["max_iter"] = 80
+    config["solver"]["max_iter"] = args.max_iter
     if args.gate_bias is not None:
         set_contact_bias(config, "gate", args.gate_bias)
     if args.initial_state is not None:
@@ -118,7 +124,11 @@ def main() -> int:
     completed = subprocess.run(
         [str(args.runner.resolve()), "--config", str(config_path)],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False)
-    (output / "reclose.log").write_text(completed.stdout, encoding="utf-8")
+    # The runner writes its detailed runtime log beside reclose.json.  Keep
+    # captured stdout separate so that completion does not truncate that log.
+    (output / "runner_stdout.log").write_text(completed.stdout, encoding="utf-8")
+    if not (output / "reclose.log").exists():
+        (output / "reclose.log").write_text(completed.stdout, encoding="utf-8")
     summary = {
         "schema": "vela.templates_ldmos.stage4_idvd_reclose.v2",
         "return_code": completed.returncode,
@@ -127,6 +137,7 @@ def main() -> int:
         "state_exists": (output / "state.csv").is_file(),
         "full_curve": args.full_curve,
         "mobility_jacobian": args.mobility_jacobian,
+        "max_iter": args.max_iter,
         "quasi_fermi_recenter_on_initial_state": args.recenter_qf,
         "requested_bias_points": args.bias_points,
     }

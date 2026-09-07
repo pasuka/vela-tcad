@@ -79,17 +79,47 @@ def ratio_error(reference: dict[str, list[tuple[float, float]]],
             "max": max(errors), "endpoint": endpoint}
 
 
-def kcl_error(path: Path) -> float:
-    by_point: dict[int, list[float]] = {}
+def kcl_audit(path: Path) -> dict[str, Any]:
+    """Keep zero-bias evidence explicit; do not silently exempt it from gates."""
+    by_point: dict[int, list[dict[str, str]]] = {}
     with path.open(newline="", encoding="utf-8") as stream:
         for row in csv.DictReader(stream):
-            by_point.setdefault(int(row["point_index"]), []).append(
-                float(row["current_total_A_per_um"]))
-    errors = []
-    for currents in by_point.values():
-        scale = max(sum(abs(value) for value in currents), 1.0e-30)
-        errors.append(abs(sum(currents)) / scale * 100.0)
-    return max(errors)
+            by_point.setdefault(int(row["point_index"]), []).append(row)
+    points = []
+    for index, rows in by_point.items():
+        biases = {float(row["bias_V"]) for row in rows}
+        contacts = {row["contact"] for row in rows}
+        if len(biases) != 1 or len(rows) != 4 or contacts != {
+                "source", "drain", "gate", "substrate"}:
+            raise ValueError(f"incomplete or inconsistent terminal balance at point {index}")
+        bias = biases.pop()
+        currents = [float(row["current_total_A_per_um"]) for row in rows]
+        if not math.isfinite(bias) or not all(math.isfinite(value) for value in currents):
+            raise ValueError(f"non-finite terminal balance at point {index}")
+        imbalance = abs(sum(currents))
+        # Frozen validation plan: terminal KCL / maximum terminal current.
+        scale = max(max(abs(value) for value in currents), 1.0e-30)
+        points.append({
+            "point_index": index, "bias_V": bias,
+            "absolute_kcl_A_per_um": imbalance,
+            "max_absolute_terminal_current_A_per_um": max(map(abs, currents)),
+            "normalized_kcl_percent": imbalance / scale * 100.0,
+        })
+    if not points:
+        raise ValueError("terminal balance contains no points")
+    nonzero = [row["normalized_kcl_percent"] for row in points if row["bias_V"] != 0.0]
+    return {
+        "denominator": "maximum_absolute_terminal_current",
+        "max_normalized_kcl_percent": max(row["normalized_kcl_percent"] for row in points),
+        "max_nonzero_bias_normalized_kcl_percent": max(nonzero) if nonzero else None,
+        "zero_bias_points": [row for row in points if row["bias_V"] == 0.0],
+        "zero_bias_policy": "raw ratio retained in gate; no equilibrium exemption or resolution floor inferred",
+        "point_count": len(points),
+    }
+
+
+def kcl_error(path: Path) -> float:
+    return kcl_audit(path)["max_normalized_kcl_percent"]
 
 
 def verdict(metrics: dict[str, Any], level: str) -> dict[str, Any]:
@@ -117,7 +147,9 @@ def analyze(reference_paths: dict[str, Path], candidate_paths: dict[str, Path],
         gate: curve_error(reference[gate], candidate[gate]) for gate in GATES
     }
     metrics["gate_ratio_error_percent"] = ratio_error(reference, candidate)
-    metrics["max_normalized_kcl_percent"] = max(kcl_error(path) for path in balance_paths.values())
+    metrics["kcl_audit"] = {gate: kcl_audit(path) for gate, path in balance_paths.items()}
+    metrics["max_normalized_kcl_percent"] = max(
+        audit["max_normalized_kcl_percent"] for audit in metrics["kcl_audit"].values())
     result = {
         "schema": "vela.templates_ldmos.stage4_d5_summary.v1",
         "alignment_policy": "31 exact shared CurrentPlot points selected from the solver path; no curve-score interpolation",
