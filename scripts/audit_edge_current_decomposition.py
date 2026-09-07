@@ -22,11 +22,7 @@ REPO = Path(__file__).resolve().parents[1]
 Q_C = 1.602176634e-19
 RATIO_FLOOR = 1.0e-300
 
-DEFAULT_NODE_COMPARE = (
-    REPO
-    / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/reports"
-    / "coarse_previous_full20_fields_20260629_155228/coarse_node_field_compare_aligned.csv"
-)
+
 DEFAULT_INTERNAL_AUDIT = REPO / "build/diagnostics/avalanche_internal_source_current_audit.csv"
 DEFAULT_SG_EDGE_TOPOLOGY = (
     REPO
@@ -154,7 +150,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--internal-audit", type=Path, default=DEFAULT_INTERNAL_AUDIT)
     parser.add_argument("--self-edge-topology", type=Path, default=DEFAULT_SG_EDGE_TOPOLOGY)
-    parser.add_argument("--node-compare", type=Path, default=DEFAULT_NODE_COMPARE)
+    parser.add_argument("--node-compare", type=Path, required=True)
     parser.add_argument("--biases", default="0,-5,-10,-16,-18,-20")
     parser.add_argument("--bias-tol", type=float, default=1.0e-6)
     parser.add_argument("--out-csv", type=Path, default=DEFAULT_OUT_CSV)

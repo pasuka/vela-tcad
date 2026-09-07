@@ -722,7 +722,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--base-config",
         type=Path,
-        default=REPO / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/reports/coarse_vm_vector_compare/simulation_coarse_previous_full20_aligned.json",
+        required=True,
     )
     parser.add_argument("--runner", type=Path, default=default_runner())
     parser.add_argument(
@@ -733,12 +733,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--reference-current-csv",
         type=Path,
-        default=REPO / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/imported_reference_vm_vector/reference_curves/pn2d_sentaurus2018_coarse7x3_bv_reference.csv",
+        required=True,
     )
     parser.add_argument(
         "--sentaurus-multibias-dir",
         type=Path,
-        default=REPO / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/reports/coarse_vm_vector_compare/sentaurus_multibias",
+        required=True,
     )
     parser.add_argument(
         "--bias-points",

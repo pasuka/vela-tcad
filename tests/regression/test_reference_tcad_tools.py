@@ -368,61 +368,7 @@ class ReferenceTcadToolsTest(unittest.TestCase):
         self.assertTrue(verdict["passed"])
         self.assertEqual(verdict["typed_outcome"], "transport_edge_decomposition_verified")
 
-    def test_previous_full20_config_uses_poisson_block_initialization(self) -> None:
-        module_path = REPO / "scripts" / "run_pn2d_coarse7x3_previous_full20_compare.py"
-        spec = importlib.util.spec_from_file_location("run_pn2d_coarse7x3_previous_full20_compare", module_path)
-        self.assertIsNotNone(spec)
-        self.assertIsNotNone(spec.loader)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
 
-        with tempfile.TemporaryDirectory(prefix="vela_previous_full20_cfg_") as td:
-            root = Path(td)
-            base = self._write_minimal_previous_full20_base(root)
-
-            config_path = module.write_previous_full20_config(
-                base_config=base,
-                out_dir=root,
-            )
-
-            config = json.loads(config_path.read_text(encoding="utf-8"))
-            self._assert_poisson_block_initialization(
-                config,
-                diagnostic_suffix="",
-                write_state_name="coarse_previous_full20_last_state.csv",
-            )
-
-    def test_previous_full20_rebaseline_config_uses_poisson_block_initialization(self) -> None:
-        module_path = REPO / "scripts" / "run_pn2d_coarse7x3_previous_full20_compare.py"
-        spec = importlib.util.spec_from_file_location("run_pn2d_coarse7x3_previous_full20_compare", module_path)
-        self.assertIsNotNone(spec)
-        self.assertIsNotNone(spec.loader)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-
-        with tempfile.TemporaryDirectory(prefix="vela_previous_full20_rebaseline_cfg_") as td:
-            root = Path(td)
-            base = self._write_minimal_previous_full20_base(root)
-
-            config_path = module.write_previous_full20_config(
-                base_config=base,
-                out_dir=root,
-                output_csv_name="coarse_rebaseline_post_contact_handoff_fix.csv",
-                bias_points=[0.0, -1.0, -5.0, -10.0, -18.0, -20.0],
-                config_name="simulation_rebaseline_post_contact_handoff_fix.json",
-                vtk_subdir="vtk_rebaseline",
-                diagnostics_suffix="_rebaseline",
-            )
-
-            config = json.loads(config_path.read_text(encoding="utf-8"))
-            self.assertEqual(config_path.name, "simulation_rebaseline_post_contact_handoff_fix.json")
-            self.assertEqual(config["output_csv"], "coarse_rebaseline_post_contact_handoff_fix.csv")
-            self.assertEqual(config["sweep"]["vtk_prefix"], "vtk_rebaseline/dc_sweep")
-            self._assert_poisson_block_initialization(
-                config,
-                diagnostic_suffix="_rebaseline",
-                write_state_name="coarse_previous_full20_rebaseline_last_state.csv",
-            )
     def test_pn2d_bv_impact_parameter_audit_injects_models_par_coefficients(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_impact_param_audit_") as td:
             tmp = Path(td)
@@ -757,10 +703,6 @@ Ionization
     def test_reference_tcad_device_configs_exist(self) -> None:
         expected = [
             REPO / "reference_tcad" / "pn2d_sentaurus2018" / "pn2d_sentaurus2018_reference.json",
-            REPO
-            / "reference_tcad"
-            / "pn2d_sentaurus2018_coarse7x3"
-            / "pn2d_sentaurus2018_coarse7x3_reference.json",
         ]
         for path in expected:
             self.assertTrue(path.is_file(), f"missing reference config: {path}")
@@ -12582,59 +12524,7 @@ Solve {
         for index in range(201):
             (source / f"pn2d_bv_multibias_{index:04d}_des.tdr").write_text("tdr\n")
 
-    @staticmethod
-    def _write_minimal_previous_full20_base(root: Path) -> Path:
-        (root / "mesh.json").write_text(
-            json.dumps({"nodes": [{"id": 0, "x": 0.0, "y": 0.0}], "triangles": [], "contacts": []}),
-            encoding="utf-8",
-        )
-        (root / "doping.csv").write_text(
-            "node_id,donors_cm3,acceptors_cm3\n0,0,1e17\n",
-            encoding="utf-8",
-        )
-        (root / "pn2d_sentaurus2018_iv_materials.json").write_text(
-            json.dumps({"materials": [{"name": "Si", "ni": 1.0e10}]}),
-            encoding="utf-8",
-        )
-        base = root / "simulation_bv.json"
-        base.write_text(
-            json.dumps({
-                "mesh_file": "mesh.json",
-                "node_doping_file": "doping.csv",
-                "solver": {},
-                "sweep": {},
-            }),
-            encoding="utf-8",
-        )
-        return base
 
-    def _assert_poisson_block_initialization(
-        self,
-        config: dict[str, object],
-        *,
-        diagnostic_suffix: str,
-        write_state_name: str,
-    ) -> None:
-        sweep = config["sweep"]
-        solver = config["solver"]
-
-        self.assertIsInstance(sweep, dict)
-        self.assertIsInstance(solver, dict)
-
-        initialization = sweep["initialization"]
-        self.assertIsInstance(initialization, dict)
-        self.assertEqual(initialization["mode"], "poisson_block")
-        self.assertTrue(str(initialization["diagnostic_csv"]).endswith("poisson_block_initialization.csv"))
-        self.assertTrue(str(initialization["write_state_file"]).endswith("poisson_block_initial_state.csv"))
-        self.assertEqual(sweep["write_state_file"], write_state_name)
-        self.assertEqual(solver["handoff"]["gummel_max_iter"], 0)
-        self.assertFalse(solver["handoff"]["require_gummel_convergence"])
-
-        diagnostics = sweep["diagnostics"]
-        self.assertIsInstance(diagnostics, dict)
-        self.assertTrue(
-            str(diagnostics["sg_avalanche_edges"]["csv_file"]).endswith(f"sg_avalanche_edges{diagnostic_suffix}.csv")
-        )
 
     @staticmethod
     def _read_csv(path: Path) -> list[dict[str, str]]:

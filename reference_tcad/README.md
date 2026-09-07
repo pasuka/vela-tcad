@@ -9,6 +9,15 @@ and are not checked in.
 These fixtures validate signs, trends, finite outputs, and rough orders of
 magnitude. They do not make calibration claims.
 
+The custom `nmos2d_sentaurus2018`, `pn2d_sentaurus2018_coarse7x3`,
+`pn2d_sentaurus2018_minimal6`, and `pn2d_sentaurus2018_skewed_tri3` cases
+and their dedicated workflows have been retired. References to these cases
+in dated validation evidence describe historical runs, not runnable fixtures.
+Reusable analysis tools now require explicit input paths where their defaults
+previously selected these cases. Shared Sentaurus avalanche helpers live in
+`scripts/sentaurus_avalanche_replay.py` and
+`scripts/sentaurus_avalanche_controls.py`.
+
 ## Directory Shape
 
 Each device directory can contain:

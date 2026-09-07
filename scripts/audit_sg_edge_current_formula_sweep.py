@@ -25,11 +25,7 @@ DEFAULT_SG_EDGE_TOPOLOGY = (
     / "BV-A2-B1p05-internal-source-current-audit"
     / "BV-A2-B1p05-internal-source-current-audit_sg_avalanche_edges.csv"
 )
-DEFAULT_NODE_COMPARE = (
-    REPO
-    / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/reports"
-    / "coarse_previous_full20_fields_20260629_155228/coarse_node_field_compare_aligned.csv"
-)
+
 DEFAULT_OUT_CSV = REPO / "build/diagnostics/sg_edge_current_formula_sweep.csv"
 DEFAULT_SUMMARY = REPO / "build/diagnostics/sg_edge_current_formula_sweep_summary.md"
 
@@ -93,7 +89,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--internal-audit", type=Path, default=DEFAULT_INTERNAL_AUDIT)
     parser.add_argument("--self-edge-topology", type=Path, default=DEFAULT_SG_EDGE_TOPOLOGY)
-    parser.add_argument("--node-compare", type=Path, default=DEFAULT_NODE_COMPARE)
+    parser.add_argument("--node-compare", type=Path, required=True)
     parser.add_argument("--biases", default="0,-5,-10,-16,-18,-20")
     parser.add_argument("--bias-tol", type=float, default=1.0e-6)
     parser.add_argument("--thermal-voltage", type=float, default=VT_300K)

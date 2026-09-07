@@ -149,7 +149,9 @@ std::filesystem::path makeUniqueSweepDir()
     for (int attempt = 0; attempt < kMaxDirCreationAttempts; ++attempt) {
         const auto dir = base /
             ("vela_dc_sweep_test_" + std::to_string(stamp) + "_" + std::to_string(dist(rng)));
-        if (!std::filesystem::exists(dir))
+        // Catch2 cases can run in separate processes with the same clock/thread
+        // seed. Reserve the directory atomically before another case can use it.
+        if (std::filesystem::create_directory(dir))
             return dir;
     }
 

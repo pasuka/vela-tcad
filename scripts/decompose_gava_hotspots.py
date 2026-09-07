@@ -495,7 +495,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--sentaurus-multibias-dir",
         type=Path,
-        default=REPO / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/reports/coarse_previous_full20/sentaurus_multibias",
+        required=True,
     )
     parser.add_argument(
         "--self-case-dir",

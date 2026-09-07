@@ -8,11 +8,13 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[2]
 SCRIPTS = REPO / "scripts"
+FIXTURE = REPO / "reference_tcad" / "transportmodels_sentaurus2022" / "vela"
 sys.path.insert(0, str(SCRIPTS))
 
 
@@ -42,7 +44,14 @@ class TransportModelsSentaurusMaterialContractTest(unittest.TestCase):
     def test_corrected_materials_use_sentaurus_silicon_intrinsic_density(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "materials.json"
-            PARAMETER_SWEEP.write_corrected_materials(output)
+            baseline = Path(directory) / "baseline_materials.json"
+            source = json.loads((FIXTURE / "materials_sentaurus2022.json").read_text(encoding="utf-8"))
+            for material in source["materials"]:
+                if material["name"] in {"Si", "PolySilicon"}:
+                    material["ni"] = 1.0e10
+            baseline.write_text(json.dumps(source), encoding="utf-8")
+            with mock.patch.object(PARAMETER_SWEEP, "BASE_MATERIALS", baseline):
+                PARAMETER_SWEEP.write_corrected_materials(output)
             payload = json.loads(output.read_text(encoding="utf-8"))
             materials = {row["name"]: row for row in payload["materials"]}
 
@@ -54,12 +63,19 @@ class TransportModelsSentaurusMaterialContractTest(unittest.TestCase):
         curve = dict(PHASE7.CURVES[0])
         curve["points"] = [-1.0]
         with tempfile.TemporaryDirectory() as directory:
-            old_output = PHASE7.OUTPUT_ROOT
-            try:
-                PHASE7.OUTPUT_ROOT = Path(directory)
+            root = Path(directory)
+            source = json.loads((FIXTURE / "configs" / "09_dg_idvg_curve.json").read_text(encoding="utf-8"))
+            source["solver"]["bandgap_narrowing"] = "old_slotboom"
+            for carrier in ("electron", "hole"):
+                source["solver"]["srh_doping_dependence"][carrier]["reference_doping_m3"] = 1.0e22
+            baseline = root / "baseline_config.json"
+            baseline.write_text(json.dumps(source), encoding="utf-8")
+            curve["config"] = baseline
+            curve["initial_state"] = root / "initial_state.csv"
+            with mock.patch.object(PHASE7, "OUTPUT_ROOT", root / "output"), mock.patch.object(
+                PHASE7, "CORRECTED_MATERIALS", FIXTURE / "materials_sentaurus2022.json"
+            ):
                 path = PHASE7.make_config(curve)
-            finally:
-                PHASE7.OUTPUT_ROOT = old_output
 
             config = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(

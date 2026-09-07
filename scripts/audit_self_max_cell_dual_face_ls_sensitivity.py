@@ -531,7 +531,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cell-id", type=int, default=12)
     parser.add_argument("--dual-face-csv", type=Path, default=REPO / "build/diagnostics/dual_face_geometry_audit.csv")
     parser.add_argument("--internal-audit", type=Path, default=REPO / "build/diagnostics/a1_b1_internal_source_current_audit/avalanche_internal_source_current_audit.csv")
-    parser.add_argument("--node-compare", type=Path, default=REPO / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/reports/coarse_previous_full20/coarse_node_field_compare_aligned.csv")
+    parser.add_argument("--node-compare", type=Path, required=True)
     parser.add_argument("--self-dual-cell-csv", type=Path, default=REPO / "build/diagnostics/dual_face_vector_current_gava_reconstruction.csv")
     parser.add_argument("--out-csv", type=Path, default=REPO / "build/diagnostics/self_max_cell_dual_face_ls_sensitivity.csv")
     parser.add_argument("--out-summary", type=Path, default=REPO / "build/diagnostics/self_max_cell_dual_face_ls_sensitivity_summary.md")

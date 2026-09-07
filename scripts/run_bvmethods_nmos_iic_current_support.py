@@ -113,7 +113,7 @@ def main() -> int:
 
     config = copy.deepcopy(json.loads(args.base.read_text(encoding="utf-8-sig")))
     config["materials_file"] = absolute(
-        REPO / "reference_tcad/nmos2d_sentaurus2018/vela/materials_sentaurus2018.json"
+        REPO / "reference_tcad/bvmethods_sentaurus2018/vela/materials_sentaurus2018.json"
     )
     config["solver"]["bandgap_narrowing"] = {
         "model": "old_slotboom",

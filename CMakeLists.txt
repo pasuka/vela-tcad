@@ -367,12 +367,6 @@ target_link_libraries(vela_example_runner PRIVATE vela_core)
 add_executable(pn2d_jacobian_block_audit src/tools/pn2d_jacobian_block_audit.cpp)
 target_link_libraries(pn2d_jacobian_block_audit PRIVATE vela_core)
 
-add_executable(pn2d_minimal6_operator_audit src/tools/pn2d_minimal6_operator_audit.cpp)
-target_link_libraries(pn2d_minimal6_operator_audit PRIVATE vela_core)
-if(MINGW)
-    target_link_options(pn2d_minimal6_operator_audit PRIVATE "-Wl,--no-insert-timestamp")
-endif()
-
 add_executable(alpha_from_sentaurus_f src/tools/alpha_from_sentaurus_f.cpp)
 target_link_libraries(alpha_from_sentaurus_f PRIVATE vela_core)
 
@@ -716,16 +710,16 @@ set_tests_properties(sentaurus_mesh_builder PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_mesh_builder)
 
-add_test(NAME pn2d_minimal6_transport_element_regression
+add_test(NAME sentaurus_reference_workflows
     COMMAND ${Python3_EXECUTABLE} -m unittest
-            tests.regression.test_pn2d_minimal6_element_currents
-            tests.regression.test_pn2d_minimal6_native_cell_sg
-            tests.regression.test_pn2d_minimal6_transport_elements
-            tests.regression.test_pn2d_minimal6_transport_element_closure
-            tests.regression.test_pn2d_minimal6_transport_element_verify)
-set_tests_properties(pn2d_minimal6_transport_element_regression PROPERTIES
+            tests.regression.test_sentaurus_contact_overrides
+            tests.regression.test_sentaurus_avalanche_replay
+            tests.regression.test_sentaurus_avalanche_controls
+            tests.regression.test_pn2d_same_mesh_sdevice_vector_export
+            tests.regression.test_cell_first_cross_device_validation)
+set_tests_properties(sentaurus_reference_workflows PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-vela_set_windows_msys2_test_path(pn2d_minimal6_transport_element_regression)
+vela_set_windows_msys2_test_path(sentaurus_reference_workflows)
 
 add_test(NAME pn2d_bv_process_observability_regression
     COMMAND ${Python3_EXECUTABLE} -m unittest

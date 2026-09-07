@@ -30,7 +30,7 @@ from scripts.diagnose_pn2d_general_tri3_imported_state import (
     error_summary,
     vector_angle_deg,
 )
-from scripts.diagnose_pn2d_minimal6_element_avalanche_replay import (
+from scripts.sentaurus_avalanche_replay import (
     currentplot_targets,
 )
 from scripts.pn2d_general_tri3_contract import EXACT_BIASES_V, SCHEMA_ID

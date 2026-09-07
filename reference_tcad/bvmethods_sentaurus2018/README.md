@@ -29,6 +29,9 @@ working directory.
 
 ## Vela template mapping
 
+- `vela/materials_sentaurus2018.json` preserves the Si/Nitride material
+  overrides used by the boundary-method and IIC replay scripts. The values
+  are unchanged; these inputs are now stored with the BVmethods case.
 - `configs/templates/bvmethods_nmos_external_resistor.template.json` maps the
   series-resistor load-line method.
 - `configs/templates/bvmethods_nmos_voltage_to_current.template.json` maps the

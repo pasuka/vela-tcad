@@ -442,12 +442,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input-csv",
         type=Path,
-        default=REPO / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/reports/coarse_vm_vector_compare/coarse_node_field_compare_aligned.csv",
+        required=True,
     )
     parser.add_argument(
         "--elements-csv",
         type=Path,
-        default=REPO / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/imported_reference_vm_vector/elements.csv",
+        required=True,
     )
     parser.add_argument(
         "--output-csv",

@@ -33,9 +33,16 @@ class DualFaceFluxDecompositionTest(unittest.TestCase):
             dual = tmp / "dual_faces.csv"
             internal = tmp / "internal.csv"
             compare = tmp / "node_compare.csv"
+            cell_vectors = tmp / "cell_vectors.csv"
             out_csv = tmp / "face_flux.csv"
             out_md = tmp / "face_flux.md"
             bias = -20.0
+
+            write_csv(
+                cell_vectors,
+                ["cell_id", "bias_V", "centroid_x_um", "centroid_y_um", "reconstruction_status"],
+                [[7, bias, 1.0 / 3.0, 1.0 / 3.0, "ok"]],
+            )
 
             write_csv(
                 dual,
@@ -118,6 +125,8 @@ class DualFaceFluxDecompositionTest(unittest.TestCase):
                     str(internal),
                     "--node-compare",
                     str(compare),
+                    "--self-dual-cell-csv",
+                    str(cell_vectors),
                     "--bias",
                     str(bias),
                     "--cell-id",
