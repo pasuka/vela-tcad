@@ -242,6 +242,9 @@ evidence.
   `scaling.mode = "unit_scaling"`.
 - [PN2D BV validation](validation/pn2d_bv_validation.md): current qualified
   template policy, validation gates, limitations, and evidence map.
+- [SimpleMOS branch status](validation/simplemos_branch_status.md): explicit
+  production options, diagnostic boundaries, local evidence dependencies, and
+  the current n23 Id-Vg comparison.
 - [Validation evidence](validation/): dated reports and machine-readable
   contracts for checked-in reference TCAD work.
 - [LDMOS performance summary, 2026-09-11](validation/templates_ldmos_stage4_performance_summary_2026-09-11.md):
