@@ -1,5 +1,6 @@
 #include "vela/mesh/BoxGeometryBuilder.h"
 #include "vela/mesh/DeviceMesh.h"
+#include "vela/mesh/DelaunayBox.h"
 #include "vela/mesh/MeshEntity.h"
 #include <algorithm>
 #include <array>
@@ -136,10 +137,38 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh)
 
 GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const Options& options)
 {
+    const auto& supplied = options.poissonCellEdgeCoefficients;
+    const bool cellMaterial = options.poissonPermittivityPolicy ==
+        PoissonPermittivityPolicy::CellMaterial;
+    const bool transfer = options.cellBoxPolicy == CellBoxPolicy::DelaunayTransfer;
+    if (transfer && (!cellMaterial || !supplied.empty()))
+        throw std::invalid_argument("delaunay_transfer requires cell_material and cannot combine with supplied cell coefficients.");
+    const auto generated = transfer ? buildDelaunayCellBox(mesh) : DelaunayBoxResult{};
+    if (!supplied.empty() && (!cellMaterial || supplied.size() != mesh.numCells()))
+        throw std::invalid_argument("Poisson cell coefficients require cell_material policy and one record per cell.");
+    if (cellMaterial) {
+        for (Index i = 0; i < mesh.numCells(); ++i) {
+            const auto& cell = mesh.getCell(i);
+            if (cell.id != i || cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+                throw std::invalid_argument("Cell-material Poisson assembly requires indexed Tri3 cells.");
+            if (triangleArea(mesh, cell) <= kDegenerateTol)
+                throw std::invalid_argument("Cell-material Poisson assembly rejects degenerate cells.");
+            if (!supplied.empty()) {
+                for (std::size_t k = 0; k < 3; ++k) {
+                    if (supplied[i].nodeIds[k] != cell.node_ids[k])
+                        throw std::invalid_argument("Poisson cell coefficient node order does not match mesh.");
+                    if (!std::isfinite(supplied[i].coefficients[k]) || supplied[i].coefficients[k] < 0.0)
+                        throw std::invalid_argument("Poisson cell coefficients must be finite and nonnegative.");
+                }
+            }
+        }
+    }
+    std::vector<std::array<Real, 3>> poissonCoefficients(mesh.numCells());
     if (mesh.edges_.empty() && !mesh.cells_.empty())
         mesh.buildEdgesOnly();
 
     GeometryBuildReport report;
+    report.transferredCellBoxEdges = generated.transferredEdges;
     report.totalCells = mesh.cells_.size();
 
     bool hasEdgeLength = false;
@@ -248,9 +277,15 @@ GeometryBuildReport BoxGeometryBuilder::buildWithReport(DeviceMesh& mesh, const 
             if (localCouple < 0.0)
                 localCouple = 0.0;
             edge.couple += localCouple;
+            if (cellMaterial)
+                poissonCoefficients.at(cell.id)[k] = supplied.empty()
+                    ? localCouple / edge.length : supplied.at(cell.id).coefficients[k];
         }
     }
 
+    if (transfer) poissonCoefficients = generated.coefficients;
+    mesh.poissonPermittivityPolicy_ = options.poissonPermittivityPolicy;
+    mesh.poissonCellEdgeCoefficients_ = std::move(poissonCoefficients);
     return report;
 }
 

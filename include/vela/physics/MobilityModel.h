@@ -161,6 +161,8 @@ struct MobilityModelConfig {
     /// ``constant_field`` uses the material low-field mobility and applies
     /// only the configured high-field saturation limiter.
     std::string model = "constant";
+    // element_box is qualified for state-independent constant/Masetti only.
+    std::string edgeAveraging = "legacy";
     std::string highFieldDrivingForce = "electric_field";
     /// Spatial discretization for a quasi-Fermi-gradient high-field drive.
     /// ``edge_projection`` preserves the historical edge-aligned difference;
