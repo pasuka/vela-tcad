@@ -1,0 +1,19 @@
+{
+  "schema": "vela.pn2d.variants.acceptance.v1",
+  "frozen_before_variant_results": true,
+  "scope": "300 K silicon Boltzmann static DD without avalanche",
+  "sentaurus_version": "T-2022.03-SP2",
+  "baseline_contracts_unchanged": ["reference_tcad/pn2d_sentaurus2018/pn2d_sentaurus2018_reference.json", "docs/validation/contracts/pn2d_node_volume_policy_atomic_default_acceptance_v2.json"],
+  "units": {"length": "um", "density": "cm^-3", "current": "A/um", "field": "V/cm", "mobility": "cm^2/V/s", "SRH": "cm^-3/s"},
+  "bias": {"forward": [0.0, 0.8, 0.02], "reverse": [0.0, -1.0, -0.1], "tolerance_V": 1e-9, "interpolation_allowed": false},
+  "input": {"same_mesh_and_node_doping": true, "matching": "bijective node id and coordinates", "coordinate_tolerance_um": 1e-10, "independent_equilibrium": true, "missing_or_duplicate_nodes": "fail"},
+  "current": {"absolute_floor_A_per_um": 1e-15, "relative_max": 0.05, "log_rmse_max_dex": 0.02, "log_max_dex": 0.05, "compare": ["Anode total", "Anode electron", "Anode hole", "Cathode total", "Cathode electron", "Cathode hole"]},
+  "conservation": {"absolute_floor_A_per_um": 1e-15, "kcl_relative_max": 0.001, "continuity_relative_max": 0.01, "section_relative_max": 0.01, "sections_x_um": [0.25, 0.75, 1.0, 1.25, 1.75]},
+  "spatial": {"biases_V": [0.0, 0.2, 0.6, 0.8, -1.0], "potential_rmse_V": 0.005, "potential_p95_V": 0.01, "qf_p95_V": 0.01, "carrier_active_reference_min_cm3": 1e5, "carrier_log_rmse_dex": 0.05, "carrier_log_p95_dex": 0.1, "field_relative_l2": 0.1, "mobility_relative_l2": 0.05, "srh_relative_l2": 0.1, "srh_integral_relative": 0.05, "srh_integral_current_floor_A_per_um": 1e-15, "contact_edge_region_radius_um": 0.025, "node_maximum_is_diagnostic_only": true},
+  "mesh": {"current_relative_max": 0.02, "current_absolute_floor_A_per_um": 1e-15, "integral_relative_max": 0.05, "required_pair": ["M0", "M1"], "endpoint_statistics_and_integrals_required": true},
+  "model_effect": {"delta_log_current_max_dex": 0.03, "absolute_floor_A_per_um": 1e-15},
+  "gate_order": ["input", "convergence_conservation", "terminal_spatial", "mesh"],
+  "stage_dependencies": {"B": "A explained and accepted", "C": "A explained and accepted"},
+  "missing_evidence": "not_run; never pass",
+  "threshold_rationale": "Prospective engineering gates: 5 percent port agreement, 1 percent continuity, 2 percent mesh current sensitivity. Floors avoid zero-current relative errors; these gates do not extend old baseline qualification. No post-result relaxation."
+}

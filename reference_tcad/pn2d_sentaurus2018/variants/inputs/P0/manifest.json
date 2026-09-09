@@ -1,0 +1,28 @@
+{
+  "id": "P0",
+  "stage": "A",
+  "change": "baseline",
+  "overrides": {},
+  "parameters": {
+    "NA_cm3": 1e+17,
+    "ND_cm3": 1e+17,
+    "anode_fraction": 1.0,
+    "mobility": "masetti",
+    "srh": true,
+    "bgn": true
+  },
+  "mesh": "M0",
+  "directory": "P0/M0",
+  "input_sha256": {
+    "pn2d_sde.cmd": "998b24450c0fb3bf25c0c4b71c08e5994d5c768b50cc7ec97cd35a5dae93f509",
+    "models.par": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+    "materials.json": "5ffb7e0997c76519a9d594ab2727a7bf3f6f45cd477634920890e7678cb69099",
+    "forward_sdevice.cmd": "6acee1559be216ef9aa3599fb50ff8bb72e1d8935009e7f39c775c85417eb7fd",
+    "reverse_sdevice.cmd": "98f018f954abbc09bda85cd16dd8d7a52db6405b929c47ad06557aaa57324d38",
+    "vela_forward.json": "2ad82844ce3a5d56c54ceab364017070e8f241c6464e3378c7883507c2c07920",
+    "vela_reverse.json": "10e1868d677a70f9569ba7df36637e483bb973312cf3ad39739a0994c587da5b"
+  },
+  "status": "generated_not_run",
+  "parameter_file": "../../../source/models.par",
+  "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742"
+}

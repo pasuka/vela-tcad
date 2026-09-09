@@ -1,0 +1,78 @@
+{
+  "date": "2026-09-08",
+  "preset": "windows-ucrt64-release",
+  "SG": {
+    "tests": 26,
+    "assertions": 221,
+    "status": "pass",
+    "log": "sg_tests_after_fix.txt"
+  },
+  "Gummel": {
+    "tests": 13,
+    "status": "pass",
+    "junit": "../pn2d_variants_dd_ctest.xml"
+  },
+  "selected_ctest": {
+    "tests": 6,
+    "status": "pass",
+    "junit": "../pn2d_variants_ctest.xml",
+    "names": [
+      "pn2d_variants",
+      "pn2d_config_templates",
+      "sentaurus_import_tools",
+      "reference_tcad_regression",
+      "pn2d_bv_m2_mixed_voronoi_self_consistent_control",
+      "pn2d_node_volume_policy_default_acceptance"
+    ]
+  },
+  "final_variant_unittest": {
+    "date": "2026-09-09",
+    "tests": 26,
+    "status": "pass",
+    "registered_ctest": "pn2d_variants",
+    "junit": "final_reconstruction_ctest.xml"
+  },
+  "git_diff_check": "pass",
+  "full_ctest": "not_run; selected numerical and interface scope only",
+  "prior_variant_unittest": {
+    "tests": 16,
+    "status": "pass",
+    "date": "2026-09-08"
+  },
+  "resume_ctest": {
+    "date": "2026-09-09",
+    "preset": "windows-ucrt64-release",
+    "name": "pn2d_variants",
+    "tests": 1,
+    "nested_unittest_cases": 21,
+    "status": "pass",
+    "seconds": 96.68,
+    "junit": "resume_ctest.xml",
+    "log": "resume_ctest.log"
+  },
+  "python_compile": "pass",
+  "final_ctest": {
+    "date": "2026-09-09",
+    "preset": "windows-ucrt64-release",
+    "name": "pn2d_variants",
+    "tests": 1,
+    "nested_unittest_cases": 26,
+    "status": "pass",
+    "seconds": 76.14,
+    "junit": "final_reconstruction_ctest.xml",
+    "checked_local": "2026-09-09T16:10:16+08:00",
+    "test_seconds": 71.26
+  },
+  "final_report_QA": {
+    "status": "pass",
+    "date": "2026-09-09T19:25:08.466717+08:00",
+    "checks": [
+      "exact exported bias coverage and all required gate statuses",
+      "all eight spatial figures exported",
+      "forward/reverse component plots, G2 spatial map, G2 SG map and diagnostic labels visually reviewed",
+      "legacy reconstruction discrepancy retained; no acceptance thresholds changed"
+    ],
+    "audit": "delivery_audit.json"
+  },
+  "report_generator_sha256": "718c6958c825e334e66a3292c7a1b438af8fd413c2188b6dbd5a4dc0884ad056"
+}

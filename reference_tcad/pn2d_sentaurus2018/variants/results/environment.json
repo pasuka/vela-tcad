@@ -1,0 +1,44 @@
+{
+  "worktree": "D:\\code-repo\\vela-tcad\\.worktrees\\pn2d-variant-genius",
+  "commit": "d58dc92e49d524b071f3c6c8b1cafd2965b96f04",
+  "sentaurus_version": "T-2022.03-SP2",
+  "sentaurus_ssh_alias": "sentaurus",
+  "remote_identity": "root@tcad",
+  "cmake_preset": "windows-ucrt64-release",
+  "compiler": "g++ (Rev3, Built by MSYS2 project) 16.2.0",
+  "python": "3.14.7 (main, Aug  8 2026, 21:15:19)  [MINGW GCC UCRT 16.2.0 64 bit (AMD64)]",
+  "hdf5_evidence": "hdf5-static detected; sentaurus_import successfully exported every executed native TDR",
+  "compiled_backends": [
+    "Eigen SparseLU",
+    "SuiteSparse SPQR",
+    "SuiteSparse UMFPACK"
+  ],
+  "active_DD_backend": "Eigen SparseLU/COLAMD",
+  "current_runner_sha256": "17cf519a71089f83915be586a998cb3be0a14698182a04b312ac8b2d0405889c",
+  "source_sha256": {
+    "src/discretization/ScharfetterGummel.cpp": "83f2974f9ac56ace85d1548c78f444282db5a8f00f008ed0aa703c78a5aff191",
+    "include/vela/discretization/ScharfetterGummel.h": "0cd5a4edbf070fd467fb02abdc7eac6b3708e0150df3fa181b12b6b0c821de18",
+    "tests/test_sg_flux.cpp": "f6ad3f96f4a372b6ea3b08ccc87405603aa61f74f3fd0ee834da48469357d725",
+    "scripts/pn2d_variants.py": "e61179c1073f12d11cad19bda0e62dd936a6abe627a0e882c1d663ef16c8f5ec",
+    "scripts/compare_pn2d_variants.py": "67b404be027cc81ea25389c2f5f23b4fe001aeb06174b4755e15dfc8a50cad94"
+  },
+  "native_precision": {
+    "A": "double",
+    "B_C": "80 bit long double, confirmed by native D1 and D2 diagnostic banners; EP128 controls retained",
+    "digits": 8,
+    "assembly_threads": 1,
+    "solver_threads": 1,
+    "evidence": "diagnostics/native_precision/D1_M2_EP128/probe.out",
+    "B_C_RHSMin": 1e-20
+  },
+  "vm_resource_audit_2026_09_09": {
+    "logical_cpus": 4,
+    "memory_MB": 7963,
+    "available_memory_MB_at_12_28": 5552,
+    "two_running_EP128_RSS_MB": [
+      614,
+      421
+    ],
+    "subsequent_C_worker_limit": 4
+  }
+}

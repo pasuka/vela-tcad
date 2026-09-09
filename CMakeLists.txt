@@ -628,6 +628,11 @@ add_test(NAME pn2d_config_templates
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_pn2d_config_templates.py)
 vela_set_windows_msys2_test_path(pn2d_config_templates)
 
+add_test(NAME pn2d_variants
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_pn2d_variants.py)
+vela_set_windows_msys2_test_path(pn2d_variants)
+
 add_test(NAME pn2d_bv_m2_mixed_voronoi_self_consistent_control
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_pn2d_bv_m2_mixed_voronoi_self_consistent_control)

@@ -1,0 +1,16 @@
+{
+  "status": "complete",
+  "task_root": "D:\\code-repo\\vela-tcad\\.worktrees\\pn2d-variant-genius",
+  "paused_local": "2026-09-09T16:27:49.7393111+08:00",
+  "processes": [
+    {
+      "ProcessId": 15340,
+      "CreatedUtc": "2026-09-09T08:23:19.4207060Z",
+      "CommandLine": "\"D:\\msys64\\ucrt64\\bin\\python.exe\" D:/code-repo/vela-tcad/.worktrees/pn2d-variant-genius/scripts/report_pn2d_variants.py --export-evidence",
+      "Suspended": false,
+      "disposition": "Verified absent on resume; no operation on old PID. Report-only replacement started."
+    }
+  ],
+  "resumed_local": "2026-09-09T19:16:38.610073+08:00",
+  "completed_local": "2026-09-09T19:25:08.466717+08:00"
+}

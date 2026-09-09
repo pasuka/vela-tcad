@@ -1,0 +1,867 @@
+{
+  "scope": "Diagnostic recovery only: unchanged frozen states; native replay means exported fields, not native internal fluxes. No transport solve, current fitting, default or threshold changes.",
+  "id": "G2",
+  "mesh": "E1",
+  "bias_V": 0.8,
+  "runner_sha256": "17cf519a71089f83915be586a998cb3be0a14698182a04b312ac8b2d0405889c",
+  "states": [
+    {
+      "state": "vela",
+      "state_sha256": "cb98e19d5f9557ba6684c105da4754013b25ab67621023b08f6f1a8d50e471b2",
+      "config_sha256": "22aa5bc132d916ec66de1dd4e18fe14ef35988ef6bffda1368b029e56bb04cf7",
+      "vtk_sha256": "810fb26d80d0f568a2abe6c228b7a7ffad32289df351cc4d33a37d3028da1ec4",
+      "recoveries": [
+        {
+          "field": "SentaurusElectronCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 4.2716908117572086,
+              "rms_error_A_per_cm2": 17078.5623578327,
+              "squared_error_integral": 569125.8810638787,
+              "Jy_over_Jx_l2": 0.5140200408169721
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.00876128610692969,
+              "rms_error_A_per_cm2": 9.00638616042005,
+              "squared_error_integral": 8.119420552965911,
+              "Jy_over_Jx_l2": 7.668878201284651e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 1.1565884853774786,
+              "rms_error_A_per_cm2": 1232.5392462200837,
+              "squared_error_integral": 1519152.993472772,
+              "Jy_over_Jx_l2": 0.2938449343559529
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.9274559251533286,
+              "rms_error_A_per_cm2": 975.6456560361801,
+              "squared_error_integral": 950027.1124088934,
+              "Jy_over_Jx_l2": 0.20192797138346438
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.002960383576003017,
+              "rms_error_A_per_cm2": 3.050409105163486,
+              "squared_error_integral": 8.832476395523534,
+              "Jy_over_Jx_l2": 0.04880563931315954
+            }
+          }
+        },
+        {
+          "field": "DualFaceSgElectronCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.03995958265339871,
+              "rms_error_A_per_cm2": 159.7616152977854,
+              "squared_error_integral": 49.802437816956335,
+              "Jy_over_Jx_l2": 0.8678262964378841
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.002593799490071051,
+              "rms_error_A_per_cm2": 2.6663619410629034,
+              "squared_error_integral": 0.7116428858171339,
+              "Jy_over_Jx_l2": 5.197403110404468e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.007568104864440431,
+              "rms_error_A_per_cm2": 8.065086573888518,
+              "squared_error_integral": 65.04562144431681,
+              "Jy_over_Jx_l2": 0.19091850243983965
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.0037150368076458882,
+              "rms_error_A_per_cm2": 3.908066599278031,
+              "squared_error_integral": 15.243183627360475,
+              "Jy_over_Jx_l2": 0.15668599419834656
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.0010415546359700335,
+              "rms_error_A_per_cm2": 1.07322840554936,
+              "squared_error_integral": 1.0933283911959342,
+              "Jy_over_Jx_l2": 0.04833382479156825
+            }
+          }
+        },
+        {
+          "field": "CellFirstSgElectronCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.024806089357994464,
+              "rms_error_A_per_cm2": 99.17673413732032,
+              "squared_error_integral": 19.192224807376945,
+              "Jy_over_Jx_l2": 0.8628087441729952
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.00259370326509647,
+              "rms_error_A_per_cm2": 2.66626302416089,
+              "squared_error_integral": 0.7115900856306409,
+              "Jy_over_Jx_l2": 3.708128481180295e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.0045162582028064795,
+              "rms_error_A_per_cm2": 4.812831487947615,
+              "squared_error_integral": 23.16334693138005,
+              "Jy_over_Jx_l2": 0.19009247791905384
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.0018961902181901264,
+              "rms_error_A_per_cm2": 1.9947144648298478,
+              "squared_error_integral": 3.9711221240031036,
+              "Jy_over_Jx_l2": 0.1562493233776847
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.0009795371598369529,
+              "rms_error_A_per_cm2": 1.0093249724236333,
+              "squared_error_integral": 0.9670041667569774,
+              "Jy_over_Jx_l2": 0.04865573439945733
+            }
+          }
+        },
+        {
+          "field": "SentaurusHoleCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.028306218141791642,
+              "rms_error_A_per_cm2": 55.28271952422605,
+              "squared_error_integral": 5.9632705627214655,
+              "Jy_over_Jx_l2": 0.866450367293744
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.008342897205316004,
+              "rms_error_A_per_cm2": 4.189475001621894,
+              "squared_error_integral": 1.756884112201673,
+              "Jy_over_Jx_l2": 6.764691390006109e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 1.0549596101547394,
+              "rms_error_A_per_cm2": 549.1763307841499,
+              "squared_error_integral": 301594.64229354187,
+              "Jy_over_Jx_l2": 0.13224962030443604
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 1.0697413106905445,
+              "rms_error_A_per_cm2": 549.7074627884829,
+              "squared_error_integral": 301588.67902297917,
+              "Jy_over_Jx_l2": 0.11097979653847614
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 1.1198620187369257,
+              "rms_error_A_per_cm2": 563.6675433340656,
+              "squared_error_integral": 301586.824828935,
+              "Jy_over_Jx_l2": 0.05416622646885545
+            }
+          }
+        },
+        {
+          "field": "DualFaceSgHoleCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.03995673374888798,
+              "rms_error_A_per_cm2": 78.03645453020373,
+              "squared_error_integral": 11.882307176712759,
+              "Jy_over_Jx_l2": 0.8677791035700738
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.0016925703377068469,
+              "rms_error_A_per_cm2": 0.849942285491815,
+              "squared_error_integral": 0.07231073592614515,
+              "Jy_over_Jx_l2": 3.4407283434933494e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.007544024534960929,
+              "rms_error_A_per_cm2": 3.927164294799644,
+              "squared_error_integral": 15.422619398349184,
+              "Jy_over_Jx_l2": 0.19093635015761143
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.0036651523531821373,
+              "rms_error_A_per_cm2": 1.8834101110860266,
+              "squared_error_integral": 3.5403122216364245,
+              "Jy_over_Jx_l2": 0.1567100969128142
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.000817724420335375,
+              "rms_error_A_per_cm2": 0.4115906311873879,
+              "squared_error_integral": 0.1608041561974198,
+              "Jy_over_Jx_l2": 0.04833952639109835
+            }
+          }
+        },
+        {
+          "field": "CellFirstSgHoleCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.024802631152069023,
+              "rms_error_A_per_cm2": 48.4401305244755,
+              "squared_error_integral": 4.578427331673568,
+              "Jy_over_Jx_l2": 0.8627628807440965
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.0016925078118906235,
+              "rms_error_A_per_cm2": 0.8499108874849144,
+              "squared_error_integral": 0.07230539351387008,
+              "Jy_over_Jx_l2": 2.484642219355049e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.004474869423597214,
+              "rms_error_A_per_cm2": 2.3294658365440557,
+              "squared_error_integral": 5.426411083625897,
+              "Jy_over_Jx_l2": 0.19011035158663556
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.0017937628093560554,
+              "rms_error_A_per_cm2": 0.9217600488280124,
+              "squared_error_integral": 0.8479837519523289,
+              "Jy_over_Jx_l2": 0.1562732740301929
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.0007370848815208676,
+              "rms_error_A_per_cm2": 0.37100179972542613,
+              "squared_error_integral": 0.13065268555499907,
+              "Jy_over_Jx_l2": 0.048661546494827186
+            }
+          }
+        },
+        {
+          "field": "SentaurusTotalCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 2.8709862253965586,
+              "rms_error_A_per_cm2": 17085.537712237943,
+              "squared_error_integral": 569590.8693149184,
+              "Jy_over_Jx_l2": 0.5309565349376194
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.008618223030845565,
+              "rms_error_A_per_cm2": 13.187052442012627,
+              "squared_error_integral": 17.4068174717872,
+              "Jy_over_Jx_l2": 4.7471123955753526e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.8508594078294149,
+              "rms_error_A_per_cm2": 1349.6622240928198,
+              "squared_error_integral": 1821588.1191431768,
+              "Jy_over_Jx_l2": 0.25203115603319776
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.7152890739966129,
+              "rms_error_A_per_cm2": 1120.0200645289835,
+              "squared_error_integral": 1251997.2498282583,
+              "Jy_over_Jx_l2": 0.17464511780530634
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.3675077102902595,
+              "rms_error_A_per_cm2": 563.6637288788793,
+              "squared_error_integral": 301582.7430415437,
+              "Jy_over_Jx_l2": 0.04913279719237645
+            }
+          }
+        },
+        {
+          "field": "DualFaceSgTotalCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.039958646959772394,
+              "rms_error_A_per_cm2": 237.79806518120523,
+              "squared_error_integral": 110.33729926951406,
+              "Jy_over_Jx_l2": 0.8678108084024366
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.002297075383787547,
+              "rms_error_A_per_cm2": 3.514837506623525,
+              "squared_error_integral": 1.236614723185221,
+              "Jy_over_Jx_l2": 4.610183445303321e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.0075590767662691806,
+              "rms_error_A_per_cm2": 11.99046548298449,
+              "squared_error_integral": 143.77126249864244,
+              "Jy_over_Jx_l2": 0.19092435955490075
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.0036963563586383755,
+              "rms_error_A_per_cm2": 5.787860373977802,
+              "squared_error_integral": 33.43396322912838,
+              "Jy_over_Jx_l2": 0.1566939042130258
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.0009638216087344118,
+              "rms_error_A_per_cm2": 1.4782581881729782,
+              "squared_error_integral": 2.0742776829250418,
+              "Jy_over_Jx_l2": 0.04833569586824489
+            }
+          }
+        },
+        {
+          "field": "CellFirstSgTotalCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.024804953205536745,
+              "rms_error_A_per_cm2": 147.61685712544883,
+              "squared_error_integral": 42.51846970991108,
+              "Jy_over_Jx_l2": 0.8627936924467322
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.002296989998357957,
+              "rms_error_A_per_cm2": 3.514706855312488,
+              "squared_error_integral": 1.236522791577159,
+              "Jy_over_Jx_l2": 3.2924548651592235e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.004500813228708768,
+              "rms_error_A_per_cm2": 7.139343511499761,
+              "squared_error_integral": 50.970225775193725,
+              "Jy_over_Jx_l2": 0.1900983435667034
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.0018584606961079193,
+              "rms_error_A_per_cm2": 2.910030845500134,
+              "squared_error_integral": 8.451756065282648,
+              "Jy_over_Jx_l2": 0.15625718350232037
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.0008964365746400336,
+              "rms_error_A_per_cm2": 1.3749066161521657,
+              "squared_error_integral": 1.7943729428233461,
+              "Jy_over_Jx_l2": 0.04865764177726168
+            }
+          }
+        }
+      ]
+    },
+    {
+      "state": "native_exported",
+      "state_sha256": "161e58875256222c6087c8f6b67f4e32ab8323311972bc48b2830cf4f5e05b95",
+      "config_sha256": "63d7afbe0747ba01b3e07b6419e3b8b0a09002a929903b0fbafba6e0ef0116a0",
+      "vtk_sha256": "a00617651104b202eae2ec8fb50247cd06932ec30e6f7d8ff05d9fffc61ebfdc",
+      "recoveries": [
+        {
+          "field": "SentaurusElectronCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 4.273310687967881,
+              "rms_error_A_per_cm2": 17085.038752800192,
+              "squared_error_integral": 569557.6015776293,
+              "Jy_over_Jx_l2": 0.5140202749172719
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.008166874134303403,
+              "rms_error_A_per_cm2": 8.395345304259097,
+              "squared_error_integral": 7.055065268280166,
+              "Jy_over_Jx_l2": 9.402314137673096e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 1.157027355671887,
+              "rms_error_A_per_cm2": 1233.006936214146,
+              "squared_error_integral": 1520306.1047521948,
+              "Jy_over_Jx_l2": 0.29384650628863335
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.9278079841468456,
+              "rms_error_A_per_cm2": 976.0160076813395,
+              "squared_error_integral": 950748.5031745655,
+              "Jy_over_Jx_l2": 0.20192933387064532
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.0027796518767603915,
+              "rms_error_A_per_cm2": 2.8641813387921693,
+              "squared_error_integral": 7.786948992894252,
+              "Jy_over_Jx_l2": 0.048806701715248285
+            }
+          }
+        },
+        {
+          "field": "DualFaceSgElectronCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.039967777208841156,
+              "rms_error_A_per_cm2": 159.79437778746123,
+              "squared_error_integral": 49.82286599244874,
+              "Jy_over_Jx_l2": 0.8678265031001027
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.0026066690005941617,
+              "rms_error_A_per_cm2": 2.6795914806592704,
+              "squared_error_integral": 0.7187222427541292,
+              "Jy_over_Jx_l2": 7.786730965281911e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.007568617696557134,
+              "rms_error_A_per_cm2": 8.065633082623949,
+              "squared_error_integral": 65.05443702351789,
+              "Jy_over_Jx_l2": 0.19092217976842482
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.003713621439199033,
+              "rms_error_A_per_cm2": 3.9065776896280795,
+              "squared_error_integral": 15.231571031069144,
+              "Jy_over_Jx_l2": 0.15668903539728363
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.001020119932574556,
+              "rms_error_A_per_cm2": 1.0511418709076827,
+              "squared_error_integral": 1.0487910686109325,
+              "Jy_over_Jx_l2": 0.04833483890718673
+            }
+          }
+        },
+        {
+          "field": "CellFirstSgElectronCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.024802440544502195,
+              "rms_error_A_per_cm2": 99.16214588842638,
+              "squared_error_integral": 19.186579121156882,
+              "Jy_over_Jx_l2": 0.8628089471148653
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.0026117452158975255,
+              "rms_error_A_per_cm2": 2.6848097048671713,
+              "squared_error_integral": 0.7215242412238935,
+              "Jy_over_Jx_l2": 5.558377090639329e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.004512213733974688,
+              "rms_error_A_per_cm2": 4.808521427257645,
+              "squared_error_integral": 23.121878316395893,
+              "Jy_over_Jx_l2": 0.19009613870922382
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.0018876182113355291,
+              "rms_error_A_per_cm2": 1.9856970646231291,
+              "squared_error_integral": 3.9352991952390144,
+              "Jy_over_Jx_l2": 0.15625235559695536
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.0009581851665179536,
+              "rms_error_A_per_cm2": 0.987323663079253,
+              "squared_error_integral": 0.9253060461301753,
+              "Jy_over_Jx_l2": 0.04865675483994799
+            }
+          }
+        },
+        {
+          "field": "SentaurusHoleCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.028339022523516076,
+              "rms_error_A_per_cm2": 55.34678726457036,
+              "squared_error_integral": 5.977100369074495,
+              "Jy_over_Jx_l2": 0.8664500727010713
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.0080208535961781,
+              "rms_error_A_per_cm2": 4.027757361249236,
+              "squared_error_integral": 1.6238671967895353,
+              "Jy_over_Jx_l2": 7.708726014346836e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 1.0553418206078555,
+              "rms_error_A_per_cm2": 549.3752966328981,
+              "squared_error_integral": 301813.2165504847,
+              "Jy_over_Jx_l2": 0.13225068867035505
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 1.070128859677432,
+              "rms_error_A_per_cm2": 549.90661240359,
+              "squared_error_integral": 301807.23945011565,
+              "Jy_over_Jx_l2": 0.11098066087661972
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 1.120267663367627,
+              "rms_error_A_per_cm2": 563.8717191241437,
+              "squared_error_integral": 301805.350381282,
+              "Jy_over_Jx_l2": 0.0541663900548564
+            }
+          }
+        },
+        {
+          "field": "DualFaceSgHoleCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.03996323080294825,
+              "rms_error_A_per_cm2": 78.0491434318277,
+              "squared_error_integral": 11.886171670193061,
+              "Jy_over_Jx_l2": 0.867778767818571
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.0016209668244295415,
+              "rms_error_A_per_cm2": 0.8139858159919358,
+              "squared_error_integral": 0.06632199524921474,
+              "Jy_over_Jx_l2": 5.119002754917926e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.007542695681262684,
+              "rms_error_A_per_cm2": 3.9264725384602293,
+              "squared_error_integral": 15.417186595282313,
+              "Jy_over_Jx_l2": 0.19093796961278606
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.0036603366183602286,
+              "rms_error_A_per_cm2": 1.8809354517044004,
+              "squared_error_integral": 3.531014925089252,
+              "Jy_over_Jx_l2": 0.156711466608189
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.0007767656050981231,
+              "rms_error_A_per_cm2": 0.3909745602997483,
+              "squared_error_integral": 0.1450986287218137,
+              "Jy_over_Jx_l2": 0.048339972962572225
+            }
+          }
+        },
+        {
+          "field": "CellFirstSgHoleCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.024799756802747534,
+              "rms_error_A_per_cm2": 48.4345168516578,
+              "squared_error_integral": 4.577366215466602,
+              "Jy_over_Jx_l2": 0.8627625460326208
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.0016245544873768568,
+              "rms_error_A_per_cm2": 0.8157873992863394,
+              "squared_error_integral": 0.06661589920461214,
+              "Jy_over_Jx_l2": 3.6578041360419614e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.004468556560018455,
+              "rms_error_A_per_cm2": 2.3261795730477544,
+              "squared_error_integral": 5.411111406064633,
+              "Jy_over_Jx_l2": 0.1901119649695149
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.0017786394505706737,
+              "rms_error_A_per_cm2": 0.9139886155817957,
+              "squared_error_integral": 0.8337451905980302,
+              "Jy_over_Jx_l2": 0.15627464049433284
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.0006922459524190147,
+              "rms_error_A_per_cm2": 0.34843272550940957,
+              "squared_error_integral": 0.1152402480548339,
+              "Jy_over_Jx_l2": 0.04866199402048506
+            }
+          }
+        },
+        {
+          "field": "SentaurusTotalCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 2.872110306306999,
+              "rms_error_A_per_cm2": 17092.227234680453,
+              "squared_error_integral": 570036.9819151252,
+              "Jy_over_Jx_l2": 0.5309566876354812
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.008104331617968233,
+              "rms_error_A_per_cm2": 12.400728743164413,
+              "squared_error_integral": 15.392824726131114,
+              "Jy_over_Jx_l2": 6.817944037170138e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.8511967179150384,
+              "rms_error_A_per_cm2": 1350.197276859684,
+              "squared_error_integral": 1823032.6864393058,
+              "Jy_over_Jx_l2": 0.2520333755301782
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.7155742349277603,
+              "rms_error_A_per_cm2": 1120.4665776606887,
+              "squared_error_integral": 1252995.7045241806,
+              "Jy_over_Jx_l2": 0.1746468746847904
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.36766109570860744,
+              "rms_error_A_per_cm2": 563.8989832543408,
+              "squared_error_integral": 301834.5366625503,
+              "Jy_over_Jx_l2": 0.049133493342528485
+            }
+          }
+        },
+        {
+          "field": "DualFaceSgTotalCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.03996628520869815,
+              "rms_error_A_per_cm2": 237.84352119521256,
+              "squared_error_integral": 110.37948609876992,
+              "Jy_over_Jx_l2": 0.8678108372440458
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.002276046306973712,
+              "rms_error_A_per_cm2": 3.482660161275345,
+              "squared_error_integral": 1.2140766449128682,
+              "Jy_over_Jx_l2": 6.898514078706867e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.007558600438595948,
+              "rms_error_A_per_cm2": 11.989709915776869,
+              "squared_error_integral": 143.75314386447815,
+              "Jy_over_Jx_l2": 0.19092736320723194
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.003693021260592274,
+              "rms_error_A_per_cm2": 5.782638182189055,
+              "squared_error_integral": 33.37365776570823,
+              "Jy_over_Jx_l2": 0.15669639823574993
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.0009334052242547133,
+              "rms_error_A_per_cm2": 1.4316071595964628,
+              "squared_error_integral": 1.9454229352972972,
+              "Jy_over_Jx_l2": 0.048336524095008895
+            }
+          }
+        },
+        {
+          "field": "CellFirstSgTotalCurrentDensityVector",
+          "regions": {
+            "contact_edges": {
+              "nodes": 1074,
+              "area_um2": 0.0019512176513671873,
+              "relative_l2": 0.024801559817670037,
+              "rms_error_A_per_cm2": 147.59666272122078,
+              "squared_error_integral": 42.50683721143715,
+              "Jy_over_Jx_l2": 0.8627937191251092
+            },
+            "junction": {
+              "nodes": 13325,
+              "area_um2": 0.10009765624999999,
+              "relative_l2": 0.002280641699798993,
+              "rms_error_A_per_cm2": 3.489691736805676,
+              "squared_error_integral": 1.2189840945681698,
+              "Jy_over_Jx_l2": 4.9180717120355e-05
+            },
+            "all": {
+              "nodes": 23881,
+              "area_um2": 0.9999999999999999,
+              "relative_l2": 0.004495370747086099,
+              "rms_error_A_per_cm2": 7.130710461451955,
+              "squared_error_integral": 50.84703168506035,
+              "Jy_over_Jx_l2": 0.19010133411261973
+            },
+            "outside_contact_edges": {
+              "nodes": 22807,
+              "area_um2": 0.9980487823486327,
+              "relative_l2": 0.0018461542846664864,
+              "rms_error_A_per_cm2": 2.890761114928492,
+              "squared_error_integral": 8.340194473623196,
+              "Jy_over_Jx_l2": 0.15625967043629943
+            },
+            "x_ge_0p1_um": {
+              "nodes": 17572,
+              "area_um2": 0.9492187499999999,
+              "relative_l2": 0.0008649346320830537,
+              "rms_error_A_per_cm2": 1.3265906164835561,
+              "squared_error_integral": 1.670475653474062,
+              "Jy_over_Jx_l2": 0.048658474614713065
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "reference_field_sha256": {
+    "AcceptorConcentration_region0.csv": "0f944406472ed343d7b97a8d803872a71a2ee1fbf2120fd9a53db14009235ab8",
+    "BandgapNarrowing_region0.csv": "6982c19ff2e7adce3d49b1e4b9fe6877198b148905002ed09fc7011c52fc1a6c",
+    "BandGap_region0.csv": "dd465c9e34f64140d408541a2a5b1c3cdd074d48d96184fc85543a88d538aaf1",
+    "ContactCharge_region1.csv": "fbcae652bbcfcc982820d76515304abd22a2eab6a16257e527fb86dd629fbb68",
+    "ContactCharge_region2.csv": "c67d8444da5037adde4dfc82feecc51018284f0fab1af5112b12716da655b616",
+    "ContactCurrentFlux_region1.csv": "f5674cb4d3af00edf4f2d28a37a279e6e015b98734a0b41e5f57d44b686ea4bb",
+    "ContactCurrentFlux_region2.csv": "ac35674bd9b6b9d0e38c4008feed18ef9e8cce5fc913b65771ef52da7abf7ffe",
+    "ContactExternalVoltage_region1.csv": "84e004d980c93e71b0d63a6ffbdaa17109ac4693184247c229286de9a2359174",
+    "ContactExternalVoltage_region2.csv": "bea80739d99d4951ec09ced7e449d4c99dce57fc54f56cd1fd86840f8d93e66a",
+    "DonorConcentration_region0.csv": "782f61d8402f57a20d0eb61d9bdd38a3b51b9c5c85f619db78e2a63782f58f89",
+    "DopingConcentration_region0.csv": "d3623ffa12db9fd79aec2514174b5a0b449c9c9e56fcbff523cf85dbe63d76ac",
+    "eCurrentDensity_region0.csv": "ac49ef11d355761485ab1251bbb676490ff1fae2307d2fab396514948645fc9a",
+    "eDensity_region0.csv": "298f295f9562d9660df271be0725c3b3a9454d6fa0cc6dec89c9e7de121bc9d5",
+    "EffectiveIntrinsicDensity_region0.csv": "76c62432883c98aafb0de017f71596f408b4e1d73b6259b25bea59a022f9e3cc",
+    "ElectricField_region0.csv": "f66c09eecbdb51e2f0b5b5c70ce4b84c653656ce10f295f4fa41f5d1c4e6d659",
+    "ElectrostaticPotential_region0.csv": "f70dfad9a5ce50e36186a3c2dbbbac9ac42960809bf86abce99e15153d9228b6",
+    "eMobility_region0.csv": "934afa2ec7b52707e6b88ff1d18a4fd7609d7773c64559b565ff96fb86aaabd8",
+    "eQuasiFermiPotential_region0.csv": "c8ffa61f0bb5a7d3f85e2ce13dfacdf7d2dfa96f7bb2fcfe090f2c9e25c74079",
+    "Extrapolation_eDensity_region0.csv": "4e4680bdd285d3bf97c72c890d470a3a1cfe3b67f43b2538cfd84f8b8ef2629e",
+    "Extrapolation_ElectrostaticPotential_region0.csv": "cf9bf0393a67a65a62b0a4731602b6867f15af3cd48be9878d526c9b24e12522",
+    "Extrapolation_hDensity_region0.csv": "c14a300a0039fac8e3fd09903f92c8fe70dd75748735d874571f939305f1e7e5",
+    "hCurrentDensity_region0.csv": "59a8df0008c7af2b7a04fc110a55011d4edf15257703a983491cad34f23b1313",
+    "hDensity_region0.csv": "b6244d76c281475fd9e75a82c62b7190e2b8ca8f9b06d95cf5dfd1750758dd22",
+    "hMobility_region0.csv": "0bedd327dfdcb89aa46629858015c4faead91afbbac895e9cc369493f0fcc001",
+    "hQuasiFermiPotential_region0.csv": "4741ab61c668bd8fccbaa85fe6fa91a7ffb2700aaa77d37823df526ce32a507c",
+    "LatticeTemperature_region0.csv": "7863025c37286d6ce267f5409f7c00b84ebdf44e8a8d7fc091d3cb734f28878a",
+    "QuasiFermiPotential_region0.csv": "38f0e3f1d4e4e796e06f9d91091fce1735a070484fa3f0b0dfe46367aa74e2cd",
+    "srhRecombination_region0.csv": "dd6499bc071a02d5ce1f8fc0411eab84b7a8013cdb34d860384f06ed3d55d799",
+    "TotalCurrentDensity_region0.csv": "655ac53c053774c495360a09543680cbab96ed2095c9a3d3e448af772d574d35"
+  },
+  "figure": "G2_SG_current_spreading.png"
+}

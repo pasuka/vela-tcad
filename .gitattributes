@@ -1,2 +1,12 @@
 # Provenance-bound C++ replay fixtures are compared by exact byte hash.
 tests/fixtures/pn2d_minimal6_synthetic/states/**/export/vela_*.csv binary
+
+# PN2D campaign contracts and paired inputs retain their recorded byte hashes.
+reference_tcad/pn2d_sentaurus2018/variants/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+scripts/analyze_pn2d_sections.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+scripts/compare_pn2d_variants.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+scripts/diagnose_pn2d_current_reconstruction.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+scripts/diagnose_pn2d_equilibrium_roundoff.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+scripts/pn2d_variants.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+scripts/probe_pn2d_sentaurus_precision.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+scripts/report_pn2d_variants.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

@@ -1,0 +1,36 @@
+{
+  "id": "D1",
+  "stage": "B",
+  "change": "acceptor concentration only",
+  "overrides": {
+    "NA_cm3": 1e+18
+  },
+  "parameters": {
+    "NA_cm3": 1e+18,
+    "ND_cm3": 1e+17,
+    "anode_fraction": 1.0,
+    "mobility": "masetti",
+    "srh": true,
+    "bgn": true
+  },
+  "mesh": "M0",
+  "directory": "D1/M0",
+  "input_sha256": {
+    "pn2d_sde.cmd": "25b0c1ec53dd2fe2820be32eaae2b1c5bca04dde0f1d8f457449f84b0abe76bf",
+    "models.par": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+    "materials.json": "5ffb7e0997c76519a9d594ab2727a7bf3f6f45cd477634920890e7678cb69099",
+    "forward_sdevice.cmd": "01d1653a784d90f8ab848720b950b9a8d4f2a00c6147f3de645b5330fbf2b3cf",
+    "reverse_sdevice.cmd": "da9dc602b1d6f2b9e4c9044165cc33cef12fd476f8c393b098266ba2565c097e",
+    "vela_forward.json": "2ad82844ce3a5d56c54ceab364017070e8f241c6464e3378c7883507c2c07920",
+    "vela_reverse.json": "10e1868d677a70f9569ba7df36637e483bb973312cf3ad39739a0994c587da5b"
+  },
+  "status": "generated_not_run",
+  "sentaurus_numerics": {
+    "sentaurus_precision_bits": 80,
+    "sdevice_rhs_min": 1e-20,
+    "sdevice_goal_initial_step": 1.0,
+    "plot_only_saved_biases": true
+  },
+  "parameter_file": "../../../source/models.par",
+  "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742"
+}

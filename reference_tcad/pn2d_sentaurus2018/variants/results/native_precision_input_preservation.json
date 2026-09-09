@@ -1,0 +1,5 @@
+{
+  "status": "pass",
+  "protected_files": 268,
+  "description": "All A decks/manifests, all Vela inputs, all SDE, material and parameter inputs stay byte-identical; only B/C SDevice numerics and their manifests change."
+}

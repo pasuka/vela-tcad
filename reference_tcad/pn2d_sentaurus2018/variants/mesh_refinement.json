@@ -1,0 +1,20 @@
+{
+  "schema": "vela.pn2d.mesh_refinement.v1",
+  "frozen_contract_sha256": "0d1b39d4518b8adab750d807783a1ef34f396b12923d7cd7aa11b62ef08c09fe",
+  "original_pair": ["M0", "M1"],
+  "additional_pair": ["M2", "M3"],
+  "previous_additional_pairs": [["M1", "M2"]],
+  "contact_edge_control": {
+    "declared_before_G_results": true,
+    "date": "2026-09-09",
+    "pair": ["M3", "E1"],
+    "ids": ["P0", "G1", "G2"],
+    "changes": "Halve only contact endpoint mesh length limits. Keep M3 global, transverse and junction limits, geometry, doping, physics and numerical strategy unchanged.",
+    "thresholds": "Same frozen 2 percent terminal current and 5 percent SRH integral mesh gates. Regional RMS, p95 and maxima are reported; single-node endpoint maxima do not decide acceptance."
+  },
+  "continuations": [{"date": "2026-09-09", "trigger": "P0 M1/M2 still changes the 0.02 V Anode hole current by 2.2455726683 percent. Both software reproduce the change. Continue x refinement without relaxing the 2 percent gate.", "declared_before_results": true, "pair": ["M2", "M3"]}],
+  "reason": "P0 M0/M1 fails the frozen mesh gate in both software: 6.1264 percent low-forward hole-current sensitivity and 8.124 percent SRH-integral sensitivity at 0.2 V. Preserve this failure and continue junction refinement.",
+  "policy": "The original contract and failed original mesh gate remain visible. Qualification on a finer mesh additionally requires both finer solutions to pass every original non-mesh gate and the same unchanged 2 percent current / 5 percent integral mesh thresholds. No coarse-mesh pass is inferred. No physical, bias, carrier-mask or error-floor scope changes.",
+  "declared_before_additional_pair_results": true,
+  "changes": "M2 and M3 retain M1 global, transverse and contact-endpoint limits; each halves junction x limits again. Every stage-A model uses exactly the corresponding P0 binary mesh. M3 starts each explicit bias Goal with its full segment; failed steps may shrink adaptively, with unchanged Digits=8 and iteration limits. All four M3 models share this strategy. M3 saves the five required spatial states; all comparison points remain actual solved Goal endpoints."
+}

@@ -1,0 +1,226 @@
+{
+  "timestamp_local": "2026-09-09T19:25:08.466717+08:00",
+  "overall_status": "pass_on_refined_mesh",
+  "contract_sha256": "0d1b39d4518b8adab750d807783a1ef34f396b12923d7cd7aa11b62ef08c09fe",
+  "completed_pairs": 28,
+  "required_pairs": 20,
+  "cases": [
+    {
+      "id": "P0",
+      "mesh": "original",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "4a1192f913c6c34c0f6ccdc83fbbb9eef9f8c1f2d2e831749e889933f42ded0e"
+    },
+    {
+      "id": "P0",
+      "mesh": "M0",
+      "status": "pass",
+      "required_for_final_qualification": false,
+      "evidence_fingerprint": "cdf6fb870cb90b2fb8bb282585583074b39e5267c6d6d0ead06d5d4f9d37ba56"
+    },
+    {
+      "id": "P0",
+      "mesh": "M1",
+      "status": "pass",
+      "required_for_final_qualification": false,
+      "evidence_fingerprint": "70f6ea7483f606d7609f93e798acc2db2e2d660c9825a4f43305501c5ab3db21"
+    },
+    {
+      "id": "P0",
+      "mesh": "M2",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "622073f19a2baeb390126e18bad1df7dc21433db9a2e1f13694c9e0ec08bb929"
+    },
+    {
+      "id": "P0",
+      "mesh": "M3",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "c19e1c51215c0f3f05a670bdff0ef7565f7d36815fdf446e1e76c474a92b4a8e"
+    },
+    {
+      "id": "P0",
+      "mesh": "E1",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "bf631fcc8d28329240e7c6453b721684d64dd03f31a77470601c8ba8175a1cef"
+    },
+    {
+      "id": "P1",
+      "mesh": "M0",
+      "status": "pass",
+      "required_for_final_qualification": false,
+      "evidence_fingerprint": "0825a455b991010397876a9bababf7a3992438009c64ba7d074553ea541712b1"
+    },
+    {
+      "id": "P1",
+      "mesh": "M1",
+      "status": "pass",
+      "required_for_final_qualification": false,
+      "evidence_fingerprint": "8c56c68d7c96053ea763c568317bd8bc005c682c158b7cb07850375fdfb90740"
+    },
+    {
+      "id": "P1",
+      "mesh": "M2",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "52e1bf424ab5d6c31c4449947ff0e0b301890bae4edcc941a159c90b5b0a3cd1"
+    },
+    {
+      "id": "P1",
+      "mesh": "M3",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "37984c91ca8c7ef956f753d2e2bdaf7e169750d798704c5f72bb533b25026cde"
+    },
+    {
+      "id": "P2",
+      "mesh": "M0",
+      "status": "pass",
+      "required_for_final_qualification": false,
+      "evidence_fingerprint": "c4e7e69e155ed87c0d70c6bf2967388efffbadca4f4c79aa3130939f6d0171be"
+    },
+    {
+      "id": "P2",
+      "mesh": "M1",
+      "status": "pass",
+      "required_for_final_qualification": false,
+      "evidence_fingerprint": "d6efba2acde97c9a85eedbdc02f56c68393e8cf6d3c1ae534408715e44ba7d78"
+    },
+    {
+      "id": "P2",
+      "mesh": "M2",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "c515ce9d5e9359d391c49f20f1fd1a78e4dbe90bc8d9cca788fd869eade8710e"
+    },
+    {
+      "id": "P2",
+      "mesh": "M3",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "332c7f9f752628a21e1c4cdd1e5c756e4ef929b7c13465941de358a7587622d6"
+    },
+    {
+      "id": "P3",
+      "mesh": "M0",
+      "status": "pass",
+      "required_for_final_qualification": false,
+      "evidence_fingerprint": "e5b702fb620bcc970384515f0e0bd8130a28fcc88b3ba90f4175825868753739"
+    },
+    {
+      "id": "P3",
+      "mesh": "M1",
+      "status": "pass",
+      "required_for_final_qualification": false,
+      "evidence_fingerprint": "b35590976a7375f38520d98453f48e53476c7c381c8109aa329146b9d318e3cf"
+    },
+    {
+      "id": "P3",
+      "mesh": "M2",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "bd3af9e0112900b57948b80b6fc2be5dcc97d3f7d827715e2935bb7ac85bb74f"
+    },
+    {
+      "id": "P3",
+      "mesh": "M3",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "74d333a3755db344541b35bfe803589d1ee8a84f2a2566fe43fc0611ae310cf4"
+    },
+    {
+      "id": "D1",
+      "mesh": "M2",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "61aeb6dfc0c9e9bd438d4e97000824fa20fa27846f9f142d35b69c2ae7f8d26b"
+    },
+    {
+      "id": "D1",
+      "mesh": "M3",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "3f581c02000380d9e6c25727ee862b6b113590b91fd3b0cec4604bb0c3cdf4a5"
+    },
+    {
+      "id": "D2",
+      "mesh": "M2",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "3df3ab291d26356565a7983cbadf3baa1c00c97f3297affd286ac5e8b1ab5977"
+    },
+    {
+      "id": "D2",
+      "mesh": "M3",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "a41b6f8104cd963636b36336cf2f20080f6dc3aa59cd5f62ffe024798bb9c0ad"
+    },
+    {
+      "id": "G1",
+      "mesh": "M2",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "f910148d0cba8caa6f9024d9d6914aca3a0b89f1b21938b5b000bc72eb2cdba2"
+    },
+    {
+      "id": "G1",
+      "mesh": "M3",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "bd8e96f221675c0c803a4e66cacab4e1e485913342e444f8a5314eac9ba41b59"
+    },
+    {
+      "id": "G1",
+      "mesh": "E1",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "b01f0200494f478d50eaf785bb4c8cabc62edd69a06095556483f86a568c65e9"
+    },
+    {
+      "id": "G2",
+      "mesh": "M2",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "02136e57c2ecb2782affed199efe6603d95bfbff7cb44f5392b1407d79552252"
+    },
+    {
+      "id": "G2",
+      "mesh": "M3",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "8e335d6bda1922fca8a3b111f688e5b3fa54ade30b47f0c7d5c7fcc1e6d1e1d8"
+    },
+    {
+      "id": "G2",
+      "mesh": "E1",
+      "status": "pass",
+      "required_for_final_qualification": true,
+      "evidence_fingerprint": "962e5c3ebe5d9a33c5ef23e305943c03982dd5c402fe913aba252bd1cdf75092"
+    }
+  ],
+  "refined_mesh": {
+    "P0": "pass",
+    "P1": "pass",
+    "P2": "pass",
+    "P3": "pass",
+    "D1": "pass",
+    "D2": "pass",
+    "G1": "pass",
+    "G2": "pass"
+  },
+  "contact_edge_mesh": {
+    "P0": "pass",
+    "G1": "pass",
+    "G2": "pass"
+  },
+  "report_status": "complete",
+  "paused_local": "2026-09-09T16:27:49.7393111+08:00",
+  "report_completed_local": "2026-09-09T19:25:08.466717+08:00",
+  "generated_entries": 41,
+  "optional_unrun_entries": 13,
+  "delivery_audit": "delivery_audit.json"
+}

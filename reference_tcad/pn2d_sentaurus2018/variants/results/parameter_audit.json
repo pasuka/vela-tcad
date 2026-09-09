@@ -1,0 +1,527 @@
+{
+  "schema": "vela.pn2d.parameter_audit.v1",
+  "source_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+  "current_dump_sha256": "adcbd026c076ca6068fc8304e0d256595688af252aa77f5f4969c1444fd32829",
+  "sections": [
+    "Bandgap",
+    "ConstantMobility",
+    "DopingDependence",
+    "Epsilon",
+    "OldSlotboom",
+    "Scharfetter",
+    "eDOSMass",
+    "hDOSMass"
+  ],
+  "source_parameters": {
+    "Epsilon.epsilon": [
+      11.7
+    ],
+    "Bandgap.Chi0": [
+      4.05
+    ],
+    "Bandgap.Bgn2Chi": [
+      0.5
+    ],
+    "Bandgap.Eg0": [
+      1.16964
+    ],
+    "Bandgap.dEg0(Bennett)": [
+      0.0
+    ],
+    "Bandgap.dEg0(Slotboom)": [
+      -0.004795
+    ],
+    "Bandgap.dEg0(OldSlotboom)": [
+      -0.01595
+    ],
+    "Bandgap.dEg0(delAlamo)": [
+      -0.01407
+    ],
+    "Bandgap.alpha": [
+      0.000473
+    ],
+    "Bandgap.beta": [
+      636.0
+    ],
+    "Bandgap.alpha2": [
+      0.0
+    ],
+    "Bandgap.beta2": [
+      0.0
+    ],
+    "Bandgap.EgMin": [
+      0.0
+    ],
+    "Bandgap.dEgMin": [
+      0.01
+    ],
+    "Bandgap.Tpar": [
+      0.0
+    ],
+    "OldSlotboom.Ebgn": [
+      0.009
+    ],
+    "OldSlotboom.Nref": [
+      1e+17
+    ],
+    "OldSlotboom.C": [
+      0.5
+    ],
+    "eDOSMass.Formula": [
+      1.0
+    ],
+    "eDOSMass.a": [
+      0.1905
+    ],
+    "eDOSMass.ml": [
+      0.9163
+    ],
+    "eDOSMass.mm": [
+      0.0
+    ],
+    "hDOSMass.Formula": [
+      1.0
+    ],
+    "hDOSMass.a": [
+      0.443587
+    ],
+    "hDOSMass.b": [
+      0.003609528
+    ],
+    "hDOSMass.c": [
+      0.0001173515
+    ],
+    "hDOSMass.d": [
+      1.263218e-06
+    ],
+    "hDOSMass.e": [
+      3.025581e-09
+    ],
+    "hDOSMass.f": [
+      0.004683382
+    ],
+    "hDOSMass.g": [
+      0.0002286895
+    ],
+    "hDOSMass.h": [
+      7.469271e-07
+    ],
+    "hDOSMass.i": [
+      1.727481e-09
+    ],
+    "hDOSMass.mm": [
+      0.0
+    ],
+    "ConstantMobility.mumax": [
+      1417.0,
+      470.5
+    ],
+    "ConstantMobility.Exponent": [
+      2.5,
+      2.2
+    ],
+    "ConstantMobility.mutunnel": [
+      0.05,
+      0.05
+    ],
+    "DopingDependence.formula": [
+      1.0,
+      1.0
+    ],
+    "DopingDependence.mumin1": [
+      52.2,
+      44.9
+    ],
+    "DopingDependence.mumin2": [
+      52.2,
+      0.0
+    ],
+    "DopingDependence.mu1": [
+      43.4,
+      29.0
+    ],
+    "DopingDependence.Pc": [
+      0.0,
+      9.23e+16
+    ],
+    "DopingDependence.Cr": [
+      9.68e+16,
+      2.23e+17
+    ],
+    "DopingDependence.Cs": [
+      3.43e+20,
+      6.1e+20
+    ],
+    "DopingDependence.alpha": [
+      0.68,
+      0.719
+    ],
+    "DopingDependence.beta": [
+      2.0,
+      2.0
+    ],
+    "Scharfetter.taumin": [
+      0.0,
+      0.0
+    ],
+    "Scharfetter.taumax": [
+      1e-05,
+      3e-06
+    ],
+    "Scharfetter.Nref": [
+      1e+16,
+      1e+16
+    ],
+    "Scharfetter.gamma": [
+      1.0,
+      1.0
+    ],
+    "Scharfetter.Talpha": [
+      -1.5,
+      -1.5
+    ],
+    "Scharfetter.Tcoeff": [
+      2.55,
+      2.55
+    ],
+    "Scharfetter.Etrap": [
+      0.0
+    ],
+    "Scharfetter.tau0": [
+      1e-05,
+      3e-06
+    ]
+  },
+  "current_default_parameters": {
+    "Epsilon.epsilon": [
+      11.7
+    ],
+    "Bandgap.Chi0": [
+      4.05
+    ],
+    "Bandgap.Bgn2Chi": [
+      0.5
+    ],
+    "Bandgap.Eg0": [
+      1.16964
+    ],
+    "Bandgap.dEg0(Bennett)": [
+      0.0
+    ],
+    "Bandgap.dEg0(Slotboom)": [
+      -0.004795
+    ],
+    "Bandgap.dEg0(OldSlotboom)": [
+      -0.01595
+    ],
+    "Bandgap.dEg0(delAlamo)": [
+      -0.01407
+    ],
+    "Bandgap.alpha": [
+      0.000473
+    ],
+    "Bandgap.beta": [
+      636.0
+    ],
+    "Bandgap.alpha2": [
+      0.0
+    ],
+    "Bandgap.beta2": [
+      0.0
+    ],
+    "Bandgap.EgMin": [
+      0.0
+    ],
+    "Bandgap.dEgMin": [
+      0.01
+    ],
+    "Bandgap.Tpar": [
+      0.0
+    ],
+    "Bandgap.FermiVelocity": [
+      -1.0
+    ],
+    "Bandgap.CNTdiameter": [
+      -1.0
+    ],
+    "OldSlotboom.Ebgn": [
+      0.009
+    ],
+    "OldSlotboom.Nref": [
+      1e+17
+    ],
+    "OldSlotboom.C": [
+      0.5
+    ],
+    "eDOSMass.Formula": [
+      1.0
+    ],
+    "eDOSMass.a": [
+      0.1905
+    ],
+    "eDOSMass.ml": [
+      0.9163
+    ],
+    "eDOSMass.mm": [
+      0.0
+    ],
+    "eDOSMass.Nc300": [
+      2.89e+19
+    ],
+    "hDOSMass.Formula": [
+      1.0
+    ],
+    "hDOSMass.a": [
+      0.443587
+    ],
+    "hDOSMass.b": [
+      0.003609528
+    ],
+    "hDOSMass.c": [
+      0.0001173515
+    ],
+    "hDOSMass.d": [
+      1.263218e-06
+    ],
+    "hDOSMass.e": [
+      3.025581e-09
+    ],
+    "hDOSMass.f": [
+      0.004683382
+    ],
+    "hDOSMass.g": [
+      0.0002286895
+    ],
+    "hDOSMass.h": [
+      7.469271e-07
+    ],
+    "hDOSMass.i": [
+      1.727481e-09
+    ],
+    "hDOSMass.mm": [
+      0.0
+    ],
+    "hDOSMass.Nv300": [
+      3.14e+19
+    ],
+    "ConstantMobility.mumax": [
+      1417.0,
+      470.5
+    ],
+    "ConstantMobility.Exponent": [
+      2.5,
+      2.2
+    ],
+    "ConstantMobility.mutunnel": [
+      0.05,
+      0.05
+    ],
+    "DopingDependence.formula": [
+      1.0,
+      1.0
+    ],
+    "DopingDependence.mumin1": [
+      52.2,
+      44.9
+    ],
+    "DopingDependence.mumin2": [
+      52.2,
+      0.0
+    ],
+    "DopingDependence.mu1": [
+      43.4,
+      29.0
+    ],
+    "DopingDependence.Pc": [
+      0.0,
+      9.23e+16
+    ],
+    "DopingDependence.Cr": [
+      9.68e+16,
+      2.23e+17
+    ],
+    "DopingDependence.Cs": [
+      3.43e+20,
+      6.1e+20
+    ],
+    "DopingDependence.alpha": [
+      0.68,
+      0.719
+    ],
+    "DopingDependence.beta": [
+      2.0,
+      2.0
+    ],
+    "DopingDependence.Ar_mumin": [
+      88.0,
+      54.3
+    ],
+    "DopingDependence.Ar_alm": [
+      -0.57,
+      -0.57
+    ],
+    "DopingDependence.Ar_mud": [
+      1252.0,
+      407.0
+    ],
+    "DopingDependence.Ar_ald": [
+      -2.33,
+      -2.23
+    ],
+    "DopingDependence.Ar_N0": [
+      1.25e+17,
+      2.35e+17
+    ],
+    "DopingDependence.Ar_alN": [
+      2.4,
+      2.4
+    ],
+    "DopingDependence.Ar_a": [
+      0.88,
+      0.88
+    ],
+    "DopingDependence.Ar_ala": [
+      -0.146,
+      -0.146
+    ],
+    "Scharfetter.taumin": [
+      0.0,
+      0.0
+    ],
+    "Scharfetter.taumax": [
+      1e-05,
+      3e-06
+    ],
+    "Scharfetter.Nref": [
+      1e+16,
+      1e+16
+    ],
+    "Scharfetter.gamma": [
+      1.0,
+      1.0
+    ],
+    "Scharfetter.Talpha": [
+      -1.5,
+      -1.5
+    ],
+    "Scharfetter.Tcoeff": [
+      2.55,
+      2.55
+    ],
+    "Scharfetter.Etrap": [
+      0.0
+    ],
+    "Scharfetter.tau0": [
+      1e-05,
+      3e-06
+    ]
+  },
+  "differences": [
+    {
+      "parameter": "Bandgap.CNTdiameter",
+      "source": null,
+      "current_default": [
+        -1.0
+      ],
+      "active": false
+    },
+    {
+      "parameter": "Bandgap.FermiVelocity",
+      "source": null,
+      "current_default": [
+        -1.0
+      ],
+      "active": false
+    },
+    {
+      "parameter": "DopingDependence.Ar_N0",
+      "source": null,
+      "current_default": [
+        1.25e+17,
+        2.35e+17
+      ],
+      "active": false
+    },
+    {
+      "parameter": "DopingDependence.Ar_a",
+      "source": null,
+      "current_default": [
+        0.88,
+        0.88
+      ],
+      "active": false
+    },
+    {
+      "parameter": "DopingDependence.Ar_alN",
+      "source": null,
+      "current_default": [
+        2.4,
+        2.4
+      ],
+      "active": false
+    },
+    {
+      "parameter": "DopingDependence.Ar_ala",
+      "source": null,
+      "current_default": [
+        -0.146,
+        -0.146
+      ],
+      "active": false
+    },
+    {
+      "parameter": "DopingDependence.Ar_ald",
+      "source": null,
+      "current_default": [
+        -2.33,
+        -2.23
+      ],
+      "active": false
+    },
+    {
+      "parameter": "DopingDependence.Ar_alm",
+      "source": null,
+      "current_default": [
+        -0.57,
+        -0.57
+      ],
+      "active": false
+    },
+    {
+      "parameter": "DopingDependence.Ar_mud",
+      "source": null,
+      "current_default": [
+        1252.0,
+        407.0
+      ],
+      "active": false
+    },
+    {
+      "parameter": "DopingDependence.Ar_mumin",
+      "source": null,
+      "current_default": [
+        88.0,
+        54.3
+      ],
+      "active": false
+    },
+    {
+      "parameter": "eDOSMass.Nc300",
+      "source": null,
+      "current_default": [
+        2.89e+19
+      ],
+      "active": false
+    },
+    {
+      "parameter": "hDOSMass.Nv300",
+      "source": null,
+      "current_default": [
+        3.14e+19
+      ],
+      "active": false
+    }
+  ],
+  "status": "active_parameters_match",
+  "note": "A parameter library is not activation: SRH doping dependence, high-field saturation, Fermi and avalanche are not selected. The campaign explicitly loads the source parameter file."
+}

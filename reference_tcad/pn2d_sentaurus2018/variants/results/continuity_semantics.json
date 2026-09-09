@@ -1,0 +1,26 @@
+{
+  "case": "P2",
+  "units": "A/um",
+  "interpretation": "zero-source raw solver net-flux ratio is not a through-current conservation error",
+  "thresholds_unchanged": true,
+  "meshes": [
+    {
+      "mesh": "M0",
+      "status": "pass",
+      "max_port_net_over_through_current": 0.0002645921070953971,
+      "raw_ratio_over_1percent_count": 59
+    },
+    {
+      "mesh": "M1",
+      "status": "pass",
+      "max_port_net_over_through_current": 0.0002644332242073336,
+      "raw_ratio_over_1percent_count": 58
+    },
+    {
+      "mesh": "M2",
+      "status": "pass",
+      "max_port_net_over_through_current": 0.00026443344688888295,
+      "raw_ratio_over_1percent_count": 56
+    }
+  ]
+}

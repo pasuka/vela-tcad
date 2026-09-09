@@ -1,0 +1,29 @@
+{
+  "schema": "vela.pn2d.variants.v1",
+  "sentaurus_version": "T-2022.03-SP2",
+  "geometry_um": {"length": 2.0, "height": 0.5, "junction_x": 1.0},
+  "temperature_K": 300.0,
+  "area_factor": 1.0,
+  "depth_um": 1.0,
+  "baseline": {"NA_cm3": 1e17, "ND_cm3": 1e17, "anode_fraction": 1.0, "mobility": "masetti", "srh": true, "bgn": true},
+  "constant_mobility_cm2_Vs": {"electron": 1417.0, "hole": 470.5},
+  "srh_lifetime_s": {"electron": 1e-5, "hole": 3e-6},
+  "branches": {"forward": {"stop_V": 0.8, "step_V": 0.02}, "reverse": {"stop_V": -1.0, "step_V": -0.1}},
+  "saved_biases_V": [0.0, 0.2, 0.6, 0.8, -1.0],
+  "sentaurus_numerics_by_stage": {
+    "B": {"sentaurus_precision_bits": 80, "sdevice_rhs_min": 1e-20, "sdevice_goal_initial_step": 1.0, "plot_only_saved_biases": true},
+    "C": {"sentaurus_precision_bits": 80, "sdevice_rhs_min": 1e-20, "sdevice_goal_initial_step": 1.0, "plot_only_saved_biases": true}
+  },
+  "meshes": {"original": {"scale": 1.0, "segmented": false}, "M0": {"scale": 1.0, "segmented": true}, "M1": {"scale": 0.5, "segmented": true}, "M2": {"scale": 0.5, "segmented": true, "junction_x_scale": 0.25}, "M3": {"scale": 0.5, "segmented": true, "junction_x_scale": 0.125, "sdevice_goal_initial_step": 1.0, "plot_only_saved_biases": true}, "E1": {"scale": 0.5, "segmented": true, "junction_x_scale": 0.125, "contact_edge_scale": 0.25, "sdevice_goal_initial_step": 1.0, "plot_only_saved_biases": true}},
+  "experiments": [
+    {"id": "P0", "stage": "A", "change": "baseline", "overrides": {}},
+    {"id": "P1", "stage": "A", "change": "constant mobility only", "overrides": {"mobility": "constant"}},
+    {"id": "P2", "stage": "A", "change": "SRH off only", "overrides": {"srh": false}},
+    {"id": "P3", "stage": "A", "change": "BGN off including associated dEg0 convention", "overrides": {"bgn": false}},
+    {"id": "D1", "stage": "B", "change": "acceptor concentration only", "overrides": {"NA_cm3": 1e18}},
+    {"id": "D2", "stage": "B", "change": "donor concentration only", "overrides": {"ND_cm3": 1e18}},
+    {"id": "G1", "stage": "C", "change": "central half-height anode only", "overrides": {"anode_fraction": 0.5}},
+    {"id": "G2", "stage": "C", "change": "central quarter-height anode only", "overrides": {"anode_fraction": 0.25}}
+  ],
+  "aliases": {"D0": "P0", "G0": "P0"}
+}
