@@ -21,3 +21,10 @@ Generated TDR, VTK, accepted-state, and log files remain under ignored
 `build*/reference_tcad/` directories.  Tests should use checked-in neutral
 inputs or explicitly generated temporary fixtures and must not present
 synthetic smoke data as commercial-tool calibration evidence.
+
+The retired custom NMOS, coarse7x3, Minimal6, and skewed-Tri3 reference cases
+are no longer regression inputs. Import/contact and mesh invariants remain
+covered using temporary data and retained fixtures. Shared avalanche helper
+tests are `test_sentaurus_avalanche_replay.py` and
+`test_sentaurus_avalanche_controls.py`; the standalone contact override test
+is `test_sentaurus_contact_overrides.py`.
