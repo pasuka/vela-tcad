@@ -53,11 +53,10 @@ Real sgElectronContinuityFluxFromQuasiFermi(Real ni0,
 /**
  * @brief Cancellation-robust balanced electron continuity flux.
  *
- * Numerically equivalent to sgElectronContinuityFluxFromQuasiFermi but factors
- * out the larger carrier-density exponential, so the weighted subtraction stays
- * at O(1) magnitude. This avoids catastrophic cancellation when (psi - phin)/Vt
- * is large (heavy band bending) and the exp(psi/Vt) overflow of the separated
- * factor form when |psi| is large. Both edge potentials are passed explicitly.
+ * Uses the equal-ni limit of the factorized variable-ni law, retaining
+ * expm1(delta quasi-Fermi/Vt) even for sub-femtovolt conductive increments.
+ * Endpoint carrier exponents use the production clamp; separated potential
+ * exponentials are never materialized. Both edge potentials are explicit.
  */
 Real sgElectronContinuityFluxFromQuasiFermiStable(Real ni0,
                                                   Real psi0,

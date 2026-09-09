@@ -21,6 +21,31 @@
 using namespace vela;
 using Catch::Approx;
 
+TEST_CASE("Homogeneous SG preserves sub-femtovolt conductive response", "[sg][pn2d]")
+{
+    // An ohmic quasi-neutral region carries current through increments far
+    // smaller than a thermal voltage. Its linear response must not disappear
+    // when two separately evaluated exponentials both round to one.
+    const double vt = 0.02585;
+    const double ni = 1.075e10;
+    const double psi = 0.415;
+    const double coef = 0.73;
+    const double density = ni * std::exp(psi / vt);
+    for (const double drop : {1e-12, 1e-16, 1e-20, -1e-20}) {
+        const double expected = coef * density * drop / vt;
+        const double electron = sgElectronContinuityFluxFromQuasiFermiStable(
+            ni, psi, psi, 0.0, drop, vt, coef);
+        const double hole = sgHoleContinuityFluxFromQuasiFermiStable(
+            ni, -psi, -psi, 0.0, drop, vt, coef);
+        REQUIRE(electron == Approx(expected).epsilon(1e-9));
+        REQUIRE(hole == Approx(-expected).epsilon(1e-9));
+        REQUIRE(sgElectronContinuityFluxFromQuasiFermiStable(
+            ni, psi, psi, drop, 0.0, vt, coef) == Approx(-electron).epsilon(1e-9));
+    }
+    REQUIRE(sgElectronContinuityFluxFromQuasiFermiStable(
+        ni, psi, psi, 0.0, 0.0, vt, coef) == 0.0);
+}
+
 // ---------------------------------------------------------------------------
 // Pure diffusion (psi_j = psi_i -> dpsi = 0, u = 0, B(0) = 1)
 // ---------------------------------------------------------------------------
