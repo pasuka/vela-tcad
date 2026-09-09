@@ -2350,6 +2350,189 @@ TEST_CASE("CoupledDDAssembler: transport Jacobian captures quasi-Fermi high-fiel
 
     REQUIRE(frozenRel > rel * 10.0);
 }
+TEST_CASE("CoupledDDAssembler: vector HFS continuity includes adjacent vertex feedback",
+          "[newton][coupled][mobility][vector-hfs]")
+{
+    bool contactFallback = false;
+    SECTION("bulk vector gradient") {}
+    SECTION("contact electric field replaces vector gradient") { contactFallback = true; }
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase materials;
+    DopingModel doping = makePNDoping(mesh);
+    MobilityModelConfig mobility = mobilityModelConfig("constant_field");
+    mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+    mobility.highFieldGradientDiscretization = "transport_cell_vector";
+    mobility.contactElectricFieldFallback = contactFallback;
+    mobility.electronField.saturationVelocity = 1.0e4;
+    mobility.holeField.saturationVelocity = 1.0e4;
+    CoupledDDAssembler assembler(mesh, materials, doping, constants::Vt_300,
+        mobility, recombinationModelConfig({"none"}));
+    const int N = static_cast<int>(mesh.numNodes());
+    CoupledDDState state;
+    state.psi.resize(N);
+    state.phin.resize(N);
+    state.phip.resize(N);
+    state.psi << -0.02, 0.03, 0.01, -0.01, 0.005;
+    state.phin << -0.07, 0.04, 0.08, -0.03, 0.02;
+    state.phip << 0.06, -0.03, -0.05, 0.04, -0.01;
+    const VectorXd x = assembler.pack(state);
+    const Eigen::MatrixXd analytic = assembler.assembleJacobian(x, {});
+    const Eigen::MatrixXd fd = assembler.finiteDifferenceJacobian(x, {}, 1.0e-7);
+    // Normalize each continuity column without a unit floor: Poisson and the
+    // other carrier must not conceal missing transverse-gradient feedback.
+    for (int block : {1, 2}) {
+        for (int column = 0; column < 3 * N; ++column) {
+            const VectorXd a = analytic.block(block * N, column, N, 1);
+            const VectorXd f = fd.block(block * N, column, N, 1);
+            const Real scale = std::max(a.norm(), f.norm());
+            CAPTURE(contactFallback, block, column, scale);
+            if (scale > 0.0)
+                CHECK((a - f).norm() / scale < 2.0e-5);
+        }
+    }
+
+    // Remove only edge (0,4). Node 1 is a third vertex of its adjacent
+    // triangle: changing its QF cannot affect the edge's frozen SG flux.
+    DeviceMesh removed = mesh;
+    bool found = false;
+    for (Index e = 0; e < mesh.numEdges(); ++e) {
+        const auto& edge = mesh.getEdge(e);
+        if ((edge.n0 == 0 && edge.n1 == 4) ||
+            (edge.n0 == 4 && edge.n1 == 0)) {
+            removed.setTransportCouple(e, 0.0);
+            found = true;
+        }
+    }
+    REQUIRE(found);
+    CoupledDDAssembler withoutEdge(removed, materials, doping, constants::Vt_300,
+        mobility, recombinationModelConfig({"none"}));
+    const Eigen::MatrixXd edgeAnalytic = analytic -
+        Eigen::MatrixXd(withoutEdge.assembleJacobian(x, {}));
+    const Eigen::MatrixXd edgeFd = fd -
+        Eigen::MatrixXd(withoutEdge.finiteDifferenceJacobian(x, {}, 1.0e-7));
+    for (int block : {1, 2}) {
+        const Real a = edgeAnalytic(block * N, block * N + 1);
+        const Real f = edgeFd(block * N, block * N + 1);
+        CAPTURE(contactFallback, block, a, f);
+        if (!contactFallback) {
+            REQUIRE(std::abs(f) > 0.0);
+            CHECK(std::abs(a - f) / std::abs(f) < 2.0e-5);
+        } else {
+            CHECK(a == Catch::Approx(0.0).margin(1.0e-10));
+        }
+    }
+}
+
+TEST_CASE("Vector HFS preserves sub-ULP fields across reference frames",
+          "[newton][contact_current][qf-reference][vector-hfs][precision]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase materials;
+    DopingModel doping = makePNDoping(mesh);
+    // Match the LDMOS Fermi-Dirac transport model, including its explicit
+    // quasi-Fermi drop flux evaluation at arbitrarily small increments.
+    const CarrierStatisticsConfig statistics{"fermi_dirac"};
+    MobilityModelConfig mobility = mobilityModelConfig("constant_field");
+    mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+    mobility.highFieldGradientDiscretization = "transport_cell_vector";
+    // Move the HFS transition into this tiny-drop experiment; a vanished
+    // gradient must produce a measurable change instead of an inert limiter.
+    mobility.electronField.saturationVelocity = 1.0e-12;
+    mobility.holeField.saturationVelocity = 1.0e-12;
+    const int N = static_cast<int>(mesh.numNodes());
+    std::vector<VectorXd> residuals;
+    std::vector<Eigen::MatrixXd> jacobians;
+    std::vector<ContactCurrentResult> currents;
+    for (Real reference : {0.0, -28.0}) {
+        CoupledDDAssembler assembler(mesh, materials, doping, constants::Vt_300,
+            mobility, recombinationModelConfig({"none"}), {}, {}, {}, {}, {}, {}, statistics);
+        assembler.setQuasiFermiReferences(reference, reference);
+        VectorXd x = VectorXd::Zero(3 * N);
+        x.head(N).setConstant(reference);
+        x.segment(N, N) << 0.0, 2e-17, 3e-17, -1e-17, 0.7e-17;
+        x.segment(2*N, N) << 0.0, -1e-17, -2e-17, 3e-17, 0.4e-17;
+        const auto physical = assembler.unpack(x);
+        if (reference != 0.0)
+            REQUIRE(physical.phin.minCoeff() == physical.phin.maxCoeff());
+        DDSolution state;
+        state.psi = physical.psi; state.phin = physical.phin; state.phip = physical.phip;
+        state.phinIncrement = x.segment(N, N); state.phipIncrement = x.segment(2*N, N);
+        state.electronQfReference_V = reference; state.holeQfReference_V = reference;
+        state.n = assembler.electronDensity(x); state.p = assembler.holeDensity(x);
+        ContactCurrent current(mesh, materials, doping, mobility, constants::T0, {}, {}, statistics);
+        const auto port = current.compute(state, "anode");
+        const auto assembled = current.computeFromResidual(assembler, x, "anode");
+        REQUIRE(std::abs(port.electronCurrent) > 0.0);
+        REQUIRE(std::abs(port.holeCurrent) > 0.0);
+        CHECK(port.electronCurrent == Catch::Approx(assembled.electronCurrent).epsilon(1e-12));
+        CHECK(port.holeCurrent == Catch::Approx(assembled.holeCurrent).epsilon(1e-12));
+        currents.push_back(port);
+        residuals.push_back(assembler.residual(x, {}));
+        jacobians.emplace_back(assembler.assembleJacobian(x, {}));
+    }
+    for (int block : {1, 2}) {
+        const auto a = residuals[0].segment(block*N, N);
+        const auto b = residuals[1].segment(block*N, N);
+        REQUIRE(a.norm() > 0.0);
+        CHECK((a-b).norm()/a.norm() < 1e-12);
+        const auto ja = jacobians[0].block(block*N, block*N, N, N);
+        const auto jb = jacobians[1].block(block*N, block*N, N, N);
+        REQUIRE(ja.norm() > 0.0);
+        CHECK((ja-jb).norm()/ja.norm() < 1e-12);
+    }
+    CHECK(currents[0].electronCurrent == Catch::Approx(currents[1].electronCurrent).epsilon(1e-12));
+    CHECK(currents[0].holeCurrent == Catch::Approx(currents[1].holeCurrent).epsilon(1e-12));
+}
+
+TEST_CASE("NewtonSolver: vector HFS live and matched frozen continuity JVP agree",
+          "[newton][diagnostics][mobility][vector-hfs]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase materials;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg;
+    cfg.recombination = {"none"};
+    cfg.warmStart = true;
+    cfg.carrierStatistics.model = "fermi_dirac";
+    cfg.mobility.model = "constant_field";
+    cfg.mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+    cfg.mobility.highFieldGradientDiscretization = "transport_cell_vector";
+    cfg.mobility.electronField.saturationVelocity = 1.0e4;
+    cfg.mobility.holeField.saturationVelocity = 1.0e4;
+    SECTION("bulk") { cfg.mobility.contactElectricFieldFallback = false; }
+    SECTION("contact fallback") { cfg.mobility.contactElectricFieldFallback = true; }
+    const int N = static_cast<int>(mesh.numNodes());
+    DDSolution state;
+    state.psi = VectorXd::LinSpaced(N, -0.02, 0.03);
+    state.phin = VectorXd::LinSpaced(N, -0.03, 0.02);
+    state.phip = VectorXd::LinSpaced(N, 0.025, -0.015);
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.01}, {"cathode", 0.0}};
+    NewtonSolver live(mesh, materials, doping, biases, cfg);
+    cfg.mobility.jacobianFieldDerivatives = false;
+    NewtonSolver frozen(mesh, materials, doping, biases, cfg);
+    for (int variable = 0; variable < 3; ++variable) {
+        DDSolution direction;
+        direction.psi = VectorXd::Zero(N);
+        direction.phin = VectorXd::Zero(N);
+        direction.phip = VectorXd::Zero(N);
+        (variable == 0 ? direction.psi :
+         variable == 1 ? direction.phin : direction.phip)(4) = 1.0e-7;
+        const auto liveJvp = live.evaluateDirectionalDerivative(state, direction);
+        const auto frozenJvp = frozen.evaluateDirectionalDerivative(state, direction, true);
+        for (const auto* jvp : {&liveJvp, &frozenJvp}) {
+            for (int block : {1, 2}) {
+                const VectorXd a = jvp->analyticJv.segment(block * N, N);
+                const VectorXd f = jvp->finiteDifferenceJv.segment(block * N, N);
+                const Real scale = std::max(a.norm(), f.norm());
+                CAPTURE(variable, block, scale, cfg.mobility.contactElectricFieldFallback);
+                if (scale > 0.0)
+                    CHECK((a - f).norm() / scale < 2.0e-5);
+            }
+        }
+    }
+}
+
 TEST_CASE("CoupledDDAssembler: Slotboom BGN uses total impurity at compensated nodes",
           "[newton][coupled][bgn][doping]")
 {
@@ -3936,6 +4119,39 @@ TEST_CASE("NewtonSolver: diagnostic probes preserve referenced sub-ULP increment
     const NewtonResidualEvaluation perturbedResidual =
         solver.evaluateResidual(perturbed);
     REQUIRE((perturbedResidual.raw - zeroResidual.raw).norm() > 0.0);
+}
+
+TEST_CASE("Newton restart packing retains increments below extended precision ULP",
+          "[newton][diagnostics][qf-reference][precision]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase materials;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg = newtonConfig();
+    cfg.quasiFermiReference = "contact_majority";
+    cfg.warmStart = true;
+    cfg.recombination = {"none"};
+    cfg.carrierStatistics.model = "fermi_dirac";
+    // A zero iteration budget exposes the packed restart without advancing it.
+    cfg.maxIter = 0;
+    cfg.quasiFermiRecenterOnInitialState = true;
+    const int N = static_cast<int>(mesh.numNodes());
+    for (Real reference : {0.0, -28.0}) {
+        NewtonSolver solver(mesh, materials, doping,
+            {{"anode", reference}, {"cathode", reference}}, cfg);
+        DDSolution state;
+        state.psi = state.phin = state.phip = VectorXd::Constant(N, reference);
+        state.n = state.p = VectorXd::Zero(N);
+        state.phinIncrement = state.phipIncrement = VectorXd::Zero(N);
+        state.electronQfReference_V = state.holeQfReference_V = reference;
+        state.phinIncrement(4) = 6e-29;
+        state.phipIncrement(4) = -4e-29;
+        REQUIRE(-28.0L + static_cast<long double>(state.phinIncrement(4)) == -28.0L);
+        const auto restart = solver.solve(state);
+        REQUIRE(restart.iters == 0);
+        CHECK(restart.solution.phinIncrement(4) == state.phinIncrement(4));
+        CHECK(restart.solution.phipIncrement(4) == state.phipIncrement(4));
+    }
 }
 
 TEST_CASE("NewtonSolver: reports maximum contact majority quasi-Fermi drop", "[newton][contact][diagnostics]")

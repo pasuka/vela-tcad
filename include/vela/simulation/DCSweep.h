@@ -288,6 +288,8 @@ struct DCSweepConfig {
     Real minStep = 0.0;
     Real maxStep = 0.0;
     Real growthFactor = 1.0;
+    /// fixed (legacy) or newton_iterations for ordinary Newton voltage sweeps.
+    std::string stepGrowthMode = "fixed";
     Real shrinkFactor = 0.5;
     int maxRetries = 5;
     bool stopOnFailure = true;

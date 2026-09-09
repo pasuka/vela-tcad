@@ -2635,6 +2635,30 @@ inline CellScalarGradientCache computeCellScalarGradientCache(
     return cache;
 }
 
+// Keep reference differences and increments separate until after subtracting
+// a cell-local anchor. Materializing reference + increment as Real first loses
+// sub-ULP QF variations in a biased frame, before the gradient can see them.
+template <typename ReferenceAt, typename IncrementAt>
+inline Point2 cellReferencedScalarGradient(
+    const DeviceMesh& mesh, const Cell& cell,
+    ReferenceAt&& referenceAt, IncrementAt&& incrementAt,
+    bool& valid, Real& area)
+{
+    if (cell.node_ids.empty()) {
+        valid = false;
+        area = 0.0;
+        return Point2::Zero();
+    }
+    const Index anchor = cell.node_ids.front();
+    return cellScalarGradient(mesh, cell, [&](Index node) {
+        return static_cast<Real>(
+            (static_cast<long double>(referenceAt(node)) -
+             static_cast<long double>(referenceAt(anchor))) +
+            (static_cast<long double>(incrementAt(node)) -
+             static_cast<long double>(incrementAt(anchor))));
+    }, valid, area);
+}
+
 template <typename ValueAt>
 inline Point2 edgeAveragedCellScalarGradient(
     const std::vector<std::vector<Index>>& edgeCells,
@@ -2963,15 +2987,13 @@ inline std::vector<Real> computePoissonChargeVolumes(
     return volume;
 }
 
-inline std::vector<Real> transportCellVectorEdgeGradientMagnitudes(
+inline std::vector<Real> transportCellVectorEdgeGradientMagnitudesFromCache(
     const DeviceMesh& mesh,
     const std::vector<std::vector<Index>>& edgeCells,
     const std::vector<Material>& cellMaterials,
-    const VectorXd& values,
+    const CellScalarGradientCache& gradients,
     Real fieldFactor)
 {
-    const CellScalarGradientCache gradients = computeCellScalarGradientCache(
-        mesh, [&](Index node) { return values(static_cast<int>(node)); });
     std::vector<Real> fields(mesh.numEdges(), 0.0);
     for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
         if (edgeId >= edgeCells.size())
@@ -2993,6 +3015,41 @@ inline std::vector<Real> transportCellVectorEdgeGradientMagnitudes(
             fields[edgeId] = (weightedGradient / totalArea).norm() * fieldFactor;
     }
     return fields;
+}
+
+inline std::vector<Real> transportCellVectorEdgeGradientMagnitudes(
+    const DeviceMesh& mesh,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<Material>& cellMaterials,
+    const VectorXd& values, Real fieldFactor)
+{
+    const auto gradients = computeCellScalarGradientCache(
+        mesh, [&](Index node) { return values(static_cast<int>(node)); });
+    return transportCellVectorEdgeGradientMagnitudesFromCache(
+        mesh, edgeCells, cellMaterials, gradients, fieldFactor);
+}
+
+template <typename ReferenceAt, typename IncrementAt>
+inline std::vector<Real> transportCellVectorReferencedGradientMagnitudes(
+    const DeviceMesh& mesh,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<Material>& cellMaterials,
+    ReferenceAt&& referenceAt, IncrementAt&& incrementAt, Real fieldFactor)
+{
+    CellScalarGradientCache gradients;
+    gradients.gradients.resize(mesh.numCells());
+    gradients.areas.resize(mesh.numCells());
+    gradients.valid.resize(mesh.numCells());
+    for (Index cell = 0; cell < mesh.numCells(); ++cell) {
+        bool valid = false;
+        Real area = 0.0;
+        gradients.gradients[cell] = cellReferencedScalarGradient(
+            mesh, mesh.getCell(cell), referenceAt, incrementAt, valid, area);
+        gradients.areas[cell] = area;
+        gradients.valid[cell] = valid;
+    }
+    return transportCellVectorEdgeGradientMagnitudesFromCache(
+        mesh, edgeCells, cellMaterials, gradients, fieldFactor);
 }
 
 template <typename ValueAt>

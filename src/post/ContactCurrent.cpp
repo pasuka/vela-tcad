@@ -176,12 +176,22 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient" &&
         mobilityConfig_.highFieldGradientDiscretization == "transport_cell_vector";
     const std::vector<Real> electronVectorMobilityFields = vectorQfMobility
-        ? detail::transportCellVectorEdgeGradientMagnitudes(
-              mesh_, edgeCells_, cellMaterials, electronQf, fieldFactor)
+        ? detail::transportCellVectorReferencedGradientMagnitudes(
+              mesh_, edgeCells_, cellMaterials,
+              [&](Index node) { return hasReferencedElectronQf
+                  ? solution.electronQuasiFermiReferenceAt(node) : 0.0; },
+              [&](Index node) { return hasReferencedElectronQf
+                  ? solution.phinIncrement(node) : solution.phin(node); },
+              fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> holeVectorMobilityFields = vectorQfMobility
-        ? detail::transportCellVectorEdgeGradientMagnitudes(
-              mesh_, edgeCells_, cellMaterials, holeQf, fieldFactor)
+        ? detail::transportCellVectorReferencedGradientMagnitudes(
+              mesh_, edgeCells_, cellMaterials,
+              [&](Index node) { return hasReferencedHoleQf
+                  ? solution.holeQuasiFermiReferenceAt(node) : 0.0; },
+              [&](Index node) { return hasReferencedHoleQf
+                  ? solution.phipIncrement(node) : solution.phip(node); },
+              fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
         mobilityConfig_.contactElectricFieldFallback

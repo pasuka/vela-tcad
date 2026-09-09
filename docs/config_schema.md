@@ -1270,8 +1270,10 @@ holds the base-state mobility fixed only while forming the transport
 Jacobian; the nonlinear residual still evaluates the live mobility model.
 For bulk edge-projected quasi-Fermi HFS away from contact-field fallback,
 the Jacobian applies the analytic mobility chain rule to the frozen-mobility
-SG flux derivative. Surface, cell-vector and contact-field paths retain
-their respective derivative stencils. `constant_field` participates in the
+SG flux derivative. The cell-vector path includes the mobility feedback from
+both edge endpoints and all vertices of adjacent transport cells. Contact
+electric-field fallback replaces that QF feedback with its electric-potential
+stencil. `constant_field` participates in the
 field-derivative path even when contact fallback is disabled.
 
 Supported `model` values are `constant`, `constant_field`, `caughey_thomas`,
@@ -1286,9 +1288,21 @@ When quasi-Fermi driving is selected, `high_field_gradient_discretization`
 controls how that magnitude is recovered. `edge_projection` (default) uses the
 potential difference projected onto each edge and preserves legacy Vela
 behavior. `transport_cell_vector` reconstructs the two-dimensional P1 gradient
-inside adjacent semiconductor cells and area-averages its magnitude onto each
-edge; this matches the orientation-independent `GradQuasiFermi` semantics used
+inside adjacent semiconductor cells, area-averages the gradient vectors, then
+takes the magnitude on each edge; this matches the orientation-independent `GradQuasiFermi` semantics used
 by Sentaurus on unstructured 2-D meshes.
+
+For referenced quasi-Fermi states, the cell-vector mobility path forms each
+cell gradient from reference differences and explicit increments before
+combining them. Residuals, analytic mobility feedback, edge diagnostics and
+terminal currents share this arithmetic so a large common potential offset
+does not erase sub-ULP variations. Restart packing subtracts the new reference
+before adding the saved increment. Checkpoint frame translations must also
+retain reference-rounding remainders in the increment; the Python
+`scripts/translate_dd_state.py` utility provides this operation with explicit
+transport node IDs and refuses to overwrite an existing checkpoint. A translated
+state still requires the original convergence and state/current equivalence
+checks before a sweep may accept it.
 
 For SG current-density avalanche integration,
 `impact_ionization.source_volume_policy=genius_conservative` normalizes the
@@ -1864,6 +1878,7 @@ Step control fields:
 - min_step
 - max_step
 - growth_factor
+- step_growth_mode
 - shrink_factor
 - max_retries
 - stop_on_failure
@@ -1887,6 +1902,43 @@ configuration records nominal targets every `0.05 V`, starts continuation at
 For explicit `bias_points`, `initial_step` is used only for the first interval.
 Later intervals inherit the adaptive step magnitude from the preceding
 accepted interval, capped by the next target distance and `max_step`.
+
+`step_growth_mode` defaults to `fixed`, retaining the existing successful-step
+multiplier. Opt in to `newton_iterations` to adjust growth using the number of
+Newton updates in the last accepted voltage step, following the steady-state
+strategy in the [Sentaurus training, section 6.3](https://ghzphy.github.io/Sentaurus_Training/sd/sd_6.html#sec3):
+
+```text
+G(N) = 1 + (growth_factor - 1) * max(0, 1 - max(N - 1, 0) / (0.75 * M))
+next_step = clamp(abs(accepted_step) * G(N), min_step, max_step)
+N = accepted step's Newton update count; M = solver.max_iter
+```
+
+`growth_factor` must be finite and at least `1`; it remains the upper bound on
+growth. A zero-update acceptance uses the same multiplier as one update. Hard
+accepted steps keep their step magnitude instead of growing; failed steps
+still use the existing `shrink_factor`, rollback, and `max_retries` rules.
+Acceptance involving QF-bounds or carrier-row recovery also suppresses growth,
+because the final recovery solve's iteration count understates total work.
+For example, `growth_factor: 1.35`, `solver.max_iter: 25`, and a `10 mV` step
+requiring five Newton updates give a next proposal of about `12.7533 mV`.
+
+This mode supports ordinary voltage sweeps with `solver.method: "newton"`
+and a positive `solver.max_iter`, for both range and explicit `bias_points`
+inputs. Other solvers, external-circuit/current-controlled sweeps, and
+pseudo-arclength continuation are rejected explicitly. It does not change the
+Newton stopping criteria, physical models, or predictor configuration.
+
+Exact nominal/reference targets still clip steps, possibly below `min_step`.
+In `newton_iterations` mode the next proposal grows from that actual clipped
+step and is bounded again; the default `fixed` mode retains its previous
+unclipped-proposal growth behavior. Runtime logs record the accepted bias,
+Newton update count, effective multiplier, and next proposed magnitude on
+`step_control: mode=newton_iterations` lines. Proposals may be clipped again
+at the next target. These log lines include accepted internal steps; explicit
+`bias_points` result/CSV rows still contain only the requested reference points.
+External checkpoint drivers that launch separate sweeps
+do not automatically inherit this controller's history.
 
 Sweep continuation fields:
 - `sweep.continuation.predictor.mode`: `none`, `constant`, `linear`, or `secant`.

@@ -48,12 +48,9 @@ VectorXd packReferencedSolution(
             if (bcs.phin.find(static_cast<Index>(i)) != bcs.phin.end())
                 continue;
             const long double increment =
-                static_cast<long double>(
-                    state.electronQuasiFermiReferenceAt(i)) +
-                static_cast<long double>(state.phinIncrement(i)) -
-                static_cast<long double>(
-                    assembler.electronQuasiFermiReferenceAt(
-                        static_cast<Index>(i)));
+                (static_cast<long double>(state.electronQuasiFermiReferenceAt(i)) -
+                 static_cast<long double>(assembler.electronQuasiFermiReferenceAt(static_cast<Index>(i)))) +
+                static_cast<long double>(state.phinIncrement(i));
             packed(N + i) = static_cast<Real>(
                 increment / static_cast<long double>(potentialScale));
         }
@@ -63,12 +60,9 @@ VectorXd packReferencedSolution(
             if (bcs.phip.find(static_cast<Index>(i)) != bcs.phip.end())
                 continue;
             const long double increment =
-                static_cast<long double>(
-                    state.holeQuasiFermiReferenceAt(i)) +
-                static_cast<long double>(state.phipIncrement(i)) -
-                static_cast<long double>(
-                    assembler.holeQuasiFermiReferenceAt(
-                        static_cast<Index>(i)));
+                (static_cast<long double>(state.holeQuasiFermiReferenceAt(i)) -
+                 static_cast<long double>(assembler.holeQuasiFermiReferenceAt(static_cast<Index>(i)))) +
+                static_cast<long double>(state.phipIncrement(i));
             packed(2 * N + i) = static_cast<Real>(
                 increment / static_cast<long double>(potentialScale));
         }
@@ -6360,11 +6354,9 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                 std::abs(initial.phin(i) - reconstructed) <=
                     consistencyTolerance) {
                 const long double repartitioned =
-                    static_cast<long double>(
-                        initial.electronQuasiFermiReferenceAt(i)) +
-                    static_cast<long double>(initial.phinIncrement(i)) -
-                    static_cast<long double>(
-                        assembler.electronQuasiFermiReferenceAt(node));
+                    (static_cast<long double>(initial.electronQuasiFermiReferenceAt(i)) -
+                     static_cast<long double>(assembler.electronQuasiFermiReferenceAt(node))) +
+                    static_cast<long double>(initial.phinIncrement(i));
                 x(N + i) = static_cast<Real>(
                     repartitioned / static_cast<long double>(potentialScale));
             }
@@ -6382,11 +6374,9 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
                 std::abs(initial.phip(i) - reconstructed) <=
                     consistencyTolerance) {
                 const long double repartitioned =
-                    static_cast<long double>(
-                        initial.holeQuasiFermiReferenceAt(i)) +
-                    static_cast<long double>(initial.phipIncrement(i)) -
-                    static_cast<long double>(
-                        assembler.holeQuasiFermiReferenceAt(node));
+                    (static_cast<long double>(initial.holeQuasiFermiReferenceAt(i)) -
+                     static_cast<long double>(assembler.holeQuasiFermiReferenceAt(node))) +
+                    static_cast<long double>(initial.phipIncrement(i));
                 x(2 * N + i) = static_cast<Real>(
                     repartitioned / static_cast<long double>(potentialScale));
             }

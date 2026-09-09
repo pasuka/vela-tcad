@@ -632,6 +632,24 @@ void CoupledDDAssembler::rebuildFixedJacobianPattern(
         }
     }
 
+    if (transportMobilityDerivativeEnabled_ && highFieldMobilityEnabled_ &&
+        vectorQfMobilityEnabled_) {
+        // Vector HFS couples each flux row to the same carrier at adjacent
+        // transport-cell vertices. Do not add cross-carrier structural zeros:
+        // they needlessly change ordering, including in HFS-off controls.
+        for (const EdgeAssemblyKernel& edge : edgeAssemblyKernels_) {
+            if (!edge.activeTransport)
+                continue;
+            for (std::size_t k = 0; k < edge.avalancheStencilNodeCount; ++k) {
+                const int node = static_cast<int>(edge.avalancheStencilNodes[k]);
+                for (Index row : {edge.n0, edge.n1}) {
+                    addPattern(phinOffset() + row, phinOffset() + node);
+                    addPattern(phipOffset() + row, phipOffset() + node);
+                }
+            }
+        }
+    }
+
     if (includeCellStencil) {
         for (const Cell& cell : mesh_.cells()) {
             const bool hasTransportNode = std::any_of(
@@ -1376,12 +1394,24 @@ VectorXd CoupledDDAssembler::residualImpl(
         mobilityConfig_.carrierCurrentDiscretization ==
             "element_qf_gradient";
     const std::vector<Real> electronVectorMobilityFields = vectorQfMobility
-        ? detail::transportCellVectorEdgeGradientMagnitudes(
-              mesh_, edgeCells_, cellMaterials_, phinPhysical, fieldFactor)
+        ? (substitution != nullptr && substitution->replaceElectronQuasiFermi
+           ? detail::transportCellVectorEdgeGradientMagnitudes(
+                 mesh_, edgeCells_, cellMaterials_, phinPhysical, fieldFactor)
+           : detail::transportCellVectorReferencedGradientMagnitudes(
+              mesh_, edgeCells_, cellMaterials_,
+              [&](Index node) { return electronQuasiFermiReferenceAt(node); },
+              [&](Index node) { return static_cast<long double>(x(phinOffset() + node)) * potentialScale; },
+              fieldFactor))
         : std::vector<Real>{};
     const std::vector<Real> holeVectorMobilityFields = vectorQfMobility
-        ? detail::transportCellVectorEdgeGradientMagnitudes(
-              mesh_, edgeCells_, cellMaterials_, phipPhysical, fieldFactor)
+        ? (substitution != nullptr && substitution->replaceHoleQuasiFermi
+           ? detail::transportCellVectorEdgeGradientMagnitudes(
+                 mesh_, edgeCells_, cellMaterials_, phipPhysical, fieldFactor)
+           : detail::transportCellVectorReferencedGradientMagnitudes(
+              mesh_, edgeCells_, cellMaterials_,
+              [&](Index node) { return holeQuasiFermiReferenceAt(node); },
+              [&](Index node) { return static_cast<long double>(x(phipOffset() + node)) * potentialScale; },
+              fieldFactor))
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
         mobilityConfig_.contactElectricFieldFallback
@@ -2021,12 +2051,24 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
     const bool qfMobility = qfMobilityEnabled_;
     const bool vectorQfMobility = vectorQfMobilityEnabled_;
     const std::vector<Real> electronVectorMobilityFields = vectorQfMobility
-        ? detail::transportCellVectorEdgeGradientMagnitudes(
-              mesh_, edgeCells_, cellMaterials_, phinPhysical, fieldFactor)
+        ? (substitution != nullptr && substitution->replaceElectronQuasiFermi
+           ? detail::transportCellVectorEdgeGradientMagnitudes(
+                 mesh_, edgeCells_, cellMaterials_, phinPhysical, fieldFactor)
+           : detail::transportCellVectorReferencedGradientMagnitudes(
+              mesh_, edgeCells_, cellMaterials_,
+              [&](Index node) { return electronQuasiFermiReferenceAt(node); },
+              [&](Index node) { return static_cast<long double>(x(phinOffset() + node)) * potentialScale; },
+              fieldFactor))
         : std::vector<Real>{};
     const std::vector<Real> holeVectorMobilityFields = vectorQfMobility
-        ? detail::transportCellVectorEdgeGradientMagnitudes(
-              mesh_, edgeCells_, cellMaterials_, phipPhysical, fieldFactor)
+        ? (substitution != nullptr && substitution->replaceHoleQuasiFermi
+           ? detail::transportCellVectorEdgeGradientMagnitudes(
+                 mesh_, edgeCells_, cellMaterials_, phipPhysical, fieldFactor)
+           : detail::transportCellVectorReferencedGradientMagnitudes(
+              mesh_, edgeCells_, cellMaterials_,
+              [&](Index node) { return holeQuasiFermiReferenceAt(node); },
+              [&](Index node) { return static_cast<long double>(x(phipOffset() + node)) * potentialScale; },
+              fieldFactor))
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
         mobilityConfig_.contactElectricFieldFallback
@@ -2379,12 +2421,18 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
             phipField(i), 0.0);
     }
     const std::vector<Real> electronVectorMobilityFields = vectorQfMobility
-        ? detail::transportCellVectorEdgeGradientMagnitudes(
-              mesh_, edgeCells_, cellMaterials_, phinField, fieldFactor)
+        ? detail::transportCellVectorReferencedGradientMagnitudes(
+              mesh_, edgeCells_, cellMaterials_,
+              [&](Index node) { return electronQuasiFermiReferenceAt(node); },
+              [&](Index node) { return static_cast<long double>(x(phinOffset() + node)) * potentialScale; },
+              fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> holeVectorMobilityFields = vectorQfMobility
-        ? detail::transportCellVectorEdgeGradientMagnitudes(
-              mesh_, edgeCells_, cellMaterials_, phipField, fieldFactor)
+        ? detail::transportCellVectorReferencedGradientMagnitudes(
+              mesh_, edgeCells_, cellMaterials_,
+              [&](Index node) { return holeQuasiFermiReferenceAt(node); },
+              [&](Index node) { return static_cast<long double>(x(phipOffset() + node)) * potentialScale; },
+              fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
         mobilityConfig_.contactElectricFieldFallback
@@ -3289,12 +3337,18 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         mobilityConfig_.carrierCurrentDiscretization ==
             "element_qf_gradient";
     const std::vector<Real> electronVectorMobilityFields = vectorQfMobility
-        ? detail::transportCellVectorEdgeGradientMagnitudes(
-              mesh_, edgeCells_, cellMaterials_, phinState, fieldFactor)
+        ? detail::transportCellVectorReferencedGradientMagnitudes(
+              mesh_, edgeCells_, cellMaterials_,
+              [&](Index node) { return electronQuasiFermiReferenceAt(node); },
+              [&](Index node) { return static_cast<long double>(x(phinOffset() + node)) * potentialScale; },
+              fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> holeVectorMobilityFields = vectorQfMobility
-        ? detail::transportCellVectorEdgeGradientMagnitudes(
-              mesh_, edgeCells_, cellMaterials_, phipState, fieldFactor)
+        ? detail::transportCellVectorReferencedGradientMagnitudes(
+              mesh_, edgeCells_, cellMaterials_,
+              [&](Index node) { return holeQuasiFermiReferenceAt(node); },
+              [&](Index node) { return static_cast<long double>(x(phipOffset() + node)) * potentialScale; },
+              fieldFactor)
         : std::vector<Real>{};
     const std::vector<Real> contactElectricMobilityFields =
         mobilityConfig_.contactElectricFieldFallback
@@ -4496,7 +4550,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     // explicitly. A finite difference of the entire live flux can straddle
     // its narrow low-field transition even when the frozen-mobility flux is
     // smooth on the same perturbation scale. Preserve the residual model and
-    // the lagged-Jacobian path; surface/vector/contact-field paths keep their
+    // the lagged-Jacobian path; surface/contact-field paths keep their
     // existing stencils below.
     const auto qfMobilityFluxDerivative = [&](
         const std::vector<Real>& lowFields,
@@ -4520,6 +4574,77 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         // has zero limit, including for beta <= 1.
         return -(flux / qfDrop) *
             (response / static_cast<Real>(lowFields.size()) / mobility);
+    };
+
+    // Differentiate the norm AFTER averaging transport-cell gradient vectors,
+    // exactly as in the residual. Every vertex of either adjacent triangle
+    // contributes, even when it is not an endpoint of this SG edge.
+    const auto addVectorQfMobilityFeedback =
+        [&](Index e, CarrierType carrier,
+            Real mobility, Real flux, int offset) {
+        if (mobility <= 0.0 || flux == 0.0)
+            return;
+        const EdgeAssemblyKernel& kernel = edgeAssemblyKernels_[e];
+        Point2 weightedGradient = Point2::Zero();
+        std::array<Point2, maxEdgeAvalancheStencilNodes> sensitivities;
+        for (auto& sensitivity : sensitivities)
+            sensitivity.setZero();
+        Real totalArea = 0.0;
+        for (Index cellId : edgeCells_[e]) {
+            if (!detail::isTransportMaterial(cellMaterials_[cellId]))
+                continue;
+            const Cell& cell = mesh_.getCell(cellId);
+            bool valid = false;
+            Real area = 0.0;
+            const bool isElectron = carrier == CarrierType::Electron;
+            const Point2 gradient = detail::cellReferencedScalarGradient(
+                mesh_, cell,
+                [&](Index node) { return isElectron
+                    ? electronQuasiFermiReferenceAt(node)
+                    : holeQuasiFermiReferenceAt(node); },
+                [&](Index node) { return static_cast<long double>(x(offset + node)) * potentialScale; },
+                valid, area);
+            if (!valid || area <= 0.0)
+                continue;
+            weightedGradient += area * gradient;
+            totalArea += area;
+            for (std::size_t k = 0; k < kernel.avalancheStencilNodeCount; ++k) {
+                const Index column = kernel.avalancheStencilNodes[k];
+                const Point2 basisGradient = detail::cellScalarGradient(
+                    mesh_, cell,
+                    [&](Index node) { return node == column ? 1.0 : 0.0; },
+                    valid, area);
+                sensitivities[k] += area * basisGradient;
+            }
+        }
+        const Real norm = weightedGradient.norm();
+        if (totalArea <= 0.0 || norm == 0.0)
+            return;
+        const Real field = norm / totalArea * fieldFactor;
+        const bool electron = carrier == CarrierType::Electron;
+        Real fluxFieldDerivative;
+        if (!surfaceMobilityEnabled_) {
+            // The existing saturation chain rule also gives dF/d|grad QF|
+            // when its denominator is the driving field rather than a drop.
+            fluxFieldDerivative = qfMobilityFluxDerivative(
+                electron ? kernel.electronLowFieldMobilities
+                         : kernel.holeLowFieldMobilities,
+                electron ? mobilityConfig_.electronField : mobilityConfig_.holeField,
+                field, field, mobility, flux);
+        } else {
+            const Real step = 1.0e-6 * field;
+            fluxFieldDerivative = flux / mobility *
+                (cachedEdgeMobility(e, carrier, field + step, &psi) -
+                 cachedEdgeMobility(e, carrier, field - step, &psi)) / (2.0 * step);
+        }
+        for (std::size_t k = 0; k < kernel.avalancheStencilNodeCount; ++k) {
+            const Real fieldDerivative = weightedGradient.dot(sensitivities[k]) /
+                norm / totalArea * fieldFactor;
+            const Real derivative = fluxFieldDerivative * fieldDerivative;
+            const int column = offset + kernel.avalancheStencilNodes[k];
+            add(offset + kernel.n0, column, derivative);
+            add(offset + kernel.n1, column, -derivative);
+        }
     };
 
     {
@@ -4573,6 +4698,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const bool analyticQfMobilityFeedback =
             transportMobilityDerivative && qfMobility && !vectorQfMobility &&
             !surfaceMobilityEnabled_ && !contactMobilityFallbackActive;
+        const bool vectorQfMobilityFeedback = transportMobilityDerivative &&
+            highFieldMobilityEnabled_ && vectorQfMobility &&
+            !contactMobilityFallbackActive;
         const Real u = dpsi / Vt_;
         const Real Bu = bernoulli(u);
         const Real dBu = bernoulliDerivative(u);
@@ -4590,6 +4718,13 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         if (mun > 0.0) {
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
+
+            if (vectorQfMobilityFeedback) {
+                addVectorQfMobilityFeedback(e, CarrierType::Electron,
+                    mun, edgeElectronTransportFlux(
+                        e, i, j, h, psi_i, psi_j, phin_i, phin_j,
+                        mun, noPerturbedNode, 0.0), phinOffset());
+            }
 
             if (transportMobilityDerivative || usesFermiDirac_) {
                 const Real vals[4] = {psi_i, psi_j, phin_i, phin_j};
@@ -4698,6 +4833,13 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         if (mup > 0.0) {
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
+
+            if (vectorQfMobilityFeedback) {
+                addVectorQfMobilityFeedback(e, CarrierType::Hole,
+                    mup, edgeHoleTransportFlux(
+                        e, i, j, h, psi_i, psi_j, phip_i, phip_j,
+                        mup, noPerturbedNode, 0.0), phipOffset());
+            }
 
             if (transportMobilityDerivative || usesFermiDirac_) {
                 const Real vals[4] = {psi_i, psi_j, phip_i, phip_j};

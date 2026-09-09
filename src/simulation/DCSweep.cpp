@@ -1629,6 +1629,11 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     const Real nominalStep = std::abs(sweep.step);
     sweep.shrinkFactor = j.value("shrink_factor", sweep.shrinkFactor);
     sweep.growthFactor = j.value("growth_factor", sweep.growthFactor);
+    sweep.stepGrowthMode = j.value("step_growth_mode", sweep.stepGrowthMode);
+    if (sweep.stepGrowthMode != "fixed" && sweep.stepGrowthMode != "newton_iterations") {
+        throw std::invalid_argument(
+            "DCSweep: sweep.step_growth_mode must be 'fixed' or 'newton_iterations'.");
+    }
     sweep.maxRetries = j.value("max_retries", sweep.maxRetries);
     sweep.initialStep = j.value("initial_step", nominalStep);
     sweep.minStep = j.value("min_step", nominalStep * std::pow(sweep.shrinkFactor, sweep.maxRetries));
@@ -2550,8 +2555,8 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
     if (sweep.initialStep < sweep.minStep || sweep.initialStep > sweep.maxStep)
         throw std::invalid_argument(
             "DCSweep: sweep.initial_step must lie within [min_step, max_step].");
-    if (sweep.growthFactor < 1.0)
-        throw std::invalid_argument("DCSweep: sweep.growth_factor must be at least 1.");
+    if (!std::isfinite(sweep.growthFactor) || sweep.growthFactor < 1.0)
+        throw std::invalid_argument("DCSweep: sweep.growth_factor must be finite and at least 1.");
     if (sweep.shrinkFactor <= 0.0 || sweep.shrinkFactor >= 1.0)
         throw std::invalid_argument("DCSweep: sweep.shrink_factor must be greater than 0 and less than 1.");
     if (sweep.maxRetries < 0)
@@ -3129,6 +3134,30 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     }
     newton.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
     gummel.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
+    if (sweep.stepGrowthMode == "newton_iterations") {
+        if (solverMethod != SolverMethod::Newton || sweep.externalResistor.enabled ||
+            sweep.voltageToCurrent.enabled || sweep.continuation.arclength.enabled) {
+            throw std::invalid_argument(
+                "DCSweep: sweep.step_growth_mode='newton_iterations' requires "
+                "solver.method='newton' and an ordinary voltage sweep "
+                "without external-circuit, current-control, or arclength continuation.");
+        }
+        if (newton.maxIter <= 0) {
+            throw std::invalid_argument(
+                "DCSweep: newton_iterations step growth requires positive solver.max_iter.");
+        }
+    }
+    const auto logStepGrowth = [&](const detail::DCSweepStepControlEvent& event) {
+        if (sweep.stepGrowthMode == "newton_iterations" && event.converged && runtimeLog.active()) {
+            std::ostringstream message;
+            message << std::setprecision(17)
+                    << "step_control: mode=newton_iterations bias_V=" << event.voltage
+                    << " newton_iterations=" << event.newtonIterations
+                    << " growth_factor=" << event.growthFactor
+                    << " next_step_magnitude_V=" << event.nextStepMagnitude;
+            runtimeLogInfo(message.str());
+        }
+    };
     const Real temperature_K = (solverMethod == SolverMethod::Newton ||
                                 solverMethod == SolverMethod::PoissonOnly ||
                                 solverMethod == SolverMethod::GummelNewton)
@@ -8154,6 +8183,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     pointStepControl.minStep = sweep.minStep;
                     pointStepControl.maxStep = sweep.maxStep;
                     pointStepControl.growthFactor = sweep.growthFactor;
+                    pointStepControl.growthMode = sweep.stepGrowthMode;
+                    pointStepControl.newtonIterationLimit = newton.maxIter;
                     pointStepControl.shrinkFactor = sweep.shrinkFactor;
                     pointStepControl.maxRetries = sweep.maxRetries;
                     pointStepControl.stopOnFailure = sweep.stopOnFailure;
@@ -8166,7 +8197,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
                     detail::runDCSweepStepControl(
                         pointStepControl,
-                        [&](Real voltage, Real, int stepRetryCount) {
+                        [&](Real voltage, Real, int stepRetryCount) -> detail::DCSweepStepAttemptResult {
                             try {
                                 SolvePointAttempt pointAttempt =
                                     solvePointWithContinuation(
@@ -8194,7 +8225,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                     : lastPointAttempt.failureReason;
                                 lastPointValidationDiagnostics =
                                     lastPointAttempt.validationDiagnostics;
-                                return pointOk;
+                                return {pointOk, lastPointAttempt.newtonIterations,
+                                    lastPointAttempt.qfBoundsRecovered ||
+                                    lastPointAttempt.carrierRowRecoveryAttempted};
                             } catch (const std::exception& ex) {
                                 if (sweep.mode == CurveSweepMode::BVReverse &&
                                     sweep.breakdown.nonConvergenceBreakdown) {
@@ -8207,6 +8240,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                             }
                         },
                         [&](const detail::DCSweepStepControlEvent& event) {
+                            logStepGrowth(event);
                             recordedVoltage = event.voltage;
                             attemptedStep = event.attemptedStep;
                             acceptedStep = event.acceptedStep;
@@ -8558,6 +8592,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     stepControl.minStep = sweep.minStep;
     stepControl.maxStep = sweep.maxStep;
     stepControl.growthFactor = sweep.growthFactor;
+    stepControl.growthMode = sweep.stepGrowthMode;
+    stepControl.newtonIterationLimit = newton.maxIter;
     stepControl.shrinkFactor = sweep.shrinkFactor;
     stepControl.maxRetries = sweep.maxRetries;
     stepControl.stopOnFailure = sweep.stopOnFailure;
@@ -8569,7 +8605,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
     detail::runDCSweepStepControl(
         stepControl,
-        [&](Real voltage, Real, int stepRetryCount) {
+        [&](Real voltage, Real, int stepRetryCount) -> detail::DCSweepStepAttemptResult {
             try {
                 if (stepRetryCount == 0)
                     activeRequestedTargetBias = voltage;
@@ -8594,7 +8630,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 lastStepAttempt = std::move(attempt);
                 lastStepFailureReason = lastStepAttempt.ok ? std::string() : lastStepAttempt.failureReason;
                 lastStepValidationDiagnostics = lastStepAttempt.validationDiagnostics;
-                return lastStepAttempt.ok;
+                return {lastStepAttempt.ok, lastStepAttempt.newtonIterations,
+                    lastStepAttempt.qfBoundsRecovered || lastStepAttempt.carrierRowRecoveryAttempted};
             } catch (const std::exception&) {
                 if (sweep.mode == CurveSweepMode::BVReverse &&
                     sweep.breakdown.nonConvergenceBreakdown) {
@@ -8607,6 +8644,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             }
         },
         [&](const detail::DCSweepStepControlEvent& event) {
+            logStepGrowth(event);
             std::string failureReason;
             if (!event.converged)
                 failureReason = !lastStepFailureReason.empty()
@@ -8669,6 +8707,14 @@ void validateDCSweepStepControlConfig(const DCSweepStepControlConfig& cfg)
     requireFinite(cfg.maxStep, "maxStep");
     requireFinite(cfg.growthFactor, "growthFactor");
     requireFinite(cfg.shrinkFactor, "shrinkFactor");
+    if (cfg.growthMode != "fixed" && cfg.growthMode != "newton_iterations") {
+        throw std::invalid_argument(
+            "DCSweep step control: growthMode must be 'fixed' or 'newton_iterations'.");
+    }
+    if (cfg.growthMode == "newton_iterations" && cfg.newtonIterationLimit <= 0) {
+        throw std::invalid_argument(
+            "DCSweep step control: newtonIterationLimit must be positive for newton_iterations growth.");
+    }
 
     if (cfg.step == 0.0)
         throw std::invalid_argument("DCSweep step control: step must be non-zero.");
@@ -8754,14 +8800,34 @@ void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,
             const Real stepMagnitude = std::min(trialStep, remaining);
             const Real candidate = limitedTarget(target, stepMagnitude);
             const Real attemptedStep = candidate - previousVoltage;
-            const bool ok = attempt(candidate, attemptedStep, retryCount);
+            const DCSweepStepAttemptResult outcome = attempt(candidate, attemptedStep, retryCount);
             lastAttempted = attemptedStep;
             lastCandidate = candidate;
 
-            if (ok) {
-                record({candidate, true, attemptedStep, attemptedStep, retryCount});
+            if (outcome.converged) {
+                Real growth = cfg.growthFactor;
+                Real growthBase = trialStep;
+                if (cfg.growthMode == "newton_iterations") {
+                    if (outcome.newtonIterations < 0) {
+                        throw std::invalid_argument(
+                            "DCSweep step control: accepted newton_iterations step requires "
+                            "a non-negative Newton iteration count.");
+                    }
+                    const Real effort = static_cast<Real>(std::max(outcome.newtonIterations - 1, 0)) /
+                        (0.75 * static_cast<Real>(cfg.newtonIterationLimit));
+                    growth = outcome.recovered ? 1.0 :
+                        1.0 + (cfg.growthFactor - 1.0) * std::max(0.0, 1.0 - effort);
+                    // Work was measured on the actual (possibly clipped) step.
+                    // Keep the legacy unclipped-base behavior only in fixed mode.
+                    growthBase = std::abs(attemptedStep);
+                }
+                const Real nextStep = cfg.growthMode == "newton_iterations"
+                    ? std::clamp(growthBase * growth, cfg.minStep, cfg.maxStep)
+                    : std::min(cfg.maxStep, growthBase * growth);
+                record({candidate, true, attemptedStep, attemptedStep, retryCount, {},
+                        outcome.newtonIterations, growth, nextStep});
                 previousVoltage = candidate;
-                adaptiveStep = std::min(cfg.maxStep, trialStep * cfg.growthFactor);
+                adaptiveStep = nextStep;
                 return true;
             }
 
