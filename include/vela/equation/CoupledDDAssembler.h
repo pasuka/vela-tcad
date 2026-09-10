@@ -422,6 +422,9 @@ private:
         bool activeTransport = false;
         std::array<Index, maxEdgeAvalancheStencilNodes> avalancheStencilNodes{};
         std::uint8_t avalancheStencilNodeCount = 0;
+        bool touchesTransportContact = false;
+        Real vectorGradientArea = 0.0;
+        std::array<Point2, maxEdgeAvalancheStencilNodes> vectorGradientSensitivities{};
         std::vector<Real> electronLowFieldMobilities;
         std::vector<Real> holeLowFieldMobilities;
     };

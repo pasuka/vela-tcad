@@ -2423,6 +2423,69 @@ TEST_CASE("CoupledDDAssembler: vector HFS continuity includes adjacent vertex fe
     }
 }
 
+TEST_CASE("Fermi vector HFS Jacobian follows changing states on bulk and contact edges",
+          "[newton][coupled][mobility][vector-hfs][precision]")
+{
+    // Only one corner is a contact: the same assembly exercises both the
+    // contact electric-field stencil and bulk QF mobility with fallback on.
+    const DeviceMesh original = makePNMesh();
+    DeviceMesh mesh;
+    for (Index i = 0; i < original.numNodes(); ++i)
+        mesh.addNode(original.getNode(i));
+    for (Index i = 0; i < original.numCells(); ++i)
+        mesh.addCell(original.getCell(i));
+    for (const auto& region : original.regions())
+        mesh.addRegion(region);
+    Contact contact;
+    contact.id = 0; contact.name = "corner"; contact.region_id = 1;
+    contact.node_ids = {0};
+    mesh.addContact(contact);
+    mesh.buildEdges();
+    MaterialDatabase materials;
+    DopingModel doping = makePNDoping(mesh);
+    MobilityModelConfig mobility = mobilityModelConfig("constant_field");
+    mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+    mobility.highFieldGradientDiscretization = "transport_cell_vector";
+    mobility.electronField.saturationVelocity = 1.0e4;
+    mobility.holeField.saturationVelocity = 1.0e4;
+    SECTION("bulk QF throughout") { mobility.contactElectricFieldFallback = false; }
+    SECTION("mixed contact and bulk") { mobility.contactElectricFieldFallback = true; }
+    const CarrierStatisticsConfig statistics{"fermi_dirac"};
+    CoupledDDAssembler reused(mesh, materials, doping, constants::Vt_300,
+        mobility, recombinationModelConfig({"none"}), {}, {}, {}, {}, {}, {}, statistics);
+    const int N = static_cast<int>(mesh.numNodes());
+    VectorXd x(3 * N);
+    x << -0.02, 0.03, 0.01, -0.01, 0.005,
+         -0.07, 0.04, 0.08, -0.03, 0.02,
+          0.06, -0.03, -0.05, 0.04, -0.01;
+    const VectorXd initial = x;
+    for (int state = 0; state < 3; ++state) {
+        if (state == 1) {
+            x(4) += 0.017;
+            x(N + 2) -= 0.026;
+            x(2 * N + 1) += 0.031;
+        } else if (state == 2) {
+            x = initial;
+        }
+        CoupledDDAssembler fresh(mesh, materials, doping, constants::Vt_300,
+            mobility, recombinationModelConfig({"none"}), {}, {}, {}, {}, {}, {}, statistics);
+        const Eigen::MatrixXd analytic = reused.assembleJacobian(x, {});
+        const Eigen::MatrixXd independent = fresh.assembleJacobian(x, {});
+        CHECK((analytic - independent).norm() == 0.0);
+        const Eigen::MatrixXd fd = reused.finiteDifferenceJacobian(x, {}, 1.0e-7);
+        for (int block : {1, 2}) {
+            for (int column = 0; column < 3 * N; ++column) {
+                const VectorXd a = analytic.block(block * N, column, N, 1);
+                const VectorXd f = fd.block(block * N, column, N, 1);
+                const Real scale = std::max(a.norm(), f.norm());
+                CAPTURE(state, block, column, mobility.contactElectricFieldFallback);
+                if (scale > 0.0)
+                    CHECK((a - f).norm() / scale < 2.0e-5);
+            }
+        }
+    }
+}
+
 TEST_CASE("Vector HFS preserves sub-ULP fields across reference frames",
           "[newton][contact_current][qf-reference][vector-hfs][precision]")
 {
