@@ -1,0 +1,88 @@
+{
+  "schema": "vela.ac.known_difference_ledger.draft.v1",
+  "plan_version": "v4",
+  "as_of": "2026-09-10",
+  "code_baseline": "d76434089dcd8564069be4b822260d7aa9c72662",
+  "document_status": "planning_only_not_execution_evidence",
+  "entries": [
+    {
+      "id": "AC-DIFF-001",
+      "topic": "material_support_volume",
+      "status": "open",
+      "waives_acceptance": false,
+      "source_kind": "main_source_and_separate_worktree_report",
+      "evidence": [
+        "src/mesh/BoxGeometryBuilder.cpp",
+        "src/equation/CoupledDDAssembler.cpp",
+        ".worktrees/templates-ldmos-phase-a/docs/validation/templates_ldmos_g3_material_local_charge_volume_qualification_2026-09-02.md"
+      ],
+      "ac_impact_measured": false,
+      "ac_error": null,
+      "required_gates": [
+        "material_support_decision",
+        "storage_charge_identity",
+        "dc_alignment"
+      ],
+      "closure": "Approve material/geometry support jointly for DC Poisson and AC storage; reclose DC and rerun dependent gates. A DC-only Poisson patch is not AC qualification.",
+      "scope": "Si/oxide shared nodes; poly only after its own qualification"
+    },
+    {
+      "id": "AC-DIFF-002",
+      "topic": "dc_alignment_before_ac_scoring",
+      "status": "open",
+      "waives_acceptance": false,
+      "source_kind": "separate_worktree_methodology_not_main_acceptance",
+      "evidence": [
+        ".worktrees/simplemos-sdevice-validation/reference_tcad/simplemos_sentaurus2022/README.md",
+        ".worktrees/simplemos-sdevice-validation/docs/validation/simplemos_m81_native_ifm_execution_2026-09-05.md"
+      ],
+      "ac_impact_measured": false,
+      "ac_error": null,
+      "required_gates": [
+        "dc_alignment",
+        "separate_ac_metrics"
+      ],
+      "closure": "Freeze per-point current/psi/log-carrier gates and independent A/C thresholds; blocked points remain in coverage denominator. Transfer methodology, not historical tolerances.",
+      "scope": "Original AC1/Sentaurus equivalence"
+    },
+    {
+      "id": "AC-DIFF-003",
+      "topic": "poly_gate_vs_metal_equivalent",
+      "status": "open",
+      "waives_acceptance": false,
+      "source_kind": "requires_vm_deck_tdr_qualification",
+      "evidence": [
+        "nMOS_dvs.cmd and original TDR: pending P0 capture",
+        "src/physics/DensityGradientQuantumPotential.cpp"
+      ],
+      "ac_impact_measured": false,
+      "ac_error": null,
+      "required_gates": [
+        "gate_material_contract",
+        "dc_alignment",
+        "separate_ac_metrics"
+      ],
+      "closure": "Resolve gate contact/material/doping/equation map. Qualify semiconductor poly or separately label metal-equivalent fixture; no original-poly equivalence waiver.",
+      "scope": "Gate depletion and port capacitance"
+    },
+    {
+      "id": "AC-DIFF-004",
+      "topic": "effective_reference_ac_derivatives",
+      "status": "open",
+      "waives_acceptance": false,
+      "source_kind": "requires_version_specific_effective_settings",
+      "evidence": [
+        "Original/effective Math sections and AC mode defaults: pending P0 capture"
+      ],
+      "ac_impact_measured": false,
+      "ac_error": null,
+      "required_gates": [
+        "reference_derivative_contract",
+        "physical_derivatives",
+        "separate_ac_metrics"
+      ],
+      "closure": "Archive version-specific effective AC derivatives, not just Newton switch spelling; separate original and derivative-matched variants without silently omitting physical Vela derivatives.",
+      "scope": "Mobility/avalanche and other state-dependent models"
+    }
+  ]
+}
