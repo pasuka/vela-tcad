@@ -5,7 +5,18 @@ reference artifacts for the Synopsys Applications Library
 `Templates/LDMOS` case. Proprietary source decks, TDR/PLT files, logs, and
 archives must remain under the ignored top-level `reference_staging/` tree.
 
-The executable plan is defined by:
+The current validation status and reproducible D5 entry point are documented in
+[LDMOS current validation](../../docs/validation/templates_ldmos_current_status.md).
+The latest Release G3 controls pass all six gates. Both linked D5 curves
+(Vg=4/8) pass all 31 points and their joint original gates on 2026-09-11.
+The newly discovered explicit Auger coefficient unit mismatch is corrected
+in the generator and in the now-default linked profile, which passed both
+complete from-zero curves and the joint gates. The explicit frozen replay profile
+retains the historical coefficients. See the current status for qualification
+scope and remaining IALMob work. Historical reports, `known_difference_ledger.json`
+and `stage4_decision_summary.json` retain their original dated observations.
+
+The original scope and provenance are defined by:
 
 - `docs/superpowers/plans/2026-08-26-templates-ldmos-sentaurus-vela-validation-plan.md`
 - `docs/superpowers/plans/2026-08-26-templates-ldmos-phase-a-oracle-classical-validation-plan.md`
@@ -22,18 +33,15 @@ TDR/PLT and exact-mesh products remain under ignored `reference_staging`.
 The G3 subthreshold/KCL follow-up is recorded in
 `docs/validation/templates_ldmos_g3_shift_kcl_audit_2026-08-29.md`; its
 candidate engine-difference entry is intentionally draft in
-`known_difference_ledger.json` until benchmark-owner and independent-reviewer
-approval.
+`known_difference_ledger.json`. Its former maximum-gm failure is historical;
+current qualification is recorded in the current status above. Historical
+engine-difference classifications have not been promoted by these curve tests.
 
-Phase-A Stage 4 execution is recorded in
-`docs/validation/templates_ldmos_stage4_idvd_execution_2026-09-03.md`.  The
-Sentaurus D1--D5 ablation is complete and hRecVelocity is closed as
-non-required.  The former 10 mV Vela D5 blocker is closed; the no-predictor
-curve has passed through 0.8 V after completing the contact-cell HFS Jacobian
-stencil and adding representation-only QF recentering.  The 31-point run is
-still incomplete because the strict path requires millivolt-scale internal
-steps; accepted internal states are now restartable.  `stage4_decision_summary.json` is the
-neutral machine-readable status; it does not claim Stage-4 or L2 acceptance.
+The initial Phase-A Stage 4 investigation is recorded in
+`docs/validation/templates_ldmos_stage4_idvd_execution_2026-09-03.md`.
+Sentaurus D1--D5 ablation is complete and hRecVelocity is non-required for
+this template path. Its former 10 mV and runtime blockers are historical;
+use the current status above for the completed Vg=8 curve and remaining scope.
 
 Expected persistent local layout:
 
@@ -126,3 +134,14 @@ python scripts/finalize_templates_ldmos_phase01.py `
 `run_templates_ldmos_cost_probe.py` may then produce the draft budget from the
 stage-1 exact mesh. Its Poisson-only placeholder materials are an explicit
 runtime lower bound, not an accepted material or physics contract.
+
+## Qualified D4 classical IALMob profile
+
+`profiles/linked_d4_config.json` and `profiles/linked_d4_inputs.json` identify the
+300 K coupled IALMob experiment qualified at all 31 exact Id-Vd points for both
+Vg=4 V and Vg=8 V. Run the linked entry point with explicit `--physics-profile D4`
+and this bundle. Its validated gauge offsets are 28 V for Vg4 and 4 V for Vg8;
+the original numerical, frame-equivalence and engineering/final curve gates apply.
+Native geometry weights and source evidence remain external hashed dependencies.
+See the [full qualification report](../../docs/validation/templates_ldmos_ialmob_global_coupling_2026-09-11.md)
+for the checkpoint chain, audits, curve errors, and the limited corner policy.

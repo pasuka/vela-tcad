@@ -12,6 +12,7 @@
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
 #include <limits>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -453,8 +454,16 @@ struct DCSweepResult {
 
 class DCSweep {
 public:
+    /// Opt-in cache for sequential requests. Each solve receives fresh copies;
+    /// no accepted/rejected nonlinear state is carried between requests.
+    explicit DCSweep(bool reusePreparedInputs = false)
+        : reusePreparedInputs_(reusePreparedInputs) {}
     std::vector<DCSweepPoint> run(const std::string& configFile) const;
     DCSweepResult runWithResult(const std::string& configFile) const;
+private:
+    struct PreparedInputs;
+    bool reusePreparedInputs_;
+    mutable std::shared_ptr<PreparedInputs> preparedInputs_;
 };
 
 } // namespace vela

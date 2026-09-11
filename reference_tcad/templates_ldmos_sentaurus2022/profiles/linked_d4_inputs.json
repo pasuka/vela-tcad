@@ -1,0 +1,45 @@
+{
+  "schema": "vela.templates_ldmos.linked_d4_inputs.v1",
+  "template": "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d4_config.json",
+  "seeds": {
+    "4": "reference_staging/templates_ldmos_shortstep_20260907/zero_closed_psi/state.csv",
+    "8": "reference_staging/templates_ldmos_vg8_20260907/continuation_r2/initial/state.csv"
+  },
+  "references": {
+    "4": "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D4-classical/IdVd_Vg1_n4_des_drain_curve.csv",
+    "8": "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D4-classical/IdVd_Vg2_n4_des_drain_curve.csv"
+  },
+  "files": {
+    "reference_tcad/templates_ldmos_sentaurus2022/contracts/materials.json": "327b02852d565e3c04e89b727e8de754a40204b2a836d4d5e71865c11b0eea2e",
+    "reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/stage1_v4/vela_exact_topology/mesh.json": "36f79a06a21550d69fb58ad221457b1c1ccc63fa3a929046ef6b90e185f09ff6",
+    "reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/stage1_v4/vela_exact_topology/doping.csv": "b9924f72bf36386d031e7a168adbc997d9f076db1662b7b8c1e3416ad68acb39",
+    "reference_staging/templates_ldmos_averagebox_full_mesh_20260831/transport_couples.csv": "758161f73f570511ccd914628451ebcad58b5f8e58dd6b6351f00669e18b36cb",
+    "reference_staging/templates_ldmos_shortstep_20260907/zero_closed_psi/state.csv": "edc93d5ebe8c6b42eeb1bab215bafdf1669e937af70b8fcefe38923e6c1f541e",
+    "reference_staging/templates_ldmos_vg8_20260907/continuation_r2/initial/state.csv": "d1e48ccd2e089bbe4ef3fa8d3d6a25c904b003d104012c76d848484efc906ccf",
+    "reference_staging/templates_ldmos_followup_20260911/ialmob_global_r4/inputs/geometry.json": "250d525d123b17df3a698dbb76bae3f2914a8bd0f7b6028b12acf76cfb35f12b",
+    "reference_staging/templates_ldmos_followup_20260911/ialmob_difference_location/native/geometry/MeasureCoefficients.debug": "05ec1a43936e0ff71bea7cdfd956d80c7d692b228187ccae8625ec53ce58d49e",
+    "scripts/prepare_templates_ldmos_ialmob_transport.py": "4a64d7d9a1a5354880b22a94677727335feea0386dc3a164fe1ef65c91d1fbd0",
+    "reference_staging/templates_ldmos_followup_20260911/ialmob_closure_r2/raw_distance_gradient_replay/e_absolute_100_input.json": "24cd75d7b91e1ac1cc0b3de40b02923a6eb4c5126b9bfb7d3da00dfa16d5ba67",
+    "reference_staging/templates_ldmos_followup_20260911/ialmob_closure_r2/raw_distance_gradient_replay/e_absolute_110_input.json": "da940a4ece6fc68b11b759f6f664a278125f678211f312d2cfc7e0083e8561cd",
+    "reference_staging/templates_ldmos_followup_20260911/ialmob_closure_r2/raw_distance_gradient_replay/h_absolute_100_input.json": "7066f5359cef339753554f76076e871b50b8d9e7625a8056db28ff9640ec3a94",
+    "reference_staging/templates_ldmos_followup_20260911/ialmob_closure_r2/raw_distance_gradient_replay/h_absolute_110_input.json": "881df92cef178949280c0f795806c43bd419174048afcfa6f54c4aff95992a3f",
+    "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D4-classical/IdVd_Vg1_n4_des_drain_curve.csv": "291e31a73a51be1881c8556d31c2e84c5be3e179a25856d2e6e979e466285502",
+    "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D4-classical/IdVd_Vg2_n4_des_drain_curve.csv": "4b48bca3a38a1d21709bd40c11ac47a7349a1c8dba4b509d1fdc4a7e19778bb8",
+    "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d4_config.json": "cc34582dc6810963f2ea26ec010aeb97ebc50a29c6429d2dee978e5fc59b9848"
+  },
+  "note": "D5 zero states are initial guesses only; D4 initialize must reclose them under live IALMob before any drain advance. Original numerical and Id-Vd scoring gates retained.",
+  "frame_offsets_V": {
+    "4": 28.0,
+    "8": 4.0
+  },
+  "qualification": {
+    "report": "docs/validation/templates_ldmos_ialmob_global_coupling_2026-09-11.md",
+    "gates_V": [
+      4,
+      8
+    ],
+    "exact_points_per_gate": 31,
+    "runner_sha256": "14e7c6b94eb1978ca0d70be8ab2bfd9e601189471d51dee45e0ffafeb82e5cdc",
+    "joint_summary_sha256": "69b1383588b576f0e8f459b69a5eac328933fb892aedfc8894829769ae8272e4"
+  }
+}

@@ -10,6 +10,10 @@
 
 namespace vela {
 
+struct IalTransportOptions;
+struct IalTransportGeometry;
+struct IalTransportState;
+
 enum class CarrierType {
     Electron,
     Hole,
@@ -77,6 +81,9 @@ struct LombardiParameters {
 };
 
 struct MobilityModelConfig {
+    std::shared_ptr<const IalTransportOptions> ialmob;
+    std::shared_ptr<const IalTransportGeometry> ialmobGeometry;
+    std::shared_ptr<const IalTransportState> ialmobState;
     /// ``constant_field`` uses the material low-field mobility and applies
     /// only the configured high-field saturation limiter.
     std::string model = "constant";

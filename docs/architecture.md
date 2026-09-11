@@ -72,6 +72,14 @@ physical voltage before returning or writing output.
 
 ## Implementation Boundaries
 
+- Experimental `ialmob` transport is assembled through `IalTransport` and
+  `IalElementMobility`: live element mobility and its nine potential derivatives
+  feed the SG residual/Jacobian, terminal currents, and density recovery. The
+  scalar `MobilityModel` API rejects this model to prevent a silent bulk fallback.
+  It currently requires explicit native AverageBox geometry evidence, Si/SiO2
+  Tri3 geometry, and a 300 K classical configuration without avalanche. See
+  [current LDMOS validation](validation/templates_ldmos_current_status.md) for
+  the distinction between local formula checks and self-consistent D4 curves.
 - Device-level calibration and cross-tool claims require a checked-in
   `reference_tcad/` fixture with an explicit acceptance boundary.
 - BV sweeps report diagnostic max field/current jump/non-convergence markers,

@@ -718,12 +718,13 @@ SweepTransportDiagnostics computeSweepTransportDiagnostics(
     const DeviceMesh& mesh,
     const MaterialDatabase& matdb,
     const DopingModel& doping,
-    const MobilityModelConfig& mobilityConfig,
+    MobilityModelConfig mobilityConfig,
     Real temperature_K,
     const DDSolution& sol,
     const UnitScalingConfig& scaling)
 {
     SweepTransportDiagnostics diagnostics;
+    updateIalTransportState(mobilityConfig,mesh,doping,sol.psi,sol.n,sol.p,sol.phin,sol.phip);
     const auto edgeCells = detail::buildEdgeCellMap(mesh);
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh, matdb, temperature_K);
@@ -874,7 +875,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
     const DeviceMesh& mesh,
     const MaterialDatabase& matdb,
     const DopingModel& doping,
-    const MobilityModelConfig& mobilityConfig,
+    MobilityModelConfig mobilityConfig,
     Real temperature_K,
     const DDSolution& sol,
     const std::vector<Real>& effectiveNi,
@@ -883,6 +884,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
     const std::vector<std::string>& contacts,
     const UnitScalingConfig& scaling)
 {
+    updateIalTransportState(mobilityConfig,mesh,doping,sol.psi,sol.n,sol.p,sol.phin,sol.phip);
     const auto edgeCells = detail::buildEdgeCellMap(mesh);
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh, matdb, temperature_K);
@@ -3020,6 +3022,15 @@ std::vector<DCSweepPoint> DCSweep::run(const std::string& configFile) const
     return runWithResult(configFile).points;
 }
 
+struct DCSweep::PreparedInputs {
+    std::string key;
+    DeviceMesh mesh;
+    MaterialDatabase materials;
+    DopingModel doping;
+    CarrierTransportCoupleProfileReport transport;
+    PoissonCoupleProfileReport poisson;
+};
+
 DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 {
     std::ifstream ifs(configFile);
@@ -3052,17 +3063,67 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         performanceConfig.enabled ? &performanceProfiler : nullptr);
     const auto performanceRunStarted = std::chrono::steady_clock::now();
 
-    JsonMeshReader reader;
-    DeviceMesh mesh = reader.read(resolve(cfg.at("mesh_file").get<std::string>()), scaling);
-    mesh.buildBoxGeometry(parseBoxGeometryOptions(cfg));
-    const CarrierTransportCoupleProfileReport transportCoupleProfile =
-        applyCarrierTransportCoupleProfile(mesh, cfg, cfgDir, scaling);
-    const PoissonCoupleProfileReport poissonCoupleProfile =
-        applyPoissonCoupleProfile(mesh, cfg, cfgDir, scaling);
+    // Only inputs used by this preparation block enter the cache. File bytes
+    // are compared on every request (not timestamps), including relative paths
+    // resolved against this request's directory. Contact and solve state stay
+    // outside the cache and are rebuilt below.
+    std::string preparedKey;
+    if (reusePreparedInputs_) {
+        ScopedPerformanceTimer stage("dc.prepared_inputs.check");
+        nlohmann::json key = nlohmann::json::object();
+        for (const char* field : {"scaling", "format_version", "mesh_geometry",
+                                 "mesh_file", "materials_file", "doping",
+                                 "node_doping_file"})
+            if (cfg.contains(field)) key[field] = cfg.at(field);
+        const auto includeFiles = [&](auto&& self, nlohmann::json& value) -> void {
+            if (value.is_array()) {
+                for (auto& child : value) self(self, child);
+            } else if (value.is_object()) {
+                for (auto& [name, child] : value.items()) {
+                    if (name.ends_with("_file") && child.is_string()) {
+                        const auto path = std::filesystem::absolute(
+                            resolve(child.get<std::string>())).lexically_normal();
+                        std::ifstream file(path, std::ios::binary);
+                        if (!file) throw std::runtime_error(
+                            "DCSweep: cannot read prepared input: " + path.string());
+                        const std::string bytes((std::istreambuf_iterator<char>(file)), {});
+                        child = {{"path", path.string()}, {"bytes", bytes}};
+                    } else self(self, child);
+                }
+            }
+        };
+        includeFiles(includeFiles, key);
+        preparedKey = key.dump();
+    }
+    DeviceMesh mesh;
     MaterialDatabase matdb(scaling);
-    if (cfg.contains("materials_file"))
-        matdb.loadJson(resolve(cfg.at("materials_file").get<std::string>()), scaling);
-    DopingModel doping = dopingFromJson(mesh, cfg, cfgDir, scaling);
+    DopingModel doping(0);
+    CarrierTransportCoupleProfileReport transportCoupleProfile;
+    PoissonCoupleProfileReport poissonCoupleProfile;
+    if (reusePreparedInputs_ && preparedInputs_ && preparedInputs_->key == preparedKey) {
+        ScopedPerformanceTimer stage("dc.prepared_inputs.copy");
+        incrementPerformanceCounter("dc.prepared_inputs.hits");
+        mesh = preparedInputs_->mesh;
+        matdb = preparedInputs_->materials;
+        doping = preparedInputs_->doping;
+        transportCoupleProfile = preparedInputs_->transport;
+        poissonCoupleProfile = preparedInputs_->poisson;
+    } else {
+        ScopedPerformanceTimer stage("dc.prepared_inputs.build");
+        incrementPerformanceCounter("dc.prepared_inputs.misses");
+        JsonMeshReader reader;
+        mesh = reader.read(resolve(cfg.at("mesh_file").get<std::string>()), scaling);
+        mesh.buildBoxGeometry(parseBoxGeometryOptions(cfg));
+        transportCoupleProfile = applyCarrierTransportCoupleProfile(mesh, cfg, cfgDir, scaling);
+        poissonCoupleProfile = applyPoissonCoupleProfile(mesh, cfg, cfgDir, scaling);
+        if (cfg.contains("materials_file"))
+            matdb.loadJson(resolve(cfg.at("materials_file").get<std::string>()), scaling);
+        doping = dopingFromJson(mesh, cfg, cfgDir, scaling);
+        if (reusePreparedInputs_)
+            preparedInputs_ = std::make_shared<PreparedInputs>(PreparedInputs{
+                std::move(preparedKey), mesh, matdb, doping,
+                transportCoupleProfile, poissonCoupleProfile});
+    }
     std::vector<RegionFixedChargeSpec> fixedChargeSpecs =
         parseRegionFixedChargeSpecs(cfg, scaling);
     std::vector<InterfaceSheetChargeSpec> sheetChargeSpecs =

@@ -172,6 +172,9 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                 static_cast<long double>(solution.phipIncrement(i)));
         }
     }
+    MobilityModelConfig liveMobilityConfig = mobilityConfig_;
+    updateIalTransportState(liveMobilityConfig,mesh_,doping_,solution.psi,
+        solution.n,solution.p,electronQf,holeQf);
     const bool vectorQfMobility =
         mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient" &&
         mobilityConfig_.highFieldGradientDiscretization == "transport_cell_vector";
@@ -468,12 +471,12 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electronMobilityField,
-            &mobilityConfig_,
+            &liveMobilityConfig,
             &solution.psi);
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
             holeMobilityField,
-            &mobilityConfig_,
+            &liveMobilityConfig,
             &solution.psi);
 
         // SG fluxes in physical units.  Mirror CoupledDDAssembler residual:

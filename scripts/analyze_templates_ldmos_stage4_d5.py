@@ -140,7 +140,10 @@ def verdict(metrics: dict[str, Any], level: str) -> dict[str, Any]:
 
 
 def analyze(reference_paths: dict[str, Path], candidate_paths: dict[str, Path],
-            balance_paths: dict[str, Path], output: Path) -> dict[str, Any]:
+            balance_paths: dict[str, Path], output: Path, *,
+            physics_profile: str = "D5") -> dict[str, Any]:
+    if physics_profile not in ("D5", "D4"):
+        raise ValueError("Unknown physics profile")
     reference = {gate: read_curve(path) for gate, path in reference_paths.items()}
     candidate = {gate: read_vela_curve(path) for gate, path in candidate_paths.items()}
     metrics: dict[str, Any] = {
@@ -151,7 +154,7 @@ def analyze(reference_paths: dict[str, Path], candidate_paths: dict[str, Path],
     metrics["max_normalized_kcl_percent"] = max(
         audit["max_normalized_kcl_percent"] for audit in metrics["kcl_audit"].values())
     result = {
-        "schema": "vela.templates_ldmos.stage4_d5_summary.v1",
+        "schema": f"vela.templates_ldmos.stage4_{physics_profile.lower()}_summary.v1",
         "alignment_policy": "31 exact shared CurrentPlot points selected from the solver path; no curve-score interpolation",
         "metrics": metrics,
         "engineering": verdict(metrics, "engineering"),
@@ -159,7 +162,7 @@ def analyze(reference_paths: dict[str, Path], candidate_paths: dict[str, Path],
     }
     output.mkdir(parents=True, exist_ok=False)
     (output / "summary.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-    lines = ["# Templates/LDMOS Stage-4 D5 Id-Vd qualification", "",
+    lines = [f"# Templates/LDMOS Stage-4 {physics_profile} Id-Vd qualification", "",
              f"Engineering gate: **{result['engineering']['status']}**; final gate: **{result['final']['status']}**.", "",
              "| Gate | median / P95 / max relative error | Ron error | Vd=40 error |",
              "| --- | ---: | ---: | ---: |"]
@@ -177,6 +180,7 @@ def analyze(reference_paths: dict[str, Path], candidate_paths: dict[str, Path],
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--physics-profile", choices=("D5", "D4"), default="D5")
     for gate in (4, 8):
         parser.add_argument(f"--reference-vg{gate}", type=Path, required=True)
         parser.add_argument(f"--candidate-vg{gate}", type=Path, required=True)
@@ -188,6 +192,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         {"Vg4": args.candidate_vg4, "Vg8": args.candidate_vg8},
         {"Vg4": args.balance_vg4, "Vg8": args.balance_vg8},
         args.output_dir.resolve(),
+        physics_profile=args.physics_profile,
     )
     print(json.dumps(result, indent=2))
     return 0 if result["engineering"]["status"] == "pass" else 2

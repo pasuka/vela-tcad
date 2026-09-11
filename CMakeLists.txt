@@ -211,6 +211,10 @@ add_library(vela_core STATIC
     src/physics/BandToBandTunnelingModel.cpp
     src/physics/SRHRecombination.cpp
     src/physics/MobilityModel.cpp
+    src/physics/IalMobility.cpp
+    src/physics/IalInterfaceGeometry.cpp
+    src/equation/IalElementMobility.cpp
+    src/equation/IalTransport.cpp
     src/physics/RecombinationModel.cpp
     src/physics/ImpactIonizationModel.cpp
     src/physics/BandgapNarrowing.cpp
@@ -370,6 +374,13 @@ target_link_libraries(pn2d_jacobian_block_audit PRIVATE vela_core)
 add_executable(alpha_from_sentaurus_f src/tools/alpha_from_sentaurus_f.cpp)
 target_link_libraries(alpha_from_sentaurus_f PRIVATE vela_core)
 
+add_executable(ialmob_probe src/tools/ialmob_probe.cpp)
+target_link_libraries(ialmob_probe PRIVATE vela_core)
+add_executable(ialmob_geometry_probe src/tools/ialmob_geometry_probe.cpp)
+target_link_libraries(ialmob_geometry_probe PRIVATE vela_core)
+add_executable(ialmob_element_probe src/tools/ialmob_element_probe.cpp)
+target_link_libraries(ialmob_element_probe PRIVATE vela_core)
+
 add_executable(sentaurus_vanoverstraeten_fit src/tools/sentaurus_vanoverstraeten_fit.cpp)
 target_link_libraries(sentaurus_vanoverstraeten_fit PRIVATE vela_core)
 
@@ -467,7 +478,7 @@ target_compile_definitions(test_external_state PRIVATE
     VELA_EXAMPLE_RUNNER_EXE="$<TARGET_FILE:vela_example_runner>")
 add_dependencies(test_external_state vela_example_runner)
 
-add_executable(test_mobility tests/test_mobility.cpp)
+add_executable(test_mobility tests/test_mobility.cpp tests/test_ialmob.cpp tests/test_ialmob_jacobian.cpp tests/test_ialmob_transport.cpp)
 target_link_libraries(test_mobility PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_impact_ionization tests/test_impact_ionization.cpp)
@@ -702,6 +713,35 @@ add_test(NAME templates_ldmos_phase01_regression
 set_tests_properties(templates_ldmos_phase01_regression PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(templates_ldmos_phase01_regression)
+
+add_test(NAME templates_ldmos_linked_d5_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_linked_d5)
+set_tests_properties(templates_ldmos_linked_d5_regression PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(templates_ldmos_linked_d5_regression)
+
+add_test(NAME dc_worker_protocol
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_dc_worker.py
+            --runner $<TARGET_FILE:vela_example_runner>)
+set_tests_properties(dc_worker_protocol PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(dc_worker_protocol)
+
+add_test(NAME ialmob_probe_protocol
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_ialmob_probe.py
+            --runner $<TARGET_FILE:ialmob_probe>)
+set_tests_properties(ialmob_probe_protocol PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(ialmob_probe_protocol)
+add_test(NAME ialmob_element_probes_protocol
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_ialmob_element_probes.py
+            --geometry $<TARGET_FILE:ialmob_geometry_probe>
+            --element $<TARGET_FILE:ialmob_element_probe>)
+vela_set_windows_msys2_test_path(ialmob_element_probes_protocol)
 
 add_test(NAME sentaurus_sde_frontend
     COMMAND ${Python3_EXECUTABLE} -m unittest

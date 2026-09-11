@@ -1,0 +1,212 @@
+{
+  "_comment": "Qualified linked D5 baseline; expand paths and bias only through run_templates_ldmos_linked_d5.py.",
+  "contacts": [
+    {
+      "bias": 0.0,
+      "flatband_voltage": -0.5609636105202798,
+      "name": "gate",
+      "type": "metal_gate"
+    },
+    {
+      "bias": 0.0,
+      "name": "drain",
+      "type": "ohmic"
+    },
+    {
+      "bias": 0.0,
+      "name": "source",
+      "type": "ohmic"
+    },
+    {
+      "bias": 0.0,
+      "name": "substrate",
+      "type": "ohmic"
+    }
+  ],
+  "discretization": {
+    "poisson_charge_volume_policy": "material_local"
+  },
+  "materials_file": "@workspace/reference_tcad/templates_ldmos_sentaurus2022/contracts/materials.json",
+  "mesh_file": "@workspace/reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/stage1_v4/vela_exact_topology/mesh.json",
+  "mesh_geometry": {
+    "carrier_transport_couple_profile": "templates_ldmos_external_averagebox",
+    "external_averagebox_couples_file": "@workspace/reference_staging/templates_ldmos_averagebox_full_mesh_20260831/transport_couples.csv",
+    "external_averagebox_expected_edges": 16237,
+    "node_volume_policy": "barycentric"
+  },
+  "node_doping_file": "@workspace/reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/stage1_v4/vela_exact_topology/doping.csv",
+  "output_csv": "@output/curve.csv",
+  "scaling": {
+    "mode": "unit_scaling"
+  },
+  "simulation_type": "dc_sweep",
+  "solver": {
+    "abstol": 1e-14,
+    "auger_cn_m6_per_s": 2.9e-43,
+    "auger_cp_m6_per_s": 1.028e-43,
+    "bandgap_narrowing": {
+      "coefficient_eV": 0.009,
+      "fermi_statistics_correction": true,
+      "model": "old_slotboom",
+      "offset_eV": 0.0,
+      "reference_doping_m3": 1e+17,
+      "smoothing": 0.5
+    },
+    "block_absolute_convergence": {
+      "electron_residual_ceiling": 1e-11,
+      "hole_residual_ceiling": 3e-10,
+      "mode": "enforce",
+      "psi_residual_ceiling": 5e-08
+    },
+    "carrier_statistics": {
+      "model": "fermi_dirac"
+    },
+    "contact_boundary_reconstruction": "legacy_node_local",
+    "continuity_row_scaling": {
+      "enabled": true,
+      "flux_fraction": 0.001,
+      "max_weight": 1000000000000.0,
+      "min_source_scale": 1e-18,
+      "min_weight": 1e-12,
+      "scale_floor": 1e-30
+    },
+    "damping_factor": 1.0,
+    "impact_ionization": {
+      "model": "none"
+    },
+    "line_search_mode": "block_filter",
+    "linear_equilibration": {
+      "mode": "l2_row_column"
+    },
+    "max_iter": 160,
+    "method": "newton",
+    "mobility": {
+      "contact_electric_field_fallback": true,
+      "contact_electric_field_fallback_mode": "cell_gradient_magnitude",
+      "contact_electric_field_fallback_scope": "contact_node_cell",
+      "electron_high_field_beta": 1.109,
+      "electron_saturation_velocity_m_s": 10700000.0,
+      "high_field_driving_force": "quasi_fermi_gradient",
+      "high_field_gradient_discretization": "transport_cell_vector",
+      "hole_high_field_beta": 1.213,
+      "hole_saturation_velocity_m_s": 8370000.0,
+      "jacobian_field_derivatives": true,
+      "model": "constant_field"
+    },
+    "quasi_fermi_recenter_on_initial_state": true,
+    "quasi_fermi_reference": "contact_basin",
+    "quasi_fermi_update_limit_V": 0.1,
+    "recombination": [
+      "srh",
+      "auger"
+    ],
+    "reltol": 1e-10,
+    "residual_filter_envelope_factor": 2.0,
+    "residual_filter_gamma": 0.0001,
+    "srh_doping_dependence": {
+      "concentration_basis": "total_impurity",
+      "density_coupling": "sentaurus_default",
+      "electron": {
+        "gamma": 1.0,
+        "reference_doping_m3": 1e+16,
+        "tau_max_s": 1e-05,
+        "tau_min_s": 0.0
+      },
+      "electron_temperature_exponent": -1.5,
+      "enabled": true,
+      "hole": {
+        "gamma": 1.0,
+        "reference_doping_m3": 1e+16,
+        "tau_max_s": 3e-06,
+        "tau_min_s": 0.0
+      },
+      "hole_temperature_exponent": -1.5,
+      "reference_temperature_K": 300.0,
+      "temperature_K": 300.0,
+      "temperature_dependence": true
+    },
+    "stall_residual_floor": 1e-12,
+    "taun": 1e-05,
+    "taup": 3e-06,
+    "warm_start": true,
+    "performance_profiling": {
+      "enabled": true,
+      "json_file": "@output/performance_profile.json"
+    },
+    "carrier_row_convergence": {
+      "mode": "enforce",
+      "eps_row": 1e-08,
+      "scale_floor": 1e-30,
+      "min_source_scale": 0.0,
+      "min_source_scale_fraction": 0.0,
+      "min_newton_max_iter": 160,
+      "diagnostic_csv": "@output/carrier_violations.csv",
+      "trace_first_iterations": 160,
+      "trace_every_iterations": 1,
+      "recovery": {
+        "mode": "gummel_density",
+        "max_attempts": 2,
+        "max_cycles": 2,
+        "density_change_reltol": 1e-08
+      }
+    },
+    "quasi_fermi_recenter_on_stall": true
+  },
+  "sweep": {
+    "bias_points": [
+      0.0
+    ],
+    "contact": "drain",
+    "current_contact": "drain",
+    "diagnostics": {
+      "newton_history": {
+        "attempts_csv_file": "@output/newton_attempts.csv",
+        "csv_file": "@output/newton_history.csv",
+        "enabled": true,
+        "iterations_csv_file": "@output/newton_iterations.csv",
+        "rejected_state_directory": "@output/rejected_states"
+      },
+      "srh_balance": {
+        "csv_file": "@output/srh_balance.csv",
+        "drain_contact": "drain",
+        "enabled": true,
+        "kcl_contacts": [
+          "source",
+          "drain",
+          "gate",
+          "substrate"
+        ],
+        "material": "Si",
+        "resolution_margin_ratio": 10.0,
+        "substrate_contact": "substrate"
+      },
+      "terminal_balance": {
+        "contacts": [
+          "source",
+          "drain",
+          "gate",
+          "substrate"
+        ],
+        "csv_file": "@output/terminal_balance.csv",
+        "enabled": true
+      },
+      "transport": {
+        "enabled": true
+      }
+    },
+    "growth_factor": 1.0,
+    "initial_state_file": "@seed",
+    "initial_step": 0.1,
+    "max_retries": 0,
+    "min_step": 0.1,
+    "mode": "iv",
+    "start": 0.0,
+    "step": 0.1,
+    "stop": 0.0,
+    "write_state_file": "@output/state.csv",
+    "write_vtk": false,
+    "max_step": 0.1,
+    "stop_on_failure": true,
+    "step_growth_mode": "fixed"
+  }
+}

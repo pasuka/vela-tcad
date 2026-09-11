@@ -6,10 +6,33 @@ from scripts.audit_templates_ldmos_averagebox_node4492 import (
     coefficient_edge,
     local_vela_couple,
     parse_debug_block,
+    measure_in_tdr_vertex_order,
 )
+from scripts.audit_templates_ldmos_ialmob_support import project_to_nodes
 
 
 class TemplatesLdmosAverageBoxNode4492AuditTest(unittest.TestCase):
+    def test_measure_places_half_volume_at_right_angle_vertex(self) -> None:
+        # Clockwise triangle (0,1), (2,0), (0,0), area=1. The circumcenter
+        # decomposition gives vertex volumes 1/4, 1/4, 1/2. Native debug
+        # slots in this profile are v0,v2,v1, independently of edge slots.
+        mapped = measure_in_tdr_vertex_order([.25,.5,.25])
+        self.assertEqual(mapped, [.25,.25,.5])
+        self.assertEqual(sum(mapped), 1.)
+        with self.assertRaises(ValueError):
+            measure_in_tdr_vertex_order([0.,0.,0.])
+
+    def test_plot_projection_uses_inverse_area_and_preserves_constants(self) -> None:
+        points={0:(0.,0.),1:(2.,0.),2:(0.,1.),3:(0.,-2.)}
+        cells=[{'id':10,'node_ids':[0,1,2]}, {'id':11,'node_ids':[0,3,1]}]
+        result=project_to_nodes(points,cells,{10:10.,11:40.})
+        self.assertAlmostEqual(result[0],20.)
+        self.assertEqual(result[2],10.)
+        self.assertEqual(result[3],40.)
+        self.assertEqual(set(project_to_nodes(points,cells,{10:7.,11:7.}).values()),{7.})
+        with self.assertRaises(ValueError):
+            project_to_nodes({**points,2:(1.,0.)},cells,{10:10.,11:40.})
+
     def test_triangle_coefficient_order_is_tdr_edge_order(self) -> None:
         nodes = [10, 11, 12]
         self.assertEqual(coefficient_edge(nodes, 0), (12, 10, 1))

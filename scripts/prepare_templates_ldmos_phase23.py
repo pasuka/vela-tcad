@@ -173,8 +173,10 @@ def classical_solver(
                 "gamma": srh["hole"]["gamma"],
             },
         },
-        "auger_cn_m6_per_s": recombination["auger_cn_m6_per_s"],
-        "auger_cp_m6_per_s": recombination["auger_cp_m6_per_s"],
+        # The neutral contract is SI; these legacy unit_scaling deck keys
+        # consume cm^6/s despite their suffix. 1 m^6 = 10^12 cm^6.
+        "auger_cn_m6_per_s": recombination["auger_cn_m6_per_s"] * 1.0e12,
+        "auger_cp_m6_per_s": recombination["auger_cp_m6_per_s"] * 1.0e12,
         "quasi_fermi_update_limit_V": 0.1,
         # The Templates/LDMOS source metal intentionally shorts a p+ body
         # pickup to the n+ source. Its contact nodes therefore contain two

@@ -349,6 +349,56 @@ std::filesystem::path writeUnitScalingSweepConfig(
 
 std::string readTextFile(const std::filesystem::path& path);
 
+TEST_CASE("DCSweep prepared inputs preserve fresh-solve results and invalidate by file bytes",
+          "[dc_sweep][prepared_inputs]")
+{
+    const auto dir = makeUniqueSweepDir();
+    std::filesystem::create_directories(dir);
+    const ScopedDirectoryCleanup cleanup{dir};
+    const auto mesh = writePNMesh(dir);
+    const auto config = dir / "cached.json";
+    const auto profile = dir / "profile.json";
+    auto cfg = baseSweepConfig(dir, mesh, dir / "curve.csv");
+    cfg["solver"]["performance_profiling"] = {
+        {"enabled", true}, {"json_file", profile.string()}};
+    cfg["sweep"].update({{"stop", 0.0}, {"write_vtk", false}});
+    DCSweep cached(true);
+    const auto save = [&] { std::ofstream(config) << cfg.dump(2); };
+    const auto counter = [&](const std::string& name) {
+        return nlohmann::json::parse(readTextFile(profile))["counters"].value(name, 0);
+    };
+    save();
+    REQUIRE(cached.run(config.string()).front().converged);
+    REQUIRE(counter("dc.prepared_inputs.misses") == 1);
+    cfg["sweep"].update({{"start", 0.1}, {"stop", 0.1}});
+    save();
+    const auto reused = cached.run(config.string());
+    REQUIRE(counter("dc.prepared_inputs.hits") == 1);
+    const auto fresh = DCSweep().run(config.string());
+    REQUIRE(reused.size() == fresh.size());
+    REQUIRE(reused.front().converged);
+    REQUIRE(reused.front().totalCurrent == fresh.front().totalCurrent);
+    REQUIRE(reused.front().iterations == fresh.front().iterations);
+
+    // Same name, length and timestamp cannot disguise changed mesh bytes.
+    const auto original = readTextFile(mesh);
+    const auto modifiedTime = std::filesystem::last_write_time(mesh);
+    std::string invalid = original;
+    invalid[0] = '[';
+    std::ofstream(mesh) << invalid;
+    std::filesystem::last_write_time(mesh, modifiedTime);
+    REQUIRE_THROWS(cached.run(config.string()));
+    std::ofstream(mesh) << original;
+    std::filesystem::last_write_time(mesh, modifiedTime);
+    REQUIRE(cached.run(config.string()).front().totalCurrent == fresh.front().totalCurrent);
+    REQUIRE(counter("dc.prepared_inputs.hits") == 1);
+    cfg["doping"][0]["donors"] = 2.0e23;
+    save();
+    const auto changed = cached.run(config.string());
+    REQUIRE(counter("dc.prepared_inputs.misses") == 1);
+    REQUIRE(changed.front().totalCurrent == DCSweep().run(config.string()).front().totalCurrent);
+}
+
 TEST_CASE("DCSweep: default runtime log file is generated", "[dc_sweep][runtime_log]")
 {
     const std::filesystem::path dir = makeUniqueSweepDir();

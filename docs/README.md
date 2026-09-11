@@ -26,6 +26,9 @@ evidence.
 - [LDMOS performance summary, 2026-09-11](validation/templates_ldmos_stage4_performance_summary_2026-09-11.md):
   implemented optimizations, Release verification, and the validated Vg=8 V
   linked-continuation experiment with its reproduction limits.
+- [LDMOS current validation](validation/templates_ldmos_current_status.md):
+  current qualification boundaries, configuration profiles and reproducible
+  linked D4/D5 entry points.
 
 Optional feature switches used by this repository:
 

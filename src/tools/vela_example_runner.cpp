@@ -35,7 +35,8 @@ namespace {
 void usage(const char* argv0)
 {
     std::cerr << "Usage: " << argv0
-              << " --config <simulation.json> [--mesh-report] [--log <auto|off|path>] [--log-profile <minimal|default|debug>]\n";
+              << " --config <simulation.json> [--mesh-report] [--log <auto|off|path>] [--log-profile <minimal|default|debug>]\n"
+              << "       " << argv0 << " --dc-worker  (sequential JSON-lines requests on stdin)\n";
 }
 
 struct RuntimeLogOverrideGuard {
@@ -3240,8 +3241,50 @@ nlohmann::json runNewtonJacobianBlockProbe(const std::string& configFile,
 
 } // namespace
 
+// One response per request; numerical rejection is a request failure, not an
+// instruction to exit. A later request must still load its explicit seed.
+int runDCWorker()
+{
+    vela::DCSweep sweep(true);
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        nlohmann::json response = {{"returncode", 1}};
+        std::ostringstream captured;
+        auto* previous = std::cout.rdbuf(captured.rdbuf());
+        try {
+            const auto request = nlohmann::json::parse(line);
+            if (request.value("shutdown", false)) {
+                std::cout.rdbuf(previous);
+                return 0;
+            }
+            response["id"] = request.at("id");
+            const auto path = request.at("config").get<std::string>();
+            std::ifstream input(path);
+            if (!input) throw std::runtime_error("Cannot open worker config: " + path);
+            auto cfg = vela::canonicalizeDeck(nlohmann::json::parse(input));
+            if (cfg.value("simulation_type", std::string("dc_sweep")) != "dc_sweep")
+                throw std::invalid_argument("--dc-worker accepts only dc_sweep configs");
+            const auto result = sweep.runWithResult(path);
+            const bool converged = !result.points.empty() && std::all_of(
+                result.points.begin(), result.points.end(),
+                [](const auto& point) { return point.converged; });
+            response.update({{"config", path}, {"converged", converged},
+                             {"points", result.points.size()},
+                             {"returncode", converged ? 0 : 1}});
+        } catch (const std::exception& error) {
+            response["error"] = error.what();
+        }
+        std::cout.rdbuf(previous);
+        response["stdout"] = captured.str();
+        std::cout << response.dump() << std::endl;
+    }
+    return std::cin.bad() ? 1 : 0;
+}
+
 int main(int argc, char** argv)
 {
+    if (argc == 2 && std::string(argv[1]) == "--dc-worker")
+        return runDCWorker();
     std::string configFile;
     bool includeMeshReport = false;
     vela::RuntimeLogCliOverrides logOverrides;

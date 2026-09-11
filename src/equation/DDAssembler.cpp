@@ -335,6 +335,13 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
     const VectorXd phinForMobility =
         electronQuasiFermiFromDensity(
             psiForMobility, n_old, ni_, Nc_, Vt_, scaling_, carrierStatistics_);
+    if (mobilityConfig_.model == "ialmob") {
+        const VectorXd phipForMobility = holeQuasiFermiFromDensity(
+            psiForMobility,p_old,ni_,Nv_,Vt_,scaling_,carrierStatistics_);
+        const Real densityScale=scaling_.enabled?scaling_.C0:1.;
+        updateIalTransportState(mobilityConfig_,mesh_,doping_,psiForMobility,
+            n_old*densityScale,p_old*densityScale,phinForMobility,phipForMobility);
+    }
     const bool qfMobility = mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
     const Real fieldFactor = scaling_.enabled ? scaling_.fieldFromCoordinateDeltaFactor : 1.0;
     const bool vectorQfMobility = qfMobility &&
@@ -568,6 +575,13 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
     const VectorXd phipForMobility =
         holeQuasiFermiFromDensity(
             psiForMobility, p_old, ni_, Nv_, Vt_, scaling_, carrierStatistics_);
+    if (mobilityConfig_.model == "ialmob") {
+        const VectorXd phinForMobility = electronQuasiFermiFromDensity(
+            psiForMobility,n_old,ni_,Nc_,Vt_,scaling_,carrierStatistics_);
+        const Real densityScale=scaling_.enabled?scaling_.C0:1.;
+        updateIalTransportState(mobilityConfig_,mesh_,doping_,psiForMobility,
+            n_old*densityScale,p_old*densityScale,phinForMobility,phipForMobility);
+    }
     const bool qfMobility = mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
     const Real fieldFactor = scaling_.enabled ? scaling_.fieldFromCoordinateDeltaFactor : 1.0;
     const bool vectorQfMobility = qfMobility &&

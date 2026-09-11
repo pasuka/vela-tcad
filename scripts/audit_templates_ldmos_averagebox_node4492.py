@@ -67,11 +67,27 @@ def edge_key(a: int, b: int) -> tuple[int, int]:
     return (a, b) if a < b else (b, a)
 
 
+def measure_in_tdr_vertex_order(values: list[float]) -> list[float]:
+    """Map this LDMOS T-2022.03 debug profile to exported triangle vertices.
+
+    Measure local slots correspond to [v0, v2, v1], independently of the
+    Coefficients edge slots. Qualified against asymmetric acute triangles and
+    native element mobility in the 2026-09-11 IALMob support audit. This is a
+    profile-specific mapping, not a convention for arbitrary debug formats.
+    """
+    if len(values) != 3 or not all(math.isfinite(v) and v >= 0 for v in values):
+        raise ValueError("expected three finite nonnegative triangle measures")
+    if sum(values) <= 0:
+        raise ValueError("triangle measure sum must be positive")
+    return [values[0], values[2], values[1]]
+
+
 def coefficient_edge(nodes: list[int], coefficient_index: int) -> tuple[int, int, int]:
     """Return (edge node 0, edge node 1, opposite local vertex).
 
     MeasureCoefficients.debug follows the TDR triangle-edge ordering, not the
-    local-vertex ordering used by Measure.  For a triangle [v0, v1, v2], its
+    local slots used by Measure (see measure_in_tdr_vertex_order). For a
+    triangle [v0, v1, v2], its
     three coefficient entries correspond to edges [v2-v0, v1-v2, v0-v1].
     The mapping is independently qualified below by comparing ordinary acute
     cells against their analytic cotangent coefficients.
@@ -258,7 +274,8 @@ def audit(
             for i in range(3)
         ]
         target_local = nodes.index(target)
-        target_measure_um2 += measures[cell][target_local]
+        vertex_measures = measure_in_tdr_vertex_order(measures[cell])
+        target_measure_um2 += vertex_measures[target_local]
         for coefficient_index in range(3):
             a, b, opposite = coefficient_edge(nodes, coefficient_index)
             key = edge_key(a, b)
@@ -278,7 +295,7 @@ def audit(
                 "edge_node1": b,
                 "edge_incident_to_target": target in key,
                 "maximum_angle_deg": max(angles),
-                "target_local_measure_um2": measures[cell][target_local],
+                "target_local_measure_um2": vertex_measures[target_local],
                 "averagebox_coefficient": coefficients[cell][coefficient_index],
                 "averagebox_local_couple_um": sent_local,
                 "vela_local_couple_um": vela_local,

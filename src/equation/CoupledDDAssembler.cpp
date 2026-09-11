@@ -74,7 +74,7 @@ bool transportMobilityDependsOnPotentials(const MobilityModelConfig& config)
         return false;
     if (config.contactElectricFieldFallback)
         return true;
-    return config.model == "constant_field" ||
+    return config.model == "ialmob" || config.model == "constant_field" ||
            config.model == "caughey_thomas_field" ||
            config.model == "masetti_field" ||
            config.model == "caughey_thomas_field_surface" ||
@@ -409,7 +409,7 @@ CoupledDDAssembler::CoupledDDAssembler(
 void CoupledDDAssembler::buildEdgeAssemblyKernels()
 {
     edgeAssemblyKernels_.resize(mesh_.numEdges());
-    const bool cacheMobility = !surfaceMobilityEnabled_;
+    const bool cacheMobility = !surfaceMobilityEnabled_ && mobilityConfig_.model != "ialmob";
     for (Index edgeId = 0; edgeId < mesh_.numEdges(); ++edgeId) {
         EdgeAssemblyKernel& kernel = edgeAssemblyKernels_[edgeId];
         for (auto& sensitivity : kernel.vectorGradientSensitivities)
@@ -562,12 +562,33 @@ void CoupledDDAssembler::buildNodalCurrentReconstructionKernels()
     }
 }
 
+void CoupledDDAssembler::refreshIalMobility(const VectorXd& x) const
+{
+    if (mobilityConfig_.model != "ialmob") return;
+    if (std::abs(Vt_*constants::q/constants::kb-300.)>1e-10 ||
+        electronQuantumPotentialConfig_.enabled || impactIonizationEnabled_)
+        throw std::invalid_argument("IALMob first coupled profile requires 300 K, quantum and avalanche off");
+    const int N=mesh_.numNodes();const Real scale=scaling_.enabled?scaling_.V0:1.;
+    const VectorXd psi=x.segment(psiOffset(),N)*scale;
+    VectorXd qn=x.segment(phinOffset(),N)*scale,qp=x.segment(phipOffset(),N)*scale;
+    VectorXd dn=VectorXd::Zero(N),dp=VectorXd::Zero(N);
+    for (int i=0;i<N;++i) {
+        dn[i]=electronDensityDerivativeEtaAt(i,psi[i]-electronQuasiFermiReferenceAt(i),qn[i])/Vt_;
+        dp[i]=holeDensityDerivativeEta(ni_[i],Nv_[i],psi[i]-holeQuasiFermiReferenceAt(i),qp[i],Vt_,carrierStatisticsModel_)/Vt_;
+        qn[i]=referencedValueRelativeTo(electronQuasiFermiReferenceAt(i),qn[i],0.);
+        qp[i]=referencedValueRelativeTo(holeQuasiFermiReferenceAt(i),qp[i],0.);
+    }
+    updateIalTransportState(mobilityConfig_,mesh_,doping_,psi,electronDensity(x),holeDensity(x),qn,qp,dn,dp);
+}
+
 Real CoupledDDAssembler::cachedEdgeMobility(
     Index edgeId,
     CarrierType carrier,
     Real drivingField,
     const VectorXd* psi) const
 {
+    if (mobilityConfig_.model == "ialmob")
+        return ialEdgeMobility(mobilityConfig_,edgeId,carrier);
     if (surfaceMobilityEnabled_) {
         return detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, edgeId,
@@ -1188,6 +1209,7 @@ bool CoupledDDAssembler::hasPositiveFiniteCarriers(const VectorXd& x) const
 {
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
+    refreshIalMobility(x);
     for (int i = 0; i < n.size(); ++i) {
         if (!std::isfinite(n(i)) || !std::isfinite(p(i)))
             return false;
@@ -1267,6 +1289,7 @@ CoupledDDAssembler::poissonTermDiagnostics(
 
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
+    refreshIalMobility(x);
     const Real chargeAreaFactor =
         scaling_.enabled ? scaling_.chargeAreaFactor : 1.0;
     for (Index node = 0; node < Nidx; ++node) {
@@ -1350,6 +1373,9 @@ VectorXd CoupledDDAssembler::residualImpl(
     const CoupledDDBoundaryConditions& bcs,
     const CoupledDDFeedbackStateSubstitution* substitution) const
 {
+    if (mobilityConfig_.model == "ialmob" && substitution != nullptr)
+        throw std::invalid_argument("IALMob feedback-substitution diagnostics are not qualified");
+
     ScopedPerformanceTimer timer("dd.residual");
     incrementPerformanceCounter("dd.residual_calls");
     const Index Nidx = mesh_.numNodes();
@@ -1379,6 +1405,7 @@ VectorXd CoupledDDAssembler::residualImpl(
     // n and p are needed for Poisson source and configured recombination.
     VectorXd n = electronDensity(x);
     VectorXd p = holeDensity(x);
+    refreshIalMobility(x);
     const auto validateSubstitutionVector = [N](
         const VectorXd& values,
         const char* name,
@@ -2022,6 +2049,9 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
     const CoupledDDFeedbackStateSubstitution* substitution,
     bool includeImpactIonization) const
 {
+    if (mobilityConfig_.model == "ialmob" && substitution != nullptr)
+        throw std::invalid_argument("IALMob feedback-substitution diagnostics are not qualified");
+
     ScopedPerformanceTimer timer("dd.continuity_diagnostics");
     incrementPerformanceCounter("dd.continuity_diagnostics_calls");
     const Index Nidx = mesh_.numNodes();
@@ -2036,6 +2066,7 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
 
     VectorXd n = electronDensity(x);
     VectorXd p = holeDensity(x);
+    refreshIalMobility(x);
     const auto validateSubstitutionVector = [N](
         const VectorXd& values,
         const char* name,
@@ -2475,6 +2506,7 @@ CoupledDDAssembler::sgEdgeFluxDiagnostics(
     const VectorXd psi = x.segment(psiOffset(), N) * potentialScale;
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
+    refreshIalMobility(x);
 
     const bool qfMobility = qfMobilityEnabled_;
     const bool vectorQfMobility = vectorQfMobilityEnabled_;
@@ -3294,6 +3326,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
     const VectorXd n = electronDensity(x);
     const VectorXd p = holeDensity(x);
+    refreshIalMobility(x);
     const Real potentialScale = scaling_.enabled ? scaling_.V0 : 1.0;
     const Real fieldFactor = scaling_.enabled ? scaling_.fieldFromCoordinateDeltaFactor : 1.0;
     const VectorXd psi = x.segment(psiOffset(), N) * potentialScale;
@@ -3488,7 +3521,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     }
 
     const std::uint64_t boundarySignature = booleanMaskHash(constrainedRows);
-    const bool includeCellStencil = elementQfCurrent || sgCurrentAvalanche ||
+    const bool includeCellStencil = mobilityConfig_.model == "ialmob" || elementQfCurrent || sgCurrentAvalanche ||
         recombination_.bandToBandEnabled();
     if (!hasFixedJacobianPattern_ ||
         boundarySignature != fixedJacobianBoundarySignature_ ||
@@ -4764,6 +4797,24 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         }
     };
 
+    const auto addIalFeedback = [&](Index edgeId,CarrierType carrier,Real mu,Real flux,int offset) {
+        if (mobilityConfig_.model != "ialmob" || !transportMobilityDerivative || mu<=0.) return;
+        const auto& geometry=*mobilityConfig_.ialmobGeometry;
+        const auto& state=*mobilityConfig_.ialmobState;
+        const auto& edge=mesh_.getEdge(edgeId);
+        for (const auto& contribution:geometry.edges[edgeId]) {
+            const auto& support=geometry.cells[contribution.support];
+            const auto& cell=mesh_.getCell(support.cellId);
+            const auto& r=state.cells[contribution.support];
+            const auto& derivatives=carrier==CarrierType::Electron?r.electron.derivative:r.hole.derivative;
+            for (int k=0;k<9;++k) {
+                const int col=(k%3==0?psiOffset():k%3==1?phinOffset():phipOffset())+cell.node_ids[k/3];
+                const Real d=flux/mu*contribution.weight*derivatives[k];
+                add(offset+edge.n0,col,d);add(offset+edge.n1,col,-d);
+            }
+        }
+    };
+
     {
         ScopedPerformanceTimer edgePhysicsTimer("jacobian.edge_physics");
         for (Index e = 0; e < mesh_.numEdges(); ++e) {
@@ -4798,13 +4849,13 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             vectorQfMobility ? holeVectorMobilityFields[e]
                              : std::abs((phip_j_from_i - phip_i) / h) * fieldFactor,
             electricField, contactElectricMobilityFields);
-        const bool contactMobilityFallbackActive = transportMobilityDerivative &&
+        const bool contactMobilityFallbackActive = mobilityConfig_.model != "ialmob" && transportMobilityDerivative &&
             mobilityConfig_.contactElectricFieldFallback && qfMobility &&
             edgeKernel.touchesTransportContact;
         const bool analyticQfMobilityFeedback =
-            transportMobilityDerivative && qfMobility && !vectorQfMobility &&
+            mobilityConfig_.model != "ialmob" && transportMobilityDerivative && qfMobility && !vectorQfMobility &&
             !surfaceMobilityEnabled_ && !contactMobilityFallbackActive;
-        const bool vectorQfMobilityFeedback = transportMobilityDerivative &&
+        const bool vectorQfMobilityFeedback = mobilityConfig_.model != "ialmob" && transportMobilityDerivative &&
             highFieldMobilityEnabled_ && vectorQfMobility &&
             !contactMobilityFallbackActive;
         const Real u = dpsi / Vt_;
@@ -4822,6 +4873,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real mun = elementQfCurrent ? 0.0 : cachedEdgeMobility(
             e, CarrierType::Electron, electronMobilityField, &psi);
         if (mun > 0.0) {
+            addIalFeedback(e,CarrierType::Electron,mun,edgeElectronTransportFlux(
+                e,i,j,h,psi_i,psi_j,phin_i,phin_j,mun,noPerturbedNode,0.),phinOffset());
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
 
@@ -4839,7 +4892,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     phinOffset() + i, phinOffset() + j,
                 };
                 const Real fixedMobility =
-                    analyticQfMobilityFeedback || !transportMobilityDerivative ||
+                    mobilityConfig_.model == "ialmob" || analyticQfMobilityFeedback || !transportMobilityDerivative ||
                         (vectorQfMobility &&
                          (!mobilityConfig_.contactElectricFieldFallback ||
                           (!surfaceMobilityEnabled_ && !contactMobilityFallbackActive)))
@@ -4938,6 +4991,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         const Real mup = elementQfCurrent ? 0.0 : cachedEdgeMobility(
             e, CarrierType::Hole, holeMobilityField, &psi);
         if (mup > 0.0) {
+            addIalFeedback(e,CarrierType::Hole,mup,edgeHoleTransportFlux(
+                e,i,j,h,psi_i,psi_j,phip_i,phip_j,mup,noPerturbedNode,0.),phipOffset());
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
 
@@ -4955,7 +5010,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     phipOffset() + i, phipOffset() + j,
                 };
                 const Real fixedMobility =
-                    analyticQfMobilityFeedback || !transportMobilityDerivative ||
+                    mobilityConfig_.model == "ialmob" || analyticQfMobilityFeedback || !transportMobilityDerivative ||
                         (vectorQfMobility &&
                          (!mobilityConfig_.contactElectricFieldFallback ||
                           (!surfaceMobilityEnabled_ && !contactMobilityFallbackActive)))

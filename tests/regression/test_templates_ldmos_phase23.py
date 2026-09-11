@@ -246,6 +246,10 @@ class Phase23DeckTest(unittest.TestCase):
 
     def test_classical_solver_materializes_units_and_physics_layer(self) -> None:
         solver = classical_solver(physics_contract(), high_field=True)
+        # Normalize before comparison: absolute decimal-place assertions on
+        # tiny coefficients would also accept zero or an SI/cm unit mismatch.
+        self.assertAlmostEqual(solver["auger_cn_m6_per_s"] / 1e-31, 2.9)
+        self.assertAlmostEqual(solver["auger_cp_m6_per_s"] / 1e-31, 1.028)
         self.assertEqual(solver["mobility"]["model"], "constant_field")
         self.assertAlmostEqual(
             solver["mobility"]["electron_saturation_velocity_m_s"], 1.07e7)

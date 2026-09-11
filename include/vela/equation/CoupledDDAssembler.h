@@ -485,6 +485,7 @@ private:
     const MaterialDatabase& matdb_;
     const DopingModel& doping_;
     double Vt_;
+    void refreshIalMobility(const VectorXd& x) const;
     mutable MobilityModelConfig mobilityConfig_;
     std::unique_ptr<MobilityModel> mobility_;
     RecombinationModelConfig recombinationConfig_;

@@ -1,4 +1,5 @@
 #include "vela/physics/MobilityModel.h"
+#include "vela/equation/IalTransport.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cmath>
@@ -527,6 +528,14 @@ MobilityModelConfig mobilityModelConfigFromJson(
                 surface.at("interface").get<std::vector<std::string>>();
     }
 
+    if (config.model == "ialmob") {
+        if (config.carrierCurrentDiscretization != "scharfetter_gummel_edge" ||
+            config.highFieldDrivingForce != "quasi_fermi_gradient")
+            throw std::invalid_argument("IALMob requires SG edge transport and QF high-field drive");
+        config.ialmob = ialTransportOptionsFromJson(value.at("ialmob"));
+    } else if (value.contains("ialmob")) {
+        throw std::invalid_argument("ialmob block requires model=ialmob");
+    }
     return config;
 }
 
@@ -563,8 +572,24 @@ bool surfaceMobilityAppliesToRegionPair(const MobilityModelConfig& config,
            adjacentRegionNames.end();
 }
 
+namespace {
+class IalCellOnlyMobility final : public MobilityModel {
+public:
+    Real electronMobility(const Material&,Real,Real,Real,Real,Real,Real) const override {
+        throw std::logic_error("IALMob requires the live element transport interface");
+    }
+    Real holeMobility(const Material&,Real,Real,Real,Real,Real,Real) const override {
+        throw std::logic_error("IALMob requires the live element transport interface");
+    }
+};
+}
+
 std::unique_ptr<MobilityModel> makeMobilityModel(const MobilityModelConfig& config)
 {
+    if (config.model == "ialmob") {
+        if (!config.ialmob) throw std::invalid_argument("IALMob requires an explicit configuration block");
+        return std::make_unique<IalCellOnlyMobility>();
+    }
     if (config.model == "constant")
         return std::make_unique<ConstantMobility>();
     if (config.model == "constant_field" ||

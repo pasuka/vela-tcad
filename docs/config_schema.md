@@ -1229,6 +1229,42 @@ Prototype note:
 
 ### mobility
 
+The experimental object model `"ialmob"` requires
+`carrier_current_discretization: "scharfetter_gummel_edge"` and
+`high_field_driving_force: "quasi_fermi_gradient"`. Its additional `ialmob`
+object contains:
+
+- `geometry_file`: an absolute path to `vela.ialmob.transport_geometry.v1` JSON.
+  The header records `node_count` and `cell_count`; every Si cell supplies
+  `cell_id`, mesh-order `node_ids`, `vertex_measure_m2` in m2 and nonnegative
+  dimensionless `edge_coefficients` in `(v0,v1),(v1,v2),(v2,v0)` order.
+  The summed coefficients must reproduce the active transport coupling.
+- `effective_electrodes`: explicit mesh contact names whose adjacent cells use
+  electric-field fallback. All contact edges are excluded from ordinary
+  exterior boundary projection, including contacts absent from this list.
+- `crystal_x`, `crystal_y`: three-component crystal directions corresponding to
+  the two mesh coordinate axes.
+- `electron_parameters_cm`, `hole_parameters_cm`: objects keyed by orientation
+  family (`"100"`, `"110"`, `"111"`). Fields use the native centimeter-based
+  IALMob parameter convention in both scaling modes. Every family encountered
+  by the mesh must have parameters; unknown parameter fields are rejected.
+- `high_field`: default `true`; `reference_density_m3`: SI m^-3, default `1e18`,
+  in both scaling modes. Outer electron/hole field parameters retain the normal
+  active-unit interpretation.
+
+The live coupled path supports 300 K, Si/SiO2 Tri3 geometry, Fermi or Boltzmann
+carrier statistics, without quantum potential or avalanche. Material interfaces
+take precedence over ordinary exterior faces at interface terminations;
+multiple nonparallel interfaces of equal priority are rejected. Distance,
+orientation, unnormalized distance gradient, vertex HFS and Measure averaging
+are evaluated on the live state. `jacobian_field_derivatives` controls the full
+cell mobility feedback; qualification uses `true`. Residuals, SG terminal
+currents and density recovery share this transport interface. External geometry
+weights are evidence dependencies, not regenerated reference solution values.
+This is an explicit experimental profile; consult
+[current LDMOS validation](validation/templates_ldmos_current_status.md) before
+claiming D4 curve qualification.
+
 `solver.mobility` accepts either the legacy string form or an object. String decks remain compatible:
 
 ```json
@@ -1290,8 +1326,9 @@ field-derivative path even when contact fallback is disabled.
 Supported `model` values are `constant`, `constant_field`, `caughey_thomas`,
 `caughey_thomas_field`, `caughey_thomas_surface`,
 `caughey_thomas_field_surface`, `masetti`, `masetti_field`,
-`masetti_surface`, and `masetti_field_surface`.
-For field-saturation models, `high_field_driving_force` is `electric_field`
+`masetti_surface`, `masetti_field_surface`, and the explicit experimental
+`ialmob` object described above.
+For bulk/prototype field-saturation models, `high_field_driving_force` is `electric_field`
 by default and may be set to `quasi_fermi_gradient` to match Sentaurus
 `HighFieldSaturation`; electrons use `|grad(phin)|` and holes use
 `|grad(phip)|`.

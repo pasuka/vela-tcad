@@ -1,4 +1,5 @@
 #pragma once
+#include "vela/equation/IalTransport.h"
 
 /**
  * @file AssemblerUtils.h
@@ -1203,6 +1204,8 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          const MobilityModelConfig*              mobilityConfig = nullptr,
                          const VectorXd*                         psi = nullptr)
 {
+    if (mobilityConfig != nullptr && mobilityConfig->model == "ialmob")
+        return ialEdgeMobility(*mobilityConfig,edgeId,carrier,psi==nullptr);
     const auto& cells = edgeCells[edgeId];
     if (cells.empty()) return 0.0;
 

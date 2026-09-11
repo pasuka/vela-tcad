@@ -1,0 +1,24 @@
+{
+  "schema": "vela.templates_ldmos.linked_d5_inputs.v1",
+  "template": "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d5_config.json",
+  "seeds": {
+    "4": "reference_staging/templates_ldmos_shortstep_20260907/zero_closed_psi/state.csv",
+    "8": "reference_staging/templates_ldmos_vg8_20260907/continuation_r2/initial/state.csv"
+  },
+  "references": {
+    "4": "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg1_n4_des_drain_curve.csv",
+    "8": "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg2_n4_des_drain_curve.csv"
+  },
+  "files": {
+    "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d5_config.json": "f81b40a38d2bfd7d0265a2185ae25a32c372999733668e8712763f274f2a6232",
+    "reference_tcad/templates_ldmos_sentaurus2022/contracts/materials.json": "327b02852d565e3c04e89b727e8de754a40204b2a836d4d5e71865c11b0eea2e",
+    "reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/stage1_v4/vela_exact_topology/mesh.json": "36f79a06a21550d69fb58ad221457b1c1ccc63fa3a929046ef6b90e185f09ff6",
+    "reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/stage1_v4/vela_exact_topology/doping.csv": "b9924f72bf36386d031e7a168adbc997d9f076db1662b7b8c1e3416ad68acb39",
+    "reference_staging/templates_ldmos_averagebox_full_mesh_20260831/transport_couples.csv": "758161f73f570511ccd914628451ebcad58b5f8e58dd6b6351f00669e18b36cb",
+    "reference_staging/templates_ldmos_shortstep_20260907/zero_closed_psi/state.csv": "edc93d5ebe8c6b42eeb1bab215bafdf1669e937af70b8fcefe38923e6c1f541e",
+    "reference_staging/templates_ldmos_vg8_20260907/continuation_r2/initial/state.csv": "d1e48ccd2e089bbe4ef3fa8d3d6a25c904b003d104012c76d848484efc906ccf",
+    "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg1_n4_des_drain_curve.csv": "3c9266b2616e2e779b853cee7bd94a0ee13478015d727c5bc2306ed8e152cb6a",
+    "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg2_n4_des_drain_curve.csv": "9545a194974f5f66205350df8585ca306fed87e9b8bcf15cfd7511a38e095d16"
+  },
+  "note": "External mesh, doping, couples, qualified seeds and reference CSVs must be retained separately; no historical Python scripts are required. Hashes are byte-level."
+}
