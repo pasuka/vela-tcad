@@ -753,8 +753,11 @@ void CoupledDDAssembler::rebuildFixedJacobianPattern(
         }
     }
 
-    fixedJacobianAvalancheScatter_.assign(mesh_.numEdges(), {});
-    for (Index edgeId = 0; edgeId < mesh_.numEdges(); ++edgeId) {
+    // Only source assembly consumes this table. Vector-QF mobility still needs
+    // the separate edge stencil and gradient sensitivities with avalanche off.
+    fixedJacobianAvalancheScatter_.assign(
+        impactIonizationCoupled_ ? mesh_.numEdges() : 0, {});
+    for (Index edgeId = 0; edgeId < fixedJacobianAvalancheScatter_.size(); ++edgeId) {
         auto& scatter = fixedJacobianAvalancheScatter_[edgeId];
         scatter.fill(invalidJacobianOffset);
         const EdgeAssemblyKernel& edge = edgeAssemblyKernels_[edgeId];
@@ -800,8 +803,9 @@ void CoupledDDAssembler::rebuildFixedJacobianPattern(
                         colBlock * nodeCount + i);
     }
 
-    fixedJacobianCellScatter_.assign(mesh_.numCells(), {});
-    for (Index cellId = 0; cellId < mesh_.numCells(); ++cellId) {
+    fixedJacobianCellScatter_.assign(
+        includeCellStencil ? mesh_.numCells() : 0, {});
+    for (Index cellId = 0; cellId < fixedJacobianCellScatter_.size(); ++cellId) {
         auto& scatter = fixedJacobianCellScatter_[cellId];
         scatter.fill(invalidJacobianOffset);
         const Cell& cell = mesh_.getCell(cellId);
@@ -894,6 +898,7 @@ void CoupledDDAssembler::setQuasiFermiReferences(
     holeQfReference_V_ = holeReference_V;
     electronQfReferenceField_V_.resize(0);
     holeQfReferenceField_V_.resize(0);
+    hasCachedActiveBranchFingerprint_ = false;
 }
 
 void CoupledDDAssembler::setQuasiFermiReferenceFields(
@@ -916,6 +921,7 @@ void CoupledDDAssembler::setQuasiFermiReferenceFields(
     holeQfReferenceField_V_ = holeReference_V;
     electronQfReference_V_ = N > 0 ? electronReference_V(0) : 0.0;
     holeQfReference_V_ = N > 0 ? holeReference_V(0) : 0.0;
+    hasCachedActiveBranchFingerprint_ = false;
 }
 
 Real CoupledDDAssembler::electronQuasiFermiReferenceAt(Index node) const
@@ -924,6 +930,34 @@ Real CoupledDDAssembler::electronQuasiFermiReferenceAt(Index node) const
             static_cast<int>(mesh_.numNodes())
         ? electronQfReferenceField_V_(static_cast<int>(node))
         : electronQfReference_V_;
+}
+
+void CoupledDDAssembler::recenterQuasiFermiState(VectorXd& state)
+{
+    const int N = static_cast<int>(mesh_.numNodes());
+    if (state.size() != 3 * N || !state.allFinite())
+        throw std::invalid_argument("recenterQuasiFermiState: invalid state.");
+    VectorXd electron = electronQuasiFermiReferenceField();
+    VectorXd hole = holeQuasiFermiReferenceField();
+    VectorXd next = state;
+    const Real scale = scaling_.enabled ? scaling_.V0 : 1.0;
+    for (int block = 1; block <= 2; ++block) {
+        VectorXd& reference = block == 1 ? electron : hole;
+        for (int i = 0; i < N; ++i) {
+            const Real a = reference(i);
+            const Real b = state(block * N + i) * scale;
+            // General TwoSum, including when |increment| exceeds |reference|.
+            const Real sum = a + b;
+            const Real z = sum - a;
+            const Real low = (a - (sum - z)) + (b - z);
+            reference(i) = sum;
+            next(block * N + i) = low / scale;
+        }
+    }
+    if (!next.allFinite() || !electron.allFinite() || !hole.allFinite())
+        throw std::invalid_argument("recenterQuasiFermiState: nonfinite repartition.");
+    setQuasiFermiReferenceFields(electron, hole);
+    state = std::move(next);
 }
 
 Real CoupledDDAssembler::holeQuasiFermiReferenceAt(Index node) const
@@ -1066,16 +1100,24 @@ Real CoupledDDAssembler::nodeRecombinationRate(
     Real electronTransportDensity,
     Real electronSrhDensity,
     Real holeDensity,
-    Real quasiFermiSplitting_V) const
+    Real quasiFermiSplitting_V,
+    const GeneralizedSrhCarrierState* srhState,
+    const GeneralizedSrhCarrierState* augerState) const
 {
     const Real ni = ni_[node];
     const Real dopingConcentration = recombination_.srhDopingConcentration(
         doping_.donors(node), doping_.acceptors(node));
+    GeneralizedSrhCarrierState computedSrh;
+    GeneralizedSrhCarrierState computedAuger;
     Real rate = 0.0;
     if (recombination_.srhEnabled()) {
-        const GeneralizedSrhCarrierState state = generalizedSrhCarrierState(
-            electronSrhDensity, holeDensity, ni, Nc_[node], Nv_[node],
-            quasiFermiSplitting_V, Vt_, carrierStatisticsModel_);
+        if (srhState == nullptr) {
+            computedSrh = generalizedSrhCarrierState(
+                electronSrhDensity, holeDensity, ni, Nc_[node], Nv_[node],
+                quasiFermiSplitting_V, Vt_, carrierStatisticsModel_);
+            srhState = &computedSrh;
+        }
+        const GeneralizedSrhCarrierState& state = *srhState;
         rate += recombination_.srhRateGeneralizedFromExcessProduct(
             state.excessProduct, electronSrhDensity, holeDensity, ni, ni,
             state.electronDegeneracy, state.holeDegeneracy,
@@ -1086,9 +1128,21 @@ Real CoupledDDAssembler::nodeRecombinationRate(
             rate += recombination_.augerRate(
                 electronTransportDensity, holeDensity, ni);
         } else {
-            const GeneralizedSrhCarrierState state = generalizedSrhCarrierState(
-                electronTransportDensity, holeDensity, ni, Nc_[node], Nv_[node],
-                quasiFermiSplitting_V, Vt_, carrierStatisticsModel_);
+            if (augerState == nullptr) {
+                // The other inputs are identical within this node evaluation.
+                // Keep distinct SRH/transport densities for quantum coupling.
+                if (srhState != nullptr &&
+                    std::bit_cast<std::uint64_t>(electronTransportDensity) ==
+                        std::bit_cast<std::uint64_t>(electronSrhDensity)) {
+                    augerState = srhState;
+                } else {
+                    computedAuger = generalizedSrhCarrierState(
+                        electronTransportDensity, holeDensity, ni, Nc_[node], Nv_[node],
+                        quasiFermiSplitting_V, Vt_, carrierStatisticsModel_);
+                    augerState = &computedAuger;
+                }
+            }
+            const GeneralizedSrhCarrierState& state = *augerState;
             rate += recombination_.augerRateFromExcessProduct(
                 state.excessProduct, electronTransportDensity, holeDensity);
         }
@@ -1537,6 +1591,7 @@ VectorXd CoupledDDAssembler::residualImpl(
 
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
         const Edge& edge = mesh_.getEdge(e);
+        const EdgeAssemblyKernel& edgeKernel = edgeAssemblyKernels_[e];
         const Real h = edge.length;
         if (h < 1.0e-30) continue;
 
@@ -1578,8 +1633,11 @@ VectorXd CoupledDDAssembler::residualImpl(
                              : std::abs((phip_j - phip_i) / h) * fieldFactor,
             electricField, contactElectricMobilityFields);
 
-        const Real eps = detail::edgeEpsilon(edgeCells, mesh_, matdb_, e);
-        const Real G = eps * poissonCouple[e] / h;
+        // The existing kernel uses a strict length guard. Preserve the generic
+        // residual's inclusive endpoint at exactly 1e-30 coordinate units.
+        const Real G = h > 1.0e-30
+            ? edgeKernel.poissonCoupling
+            : detail::edgeEpsilon(edgeCells, mesh_, matdb_, e) * poissonCouple[e] / h;
         const Real psiFlux = G * (psi_i - psi_j);
         r(psiOffset() + i) += psiFlux;
         r(psiOffset() + j) -= psiFlux;
@@ -1589,11 +1647,8 @@ VectorXd CoupledDDAssembler::residualImpl(
 
         const Real mun = frozenTransportMobility
             ? substitution->electronEdgeMobility(static_cast<int>(e))
-            : detail::edgeMobility(
-            edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
-            electronMobilityField,
-            &mobilityConfig_,
-            &psi);
+            : cachedEdgeMobility(e, CarrierType::Electron,
+                                 electronMobilityField, &psi);
         if (mun > 0.0) {
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
@@ -1610,11 +1665,10 @@ VectorXd CoupledDDAssembler::residualImpl(
             Real nFlux;
             if (usesFermiDirac_) {
                 const Real etaI = (electronPsiRelative_i - phin_i) / Vt_
-                    + std::log(ni_[idxI] / Nc_[idxI]);
+                    + edgeKernel.electronLogNiNc0;
                 const Real etaJ = (electronPsiRelative_j - phin_j) / Vt_
-                    + std::log(ni_[idxJ] / Nc_[idxJ]);
-                const Real driftPotential = electronDpsi + Vt_ * std::log(
-                    (ni_[idxJ] / Nc_[idxJ]) / (ni_[idxI] / Nc_[idxI]));
+                    + edgeKernel.electronLogNiNc1;
+                const Real driftPotential = electronDpsi + edgeKernel.electronDriftOffset;
                 nFlux = sgElectronFermiDiracQuantumContinuityFlux(
                     n(i), n(j),
                     Nc_[idxI] * fermiDiracHalf(etaI),
@@ -1643,11 +1697,8 @@ VectorXd CoupledDDAssembler::residualImpl(
 
         const Real mup = frozenTransportMobility
             ? substitution->holeEdgeMobility(static_cast<int>(e))
-            : detail::edgeMobility(
-            edgeCells, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Hole,
-            holeMobilityField,
-            &mobilityConfig_,
-            &psi);
+            : cachedEdgeMobility(e, CarrierType::Hole,
+                                 holeMobilityField, &psi);
         if (mup > 0.0) {
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
@@ -1659,11 +1710,10 @@ VectorXd CoupledDDAssembler::residualImpl(
             Real pFlux;
             if (usesFermiDirac_) {
                 const Real etaI = (phip_i - holePsiRelative_i) / Vt_
-                    + std::log(ni_[idxI] / Nv_[idxI]);
+                    + edgeKernel.holeLogNiNv0;
                 const Real etaJ = (phip_j - holePsiRelative_j) / Vt_
-                    + std::log(ni_[idxJ] / Nv_[idxJ]);
-                const Real driftPotential = dpsi + Vt_ * std::log(
-                    (ni_[idxI] / Nv_[idxI]) / (ni_[idxJ] / Nv_[idxJ]));
+                    + edgeKernel.holeLogNiNv1;
+                const Real driftPotential = dpsi + edgeKernel.holeDriftOffset;
                 pFlux = sgHoleFermiDiracContinuityFlux(
                     p(i), p(j), etaI, etaJ, driftPotential,
                     phip_i, phip_j, Vt_, coef);
@@ -2134,6 +2184,7 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
 
     for (Index e = 0; e < mesh_.numEdges(); ++e) {
         const Edge& edge = mesh_.getEdge(e);
+        const EdgeAssemblyKernel& edgeKernel = edgeAssemblyKernels_[e];
         const Real h = edge.length;
         if (h < 1.0e-30)
             continue;
@@ -2175,11 +2226,8 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
                              : std::abs((phip_j - phip_i) / h) * fieldFactor,
             electricField, contactElectricMobilityFields);
 
-        const Real mun = detail::edgeMobility(
-            edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Electron,
-            electronMobilityField,
-            &mobilityConfig_,
-            &psi);
+        const Real mun = cachedEdgeMobility(e, CarrierType::Electron,
+                                 electronMobilityField, &psi);
         if (mun > 0.0) {
             hasElectronContribution[static_cast<std::size_t>(i)] = true;
             hasElectronContribution[static_cast<std::size_t>(j)] = true;
@@ -2189,11 +2237,10 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
             const Index idxJ = static_cast<Index>(j);
             if (usesFermiDirac_) {
                 const Real etaI = (electronPsiRelative_i - phin_i) / Vt_
-                    + std::log(ni_[idxI] / Nc_[idxI]);
+                    + edgeKernel.electronLogNiNc0;
                 const Real etaJ = (electronPsiRelative_j - phin_j) / Vt_
-                    + std::log(ni_[idxJ] / Nc_[idxJ]);
-                const Real drift = (electronPsi_j - electronPsi_i) + Vt_ * std::log(
-                    (ni_[idxJ] / Nc_[idxJ]) / (ni_[idxI] / Nc_[idxI]));
+                    + edgeKernel.electronLogNiNc1;
+                const Real drift = (electronPsi_j - electronPsi_i) + edgeKernel.electronDriftOffset;
                 nFlux = sgElectronFermiDiracQuantumContinuityFlux(
                     n(i), n(j),
                     Nc_[idxI] * fermiDiracHalf(etaI),
@@ -2212,11 +2259,8 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
             terms[static_cast<Index>(j)].electronFluxAbsSum += std::abs(nFlux);
         }
 
-        const Real mup = detail::edgeMobility(
-            edgeCells_, mesh_, doping_, *mobility_, cellMaterials_, e, CarrierType::Hole,
-            holeMobilityField,
-            &mobilityConfig_,
-            &psi);
+        const Real mup = cachedEdgeMobility(e, CarrierType::Hole,
+                                 holeMobilityField, &psi);
         if (mup > 0.0) {
             hasHoleContribution[static_cast<std::size_t>(i)] = true;
             hasHoleContribution[static_cast<std::size_t>(j)] = true;
@@ -2226,11 +2270,10 @@ CoupledDDAssembler::carrierContinuityTermDiagnosticsImpl(
             const Index idxJ = static_cast<Index>(j);
             if (usesFermiDirac_) {
                 const Real etaI = (phip_i - holePsiRelative_i) / Vt_
-                    + std::log(ni_[idxI] / Nv_[idxI]);
+                    + edgeKernel.holeLogNiNv0;
                 const Real etaJ = (phip_j - holePsiRelative_j) / Vt_
-                    + std::log(ni_[idxJ] / Nv_[idxJ]);
-                const Real drift = dpsi + Vt_ * std::log(
-                    (ni_[idxI] / Nv_[idxI]) / (ni_[idxJ] / Nv_[idxJ]));
+                    + edgeKernel.holeLogNiNv1;
+                const Real drift = dpsi + edgeKernel.holeDriftOffset;
                 pFlux = sgHoleFermiDiracContinuityFlux(
                     p(i), p(j), etaI, etaJ, drift, phip_i, phip_j, Vt_, coef);
             } else {
@@ -5681,7 +5724,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     nSrh, p(ii), ni, Nc_[i], Nv_[i], dPhi, Vt_,
                     carrierStatisticsModel_);
             const GeneralizedSrhCarrierState augerState =
-                generalizedSrhCarrierState(
+                std::bit_cast<std::uint64_t>(nSrh) ==
+                    std::bit_cast<std::uint64_t>(n(ii))
+                ? srhState : generalizedSrhCarrierState(
                     n(ii), p(ii), ni, Nc_[i], Nv_[i], dPhi, Vt_,
                     carrierStatisticsModel_);
 
@@ -5747,7 +5792,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             const int columns[3] = {
                 psiOffset() + ii, phinOffset() + ii, phipOffset() + ii};
             const Real recombinationRate = nodeRecombinationRate(
-                i, n(ii), nSrh, p(ii), dPhi);
+                i, n(ii), nSrh, p(ii), dPhi, &srhState, &augerState);
             const bool activeCarrierRows =
                 hasElectronContribution[static_cast<std::size_t>(ii)] ||
                 hasHoleContribution[static_cast<std::size_t>(ii)];

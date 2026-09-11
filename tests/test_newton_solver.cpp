@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+#include <catch2/generators/catch_generators.hpp>
 
 #include <Eigen/SparseLU>
 #include <nlohmann/json.hpp>
@@ -17,6 +18,7 @@
 #include "vela/post/ContactCurrent.h"
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
+#include "vela/solver/detail/ContinuityTermCache.h"
 
 #include <algorithm>
 #include <cmath>
@@ -42,6 +44,9 @@ TEST_CASE("Newton JSON parses opt-in initial-state QF recentering",
     REQUIRE(cfg.warmStart);
     REQUIRE(cfg.quasiFermiReference == "contact_basin");
     REQUIRE(cfg.quasiFermiRecenterOnInitialState);
+    CHECK_FALSE(cfg.quasiFermiRecenterOnStall);
+    CHECK(newtonConfigFromJson(nlohmann::json{
+        {"quasi_fermi_recenter_on_stall", true}}).quasiFermiRecenterOnStall);
 }
 
 TEST_CASE("Newton JSON parses Sentaurus electron density-gradient controls",
@@ -2143,6 +2148,67 @@ TEST_CASE("CoupledDDAssembler: Sentaurus-default Fermi SRH source has analytic D
             Catch::Approx(0.0).margin(1.0e-18));
 }
 
+TEST_CASE("CoupledDDAssembler: shared recombination states preserve additive sources and derivatives",
+          "[newton][coupled][recombination_reuse][fermi][jacobian]")
+{
+    const DeviceMesh mesh = makePNMesh();
+    MaterialDatabase materials;
+    const DopingModel doping = makePNDoping(mesh);
+    const int N = static_cast<int>(mesh.numNodes());
+    const CarrierStatisticsConfig statistics{"fermi_dirac"};
+    for (const std::string coupling : {"sentaurus_default", "quantum"}) {
+    for (const std::string excess : {"generalized_fermi", "classical_np"}) {
+    for (const Real quantumShift : {0.0, 0.03}) {
+        CAPTURE(coupling, excess, quantumShift);
+        auto both = recombinationModelConfig({"srh", "auger"}, 1.1e-7, 2.3e-7);
+        both.srhDopingDependence.densityCoupling = coupling;
+        both.augerExcessProduct = excess;
+        // Resolve the source against transport subtraction round-off.
+        both.augerCn = 2.9e-28;
+        both.augerCp = 1.028e-28;
+        auto srh = both;
+        srh.mechanisms = {"srh"};
+        auto auger = both;
+        auger.mechanisms = {"auger"};
+        auto none = both;
+        none.mechanisms = {"none"};
+        DensityGradientQuantumPotentialConfig quantum;
+        quantum.enabled = true;
+        quantum.couplingMode = "frozen";
+        CoupledDDAssembler combined(mesh, materials, doping, constants::Vt_300,
+            {}, both, {}, {}, {}, {}, {}, {}, statistics, quantum);
+        CoupledDDAssembler srhOnly(mesh, materials, doping, constants::Vt_300,
+            {}, srh, {}, {}, {}, {}, {}, {}, statistics, quantum);
+        CoupledDDAssembler augerOnly(mesh, materials, doping, constants::Vt_300,
+            {}, auger, {}, {}, {}, {}, {}, {}, statistics, quantum);
+        CoupledDDAssembler noSources(mesh, materials, doping, constants::Vt_300,
+            {}, none, {}, {}, {}, {}, {}, {}, statistics, quantum);
+        const VectorXd q = VectorXd::Constant(N, quantumShift);
+        for (auto* assembler : {&combined, &srhOnly, &augerOnly, &noSources})
+            assembler->setElectronQuantumPotential(q);
+        CoupledDDState state;
+        state.psi = VectorXd::LinSpaced(N, -0.06, 0.08);
+        state.phin = VectorXd::LinSpaced(N, 0.03, -0.025);
+        state.phip = VectorXd::LinSpaced(N, -0.04, 0.02);
+        const VectorXd x = combined.pack(state);
+        const CoupledDDBoundaryConditions bcs;
+        const VectorXd base = noSources.residual(x, bcs);
+        const VectorXd source = combined.residual(x, bcs) - base;
+        const VectorXd independent = (srhOnly.residual(x, bcs) - base)
+            + (augerOnly.residual(x, bcs) - base);
+        REQUIRE(source.norm() > 0.0);
+        REQUIRE((source-independent).norm()/source.norm() < 1.0e-10);
+        const Eigen::MatrixXd jacobian = Eigen::MatrixXd(
+            combined.assembleJacobian(x, bcs) - noSources.assembleJacobian(x, bcs));
+        const Eigen::MatrixXd finiteDifference = Eigen::MatrixXd(
+            combined.finiteDifferenceJacobian(x, bcs, 1.0e-8)
+            - noSources.finiteDifferenceJacobian(x, bcs, 1.0e-8));
+        REQUIRE((jacobian-finiteDifference).norm()/finiteDifference.norm() < 2.0e-4);
+    }
+    }
+    }
+}
+
 TEST_CASE("CoupledDDAssembler: classical Fermi Auger source has analytic Jacobian",
           "[newton][coupled][auger][fermi][jacobian]")
 {
@@ -2469,10 +2535,18 @@ TEST_CASE("Fermi vector HFS Jacobian follows changing states on bulk and contact
         }
         CoupledDDAssembler fresh(mesh, materials, doping, constants::Vt_300,
             mobility, recombinationModelConfig({"none"}), {}, {}, {}, {}, {}, {}, statistics);
-        const Eigen::MatrixXd analytic = reused.assembleJacobian(x, {});
-        const Eigen::MatrixXd independent = fresh.assembleJacobian(x, {});
+        // Changing constrained rows forces pattern/scatter reconstruction.
+        // Vector-HFS transverse derivatives must survive with avalanche off.
+        CoupledDDBoundaryConditions boundaries;
+        if (state == 1) {
+            boundaries.psi[0] = x(0);
+            boundaries.phin[0] = x(N);
+            boundaries.phip[0] = x(2 * N);
+        }
+        const Eigen::MatrixXd analytic = reused.assembleJacobian(x, boundaries);
+        const Eigen::MatrixXd independent = fresh.assembleJacobian(x, boundaries);
         CHECK((analytic - independent).norm() == 0.0);
-        const Eigen::MatrixXd fd = reused.finiteDifferenceJacobian(x, {}, 1.0e-7);
+        const Eigen::MatrixXd fd = reused.finiteDifferenceJacobian(x, boundaries, 1.0e-7);
         for (int block : {1, 2}) {
             for (int column = 0; column < 3 * N; ++column) {
                 const VectorXd a = analytic.block(block * N, column, N, 1);
@@ -2484,6 +2558,153 @@ TEST_CASE("Fermi vector HFS Jacobian follows changing states on bulk and contact
             }
         }
     }
+}
+
+TEST_CASE("Cached residual edge physics follows independent fluxes as the state changes",
+          "[newton][coupled][residual][edge-cache][fermi]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase materials;
+    DopingModel doping = makePNDoping(mesh);
+    MobilityModelConfig mobility = mobilityModelConfig("masetti_field");
+    mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+    mobility.highFieldGradientDiscretization = "transport_cell_vector";
+    mobility.contactElectricFieldFallback = true;
+    SECTION("cached bulk mobility") {}
+    SECTION("generic surface mobility fallback") {
+        mobility = mobilityModelConfig("masetti_surface");
+        mobility.surface.thetaElectron = 0.3;
+        mobility.surface.thetaHole = 0.2;
+    }
+    BandgapNarrowingConfig bgn;
+    bgn.model = "old_slotboom";
+    const int N = static_cast<int>(mesh.numNodes());
+    for (const std::string statisticsModel : {"boltzmann", "fermi_dirac"}) {
+        const CarrierStatisticsConfig statistics{statisticsModel};
+        CoupledDDAssembler assembler(mesh, materials, doping, constants::Vt_300,
+            mobility, recombinationModelConfig({"none"}), bgn,
+            {}, {}, {}, {}, {}, statistics);
+        assembler.setQuasiFermiReferences(0.1, -0.1);
+        assembler.setElectronQuantumPotential(VectorXd::LinSpaced(N, 0.0, 0.015));
+        VectorXd x(3 * N);
+        x << -0.02, 0.03, 0.01, -0.01, 0.005,
+             -0.07, 0.04, 0.08, -0.03, 0.02,
+              0.06, -0.03, -0.05, 0.04, -0.01;
+        const VectorXd initial = x;
+        for (int state = 0; state < 3; ++state) {
+            if (state == 1) {
+                x(4) += 0.017;
+                x(N + 2) -= 0.026;
+                x(2 * N + 1) += 0.031;
+            } else if (state == 2) {
+                x = initial;
+            }
+            const VectorXd residual = assembler.residual(x, {});
+            const auto terms = assembler.carrierContinuityEquationTermDiagnostics(x, {});
+            VectorXd electron = VectorXd::Zero(N), hole = VectorXd::Zero(N);
+            VectorXd electronAbs = VectorXd::Zero(N), holeAbs = VectorXd::Zero(N);
+            // This public reference deliberately retains generic edgeMobility
+            // and recomputes the material logarithms independently of the cache.
+            for (const auto& edge : assembler.sgEdgeFluxDiagnostics(x, {})) {
+                electron(edge.node0) += edge.electronFlux;
+                electron(edge.node1) -= edge.electronFlux;
+                hole(edge.node0) += edge.holeFlux;
+                hole(edge.node1) -= edge.holeFlux;
+                electronAbs(edge.node0) += std::abs(edge.electronFlux);
+                electronAbs(edge.node1) += std::abs(edge.electronFlux);
+                holeAbs(edge.node0) += std::abs(edge.holeFlux);
+                holeAbs(edge.node1) += std::abs(edge.holeFlux);
+            }
+            for (int i = 0; i < N; ++i) {
+                CAPTURE(statisticsModel, mobility.model, state, i);
+                const Real nTolerance = 2.0e-12 * std::max(electronAbs(i), 1.0e-30);
+                const Real pTolerance = 2.0e-12 * std::max(holeAbs(i), 1.0e-30);
+                CHECK(std::abs(residual(N + i) - electron(i)) <= nTolerance);
+                CHECK(std::abs(residual(2 * N + i) - hole(i)) <= pTolerance);
+                CHECK(std::abs(terms[i].electronFlux - electron(i)) <= nTolerance);
+                CHECK(std::abs(terms[i].holeFlux - hole(i)) <= pTolerance);
+                CHECK(std::abs(terms[i].electronFluxAbsSum - electronAbs(i)) <= nTolerance);
+                CHECK(std::abs(terms[i].holeFluxAbsSum - holeAbs(i)) <= pTolerance);
+            }
+        }
+    }
+}
+
+TEST_CASE("Newton continuity cache preserves physical rows across trial and solve contexts",
+          "[newton][coupled][vector-hfs][precision][continuity-cache]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase materials;
+    DopingModel doping = makePNDoping(mesh);
+    MobilityModelConfig mobility = mobilityModelConfig("constant_field");
+    mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+    mobility.highFieldGradientDiscretization = "transport_cell_vector";
+    mobility.contactElectricFieldFallback = true;
+    CoupledDDAssembler assembler(mesh, materials, doping, constants::Vt_300,
+        mobility, recombinationModelConfig({"srh", "auger"}), {}, {}, {}, {}, {}, {},
+        CarrierStatisticsConfig{"fermi_dirac"});
+    const int N = static_cast<int>(mesh.numNodes());
+    VectorXd initial(3 * N);
+    initial.head(N) = VectorXd::LinSpaced(N, 27.98, 28.02);
+    initial.segment(N, N) = VectorXd::LinSpaced(N, -0.01, 0.01);
+    initial.tail(N) = -initial.segment(N, N);
+    // A physically referenced sub-ULP increment must remain part of the key.
+    initial(N + 2) = 1.0e-20;
+    PerformanceProfiler profiler({true, "unused.json"});
+    ActivePerformanceProfilerScope active(&profiler);
+    for (int context = 0; context < 3; ++context) {
+        CAPTURE(context);
+        if (context == 0) {
+            assembler.setQuasiFermiReferences(28.0, 28.0);
+        } else {
+            assembler.setQuasiFermiReferenceFields(
+                VectorXd::LinSpaced(N, 28.0, 28.004),
+                VectorXd::LinSpaced(N, 28.0, 27.996));
+        }
+        CoupledDDBoundaryConditions boundaries;
+        boundaries.phin[0] = 28.0;
+        boundaries.phip[0] = 28.0;
+        if (context == 2) {
+            boundaries.phin[2] = 28.003;
+            boundaries.phip[3] = 27.998;
+        }
+        // Each new solve owns a fresh cache after all reference/boundary setup.
+        detail::ContinuityTermCache cache(assembler, boundaries);
+        for (int trial = 0; trial < 3; ++trial) {
+            CAPTURE(trial);
+            VectorXd state = initial;
+            if (trial == 1) state(N + 2) = 2.0e-20;
+            const auto fresh = assembler.carrierContinuityEquationTermDiagnostics(state, boundaries);
+            const auto& cached = cache.evaluate(state);
+            const auto& repeated = cache.evaluate(state);
+            const VectorXd residual = assembler.residual(state, boundaries);
+            REQUIRE(cached.size() == fresh.size());
+            for (int node = 0; node < N; ++node) {
+                const auto& row = cached[static_cast<std::size_t>(node)];
+                const auto& expected = fresh[static_cast<std::size_t>(node)];
+                CHECK(row.electronResidual == expected.electronResidual);
+                CHECK(row.holeResidual == expected.holeResidual);
+                CHECK(row.electronFluxAbsSum == expected.electronFluxAbsSum);
+                CHECK(row.holeFluxAbsSum == expected.holeFluxAbsSum);
+                CHECK(row.electronRecombination == expected.electronRecombination);
+                CHECK(row.holeRecombination == expected.holeRecombination);
+                CHECK(row.electronImpact == expected.electronImpact);
+                CHECK(row.holeImpact == expected.holeImpact);
+                CHECK(row.electronResidual == repeated[static_cast<std::size_t>(node)].electronResidual);
+                CHECK(row.electronResidual == Catch::Approx(residual(N + node)).margin(1.0e-18));
+                CHECK(row.holeResidual == Catch::Approx(residual(2 * N + node)).margin(1.0e-18));
+            }
+        }
+        REQUIRE_THROWS_AS(cache.evaluate(VectorXd::Zero(1)), std::invalid_argument);
+        const auto recovered = cache.evaluate(initial);
+        const auto fresh = assembler.carrierContinuityEquationTermDiagnostics(initial, boundaries);
+        CHECK(recovered[2].electronResidual == fresh[2].electronResidual);
+    }
+    // A change smaller than one ULP of the physical QF must miss, as must a
+    // restored state after a different trial or an exception.
+    const auto counters = profiler.toJson().at("counters");
+    CHECK(counters.at("newton.continuity_terms_cache_hits") == 9);
+    CHECK(counters.at("newton.continuity_terms_cache_misses") == 15);
 }
 
 TEST_CASE("Vector HFS preserves sub-ULP fields across reference frames",
@@ -5419,6 +5640,50 @@ TEST_CASE("NewtonSolver: initial abstol cannot accept an unbalanced carrier row"
     CHECK(result.convergenceReason != "initial_abstol");
 }
 
+TEST_CASE("NewtonSolver: recovery retains accepted updates before retry",
+          "[newton][carrier_row_recovery][iteration_accounting]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg = newtonConfig();
+    cfg.recombination = {"srh"};
+    cfg.mobility.model = "constant";
+    cfg.warmStart = true;
+    cfg.abstol = 0.0;
+    cfg.reltol = 0.0;
+    cfg.maxIter = 1;
+    cfg.verbose = false;
+    cfg.carrierRowConvergence.mode = "enforce";
+    cfg.carrierRowConvergence.epsRow = 1.0e-8;
+    cfg.carrierRowConvergence.minSourceScaleFraction = 0.0;
+    cfg.carrierRowConvergence.minSourceScale = 1.0e-30;
+    cfg.carrierRowRecovery.mode = "gummel_density";
+    cfg.carrierRowRecovery.maxAttempts = 1;
+    cfg.carrierRowRecovery.maxCycles = GENERATE(1, 2);
+
+    const int n = static_cast<int>(mesh.numNodes());
+    DDSolution initial;
+    initial.psi = VectorXd::Zero(n);
+    initial.phin = VectorXd::Zero(n);
+    initial.phip = VectorXd::Zero(n);
+    initial.n = VectorXd::Zero(n);
+    initial.p = VectorXd::Zero(n);
+    initial.phin(4) = 0.1;
+    const NewtonResult result = runNewton(mesh, matdb, doping, zeroBias(), initial, cfg);
+
+    REQUIRE(result.carrierRowRecovery.attempted);
+    const auto retryStart = std::find_if(result.trace.begin() + 1, result.trace.end(),
+        [](const auto& row) { return row.iter == 0; });
+    REQUIRE(retryStart != result.trace.end());
+    REQUIRE(std::any_of(result.trace.begin(), retryStart,
+        [](const auto& row) { return row.iter > 0 && row.lineSearchAccepted; }));
+    const int accepted = static_cast<int>(std::count_if(result.trace.begin(), result.trace.end(),
+        [](const auto& row) { return row.iter > 0 && row.lineSearchAccepted; }));
+    CHECK(result.iters == accepted);
+    CHECK(result.solution.iters == accepted);
+}
+
 TEST_CASE("NewtonSolver: Gummel density recovery uses Ohmic contact densities",
           "[newton][carrier_row_recovery][contact_bc]")
 {
@@ -5487,4 +5752,61 @@ TEST_CASE("NewtonConfig unit_scaling default Auger coefficients are TCAD interna
         json, UnitScalingConfig{UnitScalingMode::UnitScaling});
     REQUIRE(scaled.augerCn == Catch::Approx(2.90e-31));
     REQUIRE(scaled.augerCp == Catch::Approx(1.028e-31));
+}
+
+
+TEST_CASE("QF repartition preserves carriers flux residual and Jacobian",
+          "[newton][qf-recenter][precision]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase materials;
+    DopingModel doping = makePNDoping(mesh);
+    for (bool scaled : {false, true}) {
+        DDScalingSpec scaling;
+        scaling.enabled = scaled;
+        scaling.V0 = scaled ? constants::Vt_300 : 1.0;
+        auto mobility = mobilityModelConfig("constant_field");
+        mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+        mobility.highFieldGradientDiscretization = "transport_cell_vector";
+        CoupledDDAssembler assembler(mesh, materials, doping, constants::Vt_300,
+            mobility, recombinationModelConfig({"srh", "auger"}), {}, {}, {}, {},
+            scaling, {}, CarrierStatisticsConfig{"fermi_dirac"});
+        const int N = static_cast<int>(mesh.numNodes());
+        assembler.setQuasiFermiReferences(1.1, -0.2);
+        VectorXd x(3*N);
+        x.head(N) = VectorXd::LinSpaced(N, 0.98, 1.04) / scaling.V0;
+        x.segment(N,N) = VectorXd::LinSpaced(N, .031, .032) / scaling.V0;
+        x.tail(N) = VectorXd::LinSpaced(N, .23, .24) / scaling.V0;
+        x(N+2) = 1e-20 / scaling.V0;
+        CoupledDDBoundaryConditions bcs;
+        bcs.psi[0] = x(0);
+        bcs.phin[0] = (1.1 + x(N)*scaling.V0) / scaling.V0;
+        bcs.phip[0] = (-.2 + x(2*N)*scaling.V0) / scaling.V0;
+        const VectorXd oldX = x;
+        const auto n = assembler.electronDensity(x);
+        const auto p = assembler.holeDensity(x);
+        const auto r = assembler.residual(x,bcs);
+        const auto j = assembler.assembleJacobian(x,bcs);
+        const auto terms = assembler.carrierContinuityEquationTermDiagnostics(x,bcs);
+        assembler.recenterQuasiFermiState(x);
+        CHECK((x.head(N)-oldX.head(N)).norm()==0.0);
+        CHECK(x(N+2)*scaling.V0 == Catch::Approx(1e-20).epsilon(1e-14));
+        CHECK(std::abs(x(N+1)*scaling.V0)<1e-15);
+        CHECK((assembler.electronDensity(x)-n).norm()<=2e-12*std::max(1.0,n.norm()));
+        CHECK((assembler.holeDensity(x)-p).norm()<=2e-12*std::max(1.0,p.norm()));
+        CHECK((assembler.residual(x,bcs)-r).norm()<=2e-11*std::max(1.0,r.norm()));
+        CHECK((assembler.assembleJacobian(x,bcs)-j).norm()<=2e-9*std::max(1.0,j.norm()));
+        const auto after = assembler.carrierContinuityEquationTermDiagnostics(x,bcs);
+        REQUIRE(after.size()==terms.size());
+        for (std::size_t i=0;i<terms.size();++i) {
+            CHECK(std::abs(after[i].electronFlux-terms[i].electronFlux)<=
+                  2e-11*std::max(1.0,std::abs(terms[i].electronFlux)));
+            CHECK(std::abs(after[i].holeFlux-terms[i].holeFlux)<=
+                  2e-11*std::max(1.0,std::abs(terms[i].holeFlux)));
+        }
+        // A correction previously rounded away is representable in the new origin.
+        const Real delta = 1e-19 / scaling.V0;
+        CHECK(oldX(N+1)+delta==oldX(N+1));
+        CHECK(x(N+1)+delta!=x(N+1));
+    }
 }

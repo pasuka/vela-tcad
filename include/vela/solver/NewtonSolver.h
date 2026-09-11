@@ -189,6 +189,8 @@ struct NewtonConfig {
     /// Recenter warm-start QF coordinates on the supplied physical state so
     /// sub-ULP corrections are represented as local increments.
     bool quasiFermiRecenterOnInitialState = false;
+    /// Default-off, bounded in-solve recovery of unrepresentable QF corrections.
+    bool quasiFermiRecenterOnStall = false;
     std::string residualNorm = "block"; ///< "block" or "l2" convergence/line-search norm
     Real residualWeightPsi = 1.0;
     Real residualWeightPhin = 1.0;

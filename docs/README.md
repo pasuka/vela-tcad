@@ -23,6 +23,9 @@ evidence.
   template policy, validation gates, limitations, and evidence map.
 - [Validation evidence](validation/): dated reports and machine-readable
   contracts for checked-in reference TCAD work.
+- [LDMOS performance summary, 2026-09-11](validation/templates_ldmos_stage4_performance_summary_2026-09-11.md):
+  implemented optimizations, Release verification, and the validated Vg=8 V
+  linked-continuation experiment with its reproduction limits.
 
 Optional feature switches used by this repository:
 

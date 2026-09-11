@@ -750,6 +750,17 @@ Notes:
   within every original block ceiling and decrease the maximum qualified
   carrier-row residual ratio by the configured filter sufficient-decrease
   factor. Carrier-row `off` and `report` modes retain the usual block filter.
+- `quasi_fermi_recenter_on_stall` (default `false`) enables bounded in-solve
+  quasi-Fermi coordinate repartition in classical coupled Newton with enforced
+  absolute block convergence. After the Poisson block qualifies, an unresolved
+  carrier row whose nonzero line-search correction rounds away can trigger a
+  change of reference. Reference-plus-increment low bits are retained; residuals
+  and coordinate-dependent caches are refreshed, and the direction is recomputed.
+  At most eight retries are allowed per solve. A retry is not a Newton update,
+  does not reset the iteration budget or residual normalization, and does not
+  bypass any original stopping gate. Profiling counts `newton.qf_recenters` and
+  `newton.qf_recenter_discarded_line_search_trials`. Enabling local-update
+  diagnostics also records carrier/residual/Jacobian changes at repartition.
 - `local_update_diagnostics` optionally writes selected carrier rows and linear
   solve diagnostics (`enabled`, `csv_file`, `nodes`, `first_iterations`,
   `every_iterations`). The CSV includes the uncapped raw system's infinity-norm

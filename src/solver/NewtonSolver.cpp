@@ -7,6 +7,7 @@
 #include "vela/numerics/ResidualNorm.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/solver/LinearSolver.h"
+#include "vela/solver/detail/ContinuityTermCache.h"
 #include <nlohmann/json.hpp>
 #include <Eigen/SparseLU>
 #include <Eigen/SVD>
@@ -1133,15 +1134,18 @@ VectorXd continuityRowWeights(
     const CoupledDDAssembler& assembler,
     const VectorXd& state,
     const CoupledDDBoundaryConditions& bcs,
-    const NewtonContinuityRowScalingConfig& cfg)
+    const NewtonContinuityRowScalingConfig& cfg,
+    const std::vector<CoupledDDCarrierTermDiagnostic>* cachedTerms = nullptr)
 {
     const int N = static_cast<int>(assembler.numNodes());
     VectorXd weights = VectorXd::Ones(3 * N);
     if (!cfg.enabled)
         return weights;
 
-    const auto terms =
-        assembler.carrierContinuityEquationTermDiagnostics(state, bcs);
+    const auto computedTerms = cachedTerms == nullptr
+        ? assembler.carrierContinuityEquationTermDiagnostics(state, bcs)
+        : std::vector<CoupledDDCarrierTermDiagnostic>{};
+    const auto& terms = cachedTerms == nullptr ? computedTerms : *cachedTerms;
     auto rowWeight = [&](Real fluxAbsSum, Real recombination, Real impact) {
         const Real sourceScale = std::max(std::abs(recombination), std::abs(impact));
         if (sourceScale < cfg.minSourceScale ||
@@ -2021,6 +2025,8 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.quasiFermiRecenterOnInitialState = json.value(
         "quasi_fermi_recenter_on_initial_state",
         cfg.quasiFermiRecenterOnInitialState);
+    cfg.quasiFermiRecenterOnStall = json.value(
+        "quasi_fermi_recenter_on_stall", cfg.quasiFermiRecenterOnStall);
     cfg.residualNorm = json.value("residual_norm", cfg.residualNorm);
     cfg.contactBoundaryReconstruction =
         json.value("contact_boundary_reconstruction", cfg.contactBoundaryReconstruction);
@@ -6382,6 +6388,10 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             }
         }
     }
+    // Clear coordinate-keyed terms whenever the optional QF origin changes.
+    // Share exact-state equation terms between row scaling and local gates;
+    // global closure uses different boundary semantics and remains independent.
+    detail::ContinuityTermCache continuityTerms(assembler, bcs);
     VectorXd r;
     {
         ScopedPerformanceTimer timer("newton.initial_residual");
@@ -6391,7 +6401,8 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
     {
         ScopedPerformanceTimer timer("newton.row_weights");
         activeRowWeights = continuityRowWeights(
-            assembler, x, bcs, cfg_.continuityRowScaling);
+            assembler, x, bcs, cfg_.continuityRowScaling,
+            cfg_.continuityRowScaling.enabled ? &continuityTerms.evaluate(x) : nullptr);
     }
     const ResidualBlockNormValue initialBlocks =
         ResidualNorm::computeBlocks(r, mesh_.numNodes());
@@ -6468,7 +6479,7 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         if (cfg_.carrierRowConvergence.mode == "off")
             return NewtonCarrierRowConvergenceEvaluation{};
         return evaluateCarrierRowConvergence(
-            assembler.carrierContinuityEquationTermDiagnostics(state, bcs),
+            continuityTerms.evaluate(state),
             cfg_.carrierRowConvergence);
     };
     auto carrierRowsAcceptConvergence = [](const NewtonCarrierRowConvergenceEvaluation& evaluation) {
@@ -6786,6 +6797,10 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             mesh_, matdb_, doping_, contactBiases_, retryCfg, fixedCharges_, sheetCharges_,
             contactSpecs_);
         NewtonResult retried = retrySolver.solve(recovery.solution);
+        // A recovery retry is part of this solve. Keep all accepted Newton
+        // updates in the public work count, including those before recovery.
+        retried.iters += iterations;
+        retried.solution.iters = retried.iters;
         std::vector<NewtonIterationInfo> combinedTrace = result.trace;
         combinedTrace.insert(
             combinedTrace.end(),
@@ -6915,6 +6930,8 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
     NewtonGlobalContinuityClosureEvaluation activeGlobalEval =
         initialGlobalEval;
 
+    int quasiFermiRecenters = 0;
+
     for (int iter = 1; iter <= cfg_.maxIter; ++iter) {
         ScopedPerformanceTimer iterationTimer("newton.iteration");
         activeGlobalElectronScale = std::max(
@@ -6926,7 +6943,8 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         {
             ScopedPerformanceTimer timer("newton.row_weights");
             activeRowWeights = continuityRowWeights(
-                assembler, x, bcs, cfg_.continuityRowScaling);
+                assembler, x, bcs, cfg_.continuityRowScaling,
+                cfg_.continuityRowScaling.enabled ? &continuityTerms.evaluate(x) : nullptr);
         }
         SparseMatrixd J;
         {
@@ -7165,6 +7183,66 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             stepNorm < rawStep.norm() * (1.0 - 1.0e-12);
         const Real predictedResidualNorm = residualNormFn(cappedLinearResidual);
 
+        // A small damped correction can round to zero while other rows keep
+        // making progress, producing a long line-search tail. Repartition the
+        // same physical state, then rebuild residuals and retry the direction.
+        // This is not an accepted Newton update and never accepts a loose gate.
+        bool lostCarrierCorrection = false;
+        if (cfg_.quasiFermiRecenterOnStall && quasiFermiRecenters < 8 &&
+            cfg_.blockAbsoluteConvergence.mode == "enforce" &&
+            currentFilterBlocks.psi <= cfg_.blockAbsoluteConvergence.psiResidualCeiling) {
+            const Real alpha = ls.accepted ? ls.damping : 1.0;
+            for (int block = 1; block <= 2 && !lostCarrierCorrection; ++block) {
+                const auto& boundaries = block == 1 ? bcs.phin : bcs.phip;
+                const Real ceiling = block == 1
+                    ? cfg_.blockAbsoluteConvergence.electronResidualCeiling
+                    : cfg_.blockAbsoluteConvergence.holeResidualCeiling;
+                for (int i = 0; i < N; ++i) {
+                    const int row = block * N + i;
+                    const Real delta = alpha * step(row);
+                    if (boundaries.count(static_cast<Index>(i)) == 0 &&
+                        std::abs(r(row)) > ceiling / std::sqrt(static_cast<Real>(N)) &&
+                        delta != 0.0 && x(row) + delta == x(row)) {
+                        lostCarrierCorrection = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (lostCarrierCorrection) {
+            ScopedPerformanceTimer recenterTimer("newton.qf_recenter");
+            const bool auditRecenter = cfg_.localUpdateDiagnostics.enabled;
+            const VectorXd beforeElectron = auditRecenter ? assembler.electronDensity(x) : VectorXd{};
+            const VectorXd beforeHole = auditRecenter ? assembler.holeDensity(x) : VectorXd{};
+            const VectorXd beforeResidual = auditRecenter ? r : VectorXd{};
+            assembler.recenterQuasiFermiState(x);
+            continuityTerms.clear();
+            r = assembler.residual(x, bcs);
+            if (auditRecenter) {
+                const auto densityDifference = [](const VectorXd& before, const VectorXd& after) {
+                    return ((after - before).cwiseAbs().array() /
+                        before.cwiseAbs().array().max(1.0)).maxCoeff();
+                };
+                observePerformanceValue("newton.qf_recenter.electron_relative_change",
+                    densityDifference(beforeElectron, assembler.electronDensity(x)));
+                observePerformanceValue("newton.qf_recenter.hole_relative_change",
+                    densityDifference(beforeHole, assembler.holeDensity(x)));
+                observePerformanceValue("newton.qf_recenter.residual_absolute_change",
+                    (r - beforeResidual).lpNorm<Eigen::Infinity>());
+                observePerformanceValue("newton.qf_recenter.jacobian_relative_change",
+                    (assembler.assembleJacobian(x, bcs) - J).norm() / std::max(1.0, J.norm()));
+            }
+            acceptedX = x;
+            acceptedR = r;
+            activeGlobalEval = globalClosureEval(x);
+            ++quasiFermiRecenters;
+            incrementPerformanceCounter("newton.qf_recenters");
+            incrementPerformanceCounter("newton.qf_recenter_discarded_line_search_trials", ls.attempts);
+            // Numeric factorization is performed again on the next iteration;
+            // topology and physical bestSolution/history remain valid.
+            --iter;
+            continue;
+        }
         writeLocalUpdateTraceCsv(
             iter, x, r, J, rawStep, step,
             rawLinearResidual, cappedLinearResidual, ls);

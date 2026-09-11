@@ -266,7 +266,10 @@ public:
     /// References are constant coordinate shifts; physical fields and the
     /// assembled equations remain invariant under a consistent repartition.
     void setQuasiFermiReferenceFields(const VectorXd& electronReference_V,
-                                      const VectorXd& holeReference_V);
+                                     const VectorXd& holeReference_V);
+    /// Repartition reference plus increment without discarding the low part.
+    /// Callers must invalidate any external caches keyed only by coordinates.
+    void recenterQuasiFermiState(VectorXd& state);
     Real electronQuasiFermiReference() const { return electronQfReference_V_; }
     Real holeQuasiFermiReference() const { return holeQfReference_V_; }
     Real electronQuasiFermiReferenceAt(Index node) const;
@@ -469,7 +472,9 @@ private:
                                Real electronTransportDensity,
                                Real electronSrhDensity,
                                Real holeDensity,
-                               Real quasiFermiSplitting_V) const;
+                               Real quasiFermiSplitting_V,
+                               const GeneralizedSrhCarrierState* srhState = nullptr,
+                               const GeneralizedSrhCarrierState* augerState = nullptr) const;
     void rebuildFixedJacobianPattern(
         const std::vector<bool>& constrainedRows,
         bool includeCellStencil,
