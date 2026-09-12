@@ -1,5 +1,6 @@
 #include "vela/post/ContactCurrent.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/core/PerformanceProfiler.h"
 #include "vela/discretization/Bernoulli.h"
 #include "vela/discretization/ElementQfGradient.h"
 #include "vela/discretization/ScharfetterGummel.h"
@@ -37,6 +38,35 @@ struct NeumaierSum {
     Real value() const { return sum + correction; }
 };
 
+std::pair<VectorXd, VectorXd> contactQuasiFermi(const DDSolution& solution)
+{
+    const bool hasReferencedElectronQf =
+        solution.phinIncrement.size() == solution.phin.size();
+    const bool hasReferencedHoleQf =
+        solution.phipIncrement.size() == solution.phip.size();
+    VectorXd electronQf = hasReferencedElectronQf
+        ? solution.phinIncrement : solution.phin;
+    VectorXd holeQf = hasReferencedHoleQf
+        ? solution.phipIncrement : solution.phip;
+    if (hasReferencedElectronQf) {
+        for (int i = 0; i < electronQf.size(); ++i) {
+            electronQf(i) = static_cast<Real>(
+                static_cast<long double>(
+                    solution.electronQuasiFermiReferenceAt(i)) +
+                static_cast<long double>(solution.phinIncrement(i)));
+        }
+    }
+    if (hasReferencedHoleQf) {
+        for (int i = 0; i < holeQf.size(); ++i) {
+            holeQf(i) = static_cast<Real>(
+                static_cast<long double>(
+                    solution.holeQuasiFermiReferenceAt(i)) +
+                static_cast<long double>(solution.phipIncrement(i)));
+        }
+    }
+    return {std::move(electronQf), std::move(holeQf)};
+}
+
 } // namespace
 
 ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
@@ -71,6 +101,17 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
     , electronQuantumPotentialConfig_(std::move(electronQuantumPotential))
 {}
 
+
+MobilityModelConfig ContactCurrent::prepareMobility(const DDSolution& solution) const
+{
+    MobilityModelConfig prepared = mobilityConfig_;
+    if (prepared.model == "ialmob") {
+        auto [electronQf, holeQf] = contactQuasiFermi(solution);
+        updateIalTransportState(prepared,mesh_,doping_,solution.psi,
+            solution.n,solution.p,electronQf,holeQf);
+    }
+    return prepared;
+}
 
 ContactCurrentResult ContactCurrent::compute(const DDSolution& solution,
                                              const std::string& contactName) const
@@ -132,6 +173,7 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
     const std::string& contactName,
     const ContactCurrentEdgeOverrides& overrides) const
 {
+    ScopedPerformanceTimer timer("post.contact_current");
     const Contact* contact = nullptr;
     for (const Contact& candidate : mesh_.contacts()) {
         if (candidate.name == contactName) {
@@ -148,30 +190,9 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
     const Real fieldFactor = scaling_.enabled
         ? scaling_.fieldFromCoordinateDeltaFactor : 1.0;
-    const bool hasReferencedElectronQf =
-        solution.phinIncrement.size() == solution.phin.size();
-    const bool hasReferencedHoleQf =
-        solution.phipIncrement.size() == solution.phip.size();
-    VectorXd electronQf = hasReferencedElectronQf
-        ? solution.phinIncrement : solution.phin;
-    VectorXd holeQf = hasReferencedHoleQf
-        ? solution.phipIncrement : solution.phip;
-    if (hasReferencedElectronQf) {
-        for (int i = 0; i < electronQf.size(); ++i) {
-            electronQf(i) = static_cast<Real>(
-                static_cast<long double>(
-                    solution.electronQuasiFermiReferenceAt(i)) +
-                static_cast<long double>(solution.phinIncrement(i)));
-        }
-    }
-    if (hasReferencedHoleQf) {
-        for (int i = 0; i < holeQf.size(); ++i) {
-            holeQf(i) = static_cast<Real>(
-                static_cast<long double>(
-                    solution.holeQuasiFermiReferenceAt(i)) +
-                static_cast<long double>(solution.phipIncrement(i)));
-        }
-    }
+    auto [electronQf, holeQf] = contactQuasiFermi(solution);
+    const bool hasReferencedElectronQf = solution.phinIncrement.size() == solution.phin.size();
+    const bool hasReferencedHoleQf = solution.phipIncrement.size() == solution.phip.size();
     MobilityModelConfig liveMobilityConfig = mobilityConfig_;
     updateIalTransportState(liveMobilityConfig,mesh_,doping_,solution.psi,
         solution.n,solution.p,electronQf,holeQf);

@@ -2,6 +2,7 @@
 #include <catch2/catch_approx.hpp>
 #include "vela/equation/IalElementMobility.h"
 #include "vela/physics/CarrierStatistics.h"
+#include "vela/physics/SiliconThermalPhysics.h"
 #include "vela/physics/IalInterfaceGeometry.h"
 #include <algorithm>
 #include <cmath>
@@ -172,4 +173,36 @@ TEST_CASE("IALMob element rejects malformed support and preserves zero-drive lim
     CHECK_THROWS_AS(evaluateIalElementMobility(g,state,em,hm),std::invalid_argument);
     g=geometry();g.coordinates_m[2]=g.coordinates_m[1];
     CHECK_THROWS_AS(evaluateIalElementMobility(g,state,em,hm),std::invalid_argument);
+}
+
+TEST_CASE("IALMob full twelve-column thermal chain matches live silicon states", "[ialmob][thermal][jacobian]") {
+    auto ep=IalMobility::siliconDefaults(true),hp=IalMobility::siliconDefaults(false);
+    ep.lCrit=hp.lCrit=ep.lCritC=hp.lCritC=1e-6;
+    IalMobility e(ep,true),h(hp,false);SiliconThermalPhysics silicon;
+    std::array<const IalMobility*,3> em{&e,&e,&e},hm{&h,&h,&h};
+    const auto populateThermal=[&](std::array<SiliconThermalState,3> input){
+        std::array<IalElementVertexState,3> result;
+        for(int i=0;i<3;++i){const auto& v=input[i];const auto r=silicon.evaluate(v);
+            result[i]={v.potential_V,v.electronQf_V,v.holeQf_V,v.donors_m3,v.acceptors_m3,
+                r.electrons_m3.value,r.holes_m3.value,r.electrons_m3.derivative[0],r.holes_m3.derivative[2],
+                v.temperature_K,r.electrons_m3.derivative[3],r.holes_m3.derivative[3]};
+        }return result;
+    };
+    const std::array<Real SiliconThermalState::*,4> fields{&SiliconThermalState::potential_V,&SiliconThermalState::electronQf_V,&SiliconThermalState::holeQf_V,&SiliconThermalState::temperature_K};
+    for(bool high:{false,true})for(bool contact:{false,true})for(bool boundary:{false,true}) {
+        auto g=geometry();g.partialBoundaryLayer=boundary;g.touchesEffectiveElectrode=contact;
+        IalElementMobilityOptions options;options.highField=high;options.temperatureDependentHighField=true;options.temperatureDerivatives=true;
+        std::array<SiliconThermalState,3> states;
+        for(int i=0;i<3;++i)states[i]={.12+.017*i,.005*i,.04-.003*i,350.+45.*i,1e23,4e22};
+        auto actual=evaluateIalElementMobility(g,populateThermal(states),em,hm,options);
+        for(int column=0;column<12;++column)for(Real fraction:{1.,.25}){
+            const int i=column/4,k=column%4;Real step=(k==3?.002:5e-7)*fraction;auto a=states,b=states;
+            a[i].*fields[k]+=step;b[i].*fields[k]-=step;
+            auto plus=evaluateIalElementMobility(g,populateThermal(a),em,hm,options),minus=evaluateIalElementMobility(g,populateThermal(b),em,hm,options);
+            const Real dn=k==3?actual.electronTemperatureDerivative[i]:actual.electron.derivative[3*i+k];
+            const Real dp=k==3?actual.holeTemperatureDerivative[i]:actual.hole.derivative[3*i+k];
+            CHECK(dn/actual.electron.value==Catch::Approx((plus.electron.value-minus.electron.value)/(2.*step*actual.electron.value)).epsilon(3e-5).margin(2e-7));
+            CHECK(dp/actual.hole.value==Catch::Approx((plus.hole.value-minus.hole.value)/(2.*step*actual.hole.value)).epsilon(3e-5).margin(2e-7));
+        }
+    }
 }

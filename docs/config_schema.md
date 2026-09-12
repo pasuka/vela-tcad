@@ -461,7 +461,10 @@ Method selection:
 - type: alias for method (legacy compatibility)
 - `frozen_state` (alias `diagnostic_state_replay`) is diagnostic-only. It
   requires `sweep.initial_state_file`, performs no nonlinear solve, preserves
-  all supplied state fields, and reports zero terminal current.
+  all supplied state fields, and reports zero terminal current by default.
+  `sweep.frozen_state_compute_current=true` evaluates terminal currents on the
+  supplied state. Replay success and zero residual placeholders do not imply
+  that the state satisfies the nonlinear equations or any acceptance gates.
 
 Commonly used controls:
 - max_iter
@@ -473,6 +476,7 @@ Commonly used controls:
 - auger_cn_m6_per_s
 - auger_cp_m6_per_s
 - auger_excess_product
+- auger_density_dependence
 - impact_ionization
 
 Gummel-specific keys:
@@ -818,6 +822,17 @@ Notes:
   generalized SRH product. `classical_np` uses `n*p-ni_eff^2`; its analytic
   Jacobian differentiates the transport carrier densities while treating the
   node material/BGN `ni_eff` as fixed during one Newton assembly.
+- `auger_density_dependence` optionally enables
+  `Cn(n)=Cn0*(1+Hn*exp(-n/N0n))` and the corresponding hole coefficient.
+  Omission preserves constant coefficients. The object accepts `enabled`
+  (default true when present), plus `electron` and `hole` objects containing
+  `enhancement` (nonnegative H, default 0) and `reference_density_m3`
+  (positive N0, default 1e24 m^-3). As with other concentration input fields,
+  explicit N0 is in cm^-3 under `unit_scaling`, so native N0=1e18 cm^-3
+  is entered as `1e18` in that mode. Newton, Gummel recovery and diagnostics
+  use the same rate; the analytic Jacobian includes the coefficient's density
+  derivative. Cn0/Cp0 still come from the explicit Auger coefficient fields;
+  this option does not imply a temperature-dependent A/B/C polynomial.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 - With `scaling.mode: "unit_scaling"`, `bandgap_narrowing.reference_doping_m3`
   is read and kept internally as `cm^-3`.
@@ -891,6 +906,17 @@ solve charge neutrality with the same statistics, continuity edges use the
 generalized Einstein/Scharfetter-Gummel operator, and terminal-current
 post-processing uses that identical edge operator. The density-form Gummel
 solver currently rejects `fermi_dirac` explicitly; use `method: "newton"`.
+
+The Fermi integral now uses a high-accuracy piecewise Chebyshev evaluation,
+with analytic derivatives and matched nondegenerate/degenerate expansions.
+The inverse uses relative density error, including dilute carrier ratios.
+The apparent BGN correction calls this same inverse; there is no separate
+lower-accuracy statistics approximation inside BGN. This replaces the former
+Bednarczyk approximation, so archived Fermi states must be requalified under
+the new executable. Historical frozen executables remain the replay baseline.
+Coefficient generation is a development-only operation using
+`scripts/generate_fermi_half_coefficients.py` (NumPy/SciPy); normal builds use
+the checked-in table and require neither package.
 
 ### bandgap_narrowing
 
@@ -2191,3 +2217,91 @@ For off-state high-field diagnostics, set `sweep.mode` to `bv_reverse` and add
 `breakdown.non_convergence` under the sweep block. The corresponding fields are
 exercised by focused unit tests. This configuration family is an engineering
 prototype and is not a calibrated MOSFET model.
+
+## Independent prescribed-source lattice heat diagnostic
+
+`lattice_heat_probe INPUT.json OUTPUT.json` is a separate diagnostic executable.
+It does not enable self-heating in `vela_example_runner` or DC sweeps. Build it
+with the matching CMake preset and target `lattice_heat_probe`.
+
+| Input field | Meaning |
+|---|---|
+| `mesh_file` | Existing Tri3 JSON mesh; use an absolute path for reproducibility. |
+| `coordinate_to_metres` | Required positive conversion from the mesh's numeric coordinates to metres; e.g. `1e-6` for um. No electrical `scaling` setting is inferred. |
+| `temperature_K` | One positive finite initial temperature per mesh node, in contiguous node-ID order. |
+| `cell_source_W_per_m3` | One finite prescribed constant heat source per triangle, in contiguous cell-ID order. Negative cooling sources are permitted. |
+| `region_conductivity` | One explicit law per region: `region_id`, `model: "constant"`, `value_W_per_m_K`; or `model: "inverse_quadratic"`, `numerator`, `denominator: [a,b,c]`, giving k(T)=numerator/(a+bT+cT²). |
+| `thermodes` | Exterior-edge objects with `nodes: [i,j]`, `ambient_K`, `conductance_W_per_m2_K`. Duplicate and interior edges are rejected; unspecified outer boundaries insulate. |
+| `solve_prescribed_source` | Default `false`: evaluate residual/Jacobian only. `true` applies safeguarded thermal Newton updates with the prescribed heat held fixed. |
+| `absolute_residual_W_per_m` | Positive finite diagnostic infinity-norm tolerance, default `1e-8`; this is separate from device-level thermal acceptance gates. |
+
+Temperature-dependent conductivity uses the element mean temperature and its
+analytic derivative. Cell heat is deposited with area/3 weights. Surface heat
+uses the consistent two-node Robin matrix. The output contains ordered node IDs,
+temperatures, nodal areas, residuals in W/m, integrated source and outward thermal
+boundary power in W/m, and thermal iteration history. The output path must not
+already exist. `solved: false` is never a self-consistent thermal qualification.
+
+`scripts/analyze_templates_ldmos_thermal.py` scores aligned reference and candidate
+temperature JSON with an explicit contract. The approved LDMOS thermal contract
+is in `reference_tcad/templates_ldmos_sentaurus2022/thermal/d0_thermal_acceptance.json`,
+separate from the frozen generic `contracts/` bundle. A thermal-only pass does not
+include electrical acceptance; zero power requires a separate absolute/equilibrium
+check and is not reported as a relative heat-balance pass.
+
+
+### Independent IALMob temperature diagnostic
+
+`ialmob_probe INPUT.json` accepts a global `temperature_K` default and optional
+`temperature_K` in each `states_SI` row (T >= 50 K). Existing six mobility partials
+retain their order and units. With `derivatives=true`, the separate
+`mobility_temperature_derivative_m2_per_Vs_K` holds densities, field and distance
+fixed. Low-temperature phonon-exponent corrections are not supported.
+
+An optional `high_field` object requires all four explicit keys:
+`vsat300_m_per_s`, `beta300`, `vsat_exponent`, `beta_exponent`. Every state then
+requires `drivingField_V_per_m`. This is the alpha=0, Vsat_Formula=1 local
+primitive, with no automatic interface/contact driving-field selection.
+`high_field_mobility_m2_per_Vs` is additional to the existing low-field output;
+its temperature derivative includes the low-field mobility chain at fixed
+carrier densities and driving field. A drive without a high-field configuration
+is rejected. This diagnostic does not enable temperature feedback in DC sweeps.
+See [native thermal mobility comparison](validation/templates_ldmos_d0_mobility_temperature_2026-09-12.md).
+
+### Experimental four-equation electrothermal input
+
+`electrothermal_probe INPUT.json OUTPUT.json` uses a separate explicit SI input;
+it does not interpret production DC `scaling` or enable self-heating in the
+production runner. `scripts/prepare_templates_ldmos_electrothermal.py` prepares
+the audited LDMOS profile and input hashes. See the
+[D0 report](validation/templates_ldmos_d0_electrothermal_2026-09-12.md) for its
+model and qualification boundaries.
+
+The mesh, coordinate conversion, conductivity laws and thermodes have the same
+meaning as in the independent lattice-heat tool. Additional fields are:
+
+| Input field | Meaning |
+|---|---|
+| `state_interleaved` | Contiguous per-node `[psi_V, fn_V, fp_V, temperature_K]`; T >= 50 K. |
+| `donors_m3`, `acceptors_m3` | Per-node SI dopant concentrations. |
+| `silicon_area_m2` | Silicon charge-control areas; zero marks non-silicon nodes. |
+| `recombination_area_m2` | Continuity source-control areas; defaults to silicon areas. The qualified LDMOS adapter explicitly supplies global barycentric node areas at silicon nodes. |
+| `fixed_charge_C_per_m` | Explicit per-node fixed charge. |
+| `edge_geometry` | Complete edge list: `nodes`, `poisson_F_per_m`, nonnegative dimensionless `transport_weight`. |
+| `mobility_SI` | Explicit constant or IALMob configuration in SI; the preparation adapter converts the audited TCAD saturation velocities. |
+| `boundaries` | Objects with `node`, `kind` (`psi`, `fn`, `fp`, `temperature`, `neutral_contact`) and `value`. Neutral contacts constrain all three electrical variables using local charge neutrality and temperature. |
+| `referenced_state_interleaved`, `electron_qf_reference_V`, `hole_qf_reference_V` | Optional complete restart pack. The fn/fp slots hold increments relative to the corresponding per-node references; preserve all three arrays together. |
+| `use_qf_references` | Defaults to true. Without a restart pack, reference coordinates are prepared from the supplied absolute state. |
+| `potential_origin_V` | Provenance offset for conversion back to the absolute external electrical gauge; does not itself alter the supplied state or boundaries. |
+| `diagnostic_newton_max_iterations` | Default zero for frozen evaluation; a positive value enables bounded four-equation Newton updates. |
+| `electrical_current_scale_A_per_m` | Explicit scale used to interpret existing numerical electrical gates. |
+| `electrical_gate_solver` | Existing `carrier_row_convergence`, `continuity_row_scaling` and `block_absolute_convergence` configuration. Device qualification requires explicit original settings. |
+
+The probe outputs physical and referenced states, original block/row gate
+results, terminal currents, nodal temperatures/areas and integrated discrete
+lattice source/boundary heat. A successful process exit can describe a failed
+diagnostic solve; inspect the gate results. The continuation script additionally
+checks KCL and heat balance before accepting a state. Full qualification uses
+`scripts/analyze_templates_ldmos_d0.py` and both 31-point native curves and all
+62 native temperature fields. No prescribed native heat source enters this
+four-equation solve.

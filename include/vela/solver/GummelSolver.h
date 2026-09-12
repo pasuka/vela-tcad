@@ -120,6 +120,7 @@ struct GummelConfig {
     double augerCn     = 2.90e-43; ///< Electron Auger coefficient [m^6/s]
     double augerCp     = 1.028e-43; ///< Hole Auger coefficient [m^6/s]
     std::string augerExcessProduct = "generalized_fermi"; ///< "generalized_fermi" or "classical_np".
+    AugerDensityDependenceConfig augerDensityDependence{};
     double carrierFloor = 1.0; ///< Minimum solved carrier concentration [m^-3] for quasi-Fermi consistency.
     MobilityModelConfig mobility{}; ///< Mobility model configuration
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}

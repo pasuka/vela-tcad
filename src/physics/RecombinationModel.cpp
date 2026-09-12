@@ -29,6 +29,22 @@ Real limitedExcessValue(Real value)
     return std::clamp(value, -limit, limit);
 }
 
+// Value and density derivative of C*n*(1+H*exp(-n/N0)). A constant
+// coefficient continuation below zero keeps trial-state evaluation finite.
+std::pair<Real, Real> augerCarrierFactor(
+    Real density, Real coefficient, Real enhancement, Real referenceDensity)
+{
+    const Real n = limitedAugerCarrier(density);
+    if (enhancement == 0.0)
+        return {coefficient * n, coefficient};
+    const Real ratio = std::max(n, 0.0) / referenceDensity;
+    if (ratio > 700.0)
+        return {coefficient * n, coefficient};
+    const Real term = enhancement * std::exp(-ratio);
+    return {coefficient * n * (1.0 + term),
+            coefficient * (1.0 + term * (1.0 - ratio))};
+}
+
 Real dopingDependentLifetime(Real concentration,
                              const SRHLifetimeParameters& parameters)
 {
@@ -109,6 +125,12 @@ RecombinationModel::RecombinationModel(RecombinationModelConfig config)
     }
     if (augerEnabled_ && (config_.augerCn < 0.0 || config_.augerCp < 0.0))
         throw std::invalid_argument("RecombinationModel: Auger coefficients cannot be negative.");
+    const auto& auger = config_.augerDensityDependence;
+    if (!std::isfinite(auger.electronEnhancement) || auger.electronEnhancement < 0.0 ||
+        !std::isfinite(auger.holeEnhancement) || auger.holeEnhancement < 0.0 ||
+        !std::isfinite(auger.electronReferenceDensity) || auger.electronReferenceDensity <= 0.0 ||
+        !std::isfinite(auger.holeReferenceDensity) || auger.holeReferenceDensity <= 0.0)
+        throw std::invalid_argument("RecombinationModel: invalid Auger density dependence.");
 }
 
 Real RecombinationModel::electronLifetime(Real dopingConcentration) const
@@ -213,9 +235,12 @@ Real RecombinationModel::augerRateFromExcessProduct(Real excessProduct,
 {
     if (!augerEnabled_)
         return 0.0;
-    const Real limitedN = limitedAugerCarrier(n);
-    const Real limitedP = limitedAugerCarrier(p);
-    return (config_.augerCn * limitedN + config_.augerCp * limitedP) *
+    const auto& a = config_.augerDensityDependence;
+    const auto electron = augerCarrierFactor(n, config_.augerCn,
+        a.enabled ? a.electronEnhancement : 0.0, a.electronReferenceDensity);
+    const auto hole = augerCarrierFactor(p, config_.augerCp,
+        a.enabled ? a.holeEnhancement : 0.0, a.holeReferenceDensity);
+    return (electron.first + hole.first) *
            limitedExcessValue(excessProduct);
 }
 
@@ -278,13 +303,10 @@ RecombinationRateDerivatives RecombinationModel::totalRateDerivativesFromExcessP
     }
 
     if (augerEnabled_) {
-        const Real limitedN = limitedAugerCarrier(n);
-        const Real limitedP = limitedAugerCarrier(p);
-        excessProduct = limitedExcessValue(excessProduct);
-        const Real prefactor = config_.augerCn * limitedN + config_.augerCp * limitedP;
-        derivatives.dRateDExcess += prefactor;
-        derivatives.dRateDn += config_.augerCn * excessProduct;
-        derivatives.dRateDp += config_.augerCp * excessProduct;
+        const auto auger = augerRateDerivativesFromExcessProduct(excessProduct, n, p);
+        derivatives.dRateDExcess += auger.dRateDExcess;
+        derivatives.dRateDn += auger.dRateDn;
+        derivatives.dRateDp += auger.dRateDp;
     }
 
     return derivatives;
@@ -334,13 +356,15 @@ RecombinationModel::augerRateDerivativesFromExcessProduct(
     if (!augerEnabled_)
         return derivatives;
 
-    const Real limitedN = limitedAugerCarrier(n);
-    const Real limitedP = limitedAugerCarrier(p);
+    const auto& a = config_.augerDensityDependence;
+    const auto electron = augerCarrierFactor(n, config_.augerCn,
+        a.enabled ? a.electronEnhancement : 0.0, a.electronReferenceDensity);
+    const auto hole = augerCarrierFactor(p, config_.augerCp,
+        a.enabled ? a.holeEnhancement : 0.0, a.holeReferenceDensity);
     const Real limitedExcess = limitedExcessValue(excessProduct);
-    derivatives.dRateDExcess =
-        config_.augerCn * limitedN + config_.augerCp * limitedP;
-    derivatives.dRateDn = config_.augerCn * limitedExcess;
-    derivatives.dRateDp = config_.augerCp * limitedExcess;
+    derivatives.dRateDExcess = electron.first + hole.first;
+    derivatives.dRateDn = electron.second * limitedExcess;
+    derivatives.dRateDp = hole.second * limitedExcess;
     return derivatives;
 }
 
@@ -364,9 +388,9 @@ RecombinationLinearization RecombinationModel::electronLinearization(
         const Real limitedN = limitedAugerCarrier(n);
         const Real limitedP = limitedAugerCarrier(p);
         const Real excessProduct = limitedExcessProduct(n, p, ni);
-        const Real prefactor = config_.augerCn * limitedN + config_.augerCp * limitedP;
-        const Real rate = prefactor * excessProduct;
-        const Real derivative = config_.augerCn * excessProduct + prefactor * limitedP;
+        const auto partials = augerRateDerivativesFromExcessProduct(excessProduct, n, p);
+        const Real rate = partials.dRateDExcess * excessProduct;
+        const Real derivative = partials.dRateDn + partials.dRateDExcess * limitedP;
         const Real positiveDerivative = std::max(derivative, 0.0);
         linearization.diagonal += positiveDerivative;
         linearization.rhs += positiveDerivative * limitedN - rate;
@@ -395,9 +419,9 @@ RecombinationLinearization RecombinationModel::holeLinearization(
         const Real limitedN = limitedAugerCarrier(n);
         const Real limitedP = limitedAugerCarrier(p);
         const Real excessProduct = limitedExcessProduct(n, p, ni);
-        const Real prefactor = config_.augerCn * limitedN + config_.augerCp * limitedP;
-        const Real rate = prefactor * excessProduct;
-        const Real derivative = config_.augerCp * excessProduct + prefactor * limitedN;
+        const auto partials = augerRateDerivativesFromExcessProduct(excessProduct, n, p);
+        const Real rate = partials.dRateDExcess * excessProduct;
+        const Real derivative = partials.dRateDp + partials.dRateDExcess * limitedN;
         const Real positiveDerivative = std::max(derivative, 0.0);
         linearization.diagonal += positiveDerivative;
         linearization.rhs += positiveDerivative * limitedP - rate;
@@ -470,6 +494,35 @@ SRHDopingDependenceConfig srhDopingDependenceConfigFromJson(
     RecombinationModelConfig validation;
     validation.mechanisms = {"srh"};
     validation.srhDopingDependence = config;
+    (void)RecombinationModel(validation);
+    return config;
+}
+
+AugerDensityDependenceConfig augerDensityDependenceConfigFromJson(
+    const nlohmann::json& value, UnitScalingConfig scaling)
+{
+    if (!value.is_object())
+        throw std::invalid_argument("auger_density_dependence must be an object.");
+    AugerDensityDependenceConfig config;
+    config.enabled = value.value("enabled", true);
+    config.electronReferenceDensity = scaling.unitSystem().m3ToInternalConcentration(
+        config.electronReferenceDensity);
+    config.holeReferenceDensity = scaling.unitSystem().m3ToInternalConcentration(
+        config.holeReferenceDensity);
+    auto parse = [&](const char* name, Real& enhancement, Real& reference) {
+        if (!value.contains(name)) return;
+        const auto& carrier = value.at(name);
+        if (!carrier.is_object())
+            throw std::invalid_argument("Auger carrier settings must be an object.");
+        enhancement = carrier.value("enhancement", enhancement);
+        if (carrier.contains("reference_density_m3"))
+            reference = scaling.concentrationToInternal(
+                carrier.at("reference_density_m3").get<Real>());
+    };
+    parse("electron", config.electronEnhancement, config.electronReferenceDensity);
+    parse("hole", config.holeEnhancement, config.holeReferenceDensity);
+    RecombinationModelConfig validation;
+    validation.augerDensityDependence = config;
     (void)RecombinationModel(validation);
     return config;
 }

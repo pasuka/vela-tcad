@@ -1,0 +1,49 @@
+{
+  "temperature_K": 300,
+  "constants": {
+    "kb": 1.380649e-23,
+    "q": 1.602176634e-19,
+    "h": 6.62607015e-34,
+    "m0": 9.1093837015e-31
+  },
+  "revision": 4,
+  "source_files": {
+    "reference_staging\\templates_ldmos_followup_20260911\\ialmob_difference_location\\native\\bundle\\Siliconc100.par": "892759d4bdc9ad80972800f8c1162c57f42da181b03f521761efd37a5a11b9d8",
+    "reference_tcad\\templates_ldmos_sentaurus2022\\contracts\\materials.json": "327b02852d565e3c04e89b727e8de754a40204b2a836d4d5e71865c11b0eea2e",
+    "D:\\code-repo\\vela-tcad\\.worktrees\\templates-ldmos-phase-a\\include\\vela\\core\\PhysicalConstants.h": "f9f188de30f894812074b7c6370fa2a6705a9ca77c004c0c462a1861cd5c0350"
+  },
+  "changes": {
+    "bandgap_eV": {
+      "old": 1.1241592307692307,
+      "new": 1.12416,
+      "relative_change": 6.842720747801678e-07
+    },
+    "electron_affinity_eV": {
+      "old": 4.05,
+      "new": 4.0727,
+      "relative_change": 0.00560493827160502
+    },
+    "conduction_band_density_of_states_cm3": {
+      "old": 2.8566652281655894e+19,
+      "new": 2.856679069182081e+19,
+      "relative_change": 4.845165739064683e-06
+    },
+    "valence_band_density_of_states_cm3": {
+      "old": 3.10464190834412e+19,
+      "new": 3.1046570334558958e+19,
+      "relative_change": 4.871773370940247e-06
+    },
+    "intrinsic_carrier_density_cm3": {
+      "old": 10753127231.7754,
+      "new": 10750016577.953705,
+      "relative_change": -0.0002892789934172413
+    },
+    "temperature_K": {
+      "old": 300.0,
+      "new": 300.0,
+      "relative_change": 0.0
+    }
+  },
+  "output_sha256": "bcd6cd7ca25d9a7b9af45f7d71372b422b35a2201134b84c05ad65a6eff2ba52",
+  "note": "Historical input contract preserved; curve acceptance is a separate requirement."
+}

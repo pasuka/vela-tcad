@@ -1,6 +1,7 @@
 #include "vela/equation/IalTransport.h"
 #include "vela/physics/IalInterfaceGeometry.h"
 #include "vela/physics/IalMobilityJson.h"
+#include "vela/core/PerformanceProfiler.h"
 #include <nlohmann/json.hpp>
 #include <filesystem>
 #include <fstream>
@@ -20,6 +21,7 @@ void keys(const json& input,std::initializer_list<std::string> allowed) {
             throw std::invalid_argument("Unsupported IALMob key: "+key);
 }
 std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& config,const DeviceMesh& mesh) {
+    ScopedPerformanceTimer timer("ialmob.geometry");
     const auto& options=*config.ialmob;
     std::ifstream stream(options.geometryFile);
     if (!stream) throw std::invalid_argument("Cannot read IALMob transport geometry: "+options.geometryFile);
@@ -148,23 +150,41 @@ std::shared_ptr<const IalTransportOptions> ialTransportOptionsFromJson(const jso
     return options;
 }
 
+void prepareIalTransportGeometry(MobilityModelConfig& config,const DeviceMesh& mesh) {
+    if (config.model!="ialmob") return;
+    if (!config.ialmob) throw std::invalid_argument("IALMob requires an explicit parameter/geometry contract");
+    if (!config.ialmobGeometry) config.ialmobGeometry=geometry(config,mesh);
+}
+
 void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
     const DopingModel& doping,const VectorXd& psi,const VectorXd& n,const VectorXd& p,
-    const VectorXd& phin,const VectorXd& phip,const VectorXd& dn,const VectorXd& dp) {
+    const VectorXd& phin,const VectorXd& phip,const VectorXd& dn,const VectorXd& dp,
+    const VectorXd& temperature,const VectorXd& dn_dT,const VectorXd& dp_dT) {
     if (config.model!="ialmob") return;
+    ScopedPerformanceTimer timer("ialmob.update");
     if (!config.ialmob) throw std::invalid_argument("IALMob requires an explicit parameter/geometry contract");
     for (const auto* v:{&psi,&n,&p,&phin,&phip})
         if (v->size()!=static_cast<int>(mesh.numNodes())||!v->allFinite()) throw std::invalid_argument("IALMob state size or finiteness mismatch");
     if ((dn.size()!=0&&dn.size()!=n.size())||(dp.size()!=0&&dp.size()!=p.size())) throw std::invalid_argument("IALMob response size mismatch");
+    if(temperature.size()!=0){
+        for(const auto* v:{&temperature,&dn_dT,&dp_dT})
+            if(v->size()!=n.size()||!v->allFinite())throw std::invalid_argument("IALMob thermal state size/finiteness mismatch");
+        if((temperature.array()<50.).any())throw std::invalid_argument("IALMob requires temperature >=50 K");
+    }else if(dn_dT.size()!=0||dp_dT.size()!=0)throw std::invalid_argument("IALMob thermal responses require temperature");
     const auto same=[](const VectorXd& a,const VectorXd& b) {return a.size()==b.size()&&(a.array()==b.array()).all();};
     if (config.ialmobState) {
         const auto& s=*config.ialmobState;
-        if (same(s.psi,psi)&&same(s.n,n)&&same(s.p,p)&&same(s.phin,phin)&&same(s.phip,phip)&&same(s.dn,dn)&&same(s.dp,dp)) return;
+        if (same(s.psi,psi)&&same(s.n,n)&&same(s.p,p)&&same(s.phin,phin)&&same(s.phip,phip)&&same(s.dn,dn)&&same(s.dp,dp)&&same(s.temperature,temperature)&&same(s.dn_dT,dn_dT)&&same(s.dp_dT,dp_dT)) {
+            incrementPerformanceCounter("ialmob.state_hits");
+            return;
+        }
     }
-    if (!config.ialmobGeometry) config.ialmobGeometry=geometry(config,mesh);
-    auto s=std::make_shared<IalTransportState>();s->psi=psi;s->n=n;s->p=p;s->phin=phin;s->phip=phip;s->dn=dn;s->dp=dp;
+    prepareIalTransportGeometry(config,mesh);
+    ScopedPerformanceTimer stateTimer("ialmob.state_build");
+    auto s=std::make_shared<IalTransportState>();s->psi=psi;s->n=n;s->p=p;s->phin=phin;s->phip=phip;s->dn=dn;s->dp=dp;s->temperature=temperature;s->dn_dT=dn_dT;s->dp_dT=dp_dT;
     s->electronEdges.resize(mesh.numEdges(),0.);s->holeEdges.resize(mesh.numEdges(),0.);
     auto options=config.ialmob->element;
+    if(temperature.size()!=0){options.temperatureDependentHighField=true;options.temperatureDerivatives=true;}
     options.electronField=config.electronField;options.holeField=config.holeField;
     const Real velocityFactor=config.internalMobilityToM2PerVS*config.internalFieldToVPerM;
     options.electronField.saturationVelocity*=velocityFactor;options.holeField.saturationVelocity*=velocityFactor;
@@ -174,7 +194,8 @@ void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
         for (int k=0;k<3;++k) {
             const Index node=c.node_ids[k];const Real factor=config.internalConcentrationToM3;
             states[k]={psi[node],phin[node],phip[node],doping.donors(node)*factor,doping.acceptors(node)*factor,
-                n[node]*factor,p[node]*factor,dn.size()?dn[node]*factor:0.,dp.size()?dp[node]*factor:0.};
+                n[node]*factor,p[node]*factor,dn.size()?dn[node]*factor:0.,dp.size()?dp[node]*factor:0.,
+                temperature.size()?temperature[node]:300.,dn_dT.size()?dn_dT[node]*factor:0.,dp_dT.size()?dp_dT[node]*factor:0.};
             em[k]=&config.ialmob->electrons.at(support.family[k]);hm[k]=&config.ialmob->holes.at(support.family[k]);
         }
         auto r=evaluateIalElementMobility(support.geometry,states,em,hm,options);
@@ -182,6 +203,9 @@ void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
             v->value/=config.internalMobilityToM2PerVS;
             for (auto& d:v->derivative) d/=config.internalMobilityToM2PerVS;
         }
+        for(auto* v:{&r.electronTemperatureDerivative,&r.holeTemperatureDerivative,
+            &r.electronLowTemperatureDerivative,&r.holeLowTemperatureDerivative})
+            for(auto& d:*v)d/=config.internalMobilityToM2PerVS;
         s->cells.push_back(r);
     }
     for (Index e=0;e<mesh.numEdges();++e)

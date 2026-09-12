@@ -12,6 +12,36 @@ import run_templates_ldmos_linked_d5 as linked
 
 
 class LinkedD5Test(unittest.TestCase):
+    def test_auger_density_profiles_change_only_the_explicit_source_model(self):
+        folder=ROOT/'reference_tcad/templates_ldmos_sentaurus2022/profiles'
+        for physics in ('d4','d5'):
+            baseline=linked.read(folder/f'linked_{physics}_fermi_accurate_config.json')
+            bundle=linked.read(folder/f'linked_{physics}_auger_density_inputs.json')
+            profile=linked.read(ROOT/bundle['template'])
+            enhancement=profile['solver'].pop('auger_density_dependence')
+            self.assertTrue(enhancement['enabled'])
+            self.assertEqual(enhancement['electron'],{'enhancement':3.46667,'reference_density_m3':1e18})
+            self.assertEqual(enhancement['hole'],{'enhancement':8.25688,'reference_density_m3':1e18})
+            self.assertEqual(profile['solver'],baseline['solver'])
+            self.assertEqual(profile['contacts'],baseline['contacts'])
+            self.assertEqual(profile['materials_file'],baseline['materials_file'])
+            self.assertEqual(profile['discretization'],baseline['discretization'])
+            self.assertEqual(profile['scaling']['mode'],'unit_scaling')
+
+    def test_accurate_fermi_profiles_preserve_original_curve_gates_and_physics(self):
+        for physics,original in [('d4','linked_d4'),('d5','linked_d5_auger_units')]:
+            folder=ROOT/'reference_tcad/templates_ldmos_sentaurus2022/profiles'
+            baseline=linked.read(folder/f'{original}_config.json')
+            bundle=linked.read(folder/f'linked_{physics}_fermi_accurate_inputs.json')
+            profile=linked.read(ROOT/bundle['template'])
+            self.assertEqual(profile['solver'],baseline['solver'])
+            self.assertEqual(profile['discretization'],baseline['discretization'])
+            self.assertEqual(profile['contacts'],baseline['contacts'])
+            self.assertEqual(linked.digest(ROOT/bundle['template']),bundle['files'][bundle['template']])
+            material=profile['materials_file'].replace('@workspace/', '')
+            self.assertEqual(linked.digest(ROOT/material),bundle['files'][material])
+            self.assertNotEqual(profile['materials_file'],baseline['materials_file'])
+
     def test_d4_qualified_bundle_keeps_its_physics_and_frame_policy(self):
         bundle=linked.read(ROOT/'reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d4_inputs.json')
         profile=linked.read(ROOT/bundle['template'])

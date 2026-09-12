@@ -4,13 +4,65 @@
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
+#include <span>
 
 namespace vela {
 
 namespace {
 
 constexpr Real SqrtPi = 1.7724538509055160273;
-constexpr Real BednarczykCoefficient = 0.75 * SqrtPi;
+#include "FermiHalfCoefficients.inc"
+
+template<int Order>
+Real evaluateFermiHalf(Real eta)
+{
+    constexpr bool Derivative=Order>0;
+    if (std::isnan(eta)) return eta;
+    if (eta == -std::numeric_limits<Real>::infinity()) return 0.0;
+    if (eta == std::numeric_limits<Real>::infinity())
+        return Order==2?0.:std::numeric_limits<Real>::infinity();
+    if (eta < -8.0) {
+        // Convergent fugacity series: sum (-1)^(k+1) exp(k eta)/k^(3/2).
+        // Differentiating term by term changes the denominator to sqrt(k).
+        const Real z = std::exp(eta);
+        Real sum = 0.0;
+        for (int k = 6; k >= 1; --k) {
+            const Real denominator = Order==2 ? 1./std::sqrt(Real(k)) : Derivative ? std::sqrt(Real(k))
+                                               : Real(k) * std::sqrt(Real(k));
+            sum = (k % 2 ? 1.0 : -1.0) / denominator + z * sum;
+        }
+        return z * sum;
+    }
+    if (eta >= 64.0) {
+        const Real reciprocal = 1.0 / eta;
+        const Real u = reciprocal * reciprocal;
+        Real sum = 0.0;
+        for (int k = 6; k >= 0; --k)
+            sum = sum * u + FermiSommerfeld[k] * (Derivative ? 1.5 - 2.0*k : 1.0) * (Order==2 ? .5-2.*k : 1.);
+        const Real prefactor = (4.0 / (3.0 * SqrtPi)) * std::sqrt(eta);
+        if constexpr (Order==2) return prefactor * sum / eta;
+        if constexpr (Derivative) return prefactor * sum;
+        return std::min(std::numeric_limits<Real>::max(), (prefactor * sum) * eta);
+    }
+    std::size_t segment = 0;
+    while (eta > FermiBounds[segment + 1]) ++segment;
+    const Real scale = 2.0 / (FermiBounds[segment + 1] - FermiBounds[segment]);
+    const Real t = (eta - FermiBounds[segment]) * scale - 1.0;
+    const auto coefficients = FermiCoefficients[segment];
+    Real b1 = 0.0, b2 = 0.0, d1 = 0.0, d2 = 0.0, c1=0., c2=0.;
+    for (std::size_t k = coefficients.size() - 1; k > 0; --k) {
+        if constexpr (Order==2) {const Real second=4.*d1+2.*t*c1-c2;c2=c1;c1=second;}
+        if constexpr (Derivative) {
+            const Real derivative = 2.0*b1 + 2.0*t*d1 - d2;
+            d2 = d1; d1 = derivative;
+        }
+        const Real b = coefficients[k] + 2.0*t*b1 - b2;
+        b2 = b1; b1 = b;
+    }
+    if constexpr (Order==2) return (2.*d1+t*c1-c2)*scale*scale;
+    if constexpr (Derivative) return (b1 + t*d1 - d2) * scale;
+    return coefficients[0] + t*b1 - b2;
+}
 
 Real limitedExp(Real value)
 {
@@ -61,43 +113,16 @@ bool usesFermiDirac(const CarrierStatisticsConfig& config)
 Real fermiDiracHalf(Real eta)
 {
     ++physicsCallCounters.fermiDiracHalf;
-    if (!std::isfinite(eta))
-        return eta < 0.0 ? 0.0 : std::numeric_limits<Real>::max();
-    if (eta < -40.0)
-        return std::exp(eta);
-
-    const Real exponential = std::exp(std::max(-eta, -700.0));
-    const Real shifted = eta + 1.0;
-    const Real gaussian = std::exp(-0.17 * shifted * shifted);
-    const Real v = std::pow(eta, 4.0) + 50.0
-        + 33.6 * eta * (1.0 - 0.68 * gaussian);
-    const Real denominator = exponential
-        + BednarczykCoefficient * std::pow(v, -0.375);
-    return 1.0 / denominator;
+    return evaluateFermiHalf<false>(eta);
 }
 
 Real fermiDiracHalfDerivative(Real eta)
 {
     ++physicsCallCounters.fermiDiracHalfDerivative;
-    if (!std::isfinite(eta))
-        return 0.0;
-    if (eta < -40.0)
-        return std::exp(eta);
-
-    const Real exponential = std::exp(std::max(-eta, -700.0));
-    const Real shifted = eta + 1.0;
-    const Real gaussian = std::exp(-0.17 * shifted * shifted);
-    const Real bracket = 1.0 - 0.68 * gaussian;
-    const Real bracketDerivative = 0.2312 * shifted * gaussian;
-    const Real v = std::pow(eta, 4.0) + 50.0 + 33.6 * eta * bracket;
-    const Real vDerivative = 4.0 * eta * eta * eta
-        + 33.6 * (bracket + eta * bracketDerivative);
-    const Real power = std::pow(v, -0.375);
-    const Real denominator = exponential + BednarczykCoefficient * power;
-    const Real denominatorDerivative = -exponential
-        - 0.375 * BednarczykCoefficient * std::pow(v, -1.375) * vDerivative;
-    return std::max<Real>(0.0, -denominatorDerivative / (denominator * denominator));
+    return evaluateFermiHalf<true>(eta);
 }
+
+Real fermiDiracHalfSecondDerivative(Real eta) { return evaluateFermiHalf<2>(eta); }
 
 Real inverseFermiDiracHalf(Real value)
 {
@@ -109,31 +134,29 @@ Real inverseFermiDiracHalf(Real value)
             "inverseFermiDiracHalf: argument must be positive and finite.");
     }
 
-    Real lower = -500.0;
-    Real upper = value < 1.0
-        ? 2.0
-        : std::max<Real>(2.0, std::pow(value / 0.752252778063675, 2.0 / 3.0) * 1.5);
-    while (fermiDiracHalf(upper) < value && upper < 1.0e6)
-        upper *= 2.0;
-
-    Real eta = value < 0.5
-        ? std::log(value)
-        : std::pow(value / 0.752252778063675, 2.0 / 3.0);
+    // For tiny positive values log(value) already resolves the inverse to
+    // floating-point precision; do not stop by an absolute density tolerance.
+    if (value < 1.0e-12) return std::log(value);
+    Real lower = std::log(value);
+    const Real degenerateEstimate = std::pow(value, 2.0 / 3.0)
+        * std::pow(0.75 * SqrtPi, 2.0 / 3.0);
+    Real upper = std::max<Real>(2.0, 2.0 * degenerateEstimate);
+    Real eta = value < 0.5 ? lower : degenerateEstimate;
     eta = std::clamp(eta, lower, upper);
     for (int iteration = 0; iteration < 80; ++iteration) {
-        const Real function = fermiDiracHalf(eta) - value;
-        if (function > 0.0)
-            upper = eta;
-        else
-            lower = eta;
-        if (std::abs(function) <= 2.0e-13 * std::max<Real>(1.0, value))
-            break;
-
+        const Real evaluated = fermiDiracHalf(eta);
+        const Real function = evaluated - value;
+        if (std::abs(function / value) <= 4.0e-14) break;
+        if (function > 0.0) upper = eta;
+        else lower = eta;
         const Real derivative = fermiDiracHalfDerivative(eta);
-        const Real newton = derivative > 0.0 ? eta - function / derivative
-                                             : 0.5 * (lower + upper);
-        eta = (newton > lower && newton < upper && std::isfinite(newton))
-            ? newton : 0.5 * (lower + upper);
+        const Real trial = derivative > 0.0 ? eta - function / derivative
+                                            : lower + 0.5 * (upper - lower);
+        const Real next = trial > lower && trial < upper && std::isfinite(trial)
+            ? trial : lower + 0.5 * (upper - lower);
+        if (next == eta || upper - lower <= 4.0 * std::numeric_limits<Real>::epsilon()
+                * std::max<Real>(1.0, std::abs(eta))) break;
+        eta = next;
     }
     return eta;
 }

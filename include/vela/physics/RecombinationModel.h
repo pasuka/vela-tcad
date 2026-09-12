@@ -53,6 +53,14 @@ struct SRHDopingDependenceConfig {
     std::string densityCoupling = "quantum";
 };
 
+struct AugerDensityDependenceConfig {
+    bool enabled = false;
+    Real electronEnhancement = 0.0;
+    Real holeEnhancement = 0.0;
+    Real electronReferenceDensity = 1.0e24; ///< Internal concentration units; SI by default.
+    Real holeReferenceDensity = 1.0e24;
+};
+
 struct RecombinationModelConfig {
     std::vector<std::string> mechanisms = {"srh"};
     Real taun = 1.0e-5; ///< Electron SRH lifetime [s]
@@ -66,6 +74,7 @@ struct RecombinationModelConfig {
     /// ``generalized_fermi`` preserves the historical Vela behavior;
     /// ``classical_np`` uses n*p-ni_eff^2, matching the conventional model.
     std::string augerExcessProduct = "generalized_fermi";
+    AugerDensityDependenceConfig augerDensityDependence{};
     SRHDopingDependenceConfig srhDopingDependence{};
     BandToBandTunnelingConfig bandToBand{};
 };
@@ -171,5 +180,8 @@ RecombinationModelConfig recombinationModelConfig(
 SRHDopingDependenceConfig srhDopingDependenceConfigFromJson(
     const nlohmann::json& value,
     UnitScalingConfig scaling = {});
+
+AugerDensityDependenceConfig augerDensityDependenceConfigFromJson(
+    const nlohmann::json& value, UnitScalingConfig scaling = {});
 
 } // namespace vela

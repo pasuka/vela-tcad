@@ -82,6 +82,21 @@ physical voltage before returning or writing output.
   the distinction between local formula checks and self-consistent D4 curves.
 - Device-level calibration and cross-tool claims require a checked-in
   `reference_tcad/` fixture with an explicit acceptance boundary.
+- `LatticeHeatAssembler` and the `lattice_heat_probe` executable provide
+  independent steady Tri3 conduction with temperature-dependent conductivity,
+  prescribed cell heat sources and explicit Robin thermodes. Geometry conversion
+  is explicit; thermal quantities are SI per unit width. This prescribed-source
+  tool remains separate from electrical DC sweeps. See the
+  [thermal operator report](validation/templates_ldmos_d0_thermal_operator_2026-09-12.md).
+- The experimental `ElectrothermalAssembler` / `electrothermal_probe` path couples
+  four SI unknowns per node: potential, electron/hole quasi-Fermi potentials and
+  lattice temperature. `SiliconThermalPhysics`, temperature-aware IALMob and
+  `ThermalSgCurrent` provide the analytic Jacobian. Default lattice heat uses the
+  same discrete carrier currents and band-edge work; Thermodynamic, Peltier and
+  RecGenHeat are not enabled. Its explicit geometry and ideal neutral contacts
+  are scoped to the audited LDMOS configuration. The production DC sweep remains
+  isothermal; qualification is tracked in the
+  [D0 electrothermal report](validation/templates_ldmos_d0_electrothermal_2026-09-12.md).
 - BV sweeps report diagnostic max field/current jump/non-convergence markers,
   not calibrated breakdown voltages.
 - CV sweeps use finite-difference terminal charge, not AC small-signal

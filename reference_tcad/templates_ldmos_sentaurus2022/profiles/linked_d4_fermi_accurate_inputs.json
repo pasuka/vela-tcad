@@ -1,0 +1,35 @@
+{
+  "schema": "vela.templates_ldmos.linked_d4_inputs.v1",
+  "template": "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d4_fermi_accurate_config.json",
+  "seeds": {
+    "4": "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg4_qualified/state.csv",
+    "8": "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg8_qualified/state.csv"
+  },
+  "references": {
+    "4": "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D4-classical/IdVd_Vg1_n4_des_drain_curve.csv",
+    "8": "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D4-classical/IdVd_Vg2_n4_des_drain_curve.csv"
+  },
+  "files": {
+    "reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/stage1_v4/vela_exact_topology/mesh.json": "36f79a06a21550d69fb58ad221457b1c1ccc63fa3a929046ef6b90e185f09ff6",
+    "reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/stage1_v4/vela_exact_topology/doping.csv": "b9924f72bf36386d031e7a168adbc997d9f076db1662b7b8c1e3416ad68acb39",
+    "reference_staging/templates_ldmos_averagebox_full_mesh_20260831/transport_couples.csv": "758161f73f570511ccd914628451ebcad58b5f8e58dd6b6351f00669e18b36cb",
+    "reference_staging/templates_ldmos_followup_20260911/ialmob_global_r4/inputs/geometry.json": "250d525d123b17df3a698dbb76bae3f2914a8bd0f7b6028b12acf76cfb35f12b",
+    "reference_staging/templates_ldmos_followup_20260911/ialmob_difference_location/native/geometry/MeasureCoefficients.debug": "05ec1a43936e0ff71bea7cdfd956d80c7d692b228187ccae8625ec53ce58d49e",
+    "scripts/prepare_templates_ldmos_ialmob_transport.py": "4a64d7d9a1a5354880b22a94677727335feea0386dc3a164fe1ef65c91d1fbd0",
+    "reference_staging/templates_ldmos_followup_20260911/ialmob_closure_r2/raw_distance_gradient_replay/e_absolute_100_input.json": "24cd75d7b91e1ac1cc0b3de40b02923a6eb4c5126b9bfb7d3da00dfa16d5ba67",
+    "reference_staging/templates_ldmos_followup_20260911/ialmob_closure_r2/raw_distance_gradient_replay/e_absolute_110_input.json": "da940a4ece6fc68b11b759f6f664a278125f678211f312d2cfc7e0083e8561cd",
+    "reference_staging/templates_ldmos_followup_20260911/ialmob_closure_r2/raw_distance_gradient_replay/h_absolute_100_input.json": "7066f5359cef339753554f76076e871b50b8d9e7625a8056db28ff9640ec3a94",
+    "reference_staging/templates_ldmos_followup_20260911/ialmob_closure_r2/raw_distance_gradient_replay/h_absolute_110_input.json": "881df92cef178949280c0f795806c43bd419174048afcfa6f54c4aff95992a3f",
+    "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D4-classical/IdVd_Vg1_n4_des_drain_curve.csv": "291e31a73a51be1881c8556d31c2e84c5be3e179a25856d2e6e979e466285502",
+    "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D4-classical/IdVd_Vg2_n4_des_drain_curve.csv": "4b48bca3a38a1d21709bd40c11ac47a7349a1c8dba4b509d1fdc4a7e19778bb8",
+    "reference_tcad/templates_ldmos_sentaurus2022/profiles/materials_fermi_consistent_300k.json": "bcd6cd7ca25d9a7b9af45f7d71372b422b35a2201134b84c05ad65a6eff2ba52",
+    "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d4_fermi_accurate_config.json": "00da311f4fd9cd6cdcd9c1970a0b7a43c0dac13085812a7f17bc3dff888d23ad",
+    "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg4_qualified/state.csv": "0e9685776c538f624ae62e31adf55feae7dc94ebdb22d5e8475435ec11ff9376",
+    "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg8_qualified/state.csv": "4994de512efe74e5efece043ffb893f3225ce0ab3646682522ae00817b870a4a"
+  },
+  "note": "High-accuracy Fermi/BGN and source-audited 300 K material profile. Equilibrium seeds re-solved with constant zero QFs by Poisson and checked by full Newton under original gates; seed preparation is separate from the drain sweep.",
+  "frame_offsets_V": {
+    "4": 28.0,
+    "8": 4.0
+  }
+}

@@ -29,6 +29,9 @@ evidence.
 - [LDMOS current validation](validation/templates_ldmos_current_status.md):
   current qualification boundaries, configuration profiles and reproducible
   linked D4/D5 entry points.
+- [LDMOS daily report, 2026-09-12](validation/templates_ldmos_daily_report_2026-09-12.md):
+  physics and electrothermal qualification summary with reproducible static
+  current, temperature-rise and nodal-temperature comparison figures.
 
 Optional feature switches used by this repository:
 

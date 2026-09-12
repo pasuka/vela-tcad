@@ -28,9 +28,35 @@ def main():
         result=run();assert result.returncode==0,result.stderr
         point=json.loads(result.stdout)['results'][0]
         assert point['mobility_derivatives_SI']==[0.]*6
-        # Unsupported temperatures/options must not silently select a surrogate.
+        # Temperature is explicit, including per-state overrides and its partial.
         config['temperature_K']=350.
-        result=run();assert result.returncode!=0 and not result.stdout and '300 K' in result.stderr
+        result=run();assert result.returncode==0,result.stderr
+        point=json.loads(result.stdout)['results'][0]
+        expected=.1*(350./300.)**-2.285
+        assert math.isclose(point['mobility_m2_per_Vs'],expected,rel_tol=1e-13)
+        assert math.isclose(point['mobility_temperature_derivative_m2_per_Vs_K'],-2.285*expected/350.,rel_tol=1e-13)
+        config['high_field']=dict(vsat300_m_per_s=1.07e5,beta300=1.109,vsat_exponent=.87,beta_exponent=.66)
+        state['drivingField_V_per_m']=2e6
+        result=run();assert result.returncode==0,result.stderr
+        point=json.loads(result.stdout)['results'][0]
+        beta=1.109*(350./300.)**.66;vsat=1.07e5*(350./300.)**-.87
+        high=expected/(1+(expected*2e6/vsat)**beta)**(1./beta)
+        assert math.isclose(point['high_field_mobility_m2_per_Vs'],high,rel_tol=1e-13)
+        config['temperature_K']=350.01
+        a=json.loads(run().stdout)['results'][0]['high_field_mobility_m2_per_Vs']
+        config['temperature_K']=349.99
+        b=json.loads(run().stdout)['results'][0]['high_field_mobility_m2_per_Vs']
+        assert math.isclose(point['high_field_temperature_derivative_m2_per_Vs_K'],(a-b)/.02,rel_tol=1e-7)
+        config['temperature_K']=350.
+        del config['high_field']
+        result=run();assert result.returncode!=0 and 'requires explicit' in result.stderr
+        del state['drivingField_V_per_m']
+        state['temperature_K']=400.
+        result=run();assert result.returncode==0,result.stderr
+        assert json.loads(result.stdout)['results'][0]['temperature_K']==400.
+        del state['temperature_K']
+        config['temperature_K']=49.
+        result=run();assert result.returncode!=0 and not result.stdout and '50 K' in result.stderr
         config['temperature_K']=300.;config['parameters_cm']['tcoulomb']=.01
         result=run();assert result.returncode!=0 and not result.stdout and 'tcoulomb' in result.stderr
         del config['parameters_cm']['tcoulomb']

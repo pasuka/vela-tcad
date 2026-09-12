@@ -114,6 +114,11 @@ public:
                                              const VectorXd& x,
                                              const std::string& contactName) const;
 
+    // Uses the same referenced quasi-Fermi reconstruction as computeDetailed.
+    // The returned immutable state can be shared by postprocessors; each call
+    // still validates live inputs before reusing it.
+    MobilityModelConfig prepareMobility(const DDSolution& solution) const;
+
     static ContactCurrentResult compute(const DeviceMesh& mesh,
                                         const MaterialDatabase& matdb,
                                         const DopingModel& doping,

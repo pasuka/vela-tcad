@@ -724,6 +724,7 @@ SweepTransportDiagnostics computeSweepTransportDiagnostics(
     const UnitScalingConfig& scaling)
 {
     SweepTransportDiagnostics diagnostics;
+    ScopedPerformanceTimer timer("post.transport_diagnostics");
     updateIalTransportState(mobilityConfig,mesh,doping,sol.psi,sol.n,sol.p,sol.phin,sol.phip);
     const auto edgeCells = detail::buildEdgeCellMap(mesh);
     const std::vector<Material> cellMaterials =
@@ -884,6 +885,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
     const std::vector<std::string>& contacts,
     const UnitScalingConfig& scaling)
 {
+    ScopedPerformanceTimer timer("post.continuity_balance");
     updateIalTransportState(mobilityConfig,mesh,doping,sol.psi,sol.n,sol.p,sol.phin,sol.phip);
     const auto edgeCells = detail::buildEdgeCellMap(mesh);
     const std::vector<Material> cellMaterials =
@@ -3193,6 +3195,13 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         gummel.unitScalingRefs = scalingRefs;
         mobilityConfig = gummel.mobility;
     }
+    // Mesh transport coefficients and mobility options are fixed for this
+    // request. Share geometry before the solvers and postprocessors copy it.
+    if (mobilityConfig.model == "ialmob") {
+        prepareIalTransportGeometry(mobilityConfig, mesh);
+        newton.mobility.ialmobGeometry = mobilityConfig.ialmobGeometry;
+        gummel.mobility.ialmobGeometry = mobilityConfig.ialmobGeometry;
+    }
     newton.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
     gummel.poissonChargeVolumePolicy = poissonChargeVolumePolicy;
     if (sweep.stepGrowthMode == "newton_iterations") {
@@ -3299,6 +3308,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             newton.srhDopingDependence);
         sweepRecombinationConfig.augerCn = newton.augerCn;
         sweepRecombinationConfig.augerCp = newton.augerCp;
+        sweepRecombinationConfig.augerDensityDependence = newton.augerDensityDependence;
         sweepRecombinationConfig.augerExcessProduct = newton.augerExcessProduct;
         sweepRecombinationConfig.bandToBand = newton.bandToBand;
         sweepBgnConfig = newton.bandgapNarrowing;
@@ -3309,6 +3319,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             gummel.srhDopingDependence);
         sweepRecombinationConfig.augerCn = gummel.augerCn;
         sweepRecombinationConfig.augerCp = gummel.augerCp;
+        sweepRecombinationConfig.augerDensityDependence = gummel.augerDensityDependence;
         sweepRecombinationConfig.augerExcessProduct = gummel.augerExcessProduct;
         sweepRecombinationConfig.bandToBand = gummel.bandToBand;
         sweepBgnConfig = gummel.bandgapNarrowing;
@@ -5237,6 +5248,19 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         ContactCurrentResult current{};
         ContactCurrentDetailedResult currentDetailed{};
         const DDSolution& sol = attempt.solution;
+        std::optional<MobilityModelConfig> preparedMobility;
+        std::optional<ContactCurrent> preparedContactCurrent;
+        if (converged && mobilityConfig.model == "ialmob") {
+            ScopedPerformanceTimer prepareTimer("post.prepare_ialmob_state");
+            preparedMobility = contactCurrent.prepareMobility(sol);
+            preparedContactCurrent.emplace(mesh, matdb, doping, *preparedMobility,
+                temperature_K, ddScaling, sweepBgnConfig, sweepCarrierStatistics,
+                sweepQuantumPotential);
+        }
+        const auto& recordMobilityConfig = preparedMobility
+            ? *preparedMobility : mobilityConfig;
+        const auto& recordContactCurrent = preparedContactCurrent
+            ? *preparedContactCurrent : contactCurrent;
         const Real fieldFactor = sweep.scaling.unitSystem().fieldFromCoordinateDeltaFactor();
         std::unordered_map<std::string, ContactCurrentDetailedResult> detailedByContact;
         auto detailedForContact = [&](const std::string& contactName) -> const ContactCurrentDetailedResult& {
@@ -5245,9 +5269,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 auto inserted = detailedByContact.emplace(
                     contactName,
                     sweep.diagnostics.contactCurrentQfFloor.enabled
-                        ? contactCurrent.computeDetailed(
+                        ? recordContactCurrent.computeDetailed(
                               sol, contactName, attempt.contactCurrentOverrides)
-                        : contactCurrent.computeDetailed(sol, contactName));
+                        : recordContactCurrent.computeDetailed(sol, contactName));
                 it = inserted.first;
             }
             return it->second;
@@ -5261,9 +5285,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 current = currentDetailed.totals;
             } else {
                 current = sweep.diagnostics.contactCurrentQfFloor.enabled
-                    ? contactCurrent.computeDetailed(
+                    ? recordContactCurrent.computeDetailed(
                           sol, sweep.currentContact, attempt.contactCurrentOverrides).totals
-                    : contactCurrent.compute(sol, sweep.currentContact);
+                    : recordContactCurrent.compute(sol, sweep.currentContact);
             }
         }
 
@@ -5430,7 +5454,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
                 pathImpactConfig,
                 *pathImpact,
-                mobilityConfig,
+                recordMobilityConfig,
                 *sweepMobility,
                 sweepEdgeCells,
                 mesh,
@@ -6087,7 +6111,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         if (converged && sweep.diagnostics.transport.enabled) {
             const SweepTransportDiagnostics diagnostics =
                 computeSweepTransportDiagnostics(
-                    mesh, matdb, doping, mobilityConfig, temperature_K, sol, sweep.scaling);
+                    mesh, matdb, doping, recordMobilityConfig, temperature_K, sol, sweep.scaling);
             point.extraFields.emplace_back(
                 "mean_electron_mobility_m2_V_s", diagnostics.meanElectronMobility_m2_V_s);
             point.extraFields.emplace_back(
@@ -6313,7 +6337,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
                     sweepImpactIonizationConfig,
                     *sweepImpactIonization,
-                    mobilityConfig,
+                    recordMobilityConfig,
                     *sweepMobility,
                     sweepEdgeCells,
                     mesh,
@@ -6607,7 +6631,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     mesh,
                     matdb,
                     doping,
-                    mobilityConfig,
+                    recordMobilityConfig,
                     temperature_K,
                     sol,
                     effectiveNi,
@@ -6650,7 +6674,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 const auto records = detail::sgEdgeCurrentAvalancheSourceRecords(
                     sweepImpactIonizationConfig,
                     *sweepImpactIonization,
-                    mobilityConfig,
+                    recordMobilityConfig,
                     *sweepMobility,
                     sweepEdgeCells,
                     mesh,
@@ -6673,11 +6697,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             }
             for (const std::string& contactName : terminalCurrentMethodCompareContacts) {
                 const ContactCurrentDetailedResult sgFluxDetailed =
-                    contactCurrent.computeDetailed(sol, contactName);
+                    recordContactCurrent.computeDetailed(sol, contactName);
                 const ContactCurrentDetailedResult qfFloorDetailed =
-                    contactCurrent.computeDetailed(sol, contactName, attempt.contactCurrentOverrides);
+                    recordContactCurrent.computeDetailed(sol, contactName, attempt.contactCurrentOverrides);
                 const ContactCurrentResult residualCurrent =
-                    contactCurrent.computeFromResidual(
+                    recordContactCurrent.computeFromResidual(
                         terminalCurrentResidualAssembler, residualX, contactName);
                 Real maxHoleQfDrop = 0.0;
                 for (const ContactCurrentEdgeDiagnostic& edge : sgFluxDetailed.edges) {
@@ -6703,7 +6727,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 detail::sgEdgeCurrentAvalancheSourceRecords(
                     sweepImpactIonizationConfig,
                     *sweepImpactIonization,
-                    mobilityConfig,
+                    recordMobilityConfig,
                     *sweepMobility,
                     sweepEdgeCells,
                     mesh,
@@ -6823,7 +6847,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             const auto records = detail::triangleGssAvalancheSourceRecords(
                 sweepImpactIonizationConfig,
                 *sweepImpactIonization,
-                mobilityConfig,
+                recordMobilityConfig,
                 *sweepMobility,
                 sweepEdgeCells,
                 mesh,
@@ -6886,7 +6910,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 mesh,
                 doping,
                 sol,
-                mobilityConfig,
+                recordMobilityConfig,
                 sweepImpactIonizationConfig,
                 sweepBgnConfig,
                 matdb,
@@ -6896,7 +6920,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 detail::currentDensityAvalancheSourceIntegrals(
                     sweepImpactIonizationConfig,
                     *sweepImpactIonization,
-                    mobilityConfig,
+                    recordMobilityConfig,
                     *sweepMobility,
                     sweepEdgeCells,
                     mesh,
@@ -7009,7 +7033,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 detail::sgEdgeCurrentAvalancheSourceRecords(
                     sweepImpactIonizationConfig,
                     *sweepImpactIonization,
-                    mobilityConfig,
+                    recordMobilityConfig,
                     *sweepMobility,
                     sweepEdgeCells,
                     mesh,
@@ -7031,7 +7055,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 detail::currentDensityAvalancheSourceIntegrals(
                     sweepImpactIonizationConfig,
                     *sweepImpactIonization,
-                    mobilityConfig,
+                    recordMobilityConfig,
                     *sweepMobility,
                     sweepEdgeCells,
                     mesh,
@@ -7136,7 +7160,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                matdb,
                                doping,
                                sol,
-                               mobilityConfig,
+                               recordMobilityConfig,
                                sweepRecombinationConfig,
                                sweepImpactIonizationConfig,
                                sweepBgnConfig,

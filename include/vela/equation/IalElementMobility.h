@@ -25,6 +25,9 @@ struct IalElementVertexState {
     /// The caller supplies derivatives from its actual carrier statistics,
     /// including Fermi-Dirac statistics when selected. No Boltzmann assumption.
     Real electronResponse_m3_per_V = 0., holeResponse_m3_per_V = 0.;
+    Real temperature_K = 300.;
+    /// Carrier temperature partials at fixed local potentials; may be negative.
+    Real electronTemperatureResponse_m3_per_K = 0., holeTemperatureResponse_m3_per_K = 0.;
 };
 
 struct IalElementMobilityOptions {
@@ -32,6 +35,10 @@ struct IalElementMobilityOptions {
     Real referenceDensity_m3 = 1e18; ///< D4 RefDens = 1e12 cm^-3.
     FieldMobilityParameters electronField{1.07e5,1.109};
     FieldMobilityParameters holeField{8.37e4,1.213};
+    bool temperatureDependentHighField = false;
+    bool temperatureDerivatives = false;
+    Real electronVelocityTemperatureExponent = .87, holeVelocityTemperatureExponent = .52;
+    Real electronBetaTemperatureExponent = .66, holeBetaTemperatureExponent = .17;
 };
 
 struct IalElementMobilityResult {
@@ -39,6 +46,9 @@ struct IalElementMobilityResult {
     /// Values in m^2/(V s), derivatives per physical volt.
     detail::Tri3LocalForwardDual electronLowField, holeLowField;
     detail::Tri3LocalForwardDual electron, hole;
+    /// Three additional T columns, one per vertex, when requested in options.
+    std::array<Real,3> electronTemperatureDerivative{},holeTemperatureDerivative{};
+    std::array<Real,3> electronLowTemperatureDerivative{},holeLowTemperatureDerivative{};
 };
 
 /// Element-vertex mobility and its coupled potential Jacobian, prior to

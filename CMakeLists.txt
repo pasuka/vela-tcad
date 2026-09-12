@@ -212,6 +212,8 @@ add_library(vela_core STATIC
     src/physics/SRHRecombination.cpp
     src/physics/MobilityModel.cpp
     src/physics/IalMobility.cpp
+    src/physics/IalHighFieldMobility.cpp
+    src/physics/SiliconThermalPhysics.cpp
     src/physics/IalInterfaceGeometry.cpp
     src/equation/IalElementMobility.cpp
     src/equation/IalTransport.cpp
@@ -219,11 +221,15 @@ add_library(vela_core STATIC
     src/physics/ImpactIonizationModel.cpp
     src/physics/BandgapNarrowing.cpp
     src/equation/PoissonAssembler.cpp
+    src/equation/LatticeHeatAssembler.cpp
+    src/equation/LatticeBandEdgeWork.cpp
+    src/equation/ElectrothermalAssembler.cpp
     src/equation/DDAssembler.cpp
     src/equation/BVProcessProbe.cpp
     src/equation/FixedStateOperatorAudit.cpp
     src/discretization/Bernoulli.cpp
     src/discretization/ScharfetterGummel.cpp
+    src/discretization/ThermalSgCurrent.cpp
     src/solver/LinearSolver.cpp
     src/solver/GummelSolver.cpp
     src/solver/SolutionValidation.cpp
@@ -374,8 +380,16 @@ target_link_libraries(pn2d_jacobian_block_audit PRIVATE vela_core)
 add_executable(alpha_from_sentaurus_f src/tools/alpha_from_sentaurus_f.cpp)
 target_link_libraries(alpha_from_sentaurus_f PRIVATE vela_core)
 
+add_executable(electrothermal_probe src/tools/electrothermal_probe.cpp)
+target_link_libraries(electrothermal_probe PRIVATE vela_core)
+
+add_executable(silicon_thermal_probe src/tools/silicon_thermal_probe.cpp)
+target_link_libraries(silicon_thermal_probe PRIVATE vela_core)
+
 add_executable(ialmob_probe src/tools/ialmob_probe.cpp)
 target_link_libraries(ialmob_probe PRIVATE vela_core)
+add_executable(lattice_heat_probe src/tools/lattice_heat_probe.cpp)
+target_link_libraries(lattice_heat_probe PRIVATE vela_core)
 add_executable(ialmob_geometry_probe src/tools/ialmob_geometry_probe.cpp)
 target_link_libraries(ialmob_geometry_probe PRIVATE vela_core)
 add_executable(ialmob_element_probe src/tools/ialmob_element_probe.cpp)
@@ -478,7 +492,7 @@ target_compile_definitions(test_external_state PRIVATE
     VELA_EXAMPLE_RUNNER_EXE="$<TARGET_FILE:vela_example_runner>")
 add_dependencies(test_external_state vela_example_runner)
 
-add_executable(test_mobility tests/test_mobility.cpp tests/test_ialmob.cpp tests/test_ialmob_jacobian.cpp tests/test_ialmob_transport.cpp)
+add_executable(test_mobility tests/test_mobility.cpp tests/test_ialmob.cpp tests/test_ialmob_temperature_hfs.cpp tests/test_silicon_thermal.cpp tests/test_ialmob_jacobian.cpp tests/test_ialmob_transport.cpp)
 target_link_libraries(test_mobility PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_impact_ionization tests/test_impact_ionization.cpp)
@@ -501,6 +515,8 @@ target_link_libraries(test_bv_process_probe PRIVATE vela_core Catch2::Catch2With
 
 add_executable(test_recombination tests/test_recombination.cpp)
 target_link_libraries(test_recombination PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_lattice_heat tests/test_lattice_heat.cpp)
+target_link_libraries(test_lattice_heat PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_density_gradient_quantum_potential tests/test_density_gradient_quantum_potential.cpp)
 target_link_libraries(test_density_gradient_quantum_potential PRIVATE vela_core Catch2::Catch2WithMain)
@@ -583,6 +599,7 @@ vela_catch_discover_tests(test_element_edge_gss_laux_avalanche)
 vela_catch_discover_tests(test_fixed_state_operator_audit)
 vela_catch_discover_tests(test_bv_process_probe)
 vela_catch_discover_tests(test_recombination)
+vela_catch_discover_tests(test_lattice_heat)
 vela_catch_discover_tests(test_density_gradient_quantum_potential)
 vela_catch_discover_tests(test_line_search_backtrack_failure)
 vela_catch_discover_tests(test_dc_sweep)
@@ -720,6 +737,29 @@ add_test(NAME templates_ldmos_linked_d5_regression
 set_tests_properties(templates_ldmos_linked_d5_regression PROPERTIES
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 vela_set_windows_msys2_test_path(templates_ldmos_linked_d5_regression)
+
+add_test(NAME templates_ldmos_fermi_materials_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_prepare_templates_ldmos_fermi_materials)
+set_tests_properties(templates_ldmos_fermi_materials_regression PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(templates_ldmos_fermi_materials_regression)
+
+add_test(NAME templates_ldmos_electrothermal_input_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_electrothermal)
+set_tests_properties(templates_ldmos_electrothermal_input_regression PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(templates_ldmos_electrothermal_input_regression)
+set_property(TEST templates_ldmos_electrothermal_input_regression APPEND PROPERTY
+    ENVIRONMENT "VELA_ELECTROTHERMAL_PROBE=$<TARGET_FILE:electrothermal_probe>")
+
+add_test(NAME templates_ldmos_thermal_gates_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_thermal)
+set_tests_properties(templates_ldmos_thermal_gates_regression PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(templates_ldmos_thermal_gates_regression)
 
 add_test(NAME dc_worker_protocol
     COMMAND ${Python3_EXECUTABLE}

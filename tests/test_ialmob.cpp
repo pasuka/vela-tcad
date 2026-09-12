@@ -141,3 +141,57 @@ TEST_CASE("IALMob rejects invalid input before numerical evaluation", "[mobility
     parameters.lCrit=0.;
     CHECK_THROWS_AS(IalMobility(parameters,true), std::invalid_argument);
 }
+
+TEST_CASE("IALMob temperature lattice limit and its analytic slope", "[mobility][ialmob][temperature]")
+{
+    for (bool electron : {false,true}) {
+        const auto p=IalMobility::siliconDefaults(electron);
+        const IalMobility model(p,electron);
+        for (Real t : {50.,200.,300.,400.,514.,600.}) {
+            IalMobilityState state; state.temperature_K=t;
+            const auto r=model.evaluateWithDerivatives(state);
+            const Real expected=p.muMax*1e-4*std::pow(t/300.,-p.theta);
+            CHECK(r.result.mobility_m2_per_Vs==Catch::Approx(expected).epsilon(1e-13));
+            CHECK(r.temperatureDerivative_m2_per_Vs_K==Catch::Approx(-p.theta*expected/t).epsilon(1e-13));
+        }
+    }
+}
+
+TEST_CASE("IALMob hot-state derivatives include moving screening clamp", "[mobility][ialmob][temperature][jacobian]")
+{
+    for (bool electron : {false,true}) {
+        auto p=IalMobility::siliconDefaults(electron);
+        p.alpha1Inv=.7; p.alpha2Inv=-.4; p.alpha1Acc=.3; p.alpha2Acc=.8;
+        p.lCrit=p.lCritC=1e-6;
+        const IalMobility model(p,electron);
+        // Dilute and strongly screened states cover either side of Pmin.
+        for (Real density : {1e18,1e23,1e28})
+        for (Real field : {0.,1e6,1e8})
+        for (Real t : {100.,299.,300.,401.,514.,600.}) {
+            IalMobilityState state{density,.8*density,.3*density,.7*density,field,2e-8,t};
+            const auto r=model.evaluateWithDerivatives(state);
+            for (Real dt : {1e-2,1e-3}) {
+                auto a=state,b=state; a.temperature_K+=dt; b.temperature_K-=dt;
+                const Real fd=(model.evaluate(a).mobility_m2_per_Vs-model.evaluate(b).mobility_m2_per_Vs)/(2.*dt);
+                INFO("electron="<<electron<<" T="<<t<<" density="<<density<<" field="<<field);
+                CHECK(r.temperatureDerivative_m2_per_Vs_K*t/r.result.mobility_m2_per_Vs==
+                    Catch::Approx(fd*t/r.result.mobility_m2_per_Vs).epsilon(2e-6).margin(2e-8));
+            }
+        }
+    }
+}
+
+TEST_CASE("IALMob rejects unsupported temperature and nonfinite thermal exponents", "[mobility][ialmob][temperature]")
+{
+    auto p=IalMobility::siliconDefaults(true);
+    const IalMobility model(p,true);
+    IalMobilityState state;
+    for (Real t : {0.,49.,-300.,std::numeric_limits<Real>::infinity(),std::numeric_limits<Real>::quiet_NaN()}) {
+        state.temperature_K=t;
+        CHECK_THROWS_AS(model.evaluate(state),std::invalid_argument);
+    }
+    for (auto member : {&IalMobilityParameters::theta,&IalMobilityParameters::k,&IalMobilityParameters::alpha1Inv}) {
+        auto bad=p; bad.*member=std::numeric_limits<Real>::quiet_NaN();
+        CHECK_THROWS_AS(IalMobility(bad,true),std::invalid_argument);
+    }
+}

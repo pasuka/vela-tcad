@@ -7,13 +7,24 @@
 
 namespace vela {
 namespace {
-Real screeningGDerivative(Real p, Real mass)
+Real screeningGDerivative(Real p, Real mass, Real temperature)
 {
-    const Real a = std::pow(1. / mass, .28227);
-    const Real b = std::pow(mass, .72169);
+    const Real a = std::pow(temperature / (300. * mass), .28227);
+    const Real b = std::pow(mass * 300. / temperature, .72169);
     return .89233 * .19778 * a / std::pow(.41372 + a * p, 1.19778)
         - .005978 * 1.80618 * b / std::pow(b * p, 2.80618);
 }
+Real screeningMinimum(Real mass, Real temperature)
+{
+    Real lower = 1e-12, upper = 1e12;
+    for (int i = 0; i < 100; ++i) {
+        const Real midpoint = std::sqrt(lower * upper);
+        if (screeningGDerivative(midpoint, mass, temperature) < 0.) lower = midpoint;
+        else upper = midpoint;
+    }
+    return std::sqrt(lower * upper);
+}
+
 
 
 }
@@ -44,16 +55,13 @@ IalMobility::IalMobility(IalMobilityParameters p, bool electron)
         if (!std::isfinite(value) || value < 0.)
             throw std::invalid_argument("IALMob requires finite nonnegative exponents and offsets");
     }
+    for (Real value : {p.theta,p.k,p.alpha1Inv,p.alpha2Inv,p.alpha1Acc,p.alpha2Acc})
+        if (!std::isfinite(value))
+            throw std::invalid_argument("IALMob requires finite temperature exponents");
     if (p.muMax <= p.muMin)
         throw std::invalid_argument("IALMob requires muMax > muMin");
-    // Locate the minimum once, not during each mobility evaluation.
-    Real lower = 1e-12, upper = 1e12;
-    for (int i = 0; i < 100; ++i) {
-        const Real midpoint = std::sqrt(lower * upper);
-        if (screeningGDerivative(midpoint, p.mass) < 0.) lower = midpoint;
-        else upper = midpoint;
-    }
-    pMin_ = std::sqrt(lower * upper);
+    // Keep the original fast path for the isothermal coupled solver.
+    pMin_ = screeningMinimum(p.mass, 300.);
 }
 
 IalMobilityResult IalMobility::evaluate(const IalMobilityState& state) const
@@ -63,9 +71,11 @@ IalMobilityResult IalMobility::evaluate(const IalMobilityState& state) const
         if (!std::isfinite(value) || value < 0.)
             throw std::invalid_argument("IALMob state must be finite and nonnegative");
     }
+    if (!std::isfinite(state.temperature_K) || state.temperature_K < 50.)
+        throw std::invalid_argument("IALMob requires finite temperature >= 50 K");
     const auto values = ial_detail::evaluate<Real>({state.donors_m3,state.acceptors_m3,
-        state.electrons_m3,state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m},
-        params_,electron_,pMin_);
+        state.electrons_m3,state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m,state.temperature_K},
+        params_,electron_,state.temperature_K==300.?pMin_:screeningMinimum(params_.mass,state.temperature_K));
     if (!std::isfinite(values[0]) || values[0] <= 0.)
         throw std::runtime_error("IALMob produced invalid mobility");
     return {values[0],values[1],values[2],values[3],values[4],values[5]};
@@ -74,14 +84,21 @@ IalMobilityResult IalMobility::evaluate(const IalMobilityState& state) const
 IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilityState& state) const
 {
     IalMobilityDifferential result{evaluate(state),{}};
-    const std::array<Real,6> inputs{state.donors_m3,state.acceptors_m3,
-        state.electrons_m3,state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m};
-    std::array<ial_detail::Dual,6> variables;
-    for (std::size_t i=0;i<6;++i) {
+    const std::array<Real,7> inputs{state.donors_m3,state.acceptors_m3,
+        state.electrons_m3,state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m,state.temperature_K};
+    std::array<ial_detail::Dual,7> variables;
+    for (std::size_t i=0;i<7;++i) {
         variables[i]=ial_detail::Dual(inputs[i]);
         variables[i].derivative[i]=1.;
     }
-    result.derivative_SI=ial_detail::evaluate(variables,params_,electron_,pMin_)[0].derivative;
+    // At the clamped minimum, dG/dP = 0. The envelope derivative is the
+    // partial dG/dT; differentiating the numerical minimizer is unnecessary.
+    const auto derivatives=ial_detail::evaluate(variables,params_,electron_,
+        state.temperature_K==300.?pMin_:screeningMinimum(params_.mass,state.temperature_K))[0].derivative;
+    std::copy_n(derivatives.begin(),6,result.derivative_SI.begin());
+    result.temperatureDerivative_m2_per_Vs_K=derivatives[6];
+    if (!std::isfinite(derivatives[6]))
+        throw std::runtime_error("IALMob produced a nonfinite temperature derivative");
     for (Real derivative:result.derivative_SI)
         if (!std::isfinite(derivative))
             throw std::runtime_error("IALMob produced a nonfinite derivative");

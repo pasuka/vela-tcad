@@ -10,7 +10,8 @@ namespace vela {
 /// FullPhuMob, PhononCombination=1, no stress/thin-layer corrections.
 /// Impurity weighting factors/exponents in the phonon/roughness terms stay at
 /// their manual defaults of one; ClusteringEverywhere is disabled. Temperature
-/// exponents theta/k are retained as metadata and have no effect at 300 K.
+/// dependencies follow equations 293, 295--299, 305--309. T >= 50 K only;
+/// the optional low-temperature phonon exponent correction is not enabled.
 /// This kernel does not enable IALMob in the coupled solver configuration.
 struct IalMobilityParameters {
     Real muMax = 1417., muMin = 52.2, theta = 2.285;
@@ -24,6 +25,7 @@ struct IalMobilityParameters {
     Real A = 2., alphaSr = 0., nu = 0., N1 = 1., N2 = 1.;
     Real lCrit = 1e3, lCritC = 1e3;
     Real d1Inv = 135., d2Inv = 40., nu0Inv = 1.5, nu1Inv = 2., nu2Inv = .5;
+    Real alpha1Inv = 0., alpha2Inv = 0., alpha1Acc = 0., alpha2Acc = 0.;
     Real d1Acc = 135., d2Acc = 40., nu0Acc = 1.5, nu1Acc = 2., nu2Acc = .5;
 };
 
@@ -31,6 +33,7 @@ struct IalMobilityState {
     Real donors_m3 = 0., acceptors_m3 = 0.;
     Real electrons_m3 = 0., holes_m3 = 0.;
     Real normalField_V_per_m = 0., interfaceDistance_m = 0.;
+    Real temperature_K = 300.;
 };
 
 struct IalMobilityResult {
@@ -46,11 +49,13 @@ struct IalMobilityResult {
 struct IalMobilityDifferential {
     IalMobilityResult result;
     std::array<Real, 6> derivative_SI{};
+    /// Partial at fixed Nd, Na, n, p, field and distance (m2 / (V s K)).
+    Real temperatureDerivative_m2_per_Vs_K = 0.;
 };
 
 class IalMobility {
 public:
-    /// The first implementation contract is explicitly isothermal at 300 K.
+    /// Local temperature is explicit; coupled electrical callers still supply 300 K.
     explicit IalMobility(IalMobilityParameters parameters, bool electron);
     IalMobilityResult evaluate(const IalMobilityState& state) const;
     IalMobilityDifferential evaluateWithDerivatives(const IalMobilityState& state) const;

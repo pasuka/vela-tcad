@@ -144,6 +144,9 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         json.value("auger_cp_m6_per_s", cfg.augerCp));
     cfg.augerExcessProduct = json.value(
         "auger_excess_product", cfg.augerExcessProduct);
+    if (json.contains("auger_density_dependence"))
+        cfg.augerDensityDependence = augerDensityDependenceConfigFromJson(
+            json.at("auger_density_dependence"), scaling);
     cfg.carrierFloor = json.value("carrier_floor_m3", cfg.carrierFloor);
     if (json.contains("mobility"))
         cfg.mobility = mobilityModelConfigFromJson(json.at("mobility"), scaling);
@@ -551,6 +554,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
             cfg.recombination, cfg.taun, cfg.taup, cfg.srhDopingDependence);
     recombinationConfig.augerCn = cfg.augerCn;
     recombinationConfig.augerCp = cfg.augerCp;
+    recombinationConfig.augerDensityDependence = cfg.augerDensityDependence;
     recombinationConfig.augerExcessProduct = cfg.augerExcessProduct;
     recombinationConfig.bandToBand = cfg.bandToBand;
     DDAssembler assembler(

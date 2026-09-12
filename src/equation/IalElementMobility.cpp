@@ -1,4 +1,5 @@
 #include "vela/equation/IalElementMobility.h"
+#include "vela/physics/IalHighFieldMobility.h"
 #include <cmath>
 #include <stdexcept>
 
@@ -20,18 +21,20 @@ D limited(const D& mu, const D& drive, const FieldMobilityParameters& p) {
 }
 }
 
-IalElementMobilityResult evaluateIalElementMobility(
+static IalElementMobilityResult evaluateImpl(
     const IalElementGeometry& geometry,
     const std::array<IalElementVertexState,3>& state,
     const std::array<const IalMobility*,3>& electronModels,
     const std::array<const IalMobility*,3>& holeModels,
-    const IalElementMobilityOptions& options)
+    const IalElementMobilityOptions& options, bool thermalDirections)
 {
     nonnegative(options.referenceDensity_m3);
     for (const auto& p:{options.electronField,options.holeField})
         if (!std::isfinite(p.saturationVelocity)||p.saturationVelocity<=0.||
             !std::isfinite(p.beta)||p.beta<=0.)
             throw std::invalid_argument("IALMob HFS requires positive velocity and beta");
+    for (Real v:{options.electronVelocityTemperatureExponent,options.holeVelocityTemperatureExponent,
+        options.electronBetaTemperatureExponent,options.holeBetaTemperatureExponent}) finite(v);
     Real measure=0.;
     for (int i=0;i<3;++i) {
         for (Real x:geometry.coordinates_m[i]) finite(x);
@@ -49,6 +52,12 @@ IalElementMobilityResult evaluateIalElementMobility(
         if (std::abs(std::hypot(geometry.boundaryTangent[0],geometry.boundaryTangent[1])-1.)>1e-12)
             throw std::invalid_argument("IALMob boundary tangent must be unit length");
     }
+    for (const auto& v:state) {
+        finite(v.temperature_K);finite(v.electronTemperatureResponse_m3_per_K);finite(v.holeTemperatureResponse_m3_per_K);
+        if(v.temperature_K<50.)throw std::invalid_argument("IALMob element requires temperature >=50 K");
+        if(options.highField && !options.temperatureDependentHighField && v.temperature_K!=300.)
+            throw std::invalid_argument("Hot IALMob element requires explicit temperature-dependent HFS");
+    }
     const auto& xy=geometry.coordinates_m;
     const Real ax=xy[1][0]-xy[0][0], ay=xy[1][1]-xy[0][1];
     const Real bx=xy[2][0]-xy[0][0], by=xy[2][1]-xy[0][1];
@@ -58,7 +67,7 @@ IalElementMobilityResult evaluateIalElementMobility(
         const D a=v[1]-v[0], b=v[2]-v[0];
         return {(a*D(by)-b*D(ay))/D(det),(b*D(ax)-a*D(bx))/D(det)};
     };
-    std::array<D,3> psi,qfn,qfp,n,p,distance;
+    std::array<D,3> psi,qfn,qfp,n,p,distance,temperature;
     for (int i=0;i<3;++i) {
         psi[i]=D::variable(state[i].potential_V,3*i);
         qfn[i]=D::variable(state[i].electronQf_V,3*i+1);
@@ -69,6 +78,14 @@ IalElementMobilityResult evaluateIalElementMobility(
         p[i]=D(state[i].holes_m3);
         p[i].derivative[3*i]=-state[i].holeResponse_m3_per_V;
         p[i].derivative[3*i+2]=state[i].holeResponse_m3_per_V;
+        temperature[i]=D(state[i].temperature_K);
+        if(thermalDirections){
+            psi[i]=D(state[i].potential_V);qfn[i]=D(state[i].electronQf_V);qfp[i]=D(state[i].holeQf_V);
+            n[i]=D(state[i].electrons_m3);p[i]=D(state[i].holes_m3);
+            n[i].derivative[i]=state[i].electronTemperatureResponse_m3_per_K;
+            p[i].derivative[i]=state[i].holeTemperatureResponse_m3_per_K;
+            temperature[i].derivative[i]=1.;
+        }
         distance[i]=D(geometry.interfaceDistance_m[i]);
     }
     const Vec e=gradient(psi), gn=gradient(qfn), gp=gradient(qfp), gd=gradient(distance);
@@ -82,13 +99,14 @@ IalElementMobilityResult evaluateIalElementMobility(
     IalElementMobilityResult result;
     for (int i=0;i<3;++i) {
         const IalMobilityState local{state[i].donors_m3,state[i].acceptors_m3,n[i].value,p[i].value,
-            en.value,geometry.interfaceDistance_m[i]};
+            en.value,geometry.interfaceDistance_m[i],state[i].temperature_K};
         const auto low=[&](const IalMobility& model) {
             const auto r=model.evaluateWithDerivatives(local);
             D mu(r.result.mobility_m2_per_Vs);
             for (int k=0;k<9;++k)
                 mu.derivative[k]=r.derivative_SI[2]*n[i].derivative[k]+
-                    r.derivative_SI[3]*p[i].derivative[k]+r.derivative_SI[4]*en.derivative[k];
+                    r.derivative_SI[3]*p[i].derivative[k]+r.derivative_SI[4]*en.derivative[k]+
+                    r.temperatureDerivative_m2_per_Vs_K*temperature[i].derivative[k];
             return mu;
         };
         const D lowN=low(*electronModels[i]), lowP=low(*holeModels[i]);
@@ -96,8 +114,23 @@ IalElementMobilityResult evaluateIalElementMobility(
         if (options.highField) {
             const D fractionN=options.referenceDensity_m3==0.?D(1.):n[i]/(n[i]+D(options.referenceDensity_m3));
             const D fractionP=options.referenceDensity_m3==0.?D(1.):p[i]/(p[i]+D(options.referenceDensity_m3));
-            finalN=limited(lowN,fractionN*driveN+(D(1.)-fractionN)*parallel,options.electronField);
-            finalP=limited(lowP,fractionP*driveP+(D(1.)-fractionP)*parallel,options.holeField);
+            const D fieldN=fractionN*driveN+(D(1.)-fractionN)*parallel;
+            const D fieldP=fractionP*driveP+(D(1.)-fractionP)*parallel;
+            if(options.temperatureDependentHighField){
+                const auto hot=[&](const D& mu,const D& field,const FieldMobilityParameters& base,Real ve,Real be){
+                    const auto h=evaluateIalHighFieldMobility(mu.value,field.value,state[i].temperature_K,
+                        {base.saturationVelocity,base.beta,ve,be});
+                    D result(h.mobility_m2_per_Vs);
+                    for(int k=0;k<9;++k)result.derivative[k]=h.lowFieldDerivative*mu.derivative[k]+
+                        h.drivingFieldDerivative_m3_per_V2s*field.derivative[k]+h.temperatureDerivative_m2_per_Vs_K*temperature[i].derivative[k];
+                    return result;
+                };
+                finalN=hot(lowN,fieldN,options.electronField,options.electronVelocityTemperatureExponent,options.electronBetaTemperatureExponent);
+                finalP=hot(lowP,fieldP,options.holeField,options.holeVelocityTemperatureExponent,options.holeBetaTemperatureExponent);
+            }else{
+                finalN=limited(lowN,fieldN,options.electronField);
+                finalP=limited(lowP,fieldP,options.holeField);
+            }
         }
         const D w(geometry.vertexMeasure_m2[i]/measure);
         result.electronLowField=result.electronLowField+w*lowN;
@@ -109,6 +142,23 @@ IalElementMobilityResult evaluateIalElementMobility(
         if (!std::isfinite(r.value)||r.value<=0.) throw std::runtime_error("Invalid IALMob element mobility");
         for (Real d:r.derivative)
             if (!std::isfinite(d)) throw std::runtime_error("Nonfinite IALMob element derivative");
+    }
+    return result;
+}
+IalElementMobilityResult evaluateIalElementMobility(
+    const IalElementGeometry& geometry,const std::array<IalElementVertexState,3>& state,
+    const std::array<const IalMobility*,3>& electrons,const std::array<const IalMobility*,3>& holes,
+    const IalElementMobilityOptions& options)
+{
+    auto result=evaluateImpl(geometry,state,electrons,holes,options,false);
+    if(options.temperatureDerivatives){
+        const auto t=evaluateImpl(geometry,state,electrons,holes,options,true);
+        for(int i=0;i<3;++i){
+            result.electronTemperatureDerivative[i]=t.electron.derivative[i];
+            result.holeTemperatureDerivative[i]=t.hole.derivative[i];
+            result.electronLowTemperatureDerivative[i]=t.electronLowField.derivative[i];
+            result.holeLowTemperatureDerivative[i]=t.holeLowField.derivative[i];
+        }
     }
     return result;
 }

@@ -1,0 +1,20 @@
+{
+  "schema": "vela.templates_ldmos.d0_thermal_acceptance.v1",
+  "approval": {"date": "2026-09-12", "user_reply": "采用建议热门限"},
+  "scope": "Original D0 steady-state lattice Temperature equation; D3/D2/D1 stage audit precedes D0 qualification",
+  "ambient_temperature_K": 300.0,
+  "heat_balance": {
+    "relative_error_max": 0.001,
+    "definition": "abs(integrated_heat_source - outward_boundary_heat) / max(abs(integrated_heat_source), abs(outward_boundary_heat))",
+    "zero_power_policy": "Do not divide by zero or declare a relative pass; record absolute residual and separately verify the constant-temperature zero-source case"
+  },
+  "peak_temperature_rise": {"absolute_error_floor_K": 1.0, "relative_error_max": 0.05},
+  "temperature_rise_field": {
+    "absolute_rms_error_floor_K": 1.0,
+    "relative_rms_error_max": 0.05,
+    "definition": "sqrt(sum(volume_i * (T_candidate_i - T_reference_i)^2) / sum(volume_i)) <= max(1 K, 0.05 * sqrt(sum(volume_i * (T_reference_i - ambient)^2) / sum(volume_i)))",
+    "alignment": "same physical mesh and volume policy; include both semiconductor and insulator; no temperature-field interpolation inferred"
+  },
+  "electrical": "Preserve existing numerical block, row-closure, KCL, engineering and final curve gates",
+  "status": "approved_criteria_not_simulation_qualification"
+}
