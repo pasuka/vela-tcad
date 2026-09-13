@@ -101,7 +101,7 @@ static IalElementMobilityResult evaluateImpl(
         const IalMobilityState local{state[i].donors_m3,state[i].acceptors_m3,n[i].value,p[i].value,
             en.value,geometry.interfaceDistance_m[i],state[i].temperature_K};
         const auto low=[&](const IalMobility& model) {
-            const auto r=model.evaluateWithDerivatives(local);
+            const auto r=model.evaluateWithDerivatives(local,options.screeningCache);
             D mu(r.result.mobility_m2_per_Vs);
             for (int k=0;k<9;++k)
                 mu.derivative[k]=r.derivative_SI[2]*n[i].derivative[k]+

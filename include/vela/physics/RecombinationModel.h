@@ -74,6 +74,7 @@ struct RecombinationModelConfig {
     /// ``generalized_fermi`` preserves the historical Vela behavior;
     /// ``classical_np`` uses n*p-ni_eff^2, matching the conventional model.
     std::string augerExcessProduct = "generalized_fermi";
+    bool augerWithGeneration = true; ///< Compatibility default; false clips Auger generation.
     AugerDensityDependenceConfig augerDensityDependence{};
     SRHDopingDependenceConfig srhDopingDependence{};
     BandToBandTunnelingConfig bandToBand{};

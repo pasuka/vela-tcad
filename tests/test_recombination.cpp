@@ -19,6 +19,52 @@
 
 using namespace vela;
 
+TEST_CASE("Auger generation switch clips only Auger and keeps inactive derivatives zero",
+          "[recombination][auger][generation][jacobian][config]")
+{
+    RecombinationModelConfig cfg;
+    cfg.mechanisms = {"auger"};
+    cfg.augerDensityDependence = {true,3.46667,8.25688,1e24,1e24};
+    const RecombinationModel legacy(cfg);
+    cfg.augerWithGeneration = false;
+    const RecombinationModel clipped(cfg);
+    for (Real excess : {-1e48, 0., 1e48}) {
+        const Real rate = clipped.augerRateFromExcessProduct(excess,1e24,2e24);
+        CHECK(rate == std::max(0.,legacy.augerRateFromExcessProduct(excess,1e24,2e24)));
+        const auto d = clipped.augerRateDerivativesFromExcessProduct(excess,1e24,2e24);
+        if (excess <= 0.) {
+            CHECK(d.dRateDExcess == 0.); CHECK(d.dRateDn == 0.); CHECK(d.dRateDp == 0.);
+        } else {
+            const Real step = 1e43;
+            const Real fd = (clipped.augerRateFromExcessProduct(excess+step,1e24,2e24)
+                - clipped.augerRateFromExcessProduct(excess-step,1e24,2e24))/(2*step);
+            CHECK(d.dRateDExcess == Catch::Approx(fd).epsilon(1e-8));
+        }
+    }
+    for (Real ni : {1e24,2e24}) {
+        CHECK(clipped.augerRate(1e24,1e24,ni) == 0.);
+        const auto electron=clipped.electronLinearization(1e24,1e24,ni);
+        const auto hole=clipped.holeLinearization(1e24,1e24,ni);
+        CHECK(electron.diagonal == 0.); CHECK(electron.rhs == 0.);
+        CHECK(hole.diagonal == 0.); CHECK(hole.rhs == 0.);
+    }
+    cfg.mechanisms = {"srh","auger"};
+    const RecombinationModel combined(cfg);
+    cfg.mechanisms = {"srh"};
+    const RecombinationModel srh(cfg);
+    CHECK(combined.totalRate(1e20,1e20,1e24) < 0.);
+    CHECK(combined.totalRate(1e20,1e20,1e24) == srh.totalRate(1e20,1e20,1e24));
+    for (const bool enabled : {false,true}) {
+        const nlohmann::json input={{"auger_with_generation",enabled}};
+        CHECK(newtonConfigFromJson(input).augerWithGeneration == enabled);
+        CHECK(gummelConfigFromJson(input).augerWithGeneration == enabled);
+    }
+    CHECK(newtonConfigFromJson(nlohmann::json::object()).augerWithGeneration);
+    CHECK(gummelConfigFromJson(nlohmann::json::object()).augerWithGeneration);
+    CHECK_THROWS(newtonConfigFromJson({{"auger_with_generation","false"}}));
+    CHECK_THROWS(gummelConfigFromJson({{"auger_with_generation",1}}));
+}
+
 TEST_CASE("Auger density enhancement preserves limits and generation sign",
           "[recombination][auger][density_dependence]")
 {

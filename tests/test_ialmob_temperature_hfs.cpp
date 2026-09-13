@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include "vela/physics/IalHighFieldMobility.h"
+#include "vela/physics/IalMobility.h"
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -48,4 +49,25 @@ TEST_CASE("IALMob hot HFS rejects invalid inputs", "[ialmob][temperature][hfs]")
     CHECK_THROWS_AS(evaluateIalHighFieldMobility(0.,1.,300.,p),std::invalid_argument);
     p.betaTemperatureExponent=std::numeric_limits<Real>::quiet_NaN();
     CHECK_THROWS_AS(evaluateIalHighFieldMobility(.03,1.,300.,p),std::invalid_argument);
+}
+TEST_CASE("IALMob screening reuse preserves values and all derivatives with exact mass and temperature keys", "[ialmob][temperature][preparation]") {
+    IalScreeningCache cache;
+    const std::array<Real IalMobilityResult::*,6> fields{
+        &IalMobilityResult::mobility_m2_per_Vs,&IalMobilityResult::coulomb3d_m2_per_Vs,
+        &IalMobilityResult::coulomb2d_m2_per_Vs,&IalMobilityResult::coulomb_m2_per_Vs,
+        &IalMobilityResult::phonon_m2_per_Vs,&IalMobilityResult::roughness_m2_per_Vs};
+    for(bool electron:{true,false}) {
+        IalMobility model(IalMobility::siliconDefaults(electron),electron);
+        for(Real temperature:{300.,350.,350.,401.,514.,350.,std::nextafter(350.,351.)}) {
+            IalMobilityState s{1e23,2e22,3e23,1e19,2e6,5e-9,temperature};
+            const auto plain=model.evaluateWithDerivatives(s),cached=model.evaluateWithDerivatives(s,&cache);
+            for(auto field:fields)CHECK(plain.result.*field==cached.result.*field);
+            CHECK(plain.derivative_SI==cached.derivative_SI);
+            CHECK(plain.temperatureDerivative_m2_per_Vs_K==cached.temperatureDerivative_m2_per_Vs_K);
+        }
+    }
+    CHECK(cache.size()==8); // Four distinct non-300 K values for each mass.
+    CHECK_THROWS_AS(cache.minimum(0.,400.),std::invalid_argument);
+    CHECK_THROWS_AS(cache.minimum(1.,49.),std::invalid_argument);
+    CHECK_THROWS_AS(cache.minimum(1.,std::numeric_limits<Real>::quiet_NaN()),std::invalid_argument);
 }

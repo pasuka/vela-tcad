@@ -12,6 +12,16 @@ import run_templates_ldmos_linked_d5 as linked
 
 
 class LinkedD5Test(unittest.TestCase):
+    def test_plain_auger_profiles_preserve_gates_and_disable_only_generation(self):
+        folder=ROOT/'reference_tcad/templates_ldmos_sentaurus2022/profiles'
+        for physics in ('d4','d5'):
+            baseline=linked.read(folder/f'linked_{physics}_auger_density_config.json')
+            bundle=linked.read(folder/f'linked_{physics}_auger_no_generation_inputs.json')
+            profile=linked.read(ROOT/bundle['template'])
+            self.assertIs(profile['solver'].pop('auger_with_generation'),False)
+            self.assertEqual(profile,baseline)
+            self.assertEqual(linked.digest(ROOT/bundle['template']),bundle['files'][bundle['template']])
+
     def test_auger_density_profiles_change_only_the_explicit_source_model(self):
         folder=ROOT/'reference_tcad/templates_ldmos_sentaurus2022/profiles'
         for physics in ('d4','d5'):

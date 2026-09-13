@@ -1,11 +1,16 @@
 # Templates/LDMOS 当前验证状态
 
-更新：2026-09-12。当前工作分支 `codex/templates-ldmos-phase-a`。
+更新：2026-09-13。当前工作分支 `codex/templates-ldmos-phase-a`。
 本页区分历史资格和最新版本验证，阶段报告保留原始结果。
 每项曲线资格对应其报告中的冻结程序和输入清单，不随工作区重编译自动转移。
 
 | 范围 | 状态 | 证据 |
 |---|---|---|
+| 原生Poisson几何 / N1 | 新几何双栅压完整62点独立通过；最大电流误差0.02409%/0.00714%，峰温误差0.00940/0.04198 K；最大导带差约7.8/26.7 meV，局部仍有余差 | [本轮执行](templates_ldmos_native_poisson_and_preparation_2026-09-13.md) |
+| 电热准备 / 停滞退出 / SparseLU / IALMob屏蔽根 | P3双栅压完整62点原门限通过，全部接受状态与N1逐项一致；Vg4完整406→358更新，Vg8保持318；累计CPU870.95/602.48 s；Release808/808通过，计时边界及串行对照见报告 | [性能验证](templates_ldmos_native_poisson_and_preparation_2026-09-13.md#p1-温度物性准备复用) |
+| 共享 Auger 生成开关 / 最新等温复核 | 新显式配置关闭生成项；G3 31点、D5/D4各62点原门限通过；后两项为精确状态重闭合，不替代新模型从零推进性能 | [最新执行](templates_ldmos_generation_alignment_2026-09-13.md) |
+| 自热 / 历史B4 R3基准 | 有限hRecVelocity、关闭Auger生成；Vg4/8各自从零漏压完成31点，原电学/批准热学联合通过；419/325次更新，子进程累计墙钟2609.58/2107.81 s；显式全场预测，未继承旧R4资格 | [B4完整验收](templates_ldmos_generation_alignment_2026-09-13.md#r3同一冻结b4模型的全场线性预测) |
+| D0 局部统计与 Poisson 几何隔离 / 历史定位 | 原生Fermi控制及40 V零迭代对照定位B4几何合同差异；原报告只认领固定状态诊断，后续N1独立实现和自洽资格见本表首行 | [历史诊断](templates_ldmos_generation_alignment_2026-09-13.md#40-v-原生状态的算子与几何隔离) |
 | G3 Id–Vg | 高精度Fermi/BGN、来源一致材料及Auger H/N0配置：31点、原六门限通过 | [本轮实现](templates_ldmos_auger_and_stage_chain_2026-09-12.md) |
 | D5 Vg=8 V，0–40 V | 新H/N0配置从零压完整31点通过，1096次更新，0回退 | [本轮实现](templates_ldmos_auger_and_stage_chain_2026-09-12.md) |
 | D5 Vg=4 V及双栅压电流比 | 新H/N0配置完整31点、1126次更新；双栅压原工程/最终门限通过 | [本轮实现](templates_ldmos_auger_and_stage_chain_2026-09-12.md) |
@@ -16,7 +21,8 @@
 | 高精度 Fermi/BGN 及材料一致性 | 函数、解析导数、逆映射及材料审计已实现；Release原768项及新增回归通过，G3/D5/D4共155个精确点复核通过 | [统计精度实现](templates_ldmos_fermi_accuracy_2026-09-12.md) |
 | Auger H/N0 | 自洽源项及导数已实现，G3/D4/D5共155点完整复核通过；独立新冻结资格，未覆盖旧证据 | [本轮执行](templates_ldmos_auger_and_stage_chain_2026-09-12.md) |
 | D3/D2/D1 | 原生脚本和曲线重核后，依次通过原工程/最终等效曲线门限；限原Solve未启用量子方程且等温接触消融不可分辨的路径 | [本轮执行](templates_ldmos_auger_and_stage_chain_2026-09-12.md) |
-| 自热 / D0 | 独立四方程冻结Release完成300 K双栅压62点回放、代表点及0–40 V完整62点；原电学及批准热学门限全部通过；最大电流误差1.7744%/1.5825%，峰温误差1.5051/2.1893 K | [电热实现与本轮证据](templates_ldmos_d0_electrothermal_2026-09-12.md) |
+| 自热 / D0 历史R4 | 独立四方程冻结Release完成300 K双栅压62点回放、代表点及0–40 V完整62点；原电学及批准热学门限全部通过；最大电流误差1.7744%/1.5825%，峰温误差1.5051/2.1893 K；对应旧有符号Auger及理想空穴接触模型 | [电热实现与本轮证据](templates_ldmos_d0_electrothermal_2026-09-12.md) |
+| 有限 hRecVelocity / 局部物性对照 | A→B阶段完成有限空穴边界及Jacobian、D0关闭Auger生成，双栅压各4个代表点通过，Release802项通过；后续B4完整资格见本表最新R3行，局部场仍有差异 | [A/B阶段证据](templates_ldmos_hrec_and_local_physics_2026-09-13.md) |
 
 ## 配置合同与冻结版本的适用范围
 

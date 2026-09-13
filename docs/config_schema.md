@@ -476,6 +476,7 @@ Commonly used controls:
 - auger_cn_m6_per_s
 - auger_cp_m6_per_s
 - auger_excess_product
+- auger_with_generation
 - auger_density_dependence
 - impact_ionization
 
@@ -822,6 +823,12 @@ Notes:
   generalized SRH product. `classical_np` uses `n*p-ni_eff^2`; its analytic
   Jacobian differentiates the transport carrier densities while treating the
   node material/BGN `ni_eff` as fixed during one Newton assembly.
+- `auger_with_generation` is a boolean (shared isothermal compatibility default
+  `true`). Set `false` to suppress nonpositive Auger excess products and their
+  derivatives, including the inactive-side derivative at equilibrium. This
+  matches plain Sentaurus `Auger`; `true` corresponds to `Auger(WithGeneration)`.
+  SRH generation remains enabled. Newton, Gummel and diagnostics share this
+  switch. The independent audited thermal interface defaults to `false`.
 - `auger_density_dependence` optionally enables
   `Cn(n)=Cn0*(1+Hn*exp(-n/N0n))` and the corresponding hole coefficient.
   Omission preserves constant coefficients. The object accepts `enabled`

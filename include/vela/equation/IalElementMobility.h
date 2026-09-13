@@ -39,6 +39,8 @@ struct IalElementMobilityOptions {
     bool temperatureDerivatives = false;
     Real electronVelocityTemperatureExponent = .87, holeVelocityTemperatureExponent = .52;
     Real electronBetaTemperatureExponent = .66, holeBetaTemperatureExponent = .17;
+    /// Non-owning optional preparation cache, valid for this evaluation only.
+    IalScreeningCache* screeningCache=nullptr;
 };
 
 struct IalElementMobilityResult {

@@ -4,6 +4,7 @@
 
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/solver/LinearSolver.h"
+#include "../src/tools/ElectrothermalIterationControl.h"
 
 #include <Eigen/Sparse>
 #include <nlohmann/json.hpp>
@@ -219,4 +220,46 @@ TEST_CASE("LinearSolver factorisation failures report sparse matrix diagnostics"
             Catch::Matchers::ContainsSubstring("zero_col_indices=[1]") &&
             Catch::Matchers::ContainsSubstring("nonfinite_entries=0") &&
             Catch::Matchers::ContainsSubstring("diag_min_abs=0"));
+}
+TEST_CASE("Experimental electrothermal symbolic reuse checks exact indices and always refactorizes", "[linear][electrothermal]") {
+    experimental::ElectrothermalSparseLU cached,plain;
+    VectorXd exact(3);exact<<1.,-2.,3.;
+    auto a=makeSparseMatrix(3,3,{{0,0,4.},{1,1,5.},{2,2,6.},{0,1,.1}});
+    const auto check=[&](SparseMatrixd matrix){
+        const VectorXd rhs=matrix*exact;
+        cached.compute(matrix,true);plain.compute(matrix,false);
+        REQUIRE(cached.info()==Eigen::Success);REQUIRE(plain.info()==Eigen::Success);
+        const VectorXd x=cached.solve(rhs),y=plain.solve(rhs);
+        REQUIRE((matrix*x-rhs).norm()<1e-12);
+        REQUIRE((x-y).norm()==0.);
+    };
+    check(a);REQUIRE(cached.analyses()==1);
+    a.coeffRef(0,0)=8.;check(a);REQUIRE(cached.analyses()==1);
+    // Same dimensions and nonzero count, different edge location.
+    a=makeSparseMatrix(3,3,{{0,0,4.},{1,1,5.},{2,2,6.},{1,2,.1}});
+    check(a);REQUIRE(cached.analyses()==2);
+    // Also exercise uncompressed input and a changed nonzero count.
+    a.coeffRef(2,0)=.2;check(a);REQUIRE(cached.analyses()==3);
+    check(a);REQUIRE(cached.analyses()==3);
+    REQUIRE(cached.factorizations()==5);REQUIRE(plain.analyses()==5);
+    SparseMatrixd b=makeSparseMatrix(2,2,{{0,0,2.},{1,1,3.}});
+    cached.compute(b,true);REQUIRE(cached.analyses()==4);
+    VectorXd rhs(2);rhs<<2.,6.;REQUIRE((b*cached.solve(rhs)-rhs).norm()<1e-12);
+}
+
+TEST_CASE("Experimental electrothermal stall watch rejects only sustained far-from-converged tiny progress", "[newton][electrothermal]") {
+    experimental::ElectrothermalStagnationWatch disabled,watch(3);
+    for(int i=0;i<10;++i)REQUIRE_FALSE(disabled.update(7.,6.99999,1e-6,true));
+    REQUIRE_FALSE(watch.update(7.,6.99999,1e-6,true));
+    REQUIRE_FALSE(watch.update(7.,6.99999,1e-6,true));
+    // Useful progress resets the window even at a small step.
+    REQUIRE_FALSE(watch.update(7.,6.,1e-6,true));
+    REQUIRE_FALSE(watch.update(7.,6.99999,1e-6,true));
+    REQUIRE_FALSE(watch.update(7.,6.99999,1e-6,true));
+    REQUIRE(watch.update(7.,6.99999,1e-6,true));
+    for(int i=0;i<10;++i){
+        REQUIRE_FALSE(watch.update(1e-10,9.9999e-11,1e-6,true));
+        REQUIRE_FALSE(watch.update(7.,6.99999,.1,true));
+        REQUIRE_FALSE(watch.update(7.,7.,1e-6,false));
+    }
 }

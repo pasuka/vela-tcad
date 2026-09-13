@@ -242,14 +242,24 @@ TEST_CASE("Four-equation operator couples live IALMob current and conservative h
         g.poissonEdge_F_per_m[edge.id]=constants::eps0*8.*edge.couple/edge.length;
         g.transportWeight[edge.id]=edge.transport_couple/edge.length;
     }
+    // Charge geometry can differ from transport/recombination volumes. Exercise
+    // nonuniform explicit native-style measures through every coupled partial.
+    g.recombinationArea_m2=g.siliconArea_m2;
+    SECTION("Existing charge geometry"){}
+    SECTION("Independent nonuniform Poisson edge and charge-volume pair"){
+        for(int i=0;i<6;++i)g.siliconArea_m2[i]*=1.+.2*i;
+        for(const auto& edge:f.mesh.edges())g.poissonEdge_F_per_m[edge.id]*=1.+.1*edge.id;
+    }
     LatticeConductivity law;law.model=LatticeConductivity::Model::InverseQuadratic;
     law.numerator=100.;law.denominator={-.0393,.00155,1.82e-6};
     LatticeHeatAssembler heat(f.mesh,1.,{{0,law},{1,law}},{{{0,1},300.,2e6}});
     ElectrothermalAssembler coupled(f.mesh,f.doping,g,heat,f.mobility);
     VectorXd x(24);for(int i=0;i<6;++i){x[4*i]=.48+.012*i;x[4*i+1]=.003*i;x[4*i+2]=.96-.002*i;x[4*i+3]=350.+12.*i;}
-    for(bool constrained:{false,true}){
+    for(int mode:{0,1,2}){
+        const bool constrained=mode!=0;
         ElectrothermalBoundary bc;
         if(constrained){bc.neutralContactBias_V={{0,0.}};bc.potential_V={{4,.2}};bc.temperature_K={{5,400.}};}
+        if(mode==2)bc.holeRecombination={{0,{1.93e4,1e-7}}};
 
         const auto base=coupled.assemble(x,bc);
         VectorXd eRef(6),hRef(6),referenced=x;
@@ -269,7 +279,7 @@ TEST_CASE("Four-equation operator couples live IALMob current and conservative h
         if(!constrained){Real sum=0.;for(int i=0;i<6;++i)sum+=base.residual[4*i+3];
             CHECK(sum==Catch::Approx(base.boundaryHeat_W_per_m-base.latticeSource_W_per_m).epsilon(1e-12));}
         CHECK(std::abs(base.electronOutflow_A_per_m.sum())<1e-10);
-        CHECK(std::abs(base.holeOutflow_A_per_m.sum())<1e-10);
+        if(mode!=2)CHECK(std::abs(base.holeOutflow_A_per_m.sum())<1e-10);
         for(int k=0;k<24;++k)for(Real fraction:{1.,.25}){
             auto a=x,b=x;Real h=(k%4==3?.002:1e-6)*fraction;a[k]+=h;b[k]-=h;
             const VectorXd fd=(coupled.assemble(a,bc).residual-coupled.assemble(b,bc).residual)/(2.*h);
@@ -283,7 +293,52 @@ TEST_CASE("Four-equation operator couples live IALMob current and conservative h
     }
 }
 
+TEST_CASE("Electrothermal preparation reuse refreshes temperature and doping without changing the operator", "[thermal][electrothermal][preparation]") {
+    Fixture f;ElectrothermalGeometry g;
+    g.siliconArea_m2=VectorXd::Zero(6);g.fixedCharge_C_per_m=VectorXd::Zero(6);
+    g.poissonEdge_F_per_m=VectorXd::Zero(f.mesh.numEdges());g.transportWeight=g.poissonEdge_F_per_m;
+    for(const auto& cell:f.mesh.cells())if(cell.region_id==0)for(Index i:cell.node_ids)g.siliconArea_m2[i]+=1e-14/6.;
+    for(const auto& edge:f.mesh.edges()){
+        g.poissonEdge_F_per_m[edge.id]=constants::eps0*8.*edge.couple/edge.length;
+        g.transportWeight[edge.id]=edge.transport_couple/edge.length;
+    }
+    LatticeConductivity law;law.constant_W_per_m_K=100.;
+    LatticeHeatAssembler heat(f.mesh,1.,{{0,law},{1,law}},{{{0,1},300.,2e6}});
+    ElectrothermalAssembler plain(f.mesh,f.doping,g,heat,f.mobility),cached(f.mesh,f.doping,g,heat,f.mobility,SiliconThermalPhysics{},.1,.04,true,true);
+    ElectrothermalBoundary bc;bc.neutralContactBias_V={{0,0.}};bc.holeRecombination={{0,{1.93e4,1e-7}}};
+    VectorXd x(24);
+    for(Real temperature:{300.,401.,401.,299.,514.}){
+        for(int i=0;i<6;++i){x[4*i]=.48+.012*i;x[4*i+1]=.003*i;x[4*i+2]=.96-.002*i;x[4*i+3]=temperature+3.*i;}
+        const auto a=plain.assemble(x,bc),b=cached.assemble(x,bc);
+        CHECK((a.residual-b.residual).norm()==0.);CHECK((a.jacobian-b.jacobian).norm()==0.);
+        const auto before=cached.preparationCounts();const auto repeat=cached.assemble(x,bc);
+        CHECK((b.residual-repeat.residual).norm()==0.);
+        CHECK(cached.preparationCounts()[0]==before[0]);CHECK(cached.preparationCounts()[1]==before[1]);
+        for(Real bias:{0.,40.}){
+            const auto expected=plain.neutralPotential(0,bias,temperature),actual=cached.neutralPotential(0,bias,temperature);
+            CHECK(expected==actual);
+        }
+    }
+    const auto before=cached.preparationCounts();
+    f.doping.setNodeDoping(0,f.doping.donors(0)+1e22,f.doping.acceptors(0));
+    const auto a=plain.assemble(x,bc),b=cached.assemble(x,bc);
+    CHECK((a.residual-b.residual).norm()==0.);CHECK((a.jacobian-b.jacobian).norm()==0.);
+    CHECK(cached.preparationCounts()[0]==before[0]+1);
+    for(int node:{0,2}){
+        auto hi=x,lo=x;hi[4*node+3]+=.002;lo[4*node+3]-=.002;
+        const VectorXd fd=(cached.assemble(hi,bc).residual-cached.assemble(lo,bc).residual)/.004;
+        const VectorXd exact=b.jacobian.col(4*node+3);
+        for(int k=0;k<4;++k){Real error=0.,scale=0.;for(int i=0;i<6;++i){int row=4*i+k;
+            error+=std::pow(fd[row]-exact[row],2);scale+=fd[row]*fd[row]+exact[row]*exact[row];}
+            CHECK(std::sqrt(error/std::max(scale,1e-100))<3e-5);
+        }
+    }
+}
+
 TEST_CASE("Four-equation silicon resistor closes self-heating and neutral contact temperature response", "[thermal][electrothermal][newton]") {
+    bool finiteHoleContact=false;
+    SECTION("Ideal contact"){}
+    SECTION("Finite hole exchange"){finiteHoleContact=true;}
     DeviceMesh mesh;mesh.addRegion({0,"silicon","Si",{}});
     constexpr int nx=4,ny=2;constexpr Real L=1e-6;
     for(int j=0;j<=ny;++j)for(int i=0;i<=nx;++i)mesh.addNode({mesh.numNodes(),L*i/nx,L*j/ny,0.});
@@ -299,12 +354,17 @@ TEST_CASE("Four-equation silicon resistor closes self-heating and neutral contac
     ElectrothermalAssembler coupled(mesh,doping,g,LatticeHeatAssembler(mesh,1.,{{0,law}},thermodes),{});
     ElectrothermalBoundary bc;
     for(int j=0;j<=ny;++j){bc.neutralContactBias_V[j*(nx+1)]=0.;bc.neutralContactBias_V[j*(nx+1)+nx]=0.;}
+    if(finiteHoleContact)for(int j=0;j<=ny;++j){
+        const Real length=L/ny*((j==0 || j==ny)?.5:1.);
+        for(Index i:{Index(j*(nx+1)),Index(j*(nx+1)+nx)})bc.holeRecombination[i]={1.93e4,length};
+    }
     VectorXd x(4*n);Real psi=coupled.neutralPotential(0,0.,300.).first;
     for(Index i=0;i<n;++i){x[4*i]=psi;x[4*i+1]=0.;x[4*i+2]=0.;x[4*i+3]=300.;}
     // Scale each physical equation separately. This test gate is for a
     // manufactured resistor, not a replacement for LDMOS electrical gates.
     VectorXd scales(4*n);for(Index i=0;i<n;++i){scales[4*i]=1e11;scales[4*i+1]=.01;scales[4*i+2]=.01;scales[4*i+3]=.01;}
-    for(const auto& [i,v]:bc.neutralContactBias_V)for(int k=0;k<3;++k)scales[4*i+k]=1.;
+    for(const auto& [i,v]:bc.neutralContactBias_V)for(int k=0;k<3;++k)
+        if(!(finiteHoleContact && k==2))scales[4*i+k]=1.;
     auto norm=[&](const ElectrothermalAssembly& a){return (a.residual.array()*scales.array()).matrix().norm();};
     REQUIRE(norm(coupled.assemble(x,bc))<1e-8);
     for(Real bias:{.01,.05,.1}){
@@ -330,4 +390,36 @@ TEST_CASE("Four-equation silicon resistor closes self-heating and neutral contac
             left+=a.electronOutflow_A_per_m[l]+a.holeOutflow_A_per_m[l];right+=a.electronOutflow_A_per_m[r]+a.holeOutflow_A_per_m[r];}
         REQUIRE(std::abs(left+right)/std::abs(left)<1e-9);
     }
+}
+
+TEST_CASE("Finite Ohmic hole contact preserves equilibrium and sub-ULP exchange", "[thermal][electrothermal][hrec]") {
+    Fixture f;
+    ElectrothermalGeometry g;g.siliconArea_m2=VectorXd::Zero(6);g.fixedCharge_C_per_m=VectorXd::Zero(6);
+    for(const auto& cell:f.mesh.cells())if(cell.region_id==0)for(Index i:cell.node_ids)g.siliconArea_m2[i]+=1e-14/6.;
+    g.poissonEdge_F_per_m=VectorXd::Zero(f.mesh.numEdges());g.transportWeight=g.poissonEdge_F_per_m;
+    SiliconThermalParameters params;params.srhTau300_s={1e100,1e100};params.augerElectron_m6_per_s={0.,0.,0.};params.augerHole_m6_per_s={0.,0.,0.};
+    SiliconThermalPhysics physics(params);LatticeConductivity law;
+    ElectrothermalAssembler coupled(f.mesh,f.doping,g,LatticeHeatAssembler(f.mesh,1.,{{0,law},{1,law}},{}),{},physics);
+    ElectrothermalBoundary bc;bc.neutralContactBias_V={{0,40.}};bc.holeRecombination={{0,{1.93e4,1e-7}}};
+    for(Real t:{300.,515.}){
+        VectorXd x=VectorXd::Zero(24),ref=VectorXd::Constant(6,40.);
+        const Real psi=coupled.neutralPotential(0,40.,t).first;
+        for(int i=0;i<6;++i){x[4*i]=psi;x[4*i+3]=t;}
+        const auto eq=coupled.assemble(x,bc,ref,ref);
+        CHECK(eq.residual[2]==0.);CHECK(eq.holeOutflow_A_per_m[0]==0.);
+        for(Real increment:{-1e-18,1e-18}){
+            auto trial=x;trial[2]=increment;const auto a=coupled.assemble(trial,bc,ref,ref);
+            REQUIRE(a.holeOutflow_A_per_m[0]!=0.);
+            CHECK(a.holeOutflow_A_per_m[0]*increment<0.);
+            CHECK(a.residual[2]==Catch::Approx(-a.holeOutflow_A_per_m[0]).epsilon(1e-12));
+            CHECK(a.residual[2]==Catch::Approx(eq.jacobian.coeff(2,2)*increment).epsilon(1e-11));
+            auto blocked=bc;blocked.holeRecombination[0].velocity_m_per_s=0.;
+            CHECK(coupled.assemble(trial,blocked,ref,ref).holeOutflow_A_per_m[0]==0.);
+        }
+    }
+    VectorXd x=VectorXd::Zero(24);for(int i=0;i<6;++i)x[4*i+3]=300.;
+    auto bad=bc;bad.holeRecombination[0].velocity_m_per_s=-1.;CHECK_THROWS_AS(coupled.assemble(x,bad),std::invalid_argument);
+    bad=bc;bad.holeRecombination[0].boundaryLength_m=0.;CHECK_THROWS_AS(coupled.assemble(x,bad),std::invalid_argument);
+    bad=bc;bad.holeQf_V[0]=40.;CHECK_THROWS_AS(coupled.assemble(x,bad),std::invalid_argument);
+    bad=bc;bad.neutralContactBias_V.clear();CHECK_THROWS_AS(coupled.assemble(x,bad),std::invalid_argument);
 }

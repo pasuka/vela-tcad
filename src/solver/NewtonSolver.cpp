@@ -1340,6 +1340,7 @@ NewtonCarrierRowRecoveryResult recoverCarrierRowsWithGummelDensity(
     recombinationConfig.augerCn = cfg.augerCn;
     recombinationConfig.augerCp = cfg.augerCp;
     recombinationConfig.augerDensityDependence = cfg.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg.augerExcessProduct;
     recombinationConfig.bandToBand = cfg.bandToBand;
     const DDScalingSpec scaling = buildRecoveryScalingSpec(mesh, matdb, doping, cfg);
@@ -2064,6 +2065,7 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
         json.value("auger_cn_m6_per_s", cfg.augerCn));
     cfg.augerCp = scaling.augerCoefficientToInternal(
         json.value("auger_cp_m6_per_s", cfg.augerCp));
+    cfg.augerWithGeneration = json.value("auger_with_generation", cfg.augerWithGeneration);
     cfg.augerExcessProduct = json.value(
         "auger_excess_product", cfg.augerExcessProduct);
     if (json.contains("auger_density_dependence"))
@@ -3240,6 +3242,7 @@ std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler() const
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -3573,6 +3576,7 @@ NewtonResidualEvaluation NewtonSolver::evaluateResidual(const DDSolution& state)
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -3621,6 +3625,7 @@ NewtonPoissonTermEvaluation NewtonSolver::evaluatePoissonTerms(
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     CoupledDDAssembler assembler(
         mesh_, matdb_, doping_, Vt, mobilityConfig, recombinationConfig,
@@ -3652,6 +3657,7 @@ NewtonStepEvaluation NewtonSolver::evaluateStep(const DDSolution& state) const
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -3741,6 +3747,7 @@ NewtonSolver::evaluateFeedbackSubstitutions(
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -3916,6 +3923,7 @@ NewtonSolver::evaluatePoissonQfpCrossBlockDecomposition(
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -4249,6 +4257,7 @@ NewtonDirectionalDerivativeEvaluation NewtonSolver::evaluateDirectionalDerivativ
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -4346,6 +4355,7 @@ NewtonBlockStepEvaluation NewtonSolver::evaluateBlockStep(
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -4434,6 +4444,7 @@ NewtonRegularizedCarrierStepEvaluation NewtonSolver::evaluateRegularizedCarrierS
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -4527,6 +4538,7 @@ NewtonCarrierRowDiagnosticsEvaluation NewtonSolver::evaluateCarrierRowDiagnostic
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -4641,6 +4653,7 @@ NewtonSolver::evaluatePoissonLinearDiagnostics(
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
     CoupledDDAssembler assembler(
@@ -4775,6 +4788,7 @@ NewtonSolver::evaluateCarrierBlockDecomposition(const DDSolution& state) const
             config.augerCn = cfg_.augerCn;
             config.augerCp = cfg_.augerCp;
             config.augerDensityDependence = cfg_.augerDensityDependence;
+            config.augerWithGeneration = cfg_.augerWithGeneration;
             config.augerExcessProduct = cfg_.augerExcessProduct;
             if (models.size() != 1 || models.front() != "none")
                 config.bandToBand = cfg_.bandToBand;
@@ -5163,6 +5177,7 @@ NewtonCarrierTermDiagnosticsEvaluation NewtonSolver::evaluateCarrierTermDiagnost
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -5236,6 +5251,7 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
             config.augerCn = cfg_.augerCn;
             config.augerCp = cfg_.augerCp;
             config.augerDensityDependence = cfg_.augerDensityDependence;
+            config.augerWithGeneration = cfg_.augerWithGeneration;
             config.augerExcessProduct = cfg_.augerExcessProduct;
             if (models.size() != 1 || models.front() != "none")
                 config.bandToBand = cfg_.bandToBand;
@@ -5511,6 +5527,7 @@ std::vector<CoupledDDEdgeFluxDiagnostic> NewtonSolver::evaluateSgEdgeFluxDiagnos
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -5550,6 +5567,7 @@ NewtonSolver::evaluateTransportEdgeJacobianDiagnostics(
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     CoupledDDAssembler assembler(
@@ -5592,6 +5610,7 @@ NewtonResult NewtonSolver::solve() const
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -5624,6 +5643,7 @@ NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization()
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();
@@ -5665,6 +5685,7 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     CoupledDDAssembler assembler(
@@ -6309,6 +6330,7 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
+    recombinationConfig.augerWithGeneration = cfg_.augerWithGeneration;
     recombinationConfig.augerExcessProduct = cfg_.augerExcessProduct;
     recombinationConfig.bandToBand = cfg_.bandToBand;
     const DDScalingSpec scaling = buildScalingSpec();

@@ -159,7 +159,7 @@ void prepareIalTransportGeometry(MobilityModelConfig& config,const DeviceMesh& m
 void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
     const DopingModel& doping,const VectorXd& psi,const VectorXd& n,const VectorXd& p,
     const VectorXd& phin,const VectorXd& phip,const VectorXd& dn,const VectorXd& dp,
-    const VectorXd& temperature,const VectorXd& dn_dT,const VectorXd& dp_dT) {
+    const VectorXd& temperature,const VectorXd& dn_dT,const VectorXd& dp_dT,bool reuseScreening) {
     if (config.model!="ialmob") return;
     ScopedPerformanceTimer timer("ialmob.update");
     if (!config.ialmob) throw std::invalid_argument("IALMob requires an explicit parameter/geometry contract");
@@ -184,6 +184,8 @@ void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
     auto s=std::make_shared<IalTransportState>();s->psi=psi;s->n=n;s->p=p;s->phin=phin;s->phip=phip;s->dn=dn;s->dp=dp;s->temperature=temperature;s->dn_dT=dn_dT;s->dp_dT=dp_dT;
     s->electronEdges.resize(mesh.numEdges(),0.);s->holeEdges.resize(mesh.numEdges(),0.);
     auto options=config.ialmob->element;
+    IalScreeningCache screening;
+    options.screeningCache=reuseScreening?&screening:nullptr;
     if(temperature.size()!=0){options.temperatureDependentHighField=true;options.temperatureDerivatives=true;}
     options.electronField=config.electronField;options.holeField=config.holeField;
     const Real velocityFactor=config.internalMobilityToM2PerVS*config.internalFieldToVPerM;

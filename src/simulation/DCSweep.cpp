@@ -3309,6 +3309,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         sweepRecombinationConfig.augerCn = newton.augerCn;
         sweepRecombinationConfig.augerCp = newton.augerCp;
         sweepRecombinationConfig.augerDensityDependence = newton.augerDensityDependence;
+        sweepRecombinationConfig.augerWithGeneration = newton.augerWithGeneration;
         sweepRecombinationConfig.augerExcessProduct = newton.augerExcessProduct;
         sweepRecombinationConfig.bandToBand = newton.bandToBand;
         sweepBgnConfig = newton.bandgapNarrowing;
@@ -3320,6 +3321,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         sweepRecombinationConfig.augerCn = gummel.augerCn;
         sweepRecombinationConfig.augerCp = gummel.augerCp;
         sweepRecombinationConfig.augerDensityDependence = gummel.augerDensityDependence;
+        sweepRecombinationConfig.augerWithGeneration = gummel.augerWithGeneration;
         sweepRecombinationConfig.augerExcessProduct = gummel.augerExcessProduct;
         sweepRecombinationConfig.bandToBand = gummel.bandToBand;
         sweepBgnConfig = gummel.bandgapNarrowing;

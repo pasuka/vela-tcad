@@ -233,7 +233,7 @@ Real RecombinationModel::augerRateFromExcessProduct(Real excessProduct,
                                                     Real n,
                                                     Real p) const
 {
-    if (!augerEnabled_)
+    if (!augerEnabled_ || (!config_.augerWithGeneration && excessProduct <= 0.0))
         return 0.0;
     const auto& a = config_.augerDensityDependence;
     const auto electron = augerCarrierFactor(n, config_.augerCn,
@@ -353,7 +353,8 @@ RecombinationModel::augerRateDerivativesFromExcessProduct(
     Real p) const
 {
     RecombinationRateDerivatives derivatives;
-    if (!augerEnabled_)
+    // At the kink use the inactive-side derivative, as in the thermal model.
+    if (!augerEnabled_ || (!config_.augerWithGeneration && excessProduct <= 0.0))
         return derivatives;
 
     const auto& a = config_.augerDensityDependence;

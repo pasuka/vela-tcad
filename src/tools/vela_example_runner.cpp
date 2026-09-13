@@ -316,6 +316,7 @@ void writeNewtonSolutionVtk(const std::filesystem::path& path,
     recombination.augerCn = problem.newton.augerCn;
     recombination.augerCp = problem.newton.augerCp;
     recombination.augerDensityDependence = problem.newton.augerDensityDependence;
+    recombination.augerWithGeneration = problem.newton.augerWithGeneration;
     recombination.augerExcessProduct = problem.newton.augerExcessProduct;
     recombination.bandToBand = problem.newton.bandToBand;
     const vela::NewtonSolver diagnosticSolver = makeNewtonSolver(problem);

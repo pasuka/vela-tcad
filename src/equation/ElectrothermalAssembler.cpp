@@ -2,15 +2,16 @@
 #include "vela/discretization/ThermalSgCurrent.h"
 #include "vela/equation/LatticeBandEdgeWork.h"
 #include "vela/core/PhysicalConstants.h"
+#include "vela/physics/CarrierStatistics.h"
 #include <cmath>
 #include <stdexcept>
 
 namespace vela {
 ElectrothermalAssembler::ElectrothermalAssembler(const DeviceMesh& mesh,
     const DopingModel& doping, ElectrothermalGeometry geometry, LatticeHeatAssembler heat,
-    MobilityModelConfig mobility, SiliconThermalPhysics physics, Real muE, Real muH)
+    MobilityModelConfig mobility, SiliconThermalPhysics physics, Real muE, Real muH,bool reusePreparation,bool reuseIalScreening)
     :mesh_(mesh),doping_(doping),geometry_(std::move(geometry)),heat_(std::move(heat)),
-     mobility_(std::move(mobility)),physics_(std::move(physics)),muE_(muE),muH_(muH) {
+     mobility_(std::move(mobility)),physics_(std::move(physics)),muE_(muE),muH_(muH),reusePreparation_(reusePreparation),reuseIalScreening_(reuseIalScreening) {
     const auto n=mesh.numNodes(),e=mesh.numEdges();
     if(geometry_.recombinationArea_m2.size()==0)geometry_.recombinationArea_m2=geometry_.siliconArea_m2;
     if(doping.numNodes()!=n || geometry_.siliconArea_m2.size()!=n || geometry_.recombinationArea_m2.size()!=n ||
@@ -33,23 +34,40 @@ ElectrothermalAssembler::ElectrothermalAssembler(const DeviceMesh& mesh,
            (geometry_.siliconArea_m2[edge.n0]<=0. || geometry_.siliconArea_m2[edge.n1]<=0.))
             throw std::invalid_argument("Transport edge touches a non-silicon node");
     prepareIalTransportGeometry(mobility_,mesh_);
+    if(reusePreparation_){dopingPreparation_.resize(n);temperaturePreparation_.resize(n);}
 }
 
+const SiliconThermalPhysics::TemperaturePreparation& ElectrothermalAssembler::preparedAt(Index node,Real temperature) const {
+    auto& dop=dopingPreparation_.at(node);auto& state=temperaturePreparation_.at(node);
+    const Real nd=doping_.donors(node),na=doping_.acceptors(node);
+    if(!dop || !dop->matches(nd,na)){
+        dop=physics_.prepareDoping(nd,na);state.reset();++preparationCounts_[0];
+    }
+    if(!state || !state->matches(temperature,nd,na)){
+        state=physics_.prepareTemperature(temperature,*dop);++preparationCounts_[1];
+    }else ++preparationCounts_[2];
+    return *state;
+}
 std::pair<Real,Real> ElectrothermalAssembler::neutralPotential(Index node,Real bias,Real t) const {
     if(node>=mesh_.numNodes() || geometry_.siliconArea_m2[node]<=0. || !std::isfinite(bias))
         throw std::invalid_argument("Neutral boundary requires a silicon node and finite bias");
     SiliconThermalState s{bias,bias,bias,t,doping_.donors(node),doping_.acceptors(node)};
+    const auto* prepared=reusePreparation_?&preparedAt(node,t):nullptr;
+    const auto densities=[&](){
+        if(prepared)return physics_.carrierDensities(s,*prepared);
+        const auto p=physics_.evaluate(s);return std::array<ThermalQuantity,2>{p.electrons_m3,p.holes_m3};
+    };
     const Real net=s.donors_m3-s.acceptors_m3;
     Real lo=bias-1.5,hi=bias+1.5;
-    s.potential_V=lo;const auto lower=physics_.evaluate(s);
-    s.potential_V=hi;const auto upper=physics_.evaluate(s);
-    if(lower.electrons_m3.value-lower.holes_m3.value>net || upper.electrons_m3.value-upper.holes_m3.value<net)
+    s.potential_V=lo;const auto lower=densities();
+    s.potential_V=hi;const auto upper=densities();
+    if(lower[0].value-lower[1].value>net || upper[0].value-upper[1].value<net)
         throw std::invalid_argument("Neutral potential outside the audited silicon bracket");
-    for(int k=0;k<70;++k){s.potential_V=(lo+hi)/2.;const auto p=physics_.evaluate(s);
-        if(p.electrons_m3.value-p.holes_m3.value>net)hi=s.potential_V;else lo=s.potential_V;}
-    s.potential_V=(lo+hi)/2.;const auto p=physics_.evaluate(s);
-    const Real slope=p.electrons_m3.derivative[0]-p.holes_m3.derivative[0];
-    return {s.potential_V,-(p.electrons_m3.derivative[3]-p.holes_m3.derivative[3])/slope};
+    for(int k=0;k<70;++k){s.potential_V=(lo+hi)/2.;const auto p=densities();
+        if(p[0].value-p[1].value>net)hi=s.potential_V;else lo=s.potential_V;}
+    s.potential_V=(lo+hi)/2.;const auto p=densities();
+    const Real slope=p[0].derivative[0]-p[1].derivative[0];
+    return {s.potential_V,-(p[0].derivative[3]-p[1].derivative[3])/slope};
 }
 
 ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
@@ -74,9 +92,13 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
             throw std::invalid_argument("Invalid neutral contact");
         for(int k=0;k<3;++k){
             if(constrained[4*i+k])throw std::invalid_argument("Conflicting neutral contact constraint");
-            constrained[4*i+k]=true;
+            constrained[4*i+k]=!(k==2 && bc.holeRecombination.contains(i));
         }
     }
+    for(const auto& [i,c]:bc.holeRecombination)
+        if(!bc.neutralContactBias_V.contains(i) || !std::isfinite(c.velocity_m_per_s) ||
+           c.velocity_m_per_s<0. || !std::isfinite(c.boundaryLength_m) || c.boundaryLength_m<=0.)
+            throw std::invalid_argument("Finite hole contact requires neutral bias, nonnegative SI velocity and positive boundary length");
     for(Index i=0;i<n;++i)if(geometry_.siliconArea_m2[i]==0.){
         constrained[4*i+1]=true;constrained[4*i+2]=true;
     }
@@ -90,7 +112,7 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
         if(t[i]<50.)throw std::invalid_argument("Electrothermal temperature below 50 K");
         if(geometry_.siliconArea_m2[i]==0.)continue;
         states[i]={psi[i],x[4*i+1],x[4*i+2],t[i],doping_.donors(i),doping_.acceptors(i),ref(i,true),ref(i,false)};
-        auto& p=properties[i];p=physics_.evaluate(states[i]);
+        auto& p=properties[i];p=reusePreparation_?physics_.evaluate(states[i],preparedAt(i,t[i])):physics_.evaluate(states[i]);
         ne[i]=p.electrons_m3.value;nh[i]=p.holes_m3.value;
         dne[i]=p.electrons_m3.derivative[0];dnh[i]=p.holes_m3.derivative[2];
         dneT[i]=p.electrons_m3.derivative[3];dnhT[i]=p.holes_m3.derivative[3];
@@ -106,7 +128,7 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
             add(4*i+1,4*i+k,-d);add(4*i+2,4*i+k,d);
         }
     }
-    updateIalTransportState(mobility_,mesh_,doping_,psi,ne,nh,fn,fp,dne,dnh,t,dneT,dnhT);
+    updateIalTransportState(mobility_,mesh_,doping_,psi,ne,nh,fn,fp,dne,dnh,t,dneT,dnhT,reuseIalScreening_);
     for(Index i=0;i<n;++i)out.residual[4*i]-=geometry_.fixedCharge_C_per_m[i];
     for(const auto& edge:mesh_.edges()){
         const Index a=edge.n0,b=edge.n1;const Real eps=geometry_.poissonEdge_F_per_m[edge.id];
@@ -169,7 +191,37 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
     for(const auto& [i,bias]:bc.neutralContactBias_V){
         const auto [potential,derivative]=neutralPotential(i,bias,t[i]);
         out.residual[4*i]=psi[i]-potential;entries.emplace_back(4*i,4*i,1.);entries.emplace_back(4*i,4*i+3,-derivative);
-        for(int k=1;k<=2;++k){out.residual[4*i+k]=x[4*i+k]-(bias-ref(i,k==1));entries.emplace_back(4*i+k,4*i+k,1.);}
+        for(int k=1;k<=2;++k){
+            if(k==2 && bc.holeRecombination.contains(i))continue;
+            out.residual[4*i+k]=x[4*i+k]-(bias-ref(i,k==1));entries.emplace_back(4*i+k,4*i+k,1.);
+        }
+        if(const auto found=bc.holeRecombination.find(i);found!=bc.holeRecombination.end()){
+            const auto& contact=found->second;
+            const SiliconThermalState equilibriumState{potential,0.,0.,t[i],doping_.donors(i),doping_.acceptors(i),bias,bias};
+            const auto equilibrium=reusePreparation_?physics_.evaluate(equilibriumState,preparedAt(i,t[i])):physics_.evaluate(equilibriumState);
+            const auto& p=properties[i].holes_m3;
+            const auto& p0=equilibrium.holes_m3;
+            const Real vt=constants::kb*t[i]/constants::q;
+            // Preserve sub-ULP QF increments and avoid subtracting two nearly
+            // equal densities. The small-eta expansion has relative O(delta^2)
+            // error below 1e-12 and exactly vanishes at equilibrium.
+            const Real delta=static_cast<Real>((static_cast<long double>(ref(i,false))-bias+
+                x[4*i+2]-(static_cast<long double>(psi[i])-potential))/vt);
+            const Real eta=equilibrium.holeEta.value;
+            const Real excess=std::abs(delta)<1e-6 ? equilibrium.Nv_m3.value*delta*
+                (fermiDiracHalfDerivative(eta)+.5*delta*fermiDiracHalfSecondDerivative(eta)) : p.value-p0.value;
+            const Real coefficient=constants::q*contact.velocity_m_per_s*contact.boundaryLength_m;
+            // Positive hole loss is OUTWARD from the device; stored terminal
+            // currents and UG Eq.103 use the contact-to-semiconductor direction.
+            const Real outward=coefficient*excess;
+            out.residual[4*i+2]+=outward;
+            out.holeFluxAbs_A_per_m[i]+=std::abs(outward);
+            out.holeOutflow_A_per_m[i]=-outward;
+            for(int k=0;k<4;++k){
+                const Real equilibriumDerivative=k==3?p0.derivative[3]+p0.derivative[0]*derivative:0.;
+                add(4*i+2,4*i+k,coefficient*(p.derivative[k]-equilibriumDerivative));
+            }
+        }
     }
     out.jacobian.resize(4*n,4*n);out.jacobian.setFromTriplets(entries.begin(),entries.end());
     return out;

@@ -211,6 +211,7 @@ struct NewtonConfig {
     Real augerCn = 2.90e-43; ///< Electron Auger coefficient [m^6/s]
     Real augerCp = 1.028e-43; ///< Hole Auger coefficient [m^6/s]
     std::string augerExcessProduct = "generalized_fermi"; ///< "generalized_fermi" or "classical_np".
+    bool augerWithGeneration = true; ///< Compatibility default; false clips Auger generation.
     AugerDensityDependenceConfig augerDensityDependence{};
     MobilityModelConfig mobility{}; ///< Mobility model configuration
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}

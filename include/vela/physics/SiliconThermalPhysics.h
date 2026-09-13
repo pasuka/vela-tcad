@@ -1,6 +1,7 @@
 #pragma once
 #include "vela/core/Types.h"
 #include <array>
+#include <memory>
 
 namespace vela {
 /// Explicit SI local model for the audited Siliconc100.par Formula-1 DOS,
@@ -20,6 +21,8 @@ struct SiliconThermalParameters {
     std::array<Real,3> augerElectron_m6_per_s{6.7e-44,2.45e-43,-2.2e-44};
     std::array<Real,3> augerHole_m6_per_s{7.2e-44,4.5e-45,2.63e-44};
     std::array<Real,2> augerEnhancement{3.46667,8.25688}, augerReference_m3{1e24,1e24};
+    // Original D0 specifies Auger without WithGeneration (UG p.489).
+    bool augerWithGeneration=false;
 };
 struct ThermalQuantity {
     Real value=0.;
@@ -42,12 +45,42 @@ struct SiliconThermalResult {
 };
 class SiliconThermalPhysics {
 public:
+    class DopingPreparation {
+    public:
+        bool matches(Real donors,Real acceptors) const {return donors_==donors && acceptors_==acceptors;}
+    private:
+        friend class SiliconThermalPhysics;
+        Real donors_=0.,acceptors_=0.,delta_=0.;
+        std::shared_ptr<const unsigned char> owner_;
+    };
+    class TemperaturePreparation {
+    public:
+        bool matches(Real temperature,Real donors,Real acceptors) const {
+            return temperature_==temperature && donors_==donors && acceptors_==acceptors;
+        }
+    private:
+        friend class SiliconThermalPhysics;
+        Real temperature_=0.,donors_=0.,acceptors_=0.;
+        std::shared_ptr<const unsigned char> owner_;
+        SiliconThermalResult base_;
+        ThermalQuantity vt_,effectiveEg_;
+    };
     explicit SiliconThermalPhysics(SiliconThermalParameters parameters={});
     /// Reference fixed at intrinsic silicon at 300 K, independent of local T.
     Real referencePotential_V() const {return reference_;}
     SiliconThermalResult evaluate(const SiliconThermalState&) const;
+    /// Preparations retain the model identity; stale temperature/doping or a
+    /// preparation from another parameter instance is rejected, never reused.
+    DopingPreparation prepareDoping(Real donors_m3,Real acceptors_m3) const;
+    TemperaturePreparation prepareTemperature(Real temperature_K,const DopingPreparation&) const;
+    SiliconThermalResult evaluate(const SiliconThermalState&,const TemperaturePreparation&) const;
+    /// Neutrality needs densities/partials only, without recombination work.
+    std::array<ThermalQuantity,2> carrierDensities(const SiliconThermalState&,const TemperaturePreparation&) const;
 private:
+    struct CarrierEvaluation {SiliconThermalResult result;ThermalQuantity fN,fP;};
+    CarrierEvaluation carriers(const SiliconThermalState&,const TemperaturePreparation&) const;
     SiliconThermalParameters p_;
     Real reference_,Nc300_,Nv300_;
+    std::shared_ptr<const unsigned char> identity_=std::make_shared<const unsigned char>(0);
 };
 } // namespace vela

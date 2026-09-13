@@ -754,6 +754,15 @@ vela_set_windows_msys2_test_path(templates_ldmos_electrothermal_input_regression
 set_property(TEST templates_ldmos_electrothermal_input_regression APPEND PROPERTY
     ENVIRONMENT "VELA_ELECTROTHERMAL_PROBE=$<TARGET_FILE:electrothermal_probe>")
 
+add_test(NAME templates_ldmos_local_physics_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_local_physics)
+set_tests_properties(templates_ldmos_local_physics_regression PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(templates_ldmos_local_physics_regression)
+set_property(TEST templates_ldmos_local_physics_regression APPEND PROPERTY
+    ENVIRONMENT "VELA_SILICON_THERMAL_PROBE=$<TARGET_FILE:silicon_thermal_probe>")
+
 add_test(NAME templates_ldmos_thermal_gates_regression
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_templates_ldmos_thermal)

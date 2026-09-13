@@ -51,6 +51,43 @@ class PreparationTest(unittest.TestCase):
         self.assertEqual(output['electron_qf_reference_V'][0],0.)
         self.assertEqual(output['referenced_state_interleaved'][1],1e-20)
         self.assertEqual(output['referenced_state_interleaved'][2],-2e-20)
+
+    def native_geometry_fixture(self):
+        mesh=json.loads((self.base/'mesh.json').read_text())
+        native=self.base/'native_geometry';native.mkdir()
+        with (native/'nodes.csv').open('w',newline='') as f:
+            w=csv.writer(f);w.writerow(['id','x_um','y_um'])
+            w.writerows((n['id'],n['x'],n['y']) for n in mesh['nodes'])
+        with (native/'elements.csv').open('w',newline='') as f:
+            w=csv.writer(f);w.writerow(['id','node0','node1','node2','material'])
+            w.writerows((c['id'],*c['node_ids'],'Si' if c['region_id']==0 else 'SiO2') for c in mesh['triangles'])
+        debug=self.base/'MeasureCoefficients.debug'
+        debug.write_text('\nMeasure {\n0 0 2 .1 .25 .15\n1 1 2 .1 .05 .1\n}\nCoefficients {\n0 0 2 .2 .3 .4\n1 1 2 .5 .6 .7\n}\n')
+        return mesh,debug,native
+
+    def test_native_poisson_pair_weights_materials_and_preserves_other_physics(self):
+        mesh,debug,native=self.native_geometry_fixture()
+        run=self.run_prepare('--native-poisson-debug',str(debug),'--native-poisson-export',str(native))
+        self.assertEqual(run.returncode,0,run.stderr)
+        cfg=json.loads((self.base/'out/input.json').read_text())
+        self.assertEqual(cfg['silicon_area_m2'],[.1e-12,.15e-12,.25e-12,0.])
+        edge=next(e for e in cfg['edge_geometry'] if e['nodes']==[0,2])
+        self.assertAlmostEqual(edge['poisson_F_per_m'],8.8541878128e-12*(11.7*.2+3.9*.7),delta=1e-25)
+        self.assertAlmostEqual(cfg['recombination_area_m2'][0],.25e-12,delta=1e-26)
+        self.assertEqual(edge['transport_weight'],0.)
+        from templates_ldmos_native_poisson import apply_native_poisson
+        before=json.dumps(cfg);again=apply_native_poisson(cfg,mesh,debug,native)
+        self.assertEqual(before,json.dumps(cfg))
+        self.assertEqual(again['recombination_area_m2'],cfg['recombination_area_m2'])
+
+    def test_native_poisson_rejects_wrong_topology_units_and_material(self):
+        from templates_ldmos_native_poisson import native_poisson_geometry
+        mesh,debug,native=self.native_geometry_fixture()
+        with self.assertRaisesRegex(ValueError,'micrometres'):native_poisson_geometry(mesh,1.,debug,native)
+        mesh['triangles'][0]['node_ids']=[1,0,2]
+        with self.assertRaisesRegex(ValueError,'connectivity'):native_poisson_geometry(mesh,1e-6,debug,native)
+        mesh['triangles'][0]['node_ids']=[0,1,2];mesh['triangles'][0]['region_id']=1
+        with self.assertRaisesRegex(ValueError,'material'):native_poisson_geometry(mesh,1e-6,debug,native)
     def test_missing_semiconductor_doping_is_rejected(self):
         (self.export/'fields/DonorConcentration_region0.csv').write_text('node_id,component0\n0,1e17\n1,1e17\n')
         run=self.run_prepare();self.assertNotEqual(run.returncode,0)
@@ -76,9 +113,22 @@ class CurveGateTest(unittest.TestCase):
         r.update(temperature_K=[300.,300.],lattice_source_W_per_m=0.,boundary_heat_W_per_m=0.)
         self.assertTrue(state_gate(r,0.)['pass_gate']);self.assertIsNone(state_gate(r,0.)['heat_balance_relative'])
         r['temperature_K'][0]=301.;self.assertFalse(state_gate(r,0.)['pass_gate'])
+
+class ContactGeometryTest(unittest.TestCase):
+    def test_contact_measure_is_conservative_and_rejects_interior_edges(self):
+        from scripts.prepare_templates_ldmos_electrothermal import contact_boundary_lengths
+        mesh=dict(nodes=[dict(id=i,x=x,y=y) for i,(x,y) in enumerate(((0,0),(2,0),(2,1),(0,1)))],
+                  triangles=[dict(region_id=0,node_ids=[0,1,2]),dict(region_id=0,node_ids=[0,2,3])])
+        contact=dict(node_ids=[0,1,2],edge_node_ids=[[0,1],[1,2]])
+        lengths=contact_boundary_lengths(mesh,contact,1e-6)
+        self.assertEqual(lengths,{0:1e-6,1:1.5e-6,2:.5e-6})
+        self.assertAlmostEqual(sum(lengths.values()),3e-6)
+        for edges in ([[0,2]],[[0,1],[1,0]],[]):
+            with self.assertRaisesRegex(ValueError,'contact|Finite'):
+                contact_boundary_lengths(mesh,dict(node_ids=[0,1,2],edge_node_ids=edges),1e-6)
 @unittest.skipUnless(os.environ.get('VELA_ELECTROTHERMAL_PROBE'),'Probe supplied by matching CTest build')
 class ProbeInputTest(unittest.TestCase):
-    def test_truncated_state_is_rejected_before_reference_access(self):
+    def test_state_validation_and_profiling_preserve_solver_results(self):
         with tempfile.TemporaryDirectory() as name:
             base=Path(name);mesh=base/'mesh.json';source=base/'input.json';target=base/'output.json'
             mesh.write_text(json.dumps(dict(nodes=[dict(id=i,x=x,y=y) for i,(x,y) in enumerate(((0,0),(1,0),(0,1)))],triangles=[dict(id=0,region_id=0,node_ids=[0,1,2])],regions=[dict(id=0,name='silicon',material='Silicon',cell_ids=[0])],contacts=[])),encoding='utf-8')
@@ -86,8 +136,64 @@ class ProbeInputTest(unittest.TestCase):
             source.write_text(json.dumps(cfg),encoding='utf-8')
             run=lambda:subprocess.run([os.environ['VELA_ELECTROTHERMAL_PROBE'],str(source),str(target)],capture_output=True,text=True)
             valid=run();self.assertEqual(valid.returncode,0,valid.stderr)
+            baseline=json.loads(target.read_text(encoding='utf-8'))
+            target=base/'profiled_output.json'
+            cfg['performance_profiling']=True;source.write_text(json.dumps(cfg),encoding='utf-8')
+            profiled=run();self.assertEqual(profiled.returncode,0,profiled.stderr)
+            observed=json.loads(target.read_text(encoding='utf-8'));performance=observed.pop('performance')
+            self.assertEqual(observed,baseline)
+            self.assertEqual(performance['assembly_calls'],1)
+            self.assertGreater(performance['fermi_half_calls'],0)
+            self.assertEqual(performance['factorizations'],0)
+
+            # A constrained voltage change exercises a real Newton update and
+            # proves that timing/limiter metadata cannot change its trajectory.
+            cfg['diagnostic_newton_max_iterations']=3
+            cfg['boundaries']=[dict(node=i,kind=k,value=v) for i in range(3)
+                for k,v in [('psi',.01),('fn',0.),('fp',0.),('temperature',300.)]]
+            solved=[]
+            for enabled in (False,True):
+                cfg['performance_profiling']=enabled;target=base/f'newton_{enabled}.json'
+                source.write_text(json.dumps(cfg),encoding='utf-8')
+                execution=run();self.assertEqual(execution.returncode,0,execution.stderr)
+                output=json.loads(target.read_text(encoding='utf-8'))
+                self.assertGreater(output['newton_updates'],0)
+                if enabled:
+                    self.assertEqual(output.pop('performance')['factorizations'],output['newton_updates'])
+                    for row in output['history']:
+                        for key in ('initial_alpha','line_search_trials','limiter_node','limiter_component','limiter_direction','max_abs_direction_by_block'):row.pop(key)
+                solved.append(output)
+            self.assertEqual(solved[0],solved[1])
             target=base/'invalid_output.json';cfg['state_interleaved'].pop();source.write_text(json.dumps(cfg),encoding='utf-8')
             invalid=run();self.assertNotEqual(invalid.returncode,0);self.assertIn('Invalid electrothermal state size',invalid.stderr);self.assertFalse(target.exists())
+
+class ElectrothermalStepPolicyTest(unittest.TestCase):
+    def test_linear_prediction_keeps_sub_ulp_qf_increments_and_does_not_mutate_seeds(self):
+        from run_templates_ldmos_electrothermal_curve import linear_predictor_state
+        old=dict(referenced_state_interleaved=[.2,0.,0.,300.],electron_qf_reference_V=[40.],hole_qf_reference_V=[40.])
+        current=dict(referenced_state_interleaved=[.3,1e-20,-2e-20,301.],electron_qf_reference_V=[40.],hole_qf_reference_V=[40.])
+        before=json.dumps((current,old));predicted=linear_predictor_state(current,old,2.)
+        self.assertEqual(json.dumps((current,old)),before)
+        self.assertAlmostEqual(predicted['referenced_state_interleaved'][0],.5)
+        self.assertEqual(predicted['referenced_state_interleaved'][3],303.)
+        self.assertAlmostEqual(predicted['referenced_state_interleaved'][1]/1e-20,3.)
+        self.assertAlmostEqual(predicted['referenced_state_interleaved'][2]/1e-20,-6.)
+        self.assertEqual(predicted['electron_qf_reference_V'],[40.])
+        for ratio in (0.,-1.,3.1,float('nan')):
+            with self.assertRaises(ValueError):linear_predictor_state(current,old,ratio)
+        current['referenced_state_interleaved'][3]=100.
+        with self.assertRaisesRegex(ValueError,'temperature'):linear_predictor_state(current,old,2.)
+
+    def test_repeated_converged_nine_update_steps_can_escape_the_legacy_plateau(self):
+        from run_templates_ldmos_electrothermal_curve import next_accepted_step
+        legacy=candidate=.225
+        for _ in range(20):
+            legacy=next_accepted_step(legacy,9,1e-4,4/3)
+            candidate=next_accepted_step(candidate,9,1e-4,4/3,12)
+        self.assertEqual(legacy,.225)
+        self.assertEqual(candidate,4/3)
+        self.assertEqual(next_accepted_step(candidate,21,1e-4,4/3,12),candidate/2)
+        self.assertEqual(next_accepted_step(1e-4,21,1e-4,4/3,12),1e-4)
 
 class FullD0GateTest(unittest.TestCase):
     def setUp(self):
@@ -120,4 +226,23 @@ class FullD0GateTest(unittest.TestCase):
     def test_incomplete_curve_is_rejected(self):
         path=self.curves[8]/'ledger.json';data=json.loads(path.read_text());data['exact_points'].pop();path.write_text(json.dumps(data))
         with self.assertRaisesRegex(ValueError,'31-point'):self.score()
+    def test_native_csv_precision_requires_explicit_noninterpolating_alignment(self):
+        from analyze_templates_ldmos_d0 import analyze
+        for path in (self.native/'normalized').glob('*.csv'):
+            lines=path.read_text().splitlines();formatted=[lines[0]]
+            for line in lines[1:]:
+                bias,current=line.split(',');formatted.append(f'{float(bias):.15g},{current}')
+            path.write_text('\n'.join(formatted))
+        with self.assertRaisesRegex(ValueError,'exact reference'):self.score()
+        before={g:(p/'curve.csv').read_bytes() for g,p in self.curves.items()}
+        score=analyze(self.native,self.curves,self.contract,15)
+        self.assertEqual(score['status'],'pass')
+        for g,p in self.curves.items():self.assertEqual((p/'curve.csv').read_bytes(),before[g])
+        mapping=score['bias_serialization']['mapping']['Vg4']
+        self.assertGreater(max(abs(r['difference_V']) for r in mapping),0.)
+        self.assertLess(max(abs(r['difference_V']) for r in mapping),1e-12)
+        # A real voltage change cannot be hidden by updating both CSV and ledger.
+        path=self.curves[4]/'curve.csv';lines=path.read_text().splitlines();v,current=lines[2].split(',');v=float(v)+1e-8;lines[2]=f'{v},{current}';path.write_text('\n'.join(lines))
+        lp=self.curves[4]/'ledger.json';ledger=json.loads(lp.read_text());ledger['exact_points'][1]['bias_V']=v;lp.write_text(json.dumps(ledger))
+        with self.assertRaisesRegex(ValueError,'serialization precision'):analyze(self.native,self.curves,self.contract,15)
 if __name__=='__main__':unittest.main()

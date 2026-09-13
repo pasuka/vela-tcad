@@ -11,6 +11,33 @@
 #include <limits>
 #include <stdexcept>
 using namespace vela;
+TEST_CASE("Thermal preparations preserve values and partials and reject stale identities", "[thermal][silicon][preparation]") {
+    SiliconThermalPhysics model,other;
+    const std::array<ThermalQuantity SiliconThermalResult::*,18> quantities{
+        &SiliconThermalResult::bandgap_eV,&SiliconThermalResult::affinity_eV,&SiliconThermalResult::Nc_m3,&SiliconThermalResult::Nv_m3,
+        &SiliconThermalResult::ni_m3,&SiliconThermalResult::effectiveNi_m3,&SiliconThermalResult::conductionBand_eV,&SiliconThermalResult::valenceBand_eV,
+        &SiliconThermalResult::electrons_m3,&SiliconThermalResult::holes_m3,&SiliconThermalResult::electronEta,&SiliconThermalResult::holeEta,
+        &SiliconThermalResult::srhRate_m3_per_s,&SiliconThermalResult::augerRate_m3_per_s,&SiliconThermalResult::electronLifetime_s,&SiliconThermalResult::holeLifetime_s,
+        &SiliconThermalResult::augerElectron_m6_per_s,&SiliconThermalResult::augerHole_m6_per_s};
+    const auto doping=model.prepareDoping(1e23,2e22);
+    CHECK_THROWS_AS(other.prepareTemperature(300.,doping),std::invalid_argument);
+    for(Real temperature:{100.,300.,401.,514.,600.})for(Real shift:{0.,40.}) {
+        const auto prepared=model.prepareTemperature(temperature,doping);
+        SiliconThermalState state{shift+.5,.01,.03,temperature,1e23,2e22,shift,shift};
+        const auto plain=model.evaluate(state),cached=model.evaluate(state,prepared);
+        for(auto member:quantities){CHECK((plain.*member).value==(cached.*member).value);CHECK((plain.*member).derivative==(cached.*member).derivative);}
+        CHECK(plain.bandgapNarrowing_eV==cached.bandgapNarrowing_eV);
+        const auto densities=model.carrierDensities(state,prepared);
+        CHECK(densities[0].value==plain.electrons_m3.value);CHECK(densities[0].derivative==plain.electrons_m3.derivative);
+        CHECK(densities[1].value==plain.holes_m3.value);CHECK(densities[1].derivative==plain.holes_m3.derivative);
+        auto changed=state;changed.temperature_K+=.01;
+        CHECK_THROWS_AS(model.evaluate(changed,prepared),std::invalid_argument);
+        changed=state;changed.donors_m3*=1.01;
+        CHECK_THROWS_AS(model.evaluate(changed,prepared),std::invalid_argument);
+        CHECK_THROWS_AS(other.evaluate(state,prepared),std::invalid_argument);
+        auto copy=model;CHECK(copy.evaluate(state,prepared).electrons_m3.value==plain.electrons_m3.value);
+    }
+}
 TEST_CASE("Thermal silicon recovers audited 300 K material and Fermi statistics", "[thermal][silicon]") {
     SiliconThermalPhysics model;
     auto r=model.evaluate({.15,.03,.07,300.,2e23,1e22});
@@ -56,6 +83,29 @@ TEST_CASE("Thermal silicon rejects invalid temperatures and coefficients", "[the
     CHECK_THROWS_AS(model.evaluate({0.,0.,0.,300.,-1.,0.}),std::invalid_argument);
     SiliconThermalParameters p;p.bandgapBeta_K=std::numeric_limits<Real>::quiet_NaN();
     CHECK_THROWS_AS(SiliconThermalPhysics(p),std::invalid_argument);
+}
+
+TEST_CASE("Audited Auger defaults to recombination only and preserves explicit generation", "[thermal][silicon][auger]") {
+    SiliconThermalPhysics audited;
+    SiliconThermalParameters p;p.augerWithGeneration=true;SiliconThermalPhysics signedModel(p);
+    for(Real t:{300.,515.})for(Real split:{-.03,0.,.03}){
+        SiliconThermalState state{.1,0.,split,t,1e23,2e22};
+        const auto a=audited.evaluate(state),b=signedModel.evaluate(state);
+        CHECK(a.srhRate_m3_per_s.value==b.srhRate_m3_per_s.value);
+        if(split<=0.){
+            CHECK(a.augerRate_m3_per_s.value==0.);
+            for(Real derivative:a.augerRate_m3_per_s.derivative)CHECK(derivative==0.);
+        }else{
+            CHECK(a.augerRate_m3_per_s.value>0.);
+            CHECK(a.augerRate_m3_per_s.value==b.augerRate_m3_per_s.value);
+            CHECK(a.augerRate_m3_per_s.derivative==b.augerRate_m3_per_s.derivative);
+        }
+        if(split<0.){
+            CHECK(b.augerRate_m3_per_s.value<0.);
+            auto hi=state,lo=state;hi.temperature_K+=.002;lo.temperature_K-=.002;
+            CHECK(b.augerRate_m3_per_s.derivative[3]==Catch::Approx((signedModel.evaluate(hi).augerRate_m3_per_s.value-signedModel.evaluate(lo).augerRate_m3_per_s.value)/.004).epsilon(3e-6));
+        }
+    }
 }
 
 TEST_CASE("Default lattice edge work preserves signs and discrete power balance", "[thermal][silicon][heat]") {

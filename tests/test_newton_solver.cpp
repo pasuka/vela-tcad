@@ -2158,11 +2158,13 @@ TEST_CASE("CoupledDDAssembler: shared recombination states preserve additive sou
     const CarrierStatisticsConfig statistics{"fermi_dirac"};
     for (const std::string coupling : {"sentaurus_default", "quantum"}) {
     for (const std::string excess : {"generalized_fermi", "classical_np"}) {
+    for (const bool generation : {false, true}) {
     for (const Real quantumShift : {0.0, 0.03}) {
-        CAPTURE(coupling, excess, quantumShift);
+        CAPTURE(coupling, excess, quantumShift, generation);
         auto both = recombinationModelConfig({"srh", "auger"}, 1.1e-7, 2.3e-7);
         both.srhDopingDependence.densityCoupling = coupling;
         both.augerExcessProduct = excess;
+        both.augerWithGeneration = generation;
         // Resolve the source against transport subtraction round-off.
         both.augerCn = 2.9e-28;
         both.augerCp = 1.028e-28;
@@ -2204,6 +2206,7 @@ TEST_CASE("CoupledDDAssembler: shared recombination states preserve additive sou
             combined.finiteDifferenceJacobian(x, bcs, 1.0e-8)
             - noSources.finiteDifferenceJacobian(x, bcs, 1.0e-8));
         REQUIRE((jacobian-finiteDifference).norm()/finiteDifference.norm() < 2.0e-4);
+    }
     }
     }
     }

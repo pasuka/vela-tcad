@@ -24,6 +24,28 @@ def fields(export, name, count, required=True, required_nodes=()):
     return [values.get(i,0.) for i in range(count)]
 
 
+def contact_boundary_lengths(mesh, contact, coordinate_to_metres):
+    """Lumped contact measure; reject missing, duplicate or interior edges."""
+    if not math.isfinite(coordinate_to_metres) or coordinate_to_metres<=0.:
+        raise ValueError('Positive coordinate conversion required')
+    nodes={n['id']:(n['x'],n['y']) for n in mesh['nodes']}
+    incidence={}
+    for cell in mesh['triangles']:
+        ns=cell['node_ids']
+        for i,j in zip(ns,ns[1:]+ns[:1]):
+            incidence.setdefault(tuple(sorted((i,j))),[]).append(cell['region_id'])
+    lengths={i:0. for i in contact['node_ids']};seen=set()
+    for a,b in contact.get('edge_node_ids',[]):
+        key=tuple(sorted((a,b)))
+        if a not in lengths or b not in lengths or key in seen or incidence.get(key)!=[0]:
+            raise ValueError('Finite contact requires unique exterior silicon edges')
+        seen.add(key);half=.5*math.dist(nodes[a],nodes[b])*coordinate_to_metres
+        lengths[a]+=half;lengths[b]+=half
+    if not lengths or any(v<=0. for v in lengths.values()):
+        raise ValueError('Finite contact node has no positive boundary measure')
+    return lengths
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('thermal-input','export','profile','couples','output'):
@@ -35,6 +57,11 @@ def main():
     p.add_argument('--initial-temperature',type=float)
     p.add_argument('--potential-origin',type=float,default=0.)
     p.add_argument('--diagnostic-newton-iterations',type=int,default=0)
+    p.add_argument('--hole-recombination-velocity-cm-s',type=float,
+                   help='Explicit constant source/drain hRecVelocity; original D0 is 1.93e6 cm/s')
+    p.add_argument('--auger-with-generation',action='store_true',help='Explicit signed Auger control; not enabled by original D0')
+    p.add_argument('--native-poisson-debug',type=Path,help='Explicit audited AverageBox edge/charge-volume pair')
+    p.add_argument('--native-poisson-export',type=Path,help='Native nodes.csv/elements.csv for strict geometry identity')
     a=p.parse_args();a.output.mkdir(parents=True,exist_ok=False)
     thermal=read(a.thermal_input);mesh=read(Path(thermal['mesh_file']));profile=read(a.profile)
     nodes=mesh['nodes'];count=len(nodes);assert [n['id'] for n in nodes]==list(range(count))
@@ -82,7 +109,16 @@ def main():
         if name=='gate':kind='psi';value=a.gate-next(c['flatband_voltage'] for c in profile['contacts'] if c['name']=='gate')
         elif name in ('source','drain','substrate'):kind='neutral_contact';value=a.drain if name=='drain' else 0.
         else:raise ValueError(f'Unknown contact {name}')
-        boundaries.extend(dict(node=i,kind=kind,value=value) for i in contact['node_ids'])
+        lengths=None
+        if name in ('source','drain') and a.hole_recombination_velocity_cm_s is not None:
+            if not math.isfinite(a.hole_recombination_velocity_cm_s) or a.hole_recombination_velocity_cm_s<0.:
+                raise ValueError('Invalid hole recombination velocity')
+            lengths=contact_boundary_lengths(mesh,contact,length)
+        for i in contact['node_ids']:
+            boundary=dict(node=i,kind=kind,value=value)
+            if lengths is not None:
+                boundary.update(hole_recombination_velocity_m_per_s=a.hole_recombination_velocity_cm_s*.01,boundary_length_m=lengths[i])
+            boundaries.append(boundary)
     if a.freeze_temperature is not None:
         boundaries.extend(dict(node=i,kind='temperature',value=a.freeze_temperature) for i in range(count))
     cfg={k:thermal[k] for k in ('mesh_file','coordinate_to_metres','region_conductivity','thermodes')}
@@ -128,11 +164,17 @@ def main():
                     raw[4*i+1+k]=math.fsum((retained[k+2][i],old_ref,-a.potential_origin,-new_ref));refs[k].append(new_ref)
                 else:raw[4*i+1+k]=0.;refs[k].append(0.)
         cfg.update(referenced_state_interleaved=raw,electron_qf_reference_V=refs[0],hole_qf_reference_V=refs[1])
-    cfg.update(recombination_area_m2=[global_area[i] if area[i]>0. else 0. for i in range(count)],potential_origin_V=a.potential_origin,electrical_current_scale_A_per_m=1.602176634e-19*max(abs(d-n) for d,n in zip(donors,acceptors))*.1417*(1.380649e-23*300/1.602176634e-19),electrical_gate_solver={k:profile['solver'][k] for k in ('carrier_row_convergence','continuity_row_scaling','block_absolute_convergence')},diagnostic_newton_max_iterations=a.diagnostic_newton_iterations,silicon_area_m2=area,fixed_charge_C_per_m=[0.]*count,edge_geometry=geometry,donors_m3=donors,acceptors_m3=acceptors,state_interleaved=state,mobility_SI=mobility,boundaries=boundaries)
+    cfg.update(recombination_area_m2=[global_area[i] if area[i]>0. else 0. for i in range(count)],potential_origin_V=a.potential_origin,electrical_current_scale_A_per_m=1.602176634e-19*max(abs(d-n) for d,n in zip(donors,acceptors))*.1417*(1.380649e-23*300/1.602176634e-19),electrical_gate_solver={k:profile['solver'][k] for k in ('carrier_row_convergence','continuity_row_scaling','block_absolute_convergence')},diagnostic_newton_max_iterations=a.diagnostic_newton_iterations,silicon_area_m2=area,fixed_charge_C_per_m=[0.]*count,edge_geometry=geometry,donors_m3=donors,acceptors_m3=acceptors,state_interleaved=state,mobility_SI=mobility,boundaries=boundaries,auger_with_generation=a.auger_with_generation)
+    if bool(a.native_poisson_debug)!=bool(a.native_poisson_export):raise ValueError('Both native Poisson debug and geometry export are required')
+    if a.native_poisson_debug:
+        from templates_ldmos_native_poisson import apply_native_poisson
+        cfg=apply_native_poisson(cfg,mesh,a.native_poisson_debug,a.native_poisson_export)
     output=a.output/'input.json';output.write_text(json.dumps(cfg),encoding='utf-8')
     sources=[Path(__file__),a.thermal_input,a.profile,a.couples,Path(thermal['mesh_file']),Path(mobility['ialmob']['geometry_file']),*sorted((a.export/'fields').glob('*.csv'))]
     if a.state_result:sources.append(a.state_result)
     if a.isothermal_state:sources.append(a.isothermal_state)
+    if a.native_poisson_debug:
+        sources.extend(Path(p) for p in cfg['poisson_geometry_provenance']['sources_sha256'])
     manifest=dict(scope='Explicit experimental SI four-equation input; provenance lists the actual native or Vela seed; not a qualification report',gate_V=a.gate,drain_V=a.drain,nodes=count,cells=len(mesh['triangles']),transport_edges=sum(e['transport_weight']>0 for e in geometry),input_sha256=hashlib.sha256(output.read_bytes()).hexdigest(),sources_sha256={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources})
     (a.output/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
     print(json.dumps({k:v for k,v in manifest.items() if k!='sources_sha256'}))

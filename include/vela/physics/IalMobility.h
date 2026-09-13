@@ -2,6 +2,7 @@
 
 #include "vela/core/Types.h"
 #include <array>
+#include <map>
 
 namespace vela {
 
@@ -53,17 +54,29 @@ struct IalMobilityDifferential {
     Real temperatureDerivative_m2_per_Vs_K = 0.;
 };
 
+/// Scoped to one transport-state preparation. The screening minimizer depends
+/// only on mass and temperature; exact keys never reuse another temperature.
+class IalScreeningCache {
+public:
+    Real minimum(Real mass,Real temperature);
+    std::size_t size() const {return roots_.size();}
+private:
+    std::map<std::pair<Real,Real>,Real> roots_;
+};
+
 class IalMobility {
 public:
     /// Local temperature is explicit; coupled electrical callers still supply 300 K.
     explicit IalMobility(IalMobilityParameters parameters, bool electron);
     IalMobilityResult evaluate(const IalMobilityState& state) const;
-    IalMobilityDifferential evaluateWithDerivatives(const IalMobilityState& state) const;
+    IalMobilityDifferential evaluateWithDerivatives(const IalMobilityState& state,
+                                                  IalScreeningCache* cache=nullptr) const;
     static IalMobilityParameters siliconDefaults(bool electron);
     /// Closest cubic plane family, including sign/permutation symmetry.
     /// Input is a nonzero normal already transformed into crystal coordinates.
     static int orientationFamily(const std::array<Real, 3>& crystalNormal);
 private:
+    IalMobilityResult evaluatePrepared(const IalMobilityState& state,Real minimum) const;
     IalMobilityParameters params_;
     bool electron_;
     Real pMin_;

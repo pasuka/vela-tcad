@@ -36,6 +36,7 @@ void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
     const DopingModel& doping,const VectorXd& psi_V,const VectorXd& n,const VectorXd& p,
     const VectorXd& phin_V,const VectorXd& phip_V,
     const VectorXd& dn_per_V = {},const VectorXd& dp_per_V = {},
-    const VectorXd& temperature_K = {},const VectorXd& dn_per_K = {},const VectorXd& dp_per_K = {});
+    const VectorXd& temperature_K = {},const VectorXd& dn_per_K = {},const VectorXd& dp_per_K = {},
+    bool reuseScreening=false);
 Real ialEdgeMobility(const MobilityModelConfig& config,Index edge,CarrierType carrier,bool lowField=false);
 } // namespace vela

@@ -1,5 +1,6 @@
 #include "vela/physics/IalMobility.h"
 #include "vela/physics/detail/IalMobilityEvaluation.h"
+#include "vela/core/PhysicsCallCounters.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -16,6 +17,7 @@ Real screeningGDerivative(Real p, Real mass, Real temperature)
 }
 Real screeningMinimum(Real mass, Real temperature)
 {
+    ++physicsCallCounters.ialScreeningMinimumSolves;
     Real lower = 1e-12, upper = 1e12;
     for (int i = 0; i < 100; ++i) {
         const Real midpoint = std::sqrt(lower * upper);
@@ -25,8 +27,24 @@ Real screeningMinimum(Real mass, Real temperature)
     return std::sqrt(lower * upper);
 }
 
+void validateState(const IalMobilityState& state) {
+    for(Real value:{state.donors_m3,state.acceptors_m3,state.electrons_m3,
+                   state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m})
+        if(!std::isfinite(value)||value<0.)throw std::invalid_argument("IALMob state must be finite and nonnegative");
+    if(!std::isfinite(state.temperature_K)||state.temperature_K<50.)
+        throw std::invalid_argument("IALMob requires finite temperature >= 50 K");
+}
 
 
+
+}
+
+Real IalScreeningCache::minimum(Real mass,Real temperature) {
+    if(!std::isfinite(mass)||mass<=0.||!std::isfinite(temperature)||temperature<50.)
+        throw std::invalid_argument("Invalid IALMob screening mass/temperature");
+    const auto key=std::make_pair(mass,temperature);
+    if(const auto found=roots_.find(key);found!=roots_.end())return found->second;
+    const Real result=screeningMinimum(mass,temperature);roots_.emplace(key,result);return result;
 }
 
 IalMobilityParameters IalMobility::siliconDefaults(bool electron)
@@ -66,24 +84,28 @@ IalMobility::IalMobility(IalMobilityParameters p, bool electron)
 
 IalMobilityResult IalMobility::evaluate(const IalMobilityState& state) const
 {
-    for (Real value : {state.donors_m3,state.acceptors_m3,state.electrons_m3,
-                      state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m}) {
-        if (!std::isfinite(value) || value < 0.)
-            throw std::invalid_argument("IALMob state must be finite and nonnegative");
-    }
-    if (!std::isfinite(state.temperature_K) || state.temperature_K < 50.)
-        throw std::invalid_argument("IALMob requires finite temperature >= 50 K");
+    validateState(state);
+    return evaluatePrepared(state,state.temperature_K==300.?pMin_:screeningMinimum(params_.mass,state.temperature_K));
+}
+
+IalMobilityResult IalMobility::evaluatePrepared(const IalMobilityState& state,Real minimum) const
+{
     const auto values = ial_detail::evaluate<Real>({state.donors_m3,state.acceptors_m3,
         state.electrons_m3,state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m,state.temperature_K},
-        params_,electron_,state.temperature_K==300.?pMin_:screeningMinimum(params_.mass,state.temperature_K));
+        params_,electron_,minimum);
     if (!std::isfinite(values[0]) || values[0] <= 0.)
         throw std::runtime_error("IALMob produced invalid mobility");
     return {values[0],values[1],values[2],values[3],values[4],values[5]};
 }
 
-IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilityState& state) const
+IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilityState& state,IalScreeningCache* cache) const
 {
-    IalMobilityDifferential result{evaluate(state),{}};
+    IalMobilityDifferential result;Real prepared=0.;
+    if(cache){
+        validateState(state);
+        prepared=state.temperature_K==300.?pMin_:cache->minimum(params_.mass,state.temperature_K);
+        result.result=evaluatePrepared(state,prepared);
+    }else result.result=evaluate(state);
     const std::array<Real,7> inputs{state.donors_m3,state.acceptors_m3,
         state.electrons_m3,state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m,state.temperature_K};
     std::array<ial_detail::Dual,7> variables;
@@ -94,7 +116,7 @@ IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilitySt
     // At the clamped minimum, dG/dP = 0. The envelope derivative is the
     // partial dG/dT; differentiating the numerical minimizer is unnecessary.
     const auto derivatives=ial_detail::evaluate(variables,params_,electron_,
-        state.temperature_K==300.?pMin_:screeningMinimum(params_.mass,state.temperature_K))[0].derivative;
+        cache?prepared:(state.temperature_K==300.?pMin_:screeningMinimum(params_.mass,state.temperature_K)))[0].derivative;
     std::copy_n(derivatives.begin(),6,result.derivative_SI.begin());
     result.temperatureDerivative_m2_per_Vs_K=derivatives[6];
     if (!std::isfinite(derivatives[6]))
