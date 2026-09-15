@@ -2,6 +2,9 @@
 #include "vela/equation/ElectrothermalAssembler.h"
 #include "vela/solver/ElectrothermalIterationControl.h"
 #include "vela/solver/ElectrothermalDensityUpdate.h"
+#include "vela/solver/ElectrothermalPredictorQuality.h"
+#include "vela/solver/ElectrothermalTangent.h"
+#include "vela/solver/ElectrothermalResidualMixing.h"
 #include "vela/simulation/ElectrothermalSimulation.h"
 #include "vela/io/MeshReader.h"
 #include <Eigen/SparseLU>
@@ -216,6 +219,119 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             catch(...){assemblySeconds+=seconds(start);throw;}
         };
         auto a=assemble(x);
+        json predictorCandidates=cfg.value("diagnostic_predictor_candidates",json::array());
+        json tangentPreparation;unsigned tangentAnalyses=0;
+        if(cfg.contains("diagnostic_tangent_predictor")) {
+            if(solveMode!="coupled" || initialization!="provided_state" || !cfg.value("use_qf_references",true))
+                throw std::invalid_argument("Tangent requires a referenced coupled provided state");
+            const auto start=Clock::now();tangentPreparation={{"prepared",false}};
+            try {
+                const auto& source=cfg.at("diagnostic_tangent_predictor");
+                const Real delta=source.at("delta_bias_V"),bias=source.at("source_bias_V");
+                if(!(delta>0. && std::isfinite(delta) && std::isfinite(bias)) ||
+                   source.value("potential_origin_V",0.)!=cfg.value("potential_origin_V",0.))
+                    throw std::invalid_argument("Invalid tangent bias or origin");
+                const auto nodes=source.at("moving_nodes").get<std::set<Index>>();
+                auto sourceBoundary=bc;
+                const VectorXd derivative=experimental::electrothermalContactBiasDerivative(mesh.numNodes(),bc,nodes);
+                for(Index i:nodes) {
+                    if(std::abs(bc.neutralContactBias_V.at(i)-bias-delta)>1e-12)
+                        throw std::invalid_argument("Tangent source and target bias mismatch");
+                    sourceBoundary.neutralContactBias_V[i]=bias;
+                }
+                VectorXd seed=values(source.at("referenced_state_interleaved"));
+                const VectorXd er=values(source.at("electron_qf_reference_V")),hr=values(source.at("hole_qf_reference_V"));
+                if(seed.size()!=x.size() || er.size()!=eReference.size() || hr.size()!=hReference.size() ||
+                   !seed.allFinite() || !er.allFinite() || !hr.allFinite())
+                    throw std::invalid_argument("Invalid tangent source state");
+                for(Index i=0;i<mesh.numNodes();++i) {
+                    seed[4*i+1]=static_cast<Real>((static_cast<long double>(er[i])-eReference[i])+seed[4*i+1]);
+                    seed[4*i+2]=static_cast<Real>((static_cast<long double>(hr[i])-hReference[i])+seed[4*i+2]);
+                }
+                // Assemble at the accepted source bias/state, before any target
+                // contact projection. Its final Jacobian is freshly factorized.
+                const auto assemblyStart=Clock::now();++assemblyCalls;
+                ElectrothermalAssembly sourceAssembly;
+                try {sourceAssembly=assembler.assemble(seed,sourceBoundary,eReference,hReference);}
+                catch(...) {assemblySeconds+=seconds(assemblyStart);throw;}
+                assemblySeconds+=seconds(assemblyStart);
+                VectorXd columns(x.size()),rows=VectorXd::Zero(x.size());
+                for(int i=0;i<x.size();++i)columns[i]=i%4==3?10.:.025;
+                auto matrix=sourceAssembly.jacobian;
+                for(int k=0;k<matrix.outerSize();++k)for(SparseMatrixd::InnerIterator it(matrix,k);it;++it)
+                    rows[it.row()]+=std::abs(it.value()*columns[it.col()]);
+                rows=rows.unaryExpr([](Real v){return 1./std::max(v,1e-100);});
+                for(int k=0;k<matrix.outerSize();++k)for(SparseMatrixd::InnerIterator it(matrix,k);it;++it)
+                    it.valueRef()*=rows[it.row()]*columns[it.col()];
+                experimental::ElectrothermalDirectSolver tangentSolver(cfg.value("electrothermal_linear_solver",std::string("sparselu_colamd")));
+                const auto factorStart=Clock::now();++factorizations;
+                tangentSolver.compute(matrix,false);factorizationSeconds+=seconds(factorStart);tangentAnalyses=tangentSolver.analyses();
+                if(tangentSolver.info()!=Eigen::Success)throw std::runtime_error("Tangent factorization failed");
+                const auto solveStart=Clock::now();const VectorXd rhs=-(derivative.array()*rows.array()).matrix();
+                VectorXd direction=tangentSolver.solve(rhs);direction.array()*=columns.array();solveSeconds+=seconds(solveStart);
+                if(tangentSolver.info()!=Eigen::Success || !direction.allFinite())throw std::runtime_error("Tangent linear solve failed");
+                tangentPreparation["scaled_linear_residual"]=(matrix*(direction.array()/columns.array()).matrix()-rhs).norm();
+                seed+=delta*direction;
+                predictorCandidates.push_back({{"label","tangent"},{"potential_origin_V",cfg.value("potential_origin_V",0.)},
+                    {"referenced_state_interleaved",list(seed)},{"electron_qf_reference_V",list(eReference)},{"hole_qf_reference_V",list(hReference)}});
+                tangentPreparation["prepared"]=true;
+            } catch(const std::exception& error) {tangentPreparation["fallback_reason"]=error.what();}
+            tangentPreparation["wall_seconds"]=seconds(start);
+        }
+        // Opt-in predictor screening. Compare every candidate under the SAME
+        // primary Jacobian row scale and physical QF reference representation.
+        json predictorSelection;
+        if(!predictorCandidates.empty()) {
+            if(solveMode!="coupled" || initialization!="provided_state" || !cfg.value("use_qf_references",true))
+                throw std::invalid_argument("Predictor screening requires a referenced coupled provided state");
+            const auto& candidates=predictorCandidates;
+            if(!candidates.is_array() || candidates.size()>4)
+                throw std::invalid_argument("Predictor screening accepts at most four candidates");
+            const auto screenStart=Clock::now();
+            VectorXd scale=VectorXd::Zero(x.size());
+            for(int k=0;k<a.jacobian.outerSize();++k)for(SparseMatrixd::InnerIterator it(a.jacobian,k);it;++it)
+                scale[it.row()]+=std::abs(it.value()*(it.col()%4==3?10.:.025));
+            scale=scale.unaryExpr([](Real v){return 1./std::max(v,1e-100);});
+            const auto quality=[&](const ElectrothermalAssembly& r) {
+                const auto blocks=blockGates(r);
+                std::array<Real,5> q{(r.residual.array()*scale.array()).matrix().norm(),rowGate(r).maxRatio,0.,0.,0.};
+                for(int k=0;k<3;++k)q[k+2]=blocks[k].at("weighted_l2");
+                return q;
+            };
+            const std::array<Real,5> floor{1e-9,1.,gateConfig.blockAbsoluteConvergence.psiResidualCeiling,
+                gateConfig.blockAbsoluteConvergence.electronResidualCeiling,gateConfig.blockAbsoluteConvergence.holeResidualCeiling};
+            auto best=quality(a);VectorXd selected=x;
+            predictorSelection={{"selected","primary"},{"primary_quality",best},{"quality_order",{"common_scaled_l2","carrier_row_ratio","psi_weighted_l2","electron_weighted_l2","hole_weighted_l2"}},
+                {"candidates",json::array()}};
+            for(const auto& candidate:candidates) {
+                json record={{"label",candidate.value("label",std::string("candidate"))},{"improved_best",false}};
+                try {
+                    if(record.at("label")=="primary")throw std::invalid_argument("Predictor candidate label primary is reserved");
+                    VectorXd trial=values(candidate.at("referenced_state_interleaved"));
+                    const VectorXd er=values(candidate.at("electron_qf_reference_V")),hr=values(candidate.at("hole_qf_reference_V"));
+                    if(trial.size()!=x.size() || er.size()!=eReference.size() || hr.size()!=hReference.size() ||
+                       !trial.allFinite() || !er.allFinite() || !hr.allFinite() ||
+                       candidate.value("potential_origin_V",cfg.value("potential_origin_V",0.))!=cfg.value("potential_origin_V",0.))
+                        throw std::invalid_argument("Invalid predictor state/reference");
+                    for(Index i=0;i<mesh.numNodes();++i) {
+                        if(!(trial[4*i+3]>50. && trial[4*i+3]<5000.))throw std::invalid_argument("Invalid predictor temperature");
+                        trial[4*i+1]=static_cast<Real>((static_cast<long double>(er[i])-eReference[i])+trial[4*i+1]);
+                        trial[4*i+2]=static_cast<Real>((static_cast<long double>(hr[i])-hReference[i])+trial[4*i+2]);
+                    }
+                    // Apply exactly the same finite-contact projection as the primary seed.
+                    for(const auto& [i,contact]:bc.holeRecombination)
+                        trial[4*i]=assembler.neutralPotential(i,bc.neutralContactBias_V.at(i),trial[4*i+3]).first;
+                    const auto trialAssembly=assemble(trial,false);const auto q=quality(trialAssembly);
+                    const bool better=experimental::improvesElectrothermalPredictor(q,best,floor);
+                    record["quality"]=q;record["improved_best"]=better;
+                    if(better){best=q;selected=std::move(trial);predictorSelection["selected"]=record["label"];}
+                } catch(const std::exception& error){record["rejected_reason"]=error.what();}
+                predictorSelection["candidates"].push_back(record);
+            }
+            if(predictorSelection.at("selected")!="primary") {x=std::move(selected);recenter();a=assemble(x);}
+            predictorSelection["selected_quality"]=best;
+            predictorSelection["wall_seconds"]=seconds(screenStart);
+        }
         const bool deferJacobian=cfg.value("defer_recentered_candidate_jacobian",false);
         const auto willRecenter=[&](const VectorXd& state){
             if(!cfg.value("use_qf_references",true))return false;
@@ -230,7 +346,12 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             if(!count.is_number_integer() || count<0 || count>std::numeric_limits<unsigned>::max())
                 throw std::invalid_argument("Density update iterations must be a nonnegative unsigned-range integer");
         }
-        const unsigned densityIterations=cfg.value("diagnostic_density_update_iterations",0u);
+        unsigned densityIterations=cfg.value("diagnostic_density_update_iterations",0u);
+        if(densityIterations && cfg.value("diagnostic_density_requires_primary_prediction",false) &&
+           !predictorSelection.is_null() && predictorSelection.at("selected")!="primary") {
+            densityIterations=0;
+            predictorSelection["density_update_disabled_after_fallback"]=true;
+        }
         std::unique_ptr<SiliconThermalPhysics> densityPhysics;
         std::vector<SiliconThermalPhysics::DopingPreparation> densityDoping;
         Real densityEvaluationSeconds=0.;unsigned densityEvaluations=0;
@@ -254,16 +375,30 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             throw std::invalid_argument("Stagnation window must be a nonnegative integer");
         experimental::ElectrothermalDirectSolver lu(cfg.value("electrothermal_linear_solver",std::string("sparselu_colamd")));
         experimental::ElectrothermalStagnationWatch stagnation(cfg.value("diagnostic_stagnation_window",0u));
+        const bool residualRecovery=cfg.value("diagnostic_ngmres_recovery",false);
+        if(residualRecovery && solveMode!="coupled")throw std::invalid_argument("NGMRES recovery requires coupled equations");
+        std::vector<VectorXd> recoveryStates,recoveryResiduals,recoveryEReferences,recoveryHReferences;
+        json recoveryHistory=json::array();unsigned recoveryReassemblies=0,recoveryUpdates=0;
         json history=json::array();std::string stop="frozen_state";
         VectorXd columns(x.size());for(int i=0;i<x.size();++i)columns[i]=i%4==3?10.:.025;
         for(unsigned iteration=0;iteration<maximum;++iteration){
-            if(recenter())a=assemble(x);
+            if(recenter()) {
+                a=assemble(x);
+            }
             VectorXd rows=VectorXd::Zero(x.size());
             for(int k=0;k<a.jacobian.outerSize();++k)for(SparseMatrixd::InnerIterator it(a.jacobian,k);it;++it)
                 rows[it.row()]+=std::abs(it.value()*columns[it.col()]);
             rows=rows.unaryExpr([](Real v){return 1./std::max(v,1e-100);});
             const auto merit=[&](const ElectrothermalAssembly& r){return (r.residual.array()*rows.array()).matrix().norm();};
             const Real before=merit(a);if(before<1e-9 && rowGate(a).satisfied && blocksSatisfied(a)){stop="diagnostic_scaled_residual";break;}
+            if(residualRecovery) {
+                if(recoveryStates.size()==4){
+                    recoveryStates.erase(recoveryStates.begin());recoveryResiduals.erase(recoveryResiduals.begin());
+                    recoveryEReferences.erase(recoveryEReferences.begin());recoveryHReferences.erase(recoveryHReferences.begin());
+                }
+                recoveryStates.push_back(x);recoveryResiduals.push_back(a.residual);
+                recoveryEReferences.push_back(eReference);recoveryHReferences.push_back(hReference);
+            }
             SparseMatrixd matrix=a.jacobian;
             for(int k=0;k<matrix.outerSize();++k)for(SparseMatrixd::InnerIterator it(matrix,k);it;++it)
                 it.valueRef()*=rows[it.row()]*columns[it.col()];
@@ -353,8 +488,62 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
                 }
             }
             progress<<history.back().dump()<<std::endl;
+            const bool stalled=stagnation.update(before,merit(a),alpha,accepted);
+            if((!accepted || stalled) && residualRecovery && recoveryHistory.empty()) {
+                const auto recoveryStart=Clock::now();json record={{"iteration",iteration+1},{"accepted",false},{"candidates",json::array()}};
+                try {
+                    // Tail steps can recenter every iteration. Convert each old
+                    // referenced state and re-evaluate its residual under the
+                    // CURRENT references; never mix residual coordinate epochs.
+                    auto samples=recoveryStates,residuals=recoveryResiduals;
+                    for(std::size_t j=0;j<samples.size();++j) {
+                        if((recoveryEReferences[j].array()==eReference.array()).all() &&
+                           (recoveryHReferences[j].array()==hReference.array()).all())continue;
+                        for(Index i=0;i<mesh.numNodes();++i) {
+                            samples[j][4*i+1]=static_cast<Real>((static_cast<long double>(recoveryEReferences[j][i])-eReference[i])+samples[j][4*i+1]);
+                            samples[j][4*i+2]=static_cast<Real>((static_cast<long double>(recoveryHReferences[j][i])-hReference[i])+samples[j][4*i+2]);
+                        }
+                        residuals[j]=assemble(samples[j],false).residual;++recoveryReassemblies;
+                    }
+                    const auto mix=experimental::electrothermalResidualMix(x,a.residual,samples,residuals,rows);
+                    record["rank"]=mix.rank;record["coefficient_l1"]=mix.coefficientL1;record["predicted_norm"]=mix.predictedNorm;
+                    Real step=1.;for(int i=0;i<x.size();++i)if(mix.direction[i]!=0.)step=std::min(step,(i%4==3?30.:voltageUpdateLimit)/std::abs(mix.direction[i]));
+                    const auto quality=[&](const ElectrothermalAssembly& value) {
+                        const auto blocks=blockGates(value);std::array<Real,5> q{merit(value),rowGate(value).maxRatio,0.,0.,0.};
+                        for(int k=0;k<3;++k)q[k+2]=blocks[k].at("weighted_l2");return q;
+                    };
+                    const auto baseline=quality(a);
+                    const std::array<Real,5> floor{1e-9,1.,gateConfig.blockAbsoluteConvergence.psiResidualCeiling,
+                        gateConfig.blockAbsoluteConvergence.electronResidualCeiling,gateConfig.blockAbsoluteConvergence.holeResidualCeiling};
+                    record["baseline_quality"]=baseline;
+                    for(unsigned trial=0;trial<4;++trial,step*=.5) {
+                        json check={{"step",step},{"accepted",false}};
+                        try {
+                            VectorXd candidate=x+step*mix.direction;
+                            if(!candidate.allFinite())throw std::invalid_argument("Nonfinite recovery state");
+                            for(Index i=0;i<mesh.numNodes();++i)if(!(candidate[4*i+3]>50. && candidate[4*i+3]<5000.))
+                                throw std::invalid_argument("Invalid recovery temperature");
+                            const auto next=assemble(candidate,false);const auto q=quality(next);check["quality"]=q;
+                            if(q[0]<.99*baseline[0] && experimental::improvesElectrothermalPredictor(q,baseline,floor)) {
+                                // Commit only after the full Jacobian is available;
+                                // failed preparation must preserve the old state.
+                                auto full=assemble(candidate);x=std::move(candidate);a=std::move(full);
+                                check["accepted"]=true;record["accepted"]=true;++recoveryUpdates;
+                            }
+                        } catch(const std::exception& error){check["rejected_reason"]=error.what();}
+                        record["candidates"].push_back(check);if(record.at("accepted").get<bool>())break;
+                    }
+                } catch(const std::exception& error){record["fallback_reason"]=error.what();}
+                record["wall_seconds"]=seconds(recoveryStart);recoveryHistory.push_back(record);
+                progress<<json{{"ngmres_recovery",record}}.dump()<<std::endl;
+                if(record.at("accepted").get<bool>()) {
+                    stagnation=experimental::ElectrothermalStagnationWatch(cfg.value("diagnostic_stagnation_window",0u));
+                    recoveryStates.clear();recoveryResiduals.clear();recoveryEReferences.clear();recoveryHReferences.clear();
+                    stop="diagnostic_iteration_limit";continue;
+                }
+            }
             if(!accepted){stop="line_search_failed";break;}
-            if(stagnation.update(before,merit(a),alpha,accepted)){stop="diagnostic_stagnation_reject";break;}
+            if(stalled){stop="diagnostic_stagnation_reject";break;}
             stop="diagnostic_iteration_limit";
         }
 
@@ -391,7 +580,7 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             {"temperature_K",list(t)},{"nodal_area_m2",list(heat.nodalAreas_m2())},
             {"residual",list(a.residual)}};
         if(profiling)result["performance"]={
-            {"scope","Newton phase wall times; factorization includes symbolic analysis; counters do not change decisions"},
+            {"scope","Point solver stages including enabled predictor/recovery work; factorization includes symbolic analysis; nested preparation timers overlap these stages"},
             {"assembly_seconds",assemblySeconds},{"assembly_calls",assemblyCalls},
             {"residual_only_calls",residualOnlyCalls},
             {"factorization_seconds",factorizationSeconds},{"factorizations",factorizations},
@@ -400,13 +589,16 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             {"fermi_half_derivative_calls",physicsCallCounters.fermiDiracHalfDerivative-countersBefore.fermiDiracHalfDerivative},
             {"inverse_fermi_half_calls",physicsCallCounters.inverseFermiDiracHalf-countersBefore.inverseFermiDiracHalf}};
         if(profiling)result["performance"]["preparation_counts"]=assembler.preparationCounts();
-        if(profiling)result["performance"]["symbolic_analyses"]=lu.analyses();
+        if(profiling)result["performance"]["symbolic_analyses"]=lu.analyses()+tangentAnalyses;
         if(profiling)result["performance"]["linear_solver"]=lu.backend();
         if(profiling && densityIterations) {
             result["performance"]["density_coordinate_evaluation_seconds"]=densityEvaluationSeconds;
             result["performance"]["density_coordinate_evaluations"]=densityEvaluations;
         }
         if(profiling)result["performance"]["ialmob_screening_minimum_solves"]=physicsCallCounters.ialScreeningMinimumSolves-countersBefore.ialScreeningMinimumSolves;
+        if(!predictorSelection.is_null())result["predictor_selection"]=predictorSelection;
+        if(!tangentPreparation.is_null())result["tangent_preparation"]=tangentPreparation;
+        if(residualRecovery)result["ngmres_recovery"]={{"updates",recoveryUpdates},{"reference_reassemblies",recoveryReassemblies},{"attempts",recoveryHistory}};
         if(cfg.contains("diagnostic_jacobian_direction")){
             const VectorXd direction=values(cfg.at("diagnostic_jacobian_direction"));
             const Real step=cfg.value("diagnostic_jacobian_step",1e-6);

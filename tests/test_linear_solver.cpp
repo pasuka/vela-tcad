@@ -4,6 +4,10 @@
 
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/solver/LinearSolver.h"
+#include "vela/solver/ElectrothermalPredictorQuality.h"
+#include "vela/solver/ElectrothermalStepControl.h"
+#include "vela/solver/ElectrothermalLocalPrediction.h"
+#include "vela/solver/ElectrothermalResidualMixing.h"
 #include "../src/tools/ElectrothermalIterationControl.h"
 
 #include <Eigen/Sparse>
@@ -280,4 +284,56 @@ TEST_CASE("Experimental electrothermal stall watch rejects only sustained far-fr
         REQUIRE_FALSE(watch.update(7.,6.99999,.1,true));
         REQUIRE_FALSE(watch.update(7.,7.,1e-6,false));
     }
+}
+TEST_CASE("Electrothermal predictor cannot hide worse carrier closure behind a better global norm", "[electrothermal][predictor]") {
+    const std::array<double,5> baseline{10.,4.,3.,2.,1.},floors{1e-9,1.,.01,.01,.01};
+    auto trial=baseline;trial[0]=5.;
+    REQUIRE(experimental::improvesElectrothermalPredictor(trial,baseline,floors));
+    for(int k=1;k<5;++k){auto worse=trial;worse[k]=2.*baseline[k];
+        REQUIRE_FALSE(experimental::improvesElectrothermalPredictor(worse,baseline,floors));}
+    REQUIRE_FALSE(experimental::improvesElectrothermalPredictor(baseline,baseline,floors));
+    auto converged=baseline;converged[1]=.2;trial=converged;trial[0]=5.;trial[1]=.8;
+    REQUIRE(experimental::improvesElectrothermalPredictor(trial,converged,floors));
+    trial[1]=1.01;REQUIRE_FALSE(experimental::improvesElectrothermalPredictor(trial,converged,floors));
+    trial=baseline;trial[0]=5.;trial[4]=std::numeric_limits<double>::infinity();
+    REQUIRE_FALSE(experimental::improvesElectrothermalPredictor(trial,baseline,floors));
+}
+TEST_CASE("Electrothermal growth follows accepted voltage advance and preserves startup and bounds", "[electrothermal][predictor]") {
+    const auto next=[](double planned,double actual,int updates){return experimental::electrothermalActualStep(planned,actual,updates,12,.0001,4./3.);};
+    REQUIRE(next(.1,0.,0)==Catch::Approx(.15));
+    REQUIRE(next(.5,.1,5)==Catch::Approx(.15));
+    REQUIRE(next(.5,.1,15)==Catch::Approx(.1));
+    REQUIRE(next(.5,.1,21)==Catch::Approx(.05));
+    REQUIRE(next(1.,1.,5)==Catch::Approx(4./3.));
+    REQUIRE(next(.0001,.00001,21)==Catch::Approx(.0001));
+    REQUIRE_THROWS(next(.1,-.1,5));
+    REQUIRE_THROWS(next(.1,std::numeric_limits<double>::quiet_NaN(),5));
+}
+TEST_CASE("Electrothermal local prediction reproduces low degree fields and bounds amplification", "[electrothermal][predictor]") {
+    const std::vector<double> bias{0.,.3,.8,1.};const double target=1.05;
+    const auto fit=vela::experimental::electrothermalLocalWeights(bias,target);
+    CHECK(fit.degree==2);
+    double predicted=0.;for(std::size_t i=0;i<bias.size();++i)predicted+=fit.weights[i]*(2.+3.*bias[i]+4.*bias[i]*bias[i]);
+    CHECK(predicted==Catch::Approx(2.+3.*target+4.*target*target).epsilon(1e-12));
+    CHECK(fit.weights.sum()==Catch::Approx(1.).epsilon(1e-12));
+    const auto guarded=vela::experimental::electrothermalLocalWeights({.375,.7125,1.21875,4./3.},2.4723958333333336);
+    CHECK(guarded.degree==1);CHECK(guarded.amplification<=8.);
+    CHECK_THROWS_AS(vela::experimental::electrothermalLocalWeights({0.,0.,1.},2.),std::invalid_argument);
+    CHECK_THROWS_AS(vela::experimental::electrothermalLocalWeights({0.,.1,.2},20.),std::invalid_argument);
+}
+
+TEST_CASE("Electrothermal residual mixing solves a spanned linear problem and rejects empty changes", "[electrothermal][ngmres]") {
+    VectorXd x(2),scale(2);x<<1.,1.;scale<<.01,10.;
+    Eigen::Matrix2d matrix;matrix<<2.,1.,-1.,3.;
+    std::vector<VectorXd> states{(VectorXd(2)<<2.,1.).finished(),(VectorXd(2)<<1.,2.).finished()};
+    std::vector<VectorXd> residuals;for(const auto& state:states)residuals.push_back(matrix*state);
+    auto mixed=experimental::electrothermalResidualMix(x,matrix*x,states,residuals,scale);
+    CHECK(mixed.rank==2);CHECK((matrix*(x+mixed.direction)).norm()<1e-12);
+    states.push_back(states.front());residuals.push_back(residuals.front());
+    mixed=experimental::electrothermalResidualMix(x,matrix*x,states,residuals,scale);
+    CHECK(mixed.rank==2);CHECK((matrix*(x+mixed.direction)).norm()<1e-12);
+    CHECK_THROWS_AS(experimental::electrothermalResidualMix(x,matrix*x,{x},{matrix*x},scale),std::invalid_argument);
+    scale[0]=0.;CHECK_THROWS_AS(experimental::electrothermalResidualMix(x,matrix*x,states,residuals,scale),std::invalid_argument);
+    scale.setConstant(1e300);
+    CHECK_THROWS_AS(experimental::electrothermalResidualMix(x,VectorXd::Constant(2,1e300),states,residuals,scale),std::invalid_argument);
 }

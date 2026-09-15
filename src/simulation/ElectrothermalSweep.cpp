@@ -1,4 +1,6 @@
 #include "vela/simulation/ElectrothermalSimulation.h"
+#include "vela/solver/ElectrothermalStepControl.h"
+#include "vela/solver/ElectrothermalLocalPrediction.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>
@@ -138,6 +140,12 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
     const double initial=control.value("initial_step_V",.1),minimum=control.value("minimum_step_V",1e-4),maximum=control.value("maximum_step_V",4./3.);
     const int budget=control.value("max_newton",60),growth=control.value("growth_newton",8);
     const auto predictor=control.value("predictor",std::string("linear"));
+    const auto predictorGuard=control.value("predictor_guard",std::string("none"));
+    const auto predictorHistory=control.value("predictor_history",std::string("legacy"));
+    const auto stepPolicy=control.value("step_policy",std::string("adaptive"));
+    if(predictorGuard!="none" && predictorGuard!="residual")throw std::invalid_argument("Unknown predictor guard");
+    if(predictorHistory!="legacy" && predictorHistory!="nearest")throw std::invalid_argument("Unknown predictor history policy");
+    if(stepPolicy!="adaptive" && stepPolicy!="fixed_targets" && stepPolicy!="actual_step")throw std::invalid_argument("Unknown step policy");
     const double densityBiasCeiling=control.value("density_update_maximum_bias_V",std::numeric_limits<double>::infinity());
     if(control.contains("density_update_maximum_bias_V") && !(densityBiasCeiling>=0.&&std::isfinite(densityBiasCeiling)))
         throw std::invalid_argument("Density update bias ceiling must be finite and nonnegative");
@@ -149,7 +157,7 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
         throw std::invalid_argument("Bias points must increase strictly from zero");
     if(!(0.<minimum&&minimum<=initial&&initial<=maximum&&std::isfinite(maximum))||budget<1||growth<1||growth>budget)
         throw std::invalid_argument("Invalid electrothermal step/Newton budget");
-    if(predictor!="linear"&&predictor!="none") throw std::invalid_argument("Unknown electrothermal predictor");
+    if(predictor!="linear"&&predictor!="none"&&predictor!="tangent_guarded"&&predictor!="local_guarded") throw std::invalid_argument("Unknown electrothermal predictor");
     const auto initialization=deck.value("initialization",json::object());
     const auto initializeMode=initialization.value("mode",std::string("provided_state"));
     if(initializeMode!="provided_state"&&initializeMode!="neutral_300K") throw std::invalid_argument("Unknown sweep initialization mode");
@@ -239,16 +247,22 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
     const auto pauseAfter=deck.value("pause_after_attempts",std::size_t(0));
     while(index<biases.size()) {
         if(fs::exists(root/"STOP")||(pauseAfter&&invocationAttempts>=pauseAfter)) {ledger["status"]="stopped_at_checkpoint";checkpoint();return ledger;}
-        const double target=index==0?0.:std::min(biases[index],current+step);
+        const double target=index==0?0.:stepPolicy=="fixed_targets"?biases[index]:std::min(biases[index],current+step);
+        const double actualStep=target-current;
+        const bool truncatedStep=index>0 && stepPolicy!="fixed_targets" && biases[index]<current+step;
         json cfg=input; useState(cfg,state);
         cfg["solve_mode"]="coupled";cfg["initialization"]="provided_state";
         cfg["diagnostic_newton_max_iterations"]=budget;
         if(target>densityBiasCeiling)cfg["diagnostic_density_update_iterations"]=0;
         for(auto& b:cfg.at("boundaries")) if(drain.contains(b.at("node"))&&b.at("kind")=="neutral_contact") b["value"]=target-origin;
         json prediction={{"mode",predictor},{"used",false}};
-        if(predictor=="linear"&&target>current) {
+        if(predictor!="none"&&target>current) {
             for(auto it=ledger["runs"].rbegin();it!=ledger["runs"].rend();++it) {
                 const double previousBias=it->at("bias_V"),difference=current-previousBias;
+                if(predictorHistory=="nearest" && it->at("gate").at("pass_gate").get<bool>() && difference>1e-12 && (target-current)/difference>3.) {
+                    prediction["rejected_nearest_ratio"]=(target-current)/difference;
+                    prediction["prior_bias_V"]=previousBias;break;
+                }
                 if(it->at("gate").at("pass_gate").get<bool>()&&difference>1e-12&&(target-current)/difference<=3.) {
                     auto previous=read(fs::path(it->at("directory").get<std::string>())/"output.json");
                     bool used=predict(cfg,previous,(target-current)/difference);
@@ -256,7 +270,57 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
                 }
             }
         }
+        if(predictor=="local_guarded" && target>current) {
+            std::vector<json> records;
+            for(auto it=ledger["runs"].rbegin();it!=ledger["runs"].rend() && records.size()<4;++it)
+                if(it->at("gate").at("pass_gate").get<bool>())records.push_back(*it);
+            if(records.size()>=3 && (target-current)/(current-records[1].at("bias_V").get<double>())>3.) {
+                const auto fitStart=std::chrono::steady_clock::now();
+                json fit={{"candidate_prepared",false}};
+                try {
+                    std::reverse(records.begin(),records.end());
+                    std::vector<double> voltages;for(const auto& r:records)voltages.push_back(r.at("bias_V"));
+                    const auto coefficients=experimental::electrothermalLocalWeights(voltages,target);
+                    auto seed=state.at("referenced_state_interleaved").get<std::vector<double>>();
+                    const auto anchor=seed;
+                    for(std::size_t j=0;j+1<records.size();++j) {
+                        const auto old=read(fs::path(records[j].at("directory").get<std::string>())/"output.json");
+                        if(old.value("potential_origin_V",0.)!=origin)throw std::invalid_argument("Local history origin differs");
+                        const auto value=old.at("referenced_state_interleaved").get<std::vector<double>>();
+                        if(value.size()!=seed.size())throw std::invalid_argument("Local history layout differs");
+                        for(std::size_t i=0;i<seed.size()/4;++i)for(int k=0;k<4;++k) {
+                            long double difference=static_cast<long double>(value[4*i+k])-anchor[4*i+k];
+                            if(k==1 || k==2) {
+                                const auto* key=k==1?"electron_qf_reference_V":"hole_qf_reference_V";
+                                difference+=static_cast<long double>(old.at(key).at(i).get<double>())-state.at(key).at(i).get<double>();
+                            }
+                            seed[4*i+k]+=coefficients.weights[j]*static_cast<double>(difference);
+                        }
+                    }
+                    json candidate={{"label","local_fit"},{"potential_origin_V",origin},{"referenced_state_interleaved",seed},
+                        {"electron_qf_reference_V",state.at("electron_qf_reference_V")},{"hole_qf_reference_V",state.at("hole_qf_reference_V")}};
+                    cfg["diagnostic_predictor_candidates"]=json::array({candidate});
+                    fit={{"candidate_prepared",true},{"degree",coefficients.degree},{"amplification",coefficients.amplification},{"history_bias_V",voltages}};
+                } catch(const std::exception& error) {fit["fallback_reason"]=error.what();}
+                fit["wall_seconds"]=std::chrono::duration<double>(std::chrono::steady_clock::now()-fitStart).count();
+                prediction["local_fit"]=fit;
+            }
+        }
+        if(predictor=="tangent_guarded" && target>current) {
+            json source={{"source_bias_V",current-origin},{"delta_bias_V",target-current},{"moving_nodes",drain},
+                {"potential_origin_V",origin}};
+            for(const auto* key:stateKeys)source[key]=state.at(key);
+            cfg["diagnostic_tangent_predictor"]=std::move(source);
+        }
+        if(predictorGuard=="residual" && prediction.at("used").get<bool>()) {
+            json candidate={{"label","constant"},{"potential_origin_V",state.value("potential_origin_V",origin)}};
+            for(const auto* key:stateKeys)candidate[key]=state.at(key);
+            if(!cfg.contains("diagnostic_predictor_candidates"))cfg["diagnostic_predictor_candidates"]=json::array();
+            cfg["diagnostic_predictor_candidates"].push_back(candidate);
+            if(densityNeedsPrediction)cfg["diagnostic_density_requires_primary_prediction"]=true;
+        }
         if(densityNeedsPrediction && !prediction.at("used").get<bool>())cfg["diagnostic_density_update_iterations"]=0;
+        if(densityNeedsPrediction && cfg.contains("diagnostic_predictor_candidates"))cfg["diagnostic_density_requires_primary_prediction"]=true;
         std::ostringstream name;name<<"step_"<<std::setw(4)<<std::setfill('0')<<ledger["runs"].size();
         const auto directory=root/name.str();
         if(!fs::create_directory(directory)) throw std::runtime_error("Uncheckpointed attempt exists: "+directory.string());
@@ -268,13 +332,22 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
         ledger["runs"].push_back({{"parent_bias_V",current},{"bias_V",target},{"directory",directory.string()},
             {"returncode",returncode},{"gate",acceptance},{"prediction",prediction},{"newton_updates",result.value("newton_updates",0)},
             {"wall_seconds",std::chrono::duration<double>(std::chrono::steady_clock::now()-solveStart).count()}});
+        if(predictorGuard!="none" || stepPolicy!="adaptive" || predictor=="tangent_guarded" || predictor=="local_guarded") {
+            ledger["runs"].back()["planned_step_V"]=step;
+            ledger["runs"].back()["actual_step_V"]=target-current;
+            ledger["runs"].back()["output_clipped"]=truncatedStep;
+            if(result.contains("predictor_selection"))ledger["runs"].back()["prediction"]["screening"]=result.at("predictor_selection");
+            if(result.contains("tangent_preparation"))ledger["runs"].back()["prediction"]["tangent_preparation"]=result.at("tangent_preparation");
+        }
         ++invocationAttempts;
         if(acceptance.at("pass_gate").get<bool>()) {
             current=target;state=result;ledger["accepted_bias_V"]=current;ledger["accepted_result"]=(directory/"output.json").string();
             if(std::abs(current-biases[index])<1e-12) {ledger["exact_points"].push_back({{"bias_V",biases[index]},{"result",(directory/"output.json").string()},{"curve_summary",curveSummary(result)}});++index;curves(root,ledger);}
             const int updates=result.at("newton_updates");
-            if(updates<=growth) step=std::min(maximum,step*1.5);else if(updates>20) step=std::max(minimum,step*.5);
+            if(stepPolicy=="actual_step")step=experimental::electrothermalActualStep(step,truncatedStep?actualStep:step,updates,growth,minimum,maximum);
+            else if(updates<=growth) step=std::min(maximum,step*1.5);else if(updates>20) step=std::max(minimum,step*.5);
         } else {
+            if(stepPolicy=="fixed_targets"){ledger["status"]="failed";checkpoint();return ledger;}
             step=(target-current)*.5;
             if(target==0.||step<minimum) {ledger["status"]="failed";checkpoint();return ledger;}
         }

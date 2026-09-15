@@ -56,7 +56,12 @@ provides a versioned, hash-checked input export and complete execution commands.
 | `sweep.bias_points_V` | Strictly increasing drain biases beginning at exactly zero. Every requested point must pass the numerical, terminal KCL and heat-balance gates. |
 | `sweep.initial_step_V`, `minimum_step_V`, `maximum_step_V` | Defaults 0.1, 0.0001 and 4/3 V. Failed attempts halve the attempted increment. |
 | `sweep.max_newton`, `growth_newton` | Defaults 60 and 8. Accepted steps with at most `growth_newton` updates grow by 1.5; more than20 updates halve the next step. |
-| `sweep.predictor` | `linear` (default) or `none`. Uses accepted states only, referenced QF increments and an extrapolation ratio at most3. |
+| `sweep.predictor` | `linear` (default), `none`, or the experimental guarded options below. Linear prediction uses accepted states only, referenced QF increments and an extrapolation ratio at most3. |
+| `sweep.predictor_guard` | Experimental `none` (default) or `residual`. Screen a constant-state fallback against the linear prediction under one Jacobian row scale and the original electrical block/row limits. Record all candidate preparation costs; not a convergence criterion. |
+| `sweep.predictor_history` | Experimental `legacy` (default) searches older accepted history when needed; `nearest` only uses the nearest accepted predecessor and declines extrapolation when its step ratio exceeds3. |
+| `sweep.predictor="tangent_guarded"` | Experimental alternative to default `linear`. Freshly assemble/factor the accepted source-state Jacobian, solve `J dx/dV=-F_V`, then screen the tangent candidate against the original secant/constant seed using common residual scaling and electrical row/block protection. Additional preparation, residual calls and factorization are counted. Failed preparation retains the original seed. |
+| `sweep.predictor="local_guarded"` | Experimental anchored local fit, only when the nearest accepted-history step ratio exceeds3. Uses three/four accepted states, normalized bias, QR rank checking, quadratic-to-linear downgrade with weight L1 bound8, and common residual/row/block screening. No physical tolerance changes. |
+| `sweep.step_policy` | Experimental `adaptive` (default), `fixed_targets`, or `actual_step`. Fixed-target mode directly attempts each requested bias and saves/stops on failure. Actual step growth uses the successfully executed advance when an exact output target clips a planned step; original startup, growth factor, bounds and failure halving remain. |
 | `sweep.density_update_maximum_bias_V` | Optional finite nonnegative drain-bias ceiling. Above it, disables the point input's density-coordinate update. Omitted: no ceiling. Does not change the bias grid or convergence gates. |
 | `sweep.density_update_requires_prediction` | Boolean, default `false`. If enabled, density-coordinate updates require an actually used accepted-state predictor; initialization/prebias, zero bias and the first unpredicted drain step use the original QF update. |
 | `initialization.mode` | `provided_state` (default) uses the prepared explicit state. `neutral_300K` constructs a neutral initial guess, solves initial Poisson/coupled equilibrium, performs Poisson gate prebias, then restores coupled equations. |
@@ -64,6 +69,17 @@ provides a versioned, hash-checked input export and complete execution commands.
 | `initialization.max_newton` | Default100 for initialization/prebias point solves. |
 | `resume` | Reload an accepted checkpoint; reject changed input, mesh, sweep or initialization configuration. |
 | `pause_after_attempts` | Optional positive count for a controlled checkpoint pause during drain continuation. A file named `STOP` in the output directory also pauses between attempts. |
+
+The prepared point input may explicitly set `diagnostic_ngmres_recovery: true`
+(default false). This experimental option allows one residual-space recovery
+after a stagnation-watch or line-search failure, with at most four prior states
+and four trial residual evaluations. Histories from other QF references are
+converted and reassembled before mixing; bias/model changes start a new point
+and cannot share history. Original voltage/temperature update caps and electrical
+row/block guards remain; a candidate must reduce the common scaled norm by more
+than1%. This progress safeguard is not a relaxed convergence tolerance. Failed
+recovery preserves the original failure state. `ngmres_recovery.updates` is
+reported separately from `newton_updates`; total state changes include both.
 
 The source input and mesh are preserved as JSON snapshots. Each attempt records
 its full input, solver history and output (referenced state, temperature, residuals,

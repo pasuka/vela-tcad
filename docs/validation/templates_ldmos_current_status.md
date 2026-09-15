@@ -1,6 +1,13 @@
 # Templates/LDMOS 当前验证状态
 
 更新：2026-09-15。当前工作分支 `codex/templates-ldmos-phase-a`。
+外推 A–E 已按用户要求串行完成：A六组、B四组、C四组完成，无总成本收益。
+D首轮六组及反向四组复测完成，局部拟合仅令Vg8的原失败尝试从10次更新
+缩短为8次，仍需减步恢复；两档计时优劣均在复测中反转，不认领稳定加速。
+E实现及Windows Release822/822、Linux Release七项定向检查通过；获源码上传
+授权后完成两个停滞样本的四组VM对照。NGMRES未恢复成功，更新仍为12/10，
+装配34/25→41/28；原失败状态、Newton历史及残差逐值不变，不晋级默认。
+本轮状态见[外推执行记录](templates_ldmos_extrapolation_execution_2026-09-15.md)，R7仍为生产默认。
 本页区分历史资格和最新版本验证，阶段报告保留原始结果。
 每项曲线资格对应其报告中的冻结程序和输入清单，不随工作区重编译自动转移。
 
@@ -18,9 +25,10 @@ R7双栅压62点电学、热学、2%局部场及本轮同VM墙钟验收已通过
 复现入口见[生产运行指南](templates_ldmos_production_reproduction.md)，
 冻结结果见[联合验收记录](templates_ldmos_production_electrothermal_2026-09-14.md#r7完成后的暂停记录)。
 
-2026-09-15提交前检查：Windows UCRT64 Release全目标构建成功，匹配的
-Release CTest全部817项通过（139.22 s），`git diff --check`通过。
-该检查覆盖当前源码的回归测试；不替代冻结Linux程序的完整曲线和计时资格。
+此前`c64039b`提交前的Windows UCRT64 Release检查为817/817（139.22 s）。
+本轮A–E实现后全目标Release构建成功，匹配CTest为822/822（129.42 s）；
+E同版Linux七项定向检查及两个停滞样本对照已完成；这些检查不替代冻结Linux
+程序的完整曲线和计时资格。本轮A–E均未获得可晋级的总成本收益。
 
 | 范围 | 状态 | 证据 |
 |---|---|---|

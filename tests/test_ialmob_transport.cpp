@@ -1,4 +1,5 @@
 #include "vela/equation/ElectrothermalAssembler.h"
+#include "vela/solver/ElectrothermalTangent.h"
 #include <Eigen/SparseLU>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
@@ -473,4 +474,29 @@ TEST_CASE("Finite Ohmic hole contact preserves equilibrium and sub-ULP exchange"
     bad=bc;bad.holeRecombination[0].boundaryLength_m=0.;CHECK_THROWS_AS(coupled.assemble(x,bad),std::invalid_argument);
     bad=bc;bad.holeQf_V[0]=40.;CHECK_THROWS_AS(coupled.assemble(x,bad),std::invalid_argument);
     bad=bc;bad.neutralContactBias_V.clear();CHECK_THROWS_AS(coupled.assemble(x,bad),std::invalid_argument);
+}
+
+TEST_CASE("Electrothermal tangent contact derivative matches fixed-state bias differences", "[thermal][electrothermal][predictor]") {
+    Fixture f;
+    ElectrothermalGeometry g;g.siliconArea_m2=VectorXd::Zero(6);g.fixedCharge_C_per_m=VectorXd::Zero(6);
+    for(const auto& cell:f.mesh.cells())if(cell.region_id==0)for(Index i:cell.node_ids)g.siliconArea_m2[i]+=1e-14/6.;
+    g.poissonEdge_F_per_m=VectorXd::Zero(f.mesh.numEdges());g.transportWeight=g.poissonEdge_F_per_m;
+    LatticeConductivity law;
+    ElectrothermalAssembler coupled(f.mesh,f.doping,g,LatticeHeatAssembler(f.mesh,1.,{{0,law},{1,law}},{}),{});
+    for(bool finite:{false,true})for(Real t:{300.,515.})for(Real bias:{0.,40.}) {
+        ElectrothermalBoundary bc;bc.neutralContactBias_V={{0,bias}};
+        if(finite)bc.holeRecombination={{0,{1.93e4,1e-7}}};
+        VectorXd x=VectorXd::Zero(24),ref=VectorXd::Constant(6,bias);
+        const Real psi=coupled.neutralPotential(0,bias,t).first;
+        for(int i=0;i<6;++i){x[4*i]=psi+.001;x[4*i+2]=.0001;x[4*i+3]=t;}
+        const auto derivative=experimental::electrothermalContactBiasDerivative(6,bc,{0});
+        constexpr Real h=1e-4;
+        auto plus=bc,minus=bc;plus.neutralContactBias_V[0]+=h;minus.neutralContactBias_V[0]-=h;
+        const VectorXd difference=(coupled.assemble(x,plus,ref,ref,false).residual-
+            coupled.assemble(x,minus,ref,ref,false).residual)/(2*h);
+        CHECK((difference-derivative).lpNorm<Eigen::Infinity>()<1e-7);
+        CHECK(derivative[2]==(finite?0.:-1.));
+        auto bad=bc;bad.potential_V[0]=psi;
+        CHECK_THROWS_AS(experimental::electrothermalContactBiasDerivative(6,bad,{0}),std::invalid_argument);
+    }
 }
