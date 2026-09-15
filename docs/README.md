@@ -31,6 +31,8 @@ evidence.
   linked D4/D5 entry points.
 - [LDMOS production electrothermal reproduction](validation/templates_ldmos_production_reproduction.md):
   frozen R7 input export, Release UMFPACK execution, pause/resume and qualification limits.
+- [Extrapolation and continuation research, 2026-09-15](validation/vela_extrapolation_solver_research_2026-09-15.md):
+  primary papers and open-source algorithms, with proposed R7/R8 predictor and Newton experiments.
 - [Linux/UCRT64 environment alignment study](validation/vela_linux_ucrt_environment_alignment_2026-09-14.md):
   measured package versions, Linux dependency dry-runs, source-build gaps and unqualified deployment plans.
 - [LDMOS daily report, 2026-09-12](validation/templates_ldmos_daily_report_2026-09-12.md):
