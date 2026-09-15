@@ -29,9 +29,16 @@ evidence.
 - [LDMOS current validation](validation/templates_ldmos_current_status.md):
   current qualification boundaries, configuration profiles and reproducible
   linked D4/D5 entry points.
+- [LDMOS production electrothermal reproduction](validation/templates_ldmos_production_reproduction.md):
+  frozen R7 input export, Release UMFPACK execution, pause/resume and qualification limits.
+- [Linux/UCRT64 environment alignment study](validation/vela_linux_ucrt_environment_alignment_2026-09-14.md):
+  measured package versions, Linux dependency dry-runs, source-build gaps and unqualified deployment plans.
 - [LDMOS daily report, 2026-09-12](validation/templates_ldmos_daily_report_2026-09-12.md):
   physics and electrothermal qualification summary with reproducible static
   current, temperature-rise and nodal-temperature comparison figures.
+- [LDMOS daily report, 2026-09-13](validation/templates_ldmos_daily_report_2026-09-13.md):
+  finite contact and Auger alignment, native Poisson geometry qualification,
+  and serial performance results with reproducible comparison figures.
 
 Optional feature switches used by this repository:
 

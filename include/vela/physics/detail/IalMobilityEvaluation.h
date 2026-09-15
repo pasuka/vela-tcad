@@ -79,13 +79,18 @@ template<class S> S coulomb2d(const S& doping, const S& carrier, Real d1, Real d
                  S(d2)*power(t,a2)/power(normalized,nu2));
 }
 
-// Same value path for scalar diagnostics and differentiated evaluations.
-template<class S> std::array<S,6> evaluate(const std::array<S,7>& state,
+// Terms independent of the cell's normal field. All derivatives retain their
+// original seven SI directions, including local temperature and distance.
+template<class S> struct Preparation {
+    S mu3,mu2,transitionScale,coulombDamping,damping,phonon3d;
+    S phononNumerator,phononTemperaturePower,roughnessExponent,roughnessNumerator;
+};
+template<class S> Preparation<S> prepare(const std::array<S,7>& state,
     const IalMobilityParameters& p, bool electron, Real pMin) {
     const S inf(std::numeric_limits<Real>::infinity());
     const S nd=state[0]/S(1e6), na=state[1]/S(1e6);
     const S n=state[2]/S(1e6), h=state[3]/S(1e6);
-    const S field=state[4]/S(100.), distance=state[5]*S(100.);
+    const S distance=state[5]*S(100.);
     const S temperature=state[6], t=temperature/S(300.);
     const S c=electron?n:h, other=electron?h:n;
     const S inv=electron?na:nd, acc=electron?nd:na;
@@ -112,25 +117,41 @@ template<class S> std::array<S,6> evaluate(const std::array<S,7>& state,
     if (std::isfinite(value(muAcc))) muAcc=muAcc*g;
     const S inverse2=inverse(muInv)+inverse(muAcc);
     const S mu2=value(inverse2)==0.?inf:inverse(inverse2);
-    const S transition=(S(p.S)/temperature)*power(field,2./3.)-S(p.transitionP);
+    return {mu3,mu2,S(p.S)/temperature,exponential(-distance/S(p.lCritC)),
+        exponential(-distance/S(p.lCrit)),S(p.muMax)*power(t,-p.theta),
+        S(p.C)*power(na+nd+S(p.N2),p.lambda),power(t,p.k),
+        S(p.A)+S(p.alphaSr)*(n+h)/power(na+nd+S(p.N1),p.nu),
+        power(na+nd+S(p.N2),p.lambdaSr)};
+}
+
+template<class S> std::array<S,6> evaluatePrepared(const Preparation<S>& q,
+    const S& field_SI,const IalMobilityParameters& p) {
+    const S inf(std::numeric_limits<Real>::infinity());
+    const S field=field_SI/S(100.);
+    const S& mu3=q.mu3;const S& mu2=q.mu2;
+    const S transition=q.transitionScale*power(field,2./3.)-S(p.transitionP);
     const S f=value(transition)>700.?S(0.):S(1.)/(S(1.)+exponential(transition));
-    const S weight=exponential(-distance/S(p.lCritC))*(S(1.)-f);
+    const S weight=q.coulombDamping*(S(1.)-f);
     // Infinite component mobilities mean absent scattering, not infinite
     // derivatives. Do not propagate infinity*zero through the AD arithmetic.
     const S muC=value(weight)==0.?mu3:value(weight)==1.?mu2:
         (!std::isfinite(value(mu3))||!std::isfinite(value(mu2)))?inf:
         (S(1.)-weight)*mu3+weight*mu2;
-    const S damping=exponential(-distance/S(p.lCrit));
-    const S muPh3=S(p.muMax)*power(t,-p.theta);
+    const S& damping=q.damping;
+    const S& muPh3=q.phonon3d;
     S muPh=muPh3, muSr=inf;
     if (value(field)>0. && value(damping)>0.) {
-        const S muPh2=S(p.B)/field+S(p.C)*power(na+nd+S(p.N2),p.lambda)/(power(field,1./3.)*power(t,p.k));
+        const S muPh2=S(p.B)/field+q.phononNumerator/(power(field,1./3.)*q.phononTemperaturePower);
         muPh=S(1.)/(damping/muPh2+S(1.)/muPh3);
-        const S exponent=S(p.A)+S(p.alphaSr)*(n+h)/power(na+nd+S(p.N1),p.nu);
-        const S inverseSr=power(field,exponent)/S(p.delta)+field*field*field/S(p.eta);
-        muSr=power(na+nd+S(p.N2),p.lambdaSr)/inverseSr;
+        const S inverseSr=power(field,q.roughnessExponent)/S(p.delta)+field*field*field/S(p.eta);
+        muSr=q.roughnessNumerator/inverseSr;
     }
     const S mobility=S(1.)/(inverse(muC)+inverse(muPh)+damping*inverse(muSr));
     return {mobility*S(1e-4),mu3*S(1e-4),mu2*S(1e-4),muC*S(1e-4),muPh*S(1e-4),muSr*S(1e-4)};
+}
+// Same arithmetic for uncached scalar diagnostics and differentiated callers.
+template<class S> std::array<S,6> evaluate(const std::array<S,7>& state,
+    const IalMobilityParameters& p,bool electron,Real pMin) {
+    return evaluatePrepared(prepare(state,p,electron,pMin),state[4],p);
 }
 } // namespace vela::ial_detail

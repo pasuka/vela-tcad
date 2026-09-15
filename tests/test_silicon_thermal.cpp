@@ -7,10 +7,41 @@
 #include "vela/equation/LatticeBandEdgeWork.h"
 #include "vela/discretization/ThermalSgCurrent.h"
 #include "vela/discretization/ScharfetterGummel.h"
+#include "vela/solver/ElectrothermalDensityUpdate.h"
 #include <cmath>
 #include <limits>
 #include <stdexcept>
 using namespace vela;
+TEST_CASE("Density-coordinate electrothermal updates invert the audited local statistics", "[thermal][silicon][density_update]") {
+    SiliconThermalPhysics model;
+    for(Real t:{300.,400.})for(Real psi:{-.4,.5})for(Real doping:{1e22,1e26})for(Real reference:{0.,40.}) {
+        SiliconThermalState state{psi+reference,.01,.03,t,doping,1e21,reference,reference};
+        const auto before=model.evaluate(state);
+        for(Real factor:{.01,1.,1e4}) {
+            auto updated=state;
+            updated.electronQf_V=experimental::electrothermalDensityQf(before,state,before.electrons_m3.value*factor,false);
+            updated.holeQf_V=experimental::electrothermalDensityQf(before,state,before.holes_m3.value/factor,true);
+            const auto after=model.evaluate(updated);
+            CHECK(after.electrons_m3.value==Catch::Approx(before.electrons_m3.value*factor).epsilon(2e-12));
+            CHECK(after.holes_m3.value==Catch::Approx(before.holes_m3.value/factor).epsilon(2e-12));
+        }
+        // The nonlinear change of coordinates has the same first derivative
+        // as the existing four-variable Jacobian, including its T column.
+        const std::array<Real,4> direction{.01,-.02,.015,1.};
+        const Real alpha=1e-6;
+        auto candidate=state;candidate.potential_V+=alpha*direction[0];candidate.temperature_K+=alpha*direction[3];
+        const auto atCandidate=model.evaluate(candidate);
+        for(int k=0;k<2;++k) {
+            const auto& density=k==0?before.electrons_m3:before.holes_m3;
+            Real delta=0.;for(int j=0;j<4;++j)delta+=density.derivative[j]*direction[j];
+            const Real qf=experimental::electrothermalDensityQf(atCandidate,candidate,density.value+alpha*delta,k==1);
+            const Real old=k==0?state.electronQf_V:state.holeQf_V;
+            CHECK((qf-old)/alpha==Catch::Approx(direction[k+1]).margin(2e-7));
+        }
+        CHECK_THROWS_AS(experimental::electrothermalDensityQf(before,state,0.,false),std::invalid_argument);
+        CHECK_THROWS_AS(experimental::electrothermalDensityQf(before,state,-1.,true),std::invalid_argument);
+    }
+}
 TEST_CASE("Thermal preparations preserve values and partials and reject stale identities", "[thermal][silicon][preparation]") {
     SiliconThermalPhysics model,other;
     const std::array<ThermalQuantity SiliconThermalResult::*,18> quantities{

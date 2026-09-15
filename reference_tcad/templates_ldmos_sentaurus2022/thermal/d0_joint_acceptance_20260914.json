@@ -1,0 +1,22 @@
+{
+  "schema": "vela.templates_ldmos.d0_joint_acceptance.v1",
+  "approved_by": "user",
+  "approved_on": "2026-09-14",
+  "electrical_and_thermal": "Retain original electrical gates and d0_thermal_acceptance.json without changes",
+  "local_fields": {
+    "scope": "All silicon nodes, matched native/candidate exact bias states and original potential reference",
+    "band_edges": ["conduction_band_eV", "valence_band_eV"],
+    "maximum_absolute_band_edge_error_eV": 0.03,
+    "carriers": ["electrons_m3", "holes_m3"],
+    "reference_density_floor_fraction_of_carrier_peak": 1e-12,
+    "volume_weighted_relative_rms_limit": 0.01,
+    "groups": ["all_silicon", "silicon_oxide_interface"],
+    "volume_policy": "Native silicon Measure nodal area times unit width; filter by strict reference density > floor; no relative error gate on excluded nodes",
+    "reference_alignment": "Restore recorded potential_origin_V; no best-fit potential shift"
+  },
+  "performance": {
+    "maximum_end_to_end_wall_time_ratio_to_sentaurus": 1.5,
+    "requirements": ["same execution environment", "same initialization and bias interval", "same output scope", "serial runs", "include runner preparation and output overhead"],
+    "existing_cross_environment_process_times_are_not_qualification": true
+  }
+}

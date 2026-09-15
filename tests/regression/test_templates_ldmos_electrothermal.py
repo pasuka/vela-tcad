@@ -164,6 +164,23 @@ class ProbeInputTest(unittest.TestCase):
                         for key in ('initial_alpha','line_search_trials','limiter_node','limiter_component','limiter_direction','max_abs_direction_by_block'):row.pop(key)
                 solved.append(output)
             self.assertEqual(solved[0],solved[1])
+            # A QF step above the reference threshold exercises residual-only
+            # line-search evaluation followed by a fresh recentered Jacobian.
+            cfg['performance_profiling']=True
+            for boundary in cfg['boundaries']:
+                if boundary['kind']=='fn':boundary['value']=.01
+                if boundary['kind']=='fp':boundary['value']=-.01
+            deferred=[]
+            for enabled in (False,True):
+                cfg['defer_recentered_candidate_jacobian']=enabled
+                target=base/f'deferred_{enabled}.json'
+                source.write_text(json.dumps(cfg),encoding='utf-8')
+                execution=run();self.assertEqual(execution.returncode,0,execution.stderr)
+                output=json.loads(target.read_text(encoding='utf-8'))
+                counts=output.pop('performance')
+                if enabled:self.assertGreater(counts['residual_only_calls'],0)
+                deferred.append(output)
+            self.assertEqual(deferred[0],deferred[1])
             target=base/'invalid_output.json';cfg['state_interleaved'].pop();source.write_text(json.dumps(cfg),encoding='utf-8')
             invalid=run();self.assertNotEqual(invalid.returncode,0);self.assertIn('Invalid electrothermal state size',invalid.stderr);self.assertFalse(target.exists())
 

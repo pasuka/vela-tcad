@@ -37,10 +37,18 @@ struct IalElementMobilityOptions {
     FieldMobilityParameters holeField{8.37e4,1.213};
     bool temperatureDependentHighField = false;
     bool temperatureDerivatives = false;
+    /// False requests values only and requires temperatureDerivatives=false.
+    bool spatialDerivatives = true;
+    /// Opt-in transport preparation policies; no physical parameter changes.
+    bool reuseLocalPreparation = false;
+    bool residualValuesOnly = false;
+    /// Spatial and temperature passes have identical local physical inputs.
+    bool reuseThermalLocalDifferentials = true;
     Real electronVelocityTemperatureExponent = .87, holeVelocityTemperatureExponent = .52;
     Real electronBetaTemperatureExponent = .66, holeBetaTemperatureExponent = .17;
     /// Non-owning optional preparation cache, valid for this evaluation only.
     IalScreeningCache* screeningCache=nullptr;
+    IalMobilityPreparationCache* preparationCache=nullptr;
 };
 
 struct IalElementMobilityResult {

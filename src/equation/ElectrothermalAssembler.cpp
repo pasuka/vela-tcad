@@ -71,7 +71,7 @@ std::pair<Real,Real> ElectrothermalAssembler::neutralPotential(Index node,Real b
 }
 
 ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
-    const ElectrothermalBoundary& bc,const VectorXd& eReference,const VectorXd& hReference) const {
+    const ElectrothermalBoundary& bc,const VectorXd& eReference,const VectorXd& hReference,bool buildJacobian,bool skipEquilibriumTransport) const {
     const Index n=mesh_.numNodes();
     if(x.size()!=4*n || !x.allFinite())throw std::invalid_argument("Invalid electrothermal state");
     for(const auto* r:{&eReference,&hReference})
@@ -103,7 +103,7 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
         constrained[4*i+1]=true;constrained[4*i+2]=true;
     }
     const auto add=[&](Index row,Index column,Real value){
-        if(!constrained[row] && value!=0.)entries.emplace_back(row,column,value);
+        if(buildJacobian && !constrained[row] && value!=0.)entries.emplace_back(row,column,value);
     };
     std::vector<SiliconThermalState> states(n);std::vector<SiliconThermalResult> properties(n);
     VectorXd t(n),psi(n),fn(n),fp(n),ne=VectorXd::Zero(n),nh=ne,dne=ne,dnh=ne,dneT=ne,dnhT=ne;
@@ -128,13 +128,25 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
             add(4*i+1,4*i+k,-d);add(4*i+2,4*i+k,d);
         }
     }
-    updateIalTransportState(mobility_,mesh_,doping_,psi,ne,nh,fn,fp,dne,dnh,t,dneT,dnhT,reuseIalScreening_);
+    // Only fully constrained, isothermal, flat-QF Poisson prebias has exactly
+    // zero edge current/work and no active transport Jacobian rows.
+    // Compare references/increments separately; their rounded sums can hide
+    // physical sub-ULP QF differences and nonzero edge currents.
+    bool identicalQfRepresentation=skipEquilibriumTransport && n>0;
+    for(Index i=0;i<n && identicalQfRepresentation;++i)
+        identicalQfRepresentation=ref(i,true)==ref(0,true) && ref(i,false)==ref(0,true) &&
+            x[4*i+1]==x[1] && x[4*i+2]==x[1];
+    const bool skipTransport=skipEquilibriumTransport && identicalQfRepresentation &&
+        bc.electronQf_V.size()==n && bc.holeQf_V.size()==n && bc.temperature_K.size()==n &&
+        bc.neutralContactBias_V.empty() && bc.holeRecombination.empty() &&
+        (t.array()==t[0]).all();
+    if(!skipTransport)updateIalTransportState(mobility_,mesh_,doping_,psi,ne,nh,fn,fp,dne,dnh,t,dneT,dnhT,reuseIalScreening_,buildJacobian);
     for(Index i=0;i<n;++i)out.residual[4*i]-=geometry_.fixedCharge_C_per_m[i];
     for(const auto& edge:mesh_.edges()){
         const Index a=edge.n0,b=edge.n1;const Real eps=geometry_.poissonEdge_F_per_m[edge.id];
         const Real flux=eps*(psi[a]-psi[b]);out.residual[4*a]+=flux;out.residual[4*b]-=flux;
         add(4*a,4*a,eps);add(4*a,4*b,-eps);add(4*b,4*a,-eps);add(4*b,4*b,eps);
-        const Real weight=geometry_.transportWeight[edge.id];if(weight==0.)continue;
+        const Real weight=geometry_.transportWeight[edge.id];if(weight==0. || skipTransport)continue;
         const auto& pa=properties[a];const auto& pb=properties[b];
         Real currents[2]{};std::array<std::map<Index,Real>,2> derivatives;
         for(int carrier=0;carrier<2;++carrier){
@@ -143,8 +155,8 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
                 electron?CarrierType::Electron:CarrierType::Hole):(electron?muE_:muH_);
             const auto current=thermalSgCurrent(states[a],pa,states[b],pb,mu,weight,electron);
             currents[carrier]=current.current_A_per_m;auto& d=derivatives[carrier];
-            for(int k=0;k<4;++k){d[4*a+k]+=current.derivative[k];d[4*b+k]+=current.derivative[4+k];}
-            if(mobility_.model=="ialmob")for(const auto& support:mobility_.ialmobGeometry->edges[edge.id]){
+            if(buildJacobian)for(int k=0;k<4;++k){d[4*a+k]+=current.derivative[k];d[4*b+k]+=current.derivative[4+k];}
+            if(buildJacobian && mobility_.model=="ialmob")for(const auto& support:mobility_.ialmobGeometry->edges[edge.id]){
                 const auto& r=mobility_.ialmobState->cells[support.support];
                 const auto& cell=mesh_.getCell(mobility_.ialmobGeometry->cells[support.support].cellId);
                 const auto& md=electron?r.electron:r.hole;
@@ -170,7 +182,7 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
         out.residual[4*a+3]-=.5*power.power_W_per_m;out.residual[4*b+3]-=.5*power.power_W_per_m;
         std::map<Index,Real> dp;
         for(int c=0;c<2;++c)for(const auto& [column,value]:derivatives[c])dp[column]+=power.derivative[c]*value;
-        for(int k=0;k<4;++k){
+        if(buildJacobian)for(int k=0;k<4;++k){
             dp[4*a+k]+=power.derivative[2]*pa.conductionBand_eV.derivative[k]+power.derivative[4]*pa.valenceBand_eV.derivative[k];
             dp[4*b+k]+=power.derivative[3]*pb.conductionBand_eV.derivative[k]+power.derivative[5]*pb.valenceBand_eV.derivative[k];
         }
@@ -223,7 +235,7 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
             }
         }
     }
-    out.jacobian.resize(4*n,4*n);out.jacobian.setFromTriplets(entries.begin(),entries.end());
+    if(buildJacobian){out.jacobian.resize(4*n,4*n);out.jacobian.setFromTriplets(entries.begin(),entries.end());}
     return out;
 }
 } // namespace vela

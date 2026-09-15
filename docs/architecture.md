@@ -88,15 +88,20 @@ physical voltage before returning or writing output.
   is explicit; thermal quantities are SI per unit width. This prescribed-source
   tool remains separate from electrical DC sweeps. See the
   [thermal operator report](validation/templates_ldmos_d0_thermal_operator_2026-09-12.md).
-- The experimental `ElectrothermalAssembler` / `electrothermal_probe` path couples
+- `ElectrothermalAssembler` and the shared `solveElectrothermalPoint` service couple
   four SI unknowns per node: potential, electron/hole quasi-Fermi potentials and
   lattice temperature. `SiliconThermalPhysics`, temperature-aware IALMob and
   `ThermalSgCurrent` provide the analytic Jacobian. Default lattice heat uses the
   same discrete carrier currents and band-edge work; Thermodynamic, Peltier and
-  RecGenHeat are not enabled. Its explicit geometry and ideal neutral contacts
-  are scoped to the audited LDMOS configuration. The production DC sweep remains
-  isothermal; qualification is tracked in the
-  [D0 electrothermal report](validation/templates_ldmos_d0_electrothermal_2026-09-12.md).
+  RecGenHeat are not enabled. Explicit native geometry, ideal electron contacts
+  and finite hole recombination boundaries are scoped to the audited LDMOS model.
+  `simulation_type: "electrothermal_dc_sweep"` uses this service in process for
+  initialization, Poisson gate prebias, four-equation drain continuation, failed
+  step reduction, checkpoints and current/temperature/heat output. The separate
+  `electrothermal_probe` CLI calls the same point solver for compatibility.
+  Legacy `dc_sweep` remains isothermal. The configuration and integrated
+  qualification boundaries are documented in the [schema](config_schema.md#explicit-electrothermal-dc-entry)
+  and [current LDMOS status](validation/templates_ldmos_current_status.md).
 - BV sweeps report diagnostic max field/current jump/non-convergence markers,
   not calibrated breakdown voltages.
 - CV sweeps use finite-difference terminal charge, not AC small-signal

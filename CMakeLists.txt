@@ -246,6 +246,8 @@ add_library(vela_core STATIC
     src/simulation/ConfigParsing.cpp
     src/simulation/CurveSweep.cpp
     src/simulation/BoundaryControl.cpp
+    src/simulation/ElectrothermalSimulation.cpp
+    src/simulation/ElectrothermalSweep.cpp
     src/simulation/DCSweep.cpp
 )
 
@@ -770,6 +772,13 @@ set_tests_properties(templates_ldmos_thermal_gates_regression PROPERTIES
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 vela_set_windows_msys2_test_path(templates_ldmos_thermal_gates_regression)
 
+add_test(NAME templates_ldmos_joint_local_fields_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_joint_local_fields)
+set_tests_properties(templates_ldmos_joint_local_fields_regression PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(templates_ldmos_joint_local_fields_regression)
+
 add_test(NAME dc_worker_protocol
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_dc_worker.py
@@ -777,6 +786,20 @@ add_test(NAME dc_worker_protocol
 set_tests_properties(dc_worker_protocol PROPERTIES
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 vela_set_windows_msys2_test_path(dc_worker_protocol)
+
+add_test(NAME ldmos_production_export_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_ldmos_production_export)
+set_tests_properties(ldmos_production_export_regression PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(ldmos_production_export_regression)
+
+add_test(NAME electrothermal_dc_runner_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_electrothermal_dc_runner)
+set_tests_properties(electrothermal_dc_runner_regression PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(electrothermal_dc_runner_regression)
+set_property(TEST electrothermal_dc_runner_regression APPEND PROPERTY
+    ENVIRONMENT "VELA_RUNNER=$<TARGET_FILE:vela_example_runner>")
 
 add_test(NAME ialmob_probe_protocol
     COMMAND ${Python3_EXECUTABLE}

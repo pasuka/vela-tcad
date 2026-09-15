@@ -9,6 +9,7 @@ from pathlib import Path
 from analyze_templates_ldmos_stage4_d5 import curve_error,ratio_error,kcl_audit,verdict,read_curve,read_vela_curve
 from analyze_templates_ldmos_thermal import assess
 from run_templates_ldmos_electrothermal_curve import state_gate
+from evidence_paths import candidate_path
 
 
 def read(path):return json.loads(path.read_text(encoding='utf-8'))
@@ -30,7 +31,7 @@ def align_bias_serialization(reference,candidate,points,digits):
     return aligned,mapping
 
 
-def analyze(native,curves,contract,native_bias_digits=None):
+def analyze(native,curves,contract,native_bias_digits=None,path_map=None):
     manifest=read(native/'manifest.json');fields=manifest['fields'];reference={};candidate={};metrics={};thermal=[];sources={};numerical=[];continuation=[];bias_mapping={}
     for gate,index in ((4,1),(8,2)):
         key=f'Vg{gate}';directory=curves[gate];ledger=read(directory/'ledger.json')
@@ -38,7 +39,7 @@ def analyze(native,curves,contract,native_bias_digits=None):
         if not ledger.get('runs'):raise ValueError('Continuation evidence is required')
         for run in ledger['runs']:
             if not run['gate']['pass_gate']:continue
-            path=Path(run['directory'])/'output.json';check=state_gate(read(path),run['bias_V'])
+            path=candidate_path(run['directory'],path_map)/'output.json';check=state_gate(read(path),run['bias_V'])
             continuation.append(dict(gate=gate,bias_V=run['bias_V'],**check));sources[str(path)]=sha(path)
         refpath=native/'normalized'/f'IdVd_Vg{index}_n4_des_drain_curve.csv'
         reference[key]=read_curve(refpath);candidate[key]=read_vela_curve(directory/'curve.csv')
@@ -50,7 +51,7 @@ def analyze(native,curves,contract,native_bias_digits=None):
         if [f['point_index'] for f in selected]!=list(range(31)):raise ValueError('Missing/duplicate native temperature field')
         for point,field in zip(ledger['exact_points'],selected):
             if abs(point['bias_V']-field['bias_V'])>1e-9:raise ValueError('Native temperature bias mismatch')
-            rp=Path(point['result']);tp=Path(field['temperature_file']);result=read(rp);ref=read(tp)
+            rp=candidate_path(point['result'],path_map);tp=Path(field['temperature_file']);result=read(rp);ref=read(tp)
             if sha(tp)!=field['temperature_sha256']:raise ValueError('Native temperature hash mismatch')
             if ref['node_id']!=list(range(len(result['temperature_K']))):raise ValueError('Temperature node mapping mismatch')
             check=state_gate(result,point['bias_V']);numerical.append(dict(gate=gate,bias_V=point['bias_V'],**check))
@@ -71,7 +72,9 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('native','vg4','vg8','contract','output'):p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--native-bias-digits',type=int,choices=(15,),help='Explicitly match the audited native 15-significant-digit CSV export; keeps solved voltages and currents unchanged')
-    a=p.parse_args();result=analyze(a.native,{4:a.vg4,8:a.vg8},read(a.contract),a.native_bias_digits)
+    p.add_argument('--candidate-path-map',nargs=2,metavar=('SOURCE_ROOT','COPIED_ROOT'),help='Resolve candidate paths after copying evidence; never modifies original JSON')
+    a=p.parse_args();result=analyze(a.native,{4:a.vg4,8:a.vg8},read(a.contract),a.native_bias_digits,a.candidate_path_map)
+    result['candidate_path_map']=a.candidate_path_map
     result['sources_sha256'][str(a.contract)]=sha(a.contract);result['sources_sha256'][str(a.native/'manifest.json')]=sha(a.native/'manifest.json')
     with a.output.open('x',encoding='utf-8') as f:json.dump(result,f,indent=2)
     print(result['status'])

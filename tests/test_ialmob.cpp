@@ -7,6 +7,107 @@
 
 using namespace vela;
 
+TEST_CASE("IALMob differentiated evaluation preserves every scalar component", "[mobility][ialmob][temperature]")
+{
+    const std::array<Real IalMobilityResult::*,6> fields{&IalMobilityResult::mobility_m2_per_Vs,
+        &IalMobilityResult::coulomb3d_m2_per_Vs,&IalMobilityResult::coulomb2d_m2_per_Vs,
+        &IalMobilityResult::coulomb_m2_per_Vs,&IalMobilityResult::phonon_m2_per_Vs,
+        &IalMobilityResult::roughness_m2_per_Vs};
+    for(bool electron:{false,true}){
+        const IalMobility model(IalMobility::siliconDefaults(electron),electron);
+        IalScreeningCache cache;
+        for(Real temperature:{50.,299.,300.,401.,600.,1000.})
+        for(Real density:{0.,1e18,1e23,1e28})for(Real field:{0.,1e6,1e8}){
+            CAPTURE(electron,temperature,density,field);
+            const IalMobilityState state{density,.8*density,.3*density,.7*density,field,2e-8,temperature};
+            IalMobilityResult scalar;
+            try {scalar=model.evaluate(state);}
+            catch(const std::runtime_error&){
+                CHECK_THROWS_AS(model.evaluateWithDerivatives(state,&cache),std::runtime_error);
+                continue;
+            }
+            IalMobilityResult dual;
+            REQUIRE_NOTHROW(dual=model.evaluateWithDerivatives(state,&cache).result);
+            for(auto member:fields)CHECK(scalar.*member==dual.*member);
+        }
+    }
+}
+
+TEST_CASE("IALMob screening optimization retains the frozen bisection root", "[mobility][ialmob][temperature]")
+{
+    IalScreeningCache cache;
+    // Compare the previous fixed-budget oracle across both carrier masses and
+    // a broad temperature range spanning 300 K.
+    for (Real mass : {.1, .258, .5, 1., 1.5, 3.}) {
+        for (int index=0;index<=100;++index) {
+            const Real temperature=50.+9.5*index;
+            Real lower=1e-12,upper=1e12;
+            for(int iteration=0;iteration<100;++iteration) {
+                const Real p=std::sqrt(lower*upper);
+                const Real a=std::pow(temperature/(300.*mass),.28227);
+                const Real b=std::pow(mass*300./temperature,.72169);
+                const Real derivative=.89233*.19778*a/std::pow(.41372+a*p,1.19778)
+                    -.005978*1.80618*b/std::pow(b*p,2.80618);
+                if(derivative<0.)lower=p;else upper=p;
+            }
+            CHECK(cache.minimum(mass,temperature)==std::sqrt(lower*upper));
+        }
+    }
+}
+
+TEST_CASE("IALMob predicted screening bracket preserves roots and stationarity", "[mobility][ialmob][temperature]")
+{
+    IalScreeningCache cache;
+    // Includes the optimization boundaries and the unaccelerated fallback.
+    for (Real mass : {.001,.01,.1,.258,.5,1.,1.258,3.,10.,100.,1000.}) {
+        for (int i=0;i<=100;++i) {
+            const Real temperature=50.*std::pow(4000.,i/100.);
+            const Real a=std::pow(temperature/(300.*mass),.28227);
+            const Real b=std::pow(mass*300./temperature,.72169);
+            const auto terms=[&](Real p) {
+                return std::array<Real,2>{.89233*.19778*a/std::pow(.41372+a*p,1.19778),
+                    .005978*1.80618*b/std::pow(b*p,2.80618)};
+            };
+            Real lower=1e-12,upper=1e12;
+            for(int k=0;k<100;++k) {
+                const Real p=std::sqrt(lower*upper);const auto t=terms(p);
+                if(t[0]-t[1]<0.)lower=p;else upper=p;
+            }
+            const Real result=cache.minimum(mass,temperature);
+            CHECK(result==std::sqrt(lower*upper));
+            const auto t=terms(result);
+            CHECK(std::abs(t[0]-t[1])/std::max(t[0],t[1])<1e-12);
+        }
+    }
+}
+
+TEST_CASE("IALMob local preparation tracks all node inputs and model identity", "[mobility][ialmob][temperature]")
+{
+    IalMobilityPreparationCache prepared;IalScreeningCache screening;
+    const std::array<IalMobility,2> models{IalMobility(IalMobility::siliconDefaults(true),true),
+        IalMobility(IalMobility::siliconDefaults(false),false)};
+    const std::array fields{&IalMobilityResult::mobility_m2_per_Vs,&IalMobilityResult::coulomb3d_m2_per_Vs,
+        &IalMobilityResult::coulomb2d_m2_per_Vs,&IalMobilityResult::coulomb_m2_per_Vs,
+        &IalMobilityResult::phonon_m2_per_Vs,&IalMobilityResult::roughness_m2_per_Vs};
+    const std::array inputs{&IalMobilityState::donors_m3,&IalMobilityState::acceptors_m3,
+        &IalMobilityState::electrons_m3,&IalMobilityState::holes_m3,
+        &IalMobilityState::interfaceDistance_m,&IalMobilityState::temperature_K};
+    const IalMobilityState base{2e22,1e23,1e24,1e16,1e7,2e-9,367.};
+    for(const auto& model:models)for(std::size_t varied=0;varied<=inputs.size();++varied){
+        auto state=base;if(varied<inputs.size())state.*inputs[varied]*=1.01;
+        for(Real field:{0.,1e5,1e7,1e8,1e5}){
+            state.normalField_V_per_m=field;
+            const auto expected=model.evaluateWithDerivatives(state);
+            const auto actual=model.evaluateWithDerivatives(state,&screening,&prepared);
+            const auto scalar=model.evaluate(state,&screening,&prepared);
+            for(auto member:fields){CHECK(actual.result.*member==expected.result.*member);CHECK(scalar.*member==expected.result.*member);}
+            CHECK(actual.derivative_SI==expected.derivative_SI);
+            CHECK(actual.temperatureDerivative_m2_per_Vs_K==expected.temperatureDerivative_m2_per_Vs_K);
+        }
+    }
+    CHECK(prepared.hits()>0);
+}
+
 TEST_CASE("IALMob intrinsic zero-field mobility is the lattice limit in SI", "[mobility][ialmob]")
 {
     for (bool electron : {false,true}) {

@@ -222,7 +222,13 @@ TEST_CASE("LinearSolver factorisation failures report sparse matrix diagnostics"
             Catch::Matchers::ContainsSubstring("diag_min_abs=0"));
 }
 TEST_CASE("Experimental electrothermal symbolic reuse checks exact indices and always refactorizes", "[linear][electrothermal]") {
-    experimental::ElectrothermalSparseLU cached,plain;
+    std::string backend="sparselu_colamd";
+    SECTION("SparseLU COLAMD"){}
+    SECTION("SparseLU AMD"){backend="sparselu_amd";}
+#if defined(VELA_HAS_UMFPACK)
+    SECTION("UMFPACK"){backend="umfpack";}
+#endif
+    experimental::ElectrothermalDirectSolver cached(backend),plain(backend);
     VectorXd exact(3);exact<<1.,-2.,3.;
     auto a=makeSparseMatrix(3,3,{{0,0,4.},{1,1,5.},{2,2,6.},{0,1,.1}});
     const auto check=[&](SparseMatrixd matrix){
@@ -245,6 +251,18 @@ TEST_CASE("Experimental electrothermal symbolic reuse checks exact indices and a
     SparseMatrixd b=makeSparseMatrix(2,2,{{0,0,2.},{1,1,3.}});
     cached.compute(b,true);REQUIRE(cached.analyses()==4);
     VectorXd rhs(2);rhs<<2.,6.;REQUIRE((b*cached.solve(rhs)-rhs).norm()<1e-12);
+    // Destroy/replace caller storage before solving: refinement must use the
+    // solver's owned original coefficients, not a borrowed temporary matrix.
+    b.setZero();b.resize(200,200);
+    const auto kept=cached.solve(rhs);
+    REQUIRE(kept[0]==Catch::Approx(1.));REQUIRE(kept[1]==Catch::Approx(2.));
+}
+
+TEST_CASE("Electrothermal direct solver rejects unavailable or unknown backends", "[linear][electrothermal]") {
+    REQUIRE_THROWS_AS(experimental::ElectrothermalDirectSolver("unknown"),std::invalid_argument);
+#if !defined(VELA_HAS_UMFPACK)
+    REQUIRE_THROWS_AS(experimental::ElectrothermalDirectSolver("umfpack"),std::invalid_argument);
+#endif
 }
 
 TEST_CASE("Experimental electrothermal stall watch rejects only sustained far-from-converged tiny progress", "[newton][electrothermal]") {

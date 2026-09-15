@@ -159,7 +159,7 @@ void prepareIalTransportGeometry(MobilityModelConfig& config,const DeviceMesh& m
 void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
     const DopingModel& doping,const VectorXd& psi,const VectorXd& n,const VectorXd& p,
     const VectorXd& phin,const VectorXd& phip,const VectorXd& dn,const VectorXd& dp,
-    const VectorXd& temperature,const VectorXd& dn_dT,const VectorXd& dp_dT,bool reuseScreening) {
+    const VectorXd& temperature,const VectorXd& dn_dT,const VectorXd& dp_dT,bool reuseScreening,bool temperatureDerivatives) {
     if (config.model!="ialmob") return;
     ScopedPerformanceTimer timer("ialmob.update");
     if (!config.ialmob) throw std::invalid_argument("IALMob requires an explicit parameter/geometry contract");
@@ -172,9 +172,10 @@ void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
         if((temperature.array()<50.).any())throw std::invalid_argument("IALMob requires temperature >=50 K");
     }else if(dn_dT.size()!=0||dp_dT.size()!=0)throw std::invalid_argument("IALMob thermal responses require temperature");
     const auto same=[](const VectorXd& a,const VectorXd& b) {return a.size()==b.size()&&(a.array()==b.array()).all();};
+    const bool spatialDerivatives=temperatureDerivatives || !config.ialmob->element.residualValuesOnly;
     if (config.ialmobState) {
         const auto& s=*config.ialmobState;
-        if (same(s.psi,psi)&&same(s.n,n)&&same(s.p,p)&&same(s.phin,phin)&&same(s.phip,phip)&&same(s.dn,dn)&&same(s.dp,dp)&&same(s.temperature,temperature)&&same(s.dn_dT,dn_dT)&&same(s.dp_dT,dp_dT)) {
+        if ((!temperatureDerivatives || s.hasTemperatureDerivatives) && (!spatialDerivatives || s.hasSpatialDerivatives) && same(s.psi,psi)&&same(s.n,n)&&same(s.p,p)&&same(s.phin,phin)&&same(s.phip,phip)&&same(s.dn,dn)&&same(s.dp,dp)&&same(s.temperature,temperature)&&same(s.dn_dT,dn_dT)&&same(s.dp_dT,dp_dT)) {
             incrementPerformanceCounter("ialmob.state_hits");
             return;
         }
@@ -182,11 +183,17 @@ void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
     prepareIalTransportGeometry(config,mesh);
     ScopedPerformanceTimer stateTimer("ialmob.state_build");
     auto s=std::make_shared<IalTransportState>();s->psi=psi;s->n=n;s->p=p;s->phin=phin;s->phip=phip;s->dn=dn;s->dp=dp;s->temperature=temperature;s->dn_dT=dn_dT;s->dp_dT=dp_dT;
+    s->hasTemperatureDerivatives=temperatureDerivatives;
+    s->hasSpatialDerivatives=spatialDerivatives;
     s->electronEdges.resize(mesh.numEdges(),0.);s->holeEdges.resize(mesh.numEdges(),0.);
     auto options=config.ialmob->element;
     IalScreeningCache screening;
+    IalMobilityPreparationCache preparation;
     options.screeningCache=reuseScreening?&screening:nullptr;
+    options.preparationCache=options.reuseLocalPreparation?&preparation:nullptr;
+    options.spatialDerivatives=spatialDerivatives;
     if(temperature.size()!=0){options.temperatureDependentHighField=true;options.temperatureDerivatives=true;}
+    if(!temperatureDerivatives)options.temperatureDerivatives=false;
     options.electronField=config.electronField;options.holeField=config.holeField;
     const Real velocityFactor=config.internalMobilityToM2PerVS*config.internalFieldToVPerM;
     options.electronField.saturationVelocity*=velocityFactor;options.holeField.saturationVelocity*=velocityFactor;
@@ -216,6 +223,8 @@ void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
             s->holeEdges[e]+=c.weight*s->cells[c.support].hole.value;
         }
     config.ialmobState=s;
+    incrementPerformanceCounter("ialmob.local_preparation_hits",preparation.hits());
+    incrementPerformanceCounter("ialmob.local_preparation_builds",preparation.size());
 }
 Real ialEdgeMobility(const MobilityModelConfig& config,Index edge,CarrierType carrier,bool lowField) {
     if (!config.ialmobState) throw std::logic_error("IALMob edge requested without a live state");

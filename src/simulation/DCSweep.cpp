@@ -3084,7 +3084,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 for (auto& [name, child] : value.items()) {
                     if (name.ends_with("_file") && child.is_string()) {
                         const auto path = std::filesystem::absolute(
-                            resolve(child.get<std::string>())).lexically_normal();
+                            resolve(child.template get<std::string>())).lexically_normal();
                         std::ifstream file(path, std::ios::binary);
                         if (!file) throw std::runtime_error(
                             "DCSweep: cannot read prepared input: " + path.string());

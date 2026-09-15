@@ -192,9 +192,26 @@ TEST_CASE("IALMob full twelve-column thermal chain matches live silicon states",
     for(bool high:{false,true})for(bool contact:{false,true})for(bool boundary:{false,true}) {
         auto g=geometry();g.partialBoundaryLayer=boundary;g.touchesEffectiveElectrode=contact;
         IalElementMobilityOptions options;options.highField=high;options.temperatureDependentHighField=true;options.temperatureDerivatives=true;
+        IalMobilityPreparationCache preparation;options.preparationCache=&preparation;
         std::array<SiliconThermalState,3> states;
         for(int i=0;i<3;++i)states[i]={.12+.017*i,.005*i,.04-.003*i,350.+45.*i,1e23,4e22};
         auto actual=evaluateIalElementMobility(g,populateThermal(states),em,hm,options);
+        auto uncachedOptions=options;uncachedOptions.reuseThermalLocalDifferentials=false;
+        uncachedOptions.preparationCache=nullptr;
+        const auto uncached=evaluateIalElementMobility(g,populateThermal(states),em,hm,uncachedOptions);
+        auto valueOptions=options;valueOptions.spatialDerivatives=false;valueOptions.temperatureDerivatives=false;
+        const auto valuesOnly=evaluateIalElementMobility(g,populateThermal(states),em,hm,valueOptions);
+        for(auto field:{&IalElementMobilityResult::electron,&IalElementMobilityResult::hole,
+                       &IalElementMobilityResult::electronLowField,&IalElementMobilityResult::holeLowField}){
+            CHECK((actual.*field).value==(uncached.*field).value);
+            CHECK((actual.*field).derivative==(uncached.*field).derivative);
+            CHECK((actual.*field).value==(valuesOnly.*field).value);
+            for(Real derivative:(valuesOnly.*field).derivative)CHECK(derivative==0.);
+        }
+        CHECK(actual.electronTemperatureDerivative==uncached.electronTemperatureDerivative);
+        CHECK(actual.holeTemperatureDerivative==uncached.holeTemperatureDerivative);
+        CHECK(actual.electronLowTemperatureDerivative==uncached.electronLowTemperatureDerivative);
+        CHECK(actual.holeLowTemperatureDerivative==uncached.holeLowTemperatureDerivative);
         for(int column=0;column<12;++column)for(Real fraction:{1.,.25}){
             const int i=column/4,k=column%4;Real step=(k==3?.002:5e-7)*fraction;auto a=states,b=states;
             a[i].*fields[k]+=step;b[i].*fields[k]-=step;

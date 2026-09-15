@@ -38,6 +38,92 @@ Scope and conventions:
 | regions | array | Optional | Region-level fixed charge definitions; see below. |
 | interfaces | array | Optional | Interface sheet/fixed/trap charge definitions; see below. |
 | contacts | array | Yes | Contact bias and type definitions; see below. |
+
+### Explicit electrothermal DC entry
+
+`simulation_type: "electrothermal_dc_sweep"` selects the in-process four-equation
+silicon service. This is a separate explicit schema; the legacy DC fields above
+do not select or configure it. Its initial scope is the audited LDMOS SI model,
+not arbitrary semiconductor materials. Integrated numerical qualification is
+tracked in [current LDMOS validation](validation/templates_ldmos_current_status.md).
+The [R7 production run guide](validation/templates_ldmos_production_reproduction.md)
+provides a versioned, hash-checked input export and complete execution commands.
+
+| Field | Meaning |
+|---|---|
+| `input_file` | Prepared four-equation SI JSON: mesh, native Poisson/transport/volume geometry, doping, audited material configuration, thermodes and contact boundaries. Relative to this deck. |
+| `output_directory` | New output directory, relative to this deck. Existing directories require explicit `resume: true`. |
+| `sweep.bias_points_V` | Strictly increasing drain biases beginning at exactly zero. Every requested point must pass the numerical, terminal KCL and heat-balance gates. |
+| `sweep.initial_step_V`, `minimum_step_V`, `maximum_step_V` | Defaults 0.1, 0.0001 and 4/3 V. Failed attempts halve the attempted increment. |
+| `sweep.max_newton`, `growth_newton` | Defaults 60 and 8. Accepted steps with at most `growth_newton` updates grow by 1.5; more than20 updates halve the next step. |
+| `sweep.predictor` | `linear` (default) or `none`. Uses accepted states only, referenced QF increments and an extrapolation ratio at most3. |
+| `sweep.density_update_maximum_bias_V` | Optional finite nonnegative drain-bias ceiling. Above it, disables the point input's density-coordinate update. Omitted: no ceiling. Does not change the bias grid or convergence gates. |
+| `sweep.density_update_requires_prediction` | Boolean, default `false`. If enabled, density-coordinate updates require an actually used accepted-state predictor; initialization/prebias, zero bias and the first unpredicted drain step use the original QF update. |
+| `initialization.mode` | `provided_state` (default) uses the prepared explicit state. `neutral_300K` constructs a neutral initial guess, solves initial Poisson/coupled equilibrium, performs Poisson gate prebias, then restores coupled equations. |
+| `initialization.gate_voltage_V` | Required positive final gate voltage for `neutral_300K`; gate boundary work-function/reference offsets are retained from the prepared input. Prebias passes through4 V when the final voltage is higher. |
+| `initialization.max_newton` | Default100 for initialization/prebias point solves. |
+| `resume` | Reload an accepted checkpoint; reject changed input, mesh, sweep or initialization configuration. |
+| `pause_after_attempts` | Optional positive count for a controlled checkpoint pause during drain continuation. A file named `STOP` in the output directory also pauses between attempts. |
+
+The source input and mesh are preserved as JSON snapshots. Each attempt records
+its full input, solver history and output (referenced state, temperature, residuals,
+terminal currents, lattice source and thermode heat). `ledger.json` atomically
+records accepted states, rejected attempts, exact points and elapsed wall time.
+`curve.csv` uses A/µm for terminal current and K for temperature;
+`terminal_balance.csv` records all four terminals. Source and boundary heat are
+in W/m (unit device width). Failed attempts never replace the last accepted state.
+Incomplete initialization currently requires a new output directory; completed
+initialization and drain-continuation checkpoints can be resumed.
+
+The prepared `input_file` can explicitly enable these performance controls (all
+default to `false`): `defer_recentered_candidate_jacobian` computes residuals only
+for line-search candidates that must be reassembled after QF recentering, and
+`skip_equilibrium_poisson_transport` omits zero edge currents during Poisson
+prebias only when both QF fields and temperature are globally constant and all
+carrier/temperature rows are constrained. Coupled transport and convergence
+gates are unchanged. Curve summaries are retained in exact-point ledger entries
+to avoid repeatedly parsing all prior full-state files; old checkpoints retain
+the full-state fallback.
+
+`reuse_ialmob_local_preparation` reuses field-independent low-field mobility
+terms across cell vertices with identical model, doping, carrier density,
+interface distance and temperature, within one transport-state preparation.
+`residual_ialmob_values_only` omits spatial and temperature mobility derivatives
+for residual-only candidates. A subsequent full Jacobian request rebuilds any
+incomplete cached state. Both require the IALMob path to have an effect; neither
+changes physical parameters, step selection or convergence criteria.
+
+`electrothermal_linear_solver` selects `sparselu_colamd` (default),
+`sparselu_amd`, or `umfpack` for this four-equation service only. `umfpack`
+requires a build with detected SuiteSparse UMFPACK; unavailable or unknown
+selections fail explicitly. All choices repeat numerical factorization and
+reuse symbolic analysis only for identical compressed sparse indices when
+enabled. Backend changes can alter Newton trajectories through roundoff and
+require independent numerical and performance qualification.
+
+`diagnostic_density_update_iterations` is a nonnegative integer in the point
+input, default `0` (disabled). During at most this many initial coupled Newton
+iterations, and only while the scaled residual exceeds `1e-6`, it transforms
+the existing Jacobian direction to nodal density increments using the full
+psi/QF/temperature derivatives. It bounds negative increments to retain positive
+densities, inverts the same local Fermi/DOS/BGN model at the candidate psi/T,
+and applies the original residual line search. Eight unsuccessful density
+trials fall back to the original QF direction. Dirichlet carrier unknowns,
+Poisson-only prebias and final convergence gates retain their existing behavior.
+The sweep guards above can further restrict its use. Broad-bias use has failed
+representative LDMOS controls; do not infer qualification from enabling this flag.
+
+`diagnostic_voltage_update_limit_V` is a positive finite point-input value,
+default `0.2`. It bounds voltage corrections in the original global damping;
+the temperature bound remains 30 K. Active density-coordinate carriers instead
+use the density positivity bound. This is a numerical update limit, separate
+from both the outer drain-bias step and the convergence tolerances. Increasing
+it has not improved the tested LDMOS representative-point totals.
+
+These solver gates are independent of reference acceptance: native electrical
+curves, thermal fields, the user-approved 2% local-density RMS and same-environment
+performance still need separate scoring. The legacy `electrothermal_probe` calls
+the same point-solve service for compatibility and diagnostics.
 | boundaries | array | Optional | Explicit Poisson boundary segments (Neumann/insulating/symmetry); see below. |
 | solver | object | Optional | Gummel/Newton settings for DD sweep and Newton solve. |
 | sweep | object | Required for dc_sweep | Sweep mode, range, outputs, and diagnostics controls. |

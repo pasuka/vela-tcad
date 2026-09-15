@@ -1,0 +1,17 @@
+# Separate analysis environment avoids mixing its prebuilt BLAS with the solver overlay.
+name: vela-ucrt-analysis-candidate
+channels:
+  - conda-forge
+dependencies:
+  - python=3.14.7
+  - python_abi=3.14=*_cp314
+  - numpy=2.5.2
+  - scipy=1.18.1
+  - h5py=3.16.0
+  - hdf5=2.2.0=nompi_*
+  # Matplotlib 3.11.1 has a glibc>=2.28 transitive dependency; handle separately.
+  - pillow=12.3.0
+  - openblas=0.3.34=pthreads_*
+  - libopenblas=0.3.34=pthreads_*
+  - libblas=*=*openblas
+  - liblapack=*=*openblas

@@ -51,7 +51,8 @@ public:
         bool reusePhysicsPreparation=false,bool reuseIalScreening=false);
     ElectrothermalAssembly assemble(const VectorXd& state,
                                    const ElectrothermalBoundary& boundary,
-        const VectorXd& electronQfReference_V={}, const VectorXd& holeQfReference_V={}) const;
+        const VectorXd& electronQfReference_V={}, const VectorXd& holeQfReference_V={},
+        bool buildJacobian=true,bool skipEquilibriumTransport=false) const;
     /// psi and dpsi/dT for n-p=Nd-Na, fn=fp=bias.
     std::pair<Real,Real> neutralPotential(Index node, Real bias, Real temperature) const;
     /// Doping preparations, temperature preparations, exact preparation hits.

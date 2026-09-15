@@ -13,6 +13,7 @@
 #include "vela/solver/NewtonSolver.h"
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/simulation/DCSweep.h"
+#include "vela/simulation/ElectrothermalSimulation.h"
 #include "vela/simulation/PoissonSimulation.h"
 #include <algorithm>
 #include <cctype>
@@ -3344,7 +3345,13 @@ int main(int argc, char** argv)
         status["simulation_type"] = type;
         status["converged"] = true;
 
-        if (type == "dc_sweep") {
+        if (type == "electrothermal_dc_sweep") {
+            const auto result=vela::runElectrothermalSweep(cfg,configFile);
+            status["converged"]=result.at("status")=="complete";
+            status["sweep_status"]=result.at("status");
+            status["points"]=result.at("exact_points").size();
+            status["wall_seconds"]=result.at("wall_seconds");
+        } else if (type == "dc_sweep") {
             vela::DCSweep sweep;
             const auto result = sweep.runWithResult(configFile);
             bool allConverged = !result.points.empty();

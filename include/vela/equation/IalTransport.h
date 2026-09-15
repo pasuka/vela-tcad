@@ -23,6 +23,8 @@ struct IalTransportGeometry {
     std::vector<std::vector<EdgeContribution>> edges;
 };
 struct IalTransportState {
+    bool hasTemperatureDerivatives=true;
+    bool hasSpatialDerivatives=true;
     VectorXd psi,n,p,phin,phip,dn,dp,temperature,dn_dT,dp_dT;
     std::vector<IalElementMobilityResult> cells;
     std::vector<Real> electronEdges,holeEdges;
@@ -37,6 +39,6 @@ void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
     const VectorXd& phin_V,const VectorXd& phip_V,
     const VectorXd& dn_per_V = {},const VectorXd& dp_per_V = {},
     const VectorXd& temperature_K = {},const VectorXd& dn_per_K = {},const VectorXd& dp_per_K = {},
-    bool reuseScreening=false);
+    bool reuseScreening=false,bool temperatureDerivatives=true);
 Real ialEdgeMobility(const MobilityModelConfig& config,Index edge,CarrierType carrier,bool lowField=false);
 } // namespace vela

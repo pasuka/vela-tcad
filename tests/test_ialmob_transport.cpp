@@ -295,6 +295,13 @@ TEST_CASE("Four-equation operator couples live IALMob current and conservative h
 
 TEST_CASE("Electrothermal preparation reuse refreshes temperature and doping without changing the operator", "[thermal][electrothermal][preparation]") {
     Fixture f;ElectrothermalGeometry g;
+    auto fastMobility=f.mobility;
+    SECTION("Existing full local evaluation"){}
+    SECTION("Node preparation and values-only residual candidates"){
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        options->element.reuseLocalPreparation=true;options->element.residualValuesOnly=true;
+        fastMobility.ialmob=options;
+    }
     g.siliconArea_m2=VectorXd::Zero(6);g.fixedCharge_C_per_m=VectorXd::Zero(6);
     g.poissonEdge_F_per_m=VectorXd::Zero(f.mesh.numEdges());g.transportWeight=g.poissonEdge_F_per_m;
     for(const auto& cell:f.mesh.cells())if(cell.region_id==0)for(Index i:cell.node_ids)g.siliconArea_m2[i]+=1e-14/6.;
@@ -304,12 +311,29 @@ TEST_CASE("Electrothermal preparation reuse refreshes temperature and doping wit
     }
     LatticeConductivity law;law.constant_W_per_m_K=100.;
     LatticeHeatAssembler heat(f.mesh,1.,{{0,law},{1,law}},{{{0,1},300.,2e6}});
-    ElectrothermalAssembler plain(f.mesh,f.doping,g,heat,f.mobility),cached(f.mesh,f.doping,g,heat,f.mobility,SiliconThermalPhysics{},.1,.04,true,true);
+    ElectrothermalAssembler plain(f.mesh,f.doping,g,heat,f.mobility),cached(f.mesh,f.doping,g,heat,fastMobility,SiliconThermalPhysics{},.1,.04,true,true);
     ElectrothermalBoundary bc;bc.neutralContactBias_V={{0,0.}};bc.holeRecombination={{0,{1.93e4,1e-7}}};
     VectorXd x(24);
     for(Real temperature:{300.,401.,401.,299.,514.}){
         for(int i=0;i<6;++i){x[4*i]=.48+.012*i;x[4*i+1]=.003*i;x[4*i+2]=.96-.002*i;x[4*i+3]=temperature+3.*i;}
         const auto a=plain.assemble(x,bc),b=cached.assemble(x,bc);
+        const auto residualOnly=cached.assemble(x,bc,{},{},false);
+        CHECK(residualOnly.jacobian.rows()==0);
+        CHECK((b.residual-residualOnly.residual).norm()==0.);
+        CHECK((b.electronOutflow_A_per_m-residualOnly.electronOutflow_A_per_m).norm()==0.);
+        CHECK((b.holeOutflow_A_per_m-residualOnly.holeOutflow_A_per_m).norm()==0.);
+        CHECK((b.electronFluxAbs_A_per_m-residualOnly.electronFluxAbs_A_per_m).norm()==0.);
+        CHECK((b.holeFluxAbs_A_per_m-residualOnly.holeFluxAbs_A_per_m).norm()==0.);
+        CHECK((b.recombination_A_per_m-residualOnly.recombination_A_per_m).norm()==0.);
+        CHECK(b.latticeSource_W_per_m==residualOnly.latticeSource_W_per_m);
+        CHECK(b.boundaryHeat_W_per_m==residualOnly.boundaryHeat_W_per_m);
+        CHECK((b.jacobian-cached.assemble(x,bc).jacobian).norm()==0.);
+        ElectrothermalAssembler partial(f.mesh,f.doping,g,heat,fastMobility,SiliconThermalPhysics{},.1,.04,true,true);
+        const auto firstResidual=partial.assemble(x,bc,{},{},false);
+        CHECK((b.residual-firstResidual.residual).norm()==0.);
+        // A residual cache may lack all derivative columns; the same-state full
+        // request must rebuild them, not reuse incomplete derivatives.
+        CHECK((b.jacobian-partial.assemble(x,bc).jacobian).norm()==0.);
         CHECK((a.residual-b.residual).norm()==0.);CHECK((a.jacobian-b.jacobian).norm()==0.);
         const auto before=cached.preparationCounts();const auto repeat=cached.assemble(x,bc);
         CHECK((b.residual-repeat.residual).norm()==0.);
@@ -319,7 +343,34 @@ TEST_CASE("Electrothermal preparation reuse refreshes temperature and doping wit
             CHECK(expected==actual);
         }
     }
+    auto poissonState=x;ElectrothermalBoundary poissonBoundary;
+    for(int i=0;i<6;++i){
+        poissonState[4*i+1]=poissonState[4*i+2]=0.;poissonState[4*i+3]=300.;
+        poissonBoundary.electronQf_V[i]=poissonBoundary.holeQf_V[i]=0.;
+        poissonBoundary.temperature_K[i]=300.;
+    }
+    for(int perturbation=0;perturbation<3;++perturbation){
+        auto state=poissonState;
+        if(perturbation==1)state[1]=.001;
+        if(perturbation==2)state[3]=301.;
+        const auto full=plain.assemble(state,poissonBoundary);
+        const auto fast=cached.assemble(state,poissonBoundary,{},{},true,true);
+        CHECK((full.residual-fast.residual).norm()==0.);
+        CHECK((full.jacobian-fast.jacobian).norm()==0.);
+        CHECK((full.electronOutflow_A_per_m-fast.electronOutflow_A_per_m).norm()==0.);
+        CHECK((full.holeOutflow_A_per_m-fast.holeOutflow_A_per_m).norm()==0.);
+        CHECK(full.latticeSource_W_per_m==fast.latticeSource_W_per_m);
+        CHECK(full.boundaryHeat_W_per_m==fast.boundaryHeat_W_per_m);
+    }
     const auto before=cached.preparationCounts();
+    auto tinyQf=poissonState;const VectorXd largeReference=VectorXd::Constant(6,40.);
+    for(int i=0;i<6;++i)tinyQf[4*i]+=40.;
+    tinyQf[1]=1e-18;
+    const auto tinyFull=plain.assemble(tinyQf,poissonBoundary,largeReference,largeReference);
+    const auto tinyFast=cached.assemble(tinyQf,poissonBoundary,largeReference,largeReference,true,true);
+    CHECK(tinyFull.electronOutflow_A_per_m.norm()>0.);
+    CHECK((tinyFull.electronOutflow_A_per_m-tinyFast.electronOutflow_A_per_m).norm()==0.);
+    CHECK((tinyFull.residual-tinyFast.residual).norm()==0.);
     f.doping.setNodeDoping(0,f.doping.donors(0)+1e22,f.doping.acceptors(0));
     const auto a=plain.assemble(x,bc),b=cached.assemble(x,bc);
     CHECK((a.residual-b.residual).norm()==0.);CHECK((a.jacobian-b.jacobian).norm()==0.);

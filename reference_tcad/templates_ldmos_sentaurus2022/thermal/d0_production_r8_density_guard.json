@@ -1,0 +1,38 @@
+{
+  "schema": "vela.ldmos.frozen_production_profile.v1",
+  "qualification": "R8 Linux Release D0 dual-gate 62 points; opt-in density update at Vd<=1V with accepted-history prediction; initialization excluded; one same-VM timing pair per gate; export alone is not new qualification",
+  "archive_sha256": "3bfc9ff2193582469ab07e134e3f234d5d064dbe2798735b61bae16d2a82aa33",
+  "qualified_linux_runner_sha256": "252dce7d7cbd9d3e36d61f3d53d5951ae626d528e710be3eebcccf4e9c616270",
+  "files_sha256": {
+    "cases/data/mesh.json": "36f79a06a21550d69fb58ad221457b1c1ccc63fa3a929046ef6b90e185f09ff6",
+    "cases/data/ialmob_geometry.json": "250d525d123b17df3a698dbb76bae3f2914a8bd0f7b6028b12acf76cfb35f12b",
+    "r8_density_low_20260915/input_vg4.json": "ef1b5f6fa22af824435cbbae9577554f9cec4b6bd05f62b3a525a96ef7e95080",
+    "r8_density_low_20260915/deck_vg4.json": "6a1fd685a0fe27cba390b7f8b1141ebd77ff8c591a42747856c16d77bb1c53b1",
+    "r8_density_low_20260915/input_vg8.json": "a26f420a31f2d057fac55116dd227c5becd1426c1b4c72158e0107d8050ca1c5",
+    "r8_density_low_20260915/deck_vg8.json": "d4edc6e5937c6fc89d656ccfe5be8aff3f4a21beb48f5bd6714b592d40e69d43"
+  },
+  "dependencies": [
+    {
+      "recorded_path": "/home/tcad/sentaurus_runs/vela_oracle_2022/vela_build_20260914/cases/data/mesh.json",
+      "evidence_path": "cases/data/mesh.json",
+      "bundle_path": "data/mesh.json"
+    },
+    {
+      "recorded_path": "/home/tcad/sentaurus_runs/vela_oracle_2022/vela_build_20260914/cases/data/ialmob_geometry.json",
+      "evidence_path": "cases/data/ialmob_geometry.json",
+      "bundle_path": "data/ialmob_geometry.json"
+    }
+  ],
+  "cases": [
+    {
+      "gate_V": 4,
+      "input": "r8_density_low_20260915/input_vg4.json",
+      "deck": "r8_density_low_20260915/deck_vg4.json"
+    },
+    {
+      "gate_V": 8,
+      "input": "r8_density_low_20260915/input_vg8.json",
+      "deck": "r8_density_low_20260915/deck_vg8.json"
+    }
+  ]
+}

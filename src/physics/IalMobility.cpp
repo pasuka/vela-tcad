@@ -8,20 +8,51 @@
 
 namespace vela {
 namespace {
-Real screeningGDerivative(Real p, Real mass, Real temperature)
+Real screeningGDerivative(Real p, Real a, Real b)
 {
-    const Real a = std::pow(temperature / (300. * mass), .28227);
-    const Real b = std::pow(mass * 300. / temperature, .72169);
     return .89233 * .19778 * a / std::pow(.41372 + a * p, 1.19778)
         - .005978 * 1.80618 * b / std::pow(b * p, 2.80618);
 }
 Real screeningMinimum(Real mass, Real temperature)
 {
     ++physicsCallCounters.ialScreeningMinimumSolves;
+    const Real a = std::pow(temperature / (300. * mass), .28227);
+    const Real b = std::pow(mass * 300. / temperature, .72169);
+    Real predictedLower = 0., predictedUpper = 0.;
+    if (mass >= .01 && mass <= 100. && temperature <= 1e5) {
+        // g'(p)=0 is equivalent to p^v/(c+a*p)^u=K. Its logarithmic
+        // derivative v-u*a*p/(c+a*p) is positive (v>u), so there is one
+        // sign change. Predict a bracket, but retain the original bisection
+        // sequence and evaluate its original derivative near that root.
+        constexpr Real u = 1.19778, v = 2.80618, c = .41372;
+        const Real logK = std::log(.005978 * 1.80618 / (.89233 * .19778))
+            + (1. - v) * std::log(b) - std::log(a);
+        Real x = 0.;
+        for (int i = 0; i < 6; ++i) {
+            const Real ap = a * std::exp(x);
+            x -= (v * x - u * std::log(c + ap) - logK)
+                / (v - u * ap / (c + ap));
+        }
+        const Real predicted = std::exp(x);
+        const Real lo = predicted * (1. - 1e-12), hi = predicted * (1. + 1e-12);
+        // The margin is well outside cancellation at the floating root.
+        // Nonfinite/unsuccessful predictions use the original full search.
+        if (lo > 1e-12 && hi < 1e12 && screeningGDerivative(lo,a,b) < 0.
+            && screeningGDerivative(hi,a,b) > 0.) {
+            predictedLower = lo;
+            predictedUpper = hi;
+        }
+    }
     Real lower = 1e-12, upper = 1e12;
     for (int i = 0; i < 100; ++i) {
         const Real midpoint = std::sqrt(lower * upper);
-        if (screeningGDerivative(midpoint, mass, temperature) < 0.) lower = midpoint;
+        // Once geometric bisection reaches an endpoint, another identical
+        // iteration cannot refine the representable root.
+        if (midpoint == lower || midpoint == upper) return midpoint;
+        const bool negative = predictedLower > 0. && midpoint < predictedLower ? true
+            : predictedUpper > 0. && midpoint > predictedUpper ? false
+            : screeningGDerivative(midpoint, a, b) < 0.;
+        if (negative) lower = midpoint;
         else upper = midpoint;
     }
     return std::sqrt(lower * upper);
@@ -38,6 +69,22 @@ void validateState(const IalMobilityState& state) {
 
 
 }
+
+struct IalMobilityPreparationCache::Impl {
+    using Key=std::pair<const IalMobility*,std::array<Real,6>>;
+    struct Less {
+        bool operator()(const Key& a,const Key& b) const {
+            return a.first!=b.first?std::less<const IalMobility*>{}(a.first,b.first):a.second<b.second;
+        }
+    };
+    std::map<Key,ial_detail::Preparation<Real>,Less> scalar;
+    std::map<Key,ial_detail::Preparation<ial_detail::Dual>,Less> differentiated;
+    std::size_t hits=0;
+};
+IalMobilityPreparationCache::IalMobilityPreparationCache():impl_(std::make_unique<Impl>()) {}
+IalMobilityPreparationCache::~IalMobilityPreparationCache()=default;
+std::size_t IalMobilityPreparationCache::hits() const {return impl_->hits;}
+std::size_t IalMobilityPreparationCache::size() const {return impl_->scalar.size()+impl_->differentiated.size();}
 
 Real IalScreeningCache::minimum(Real mass,Real temperature) {
     if(!std::isfinite(mass)||mass<=0.||!std::isfinite(temperature)||temperature<50.)
@@ -82,10 +129,23 @@ IalMobility::IalMobility(IalMobilityParameters p, bool electron)
     pMin_ = screeningMinimum(p.mass, 300.);
 }
 
-IalMobilityResult IalMobility::evaluate(const IalMobilityState& state) const
+IalMobilityResult IalMobility::evaluate(const IalMobilityState& state,IalScreeningCache* cache,
+    IalMobilityPreparationCache* preparation) const
 {
     validateState(state);
-    return evaluatePrepared(state,state.temperature_K==300.?pMin_:screeningMinimum(params_.mass,state.temperature_K));
+    const auto minimum=[&]{return state.temperature_K==300.?pMin_:
+        cache?cache->minimum(params_.mass,state.temperature_K):screeningMinimum(params_.mass,state.temperature_K);};
+    if(!preparation)return evaluatePrepared(state,minimum());
+    const IalMobilityPreparationCache::Impl::Key key{this,{state.donors_m3,state.acceptors_m3,
+        state.electrons_m3,state.holes_m3,state.interfaceDistance_m,state.temperature_K}};
+    auto& entries=preparation->impl_->scalar;auto found=entries.find(key);
+    if(found==entries.end())found=entries.emplace(key,ial_detail::prepare<Real>({state.donors_m3,
+        state.acceptors_m3,state.electrons_m3,state.holes_m3,state.normalField_V_per_m,
+        state.interfaceDistance_m,state.temperature_K},params_,electron_,minimum())).first;
+    else ++preparation->impl_->hits;
+    const auto result=ial_detail::evaluatePrepared(found->second,state.normalField_V_per_m,params_);
+    if(!std::isfinite(result[0])||result[0]<=0.)throw std::runtime_error("IALMob produced invalid mobility");
+    return {result[0],result[1],result[2],result[3],result[4],result[5]};
 }
 
 IalMobilityResult IalMobility::evaluatePrepared(const IalMobilityState& state,Real minimum) const
@@ -98,14 +158,11 @@ IalMobilityResult IalMobility::evaluatePrepared(const IalMobilityState& state,Re
     return {values[0],values[1],values[2],values[3],values[4],values[5]};
 }
 
-IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilityState& state,IalScreeningCache* cache) const
+IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilityState& state,IalScreeningCache* cache,
+    IalMobilityPreparationCache* preparation) const
 {
-    IalMobilityDifferential result;Real prepared=0.;
-    if(cache){
-        validateState(state);
-        prepared=state.temperature_K==300.?pMin_:cache->minimum(params_.mass,state.temperature_K);
-        result.result=evaluatePrepared(state,prepared);
-    }else result.result=evaluate(state);
+    validateState(state);
+    IalMobilityDifferential result;
     const std::array<Real,7> inputs{state.donors_m3,state.acceptors_m3,
         state.electrons_m3,state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m,state.temperature_K};
     std::array<ial_detail::Dual,7> variables;
@@ -115,8 +172,25 @@ IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilitySt
     }
     // At the clamped minimum, dG/dP = 0. The envelope derivative is the
     // partial dG/dT; differentiating the numerical minimizer is unnecessary.
-    const auto derivatives=ial_detail::evaluate(variables,params_,electron_,
-        cache?prepared:(state.temperature_K==300.?pMin_:screeningMinimum(params_.mass,state.temperature_K)))[0].derivative;
+    const auto prepare=[&]{
+        const Real minimum=state.temperature_K==300.?pMin_:
+            cache?cache->minimum(params_.mass,state.temperature_K):screeningMinimum(params_.mass,state.temperature_K);
+        return ial_detail::prepare(variables,params_,electron_,minimum);
+    };
+    const auto differentiated=[&]{
+        if(!preparation)return ial_detail::evaluatePrepared(prepare(),variables[4],params_);
+        const IalMobilityPreparationCache::Impl::Key key{this,{state.donors_m3,state.acceptors_m3,
+            state.electrons_m3,state.holes_m3,state.interfaceDistance_m,state.temperature_K}};
+        auto& entries=preparation->impl_->differentiated;auto found=entries.find(key);
+        if(found==entries.end())found=entries.emplace(key,prepare()).first;
+        else ++preparation->impl_->hits;
+        return ial_detail::evaluatePrepared(found->second,variables[4],params_);
+    }();
+    result.result={differentiated[0].value,differentiated[1].value,differentiated[2].value,
+        differentiated[3].value,differentiated[4].value,differentiated[5].value};
+    if(!std::isfinite(result.result.mobility_m2_per_Vs)||result.result.mobility_m2_per_Vs<=0.)
+        throw std::runtime_error("IALMob produced invalid mobility");
+    const auto& derivatives=differentiated[0].derivative;
     std::copy_n(derivatives.begin(),6,result.derivative_SI.begin());
     result.temperatureDerivative_m2_per_Vs_K=derivatives[6];
     if (!std::isfinite(derivatives[6]))

@@ -26,9 +26,12 @@ static IalElementMobilityResult evaluateImpl(
     const std::array<IalElementVertexState,3>& state,
     const std::array<const IalMobility*,3>& electronModels,
     const std::array<const IalMobility*,3>& holeModels,
-    const IalElementMobilityOptions& options, bool thermalDirections)
+    const IalElementMobilityOptions& options, bool thermalDirections,
+    std::array<IalMobilityDifferential,6>& localDifferentials)
 {
     nonnegative(options.referenceDensity_m3);
+    if(options.temperatureDerivatives && !options.spatialDerivatives)
+        throw std::invalid_argument("IALMob values-only evaluation cannot request temperature columns");
     for (const auto& p:{options.electronField,options.holeField})
         if (!std::isfinite(p.saturationVelocity)||p.saturationVelocity<=0.||
             !std::isfinite(p.beta)||p.beta<=0.)
@@ -79,6 +82,10 @@ static IalElementMobilityResult evaluateImpl(
         p[i].derivative[3*i]=-state[i].holeResponse_m3_per_V;
         p[i].derivative[3*i+2]=state[i].holeResponse_m3_per_V;
         temperature[i]=D(state[i].temperature_K);
+        if(!options.spatialDerivatives){
+            psi[i]=D(state[i].potential_V);qfn[i]=D(state[i].electronQf_V);qfp[i]=D(state[i].holeQf_V);
+            n[i]=D(state[i].electrons_m3);p[i]=D(state[i].holes_m3);
+        }
         if(thermalDirections){
             psi[i]=D(state[i].potential_V);qfn[i]=D(state[i].electronQf_V);qfp[i]=D(state[i].holeQf_V);
             n[i]=D(state[i].electrons_m3);p[i]=D(state[i].holes_m3);
@@ -100,8 +107,13 @@ static IalElementMobilityResult evaluateImpl(
     for (int i=0;i<3;++i) {
         const IalMobilityState local{state[i].donors_m3,state[i].acceptors_m3,n[i].value,p[i].value,
             en.value,geometry.interfaceDistance_m[i],state[i].temperature_K};
-        const auto low=[&](const IalMobility& model) {
-            const auto r=model.evaluateWithDerivatives(local,options.screeningCache);
+        const auto low=[&](const IalMobility& model,int carrier) {
+            if(!options.spatialDerivatives)return D(model.evaluate(local,options.screeningCache,
+                options.preparationCache).mobility_m2_per_Vs);
+            auto& saved=localDifferentials[2*i+carrier];
+            if(!thermalDirections || !options.reuseThermalLocalDifferentials)
+                saved=model.evaluateWithDerivatives(local,options.screeningCache,options.preparationCache);
+            const auto& r=saved;
             D mu(r.result.mobility_m2_per_Vs);
             for (int k=0;k<9;++k)
                 mu.derivative[k]=r.derivative_SI[2]*n[i].derivative[k]+
@@ -109,7 +121,7 @@ static IalElementMobilityResult evaluateImpl(
                     r.temperatureDerivative_m2_per_Vs_K*temperature[i].derivative[k];
             return mu;
         };
-        const D lowN=low(*electronModels[i]), lowP=low(*holeModels[i]);
+        const D lowN=low(*electronModels[i],0), lowP=low(*holeModels[i],1);
         D finalN=lowN,finalP=lowP;
         if (options.highField) {
             const D fractionN=options.referenceDensity_m3==0.?D(1.):n[i]/(n[i]+D(options.referenceDensity_m3));
@@ -150,9 +162,10 @@ IalElementMobilityResult evaluateIalElementMobility(
     const std::array<const IalMobility*,3>& electrons,const std::array<const IalMobility*,3>& holes,
     const IalElementMobilityOptions& options)
 {
-    auto result=evaluateImpl(geometry,state,electrons,holes,options,false);
+    std::array<IalMobilityDifferential,6> localDifferentials;
+    auto result=evaluateImpl(geometry,state,electrons,holes,options,false,localDifferentials);
     if(options.temperatureDerivatives){
-        const auto t=evaluateImpl(geometry,state,electrons,holes,options,true);
+        const auto t=evaluateImpl(geometry,state,electrons,holes,options,true,localDifferentials);
         for(int i=0;i<3;++i){
             result.electronTemperatureDerivative[i]=t.electron.derivative[i];
             result.holeTemperatureDerivative[i]=t.hole.derivative[i];

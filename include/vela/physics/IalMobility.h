@@ -3,6 +3,7 @@
 #include "vela/core/Types.h"
 #include <array>
 #include <map>
+#include <memory>
 
 namespace vela {
 
@@ -64,13 +65,31 @@ private:
     std::map<std::pair<Real,Real>,Real> roots_;
 };
 
+/// Local to one transport-state preparation. Model objects must remain alive
+/// and immutable; exact keys include doping, densities, distance and temperature.
+class IalMobilityPreparationCache {
+public:
+    IalMobilityPreparationCache();
+    ~IalMobilityPreparationCache();
+    IalMobilityPreparationCache(const IalMobilityPreparationCache&)=delete;
+    IalMobilityPreparationCache& operator=(const IalMobilityPreparationCache&)=delete;
+    std::size_t hits() const;
+    std::size_t size() const;
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+    friend class IalMobility;
+};
+
 class IalMobility {
 public:
     /// Local temperature is explicit; coupled electrical callers still supply 300 K.
     explicit IalMobility(IalMobilityParameters parameters, bool electron);
-    IalMobilityResult evaluate(const IalMobilityState& state) const;
+    IalMobilityResult evaluate(const IalMobilityState& state,IalScreeningCache* cache=nullptr,
+                              IalMobilityPreparationCache* preparation=nullptr) const;
     IalMobilityDifferential evaluateWithDerivatives(const IalMobilityState& state,
-                                                  IalScreeningCache* cache=nullptr) const;
+                                                  IalScreeningCache* cache=nullptr,
+                                                  IalMobilityPreparationCache* preparation=nullptr) const;
     static IalMobilityParameters siliconDefaults(bool electron);
     /// Closest cubic plane family, including sign/permutation symmetry.
     /// Input is a nonzero normal already transformed into crystal coordinates.
