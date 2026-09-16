@@ -36,6 +36,49 @@ evidence.
 - [Extrapolation A–E execution, 2026-09-15](validation/templates_ldmos_extrapolation_execution_2026-09-15.md):
   guarded predictor, step-growth, tangent, local-fit and NGMRES controls; complete costs,
   frozen evidence and negative results, with R7 retained as the production default.
+- [Newton update execution, 2026-09-15](validation/templates_ldmos_newton_update_execution_2026-09-15.md):
+  F0 reproduces all 74 R7 attempts exactly; local density projection and NLEQ_ERR-type controls
+  fail promotion, and conservative Jacobian refresh shifts cost to extra updates/assemblies.
+  R7 remains the production default; projected pseudo-transient mass-matrix research is recorded.
+- [Carrier pseudo-transient validation, 2026-09-15](validation/templates_ldmos_pseudo_transient_2026-09-15.md):
+  storage signs, temperature/statistics partials and SG diffusion verified; twelve controls
+  fail promotion, with fixed-state coefficient isolation identifying non-descent steady-residual directions.
+- [Pseudo-transient acceptance validation, 2026-09-15](validation/templates_ldmos_pseudo_acceptance_2026-09-15.md):
+  actual backward-Euler defect trials cross initial rejection, but both time controllers fail
+  steady gates within 60 updates at each frozen point; R7 remains unchanged.
+- [Poisson-consistent initialization controls, 2026-09-15](validation/templates_ldmos_poisson_initialization_2026-09-15.md):
+  both preparations close with QF/temperature held; model-controlled PTC reaches near-steady
+  states but fails original carrier-row gates, with all preparation costs retained. No promotion.
+- [Near-steady mass, density and QF representation controls, 2026-09-15](validation/templates_ldmos_near_steady_isolation_2026-09-15.md):
+  state-only local reference changes plus one QF update close both frozen failures under original gates;
+  density mapping adds rejected trials. That isolation stage did not test automatic switching or full-path acceleration.
+- [Automatic near-steady switch, 2026-09-15](validation/templates_ldmos_near_switch_2026-09-15.md):
+  opt-in switching closes both full representative trajectories after Poisson preparation in 32/31 total
+  updates; direct raw seeds still fail. Original R7 needs 15/15, so the candidate is not promoted.
+- [Standalone R7 high-voltage QF rebase, 2026-09-15](validation/templates_ldmos_r7_local_rebase_2026-09-15.md):
+  four points with two paired repeats on each platform pass original gates; Windows/Linux updates
+  remain 44/45 per round, with extra reassembly and no reduction of the Linux five-update floor tail.
+  Diagnostic only; production defaults unchanged.
+- [Finite-contact row arithmetic audit, 2026-09-16](validation/templates_ldmos_contact_row_roundoff_2026-09-16.md):
+  exact frozen R7 prefixes isolate the high-voltage floor tail to neutral-contact potential consistency,
+  amplified by finite hole exchange; high-precision sum/SG/recombination arithmetic does not remove it.
+  Existing contact projection closes the five failed frozen states under original row/block gates;
+  that audit alone did not qualify an automatic Newton candidate.
+- [Finite-contact algebraic consistency candidate, 2026-09-16](validation/templates_ldmos_contact_consistency_2026-09-16.md):
+  an opt-in terminal repair passes 32 paired original-seed high-voltage runs on Windows/Linux;
+  Linux's 14-update tail becomes 9 under unchanged gates. Per-round updates fall 44/45 to 40/40,
+  but Linux representative-point wall time reverses between repeats. Subsequent full-curve
+  qualification is linked below; production R7 defaults are unchanged.
+- [Contact-repair sweep validation, 2026-09-16](validation/templates_ldmos_contact_sweep_2026-09-16.md):
+  first8 dual-gate controls and real pause/resume pass with exact R7 states and unchanged
+  152/137 drain updates; initialization is explicitly protected. All 62 points and two rounds
+  of R7/candidate/native controls pass the original joint gates with exactly repeated trajectories.
+  Updates fall 366/321 to 344/302; median wall time falls 3.53%/7.20%, with variable per-round
+  benefit and higher CPU cost than native. The candidate remains opt-in.
+- [Newton update-mapping and damping plan, 2026-09-15](validation/templates_ldmos_newton_update_plan_2026-09-15.md):
+  R7 iteration-phase decomposition, the R8 global positivity-alpha failure mechanism, and the
+  proposed F0–F5 stage contracts and confirmed design choices (per-node density projection first);
+  implementation and local VM experiments are authorized; see the execution report for completed controls.
 - [Linux/UCRT64 environment alignment study](validation/vela_linux_ucrt_environment_alignment_2026-09-14.md):
   measured package versions, Linux dependency dry-runs, source-build gaps and unqualified deployment plans.
 - [LDMOS daily report, 2026-09-12](validation/templates_ldmos_daily_report_2026-09-12.md):

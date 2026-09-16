@@ -211,6 +211,10 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
             // Initialization has no accepted drain-history predictor. Apply the
             // same opt-in guard as for unpredicted sweep steps.
             if(densityNeedsPrediction) cfg["diagnostic_density_update_iterations"]=0;
+            // The opt-in contact repair is qualified for drain continuation,
+            // not neutral initialization or Poisson gate prebias.
+            if(cfg.value("diagnostic_near_steady_contact_consistency",false))
+                cfg["diagnostic_near_steady_contact_consistency"]=false;
             for(auto& b:cfg.at("boundaries")) if(gateNodes.contains(b.at("node"))&&b.at("kind")=="psi")
                 b["value"]=b.at("value").get<double>()-finalGate+voltage;
             cfg["solve_mode"]=poisson?"poisson":"coupled";

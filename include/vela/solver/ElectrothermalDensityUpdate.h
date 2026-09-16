@@ -2,10 +2,21 @@
 #include "vela/physics/SiliconThermalPhysics.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/core/PhysicalConstants.h"
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 
 namespace vela::experimental {
+// Local positivity projection: no node can reduce the step of another node.
+// The representability floor is capped by oldDensity to preserve zero steps.
+inline Real electrothermalProjectedDensity(Real oldDensity,Real relative,Real alpha) {
+    if(!(oldDensity>0.) || !std::isfinite(oldDensity) || !std::isfinite(relative) ||
+       !std::isfinite(alpha) || alpha<0. || alpha>1.)
+        throw std::invalid_argument("Invalid local density projection");
+    const Real target=oldDensity*(1.+alpha*relative);
+    if(!std::isfinite(target))throw std::invalid_argument("Nonfinite density target");
+    return std::max(target,std::max(.01*oldDensity,std::min(oldDensity,Real(1e-250))));
+}
 // Invert the SAME local statistics at the candidate psi/T. Keep the reference
 // and return its QF increment, avoiding subtraction of two large physical QFs.
 inline Real electrothermalDensityQf(const SiliconThermalResult& atCandidate,

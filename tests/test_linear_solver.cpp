@@ -8,6 +8,8 @@
 #include "vela/solver/ElectrothermalStepControl.h"
 #include "vela/solver/ElectrothermalLocalPrediction.h"
 #include "vela/solver/ElectrothermalResidualMixing.h"
+#include "vela/solver/ElectrothermalDensityUpdate.h"
+#include "vela/solver/ElectrothermalNaturalDamping.h"
 #include "../src/tools/ElectrothermalIterationControl.h"
 
 #include <Eigen/Sparse>
@@ -336,4 +338,32 @@ TEST_CASE("Electrothermal residual mixing solves a spanned linear problem and re
     scale[0]=0.;CHECK_THROWS_AS(experimental::electrothermalResidualMix(x,matrix*x,states,residuals,scale),std::invalid_argument);
     scale.setConstant(1e300);
     CHECK_THROWS_AS(experimental::electrothermalResidualMix(x,VectorXd::Constant(2,1e300),states,residuals,scale),std::invalid_argument);
+}
+
+TEST_CASE("Electrothermal local density projection preserves positive states without global damping", "[electrothermal]") {
+    using experimental::electrothermalProjectedDensity;
+    CHECK(electrothermalProjectedDensity(100.,-2.,1.)==1.);
+    CHECK(electrothermalProjectedDensity(100.,.5,1.)==150.);
+    CHECK(electrothermalProjectedDensity(100.,-2.,.1)==80.);
+    for(Real n:{Real(1e-280),Real(1e-100),Real(1.),Real(1e26)}) {
+        CHECK(electrothermalProjectedDensity(n,0.,1.)==n);
+        CHECK(electrothermalProjectedDensity(n,-2.,0.)==n);
+        CHECK(electrothermalProjectedDensity(n,-2.,1.)>0.);
+    }
+    CHECK_THROWS(electrothermalProjectedDensity(1.,std::numeric_limits<Real>::infinity(),1.));
+    CHECK_THROWS(electrothermalProjectedDensity(0.,1.,1.));
+}
+
+TEST_CASE("Electrothermal natural corrector recognizes linear contraction and rejects growth", "[electrothermal]") {
+    VectorXd d(2);d<<2.,-1.;
+    for(Real alpha:{.1,.5,1.}) {
+        const auto trial=experimental::electrothermalNaturalTrial(d,(1.-alpha)*d,alpha);
+        CHECK(trial.decreasing);
+        CHECK(trial.theta==Catch::Approx(1.-alpha));
+    }
+    const auto growth=experimental::electrothermalNaturalTrial(d,2.*d,1.);
+    CHECK_FALSE(growth.decreasing);CHECK(growth.nextAlpha>0.);CHECK(growth.nextAlpha<=.5);
+    const auto projected=experimental::electrothermalNaturalTrial(d,20.*d,.4,true);
+    CHECK(projected.nextAlpha==.2);
+    CHECK_THROWS(experimental::electrothermalNaturalTrial(VectorXd::Zero(2),d,1.));
 }

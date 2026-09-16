@@ -8,10 +8,121 @@
 #include "vela/discretization/ThermalSgCurrent.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/solver/ElectrothermalDensityUpdate.h"
+#include "vela/solver/ElectrothermalPseudoTransient.h"
+#include "vela/solver/ElectrothermalNearSteady.h"
 #include <cmath>
 #include <limits>
 #include <stdexcept>
 using namespace vela;
+TEST_CASE("Near-steady QF rebasing preserves physical state and is idempotent", "[thermal][near_steady]") {
+    VectorXd x(12),e(3),h(3);
+    x<<.4,-std::ldexp(1.,-12)+1e-17,2e-17,301., .5,1e-8,-1e-8,320., .6,0.,0.,330.;
+    e<<std::ldexp(1.,-12),4.,0.;h<<0.,-2.,0.;
+    const VectorXd old=x,er=e,hr=h;
+    const auto changed=experimental::rebaseSmallElectrothermalQf(x,e,h);
+    REQUIRE(changed.changed[0]==1);REQUIRE(changed.changed[1]==0);
+    CHECK(e[0]==0.);CHECK(x[1]!=0.);
+    for(int i=0;i<3;++i) {
+        CHECK(x[4*i]==old[4*i]);CHECK(x[4*i+3]==old[4*i+3]);
+        CHECK(static_cast<long double>(e[i])+x[4*i+1]==static_cast<long double>(er[i])+old[4*i+1]);
+        CHECK(static_cast<long double>(h[i])+x[4*i+2]==static_cast<long double>(hr[i])+old[4*i+2]);
+    }
+    const auto again=experimental::rebaseSmallElectrothermalQf(x,e,h);
+    CHECK(again.changed[0]==0);CHECK(again.changed[1]==0);
+    auto invalid=x;invalid[0]=std::numeric_limits<Real>::quiet_NaN();
+    CHECK_THROWS_AS(experimental::rebaseSmallElectrothermalQf(invalid,e,h),std::invalid_argument);
+}
+TEST_CASE("Pseudo defect acceptance allows steady growth without declaring steady convergence", "[thermal][pseudo_transient]") {
+    Eigen::Matrix2d j,m;j<<1.,10.,0.,1.;m<<100.,0.,0.,.1;
+    VectorXd r(2);r<<1.,1.;const VectorXd d=(j+m).fullPivLu().solve(-r);
+    const VectorXd steady=r+j*d;
+    REQUIRE(steady.norm()>r.norm());
+    for(Real alpha:{1.,.1,1e-4}) {
+        const VectorXd g=r+alpha*j*d+alpha*m*d;
+        const auto trial=experimental::electrothermalPseudoTrial(r,g,alpha);
+        CHECK(trial.accepted);CHECK(trial.modelError<1e-10);
+        CHECK(trial.norm==Catch::Approx((1.-alpha)*r.norm()).margin(1e-12));
+    }
+    // A projected nonlinear target must be checked by its actual defect,
+    // never accepted because the linearized model predicts decrease.
+    CHECK_FALSE(experimental::electrothermalPseudoTrial(r,1.01*r,.1).accepted);
+    CHECK_THROWS_AS(experimental::electrothermalPseudoTrial(r,r,0.),std::invalid_argument);
+    auto bad=r;bad[0]=std::numeric_limits<Real>::quiet_NaN();
+    CHECK_THROWS_AS(experimental::electrothermalPseudoTrial(r,bad,.1),std::invalid_argument);
+    CHECK_THROWS_AS(experimental::electrothermalPseudoTrial(r,VectorXd::Constant(2,1e308),.1),std::invalid_argument);
+    for(bool hole:{false,true}) {
+        const Real n=1e25,next=std::nextafter(n,std::numeric_limits<Real>::infinity()),area=1e-14;
+        const Real delta=experimental::electrothermalStorageDifference(n,next,area,hole);
+        CHECK(delta!=0.);CHECK((hole?1.:-1.)*delta>0.);
+        CHECK(experimental::electrothermalStorageDifference(n,n,area,hole)==0.);
+        CHECK(experimental::electrothermalStorageDifference(n,next,0.,hole)==0.);
+    }
+}
+TEST_CASE("Carrier pseudo storage partials preserve signs units gauge and constraints", "[thermal][pseudo_transient]") {
+    SiliconThermalPhysics model;
+    const std::array<Real SiliconThermalState::*,4> fields{&SiliconThermalState::potential_V,
+        &SiliconThermalState::electronQf_V,&SiliconThermalState::holeQf_V,&SiliconThermalState::temperature_K};
+    const Real area=3e-14;
+    for(Real t:{300.,475.})for(Real psi:{-.6,.7})for(Real doping:{1e21,1e26})for(Real shift:{0.,40.}) {
+        SiliconThermalState s{shift+psi,.01,.03,t,doping,1e22,shift,shift};
+        const auto p=model.evaluate(s);
+        const auto storage=experimental::electrothermalCarrierStorage(p,area,{true,true});
+        CHECK(storage[1].value<0.);CHECK(storage[2].value>0.);
+        CHECK(storage[1].value/(-constants::q*area)==Catch::Approx(p.electrons_m3.value));
+        CHECK(storage[2].value/(constants::q*area)==Catch::Approx(p.holes_m3.value));
+        for(int row:{0,3}){CHECK(storage[row].value==0.);for(Real d:storage[row].derivative)CHECK(d==0.);}
+        for(int j=0;j<4;++j) {
+            auto plus=s,minus=s;const Real h=j==3?.002:1e-6;
+            plus.*fields[j]+=h;minus.*fields[j]-=h;
+            const auto hi=experimental::electrothermalCarrierStorage(model.evaluate(plus),area,{true,true});
+            const auto lo=experimental::electrothermalCarrierStorage(model.evaluate(minus),area,{true,true});
+            for(int k:{1,2}) {
+                const Real scale=std::max(std::abs(storage[k].value),Real(1e-100));
+                CHECK(storage[k].derivative[j]/scale==Catch::Approx((hi[k].value-lo[k].value)/(2*h*scale)).epsilon(4e-6).margin(4e-7));
+            }
+        }
+        const auto contact=experimental::electrothermalCarrierStorage(p,area,{false,true});
+        CHECK(contact[1].value==0.);for(Real d:contact[1].derivative)CHECK(d==0.);
+        CHECK(contact[2].derivative==storage[2].derivative);
+        const auto twice=experimental::electrothermalCarrierStorage(p,2*area,{true,true});
+        CHECK(twice[1].value==2*storage[1].value);
+        const auto empty=experimental::electrothermalCarrierStorage(p,0.,{true,true});
+        for(const auto& q:empty){CHECK(q.value==0.);for(Real d:q.derivative)CHECK(d==0.);}
+    }
+    CHECK_THROWS_AS(experimental::electrothermalCarrierStorage(model.evaluate({}),-1.,{true,true}),std::invalid_argument);
+}
+
+TEST_CASE("Carrier pseudo mass stabilizes actual SG dilute diffusion for both signs", "[thermal][pseudo_transient]") {
+    SiliconThermalPhysics model;
+    const Real area=3e-14,mu=.03,weight=.7;
+    // One free node between fixed reservoirs. In the dilute isothermal limit
+    // the actual SG residual is s*q*D*w*(2*c-cLeft-cRight), s=-1/+1.
+    // Backward Euler must preserve positivity and approach the reservoir mean.
+    for(bool hole:{false,true}) {
+        auto state=[&](Real density){SiliconThermalState s{};const auto p=model.evaluate(s);
+            const Real qf=experimental::electrothermalDensityQf(p,s,density,hole);
+            if(hole)s.holeQf_V=qf;else s.electronQf_V=qf;return s;};
+        const auto left=state(1e14),right=state(3e14),center=state(8e14);
+        const auto pc=model.evaluate(center),pl=model.evaluate(left),pr=model.evaluate(right);
+        const auto a=thermalSgCurrent(center,pc,left,pl,mu,weight,!hole);
+        const auto b=thermalSgCurrent(center,pc,right,pr,mu,weight,!hole);
+        const int k=hole?2:1;const auto& density=hole?pc.holes_m3:pc.electrons_m3;
+        const auto mass=experimental::electrothermalCarrierStorage(pc,area,{!hole,hole});
+        const Real jac=a.derivative[k]+b.derivative[k],residual=a.current_A_per_m+b.current_A_per_m;
+        const Real diffusion=mu*constants::Vt_300,sign=hole?1.:-1.;
+        CHECK(residual==Catch::Approx(sign*constants::q*diffusion*weight*(2*8e14-4e14)).epsilon(2e-9));
+        Real previous=8e14;
+        for(Real multiplier:{.01,1.,100.}) {
+            const Real tau=multiplier*area/(diffusion*weight);
+            const Real dq=-residual/(jac+mass[k].derivative[k]/tau);
+            const Real target=density.value+density.derivative[k]*dq;
+            const Real expected=(area/tau*8e14+diffusion*weight*4e14)/(area/tau+2*diffusion*weight);
+            CHECK(target==Catch::Approx(expected).epsilon(3e-9));
+            CHECK(target>2e14);CHECK(target<previous);previous=target;
+        }
+    }
+}
+
 TEST_CASE("Density-coordinate electrothermal updates invert the audited local statistics", "[thermal][silicon][density_update]") {
     SiliconThermalPhysics model;
     for(Real t:{300.,400.})for(Real psi:{-.4,.5})for(Real doping:{1e22,1e26})for(Real reference:{0.,40.}) {
@@ -24,6 +135,18 @@ TEST_CASE("Density-coordinate electrothermal updates invert the audited local st
             const auto after=model.evaluate(updated);
             CHECK(after.electrons_m3.value==Catch::Approx(before.electrons_m3.value*factor).epsilon(2e-12));
             CHECK(after.holes_m3.value==Catch::Approx(before.holes_m3.value/factor).epsilon(2e-12));
+        }
+        // A projected negative local target remains invertible at changed psi/T,
+        // including degenerate statistics, BGN and a shifted QF reference.
+        for(int k=0;k<2;++k) {
+            const Real old=k==0?before.electrons_m3.value:before.holes_m3.value;
+            auto candidate=state;candidate.potential_V+=.05;candidate.temperature_K+=10.;
+            const auto properties=model.evaluate(candidate);
+            const Real target=experimental::electrothermalProjectedDensity(old,-2.,1.);
+            const Real qf=experimental::electrothermalDensityQf(properties,candidate,target,k==1);
+            if(k==0)candidate.electronQf_V=qf;else candidate.holeQf_V=qf;
+            const auto mapped=model.evaluate(candidate);
+            CHECK((k==0?mapped.electrons_m3.value:mapped.holes_m3.value)==Catch::Approx(target).epsilon(2e-12));
         }
         // The nonlinear change of coordinates has the same first derivative
         // as the existing four-variable Jacobian, including its T column.

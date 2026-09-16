@@ -112,8 +112,8 @@ changes physical parameters, step selection or convergence criteria.
 `electrothermal_linear_solver` selects `sparselu_colamd` (default),
 `sparselu_amd`, or `umfpack` for this four-equation service only. `umfpack`
 requires a build with detected SuiteSparse UMFPACK; unavailable or unknown
-selections fail explicitly. All choices repeat numerical factorization and
-reuse symbolic analysis only for identical compressed sparse indices when
+selections fail explicitly. Unless the explicit adaptive-Jacobian experiment is enabled,
+all choices repeat numerical factorization and reuse symbolic analysis only for identical compressed sparse indices when
 enabled. Backend changes can alter Newton trajectories through roundoff and
 require independent numerical and performance qualification.
 
@@ -129,10 +129,41 @@ Poisson-only prebias and final convergence gates retain their existing behavior.
 The sweep guards above can further restrict its use. Broad-bias use has failed
 representative LDMOS controls; do not infer qualification from enabling this flag.
 
+Additional prepared-point experimental controls, all disabled by default:
+
+| Field | Behavior |
+| --- | --- |
+| `diagnostic_iteration_trace` | Records before/after block and row gates, direction maxima, node temperatures, and local density changes. Does not participate in numerical decisions; `iteration_trace_seconds` reports its overhead. |
+| `diagnostic_density_projection` | `off` (default), `v1`, or `v2`. Coupled silicon carrier updates use per-node positive density targets with relative floor 0.01 and absolute floor `min(old_density,1e-250 m^-3)`. V1 applies throughout coupled iterations; V2 returns to QF updates when every active raw QF direction is below 0.01 local Vt. Poisson prebias remains unchanged. Unlike the earlier R8 window, these variants deliberately do not require a predictor or low bias. |
+| `diagnostic_natural_damping` | NLEQ_ERR-type corrector test using the existing LU and fixed scaling, with extra back-solves counted in `natural_damping`. Preserves the original near-floor behavior and terminal convergence gates; does not implement the full NLEQ_ERR predictor/corrector algorithm. |
+| `diagnostic_adaptive_jacobian` | Reuses a factorization for at most two updates following an accepted full step with residual ratio at most 0.1. QF recentering forces refresh; failed stale-Jacobian attempts retry fresh within the existing iteration budget. Candidate residuals are evaluated before preparing another Jacobian. |
+| `diagnostic_pseudo_transient` | Adds `d(0,-q*A_cont*n,+q*A_cont*p,0)/dx / tau` to the coupled steady Jacobian, using `recombination_area_m2` (or its documented silicon-area fallback). Constrained rows have no storage; a finite-exchange hole contact remains active. Initial tau is the median positive finite carrier `abs(M_ii/J_ii)` times `diagnostic_pseudo_time_scale` (default 1). SER uses initial steady row scales throughout, with growth factor clamped to [0.5,4], tau bounded to [1e-6,1e12] times its initial value. A failed line search reduces tau tenfold, with at most three retries within the original iteration budget. Poisson prebias ignores this option. Incompatible with natural damping, adaptive Jacobian, and NGMRES. Steady acceptance gates are unchanged; this is not physical transient qualification. |
+| `diagnostic_pseudo_direction_audit` | Requires `diagnostic_pseudo_transient` and exactly one coupled diagnostic iteration. Independently compares full, frozen mobility-derivative, frozen bulk-recombination-derivative, and combined directions with/without carrier mass. Reports true steady merit slopes and projected trial residuals. Coefficient values, residuals and contact laws remain unchanged; audited directions never replace the actual update. |
+| `diagnostic_pseudo_acceptance` | `steady` (default), `defect_ser`, or `defect_model`. The latter two require coupled pseudo transient and check the actual backward-Euler defect `G(y)=F(y)+(rho(y)-rho(x))/tau` with initial fixed row weights and norm Armijo coefficient 1e-4. The previous accepted state x and tau stay fixed during every backtracking trial. `defect_ser` retains the steady-residual SER time controller; `defect_model` multiplies tau by 2/0.5/1 when `norm(W*G-(1-alpha)*W*F)/(alpha*norm(W*F))` is <=0.25/>0.75/otherwise. The stagnation watch uses the within-step defect reduction when accepted this way. The original near-floor trial rule and all steady terminal gates are retained. Poisson prebias is unchanged. |
+| `diagnostic_near_steady_qf_switch` | Default false. Independent candidate requiring referenced coupled `provided_state`, PTC, V1 projection and `defect_model`, without direction audit. Once the original scaled merit is <1e-9 and all three original electrical block gates pass, rebase physical QFs within +/-1 mV to zero references, rebuild the full residual/Jacobian and row scales, clear stagnation history, and permanently retire carrier mass and density mapping for the rest of this point. Records the event and inclusive preparation time. Does not accept a state, reset the attempt budget, relax any terminal gate, or change the production default. |
+| `diagnostic_near_steady_qf_rebase` | Default false. Standalone R7 representation experiment, requiring referenced coupled `provided_state` QF Newton, isolated from PTC, density mapping, natural damping, adaptive Jacobian, NGMRES and the PTC switch. If merit <1e-9 and all original electrical blocks pass while the row gate still fails, once per point move physical QFs within +/-1 mV to zero references and fully reassemble. Retains original terminal gates, stagnation history, update limits and iteration budget. Reports changed references and inclusive reassembly time; no production default change. |
+| `diagnostic_near_steady_contact_consistency` | Default false. Isolated referenced coupled `provided_state` QF Newton only; cannot combine with density mapping, PTC, natural damping, adaptive Jacobian, NGMRES or either near-steady QF experiment. Once per point, when merit <1e-9 and all original electrical blocks pass while the row gate fails, set finite-hole-contact potentials to the existing neutral target at their current T. QFs, references and T remain fixed. Try a full residual/Jacobian/scaling rebuild only for a nonzero potential correction <=1e-8 V. Accept as a terminal repair only if original merit, all row and electrical block gates pass; otherwise discard the candidate and retain ordinary Newton state, scales, history and budget. Reports the event, correction and inclusive preparation/reassembly time (overlaps assembly profiling). Adds no Newton update/factorization; the repair and its assembly are reported separately. Outer current/heat/state qualification remains required; production default unchanged. |
+| `diagnostic_hole_row_audit_nodes` | Optional list of distinct active silicon hole-row IDs, including finite hole contacts; only allowed for zero-update coupled `provided_state` diagnostics. Preserves the raw input by bypassing load-time finite-contact potential projection and QF recentering. Records every oriented hole edge current, frozen endpoint statistics/state/mobility, SRH/Auger rates, source area charge, residual and absolute flux sum. Finite contacts additionally record the outward current, neutral target and temperature derivative, small-delta operands and Fermi derivatives. Independently checks that observation leaves the full residual and hole flux sums identical; this extra observation assembly is outside solve-loop profiling counters. It is a read-only arithmetic audit, not a convergence or model option. |
+
+For an explicit `electrothermal_dc_sweep`, the contact-consistency candidate is
+disabled during neutral initialization and every gate-prebias stage, including
+coupled reclosure. The requested flag is restored for drain continuation and is
+part of the input snapshot checked on resume. Direct point-service calls retain
+the isolation guards above.
+
+Projection covers free carrier unknowns only, retaining Dirichlet/contact
+constraints and the candidate-temperature statistics inversion. Invalid targets
+are rejected; eight unsuccessful mapped trials fall back to QF updates. These
+controls have not qualified as production improvements; see the
+[Newton update execution report](validation/templates_ldmos_newton_update_execution_2026-09-15.md).
+The mass-matrix controls and coefficient-isolation findings are recorded in the
+[pseudo-transient validation report](validation/templates_ldmos_pseudo_transient_2026-09-15.md).
+
 `diagnostic_voltage_update_limit_V` is a positive finite point-input value,
 default `0.2`. It bounds voltage corrections in the original global damping;
-the temperature bound remains 30 K. Active density-coordinate carriers instead
-use the density positivity bound. This is a numerical update limit, separate
+the temperature bound remains 30 K. Legacy density-coordinate carriers instead
+use the global density positivity bound; the explicit local projection variants
+project each free carrier independently. This is a numerical update limit, separate
 from both the outer drain-bias step and the convergence tolerances. Increasing
 it has not improved the tested LDMOS representative-point totals.
 

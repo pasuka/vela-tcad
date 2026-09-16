@@ -71,8 +71,17 @@ std::pair<Real,Real> ElectrothermalAssembler::neutralPotential(Index node,Real b
 }
 
 ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
-    const ElectrothermalBoundary& bc,const VectorXd& eReference,const VectorXd& hReference,bool buildJacobian,bool skipEquilibriumTransport) const {
+    const ElectrothermalBoundary& bc,const VectorXd& eReference,const VectorXd& hReference,bool buildJacobian,bool skipEquilibriumTransport,
+    bool diagnosticFreezeMobilityDerivatives,bool diagnosticFreezeRecombinationDerivatives,
+    std::vector<ElectrothermalHoleRowAudit>* holeRowAudit) const {
     const Index n=mesh_.numNodes();
+    std::map<Index,ElectrothermalHoleRowAudit*> audited;
+    if(holeRowAudit)for(auto& row:*holeRowAudit){
+        if(row.node>=n || geometry_.siliconArea_m2[row.node]<=0. || bc.holeQf_V.contains(row.node) ||
+           (bc.neutralContactBias_V.contains(row.node) && !bc.holeRecombination.contains(row.node)) || !audited.emplace(row.node,&row).second)
+            throw std::invalid_argument("Hole row audit requires distinct active silicon hole rows");
+        row.edges.clear();row.finiteContact=false;
+    }
     if(x.size()!=4*n || !x.allFinite())throw std::invalid_argument("Invalid electrothermal state");
     for(const auto* r:{&eReference,&hReference})
         if(r->size()!=0 && (r->size()!=n || !r->allFinite()))throw std::invalid_argument("Invalid electrothermal QF reference");
@@ -119,13 +128,16 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
         const Real qArea=constants::q*geometry_.siliconArea_m2[i];
         const Real sourceArea=constants::q*geometry_.recombinationArea_m2[i];
         const Real source=sourceArea*(p.srhRate_m3_per_s.value+p.augerRate_m3_per_s.value);
+        if(auto it=audited.find(i);it!=audited.end()){
+            auto& row=*it->second;row.state=states[i];row.properties=p;row.sourceAreaCharge=sourceArea;row.source=source;
+        }
         out.residual[4*i]-=qArea*(nh[i]-ne[i]+doping_.netDoping(i));
         out.recombination_A_per_m[i]=source;
         out.residual[4*i+1]-=source;out.residual[4*i+2]+=source;
         for(int k=0;k<4;++k){
             add(4*i,4*i+k,-qArea*(p.holes_m3.derivative[k]-p.electrons_m3.derivative[k]));
             const Real d=sourceArea*(p.srhRate_m3_per_s.derivative[k]+p.augerRate_m3_per_s.derivative[k]);
-            add(4*i+1,4*i+k,-d);add(4*i+2,4*i+k,d);
+            if(!diagnosticFreezeRecombinationDerivatives){add(4*i+1,4*i+k,-d);add(4*i+2,4*i+k,d);}
         }
     }
     // Only fully constrained, isothermal, flat-QF Poisson prebias has exactly
@@ -154,9 +166,11 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
             const Real mu=mobility_.model=="ialmob"?ialEdgeMobility(mobility_,edge.id,
                 electron?CarrierType::Electron:CarrierType::Hole):(electron?muE_:muH_);
             const auto current=thermalSgCurrent(states[a],pa,states[b],pb,mu,weight,electron);
+            if(!electron && !audited.empty())for(Index node:{a,b})if(auto it=audited.find(node);it!=audited.end())
+                it->second->edges.push_back({edge.id,a,b,states[a],states[b],pa,pb,mu,weight,current.current_A_per_m});
             currents[carrier]=current.current_A_per_m;auto& d=derivatives[carrier];
             if(buildJacobian)for(int k=0;k<4;++k){d[4*a+k]+=current.derivative[k];d[4*b+k]+=current.derivative[4+k];}
-            if(buildJacobian && mobility_.model=="ialmob")for(const auto& support:mobility_.ialmobGeometry->edges[edge.id]){
+            if(buildJacobian && !diagnosticFreezeMobilityDerivatives && mobility_.model=="ialmob")for(const auto& support:mobility_.ialmobGeometry->edges[edge.id]){
                 const auto& r=mobility_.ialmobState->cells[support.support];
                 const auto& cell=mesh_.getCell(mobility_.ialmobGeometry->cells[support.support].cellId);
                 const auto& md=electron?r.electron:r.hole;
@@ -226,6 +240,13 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
             // Positive hole loss is OUTWARD from the device; stored terminal
             // currents and UG Eq.103 use the contact-to-semiconductor direction.
             const Real outward=coefficient*excess;
+            if(auto it=audited.find(i);it!=audited.end()){
+                auto& row=*it->second;row.finiteContact=true;row.contactBias=bias;row.neutralPotential=potential;
+                row.neutralTemperatureDerivative=derivative;row.contactVt=vt;row.contactDelta=delta;
+                row.contactCoefficient=coefficient;row.contactOutward=outward;row.equilibriumNv=equilibrium.Nv_m3.value;
+                row.equilibriumEta=eta;row.equilibriumDensity=p0.value;
+                row.fermiDerivative=fermiDiracHalfDerivative(eta);row.fermiSecondDerivative=fermiDiracHalfSecondDerivative(eta);
+            }
             out.residual[4*i+2]+=outward;
             out.holeFluxAbs_A_per_m[i]+=std::abs(outward);
             out.holeOutflow_A_per_m[i]=-outward;
@@ -236,6 +257,7 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
         }
     }
     if(buildJacobian){out.jacobian.resize(4*n,4*n);out.jacobian.setFromTriplets(entries.begin(),entries.end());}
+    for(const auto& [node,row]:audited){row->residual=out.residual[4*node+2];row->fluxAbs=out.holeFluxAbs_A_per_m[node];}
     return out;
 }
 } // namespace vela

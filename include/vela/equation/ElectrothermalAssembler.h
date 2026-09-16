@@ -39,6 +39,24 @@ struct ElectrothermalAssembly {
     VectorXd electronFluxAbs_A_per_m, holeFluxAbs_A_per_m, recombination_A_per_m;
     Real latticeSource_W_per_m=0., boundaryHeat_W_per_m=0.;
 };
+/// Read-only decomposition of an active hole row, including finite contacts (SI).
+struct ElectrothermalHoleRowAudit {
+    Index node=0;
+    SiliconThermalState state;
+    SiliconThermalResult properties;
+    Real sourceAreaCharge=0.,source=0.,residual=0.,fluxAbs=0.;
+    bool finiteContact=false;
+    Real contactBias=0.,neutralPotential=0.,neutralTemperatureDerivative=0.,contactVt=0.,contactDelta=0.;
+    Real contactCoefficient=0.,contactOutward=0.,equilibriumNv=0.,equilibriumEta=0.,equilibriumDensity=0.;
+    Real fermiDerivative=0.,fermiSecondDerivative=0.;
+    struct Edge {
+        Index id=0,a=0,b=0;
+        SiliconThermalState sa,sb;
+        SiliconThermalResult pa,pb;
+        Real mobility=0.,weight=0.,current=0.;
+    };
+    std::vector<Edge> edges;
+};
 /// Experimental four-equation DD/lattice operator, with explicit silicon
 /// statistics and the same oriented edge current in continuity and heating.
 /// This does not change the qualified isothermal production solver.
@@ -49,10 +67,15 @@ public:
         MobilityModelConfig mobility_SI, SiliconThermalPhysics physics=SiliconThermalPhysics{},
         Real constantElectronMobility=.1, Real constantHoleMobility=.04,
         bool reusePhysicsPreparation=false,bool reuseIalScreening=false);
+    // The final two flags omit only coefficient derivatives for fixed-state
+    // direction audits; residuals, material values and contact laws are kept.
+    // They do not define a physical model or a qualified nonlinear Jacobian.
     ElectrothermalAssembly assemble(const VectorXd& state,
                                    const ElectrothermalBoundary& boundary,
         const VectorXd& electronQfReference_V={}, const VectorXd& holeQfReference_V={},
-        bool buildJacobian=true,bool skipEquilibriumTransport=false) const;
+        bool buildJacobian=true,bool skipEquilibriumTransport=false,
+        bool diagnosticFreezeMobilityDerivatives=false,bool diagnosticFreezeRecombinationDerivatives=false,
+        std::vector<ElectrothermalHoleRowAudit>* holeRowAudit=nullptr) const;
     /// psi and dpsi/dT for n-p=Nd-Na, fn=fp=bias.
     std::pair<Real,Real> neutralPotential(Index node, Real bias, Real temperature) const;
     /// Doping preparations, temperature preparations, exact preparation hits.

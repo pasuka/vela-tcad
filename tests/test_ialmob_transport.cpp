@@ -263,6 +263,37 @@ TEST_CASE("Four-equation operator couples live IALMob current and conservative h
         if(mode==2)bc.holeRecombination={{0,{1.93e4,1e-7}}};
 
         const auto base=coupled.assemble(x,bc);
+        std::vector<ElectrothermalHoleRowAudit> audit(1);audit[0].node=1;
+        const auto observed=coupled.assemble(x,bc,{},{},true,false,false,false,&audit);
+        CHECK((observed.residual.array()==base.residual.array()).all());
+        CHECK((Eigen::MatrixXd(observed.jacobian).array()==Eigen::MatrixXd(base.jacobian).array()).all());
+        Real sum=audit[0].source,absolute=0.;
+        for(const auto& e:audit[0].edges){sum+=(e.a==1?1.:-1.)*e.current;absolute+=std::abs(e.current);}
+        CHECK(sum==base.residual[6]);CHECK(absolute==base.holeFluxAbs_A_per_m[1]);
+        CHECK(audit[0].residual==sum);REQUIRE(!audit[0].edges.empty());
+        audit[0].node=6;CHECK_THROWS_AS(coupled.assemble(x,bc,{},{},false,false,false,false,&audit),std::invalid_argument);
+        if(mode==2){
+            audit[0].node=0;coupled.assemble(x,bc,{},{},false,false,false,false,&audit);
+            REQUIRE(audit[0].finiteContact);Real sum=audit[0].source,absolute=0.;
+            for(const auto& e:audit[0].edges){sum+=(e.a==0?1.:-1.)*e.current;absolute+=std::abs(e.current);}
+            sum+=audit[0].contactOutward;absolute+=std::abs(audit[0].contactOutward);
+            CHECK(sum==base.residual[2]);CHECK(absolute==base.holeFluxAbs_A_per_m[0]);
+        }
+        const auto frozenMu=coupled.assemble(x,bc,{},{},true,false,true,false);
+        const auto frozenRec=coupled.assemble(x,bc,{},{},true,false,false,true);
+        const auto frozenBoth=coupled.assemble(x,bc,{},{},true,false,true,true);
+        for(const auto* frozen:{&frozenMu,&frozenRec,&frozenBoth}) {
+            CHECK((frozen->residual.array()==base.residual.array()).all());
+            CHECK(frozen->latticeSource_W_per_m==base.latticeSource_W_per_m);
+        }
+        CHECK((base.jacobian-frozenMu.jacobian).norm()>0.);
+        CHECK((base.jacobian-frozenRec.jacobian).norm()>0.);
+        CHECK((base.jacobian-frozenMu.jacobian-frozenRec.jacobian+frozenBoth.jacobian).norm()<1e-12*base.jacobian.norm());
+        // Omitting a recombination derivative must not change Poisson/heat or
+        // any row replaced by a boundary condition. Full Jacobian FD checks
+        // below continue to use the complete operator.
+        for(int i=0;i<24;++i)if(i%4==0 || i%4==3 || (constrained && i<3 && !(mode==2 && i==2)))
+            for(int j=0;j<24;++j)CHECK(base.jacobian.coeff(i,j)==frozenRec.jacobian.coeff(i,j));
         VectorXd eRef(6),hRef(6),referenced=x;
         for(int i=0;i<6;++i){eRef[i]=x[4*i+1];hRef[i]=x[4*i+2];referenced[4*i+1]=0.;referenced[4*i+2]=0.;}
         const auto recentered=coupled.assemble(referenced,bc,eRef,hRef);
@@ -459,6 +490,22 @@ TEST_CASE("Finite Ohmic hole contact preserves equilibrium and sub-ULP exchange"
         for(int i=0;i<6;++i){x[4*i]=psi;x[4*i+3]=t;}
         const auto eq=coupled.assemble(x,bc,ref,ref);
         CHECK(eq.residual[2]==0.);CHECK(eq.holeOutflow_A_per_m[0]==0.);
+        // A finite contact must use its algebraic potential at the current
+        // temperature, not a root cached from the previous temperature. At
+        // equilibrium the constrained temperature direction also cancels the
+        // free-hole residual derivative. Repairing psi must not clamp fp.
+        auto heated=x;heated[3]=t+.01;
+        const auto target=coupled.neutralPotential(0,40.,heated[3]);
+        REQUIRE(target.first!=heated[0]);
+        const auto stale=coupled.assemble(heated,bc,ref,ref);
+        REQUIRE(stale.residual[0]!=0.);REQUIRE(stale.residual[2]!=0.);
+        heated[0]=target.first;
+        const auto consistent=coupled.assemble(heated,bc,ref,ref);
+        CHECK(consistent.residual[0]==0.);CHECK(consistent.residual[2]==0.);
+        CHECK(std::abs(consistent.jacobian.coeff(2,3)+consistent.jacobian.coeff(2,0)*target.second)
+            <1e-12*std::max(std::abs(consistent.jacobian.coeff(2,3)),1e-100));
+        heated[2]=1e-18;
+        CHECK(coupled.assemble(heated,bc,ref,ref).residual[2]!=0.);
         for(Real increment:{-1e-18,1e-18}){
             auto trial=x;trial[2]=increment;const auto a=coupled.assemble(trial,bc,ref,ref);
             REQUIRE(a.holeOutflow_A_per_m[0]!=0.);
