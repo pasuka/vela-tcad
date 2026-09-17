@@ -29,6 +29,8 @@ evidence.
 - [LDMOS current validation](validation/templates_ldmos_current_status.md):
   current qualification boundaries, configuration profiles and reproducible
   linked D4/D5 entry points.
+- [R9 UCRT64 first8 gprof, 2026-09-17](validation/templates_ldmos_gprof_r9_2026-09-17.md):
+  Vg8 Release control and cold/drain-only profiles; exact trajectories, IALMob/assembly hotspots and profiler limits.
 - [Safeguarded neutral-root Newton, 2026-09-16](validation/templates_ldmos_neutral_root_newton_2026-09-16.md):
   original-equation scalar root acceleration, finite-budget rounding guard and isolated representative controls.
 - [Newton and assembly cost controls, 2026-09-16](validation/templates_ldmos_newton_cost_2026-09-16.md):

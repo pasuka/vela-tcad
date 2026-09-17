@@ -1,8 +1,14 @@
 # Templates/LDMOS 当前验证状态
 
-更新：2026-09-16。当前工作分支 `codex/templates-ldmos-phase-a`。
+更新：2026-09-17。当前工作分支 `codex/templates-ldmos-phase-a`。
 
-## 当前总览（2026-09-16）
+## 当前总览（2026-09-17）
+
+最新 [R9 UCRT64 gprof 复核](templates_ldmos_gprof_r9_2026-09-17.md)：Vg8 从零
+漏压起前 8 个精确点全部通过；普通 Release 166.93 s（含初始化），漏压
+137 次更新，装配/分解占漏压尝试墙钟 61.35%/23.30%。完整及仅漏压插桩轨迹
+与对照逐值一致；IALMob 为主要可归因采样热点，另需关注跨点几何准备。
+gprof 部分调用计数归属异常，使用内部计数；本轮未修改求解策略或推荐配置。
 
 最新[带保护的局部标量 Newton 验证](templates_ldmos_neutral_root_newton_2026-09-16.md)：
 Windows 8 个代表点全部非计时输出逐值一致，平均密度评估 73→16.39 次/根，
