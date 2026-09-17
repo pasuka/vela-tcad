@@ -47,6 +47,8 @@ struct IalElementMobilityOptions {
     /// Opt-in reuse of identical high-field values/partials between the spatial
     /// and temperature passes of one element. Never reused across states.
     bool reuseThermalHighField = false;
+    bool explicitHighFieldPartials = false;
+    bool generatedLowFieldPartials = false;
     Real electronVelocityTemperatureExponent = .87, holeVelocityTemperatureExponent = .52;
     Real electronBetaTemperatureExponent = .66, holeBetaTemperatureExponent = .17;
     /// Non-owning optional preparation cache, valid for this evaluation only.

@@ -390,6 +390,8 @@ target_link_libraries(silicon_thermal_probe PRIVATE vela_core)
 
 add_executable(ialmob_probe src/tools/ialmob_probe.cpp)
 target_link_libraries(ialmob_probe PRIVATE vela_core)
+add_executable(ialmob_kernel_bench src/tools/ialmob_kernel_bench.cpp)
+target_link_libraries(ialmob_kernel_bench PRIVATE vela_core)
 add_executable(lattice_heat_probe src/tools/lattice_heat_probe.cpp)
 target_link_libraries(lattice_heat_probe PRIVATE vela_core)
 add_executable(ialmob_geometry_probe src/tools/ialmob_geometry_probe.cpp)

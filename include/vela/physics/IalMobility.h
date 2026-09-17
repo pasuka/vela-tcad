@@ -86,10 +86,10 @@ public:
     /// Local temperature is explicit; coupled electrical callers still supply 300 K.
     explicit IalMobility(IalMobilityParameters parameters, bool electron);
     IalMobilityResult evaluate(const IalMobilityState& state,IalScreeningCache* cache=nullptr,
-                              IalMobilityPreparationCache* preparation=nullptr) const;
+                              IalMobilityPreparationCache* preparation=nullptr,bool generated=false) const;
     IalMobilityDifferential evaluateWithDerivatives(const IalMobilityState& state,
                                                   IalScreeningCache* cache=nullptr,
-                                                  IalMobilityPreparationCache* preparation=nullptr) const;
+                                                  IalMobilityPreparationCache* preparation=nullptr,bool generated=false) const;
     static IalMobilityParameters siliconDefaults(bool electron);
     /// Closest cubic plane family, including sign/permutation symmetry.
     /// Input is a nonzero normal already transformed into crystal coordinates.

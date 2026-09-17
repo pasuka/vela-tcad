@@ -1,6 +1,7 @@
 #include "vela/physics/IalMobility.h"
 #include "vela/core/IalKernelProfiling.h"
 #include "vela/physics/detail/IalMobilityEvaluation.h"
+#include "vela/physics/detail/IalMobilityGenerated.h"
 #include "vela/core/PhysicsCallCounters.h"
 #include <algorithm>
 #include <cmath>
@@ -80,12 +81,14 @@ struct IalMobilityPreparationCache::Impl {
     };
     std::map<Key,ial_detail::Preparation<Real>,Less> scalar;
     std::map<Key,ial_detail::Preparation<ial_detail::Dual>,Less> differentiated;
+    std::map<Key,ial_detail::Preparation<Real>,Less> generatedScalar;
+    std::map<Key,ial_detail::Preparation<ial_detail::Dual>,Less> generatedDifferentiated;
     std::size_t hits=0;
 };
 IalMobilityPreparationCache::IalMobilityPreparationCache():impl_(std::make_unique<Impl>()) {}
 IalMobilityPreparationCache::~IalMobilityPreparationCache()=default;
 std::size_t IalMobilityPreparationCache::hits() const {return impl_->hits;}
-std::size_t IalMobilityPreparationCache::size() const {return impl_->scalar.size()+impl_->differentiated.size();}
+std::size_t IalMobilityPreparationCache::size() const {return impl_->scalar.size()+impl_->differentiated.size()+impl_->generatedScalar.size()+impl_->generatedDifferentiated.size();}
 
 Real IalScreeningCache::minimum(Real mass,Real temperature) {
     ++ialKernelProfile.screeningRequests;
@@ -132,11 +135,26 @@ IalMobility::IalMobility(IalMobilityParameters p, bool electron)
 }
 
 IalMobilityResult IalMobility::evaluate(const IalMobilityState& state,IalScreeningCache* cache,
-    IalMobilityPreparationCache* preparation) const
+    IalMobilityPreparationCache* preparation,bool generated) const
 {
     validateState(state);
     const auto minimum=[&]{return state.temperature_K==300.?pMin_:
         cache?cache->minimum(params_.mass,state.temperature_K):screeningMinimum(params_.mass,state.temperature_K);};
+    if(generated) {
+        const std::array<Real,7> input{state.donors_m3,state.acceptors_m3,state.electrons_m3,
+            state.holes_m3,state.normalField_V_per_m,state.interfaceDistance_m,state.temperature_K};
+        const auto make=[&]{return ial_detail::generatedPrepareValue(input,params_,electron_,minimum());};
+        const auto result=[&]{
+            if(!preparation)return ial_detail::generatedEvaluateValue(make(),state.normalField_V_per_m,params_);
+            const IalMobilityPreparationCache::Impl::Key key{this,{state.donors_m3,state.acceptors_m3,
+                state.electrons_m3,state.holes_m3,state.interfaceDistance_m,state.temperature_K}};
+            auto& entries=preparation->impl_->generatedScalar;auto found=entries.find(key);
+            if(found==entries.end())found=entries.emplace(key,make()).first;else ++preparation->impl_->hits;
+            return ial_detail::generatedEvaluateValue(found->second,state.normalField_V_per_m,params_);
+        }();
+        if(!std::isfinite(result[0])||result[0]<=0.)throw std::runtime_error("Generated IALMob produced invalid mobility");
+        return {result[0],result[1],result[2],result[3],result[4],result[5]};
+    }
     if(!preparation)return evaluatePrepared(state,minimum());
     const IalMobilityPreparationCache::Impl::Key key{this,{state.donors_m3,state.acceptors_m3,
         state.electrons_m3,state.holes_m3,state.interfaceDistance_m,state.temperature_K}};
@@ -161,7 +179,7 @@ IalMobilityResult IalMobility::evaluatePrepared(const IalMobilityState& state,Re
 }
 
 IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilityState& state,IalScreeningCache* cache,
-    IalMobilityPreparationCache* preparation) const
+    IalMobilityPreparationCache* preparation,bool generated) const
 {
     validateState(state);
     IalMobilityDifferential result;
@@ -180,6 +198,19 @@ IalMobilityDifferential IalMobility::evaluateWithDerivatives(const IalMobilitySt
         return ial_detail::prepare(variables,params_,electron_,minimum);
     };
     const auto differentiated=[&]{
+        if(generated){
+            const auto make=[&]{
+                const Real minimum=state.temperature_K==300.?pMin_:
+                    cache?cache->minimum(params_.mass,state.temperature_K):screeningMinimum(params_.mass,state.temperature_K);
+                return ial_detail::generatedPreparePartials(inputs,params_,electron_,minimum);
+            };
+            if(!preparation)return ial_detail::generatedEvaluatePartials(make(),state.normalField_V_per_m,params_);
+            const IalMobilityPreparationCache::Impl::Key key{this,{state.donors_m3,state.acceptors_m3,
+                state.electrons_m3,state.holes_m3,state.interfaceDistance_m,state.temperature_K}};
+            auto& entries=preparation->impl_->generatedDifferentiated;auto found=entries.find(key);
+            if(found==entries.end())found=entries.emplace(key,make()).first;else ++preparation->impl_->hits;
+            return ial_detail::generatedEvaluatePartials(found->second,state.normalField_V_per_m,params_);
+        }
         if(!preparation)return ial_detail::evaluatePrepared(prepare(),variables[4],params_);
         const IalMobilityPreparationCache::Impl::Key key{this,{state.donors_m3,state.acceptors_m3,
             state.electrons_m3,state.holes_m3,state.interfaceDistance_m,state.temperature_K}};

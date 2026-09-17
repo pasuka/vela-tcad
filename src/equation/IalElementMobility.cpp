@@ -121,10 +121,10 @@ static IalElementMobilityResult evaluateImpl(
             en.value,geometry.interfaceDistance_m[i],state[i].temperature_K};
         const auto low=[&](const IalMobility& model,int carrier) {
             if(!options.spatialDerivatives)return D(model.evaluate(local,options.screeningCache,
-                options.preparationCache).mobility_m2_per_Vs);
+                options.preparationCache,options.generatedLowFieldPartials).mobility_m2_per_Vs);
             auto& saved=localDifferentials[2*i+carrier];
             if(!thermalDirections || !options.reuseThermalLocalDifferentials)
-                saved=model.evaluateWithDerivatives(local,options.screeningCache,options.preparationCache);
+                saved=model.evaluateWithDerivatives(local,options.screeningCache,options.preparationCache,options.generatedLowFieldPartials);
             const auto& r=saved;
             D mu(r.result.mobility_m2_per_Vs);
             for (int k=0;k<9;++k)
@@ -142,10 +142,13 @@ static IalElementMobilityResult evaluateImpl(
             const D fieldP=fractionP*driveP+(D(1.)-fractionP)*parallel;
             if(options.temperatureDependentHighField){
                 const auto hot=[&](const D& mu,const D& field,const FieldMobilityParameters& base,Real ve,Real be,int carrier){
+                    const IalHighFieldParameters parameters{base.saturationVelocity,base.beta,ve,be};
+                    if(options.explicitHighFieldPartials && !options.spatialDerivatives)
+                        return D(evaluateIalHighFieldMobilityValue(mu.value,field.value,state[i].temperature_K,parameters));
                     auto& h=highFieldDifferentials[2*i+carrier];
                     if(!thermalDirections || !options.reuseThermalHighField)
-                        h=evaluateIalHighFieldMobility(mu.value,field.value,state[i].temperature_K,
-                            {base.saturationVelocity,base.beta,ve,be});
+                        h=(options.explicitHighFieldPartials?evaluateIalHighFieldMobilityExplicit:evaluateIalHighFieldMobility)
+                            (mu.value,field.value,state[i].temperature_K,parameters);
                     else ++ialKernelProfile.highFieldReuses;
                     D result(h.mobility_m2_per_Vs);
                     for(int k=0;k<9;++k)result.derivative[k]=h.lowFieldDerivative*mu.derivative[k]+

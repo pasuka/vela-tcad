@@ -22,4 +22,10 @@ struct IalHighFieldResult {
 /// At zero drive the selected drive slope is zero (a cusp if beta <= 1).
 IalHighFieldResult evaluateIalHighFieldMobility(Real lowField_m2_per_Vs,
     Real drivingField_V_per_m, Real temperature_K, const IalHighFieldParameters&);
+/// Independent explicit-partial candidate; reference AD entry above is retained.
+IalHighFieldResult evaluateIalHighFieldMobilityExplicit(Real lowField_m2_per_Vs,
+    Real drivingField_V_per_m, Real temperature_K, const IalHighFieldParameters&);
+/// Same candidate arithmetic without partial evaluation.
+Real evaluateIalHighFieldMobilityValue(Real lowField_m2_per_Vs,
+    Real drivingField_V_per_m, Real temperature_K, const IalHighFieldParameters&);
 } // namespace vela

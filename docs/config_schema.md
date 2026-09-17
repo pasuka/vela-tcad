@@ -121,6 +121,19 @@ screening cache requests/hits and local preparation hits/builds are also recorde
 These point-scoped counters include preparation and final outputs, whereas the
 existing solve-loop counters retain their narrower scope.
 
+`diagnostic_ialmob_explicit_high_field` and
+`diagnostic_ialmob_generated_low_field` (both default false) select independent
+experimental mobility kernels in the electrothermal point service. The first
+uses explicit high-field partials and a value-only residual path; the second
+uses offline SymPy-generated low-field values and seven SI partials. The original
+AD kernels remain the reference. Both switches participate in static preparation
+identity; generated and reference low-field caches are separate. They do not
+change the screening root, branch conventions, physical model or solver gates,
+and remain disabled in the R10 rollback profile. The explicitly selected,
+qualified R11 profile enables only the high-field switch; generated low-field
+remains an experimental candidate. See the
+[R11 qualification](validation/templates_ldmos_symbolic_full_2026-09-17.md).
+
 Preparation timing separates identity checking, mesh loading, input mapping,
 IALMob geometry and new assembler construction. `point_preparation_seconds` is
 inclusive; its components must not be added to it. Assembly seconds are split

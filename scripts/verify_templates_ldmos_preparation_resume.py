@@ -14,10 +14,12 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--matrix',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--reference',type=Path,help='Explicit completed curve; default is matrix/r0_vg8_combined')
     a=p.parse_args();matrix=a.matrix.resolve();out=a.output.resolve()
     summary=read(matrix/'summary.json');assert summary['status']=='complete'
     runner=matrix/'vela_example_runner';assert sha(runner)==summary['runner_sha256']
-    reference=matrix/'r0_vg8_combined';old=read(reference/'results/ledger.json')
+    reference=a.reference.resolve() if a.reference else matrix/'r0_vg8_combined';old=read(reference/'results/ledger.json')
+    assert old['status']=='complete' and len(old['exact_points'])==31
     out.mkdir(parents=True,exist_ok=False)
     cfg,deck=read(reference/'input.json'),read(reference/'deck.json')
     deck.update(input_file=str(out/'input.json'),output_directory=str(out/'results'),pause_after_attempts=3)

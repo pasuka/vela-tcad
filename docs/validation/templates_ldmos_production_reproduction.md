@@ -1,8 +1,8 @@
 # LDMOS production electrothermal reproduction
 
-This is the run guide for the frozen D0 production configurations. R10 preparation
-reuse is the recommended explicit profile; R9 remains its rollback and R7 remains
-the compatible exporter default. See the R10 section below.
+This is the run guide for the frozen D0 production configurations. R11 explicit
+high-field values/partials is the recommended explicit profile; R10 remains its
+rollback and R7 remains the compatible exporter default. See the R11 section below.
 The [current status](templates_ldmos_current_status.md), profile-specific
 evidence below and [frozen R7 evidence](templates_ldmos_production_electrothermal_2026-09-14.md#r7完成后的暂停记录)
 define their separate numerical and performance qualifications. The ordinary `dc_sweep`
@@ -100,7 +100,42 @@ was additionally exported and run through frozen Windows Release neutral
 initialization and the zero-bias point; this checks the generated file paths
 and service entry, not a new Windows full-curve performance qualification.
 
+## Recommended explicit R11 high-field profile
+
+[`d0_production_r11_explicit_hfs.json`](../../reference_tcad/templates_ldmos_sentaurus2022/thermal/d0_production_r11_explicit_hfs.json)
+adds `diagnostic_ialmob_explicit_high_field` to R10. Generated low-field kernels
+remain disabled. Physical models, gates and Newton policy are unchanged; the
+general C++ default remains off. R10 is retained below for rollback.
+
+The [full repeated qualification](templates_ldmos_symbolic_full_2026-09-17.md)
+completed two candidate/control rounds per gate, four native curves, actual
+pause/resume and an independent 62-point physical audit. Same-configuration
+non-timing trajectories match exactly across rounds. Four paired wall reductions
+were 6.754%–12.257%, with native wall ratios 0.752–0.837 and CPU ratios 1.302–1.488.
+Drain Newton counts were 344/303 versus R10's 344/302; the extra Vg8 update occurs
+in the 40 V round-off tail. This qualification does not claim fewer Newton steps.
+
+Extract the matching symbolic `evidence.tgz` under
+`extrapolation_20260915/symbolic_20260917/` and add the unchanged hash-checked
+`cases/data` dependencies. Both `full/` and `full_resume/` preserve the evidence,
+including the interrupted native run. The locally verified layout is:
+
+```powershell
+$env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
+python -X utf8 scripts/export_templates_ldmos_production.py --profile reference_tcad/templates_ldmos_sentaurus2022/thermal/d0_production_r11_explicit_hfs.json --evidence-root reference_staging/templates_ldmos_symbolic_vm_20260917/copied_vm --output build-release/reference_tcad/ldmos-r11
+build-release/vela_example_runner.exe --config build-release/reference_tcad/ldmos-r11/vg4.json
+build-release/vela_example_runner.exe --config build-release/reference_tcad/ldmos-r11/vg8.json
+```
+
+Build Release and verify actual UMFPACK support first. The real R11 export was
+checked against all frozen inputs with only declared path replacements. Export
+verification does not transfer the Linux timing qualification to Windows or a
+rebuilt binary. Native startup waits remain part of the external wall boundary;
+the lower wall ratio is not evidence of a faster Vela computational kernel.
+
 ## Recommended explicit R10 preparation-reuse profile
+
+Historical recommendation, retained as the R11 rollback configuration.
 
 [`d0_production_r10_preparation.json`](../../reference_tcad/templates_ldmos_sentaurus2022/thermal/d0_production_r10_preparation.json)
 adds sweep `reuse_static_preparation` and point `reuse_ialmob_thermal_high_field`

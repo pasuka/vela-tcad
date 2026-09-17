@@ -29,6 +29,13 @@ evidence.
 - [LDMOS current validation](validation/templates_ldmos_current_status.md):
   current qualification boundaries, configuration profiles and reproducible
   linked D4/D5 entry points.
+- [IALMob explicit and generated partials, 2026-09-17](validation/templates_ldmos_symbolic_partials_2026-09-17.md):
+  high-field analytic partials, branch-preserving low-field code generation,
+  independent AD/finite-difference checks and frozen-seed/curve controls; implementation-stage evidence.
+- [IALMob kernel costs and same-VM follow-up, 2026-09-17](validation/templates_ldmos_symbolic_vm_2026-09-17.md):
+  Release kernel microbenchmarks and deadline-protected full-curve controls; qualification tracked separately from R10.
+- [Explicit high-field full repeated qualification, 2026-09-17](validation/templates_ldmos_symbolic_full_2026-09-17.md):
+  recommended explicit R11 profile; 12 full curves, exact repeated trajectories, real restart and 62-point physical audit; R10 rollback.
 - [R9 UCRT64 first8 gprof, 2026-09-17](validation/templates_ldmos_gprof_r9_2026-09-17.md):
   Vg8 Release control and cold/drain-only profiles; exact trajectories, IALMob/assembly hotspots and profiler limits.
 - [R9 preparation and kernel follow-up, 2026-09-17](validation/templates_ldmos_preparation_followup_2026-09-17.md):
@@ -42,7 +49,7 @@ evidence.
 - [Newton and assembly cost controls, 2026-09-16](validation/templates_ldmos_newton_cost_2026-09-16.md):
   explicit R9 contact recommendation, exact neutral-root caching and failed local QF clipping controls.
 - [LDMOS production electrothermal reproduction](validation/templates_ldmos_production_reproduction.md):
-  recommended explicit R10 preparation profile, R9 rollback and compatible R7 export; Release UMFPACK execution and qualification limits.
+  recommended explicit R11 high-field profile, R10 rollback and compatible R7 export; Release UMFPACK execution and qualification limits.
 - [Extrapolation and continuation research, 2026-09-15](validation/vela_extrapolation_solver_research_2026-09-15.md):
   primary papers and open-source algorithms, with proposed R7/R8 predictor and Newton experiments.
 - [Extrapolation A–E execution, 2026-09-15](validation/templates_ldmos_extrapolation_execution_2026-09-15.md):

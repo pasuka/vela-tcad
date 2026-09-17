@@ -49,7 +49,8 @@ std::string preparationIdentity(const json& cfg) {
     for(const auto* name:{"mesh_file","coordinate_to_metres","region_conductivity","thermodes",
         "silicon_area_m2","recombination_area_m2","fixed_charge_C_per_m","edge_geometry",
         "donors_m3","acceptors_m3","mobility_SI","reuse_ialmob_local_preparation",
-        "residual_ialmob_values_only","reuse_ialmob_thermal_high_field"})if(cfg.contains(name))key[name]=cfg.at(name);
+        "residual_ialmob_values_only","reuse_ialmob_thermal_high_field",
+        "diagnostic_ialmob_explicit_high_field","diagnostic_ialmob_generated_low_field"})if(cfg.contains(name))key[name]=cfg.at(name);
     // Compare complete bytes, not timestamps or a hash with possible collisions.
     // Mesh bytes include contacts; mobility JSON includes crystal axes and units.
     key["mesh_source_bytes"]=sourceBytes(cfg.at("mesh_file"));
@@ -119,6 +120,8 @@ struct vela::ElectrothermalPreparationContext::Impl {
             options->element.reuseLocalPreparation=cfg.value("reuse_ialmob_local_preparation",false);
             options->element.residualValuesOnly=cfg.value("residual_ialmob_values_only",false);
             options->element.reuseThermalHighField=cfg.value("reuse_ialmob_thermal_high_field",false);
+            options->element.explicitHighFieldPartials=cfg.value("diagnostic_ialmob_explicit_high_field",false);
+            options->element.generatedLowFieldPartials=cfg.value("diagnostic_ialmob_generated_low_field",false);
             mobility.ialmob=std::move(options);
         }
         mobility.internalLengthToM=lengthFactor;

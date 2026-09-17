@@ -298,6 +298,16 @@ TEST_CASE("Four-equation operator couples live IALMob current and conservative h
         auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
         options->element.reuseThermalHighField=true;f.mobility.ialmob=options;
     }
+    SECTION("Explicit high-field partials preserve the full coupled Jacobian"){
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        options->element.reuseThermalHighField=true;options->element.explicitHighFieldPartials=true;
+        f.mobility.ialmob=options;
+    }
+    SECTION("Generated low-field and explicit high-field preserve the coupled Jacobian"){
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        options->element.reuseThermalHighField=true;options->element.explicitHighFieldPartials=true;
+        options->element.generatedLowFieldPartials=true;f.mobility.ialmob=options;
+    }
     LatticeConductivity law;law.model=LatticeConductivity::Model::InverseQuadratic;
     law.numerator=100.;law.denominator={-.0393,.00155,1.82e-6};
     LatticeHeatAssembler heat(f.mesh,1.,{{0,law},{1,law}},{{{0,1},300.,2e6}});
