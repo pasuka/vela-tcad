@@ -12,6 +12,7 @@
 #include "vela/io/MeshReader.h"
 #include <Eigen/SparseLU>
 #include "vela/core/PhysicsCallCounters.h"
+#include "vela/core/IalKernelProfiling.h"
 #include "vela/physics/CarrierStatistics.h"
 #include <chrono>
 #include "vela/solver/NewtonSolver.h"
@@ -34,9 +35,46 @@ VectorXd values(const json& a) {
 }
 std::vector<Real> list(const VectorXd& a) {return {a.data(),a.data()+a.size()};}
 }
-nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::ostream& progress) {
+namespace {
+using PreparationClock=std::chrono::steady_clock;
+std::string sourceBytes(const std::string& path) {
+    std::ifstream file(path,std::ios::binary);
+    if(!file)throw std::runtime_error("Cannot read preparation dependency: "+path);
+    std::string result((std::istreambuf_iterator<char>(file)),{});
+    if(file.bad())throw std::runtime_error("Failed reading preparation dependency: "+path);
+    return result;
+}
+std::string preparationIdentity(const json& cfg) {
+    json key=json::object();
+    for(const auto* name:{"mesh_file","coordinate_to_metres","region_conductivity","thermodes",
+        "silicon_area_m2","recombination_area_m2","fixed_charge_C_per_m","edge_geometry",
+        "donors_m3","acceptors_m3","mobility_SI","reuse_ialmob_local_preparation",
+        "residual_ialmob_values_only","reuse_ialmob_thermal_high_field"})if(cfg.contains(name))key[name]=cfg.at(name);
+    // Compare complete bytes, not timestamps or a hash with possible collisions.
+    // Mesh bytes include contacts; mobility JSON includes crystal axes and units.
+    key["mesh_source_bytes"]=sourceBytes(cfg.at("mesh_file"));
+    const auto& mobility=cfg.at("mobility_SI");
+    if(mobility.contains("ialmob"))
+        key["ialmob_source_bytes"]=sourceBytes(mobility.at("ialmob").at("geometry_file"));
+    return key.dump();
+}
+}
+struct vela::ElectrothermalPreparationContext::Impl {
+    using Clock=PreparationClock;
+    static double elapsed(Clock::time_point start) {return std::chrono::duration<double>(Clock::now()-start).count();}
+    std::string identity;
+    DeviceMesh mesh;
+    DopingModel doping{0};
+    VectorXd nd,na;
+    ElectrothermalGeometry geometry;
+    MobilityModelConfig mobility;
+    std::unique_ptr<LatticeHeatAssembler> heat;
+    double meshSeconds=0.,inputSeconds=0.,geometrySeconds=0.;
+    explicit Impl(const json& cfg) {
+        auto stage=Clock::now();
         JsonMeshReader reader;
-        auto mesh=reader.read(cfg.at("mesh_file").get<std::string>());
+        mesh=reader.read(cfg.at("mesh_file").get<std::string>());
+        meshSeconds=elapsed(stage);stage=Clock::now();
         std::map<Index,LatticeConductivity> laws;
         for (const auto& r:cfg.at("region_conductivity")) {
             LatticeConductivity law;
@@ -54,7 +92,6 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             edges.push_back({b.at("nodes").get<std::array<Index,2>>(),b.at("ambient_K"),b.at("conductance_W_per_m2_K")});
 
         const Real lengthFactor=cfg.at("coordinate_to_metres");
-        ElectrothermalGeometry geometry;
         geometry.siliconArea_m2=values(cfg.at("silicon_area_m2"));
         if(cfg.contains("recombination_area_m2"))geometry.recombinationArea_m2=values(cfg.at("recombination_area_m2"));
         geometry.fixedCharge_C_per_m=values(cfg.at("fixed_charge_C_per_m"));
@@ -73,21 +110,47 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             geometry.transportWeight[edge.id]=e.at("transport_weight");
             mesh.setTransportCouple(edge.id,geometry.transportWeight[edge.id]*edge.length);
         }
-        VectorXd nd=values(cfg.at("donors_m3")),na=values(cfg.at("acceptors_m3"));
+        nd=values(cfg.at("donors_m3"));na=values(cfg.at("acceptors_m3"));
         if(nd.size()!=mesh.numNodes() || na.size()!=mesh.numNodes())throw std::invalid_argument("Doping size mismatch");
-        DopingModel doping(mesh.numNodes());for(Index i=0;i<mesh.numNodes();++i)doping.setNodeDoping(i,nd[i],na[i]);
-        auto mobility=mobilityModelConfigFromJson(cfg.at("mobility_SI"));
+        doping=DopingModel(mesh.numNodes());for(Index i=0;i<mesh.numNodes();++i)doping.setNodeDoping(i,nd[i],na[i]);
+        mobility=mobilityModelConfigFromJson(cfg.at("mobility_SI"));
         if(mobility.ialmob){
             auto options=std::make_shared<IalTransportOptions>(*mobility.ialmob);
             options->element.reuseLocalPreparation=cfg.value("reuse_ialmob_local_preparation",false);
             options->element.residualValuesOnly=cfg.value("residual_ialmob_values_only",false);
+            options->element.reuseThermalHighField=cfg.value("reuse_ialmob_thermal_high_field",false);
             mobility.ialmob=std::move(options);
         }
         mobility.internalLengthToM=lengthFactor;
-        LatticeHeatAssembler heat(mesh,lengthFactor,laws,edges);
+        heat=std::make_unique<LatticeHeatAssembler>(mesh,lengthFactor,laws,edges);
+        inputSeconds=elapsed(stage);stage=Clock::now();
+        prepareIalTransportGeometry(mobility,mesh);
+        geometrySeconds=elapsed(stage);
+    }
+};
+nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::ostream& progress,
+    ElectrothermalPreparationContext* context) {
+        IalKernelProfilingScope ialProfileScope(cfg.value("diagnostic_ialmob_kernel_timing",false));
+        const auto preparationStart=PreparationClock::now();
+        using Preparation=ElectrothermalPreparationContext::Impl;
+        const auto keyStart=PreparationClock::now();
+        std::string identity=context?preparationIdentity(cfg):std::string{};
+        const double preparationKeySeconds=Preparation::elapsed(keyStart);
+        const bool preparationHit=context && context->prepared_ && context->prepared_->identity==identity;
+        auto prepared=preparationHit?context->prepared_:std::make_shared<Preparation>(cfg);
+        if(context && !preparationHit) {
+            if(preparationIdentity(cfg)!=identity)throw std::runtime_error("Preparation inputs changed during construction");
+            prepared->identity=std::move(identity);context->prepared_=prepared;
+        }
+        const auto& mesh=prepared->mesh;const auto& doping=prepared->doping;
+        const auto& nd=prepared->nd;const auto& na=prepared->na;
+        const auto& heat=*prepared->heat;
+        const auto assemblerStart=PreparationClock::now();
         SiliconThermalParameters siliconParameters;
         siliconParameters.augerWithGeneration=cfg.value("auger_with_generation",false);
-        ElectrothermalAssembler assembler(mesh,doping,std::move(geometry),heat,mobility,SiliconThermalPhysics(siliconParameters),.1,.04,cfg.value("reuse_physics_preparation",false),cfg.value("reuse_ialmob_screening",false),cfg.value("reuse_neutral_contact_roots",false),cfg.value("diagnostic_neutral_root_newton",false));
+        ElectrothermalAssembler assembler(mesh,doping,prepared->geometry,heat,prepared->mobility,SiliconThermalPhysics(siliconParameters),.1,.04,cfg.value("reuse_physics_preparation",false),cfg.value("reuse_ialmob_screening",false),cfg.value("reuse_neutral_contact_roots",false),cfg.value("diagnostic_neutral_root_newton",false));
+        const double assemblerPreparationSeconds=Preparation::elapsed(assemblerStart);
+        const double pointPreparationSeconds=Preparation::elapsed(preparationStart);
         ElectrothermalBoundary bc;
         for(const auto& b:cfg.at("boundaries")){
             const Index node=b.at("node");const std::string kind=b.at("kind");const Real value=b.at("value");
@@ -219,14 +282,17 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
         using Clock=std::chrono::steady_clock;
         const auto seconds=[](Clock::time_point start){return std::chrono::duration<double>(Clock::now()-start).count();};
         Real assemblySeconds=0.,factorizationSeconds=0.,solveSeconds=0.;
+        Real fullAssemblySeconds=0.,residualAssemblySeconds=0.;
         unsigned assemblyCalls=0,factorizations=0,residualOnlyCalls=0;
         const auto countersBefore=physicsCallCounters;
         const auto assemble=[&](const VectorXd& state,bool buildJacobian=true){
             const auto start=Clock::now();++assemblyCalls;if(!buildJacobian)++residualOnlyCalls;
             try{auto result=assembler.assemble(state,bc,eReference,hReference,buildJacobian,
                     solveMode=="poisson" && cfg.value("skip_equilibrium_poisson_transport",false));
-                assemblySeconds+=seconds(start);return result;}
-            catch(...){assemblySeconds+=seconds(start);throw;}
+                const Real elapsed=seconds(start);assemblySeconds+=elapsed;
+                (buildJacobian?fullAssemblySeconds:residualAssemblySeconds)+=elapsed;return result;}
+            catch(...){const Real elapsed=seconds(start);assemblySeconds+=elapsed;
+                (buildJacobian?fullAssemblySeconds:residualAssemblySeconds)+=elapsed;throw;}
         };
         auto a=assemble(x);
         json predictorCandidates=cfg.value("diagnostic_predictor_candidates",json::array());
@@ -747,6 +813,8 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
                 if(densityAttempt && trial==8){alpha=globalAlpha;densityFallback=true;}
                 ++trials;Real nextAlpha=.5*alpha;
                 VectorXd candidate=x+alpha*(localQfLimiter?trialDirection:direction);
+                const auto trialStart=iterationTrace?Clock::now():Clock::time_point{};
+                bool candidateJacobian=false;
                 // Such a candidate must be reassembled after reference changes
                 // before the next Newton solve. Its merit needs residuals only.
                 try{
@@ -775,7 +843,8 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
                         {"max_relative_correction",maximumViolation},{"charge_correction_abs_C_per_m",projectionCharge},
                         {"poisson_residual_l1_C_per_m",poissonResidualL1},
                         {"charge_ratio",poissonResidualL1>0.?json((projectionCharge[0]+projectionCharge[1])/poissonResidualL1):json(nullptr)}});
-                    auto next=assemble(candidate,!adaptiveJacobian && !(deferJacobian && willRecenter(candidate)));
+                    candidateJacobian=!adaptiveJacobian && !(deferJacobian && willRecenter(candidate));
+                    auto next=assemble(candidate,candidateJacobian);
                     bool acceptable=merit(next)<before || (before<1e-9 && merit(next)<1e-9 && rowGate(next).maxRatio<rowGate(a).maxRatio);
                     if(defectStep && before>=1e-9) {
                         const auto started=Clock::now();++defectEvaluations;
@@ -811,8 +880,14 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
                         naturalTrials.push_back({{"alpha",alpha},{"theta",check.theta},{"accepted",acceptable},
                             {"merit",merit(next)},{"projected",projectedElectrons+projectedHoles>0}});
                     }
+                    if(iterationTrace)trace["line_search_candidates"].push_back({{"trial",trial+1},
+                        {"alpha",alpha},{"merit",merit(next)},{"accepted",acceptable},
+                        {"built_jacobian",candidateJacobian},{"trial_seconds",seconds(trialStart)}});
                     if(acceptable){x=candidate;a=std::move(next);accepted=true;break;}}
                 catch(const std::exception& error){
+                    if(iterationTrace)trace["line_search_candidates"].push_back({{"trial",trial+1},
+                        {"alpha",alpha},{"accepted",false},{"exception",error.what()},
+                        {"built_jacobian",candidateJacobian},{"trial_seconds",seconds(trialStart)}});
                     if(projectionStep || naturalDamping || defectStep)trialFailures.push_back({{"trial",trial+1},{"alpha",alpha},{"reason",error.what()}});
                 }
                 alpha=nextAlpha;
@@ -1016,6 +1091,7 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
         if(profiling)result["performance"]={
             {"scope","Point solver stages including enabled predictor/recovery work; factorization includes symbolic analysis; nested preparation timers overlap these stages"},
             {"assembly_seconds",assemblySeconds},{"assembly_calls",assemblyCalls},
+            {"full_assembly_seconds",fullAssemblySeconds},{"residual_assembly_seconds",residualAssemblySeconds},
             {"residual_only_calls",residualOnlyCalls},
             {"factorization_seconds",factorizationSeconds},{"factorizations",factorizations},
             {"linear_solve_seconds",solveSeconds},
@@ -1048,6 +1124,24 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             {"maximum_lag",2},{"scope","Reuse only after an accepted full step with residual ratio <=0.1; recentering forces refresh"}};
         if(naturalDamping)result["natural_damping"]={{"corrector_solves",naturalSolves},{"corrector_solve_seconds",naturalSolveSeconds},
             {"scope","NLEQ_ERR-type current-Jacobian corrector test, fixed scaling; original terminal gates retained"}};
+        if(profiling){
+            auto& perf=result["performance"];
+            perf["point_preparation_seconds"]=pointPreparationSeconds;
+            perf["preparation_key_seconds"]=preparationKeySeconds;
+            perf["preparation_mesh_seconds"]=preparationHit?0.:prepared->meshSeconds;
+            perf["preparation_input_seconds"]=preparationHit?0.:prepared->inputSeconds;
+            perf["preparation_ialmob_geometry_seconds"]=preparationHit?0.:prepared->geometrySeconds;
+            perf["preparation_assembler_seconds"]=assemblerPreparationSeconds;
+            perf["static_preparation_reused"]=preparationHit;
+            perf["ialmob_pass_calls"]=ialKernelProfile.passes;
+            perf["ialmob_pass_seconds"]=ialKernelProfile.seconds;
+            perf["ialmob_high_field_evaluations"]=ialKernelProfile.highFieldEvaluations;
+            perf["ialmob_high_field_reuses"]=ialKernelProfile.highFieldReuses;
+            perf["ialmob_screening_cache_requests"]=ialKernelProfile.screeningRequests;
+            perf["ialmob_screening_cache_hits"]=ialKernelProfile.screeningHits;
+            perf["ialmob_local_preparation_hits"]=ialKernelProfile.localPreparationHits;
+            perf["ialmob_local_preparation_builds"]=ialKernelProfile.localPreparationBuilds;
+        }
         if(profiling)result["performance"]["preparation_counts"]=assembler.preparationCounts();
         if(profiling)result["performance"]["neutral_root_counts"]=assembler.neutralRootCounts();
         if(profiling)result["performance"]["neutral_root_iteration_counts"]=assembler.neutralRootIterationCounts();

@@ -1,9 +1,9 @@
 # LDMOS production electrothermal reproduction
 
-This is the run guide for the frozen D0 production configurations. R9 contact
-consistency is now the recommended explicit profile; R7 remains the compatible
-exporter default and rollback baseline. See the R9 section below.
-The [current status](templates_ldmos_current_status.md), profile-specific R9
+This is the run guide for the frozen D0 production configurations. R10 preparation
+reuse is the recommended explicit profile; R9 remains its rollback and R7 remains
+the compatible exporter default. See the R10 section below.
+The [current status](templates_ldmos_current_status.md), profile-specific
 evidence below and [frozen R7 evidence](templates_ldmos_production_electrothermal_2026-09-14.md#r7完成后的暂停记录)
 define their separate numerical and performance qualifications. The ordinary `dc_sweep`
 entry remains isothermal.
@@ -100,7 +100,43 @@ was additionally exported and run through frozen Windows Release neutral
 initialization and the zero-bias point; this checks the generated file paths
 and service entry, not a new Windows full-curve performance qualification.
 
+## Recommended explicit R10 preparation-reuse profile
+
+[`d0_production_r10_preparation.json`](../../reference_tcad/templates_ldmos_sentaurus2022/thermal/d0_production_r10_preparation.json)
+adds sweep `reuse_static_preparation` and point `reuse_ialmob_thermal_high_field`
+to R9. The physical model, Newton policy, exact biases and original gates remain
+unchanged. Both general C++ defaults stay off. R9 is retained below for rollback.
+
+The [same-VM full study](templates_ldmos_preparation_full_2026-09-17.md) completed
+two independent 62-point candidate rounds, their R9 controls and four native
+curves, plus actual pause/resume. Every non-timing Vela trajectory matches frozen
+R9 exactly. All original electrical/thermal and 2% density RMS / 30 meV band-edge
+gates passed on all 62 points. The four paired wall reductions were 16.18%,
+13.64%, 31.64% and 16.19%; candidate/native wall ratios were 0.637–1.015, below
+the 1.5 limit. CPU ratios were 1.058–1.686 and drain Newton remained 344/302.
+Absolute timing varied; these two rounds do not establish a universal speedup.
+
+Extract the profile's matching `evidence.tgz` under
+`extrapolation_20260915/preparation_20260917/` in a new evidence root and add
+the hash-checked `cases/data` dependencies from the R7 archive. The already
+verified local layout is used below. Exporting checks the six required input
+hashes, but a new platform or rebuilt runner needs its own validation.
+
+```powershell
+$env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
+python -X utf8 scripts/export_templates_ldmos_production.py --profile reference_tcad/templates_ldmos_sentaurus2022/thermal/d0_production_r10_preparation.json --evidence-root reference_staging/templates_ldmos_preparation_vm_20260917/copied_vm --output build-release/reference_tcad/ldmos-r10
+build-release/vela_example_runner.exe --config build-release/reference_tcad/ldmos-r10/vg4.json
+build-release/vela_example_runner.exe --config build-release/reference_tcad/ldmos-r10/vg8.json
+```
+
+Build the Release runner and verify UMFPACK as described above before execution.
+The real R10 export was checked against the frozen inputs: only declared paths
+change, both reuse controls stay enabled and both decks retain all 31 exact biases.
+The Linux performance qualification does not transfer to these Windows commands.
+
 ## Recommended explicit R9 contact-consistency profile
+
+Historical recommendation, retained as the R10 rollback configuration.
 
 [`d0_production_r9_contact.json`](../../reference_tcad/templates_ldmos_sentaurus2022/thermal/d0_production_r9_contact.json)
 freezes the actual qualified contact-repair inputs and decks, without generating

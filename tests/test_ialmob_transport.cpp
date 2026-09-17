@@ -1,4 +1,7 @@
 #include "vela/equation/ElectrothermalAssembler.h"
+#include "vela/simulation/ElectrothermalSimulation.h"
+#include "vela/core/IalKernelProfiling.h"
+#include <sstream>
 #include "vela/solver/ElectrothermalTangent.h"
 #include <Eigen/SparseLU>
 #include <catch2/catch_test_macros.hpp>
@@ -14,6 +17,46 @@
 #include <chrono>
 
 using namespace vela;
+TEST_CASE("Sweep preparation observes exact sources and never caches carrier state", "[electrothermal][preparation_context]") {
+    using J=nlohmann::json;
+    const auto path=std::filesystem::temp_directory_path()/
+        ("vela_preparation_"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())+".json");
+    struct Cleanup {std::filesystem::path p;~Cleanup(){std::error_code e;std::filesystem::remove(p,e);}} cleanup{path};
+    J mesh={{"regions",J::array({{{"id",0},{"name","silicon"},{"material","Silicon"},{"cell_ids",{0,1}}}})},
+        {"nodes",J::array()},{"triangles",J::array({{{"id",0},{"region_id",0},{"node_ids",{0,1,2}}},
+            {{"id",1},{"region_id",0},{"node_ids",{0,2,3}}}})},{"contacts",J::array()}};
+    for(int i=0;i<4;++i){mesh["nodes"].push_back({{"id",i},{"x",i==1||i==2?1.:0.},{"y",i>=2?1.:0.}});
+        mesh["contacts"].push_back({{"id",i},{"region_id",0},{"name",std::array{"source","drain","substrate","gate"}[i]},{"node_ids",{i}}});}
+    const auto write=[&](){std::ofstream f(path);f<<mesh.dump();};write();
+    J cfg={{"mesh_file",path.string()},{"coordinate_to_metres",1.},
+        {"region_conductivity",J::array({{{"region_id",0},{"model","constant"},{"value_W_per_m_K",1.}}})},
+        {"thermodes",J::array()},{"silicon_area_m2",{1./3,1./6,1./3,1./6}},
+        {"fixed_charge_C_per_m",{0.,0.,0.,0.}},{"donors_m3",{0.,0.,0.,0.}},{"acceptors_m3",{0.,0.,0.,0.}},
+        {"mobility_SI",{{"model","constant"}}},{"boundaries",J::array()},
+        {"state_interleaved",J::array()},{"edge_geometry",J::array()},
+        {"performance_profiling",true},{"diagnostic_newton_max_iterations",0}};
+    for(int i=0;i<4;++i)for(int k=0;k<4;++k){const double v=k==3?300.:0.;cfg["state_interleaved"].push_back(v);
+        cfg["boundaries"].push_back({{"node",i},{"kind",std::array{"psi","fn","fp","temperature"}[k]},{"value",v}});}
+    for(auto e:std::array<std::array<int,2>,5>{{{0,1},{1,2},{0,2},{2,3},{0,3}}})
+        cfg["edge_geometry"].push_back({{"nodes",e},{"poisson_F_per_m",1e-10},{"transport_weight",0.}});
+    ElectrothermalPreparationContext context;std::ostringstream log;
+    const auto compare=[&](bool hit){
+        auto actual=solveElectrothermalPoint(cfg,log,&context),expected=solveElectrothermalPoint(cfg,log);
+        CHECK(actual["performance"]["static_preparation_reused"]==hit);
+        actual.erase("performance");expected.erase("performance");CHECK(actual==expected);
+    };
+    compare(false);compare(true);
+    cfg["state_interleaved"][3]=350.;cfg["boundaries"][0]["value"]=.1;compare(true);
+    cfg["donors_m3"][0]=1e20;compare(false);compare(true);
+    cfg["coordinate_to_metres"]=2.;compare(false);
+    cfg["edge_geometry"][0]["poisson_F_per_m"]=2e-10;compare(false);
+    // Same path, byte count and timestamp: a metadata-only cache would be stale.
+    const auto stamp=std::filesystem::last_write_time(path);const auto size=std::filesystem::file_size(path);
+    mesh["nodes"][1]["x"]=2.;write();std::filesystem::last_write_time(path,stamp);
+    REQUIRE(std::filesystem::file_size(path)==size);compare(false);compare(true);
+    {std::ofstream f(path);f<<"bad mesh";}
+    CHECK_THROWS(solveElectrothermalPoint(cfg,log,&context));write();compare(true);
+}
 namespace {
 struct Fixture {
     DeviceMesh mesh;MaterialDatabase materials;DopingModel doping{6};
@@ -251,6 +294,10 @@ TEST_CASE("Four-equation operator couples live IALMob current and conservative h
         for(int i=0;i<6;++i)g.siliconArea_m2[i]*=1.+.2*i;
         for(const auto& edge:f.mesh.edges())g.poissonEdge_F_per_m[edge.id]*=1.+.1*edge.id;
     }
+    SECTION("Reused thermal high-field partials preserve the full coupled Jacobian"){
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        options->element.reuseThermalHighField=true;f.mobility.ialmob=options;
+    }
     LatticeConductivity law;law.model=LatticeConductivity::Model::InverseQuadratic;
     law.numerator=100.;law.denominator={-.0393,.00155,1.82e-6};
     LatticeHeatAssembler heat(f.mesh,1.,{{0,law},{1,law}},{{{0,1},300.,2e6}});
@@ -334,6 +381,11 @@ TEST_CASE("Electrothermal preparation reuse refreshes temperature and doping wit
         options->element.reuseLocalPreparation=true;options->element.residualValuesOnly=true;
         fastMobility.ialmob=options;
     }
+    SECTION("High-field work reused only within one element state"){
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        options->element.reuseLocalPreparation=true;options->element.residualValuesOnly=true;
+        options->element.reuseThermalHighField=true;fastMobility.ialmob=options;
+    }
     g.siliconArea_m2=VectorXd::Zero(6);g.fixedCharge_C_per_m=VectorXd::Zero(6);
     g.poissonEdge_F_per_m=VectorXd::Zero(f.mesh.numEdges());g.transportWeight=g.poissonEdge_F_per_m;
     for(const auto& cell:f.mesh.cells())if(cell.region_id==0)for(Index i:cell.node_ids)g.siliconArea_m2[i]+=1e-14/6.;
@@ -348,7 +400,14 @@ TEST_CASE("Electrothermal preparation reuse refreshes temperature and doping wit
     VectorXd x(24);
     for(Real temperature:{300.,401.,401.,299.,514.}){
         for(int i=0;i<6;++i){x[4*i]=.48+.012*i;x[4*i+1]=.003*i;x[4*i+2]=.96-.002*i;x[4*i+3]=temperature+3.*i;}
-        const auto a=plain.assemble(x,bc),b=cached.assemble(x,bc);
+        IalKernelProfilingScope profile(true);
+        const auto a=plain.assemble(x,bc);const auto beforeWork=ialKernelProfile;
+        const auto b=cached.assemble(x,bc);const auto afterWork=ialKernelProfile;
+        if(fastMobility.ialmob->element.reuseThermalHighField && afterWork.passes[1]>beforeWork.passes[1]) {
+            CHECK(afterWork.highFieldReuses>beforeWork.highFieldReuses);
+            CHECK(afterWork.highFieldEvaluations-beforeWork.highFieldEvaluations<beforeWork.highFieldEvaluations);
+            CHECK(afterWork.seconds[2]>beforeWork.seconds[2]);
+        }
         const auto residualOnly=cached.assemble(x,bc,{},{},false);
         CHECK(residualOnly.jacobian.rows()==0);
         CHECK((b.residual-residualOnly.residual).norm()==0.);

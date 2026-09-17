@@ -10,6 +10,14 @@ import tempfile
 import unittest
 
 
+def without_trial_timing(value):
+    if isinstance(value,dict):
+        return {k:without_trial_timing(v) for k,v in value.items() if k!='trial_seconds'}
+    if isinstance(value,list):
+        return [without_trial_timing(v) for v in value]
+    return value
+
+
 @unittest.skipUnless(os.environ.get('VELA_RUNNER'), 'Matching build runner required')
 class ElectrothermalRunnerTest(unittest.TestCase):
     def setUp(self):
@@ -75,6 +83,17 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.input['electrical_gate_solver']['carrier_row_convergence']['mode']='off';self.write('input.json',self.input)
         run=self.run_deck();self.assertNotEqual(run.returncode,0)
         self.assertFalse((self.root/'output').exists())
+    def test_static_preparation_is_fresh_on_resume_and_shared_after_failure(self):
+        self.deck['reuse_static_preparation']=True
+        self.input['performance_profiling']=True
+        self.write('input.json',self.input)
+        self.test_pause_then_failed_heat_gate_keeps_accepted_zero()
+        ledger=json.loads((self.root/'output/ledger.json').read_text())
+        self.assertGreater(len(ledger['runs']),2)
+        hits=[json.loads((Path(r['directory'])/'output.json').read_text())
+              ['performance']['static_preparation_reused'] for r in ledger['runs']]
+        self.assertEqual(hits[:2],[False,False])
+        self.assertTrue(all(hits[2:]))
     def test_voltage_update_limit_changes_path_but_preserves_converged_state(self):
         self.deck['sweep']['max_newton']=10
         for boundary in self.input['boundaries']:
@@ -112,6 +131,9 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             trace=b.pop('iteration_trace');self.assertEqual(a,b)
             self.assertEqual(len(trace['direction_maxima']),4)
             self.assertEqual(trace['direction_maxima'][0]['temperature_K'],300.)
+            self.assertEqual(len(trace['line_search_candidates']),b['line_search_trials'])
+            self.assertEqual(sum(x['accepted'] for x in trace['line_search_candidates']),int(b['accepted']))
+            self.assertTrue(all(x['trial_seconds']>=0 for x in trace['line_search_candidates']))
             for stage in ('before_gates','after_gates'):
                 self.assertEqual(len(trace[stage]['blocks']),3)
                 self.assertIn('eps_row',trace[stage]['row'])
@@ -432,7 +454,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
                 self.run_deck()
                 pair.append(json.loads((self.root/self.deck['output_directory']/'step_0000/output.json').read_text()))
             for key in ('history','state_interleaved','referenced_state_interleaved','residual','carrier_row_gate','newton_updates'):
-                self.assertEqual(pair[0][key],pair[1][key],key)
+                self.assertEqual(without_trial_timing(pair[0][key]),without_trial_timing(pair[1][key]),key)
             event=pair[1]['near_steady_contact_consistency']
             if amplitude==0.:
                 self.assertFalse(event['triggered'])
@@ -468,7 +490,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.assertGreater(event[0]['max_potential_change_V'],0.)
         for key in ('history','state_interleaved','referenced_state_interleaved','electron_qf_reference_V',
                     'hole_qf_reference_V','residual','carrier_row_gate','electrical_block_gates','diagnostic_stop'):
-            self.assertEqual(pair[0][key],pair[1][key],key)
+            self.assertEqual(without_trial_timing(pair[0][key]),without_trial_timing(pair[1][key]),key)
         self.assertEqual(pair[1]['performance']['assembly_calls'],pair[0]['performance']['assembly_calls']+1)
         self.assertEqual(pair[1]['performance']['factorizations'],pair[0]['performance']['factorizations'])
 
@@ -745,6 +767,30 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             trajectories.append(trajectory)
             cfg=json.loads((Path(ledger['runs'][0]['directory'])/'input.json').read_text())
             self.assertEqual(cfg['diagnostic_near_steady_contact_consistency'],enabled)
+        self.assertEqual(trajectories[0],trajectories[1])
+
+    def test_static_preparation_reuse_preserves_initialization_and_resume(self):
+        self.deck['initialization']=dict(mode='neutral_300K',gate_voltage_V=.1,max_newton=10)
+        self.input.update(skip_equilibrium_poisson_transport=True,performance_profiling=True,
+                          reuse_physics_preparation=True)
+        self.input['boundaries'][-4]['value']=.1
+        self.write('input.json',self.input)
+        trajectories=[]
+        for enabled in (False,True):
+            self.deck.update(reuse_static_preparation=enabled,output_directory='static_'+str(enabled),resume=False)
+            run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
+            ledger=json.loads((self.root/self.deck['output_directory']/'ledger.json').read_text())
+            paths=[Path(r['result']) for r in ledger['initialization_runs']]
+            paths += [Path(r['directory'])/'output.json' for r in ledger['runs']]
+            trajectory=[]
+            for i,path in enumerate(paths):
+                result=json.loads(path.read_text());perf=result.pop('performance')
+                self.assertEqual(perf['static_preparation_reused'],enabled and i>0)
+                trajectory.append(result)
+            trajectories.append(trajectory)
+            before=paths[-1].read_bytes();self.deck['resume']=True
+            run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
+            self.assertEqual(paths[-1].read_bytes(),before)
         self.assertEqual(trajectories[0],trajectories[1])
 
     def test_neutral_root_newton_preserves_initialization_and_reports_all_work(self):

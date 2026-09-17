@@ -2,6 +2,7 @@
 #include "vela/physics/IalInterfaceGeometry.h"
 #include "vela/physics/IalMobilityJson.h"
 #include "vela/core/PerformanceProfiler.h"
+#include "vela/core/IalKernelProfiling.h"
 #include <nlohmann/json.hpp>
 #include <filesystem>
 #include <fstream>
@@ -225,6 +226,8 @@ void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
     config.ialmobState=s;
     incrementPerformanceCounter("ialmob.local_preparation_hits",preparation.hits());
     incrementPerformanceCounter("ialmob.local_preparation_builds",preparation.size());
+    ialKernelProfile.localPreparationHits+=preparation.hits();
+    ialKernelProfile.localPreparationBuilds+=preparation.size();
 }
 Real ialEdgeMobility(const MobilityModelConfig& config,Index edge,CarrierType carrier,bool lowField) {
     if (!config.ialmobState) throw std::logic_error("IALMob edge requested without a live state");

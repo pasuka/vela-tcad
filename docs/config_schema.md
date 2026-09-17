@@ -69,6 +69,7 @@ provides a versioned, hash-checked input export and complete execution commands.
 | `initialization.max_newton` | Default100 for initialization/prebias point solves. |
 | `resume` | Reload an accepted checkpoint; reject changed input, mesh, sweep or initialization configuration. |
 | `pause_after_attempts` | Optional positive count for a controlled checkpoint pause during drain continuation. A file named `STOP` in the output directory also pauses between attempts. |
+| `reuse_static_preparation` | Default false. Retains immutable mesh, edge/volume mapping, doping, heat geometry and IALMob interface geometry across initialization and drain point services within this sweep. Exact serialized configuration and complete mesh/IALMob source bytes determine reuse, including units, crystal axes and contact geometry. Each point creates a new assembler and state caches; changed carrier state or temperature never reuses an old root or transport state. A resumed process creates a fresh context. |
 
 The prepared point input may explicitly set `diagnostic_ngmres_recovery: true`
 (default false). This experimental option allows one residual-space recovery
@@ -109,6 +110,22 @@ for residual-only candidates. A subsequent full Jacobian request rebuilds any
 incomplete cached state. Both require the IALMob path to have an effect; neither
 changes physical parameters, step selection or convergence criteria.
 
+`reuse_ialmob_thermal_high_field` (default false) reuses high-field mobility values
+and local partials between spatial and temperature directions of the same element
+evaluation. Temperature chain derivatives are still applied separately. It never
+shares high-field results between elements or states. `diagnostic_ialmob_kernel_timing`
+(default false) times value-only, spatial and temperature passes, in that order
+in `performance.ialmob_pass_seconds`; element clocks perturb timing, so use a
+separate run for this diagnosis. Pass counts, high-field evaluations/reuses,
+screening cache requests/hits and local preparation hits/builds are also recorded.
+These point-scoped counters include preparation and final outputs, whereas the
+existing solve-loop counters retain their narrower scope.
+
+Preparation timing separates identity checking, mesh loading, input mapping,
+IALMob geometry and new assembler construction. `point_preparation_seconds` is
+inclusive; its components must not be added to it. Assembly seconds are split
+into full-Jacobian and residual-only requests; nested IALMob timers overlap them.
+
 `electrothermal_linear_solver` selects `sparselu_colamd` (default),
 `sparselu_amd`, or `umfpack` for this four-equation service only. `umfpack`
 requires a build with detected SuiteSparse UMFPACK; unavailable or unknown
@@ -133,7 +150,7 @@ Additional prepared-point experimental controls, all disabled by default:
 
 | Field | Behavior |
 | --- | --- |
-| `diagnostic_iteration_trace` | Records before/after block and row gates, direction maxima, node temperatures, and local density changes. Does not participate in numerical decisions; `iteration_trace_seconds` reports its overhead. |
+| `diagnostic_iteration_trace` | Records before/after block and row gates, direction maxima, node temperatures, local density changes, and each ordinary line-search candidate's alpha, merit, acceptance, Jacobian request and inclusive trial time. Does not participate in numerical decisions; `iteration_trace_seconds` reports gate/direction diagnostic overhead. Trial durations include actual trial work and are not additional overhead. |
 | `diagnostic_density_projection` | `off` (default), `v1`, or `v2`. Coupled silicon carrier updates use per-node positive density targets with relative floor 0.01 and absolute floor `min(old_density,1e-250 m^-3)`. V1 applies throughout coupled iterations; V2 returns to QF updates when every active raw QF direction is below 0.01 local Vt. Poisson prebias remains unchanged. Unlike the earlier R8 window, these variants deliberately do not require a predictor or low bias. |
 | `diagnostic_natural_damping` | NLEQ_ERR-type corrector test using the existing LU and fixed scaling, with extra back-solves counted in `natural_damping`. Preserves the original near-floor behavior and terminal convergence gates; does not implement the full NLEQ_ERR predictor/corrector algorithm. |
 | `diagnostic_adaptive_jacobian` | Reuses a factorization for at most two updates following an accepted full step with residual ratio at most 0.1. QF recentering forces refresh; failed stale-Jacobian attempts retry fresh within the existing iteration budget. Candidate residuals are evaluated before preparing another Jacobian. |

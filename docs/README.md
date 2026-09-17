@@ -31,12 +31,18 @@ evidence.
   linked D4/D5 entry points.
 - [R9 UCRT64 first8 gprof, 2026-09-17](validation/templates_ldmos_gprof_r9_2026-09-17.md):
   Vg8 Release control and cold/drain-only profiles; exact trajectories, IALMob/assembly hotspots and profiler limits.
+- [R9 preparation and kernel follow-up, 2026-09-17](validation/templates_ldmos_preparation_followup_2026-09-17.md):
+  immutable preparation reuse, thermal high-field reuse controls and fixed-seed candidate-cost diagnosis.
+- [Preparation full VM repeat study, 2026-09-17](validation/templates_ldmos_preparation_full_2026-09-17.md):
+  qualified explicit R10 preparation profile; two full dual-gate rounds, native pairing and actual pause/resume.
+- [LDMOS work summary, 2026-09-16–17](validation/templates_ldmos_work_summary_2026-09-16_17.md):
+  daily-report material covering contact repair, root controls, hotspot profiling and R10 qualification.
 - [Safeguarded neutral-root Newton, 2026-09-16](validation/templates_ldmos_neutral_root_newton_2026-09-16.md):
   original-equation scalar root acceleration, finite-budget rounding guard and isolated representative controls.
 - [Newton and assembly cost controls, 2026-09-16](validation/templates_ldmos_newton_cost_2026-09-16.md):
   explicit R9 contact recommendation, exact neutral-root caching and failed local QF clipping controls.
 - [LDMOS production electrothermal reproduction](validation/templates_ldmos_production_reproduction.md):
-  recommended explicit R9 contact profile and compatible R7 export, Release UMFPACK execution, pause/resume and qualification limits.
+  recommended explicit R10 preparation profile, R9 rollback and compatible R7 export; Release UMFPACK execution and qualification limits.
 - [Extrapolation and continuation research, 2026-09-15](validation/vela_extrapolation_solver_research_2026-09-15.md):
   primary papers and open-source algorithms, with proposed R7/R8 predictor and Newton experiments.
 - [Extrapolation A–E execution, 2026-09-15](validation/templates_ldmos_extrapolation_execution_2026-09-15.md):

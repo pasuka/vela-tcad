@@ -1,4 +1,5 @@
 #include "vela/physics/IalHighFieldMobility.h"
+#include "vela/core/IalKernelProfiling.h"
 #include "vela/physics/detail/IalMobilityEvaluation.h"
 #include <cmath>
 #include <stdexcept>
@@ -7,6 +8,7 @@ namespace vela {
 IalHighFieldResult evaluateIalHighFieldMobility(Real low, Real field, Real temperature,
     const IalHighFieldParameters& p)
 {
+    ++ialKernelProfile.highFieldEvaluations;
     for (Real v : {low,p.saturationVelocity300_m_per_s,p.beta300})
         if (!std::isfinite(v)||v<=0.) throw std::invalid_argument("IALMob HFS requires positive scales");
     for (Real v : {p.saturationVelocityTemperatureExponent,p.betaTemperatureExponent})

@@ -189,6 +189,8 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
             {"input_file",inputPath.string()},{"sweep",control},{"initialization",initialization},{"status","running"},{"runs",json::array()},
             {"exact_points",json::array()},{"accepted_bias_V",0.},{"accepted_result",nullptr},{"next_step_V",step},{"wall_seconds",0.}};
     }
+    ElectrothermalPreparationContext preparation;
+    auto* preparationContext=deck.value("reuse_static_preparation",false)?&preparation:nullptr;
     const double priorWall=ledger.value("wall_seconds",0.);
     auto checkpoint=[&] {
         ledger["next_step_V"]=step;
@@ -224,7 +226,7 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
             else {for(const auto* key:stateKeys) cfg[key]=state.at(key);}
             std::ostringstream name;name<<"stage_"<<std::setw(4)<<std::setfill('0')<<initAttempt++;
             auto directory=initRoot/name.str();fs::create_directory(directory);save(directory/"input.json",cfg);
-            std::ofstream log(directory/"run.log");auto result=solveElectrothermalPoint(cfg,log);save(directory/"output.json",result);
+            std::ofstream log(directory/"run.log");auto result=solveElectrothermalPoint(cfg,log,preparationContext);save(directory/"output.json",result);
             auto acceptance=gate(result,0.);
             initRuns.push_back({{"gate_V",voltage},{"solve_mode",cfg["solve_mode"]},{"result",(directory/"output.json").string()},
                 {"gate",acceptance},{"newton_updates",result.at("newton_updates")}});
@@ -332,7 +334,7 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
         save(directory/"input.json",cfg);std::ofstream log(directory/"run.log");
         const auto solveStart=std::chrono::steady_clock::now();
         json result=json::object(),acceptance;int returncode=0;
-        try {result=solveElectrothermalPoint(cfg,log);save(directory/"output.json",result);acceptance=gate(result,target);}
+        try {result=solveElectrothermalPoint(cfg,log,preparationContext);save(directory/"output.json",result);acceptance=gate(result,target);}
         catch(const std::exception& e) {returncode=1;log<<e.what()<<'\n';acceptance={{"pass_gate",false},{"reasons",{"solver_error"}},{"message",e.what()}};}
         ledger["runs"].push_back({{"parent_bias_V",current},{"bias_V",target},{"directory",directory.string()},
             {"returncode",returncode},{"gate",acceptance},{"prediction",prediction},{"newton_updates",result.value("newton_updates",0)},

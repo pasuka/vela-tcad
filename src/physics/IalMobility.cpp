@@ -1,4 +1,5 @@
 #include "vela/physics/IalMobility.h"
+#include "vela/core/IalKernelProfiling.h"
 #include "vela/physics/detail/IalMobilityEvaluation.h"
 #include "vela/core/PhysicsCallCounters.h"
 #include <algorithm>
@@ -87,10 +88,11 @@ std::size_t IalMobilityPreparationCache::hits() const {return impl_->hits;}
 std::size_t IalMobilityPreparationCache::size() const {return impl_->scalar.size()+impl_->differentiated.size();}
 
 Real IalScreeningCache::minimum(Real mass,Real temperature) {
+    ++ialKernelProfile.screeningRequests;
     if(!std::isfinite(mass)||mass<=0.||!std::isfinite(temperature)||temperature<50.)
         throw std::invalid_argument("Invalid IALMob screening mass/temperature");
     const auto key=std::make_pair(mass,temperature);
-    if(const auto found=roots_.find(key);found!=roots_.end())return found->second;
+    if(const auto found=roots_.find(key);found!=roots_.end()){++ialKernelProfile.screeningHits;return found->second;}
     const Real result=screeningMinimum(mass,temperature);roots_.emplace(key,result);return result;
 }
 

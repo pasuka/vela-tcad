@@ -1,5 +1,7 @@
 #include "vela/equation/IalElementMobility.h"
 #include "vela/physics/IalHighFieldMobility.h"
+#include "vela/core/IalKernelProfiling.h"
+#include <chrono>
 #include <cmath>
 #include <stdexcept>
 
@@ -7,6 +9,14 @@ namespace vela {
 namespace {
 using D=detail::Tri3LocalForwardDual;
 using Vec=std::array<D,2>;
+struct PassTimer {
+    using Clock=std::chrono::steady_clock;
+    int phase;bool enabled;Clock::time_point start;
+    explicit PassTimer(int p):phase(p),enabled(ialKernelProfile.timingEnabled) {
+        ++ialKernelProfile.passes[phase];if(enabled)start=Clock::now();
+    }
+    ~PassTimer(){if(enabled)ialKernelProfile.seconds[phase]+=std::chrono::duration<double>(Clock::now()-start).count();}
+};
 D norm(const Vec& v) { return detail::dualSqrt(v[0]*v[0]+v[1]*v[1]); }
 D dot(const Vec& v, const std::array<Real,2>& g) { return v[0]*D(g[0])+v[1]*D(g[1]); }
 void nonnegative(Real v) {
@@ -27,8 +37,10 @@ static IalElementMobilityResult evaluateImpl(
     const std::array<const IalMobility*,3>& electronModels,
     const std::array<const IalMobility*,3>& holeModels,
     const IalElementMobilityOptions& options, bool thermalDirections,
-    std::array<IalMobilityDifferential,6>& localDifferentials)
+    std::array<IalMobilityDifferential,6>& localDifferentials,
+    std::array<IalHighFieldResult,6>& highFieldDifferentials)
 {
+    PassTimer timer(thermalDirections?2:options.spatialDerivatives?1:0);
     nonnegative(options.referenceDensity_m3);
     if(options.temperatureDerivatives && !options.spatialDerivatives)
         throw std::invalid_argument("IALMob values-only evaluation cannot request temperature columns");
@@ -129,16 +141,19 @@ static IalElementMobilityResult evaluateImpl(
             const D fieldN=fractionN*driveN+(D(1.)-fractionN)*parallel;
             const D fieldP=fractionP*driveP+(D(1.)-fractionP)*parallel;
             if(options.temperatureDependentHighField){
-                const auto hot=[&](const D& mu,const D& field,const FieldMobilityParameters& base,Real ve,Real be){
-                    const auto h=evaluateIalHighFieldMobility(mu.value,field.value,state[i].temperature_K,
-                        {base.saturationVelocity,base.beta,ve,be});
+                const auto hot=[&](const D& mu,const D& field,const FieldMobilityParameters& base,Real ve,Real be,int carrier){
+                    auto& h=highFieldDifferentials[2*i+carrier];
+                    if(!thermalDirections || !options.reuseThermalHighField)
+                        h=evaluateIalHighFieldMobility(mu.value,field.value,state[i].temperature_K,
+                            {base.saturationVelocity,base.beta,ve,be});
+                    else ++ialKernelProfile.highFieldReuses;
                     D result(h.mobility_m2_per_Vs);
                     for(int k=0;k<9;++k)result.derivative[k]=h.lowFieldDerivative*mu.derivative[k]+
                         h.drivingFieldDerivative_m3_per_V2s*field.derivative[k]+h.temperatureDerivative_m2_per_Vs_K*temperature[i].derivative[k];
                     return result;
                 };
-                finalN=hot(lowN,fieldN,options.electronField,options.electronVelocityTemperatureExponent,options.electronBetaTemperatureExponent);
-                finalP=hot(lowP,fieldP,options.holeField,options.holeVelocityTemperatureExponent,options.holeBetaTemperatureExponent);
+                finalN=hot(lowN,fieldN,options.electronField,options.electronVelocityTemperatureExponent,options.electronBetaTemperatureExponent,0);
+                finalP=hot(lowP,fieldP,options.holeField,options.holeVelocityTemperatureExponent,options.holeBetaTemperatureExponent,1);
             }else{
                 finalN=limited(lowN,fieldN,options.electronField);
                 finalP=limited(lowP,fieldP,options.holeField);
@@ -163,9 +178,10 @@ IalElementMobilityResult evaluateIalElementMobility(
     const IalElementMobilityOptions& options)
 {
     std::array<IalMobilityDifferential,6> localDifferentials;
-    auto result=evaluateImpl(geometry,state,electrons,holes,options,false,localDifferentials);
+    std::array<IalHighFieldResult,6> highFieldDifferentials;
+    auto result=evaluateImpl(geometry,state,electrons,holes,options,false,localDifferentials,highFieldDifferentials);
     if(options.temperatureDerivatives){
-        const auto t=evaluateImpl(geometry,state,electrons,holes,options,true,localDifferentials);
+        const auto t=evaluateImpl(geometry,state,electrons,holes,options,true,localDifferentials,highFieldDifferentials);
         for(int i=0;i<3;++i){
             result.electronTemperatureDerivative[i]=t.electron.derivative[i];
             result.holeTemperatureDerivative[i]=t.hole.derivative[i];
