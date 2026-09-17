@@ -29,8 +29,12 @@ evidence.
 - [LDMOS current validation](validation/templates_ldmos_current_status.md):
   current qualification boundaries, configuration profiles and reproducible
   linked D4/D5 entry points.
+- [Safeguarded neutral-root Newton, 2026-09-16](validation/templates_ldmos_neutral_root_newton_2026-09-16.md):
+  original-equation scalar root acceleration, finite-budget rounding guard and isolated representative controls.
+- [Newton and assembly cost controls, 2026-09-16](validation/templates_ldmos_newton_cost_2026-09-16.md):
+  explicit R9 contact recommendation, exact neutral-root caching and failed local QF clipping controls.
 - [LDMOS production electrothermal reproduction](validation/templates_ldmos_production_reproduction.md):
-  frozen R7 input export, Release UMFPACK execution, pause/resume and qualification limits.
+  recommended explicit R9 contact profile and compatible R7 export, Release UMFPACK execution, pause/resume and qualification limits.
 - [Extrapolation and continuation research, 2026-09-15](validation/vela_extrapolation_solver_research_2026-09-15.md):
   primary papers and open-source algorithms, with proposed R7/R8 predictor and Newton experiments.
 - [Extrapolation A–E execution, 2026-09-15](validation/templates_ldmos_extrapolation_execution_2026-09-15.md):

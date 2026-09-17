@@ -116,6 +116,36 @@ class ElectrothermalRunnerTest(unittest.TestCase):
                 self.assertEqual(len(trace[stage]['blocks']),3)
                 self.assertIn('eps_row',trace[stage]['row'])
 
+    def test_local_qf_limiter_does_not_reduce_the_potential_cap(self):
+        self.deck['sweep']['max_newton']=15
+        self.input['performance_profiling']=True
+        for boundary in self.input['boundaries']:
+            if boundary['kind']=='psi':boundary['value']=.5
+            if boundary['kind']=='fn':boundary['value']=1.
+        results=[]
+        for enabled in (False,True):
+            self.input['diagnostic_local_qf_limiter']=enabled
+            self.write('input.json',self.input);self.deck['output_directory']='local_qf_'+str(enabled)
+            run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
+            result=json.loads((self.root/self.deck['output_directory']/'step_0000/output.json').read_text())
+            self.assertTrue(result['carrier_row_gate']['satisfied'])
+            results.append(result)
+        self.assertGreater(results[1]['history'][0]['initial_alpha'],results[0]['history'][0]['initial_alpha'])
+        self.assertGreater(results[1]['history'][0]['local_qf_limiter']['clipped_electrons'],0)
+        for a,b in zip(results[0]['state_interleaved'],results[1]['state_interleaved']):self.assertAlmostEqual(a,b,delta=1e-12)
+
+    def test_local_qf_limiter_is_disabled_during_initialization(self):
+        self.deck['initialization']=dict(mode='neutral_300K',gate_voltage_V=.1,max_newton=10)
+        self.input['boundaries'][-4]['value']=.1
+        self.input['diagnostic_local_qf_limiter']=True;self.write('input.json',self.input)
+        run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
+        ledger=json.loads((self.root/'output/ledger.json').read_text())
+        for row in ledger['initialization_runs']:
+            cfg=json.loads((Path(row['result']).parent/'input.json').read_text())
+            self.assertFalse(cfg['diagnostic_local_qf_limiter'])
+        cfg=json.loads((Path(ledger['runs'][0]['directory'])/'input.json').read_text())
+        self.assertTrue(cfg['diagnostic_local_qf_limiter'])
+
     def test_projected_natural_updates_preserve_dirichlet_constraints(self):
         self.deck['sweep']['max_newton']=10
         for boundary in self.input['boundaries']:
@@ -716,6 +746,33 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             cfg=json.loads((Path(ledger['runs'][0]['directory'])/'input.json').read_text())
             self.assertEqual(cfg['diagnostic_near_steady_contact_consistency'],enabled)
         self.assertEqual(trajectories[0],trajectories[1])
+
+    def test_neutral_root_newton_preserves_initialization_and_reports_all_work(self):
+        self.deck['initialization']=dict(mode='neutral_300K',gate_voltage_V=.1,max_newton=10)
+        self.input.update(skip_equilibrium_poisson_transport=True,performance_profiling=True,
+                          reuse_physics_preparation=True)
+        self.input['boundaries'][-4]['value']=.1
+        trajectories=[];iterations=[]
+        for enabled in (False,True):
+            self.input['diagnostic_neutral_root_newton']=enabled;self.write('input.json',self.input)
+            self.deck['output_directory']='root_newton_'+str(enabled)
+            run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
+            ledger=json.loads((self.root/self.deck['output_directory']/'ledger.json').read_text())
+            trajectory=[];counts=[0]*5
+            paths=[Path(r['result']) for r in ledger['initialization_runs']]
+            paths += [Path(r['directory'])/'output.json' for r in ledger['runs']]
+            for path in paths:
+                cfg=json.loads((path.parent/'input.json').read_text())
+                self.assertEqual(cfg['diagnostic_neutral_root_newton'],enabled)
+                result=json.loads(path.read_text())
+                counts=[a+b for a,b in zip(counts,result['performance']['neutral_root_iteration_counts'])]
+                trajectory.append((result['history'],result['state_interleaved'],result['residual']))
+            trajectories.append(trajectory);iterations.append(counts)
+        self.assertEqual(trajectories[0],trajectories[1])
+        self.assertEqual(iterations[0][1],0)
+        self.assertGreater(iterations[1][1],0)
+        self.assertGreater(iterations[1][4],0)  # Intrinsic near-zero reference uses the legacy guard.
+
     def test_density_projection_preserves_poisson_prebias(self):
         self.deck['initialization']=dict(mode='neutral_300K',gate_voltage_V=.1,max_newton=10)
         self.input['skip_equilibrium_poisson_transport']=True

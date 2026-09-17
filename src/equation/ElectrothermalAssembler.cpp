@@ -5,13 +5,14 @@
 #include "vela/physics/CarrierStatistics.h"
 #include <cmath>
 #include <stdexcept>
+#include <limits>
 
 namespace vela {
 ElectrothermalAssembler::ElectrothermalAssembler(const DeviceMesh& mesh,
     const DopingModel& doping, ElectrothermalGeometry geometry, LatticeHeatAssembler heat,
-    MobilityModelConfig mobility, SiliconThermalPhysics physics, Real muE, Real muH,bool reusePreparation,bool reuseIalScreening)
+    MobilityModelConfig mobility, SiliconThermalPhysics physics, Real muE, Real muH,bool reusePreparation,bool reuseIalScreening,bool reuseNeutralRoots,bool safeguardedNeutralNewton)
     :mesh_(mesh),doping_(doping),geometry_(std::move(geometry)),heat_(std::move(heat)),
-     mobility_(std::move(mobility)),physics_(std::move(physics)),muE_(muE),muH_(muH),reusePreparation_(reusePreparation),reuseIalScreening_(reuseIalScreening) {
+     mobility_(std::move(mobility)),physics_(std::move(physics)),muE_(muE),muH_(muH),reusePreparation_(reusePreparation),reuseIalScreening_(reuseIalScreening),reuseNeutralRoots_(reuseNeutralRoots),safeguardedNeutralNewton_(safeguardedNeutralNewton) {
     const auto n=mesh.numNodes(),e=mesh.numEdges();
     if(geometry_.recombinationArea_m2.size()==0)geometry_.recombinationArea_m2=geometry_.siliconArea_m2;
     if(doping.numNodes()!=n || geometry_.siliconArea_m2.size()!=n || geometry_.recombinationArea_m2.size()!=n ||
@@ -35,6 +36,7 @@ ElectrothermalAssembler::ElectrothermalAssembler(const DeviceMesh& mesh,
             throw std::invalid_argument("Transport edge touches a non-silicon node");
     prepareIalTransportGeometry(mobility_,mesh_);
     if(reusePreparation_){dopingPreparation_.resize(n);temperaturePreparation_.resize(n);}
+    if(reuseNeutralRoots_)neutralRoots_.resize(n);
 }
 
 const SiliconThermalPhysics::TemperaturePreparation& ElectrothermalAssembler::preparedAt(Index node,Real temperature) const {
@@ -52,8 +54,15 @@ std::pair<Real,Real> ElectrothermalAssembler::neutralPotential(Index node,Real b
     if(node>=mesh_.numNodes() || geometry_.siliconArea_m2[node]<=0. || !std::isfinite(bias))
         throw std::invalid_argument("Neutral boundary requires a silicon node and finite bias");
     SiliconThermalState s{bias,bias,bias,t,doping_.donors(node),doping_.acceptors(node)};
+    if(reuseNeutralRoots_)if(const auto& cached=neutralRoots_[node];cached &&
+       cached->bias==bias && std::signbit(cached->bias)==std::signbit(bias) &&
+       cached->temperature==t && cached->donors==s.donors_m3 && cached->acceptors==s.acceptors_m3) {
+        ++neutralRootCounts_[1];return cached->value;
+    }
+    ++neutralRootCounts_[0];
     const auto* prepared=reusePreparation_?&preparedAt(node,t):nullptr;
     const auto densities=[&](){
+        ++neutralRootIterationCounts_[0];
         if(prepared)return physics_.carrierDensities(s,*prepared);
         const auto p=physics_.evaluate(s);return std::array<ThermalQuantity,2>{p.electrons_m3,p.holes_m3};
     };
@@ -63,11 +72,47 @@ std::pair<Real,Real> ElectrothermalAssembler::neutralPotential(Index node,Real b
     s.potential_V=hi;const auto upper=densities();
     if(lower[0].value-lower[1].value>net || upper[0].value-upper[1].value<net)
         throw std::invalid_argument("Neutral potential outside the audited silicon bracket");
-    for(int k=0;k<70;++k){s.potential_V=(lo+hi)/2.;const auto p=densities();
+    bool resolved=false;
+    if(safeguardedNeutralNewton_) {
+        Real next=(lo+hi)/2.;bool lastNeighbor=false;
+        for(int k=0;k<70;++k) {
+            s.potential_V=next;const auto p=densities();
+            const Real charge=p[0].value-p[1].value;
+            // Preserve the original strict comparison, including flat rounded roots.
+            if(charge>net)hi=next;else lo=next;
+            const Real middle=(lo+hi)/2.;
+            if(middle==lo || middle==hi){resolved=true;break;}
+            const Real slope=p[0].derivative[0]-p[1].derivative[0];
+            const Real proposal=std::isfinite(slope) && slope>0.?next-(charge-net)/slope:
+                std::numeric_limits<Real>::quiet_NaN();
+            if(std::isfinite(slope) && slope>0. && std::isfinite(proposal) &&
+               proposal>lo && proposal<hi && std::abs(proposal-next)<=.5*(hi-lo)) {
+                next=proposal;lastNeighbor=false;++neutralRootIterationCounts_[1];
+            } else if(proposal==next && !lastNeighbor) {
+                // Probe the other side of a rounded Newton root once; repeated
+                // adjacent-float walking across a flat interval is not useful.
+                const Real neighbor=std::nextafter(next,charge>net?lo:hi);
+                if(neighbor>lo && neighbor<hi) {
+                    next=neighbor;lastNeighbor=true;++neutralRootIterationCounts_[3];
+                } else {next=middle;lastNeighbor=false;++neutralRootIterationCounts_[2];}
+            } else {next=middle;lastNeighbor=false;++neutralRootIterationCounts_[2];}
+        }
+        // Close to zero, 70 original bisections need not reach adjacent floats.
+        // Preserve that finite-budget convention instead of silently returning
+        // a different rounded contact target or temperature derivative.
+        const Real root=(lo+hi)/2.;
+        const Real spacing=std::abs(std::nextafter(root,std::numeric_limits<Real>::infinity())-root);
+        if(spacing<std::ldexp((bias+1.5)-(bias-1.5),-70))resolved=false;
+        if(!resolved){lo=bias-1.5;hi=bias+1.5;++neutralRootIterationCounts_[4];}
+    }
+    if(!resolved)for(int k=0;k<70;++k){s.potential_V=(lo+hi)/2.;const auto p=densities();
+        ++neutralRootIterationCounts_[2];
         if(p[0].value-p[1].value>net)hi=s.potential_V;else lo=s.potential_V;}
     s.potential_V=(lo+hi)/2.;const auto p=densities();
     const Real slope=p[0].derivative[0]-p[1].derivative[0];
-    return {s.potential_V,-(p[0].derivative[3]-p[1].derivative[3])/slope};
+    const std::pair<Real,Real> result{s.potential_V,-(p[0].derivative[3]-p[1].derivative[3])/slope};
+    if(reuseNeutralRoots_)neutralRoots_[node]=NeutralRoot{bias,t,s.donors_m3,s.acceptors_m3,result};
+    return result;
 }
 
 ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,

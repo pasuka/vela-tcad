@@ -1,9 +1,11 @@
 # LDMOS production electrothermal reproduction
 
-This is the current run guide for the explicit R7 D0 production configuration.
-The [current status](templates_ldmos_current_status.md) and
-[frozen R7 evidence](templates_ldmos_production_electrothermal_2026-09-14.md#r7完成后的暂停记录)
-define its numerical and performance qualification. The ordinary `dc_sweep`
+This is the run guide for the frozen D0 production configurations. R9 contact
+consistency is now the recommended explicit profile; R7 remains the compatible
+exporter default and rollback baseline. See the R9 section below.
+The [current status](templates_ldmos_current_status.md), profile-specific R9
+evidence below and [frozen R7 evidence](templates_ldmos_production_electrothermal_2026-09-14.md#r7完成后的暂停记录)
+define their separate numerical and performance qualifications. The ordinary `dc_sweep`
 entry remains isothermal.
 
 ## Inputs and provenance
@@ -97,6 +99,39 @@ Exporter regressions use synthetic provenance/path fixtures. The real R7 input
 was additionally exported and run through frozen Windows Release neutral
 initialization and the zero-bias point; this checks the generated file paths
 and service entry, not a new Windows full-curve performance qualification.
+
+## Recommended explicit R9 contact-consistency profile
+
+[`d0_production_r9_contact.json`](../../reference_tcad/templates_ldmos_sentaurus2022/thermal/d0_production_r9_contact.json)
+freezes the actual qualified contact-repair inputs and decks, without generating
+new numerical overrides. It is recommended following the
+[62-point joint and repeated timing qualification](templates_ldmos_contact_sweep_2026-09-16.md).
+The ordinary exporter default remains R7 for existing callers; select R9 explicitly.
+The underlying C++ contact-repair default remains false for other devices/configurations.
+
+The R9 archive contains the full matrix, not another copy of the unchanged
+mesh/IALMob dependencies. Extract `full_final_evidence.tgz` beneath
+`extrapolation_20260915/contact_sweep_20260916` in the evidence root and add
+the hash-checked `cases/data` dependencies from the R7 archive. Both archive
+hashes and all six required input/dependency hashes are recorded in the profile.
+The existing copied evidence already has this layout:
+
+```powershell
+$env:Path = "D:\msys64\ucrt64\bin;D:\msys64\usr\bin;$env:Path"
+python scripts/export_templates_ldmos_production.py --profile reference_tcad/templates_ldmos_sentaurus2022/thermal/d0_production_r9_contact.json --evidence-root reference_staging/templates_ldmos_contact_sweep_20260916/copied_vm --output build-release/reference_tcad/ldmos-r9
+```
+
+The qualified Linux runner hash is in the profile. A rebuilt Windows binary or
+an additional optimization does not inherit that Linux timing qualification.
+R9 protects initialization/gate prebias, passes actual pause/resume, and preserves
+the original electrical/thermal/2% density/30 meV gates. Two complete numerical
+trajectories repeat exactly. Drain updates are 344/302; median end-to-end times
+are 520.71/511.32 s, or 1.018/1.063 times paired native medians. CPU is still
+1.625/1.763 times native; per-round speedup varies. The recommendation rests on
+qualified behavior and repeatable removal of contact closure work, not a promise
+of fixed wall-time acceleration. Root caching passed separate exact-trajectory controls but has no demonstrated
+stable speedup; local QF limiting failed screening. Neither experiment is
+enabled by this profile. See the [cost study](templates_ldmos_newton_cost_2026-09-16.md).
 
 ## Optional R8 density-coordinate profile
 

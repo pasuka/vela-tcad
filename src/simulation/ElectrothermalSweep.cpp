@@ -215,6 +215,7 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
             // not neutral initialization or Poisson gate prebias.
             if(cfg.value("diagnostic_near_steady_contact_consistency",false))
                 cfg["diagnostic_near_steady_contact_consistency"]=false;
+            if(cfg.value("diagnostic_local_qf_limiter",false))cfg["diagnostic_local_qf_limiter"]=false;
             for(auto& b:cfg.at("boundaries")) if(gateNodes.contains(b.at("node"))&&b.at("kind")=="psi")
                 b["value"]=b.at("value").get<double>()-finalGate+voltage;
             cfg["solve_mode"]=poisson?"poisson":"coupled";

@@ -343,7 +343,7 @@ TEST_CASE("Electrothermal preparation reuse refreshes temperature and doping wit
     }
     LatticeConductivity law;law.constant_W_per_m_K=100.;
     LatticeHeatAssembler heat(f.mesh,1.,{{0,law},{1,law}},{{{0,1},300.,2e6}});
-    ElectrothermalAssembler plain(f.mesh,f.doping,g,heat,f.mobility),cached(f.mesh,f.doping,g,heat,fastMobility,SiliconThermalPhysics{},.1,.04,true,true);
+    ElectrothermalAssembler plain(f.mesh,f.doping,g,heat,f.mobility),cached(f.mesh,f.doping,g,heat,fastMobility,SiliconThermalPhysics{},.1,.04,true,true,true);
     ElectrothermalBoundary bc;bc.neutralContactBias_V={{0,0.}};bc.holeRecombination={{0,{1.93e4,1e-7}}};
     VectorXd x(24);
     for(Real temperature:{300.,401.,401.,299.,514.}){
@@ -373,6 +373,13 @@ TEST_CASE("Electrothermal preparation reuse refreshes temperature and doping wit
         for(Real bias:{0.,40.}){
             const auto expected=plain.neutralPotential(0,bias,temperature),actual=cached.neutralPotential(0,bias,temperature);
             CHECK(expected==actual);
+            const auto counts=cached.neutralRootCounts();
+            CHECK(cached.neutralPotential(0,bias,temperature)==expected);
+            CHECK(cached.neutralRootCounts()[0]==counts[0]);
+            CHECK(cached.neutralRootCounts()[1]==counts[1]+1);
+            const Real adjacent=std::nextafter(temperature,1000.);
+            CHECK(cached.neutralPotential(0,bias,adjacent)==plain.neutralPotential(0,bias,adjacent));
+            CHECK(cached.neutralRootCounts()[0]==counts[0]+1);
         }
     }
     auto poissonState=x;ElectrothermalBoundary poissonBoundary;
@@ -404,6 +411,7 @@ TEST_CASE("Electrothermal preparation reuse refreshes temperature and doping wit
     CHECK((tinyFull.electronOutflow_A_per_m-tinyFast.electronOutflow_A_per_m).norm()==0.);
     CHECK((tinyFull.residual-tinyFast.residual).norm()==0.);
     f.doping.setNodeDoping(0,f.doping.donors(0)+1e22,f.doping.acceptors(0));
+    CHECK(cached.neutralPotential(0,40.,514.)==plain.neutralPotential(0,40.,514.));
     const auto a=plain.assemble(x,bc),b=cached.assemble(x,bc);
     CHECK((a.residual-b.residual).norm()==0.);CHECK((a.jacobian-b.jacobian).norm()==0.);
     CHECK(cached.preparationCounts()[0]==before[0]+1);
@@ -416,6 +424,40 @@ TEST_CASE("Electrothermal preparation reuse refreshes temperature and doping wit
             CHECK(std::sqrt(error/std::max(scale,1e-100))<3e-5);
         }
     }
+}
+
+TEST_CASE("Safeguarded neutral Newton preserves charge balance and temperature response", "[thermal][electrothermal][neutral_root]") {
+    Fixture f;ElectrothermalGeometry g;
+    g.siliconArea_m2=VectorXd::Zero(6);g.siliconArea_m2[0]=1e-14;
+    g.fixedCharge_C_per_m=VectorXd::Zero(6);
+    g.poissonEdge_F_per_m=VectorXd::Zero(f.mesh.numEdges());g.transportWeight=g.poissonEdge_F_per_m;
+    LatticeConductivity law;law.constant_W_per_m_K=100.;
+    LatticeHeatAssembler heat(f.mesh,1.,{{0,law},{1,law}},{});
+    ElectrothermalAssembler plain(f.mesh,f.doping,g,heat,{},SiliconThermalPhysics{},.1,.04,true);
+    ElectrothermalAssembler fast(f.mesh,f.doping,g,heat,{},SiliconThermalPhysics{},.1,.04,true,false,false,true);
+    SiliconThermalPhysics physics;
+    for(const auto& doping:std::array<std::array<Real,2>,7>{{{0.,0.},{1e19,0.},{1e23,0.},
+            {1e26,0.},{0.,1e23},{0.,1e26},{1e24,1e24}}}) {
+        f.doping.setNodeDoping(0,doping[0],doping[1]);
+        for(Real t:{200.,300.,std::nextafter(300.,400.),450.,600.})for(Real bias:{-40.,-1.,-0.,0.,.375,40.}) {
+            INFO("Nd="<<doping[0]<<" Na="<<doping[1]<<" T="<<t<<" bias="<<bias);
+            const auto a=plain.neutralPotential(0,bias,t),b=fast.neutralPotential(0,bias,t);
+            CHECK(std::abs(a.first-b.first)<=8.*std::numeric_limits<Real>::epsilon()*std::max(1.,std::abs(bias)));
+            CHECK(std::abs(a.second-b.second)<=1e-12*std::max(1e-6,std::abs(a.second)));
+            const auto state=physics.evaluate({b.first,bias,bias,t,doping[0],doping[1]});
+            const Real scale=std::max({state.electrons_m3.value,state.holes_m3.value,doping[0],doping[1],1.});
+            CHECK(std::abs(state.electrons_m3.value-state.holes_m3.value-doping[0]+doping[1])/scale<1e-11);
+            const Real h=.002;
+            const Real fd=(fast.neutralPotential(0,bias,t+h).first-fast.neutralPotential(0,bias,t-h).first)/(2.*h);
+            CHECK(std::abs(fd-b.second)<3e-8*std::max(.001,std::abs(b.second)));
+        }
+    }
+    const auto iterations=fast.neutralRootIterationCounts();
+    CHECK(iterations[1]>0);CHECK(iterations[2]>0);CHECK(iterations[3]>0);
+    // Counts include every derivative check and any original-method fallback.
+    CHECK(iterations[0]<73*fast.neutralRootCounts()[0]);
+    REQUIRE_THROWS(fast.neutralPotential(0,0.,-1.));
+    REQUIRE_THROWS(fast.neutralPotential(4,0.,300.));
 }
 
 TEST_CASE("Four-equation silicon resistor closes self-heating and neutral contact temperature response", "[thermal][electrothermal][newton]") {

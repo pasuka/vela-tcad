@@ -66,7 +66,7 @@ public:
         ElectrothermalGeometry geometry, LatticeHeatAssembler heat,
         MobilityModelConfig mobility_SI, SiliconThermalPhysics physics=SiliconThermalPhysics{},
         Real constantElectronMobility=.1, Real constantHoleMobility=.04,
-        bool reusePhysicsPreparation=false,bool reuseIalScreening=false);
+        bool reusePhysicsPreparation=false,bool reuseIalScreening=false,bool reuseNeutralRoots=false,bool safeguardedNeutralNewton=false);
     // The final two flags omit only coefficient derivatives for fixed-state
     // direction audits; residuals, material values and contact laws are kept.
     // They do not define a physical model or a qualified nonlinear Jacobian.
@@ -80,6 +80,10 @@ public:
     std::pair<Real,Real> neutralPotential(Index node, Real bias, Real temperature) const;
     /// Doping preparations, temperature preparations, exact preparation hits.
     std::array<std::size_t,3> preparationCounts() const {return preparationCounts_;}
+    /// Actual neutral root solves and exact-key cache hits.
+    std::array<std::size_t,2> neutralRootCounts() const {return neutralRootCounts_;}
+    /// Density evaluations, Newton proposals, bisections, neighbor probes, legacy fallbacks.
+    std::array<std::size_t,5> neutralRootIterationCounts() const {return neutralRootIterationCounts_;}
 private:
     const SiliconThermalPhysics::TemperaturePreparation& preparedAt(Index,Real temperature) const;
     const DeviceMesh& mesh_;
@@ -91,6 +95,15 @@ private:
     Real muE_,muH_;
     bool reusePreparation_;
     bool reuseIalScreening_;
+    struct NeutralRoot {
+        Real bias,temperature,donors,acceptors;
+        std::pair<Real,Real> value;
+    };
+    bool reuseNeutralRoots_;
+    bool safeguardedNeutralNewton_;
+    mutable std::array<std::size_t,5> neutralRootIterationCounts_{};
+    mutable std::vector<std::optional<NeutralRoot>> neutralRoots_;
+    mutable std::array<std::size_t,2> neutralRootCounts_{};
     mutable std::vector<std::optional<SiliconThermalPhysics::DopingPreparation>> dopingPreparation_;
     mutable std::vector<std::optional<SiliconThermalPhysics::TemperaturePreparation>> temperaturePreparation_;
     mutable std::array<std::size_t,3> preparationCounts_{};

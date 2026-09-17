@@ -87,7 +87,7 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
         LatticeHeatAssembler heat(mesh,lengthFactor,laws,edges);
         SiliconThermalParameters siliconParameters;
         siliconParameters.augerWithGeneration=cfg.value("auger_with_generation",false);
-        ElectrothermalAssembler assembler(mesh,doping,std::move(geometry),heat,mobility,SiliconThermalPhysics(siliconParameters),.1,.04,cfg.value("reuse_physics_preparation",false),cfg.value("reuse_ialmob_screening",false));
+        ElectrothermalAssembler assembler(mesh,doping,std::move(geometry),heat,mobility,SiliconThermalPhysics(siliconParameters),.1,.04,cfg.value("reuse_physics_preparation",false),cfg.value("reuse_ialmob_screening",false),cfg.value("reuse_neutral_contact_roots",false),cfg.value("diagnostic_neutral_root_newton",false));
         ElectrothermalBoundary bc;
         for(const auto& b:cfg.at("boundaries")){
             const Index node=b.at("node");const std::string kind=b.at("kind");const Real value=b.at("value");
@@ -386,6 +386,11 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
         const bool nearSwitch=cfg.value("diagnostic_near_steady_qf_switch",false);
         const bool nearRebase=cfg.value("diagnostic_near_steady_qf_rebase",false);
         const bool contactConsistency=cfg.value("diagnostic_near_steady_contact_consistency",false);
+        const bool localQfLimiter=cfg.value("diagnostic_local_qf_limiter",false);
+        if(localQfLimiter && (nearSwitch || nearRebase || pseudoTransient || projectionMode!="off" || densityIterations ||
+           naturalDamping || adaptiveJacobian || cfg.value("diagnostic_ngmres_recovery",false) ||
+           solveMode!="coupled" || initialization!="provided_state"))
+            throw std::invalid_argument("Local QF limiter requires isolated coupled provided-state QF Newton");
         if(contactConsistency && (nearSwitch || nearRebase || pseudoTransient || projectionMode!="off" || densityIterations ||
            naturalDamping || adaptiveJacobian || cfg.value("diagnostic_ngmres_recovery",false) ||
            solveMode!="coupled" || initialization!="provided_state" || !cfg.value("use_qf_references",true)))
@@ -642,13 +647,19 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             VectorXd direction=lu.solve(rhs);direction.array()*=columns.array();
             solveSeconds+=seconds(solveStart);
             if(lu.info()!=Eigen::Success || !direction.allFinite()){stop="linear_solve_failed";break;}
-            Real alpha=1.;int limiter=-1;
+            Real alpha=1.;int limiter=-1;VectorXd trialDirection;
+            std::array<unsigned,2> locallyLimited{};
+            if(localQfLimiter)trialDirection=direction;
             std::array<int,4> maxDirectionIndex{-1,-1,-1,-1};
             std::array<Real,4> maxDirection{};
             for(int i=0;i<x.size();++i)if(direction[i]!=0.){
                 const Real cap=(i%4==3?30.:voltageUpdateLimit)/std::abs(direction[i]);
-                if(cap<alpha)limiter=i;
-                alpha=std::min(alpha,cap);
+                if(localQfLimiter && (i%4==1 || i%4==2)) {
+                    if(cap<1.){trialDirection[i]=std::copysign(voltageUpdateLimit,direction[i]);++locallyLimited[i%4-1];}
+                } else {
+                    if(cap<alpha)limiter=i;
+                    alpha=std::min(alpha,cap);
+                }
                 if(std::abs(direction[i])>maxDirection[i%4])maxDirectionIndex[i%4]=i;
                 maxDirection[i%4]=std::max(maxDirection[i%4],std::abs(direction[i]));
             }
@@ -735,7 +746,7 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             for(int trial=0;trial<(densityAttempt?32:24);++trial){
                 if(densityAttempt && trial==8){alpha=globalAlpha;densityFallback=true;}
                 ++trials;Real nextAlpha=.5*alpha;
-                VectorXd candidate=x+alpha*direction;
+                VectorXd candidate=x+alpha*(localQfLimiter?trialDirection:direction);
                 // Such a candidate must be reassembled after reference changes
                 // before the next Newton solve. Its merit needs residuals only.
                 try{
@@ -807,6 +818,8 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
                 alpha=nextAlpha;
             }
             history.push_back({{"iteration",iteration+1},{"scaled_l2_before",before},{"scaled_l2_after",merit(a)},{"alpha",alpha},{"accepted",accepted}});
+            if(localQfLimiter)history.back()["local_qf_limiter"]={{"clipped_electrons",locallyLimited[0]},
+                {"clipped_holes",locallyLimited[1]},{"cap_V",voltageUpdateLimit}};
             if(pseudoStep) {
                 const Real after=(a.residual.array()*pseudoRows.array()).matrix().norm();
                 pseudoSteps.back().update({{"fixed_residual_after",after},{"accepted",accepted},{"alpha",alpha},
@@ -1036,6 +1049,8 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
         if(naturalDamping)result["natural_damping"]={{"corrector_solves",naturalSolves},{"corrector_solve_seconds",naturalSolveSeconds},
             {"scope","NLEQ_ERR-type current-Jacobian corrector test, fixed scaling; original terminal gates retained"}};
         if(profiling)result["performance"]["preparation_counts"]=assembler.preparationCounts();
+        if(profiling)result["performance"]["neutral_root_counts"]=assembler.neutralRootCounts();
+        if(profiling)result["performance"]["neutral_root_iteration_counts"]=assembler.neutralRootIterationCounts();
         if(profiling)result["performance"]["symbolic_analyses"]=lu.analyses()+tangentAnalyses;
         if(profiling)result["performance"]["linear_solver"]=lu.backend();
         if(profiling && (densityIterations || localProjection || pseudoTransient)) {
