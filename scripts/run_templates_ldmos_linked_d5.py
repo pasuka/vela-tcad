@@ -510,12 +510,14 @@ def audit(sweep,plan,*,write_output=True):
     return summary
 
 
-def validate_resume_contract(plan,ledger,targets,runner_sha,gate,max_step,frame,worker):
+def validate_resume_contract(plan,ledger,targets,runner_sha,gate,max_step,frame,worker,linear_solver='sparselu'):
     """Only resume an immutable, inactive prefix of the requested experiment."""
     if ledger.get('active_child') is not None or ledger.get('status')=='running':
         raise ValueError('Cannot resume an active solver run')
     if plan['runner_sha256']!=runner_sha or plan['gate_V']!=gate:
         raise ValueError('Resume runner/gate mismatch')
+    if plan.get('linear_solver','sparselu')!=linear_solver:
+        raise ValueError('Resume linear backend mismatch')
     if plan['max_step_V']!=max_step or plan['original_blocks']!=GATES:
         raise ValueError('Resume step or numerical gate mismatch')
     if plan.get('execution_mode','subprocess')!=('dc_worker' if worker else 'subprocess'):
@@ -539,7 +541,7 @@ def load_resume(source,targets,bundle,manifest):
         raise ValueError('Resume output cannot be inside its source')
     plan=read(source/'plan.json');ledger=read(source/'fixed/ledger.json')
     validate_resume_contract(plan,ledger,targets,manifest['runner_sha256'],args.gate,
-                             MAXIMUM,FRAME,args.worker)
+                             MAXIMUM,FRAME,args.worker,args.linear_solver)
     for relative,expected in bundle['files'].items():
         if plan['frozen_files'].get(str(ROOT/relative))!=expected:
             raise ValueError(f'Resume physical input differs: {relative}')
@@ -550,6 +552,12 @@ def load_resume(source,targets,bundle,manifest):
         audit(sweep,plan,write_output=False)
     finally:HERE=previous_here
     return source,plan,ledger
+
+def validate_backend_manifest(manifest, backend):
+    # Older qualified manifests describe SparseLU and predate the explicit key.
+    if manifest.get('linear_solver', 'sparselu') != backend:
+        raise ValueError('Runner manifest linear backend mismatch')
+
 
 def preflight(bundle_path, workspace, runner_manifest, gate):
     bundle=read(bundle_path)
@@ -578,6 +586,7 @@ def main():
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--gate',type=int,choices=[4,8],required=True)
     parser.add_argument('--points',type=int,choices=[2,8,31],default=8)
+    parser.add_argument('--linear-solver',choices=['sparselu','umfpack','sparselu_metis','umfpack_metis','mumps','mumps_metis','superlu_mt','superlu_mt_metis','strumpack'],default='sparselu')
     parser.add_argument('--max-step',type=float,default=.2)
     parser.add_argument('--frame-offset',type=float,help='Potential gauge offset; defaults to bundle policy or 28 V; original equivalence gates remain enforced')
     parser.add_argument('--resume-from',type=Path,help='Read-only accepted prefix; copy its evidence into a new output and continue')
@@ -590,6 +599,7 @@ def main():
     if not math.isfinite(args.max_step) or not .1<=args.max_step<=2.: raise ValueError('Invalid maximum step')
     MAXIMUM=args.max_step
     bundle,manifest=preflight(args.bundle,ROOT,args.manifest,args.gate)
+    validate_backend_manifest(manifest,args.linear_solver)
     FRAME=frame_offset_for(bundle,args.gate,args.frame_offset)
     if PHYSICS_PROFILE=='D4' and bundle.get('schema')!='vela.templates_ldmos.linked_d4_inputs.v1':
         raise ValueError('D4 requires its own hashed reference/config bundle')
@@ -597,7 +607,7 @@ def main():
     SEED=ROOT/bundle['seeds'][str(args.gate)]
     REFERENCE=ROOT/bundle['references'][str(args.gate)]
     RUNNER=Path(manifest['runner']);EXPECTED=manifest['runner_sha256']
-    ENV=dict(os.environ,VELA_LINEAR_SOLVER='sparselu')
+    ENV=dict(os.environ,VELA_LINEAR_SOLVER=args.linear_solver)
     ENV['PATH']=r'D:\msys64\ucrt64\bin'+os.pathsep+ENV.get('PATH','')
     ENV.pop('GMON_OUT_PREFIX',None)
     targets=read_points(REFERENCE)[:args.points];stop=targets[-1]
@@ -629,6 +639,7 @@ def main():
         backend=manifest['backend'],reference=str(REFERENCE),frame_pivot_V=FRAME_PIVOT,
         frame_offset_V=FRAME,created_at=stamp(),scope=f'{PHYSICS_PROFILE} linked sweep; original gates')
     plan['execution_mode']='dc_worker' if args.worker else 'subprocess'
+    plan['linear_solver']=args.linear_solver
     if resume:
         plan['resume_origin']=dict(directory=str(origin),plan_sha256=digest(origin/'plan.json'),
             accepted_bias_V=origin_ledger['accepted_bias_V'],accepted_state=origin_ledger['accepted_state'],

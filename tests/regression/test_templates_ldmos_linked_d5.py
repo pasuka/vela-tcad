@@ -12,6 +12,13 @@ import run_templates_ldmos_linked_d5 as linked
 
 
 class LinkedD5Test(unittest.TestCase):
+    def test_backend_selection_must_match_manifest(self):
+        linked.validate_backend_manifest({}, 'sparselu')
+        linked.validate_backend_manifest({'linear_solver':'umfpack'}, 'umfpack')
+        for manifest, backend in [({}, 'umfpack'), ({'linear_solver':'umfpack'}, 'sparselu')]:
+            with self.assertRaisesRegex(ValueError, 'backend mismatch'):
+                linked.validate_backend_manifest(manifest, backend)
+
     def test_plain_auger_profiles_preserve_gates_and_disable_only_generation(self):
         folder=ROOT/'reference_tcad/templates_ldmos_sentaurus2022/profiles'
         for physics in ('d4','d5'):
@@ -87,7 +94,7 @@ class LinkedD5Test(unittest.TestCase):
             changed=deepcopy(ledger);changed[key]=value
             with self.assertRaises(ValueError,msg=key):check(plan,changed)
         for key,value in [('runner_sha256','other'),('gate_V',4),('max_step_V',.4),
-                          ('execution_mode','dc_worker'),('original_blocks',{})]:
+                          ('execution_mode','dc_worker'),('original_blocks',{}),('linear_solver','umfpack')]:
             changed=deepcopy(plan);changed[key]=value
             with self.assertRaises(ValueError,msg=key):check(changed,ledger)
 

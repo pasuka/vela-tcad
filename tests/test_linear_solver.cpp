@@ -15,7 +15,9 @@
 #include <Eigen/Sparse>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
+#include <limits>
 #include <vector>
+#include <cstdlib>
 
 using namespace vela;
 
@@ -33,6 +35,191 @@ SparseMatrixd makeSparseMatrix(
 }
 
 } // namespace
+
+TEST_CASE("Optional direct backends preserve equations caches and failure recovery", "[linear_solver][backend_contract]") {
+    std::vector<std::string> backends;
+#if defined(VELA_HAS_STRUMPACK)
+    backends.push_back("strumpack");
+#endif
+#if defined(VELA_HAS_SUPERLU_MT)
+    backends.push_back("superlu_mt");
+#if defined(VELA_HAS_METIS)
+    backends.push_back("superlu_mt_metis");
+#endif
+#endif
+#if defined(VELA_HAS_MUMPS)
+    backends.push_back("mumps");backends.push_back("mumps_metis");
+#endif
+#if defined(VELA_HAS_METIS)
+    backends.push_back("sparselu_metis");
+#endif
+#if defined(VELA_HAS_UMFPACK)
+    backends.push_back("umfpack_metis");
+#endif
+    for(const auto& backend:backends) {
+        DYNAMIC_SECTION(backend) {
+            LinearSolver solver(backend);
+            REQUIRE_THROWS(solver.solve(SparseMatrixd(0,0),VectorXd(0)));
+            auto a=makeSparseMatrix(4,4,{{0,0,0.},{0,1,2.},{1,0,3.},{1,1,4.},
+                {1,2,-1.},{2,1,.3},{2,2,6.},{3,3,7.}});
+            VectorXd exact(4);exact<<1.,-2.,.5,3.;
+            const auto check=[&](const SparseMatrixd& m){
+                VectorXd b=m*exact,x=solver.solve(m,b);
+                REQUIRE((x-exact).norm()<1e-11);REQUIRE((m*x-b).norm()<1e-11);
+            };
+            PerformanceProfiler profiler({true,"unused.json"});
+            {
+                ActivePerformanceProfilerScope active(&profiler);
+                check(a);auto saved=a;a.setZero();a.resize(1,1);
+                REQUIRE((solver.solve(saved,2.*(saved*exact))-2.*exact).norm()<1e-11);
+                a=saved;a.coeffRef(1,0)=-5.;check(a);
+            }
+            REQUIRE(solver.patternAnalysisCount()==1);
+            const auto counts=profiler.toJson().at("counters");
+            REQUIRE(counts.at("linear.factorize_calls")==2);
+            REQUIRE(counts.at("linear.factorize_cache_hits")==1);
+            a.coeffRef(3,0)=.7;check(a);REQUIRE(solver.patternAnalysisCount()==2);
+            solver.clearPatternCache();check(a);REQUIRE(solver.patternAnalysisCount()==3);
+            auto singular=makeSparseMatrix(4,4,{{0,0,1.},{1,1,1.},{2,2,1.}});
+            REQUIRE_THROWS(solver.solve(singular,exact));check(a);
+            auto dependent=makeSparseMatrix(4,4,{{0,0,1.},{0,1,2.},{1,0,1.},{1,1,2.},{2,2,1.},{3,3,1.}});
+            REQUIRE_THROWS(solver.solve(dependent,exact));check(a);
+            auto bad=exact;bad[0]=std::numeric_limits<double>::quiet_NaN();
+            REQUIRE_THROWS(solver.solve(a,bad));check(a);
+            auto badA=a;badA.coeffRef(0,1)=std::numeric_limits<double>::infinity();
+            REQUIRE_THROWS(solver.solve(badA,exact));check(a);
+            // Severe row scaling must not turn the solve into a symmetric problem.
+            auto scaled=a;
+            const double scale[]={1e-12,1e8,1e-4,1e3};
+            for(int j=0;j<scaled.outerSize();++j)
+                for(SparseMatrixd::InnerIterator it(scaled,j);it;++it) it.valueRef()*=scale[it.row()];
+            VectorXd rhs=scaled*exact,x=solver.solve(scaled,rhs);
+            REQUIRE((x-exact).norm()<1e-10);
+        }
+    }
+}
+
+TEST_CASE("Disabling factor diagnostics preserves states and factor reuse", "[linear_solver][diagnostics]") {
+    struct Environment {
+        std::string old;
+        bool existed;
+        Environment() : existed(std::getenv("VELA_LINEAR_FACTOR_STATISTICS") != nullptr) {
+            if (existed) old=std::getenv("VELA_LINEAR_FACTOR_STATISTICS");
+        }
+        void set(const char* value) {
+#ifdef _WIN32
+            _putenv_s("VELA_LINEAR_FACTOR_STATISTICS",value ? value : "");
+#else
+            if(value) setenv("VELA_LINEAR_FACTOR_STATISTICS",value,1);
+            else unsetenv("VELA_LINEAR_FACTOR_STATISTICS");
+#endif
+        }
+        ~Environment() { set(existed ? old.c_str() : nullptr); }
+    } env;
+    std::string backend="sparselu";
+    SECTION("SparseLU") {}
+#if defined(VELA_HAS_UMFPACK)
+    SECTION("UMFPACK") { backend="umfpack"; }
+#endif
+    const auto a=makeSparseMatrix(3,3,{{0,0,4.},{0,1,.2},{1,1,5.},{1,2,-.3},{2,0,.1},{2,2,6.}});
+    const VectorXd rhs=VectorXd::Ones(3);
+    env.set("1"); LinearSolver on(backend);
+    const VectorXd expected=on.solve(a,rhs);
+    env.set("0"); LinearSolver off(backend);
+    PerformanceProfiler profiler({true,"unused.json"});
+    {
+        ActivePerformanceProfilerScope active(&profiler);
+        REQUIRE((off.solve(a,rhs)-expected).norm()==0.);
+        REQUIRE((off.solve(a,2.*rhs)-2.*expected).norm()<1e-14);
+    }
+    const auto json=profiler.toJson();
+    REQUIRE(json.at("counters").at("linear.factorize_calls")==1);
+    REQUIRE(json.at("counters").at("linear.factorize_cache_hits")==1);
+    REQUIRE_FALSE(json.at("observations").contains("linear.numeric_factor_nonzeros_l"));
+    REQUIRE_FALSE(json.at("observations").contains("linear.sparselu_structural_flops_estimate"));
+    for(const auto& stage:json.at("stages")) REQUIRE(stage.at("name")!="linear.factor_statistics");
+    env.set("invalid"); REQUIRE_THROWS_AS(LinearSolver(backend),std::invalid_argument);
+}
+
+TEST_CASE("Factor statistics preserve solves and count only fresh factors", "[linear_solver][diagnostics]") {
+    std::string backend = "sparselu";
+#if defined(VELA_HAS_UMFPACK)
+    SECTION("UMFPACK") { backend = "umfpack"; }
+#endif
+    SECTION("SparseLU") {}
+    LinearSolver measured(backend), plain(backend);
+    const auto a = makeSparseMatrix(3,3,{{0,0,10.},{0,1,1.},{0,2,2.},
+        {1,0,3.},{1,1,20.},{1,2,4.},{2,0,5.},{2,1,6.},{2,2,30.}});
+    const VectorXd rhs = VectorXd::Ones(3);
+    const VectorXd reference = plain.solve(a,rhs);
+    PerformanceProfiler profiler({true,"unused.json"});
+    {
+        ActivePerformanceProfilerScope active(&profiler);
+        REQUIRE((measured.solve(a,rhs)-reference).norm()==0.);
+        REQUIRE((measured.solve(a,2.*rhs)-2.*reference).norm()<1e-14);
+    }
+    const auto json=profiler.toJson();
+    const auto obs=json.at("observations");
+    REQUIRE(obs.at("linear.numeric_factor_nonzeros_l").at("count")==1);
+    REQUIRE(obs.at("linear.numeric_factor_nonzeros_l").at("last")==6.);
+    REQUIRE(obs.at("linear.numeric_factor_nonzeros_u").at("last")==6.);
+    REQUIRE(obs.at("linear.numeric_factor_fill_ratio").at("last").get<double>()==Catch::Approx(12./9.));
+    if(backend=="sparselu")
+        REQUIRE(obs.at("linear.sparselu_structural_flops_estimate").at("last")==13.);
+    else {
+        REQUIRE(obs.at("linear.umfpack_reported_flops").at("last").get<double>()>=13.);
+        REQUIRE(obs.at("linear.umfpack_internal_peak_bytes").at("last").get<double>()>0.);
+    }
+#if defined(_WIN32)
+    REQUIRE(json.at("resources").at("process_peak_working_set_bytes").get<double>()>0.);
+#endif
+}
+
+TEST_CASE("UMFPACK retains factors safely and recovers after rejected systems", "[linear_solver][umfpack]")
+{
+#if defined(VELA_HAS_UMFPACK)
+    LinearSolver solver("umfpack");
+    const VectorXd exact = (VectorXd(3) << 1., -2., 3.).finished();
+    auto a = makeSparseMatrix(3,3,{{0,0,4.},{1,1,5.},{2,2,6.},{0,1,.7},{2,0,-.3}});
+    const auto check = [&](const SparseMatrixd& m) {
+        const VectorXd b = m * exact;
+        const VectorXd x = solver.solve(m,b);
+        REQUIRE((m*x-b).norm()<1e-12);
+        REQUIRE((x-exact).norm()<1e-12);
+    };
+    PerformanceProfiler profiler({true,"unused.json"});
+    {
+        ActivePerformanceProfilerScope active(&profiler);
+        check(a);
+        // Destroy caller storage, then reuse identical factors with a new RHS.
+        const auto saved = a;
+        a.setZero(); a.resize(100,100);
+        const VectorXd b = saved * (2.*exact);
+        REQUIRE((solver.solve(saved,b)-2.*exact).norm()<1e-12);
+        a=saved; a.coeffRef(0,0)=8.;check(a);
+    }
+    REQUIRE(solver.patternAnalysisCount()==1);
+    const auto counts=profiler.toJson().at("counters");
+    REQUIRE(counts.at("linear.factorize_calls")==2);
+    REQUIRE(counts.at("linear.factorize_cache_hits")==1);
+    // Same nnz, different indices must invalidate symbolic analysis.
+    a=makeSparseMatrix(3,3,{{0,0,4.},{1,1,5.},{2,2,6.},{1,0,.7},{0,2,-.3}});
+    check(a);REQUIRE(solver.patternAnalysisCount()==2);
+    a.coeffRef(2,1)=.2;REQUIRE_FALSE(a.isCompressed());check(a);
+    REQUIRE(solver.patternAnalysisCount()==3);
+    auto singular=makeSparseMatrix(3,3,{{0,0,1.},{2,2,1.}});
+    REQUIRE_THROWS_WITH(solver.solve(singular,exact),Catch::Matchers::ContainsSubstring("zero_rows=1"));
+    check(a);REQUIRE(solver.patternAnalysisCount()==5);
+    auto bad=exact;bad[0]=std::numeric_limits<double>::quiet_NaN();
+    REQUIRE_THROWS_WITH(solver.solve(a,bad),Catch::Matchers::ContainsSubstring("nonfinite input"));
+    check(a);
+    solver.clearPatternCache();check(a);
+    auto small=makeSparseMatrix(2,2,{{0,0,2.},{1,1,3.}});
+    REQUIRE((solver.solve(small,VectorXd::Ones(2))-(VectorXd(2)<<.5,1./3.).finished()).norm()<1e-12);
+#else
+    REQUIRE_THROWS_AS(LinearSolver("umfpack"),std::invalid_argument);
+#endif
+}
 
 TEST_CASE("LinearSolver reuses symbolic analysis for identical sparse pattern", "[linear_solver]")
 {

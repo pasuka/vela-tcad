@@ -139,6 +139,44 @@ IALMob geometry and new assembler construction. `point_preparation_seconds` is
 inclusive; its components must not be added to it. Assembly seconds are split
 into full-Jacobian and residual-only requests; nested IALMob timers overlap them.
 
+The shared isothermal linear solver also accepts the process environment override
+`VELA_LINEAR_SOLVER=umfpack` when built with detected UMFPACK support. Its default
+remains `sparselu`. Both direct backends reuse exact sparse patterns and identical
+numeric factors; unavailable UMFPACK and failed solves raise errors rather than
+silently changing backends. This override is independent of the electrothermal
+configuration below; it does not select a different physical model.
+
+Optional shared-solver candidates also accept `sparselu_metis`, `umfpack_metis`,
+`mumps`, `mumps_metis`, `superlu_mt`, `superlu_mt_metis`, and `strumpack`.
+They require their detected CMake packages (`VELA_ENABLE_METIS`,
+`VELA_ENABLE_MUMPS`, `VELA_ENABLE_SUPERLU_MT`, `VELA_ENABLE_STRUMPACK`).
+An enabled option alone does not prove availability. These candidates do not
+change the default and do not extend the separate electrothermal selector.
+METIS uses the undirected structural union, not numerical symmetrization.
+MUMPS uses its non-MPI OpenMP double-precision library and nonsymmetric mode;
+SuperLU_MT uses COLAMD or an external METIS column ordering with internal
+postordering; STRUMPACK uses METIS, maximum diagonal-product matching/scaling,
+uncompressed DIRECT mode, and disables tiny-pivot replacement and GPU execution.
+`VELA_LINEAR_THREADS` accepts `1` (default), `2`, or `4` for those three threaded
+adapters. Control BLAS threads separately; this is not a thread setting for Eigen
+SparseLU or UMFPACK. Performance qualification is configuration-specific.
+See the [backend screening record](validation/templates_ldmos_sparse_backend_execution_2026-09-18.md)
+for tested ranges. SuperLU_MT at 2/4 threads encountered replay accuracy failures
+and has not passed that qualification; small-system unit tests do not override it.
+
+`VELA_LINEAR_CAPTURE_DIR` is an opt-in diagnostic directory, which must already
+exist. It records at most four large three-block solver inputs per process as
+`VELALU02` files and rejects existing output names. These files contain the matrix,
+RHS and solution in solver coordinates, not the unscaled physical Jacobian.
+Capture runs must be excluded from performance comparisons. Leave unset normally.
+
+`VELA_LINEAR_FACTOR_STATISTICS=0` disables the optional numeric-factor statistics
+and SparseLU structural work estimate in this shared solver. Basic stage timers,
+solve/cache counters and numerical checks remain active when profiling is enabled.
+Unset, empty, or `1` retains the existing statistics; other values are rejected.
+The switch is read at solver construction and does not change factorization controls.
+Use it for paired end-to-end timing; gather detailed factor diagnostics separately.
+
 `electrothermal_linear_solver` selects `sparselu_colamd` (default),
 `sparselu_amd`, or `umfpack` for this four-equation service only. `umfpack`
 requires a build with detected SuiteSparse UMFPACK; unavailable or unknown

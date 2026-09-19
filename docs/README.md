@@ -6,6 +6,34 @@ evidence.
 
 ## Current References
 
+- [Sparse backend and METIS execution, 2026-09-18](validation/templates_ldmos_sparse_backend_execution_2026-09-18.md):
+  optional adapters and linear-contract tests implemented; historical/current matrix screening passes.
+  All six single-thread D5 dual-gate first-eight-point controls pass; no new wall-time winner.
+  STRUMPACK 2/4-thread curve controls also pass but are slower than matched UMFPACK controls;
+  SuperLU_MT multithreaded replay failures retained. No winner triggered the full-curve repeat stage.
+  Screening complete; default unchanged.
+
+- [Sparse backend and METIS comparison plan, 2026-09-18](validation/templates_ldmos_sparse_backend_plan_2026-09-18.md):
+  UCRT64 MUMPS/SuperLU_MT/STRUMPACK/METIS inventory and five smoke checks pass;
+  staged integration and fixed-matrix/curve plan only, no new production backend qualification.
+
+- [D5 diagnostics-disabled repeats and strategy controls, 2026-09-18](validation/templates_ldmos_umfpack_low_noise_2026-09-18.md):
+  all 8 curves and original joint gates pass; four wall-time gains of 10.38%–17.93%.
+  Repeated states/counters match; strict idle conditions were unavailable.
+  Historical frozen-matrix controls distinguish ordering, scaling and pivot effects.
+
+- [Isothermal full-curve backend repeats, 2026-09-18](validation/templates_ldmos_umfpack_full_repeats_2026-09-18.md):
+  all 16 D5/D4 curves and original joint gates pass; repeat states are identical.
+  Factor fill/ordering/work/memory quantified; D4 wall-time gains repeat, D5 timings vary.
+
+- [Isothermal SparseLU/UMFPACK controls, 2026-09-18](validation/templates_ldmos_isothermal_umfpack_2026-09-18.md):
+  optional shared backend with symbolic/numeric reuse and failure checks;
+  fixed-system replay and first-eight-point controls, qualification tracked separately from R11.
+
+- [LDMOS group review, September 12–17, 2026](reports/ldmos_review_2026-09-12_17/report.md):
+  meeting report with device/model parameters, equations, solver flow and pseudocode,
+  11 source-backed figures, R11 curve/local-field results and paired performance evidence.
+
 - [Architecture](architecture.md): source tree map, solver paths, and supported
   implementation boundaries.
 - [Config schema](config_schema.md): implementation-aligned JSON field
@@ -36,6 +64,8 @@ evidence.
   Release kernel microbenchmarks and deadline-protected full-curve controls; qualification tracked separately from R10.
 - [Explicit high-field full repeated qualification, 2026-09-17](validation/templates_ldmos_symbolic_full_2026-09-17.md):
   recommended explicit R11 profile; 12 full curves, exact repeated trajectories, real restart and 62-point physical audit; R10 rollback.
+- [R11 G3/D5/D4 isothermal full sweeps, 2026-09-17](validation/templates_ldmos_r11_isothermal_2026-09-17.md):
+  final-source isothermal regression: all 155 exact points and both dual-gate joint scores pass; original physics/gates, full continuation distinct from saved-point reclosure.
 - [R9 UCRT64 first8 gprof, 2026-09-17](validation/templates_ldmos_gprof_r9_2026-09-17.md):
   Vg8 Release control and cold/drain-only profiles; exact trajectories, IALMob/assembly hotspots and profiler limits.
 - [R9 preparation and kernel follow-up, 2026-09-17](validation/templates_ldmos_preparation_followup_2026-09-17.md):

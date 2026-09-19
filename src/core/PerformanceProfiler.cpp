@@ -8,6 +8,13 @@
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <utility>
+#if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <psapi.h>
+#endif
 
 namespace vela {
 
@@ -140,6 +147,17 @@ void PerformanceProfiler::recordNewtonSolve(bool converged,
 
 nlohmann::json PerformanceProfiler::toJson() const
 {
+    // OS process-lifetime high-water mark, sampled while the process is alive.
+    // Includes inputs, assembly and factors; not solver-exclusive allocation.
+    nlohmann::json resources = nlohmann::json::object();
+#if defined(_WIN32)
+    PROCESS_MEMORY_COUNTERS memory{};
+    memory.cb = sizeof(memory);
+    if (enabled() && K32GetProcessMemoryInfo(GetCurrentProcess(), &memory, sizeof(memory))) {
+        resources["process_peak_working_set_bytes"] = memory.PeakWorkingSetSize;
+        resources["process_peak_pagefile_bytes"] = memory.PeakPagefileUsage;
+    }
+#endif
     nlohmann::json stages = nlohmann::json::array();
     for (const auto& [name, stage] : stages_) {
         stages.push_back({
@@ -190,6 +208,7 @@ nlohmann::json PerformanceProfiler::toJson() const
 
     return {
         {"schema_version", 1},
+        {"resources", std::move(resources)},
         {"clock", "steady_clock"},
         {"enabled", enabled()},
         {"elapsed_ns", std::chrono::duration_cast<std::chrono::nanoseconds>(

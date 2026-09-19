@@ -1,4 +1,6 @@
 #include "vela/solver/LinearSolver.h"
+#include "DirectBackend.h"
+#include "LinearCapture.h"
 #if defined(VELA_HAS_UMFPACK)
 #include <Eigen/UmfPackSupport>
 #endif
@@ -206,6 +208,175 @@ VectorXd solveWithAlternateBackend(const std::string& backend,
 
 } // namespace
 
+struct LinearSolver::UmfPackState {
+#if defined(VELA_HAS_UMFPACK)
+    // Eigen retains matrix storage for iterative refinement. Own it for the
+    // entire numeric-factor lifetime, including repeated RHS-only solves.
+    SparseMatrixd matrix;
+    class Solver : public Eigen::UmfPackLU<SparseMatrixd> {
+    public:
+        double statistic(int index) const { return this->m_umfpackInfo[index]; }
+    } solver;
+#endif
+};
+
+LinearSolver::LinearSolver(const std::string& backend)
+    : backend_(backend.empty() ? backendFromEnvironment() : backend)
+{
+    if(const char* directory=std::getenv("VELA_LINEAR_CAPTURE_DIR")) captureDirectory_=directory;
+    if (const char* flag = std::getenv("VELA_LINEAR_FACTOR_STATISTICS")) {
+        if (std::strcmp(flag, "0") == 0) factorStatistics_ = false;
+        else if (*flag && std::strcmp(flag, "1") != 0)
+            throw std::invalid_argument("VELA_LINEAR_FACTOR_STATISTICS must be 0 or 1");
+    }
+    if (backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") createDirectBackend();
+    if (backend_ == "umfpack" || backend_ == "umfpack_metis") {
+#if defined(VELA_HAS_UMFPACK)
+        umfpack_ = std::make_unique<UmfPackState>();
+        if (backend_ == "umfpack_metis")
+            umfpack_->solver.umfpackControl()[UMFPACK_ORDERING] = UMFPACK_ORDERING_METIS;
+#else
+        throw std::invalid_argument("LinearSolver: UMFPACK was not enabled in this build");
+#endif
+    }
+}
+
+LinearSolver::~LinearSolver() = default;
+
+void LinearSolver::createDirectBackend() {
+    if (backend_ == "sparselu_metis") direct_ = detail::makeMetisSparseLU();
+    else if (backend_ == "mumps" || backend_ == "mumps_metis") direct_ = detail::makeMumps(backend_ == "mumps_metis");
+    else if (backend_ == "superlu_mt" || backend_ == "superlu_mt_metis") direct_ = detail::makeSuperLuMt(backend_ == "superlu_mt_metis");
+    else if (backend_ == "strumpack") direct_ = detail::makeStrumpack();
+}
+
+VectorXd LinearSolver::solveDirect(const SparseMatrixd& a, const VectorXd& b) {
+    try {
+        if(a.rows()==0) throw std::invalid_argument("empty system");
+        if (!b.allFinite() || !Eigen::Map<const VectorXd>(a.valuePtr(),a.nonZeros()).allFinite())
+            throw std::runtime_error("nonfinite input");
+        if (!direct_) createDirectBackend();
+        const bool same=patternMatches(a), reuse=same && valuesMatchFactorization(a);
+        if(!reuse) {
+            // Some vendor symbolic paths assume every row and column is present.
+            // Reject these provably singular inputs before calling that code.
+            std::vector<bool> rows(static_cast<std::size_t>(a.rows()),false);
+            for(int j=0;j<a.outerSize();++j) {
+                bool nonzero=false;
+                for(SparseMatrixd::InnerIterator it(a,j);it;++it) if(it.value()!=0.) {
+                    rows[it.row()]=true;nonzero=true;
+                }
+                if(!nonzero) throw std::runtime_error("singular system: empty numerical column");
+            }
+            if(std::find(rows.begin(),rows.end(),false)!=rows.end())
+                throw std::runtime_error("singular system: empty numerical row");
+        }
+        {
+            ScopedPerformanceTimer timer("linear.analyze");
+            if(same) incrementPerformanceCounter("linear.analyze_cache_hits");
+            else {
+                hasFactorization_=false;
+                // A changed structure requires a new vendor instance.
+                createDirectBackend();
+                incrementPerformanceCounter("linear.analyze_calls");direct_->analyze(a);
+                cachePattern(a);++patternAnalysisCount_;
+            }
+        }
+        {
+            ScopedPerformanceTimer timer("linear.factorize");
+            if(reuse) incrementPerformanceCounter("linear.factorize_cache_hits");
+            else {
+                hasFactorization_=false;cachedValues_.clear();
+                incrementPerformanceCounter("linear.factorize_calls");direct_->factor(a);
+                cacheFactorizationValues(a);
+            }
+        }
+        if(!reuse && factorStatistics_ && activePerformanceProfiler()) {
+            ScopedPerformanceTimer timer("linear.factor_statistics");direct_->statistics();
+        }
+        ScopedPerformanceTimer timer("linear.solve");
+        VectorXd x=direct_->solve(b);
+        if(x.size()!=b.size() || !x.allFinite()) throw std::runtime_error("invalid solution");
+        return x;
+    } catch(const std::exception& e) {
+        const std::string message=e.what();clearPatternCache();
+        throw std::runtime_error("LinearSolver["+backend_+"]: "+message+sparseMatrixDiagnostics(a,b));
+    }
+}
+
+VectorXd LinearSolver::solveUmfPack(const SparseMatrixd& A, const VectorXd& b)
+{
+#if defined(VELA_HAS_UMFPACK)
+    const auto fail = [&](const char* phase) {
+        clearPatternCache();
+        throw std::runtime_error(std::string("LinearSolver: UMFPACK ") + phase +
+            " failed." + sparseMatrixDiagnostics(A, b));
+    };
+    if (!b.allFinite() || !Eigen::Map<const VectorXd>(A.valuePtr(), A.nonZeros()).allFinite())
+        fail("nonfinite input check");
+    const bool samePattern = patternMatches(A);
+    const bool reuse = samePattern && valuesMatchFactorization(A);
+    if (!reuse) umfpack_->matrix = A;
+    auto& lu = umfpack_->solver;
+    {
+        ScopedPerformanceTimer timer("linear.analyze");
+        if (samePattern) incrementPerformanceCounter("linear.analyze_cache_hits");
+        else {
+            hasFactorization_ = false;
+            incrementPerformanceCounter("linear.analyze_calls");
+            lu.analyzePattern(umfpack_->matrix);
+            if (lu.info() != Eigen::Success) fail("symbolic analysis");
+            if (backend_ == "umfpack_metis" && lu.statistic(UMFPACK_ORDERING_USED) != UMFPACK_ORDERING_METIS)
+                fail("requested METIS ordering unavailable");
+            cachePattern(A);
+            ++patternAnalysisCount_;
+        }
+    }
+    {
+        ScopedPerformanceTimer timer("linear.factorize");
+        if (reuse) incrementPerformanceCounter("linear.factorize_cache_hits");
+        else {
+            hasFactorization_ = false;
+            cachedValues_.clear();
+            incrementPerformanceCounter("linear.factorize_calls");
+            lu.factorize(umfpack_->matrix);
+            if (lu.info() != Eigen::Success) fail("factorisation");
+            cacheFactorizationValues(A);
+        }
+    }
+    if (!reuse && factorStatistics_ && activePerformanceProfiler()) {
+        ScopedPerformanceTimer diagnostics("linear.factor_statistics");
+        const auto emit = [&](const char* name, int index) {
+            const double value = lu.statistic(index);
+            if (std::isfinite(value) && value >= 0.) observePerformanceValue(name, value);
+        };
+        emit("linear.numeric_factor_nonzeros_l", UMFPACK_LNZ);
+        emit("linear.numeric_factor_nonzeros_u", UMFPACK_UNZ);
+        emit("linear.umfpack_reported_flops", UMFPACK_FLOPS);
+        emit("linear.umfpack_strategy_used", UMFPACK_STRATEGY_USED);
+        emit("linear.umfpack_ordering_used", UMFPACK_ORDERING_USED);
+        emit("linear.umfpack_max_front_entries", UMFPACK_MAX_FRONT_SIZE);
+        observePerformanceValue("linear.numeric_factor_fill_ratio",
+            (lu.statistic(UMFPACK_LNZ) + lu.statistic(UMFPACK_UNZ)) / A.nonZeros());
+        observePerformanceValue("linear.umfpack_internal_peak_bytes",
+            lu.statistic(UMFPACK_PEAK_MEMORY) * lu.statistic(UMFPACK_SIZE_OF_UNIT));
+    }
+    VectorXd x(A.cols());
+    {
+        ScopedPerformanceTimer timer("linear.solve");
+        // Eigen's solve expression discards this adapter's boolean status.
+        // Check it explicitly, then reject nonfinite solutions as well.
+        if (!lu._solve_impl(b, x) || !x.allFinite()) fail("back-substitution");
+    }
+    if (factorStatistics_)
+        observePerformanceValue("linear.umfpack_refinement_steps", lu.statistic(UMFPACK_IR_TAKEN));
+    return x;
+#else
+    (void)A; (void)b;
+    throw std::invalid_argument("LinearSolver: UMFPACK was not enabled in this build");
+#endif
+}
+
 bool solveSparseQrSystem(const SparseMatrixd& A,
                          const VectorXd& b,
                          VectorXd& x) noexcept
@@ -308,9 +479,15 @@ VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b)
         matrix = &compressed;
     }
 
-    static const std::string backend = backendFromEnvironment();
-    if (backend != "sparselu")
-        return solveWithAlternateBackend(backend, *matrix, b);
+    const auto finish=[&](VectorXd x) {
+        if(!captureDirectory_.empty()) detail::captureLinearInput(captureDirectory_,*matrix,b,x);
+        return x;
+    };
+    if (backend_ == "umfpack" || backend_ == "umfpack_metis")
+        return finish(solveUmfPack(*matrix, b));
+    if (backend_ == "sparselu_metis" || backend_ == "mumps" || backend_ == "mumps_metis" || backend_ == "superlu_mt" || backend_ == "superlu_mt_metis" || backend_ == "strumpack") return finish(solveDirect(*matrix,b));
+    if (backend_ != "sparselu")
+        return finish(solveWithAlternateBackend(backend_, *matrix, b));
 
     // A repeated solve with the same matrix (Newton line searches, feedback
     // state substitution) currently refactorises identical values.  Reusing the
@@ -342,6 +519,19 @@ VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b)
                 "Matrix may be singular or ill-conditioned." +
                 sparseMatrixDiagnostics(*matrix, b));
         cacheFactorizationValues(*matrix);
+        if (factorStatistics_ && activePerformanceProfiler()) {
+            ScopedPerformanceTimer diagnostics("linear.factor_statistics");
+            observePerformanceValue("linear.numeric_factor_nonzeros_l", solver_.nnzL());
+            observePerformanceValue("linear.numeric_factor_nonzeros_u", solver_.nnzU());
+            observePerformanceValue("linear.numeric_factor_fill_ratio",
+                double(solver_.nnzL() + solver_.nnzU()) / matrix->nonZeros());
+            observePerformanceValue("linear.sparselu_structural_flops_estimate", solver_.structuralFlops());
+#if defined(VELA_SPARSELU_ORDERING_AMD)
+            incrementPerformanceCounter("linear.numeric_ordering_amd");
+#else
+            incrementPerformanceCounter("linear.numeric_ordering_colamd");
+#endif
+        }
     }
 
     const double factorNonzerosL = static_cast<double>(solver_.nnzL());
@@ -366,11 +556,12 @@ VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b)
             "LinearSolver: SparseLU back-substitution failed." +
             sparseMatrixDiagnostics(*matrix, b));
 
-    return x;
+    return finish(std::move(x));
 }
 
 void LinearSolver::clearPatternCache()
 {
+    direct_.reset();
     hasAnalyzedPattern_ = false;
     cachedRows_ = 0;
     cachedCols_ = 0;
