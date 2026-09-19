@@ -21,6 +21,55 @@
 
 using namespace vela;
 
+#if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
+extern "C" int openblas_get_num_threads();
+extern "C" void openblas_set_num_threads(int);
+#endif
+
+TEST_CASE("Explicit BLAS single-thread control is opt-in and observable", "[linear_solver][blas_threads]") {
+    struct Guard {
+        const bool existed=std::getenv("VELA_BLAS_THREADS")!=nullptr;
+        const std::string old=existed?std::getenv("VELA_BLAS_THREADS"):"";
+#if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
+        const int oldThreads=openblas_get_num_threads();
+#endif
+        void set(const char* value) {
+#ifdef _WIN32
+            _putenv_s("VELA_BLAS_THREADS",value?value:"");
+#else
+            if(value) setenv("VELA_BLAS_THREADS",value,1);else unsetenv("VELA_BLAS_THREADS");
+#endif
+        }
+        ~Guard() {
+            set(existed?old.c_str():nullptr);
+#if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
+            openblas_set_num_threads(oldThreads);
+#endif
+        }
+    } guard;
+    guard.set("2");REQUIRE_THROWS_AS(LinearSolver("sparselu"),std::invalid_argument);
+    guard.set("invalid");REQUIRE_THROWS_AS(LinearSolver("sparselu"),std::invalid_argument);
+    guard.set("1");
+#if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
+    SparseMatrixd a(3,3);a.insert(0,0)=2.;a.insert(0,1)=.3;a.insert(1,1)=4.;a.insert(2,0)=-.2;a.insert(2,2)=5.;a.makeCompressed();
+    VectorXd exact(3);exact<<1.,-2.,3.;const VectorXd b=a*exact;
+    LinearSolver solver("sparselu");REQUIRE(openblas_get_num_threads()==1);
+    PerformanceProfiler profiler({true,"unused.json"});
+    {
+        ActivePerformanceProfilerScope active(&profiler);
+        REQUIRE((solver.solve(a,b)-exact).norm()<1e-14);
+        REQUIRE((solver.solve(a,2.*b)-2.*exact).norm()<1e-14);
+    }
+    const auto observation=profiler.toJson().at("observations").at("linear.openblas_threads");
+    REQUIRE(observation.at("min")==1);REQUIRE(observation.at("max")==1);
+    REQUIRE(observation.at("count")==2);
+    openblas_set_num_threads(2);REQUIRE_THROWS(solver.solve(a,b));
+    guard.set(nullptr);LinearSolver noControl("sparselu");REQUIRE(openblas_get_num_threads()==2);
+#else
+    REQUIRE_THROWS_AS(LinearSolver("sparselu"),std::invalid_argument);
+#endif
+}
+
 namespace {
 
 SparseMatrixd makeSparseMatrix(
@@ -78,6 +127,19 @@ TEST_CASE("Optional direct backends preserve equations caches and failure recove
             const auto counts=profiler.toJson().at("counters");
             REQUIRE(counts.at("linear.factorize_calls")==2);
             REQUIRE(counts.at("linear.factorize_cache_hits")==1);
+            // A new DC request must preserve the graph but refresh numeric
+            // factors, even for a bitwise identical coefficient matrix.
+            solver.clearNumericCache();
+            PerformanceProfiler requestProfiler({true,"unused.json"});
+            {
+                ActivePerformanceProfilerScope active(&requestProfiler);
+                check(a);
+            }
+            REQUIRE(solver.patternAnalysisCount()==1);
+            const auto requestCounts=requestProfiler.toJson().at("counters");
+            REQUIRE(requestCounts.at("linear.analyze_cache_hits")==1);
+            REQUIRE(requestCounts.at("linear.factorize_calls")==1);
+            REQUIRE_FALSE(requestCounts.contains("linear.factorize_cache_hits"));
             a.coeffRef(3,0)=.7;check(a);REQUIRE(solver.patternAnalysisCount()==2);
             solver.clearPatternCache();check(a);REQUIRE(solver.patternAnalysisCount()==3);
             auto singular=makeSparseMatrix(4,4,{{0,0,1.},{1,1,1.},{2,2,1.}});

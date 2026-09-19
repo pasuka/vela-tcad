@@ -6,6 +6,33 @@ evidence.
 
 ## Current References
 
+- [Four-backend cross-point curve validation, 2026-09-19](validation/templates_ldmos_four_backend_reuse_2026-09-19.md):
+  SparseLU/UMFPACK/MUMPS/SuperLU_MT, ordinary worker versus analysis reuse,
+  all 16 dual-gate D5 first-eight-point curves pass with identical paired states,
+  Newton updates and factorization counts. One paired round, solver/BLAS 1+1;
+  default remains off, auxiliary analyses remain separate.
+
+- [Cross-point Newton analysis reuse, 2026-09-19](validation/templates_ldmos_cross_point_analysis_2026-09-19.md):
+  default-off sequential linear context; all six D5 first-eight-point controls pass.
+  Incremental wall savings over ordinary worker are 8.57%/8.78%; main-only services
+  add no analyses after reuse. Auxiliary solvers remain separate; one round only.
+
+- [STRUMPACK ordering comparison, 2026-09-19](validation/templates_ldmos_strumpack_ordering_2026-09-19.md):
+  METIS/AMD/MMD/AND over 36 captured systems, three analysis policies and three rounds;
+  all 1,296 systems pass. METIS wins with reuse, AMD wins with per-matrix rebuilding.
+  Ordering/tree timings and fill recorded; factor structure varies across some repeats.
+  No production or curve qualification change.
+
+- [STRUMPACK verified 2+1 threads: D5 first-eight-point controls, 2026-09-19](validation/templates_ldmos_strumpack_verified_threads_2026-09-19.md):
+  all four dual-gate curves and runtime thread audits pass; end-to-end wall time is
+  2.87%/4.60% higher than paired UMFPACK. Faster factorization is offset by analysis
+  and solve costs; one paired round only, no full-curve qualification or promotion.
+
+- [BLAS threading and STRUMPACK compression, 2026-09-19](validation/templates_ldmos_blas_compression_2026-09-19.md):
+  isolated Eigen BLAS and compression candidates; runtime thread verification and
+  13 configurations over 36 matrices, three rounds, all accuracy gates pass.
+  Corrects the previous BLAS=1 assumption for OpenMP OpenBLAS; no production promotion.
+
 - [Sparse backend and METIS execution, 2026-09-18](validation/templates_ldmos_sparse_backend_execution_2026-09-18.md):
   optional adapters and linear-contract tests implemented; historical/current matrix screening passes.
   All six single-thread D5 dual-gate first-eight-point controls pass; no new wall-time winner.

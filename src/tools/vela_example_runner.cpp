@@ -37,7 +37,8 @@ void usage(const char* argv0)
 {
     std::cerr << "Usage: " << argv0
               << " --config <simulation.json> [--mesh-report] [--log <auto|off|path>] [--log-profile <minimal|default|debug>]\n"
-              << "       " << argv0 << " --dc-worker  (sequential JSON-lines requests on stdin)\n";
+              << "       " << argv0 << " --dc-worker  (sequential JSON-lines requests on stdin)\n"
+              << "       " << argv0 << " --dc-worker-linear-reuse  (experimental cross-request analysis cache)\n";
 }
 
 struct RuntimeLogOverrideGuard {
@@ -3246,9 +3247,9 @@ nlohmann::json runNewtonJacobianBlockProbe(const std::string& configFile,
 
 // One response per request; numerical rejection is a request failure, not an
 // instruction to exit. A later request must still load its explicit seed.
-int runDCWorker()
+int runDCWorker(bool reuseLinearAnalysis = false)
 {
-    vela::DCSweep sweep(true);
+    vela::DCSweep sweep(true, reuseLinearAnalysis);
     std::string line;
     while (std::getline(std::cin, line)) {
         nlohmann::json response = {{"returncode", 1}};
@@ -3271,10 +3272,12 @@ int runDCWorker()
             const bool converged = !result.points.empty() && std::all_of(
                 result.points.begin(), result.points.end(),
                 [](const auto& point) { return point.converged; });
+            if (!converged) sweep.clearLinearContext();
             response.update({{"config", path}, {"converged", converged},
                              {"points", result.points.size()},
                              {"returncode", converged ? 0 : 1}});
         } catch (const std::exception& error) {
+            sweep.clearLinearContext();
             response["error"] = error.what();
         }
         std::cout.rdbuf(previous);
@@ -3288,6 +3291,8 @@ int main(int argc, char** argv)
 {
     if (argc == 2 && std::string(argv[1]) == "--dc-worker")
         return runDCWorker();
+    if (argc == 2 && std::string(argv[1]) == "--dc-worker-linear-reuse")
+        return runDCWorker(true);
     std::string configFile;
     bool includeMeshReport = false;
     vela::RuntimeLogCliOverrides logOverrides;

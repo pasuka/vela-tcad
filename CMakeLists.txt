@@ -290,6 +290,13 @@ target_link_libraries(vela_core
         Boost::headers
 )
 target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")
+option(VELA_ENABLE_OPENBLAS_THREAD_CONTROL "Enable explicit single-thread OpenBLAS experiments" OFF)
+if(VELA_ENABLE_OPENBLAS_THREAD_CONTROL)
+    find_library(VELA_OPENBLAS_CONTROL_LIBRARY NAMES openblas REQUIRED)
+    target_link_libraries(vela_core PUBLIC ${VELA_OPENBLAS_CONTROL_LIBRARY})
+    set_property(SOURCE src/solver/LinearSolver.cpp APPEND PROPERTY
+        COMPILE_DEFINITIONS VELA_HAS_OPENBLAS_THREAD_CONTROL=1)
+endif()
 target_sources(vela_core PRIVATE src/solver/MetisBackend.cpp)
 target_sources(vela_core PRIVATE src/solver/LinearCapture.cpp)
 target_sources(vela_core PRIVATE src/solver/MumpsBackend.cpp)
@@ -545,6 +552,9 @@ target_link_libraries(test_poisson PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_linear_solver tests/test_linear_solver.cpp)
 target_link_libraries(test_linear_solver PRIVATE vela_core Catch2::Catch2WithMain)
+if(VELA_ENABLE_OPENBLAS_THREAD_CONTROL)
+    target_compile_definitions(test_linear_solver PRIVATE VELA_HAS_OPENBLAS_THREAD_CONTROL=1)
+endif()
 if(VELA_ENABLE_STRUMPACK AND TARGET STRUMPACK::strumpack)
     target_compile_definitions(test_linear_solver PRIVATE VELA_HAS_STRUMPACK=1)
 endif()
@@ -560,6 +570,23 @@ add_executable(linear_solver_replay EXCLUDE_FROM_ALL src/tools/linear_solver_rep
 target_link_libraries(linear_solver_replay PRIVATE vela_core)
 add_executable(linear_solver_strategy_study EXCLUDE_FROM_ALL src/tools/linear_solver_strategy_study.cpp)
 target_link_libraries(linear_solver_strategy_study PRIVATE vela_core)
+
+# Separate executables prevent EIGEN_USE_BLAS from changing production physics
+# or mixing incompatible Eigen template instantiations with vela_core.
+if(TARGET PkgConfig::UMFPACK AND VELA_ENABLE_STRUMPACK AND TARGET STRUMPACK::strumpack)
+    foreach(study linear_solver_acceleration_study linear_solver_acceleration_blas_study)
+        add_executable(${study} EXCLUDE_FROM_ALL src/tools/linear_solver_acceleration_study.cpp)
+        target_include_directories(${study} PRIVATE include)
+        target_compile_definitions(${study} PRIVATE EIGEN_DONT_PARALLELIZE)
+        target_link_libraries(${study} PRIVATE Eigen3::Eigen nlohmann_json::nlohmann_json
+            PkgConfig::UMFPACK STRUMPACK::strumpack ${VELA_BACKEND_BLAS})
+        # MSYS2's root -isystem path interferes with GCC include_next.
+        if(MINGW)
+            set_property(TARGET ${study} PROPERTY NO_SYSTEM_FROM_IMPORTED ON)
+        endif()
+    endforeach()
+    target_compile_definitions(linear_solver_acceleration_blas_study PRIVATE EIGEN_USE_BLAS)
+endif()
 
 add_executable(test_performance_profiler tests/test_performance_profiler.cpp)
 target_link_libraries(test_performance_profiler PRIVATE vela_core Catch2::Catch2WithMain)

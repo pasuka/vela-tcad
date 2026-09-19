@@ -456,13 +456,18 @@ class DCSweep {
 public:
     /// Opt-in cache for sequential requests. Each solve receives fresh copies;
     /// no accepted/rejected nonlinear state is carried between requests.
-    explicit DCSweep(bool reusePreparedInputs = false)
-        : reusePreparedInputs_(reusePreparedInputs) {}
+    explicit DCSweep(bool reusePreparedInputs = false, bool reuseLinearAnalysis = false)
+        : reusePreparedInputs_(reusePreparedInputs || reuseLinearAnalysis),
+          reuseLinearAnalysis_(reuseLinearAnalysis) {}
+    /// Clear on rejected/invalid worker requests; never retain rejected states.
+    void clearLinearContext() const { sequentialLinearSolver_.reset(); }
     std::vector<DCSweepPoint> run(const std::string& configFile) const;
     DCSweepResult runWithResult(const std::string& configFile) const;
 private:
     struct PreparedInputs;
     bool reusePreparedInputs_;
+    bool reuseLinearAnalysis_;
+    mutable std::shared_ptr<LinearSolver> sequentialLinearSolver_;
     mutable std::shared_ptr<PreparedInputs> preparedInputs_;
 };
 

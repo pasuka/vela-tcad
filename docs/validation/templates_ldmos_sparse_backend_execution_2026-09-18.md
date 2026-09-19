@@ -1,5 +1,12 @@
 # LDMOS 多直接法后端与 METIS 执行记录
 
+线程口径更正（2026-09-19）：本机 OpenBLAS 为 `USE_OPENMP` 构建，旧脚本的
+`OPENBLAS_NUM_THREADS=1` 未隔离 BLAS 线程；设置 `OMP_NUM_THREADS=4` 时库查询
+返回 4。因此下文历史“BLAS=1”是请求值，不能认领已生效。数值检查和墙钟记录
+保留，2/4 线程收益不能单独归因于求解器。后续独立实验通过
+`openblas_set_num_threads` 设置并查询实际配置，详见
+[BLAS 与压缩验证](templates_ldmos_blas_compression_2026-09-19.md)。
+
 状态：本轮接入及筛选完成（9 月 19 日续接结束）。已完成线性合同测试、两类固定
 矩阵筛选、六配置单线程 D5 双栅压前 8 点，以及线程矩阵/STRUMPACK 曲线对照。
 新增配置未胜过同批 UMFPACK，因此未触发“优胜候选完整曲线三轮配对”阶段。

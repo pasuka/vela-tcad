@@ -10,10 +10,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts'))
 from analyze_templates_ldmos_isothermal_backends import factor_statistics
 from windows_system_load import cpu_interval
 from analyze_templates_ldmos_multi_backend import matrix_summary, curve_summary
-from run_templates_ldmos_isothermal_backends import archive_interrupted_artifacts, validate_resume_settings, backend_threads
+from run_templates_ldmos_isothermal_backends import archive_interrupted_artifacts, validate_resume_settings, backend_threads, audit_runtime_threads
 
 
 class StatisticsTests(unittest.TestCase):
+    def test_thread_audit_requires_runtime_evidence(self):
+        import json
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'replay.json'
+            profile=dict(counters={'linear.solve_calls':2},observations={})
+            def save():path.write_text(json.dumps({'systems':[{'profiling':profile}]}))
+            save()
+            with self.assertRaises(ValueError):audit_runtime_threads(path,'strumpack',2)
+            for name,value in [('linear.openblas_threads',1),('linear.strumpack_omp_threads',2),('linear.strumpack_omp_max_active_levels',1)]:
+                profile['observations'][name]=dict(min=value,max=value,count=2)
+            save();self.assertTrue(audit_runtime_threads(path,'strumpack',2)['verified'])
+            profile['observations']['linear.openblas_threads']['max']=2
+            save()
+            with self.assertRaises(ValueError):audit_runtime_threads(path,'strumpack',2)
+
     def test_threaded_candidates_keep_serial_control_fixed(self):
         for requested in [1,2,4]:
             self.assertEqual(backend_threads('strumpack',requested),requested)

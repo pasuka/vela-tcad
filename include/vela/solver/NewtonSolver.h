@@ -25,6 +25,8 @@
 
 namespace vela {
 
+class LinearSolver;
+
 struct NewtonCarrierRowConvergenceConfig {
     std::string mode = "off"; ///< "off", "report", or "enforce".
     Real epsRow = 1.0e-3;
@@ -143,6 +145,9 @@ struct NewtonBlockAbsoluteConvergenceConfig {
 };
 
 struct NewtonConfig {
+    /// Explicit sequential experiment; no nonlinear state is retained here.
+    /// The owner controls lifetime and invalidation across DC requests.
+    std::shared_ptr<LinearSolver> sequentialLinearSolver;
     int maxIter = 20;
     Real reltol = 1.0e-8;
     Real abstol = 1.0e-18;

@@ -158,11 +158,32 @@ SuperLU_MT uses COLAMD or an external METIS column ordering with internal
 postordering; STRUMPACK uses METIS, maximum diagonal-product matching/scaling,
 uncompressed DIRECT mode, and disables tiny-pivot replacement and GPU execution.
 `VELA_LINEAR_THREADS` accepts `1` (default), `2`, or `4` for those three threaded
-adapters. Control BLAS threads separately; this is not a thread setting for Eigen
+adapters. Control BLAS threads separately; the installed OpenMP OpenBLAS ignores
+`OPENBLAS_NUM_THREADS`, so that variable alone does not isolate BLAS threads.
+The isolated acceleration study uses `openblas_set_num_threads` and records the
+runtime query. The shared runner also offers the opt-in experiment
+`VELA_ENABLE_OPENBLAS_THREAD_CONTROL=ON` (CMake default OFF) with
+`VELA_BLAS_THREADS=1`. It requires OpenBLAS, verifies the reported thread count
+after every solve, and records `linear.openblas_threads`. Other requested values
+are rejected by the shared runner. STRUMPACK additionally records its OpenMP
+thread count and restricts active nesting to one level for this experiment.
+Without the environment switch the shared runner does not set BLAS threads.
+This is not a thread setting for Eigen
 SparseLU or UMFPACK. Performance qualification is configuration-specific.
 See the [backend screening record](validation/templates_ldmos_sparse_backend_execution_2026-09-18.md)
 for tested ranges. SuperLU_MT at 2/4 threads encountered replay accuracy failures
 and has not passed that qualification; small-system unit tests do not override it.
+
+The experimental CLI `vela_example_runner --dc-worker-linear-reuse` retains the
+main Newton linear context across sequential JSON-lines DC requests. Ordinary
+`--dc-worker` retains prepared inputs only. Each new request invalidates numeric
+factors; changed prepared inputs, sparse structure, or failed/invalid requests
+invalidate analysis as appropriate. STRUMPACK also retains its value-dependent
+matching/scaling until reanalysis. Auxiliary Poisson/recovery solvers keep their
+existing lifetimes. No nonlinear state is implicitly reused. This is default-off;
+the linked D5/D4 script requires both `--worker --reuse-linear-analysis` and
+rejects a resume with changed cache policy. See the
+[cross-point experiment](validation/templates_ldmos_cross_point_analysis_2026-09-19.md).
 
 `VELA_LINEAR_CAPTURE_DIR` is an opt-in diagnostic directory, which must already
 exist. It records at most four large three-block solver inputs per process as

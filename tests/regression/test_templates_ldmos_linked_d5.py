@@ -94,7 +94,8 @@ class LinkedD5Test(unittest.TestCase):
             changed=deepcopy(ledger);changed[key]=value
             with self.assertRaises(ValueError,msg=key):check(plan,changed)
         for key,value in [('runner_sha256','other'),('gate_V',4),('max_step_V',.4),
-                          ('execution_mode','dc_worker'),('original_blocks',{}),('linear_solver','umfpack')]:
+                          ('execution_mode','dc_worker'),('original_blocks',{}),('linear_solver','umfpack'),
+                          ('reuse_linear_analysis',True)]:
             changed=deepcopy(plan);changed[key]=value
             with self.assertRaises(ValueError,msg=key):check(changed,ledger)
 

@@ -18,6 +18,7 @@
 #include "vela/post/ContactCurrent.h"
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
+#include "vela/solver/LinearSolver.h"
 #include "vela/solver/detail/ContinuityTermCache.h"
 
 #include <algorithm>
@@ -557,6 +558,36 @@ TEST_CASE("NewtonSolver: PN diode equilibrium converges", "[newton]")
     REQUIRE(result.converged);
     REQUIRE(result.iters >= 0);
     REQUIRE(result.finalResidualNorm <= result.initialResidualNorm);
+}
+
+TEST_CASE("NewtonSolver: sequential linear context does not retain nonlinear state",
+          "[newton][linear_reuse]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg = newtonConfig();
+    auto seed = runNewton(mesh, matdb, doping, zeroBias(), cfg).solution;
+    seed.phin(4) += 1e-4;
+    seed.phinIncrement(4) += 1e-4;
+    cfg.warmStart = true;
+    cfg.stallResidualFloor = 0.0;
+    const auto baseline = runNewton(mesh, matdb, doping, zeroBias(), seed, cfg);
+    REQUIRE(baseline.converged);
+    cfg.sequentialLinearSolver = std::make_shared<LinearSolver>("sparselu");
+    const auto first = runNewton(mesh, matdb, doping, zeroBias(), seed, cfg);
+    REQUIRE(first.converged);
+    REQUIRE(first.iters > 0);
+    const auto analyses = cfg.sequentialLinearSolver->patternAnalysisCount();
+    REQUIRE(analyses > 0);
+    cfg.sequentialLinearSolver->clearNumericCache();
+    const auto repeated = runNewton(mesh, matdb, doping, zeroBias(), seed, cfg);
+    REQUIRE(repeated.converged);
+    REQUIRE(cfg.sequentialLinearSolver->patternAnalysisCount() == analyses);
+    REQUIRE(repeated.iters == baseline.iters);
+    REQUIRE((repeated.solution.psi - baseline.solution.psi).norm() < 1e-12);
+    REQUIRE((repeated.solution.phin - baseline.solution.phin).norm() < 1e-12);
+    REQUIRE((repeated.solution.phip - baseline.solution.phip).norm() < 1e-12);
 }
 
 TEST_CASE("NewtonSolver: accepts a qualified initial numerical-floor restart",

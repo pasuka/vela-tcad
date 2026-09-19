@@ -196,7 +196,7 @@ def run_child(name, parent, parent_bias, target, cap, frame):
     started=time.perf_counter()
     with (dest/'stdout.log').open('w',encoding='utf-8') as log:
         if args.worker:
-            if WORKER is None: WORKER=DCWorker(RUNNER,HERE,ENV,cpu_times)
+            if WORKER is None: WORKER=DCWorker(RUNNER,HERE,ENV,cpu_times,reuse_linear_analysis=args.reuse_linear_analysis)
             status['pid']=WORKER.proc.pid;write(dest/'status.json',status)
             response,cpu=WORKER.run(dest/'control.json')
             log.write(json.dumps(response)+'\n')
@@ -510,10 +510,12 @@ def audit(sweep,plan,*,write_output=True):
     return summary
 
 
-def validate_resume_contract(plan,ledger,targets,runner_sha,gate,max_step,frame,worker,linear_solver='sparselu'):
+def validate_resume_contract(plan,ledger,targets,runner_sha,gate,max_step,frame,worker,linear_solver='sparselu',reuse_linear_analysis=False):
     """Only resume an immutable, inactive prefix of the requested experiment."""
     if ledger.get('active_child') is not None or ledger.get('status')=='running':
         raise ValueError('Cannot resume an active solver run')
+    if plan.get('reuse_linear_analysis',False)!=reuse_linear_analysis:
+        raise ValueError('Cannot change cross-request linear analysis reuse on resume')
     if plan['runner_sha256']!=runner_sha or plan['gate_V']!=gate:
         raise ValueError('Resume runner/gate mismatch')
     if plan.get('linear_solver','sparselu')!=linear_solver:
@@ -541,7 +543,7 @@ def load_resume(source,targets,bundle,manifest):
         raise ValueError('Resume output cannot be inside its source')
     plan=read(source/'plan.json');ledger=read(source/'fixed/ledger.json')
     validate_resume_contract(plan,ledger,targets,manifest['runner_sha256'],args.gate,
-                             MAXIMUM,FRAME,args.worker,args.linear_solver)
+                             MAXIMUM,FRAME,args.worker,args.linear_solver,args.reuse_linear_analysis)
     for relative,expected in bundle['files'].items():
         if plan['frozen_files'].get(str(ROOT/relative))!=expected:
             raise ValueError(f'Resume physical input differs: {relative}')
@@ -592,7 +594,9 @@ def main():
     parser.add_argument('--resume-from',type=Path,help='Read-only accepted prefix; copy its evidence into a new output and continue')
     parser.add_argument('--preflight',action='store_true')
     parser.add_argument('--worker',action='store_true',help='Reuse one sequential DC worker with prepared input cache')
+    parser.add_argument('--reuse-linear-analysis',action='store_true',help='Default-off sequential Newton linear context; requires --worker')
     args=parser.parse_args()
+    if args.reuse_linear_analysis and not args.worker:parser.error('--reuse-linear-analysis requires --worker')
     PHYSICS_PROFILE=args.physics_profile
     ROOT=args.workspace.resolve(); HERE=args.output.resolve()
     if HERE.exists(): raise ValueError('Refusing to overwrite an experiment')
@@ -639,6 +643,7 @@ def main():
         backend=manifest['backend'],reference=str(REFERENCE),frame_pivot_V=FRAME_PIVOT,
         frame_offset_V=FRAME,created_at=stamp(),scope=f'{PHYSICS_PROFILE} linked sweep; original gates')
     plan['execution_mode']='dc_worker' if args.worker else 'subprocess'
+    plan['reuse_linear_analysis']=args.reuse_linear_analysis
     plan['linear_solver']=args.linear_solver
     if resume:
         plan['resume_origin']=dict(directory=str(origin),plan_sha256=digest(origin/'plan.json'),

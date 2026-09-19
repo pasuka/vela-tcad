@@ -15,6 +15,8 @@
 #include <unsupported/Eigen/IterativeSolvers>
 
 #include <algorithm>
+#include <atomic>
+#include <cstdio>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -24,9 +26,43 @@
 #include <string>
 #include <vector>
 
+#if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
+extern "C" void openblas_set_num_threads(int);
+extern "C" int openblas_get_num_threads();
+#endif
+
 namespace vela {
 
 namespace {
+
+bool blasThreadControlRequested() {
+    const char* value=std::getenv("VELA_BLAS_THREADS");
+    if(!value || !*value) return false;
+    if(std::strcmp(value,"1")!=0)
+        throw std::invalid_argument("Shared runner VELA_BLAS_THREADS currently supports only 1");
+    return true;
+}
+void verifyBlasThreads() {
+    if(!blasThreadControlRequested()) return;
+#if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
+    const int actual=openblas_get_num_threads();
+    if(actual!=1) throw std::runtime_error("OpenBLAS thread configuration changed during solve");
+    observePerformanceValue("linear.openblas_threads",actual);
+#else
+    throw std::invalid_argument("OpenBLAS thread control unavailable in this build");
+#endif
+}
+void configureBlasThreads() {
+    if(!blasThreadControlRequested()) return;
+#if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
+    openblas_set_num_threads(1);
+    verifyBlasThreads();
+    static std::atomic<bool> logged{false};
+    if(!logged.exchange(true)) std::fputs("VELA_BLAS_THREADS_VERIFIED requested=1 actual=1\n",stderr);
+#else
+    verifyBlasThreads();
+#endif
+}
 
 std::string backendFromEnvironment()
 {
@@ -223,6 +259,7 @@ struct LinearSolver::UmfPackState {
 LinearSolver::LinearSolver(const std::string& backend)
     : backend_(backend.empty() ? backendFromEnvironment() : backend)
 {
+    configureBlasThreads();
     if(const char* directory=std::getenv("VELA_LINEAR_CAPTURE_DIR")) captureDirectory_=directory;
     if (const char* flag = std::getenv("VELA_LINEAR_FACTOR_STATISTICS")) {
         if (std::strcmp(flag, "0") == 0) factorStatistics_ = false;
@@ -480,6 +517,7 @@ VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b)
     }
 
     const auto finish=[&](VectorXd x) {
+        verifyBlasThreads();
         if(!captureDirectory_.empty()) detail::captureLinearInput(captureDirectory_,*matrix,b,x);
         return x;
     };
@@ -557,6 +595,12 @@ VectorXd LinearSolver::solve(const SparseMatrixd& A, const VectorXd& b)
             sparseMatrixDiagnostics(*matrix, b));
 
     return finish(std::move(x));
+}
+
+void LinearSolver::clearNumericCache()
+{
+    cachedValues_.clear();
+    hasFactorization_ = false;
 }
 
 void LinearSolver::clearPatternCache()

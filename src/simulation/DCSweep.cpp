@@ -28,6 +28,7 @@
 #include "vela/post/TerminalCharge.h"
 #include "vela/post/StoredCharge.h"
 #include "vela/solver/NewtonSolver.h"
+#include "vela/solver/LinearSolver.h"
 #include "vela/solver/SolutionValidation.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -3113,6 +3114,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     } else {
         ScopedPerformanceTimer stage("dc.prepared_inputs.build");
         incrementPerformanceCounter("dc.prepared_inputs.misses");
+        sequentialLinearSolver_.reset();
         JsonMeshReader reader;
         mesh = reader.read(resolve(cfg.at("mesh_file").get<std::string>()), scaling);
         mesh.buildBoxGeometry(parseBoxGeometryOptions(cfg));
@@ -3194,6 +3196,18 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         gummel = gummelConfigFromJson(solverCfg, scaling);
         gummel.unitScalingRefs = scalingRefs;
         mobilityConfig = gummel.mobility;
+    }
+    if (reuseLinearAnalysis_ && (solverMethod == SolverMethod::Newton ||
+                                solverMethod == SolverMethod::GummelNewton)) {
+        incrementPerformanceCounter(sequentialLinearSolver_
+            ? "dc.linear_context.hits" : "dc.linear_context.misses");
+        if (!sequentialLinearSolver_) sequentialLinearSolver_ = std::make_shared<LinearSolver>();
+        // Reuse analysis only across requests. Numeric values must be factored
+        // afresh even if the next point happens to assemble identical entries.
+        sequentialLinearSolver_->clearNumericCache();
+        newton.sequentialLinearSolver = sequentialLinearSolver_;
+    } else if (reuseLinearAnalysis_) {
+        sequentialLinearSolver_.reset();
     }
     // Mesh transport coefficients and mobility options are fixed for this
     // request. Share geometry before the solvers and postprocessors copy it.

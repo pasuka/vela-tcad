@@ -1,6 +1,7 @@
 #include "DirectBackend.h"
 #include "vela/core/PerformanceProfiler.h"
 #include <stdexcept>
+#include <cstdlib>
 #if defined(VELA_HAS_STRUMPACK)
 #include <StrumpackSparseSolver.hpp>
 #include <omp.h>
@@ -21,6 +22,7 @@ class StrumpackBackend final : public DirectBackend {
 public:
     StrumpackBackend() {
         omp_set_dynamic(0);omp_set_num_threads(directBackendThreads());
+        if(std::getenv("VELA_BLAS_THREADS")) omp_set_max_active_levels(1);
         auto& opts=solver_.options();
         opts.set_compression(strumpack::CompressionType::NONE);
         opts.set_Krylov_solver(strumpack::KrylovSolver::DIRECT);
@@ -47,6 +49,13 @@ public:
         check(solver_.factor(),"factor");factored_=true;
     }
     VectorXd solve(const VectorXd& b) override {
+        if(std::getenv("VELA_BLAS_THREADS")) {
+            const int actual=omp_get_max_threads();
+            if(actual!=directBackendThreads() || omp_get_max_active_levels()!=1)
+                throw std::runtime_error("STRUMPACK OpenMP thread configuration changed");
+            observePerformanceValue("linear.strumpack_omp_threads",actual);
+            observePerformanceValue("linear.strumpack_omp_max_active_levels",omp_get_max_active_levels());
+        }
         VectorXd x(b.size());check(solver_.solve(b.data(),x.data()),"solve");return x;
     }
     void statistics() const override {

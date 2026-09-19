@@ -6943,7 +6943,10 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
             return *recovered;
     }
 
-    LinearSolver linearSolver;
+    std::unique_ptr<LinearSolver> localLinearSolver;
+    if (!cfg_.sequentialLinearSolver) localLinearSolver = std::make_unique<LinearSolver>();
+    LinearSolver& linearSolver = cfg_.sequentialLinearSolver
+        ? *cfg_.sequentialLinearSolver : *localLinearSolver;
     LineSearchConfig lscfg;
     lscfg.enabled = cfg_.lineSearch;
     lscfg.initialDamping = cfg_.dampingFactor;

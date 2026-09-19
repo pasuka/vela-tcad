@@ -65,6 +65,8 @@ public:
      * @brief Clear the cached sparse pattern and force re-analysis next solve.
      */
     void clearPatternCache();
+    /// Force fresh numerical factorization while retaining symbolic analysis.
+    void clearNumericCache();
 
     /**
      * @brief Number of symbolic pattern analyses performed by this instance.

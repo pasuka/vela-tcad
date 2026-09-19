@@ -17,8 +17,22 @@ def backend_threads(backend,requested):
  return requested if backend in ['mumps','mumps_metis','superlu_mt','superlu_mt_metis','strumpack'] else 1
 
 def validate_resume_settings(report,args):
- for key in ['backends','threads','points','rounds','profiles','factor_statistics','idle_cpu_percent']:
-  if report.get(key)!=getattr(args,key):raise ValueError('Resume settings changed: '+key)
+ for key in ['backends','threads','points','rounds','profiles','factor_statistics','idle_cpu_percent','blas_threads']:
+  if report.get(key)!=getattr(args,key,None):raise ValueError('Resume settings changed: '+key)
+
+def audit_runtime_threads(path,backend,threads):
+ if path.is_file():profiles=[r['profiling'] for r in read(path)['systems']]
+ else:profiles=[read(path/r['case']/'performance_profile.json') for r in read(path/'fixed/ledger.json')['runs']]
+ active=[p for p in profiles if p.get('counters',{}).get('linear.solve_calls',0)>0]
+ if not active:raise ValueError('No linear solves found for thread verification')
+ expected={'linear.openblas_threads':1}
+ if backend=='strumpack':expected.update({'linear.strumpack_omp_threads':threads,'linear.strumpack_omp_max_active_levels':1})
+ for profile in active:
+  for key,value in expected.items():
+   observed=profile.get('observations',{}).get(key,{})
+   if observed.get('min')!=value or observed.get('max')!=value or observed.get('count',0)<1:
+    raise ValueError('Missing or incorrect runtime thread observation: '+key)
+ return dict(profiles=len(active),expected=expected,verified=True)
 
 def archive_interrupted_artifacts(out,name,stamp):
  """Preserve original bytes and record relocation without rewriting old ledgers."""
@@ -40,6 +54,7 @@ def main():
  p.add_argument('--replay',type=Path,default=ROOT/'build-release/linear_solver_replay.exe')
  p.add_argument('--backends',nargs='+',default=['sparselu','umfpack'])
  p.add_argument('--threads',type=int,choices=[1,2,4],default=1)
+ p.add_argument('--blas-threads',type=int,choices=[1],default=None,help='Explicit API control and per-solve runtime verification; requires enabled build')
  p.add_argument('--points',type=int,choices=[8,31],default=8)
  p.add_argument('--rounds',type=int,default=1)
  p.add_argument('--profiles',nargs='+',choices=['D5','D4'],default=['D5','D4'])
@@ -54,6 +69,8 @@ def main():
  out=args.output.resolve()
  if not args.resume:out.mkdir(parents=True,exist_ok=False)
  env=dict(os.environ,OMP_NUM_THREADS=str(args.threads),OPENBLAS_NUM_THREADS='1',OMP_DYNAMIC='FALSE',VELA_LINEAR_THREADS=str(args.threads))
+ env.pop('VELA_BLAS_THREADS',None)
+ if args.blas_threads is not None:env['VELA_BLAS_THREADS']=str(args.blas_threads)
  env['VELA_LINEAR_FACTOR_STATISTICS']='1' if args.factor_statistics=='on' else '0'
  env['PATH']='D:/msys64/ucrt64/bin;D:/msys64/usr/bin;'+env.get('PATH','')
  env.pop('GMON_OUT_PREFIX',None)
@@ -95,12 +112,14 @@ def main():
   for dll in args.runner.parent.glob('*.dll'):shutil.copy2(dll,binary/dll.name)
   for name in ['CMakeCache.txt','build.ninja']:shutil.copy2(ROOT/'build-release'/name,binary/name)
   report=dict(status='running',backends=args.backends,threads=args.threads,points=args.points,rounds=args.rounds,profiles=args.profiles,
+   blas_threads=args.blas_threads,
    factor_statistics=args.factor_statistics,idle_cpu_percent=args.idle_cpu_percent,
    logical_processors=os.cpu_count(),power_scheme=subprocess.check_output(['powercfg','/getactivescheme']).decode(errors='replace'),
    runner_sha256=digest(runner),cases=[],matrix_cases=[],comparisons=[])
  for backend in args.backends:
   if not args.resume:
    manifest=dict(runner=str(runner),runner_sha256=digest(runner),backend=backend,linear_solver=backend,frozen_sources=frozen,build_type='UCRT64 Release -O3 -DNDEBUG',threads=backend_threads(backend,args.threads),factor_statistics=args.factor_statistics,
+    blas_threads=args.blas_threads,
     runtime_sha256={str(x):digest(x) for x in binary.glob('*.dll')})
    write(binary/f'{backend}.json',manifest)
   for bundle in bundles.values():
@@ -111,7 +130,7 @@ def main():
    archived=archive_interrupted_artifacts(out,name,stamp)
    report['resumptions'][-1].setdefault('archived_artifacts',[]).extend(archived)
   effective_threads=backend_threads(backend,args.threads)
-  row=dict(name=name,argv=list(map(str,argv)),backend=backend,status='running',solver_threads=effective_threads,blas_threads=1);report['active']=name;report['active_elapsed_s']=0.;save()
+  row=dict(name=name,argv=list(map(str,argv)),backend=backend,status='running',solver_threads=effective_threads,blas_threads=args.blas_threads);report['active']=name;report['active_elapsed_s']=0.;save()
   if args.idle_cpu_percent is not None:
    print('Waiting for CPU idle gate: '+name,flush=True)
    try:row['pre_run_load']=wait_for_idle(args.idle_cpu_percent)
@@ -143,6 +162,8 @@ def main():
     name=f'matrix_r{r}_{backend}'
     if any(x['name']==name and x['status']=='pass' for x in report['matrix_cases']):continue
     row=execute(name,[replay,backend,out/(name+'.json'),*captures],backend)
+    if row['returncode']==0 and args.blas_threads is not None:
+     row['thread_audit']=audit_runtime_threads(out/(name+'.json'),backend,backend_threads(backend,args.threads))
     report['matrix_cases'].append(row);save();assert row['returncode']==0,name
   for r in range(args.rounds):
    for profile in args.profiles:
@@ -158,6 +179,7 @@ def main():
        row=execute(name,[sys.executable,out/'source/scripts/run_templates_ldmos_linked_d5.py','--workspace',ROOT,'--physics-profile',profile,'--bundle',bundles[profile],'--manifest',binary/f'{backend}.json','--output',dest,'--gate',gate,'--points',args.points,'--linear-solver',backend],backend)
        report['cases'].append(row);save();assert row['returncode']==0,name
       row['audit']=read(dest/'audit_summary.json');assert row['audit']['integrity_pass']
+      if args.blas_threads is not None:row['thread_audit']=audit_runtime_threads(dest,backend,backend_threads(backend,args.threads))
       assert row['audit']['exact_points']==args.points and read(dest/'progress.json')['status']=='completed'
       pair[backend]=dest;save()
      for candidate in args.backends[1:]:
