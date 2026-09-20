@@ -6,10 +6,10 @@ import threading
 
 
 class DCWorker:
-    def __init__(self, runner, cwd, env, cpu_reader, *, reuse_linear_analysis=False):
+    def __init__(self, runner, cwd, env, cpu_reader, *, reuse_linear_analysis=True):
         self.log = (cwd / 'worker_stderr.log').open('w', encoding='utf-8')
         self.proc = subprocess.Popen(
-            [str(runner), '--dc-worker-linear-reuse' if reuse_linear_analysis else '--dc-worker'], cwd=cwd, env=env,
+            [str(runner), '--dc-worker' if reuse_linear_analysis else '--dc-worker-no-linear-reuse'], cwd=cwd, env=env,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.log,
             text=True, encoding='utf-8', bufsize=1)
         self.cpu_reader = cpu_reader

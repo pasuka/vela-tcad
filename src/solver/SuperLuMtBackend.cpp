@@ -1,6 +1,7 @@
 #include "DirectBackend.h"
 #include "vela/core/PerformanceProfiler.h"
 #include <stdexcept>
+#include <cstdlib>
 #if defined(VELA_HAS_SUPERLU_MT)
 #include <superlu_mt/slu_mt_ddefs.h>
 #endif
@@ -21,7 +22,10 @@ class SuperLuMtBackend final : public DirectBackend {
             pc_.data(),pr_.data(),nullptr,0,&a_,&ac_,&options_,&stats_);
     }
 public:
-    explicit SuperLuMtBackend(bool metis):metis_(metis) {omp_set_dynamic(0);omp_set_num_threads(threads_);}
+    explicit SuperLuMtBackend(bool metis):metis_(metis) {
+        omp_set_dynamic(0);omp_set_num_threads(threads_);
+        if(std::getenv("VELA_BLAS_THREADS")) omp_set_max_active_levels(1);
+    }
     ~SuperLuMtBackend() override {
         // options' structural arrays are owned by vectors, not pxgstrf_finalize.
         if(ac_.Store) Destroy_CompCol_Permuted(&ac_);
@@ -50,6 +54,13 @@ public:
         factored_=true;
     }
     VectorXd solve(const VectorXd& b) override {
+        if(std::getenv("VELA_BLAS_THREADS")) {
+            const int actual=omp_get_max_threads();
+            if(actual!=threads_ || omp_get_max_active_levels()!=1)
+                throw std::runtime_error("SuperLU_MT OpenMP thread configuration changed");
+            observePerformanceValue("linear.superlu_mt_omp_threads",actual);
+            observePerformanceValue("linear.superlu_mt_omp_max_active_levels",omp_get_max_active_levels());
+        }
         VectorXd x=b;SuperMatrix rhs{};int_t info=0;
         dCreate_Dense_Matrix(&rhs,static_cast<int>(b.size()),1,x.data(),static_cast<int>(b.size()),SLU_DN,SLU_D,SLU_GE);
         dgstrs(NOTRANS,&l_,&u_,pr_.data(),pc_.data(),&rhs,&stats_,&info);

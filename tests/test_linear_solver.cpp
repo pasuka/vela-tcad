@@ -26,7 +26,7 @@ extern "C" int openblas_get_num_threads();
 extern "C" void openblas_set_num_threads(int);
 #endif
 
-TEST_CASE("Explicit BLAS single-thread control is opt-in and observable", "[linear_solver][blas_threads]") {
+TEST_CASE("Explicit BLAS thread control is opt-in and observable", "[linear_solver][blas_threads]") {
     struct Guard {
         const bool existed=std::getenv("VELA_BLAS_THREADS")!=nullptr;
         const std::string old=existed?std::getenv("VELA_BLAS_THREADS"):"";
@@ -47,7 +47,7 @@ TEST_CASE("Explicit BLAS single-thread control is opt-in and observable", "[line
 #endif
         }
     } guard;
-    guard.set("2");REQUIRE_THROWS_AS(LinearSolver("sparselu"),std::invalid_argument);
+    guard.set("3");REQUIRE_THROWS_AS(LinearSolver("sparselu"),std::invalid_argument);
     guard.set("invalid");REQUIRE_THROWS_AS(LinearSolver("sparselu"),std::invalid_argument);
     guard.set("1");
 #if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
@@ -65,6 +65,26 @@ TEST_CASE("Explicit BLAS single-thread control is opt-in and observable", "[line
     REQUIRE(observation.at("count")==2);
     openblas_set_num_threads(2);REQUIRE_THROWS(solver.solve(a,b));
     guard.set(nullptr);LinearSolver noControl("sparselu");REQUIRE(openblas_get_num_threads()==2);
+    for(const char* count : {"2", "4"}) {
+        guard.set(count);
+#if defined(VELA_HAS_UMFPACK)
+        LinearSolver threaded("umfpack");
+#else
+        LinearSolver threaded("sparselu");
+#endif
+        const int expected=std::atoi(count);
+        REQUIRE(openblas_get_num_threads()==expected);
+        PerformanceProfiler measured({true,"unused.json"});
+        {
+            ActivePerformanceProfilerScope active(&measured);
+            REQUIRE((threaded.solve(a,b)-exact).norm()<1e-13);
+            REQUIRE((threaded.solve(a,2.*b)-2.*exact).norm()<1e-13);
+        }
+        const auto seen=measured.toJson().at("observations").at("linear.openblas_threads");
+        REQUIRE(seen.at("min")==expected);REQUIRE(seen.at("max")==expected);
+        REQUIRE(seen.at("count")==2);
+        openblas_set_num_threads(1);REQUIRE_THROWS(threaded.solve(a,b));
+    }
 #else
     REQUIRE_THROWS_AS(LinearSolver("sparselu"),std::invalid_argument);
 #endif
@@ -84,6 +104,51 @@ SparseMatrixd makeSparseMatrix(
 }
 
 } // namespace
+
+TEST_CASE("Direct backend preference honors explicit overrides without failover", "[linear_solver][default]") {
+    struct EnvironmentGuard {
+        const std::string old = std::getenv("VELA_LINEAR_SOLVER") ? std::getenv("VELA_LINEAR_SOLVER") : "";
+        void set(const char* value) {
+#ifdef _WIN32
+            _putenv_s("VELA_LINEAR_SOLVER", value);
+#else
+            setenv("VELA_LINEAR_SOLVER", value, 1);
+#endif
+        }
+        ~EnvironmentGuard() { set(old.c_str()); }
+    } env;
+    std::vector<std::string> expected;
+#if defined(VELA_HAS_UMFPACK)
+    expected.emplace_back("umfpack");
+#endif
+    expected.emplace_back("sparselu");
+#if defined(VELA_HAS_STRUMPACK)
+    expected.emplace_back("strumpack");
+#endif
+#if defined(VELA_HAS_MUMPS)
+    expected.emplace_back("mumps");
+#endif
+#if defined(VELA_HAS_SUPERLU_MT)
+    expected.emplace_back("superlu_mt");
+#endif
+    REQUIRE(LinearSolver::availableDirectBackends() == expected);
+    env.set("");
+    LinearSolver solver;
+    REQUIRE(solver.backend() == expected.front());
+    auto a = makeSparseMatrix(2,2,{{0,0,3.},{0,1,-1.},{1,0,2.},{1,1,5.}});
+    VectorXd exact(2); exact << 2., -1.;
+    REQUIRE((solver.solve(a,a*exact)-exact).norm() < 1e-13);
+    a.coeffRef(0,0)=4.;
+    REQUIRE((solver.solve(a,a*exact)-exact).norm() < 1e-13);
+    REQUIRE(solver.patternAnalysisCount()==1);
+    env.set("sparselu");
+    REQUIRE(LinearSolver().backend()=="sparselu");
+    REQUIRE(solver.backend()==expected.front());
+    env.set("unknown_backend");
+    LinearSolver invalid;
+    REQUIRE_THROWS(invalid.solve(a,a*exact));
+    REQUIRE(invalid.backend()=="unknown_backend");
+}
 
 TEST_CASE("Optional direct backends preserve equations caches and failure recovery", "[linear_solver][backend_contract]") {
     std::vector<std::string> backends;
@@ -341,7 +406,7 @@ TEST_CASE("LinearSolver re-analyzes when sparse pattern changes", "[linear_solve
     REQUIRE((coupled * x3 - b).norm() == Catch::Approx(0.0).margin(1e-12));
 }
 
-TEST_CASE("LinearSolver profiles numeric factor fill", "[linear_solver][performance]")
+TEST_CASE("Eigen SparseLU profiles numeric factor fill", "[linear_solver][performance]")
 {
     const SparseMatrixd A = makeSparseMatrix(3, 3, {
         {0, 0, 4.0}, {1, 0, -1.0},
@@ -350,7 +415,7 @@ TEST_CASE("LinearSolver profiles numeric factor fill", "[linear_solver][performa
     });
     const VectorXd expected = (VectorXd(3) << 1.0, 2.0, 3.0).finished();
     PerformanceProfiler profiler({true, "unused.json"});
-    LinearSolver solver;
+    LinearSolver solver("sparselu");
     {
         ActivePerformanceProfilerScope active(&profiler);
         const VectorXd solution = solver.solve(A, A * expected);

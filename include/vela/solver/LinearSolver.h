@@ -31,14 +31,10 @@ bool solveSpqrSystem(const SparseMatrixd& A,
                      VectorXd& x) noexcept;
 
 /**
- * @brief Sparse direct linear solver based on Eigen SparseLU.
- *
- * Wraps Eigen::SparseLU for the convenience of the rest of the solver
- * pipeline.  Swap this class for an iterative solver (e.g. BiCGSTAB)
- * without changing any call sites.
+ * @brief Sparse linear solver with reusable direct-backend analysis.
  *
  * Experimental backend override: set the environment variable
- * VELA_LINEAR_SOLVER to one of "sparselu" (default), "sparseqr",
+ * VELA_LINEAR_SOLVER to one of "sparselu", "sparseqr",
  * "umfpack", "sparselu_metis", "umfpack_metis", "mumps", "mumps_metis",
  * "superlu_mt", "superlu_mt_metis", "strumpack", "bicgstab_ilut",
  * "gmres_ilut", or "simplicial_ldlt". Optional direct backends retain symbolic
@@ -46,9 +42,15 @@ bool solveSpqrSystem(const SparseMatrixd& A,
  */
 class LinearSolver {
 public:
-    /// Empty selects VELA_LINEAR_SOLVER at construction (default: sparselu).
+    /// Available direct backends in preference order: UMFPACK, SparseLU,
+    /// STRUMPACK, MUMPS, SuperLU_MT. SparseLU is always available.
+    static std::vector<std::string> availableDirectBackends();
+    /// Explicit environment override, otherwise the first available backend.
+    static std::string selectedBackend();
+    /// Empty selects selectedBackend(); a failed solve never changes backends.
     explicit LinearSolver(const std::string& backend = "");
     ~LinearSolver();
+    const std::string& backend() const noexcept { return backend_; }
     /**
      * @brief Solve the linear system A * x = b.
      *

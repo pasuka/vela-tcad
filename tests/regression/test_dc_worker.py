@@ -40,7 +40,7 @@ class DCWorkerTest(unittest.TestCase):
             requests=[json.dumps(dict(id=i,config=str(path))) for i,path in enumerate(configs)]
             requests.insert(2,'malformed')
             requests.append('{"shutdown":true}')
-            result=subprocess.run([str(RUNNER),'--dc-worker-linear-reuse'],input='\n'.join(requests)+'\n',
+            result=subprocess.run([str(RUNNER),'--dc-worker'],input='\n'.join(requests)+'\n',
                                   capture_output=True,text=True,timeout=60)
             self.assertEqual(result.returncode,0,result.stderr)
             responses=[json.loads(line) for line in result.stdout.splitlines()]
@@ -53,6 +53,14 @@ class DCWorkerTest(unittest.TestCase):
                 key='hits' if i==1 else 'misses'
                 self.assertEqual(counters.get('dc.linear_context.'+key),1)
                 if i==1:self.assertEqual(counters.get('linear.analyze_calls',0),0)
+            # The explicit control must still rebuild across requests after
+            # enabling reuse by default; a baseline must not silently reuse.
+            result=subprocess.run([str(RUNNER),'--dc-worker-no-linear-reuse'],input='\n'.join(requests)+'\n',
+                                  capture_output=True,text=True,timeout=60)
+            self.assertEqual(result.returncode,0,result.stderr)
+            counters=json.loads((root/'profile1.json').read_text())['counters']
+            self.assertGreater(counters.get('linear.analyze_calls',0),0)
+            self.assertNotIn('dc.linear_context.hits',counters)
 
     def test_failure_does_not_contaminate_following_requests(self):
         with tempfile.TemporaryDirectory() as tmp:

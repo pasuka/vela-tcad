@@ -362,7 +362,7 @@ TEST_CASE("DCSweep prepared inputs preserve fresh-solve results and invalidate b
     cfg["solver"]["performance_profiling"] = {
         {"enabled", true}, {"json_file", profile.string()}};
     cfg["sweep"].update({{"stop", 0.0}, {"write_vtk", false}});
-    DCSweep cached(true);
+    DCSweep cached;
     const auto save = [&] { std::ofstream(config) << cfg.dump(2); };
     const auto counter = [&](const std::string& name) {
         return nlohmann::json::parse(readTextFile(profile))["counters"].value(name, 0);

@@ -454,9 +454,9 @@ struct DCSweepResult {
 
 class DCSweep {
 public:
-    /// Opt-in cache for sequential requests. Each solve receives fresh copies;
+    /// Default caches for sequential requests. Each solve receives fresh copies;
     /// no accepted/rejected nonlinear state is carried between requests.
-    explicit DCSweep(bool reusePreparedInputs = false, bool reuseLinearAnalysis = false)
+    explicit DCSweep(bool reusePreparedInputs = true, bool reuseLinearAnalysis = true)
         : reusePreparedInputs_(reusePreparedInputs || reuseLinearAnalysis),
           reuseLinearAnalysis_(reuseLinearAnalysis) {}
     /// Clear on rejected/invalid worker requests; never retain rejected states.

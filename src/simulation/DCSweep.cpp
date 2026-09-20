@@ -3199,6 +3199,9 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     }
     if (reuseLinearAnalysis_ && (solverMethod == SolverMethod::Newton ||
                                 solverMethod == SolverMethod::GummelNewton)) {
+        if (sequentialLinearSolver_ &&
+            sequentialLinearSolver_->backend() != LinearSolver::selectedBackend())
+            sequentialLinearSolver_.reset();
         incrementPerformanceCounter(sequentialLinearSolver_
             ? "dc.linear_context.hits" : "dc.linear_context.misses");
         if (!sequentialLinearSolver_) sequentialLinearSolver_ = std::make_shared<LinearSolver>();

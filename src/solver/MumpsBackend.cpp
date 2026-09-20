@@ -1,6 +1,7 @@
 #include "DirectBackend.h"
 #include "vela/core/PerformanceProfiler.h"
 #include <stdexcept>
+#include <cstdlib>
 #if defined(VELA_HAS_MUMPS)
 #include <dmumps_c.h>
 #include <omp.h>
@@ -22,6 +23,7 @@ class MumpsBackend final : public DirectBackend {
 public:
     explicit MumpsBackend(bool metis) {
         omp_set_dynamic(0);omp_set_num_threads(directBackendThreads());
+        if(std::getenv("VELA_BLAS_THREADS")) omp_set_max_active_levels(1);
         id_.sym=0;id_.par=1;id_.comm_fortran=-987654;run(-1);initialized_=true;
         id_.icntl[0]=-1;id_.icntl[1]=-1;id_.icntl[2]=-1;id_.icntl[3]=0;
         if(metis) id_.icntl[6]=5;
@@ -39,6 +41,13 @@ public:
         std::copy(a.valuePtr(),a.valuePtr()+a.nonZeros(),values_.begin());run(2);
     }
     VectorXd solve(const VectorXd& b) override {
+        if(std::getenv("VELA_BLAS_THREADS")) {
+            const int actual=omp_get_max_threads();
+            if(actual!=directBackendThreads() || omp_get_max_active_levels()!=1)
+                throw std::runtime_error("MUMPS OpenMP thread configuration changed");
+            observePerformanceValue("linear.mumps_omp_threads",actual);
+            observePerformanceValue("linear.mumps_omp_max_active_levels",omp_get_max_active_levels());
+        }
         VectorXd x=b;id_.rhs=x.data();id_.nrhs=1;id_.lrhs=static_cast<MUMPS_INT>(b.size());
         try {run(3);} catch(...) {id_.rhs=nullptr;throw;}
         id_.rhs=nullptr;return x;

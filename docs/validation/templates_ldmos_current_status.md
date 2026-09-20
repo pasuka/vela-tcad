@@ -1,6 +1,36 @@
 # Templates/LDMOS 当前验证状态
 
-更新：2026-09-19。当前工作分支 `codex/templates-ldmos-phase-a`。
+更新：2026-09-20。当前工作分支 `codex/templates-ldmos-phase-a`。
+
+当前转入[性能收尾](templates_ldmos_performance_closeout_2026-09-20.md)：
+用户授权默认启用主 Newton 跨点分析复用、默认优先 UMFPACK，并按
+SparseLU → STRUMPACK → MUMPS → SuperLU_MT 列出备选。新增可直接运行的
+[D5 验证算例](../../reference_tcad/templates_ldmos_sentaurus2022/validation_d5/README.md)。
+本次默认值验证与合入记录见收尾文档；以下早期“默认关闭”属于当时实验状态。
+
+新增 [T470p 1/2/4 线程对照](templates_ldmos_t470p_threads_2026-09-20.md)：
+39 次固定矩阵回放和 13 条 D5 Vg8 前八点曲线全部通过，104 精确点，
+配对状态最大差 7.11e-15 V，无外层回退。STRUMPACK 2/1 为 167.445 s，
+较 1/1 的 230.187 s 减少 27.26%；SuperLU_MT 2/4 线程减少 9.80%/10.57%，
+UMFPACK/MUMPS 在所测组合中仍以单线程最快。单轮短曲线，不认领完整曲线
+重复资格；未改生产默认。试验已结束，原完整曲线批次仍暂停。
+
+新增[同程序 T470p 主机试跑](templates_ldmos_t470p_host_pilot_2026-09-20.md)：
+五后端、统一单线程跨点复用，两主机共 10 条 D5 Vg8 前八点曲线全部通过。
+T470p 本轮墙钟减少 12.79%–34.48%，状态最大差约 8.88e-15 V；
+单轮短曲线筛选，不能与本机两轮完整曲线合并统计。试跑已结束，原完整批次仍暂停。
+
+已完成[完整曲线计时计划](templates_ldmos_full_curve_timing_plan_2026-09-20.md)的旧批次 P1，
+见[执行记录](templates_ldmos_full_curve_timing_execution_2026-09-20.md)：
+调度与联合验收入口完成，新增 6 项/既有 26 项 Python 回归及 2 项 worker 测试通过。
+12 条完整曲线、372 精确点与 6 组双栅压联合验收全部通过，0 次外层回退。
+批次停在候选名单复核处，重复计时和 D4 尚未执行。用户要求后续统一单线程，
+调度器已将 STRUMPACK 改为求解器/BLAS=1/1；旧 T1 的 2/1 结果只保留历史口径，
+不纳入单线程排名。后续改为[统一单线程新批次](templates_ldmos_single_thread_repeats_2026-09-20.md)：
+先完成 STRUMPACK 双栅压资格，再串行完成五后端三轮 D5，共 30 条曲线。
+新批次按用户要求在第二轮结束后暂停：14:56 已完成 20/30 条曲线、620 精确点、
+10 组双栅压联合验收，全部通过、无外层回退；第三轮 R2 未启动。
+仿真进程已退出，定时检查已停用；结果与续接记录已保存，不自动恢复。
 
 ## 当前总览（2026-09-19）
 

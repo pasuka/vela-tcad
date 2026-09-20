@@ -38,7 +38,8 @@ void usage(const char* argv0)
     std::cerr << "Usage: " << argv0
               << " --config <simulation.json> [--mesh-report] [--log <auto|off|path>] [--log-profile <minimal|default|debug>]\n"
               << "       " << argv0 << " --dc-worker  (sequential JSON-lines requests on stdin)\n"
-              << "       " << argv0 << " --dc-worker-linear-reuse  (experimental cross-request analysis cache)\n";
+              << "       " << argv0 << " --dc-worker-linear-reuse  (alias; reuse is enabled by default)\n"
+              << "       " << argv0 << " --dc-worker-no-linear-reuse  (disable cross-request analysis cache)\n";
 }
 
 struct RuntimeLogOverrideGuard {
@@ -3247,7 +3248,7 @@ nlohmann::json runNewtonJacobianBlockProbe(const std::string& configFile,
 
 // One response per request; numerical rejection is a request failure, not an
 // instruction to exit. A later request must still load its explicit seed.
-int runDCWorker(bool reuseLinearAnalysis = false)
+int runDCWorker(bool reuseLinearAnalysis = true)
 {
     vela::DCSweep sweep(true, reuseLinearAnalysis);
     std::string line;
@@ -3293,6 +3294,8 @@ int main(int argc, char** argv)
         return runDCWorker();
     if (argc == 2 && std::string(argv[1]) == "--dc-worker-linear-reuse")
         return runDCWorker(true);
+    if (argc == 2 && std::string(argv[1]) == "--dc-worker-no-linear-reuse")
+        return runDCWorker(false);
     std::string configFile;
     bool includeMeshReport = false;
     vela::RuntimeLogCliOverrides logOverrides;

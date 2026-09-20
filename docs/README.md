@@ -6,6 +6,35 @@ evidence.
 
 ## Current References
 
+- [LDMOS performance closeout and production defaults, 2026-09-20](validation/templates_ldmos_performance_closeout_2026-09-20.md):
+  cross-point main-Newton analysis reuse enabled by default; UMFPACK preferred,
+  SparseLU fallback, then STRUMPACK/MUMPS/SuperLU_MT in the available-backend list.
+  Portable D5 inputs and dual-gate validation entry; historical experiments remain explicit controls.
+
+- [T470p 1/2/4-thread pilot, 2026-09-20](validation/templates_ldmos_t470p_threads_2026-09-20.md):
+  39 matrix replays and 13 Vg8 first-eight-point D5 curves pass; 104 exact points,
+  unchanged gates. STRUMPACK 2/1 takes 167.445 s versus 230.187 s at 1/1;
+  UMFPACK/MUMPS do not benefit under tested settings. One curve round, defaults unchanged.
+
+- [T470p identical-binary host pilot, 2026-09-20](validation/templates_ldmos_t470p_host_pilot_2026-09-20.md):
+  five single-thread reuse backends, Vg8 first eight D5 points on N150 and T470p;
+  all 80 points pass, remote wall times 12.79–34.48% lower in this single round.
+  Full-curve repeats remain paused; host timings must not be pooled across machines.
+
+- [Single-thread five-backend repeats, 2026-09-20](validation/templates_ldmos_single_thread_repeats_2026-09-20.md):
+  STRUMPACK dual-gate qualification first, then all five reuse backends with solver/BLAS
+  1+1, three fresh D5 rounds (30 curves); original gates and historical timings preserved.
+
+- [Full-curve backend timing execution, 2026-09-20](validation/templates_ldmos_full_curve_timing_execution_2026-09-20.md):
+  all 12 D5 first-round curves and six dual-gate qualifications pass; stopped for shortlist
+  review. Future runs use solver/BLAS 1+1 for every backend; historical STRUMPACK 2+1
+  results stay separate. Repeats and D4 pending; no production default change.
+
+- [Full-curve backend timing plan, 2026-09-20](validation/templates_ldmos_full_curve_timing_plan_2026-09-20.md):
+  revised future thread contract fixes all five solvers and BLAS to one thread.
+  Original schedule retained as provenance; thread changes require a new frozen batch,
+  not a resume that mixes old STRUMPACK two-thread timings with single-thread repeats.
+
 - [Four-backend cross-point curve validation, 2026-09-19](validation/templates_ldmos_four_backend_reuse_2026-09-19.md):
   SparseLU/UMFPACK/MUMPS/SuperLU_MT, ordinary worker versus analysis reuse,
   all 16 dual-gate D5 first-eight-point curves pass with identical paired states,

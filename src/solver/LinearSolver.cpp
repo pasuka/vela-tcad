@@ -35,41 +35,36 @@ namespace vela {
 
 namespace {
 
-bool blasThreadControlRequested() {
+int requestedBlasThreads() {
     const char* value=std::getenv("VELA_BLAS_THREADS");
-    if(!value || !*value) return false;
-    if(std::strcmp(value,"1")!=0)
-        throw std::invalid_argument("Shared runner VELA_BLAS_THREADS currently supports only 1");
-    return true;
+    if(!value || !*value) return 0;
+    if(std::strcmp(value,"1")==0) return 1;
+    if(std::strcmp(value,"2")==0) return 2;
+    if(std::strcmp(value,"4")==0) return 4;
+    throw std::invalid_argument("VELA_BLAS_THREADS must be 1, 2 or 4");
 }
 void verifyBlasThreads() {
-    if(!blasThreadControlRequested()) return;
+    const int requested=requestedBlasThreads();
+    if(!requested) return;
 #if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
     const int actual=openblas_get_num_threads();
-    if(actual!=1) throw std::runtime_error("OpenBLAS thread configuration changed during solve");
+    if(actual!=requested) throw std::runtime_error("OpenBLAS thread configuration changed during solve");
     observePerformanceValue("linear.openblas_threads",actual);
 #else
     throw std::invalid_argument("OpenBLAS thread control unavailable in this build");
 #endif
 }
 void configureBlasThreads() {
-    if(!blasThreadControlRequested()) return;
+    const int requested=requestedBlasThreads();
+    if(!requested) return;
 #if defined(VELA_HAS_OPENBLAS_THREAD_CONTROL)
-    openblas_set_num_threads(1);
+    openblas_set_num_threads(requested);
     verifyBlasThreads();
     static std::atomic<bool> logged{false};
-    if(!logged.exchange(true)) std::fputs("VELA_BLAS_THREADS_VERIFIED requested=1 actual=1\n",stderr);
+    if(!logged.exchange(true)) std::fprintf(stderr,"VELA_BLAS_THREADS_VERIFIED requested=%d actual=%d\n",requested,requested);
 #else
     verifyBlasThreads();
 #endif
-}
-
-std::string backendFromEnvironment()
-{
-    const char* env = std::getenv("VELA_LINEAR_SOLVER");
-    if (env == nullptr || *env == '\0')
-        return "sparselu";
-    return std::string(env);
 }
 
 std::string sparseMatrixDiagnostics(const SparseMatrixd& A, const VectorXd& b)
@@ -256,8 +251,33 @@ struct LinearSolver::UmfPackState {
 #endif
 };
 
+std::vector<std::string> LinearSolver::availableDirectBackends()
+{
+    std::vector<std::string> names;
+#if defined(VELA_HAS_UMFPACK)
+    names.emplace_back("umfpack");
+#endif
+    names.emplace_back("sparselu");
+#if defined(VELA_HAS_STRUMPACK)
+    names.emplace_back("strumpack");
+#endif
+#if defined(VELA_HAS_MUMPS)
+    names.emplace_back("mumps");
+#endif
+#if defined(VELA_HAS_SUPERLU_MT)
+    names.emplace_back("superlu_mt");
+#endif
+    return names;
+}
+
+std::string LinearSolver::selectedBackend()
+{
+    const char* env = std::getenv("VELA_LINEAR_SOLVER");
+    return env && *env ? std::string(env) : availableDirectBackends().front();
+}
+
 LinearSolver::LinearSolver(const std::string& backend)
-    : backend_(backend.empty() ? backendFromEnvironment() : backend)
+    : backend_(backend.empty() ? selectedBackend() : backend)
 {
     configureBlasThreads();
     if(const char* directory=std::getenv("VELA_LINEAR_CAPTURE_DIR")) captureDirectory_=directory;

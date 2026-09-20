@@ -96,6 +96,10 @@ ctest --test-dir build --output-on-failure -R sentaurus
 
 ## Checked-In Validation Chains
 
+- `templates_ldmos_sentaurus2022/validation_d5`: portable R11 D5 LDMOS inputs,
+  10,241-node exact mesh, two qualified zero-drain seeds and native 0--40 V
+  references. The default runner uses UMFPACK and cross-point analysis reuse;
+  first-eight-point checks and full 62-point joint qualification are distinct.
 - `bvmethods_sentaurus2018`: Sentaurus Training NMOS BV method inputs covering
   ABA, external resistor, voltage-to-current, continuation, and transient
   approaches, plus the corresponding supported Vela template mapping.

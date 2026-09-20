@@ -290,7 +290,7 @@ target_link_libraries(vela_core
         Boost::headers
 )
 target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")
-option(VELA_ENABLE_OPENBLAS_THREAD_CONTROL "Enable explicit single-thread OpenBLAS experiments" OFF)
+option(VELA_ENABLE_OPENBLAS_THREAD_CONTROL "Enable explicit 1/2/4-thread OpenBLAS experiments" OFF)
 if(VELA_ENABLE_OPENBLAS_THREAD_CONTROL)
     find_library(VELA_OPENBLAS_CONTROL_LIBRARY NAMES openblas REQUIRED)
     target_link_libraries(vela_core PUBLIC ${VELA_OPENBLAS_CONTROL_LIBRARY})
@@ -308,6 +308,7 @@ if(VELA_ENABLE_STRUMPACK AND TARGET STRUMPACK::strumpack)
     # Do not propagate the vendor target's OpenMP compile flags into physics.
     target_link_libraries(vela_core PUBLIC $<TARGET_LINKER_FILE:STRUMPACK::strumpack> ${VELA_BACKEND_BLAS} ${OpenMP_CXX_LIBRARIES})
     set_source_files_properties(src/solver/StrumpackBackend.cpp PROPERTIES COMPILE_DEFINITIONS VELA_HAS_STRUMPACK=1 COMPILE_OPTIONS "${OpenMP_CXX_FLAGS}")
+    set_property(SOURCE src/solver/LinearSolver.cpp APPEND PROPERTY COMPILE_DEFINITIONS VELA_HAS_STRUMPACK=1)
     if(NOT MINGW)
         get_target_property(_strumpack_includes STRUMPACK::strumpack INTERFACE_INCLUDE_DIRECTORIES)
         set_property(SOURCE src/solver/StrumpackBackend.cpp PROPERTY INCLUDE_DIRECTORIES "${_strumpack_includes}")
@@ -321,6 +322,7 @@ if(VELA_ENABLE_SUPERLU_MT AND VELA_SUPERLU_MT_INCLUDE AND VELA_SUPERLU_MT_LIBRAR
     find_package(OpenMP REQUIRED COMPONENTS CXX)
     target_link_libraries(vela_core PUBLIC ${VELA_SUPERLU_MT_LIBRARY} ${OpenMP_CXX_LIBRARIES})
     set_source_files_properties(src/solver/SuperLuMtBackend.cpp PROPERTIES COMPILE_DEFINITIONS VELA_HAS_SUPERLU_MT=1 COMPILE_OPTIONS "${OpenMP_CXX_FLAGS}")
+    set_property(SOURCE src/solver/LinearSolver.cpp APPEND PROPERTY COMPILE_DEFINITIONS VELA_HAS_SUPERLU_MT=1)
     if(NOT MINGW)
         set_property(SOURCE src/solver/SuperLuMtBackend.cpp PROPERTY INCLUDE_DIRECTORIES "${VELA_SUPERLU_MT_INCLUDE}")
     endif()
@@ -330,6 +332,7 @@ if(VELA_ENABLE_SUPERLU_MT AND VELA_SUPERLU_MT_INCLUDE AND VELA_SUPERLU_MT_LIBRAR
     endif()
 endif()
 if(TARGET PkgConfig::VELA_MUMPS)
+    set_property(SOURCE src/solver/LinearSolver.cpp APPEND PROPERTY COMPILE_DEFINITIONS VELA_HAS_MUMPS=1)
     find_package(OpenMP REQUIRED COMPONENTS CXX)
     # Link only the runtime; OpenMP compilation is restricted to the adapters.
     # Propagating -fopenmp into physics/Eigen would change the control build.
@@ -869,6 +872,12 @@ add_test(NAME templates_ldmos_linked_d5_regression
 set_tests_properties(templates_ldmos_linked_d5_regression PROPERTIES
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 vela_set_windows_msys2_test_path(templates_ldmos_linked_d5_regression)
+
+add_test(NAME templates_ldmos_reference_fixture
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_ldmos_reference_fixture)
+set_tests_properties(templates_ldmos_reference_fixture PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(templates_ldmos_reference_fixture)
 
 add_test(NAME templates_ldmos_backend_statistics_regression
     COMMAND ${Python3_EXECUTABLE} -m unittest

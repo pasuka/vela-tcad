@@ -1,9 +1,17 @@
 # Sentaurus T-2022.03-SP2 Templates/LDMOS reference
 
-This directory contains only neutral, reviewable metadata and small normalized
+This directory contains neutral, reviewable inputs, metadata and normalized
 reference artifacts for the Synopsys Applications Library
 `Templates/LDMOS` case. Proprietary source decks, TDR/PLT files, logs, and
 archives must remain under the ignored top-level `reference_staging/` tree.
+
+The self-contained [D5 validation case](validation_d5/README.md) now includes all
+runtime neutral inputs and qualified zero-drain seeds for both gate biases.
+Use `python scripts/run_templates_ldmos_reference.py --output <new-directory>`
+from the repository root for the default UMFPACK, cross-point-reuse, first-eight-point
+check; add `--points 31` for the complete dual-gate curve qualification.
+This entry needs no historical staging directory. Older profiles below preserve
+their original external evidence paths and are not the portable entry point.
 
 The current validation status and reproducible D5 entry point are documented in
 [LDMOS current validation](../../docs/validation/templates_ldmos_current_status.md).
@@ -13,7 +21,7 @@ The newly discovered explicit Auger coefficient unit mismatch is corrected
 in the generator and in the now-default linked profile, which passed both
 complete from-zero curves and the joint gates. The explicit frozen replay profile
 retains the historical coefficients. See the current status for qualification
-scope and remaining IALMob work. Historical reports, `known_difference_ledger.json`
+scope and later R11 G3/D5/D4/D0 qualifications. Historical reports, `known_difference_ledger.json`
 and `stage4_decision_summary.json` retain their original dated observations.
 
 The original scope and provenance are defined by:

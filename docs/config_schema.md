@@ -140,8 +140,10 @@ inclusive; its components must not be added to it. Assembly seconds are split
 into full-Jacobian and residual-only requests; nested IALMob timers overlap them.
 
 The shared isothermal linear solver also accepts the process environment override
-`VELA_LINEAR_SOLVER=umfpack` when built with detected UMFPACK support. Its default
-remains `sparselu`. Both direct backends reuse exact sparse patterns and identical
+`VELA_LINEAR_SOLVER=umfpack` when built with detected UMFPACK support. Without an
+override, its preference order is `umfpack`, `sparselu`, `strumpack`, `mumps`,
+`superlu_mt`, excluding unavailable optional libraries. SparseLU is always
+available, so it is the default when UMFPACK is absent. Direct backends reuse exact sparse patterns and identical
 numeric factors; unavailable UMFPACK and failed solves raise errors rather than
 silently changing backends. This override is independent of the electrothermal
 configuration below; it does not select a different physical model.
@@ -163,26 +165,37 @@ adapters. Control BLAS threads separately; the installed OpenMP OpenBLAS ignores
 The isolated acceleration study uses `openblas_set_num_threads` and records the
 runtime query. The shared runner also offers the opt-in experiment
 `VELA_ENABLE_OPENBLAS_THREAD_CONTROL=ON` (CMake default OFF) with
-`VELA_BLAS_THREADS=1`. It requires OpenBLAS, verifies the reported thread count
-after every solve, and records `linear.openblas_threads`. Other requested values
-are rejected by the shared runner. STRUMPACK additionally records its OpenMP
-thread count and restricts active nesting to one level for this experiment.
+`VELA_BLAS_THREADS=1`, `2`, or `4`. It requires OpenBLAS, verifies the reported
+thread count after every solve, and records `linear.openblas_threads`. Other
+requested values are rejected. MUMPS, SuperLU_MT and STRUMPACK additionally record
+their OpenMP thread configuration and restrict active nesting to one level.
 Without the environment switch the shared runner does not set BLAS threads.
-This is not a thread setting for Eigen
-SparseLU or UMFPACK. Performance qualification is configuration-specific.
+UMFPACK's sparse algorithm remains serial; its dense kernels may use threaded
+BLAS. For this installed OpenMP BLAS, also allow the requested OpenMP team size
+with `OMP_NUM_THREADS`; the API query alone does not prove every kernel launches
+that team. The production Eigen SparseLU path has no BLAS or parallel build
+switch enabled by these runtime variables. Performance qualification is
+configuration-specific; no thread setting changes a default physical model.
 See the [backend screening record](validation/templates_ldmos_sparse_backend_execution_2026-09-18.md)
 for tested ranges. SuperLU_MT at 2/4 threads encountered replay accuracy failures
-and has not passed that qualification; small-system unit tests do not override it.
+in that historical screening; small-system unit tests do not override them.
+The later [T470p thread pilot](validation/templates_ldmos_t470p_threads_2026-09-20.md)
+passed its three matrix rounds and bounded D5 curves, a separate environment-specific
+qualification rather than a general guarantee for every multithreaded configuration.
 
-The experimental CLI `vela_example_runner --dc-worker-linear-reuse` retains the
-main Newton linear context across sequential JSON-lines DC requests. Ordinary
-`--dc-worker` retains prepared inputs only. Each new request invalidates numeric
+The default `DCSweep` and CLI `vela_example_runner --dc-worker` retain the
+main Newton linear context across points and sequential JSON-lines DC requests.
+`--dc-worker-linear-reuse` remains an alias; `--dc-worker-no-linear-reuse` is the
+explicit control that retains prepared inputs only. Each new request invalidates numeric
 factors; changed prepared inputs, sparse structure, or failed/invalid requests
-invalidate analysis as appropriate. STRUMPACK also retains its value-dependent
+invalidate analysis as appropriate. Changing the selected backend creates a new
+context. STRUMPACK also retains its value-dependent
 matching/scaling until reanalysis. Auxiliary Poisson/recovery solvers keep their
-existing lifetimes. No nonlinear state is implicitly reused. This is default-off;
-the linked D5/D4 script requires both `--worker --reuse-linear-analysis` and
-rejects a resume with changed cache policy. See the
+existing lifetimes. No nonlinear state is implicitly reused. Use
+`DCSweep(false, false)` to disable both caches explicitly. The portable
+[LDMOS reference entry](../reference_tcad/templates_ldmos_sentaurus2022/validation_d5/README.md)
+defaults to UMFPACK and reuse. Historical experiment drivers keep explicit control
+flags and reject a resume with changed cache policy. See the
 [cross-point experiment](validation/templates_ldmos_cross_point_analysis_2026-09-19.md).
 
 `VELA_LINEAR_CAPTURE_DIR` is an opt-in diagnostic directory, which must already
