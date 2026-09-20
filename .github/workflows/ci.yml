@@ -123,14 +123,17 @@ jobs:
             mingw-w64-ucrt-x86_64-strumpack
 
       - name: Check regression Python dependencies
-        run: python -c "import h5py, numpy, PIL; print(h5py.version.info)"
+        run: /ucrt64/bin/python.exe -c "import sys, h5py, numpy, PIL; print(sys.executable); print(h5py.version.info)"
 
       - name: Configure all five direct backends
         # The hosted MSYS2 path differs from the local D:/msys64 launcher.
         # Keep the Release preset, but inherit this action's UCRT64 PATH.
+        # Pin Python too: CMake may otherwise select hostedtoolcache Python,
+        # which cannot see the modules installed by pacman above.
         run: |
           set -euo pipefail
           cmake --preset windows-ucrt64-release \
+            -DPython3_EXECUTABLE="$(cygpath -m /ucrt64/bin/python.exe)" \
             '-DCMAKE_C_COMPILER_LAUNCHER=cmake;-E;env' \
             '-DCMAKE_CXX_COMPILER_LAUNCHER=cmake;-E;env' \
             '-DCMAKE_C_LINKER_LAUNCHER=cmake;-E;env' \

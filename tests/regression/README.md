@@ -11,6 +11,13 @@ install `python3-numpy python3-pil python3-h5py` and use `/usr/bin/python3`
 for CMake/CTest so that it sees the apt-installed modules. The C/C++ HDF5
 development library alone does not provide the Python `h5py` module.
 
+On Windows CI, install the UCRT64 `python-numpy`, `python-pillow`, and
+`python-h5py` packages and pass
+`-DPython3_EXECUTABLE="$(cygpath -m /ucrt64/bin/python.exe)"` to CMake from the
+MSYS2 shell. Check imports with `/ucrt64/bin/python.exe` as well: an unpinned
+CMake search can select the hosted runner's separate Python installation even
+when the shell's `python` is UCRT64.
+
 LDMOS linked-input manifests retain byte-exact SHA-256 checks. The repository's
 `.gitattributes` specifies the originally qualified LF or CRLF form for each
 checked-in dependency; do not replace hashes or normalize bytes in the digest
