@@ -12,6 +12,19 @@ import run_templates_ldmos_linked_d5 as linked
 
 
 class LinkedD5Test(unittest.TestCase):
+    def test_checked_in_bundle_dependencies_keep_exact_hashes(self):
+        folder = ROOT / 'reference_tcad/templates_ldmos_sentaurus2022/profiles'
+        bundles = list(folder.glob('linked_*_inputs.json'))
+        self.assertTrue(bundles)
+        for path in bundles:
+            for name, expected in linked.read(path)['files'].items():
+                # External historical evidence is not present in a clean checkout.
+                if name.startswith('reference_staging/'):
+                    continue
+                with self.subTest(bundle=path.name, dependency=name):
+                    self.assertTrue((ROOT / name).is_file())
+                    self.assertEqual(linked.digest(ROOT / name), expected)
+
     def test_backend_selection_must_match_manifest(self):
         linked.validate_backend_manifest({}, 'sparselu')
         linked.validate_backend_manifest({'linear_solver':'umfpack'}, 'umfpack')

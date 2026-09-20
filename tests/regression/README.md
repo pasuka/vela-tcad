@@ -6,6 +6,16 @@ contracts.  Device-level reusable inputs live under `reference_tcad/`; the
 repository no longer ships a separate set of uncalibrated engineering example
 decks.
 
+The Python regression environment needs NumPy, Pillow, and h5py. On Ubuntu,
+install `python3-numpy python3-pil python3-h5py` and use `/usr/bin/python3`
+for CMake/CTest so that it sees the apt-installed modules. The C/C++ HDF5
+development library alone does not provide the Python `h5py` module.
+
+LDMOS linked-input manifests retain byte-exact SHA-256 checks. The repository's
+`.gitattributes` specifies the originally qualified LF or CRLF form for each
+checked-in dependency; do not replace hashes or normalize bytes in the digest
+function to make a platform-specific mismatch pass.
+
 Run the main reference-tool checks from the repository root:
 
 ```bash

@@ -10,3 +10,11 @@ scripts/diagnose_pn2d_equilibrium_roundoff.py -text whitespace=blank-at-eol,blan
 scripts/pn2d_variants.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 scripts/probe_pn2d_sentaurus_precision.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 scripts/report_pn2d_variants.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# LDMOS manifests hash exact checked-out bytes, not normalized JSON.
+# These frozen profiles were qualified with CRLF; enforce it on Linux too.
+reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_*_config.json text eol=crlf
+reference_tcad/templates_ldmos_sentaurus2022/profiles/materials_fermi_consistent_300k.json text eol=crlf
+# Other checked-in dependencies in the same manifests were qualified with LF.
+reference_tcad/templates_ldmos_sentaurus2022/contracts/materials.json text eol=lf
+scripts/prepare_templates_ldmos_ialmob_transport.py text eol=lf

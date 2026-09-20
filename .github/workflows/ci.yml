@@ -49,7 +49,11 @@ jobs:
             catch2 \
             python3 \
             python3-pil \
-            python3-numpy
+            python3-numpy \
+            python3-h5py
+
+      - name: Check regression Python dependencies
+        run: /usr/bin/python3 -c "import h5py, numpy, PIL; print(h5py.version.info)"
 
       - name: Configure debug build
         # Optional OpenMP backends are covered by the UCRT64 job below;
@@ -57,6 +61,7 @@ jobs:
         run: |
           set -euo pipefail
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+            -DPython3_EXECUTABLE=/usr/bin/python3 \
             -DVELA_ENABLE_UMFPACK=ON -DVELA_ENABLE_METIS=ON \
             -DVELA_ENABLE_OPENBLAS_THREAD_CONTROL=ON \
             -DVELA_ENABLE_MUMPS=OFF -DVELA_ENABLE_SUPERLU_MT=OFF \
@@ -108,6 +113,7 @@ jobs:
             mingw-w64-ucrt-x86_64-python
             mingw-w64-ucrt-x86_64-python-numpy
             mingw-w64-ucrt-x86_64-python-pillow
+            mingw-w64-ucrt-x86_64-python-h5py
             mingw-w64-ucrt-x86_64-hdf5
             mingw-w64-ucrt-x86_64-suitesparse
             mingw-w64-ucrt-x86_64-openblas
@@ -115,6 +121,9 @@ jobs:
             mingw-w64-ucrt-x86_64-mumps
             mingw-w64-ucrt-x86_64-superlu_mt
             mingw-w64-ucrt-x86_64-strumpack
+
+      - name: Check regression Python dependencies
+        run: python -c "import h5py, numpy, PIL; print(h5py.version.info)"
 
       - name: Configure all five direct backends
         # The hosted MSYS2 path differs from the local D:/msys64 launcher.
@@ -143,4 +152,4 @@ jobs:
         run: ./build-release/test_linear_solver.exe '[linear_solver]'
 
       - name: Verify default worker reuse and reference inputs
-        run: ctest --test-dir build-release --output-on-failure --no-tests=error -R '^(ascii_sources|dc_worker_protocol|templates_ldmos_reference_fixture)$'
+        run: ctest --test-dir build-release --output-on-failure --no-tests=error -R '^(ascii_sources|dc_worker_protocol|templates_ldmos_reference_fixture|templates_ldmos_linked_d5_regression|templates_ldmos_joint_local_fields_regression)$'
