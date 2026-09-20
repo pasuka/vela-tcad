@@ -561,19 +561,44 @@ TEST_CASE("Four-equation silicon resistor closes self-heating and neutral contac
         if(!(finiteHoleContact && k==2))scales[4*i+k]=1.;
     auto norm=[&](const ElectrothermalAssembly& a){return (a.residual.array()*scales.array()).matrix().norm();};
     REQUIRE(norm(coupled.assemble(x,bc))<1e-8);
+    Real previousBias=0.;
     for(Real bias:{.01,.05,.1}){
+        CAPTURE(finiteHoleContact,bias);
+        // Lift the previous solution with the imposed electrical bias. For
+        // this uniform resistor the same affine shift in psi/fn/fp preserves
+        // carrier densities and avoids a spurious contact depletion transient.
+        for(Index i=0;i<n;++i){
+            const Real shift=(bias-previousBias)*mesh.getNode(i).x/L;
+            for(int k=0;k<3;++k)x[4*i+k]+=shift;
+        }
         for(int j=0;j<=ny;++j)bc.neutralContactBias_V[j*(nx+1)+nx]=bias;
         for(int iteration=0;iteration<35;++iteration){
-            auto a=coupled.assemble(x,bc);if(norm(a)<1e-9)break;
+            auto a=coupled.assemble(x,bc);const Real before=norm(a);if(before<1e-9)break;
+            CAPTURE(finiteHoleContact,bias,iteration,before);
             SparseMatrixd jac=a.jacobian;
             for(int k=0;k<jac.outerSize();++k)for(SparseMatrixd::InnerIterator it(jac,k);it;++it)it.valueRef()*=scales[it.row()];
             Eigen::SparseLU<SparseMatrixd> lu;lu.compute(jac);REQUIRE(lu.info()==Eigen::Success);
             VectorXd rhs=-(a.residual.array()*scales.array()).matrix();VectorXd delta=lu.solve(rhs);REQUIRE(lu.info()==Eigen::Success);
-            Real alpha=1.;bool accepted=false;
+            // Keep the standalone Newton driver inside an admissible trial
+            // range, as the production solver does. Unbounded QF steps can
+            // deplete minority holes before a finite-contact row recovers.
+            Real alpha=1.;
+            for(Index i=0;i<n;++i){
+                for(int k=0;k<3;++k)if(std::abs(delta[4*i+k])>.2)
+                    alpha=std::min(alpha,.2/std::abs(delta[4*i+k]));
+                if(std::abs(delta[4*i+3])>30.)alpha=std::min(alpha,30./std::abs(delta[4*i+3]));
+            }
+            CAPTURE(alpha);
+            Real bestTrial=std::numeric_limits<Real>::infinity();bool accepted=false;
+            std::string lastTrialError;
             for(int trial=0;trial<20;++trial){VectorXd candidate=x+alpha*delta;
-                try{if(norm(coupled.assemble(candidate,bc))<norm(a)){x=candidate;accepted=true;break;}}catch(const std::exception&){}
+                try{const Real value=norm(coupled.assemble(candidate,bc));bestTrial=std::min(bestTrial,value);
+                    if(value<before){x=candidate;accepted=true;break;}}
+                catch(const std::exception& error){lastTrialError=error.what();}
                 alpha*=.5;
             }
+            INFO("best trial residual="<<bestTrial<<"; max update="<<delta.cwiseAbs().maxCoeff());
+            INFO("last invalid trial: "<<lastTrialError);
             REQUIRE(accepted);
         }
         const auto a=coupled.assemble(x,bc);REQUIRE(norm(a)<1e-9);
@@ -583,6 +608,7 @@ TEST_CASE("Four-equation silicon resistor closes self-heating and neutral contac
         Real left=0.,right=0.;for(int j=0;j<=ny;++j){Index l=j*(nx+1),r=l+nx;
             left+=a.electronOutflow_A_per_m[l]+a.holeOutflow_A_per_m[l];right+=a.electronOutflow_A_per_m[r]+a.holeOutflow_A_per_m[r];}
         REQUIRE(std::abs(left+right)/std::abs(left)<1e-9);
+        previousBias=bias;
     }
 }
 
