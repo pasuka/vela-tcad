@@ -3,8 +3,10 @@
 #include "vela/core/UnitScaling.h"
 #include "vela/core/Types.h"
 #include "vela/material/Material.h"
+#include "vela/physics/IALMobilityParameters.h"
 #include <nlohmann/json_fwd.hpp>
 #include <memory>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -13,6 +15,14 @@ namespace vela {
 enum class CarrierType {
     Electron,
     Hole,
+};
+
+/** Separate ionized dopants in active internal concentration units.
+ * Required by IALMob; a single net or total concentration loses compensation.
+ */
+struct MobilityDopants {
+    Real donors = std::numeric_limits<Real>::quiet_NaN();
+    Real acceptors = std::numeric_limits<Real>::quiet_NaN();
 };
 
 struct CaugheyThomasParameters {
@@ -102,6 +112,7 @@ struct MobilityModelConfig {
     FieldMobilityParameters electronField{1.07e5, 1.109};
     FieldMobilityParameters holeField{8.37e4, 1.213};
     SurfaceMobilityParameters surface{};
+    IALMobilityParameters ialmob{};
     // Sentaurus O-2018.06 Silicon EnormalDependence defaults.  C is
     // converted from cm^(5/3)/(V^(2/3)s), delta from cm^2/(V s), and eta
     // from V^2/(cm s).
@@ -129,7 +140,8 @@ public:
                                   Real p,
                                   Real electricField = 0.0,
                                   Real surfaceNormalField = 0.0,
-                                  Real surfaceDistance = 0.0) const = 0;
+                                  Real surfaceDistance = 0.0,
+                                  MobilityDopants dopants = {}) const = 0;
 
     virtual Real holeMobility(const Material& material,
                               Real netDoping,
@@ -137,7 +149,8 @@ public:
                               Real p,
                               Real electricField = 0.0,
                               Real surfaceNormalField = 0.0,
-                              Real surfaceDistance = 0.0) const = 0;
+                              Real surfaceDistance = 0.0,
+                                  MobilityDopants dopants = {}) const = 0;
 };
 
 class ConstantMobility final : public MobilityModel {
@@ -148,7 +161,8 @@ public:
                           Real p,
                           Real electricField = 0.0,
                           Real surfaceNormalField = 0.0,
-                          Real surfaceDistance = 0.0) const override;
+                          Real surfaceDistance = 0.0,
+                                  MobilityDopants dopants = {}) const override;
 
     Real holeMobility(const Material& material,
                       Real netDoping,
@@ -156,7 +170,8 @@ public:
                       Real p,
                       Real electricField = 0.0,
                       Real surfaceNormalField = 0.0,
-                      Real surfaceDistance = 0.0) const override;
+                      Real surfaceDistance = 0.0,
+                                  MobilityDopants dopants = {}) const override;
 };
 
 class DopingDependentMobility final : public MobilityModel {
@@ -169,7 +184,8 @@ public:
                           Real p,
                           Real electricField = 0.0,
                           Real surfaceNormalField = 0.0,
-                          Real surfaceDistance = 0.0) const override;
+                          Real surfaceDistance = 0.0,
+                                  MobilityDopants dopants = {}) const override;
 
     Real holeMobility(const Material& material,
                       Real netDoping,
@@ -177,7 +193,8 @@ public:
                       Real p,
                       Real electricField = 0.0,
                       Real surfaceNormalField = 0.0,
-                      Real surfaceDistance = 0.0) const override;
+                      Real surfaceDistance = 0.0,
+                                  MobilityDopants dopants = {}) const override;
 
 private:
     static Real caugheyThomas(Real muMax,
@@ -209,6 +226,8 @@ MobilityModelConfig mobilityModelConfigFromJson(
     const nlohmann::json& value,
     UnitScalingConfig scaling = {});
 bool isSurfaceMobilityModel(const MobilityModelConfig& config);
+bool isIALMobilityModel(const MobilityModelConfig& config);
+bool mobilityDependsOnCarrierDensity(const MobilityModelConfig& config);
 bool surfaceMobilityAppliesToRegionPair(const MobilityModelConfig& config,
                                         const std::string& regionName,
                                         const std::vector<std::string>& adjacentRegionNames);

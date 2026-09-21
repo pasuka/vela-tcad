@@ -282,10 +282,10 @@ FixedStateOperatorAuditResult evaluateFixedStateOperators(
         const Real electronMobility = detail::edgeMobility(
             edgeCells, mesh, dopingModel, *mobility, cellMaterials, edgeId,
             CarrierType::Electron, electronMobilityField, &config.mobility,
-            &state.psi);
+            &state.psi, &state.n, &state.p);
         const Real holeMobility = detail::edgeMobility(
             edgeCells, mesh, dopingModel, *mobility, cellMaterials, edgeId,
-            CarrierType::Hole, holeMobilityField, &config.mobility, &state.psi);
+            CarrierType::Hole, holeMobilityField, &config.mobility, &state.psi, &state.n, &state.p);
         const Real electronRawSignedFlux = electronMobility > 0.0
             ? sgElectronContinuityFluxFromQuasiFermiVariableNi(
                   ni[edge.n0], ni[edge.n1], state.psi(i), state.psi(j),

@@ -21,6 +21,9 @@ evidence.
   `scaling.mode = "unit_scaling"`.
 - [PN2D BV validation](validation/pn2d_bv_validation.md): current qualified
   template policy, validation gates, limitations, and evidence map.
+- [SLOT-LDMOS BVDS validation](validation/slot_ldmos_bvds_validation.md):
+  local and global qualification profiles, current low-voltage evidence,
+  and remaining physical-model differences.
 - [Validation evidence](validation/): dated reports and machine-readable
   contracts for checked-in reference TCAD work.
 

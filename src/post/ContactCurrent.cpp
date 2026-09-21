@@ -296,12 +296,12 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electronMobilityField,
             &mobilityConfig_,
-            &solution.psi);
+            &solution.psi, &solution.n, &solution.p);
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
             holeMobilityField,
             &mobilityConfig_,
-            &solution.psi);
+            &solution.psi, &solution.n, &solution.p);
 
         // SG fluxes in physical units.  Mirror CoupledDDAssembler residual:
         // use the cancellation-free quasi-Fermi balanced form, including the

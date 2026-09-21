@@ -297,6 +297,8 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
     const VectorXd psiForMobility = scaling_.enabled ? (psi * scaling_.V0) : psi;
+    const VectorXd nForMobility = scaling_.enabled ? (n_old * scaling_.C0) : n_old;
+    const VectorXd pForMobility = scaling_.enabled ? (p_old * scaling_.C0) : p_old;
     const VectorXd phinForMobility =
         electronQuasiFermiFromDensity(
             psiForMobility, n_old, ni_, Nc_, Vt_, scaling_, carrierStatistics_);
@@ -335,7 +337,7 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electronMobilityField,
             &mobilityConfig_,
-            &psiForMobility);
+            &psiForMobility, &nForMobility, &pForMobility);
         if (mun <= 0.0) continue; // skip insulator edges
 
         Real coef = scaling_.enabled
@@ -524,6 +526,8 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh_, matdb_, temperature_K);
     const VectorXd psiForMobility = scaling_.enabled ? (psi * scaling_.V0) : psi;
+    const VectorXd nForMobility = scaling_.enabled ? (n_old * scaling_.C0) : n_old;
+    const VectorXd pForMobility = scaling_.enabled ? (p_old * scaling_.C0) : p_old;
     const VectorXd phipForMobility =
         holeQuasiFermiFromDensity(
             psiForMobility, p_old, ni_, Nv_, Vt_, scaling_, carrierStatistics_);
@@ -562,7 +566,7 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
             holeMobilityField,
             &mobilityConfig_,
-            &psiForMobility);
+            &psiForMobility, &nForMobility, &pForMobility);
         if (mup <= 0.0) continue; // skip insulator edges
 
         Real coef = scaling_.enabled

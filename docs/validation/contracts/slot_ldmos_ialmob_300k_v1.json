@@ -1,0 +1,102 @@
+{
+  "schema": "vela.slot_ldmos.ialmob_300k.v1",
+  "status": "model integration validated; spatial/reference parity remains under investigation",
+  "temperature_K": 300,
+  "source": {
+    "tool": "Sentaurus Device T-2022.03-SP2",
+    "parameter_file": "pp2_des.par",
+    "parameter_sha256": "8f3c94fbca5ac9cd462dadee00549e032466a72bfb02fa092e4d3bac9d2e2919",
+    "block": "unnamed IALMob",
+    "formula": "Device User Guide equations 290--311"
+  },
+  "coefficient_units": "All mobility.ialmob coefficients retain their source cm-based units independently of solver scaling.",
+  "high_field_reference_300K": {
+    "alpha_electron": 0,
+    "alpha_hole": 0,
+    "beta_electron": 1.109,
+    "beta_hole": 1.213,
+    "vsat_electron_cm_per_s": 10700000.0,
+    "vsat_hole_cm_per_s": 8370000.0
+  },
+  "mobility": {
+    "model": "ialmob_field",
+    "ialmob": {
+      "electron": {
+        "EnormMinimum": 0.0,
+        "mumax": 1417.0,
+        "mumin": 56.0,
+        "alpha": 0.68,
+        "theta": 2.285,
+        "n_ref": 9.68e+16,
+        "B": 900000.0,
+        "C": 48400.0,
+        "delta": 715000000000000.0,
+        "eta": 1e+50,
+        "N1": 1.0,
+        "N2": 1.0,
+        "lambda": 0.0,
+        "lambda_sr": 0.0,
+        "A": 2.0,
+        "alpha_sr": 5e-22,
+        "k": 1.0,
+        "nu": 0.0,
+        "D1_inv": 300.0,
+        "D2_inv": 300.0,
+        "nu0_inv": 1.5,
+        "nu1_inv": 2.0,
+        "nu2_inv": 0.5,
+        "alpha1_inv": 0.0,
+        "alpha2_inv": 0.0,
+        "l_crit": 1e-06,
+        "l_crit_c": 1e-06
+      },
+      "hole": {
+        "EnormMinimum": 0.0,
+        "mumax": 486.0,
+        "mumin": 46.0,
+        "alpha": 0.719,
+        "theta": 2.247,
+        "n_ref": 2.23e+17,
+        "B": 810000.0,
+        "C": 8360.0,
+        "delta": 258000000000000.0,
+        "eta": 1e+50,
+        "N1": 1.0,
+        "N2": 1.0,
+        "lambda": 0.0,
+        "lambda_sr": 0.0,
+        "A": 2.0,
+        "alpha_sr": 0.0,
+        "k": 1.0,
+        "nu": 0.0,
+        "D1_inv": 150.0,
+        "D2_inv": 150.0,
+        "nu0_inv": 1.5,
+        "nu1_inv": 2.0,
+        "nu2_inv": 0.5,
+        "alpha1_inv": 0.0,
+        "alpha2_inv": 0.0,
+        "l_crit": 1e-06,
+        "l_crit_c": 1e-06
+      },
+      "me_over_m0": 1.0,
+      "mh_over_m0": 1.258
+    },
+    "doping_concentration_basis": "total_impurity",
+    "high_field_driving_force": "quasi_fermi_gradient",
+    "high_field_gradient_discretization": "transport_cell_vector",
+    "jacobian_field_derivatives": true,
+    "surface": {
+      "surface_region": "Silicon_1",
+      "surface_interface": [
+        "Silicon_1",
+        "Oxide_1"
+      ]
+    }
+  },
+  "limitations": [
+    "Existing Vela endpoint and cell surface-field spatial operator; not yet the original Element averaging operator.",
+    "Si intrinsic-density alignment and Poly transport/energy reference must be specified separately.",
+    "This contract does not qualify avalanche or external-resistor BVDS."
+  ]
+}

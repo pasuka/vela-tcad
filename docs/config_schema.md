@@ -453,7 +453,7 @@ Newton-specific keys:
 - diagnostics / diagnostic_history
 - jacobian (`analytic` or `finite_difference`)
 - finite_difference_step
-- quasi_fermi_reference (`none` or `contact_majority`)
+- quasi_fermi_reference (`none`, `contact_majority`, `contact_basin`, or `contact_nearest_state`)
 - carrier_row_convergence
 - continuity_row_scaling
 - global_continuity_closure
@@ -610,6 +610,10 @@ Notes:
   `legacy_node_local` (uses each node's local signed doping without
   contact-mean polarity alignment). This is a boundary reconstruction policy,
   not a mobility calibration knob.
+  With `quasi_fermi_reference: "contact_basin"`, reference seeds follow the
+  selected boundary doping rule per contact node. Thus a mixed source/body
+  terminal in `legacy_node_local` mode supplies both electron and hole seeds;
+  its mean polarity does not suppress one of the carrier reference basins.
 - `contact_boundary_minority_electron_relaxation` controls whether Newton
   relaxes minority-electron quasi-Fermi pinning on p-side Ohmic contacts at
   higher applied bias. Default is `true` (current behavior).
@@ -858,7 +862,7 @@ Newton configs can opt into diagnostic history with either
 
 - `jacobian`: `analytic` or `finite_difference`
 - `finite_difference_step`
-- `quasi_fermi_reference`: `none` (default) or `contact_majority`
+- `quasi_fermi_reference`: `none` (default), `contact_majority`, `contact_basin`, or `contact_nearest_state`
 - `residual_norm`: `block` or `l2`
 - `residual_weights`: object with `psi`, `phin`, and `phip`
 - `residual_scales`: object with `psi`, `phin`, and `phip`
@@ -870,6 +874,18 @@ hole unknown relative to the most strongly p-type biased contact. Because each
 carrier uses one constant reference, edge differences and the physical model
 are unchanged. This avoids losing sub-femtovolt current-carrying increments
 when an absolute quasi-Fermi potential is tens of volts from zero.
+
+`contact_basin` partitions the transport graph by distance to majority-carrier
+contact seeds. For mixed source/body terminals, seed classification follows
+`contact_boundary_reconstruction`.
+
+`contact_nearest_state` instead chooses, independently for each carrier and
+node, the non-metal terminal voltage closest to the supplied quasi-Fermi state.
+This is an explicit numerical-coordinate option; boundary conditions and
+physical models do not change. References stay fixed during each solve. A
+subsequent warm restart or diagnostic may choose a new partition from its input
+state. Without an input state, initialization falls back to geometric contact
+basins. Saved reference/increment pairs preserve sub-ULP changes when rebasing.
 
 The source-aware convergence controls are:
 
@@ -955,6 +971,45 @@ whether it is useful. Final local/global convergence gates remain unchanged.
 Rank-deficient or non-finite projections are skipped; the default is `"off"`.
 `feasibility_restoration_factor` selects a fraction in `(0, 1]` of the
 projected correction before QF recapping; it defaults to `1`.
+
+`global_continuity_closure.audit_jsonl_file` optionally appends JSON Lines
+records for the selected replacement rows (initial state and every accepted
+Newton iteration), final-restoration triggers, and every nonlinear restoration
+trial, including rejected trials. Records distinguish physical contact/source
+closure from assembled free-row residual sums. They include normalized-row SVD
+conditioning, projection multipliers, predicted and reassembled sums, raw/
+projected/capped/nominal/applied step norms, cap locations, carrier qualification,
+and rejection reasons (`projection_failed`, `nonfinite_residual`, `device_floor`,
+`carrier_rows`, `global_closure`, or `accepted`). Nonfinite JSON numbers are null.
+The ideal alpha lower bound freezes the initial closure mode and assumes an exact
+linear correction; `ideal_linear_infeasible` labels trials without skipping them
+or changing the existing halving schedule. The final corrector uses QF caps only;
+its audit explicitly reports that Poisson recorrection was not applied.
+
+`global_continuity_closure.restoration_jacobian` defaults to `"stabilized"`.
+The opt-in `"physical"` mode excludes both the assembler carrier diagonal floor
+and solver carrier-row regularization from the **final** closure sensitivity.
+The main Newton solve retains both configured stabilizers. With an audit file,
+physical-Jacobian predictions are also recorded for stabilized restoration trials.
+This is an A/B diagnostic option, not a change to default convergence or physics.
+
+`global_continuity_closure.restoration_physical_rows_only` defaults to `false`.
+When enabled, the **final** QF projection excludes inactive carrier gauge rows
+from its constraint sums and excludes their unknowns from its correction.
+Contact Dirichlet rows/unknowns remain excluded. Gauge equations enforce
+auxiliary coordinates in non-transport regions; their residuals must not cancel
+physical contact/source imbalance. The main Newton equations and stabilization
+are unchanged. This can be combined with `quasi_fermi_reference: "contact_basin"`
+to retain small corrections that absolute biased QF coordinates cannot represent.
+
+`global_continuity_closure.roundoff_audit` defaults to `false` and requires
+`audit_jsonl_file` to emit results. It adds expensive, read-only diagnostics at
+the initial state and the first final-restoration trial if finite: fixed-residual
+reductions (ordinary, pairwise, Kahan, Neumaier, long double, magnitude-ordered,
+permuted and Boost quad reference), actual forward/reverse/permuted edge
+assembly with ordinary or compensated per-node accumulation, and bitwise
+repeatability. Records distinguish physical term sums from inactive gauge sums.
+Audit variants never replace the residual used by Newton or its acceptance gates.
 
 `feasibility_restoration: "final_linear_qf_projection"` uses the same
 minimum-norm QF construction only after the accepted device residual is at or
@@ -1277,6 +1332,51 @@ damping, and combines them with the bulk mobility using Matthiessen's rule.
 `surface.surface_interface` should identify the semiconductor/insulator pair;
 the normal field is the electric-field projection along that interface normal.
 
+When a Lombardi carrier-dependent roughness exponent is enabled (`alpha != 0`
+with nonzero roughness weight), edge transport evaluates mobility separately
+at the two endpoint carrier densities and averages the two mobilities. The
+edge doping and surface-field conventions stay the same. Residuals, terminal
+currents, and the coupled Jacobian use the same density fields. With
+`jacobian_field_derivatives=true`, local central differences include both
+carrier quasi-Fermi potentials, the endpoint electrostatic potentials, and
+all adjacent-cell field reconstruction dependencies. In particular,
+`transport_cell_vector` freezes only its GradQF drive in the endpoint part;
+it does not freeze the surface field or carrier densities. These are numerical
+derivatives of the implemented flux, not symbolic derivatives of every model.
+The default Lombardi `alpha=0` and bulk Masetti behavior are unchanged.
+
+`ialmob` and `ialmob_field` select the independent isotropic IALMob model
+(T-2022.03 equations 290--311). The latter also applies high-field saturation
+to the complete IALMob low-field mobility. These models require separate
+nodal donors and acceptors and `doping_concentration_basis: "total_impurity"`
+(their default). Both carrier densities affect screening and scattering, even
+when `alpha_sr=0`; the full surface/density Jacobian dependency path applies.
+Use `surface.surface_region` and `surface.surface_interface` to identify Si
+and its insulating interface.
+
+The optional `mobility.ialmob` object contains `electron` and `hole` objects
+whose coefficient names match the unnamed Sentaurus parameter block:
+`mumax`, `mumin`, `theta`, `n_ref`, `alpha`, `ndop_ref`, `nsc_ref`, `S`, `p`,
+`l_crit_c`, `B`, `C`, `lambda`, `k`, `alpha_ph2d_A/D`, `lambda_ph2d_A/D`,
+`delta`, `lambda_sr`, `A`, `alpha_sr`, `nu`, `eta`, `N1`, `N2`,
+`alpha_sr_A/D`, `lambda_sr_A/D`, `l_crit`, `EnormMinimum`, and the
+`D1`, `D2`, `nu0`, `nu1`, `nu2`, `alpha1`, `alpha2` families with `_inv`
+and `_acc` suffixes. Here `A/D` denotes two separate keys.
+Shared keys are `nref_D/A`, `cref_D/A`, `me_over_m0`, `mh_over_m0`,
+`full_phumob` (default true), `clustering_everywhere` (false), and
+`phonon_combination` (0, 1, or 2; default 1). Unknown keys are rejected.
+
+All coefficients inside `ialmob` always retain the source model's **cm-based
+units**, including concentrations in `cm^-3`, lengths in `cm`, mobility in
+`cm^2/(V s)`, and the dimensional fractional-power coefficients. They do not
+change under `scaling` or `format_version: 2`. Runtime state quantities are
+converted separately. Defaults are listed in
+`include/vela/physics/IALMobilityParameters.h`. The implementation excludes
+ThinLayer, stress, AutoOrientation, and low-temperature phonon corrections;
+temperatures below 50 K are rejected. Current high-field parameter alignment
+is validated at 300 K. Model/spatial comparison status is recorded in
+[the IALMob validation report](validation/slot_ldmos_ialmob_alignment_2026-09-07.md).
+
 ### SRH doping-dependent lifetime
 
 `solver.srh_doping_dependence` enables the Sentaurus
@@ -1481,14 +1581,84 @@ unknown used to reconstruct the material-side quantum correction after a
 restart. Readers remain compatible with the legacy six-column and
 Lambda-only seven-column forms.
 
-Rows must cover every mesh node exactly once by `node_id`. All state values are
-stored in active internal solver units: potentials in V and carrier densities in legacy `m^-3` or `unit_scaling` `cm^-3`.
+Rows must cover every mesh node exactly once by `node_id`. Restart potentials
+are in V and the `electrons_m3`/`holes_m3` fields are always in `m^-3`.
+The reader converts densities to the active internal concentration unit.
 For checkpoint-style BV runs, set `write_state_file` during the first run, then
 resume from the latest converged point with `initial_state_file` plus either a
 new adaptive range or `bias_points` for selected target biases. Sweep CSV files
 are still opened as fresh outputs; use distinct CSV names for resumed segments.
 
 Diagnostics fields:
+
+`simulation_type: "ialmob_point_probe"` evaluates the production IALMob
+formula without a mesh solve. It requires top-level `mobility`, `points_file`
+(a nonempty JSON array), and `output_csv`; `temperature_K` defaults to 300.
+It accepts explicitly SI inputs and rejects a `scaling` block. Each point
+has a unique nonnegative `node_id`, `donors_m3`, `acceptors_m3`,
+`electrons_m3`, `holes_m3`, `interface_distance_m`, and
+`electron_driving_field_V_per_m`, `hole_driving_field_V_per_m`,
+`electron_normal_field_V_per_m`, `hole_normal_field_V_per_m`.
+CSV output contains both carriers' final mobility and scattering components
+in `cm^2/(V s)`, together with screening and interface weights. Infinite
+component mobilities denote a disabled scattering mechanism; the final
+mobility must remain finite. Probe success does not qualify an I-V state.
+The preparation and comparison scripts in `scripts/*slot_ldmos_ialmob_probe.py`
+retain source parameters, field units, node support and averaging limitations.
+
+The read-only `simulation_type: "newton_carrier_term_probe"` accepts a
+`state_file` and `carrier_term_probe: {"solved_equation_terms": true}` to
+export the actual carrier equation terms at a saved state. Its CSV includes
+`electron_continuity_active` and `hole_continuity_active`: exclude rows marked
+zero (contacts and inactive gauges) when assessing local continuity. The
+`electron_density`/`hole_density` columns use active internal concentration
+units. Term/residual columns retain assembly units. A successful probe only
+means the diagnostic completed; it does not qualify the state as converged.
+`scripts/audit_slot_ldmos_local_continuity.py` summarizes all active rows
+without the production source-size filter, including absolute and signed sums
+to expose cancellation. Its relative-error counts are diagnostic and do not
+replace the configured solver gates.
+
+`simulation_type: "newton_block_step_probe"` also accepts an optional
+`output_state_prefix`. It saves each trial as `<prefix>_<block_mode>.csv` and
+returns its `trial_state_file` in the block summary. Saved states include the
+reference/increment coordinates and SI carrier densities. They are diagnostic
+trials and must pass a full coupled validation before use as checkpoints.
+
+The continuation runner's optional `--audit-local-continuity` adds an all-active
+row audit at each accepted candidate, using the deck's `eps_row` and scale floor.
+Failed audits stop advancement; the original solver and closure gates still
+apply. This option requires per-point continuation and cannot be combined with
+`--batch-predictor`. Diagnostic outputs are isolated per attempt. Secant restart
+prediction extrapolates saved QF references and increments separately so tiny
+leakage-current signals survive a moving bias reference.
+`--secant-predictor` applies this prediction to each subsequent point once two
+qualified states are available. `--carrier-corrector-passes N` optionally tries
+up to N fixed-potential carrier Newton steps after a failed coupled attempt.
+These steps use the physical carrier Jacobian without its diagonal floor. The
+result must then pass the full original coupled deck and a fresh all-active row
+audit. The attempt manifest reports coupled Newton iterations and carrier
+correction steps separately; a zero-step validation is not counted as a fresh
+coupled Newton iteration. This correction requires `--audit-local-continuity`.
+If a coupled validation fails and saves a rejected state, the remaining
+correction budget can continue from that state and revalidate again. Each
+validation has an isolated directory, and its Newton iterations are included
+in the attempt total. Only a complete coupled solve followed by the local
+audit advances the accepted state.
+
+The historically named `run_slot_ldmos_noavalanche_continuation.py` preserves
+the base deck's impact-ionization configuration. Enabled self-consistent
+avalanche uses separate `02_delaunay_avalanche_adaptive` paths and
+`adaptive_avalanche_summary.json`; avalanche-off/postprocess-only retains the
+existing no-avalanche names. Summaries record the actual physics branch and
+source configuration. An enabled external circuit is rejected because the
+local audit needs the solved inner voltage, not the outer supply voltage;
+retained circuit settings with `enabled: false` are allowed.
+Known Windows loader errors (missing/incompatible runtime DLLs) stop the
+driver immediately and write `startup_failure.json`. They cannot be repaired
+by voltage bisection. Launch Windows runs with the matching UCRT64 `bin` on
+`PATH`, including when using a frozen copy of the Release executable.
+
 - `diagnostics.transport.enabled`: appends aggregate mobility and high-field
   drive columns to the main sweep CSV.
 - `diagnostics.contact_edge.enabled`: writes a separate contact-edge transport
@@ -1660,7 +1830,13 @@ For deterministic avalanche-source diagnostics,
 Tri3 potential/quasi-Fermi derivatives through the impact coefficient,
 midpoint density, high-field mobility, edge GradQF magnitude, truncated source
 volume, and symmetric source partition. `finite_difference` remains an audit
-oracle. `frozen` keeps the self-consistent avalanche residual but omits only
+oracle. With surface mobility, the cell source uses the complete local
+central-difference path even when `local_ad` is selected, because the current
+AD kernel does not propagate the surface-field mobility response. Trial
+potentials refresh the normal field; trial densities follow the selected
+carrier statistics. Edge sources also include adjacent-vertex electrostatic
+columns and cross-carrier density dependence. `frozen` keeps the
+self-consistent avalanche residual but omits only
 its Jacobian contribution; it is an ablation control and does not match the
 default Sentaurus avalanche-derivative semantics.
 

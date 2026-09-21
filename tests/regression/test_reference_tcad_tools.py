@@ -7,6 +7,7 @@ import csv
 import importlib.util
 import json
 import math
+import os
 import subprocess
 import sys
 import tempfile
@@ -11509,8 +11510,11 @@ LOOKUP_TABLE default
 
     def test_runner_writes_newton_block_step_probe_for_external_state(self) -> None:
         exe_name = "vela_example_runner.exe" if sys.platform.startswith("win") else "vela_example_runner"
-        runner = REPO / "build-release" / exe_name
-        if not runner.is_file():
+        configured_runner = os.environ.get("VELA_EXAMPLE_RUNNER")
+        runner = Path(configured_runner) if configured_runner else REPO / "build-release" / exe_name
+        if configured_runner:
+            self.assertTrue(runner.is_file(), f"configured runner missing: {runner}")
+        elif not runner.is_file():
             runner = REPO / "build" / exe_name
         if not runner.is_file():
             self.skipTest(f"missing built runner: {runner}")
@@ -11559,6 +11563,7 @@ LOOKUP_TABLE default
                 "mesh_file": "mesh.json",
                 "node_doping_file": "doping.csv",
                 "output_csv": str(output),
+                "output_state_prefix": str(root / "trial"),
                 "state_fields_dir": "fields",
                 "scaling": {"mode": "unit_scaling"},
                 "doping": [{"region": "Si", "donors": 1.0e17, "acceptors": 1.0e17}],
@@ -11585,6 +11590,16 @@ LOOKUP_TABLE default
             self.assertEqual(result.returncode, 0, result.stderr)
             rows = self._read_csv(output)
             status = json.loads(result.stdout)
+            for step in status["block_steps"]:
+                trial = self._read_csv(Path(step["trial_state_file"]))
+                self.assertEqual(len(trial), 4)
+                self.assertIn("electrons_m3", trial[0])
+                self.assertIn("holes_m3", trial[0])
+                self.assertIn("electron_qf_increment_V", trial[0])
+                self.assertIn("hole_qf_reference_V", trial[0])
+                if step["mode"] == "carrier_only":
+                    self.assertAlmostEqual(float(trial[0]["psi"]), -0.1)
+
 
         self.assertEqual(status["block_step_count"], 2)
         self.assertEqual(len(rows), 8)
@@ -11782,8 +11797,11 @@ LOOKUP_TABLE default
 
     def test_runner_writes_newton_carrier_term_probe_for_external_state(self) -> None:
         exe_name = "vela_example_runner.exe" if sys.platform.startswith("win") else "vela_example_runner"
-        runner = REPO / "build-release" / exe_name
-        if not runner.is_file():
+        configured_runner = os.environ.get("VELA_EXAMPLE_RUNNER")
+        runner = Path(configured_runner) if configured_runner else REPO / "build-release" / exe_name
+        if configured_runner:
+            self.assertTrue(runner.is_file(), f"configured runner missing: {runner}")
+        elif not runner.is_file():
             runner = REPO / "build" / exe_name
         if not runner.is_file():
             self.skipTest(f"missing built runner: {runner}")
@@ -11876,6 +11894,10 @@ LOOKUP_TABLE default
         self.assertIn("impact_combined_source", rows[0])
         self.assertIn("electron_residual", rows[0])
         self.assertIn("hole_flux", rows[0])
+        # Every node in this fixture belongs to an Ohmic terminal, so none
+        # represents a free continuity equation in a local conservation audit.
+        self.assertTrue(all(row["electron_continuity_active"] == "0" for row in rows))
+        self.assertTrue(all(row["hole_continuity_active"] == "0" for row in rows))
         self.assertEqual(status["carrier_term_probe"]["electron_impact_scale"], 2.0)
         self.assertEqual(status["carrier_term_probe"]["hole_impact_scale"], 3.0)
         self.assertIn("adjusted_block_residuals", status)

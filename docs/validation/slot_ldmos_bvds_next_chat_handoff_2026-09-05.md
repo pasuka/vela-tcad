@@ -7,7 +7,62 @@ Branch: `codex/slot-ldmos-bvds-next`
 Implementation baseline before this document: `d5a3f8a`  
 Primary solver change: `e19d388`  
 
-## 1. Current outcome
+## Current qualification reference (2026-09-07)
+
+Read [SLOT-LDMOS BVDS validation](slot_ldmos_bvds_validation.md) and the
+[IALMob implementation and controls](slot_ldmos_ialmob_alignment_2026-09-07.md)
+before the historical notes below. The old v1 contract selected zero local
+carrier rows; its strict global-closure checkpoints do not qualify spatial
+continuity under the current all-active profile. Masetti 0--2 V replay and
+3/5/10 V checkpoints now pass the stronger local and global gates.
+
+Original-coefficient IALMob has separate qualified no-avalanche 2/3/5/10 V
+controls, and self-consistent avalanche 2/3/5 V activation controls. These do
+not establish original Sentaurus spatial parity or BVDS. Original
+`AvalDensGradQF` also differs from the local SG/GSS-Laux source-current path;
+the current report records that distinction and the independent oracle deck.
+
+Numerical work now uses Release. The reported missing `libcholmod.dll` was
+an omitted UCRT64 runtime search path and is resolved; use the repository
+`scripts/with_ucrt64_path.cmd` launcher. Runtime loader failures are recorded
+separately and immediately stop voltage bisection.
+
+## Latest follow-up: strict 1.25 V obtained (2026-09-05)
+
+Local main tip `8e99e57` was merged as `dbe6d3d`. The
+[E4/E1/E2 audit](slot_ldmos_closure_restoration_audit_2026-09-05.md) and the
+[completed E3 budget and checkpoint report](slot_ldmos_e3_strict_1p25_2026-09-05.md)
+supersede the failure status and hypothesis ordering in the historical sections
+below. Fixed-vector reduction errors are at most about 8.2e-23 in the audited
+baseline trials; actual assembly-order spans are about 1.9e-24. The larger
+contact/source versus free-sum discrepancy came from inactive auxiliary gauge
+rows, while the dominant electron correction was lost on addition to biased
+absolute QF coordinates.
+
+The retained correction combines `quasi_fermi_reference: "contact_basin"` with
+`global_continuity_closure.restoration_physical_rows_only: true`. It preserves
+the stabilized sensitivity, main Newton equations, physical models, QF limits
+and closure tolerances. Reference repacking also subtracts references before
+adding saved increments, eliminating the measured restart current drift.
+
+The final strict 1.25 V run executes two real Newton iterations and converges
+with `final_global_continuity_restoration`. Drain current is
+`6.5889954852964324e-16 A/um`; electron/hole closure mismatches are
+`2.4601233527902148e-19` and `2.3598226144186885e-19`. The same-bias reload
+retains exactly the reported current and densities. Acceptance uses the existing
+carrier-row qualification threshold (zero qualified rows here); QF-bound
+diagnostics remain warnings, as documented in the report.
+
+Restart from
+`build/slot_ldmos_e3_20260905/final_strict/final_state.csv`, SHA-256
+`8de098c8b1416210a0ef05e1e4269104a8f555e48d01ef99e9a308d96818b10a`.
+The [frozen restoration contract](contracts/slot_ldmos_physical_closure_restoration_v1.json)
+records the options, unchanged gates and evidence hashes. All Newton tests pass
+(1610 assertions, 114 cases). Next obtain strict 1.5 V and 2 V checkpoints with
+this contract before resuming the high-voltage sequence. Vela BVDS is still
+unavailable. Code and reports after the merge remain uncommitted worktree changes.
+
+## 1. Historical handoff outcome before follow-up
 
 The Sentaurus reference is complete and reproducible. Vela has strict,
 avalanche-off checkpoints through 1.0 V, but it does not yet have a credible

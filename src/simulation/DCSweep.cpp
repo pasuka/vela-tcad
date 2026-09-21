@@ -815,14 +815,14 @@ SweepTransportDiagnostics computeSweepTransportDiagnostics(
 
         const Real electronLowFieldMobility = detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, e, CarrierType::Electron,
-            0.0, &mobilityConfig, nullptr);
+            0.0, &mobilityConfig, nullptr, &sol.n, &sol.p);
         const Real holeLowFieldMobility = detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, e, CarrierType::Hole,
-            0.0, &mobilityConfig, nullptr);
+            0.0, &mobilityConfig, nullptr, &sol.n, &sol.p);
 
         const Real electronMobility = detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, e, CarrierType::Electron,
-            electronMobilityField, &mobilityConfig, &sol.psi);
+            electronMobilityField, &mobilityConfig, &sol.psi, &sol.n, &sol.p);
         if (electronMobility > 0.0 && std::isfinite(electronMobility)) {
             electronMobilitySum += electronMobility;
             diagnostics.minElectronMobility_m2_V_s = hasElectronMobility
@@ -845,7 +845,7 @@ SweepTransportDiagnostics computeSweepTransportDiagnostics(
 
         const Real holeMobility = detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, e, CarrierType::Hole,
-            holeMobilityField, &mobilityConfig, &sol.psi);
+            holeMobilityField, &mobilityConfig, &sol.psi, &sol.n, &sol.p);
         if (holeMobility > 0.0 && std::isfinite(holeMobility)) {
             holeMobilitySum += holeMobility;
             diagnostics.minHoleMobility_m2_V_s = hasHoleMobility
@@ -948,7 +948,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
             : electricField;
         const Real mu = detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId, carrier,
-            drivingField, &mobilityConfig, &sol.psi);
+            drivingField, &mobilityConfig, &sol.psi, &sol.n, &sol.p);
         if (mu <= 0.0)
             return Real{0.0};
         const Real coef = mu * Vt * edge.couple / h;

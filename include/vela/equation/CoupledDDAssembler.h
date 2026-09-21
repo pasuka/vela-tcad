@@ -168,6 +168,12 @@ struct CarrierDiagonalFloorRegularizationConfig {
     Real minorityDensityRatio = 1.0;
 };
 
+/// Diagnostic scatter order and compensated accumulation; default assembly is unchanged.
+struct CoupledDDAssemblyAuditOptions {
+    std::vector<Index> edgeOrder; ///< Empty means original order; otherwise a full permutation.
+    bool compensated = false;
+};
+
 class CoupledDDAssembler {
 public:
     CoupledDDAssembler(const DeviceMesh& mesh,
@@ -236,6 +242,13 @@ public:
     VectorXd residual(const VectorXd& x,
                       const CoupledDDBoundaryConditions& bcs) const;
 
+    VectorXd auditAssemblyResidual(const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs,
+        const CoupledDDAssemblyAuditOptions& options) const;
+    std::vector<CoupledDDCarrierTermDiagnostic> auditAssemblyCarrierTerms(
+        const VectorXd& x, const CoupledDDBoundaryConditions& bcs,
+        const CoupledDDAssemblyAuditOptions& options) const;
+
     VectorXd feedbackSubstitutionResidual(
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs,
@@ -243,7 +256,8 @@ public:
 
     SparseMatrixd assembleJacobian(
         const VectorXd& x,
-        const CoupledDDBoundaryConditions& bcs) const;
+        const CoupledDDBoundaryConditions& bcs,
+        bool includeCarrierDiagonalFloor = true) const;
 
     SparseMatrixd finiteDifferenceJacobian(
         const VectorXd& x,
@@ -315,13 +329,15 @@ private:
     VectorXd residualImpl(
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs,
-        const CoupledDDFeedbackStateSubstitution* substitution) const;
+        const CoupledDDFeedbackStateSubstitution* substitution,
+        const CoupledDDAssemblyAuditOptions* audit = nullptr) const;
     std::vector<CoupledDDCarrierTermDiagnostic>
     carrierContinuityTermDiagnosticsImpl(
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs,
         const CoupledDDFeedbackStateSubstitution* substitution,
-        bool includeImpactIonization) const;
+        bool includeImpactIonization,
+        const CoupledDDAssemblyAuditOptions* audit = nullptr) const;
 
     template <typename Scalar>
     SparseMatrixd impactIonizationSourceFiniteDifferenceJacobianImpl(
@@ -337,7 +353,7 @@ private:
     static constexpr JacobianStorageIndex invalidJacobianOffset = -1;
     static constexpr std::size_t maxEdgeAvalancheStencilNodes = 8;
     static constexpr std::size_t maxEdgeAvalancheDerivativeColumns =
-        2 + 2 * maxEdgeAvalancheStencilNodes;
+        3 * maxEdgeAvalancheStencilNodes;
     enum class MobilityDopingBasis : std::uint8_t {
         NetDoping,
         TotalImpurity,
@@ -384,7 +400,9 @@ private:
         Index edgeId,
         CarrierType carrier,
         Real drivingField,
-        const VectorXd* psi) const;
+        const VectorXd* psi,
+        const VectorXd* n = nullptr,
+        const VectorXd* p = nullptr) const;
     bool usesSentaurusExponentialQuantumCoupling() const;
     Real electronTransportPotential(Index node, Real psiRelative_V) const;
     Real electronDensityAt(Index node,

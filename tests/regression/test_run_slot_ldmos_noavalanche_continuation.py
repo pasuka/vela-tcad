@@ -4,6 +4,9 @@ import importlib.util
 import tempfile
 import unittest
 import csv
+import json
+import subprocess
+from unittest.mock import patch
 from pathlib import Path
 
 
@@ -15,6 +18,32 @@ SPEC.loader.exec_module(MODULE)
 
 
 class SlotAdaptiveContinuationTest(unittest.TestCase):
+    def test_avalanche_continuation_preserves_source_and_separates_evidence(self) -> None:
+        impact = {"model": "van_overstraeten", "coupling_mode": "self_consistent",
+                  "current_approximation": "element_edge_sg_gss_laux", "source_jacobian_mode": "local_ad"}
+        base = {"solver": {"impact_ionization": impact}, "sweep": {}}
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            document, config, stage = MODULE.render_attempt(base, root, 2.0, root / "seed.csv", 1)
+            self.assertEqual(document["solver"]["impact_ionization"], impact)
+            self.assertEqual(MODULE.physics_branch(document), "avalanche")
+            self.assertIn("02_delaunay_avalanche_adaptive", str(stage))
+            self.assertEqual(config.name, "adaptive_avalanche_attempt_001.json")
+        base["solver"]["impact_ionization"]["coupling_mode"] = "postprocess_only"
+        self.assertEqual(MODULE.physics_branch(base), "noavalanche")
+        self.assertEqual(MODULE.physics_branch({}), "noavalanche")
+
+    def test_external_circuit_rejects_outer_voltage_as_local_device_bias(self) -> None:
+        # Saved SLOT decks retain all resistor settings with enabled=false.
+        MODULE.require_direct_device_bias({"sweep": {"external_circuit": {
+            "enabled": False, "mode": "series_resistor", "resistance_ohm_um": 1e12}}})
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); config = root / "base.json"
+            config.write_text(json.dumps({"sweep": {"external_circuit": {"mode": "series_resistor"}}}))
+            import argparse
+            with self.assertRaisesRegex(ValueError, "solved inner voltage"):
+                MODULE.run(argparse.Namespace(base_config=config))
+
     def test_attempt_render_keeps_bundle_relative_outputs_and_absolute_restart(self) -> None:
         base = {
             "output_csv": "old.csv",
@@ -212,6 +241,188 @@ class SlotAdaptiveContinuationTest(unittest.TestCase):
             self.assertEqual(float(predicted["holes_m3"]), 21.0)
             self.assertAlmostEqual(float(predicted["electron_qf_increment_V"]), 6.0)
             self.assertAlmostEqual(float(predicted["hole_qf_increment_V"]), 9.0)
+
+
+    def test_secant_preserves_sub_ulp_current_signal_on_a_moving_reference(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            previous, current, output = (root / name for name in ("previous.csv", "current.csv", "out.csv"))
+            for path, bias, increment in ((previous, 1.0, 1e-20), (current, 2.0, 2e-20)):
+                row = {"node_id": 0, "psi": bias, "phin": bias,
+                       "phip": -increment, "electrons_m3": 10, "holes_m3": 20,
+                       "electron_qf_reference_V": bias, "electron_qf_increment_V": increment,
+                       "hole_qf_reference_V": 0, "hole_qf_increment_V": -increment}
+                with path.open("w", newline="") as stream:
+                    writer = csv.DictWriter(stream, fieldnames=row.keys())
+                    writer.writeheader()
+                    writer.writerow(row)
+            MODULE.write_secant_restart(previous, current, output, 1.0, 2.0, 3.0)
+            with output.open(newline="") as stream:
+                row = next(csv.DictReader(stream))
+            self.assertEqual(float(row["phin"]), 3.0)
+            self.assertEqual(float(row["electron_qf_reference_V"]), 3.0)
+            self.assertAlmostEqual(float(row["electron_qf_increment_V"]) / 1e-20, 3.0)
+            self.assertAlmostEqual(float(row["hole_qf_increment_V"]) / 1e-20, -3.0)
+
+    def test_loader_failure_stops_bisection_and_records_environment_evidence(self) -> None:
+        for code in (0xC0000135, -1073741515, 0xC0000139, 0xC000007B, 0xC0000142):
+            with self.subTest(code=code), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                result = subprocess.CompletedProcess([], code, "", "")
+                with patch.object(MODULE.subprocess, "run", return_value=result):
+                    with self.assertRaisesRegex(RuntimeError, "startup failed"):
+                        MODULE.execute_config(root / "runner", root, root / "config.json", root / "run", 1)
+                failure = json.loads((root / "run/startup_failure.json").read_text())
+                self.assertEqual(failure["failure_class"], "runtime_environment")
+                self.assertEqual(failure["exit_code"], code)
+
+    def test_solver_failure_is_still_a_retryable_numerical_attempt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = subprocess.CompletedProcess([], 1, "solver failed", "")
+            with patch.object(MODULE.subprocess, "run", return_value=result):
+                code, timed_out, _ = MODULE.execute_config(
+                    root / "runner", root, root / "config.json", root / "run", 1)
+            self.assertEqual(code, 1)
+            self.assertFalse(timed_out)
+            self.assertFalse((root / "run/startup_failure.json").exists())
+
+    def test_timeout_preserves_byte_output_and_returns_a_rejected_attempt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            error = subprocess.TimeoutExpired("runner", 0.01, output=b"partial output", stderr=b"partial error")
+            with patch.object(MODULE.subprocess, "run", side_effect=error):
+                code, timed_out, elapsed = MODULE.execute_config(
+                    root / "runner", root, root / "config.json", root / "run", 0.01)
+            self.assertEqual(code, -1)
+            self.assertTrue(timed_out)
+            self.assertGreaterEqual(elapsed, 0)
+            self.assertEqual((root / "run/stdout.log").read_text(), "partial output")
+            self.assertEqual((root / "run/stderr.log").read_text(), "partial error")
+
+
+    def test_audit_rejects_cancelling_rows_and_preserves_input_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            document = {"mesh_file": "mesh.json", "node_doping_file": "doping.csv",
+                        "materials_file": "materials.json", "sweep": {"contact": "drain"},
+                        "contacts": [{"name": "drain", "bias": 0.0}],
+                        "solver": {"carrier_row_convergence": {
+                            "eps_row": 0.001, "min_source_scale": 1e-13, "scale_floor": 1e-30}}}
+            def probe(runner, repo, config, run_dir, timeout):
+                deck = json.loads(config.read_text())
+                self.assertEqual(deck["mesh_file"], str((root / "base/mesh.json").resolve()))
+                self.assertEqual(deck["contacts"][0]["bias"], 2.0)
+                self.assertNotIn("sweep", deck)
+                rows = []
+                for node, residual in enumerate((1e-15, -1e-15)):
+                    row = {"node_id": node, "x": node, "y": 0}
+                    for carrier in ("electron", "hole"):
+                        row.update({f"{carrier}_{key}": value for key, value in {
+                            "continuity_active": 1, "residual": residual,
+                            "flux": residual - 1e-15, "flux_abs_sum": 2e-15,
+                            "recombination": 1e-15, "impact": 0, "gauge": 0,
+                            "boundary": 0, "term_sum": residual}.items()})
+                    rows.append(row)
+                with Path(deck["output_csv"]).open("w", newline="") as stream:
+                    writer = csv.DictWriter(stream, fieldnames=rows[0].keys())
+                    writer.writeheader()
+                    writer.writerows(rows)
+                return 0, False, 0.1
+            with patch.object(MODULE, "execute_config", side_effect=probe):
+                result = MODULE.audit_local_candidate(document, root / "state.csv", 2.0,
+                    root / "runner", root, root / "attempt", 10, root / "base")
+            self.assertFalse(result["passed"])
+            self.assertEqual(result["metrics"]["carriers"]["electron"]["residual_signed_sum"], 0)
+            self.assertEqual(document["contacts"][0]["bias"], 0)
+
+    def test_carrier_corrector_requires_full_coupled_and_post_validation_audit(self) -> None:
+        for coupled_pass, final_audit, expected in ((False, True, False),
+                                                   (True, False, False), (True, True, True)):
+            with self.subTest(coupled=coupled_pass, audit=final_audit), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                document = {"simulation_type": "dc_sweep", "mesh_file": "mesh.json",
+                            "output_csv": "old.csv", "sweep": {"contact": "drain"},
+                            "contacts": [{"name": "drain", "bias": 0}],
+                            "solver": {"abstol": 1e-9, "carrier_diagonal_floor": {"enabled": True}}}
+                def execute(runner, repo, config, run_dir, timeout):
+                    deck = json.loads(config.read_text())
+                    self.assertEqual(deck["solver"]["abstol"], 1e-9)
+                    if deck["simulation_type"] == "newton_block_step_probe":
+                        self.assertFalse(deck["solver"]["carrier_diagonal_floor"]["enabled"])
+                        (run_dir / "trial_carrier_only.csv").write_text("trial")
+                    else:
+                        self.assertTrue(deck["solver"]["carrier_diagonal_floor"]["enabled"])
+                        self.assertEqual(deck["mesh_file"], str((root / "mesh.json").resolve()))
+                        (run_dir / "final_state.csv").write_text("candidate")
+                        (run_dir / "iv.csv").write_text("converged,newton_iterations\n" +
+                                                        f"{int(coupled_pass)},2\n")
+                    return 0, False, 0.1
+                audits = [{"passed": True}, {"passed": final_audit}]
+                with patch.object(MODULE, "execute_config", side_effect=execute), \
+                     patch.object(MODULE, "audit_local_candidate", side_effect=audits):
+                    result = MODULE.correct_local_candidate(document, root / "seed.csv", 1.0,
+                        root / "runner", root, root / "attempt", 10, root, 1)
+                self.assertEqual(result["passed"], expected)
+                self.assertEqual(bool(result["state_file"]), expected)
+                self.assertTrue(document["solver"]["carrier_diagonal_floor"]["enabled"])
+                self.assertEqual(document["output_csv"], "old.csv")
+
+    def test_corrector_retries_coupled_state_without_accepting_intermediate_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            document = {"simulation_type": "dc_sweep", "sweep": {"contact": "drain"},
+                        "contacts": [{"name": "drain", "bias": 0}], "solver": {}}
+            validation_count = 0
+            def execute(runner, repo, config, run_dir, timeout):
+                nonlocal validation_count
+                deck = json.loads(config.read_text())
+                if deck["simulation_type"] == "newton_block_step_probe":
+                    if validation_count:
+                        self.assertEqual(Path(deck["state_file"]).name, "saved_rejected.csv")
+                    (run_dir / "trial_carrier_only.csv").write_text("trial")
+                else:
+                    validation_count += 1
+                    passed = validation_count == 2
+                    (run_dir / "iv.csv").write_text(
+                        f"converged,newton_iterations\n{int(passed)},3\n")
+                    if passed:
+                        (run_dir / "final_state.csv").write_text("accepted")
+                    else:
+                        rejected = run_dir / "saved_rejected.csv"
+                        rejected.write_text("rejected")
+                        with (run_dir / "attempts.csv").open("w", newline="") as stream:
+                            writer = csv.DictWriter(stream, fieldnames=["rejected_final_state_file"])
+                            writer.writeheader()
+                            writer.writerow({"rejected_final_state_file": str(rejected)})
+                return 0, False, 0.1
+            with patch.object(MODULE, "execute_config", side_effect=execute), \
+                 patch.object(MODULE, "audit_local_candidate", return_value={"passed": True}):
+                result = MODULE.correct_local_candidate(document, root / "seed.csv", 1.0,
+                    root / "runner", root, root / "attempt", 10, root, 2)
+            self.assertTrue(result["passed"])
+            self.assertEqual(result["coupled_newton_iterations"], 6)
+            self.assertEqual(len(result["steps"]), 2)
+            self.assertNotEqual(result["steps"][0]["validation_directory"],
+                                result["steps"][1]["validation_directory"])
+
+    def test_attempt_diagnostics_do_not_overwrite_base_or_other_attempts(self) -> None:
+        base = {"solver": {
+                    "global_continuity_closure": {"audit_jsonl_file": "old.jsonl"},
+                    "carrier_row_convergence": {"trace_csv": "old_trace.csv"}},
+                "sweep": {"diagnostics": {"newton_history": {
+                    "attempts_csv_file": "old_attempts.csv", "iterations_csv_file": "old_iterations.csv",
+                    "rejected_state_directory": "old_states"}}}}
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            one, _, _ = MODULE.render_attempt(base, root, 1, root / "state.csv", 1)
+            two, _, _ = MODULE.render_attempt(base, root, 2, root / "state.csv", 2)
+            first = one["solver"]["global_continuity_closure"]["audit_jsonl_file"]
+            second = two["solver"]["global_continuity_closure"]["audit_jsonl_file"]
+            self.assertNotEqual(first, second)
+            self.assertEqual(base["solver"]["global_continuity_closure"]["audit_jsonl_file"], "old.jsonl")
+            self.assertNotEqual(one["sweep"]["diagnostics"]["newton_history"]["iterations_csv_file"],
+                                two["sweep"]["diagnostics"]["newton_history"]["iterations_csv_file"])
 
 
 if __name__ == "__main__":

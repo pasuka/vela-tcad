@@ -1004,7 +1004,12 @@ inline std::pair<Real, Real> nearestSurfaceFieldAndDistanceForCell(
         const Real distance = std::hypot(cx - nearestX, cy - nearestY);
         if (distance < nearestDistance) {
             nearestDistance = distance;
-            nearestField = std::abs(gradient.dot(normal)) * fieldFactor;
+            // IALMob uses the gradient of true interface distance. Beyond a
+            // finite segment endpoint this is radial, not its line normal.
+            const Point2 distanceGradient = isIALMobilityModel(mobilityConfig) && distance > 0.0
+                ? Point2{(cx - nearestX) / distance, (cy - nearestY) / distance}
+                : normal;
+            nearestField = std::abs(gradient.dot(distanceGradient)) * fieldFactor;
         }
     }
     return {nearestField, nearestDistance};
@@ -1094,8 +1099,11 @@ inline void updateSurfaceMobilityCellGeometry(
                 const Real distance = std::hypot(cx - nearestX, cy - nearestY);
                 if (distance < nearest) {
                     nearest = distance;
-                    config.surface.cellNormalX[cellId] = segment.nx;
-                    config.surface.cellNormalY[cellId] = segment.ny;
+                    const bool distanceNormal = isIALMobilityModel(config) && distance > 0.0;
+                    config.surface.cellNormalX[cellId] = distanceNormal
+                        ? (cx - nearestX) / distance : segment.nx;
+                    config.surface.cellNormalY[cellId] = distanceNormal
+                        ? (cy - nearestY) / distance : segment.ny;
                     config.surface.cellDistances[cellId] = distance;
                 }
             }
@@ -1179,12 +1187,18 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          CarrierType                             carrier,
                          Real                                    electricField,
                          const MobilityModelConfig*              mobilityConfig = nullptr,
-                         const VectorXd*                         psi = nullptr)
+                         const VectorXd*                         psi = nullptr,
+                         const VectorXd*                         n = nullptr,
+                         const VectorXd*                         p = nullptr)
 {
     const auto& cells = edgeCells[edgeId];
     if (cells.empty()) return 0.0;
 
     const Edge& edge = mesh.getEdge(edgeId);
+    const bool densityDependent = mobilityConfig && mobilityDependsOnCarrierDensity(*mobilityConfig);
+    if (densityDependent && (!n || !p || n->size() != static_cast<int>(mesh.numNodes()) ||
+                             p->size() != static_cast<int>(mesh.numNodes())))
+        throw std::invalid_argument("density-dependent edge mobility requires electron and hole fields");
 
     const bool surfaceEnabled =
         mobilityConfig != nullptr && isSurfaceMobilityModel(*mobilityConfig);
@@ -1212,7 +1226,8 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
         const Region& region = mesh.getRegion(mesh.getCell(c).region_id);
         const bool lombardi = mobilityConfig != nullptr &&
             (mobilityConfig->model == "masetti_lombardi" ||
-             mobilityConfig->model == "masetti_field_lombardi");
+             mobilityConfig->model == "masetti_field_lombardi" ||
+             isIALMobilityModel(*mobilityConfig));
         const bool surfaceApplies = surfaceEnabled &&
             (lombardi
                 ? (mobilityConfig->surface.surfaceRegion.empty() ||
@@ -1252,13 +1267,20 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
             : std::numeric_limits<Real>::quiet_NaN();
         const Real mobilityDoping = edgeMobilityDopingConcentration(
             mesh, doping, edge, c, mobilityConfig);
-        const Real modelMobility = (carrier == CarrierType::Electron)
-            ? mobility.electronMobility(
-                material, mobilityDoping, 0.0, 0.0, electricField,
-                surfaceNormalField, surfaceDistance)
-            : mobility.holeMobility(
-                material, mobilityDoping, 0.0, 0.0, electricField,
-                surfaceNormalField, surfaceDistance);
+        const auto evaluate = [&](Real electrons, Real holes, Index node) {
+            const MobilityDopants dopants{doping.donors(node), doping.acceptors(node)};
+            return carrier == CarrierType::Electron
+                ? mobility.electronMobility(material, mobilityDoping, electrons, holes,
+                    electricField, surfaceNormalField, surfaceDistance, dopants)
+                : mobility.holeMobility(material, mobilityDoping, electrons, holes,
+                    electricField, surfaceNormalField, surfaceDistance, dopants);
+        };
+        // Use endpoint mobility averaging, as in the cell source kernels.
+        // Retain the established edge doping and normal-field reconstruction.
+        const Real modelMobility = densityDependent
+            ? 0.5 * (evaluate((*n)(edge.n0), (*p)(edge.n0), edge.n0) +
+                     evaluate((*n)(edge.n1), (*p)(edge.n1), edge.n1))
+            : evaluate(0.0, 0.0, edge.n0);
         if (modelMobility <= 0.0)
             continue;
 
@@ -1279,7 +1301,9 @@ inline Real nodeMobility(const std::vector<std::vector<Index>>& nodeCells,
                          Index                                 nodeId,
                          CarrierType                           carrier,
                          Real                                  drivingField,
-                         const MobilityModelConfig*            mobilityConfig = nullptr)
+                         const MobilityModelConfig*            mobilityConfig = nullptr,
+                         Real electronDensity = 0.0,
+                         Real holeDensity = 0.0)
 {
     const auto& cells = nodeCells[nodeId];
     if (cells.empty())
@@ -1306,13 +1330,14 @@ inline Real nodeMobility(const std::vector<std::vector<Index>>& nodeCells,
             : std::numeric_limits<Real>::quiet_NaN();
         const Real mobilityDoping = nodeMobilityDopingConcentration(
             mesh, doping, nodeId, c, mobilityConfig);
+        const MobilityDopants dopants{doping.donors(nodeId), doping.acceptors(nodeId)};
         const Real modelMobility = (carrier == CarrierType::Electron)
             ? mobility.electronMobility(
-                material, mobilityDoping, 0.0, 0.0, drivingField,
-                surfaceNormalField, surfaceDistance)
+                material, mobilityDoping, electronDensity, holeDensity, drivingField,
+                surfaceNormalField, surfaceDistance, dopants)
             : mobility.holeMobility(
-                material, mobilityDoping, 0.0, 0.0, drivingField,
-                surfaceNormalField, surfaceDistance);
+                material, mobilityDoping, electronDensity, holeDensity, drivingField,
+                surfaceNormalField, surfaceDistance, dopants);
         if (modelMobility <= 0.0)
             continue;
         sum += modelMobility;
@@ -3287,30 +3312,40 @@ inline Real triangleGssEndpointAveragedMobility(
     Real                          fieldFactor = 1.0)
 {
     const Material& material = cellMaterials.at(static_cast<std::size_t>(cellId));
-    const auto [surfaceField, surfaceDistance] =
-        isSurfaceMobilityModel(mobilityConfig) &&
-            cellId < mobilityConfig.surface.cellNormalFields.size() &&
-            cellId < mobilityConfig.surface.cellDistances.size()
-        ? std::pair<Real, Real>{
-              mobilityConfig.surface.cellNormalFields[cellId],
-              mobilityConfig.surface.cellDistances[cellId]}
-        : isSurfaceMobilityModel(mobilityConfig) && psi != nullptr && cellEdgeIds != nullptr
-        ? nearestSurfaceFieldAndDistanceForCell(
-              mesh, buildEdgeCellMap(mesh), *psi, cellId, mobilityConfig,
-              fieldFactor)
-        : std::pair<Real, Real>{0.0, 0.0};
+    const auto [surfaceField, surfaceDistance] = [&]() -> std::pair<Real, Real> {
+        if (!isSurfaceMobilityModel(mobilityConfig)) return {0.0, 0.0};
+        const auto& surface = mobilityConfig.surface;
+        if (cellId < surface.cellNormalFields.size() && cellId < surface.cellDistances.size()) {
+            Real normalField = surface.cellNormalFields[cellId];
+            // Geometry is invariant, but the trial potential must update Enormal.
+            if (psi && cellId < surface.cellNormalX.size() && cellId < surface.cellNormalY.size()) {
+                bool valid = false;
+                Real area = 0.0;
+                const Point2 gradient = cellScalarGradient(mesh, mesh.getCell(cellId),
+                    [&](Index node) { return (*psi)(node); }, valid, area);
+                if (valid)
+                    normalField = std::abs(gradient.x() * surface.cellNormalX[cellId] +
+                        gradient.y() * surface.cellNormalY[cellId]) * surface.coordinateFieldFactor;
+            }
+            return {normalField, surface.cellDistances[cellId]};
+        }
+        return psi && cellEdgeIds ? nearestSurfaceFieldAndDistanceForCell(
+            mesh, buildEdgeCellMap(mesh), *psi, cellId, mobilityConfig, fieldFactor)
+            : std::pair<Real, Real>{0.0, 0.0};
+    }();
     const auto atNode = [&](Index node) {
         const Real mobilityDoping = nodeMobilityDopingConcentration(
             mesh, doping, node, cellId, &mobilityConfig);
+        const MobilityDopants dopants{doping.donors(node), doping.acceptors(node)};
         return carrier == CarrierType::Electron
             ? mobility.electronMobility(
                 material, mobilityDoping, n(static_cast<int>(node)),
                 p(static_cast<int>(node)), drivingField,
-                surfaceField, surfaceDistance)
+                surfaceField, surfaceDistance, dopants)
             : mobility.holeMobility(
                 material, mobilityDoping, n(static_cast<int>(node)),
                 p(static_cast<int>(node)), drivingField,
-                surfaceField, surfaceDistance);
+                surfaceField, surfaceDistance, dopants);
     };
     return 0.5 * (atNode(node0) + atNode(node1));
 }
@@ -3568,6 +3603,17 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
             "element-edge GSS/Laux avalanche source requires Tri3 cells");
     }
 
+    ElementEdgeGssLauxAvalancheSourceRecord record;
+    record.cellId = cellId;
+    record.edgePartialVolumes = tri3ElementEdgeBoxPartialVolumes(mesh, cell);
+    record.vertexMeasures = tri3ElementVertexBoxMeasures(mesh, cell);
+    // Match the transport support used by the source Jacobian. A doping-based
+    // surface model can return positive mobility in an insulator; silicon
+    // densities on shared vertices must not generate avalanche inside it.
+    const Material& material = cellMaterials.at(static_cast<std::size_t>(cellId));
+    if (material.ni <= 0.0 || (material.mun <= 0.0 && material.mup <= 0.0))
+        return record;
+
     bool electricGradientValid = false;
     Real electricDoubleArea = 0.0;
     const Point2 electricGradient =
@@ -3592,12 +3638,6 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
             "degenerate triangle cannot evaluate avalanche driving fields");
     }
 
-    ElementEdgeGssLauxAvalancheSourceRecord record;
-    record.cellId = cellId;
-    record.edgePartialVolumes =
-        tri3ElementEdgeBoxPartialVolumes(mesh, cell);
-    record.vertexMeasures =
-        tri3ElementVertexBoxMeasures(mesh, cell);
     const bool useContactFallback =
         cellUsesContactElectricFieldFallback(config, mesh, cell);
     const Real electronQfField = electronGradient.norm() * fieldFactor;
@@ -4082,7 +4122,7 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
                 : (qfMobility ? holeQfField : electricField);
             const Real mun = edgeMobility(
                 edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Electron,
-                electronMobilityField, &mobilityConfig, &psi);
+                electronMobilityField, &mobilityConfig, &psi, &n, &p);
             if (mun > 0.0) {
                 const Real signedFlux = electronEdgeSgFlux(edge, mun).continuityFlux;
                 rawSignedElectronFlux[static_cast<std::size_t>(e)] = signedFlux;
@@ -4091,7 +4131,7 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
             }
             const Real mup = edgeMobility(
                 edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Hole,
-                holeMobilityField, &mobilityConfig, &psi);
+                holeMobilityField, &mobilityConfig, &psi, &n, &p);
             if (mup > 0.0) {
                 const Real signedFlux = holeEdgeSgFlux(edge, mup).continuityFlux;
                 rawSignedHoleFlux[static_cast<std::size_t>(e)] = signedFlux;
@@ -4257,18 +4297,18 @@ inline std::vector<SgEdgeCurrentAvalancheSourceRecord> sgEdgeCurrentAvalancheSou
 
         const Real mun = edgeMobility(
             edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Electron,
-            electronMobilityField, &mobilityConfig, &psi);
+            electronMobilityField, &mobilityConfig, &psi, &n, &p);
         record.electronMobility = mun;
         record.electronLowFieldMobility = edgeMobility(
             edgeCells, mesh, doping, mobility, cellMaterials, e,
-            CarrierType::Electron, 0.0, &mobilityConfig, &psi);
+            CarrierType::Electron, 0.0, &mobilityConfig, &psi, &n, &p);
         const Real mup = edgeMobility(
             edgeCells, mesh, doping, mobility, cellMaterials, e, CarrierType::Hole,
-            holeMobilityField, &mobilityConfig, &psi);
+            holeMobilityField, &mobilityConfig, &psi, &n, &p);
         record.holeMobility = mup;
         record.holeLowFieldMobility = edgeMobility(
             edgeCells, mesh, doping, mobility, cellMaterials, e,
-            CarrierType::Hole, 0.0, &mobilityConfig, &psi);
+            CarrierType::Hole, 0.0, &mobilityConfig, &psi, &n, &p);
         constexpr bool IncludeElectronNiGradientDrift = true;
         const Real electronContinuityCoefficient =
             mun > 0.0 ? mun * Vt * fieldFactor / h : 0.0;
@@ -4857,10 +4897,10 @@ inline Real impactIonizationGenerationRate(
     const Real alphaP = impact.holeCoefficient(holeImpactField);
     const Real mun = nodeMobility(
         nodeCells, mesh, doping, mobility, cellMaterials, nodeId, CarrierType::Electron,
-        electronImpactField, &mobilityConfig);
+        electronImpactField, &mobilityConfig, n, p);
     const Real mup = nodeMobility(
         nodeCells, mesh, doping, mobility, cellMaterials, nodeId, CarrierType::Hole,
-        holeImpactField, &mobilityConfig);
+        holeImpactField, &mobilityConfig, n, p);
     return alphaN * mun * std::max(n, 0.0) * std::abs(electronImpactField) +
            alphaP * mup * std::max(p, 0.0) * std::abs(holeImpactField);
 }

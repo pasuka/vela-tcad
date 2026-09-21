@@ -211,6 +211,7 @@ add_library(vela_core STATIC
     src/physics/BandToBandTunnelingModel.cpp
     src/physics/SRHRecombination.cpp
     src/physics/MobilityModel.cpp
+    src/physics/IALMobility.cpp
     src/physics/RecombinationModel.cpp
     src/physics/ImpactIonizationModel.cpp
     src/physics/BandgapNarrowing.cpp
@@ -229,6 +230,7 @@ add_library(vela_core STATIC
     src/post/TerminalCharge.cpp
     src/post/StoredCharge.cpp
     src/solver/NewtonSolver.cpp
+    src/solver/GlobalContinuityAudit.cpp
     src/equation/CoupledDDAssembler.cpp
     src/numerics/ResidualNorm.cpp
     src/numerics/LineSearch.cpp
@@ -621,6 +623,30 @@ add_test(NAME reference_tcad_regression
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_reference_tcad_tools.py)
 vela_set_windows_msys2_test_path(reference_tcad_regression)
+set_property(TEST reference_tcad_regression APPEND PROPERTY ENVIRONMENT
+    "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
+
+add_test(NAME slot_ldmos_local_continuity_audit
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_audit_slot_ldmos_local_continuity)
+set_tests_properties(slot_ldmos_local_continuity_audit PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(slot_ldmos_local_continuity_audit)
+
+add_test(NAME slot_ldmos_noavalanche_continuation
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_run_slot_ldmos_noavalanche_continuation)
+set_tests_properties(slot_ldmos_noavalanche_continuation PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(slot_ldmos_noavalanche_continuation)
+
+add_test(NAME slot_ldmos_ialmob_tools
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_slot_ldmos_ialmob_tools)
+set_tests_properties(slot_ldmos_ialmob_tools PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    ENVIRONMENT "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
+vela_set_windows_msys2_test_path(slot_ldmos_ialmob_tools)
 
 add_test(NAME bv_performance_benchmarks
     COMMAND ${Python3_EXECUTABLE} -m unittest

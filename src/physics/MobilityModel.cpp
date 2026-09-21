@@ -1,4 +1,5 @@
 #include "vela/physics/MobilityModel.h"
+#include "vela/physics/IALMobility.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cmath>
@@ -174,7 +175,8 @@ Real ConstantMobility::electronMobility(const Material& material,
                                         Real,
                                         Real,
                                         Real,
-                                        Real) const
+                                        Real,
+                                        MobilityDopants) const
 {
     return material.mun;
 }
@@ -185,7 +187,8 @@ Real ConstantMobility::holeMobility(const Material& material,
                                     Real,
                                     Real,
                                     Real,
-                                    Real) const
+                                    Real,
+                                        MobilityDopants) const
 {
     return material.mup;
 }
@@ -200,7 +203,8 @@ Real DopingDependentMobility::electronMobility(const Material& material,
                                                Real p,
                                                Real electricField,
                                                Real surfaceNormalField,
-                                               Real surfaceDistance) const
+                                               Real surfaceDistance,
+                                               MobilityDopants) const
 {
     Real mobility = isMasettiModel(config_.model)
         ? masetti(netDoping, config_.electronMasetti)
@@ -223,7 +227,8 @@ Real DopingDependentMobility::holeMobility(const Material& material,
                                            Real p,
                                            Real electricField,
                                            Real surfaceNormalField,
-                                           Real surfaceDistance) const
+                                           Real surfaceDistance,
+                                               MobilityDopants) const
 {
     Real mobility = isMasettiModel(config_.model)
         ? masetti(netDoping, config_.holeMasetti)
@@ -389,6 +394,7 @@ MobilityModelConfig mobilityModelConfig(std::string modelName)
 {
     MobilityModelConfig config;
     config.model = std::move(modelName);
+    if (isIALMobilityModel(config)) config.dopingConcentrationBasis = "total_impurity";
     validateHighFieldDrivingForce(config.highFieldDrivingForce);
     validateHighFieldGradientDiscretization(
         config.highFieldGradientDiscretization);
@@ -406,6 +412,7 @@ MobilityModelConfig mobilityModelConfigFromJson(
         MobilityModelConfig config;
         convertMobilityDefaultsToInternal(config, scaling);
         config.model = value.get<std::string>();
+        if (isIALMobilityModel(config)) config.dopingConcentrationBasis = "total_impurity";
         validateHighFieldDrivingForce(config.highFieldDrivingForce);
         validateHighFieldGradientDiscretization(
             config.highFieldGradientDiscretization);
@@ -418,6 +425,7 @@ MobilityModelConfig mobilityModelConfigFromJson(
     MobilityModelConfig config;
     convertMobilityDefaultsToInternal(config, scaling);
     config.model = value.value("model", config.model);
+    if (isIALMobilityModel(config)) config.dopingConcentrationBasis = "total_impurity";
     config.highFieldDrivingForce = value.value(
         "high_field_driving_force", config.highFieldDrivingForce);
     config.highFieldGradientDiscretization = value.value(
@@ -438,6 +446,7 @@ MobilityModelConfig mobilityModelConfigFromJson(
     parseMasetti(value, config.holeMasetti, "hole", scaling);
     parseField(value, config.electronField, "electron", scaling);
     parseField(value, config.holeField, "hole", scaling);
+    if (value.contains("ialmob")) parseIALMobilityParameters(value.at("ialmob"), config.ialmob);
 
     if (value.contains("surface")) {
         const auto& surface = value.at("surface");
@@ -480,7 +489,19 @@ bool isSurfaceMobilityModel(const MobilityModelConfig& config)
            config.model == "caughey_thomas_field_surface" ||
            config.model == "masetti_surface" ||
            config.model == "masetti_field_surface" ||
-           isLombardiModel(config.model);
+           isLombardiModel(config.model) || isIALMobilityModel(config);
+}
+
+bool isIALMobilityModel(const MobilityModelConfig& config)
+{
+    return config.model == "ialmob" || config.model == "ialmob_field";
+}
+
+bool mobilityDependsOnCarrierDensity(const MobilityModelConfig& config)
+{
+    return isIALMobilityModel(config) || (isLombardiModel(config.model) &&
+        ((config.electronLombardi.alpha != 0.0 && config.electronLombardi.roughnessFactor != 0.0) ||
+         (config.holeLombardi.alpha != 0.0 && config.holeLombardi.roughnessFactor != 0.0)));
 }
 
 bool surfaceMobilityAppliesToRegionPair(const MobilityModelConfig& config,
@@ -511,6 +532,7 @@ std::unique_ptr<MobilityModel> makeMobilityModel(const MobilityModelConfig& conf
 {
     if (config.model == "constant")
         return std::make_unique<ConstantMobility>();
+    if (isIALMobilityModel(config)) return std::make_unique<IALMobility>(config);
     if (config.model == "caughey_thomas" ||
         config.model == "caughey_thomas_field" ||
         isMasettiModel(config.model) ||

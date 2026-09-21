@@ -5,6 +5,7 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/physics/DopingModel.h"
+#include "vela/physics/IALMobility.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/physics/RecombinationModel.h"
 #include "vela/post/ContactCurrent.h"
@@ -27,6 +28,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -2057,6 +2059,14 @@ nlohmann::json runNewtonBlockStepProbe(const std::string& configFile, const nloh
     for (const std::string& mode : modes) {
         steps.push_back(solver.evaluateBlockStep(state, mode));
         summaries.push_back(blockStepSummaryJson(steps.back()));
+        if (cfg.contains("output_state_prefix")) {
+            const std::filesystem::path trialPath = resolvePath(
+                cfgDir, cfg.at("output_state_prefix").get<std::string>()
+                            + "_" + mode + ".csv");
+            vela::writeDDSolutionStateCsv(
+                trialPath, steps.back().trialSolution, problem.newton.inputScaling);
+            summaries.back()["trial_state_file"] = trialPath.string();
+        }
     }
 
     writeNewtonBlockStepProbeCsv(
@@ -2464,7 +2474,9 @@ void writeNewtonCarrierTermProbeCsv(
         << "hole_term_sum,hole_residual,hole_adjusted_impact,"
         << "hole_adjusted_term_sum,hole_adjusted_residual,"
         << "impact_electron_source,impact_hole_source,impact_combined_source,"
-        << "donors_m3,acceptors_m3,net_doping_m3,ni_eff_m3\n";
+        << "donors_m3,acceptors_m3,net_doping_m3,ni_eff_m3,"
+        << "electron_continuity_active,hole_continuity_active,"
+        << "electron_density,hole_density\n";
     for (const auto& row : diagnostics.rows) {
         const vela::Node& node = mesh.getNode(row.nodeId);
         const vela::Real electronSum = row.electronFlux
@@ -2520,8 +2532,9 @@ void writeNewtonCarrierTermProbeCsv(
             << doping.donors(row.nodeId) << ','
             << doping.acceptors(row.nodeId) << ','
             << doping.netDoping(row.nodeId) << ','
-            << diagnostics.residual.intrinsicDensity[static_cast<std::size_t>(row.nodeId)]
-            << '\n';
+            << diagnostics.residual.intrinsicDensity[static_cast<std::size_t>(row.nodeId)] << ','
+            << row.electronContinuityActive << ',' << row.holeContinuityActive << ','
+            << row.electronDensity_m3 << ',' << row.holeDensity_m3 << '\n';
     }
 }
 
@@ -2837,16 +2850,16 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
             : electricField;
         const vela::Real electronLowField = vela::detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId,
-            vela::CarrierType::Electron, 0.0, &newton.mobility, nullptr);
+            vela::CarrierType::Electron, 0.0, &newton.mobility, nullptr, &state.n, &state.p);
         const vela::Real holeLowField = vela::detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId,
-            vela::CarrierType::Hole, 0.0, &newton.mobility, nullptr);
+            vela::CarrierType::Hole, 0.0, &newton.mobility, nullptr, &state.n, &state.p);
         const vela::Real electronFinal = vela::detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId,
-            vela::CarrierType::Electron, electronMobilityField, &newton.mobility, &state.psi);
+            vela::CarrierType::Electron, electronMobilityField, &newton.mobility, &state.psi, &state.n, &state.p);
         const vela::Real holeFinal = vela::detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId,
-            vela::CarrierType::Hole, holeMobilityField, &newton.mobility, &state.psi);
+            vela::CarrierType::Hole, holeMobilityField, &newton.mobility, &state.psi, &state.n, &state.p);
         const vela::Real electronLimiter =
             electronLowField > 0.0 ? electronFinal / electronLowField : 0.0;
         const vela::Real holeLimiter =
@@ -2878,6 +2891,63 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
             << edgeCells[edgeId].size()
             << '\n';
     }
+}
+
+nlohmann::json runIALMobilityPointProbe(const std::string& configFile, const nlohmann::json& cfg)
+{
+    const auto directory = configDirectory(configFile);
+    const auto config = vela::mobilityModelConfigFromJson(cfg.at("mobility"));
+    if (!vela::isIALMobilityModel(config))
+        throw std::invalid_argument("ialmob_point_probe requires ialmob or ialmob_field");
+    if (cfg.contains("scaling"))
+        throw std::invalid_argument("ialmob_point_probe inputs are explicitly SI; omit scaling");
+    const vela::IALMobility model(config);
+    const auto material = vela::MaterialDatabase{}.getMaterial("Si", cfg.value("temperature_K", 300.0));
+    std::ifstream input(resolvePath(directory, cfg.at("points_file").get<std::string>()));
+    if (!input) throw std::runtime_error("Cannot read IALMob point inputs");
+    nlohmann::json points;
+    input >> points;
+    if (!points.is_array() || points.empty())
+        throw std::invalid_argument("IALMob point inputs must be a nonempty array");
+    const std::filesystem::path output = resolvePath(directory, cfg.at("output_csv").get<std::string>());
+    std::filesystem::create_directories(output.parent_path());
+    std::ofstream out(output);
+    if (!out) throw std::runtime_error("Cannot write IALMob point probe");
+    out << std::setprecision(17) << "node_id,carrier,mobility_cm2_V_s,low_field_cm2_V_s,"
+        "coulomb_3d_cm2_V_s,coulomb_2d_cm2_V_s,coulomb_cm2_V_s,"
+        "phonon_3d_cm2_V_s,phonon_2d_cm2_V_s,phonon_cm2_V_s,roughness_cm2_V_s,"
+        "screening,F,G,interface_damping,coulomb_damping,bulk_weight\n";
+    std::unordered_set<int> seen;
+    for (const auto& point : points) {
+        const int node = point.at("node_id").get<int>();
+        if (node < 0 || !seen.insert(node).second)
+            throw std::invalid_argument("IALMob point node ids must be unique and nonnegative");
+        const auto number = [&](const std::string& key) {
+            const auto value = point.at(key).get<vela::Real>();
+            if (!std::isfinite(value) || value < 0.0)
+                throw std::invalid_argument("IALMob point value must be finite and nonnegative: " + key);
+            return value;
+        };
+        const vela::MobilityDopants dopants{number("donors_m3"), number("acceptors_m3")};
+        const auto n = number("electrons_m3"), p = number("holes_m3");
+        const auto distance = number("interface_distance_m");
+        for (auto carrier : {vela::CarrierType::Electron, vela::CarrierType::Hole}) {
+            const bool electron = carrier == vela::CarrierType::Electron;
+            const std::string name = electron ? "electron" : "hole";
+            const auto field = number(name + "_driving_field_V_per_m");
+            const auto normal = number(name + "_normal_field_V_per_m");
+            const auto components = model.components(material, carrier, dopants, n, p, normal, distance);
+            const auto mobility = electron ? model.electronMobility(material, 0, n, p, field, normal, distance, dopants) :
+                model.holeMobility(material, 0, n, p, field, normal, distance, dopants);
+            out << node << ',' << name << ',' << mobility * 1e4 << ',' << components.lowField << ','
+                << components.coulomb3D << ',' << components.coulomb2D << ',' << components.coulomb << ','
+                << components.phonon3D << ',' << components.phonon2D << ',' << components.phonon << ','
+                << components.roughness << ',' << components.screening << ',' << components.F << ',' << components.G << ','
+                << components.interfaceDamping << ',' << components.coulombDamping << ',' << components.bulkWeight << '\n';
+        }
+    }
+    return {{"points", points.size()}, {"mobility_model", config.model}, {"input_units", "SI"},
+            {"output_mobility_units", "cm2/(V s)"}, {"qualification", "pointwise model evaluation only"}};
 }
 
 nlohmann::json runEdgeMobilityProbe(const std::string& configFile, const nlohmann::json& cfg)
@@ -3141,6 +3211,8 @@ int main(int argc, char** argv)
             status.update(runTransportEdgeJacobianProbe(configFile, cfg));
         } else if (type == "edge_mobility_probe") {
             status.update(runEdgeMobilityProbe(configFile, cfg));
+        } else if (type == "ialmob_point_probe") {
+            status.update(runIALMobilityPointProbe(configFile, cfg));
         } else if (type == "newton_jacobian_block_probe") {
             status.update(runNewtonJacobianBlockProbe(configFile, cfg));
         } else {

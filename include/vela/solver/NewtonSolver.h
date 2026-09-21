@@ -16,6 +16,7 @@
 #include "vela/simulation/PseudoArclength.h"
 #include "vela/solver/GummelSolver.h"
 #include <functional>
+#include <array>
 #include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include <string>
@@ -74,6 +75,10 @@ struct NewtonGlobalContinuityClosureConfig {
     ///< after the device residual reaches the configured stall floor.
     Real feasibilityRestorationFactor = 1.0;
     ///< Fraction in (0, 1] of the linear QF projection applied per trial.
+    bool restorationPhysicalRowsOnly = false; ///< Exclude inactive QF gauge rows/DOFs from final projection.
+    bool roundoffAudit = false; ///< E3: actual assembly-order, reduction, repeatability audit.
+    std::string auditJsonlFile; ///< Opt-in replacement-row and final-trial audit.
+    std::string restorationJacobian = "stabilized"; ///< Final-only: stabilized or physical.
 };
 
 struct NewtonGlobalContinuityCarrierClosure {
@@ -179,7 +184,7 @@ struct NewtonConfig {
     NewtonGlobalContinuityClosureConfig globalContinuityClosure{}; ///< Optional contact-flux versus integrated-source convergence check.
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
-    std::string quasiFermiReference = "none"; ///< "none", "contact_majority", or "contact_basin"
+    std::string quasiFermiReference = "none"; ///< "none", "contact_majority", "contact_basin", or "contact_nearest_state"
     std::string poissonOnlyQuasiFermiInitialization = "contact_basin"; ///< "contact_basin" reconstructs ABA QFs; "preserve_initial" retains the supplied QF field except contact projections.
     std::string residualNorm = "block"; ///< "block" or "l2" convergence/line-search norm
     Real residualWeightPsi = 1.0;
@@ -725,7 +730,8 @@ public:
         Real currentScale) const;
 
 private:
-    void configureQuasiFermiReferences(CoupledDDAssembler& assembler) const;
+    void configureQuasiFermiReferences(CoupledDDAssembler& assembler,
+                                      const DDSolution* state = nullptr) const;
     CoupledDDBoundaryConditions buildBoundaryConditions(
         const CoupledDDAssembler& assembler) const;
     CoupledDDBoundaryConditions buildBoundaryConditions(
@@ -798,7 +804,25 @@ bool restoreGlobalContinuityLinearizedStep(
     const VectorXd& residual,
     int nodeCount,
     const std::vector<Index>& electronContactNodes,
+    const std::vector<Index>& holeContactNodes,
+    nlohmann::json* diagnostics = nullptr,
+    const std::vector<CoupledDDCarrierTermDiagnostic>* physicalRows = nullptr);
+
+nlohmann::json globalContinuityReductionAudit(const std::vector<Real>& values);
+nlohmann::json auditGlobalContinuityRoundoff(const CoupledDDAssembler& assembler,
+    const VectorXd& state, const CoupledDDBoundaryConditions& bcs,
+    const NewtonGlobalContinuityClosureConfig& config, Index edgeCount);
+
+/// Full linear free-row sums, including electrostatic/Dirichlet step entries.
+std::array<Real, 2> globalContinuityLinearizedSums(
+    const SparseMatrixd& matrix, const VectorXd& residual, const VectorXd& step,
+    int nodeCount, const std::vector<Index>& electronContactNodes,
     const std::vector<Index>& holeContactNodes);
+
+/// Ideal exact-restoration alpha lower bound with the initial closure mode frozen.
+Real globalContinuityIdealAlphaLowerBound(
+    const NewtonGlobalContinuityClosureEvaluation& evaluation,
+    const NewtonGlobalContinuityClosureConfig& config);
 
 NewtonCarrierRowRecoveryResult recoverCarrierRowsWithGummelDensity(
     const DeviceMesh& mesh,

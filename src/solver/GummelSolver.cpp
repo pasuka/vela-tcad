@@ -1438,16 +1438,16 @@ void writeDDSolutionVTK(const std::string& filename,
         holeHighFieldDrive_V_cm[i] = holeMobilityField * scaleToVcm;
         electronLowFieldMobility[i] = detail::nodeMobility(
             nodeCells, mesh, doping, *mobility, cellMaterials, i,
-            CarrierType::Electron, 0.0, &resolvedMobilityConfig);
+            CarrierType::Electron, 0.0, &resolvedMobilityConfig, n, p);
         holeLowFieldMobility[i] = detail::nodeMobility(
             nodeCells, mesh, doping, *mobility, cellMaterials, i,
-            CarrierType::Hole, 0.0, &resolvedMobilityConfig);
+            CarrierType::Hole, 0.0, &resolvedMobilityConfig, n, p);
         electronMobility[i] = detail::nodeMobility(
             nodeCells, mesh, doping, *mobility, cellMaterials, i,
-            CarrierType::Electron, electronMobilityField, &resolvedMobilityConfig);
+            CarrierType::Electron, electronMobilityField, &resolvedMobilityConfig, n, p);
         holeMobility[i] = detail::nodeMobility(
             nodeCells, mesh, doping, *mobility, cellMaterials, i,
-            CarrierType::Hole, holeMobilityField, &resolvedMobilityConfig);
+            CarrierType::Hole, holeMobilityField, &resolvedMobilityConfig, n, p);
         electronMobility_cm2_V_s[i] =
             units.internalMobilityToM2PerVS(electronMobility[i]) * 1.0e4;
         holeMobility_cm2_V_s[i] =
