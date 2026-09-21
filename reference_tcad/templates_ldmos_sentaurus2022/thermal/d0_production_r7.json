@@ -1,0 +1,38 @@
+{
+  "schema": "vela.ldmos.frozen_production_profile.v1",
+  "qualification": "R7 Linux Release D0 dual-gate 62 points; explicit UMFPACK; input export alone is not new qualification",
+  "archive_sha256": "a01f29aabc39dc570534c74a1d727ce231f82ad4bce791ae2bae1779bc281719",
+  "qualified_linux_runner_sha256": "8a00116f23dc1788d3fed8467fb2aa433873090dff931b9b0e816b497565e76d",
+  "files_sha256": {
+    "cases/data/mesh.json": "36f79a06a21550d69fb58ad221457b1c1ccc63fa3a929046ef6b90e185f09ff6",
+    "cases/data/ialmob_geometry.json": "250d525d123b17df3a698dbb76bae3f2914a8bd0f7b6028b12acf76cfb35f12b",
+    "cases_r7/data/input_vg4.json": "bc8d58ed091531ecd34f65fb74649d3950d8a6b3717846b92b8f88a06cff4f5b",
+    "cases_r7/vela_vg4.json": "c61a17acd3f9fb43dce65cdaa469d6b8cff3b33589cf5787677632a4568b7a3c",
+    "cases_r7/data/input_vg8.json": "891c0e8da619d27a1e756ffe14c1cd75b93c3fd8b45a757712e5143a7cc44da9",
+    "cases_r7/vela_vg8.json": "9b54e92799938ba4f6097482283b0bd8cf9be33bad98c5aefc5f9bda1e18138b"
+  },
+  "dependencies": [
+    {
+      "recorded_path": "/home/tcad/sentaurus_runs/vela_oracle_2022/vela_build_20260914/cases/data/mesh.json",
+      "evidence_path": "cases/data/mesh.json",
+      "bundle_path": "data/mesh.json"
+    },
+    {
+      "recorded_path": "/home/tcad/sentaurus_runs/vela_oracle_2022/vela_build_20260914/cases/data/ialmob_geometry.json",
+      "evidence_path": "cases/data/ialmob_geometry.json",
+      "bundle_path": "data/ialmob_geometry.json"
+    }
+  ],
+  "cases": [
+    {
+      "gate_V": 4,
+      "input": "cases_r7/data/input_vg4.json",
+      "deck": "cases_r7/vela_vg4.json"
+    },
+    {
+      "gate_V": 8,
+      "input": "cases_r7/data/input_vg8.json",
+      "deck": "cases_r7/vela_vg8.json"
+    }
+  ]
+}

@@ -63,12 +63,16 @@ constexpr bool usesFermiDirac(CarrierStatisticsModel model) noexcept
 /**
  * @brief Normalized complete Fermi-Dirac integral F_{1/2}(eta).
  *
- * Uses the Bednarczyk analytic approximation (maximum relative error 0.4%).
+ * Uses a defining-integral Chebyshev approximation with analytic derivatives,
+ * a convergent nondegenerate series, and a degenerate Sommerfeld expansion.
+ * Value and derivative are independently checked against quadrature.
  * The normalization is 2/sqrt(pi) times the defining integral, so the
  * non-degenerate limit is exp(eta).
  */
 Real fermiDiracHalf(Real eta);
 Real fermiDiracHalfDerivative(Real eta);
+/// Second derivative of the same high-accuracy representation.
+Real fermiDiracHalfSecondDerivative(Real eta);
 Real inverseFermiDiracHalf(Real value);
 
 /**

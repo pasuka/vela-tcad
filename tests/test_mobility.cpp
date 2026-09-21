@@ -21,7 +21,7 @@ using namespace vela;
 TEST_CASE("IALMob retains compensation and both carrier screening responses", "[mobility][ialmob]")
 {
     const Material silicon = MaterialDatabase{}.getMaterial("Si");
-    const auto config = mobilityModelConfig("ialmob");
+    const auto config = mobilityModelConfig("slot_ialmob");
     const IALMobility model(config);
     const Real noInterface = std::numeric_limits<Real>::quiet_NaN();
     const auto donorOnly = model.components(silicon, CarrierType::Electron,
@@ -35,7 +35,7 @@ TEST_CASE("IALMob retains compensation and both carrier screening responses", "[
     CHECK(injected.screening < donorOnly.screening);
     const auto intrinsic = model.components(silicon, CarrierType::Electron,
         {0, 0}, 0, 0, noInterface, noInterface);
-    CHECK(intrinsic.lowField == Catch::Approx(config.ialmob.electron.mumax).epsilon(1e-12));
+    CHECK(intrinsic.lowField == Catch::Approx(config.slotIalMobility.electron.mumax).epsilon(1e-12));
     CHECK_THROWS(model.electronMobility(silicon, 1e23, 1e23, 1e20));
     CHECK_THROWS(model.components(silicon, CarrierType::Electron, {-1, 0}, 1, 1, 0, 0));
 }
@@ -43,13 +43,13 @@ TEST_CASE("IALMob retains compensation and both carrier screening responses", "[
 TEST_CASE("IALMob obeys carrier exchange and interface limits", "[mobility][ialmob][surface]")
 {
     const Material silicon = MaterialDatabase{}.getMaterial("Si");
-    auto config = mobilityModelConfig("ialmob");
-    config.ialmob.hole = config.ialmob.electron;
-    config.ialmob.mh_over_m0 = config.ialmob.me_over_m0;
-    config.ialmob.nref_A = config.ialmob.nref_D;
-    config.ialmob.cref_A = config.ialmob.cref_D;
-    config.ialmob.electron.l_crit = config.ialmob.hole.l_crit = 1e-6;
-    config.ialmob.electron.l_crit_c = config.ialmob.hole.l_crit_c = 1e-6;
+    auto config = mobilityModelConfig("slot_ialmob");
+    config.slotIalMobility.hole = config.slotIalMobility.electron;
+    config.slotIalMobility.mh_over_m0 = config.slotIalMobility.me_over_m0;
+    config.slotIalMobility.nref_A = config.slotIalMobility.nref_D;
+    config.slotIalMobility.cref_A = config.slotIalMobility.cref_D;
+    config.slotIalMobility.electron.l_crit = config.slotIalMobility.hole.l_crit = 1e-6;
+    config.slotIalMobility.electron.l_crit_c = config.slotIalMobility.hole.l_crit_c = 1e-6;
     const IALMobility model(config);
     for (Real field : {0.0, 1e6, 1e8}) {
         const auto electron = model.components(silicon, CarrierType::Electron,
@@ -78,8 +78,8 @@ TEST_CASE("IALMob source parameters and complete mobility preserve unit scaling"
             {"lambda_sr", 0.0}, {"l_crit", 1e-6}, {"l_crit_c", 1e-6}}}}}};
     const auto si = mobilityModelConfigFromJson(input);
     const auto tcad = mobilityModelConfigFromJson(input, UnitScalingConfig{UnitScalingMode::UnitScaling});
-    REQUIRE(si.ialmob.electron.C == tcad.ialmob.electron.C);
-    REQUIRE(si.ialmob.electron.alpha_sr == tcad.ialmob.electron.alpha_sr);
+    REQUIRE(si.slotIalMobility.electron.C == tcad.slotIalMobility.electron.C);
+    REQUIRE(si.slotIalMobility.electron.alpha_sr == tcad.slotIalMobility.electron.alpha_sr);
     const Material material = MaterialDatabase{}.getMaterial("Si");
     const auto units = PhysicalUnitSystem::tcadInternal();
     const auto siModel = makeMobilityModel(si), tcadModel = makeMobilityModel(tcad);
@@ -95,9 +95,9 @@ TEST_CASE("IALMob source parameters and complete mobility preserve unit scaling"
         highDrive, 2e7, 2e-9, {2e23, 8e22});
     CHECK(saturated * highDrive == Catch::Approx(si.electronField.saturationVelocity).epsilon(1e-4));
     CHECK_THROWS(mobilityModelConfigFromJson(nlohmann::json{
-        {"model", "ialmob"}, {"ialmob", {{"auto_orientation", true}}}}));
+        {"model", "slot_ialmob"}, {"ialmob", {{"auto_orientation", true}}}}));
     CHECK_THROWS(mobilityModelConfigFromJson(nlohmann::json{
-        {"model", "ialmob"}, {"ialmob", {{"electron", {{"misspelled_coefficient", 1.0}}}}}}));
+        {"model", "slot_ialmob"}, {"ialmob", {{"electron", {{"misspelled_coefficient", 1.0}}}}}}));
 }
 
 TEST_CASE("IALMob normal follows true distance around an interface endpoint",
@@ -119,7 +119,7 @@ TEST_CASE("IALMob normal follows true distance around an interface endpoint",
     const auto edgeCells = detail::buildEdgeCellMap(mesh);
     VectorXd psi(4);
     for (Index i = 0; i < mesh.numNodes(); ++i) psi(i) = mesh.getNode(i).x * 1e7;
-    auto config = mobilityModelConfig("ialmob");
+    auto config = mobilityModelConfig("slot_ialmob");
     config.surface.surfaceInterface = {"Silicon_1", "Oxide_1"};
     // Silicon centroid is (-2/3, 1)*length, nearest to the endpoint (0, 0).
     const auto [field, distance] = detail::nearestSurfaceFieldAndDistanceForCell(
@@ -204,6 +204,65 @@ TEST_CASE("Masetti mobility matches Sentaurus silicon DopingDependence formula",
             Catch::Approx(0.03190980929489245).epsilon(1.0e-12));
 }
 
+TEST_CASE("Constant-field mobility applies HighFieldSaturation without doping dependence",
+          "[mobility][constant-field]")
+{
+    MobilityModelConfig config = mobilityModelConfig("constant_field");
+    config.electronField = {1.07e5, 1.109};
+    config.holeField = {8.37e4, 1.213};
+    DopingDependentMobility mobility(config);
+    MaterialDatabase matdb;
+    const Material& si = matdb.getMaterial("Si");
+
+    const Real field = 2.5e5;
+    const auto expected = [field](Real lowField, const FieldMobilityParameters& p) {
+        const Real ratio = lowField * field / p.saturationVelocity;
+        return lowField /
+            std::pow(1.0 + std::pow(ratio, p.beta), 1.0 / p.beta);
+    };
+
+    const Real electronLowDoping =
+        mobility.electronMobility(si, 1.0e18, 0.0, 0.0, field);
+    const Real electronHighDoping =
+        mobility.electronMobility(si, 1.0e26, 0.0, 0.0, field);
+    const Real holeLowDoping =
+        mobility.holeMobility(si, 1.0e18, 0.0, 0.0, field);
+    const Real holeHighDoping =
+        mobility.holeMobility(si, 1.0e26, 0.0, 0.0, field);
+
+    REQUIRE(electronLowDoping == Catch::Approx(
+        expected(si.mun, config.electronField)).epsilon(1.0e-13));
+    REQUIRE(electronHighDoping == Catch::Approx(electronLowDoping));
+    REQUIRE(holeLowDoping == Catch::Approx(
+        expected(si.mup, config.holeField)).epsilon(1.0e-13));
+    REQUIRE(holeHighDoping == Catch::Approx(holeLowDoping));
+    REQUIRE_NOTHROW(makeMobilityModel(config));
+}
+
+TEST_CASE("Constant-field JSON preserves TCAD internal high-field parameters",
+          "[mobility][constant-field][json][scaling]")
+{
+    const nlohmann::json json = {
+        {"model", "constant_field"},
+        {"electron_saturation_velocity_m_s", 1.07e7},
+        {"electron_high_field_beta", 1.109},
+        {"hole_saturation_velocity_m_s", 8.37e6},
+        {"hole_high_field_beta", 1.213},
+    };
+    const auto scaling = UnitScalingConfig{UnitScalingMode::UnitScaling};
+    const MobilityModelConfig config = mobilityModelConfigFromJson(json, scaling);
+    DopingDependentMobility mobility(config);
+    MaterialDatabase matdb(scaling);
+    const Material& si = matdb.getMaterial("Si");
+
+    REQUIRE(config.electronField.saturationVelocity == Catch::Approx(1.07e7));
+    REQUIRE(config.holeField.saturationVelocity == Catch::Approx(8.37e6));
+    REQUIRE(mobility.electronMobility(si, 1.0e23, 0.0, 0.0) ==
+            Catch::Approx(si.mun));
+    REQUIRE(mobility.holeMobility(si, 1.0e23, 0.0, 0.0) ==
+            Catch::Approx(si.mup));
+}
+
 TEST_CASE("JSON mobility object parses Masetti parameters with unit scaling",
           "[mobility][masetti][json][scaling]")
 {
@@ -271,6 +330,30 @@ TEST_CASE("mobility doping concentration basis parses and validates",
         mobilityModelConfigFromJson(nlohmann::json{
             {"model", "masetti"},
             {"doping_concentration_basis", "unsupported"},
+        }),
+        std::invalid_argument);
+}
+
+TEST_CASE("carrier current discretization parses and validates",
+          "[mobility][json][element-current]")
+{
+    const MobilityModelConfig defaultConfig = mobilityModelConfigFromJson(
+        nlohmann::json{{"model", "masetti"}});
+    REQUIRE(defaultConfig.carrierCurrentDiscretization ==
+            "scharfetter_gummel_edge");
+
+    const MobilityModelConfig elementConfig = mobilityModelConfigFromJson(
+        nlohmann::json{
+            {"model", "masetti"},
+            {"carrier_current_discretization", "element_qf_gradient"},
+        });
+    REQUIRE(elementConfig.carrierCurrentDiscretization ==
+            "element_qf_gradient");
+
+    REQUIRE_THROWS_AS(
+        mobilityModelConfigFromJson(nlohmann::json{
+            {"model", "masetti"},
+            {"carrier_current_discretization", "unsupported"},
         }),
         std::invalid_argument);
 }
@@ -422,6 +505,7 @@ TEST_CASE("JSON mobility object parses high-field quasi-Fermi driving force",
     REQUIRE(cfg.model == "masetti_field");
     REQUIRE(cfg.highFieldDrivingForce == "quasi_fermi_gradient");
     REQUIRE(cfg.highFieldGradientDiscretization == "edge_projection");
+    REQUIRE_FALSE(cfg.contactElectricFieldFallback);
     REQUIRE(cfg.jacobianFieldDerivatives);
 
     const MobilityModelConfig vectorCfg = mobilityModelConfigFromJson(nlohmann::json{
@@ -430,6 +514,16 @@ TEST_CASE("JSON mobility object parses high-field quasi-Fermi driving force",
         {"high_field_gradient_discretization", "transport_cell_vector"},
     });
     REQUIRE(vectorCfg.highFieldGradientDiscretization == "transport_cell_vector");
+
+    const MobilityModelConfig contactFallbackCfg = mobilityModelConfigFromJson(
+        nlohmann::json{
+            {"model", "constant_field"},
+            {"high_field_driving_force", "quasi_fermi_gradient"},
+            {"contact_electric_field_fallback", true},
+            {"contact_electric_field_fallback_scope", "contact_node_cell"},
+            {"contact_electric_field_fallback_mode", "cell_gradient_magnitude"},
+        });
+    REQUIRE(contactFallbackCfg.contactElectricFieldFallback);
 
     const MobilityModelConfig frozenJacobianCfg = mobilityModelConfigFromJson(nlohmann::json{
         {"model", "masetti_field"},
@@ -446,6 +540,16 @@ TEST_CASE("JSON mobility object parses high-field quasi-Fermi driving force",
     REQUIRE_THROWS_AS(mobilityModelConfigFromJson(nlohmann::json{
         {"model", "masetti_field"},
         {"high_field_gradient_discretization", "unsupported"},
+    }), std::invalid_argument);
+    REQUIRE_THROWS_AS(mobilityModelConfigFromJson(nlohmann::json{
+        {"model", "constant_field"},
+        {"contact_electric_field_fallback", true},
+    }), std::invalid_argument);
+    REQUIRE_THROWS_AS(mobilityModelConfigFromJson(nlohmann::json{
+        {"model", "constant_field"},
+        {"high_field_driving_force", "quasi_fermi_gradient"},
+        {"contact_electric_field_fallback", true},
+        {"contact_electric_field_fallback_scope", "contact_boundary_face"},
     }), std::invalid_argument);
 }
 
@@ -469,6 +573,35 @@ TEST_CASE("transport cell-vector quasi-Fermi recovery is orientation independent
     REQUIRE(fields.size() == mesh.numEdges());
     for (const Real field : fields)
         REQUIRE(field == Catch::Approx(5.0).epsilon(1.0e-12));
+}
+
+TEST_CASE("contact mobility fallback uses transport-cell electrostatic gradient",
+          "[mobility][field][contact]")
+{
+    const DeviceMesh mesh = makePNMesh();
+    const MaterialDatabase matdb;
+    const auto edgeCells = detail::buildEdgeCellMap(mesh);
+    const auto cellMaterials = detail::buildCellMaterials(mesh, matdb, 300.0);
+    VectorXd potential(static_cast<int>(mesh.numNodes()));
+    for (Index node = 0; node < mesh.numNodes(); ++node) {
+        const Node& point = mesh.getNode(node);
+        potential(static_cast<int>(node)) = 2.0 * point.x + 3.0 * point.y;
+    }
+
+    MobilityModelConfig config = mobilityModelConfig("constant_field");
+    config.highFieldDrivingForce = "quasi_fermi_gradient";
+    config.contactElectricFieldFallback = true;
+    const std::vector<Real> fields =
+        detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+            config, mesh, edgeCells, cellMaterials, potential, 1.0);
+
+    REQUIRE(fields.size() == mesh.numEdges());
+    for (Index edge = 0; edge < mesh.numEdges(); ++edge) {
+        REQUIRE(fields[edge] == Catch::Approx(std::sqrt(13.0)).epsilon(1.0e-12));
+        REQUIRE(detail::mobilityHighFieldDrivingField(
+                    config, edge, 0.25, 0.5, fields) ==
+                Catch::Approx(std::sqrt(13.0)).epsilon(1.0e-12));
+    }
 }
 
 

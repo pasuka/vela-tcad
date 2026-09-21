@@ -1,0 +1,7 @@
+# Preserve qualified input bytes and SHA-256 across Windows/Linux checkouts.
+data/** -text whitespace=cr-at-eol
+seeds/** -text whitespace=cr-at-eol
+reference_curves/** -text whitespace=cr-at-eol
+config.json -text whitespace=cr-at-eol
+inputs.json -text whitespace=cr-at-eol
+provenance.json -text whitespace=cr-at-eol

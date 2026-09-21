@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vela.local/schemas/vela.templates_ldmos.g3_wp3_knockout_summary.v1.schema.json",
+  "title": "Templates LDMOS G3 WP3 T4 knockout endpoint summary v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "benchmark", "variant", "bias_V", "gate_np_p95_dex",
+    "gate_np_max_dex", "gate_contact_qf_max_V", "gate_neutrality_max_rel",
+    "gate_port_rel", "gate_mesh_equal", "qualification_gates", "r7_l2",
+    "sum_abs_phi", "incident_edge_count", "denominator", "denominator_floor",
+    "denominator_port_current_source", "residual_and_flux_unit",
+    "denominator_floor_hit", "normalized_residual",
+    "baseline_normalized_residual", "ratio_vs_baseline",
+    "reduction_factor_vs_baseline", "hotspot_set", "residual_sets",
+    "artifact_sha256", "verdict"
+  ],
+  "properties": {
+    "schema": {"const": "vela.templates_ldmos.g3_wp3_knockout_summary.v1"},
+    "benchmark": {"const": "sentaurus_t2022_03_sp2_templates_ldmos"},
+    "variant": {"enum": ["k1_hfs_off", "k2_boltzmann", "k3_bgn_off"]},
+    "bias_V": {"enum": [1.0, 1.166666666666667]},
+    "gate_np_p95_dex": {"type": "number", "minimum": 0.0},
+    "gate_np_max_dex": {"type": "number", "minimum": 0.0},
+    "gate_contact_qf_max_V": {"type": "number", "minimum": 0.0},
+    "gate_neutrality_max_rel": {"type": "number", "minimum": 0.0},
+    "gate_port_rel": {"type": "number", "minimum": 0.0},
+    "gate_mesh_equal": {"type": "boolean"},
+    "qualification_gates": {
+      "type": "object", "additionalProperties": false,
+      "required": ["np_reconstruction", "contact_rows", "fixed_state_port_current", "mesh_and_transport_edges"],
+      "properties": {
+        "np_reconstruction": {"type": "boolean"},
+        "contact_rows": {"type": "boolean"},
+        "fixed_state_port_current": {"type": "boolean"},
+        "mesh_and_transport_edges": {"type": "boolean"}
+      }
+    },
+    "r7_l2": {"type": "number", "minimum": 0.0},
+    "sum_abs_phi": {"type": "number", "minimum": 0.0},
+    "incident_edge_count": {"const": 40},
+    "denominator": {"type": "number", "minimum": 0.0},
+    "denominator_floor": {"type": "number", "minimum": 0.0},
+    "denominator_port_current_source": {"const": "sentaurus_variant_endpoint"},
+    "residual_and_flux_unit": {"const": "A/um"},
+    "denominator_floor_hit": {"type": "boolean"},
+    "normalized_residual": {"type": "number", "minimum": 0.0},
+    "baseline_normalized_residual": {"type": "number", "exclusiveMinimum": 0.0},
+    "ratio_vs_baseline": {"type": "number", "minimum": 0.0},
+    "reduction_factor_vs_baseline": {"type": "number", "minimum": 0.0},
+    "hotspot_set": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fixed_seven_node_ids", "variant_top7_node_ids"],
+      "properties": {
+        "fixed_seven_node_ids": {
+          "const": [3721, 3974, 3973, 4091, 3727, 4021, 3771]
+        },
+        "variant_top7_node_ids": {
+          "type": "array", "minItems": 7, "maxItems": 7,
+          "uniqueItems": true, "items": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "residual_sets": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fixed_seven_l2_A_per_um", "fixed_seven_max_abs_A_per_um", "variant_top7_l2_A_per_um", "variant_top7_max_abs_A_per_um"],
+      "properties": {
+        "fixed_seven_l2_A_per_um": {"type": "number", "minimum": 0.0},
+        "fixed_seven_max_abs_A_per_um": {"type": "number", "minimum": 0.0},
+        "variant_top7_l2_A_per_um": {"type": "number", "minimum": 0.0},
+        "variant_top7_max_abs_A_per_um": {"type": "number", "minimum": 0.0}
+      }
+    },
+    "artifact_sha256": {
+      "type": "object", "additionalProperties": false,
+      "required": ["deck", "grid", "parameter", "sentaurus_tdr", "imported_state", "vela_replay_config", "transport_edges"],
+      "properties": {
+        "deck": {"$ref": "#/$defs/sha256"},
+        "grid": {"$ref": "#/$defs/sha256"},
+        "parameter": {"$ref": "#/$defs/sha256"},
+        "sentaurus_tdr": {"$ref": "#/$defs/sha256"},
+        "imported_state": {"$ref": "#/$defs/sha256"},
+        "vela_replay_config": {"$ref": "#/$defs/sha256"},
+        "transport_edges": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "verdict": {"enum": ["contract_not_equivalent", "discretization_carrier", "family_ruled_out", "uncertain"]}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

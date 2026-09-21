@@ -1,0 +1,44 @@
+[
+  {
+    "id": "P0",
+    "mesh": "E1",
+    "bias_V": 0.8,
+    "tool": "reference",
+    "Jy_over_Jx_l2": 1.668814705230739e-05
+  },
+  {
+    "id": "P0",
+    "mesh": "E1",
+    "bias_V": 0.8,
+    "tool": "candidate",
+    "Jy_over_Jx_l2": 0.07843802076177116
+  },
+  {
+    "id": "G1",
+    "mesh": "E1",
+    "bias_V": 0.8,
+    "tool": "reference",
+    "Jy_over_Jx_l2": 0.11522597295462318
+  },
+  {
+    "id": "G1",
+    "mesh": "E1",
+    "bias_V": 0.8,
+    "tool": "candidate",
+    "Jy_over_Jx_l2": 0.1775981125438365
+  },
+  {
+    "id": "G2",
+    "mesh": "E1",
+    "bias_V": 0.8,
+    "tool": "reference",
+    "Jy_over_Jx_l2": 0.1900639879277163
+  },
+  {
+    "id": "G2",
+    "mesh": "E1",
+    "bias_V": 0.8,
+    "tool": "candidate",
+    "Jy_over_Jx_l2": 0.25203115603319776
+  }
+]

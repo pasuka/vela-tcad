@@ -1,0 +1,581 @@
+{
+  "description": "Exact electrode node sets match the requested intervals; remaining left-boundary nodes have no electrode",
+  "results": [
+    {
+      "id": "P0",
+      "mesh": "original",
+      "contact": "Cathode",
+      "expected_nodes": 17,
+      "actual_nodes": 17,
+      "status": "pass"
+    },
+    {
+      "id": "P0",
+      "mesh": "original",
+      "contact": "Anode",
+      "expected_nodes": 17,
+      "actual_nodes": 17,
+      "status": "pass"
+    },
+    {
+      "id": "P0",
+      "mesh": "M0",
+      "contact": "Cathode",
+      "expected_nodes": 17,
+      "actual_nodes": 17,
+      "status": "pass"
+    },
+    {
+      "id": "P0",
+      "mesh": "M0",
+      "contact": "Anode",
+      "expected_nodes": 81,
+      "actual_nodes": 81,
+      "status": "pass"
+    },
+    {
+      "id": "P0",
+      "mesh": "M1",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P0",
+      "mesh": "M1",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "P0",
+      "mesh": "M2",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P0",
+      "mesh": "M2",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "P0",
+      "mesh": "M3",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P0",
+      "mesh": "M3",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "P0",
+      "mesh": "E1",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P0",
+      "mesh": "E1",
+      "contact": "Anode",
+      "expected_nodes": 245,
+      "actual_nodes": 245,
+      "status": "pass"
+    },
+    {
+      "id": "P1",
+      "mesh": "M0",
+      "contact": "Cathode",
+      "expected_nodes": 17,
+      "actual_nodes": 17,
+      "status": "pass"
+    },
+    {
+      "id": "P1",
+      "mesh": "M0",
+      "contact": "Anode",
+      "expected_nodes": 81,
+      "actual_nodes": 81,
+      "status": "pass"
+    },
+    {
+      "id": "P1",
+      "mesh": "M1",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P1",
+      "mesh": "M1",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "P1",
+      "mesh": "M2",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P1",
+      "mesh": "M2",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "P1",
+      "mesh": "M3",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P1",
+      "mesh": "M3",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "P2",
+      "mesh": "M0",
+      "contact": "Cathode",
+      "expected_nodes": 17,
+      "actual_nodes": 17,
+      "status": "pass"
+    },
+    {
+      "id": "P2",
+      "mesh": "M0",
+      "contact": "Anode",
+      "expected_nodes": 81,
+      "actual_nodes": 81,
+      "status": "pass"
+    },
+    {
+      "id": "P2",
+      "mesh": "M1",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P2",
+      "mesh": "M1",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "P2",
+      "mesh": "M2",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P2",
+      "mesh": "M2",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "P2",
+      "mesh": "M3",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P2",
+      "mesh": "M3",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "P3",
+      "mesh": "M0",
+      "contact": "Cathode",
+      "expected_nodes": 17,
+      "actual_nodes": 17,
+      "status": "pass"
+    },
+    {
+      "id": "P3",
+      "mesh": "M0",
+      "contact": "Anode",
+      "expected_nodes": 81,
+      "actual_nodes": 81,
+      "status": "pass"
+    },
+    {
+      "id": "P3",
+      "mesh": "M1",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P3",
+      "mesh": "M1",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "P3",
+      "mesh": "M2",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P3",
+      "mesh": "M2",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "P3",
+      "mesh": "M3",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "P3",
+      "mesh": "M3",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "D1",
+      "mesh": "M0",
+      "contact": "Cathode",
+      "expected_nodes": 17,
+      "actual_nodes": 17,
+      "status": "pass"
+    },
+    {
+      "id": "D1",
+      "mesh": "M0",
+      "contact": "Anode",
+      "expected_nodes": 81,
+      "actual_nodes": 81,
+      "status": "pass"
+    },
+    {
+      "id": "D1",
+      "mesh": "M1",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "D1",
+      "mesh": "M1",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "D1",
+      "mesh": "M2",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "D1",
+      "mesh": "M2",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "D1",
+      "mesh": "M3",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "D1",
+      "mesh": "M3",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "D2",
+      "mesh": "M0",
+      "contact": "Cathode",
+      "expected_nodes": 17,
+      "actual_nodes": 17,
+      "status": "pass"
+    },
+    {
+      "id": "D2",
+      "mesh": "M0",
+      "contact": "Anode",
+      "expected_nodes": 81,
+      "actual_nodes": 81,
+      "status": "pass"
+    },
+    {
+      "id": "D2",
+      "mesh": "M1",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "D2",
+      "mesh": "M1",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "D2",
+      "mesh": "M2",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "D2",
+      "mesh": "M2",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "D2",
+      "mesh": "M3",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "D2",
+      "mesh": "M3",
+      "contact": "Anode",
+      "expected_nodes": 141,
+      "actual_nodes": 141,
+      "status": "pass"
+    },
+    {
+      "id": "G1",
+      "mesh": "M0",
+      "contact": "Cathode",
+      "expected_nodes": 17,
+      "actual_nodes": 17,
+      "status": "pass"
+    },
+    {
+      "id": "G1",
+      "mesh": "M0",
+      "contact": "Anode",
+      "expected_nodes": 55,
+      "actual_nodes": 55,
+      "status": "pass"
+    },
+    {
+      "id": "G1",
+      "mesh": "M1",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "G1",
+      "mesh": "M1",
+      "contact": "Anode",
+      "expected_nodes": 97,
+      "actual_nodes": 97,
+      "status": "pass"
+    },
+    {
+      "id": "G1",
+      "mesh": "M2",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "G1",
+      "mesh": "M2",
+      "contact": "Anode",
+      "expected_nodes": 97,
+      "actual_nodes": 97,
+      "status": "pass"
+    },
+    {
+      "id": "G1",
+      "mesh": "M3",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "G1",
+      "mesh": "M3",
+      "contact": "Anode",
+      "expected_nodes": 97,
+      "actual_nodes": 97,
+      "status": "pass"
+    },
+    {
+      "id": "G1",
+      "mesh": "E1",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "G1",
+      "mesh": "E1",
+      "contact": "Anode",
+      "expected_nodes": 175,
+      "actual_nodes": 175,
+      "status": "pass"
+    },
+    {
+      "id": "G2",
+      "mesh": "M0",
+      "contact": "Cathode",
+      "expected_nodes": 17,
+      "actual_nodes": 17,
+      "status": "pass"
+    },
+    {
+      "id": "G2",
+      "mesh": "M0",
+      "contact": "Anode",
+      "expected_nodes": 23,
+      "actual_nodes": 23,
+      "status": "pass"
+    },
+    {
+      "id": "G2",
+      "mesh": "M1",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "G2",
+      "mesh": "M1",
+      "contact": "Anode",
+      "expected_nodes": 37,
+      "actual_nodes": 37,
+      "status": "pass"
+    },
+    {
+      "id": "G2",
+      "mesh": "M2",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "G2",
+      "mesh": "M2",
+      "contact": "Anode",
+      "expected_nodes": 37,
+      "actual_nodes": 37,
+      "status": "pass"
+    },
+    {
+      "id": "G2",
+      "mesh": "M3",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "G2",
+      "mesh": "M3",
+      "contact": "Anode",
+      "expected_nodes": 37,
+      "actual_nodes": 37,
+      "status": "pass"
+    },
+    {
+      "id": "G2",
+      "mesh": "E1",
+      "contact": "Cathode",
+      "expected_nodes": 33,
+      "actual_nodes": 33,
+      "status": "pass"
+    },
+    {
+      "id": "G2",
+      "mesh": "E1",
+      "contact": "Anode",
+      "expected_nodes": 63,
+      "actual_nodes": 63,
+      "status": "pass"
+    }
+  ]
+}

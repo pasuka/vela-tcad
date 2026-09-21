@@ -1,0 +1,41 @@
+{
+  "schema": "vela.ldmos.frozen_production_profile.v1",
+  "qualification": "R11 explicit high-field value/partials recommended explicit profile; frozen Linux Release UMFPACK, original dual-gate 62-point gates, actual pause/resume and two complete timing pairs per gate. Generated low-field disabled. New binaries/environments do not inherit this qualification.",
+  "archive_sha256": "3f18dedcf87c62229eae3cf4a11969448f98f32b24e2b0287678892091263dc5",
+  "qualified_linux_runner_sha256": "34779c0197961aa98ec29e71d8a1514902cca4d8b58b66250f37a0e45bf81367",
+  "files_sha256": {
+    "cases/data/mesh.json": "36f79a06a21550d69fb58ad221457b1c1ccc63fa3a929046ef6b90e185f09ff6",
+    "cases/data/ialmob_geometry.json": "250d525d123b17df3a698dbb76bae3f2914a8bd0f7b6028b12acf76cfb35f12b",
+    "extrapolation_20260915/symbolic_20260917/full/r0_vg4_high/input.json": "01640d36c521cb24884fff23b321b8dfcf7cd34f7d19978acecfae90ac2d29f1",
+    "extrapolation_20260915/symbolic_20260917/full/r0_vg4_high/deck.json": "5822484a433e92dc26a35789fb48702038aea554e99abf65eeec70fcb12611b2",
+    "extrapolation_20260915/symbolic_20260917/full/r0_vg8_high/input.json": "bdb66951e69ea70868c2ea53bf4aadb921238f4ef3b586cd9c78983eb519e549",
+    "extrapolation_20260915/symbolic_20260917/full/r0_vg8_high/deck.json": "16915144d2800dc9631fec718f97118a6150b2c665ad8d43c7c63005b9f03c76"
+  },
+  "dependencies": [
+    {
+      "recorded_path": "/home/tcad/sentaurus_runs/vela_oracle_2022/vela_build_20260914/cases/data/mesh.json",
+      "evidence_path": "cases/data/mesh.json",
+      "bundle_path": "data/mesh.json"
+    },
+    {
+      "recorded_path": "/home/tcad/sentaurus_runs/vela_oracle_2022/vela_build_20260914/cases/data/ialmob_geometry.json",
+      "evidence_path": "cases/data/ialmob_geometry.json",
+      "bundle_path": "data/ialmob_geometry.json"
+    }
+  ],
+  "cases": [
+    {
+      "gate_V": 4,
+      "input": "extrapolation_20260915/symbolic_20260917/full/r0_vg4_high/input.json",
+      "deck": "extrapolation_20260915/symbolic_20260917/full/r0_vg4_high/deck.json"
+    },
+    {
+      "gate_V": 8,
+      "input": "extrapolation_20260915/symbolic_20260917/full/r0_vg8_high/input.json",
+      "deck": "extrapolation_20260915/symbolic_20260917/full/r0_vg8_high/deck.json"
+    }
+  ],
+  "dependency_archive_sha256": "a01f29aabc39dc570534c74a1d727ce231f82ad4bce791ae2bae1779bc281719",
+  "evidence_layout": "Extract the symbolic study evidence.tgz below extrapolation_20260915/symbolic_20260917; add the unchanged hash-checked cases/data dependencies. full and full_resume together preserve both rounds and interrupted native evidence.",
+  "validation_report": "docs/validation/templates_ldmos_symbolic_full_2026-09-17.md"
+}

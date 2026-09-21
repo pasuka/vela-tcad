@@ -1,0 +1,39 @@
+{
+  "schema": "vela.templates_ldmos.linked_d5_inputs.v1",
+  "template": "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d5_auger_density_config.json",
+  "seeds": {
+    "4": "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg4_qualified/state.csv",
+    "8": "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg8_qualified/state.csv"
+  },
+  "references": {
+    "4": "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg1_n4_des_drain_curve.csv",
+    "8": "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg2_n4_des_drain_curve.csv"
+  },
+  "files": {
+    "reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/stage1_v4/vela_exact_topology/mesh.json": "36f79a06a21550d69fb58ad221457b1c1ccc63fa3a929046ef6b90e185f09ff6",
+    "reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/stage1_v4/vela_exact_topology/doping.csv": "b9924f72bf36386d031e7a168adbc997d9f076db1662b7b8c1e3416ad68acb39",
+    "reference_staging/templates_ldmos_averagebox_full_mesh_20260831/transport_couples.csv": "758161f73f570511ccd914628451ebcad58b5f8e58dd6b6351f00669e18b36cb",
+    "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg1_n4_des_drain_curve.csv": "3c9266b2616e2e779b853cee7bd94a0ee13478015d727c5bc2306ed8e152cb6a",
+    "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg2_n4_des_drain_curve.csv": "9545a194974f5f66205350df8585ca306fed87e9b8bcf15cfd7511a38e095d16",
+    "reference_tcad/templates_ldmos_sentaurus2022/profiles/materials_fermi_consistent_300k.json": "bcd6cd7ca25d9a7b9af45f7d71372b422b35a2201134b84c05ad65a6eff2ba52",
+    "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg4_qualified/state.csv": "0e9685776c538f624ae62e31adf55feae7dc94ebdb22d5e8475435ec11ff9376",
+    "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg8_qualified/state.csv": "4994de512efe74e5efece043ffb893f3225ce0ab3646682522ae00817b870a4a",
+    "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d5_auger_density_config.json": "401484899b58927cdf5c0ab8ba8492fa8d5731898bb3782651c47acd50333e57"
+  },
+  "note": "High-accuracy Fermi/material baseline plus explicit native Auger H/N0 density dependence. Qualification is tracked separately; original numerical gates and high-field policies retained.",
+  "parameter_audit": {
+    "source": "reference_staging/templates_ldmos_followup_20260911/ialmob_difference_location/native/bundle/Siliconc100.par",
+    "sha256": "892759d4bdc9ad80972800f8c1162c57f42da181b03f521761efd37a5a11b9d8",
+    "Auger": {
+      "H": [
+        3.46667,
+        8.25688
+      ],
+      "N0": [
+        1e+18,
+        1e+18
+      ]
+    },
+    "N0_input_units": "cm^-3 (unit_scaling)"
+  }
+}

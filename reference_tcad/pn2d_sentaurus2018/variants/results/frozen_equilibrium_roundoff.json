@@ -1,0 +1,105 @@
+{
+  "status": "diagnostic_only",
+  "scope": "Vela production flux on frozen exported native equilibrium, never an independent solve or native internal-state replay",
+  "state_policy": "Identical psi/n/p in both probes; only replace exported equilibrium quasi-Fermi roundoff by exact zero in the second probe.",
+  "id": "D1",
+  "mesh": "M2",
+  "runner_sha256": "17cf519a71089f83915be586a998cb3be0a14698182a04b312ac8b2d0405889c",
+  "input_field_sha256": {
+    "eDensity_region0.csv": "ff53a51fb55098d209d837e5604b02affdedd8961fb0da56b9e1bd057dff5b54",
+    "ElectrostaticPotential_region0.csv": "234d672b83ca32bf1ed49fcf6368ebfb6d2cf1cee3cc5a886dc2a24995ae825f",
+    "eQuasiFermiPotential_region0.csv": "0b861af7a407c7bf7be2f3a041d04bbb6027ee0afd6bea8018d1ef0b3f6baa9c",
+    "hDensity_region0.csv": "312cc7834265cd93280e62fb2248c2e904ad0b19d7fd78f83eb0fddec5dfcbac",
+    "hQuasiFermiPotential_region0.csv": "d0fbbccc5c4d136c12d7a0e847013be2123d1e30ce54eb402d5e9600e9343c1d"
+  },
+  "native_qfn_max_abs_V": 8.725250034715041e-16,
+  "native_qfp_max_abs_V": 9.184473720752675e-16,
+  "probes": [
+    {
+      "name": "exported_qf",
+      "returncode": 0,
+      "state_sha256": "2ab611073ea9fd46f9678e3849e8fd6d031b7dce41e806f08bf81da173d62c74",
+      "config_sha256": "99ccafeedf184578fe00455d86268e0904284cdef6df55924fe9a075d0d1fa21",
+      "sections": [
+        {
+          "x_um": 0.25,
+          "crossing_edge_count": 65,
+          "electron_A_per_um": -0.0,
+          "hole_A_per_um": 0.0,
+          "total_A_per_um": 0.0
+        },
+        {
+          "x_um": 0.75,
+          "crossing_edge_count": 65,
+          "electron_A_per_um": -0.0,
+          "hole_A_per_um": 0.0,
+          "total_A_per_um": 0.0
+        },
+        {
+          "x_um": 1.0,
+          "crossing_edge_count": 129,
+          "electron_A_per_um": -5.414013869920105e-30,
+          "hole_A_per_um": 5.3197673889858355e-18,
+          "total_A_per_um": 5.319767388980421e-18
+        },
+        {
+          "x_um": 1.25,
+          "crossing_edge_count": 65,
+          "electron_A_per_um": -3.4226309524816923e-18,
+          "hole_A_per_um": 0.0,
+          "total_A_per_um": -3.4226309524816923e-18
+        },
+        {
+          "x_um": 1.75,
+          "crossing_edge_count": 65,
+          "electron_A_per_um": -0.0,
+          "hole_A_per_um": 0.0,
+          "total_A_per_um": 0.0
+        }
+      ]
+    },
+    {
+      "name": "exact_equilibrium_qf",
+      "returncode": 0,
+      "state_sha256": "2c82876e580c224c855ae571ee28730526bf85385e75a990601dc1d1c6c85c62",
+      "config_sha256": "9024bc670d1db7ea052f1c0ce6cb04dc385a07d8198af2f8fd4ace7fdc88206a",
+      "sections": [
+        {
+          "x_um": 0.25,
+          "crossing_edge_count": 65,
+          "electron_A_per_um": -0.0,
+          "hole_A_per_um": 0.0,
+          "total_A_per_um": 0.0
+        },
+        {
+          "x_um": 0.75,
+          "crossing_edge_count": 65,
+          "electron_A_per_um": -0.0,
+          "hole_A_per_um": 0.0,
+          "total_A_per_um": 0.0
+        },
+        {
+          "x_um": 1.0,
+          "crossing_edge_count": 129,
+          "electron_A_per_um": -0.0,
+          "hole_A_per_um": 0.0,
+          "total_A_per_um": 0.0
+        },
+        {
+          "x_um": 1.25,
+          "crossing_edge_count": 65,
+          "electron_A_per_um": -0.0,
+          "hole_A_per_um": 0.0,
+          "total_A_per_um": 0.0
+        },
+        {
+          "x_um": 1.75,
+          "crossing_edge_count": 65,
+          "electron_A_per_um": -0.0,
+          "hole_A_per_um": 0.0,
+          "total_A_per_um": 0.0
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-09",
+  "reason": "D1 M2/M3 double-precision reference gives nonzero equilibrium and inaccurate minority port components; spatial fields and source/SG closure pass. Frozen exported-QF diagnosis and EP128 native short sweep isolate roundoff.",
+  "contract_sha256": "0d1b39d4518b8adab750d807783a1ef34f396b12923d7cd7aa11b62ef08c09fe",
+  "diagnostic": "build-release\\pn2d_variants\\diagnostics\\native_precision\\D1_M2_EP128\\comparison.json",
+  "original_failures": "Each D1/D2 M2/M3 initial_native_double/ retains its transfer.tgz, native input/run metadata and full comparison.",
+  "policy": "B/C both use EP80 long double, Digits=8, RHSMin=1e-20. Exact Goals and all frozen gates unchanged. D1 and D2 M3 EP80 strict-RHS controls pass zero and 0.02 V current gates. Retain EP128 partial cost controls; complete uniform EP80 native sweeps are rerun.",
+  "current_limits_unchanged": true,
+  "precision_probe_pass": true,
+  "C_precision_bits": 80,
+  "B_precision_bits": 80,
+  "C_precision_declared_before_G_results": true,
+  "EP80_evidence": "diagnostics/native_precision/D1_M3_EP80/comparison.json",
+  "RHSMin": 1e-20,
+  "stopping_repair": "native_stopping_repair.json",
+  "EP80_D2_evidence": "diagnostics/native_precision/D2_M3_EP80_forward_rhs1e-20/comparison.json",
+  "final_precision_choice_local": "2026-09-09T13:49:20.641134+08:00"
+}

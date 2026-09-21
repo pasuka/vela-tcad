@@ -5,10 +5,12 @@
 #include <Eigen/OrderingMethods>
 #include <Eigen/SparseLU>
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace vela {
+namespace detail { class DirectBackend; }
 
 /// Rank-revealing sparse direct fallback for bordered systems whose principal
 /// device block may be singular. Returns false instead of throwing when Eigen
@@ -29,26 +31,32 @@ bool solveSpqrSystem(const SparseMatrixd& A,
                      VectorXd& x) noexcept;
 
 /**
- * @brief Sparse direct linear solver based on Eigen SparseLU.
- *
- * Wraps Eigen::SparseLU for the convenience of the rest of the solver
- * pipeline.  Swap this class for an iterative solver (e.g. BiCGSTAB)
- * without changing any call sites.
+ * @brief Sparse linear solver with reusable direct-backend analysis.
  *
  * Experimental backend override: set the environment variable
- * VELA_LINEAR_SOLVER to one of "sparselu" (default), "sparseqr",
- * "bicgstab_ilut", "gmres_ilut", or "simplicial_ldlt" to switch the
- * algorithm used by solve(). Non-default backends bypass the pattern
- * cache and are intended for diagnostics only.
+ * VELA_LINEAR_SOLVER to one of "sparselu", "sparseqr",
+ * "umfpack", "sparselu_metis", "umfpack_metis", "mumps", "mumps_metis",
+ * "superlu_mt", "superlu_mt_metis", "strumpack", "bicgstab_ilut",
+ * "gmres_ilut", or "simplicial_ldlt". Optional direct backends retain symbolic
+ * and identical-value numeric factors; the other alternate backends do not.
  */
 class LinearSolver {
 public:
+    /// Available direct backends in preference order: UMFPACK, SparseLU,
+    /// STRUMPACK, MUMPS, SuperLU_MT. SparseLU is always available.
+    static std::vector<std::string> availableDirectBackends();
+    /// Explicit environment override, otherwise the first available backend.
+    static std::string selectedBackend();
+    /// Empty selects selectedBackend(); a failed solve never changes backends.
+    explicit LinearSolver(const std::string& backend = "");
+    ~LinearSolver();
+    const std::string& backend() const noexcept { return backend_; }
     /**
      * @brief Solve the linear system A * x = b.
      *
      * Reuses Eigen's symbolic analysis when consecutive solves have the same
-     * sparse structure. Numerical factorisation is still performed every call
-     * so changed coefficient values are reflected in the solution.
+     * sparse structure. Numerical factorisation is repeated when coefficient
+     * values change; an identical matrix reuses its factors for a new RHS.
      *
      * @throws std::invalid_argument if dimensions are inconsistent.
      * @throws std::runtime_error if the analysis, factorisation, or solve fails.
@@ -59,6 +67,8 @@ public:
      * @brief Clear the cached sparse pattern and force re-analysis next solve.
      */
     void clearPatternCache();
+    /// Force fresh numerical factorization while retaining symbolic analysis.
+    void clearNumericCache();
 
     /**
      * @brief Number of symbolic pattern analyses performed by this instance.
@@ -69,6 +79,16 @@ public:
     std::size_t patternAnalysisCount() const noexcept;
 
 private:
+    struct UmfPackState;
+    std::string backend_;
+    std::string captureDirectory_;
+    /// VELA_LINEAR_FACTOR_STATISTICS=0 disables optional factor diagnostics.
+    bool factorStatistics_ = true;
+    std::unique_ptr<UmfPackState> umfpack_;
+    std::unique_ptr<detail::DirectBackend> direct_;
+    void createDirectBackend();
+    VectorXd solveDirect(const SparseMatrixd& A, const VectorXd& b);
+    VectorXd solveUmfPack(const SparseMatrixd& A, const VectorXd& b);
     using StorageIndex = SparseMatrixd::StorageIndex;
 #if defined(VELA_SPARSELU_ORDERING_AMD)
     using SparseLUOrdering = Eigen::AMDOrdering<StorageIndex>;
@@ -80,6 +100,23 @@ private:
         : public Eigen::SparseLU<SparseMatrixd, SparseLUOrdering> {
     public:
         bool analysisIsOk() const noexcept { return this->m_analysisIsOk; }
+        /// Conventional scalar LU work implied by stored factor structure;
+        /// excludes blocked-kernel padding, pivot searches and memory work.
+        double structuralFlops() const {
+            std::vector<double> lower(this->cols(), 0.), upper(this->cols(), 0.);
+            for (Eigen::Index col = 0; col < this->cols(); ++col) {
+                for (typename SparseLUSolver::SCMatrix::InnerIterator it(this->m_Lstore, col); it; ++it) {
+                    if (it.row() > col) ++lower[col];
+                    else if (it.row() < col) ++upper[it.row()];
+                }
+                for (Eigen::Map<SparseMatrixd>::InnerIterator it(this->m_Ustore, col); it; ++it)
+                    if (it.row() < col) ++upper[it.row()];
+            }
+            double flops = 0.;
+            for (Eigen::Index i = 0; i < this->cols(); ++i)
+                flops += lower[i] * (1. + 2. * upper[i]);
+            return flops;
+        }
     };
 
     bool patternMatches(const SparseMatrixd& A) const;

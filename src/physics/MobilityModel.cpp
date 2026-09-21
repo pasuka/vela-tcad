@@ -1,5 +1,6 @@
 #include "vela/physics/MobilityModel.h"
 #include "vela/physics/SlotIALMobility.h"
+#include "vela/equation/IalTransport.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <cmath>
@@ -69,7 +70,8 @@ bool isMasettiModel(const std::string& model)
 
 bool isFieldMobilityModel(const std::string& model)
 {
-    return model == "caughey_thomas_field" ||
+    return model == "constant_field" ||
+           model == "caughey_thomas_field" ||
            model == "caughey_thomas_field_surface" ||
            model == "masetti_field" ||
            model == "masetti_field_surface" ||
@@ -110,6 +112,36 @@ void validateHighFieldGradientDiscretization(const std::string& value)
         throw std::invalid_argument(
             "mobility.high_field_gradient_discretization must be "
             "'edge_projection' or 'transport_cell_vector'.");
+    }
+}
+
+void validateContactElectricFieldFallback(const MobilityModelConfig& config)
+{
+    if (config.contactElectricFieldFallbackScope != "contact_node_cell") {
+        throw std::invalid_argument(
+            "mobility.contact_electric_field_fallback_scope must be "
+            "'contact_node_cell'.");
+    }
+    if (config.contactElectricFieldFallbackMode != "cell_gradient_magnitude") {
+        throw std::invalid_argument(
+            "mobility.contact_electric_field_fallback_mode must be "
+            "'cell_gradient_magnitude'.");
+    }
+    if (config.contactElectricFieldFallback &&
+        config.highFieldDrivingForce != "quasi_fermi_gradient") {
+        throw std::invalid_argument(
+            "mobility.contact_electric_field_fallback requires "
+            "high_field_driving_force='quasi_fermi_gradient'.");
+    }
+}
+
+void validateCarrierCurrentDiscretization(const std::string& value)
+{
+    if (value != "scharfetter_gummel_edge" &&
+        value != "element_qf_gradient") {
+        throw std::invalid_argument(
+            "mobility.carrier_current_discretization must be "
+            "'scharfetter_gummel_edge' or 'element_qf_gradient'.");
     }
 }
 
@@ -206,9 +238,11 @@ Real DopingDependentMobility::electronMobility(const Material& material,
                                                Real surfaceDistance,
                                                MobilityDopants) const
 {
-    Real mobility = isMasettiModel(config_.model)
-        ? masetti(netDoping, config_.electronMasetti)
-        : caugheyThomas(material.mun, netDoping, config_.electronCT);
+    Real mobility = config_.model == "constant_field"
+        ? material.mun
+        : (isMasettiModel(config_.model)
+            ? masetti(netDoping, config_.electronMasetti)
+            : caugheyThomas(material.mun, netDoping, config_.electronCT));
     if (isFieldMobilityModel(config_.model))
         mobility = fieldLimit(mobility, electricField, config_.electronField);
     if (isSurfaceMobilityModel(config_))
@@ -230,9 +264,11 @@ Real DopingDependentMobility::holeMobility(const Material& material,
                                            Real surfaceDistance,
                                                MobilityDopants) const
 {
-    Real mobility = isMasettiModel(config_.model)
-        ? masetti(netDoping, config_.holeMasetti)
-        : caugheyThomas(material.mup, netDoping, config_.holeCT);
+    Real mobility = config_.model == "constant_field"
+        ? material.mup
+        : (isMasettiModel(config_.model)
+            ? masetti(netDoping, config_.holeMasetti)
+            : caugheyThomas(material.mup, netDoping, config_.holeCT));
     if (isFieldMobilityModel(config_.model))
         mobility = fieldLimit(mobility, electricField, config_.holeField);
     if (isSurfaceMobilityModel(config_))
@@ -398,6 +434,9 @@ MobilityModelConfig mobilityModelConfig(std::string modelName)
     validateHighFieldDrivingForce(config.highFieldDrivingForce);
     validateHighFieldGradientDiscretization(
         config.highFieldGradientDiscretization);
+    validateContactElectricFieldFallback(config);
+    validateCarrierCurrentDiscretization(
+        config.carrierCurrentDiscretization);
     validateDopingConcentrationBasis(config.dopingConcentrationBasis);
     return config;
 }
@@ -416,6 +455,9 @@ MobilityModelConfig mobilityModelConfigFromJson(
         validateHighFieldDrivingForce(config.highFieldDrivingForce);
         validateHighFieldGradientDiscretization(
             config.highFieldGradientDiscretization);
+        validateContactElectricFieldFallback(config);
+        validateCarrierCurrentDiscretization(
+            config.carrierCurrentDiscretization);
         validateDopingConcentrationBasis(config.dopingConcentrationBasis);
         return config;
     }
@@ -431,6 +473,18 @@ MobilityModelConfig mobilityModelConfigFromJson(
     config.highFieldGradientDiscretization = value.value(
         "high_field_gradient_discretization",
         config.highFieldGradientDiscretization);
+    config.contactElectricFieldFallback = value.value(
+        "contact_electric_field_fallback",
+        config.contactElectricFieldFallback);
+    config.contactElectricFieldFallbackScope = value.value(
+        "contact_electric_field_fallback_scope",
+        config.contactElectricFieldFallbackScope);
+    config.contactElectricFieldFallbackMode = value.value(
+        "contact_electric_field_fallback_mode",
+        config.contactElectricFieldFallbackMode);
+    config.carrierCurrentDiscretization = value.value(
+        "carrier_current_discretization",
+        config.carrierCurrentDiscretization);
     config.dopingConcentrationBasis = value.value(
         "doping_concentration_basis", config.dopingConcentrationBasis);
     config.jacobianFieldDerivatives = value.value(
@@ -438,6 +492,9 @@ MobilityModelConfig mobilityModelConfigFromJson(
     validateHighFieldDrivingForce(config.highFieldDrivingForce);
     validateHighFieldGradientDiscretization(
         config.highFieldGradientDiscretization);
+    validateContactElectricFieldFallback(config);
+    validateCarrierCurrentDiscretization(
+        config.carrierCurrentDiscretization);
     validateDopingConcentrationBasis(config.dopingConcentrationBasis);
 
     parseCaugheyThomas(value, config.electronCT, "electron", scaling);
@@ -446,7 +503,8 @@ MobilityModelConfig mobilityModelConfigFromJson(
     parseMasetti(value, config.holeMasetti, "hole", scaling);
     parseField(value, config.electronField, "electron", scaling);
     parseField(value, config.holeField, "hole", scaling);
-    if (value.contains("ialmob")) parseIALMobilityParameters(value.at("ialmob"), config.ialmob);
+    if (isIALMobilityModel(config) && value.contains("ialmob"))
+        parseIALMobilityParameters(value.at("ialmob"), config.slotIalMobility);
 
     if (value.contains("surface")) {
         const auto& surface = value.at("surface");
@@ -480,6 +538,14 @@ MobilityModelConfig mobilityModelConfigFromJson(
                 surface.at("interface").get<std::vector<std::string>>();
     }
 
+    if (config.model == "ialmob") {
+        if (config.carrierCurrentDiscretization != "scharfetter_gummel_edge" ||
+            config.highFieldDrivingForce != "quasi_fermi_gradient")
+            throw std::invalid_argument("IALMob requires SG edge transport and QF high-field drive");
+        config.ialmob = ialTransportOptionsFromJson(value.at("ialmob"));
+    } else if (value.contains("ialmob") && !isIALMobilityModel(config)) {
+        throw std::invalid_argument("ialmob block requires model=ialmob");
+    }
     return config;
 }
 
@@ -494,7 +560,7 @@ bool isSurfaceMobilityModel(const MobilityModelConfig& config)
 
 bool isIALMobilityModel(const MobilityModelConfig& config)
 {
-    return config.model == "ialmob" || config.model == "ialmob_field";
+    return config.model == "slot_ialmob" || config.model == "ialmob_field";
 }
 
 bool mobilityDependsOnCarrierDensity(const MobilityModelConfig& config)
@@ -528,12 +594,29 @@ bool surfaceMobilityAppliesToRegionPair(const MobilityModelConfig& config,
            adjacentRegionNames.end();
 }
 
+namespace {
+class IalCellOnlyMobility final : public MobilityModel {
+public:
+    Real electronMobility(const Material&,Real,Real,Real,Real,Real,Real,MobilityDopants) const override {
+        throw std::logic_error("IALMob requires the live element transport interface");
+    }
+    Real holeMobility(const Material&,Real,Real,Real,Real,Real,Real,MobilityDopants) const override {
+        throw std::logic_error("IALMob requires the live element transport interface");
+    }
+};
+}
+
 std::unique_ptr<MobilityModel> makeMobilityModel(const MobilityModelConfig& config)
 {
+    if (config.model == "ialmob") {
+        if (!config.ialmob) throw std::invalid_argument("IALMob requires an explicit configuration block");
+        return std::make_unique<IalCellOnlyMobility>();
+    }
     if (config.model == "constant")
         return std::make_unique<ConstantMobility>();
     if (isIALMobilityModel(config)) return std::make_unique<IALMobility>(config);
-    if (config.model == "caughey_thomas" ||
+    if (config.model == "constant_field" ||
+        config.model == "caughey_thomas" ||
         config.model == "caughey_thomas_field" ||
         isMasettiModel(config.model) ||
         isSurfaceMobilityModel(config))

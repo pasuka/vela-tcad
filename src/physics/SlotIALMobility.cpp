@@ -149,11 +149,11 @@ void parseIALMobilityParameters(const nlohmann::json& document, IALMobilityParam
 
 IALMobility::IALMobility(MobilityModelConfig config) : config_(std::move(config))
 {
-    validate(config_.ialmob);
+    validate(config_.slotIalMobility);
     if (config_.dopingConcentrationBasis != "total_impurity")
         throw std::invalid_argument("IALMob requires total_impurity with separate nodal donors and acceptors");
-    electronScreeningMinimum_ = screeningMinimum(1.0, config_.ialmob.me_over_m0);
-    holeScreeningMinimum_ = screeningMinimum(1.0, config_.ialmob.mh_over_m0);
+    electronScreeningMinimum_ = screeningMinimum(1.0, config_.slotIalMobility.me_over_m0);
+    holeScreeningMinimum_ = screeningMinimum(1.0, config_.slotIalMobility.mh_over_m0);
 }
 
 IALMobilityComponents IALMobility::components(const Material& material, CarrierType carrier,
@@ -167,7 +167,7 @@ IALMobilityComponents IALMobility::components(const Material& material, CarrierT
         throw std::invalid_argument("IALMob: temperatures below 50 K require unsupported low-temperature corrections");
     const Real relativeTemperature = temperature / 300.0;
     const bool electron = carrier == CarrierType::Electron;
-    const auto& model = config_.ialmob;
+    const auto& model = config_.slotIalMobility;
     const auto& parameters = electron ? model.electron : model.hole;
     const Real concentrationFactor = config_.internalConcentrationToM3 * 1.0e-6;
     const Real donors = dopants.donors * concentrationFactor;

@@ -88,16 +88,13 @@ def parse_args() -> argparse.Namespace:
     default_elements = repo / "build/diagnostics/pn2d_bv_codex_compare/imported_reference/elements.csv"
     default_nodes = repo / "build/diagnostics/pn2d_bv_codex_compare/imported_reference/nodes.csv"
     default_mesh_json = repo / "build/diagnostics/pn2d_bv_codex_compare/imported_reference/vela/mesh.json"
-    default_node_compare = (
-        repo / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/reports"
-        / "coarse_vm_vector_compare/coarse_node_field_compare_aligned.csv"
-    )
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--internal-audit", type=Path, default=default_internal)
     parser.add_argument("--internal-summary", type=Path, default=default_summary)
     parser.add_argument("--self-edge-topology", type=Path)
     parser.add_argument("--sentaurus-multibias-dir", type=Path, default=default_sentaurus)
-    parser.add_argument("--node-compare", type=Path, default=default_node_compare)
+    parser.add_argument("--node-compare", type=Path)
     parser.add_argument("--elements", type=Path, default=default_elements)
     parser.add_argument("--nodes", type=Path, default=default_nodes)
     parser.add_argument("--mesh-json", type=Path, default=default_mesh_json)
@@ -671,7 +668,11 @@ def compare(args: argparse.Namespace) -> None:
         stats_by_bias_window=stats_by_bias_window,
         max_distance_um=max_distance_um,
         sentaurus_method_a_over_b=method_a_over_b,
-        used_node_compare=args.node_compare if args.node_compare.exists() else None,
+        used_node_compare=(
+            args.node_compare
+            if args.node_compare is not None and args.node_compare.exists()
+            else None
+        ),
     )
 
 

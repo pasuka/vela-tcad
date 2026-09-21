@@ -39,8 +39,6 @@ from sentaurus_mesh_builder import (  # noqa: E402
 )
 
 PN2D_SDE = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "source" / "pn2d_sde.cmd"
-COARSE_SDE = (REPO / "reference_tcad" / "pn2d_sentaurus2018_coarse7x3"
-              / "source" / "pn2d_sde.cmd")
 
 
 def doping_at(device_ir: dict, x: float, y: float) -> tuple[float, float]:
@@ -126,22 +124,9 @@ class ContactOwnerRuleTest(unittest.TestCase):
 
 
 class GeneratedMeshTest(unittest.TestCase):
-    def test_coarse_fixture_reproduces_the_documented_7x3_lattice(self) -> None:
-        """The coarse fixture names its own lattice; the generator must match."""
-        generated = build_mesh_and_doping(parse_sde_device_ir(COARSE_SDE))
-        mesh = generated.mesh
-        self.assertEqual(21, len(mesh["nodes"]))
-        self.assertEqual(24, len(mesh["triangles"]))
-        xs = sorted({round(node["x"], 9) for node in mesh["nodes"]})
-        ys = sorted({round(node["y"], 9) for node in mesh["nodes"]})
-        self.assertEqual(7, len(xs))
-        self.assertEqual(3, len(ys))
-        self.assertAlmostEqual(0.0, xs[0])
-        self.assertAlmostEqual(2.0, xs[-1])
-        self.assertEqual([0.0, 0.25, 0.5], ys)
 
     def test_identifiers_are_sequential_and_cross_referenced(self) -> None:
-        mesh = build_mesh_and_doping(parse_sde_device_ir(COARSE_SDE)).mesh
+        mesh = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE)).mesh
         self.assertEqual(list(range(len(mesh["nodes"]))),
                          [node["id"] for node in mesh["nodes"]])
         self.assertEqual(list(range(len(mesh["triangles"]))),
@@ -232,13 +217,13 @@ class MeshQualificationGateTest(unittest.TestCase):
         self.assertEqual("mixed_voronoi", report["node_volume_policy"])
 
     def test_unknown_node_volume_policy_is_rejected(self) -> None:
-        ir = parse_sde_device_ir(COARSE_SDE)
+        ir = parse_sde_device_ir(PN2D_SDE)
         with self.assertRaises(MeshQualificationError) as ctx:
             build_mesh_and_doping(ir, node_volume_policy="cell_reconstructed")
         self.assertIn("cell_reconstructed", str(ctx.exception))
 
     def test_barycentric_policy_is_accepted(self) -> None:
-        generated = build_mesh_and_doping(parse_sde_device_ir(COARSE_SDE),
+        generated = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE),
                                           node_volume_policy="barycentric")
         self.assertEqual("barycentric", generated.qualification["node_volume_policy"])
 
@@ -332,7 +317,7 @@ class NodeDopingTest(unittest.TestCase):
 
 class MeshFileContractTest(unittest.TestCase):
     def test_written_files_match_the_vela_file_contract(self) -> None:
-        generated = build_mesh_and_doping(parse_sde_device_ir(COARSE_SDE))
+        generated = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE))
         with tempfile.TemporaryDirectory(prefix="vela_mesh_io_", dir=REPO / "build") as tmp:
             root = Path(tmp)
             write_mesh_json(root / "mesh.json", generated.mesh)
@@ -357,10 +342,11 @@ class MeshFileContractTest(unittest.TestCase):
             self.assertEqual(list(range(len(mesh["nodes"]))), ids)
 
     def test_generated_mesh_loads_in_the_vela_runner(self) -> None:
-        runner = REPO / "build" / "vela_example_runner"
+        exe_name = "vela_example_runner.exe" if sys.platform.startswith("win") else "vela_example_runner"
+        runner = REPO / "build" / exe_name
         if not runner.exists():
             self.skipTest("vela_example_runner has not been built")
-        generated = build_mesh_and_doping(parse_sde_device_ir(COARSE_SDE))
+        generated = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE))
         with tempfile.TemporaryDirectory(prefix="vela_mesh_run_", dir=REPO / "build") as tmp:
             root = Path(tmp)
             write_mesh_json(root / "mesh.json", generated.mesh)

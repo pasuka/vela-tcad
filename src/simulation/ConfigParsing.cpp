@@ -1,6 +1,13 @@
 #include "vela/simulation/ConfigParsing.h"
+#include "vela/io/CsvUtils.h"
+#include "vela/mesh/DeviceMesh.h"
 
 #include <nlohmann/json.hpp>
+#include <cmath>
+#include <cstdint>
+#include <fstream>
+#include <map>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -173,8 +180,361 @@ BoxGeometryBuilder::Options parseBoxGeometryOptions(const nlohmann::json& cfg)
             "ConfigParsing: mesh_geometry.edge_coupling_policy must be "
             "'local_positive_fallback' or 'assembled_delaunay_fallback'.");
     }
+    if (geometry.contains("fallback_negative_cotangent") &&
+        !geometry.at("fallback_negative_cotangent").is_boolean()) {
+        throw std::runtime_error(
+            "ConfigParsing: mesh_geometry.fallback_negative_cotangent must be boolean.");
+    }
+    options.fallbackNegativeCotangent =
+        geometry.value("fallback_negative_cotangent", true);
 
     return options;
+}
+
+PoissonChargeVolumePolicy parsePoissonChargeVolumePolicy(
+    const nlohmann::json& cfg)
+{
+    if (!cfg.contains("discretization"))
+        return PoissonChargeVolumePolicy::Global;
+    const auto& discretization = cfg.at("discretization");
+    if (!discretization.is_object()) {
+        throw std::runtime_error(
+            "ConfigParsing: discretization must be an object.");
+    }
+    const std::string policy = discretization.value(
+        "poisson_charge_volume_policy", "global");
+    if (policy == "global")
+        return PoissonChargeVolumePolicy::Global;
+    if (policy != "material_local") {
+        throw std::runtime_error(
+            "ConfigParsing: discretization.poisson_charge_volume_policy must be "
+            "'global' or 'material_local'.");
+    }
+    if (cfg.contains("mesh_geometry") &&
+        cfg.at("mesh_geometry").value("node_volume_policy", "barycentric") !=
+            "barycentric") {
+        throw std::runtime_error(
+            "ConfigParsing: material_local Poisson charge volume is qualified "
+            "only with mesh_geometry.node_volume_policy='barycentric'.");
+    }
+    return PoissonChargeVolumePolicy::MaterialLocalBarycentric;
+}
+
+CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
+    DeviceMesh& mesh,
+    const nlohmann::json& cfg,
+    const std::filesystem::path& configDirectory,
+    UnitScalingConfig scaling)
+{
+    CarrierTransportCoupleProfileReport report;
+    if (!cfg.contains("mesh_geometry"))
+        return report;
+
+    const auto& geometry = cfg.at("mesh_geometry");
+    if (!geometry.is_object())
+        throw std::runtime_error("ConfigParsing: mesh_geometry must be an object.");
+    report.profile = geometry.value(
+        "carrier_transport_couple_profile", "mesh_default");
+    const bool hasFile = geometry.contains("external_averagebox_couples_file");
+    const bool hasCount = geometry.contains("external_averagebox_expected_edges");
+    if (report.profile == "mesh_default") {
+        if (hasFile || hasCount) {
+            throw std::runtime_error(
+                "ConfigParsing: external AverageBox fields require "
+                "mesh_geometry.carrier_transport_couple_profile="
+                "'templates_ldmos_external_averagebox'.");
+        }
+        return report;
+    }
+    if (report.profile != "templates_ldmos_external_averagebox") {
+        throw std::runtime_error(
+            "ConfigParsing: mesh_geometry.carrier_transport_couple_profile must be "
+            "'mesh_default' or the template-private diagnostic "
+            "'templates_ldmos_external_averagebox'.");
+    }
+    if (geometry.value("node_volume_policy", "barycentric") != "barycentric") {
+        throw std::runtime_error(
+            "ConfigParsing: templates_ldmos_external_averagebox requires "
+            "mesh_geometry.node_volume_policy='barycentric'.");
+    }
+    if (!hasFile || !geometry.at("external_averagebox_couples_file").is_string()) {
+        throw std::runtime_error(
+            "ConfigParsing: templates_ldmos_external_averagebox requires a string "
+            "external_averagebox_couples_file.");
+    }
+    if (!hasCount ||
+        (!geometry.at("external_averagebox_expected_edges").is_number_unsigned() &&
+         !geometry.at("external_averagebox_expected_edges").is_number_integer())) {
+        throw std::runtime_error(
+            "ConfigParsing: templates_ldmos_external_averagebox requires an integer "
+            "external_averagebox_expected_edges.");
+    }
+    const auto expectedWide =
+        geometry.at("external_averagebox_expected_edges").get<std::int64_t>();
+    if (expectedWide <= 0) {
+        throw std::runtime_error(
+            "ConfigParsing: external_averagebox_expected_edges must be positive.");
+    }
+    const Index expected = static_cast<Index>(expectedWide);
+
+    std::filesystem::path source =
+        geometry.at("external_averagebox_couples_file").get<std::string>();
+    if (source.is_relative())
+        source = configDirectory / source;
+    source = std::filesystem::weakly_canonical(source);
+    report.sourceFile = source.string();
+    std::ifstream input(source);
+    if (!input.is_open()) {
+        throw std::runtime_error(
+            "ConfigParsing: cannot open external AverageBox couples file: " +
+            source.string());
+    }
+
+    std::string line;
+    if (!std::getline(input, line))
+        throw std::runtime_error("ConfigParsing: external AverageBox CSV is empty.");
+    const auto header = splitCsvLine(line);
+    if (header != std::vector<std::string>{"node0", "node1", "couple_m"}) {
+        throw std::runtime_error(
+            "ConfigParsing: external AverageBox CSV header must be exactly "
+            "node0,node1,couple_m.");
+    }
+
+    std::map<std::pair<Index, Index>, Index> edgeByNodes;
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        edgeByNodes[{std::min(edge.n0, edge.n1), std::max(edge.n0, edge.n1)}] = edgeId;
+    }
+    std::map<std::pair<Index, Index>, Real> overrides;
+    Index lineNumber = 1;
+    while (std::getline(input, line)) {
+        ++lineNumber;
+        if (trimCsvToken(line).empty())
+            continue;
+        const auto fields = splitCsvLine(line);
+        if (fields.size() != 3) {
+            throw std::runtime_error(
+                "ConfigParsing: external AverageBox CSV row " +
+                std::to_string(lineNumber) + " must contain three fields.");
+        }
+        Index node0 = 0;
+        Index node1 = 0;
+        Real coupleM = 0.0;
+        try {
+            node0 = static_cast<Index>(std::stoull(fields[0]));
+            node1 = static_cast<Index>(std::stoull(fields[1]));
+            coupleM = std::stod(fields[2]);
+        } catch (const std::exception&) {
+            throw std::runtime_error(
+                "ConfigParsing: invalid external AverageBox CSV value at row " +
+                std::to_string(lineNumber) + ".");
+        }
+        if (node0 == node1 || !std::isfinite(coupleM) || coupleM < 0.0) {
+            throw std::runtime_error(
+                "ConfigParsing: external AverageBox row " +
+                std::to_string(lineNumber) +
+                " requires distinct nodes and a finite non-negative couple_m.");
+        }
+        const auto key = std::minmax(node0, node1);
+        const std::pair<Index, Index> pair{key.first, key.second};
+        if (!edgeByNodes.contains(pair)) {
+            throw std::runtime_error(
+                "ConfigParsing: external AverageBox row " +
+                std::to_string(lineNumber) + " references a non-mesh edge.");
+        }
+        const Real internal = scaling.unitSystem().metersToInternalLength(coupleM);
+        if (!overrides.emplace(pair, internal).second) {
+            throw std::runtime_error(
+                "ConfigParsing: duplicate external AverageBox edge at row " +
+                std::to_string(lineNumber) + ".");
+        }
+    }
+    if (overrides.size() != static_cast<std::size_t>(expected)) {
+        throw std::runtime_error(
+            "ConfigParsing: external AverageBox edge count mismatch: expected " +
+            std::to_string(expected) + ", read " +
+            std::to_string(overrides.size()) + ".");
+    }
+
+    bool first = true;
+    for (const auto& [nodes, couple] : overrides) {
+        mesh.setTransportCouple(edgeByNodes.at(nodes), couple);
+        ++report.records;
+        if (couple == 0.0)
+            ++report.zeroCouples;
+        if (first) {
+            report.minimumCouple = couple;
+            report.maximumCouple = couple;
+            first = false;
+        } else {
+            report.minimumCouple = std::min(report.minimumCouple, couple);
+            report.maximumCouple = std::max(report.maximumCouple, couple);
+        }
+    }
+    return report;
+}
+
+PoissonCoupleProfileReport applyPoissonCoupleProfile(
+    DeviceMesh& mesh,
+    const nlohmann::json& cfg,
+    const std::filesystem::path& configDirectory,
+    UnitScalingConfig scaling)
+{
+    PoissonCoupleProfileReport report;
+    if (!cfg.contains("mesh_geometry"))
+        return report;
+
+    const auto& geometry = cfg.at("mesh_geometry");
+    if (!geometry.is_object())
+        throw std::runtime_error("ConfigParsing: mesh_geometry must be an object.");
+    report.profile = geometry.value("poisson_couple_profile", "mesh_default");
+    const bool hasFile =
+        geometry.contains("external_averagebox_poisson_couples_file");
+    const bool hasCount =
+        geometry.contains("external_averagebox_poisson_expected_edges");
+    if (report.profile == "mesh_default") {
+        if (hasFile || hasCount) {
+            throw std::runtime_error(
+                "ConfigParsing: external AverageBox Poisson fields require "
+                "mesh_geometry.poisson_couple_profile="
+                "'templates_ldmos_region_averagebox'.");
+        }
+        return report;
+    }
+    if (report.profile != "templates_ldmos_region_averagebox") {
+        throw std::runtime_error(
+            "ConfigParsing: mesh_geometry.poisson_couple_profile must be "
+            "'mesh_default' or the template-private diagnostic "
+            "'templates_ldmos_region_averagebox'.");
+    }
+    if (geometry.value("node_volume_policy", "barycentric") != "barycentric") {
+        throw std::runtime_error(
+            "ConfigParsing: templates_ldmos_region_averagebox requires "
+            "mesh_geometry.node_volume_policy='barycentric'.");
+    }
+    if (geometry.value("carrier_transport_couple_profile", "mesh_default") !=
+        "templates_ldmos_external_averagebox") {
+        throw std::runtime_error(
+            "ConfigParsing: templates_ldmos_region_averagebox requires the "
+            "qualified templates_ldmos_external_averagebox carrier profile.");
+    }
+    if (!hasFile ||
+        !geometry.at("external_averagebox_poisson_couples_file").is_string()) {
+        throw std::runtime_error(
+            "ConfigParsing: templates_ldmos_region_averagebox requires a string "
+            "external_averagebox_poisson_couples_file.");
+    }
+    if (!hasCount ||
+        (!geometry.at("external_averagebox_poisson_expected_edges").is_number_unsigned() &&
+         !geometry.at("external_averagebox_poisson_expected_edges").is_number_integer())) {
+        throw std::runtime_error(
+            "ConfigParsing: templates_ldmos_region_averagebox requires an integer "
+            "external_averagebox_poisson_expected_edges.");
+    }
+    const auto expectedWide = geometry.at(
+        "external_averagebox_poisson_expected_edges").get<std::int64_t>();
+    if (expectedWide <= 0) {
+        throw std::runtime_error(
+            "ConfigParsing: external_averagebox_poisson_expected_edges must be positive.");
+    }
+    const Index expected = static_cast<Index>(expectedWide);
+
+    std::filesystem::path source = geometry.at(
+        "external_averagebox_poisson_couples_file").get<std::string>();
+    if (source.is_relative())
+        source = configDirectory / source;
+    source = std::filesystem::weakly_canonical(source);
+    report.sourceFile = source.string();
+    std::ifstream input(source);
+    if (!input.is_open()) {
+        throw std::runtime_error(
+            "ConfigParsing: cannot open external AverageBox Poisson couples file: " +
+            source.string());
+    }
+
+    std::string line;
+    if (!std::getline(input, line))
+        throw std::runtime_error(
+            "ConfigParsing: external AverageBox Poisson CSV is empty.");
+    const auto header = splitCsvLine(line);
+    if (header != std::vector<std::string>{"node0", "node1", "couple_m"}) {
+        throw std::runtime_error(
+            "ConfigParsing: external AverageBox Poisson CSV header must be exactly "
+            "node0,node1,couple_m.");
+    }
+
+    std::map<std::pair<Index, Index>, Index> edgeByNodes;
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        const Edge& edge = mesh.getEdge(edgeId);
+        edgeByNodes[{std::min(edge.n0, edge.n1), std::max(edge.n0, edge.n1)}] = edgeId;
+    }
+    std::map<std::pair<Index, Index>, Real> overrides;
+    Index lineNumber = 1;
+    while (std::getline(input, line)) {
+        ++lineNumber;
+        if (trimCsvToken(line).empty())
+            continue;
+        const auto fields = splitCsvLine(line);
+        if (fields.size() != 3) {
+            throw std::runtime_error(
+                "ConfigParsing: external AverageBox Poisson CSV row " +
+                std::to_string(lineNumber) + " must contain three fields.");
+        }
+        Index node0 = 0;
+        Index node1 = 0;
+        Real coupleM = 0.0;
+        try {
+            node0 = static_cast<Index>(std::stoull(fields[0]));
+            node1 = static_cast<Index>(std::stoull(fields[1]));
+            coupleM = std::stod(fields[2]);
+        } catch (const std::exception&) {
+            throw std::runtime_error(
+                "ConfigParsing: invalid external AverageBox Poisson CSV value at row " +
+                std::to_string(lineNumber) + ".");
+        }
+        if (node0 == node1 || !std::isfinite(coupleM) || coupleM < 0.0) {
+            throw std::runtime_error(
+                "ConfigParsing: external AverageBox Poisson row " +
+                std::to_string(lineNumber) +
+                " requires distinct nodes and a finite non-negative couple_m.");
+        }
+        const auto key = std::minmax(node0, node1);
+        const std::pair<Index, Index> pair{key.first, key.second};
+        if (!edgeByNodes.contains(pair)) {
+            throw std::runtime_error(
+                "ConfigParsing: external AverageBox Poisson row " +
+                std::to_string(lineNumber) + " references a non-mesh edge.");
+        }
+        const Real internal = scaling.unitSystem().metersToInternalLength(coupleM);
+        if (!overrides.emplace(pair, internal).second) {
+            throw std::runtime_error(
+                "ConfigParsing: duplicate external AverageBox Poisson edge at row " +
+                std::to_string(lineNumber) + ".");
+        }
+    }
+    if (overrides.size() != static_cast<std::size_t>(expected)) {
+        throw std::runtime_error(
+            "ConfigParsing: external AverageBox Poisson edge count mismatch: expected " +
+            std::to_string(expected) + ", read " +
+            std::to_string(overrides.size()) + ".");
+    }
+
+    bool first = true;
+    for (const auto& [nodes, couple] : overrides) {
+        mesh.setPoissonCouple(edgeByNodes.at(nodes), couple);
+        ++report.records;
+        if (couple == 0.0)
+            ++report.zeroCouples;
+        if (first) {
+            report.minimumCouple = couple;
+            report.maximumCouple = couple;
+            first = false;
+        } else {
+            report.minimumCouple = std::min(report.minimumCouple, couple);
+            report.maximumCouple = std::max(report.maximumCouple, couple);
+        }
+    }
+    return report;
 }
 
 } // namespace vela

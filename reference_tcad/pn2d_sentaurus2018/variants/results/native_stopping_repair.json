@@ -1,0 +1,77 @@
+{
+  "date": "2026-09-09",
+  "trigger": {
+    "id": "D1",
+    "mesh": "M2",
+    "bias_V": 0.02,
+    "native_last_update_error": 811.0,
+    "native_last_RHS": 1.03e-06,
+    "native_RHSMin": 1e-05,
+    "failed_port_metrics": [
+      {
+        "branch": "forward",
+        "bias_V": 0.02,
+        "contact": "Anode",
+        "component": "total",
+        "reference_A_per_um": 9.49647687382624e-19,
+        "candidate_A_per_um": 8.226486138705139e-19,
+        "absolute_error_A_per_um": 1.2699907351211021e-19,
+        "relative_error": 0.133732830816594,
+        "log_error_dex": 0.0623481446944586,
+        "pass": false
+      },
+      {
+        "branch": "forward",
+        "bias_V": 0.02,
+        "contact": "Anode",
+        "component": "hole",
+        "reference_A_per_um": 8.73152181329227e-19,
+        "candidate_A_per_um": 7.46196326309598e-19,
+        "absolute_error_A_per_um": 1.2695585501962906e-19,
+        "relative_error": 0.14539945926305786,
+        "log_error_dex": 0.06823683672477146,
+        "pass": false
+      },
+      {
+        "branch": "forward",
+        "bias_V": 0.02,
+        "contact": "Cathode",
+        "component": "total",
+        "reference_A_per_um": -9.49647687382624e-19,
+        "candidate_A_per_um": -8.226486643173573e-19,
+        "absolute_error_A_per_um": 1.2699902306526672e-19,
+        "relative_error": 0.13373277769495304,
+        "log_error_dex": 0.062348118062449845,
+        "pass": false
+      },
+      {
+        "branch": "forward",
+        "bias_V": 0.02,
+        "contact": "Cathode",
+        "component": "hole",
+        "reference_A_per_um": -3.60786440723851e-19,
+        "candidate_A_per_um": -2.339354037489196e-19,
+        "absolute_error_A_per_um": 1.2685103697493139e-19,
+        "relative_error": 0.35159591009137797,
+        "log_error_dex": 0.18815425443557682,
+        "pass": false
+      }
+    ]
+  },
+  "repair": {
+    "stages": [
+      "B",
+      "C"
+    ],
+    "RHSMin": 1e-20,
+    "Digits": 8,
+    "other_convergence_controls": "unchanged",
+    "acceptance_contract_sha256": "0d1b39d4518b8adab750d807783a1ef34f396b12923d7cd7aa11b62ef08c09fe",
+    "protected_inputs_unchanged": 268
+  },
+  "diagnostics": [
+    "diagnostics/native_precision/D1_M2_EP128_forward_rhs1e-20",
+    "diagnostics/native_precision/D1_M3_EP80_forward_rhs1e-20"
+  ],
+  "policy": "Complete native sweeps are rerun. No point interpolation, patched reference current, or threshold relaxation."
+}

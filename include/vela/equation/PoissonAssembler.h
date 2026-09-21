@@ -2,6 +2,7 @@
 
 #include "vela/core/Types.h"
 #include "vela/equation/ChargeSpec.h"
+#include "vela/equation/PoissonChargeVolume.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
@@ -76,6 +77,9 @@ struct PoissonScalingSpec {
     Real chargeAreaFactor = 1.0;
     Real chargeLineFactor = 1.0;
     Real boundaryLengthFactor = 1.0;
+    /// Discretization contract; independent of whether unit scaling is active.
+    PoissonChargeVolumePolicy poissonChargeVolumePolicy =
+        PoissonChargeVolumePolicy::Global;
 };
 
 class PoissonAssembler {

@@ -21,7 +21,7 @@ from scripts.run_pn2d_bv_process_matrix_vm import (
     list_remote_files,
     run_checked,
 )
-from scripts.run_pn2d_minimal6_sentaurus_avalanche_drive_controls_vm import (
+from scripts.sentaurus_avalanche_controls import (
     validate_remote_root,
 )
 

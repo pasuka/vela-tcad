@@ -12,6 +12,7 @@
 #include "vela/solver/GummelSolver.h"
 #include "vela/solver/NewtonSolver.h"
 #include <limits>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -288,6 +289,8 @@ struct DCSweepConfig {
     Real minStep = 0.0;
     Real maxStep = 0.0;
     Real growthFactor = 1.0;
+    /// fixed (legacy) or newton_iterations for ordinary Newton voltage sweeps.
+    std::string stepGrowthMode = "fixed";
     Real shrinkFactor = 0.5;
     int maxRetries = 5;
     bool stopOnFailure = true;
@@ -303,6 +306,9 @@ struct DCSweepConfig {
     VoltageToCurrentControlConfig voltageToCurrent;
     BoundaryControlPersistenceConfig boundaryControl;
     std::string writeStateEveryPointPrefix;
+    /// Optional diagnostic history for accepted adaptive steps between
+    /// requested bias points. writeStateFile remains the rolling checkpoint.
+    std::string writeStateEveryAcceptedStepPrefix;
     std::string chargeContact;
     std::vector<std::string> chargeRegions;
     Real chargeContactRadius = 0.0;
@@ -452,8 +458,21 @@ struct DCSweepResult {
 
 class DCSweep {
 public:
+    /// Default caches for sequential requests. Each solve receives fresh copies;
+    /// no accepted/rejected nonlinear state is carried between requests.
+    explicit DCSweep(bool reusePreparedInputs = true, bool reuseLinearAnalysis = true)
+        : reusePreparedInputs_(reusePreparedInputs || reuseLinearAnalysis),
+          reuseLinearAnalysis_(reuseLinearAnalysis) {}
+    /// Clear on rejected/invalid worker requests; never retain rejected states.
+    void clearLinearContext() const { sequentialLinearSolver_.reset(); }
     std::vector<DCSweepPoint> run(const std::string& configFile) const;
     DCSweepResult runWithResult(const std::string& configFile) const;
+private:
+    struct PreparedInputs;
+    bool reusePreparedInputs_;
+    bool reuseLinearAnalysis_;
+    mutable std::shared_ptr<LinearSolver> sequentialLinearSolver_;
+    mutable std::shared_ptr<PreparedInputs> preparedInputs_;
 };
 
 } // namespace vela

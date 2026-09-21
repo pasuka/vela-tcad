@@ -149,7 +149,9 @@ std::filesystem::path makeUniqueSweepDir()
     for (int attempt = 0; attempt < kMaxDirCreationAttempts; ++attempt) {
         const auto dir = base /
             ("vela_dc_sweep_test_" + std::to_string(stamp) + "_" + std::to_string(dist(rng)));
-        if (!std::filesystem::exists(dir))
+        // Catch2 cases can run in separate processes with the same clock/thread
+        // seed. Reserve the directory atomically before another case can use it.
+        if (std::filesystem::create_directory(dir))
             return dir;
     }
 
@@ -347,6 +349,56 @@ std::filesystem::path writeUnitScalingSweepConfig(
 
 std::string readTextFile(const std::filesystem::path& path);
 
+TEST_CASE("DCSweep prepared inputs preserve fresh-solve results and invalidate by file bytes",
+          "[dc_sweep][prepared_inputs]")
+{
+    const auto dir = makeUniqueSweepDir();
+    std::filesystem::create_directories(dir);
+    const ScopedDirectoryCleanup cleanup{dir};
+    const auto mesh = writePNMesh(dir);
+    const auto config = dir / "cached.json";
+    const auto profile = dir / "profile.json";
+    auto cfg = baseSweepConfig(dir, mesh, dir / "curve.csv");
+    cfg["solver"]["performance_profiling"] = {
+        {"enabled", true}, {"json_file", profile.string()}};
+    cfg["sweep"].update({{"stop", 0.0}, {"write_vtk", false}});
+    DCSweep cached;
+    const auto save = [&] { std::ofstream(config) << cfg.dump(2); };
+    const auto counter = [&](const std::string& name) {
+        return nlohmann::json::parse(readTextFile(profile))["counters"].value(name, 0);
+    };
+    save();
+    REQUIRE(cached.run(config.string()).front().converged);
+    REQUIRE(counter("dc.prepared_inputs.misses") == 1);
+    cfg["sweep"].update({{"start", 0.1}, {"stop", 0.1}});
+    save();
+    const auto reused = cached.run(config.string());
+    REQUIRE(counter("dc.prepared_inputs.hits") == 1);
+    const auto fresh = DCSweep().run(config.string());
+    REQUIRE(reused.size() == fresh.size());
+    REQUIRE(reused.front().converged);
+    REQUIRE(reused.front().totalCurrent == fresh.front().totalCurrent);
+    REQUIRE(reused.front().iterations == fresh.front().iterations);
+
+    // Same name, length and timestamp cannot disguise changed mesh bytes.
+    const auto original = readTextFile(mesh);
+    const auto modifiedTime = std::filesystem::last_write_time(mesh);
+    std::string invalid = original;
+    invalid[0] = '[';
+    std::ofstream(mesh) << invalid;
+    std::filesystem::last_write_time(mesh, modifiedTime);
+    REQUIRE_THROWS(cached.run(config.string()));
+    std::ofstream(mesh) << original;
+    std::filesystem::last_write_time(mesh, modifiedTime);
+    REQUIRE(cached.run(config.string()).front().totalCurrent == fresh.front().totalCurrent);
+    REQUIRE(counter("dc.prepared_inputs.hits") == 1);
+    cfg["doping"][0]["donors"] = 2.0e23;
+    save();
+    const auto changed = cached.run(config.string());
+    REQUIRE(counter("dc.prepared_inputs.misses") == 1);
+    REQUIRE(changed.front().totalCurrent == DCSweep().run(config.string()).front().totalCurrent);
+}
+
 TEST_CASE("DCSweep: default runtime log file is generated", "[dc_sweep][runtime_log]")
 {
     const std::filesystem::path dir = makeUniqueSweepDir();
@@ -415,6 +467,52 @@ TEST_CASE("DCSweep ABA Poisson mode runs coupled equilibrium then Poisson-only b
     REQUIRE(result.points.at(1).solverMethod == "poisson_only");
     REQUIRE(result.points.at(0).totalCurrent == Catch::Approx(0.0));
     REQUIRE(result.points.at(1).totalCurrent == Catch::Approx(0.0));
+}
+
+TEST_CASE("DCSweep preserves metal-gate flatband while sweeping gate bias",
+          "[dc_sweep][metal_gate][flatband]")
+{
+    const std::filesystem::path dir = makeUniqueSweepDir();
+    std::filesystem::create_directories(dir);
+    const ScopedDirectoryCleanup cleanup{dir};
+
+    const std::filesystem::path meshPath = writePNMeshWithInterior(dir);
+    const std::filesystem::path csvPath = dir / "metal_gate_sweep.csv";
+    const std::filesystem::path statePath = dir / "metal_gate_sweep_state.csv";
+    nlohmann::json cfg = baseSweepConfig(dir, meshPath, csvPath);
+    cfg["scaling"] = {{"mode", "unit_scaling"}};
+    cfg["contacts"] = {
+        {{"name", "anode"}, {"type", "metal_gate"}, {"bias", 0.0},
+         {"flatband_voltage", -0.01}},
+        {{"name", "cathode"}, {"type", "ohmic"}, {"bias", 0.0}},
+    };
+    cfg["solver"].update({
+        {"method", "poisson_only"},
+        {"max_iter", 100},
+        {"reltol", 1.0e-8},
+        {"abstol", 1.0e-8},
+        {"recombination", nlohmann::json::array()},
+    });
+    cfg["sweep"].update({
+        {"contact", "anode"},
+        {"current_contact", "cathode"},
+        {"start", 0.0},
+        {"stop", 0.0},
+        {"step", 0.1},
+        {"write_vtk", false},
+        {"write_state_file", statePath.string()},
+    });
+    const std::filesystem::path cfgPath = dir / "metal_gate_sweep.json";
+    std::ofstream(cfgPath) << cfg.dump(2);
+
+    DCSweep sweep;
+    const DCSweepResult result = sweep.runWithResult(cfgPath.string());
+    REQUIRE(result.points.size() == 1);
+    REQUIRE(result.points.front().converged);
+    const DDSolution state = readDDSolutionStateCsv(statePath, 5);
+    // psi_gate = applied_bias - flatband_voltage = 0 - (-0.01).
+    REQUIRE(state.psi(0) == Catch::Approx(0.01).margin(1.0e-12));
+    REQUIRE(state.psi(3) == Catch::Approx(0.01).margin(1.0e-12));
 }
 
 TEST_CASE("DCSweep frozen-state mode preserves the supplied diagnostic state",
@@ -4021,11 +4119,13 @@ TEST_CASE("DCSweep: explicit bias_points solve only requested biases", "[dc_swee
     std::filesystem::create_directories(dir);
     const auto meshPath = writePNMesh(dir);
     const auto csvPath = dir / "bias_points.csv";
+    const auto acceptedPrefix = dir / "accepted" / "state";
     const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
         {"start", 0.0},
         {"stop", 0.5},
         {"step", 0.25},
         {"bias_points", {0.0, 0.125, 0.4}},
+        {"write_state_every_accepted_step_prefix", acceptedPrefix.string()},
         {"write_vtk", false}
     });
 
@@ -4040,6 +4140,14 @@ TEST_CASE("DCSweep: explicit bias_points solve only requested biases", "[dc_swee
     REQUIRE(points[1].acceptedStep == Catch::Approx(0.125));
     REQUIRE(points[2].attemptedStep == Catch::Approx(0.025));
     REQUIRE(points[2].acceptedStep == Catch::Approx(0.025));
+    REQUIRE(std::filesystem::exists(
+        dir / "accepted" / "state_bias_0p000000.csv"));
+    REQUIRE(std::filesystem::exists(
+        dir / "accepted" / "state_bias_0p125000.csv"));
+    REQUIRE(std::filesystem::exists(
+        dir / "accepted" / "state_bias_0p375000.csv"));
+    REQUIRE(std::filesystem::exists(
+        dir / "accepted" / "state_bias_0p400000.csv"));
 }
 
 TEST_CASE("DCSweep: write_state_file stores latest converged restart state", "[dc_sweep]")
@@ -4110,6 +4218,56 @@ TEST_CASE("DDSolution CSV shared IO roundtrips restart state", "[dc_sweep]")
     REQUIRE((loaded.phip - solution.phip).norm() == Catch::Approx(0.0));
     REQUIRE((loaded.n - solution.n).norm() == Catch::Approx(0.0));
     REQUIRE((loaded.p - solution.p).norm() == Catch::Approx(0.0));
+}
+
+TEST_CASE("DDSolution CSV uses round-trip precision for every persistent field",
+          "[dc_sweep][restart][precision]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto path = dir / "full_precision_state.csv";
+
+    DDSolution solution;
+    solution.psi.resize(2);
+    solution.psi << -0.12345678901234566, 0.98765432109876539;
+    solution.phin.resize(2);
+    solution.phin << 0.012345678901234567, 1.1000000000000001;
+    solution.phip.resize(2);
+    solution.phip << -0.023456789012345678, -0.20000000000000001;
+    solution.n.resize(2);
+    solution.n << 1.234567890123456e16, 9.876543210987654e19;
+    solution.p.resize(2);
+    solution.p << 7.654321098765432e12, 3.210987654321098e18;
+    solution.electronQuantumPotential.resize(2);
+    solution.electronQuantumPotential << 0.003456789012345678, -0.004567890123456789;
+    solution.electronQuantumPotentialLike.resize(2);
+    solution.electronQuantumPotentialLike << -4.123456789012345, -3.987654321098765;
+    solution.phinIncrement.resize(2);
+    solution.phinIncrement << 1.2345678901234567e-17, -2.3456789012345678e-17;
+    solution.phipIncrement.resize(2);
+    solution.phipIncrement << -3.4567890123456789e-17, 4.567890123456789e-17;
+    solution.electronQfReference = solution.phin - solution.phinIncrement;
+    solution.holeQfReference = solution.phip - solution.phipIncrement;
+
+    writeDDSolutionStateCsv(path, solution);
+    const DDSolution loaded = readDDSolutionStateCsv(path, 2);
+
+    REQUIRE((loaded.psi.array() == solution.psi.array()).all());
+    REQUIRE((loaded.phin.array() == solution.phin.array()).all());
+    REQUIRE((loaded.phip.array() == solution.phip.array()).all());
+    REQUIRE((loaded.n.array() == solution.n.array()).all());
+    REQUIRE((loaded.p.array() == solution.p.array()).all());
+    REQUIRE((loaded.electronQuantumPotential.array() ==
+             solution.electronQuantumPotential.array()).all());
+    REQUIRE((loaded.electronQuantumPotentialLike.array() ==
+             solution.electronQuantumPotentialLike.array()).all());
+    REQUIRE((loaded.phinIncrement.array() == solution.phinIncrement.array()).all());
+    REQUIRE((loaded.phipIncrement.array() == solution.phipIncrement.array()).all());
+    REQUIRE((loaded.electronQfReference.array() ==
+             solution.electronQfReference.array()).all());
+    REQUIRE((loaded.holeQfReference.array() ==
+             solution.holeQfReference.array()).all());
 }
 
 TEST_CASE("DDSolution CSV writes physical m3 densities in unit scaling mode", "[dc_sweep][scaling]")
@@ -4789,6 +4947,150 @@ TEST_CASE("DCSweep step control: invalid direct-call config fails fast", "[dc_sw
     }
 }
 
+TEST_CASE("DCSweep step control: Newton work controls bounded growth", "[dc_sweep][step_growth]")
+{
+    detail::DCSweepStepControlConfig cfg;
+    cfg.start = 0.0;
+    cfg.stop = 1.0;
+    cfg.step = 1.0;
+    cfg.initialStep = 0.01;
+    cfg.minStep = 1.0e-6;
+    cfg.maxStep = 1.0;
+    cfg.growthFactor = 1.35;
+    cfg.growthMode = "newton_iterations";
+    cfg.newtonIterationLimit = 25;
+
+    Real previousGrowth = 2.0;
+    for (int iterations : {0, 1, 2, 5, 10, 20, 25, 100}) {
+        std::vector<detail::DCSweepStepControlEvent> events;
+        cfg.stopRequested = [&]() { return !events.empty(); };
+        detail::runDCSweepStepControl(cfg,
+            [&](Real, Real, int) { return detail::DCSweepStepAttemptResult{true, iterations}; },
+            [&](const auto& event) { events.push_back(event); });
+        REQUIRE(events.size() == 1);
+        const auto& event = events.front();
+        REQUIRE(event.newtonIterations == iterations);
+        REQUIRE(event.growthFactor >= 1.0);
+        REQUIRE(event.growthFactor <= cfg.growthFactor);
+        REQUIRE(event.growthFactor <= previousGrowth);
+        previousGrowth = event.growthFactor;
+        if (iterations == 5) {
+            // Independent example: 10 mV, 5 updates, budget 25, Increment 1.35.
+            REQUIRE(event.nextStepMagnitude == Catch::Approx(0.0127533333333333));
+        }
+        if (iterations >= 20)
+            REQUIRE(event.nextStepMagnitude == Catch::Approx(0.01));
+    }
+}
+
+TEST_CASE("DCSweep step control: Newton growth preserves rollback and suppresses recovery growth",
+          "[dc_sweep][step_growth]")
+{
+    detail::DCSweepStepControlConfig cfg;
+    cfg.stop = 0.3;
+    cfg.step = 0.3;
+    cfg.initialStep = 0.2;
+    cfg.minStep = 0.01;
+    cfg.maxStep = 0.3;
+    cfg.growthFactor = 2.0;
+    cfg.growthMode = "newton_iterations";
+    cfg.newtonIterationLimit = 25;
+    cfg.maxRetries = 2;
+    std::vector<Real> attempts;
+    std::vector<detail::DCSweepStepControlEvent> events;
+    detail::runDCSweepStepControl(cfg,
+        [&](Real bias, Real, int retries) -> detail::DCSweepStepAttemptResult {
+            attempts.push_back(bias);
+            if (attempts.size() == 1)
+                return false; // Failure does not need a successful-step work count.
+            if (attempts.size() == 2) {
+                REQUIRE(retries == 1);
+                return {true, 1};
+            }
+            return {true, 1, true}; // A recovery is not a cheap ordinary step.
+        }, [&](const auto& event) { events.push_back(event); });
+    REQUIRE(attempts.size() == 3);
+    REQUIRE(attempts[0] == Catch::Approx(0.2));
+    REQUIRE(attempts[1] == Catch::Approx(0.1));
+    REQUIRE(attempts[2] == Catch::Approx(0.3));
+    REQUIRE(events.size() == 2);
+    REQUIRE(events[0].acceptedStep == Catch::Approx(0.1));
+    REQUIRE(events[1].growthFactor == 1.0);
+    REQUIRE(events[1].nextStepMagnitude == Catch::Approx(0.2));
+
+    cfg.maxRetries = 0;
+    detail::DCSweepStepControlState state;
+    events.clear();
+    detail::runDCSweepStepControl(cfg, [](Real, Real, int) { return false; },
+        [&](const auto& event) { events.push_back(event); }, &state);
+    REQUIRE(events.size() == 1);
+    REQUIRE_FALSE(events[0].converged);
+    REQUIRE(events[0].acceptedStep == 0.0);
+    REQUIRE(events[0].failureReason == "non_convergence");
+    REQUIRE(state.adaptiveStep == Catch::Approx(0.1));
+}
+
+TEST_CASE("DCSweep step control: Newton growth uses clipped steps and carries history in both directions",
+          "[dc_sweep][step_growth]")
+{
+    for (Real direction : {1.0, -1.0}) {
+        detail::DCSweepStepControlConfig cfg;
+        cfg.stop = direction * 0.3;
+        cfg.step = direction * 0.3;
+        cfg.initialStep = 0.2;
+        cfg.minStep = 0.01;
+        cfg.maxStep = 0.5;
+        cfg.growthFactor = 2.0;
+        cfg.growthMode = "newton_iterations";
+        cfg.newtonIterationLimit = 25;
+        detail::DCSweepStepControlState state;
+        std::vector<detail::DCSweepStepControlEvent> events;
+        const auto attempt = [](Real, Real, int) { return detail::DCSweepStepAttemptResult{true, 1}; };
+        const auto record = [&](const auto& event) { events.push_back(event); };
+        detail::runDCSweepStepControl(cfg, attempt, record, &state);
+        REQUIRE(events.size() == 2);
+        REQUIRE(events.back().acceptedStep == Catch::Approx(direction * 0.1));
+        REQUIRE(state.adaptiveStep == Catch::Approx(0.2));
+
+        cfg.start = direction * 0.3;
+        cfg.stop = direction * 0.501;
+        cfg.step = direction * 0.201;
+        cfg.initialStep = 0.4; // Persisted history, not this value, controls the next interval.
+        events.clear();
+        detail::runDCSweepStepControl(cfg, attempt, record, &state);
+        REQUIRE(events.size() == 2);
+        REQUIRE(events.front().acceptedStep == Catch::Approx(direction * 0.2));
+        REQUIRE(events.back().voltage == Catch::Approx(direction * 0.501));
+        REQUIRE(events.back().acceptedStep == Catch::Approx(direction * 0.001));
+        REQUIRE(state.adaptiveStep == cfg.minStep);
+    }
+}
+
+TEST_CASE("DCSweep step control: Newton policy rejects missing or invalid work metadata",
+          "[dc_sweep][step_growth]")
+{
+    detail::DCSweepStepControlConfig cfg;
+    cfg.stop = 0.2;
+    cfg.step = 0.2;
+    cfg.minStep = 0.01;
+    cfg.maxStep = 0.2;
+    cfg.growthMode = "newton_iterations";
+    const auto attempt = [](Real, Real, int) { return true; };
+    const auto record = [](const auto&) {};
+    REQUIRE_THROWS_WITH(detail::runDCSweepStepControl(cfg, attempt, record),
+        Catch::Matchers::ContainsSubstring("newtonIterationLimit must be positive"));
+    cfg.newtonIterationLimit = 25;
+    REQUIRE_THROWS_WITH(detail::runDCSweepStepControl(cfg, attempt, record),
+        Catch::Matchers::ContainsSubstring("non-negative Newton iteration count"));
+    cfg.growthMode = "unknown";
+    REQUIRE_THROWS_WITH(detail::runDCSweepStepControl(cfg, attempt, record),
+        Catch::Matchers::ContainsSubstring("growthMode must be"));
+    cfg.growthMode = "fixed";
+    cfg.growthFactor = std::numeric_limits<Real>::infinity();
+    REQUIRE_THROWS_WITH(detail::runDCSweepStepControl(cfg, attempt, record),
+        Catch::Matchers::ContainsSubstring("growthFactor must be finite"));
+}
+
 TEST_CASE("DCSweep step control: independent initialStep grows within nominal targets",
           "[dc_sweep]")
 {
@@ -4891,6 +5193,152 @@ TEST_CASE("DCSweep: sweep.initial_step is parsed and bounded", "[dc_sweep]")
             Catch::Matchers::ContainsSubstring(
                 "DCSweep: sweep.initial_step must lie within [min_step, max_step]."));
     }
+}
+
+TEST_CASE("DCSweep: Newton step growth uses solver feedback and preserves PN endpoint current",
+          "[dc_sweep][step_growth]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshWithInterior(dir);
+    const nlohmann::json solver = {
+        {"method", "newton"}, {"max_iter", 80}, {"reltol", 1.0e-10},
+        {"warm_start", true}, {"line_search", true}
+    };
+    nlohmann::json sweepCfg = {
+        {"start", 0.0}, {"stop", 0.08}, {"step", 0.08},
+        {"initial_step", 0.01}, {"min_step", 1.0e-5}, {"max_step", 0.08},
+        {"growth_factor", 1.35}, {"write_vtk", false}
+    };
+    DCSweep sweep;
+    const auto run = [&](const std::string& name, const nlohmann::json& settings) {
+        auto cfg = baseSweepConfig(dir, meshPath, dir / (name + ".csv"));
+        // Use a moderate-doping PN fixture; its fixed-growth baseline must
+        // converge independently under the same tight Newton tolerance.
+        cfg["doping"][0]["donors"] = 1.0e21;
+        cfg["doping"][1]["acceptors"] = 1.0e21;
+        cfg["solver"].update(solver);
+        cfg["sweep"].update(settings);
+        const auto cfgPath = dir / "pn_sweep.json";
+        std::ofstream(cfgPath) << cfg.dump(2);
+        return sweep.runWithResult(cfgPath.string());
+    };
+    const auto legacy = run("legacy", sweepCfg);
+    sweepCfg["step_growth_mode"] = "fixed";
+    const auto fixed = run("fixed", sweepCfg);
+    REQUIRE(legacy.points.size() == fixed.points.size());
+    for (std::size_t i = 0; i < fixed.points.size(); ++i) {
+        INFO("bias=" << fixed.points[i].voltage << " failure=" << fixed.points[i].failureReason);
+        REQUIRE(fixed.points[i].converged);
+        REQUIRE(legacy.points[i].voltage == fixed.points[i].voltage);
+        REQUIRE(legacy.points[i].totalCurrent == fixed.points[i].totalCurrent);
+    }
+
+    SECTION("range sweep") {}
+    SECTION("explicit reference points") { sweepCfg["bias_points"] = {0.0, 0.04, 0.08}; }
+    sweepCfg["step_growth_mode"] = "newton_iterations";
+    const auto adaptive = run("adaptive", sweepCfg);
+    REQUIRE(adaptive.points.size() >= 3);
+    for (const auto& point : adaptive.points) {
+        REQUIRE(point.converged);
+        REQUIRE(point.solverMethod == "newton");
+        REQUIRE_FALSE(point.predictedInitialState);
+        REQUIRE(std::isfinite(point.totalCurrent));
+        REQUIRE(std::isfinite(point.finalElectronContinuityResidualNorm));
+    }
+    // Explicit bias_points store reference outputs only. The runtime log also
+    // exposes the accepted internal steps, which must use measured solver work.
+    const auto log = readTextFile(dir / "pn_sweep.log");
+    std::vector<detail::DCSweepStepControlEvent> steps;
+    std::istringstream lines(log);
+    std::string line;
+    while (std::getline(lines, line)) {
+        if (line.find("step_control: mode=newton_iterations") == std::string::npos)
+            continue;
+        detail::DCSweepStepControlEvent event;
+        event.voltage = std::stod(line.substr(line.find("bias_V=") + 7));
+        event.newtonIterations = std::stoi(line.substr(line.find("newton_iterations=") + 18));
+        event.growthFactor = std::stod(line.substr(line.find("growth_factor=") + 14));
+        event.nextStepMagnitude = std::stod(line.substr(line.find("next_step_magnitude_V=") + 22));
+        steps.push_back(event);
+    }
+    REQUIRE(steps.size() >= 3);
+    const auto& first = steps.front();
+    REQUIRE(first.newtonIterations == fixed.points.at(1).newtonIterations);
+    REQUIRE(first.newtonIterations > 1);
+    REQUIRE(first.voltage == Catch::Approx(0.01));
+    const Real expectedGrowth = 1.0 + 0.35 *
+        std::max(0.0, 1.0 - (first.newtonIterations - 1) / 60.0);
+    REQUIRE(first.growthFactor == Catch::Approx(expectedGrowth));
+    REQUIRE(first.nextStepMagnitude == Catch::Approx(0.01 * expectedGrowth));
+    REQUIRE(steps.at(1).voltage - first.voltage ==
+            Catch::Approx(first.nextStepMagnitude).margin(1.0e-12));
+    REQUIRE(first.nextStepMagnitude < fixed.points.at(2).acceptedStep);
+    REQUIRE(adaptive.points.back().voltage == Catch::Approx(0.08));
+    REQUIRE(std::abs(fixed.points.back().totalCurrent) > 1.0e-12);
+    REQUIRE(adaptive.points.back().totalCurrent ==
+            Catch::Approx(fixed.points.back().totalCurrent).epsilon(1.0e-6));
+    if (sweepCfg.contains("bias_points")) {
+        REQUIRE(adaptive.points.size() == 3);
+        const auto reference = std::find_if(adaptive.points.begin(), adaptive.points.end(),
+            [](const auto& point) { return std::abs(point.voltage - 0.04) < 1.0e-12; });
+        REQUIRE(reference != adaptive.points.end());
+    } else {
+        REQUIRE(steps.size() + 1 == adaptive.points.size());
+        for (std::size_t i = 0; i < steps.size(); ++i)
+            REQUIRE(steps[i].newtonIterations == adaptive.points[i + 1].newtonIterations);
+    }
+    REQUIRE(adaptive.points.back().newtonIterations == steps.back().newtonIterations);
+}
+
+TEST_CASE("DCSweep: Newton step growth rejects unsupported configurations",
+          "[dc_sweep][step_growth]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMesh(dir);
+    nlohmann::json sweepCfg = {{"step_growth_mode", "newton_iterations"}, {"write_vtk", false}};
+    nlohmann::json solver = {{"method", "newton"}};
+    std::string expected;
+    SECTION("unknown policy") {
+        sweepCfg["step_growth_mode"] = "other";
+        expected = "sweep.step_growth_mode must be";
+    }
+    SECTION("Gummel has no Newton work budget") {
+        solver["method"] = "gummel";
+        expected = "requires solver.method='newton'";
+    }
+    SECTION("hybrid work is not pure Newton work") {
+        solver["method"] = "gummel_newton";
+        expected = "requires solver.method='newton'";
+    }
+    SECTION("Poisson-only work is not coupled Newton work") {
+        solver["method"] = "poisson_only";
+        expected = "requires solver.method='newton'";
+    }
+    SECTION("positive work budget required") {
+        solver["max_iter"] = 0;
+        expected = "positive solver.max_iter";
+    }
+    SECTION("external-circuit work needs its own controller") {
+        sweepCfg["external_circuit"] = {
+            {"mode", "series_resistor"}, {"resistance_ohm_um", 1.0e3}
+        };
+        expected = "without external-circuit";
+    }
+    SECTION("arclength has a separate corrector budget") {
+        sweepCfg["continuation"] = {{"arclength", {
+            {"enabled", true}, {"initial_step", 0.05}, {"min_step", 0.01}, {"max_step", 0.25}
+        }}};
+        expected = "without external-circuit, current-control, or arclength";
+    }
+    const auto cfgPath = writeSweepConfig(dir, meshPath, dir / "invalid.csv", sweepCfg, solver);
+    REQUIRE_FALSE(expected.empty());
+    DCSweep sweep;
+    REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring(expected));
 }
 
 TEST_CASE("DCSweep step control: persisted state carries growth across explicit targets",
@@ -5164,6 +5612,12 @@ TEST_CASE("DCSweep: nonlinear trace records rejected attempts before determinist
         csvColumnIndex(attemptHeader, "rejected_initial_state_file");
     const std::size_t rejectedFinalStateCol =
         csvColumnIndex(attemptHeader, "rejected_final_state_file");
+    const std::size_t rejectedBestStateCol =
+        csvColumnIndex(attemptHeader, "rejected_best_state_file");
+    const std::size_t bestIterationCol =
+        csvColumnIndex(attemptHeader, "best_newton_iteration");
+    const std::size_t bestResidualCol =
+        csvColumnIndex(attemptHeader, "best_newton_residual_norm");
 
     std::string retrySegment;
     std::string retryParentHash;
@@ -5199,6 +5653,9 @@ TEST_CASE("DCSweep: nonlinear trace records rejected attempts before determinist
         REQUIRE(std::filesystem::exists(row.at(rejectedParentStateCol)));
         REQUIRE(std::filesystem::exists(row.at(rejectedInitialStateCol)));
         REQUIRE(std::filesystem::exists(row.at(rejectedFinalStateCol)));
+        REQUIRE(std::filesystem::exists(row.at(rejectedBestStateCol)));
+        REQUIRE_FALSE(row.at(bestIterationCol).empty());
+        REQUIRE(std::isfinite(std::stod(row.at(bestResidualCol))));
         REQUIRE(readTextFile(row.at(rejectedParentStateCol)) ==
                 readTextFile(row.at(rejectedInitialStateCol)));
         if (firstRejectedAttemptId.empty()) {

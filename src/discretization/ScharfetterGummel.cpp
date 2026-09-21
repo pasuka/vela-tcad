@@ -161,19 +161,11 @@ Real sgElectronContinuityFluxFromQuasiFermiStable(Real ni0,
     if (phin0 == phin1)
         return 0.0;
 
-    // Separated-factor form of coef*(B(-u)*n0 - B(u)*n1). Evaluating the
-    // quasi-Fermi difference (exp(-phin0/Vt) - exp(-phin1/Vt)) directly avoids
-    // the catastrophic cancellation of subtracting two large nearly-equal
-    // carrier densities when (psi - phin)/Vt is large (heavy band bending).
-    const Real u = (psi1 - psi0) / Vt;
-    return sgElectronContinuityFluxFromQuasiFermiFactors(
-        ni0,
-        limitedExp(psi1 / Vt),
-        limitedExp(-phin0 / Vt),
-        limitedExp(-phin1 / Vt),
-        u * Vt,
-        Vt,
-        coef);
+    // Equal-ni is the homogeneous limit of the factorized SG law. Retain
+    // expm1(delta phin/Vt): subtracting exp(-phin0/Vt) and exp(-phin1/Vt)
+    // loses the tiny majority-carrier increments in low-current PN sweeps.
+    return sgElectronContinuityFluxFromQuasiFermiVariableNi(
+        ni0, ni0, psi0, psi1, phin0, phin1, Vt, coef);
 }
 
 Real sgElectronContinuityFluxFromQuasiFermiFactors(Real ni0,
@@ -384,17 +376,8 @@ Real sgHoleContinuityFluxFromQuasiFermiStable(Real ni0,
     if (phip0 == phip1)
         return 0.0;
 
-    // Separated-factor form of coef*(B(u)*p0 - B(-u)*p1). See the electron
-    // variant above for the numerical rationale.
-    const Real u = (psi1 - psi0) / Vt;
-    return sgHoleContinuityFluxFromQuasiFermiFactors(
-        ni0,
-        limitedExp(-psi0 / Vt),
-        limitedExp(phip0 / Vt),
-        limitedExp(phip1 / Vt),
-        u * Vt,
-        Vt,
-        coef);
+    return sgHoleContinuityFluxFromQuasiFermiVariableNi(
+        ni0, ni0, psi0, psi1, phip0, phip1, Vt, coef);
 }
 
 Real sgHoleContinuityFluxFromQuasiFermiFactors(Real ni0,

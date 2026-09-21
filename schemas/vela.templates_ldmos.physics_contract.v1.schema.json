@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vela.local/schemas/vela.templates_ldmos.physics_contract.v1.schema.json",
+  "title": "Templates LDMOS solver physics contract v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "benchmark", "revision", "materials_file", "temperature_K", "carrier_statistics", "bandgap_narrowing", "recombination", "mobility", "electron_quantum_potential", "hole_quantum_potential", "impact_ionization", "thermal", "discretization_profile"],
+  "properties": {
+    "schema": {"const": "vela.templates_ldmos.physics_contract.v1"},
+    "benchmark": {"type": "string", "minLength": 1},
+    "revision": {"type": "integer", "minimum": 1},
+    "materials_file": {"type": "string", "minLength": 1},
+    "temperature_K": {"type": "number", "minimum": 1.0, "maximum": 1e5},
+    "carrier_statistics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["model", "implementation_status"],
+      "properties": {
+        "model": {"enum": ["boltzmann", "fermi_dirac"]},
+        "implementation_status": {"enum": ["implemented", "partial", "pending"]}
+      }
+    },
+    "bandgap_narrowing": {
+      "type": "object", "additionalProperties": false,
+      "required": ["model", "reference_doping_cm3", "coefficient_eV", "smoothing", "offset_eV", "fermi_statistics_correction", "sentaurus_dEg0_eV", "sentaurus_qf_reference_mapping", "parameter_source", "implementation_status"],
+      "properties": {
+        "model": {"enum": ["none", "slotboom", "old_slotboom"]},
+        "reference_doping_cm3": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e30},
+        "coefficient_eV": {"type": "number", "minimum": 0.0, "maximum": 100.0},
+        "smoothing": {"type": "number", "minimum": 0.0, "maximum": 1e6},
+        "offset_eV": {"type": "number", "minimum": 0.0, "maximum": 100.0},
+        "fermi_statistics_correction": {"type": "boolean"},
+        "sentaurus_dEg0_eV": {"type": "number", "minimum": -100.0, "maximum": 100.0},
+        "sentaurus_qf_reference_mapping": {"type": "string", "minLength": 1},
+        "parameter_source": {"type": "string", "minLength": 1},
+        "implementation_status": {"enum": ["implemented", "pending"]}
+      }
+    },
+    "recombination": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mechanisms", "taun_s", "taup_s", "auger_cn_m6_per_s", "auger_cp_m6_per_s", "srh_doping_dependence", "parameter_source", "implementation_status"],
+      "properties": {
+        "mechanisms": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["none", "srh", "auger"]}},
+        "taun_s": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e6},
+        "taup_s": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e6},
+        "auger_cn_m6_per_s": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+        "auger_cp_m6_per_s": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+        "srh_doping_dependence": {
+          "type": "object", "additionalProperties": false,
+          "required": ["enabled", "concentration_basis", "density_coupling", "temperature_dependence", "temperature_K", "reference_temperature_K", "electron_temperature_exponent", "hole_temperature_exponent", "electron", "hole", "parameter_status"],
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "concentration_basis": {"enum": ["total_impurity", "net_doping"]},
+            "density_coupling": {"enum": ["quantum", "sentaurus_default"]},
+            "temperature_dependence": {"type": "boolean"},
+            "temperature_K": {"type": "number", "exclusiveMinimum": 0.0},
+            "reference_temperature_K": {"type": "number", "exclusiveMinimum": 0.0},
+            "electron_temperature_exponent": {"type": "number"},
+            "hole_temperature_exponent": {"type": "number"},
+            "electron": {"$ref": "#/$defs/srh_carrier"},
+            "hole": {"$ref": "#/$defs/srh_carrier"},
+            "parameter_status": {"enum": ["vela_compiled_defaults", "t2022_parameter_query", "pending_t2022_extraction"]}
+          }
+        },
+        "parameter_source": {"type": "string", "minLength": 1},
+        "implementation_status": {"enum": ["implemented", "partial", "pending"]}
+      }
+    },
+    "mobility": {
+      "type": "object", "additionalProperties": false,
+      "required": ["model", "g3_model", "doping_dependence_enabled", "high_field_saturation_enabled", "doping_concentration_basis", "high_field_driving_force", "high_field_gradient_discretization", "contact_electric_field_fallback", "contact_electric_field_fallback_scope", "contact_electric_field_fallback_mode", "contact_electric_field_fallback_status", "surface_model", "electron", "hole", "parameter_source", "implementation_status"],
+      "properties": {
+        "model": {"enum": ["constant", "constant_field", "caughey_thomas", "caughey_thomas_field", "masetti", "masetti_field"]},
+        "g3_model": {"const": "constant_field"},
+        "doping_dependence_enabled": {"const": false},
+        "high_field_saturation_enabled": {"const": true},
+        "doping_concentration_basis": {"enum": ["total_impurity", "net_doping"]},
+        "high_field_driving_force": {"enum": ["electric_field", "quasi_fermi_gradient"]},
+        "high_field_gradient_discretization": {"enum": ["edge_projection", "transport_cell_vector"]},
+        "contact_electric_field_fallback": {"type": "boolean"},
+        "contact_electric_field_fallback_scope": {"const": "contact_node_cell"},
+        "contact_electric_field_fallback_mode": {"const": "cell_gradient_magnitude"},
+        "contact_electric_field_fallback_status": {"enum": ["experimental_g3_qualification", "qualified_g3_numerical"]},
+        "surface_model": {"enum": ["none", "ialmob_pending"]},
+        "electron": {"$ref": "#/$defs/mobility_carrier"},
+        "hole": {"$ref": "#/$defs/mobility_carrier"},
+        "parameter_source": {"type": "string", "minLength": 1},
+        "implementation_status": {"enum": ["implemented", "partial", "pending"]}
+      }
+    },
+    "electron_quantum_potential": {"$ref": "#/$defs/conditional_model"},
+    "hole_quantum_potential": {"$ref": "#/$defs/conditional_model"},
+    "impact_ionization": {
+      "type": "object", "additionalProperties": false,
+      "required": ["enabled", "model", "driving_force", "electron", "hole", "parameter_source", "implementation_status"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "model": {"enum": ["none", "okuto_pending"]},
+        "driving_force": {"enum": ["electric_field", "quasi_fermi_gradient", "pending_t2022_query"]},
+        "electron": {"$ref": "#/$defs/okuto_carrier"},
+        "hole": {"$ref": "#/$defs/okuto_carrier"},
+        "parameter_source": {"type": "string", "minLength": 1},
+        "implementation_status": {"enum": ["implemented", "pending_phase_b"]}
+      }
+    },
+    "thermal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["enabled", "model", "heat_sources", "thermode_boundary", "material_parameters", "parameter_source", "implementation_status"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "model": {"enum": ["isothermal_300K", "lattice_temperature_pending"]},
+        "heat_sources": {"type": "array", "uniqueItems": true, "items": {"enum": ["joule", "recombination", "generation", "peltier_thomson"]}},
+        "thermode_boundary": {"enum": ["not_applicable_isothermal", "pending_t2022_mapping"]},
+        "material_parameters": {"enum": ["not_used_isothermal", "pending_t2022_extraction"]},
+        "parameter_source": {"type": "string", "minLength": 1},
+        "implementation_status": {"enum": ["implemented", "pending_phase_b"]}
+      }
+    },
+    "discretization_profile": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "conditional_model": {
+      "type": "object", "additionalProperties": false,
+      "required": ["enabled", "implementation_status", "decision", "parameters", "parameter_source"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "implementation_status": {"enum": ["implemented", "decision_pending", "not_implemented"]},
+        "decision": {"enum": ["disabled_classical_baseline", "pending_sentaurus_ablation", "required"]},
+        "parameters": {
+          "type": "object", "additionalProperties": false,
+          "required": ["gamma", "dos_mass_ratio", "coefficient_mass_ratio"],
+          "properties": {
+            "gamma": {"type": ["number", "null"], "minimum": 0.0},
+            "dos_mass_ratio": {"type": ["number", "null"], "exclusiveMinimum": 0.0},
+            "coefficient_mass_ratio": {"type": ["number", "null"], "exclusiveMinimum": 0.0}
+          }
+        },
+        "parameter_source": {"type": "string", "minLength": 1}
+      }
+    },
+    "mobility_carrier": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mu_const_cm2_per_V_s", "mu_min_cm2_per_V_s", "mu_min2_cm2_per_V_s", "mu1_cm2_per_V_s", "pc_cm3", "reference_doping_cm3", "cs_cm3", "doping_exponent", "masetti_beta", "saturation_velocity_cm_per_s", "high_field_exponent"],
+      "properties": {
+        "mu_const_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
+        "mu_min_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
+        "mu_min2_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
+        "mu1_cm2_per_V_s": {"type": "number", "minimum": 0.0, "maximum": 1e9},
+        "pc_cm3": {"type": "number", "minimum": 0.0, "maximum": 1e30},
+        "reference_doping_cm3": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e30},
+        "cs_cm3": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e30},
+        "doping_exponent": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 100.0},
+        "masetti_beta": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 100.0},
+        "saturation_velocity_cm_per_s": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e20},
+        "high_field_exponent": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 100.0}
+      }
+    },
+    "srh_carrier": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tau_min_s", "tau_max_s", "reference_doping_cm3", "gamma"],
+      "properties": {
+        "tau_min_s": {"type": "number", "minimum": 0.0},
+        "tau_max_s": {"type": "number", "exclusiveMinimum": 0.0},
+        "reference_doping_cm3": {"type": "number", "exclusiveMinimum": 0.0, "maximum": 1e30},
+        "gamma": {"type": "number", "exclusiveMinimum": 0.0}
+      }
+    },
+    "okuto_carrier": {
+      "type": "object", "additionalProperties": false,
+      "required": ["a_per_V", "b_V_per_cm", "c_per_K", "d_per_K", "gamma", "delta", "beta", "lambda_cm"],
+      "properties": {
+        "a_per_V": {"type": ["number", "null"], "minimum": 0.0},
+        "b_V_per_cm": {"type": ["number", "null"], "minimum": 0.0},
+        "c_per_K": {"type": ["number", "null"]},
+        "d_per_K": {"type": ["number", "null"]},
+        "gamma": {"type": ["number", "null"], "minimum": 0.0},
+        "delta": {"type": ["number", "null"], "minimum": 0.0},
+        "beta": {"type": ["number", "null"], "minimum": 0.0},
+        "lambda_cm": {"type": ["number", "null"], "minimum": 0.0}
+      }
+    }
+  }
+}

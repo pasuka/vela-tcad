@@ -7,6 +7,8 @@
 #include "vela/physics/RecombinationModel.h"
 #include "vela/physics/BandToBandTunnelingModel.h"
 #include "vela/equation/AssemblerUtils.h"
+#include "vela/solver/NewtonSolver.h"
+#include "vela/solver/GummelSolver.h"
 #include <nlohmann/json.hpp>
 
 #include <cmath>
@@ -16,6 +18,128 @@
 #include <vector>
 
 using namespace vela;
+
+TEST_CASE("Auger generation switch clips only Auger and keeps inactive derivatives zero",
+          "[recombination][auger][generation][jacobian][config]")
+{
+    RecombinationModelConfig cfg;
+    cfg.mechanisms = {"auger"};
+    cfg.augerDensityDependence = {true,3.46667,8.25688,1e24,1e24};
+    const RecombinationModel legacy(cfg);
+    cfg.augerWithGeneration = false;
+    const RecombinationModel clipped(cfg);
+    for (Real excess : {-1e48, 0., 1e48}) {
+        const Real rate = clipped.augerRateFromExcessProduct(excess,1e24,2e24);
+        CHECK(rate == std::max(0.,legacy.augerRateFromExcessProduct(excess,1e24,2e24)));
+        const auto d = clipped.augerRateDerivativesFromExcessProduct(excess,1e24,2e24);
+        if (excess <= 0.) {
+            CHECK(d.dRateDExcess == 0.); CHECK(d.dRateDn == 0.); CHECK(d.dRateDp == 0.);
+        } else {
+            const Real step = 1e43;
+            const Real fd = (clipped.augerRateFromExcessProduct(excess+step,1e24,2e24)
+                - clipped.augerRateFromExcessProduct(excess-step,1e24,2e24))/(2*step);
+            CHECK(d.dRateDExcess == Catch::Approx(fd).epsilon(1e-8));
+        }
+    }
+    for (Real ni : {1e24,2e24}) {
+        CHECK(clipped.augerRate(1e24,1e24,ni) == 0.);
+        const auto electron=clipped.electronLinearization(1e24,1e24,ni);
+        const auto hole=clipped.holeLinearization(1e24,1e24,ni);
+        CHECK(electron.diagonal == 0.); CHECK(electron.rhs == 0.);
+        CHECK(hole.diagonal == 0.); CHECK(hole.rhs == 0.);
+    }
+    cfg.mechanisms = {"srh","auger"};
+    const RecombinationModel combined(cfg);
+    cfg.mechanisms = {"srh"};
+    const RecombinationModel srh(cfg);
+    CHECK(combined.totalRate(1e20,1e20,1e24) < 0.);
+    CHECK(combined.totalRate(1e20,1e20,1e24) == srh.totalRate(1e20,1e20,1e24));
+    for (const bool enabled : {false,true}) {
+        const nlohmann::json input={{"auger_with_generation",enabled}};
+        CHECK(newtonConfigFromJson(input).augerWithGeneration == enabled);
+        CHECK(gummelConfigFromJson(input).augerWithGeneration == enabled);
+    }
+    CHECK(newtonConfigFromJson(nlohmann::json::object()).augerWithGeneration);
+    CHECK(gummelConfigFromJson(nlohmann::json::object()).augerWithGeneration);
+    CHECK_THROWS(newtonConfigFromJson({{"auger_with_generation","false"}}));
+    CHECK_THROWS(gummelConfigFromJson({{"auger_with_generation",1}}));
+}
+
+TEST_CASE("Auger density enhancement preserves limits and generation sign",
+          "[recombination][auger][density_dependence]")
+{
+    RecombinationModelConfig cfg;
+    cfg.mechanisms = {"auger"};
+    cfg.augerDensityDependence = {true, 3.46667, 8.25688, 1e24, 1e24};
+    RecombinationModel enhanced(cfg);
+    cfg.augerDensityDependence.enabled = false;
+    RecombinationModel plain(cfg);
+    for (Real n : {1e10, 1e20, 1e24, 1e25, 1e29}) {
+        const Real p = .3*n;
+        const Real expected = (cfg.augerCn*n*(1+3.46667*std::exp(-n/1e24))
+            +cfg.augerCp*p*(1+8.25688*std::exp(-p/1e24)));
+        CHECK(enhanced.augerRateFromExcessProduct(1.,n,p)/expected == Catch::Approx(1.).epsilon(2e-14));
+        CHECK(enhanced.augerRateFromExcessProduct(-1.,n,p) == -enhanced.augerRateFromExcessProduct(1.,n,p));
+        CHECK(enhanced.augerRateFromExcessProduct(0.,n,p) == 0.);
+    }
+    CHECK(enhanced.augerRateFromExcessProduct(1.,1e29,1e29) == plain.augerRateFromExcessProduct(1.,1e29,1e29));
+    cfg.augerDensityDependence = {true,0.,0.,1e24,1e24};
+    CHECK(RecombinationModel(cfg).augerRate(1e24,2e23,1e16) == plain.augerRate(1e24,2e23,1e16));
+}
+
+TEST_CASE("Auger enhanced derivatives and Gummel linearization match the rate",
+          "[recombination][auger][density_dependence][jacobian]")
+{
+    RecombinationModelConfig cfg;
+    cfg.mechanisms = {"auger"};
+    cfg.augerDensityDependence = {true,3.46667,8.25688,1e24,1e24};
+    RecombinationModel model(cfg);
+    for (Real n : {1e20, 1e24, 2e24, 1e25}) {
+        const Real p=1.7e24, ni=1e16, excess=n*p-ni*ni;
+        const auto a=model.augerRateDerivativesFromExcessProduct(excess,n,p);
+        const auto all=model.totalRateDerivativesFromExcessProduct(excess,n,p,ni);
+        CHECK(a.dRateDn==all.dRateDn);CHECK(a.dRateDp==all.dRateDp);
+        CHECK(a.dRateDExcess==all.dRateDExcess);
+        const Real hn=n*1e-5,hp=p*1e-5;
+        const Real dn=(model.augerRateFromExcessProduct(excess,n+hn,p)-model.augerRateFromExcessProduct(excess,n-hn,p))/(2*hn);
+        const Real dp=(model.augerRateFromExcessProduct(excess,n,p+hp)-model.augerRateFromExcessProduct(excess,n,p-hp))/(2*hp);
+        CHECK(a.dRateDn==Catch::Approx(dn).epsilon(2e-6));
+        CHECK(a.dRateDp==Catch::Approx(dp).epsilon(2e-6));
+        const auto en=model.electronLinearization(n,p,ni), ho=model.holeLinearization(n,p,ni);
+        CHECK(en.diagonal*n-en.rhs==Catch::Approx(model.augerRate(n,p,ni)).epsilon(2e-12));
+        CHECK(ho.diagonal*p-ho.rhs==Catch::Approx(model.augerRate(n,p,ni)).epsilon(2e-12));
+        CHECK(en.diagonal==Catch::Approx(std::max(0.,a.dRateDn+a.dRateDExcess*p)).epsilon(2e-12));
+        CHECK(ho.diagonal==Catch::Approx(std::max(0.,a.dRateDp+a.dRateDExcess*n)).epsilon(2e-12));
+    }
+}
+
+TEST_CASE("Auger density config propagates through both solvers and units",
+          "[recombination][auger][density_dependence][config][scaling]")
+{
+    using nlohmann::json;
+    const json si={{"enabled",true},{"electron",{{"enhancement",3.46667},{"reference_density_m3",1e24}}},
+        {"hole",{{"enhancement",8.25688},{"reference_density_m3",1e24}}}};
+    auto tcad=si;tcad["electron"]["reference_density_m3"]=1e18;tcad["hole"]["reference_density_m3"]=1e18;
+    const UnitScalingConfig scale{UnitScalingMode::UnitScaling};
+    const auto a=augerDensityDependenceConfigFromJson(si);
+    const auto b=augerDensityDependenceConfigFromJson(tcad,scale);
+    CHECK(b.electronReferenceDensity==Catch::Approx(a.electronReferenceDensity*1e-6));
+    const auto nc=newtonConfigFromJson({{"auger_density_dependence",tcad}},scale);
+    const auto gc=gummelConfigFromJson({{"auger_density_dependence",tcad}},scale);
+    CHECK(nc.augerDensityDependence.electronEnhancement==a.electronEnhancement);
+    CHECK(gc.augerDensityDependence.holeReferenceDensity==b.holeReferenceDensity);
+    RecombinationModelConfig ac,bc;ac.mechanisms=bc.mechanisms={"auger"};
+    ac.augerDensityDependence=a;bc.augerDensityDependence=b;
+    bc.augerCn=ac.augerCn*1e12;bc.augerCp=ac.augerCp*1e12;
+    CHECK(RecombinationModel(ac).augerRate(2e24,3e23,1e16)==
+        Catch::Approx(RecombinationModel(bc).augerRate(2e18,3e17,1e10)*1e6).epsilon(2e-12));
+    for (const auto& bad : {json(-1),json(0),json("bad")}) {
+        auto invalid=si;invalid["electron"]["reference_density_m3"]=bad;
+        CHECK_THROWS(augerDensityDependenceConfigFromJson(invalid));
+    }
+    auto invalid=si;invalid["hole"]["enhancement"]=-1.;
+    CHECK_THROWS(augerDensityDependenceConfigFromJson(invalid));
+}
 
 TEST_CASE("Sentaurus E2 band-to-band defaults use the documented SI conversion",
           "[recombination][btbt][sentaurus]")
@@ -536,7 +660,10 @@ TEST_CASE("Fermi statistics adds the Sentaurus apparent BGN correction", "[bgn][
     const Real correction = fermiStatisticsBandgapCorrection(
         5.1e26, 1.0e24, 2.8e25, 1.04e25, 0.025851999786435);
 
-    REQUIRE(correction == Catch::Approx(0.13920003585558116).epsilon(2.0e-12));
+    // Invert the defining F1/2 integral at Nd/Nc and Na/Nv, then subtract
+    // log(Nd/Nc) and log(Na/Nv). The former value pinned Bednarczyk's
+    // approximation, not the underlying apparent-BGN equation.
+    REQUIRE(correction == Catch::Approx(0.13961543141335792).epsilon(2.0e-12));
     REQUIRE(fermiStatisticsBandgapCorrection(
         0.0, 0.0, 2.8e25, 1.04e25, 0.025851999786435) == Catch::Approx(0.0));
 }

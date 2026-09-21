@@ -1,0 +1,39 @@
+{
+  "schema": "vela.templates_ldmos.materials.v1",
+  "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
+  "revision": 4,
+  "unit_system": {
+    "concentration": "cm^-3",
+    "mobility": "cm^2/(V*s)",
+    "energy": "eV",
+    "temperature": "K",
+    "thermal_conductivity": "W/(m*K)",
+    "specific_heat": "J/(kg*K)",
+    "mass_density": "kg/m^3"
+  },
+  "materials": [
+    {
+      "name": "Si",
+      "role": "transport_semiconductor",
+      "eps_r": 11.7,
+      "intrinsic_carrier_density_cm3": 10750016577.953705,
+      "electron_mobility_cm2_per_V_s": 1417.0,
+      "hole_mobility_cm2_per_V_s": 470.5,
+      "bandgap_eV": 1.12416,
+      "electron_affinity_eV": 4.0727,
+      "conduction_band_density_of_states_cm3": 2.856679069182081e+19,
+      "valence_band_density_of_states_cm3": 3.1046570334558958e+19,
+      "temperature_K": 300.0,
+      "provenance": "Siliconc100.par DOS Formula 1 and Eg(T) at 300 K; current Vela SI constants; ni=sqrt(Nc*Nv)*exp(-Eg/(2*kT)); BGN applied separately, no curve fit"
+    },
+    {
+      "name": "SiO2",
+      "role": "dielectric",
+      "eps_r": 3.9,
+      "bandgap_eV": 9.0,
+      "electron_affinity_eV": 0.95,
+      "temperature_K": 300.0,
+      "provenance": "vela_builtin_300K_baseline_pending_sentaurus_parameter_ablation"
+    }
+  ]
+}

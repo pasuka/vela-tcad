@@ -47,6 +47,42 @@ option(VELA_ENABLE_HDF5 "Build Sentaurus HDF5/TDR import tools when HDF5 is avai
 option(VELA_ENABLE_GPROF "Instrument Vela targets for GNU gprof" OFF)
 option(VELA_ENABLE_LTO "Enable conservative link-time optimization for Vela targets" OFF)
 option(VELA_ENABLE_UMFPACK "Use SuiteSparse UMFPACK for robust bordered solves when available" ON)
+option(VELA_ENABLE_METIS "Enable optional METIS ordering experiments" ON)
+option(VELA_ENABLE_MUMPS "Enable optional OpenMP MUMPS direct solver" ON)
+option(VELA_ENABLE_SUPERLU_MT "Enable optional OpenMP SuperLU_MT direct solver" ON)
+option(VELA_ENABLE_STRUMPACK "Enable optional uncompressed STRUMPACK direct solver" ON)
+if(VELA_ENABLE_STRUMPACK)
+    find_package(STRUMPACK CONFIG QUIET)
+endif()
+if(VELA_ENABLE_SUPERLU_MT)
+    find_path(VELA_SUPERLU_MT_INCLUDE NAMES superlu_mt/slu_mt_ddefs.h)
+    find_library(VELA_SUPERLU_MT_LIBRARY NAMES superlu_mt_OPENMP)
+endif()
+if(VELA_ENABLE_MUMPS)
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(VELA_MUMPS QUIET IMPORTED_TARGET mumps-dto)
+    endif()
+endif()
+if(VELA_ENABLE_METIS)
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(VELA_METIS QUIET IMPORTED_TARGET metis)
+    endif()
+    if(TARGET PkgConfig::VELA_METIS)
+        set(VELA_METIS_TARGET PkgConfig::VELA_METIS)
+    else()
+        # Ubuntu's development package need not provide metis.pc.
+        find_path(VELA_METIS_INCLUDE_DIR NAMES metis.h)
+        find_library(VELA_METIS_LIBRARY NAMES metis)
+        if(VELA_METIS_INCLUDE_DIR AND VELA_METIS_LIBRARY)
+            add_library(vela_metis INTERFACE)
+            target_include_directories(vela_metis INTERFACE ${VELA_METIS_INCLUDE_DIR})
+            target_link_libraries(vela_metis INTERFACE ${VELA_METIS_LIBRARY})
+            set(VELA_METIS_TARGET vela_metis)
+        endif()
+    endif()
+endif()
 set(VELA_SPARSELU_ORDERING "COLAMD" CACHE STRING
     "Eigen SparseLU column ordering (COLAMD or AMD)")
 set_property(CACHE VELA_SPARSELU_ORDERING PROPERTY STRINGS COLAMD AMD)
@@ -135,9 +171,10 @@ endif()
 if(VELA_ENABLE_UMFPACK)
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND)
-        pkg_check_modules(UMFPACK QUIET IMPORTED_TARGET umfpack)
-        pkg_check_modules(SPQR QUIET IMPORTED_TARGET spqr)
-        pkg_check_modules(CHOLMOD QUIET IMPORTED_TARGET cholmod)
+        # SuiteSparse 7 distro packages also use uppercase .pc filenames.
+        pkg_search_module(UMFPACK QUIET IMPORTED_TARGET umfpack UMFPACK)
+        pkg_search_module(SPQR QUIET IMPORTED_TARGET spqr SPQR)
+        pkg_search_module(CHOLMOD QUIET IMPORTED_TARGET cholmod CHOLMOD)
     endif()
     if(TARGET PkgConfig::SPQR)
         message(STATUS "SuiteSparse SPQR bordered solver enabled")
@@ -151,7 +188,10 @@ if(VELA_ENABLE_UMFPACK)
     endif()
 endif()
 
-if(MINGW AND (TARGET PkgConfig::UMFPACK OR TARGET PkgConfig::SPQR))
+if(MINGW AND (TARGET PkgConfig::UMFPACK OR TARGET PkgConfig::SPQR
+        OR TARGET PkgConfig::VELA_MUMPS
+        OR (VELA_ENABLE_SUPERLU_MT AND VELA_SUPERLU_MT_LIBRARY)
+        OR (VELA_ENABLE_STRUMPACK AND TARGET STRUMPACK::strumpack)))
     set(_vela_suitesparse_runtime_dlls
         libsuitesparseconfig.dll
         libopenblas.dll
@@ -212,15 +252,25 @@ add_library(vela_core STATIC
     src/physics/SRHRecombination.cpp
     src/physics/MobilityModel.cpp
     src/physics/SlotIALMobility.cpp
+    src/physics/IalMobility.cpp
+    src/physics/IalHighFieldMobility.cpp
+    src/physics/SiliconThermalPhysics.cpp
+    src/physics/IalInterfaceGeometry.cpp
+    src/equation/IalElementMobility.cpp
+    src/equation/IalTransport.cpp
     src/physics/RecombinationModel.cpp
     src/physics/ImpactIonizationModel.cpp
     src/physics/BandgapNarrowing.cpp
     src/equation/PoissonAssembler.cpp
+    src/equation/LatticeHeatAssembler.cpp
+    src/equation/LatticeBandEdgeWork.cpp
+    src/equation/ElectrothermalAssembler.cpp
     src/equation/DDAssembler.cpp
     src/equation/BVProcessProbe.cpp
     src/equation/FixedStateOperatorAudit.cpp
     src/discretization/Bernoulli.cpp
     src/discretization/ScharfetterGummel.cpp
+    src/discretization/ThermalSgCurrent.cpp
     src/solver/LinearSolver.cpp
     src/solver/GummelSolver.cpp
     src/solver/SolutionValidation.cpp
@@ -238,6 +288,8 @@ add_library(vela_core STATIC
     src/simulation/ConfigParsing.cpp
     src/simulation/CurveSweep.cpp
     src/simulation/BoundaryControl.cpp
+    src/simulation/ElectrothermalSimulation.cpp
+    src/simulation/ElectrothermalSweep.cpp
     src/simulation/DCSweep.cpp
 )
 
@@ -254,6 +306,76 @@ target_link_libraries(vela_core
         Boost::headers
 )
 target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")
+option(VELA_ENABLE_OPENBLAS_THREAD_CONTROL "Enable explicit 1/2/4-thread OpenBLAS experiments" OFF)
+if(VELA_ENABLE_OPENBLAS_THREAD_CONTROL)
+    find_library(VELA_OPENBLAS_CONTROL_LIBRARY NAMES openblas REQUIRED)
+    target_link_libraries(vela_core PUBLIC ${VELA_OPENBLAS_CONTROL_LIBRARY})
+    set_property(SOURCE src/solver/LinearSolver.cpp APPEND PROPERTY
+        COMPILE_DEFINITIONS VELA_HAS_OPENBLAS_THREAD_CONTROL=1)
+endif()
+target_sources(vela_core PRIVATE src/solver/MetisBackend.cpp)
+target_sources(vela_core PRIVATE src/solver/LinearCapture.cpp)
+target_sources(vela_core PRIVATE src/solver/MumpsBackend.cpp)
+target_sources(vela_core PRIVATE src/solver/SuperLuMtBackend.cpp)
+target_sources(vela_core PRIVATE src/solver/StrumpackBackend.cpp)
+if(VELA_ENABLE_STRUMPACK AND TARGET STRUMPACK::strumpack)
+    find_package(OpenMP REQUIRED COMPONENTS CXX)
+    find_library(VELA_BACKEND_BLAS NAMES openblas REQUIRED)
+    # Do not propagate the vendor target's OpenMP compile flags into physics.
+    target_link_libraries(vela_core PUBLIC $<TARGET_LINKER_FILE:STRUMPACK::strumpack> ${VELA_BACKEND_BLAS} ${OpenMP_CXX_LIBRARIES})
+    set_source_files_properties(src/solver/StrumpackBackend.cpp PROPERTIES COMPILE_DEFINITIONS VELA_HAS_STRUMPACK=1 COMPILE_OPTIONS "${OpenMP_CXX_FLAGS}")
+    set_property(SOURCE src/solver/LinearSolver.cpp APPEND PROPERTY COMPILE_DEFINITIONS VELA_HAS_STRUMPACK=1)
+    if(NOT MINGW)
+        get_target_property(_strumpack_includes STRUMPACK::strumpack INTERFACE_INCLUDE_DIRECTORIES)
+        set_property(SOURCE src/solver/StrumpackBackend.cpp PROPERTY INCLUDE_DIRECTORIES "${_strumpack_includes}")
+    endif()
+    message(STATUS "STRUMPACK uncompressed direct solver enabled")
+    if(MINGW)
+        configure_file("${VELA_MINGW_RUNTIME_DIR}/libstrumpack.dll" "${CMAKE_CURRENT_BINARY_DIR}/libstrumpack.dll" COPYONLY)
+    endif()
+endif()
+if(VELA_ENABLE_SUPERLU_MT AND VELA_SUPERLU_MT_INCLUDE AND VELA_SUPERLU_MT_LIBRARY)
+    find_package(OpenMP REQUIRED COMPONENTS CXX)
+    target_link_libraries(vela_core PUBLIC ${VELA_SUPERLU_MT_LIBRARY} ${OpenMP_CXX_LIBRARIES})
+    set_source_files_properties(src/solver/SuperLuMtBackend.cpp PROPERTIES COMPILE_DEFINITIONS VELA_HAS_SUPERLU_MT=1 COMPILE_OPTIONS "${OpenMP_CXX_FLAGS}")
+    set_property(SOURCE src/solver/LinearSolver.cpp APPEND PROPERTY COMPILE_DEFINITIONS VELA_HAS_SUPERLU_MT=1)
+    if(NOT MINGW)
+        set_property(SOURCE src/solver/SuperLuMtBackend.cpp PROPERTY INCLUDE_DIRECTORIES "${VELA_SUPERLU_MT_INCLUDE}")
+    endif()
+    message(STATUS "SuperLU_MT OpenMP direct solver enabled")
+    if(MINGW)
+        configure_file("${VELA_MINGW_RUNTIME_DIR}/libsuperlu_mt_OPENMP.dll" "${CMAKE_CURRENT_BINARY_DIR}/libsuperlu_mt_OPENMP.dll" COPYONLY)
+    endif()
+endif()
+if(TARGET PkgConfig::VELA_MUMPS)
+    set_property(SOURCE src/solver/LinearSolver.cpp APPEND PROPERTY COMPILE_DEFINITIONS VELA_HAS_MUMPS=1)
+    find_package(OpenMP REQUIRED COMPONENTS CXX)
+    # Link only the runtime; OpenMP compilation is restricted to the adapters.
+    # Propagating -fopenmp into physics/Eigen would change the control build.
+    target_link_libraries(vela_core PUBLIC ${VELA_MUMPS_LINK_LIBRARIES} ${OpenMP_CXX_LIBRARIES})
+    set_source_files_properties(src/solver/MumpsBackend.cpp PROPERTIES
+        COMPILE_DEFINITIONS VELA_HAS_MUMPS=1
+        COMPILE_OPTIONS "${OpenMP_CXX_FLAGS}")
+    if(NOT MINGW)
+        set_property(SOURCE src/solver/MumpsBackend.cpp PROPERTY INCLUDE_DIRECTORIES "${VELA_MUMPS_INCLUDE_DIRS}")
+    endif()
+    message(STATUS "MUMPS OpenMP direct solver enabled")
+    if(MINGW)
+        foreach(dll libmumps-dto.dll libesmumps.dll libscotch.dll libscotcherr.dll libmetis.dll libopenblas.dll libgomp-1.dll libgfortran-5.dll libquadmath-0.dll libbz2-1.dll liblzma-5.dll zlib1.dll)
+            if(EXISTS "${VELA_MINGW_RUNTIME_DIR}/${dll}")
+                configure_file("${VELA_MINGW_RUNTIME_DIR}/${dll}" "${CMAKE_CURRENT_BINARY_DIR}/${dll}" COPYONLY)
+            endif()
+        endforeach()
+    endif()
+endif()
+if(VELA_ENABLE_METIS AND VELA_METIS_TARGET)
+    target_link_libraries(vela_core PUBLIC ${VELA_METIS_TARGET})
+    target_compile_definitions(vela_core PUBLIC VELA_HAS_METIS=1)
+    message(STATUS "METIS ordering enabled")
+    if(MINGW)
+        configure_file("${VELA_MINGW_RUNTIME_DIR}/libmetis.dll" "${CMAKE_CURRENT_BINARY_DIR}/libmetis.dll" COPYONLY)
+    endif()
+endif()
 if(TARGET PkgConfig::UMFPACK)
     target_link_libraries(vela_core PUBLIC PkgConfig::UMFPACK)
     target_compile_definitions(vela_core PUBLIC VELA_HAS_UMFPACK=1)
@@ -369,14 +491,25 @@ target_link_libraries(vela_example_runner PRIVATE vela_core)
 add_executable(pn2d_jacobian_block_audit src/tools/pn2d_jacobian_block_audit.cpp)
 target_link_libraries(pn2d_jacobian_block_audit PRIVATE vela_core)
 
-add_executable(pn2d_minimal6_operator_audit src/tools/pn2d_minimal6_operator_audit.cpp)
-target_link_libraries(pn2d_minimal6_operator_audit PRIVATE vela_core)
-if(MINGW)
-    target_link_options(pn2d_minimal6_operator_audit PRIVATE "-Wl,--no-insert-timestamp")
-endif()
-
 add_executable(alpha_from_sentaurus_f src/tools/alpha_from_sentaurus_f.cpp)
 target_link_libraries(alpha_from_sentaurus_f PRIVATE vela_core)
+
+add_executable(electrothermal_probe src/tools/electrothermal_probe.cpp)
+target_link_libraries(electrothermal_probe PRIVATE vela_core)
+
+add_executable(silicon_thermal_probe src/tools/silicon_thermal_probe.cpp)
+target_link_libraries(silicon_thermal_probe PRIVATE vela_core)
+
+add_executable(ialmob_probe src/tools/ialmob_probe.cpp)
+target_link_libraries(ialmob_probe PRIVATE vela_core)
+add_executable(ialmob_kernel_bench src/tools/ialmob_kernel_bench.cpp)
+target_link_libraries(ialmob_kernel_bench PRIVATE vela_core)
+add_executable(lattice_heat_probe src/tools/lattice_heat_probe.cpp)
+target_link_libraries(lattice_heat_probe PRIVATE vela_core)
+add_executable(ialmob_geometry_probe src/tools/ialmob_geometry_probe.cpp)
+target_link_libraries(ialmob_geometry_probe PRIVATE vela_core)
+add_executable(ialmob_element_probe src/tools/ialmob_element_probe.cpp)
+target_link_libraries(ialmob_element_probe PRIVATE vela_core)
 
 add_executable(sentaurus_vanoverstraeten_fit src/tools/sentaurus_vanoverstraeten_fit.cpp)
 target_link_libraries(sentaurus_vanoverstraeten_fit PRIVATE vela_core)
@@ -438,6 +571,41 @@ target_link_libraries(test_poisson PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_linear_solver tests/test_linear_solver.cpp)
 target_link_libraries(test_linear_solver PRIVATE vela_core Catch2::Catch2WithMain)
+if(VELA_ENABLE_OPENBLAS_THREAD_CONTROL)
+    target_compile_definitions(test_linear_solver PRIVATE VELA_HAS_OPENBLAS_THREAD_CONTROL=1)
+endif()
+if(VELA_ENABLE_STRUMPACK AND TARGET STRUMPACK::strumpack)
+    target_compile_definitions(test_linear_solver PRIVATE VELA_HAS_STRUMPACK=1)
+endif()
+if(VELA_ENABLE_SUPERLU_MT AND VELA_SUPERLU_MT_INCLUDE AND VELA_SUPERLU_MT_LIBRARY)
+    target_compile_definitions(test_linear_solver PRIVATE VELA_HAS_SUPERLU_MT=1)
+endif()
+if(TARGET PkgConfig::VELA_MUMPS)
+    target_compile_definitions(test_linear_solver PRIVATE VELA_HAS_MUMPS=1)
+endif()
+
+# Diagnostic replay of frozen Newton systems through the shared linear backend.
+add_executable(linear_solver_replay EXCLUDE_FROM_ALL src/tools/linear_solver_replay.cpp)
+target_link_libraries(linear_solver_replay PRIVATE vela_core)
+add_executable(linear_solver_strategy_study EXCLUDE_FROM_ALL src/tools/linear_solver_strategy_study.cpp)
+target_link_libraries(linear_solver_strategy_study PRIVATE vela_core)
+
+# Separate executables prevent EIGEN_USE_BLAS from changing production physics
+# or mixing incompatible Eigen template instantiations with vela_core.
+if(TARGET PkgConfig::UMFPACK AND VELA_ENABLE_STRUMPACK AND TARGET STRUMPACK::strumpack)
+    foreach(study linear_solver_acceleration_study linear_solver_acceleration_blas_study)
+        add_executable(${study} EXCLUDE_FROM_ALL src/tools/linear_solver_acceleration_study.cpp)
+        target_include_directories(${study} PRIVATE include)
+        target_compile_definitions(${study} PRIVATE EIGEN_DONT_PARALLELIZE)
+        target_link_libraries(${study} PRIVATE Eigen3::Eigen nlohmann_json::nlohmann_json
+            PkgConfig::UMFPACK STRUMPACK::strumpack ${VELA_BACKEND_BLAS})
+        # MSYS2's root -isystem path interferes with GCC include_next.
+        if(MINGW)
+            set_property(TARGET ${study} PROPERTY NO_SYSTEM_FROM_IMPORTED ON)
+        endif()
+    endforeach()
+    target_compile_definitions(linear_solver_acceleration_blas_study PRIVATE EIGEN_USE_BLAS)
+endif()
 
 add_executable(test_performance_profiler tests/test_performance_profiler.cpp)
 target_link_libraries(test_performance_profiler PRIVATE vela_core Catch2::Catch2WithMain)
@@ -475,7 +643,7 @@ target_compile_definitions(test_external_state PRIVATE
     VELA_EXAMPLE_RUNNER_EXE="$<TARGET_FILE:vela_example_runner>")
 add_dependencies(test_external_state vela_example_runner)
 
-add_executable(test_mobility tests/test_mobility.cpp)
+add_executable(test_mobility tests/test_mobility.cpp tests/test_ialmob.cpp tests/test_ialmob_temperature_hfs.cpp tests/test_silicon_thermal.cpp tests/test_ialmob_jacobian.cpp tests/test_ialmob_transport.cpp)
 target_link_libraries(test_mobility PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_impact_ionization tests/test_impact_ionization.cpp)
@@ -498,6 +666,8 @@ target_link_libraries(test_bv_process_probe PRIVATE vela_core Catch2::Catch2With
 
 add_executable(test_recombination tests/test_recombination.cpp)
 target_link_libraries(test_recombination PRIVATE vela_core Catch2::Catch2WithMain)
+add_executable(test_lattice_heat tests/test_lattice_heat.cpp)
+target_link_libraries(test_lattice_heat PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_density_gradient_quantum_potential tests/test_density_gradient_quantum_potential.cpp)
 target_link_libraries(test_density_gradient_quantum_potential PRIVATE vela_core Catch2::Catch2WithMain)
@@ -534,6 +704,9 @@ target_link_libraries(test_poisson_neumann PRIVATE vela_core Catch2::Catch2WithM
 
 add_executable(test_mos_interface_charge tests/test_mos_interface_charge.cpp)
 target_link_libraries(test_mos_interface_charge PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_material_local_poisson_charge tests/test_material_local_poisson_charge.cpp)
+target_link_libraries(test_material_local_poisson_charge PRIVATE vela_core Catch2::Catch2WithMain)
 
 if(VELA_HDF5_TARGET)
     add_executable(test_sentaurus_tdr_reader tests/test_sentaurus_tdr_reader.cpp)
@@ -577,6 +750,7 @@ vela_catch_discover_tests(test_element_edge_gss_laux_avalanche)
 vela_catch_discover_tests(test_fixed_state_operator_audit)
 vela_catch_discover_tests(test_bv_process_probe)
 vela_catch_discover_tests(test_recombination)
+vela_catch_discover_tests(test_lattice_heat)
 vela_catch_discover_tests(test_density_gradient_quantum_potential)
 vela_catch_discover_tests(test_line_search_backtrack_failure)
 vela_catch_discover_tests(test_dc_sweep)
@@ -598,6 +772,7 @@ add_test(NAME schottky COMMAND test_schottky_contact [schottky])
 vela_catch_discover_tests(test_poisson_neumann)
 vela_catch_discover_tests(test_mos_interface_charge)
 add_test(NAME interface COMMAND test_mos_interface_charge [interface])
+vela_catch_discover_tests(test_material_local_poisson_charge)
 
 if(VELA_HDF5_TARGET)
     vela_catch_discover_tests(test_sentaurus_tdr_reader)
@@ -648,6 +823,11 @@ set_tests_properties(slot_ldmos_ialmob_tools PROPERTIES
     ENVIRONMENT "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
 vela_set_windows_msys2_test_path(slot_ldmos_ialmob_tools)
 
+add_test(NAME dd_state_frame_translation
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_translate_dd_state.py)
+vela_set_windows_msys2_test_path(dd_state_frame_translation)
+
 add_test(NAME bv_performance_benchmarks
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_bv_performance_benchmarks)
@@ -659,6 +839,11 @@ add_test(NAME pn2d_config_templates
     COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_pn2d_config_templates.py)
 vela_set_windows_msys2_test_path(pn2d_config_templates)
+
+add_test(NAME pn2d_variants
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_pn2d_variants.py)
+vela_set_windows_msys2_test_path(pn2d_variants)
 
 add_test(NAME pn2d_bv_m2_mixed_voronoi_self_consistent_control
     COMMAND ${Python3_EXECUTABLE} -m unittest
@@ -714,6 +899,108 @@ set_tests_properties(sentaurus_vm_reference_runner PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_vm_reference_runner)
 
+add_test(NAME templates_ldmos_phase01_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_phase01)
+set_tests_properties(templates_ldmos_phase01_regression PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(templates_ldmos_phase01_regression)
+
+add_test(NAME templates_ldmos_linked_d5_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_linked_d5)
+set_tests_properties(templates_ldmos_linked_d5_regression PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(templates_ldmos_linked_d5_regression)
+
+add_test(NAME templates_ldmos_reference_fixture
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_ldmos_reference_fixture)
+set_tests_properties(templates_ldmos_reference_fixture PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(templates_ldmos_reference_fixture)
+
+add_test(NAME templates_ldmos_backend_statistics_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_backend_statistics)
+set_tests_properties(templates_ldmos_backend_statistics_regression PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(templates_ldmos_backend_statistics_regression)
+
+add_test(NAME templates_ldmos_fermi_materials_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_prepare_templates_ldmos_fermi_materials)
+set_tests_properties(templates_ldmos_fermi_materials_regression PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(templates_ldmos_fermi_materials_regression)
+
+add_test(NAME templates_ldmos_electrothermal_input_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_electrothermal)
+set_tests_properties(templates_ldmos_electrothermal_input_regression PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(templates_ldmos_electrothermal_input_regression)
+set_property(TEST templates_ldmos_electrothermal_input_regression APPEND PROPERTY
+    ENVIRONMENT "VELA_ELECTROTHERMAL_PROBE=$<TARGET_FILE:electrothermal_probe>")
+
+add_test(NAME templates_ldmos_local_physics_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_local_physics)
+set_tests_properties(templates_ldmos_local_physics_regression PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(templates_ldmos_local_physics_regression)
+set_property(TEST templates_ldmos_local_physics_regression APPEND PROPERTY
+    ENVIRONMENT "VELA_SILICON_THERMAL_PROBE=$<TARGET_FILE:silicon_thermal_probe>")
+
+add_test(NAME templates_ldmos_thermal_gates_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_thermal)
+set_tests_properties(templates_ldmos_thermal_gates_regression PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(templates_ldmos_thermal_gates_regression)
+
+add_test(NAME templates_ldmos_joint_local_fields_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_templates_ldmos_joint_local_fields)
+set_tests_properties(templates_ldmos_joint_local_fields_regression PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(templates_ldmos_joint_local_fields_regression)
+
+add_test(NAME dc_worker_protocol
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_dc_worker.py
+            --runner $<TARGET_FILE:vela_example_runner>)
+set_tests_properties(dc_worker_protocol PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(dc_worker_protocol)
+
+add_test(NAME ldmos_production_export_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_ldmos_production_export)
+set_tests_properties(ldmos_production_export_regression PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(ldmos_production_export_regression)
+
+add_test(NAME electrothermal_dc_runner_regression
+    COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_electrothermal_dc_runner)
+set_tests_properties(electrothermal_dc_runner_regression PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(electrothermal_dc_runner_regression)
+set_property(TEST electrothermal_dc_runner_regression APPEND PROPERTY
+    ENVIRONMENT "VELA_RUNNER=$<TARGET_FILE:vela_example_runner>")
+
+add_test(NAME ialmob_probe_protocol
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_ialmob_probe.py
+            --runner $<TARGET_FILE:ialmob_probe>)
+set_tests_properties(ialmob_probe_protocol PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+vela_set_windows_msys2_test_path(ialmob_probe_protocol)
+add_test(NAME ialmob_element_probes_protocol
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_ialmob_element_probes.py
+            --geometry $<TARGET_FILE:ialmob_geometry_probe>
+            --element $<TARGET_FILE:ialmob_element_probe>)
+vela_set_windows_msys2_test_path(ialmob_element_probes_protocol)
+
 add_test(NAME sentaurus_sde_frontend
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_sentaurus_sde_frontend)
@@ -742,16 +1029,16 @@ set_tests_properties(sentaurus_mesh_builder PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_mesh_builder)
 
-add_test(NAME pn2d_minimal6_transport_element_regression
+add_test(NAME sentaurus_reference_workflows
     COMMAND ${Python3_EXECUTABLE} -m unittest
-            tests.regression.test_pn2d_minimal6_element_currents
-            tests.regression.test_pn2d_minimal6_native_cell_sg
-            tests.regression.test_pn2d_minimal6_transport_elements
-            tests.regression.test_pn2d_minimal6_transport_element_closure
-            tests.regression.test_pn2d_minimal6_transport_element_verify)
-set_tests_properties(pn2d_minimal6_transport_element_regression PROPERTIES
+            tests.regression.test_sentaurus_contact_overrides
+            tests.regression.test_sentaurus_avalanche_replay
+            tests.regression.test_sentaurus_avalanche_controls
+            tests.regression.test_pn2d_same_mesh_sdevice_vector_export
+            tests.regression.test_cell_first_cross_device_validation)
+set_tests_properties(sentaurus_reference_workflows PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-vela_set_windows_msys2_test_path(pn2d_minimal6_transport_element_regression)
+vela_set_windows_msys2_test_path(sentaurus_reference_workflows)
 
 add_test(NAME pn2d_bv_process_observability_regression
     COMMAND ${Python3_EXECUTABLE} -m unittest

@@ -1,0 +1,381 @@
+{
+  "period": "2026-09-12 to 2026-09-17",
+  "d0_metrics": {
+    "Vg4": {
+      "exact_point_count": 31,
+      "resolved_point_count": 30,
+      "relative_error_percent": {
+        "median": 0.008455334656720659,
+        "p95": 0.023515253068563946,
+        "max": 0.024087097588187945
+      },
+      "low_vd_differential_resistance_error_percent": 0.0038811664278326496,
+      "endpoint_current_error_percent": 0.006338405490158294,
+      "endpoint_bias_V": 40.0,
+      "reference_endpoint_A_per_um": 0.000118150892997882,
+      "candidate_endpoint_A_per_um": 0.00011815838188057045
+    },
+    "Vg8": {
+      "exact_point_count": 31,
+      "resolved_point_count": 30,
+      "relative_error_percent": {
+        "median": 0.004561961377813617,
+        "p95": 0.006410606813153082,
+        "max": 0.007143900342421183
+      },
+      "low_vd_differential_resistance_error_percent": 0.0052390654800005265,
+      "endpoint_current_error_percent": 0.0015836921237633028,
+      "endpoint_bias_V": 40.0,
+      "reference_endpoint_A_per_um": 0.000236627089832508,
+      "candidate_endpoint_A_per_um": 0.00023662334238792364
+    },
+    "gate_ratio_error_percent": {
+      "median": 0.007682524323682216,
+      "p95": 0.025599708551536926,
+      "max": 0.026671858985660712,
+      "endpoint": 0.00792159551107341
+    },
+    "kcl_audit": {
+      "Vg4": {
+        "denominator": "maximum_absolute_terminal_current",
+        "max_normalized_kcl_percent": 7.298257023795486e-12,
+        "max_nonzero_bias_normalized_kcl_percent": 7.298257023795486e-12,
+        "zero_bias_points": [
+          {
+            "point_index": 0,
+            "bias_V": 0.0,
+            "absolute_kcl_A_per_um": 0.0,
+            "max_absolute_terminal_current_A_per_um": 0.0,
+            "normalized_kcl_percent": 0.0
+          }
+        ],
+        "zero_bias_policy": "raw ratio retained in gate; no equilibrium exemption or resolution floor inferred",
+        "point_count": 31
+      },
+      "Vg8": {
+        "denominator": "maximum_absolute_terminal_current",
+        "max_normalized_kcl_percent": 3.8342150772425e-10,
+        "max_nonzero_bias_normalized_kcl_percent": 3.8342150772425e-10,
+        "zero_bias_points": [
+          {
+            "point_index": 0,
+            "bias_V": 0.0,
+            "absolute_kcl_A_per_um": 0.0,
+            "max_absolute_terminal_current_A_per_um": 0.0,
+            "normalized_kcl_percent": 0.0
+          }
+        ],
+        "zero_bias_policy": "raw ratio retained in gate; no equilibrium exemption or resolution floor inferred",
+        "point_count": 31
+      }
+    },
+    "max_normalized_kcl_percent": 3.8342150772425e-10
+  },
+  "thermal_40V": {
+    "4": {
+      "schema": "vela.templates_ldmos.thermal_gate_results.v1",
+      "status": "pass",
+      "scope": "Thermal gates only; electrical qualification must be supplied separately",
+      "nodes": 10241,
+      "gates": {
+        "heat_balance": {
+          "observed": 2.5026364276563047e-15,
+          "limit": 0.001,
+          "status": "pass"
+        },
+        "peak_temperature_rise": {
+          "error_K": 0.0035141493758601428,
+          "limit_K": 5.055617852680888,
+          "status": "pass"
+        },
+        "temperature_rise_field": {
+          "rms_error_K": 0.0035577562806676853,
+          "limit_K": 3.2803639612387716,
+          "reference_rms_rise_K": 65.60727922477543,
+          "status": "pass"
+        }
+      },
+      "reference_peak_K": 401.11235705361776,
+      "candidate_peak_K": 401.1158712029936,
+      "absolute_heat_imbalance_W_per_m": 1.1823431123048067e-11,
+      "gate": 4,
+      "bias_V": 40.0,
+      "qualification_pass": true
+    },
+    "8": {
+      "schema": "vela.templates_ldmos.thermal_gate_results.v1",
+      "status": "pass",
+      "scope": "Thermal gates only; electrical qualification must be supplied separately",
+      "nodes": 10241,
+      "gates": {
+        "heat_balance": {
+          "observed": 0.0,
+          "limit": 0.001,
+          "status": "pass"
+        },
+        "peak_temperature_rise": {
+          "error_K": 0.04198206611317801,
+          "limit_K": 10.678430737311192,
+          "status": "pass"
+        },
+        "temperature_rise_field": {
+          "rms_error_K": 0.0108474392238216,
+          "limit_K": 6.684598016019028,
+          "reference_rms_rise_K": 133.69196032038056,
+          "status": "pass"
+        }
+      },
+      "reference_peak_K": 513.5686147462238,
+      "candidate_peak_K": 513.5266326801107,
+      "absolute_heat_imbalance_W_per_m": 0.0,
+      "gate": 8,
+      "bias_V": 40.0,
+      "qualification_pass": true
+    }
+  },
+  "d0_total_points": 62,
+  "isothermal_total_points": 155,
+  "temperature_max_same_node_error_K": 0.1265366772168477,
+  "mesh_nodes": 10241,
+  "mesh_triangles": 19782,
+  "performance_pairs": [
+    {
+      "repeat": 0,
+      "gate_V": 4,
+      "wall_reduction_fraction": 0.11890119594569704,
+      "cpu_reduction_fraction": 0.11886498395208933,
+      "high_wall_ratio_to_native": 0.7673950641380308,
+      "high_cpu_ratio_to_native": 1.301636454257164,
+      "wall_gate": true
+    },
+    {
+      "repeat": 0,
+      "gate_V": 8,
+      "wall_reduction_fraction": 0.12256989966479082,
+      "cpu_reduction_fraction": 0.12245374137593512,
+      "high_wall_ratio_to_native": 0.7521424333783563,
+      "high_cpu_ratio_to_native": 1.3158041758082228,
+      "wall_gate": true
+    },
+    {
+      "repeat": 1,
+      "gate_V": 4,
+      "wall_reduction_fraction": 0.0826123302467644,
+      "cpu_reduction_fraction": 0.08282126912929899,
+      "high_wall_ratio_to_native": 0.8374625718684927,
+      "high_cpu_ratio_to_native": 1.4878333003352413,
+      "wall_gate": true
+    },
+    {
+      "repeat": 1,
+      "gate_V": 8,
+      "wall_reduction_fraction": 0.0675436409629735,
+      "cpu_reduction_fraction": 0.06583525754048825,
+      "high_wall_ratio_to_native": 0.7611542877524518,
+      "high_cpu_ratio_to_native": 1.3549993278352463,
+      "wall_gate": true
+    }
+  ],
+  "isothermal_curves": [
+    {
+      "name": "g3",
+      "points": 31,
+      "wall_s": 88.2726948999998,
+      "cpu_s": 75.09375,
+      "updates": 131,
+      "metrics": {
+        "exact_shared_points": 31,
+        "resolved_points": 31,
+        "unresolved_biases_V": [],
+        "median_abs_log_error_dex": 0.0039565372121605,
+        "p95_abs_log_error_dex": 0.09967134949533406,
+        "max_abs_log_error_dex": 0.10737427561218867,
+        "strong_inversion_endpoint_relative_error": 0.008042727973614508,
+        "reference_endpoint_A_per_um": 9.81082521885953e-06,
+        "candidate_endpoint_A_per_um": 9.889731017291494e-06,
+        "fixed_current_A_per_um": 1e-08,
+        "reference_vth_V": 0.7281864169343747,
+        "candidate_vth_V": 0.7174340116484582,
+        "vth_absolute_error_V": 0.010752405285916478,
+        "reference_max_gm": {
+          "value_A_per_um_V": 9.442565683535388e-06,
+          "midpoint_V": 1.083333333333335
+        },
+        "candidate_max_gm": {
+          "value_A_per_um_V": 9.29053252200668e-06,
+          "midpoint_V": 1.083333333333335
+        },
+        "max_gm_relative_error": 0.016100831767980266,
+        "kcl_relative_error": 0.0005160683638841864,
+        "worst_log_error_points": [
+          {
+            "bias_V": 0.5,
+            "reference_A_per_um": 6.46224808521937e-11,
+            "candidate_A_per_um": 8.27480755219105e-11,
+            "abs_log_error_dex": 0.10737427561218867,
+            "kcl_relative_error": 1.0196605735551865e-14
+          },
+          {
+            "bias_V": 0.666666666666667,
+            "reference_A_per_um": 2.61661882981091e-09,
+            "candidate_A_per_um": 3.348428800936977e-09,
+            "abs_log_error_dex": 0.10710060642783463,
+            "kcl_relative_error": 6.4551129202213744e-15
+          },
+          {
+            "bias_V": 0.333333333333333,
+            "reference_A_per_um": 1.86073477840091e-12,
+            "candidate_A_per_um": 2.3010527121327958e-12,
+            "abs_log_error_dex": 0.09224209256283349,
+            "kcl_relative_error": 2.552766032311287e-13
+          },
+          {
+            "bias_V": 0.833333333333333,
+            "reference_A_per_um": 9.88946978767641e-08,
+            "candidate_A_per_um": 1.2155258221880205e-07,
+            "abs_log_error_dex": 0.08959118123915066,
+            "kcl_relative_error": 2.219283661398291e-14
+          },
+          {
+            "bias_V": 0.166666666666667,
+            "reference_A_per_um": 6.77043094455847e-14,
+            "candidate_A_per_um": 7.97148988607618e-14,
+            "abs_log_error_dex": 0.07092318658356847,
+            "kcl_relative_error": 7.114267485709077e-11
+          }
+        ],
+        "worst_kcl_point": {
+          "bias_V": 0.0,
+          "reference_A_per_um": 3.29679394772149e-15,
+          "candidate_A_per_um": 3.684699833918459e-15,
+          "abs_log_error_dex": 0.04831031054157255,
+          "kcl_relative_error": 0.0005160683638841864
+        }
+      }
+    },
+    {
+      "name": "d5_vg4",
+      "points": 31,
+      "wall_s": 865.7902775000002,
+      "cpu_s": 769.53125,
+      "updates": 1131,
+      "requests": 253,
+      "rollbacks": 0,
+      "max_relative_change_vs_r6": 1.3759946541244311e-12,
+      "metrics": {
+        "exact_point_count": 31,
+        "resolved_point_count": 30,
+        "relative_error_percent": {
+          "median": 1.4289965981928998,
+          "p95": 1.5809313603272446,
+          "max": 1.592417208697805
+        },
+        "low_vd_differential_resistance_error_percent": 1.101716989185919,
+        "endpoint_current_error_percent": 1.4404697144513978,
+        "endpoint_bias_V": 40.0,
+        "reference_endpoint_A_per_um": 0.000224833171719662,
+        "candidate_endpoint_A_per_um": 0.00022807182546632425
+      },
+      "joint_gate_ratio": {
+        "median": 0.07389189275682218,
+        "p95": 0.3235931958613724,
+        "max": 0.34015433065981426,
+        "endpoint": 0.34015433065981426
+      },
+      "max_kcl_percent": 1.4036694251397023e-10
+    },
+    {
+      "name": "d5_vg8",
+      "points": 31,
+      "wall_s": 841.2111809999997,
+      "cpu_s": 743.25,
+      "updates": 1086,
+      "requests": 253,
+      "rollbacks": 0,
+      "max_relative_change_vs_r6": 2.086900358175002e-12,
+      "metrics": {
+        "exact_point_count": 31,
+        "resolved_point_count": 30,
+        "relative_error_percent": {
+          "median": 1.3285697661630014,
+          "p95": 1.6109040065719105,
+          "max": 1.6250833992496938
+        },
+        "low_vd_differential_resistance_error_percent": 1.0321167311321044,
+        "endpoint_current_error_percent": 1.0954155636760277,
+        "endpoint_bias_V": 40.0,
+        "reference_endpoint_A_per_um": 0.000419027790569749,
+        "candidate_endpoint_A_per_um": 0.0004236178862037779
+      },
+      "joint_gate_ratio": {
+        "median": 0.07389189275682218,
+        "p95": 0.3235931958613724,
+        "max": 0.34015433065981426,
+        "endpoint": 0.34015433065981426
+      },
+      "max_kcl_percent": 1.4036694251397023e-10
+    },
+    {
+      "name": "d4_vg4",
+      "points": 31,
+      "wall_s": 1397.2978915999993,
+      "cpu_s": 1266.890625,
+      "updates": 1127,
+      "requests": 253,
+      "rollbacks": 0,
+      "max_relative_change_vs_r6": 7.935059071817805e-14,
+      "metrics": {
+        "exact_point_count": 31,
+        "resolved_point_count": 30,
+        "relative_error_percent": {
+          "median": 1.8543867585801843,
+          "p95": 1.8865109295353588,
+          "max": 1.8917614956752038
+        },
+        "low_vd_differential_resistance_error_percent": 1.1296121358015165,
+        "endpoint_current_error_percent": 1.8917614956752038,
+        "endpoint_bias_V": 40.0,
+        "reference_endpoint_A_per_um": 0.000141106619595945,
+        "candidate_endpoint_A_per_um": 0.00014377602029330997
+      },
+      "joint_gate_ratio": {
+        "median": 0.14781495030267155,
+        "p95": 0.29218589387289323,
+        "max": 0.31095807349180715,
+        "endpoint": 0.31095807349180715
+      },
+      "max_kcl_percent": 5.953448364021899e-12
+    },
+    {
+      "name": "d4_vg8",
+      "points": 31,
+      "wall_s": 1329.9228137999999,
+      "cpu_s": 1201.203125,
+      "updates": 1073,
+      "requests": 253,
+      "rollbacks": 0,
+      "max_relative_change_vs_r6": 5.937426820587128e-14,
+      "metrics": {
+        "exact_point_count": 31,
+        "resolved_point_count": 30,
+        "relative_error_percent": {
+          "median": 1.690461993168857,
+          "p95": 1.7980416858450632,
+          "max": 1.8015469792137306
+        },
+        "low_vd_differential_resistance_error_percent": 1.0111072438288127,
+        "endpoint_current_error_percent": 1.5749208370813728,
+        "endpoint_bias_V": 40.0,
+        "reference_endpoint_A_per_um": 0.000351519595888282,
+        "candidate_endpoint_A_per_um": 0.0003570557512503508
+      },
+      "joint_gate_ratio": {
+        "median": 0.14781495030267155,
+        "p95": 0.29218589387289323,
+        "max": 0.31095807349180715,
+        "endpoint": 0.31095807349180715
+      },
+      "max_kcl_percent": 5.953448364021899e-12
+    }
+  ]
+}

@@ -17,6 +17,7 @@
 #include "vela/solver/GummelSolver.h"
 #include <functional>
 #include <array>
+#include <limits>
 #include <memory>
 #include <nlohmann/json_fwd.hpp>
 #include <string>
@@ -60,6 +61,10 @@ struct NewtonContinuityRowScalingConfig {
     Real minSourceScale = 0.0;
     Real minWeight = 1.0e-12;
     Real maxWeight = 1.0e12;
+};
+
+struct NewtonLinearEquilibrationConfig {
+    std::string mode = "off"; ///< "off" or one-pass "l2_row_column".
 };
 
 struct NewtonGlobalContinuityClosureConfig {
@@ -146,11 +151,24 @@ struct NewtonCarrierRowRecoveryResult {
     Real maxPsiDelta_V = 0.0;
     Real maxCarrierDensityRatio = 0.0;
 };
+
+struct NewtonBlockAbsoluteConvergenceConfig {
+    std::string mode = "off"; ///< "off" or "enforce".
+    Real psiResidualCeiling = 0.0;
+    Real electronResidualCeiling = 0.0;
+    Real holeResidualCeiling = 0.0;
+};
+
 struct NewtonConfig {
+    /// Explicit sequential experiment; no nonlinear state is retained here.
+    /// The owner controls lifetime and invalidation across DC requests.
+    std::shared_ptr<LinearSolver> sequentialLinearSolver;
     int maxIter = 20;
     Real reltol = 1.0e-8;
     Real abstol = 1.0e-18;
     Real temperature_K = constants::T0; ///< Lattice temperature [K]
+    PoissonChargeVolumePolicy poissonChargeVolumePolicy =
+        PoissonChargeVolumePolicy::Global;
     Real dampingFactor = 1.0;
     bool lineSearch = true;
     std::string lineSearchMode = "merit"; ///< "merit", "block_filter", or "block_closure_filter".
@@ -174,6 +192,9 @@ struct NewtonConfig {
     Real poissonLineSearchStallRelativeIncrease = 1.0e-5; ///< Allowed best rejected residual increase at the Poisson floor.
     Real poissonLineSearchStallCarrierResidualFloor = 1.0e-6; ///< Carrier-block ceiling for Poisson-floor stall acceptance.
     Real poissonLineSearchStallContactMajorityQfDropLimit_V = 5.0e-11; ///< Maximum contact-edge majority-carrier quasi-Fermi drop allowed for Poisson-floor stall acceptance; 0 disables.
+    NewtonBlockAbsoluteConvergenceConfig blockAbsoluteConvergence{}; ///< Optional authoritative per-block absolute convergence contract.
+    Real contactMajorityQfBranchDropLimit_V = 0.0; ///< Maximum contact-edge majority-carrier quasi-Fermi drop allowed for every convergence path and best-iterate eligibility; 0 disables.
+    std::vector<std::string> contactMajorityQfBranchGuardContacts; ///< Optional contact scope for the branch guard; empty means all transport contacts.
     bool carrierRowQualifiedStallAcceptance = false; ///< Accept a non-decreasing line-search stall within the configured block/contact floors only when enforced local carrier rows are all satisfied.
     Real carrierRegularizationScale = 0.0; ///< Optional carrier-row diagonal regularization scale.
     CarrierDiagonalFloorRegularizationConfig carrierDiagonalFloor{}; ///< Optional absolute floor for depleted minority carrier-row diagonals.
@@ -181,11 +202,17 @@ struct NewtonConfig {
     NewtonLocalUpdateDiagnosticsConfig localUpdateDiagnostics{}; ///< Opt-in raw/capped/applied Newton-step trace.
     NewtonCarrierRowRecoveryConfig carrierRowRecovery{}; ///< Optional recovery pass for locally unbalanced carrier rows.
     NewtonContinuityRowScalingConfig continuityRowScaling{}; ///< Optional source-aware left row equilibration.
+    NewtonLinearEquilibrationConfig linearEquilibration{}; ///< Optional two-sided scaling of the linear system.
     NewtonGlobalContinuityClosureConfig globalContinuityClosure{}; ///< Optional contact-flux versus integrated-source convergence check.
     Real finiteDifferenceStep = 1.0e-6;
     std::string jacobian = "analytic"; ///< "analytic" or "finite_difference"
     std::string quasiFermiReference = "none"; ///< "none", "contact_majority", "contact_basin", or "contact_nearest_state"
     std::string poissonOnlyQuasiFermiInitialization = "contact_basin"; ///< "contact_basin" reconstructs ABA QFs; "preserve_initial" retains the supplied QF field except contact projections.
+    /// Recenter warm-start QF coordinates on the supplied physical state so
+    /// sub-ULP corrections are represented as local increments.
+    bool quasiFermiRecenterOnInitialState = false;
+    /// Default-off, bounded in-solve recovery of unrepresentable QF corrections.
+    bool quasiFermiRecenterOnStall = false;
     std::string residualNorm = "block"; ///< "block" or "l2" convergence/line-search norm
     Real residualWeightPsi = 1.0;
     Real residualWeightPhin = 1.0;
@@ -206,6 +233,8 @@ struct NewtonConfig {
     Real augerCn = 2.90e-43; ///< Electron Auger coefficient [m^6/s]
     Real augerCp = 1.028e-43; ///< Hole Auger coefficient [m^6/s]
     std::string augerExcessProduct = "generalized_fermi"; ///< "generalized_fermi" or "classical_np".
+    bool augerWithGeneration = true; ///< Compatibility default; false clips Auger generation.
+    AugerDensityDependenceConfig augerDensityDependence{};
     MobilityModelConfig mobility{}; ///< Mobility model configuration
     std::vector<std::string> recombination = {"srh"}; ///< e.g. {"srh", "auger"}
     SRHDopingDependenceConfig srhDopingDependence{}; ///< Sentaurus SRH(DopingDep).
@@ -236,6 +265,7 @@ struct NewtonIterationInfo {
     Real stepNorm = 0.0;
     Real dampingFactor = 0.0;
     Real relativeResidualNorm = 0.0;
+    Real contactMajorityQfDrop = 0.0;
     Real rawStepNorm = 0.0;
     int lineSearchAttempts = 0;
     bool lineSearchAccepted = false;
@@ -314,6 +344,12 @@ struct DensityGradientOuterIterationInfo {
 
 struct NewtonResult {
     DDSolution solution;
+    DDSolution bestSolution; ///< Lowest-residual accepted iterate that passes the configured branch guard.
+    bool hasBestSolution = false;
+    int bestIteration = 0;
+    Real bestResidualNorm = std::numeric_limits<Real>::infinity();
+    NewtonBlockResidualInfo bestBlockNorms;
+    Real bestContactMajorityQfDrop = std::numeric_limits<Real>::infinity();
     bool converged = false;
     int iters = 0;
     Real initialResidualNorm = 0.0;
@@ -333,6 +369,12 @@ struct NewtonResidualEvaluation {
     VectorXd raw;
     NewtonBlockResidualInfo blockNorms;
     std::vector<Real> intrinsicDensity;
+    bool scaledState = false;
+    Real potentialScale = 1.0;
+};
+
+struct NewtonPoissonTermEvaluation {
+    std::vector<CoupledDDPoissonTermDiagnostic> rows;
     bool scaledState = false;
     Real potentialScale = 1.0;
 };
@@ -519,6 +561,39 @@ struct NewtonCarrierRowDiagnosticsEvaluation {
     Real cappedCarrierStepNorm = 0.0;
 };
 
+struct NewtonPoissonLinearRowDiagnostic {
+    Index nodeId = 0;
+    Real residual = 0.0;
+    Real diagonal = 0.0;
+    Real poissonRowL2Norm = 0.0;
+    Real poissonColumnL2Norm = 0.0;
+    Real fullRowL2Norm = 0.0;
+    Real fullColumnL2Norm = 0.0;
+    Real rawDeltaPsi_V = 0.0;
+    Real equilibratedDeltaPsi_V = 0.0;
+};
+
+struct NewtonPoissonLinearDiagnosticsEvaluation {
+    NewtonResidualEvaluation residual;
+    std::vector<NewtonPoissonLinearRowDiagnostic> rows;
+    std::vector<Index> focusPatchNodes;
+    NewtonMatrixConditionEstimate focusPatchRawCondition;
+    NewtonMatrixConditionEstimate focusPatchEquilibratedCondition;
+    Index focusNode = 0;
+    Real potentialScale = 1.0;
+    Real poissonRowNormSpread = 0.0;
+    Real poissonColumnNormSpread = 0.0;
+    Real fullRowNormSpread = 0.0;
+    Real fullColumnNormSpread = 0.0;
+    Real rawStepNorm = 0.0;
+    Real equilibratedStepNorm = 0.0;
+    Real rawLinearClosureNorm = 0.0;
+    Real equilibratedLinearClosureNorm = 0.0;
+    Real rawRelativeLinearClosure = 0.0;
+    Real equilibratedRelativeLinearClosure = 0.0;
+    Real relativeStepDifference = 0.0;
+};
+
 struct NewtonCarrierBlockColumnDiagnostic {
     std::string carrier;
     Index nodeId = 0;
@@ -662,7 +737,12 @@ public:
     /// potential extrapolation observed in Sentaurus ABA after equilibrium.
     NewtonResult solvePoissonOnly(const DDSolution& initial) const;
     NewtonResidualEvaluation evaluateResidual(const DDSolution& state) const;
+    NewtonPoissonTermEvaluation evaluatePoissonTerms(
+        const DDSolution& state) const;
     Real maxContactMajorityQuasiFermiDrop(const DDSolution& state) const;
+    Real maxContactMajorityQuasiFermiDrop(
+        const DDSolution& state,
+        const std::vector<std::string>& contacts) const;
     NewtonStepEvaluation evaluateStep(const DDSolution& state) const;
     std::vector<NewtonFeedbackSubstitutionEvaluation>
     evaluateFeedbackSubstitutions(
@@ -674,7 +754,8 @@ public:
         const DDSolution& replacementState) const;
     NewtonDirectionalDerivativeEvaluation evaluateDirectionalDerivative(
         const DDSolution& state,
-        const DDSolution& physicalPerturbation) const;
+        const DDSolution& physicalPerturbation,
+        bool freezeTransportMobility = false) const;
     NewtonBlockStepEvaluation evaluateBlockStep(
         const DDSolution& state,
         const std::string& mode) const;
@@ -683,6 +764,13 @@ public:
         Real regularizationScale) const;
     NewtonCarrierRowDiagnosticsEvaluation evaluateCarrierRowDiagnostics(
         const DDSolution& state) const;
+
+    /// Diagnose Poisson rows and compare the production linear solve with a
+    /// mathematically equivalent one-pass two-sided L2 equilibration.  This is
+    /// read-only and does not alter solve().
+    NewtonPoissonLinearDiagnosticsEvaluation evaluatePoissonLinearDiagnostics(
+        const DDSolution& state,
+        Index focusNode) const;
     NewtonCarrierBlockDecompositionEvaluation
     evaluateCarrierBlockDecomposition(const DDSolution& state) const;
     NewtonCarrierTermDiagnosticsEvaluation evaluateCarrierTermDiagnostics(

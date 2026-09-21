@@ -1,4 +1,5 @@
 #include "vela/io/MeshReader.h"
+#include <algorithm>
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <stdexcept>
@@ -88,6 +89,22 @@ void validateMesh(const vela::DeviceMesh& mesh, const std::string& filename)
                                 " references missing node id " + std::to_string(node_id));
             }
         }
+        for (const auto& edge : contact.edge_node_ids) {
+            for (const auto node_id : edge) {
+                if (node_id >= mesh.numNodes()) {
+                    throw meshError(filename,
+                                    "contact id " + std::to_string(contact.id) +
+                                    " edge references missing node id " +
+                                    std::to_string(node_id));
+                }
+                if (std::find(contact.node_ids.begin(), contact.node_ids.end(), node_id) ==
+                    contact.node_ids.end()) {
+                    throw meshError(filename,
+                                    "contact id " + std::to_string(contact.id) +
+                                    " edge endpoint is absent from node_ids");
+                }
+            }
+        }
     }
 }
 
@@ -156,6 +173,10 @@ DeviceMesh JsonMeshReader::read(const std::string& filename, UnitScalingConfig s
             ct.name      = jct.at("name").get<std::string>();
             ct.region_id = jct.at("region_id").get<Index>();
             ct.node_ids  = jct.at("node_ids").get<std::vector<Index>>();
+            if (jct.contains("edge_node_ids")) {
+                ct.edge_node_ids =
+                    jct.at("edge_node_ids").get<std::vector<std::array<Index, 2>>>();
+            }
             mesh.addContact(ct);
         }
     } catch (const nlohmann::json::exception& e) {

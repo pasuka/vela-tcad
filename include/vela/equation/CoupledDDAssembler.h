@@ -55,6 +55,10 @@ struct CoupledDDFeedbackStateSubstitution {
     VectorXd holeDensity;
     VectorXd electronQuasiFermi_V;
     VectorXd holeQuasiFermi_V;
+    // JVP diagnostics: hold each edge's mobility at the unperturbed state.
+    bool replaceTransportMobility = false;
+    VectorXd electronEdgeMobility;
+    VectorXd holeEdgeMobility;
 };
 
 struct CoupledDDCarrierTermDiagnostic {
@@ -82,6 +86,36 @@ struct CoupledDDCarrierTermDiagnostic {
     Real holeResidual = 0.0;
 };
 
+// Diagnostic-only decomposition of the Poisson row assembled by residual().
+// All contribution fields use the production residual's scaled coordinates;
+// boundaryReplacement is the amount by which a Dirichlet contact row replaces
+// the unconstrained physical equation.
+struct CoupledDDPoissonTermDiagnostic {
+    Index nodeId = 0;
+    Real intrinsicDensity = 0.0;
+    Real electronDensityOfStates = 0.0;
+    Real holeDensityOfStates = 0.0;
+    Real suppliedElectronDensity = 0.0;
+    Real suppliedHoleDensity = 0.0;
+    Real reconstructedElectronDensity = 0.0;
+    Real reconstructedHoleDensity = 0.0;
+    Real electronRequiredQuasiFermiPotential = 0.0;
+    Real holeRequiredQuasiFermiPotential = 0.0;
+    Real electronQuasiFermiMappingError = 0.0;
+    Real holeQuasiFermiMappingError = 0.0;
+    bool hasSuppliedCarrierState = false;
+    Real dielectricFlux = 0.0;
+    Real electronCharge = 0.0;
+    Real holeCharge = 0.0;
+    Real dopingCharge = 0.0;
+    Real fixedInterfaceCharge = 0.0;
+    Real unconstrainedResidual = 0.0;
+    Real boundaryReplacement = 0.0;
+    Real productionResidual = 0.0;
+    Real closureError = 0.0;
+    bool constrained = false;
+};
+
 struct CoupledDDEdgeFluxDiagnostic {
     Index edgeId = 0;
     Index node0 = 0;
@@ -106,16 +140,35 @@ struct CoupledDDEdgeFluxDiagnostic {
     Real phip0_V = 0.0;
     Real phip1_V = 0.0;
     Real electricField_V_m = 0.0;
+    Real electronMobilityField_V_m = 0.0;
     Real electronMobility_m2_V_s = 0.0;
     Real holeMobility_m2_V_s = 0.0;
+    // Exact dimensionless factors used by the production electron SG branch.
+    // For Fermi statistics, eta0/eta1 are reduced chemical potentials and
+    // generalizedEinsteinFactor modifies both drift and quasi-Fermi arguments.
+    Real electronEta0 = 0.0;
+    Real electronEta1 = 0.0;
+    Real electronDriftPotential_V = 0.0;
+    Real electronGeneralizedEinsteinFactor = 1.0;
+    Real electronBernoulliArgument = 0.0;
+    Real electronQuasiFermiArgument = 0.0;
+    Real electronBernoulliPlus = 1.0;
+    Real electronBernoulliMinus = 1.0;
     // Signed Scharfetter-Gummel continuity edge flux (added to node0's residual
     // and subtracted from node1's), identical to the residual edge loop.
     Real electronFlux = 0.0;
     Real holeFlux = 0.0;
+    // Diagnostic response to one internal length unit of edge coupling.  This
+    // remains defined when the production coupling is zero, allowing a direct
+    // fixed-state replay of an external box-coefficient oracle.
+    Real electronFluxPerInternalCouple = 0.0;
+    Real holeFluxPerInternalCouple = 0.0;
     // The same integrated particle line flux before residual nondimensionalization
     // (particles per metre of out-of-plane depth per second).
     Real electronParticleLineFlux_per_m_s = 0.0;
     Real holeParticleLineFlux_per_m_s = 0.0;
+    Real electronParticleLineFluxPerInternalCouple_per_m_s = 0.0;
+    Real holeParticleLineFluxPerInternalCouple_per_m_s = 0.0;
 };
 
 // Diagnostic-only decomposition of one transport edge derivative with respect
@@ -219,7 +272,10 @@ public:
     /// References are constant coordinate shifts; physical fields and the
     /// assembled equations remain invariant under a consistent repartition.
     void setQuasiFermiReferenceFields(const VectorXd& electronReference_V,
-                                      const VectorXd& holeReference_V);
+                                     const VectorXd& holeReference_V);
+    /// Repartition reference plus increment without discarding the low part.
+    /// Callers must invalidate any external caches keyed only by coordinates.
+    void recenterQuasiFermiState(VectorXd& state);
     Real electronQuasiFermiReference() const { return electronQfReference_V_; }
     Real holeQuasiFermiReference() const { return holeQfReference_V_; }
     Real electronQuasiFermiReferenceAt(Index node) const;
@@ -253,6 +309,15 @@ public:
         const VectorXd& x,
         const CoupledDDBoundaryConditions& bcs,
         const CoupledDDFeedbackStateSubstitution& substitution) const;
+
+    std::vector<CoupledDDPoissonTermDiagnostic> poissonTermDiagnostics(
+        const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs) const;
+    std::vector<CoupledDDPoissonTermDiagnostic> poissonTermDiagnostics(
+        const VectorXd& x,
+        const CoupledDDBoundaryConditions& bcs,
+        const VectorXd& suppliedElectronDensity,
+        const VectorXd& suppliedHoleDensity) const;
 
     SparseMatrixd assembleJacobian(
         const VectorXd& x,
@@ -376,6 +441,9 @@ private:
         bool activeTransport = false;
         std::array<Index, maxEdgeAvalancheStencilNodes> avalancheStencilNodes{};
         std::uint8_t avalancheStencilNodeCount = 0;
+        bool touchesTransportContact = false;
+        Real vectorGradientArea = 0.0;
+        std::array<Point2, maxEdgeAvalancheStencilNodes> vectorGradientSensitivities{};
         std::vector<Real> electronLowFieldMobilities;
         std::vector<Real> holeLowFieldMobilities;
     };
@@ -422,7 +490,9 @@ private:
                                Real electronTransportDensity,
                                Real electronSrhDensity,
                                Real holeDensity,
-                               Real quasiFermiSplitting_V) const;
+                               Real quasiFermiSplitting_V,
+                               const GeneralizedSrhCarrierState* srhState = nullptr,
+                               const GeneralizedSrhCarrierState* augerState = nullptr) const;
     void rebuildFixedJacobianPattern(
         const std::vector<bool>& constrainedRows,
         bool includeCellStencil,
@@ -433,6 +503,7 @@ private:
     const MaterialDatabase& matdb_;
     const DopingModel& doping_;
     double Vt_;
+    void refreshIalMobility(const VectorXd& x) const;
     mutable MobilityModelConfig mobilityConfig_;
     std::unique_ptr<MobilityModel> mobility_;
     RecombinationModelConfig recombinationConfig_;
@@ -465,6 +536,8 @@ private:
     std::vector<NodalCurrentReconstructionKernel>
         nodalCurrentReconstructionKernels_;
     std::vector<Real> vol_;
+    std::vector<Real> poissonChargeVol_;
+    std::vector<Real> poissonCouple_;
     std::vector<Real> couple_;
     VectorXd fixedInterfaceChargeRhs_;
     DDScalingSpec scaling_;

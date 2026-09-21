@@ -3,7 +3,9 @@
 
 #include "vela/core/PhysicalConstants.h"
 #include "vela/physics/CarrierStatistics.h"
+#include "vela/physics/BandgapNarrowing.h"
 #include "vela/discretization/ScharfetterGummel.h"
+#include <boost/math/quadrature/gauss_kronrod.hpp>
 
 #include <cmath>
 #include <limits>
@@ -12,7 +14,7 @@
 using Catch::Approx;
 using namespace vela;
 
-TEST_CASE("Bednarczyk Fermi-Dirac half integral has the documented normalization",
+TEST_CASE("Fermi-Dirac half integral has the documented normalization",
           "[carrier_statistics][fermi_dirac]")
 {
     REQUIRE(fermiDiracHalf(0.0) == Approx(0.765147).epsilon(4.0e-3));
@@ -20,6 +22,73 @@ TEST_CASE("Bednarczyk Fermi-Dirac half integral has the documented normalization
     REQUIRE(fermiDiracHalfDerivative(-12.0) ==
             Approx(std::exp(-12.0)).epsilon(2.0e-3));
     REQUIRE(fermiDiracHalfDerivative(4.0) > 0.0);
+}
+
+namespace {
+long double referenceFermiHalf(long double eta, bool derivative = false)
+{
+    const auto integrand = [&](long double t) {
+        const long double z = t*t - eta;
+        const long double f = z > 0 ? std::exp(-z)/(1+std::exp(-z))
+                                    : 1/(1+std::exp(z));
+        const long double complement = z > 0 ? 1/(1+std::exp(-z))
+                                             : std::exp(z)/(1+std::exp(z));
+        return t*t*f*(derivative ? complement : 1.L);
+    };
+    const auto integral = boost::math::quadrature::gauss_kronrod<long double,61>::integrate(
+        integrand, 0.L, std::sqrt(std::max(0.L,eta)+80.L), 12, 1e-16L);
+    return 4/std::sqrt(std::acos(-1.L))*integral;
+}
+}
+
+TEST_CASE("Fermi functions and derivatives agree with independent defining integrals",
+          "[carrier_statistics][fermi_dirac]")
+{
+    for (Real eta=-40.;eta<=100.;eta+=.75) {
+        INFO("eta=" << eta);
+        CHECK(fermiDiracHalf(eta)==Approx(static_cast<Real>(referenceFermiHalf(eta))).epsilon(2e-12));
+        CHECK(fermiDiracHalfDerivative(eta)==Approx(static_cast<Real>(referenceFermiHalf(eta,true))).epsilon(2e-11));
+        CHECK(fermiDiracHalfDerivative(eta)>0.);
+    }
+    for (Real boundary : {-8.,-4.,0.,4.,8.,16.,32.,64.}) {
+        for (Real eta : {std::nextafter(boundary,-INFINITY),boundary,std::nextafter(boundary,INFINITY)}) {
+            INFO("boundary=" << boundary);
+            CHECK(fermiDiracHalf(eta)==Approx(static_cast<Real>(referenceFermiHalf(eta))).epsilon(2e-12));
+            CHECK(fermiDiracHalfDerivative(eta)==Approx(static_cast<Real>(referenceFermiHalf(eta,true))).epsilon(2e-11));
+        }
+    }
+}
+
+TEST_CASE("Fermi inverse remains accurate across extreme carrier density ratios",
+          "[carrier_statistics][fermi_dirac]")
+{
+    for (Real value : {1e-300,1e-100,1e-20,1e-12,1e-8,.01,.5,1.,10.,1e3,1e20,1e200}) {
+        const Real eta=inverseFermiDiracHalf(value);
+        INFO("density ratio=" << value);
+        REQUIRE(std::isfinite(eta));
+        CHECK(std::abs(fermiDiracHalf(eta)/value-1.)<2e-12);
+        CHECK(fermiDiracHalfDerivative(eta)>0.);
+    }
+    CHECK(std::isnan(fermiDiracHalf(std::numeric_limits<Real>::quiet_NaN())));
+    CHECK(fermiDiracHalf(-INFINITY)==0.);
+}
+
+TEST_CASE("Fermi BGN correction uses the same accurately inverted statistics in SI and TCAD",
+          "[carrier_statistics][fermi_dirac][bgn]")
+{
+    const Real vt=constants::kb*300./constants::q;
+    for (Real ratio : {1e-6,.01,1.,10.}) {
+        long double lo=std::log(ratio),hi=30.;
+        for (int i=0;i<65;++i) {
+            const auto mid=(lo+hi)/2;
+            if (referenceFermiHalf(mid)>ratio) hi=mid; else lo=mid;
+        }
+        const Real expected=vt*static_cast<Real>((lo+hi)/2-std::log(static_cast<long double>(ratio)));
+        const Real si=fermiStatisticsBandgapCorrection(ratio*2.8e25,0.,2.8e25,3.1e25,vt);
+        const Real tcad=fermiStatisticsBandgapCorrection(ratio*2.8e19,0.,2.8e19,3.1e19,vt);
+        CHECK(si==Approx(expected).margin(2e-14));
+        CHECK(tcad==Approx(si).margin(2e-15));
+    }
 }
 
 TEST_CASE("Fermi-Dirac half inverse round trips from nondegenerate to degenerate",
@@ -236,4 +305,16 @@ TEST_CASE("Generalized Fermi SRH factors reproduce the carrier product identity"
                 .epsilon(3.0e-10));
     REQUIRE(state.excessProduct ==
             Approx(n * p - state.equilibriumProduct).epsilon(3.0e-10));
+}
+
+TEST_CASE("Fermi half second derivative is positive and matches derivative slopes", "[statistics][fermi][thermal]") {
+    for(Real eta:{-30.,-8.1,-8.,-7.9,-4.,0.,4.,8.,16.,32.,63.9,64.,64.1,100.,1e4}) {
+        const Real second=fermiDiracHalfSecondDerivative(eta);
+        CHECK(second>0.);
+        for(Real fraction:{1.,.25}) {
+            Real step=1e-4*std::max(1.,std::abs(eta))*fraction;
+            const Real fd=(fermiDiracHalfDerivative(eta+step)-fermiDiracHalfDerivative(eta-step))/(2.*step);
+            CHECK(second==Catch::Approx(fd).epsilon(2e-6));
+        }
+    }
 }

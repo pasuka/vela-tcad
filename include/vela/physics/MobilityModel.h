@@ -12,6 +12,10 @@
 
 namespace vela {
 
+struct IalTransportOptions;
+struct IalTransportGeometry;
+struct IalTransportState;
+
 enum class CarrierType {
     Electron,
     Hole,
@@ -87,6 +91,11 @@ struct LombardiParameters {
 };
 
 struct MobilityModelConfig {
+    std::shared_ptr<const IalTransportOptions> ialmob;
+    std::shared_ptr<const IalTransportGeometry> ialmobGeometry;
+    std::shared_ptr<const IalTransportState> ialmobState;
+    /// ``constant_field`` uses the material low-field mobility and applies
+    /// only the configured high-field saturation limiter.
     std::string model = "constant";
     std::string highFieldDrivingForce = "electric_field";
     /// Spatial discretization for a quasi-Fermi-gradient high-field drive.
@@ -94,6 +103,19 @@ struct MobilityModelConfig {
     /// ``transport_cell_vector`` recovers the full vector gradient from
     /// adjacent transport cells before evaluating the edge mobility.
     std::string highFieldGradientDiscretization = "edge_projection";
+    /// Experimental Sentaurus-compatible HFS support: retain the configured
+    /// quasi-Fermi-gradient drive in the device interior, but use the P1
+    /// electrostatic-field magnitude in transport cells touching a contact.
+    /// This is deliberately independent of the impact-ionization contact
+    /// fallback and remains disabled unless a template opts in explicitly.
+    bool contactElectricFieldFallback = false;
+    std::string contactElectricFieldFallbackScope = "contact_node_cell";
+    std::string contactElectricFieldFallbackMode = "cell_gradient_magnitude";
+    /// Spatial support used by the carrier continuity operator and terminal
+    /// current integration. ``scharfetter_gummel_edge`` preserves the
+    /// historical edge flux. ``element_qf_gradient`` uses a Tri3 P1
+    /// quasi-Fermi-gradient current reconstructed inside each transport cell.
+    std::string carrierCurrentDiscretization = "scharfetter_gummel_edge";
     std::string dopingConcentrationBasis = "net_doping";
     bool jacobianFieldDerivatives = true;
 
@@ -112,7 +134,8 @@ struct MobilityModelConfig {
     FieldMobilityParameters electronField{1.07e5, 1.109};
     FieldMobilityParameters holeField{8.37e4, 1.213};
     SurfaceMobilityParameters surface{};
-    IALMobilityParameters ialmob{};
+    // Legacy SLOT endpoint model; separate from the element IAL transport above.
+    IALMobilityParameters slotIalMobility{};
     // Sentaurus O-2018.06 Silicon EnormalDependence defaults.  C is
     // converted from cm^(5/3)/(V^(2/3)s), delta from cm^2/(V s), and eta
     // from V^2/(cm s).
@@ -226,6 +249,7 @@ MobilityModelConfig mobilityModelConfigFromJson(
     const nlohmann::json& value,
     UnitScalingConfig scaling = {});
 bool isSurfaceMobilityModel(const MobilityModelConfig& config);
+// Identifies only the legacy SLOT endpoint models, not native model="ialmob".
 bool isIALMobilityModel(const MobilityModelConfig& config);
 bool mobilityDependsOnCarrierDensity(const MobilityModelConfig& config);
 bool surfaceMobilityAppliesToRegionPair(const MobilityModelConfig& config,

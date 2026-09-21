@@ -1,0 +1,293 @@
+{
+  "schema": "vela.templates_ldmos.known_difference_ledger.v1",
+  "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
+  "entries": [
+    {
+      "id": "g3_exact_mesh_subthreshold_edge_current_support_20260829",
+      "classification": "candidate_baseline_difference",
+      "status": "open",
+      "scope": "G3 no-IALMob Id-Vg, Vd=0.1 V, exact SProcess topology, Vg=0--5 V; remaining failed metric is maximum gm on Vg=1.0--1.1667 V",
+      "observation": "The qualified contact-boundary ElectricField HFS fallback and cached-mobility Jacobian repair allow all 31 no-predictor G3 points to converge, but the former production P95 current error was 0.432753 dex. At Vg=0.5 V the production curve and independent Sentaurus-seed reclose reconcile exactly at Id=1.736470037555399e-10 A/um, excluding a warm-start multiple-solution discrepancy. A complete T-2022.03-SP2 MeasureCoefficients.debug replay over 5674 active electron rows reduces fixed-state electron residual L2 and maximum to 0.0173075x and 0.0433710x without changing the initial Poisson residual. A 2x2 same-bias factorial then identifies two nearly orthogonal correctable contracts: external AverageBox carrier couples close 0.136312--0.140239 dex, while explicit legacy_node_local reconstruction of the physical p+/n+ source short closes 0.276004--0.279931 dex and removes the spurious 1.0818503857 V psi family. Their combination closes the Vg=0.5 V point to 0.013041 dex. The exact no-predictor 31-point confirmation converges all points in 177 full Newton steps and passes median log error, P95 log error, endpoint current, Vth and KCL gates. P95 improves to 0.099697 dex and Vth error to 0.0387 mV. A same-contract frozen replay proves contact HFS remains necessary: at Vg=0.5 and 0.833333 V, HFS off gives 11.00098x and 10.98829x current while HFS on gives 1.00071x and 1.00020x. The corrected eight-state replay reduces median self-consistent feedback from the old 0.403147 dex to 0.005615 dex, so the former phin-amplified platform is closed rather than reclassified as an engine floor. Stage 3 remains failed solely because maximum gm differs by 24.3076% versus the frozen 20% limit; both curves locate maximum gm on the same exact Vg=1.0--1.1667 V segment, excluding interpolation or peak-location artifacts. A new T-2022.03-SP2 endpoint state at Vg=1.1667 V enables an exact two-endpoint frozen replay: the AverageBox plus qualified-HFS operator gives gm=9.444475139e-6 A/(um V), only +0.0202% from the Sentaurus 9.442565684e-6, while self-consistent Vela remains -24.3076%. The feedback becomes -0.0890742 to -0.1065699 dex and is dominated by phin (-0.0904882 to -0.1079843 dex); psi stays near +0.001399 dex and phip is zero. Both complete Sentaurus endpoint states reclose to the independent Vela branch in five coupled Newton iterations. The first coupled step captures 0.9398--0.9712x of the full phin-update norm with cosine similarity 0.9803--0.9947, while localized analytic-versus-symmetric-FD JVP errors remain below 3.93e-10. A carrier-only step on the complete Sentaurus psi/phin/phip state is nearly orthogonal because it mixes the separate Sentaurus-psi residual support. The causal VSV experiment instead holds Vela psi and phip fixed while substituting only Sentaurus phin: a carrier-only reclose then reproduces both Vela endpoints in four full steps, matches Vela gm to 1.00000000018x, and returns phin to RMSE below 7.8e-17 V. Its bias-growing residual energy is concentrated in the gate-channel Si/dielectric interface one-ring at 91.9--95.2%, while contact one-rings contribute only 0.87--1.31%; extended localized JVP errors remain below 1.07e-6. A 40-edge production SG-kernel decomposition reconstructs flux ratios within 1.34e-14 and shows that holding the initial QF drive preserves 92.29% and 80.87% of the same-bias VSV residual, whereas each other single factor preserves at most 0.91%. A default-off, material-weighted region-local AverageBox Poisson P1 profile then converges both endpoints in four Newton steps but changes gm/Sentaurus from 0.7569242 to 0.7559671, excluding Poisson edge couples as the material maximum-gm cause. A read-only fixed-state A/B then tests ten generalized-Einstein factor alternatives on the same seven-node cluster. The best classical factor changes endpoint L2 only to 0.9831x and 0.9728x while increasing the worst node to 1.0340x; no candidate passes the pre-registered 0.5x L2, maximum and per-node gate. The enumerated factor-averaging choices are therefore insufficient, and no C++ profile, self-consistent reclose or new 31-point curve is authorized. Native T-2022.03-SP2 NewtonPlot equation-balance on the complete Sentaurus endpoint states then gives seven-node electron RHS L2 of 3.50691e-15 and 4.41779e-15 A, while Vela assembles 1.24147e-9 and 6.97873e-9 A/um on the same SSS states. The Vela vectors grow 5.62135x with cosine 0.990984 even though SSS terminal current remains within 0.0202%, confirming a stable local same-state operator mismatch. Authorized iteration-0 NewtonPlot runs on copied, identically loaded VSV states then make the row mode directly observable: the seven-node Sentaurus/Vela cosines are -0.999980 and -0.999910, the least-squares magnitudes are 33.5948x and 33.4600x, and removing that one scalar leaves only 0.638% and 1.341% relative L2. The scalar changes by only 0.403% across bias. A symmetric 1 uV node-3721 QF perturbation independently recovers a -33.7806x Jacobian-column scalar with cosine -0.999999831. The dimensional-chain audit then establishes a 1 um default 2-D thickness and an explicit Vela A/um conversion, while the controlled global AreaFactor=1-to-2 A/B doubles every terminal-current component but leaves both complete 5723-node eContinuityRhs CSVs byte-identical and the central-difference derivative exactly 1.0x. The 2-D width/current convention and AreaFactor are therefore excluded; NewtonPlot RHS must be treated as an implementation-dependent internal normalized quantity. A subsequent ErrRef=1e10-to-1e8 cm^-3 A/B leaves iteration-0/1 eContinuityRhs and the first electron update byte-identical while all 5674 density-error ratios exactly follow the documented ErrRef formula. The five local silicon Measures vary 14.607x while row scalars vary only 1.00496x, and iteration-0 NewtonPlot precedes the first linear solve with diagonal preconditioning disabled. Electron ErrRef, per-row Measure, the linear-solver preconditioner and simple 1/Vt scaling are therefore excluded. Finally, the supported public-interface audit activates Math.ElementEdgeCurrent on the identical high-endpoint VSV plus/minus states but leaves all 20 iteration-0 fields, all 20 iteration-1 fields, all 36 final-state fields and terminal currents byte- or log-identical. A Tcl/PMI edge-vector request then fails natively because eCurrentDensity is registered only at vertices. T-2022.03-SP2 exposes neither an assembly edge-current dataset nor a general DD row-scale, so exact scalar attribution now requires vendor-internal version-specific disclosure and the ledger stays draft.",
+      "excluded_causes": [
+        "uniform electrostatic, flatband, or reference-energy offset",
+        "terminal floating-point summation",
+        "electron-density reconstruction from psi and QF",
+        "DopingDependence or Masetti low-field mobility",
+        "global low-field mobility parameter mismatch",
+        "negative local cotangent barycentric fallback",
+        "mixed-Voronoi node volume in fixed-state SG replay",
+        "barycentric versus truncated negative-cotangent coupling in same-bias reclose",
+        "removing oxide-side box contributions from interface carrier edges as a sufficient global closure for the Vg=0.5 V fixed state",
+        "a density-state or restart-precision mismatch as the silicon-only node 4492 residual cause",
+        "a uniform node-4492 incident-edge scaling as a sufficient one-ring closure",
+        "AverageBox source Measure as the dominant Vg=0.5 V fixed-state electron-continuity cause",
+        "full-mesh direct AverageBox coefficient replay as causing material residual hotspot transfer",
+        "different Vg=0.5 V production and Sentaurus-seed reclose baselines or warm-start multiple solutions",
+        "the 1.0818503857 V psi family as a harmless gate or oxide-only comparison outlier",
+        "external AverageBox transport couple alone as sufficient to close the self-consistent current gate under dominant-contact-mean reconstruction",
+        "uniform psi or hole-QF state feedback as the subthreshold current-amplitude cause",
+        "SRH or Auger recombination magnitude as the electron-continuity hotspot cause",
+        "drain-side anomalous couple-over-length edges as the dominant remaining feedback location",
+        "WP1.5 low-current KCL and line-search floor",
+        "missing contact-boundary ElectricField fallback as the sole remaining cause",
+        "constant_field cached-mobility Jacobian mismatch as a physical curve-amplitude cause",
+        "the former 0.403147 dex phin state-feedback amplification as a remaining platform under the corrected node-local plus AverageBox contract",
+        "contact HFS as the cause of the former self-consistent 2.6--2.7x platform; it remains a required fixed-state operator correction",
+        "AverageBox carrier coefficients or qualified HFS mobility amplitude as the cause of the Vg=1.0--1.1667 V maximum-gm deficit",
+        "an analytic-versus-primal Vela electron-QF Jacobian inconsistency on the dominant edge-feedback patch",
+        "the carrier-only step on the complete Sentaurus psi/phin/phip state as a causally representative path to the Vela branch",
+        "Poisson or hole-QF feedback as required once Vela psi and phip are held fixed in the VSV carrier reclose",
+        "silicon-local continuity source Measure or an exactly constrained potential double-node representation as the seven-node residual cause",
+        "carrier couple, mobility or generalized-Einstein amplitude drift as the cause of the seven-node VSV residual growth",
+        "material-weighted region-local AverageBox Poisson P1 edge couples as a correction for the maximum-gm deficit",
+        "classical, eta-midpoint, log-density-midpoint, endpoint arithmetic/geometric/harmonic/density-weighted, Simpson eta-integral, or endpoint-bound generalized-Einstein factor averaging as a sufficient closure of the seven-node VSV residual",
+        "a different seven-node QF-drive spatial mode as the dominant VSV row mismatch; two nonzero identical-state row vectors align to one bias-stable scalar",
+        "baseline-residual leakage or a different local electron-QF Jacobian-column shape as the approximately 33.5x cause; a symmetric 1 uV node-3721 perturbation aligns the complete silicon one-ring derivative with cosine -0.999999831 and only 0.0581% residual after one scalar",
+        "the 2-D default width, Vela A/um terminal conversion, or Sentaurus AreaFactor as the approximately 33.5x cause; AreaFactor=2 doubles terminal currents but leaves both complete NewtonPlot eContinuityRhs fields byte-identical",
+        "Electron ErrRef as the approximately 33.5x cause; changing 1e10 to 1e8 cm^-3 changes only the documented density update-error field while leaving iteration-0/1 eContinuityRhs and the first electron Newton update byte-identical",
+        "per-row silicon AverageBox Measure as the approximately 33.5x cause; five Measures vary 14.607x while the corresponding row scalar varies only 1.00496x with log-space correlation -0.07625",
+        "the linear-solver preconditioner as the iteration-0 NewtonPlot RHS cause; all logs write iteration-0 NewtonPlot before the first linear solve and declare no diagonal preconditioning",
+        "a simple missing or extra inverse thermal-voltage factor as the approximately 33.5x cause; 1/Vt at 300 K is 38.6817 per V, differing by 12.6704%",
+        "Math.ElementEdgeCurrent as the approximately 33.5x VSV row-scalar cause or correction; activating it leaves both signs' iteration-0, iteration-1 and final-state normalized fields byte-identical and terminal currents identical at log precision"
+      ],
+      "open_causes": [
+        "whether the calibrated approximately 33.5x VSV electron-row and single-mode Jacobian-column magnitude belongs to an undisclosed Sentaurus nonlinear equation normalization or a uniform assembly coefficient; the supported T-2022.03-SP2 public interface search is exhausted, so only Synopsys version-specific internal disclosure can assign the exact scalar",
+        "the individual element-edge current rule, which row-mode alignment cannot uniquely recover because T-2022.03-SP2 registers eCurrentDensity only at vertices and its Tcl/PMI edge-vector request fails natively",
+        "generalized SRH hole-QF reference convention after removal of the source-short contact reconstruction artifact; low expected impact on Id-Vg but material for recombination qualification"
+      ],
+      "evidence": [
+        {
+          "path": "docs/validation/templates_ldmos_g4_hfs_coefficient_phip_audit_2026-08-29.md",
+          "sha256": "e6861268892522648718204a5361ad8ec5183ca78b49ce55ef86319cd88c0799"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g4_fixed_state_coefficients.py",
+          "sha256": "d00b1fc8372fcc534b7956638fd55744c37a366d3598cf59ba38672aac294d1c"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_element_hfs.py",
+          "sha256": "fa6ebfb24b6b8665816152dcb48afed17ba2c0d38091692a57ffd45a5b084a26"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_phip_srh.py",
+          "sha256": "1200311dc5de8d08232a4973748fa30f8970fb11eda670c79f8626fe12bd2206"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_contact_hfs_qualification_2026-08-31.md",
+          "sha256": "4d5e2f70ea871acb9b80884e2c67b54ad0f9f48afd2298b3bc2d9655cf6f7ba6"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_coefficient_state_feedback_audit_2026-08-31.md",
+          "sha256": "62840bccfc4ef21a581013f7b010fb90d339dbd6f73872560928b9a0402095f6"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_state_feedback.py",
+          "sha256": "8d80431df67ac10e34b1e87d41e37b66c4bd1cb9d3abaaee8d6c97a5d3c53f2d"
+        },
+        {
+          "path": "scripts/run_templates_ldmos_g3_same_bias_reclose.py",
+          "sha256": "f598de740ac0b58a8afc11e9f34acd6eccc0e04bc402fd0318917ebfe03f6973"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_interface_pair_box_audit_2026-08-31.md",
+          "sha256": "e22ae9e2c62b14bbe72661ad06f72c0a02df9160c04abc56b1dd710aa60d6ed7"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_interface_pair_box.py",
+          "sha256": "abb6db077b46bd43b429d003d3ba27c4d044694d01121eea3069026d1930553c"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_averagebox_node4492_audit_2026-08-31.md",
+          "sha256": "914975cef2795d2a04aea49d2d2540760f4d52e1c1b1d6427bac256c386b4292"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_averagebox_node4492.py",
+          "sha256": "06104b224c82a40e515ad6ee53d0cc2e3ec1edb18b2eab54938384273e929330"
+        },
+        {
+          "path": "scripts/run_templates_ldmos_averagebox_probe.py",
+          "sha256": "f20c9b8e79ff6437f9e65f677852efb47d7d0c8bb1d5c5cbba4e411e8f660b11"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_averagebox_full_mesh_audit_2026-08-31.md",
+          "sha256": "cd281567a72a7771655d188e2a6f72e45af180510c95df2f1a2baec8ef52927c"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_averagebox_full_mesh.py",
+          "sha256": "80499a1486be9d5723136e66db7e630dedeb6cf1c30be0714232e4457672bb5a"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_averagebox_newton_ab_2026-08-31.md",
+          "sha256": "c349cb7a4197f1fb974561ae6bce994e1d91ff8dd380a56f92aa4bbe464b1f66"
+        },
+        {
+          "path": "scripts/run_templates_ldmos_averagebox_newton_ab.py",
+          "sha256": "8a69ef598fc6a33e7b868f13752401f0dca31912ee68f8b97870d8fe972c3971"
+        },
+        {
+          "path": "scripts/prepare_templates_ldmos_phase23.py",
+          "sha256": "2c55e70b98ce472cab776fda0cd29d94020fc7060593b5ced914d6244803a611"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_averagebox_curve_qualification_2026-08-31.md",
+          "sha256": "39b7e05885f8344e094c02ce948ae2afa852b67a3a676161eb81a3a5a7c7836f"
+        },
+        {
+          "path": "scripts/run_templates_ldmos_g3_averagebox_curve.py",
+          "sha256": "71cfd747cccef53917c17903e3727f8b4dcd6cafd8dfba38206bc7133e4cee40"
+        },
+        {
+          "path": "scripts/run_templates_ldmos_g3_contact_hfs_replay.py",
+          "sha256": "8920e5f27eda49d748a99e9ea97393bb237f1bfb3136a7f92a7524745d95ba8b"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_gm_segment_fixed_state_audit_2026-08-31.md",
+          "sha256": "eba00e378679de6f81a1f2edd6aad3e17fe0a3b427bd91bbf0843af1e97be517"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_gm_operator.py",
+          "sha256": "9a7ede00b266adb348320874750324626d1e42039be7ed56387581395f7fd84b"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_gm_reclose_jacobian_2026-08-31.md",
+          "sha256": "c4909d88854c178938bb1ae7b74e7e1eb9876d21d50556bf73a44248a8889a1c"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_gm_reclose.py",
+          "sha256": "89bcbcda5b74ff3b11cc14fd05a9f318fedd8fcc14b871809774f8b6df8543f2"
+        },
+        {
+          "path": "tests/regression/test_audit_templates_ldmos_g3_gm_reclose.py",
+          "sha256": "aff4c327181d4002ec3ed8de09c2f6ee437ea8d73a4911a94e8318d29442c65c"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_phin_reclose.py",
+          "sha256": "367b9a48202d94876c1cbdc5632938bf04e1b909f75589fe713c2c594f508a8f"
+        },
+        {
+          "path": "tests/regression/test_audit_templates_ldmos_g3_phin_reclose.py",
+          "sha256": "9cf2d34d3cc356c91b1311414b60e14e67f7a8dad54f1b8051160670e8ae8c83"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_seven_node_interface_ablation_2026-08-31.md",
+          "sha256": "d64b3605c1d9aba9c7c45a9bcae3151e4c0a62ea77321c2a0ed68bb48ac21f3a"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_seven_node_interface_ablation.py",
+          "sha256": "c98f2a66b642895afa6b9946eac61c129c88b388418ccca55788ff5026b96c16"
+        },
+        {
+          "path": "tests/regression/test_audit_templates_ldmos_g3_seven_node_interface_ablation.py",
+          "sha256": "21f5bd3046543e3733a34a755aaec48737e6f01682278301e2220e55bbe38a92"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_interface_edge_poisson_ab_2026-09-01.md",
+          "sha256": "246bf4c4d7f5a785eb2d2ee14af7888031b946d8a46de94083ace5b8cea616ed"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_interface_edge_state.py",
+          "sha256": "cf830513b3b33f1c4ff5c257c8818eb025f9ab44a55508fdd5eb57a38e8cda88"
+        },
+        {
+          "path": "tests/regression/test_audit_templates_ldmos_g3_interface_edge_state.py",
+          "sha256": "b7588e05a4f5a39038b3c8494c7fcd8b44667ce3cffe041cf794525db32a8154"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_side_local_poisson_ab.py",
+          "sha256": "305b0fdf0e44ffe998ee777016e21833f57103852918e57ac22bacf957501cc6"
+        },
+        {
+          "path": "tests/regression/test_audit_templates_ldmos_g3_side_local_poisson_ab.py",
+          "sha256": "de4dc57bba72256f72a42a2d8a33d6200708cf7f21c7c17cc41c288b44cc2f30"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_fermi_edge_average_ab_2026-09-01.md",
+          "sha256": "447fa5b3202a5163e551c46ff4670e19416d342803f4586f7b2923e34091429a"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_fermi_edge_average_ab.py",
+          "sha256": "372ab827bf5364f2d44618d2a636517c80f7a3a1830447d2e10f05cf276ba0a9"
+        },
+        {
+          "path": "tests/regression/test_audit_templates_ldmos_g3_fermi_edge_average_ab.py",
+          "sha256": "877606856e1283bcce6c20025983a46206327f4bc8790c73666ad99b73239f4a"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_sentaurus_equation_balance_2026-09-01.md",
+          "sha256": "fd4995c4bc52b59bbdf592474379581d57ca53f84da4ac2872bbc65708dbd7a0"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_sentaurus_equation_balance.py",
+          "sha256": "0e29b38f41c3418b2e033b6f533937ebf4588b1d0b7b334d3140e8e5065c0757"
+        },
+        {
+          "path": "tests/regression/test_audit_templates_ldmos_g3_sentaurus_equation_balance.py",
+          "sha256": "76b2056573bc321a2e517114bf970cd61c45589f8c4f47185e5f73a6e4f83a82"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_qf_single_mode_perturbation_2026-09-01.md",
+          "sha256": "d814f8c6da370c250507e1e90df158eae0f5e0239b344e22d06a52c037a41de9"
+        },
+        {
+          "path": "scripts/prepare_templates_ldmos_g3_qf_single_mode_perturbation.py",
+          "sha256": "4daa069e2a3ba39d189123c42c4a5f7629c1279109608b01e710f1bdb6d46fda"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_qf_single_mode_perturbation.py",
+          "sha256": "77e68287bb48dae971edcaeab2e83a472fd8680b26b73889018520001065e999"
+        },
+        {
+          "path": "tests/regression/test_audit_templates_ldmos_g3_qf_single_mode_perturbation.py",
+          "sha256": "7894b9dff855359248df2810f522af94270b0b713933c381ee24c0668101fadb"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_rhs_dimension_chain_2026-09-01.md",
+          "sha256": "2228c62f971890209fc19c59ef0546adce3a21aaf1e04bb78c3fc3b59b9d0dae"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_rhs_dimension_chain.py",
+          "sha256": "fa2f76bb3fd1ad7de465f6ebe7c4a07da80c53bf0cf36fd419cf5af4da10ea4e"
+        },
+        {
+          "path": "tests/regression/test_audit_templates_ldmos_g3_rhs_dimension_chain.py",
+          "sha256": "4ed8a9d8c02d8104946e304eeb46330fad2364d1a4abe5185a650a3b9a7a0910"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_internal_equation_scaling_2026-09-01.md",
+          "sha256": "3e4b97f105fd9fa173644596da362e32d0458cf8c0cf6be6ef31066da11f91c0"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_internal_scaling.py",
+          "sha256": "65e65d47d049270853923200aef88d8db0bca8077b8c5dfea121d26ab77cabff"
+        },
+        {
+          "path": "tests/regression/test_audit_templates_ldmos_g3_internal_scaling.py",
+          "sha256": "c8c4fe82ba46e3543192e35d56b15363ead646a0cc8487740f5127b9c5f04f31"
+        },
+        {
+          "path": "docs/validation/templates_ldmos_g3_supported_element_edge_current_2026-09-01.md",
+          "sha256": "8d5927c3b26eb452cedacd1015b6e992d3ea61adcd401ac55b0b8cca2046deb0"
+        },
+        {
+          "path": "scripts/audit_templates_ldmos_g3_element_edge_current.py",
+          "sha256": "442d5bee1109da569ffebec6b8240d6f412960c7fb79d87a1f84fa3d55ec510f"
+        },
+        {
+          "path": "tests/regression/test_audit_templates_ldmos_g3_element_edge_current.py",
+          "sha256": "5adf2ba12629f515291a99581a33318f5e611af7e4eb8e083c3974ad829cb51b"
+        },
+        {
+          "path": "reference_tcad/templates_ldmos_sentaurus2022/contracts/diagnostics/templates_ldmos_external_averagebox_profile.json",
+          "sha256": "ee7a2b75f5bd8d9d946e00d5b9cc4d640468fa571e78b1a17430e80bc7007d12"
+        }
+      ],
+      "expires_when": "The gate-channel interface-box electron-row semantic difference is closed or classified, generalized SRH reference semantics are independently requalified, or the exact mesh/discretization contract changes.",
+      "approval": {
+        "status": "draft",
+        "benchmark_owner": null,
+        "independent_reviewer": null,
+        "approved_at": null
+      }
+    }
+  ]
+}

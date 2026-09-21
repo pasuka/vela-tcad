@@ -1,4 +1,5 @@
 #pragma once
+#include "vela/equation/IalTransport.h"
 
 /**
  * @file AssemblerUtils.h
@@ -13,6 +14,7 @@
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/UnitScaling.h"
 #include "vela/equation/ChargeSpec.h"
+#include "vela/equation/PoissonChargeVolume.h"
 #include "vela/equation/Tri3LocalForwardAD.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/mesh/DeviceMesh.h"
@@ -196,6 +198,24 @@ inline std::vector<Real> computeEdgeCouplings(const DeviceMesh& mesh)
     std::vector<Real> couple(E, 0.0);
     for (Index e = 0; e < E; ++e)
         couple[e] = mesh.getEdge(e).couple;
+    return couple;
+}
+
+/// Return carrier-transport couplings, honoring explicit per-edge diagnostic
+/// overrides while leaving the mesh electrostatic geometry untouched.
+inline Real transportEdgeCouple(const Edge& edge)
+{
+    return edge.transport_couple >= 0.0
+        ? edge.transport_couple
+        : edge.couple;
+}
+
+inline std::vector<Real> computeTransportEdgeCouplings(const DeviceMesh& mesh)
+{
+    const Index E = mesh.numEdges();
+    std::vector<Real> couple(E, 0.0);
+    for (Index e = 0; e < E; ++e)
+        couple[e] = transportEdgeCouple(mesh.getEdge(e));
     return couple;
 }
 
@@ -1191,6 +1211,8 @@ inline Real edgeMobility(const std::vector<std::vector<Index>>& edgeCells,
                          const VectorXd*                         n = nullptr,
                          const VectorXd*                         p = nullptr)
 {
+    if (mobilityConfig != nullptr && mobilityConfig->model == "ialmob")
+        return ialEdgeMobility(*mobilityConfig,edgeId,carrier,psi==nullptr);
     const auto& cells = edgeCells[edgeId];
     if (cells.empty()) return 0.0;
 
@@ -2365,6 +2387,17 @@ inline bool cellTouchesContact(const DeviceMesh& mesh, const Cell& cell)
     return false;
 }
 
+inline bool cellTouchesContact(
+    const Cell& cell,
+    const std::vector<bool>& contactNodes)
+{
+    return std::any_of(
+        cell.node_ids.begin(), cell.node_ids.end(),
+        [&](Index node) {
+            return node < contactNodes.size() && contactNodes[node];
+        });
+}
+
 inline bool cellTouchesContactBoundaryFace(
     const DeviceMesh& mesh,
     const Cell& cell)
@@ -2413,6 +2446,18 @@ inline bool contactBoundaryFaceGeometry(
             const std::size_t next = (local + 1) % 3;
             if (!onContact[local] || !onContact[next])
                 continue;
+            if (!contact.edge_node_ids.empty()) {
+                const Index first = cell.node_ids[local];
+                const Index second = cell.node_ids[next];
+                const bool exactEdge = std::any_of(
+                    contact.edge_node_ids.begin(), contact.edge_node_ids.end(),
+                    [&](const std::array<Index, 2>& edge) {
+                        return (edge[0] == first && edge[1] == second) ||
+                            (edge[0] == second && edge[1] == first);
+                    });
+                if (!exactEdge)
+                    continue;
+            }
             const std::size_t opposite = (local + 2) % 3;
             const Point2 face0 = meshPoint(mesh, cell.node_ids[local]);
             const Point2 face1 = meshPoint(mesh, cell.node_ids[next]);
@@ -2633,6 +2678,30 @@ inline CellScalarGradientCache computeCellScalarGradientCache(
         cache.valid[cellId] = valid;
     }
     return cache;
+}
+
+// Keep reference differences and increments separate until after subtracting
+// a cell-local anchor. Materializing reference + increment as Real first loses
+// sub-ULP QF variations in a biased frame, before the gradient can see them.
+template <typename ReferenceAt, typename IncrementAt>
+inline Point2 cellReferencedScalarGradient(
+    const DeviceMesh& mesh, const Cell& cell,
+    ReferenceAt&& referenceAt, IncrementAt&& incrementAt,
+    bool& valid, Real& area)
+{
+    if (cell.node_ids.empty()) {
+        valid = false;
+        area = 0.0;
+        return Point2::Zero();
+    }
+    const Index anchor = cell.node_ids.front();
+    return cellScalarGradient(mesh, cell, [&](Index node) {
+        return static_cast<Real>(
+            (static_cast<long double>(referenceAt(node)) -
+             static_cast<long double>(referenceAt(anchor))) +
+            (static_cast<long double>(incrementAt(node)) -
+             static_cast<long double>(incrementAt(anchor))));
+    }, valid, area);
 }
 
 template <typename ValueAt>
@@ -2923,15 +2992,53 @@ inline bool isTransportMaterial(const Material& material)
     return material.ni > 0.0 || material.mun > 0.0 || material.mup > 0.0;
 }
 
-inline std::vector<Real> transportCellVectorEdgeGradientMagnitudes(
+/// Return the control-volume area used only for mobile and ionized-dopant
+/// charge in Poisson.  The material-local diagnostic intentionally remains
+/// barycentric in P1 so its single changed factor is the material ownership;
+/// Sentaurus Measure/mixed-Voronoi semantics are a later, independent profile.
+inline std::vector<Real> computePoissonChargeVolumes(
+    const DeviceMesh& mesh,
+    const std::vector<Material>& cellMaterials,
+    PoissonChargeVolumePolicy policy)
+{
+    if (policy == PoissonChargeVolumePolicy::Global)
+        return computeNodeVolumes(mesh);
+    if (cellMaterials.size() != mesh.numCells()) {
+        throw std::invalid_argument(
+            "computePoissonChargeVolumes: cell material count does not match mesh.");
+    }
+
+    bool allCellsTransport = true;
+    for (const Material& material : cellMaterials)
+        allCellsTransport = allCellsTransport && isTransportMaterial(material);
+    // Preserve the legacy arithmetic and bit pattern on a one-material
+    // semiconductor mesh instead of recomputing an equivalent area sum.
+    if (allCellsTransport)
+        return computeNodeVolumes(mesh);
+
+    std::vector<Real> volume(mesh.numNodes(), 0.0);
+    for (Index cellId = 0; cellId < mesh.numCells(); ++cellId) {
+        if (!isTransportMaterial(cellMaterials[cellId]))
+            continue;
+        const Cell& cell = mesh.getCell(cellId);
+        if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3) {
+            throw std::invalid_argument(
+                "computePoissonChargeVolumes: material_local supports Tri3 cells only.");
+        }
+        const Real share = triangleArea(mesh, cell) / 3.0;
+        for (Index node : cell.node_ids)
+            volume.at(static_cast<std::size_t>(node)) += share;
+    }
+    return volume;
+}
+
+inline std::vector<Real> transportCellVectorEdgeGradientMagnitudesFromCache(
     const DeviceMesh& mesh,
     const std::vector<std::vector<Index>>& edgeCells,
     const std::vector<Material>& cellMaterials,
-    const VectorXd& values,
+    const CellScalarGradientCache& gradients,
     Real fieldFactor)
 {
-    const CellScalarGradientCache gradients = computeCellScalarGradientCache(
-        mesh, [&](Index node) { return values(static_cast<int>(node)); });
     std::vector<Real> fields(mesh.numEdges(), 0.0);
     for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
         if (edgeId >= edgeCells.size())
@@ -2953,6 +3060,147 @@ inline std::vector<Real> transportCellVectorEdgeGradientMagnitudes(
             fields[edgeId] = (weightedGradient / totalArea).norm() * fieldFactor;
     }
     return fields;
+}
+
+inline std::vector<Real> transportCellVectorEdgeGradientMagnitudes(
+    const DeviceMesh& mesh,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<Material>& cellMaterials,
+    const VectorXd& values, Real fieldFactor)
+{
+    const auto gradients = computeCellScalarGradientCache(
+        mesh, [&](Index node) { return values(static_cast<int>(node)); });
+    return transportCellVectorEdgeGradientMagnitudesFromCache(
+        mesh, edgeCells, cellMaterials, gradients, fieldFactor);
+}
+
+template <typename ReferenceAt, typename IncrementAt>
+inline std::vector<Real> transportCellVectorReferencedGradientMagnitudes(
+    const DeviceMesh& mesh,
+    const std::vector<std::vector<Index>>& edgeCells,
+    const std::vector<Material>& cellMaterials,
+    ReferenceAt&& referenceAt, IncrementAt&& incrementAt, Real fieldFactor)
+{
+    CellScalarGradientCache gradients;
+    gradients.gradients.resize(mesh.numCells());
+    gradients.areas.resize(mesh.numCells());
+    gradients.valid.resize(mesh.numCells());
+    for (Index cell = 0; cell < mesh.numCells(); ++cell) {
+        bool valid = false;
+        Real area = 0.0;
+        gradients.gradients[cell] = cellReferencedScalarGradient(
+            mesh, mesh.getCell(cell), referenceAt, incrementAt, valid, area);
+        gradients.areas[cell] = area;
+        gradients.valid[cell] = valid;
+    }
+    return transportCellVectorEdgeGradientMagnitudesFromCache(
+        mesh, edgeCells, cellMaterials, gradients, fieldFactor);
+}
+
+template <typename ValueAt>
+inline Real contactCellElectricFieldMagnitudeForMobility(
+    const MobilityModelConfig&               config,
+    const DeviceMesh&                        mesh,
+    const std::vector<std::vector<Index>>&   edgeCells,
+    const std::vector<Material>&             cellMaterials,
+    Index                                    edgeId,
+    ValueAt&&                                potentialAt,
+    Real                                     fieldFactor,
+    Real                                     fallbackField,
+    bool*                                    applied = nullptr,
+    const std::vector<bool>*                 contactNodes = nullptr)
+{
+    if (applied != nullptr)
+        *applied = false;
+    if (!config.contactElectricFieldFallback ||
+        config.highFieldDrivingForce != "quasi_fermi_gradient" ||
+        edgeId >= edgeCells.size()) {
+        return fallbackField;
+    }
+
+    Point2 weightedGradient = Point2::Zero();
+    Real totalArea = 0.0;
+    for (const Index cellId : edgeCells[edgeId]) {
+        if (cellId >= cellMaterials.size() ||
+            !isTransportMaterial(cellMaterials[cellId])) {
+            continue;
+        }
+        const Cell& cell = mesh.getCell(cellId);
+        const bool touchesContact = contactNodes != nullptr
+            ? cellTouchesContact(cell, *contactNodes)
+            : cellTouchesContact(mesh, cell);
+        if (!touchesContact)
+            continue;
+        bool valid = false;
+        Real area = 0.0;
+        const Point2 gradient = cellScalarGradient(
+            mesh, cell, potentialAt, valid, area);
+        if (!valid || area <= 0.0)
+            continue;
+        weightedGradient += area * gradient;
+        totalArea += area;
+    }
+    if (totalArea <= 0.0)
+        return fallbackField;
+    if (applied != nullptr)
+        *applied = true;
+    return (weightedGradient / totalArea).norm() * fieldFactor;
+}
+
+inline std::vector<Real> contactCellElectricFieldEdgeMagnitudesForMobility(
+    const MobilityModelConfig&               config,
+    const DeviceMesh&                        mesh,
+    const std::vector<std::vector<Index>>&   edgeCells,
+    const std::vector<Material>&             cellMaterials,
+    const VectorXd&                          potential,
+    Real                                     fieldFactor)
+{
+    std::vector<Real> fields(mesh.numEdges(), 0.0);
+    if (!config.contactElectricFieldFallback ||
+        config.highFieldDrivingForce != "quasi_fermi_gradient") {
+        return fields;
+    }
+    const std::vector<bool> contactNodes = contactNodeMask(mesh);
+    const CellScalarGradientCache gradients = computeCellScalarGradientCache(
+        mesh, [&](Index node) { return potential(static_cast<int>(node)); });
+    for (Index edgeId = 0; edgeId < mesh.numEdges(); ++edgeId) {
+        if (edgeId >= edgeCells.size())
+            continue;
+        Point2 weightedGradient = Point2::Zero();
+        Real totalArea = 0.0;
+        for (const Index cellId : edgeCells[edgeId]) {
+            if (cellId >= cellMaterials.size() ||
+                !isTransportMaterial(cellMaterials[cellId]) ||
+                cellId >= gradients.valid.size() || !gradients.valid[cellId] ||
+                gradients.areas[cellId] <= 0.0 ||
+                !cellTouchesContact(mesh.getCell(cellId), contactNodes)) {
+                continue;
+            }
+            const Real area = gradients.areas[cellId];
+            weightedGradient += area * gradients.gradients[cellId];
+            totalArea += area;
+        }
+        if (totalArea > 0.0)
+            fields[edgeId] = (weightedGradient / totalArea).norm() * fieldFactor;
+    }
+    return fields;
+}
+
+inline Real mobilityHighFieldDrivingField(
+    const MobilityModelConfig& config,
+    Index edgeId,
+    Real quasiFermiField,
+    Real electricField,
+    const std::vector<Real>& contactElectricFields)
+{
+    if (config.highFieldDrivingForce != "quasi_fermi_gradient")
+        return electricField;
+    if (config.contactElectricFieldFallback &&
+        edgeId < contactElectricFields.size() &&
+        contactElectricFields[edgeId] > 0.0) {
+        return contactElectricFields[edgeId];
+    }
+    return quasiFermiField;
 }
 
 /**

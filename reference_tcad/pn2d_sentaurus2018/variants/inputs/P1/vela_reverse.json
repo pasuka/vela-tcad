@@ -1,0 +1,137 @@
+{
+  "contacts": [
+    {
+      "bias": 0.0,
+      "name": "Cathode"
+    },
+    {
+      "bias": 0.0,
+      "name": "Anode"
+    }
+  ],
+  "materials_file": "materials.json",
+  "mesh_file": "inputs/mesh.json",
+  "node_doping_file": "inputs/doping.csv",
+  "output_csv": "reverse.csv",
+  "scaling": {
+    "mode": "unit_scaling"
+  },
+  "simulation_type": "dc_sweep",
+  "solver": {
+    "abstol": 1e-09,
+    "bandgap_narrowing": "old_slotboom",
+    "contact_boundary_minority_electron_relaxation": false,
+    "contact_boundary_reconstruction": "dominant_signed_contact_mean",
+    "damping_factor": 1.0,
+    "damping_psi": 0.2,
+    "diagnostics": false,
+    "handoff": {
+      "fallback": "none",
+      "gummel_max_iter": 0,
+      "newton_max_iter": 50,
+      "require_gummel_convergence": false
+    },
+    "impact_ionization": {
+      "model": "none"
+    },
+    "line_search": true,
+    "carrier_row_convergence": {
+      "eps_row": 0.001,
+      "min_source_scale": 1e-18,
+      "min_source_scale_fraction": 0.0,
+      "mode": "enforce",
+      "scale_floor": 1e-30
+    },
+    "continuity_row_scaling": {
+      "enabled": true,
+      "flux_fraction": 1.0,
+      "max_weight": 1e+18,
+      "min_source_scale": 1e-18,
+      "min_weight": 1e-12,
+      "scale_floor": 1e-30
+    },
+    "global_continuity_closure": {
+      "mode": "enforce",
+      "source_floor": 1e-14,
+      "tolerance": 0.01
+    },
+    "max_iter": 50,
+    "max_update": 0,
+    "method": "gummel_newton",
+    "mobility": {
+      "doping_concentration_basis": "cell_reconstructed_total_impurity",
+      "model": "constant"
+    },
+    "quasi_fermi_update_limit_V": 0.1,
+    "quasi_fermi_reference": "contact_majority",
+    "recombination": [
+      "srh"
+    ],
+    "reltol": 1e-08,
+    "warm_start": true,
+    "temperature_K": 300.0,
+    "taun": 1e-05,
+    "taup": 3e-06,
+    "srh_doping_dependence": {
+      "enabled": false
+    }
+  },
+  "sweep": {
+    "contact": "Anode",
+    "current_contact": "Anode",
+    "diagnostics": {
+      "newton_history": {
+        "csv_file": "reverse_newton.csv",
+        "enabled": true
+      },
+      "terminal_balance": {
+        "enabled": true,
+        "contacts": [
+          "Anode",
+          "Cathode"
+        ]
+      },
+      "continuity_balance": {
+        "enabled": true,
+        "contacts": [
+          "Anode",
+          "Cathode"
+        ]
+      },
+      "transport": {
+        "enabled": true
+      }
+    },
+    "growth_factor": 1.3,
+    "initial_step": 0.001,
+    "initialization": {
+      "mode": "poisson_block"
+    },
+    "max_retries": 20,
+    "max_step": 0.025,
+    "min_step": 1e-08,
+    "mode": "iv",
+    "shrink_factor": 0.5,
+    "start": 0.0,
+    "step": -0.1,
+    "stop": -1.0,
+    "vtk_prefix": "reverse/state",
+    "write_state_file": "reverse/last.csv",
+    "write_vtk": true,
+    "bias_points": [
+      -0.0,
+      -0.1,
+      -0.2,
+      -0.3,
+      -0.4,
+      -0.5,
+      -0.6,
+      -0.7,
+      -0.8,
+      -0.9,
+      -1.0
+    ],
+    "write_state_every_point_prefix": "reverse/accepted",
+    "stop_on_failure": true
+  }
+}

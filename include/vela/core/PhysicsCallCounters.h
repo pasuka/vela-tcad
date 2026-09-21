@@ -21,6 +21,7 @@ struct PhysicsCallCounters {
     std::uint64_t inverseFermiDiracHalf = 0;
     std::uint64_t equilibriumStateSolves = 0;
     std::uint64_t equilibriumStateIterations = 0;
+    std::uint64_t ialScreeningMinimumSolves = 0;
 };
 
 /**

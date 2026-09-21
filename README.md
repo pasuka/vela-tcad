@@ -106,9 +106,16 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
   libboost-dev \
   libeigen3-dev \
   nlohmann-json3-dev \
+  libspdlog-dev \
   catch2 \
+  python3 \
   libhdf5-dev
 ```
+
+Use these installation steps for initial setup or confirmed missing dependencies.
+Verify that the distribution provides Catch2 v3; CMake requires version 3.
+The Python interpreter is required even when the optional Python API is disabled.
+If running as root without `sudo`, omit `sudo` from these commands.
 
 Configure and build:
 
@@ -117,7 +124,8 @@ cmake --preset windows-ucrt64-debug
 cmake --build --preset windows-ucrt64-debug
 ```
 
-If Ninja is unavailable, omit `-G Ninja`.
+These presets require Ninja. For a Linux build without the Windows presets,
+see the out-of-tree build commands in [AGENTS.md](AGENTS.md#environment-and-build).
 
 The repository also ships `CMakePresets.json`, so CMake Tools and command-line
 workflows can share the same Windows UCRT64 configuration.
@@ -164,7 +172,8 @@ DLL such as `libcholmod.dll` is reported missing before any solver output, use
 the launcher with the matching UCRT64 installation to supply its search path. Build
 performance runs with the `windows-ucrt64-release` configure and build preset.
 
-Install packages from a UCRT64 shell:
+For initial setup or environment repair, install packages from a UCRT64 shell.
+`pacman -Syu` is a system update step, not a prerequisite for each repository task:
 
 ```bash
 pacman -Syu
@@ -175,6 +184,7 @@ pacman -S --needed \
   mingw-w64-ucrt-x86_64-boost \
   mingw-w64-ucrt-x86_64-eigen3 \
   mingw-w64-ucrt-x86_64-nlohmann-json \
+  mingw-w64-ucrt-x86_64-spdlog \
   mingw-w64-ucrt-x86_64-hdf5 \
   mingw-w64-ucrt-x86_64-catch \
   mingw-w64-ucrt-x86_64-python \

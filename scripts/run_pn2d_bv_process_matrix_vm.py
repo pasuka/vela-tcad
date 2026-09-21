@@ -20,7 +20,7 @@ from typing import Any
 if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.diagnose_pn2d_minimal6_element_avalanche_replay import parse_plt
+from scripts.sentaurus_avalanche_replay import parse_plt
 from scripts.pn2d_bv_process_contract import (
     EXACT_BIAS_TOLERANCE_V,
     SCHEMA_ID,
@@ -32,7 +32,7 @@ from scripts.pn2d_high_bias_process_contract import (
     SENTAURUS_RELEASE,
 )
 from scripts.run_pn2d_high_bias_oracle_variant_vm import oracle_deck, oracle_tcl
-from scripts.run_pn2d_minimal6_sentaurus_avalanche_drive_controls_vm import (
+from scripts.sentaurus_avalanche_controls import (
     validate_biases,
     validate_remote_root,
 )
@@ -66,11 +66,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--source-root",
         type=Path,
-        default=Path(
-            "build-release/reference_tcad/"
-            "pn2d_sentaurus2018_coarse7x3/sentaurus_vm_runs/"
-            "coarse7x3_vector_bv_20260627/source"
-        ),
+        required=True,
     )
     parser.add_argument(
         "--template-root",

@@ -1,0 +1,39 @@
+{
+  "schema": "vela.templates_ldmos.linked_d5_inputs.v1",
+  "template": "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/config.json",
+  "seeds": {
+    "4": "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/seeds/vg4_vd0.csv",
+    "8": "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/seeds/vg8_vd0.csv"
+  },
+  "references": {
+    "4": "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/reference_curves/vg4.csv",
+    "8": "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/reference_curves/vg8.csv"
+  },
+  "files": {
+    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/data/mesh.json": "36f79a06a21550d69fb58ad221457b1c1ccc63fa3a929046ef6b90e185f09ff6",
+    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/data/doping.csv": "b9924f72bf36386d031e7a168adbc997d9f076db1662b7b8c1e3416ad68acb39",
+    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/data/transport_couples.csv": "758161f73f570511ccd914628451ebcad58b5f8e58dd6b6351f00669e18b36cb",
+    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/reference_curves/vg4.csv": "3c9266b2616e2e779b853cee7bd94a0ee13478015d727c5bc2306ed8e152cb6a",
+    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/reference_curves/vg8.csv": "9545a194974f5f66205350df8585ca306fed87e9b8bcf15cfd7511a38e095d16",
+    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/data/materials_fermi_consistent_300k.json": "bcd6cd7ca25d9a7b9af45f7d71372b422b35a2201134b84c05ad65a6eff2ba52",
+    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/seeds/vg4_vd0.csv": "0e9685776c538f624ae62e31adf55feae7dc94ebdb22d5e8475435ec11ff9376",
+    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/seeds/vg8_vd0.csv": "4994de512efe74e5efece043ffb893f3225ce0ab3646682522ae00817b870a4a",
+    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/config.json": "ab467bb7ffb1b8a92384be6286126b02c4ee4edbabb9d39a97fe0b3ba65c4d5d"
+  },
+  "note": "Portable D5 validation fixture; paths relocated only, original physics and convergence gates unchanged. Source provenance is historical, not a runtime dependency.",
+  "parameter_audit": {
+    "source": "reference_staging/templates_ldmos_followup_20260911/ialmob_difference_location/native/bundle/Siliconc100.par",
+    "sha256": "892759d4bdc9ad80972800f8c1162c57f42da181b03f521761efd37a5a11b9d8",
+    "Auger": {
+      "H": [
+        3.46667,
+        8.25688
+      ],
+      "N0": [
+        1e+18,
+        1e+18
+      ]
+    },
+    "N0_input_units": "cm^-3 (unit_scaling)"
+  }
+}

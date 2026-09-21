@@ -14,6 +14,8 @@ struct DCSweepStepControlConfig {
     Real minStep = 0.0;
     Real maxStep = 0.0;
     Real growthFactor = 1.0;
+    std::string growthMode = "fixed";
+    int newtonIterationLimit = 0;
     Real shrinkFactor = 0.5;
     int maxRetries = 5;
     bool stopOnFailure = true;
@@ -32,10 +34,23 @@ struct DCSweepStepControlEvent {
     Real acceptedStep = 0.0;
     int retryCount = 0;
     std::string failureReason;
+    int newtonIterations = -1;
+    Real growthFactor = 1.0;
+    Real nextStepMagnitude = 0.0;
+};
+
+struct DCSweepStepAttemptResult {
+    bool converged = false;
+    int newtonIterations = -1;
+    bool recovered = false;
+
+    // Preserve existing bool callbacks in fixed-growth users of the controller.
+    DCSweepStepAttemptResult(bool ok, int iterations = -1, bool usedRecovery = false)
+        : converged(ok), newtonIterations(iterations), recovered(usedRecovery) {}
 };
 
 using DCSweepStepAttempt =
-    std::function<bool(Real voltage, Real attemptedStep, int retryCount)>;
+    std::function<DCSweepStepAttemptResult(Real voltage, Real attemptedStep, int retryCount)>;
 using DCSweepStepRecorder = std::function<void(const DCSweepStepControlEvent& event)>;
 
 void runDCSweepStepControl(const DCSweepStepControlConfig& cfg,

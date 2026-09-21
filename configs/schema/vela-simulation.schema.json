@@ -24,6 +24,18 @@
       "minItems": 2,
       "type": "array"
     },
+    "discretization": {
+      "additionalProperties": true,
+      "properties": {
+        "poisson_charge_volume_policy": {
+          "enum": [
+            "global",
+            "material_local"
+          ]
+        }
+      },
+      "type": "object"
+    },
     "materials_file": {
       "minLength": 1,
       "type": "string"
@@ -31,6 +43,23 @@
     "mesh_geometry": {
       "additionalProperties": true,
       "properties": {
+        "carrier_transport_couple_profile": {
+          "enum": [
+            "mesh_default",
+            "templates_ldmos_external_averagebox"
+          ]
+        },
+        "external_averagebox_couples_file": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "external_averagebox_expected_edges": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "fallback_negative_cotangent": {
+          "type": "boolean"
+        },
         "node_volume_policy": {
           "enum": [
             "barycentric",
@@ -61,6 +90,39 @@
     "solver": {
       "additionalProperties": true,
       "properties": {
+        "block_absolute_convergence": {
+          "additionalProperties": false,
+          "properties": {
+            "electron_residual_ceiling": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "hole_residual_ceiling": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "mode": {
+              "enum": ["off", "enforce"]
+            },
+            "psi_residual_ceiling": {
+              "minimum": 0,
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "contact_majority_qf_branch_drop_limit_V": {
+          "minimum": 0,
+          "type": "number"
+        },
+        "contact_majority_qf_branch_guard_contacts": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
         "impact_ionization": {
           "additionalProperties": true,
           "properties": {

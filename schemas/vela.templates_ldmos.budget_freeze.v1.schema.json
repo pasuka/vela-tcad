@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vela.local/schemas/vela.templates_ldmos.budget_freeze.v1.schema.json",
+  "title": "Templates/LDMOS execution budget freeze v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "benchmark", "revision", "basis", "scenarios", "scope_budgets", "matrix_policy", "approval"],
+  "properties": {
+    "schema": {"const": "vela.templates_ldmos.budget_freeze.v1"},
+    "benchmark": {"const": "sentaurus_t2022_03_sp2_templates_ldmos"},
+    "revision": {"type": "integer", "minimum": 1},
+    "basis": {
+      "type": "object", "additionalProperties": false,
+      "required": ["vela_commit", "oracle_manifest_sha256", "probe"],
+      "properties": {
+        "vela_commit": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"},
+        "oracle_manifest_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "probe": {"type": "object", "additionalProperties": {"type": ["number", "integer", "string", "boolean", "null"]}}
+      }
+    },
+    "scenarios": {
+      "type": "array", "minItems": 3,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "wall_clock_hours", "peak_memory_gib", "storage_gib", "max_concurrency"],
+        "properties": {
+          "name": {"enum": ["best", "base", "worst"]},
+          "wall_clock_hours": {"type": ["number", "null"], "minimum": 0},
+          "peak_memory_gib": {"type": ["number", "null"], "minimum": 0},
+          "storage_gib": {"type": ["number", "null"], "minimum": 0},
+          "max_concurrency": {"type": ["integer", "null"], "minimum": 1}
+        }
+      }
+    },
+    "scope_budgets": {
+      "type": "array", "minItems": 3,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["scope", "status", "best_wall_clock_hours", "base_wall_clock_hours", "worst_wall_clock_hours", "estimated_bias_points"],
+        "properties": {
+          "scope": {"enum": ["phase_a", "phase_a_plus", "phase_b"]},
+          "status": {"enum": ["estimated", "not_applicable", "pending_evidence"]},
+          "best_wall_clock_hours": {"type": ["number", "null"], "minimum": 0},
+          "base_wall_clock_hours": {"type": ["number", "null"], "minimum": 0},
+          "worst_wall_clock_hours": {"type": ["number", "null"], "minimum": 0},
+          "estimated_bias_points": {"type": ["integer", "null"], "minimum": 0}
+        }
+      }
+    },
+    "matrix_policy": {"type": "string", "minLength": 1},
+    "approval": {"$ref": "#/$defs/approval"}
+  },
+  "$defs": {
+    "approval": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "benchmark_owner", "independent_reviewer", "approved_at"],
+      "properties": {
+        "status": {"enum": ["draft", "approved", "rejected", "expired"]},
+        "benchmark_owner": {"type": ["string", "null"]},
+        "independent_reviewer": {"type": ["string", "null"]},
+        "approved_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    }
+  }
+}

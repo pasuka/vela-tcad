@@ -1,0 +1,26 @@
+[
+  {
+    "id": "D1",
+    "mesh": "M2",
+    "scope": "interrupted partial EP128 strict-RHS cost control; not a failed physical comparison or completed reference",
+    "archive": "D1\\M2\\EP128_strict_cost_control"
+  },
+  {
+    "id": "D1",
+    "mesh": "M3",
+    "scope": "interrupted partial EP128 strict-RHS cost control; not a failed physical comparison or completed reference",
+    "archive": "D1\\M3\\EP128_strict_cost_control"
+  },
+  {
+    "id": "D2",
+    "mesh": "M2",
+    "scope": "interrupted partial EP128 strict-RHS cost control; not a failed physical comparison or completed reference",
+    "archive": "D2\\M2\\EP128_strict_cost_control"
+  },
+  {
+    "id": "D2",
+    "mesh": "M3",
+    "scope": "interrupted partial EP128 strict-RHS cost control; not a failed physical comparison or completed reference",
+    "archive": "D2\\M3\\EP128_strict_cost_control"
+  }
+]

@@ -537,7 +537,7 @@ TEST_CASE("SentaurusTdrReader exports neutral reference TCAD CSV files", "[senta
     REQUIRE(std::filesystem::is_regular_file(outDir / "field_manifest.json"));
 
     const std::string contacts = readFile(outDir / "contacts.csv");
-    REQUIRE(contacts.find("drain,1;2;3,Silicon_1") != std::string::npos);
+    REQUIRE(contacts.find("drain,1;2;3,1-2;2-3,Silicon_1") != std::string::npos);
 
     const auto dopingRows = readCsvRows(outDir / "doping.csv");
     REQUIRE(dopingRows.size() == 4);
@@ -601,6 +601,29 @@ TEST_CASE("SentaurusTdrReader exports neutral reference TCAD CSV files", "[senta
     REQUIRE(cellRows[1][0] == "1");
     REQUIRE(std::stod(cellRows[1][1]) == Catch::Approx(30.0));
     REQUIRE(std::stod(cellRows[1][2]) == Catch::Approx(40.0));
+}
+
+TEST_CASE("SentaurusTdrReader explicitly converts SProcess centimetre geometry to micrometres",
+          "[sentaurus][tdr]")
+{
+    const auto path = writeSyntheticTdr();
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_export_cm");
+    std::error_code ec;
+    std::filesystem::remove_all(outDir, ec);
+
+    SentaurusTdrReader reader;
+    SentaurusTdrExportOptions options;
+    options.coordinateUnit = "cm";
+    reader.exportNeutral(path.string(), outDir.string(), options);
+
+    const auto rows = readCsvRows(outDir / "nodes.csv");
+    REQUIRE(rows.size() == 4);
+    REQUIRE(std::stod(rows[1][1]) == Catch::Approx(1.0e4));
+    REQUIRE(std::stod(rows[2][2]) == Catch::Approx(1.0e4));
+    const auto metadata = nlohmann::json::parse(readFile(outDir / "metadata.json"));
+    REQUIRE(metadata["source_coordinate_unit"] == "cm");
+    REQUIRE(metadata["exported_coordinate_unit"] == "um");
+    REQUIRE(metadata["coordinate_to_um_scale"].get<double>() == Catch::Approx(1.0e4));
 }
 
 TEST_CASE("SentaurusTdrReader preserves small scalar field differences in CSV export",
@@ -867,6 +890,24 @@ TEST_CASE("SentaurusTdrReader sums active dopant species when no aggregate field
     REQUIRE(std::stod(rows[3][0]) == Catch::Approx(3.0));
     REQUIRE(std::stod(rows[3][1]) == Catch::Approx(4.8e17));
     REQUIRE(std::stod(rows[3][2]) == Catch::Approx(9.0e16));
+}
+
+TEST_CASE("SentaurusTdrReader accepts SProcess abbreviated active dopant fields", "[sentaurus][tdr]")
+{
+    const auto outDir = uniqueTempDirectory("vela_synthetic_sentaurus_export_sprocess_active");
+    const auto dopingCsv = exportSyntheticDopingCsv({
+        {"PActive", {1.0e17, 2.0e17, 3.0e17, 4.0e17}},
+        {"AsActive", {5.0e16, 6.0e16, 7.0e16, 8.0e16}},
+        {"BActive", {1.0e16, 2.0e16, 3.0e16, 4.0e16}},
+        {"NetActive", {1.4e17, 2.4e17, 3.4e17, 4.4e17}},
+    }, outDir);
+
+    const auto rows = readCsvRows(dopingCsv);
+    REQUIRE(rows.size() == 4);
+    REQUIRE(std::stod(rows[0][1]) == Catch::Approx(1.5e17));
+    REQUIRE(std::stod(rows[0][2]) == Catch::Approx(1.0e16));
+    REQUIRE(std::stod(rows[3][1]) == Catch::Approx(4.8e17));
+    REQUIRE(std::stod(rows[3][2]) == Catch::Approx(4.0e16));
 }
 
 TEST_CASE("SentaurusTdrReader prefers aggregate dopant totals over active species for the same region", "[sentaurus][tdr]")

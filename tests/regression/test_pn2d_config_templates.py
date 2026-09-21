@@ -305,6 +305,11 @@ class Pn2dConfigTemplatesTest(unittest.TestCase):
         self.assertIn("initial_step", schema["properties"]["sweep"]["required"])
         sweep_properties = schema["properties"]["sweep"]["properties"]
         self.assertIn("write_state_every_point_prefix", sweep_properties)
+        solver_properties = schema["properties"]["solver"]["properties"]
+        self.assertIn("block_absolute_convergence", solver_properties)
+        self.assertIn(
+            "contact_majority_qf_branch_guard_contacts", solver_properties
+        )
         newton_history = sweep_properties["diagnostics"]["properties"]["newton_history"]
         self.assertIn("attempts_csv_file", newton_history["properties"])
         self.assertIn("iterations_csv_file", newton_history["properties"])

@@ -44,6 +44,15 @@ public:
     void buildBoxGeometry();
     void buildBoxGeometry(const BoxGeometryBuilder::Options& options);
 
+    /// Install an explicit carrier-transport-only edge coupling. The
+    /// electrostatic box coupling remains unchanged.
+    void setTransportCouple(Index edgeId, Real couple);
+    void clearTransportCoupleOverrides();
+
+    /// Install an explicit electrostatic edge coupling. Carrier transport
+    /// remains on its independent override when one has already been set.
+    void setPoissonCouple(Index edgeId, Real couple);
+
     // ------------------------------------------------------------------
     // Queries
     // ------------------------------------------------------------------

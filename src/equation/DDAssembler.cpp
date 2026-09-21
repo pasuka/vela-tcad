@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -146,10 +147,14 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
           mesh, matdb, Vt * constants::q / constants::kb, true))
     , Nv_(detail::buildNodeDensityOfStates(
           mesh, matdb, Vt * constants::q / constants::kb, false))
+    , cellMaterials_(detail::buildCellMaterials(
+          mesh, matdb, Vt * constants::q / constants::kb))
     , edgeCells_(detail::buildEdgeCellMap(mesh))
     , nodeCells_(detail::buildNodeCellMap(mesh))
     , vol_(detail::computeNodeVolumes(mesh))
-    , couple_(detail::computeEdgeCouplings(mesh))
+    , poissonChargeVol_(detail::computePoissonChargeVolumes(
+          mesh, cellMaterials_, scaling.poissonChargeVolumePolicy))
+    , couple_(detail::computeTransportEdgeCouplings(mesh))
     , fixedInterfaceChargeRhs_(detail::computeFixedAndInterfaceChargeRhs(
           mesh,
           edgeCells_,
@@ -225,6 +230,15 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
         const Real eps = detail::edgeEpsilon(edgeCells_, mesh_, matdb_, e);
         const Real G   = eps * couple_[e] / h;
 
+        if (!std::isfinite(G)) {
+            std::ostringstream message;
+            message << "DDAssembler::assemblePoissonWithCarriers: non-finite edge "
+                    << "coefficient at edge " << e << " (nodes " << edge.n0
+                    << ',' << edge.n1 << ", eps_F_per_m=" << eps
+                    << ", couple=" << couple_[e] << ", length=" << h << ')';
+            throw std::runtime_error(message.str());
+        }
+
         auto i = static_cast<int>(edge.n0);
         auto j = static_cast<int>(edge.n1);
 
@@ -247,7 +261,7 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
         const Real ni_v   = scaling_.enabled ? n(ii) * scaling_.C0 : n(ii);
         const Real pi_v   = scaling_.enabled ? p(ii) * scaling_.C0 : p(ii);
         const Real psi_v  = scaling_.enabled ? psi(ii) * scaling_.V0 : psi(ii);
-        const Real vol_i  = vol_[i];
+        const Real vol_i  = poissonChargeVol_[i];
         const Real chargeAreaFactor = scaling_.enabled ? scaling_.chargeAreaFactor : 1.0;
 
         Real electronDerivativeEta = ni_v;
@@ -261,11 +275,32 @@ void DDAssembler::assemblePoissonWithCarriers(const VectorXd& n,
         const Real matrixScale = scaling_.enabled
             ? (1.0 / scaling_.permittivityReference_F_per_m)
             : 1.0;
+        if (!std::isfinite(diagCarrier) || !std::isfinite(matrixScale)) {
+            std::ostringstream message;
+            message << "DDAssembler::assemblePoissonWithCarriers: non-finite carrier "
+                    << "diagonal at node " << i << " (n=" << ni_v
+                    << ", p=" << pi_v << ", dn_deta=" << electronDerivativeEta
+                    << ", dp_deta=" << holeDerivativeEta << ", Vt=" << Vt_
+                    << ", volume=" << vol_i << ", charge_area_factor="
+                    << chargeAreaFactor << ", matrix_scale=" << matrixScale
+                    << ", concentration_scale=" << scaling_.C0 << ')';
+            throw std::runtime_error(message.str());
+        }
         A_.coeffRef(ii, ii) += diagCarrier * matrixScale;
 
         const Real rhs_si = constants::q *
                  (pi_v - ni_v + doping_.netDoping(i)) * vol_i * chargeAreaFactor
                  + diagCarrier * psi_v;
+        if (!std::isfinite(rhs_si)) {
+            std::ostringstream message;
+            message << "DDAssembler::assemblePoissonWithCarriers: non-finite Poisson "
+                    << "RHS at node " << i << " (n=" << ni_v << ", p=" << pi_v
+                    << ", net_doping=" << doping_.netDoping(i) << ", volume="
+                    << vol_i << ", charge_area_factor=" << chargeAreaFactor
+                    << ", carrier_diagonal=" << diagCarrier << ", psi=" << psi_v
+                    << ')';
+            throw std::runtime_error(message.str());
+        }
         b_(ii) = scaling_.enabled
             ? rhs_si / (scaling_.permittivityReference_F_per_m * scaling_.V0)
             : rhs_si;
@@ -302,6 +337,13 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
     const VectorXd phinForMobility =
         electronQuasiFermiFromDensity(
             psiForMobility, n_old, ni_, Nc_, Vt_, scaling_, carrierStatistics_);
+    if (mobilityConfig_.model == "ialmob") {
+        const VectorXd phipForMobility = holeQuasiFermiFromDensity(
+            psiForMobility,p_old,ni_,Nv_,Vt_,scaling_,carrierStatistics_);
+        const Real densityScale=scaling_.enabled?scaling_.C0:1.;
+        updateIalTransportState(mobilityConfig_,mesh_,doping_,psiForMobility,
+            n_old*densityScale,p_old*densityScale,phinForMobility,phipForMobility);
+    }
     const bool qfMobility = mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
     const Real fieldFactor = scaling_.enabled ? scaling_.fieldFromCoordinateDeltaFactor : 1.0;
     const bool vectorQfMobility = qfMobility &&
@@ -309,6 +351,12 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
     const std::vector<Real> electronVectorMobilityFields = vectorQfMobility
         ? detail::transportCellVectorEdgeGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials, phinForMobility, fieldFactor)
+        : std::vector<Real>{};
+    const std::vector<Real> contactElectricMobilityFields =
+        mobilityConfig_.contactElectricFieldFallback
+        ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              mobilityConfig_, mesh_, edgeCells_, cellMaterials,
+              psiForMobility, fieldFactor)
         : std::vector<Real>{};
     const Real sourceIntegralFactor = scaling_.enabled
         ? scaling_.unitSystem.continuitySourceIntegralFactor()
@@ -327,12 +375,12 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
             ? psi(static_cast<int>(edge.n1)) * scaling_.V0
             : psi(static_cast<int>(edge.n1));
         const Real electricField = std::abs((psi1 - psi0) / h) * fieldFactor;
-        const Real electronMobilityField = vectorQfMobility
-            ? electronVectorMobilityFields[e]
-            : qfMobility
-            ? std::abs((phinForMobility(static_cast<int>(edge.n1)) -
-                        phinForMobility(static_cast<int>(edge.n0))) / h) * fieldFactor
-            : electricField;
+        const Real electronMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? electronVectorMobilityFields[e]
+                : std::abs((phinForMobility(static_cast<int>(edge.n1)) -
+                            phinForMobility(static_cast<int>(edge.n0))) / h) * fieldFactor,
+            electricField, contactElectricMobilityFields);
         const Real mun = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Electron,
             electronMobilityField,
@@ -531,6 +579,13 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
     const VectorXd phipForMobility =
         holeQuasiFermiFromDensity(
             psiForMobility, p_old, ni_, Nv_, Vt_, scaling_, carrierStatistics_);
+    if (mobilityConfig_.model == "ialmob") {
+        const VectorXd phinForMobility = electronQuasiFermiFromDensity(
+            psiForMobility,n_old,ni_,Nc_,Vt_,scaling_,carrierStatistics_);
+        const Real densityScale=scaling_.enabled?scaling_.C0:1.;
+        updateIalTransportState(mobilityConfig_,mesh_,doping_,psiForMobility,
+            n_old*densityScale,p_old*densityScale,phinForMobility,phipForMobility);
+    }
     const bool qfMobility = mobilityConfig_.highFieldDrivingForce == "quasi_fermi_gradient";
     const Real fieldFactor = scaling_.enabled ? scaling_.fieldFromCoordinateDeltaFactor : 1.0;
     const bool vectorQfMobility = qfMobility &&
@@ -538,6 +593,12 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
     const std::vector<Real> holeVectorMobilityFields = vectorQfMobility
         ? detail::transportCellVectorEdgeGradientMagnitudes(
               mesh_, edgeCells_, cellMaterials, phipForMobility, fieldFactor)
+        : std::vector<Real>{};
+    const std::vector<Real> contactElectricMobilityFields =
+        mobilityConfig_.contactElectricFieldFallback
+        ? detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              mobilityConfig_, mesh_, edgeCells_, cellMaterials,
+              psiForMobility, fieldFactor)
         : std::vector<Real>{};
     const Real sourceIntegralFactor = scaling_.enabled
         ? scaling_.unitSystem.continuitySourceIntegralFactor()
@@ -556,12 +617,12 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
             ? psi(static_cast<int>(edge.n1)) * scaling_.V0
             : psi(static_cast<int>(edge.n1));
         const Real electricField = std::abs((psi1 - psi0) / h) * fieldFactor;
-        const Real holeMobilityField = vectorQfMobility
-            ? holeVectorMobilityFields[e]
-            : qfMobility
-            ? std::abs((phipForMobility(static_cast<int>(edge.n1)) -
-                        phipForMobility(static_cast<int>(edge.n0))) / h) * fieldFactor
-            : electricField;
+        const Real holeMobilityField = detail::mobilityHighFieldDrivingField(
+            mobilityConfig_, e,
+            vectorQfMobility ? holeVectorMobilityFields[e]
+                : std::abs((phipForMobility(static_cast<int>(edge.n1)) -
+                            phipForMobility(static_cast<int>(edge.n0))) / h) * fieldFactor,
+            electricField, contactElectricMobilityFields);
         const Real mup = detail::edgeMobility(
             edgeCells_, mesh_, doping_, *mobility_, cellMaterials, e, CarrierType::Hole,
             holeMobilityField,

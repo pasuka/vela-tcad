@@ -1,0 +1,14 @@
+{
+  "scope": "diagnostic_only",
+  "id": "D1",
+  "mesh": "M3",
+  "precision_bits": 80,
+  "digits": 8,
+  "version": "T-2022.03-SP2",
+  "remote": "/home/tcad/sentaurus_runs/vela_oracle_2022/pn2d_variants_8ff9b76aac2e/diagnostics/native_precision/D1_M3_EP80",
+  "source_mesh_sha256": "279e5e32d3cc922449bb3bd92d9e34c6c2d1e46a87ac80956be02fce50a9edfc",
+  "deck_sha256": "09dea95f63e0d969524dbab77c9f27fabd1782825ed166efcd0a99ed65e6147b",
+  "models_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+  "returncode": 0,
+  "status": "complete"
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "vela.ldmos.frozen_production_profile.v1",
+  "qualification": "R9 contact-consistency recommended explicit profile; Linux Release dual-gate 62 points, real pause/resume and two repeat pairs; original gates. Rebuilding or exporting is not new qualification.",
+  "archive_sha256": "8b92c1aeb9c9e657a86ebb345b56b1c07b7cddd72427364c5a9934e36a6cea7f",
+  "qualified_linux_runner_sha256": "9ce076b51e84ee546f5fce40bdd19424166cba7176bea1b5ce06308165f22ee0",
+  "files_sha256": {
+    "cases/data/mesh.json": "36f79a06a21550d69fb58ad221457b1c1ccc63fa3a929046ef6b90e185f09ff6",
+    "cases/data/ialmob_geometry.json": "250d525d123b17df3a698dbb76bae3f2914a8bd0f7b6028b12acf76cfb35f12b",
+    "extrapolation_20260915/contact_sweep_20260916/full/r0_vg4_contact/input.json": "bb0265515fc49030322be0fbe0db3035fe0e5a471c849cfaeb0d273ae14c1a4b",
+    "extrapolation_20260915/contact_sweep_20260916/full/r0_vg4_contact/deck.json": "ea4065b98a2fbb4517c03c60ec3625320320b31ffd98da159366c8e5f5e7f042",
+    "extrapolation_20260915/contact_sweep_20260916/full/r0_vg8_contact/input.json": "f9b6e6288bb81422612ea0ba569167f8acf606bec4e38f1136567bc7bf003c41",
+    "extrapolation_20260915/contact_sweep_20260916/full/r0_vg8_contact/deck.json": "f225e40eee3e154f0ec9bf98bd06543a4fc29aaa867e1432eeb2f1b0f2960e39"
+  },
+  "dependencies": [
+    {
+      "recorded_path": "/home/tcad/sentaurus_runs/vela_oracle_2022/vela_build_20260914/cases/data/mesh.json",
+      "evidence_path": "cases/data/mesh.json",
+      "bundle_path": "data/mesh.json"
+    },
+    {
+      "recorded_path": "/home/tcad/sentaurus_runs/vela_oracle_2022/vela_build_20260914/cases/data/ialmob_geometry.json",
+      "evidence_path": "cases/data/ialmob_geometry.json",
+      "bundle_path": "data/ialmob_geometry.json"
+    }
+  ],
+  "cases": [
+    {
+      "gate_V": 4,
+      "input": "extrapolation_20260915/contact_sweep_20260916/full/r0_vg4_contact/input.json",
+      "deck": "extrapolation_20260915/contact_sweep_20260916/full/r0_vg4_contact/deck.json"
+    },
+    {
+      "gate_V": 8,
+      "input": "extrapolation_20260915/contact_sweep_20260916/full/r0_vg8_contact/input.json",
+      "deck": "extrapolation_20260915/contact_sweep_20260916/full/r0_vg8_contact/deck.json"
+    }
+  ],
+  "dependency_archive_sha256": "a01f29aabc39dc570534c74a1d727ce231f82ad4bce791ae2bae1779bc281719",
+  "evidence_layout": "Extract contact full archive below extrapolation_20260915/contact_sweep_20260916; add the hash-checked cases/data dependencies from the R7 archive."
+}

@@ -1,0 +1,74 @@
+{
+  "schema": "vela.templates_ldmos.portable_reference.v1",
+  "profile": "D5",
+  "reference_release": "Sentaurus T-2022.03-SP2",
+  "extraction": "Previously qualified neutral exact-topology JSON and normalized CSV; byte copies except config path relocation.",
+  "units": {
+    "mesh_coordinates": "m",
+    "doping": "as named by CSV columns; cm^-3 input with unit_scaling",
+    "seed_potential": "V",
+    "seed_density": "m^-3",
+    "reference_bias": "V",
+    "reference_current": "A/um"
+  },
+  "current_sign": "Signed drain terminal current; original reference sign preserved.",
+  "source_bundle": "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d5_auger_no_generation_inputs.json",
+  "source_bundle_sha256": "5ea4eac9a4d897e8a4cae07243c3b361abece04c763fadba4a5ba8b2198c63a2",
+  "files": [
+    {
+      "path": "data/mesh.json",
+      "original_path": "reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/stage1_v4/vela_exact_topology/mesh.json",
+      "original_sha256": "36f79a06a21550d69fb58ad221457b1c1ccc63fa3a929046ef6b90e185f09ff6",
+      "sha256": "36f79a06a21550d69fb58ad221457b1c1ccc63fa3a929046ef6b90e185f09ff6"
+    },
+    {
+      "path": "data/doping.csv",
+      "original_path": "reference_staging/templates_ldmos_sentaurus2022/phase01_original_20260826_02/stage1_v4/vela_exact_topology/doping.csv",
+      "original_sha256": "b9924f72bf36386d031e7a168adbc997d9f076db1662b7b8c1e3416ad68acb39",
+      "sha256": "b9924f72bf36386d031e7a168adbc997d9f076db1662b7b8c1e3416ad68acb39"
+    },
+    {
+      "path": "data/transport_couples.csv",
+      "original_path": "reference_staging/templates_ldmos_averagebox_full_mesh_20260831/transport_couples.csv",
+      "original_sha256": "758161f73f570511ccd914628451ebcad58b5f8e58dd6b6351f00669e18b36cb",
+      "sha256": "758161f73f570511ccd914628451ebcad58b5f8e58dd6b6351f00669e18b36cb"
+    },
+    {
+      "path": "reference_curves/vg4.csv",
+      "original_path": "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg1_n4_des_drain_curve.csv",
+      "original_sha256": "3c9266b2616e2e779b853cee7bd94a0ee13478015d727c5bc2306ed8e152cb6a",
+      "sha256": "3c9266b2616e2e779b853cee7bd94a0ee13478015d727c5bc2306ed8e152cb6a"
+    },
+    {
+      "path": "reference_curves/vg8.csv",
+      "original_path": "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg2_n4_des_drain_curve.csv",
+      "original_sha256": "9545a194974f5f66205350df8585ca306fed87e9b8bcf15cfd7511a38e095d16",
+      "sha256": "9545a194974f5f66205350df8585ca306fed87e9b8bcf15cfd7511a38e095d16"
+    },
+    {
+      "path": "data/materials_fermi_consistent_300k.json",
+      "original_path": "reference_tcad/templates_ldmos_sentaurus2022/profiles/materials_fermi_consistent_300k.json",
+      "original_sha256": "bcd6cd7ca25d9a7b9af45f7d71372b422b35a2201134b84c05ad65a6eff2ba52",
+      "sha256": "bcd6cd7ca25d9a7b9af45f7d71372b422b35a2201134b84c05ad65a6eff2ba52"
+    },
+    {
+      "path": "seeds/vg4_vd0.csv",
+      "original_path": "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg4_qualified/state.csv",
+      "original_sha256": "0e9685776c538f624ae62e31adf55feae7dc94ebdb22d5e8475435ec11ff9376",
+      "sha256": "0e9685776c538f624ae62e31adf55feae7dc94ebdb22d5e8475435ec11ff9376"
+    },
+    {
+      "path": "seeds/vg8_vd0.csv",
+      "original_path": "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg8_qualified/state.csv",
+      "original_sha256": "4994de512efe74e5efece043ffb893f3225ce0ab3646682522ae00817b870a4a",
+      "sha256": "4994de512efe74e5efece043ffb893f3225ce0ab3646682522ae00817b870a4a"
+    },
+    {
+      "path": "config.json",
+      "original_path": "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d5_auger_no_generation_config.json",
+      "original_sha256": "d8c75f866f402ae82682cd6b3ddd2a21d4358b94f10451099256a264608dfc37",
+      "sha256": "ab467bb7ffb1b8a92384be6286126b02c4ee4edbabb9d39a97fe0b3ba65c4d5d"
+    }
+  ],
+  "qualification": "Historical R11 D5 full-curve evidence remains configuration-specific; newly built runner requires fresh verification."
+}

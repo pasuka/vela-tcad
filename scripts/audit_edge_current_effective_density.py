@@ -70,14 +70,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--node-compare",
         type=Path,
-        default=(
-            REPO / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/reports"
-            / "coarse_previous_full20_fields_20260629_155228/coarse_node_field_compare_aligned.csv"
-        ),
+        required=True,
     )
     parser.add_argument("--sg-formula-sweep", type=Path, default=REPO / "build/diagnostics/sg_edge_current_formula_sweep.csv")
     parser.add_argument("--cell-vector-reconstruction", type=Path, default=REPO / "build/diagnostics/edge_to_cell_vector_current_reconstruction.csv")
-    parser.add_argument("--elements-csv", type=Path, default=REPO / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/imported_reference_fields_20260629_155228/elements.csv")
+    parser.add_argument("--elements-csv", type=Path)
     parser.add_argument("--biases", default="0,-5,-10,-16,-18,-20")
     parser.add_argument("--bias-tol", type=float, default=1.0e-6)
     parser.add_argument("--delta-phi-floor", type=float, default=DELTA_PHI_FLOOR_V)

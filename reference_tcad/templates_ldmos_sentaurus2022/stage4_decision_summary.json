@@ -1,0 +1,111 @@
+{
+  "schema": "vela.templates_ldmos.stage4_decision_summary.v1",
+  "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
+  "generated_on": "2026-09-03",
+  "status": "vela_d5_vg4_partial_through_0p8_after_qf_recenter",
+  "sentaurus_ablation": {
+    "status": "pass",
+    "variants": [
+      "D1-isothermal",
+      "D2-no-hRecVelocity",
+      "D3-no-hQP",
+      "D4-classical",
+      "D5-no-IALMob"
+    ],
+    "hrec_velocity": {
+      "implementation_required": false,
+      "max_curve_change_percent": 4.352074256530614e-12,
+      "max_contact_component_abs_delta_A_per_um": 1.5016200088924236e-17,
+      "max_contact_component_delta_over_terminal_current": 4.480426838072006e-14,
+      "resolved_contact_component_sign_changes": 0
+    },
+    "hqp_and_eqp_control": {
+      "curve_change_at_numerical_noise_floor": true,
+      "qualification": "The shipped IdVd Solve blocks do not include eQuantumPotential or hQuantumPotential equations; this is an inactive-declaration control, not an active-DG implementation qualification."
+    },
+    "ialmob": {
+      "implementation_required": true,
+      "vg4_median_change_percent": 59.837904184269696,
+      "vg4_p95_change_percent": 60.73684888414923,
+      "vg4_endpoint_change_percent": 59.335665728132206,
+      "vg8_median_change_percent": 21.96273879070901,
+      "vg8_p95_change_percent": 46.46671074045658,
+      "vg8_endpoint_change_percent": 19.20467463865716
+    },
+    "self_heating": {
+      "vg4_endpoint_change_percent": 19.42916047064791,
+      "vg8_endpoint_change_percent": 48.554248855063676,
+      "classification": "phase_b_required"
+    }
+  },
+  "vela_d5": {
+    "gate_prebias_vd0": {
+      "status": "pass",
+      "bias_points": 17,
+      "vg4_state_sha256": "ab22fd6f665397e2a37c0aa0d7aa2297342a4c73af02669b33052795aa83ef6e",
+      "vg8_state_sha256": "afcb1dfed78a6c0e8d6ef1f8c4e2a391dc13b29bb316993c594e16d096b052b2"
+    },
+    "bounded_first_step": {
+      "gate_V": 4.0,
+      "drain_V": 0.01,
+      "max_iterations": 40,
+      "predictor": false,
+      "drain_branch_guard": false,
+      "status": "fail",
+      "reason": "block_absolute_convergence",
+      "initial_scaled_residual": 1.4142135623730951,
+      "best_scaled_residual": 0.22519355842346422,
+      "best_iteration": 3,
+      "final_scaled_residual": 1.4085386912722671,
+      "final_poisson_block": 18.129384,
+      "final_electron_block": 20034.71608,
+      "final_hole_block": 4.9e-5,
+      "top_poisson_node": 695,
+      "top_poisson_node_x_um": -9.976355,
+      "top_poisson_node_y_um": 10.119157
+    },
+    "lagged_mobility_jacobian_reclose": {
+      "status": "pass",
+      "jacobian_field_derivatives": false,
+      "drain_V": 0.01,
+      "newton_iterations": 4,
+      "final_poisson_block": 7.693212818810222e-10,
+      "final_electron_block": 9.271133321828182e-13,
+      "drain_current_A_per_um": 9.254405994855323e-7,
+      "full_vg4_curve": "partial_through_0p8_not_yet_qualified"
+    },
+    "complete_contact_hfs_stencil": {
+      "status": "pass",
+      "device_jvp_max_relative_error": 2.5216865011599766e-10,
+      "historical_max_relative_error": 0.00228226077872241
+    },
+    "initial_state_qf_recenter": {
+      "status": "pass",
+      "representation_only": true,
+      "original_failed_bias_V": 0.1625,
+      "live_hfs_explicit_points_to_0p2": 25,
+      "lagged_vs_live_endpoint_current_relative_difference": 5.924150059399835e-13,
+      "production_min_step_V": 0.001,
+      "production_initial_step_V": 0.0025,
+      "production_growth_factor": 1.0,
+      "production_max_retries": 12
+    },
+    "no_predictor_continuation_cost": {
+      "highest_accepted_drain_bias_V": 0.8,
+      "accepted_internal_substeps_0p4_to_0p6": 64,
+      "accepted_step_checkpointing_status": "pass",
+      "checkpoint_test_persisted_states_0p6_to_0p65": 17,
+      "rolling_checkpoint_updated_each_internal_step": true,
+      "growth_factor_2_control": "rejected_for_repeated_growth_shrink_cost",
+      "production_growth_factor": 1.0,
+      "classification": "runtime blocker; accepted internal steps are resumable; no partial curve score"
+    }
+  },
+  "evidence_sha256": {
+    "prepared_manifest": "1b8ef2f3de1bc9e1fc13646b9a4d9e253425485a5e5e7a73e70fe1264ba68181",
+    "sentaurus_run_manifest": "827dfb741b51d55c64334d74d1525820b073c7373f8588e6f8bd0cadf2e40ffc",
+    "sentaurus_analysis": "a4aa381194e41f9ab05c721940a537bb780d58ebfb18ed22e0f448b1f8cd21e3",
+    "vela_bounded_run_summary": "5c29152b3407005c443984177cf0384b2bd48cb1a164a936c0666df8af496065",
+    "vela_failure_diagnostics": "2c1dda0238ee5edb71dfd9188296d44f137ad5a0b5ff0f19fec886e848776242"
+  }
+}

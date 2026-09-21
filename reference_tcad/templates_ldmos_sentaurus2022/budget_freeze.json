@@ -1,0 +1,74 @@
+{
+  "approval": {
+    "approved_at": "2026-08-26T12:41:25Z",
+    "benchmark_owner": "Ted Chin (explicit Codex task authorization)",
+    "independent_reviewer": "OpenAI Codex evidence reviewer (non-human)",
+    "status": "approved"
+  },
+  "basis": {
+    "oracle_manifest_sha256": "be3cde4b5046edc1be8609082797c35051db4d6416eaf151ce70e8032aff0678",
+    "probe": {
+      "derived_per_point_seconds": 0.9122836599999573,
+      "five_point_wall_seconds": 4.5614182999997865,
+      "matrix_nnz_upper_bound": 70285,
+      "peak_memory_gib": 0.026317596435546875,
+      "physics_contract": "placeholder_poisson_only_not_for_acceptance",
+      "single_bias_wall_seconds": 1.608392999998614,
+      "status": "structural_lower_bound_complete"
+    },
+    "vela_commit": "3b85a2f"
+  },
+  "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
+  "matrix_policy": "Approved entry budget: use exact common bias points; keep equilibrium, threshold/knee, and endpoint points; trim redundant smooth-curve interior points by information gain before execution, never afterward. Poisson timings are lower bounds; re-freeze after stage 1.5 and first classic-DD exact-mesh run.",
+  "revision": 1,
+  "scenarios": [
+    {
+      "max_concurrency": 1,
+      "name": "best",
+      "peak_memory_gib": 0.07895278930664062,
+      "storage_gib": 5.0,
+      "wall_clock_hours": 2.8280793459998677
+    },
+    {
+      "max_concurrency": 1,
+      "name": "base",
+      "peak_memory_gib": 0.15790557861328125,
+      "storage_gib": 15.0,
+      "wall_clock_hours": 5.656158691999735
+    },
+    {
+      "max_concurrency": 1,
+      "name": "worst",
+      "peak_memory_gib": 0.3158111572265625,
+      "storage_gib": 40.0,
+      "wall_clock_hours": 14.140396729999338
+    }
+  ],
+  "schema": "vela.templates_ldmos.budget_freeze.v1",
+  "scope_budgets": [
+    {
+      "base_wall_clock_hours": 0.5473701959999744,
+      "best_wall_clock_hours": 0.2736850979999872,
+      "estimated_bias_points": 360,
+      "scope": "phase_a",
+      "status": "estimated",
+      "worst_wall_clock_hours": 1.368425489999936
+    },
+    {
+      "base_wall_clock_hours": 0.5473701959999744,
+      "best_wall_clock_hours": 0.2736850979999872,
+      "estimated_bias_points": 180,
+      "scope": "phase_a_plus",
+      "status": "estimated",
+      "worst_wall_clock_hours": 1.368425489999936
+    },
+    {
+      "base_wall_clock_hours": 4.5614182999997865,
+      "best_wall_clock_hours": 2.2807091499998933,
+      "estimated_bias_points": 600,
+      "scope": "phase_b",
+      "status": "estimated",
+      "worst_wall_clock_hours": 11.403545749999466
+    }
+  ]
+}

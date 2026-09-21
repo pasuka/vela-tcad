@@ -25,6 +25,11 @@ struct Edge {
     Index  n1     = 0;  ///< Second node id
     Real   length = 0.0; ///< Euclidean length [m]
     Real   couple = 0.0; ///< Voronoi coupling length [m] (computed later)
+    /// Optional carrier-transport-only coupling override. A negative value
+    /// means that carrier transport uses `couple`. Poisson always uses
+    /// `couple`, so an external transport oracle cannot silently alter the
+    /// electrostatic discretization.
+    Real   transport_couple = -1.0;
 };
 
 /// A triangular (or higher-order) mesh cell.
@@ -49,6 +54,9 @@ struct Contact {
     std::string        name;
     Index              region_id = 0;
     std::vector<Index> node_ids;
+    /// Optional exact boundary edge pairs. Empty preserves the legacy
+    /// node-set inference used by hand-authored meshes.
+    std::vector<std::array<Index, 2>> edge_node_ids;
 };
 
 } // namespace vela

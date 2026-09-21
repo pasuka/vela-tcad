@@ -1,0 +1,41 @@
+{
+  "schema": "vela.ldmos.frozen_production_profile.v1",
+  "qualification": "R10 static-preparation and thermal high-field reuse recommended explicit profile; Linux Release dual-gate 62 points, real pause/resume and two complete repeat pairs; all non-timing trajectories exactly equal to R9, original gates. Exporting or rebuilding is not new qualification.",
+  "archive_sha256": "17cbb305f676badea7888e12d0a38bac37d89bafdf669a5651a3ef9eeaf9d081",
+  "qualified_linux_runner_sha256": "8a49f6b415f81115c27c5859ce50f1f7181835cb5d141623be828d76b158f54b",
+  "files_sha256": {
+    "cases/data/mesh.json": "36f79a06a21550d69fb58ad221457b1c1ccc63fa3a929046ef6b90e185f09ff6",
+    "cases/data/ialmob_geometry.json": "250d525d123b17df3a698dbb76bae3f2914a8bd0f7b6028b12acf76cfb35f12b",
+    "extrapolation_20260915/preparation_20260917/full/r0_vg4_combined/input.json": "a4020301ba05d8c4dbd81ee31ffc0a7115f55f67220a7d0838eb925d3f31d1e4",
+    "extrapolation_20260915/preparation_20260917/full/r0_vg4_combined/deck.json": "4f32f2b561a90869ae66140aa484f2efb54cce05c5a91d1fa0c81031565f5272",
+    "extrapolation_20260915/preparation_20260917/full/r0_vg8_combined/input.json": "05ea537faf940fa41320354a2eaad375e2d1711cf536fe33ca353085c1069334",
+    "extrapolation_20260915/preparation_20260917/full/r0_vg8_combined/deck.json": "70418e8354ebb1eb99fa42d4f5b3512be18f7cab893deff8f4dca17dad584cf9"
+  },
+  "dependencies": [
+    {
+      "recorded_path": "/home/tcad/sentaurus_runs/vela_oracle_2022/vela_build_20260914/cases/data/mesh.json",
+      "evidence_path": "cases/data/mesh.json",
+      "bundle_path": "data/mesh.json"
+    },
+    {
+      "recorded_path": "/home/tcad/sentaurus_runs/vela_oracle_2022/vela_build_20260914/cases/data/ialmob_geometry.json",
+      "evidence_path": "cases/data/ialmob_geometry.json",
+      "bundle_path": "data/ialmob_geometry.json"
+    }
+  ],
+  "cases": [
+    {
+      "gate_V": 4,
+      "input": "extrapolation_20260915/preparation_20260917/full/r0_vg4_combined/input.json",
+      "deck": "extrapolation_20260915/preparation_20260917/full/r0_vg4_combined/deck.json"
+    },
+    {
+      "gate_V": 8,
+      "input": "extrapolation_20260915/preparation_20260917/full/r0_vg8_combined/input.json",
+      "deck": "extrapolation_20260915/preparation_20260917/full/r0_vg8_combined/deck.json"
+    }
+  ],
+  "dependency_archive_sha256": "a01f29aabc39dc570534c74a1d727ce231f82ad4bce791ae2bae1779bc281719",
+  "evidence_layout": "Extract preparation evidence.tgz below extrapolation_20260915/preparation_20260917; add hash-checked cases/data dependencies from the R7 archive. Full native, thermal and local-field postprocessing reports are stored beside copied_vm in the local evidence directory.",
+  "validation_report": "docs/validation/templates_ldmos_preparation_full_2026-09-17.md"
+}

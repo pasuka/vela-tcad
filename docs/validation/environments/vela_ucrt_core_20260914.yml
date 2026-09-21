@@ -1,0 +1,26 @@
+# Research candidate only. spdlog/OpenBLAS/SuiteSparse are separate source overlays.
+name: vela-ucrt-core-candidate
+channels:
+  - conda-forge
+dependencies:
+  - gcc_linux-64=16.2.0
+  - gxx_linux-64=16.2.0
+  - gfortran_linux-64=16.2.0
+  - sysroot_linux-64=2.17
+  - binutils_impl_linux-64=2.46.1=default_*
+  - libboost-devel=1.92.0
+  - eigen=5.0.1
+  - nlohmann_json=3.12.0
+  - fmt=12.2.0
+  - catch2=3.16.0
+  - cmake=4.4.3
+  - ninja=1.13.2
+  - pkgconf=3.0.7
+  - python=3.14.7
+  - python_abi=3.14=*_cp314
+  - pybind11=3.1.0
+  - hdf5=2.2.0=nompi_*
+  - gdb=17.2
+  - git
+  - make
+  - patch

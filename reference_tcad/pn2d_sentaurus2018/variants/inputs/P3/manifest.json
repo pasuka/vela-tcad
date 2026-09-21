@@ -1,0 +1,30 @@
+{
+  "id": "P3",
+  "stage": "A",
+  "change": "BGN off including associated dEg0 convention",
+  "overrides": {
+    "bgn": false
+  },
+  "parameters": {
+    "NA_cm3": 1e+17,
+    "ND_cm3": 1e+17,
+    "anode_fraction": 1.0,
+    "mobility": "masetti",
+    "srh": true,
+    "bgn": false
+  },
+  "mesh": "M0",
+  "directory": "P3/M0",
+  "input_sha256": {
+    "pn2d_sde.cmd": "998b24450c0fb3bf25c0c4b71c08e5994d5c768b50cc7ec97cd35a5dae93f509",
+    "models.par": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742",
+    "materials.json": "7d9cbdb7030411a15547c82e0ceda15c18b4bb2292a7a5b73b1bccd91adaf395",
+    "forward_sdevice.cmd": "92e5344fe4ace5912f871a837a9591ddc13caf3ec905039727ae1b69e834d54c",
+    "reverse_sdevice.cmd": "3b98bb760919d927b0141f53431d96a573fb51af6d85b305d93174d24fe77625",
+    "vela_forward.json": "fb345b8f644f324b1c60a778b28e5cb4de73a1c6650143fc1bef34fc4cb11d15",
+    "vela_reverse.json": "782e531005b45c56859e82f3fa535d9eb8f8fc19b5668a9057e5626ac172d958"
+  },
+  "status": "generated_not_run",
+  "parameter_file": "../../../source/models.par",
+  "parameter_sha256": "b4b3ebfdefba530f756f3855d43d7d587720689771d8badc747b61439ed42742"
+}

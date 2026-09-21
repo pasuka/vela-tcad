@@ -15,7 +15,7 @@ from typing import Any
 if not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.diagnose_pn2d_minimal6_element_avalanche_replay import (
+from scripts.sentaurus_avalanche_replay import (
     currentplot_targets,
 )
 from scripts.pn2d_high_bias_process_contract import EXACT_HIGH_BIAS_V

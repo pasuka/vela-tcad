@@ -1,0 +1,126 @@
+{
+  "scope": "precision diagnostic only; two bias points do not replace formal sweeps",
+  "points": [
+    {
+      "bias_V": 0.0,
+      "contact": "Anode",
+      "component": "total",
+      "reference_A_per_um": 1.08051567406953e-34,
+      "candidate_A_per_um": 3.0618120191461557e-33,
+      "absolute_error_A_per_um": 2.953760451739203e-33,
+      "relative_error": 2.953760451739203e-11,
+      "pass": true
+    },
+    {
+      "bias_V": 0.0,
+      "contact": "Anode",
+      "component": "electron",
+      "reference_A_per_um": -4.36227438564137e-46,
+      "candidate_A_per_um": 2.0167104436865737e-38,
+      "absolute_error_A_per_um": 2.0167104873093175e-38,
+      "relative_error": 2.0167104873093174e-16,
+      "pass": true
+    },
+    {
+      "bias_V": 0.0,
+      "contact": "Anode",
+      "component": "hole",
+      "reference_A_per_um": 1.08051567407389e-34,
+      "candidate_A_per_um": 3.061791852041719e-33,
+      "absolute_error_A_per_um": 2.95374028463433e-33,
+      "relative_error": 2.95374028463433e-11,
+      "pass": true
+    },
+    {
+      "bias_V": 0.0,
+      "contact": "Cathode",
+      "component": "total",
+      "reference_A_per_um": -1.08051567406953e-34,
+      "candidate_A_per_um": -2.543793324633617e-32,
+      "absolute_error_A_per_um": 2.5329881678929215e-32,
+      "relative_error": 2.5329881678929216e-10,
+      "pass": true
+    },
+    {
+      "bias_V": 0.0,
+      "contact": "Cathode",
+      "component": "electron",
+      "reference_A_per_um": 4.55964819003122e-46,
+      "candidate_A_per_um": -2.5437975686360395e-32,
+      "absolute_error_A_per_um": 2.543797568636085e-32,
+      "relative_error": 2.543797568636085e-10,
+      "pass": true
+    },
+    {
+      "bias_V": 0.0,
+      "contact": "Cathode",
+      "component": "hole",
+      "reference_A_per_um": -1.08051567407409e-34,
+      "candidate_A_per_um": 4.2440024225544695e-38,
+      "absolute_error_A_per_um": 1.0809400743163455e-34,
+      "relative_error": 1.0809400743163454e-12,
+      "pass": true
+    },
+    {
+      "bias_V": -0.1,
+      "contact": "Anode",
+      "component": "total",
+      "reference_A_per_um": -1.56120011808861e-18,
+      "candidate_A_per_um": -1.5609411710962056e-18,
+      "absolute_error_A_per_um": 2.58946992404514e-22,
+      "relative_error": 0.000165864061502599,
+      "pass": true
+    },
+    {
+      "bias_V": -0.1,
+      "contact": "Anode",
+      "component": "electron",
+      "reference_A_per_um": -6.41906635531023e-20,
+      "candidate_A_per_um": -6.415459506266762e-20,
+      "absolute_error_A_per_um": 3.606849043467616e-23,
+      "relative_error": 0.0005618962079249762,
+      "pass": true
+    },
+    {
+      "bias_V": -0.1,
+      "contact": "Anode",
+      "component": "hole",
+      "reference_A_per_um": -1.49700945453551e-18,
+      "candidate_A_per_um": -1.4967865760335378e-18,
+      "absolute_error_A_per_um": 2.22878501972161e-22,
+      "relative_error": 0.00014888249456067426,
+      "pass": true
+    },
+    {
+      "bias_V": -0.1,
+      "contact": "Cathode",
+      "component": "total",
+      "reference_A_per_um": 1.56120011808861e-18,
+      "candidate_A_per_um": 1.5609411713298028e-18,
+      "absolute_error_A_per_um": 2.589467588073155e-22,
+      "relative_error": 0.00016586391187591384,
+      "pass": true
+    },
+    {
+      "bias_V": -0.1,
+      "contact": "Cathode",
+      "component": "electron",
+      "reference_A_per_um": 1.36338977665339e-18,
+      "candidate_A_per_um": 1.3632153140081652e-18,
+      "absolute_error_A_per_um": 1.7446264522472196e-22,
+      "relative_error": 0.00012796241266599655,
+      "pass": true
+    },
+    {
+      "bias_V": -0.1,
+      "contact": "Cathode",
+      "component": "hole",
+      "reference_A_per_um": 1.97810341435219e-19,
+      "candidate_A_per_um": 1.9772585732163732e-19,
+      "absolute_error_A_per_um": 8.448411358167872e-23,
+      "relative_error": 0.000427096545957616,
+      "pass": true
+    }
+  ],
+  "all_points_pass_frozen_current_gate": true
+}

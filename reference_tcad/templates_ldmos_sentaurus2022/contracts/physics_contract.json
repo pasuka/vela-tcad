@@ -1,0 +1,156 @@
+{
+  "schema": "vela.templates_ldmos.physics_contract.v1",
+  "benchmark": "sentaurus_t2022_03_sp2_templates_ldmos",
+  "revision": 5,
+  "materials_file": "materials.json",
+  "temperature_K": 300.0,
+  "carrier_statistics": {
+    "model": "fermi_dirac",
+    "implementation_status": "implemented"
+  },
+  "bandgap_narrowing": {
+    "model": "old_slotboom",
+    "reference_doping_cm3": 1e17,
+    "coefficient_eV": 0.009,
+    "smoothing": 0.5,
+    "offset_eV": 0.0,
+    "fermi_statistics_correction": true,
+    "sentaurus_dEg0_eV": -0.01595,
+    "sentaurus_qf_reference_mapping": "identity; preserve physical contact quasi-Fermi potentials",
+    "parameter_source": "T-2022.03 sdevice -P query; dEg0(OldSlotboom)=-0.01595 eV is carried by the production BGN field, while materials[].intrinsic_carrier_density_cm3 excludes it",
+    "implementation_status": "implemented"
+  },
+  "recombination": {
+    "mechanisms": ["srh", "auger"],
+    "taun_s": 1e-5,
+    "taup_s": 3e-6,
+    "auger_cn_m6_per_s": 2.9e-43,
+    "auger_cp_m6_per_s": 1.028e-43,
+    "srh_doping_dependence": {
+      "enabled": true,
+      "concentration_basis": "total_impurity",
+      "density_coupling": "sentaurus_default",
+      "temperature_dependence": true,
+      "temperature_K": 300.0,
+      "reference_temperature_K": 300.0,
+      "electron_temperature_exponent": -1.5,
+      "hole_temperature_exponent": -1.5,
+      "electron": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 1e-5,
+        "reference_doping_cm3": 1e16,
+        "gamma": 1.0
+      },
+      "hole": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 3e-6,
+        "reference_doping_cm3": 1e16,
+        "gamma": 1.0
+      },
+      "parameter_status": "t2022_parameter_query"
+    },
+    "parameter_source": "T-2022.03 sdevice -P query at 300 K; Auger A+B+C frozen to scalar Vela coefficients",
+    "implementation_status": "partial"
+  },
+  "mobility": {
+    "model": "constant_field",
+    "g3_model": "constant_field",
+    "doping_dependence_enabled": false,
+    "high_field_saturation_enabled": true,
+    "doping_concentration_basis": "net_doping",
+    "high_field_driving_force": "quasi_fermi_gradient",
+    "high_field_gradient_discretization": "edge_projection",
+    "contact_electric_field_fallback": true,
+    "contact_electric_field_fallback_scope": "contact_node_cell",
+    "contact_electric_field_fallback_mode": "cell_gradient_magnitude",
+    "contact_electric_field_fallback_status": "qualified_g3_numerical",
+    "surface_model": "ialmob_pending",
+    "electron": {
+      "mu_const_cm2_per_V_s": 1417.0,
+      "mu_min_cm2_per_V_s": 52.2,
+      "mu_min2_cm2_per_V_s": 52.2,
+      "mu1_cm2_per_V_s": 43.4,
+      "pc_cm3": 0.0,
+      "reference_doping_cm3": 9.68e16,
+      "cs_cm3": 3.43e20,
+      "doping_exponent": 0.68,
+      "masetti_beta": 2.0,
+      "saturation_velocity_cm_per_s": 1.07e7,
+      "high_field_exponent": 1.109
+    },
+    "hole": {
+      "mu_const_cm2_per_V_s": 470.5,
+      "mu_min_cm2_per_V_s": 44.9,
+      "mu_min2_cm2_per_V_s": 0.0,
+      "mu1_cm2_per_V_s": 29.0,
+      "pc_cm3": 9.23e16,
+      "reference_doping_cm3": 2.23e17,
+      "cs_cm3": 6.10e20,
+      "doping_exponent": 0.719,
+      "masetti_beta": 2.0,
+      "saturation_velocity_cm_per_s": 8.37e6,
+      "high_field_exponent": 1.213
+    },
+    "parameter_source": "G3-no-IALMob deck enables HighFieldSaturation only; T-2022.03 sdevice -P query supplies HighFieldDependence Vsat_Formula=1 at 300 K; retained Masetti values are inactive until a deck explicitly enables DopingDependence; element eMobility audit identifies ElectricField HFS support in contact-node transport cells and GradQF support in the interior",
+    "implementation_status": "implemented"
+  },
+  "electron_quantum_potential": {
+    "enabled": false,
+    "implementation_status": "implemented",
+    "decision": "disabled_classical_baseline",
+    "parameters": {
+      "gamma": null,
+      "dos_mass_ratio": null,
+      "coefficient_mass_ratio": null
+    },
+    "parameter_source": "pending_t2022_parameter_extraction"
+  },
+  "hole_quantum_potential": {
+    "enabled": false,
+    "implementation_status": "not_implemented",
+    "decision": "pending_sentaurus_ablation",
+    "parameters": {
+      "gamma": null,
+      "dos_mass_ratio": null,
+      "coefficient_mass_ratio": null
+    },
+    "parameter_source": "pending_t2022_parameter_extraction"
+  },
+  "impact_ionization": {
+    "enabled": false,
+    "model": "okuto_pending",
+    "driving_force": "pending_t2022_query",
+    "electron": {
+      "a_per_V": null,
+      "b_V_per_cm": null,
+      "c_per_K": null,
+      "d_per_K": null,
+      "gamma": null,
+      "delta": null,
+      "beta": null,
+      "lambda_cm": null
+    },
+    "hole": {
+      "a_per_V": null,
+      "b_V_per_cm": null,
+      "c_per_K": null,
+      "d_per_K": null,
+      "gamma": null,
+      "delta": null,
+      "beta": null,
+      "lambda_cm": null
+    },
+    "parameter_source": "pending_t2022_sdevice_parameter_query",
+    "implementation_status": "pending_phase_b"
+  },
+  "thermal": {
+    "enabled": false,
+    "model": "lattice_temperature_pending",
+    "heat_sources": ["joule", "recombination", "generation", "peltier_thomson"],
+    "thermode_boundary": "pending_t2022_mapping",
+    "material_parameters": "pending_t2022_extraction",
+    "parameter_source": "pending_phase_b_thermal_contract",
+    "implementation_status": "pending_phase_b"
+  },
+  "discretization_profile": "templates_ldmos_exact_topology_phase_a_classical_v2"
+}

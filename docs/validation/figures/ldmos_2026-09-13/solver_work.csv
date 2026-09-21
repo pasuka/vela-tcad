@@ -1,0 +1,13 @@
+﻿version,gate_V,metric,count
+n1,4,newton_updates,406
+n1,8,newton_updates,318
+p3,4,newton_updates,358
+p3,8,newton_updates,318
+n1,4,rejected_updates,60
+n1,8,rejected_updates,0
+p3,4,rejected_updates,12
+p3,8,rejected_updates,0
+n1,4,symbolic_analyses,406
+n1,8,symbolic_analyses,318
+p3,4,symbolic_analyses,38
+p3,8,symbolic_analyses,36

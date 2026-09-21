@@ -14,6 +14,7 @@
 #include "vela/solver/NewtonSolver.h"
 #include "vela/simulation/ConfigParsing.h"
 #include "vela/simulation/DCSweep.h"
+#include "vela/simulation/ElectrothermalSimulation.h"
 #include "vela/simulation/PoissonSimulation.h"
 #include <algorithm>
 #include <cctype>
@@ -37,7 +38,10 @@ namespace {
 void usage(const char* argv0)
 {
     std::cerr << "Usage: " << argv0
-              << " --config <simulation.json> [--mesh-report] [--log <auto|off|path>] [--log-profile <minimal|default|debug>]\n";
+              << " --config <simulation.json> [--mesh-report] [--log <auto|off|path>] [--log-profile <minimal|default|debug>]\n"
+              << "       " << argv0 << " --dc-worker  (sequential JSON-lines requests on stdin)\n"
+              << "       " << argv0 << " --dc-worker-linear-reuse  (alias; reuse is enabled by default)\n"
+              << "       " << argv0 << " --dc-worker-no-linear-reuse  (disable cross-request analysis cache)\n";
 }
 
 struct RuntimeLogOverrideGuard {
@@ -318,6 +322,8 @@ void writeNewtonSolutionVtk(const std::filesystem::path& path,
             problem.newton.srhDopingDependence);
     recombination.augerCn = problem.newton.augerCn;
     recombination.augerCp = problem.newton.augerCp;
+    recombination.augerDensityDependence = problem.newton.augerDensityDependence;
+    recombination.augerWithGeneration = problem.newton.augerWithGeneration;
     recombination.augerExcessProduct = problem.newton.augerExcessProduct;
     recombination.bandToBand = problem.newton.bandToBand;
     const vela::NewtonSolver diagnosticSolver = makeNewtonSolver(problem);
@@ -358,6 +364,10 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
         resolvePath(cfgDir, cfg.at("mesh_file").get<std::string>()),
         scaling);
     mesh.buildBoxGeometry(vela::parseBoxGeometryOptions(cfg));
+    const vela::CarrierTransportCoupleProfileReport transportProfile =
+        vela::applyCarrierTransportCoupleProfile(mesh, cfg, cfgDir, scaling);
+    const vela::PoissonCoupleProfileReport poissonProfile =
+        vela::applyPoissonCoupleProfile(mesh, cfg, cfgDir, scaling);
 
     vela::MaterialDatabase matdb(scaling);
     if (cfg.contains("materials_file"))
@@ -374,6 +384,24 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
         ? vela::newtonConfigFromJson(cfg.at("solver"), scaling)
         : vela::NewtonConfig{};
     newton.unitScalingRefs = vela::parseUnitScalingReferenceConfig(cfg);
+    newton.poissonChargeVolumePolicy =
+        vela::parsePoissonChargeVolumePolicy(cfg);
+    if (transportProfile.profile != "mesh_default" &&
+        (newton.impactIonization.model != "none" ||
+         vela::isSurfaceMobilityModel(newton.mobility) ||
+         newton.electronQuantumPotential.enabled)) {
+        throw std::invalid_argument(
+            "templates_ldmos_external_averagebox is qualified only with "
+            "impact ionization, surface mobility/IALMob, and quantum potential off.");
+    }
+    if (poissonProfile.profile != "mesh_default" &&
+        (newton.impactIonization.model != "none" ||
+         vela::isSurfaceMobilityModel(newton.mobility) ||
+         newton.electronQuantumPotential.enabled)) {
+        throw std::invalid_argument(
+            "templates_ldmos_region_averagebox is qualified only with "
+            "impact ionization, surface mobility/IALMob, and quantum potential off.");
+    }
     std::vector<vela::RegionFixedChargeSpec> fixedCharges =
         vela::parseRegionFixedChargeSpecs(cfg, scaling);
     std::vector<vela::InterfaceSheetChargeSpec> sheetCharges =
@@ -447,6 +475,8 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
     // model setup mirror DCSweep so the value is directly comparable to a dc_sweep
     // terminal current.
     vela::DDScalingSpec ddScaling;
+    ddScaling.poissonChargeVolumePolicy =
+        problem.newton.poissonChargeVolumePolicy;
     if (problem.newton.inputScaling.isUnitScaling()) {
         const vela::UnitScalingSystem sc = vela::UnitScalingSystem::fromInputs(
             problem.newton.temperature_K,
@@ -947,6 +977,60 @@ void writeResidualProbeCsv(const std::filesystem::path& path,
     }
 }
 
+void writePoissonTermProbeCsv(
+    const std::filesystem::path& path,
+    const vela::DeviceMesh& mesh,
+    const vela::DopingModel& doping,
+    const vela::DDSolution& state,
+    const vela::NewtonPoissonTermEvaluation& evaluation,
+    const vela::UnitScalingConfig& scaling)
+{
+    std::ofstream out(path);
+    if (!out.is_open()) {
+        throw std::runtime_error(
+            "Cannot write Poisson term probe CSV: " + path.string());
+    }
+    out << std::setprecision(17);
+    out << "node_id,x,y,psi,phin,phip,net_doping_m3,"
+        << "ni_eff_m3,Nc_m3,Nv_m3,"
+        << "input_electron_density_m3,input_hole_density_m3,"
+        << "reconstructed_electron_density_m3,reconstructed_hole_density_m3,"
+        << "electron_required_qf_V,hole_required_qf_V,"
+        << "electron_qf_mapping_error_V,hole_qf_mapping_error_V,"
+        << "has_supplied_carrier_state,"
+        << "dielectric_flux,electron_charge,hole_charge,doping_charge,"
+        << "fixed_interface_charge,unconstrained_residual,"
+        << "boundary_replacement,production_residual,closure_error,constrained\n";
+    const auto& units = scaling.unitSystem();
+    for (const auto& row : evaluation.rows) {
+        const auto& node = mesh.getNode(row.nodeId);
+        const int i = static_cast<int>(row.nodeId);
+        out << row.nodeId << ',' << node.x << ',' << node.y << ','
+            << state.psi(i) << ',' << state.phin(i) << ',' << state.phip(i) << ','
+            << units.internalConcentrationToM3(doping.netDoping(row.nodeId)) << ','
+            << units.internalConcentrationToM3(row.intrinsicDensity) << ','
+            << units.internalConcentrationToM3(
+                   row.electronDensityOfStates) << ','
+            << units.internalConcentrationToM3(row.holeDensityOfStates) << ','
+            << units.internalConcentrationToM3(state.n(i)) << ','
+            << units.internalConcentrationToM3(state.p(i)) << ','
+            << units.internalConcentrationToM3(
+                   row.reconstructedElectronDensity) << ','
+            << units.internalConcentrationToM3(
+                   row.reconstructedHoleDensity) << ','
+            << row.electronRequiredQuasiFermiPotential << ','
+            << row.holeRequiredQuasiFermiPotential << ','
+            << row.electronQuasiFermiMappingError << ','
+            << row.holeQuasiFermiMappingError << ','
+            << (row.hasSuppliedCarrierState ? 1 : 0) << ','
+            << row.dielectricFlux << ',' << row.electronCharge << ','
+            << row.holeCharge << ',' << row.dopingCharge << ','
+            << row.fixedInterfaceCharge << ',' << row.unconstrainedResidual << ','
+            << row.boundaryReplacement << ',' << row.productionResidual << ','
+            << row.closureError << ',' << (row.constrained ? 1 : 0) << '\n';
+    }
+}
+
 nlohmann::json runNewtonResidualProbe(const std::string& configFile, const nlohmann::json& cfg)
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
@@ -972,6 +1056,44 @@ nlohmann::json runNewtonResidualProbe(const std::string& configFile, const nlohm
             {"phip", residual.blockNorms.phip},
             {"combined", residual.blockNorms.combined},
         }},
+    };
+}
+
+nlohmann::json runNewtonPoissonTermProbe(
+    const std::string& configFile,
+    const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    const vela::DDSolution state =
+        readExternalState(cfgDir, cfg, problem.mesh.numNodes());
+    const vela::NewtonSolver solver = makeNewtonSolver(problem);
+    const vela::NewtonPoissonTermEvaluation evaluation =
+        solver.evaluatePoissonTerms(state);
+    writePoissonTermProbeCsv(
+        resolvePath(cfgDir, cfg.at("output_csv").get<std::string>()),
+        problem.mesh, problem.doping, state, evaluation,
+        problem.newton.inputScaling);
+
+    vela::Real maxClosureError = 0.0;
+    vela::Real maxProductionResidual = 0.0;
+    vela::Index constrainedRows = 0;
+    for (const auto& row : evaluation.rows) {
+        maxClosureError = std::max(maxClosureError, std::abs(row.closureError));
+        maxProductionResidual = std::max(
+            maxProductionResidual, std::abs(row.productionResidual));
+        if (row.constrained)
+            ++constrainedRows;
+    }
+    return {
+        {"nodes", problem.mesh.numNodes()},
+        {"scaled_state", evaluation.scaledState},
+        {"potential_scale", evaluation.potentialScale},
+        {"constrained_rows", constrainedRows},
+        {"max_abs_production_residual", maxProductionResidual},
+        {"max_abs_closure_error", maxClosureError},
+        {"output_csv", resolvePath(
+            cfgDir, cfg.at("output_csv").get<std::string>())}
     };
 }
 
@@ -1853,7 +1975,9 @@ nlohmann::json runNewtonJvpProbe(const std::string& configFile, const nlohmann::
         const JvpProbeDirection direction = makeJvpProbeDirection(
             problem.mesh, directionConfig);
         const vela::NewtonDirectionalDerivativeEvaluation jvp =
-            solver.evaluateDirectionalDerivative(state, direction.perturbation);
+            solver.evaluateDirectionalDerivative(
+                state, direction.perturbation,
+                cfg.value("freeze_transport_mobility", false));
         const vela::VectorXd error = jvp.analyticJv - jvp.finiteDifferenceJv;
         const vela::Real psiFd = vectorBlockNorm(jvp.finiteDifferenceJv, 0, n);
         const vela::Real phinFd = vectorBlockNorm(jvp.finiteDifferenceJv, n, n);
@@ -2282,6 +2406,89 @@ nlohmann::json runNewtonCarrierRowProbe(const std::string& configFile, const nlo
     };
 }
 
+void writeNewtonPoissonLinearProbeCsv(
+    const std::filesystem::path& path,
+    const vela::DeviceMesh& mesh,
+    const vela::DopingModel& doping,
+    const vela::NewtonPoissonLinearDiagnosticsEvaluation& diagnostics)
+{
+    if (!path.parent_path().empty())
+        std::filesystem::create_directories(path.parent_path());
+    std::ofstream out(path);
+    if (!out.is_open())
+        throw std::runtime_error(
+            "Cannot write Newton Poisson-linear probe CSV: " + path.string());
+    out << std::setprecision(17);
+    out << "node_id,x,y,poisson_residual,diagonal,"
+        << "poisson_row_l2_norm,poisson_column_l2_norm,"
+        << "full_row_l2_norm,full_column_l2_norm,"
+        << "raw_delta_psi_V,equilibrated_delta_psi_V,"
+        << "donors_m3,acceptors_m3,net_doping_m3,ni_eff_m3\n";
+    for (const auto& row : diagnostics.rows) {
+        const vela::Node& node = mesh.getNode(row.nodeId);
+        out << row.nodeId << ',' << node.x << ',' << node.y << ','
+            << row.residual << ',' << row.diagonal << ','
+            << row.poissonRowL2Norm << ',' << row.poissonColumnL2Norm << ','
+            << row.fullRowL2Norm << ',' << row.fullColumnL2Norm << ','
+            << row.rawDeltaPsi_V << ',' << row.equilibratedDeltaPsi_V << ','
+            << doping.donors(row.nodeId) << ','
+            << doping.acceptors(row.nodeId) << ','
+            << doping.netDoping(row.nodeId) << ','
+            << diagnostics.residual.intrinsicDensity[
+                static_cast<std::size_t>(row.nodeId)] << '\n';
+    }
+}
+
+nlohmann::json runNewtonPoissonLinearProbe(
+    const std::string& configFile,
+    const nlohmann::json& cfg)
+{
+    const std::filesystem::path cfgDir = configDirectory(configFile);
+    NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    const vela::DDSolution state =
+        readExternalState(cfgDir, cfg, problem.mesh.numNodes());
+    const auto focusNode = static_cast<vela::Index>(cfg.at("focus_node").get<int>());
+    const vela::NewtonSolver solver = makeNewtonSolver(problem);
+    const auto diagnostics =
+        solver.evaluatePoissonLinearDiagnostics(state, focusNode);
+    const std::filesystem::path outputPath =
+        resolvePath(cfgDir, cfg.at("output_csv").get<std::string>());
+    writeNewtonPoissonLinearProbeCsv(
+        outputPath, problem.mesh, problem.doping, diagnostics);
+
+    nlohmann::json patchNodes = nlohmann::json::array();
+    for (const vela::Index node : diagnostics.focusPatchNodes)
+        patchNodes.push_back(node);
+    return {
+        {"nodes", problem.mesh.numNodes()},
+        {"focus_node", diagnostics.focusNode},
+        {"focus_patch_nodes", patchNodes},
+        {"focus_patch_raw_condition", matrixConditionJson(
+            diagnostics.focusPatchRawCondition)},
+        {"focus_patch_l2_equilibrated_condition", matrixConditionJson(
+            diagnostics.focusPatchEquilibratedCondition)},
+        {"poisson_row_norm_spread", diagnostics.poissonRowNormSpread},
+        {"poisson_column_norm_spread", diagnostics.poissonColumnNormSpread},
+        {"full_row_norm_spread", diagnostics.fullRowNormSpread},
+        {"full_column_norm_spread", diagnostics.fullColumnNormSpread},
+        {"raw_step_norm", diagnostics.rawStepNorm},
+        {"equilibrated_step_norm", diagnostics.equilibratedStepNorm},
+        {"raw_linear_closure_norm", diagnostics.rawLinearClosureNorm},
+        {"equilibrated_linear_closure_norm", diagnostics.equilibratedLinearClosureNorm},
+        {"raw_relative_linear_closure", diagnostics.rawRelativeLinearClosure},
+        {"equilibrated_relative_linear_closure",
+            diagnostics.equilibratedRelativeLinearClosure},
+        {"relative_step_difference", diagnostics.relativeStepDifference},
+        {"block_residuals", {
+            {"psi", diagnostics.residual.blockNorms.psi},
+            {"phin", diagnostics.residual.blockNorms.phin},
+            {"phip", diagnostics.residual.blockNorms.phip},
+            {"combined", diagnostics.residual.blockNorms.combined},
+        }},
+        {"output_csv", outputPath.string()},
+    };
+}
+
 void writeNewtonCarrierBlockColumnsCsv(
     const std::filesystem::path& path,
     const vela::DeviceMesh& mesh,
@@ -2645,10 +2852,18 @@ void writeSgEdgeFluxProbeCsv(
         << "electron_density0_m3,electron_density1_m3,"
         << "hole_density0_m3,hole_density1_m3,"
         << "psi0_V,psi1_V,phin0_V,phin1_V,"
-        << "phip0_V,phip1_V,electric_field_V_m,electron_mobility_m2_V_s,"
-        << "hole_mobility_m2_V_s,electron_flux,hole_flux,"
-        << "electron_particle_line_flux_per_m_s,hole_particle_line_flux_per_m_s\n";
+        << "phip0_V,phip1_V,electric_field_V_m,electron_mobility_field_V_m,"
+        << "electron_mobility_m2_V_s,hole_mobility_m2_V_s,"
+        << "electron_eta0,electron_eta1,electron_drift_potential_V,"
+        << "electron_generalized_einstein_factor,electron_bernoulli_argument,"
+        << "electron_quasi_fermi_argument,electron_bernoulli_plus,"
+        << "electron_bernoulli_minus,electron_flux,hole_flux,"
+        << "electron_scaled_flux_per_couple_m,hole_scaled_flux_per_couple_m,"
+        << "electron_particle_line_flux_per_m_s,hole_particle_line_flux_per_m_s,"
+        << "electron_particle_flux_density_per_couple_m2_s,"
+        << "hole_particle_flux_density_per_couple_m2_s\n";
     const vela::PhysicalUnitSystem& units = scaling.unitSystem();
+    const vela::Real internalLength_m = units.internalLengthToMeters(1.0);
     out << std::setprecision(17);
     for (const auto& edge : edges) {
         out << edge.edgeId << ','
@@ -2674,12 +2889,28 @@ void writeSgEdgeFluxProbeCsv(
             << edge.phip0_V << ','
             << edge.phip1_V << ','
             << units.internalElectricFieldToVPerM(edge.electricField_V_m) << ','
+            << units.internalElectricFieldToVPerM(
+                   edge.electronMobilityField_V_m) << ','
             << units.internalMobilityToM2PerVS(edge.electronMobility_m2_V_s) << ','
             << units.internalMobilityToM2PerVS(edge.holeMobility_m2_V_s) << ','
+            << edge.electronEta0 << ','
+            << edge.electronEta1 << ','
+            << edge.electronDriftPotential_V << ','
+            << edge.electronGeneralizedEinsteinFactor << ','
+            << edge.electronBernoulliArgument << ','
+            << edge.electronQuasiFermiArgument << ','
+            << edge.electronBernoulliPlus << ','
+            << edge.electronBernoulliMinus << ','
             << edge.electronFlux << ','
             << edge.holeFlux << ','
+            << edge.electronFluxPerInternalCouple / internalLength_m << ','
+            << edge.holeFluxPerInternalCouple / internalLength_m << ','
             << edge.electronParticleLineFlux_per_m_s << ','
-            << edge.holeParticleLineFlux_per_m_s << '\n';
+            << edge.holeParticleLineFlux_per_m_s << ','
+            << edge.electronParticleLineFluxPerInternalCouple_per_m_s
+                   / internalLength_m << ','
+            << edge.holeParticleLineFluxPerInternalCouple_per_m_s
+                   / internalLength_m << '\n';
     }
 }
 
@@ -2812,6 +3043,12 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
         ? vela::detail::transportCellVectorEdgeGradientMagnitudes(
               mesh, edgeCells, cellMaterials, state.phip, fieldFactor)
         : std::vector<vela::Real>{};
+    const std::vector<vela::Real> contactElectricFields =
+        newton.mobility.contactElectricFieldFallback
+        ? vela::detail::contactCellElectricFieldEdgeMagnitudesForMobility(
+              newton.mobility, mesh, edgeCells, cellMaterials,
+              state.psi, fieldFactor)
+        : std::vector<vela::Real>{};
 
     std::ofstream out(path);
     if (!out.is_open())
@@ -2837,17 +3074,15 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
         const vela::Real electronQfField = std::abs(state.phin(i1) - state.phin(i0)) / length * fieldFactor;
         const vela::Real holeQfField = std::abs(state.phip(i1) - state.phip(i0)) / length * fieldFactor;
         const vela::Real electronMobilityField =
-            vectorQfMobility
-            ? electronVectorFields[edgeId]
-            : newton.mobility.highFieldDrivingForce == "quasi_fermi_gradient"
-            ? electronQfField
-            : electricField;
+            vela::detail::mobilityHighFieldDrivingField(
+                newton.mobility, edgeId,
+                vectorQfMobility ? electronVectorFields[edgeId] : electronQfField,
+                electricField, contactElectricFields);
         const vela::Real holeMobilityField =
-            vectorQfMobility
-            ? holeVectorFields[edgeId]
-            : newton.mobility.highFieldDrivingForce == "quasi_fermi_gradient"
-            ? holeQfField
-            : electricField;
+            vela::detail::mobilityHighFieldDrivingField(
+                newton.mobility, edgeId,
+                vectorQfMobility ? holeVectorFields[edgeId] : holeQfField,
+                electricField, contactElectricFields);
         const vela::Real electronLowField = vela::detail::edgeMobility(
             edgeCells, mesh, doping, *mobility, cellMaterials, edgeId,
             vela::CarrierType::Electron, 0.0, &newton.mobility, nullptr, &state.n, &state.p);
@@ -2898,7 +3133,7 @@ nlohmann::json runIALMobilityPointProbe(const std::string& configFile, const nlo
     const auto directory = configDirectory(configFile);
     const auto config = vela::mobilityModelConfigFromJson(cfg.at("mobility"));
     if (!vela::isIALMobilityModel(config))
-        throw std::invalid_argument("ialmob_point_probe requires ialmob or ialmob_field");
+        throw std::invalid_argument("ialmob_point_probe requires slot_ialmob or ialmob_field");
     if (cfg.contains("scaling"))
         throw std::invalid_argument("ialmob_point_probe inputs are explicitly SI; omit scaling");
     const vela::IALMobility model(config);
@@ -3083,8 +3318,56 @@ nlohmann::json runNewtonJacobianBlockProbe(const std::string& configFile,
 
 } // namespace
 
+// One response per request; numerical rejection is a request failure, not an
+// instruction to exit. A later request must still load its explicit seed.
+int runDCWorker(bool reuseLinearAnalysis = true)
+{
+    vela::DCSweep sweep(true, reuseLinearAnalysis);
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        nlohmann::json response = {{"returncode", 1}};
+        std::ostringstream captured;
+        auto* previous = std::cout.rdbuf(captured.rdbuf());
+        try {
+            const auto request = nlohmann::json::parse(line);
+            if (request.value("shutdown", false)) {
+                std::cout.rdbuf(previous);
+                return 0;
+            }
+            response["id"] = request.at("id");
+            const auto path = request.at("config").get<std::string>();
+            std::ifstream input(path);
+            if (!input) throw std::runtime_error("Cannot open worker config: " + path);
+            auto cfg = vela::canonicalizeDeck(nlohmann::json::parse(input));
+            if (cfg.value("simulation_type", std::string("dc_sweep")) != "dc_sweep")
+                throw std::invalid_argument("--dc-worker accepts only dc_sweep configs");
+            const auto result = sweep.runWithResult(path);
+            const bool converged = !result.points.empty() && std::all_of(
+                result.points.begin(), result.points.end(),
+                [](const auto& point) { return point.converged; });
+            if (!converged) sweep.clearLinearContext();
+            response.update({{"config", path}, {"converged", converged},
+                             {"points", result.points.size()},
+                             {"returncode", converged ? 0 : 1}});
+        } catch (const std::exception& error) {
+            sweep.clearLinearContext();
+            response["error"] = error.what();
+        }
+        std::cout.rdbuf(previous);
+        response["stdout"] = captured.str();
+        std::cout << response.dump() << std::endl;
+    }
+    return std::cin.bad() ? 1 : 0;
+}
+
 int main(int argc, char** argv)
 {
+    if (argc == 2 && std::string(argv[1]) == "--dc-worker")
+        return runDCWorker();
+    if (argc == 2 && std::string(argv[1]) == "--dc-worker-linear-reuse")
+        return runDCWorker(true);
+    if (argc == 2 && std::string(argv[1]) == "--dc-worker-no-linear-reuse")
+        return runDCWorker(false);
     std::string configFile;
     bool includeMeshReport = false;
     vela::RuntimeLogCliOverrides logOverrides;
@@ -3142,7 +3425,13 @@ int main(int argc, char** argv)
         status["simulation_type"] = type;
         status["converged"] = true;
 
-        if (type == "dc_sweep") {
+        if (type == "electrothermal_dc_sweep") {
+            const auto result=vela::runElectrothermalSweep(cfg,configFile);
+            status["converged"]=result.at("status")=="complete";
+            status["sweep_status"]=result.at("status");
+            status["points"]=result.at("exact_points").size();
+            status["wall_seconds"]=result.at("wall_seconds");
+        } else if (type == "dc_sweep") {
             vela::DCSweep sweep;
             const auto result = sweep.runWithResult(configFile);
             bool allConverged = !result.points.empty();
@@ -3183,6 +3472,8 @@ int main(int argc, char** argv)
             status.update(runNewtonSolveFromState(configFile, cfg));
         } else if (type == "newton_residual_probe") {
             status.update(runNewtonResidualProbe(configFile, cfg));
+        } else if (type == "newton_poisson_term_probe") {
+            status.update(runNewtonPoissonTermProbe(configFile, cfg));
         } else if (type == "newton_step_probe") {
             status.update(runNewtonStepProbe(configFile, cfg));
         } else if (type == "newton_feedback_substitution_probe") {
@@ -3197,6 +3488,8 @@ int main(int argc, char** argv)
             status.update(runNewtonRegularizedCarrierStepProbe(configFile, cfg));
         } else if (type == "newton_carrier_row_probe") {
             status.update(runNewtonCarrierRowProbe(configFile, cfg));
+        } else if (type == "newton_poisson_linear_probe") {
+            status.update(runNewtonPoissonLinearProbe(configFile, cfg));
         } else if (type == "newton_carrier_block_decomposition_probe") {
             status.update(runNewtonCarrierBlockDecompositionProbe(configFile, cfg));
         } else if (type == "newton_carrier_term_probe") {

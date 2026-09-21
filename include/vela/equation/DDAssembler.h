@@ -3,6 +3,7 @@
 #include "vela/core/Types.h"
 #include "vela/core/UnitScaling.h"
 #include "vela/equation/ChargeSpec.h"
+#include "vela/equation/PoissonChargeVolume.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/BandgapNarrowing.h"
@@ -30,6 +31,9 @@ struct DDScalingSpec {
     Real chargeLineFactor = 1.0;
     Real fieldFromCoordinateDeltaFactor = 1.0;
     Real currentDensityLineIntegralFactor = 1.0;
+    /// Discretization contract; independent of whether unit scaling is active.
+    PoissonChargeVolumePolicy poissonChargeVolumePolicy =
+        PoissonChargeVolumePolicy::Global;
 };
 
 /**
@@ -147,9 +151,11 @@ private:
     std::vector<Real> Nv_; ///< Per-node hole density of states [m^-3]
 
     // Mesh-derived quantities cached at construction time.
+    std::vector<Material> cellMaterials_;
     std::vector<std::vector<Index>> edgeCells_;
     std::vector<std::vector<Index>> nodeCells_;
     std::vector<Real> vol_;
+    std::vector<Real> poissonChargeVol_;
     std::vector<Real> couple_;
     VectorXd fixedInterfaceChargeRhs_; ///< Cached fixed/interface charge RHS contribution [C].
     DDScalingSpec scaling_;

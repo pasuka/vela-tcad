@@ -93,6 +93,7 @@ void usage()
     std::cerr
         << "Usage: sentaurus_import --tdr FILE [--inventory-json FILE] [--export-dir DIR] "
            "[--field-values-json FILE] "
+           "[--coordinate-unit um|cm] "
            "[--compensated-doping-policy reported|dominant_signed_region]\n";
 }
 
@@ -124,6 +125,8 @@ int main(int argc, char** argv)
                 exportDir = requireValue("--export-dir");
             } else if (arg == "--compensated-doping-policy") {
                 exportOptions.compensatedDopingPolicy = requireValue("--compensated-doping-policy");
+            } else if (arg == "--coordinate-unit") {
+                exportOptions.coordinateUnit = requireValue("--coordinate-unit");
             } else if (arg == "--help" || arg == "-h") {
                 usage();
                 return 0;

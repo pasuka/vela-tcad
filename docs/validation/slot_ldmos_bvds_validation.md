@@ -4,6 +4,10 @@ This is the current qualification reference. Read it before the dated SLOT
 handoff and execution reports. Evidence is local to
 `build/low_voltage_20260906/`; generated simulation states are not checked in.
 
+The [2026-09-21 main integration and template comparison](slot_ldmos_main_integration_2026-09-21.md)
+records the imported element IALMob and solver capabilities, retained SLOT
+endpoint-model compatibility, and qualification limits of each path.
+
 ## Qualification profiles
 
 The historical

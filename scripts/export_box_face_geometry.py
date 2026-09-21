@@ -26,10 +26,7 @@ DEFAULT_SG_EDGES = (
     / "avalanche_internal_source_current_audit_case/BV-A1-B1p00-internal-source-current-audit"
     / "BV-A1-B1p00-internal-source-current-audit_sg_avalanche_edges.csv"
 )
-DEFAULT_ELEMENTS = (
-    REPO / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3"
-    / "imported_reference_fields_20260629_155228/elements.csv"
-)
+
 DEFAULT_INTERNAL = (
     REPO / "build/diagnostics/a1_b1_internal_source_current_audit"
     / "avalanche_internal_source_current_audit.csv"
@@ -164,7 +161,7 @@ VALIDATION_HEADER = [
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sg-edges", type=Path, default=DEFAULT_SG_EDGES)
-    parser.add_argument("--elements-csv", type=Path, default=DEFAULT_ELEMENTS)
+    parser.add_argument("--elements-csv", type=Path, required=True)
     parser.add_argument("--internal-audit", type=Path, default=DEFAULT_INTERNAL)
     parser.add_argument("--out-csv", type=Path, default=REPO / "build/diagnostics/box_face_geometry_audit.csv")
     parser.add_argument("--out-summary", type=Path, default=REPO / "build/diagnostics/box_face_geometry_audit_summary.md")
@@ -672,8 +669,6 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-
 
 
 

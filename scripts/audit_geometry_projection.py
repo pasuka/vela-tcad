@@ -72,14 +72,11 @@ def parse_args() -> argparse.Namespace:
             / "BV-A1-B1p00-internal-source-current-audit_sg_avalanche_edges.csv"
         ),
     )
-    parser.add_argument("--elements-csv", type=Path, default=REPO / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/imported_reference_fields_20260629_155228/elements.csv")
+    parser.add_argument("--elements-csv", type=Path, required=True)
     parser.add_argument(
         "--node-compare",
         type=Path,
-        default=(
-            REPO / "build-release/reference_tcad/pn2d_sentaurus2018_coarse7x3/reports"
-            / "coarse_previous_full20_fields_20260629_155228/coarse_node_field_compare_aligned.csv"
-        ),
+        required=True,
     )
     parser.add_argument("--edge-to-cell-reconstruction", type=Path, default=REPO / "build/diagnostics/edge_to_cell_vector_current_reconstruction.csv")
     parser.add_argument("--biases", default="0,-5,-10,-16,-18,-20")
