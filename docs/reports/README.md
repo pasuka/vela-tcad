@@ -1,4 +1,9 @@
-# LDMOS 会议汇报材料
+# LDMOS 汇报材料
+
+- [SLOT LDMOS 2026-09-21 日报素材](slot_ldmos_daily_2026-09-21/README.md)：
+  当日材料/源项修正、10 V 验证进展和三组真实器件配图；高压及 BVDS 未完成。
+
+## 2026-09-12 至 17 日会议材料
 
 - [Markdown 主报告](ldmos_review_2026-09-12_17/report.md)
 - [PDF 完整报告](LDMOS_R11_full_report.pdf)

@@ -1,0 +1,7 @@
+Source: build/slot_energy_reference_20260921/ctest_av_projection_all.log
+SHA256: d5101128365eabcaff9f0d6cb0c864c60dde79958c53ee946a20a51c9f585d55
+888/888 Test #362: IALMob avalanche boundary projection removes normal field without changing current .....................   Passed    0.07 sec
+
+100% tests passed out of 888
+
+Total Test time (real) = 119.37 sec

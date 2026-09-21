@@ -1,0 +1,11 @@
+{
+  "numeric_recalculation": "passed",
+  "input_hashes": "passed",
+  "mesh_shape_and_connectivity": "passed",
+  "png_dimensions": "3520x1980 (3 files)",
+  "svg_xml": "passed (3 files)",
+  "markdown_links": "passed",
+  "visual_review": "All three PNG figures inspected; source-bar caption overlap corrected and reinspected.",
+  "solver_rerun": false,
+  "simulation_status": "paused"
+}

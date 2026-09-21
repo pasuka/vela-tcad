@@ -1,0 +1,17 @@
+{
+  "sha256": {
+    ".gitattributes": "a80a582dc5f93120c88807d0e39f22e345ccc548a49f59ae75499d3e649c8f03",
+    "data/figure_data.npz": "d4b79908c01acef39f47974f4f8b2e3bdfab1fd8f3f8e9e0baec7eb75e33c5df",
+    "data/release_validation.txt": "15555597cd46e578c304c71be26abd74e435a8b79ee4e3272668e9ed0ddeb878",
+    "data/summary.json": "6260a02b81bda2f4c92eb4b0c017d40d446ad5325008829ceccd09c71467dcc3",
+    "data/validation.json": "899967201615afd9269db6bdc0d2d84f369d5ca147c34cc3d177444375c45190",
+    "figures/01_device_structure.png": "4ad3c902fed24bb90c606c81e3586475ceb0b47d1281b3c72fc27e1e04c53425",
+    "figures/01_device_structure.svg": "69429dd88fa051a185c7213a7b8ffa2947dcbc61e29e0e8927804179d497c115",
+    "figures/02_potential_and_progress.png": "3c58aac0ee2ae7b26713fac1a8eef5ca8bf9437e42e0e308c6da277b5efdaec3",
+    "figures/02_potential_and_progress.svg": "ebd9dbfdecb3498e61f638a50833d7a7b14aabe65ca4f01e182b437ddff5ff0e",
+    "figures/03_avalanche_boundary.png": "d9892ae2e75f4f9535bf8b95a5c661c31eb1f01d02203f7889c1059000767175",
+    "figures/03_avalanche_boundary.svg": "901a4455159e9e8f566881aa6bfefca782a64f2b0fd56b5aabdb9700773c51cc",
+    "README.md": "f7aff801a46a48d9abea2f26f9bd70da86379ec2423cc8e71b0879fa80cee43b",
+    "report.md": "576299505686f77a35b0c3b021449f7052ffbf9f2fb70237c9de8f71a6bc43e9"
+  }
+}
