@@ -114,6 +114,11 @@ class SlotAdaptiveContinuationTest(unittest.TestCase):
                 document["sweep"]["initial_state_file"], str(initial.resolve()))
             self.assertIn("prewarm_008_v_0p246875", str(run_dir))
             self.assertIn("prewarm_008", config.name)
+            basin, _, _ = MODULE.render_poisson_prewarm(
+                base, bundle, 0.246875, initial, 8, 17, "contact_basin")
+            self.assertEqual(basin["solver"]["poisson_only_quasi_fermi_initialization"], "contact_basin")
+            with self.assertRaises(ValueError):
+                MODULE.render_poisson_prewarm(base, bundle, 0.246875, initial, 8, 17, "typo")
 
     def test_local_update_diagnostics_are_opt_in_and_run_relative(self) -> None:
         document = {"solver": {"max_iter": 7}}

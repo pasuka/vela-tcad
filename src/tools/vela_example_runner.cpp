@@ -320,6 +320,8 @@ void writeNewtonSolutionVtk(const std::filesystem::path& path,
             problem.newton.taun,
             problem.newton.taup,
             problem.newton.srhDopingDependence);
+    recombination.activeMaterials = problem.newton.recombinationMaterials;
+    recombination.volumePolicy = problem.newton.recombinationVolumePolicy;
     recombination.augerCn = problem.newton.augerCn;
     recombination.augerCp = problem.newton.augerCp;
     recombination.augerDensityDependence = problem.newton.augerDensityDependence;
@@ -708,6 +710,12 @@ nlohmann::json runSrhFixedStateProbe(const std::string& configFile,
         vela::detail::buildValidatedEffectiveNodeNi(
             "srh_fixed_state_probe", problem.mesh, problem.matdb,
             problem.doping, problem.newton.bandgapNarrowing, thermalVoltageV);
+    const auto intrinsicReference=vela::detail::buildNodeIntrinsicReference(
+        problem.mesh,problem.matdb,temperatureK);
+    const auto electronPrefactor=vela::detail::carrierReferencePrefactor(
+        productionNi,intrinsicReference,thermalVoltageV,true);
+    const auto holePrefactor=vela::detail::carrierReferencePrefactor(
+        productionNi,intrinsicReference,thermalVoltageV,false);
     const std::vector<vela::Real> electronDensityOfStates =
         vela::detail::buildNodeDensityOfStates(
             problem.mesh, problem.matdb, temperatureK, true);
@@ -771,10 +779,10 @@ nlohmann::json runSrhFixedStateProbe(const std::string& configFile,
         const vela::Real niProduction = productionNi[i];
         const vela::Real splittingV = holeQfV[i] - electronQfV[i];
         const vela::Real qfElectron = vela::electronDensity(
-            niProduction, electronDensityOfStates[i], electrostaticPotentialV[i],
+            electronPrefactor[i], electronDensityOfStates[i], electrostaticPotentialV[i],
             electronQfV[i], thermalVoltageV, problem.newton.carrierStatistics);
         const vela::Real qfHole = vela::holeDensity(
-            niProduction, holeDensityOfStates[i], electrostaticPotentialV[i],
+            holePrefactor[i], holeDensityOfStates[i], electrostaticPotentialV[i],
             holeQfV[i], thermalVoltageV, problem.newton.carrierStatistics);
         const vela::Real dopingConcentration = model.srhDopingConcentration(
             problem.doping.donors(node), problem.doping.acceptors(node));

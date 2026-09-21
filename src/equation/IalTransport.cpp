@@ -138,12 +138,33 @@ std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& 
         if (coefficientSum[edge.id]>0.)
             for (auto& c:result->edges[edge.id]) c.weight/=coefficientSum[edge.id];
     }
+    result->constantElectronEdges.assign(mesh.numEdges(),0.);
+    result->constantHoleEdges.assign(mesh.numEdges(),0.);
+    std::set<std::string> foundConstantMaterials;
+    for (const auto& edge:mesh.edges()) {
+        std::array<Real,2> sum{};int count=0;
+        for (Index id:adjacent.at(pair(edge.n0,edge.n1))) {
+            const auto& name=mesh.getRegion(mesh.getCell(id).region_id).material;
+            const auto entry=options.constantMaterialMobility.find(name);
+            if (entry==options.constantMaterialMobility.end()) continue;
+            foundConstantMaterials.insert(name);++count;
+            for(int k=0;k<2;++k) sum[k]+=entry->second[k]*1e-4/config.internalMobilityToM2PerVS;
+        }
+        if (!count) continue;
+        if (!result->edges[edge.id].empty())
+            throw std::invalid_argument("IALMob constant material must not share a transport edge with Si");
+        result->constantElectronEdges[edge.id]=sum[0]/count;
+        result->constantHoleEdges[edge.id]=sum[1]/count;
+    }
+    for (const auto& [name,value]:options.constantMaterialMobility)
+        if (!foundConstantMaterials.count(name))
+            throw std::invalid_argument("Unknown IALMob constant material: "+name);
     return result;
 }
 }
 
 std::shared_ptr<const IalTransportOptions> ialTransportOptionsFromJson(const json& input) {
-    keys(input,{"geometry_file","effective_electrodes","crystal_x","crystal_y","electron_parameters_cm","hole_parameters_cm","high_field","reference_density_m3"});
+    keys(input,{"geometry_file","effective_electrodes","crystal_x","crystal_y","electron_parameters_cm","hole_parameters_cm","high_field","reference_density_m3","constant_material_mobility_cm2_per_Vs"});
     auto options=std::make_shared<IalTransportOptions>();
     options->geometryFile=input.at("geometry_file");
     if (!std::filesystem::path(options->geometryFile).is_absolute())
@@ -152,6 +173,17 @@ std::shared_ptr<const IalTransportOptions> ialTransportOptionsFromJson(const jso
     options->crystalX=input.at("crystal_x");options->crystalY=input.at("crystal_y");
     options->element.highField=input.value("high_field",true);
     options->element.referenceDensity_m3=input.value("reference_density_m3",1e18);
+    if (input.contains("constant_material_mobility_cm2_per_Vs")) {
+        const auto& entries=input.at("constant_material_mobility_cm2_per_Vs");
+        if (!entries.is_object()) throw std::invalid_argument("IALMob constant materials must be an object");
+        for (const auto& [name,row]:entries.items()) {
+            if (name.empty()||name=="Si") throw std::invalid_argument("IALMob constant material must be explicit non-Si");
+            keys(row,{"electron","hole"});
+            const std::array<Real,2> values{row.at("electron").get<Real>(),row.at("hole").get<Real>()};
+            for(Real v:values) if (!std::isfinite(v)||v<=0.) throw std::invalid_argument("IALMob constant mobility must be positive finite");
+            options->constantMaterialMobility.emplace(name,values);
+        }
+    }
     for (const auto& [name,p]:input.at("electron_parameters_cm").items())
         options->electrons.emplace(std::stoi(name),IalMobility(ial_json::parameters(p,true),true));
     for (const auto& [name,p]:input.at("hole_parameters_cm").items())
@@ -223,7 +255,8 @@ void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
     auto s=std::make_shared<IalTransportState>();s->psi=psi;s->n=n;s->p=p;s->phin=phin;s->phip=phip;s->dn=dn;s->dp=dp;s->temperature=temperature;s->dn_dT=dn_dT;s->dp_dT=dp_dT;
     s->hasTemperatureDerivatives=temperatureDerivatives;
     s->hasSpatialDerivatives=spatialDerivatives;
-    s->electronEdges.resize(mesh.numEdges(),0.);s->holeEdges.resize(mesh.numEdges(),0.);
+    s->electronEdges=config.ialmobGeometry->constantElectronEdges;
+    s->holeEdges=config.ialmobGeometry->constantHoleEdges;
     auto options=config.ialmob->element;
     IalScreeningCache screening;
     IalMobilityPreparationCache preparation;
@@ -269,7 +302,7 @@ void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
 Real ialEdgeMobility(const MobilityModelConfig& config,Index edge,CarrierType carrier,bool lowField) {
     if (!config.ialmobState) throw std::logic_error("IALMob edge requested without a live state");
     if (lowField) {
-        Real result=0.;
+        Real result=carrier==CarrierType::Electron?config.ialmobGeometry->constantElectronEdges.at(edge):config.ialmobGeometry->constantHoleEdges.at(edge);
         for (const auto& c:config.ialmobGeometry->edges.at(edge)) {
             const auto& r=config.ialmobState->cells[c.support];
             result+=c.weight*(carrier==CarrierType::Electron?r.electronLowField.value:r.holeLowField.value);

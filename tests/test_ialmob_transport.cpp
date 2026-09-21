@@ -8,8 +8,11 @@
 #include <catch2/catch_approx.hpp>
 #include "vela/equation/IalTransport.h"
 #include "vela/equation/CoupledDDAssembler.h"
+#include "vela/equation/AssemblerUtils.h"
+#include "vela/equation/DDAssembler.h"
 #include "vela/post/ContactCurrent.h"
 #include "vela/solver/GummelSolver.h"
+#include "vela/solver/NewtonSolver.h"
 #include "vela/core/PhysicalConstants.h"
 #include <nlohmann/json.hpp>
 #include <filesystem>
@@ -99,6 +102,221 @@ struct Fixture {
     }
     ~Fixture() {std::error_code ec;std::filesystem::remove(path,ec);}
 };
+}
+
+TEST_CASE("IALMob keeps isolated poly transport constant and scopes recombination",
+          "[ialmob][material_scope][jacobian]")
+{
+    for (bool tcad:{false,true}) {
+      for (Real intrinsicOffset:{0.,0.00793}) {
+        Fixture f(tcad);
+        const Real length=tcad?.1:1e-7;
+        for (Index i=6;i<9;++i) {Node n;n.id=i;n.x=3*length+(i==7?length:0);n.y=i==8?length:0;f.mesh.addNode(n);}
+        Cell c;c.id=4;c.region_id=2;c.node_ids={6,7,8};f.mesh.addCell(c);
+        Region region;region.id=2;region.name="poly";region.material="PolySilicon";region.cell_ids={4};f.mesh.addRegion(region);
+        f.mesh.buildEdges();
+        auto geometry=nlohmann::json::parse(std::ifstream(f.path));
+        geometry["node_count"]=9;geometry["cell_count"]=5;
+        std::ofstream(f.path)<<geometry.dump();
+        std::map<std::pair<Index,Index>,Real> weights;
+        for(const auto& row:geometry["cells"]) {
+            const auto nodes=row["node_ids"].get<std::array<Index,3>>();
+            const auto values=row["edge_coefficients"].get<std::array<Real,3>>();
+            for(int k=0;k<3;++k) weights[std::minmax(nodes[k],nodes[(k+1)%3])]+=values[k];
+        }
+        for(const auto& edge:f.mesh.edges()) f.mesh.setTransportCouple(edge.id,
+            (edge.n0>=6?.5:weights[std::minmax(edge.n0,edge.n1)])*edge.length);
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        options->constantMaterialMobility["PolySilicon"]={1417.,470.5};f.mobility.ialmob=options;
+        Material poly=f.materials.getMaterial("Si");poly.name="PolySilicon";
+        poly.intrinsic_reference_potential_V=intrinsicOffset;
+        poly.mun=1417e-4/f.mobility.internalMobilityToM2PerVS;
+        poly.mup=470.5e-4/f.mobility.internalMobilityToM2PerVS;
+        f.materials.addMaterial(poly);
+        f.doping=DopingModel::fromMeshAndRegions(f.mesh,{{"silicon",tcad?2e17:2e23,0.},{"poly",tcad?1e18:1e24,0.}});
+        const Real vt=constants::kb*300./constants::q;
+        RecombinationModelConfig selected;selected.mechanisms={"srh","auger"};selected.activeMaterials={"Si"};
+        RecombinationModelConfig off=selected;off.mechanisms.clear();
+        CoupledDDAssembler on(f.mesh,f.materials,f.doping,vt,f.mobility,selected);
+        CoupledDDAssembler zero(f.mesh,f.materials,f.doping,vt,f.mobility,off);
+        CoupledDDState state;state.psi=VectorXd::Constant(9,.3);state.phin=VectorXd::Zero(9);state.phip=VectorXd::Constant(9,.02);
+        state.phin[7]=.003;
+        for(int i=6;i<9;++i) state.psi[i]+=intrinsicOffset;
+        auto x=on.pack(state);CoupledDDBoundaryConditions bc;
+        CHECK(on.electronDensity(x)[7]==Catch::Approx(poly.ni*std::exp((.3-.003)/vt)));
+        CHECK(on.holeDensity(x)[7]==Catch::Approx(poly.ni*std::exp((.02-.3)/vt)));
+        auto r=on.residual(x,bc),r0=zero.residual(x,bc);
+        REQUIRE(r.segment(9+6,3).norm()>0.);
+        CHECK(r.segment(9+6,3)==r0.segment(9+6,3));
+        CHECK(r.segment(18+6,3)==r0.segment(18+6,3));
+        CHECK((r-r0).segment(9,4).norm()>0.);
+        const auto jac=on.assembleJacobian(x,bc);
+        for (int col:{6,7,8,15,16,17,24,25,26}) {
+            auto plus=x,minus=x;plus[col]+=1e-6;minus[col]-=1e-6;
+            const VectorXd fd=(on.residual(plus,bc)-on.residual(minus,bc))/(2e-6);
+            const VectorXd analytic=jac.col(col);
+            CHECK((fd-analytic).norm()/std::max(analytic.norm(),1e-30)<2e-6);
+        }
+        prepareIalTransportGeometry(f.mobility,f.mesh);
+        const auto n=on.electronDensity(x),p=on.holeDensity(x);
+        DDAssembler ddOn(f.mesh,f.materials,f.doping,vt,f.mobility,selected);
+        DDAssembler ddOff(f.mesh,f.materials,f.doping,vt,f.mobility,off);
+        for (bool electron:{false,true}) {
+            if (electron) {ddOn.assembleElectronContinuity(state.psi,n,p);ddOff.assembleElectronContinuity(state.psi,n,p);}
+            else {ddOn.assembleHoleContinuity(state.psi,n,p);ddOff.assembleHoleContinuity(state.psi,n,p);}
+            for(int i=6;i<9;++i) {
+                CHECK(ddOn.rhs()[i]==ddOff.rhs()[i]);
+                CHECK(ddOn.matrix().coeff(i,i)==ddOff.matrix().coeff(i,i));
+            }
+        }
+        updateIalTransportState(f.mobility,f.mesh,f.doping,state.psi,n,p,state.phin,state.phip);
+        for (const auto& edge:f.mesh.edges()) if(edge.n0>=6) {
+            CHECK(ialEdgeMobility(f.mobility,edge.id,CarrierType::Electron)==Catch::Approx(poly.mun));
+            CHECK(ialEdgeMobility(f.mobility,edge.id,CarrierType::Hole,true)==Catch::Approx(poly.mup));
+        }
+        // Restoring PolySilicon carriers and its energy reference must not
+        // extend the Si-only element avalanche support into the isolated gate.
+        auto impact=impactIonizationModelConfig("van_overstraeten",
+            UnitScalingConfig{tcad?UnitScalingMode::UnitScaling:UnitScalingMode::LegacySI});
+        impact.drivingForce="quasi_fermi_gradient";impact.generation="current_density";
+        impact.currentApproximation="element_edge_sg_gss_laux";
+        impact.sourceMappingMode="element_vertex_box_measure";
+        impact.quasiFermiGradientDiscretization="cell_gradient";
+        impact.sourceJacobianMode="local_ad";
+        impact.bScale=.0001;impact.aScale=.01;
+        DDScalingSpec avScaling;
+        if(tcad) {
+            avScaling.enabled=true;avScaling.V0=vt;avScaling.C0=1e17;
+            avScaling.D0=1000.*vt;avScaling.mu0=1000.;avScaling.L0=.1;
+            avScaling.permittivityReference_F_per_m=constants::eps0*11.7;
+            avScaling.unitSystem=PhysicalUnitSystem::tcadInternal();
+            avScaling.chargeAreaFactor=avScaling.unitSystem.chargeAreaFactor();
+            avScaling.chargeLineFactor=avScaling.unitSystem.chargeLineFactor();
+            avScaling.fieldFromCoordinateDeltaFactor=avScaling.unitSystem.fieldFromCoordinateDeltaFactor();
+            avScaling.currentDensityLineIntegralFactor=avScaling.unitSystem.currentDensityAM2PerInternal()*avScaling.unitSystem.lengthMPerInternal();
+        }
+        CoupledDDAssembler avalanche(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},avScaling);
+        auto driven=state;
+        for(int i=0;i<4;++i) {
+            driven.psi[i]=.48+.012*i;
+            driven.phin[i]=.003*i;
+            driven.phip[i]=.96-.002*i;
+        }
+        if(tcad) {driven.psi/=vt;driven.phin/=vt;driven.phip/=vt;}
+        const auto drivenX=avalanche.pack(driven);
+        const auto avSource=avalanche.impactIonizationSourceResidual(drivenX,bc);
+        const auto avJac=avalanche.impactIonizationSourceJacobian(drivenX,bc);
+        CAPTURE(tcad,intrinsicOffset);
+        REQUIRE(avSource.segment(9,4).norm()>0.);
+        for(int node=6;node<9;++node) {
+            for(int block=0;block<3;++block) {
+                const int row=block*9+node;
+                CHECK(avSource[row]==0.);
+                CHECK(VectorXd(avJac.row(row)).norm()==0.);
+                CHECK(VectorXd(avJac.col(row)).norm()==0.);
+                auto plus=drivenX,minus=drivenX;
+                plus[row]+=1e-6;minus[row]-=1e-6;
+                const VectorXd fd=(avalanche.impactIonizationSourceResidual(plus,bc)
+                    -avalanche.impactIonizationSourceResidual(minus,bc))/(2e-6);
+                CHECK(fd.norm()==0.);
+            }
+        }
+        const auto mats=detail::buildCellMaterials(f.mesh,f.materials,300.);
+        CHECK_THROWS(detail::recombinationNodeMask(f.mesh,mats,{"Missing"}));
+        CHECK_THROWS(detail::recombinationNodeMask(f.mesh,mats,{"Si","Si"}));
+        CHECK_THROWS(detail::recombinationNodeMask(f.mesh,mats,{""}));
+      }
+    }
+}
+
+TEST_CASE("Material source scope parses in Newton and Gummel", "[material_scope][config]") {
+    const nlohmann::json input={{"recombination_materials",{"Si"}}};
+    CHECK(newtonConfigFromJson(input).recombinationMaterials==std::vector<std::string>{"Si"});
+    CHECK(gummelConfigFromJson(input).recombinationMaterials==std::vector<std::string>{"Si"});
+    CHECK(newtonConfigFromJson(nlohmann::json::object()).recombinationMaterials.empty());
+    CHECK_THROWS(newtonConfigFromJson({{"recombination_materials",12}}));
+    const nlohmann::json local={{"recombination_volume_policy","material_local_mixed_voronoi"}};
+    CHECK(newtonConfigFromJson(local).recombinationVolumePolicy=="material_local_mixed_voronoi");
+    CHECK(gummelConfigFromJson(local).recombinationVolumePolicy=="material_local_mixed_voronoi");
+    CHECK_THROWS(newtonConfigFromJson({{"recombination_volume_policy","typo"}}));
+    CHECK_THROWS(gummelConfigFromJson({{"recombination_volume_policy","typo"}}));
+}
+
+TEST_CASE("Material-local SRH volume excludes dielectric area and differentiates the same source",
+          "[material_scope][source_volume][jacobian]") {
+    for(bool tcad:{false,true}) {
+        Fixture f(tcad);
+        RecombinationModelConfig legacy;legacy.activeMaterials={"Si"};
+        legacy.taun=legacy.taup=1e-15; // Resolve source differences above transport roundoff.
+        auto local=legacy;local.volumePolicy="material_local_mixed_voronoi";
+        auto off=legacy;off.mechanisms.clear();
+        const Real vt=constants::kb*300./constants::q;
+        CoupledDDAssembler a(f.mesh,f.materials,f.doping,vt,f.mobility,legacy);
+        CoupledDDAssembler b(f.mesh,f.materials,f.doping,vt,f.mobility,local);
+        CoupledDDAssembler z(f.mesh,f.materials,f.doping,vt,f.mobility,off);
+        CoupledDDState state;state.psi=VectorXd::Constant(6,.05);
+        state.phin=VectorXd::Zero(6);state.phip=VectorXd::Constant(6,.02);
+        const auto x=a.pack(state);CoupledDDBoundaryConditions bc;
+        const auto ra=a.residual(x,bc),rb=b.residual(x,bc),rz=z.residual(x,bc);
+        const auto materials=detail::buildCellMaterials(f.mesh,f.materials,300.);
+        const auto all=detail::recombinationNodeVolumes(f.mesh,materials,"legacy_node");
+        const auto si=detail::recombinationNodeVolumes(f.mesh,materials,local.volumePolicy);
+        CHECK(rb.head(6)==ra.head(6)); // Charge measure is independent.
+        const Real length=tcad?.1:1e-7;
+        CHECK(std::accumulate(si.begin(),si.end(),0.)==Catch::Approx(length*length));
+        REQUIRE(si[2]<all[2]);REQUIRE(si[3]<all[3]);
+        for(int i=0;i<4;++i)for(int offset:{6,12})
+            CHECK((rb-rz)[offset+i]==Catch::Approx((ra-rz)[offset+i]*si[i]/all[i]).epsilon(1e-9));
+        const auto jac=b.assembleJacobian(x,bc);
+        for(int col:{2,3,8,9,14,15}) {
+            auto plus=x,minus=x;plus[col]+=1e-6;minus[col]-=1e-6;
+            const VectorXd fd=(b.residual(plus,bc)-b.residual(minus,bc))/(2e-6);
+            const VectorXd analytic=jac.col(col);
+            CHECK((fd-analytic).norm()/std::max(analytic.norm(),1e-30)<2e-6);
+        }
+        const auto n=a.electronDensity(x),p=a.holeDensity(x);
+        DDAssembler da(f.mesh,f.materials,f.doping,vt,f.mobility,legacy);
+        DDAssembler db(f.mesh,f.materials,f.doping,vt,f.mobility,local);
+        DDAssembler dz(f.mesh,f.materials,f.doping,vt,f.mobility,off);
+        for(bool electron:{false,true}) {
+            for(auto* dd:{&da,&db,&dz}) {
+                if(electron)dd->assembleElectronContinuity(state.psi,n,p);
+                else dd->assembleHoleContinuity(state.psi,n,p);
+            }
+            for(int i=0;i<4;++i) {
+                CHECK((db.rhs()-dz.rhs())[i]==Catch::Approx((da.rhs()-dz.rhs())[i]*si[i]/all[i]).epsilon(1e-9));
+                CHECK(db.matrix().coeff(i,i)-dz.matrix().coeff(i,i)==Catch::Approx(
+                    (da.matrix().coeff(i,i)-dz.matrix().coeff(i,i))*si[i]/all[i]).epsilon(1e-9));
+            }
+        }
+    }
+}
+
+TEST_CASE("Material reference keeps Ohmic neutrality and physical quasi-Fermi bias",
+          "[material_reference][newton][gummel]") {
+    DeviceMesh mesh;
+    for(Index i=0;i<3;++i){Node n;n.id=i;n.x=i==1?1e-7:0.;n.y=i==2?1e-7:0.;mesh.addNode(n);}
+    Cell cell;cell.id=0;cell.region_id=0;cell.node_ids={0,1,2};mesh.addCell(cell);
+    Region region;region.id=0;region.name="body";region.material="Si";region.cell_ids={0};mesh.addRegion(region);
+    Contact contact;contact.id=0;contact.name="terminal";contact.node_ids={0,1,2};mesh.addContact(contact);mesh.buildEdges();
+    MaterialDatabase db;Material si=db.getMaterial("Si");si.intrinsic_reference_potential_V=.00793;db.addMaterial(si);
+    const auto doping=DopingModel::fromMeshAndRegions(mesh,{{"body",1e23,0.}});
+    const Real vt=constants::kb*300/constants::q;
+    const auto equilibrium=equilibriumCarrierState(1e23,si.ni,*si.Nc_m3,*si.Nv_m3,vt,CarrierStatisticsConfig{});
+    const std::unordered_map<std::string,Real> biases{{"terminal",.2}};
+    NewtonConfig config;config.recombination.clear();
+    const auto result=NewtonSolver(mesh,db,doping,biases,config).solve();
+    REQUIRE(result.converged);
+    GummelConfig gcfg;gcfg.recombination.clear();
+    const auto gummel=runGummel(mesh,db,doping,biases,gcfg);
+    REQUIRE(gummel.converged);
+    for(const auto* sol:{&result.solution,&gummel})for(int i=0;i<3;++i){
+        CHECK(sol->psi[i]==Catch::Approx(.2+equilibrium.potential+.00793));
+        CHECK(sol->n[i]==Catch::Approx(equilibrium.n));
+        CHECK(sol->p[i]==Catch::Approx(equilibrium.p));
+        CHECK(sol->phin[i]==Catch::Approx(.2));CHECK(sol->phip[i]==Catch::Approx(.2));
+    }
+    CHECK_THROWS(detail::buildNodeIntrinsicReference(mesh,db,350.));
 }
 
 TEST_CASE("IALMob Fermi Auger enhancement has a consistent coupled source Jacobian",
@@ -211,7 +429,8 @@ TEST_CASE("IALMob avalanche differentiates live element mobility in every potent
           "[ialmob][impact][element_edge_gss_laux][jacobian]")
 {
     const Real vt=constants::kb*300./constants::q;
-    for (bool tcad:{false,true}) for (Real referenceDensity:{0.,1e18}) {
+    for (bool tcad:{false,true}) for (Real referenceDensity:{0.,1e18})
+    for (bool boundaryProjection:{false,true}) {
         Fixture f(tcad);
         auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
         options->element.referenceDensity_m3=referenceDensity;f.mobility.ialmob=options;
@@ -234,6 +453,7 @@ TEST_CASE("IALMob avalanche differentiates live element mobility in every potent
         // Manufactured field scale makes avalanche resolvable on the small
         // fixture. This changes no production coefficient or acceptance gate.
         impact.bScale=.001;impact.aScale=.01;
+        impact.ialmobBoundaryFieldProjection=boundaryProjection;
         RecombinationModelConfig off;off.mechanisms.clear();
         CoupledDDAssembler assembler(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
         const Real scale=tcad?vt:1.;
@@ -252,7 +472,7 @@ TEST_CASE("IALMob avalanche differentiates live element mobility in every potent
             auto plus=x,minus=x;const Real h=2e-7/scale;plus[k]+=h;minus[k]-=h;
             const VectorXd fd=(assembler.residual(plus,bc)-assembler.residual(minus,bc))/(2*h);
             const VectorXd sf=(assembler.impactIonizationSourceResidual(plus,bc)-assembler.impactIonizationSourceResidual(minus,bc))/(2*h);
-            CAPTURE(tcad,referenceDensity,k);
+            CAPTURE(tcad,referenceDensity,boundaryProjection,k);
             const VectorXd sc=source.col(k);
             CHECK((sc-sf).norm()/std::max({sc.norm(),sf.norm(),1e-30})<3e-5);
             for(int block=0;block<3;++block) {
@@ -274,6 +494,64 @@ TEST_CASE("IALMob avalanche differentiates live element mobility in every potent
         CoupledDDAssembler frozen(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
         CHECK_THROWS_AS(frozen.residual(x,bc),std::invalid_argument);
     }
+}
+
+TEST_CASE("IALMob avalanche boundary projection removes normal field without changing current",
+          "[ialmob][impact][element_edge_gss_laux]")
+{
+    Fixture f;
+    prepareIalTransportGeometry(f.mobility,f.mesh);
+    const auto cellEdges=detail::buildCellEdgeMap(detail::buildEdgeCellMap(f.mesh),f.mesh);
+    const auto materials=detail::buildCellMaterials(f.mesh,f.materials,300.);
+    const auto mobility=makeMobilityModel(f.mobility);
+    auto impact=impactIonizationModelConfig("van_overstraeten");
+    impact.drivingForce="quasi_fermi_gradient";impact.generation="current_density";
+    impact.currentApproximation="element_edge_sg_gss_laux";
+    impact.sourceMappingMode="element_vertex_box_measure";
+    impact.quasiFermiGradientDiscretization="cell_gradient";
+    impact.bScale=.001;
+    const auto model=makeImpactIonizationModel(impact);
+    const Real vt=constants::kb*300./constants::q;
+    VectorXd psi=VectorXd::Constant(6,.48),fn(6),fp=VectorXd::Constant(6,.96),n(6),p(6);
+    std::vector<Real> ni(6,1e16);
+    for(int i=0;i<6;++i) fn[i]=f.mesh.getNode(i).y*3e5;
+    const auto record=[&]() {
+        for(int i=0;i<6;++i) {
+            n[i]=ni[i]*std::exp((psi[i]-fn[i])/vt);
+            p[i]=ni[i]*std::exp((fp[i]-psi[i])/vt);
+        }
+        return detail::elementEdgeGssLauxAvalancheSourceRecordForCell(
+            impact,*model,f.mobility,*mobility,cellEdges.at(1),f.mesh,f.doping,
+            materials,1,psi,fn,fp,n,p,ni,vt);
+    };
+    const auto original=record();
+    REQUIRE(original.electronAlpha>0.);
+    impact.ialmobBoundaryFieldProjection=true;
+    const auto projected=record();
+    CHECK(projected.electronImpactField==0.);
+    CHECK(projected.electronAlpha==0.);
+    CHECK((projected.electronCurrentVector-original.electronCurrentVector).norm()==0.);
+    for(int i=0;i<6;++i) fn[i]+=f.mesh.getNode(i).x*2e5;
+    CHECK(record().electronImpactField==Catch::Approx(2e5));
+    impact.contactElectricFieldFallback=true;
+    CHECK(record().electronImpactField==0.);
+}
+
+TEST_CASE("Avalanche boundary projection is opt in and parsed by both solvers", "[ialmob][impact][config]")
+{
+    CHECK_FALSE(newtonConfigFromJson(nlohmann::json::object()).impactIonization.ialmobBoundaryFieldProjection);
+    CHECK_FALSE(gummelConfigFromJson(nlohmann::json::object()).impactIonization.ialmobBoundaryFieldProjection);
+    const nlohmann::json cfg={{"impact_ionization",{{"model","van_overstraeten"},
+        {"current_approximation","element_edge_sg_gss_laux"},
+        {"generation","current_density"},{"driving_force","quasi_fermi_gradient"},
+        {"source_mapping_mode","element_vertex_box_measure"},
+        {"quasi_fermi_gradient_discretization","cell_gradient"},
+        {"ialmob_boundary_field_projection",true}}}};
+    CHECK(newtonConfigFromJson(cfg).impactIonization.ialmobBoundaryFieldProjection);
+    CHECK(gummelConfigFromJson(cfg).impactIonization.ialmobBoundaryFieldProjection);
+    auto impact=impactIonizationModelConfig("van_overstraeten");
+    impact.ialmobBoundaryFieldProjection=true;
+    CHECK_THROWS_AS(detail::validateImpactIonizationDrivingForce(impact,"test"),std::invalid_argument);
 }
 
 TEST_CASE("IALMob transport rejects geometry coupling mismatch", "[ialmob][transport]")

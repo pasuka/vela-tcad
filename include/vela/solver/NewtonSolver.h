@@ -233,6 +233,8 @@ struct NewtonConfig {
     Real augerCn = 2.90e-43; ///< Electron Auger coefficient [m^6/s]
     Real augerCp = 1.028e-43; ///< Hole Auger coefficient [m^6/s]
     std::string augerExcessProduct = "generalized_fermi"; ///< "generalized_fermi" or "classical_np".
+    std::string recombinationVolumePolicy = "legacy_node";
+    std::vector<std::string> recombinationMaterials; ///< Empty: all materials.
     bool augerWithGeneration = true; ///< Compatibility default; false clips Auger generation.
     AugerDensityDependenceConfig augerDensityDependence{};
     MobilityModelConfig mobility{}; ///< Mobility model configuration
@@ -797,7 +799,8 @@ public:
     /// the standard Newton solve. `biasFiniteDifferenceStep_V` sizes the central
     /// finite difference used to estimate dF/dV.
     ArclengthSystem makeArclengthSystem(const std::string& activeContact,
-                                        Real biasFiniteDifferenceStep_V = 1.0e-4) const;
+                                        Real biasFiniteDifferenceStep_V = 1.0e-4,
+                                        bool positiveDensityTrials = false) const;
 
     /// Convert a physical-unit DDSolution into the scaled packed state vector and
     /// back, consistent with makeArclengthSystem. These help drive the continuation

@@ -6,6 +6,14 @@ evidence.
 
 ## Current References
 
+- [SLOT energy reference and source volume, 2026-09-21](validation/slot_ldmos_energy_reference_and_source_volume_2026-09-21.md):
+  band-derived poly reference, material-local SRH/Auger integration, qualified
+  2 V error budget and independent local-equilibrium continuation status.
+
+- [SLOT Auger and poly independent controls, 2026-09-21](validation/slot_ldmos_auger_poly_independent_controls_2026-09-21.md):
+  density-enhanced Auger controls at 2/5/10 V, isolated poly transport and
+  material-scoped SRH/Auger, qualified 2 V restoration and remaining energy-reference gap.
+
 - [SLOT element IALMob execution, 2026-09-21](validation/slot_ldmos_element_ialmob_execution_2026-09-21.md):
   original isotropic parameter and element replay, strict 2 V checkpoint,
   single-factor error budget and complete mobility/avalanche Jacobian work.

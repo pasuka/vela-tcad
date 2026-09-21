@@ -143,6 +143,7 @@ private:
     Real thermalVoltage_;
     DDScalingSpec scaling_;
     std::vector<Real> ni_;
+    std::vector<Real> intrinsicReference_, niElectron_, niHole_;
     std::vector<Real> Nc_;
     std::vector<Real> Nv_;
     CarrierStatisticsConfig carrierStatistics_;

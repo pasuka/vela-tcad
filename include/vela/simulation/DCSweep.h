@@ -246,6 +246,7 @@ struct ExternalResistorControlConfig {
     Real coupledOuterShrinkFactor = 0.5;
     int coupledMaxStepRetries = 12;
     bool coupledApplyDeviceUpdateLimit = true;
+    bool coupledPositiveDensityUpdates = false;
     std::string coupledLineSearchMode = "merit";
     std::string coupledLinearSolver = "direct_bordered";
     Real coupledFilterGamma = 1.0e-4;

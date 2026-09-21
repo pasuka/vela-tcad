@@ -140,6 +140,8 @@ private:
     MobilityModelConfig mobilityConfig_;
     std::unique_ptr<MobilityModel> mobility_;
     RecombinationModel recombination_;
+    std::vector<bool> recombinationNodes_;
+    std::vector<Real> recombinationVol_;
     ImpactIonizationModelConfig impactIonizationConfig_;
     std::unique_ptr<ImpactIonizationModel> impactIonization_;
     bool impactIonizationEnabled_ = false;
@@ -147,6 +149,7 @@ private:
 
     CarrierStatisticsConfig carrierStatistics_;
     std::vector<Real> ni_; ///< Per-node intrinsic concentration [m^-3]
+    std::vector<Real> intrinsicReference_, niElectron_, niHole_;
     std::vector<Real> Nc_; ///< Per-node electron density of states [m^-3]
     std::vector<Real> Nv_; ///< Per-node hole density of states [m^-3]
 

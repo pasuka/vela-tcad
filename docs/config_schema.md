@@ -39,6 +39,28 @@ Scope and conventions:
 | interfaces | array | Optional | Interface sheet/fixed/trap charge definitions; see below. |
 | contacts | array | Yes | Contact bias and type definitions; see below. |
 
+### Isothermal material energy reference
+
+An optional material field `intrinsic_reference_potential_V` defaults to zero.
+At 300 K the coupled/Newton/Gummel transport paths use
+`n = ni * exp((psi - phin - delta)/Vt)` and
+`p = ni * exp((phip - psi + delta)/Vt)` in the Boltzmann case, with the
+corresponding density-of-states prefactors for Fermi statistics. Physical `ni`
+in SRH/Auger is unchanged. Ohmic neutrality uses
+`psi_contact = bias + equilibrium_potential + delta`; quasi-Fermi potentials
+remain physical terminal voltages. The fixed material offset is differentiated
+through carrier density, charge, flux, mobility and recombination.
+
+This option represents a material energy reference, not a fitted contact bias.
+Derive relative offsets from consistent affinity, band gap, density of states
+and a common energy origin; do not infer them from a target current. Nonzero
+offsets require 300 K, reject shared semiconductor nodes with incompatible
+references, and are not supported with quantum correction or Schottky contacts.
+Avalanche with nonzero offsets is restricted to the audited element IALMob
+GSS-Laux configuration where offsets occur only in non-Si materials outside
+its source support. General heterojunction, electrothermal and nonzero-Si
+avalanche-reference extensions require separate work.
+
 ### Explicit electrothermal DC entry
 
 `simulation_type: "electrothermal_dc_sweep"` selects the in-process four-equation
@@ -732,6 +754,7 @@ Commonly used controls:
 - auger_excess_product
 - auger_with_generation
 - auger_density_dependence
+- recombination_materials
 - impact_ionization
 
 Gummel-specific keys:
@@ -1123,6 +1146,21 @@ Notes:
   use the same rate; the analytic Jacobian includes the coefficient's density
   derivative. Cn0/Cp0 still come from the explicit Auger coefficient fields;
   this option does not imply a temperature-dependent A/B/C polynomial.
+- `recombination_materials` optionally restricts nodal SRH/Auger to a list of
+  exact material names, for example `["Si"]`. Omission or an empty list preserves
+  all-material behavior. Newton, Gummel, source Jacobian audits and isothermal
+  exports use the same mask. Source volumes are independently selected by
+  `recombination_volume_policy`. Unknown/duplicate
+  names and nodes shared by included and excluded semiconductor materials are
+  rejected. Insulator interfaces are allowed. This option does not restrict
+  BTBT or avalanche and does not define an electrothermal material policy.
+- `recombination_volume_policy`: `legacy_node` (default) preserves the existing
+  nodal SRH/Auger measure. `material_local_mixed_voronoi` sums mixed-Voronoi
+  vertex shares from semiconductor Tri3 cells only, excluding dielectric area
+  at shared nodes. Residuals, source derivatives, Gummel linearization and
+  continuity diagnostics use the same measure. Transport, Poisson, BTBT and
+  avalanche retain their own measures. This is an explicit isothermal control,
+  not a change to template or C++ defaults.
 - Both Gummel/Newton parse `mobility`, `recombination`, `impact_ionization`, `temperature_K`.
 - With `scaling.mode: "unit_scaling"`, `bandgap_narrowing.reference_doping_m3`
   is read and kept internally as `cm^-3`.
@@ -1674,6 +1712,18 @@ object contains:
 - `high_field`: default `true`; `reference_density_m3`: SI m^-3, default `1e18`,
   in both scaling modes. Outer electron/hole field parameters retain the normal
   active-unit interpretation.
+- `constant_material_mobility_cm2_per_Vs`: optional mapping of explicit non-Si
+  material names to positive finite `electron` and `hole` mobilities. For
+  example, `{"PolySilicon":{"electron":1417,"hole":470.5}}` restores constant
+  poly transport alongside Si IALMob. Values always use cm2/(V s), in both
+  scaling modes. Names must exist on the mesh; an edge shared with Si IALMob
+  is rejected. Constant mobility has zero field/density derivatives, while
+  SG flux derivatives remain active. Material `ni`, doping and contacts must
+  also enable transport; this mapping alone does not create carriers.
+  The isolated SLOT poly extension is qualified here only at 300 K without
+  avalanche. Its material energy reference, thermal behavior and avalanche
+  coupling require separate validation. Use `recombination_materials: ["Si"]`
+  for the original SLOT deck's Silicon-only SRH/Auger scope.
 
 The live coupled path supports 300 K, Si/SiO2 Tri3 geometry, Fermi or Boltzmann
 carrier statistics, without quantum potential. Avalanche additionally requires
@@ -1683,6 +1733,15 @@ all nine potential columns include density, normal-field and HFS feedback.
 The independent source audit recomputes mobility at each perturbed state;
 multiprecision source audits are rejected because the IALMob kernel uses double.
 This implementation does not establish SLOT high-voltage or breakdown qualification.
+For a separate boundary-field control, `impact_ionization.ialmob_boundary_field_projection`
+defaults to `false`. When enabled, the canonical element-edge SG/GSS-Laux
+current-density source with quasi-Fermi driving force projects the avalanche
+quasi-Fermi gradient onto the insulating-boundary tangent of prepared element
+IALMob geometry. Bulk cells retain the full gradient; configured contact electric
+fallback retains precedence. Scalar source and local AD use the same projection,
+including its potential derivatives. This option changes the ionization field
+only: SG source currents and IALMob transport remain unchanged. It does not
+implement Sentaurus `AvalDensGradQF` density averaging or establish native parity.
 Material interfaces
 take precedence over ordinary exterior faces at interface terminations;
 multiple nonparallel interfaces of equal priority are rejected. Distance,
@@ -2127,6 +2186,16 @@ returns its `trial_state_file` in the block summary. Saved states include the
 reference/increment coordinates and SI carrier densities. They are diagnostic
 trials and must pass a full coupled validation before use as checkpoints.
 
+The explicit `block_modes: ["carrier_density"]` candidate requires Boltzmann
+statistics, no quantum correction, and already projected carrier contact
+values. It transforms the full carrier Jacobian into density coordinates,
+limits each depletion to 90 percent, then maps the positive candidate back to
+quasi-Fermi coordinates. Backtracking requires a decrease of the carrier
+residual norm with frozen physical row scales. It is a diagnostic candidate
+method, not a convergence criterion or a new default Newton formulation.
+The continuation driver's `--carrier-corrector-mode carrier_density` uses this
+candidate and retains the full coupled, global closure and all-active-row gates.
+
 The continuation runner's optional `--audit-local-continuity` adds an all-active
 row audit at each accepted candidate, using the deck's `eps_row` and scale floor.
 Failed audits stop advancement; the original solver and closure gates still
@@ -2374,6 +2443,18 @@ load-line convergence tolerances. The filter controls are
 `coupled_filter_gamma` and `coupled_filter_envelope_factor`. The envelope is
 applied independently to the device-equation and load-line residual blocks;
 a large load-line residual cannot authorize growth of the device residual.
+
+`coupled_positive_density_updates` (default `false`, `coupled_newton` only)
+uses a nonlinear positive-density trial path for classical Boltzmann carriers.
+The full device and current Jacobians are unchanged. The linearized relative
+density step is bounded below by -0.9, then mapped back with `log1p`; configured
+quasi-Fermi caps apply to the mapped components instead of uniformly scaling
+the circuit voltage with the largest raw quasi-Fermi step. This trial path
+retains the original Newton tangent at zero step length. Each trial still
+passes the selected residual line search and final equation/load-line tests.
+Fermi-Dirac statistics and electron quantum potential are rejected. This
+experimental globalization option does not replace carrier-row or global
+current-closure qualification of a simulation checkpoint.
 
 `coupled_inexact_device_forcing` is an optional object for locator or branch-
 tracking runs. It is disabled by default. When enabled, the device tolerance

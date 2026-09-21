@@ -173,7 +173,8 @@ def render_attempt(base: dict, bundle: Path, target: float,
 
 def render_poisson_prewarm(base: dict, bundle: Path, target: float,
                            initial_state: Path, attempt_index: int,
-                           max_iterations: int) -> tuple[dict, Path, Path]:
+                           max_iterations: int,
+                           qf_initialization: str = "preserve_initial") -> tuple[dict, Path, Path]:
     """Render a Poisson-only contact-bias basin solve before coupled Newton."""
     document = json.loads(json.dumps(base))
     run_rel = Path("outputs") / "stages" / stage_name(base) / (
@@ -186,13 +187,40 @@ def render_poisson_prewarm(base: dict, bundle: Path, target: float,
     document["sweep"]["write_state_file"] = str(run_rel / "final_state.csv")
     solver = document["solver"]
     solver["method"] = "poisson_only"
-    solver["poisson_only_quasi_fermi_initialization"] = "preserve_initial"
+    if qf_initialization not in ("preserve_initial", "contact_basin"):
+        raise ValueError("Unknown Poisson prewarm quasi-Fermi initialization")
+    solver["poisson_only_quasi_fermi_initialization"] = qf_initialization
     solver["max_iter"] = max_iterations
     if "handoff" in solver:
         solver["handoff"]["newton_max_iter"] = max_iterations
     config_path = bundle / f"adaptive_{physics_branch(base)}_prewarm_{attempt_index:03d}.json"
     redirect_diagnostics(document, bundle / run_rel)
     return document, config_path, bundle / run_rel
+
+
+def render_cold_equilibrium(base: dict, bundle: Path) -> tuple[dict, Path, Path]:
+    """Build a local zero-bias seed without consuming an imported solution."""
+    require_direct_device_bias(base)
+    if physics_branch(base) != "noavalanche":
+        raise ValueError("cold SLOT initialization requires no avalanche")
+    if any(float(c.get("bias", 0.0)) != 0.0 for c in base["contacts"]):
+        raise ValueError("cold SLOT initialization requires zero terminal biases")
+    document = json.loads(json.dumps(base))
+    document.pop("state_file", None)
+    document.pop("state_fields_dir", None)
+    sweep = document["sweep"]
+    sweep.pop("initial_state_file", None)
+    run_dir = (bundle / "cold_equilibrium").resolve()
+    document["output_csv"] = str(run_dir / "iv.csv")
+    sweep.update(bias_points=[0.0], start=0.0, stop=0.0, max_retries=0,
+                 write_state_file=str(run_dir / "final_state.csv"),
+                 write_state_every_point_prefix=str(run_dir / "states/state"))
+    document["solver"].update(method="poisson_only", max_iter=100,
+        poisson_only_quasi_fermi_initialization="contact_basin")
+    if "handoff" in document["solver"]:
+        document["solver"]["handoff"]["newton_max_iter"] = 100
+    redirect_diagnostics(document, run_dir)
+    return document, bundle / "cold_equilibrium.json", run_dir
 
 
 def render_batch_predictor(base: dict, bundle: Path, biases: list[float],
@@ -327,19 +355,21 @@ def audit_local_candidate(document: dict, state: Path, bias: float,
 def correct_local_candidate(document: dict, state: Path, bias: float,
                             runner: Path, repo: Path, run_dir: Path,
                             timeout_seconds: float, config_directory: Path,
-                            max_passes: int) -> dict:
+                            max_passes: int, mode: str = "carrier_only") -> dict:
     """Try bounded carrier Newton steps, then require the original coupled gates.
 
     The probe supplies candidates only. It cannot mark an I-V point accepted.
     Both the full coupled validator and the all-active row audit must pass.
     """
+    if mode not in ("carrier_only", "carrier_density"):
+        raise ValueError("Unknown carrier candidate mode")
     root = run_dir / "local_corrector"
     root.mkdir(parents=True, exist_ok=True)
     base = json.loads(json.dumps(document))
     for key in ("mesh_file", "node_doping_file", "materials_file"):
         if key in base:
             base[key] = str((config_directory / base[key]).resolve())
-    result = {"passed": False, "steps": [], "state_file": "", "validation_row": {},
+    result = {"passed": False, "mode": mode, "steps": [], "state_file": "", "validation_row": {},
               "coupled_newton_iterations": 0}
     current = state.resolve()
     for iteration in range(1, max_passes + 1):
@@ -350,7 +380,7 @@ def correct_local_candidate(document: dict, state: Path, bias: float,
         probe["state_file"] = str(current)
         probe["output_csv"] = str((step_dir / "step.csv").resolve())
         probe["output_state_prefix"] = str((step_dir / "trial").resolve())
-        probe["block_modes"] = ["carrier_only"]
+        probe["block_modes"] = [mode]
         driven = probe.pop("sweep")["contact"]
         for contact in probe["contacts"]:
             if contact["name"] == driven:
@@ -362,7 +392,7 @@ def correct_local_candidate(document: dict, state: Path, bias: float,
         config = step_dir / "config.json"
         config.write_text(json.dumps(probe, indent=2), encoding="utf-8")
         code, timed_out, elapsed = execute_config(runner, repo, config, step_dir, timeout_seconds)
-        trial = step_dir / "trial_carrier_only.csv"
+        trial = step_dir / f"trial_{mode}.csv"
         step = {"iteration": iteration, "exit_code": code, "timed_out": timed_out,
                 "elapsed_s": elapsed, "local_audit_passed": False}
         result["steps"].append(step)
@@ -454,7 +484,27 @@ def run(args: argparse.Namespace) -> int:
     branch = physics_branch(base)
     require_direct_device_bias(base)
     runner = args.runner.resolve()
-    initial_state = args.initial_state.resolve()
+    cold_start = getattr(args, "cold_start", False)
+    if cold_start:
+        if args.batch_predictor or args.secant_previous_state is not None:
+            raise ValueError("cold initialization requires individually audited local states")
+        if any(t <= 0 for t in args.targets) or args.targets != sorted(set(args.targets)):
+            raise ValueError("cold-start targets must be positive and strictly increasing")
+        document, config, run_dir = render_cold_equilibrium(base, bundle)
+        if run_dir.exists():
+            raise ValueError("Refusing to overwrite a cold-equilibrium run")
+        config.write_text(json.dumps(document, indent=2), encoding="utf-8")
+        code, timed_out, _ = execute_config(runner, args.repo_root, config, run_dir, args.timeout_seconds)
+        if code != 0 or timed_out or load_last_row(run_dir / "iv.csv").get("converged") != "1":
+            raise RuntimeError("Local equilibrium Poisson initialization failed")
+        initial_state = run_dir / "final_state.csv"
+        # The Poisson seed is only a candidate. Zero must pass the same full
+        # coupled and all-active carrier-row gates as every later point.
+        args.initial_bias = 0.0
+        args.targets = [0.0, *args.targets]
+        args.audit_local_continuity = True
+    else:
+        initial_state = args.initial_state.resolve()
     if not initial_state.exists():
         raise FileNotFoundError(initial_state)
     if args.audit_local_continuity and args.batch_predictor:
@@ -549,7 +599,8 @@ def run(args: argparse.Namespace) -> int:
         if args.poisson_prewarm:
             prewarm_document, prewarm_config, prewarm_dir = render_poisson_prewarm(
                 base, bundle, target, attempt_initial_state, attempt_index,
-                args.poisson_prewarm_max_iterations)
+                args.poisson_prewarm_max_iterations,
+                getattr(args, "poisson_prewarm_qf", "preserve_initial"))
             prewarm_config.write_text(
                 json.dumps(prewarm_document, indent=2), encoding="utf-8")
             prewarm_exit, prewarm_timed_out, prewarm_elapsed = execute_config(
@@ -620,7 +671,8 @@ def run(args: argparse.Namespace) -> int:
             if correction_seed is not None:
                 corrector = correct_local_candidate(document, correction_seed, target,
                     runner, args.repo_root, run_dir, args.timeout_seconds,
-                    config_path.parent, args.carrier_corrector_passes)
+                    config_path.parent, args.carrier_corrector_passes,
+                    getattr(args, "carrier_corrector_mode", "carrier_only"))
                 coupled_iterations += corrector["coupled_newton_iterations"]
                 if corrector["passed"] and (target == current_bias or coupled_iterations > 0):
                     converged = True
@@ -691,9 +743,12 @@ def run(args: argparse.Namespace) -> int:
         "solver_method": args.solver_method,
         "gummel_max_iterations": args.gummel_max_iterations,
         "poisson_prewarm": args.poisson_prewarm,
+        "poisson_prewarm_qf": getattr(args, "poisson_prewarm_qf", "preserve_initial"),
+        "cold_start": cold_start,
         "secant_predictor": args.secant_predictor,
         "audit_local_continuity": args.audit_local_continuity,
         "carrier_corrector_passes": args.carrier_corrector_passes,
+        "carrier_corrector_mode": getattr(args, "carrier_corrector_mode", "carrier_only"),
         "poisson_prewarm_max_iterations": args.poisson_prewarm_max_iterations,
         "min_step_V": args.min_step_V,
         "attempts": attempts,
@@ -710,7 +765,10 @@ def main() -> int:
     parser.add_argument("--repo-root", type=Path, required=True)
     parser.add_argument("--runner", type=Path, required=True)
     parser.add_argument("--base-config", type=Path, required=True)
-    parser.add_argument("--initial-state", type=Path, required=True)
+    seed = parser.add_mutually_exclusive_group(required=True)
+    seed.add_argument("--initial-state", type=Path)
+    seed.add_argument("--cold-start", action="store_true",
+                      help="derive local equilibrium, then qualify 0 V before the requested positive biases")
     parser.add_argument("--initial-bias", type=float, default=0.105)
     parser.add_argument("--targets", type=float, nargs="+", default=DEFAULT_TARGETS)
     parser.add_argument("--timeout-seconds", type=float, default=300.0)
@@ -736,6 +794,8 @@ def main() -> int:
         "--solver-method", choices=("newton", "gummel_newton"), default="newton")
     parser.add_argument("--gummel-max-iterations", type=int)
     parser.add_argument("--poisson-prewarm", action="store_true")
+    parser.add_argument("--poisson-prewarm-qf", choices=("preserve_initial", "contact_basin"),
+                        default="preserve_initial")
     parser.add_argument("--poisson-prewarm-max-iterations", type=int, default=20)
     parser.add_argument("--min-step-V", type=float, default=0.01)
     parser.add_argument("--max-attempts", type=int, default=100)
@@ -744,6 +804,8 @@ def main() -> int:
                         help="audit every active carrier row before accepting a continuation checkpoint")
     parser.add_argument("--carrier-corrector-passes", type=int, default=0,
                         help="bounded carrier Newton corrections followed by full coupled validation; requires local audit")
+    parser.add_argument("--carrier-corrector-mode", choices=("carrier_only", "carrier_density"),
+                        default="carrier_only", help="coordinate choice for the candidate correction, preserving full acceptance gates")
     parser.add_argument("--secant-previous-state", type=Path)
     parser.add_argument("--secant-predictor", action="store_true",
                         help="use the two most recent qualified states for every subsequent bias prediction")

@@ -560,7 +560,10 @@ SweepRecombinationDiagnostics computeSweepRecombinationDiagnostics(
         return diagnostics;
 
     const RecombinationModel recombination(recombinationCfg);
+    const auto sourceMask=detail::recombinationNodeMask(mesh,detail::buildCellMaterials(mesh,matdb,temperature_K),recombinationCfg.activeMaterials);
     const Real Vt = constants::kb * temperature_K / constants::q;
+    const auto refs=detail::buildNodeIntrinsicReference(mesh,matdb,temperature_K);
+    const auto niElectron=detail::carrierReferencePrefactor(effectiveNi,refs,Vt,true);
     const std::vector<Real> Nc =
         detail::buildNodeDensityOfStates(mesh, matdb, temperature_K, true);
     const std::vector<Real> Nv =
@@ -582,7 +585,7 @@ SweepRecombinationDiagnostics computeSweepRecombinationDiagnostics(
             recombinationCfg.srhDopingDependence.densityCoupling ==
                     "sentaurus_default"
             ? electronDensity(
-                ni, Nc[i], sol.psi(row), sol.electronQuasiFermiAt(row),
+                niElectron[i], Nc[i], sol.psi(row), sol.electronQuasiFermiAt(row),
                 Vt, carrierStatistics)
             : n;
         const Real dopingConcentration = recombination.srhDopingConcentration(
@@ -610,6 +613,7 @@ SweepRecombinationDiagnostics computeSweepRecombinationDiagnostics(
                     augerState.excessProduct, n, p);
             }
         }
+        if (!sourceMask[i]) rate=0.;
         const Real absRate = std::abs(rate);
         if (std::isfinite(absRate)) {
             diagnostics.maxAbsRate_m3_per_s = std::max(diagnostics.maxAbsRate_m3_per_s, absRate);
@@ -642,10 +646,13 @@ SrhBalanceIntegral computeMaterialSrhBalanceIntegral(
 {
     SrhBalanceIntegral integral;
     const RecombinationModel recombination(recombinationCfg);
+    const auto sourceMask=detail::recombinationNodeMask(mesh,detail::buildCellMaterials(mesh,matdb,temperature_K),recombinationCfg.activeMaterials);
     if (!recombination.srhEnabled() && !recombination.augerEnabled())
         return integral;
 
     const Real Vt = constants::kb * temperature_K / constants::q;
+    const auto refs=detail::buildNodeIntrinsicReference(mesh,matdb,temperature_K);
+    const auto niElectron=detail::carrierReferencePrefactor(effectiveNi,refs,Vt,true);
     const std::vector<Real> Nc =
         detail::buildNodeDensityOfStates(mesh, matdb, temperature_K, true);
     const std::vector<Real> Nv =
@@ -658,6 +665,7 @@ SrhBalanceIntegral computeMaterialSrhBalanceIntegral(
         scaling.unitSystem().continuitySourceIntegralFactor();
 
     auto srhRateAtNode = [&](Index node) {
+        if (!sourceMask[node]) return Real{0.0};
         if (!recombination.srhEnabled())
             return Real{0.0};
         const int row = static_cast<int>(node);
@@ -671,7 +679,7 @@ SrhBalanceIntegral computeMaterialSrhBalanceIntegral(
             recombinationCfg.srhDopingDependence.densityCoupling ==
                     "sentaurus_default"
             ? electronDensity(
-                ni, Nc[node], sol.psi(row), sol.electronQuasiFermiAt(row),
+                niElectron[node], Nc[node], sol.psi(row), sol.electronQuasiFermiAt(row),
                 Vt, carrierStatistics)
             : sol.n(row);
         const GeneralizedSrhCarrierState srhState = generalizedSrhCarrierState(
@@ -685,6 +693,7 @@ SrhBalanceIntegral computeMaterialSrhBalanceIntegral(
     };
 
     auto augerRateAtNode = [&](Index node) {
+        if (!sourceMask[node]) return Real{0.0};
         if (!recombination.augerEnabled())
             return Real{0.0};
         const int row = static_cast<int>(node);
@@ -936,7 +945,11 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
               sol.psi, fieldFactor)
         : std::vector<Real>{};
     const RecombinationModel recombination(recombinationCfg);
+    const auto sourceMask=detail::recombinationNodeMask(mesh,detail::buildCellMaterials(mesh,matdb,temperature_K),recombinationCfg.activeMaterials);
     const Real Vt = constants::kb * temperature_K / constants::q;
+    const auto refs=detail::buildNodeIntrinsicReference(mesh,matdb,temperature_K);
+    const auto niElectron=detail::carrierReferencePrefactor(effectiveNi,refs,Vt,true);
+    const auto niHole=detail::carrierReferencePrefactor(effectiveNi,refs,Vt,false);
     const std::vector<Real> Nc =
         detail::buildNodeDensityOfStates(mesh, matdb, temperature_K, true);
     const std::vector<Real> Nv =
@@ -973,20 +986,20 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
         if (carrier == CarrierType::Electron) {
             if (usesFermiDirac(carrierStatistics)) {
                 const Real etaI = (sol.psi(i) - sol.phin(i)) / Vt
-                    + std::log(effectiveNi[edge.n0] / Nc[edge.n0]);
+                    + std::log(niElectron[edge.n0] / Nc[edge.n0]);
                 const Real etaJ = (sol.psi(j) - sol.phin(j)) / Vt
-                    + std::log(effectiveNi[edge.n1] / Nc[edge.n1]);
+                    + std::log(niElectron[edge.n1] / Nc[edge.n1]);
                 const Real driftPotential = sol.psi(j) - sol.psi(i)
                     + Vt * std::log(
-                        (effectiveNi[edge.n1] / Nc[edge.n1]) /
-                        (effectiveNi[edge.n0] / Nc[edge.n0]));
+                        (niElectron[edge.n1] / Nc[edge.n1]) /
+                        (niElectron[edge.n0] / Nc[edge.n0]));
                 return sgElectronFermiDiracContinuityFlux(
                     sol.n(i), sol.n(j), etaI, etaJ, driftPotential,
                     sol.phin(i), sol.phin(j), Vt, coef);
             }
             return sgElectronContinuityFluxFromQuasiFermiVariableNi(
-                effectiveNi[edge.n0],
-                effectiveNi[edge.n1],
+                niElectron[edge.n0],
+                niElectron[edge.n1],
                 sol.psi(i),
                 sol.psi(j),
                 sol.phin(i),
@@ -996,20 +1009,20 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
         }
         if (usesFermiDirac(carrierStatistics)) {
             const Real etaI = (sol.phip(i) - sol.psi(i)) / Vt
-                + std::log(effectiveNi[edge.n0] / Nv[edge.n0]);
+                + std::log(niHole[edge.n0] / Nv[edge.n0]);
             const Real etaJ = (sol.phip(j) - sol.psi(j)) / Vt
-                + std::log(effectiveNi[edge.n1] / Nv[edge.n1]);
+                + std::log(niHole[edge.n1] / Nv[edge.n1]);
             const Real driftPotential = sol.psi(j) - sol.psi(i)
                 + Vt * std::log(
-                    (effectiveNi[edge.n0] / Nv[edge.n0]) /
-                    (effectiveNi[edge.n1] / Nv[edge.n1]));
+                    (niHole[edge.n0] / Nv[edge.n0]) /
+                    (niHole[edge.n1] / Nv[edge.n1]));
             return sgHoleFermiDiracContinuityFlux(
                 sol.p(i), sol.p(j), etaI, etaJ, driftPotential,
                 sol.phip(i), sol.phip(j), Vt, coef);
         }
         return sgHoleContinuityFluxFromQuasiFermiVariableNi(
-            effectiveNi[edge.n0],
-            effectiveNi[edge.n1],
+            niHole[edge.n0],
+            niHole[edge.n1],
             sol.psi(i),
             sol.psi(j),
             sol.phip(i),
@@ -1028,7 +1041,10 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
         return Real{0.0};
     };
 
+    const auto recombinationVolumes=detail::recombinationNodeVolumes(
+        mesh,cellMaterials,recombinationCfg.volumePolicy);
     auto recombinationTerm = [&](Index node) {
+        if (!sourceMask[node]) return Real{0.0};
         const int row = static_cast<int>(node);
         const Real ni = effectiveNi[node];
         if (ni <= 0.0)
@@ -1038,7 +1054,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
             recombinationCfg.srhDopingDependence.densityCoupling ==
                     "sentaurus_default"
             ? electronDensity(
-                ni, Nc[node], sol.psi(row), sol.electronQuasiFermiAt(row),
+                niElectron[node], Nc[node], sol.psi(row), sol.electronQuasiFermiAt(row),
                 Vt, carrierStatistics)
             : sol.n(row);
         const Real dopingConcentration = recombination.srhDopingConcentration(
@@ -1066,7 +1082,7 @@ std::vector<ContinuityBalanceDiagnosticRow> computeContinuityBalanceDiagnostics(
                     augerState.excessProduct, sol.n(row), sol.p(row));
             }
         }
-        return rate * mesh.getNode(node).volume;
+        return rate * recombinationVolumes[node];
     };
 
     std::vector<ContinuityBalanceDiagnosticRow> rows;
@@ -1777,6 +1793,9 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
         sweep.externalResistor.coupledApplyDeviceUpdateLimit = circuit.value(
             "coupled_apply_device_update_limit",
             sweep.externalResistor.coupledApplyDeviceUpdateLimit);
+        sweep.externalResistor.coupledPositiveDensityUpdates = circuit.value(
+            "coupled_positive_density_updates",
+            sweep.externalResistor.coupledPositiveDensityUpdates);
         sweep.externalResistor.coupledLineSearchMode = circuit.value(
             "coupled_line_search_mode",
             sweep.externalResistor.coupledLineSearchMode);
@@ -1865,6 +1884,11 @@ DCSweepConfig dcSweepConfigFromJson(const nlohmann::json& cfg,
             sweep.externalResistor.resistance_ohm_um <= 0.0) {
             throw std::invalid_argument(
                 "DCSweep: sweep.external_circuit.resistance_ohm_um must be finite and positive.");
+        }
+        if (sweep.externalResistor.coupledPositiveDensityUpdates &&
+            sweep.externalResistor.solver != "coupled_newton") {
+            throw std::invalid_argument(
+                "coupled_positive_density_updates requires external_circuit.solver='coupled_newton'.");
         }
         if (sweep.externalResistor.solver == "coupled_newton") {
             if (!(sweep.externalResistor.coupledEquationTolerance > 0.0) ||
@@ -3363,6 +3387,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         sweepRecombinationConfig = recombinationModelConfig(
             newton.recombination, newton.taun, newton.taup,
             newton.srhDopingDependence);
+        sweepRecombinationConfig.activeMaterials = newton.recombinationMaterials;
+        sweepRecombinationConfig.volumePolicy = newton.recombinationVolumePolicy;
         sweepRecombinationConfig.augerCn = newton.augerCn;
         sweepRecombinationConfig.augerCp = newton.augerCp;
         sweepRecombinationConfig.augerDensityDependence = newton.augerDensityDependence;
@@ -3375,6 +3401,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         sweepRecombinationConfig = recombinationModelConfig(
             gummel.recombination, gummel.taun, gummel.taup,
             gummel.srhDopingDependence);
+        sweepRecombinationConfig.activeMaterials = gummel.recombinationMaterials;
+        sweepRecombinationConfig.volumePolicy = gummel.recombinationVolumePolicy;
         sweepRecombinationConfig.augerCn = gummel.augerCn;
         sweepRecombinationConfig.augerCp = gummel.augerCp;
         sweepRecombinationConfig.augerDensityDependence = gummel.augerDensityDependence;
@@ -7795,7 +7823,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 contactSpecs);
             ArclengthSystem coupledDeviceSystem =
                 coupledDeviceSolver.makeArclengthSystem(
-                    sweep.contact, 1.0e-4);
+                    sweep.contact, 1.0e-4,
+                    sweep.externalResistor.coupledPositiveDensityUpdates);
             const auto coupledStateUnpacker =
                 coupledDeviceSolver.makeArclengthStateUnpacker();
             CoupledLoadLineConfig coupledConfig;

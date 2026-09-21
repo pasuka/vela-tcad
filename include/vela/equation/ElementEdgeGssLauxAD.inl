@@ -679,12 +679,18 @@ elementEdgeGssLauxAvalancheSourceIntegralsLocal(
     const auto electricGradient = localAdTri3Gradient(mesh, cell, psi);
     const auto electronGradient = localAdTri3Gradient(mesh, cell, phin);
     const auto holeGradient = localAdTri3Gradient(mesh, cell, phip);
-    const Scalar electronQfField =
+    Scalar electronQfField =
         localAdNorm2(electronGradient[0], electronGradient[1]) *
         Scalar(fieldFactor);
-    const Scalar holeQfField =
+    Scalar holeQfField =
         localAdNorm2(holeGradient[0], holeGradient[1]) *
         Scalar(fieldFactor);
+    if (const auto tangent = ialAvalancheBoundaryTangent(impactConfig, mobilityConfig, cellId)) {
+        electronQfField = localAdAbs(electronGradient[0] * Scalar(tangent->x()) +
+            electronGradient[1] * Scalar(tangent->y())) * Scalar(fieldFactor);
+        holeQfField = localAdAbs(holeGradient[0] * Scalar(tangent->x()) +
+            holeGradient[1] * Scalar(tangent->y())) * Scalar(fieldFactor);
+    }
     Scalar electronImpactField = electronQfField;
     Scalar holeImpactField = holeQfField;
     if (impactConfig.drivingForce == "electric_field") {

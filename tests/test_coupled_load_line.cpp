@@ -148,6 +148,43 @@ TEST_CASE("CoupledLoadLineNewton rejects invalid circuit input",
     REQUIRE_THROWS_AS(solver.solve(state, 1.0, 0.0), std::invalid_argument);
 }
 
+TEST_CASE("Coupled load-line backtracks nonlinear trial maps and closes both equations",
+          "[coupled_load_line][positive_density]")
+{
+    auto system = foldedDeviceSystem();
+    int calls = 0;
+    int rejected = 0;
+    system.trialState = [&](const VectorXd& x, const VectorXd& dx, Real alpha) {
+        ++calls;
+        // A domain-limited nonlinear path has the original Newton tangent.
+        // Rejected trial evaluations must backtrack, not abort the solve.
+        if (alpha > 0.5) {
+            ++rejected;
+            throw std::domain_error("Trial outside admissible domain");
+        }
+        VectorXd trial = x + alpha * dx;
+        trial(0) += 0.1 * std::pow(alpha * dx(0), 2);
+        return trial;
+    };
+    CoupledLoadLineConfig config;
+    config.maxIterations = 100;
+    config.equationTolerance = 1.0e-10;
+    config.loadLineTolerance_V = 1.0e-10;
+    auto current = foldedCurrentFunctional();
+    const auto value = current.value;
+    CoupledLoadLineNewton solver(system, value, config, std::move(current));
+    ArclengthState initial;
+    initial.x = VectorXd::Zero(1);
+    initial.lambda = 0.0;
+    const auto result = solver.solve(initial, 3.0, 3.0);
+    REQUIRE(calls > 0);
+    REQUIRE(rejected > 0);
+    REQUIRE(result.converged);
+    REQUIRE(system.residual(result.state.x, result.state.lambda).norm() <= 1.0e-10);
+    REQUIRE(std::abs(result.state.lambda + 3.0 * result.state.x(0) - 3.0) <= 1.0e-10);
+    REQUIRE(result.state.x(0) == Catch::Approx(1.0).margin(1.0e-9));
+}
+
 TEST_CASE("direct bordered load-line solve remains regular at a device fold",
           "[coupled_load_line][direct_bordered]")
 {

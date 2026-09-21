@@ -1,5 +1,6 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "vela/io/DDSolutionCsv.h"
@@ -839,6 +840,7 @@ TEST_CASE("DCSweep: external resistor records a closed inner/outer load line",
 TEST_CASE("DCSweep: coupled external resistor closes device and circuit residuals",
           "[dc_sweep][external_circuit][coupled_newton][integration]")
 {
+    const bool positiveDensityUpdates = GENERATE(false, true);
     const auto dir = makeUniqueSweepDir();
     const ScopedDirectoryCleanup cleanup{dir};
     std::filesystem::create_directories(dir);
@@ -862,6 +864,7 @@ TEST_CASE("DCSweep: coupled external resistor closes device and circuit residual
             {"external_circuit", {
                 {"mode", "series_resistor"},
                 {"solver", "coupled_newton"},
+                {"coupled_positive_density_updates", positiveDensityUpdates},
                 {"resistance_ohm_um", 1.0e3},
                 {"initial_inner_voltage_V", 0.0},
                 {"max_inner_voltage_step_V", 0.1},
@@ -948,6 +951,25 @@ TEST_CASE("DCSweep: coupled external resistor closes device and circuit residual
     REQUIRE(restarted.points.back().outerVoltage_V ==
             Catch::Approx(0.5).margin(1.0e-12));
     REQUIRE(std::abs(restarted.points.back().loadLineResidual_V) <= 1.0e-7);
+}
+
+TEST_CASE("DCSweep: positive density circuit trials require coupled Newton",
+          "[dc_sweep][external_circuit][positive_density]")
+{
+    const auto dir = makeUniqueSweepDir();
+    const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    const auto meshPath = writePNMeshMicrometers(dir);
+    const auto cfgPath = writeUnitScalingSweepConfig(dir, meshPath, dir / "iv.csv", {
+        {"start", 0.0}, {"stop", 0.0}, {"step", 0.1},
+        {"external_circuit", {
+            {"mode", "series_resistor"}, {"solver", "nested_scalar"},
+            {"resistance_ohm_um", 1.0e3}, {"coupled_positive_density_updates", true}
+        }}
+    }, {{"method", "newton"}});
+    DCSweep sweep;
+    REQUIRE_THROWS_WITH(sweep.runWithResult(cfgPath.string()),
+        Catch::Matchers::ContainsSubstring("coupled_positive_density_updates requires"));
 }
 
 TEST_CASE("DCSweep: external resistor restores an interrupted persisted bracket",

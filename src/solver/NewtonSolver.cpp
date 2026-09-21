@@ -1788,6 +1788,8 @@ NewtonCarrierRowRecoveryResult recoverCarrierRowsWithGummelDensity(
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg.recombination, cfg.taun, cfg.taup, cfg.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg.augerCn;
     recombinationConfig.augerCp = cfg.augerCp;
     recombinationConfig.augerDensityDependence = cfg.augerDensityDependence;
@@ -1926,7 +1928,7 @@ NewtonCarrierRowRecoveryResult recoverCarrierRowsWithGummelDensity(
                 const Real before = std::max(std::abs(state.n(i)), std::numeric_limits<Real>::min());
                 result.solution.n(i) = recoveredN;
                 result.solution.phin(i) = electronQuasiFermiPotential(
-                    niNode, Nc[static_cast<std::size_t>(i)], psiSi,
+                    qfAssembler.electronReferencePrefactor()[i], Nc[static_cast<std::size_t>(i)], psiSi,
                     recoveredN, Vt, cfg.carrierStatistics);
                 if (result.solution.hasReferencedElectronQuasiFermi()) {
                     result.solution.phinIncrement(i) = result.solution.phin(i)
@@ -1943,7 +1945,7 @@ NewtonCarrierRowRecoveryResult recoverCarrierRowsWithGummelDensity(
                 const Real before = std::max(std::abs(state.p(i)), std::numeric_limits<Real>::min());
                 result.solution.p(i) = recoveredP;
                 result.solution.phip(i) = holeQuasiFermiPotential(
-                    niNode, Nv[static_cast<std::size_t>(i)], psiSi,
+                    qfAssembler.holeReferencePrefactor()[i], Nv[static_cast<std::size_t>(i)], psiSi,
                     recoveredP, Vt, cfg.carrierStatistics);
                 if (result.solution.hasReferencedHoleQuasiFermi()) {
                     result.solution.phipIncrement(i) = result.solution.phip(i)
@@ -2583,6 +2585,12 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.augerWithGeneration = json.value("auger_with_generation", cfg.augerWithGeneration);
     cfg.augerExcessProduct = json.value(
         "auger_excess_product", cfg.augerExcessProduct);
+    cfg.recombinationVolumePolicy = json.value("recombination_volume_policy", cfg.recombinationVolumePolicy);
+    if (cfg.recombinationVolumePolicy != "legacy_node" &&
+        cfg.recombinationVolumePolicy != "material_local_mixed_voronoi")
+        throw std::invalid_argument("Unsupported recombination_volume_policy");
+    if (json.contains("recombination_materials"))
+        cfg.recombinationMaterials=json.at("recombination_materials").get<std::vector<std::string>>();
     if (json.contains("auger_density_dependence"))
         cfg.augerDensityDependence = augerDensityDependenceConfigFromJson(
             json.at("auger_density_dependence"), scaling);
@@ -2672,6 +2680,9 @@ NewtonConfig newtonConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             cfg.impactIonization.contactElectricFieldFallback = value.value(
                 "contact_electric_field_fallback",
                 cfg.impactIonization.contactElectricFieldFallback);
+            cfg.impactIonization.ialmobBoundaryFieldProjection = value.value(
+                "ialmob_boundary_field_projection",
+                cfg.impactIonization.ialmobBoundaryFieldProjection);
             cfg.impactIonization.contactElectricFieldFallbackScope = value.value(
                 "contact_electric_field_fallback_scope",
                 cfg.impactIonization.contactElectricFieldFallbackScope);
@@ -3626,6 +3637,10 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
         }
         if (specIt != contactSpecs_.end() &&
             specIt->second.type == ContactType::Schottky) {
+            for (Index nid : contact.node_ids)
+                if (assembler.intrinsicReferencePotential()[nid] != 0.0)
+                    throw std::invalid_argument(
+                        "Nonzero intrinsic reference with Schottky contacts is unsupported");
             ContactBoundarySpec spec = specIt->second;
             spec.bias = Vbias;
             if (spec.emissionModel != "thermionic_robin") {
@@ -3727,7 +3742,7 @@ CoupledDDBoundaryConditions NewtonSolver::buildBoundaryConditions(
                 mesh_, doping_, contact, nid, dominantSignedContactMean);
             const EquilibriumCarrierState equilibrium = equilibriumCarrierState(
                 Ndop, niNode, Nc[nid], Nv[nid], Vt, cfg_.carrierStatistics);
-            const double psiBuiltIn = equilibrium.potential;
+            const double psiBuiltIn = equilibrium.potential + assembler.intrinsicReferencePotential()[nid];
 
             bcs.psi[nid] = (Vbias + psiBuiltIn) / potentialScale;
             if (Ndop >= 0.0) {
@@ -3774,7 +3789,7 @@ DDSolution NewtonSolver::buildInitialGuess(
         const EquilibriumCarrierState equilibrium = equilibriumCarrierState(
             doping_.netDoping(nid), niNode, Nc[nid], Nv[nid], Vt,
             cfg_.carrierStatistics);
-        sol.psi(i) = equilibrium.potential;
+        sol.psi(i) = equilibrium.potential + assembler.intrinsicReferencePotential()[nid];
     }
 
     for (const auto& [nid, value] : bcs.psi)
@@ -3787,10 +3802,10 @@ DDSolution NewtonSolver::buildInitialGuess(
     for (int i = 0; i < N; ++i) {
         const Index nid = static_cast<Index>(i);
         sol.n(i) = electronDensity(
-            ni[nid], Nc[nid], sol.psi(i), sol.phin(i), Vt,
+            assembler.electronReferencePrefactor()[nid], Nc[nid], sol.psi(i), sol.phin(i), Vt,
             cfg_.carrierStatistics);
         sol.p(i) = holeDensity(
-            ni[nid], Nv[nid], sol.psi(i), sol.phip(i), Vt,
+            assembler.holeReferencePrefactor()[nid], Nv[nid], sol.psi(i), sol.phip(i), Vt,
             cfg_.carrierStatistics);
     }
     return sol;
@@ -3828,6 +3843,8 @@ std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler() const
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -3854,8 +3871,15 @@ std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler() const
 }
 
 ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeContact,
-                                                  Real biasFiniteDifferenceStep_V) const
+                                                  Real biasFiniteDifferenceStep_V,
+                                                  bool positiveDensityTrials) const
 {
+    if (positiveDensityTrials &&
+        (usesFermiDirac(cfg_.carrierStatistics) || cfg_.electronQuantumPotential.enabled)) {
+        throw std::invalid_argument(
+            "NewtonSolver::makeArclengthSystem: positive density trials require "
+            "classical Boltzmann carrier statistics without quantum potential.");
+    }
     if (!(biasFiniteDifferenceStep_V > 0.0) ||
         !std::isfinite(biasFiniteDifferenceStep_V)) {
         throw std::invalid_argument(
@@ -3944,7 +3968,35 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
             y2 = solution.col(1);
             return true;
         };
-    if (cfg_.quasiFermiUpdateLimit_V > 0.0 ||
+    if (positiveDensityTrials) {
+        const Real scaledThermalVoltage = thermalVoltage(cfg_.temperature_K) / potentialScale;
+        system.trialState = [self, nodeCount, potentialScale, scaledThermalVoltage](
+            const VectorXd& x, const VectorXd& deltaX, Real alpha) {
+            if (x.size() != 3 * nodeCount || deltaX.size() != x.size() ||
+                !x.allFinite() || !deltaX.allFinite() ||
+                !std::isfinite(alpha) || alpha < 0.0) {
+                throw std::invalid_argument("Invalid positive density trial state or step.");
+            }
+            VectorXd mapped = alpha * deltaX;
+            for (int i = 0; i < nodeCount; ++i) {
+                // Express the same Newton tangent in n,p coordinates. The
+                // finite trial retains at least 10% of each old density;
+                // log1p maps it back to quasi-Fermi potentials without the
+                // enormous voltage steps caused by tiny minority densities.
+                const Real relativeN = alpha * (deltaX(i) - deltaX(nodeCount + i)) /
+                    scaledThermalVoltage;
+                const Real relativeP = alpha * (deltaX(2 * nodeCount + i) - deltaX(i)) /
+                    scaledThermalVoltage;
+                mapped(nodeCount + i) = mapped(i) - scaledThermalVoltage *
+                    std::log1p(std::max(-0.9, relativeN));
+                mapped(2 * nodeCount + i) = mapped(i) + scaledThermalVoltage *
+                    std::log1p(std::max(-0.9, relativeP));
+            }
+            applyConfiguredQuasiFermiStepCaps(
+                mapped, self->cfg_, nodeCount, potentialScale, self->doping_);
+            return VectorXd(x + mapped);
+        };
+    } else if (cfg_.quasiFermiUpdateLimit_V > 0.0 ||
         cfg_.quasiFermiUpdateLimitMinority_V > 0.0) {
         system.limitUpdate = [self, nodeCount, potentialScale](
             const VectorXd&, VectorXd& deltaX, Real& deltaLambda) {
@@ -4162,6 +4214,8 @@ NewtonResidualEvaluation NewtonSolver::evaluateResidual(const DDSolution& state)
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -4211,6 +4265,8 @@ NewtonPoissonTermEvaluation NewtonSolver::evaluatePoissonTerms(
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup,
             cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -4243,6 +4299,8 @@ NewtonStepEvaluation NewtonSolver::evaluateStep(const DDSolution& state) const
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -4333,6 +4391,8 @@ NewtonSolver::evaluateFeedbackSubstitutions(
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -4509,6 +4569,8 @@ NewtonSolver::evaluatePoissonQfpCrossBlockDecomposition(
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -4843,6 +4905,8 @@ NewtonDirectionalDerivativeEvaluation NewtonSolver::evaluateDirectionalDerivativ
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -4941,6 +5005,8 @@ NewtonBlockStepEvaluation NewtonSolver::evaluateBlockStep(
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -4980,16 +5046,84 @@ NewtonBlockStepEvaluation NewtonSolver::evaluateBlockStep(
     if (mode == "poisson_only") {
         const SparseMatrixd block = sparseBlock(J, 0, 0, N, N);
         step.segment(0, N) = linearSolver.solve(block, -raw.segment(0, N));
-    } else if (mode == "carrier_only") {
-        const SparseMatrixd block = sparseBlock(J, N, N, 2 * N, 2 * N);
-        step.segment(N, 2 * N) = linearSolver.solve(block, -raw.segment(N, 2 * N));
+    } else if (mode == "carrier_only" || mode == "carrier_density") {
+        if (mode == "carrier_density" &&
+            (usesFermiDirac(cfg_.carrierStatistics) || cfg_.electronQuantumPotential.enabled))
+            throw std::invalid_argument("carrier_density candidate requires classical Boltzmann densities");
+        if (mode == "carrier_density") {
+            for (const auto& [node,value] : bcs.phin)
+                if (std::abs(raw(N+node)) > 1e-12)
+                    throw std::invalid_argument("carrier_density requires projected carrier contact values");
+            for (const auto& [node,value] : bcs.phip)
+                if (std::abs(raw(2*N+node)) > 1e-12)
+                    throw std::invalid_argument("carrier_density requires projected carrier contact values");
+        }
+        SparseMatrixd block = sparseBlock(J, N, N, 2 * N, 2 * N);
+        VectorXd coordinateFactor=VectorXd::Ones(2*N);
+        if (mode == "carrier_density") {
+            const VectorXd n=assembler.electronDensity(x),p=assembler.holeDensity(x);
+            for(int node=0;node<N;++node) if(assembler.intrinsicDensity()[node]>0.) {
+                if (!(n[node]>0.) || !(p[node]>0.))
+                    throw std::runtime_error("Nonpositive base density in carrier_density");
+                coordinateFactor[node]=-Vt/(potentialScale*n[node]);
+                coordinateFactor[N+node]=Vt/(potentialScale*p[node]);
+            }
+            if (!coordinateFactor.allFinite())
+                throw std::runtime_error("Nonfinite density coordinate transformation");
+            for(int col=0;col<block.outerSize();++col)
+                for(SparseMatrixd::InnerIterator entry(block,col);entry;++entry)
+                    entry.valueRef()*=coordinateFactor[col];
+        }
+        const VectorXd solved=linearSolver.solve(block,-raw.segment(N,2*N));
+        step.segment(N,2*N)=solved.cwiseProduct(coordinateFactor);
     } else {
         throw std::invalid_argument(
             "NewtonSolver::evaluateBlockStep: mode must be 'poisson_only' "
-            "or 'carrier_only'.");
+            "or 'carrier_only' or 'carrier_density'.");
     }
 
     const Real rawStepNorm = step.norm();
+    if (mode == "carrier_density") {
+        // The linear system above is solved in density coordinates. Freeze
+        // physical row scales during backtracking so a larger trial flux cannot
+        // artificially reduce the merit. Poisson remains frozen in this probe.
+        const auto terms=assembler.carrierContinuityTermDiagnostics(x,bcs);
+        VectorXd weights=VectorXd::Zero(2*N);
+        for(int node=0;node<N;++node) {
+            const auto& t=terms[node];
+            if(t.electronContinuityActive) weights[node]=1./std::max({t.electronFluxAbsSum,
+                std::abs(t.electronRecombination),std::abs(t.electronImpact),Real{1e-30}});
+            if(t.holeContinuityActive) weights[N+node]=1./std::max({t.holeFluxAbsSum,
+                std::abs(t.holeRecombination),std::abs(t.holeImpact),Real{1e-30}});
+        }
+        const auto merit=[&](const VectorXd& residual) {
+            return residual.tail(2*N).cwiseProduct(weights).stableNorm();
+        };
+        const Real initialMerit=merit(raw);
+        const VectorXd direction=step;
+        bool accepted=false;
+        for(int backtrack=0;backtrack<20;++backtrack) {
+            const Real alpha=std::ldexp(Real{1.},-backtrack);
+            step=alpha*direction;
+            for(int node=0;node<N;++node) if(assembler.intrinsicDensity()[node]>0.)
+                for(int carrier=0;carrier<2;++carrier) {
+                    const int row=(carrier+1)*N+node;
+                    const Real sign=carrier==0 ? -1. : 1.;
+                    const Real relativeChange=sign*step[row]*potentialScale/Vt;
+                    if(!std::isfinite(relativeChange))
+                        throw std::runtime_error("Nonfinite carrier density Newton candidate");
+                    // Limit depletion to 90 percent, then map back to physical QF.
+                    step[row]=sign*Vt*std::log1p(std::max(relativeChange,Real{-0.9}))/potentialScale;
+                }
+            applyConfiguredStepCaps(step,cfg_,N,potentialScale,doping_);
+            const Real trialMerit=merit(assembler.residual(x+step,bcs));
+            if(std::isfinite(trialMerit) && trialMerit<=initialMerit*(1.-1e-4*alpha)) {
+                accepted=true;break;
+            }
+        }
+        if(!accepted)
+            throw std::runtime_error("carrier_density has no residual-decreasing candidate");
+    }
     applyConfiguredStepCaps(step, cfg_, N, potentialScale, doping_);
     const VectorXd trialX = x + step;
     const VectorXd trialRaw = assembler.residual(trialX, bcs);
@@ -5030,6 +5164,8 @@ NewtonRegularizedCarrierStepEvaluation NewtonSolver::evaluateRegularizedCarrierS
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -5124,6 +5260,8 @@ NewtonCarrierRowDiagnosticsEvaluation NewtonSolver::evaluateCarrierRowDiagnostic
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -5239,6 +5377,8 @@ NewtonSolver::evaluatePoissonLinearDiagnostics(
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -5374,6 +5514,8 @@ NewtonSolver::evaluateCarrierBlockDecomposition(const DDSolution& state) const
             RecombinationModelConfig config =
                 recombinationModelConfig(
                     models, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+            config.activeMaterials = cfg_.recombinationMaterials;
+            config.volumePolicy = cfg_.recombinationVolumePolicy;
             config.augerCn = cfg_.augerCn;
             config.augerCp = cfg_.augerCp;
             config.augerDensityDependence = cfg_.augerDensityDependence;
@@ -5763,6 +5905,8 @@ NewtonCarrierTermDiagnosticsEvaluation NewtonSolver::evaluateCarrierTermDiagnost
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -5837,6 +5981,8 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
             RecombinationModelConfig config =
                 recombinationModelConfig(
                     models, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+            config.activeMaterials = cfg_.recombinationMaterials;
+            config.volumePolicy = cfg_.recombinationVolumePolicy;
             config.augerCn = cfg_.augerCn;
             config.augerCp = cfg_.augerCp;
             config.augerDensityDependence = cfg_.augerDensityDependence;
@@ -6122,6 +6268,8 @@ std::vector<CoupledDDEdgeFluxDiagnostic> NewtonSolver::evaluateSgEdgeFluxDiagnos
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -6162,6 +6310,8 @@ NewtonSolver::evaluateTransportEdgeJacobianDiagnostics(
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -6205,6 +6355,8 @@ NewtonResult NewtonSolver::solve() const
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -6238,6 +6390,8 @@ NewtonPoissonBlockInitialization NewtonSolver::buildPoissonBlockInitialization()
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -6280,6 +6434,8 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;
@@ -6927,6 +7083,8 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg_.recombination, cfg_.taun, cfg_.taup, cfg_.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg_.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg_.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg_.augerCn;
     recombinationConfig.augerCp = cfg_.augerCp;
     recombinationConfig.augerDensityDependence = cfg_.augerDensityDependence;

@@ -143,6 +143,9 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
           doping,
           bandgapNarrowingConfig,
           Vt))
+    , intrinsicReference_(detail::buildNodeIntrinsicReference(mesh,matdb,Vt * constants::q / constants::kb))
+    , niElectron_(detail::carrierReferencePrefactor(ni_,intrinsicReference_,Vt,true))
+    , niHole_(detail::carrierReferencePrefactor(ni_,intrinsicReference_,Vt,false))
     , Nc_(detail::buildNodeDensityOfStates(
           mesh, matdb, Vt * constants::q / constants::kb, true))
     , Nv_(detail::buildNodeDensityOfStates(
@@ -168,6 +171,16 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
          static_cast<int>(mesh.numNodes()))
     , b_(VectorXd::Zero(static_cast<int>(mesh.numNodes())))
 {
+    recombinationNodes_=detail::recombinationNodeMask(mesh_,cellMaterials_,recombinationConfig.activeMaterials);
+    recombinationVol_=detail::recombinationNodeVolumes(mesh_,cellMaterials_,recombinationConfig.volumePolicy);
+    for (const auto& cell:mesh_.cells()) {
+        if (cellMaterials_[cell.id].intrinsic_reference_potential_V==0.) continue;
+        if (impactIonizationEnabled_ &&
+            (mobilityConfig_.model!="ialmob" ||
+             !detail::usesElementEdgeGssLauxAvalancheSource(impactIonizationConfig_) ||
+             mesh_.getRegion(cell.region_id).material=="Si"))
+            throw std::invalid_argument("Intrinsic reference avalanche requires Si-only element IALMob source");
+    }
     (void)usesFermiDirac(carrierStatistics_);
     if (usesFermiDirac(carrierStatistics_)) {
         for (Index node = 0; node < mesh_.numNodes(); ++node) {
@@ -336,10 +349,10 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
     const VectorXd pForMobility = scaling_.enabled ? (p_old * scaling_.C0) : p_old;
     const VectorXd phinForMobility =
         electronQuasiFermiFromDensity(
-            psiForMobility, n_old, ni_, Nc_, Vt_, scaling_, carrierStatistics_);
+            psiForMobility, n_old, niElectron_, Nc_, Vt_, scaling_, carrierStatistics_);
     if (mobilityConfig_.model == "ialmob") {
         const VectorXd phipForMobility = holeQuasiFermiFromDensity(
-            psiForMobility,p_old,ni_,Nv_,Vt_,scaling_,carrierStatistics_);
+            psiForMobility,p_old,niHole_,Nv_,Vt_,scaling_,carrierStatistics_);
         const Real densityScale=scaling_.enabled?scaling_.C0:1.;
         updateIalTransportState(mobilityConfig_,mesh_,doping_,psiForMobility,
             n_old*densityScale,p_old*densityScale,phinForMobility,phipForMobility);
@@ -403,8 +416,8 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
             const Real eta1 = reducedFermiEnergyFromDensity(n1, Nc_[edge.n1]);
             const Real factor = sgGeneralizedEinsteinFactor(n0, n1, eta0, eta1);
             const Real driftPotential = (psi1 - psi0) + Vt_ * std::log(
-                (ni_[edge.n1] / Nc_[edge.n1]) /
-                (ni_[edge.n0] / Nc_[edge.n0]));
+                (niElectron_[edge.n1] / Nc_[edge.n1]) /
+                (niElectron_[edge.n0] / Nc_[edge.n0]));
             weights = sgEdgeWeights(driftPotential, Vt_ * factor);
             coef *= factor;
         } else {
@@ -445,7 +458,7 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
         detail::usesQuasiFermiAvalancheDrivingForce(impactIonizationConfig_);
     const VectorXd phipForImpact =
         holeQuasiFermiFromDensity(
-            psi_si, p_old, ni_, Nv_, Vt_, scaling_, carrierStatistics_);
+            psi_si, p_old, niHole_, Nv_, Vt_, scaling_, carrierStatistics_);
     const std::vector<Real> nodeElectronDrivingFields = (impactIonizationCoupled_ && qfImpact)
         ? detail::computeElectronAvalancheNodeQuasiFermiDrivingFields(
             impactIonizationConfig_, mesh_, nodeCells_, psi_si, phinForMobility,
@@ -499,19 +512,19 @@ void DDAssembler::assembleElectronContinuity(const VectorXd& psi,
                 n_v, p_v, ni_i, Nc_[i], Nv_[i], Vt_, carrierStatistics_);
             recombinationNi = std::sqrt(std::max<Real>(product, 0.0));
         }
-        const RecombinationLinearization linearization =
+        const RecombinationLinearization linearization = !recombinationNodes_[i] ? RecombinationLinearization{} :
             recombination_.electronLinearization(
                 n_v, p_v, recombinationNi,
                 recombination_.srhDopingConcentration(
                     doping_.donors(i), doping_.acceptors(i)));
         if (scaling_.enabled) {
             A_.coeffRef(ii, ii) +=
-                linearization.diagonal * vol_i * sourceIntegralFactor / scaling_.D0;
-            b_(ii) += linearization.rhs * vol_i * sourceIntegralFactor /
+                linearization.diagonal * recombinationVol_[i] * sourceIntegralFactor / scaling_.D0;
+            b_(ii) += linearization.rhs * recombinationVol_[i] * sourceIntegralFactor /
                 (scaling_.C0 * scaling_.D0);
         } else {
-            A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
-            b_(ii) += linearization.rhs * vol_i;
+            A_.coeffRef(ii, ii) += linearization.diagonal * recombinationVol_[i];
+            b_(ii) += linearization.rhs * recombinationVol_[i];
         }
         if (recombination_.bandToBandEnabled()) {
             const Real source =
@@ -578,10 +591,10 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
     const VectorXd pForMobility = scaling_.enabled ? (p_old * scaling_.C0) : p_old;
     const VectorXd phipForMobility =
         holeQuasiFermiFromDensity(
-            psiForMobility, p_old, ni_, Nv_, Vt_, scaling_, carrierStatistics_);
+            psiForMobility, p_old, niHole_, Nv_, Vt_, scaling_, carrierStatistics_);
     if (mobilityConfig_.model == "ialmob") {
         const VectorXd phinForMobility = electronQuasiFermiFromDensity(
-            psiForMobility,n_old,ni_,Nc_,Vt_,scaling_,carrierStatistics_);
+            psiForMobility,n_old,niElectron_,Nc_,Vt_,scaling_,carrierStatistics_);
         const Real densityScale=scaling_.enabled?scaling_.C0:1.;
         updateIalTransportState(mobilityConfig_,mesh_,doping_,psiForMobility,
             n_old*densityScale,p_old*densityScale,phinForMobility,phipForMobility);
@@ -645,8 +658,8 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
             const Real eta1 = reducedFermiEnergyFromDensity(p1, Nv_[edge.n1]);
             const Real factor = sgGeneralizedEinsteinFactor(p0, p1, eta0, eta1);
             const Real driftPotential = (psi1 - psi0) + Vt_ * std::log(
-                (ni_[edge.n0] / Nv_[edge.n0]) /
-                (ni_[edge.n1] / Nv_[edge.n1]));
+                (niHole_[edge.n0] / Nv_[edge.n0]) /
+                (niHole_[edge.n1] / Nv_[edge.n1]));
             weights = sgEdgeWeights(driftPotential, Vt_ * factor);
             coef *= factor;
         } else {
@@ -687,7 +700,7 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
         detail::usesQuasiFermiAvalancheDrivingForce(impactIonizationConfig_);
     const VectorXd phinForImpact =
         electronQuasiFermiFromDensity(
-            psi_si, n_old, ni_, Nc_, Vt_, scaling_, carrierStatistics_);
+            psi_si, n_old, niElectron_, Nc_, Vt_, scaling_, carrierStatistics_);
     const std::vector<Real> nodeElectronDrivingFields = (impactIonizationCoupled_ && qfImpact)
         ? detail::computeElectronAvalancheNodeQuasiFermiDrivingFields(
             impactIonizationConfig_, mesh_, nodeCells_, psi_si, phinForImpact,
@@ -741,19 +754,19 @@ void DDAssembler::assembleHoleContinuity(const VectorXd& psi,
                 n_v, p_v, ni_i, Nc_[i], Nv_[i], Vt_, carrierStatistics_);
             recombinationNi = std::sqrt(std::max<Real>(product, 0.0));
         }
-        const RecombinationLinearization linearization =
+        const RecombinationLinearization linearization = !recombinationNodes_[i] ? RecombinationLinearization{} :
             recombination_.holeLinearization(
                 n_v, p_v, recombinationNi,
                 recombination_.srhDopingConcentration(
                     doping_.donors(i), doping_.acceptors(i)));
         if (scaling_.enabled) {
             A_.coeffRef(ii, ii) +=
-                linearization.diagonal * vol_i * sourceIntegralFactor / scaling_.D0;
-            b_(ii) += linearization.rhs * vol_i * sourceIntegralFactor /
+                linearization.diagonal * recombinationVol_[i] * sourceIntegralFactor / scaling_.D0;
+            b_(ii) += linearization.rhs * recombinationVol_[i] * sourceIntegralFactor /
                 (scaling_.C0 * scaling_.D0);
         } else {
-            A_.coeffRef(ii, ii) += linearization.diagonal * vol_i;
-            b_(ii) += linearization.rhs * vol_i;
+            A_.coeffRef(ii, ii) += linearization.diagonal * recombinationVol_[i];
+            b_(ii) += linearization.rhs * recombinationVol_[i];
         }
         if (recombination_.bandToBandEnabled()) {
             const Real source =

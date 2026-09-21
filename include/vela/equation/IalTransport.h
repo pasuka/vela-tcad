@@ -11,6 +11,9 @@ struct IalTransportOptions {
     std::array<Real,3> crystalX{1.,0.,0.},crystalY{0.,1.,0.};
     std::map<int,IalMobility> electrons,holes;
     IalElementMobilityOptions element;
+    // Explicit non-Si transport controls. Values are cm^2/(V s); no HFS or
+    // element avalanche is applied to these materials.
+    std::map<std::string,std::array<Real,2>> constantMaterialMobility;
 };
 struct IalTransportGeometry {
     struct CellSupport {
@@ -23,6 +26,7 @@ struct IalTransportGeometry {
     // -1 for cells outside the silicon transport support.
     std::vector<int> cellSupportIndex;
     std::vector<std::vector<EdgeContribution>> edges;
+    std::vector<Real> constantElectronEdges,constantHoleEdges;
 };
 struct IalTransportState {
     bool hasTemperatureDerivatives=true;

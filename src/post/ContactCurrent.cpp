@@ -95,6 +95,9 @@ ContactCurrent::ContactCurrent(const DeviceMesh& mesh,
           doping,
           bandgapNarrowingConfig,
           validatedThermalVoltage(temperature_K)))
+    , intrinsicReference_(detail::buildNodeIntrinsicReference(mesh,matdb,temperature_K))
+    , niElectron_(detail::carrierReferencePrefactor(ni_,intrinsicReference_,validatedThermalVoltage(temperature_K),true))
+    , niHole_(detail::carrierReferencePrefactor(ni_,intrinsicReference_,validatedThermalVoltage(temperature_K),false))
     , Nc_(detail::buildNodeDensityOfStates(mesh, matdb, temperature_K, true))
     , Nv_(detail::buildNodeDensityOfStates(mesh, matdb, temperature_K, false))
     , carrierStatistics_(std::move(carrierStatistics))
@@ -521,14 +524,14 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             const Real coef = mun * thermalVoltage_ * fieldFactor / edgeLength;
             if (fermiDirac) {
                 const Real etaI = (electronPsi_i - phin_i) / thermalVoltage_
-                    + std::log(ni_i / Nc_[idxI]);
+                    + std::log(niElectron_[idxI] / Nc_[idxI]);
                 const Real etaJ = (electronPsi_j - phin_j) / thermalVoltage_
-                    + std::log(ni_j / Nc_[idxJ]);
+                    + std::log(niElectron_[idxJ] / Nc_[idxJ]);
                 const Real driftPotential =
                     (psi_j - psi_i) -
                     (1.0 - exponentialWeight) * (quantum_j - quantum_i)
                     + thermalVoltage_ * std::log(
-                        (ni_j / Nc_[idxJ]) / (ni_i / Nc_[idxI]));
+                        (niElectron_[idxJ] / Nc_[idxJ]) / (niElectron_[idxI] / Nc_[idxI]));
                 const Real fermiDensityI = Nc_[idxI] * fermiDiracHalf(etaI);
                 const Real fermiDensityJ = Nc_[idxJ] * fermiDiracHalf(etaJ);
                 electronGeneralizedFactor = sgGeneralizedEinsteinFactor(
@@ -550,7 +553,7 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                 const Real electronPsiFromNode0QfAtJ =
                     electronPsi_j - phin_j + electronQfDrop;
                 electronContinuityFlux01 = sgElectronContinuityFluxFromQuasiFermiVariableNi(
-                    ni_i, ni_j,
+                    niElectron_[idxI], niElectron_[idxJ],
                     electronPsiFromNode0Qf, electronPsiFromNode0QfAtJ,
                     0.0, electronQfDrop, thermalVoltage_, coef);
             }
@@ -566,12 +569,12 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
             const Real coef = mup * thermalVoltage_ * fieldFactor / edgeLength;
             if (fermiDirac) {
                 const Real etaI = (phip_i_forHole - holePsi_i) / thermalVoltage_
-                    + std::log(ni_i / Nv_[idxI]);
+                    + std::log(niHole_[idxI] / Nv_[idxI]);
                 const Real etaJ = (phip_j_forHole - holePsi_j) / thermalVoltage_
-                    + std::log(ni_j / Nv_[idxJ]);
+                    + std::log(niHole_[idxJ] / Nv_[idxJ]);
                 const Real driftPotential = psi_j - psi_i
                     + thermalVoltage_ * std::log(
-                        (ni_i / Nv_[idxI]) / (ni_j / Nv_[idxJ]));
+                        (niHole_[idxI] / Nv_[idxI]) / (niHole_[idxJ] / Nv_[idxJ]));
                 holeGeneralizedFactor = sgGeneralizedEinsteinFactor(
                     p_i, p_j, etaI, etaJ);
                 holeGeneralizedArgument = driftPotential /
@@ -589,7 +592,7 @@ ContactCurrentDetailedResult ContactCurrent::computeDetailed(
                 const Real holePsiFromNode0QfAtJ =
                     holePsi_j - phip_j_forHole + holeQfDropForFlux;
                 holeContinuityFlux01 = sgHoleContinuityFluxFromQuasiFermiVariableNi(
-                    ni_i, ni_j,
+                    niHole_[idxI], niHole_[idxJ],
                     holePsiFromNode0Qf, holePsiFromNode0QfAtJ,
                     0.0, holeQfDropForFlux,
                     thermalVoltage_, coef);

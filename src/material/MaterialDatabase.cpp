@@ -113,7 +113,7 @@ Material templatesLdmosMaterialFromJson(const nlohmann::json& j,
         j,
         {"name", "role", "eps_r", "intrinsic_carrier_density_cm3",
          "electron_mobility_cm2_per_V_s", "hole_mobility_cm2_per_V_s",
-         "bandgap_eV", "electron_affinity_eV",
+         "bandgap_eV", "electron_affinity_eV", "intrinsic_reference_potential_V",
          "conduction_band_density_of_states_cm3",
          "valence_band_density_of_states_cm3", "temperature_K",
          "electron_quantum_gamma", "electron_quantum_dos_mass_ratio",
@@ -158,6 +158,9 @@ Material templatesLdmosMaterialFromJson(const nlohmann::json& j,
     }
     if (j.contains("bandgap_eV"))
         mat.bandgap_eV = finiteInRange(j, "bandgap_eV", 0.0, 100.0, context);
+    if (j.contains("intrinsic_reference_potential_V"))
+        mat.intrinsic_reference_potential_V = finiteInRange(
+            j, "intrinsic_reference_potential_V", -10.0, 10.0, context);
     if (j.contains("electron_affinity_eV"))
         mat.electron_affinity_eV = finiteInRange(
             j, "electron_affinity_eV", 0.0, 100.0, context);
@@ -206,6 +209,9 @@ Material materialFromJson(const nlohmann::json& j,
     if (j.contains("mup")) mat.mup = scaling.mobilityToInternal(j.at("mup").get<Real>());
     setOptionalReal(j, "bandgap_eV", mat.bandgap_eV);
     setOptionalReal(j, "electron_affinity_eV", mat.electron_affinity_eV);
+    if (j.contains("intrinsic_reference_potential_V"))
+        mat.intrinsic_reference_potential_V = finiteInRange(
+            j, "intrinsic_reference_potential_V", -10.0, 10.0, "MaterialDatabase");
     setOptionalScaledReal(
         j, "Nc_m3", mat.Nc_m3, &UnitScalingConfig::concentrationToInternal, scaling);
     setOptionalScaledReal(

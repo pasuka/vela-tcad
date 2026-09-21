@@ -148,6 +148,12 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
     cfg.augerWithGeneration = json.value("auger_with_generation", cfg.augerWithGeneration);
     cfg.augerExcessProduct = json.value(
         "auger_excess_product", cfg.augerExcessProduct);
+    cfg.recombinationVolumePolicy = json.value("recombination_volume_policy", cfg.recombinationVolumePolicy);
+    if (cfg.recombinationVolumePolicy != "legacy_node" &&
+        cfg.recombinationVolumePolicy != "material_local_mixed_voronoi")
+        throw std::invalid_argument("Unsupported recombination_volume_policy");
+    if (json.contains("recombination_materials"))
+        cfg.recombinationMaterials=json.at("recombination_materials").get<std::vector<std::string>>();
     if (json.contains("auger_density_dependence"))
         cfg.augerDensityDependence = augerDensityDependenceConfigFromJson(
             json.at("auger_density_dependence"), scaling);
@@ -228,6 +234,9 @@ GummelConfig gummelConfigFromJson(const nlohmann::json& json, UnitScalingConfig 
             cfg.impactIonization.contactElectricFieldFallback = value.value(
                 "contact_electric_field_fallback",
                 cfg.impactIonization.contactElectricFieldFallback);
+            cfg.impactIonization.ialmobBoundaryFieldProjection = value.value(
+                "ialmob_boundary_field_projection",
+                cfg.impactIonization.ialmobBoundaryFieldProjection);
             cfg.impactIonization.contactElectricFieldFallbackScope = value.value(
                 "contact_electric_field_fallback_scope",
                 cfg.impactIonization.contactElectricFieldFallbackScope);
@@ -369,6 +378,9 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     // Per-node effective ni, including optional bandgap narrowing.
     std::vector<double> ni_v = detail::buildValidatedEffectiveNodeNi(
         "runGummel", mesh, matdb, doping, cfg.bandgapNarrowing, Vt);
+    const auto intrinsicReference = detail::buildNodeIntrinsicReference(mesh,matdb,cfg.temperature_K);
+    const auto niElectron = detail::carrierReferencePrefactor(ni_v,intrinsicReference,Vt,true);
+    const auto niHole = detail::carrierReferencePrefactor(ni_v,intrinsicReference,Vt,false);
     const std::vector<Real> Nc = detail::buildNodeDensityOfStates(
         mesh, matdb, cfg.temperature_K, true);
     const std::vector<Real> Nv = detail::buildNodeDensityOfStates(
@@ -475,6 +487,10 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
         }
 
         if (isSchottky) {
+            for (Index nid : contact.node_ids)
+                if (intrinsicReference[nid] != 0.0)
+                    throw std::invalid_argument(
+                        "Nonzero intrinsic reference with Schottky contacts is unsupported");
             if (spec->emissionModel == "thermionic_robin") {
                 throw std::runtime_error(
                     "runGummel: Schottky contact '" + contact.name +
@@ -517,7 +533,7 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
             const EquilibriumCarrierState equilibrium = equilibriumCarrierState(
                 Ndop, ni_node, Nc[nid], Nv[nid], Vt, cfg.carrierStatistics);
 
-            psiBC [nid] = Vbias + equilibrium.potential;
+            psiBC [nid] = Vbias + equilibrium.potential + intrinsicReference[nid];
             nBC   [nid] = equilibrium.n;
             pBC   [nid] = equilibrium.p;
             phinBC[nid] = Vbias;
@@ -584,6 +600,8 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
     RecombinationModelConfig recombinationConfig =
         recombinationModelConfig(
             cfg.recombination, cfg.taun, cfg.taup, cfg.srhDopingDependence);
+    recombinationConfig.activeMaterials = cfg.recombinationMaterials;
+    recombinationConfig.volumePolicy = cfg.recombinationVolumePolicy;
     recombinationConfig.augerCn = cfg.augerCn;
     recombinationConfig.augerCp = cfg.augerCp;
     recombinationConfig.augerDensityDependence = cfg.augerDensityDependence;
@@ -656,9 +674,9 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
             const double phinSi = useScaledUnknowns ? phin(ii) * ddScaling.V0 : phin(ii);
             const double phipSi = useScaledUnknowns ? phip(ii) * ddScaling.V0 : phip(ii);
             const double nSi = electronDensity(
-                ni_i, Nc[i], psiSi, phinSi, Vt, cfg.carrierStatistics);
+                niElectron[i], Nc[i], psiSi, phinSi, Vt, cfg.carrierStatistics);
             const double pSi = holeDensity(
-                ni_i, Nv[i], psiSi, phipSi, Vt, cfg.carrierStatistics);
+                niHole[i], Nv[i], psiSi, phipSi, Vt, cfg.carrierStatistics);
             n_init(ii) = useScaledUnknowns ? (nSi / ddScaling.C0) : nSi;
             p_init(ii) = useScaledUnknowns ? (pSi / ddScaling.C0) : pSi;
         }
@@ -719,10 +737,10 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
                     ? *equilibriumQfLock * ddScaling.V0
                     : *equilibriumQfLock;
                 const double nSi = electronDensity(
-                    ni_v[i], Nc[i], psiSi, qfSi, Vt,
+                    niElectron[i], Nc[i], psiSi, qfSi, Vt,
                     cfg.carrierStatistics);
                 const double pSi = holeDensity(
-                    ni_v[i], Nv[i], psiSi, qfSi, Vt,
+                    niHole[i], Nv[i], psiSi, qfSi, Vt,
                     cfg.carrierStatistics);
                 n_new(ii) = useScaledUnknowns ? nSi / ddScaling.C0 : nSi;
                 p_new(ii) = useScaledUnknowns ? pSi / ddScaling.C0 : pSi;
@@ -765,12 +783,12 @@ DDSolution runGummelImpl(const DeviceMesh&                          mesh,
             const double pSi = useScaledUnknowns ? p_new(ii) * ddScaling.C0 : p_new(ii);
             if (ni_i > 0.0 && nSi > 0.0) {
                 const double phinSi = electronQuasiFermiPotential(
-                    ni_i, Nc[i], psiSi, nSi, Vt, cfg.carrierStatistics);
+                    niElectron[i], Nc[i], psiSi, nSi, Vt, cfg.carrierStatistics);
                 phin(ii) = useScaledUnknowns ? (phinSi / ddScaling.V0) : phinSi;
             }
             if (ni_i > 0.0 && pSi > 0.0) {
                 const double phipSi = holeQuasiFermiPotential(
-                    ni_i, Nv[i], psiSi, pSi, Vt, cfg.carrierStatistics);
+                    niHole[i], Nv[i], psiSi, pSi, Vt, cfg.carrierStatistics);
                 phip(ii) = useScaledUnknowns ? (phipSi / ddScaling.V0) : phipSi;
             }
         }
@@ -1185,6 +1203,7 @@ void writeDDSolutionVTK(const std::string& filename,
         makeMobilityModel(resolvedMobilityConfig);
     const std::vector<Material> cellMaterials =
         detail::buildCellMaterials(mesh, matdb, temperature_K);
+    const auto recombinationMask=detail::recombinationNodeMask(mesh,cellMaterials,recombinationConfig.activeMaterials);
     const std::vector<Real> effectiveNi = detail::buildValidatedEffectiveNodeNi(
         "writeDDSolutionVTK",
         mesh,
@@ -1197,6 +1216,8 @@ void writeDDSolutionVTK(const std::string& filename,
     const std::vector<Real> densityOfStatesNv =
         detail::buildNodeDensityOfStates(mesh, matdb, temperature_K, false);
     writer.addNodeScalar("EffectiveIntrinsicDensity", effectiveNi);
+    writer.addNodeScalar("IntrinsicReferencePotential",
+        detail::buildNodeIntrinsicReference(mesh,matdb,temperature_K));
     const bool qfImpact =
         detail::usesQuasiFermiAvalancheDrivingForce(impactIonizationConfig);
     const std::vector<Real> electronImpactQfGradient_V_m = qfImpact
@@ -1399,12 +1420,14 @@ void writeDDSolutionVTK(const std::string& filename,
             srhState.electronDegeneracy, srhState.holeDegeneracy,
             recombination.srhDopingConcentration(
                 doping.donors(i), doping.acceptors(i)));
+        if (!recombinationMask[i]) srh[i]=0.;
         srh_cm3_s[i] =
             srh[i] * units.concentrationM3PerInternal() / 1.0e6;
         auger[i] = recombination.usesClassicalAugerExcessProduct()
             ? recombination.augerRate(n, p, ni)
             : recombination.augerRateFromExcessProduct(
                 srhState.excessProduct, n, p);
+        if (!recombinationMask[i]) auger[i]=0.;
         auger_cm3_s[i] =
             auger[i] * units.concentrationM3PerInternal() / 1.0e6;
         bandToBandGeneration[i] = transportNodeAreas[i] > 0.0

@@ -273,6 +273,8 @@ std::string bvProcessConfigurationFingerprint(
               << ";impact.source_volume_factor=" << impact.sourceVolumeFactor
               << ";impact.contact_fallback="
               << (impact.contactElectricFieldFallback ? 1 : 0)
+              << ";impact.ialmob_boundary_projection="
+              << (impact.ialmobBoundaryFieldProjection ? 1 : 0)
               << ";impact.contact_fallback_scope="
               << impact.contactElectricFieldFallbackScope
               << ";impact.contact_fallback_mode="

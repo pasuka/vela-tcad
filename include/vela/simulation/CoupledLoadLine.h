@@ -523,9 +523,11 @@ public:
                  ++lineSearch) {
                 ++result.lineSearchAttempts;
                 ArclengthState trial;
-                trial.x = result.state.x + alpha * deltaState;
                 trial.lambda = result.state.lambda + alpha * deltaVoltage;
                 try {
+                    trial.x = system_.trialState
+                        ? system_.trialState(result.state.x, deltaState, alpha)
+                        : VectorXd(result.state.x + alpha * deltaState);
                     const VectorXd trialF =
                         system_.residual(trial.x, trial.lambda);
                     const Real trialCurrent = current_(trial.x, trial.lambda);

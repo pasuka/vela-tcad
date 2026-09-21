@@ -16,6 +16,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+import os
 import subprocess
 import sys
 import tempfile
@@ -343,7 +344,7 @@ class MeshFileContractTest(unittest.TestCase):
 
     def test_generated_mesh_loads_in_the_vela_runner(self) -> None:
         exe_name = "vela_example_runner.exe" if sys.platform.startswith("win") else "vela_example_runner"
-        runner = REPO / "build" / exe_name
+        runner = Path(os.environ.get("VELA_EXAMPLE_RUNNER", REPO / "build" / exe_name))
         if not runner.exists():
             self.skipTest("vela_example_runner has not been built")
         generated = build_mesh_and_doping(parse_sde_device_ir(PN2D_SDE))
@@ -377,7 +378,8 @@ class MeshFileContractTest(unittest.TestCase):
             }, indent=2) + "\n", encoding="utf-8")
             result = subprocess.run(
                 [str(runner), "--config", str(root / "sim.json")],
-                cwd=root, capture_output=True, text=True, check=True)
+                cwd=root, capture_output=True, text=True, check=False)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
             self.assertNotIn("warning", result.stderr.lower())
             with (root / "iv.csv").open(encoding="utf-8") as handle:
                 rows = list(csv.DictReader(handle))

@@ -78,6 +78,8 @@ struct RecombinationModelConfig {
     AugerDensityDependenceConfig augerDensityDependence{};
     SRHDopingDependenceConfig srhDopingDependence{};
     BandToBandTunnelingConfig bandToBand{};
+    std::string volumePolicy = "legacy_node"; ///< SRH/Auger only; independent of charge/avalanche.
+    std::vector<std::string> activeMaterials; ///< Empty: all; otherwise restrict nodal SRH/Auger.
 };
 
 class RecombinationModel {
@@ -85,6 +87,7 @@ public:
     explicit RecombinationModel(RecombinationModelConfig config = {});
 
     bool srhEnabled() const { return srhEnabled_; }
+    const std::vector<std::string>& activeMaterials() const { return config_.activeMaterials; }
     bool augerEnabled() const { return augerEnabled_; }
     bool usesClassicalAugerExcessProduct() const
     {

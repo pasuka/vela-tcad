@@ -39,6 +39,7 @@
 #include <string>
 #include <utility>
 #include <type_traits>
+#include <optional>
 
 namespace vela::detail {
 
@@ -1833,6 +1834,14 @@ inline Real avalancheSourceEdgeArea(
 inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& config,
                                                  const char* context)
 {
+    if (config.ialmobBoundaryFieldProjection &&
+        (config.currentApproximation != "element_edge_sg_gss_laux" ||
+         config.generation != "current_density" ||
+         config.drivingForce != "quasi_fermi_gradient")) {
+        throw std::invalid_argument(std::string(context) +
+            ": ialmob_boundary_field_projection requires element-edge SG/GSS-Laux "
+            "current-density avalanche with a quasi-Fermi-gradient drive.");
+    }
     if (config.couplingMode != "self_consistent" &&
         config.couplingMode != "postprocess_only") {
         throw std::invalid_argument(
@@ -2993,6 +3002,34 @@ inline bool isTransportMaterial(const Material& material)
     return material.ni > 0.0 || material.mun > 0.0 || material.mup > 0.0;
 }
 
+/// Restrict nodal SRH/Auger to explicitly selected materials, preserving the
+/// existing node volumes. Mixed semiconductor ownership needs a separate
+/// material-local source integration contract and is rejected here.
+inline std::vector<bool> recombinationNodeMask(const DeviceMesh& mesh,
+    const std::vector<Material>& materials,const std::vector<std::string>& selected)
+{
+    std::vector<bool> active(mesh.numNodes(),selected.empty());
+    if (selected.empty()) return active;
+    std::unordered_set<std::string> names(selected.begin(),selected.end()),found;
+    if (names.count("") || names.size()!=selected.size())
+        throw std::invalid_argument("recombination_materials must contain unique nonempty names");
+    std::vector<bool> excluded(mesh.numNodes(),false);
+    for (const auto& cell:mesh.cells()) {
+        const auto& name=mesh.getRegion(cell.region_id).material;
+        const bool enabled=names.count(name)!=0;
+        if (enabled) found.insert(name);
+        if (!isTransportMaterial(materials.at(cell.id))) continue;
+        for (Index node:cell.node_ids) {
+            if (enabled) active[node]=true; else excluded[node]=true;
+        }
+    }
+    if (found!=names) throw std::invalid_argument("Unknown recombination material");
+    for (Index i=0;i<mesh.numNodes();++i)
+        if (active[i]&&excluded[i])
+            throw std::invalid_argument("Mixed semiconductor recombination ownership is unsupported");
+    return active;
+}
+
 /// Return the control-volume area used only for mobile and ionized-dopant
 /// charge in Poisson. Barycentric and mixed-Voronoi material ownership are
 /// explicit independent policies; neither changes continuity source volumes.
@@ -3031,6 +3068,29 @@ inline std::vector<Real> computePoissonChargeVolumes(
             : std::array<Real,3>{share,share,share};
         for (std::size_t k=0;k<3;++k)
             volume.at(static_cast<std::size_t>(cell.node_ids[k])) += shares[k];
+    }
+    return volume;
+}
+
+/// SRH/Auger integration measure only. Semiconductor shares at dielectric
+/// interfaces exclude the dielectric area; flux, charge and avalanche retain
+/// their independently selected measures. Mixed semiconductor source ownership
+/// is checked by recombinationNodeMask.
+inline std::vector<Real> recombinationNodeVolumes(const DeviceMesh& mesh,
+    const std::vector<Material>& materials, const std::string& policy)
+{
+    if (policy == "legacy_node") return computeNodeVolumes(mesh);
+    if (policy != "material_local_mixed_voronoi")
+        throw std::invalid_argument("Unsupported recombination_volume_policy");
+    if (materials.size() != mesh.numCells())
+        throw std::invalid_argument("Recombination cell material count mismatch");
+    std::vector<Real> volume(mesh.numNodes(), 0.0);
+    for (const auto& cell : mesh.cells()) {
+        if (!isTransportMaterial(materials.at(cell.id))) continue;
+        if (cell.type != CellType::Tri3 || cell.node_ids.size() != 3)
+            throw std::invalid_argument("Material-local recombination requires Tri3 cells");
+        const auto shares = BoxGeometryBuilder::mixedVoronoiVertexVolumes(mesh,cell);
+        for (std::size_t k=0;k<3;++k) volume.at(cell.node_ids[k]) += shares[k];
     }
     return volume;
 }
@@ -3797,6 +3857,10 @@ triangleGssAvalancheSourceRecords(
     return records;
 }
 
+inline std::optional<Point2> ialAvalancheBoundaryTangent(
+    const ImpactIonizationModelConfig& impact,
+    const MobilityModelConfig& mobility, Index cellId);
+
 #include "vela/equation/ElementEdgeGssLauxAD.inl"
 
 struct ElementEdgeGssLauxAvalancheSourceRecord {
@@ -3823,6 +3887,23 @@ struct ElementEdgeGssLauxAvalancheSourceRecord {
     std::array<Real, 3> holeSourceIntegrals{};
     std::array<Real, 3> combinedSourceIntegrals{};
 };
+
+inline std::optional<Point2> ialAvalancheBoundaryTangent(
+    const ImpactIonizationModelConfig& impact,
+    const MobilityModelConfig& mobility, Index cellId)
+{
+    if (!impact.ialmobBoundaryFieldProjection) return std::nullopt;
+    if (mobility.model != "ialmob" || !mobility.ialmobGeometry) {
+        throw std::invalid_argument(
+            "ialmob_boundary_field_projection requires prepared element IALMob geometry");
+    }
+    const auto& geometry = *mobility.ialmobGeometry;
+    const int support = geometry.cellSupportIndex.at(cellId);
+    if (support < 0) return std::nullopt;
+    const auto& cell = geometry.cells.at(static_cast<std::size_t>(support)).geometry;
+    if (!cell.partialBoundaryLayer) return std::nullopt;
+    return Point2{cell.boundaryTangent[0], cell.boundaryTangent[1]};
+}
 
 inline ElementEdgeGssLauxAvalancheSourceRecord
 elementEdgeGssLauxAvalancheSourceRecordForCell(
@@ -3891,8 +3972,11 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
 
     const bool useContactFallback =
         cellUsesContactElectricFieldFallback(config, mesh, cell);
-    const Real electronQfField = electronGradient.norm() * fieldFactor;
-    const Real holeQfField = holeGradient.norm() * fieldFactor;
+    const auto boundaryTangent = ialAvalancheBoundaryTangent(config, mobilityConfig, cellId);
+    const Real electronQfField = (boundaryTangent
+        ? std::abs(electronGradient.dot(*boundaryTangent)) : electronGradient.norm()) * fieldFactor;
+    const Real holeQfField = (boundaryTangent
+        ? std::abs(holeGradient.dot(*boundaryTangent)) : holeGradient.norm()) * fieldFactor;
     if (config.drivingForce == "electric_field") {
         record.electronImpactField = electricGradient.norm() * fieldFactor;
         record.holeImpactField = record.electronImpactField;
@@ -5210,6 +5294,45 @@ inline std::vector<Real> buildNodeNi(const DeviceMesh&       mesh,
         }
     }
     return ni_v;
+}
+
+/// Material reference for disconnected, isothermal semiconductor components.
+/// A shared semiconductor node cannot have two different intrinsic references;
+/// this implementation does not approximate a heterojunction interface law.
+inline std::vector<Real> buildNodeIntrinsicReference(
+    const DeviceMesh& mesh, const MaterialDatabase& matdb, Real temperature_K)
+{
+    std::vector<Real> result(mesh.numNodes(),0.);
+    std::vector<bool> found(mesh.numNodes(),false);
+    for (const auto& cell:mesh.cells()) {
+        const auto material=matdb.getMaterial(mesh.getRegion(cell.region_id).material,temperature_K);
+        if (!isTransportMaterial(material)) continue;
+        const Real offset=material.intrinsic_reference_potential_V;
+        if (!std::isfinite(offset)) throw std::invalid_argument("Nonfinite intrinsic reference");
+        if (offset!=0. && std::abs(temperature_K-300.)>1e-8)
+            throw std::invalid_argument("Intrinsic reference currently requires isothermal 300 K");
+        for (Index node:cell.node_ids) {
+            if (found[node] && result[node]!=offset)
+                throw std::invalid_argument("Mixed semiconductor intrinsic references are unsupported");
+            found[node]=true;result[node]=offset;
+        }
+    }
+    return result;
+}
+
+/// Carrier-specific Boltzmann prefactors. Their product remains ni^2, so the
+/// physical intrinsic density used by recombination is never changed.
+inline std::vector<Real> carrierReferencePrefactor(
+    const std::vector<Real>& ni,const std::vector<Real>& offsets,Real vt,bool electrons)
+{
+    std::vector<Real> result=ni;
+    for (std::size_t i=0;i<ni.size();++i) {
+        if (offsets.at(i)==0. || ni[i]==0.) continue;
+        result[i]*=std::exp((electrons?-1.:1.)*offsets[i]/vt);
+        if (!(result[i]>0.) || !std::isfinite(result[i]))
+            throw std::invalid_argument("Intrinsic reference overflows carrier prefactor");
+    }
+    return result;
 }
 
 /// Build per-node effective conduction/valence density of states.  Shared

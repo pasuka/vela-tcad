@@ -978,6 +978,75 @@ TEST_CASE("NewtonSolver: arclength quasi-Fermi cap uniformly scales bordered upd
             Catch::Approx(cappedCfg.quasiFermiUpdateLimitMinority_V).margin(1.0e-12));
 }
 
+TEST_CASE("NewtonSolver: positive density trials preserve tangent and physical densities",
+          "[newton][arclength][positive_density][scaling]")
+{
+    const auto mode = GENERATE(UnitScalingMode::LegacySI, UnitScalingMode::UnitScaling);
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg = newtonConfig();
+    cfg.inputScaling = UnitScalingConfig{mode};
+    NewtonSolver solver(mesh, matdb, doping, zeroBias(), cfg);
+    const auto equilibrium = solver.solve();
+    REQUIRE(equilibrium.converged);
+    const Real scale = solver.evaluateResidual(equilibrium.solution).potentialScale;
+    const Real vt = constants::Vt_300 * cfg.temperature_K / 300.0;
+    const int n = static_cast<int>(mesh.numNodes());
+    const int i = 4;
+    const auto original = solver.makeArclengthSystem("anode");
+    REQUIRE_FALSE(static_cast<bool>(original.trialState));
+    const auto system = solver.makeArclengthSystem("anode", 1.0e-4, true);
+    REQUIRE(static_cast<bool>(system.trialState));
+    REQUIRE_FALSE(static_cast<bool>(system.limitUpdate));
+    const VectorXd x = solver.packArclengthState(equilibrium.solution);
+    VectorXd dx = VectorXd::Zero(3 * n);
+    dx(i) = 0.01 / scale;
+    dx(n + i) = -0.02 / scale;
+    dx(2 * n + i) = 0.04 / scale;
+    const Real alpha = 1.0e-5;
+    const VectorXd tangent = (system.trialState(x, dx, alpha) - x) / alpha;
+    REQUIRE((tangent - dx).norm() / dx.norm() < 2.0e-5);
+    // The residual and its Jacobian must remain exactly the original system.
+    REQUIRE((system.residual(x, 0.0) - original.residual(x, 0.0)).norm() == 0.0);
+    REQUIRE((system.jacobian(x, 0.0) - original.jacobian(x, 0.0)).norm() == 0.0);
+
+    // A huge density increase and an otherwise negative density proposal
+    // both produce finite positive carrier densities after the nonlinear map.
+    dx.setZero();
+    dx(n + i) = -1.0e9 * vt / scale;
+    dx(2 * n + i) = -2.0 * vt / scale;
+    const auto initial = solver.unpackArclengthState(x);
+    const VectorXd trial = system.trialState(x, dx, 1.0);
+    const auto updated = solver.unpackArclengthState(trial);
+    REQUIRE(updated.n(i) > 0.0);
+    REQUIRE(updated.p(i) > 0.0);
+    REQUIRE(std::isfinite(updated.n(i)));
+    REQUIRE(updated.n(i) / initial.n(i) == Catch::Approx(1.0e9 + 1.0).epsilon(1.0e-10));
+    REQUIRE(updated.p(i) / initial.p(i) == Catch::Approx(0.1).epsilon(1.0e-10));
+    REQUIRE_THROWS_AS(system.trialState(x, dx, -1.0), std::invalid_argument);
+
+    cfg.quasiFermiUpdateLimit_V = 0.02;
+    NewtonSolver cappedSolver(mesh, matdb, doping, zeroBias(), cfg);
+    const auto capped = cappedSolver.makeArclengthSystem("anode", 1.0e-4, true);
+    const VectorXd cappedStep = capped.trialState(x, dx, 1.0) - x;
+    REQUIRE(cappedStep.tail(2 * n).lpNorm<Eigen::Infinity>() * scale <= 0.02 + 1.0e-14);
+    REQUIRE_FALSE(static_cast<bool>(capped.limitUpdate));
+}
+
+TEST_CASE("NewtonSolver: positive density trials reject unsupported statistics",
+          "[newton][arclength][positive_density]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg = newtonConfig();
+    SECTION("Fermi Dirac") { cfg.carrierStatistics.model = "fermi_dirac"; }
+    SECTION("Quantum potential") { cfg.electronQuantumPotential.enabled = true; }
+    NewtonSolver solver(mesh, matdb, doping, zeroBias(), cfg);
+    REQUIRE_THROWS_AS(solver.makeArclengthSystem("anode", 1.0e-4, true), std::invalid_argument);
+}
+
 TEST_CASE("NewtonSolver: high-doping unit-scaled PN cold start reaches near-zero 0V current",
           "[newton][scaling][bgn]")
 {
@@ -3967,6 +4036,39 @@ TEST_CASE("NewtonSolver: evaluateBlockStep freezes complementary unknown blocks"
             Catch::Approx(state.phin(1) + carriers.deltaPhin(1)));
 }
 
+
+TEST_CASE("NewtonSolver: density candidate solves fixed-field linear carrier transport",
+          "[newton][carrier_density_candidate]")
+{
+    DeviceMesh mesh=makePNMesh();MaterialDatabase matdb;auto doping=makePNDoping(mesh);
+    NewtonConfig cfg;cfg.recombination={"none"};cfg.warmStart=true;
+    const std::unordered_map<std::string,Real> biases={{"anode",0.},{"cathode",0.}};
+    const int N=static_cast<int>(mesh.numNodes());DDSolution state;
+    state.psi=VectorXd::LinSpaced(N,-.02,.02);
+    state.phin=VectorXd::Constant(N,-.02);state.phip=VectorXd::Constant(N,.02);
+    for (const auto& contact:mesh.contacts()) for(Index node:contact.node_ids) {
+        state.phin[node]=0.;state.phip[node]=0.;
+    }
+    NewtonSolver solver(mesh,matdb,doping,biases,cfg);
+    const auto step=solver.evaluateBlockStep(state,"carrier_density");
+    CHECK(step.deltaPsi.norm()==0.);
+    CHECK(step.trialSolution.n.minCoeff()>0.);CHECK(step.trialSolution.p.minCoeff()>0.);
+    // With fixed mobility and no source, the continuity equations are linear
+    // in density. An admissible density Newton candidate solves them directly.
+    CHECK(step.trialResidual.raw.tail(2*N).norm()<1e-8*step.residual.raw.tail(2*N).norm());
+    DDSolution far=state;
+    far.phin=VectorXd::Constant(N,-.25);far.phip=VectorXd::Constant(N,.25);
+    for(const auto& contact:mesh.contacts()) for(Index node:contact.node_ids) {
+        far.phin[node]=0.;far.phip[node]=0.;
+    }
+    const auto limited=solver.evaluateBlockStep(far,"carrier_density");
+    CHECK(limited.trialSolution.n.minCoeff()>0.);CHECK(limited.trialSolution.p.minCoeff()>0.);
+    CHECK(limited.trialResidual.raw.tail(2*N).norm()<.5*limited.residual.raw.tail(2*N).norm());
+    far.phin[mesh.contacts().front().node_ids.front()]=.01;
+    CHECK_THROWS(solver.evaluateBlockStep(far,"carrier_density"));
+    cfg.carrierStatistics.model="fermi_dirac";
+    CHECK_THROWS(NewtonSolver(mesh,matdb,doping,biases,cfg).evaluateBlockStep(state,"carrier_density"));
+}
 
 TEST_CASE("NewtonSolver: builds a Poisson-block initialized cold state",
           "[newton][poisson_block_initialization]")

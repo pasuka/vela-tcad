@@ -384,6 +384,9 @@ public:
     bool hasPositiveFiniteCarriers(const VectorXd& x) const;
     Index numNodes() const { return mesh_.numNodes(); }
     const std::vector<Real>& intrinsicDensity() const { return ni_; }
+    const std::vector<Real>& intrinsicReferencePotential() const { return intrinsicReference_; }
+    const std::vector<Real>& electronReferencePrefactor() const { return niElectron_; }
+    const std::vector<Real>& holeReferencePrefactor() const { return niHole_; }
     const std::vector<Real>& electronDensityOfStates() const { return Nc_; }
     const std::vector<Real>& holeDensityOfStates() const { return Nv_; }
     const CarrierStatisticsConfig& carrierStatistics() const { return carrierStatistics_; }
@@ -518,6 +521,8 @@ private:
     std::unique_ptr<MobilityModel> mobility_;
     RecombinationModelConfig recombinationConfig_;
     RecombinationModel recombination_;
+    std::vector<bool> recombinationNodes_;
+    std::vector<Real> recombinationVol_;
     BandgapNarrowingConfig bandgapNarrowingConfig_;
     ImpactIonizationModelConfig impactIonizationConfig_;
     std::unique_ptr<ImpactIonizationModel> impactIonization_;
@@ -532,6 +537,7 @@ private:
     CarrierStatisticsModel carrierStatisticsModel_ = CarrierStatisticsModel::Boltzmann;
     bool usesFermiDirac_ = false;
     std::vector<Real> ni_;
+    std::vector<Real> intrinsicReference_, niElectron_, niHole_;
     std::vector<Real> Nc_;
     std::vector<Real> Nv_;
     std::vector<Material> cellMaterials_;

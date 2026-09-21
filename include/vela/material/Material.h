@@ -37,6 +37,11 @@ struct Material {
     std::optional<Real> specific_heat_J_per_kg_K;
     std::optional<Real> mass_density_kg_per_m3;
 
+    /// Intrinsic-level potential relative to the common device reference [V].
+    /// n = ni*exp((psi-phin-reference)/Vt), p = ni*exp((phip-psi+reference)/Vt).
+    /// Default zero preserves the historical homogeneous reference.
+    Real intrinsic_reference_potential_V = 0.0;
+
     /// Return a copy with ni and low-field mobilities scaled to temperature_K.
     Material atTemperature(Real targetTemperature_K) const;
 };
