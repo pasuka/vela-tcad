@@ -56,8 +56,7 @@ jobs:
         run: /usr/bin/python3 -c "import h5py, numpy, PIL; print(h5py.version.info)"
 
       - name: Configure debug build
-        # Optional OpenMP backends are covered by the UCRT64 job below;
-        # Ubuntu's serial SuperLU/MPI MUMPS are not those same adapters.
+        # Keep optional OpenMP direct backends disabled in this Linux CI job.
         run: |
           set -euo pipefail
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug \
