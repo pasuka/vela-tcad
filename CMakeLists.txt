@@ -211,7 +211,7 @@ add_library(vela_core STATIC
     src/physics/BandToBandTunnelingModel.cpp
     src/physics/SRHRecombination.cpp
     src/physics/MobilityModel.cpp
-    src/physics/IALMobility.cpp
+    src/physics/SlotIALMobility.cpp
     src/physics/RecombinationModel.cpp
     src/physics/ImpactIonizationModel.cpp
     src/physics/BandgapNarrowing.cpp

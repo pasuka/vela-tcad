@@ -9,7 +9,7 @@
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DopingModel.h"
 #include "vela/physics/MobilityModel.h"
-#include "vela/physics/IALMobility.h"
+#include "vela/physics/SlotIALMobility.h"
 #include "vela/solver/GummelSolver.h"
 
 #include <cmath>

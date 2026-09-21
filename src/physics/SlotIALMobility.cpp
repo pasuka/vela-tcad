@@ -1,4 +1,4 @@
-#include "vela/physics/IALMobility.h"
+#include "vela/physics/SlotIALMobility.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>

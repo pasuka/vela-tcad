@@ -5,7 +5,7 @@
 #include "vela/material/MaterialDatabase.h"
 #include "vela/core/PhysicalConstants.h"
 #include "vela/physics/DopingModel.h"
-#include "vela/physics/IALMobility.h"
+#include "vela/physics/SlotIALMobility.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/physics/RecombinationModel.h"
 #include "vela/post/ContactCurrent.h"
