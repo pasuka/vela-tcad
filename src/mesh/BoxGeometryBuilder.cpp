@@ -121,6 +121,19 @@ Real BoxGeometryBuilder::triangleArea(const DeviceMesh& mesh, const Cell& cell)
                         mesh.getNode(cell.node_ids[2]));
 }
 
+std::array<Real,3> BoxGeometryBuilder::mixedVoronoiVertexVolumes(const DeviceMesh& mesh,const Cell& cell)
+{
+    if (cell.type!=CellType::Tri3 || cell.node_ids.size()!=3)
+        throw std::invalid_argument("Mixed-Voronoi vertex volumes require Tri3 cells");
+    const auto& a=mesh.getNode(cell.node_ids[0]);
+    const auto& b=mesh.getNode(cell.node_ids[1]);
+    const auto& c=mesh.getNode(cell.node_ids[2]);
+    const Real area=triangleArea(a,b,c);
+    if (area<=kDegenerateTol) return {};
+    return mixedVoronoiShares({&a,&b,&c},
+        {angleDegreesAt(a,b,c),angleDegreesAt(b,c,a),angleDegreesAt(c,a,b)},area);
+}
+
 void BoxGeometryBuilder::build(DeviceMesh& mesh)
 {
     (void)buildWithReport(mesh, Options{});

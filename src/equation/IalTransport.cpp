@@ -8,6 +8,8 @@
 #include <fstream>
 #include <set>
 #include <numeric>
+#include <sstream>
+#include <iomanip>
 
 namespace vela {
 namespace {
@@ -33,6 +35,7 @@ std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& 
         input.at("cell_count").get<Index>()!=mesh.numCells())
         throw std::invalid_argument("IALMob geometry does not match the mesh");
     auto result=std::make_shared<IalTransportGeometry>();result->edges.resize(mesh.numEdges());
+    result->cellSupportIndex.assign(mesh.numCells(),-1);
     std::vector<std::array<Real,2>> xy;
     for (const auto& n:mesh.nodes()) xy.push_back({n.x*config.internalLengthToM,n.y*config.internalLengthToM});
     std::map<Pair,std::vector<Index>> adjacent;std::map<Pair,Index> edgeIds;
@@ -114,6 +117,7 @@ std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& 
         if (support.geometry.partialBoundaryLayer) support.geometry.boundaryTangent=tangents.at(id);
         const auto coeff=row.at("edge_coefficients").get<std::array<Real,3>>();
         const std::size_t index=result->cells.size();result->cells.push_back(support);
+        result->cellSupportIndex[id]=static_cast<int>(index);
         for (int k=0;k<3;++k) {
             if (!std::isfinite(coeff[k])||coeff[k]<0.) throw std::invalid_argument("Invalid IALMob transport coefficient");
             const Index edge=edgeIds.at(pair(c.node_ids[k],c.node_ids[(k+1)%3]));
@@ -125,8 +129,12 @@ std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& 
     for (const auto& edge:mesh.edges()) {
         const Real expected=edge.transport_couple>=0.?edge.transport_couple:edge.couple;
         const Real actual=coefficientSum[edge.id]*edge.length;
-        if (!result->edges[edge.id].empty()&&std::abs(expected-actual)>1e-10*std::max(std::abs(expected),std::abs(actual)))
-            throw std::invalid_argument("IALMob cell coefficients disagree with transport edge coupling");
+        if (!result->edges[edge.id].empty()&&std::abs(expected-actual)>1e-10*std::max(std::abs(expected),std::abs(actual))) {
+            std::ostringstream message;
+            message << std::setprecision(17) << "IALMob cell coefficients disagree with transport edge coupling: edge "
+                    << edge.id << " (" << edge.n0 << ',' << edge.n1 << "), expected " << expected << ", actual " << actual;
+            throw std::invalid_argument(message.str());
+        }
         if (coefficientSum[edge.id]>0.)
             for (auto& c:result->edges[edge.id]) c.weight/=coefficientSum[edge.id];
     }
@@ -155,6 +163,35 @@ void prepareIalTransportGeometry(MobilityModelConfig& config,const DeviceMesh& m
     if (config.model!="ialmob") return;
     if (!config.ialmob) throw std::invalid_argument("IALMob requires an explicit parameter/geometry contract");
     if (!config.ialmobGeometry) config.ialmobGeometry=geometry(config,mesh);
+}
+
+IalElementMobilityResult evaluateIalTransportCell(
+    const MobilityModelConfig& config,Index cellId,
+    const std::array<IalElementVertexState,3>& states,bool spatialDerivatives) {
+    if (!config.ialmob || !config.ialmobGeometry)
+        throw std::logic_error("IALMob cell evaluation requires prepared geometry");
+    const int index=config.ialmobGeometry->cellSupportIndex.at(cellId);
+    if (index<0) return {};
+    const auto& support=config.ialmobGeometry->cells.at(index);
+    std::array<const IalMobility*,3> em,hm;
+    for (int k=0;k<3;++k) {
+        em[k]=&config.ialmob->electrons.at(support.family[k]);
+        hm[k]=&config.ialmob->holes.at(support.family[k]);
+    }
+    auto options=config.ialmob->element;
+    options.spatialDerivatives=spatialDerivatives;
+    options.temperatureDerivatives=false;
+    options.screeningCache=nullptr;options.preparationCache=nullptr;
+    options.electronField=config.electronField;options.holeField=config.holeField;
+    const Real velocityFactor=config.internalMobilityToM2PerVS*config.internalFieldToVPerM;
+    options.electronField.saturationVelocity*=velocityFactor;
+    options.holeField.saturationVelocity*=velocityFactor;
+    auto r=evaluateIalElementMobility(support.geometry,states,em,hm,options);
+    for (auto* value:{&r.electron,&r.hole,&r.electronLowField,&r.holeLowField}) {
+        value->value/=config.internalMobilityToM2PerVS;
+        for (auto& d:value->derivative) d/=config.internalMobilityToM2PerVS;
+    }
+    return r;
 }
 
 void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,

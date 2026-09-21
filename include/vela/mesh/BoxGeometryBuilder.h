@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include <array>
 
 namespace vela {
 
@@ -52,6 +53,8 @@ public:
     };
 
     static Real triangleArea(const Node& a, const Node& b, const Node& c);
+    /// Exactly the local mixed-Voronoi shares used by buildWithReport.
+    static std::array<Real,3> mixedVoronoiVertexVolumes(const DeviceMesh& mesh,const Cell& cell);
     static void build(DeviceMesh& mesh);
     static void build(DeviceMesh& mesh, const Options& options);
     static GeometryBuildReport buildWithReport(DeviceMesh& mesh);

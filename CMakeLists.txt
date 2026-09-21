@@ -817,7 +817,8 @@ vela_set_windows_msys2_test_path(slot_ldmos_noavalanche_continuation)
 
 add_test(NAME slot_ldmos_ialmob_tools
     COMMAND ${Python3_EXECUTABLE} -m unittest
-            tests.regression.test_slot_ldmos_ialmob_tools)
+            tests.regression.test_slot_ldmos_ialmob_tools
+            tests.regression.test_prepare_slot_ldmos_element_ialmob)
 set_tests_properties(slot_ldmos_ialmob_tools PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     ENVIRONMENT "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")

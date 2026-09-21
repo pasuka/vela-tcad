@@ -329,6 +329,10 @@ public:
         const CoupledDDBoundaryConditions& bcs,
         Real relativeStep = 1.0e-6) const;
 
+    // Direct SRH/Auger contribution, avoiding cancellation against transport.
+    SparseMatrixd recombinationSourceJacobian(
+        const VectorXd& x,const CoupledDDBoundaryConditions& bcs) const;
+
     // Assemble only the impact-ionization source contribution. These direct
     // paths avoid subtracting two full continuity residuals/Jacobians when the
     // avalanche block is many orders of magnitude smaller than transport.
@@ -493,6 +497,12 @@ private:
                                Real quasiFermiSplitting_V,
                                const GeneralizedSrhCarrierState* srhState = nullptr,
                                const GeneralizedSrhCarrierState* augerState = nullptr) const;
+    struct NodeRecombinationDifferential {
+        Real rate=0.;
+        std::array<Real,3> derivative{};
+    };
+    NodeRecombinationDifferential nodeRecombinationDifferential(
+        Index node,const VectorXd& x,Real n,Real p) const;
     void rebuildFixedJacobianPattern(
         const std::vector<bool>& constrainedRows,
         bool includeCellStencil,

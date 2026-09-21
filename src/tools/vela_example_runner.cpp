@@ -388,10 +388,10 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
         vela::parsePoissonChargeVolumePolicy(cfg);
     if (transportProfile.profile != "mesh_default" &&
         (newton.impactIonization.model != "none" ||
-         vela::isSurfaceMobilityModel(newton.mobility) ||
+         (transportProfile.profile != "slot_ldmos_external_averagebox" && vela::isSurfaceMobilityModel(newton.mobility)) ||
          newton.electronQuantumPotential.enabled)) {
         throw std::invalid_argument(
-            "templates_ldmos_external_averagebox is qualified only with "
+            "external AverageBox requires "
             "impact ionization, surface mobility/IALMob, and quantum potential off.");
     }
     if (poissonProfile.profile != "mesh_default" &&
@@ -3053,6 +3053,7 @@ void writeEdgeMobilityProbeCsv(const std::filesystem::path& path,
     std::ofstream out(path);
     if (!out.is_open())
         throw std::runtime_error("Cannot write edge mobility probe CSV: " + path.string());
+    out << std::setprecision(17);
     out << "edge_id,node0,node1,x0,y0,x1,y1,length_m,couple_m,"
         << "net_doping_avg_m3,electric_field_V_m,electron_qf_field_V_m,"
         << "hole_qf_field_V_m,electron_mobility_field_V_m,"

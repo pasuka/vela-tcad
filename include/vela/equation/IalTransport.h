@@ -20,6 +20,8 @@ struct IalTransportGeometry {
     };
     struct EdgeContribution { std::size_t support; Real weight; };
     std::vector<CellSupport> cells;
+    // -1 for cells outside the silicon transport support.
+    std::vector<int> cellSupportIndex;
     std::vector<std::vector<EdgeContribution>> edges;
 };
 struct IalTransportState {
@@ -34,6 +36,12 @@ std::shared_ptr<const IalTransportOptions> ialTransportOptionsFromJson(const nlo
 // Prepare once for an immutable mesh/options pair, then share the read-only
 // geometry through config copies. Live carrier states are not shared here.
 void prepareIalTransportGeometry(MobilityModelConfig& config,const DeviceMesh& mesh);
+// Evaluate the supplied local state, never the cached global state. Inputs are
+// SI; returned mobilities use the configured internal units, partials per volt.
+// Used by cell-local avalanche residuals and independent perturbed-state audits.
+IalElementMobilityResult evaluateIalTransportCell(
+    const MobilityModelConfig& config,Index cellId,
+    const std::array<IalElementVertexState,3>& states,bool spatialDerivatives);
 void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
     const DopingModel& doping,const VectorXd& psi_V,const VectorXd& n,const VectorXd& p,
     const VectorXd& phin_V,const VectorXd& phip_V,

@@ -332,23 +332,32 @@ TEST_CASE("External AverageBox carrier profile is explicit and leaves Poisson co
         output << mesh.getEdge(0).n0 << ',' << mesh.getEdge(0).n1
                << ",2e-7\n";
     }
-    const nlohmann::json cfg{{"mesh_geometry", {
+    nlohmann::json cfg{{"mesh_geometry", {
         {"carrier_transport_couple_profile", "templates_ldmos_external_averagebox"},
         {"external_averagebox_couples_file", path.string()},
         {"external_averagebox_expected_edges", 1},
     }}};
+    std::string profile="templates_ldmos_external_averagebox";
+    SECTION("SLOT transport geometry can be separated from mixed volumes") {
+        profile="slot_ldmos_external_averagebox";
+        cfg["mesh_geometry"]["carrier_transport_couple_profile"]=profile;
+        cfg["mesh_geometry"]["node_volume_policy"]="mixed_voronoi";
+    }
+    SECTION("Templates keeps the existing barycentric contract") {}
+    const auto volumes=detail::computeNodeVolumes(mesh);
     const CarrierTransportCoupleProfileReport report =
         applyCarrierTransportCoupleProfile(
             mesh, cfg, path.parent_path(), UnitScalingConfig{UnitScalingMode::UnitScaling});
     std::filesystem::remove(path);
 
-    REQUIRE(report.profile == "templates_ldmos_external_averagebox");
+    REQUIRE(report.profile == profile);
     REQUIRE(report.records == 1);
     REQUIRE(mesh.getEdge(0).couple == Catch::Approx(original));
     REQUIRE(mesh.getEdge(0).transport_couple == Catch::Approx(0.2));
     REQUIRE(detail::computeEdgeCouplings(mesh).at(0) == Catch::Approx(original));
     REQUIRE(detail::computeTransportEdgeCouplings(mesh).at(0) == Catch::Approx(0.2));
     REQUIRE(mesh.getEdge(1).transport_couple < 0.0);
+    REQUIRE(detail::computeNodeVolumes(mesh)==volumes);
 }
 
 TEST_CASE("External AverageBox fields cannot be silently ignored by the default profile",

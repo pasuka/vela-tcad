@@ -207,6 +207,75 @@ TEST_CASE("IALMob full residual Jacobian and terminal currents share live mobili
 
 }
 
+TEST_CASE("IALMob avalanche differentiates live element mobility in every potential column",
+          "[ialmob][impact][element_edge_gss_laux][jacobian]")
+{
+    const Real vt=constants::kb*300./constants::q;
+    for (bool tcad:{false,true}) for (Real referenceDensity:{0.,1e18}) {
+        Fixture f(tcad);
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        options->element.referenceDensity_m3=referenceDensity;f.mobility.ialmob=options;
+        DDScalingSpec scaling;
+        if (tcad) {
+            scaling.enabled=true;scaling.V0=vt;scaling.C0=1e17;scaling.D0=1000.*vt;
+            scaling.mu0=1000.;scaling.L0=.1;scaling.permittivityReference_F_per_m=constants::eps0*11.7;
+            scaling.unitSystem=PhysicalUnitSystem::tcadInternal();
+            scaling.chargeAreaFactor=scaling.unitSystem.chargeAreaFactor();
+            scaling.chargeLineFactor=scaling.unitSystem.chargeLineFactor();
+            scaling.fieldFromCoordinateDeltaFactor=scaling.unitSystem.fieldFromCoordinateDeltaFactor();
+            scaling.currentDensityLineIntegralFactor=scaling.unitSystem.currentDensityAM2PerInternal()*scaling.unitSystem.lengthMPerInternal();
+        }
+        auto impact=impactIonizationModelConfig("van_overstraeten",
+            UnitScalingConfig{tcad?UnitScalingMode::UnitScaling:UnitScalingMode::LegacySI});
+        impact.drivingForce="quasi_fermi_gradient";impact.generation="current_density";
+        impact.currentApproximation="element_edge_sg_gss_laux";
+        impact.sourceMappingMode="element_vertex_box_measure";
+        impact.quasiFermiGradientDiscretization="cell_gradient";impact.sourceJacobianMode="local_ad";
+        // Manufactured field scale makes avalanche resolvable on the small
+        // fixture. This changes no production coefficient or acceptance gate.
+        impact.bScale=.001;impact.aScale=.01;
+        RecombinationModelConfig off;off.mechanisms.clear();
+        CoupledDDAssembler assembler(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
+        const Real scale=tcad?vt:1.;
+        CoupledDDState state;state.psi=VectorXd(6);state.phin=VectorXd(6);state.phip=VectorXd(6);
+        for(int i=0;i<6;++i){state.psi[i]=(.48+.012*i)/scale;state.phin[i]=.003*i/scale;state.phip[i]=(.96-.002*i)/scale;}
+        const auto x=assembler.pack(state);CoupledDDBoundaryConditions bc;
+        // Branch diagnostics can be the first consumer, before any live cache.
+        CHECK_FALSE(assembler.impactIonizationActiveBranchFingerprint(x).empty());
+        // Call the source API before a full residual: geometry must be prepared.
+        const auto source=assembler.impactIonizationSourceJacobian(x,bc);
+        REQUIRE(source.norm()>0.);
+        const auto sourceFd=assembler.impactIonizationSourceFiniteDifferenceJacobian(x,bc,2e-7);
+        CHECK((source-sourceFd).norm()/source.norm()<3e-6);
+        const auto full=assembler.assembleJacobian(x,bc);
+        for(int k=0;k<x.size();++k) {
+            auto plus=x,minus=x;const Real h=2e-7/scale;plus[k]+=h;minus[k]-=h;
+            const VectorXd fd=(assembler.residual(plus,bc)-assembler.residual(minus,bc))/(2*h);
+            const VectorXd sf=(assembler.impactIonizationSourceResidual(plus,bc)-assembler.impactIonizationSourceResidual(minus,bc))/(2*h);
+            CAPTURE(tcad,referenceDensity,k);
+            const VectorXd sc=source.col(k);
+            CHECK((sc-sf).norm()/std::max({sc.norm(),sf.norm(),1e-30})<3e-5);
+            for(int block=0;block<3;++block) {
+                const VectorXd a=VectorXd(full.col(k)).segment(block*6,6),b=fd.segment(block*6,6);
+                CHECK((a-b).norm()/std::max({a.norm(),b.norm(),1e-30})<3e-5);
+            }
+        }
+        bc.phin[0]=state.phin[0];bc.phip[0]=state.phip[0];
+        const auto constrained=assembler.impactIonizationSourceJacobian(x,bc);
+        for(int k=0;k<18;++k){CHECK(constrained.coeff(6,k)==0.);CHECK(constrained.coeff(12,k)==0.);}
+        // Oxide nodes have no generation even when interface nodes have carriers.
+        const auto residual=assembler.impactIonizationSourceResidual(x,bc);
+        for(int i:{4,5,10,11,16,17}) CHECK(residual[i]==0.);
+        CHECK_THROWS_AS(assembler.impactIonizationSourceBranchResolvedFiniteDifferenceJacobian(x,bc,1e-7),std::invalid_argument);
+        CarrierStatisticsConfig fermi;fermi.model="fermi_dirac";
+        CoupledDDAssembler unsupported(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling,{},fermi);
+        CHECK_THROWS_AS(unsupported.residual(x,bc),std::invalid_argument);
+        impact.sourceJacobianMode="frozen";
+        CoupledDDAssembler frozen(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
+        CHECK_THROWS_AS(frozen.residual(x,bc),std::invalid_argument);
+    }
+}
+
 TEST_CASE("IALMob transport rejects geometry coupling mismatch", "[ialmob][transport]")
 {
     Fixture f;f.mesh.setTransportCouple(0,123.);

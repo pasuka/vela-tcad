@@ -304,7 +304,7 @@ BVProcessProbeResult evaluateBVProcessProbe(
     const DeviceMesh& mesh,
     const DopingModel& doping,
     const DDSolution& state,
-    const MobilityModelConfig& mobilityConfig,
+    const MobilityModelConfig& inputMobilityConfig,
     const ImpactIonizationModelConfig& impactConfig,
     const BandgapNarrowingConfig& bandgapNarrowing,
     const MaterialDatabase& materials,
@@ -316,6 +316,15 @@ BVProcessProbeResult evaluateBVProcessProbe(
     requireState(state, mesh.numNodes());
     if (doping.numNodes() != mesh.numNodes())
         throw std::invalid_argument("BV process probe doping size mismatch");
+
+    auto mobilityConfig=inputMobilityConfig;
+    if (mobilityConfig.model=="ialmob" && impactConfig.model!="none") {
+        if (!detail::usesElementEdgeGssLauxAvalancheSource(impactConfig) || std::abs(temperature_K-300.)>1e-10)
+            throw std::invalid_argument("IALMob BV probe requires element_edge_sg_gss_laux at 300 K");
+        // The standalone probe and branch fingerprint can precede any coupled
+        // residual. Cell mobility is evaluated from the supplied state below.
+        prepareIalTransportGeometry(mobilityConfig,mesh);
+    }
 
     BVProcessProbeResult result;
     result.configurationFingerprint =

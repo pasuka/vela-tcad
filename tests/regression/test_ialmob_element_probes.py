@@ -41,6 +41,14 @@ def main():
         assert math.isclose(r['electron_m2_per_Vs'],.1,rel_tol=1e-14)
         assert math.isclose(r['hole_m2_per_Vs'],.05,rel_tol=1e-14)
         assert r['electron_derivative_per_V']==[0.]*9
+        for i,v in enumerate(cell['vertices']):
+            v['electron_qf_V']=.1*i
+            v['electrons_m3']=v['holes_m3']=1e10
+        pure=run(args.element,dict(data,reference_density_m3=0.))['elements'][0]
+        blended=run(args.element,dict(data,reference_density_m3=1e18))['elements'][0]
+        assert pure['electron_m2_per_Vs'] < blended['electron_m2_per_Vs']
+        assert pure['electron_low_m2_per_Vs']==blended['electron_low_m2_per_Vs']
+        run(args.element,dict(data,reference_density_m3=-1.),False)
         run(args.element,dict(data,temperature_K=350.),False)
         cell['vertices'][0]['orientation_family']=111
         run(args.element,data,False)

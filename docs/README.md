@@ -6,6 +6,11 @@ evidence.
 
 ## Current References
 
+- [SLOT element IALMob execution, 2026-09-21](validation/slot_ldmos_element_ialmob_execution_2026-09-21.md):
+  original isotropic parameter and element replay, strict 2 V checkpoint,
+  single-factor error budget and complete mobility/avalanche Jacobian work.
+  High-voltage and external-resistor qualification are recorded separately.
+
 - [LDMOS performance closeout and production defaults, 2026-09-20](validation/templates_ldmos_performance_closeout_2026-09-20.md):
   cross-point main-Newton analysis reuse enabled by default; UMFPACK preferred,
   SparseLU fallback, then STRUMPACK/MUMPS/SuperLU_MT in the available-backend list.

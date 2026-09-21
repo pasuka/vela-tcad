@@ -490,6 +490,14 @@ ionization, surface mobility/IALMob, quantum potential, and predictor disabled.
 It requires barycentric node volumes, is not a production/global default, and
 does not inherit the PN2D `element_edge_sg_gss_laux` bundle.
 
+The explicit `slot_ldmos_external_averagebox` diagnostic reads the same CSV
+contract while preserving the selected mesh node volumes (including
+`mixed_voronoi`). This permits a SLOT transport-couple-only comparison and
+surface/element IALMob; quantum potential and avalanche remain rejected in
+this initial diagnostic. The caller must supply SLOT's own native geometry.
+It changes no Poisson couples or source volumes, and makes no curve
+qualification claim. The Templates profile retains its original restrictions.
+
 ## discretization.poisson_charge_volume_policy
 
 The optional Poisson charge-volume policy is independent of the pure mesh
@@ -513,6 +521,14 @@ implementation requires `mesh_geometry.node_volume_policy: "barycentric"`;
 mixed-Voronoi composition is rejected rather than inferred. A mesh containing
 only transport material is returned to the existing node-volume vector so the
 single-material path remains bitwise unchanged.
+
+`material_local_mixed_voronoi` is a separate, explicit policy requiring
+`mesh_geometry.node_volume_policy: "mixed_voronoi"`. It sums the same local
+mixed-Voronoi shares as the mesh builder, restricted to transport cells, for
+Poisson mobile and dopant charge and their derivatives. It preserves
+continuity sources and edge couples. This policy is useful for isolating
+material ownership on SLOT without also changing the geometric volume rule;
+it does not import Sentaurus AverageBox measures.
 
 ## Doping, regions, interfaces
 
@@ -1660,7 +1676,14 @@ object contains:
   active-unit interpretation.
 
 The live coupled path supports 300 K, Si/SiO2 Tri3 geometry, Fermi or Boltzmann
-carrier statistics, without quantum potential or avalanche. Material interfaces
+carrier statistics, without quantum potential. Avalanche additionally requires
+Boltzmann statistics, the canonical `element_edge_sg_gss_laux` source and
+`source_jacobian: local_ad`. Its cell SG currents use the live element IALMob;
+all nine potential columns include density, normal-field and HFS feedback.
+The independent source audit recomputes mobility at each perturbed state;
+multiprecision source audits are rejected because the IALMob kernel uses double.
+This implementation does not establish SLOT high-voltage or breakdown qualification.
+Material interfaces
 take precedence over ordinary exterior faces at interface terminations;
 multiple nonparallel interfaces of equal priority are rejected. Distance,
 orientation, unnormalized distance gradient, vertex HFS and Measure averaging
@@ -1671,6 +1694,13 @@ weights are evidence dependencies, not regenerated reference solution values.
 This is an explicit experimental profile; consult
 [current LDMOS validation](validation/templates_ldmos_current_status.md) before
 claiming D4 curve qualification.
+
+The isotropic SLOT profile supplies the original unnamed parameter block to
+all three orientation families and explicitly sets `reference_density_m3: 0`.
+Its original deck does not activate low-density HFS interpolation. The D4
+default `1e18 m^-3` must not be transferred to SLOT. The standalone
+`ialmob_element_probe` accepts `reference_density_m3` and `high_field` for the
+same controlled comparison.
 
 `solver.mobility` accepts either the legacy string form or an object. String decks remain compatible:
 

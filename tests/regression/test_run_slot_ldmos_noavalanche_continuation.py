@@ -20,7 +20,7 @@ SPEC.loader.exec_module(MODULE)
 class SlotAdaptiveContinuationTest(unittest.TestCase):
     def test_avalanche_continuation_preserves_source_and_separates_evidence(self) -> None:
         impact = {"model": "van_overstraeten", "coupling_mode": "self_consistent",
-                  "current_approximation": "element_edge_sg_gss_laux", "source_jacobian_mode": "local_ad"}
+                  "current_approximation": "element_edge_sg_gss_laux", "source_jacobian": "local_ad"}
         base = {"solver": {"impact_ionization": impact}, "sweep": {}}
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

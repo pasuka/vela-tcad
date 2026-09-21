@@ -5911,6 +5911,23 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
 
     const auto matrixPair =
         [&](CoupledDDAssembler& assembler) {
+            if (!selectedColumns.empty()) {
+                std::vector<Eigen::Triplet<double>> triplets;
+                for (int col : selectedColumns) {
+                    const Real step = finiteDifferenceStep * std::max<Real>(1., std::abs(x(col)));
+                    VectorXd plus=x, minus=x;
+                    plus(col)+=step;minus(col)-=step;
+                    const VectorXd rp=assembler.residual(plus,bcs);
+                    const VectorXd rm=assembler.residual(minus,bcs);
+                    const VectorXd derivative=(rp-rm)/(2.*step);
+                    for (int row=0;row<x.size();++row)
+                        if (derivative(row)!=0.) triplets.emplace_back(row,col,derivative(row));
+                }
+                SparseMatrixd reference(x.size(),x.size());
+                reference.setFromTriplets(triplets.begin(),triplets.end());
+                return std::pair<SparseMatrixd,SparseMatrixd>{
+                    filterSelectedColumns(assembler.assembleJacobian(x,bcs)),reference};
+            }
             return std::pair<SparseMatrixd, SparseMatrixd>{
                 assembler.assembleJacobian(x, bcs),
                 assembler.finiteDifferenceJacobian(x, bcs, finiteDifferenceStep),
@@ -5937,9 +5954,10 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
                         withTerm.impactIonizationSourceJacobian(x, bcs)),
                     filterSelectedColumns(reference)};
             }
-            SparseMatrixd analytic =
-                withTerm.assembleJacobian(x, bcs) -
-                withoutTerm.assembleJacobian(x, bcs);
+            SparseMatrixd analytic = termName == "srh_auger"
+                ? withTerm.recombinationSourceJacobian(x,bcs)
+                : SparseMatrixd(withTerm.assembleJacobian(x, bcs) -
+                                withoutTerm.assembleJacobian(x, bcs));
             analytic = filterSelectedColumns(analytic);
             const int unknowns = static_cast<int>(x.size());
             auto diagnosticResidual =
@@ -6013,7 +6031,8 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
                     withoutTerm, values, "gauge");
                 return residual;
             };
-            analytic -= centralDifference(gaugeResidual, finiteDifferenceStep);
+            if (termName != "srh_auger")
+                analytic -= centralDifference(gaugeResidual, finiteDifferenceStep);
             return std::pair<SparseMatrixd, SparseMatrixd>{
                 analytic, finiteDifference};
         };
@@ -6027,16 +6046,6 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
     };
     if (blocks.empty())
         blocks = defaultBlocks;
-
-    if (!columnNodes.empty() && std::any_of(
-            blocks.begin(), blocks.end(), [](const std::string& block) {
-                return block == "poisson" || block == "transport" ||
-                       block == "dirichlet_or_gauge";
-            })) {
-        throw std::invalid_argument(
-            "NewtonSolver::evaluateJacobianBlockAudit: column_nodes currently "
-            "supports only srh_auger and sg_avalanche blocks.");
-    }
 
     const auto wants = [&](const std::string& block) {
         return std::find(blocks.begin(), blocks.end(), block) != blocks.end();

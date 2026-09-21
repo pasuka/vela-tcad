@@ -587,8 +587,12 @@ void CoupledDDAssembler::refreshIalMobility(const VectorXd& x) const
 {
     if (mobilityConfig_.model != "ialmob") return;
     if (std::abs(Vt_*constants::q/constants::kb-300.)>1e-10 ||
-        electronQuantumPotentialConfig_.enabled || impactIonizationEnabled_)
-        throw std::invalid_argument("IALMob first coupled profile requires 300 K, quantum and avalanche off");
+        electronQuantumPotentialConfig_.enabled)
+        throw std::invalid_argument("IALMob coupled profile requires 300 K and quantum off");
+    if (impactIonizationEnabled_ &&
+        (!detail::usesElementEdgeGssLauxAvalancheSource(impactIonizationConfig_) || usesFermiDirac_ ||
+         impactIonizationConfig_.sourceJacobianMode!="local_ad"))
+        throw std::invalid_argument("IALMob avalanche requires element_edge_sg_gss_laux, Boltzmann statistics and local_ad");
     const int N=mesh_.numNodes();const Real scale=scaling_.enabled?scaling_.V0:1.;
     const VectorXd psi=x.segment(psiOffset(),N)*scale;
     VectorXd qn=x.segment(phinOffset(),N)*scale,qp=x.segment(phipOffset(),N)*scale;
@@ -3086,6 +3090,154 @@ VectorXd CoupledDDAssembler::impactIonizationSourceResidual(
     return source;
 }
 
+CoupledDDAssembler::NodeRecombinationDifferential
+CoupledDDAssembler::nodeRecombinationDifferential(Index i,const VectorXd& x,Real nValue,Real pValue) const
+{
+    NodeRecombinationDifferential result;
+    const Real ni=ni_[i];
+    if (ni<=0. || (!recombination_.srhEnabled() && !recombination_.augerEnabled())) return result;
+    const Real potentialScale=scaling_.enabled?scaling_.V0:1.;
+    const Real electronReference=electronQuasiFermiReferenceAt(i),holeReference=holeQuasiFermiReferenceAt(i);
+    const Real electronIncrement=x(phinOffset()+i)*potentialScale,holeIncrement=x(phipOffset()+i)*potentialScale;
+    const Real psiRelativeN=x(psiOffset()+i)*potentialScale-electronReference;
+    const Real psiRelativeP=x(psiOffset()+i)*potentialScale-holeReference;
+    const Real dnDeta=electronDensityDerivativeEtaAt(i,psiRelativeN,electronIncrement);
+    const Real dpDeta=holeDensityDerivativeEta(ni,Nv_[i],psiRelativeP,holeIncrement,Vt_,carrierStatisticsModel_);
+    const Real dni_dpsi=dnDeta/Vt_,dni_dphin=-dnDeta/Vt_,dpi_dpsi=-dpDeta/Vt_,dpi_dphip=dpDeta/Vt_;
+    const Real dPhi = referencedDifference(
+        electronReference, electronIncrement,
+        holeReference, holeIncrement);
+    const Real nSrh = electronSrhDensityAt(
+        i, psiRelativeN, electronIncrement);
+    const Real dnSrhDeta = electronSrhDensityDerivativeEtaAt(
+        i, psiRelativeN, electronIncrement);
+    const Real dopingConcentration =
+        recombination_.srhDopingConcentration(
+            doping_.donors(i), doping_.acceptors(i));
+
+    const GeneralizedSrhCarrierState srhState =
+        generalizedSrhCarrierState(
+            nSrh, pValue, ni, Nc_[i], Nv_[i], dPhi, Vt_,
+            carrierStatisticsModel_);
+    const GeneralizedSrhCarrierState augerState =
+        std::bit_cast<std::uint64_t>(nSrh) ==
+            std::bit_cast<std::uint64_t>(nValue)
+        ? srhState : generalizedSrhCarrierState(
+            nValue, pValue, ni, Nc_[i], Nv_[i], dPhi, Vt_,
+            carrierStatisticsModel_);
+
+    const auto degeneracyDerivativeEta = [&](Real density,
+                                              Real densityDerivativeEta,
+                                              Real degeneracy) {
+        if (!usesFermiDirac_ || !(density > 0.0))
+            return Real{0.0};
+        return degeneracy * (densityDerivativeEta / density - 1.0);
+    };
+    const Real dSrhGammaNDeta = degeneracyDerivativeEta(
+        nSrh, dnSrhDeta, srhState.electronDegeneracy);
+    const Real dAugerGammaNDeta = degeneracyDerivativeEta(
+        nValue, dnDeta, augerState.electronDegeneracy);
+    const Real dGammaPDeta = degeneracyDerivativeEta(
+        pValue, dpDeta, srhState.holeDegeneracy);
+
+    const Real dnTransport[3] = {
+        dni_dpsi, dni_dphin, Real{0.0}};
+    const Real dnSrh[3] = {
+        dnSrhDeta / Vt_, -dnSrhDeta / Vt_, Real{0.0}};
+    const Real dp[3] = {
+        dpi_dpsi, Real{0.0}, dpi_dphip};
+    const Real dGammaNSrh[3] = {
+        dSrhGammaNDeta / Vt_, -dSrhGammaNDeta / Vt_, Real{0.0}};
+    const Real dGammaNAuger[3] = {
+        dAugerGammaNDeta / Vt_, -dAugerGammaNDeta / Vt_, Real{0.0}};
+    const Real dGammaP[3] = {
+        -dGammaPDeta / Vt_, Real{0.0}, dGammaPDeta / Vt_};
+    const Real dNormalizedSplitting[3] = {
+        Real{0.0}, -1.0 / Vt_, 1.0 / Vt_};
+
+    const auto excessDerivative = [&](
+        const GeneralizedSrhCarrierState& state,
+        Real dGammaN,
+        Real dGammaHole,
+        Real dSplitting) {
+        const Real normalized = std::clamp(
+            dPhi / Vt_, Real{-500.0}, Real{500.0});
+        const Real dEquilibrium = ni * ni * (
+            state.holeDegeneracy * dGammaN +
+            state.electronDegeneracy * dGammaHole);
+        const Real activeSplittingDerivative =
+            std::abs(dPhi / Vt_) < 500.0 ? dSplitting : Real{0.0};
+        return dEquilibrium * std::expm1(normalized) +
+            state.equilibriumProduct * std::exp(normalized) *
+            activeSplittingDerivative;
+    };
+
+    const auto srhDerivatives =
+        recombination_.srhRateGeneralizedDerivativesFromExcessProduct(
+            srhState.excessProduct, nSrh, pValue, ni, ni,
+            srhState.electronDegeneracy,
+            srhState.holeDegeneracy,
+            dopingConcentration);
+    const Real augerExcessProduct =
+        recombination_.usesClassicalAugerExcessProduct()
+        ? nValue * pValue - ni * ni
+        : augerState.excessProduct;
+    const auto augerDerivatives =
+        recombination_.augerRateDerivativesFromExcessProduct(
+            augerExcessProduct, nValue, pValue);
+    const Real recombinationRate = nodeRecombinationRate(
+        i, nValue, nSrh, pValue, dPhi, &srhState, &augerState);
+    for (int k = 0; k < 3; ++k) {
+        Real derivative = 0.0;
+        if (recombination_.srhEnabled()) {
+            const Real dExcess = excessDerivative(
+                srhState, dGammaNSrh[k], dGammaP[k],
+                dNormalizedSplitting[k]);
+            derivative += srhDerivatives.dRateDn * dnSrh[k]
+                + srhDerivatives.dRateDp * dp[k]
+                + srhDerivatives.dRateDExcess * dExcess
+                + srhDerivatives.dRateDElectronDegeneracy *
+                    dGammaNSrh[k]
+                + srhDerivatives.dRateDHoleDegeneracy * dGammaP[k];
+        }
+        if (recombination_.augerEnabled()) {
+            const Real dExcess =
+                recombination_.usesClassicalAugerExcessProduct()
+                ? pValue * dnTransport[k] + nValue * dp[k]
+                : excessDerivative(
+                    augerState, dGammaNAuger[k], dGammaP[k],
+                    dNormalizedSplitting[k]);
+            derivative += augerDerivatives.dRateDn * dnTransport[k]
+                + augerDerivatives.dRateDp * dp[k]
+                + augerDerivatives.dRateDExcess * dExcess;
+        }
+        result.derivative[k]=derivative;
+    }
+    result.rate=recombinationRate;
+    return result;
+}
+
+SparseMatrixd CoupledDDAssembler::recombinationSourceJacobian(
+    const VectorXd& x,const CoupledDDBoundaryConditions& bcs) const
+{
+    const int N=mesh_.numNodes();
+    if(x.size()!=3*N) throw std::invalid_argument("Recombination source Jacobian state size mismatch");
+    const auto n=electronDensity(x),p=holeDensity(x);
+    const Real factor=(scaling_.enabled?scaling_.unitSystem.continuitySourceIntegralFactor():1.)*
+        (scaling_.enabled?scaling_.V0/(scaling_.C0*scaling_.D0):1.);
+    std::vector<Eigen::Triplet<double>> entries;
+    for(int i=0;i<N;++i) {
+        const auto source=nodeRecombinationDifferential(i,x,n[i],p[i]);
+        for(int k=0;k<3;++k) {
+            const Real value=source.derivative[k]*vol_[i]*factor;
+            if(value==0.) continue;
+            if(!bcs.phin.contains(i)) entries.emplace_back(phinOffset()+i,k*N+i,value);
+            if(!bcs.phip.contains(i)) entries.emplace_back(phipOffset()+i,k*N+i,value);
+        }
+    }
+    SparseMatrixd result(3*N,3*N);result.setFromTriplets(entries.begin(),entries.end());return result;
+}
+
 SparseMatrixd CoupledDDAssembler::impactIonizationSourceJacobian(
     const VectorXd& x,
     const CoupledDDBoundaryConditions& bcs) const
@@ -3095,6 +3247,7 @@ SparseMatrixd CoupledDDAssembler::impactIonizationSourceJacobian(
         throw std::invalid_argument(
             "CoupledDDAssembler::impactIonizationSourceJacobian: vector size mismatch.");
     }
+    refreshIalMobility(x);
     if (!impactIonizationEnabled_ ||
         !detail::usesElementEdgeGssLauxAvalancheSource(impactIonizationConfig_)) {
         throw std::invalid_argument(
@@ -3252,6 +3405,11 @@ CoupledDDAssembler::impactIonizationSourceFiniteDifferenceJacobianImpl(
             "CoupledDDAssembler::impactIonizationSourceFiniteDifferenceJacobianImpl: "
             "step must be positive and finite.");
     }
+    if constexpr (!std::is_same_v<Scalar,Real>) {
+        if (mobilityConfig_.model=="ialmob")
+            throw std::invalid_argument("IALMob avalanche does not support multiprecision source audits");
+    }
+    refreshIalMobility(x);
     if (!impactIonizationEnabled_ ||
         !detail::usesElementEdgeGssLauxAvalancheSource(impactIonizationConfig_)) {
         throw std::invalid_argument(
@@ -6021,126 +6179,17 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             continue;
 
         if (recombination_.srhEnabled() || recombination_.augerEnabled()) {
-            const Real dPhi = referencedDifference(
-                electronReference, electronIncrement,
-                holeReference, holeIncrement);
-            const Real nSrh = electronSrhDensityAt(
-                i, psiRelativeN, electronIncrement);
-            const Real dnSrhDeta = electronSrhDensityDerivativeEtaAt(
-                i, psiRelativeN, electronIncrement);
-            const Real dopingConcentration =
-                recombination_.srhDopingConcentration(
-                    doping_.donors(i), doping_.acceptors(i));
-
-            const GeneralizedSrhCarrierState srhState =
-                generalizedSrhCarrierState(
-                    nSrh, p(ii), ni, Nc_[i], Nv_[i], dPhi, Vt_,
-                    carrierStatisticsModel_);
-            const GeneralizedSrhCarrierState augerState =
-                std::bit_cast<std::uint64_t>(nSrh) ==
-                    std::bit_cast<std::uint64_t>(n(ii))
-                ? srhState : generalizedSrhCarrierState(
-                    n(ii), p(ii), ni, Nc_[i], Nv_[i], dPhi, Vt_,
-                    carrierStatisticsModel_);
-
-            const auto degeneracyDerivativeEta = [&](Real density,
-                                                      Real densityDerivativeEta,
-                                                      Real degeneracy) {
-                if (!usesFermiDirac_ || !(density > 0.0))
-                    return Real{0.0};
-                return degeneracy * (densityDerivativeEta / density - 1.0);
-            };
-            const Real dSrhGammaNDeta = degeneracyDerivativeEta(
-                nSrh, dnSrhDeta, srhState.electronDegeneracy);
-            const Real dAugerGammaNDeta = degeneracyDerivativeEta(
-                n(ii), dnDeta, augerState.electronDegeneracy);
-            const Real dGammaPDeta = degeneracyDerivativeEta(
-                p(ii), dpDeta, srhState.holeDegeneracy);
-
-            const Real dnTransport[3] = {
-                dni_dpsi, dni_dphin, Real{0.0}};
-            const Real dnSrh[3] = {
-                dnSrhDeta / Vt_, -dnSrhDeta / Vt_, Real{0.0}};
-            const Real dp[3] = {
-                dpi_dpsi, Real{0.0}, dpi_dphip};
-            const Real dGammaNSrh[3] = {
-                dSrhGammaNDeta / Vt_, -dSrhGammaNDeta / Vt_, Real{0.0}};
-            const Real dGammaNAuger[3] = {
-                dAugerGammaNDeta / Vt_, -dAugerGammaNDeta / Vt_, Real{0.0}};
-            const Real dGammaP[3] = {
-                -dGammaPDeta / Vt_, Real{0.0}, dGammaPDeta / Vt_};
-            const Real dNormalizedSplitting[3] = {
-                Real{0.0}, -1.0 / Vt_, 1.0 / Vt_};
-
-            const auto excessDerivative = [&](
-                const GeneralizedSrhCarrierState& state,
-                Real dGammaN,
-                Real dGammaHole,
-                Real dSplitting) {
-                const Real normalized = std::clamp(
-                    dPhi / Vt_, Real{-500.0}, Real{500.0});
-                const Real dEquilibrium = ni * ni * (
-                    state.holeDegeneracy * dGammaN +
-                    state.electronDegeneracy * dGammaHole);
-                const Real activeSplittingDerivative =
-                    std::abs(dPhi / Vt_) < 500.0 ? dSplitting : Real{0.0};
-                return dEquilibrium * std::expm1(normalized) +
-                    state.equilibriumProduct * std::exp(normalized) *
-                    activeSplittingDerivative;
-            };
-
-            const auto srhDerivatives =
-                recombination_.srhRateGeneralizedDerivativesFromExcessProduct(
-                    srhState.excessProduct, nSrh, p(ii), ni, ni,
-                    srhState.electronDegeneracy,
-                    srhState.holeDegeneracy,
-                    dopingConcentration);
-            const Real augerExcessProduct =
-                recombination_.usesClassicalAugerExcessProduct()
-                ? n(ii) * p(ii) - ni * ni
-                : augerState.excessProduct;
-            const auto augerDerivatives =
-                recombination_.augerRateDerivativesFromExcessProduct(
-                    augerExcessProduct, n(ii), p(ii));
-            const int columns[3] = {
-                psiOffset() + ii, phinOffset() + ii, phipOffset() + ii};
-            const Real recombinationRate = nodeRecombinationRate(
-                i, n(ii), nSrh, p(ii), dPhi, &srhState, &augerState);
-            const bool activeCarrierRows =
-                hasElectronContribution[static_cast<std::size_t>(ii)] ||
+            const auto source=nodeRecombinationDifferential(i,x,n(ii),p(ii));
+            const bool activeCarrierRows=hasElectronContribution[static_cast<std::size_t>(ii)] ||
                 hasHoleContribution[static_cast<std::size_t>(ii)];
-            if (recombinationRate != 0.0 || activeCarrierRows) {
-            for (int k = 0; k < 3; ++k) {
-                Real derivative = 0.0;
-                if (recombination_.srhEnabled()) {
-                    const Real dExcess = excessDerivative(
-                        srhState, dGammaNSrh[k], dGammaP[k],
-                        dNormalizedSplitting[k]);
-                    derivative += srhDerivatives.dRateDn * dnSrh[k]
-                        + srhDerivatives.dRateDp * dp[k]
-                        + srhDerivatives.dRateDExcess * dExcess
-                        + srhDerivatives.dRateDElectronDegeneracy *
-                            dGammaNSrh[k]
-                        + srhDerivatives.dRateDHoleDegeneracy * dGammaP[k];
+            if (source.rate!=0. || activeCarrierRows) {
+                const int columns[3]={psiOffset()+ii,phinOffset()+ii,phipOffset()+ii};
+                for(int k=0;k<3;++k) {
+                    add(phinOffset()+ii,columns[k],source.derivative[k]*vol_[i]*sourceIntegralFactor);
+                    add(phipOffset()+ii,columns[k],source.derivative[k]*vol_[i]*sourceIntegralFactor);
                 }
-                if (recombination_.augerEnabled()) {
-                    const Real dExcess =
-                        recombination_.usesClassicalAugerExcessProduct()
-                        ? p(ii) * dnTransport[k] + n(ii) * dp[k]
-                        : excessDerivative(
-                            augerState, dGammaNAuger[k], dGammaP[k],
-                            dNormalizedSplitting[k]);
-                    derivative += augerDerivatives.dRateDn * dnTransport[k]
-                        + augerDerivatives.dRateDp * dp[k]
-                        + augerDerivatives.dRateDExcess * dExcess;
-                }
-                add(phinOffset() + ii, columns[k],
-                    derivative * vol_[i] * sourceIntegralFactor);
-                add(phipOffset() + ii, columns[k],
-                    derivative * vol_[i] * sourceIntegralFactor);
-            }
-            hasElectronContribution[static_cast<std::size_t>(ii)] = true;
-            hasHoleContribution[static_cast<std::size_t>(ii)] = true;
+                hasElectronContribution[static_cast<std::size_t>(ii)]=true;
+                hasHoleContribution[static_cast<std::size_t>(ii)]=true;
             }
         }
 
@@ -6439,6 +6488,10 @@ std::string CoupledDDAssembler::impactIonizationActiveBranchFingerprint(
     solution.psi = state.psi * potentialScale;
     solution.phin = state.phin * potentialScale;
     solution.phip = state.phip * potentialScale;
+    for (Index i=0;i<mesh_.numNodes();++i) {
+        solution.phin[i]=referencedValueRelativeTo(electronQuasiFermiReferenceAt(i),solution.phin[i],0.);
+        solution.phip[i]=referencedValueRelativeTo(holeQuasiFermiReferenceAt(i),solution.phip[i],0.);
+    }
     solution.n = electronDensity(x);
     solution.p = holeDensity(x);
 

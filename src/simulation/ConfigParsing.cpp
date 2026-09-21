@@ -205,10 +205,16 @@ PoissonChargeVolumePolicy parsePoissonChargeVolumePolicy(
         "poisson_charge_volume_policy", "global");
     if (policy == "global")
         return PoissonChargeVolumePolicy::Global;
+    if (policy == "material_local_mixed_voronoi") {
+        if (!cfg.contains("mesh_geometry") ||
+            cfg.at("mesh_geometry").value("node_volume_policy","barycentric")!="mixed_voronoi")
+            throw std::runtime_error("ConfigParsing: material_local_mixed_voronoi requires mesh_geometry.node_volume_policy='mixed_voronoi'.");
+        return PoissonChargeVolumePolicy::MaterialLocalMixedVoronoi;
+    }
     if (policy != "material_local") {
         throw std::runtime_error(
             "ConfigParsing: discretization.poisson_charge_volume_policy must be "
-            "'global' or 'material_local'.");
+            "'global', 'material_local', or 'material_local_mixed_voronoi'.");
     }
     if (cfg.contains("mesh_geometry") &&
         cfg.at("mesh_geometry").value("node_volume_policy", "barycentric") !=
@@ -246,13 +252,15 @@ CarrierTransportCoupleProfileReport applyCarrierTransportCoupleProfile(
         }
         return report;
     }
-    if (report.profile != "templates_ldmos_external_averagebox") {
+    if (report.profile != "templates_ldmos_external_averagebox" &&
+        report.profile != "slot_ldmos_external_averagebox") {
         throw std::runtime_error(
             "ConfigParsing: mesh_geometry.carrier_transport_couple_profile must be "
             "'mesh_default' or the template-private diagnostic "
-            "'templates_ldmos_external_averagebox'.");
+            "'templates_ldmos_external_averagebox' or 'slot_ldmos_external_averagebox'.");
     }
-    if (geometry.value("node_volume_policy", "barycentric") != "barycentric") {
+    if (report.profile == "templates_ldmos_external_averagebox" &&
+        geometry.value("node_volume_policy", "barycentric") != "barycentric") {
         throw std::runtime_error(
             "ConfigParsing: templates_ldmos_external_averagebox requires "
             "mesh_geometry.node_volume_policy='barycentric'.");

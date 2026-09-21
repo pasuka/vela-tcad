@@ -3386,10 +3386,10 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     }
     if (transportCoupleProfile.profile != "mesh_default" &&
         (sweepImpactIonizationConfig.model != "none" ||
-         isSurfaceMobilityModel(mobilityConfig) ||
+         (transportCoupleProfile.profile != "slot_ldmos_external_averagebox" && isSurfaceMobilityModel(mobilityConfig)) ||
          sweepQuantumPotential.enabled)) {
         throw std::invalid_argument(
-            "DCSweep: templates_ldmos_external_averagebox is qualified only "
+            "DCSweep: external AverageBox requires "
             "with impact ionization, surface mobility/IALMob, and quantum "
             "potential off.");
     }

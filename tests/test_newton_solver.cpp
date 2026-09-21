@@ -3580,10 +3580,30 @@ TEST_CASE("NewtonSolver: evaluateJacobianBlockAudit can restrict expensive block
         1.0e-7,
         std::vector<std::string>{"srh_auger"},
         "double_symmetric",
-        std::vector<Index>{1});
+        std::vector<Index>{4});
     REQUIRE(sourceRows.size() == 1);
     REQUIRE(sourceRows.front().block == "srh_auger");
+    REQUIRE(sourceRows.front().analyticNorm > 0.);
     REQUIRE(sourceRows.front().relDiff < 1.0e-5);
+    cfg.augerCn*=1e-12;cfg.augerCp*=1e-12;
+    NewtonSolver weakSourceSolver(mesh,matdb,doping,biases,cfg);
+    const auto weak=weakSourceSolver.evaluateJacobianBlockAudit(state,1e-7,{"srh_auger"},"double_symmetric",{4});
+    REQUIRE(weak.front().analyticNorm>0.);
+    CHECK(weak.front().relDiff<1e-5);
+    // Selecting every node reproduces the full analytic audit; selecting one
+    // node differentiates all three physical variables, including transport.
+    const auto selected = sourceSolver.evaluateJacobianBlockAudit(
+        state,1e-7,{"poisson","transport","dirichlet_or_gauge"},"double_symmetric",{4});
+    REQUIRE(selected.size()==3);
+    for (const auto& row:selected) {
+        CHECK(std::isfinite(row.relDiff));
+        CHECK(row.relDiff < 1e-5);
+    }
+    std::vector<Index> allNodes;
+    for(int i=0;i<N;++i) allNodes.push_back(i);
+    const auto full=sourceSolver.evaluateJacobianBlockAudit(state,1e-7,{"transport"});
+    const auto all=sourceSolver.evaluateJacobianBlockAudit(state,1e-7,{"transport"},"double_symmetric",allNodes);
+    CHECK(all.front().analyticNorm==Catch::Approx(full.front().analyticNorm).epsilon(1e-14));
 }
 
 

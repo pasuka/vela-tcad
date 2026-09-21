@@ -18,6 +18,7 @@
 #include "vela/equation/Tri3LocalForwardAD.h"
 #include "vela/discretization/ScharfetterGummel.h"
 #include "vela/mesh/DeviceMesh.h"
+#include "vela/mesh/BoxGeometryBuilder.h"
 #include "vela/material/Material.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/DopingModel.h"
@@ -2993,9 +2994,8 @@ inline bool isTransportMaterial(const Material& material)
 }
 
 /// Return the control-volume area used only for mobile and ionized-dopant
-/// charge in Poisson.  The material-local diagnostic intentionally remains
-/// barycentric in P1 so its single changed factor is the material ownership;
-/// Sentaurus Measure/mixed-Voronoi semantics are a later, independent profile.
+/// charge in Poisson. Barycentric and mixed-Voronoi material ownership are
+/// explicit independent policies; neither changes continuity source volumes.
 inline std::vector<Real> computePoissonChargeVolumes(
     const DeviceMesh& mesh,
     const std::vector<Material>& cellMaterials,
@@ -3026,8 +3026,11 @@ inline std::vector<Real> computePoissonChargeVolumes(
                 "computePoissonChargeVolumes: material_local supports Tri3 cells only.");
         }
         const Real share = triangleArea(mesh, cell) / 3.0;
-        for (Index node : cell.node_ids)
-            volume.at(static_cast<std::size_t>(node)) += share;
+        const auto shares = policy == PoissonChargeVolumePolicy::MaterialLocalMixedVoronoi
+            ? BoxGeometryBuilder::mixedVoronoiVertexVolumes(mesh,cell)
+            : std::array<Real,3>{share,share,share};
+        for (std::size_t k=0;k<3;++k)
+            volume.at(static_cast<std::size_t>(cell.node_ids[k])) += shares[k];
     }
     return volume;
 }
@@ -3912,6 +3915,17 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
     record.holeAlpha =
         impact.holeCoefficient(record.holeImpactField);
 
+    IalElementMobilityResult ialCell;
+    if (mobilityConfig.model=="ialmob") {
+        std::array<IalElementVertexState,3> state;
+        for (std::size_t k=0;k<3;++k) {
+            const auto i=cell.node_ids[k];const Real factor=mobilityConfig.internalConcentrationToM3;
+            state[k]={psi[i],phin[i],phip[i],doping.donors(i)*factor,doping.acceptors(i)*factor,
+                n[i]*factor,p[i]*factor};
+        }
+        ialCell=evaluateIalTransportCell(mobilityConfig,cellId,state,false);
+    }
+
     for (int localEdge = 0; localEdge < 3; ++localEdge) {
         const std::size_t local = static_cast<std::size_t>(localEdge);
         const Index node0 = cell.node_ids[local];
@@ -3961,22 +3975,22 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
                 ? holeGradient.norm() * fieldFactor
                 : holeEdgeField)
             : electricEdgeField;
-        const Real electronLowFieldMobility =
+        const Real electronLowFieldMobility = mobilityConfig.model=="ialmob" ? ialCell.electronLowField.value :
             triangleGssEndpointAveragedMobility(
                 mobilityConfig, mobility, mesh, doping, cellMaterials, n, p, cellId,
                 node0, node1, CarrierType::Electron, 0.0,
                 &psi, &cellEdgeIds, fieldFactor);
-        const Real holeLowFieldMobility =
+        const Real holeLowFieldMobility = mobilityConfig.model=="ialmob" ? ialCell.holeLowField.value :
             triangleGssEndpointAveragedMobility(
                 mobilityConfig, mobility, mesh, doping, cellMaterials, n, p, cellId,
                 node0, node1, CarrierType::Hole, 0.0,
                 &psi, &cellEdgeIds, fieldFactor);
-        const Real electronMobility =
+        const Real electronMobility = mobilityConfig.model=="ialmob" ? ialCell.electron.value :
             triangleGssEndpointAveragedMobility(
                 mobilityConfig, mobility, mesh, doping, cellMaterials, n, p, cellId,
                 node0, node1, CarrierType::Electron,
                 electronMobilityDrive, &psi, &cellEdgeIds, fieldFactor);
-        const Real holeMobility =
+        const Real holeMobility = mobilityConfig.model=="ialmob" ? ialCell.hole.value :
             triangleGssEndpointAveragedMobility(
                 mobilityConfig, mobility, mesh, doping, cellMaterials, n, p, cellId,
                 node0, node1, CarrierType::Hole,
@@ -4024,7 +4038,7 @@ elementEdgeGssLauxAvalancheSourceRecordForCell(
         localHoleDensity[localNode] = p(static_cast<int>(node));
         localIntrinsicDensity[localNode] = ni.at(node);
     }
-    if (isSurfaceMobilityModel(mobilityConfig)) {
+    if (isSurfaceMobilityModel(mobilityConfig) || mobilityConfig.model=="ialmob") {
         const Real electronGeneration = record.electronAlpha *
             record.electronCurrentVector.norm();
         const Real holeGeneration = record.holeAlpha *

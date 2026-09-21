@@ -176,6 +176,46 @@ TEST_CASE("Poisson charge volume policy parsing is explicit and barycentric-only
         Catch::Matchers::ContainsSubstring("qualified only"));
 }
 
+TEST_CASE("Mixed material-local Poisson preserves volume and continuity with full charge derivatives",
+          "[poisson][charge_volume][jacobian]")
+{
+    auto mesh=makeHorizontalInterfaceMesh();
+    BoxGeometryBuilder::Options geometry;
+    geometry.nodeVolumePolicy=BoxGeometryBuilder::NodeVolumePolicy::MixedVoronoi;
+    mesh.buildBoxGeometry(geometry);
+    MaterialDatabase materials;
+    const auto cellMaterials=detail::buildCellMaterials(mesh,materials,300.);
+    const auto local=detail::computePoissonChargeVolumes(mesh,cellMaterials,PoissonChargeVolumePolicy::MaterialLocalMixedVoronoi);
+    const auto global=detail::computeNodeVolumes(mesh);
+    CHECK(local[0]==Catch::Approx(.5*global[0]).epsilon(1e-14));
+    CHECK(local[1]==Catch::Approx(.5*global[1]).epsilon(1e-14));
+    CHECK(local[2]==global[2]);CHECK(local[3]==0.);
+    CHECK(local[0]+local[1]+local[2]==Catch::Approx(.5e-12).epsilon(1e-14));
+    const auto doping=DopingModel::fromMeshAndRegions(mesh,{{"channel",1e21,0.}});
+    DDScalingSpec scaling;scaling.poissonChargeVolumePolicy=PoissonChargeVolumePolicy::MaterialLocalMixedVoronoi;
+    CoupledDDAssembler candidate(mesh,materials,doping,constants::Vt_300,{}, {}, {}, {}, {}, {},scaling);
+    scaling.poissonChargeVolumePolicy=PoissonChargeVolumePolicy::Global;
+    CoupledDDAssembler baseline(mesh,materials,doping,constants::Vt_300,{}, {}, {}, {}, {}, {},scaling);
+    CoupledDDState state{VectorXd::Constant(4,.03),VectorXd::Constant(4,.01),VectorXd::Constant(4,-.02)};
+    const auto x=candidate.pack(state);CoupledDDBoundaryConditions bc;
+    CHECK(candidate.residual(x,bc).tail(8)==baseline.residual(x,bc).tail(8));
+    const auto jac=candidate.assembleJacobian(x,bc);
+    for(int col=0;col<12;++col){
+        auto a=x,b=x;a[col]+=1e-6;b[col]-=1e-6;
+        const VectorXd fd=(candidate.residual(a,bc)-candidate.residual(b,bc))/(2e-6);
+        const VectorXd analytic=VectorXd(jac.col(col));
+        CHECK((analytic-fd).norm()/std::max({analytic.norm(),fd.norm(),1e-30})<1e-6);
+    }
+    const nlohmann::json cfg{{"mesh_geometry",{{"node_volume_policy","mixed_voronoi"}}},
+        {"discretization",{{"poisson_charge_volume_policy","material_local_mixed_voronoi"}}}};
+    CHECK(parsePoissonChargeVolumePolicy(cfg)==PoissonChargeVolumePolicy::MaterialLocalMixedVoronoi);
+    auto bad=cfg;bad["mesh_geometry"]["node_volume_policy"]="barycentric";
+    CHECK_THROWS(parsePoissonChargeVolumePolicy(bad));
+    auto single=makeSiliconTriangleMesh();single.buildBoxGeometry(geometry);
+    CHECK(detail::computePoissonChargeVolumes(single,detail::buildCellMaterials(single,materials,300.),
+        PoissonChargeVolumePolicy::MaterialLocalMixedVoronoi)==detail::computeNodeVolumes(single));
+}
+
 TEST_CASE("Poisson carrier assembly reports a non-finite carrier state",
           "[poisson][diagnostic]")
 {
