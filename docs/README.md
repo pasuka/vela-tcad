@@ -6,6 +6,11 @@ evidence.
 
 ## Current References
 
+- [SLOT commit handoff and next tasks, 2026-09-22](validation/slot_ldmos_next_tasks_2026-09-22.md):
+  committed fixes, a timestamped live-run snapshot, and concrete acceptance
+  criteria for continuation, load-line automation, original avalanche physics,
+  error budgeting, and final BVDS qualification.
+
 - [SLOT high-voltage continuation, 2026-09-22](validation/slot_ldmos_high_voltage_resume_2026-09-22.md):
   independently qualified projected-SG checkpoints through 37 V, complete
   Jacobian checks, guarded Poly restarts, compensated-QF restart repairs, and
