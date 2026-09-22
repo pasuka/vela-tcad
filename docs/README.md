@@ -7,9 +7,10 @@ evidence.
 ## Current References
 
 - [SLOT high-voltage continuation, 2026-09-22](validation/slot_ldmos_high_voltage_resume_2026-09-22.md):
-  independently qualified projected-SG 15/20 V checkpoints, complete Jacobian
-  and resistor fixed-point checks, guarded Poly equilibrium candidate restarts,
-  and unresolved original AvalDensGradQF source averaging. BVDS remains unfinished.
+  independently qualified projected-SG checkpoints through 37 V, complete
+  Jacobian checks, guarded Poly restarts, compensated-QF restart repairs, and
+  qualified 37.02/37.05 V external-load-line controls. Original AvalDensGradQF source
+  averaging and full BVDS qualification remain unresolved.
 
 - [SLOT energy reference and source volume, 2026-09-21](validation/slot_ldmos_energy_reference_and_source_volume_2026-09-21.md):
   band-derived poly reference, material-local SRH/Auger integration, qualified
