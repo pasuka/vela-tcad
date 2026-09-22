@@ -810,7 +810,8 @@ vela_set_windows_msys2_test_path(slot_ldmos_local_continuity_audit)
 
 add_test(NAME slot_ldmos_noavalanche_continuation
     COMMAND ${Python3_EXECUTABLE} -m unittest
-            tests.regression.test_run_slot_ldmos_noavalanche_continuation)
+            tests.regression.test_run_slot_ldmos_noavalanche_continuation
+            tests.regression.test_slot_poly_equilibrium)
 set_tests_properties(slot_ldmos_noavalanche_continuation PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(slot_ldmos_noavalanche_continuation)

@@ -45,3 +45,11 @@ covered using temporary data and retained fixtures. Shared avalanche helper
 tests are `test_sentaurus_avalanche_replay.py` and
 `test_sentaurus_avalanche_controls.py`; the standalone contact override test
 is `test_sentaurus_contact_overrides.py`.
+
+The `slot_ldmos_noavalanche_continuation` CTest entry includes guarded Poly
+restart helper tests. For the SLOT continuation script, the opt-in
+`--restore-poly-equilibrium` flag requires carrier corrector passes and a local
+continuity audit. It prepares isolated source-free PolySilicon candidates only;
+full coupled convergence, final all-active row checks, and update-history
+qualification remain mandatory. Unsupported profiles are rejected rather than
+silently projected. See the [2026-09-22 SLOT evidence](../../docs/validation/slot_ldmos_high_voltage_resume_2026-09-22.md).

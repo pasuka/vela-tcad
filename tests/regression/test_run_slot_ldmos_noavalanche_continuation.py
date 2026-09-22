@@ -373,6 +373,46 @@ class SlotAdaptiveContinuationTest(unittest.TestCase):
                 self.assertTrue(document["solver"]["carrier_diagonal_floor"]["enabled"])
                 self.assertEqual(document["output_csv"], "old.csv")
 
+    def test_poly_restart_is_only_a_candidate_and_retains_both_validation_gates(self) -> None:
+        for coupled_pass, final_audit, expected in ((False, True, False),
+                                                   (True, False, False), (True, True, True)):
+            with self.subTest(coupled=coupled_pass, audit=final_audit), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                document = {"simulation_type": "dc_sweep", "sweep": {"contact": "drain"},
+                            "contacts": [{"name": "drain", "bias": 0.0}],
+                            "solver": {"abstol": 1e-9}}
+                original = json.dumps(document, sort_keys=True)
+                def execute(runner, repo, config, run_dir, timeout):
+                    deck = json.loads(config.read_text())
+                    self.assertEqual(deck["solver"]["abstol"], 1e-9)
+                    if deck["simulation_type"] == "newton_block_step_probe":
+                        (run_dir / "trial_carrier_only.csv").write_text("original trial")
+                    else:
+                        self.assertEqual(Path(deck["sweep"]["initial_state_file"]).name,
+                                         "poly_equilibrium_candidate.csv")
+                        (run_dir / "final_state.csv").write_text("validated state")
+                        (run_dir / "iv.csv").write_text(
+                            f"converged,newton_iterations\n{int(coupled_pass)},2\n")
+                    return 0, False, 0.1
+                def restore(doc, source, output, config_directory, bias):
+                    self.assertEqual(bias, 15.0)
+                    self.assertEqual(source.read_text(), "original trial")
+                    self.assertEqual(json.dumps(document, sort_keys=True), original)
+                    output.write_text("equilibrium candidate")
+                    return {"max_qf_change_V": 1e-20, "components": [{"nodes": 3, "qf_V": 0.0}]}
+                with patch.object(MODULE, "execute_config", side_effect=execute), \
+                     patch.object(MODULE, "audit_local_candidate", side_effect=[
+                         {"passed": True}, {"passed": final_audit}]), \
+                     patch.object(MODULE, "restore_poly_candidate", side_effect=restore, create=True) as projection:
+                    result = MODULE.correct_local_candidate(document, root / "seed.csv", 15.0,
+                        root / "runner", root, root / "attempt", 10, root, 1,
+                        restore_poly_equilibrium=True)
+                self.assertEqual(result["passed"], expected)
+                self.assertEqual(bool(result["state_file"]), expected)
+                self.assertEqual(projection.call_count, 1)
+                self.assertEqual(result["steps"][0]["poly_equilibrium"]["max_qf_change_V"], 1e-20)
+                self.assertEqual(json.dumps(document, sort_keys=True), original)
+
     def test_corrector_retries_coupled_state_without_accepting_intermediate_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

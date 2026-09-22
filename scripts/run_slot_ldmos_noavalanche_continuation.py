@@ -352,10 +352,22 @@ def audit_local_candidate(document: dict, state: Path, bias: float,
     return result
 
 
+def restore_poly_candidate(document: dict, source: Path, output: Path,
+                           config_directory: Path, bias: float) -> dict:
+    """Prepare a guarded equilibrium restart; this never qualifies a state."""
+    spec = importlib.util.spec_from_file_location(
+        "slot_poly_equilibrium", Path(__file__).with_name("slot_poly_equilibrium.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.write_poly_equilibrium_restart(
+        document, source, output, config_directory, bias)
+
+
 def correct_local_candidate(document: dict, state: Path, bias: float,
                             runner: Path, repo: Path, run_dir: Path,
                             timeout_seconds: float, config_directory: Path,
-                            max_passes: int, mode: str = "carrier_only") -> dict:
+                            max_passes: int, mode: str = "carrier_only",
+                            restore_poly_equilibrium: bool = False) -> dict:
     """Try bounded carrier Newton steps, then require the original coupled gates.
 
     The probe supplies candidates only. It cannot mark an I-V point accepted.
@@ -398,6 +410,11 @@ def correct_local_candidate(document: dict, state: Path, bias: float,
         result["steps"].append(step)
         if code != 0 or timed_out or not trial.is_file():
             break
+        if restore_poly_equilibrium:
+            projected = step_dir / "poly_equilibrium_candidate.csv"
+            step["poly_equilibrium"] = restore_poly_candidate(
+                base, trial, projected, config_directory, bias)
+            trial = projected
         audit = audit_local_candidate(base, trial, bias, runner, repo, step_dir,
                                       timeout_seconds, config_directory)
         step["local_audit_passed"] = audit["passed"]
@@ -482,6 +499,8 @@ def run(args: argparse.Namespace) -> int:
     bundle = base_config.parent
     base = json.loads(base_config.read_text(encoding="utf-8"))
     branch = physics_branch(base)
+    if getattr(args, "restore_poly_equilibrium", False) and not args.carrier_corrector_passes:
+        raise ValueError("poly equilibrium restoration requires carrier corrector passes")
     require_direct_device_bias(base)
     runner = args.runner.resolve()
     cold_start = getattr(args, "cold_start", False)
@@ -672,7 +691,8 @@ def run(args: argparse.Namespace) -> int:
                 corrector = correct_local_candidate(document, correction_seed, target,
                     runner, args.repo_root, run_dir, args.timeout_seconds,
                     config_path.parent, args.carrier_corrector_passes,
-                    getattr(args, "carrier_corrector_mode", "carrier_only"))
+                    getattr(args, "carrier_corrector_mode", "carrier_only"),
+                    getattr(args, "restore_poly_equilibrium", False))
                 coupled_iterations += corrector["coupled_newton_iterations"]
                 if corrector["passed"] and (target == current_bias or coupled_iterations > 0):
                     converged = True
@@ -749,6 +769,7 @@ def run(args: argparse.Namespace) -> int:
         "audit_local_continuity": args.audit_local_continuity,
         "carrier_corrector_passes": args.carrier_corrector_passes,
         "carrier_corrector_mode": getattr(args, "carrier_corrector_mode", "carrier_only"),
+        "restore_poly_equilibrium": getattr(args, "restore_poly_equilibrium", False),
         "poisson_prewarm_max_iterations": args.poisson_prewarm_max_iterations,
         "min_step_V": args.min_step_V,
         "attempts": attempts,
@@ -806,6 +827,8 @@ def main() -> int:
                         help="bounded carrier Newton corrections followed by full coupled validation; requires local audit")
     parser.add_argument("--carrier-corrector-mode", choices=("carrier_only", "carrier_density"),
                         default="carrier_only", help="coordinate choice for the candidate correction, preserving full acceptance gates")
+    parser.add_argument("--restore-poly-equilibrium", action="store_true",
+                        help="restore guarded source-free Poly equilibrium in corrector candidates; retain full validation")
     parser.add_argument("--secant-previous-state", type=Path)
     parser.add_argument("--secant-predictor", action="store_true",
                         help="use the two most recent qualified states for every subsequent bias prediction")
