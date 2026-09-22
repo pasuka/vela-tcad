@@ -7812,11 +7812,18 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 coupledSeed = std::move(seedAttempt.solution);
             }
 
+            // Freeze one seed-aware coordinate system for every bordered
+            // callback. The physical starting bias need not equal the base
+            // contact deck (which commonly specifies zero at all terminals).
+            const DDSolution coupledReferenceState = coupledSeed;
+            auto coupledReferenceBiases = baseBiases;
+            coupledReferenceBiases[sweep.contact] =
+                sweep.externalResistor.initialInnerVoltage_V;
             NewtonSolver coupledDeviceSolver(
                 mesh,
                 matdb,
                 doping,
-                baseBiases,
+                coupledReferenceBiases,
                 newton,
                 fixedChargeSpecs,
                 sheetChargeSpecs,
@@ -7824,9 +7831,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             ArclengthSystem coupledDeviceSystem =
                 coupledDeviceSolver.makeArclengthSystem(
                     sweep.contact, 1.0e-4,
-                    sweep.externalResistor.coupledPositiveDensityUpdates);
+                    sweep.externalResistor.coupledPositiveDensityUpdates,
+                    &coupledReferenceState);
             const auto coupledStateUnpacker =
-                coupledDeviceSolver.makeArclengthStateUnpacker();
+                coupledDeviceSolver.makeArclengthStateUnpacker(
+                    &coupledReferenceState);
             CoupledLoadLineConfig coupledConfig;
             coupledConfig.maxIterations = sweep.externalResistor.maxIterations;
             coupledConfig.equationTolerance =
@@ -7870,7 +7879,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     ddScaling.currentDensityLineIntegralFactor);
             ArclengthScalarFunctional coupledCurrent =
                 coupledDeviceSolver.makeArclengthContactCurrentFunctional(
-                    sweep.currentContact, coupledCurrentScale);
+                    sweep.currentContact, coupledCurrentScale,
+                    &coupledReferenceState);
             const auto coupledCurrentValue = coupledCurrent.value;
             CoupledLoadLineNewton coupledSolver(
                 std::move(coupledDeviceSystem),
@@ -7880,7 +7890,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
             ArclengthState coupledState;
             coupledState.x =
-                coupledDeviceSolver.packArclengthState(coupledSeed);
+                coupledDeviceSolver.packArclengthState(
+                    coupledSeed, &coupledReferenceState);
             coupledState.lambda =
                 sweep.externalResistor.initialInnerVoltage_V;
             std::optional<ArclengthState> previousCoupledState;
@@ -7894,7 +7905,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                         sweep.scaling);
                 ArclengthState secantPrevious;
                 secantPrevious.x = coupledDeviceSolver.packArclengthState(
-                    secantPreviousSolution);
+                    secantPreviousSolution, &coupledReferenceState);
                 secantPrevious.lambda =
                     sweep.continuation.arclength.initialSecantBias_V;
                 previousCoupledState = std::move(secantPrevious);
@@ -8608,24 +8619,29 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             arclengthNewton.impactIonization.sourceJacobianMode =
                 sweep.continuation.arclength.sourceJacobianMode;
         }
+        const DDSolution arclengthReferenceState = previousSolution;
+        auto arclengthReferenceBiases = baseBiases;
+        arclengthReferenceBiases[sweep.contact] = sweep.start;
         NewtonSolver arclengthSolver(
             mesh,
             matdb,
             doping,
-            baseBiases,
+            arclengthReferenceBiases,
             arclengthNewton,
             fixedChargeSpecs,
             sheetChargeSpecs,
             contactSpecs);
         ArclengthSystem arclengthSystem = arclengthSolver.makeArclengthSystem(
             sweep.contact,
-            sweep.continuation.arclength.biasFiniteDifferenceStep_V);
+            sweep.continuation.arclength.biasFiniteDifferenceStep_V,
+            false, &arclengthReferenceState);
         PseudoArclengthContinuation continuation(
             arclengthSystem,
             sweep.continuation.arclength.core);
 
         ArclengthState anchor;
-        anchor.x = arclengthSolver.packArclengthState(previousSolution);
+        anchor.x = arclengthSolver.packArclengthState(
+            previousSolution, &arclengthReferenceState);
         anchor.lambda = sweep.start;
         std::optional<ArclengthTangent> initialSecantTangent;
         if (!sweep.continuation.arclength.initialSecantStateFile.empty()) {
@@ -8635,7 +8651,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 sweep.scaling);
             ArclengthState secantPrevious;
             secantPrevious.x =
-                arclengthSolver.packArclengthState(secantPreviousSolution);
+                arclengthSolver.packArclengthState(
+                    secantPreviousSolution, &arclengthReferenceState);
             secantPrevious.lambda =
                 sweep.continuation.arclength.initialSecantBias_V;
             initialSecantTangent = continuation.computeSecantTangent(
@@ -8723,7 +8740,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
 
             SolvePointAttempt attempt;
             attempt.ok = true;
-            attempt.solution = arclengthSolver.unpackArclengthState(stepResult.state.x);
+            attempt.solution = arclengthSolver.unpackArclengthState(
+                stepResult.state.x, &arclengthReferenceState);
             attempt.solution.converged = true;
             attempt.solution.iters = stepResult.correctorIterations;
             attempt.solverMethod = "arclength";

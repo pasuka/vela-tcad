@@ -36,7 +36,8 @@ namespace {
 VectorXd packReferencedSolution(
     const CoupledDDAssembler& assembler,
     const DDSolution& state,
-    const CoupledDDBoundaryConditions& bcs)
+    const CoupledDDBoundaryConditions& bcs,
+    bool checkConsistency = false)
 {
     const Real potentialScale =
         assembler.usesScaledState() ? assembler.potentialScale() : 1.0;
@@ -45,9 +46,20 @@ VectorXd packReferencedSolution(
         state.phin / potentialScale,
         state.phip / potentialScale});
     const int N = static_cast<int>(assembler.numNodes());
+    const auto consistentCoordinate = [](Real physical, Real reconstructed) {
+        const Real tolerance =
+            32.0 * std::numeric_limits<Real>::epsilon() *
+            std::max({Real{1.0}, std::abs(physical), std::abs(reconstructed)});
+        return std::abs(physical - reconstructed) <= tolerance;
+    };
     if (state.hasReferencedElectronQuasiFermi()) {
         for (int i = 0; i < N; ++i) {
             if (bcs.phin.find(static_cast<Index>(i)) != bcs.phin.end())
+                continue;
+            // Match ordinary Newton restart semantics: an intentional edit
+            // of the absolute field takes precedence over stale coordinates.
+            if (checkConsistency && !consistentCoordinate(
+                    state.phin(i), state.electronQuasiFermiAt(i)))
                 continue;
             // Cancel matching references before adding the tiny coordinate.
             // Even long double can lose it if added to the bias first.
@@ -62,6 +74,9 @@ VectorXd packReferencedSolution(
     if (state.hasReferencedHoleQuasiFermi()) {
         for (int i = 0; i < N; ++i) {
             if (bcs.phip.find(static_cast<Index>(i)) != bcs.phip.end())
+                continue;
+            if (checkConsistency && !consistentCoordinate(
+                    state.phip(i), state.holeQuasiFermiAt(i)))
                 continue;
             const long double increment =
                 (static_cast<long double>(state.holeQuasiFermiReferenceAt(i)) -
@@ -3836,7 +3851,8 @@ DDSolution NewtonSolver::makeSolution(const CoupledDDAssembler& assembler,
     return sol;
 }
 
-std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler() const
+std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler(
+    const DDSolution* referenceState) const
 {
     const double Vt = thermalVoltage(cfg_.temperature_K);
     const MobilityModelConfig mobilityConfig = cfg_.mobility;
@@ -3866,13 +3882,14 @@ std::shared_ptr<CoupledDDAssembler> NewtonSolver::makeArclengthAssembler() const
         scaling,
         cfg_.carrierDiagonalFloor,
         cfg_.carrierStatistics);
-    configureQuasiFermiReferences(*assembler);
+    configureQuasiFermiReferences(*assembler, referenceState);
     return assembler;
 }
 
 ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeContact,
                                                   Real biasFiniteDifferenceStep_V,
-                                                  bool positiveDensityTrials) const
+                                                  bool positiveDensityTrials,
+                                                  const DDSolution* referenceState) const
 {
     if (positiveDensityTrials &&
         (usesFermiDirac(cfg_.carrierStatistics) || cfg_.electronQuantumPotential.enabled)) {
@@ -3892,7 +3909,7 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
             "' is not present in the contact bias map.");
     }
 
-    auto assembler = makeArclengthAssembler();
+    auto assembler = makeArclengthAssembler(referenceState);
     const NewtonSolver* self = this;
     const std::unordered_map<std::string, Real> baseBiases = contactBiases_;
     const Real h = biasFiniteDifferenceStep_V;
@@ -4014,27 +4031,25 @@ ArclengthSystem NewtonSolver::makeArclengthSystem(const std::string& activeConta
     return system;
 }
 
-VectorXd NewtonSolver::packArclengthState(const DDSolution& state) const
+VectorXd NewtonSolver::packArclengthState(
+    const DDSolution& state, const DDSolution* referenceState) const
 {
-    auto assembler = makeArclengthAssembler();
-    const Real potentialScale =
-        assembler->usesScaledState() ? assembler->potentialScale() : 1.0;
-    return assembler->pack({
-        state.psi / potentialScale,
-        state.phin / potentialScale,
-        state.phip / potentialScale});
+    auto assembler = makeArclengthAssembler(referenceState);
+    return packReferencedSolution(
+        *assembler, state, buildBoundaryConditions(*assembler), true);
 }
 
-DDSolution NewtonSolver::unpackArclengthState(const VectorXd& x) const
+DDSolution NewtonSolver::unpackArclengthState(
+    const VectorXd& x, const DDSolution* referenceState) const
 {
-    auto assembler = makeArclengthAssembler();
+    auto assembler = makeArclengthAssembler(referenceState);
     return makeSolution(*assembler, x, 0);
 }
 
 std::function<DDSolution(const VectorXd&)>
-NewtonSolver::makeArclengthStateUnpacker() const
+NewtonSolver::makeArclengthStateUnpacker(const DDSolution* referenceState) const
 {
-    auto assembler = makeArclengthAssembler();
+    auto assembler = makeArclengthAssembler(referenceState);
     const NewtonSolver* self = this;
     return [self, assembler](const VectorXd& x) {
         return self->makeSolution(*assembler, x, 0);
@@ -4043,7 +4058,8 @@ NewtonSolver::makeArclengthStateUnpacker() const
 
 ArclengthScalarFunctional NewtonSolver::makeArclengthContactCurrentFunctional(
     const std::string& contactName,
-    Real currentScale) const
+    Real currentScale,
+    const DDSolution* referenceState) const
 {
     if (!std::isfinite(currentScale)) {
         throw std::invalid_argument(
@@ -4063,7 +4079,7 @@ ArclengthScalarFunctional NewtonSolver::makeArclengthContactCurrentFunctional(
             contactName + "'.");
     }
 
-    auto assembler = makeArclengthAssembler();
+    auto assembler = makeArclengthAssembler(referenceState);
     const int nodeCount = static_cast<int>(assembler->numNodes());
     VectorXd residualWeights = VectorXd::Zero(3 * nodeCount);
     for (Index node : contact->node_ids) {
@@ -6530,10 +6546,20 @@ NewtonResult NewtonSolver::solvePoissonOnly(const DDSolution& initial) const
     for (const auto& [node, value] : bcs.phip)
         phip(static_cast<int>(node)) = value * potentialScale;
 
-    VectorXd x = assembler.pack({
-        psi / potentialScale,
-        phin / potentialScale,
-        phip / potentialScale});
+    VectorXd x;
+    if (cfg_.poissonOnlyQuasiFermiInitialization == "preserve_initial") {
+        DDSolution projected = initial;
+        projected.psi = psi;
+        projected.phin = phin;
+        projected.phip = phip;
+        x = packReferencedSolution(assembler, projected, bcs, true);
+    } else {
+        // Contact-basin initialization intentionally replaces the imported QFs.
+        x = assembler.pack({
+            psi / potentialScale,
+            phin / potentialScale,
+            phip / potentialScale});
+    }
     VectorXd residual = assembler.residual(x, bcs);
     const auto poissonNorm = [N](const VectorXd& value) {
         return value.head(N).norm();

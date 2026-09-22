@@ -1003,6 +1003,11 @@ Notes:
   projects explicit contact boundary values. Use the latter when correcting
   the Poisson discretization of an imported biased TCAD state; it also prevents
   pure-insulator gauge rows from inheriting a nearby terminal bias.
+  Consistent saved reference/increment pairs retain their small free-node
+  coordinates, including increments below the absolute-QF rounding precision.
+  If an absolute QF was explicitly edited and is inconsistent with its saved
+  pair under the ordinary Newton restart check, the absolute value takes
+  precedence. `contact_basin` continues to reset the QF fields intentionally.
 - For `uniform_trust_region`, `quasi_fermi_trust_region_growth_factor` and
   `quasi_fermi_trust_region_max_multiplier` optionally expand the physical
   update radius after a boundary-limited step. Expansion occurs only when the
@@ -2443,6 +2448,13 @@ load-line convergence tolerances. The filter controls are
 `coupled_filter_gamma` and `coupled_filter_envelope_factor`. The envelope is
 applied independently to the device-equation and load-line residual blocks;
 a large load-line residual cannot authorize growth of the device residual.
+
+Coupled circuit and pseudo-arclength restarts use their actual initial contact
+bias and one seed-aware QF reference coordinate system for the device, current,
+and state conversions. When referenced QF coordinates are enabled, packing
+uses the saved reference/increment fields instead of rounded absolute QFs.
+References stay fixed during that continuation context;
+this does not guarantee sub-ULP carrier resolution after a large bias change.
 
 `coupled_positive_density_updates` (default `false`, `coupled_newton` only)
 uses a nonlinear positive-density trial path for classical Boltzmann carriers.

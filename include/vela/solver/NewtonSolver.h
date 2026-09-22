@@ -797,28 +797,35 @@ public:
     /// vector [psi, phin, phip] produced by CoupledDDAssembler::pack, reusing the
     /// exact assembler, boundary-condition construction, and Jacobian assembly of
     /// the standard Newton solve. `biasFiniteDifferenceStep_V` sizes the central
-    /// finite difference used to estimate dF/dV.
+    /// finite difference used to estimate dF/dV. Pass the same initial reference
+    /// state to every arclength factory/packer to freeze consistent seed-aware
+    /// QF coordinates. It is read during construction only, never captured.
+    /// The contact bias map must contain the initial continuation bias.
     ArclengthSystem makeArclengthSystem(const std::string& activeContact,
                                         Real biasFiniteDifferenceStep_V = 1.0e-4,
-                                        bool positiveDensityTrials = false) const;
+                                        bool positiveDensityTrials = false,
+                                        const DDSolution* referenceState = nullptr) const;
 
     /// Convert a physical-unit DDSolution into the scaled packed state vector and
     /// back, consistent with makeArclengthSystem. These help drive the continuation
     /// from a converged Newton solution and interpret the corrected state.
-    VectorXd packArclengthState(const DDSolution& state) const;
-    DDSolution unpackArclengthState(const VectorXd& x) const;
+    VectorXd packArclengthState(const DDSolution& state,
+                                const DDSolution* referenceState = nullptr) const;
+    DDSolution unpackArclengthState(const VectorXd& x,
+                                   const DDSolution* referenceState = nullptr) const;
     /// Return a reusable unpacker backed by one cached assembler. This avoids
     /// rebuilding immutable mesh/material kernels for repeated terminal-current
     /// evaluations inside bordered circuit Newton.
     std::function<DDSolution(const VectorXd&)>
-    makeArclengthStateUnpacker() const;
+    makeArclengthStateUnpacker(const DDSolution* referenceState = nullptr) const;
     /// Build a terminal-current functional on the same packed state and
     /// assembler as makeArclengthSystem. currentScale converts the assembler's
     /// internal current-per-depth units (excluding its line factor) to the
     /// caller's signed terminal-current units.
     ArclengthScalarFunctional makeArclengthContactCurrentFunctional(
         const std::string& contactName,
-        Real currentScale) const;
+        Real currentScale,
+        const DDSolution* referenceState = nullptr) const;
 
 private:
     void configureQuasiFermiReferences(CoupledDDAssembler& assembler,
@@ -828,7 +835,8 @@ private:
     CoupledDDBoundaryConditions buildBoundaryConditions(
         const CoupledDDAssembler& assembler,
         const std::unordered_map<std::string, Real>& contactBiases) const;
-    std::shared_ptr<CoupledDDAssembler> makeArclengthAssembler() const;
+    std::shared_ptr<CoupledDDAssembler> makeArclengthAssembler(
+        const DDSolution* referenceState = nullptr) const;
     DDScalingSpec buildScalingSpec() const;
     DDSolution buildInitialGuess(const CoupledDDAssembler& assembler,
                                  const CoupledDDBoundaryConditions& bcs) const;

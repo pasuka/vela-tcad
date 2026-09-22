@@ -4181,6 +4181,102 @@ TEST_CASE("NewtonSolver: Poisson-only correction can preserve imported quasi-Fer
 }
 
 
+TEST_CASE("NewtonSolver: Poisson initialization retains only requested restart coordinates",
+          "[newton][poisson_only][restart][qf-reference][precision][scaling]")
+{
+    const auto mode = GENERATE(UnitScalingMode::LegacySI, UnitScalingMode::UnitScaling);
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg = newtonConfig();
+    cfg.inputScaling = UnitScalingConfig{mode};
+    cfg.quasiFermiReference = "contact_majority";
+    cfg.maxIter = 0;
+    cfg.abstol = 0.0;
+    cfg.reltol = 0.0;
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.7}, {"cathode", 1.1}};
+    const int n = static_cast<int>(mesh.numNodes());
+    DDSolution initial;
+    initial.psi = VectorXd::Zero(n);
+    initial.phin = VectorXd::Constant(n, 1.1);
+    initial.phip = VectorXd::Constant(n, -0.7);
+    initial.n = VectorXd::Ones(n);
+    initial.p = VectorXd::Ones(n);
+    initial.phinIncrement = VectorXd::Zero(n);
+    initial.phipIncrement = VectorXd::Zero(n);
+    initial.electronQfReference = VectorXd::Constant(n, 1.1);
+    initial.holeQfReference = VectorXd::Constant(n, -0.7);
+    initial.phinIncrement(4) = 1.0e-22;
+    initial.phipIncrement(4) = -2.0e-22;
+    REQUIRE(initial.electronQuasiFermiAt(4) == initial.phin(4));
+    REQUIRE(initial.holeQuasiFermiAt(4) == initial.phip(4));
+
+    SECTION("preserve_initial retains both sub-ULP coordinates") {
+        cfg.poissonOnlyQuasiFermiInitialization = "preserve_initial";
+        const NewtonResult result = runNewtonPoissonOnly(
+            mesh, matdb, doping, biases, initial, cfg);
+        CHECK(result.solution.phinIncrement(4) / initial.phinIncrement(4) ==
+              Catch::Approx(1.0));
+        CHECK(result.solution.phipIncrement(4) / initial.phipIncrement(4) ==
+              Catch::Approx(1.0));
+        CHECK(result.solution.phin(1) == Catch::Approx(1.1));
+        CHECK(result.solution.phip(0) == Catch::Approx(-0.7));
+    }
+    SECTION("contact_basin intentionally replaces saved coordinates") {
+        cfg.poissonOnlyQuasiFermiInitialization = "contact_basin";
+        const NewtonResult result = runNewtonPoissonOnly(
+            mesh, matdb, doping, biases, initial, cfg);
+        CHECK(result.solution.phinIncrement(4) == 0.0);
+        CHECK(result.solution.phipIncrement(4) == 0.0);
+        CHECK(result.solution.phin(4) == Catch::Approx(1.1));
+        CHECK(result.solution.phip(4) == Catch::Approx(-0.7));
+    }
+}
+
+
+TEST_CASE("NewtonSolver: arclength packing respects edited absolute QFs per carrier",
+          "[newton][arclength][restart][qf-reference][precision][scaling]")
+{
+    const auto mode = GENERATE(UnitScalingMode::LegacySI, UnitScalingMode::UnitScaling);
+    const bool editElectron = GENERATE(false, true);
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg = newtonConfig();
+    cfg.inputScaling = UnitScalingConfig{mode};
+    cfg.quasiFermiReference = "contact_majority";
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.7}, {"cathode", 1.1}};
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const int n = static_cast<int>(mesh.numNodes());
+    DDSolution initial;
+    initial.psi = VectorXd::Zero(n);
+    initial.phin = VectorXd::Constant(n, 1.1);
+    initial.phip = VectorXd::Constant(n, -0.7);
+    initial.phinIncrement = VectorXd::Zero(n);
+    initial.phipIncrement = VectorXd::Zero(n);
+    initial.electronQfReference = VectorXd::Constant(n, 1.1);
+    initial.holeQfReference = VectorXd::Constant(n, -0.7);
+    initial.phinIncrement(4) = 1.0e-22;
+    initial.phipIncrement(4) = -2.0e-22;
+    // An external caller may update a physical field without rebuilding its
+    // optional restart coordinates. Only that carrier must fall back to it.
+    if (editElectron)
+        initial.phin(4) += 0.0123;
+    else
+        initial.phip(4) -= 0.0045;
+    const DDSolution restored = solver.unpackArclengthState(
+        solver.packArclengthState(initial));
+    CHECK(restored.phin(4) == Catch::Approx(initial.phin(4)));
+    CHECK(restored.phip(4) == Catch::Approx(initial.phip(4)));
+    if (editElectron)
+        CHECK(restored.phipIncrement(4) / initial.phipIncrement(4) == Catch::Approx(1.0));
+    else
+        CHECK(restored.phinIncrement(4) / initial.phinIncrement(4) == Catch::Approx(1.0));
+}
+
+
 TEST_CASE("NewtonSolver: evaluateRegularizedCarrierStep damps carrier-only correction",
           "[newton][diagnostics]")
 {
@@ -4758,6 +4854,113 @@ TEST_CASE("NewtonSolver: restart retains increments below the reference long-dou
         mesh, matdb, doping, biases, result.solution, cfg);
     REQUIRE(restarted.solution.phinIncrement(4) == initial.phinIncrement(4));
     REQUIRE(restarted.solution.phipIncrement(4) == initial.phipIncrement(4));
+}
+
+
+TEST_CASE("NewtonSolver: arclength restart retains sub-ULP QF increments",
+          "[newton][arclength][qf-reference][precision]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg = newtonConfig();
+    cfg.quasiFermiReference = "contact_majority";
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.7}, {"cathode", 1.1}};
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const int n = static_cast<int>(mesh.numNodes());
+    DDSolution initial;
+    initial.psi = VectorXd::Zero(n);
+    initial.phin = VectorXd::Constant(n, 1.1);
+    initial.phip = VectorXd::Constant(n, -0.7);
+    initial.phinIncrement = VectorXd::Zero(n);
+    initial.phipIncrement = VectorXd::Zero(n);
+    initial.electronQfReference = VectorXd::Constant(n, 1.1);
+    initial.holeQfReference = VectorXd::Constant(n, -0.7);
+    initial.electronQfReference_V = 1.1;
+    initial.holeQfReference_V = -0.7;
+    initial.phinIncrement(4) = 1.0e-22;
+    initial.phipIncrement(4) = -2.0e-22;
+    REQUIRE(1.1 + initial.phinIncrement(4) == 1.1);
+    REQUIRE(-0.7 + initial.phipIncrement(4) == -0.7);
+
+    const VectorXd packed = solver.packArclengthState(initial);
+    const DDSolution restored = solver.unpackArclengthState(packed);
+    CHECK(restored.phinIncrement(4) == initial.phinIncrement(4));
+    CHECK(restored.phipIncrement(4) == initial.phipIncrement(4));
+}
+
+
+TEST_CASE("NewtonSolver: seed-aware arclength callbacks preserve the QF signal",
+          "[newton][arclength][qf-reference][precision][scaling]")
+{
+    const auto mode = GENERATE(UnitScalingMode::LegacySI, UnitScalingMode::UnitScaling);
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    NewtonConfig cfg = newtonConfig();
+    cfg.inputScaling = UnitScalingConfig{mode};
+    cfg.quasiFermiReference = "contact_nearest_state";
+    const std::unordered_map<std::string, Real> biases = {
+        {"anode", -0.7}, {"cathode", 1.1}};
+    NewtonSolver solver(mesh, matdb, doping, biases, cfg);
+    const int n = static_cast<int>(mesh.numNodes());
+    DDSolution zero;
+    zero.psi = VectorXd::Constant(n, 1.1);
+    zero.phin = VectorXd::Constant(n, 1.1);
+    zero.phip = VectorXd::Constant(n, 1.1);
+    zero.phinIncrement = VectorXd::Zero(n);
+    zero.phipIncrement = VectorXd::Zero(n);
+    zero.electronQfReference = VectorXd::Constant(n, 1.1);
+    zero.holeQfReference = VectorXd::Constant(n, 1.1);
+    zero.electronQfReference_V = 1.1;
+    zero.holeQfReference_V = 1.1;
+    DDSolution perturbed = zero;
+    perturbed.phinIncrement(4) = 1.0e-22;
+    perturbed.phipIncrement(4) = -2.0e-22;
+    REQUIRE(perturbed.phin(4) == zero.phin(4));
+    REQUIRE(perturbed.phip(4) == zero.phip(4));
+
+    // Hole geometry points to the anode, but this seed is near the cathode.
+    // All factories must agree on the seed-aware reference, including callers
+    // using positive-density trial updates and a cached unpacker.
+    DDSolution referenceSeed = zero;
+    const auto system = solver.makeArclengthSystem("cathode", 1.0e-4, true, &referenceSeed);
+    const auto unpack = solver.makeArclengthStateUnpacker(&referenceSeed);
+    const auto current = solver.makeArclengthContactCurrentFunctional("cathode", 1.0, &referenceSeed);
+    const VectorXd packedZero = solver.packArclengthState(zero, &referenceSeed);
+    const VectorXd packed = solver.packArclengthState(perturbed, &referenceSeed);
+    const auto direct = solver.unpackArclengthState(packed, &referenceSeed);
+    // Factories must own the configured references, not capture this pointer.
+    referenceSeed = DDSolution{};
+    const auto restored = unpack(packed);
+    CHECK(restored.electronQuasiFermiReferenceAt(4) == 1.1);
+    CHECK(restored.holeQuasiFermiReferenceAt(4) == 1.1);
+    CHECK(restored.phinIncrement(4) / perturbed.phinIncrement(4) == Catch::Approx(1.0));
+    CHECK(restored.phipIncrement(4) / perturbed.phipIncrement(4) == Catch::Approx(1.0));
+    CHECK((direct.phinIncrement - restored.phinIncrement).norm() == 0.0);
+    CHECK((direct.phipIncrement - restored.phipIncrement).norm() == 0.0);
+
+    const VectorXd raw = system.residual(packed, 1.1);
+    const VectorXd rawZero = system.residual(packedZero, 1.1);
+    const auto ordinary = solver.evaluateResidual(perturbed);
+    CHECK((raw - ordinary.raw).norm() == 0.0);
+    // An actual continuity/current signal must survive below the physical QF ULP.
+    CHECK(std::abs(raw(n + 4) - rawZero(n + 4)) > 0.0);
+    CHECK(std::abs(raw(2 * n + 4) - rawZero(2 * n + 4)) > 0.0);
+    const Real currentSignal = current.value(packed, 1.1) - current.value(packedZero, 1.1);
+    REQUIRE(std::abs(currentSignal) > 0.0);
+    const auto linearization = current.linearize(packedZero, 1.1);
+    CHECK(linearization.value == current.value(packedZero, 1.1));
+    CHECK(linearization.stateDerivative.dot(packed - packedZero) / currentSignal ==
+          Catch::Approx(1.0).epsilon(1.0e-10));
+    CHECK(linearization.parameterDerivative == 0.0);
+    const VectorXd delta = packed - packedZero;
+    const VectorXd linearSignal = system.jacobian(packedZero, 1.1) * delta;
+    CHECK(linearSignal(n + 4) / (raw(n + 4) - rawZero(n + 4)) ==
+          Catch::Approx(1.0).epsilon(1.0e-10));
+    CHECK(linearSignal(2 * n + 4) / (raw(2 * n + 4) - rawZero(2 * n + 4)) ==
+          Catch::Approx(1.0).epsilon(1.0e-10));
 }
 
 
