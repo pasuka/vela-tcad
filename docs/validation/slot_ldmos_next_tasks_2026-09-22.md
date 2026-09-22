@@ -37,6 +37,11 @@ Release/UMFPACK；电路 `direct_bordered` 仍是 Eigen SparseLU。
 这些计算。外部 37.1 V 尚无最终合格结果；不能把其内部候选直接作为
 外电阻合格点。原生保存态启动的独立 37 V 点，也不等于完整连续扫描。
 
+13:06 补充：外部 37.1 V 控制随后结束，`qualified=false`。内部候选
+37.08222017525719 V 的 Poisson 预热通过，主 Newton 完成 4 次更新，
+12 轮载流子修正后仍为 `local_corrector_unqualified`，未超时。
+最后合格外部点仍为 37.05 V；该外电阻驱动已结束，两条内部续算保留。
+
 证据根目录 `build/slot_resume_20260922/`：
 
 - `preserved_progress_snapshot.json`：带观察时间的两条续算合格点快照。
@@ -44,7 +49,7 @@ Release/UMFPACK；电路 `direct_bordered` 仍是 Eigen SparseLU。
   初值来源、逐次尝试和审计；结束后才生成 `reports/` 最终汇总。
 - `preserved_loadline_37p02/result.json`、`preserved_loadline_37p05/result.json`：
   负载线与相同状态确认；完整方程资格来自对应器件 Newton 及局部审计。
-- `preserved_loadline_37p1/`：尚未完成的外部 37.1 V 控制。
+- `preserved_loadline_37p1/`：已结束但未合格的外部 37.1 V 控制。
 - `continuation_reference_audit/`：修复前后回归、完整 CTest 和构建清单。
 
 ## 下一步具体任务与完成条件
@@ -64,7 +69,9 @@ Release/UMFPACK；电路 `direct_bordered` 仍是 Eigen SparseLU。
 
 ### 2. 将已成功的外电阻控制整理为可重复流程
 
-先收取 37.1 V 结果，再逐步推进外部 37.2/37.5/38/40 V。把目前的
+先针对 37.1 V 的失败，从合格 37.05 V 恢复并缩小外部步长，例如
+先试 37.075 V；检查失败行、固定电势修正及完整 Newton 线搜索的
+关系，通过后再推进 37.1/37.2/37.5/38/40 V。把目前的
 “内压预测→器件预热/修正→完整验收→负载线割线校正→电路确认”
 整理为正式脚本或求解器流程，加入失败回退、步长缩小、检查点及重启。
 该工作须有针对性回归，不能直接把 `build/` 下研究脚本作为生产入口。
