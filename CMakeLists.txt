@@ -816,6 +816,13 @@ set_tests_properties(slot_ldmos_noavalanche_continuation PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(slot_ldmos_noavalanche_continuation)
 
+add_test(NAME slot_ldmos_loadline_continuation
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_run_slot_ldmos_loadline_continuation)
+set_tests_properties(slot_ldmos_loadline_continuation PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(slot_ldmos_loadline_continuation)
+
 add_test(NAME slot_ldmos_ialmob_tools
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_slot_ldmos_ialmob_tools

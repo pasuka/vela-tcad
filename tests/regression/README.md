@@ -53,3 +53,21 @@ continuity audit. It prepares isolated source-free PolySilicon candidates only;
 full coupled convergence, final all-active row checks, and update-history
 qualification remain mandatory. Unsupported profiles are rejected rather than
 silently projected. See the [2026-09-22 SLOT evidence](../../docs/validation/slot_ldmos_high_voltage_resume_2026-09-22.md).
+
+The `slot_ldmos_loadline_continuation` test covers the SLOT-specific independent
+device load-line driver, `scripts/run_slot_ldmos_loadline_continuation.py`.
+It freezes R=1e12 ohm*um, a 1e-6 V load-line tolerance, and the original SLOT
+all-active-row/global-closure gates. `--initial-inner-bias` is the device voltage;
+`--outer-targets` are supply voltages. A seed is requalified before use. Each new
+device bias needs actual coupled Newton updates, and each external acceptance
+requires byte-identical circuit confirmation. A changed confirmation state stops
+incomplete; it cannot inherit the previous proof.
+
+Choose a short, fresh ignored `--output-dir`. `--resume` requires identical input
+files, solver/helper code, runner, solver/thread environment, request, and budgets.
+It validates saved evidence and does not repeat completed solves. Numerical
+failure permits bounded inner/outer step reduction; missing runtime files,
+corrupt proof, or resource/environment changes stop the campaign. This entry is
+qualified only for the documented SLOT profile, not a general circuit solver or
+proof of original AvalDensGradQF parity. See the
+[2026-09-23 review](../../docs/validation/slot_ldmos_loadline_review_2026-09-23.md).

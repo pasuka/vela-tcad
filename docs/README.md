@@ -6,6 +6,16 @@ evidence.
 
 ## Current References
 
+- [SLOT load-line driver review, 2026-09-23](validation/slot_ldmos_loadline_review_2026-09-23.md):
+  guarded independent-device continuation, original all-row/circuit gates,
+  reviewed restart identity and budgets, and real 37.075/37.1 V replay evidence.
+  Original AvalDensGradQF and complete BVDS remain separate.
+
+- [SLOT completed internal continuation, 2026-09-22](validation/slot_ldmos_continuation_completion_2026-09-22.md):
+  both resumed segments complete through 20/37 V, 49 qualified new points,
+  and 20/30/35/37 V field/current overlap with independent checkpoints.
+  Cold-origin replay and original avalanche/BVDS validation remain separate.
+
 - [SLOT commit handoff and next tasks, 2026-09-22](validation/slot_ldmos_next_tasks_2026-09-22.md):
   committed fixes, a timestamped live-run snapshot, and concrete acceptance
   criteria for continuation, load-line automation, original avalanche physics,
