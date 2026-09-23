@@ -48,8 +48,11 @@ explicitly, with full nine-potential chain derivatives. It passed Release unit,
 protocol, actual-state derivative and 10/37 V source replay checks. It is not wired
 into solver configuration or Newton assembly. The next step is to qualify that
 integration after resolving or explicitly bounding the remaining geometry-choice
-and weak-source differences. An original-physics element-output control is running
-to check whether the native source can expose the selected vertex directly.
+and weak-source differences. The original-physics element-output control ended:
+after fixing a missing parameter input, r2 rejected `eAlphaAvalanche/Element` at
+Plot. Do not repeat that unsupported field. Generation/Element was not reached
+and remains a separate possible diagnostic; retain the failed logs and partial
+TDR as failed evidence, never as a checkpoint.
 The measurements and limitations are in
 `docs/validation/slot_ldmos_native_avalanche_identification_2026-09-23.md`.
 

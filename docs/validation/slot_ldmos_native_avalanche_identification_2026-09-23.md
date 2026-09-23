@@ -344,6 +344,22 @@ ctest --preset windows-ucrt64-release -R ialmob_element_avalanche_probe_protocol
 ./build-release/ialmob_element_avalanche_probe.exe build/slot_pmi_20260923/release_avalanche_10v_input.json > build/slot_pmi_20260923/replay_10v.json
 ```
 
+## 元素输出能力检查与恢复位置
+
+额外的原始物理 10 V 冻结输出检查未获得元素电离系数。首轮在 Load
+之前因诊断目录遗漏 `pp2_des.par` 失败；补齐文件并对全部上传输入进行
+SHA256 预校验后，以新前缀 r2 重试。r2 在 Plot 处明确报
+`Tried to read undefined Element-Scalar eAlphaAvalanche`，原生退出码文件为 5。
+这不是 Newton 数值失败。后续的元素产生率输出尚未执行，不能据此
+判定所有元素源字段均不受支持。失败日志和部分输出均保留且已核验
+下载哈希，见 `element_source_capability_status.json` 和
+`element_source_result/`；不能将不完整 TDR 当作新参考态。
+
+本次原生诊断均已结束，无新的高压续算接受点。原有投影 SG 外压
+37.1 V 资格保持不变。后续可以先单独检查元素产生率输出，避免再次
+请求已确认不支持的元素 alpha；若输出仍不足，则沿用冻结态独立
+控制与显式几何边界，不以字段名字或小积分差替代局部验收。
+
 下一项验收包括原生元素源输出能否直接确定近等角选点、弱源项剩余差异、
 源体积映射的可移植性，以及将独立计算核接入 Newton 装配、审计与
 续算后的整体 Jacobian 验证。投影 SG 的外压 37.1 V 合格结果不能替代
