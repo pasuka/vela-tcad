@@ -158,6 +158,10 @@ TEST_CASE("Element avalanche rejects unsupported temperature and invalid support
     Fixture f;auto state=f.reference;f.populate(state,false);
     SECTION("temperature"){state[0].temperature_K=301.;}
     SECTION("selected vertex"){f.options.mobilityVertex=3;}
+    SECTION("omitted vertex"){
+        f.options=IalElementAvalancheOptions{};
+        f.options.sourceMeasure_m2={1e-17,1.5e-17,2.5e-17};
+    }
     SECTION("negative measure"){f.options.sourceMeasure_m2[1]=-1.;}
     SECTION("empty support"){f.options.sourceMeasure_m2={0.,0.,0.};}
     SECTION("bad coefficient"){f.options.hole.lowA_per_m=std::numeric_limits<Real>::quiet_NaN();}

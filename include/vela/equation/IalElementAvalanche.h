@@ -13,7 +13,7 @@ struct ElementIonizationCurve {
 /// This API does not select a solver model or infer native mesh conventions.
 struct IalElementAvalancheOptions {
     /// Caller supplies the geometry-selected vertex, independently of state.
-    std::size_t mobilityVertex = 0;
+    std::size_t mobilityVertex = 3; ///< Unset; evaluation rejects until supplied.
     /// Explicit source shares, distinct from transport/mobility box measures.
     std::array<Real,3> sourceMeasure_m2{};
     ElementIonizationCurve electron{7.03e7,1.231e8,7.03e7,1.231e8};

@@ -306,12 +306,12 @@ API 不推断尚有歧义的原生几何选择，不启用新的求解器模型�
 
 验证结果：
 
-- Release `test_impact_ionization`：60 个用例、2,297 项断言全部通过。
+- Release `test_impact_ionization`：60 个用例、2,298 项断言全部通过。
   新增五类测试覆盖 Fermi/Boltzmann 九列差分、四种边界/接触组合、
   源积分分配、电势整体平移不变性、极值并列单侧导数、零 QF 流和
   alpha 两端 C1 连续性。初次 C1 有限距离比较失败，随后改为两个
   接近尺度的收缩检查；未放宽连续性验收阈值。
-- 对应 Release CTest 7/7 通过（0.90 s），包括原有元素探针和新探针
+- 对应 Release CTest 7/7 通过（最终 0.71 s），包括原有元素探针和新探针
   的 SI 单位、显式源支撑及拒绝未支持配置的协议检查。
 - 实际原生状态差分：10/37 V 各取九个高场/界面元素，双步长
   1e-7、3e-8 V，密度与迁移率同时更新。各检查 324 个载流子列，
@@ -330,6 +330,10 @@ API 不推断尚有歧义的原生几何选择，不启用新的求解器模型�
 这是源项冻结回放，不能表述为端电流已达到上述相对误差。与 Python
 候选回放的细微差异包含近等角选择对坐标单位/浮点运算顺序的敏感性。
 见 `release_avalanche_kernel_replay.json` 及其输入/输出/可执行文件哈希。
+随后将未指定的迁移率顶点改为显式拒绝，增加遗漏顶点的回归。重新构建
+后的 10/37 V 输出与上述显式输入回放逐字节一致，见
+`guard_replay_identity.json`；原可执行文件保存在
+`ialmob_element_avalanche_probe_eda69ff6.exe`，可复核旧哈希与导数差分。
 
 可复验入口（从本 worktree 根目录执行，使用 UCRT64 DLL 路径）：
 
@@ -337,7 +341,7 @@ API 不推断尚有歧义的原生几何选择，不启用新的求解器模型�
 cmake --build --preset windows-ucrt64-release --target test_impact_ionization ialmob_element_avalanche_probe
 ./build-release/test_impact_ionization.exe '[element-density]'
 ctest --preset windows-ucrt64-release -R ialmob_element_avalanche_probe_protocol --output-on-failure
-./build-release/ialmob_element_avalanche_probe.exe build/slot_pmi_20260923/release_avalanche_10v_input.json
+./build-release/ialmob_element_avalanche_probe.exe build/slot_pmi_20260923/release_avalanche_10v_input.json > build/slot_pmi_20260923/replay_10v.json
 ```
 
 下一项验收包括原生元素源输出能否直接确定近等角选点、弱源项剩余差异、
