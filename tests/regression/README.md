@@ -23,6 +23,13 @@ LDMOS linked-input manifests retain byte-exact SHA-256 checks. The repository's
 checked-in dependency; do not replace hashes or normalize bytes in the digest
 function to make a platform-specific mismatch pass.
 
+The `ialmob_element_avalanche_probe_protocol` test checks the diagnostic
+`ialmob_element_avalanche_probe` SI contract, explicit source shares, output
+derivative columns and rejection of unsupported temperatures/RefDens. Full local
+chain-rule differences (including live mobility and both carrier statistics) are
+in `test_impact_ionization` under `[element-density]`. These probe checks do not
+qualify coupled SLOT avalanche or BVDS continuation.
+
 Run the main reference-tool checks from the repository root:
 
 ```bash

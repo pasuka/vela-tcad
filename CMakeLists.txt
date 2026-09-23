@@ -257,6 +257,7 @@ add_library(vela_core STATIC
     src/physics/SiliconThermalPhysics.cpp
     src/physics/IalInterfaceGeometry.cpp
     src/equation/IalElementMobility.cpp
+    src/equation/IalElementAvalanche.cpp
     src/equation/IalTransport.cpp
     src/physics/RecombinationModel.cpp
     src/physics/ImpactIonizationModel.cpp
@@ -510,6 +511,8 @@ add_executable(ialmob_geometry_probe src/tools/ialmob_geometry_probe.cpp)
 target_link_libraries(ialmob_geometry_probe PRIVATE vela_core)
 add_executable(ialmob_element_probe src/tools/ialmob_element_probe.cpp)
 target_link_libraries(ialmob_element_probe PRIVATE vela_core)
+add_executable(ialmob_element_avalanche_probe src/tools/ialmob_element_avalanche_probe.cpp)
+target_link_libraries(ialmob_element_avalanche_probe PRIVATE vela_core)
 
 add_executable(sentaurus_vanoverstraeten_fit src/tools/sentaurus_vanoverstraeten_fit.cpp)
 target_link_libraries(sentaurus_vanoverstraeten_fit PRIVATE vela_core)
@@ -646,7 +649,7 @@ add_dependencies(test_external_state vela_example_runner)
 add_executable(test_mobility tests/test_mobility.cpp tests/test_ialmob.cpp tests/test_ialmob_temperature_hfs.cpp tests/test_silicon_thermal.cpp tests/test_ialmob_jacobian.cpp tests/test_ialmob_transport.cpp)
 target_link_libraries(test_mobility PRIVATE vela_core Catch2::Catch2WithMain)
 
-add_executable(test_impact_ionization tests/test_impact_ionization.cpp)
+add_executable(test_impact_ionization tests/test_impact_ionization.cpp tests/test_ialmob_element_avalanche.cpp)
 target_link_libraries(test_impact_ionization PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_path_ionization_integral tests/test_path_ionization_integral.cpp)
@@ -1011,6 +1014,11 @@ add_test(NAME ialmob_element_probes_protocol
             --geometry $<TARGET_FILE:ialmob_geometry_probe>
             --element $<TARGET_FILE:ialmob_element_probe>)
 vela_set_windows_msys2_test_path(ialmob_element_probes_protocol)
+add_test(NAME ialmob_element_avalanche_probe_protocol
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_ialmob_element_avalanche_probe.py
+            --runner $<TARGET_FILE:ialmob_element_avalanche_probe>)
+vela_set_windows_msys2_test_path(ialmob_element_avalanche_probe_protocol)
 
 add_test(NAME sentaurus_sde_frontend
     COMMAND ${Python3_EXECUTABLE} -m unittest
