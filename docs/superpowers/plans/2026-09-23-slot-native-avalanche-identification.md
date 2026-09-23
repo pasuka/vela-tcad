@@ -24,6 +24,17 @@ vertex choices, including 17 electron and 9 hole differences from double-precisi
 maximum-angle selection, all inside the prior near-tie envelope. The vector
 magnitude and unmatched traces remain unqualified; see the validation report.
 
+Follow-up now completed: all 15,116 electron and 10,960 hole unique callbacks
+map uniquely using coordinate and field checks; prior missing matches were
+decimal-rounding keys and over-wide field windows. The AvalDensGradQF-off PMI
+control passed exact built-in parity. Full current gradients at electrode-contact
+elements resolve the interface-overlap vector discrepancy; non-contact interfaces
+retain tangential projection. The inferred current scale and remaining contact
+saved-state precision limits are documented in
+`docs/validation/slot_ldmos_pmi_callback_followup_2026-09-23.md`.
+Correct the isolated research kernel and verify its nine-column derivatives
+before coupled integration; no production behavior changed in this follow-up.
+
 The available fallback uses the built-in isotropic van Overstraeten model with
 only both carriers' low/high `a` set to 1 cm^-1 and `b` to 0 V/cm. At the fixed
 300 K state this should give unit alpha wherever the model evaluates a nonzero

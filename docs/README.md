@@ -6,6 +6,11 @@ evidence.
 
 ## Current References
 
+- [SLOT PMI callback follow-up, 2026-09-23](validation/slot_ldmos_pmi_callback_followup_2026-09-23.md):
+  complete callback-to-element matching, contact full-gradient current evidence,
+  effective current scale, saved-state precision limits and qualified frozen
+  AvalDensGradQF-off control. Research-kernel correction and coupled validation remain pending.
+
 - [SLOT native avalanche identification, 2026-09-23](validation/slot_ldmos_native_avalanche_identification_2026-09-23.md):
   compiler-independent frozen controls, extrema harmonic density, cosine alpha
   smoothing, best-vertex mobility and 10/37 V interior replay with explicit
