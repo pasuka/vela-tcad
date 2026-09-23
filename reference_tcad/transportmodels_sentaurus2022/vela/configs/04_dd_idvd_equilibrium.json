@@ -135,7 +135,7 @@
       1.0
     ],
     "write_vtk": false,
-    "write_state_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dd_idvd_equilibrium_final_state.csv",
+    "write_state_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dd_idvd_equilibrium_final_state.h5",
     "write_state_every_point_prefix": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dd_idvd_equilibrium_state",
     "diagnostics": {
       "transport": {
@@ -656,5 +656,6 @@
       "pointwise_reclosure_forbidden": true,
       "interpolation_forbidden": true
     }
-  }
+  },
+  "state_format": "hdf5"
 }

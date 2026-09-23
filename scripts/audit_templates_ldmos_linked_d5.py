@@ -43,10 +43,25 @@ def audit(directory: Path) -> dict:
     accepted = ledger['exact_points'] + ledger['transfers']
     accepted += [e['accepted'] for e in ledger['frame_events'] if e['status'] == 'qualified']
     unique = {}
+    mesh_bindings = {}
     for point in accepted:
         case = directory/point['case']
         assert good(read(case/'status.json'), case, point['bias_V'])
         assert digest(Path(point['state'])) == point['sha256']
+        state_path = Path(point['state'])
+        if state_path.suffix == '.h5':
+            import state_archive
+            cfg = read(case/'control.json')
+            mesh_path = Path(cfg['mesh_file'])
+            scaling = 1e-6 if cfg.get('scaling',{}).get('mode') == 'unit_scaling' else 1.
+            key = (mesh_path, scaling)
+            if key not in mesh_bindings:
+                mesh = read(mesh_path)
+                mesh_bindings[key] = (len(mesh['nodes']), state_archive.mesh_identity(mesh,scaling))
+            count,identity = mesh_bindings[key]
+            _,metadata = state_archive.read(state_path,count,identity)
+            if metadata['mode'] != 'dd' or metadata['potential_origin_V'] != cfg.get('potential_origin_V',0.):
+                raise ValueError('Checkpoint mode/frame differs from the accepted control')
         unique[point['state']] = point['sha256']
     assert updates == ledger['total_Newton_updates']
     if worker_ids:

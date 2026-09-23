@@ -9,8 +9,8 @@
   "vela_solver": {
     "method": "gummel_newton",
     "max_iter": 40,
-    "reltol": 1.0e-8,
-    "abstol": 1.0e-18,
+    "reltol": 1e-08,
+    "abstol": 1e-18,
     "damping_psi": 0.2,
     "damping_factor": 1.0,
     "max_update": 5.0,
@@ -56,8 +56,8 @@
       "vela_materials_file": "pn2d_sentaurus2018_iv_materials.json",
       "vela_solver": {
         "max_iter": 80,
-        "reltol": 1.0e-10,
-        "abstol": 1.0e-24,
+        "reltol": 1e-10,
+        "abstol": 1e-24,
         "max_update": 2.0,
         "handoff": {
           "fallback": "none",
@@ -72,7 +72,7 @@
         "min_points": 2,
         "bias_min": 0.0,
         "bias_max": 0.0,
-        "max_abs_current": 1.0e-20,
+        "max_abs_current": 1e-20,
         "require_trend_match": false
       }
     },
@@ -92,8 +92,8 @@
       "vela_materials_file": "pn2d_sentaurus2018_iv_materials.json",
       "vela_solver": {
         "contact_boundary_minority_electron_relaxation": false,
-        "taun": 1.0e-5,
-        "taup": 3.0e-6,
+        "taun": 1e-05,
+        "taup": 3e-06,
         "mobility": {
           "model": "masetti"
         }
@@ -129,8 +129,8 @@
       "vela_materials_file": "pn2d_sentaurus2018_iv_materials.json",
       "vela_solver": {
         "contact_boundary_minority_electron_relaxation": false,
-        "taun": 1.0e-5,
-        "taup": 3.0e-6,
+        "taun": 1e-05,
+        "taup": 3e-06,
         "mobility": {
           "model": "masetti"
         }
@@ -187,8 +187,8 @@
       "vela_materials_file": "pn2d_sentaurus2018_iv_materials.json",
       "vela_solver": {
         "contact_boundary_minority_electron_relaxation": false,
-        "taun": 1.0e-5,
-        "taup": 3.0e-6,
+        "taun": 1e-05,
+        "taup": 3e-06,
         "mobility": {
           "model": "masetti"
         }
@@ -245,11 +245,11 @@
       "vela_sweep_initialization": {
         "mode": "poisson_block",
         "diagnostic_csv": "poisson_block_initialization.csv",
-        "write_state_file": "poisson_block_initial_state.csv"
+        "write_state_file": "poisson_block_initial_state.h5"
       },
       "comparison_kind": "iv",
       "vela_solver": {
-        "abstol": 1.0e-9,
+        "abstol": 1e-09,
         "contact_boundary_minority_electron_relaxation": false,
         "mobility": {
           "model": "masetti_field",

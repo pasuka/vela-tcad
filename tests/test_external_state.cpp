@@ -178,7 +178,7 @@ RunnerCase makeRunnerCase(const std::string& name)
         {"simulation_type", "newton_solve_from_state"},
         {"mesh_file", "mesh.json"},
         {"state_fields_dir", "fields"},
-        {"output_state_file", "out/state.csv"},
+        {"output_state_file", "out/state.h5"},
         {"output_vtk", "out/state.vtk"},
         {"contacts", nlohmann::json::array({
             {{"name", "anode"}, {"bias", 0.0}},
@@ -256,7 +256,7 @@ TEST_CASE("newton_solve_from_state accepts a converged external field state",
     REQUIRE(status.at("converged").get<bool>());
     REQUIRE(status.at("iterations").get<int>() == 0);
     REQUIRE(status.at("initial_residual").get<double>() <= 1.0e-6);
-    REQUIRE(std::filesystem::exists(c.dir / "out" / "state.csv"));
+    REQUIRE(std::filesystem::exists(c.dir / "out" / "state.h5"));
     const std::string vtk = readFile(c.dir / "out" / "state.vtk");
     REQUIRE(vtk.find("SRHRecombinationCm3PerS") != std::string::npos);
     REQUIRE(vtk.find("AugerRecombinationCm3PerS") != std::string::npos);

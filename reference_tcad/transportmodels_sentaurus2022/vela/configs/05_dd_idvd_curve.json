@@ -132,7 +132,7 @@
     "stop": 2.0,
     "step": 0.1,
     "write_vtk": false,
-    "write_state_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dd_idvd_curve_final_state.csv",
+    "write_state_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dd_idvd_curve_final_state.h5",
     "write_state_every_point_prefix": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dd_idvd_curve_state",
     "diagnostics": {
       "transport": {
@@ -149,7 +149,7 @@
         "csv_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dd_idvd_curve_terminal_balance.csv"
       }
     },
-    "initial_state_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dd_idvd_equilibrium_final_state.csv",
+    "initial_state_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dd_idvd_equilibrium_final_state.h5",
     "initial_step": 0.1,
     "min_step": 1e-05,
     "max_step": 0.1,
@@ -658,5 +658,6 @@
       "pointwise_reclosure_forbidden": true,
       "interpolation_forbidden": true
     }
-  }
+  },
+  "state_format": "hdf5"
 }

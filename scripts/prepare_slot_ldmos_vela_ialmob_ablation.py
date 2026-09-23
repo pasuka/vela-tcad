@@ -103,7 +103,7 @@ def build_probe_case(
     sweep["start"] = 60.0
     sweep["stop"] = 60.0
     sweep["initial_state_file"] = (
-        "outputs/stages/05_avalanche_on_60v/final_state.csv"
+        "outputs/stages/05_avalanche_on_60v/final_state.h5"
     )
     sweep["external_circuit"]["initial_inner_voltage_V"] = (
         initial_inner_voltage_V
@@ -200,7 +200,7 @@ def prepare(bundle: Path, resume_boundary_control: bool = False) -> dict[str, An
         "schema": "vela.slot_ldmos.ialmob_ablation.v1",
         "controlled_delta": "Enhanced Lombardi Enormal mobility only",
         "shared_initial_state": (
-            "outputs/stages/05_avalanche_on_60v/final_state.csv"
+            "outputs/stages/05_avalanche_on_60v/final_state.h5"
         ),
         "shared_initial_inner_voltage_V": initial_inner,
         "surface_interface": [SILICON_REGION, OXIDE_REGION],

@@ -191,7 +191,7 @@
       1.1
     ],
     "write_vtk": false,
-    "write_state_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dg_idvg_drain_ramp_final_state.csv",
+    "write_state_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dg_idvg_drain_ramp_final_state.h5",
     "write_state_every_point_prefix": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dg_idvg_drain_ramp_state",
     "diagnostics": {
       "transport": {
@@ -208,7 +208,7 @@
         "csv_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dg_idvg_drain_ramp_terminal_balance.csv"
       }
     },
-    "initial_state_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dg_idvg_equilibrium_final_state.csv"
+    "initial_state_file": "../../../../build/reference_tcad/transportmodels_sentaurus2022/work/dg_idvg_equilibrium_final_state.h5"
   },
   "sentaurus_import": {
     "cmd_summary": {
@@ -770,5 +770,6 @@
       "pointwise_reclosure_forbidden": true,
       "interpolation_forbidden": true
     }
-  }
+  },
+  "state_format": "hdf5"
 }

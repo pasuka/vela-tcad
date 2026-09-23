@@ -168,7 +168,7 @@ Solve {{
 
 def vela_config(spec, cfg, branch):
     c, _ = render_named_template('pn2d_iv')
-    c.update(mesh_file='inputs/mesh.json', node_doping_file='inputs/doping.csv', materials_file='materials.json', output_csv=f'{branch}.csv')
+    c.update(state_format='hdf5', mesh_file='inputs/mesh.json', node_doping_file='inputs/doping.csv', materials_file='materials.json', output_csv=f'{branch}.csv')
     s = c['solver']
     s.update(temperature_K=300.0, taun=1e-5, taup=3e-6, recombination=['srh'] if cfg['srh'] else [],
              bandgap_narrowing='old_slotboom' if cfg['bgn'] else 'none', srh_doping_dependence={'enabled':False})
@@ -178,7 +178,7 @@ def vela_config(spec, cfg, branch):
     # local/global convergence gates. This is campaign-local, not a default.
     s['continuity_row_scaling']['flux_fraction'] = 1.0
     c['sweep'].update(bias_points=biases(spec['branches'][branch]), step=spec['branches'][branch]['step_V'], stop=spec['branches'][branch]['stop_V'],
-                       vtk_prefix=f'{branch}/state', write_vtk=True, write_state_file=f'{branch}/last.csv',
+                       vtk_prefix=f'{branch}/state', write_vtk=True, write_state_file=f'{branch}/last.h5',
                        write_state_every_point_prefix=f'{branch}/accepted', stop_on_failure=True)
     c['sweep']['diagnostics'].update(terminal_balance={'enabled':True,'contacts':['Anode','Cathode']},
                                   continuity_balance={'enabled':True,'contacts':['Anode','Cathode']}, transport={'enabled':True})
@@ -393,7 +393,7 @@ def postprocess_states(d, branch, source_config):
     for bias in read_json(SPEC)['saved_biases_V']:
         if (bias<0)!=(branch=='reverse'): continue
         token=('m' if bias<0 else '')+f'{abs(bias):.6f}'.replace('.','p')
-        state=f'{branch}/accepted_bias_{token}.csv'
+        state=f'{branch}/accepted_bias_{token}.h5'
         cfg=copy.deepcopy(source_config)
         cfg['output_csv']=f'postprocess/{branch}_{tag(bias)}.csv'
         cfg['solver']['method']='frozen_state'

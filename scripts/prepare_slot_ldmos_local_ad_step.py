@@ -54,7 +54,7 @@ def main() -> int:
     sweep["boundary_control"]["checkpoint_directory"] = (
         "diagnostics/local_ad_step/checkpoints"
     )
-    sweep["write_state_file"] = "diagnostics/local_ad_step/final_state.csv"
+    sweep["write_state_file"] = "diagnostics/local_ad_step/final_state.h5"
     sweep["write_state_every_point_prefix"] = (
         "diagnostics/local_ad_step/states/state"
     )

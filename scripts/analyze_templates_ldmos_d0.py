@@ -5,6 +5,7 @@ contract. A zero-power point retains the undefined relative heat balance, and
 must independently prove exactly zero heat and constant ambient temperature.
 """
 import argparse,hashlib,json,math
+from electrothermal_state import read_bound_record
 from pathlib import Path
 from analyze_templates_ldmos_stage4_d5 import curve_error,ratio_error,kcl_audit,verdict,read_curve,read_vela_curve
 from analyze_templates_ldmos_thermal import assess
@@ -12,7 +13,7 @@ from run_templates_ldmos_electrothermal_curve import state_gate
 from evidence_paths import candidate_path
 
 
-def read(path):return json.loads(path.read_text(encoding='utf-8'))
+def read(path):return read_bound_record(path)
 def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 def align_bias_serialization(reference,candidate,points,digits):
     """Explicit native export precision, not interpolation or a bias tolerance."""

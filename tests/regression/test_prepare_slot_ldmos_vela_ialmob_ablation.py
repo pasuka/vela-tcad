@@ -30,7 +30,7 @@ BASE = {
         "bias_points": [10.0, 60.0],
         "start": 10.0,
         "stop": 60.0,
-        "initial_state_file": "outputs/stages/04/final_state.csv",
+        "initial_state_file": "outputs/stages/04/final_state.h5",
         "external_circuit": {"initial_inner_voltage_V": 0.01},
         "boundary_control": {
             "resume": True,
@@ -38,7 +38,7 @@ BASE = {
                 "outputs/stages/05_avalanche_on_60v/evaluations.csv"
             ),
         },
-        "write_state_file": "outputs/stages/05_avalanche_on_60v/final_state.csv",
+        "write_state_file": "outputs/stages/05_avalanche_on_60v/final_state.h5",
     },
 }
 

@@ -11,6 +11,7 @@ import math
 import subprocess
 import sys
 from pathlib import Path
+import state_archive
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -95,7 +96,7 @@ def field_map(path: Path) -> dict[int, float]:
     return result
 
 
-def make_seed_state(export: Path, output: Path) -> int:
+def make_seed_state(export: Path, output: Path, mesh_file: Path) -> int:
     names = {
         "psi": "ElectrostaticPotential",
         "phin": "eQuasiFermiPotential",
@@ -119,7 +120,13 @@ def make_seed_state(export: Path, output: Path) -> int:
                 "holes_m3": fields["holes_cm3"][node] * 1.0e6,
             }
         )
-    write_csv(output, rows)
+    mesh = read_json(mesh_file)
+    if len(rows) != len(mesh["nodes"]):
+        raise ValueError("SDevice seed node count differs from the converted mesh")
+    state_archive.write(output, state_archive.rows_to_fields(rows), dict(
+        mode="dd", mesh_sha256=state_archive.mesh_identity(mesh, 1e-6),
+        potential_origin_V=0., source_fields_sha256={
+            name: sha256(find_field(export, name)) for name in names.values()}))
     return len(rows)
 
 
@@ -160,7 +167,8 @@ def prepare(args: argparse.Namespace) -> dict:
         ],
         log=root / "logs" / "convert_mesh",
     )
-    count = make_seed_state(exports / "vbe070", root / "vela" / "sdevice_vbe070_seed.csv")
+    count = make_seed_state(exports / "vbe070", root / "vela" / "sdevice_vbe070_seed.h5",
+                            input_root / "mesh.json")
     metadata = read_json(exports / "mesh" / "metadata.json")
     structure_audit = audit_structure(exports / "mesh")
     if not structure_audit["pass"]:
@@ -205,7 +213,7 @@ def run_vela_config(args: argparse.Namespace, cfg: dict, name: str) -> dict:
 
 def spatial(args: argparse.Namespace) -> dict:
     root = args.artifact_root.resolve()
-    final_state = root / "vela" / "m1_vce300_state.csv"
+    final_state = root / "vela" / "m1_vce300_state.h5"
     if not final_state.is_file():
         raise FileNotFoundError(f"run the Vela collector sweep first: {final_state}")
     cfg = read_json(FIXTURE / "vela" / "configs" / "m1_spatial_vce3.json")
@@ -217,7 +225,7 @@ def spatial(args: argparse.Namespace) -> dict:
         {
             "simulation_type": "newton_solve_from_state",
             "state_file": str(final_state.resolve()),
-            "output_state_file": str((root / "vela" / "m1_spatial_vce3_state.csv").resolve()),
+            "output_state_file": str((root / "vela" / "m1_spatial_vce3_state.h5").resolve()),
             "output_vtk": str((root / "vela" / "m1_spatial_vce3.vtk").resolve()),
         }
     )
@@ -229,7 +237,7 @@ def spatial(args: argparse.Namespace) -> dict:
 
 def vela(args: argparse.Namespace) -> dict:
     root = args.artifact_root.resolve()
-    seed = root / "vela" / "sdevice_vbe070_seed.csv"
+    seed = root / "vela" / "sdevice_vbe070_seed.h5"
     if not seed.is_file():
         raise FileNotFoundError(f"run prepare first: {seed}")
 
@@ -242,7 +250,7 @@ def vela(args: argparse.Namespace) -> dict:
         {
             "simulation_type": "newton_solve_from_state",
             "state_file": str(seed.resolve()),
-            "output_state_file": str((root / "vela" / "m1_vbe070_state.csv").resolve()),
+            "output_state_file": str((root / "vela" / "m1_vbe070_state.h5").resolve()),
         }
     )
     seed_status = run_vela_config(args, base, "m1_seed_relaxation")
@@ -252,8 +260,8 @@ def vela(args: argparse.Namespace) -> dict:
     sweep = read_json(FIXTURE / "vela" / "configs" / "m1_collector_sweep.json")
     patch_paths(sweep, root)
     sweep["output_csv"] = str((root / "vela" / "m1_collector.csv").resolve())
-    sweep["sweep"]["initial_state_file"] = str((root / "vela" / "m1_vbe070_state.csv").resolve())
-    sweep["sweep"]["write_state_file"] = str((root / "vela" / "m1_vce300_state.csv").resolve())
+    sweep["sweep"]["initial_state_file"] = str((root / "vela" / "m1_vbe070_state.h5").resolve())
+    sweep["sweep"]["write_state_file"] = str((root / "vela" / "m1_vce300_state.h5").resolve())
     sweep["sweep"]["diagnostics"]["terminal_balance"]["csv_file"] = str(
         (root / "vela" / "m1_collector_terminal_balance.csv").resolve()
     )

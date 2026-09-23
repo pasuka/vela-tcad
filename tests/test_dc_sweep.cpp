@@ -4,6 +4,9 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "vela/io/DDSolutionCsv.h"
+#include "vela/io/DDSolutionState.h"
+#include "vela/io/StateIdentity.h"
+#include "vela/io/MeshReader.h"
 #include "vela/simulation/DCSweep.h"
 #include "vela/simulation/BoundaryControl.h"
 #include "vela/simulation/DCSweepPredictor.h"
@@ -400,6 +403,116 @@ TEST_CASE("DCSweep prepared inputs preserve fresh-solve results and invalidate b
     REQUIRE(changed.front().totalCurrent == DCSweep().run(config.string()).front().totalCurrent);
 }
 
+TEST_CASE("DCSweep structure reuse defaults on and honors explicit controls",
+          "[dc_sweep][structure_cache]")
+{
+    const auto dir = makeUniqueSweepDir();
+    std::filesystem::create_directories(dir);
+    const ScopedDirectoryCleanup cleanup{dir};
+    const auto mesh = writePNMeshWithInterior(dir);
+    const auto config = dir / "structure.json";
+    const auto profile = dir / "profile.json";
+    auto cfg = baseSweepConfig(dir, mesh, dir / "curve.csv");
+    cfg["solver"].update({{"method", "newton"}, {"line_search", true},
+        {"performance_profiling", {{"enabled", true}, {"json_file", profile.string()}}}});
+    cfg["sweep"].update({{"start", 0.05}, {"stop", 0.05}, {"write_vtk", false}});
+    bool enabled = true;
+    SECTION("omitted option enables reuse") {}
+    SECTION("production option enables reuse") {
+        cfg["solver"]["reuse_jacobian_structure"] = true;
+    }
+    SECTION("production option disables reuse") {
+        cfg["solver"]["reuse_jacobian_structure"] = false;
+        enabled = false;
+    }
+    SECTION("historical explicit opt-out remains effective") {
+        cfg["solver"]["diagnostic_reuse_jacobian_structure"] = false;
+        enabled = false;
+    }
+    SECTION("production opt-out overrides historical opt-in") {
+        cfg["solver"]["reuse_jacobian_structure"] = false;
+        cfg["solver"]["diagnostic_reuse_jacobian_structure"] = true;
+        enabled = false;
+    }
+    SECTION("production opt-in overrides historical opt-out") {
+        cfg["solver"]["reuse_jacobian_structure"] = true;
+        cfg["solver"]["diagnostic_reuse_jacobian_structure"] = false;
+    }
+    const auto counters = [&] {
+        return nlohmann::json::parse(readTextFile(profile)).at("counters");
+    };
+    DCSweep sweep;
+    std::ofstream(config) << cfg.dump(2);
+    REQUIRE(sweep.run(config.string()).front().converged);
+    REQUIRE(counters().value("jacobian.pattern_build_calls", 0) > 0);
+    cfg["sweep"].update({{"start", 0.025}, {"stop", 0.025}});
+    std::ofstream(config) << cfg.dump(2);
+    const auto reused = sweep.run(config.string());
+    REQUIRE(reused.front().converged);
+    const auto counts = counters();
+    REQUIRE(counts.value("dc.prepared_inputs.hits", 0) == 1);
+    REQUIRE(counts.value("jacobian.structure_cache_hits", 0) == (enabled ? 1 : 0));
+    REQUIRE(counts.value("jacobian.pattern_build_calls", 0) == (enabled ? 0 : 1));
+    REQUIRE(counts.value("jacobian.fermi_node_cache_assemblies", 0) == 0);
+    cfg["solver"]["reuse_jacobian_structure"] = false;
+    std::ofstream(config) << cfg.dump(2);
+    const auto fresh = DCSweep().run(config.string());
+    REQUIRE(fresh.front().converged);
+    REQUIRE(reused.front().totalCurrent == fresh.front().totalCurrent);
+    REQUIRE(reused.front().iterations == fresh.front().iterations);
+}
+
+TEST_CASE("DCSweep structure reuse rebuilds after input changes and context reset",
+          "[dc_sweep][structure_cache]")
+{
+    const auto dir = makeUniqueSweepDir();
+    std::filesystem::create_directories(dir);
+    const ScopedDirectoryCleanup cleanup{dir};
+    const auto mesh = writePNMeshWithInterior(dir);
+    const auto config = dir / "structure.json";
+    const auto profile = dir / "profile.json";
+    auto cfg = baseSweepConfig(dir, mesh, dir / "curve.csv");
+    cfg["solver"].update({{"method", "newton"}, {"line_search", true},
+        {"performance_profiling", {{"enabled", true}, {"json_file", profile.string()}}}});
+    cfg["sweep"].update({{"start", 0.05}, {"stop", 0.05}, {"write_vtk", false}});
+    DCSweep sweep;
+    const auto solve = [&] {
+        std::ofstream(config) << cfg.dump(2);
+        const auto points = sweep.run(config.string());
+        REQUIRE(points.front().converged);
+        return nlohmann::json::parse(readTextFile(profile)).at("counters");
+    };
+    REQUIRE(solve().value("jacobian.pattern_build_calls", 0) == 1);
+    REQUIRE(solve().value("jacobian.structure_cache_hits", 0) == 1);
+    SECTION("changed material preparation invalidates the shared structure") {
+        cfg["doping"][0]["donors"] = 2.0e23;
+    }
+    SECTION("changed mesh bytes invalidate the shared structure") {
+        auto changed = nlohmann::json::parse(readTextFile(mesh));
+        for (auto& node : changed["nodes"])
+            node["x"] = node["x"].get<double>() * 1.1;
+        std::ofstream(mesh) << changed.dump(2);
+    }
+    SECTION("explicit context reset invalidates the shared structure") {
+        sweep.clearLinearContext();
+    }
+    SECTION("disabling then enabling cannot resurrect an old entry") {
+        cfg["solver"]["reuse_jacobian_structure"] = false;
+        REQUIRE(solve().value("jacobian.structure_cache_hits", 0) == 0);
+        cfg["solver"].erase("reuse_jacobian_structure");
+    }
+    const auto rebuilt = solve();
+    REQUIRE(rebuilt.value("jacobian.pattern_build_calls", 0) == 1);
+    REQUIRE(rebuilt.value("jacobian.structure_cache_misses", 0) == 1);
+    REQUIRE(rebuilt.value("jacobian.structure_cache_hits", 0) == 0);
+    REQUIRE(solve().value("jacobian.structure_cache_hits", 0) == 1);
+    // A different scan object owns a separate cache even with identical inputs.
+    REQUIRE(DCSweep().run(config.string()).front().converged);
+    const auto isolated = nlohmann::json::parse(readTextFile(profile)).at("counters");
+    REQUIRE(isolated.value("jacobian.structure_cache_hits", 0) == 0);
+    REQUIRE(isolated.value("jacobian.pattern_build_calls", 0) == 1);
+}
+
 TEST_CASE("DCSweep: default runtime log file is generated", "[dc_sweep][runtime_log]")
 {
     const std::filesystem::path dir = makeUniqueSweepDir();
@@ -479,7 +592,7 @@ TEST_CASE("DCSweep preserves metal-gate flatband while sweeping gate bias",
 
     const std::filesystem::path meshPath = writePNMeshWithInterior(dir);
     const std::filesystem::path csvPath = dir / "metal_gate_sweep.csv";
-    const std::filesystem::path statePath = dir / "metal_gate_sweep_state.csv";
+    const std::filesystem::path statePath = dir / "metal_gate_sweep_state.h5";
     nlohmann::json cfg = baseSweepConfig(dir, meshPath, csvPath);
     cfg["scaling"] = {{"mode", "unit_scaling"}};
     cfg["contacts"] = {
@@ -510,10 +623,23 @@ TEST_CASE("DCSweep preserves metal-gate flatband while sweeping gate bias",
     const DCSweepResult result = sweep.runWithResult(cfgPath.string());
     REQUIRE(result.points.size() == 1);
     REQUIRE(result.points.front().converged);
-    const DDSolution state = readDDSolutionStateCsv(statePath, 5);
+    const DDSolution state = restoreDDSolution(readStateArchive(statePath, 5, stateMeshIdentity(result.mesh, UnitScalingConfig{UnitScalingMode::UnitScaling})), UnitScalingConfig{UnitScalingMode::UnitScaling});
     // psi_gate = applied_bias - flatband_voltage = 0 - (-0.01).
     REQUIRE(state.psi(0) == Catch::Approx(0.01).margin(1.0e-12));
     REQUIRE(state.psi(3) == Catch::Approx(0.01).margin(1.0e-12));
+}
+
+namespace {
+StateArchive readTestArchive(const std::filesystem::path& path, const DeviceMesh& mesh,
+                             UnitScalingConfig scaling = UnitScalingConfig{}) {
+    return readStateArchive(path, mesh.numNodes(), stateMeshIdentity(mesh, scaling));
+}
+void encodeSyntheticSeed(const std::filesystem::path& path, const std::filesystem::path& meshPath) {
+    const auto mesh = JsonMeshReader{}.read(meshPath.string());
+    const auto state = readDDSolutionStateCsv(path, mesh.numNodes());
+    writeStateArchive(path, archiveDDSolution(state, {{"mode","dd"},
+        {"mesh_sha256",stateMeshIdentity(mesh)},{"potential_origin_V",0.}}));
+}
 }
 
 TEST_CASE("DCSweep frozen-state mode preserves the supplied diagnostic state",
@@ -525,8 +651,8 @@ TEST_CASE("DCSweep frozen-state mode preserves the supplied diagnostic state",
 
     const std::filesystem::path meshPath = writePNMesh(dir);
     const std::filesystem::path csvPath = dir / "frozen_state.csv";
-    const std::filesystem::path initialStatePath = dir / "frozen_state_initial.csv";
-    const std::filesystem::path outputStatePath = dir / "frozen_state_output.csv";
+    const std::filesystem::path initialStatePath = dir / "frozen_state_initial.h5";
+    const std::filesystem::path outputStatePath = dir / "frozen_state_output.h5";
     {
         std::ofstream state(initialStatePath);
         state << "node_id,psi,phin,phip,electrons_m3,holes_m3\n";
@@ -535,6 +661,7 @@ TEST_CASE("DCSweep frozen-state mode preserves the supplied diagnostic state",
         state << "2,0.33,0,0,1e10,1e10\n";
         state << "3,0.44,0,0,1e10,1e10\n";
     }
+    encodeSyntheticSeed(initialStatePath,meshPath);
     const std::filesystem::path cfgPath = writeSweepConfig(
         dir,
         meshPath,
@@ -561,7 +688,7 @@ TEST_CASE("DCSweep frozen-state mode preserves the supplied diagnostic state",
     REQUIRE(result.points.front().handoffStage == "diagnostic_state_replay");
     REQUIRE(result.points.front().iterations == 0);
     REQUIRE(result.points.front().totalCurrent == Catch::Approx(0.0));
-    const DDSolution replayed = readDDSolutionStateCsv(outputStatePath, 4);
+    const DDSolution replayed = restoreDDSolution(readTestArchive(outputStatePath,result.mesh));
     REQUIRE(replayed.psi(0) == Catch::Approx(0.11));
     REQUIRE(replayed.psi(1) == Catch::Approx(0.22));
     REQUIRE(replayed.psi(2) == Catch::Approx(0.33));
@@ -655,7 +782,7 @@ TEST_CASE("DCSweep frozen-state replay can explicitly compute terminal current",
     std::filesystem::create_directories(dir);
     const ScopedDirectoryCleanup cleanup{dir};
     const std::filesystem::path meshPath = writePNMesh(dir);
-    const std::filesystem::path statePath = dir / "current_state.csv";
+    const std::filesystem::path statePath = dir / "current_state.h5";
     const std::filesystem::path csvPath = dir / "current.csv";
     {
         std::ofstream state(statePath);
@@ -665,6 +792,7 @@ TEST_CASE("DCSweep frozen-state replay can explicitly compute terminal current",
         state << "2,0.0,0.0,0.0,1e16,1e20\n";
         state << "3,0.0,0.0,0.0,1e16,1e20\n";
     }
+    encodeSyntheticSeed(statePath,meshPath);
     const std::filesystem::path cfgPath = writeSweepConfig(
         dir, meshPath, csvPath,
         {{"start", 0.0}, {"stop", 0.0}, {"step", 0.1},
@@ -846,7 +974,7 @@ TEST_CASE("DCSweep: coupled external resistor closes device and circuit residual
     std::filesystem::create_directories(dir);
     const auto meshPath = writePNMeshMicrometers(dir);
     const auto csvPath = dir / "coupled_external_resistor.csv";
-    const auto restartPath = dir / "coupled_external_resistor_state.csv";
+    const auto restartPath = dir / "coupled_external_resistor_state.h5";
     const auto cfgPath = writeUnitScalingSweepConfig(
         dir,
         meshPath,
@@ -2770,13 +2898,14 @@ TEST_CASE("DCSweep: Newton history diagnostic writes accepted iteration block re
     const auto historyPath = dir / "newton_history_iterations.csv";
     const auto attemptsPath = dir / "newton_attempts.csv";
     const auto iterationsPath = dir / "newton_iterations.csv";
-    const auto initialStatePath = dir / "newton_history_initial_state.csv";
+    const auto initialStatePath = dir / "newton_history_initial_state.h5";
     {
         std::ofstream state(initialStatePath);
         state << "node_id,psi,phin,phip,electrons_m3,holes_m3\n";
         for (int node = 0; node < 5; ++node)
             state << node << ",0,0,0,1e10,1e10\n";
     }
+    encodeSyntheticSeed(initialStatePath, meshPath);
     const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
         {"start", 0.05},
         {"stop", 0.05},
@@ -3360,7 +3489,7 @@ TEST_CASE("DCSweep: contact current QF floor reporting uses initial edge drops o
     const auto floorCsvPath = dir / "floor.csv";
     const auto defaultEdgesPath = dir / "default_edges.csv";
     const auto floorEdgesPath = dir / "floor_edges.csv";
-    const auto initialStatePath = dir / "initial_state.csv";
+    const auto initialStatePath = dir / "initial_state.h5";
     {
         std::ofstream state(initialStatePath);
         state << "node_id,psi,phin,phip,electrons_m3,holes_m3\n";
@@ -3370,6 +3499,7 @@ TEST_CASE("DCSweep: contact current QF floor reporting uses initial edge drops o
         state << "3,0,0,-1e-6,1e10,1e23\n";
         state << "4,0,0,0,1e12,1e12\n";
     }
+    encodeSyntheticSeed(initialStatePath, meshPath);
 
     const nlohmann::json commonSweep = {
         {"start", 1.0e-6},
@@ -3507,7 +3637,7 @@ TEST_CASE("DCSweep: contact current reporting policy preserves initial endpoint 
     const auto meshPath = writePNMeshWithInterior(dir);
     const auto csvPath = dir / "reporting_policy.csv";
     const auto edgePath = dir / "reporting_policy_edges.csv";
-    const auto initialStatePath = dir / "initial_state.csv";
+    const auto initialStatePath = dir / "initial_state.h5";
     {
         std::ofstream state(initialStatePath);
         state << "node_id,psi,phin,phip,electrons_m3,holes_m3\n";
@@ -3517,6 +3647,7 @@ TEST_CASE("DCSweep: contact current reporting policy preserves initial endpoint 
         state << "3,0,0,-1e-6,1e10,1e23\n";
         state << "4,0,0,0,1e12,1e12\n";
     }
+    encodeSyntheticSeed(initialStatePath, meshPath);
 
     const nlohmann::json sweepOverrides = {
         {"start", 1.0e-6},
@@ -4077,8 +4208,8 @@ TEST_CASE("DCSweep: persisted stage state restarts into arclength continuation",
     REQUIRE(stageA.points.size() == 2);
     REQUIRE(stageA.points.back().converged);
 
-    const auto restartPath = dir / "states" / "stage_a_bias_m0p020000.csv";
-    const auto secantPreviousPath = dir / "states" / "stage_a_bias_0p000000.csv";
+    const auto restartPath = dir / "states" / "stage_a_bias_m0p020000.h5";
+    const auto secantPreviousPath = dir / "states" / "stage_a_bias_0p000000.h5";
     REQUIRE(std::filesystem::exists(restartPath));
     REQUIRE(std::filesystem::exists(secantPreviousPath));
 
@@ -4163,13 +4294,13 @@ TEST_CASE("DCSweep: explicit bias_points solve only requested biases", "[dc_swee
     REQUIRE(points[2].attemptedStep == Catch::Approx(0.025));
     REQUIRE(points[2].acceptedStep == Catch::Approx(0.025));
     REQUIRE(std::filesystem::exists(
-        dir / "accepted" / "state_bias_0p000000.csv"));
+        dir / "accepted" / "state_bias_0p000000.h5"));
     REQUIRE(std::filesystem::exists(
-        dir / "accepted" / "state_bias_0p125000.csv"));
+        dir / "accepted" / "state_bias_0p125000.h5"));
     REQUIRE(std::filesystem::exists(
-        dir / "accepted" / "state_bias_0p375000.csv"));
+        dir / "accepted" / "state_bias_0p375000.h5"));
     REQUIRE(std::filesystem::exists(
-        dir / "accepted" / "state_bias_0p400000.csv"));
+        dir / "accepted" / "state_bias_0p400000.h5"));
 }
 
 TEST_CASE("DCSweep: write_state_file stores latest converged restart state", "[dc_sweep]")
@@ -4179,7 +4310,7 @@ TEST_CASE("DCSweep: write_state_file stores latest converged restart state", "[d
     std::filesystem::create_directories(dir);
     const auto meshPath = writePNMesh(dir);
     const auto csvPath = dir / "state_writer.csv";
-    const auto statePath = dir / "latest_state.csv";
+    const auto statePath = dir / "latest_state.h5";
     const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
         {"start", 0.0},
         {"stop", 0.25},
@@ -4193,15 +4324,12 @@ TEST_CASE("DCSweep: write_state_file stores latest converged restart state", "[d
 
     REQUIRE(result.points.size() == 2);
     REQUIRE(std::filesystem::exists(statePath));
-    const auto rows = readCsvRows(statePath);
-    REQUIRE(rows.size() == result.mesh.numNodes() + 1);
-    REQUIRE(rows.front() == std::vector<std::string>{
-        "node_id", "psi", "phin", "phip", "electrons_m3", "holes_m3"});
-    for (std::size_t row = 1; row < rows.size(); ++row) {
-        REQUIRE(rows[row].size() == 6);
-        REQUIRE(std::stoul(rows[row][0]) == row - 1);
-        for (std::size_t column = 1; column < rows[row].size(); ++column)
-            REQUIRE(std::isfinite(std::stod(rows[row][column])));
+    const auto archive = readTestArchive(statePath,result.mesh);
+    REQUIRE(archive.nodeCount == result.mesh.numNodes());
+    for (const auto* name : {"psi","phin","phip","electrons_m3","holes_m3"}) {
+        REQUIRE(archive.fields.contains(name));
+        REQUIRE(archive.fields.at(name).size() == result.mesh.numNodes());
+        for (double value : archive.fields.at(name)) REQUIRE(std::isfinite(value));
     }
 }
 
@@ -4360,9 +4488,9 @@ TEST_CASE("DCSweep: write_state_every_point_prefix stores accepted states", "[dc
     const DCSweepResult result = sweep.runWithResult(cfgPath.string());
 
     REQUIRE(result.points.size() == 3);
-    REQUIRE(std::filesystem::exists(dir / "states" / "bv_state_bias_0p000000.csv"));
-    REQUIRE(std::filesystem::exists(dir / "states" / "bv_state_bias_m0p050000.csv"));
-    REQUIRE(std::filesystem::exists(dir / "states" / "bv_state_bias_m0p100000.csv"));
+    REQUIRE(std::filesystem::exists(dir / "states" / "bv_state_bias_0p000000.h5"));
+    REQUIRE(std::filesystem::exists(dir / "states" / "bv_state_bias_m0p050000.h5"));
+    REQUIRE(std::filesystem::exists(dir / "states" / "bv_state_bias_m0p100000.h5"));
 }
 
 TEST_CASE("DCSweep: initial_state_file validates restart node coverage", "[dc_sweep]")
@@ -4372,12 +4500,15 @@ TEST_CASE("DCSweep: initial_state_file validates restart node coverage", "[dc_sw
     std::filesystem::create_directories(dir);
     const auto meshPath = writePNMesh(dir);
     const auto csvPath = dir / "bad_restart.csv";
-    const auto statePath = dir / "bad_state.csv";
-    {
-        std::ofstream state(statePath);
-        state << "node_id,psi,phin,phip,electrons_m3,holes_m3\n";
-        state << "0,0,0,0,1e10,1e10\n";
-    }
+    const auto statePath = dir / "bad_state.h5";
+    const auto mesh = JsonMeshReader{}.read(meshPath.string());
+    StateArchive incomplete;
+    incomplete.nodeCount = 1;
+    incomplete.metadata = {{"mode","dd"}, {"mesh_sha256",stateMeshIdentity(mesh)},
+                           {"potential_origin_V",0.}};
+    for (const auto* field : {"psi", "phin", "phip", "electrons_m3", "holes_m3"})
+        incomplete.fields[field] = {0.};
+    writeStateArchive(statePath, incomplete);
     const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
         {"start", 0.0},
         {"stop", 0.0},
@@ -4389,7 +4520,7 @@ TEST_CASE("DCSweep: initial_state_file validates restart node coverage", "[dc_sw
     DCSweep sweep;
     REQUIRE_THROWS_WITH(
         sweep.run(cfgPath.string()),
-        Catch::Matchers::ContainsSubstring("DCSweep: initial_state_file missing row for node id 1"));
+        Catch::Matchers::ContainsSubstring("node count mismatch"));
 }
 
 TEST_CASE("DCSweep: poisson_block initialization writes runtime artifacts", "[dc_sweep]")
@@ -4400,7 +4531,7 @@ TEST_CASE("DCSweep: poisson_block initialization writes runtime artifacts", "[dc
     const auto meshPath = writePNMeshWithInterior(dir);
     const auto csvPath = dir / "poisson_block_init.csv";
     const auto initDiagPath = dir / "init.csv";
-    const auto initStatePath = dir / "init_state.csv";
+    const auto initStatePath = dir / "init_state.h5";
     const auto cfgPath = writeSweepConfig(dir, meshPath, csvPath, {
         {"start", 0.01},
         {"stop", 0.01},
@@ -4409,7 +4540,7 @@ TEST_CASE("DCSweep: poisson_block initialization writes runtime artifacts", "[dc
         {"initialization", {
             {"mode", "poisson_block"},
             {"diagnostic_csv", "init.csv"},
-            {"write_state_file", "init_state.csv"}
+            {"write_state_file", "init_state.h5"}
         }}
     }, {
         {"method", "newton"}
@@ -4467,7 +4598,7 @@ TEST_CASE("DCSweep: poisson_block initialization rejects invalid parser combinat
             {"initialization", {
                 {"mode", "poisson_block"},
                 {"diagnostic_csv", "init.csv"},
-                {"write_state_file", "init_state.csv"}
+                {"write_state_file", "init_state.h5"}
             }}
         });
 
@@ -4488,7 +4619,7 @@ TEST_CASE("DCSweep: poisson_block initialization rejects invalid parser combinat
             {"initialization", {
                 {"mode", "bad_mode"},
                 {"diagnostic_csv", "init.csv"},
-                {"write_state_file", "init_state.csv"}
+                {"write_state_file", "init_state.h5"}
             }}
         });
 
@@ -5678,12 +5809,12 @@ TEST_CASE("DCSweep: nonlinear trace records rejected attempts before determinist
         REQUIRE(std::filesystem::exists(row.at(rejectedBestStateCol)));
         REQUIRE_FALSE(row.at(bestIterationCol).empty());
         REQUIRE(std::isfinite(std::stod(row.at(bestResidualCol))));
-        REQUIRE(readTextFile(row.at(rejectedParentStateCol)) ==
-                readTextFile(row.at(rejectedInitialStateCol)));
+        REQUIRE(readTestArchive(row.at(rejectedParentStateCol), first.mesh).fields ==
+                readTestArchive(row.at(rejectedInitialStateCol), first.mesh).fields);
         if (firstRejectedAttemptId.empty()) {
             firstRejectedAttemptId = row.at(attemptIdCol);
-            REQUIRE(readTextFile(row.at(rejectedFinalStateCol)) !=
-                    readTextFile(row.at(rejectedInitialStateCol)));
+            REQUIRE(readTestArchive(row.at(rejectedFinalStateCol), first.mesh).fields !=
+                    readTestArchive(row.at(rejectedInitialStateCol), first.mesh).fields);
         }
         ++rejectedBeforeSuccess;
     }
@@ -5726,8 +5857,8 @@ TEST_CASE("DCSweep: nonlinear trace records rejected attempts before determinist
         REQUIRE(second.points.at(i).totalCurrent ==
                 Catch::Approx(withoutDiagnostics.points.at(i).totalCurrent));
     }
-    REQUIRE(readTextFile(dir / "trace_second" / "state_bias_0p062500.csv") ==
-            readTextFile(dir / "trace_disabled" / "state_bias_0p062500.csv"));
+    REQUIRE(readTestArchive(dir / "trace_second" / "state_bias_0p062500.h5",second.mesh).fields ==
+            readTestArchive(dir / "trace_disabled" / "state_bias_0p062500.h5",withoutDiagnostics.mesh).fields);
 }
 
 TEST_CASE("DCSweep: sealed PN2D BV transition preserves max-iteration failure trace",
@@ -5815,7 +5946,7 @@ TEST_CASE("DCSweep: sealed PN2D BV transition preserves max-iteration failure tr
             {"stop", targetBias},
             {"step", targetBias - parentBias},
             {"initial_state_file",
-             (fixture / "parent_state_m19p6921875V.csv").string()},
+             (fixture / "parent_state_m19p6921875V.h5").string()},
             {"write_vtk", false},
             {"stop_on_failure", true},
             {"diagnostics", {
@@ -6254,4 +6385,18 @@ TEST_CASE("DCSweep: hybrid strict policy rejects Newton failure",
     const std::size_t newtonFailureColumn = csvColumnIndex(rows.front(), "newton_failure_class");
     REQUIRE(rows.at(1).at(failureReasonColumn) == "newton_non_convergence");
     REQUIRE(rows.at(1).at(newtonFailureColumn).empty());
+}
+
+
+TEST_CASE("Production restart rejects legacy extensions and missing context", "[dc_sweep][restart]") {
+    const auto dir=makeUniqueSweepDir(); const ScopedDirectoryCleanup cleanup{dir};
+    std::filesystem::create_directories(dir);
+    DDSolution s; s.psi=s.phin=s.phip=VectorXd::Zero(2);s.n=s.p=VectorXd::Ones(2);
+    REQUIRE_THROWS(writeDDSolutionState(dir/"state.h5",s));
+    DDStateArchiveScope scope({{"mode","dd"},{"mesh_sha256",std::string(64,'a')},{"potential_origin_V",0.}});
+    REQUIRE_THROWS(writeDDSolutionState(dir/"state.csv",s));
+    REQUIRE_THROWS(writeDDSolutionState(dir/"state.vds",s));
+    writeDDSolutionState(dir/"state.h5",s);
+    REQUIRE(readDDSolutionState(dir/"state.h5",2).psi.isZero());
+    REQUIRE_THROWS(readDDSolutionState(dir/"state.h5",3));
 }

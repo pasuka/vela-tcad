@@ -57,6 +57,9 @@ def write_csv(path: Path, rows: list[dict]) -> None:
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
+    if path.suffix == ".h5":
+        from state_archive import read_rows
+        return read_rows(path)
     with path.open(newline="", encoding="utf-8") as stream:
         return list(csv.DictReader(stream))
 
@@ -180,7 +183,7 @@ def recombination_summary(path: Path) -> dict:
 
 def probe_point(runner: Path, output: Path, index: int, bias: float) -> tuple[dict, dict]:
     token = f"vce_{index:03d}"
-    state = output / "states" / f"{token}.csv"
+    state = output / "states" / f"{token}.h5"
     state_rows = read_csv(state)
     step_results = {}
     for label, limit in (("raw", 0.0), ("capped", 0.1)):
@@ -207,16 +210,16 @@ def main() -> int:
         (output / name).mkdir(parents=True, exist_ok=True)
     biases = [float(Decimal(index) / Decimal(10)) for index in range(31)]
     records, terminal_rows = [], []
-    previous = BUILD_ROOT / "vela_wp3_wp5" / "m1_vbe070_state.csv"
+    previous = BUILD_ROOT / "vela_wp3_wp5" / "m1_vbe070_state.h5"
     previous_bias = 0.0
     for index, bias in enumerate(biases):
         token = f"vce_{index:03d}"
-        state, vtk = output / "states" / f"{token}.csv", output / "fields" / f"{token}.vtk"
+        state, vtk = output / "states" / f"{token}.h5", output / "fields" / f"{token}.vtk"
         candidate = previous
         if index:
-            candidate = output / "states" / f"{token}_continuation.csv"
+            candidate = output / "states" / f"{token}_continuation.h5"
             cfg = common_config(); cfg["simulation_type"] = "dc_sweep"; set_collector_bias(cfg, previous_bias)
-            cfg["output_csv"] = absolute(output / "logs" / f"{token}_continuation.csv")
+            cfg["output_csv"] = absolute(output / "logs" / f"{token}_continuation.h5")
             cfg["sweep"] = {"mode": "iv", "contact": "collector", "current_contact": "collector", "start": previous_bias, "stop": bias, "step": 0.05, "initial_step": 0.05, "min_step": 1e-8, "max_step": 0.05, "growth_factor": 1.0, "shrink_factor": 0.5, "max_retries": 20, "write_vtk": False, "initial_state_file": absolute(previous), "write_state_file": absolute(candidate)}
             run(args.runner, cfg, output / "configs" / f"{token}_continuation.json", output / "logs" / f"{token}_continuation_run")
             if not candidate.is_file(): raise RuntimeError(f"continuation did not produce {candidate}")

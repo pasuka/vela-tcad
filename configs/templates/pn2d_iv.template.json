@@ -146,7 +146,7 @@
       "type": "number"
     },
     "state_output": {
-      "default": "pn2d_iv_last_state.csv",
+      "default": "pn2d_iv_last_state.h5",
       "path": true,
       "type": "string"
     },

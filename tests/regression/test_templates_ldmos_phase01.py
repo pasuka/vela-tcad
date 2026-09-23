@@ -7,6 +7,7 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 
@@ -267,7 +268,8 @@ class TemplatesLdmosRunnerTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_stages("unknown")
 
-    def test_dry_run_writes_manifests_governance_contracts_and_reports(self) -> None:
+    @patch("run_templates_ldmos_sentaurus_vm.git_commit", return_value="0" * 40)
+    def test_dry_run_writes_manifests_governance_contracts_and_reports(self, _commit) -> None:
         with tempfile.TemporaryDirectory(prefix="templates_ldmos_dry_") as directory:
             root = Path(directory)
             source = root / "source"

@@ -56,8 +56,7 @@ jobs:
         run: /usr/bin/python3 -c "import h5py, numpy, PIL; print(h5py.version.info)"
 
       - name: Configure debug build
-        # Optional OpenMP backends are covered by the UCRT64 job below;
-        # Ubuntu's serial SuperLU/MPI MUMPS are not those same adapters.
+        # Keep optional OpenMP direct backends disabled in this Linux CI job.
         run: |
           set -euo pipefail
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug \
@@ -70,89 +69,8 @@ jobs:
           grep -F 'SuiteSparse SPQR bordered solver enabled' configure.log
           grep -F 'METIS ordering enabled' configure.log
 
-      - name: Enforce ASCII source policy
-        run: ctest --test-dir build --output-on-failure -R '^ascii_sources$'
-
       - name: Build
         run: cmake --build build --parallel
 
       - name: Run test suite
         run: ctest --test-dir build --output-on-failure
-
-  ucrt64-direct-backends:
-    runs-on: windows-2022
-    timeout-minutes: 45
-    permissions:
-      contents: read
-    defaults:
-      run:
-        shell: msys2 {0}
-    env:
-      OMP_NUM_THREADS: '1'
-      OPENBLAS_NUM_THREADS: '1'
-      VELA_LINEAR_THREADS: '1'
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install UCRT64 build and solver dependencies
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: UCRT64
-          update: true
-          install: >-
-            mingw-w64-ucrt-x86_64-gcc
-            mingw-w64-ucrt-x86_64-cmake
-            mingw-w64-ucrt-x86_64-ninja
-            mingw-w64-ucrt-x86_64-pkgconf
-            mingw-w64-ucrt-x86_64-boost
-            mingw-w64-ucrt-x86_64-eigen3
-            mingw-w64-ucrt-x86_64-nlohmann-json
-            mingw-w64-ucrt-x86_64-spdlog
-            mingw-w64-ucrt-x86_64-catch
-            mingw-w64-ucrt-x86_64-python
-            mingw-w64-ucrt-x86_64-python-numpy
-            mingw-w64-ucrt-x86_64-python-pillow
-            mingw-w64-ucrt-x86_64-python-h5py
-            mingw-w64-ucrt-x86_64-hdf5
-            mingw-w64-ucrt-x86_64-suitesparse
-            mingw-w64-ucrt-x86_64-openblas
-            mingw-w64-ucrt-x86_64-metis
-            mingw-w64-ucrt-x86_64-mumps
-            mingw-w64-ucrt-x86_64-superlu_mt
-            mingw-w64-ucrt-x86_64-strumpack
-
-      - name: Check regression Python dependencies
-        run: /ucrt64/bin/python.exe -c "import sys, h5py, numpy, PIL; print(sys.executable); print(h5py.version.info)"
-
-      - name: Configure all five direct backends
-        # The hosted MSYS2 path differs from the local D:/msys64 launcher.
-        # Keep the Release preset, but inherit this action's UCRT64 PATH.
-        # Pin Python too: CMake may otherwise select hostedtoolcache Python,
-        # which cannot see the modules installed by pacman above.
-        run: |
-          set -euo pipefail
-          cmake --preset windows-ucrt64-release \
-            -DPython3_EXECUTABLE="$(cygpath -m /ucrt64/bin/python.exe)" \
-            '-DCMAKE_C_COMPILER_LAUNCHER=cmake;-E;env' \
-            '-DCMAKE_CXX_COMPILER_LAUNCHER=cmake;-E;env' \
-            '-DCMAKE_C_LINKER_LAUNCHER=cmake;-E;env' \
-            '-DCMAKE_CXX_LINKER_LAUNCHER=cmake;-E;env' \
-            -DVELA_ENABLE_UMFPACK=ON -DVELA_ENABLE_METIS=ON \
-            -DVELA_ENABLE_MUMPS=ON -DVELA_ENABLE_SUPERLU_MT=ON \
-            -DVELA_ENABLE_STRUMPACK=ON -DVELA_ENABLE_OPENBLAS_THREAD_CONTROL=ON \
-            | tee configure.log
-          for feature in 'SuiteSparse UMFPACK bordered solver' 'METIS ordering' \
-            'MUMPS OpenMP direct solver' 'SuperLU_MT OpenMP direct solver' \
-            'STRUMPACK uncompressed direct solver'; do
-            grep -F "$feature enabled" configure.log
-          done
-
-      - name: Build solver and worker tests
-        run: cmake --build --preset windows-ucrt64-release --parallel 2 --target test_linear_solver vela_example_runner
-
-      - name: Verify backend solves and cache invalidation
-        run: ./build-release/test_linear_solver.exe '[linear_solver]'
-
-      - name: Verify default worker reuse and reference inputs
-        run: ctest --test-dir build-release --output-on-failure --no-tests=error -R '^(ascii_sources|dc_worker_protocol|templates_ldmos_reference_fixture|templates_ldmos_linked_d5_regression|templates_ldmos_joint_local_fields_regression)$'

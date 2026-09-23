@@ -5,18 +5,38 @@
   "node_doping_file": "../input/doping.csv",
   "materials_file": "../materials_sentaurus2022.json",
   "output_csv": "../../../../build-release/reference_tcad/genius_bjt_sentaurus2022/m1_spatial_vce3.csv",
-  "scaling": {"mode": "unit_scaling"},
-  "doping": [{"region": "R.Silicon", "donors": 5e15, "acceptors": 0.0}],
+  "scaling": {
+    "mode": "unit_scaling"
+  },
+  "doping": [
+    {
+      "region": "R.Silicon",
+      "donors": 5000000000000000.0,
+      "acceptors": 0.0
+    }
+  ],
   "contacts": [
-    {"name": "emitter", "type": "ohmic", "bias": 0.0},
-    {"name": "base", "type": "ohmic", "bias": 0.7},
-    {"name": "collector", "type": "ohmic", "bias": 3.0}
+    {
+      "name": "emitter",
+      "type": "ohmic",
+      "bias": 0.0
+    },
+    {
+      "name": "base",
+      "type": "ohmic",
+      "bias": 0.7
+    },
+    {
+      "name": "collector",
+      "type": "ohmic",
+      "bias": 3.0
+    }
   ],
   "solver": {
     "method": "gummel_newton",
     "max_iter": 80,
-    "reltol": 1e-8,
-    "abstol": 1e-9,
+    "reltol": 1e-08,
+    "abstol": 1e-09,
     "damping_factor": 1.0,
     "damping_psi": 0.2,
     "line_search": true,
@@ -28,12 +48,17 @@
       "model": "masetti",
       "doping_concentration_basis": "total_impurity"
     },
-    "carrier_statistics": {"model": "fermi_dirac"},
+    "carrier_statistics": {
+      "model": "fermi_dirac"
+    },
     "bandgap_narrowing": {
       "model": "old_slotboom",
       "fermi_statistics_correction": true
     },
-    "recombination": ["srh", "auger"],
+    "recombination": [
+      "srh",
+      "auger"
+    ],
     "auger_excess_product": "classical_np",
     "srh_density_coupling": "sentaurus_default",
     "srh_doping_dependence": {
@@ -43,10 +68,22 @@
       "reference_temperature_K": 300.0,
       "electron_temperature_exponent": -1.5,
       "hole_temperature_exponent": -1.5,
-      "electron": {"tau_min_s": 0.0, "tau_max_s": 1e-5, "reference_doping_m3": 1e16, "gamma": 1.0},
-      "hole": {"tau_min_s": 0.0, "tau_max_s": 3e-6, "reference_doping_m3": 1e16, "gamma": 1.0}
+      "electron": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 1e-05,
+        "reference_doping_m3": 1e+16,
+        "gamma": 1.0
+      },
+      "hole": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 3e-06,
+        "reference_doping_m3": 1e+16,
+        "gamma": 1.0
+      }
     },
-    "impact_ionization": {"model": "none"},
+    "impact_ionization": {
+      "model": "none"
+    },
     "handoff": {
       "gummel_max_iter": 20,
       "newton_max_iter": 80,
@@ -59,9 +96,9 @@
       "scale_floor": 1e-30,
       "min_source_scale": 1e-18,
       "min_source_scale_fraction": 0.001,
-      "min_source_global_fraction": 1e-6,
-      "min_carrier_density_m3": 1e16,
-      "min_flux_scale_fraction": 1e-6,
+      "min_source_global_fraction": 1e-06,
+      "min_carrier_density_m3": 1e+16,
+      "min_flux_scale_fraction": 1e-06,
       "min_flux_scale": 0.0,
       "min_newton_max_iter": 200
     },
@@ -71,11 +108,11 @@
       "scale_floor": 1e-30,
       "min_source_scale": 1e-18,
       "min_weight": 1e-12,
-      "max_weight": 1e18
+      "max_weight": 1e+18
     },
     "global_continuity_closure": {
       "mode": "enforce",
-      "tolerance": 1e-6,
+      "tolerance": 1e-06,
       "source_floor": 1e-18
     },
     "diagnostics": true
@@ -88,14 +125,15 @@
     "stop": 3.0,
     "step": 0.1,
     "initial_step": 0.01,
-    "min_step": 1e-8,
+    "min_step": 1e-08,
     "max_step": 0.01,
     "growth_factor": 1.3,
     "shrink_factor": 0.5,
     "max_retries": 20,
     "write_vtk": true,
-    "initial_state_file": "../../../../build-release/reference_tcad/genius_bjt_sentaurus2022/vela_wp3_wp5/m1_vce300_state.csv",
-    "write_state_file": "../../../../build-release/reference_tcad/genius_bjt_sentaurus2022/m1_spatial_vce3_state.csv",
+    "initial_state_file": "../../../../build-release/reference_tcad/genius_bjt_sentaurus2022/vela_wp3_wp5/m1_vce300_state.h5",
+    "write_state_file": "../../../../build-release/reference_tcad/genius_bjt_sentaurus2022/m1_spatial_vce3_state.h5",
     "vtk_prefix": "../../../../build-release/reference_tcad/genius_bjt_sentaurus2022/m1_spatial_vce3"
-  }
+  },
+  "state_format": "hdf5"
 }

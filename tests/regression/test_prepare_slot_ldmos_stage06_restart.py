@@ -12,7 +12,7 @@ from scripts.prepare_slot_ldmos_stage06_restart import (
 BASE = {
     "sweep": {
         "bias_points": [60.0, 1000.0],
-        "initial_state_file": "outputs/stages/05_avalanche_on_60v/final_state.csv",
+        "initial_state_file": "outputs/stages/05_avalanche_on_60v/final_state.h5",
         "external_circuit": {
             "mode": "series_resistor",
             "initial_inner_voltage_V": 38.5209,

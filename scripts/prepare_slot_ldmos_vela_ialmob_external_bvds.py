@@ -77,7 +77,7 @@ def build_case(
     sweep = document["sweep"]
     document["solver"]["handoff"]["gummel_max_iter"] = GUMMEL_MAX_ITER
     sweep["initial_state_file"] = (
-        f"outputs/ialmob_ablation/probe_60v/{case}/final_state.csv"
+        f"outputs/ialmob_ablation/probe_60v/{case}/final_state.h5"
     )
     sweep["external_circuit"]["initial_inner_voltage_V"] = initial_inner_voltage_V
     sweep["external_circuit"]["solver"] = "coupled_newton"

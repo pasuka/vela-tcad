@@ -18,7 +18,7 @@ from typing import Any
 SILICON_REGION = "Silicon_1"
 OXIDE_REGION = "Oxide_1"
 SEED_INNER_V = 0.008374398259206585
-SEED_STATE = "outputs/stages/04_avalanche_activation_1v/final_state.csv"
+SEED_STATE = "outputs/stages/04_avalanche_activation_1v/final_state.h5"
 OUTPUT_ROOT = "outputs/ialmob_ablation/corrected_low_voltage_newton_20260823"
 EXTENSION_ROOT = "outputs/ialmob_ablation/corrected_accelerated_20260823"
 DENSE_EXTENSION_ROOT = "outputs/ialmob_ablation/corrected_dense_low_voltage_20260823"
@@ -106,7 +106,7 @@ def build_bootstrap_case(base: dict[str, Any], case: str) -> dict[str, Any]:
     sweep["start"] = 0.01
     sweep["stop"] = 0.01
     sweep["initial_state_file"] = SEED_STATE
-    sweep["write_state_file"] = f"{output}/final_state.csv"
+    sweep["write_state_file"] = f"{output}/final_state.h5"
     sweep["write_state_every_point_prefix"] = f"{output}/states/state"
     sweep["write_vtk"] = False
     sweep["continuation"] = {"arclength": {"enabled": False}}
@@ -185,8 +185,8 @@ def build_case(
     sweep["max_step"] = 0.5
     sweep["max_retries"] = 26
     sweep["stop_on_failure"] = True
-    sweep["initial_state_file"] = f"{OUTPUT_ROOT}/{case}_bootstrap/final_state.csv"
-    sweep["write_state_file"] = f"{output}/final_state.csv"
+    sweep["initial_state_file"] = f"{OUTPUT_ROOT}/{case}_bootstrap/final_state.h5"
+    sweep["write_state_file"] = f"{output}/final_state.h5"
     sweep["write_state_every_point_prefix"] = f"{output}/states/state"
     sweep["write_vtk"] = False
     sweep["continuation"] = {"arclength": {"enabled": False}}
@@ -326,7 +326,7 @@ def prepare_accelerated_extension(
     documents: dict[str, dict[str, Any]] = {}
     for case in ("ialmob_off", "ialmob_on"):
         seed = (
-            bundle / OUTPUT_ROOT / case / "states" / "state_bias_0p050000.csv"
+            bundle / OUTPUT_ROOT / case / "states" / "state_bias_0p050000.h5"
         )
         if not seed.is_file():
             raise PreparationError(f"verified 50 mV extension seed is missing: {seed}")
@@ -348,7 +348,7 @@ def prepare_accelerated_extension(
         sweep["start"] = points[0]
         sweep["stop"] = points[-1]
         sweep["initial_state_file"] = (
-            f"{OUTPUT_ROOT}/{case}/states/state_bias_0p050000.csv"
+            f"{OUTPUT_ROOT}/{case}/states/state_bias_0p050000.h5"
         )
         sweep["initial_step"] = 0.05
         sweep["growth_factor"] = 1.8
@@ -415,7 +415,7 @@ def prepare_dense_low_voltage_extension(
 
     documents: dict[str, dict[str, Any]] = {}
     for case in ("ialmob_off", "ialmob_on"):
-        seed = bundle / OUTPUT_ROOT / case / "states/state_bias_0p050000.csv"
+        seed = bundle / OUTPUT_ROOT / case / "states/state_bias_0p050000.h5"
         if not seed.is_file():
             raise PreparationError(f"verified 50 mV dense-extension seed is missing: {seed}")
         document = build_case(base, case, stop_voltage_V)
@@ -444,7 +444,7 @@ def prepare_dense_low_voltage_extension(
         sweep["start"] = points[0]
         sweep["stop"] = points[-1]
         sweep["initial_state_file"] = (
-            f"{OUTPUT_ROOT}/{case}/states/state_bias_0p050000.csv"
+            f"{OUTPUT_ROOT}/{case}/states/state_bias_0p050000.h5"
         )
         sweep["initial_step"] = step_voltage_V
         sweep["growth_factor"] = 1.0
@@ -502,7 +502,7 @@ def prepare_post_dense_extension(
     for case in ("ialmob_off", "ialmob_on"):
         seed = (
             bundle / DENSE_EXTENSION_ROOT / case /
-            "states/state_bias_0p100000.csv"
+            "states/state_bias_0p100000.h5"
         )
         if not seed.is_file():
             raise PreparationError(f"converged 0.1 V post-dense seed is missing: {seed}")
@@ -532,7 +532,7 @@ def prepare_post_dense_extension(
         sweep["start"] = points[0]
         sweep["stop"] = points[-1]
         sweep["initial_state_file"] = (
-            f"{DENSE_EXTENSION_ROOT}/{case}/states/state_bias_0p100000.csv"
+            f"{DENSE_EXTENSION_ROOT}/{case}/states/state_bias_0p100000.h5"
         )
         sweep["initial_step"] = 0.02
         sweep["growth_factor"] = 1.5
@@ -581,7 +581,7 @@ def prepare_point_two_recovery(bundle: Path) -> dict[str, Any]:
     for case in ("ialmob_off", "ialmob_on"):
         seed = (
             bundle / POST_DENSE_ROOT / case /
-            "states/state_bias_0p150000.csv"
+            "states/state_bias_0p150000.h5"
         )
         if not seed.is_file():
             raise PreparationError(
@@ -614,7 +614,7 @@ def prepare_point_two_recovery(bundle: Path) -> dict[str, Any]:
         sweep["start"] = points[0]
         sweep["stop"] = points[-1]
         sweep["initial_state_file"] = (
-            f"{POST_DENSE_ROOT}/{case}/states/state_bias_0p150000.csv"
+            f"{POST_DENSE_ROOT}/{case}/states/state_bias_0p150000.h5"
         )
         sweep["initial_step"] = 0.01
         sweep["growth_factor"] = 1.0
@@ -660,7 +660,7 @@ def prepare_one_volt_extension(bundle: Path) -> dict[str, Any]:
     for case in ("ialmob_off", "ialmob_on"):
         seed = (
             bundle / POINT_TWO_RECOVERY_ROOT / case /
-            "states/state_bias_0p200000.csv"
+            "states/state_bias_0p200000.h5"
         )
         if not seed.is_file():
             raise PreparationError(
@@ -693,7 +693,7 @@ def prepare_one_volt_extension(bundle: Path) -> dict[str, Any]:
         sweep["start"] = points[0]
         sweep["stop"] = points[-1]
         sweep["initial_state_file"] = (
-            f"{POINT_TWO_RECOVERY_ROOT}/{case}/states/state_bias_0p200000.csv"
+            f"{POINT_TWO_RECOVERY_ROOT}/{case}/states/state_bias_0p200000.h5"
         )
         sweep["initial_step"] = 0.05
         sweep["growth_factor"] = 1.0
@@ -741,7 +741,7 @@ def prepare_high_voltage_extension(bundle: Path) -> dict[str, Any]:
     for case in ("ialmob_off", "ialmob_on"):
         seed = (
             bundle / ONE_VOLT_EXTENSION_ROOT / case /
-            "states/state_bias_1p000000.csv"
+            "states/state_bias_1p000000.h5"
         )
         if not seed.is_file():
             raise PreparationError(
@@ -776,7 +776,7 @@ def prepare_high_voltage_extension(bundle: Path) -> dict[str, Any]:
         sweep["start"] = points[0]
         sweep["stop"] = points[-1]
         sweep["initial_state_file"] = (
-            f"{ONE_VOLT_EXTENSION_ROOT}/{case}/states/state_bias_1p000000.csv"
+            f"{ONE_VOLT_EXTENSION_ROOT}/{case}/states/state_bias_1p000000.h5"
         )
         sweep["initial_step"] = 0.05
         sweep["growth_factor"] = 1.25

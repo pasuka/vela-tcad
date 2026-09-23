@@ -23,7 +23,7 @@ BASE = {
         "start": 10.0,
         "stop": 60.0,
         "bias_points": [10.0, 60.0],
-        "initial_state_file": "outputs/stages/04/final_state.csv",
+        "initial_state_file": "outputs/stages/04/final_state.h5",
         "external_circuit": {"mode": "series_resistor"},
         "boundary_control": {"resume": True},
     },

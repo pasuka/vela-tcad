@@ -1,6 +1,9 @@
 #include "vela/simulation/ElectrothermalSimulation.h"
 #include "vela/solver/ElectrothermalStepControl.h"
 #include "vela/solver/ElectrothermalLocalPrediction.h"
+#include "vela/io/ElectrothermalState.h"
+#include "vela/io/StateIdentity.h"
+#include "vela/io/MeshReader.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>
@@ -135,6 +138,26 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
     auto input=read(inputPath);
     input["mesh_file"]=resolve(inputPath.parent_path(),input.at("mesh_file")).string();
     const auto mesh=read(input.at("mesh_file").get<std::string>());
+    const auto identity=stateMeshIdentity(JsonMeshReader{}.read(input.at("mesh_file").get<std::string>()),
+        input.value("coordinate_to_metres",1.));
+    const auto nodeCount=mesh.at("nodes").size();
+    const double stateOrigin=input.value("potential_origin_V",0.);
+    const auto readState=[&](const fs::path& p) {
+        return unpackElectrothermalRecord(p,read(p),nodeCount,identity,stateOrigin);
+    };
+    input=unpackElectrothermalRecord(inputPath,input,nodeCount,identity,stateOrigin);
+    auto sourceInput=input;
+    for(const auto* key:stateKeys) sourceInput.erase(key);
+    sourceInput.erase("temperature_K");
+    const json archiveMetadata={{"mode","electrothermal"},{"mesh_sha256",identity},
+        {"input_file_sha256",stateInputProvenance(sourceInput,inputPath.parent_path())},
+        {"potential_origin_V",stateOrigin},{"source_config_sha256",stateSha256(sourceInput.dump())}};
+    const auto saveState=[&](const fs::path& p,const json& value,const json& bias=json::object()) {
+        auto metadata=archiveMetadata;
+        metadata["bias"]=bias;
+        if(value.contains("boundaries")) metadata["boundary_values_sha256"]=stateSha256(value.at("boundaries").dump());
+        save(p,packElectrothermalRecord(p,value,metadata));
+    };
     const auto control=deck.at("sweep");
     const auto biases=control.at("bias_points_V").get<std::vector<double>>();
     const double initial=control.value("initial_step_V",.1),minimum=control.value("minimum_step_V",1e-4),maximum=control.value("maximum_step_V",4./3.);
@@ -175,17 +198,24 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
     json ledger,state=input; double current=0.,step=initial;std::size_t index=0;
     if(deck.value("resume",false)) {
         ledger=read(root/"ledger.json");
-        if(read(root/"input_snapshot.json")!=input || read(root/"mesh_snapshot.json")!=mesh || ledger.at("sweep")!=control ||
-           ledger.value("initialization",json::object())!=initialization)
+        if(readState(root/"input_snapshot.json")!=input || read(root/"mesh_snapshot.json")!=mesh || ledger.at("sweep")!=control ||
+           ledger.value("initialization",json::object())!=initialization ||
+           ledger.at("input_file_sha256")!=archiveMetadata.at("input_file_sha256"))
             throw std::invalid_argument("Restart input, mesh or sweep differs from checkpoint");
+        // Validate every history dependency, including completed checkpoints.
+        for(const auto& entry:ledger.at("runs")) if(entry.at("gate").value("pass_gate",false))
+            readState(fs::path(entry.at("directory").get<std::string>())/"output.json");
+        for(const auto& entry:ledger.value("initialization_runs",json::array()))
+            readState(entry.at("result").get<std::string>());
         if(ledger.at("status")=="complete") return ledger;
         current=ledger.at("accepted_bias_V");step=ledger.at("next_step_V");index=ledger.at("exact_points").size();
-        if(!ledger.at("accepted_result").is_null()) state=read(ledger.at("accepted_result").get<std::string>());
-        else if(ledger.contains("initialized_result")) state=read(ledger.at("initialized_result").get<std::string>());
+        if(!ledger.at("accepted_result").is_null()) state=readState(ledger.at("accepted_result").get<std::string>());
+        else if(ledger.contains("initialized_result")) state=readState(ledger.at("initialized_result").get<std::string>());
     } else {
         if(fs::exists(root)) throw std::invalid_argument("Output directory already exists; use explicit resume for a checkpoint");
-        fs::create_directories(root);save(root/"input_snapshot.json",input);save(root/"mesh_snapshot.json",mesh);
+        fs::create_directories(root);saveState(root/"input_snapshot.json",input);save(root/"mesh_snapshot.json",mesh);
         ledger={{"schema","vela.electrothermal_dc_sweep.v1"},{"scope","Explicit audited silicon electrothermal DC; reference acceptance is scored separately"},
+            {"input_file_sha256",archiveMetadata.at("input_file_sha256")},
             {"input_file",inputPath.string()},{"sweep",control},{"initialization",initialization},{"status","running"},{"runs",json::array()},
             {"exact_points",json::array()},{"accepted_bias_V",0.},{"accepted_result",nullptr},{"next_step_V",step},{"wall_seconds",0.}};
     }
@@ -225,8 +255,8 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
             if(neutral) {for(const auto* key:stateKeys) cfg.erase(key);cfg["initialization"]="neutral_300K";}
             else {for(const auto* key:stateKeys) cfg[key]=state.at(key);}
             std::ostringstream name;name<<"stage_"<<std::setw(4)<<std::setfill('0')<<initAttempt++;
-            auto directory=initRoot/name.str();fs::create_directory(directory);save(directory/"input.json",cfg);
-            std::ofstream log(directory/"run.log");auto result=solveElectrothermalPoint(cfg,log,preparationContext);save(directory/"output.json",result);
+            auto directory=initRoot/name.str();fs::create_directory(directory);saveState(directory/"input.json",cfg,{{"gate_V",voltage},{"drain_V",0.}});
+            std::ofstream log(directory/"run.log");auto result=solveElectrothermalPoint(cfg,log,preparationContext);saveState(directory/"output.json",result,{{"gate_V",voltage},{"drain_V",0.}});
             auto acceptance=gate(result,0.);
             initRuns.push_back({{"gate_V",voltage},{"solve_mode",cfg["solve_mode"]},{"result",(directory/"output.json").string()},
                 {"gate",acceptance},{"newton_updates",result.at("newton_updates")}});
@@ -271,7 +301,7 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
                     prediction["prior_bias_V"]=previousBias;break;
                 }
                 if(it->at("gate").at("pass_gate").get<bool>()&&difference>1e-12&&(target-current)/difference<=3.) {
-                    auto previous=read(fs::path(it->at("directory").get<std::string>())/"output.json");
+                    auto previous=readState(fs::path(it->at("directory").get<std::string>())/"output.json");
                     bool used=predict(cfg,previous,(target-current)/difference);
                     prediction={{"mode",predictor},{"used",used},{"prior_bias_V",previousBias},{"ratio",(target-current)/difference}};break;
                 }
@@ -291,7 +321,7 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
                     auto seed=state.at("referenced_state_interleaved").get<std::vector<double>>();
                     const auto anchor=seed;
                     for(std::size_t j=0;j+1<records.size();++j) {
-                        const auto old=read(fs::path(records[j].at("directory").get<std::string>())/"output.json");
+                        const auto old=readState(fs::path(records[j].at("directory").get<std::string>())/"output.json");
                         if(old.value("potential_origin_V",0.)!=origin)throw std::invalid_argument("Local history origin differs");
                         const auto value=old.at("referenced_state_interleaved").get<std::vector<double>>();
                         if(value.size()!=seed.size())throw std::invalid_argument("Local history layout differs");
@@ -331,10 +361,10 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
         std::ostringstream name;name<<"step_"<<std::setw(4)<<std::setfill('0')<<ledger["runs"].size();
         const auto directory=root/name.str();
         if(!fs::create_directory(directory)) throw std::runtime_error("Uncheckpointed attempt exists: "+directory.string());
-        save(directory/"input.json",cfg);std::ofstream log(directory/"run.log");
+        saveState(directory/"input.json",cfg,{{"drain_V",target}});std::ofstream log(directory/"run.log");
         const auto solveStart=std::chrono::steady_clock::now();
         json result=json::object(),acceptance;int returncode=0;
-        try {result=solveElectrothermalPoint(cfg,log,preparationContext);save(directory/"output.json",result);acceptance=gate(result,target);}
+        try {result=solveElectrothermalPoint(cfg,log,preparationContext);saveState(directory/"output.json",result,{{"drain_V",target}});acceptance=gate(result,target);}
         catch(const std::exception& e) {returncode=1;log<<e.what()<<'\n';acceptance={{"pass_gate",false},{"reasons",{"solver_error"}},{"message",e.what()}};}
         ledger["runs"].push_back({{"parent_bias_V",current},{"bias_V",target},{"directory",directory.string()},
             {"returncode",returncode},{"gate",acceptance},{"prediction",prediction},{"newton_updates",result.value("newton_updates",0)},
