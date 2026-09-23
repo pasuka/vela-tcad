@@ -10,7 +10,8 @@ evidence.
   compiler-independent frozen controls, extrema harmonic density, cosine alpha
   smoothing, best-vertex mobility and 10/37 V interior replay with explicit
   geometry-choice uncertainty, native truncated source volumes and a standalone
-  nine-column Jacobian kernel. Coupled solver integration remains pending.
+  nine-column Jacobian kernel. GCC 11 PMI loading and frozen-output parity now
+  pass, with direct near-tie vertex-choice evidence. Coupled solver integration remains pending.
   Original AvalDensGradQF and complete BVDS remain unqualified.
 
 - [SLOT load-line driver review, 2026-09-23](validation/slot_ldmos_loadline_review_2026-09-23.md):

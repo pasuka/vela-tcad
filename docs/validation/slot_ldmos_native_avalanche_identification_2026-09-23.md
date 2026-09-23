@@ -7,12 +7,13 @@
 原始 `AvalDensGradQF`；尚未修改 Vela 的生产物理模型，也未完成严格
 原始模型、BVDS 或击穿后支路验证。
 
-Sentaurus T-2022.03-SP2 的 PMI 包装器实际调用 GCC 4.8.5，在
-`-std=c++14` 处失败；工具报告自身按 GCC 9.2.0 构建。用户确认没有
-兼容编译器，因此搁置 PMI 编译，改用内置模型参数对照。未安装编译器，
-未通过降级编译参数规避兼容性要求。
+Sentaurus T-2022.03-SP2 的 PMI 包装器最初调用 GCC 4.8.5，在
+`-std=c++14` 处失败；工具报告自身按 GCC 9.2.0 构建。因此先搁置
+PMI 编译，完成下述内置模型参数对照。随后用户提供了已有 GCC 11
+工具链路径，实测版本为 11.2.1，已恢复隔离 PMI 实验。编译与实际加载
+分别验证，保留初次失败；未安装编译器或降级编译参数。
 
-全部新诊断保存在 `build/slot_pmi_20260923/`；虚拟机对应目录是
+内置模型诊断保存在 `build/slot_pmi_20260923/`；虚拟机对应目录是
 `/home/tcad/sentaurus_runs/vela_oracle_2022/slot_pmi_20260923/`。
 原始参数、网格和 10 V 保存态均保留。诊断只执行 Load、Plot、CurrentPlot，
 没有 Newton 更新，不能成为续算种子或合格器件点。
@@ -364,3 +365,60 @@ SHA256 预校验后，以新前缀 r2 重试。r2 在 Plot 处明确报
 源体积映射的可移植性，以及将独立计算核接入 Newton 装配、审计与
 续算后的整体 Jacobian 验证。投影 SG 的外压 37.1 V 合格结果不能替代
 这些验证；严格原始模型、完整 BVDS 及击穿后支路仍未完成。
+
+## GCC 11 恢复 PMI：编译、实际加载及冻结输出通过
+
+用户随后给出的既有工具链已实测可用于本次诊断：
+
+```bash
+VELA_ENV=/home/tcad/sentaurus_runs/vela_oracle_2022/vela_build_20260914
+GCC11_ROOT="$VELA_ENV/toolchain/opt/rh/devtoolset-11/root/usr"
+export PATH="$GCC11_ROOT/bin:$PATH"
+cmi -v -O slot_current_probe.C
+```
+
+`cmi -a` 确认调用 GCC 11.2.1，保持原包装器的 C++14/优化选项，编译
+退出码 0。`cmi --compiler-version` 仍报告 Sentaurus 使用 GCC 9.2.0
+构建，并建议版本一致。因此以下结论仅限此次探针的实测兼容性，
+不能推广为任意 GCC 11 PMI 的 ABI 保证。
+
+在普通 shell 中执行 `ldd` 曾找到系统旧 `libstdc++`，报缺少
+`CXXABI_1.3.9`。现有 GCC 11 目录没有独立的 `usr/lib64/libstdc++`。
+实际 sdevice 启动器加载的是 Sentaurus 自带 `libstdc++.so.6.0.27`，
+已由运行进程的 `/proc/<pid>/maps` 核对；对依赖检查显式使用
+`LD_LIBRARY_PATH=/atctools/Synopsys/tcad/T-2022.03/tcad/current/linux64/lib`
+后全部解析成功。未修改系统库，也未静态替换 C++ 运行库。
+
+新隔离目录为本地 `build/slot_pmi_gcc11_20260923/`，远端为
+`/home/tcad/sentaurus_runs/vela_oracle_2022/slot_pmi_gcc11_20260923/`。
+10 V 原生 Load/Plot/CurrentPlot 完成，退出码 0，耗时 227.90 s；
+日志确认加载诊断 `.so.linux64` 并启用电子、空穴 PMI 雪崩模型。
+六项远端输入预校验通过；本地复核五个可用输入的哈希，网格原文件
+仅作远端哈希校验，输出网格另经完整几何哈希一致性检查。
+下载的输出文件逐一通过 SHA256 检查。
+
+与已合格的内置常 alpha 对照 `slot_const_grad_r2` 比较：
+
+- 七个区域的电势、电子/空穴准费米势、温度逐值完全一致。
+- 节点及元素的电子/空穴密度、迁移率完全一致。
+- 节点电子/空穴 alpha 和产生率完全一致，最大绝对差均为 0。
+- 电子回调 120,928 条（15,116 条唯一记录），空穴 87,680 条
+  （10,960 条唯一记录），八个记录字段全部有限。
+
+见 `verification.json`、`input_verification.json`、原生退出码和日志。
+动态库 SHA256 为
+`6045af47fb8a39dd6686a113f67fc680ae75d8aa29d827dfbde493856a3650e9`。
+此检查没有 Newton 更新，不新增器件合格点。
+
+仅按回调坐标和驱动场匹配已有元素，电子 14,997 条、空穴 10,812 条
+获得唯一对应，全部选点位于此前 `1e-12` 正弦差界定的最大角候选内。
+其中分别 17/9 条与本地双精度最大角选择不同，均属于近等角情况。
+这提供了原生选点的直接证据，但不构成可移植的平局选择算法；
+存在多解或未匹配的记录不能强行分配。见 `trace_mapping.json`、
+`trace_selection.json` 和两份 `trace_map_*.csv`。
+
+`currentWoMob` 幅值尚未全部验证：使用本地物理常数重构的多数唯一
+匹配项呈约 9.59 ppm 偏差，少量点差异更大。公共手册 1260 页建议
+只利用该向量的方向；在独立查明单位、常数与边界差异之前，不把
+幅值直接当作严格原生电流或用它拟合密度。下一步继续匹配未定记录、
+复核关闭 AvalDensGradQF 的独立 PMI 对照，并解决原生选点和弱源项差异。

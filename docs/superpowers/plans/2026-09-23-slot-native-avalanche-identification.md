@@ -6,11 +6,23 @@ must identify the actual source construction before changing Vela physics.
 
 ## Compiler constraint and current experiment
 
-The installed PMI compiler wrapper selects GCC 4.8.5 and fails on its required
-`-std=c++14` flag before running the device. Sentaurus reports a GCC 9.2.0 build;
-the user confirmed on 2026-09-23 that no compatible compiler is available.
-PMI compilation is therefore shelved. Do not install a compiler or weaken ABI
-checks as part of this experiment.
+The initial PMI compiler wrapper selected GCC 4.8.5 and failed on its required
+`-std=c++14` flag before running the device. The user subsequently supplied an
+existing GCC 11 toolchain under `vela_build_20260914/toolchain/opt/rh/devtoolset-11/root/usr`.
+It reports GCC 11.2.1 and successfully compiles the diagnostic with unchanged
+`cmi -O` options. Sentaurus reports a GCC 9.2.0 build and recommends identical
+compiler versions, so compilation alone does not establish runtime compatibility.
+Restore the isolated PMI experiment and qualify actual loading and frozen output;
+do not install a compiler or alter system libraries. Preserve the initial failure.
+
+The GCC 11 diagnostic now passed actual loading and frozen 10 V output checks
+in `build/slot_pmi_gcc11_20260923`: exit 0, unchanged primary state, and exact
+nodal alpha/generation parity with the built-in constant-alpha control. The
+native launcher supplies its own libstdc++.so.6.0.27; system-shell ldd alone
+selects an insufficient older runtime. Coordinate/field matching exposes native
+vertex choices, including 17 electron and 9 hole differences from double-precision
+maximum-angle selection, all inside the prior near-tie envelope. The vector
+magnitude and unmatched traces remain unqualified; see the validation report.
 
 The available fallback uses the built-in isotropic van Overstraeten model with
 only both carriers' low/high `a` set to 1 cm^-1 and `b` to 0 V/cm. At the fixed
@@ -56,7 +68,7 @@ TDR as failed evidence, never as a checkpoint.
 The measurements and limitations are in
 `docs/validation/slot_ldmos_native_avalanche_identification_2026-09-23.md`.
 
-## Shelved PMI experiment
+## Restored PMI experiment
 
 Use the installed T-2022.03 public avalanche PMI interface to observe
 `currentWoMob`, driving field, and evaluation coordinates. The installed manual
