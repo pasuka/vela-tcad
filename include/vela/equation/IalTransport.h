@@ -1,12 +1,16 @@
 #pragma once
 #include "vela/equation/IalElementMobility.h"
+#include "vela/equation/IalElementAvalanche.h"
 #include "vela/mesh/DeviceMesh.h"
 #include "vela/physics/DopingModel.h"
 #include <map>
+#include <optional>
 
 namespace vela {
 struct IalTransportOptions {
     std::string geometryFile;
+    /// Optional, mesh-specific observed selector and independent source shares.
+    std::string avalancheGeometryFile;
     std::vector<std::string> effectiveElectrodes;
     std::array<Real,3> crystalX{1.,0.,0.},crystalY{0.,1.,0.};
     std::map<int,IalMobility> electrons,holes;
@@ -20,6 +24,7 @@ struct IalTransportGeometry {
         Index cellId;
         IalElementGeometry geometry;
         std::array<int,3> family;
+        std::optional<IalElementAvalancheOptions> avalanche;
     };
     struct EdgeContribution { std::size_t support; Real weight; };
     std::vector<CellSupport> cells;
@@ -46,6 +51,11 @@ void prepareIalTransportGeometry(MobilityModelConfig& config,const DeviceMesh& m
 IalElementMobilityResult evaluateIalTransportCell(
     const MobilityModelConfig& config,Index cellId,
     const std::array<IalElementVertexState,3>& states,bool spatialDerivatives);
+/// Controlled density-gradient source, SI input and output. No cached state.
+IalElementAvalancheResult evaluateIalTransportAvalancheCell(
+    const MobilityModelConfig& config,Index cellId,
+    const std::array<IalElementVertexState,3>& states,
+    IalElementAvalancheOptions options);
 void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,
     const DopingModel& doping,const VectorXd& psi_V,const VectorXd& n,const VectorXd& p,
     const VectorXd& phin_V,const VectorXd& phip_V,

@@ -6101,7 +6101,7 @@ std::vector<NewtonJacobianBlockAuditRow> NewtonSolver::evaluateJacobianBlockAudi
             const std::string& termName) {
             const bool directElementEdgeImpact =
                 termName == "sg_avalanche" &&
-                detail::usesElementEdgeGssLauxAvalancheSource(
+                detail::usesElementLocalAvalancheSource(
                     cfg_.impactIonization);
             if (directElementEdgeImpact) {
                 const SparseMatrixd reference =

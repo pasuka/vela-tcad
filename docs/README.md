@@ -6,23 +6,35 @@ evidence.
 
 ## Current References
 
+- [SLOT comparison analysis for LLM review, 2026-09-23](validation/slot_ldmos_comparison_analysis_for_llm_2026-09-23.md):
+  Chinese evidence summary, separate projected-SG and observed-source qualification,
+  qualified new-source 2 V, failed 2.125/10 V controls, Jacobian coverage limits,
+  units, outstanding hypotheses and concrete questions for independent analysis.
+
+- [SLOT observed element source integration, 2026-09-23](validation/slot_ldmos_observed_source_integration_2026-09-23.md):
+  complete fixed-mesh native selector coverage, independent screening-floor
+  discrepancy evidence, controlled live source/Jacobian integration and explicit
+  qualified 2 V and failed 2.125/10 V coupled controls. Strict original BVDS remains unqualified.
+
 - [SLOT contact avalanche kernel fix, 2026-09-23](validation/slot_ldmos_contact_kernel_fix_2026-09-23.md):
   contact/interface full-gradient correction, analytic regression, full local
   nine-column live-mobility Jacobian checks and native 10/37 V replay.
-  Coupled Newton assembly and strict BVDS remain unqualified.
+  Controlled coupled assembly and 2 V qualification are recorded above;
+  strict BVDS remains unqualified.
 
 - [SLOT PMI callback follow-up, 2026-09-23](validation/slot_ldmos_pmi_callback_followup_2026-09-23.md):
   complete callback-to-element matching, contact full-gradient current evidence,
   effective current scale, saved-state precision limits and qualified frozen
   AvalDensGradQF-off control. The contact-kernel correction is now verified in
-  the report above; coupled validation remains pending.
+  the contact-kernel report; subsequent controlled assembly is recorded above.
 
 - [SLOT native avalanche identification, 2026-09-23](validation/slot_ldmos_native_avalanche_identification_2026-09-23.md):
   compiler-independent frozen controls, extrema harmonic density, cosine alpha
   smoothing, best-vertex mobility and 10/37 V interior replay with explicit
   geometry-choice uncertainty, native truncated source volumes and a standalone
   nine-column Jacobian kernel. GCC 11 PMI loading and frozen-output parity now
-  pass, with direct near-tie vertex-choice evidence. Coupled solver integration remains pending.
+  pass, with direct near-tie vertex-choice evidence. Subsequent fixed-mesh selector
+  completion and controlled coupled integration are recorded above.
   Original AvalDensGradQF and complete BVDS remain unqualified.
 
 - [SLOT load-line driver review, 2026-09-23](validation/slot_ldmos_loadline_review_2026-09-23.md):

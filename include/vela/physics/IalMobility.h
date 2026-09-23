@@ -91,6 +91,8 @@ public:
                                                   IalScreeningCache* cache=nullptr,
                                                   IalMobilityPreparationCache* preparation=nullptr,bool generated=false) const;
     static IalMobilityParameters siliconDefaults(bool electron);
+    /// Immutable model data for evidence fingerprints; never carrier state.
+    const IalMobilityParameters& parameters() const { return params_; }
     /// Closest cubic plane family, including sign/permutation symmetry.
     /// Input is a nonzero normal already transformed into crystal coordinates.
     static int orientationFamily(const std::array<Real, 3>& crystalNormal);

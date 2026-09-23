@@ -1708,6 +1708,17 @@ object contains:
 - `effective_electrodes`: explicit mesh contact names whose adjacent cells use
   electric-field fallback. All contact edges are excluded from ordinary
   exterior boundary projection, including contacts absent from this list.
+- `avalanche_geometry_file`: optional absolute path to the controlled
+  `vela.ialmob.observed_avalanche_geometry.v1` source geometry. The header
+  supplies integer `node_count`, `cell_count` and `cells`; optional `scope` is
+  descriptive provenance. Every Si triangle appears exactly once, with
+  `cell_id`, mesh-order `node_ids`, three `coordinates_m` pairs,
+  `mobility_vertex` (local index 0--2), and three `source_measure_m2` shares.
+  Other materials are rejected. Coordinates must match the actual mesh;
+  shares must be finite, nonnegative, have positive sum, and cannot exceed
+  the triangle area (relative export-roundoff allowance `1e-10`). This is
+  independent of the transport geometry and must be regenerated/revalidated
+  after changing the mesh. It is measured geometry, not a carrier-state table.
 - `crystal_x`, `crystal_y`: three-component crystal directions corresponding to
   the two mesh coordinate axes.
 - `electron_parameters_cm`, `hole_parameters_cm`: objects keyed by orientation
@@ -1732,12 +1743,34 @@ object contains:
 
 The live coupled path supports 300 K, Si/SiO2 Tri3 geometry, Fermi or Boltzmann
 carrier statistics, without quantum potential. Avalanche additionally requires
-Boltzmann statistics, the canonical `element_edge_sg_gss_laux` source and
+Boltzmann statistics, a supported element source and
 `source_jacobian: local_ad`. Its cell SG currents use the live element IALMob;
 all nine potential columns include density, normal-field and HFS feedback.
 The independent source audit recomputes mobility at each perturbed state;
 multiprecision source audits are rejected because the IALMob kernel uses double.
 This implementation does not establish SLOT high-voltage or breakdown qualification.
+The additional controlled source is selected explicitly with
+`impact_ionization.current_approximation: "ialmob_element_density_grad_qf"`.
+It requires the observed avalanche geometry above, `van_overstraeten`,
+`generation: "current_density"`, `driving_force: "quasi_fermi_gradient"`,
+`quasi_fermi_gradient_discretization: "cell_gradient"`,
+`source_mapping_mode: "element_vertex_box_measure"`, and `source_jacobian: "local_ad"`.
+Set `contact_electric_field_fallback: true`, fallback scope `contact_node_cell`,
+fallback mode `cell_gradient_magnitude`, and `ialmob_boundary_field_projection: true`.
+The IALMob reference density and avalanche interpolation/truncation must be zero;
+complete mobility derivatives are required. The identified HFS parameters are
+electron/hole saturation velocities `1.07e5`/`8.37e4 m/s` and beta `1.109`/`1.213`,
+at 300 K. Source-volume scaling overrides, directional partition, debug raw
+alpha and alternative current-magnitude policies are unsupported.
+The source is restricted to Si and uses extrema-based harmonic carrier density,
+the observed vertex mobility, full contact QF current gradient, and tangential
+non-contact interface gradients. Contact alpha uses the electric field. All
+nine local potential derivatives include carrier density and live IALMob/HFS.
+The production mobility retains the mathematical screening minimum; inferred
+native numerical clipping constants are diagnostic evidence only. This source
+does not establish a universal native near-angle selector algorithm or qualify
+an original-model BVDS curve. See the
+[controlled source validation](validation/slot_ldmos_observed_source_integration_2026-09-23.md).
 For a separate boundary-field control, `impact_ionization.ialmob_boundary_field_projection`
 defaults to `false`. When enabled, the canonical element-edge SG/GSS-Laux
 current-density source with quasi-Fermi driving force projects the avalanche

@@ -177,7 +177,7 @@ DDAssembler::DDAssembler(const DeviceMesh&               mesh,
         if (cellMaterials_[cell.id].intrinsic_reference_potential_V==0.) continue;
         if (impactIonizationEnabled_ &&
             (mobilityConfig_.model!="ialmob" ||
-             !detail::usesElementEdgeGssLauxAvalancheSource(impactIonizationConfig_) ||
+             !detail::usesElementLocalAvalancheSource(impactIonizationConfig_) ||
              mesh_.getRegion(cell.region_id).material=="Si"))
             throw std::invalid_argument("Intrinsic reference avalanche requires Si-only element IALMob source");
     }

@@ -126,6 +126,66 @@ std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& 
     }
     for (const auto& c:mesh.cells())
         if (silicon(mesh,c)&&!seenCells.count(c.id)) throw std::invalid_argument("Missing IALMob Si cell measure");
+    if (!options.avalancheGeometryFile.empty()) {
+        std::ifstream sourceStream(options.avalancheGeometryFile);
+        if (!sourceStream) throw std::invalid_argument("Cannot read IALMob avalanche geometry");
+        const json source=json::parse(sourceStream);
+        keys(source,{"schema","scope","node_count","cell_count","cells"});
+        const auto indexValue=[](const json& value) -> Index {
+            if (!value.is_number_integer() || value.get<long double>()<0 ||
+                value.get<long double>()>std::numeric_limits<Index>::max())
+                throw std::invalid_argument("IALMob avalanche IDs/counts must be nonnegative integers");
+            return value.get<Index>();
+        };
+        if (source.at("schema")!="vela.ialmob.observed_avalanche_geometry.v1" ||
+            indexValue(source.at("node_count"))!=mesh.numNodes() ||
+            indexValue(source.at("cell_count"))!=mesh.numCells() ||
+            !source.at("cells").is_array())
+            throw std::invalid_argument("IALMob avalanche geometry does not match the mesh");
+        std::set<Index> sourceSeen;
+        for (const auto& row:source.at("cells")) {
+            keys(row,{"cell_id","node_ids","coordinates_m","mobility_vertex","source_measure_m2"});
+            const Index id=indexValue(row.at("cell_id"));
+            for (const auto& key:{"node_ids","coordinates_m","source_measure_m2"})
+                if (!row.at(key).is_array() || row.at(key).size()!=3)
+                    throw std::invalid_argument("IALMob avalanche requires exactly three vertex entries");
+            for (const auto& node:row.at("node_ids")) indexValue(node);
+            for (const auto& coordinate:row.at("coordinates_m"))
+                if (!coordinate.is_array() || coordinate.size()!=2)
+                    throw std::invalid_argument("IALMob avalanche coordinates must be 2-D");
+            if (id>=mesh.numCells() || result->cellSupportIndex.at(id)<0 ||
+                !sourceSeen.insert(id).second ||
+                row.at("node_ids").get<std::vector<Index>>()!=mesh.getCell(id).node_ids)
+                throw std::invalid_argument("IALMob avalanche cell topology mismatch");
+            auto& support=result->cells.at(result->cellSupportIndex.at(id));
+            const auto coordinates=row.at("coordinates_m").get<std::array<std::array<Real,2>,3>>();
+            for (int i=0;i<3;++i) for (int d=0;d<2;++d) {
+                const Real expected=support.geometry.coordinates_m[i][d],actual=coordinates[i][d];
+                if (!std::isfinite(actual) || std::abs(actual-expected)>
+                    16.*std::numeric_limits<Real>::epsilon()*std::max(std::abs(expected),Real{1e-30}))
+                    throw std::invalid_argument("IALMob avalanche coordinate mismatch");
+            }
+            IalElementAvalancheOptions selected;
+            selected.mobilityVertex=indexValue(row.at("mobility_vertex"));
+            selected.sourceMeasure_m2=row.at("source_measure_m2");
+            Real total=0.;
+            for (Real v:selected.sourceMeasure_m2) {
+                if (!std::isfinite(v)||v<0.) throw std::invalid_argument("Invalid IALMob avalanche source share");
+                total+=v;
+            }
+            if (selected.mobilityVertex>=3 || !std::isfinite(total) || total<=0.)
+                throw std::invalid_argument("Invalid IALMob avalanche selection or source measure");
+            const auto& xy=support.geometry.coordinates_m;
+            const Real area=.5*std::abs((xy[1][0]-xy[0][0])*(xy[2][1]-xy[0][1])-
+                (xy[1][1]-xy[0][1])*(xy[2][0]-xy[0][0]));
+            // Native truncated shares may sum to less than the triangle area.
+            // The relative allowance covers coordinate/export roundoff only.
+            if (total>area*(1.+1e-10))
+                throw std::invalid_argument("IALMob avalanche source shares exceed cell area");
+            support.avalanche=selected;
+        }
+        if (sourceSeen!=seenCells) throw std::invalid_argument("Missing IALMob avalanche Si cell");
+    }
     for (const auto& edge:mesh.edges()) {
         const Real expected=edge.transport_couple>=0.?edge.transport_couple:edge.couple;
         const Real actual=coefficientSum[edge.id]*edge.length;
@@ -164,9 +224,13 @@ std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& 
 }
 
 std::shared_ptr<const IalTransportOptions> ialTransportOptionsFromJson(const json& input) {
-    keys(input,{"geometry_file","effective_electrodes","crystal_x","crystal_y","electron_parameters_cm","hole_parameters_cm","high_field","reference_density_m3","constant_material_mobility_cm2_per_Vs"});
+    keys(input,{"geometry_file","avalanche_geometry_file","effective_electrodes","crystal_x","crystal_y","electron_parameters_cm","hole_parameters_cm","high_field","reference_density_m3","constant_material_mobility_cm2_per_Vs"});
     auto options=std::make_shared<IalTransportOptions>();
     options->geometryFile=input.at("geometry_file");
+    options->avalancheGeometryFile=input.value("avalanche_geometry_file",std::string{});
+    if (input.contains("avalanche_geometry_file") &&
+        (options->avalancheGeometryFile.empty() || !std::filesystem::path(options->avalancheGeometryFile).is_absolute()))
+        throw std::invalid_argument("IALMob avalanche_geometry_file must be an explicit absolute path");
     if (!std::filesystem::path(options->geometryFile).is_absolute())
         throw std::invalid_argument("IALMob geometry_file must be an explicit absolute path");
     options->effectiveElectrodes=input.at("effective_electrodes").get<std::vector<std::string>>();
@@ -224,6 +288,36 @@ IalElementMobilityResult evaluateIalTransportCell(
         for (auto& d:value->derivative) d/=config.internalMobilityToM2PerVS;
     }
     return r;
+}
+
+IalElementAvalancheResult evaluateIalTransportAvalancheCell(
+    const MobilityModelConfig& config,Index cellId,
+    const std::array<IalElementVertexState,3>& states,
+    IalElementAvalancheOptions options) {
+    if (config.model!="ialmob" || !config.ialmob || !config.ialmobGeometry)
+        throw std::invalid_argument("Element density-gradient source requires prepared IALMob geometry");
+    const int index=config.ialmobGeometry->cellSupportIndex.at(cellId);
+    if (index<0) return {}; // Source is restricted to the original Si material.
+    const auto& support=config.ialmobGeometry->cells.at(index);
+    if (!support.avalanche)
+        throw std::invalid_argument("Element density-gradient source requires observed avalanche geometry");
+    if (config.ialmob->element.referenceDensity_m3!=0.)
+        throw std::invalid_argument("Element density-gradient source requires zero HFS reference density");
+    const Real velocityFactor=config.internalMobilityToM2PerVS*config.internalFieldToVPerM;
+    const auto same=[](Real a,Real b){return std::abs(a-b)<=1e-12*std::max(std::abs(a),std::abs(b));};
+    if (!same(config.electronField.saturationVelocity*velocityFactor,1.07e5) ||
+        !same(config.holeField.saturationVelocity*velocityFactor,8.37e4) ||
+        config.electronField.beta!=1.109 || config.holeField.beta!=1.213)
+        throw std::invalid_argument("Element density-gradient source requires identified 300 K HFS parameters");
+    options.mobilityVertex=support.avalanche->mobilityVertex;
+    options.sourceMeasure_m2=support.avalanche->sourceMeasure_m2;
+    options.highFieldMobility=config.ialmob->element.highField;
+    std::array<const IalMobility*,3> em,hm;
+    for (int k=0;k<3;++k) {
+        em[k]=&config.ialmob->electrons.at(support.family[k]);
+        hm[k]=&config.ialmob->holes.at(support.family[k]);
+    }
+    return evaluateIalElementAvalanche(support.geometry,states,em,hm,options);
 }
 
 void updateIalTransportState(MobilityModelConfig& config,const DeviceMesh& mesh,

@@ -3,6 +3,7 @@
 #include "vela/core/PhysicalConstants.h"
 #include "vela/core/PerformanceProfiler.h"
 #include "vela/equation/AssemblerUtils.h"
+#include "vela/physics/IalMobilityJson.h"
 
 #include <algorithm>
 #include <cmath>
@@ -137,7 +138,7 @@ void finalizeRecord(
                      ? 1
                      : 0)
              << ";flux_sign="
-             << (record.directedSgFlux > 0.0
+             << (record.supportKind=="observed_ialmob_element_vertex" ? "not_applicable" : record.directedSgFlux > 0.0
                      ? "positive"
                      : (record.directedSgFlux < 0.0 ? "negative" : "zero"));
     if (!record.productionBranchDetails.empty())
@@ -299,6 +300,36 @@ std::string bvProcessConfigurationFingerprint(
               << ':' << impact.temperature_K;
     for (const std::string& selector : mobility.surface.surfaceInterface)
         canonical << ";mobility.surface_interface=" << selector;
+    if (mobility.model=="ialmob" && mobility.ialmob) {
+        const auto& options=*mobility.ialmob;
+        canonical << ";ialmob.high_field=" << options.element.highField
+                  << ";ialmob.refdens=" << options.element.referenceDensity_m3;
+        for (const auto* models:{&options.electrons,&options.holes}) {
+            canonical << ";carrier_parameters=";
+            for (const auto& [family,model]:*models) {
+                canonical << family << ':';
+                for (const auto& [name,member]:ial_json::fields)
+                    canonical << name << '=' << model.parameters().*member << ',';
+            }
+        }
+        // Hash the prepared values, not file names: replacing an input file at
+        // the same path must not make distinct source configurations identical.
+        if (mobility.ialmobGeometry) for (const auto& cell:mobility.ialmobGeometry->cells) {
+            canonical << ";ialmob.cell=" << cell.cellId << ':';
+            for (int i=0;i<3;++i) {
+                for (Real coordinate:cell.geometry.coordinates_m[i]) canonical << coordinate << ',';
+                canonical << cell.geometry.interfaceDistance_m[i] << ',' << cell.family[i] << ','
+                          << cell.geometry.vertexMeasure_m2[i] << ';';
+            }
+            canonical << cell.geometry.touchesEffectiveElectrode << ':'
+                      << cell.geometry.partialBoundaryLayer << ':'
+                      << cell.geometry.boundaryTangent[0] << ':' << cell.geometry.boundaryTangent[1];
+            if (cell.avalanche) {
+                canonical << ";source_vertex=" << cell.avalanche->mobilityVertex;
+                for (Real measure:cell.avalanche->sourceMeasure_m2) canonical << ':' << measure;
+            }
+        }
+    }
     return fnv1a64(canonical.str());
 }
 
@@ -320,9 +351,11 @@ BVProcessProbeResult evaluateBVProcessProbe(
         throw std::invalid_argument("BV process probe doping size mismatch");
 
     auto mobilityConfig=inputMobilityConfig;
+    if (detail::usesIalElementAvalancheSource(impactConfig) && mobilityConfig.model!="ialmob")
+        throw std::invalid_argument("Observed element source requires IALMob transport");
     if (mobilityConfig.model=="ialmob" && impactConfig.model!="none") {
-        if (!detail::usesElementEdgeGssLauxAvalancheSource(impactConfig) || std::abs(temperature_K-300.)>1e-10)
-            throw std::invalid_argument("IALMob BV probe requires element_edge_sg_gss_laux at 300 K");
+        if (!detail::usesElementLocalAvalancheSource(impactConfig) || std::abs(temperature_K-300.)>1e-10)
+            throw std::invalid_argument("IALMob BV probe requires a supported element source at 300 K");
         // The standalone probe and branch fingerprint can precede any coupled
         // residual. Cell mobility is evaluated from the supplied state below.
         prepareIalTransportGeometry(mobilityConfig,mesh);
@@ -353,6 +386,72 @@ BVProcessProbeResult evaluateBVProcessProbe(
     const auto impact = makeImpactIonizationModel(impactConfig);
     const auto edgeCells = detail::buildEdgeCellMap(mesh);
     const std::vector<bool> contactNodes = detail::contactNodeMask(mesh);
+
+    if (detail::usesIalElementAvalancheSource(impactConfig)) {
+        for (const auto& support:mobilityConfig.ialmobGeometry->cells) {
+            const auto& cell=mesh.getCell(support.cellId);
+            std::array<IalElementVertexState,3> local;
+            const Real concentration=mobilityConfig.internalConcentrationToM3;
+            const Real length=mobilityConfig.internalLengthToM;
+            const Real measure=concentration*length*length;
+            for (int i=0;i<3;++i) {
+                const auto n=cell.node_ids[i];
+                local[i]={state.psi[n],state.phin[n],state.phip[n],doping.donors(n)*concentration,
+                    doping.acceptors(n)*concentration,state.n[n]*concentration,state.p[n]*concentration};
+            }
+            const auto evaluated=evaluateIalTransportAvalancheCell(mobilityConfig,cell.id,local,
+                detail::ialElementAvalancheOptionsFromConfig(impactConfig));
+            // A one-hot evaluation supplies the matching low-field mobility.
+            auto geometry=support.geometry;
+            geometry.vertexMeasure_m2={0.,0.,0.};
+            geometry.vertexMeasure_m2[support.avalanche->mobilityVertex]=1.;
+            std::array<const IalMobility*,3> em,hm;
+            for(int i=0;i<3;++i) {
+                em[i]=&mobilityConfig.ialmob->electrons.at(support.family[i]);
+                hm[i]=&mobilityConfig.ialmob->holes.at(support.family[i]);
+            }
+            IalElementMobilityOptions lowOptions;lowOptions.highField=false;lowOptions.spatialDerivatives=false;
+            const auto low=evaluateIalElementMobility(geometry,local,em,hm,lowOptions);
+            for (bool electron:{true,false}) {
+                const auto& value=electron?evaluated.electron:evaluated.hole;
+                Point2 gradient=cellGradient(mesh,cell.id,electron?state.phin:state.phip)*fieldFactor;
+                if (geometry.partialBoundaryLayer&&!geometry.touchesEffectiveElectrode) {
+                    const Point2 tangent(geometry.boundaryTangent[0],geometry.boundaryTangent[1]);
+                    gradient=tangent*gradient.dot(tangent);
+                }
+                const auto density=[&](int i){return electron?local[i].electrons_m3:local[i].holes_m3;};
+                int minimum=0,maximum=0;
+                for(int i=1;i<3;++i){if(density(i)<density(minimum))minimum=i;if(density(i)>density(maximum))maximum=i;}
+                for (int i=0;i<3;++i) {
+                    BVProcessProbeRecord record;
+                    record.supportKind="observed_ialmob_element_vertex";
+                    record.carrier=electron?"electron":"hole";
+                    record.cellId=cell.id;record.edgeId=InvalidIndex;
+                    record.node0=record.node1=cell.node_ids[i];assignEndpointState(record,state);
+                    record.midpointDensity=value.density_m3.value/concentration;
+                    record.electricFieldVector=-cellGradient(mesh,cell.id,state.psi)*fieldFactor;
+                    record.quasiFermiGradientVector=gradient;
+                    record.lowFieldMobility=(electron?low.electronLowField.value:low.holeLowField.value)/mobilityConfig.internalMobilityToM2PerVS;
+                    record.finalMobility=value.mobility_m2_per_Vs.value/mobilityConfig.internalMobilityToM2PerVS;
+                    record.highFieldDrive=value.ionizationField_V_per_m.value/mobilityConfig.internalFieldToVPerM;
+                    record.currentVector=-record.midpointDensity*record.finalMobility*gradient;
+                    record.currentVectorProvenance="element_extrema_density_gradqf";
+                    record.selectedFluxMagnitude=record.currentVector.norm();
+                    record.impactField=record.highFieldDrive;
+                    record.alpha=impactConfig.unitSystem.mInvToInternalInverseLength(value.alpha_per_m.value);
+                    record.sourceMeasure=support.avalanche->sourceMeasure_m2[i]/(length*length);
+                    record.sourceIntegral=value.source_per_m_s[i].value/measure;
+                    record.scatterCount=1;record.scatterNodes[0]=record.node0;record.sourceWeights[0]=1.;
+                    record.contactAdjacent=geometry.touchesEffectiveElectrode;record.reconstructedCurrent=true;
+                    record.productionBranchDetails="density_min="+std::to_string(minimum)+";density_max="+std::to_string(maximum)+
+                        ";mobility_vertex="+std::to_string(support.avalanche->mobilityVertex)+
+                        ";tangent="+std::to_string(geometry.partialBoundaryLayer&&!geometry.touchesEffectiveElectrode);
+                    appendRecord(result,std::move(record),impactConfig);
+                }
+            }
+        }
+        return result;
+    }
 
     if (detail::usesElementEdgeGssLauxAvalancheSource(impactConfig)) {
         const auto production =

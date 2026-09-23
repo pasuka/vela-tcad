@@ -7,6 +7,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include "vela/equation/IalTransport.h"
+#include "vela/equation/BVProcessProbe.h"
 #include "vela/equation/CoupledDDAssembler.h"
 #include "vela/equation/AssemblerUtils.h"
 #include "vela/equation/DDAssembler.h"
@@ -1029,5 +1030,182 @@ TEST_CASE("Electrothermal tangent contact derivative matches fixed-state bias di
         CHECK(derivative[2]==(finite?0.:-1.));
         auto bad=bc;bad.potential_V[0]=psi;
         CHECK_THROWS_AS(experimental::electrothermalContactBiasDerivative(6,bad,{0}),std::invalid_argument);
+    }
+}
+
+TEST_CASE("Observed avalanche geometry rejects mismatched or nonphysical evidence",
+          "[ialmob][observed_ialmob][geometry]")
+{
+    Fixture f;
+    using J=nlohmann::json;
+    J cells=J::array();
+    for (Index id=0;id<2;++id) {
+        const auto& cell=f.mesh.getCell(id);
+        J coordinates=J::array();
+        for (Index node:cell.node_ids) coordinates.push_back({f.mesh.getNode(node).x,f.mesh.getNode(node).y});
+        cells.push_back({{"cell_id",id},{"node_ids",cell.node_ids},{"coordinates_m",coordinates},
+            {"mobility_vertex",id},{"source_measure_m2",{1e-15,2e-15,2e-15}}});
+    }
+    const J valid={{"schema","vela.ialmob.observed_avalanche_geometry.v1"},
+        {"node_count",6},{"cell_count",4},{"cells",cells}};
+    const auto path=std::filesystem::path(f.path.string()+".avalanche");
+    struct Cleanup {std::filesystem::path p;~Cleanup(){std::error_code e;std::filesystem::remove(p,e);}} cleanup{path};
+    const auto prepare=[&](const J& evidence) {
+        std::ofstream(path)<<evidence;
+        auto config=f.mobility;
+        auto options=std::make_shared<IalTransportOptions>(*config.ialmob);
+        options->avalancheGeometryFile=path.string();config.ialmob=options;
+        config.ialmobGeometry.reset();prepareIalTransportGeometry(config,f.mesh);
+        return config;
+    };
+    const auto original=prepare(valid);
+    auto impact=impactIonizationModelConfig("van_overstraeten");
+    const auto fingerprint=bvProcessConfigurationFingerprint(original,impact);
+    auto changed=valid;changed["cells"][0]["mobility_vertex"]=2;
+    CHECK(bvProcessConfigurationFingerprint(prepare(changed),impact)!=fingerprint);
+    changed=valid;changed["cells"][0]["source_measure_m2"][0]=.5e-15;
+    CHECK(bvProcessConfigurationFingerprint(prepare(changed),impact)!=fingerprint);
+    auto modified=original;auto options=std::make_shared<IalTransportOptions>(*modified.ialmob);
+    auto params=options->electrons.at(100).parameters();params.muMax*=1.01;
+    options->electrons.insert_or_assign(100,IalMobility(params,true));modified.ialmob=options;
+    CHECK(bvProcessConfigurationFingerprint(modified,impact)!=fingerprint);
+    CHECK(bvProcessConfigurationFingerprint(prepare(valid),impact)==fingerprint);
+    std::vector<J> invalid;
+    const auto bad=[&](auto edit){auto value=valid;edit(value);invalid.push_back(value);};
+    bad([](J& j){j["node_count"]=6.5;});
+    bad([](J& j){j["cell_count"]=3;});
+    bad([](J& j){j["cells"].erase(1);});
+    bad([](J& j){j["cells"].push_back(j["cells"][0]);});
+    bad([](J& j){j["cells"][0]["cell_id"]=-1;});
+    bad([](J& j){j["cells"][0]["cell_id"]=2;});
+    bad([](J& j){j["cells"][0]["node_ids"]={0,2,1};});
+    bad([](J& j){j["cells"][0]["node_ids"][0]=.1;});
+    bad([](J& j){j["cells"][0]["coordinates_m"][1][0]=2e-7;});
+    bad([](J& j){j["cells"][0]["coordinates_m"][0].push_back(0);});
+    bad([](J& j){j["cells"][0]["mobility_vertex"]=3;});
+    bad([](J& j){j["cells"][0]["mobility_vertex"]=.5;});
+    bad([](J& j){j["cells"][0]["source_measure_m2"]={0,0,0};});
+    bad([](J& j){j["cells"][0]["source_measure_m2"]={-1e-15,3e-15,3e-15};});
+    bad([](J& j){j["cells"][0]["source_measure_m2"]={1e-14,0,0};});
+    bad([](J& j){j["cells"][0]["source_measure_m2"].push_back(0);});
+    for (const auto& evidence:invalid) CHECK_THROWS(prepare(evidence));
+    const auto parserInput=J{{"geometry_file",f.path.string()},{"effective_electrodes",{"left","right"}},
+        {"crystal_x",{1,0,0}},{"crystal_y",{0,1,0}},
+        {"electron_parameters_cm",{{"100",J::object()}}},{"hole_parameters_cm",{{"100",J::object()}}}};
+    for (const auto& value:{"","relative.json"}) {
+        auto input=parserInput;input["avalanche_geometry_file"]=value;
+        CHECK_THROWS_AS(ialTransportOptionsFromJson(input),std::invalid_argument);
+    }
+}
+
+TEST_CASE("Observed IALMob avalanche assembles every live potential column in both unit systems",
+          "[ialmob][impact][observed_ialmob][jacobian]")
+{
+    const Real vt=constants::kb*300./constants::q;
+    for (bool tcad:{false,true}) for (bool interfaceCorner:{false,true}) {
+        const Real referenceDensity=0.;const bool boundaryProjection=true;
+        Fixture f(tcad,interfaceCorner);
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        options->element.referenceDensity_m3=referenceDensity;
+        const auto sourcePath=std::filesystem::path(f.path.string()+".avalanche");
+        struct Cleanup {std::filesystem::path p;~Cleanup(){std::error_code e;std::filesystem::remove(p,e);}} cleanup{sourcePath};
+        nlohmann::json cells=nlohmann::json::array();
+        for(Index id=0;id<2;++id) {
+            const auto& c=f.mesh.getCell(id);std::array<std::array<Real,2>,3> coordinates;
+            for(int j=0;j<3;++j){const auto& n=f.mesh.getNode(c.node_ids[j]);coordinates[j]={n.x*f.mobility.internalLengthToM,n.y*f.mobility.internalLengthToM};}
+            cells.push_back({{"cell_id",id},{"node_ids",c.node_ids},{"coordinates_m",coordinates},
+                {"mobility_vertex",id},{"source_measure_m2",{1.1e-15,1.4e-15,2.5e-15}}});
+        }
+        std::ofstream(sourcePath)<<nlohmann::json({{"schema","vela.ialmob.observed_avalanche_geometry.v1"},
+            {"node_count",6},{"cell_count",4},{"cells",cells}});
+        options->avalancheGeometryFile=sourcePath.string();f.mobility.ialmob=options;
+        DDScalingSpec scaling;
+        if (tcad) {
+            scaling.enabled=true;scaling.V0=vt;scaling.C0=1e17;scaling.D0=1000.*vt;
+            scaling.mu0=1000.;scaling.L0=.1;scaling.permittivityReference_F_per_m=constants::eps0*11.7;
+            scaling.unitSystem=PhysicalUnitSystem::tcadInternal();
+            scaling.chargeAreaFactor=scaling.unitSystem.chargeAreaFactor();
+            scaling.chargeLineFactor=scaling.unitSystem.chargeLineFactor();
+            scaling.fieldFromCoordinateDeltaFactor=scaling.unitSystem.fieldFromCoordinateDeltaFactor();
+            scaling.currentDensityLineIntegralFactor=scaling.unitSystem.currentDensityAM2PerInternal()*scaling.unitSystem.lengthMPerInternal();
+        }
+        auto impact=impactIonizationModelConfig("van_overstraeten",
+            UnitScalingConfig{tcad?UnitScalingMode::UnitScaling:UnitScalingMode::LegacySI});
+        impact.drivingForce="quasi_fermi_gradient";impact.generation="current_density";
+        impact.currentApproximation="ialmob_element_density_grad_qf";
+        impact.contactElectricFieldFallback=true;
+        impact.sourceMappingMode="element_vertex_box_measure";
+        impact.quasiFermiGradientDiscretization="cell_gradient";impact.sourceJacobianMode="local_ad";
+        // Manufactured field scale makes avalanche resolvable on the small
+        // fixture. This changes no production coefficient or acceptance gate.
+        impact.bScale=.001;impact.aScale=.01;
+        impact.ialmobBoundaryFieldProjection=boundaryProjection;
+        const auto curves=detail::ialElementAvalancheOptionsFromConfig(impact);
+        CHECK(curves.electron.lowA_per_m==Catch::Approx(7.03e7*impact.aScale));
+        CHECK(curves.electron.lowB_V_per_m==Catch::Approx(1.231e8*impact.bScale));
+        RecombinationModelConfig off;off.mechanisms.clear();
+        CoupledDDAssembler assembler(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
+        const Real scale=tcad?vt:1.;
+        CoupledDDState state;state.psi=VectorXd(6);state.phin=VectorXd(6);state.phip=VectorXd(6);
+        for(int i=0;i<6;++i){state.psi[i]=(.48+.012*i)/scale;state.phin[i]=.003*i/scale;state.phip[i]=(.96-.002*i)/scale;}
+        const auto x=assembler.pack(state);CoupledDDBoundaryConditions bc;
+        // Branch diagnostics can be the first consumer, before any live cache.
+        CHECK_FALSE(assembler.impactIonizationActiveBranchFingerprint(x).empty());
+        // Call the source API before a full residual: geometry must be prepared.
+        const auto source=assembler.impactIonizationSourceJacobian(x,bc);
+        REQUIRE(source.norm()>0.);
+        const auto sourceFd=assembler.impactIonizationSourceFiniteDifferenceJacobian(x,bc,2e-7);
+        CHECK((source-sourceFd).norm()/source.norm()<3e-6);
+        const auto full=assembler.assembleJacobian(x,bc);
+        DDSolution physical;
+        physical.psi=state.psi*scale;physical.phin=state.phin*scale;physical.phip=state.phip*scale;
+        physical.n=assembler.electronDensity(x);physical.p=assembler.holeDensity(x);
+        auto probe=evaluateBVProcessProbe(f.mesh,f.doping,physical,f.mobility,impact,{},f.materials,300.,
+            tcad?scaling.fieldFromCoordinateDeltaFactor:1.);
+        const auto sourceResidual=assembler.impactIonizationSourceResidual(x,bc);
+        auto doubleRate=impact;doubleRate.aScale*=2.;
+        CoupledDDAssembler doubled(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},doubleRate,{}, {},scaling);
+        const VectorXd doubledSource=doubled.impactIonizationSourceResidual(x,bc);
+        CHECK((doubledSource-2.*sourceResidual).norm()/sourceResidual.norm()<1e-12);
+        const Real integralScale=tcad?scaling.unitSystem.continuitySourceIntegralFactor()/(scaling.C0*scaling.D0):1.;
+        CHECK(sourceResidual.segment(6,6).sum()==Catch::Approx(-probe.totalSourceIntegral*integralScale).epsilon(1e-12));
+        CHECK(sourceResidual.segment(12,6).sum()==Catch::Approx(-probe.totalSourceIntegral*integralScale).epsilon(1e-12));
+        REQUIRE(probe.records.size()==12);
+        for (const auto& record:probe.records) {
+            CHECK(record.activeBranches.find("flux_sign=not_applicable")!=std::string::npos);
+            CHECK(record.sourceIntegral==Catch::Approx(record.alpha*record.selectedFluxMagnitude*record.sourceMeasure).epsilon(1e-12));
+        }
+        for(int k=0;k<x.size();++k) {
+            auto plus=x,minus=x;const Real h=2e-7/scale;plus[k]+=h;minus[k]-=h;
+            const VectorXd fd=(assembler.residual(plus,bc)-assembler.residual(minus,bc))/(2*h);
+            const VectorXd positiveSource=assembler.impactIonizationSourceResidual(plus,bc);
+            const VectorXd negativeSource=assembler.impactIonizationSourceResidual(minus,bc);
+            const VectorXd sf=(positiveSource-negativeSource)/(2*h);
+            CAPTURE(tcad,referenceDensity,boundaryProjection,k);
+            const VectorXd sc=source.col(k);
+            // At a symmetric gradient, an orthogonal direction has zero
+            // first derivative. Bound subtraction roundoff by the operands,
+            // rather than divide a numerical zero-column error by itself.
+            const Real cancellationBound=32*std::numeric_limits<Real>::epsilon()*
+                (positiveSource.norm()+negativeSource.norm())/(2*h);
+            CHECK((sc-sf).norm()<=3e-5*std::max(sc.norm(),sf.norm())+cancellationBound);
+            for(int block=0;block<3;++block) {
+                const VectorXd a=VectorXd(full.col(k)).segment(block*6,6),b=fd.segment(block*6,6);
+                CHECK((a-b).norm()/std::max({a.norm(),b.norm(),1e-30})<3e-5);
+            }
+        }
+        bc.phin[0]=state.phin[0];bc.phip[0]=state.phip[0];
+        const auto constrained=assembler.impactIonizationSourceJacobian(x,bc);
+        for(int k=0;k<18;++k){CHECK(constrained.coeff(6,k)==0.);CHECK(constrained.coeff(12,k)==0.);}
+        // Oxide nodes have no generation even when interface nodes have carriers.
+        const auto residual=assembler.impactIonizationSourceResidual(x,bc);
+        for(int i:{4,5,10,11,16,17}) CHECK(residual[i]==0.);
+        CHECK_THROWS_AS(assembler.impactIonizationSourceBranchResolvedFiniteDifferenceJacobian(x,bc,1e-7),std::invalid_argument);
+        CarrierStatisticsConfig fermi;fermi.model="fermi_dirac";
+        CoupledDDAssembler unsupported(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling,{},fermi);
+        CHECK_THROWS_AS(unsupported.residual(x,bc),std::invalid_argument);
+        impact.sourceJacobianMode="frozen";
+        CoupledDDAssembler frozen(f.mesh,f.materials,f.doping,vt,f.mobility,off,{},impact,{}, {},scaling);
+        CHECK_THROWS_AS(frozen.residual(x,bc),std::invalid_argument);
     }
 }

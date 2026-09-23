@@ -1829,13 +1829,36 @@ inline Real avalancheSourceEdgeArea(
     return area * config.sourceGeometryScale;
 }
 
+inline bool usesIalElementAvalancheSource(const ImpactIonizationModelConfig& config)
+{
+    return config.currentApproximation=="ialmob_element_density_grad_qf";
+}
+
 /// Validates the impact-ionization configuration shared by the Gummel and
 /// Newton solver config loaders. `context` is prefixed to any thrown message.
 inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConfig& config,
                                                  const char* context)
 {
+    const bool observedIal=usesIalElementAvalancheSource(config);
+    if (observedIal &&
+        (config.model!="van_overstraeten" || config.generation!="current_density" ||
+         config.drivingForce!="quasi_fermi_gradient" ||
+         config.quasiFermiGradientDiscretization!="cell_gradient" ||
+         config.sourceMappingMode!="element_vertex_box_measure" ||
+         config.sourceJacobianMode!="local_ad" ||
+         !config.contactElectricFieldFallback || !config.ialmobBoundaryFieldProjection ||
+         config.contactElectricFieldFallbackScope!="contact_node_cell" ||
+         config.contactElectricFieldFallbackMode!="cell_gradient_magnitude" ||
+         config.drivingForceInterpolation!="none" ||
+         config.electronDrivingForceRefDensity!=0. || config.holeDrivingForceRefDensity!=0. ||
+         config.quasiFermiCarrierTruncation!=0. || config.sourceVolumeFactor!=0. ||
+           config.sourceGeometryScale!=1. || config.edgeSourcePartition!="symmetric" ||
+           config.currentMagnitudeMode!="edge_scalar_abs" || config.sourceVolumePolicy!="genius_truncated" ||
+         config.debugRawVanOverstraeten || config.temperature_K!=300. ||
+         config.referenceTemperature_K!=300.))
+        throw std::invalid_argument(std::string(context)+": observed IALMob source requires its explicit 300 K GradQF/local_ad profile");
     if (config.ialmobBoundaryFieldProjection &&
-        (config.currentApproximation != "element_edge_sg_gss_laux" ||
+        ((!observedIal && config.currentApproximation != "element_edge_sg_gss_laux") ||
          config.generation != "current_density" ||
          config.drivingForce != "quasi_fermi_gradient")) {
         throw std::invalid_argument(std::string(context) +
@@ -1918,6 +1941,7 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
         config.currentApproximation != "cell_vector_current_reconstructed" &&
         config.currentApproximation != "nodal_vector_current_reconstructed" &&
         config.currentApproximation != "element_edge_sg_gss_laux" &&
+        config.currentApproximation != "ialmob_element_density_grad_qf" &&
         config.currentApproximation != "conserved_total_current") {
         throw std::invalid_argument(
             std::string(context) +
@@ -2071,7 +2095,7 @@ inline void validateImpactIonizationDrivingForce(const ImpactIonizationModelConf
     }
     const bool elementEdgeGssLauxRequested =
         config.currentApproximation == "element_edge_sg_gss_laux" ||
-        config.sourceMappingMode == "element_vertex_box_measure";
+        (config.sourceMappingMode == "element_vertex_box_measure" && !observedIal);
     if (elementEdgeGssLauxRequested &&
         (config.generation != "current_density" ||
          (config.drivingForce != "quasi_fermi_gradient" &&
@@ -2167,6 +2191,11 @@ inline bool usesElementEdgeGssLauxAvalancheSource(
     return config.generation == "current_density" &&
            config.currentApproximation == "element_edge_sg_gss_laux" &&
            config.sourceMappingMode == "element_vertex_box_measure";
+}
+
+inline bool usesElementLocalAvalancheSource(const ImpactIonizationModelConfig& config)
+{
+    return usesElementEdgeGssLauxAvalancheSource(config) || usesIalElementAvalancheSource(config);
 }
 
 inline bool usesDensityGradientAvalancheCurrent(
@@ -2349,6 +2378,7 @@ inline bool usesEdgeCurrentAvalancheSource(
             config.currentApproximation == "cell_vector_current_reconstructed" ||
             config.currentApproximation == "nodal_vector_current_reconstructed" ||
             config.currentApproximation == "element_edge_sg_gss_laux" ||
+            config.currentApproximation == "ialmob_element_density_grad_qf" ||
             config.currentApproximation == "conserved_total_current");
 }
 
@@ -3862,6 +3892,7 @@ inline std::optional<Point2> ialAvalancheBoundaryTangent(
     const MobilityModelConfig& mobility, Index cellId);
 
 #include "vela/equation/ElementEdgeGssLauxAD.inl"
+#include "vela/equation/IalElementAvalancheAssembly.inl"
 
 struct ElementEdgeGssLauxAvalancheSourceRecord {
     Index cellId = 0;
@@ -5083,6 +5114,27 @@ currentDensityAvalancheSourceComponentIntegrals(
     const std::vector<Real>&           Nc = {},
     const std::vector<Real>&           Nv = {})
 {
+    if (usesIalElementAvalancheSource(config)) {
+        SgAvalancheSourceComponentIntegrals source;
+        source.electron.assign(mesh.numNodes(),0.);
+        source.hole.assign(mesh.numNodes(),0.);
+        source.combined.assign(mesh.numNodes(),0.);
+        for (const auto& cell:mesh.cells()) {
+            if (mesh.getRegion(cell.region_id).material!="Si") continue;
+            std::array<Real,3> lp,lfn,lfp,ln,lh;
+            for (std::size_t i=0;i<3;++i) {
+                const auto id=cell.node_ids.at(i);
+                lp[i]=psi[id];lfn[i]=phin[id];lfp[i]=phip[id];ln[i]=n[id];lh[i]=p[id];
+            }
+            const auto local=ialElementAvalancheSourceIntegralsLocal(
+                config,mobilityConfig,mesh,doping,cell.id,lp,lfn,lfp,ln,lh);
+            for (std::size_t i=0;i<3;++i) {
+                const auto id=cell.node_ids[i];source.electron[id]+=local.electron[i];
+                source.hole[id]+=local.hole[i];source.combined[id]+=local.combined[i];
+            }
+        }
+        return source;
+    }
     if (usesElementEdgeGssLauxAvalancheSource(config)) {
         SgAvalancheSourceComponentIntegrals source;
         source.electron.assign(

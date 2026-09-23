@@ -369,7 +369,7 @@ CoupledDDAssembler::CoupledDDAssembler(
             throw std::invalid_argument("Intrinsic reference quantum coupling is not supported");
         if (impactIonizationEnabled_ &&
             (mobilityConfig_.model!="ialmob" ||
-             !detail::usesElementEdgeGssLauxAvalancheSource(impactIonizationConfig_) ||
+             !detail::usesElementLocalAvalancheSource(impactIonizationConfig_) ||
              mesh_.getRegion(cell.region_id).material=="Si"))
             throw std::invalid_argument("Intrinsic reference avalanche requires Si-only element IALMob source");
     }
@@ -600,14 +600,18 @@ void CoupledDDAssembler::buildNodalCurrentReconstructionKernels()
 
 void CoupledDDAssembler::refreshIalMobility(const VectorXd& x) const
 {
+    if (detail::usesIalElementAvalancheSource(impactIonizationConfig_) && mobilityConfig_.model!="ialmob")
+        throw std::invalid_argument("Observed element source requires IALMob transport");
+    if (detail::usesIalElementAvalancheSource(impactIonizationConfig_) && !mobilityConfig_.jacobianFieldDerivatives)
+        throw std::invalid_argument("Observed element source requires complete mobility derivatives");
     if (mobilityConfig_.model != "ialmob") return;
     if (std::abs(Vt_*constants::q/constants::kb-300.)>1e-10 ||
         electronQuantumPotentialConfig_.enabled)
         throw std::invalid_argument("IALMob coupled profile requires 300 K and quantum off");
     if (impactIonizationEnabled_ &&
-        (!detail::usesElementEdgeGssLauxAvalancheSource(impactIonizationConfig_) || usesFermiDirac_ ||
+        (!detail::usesElementLocalAvalancheSource(impactIonizationConfig_) || usesFermiDirac_ ||
          impactIonizationConfig_.sourceJacobianMode!="local_ad"))
-        throw std::invalid_argument("IALMob avalanche requires element_edge_sg_gss_laux, Boltzmann statistics and local_ad");
+        throw std::invalid_argument("IALMob avalanche requires a supported element source, Boltzmann statistics and local_ad");
     const int N=mesh_.numNodes();const Real scale=scaling_.enabled?scaling_.V0:1.;
     const VectorXd psi=x.segment(psiOffset(),N)*scale;
     VectorXd qn=x.segment(phinOffset(),N)*scale,qp=x.segment(phipOffset(),N)*scale;
@@ -1600,7 +1604,7 @@ VectorXd CoupledDDAssembler::residualImpl(
     std::vector<Real> sgAvalancheSourceIntegrals;
     if (sgCurrentAvalanche) {
         const bool directSgSource =
-            !detail::usesElementEdgeGssLauxAvalancheSource(
+            !detail::usesElementLocalAvalancheSource(
                 impactIonizationConfig_) &&
             !detail::usesTriangleGssAvalancheSource(
                 impactIonizationConfig_);
@@ -3266,7 +3270,7 @@ SparseMatrixd CoupledDDAssembler::impactIonizationSourceJacobian(
     }
     refreshIalMobility(x);
     if (!impactIonizationEnabled_ ||
-        !detail::usesElementEdgeGssLauxAvalancheSource(impactIonizationConfig_)) {
+        !detail::usesElementLocalAvalancheSource(impactIonizationConfig_)) {
         throw std::invalid_argument(
             "CoupledDDAssembler::impactIonizationSourceJacobian requires the "
             "element_edge_sg_gss_laux avalanche source.");
@@ -3337,7 +3341,7 @@ SparseMatrixd CoupledDDAssembler::impactIonizationSourceJacobian(
                     detail::Tri3LocalForwardDual(Vt_));
         }
         const auto sources =
-            detail::elementEdgeGssLauxAvalancheSourceIntegralsLocal<
+            detail::elementLocalAvalancheSourceIntegrals<
                 detail::Tri3LocalForwardDual>(
                 impactIonizationConfig_, mobilityConfig_, *mobility_,
                 cellEdges.at(static_cast<std::size_t>(cellId)), mesh_, doping_,
@@ -3428,7 +3432,7 @@ CoupledDDAssembler::impactIonizationSourceFiniteDifferenceJacobianImpl(
     }
     refreshIalMobility(x);
     if (!impactIonizationEnabled_ ||
-        !detail::usesElementEdgeGssLauxAvalancheSource(impactIonizationConfig_)) {
+        !detail::usesElementLocalAvalancheSource(impactIonizationConfig_)) {
         throw std::invalid_argument(
             "CoupledDDAssembler::impactIonizationSourceFiniteDifferenceJacobian "
             "requires the element_edge_sg_gss_laux avalanche source.");
@@ -3501,7 +3505,7 @@ CoupledDDAssembler::impactIonizationSourceFiniteDifferenceJacobianImpl(
                         (phipValues[localNode] - psiValues[localNode]) /
                         Scalar(Vt_));
             }
-            return detail::elementEdgeGssLauxAvalancheSourceIntegralsLocal<Scalar>(
+            return detail::elementLocalAvalancheSourceIntegrals<Scalar>(
                 impactIonizationConfig_, mobilityConfig_, *mobility_,
                 cellEdges.at(static_cast<std::size_t>(cellId)), mesh_, doping_,
                 cellMaterials_, cellId, psiValues, phinValues, phipValues,
@@ -3761,7 +3765,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     const bool triangleGssAvalanche = sgCurrentAvalanche &&
         detail::usesTriangleGssAvalancheSource(impactIonizationConfig_);
     const bool elementEdgeGssLauxAvalanche = sgCurrentAvalanche &&
-        detail::usesElementEdgeGssLauxAvalancheSource(
+        detail::usesElementLocalAvalancheSource(
             impactIonizationConfig_);
     const bool cellLocalAvalanche =
         triangleGssAvalanche || elementEdgeGssLauxAvalanche;
@@ -5978,7 +5982,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                             detail::Tri3LocalForwardDual(Vt_));
                 }
                 const auto sources = elementEdgeGssLauxAvalanche
-                    ? detail::elementEdgeGssLauxAvalancheSourceIntegralsLocal<
+                    ? detail::elementLocalAvalancheSourceIntegrals<
                           detail::Tri3LocalForwardDual>(
                           impactIonizationConfig_, mobilityConfig_, *mobility_,
                           cellEdges.at(static_cast<std::size_t>(cellId)),
