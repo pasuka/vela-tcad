@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+from electrothermal_state import read_bound_record
 from pathlib import Path
 import statistics
 import re
@@ -12,7 +13,7 @@ from run_templates_ldmos_electrothermal_curve import state_gate
 
 
 def read(p):
-    return json.loads(Path(p).read_text(encoding='utf-8'))
+    return read_bound_record(p)
 
 
 def sha(p):

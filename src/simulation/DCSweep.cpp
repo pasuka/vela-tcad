@@ -16,6 +16,10 @@
 #include "vela/io/CSVWriter.h"
 #include "vela/io/CsvUtils.h"
 #include "vela/io/DDSolutionCsv.h"
+#ifdef VELA_ENABLE_HDF5_STATE
+#include "vela/io/DDSolutionState.h"
+#include "vela/io/StateIdentity.h"
+#endif
 #include "vela/io/MeshReader.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/physics/BandgapNarrowing.h"
@@ -3032,6 +3036,9 @@ struct DCSweep::PreparedInputs {
     DopingModel doping;
     CarrierTransportCoupleProfileReport transport;
     PoissonCoupleProfileReport poisson;
+    std::string stateMeshSha256;
+    std::string stateSourceKey;
+    nlohmann::json stateSources;
 };
 
 DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
@@ -3070,6 +3077,23 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     // are compared on every request (not timestamps), including relative paths
     // resolved against this request's directory. Contact and solve state stay
     // outside the cache and are rebuilt below.
+    const auto includeFiles = [&](auto&& self, nlohmann::json& value) -> void {
+        if (value.is_array()) {
+            for (auto& child : value) self(self, child);
+        } else if (value.is_object()) {
+            for (auto& [name, child] : value.items()) {
+                if (name.ends_with("_file") && child.is_string()) {
+                    const auto path = std::filesystem::absolute(
+                        resolve(child.template get<std::string>())).lexically_normal();
+                    std::ifstream file(path, std::ios::binary);
+                    if (!file) throw std::runtime_error(
+                        "DCSweep: cannot read prepared input: " + path.string());
+                    const std::string bytes((std::istreambuf_iterator<char>(file)), {});
+                    child = {{"path", path.string()}, {"bytes", bytes}};
+                } else self(self, child);
+            }
+        }
+    };
     std::string preparedKey;
     if (reusePreparedInputs_) {
         ScopedPerformanceTimer stage("dc.prepared_inputs.check");
@@ -3078,23 +3102,6 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                  "mesh_file", "materials_file", "doping",
                                  "node_doping_file"})
             if (cfg.contains(field)) key[field] = cfg.at(field);
-        const auto includeFiles = [&](auto&& self, nlohmann::json& value) -> void {
-            if (value.is_array()) {
-                for (auto& child : value) self(self, child);
-            } else if (value.is_object()) {
-                for (auto& [name, child] : value.items()) {
-                    if (name.ends_with("_file") && child.is_string()) {
-                        const auto path = std::filesystem::absolute(
-                            resolve(child.template get<std::string>())).lexically_normal();
-                        std::ifstream file(path, std::ios::binary);
-                        if (!file) throw std::runtime_error(
-                            "DCSweep: cannot read prepared input: " + path.string());
-                        const std::string bytes((std::istreambuf_iterator<char>(file)), {});
-                        child = {{"path", path.string()}, {"bytes", bytes}};
-                    } else self(self, child);
-                }
-            }
-        };
         includeFiles(includeFiles, key);
         preparedKey = key.dump();
     }
@@ -3115,6 +3122,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         ScopedPerformanceTimer stage("dc.prepared_inputs.build");
         incrementPerformanceCounter("dc.prepared_inputs.misses");
         sequentialLinearSolver_.reset();
+        sequentialJacobianStructure_.reset();
         JsonMeshReader reader;
         mesh = reader.read(resolve(cfg.at("mesh_file").get<std::string>()), scaling);
         mesh.buildBoxGeometry(parseBoxGeometryOptions(cfg));
@@ -3128,6 +3136,42 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 std::move(preparedKey), mesh, matdb, doping,
                 transportCoupleProfile, poissonCoupleProfile});
     }
+    const auto stateFormat = cfg.value("state_format", std::string("hdf5"));
+    const std::string stateSuffix = ".h5";
+    if (stateFormat != "hdf5")
+        throw std::invalid_argument("DCSweep: unknown state_format");
+#ifdef VELA_ENABLE_HDF5_STATE
+    std::unique_ptr<DDStateArchiveScope> archiveScope;
+    if (stateFormat == "hdf5") {
+        if (reusePreparedInputs_ && preparedInputs_ && preparedInputs_->stateMeshSha256.empty())
+            preparedInputs_->stateMeshSha256 = stateMeshIdentity(mesh, scaling);
+        const auto identity = reusePreparedInputs_ && preparedInputs_ ? preparedInputs_->stateMeshSha256 : stateMeshIdentity(mesh, scaling);
+        nlohmann::json inputSources;
+        if (reusePreparedInputs_ && preparedInputs_) {
+            // Base input bytes were already checked above. Additional mobility
+            // file bytes are also compared, so same-path edits invalidate hashes.
+            nlohmann::json extra = nlohmann::json::object();
+            for (const char* key : {"mobility", "mobility_SI"})
+                if (cfg.contains(key)) extra[key] = cfg.at(key);
+            if (cfg.contains("solver") && cfg.at("solver").contains("mobility"))
+                extra["solver"]["mobility"] = cfg.at("solver").at("mobility");
+            includeFiles(includeFiles, extra);
+            const auto extraKey = extra.dump();
+            if (preparedInputs_->stateSources.is_null() || preparedInputs_->stateSourceKey != extraKey) {
+                preparedInputs_->stateSources = stateInputProvenance(cfg, cfgDir);
+                preparedInputs_->stateSourceKey = extraKey;
+            }
+            inputSources = preparedInputs_->stateSources;
+        } else inputSources = stateInputProvenance(cfg, cfgDir);
+        archiveScope = std::make_unique<DDStateArchiveScope>(nlohmann::json{
+            {"mode", "dd"}, {"mesh_sha256", identity},
+            {"potential_origin_V", cfg.value("potential_origin_V", 0.)},
+            {"input_file_sha256", inputSources},
+            {"source_config_sha256", stateSha256(cfg.dump())}});
+    }
+#else
+    if (stateFormat == "hdf5") throw std::invalid_argument("HDF5 state archives not enabled in this build");
+#endif
     std::vector<RegionFixedChargeSpec> fixedChargeSpecs =
         parseRegionFixedChargeSpecs(cfg, scaling);
     std::vector<InterfaceSheetChargeSpec> sheetChargeSpecs =
@@ -3138,6 +3182,18 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     canonicalizeSweepContactsInPlace(mesh, sweep);
     std::unordered_map<std::string, Real>& baseBiases = contactConfig.biases;
     ContactSpecsMap& contactSpecs = contactConfig.specs;
+    const auto saveBiasState = [&](const std::filesystem::path& path,
+                                   const DDSolution& solution, Real bias,
+                                   const char* role) {
+        auto metadata = *activeDDStateArchiveMetadata();
+        metadata["bias_V"] = bias;
+        metadata["bias_contact"] = sweep.contact;
+        metadata["state_role"] = role;
+        metadata["contact_biases_V"] = baseBiases;
+        metadata["contact_biases_V"][sweep.contact] = bias;
+        DDStateArchiveScope stateScope(std::move(metadata));
+        writeDDSolutionState(path, solution, sweep.scaling);
+    };
     const auto transportContactBiases = [&](const auto& allBiases) {
         std::unordered_map<std::string, Real> filtered;
         for (const auto& [name, bias] : allBiases) {
@@ -3211,6 +3267,15 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         newton.sequentialLinearSolver = sequentialLinearSolver_;
     } else if (reuseLinearAnalysis_) {
         sequentialLinearSolver_.reset();
+    }
+    newton.diagnosticFermiNodeCache = solverCfg.value("diagnostic_fermi_node_cache", false);
+    if (solverCfg.value("diagnostic_reuse_jacobian_structure", false) &&
+        (solverMethod == SolverMethod::Newton || solverMethod == SolverMethod::GummelNewton)) {
+        if (!sequentialJacobianStructure_)
+            sequentialJacobianStructure_ = std::make_shared<CoupledDDAssembler::StructureCache>();
+        newton.sequentialJacobianStructure = sequentialJacobianStructure_;
+    } else {
+        sequentialJacobianStructure_.reset();
     }
     // Mesh transport coefficients and mobility options are fixed for this
     // request. Share geometry before the solvers and postprocessors copy it.
@@ -5138,31 +5203,27 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 "_bias_" + biasToken(actualTargetBias);
             if (parentAcceptedState != nullptr) {
                 const std::filesystem::path path =
-                    stateDir / (stem + "_parent.csv");
-                writeDDSolutionStateCsv(
-                    path.string(), *parentAcceptedState, sweep.scaling);
+                    stateDir / (stem + "_parent" + stateSuffix);
+                saveBiasState(path, *parentAcceptedState, parentAcceptedBias, "accepted_parent");
                 rejectedParentStateFile = path.string();
             }
             if (attempt.hasInitialSolution) {
                 const std::filesystem::path path =
-                    stateDir / (stem + "_initial.csv");
-                writeDDSolutionStateCsv(
-                    path.string(), attempt.initialSolution, sweep.scaling);
+                    stateDir / (stem + "_initial" + stateSuffix);
+                saveBiasState(path, attempt.initialSolution, actualTargetBias, "trial_initial");
                 rejectedInitialStateFile = path.string();
             }
             if (attempt.solution.psi.size() == mesh.numNodes()) {
                 const std::filesystem::path path =
-                    stateDir / (stem + "_final.csv");
-                writeDDSolutionStateCsv(
-                    path.string(), attempt.solution, sweep.scaling);
+                    stateDir / (stem + "_final" + stateSuffix);
+                saveBiasState(path, attempt.solution, actualTargetBias, "trial_final");
                 rejectedFinalStateFile = path.string();
             }
             if (attempt.hasBestNewtonSolution &&
                 attempt.bestNewtonSolution.psi.size() == mesh.numNodes()) {
                 const std::filesystem::path path =
-                    stateDir / (stem + "_best.csv");
-                writeDDSolutionStateCsv(
-                    path.string(), attempt.bestNewtonSolution, sweep.scaling);
+                    stateDir / (stem + "_best" + stateSuffix);
+                saveBiasState(path, attempt.bestNewtonSolution, actualTargetBias, "trial_best");
                 rejectedBestStateFile = path.string();
             }
         }
@@ -5254,8 +5315,8 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         const std::filesystem::path prefix(prefixString);
         const std::filesystem::path path =
             prefix.parent_path() /
-            (prefix.filename().string() + "_bias_" + biasToken(voltage) + ".csv");
-        writeDDSolutionStateCsv(path, solution, sweep.scaling);
+            (prefix.filename().string() + "_bias_" + biasToken(voltage) + stateSuffix);
+        saveBiasState(path, solution, voltage, "accepted");
     };
 
     auto recordPoint = [&](Real voltage, const SolvePointAttempt& attempt, bool converged,
@@ -7188,7 +7249,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                                sweepCarrierStatistics);
         }
         if (converged && !sweep.writeStateFile.empty())
-            writeDDSolutionStateCsv(sweep.writeStateFile, sol, sweep.scaling);
+            saveBiasState(sweep.writeStateFile, sol, voltage, "accepted");
         if (converged)
             writeAcceptedState(sweep.writeStateEveryPointPrefix, voltage, sol);
         if (converged)
@@ -7259,7 +7320,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
     std::unique_ptr<DDSolution> initialState;
     if (!sweep.initialStateFile.empty()) {
         initialState = std::make_unique<DDSolution>(
-            readDDSolutionStateCsv(
+            readDDSolutionState(
                 sweep.initialStateFile, mesh.numNodes(), sweep.scaling));
     } else if (sweep.initialization.mode == "poisson_block") {
         const Real initialBias = !sweep.biasPoints.empty() ? sweep.biasPoints.front() : sweep.start;
@@ -7278,8 +7339,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
             initializer.buildPoissonBlockInitialization();
         initialState = std::make_unique<DDSolution>(initialization.poissonBlockInitial);
         if (!sweep.initialization.writeStateFile.empty())
-            writeDDSolutionStateCsv(
-                sweep.initialization.writeStateFile, *initialState, sweep.scaling);
+            saveBiasState(sweep.initialization.writeStateFile, *initialState, initialBias, "initialization");
         if (!sweep.initialization.diagnosticCsv.empty()) {
             writePoissonBlockInitializationDiagnosticCsv(
                 std::filesystem::path(sweep.initialization.diagnosticCsv),
@@ -7414,7 +7474,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 previousEvaluationVoltage = evaluationStateVoltage;
                 hasPreviousEvaluationState = true;
             }
-            evaluationState = readDDSolutionStateCsv(
+            evaluationState = readDDSolutionState(
                 best->stateFile, mesh.numNodes(), sweep.scaling);
             hasEvaluationState = true;
             seedVoltage = best->innerVoltage_V;
@@ -7599,12 +7659,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                     sweep.boundaryControl.checkpointDirectory);
                 const std::filesystem::path checkpointPath = checkpointDir /
                     (controlMode + "_target_" + biasToken(targetValue) +
-                     "_eval_" + std::to_string(evaluationIndex) + ".csv");
+                     "_eval_" + std::to_string(evaluationIndex) + stateSuffix);
                 {
                     ScopedPerformanceTimer timer("boundary.checkpoint_write");
                     incrementPerformanceCounter("boundary.checkpoint_writes");
-                    writeDDSolutionStateCsv(
-                        checkpointPath, attempt.solution, sweep.scaling);
+                    saveBiasState(checkpointPath, attempt.solution, innerVoltage, "boundary_trial");
                 }
                 stateFile = checkpointPath.string();
             }
@@ -7768,7 +7827,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                 std::isfinite(
                     sweep.continuation.arclength.initialSecantBias_V)) {
                 const DDSolution secantPreviousSolution =
-                    readDDSolutionStateCsv(
+                    readDDSolutionState(
                         sweep.continuation.arclength.initialSecantStateFile,
                         mesh.numNodes(),
                         sweep.scaling);
@@ -8360,10 +8419,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
                             }
                             failureReason.clear();
                             if (!sweep.writeStateFile.empty()) {
-                                writeDDSolutionStateCsv(
-                                    sweep.writeStateFile,
-                                    attempt.solution,
-                                    sweep.scaling);
+                                saveBiasState(sweep.writeStateFile, attempt.solution, event.voltage, "accepted");
                             }
                             writeAcceptedState(
                                 sweep.writeStateEveryAcceptedStepPrefix,
@@ -8509,7 +8565,7 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         anchor.lambda = sweep.start;
         std::optional<ArclengthTangent> initialSecantTangent;
         if (!sweep.continuation.arclength.initialSecantStateFile.empty()) {
-            const DDSolution secantPreviousSolution = readDDSolutionStateCsv(
+            const DDSolution secantPreviousSolution = readDDSolutionState(
                 sweep.continuation.arclength.initialSecantStateFile,
                 mesh.numNodes(),
                 sweep.scaling);

@@ -9,6 +9,10 @@ import sys
 import tempfile
 import unittest
 
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'scripts'))
+import electrothermal_state
+import state_archive
+
 
 def without_trial_timing(value):
     if isinstance(value,dict):
@@ -28,6 +32,8 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         mesh = dict(regions=[dict(id=0,name='silicon',material='Silicon',cell_ids=[0,1])],nodes=[dict(id=i, x=x, y=y) for i, (x,y) in enumerate(((0,0),(1,0),(1,1),(0,1)))],
                     triangles=[dict(id=0, region_id=0, node_ids=[0,1,2]), dict(id=1, region_id=0, node_ids=[0,2,3])],
                     contacts=[dict(id=i,region_id=0,name=name, node_ids=[i]) for i,name in enumerate(('source','drain','substrate','gate'))])
+        self.mesh_identity=state_archive.mesh_identity(mesh,1.)
+        self.state_serial=0
         self.write('mesh.json', mesh)
         self.input = dict(mesh_file='mesh.json', coordinate_to_metres=1.,
             region_conductivity=[dict(region_id=0,model='constant',value_W_per_m_K=1.)], thermodes=[],
@@ -43,7 +49,15 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.deck=dict(simulation_type='electrothermal_dc_sweep', input_file='input.json',output_directory='output',runtime_log=dict(enabled=False),
                        sweep=dict(bias_points_V=[0.],initial_step_V=.1,minimum_step_V=.025,maximum_step_V=.1,max_newton=2,growth_newton=2,predictor='none'))
     def write(self,name,data):
+        if 'state_interleaved' in data or 'referenced_state_interleaved' in data:
+            self.state_serial+=1
+            mesh=json.loads((self.root/Path(data['mesh_file'])).read_text())
+            identity=state_archive.mesh_identity(mesh,data.get('coordinate_to_metres',1.))
+            data=electrothermal_state.pack(self.root/f'input_{self.state_serial}.json',data,
+                dict(mode='electrothermal',mesh_sha256=identity,potential_origin_V=data.get('potential_origin_V',0.)))
         (self.root/name).write_text(json.dumps(data),encoding='utf-8')
+    def read(self,path):
+        return electrothermal_state.read_bound_record(path)
     def run_deck(self):
         self.write('deck.json',self.deck)
         return subprocess.run([self.runner,'--config',str(self.root/'deck.json')],cwd=self.root.parent,
@@ -62,20 +76,53 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.assertEqual(float(rows[0]['peak_temperature_K']),300.)
         # Volume accumulation can round the uniform mean by one ULP.
         self.assertAlmostEqual(float(rows[0]['mean_temperature_K']),300.,delta=1e-12)
+    def test_completed_resume_rejects_corrupted_referenced_state(self):
+        self.assertEqual(self.run_deck().returncode,0)
+        path=self.root/'output/step_0000/output.json'
+        record=json.loads(path.read_text())
+        state=path.parent/record['state_archive']['file']
+        with state.open('ab') as stream: stream.write(b'corruption')
+        self.deck['resume']=True
+        run=self.run_deck()
+        self.assertNotEqual(run.returncode,0)
+        self.assertIn('digest mismatch',run.stderr)
+    def test_missing_temperature_is_not_replaced_by_ambient(self):
+        import h5py
+        path=self.root/'input.json';record=json.loads(path.read_text())
+        state=path.parent/record['state_archive']['file']
+        with h5py.File(state,'r+') as file: del file['fields/temperature_K']
+        record['state_archive']['sha256']=hashlib.sha256(state.read_bytes()).hexdigest()
+        path.write_text(json.dumps(record))
+        run=self.run_deck()
+        self.assertNotEqual(run.returncode,0)
+        self.assertIn('temperature/mode mismatch',run.stderr)
+        self.assertFalse((self.root/'output').exists())
     def test_resume_rejects_modified_geometry(self):
         self.assertEqual(self.run_deck().returncode,0)
-        mesh=json.loads((self.root/'mesh.json').read_text());mesh['nodes'][0]['x']=.1;self.write('mesh.json',mesh)
+        mesh=self.read((self.root/'mesh.json'));mesh['nodes'][0]['x']=.1;self.write('mesh.json',mesh)
         self.deck['resume']=True
-        run=self.run_deck();self.assertNotEqual(run.returncode,0);self.assertIn('differs from checkpoint',run.stderr)
+        run=self.run_deck();self.assertNotEqual(run.returncode,0);self.assertIn('mesh identity mismatch',run.stderr)
+    def test_resume_rejects_changed_external_input_bytes(self):
+        # A declared source is fingerprinted even when this minimal fixture's
+        # physics is specified inline. The path and main deck remain unchanged.
+        (self.root/'material_source.json').write_text('{}')
+        self.input['materials_file']=str(self.root/'material_source.json')
+        self.write('input.json',self.input)
+        self.assertEqual(self.run_deck().returncode,0)
+        (self.root/'material_source.json').write_text('{"revision":2}')
+        self.deck['resume']=True
+        run=self.run_deck()
+        self.assertNotEqual(run.returncode,0)
+        self.assertIn('differs from checkpoint',run.stderr)
     def test_pause_then_failed_heat_gate_keeps_accepted_zero(self):
         self.deck['sweep']['bias_points_V']=[0.,.1];self.deck['pause_after_attempts']=1
         run=self.run_deck();self.assertEqual(run.returncode,1,run.stderr)
-        ledger=json.loads((self.root/'output/ledger.json').read_text())
+        ledger=self.read((self.root/'output/ledger.json'))
         self.assertEqual(ledger['status'],'stopped_at_checkpoint')
         accepted=Path(ledger['accepted_result']).read_bytes()
         self.deck.update(resume=True,pause_after_attempts=0)
         run=self.run_deck();self.assertEqual(run.returncode,1,run.stderr)
-        ledger=json.loads((self.root/'output/ledger.json').read_text())
+        ledger=self.read((self.root/'output/ledger.json'))
         self.assertEqual(ledger['status'],'failed');self.assertEqual(ledger['accepted_bias_V'],0.)
         self.assertEqual(Path(ledger['accepted_result']).read_bytes(),accepted)
         self.assertIn('heat_balance',ledger['runs'][-1]['gate']['reasons'])
@@ -88,9 +135,9 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.input['performance_profiling']=True
         self.write('input.json',self.input)
         self.test_pause_then_failed_heat_gate_keeps_accepted_zero()
-        ledger=json.loads((self.root/'output/ledger.json').read_text())
+        ledger=self.read((self.root/'output/ledger.json'))
         self.assertGreater(len(ledger['runs']),2)
-        hits=[json.loads((Path(r['directory'])/'output.json').read_text())
+        hits=[self.read((Path(r['directory'])/'output.json'))
               ['performance']['static_preparation_reused'] for r in ledger['runs']]
         self.assertEqual(hits[:2],[False,False])
         self.assertTrue(all(hits[2:]))
@@ -104,8 +151,8 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.input['diagnostic_voltage_update_limit_V']=limit
             self.write('input.json',self.input)
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            ledger=json.loads((self.root/self.deck['output_directory']/'ledger.json').read_text())
-            result=json.loads(Path(ledger['accepted_result']).read_text())
+            ledger=self.read((self.root/self.deck['output_directory']/'ledger.json'))
+            result=self.read(Path(ledger['accepted_result']))
             self.assertTrue(ledger['runs'][0]['gate']['pass_gate'])
             counts.append(result['newton_updates']);states.append(result['state_interleaved'])
         self.assertLess(counts[1],counts[0])
@@ -121,7 +168,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.write('input.json',self.input)
             self.deck['output_directory']='trace_'+str(trace)
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            results.append(json.loads((self.root/self.deck['output_directory']/'step_0000/output.json').read_text()))
+            results.append(self.read((self.root/self.deck['output_directory']/'step_0000/output.json')))
         baseline,traced=results
         for key in ('state_interleaved','referenced_state_interleaved','residual','diagnostic_stop','newton_updates'):
             self.assertEqual(baseline[key],traced[key],key)
@@ -149,7 +196,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.input['diagnostic_local_qf_limiter']=enabled
             self.write('input.json',self.input);self.deck['output_directory']='local_qf_'+str(enabled)
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            result=json.loads((self.root/self.deck['output_directory']/'step_0000/output.json').read_text())
+            result=self.read((self.root/self.deck['output_directory']/'step_0000/output.json'))
             self.assertTrue(result['carrier_row_gate']['satisfied'])
             results.append(result)
         self.assertGreater(results[1]['history'][0]['initial_alpha'],results[0]['history'][0]['initial_alpha'])
@@ -161,11 +208,11 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.input['boundaries'][-4]['value']=.1
         self.input['diagnostic_local_qf_limiter']=True;self.write('input.json',self.input)
         run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-        ledger=json.loads((self.root/'output/ledger.json').read_text())
+        ledger=self.read((self.root/'output/ledger.json'))
         for row in ledger['initialization_runs']:
-            cfg=json.loads((Path(row['result']).parent/'input.json').read_text())
+            cfg=self.read((Path(row['result']).parent/'input.json'))
             self.assertFalse(cfg['diagnostic_local_qf_limiter'])
-        cfg=json.loads((Path(ledger['runs'][0]['directory'])/'input.json').read_text())
+        cfg=self.read((Path(ledger['runs'][0]['directory'])/'input.json'))
         self.assertTrue(cfg['diagnostic_local_qf_limiter'])
 
     def test_projected_natural_updates_preserve_dirichlet_constraints(self):
@@ -180,7 +227,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.write('input.json',self.input)
             self.deck['output_directory']='natural_'+mode
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            result=json.loads((self.root/self.deck['output_directory']/'step_0000/output.json').read_text())
+            result=self.read((self.root/self.deck['output_directory']/'step_0000/output.json'))
             self.assertGreater(result['natural_damping']['corrector_solves'],0)
             self.assertTrue(result['carrier_row_gate']['satisfied'])
             self.assertTrue(all(b['satisfied'] for b in result['electrical_block_gates']))
@@ -200,7 +247,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.input['diagnostic_adaptive_jacobian']=adaptive;self.write('input.json',self.input)
             self.deck['output_directory']='adaptive_'+str(adaptive)
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            result=json.loads((self.root/self.deck['output_directory']/'step_0000/output.json').read_text())
+            result=self.read((self.root/self.deck['output_directory']/'step_0000/output.json'))
             self.assertTrue(all(b['satisfied'] for b in result['electrical_block_gates']))
             results.append(result)
         self.assertGreater(results[1]['adaptive_jacobian']['lagged_solves'],0)
@@ -235,7 +282,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         def run(value,label):
             self.write(label+'.json',value)
             proc=subprocess.run([str(probe),str(self.root/(label+'.json')),str(self.root/(label+'_out.json'))],stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
-            return proc,json.loads((self.root/(label+'_out.json')).read_text()) if proc.returncode==0 else None
+            return proc,self.read((self.root/(label+'_out.json'))) if proc.returncode==0 else None
         p,base=run(cfg,'base');self.assertEqual(p.returncode,0,p.stderr)
         cfg['diagnostic_hole_row_audit_nodes']=[1]
         p,data=run(cfg,'audit');self.assertEqual(p.returncode,0,p.stderr)
@@ -271,7 +318,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             run=subprocess.run([str(probe),str(self.root/(name+'_input.json')),str(self.root/(name+'.json'))],
                                stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
             self.assertEqual(run.returncode,0,run.stderr)
-            return json.loads((self.root/(name+'.json')).read_text())
+            return self.read((self.root/(name+'.json')))
         prepared=point(self.input,'prepared')
         self.assertEqual(prepared['diagnostic_stop'],'diagnostic_scaled_residual')
         self.assertTrue(prepared['electrical_block_gates'][0]['satisfied'])
@@ -356,7 +403,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.input['diagnostic_pseudo_transient']=enabled;self.write('input.json',self.input)
             self.deck['output_directory']='pseudo_constraints_'+str(enabled)
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            results.append(json.loads((self.root/self.deck['output_directory']/'step_0000/output.json').read_text()))
+            results.append(self.read((self.root/self.deck['output_directory']/'step_0000/output.json')))
         for key in ('state_interleaved','residual','newton_updates','electrical_block_gates'):
             self.assertEqual(results[0][key],results[1][key])
         steps=results[1]['pseudo_transient']['steps'];self.assertGreater(len(steps),0)
@@ -365,7 +412,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.input['diagnostic_pseudo_acceptance']=mode;self.write('input.json',self.input)
             self.deck['output_directory']='algebraic_'+mode
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            result=json.loads((self.root/self.deck['output_directory']/'step_0000/output.json').read_text())
+            result=self.read((self.root/self.deck['output_directory']/'step_0000/output.json'))
             for key in ('state_interleaved','residual','newton_updates','electrical_block_gates'):
                 self.assertEqual(results[0][key],result[key])
 
@@ -378,7 +425,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.input['diagnostic_pseudo_transient']=True;self.write('input.json',self.input)
         self.deck['output_directory']='converged_defect'
         run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-        result=json.loads((self.root/'converged_defect/step_0000/output.json').read_text())
+        result=self.read((self.root/'converged_defect/step_0000/output.json'))
         self.assertEqual(result['newton_updates'],0)
         self.assertEqual(result['pseudo_transient']['defect_evaluations'],0)
         self.assertEqual(result['carrier_row_gate']['eps_row'],1e-8)
@@ -398,7 +445,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.write('input.json',self.input)
         run=self.run_deck()
         self.assertTrue((self.root/'output/step_0000/output.json').exists(),run.stdout+run.stderr)
-        result=json.loads((self.root/'output/step_0000/output.json').read_text())
+        result=self.read((self.root/'output/step_0000/output.json'))
         first=result['pseudo_transient']['steps'][0]
         self.assertGreater(first['mass_nonzeros'],0);self.assertLessEqual(first['mass_nonzeros'],8)
         self.assertGreater(first['tau_s'],0.)
@@ -407,7 +454,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.input['diagnostic_pseudo_acceptance']=mode;self.write('input.json',self.input)
             self.deck['output_directory']=mode
             self.run_deck()
-            trial=json.loads((self.root/mode/'step_0000/output.json').read_text())
+            trial=self.read((self.root/mode/'step_0000/output.json'))
             step=trial['pseudo_transient']['steps'][0]
             self.assertTrue(step['accepted']);self.assertTrue(step['defect_used'])
             self.assertLess(step['accepted_defect_norm'],step['fixed_residual_before'])
@@ -418,7 +465,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.input['diagnostic_pseudo_direction_audit']=True;self.write('input.json',self.input)
         self.deck['output_directory']='audit'
         self.run_deck()
-        audited=json.loads((self.root/'audit/step_0000/output.json').read_text())
+        audited=self.read((self.root/'audit/step_0000/output.json'))
         for key in ('state_interleaved','residual','newton_updates'):
             self.assertEqual(result[key],audited[key])
         directions=audited['pseudo_direction_audit']['directions'];self.assertEqual(len(directions),8)
@@ -452,7 +499,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
                 self.write('input.json',self.input)
                 self.deck['output_directory']='contact_'+str(amplitude)+'_'+str(enabled)
                 self.run_deck()
-                pair.append(json.loads((self.root/self.deck['output_directory']/'step_0000/output.json').read_text()))
+                pair.append(self.read((self.root/self.deck['output_directory']/'step_0000/output.json')))
             for key in ('history','state_interleaved','referenced_state_interleaved','residual','carrier_row_gate','newton_updates'):
                 self.assertEqual(without_trial_timing(pair[0][key]),without_trial_timing(pair[1][key]),key)
             event=pair[1]['near_steady_contact_consistency']
@@ -484,7 +531,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         for enabled in (False,True):
             self.input['diagnostic_near_steady_contact_consistency']=enabled;self.write('input.json',self.input)
             self.deck['output_directory']='rollback_contact_'+str(enabled);self.run_deck()
-            pair.append(json.loads((self.root/self.deck['output_directory']/'step_0000/output.json').read_text()))
+            pair.append(self.read((self.root/self.deck['output_directory']/'step_0000/output.json')))
         event=pair[1]['near_steady_contact_consistency']['events']
         self.assertEqual(len(event),1);self.assertTrue(event[0]['reassembled']);self.assertFalse(event[0]['accepted'])
         self.assertGreater(event[0]['max_potential_change_V'],0.)
@@ -497,7 +544,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
     def check_near_steady_representation(self, standalone):
         # Keep contacts fixed and explicitly qualify the tiny nonzero flux
         # at a free interior carrier node in this controlled test.
-        mesh=json.loads((self.root/'mesh.json').read_text())
+        mesh=self.read((self.root/'mesh.json'))
         mesh['nodes'].append(dict(id=4,x=.5,y=.5))
         mesh['triangles']=[dict(id=i,region_id=0,node_ids=[i,(i+1)%4,4]) for i in range(4)]
         mesh['regions'][0]['cell_ids']=list(range(4));self.write('mesh.json',mesh)
@@ -526,7 +573,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
                 self.input[key][17]=amplitude;self.input[key][18]=-amplitude
             self.deck['output_directory']=label;self.write('input.json',self.input)
             self.run_deck()
-            data=json.loads((self.root/label/'step_0000/output.json').read_text())
+            data=self.read((self.root/label/'step_0000/output.json'))
             switch=data['near_steady_qf_rebase' if standalone else 'near_steady_qf_switch']
             if standalone:
                 self.assertNotIn('pseudo_transient',data)
@@ -561,11 +608,11 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         run=self.run_deck();self.assertNotEqual(run.returncode,0)
     def test_ngmres_does_not_modify_a_converged_point(self):
         self.assertEqual(self.run_deck().returncode,0)
-        baseline=json.loads((self.root/'output/step_0000/output.json').read_text())
+        baseline=self.read((self.root/'output/step_0000/output.json'))
         self.input['diagnostic_ngmres_recovery']=True;self.write('input.json',self.input)
         self.deck['output_directory']='ngmres'
         run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-        result=json.loads((self.root/'ngmres/step_0000/output.json').read_text())
+        result=self.read((self.root/'ngmres/step_0000/output.json'))
         self.assertEqual(result['state_interleaved'],baseline['state_interleaved'])
         self.assertEqual(result['residual'],baseline['residual'])
         self.assertEqual(result['ngmres_recovery']['updates'],0)
@@ -582,7 +629,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.input['diagnostic_ngmres_recovery']=enabled;self.write('input.json',self.input)
             self.deck['output_directory']='stalled_'+str(enabled)
             run=self.run_deck();self.assertEqual(run.returncode,1)
-            result=json.loads((self.root/self.deck['output_directory']/'step_0000/output.json').read_text())
+            result=self.read((self.root/self.deck['output_directory']/'step_0000/output.json'))
             self.assertEqual(result['diagnostic_stop'],'diagnostic_stagnation_reject');results.append(result)
         for key in ('referenced_state_interleaved','electron_qf_reference_V','hole_qf_reference_V','residual','newton_updates'):
             self.assertEqual(results[0][key],results[1][key])
@@ -607,8 +654,8 @@ class ElectrothermalRunnerTest(unittest.TestCase):
                     electron_qf_reference_V=[.001]*4,hole_qf_reference_V=[-.002]*4)]
             self.write('input.json',self.input)
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            ledger=json.loads((self.root/self.deck['output_directory']/'ledger.json').read_text())
-            results.append(json.loads(Path(ledger['accepted_result']).read_text()))
+            ledger=self.read((self.root/self.deck['output_directory']/'ledger.json'))
+            results.append(self.read(Path(ledger['accepted_result'])))
         self.assertLess(results[1]['newton_updates'],results[0]['newton_updates'])
         self.assertEqual(results[1]['predictor_selection']['selected'],'exact')
         self.assertTrue(results[1]['predictor_selection']['density_update_disabled_after_fallback'])
@@ -623,7 +670,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             for label,psi,temp in (('worse',1.,300.),('invalid',0.,-1.))]
         self.write('input.json',self.input)
         run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-        result=json.loads((self.root/'output/step_0000/output.json').read_text())
+        result=self.read((self.root/'output/step_0000/output.json'))
         self.assertEqual(result['predictor_selection']['selected'],'primary')
         self.assertEqual(result['newton_updates'],0)
         self.assertIn('rejected_reason',result['predictor_selection']['candidates'][1])
@@ -635,7 +682,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.deck['sweep']['max_newton']=20
         self.write('input.json',self.input)
         run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-        zero=json.loads((self.root/'output/step_0000/output.json').read_text())
+        zero=self.read((self.root/'output/step_0000/output.json'))
         keys=('state_interleaved','referenced_state_interleaved','electron_qf_reference_V','hole_qf_reference_V')
         source={key:copy.deepcopy(zero[key]) for key in keys}
         for key in ('state_interleaved','referenced_state_interleaved'):
@@ -647,7 +694,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.deck['output_directory']='tangent'
         self.write('input.json',self.input)
         run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-        result=json.loads((self.root/'tangent/step_0000/output.json').read_text())
+        result=self.read((self.root/'tangent/step_0000/output.json'))
         self.assertTrue(result['tangent_preparation']['prepared'])
         self.assertEqual(result['predictor_selection']['selected'],'tangent')
         self.assertEqual(result['performance']['factorizations'],result['newton_updates']+1)
@@ -655,13 +702,13 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         source['moving_nodes']=[99];self.write('input.json',self.input)
         self.deck['output_directory']='tangent_fallback'
         run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-        result=json.loads((self.root/'tangent_fallback/step_0000/output.json').read_text())
+        result=self.read((self.root/'tangent_fallback/step_0000/output.json'))
         self.assertFalse(result['tangent_preparation']['prepared'])
         self.assertIn('fallback_reason',result['tangent_preparation'])
     def test_fixed_targets_attempts_exact_target_and_stops_on_failure(self):
         self.deck['sweep'].update(step_policy='fixed_targets',bias_points_V=[0.,.3,.4])
         run=self.run_deck();self.assertEqual(run.returncode,1,run.stderr)
-        ledger=json.loads((self.root/'output/ledger.json').read_text())
+        ledger=self.read((self.root/'output/ledger.json'))
         self.assertEqual([r['bias_V'] for r in ledger['runs']],[0.,.3])
         self.assertEqual(ledger['status'],'failed')
         self.assertEqual(ledger['accepted_bias_V'],0.)
@@ -676,6 +723,9 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             (evidence/f'cases_r7/vela_vg{gate}.json').write_text(json.dumps(self.deck))
             directory=evidence/f'results/r7_full_vg{gate}/step_0000';directory.mkdir(parents=True)
             (directory/'output.json').write_bytes((self.root/'output/step_0000/output.json').read_bytes())
+            for payload in (self.root/'output/step_0000').iterdir():
+                if payload.suffix=='.h5' or payload.name=='input.json':
+                    (directory/payload.name).write_bytes(payload.read_bytes())
             (directory.parent/'ledger.json').write_text(json.dumps(dict(runs=[dict(bias_V=0.,gate=dict(pass_gate=True),
                 directory=f'/original/results/r7_full_vg{gate}/step_0000')])))
         sources=[p for p in evidence.rglob('*.json') if 'results' not in p.parts]
@@ -687,7 +737,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
               '--runner',self.runner,'--output',str(self.root/'study'),'--maximum-bias','0']
         run=subprocess.run(argv,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
         self.assertEqual(run.returncode,0,run.stderr)
-        report=json.loads((self.root/'study/summary.json').read_text())
+        report=self.read((self.root/'study/summary.json'))
         self.assertEqual(len(report['runs']),6)
         self.assertTrue(all(r['status']=='complete' and r['attempts']==1 and r['newton_updates']==0 for r in report['runs']))
         (evidence/'cases/data/mesh.json').write_text('{}')
@@ -701,9 +751,9 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.deck['sweep'].update(bias_points_V=[0.,.1],density_update_maximum_bias_V=0.)
         self.deck['pause_after_attempts']=2
         run=self.run_deck();self.assertEqual(run.returncode,1,run.stderr)
-        ledger=json.loads((self.root/'output/ledger.json').read_text())
+        ledger=self.read((self.root/'output/ledger.json'))
         self.assertEqual(len(ledger['runs']),2)
-        configs=[json.loads((Path(r['directory'])/'input.json').read_text()) for r in ledger['runs']]
+        configs=[self.read((Path(r['directory'])/'input.json')) for r in ledger['runs']]
         self.assertEqual(configs[0]['diagnostic_density_update_iterations'],60)
         self.assertEqual(configs[1]['diagnostic_density_update_iterations'],0)
         self.assertEqual(configs[1]['electrical_gate_solver'],self.input['electrical_gate_solver'])
@@ -718,9 +768,9 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.write('input.json',self.input)
         self.deck['sweep']['density_update_requires_prediction']=True
         run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-        ledger=json.loads((self.root/'output/ledger.json').read_text())
+        ledger=self.read((self.root/'output/ledger.json'))
         self.assertFalse(ledger['runs'][0]['prediction']['used'])
-        cfg=json.loads((Path(ledger['runs'][0]['directory'])/'input.json').read_text())
+        cfg=self.read((Path(ledger['runs'][0]['directory'])/'input.json'))
         self.assertEqual(cfg['diagnostic_density_update_iterations'],0)
     def test_density_prediction_guard_preserves_initialization_trajectory(self):
         self.deck['initialization']=dict(mode='neutral_300K',gate_voltage_V=.1,max_newton=10)
@@ -733,14 +783,14 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.write('input.json',self.input)
             self.deck['output_directory']='initial_density_'+str(count)
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            ledger=json.loads((self.root/self.deck['output_directory']/'ledger.json').read_text())
+            ledger=self.read((self.root/self.deck['output_directory']/'ledger.json'))
             trajectory=[]
             self.assertGreater(len(ledger['initialization_runs']),3)
             for row in ledger['initialization_runs']:
                 result_path=Path(row['result'])
-                cfg=json.loads((result_path.parent/'input.json').read_text())
+                cfg=self.read((result_path.parent/'input.json'))
                 self.assertEqual(cfg['diagnostic_density_update_iterations'],0)
-                result=json.loads(result_path.read_text())
+                result=self.read(result_path)
                 self.assertTrue(row['gate']['pass_gate'])
                 trajectory.append((row['gate_V'],row['solve_mode'],row['newton_updates'],
                                    result['state_interleaved']))
@@ -756,16 +806,16 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.input['diagnostic_near_steady_contact_consistency']=enabled;self.write('input.json',self.input)
             self.deck['output_directory']='contact_init_'+str(enabled)
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            ledger=json.loads((self.root/self.deck['output_directory']/'ledger.json').read_text())
+            ledger=self.read((self.root/self.deck['output_directory']/'ledger.json'))
             trajectory=[]
             self.assertGreater(len(ledger['initialization_runs']),3)
             for row in ledger['initialization_runs']:
-                result_path=Path(row['result']);cfg=json.loads((result_path.parent/'input.json').read_text())
+                result_path=Path(row['result']);cfg=self.read((result_path.parent/'input.json'))
                 self.assertFalse(cfg['diagnostic_near_steady_contact_consistency'])
-                result=json.loads(result_path.read_text());self.assertNotIn('near_steady_contact_consistency',result)
+                result=self.read(result_path);self.assertNotIn('near_steady_contact_consistency',result)
                 trajectory.append((row['gate_V'],row['solve_mode'],result['history'],result['state_interleaved'],result['residual']))
             trajectories.append(trajectory)
-            cfg=json.loads((Path(ledger['runs'][0]['directory'])/'input.json').read_text())
+            cfg=self.read((Path(ledger['runs'][0]['directory'])/'input.json'))
             self.assertEqual(cfg['diagnostic_near_steady_contact_consistency'],enabled)
         self.assertEqual(trajectories[0],trajectories[1])
 
@@ -779,12 +829,12 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         for enabled in (False,True):
             self.deck.update(reuse_static_preparation=enabled,output_directory='static_'+str(enabled),resume=False)
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            ledger=json.loads((self.root/self.deck['output_directory']/'ledger.json').read_text())
+            ledger=self.read((self.root/self.deck['output_directory']/'ledger.json'))
             paths=[Path(r['result']) for r in ledger['initialization_runs']]
             paths += [Path(r['directory'])/'output.json' for r in ledger['runs']]
             trajectory=[]
             for i,path in enumerate(paths):
-                result=json.loads(path.read_text());perf=result.pop('performance')
+                result=self.read(path);perf=result.pop('performance')
                 self.assertEqual(perf['static_preparation_reused'],enabled and i>0)
                 trajectory.append(result)
             trajectories.append(trajectory)
@@ -803,14 +853,14 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.input['diagnostic_neutral_root_newton']=enabled;self.write('input.json',self.input)
             self.deck['output_directory']='root_newton_'+str(enabled)
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            ledger=json.loads((self.root/self.deck['output_directory']/'ledger.json').read_text())
+            ledger=self.read((self.root/self.deck['output_directory']/'ledger.json'))
             trajectory=[];counts=[0]*5
             paths=[Path(r['result']) for r in ledger['initialization_runs']]
             paths += [Path(r['directory'])/'output.json' for r in ledger['runs']]
             for path in paths:
-                cfg=json.loads((path.parent/'input.json').read_text())
+                cfg=self.read((path.parent/'input.json'))
                 self.assertEqual(cfg['diagnostic_neutral_root_newton'],enabled)
-                result=json.loads(path.read_text())
+                result=self.read(path)
                 counts=[a+b for a,b in zip(counts,result['performance']['neutral_root_iteration_counts'])]
                 trajectory.append((result['history'],result['state_interleaved'],result['residual']))
             trajectories.append(trajectory);iterations.append(counts)
@@ -828,11 +878,11 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.input['diagnostic_density_projection']=mode;self.write('input.json',self.input)
             self.deck['output_directory']='projection_init_'+mode
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-            ledger=json.loads((self.root/self.deck['output_directory']/'ledger.json').read_text())
+            ledger=self.read((self.root/self.deck['output_directory']/'ledger.json'))
             trajectory=[]
             for row in ledger['initialization_runs']:
                 if row['solve_mode']!='poisson':continue
-                result=json.loads(Path(row['result']).read_text())
+                result=self.read(Path(row['result']))
                 self.assertNotIn('density_projection',result)
                 self.assertTrue(row['gate']['pass_gate'])
                 trajectory.append((row['gate_V'],result['state_interleaved']))
@@ -847,9 +897,9 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             self.input[key]=[999.]*16
         self.write('input.json',self.input)
         run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
-        ledger=json.loads((self.root/'output/ledger.json').read_text())
+        ledger=self.read((self.root/'output/ledger.json'))
         self.assertGreater(len(ledger['initialization_runs']),3)
-        result=json.loads(Path(ledger['accepted_result']).read_text())
+        result=self.read(Path(ledger['accepted_result']))
         self.assertEqual(result['temperature_K'],[300.]*4)
         self.assertAlmostEqual(result['state_interleaved'][12],.1)
         self.assertTrue(all(abs(v)<1e-14 for v in result['state_interleaved'][1::4]))

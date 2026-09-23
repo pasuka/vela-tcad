@@ -139,7 +139,7 @@ def stage_config(base: dict[str, Any], base_dir: Path, run_dir: Path,
     set_contact(config, "gate", gate_bias)
     set_contact(config, "drain", drain_bias)
     output = (run_dir / f"{stem}.csv").resolve()
-    final_state = (run_dir / f"{stem}_final_state.csv").resolve()
+    final_state = (run_dir / f"{stem}_final_state.h5").resolve()
     config["output_csv"] = str(output)
     config["log_file"] = str((run_dir / f"{stem}.log").resolve())
     step = (bias_points[1] - bias_points[0]) if len(bias_points) > 1 else 0.01
@@ -233,13 +233,13 @@ def materialize(generated_dir: Path, run_dir: Path,
             idvg_base.get("solver", {}), sort_keys=True).encode()).hexdigest()
 
         eq_vg_name = f"{branch}_idvg_equilibrium"
-        eq_vg_state = (run_dir / f"{eq_vg_name}_final_state.csv").resolve()
+        eq_vg_state = (run_dir / f"{eq_vg_name}_final_state.h5").resolve()
         ramp_name = f"{branch}_idvg_drain_ramp"
-        ramp_state = (run_dir / f"{ramp_name}_final_state.csv").resolve()
+        ramp_state = (run_dir / f"{ramp_name}_final_state.h5").resolve()
         relax_name = f"{branch}_idvg_final_bias_relax"
-        relax_state = (run_dir / f"{relax_name}_final_state.csv").resolve()
+        relax_state = (run_dir / f"{relax_name}_final_state.h5").resolve()
         eq_vd_name = f"{branch}_idvd_equilibrium"
-        eq_vd_state = (run_dir / f"{eq_vd_name}_final_state.csv").resolve()
+        eq_vd_state = (run_dir / f"{eq_vd_name}_final_state.h5").resolve()
 
         external_ramp_state = idvg_ramp_states.get(branch)
         curve_restart = idvg_curve_restarts.get(branch)

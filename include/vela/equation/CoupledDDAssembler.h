@@ -222,7 +222,19 @@ struct CarrierDiagonalFloorRegularizationConfig {
 };
 
 class CoupledDDAssembler {
+    struct FixedJacobianData;
 public:
+    /// Single-owner sequential cache. Stores no numeric Jacobian or state.
+    struct StructureCache {
+    private:
+        friend class CoupledDDAssembler;
+        std::vector<std::uint64_t> key;
+        std::shared_ptr<const FixedJacobianData> data;
+    };
+    void setStructureCache(std::shared_ptr<StructureCache> cache) {
+        structureCache_ = std::move(cache);
+    }
+    void setFermiNodeCache(bool enabled) { fermiNodeCacheEnabled_ = enabled; }
     CoupledDDAssembler(const DeviceMesh& mesh,
                        const MaterialDatabase& matdb,
                        const DopingModel& doping,
@@ -480,6 +492,8 @@ private:
         bool includeCellStencil,
         std::uint64_t boundarySignature) const;
     JacobianStorageIndex fixedJacobianOffset(int row, int col) const;
+    std::vector<std::uint64_t> jacobianStructureKey(
+        const std::vector<bool>& constrainedRows, bool includeCellStencil) const;
 
     const DeviceMesh& mesh_;
     const MaterialDatabase& matdb_;
@@ -539,18 +553,19 @@ private:
     mutable bool hasFixedJacobianPattern_ = false;
     mutable std::uint64_t fixedJacobianBoundarySignature_ = 0;
     mutable bool fixedJacobianIncludesCellStencil_ = false;
-    mutable SparseMatrixd fixedJacobianPattern_;
-    mutable std::unordered_map<std::uint64_t, JacobianStorageIndex>
-        fixedJacobianOffsets_;
-    mutable std::vector<std::array<JacobianStorageIndex, 36>>
-        fixedJacobianEdgeScatter_;
-    mutable std::vector<std::array<
-        JacobianStorageIndex, 4 * maxEdgeAvalancheDerivativeColumns>>
-        fixedJacobianAvalancheScatter_;
-    mutable std::vector<std::array<JacobianStorageIndex, 9>>
-        fixedJacobianNodeScatter_;
-    mutable std::vector<std::array<JacobianStorageIndex, 81>>
-        fixedJacobianCellScatter_;
+    struct FixedJacobianData {
+        SparseMatrixd pattern;
+        std::unordered_map<std::uint64_t, JacobianStorageIndex> offsets;
+        std::vector<std::array<JacobianStorageIndex, 36>> edgeScatter;
+        std::vector<std::array<JacobianStorageIndex, 4 * maxEdgeAvalancheDerivativeColumns>> avalancheScatter;
+        std::vector<std::array<JacobianStorageIndex, 9>> nodeScatter;
+        std::vector<std::array<JacobianStorageIndex, 81>> cellScatter;
+        std::vector<bool> constrainedRows;
+    };
+    mutable std::shared_ptr<const FixedJacobianData> fixedJacobian_;
+    std::shared_ptr<StructureCache> structureCache_;
+    mutable std::vector<std::uint64_t> structureBaseKey_;
+    bool fermiNodeCacheEnabled_ = false;
     mutable bool hasCachedActiveBranchFingerprint_ = false;
     mutable VectorXd cachedActiveBranchFingerprintState_;
     mutable std::string cachedActiveBranchFingerprint_;

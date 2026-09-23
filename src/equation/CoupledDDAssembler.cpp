@@ -616,12 +616,66 @@ Real CoupledDDAssembler::cachedEdgeMobility(
     return sum / static_cast<Real>(lowFieldMobilities.size());
 }
 
+std::vector<std::uint64_t> CoupledDDAssembler::jacobianStructureKey(
+    const std::vector<bool>& constrainedRows, bool includeCellStencil) const
+{
+    // Exact comparison, not a hash: equal node/edge counts alone do not prove
+    // compatible numbering, active transport support or neighboring stencils.
+    // Geometry/material preparation is immutable during this assembler's life.
+    if (structureBaseKey_.empty()) {
+        auto& key = structureBaseKey_;
+        const auto real = [&](Real value) { key.push_back(std::bit_cast<std::uint64_t>(value)); };
+        key = {mesh_.numNodes(), mesh_.numEdges(), mesh_.numCells(),
+               transportMobilityDerivativeEnabled_, highFieldMobilityEnabled_,
+               vectorQfMobilityEnabled_, impactIonizationCoupled_};
+        real(Vt_);
+        for (Index i = 0; i < mesh_.numNodes(); ++i) {
+            const auto& node = mesh_.getNode(i);
+            key.push_back(node.id); real(node.x); real(node.y);
+            real(ni_[i]); real(Nc_[i]); real(Nv_[i]);
+        }
+        for (const auto& edge : edgeAssemblyKernels_) {
+            key.push_back(edge.n0); key.push_back(edge.n1);
+            real(edge.length); real(edge.coupling); real(edge.poissonCoupling);
+            key.push_back(edge.activeTransport);
+            key.push_back(edge.avalancheStencilNodeCount);
+            for (std::size_t i = 0; i < edge.avalancheStencilNodeCount; ++i)
+                key.push_back(edge.avalancheStencilNodes[i]);
+        }
+        for (const auto& cell : mesh_.cells()) {
+            key.push_back(cell.id); key.push_back(cell.region_id);
+            key.push_back(cell.node_ids.size());
+            key.insert(key.end(), cell.node_ids.begin(), cell.node_ids.end());
+        }
+    }
+    auto key = structureBaseKey_;
+    key.push_back(includeCellStencil);
+    for (bool constrained : constrainedRows) key.push_back(constrained);
+    return key;
+}
+
 void CoupledDDAssembler::rebuildFixedJacobianPattern(
     const std::vector<bool>& constrainedRows,
     bool includeCellStencil,
     std::uint64_t boundarySignature) const
 {
+    std::vector<std::uint64_t> key;
+    if (structureCache_) {
+        ScopedPerformanceTimer cacheTimer("jacobian.structure_cache_check");
+        key = jacobianStructureKey(constrainedRows, includeCellStencil);
+        if (structureCache_->data && structureCache_->key == key) {
+            fixedJacobian_ = structureCache_->data;
+            fixedJacobianBoundarySignature_ = boundarySignature;
+            fixedJacobianIncludesCellStencil_ = includeCellStencil;
+            hasFixedJacobianPattern_ = true;
+            incrementPerformanceCounter("jacobian.structure_cache_hits");
+            return;
+        }
+        incrementPerformanceCounter("jacobian.structure_cache_misses");
+    }
     ScopedPerformanceTimer patternTimer("jacobian.pattern_build");
+    auto data = std::make_shared<FixedJacobianData>();
+    data->constrainedRows = constrainedRows;
     const int nodeCount = static_cast<int>(mesh_.numNodes());
     std::vector<Eigen::Triplet<double>> patternTriplets;
     patternTriplets.reserve(static_cast<std::size_t>(nodeCount) * 45);
@@ -721,39 +775,39 @@ void CoupledDDAssembler::rebuildFixedJacobianPattern(
         }
     }
 
-    fixedJacobianPattern_ = SparseMatrixd(3 * nodeCount, 3 * nodeCount);
-    fixedJacobianPattern_.setFromTriplets(
+    data->pattern = SparseMatrixd(3 * nodeCount, 3 * nodeCount);
+    data->pattern.setFromTriplets(
         patternTriplets.begin(), patternTriplets.end());
-    std::fill(fixedJacobianPattern_.valuePtr(),
-              fixedJacobianPattern_.valuePtr() +
-                  fixedJacobianPattern_.nonZeros(),
+    std::fill(data->pattern.valuePtr(),
+              data->pattern.valuePtr() +
+                  data->pattern.nonZeros(),
               0.0);
 
-    fixedJacobianOffsets_.clear();
-    fixedJacobianOffsets_.reserve(
-        static_cast<std::size_t>(fixedJacobianPattern_.nonZeros()));
-    for (Eigen::Index col = 0; col < fixedJacobianPattern_.outerSize(); ++col) {
+    data->offsets.clear();
+    data->offsets.reserve(
+        static_cast<std::size_t>(data->pattern.nonZeros()));
+    for (Eigen::Index col = 0; col < data->pattern.outerSize(); ++col) {
         const JacobianStorageIndex begin =
-            fixedJacobianPattern_.outerIndexPtr()[col];
+            data->pattern.outerIndexPtr()[col];
         const JacobianStorageIndex end =
-            fixedJacobianPattern_.outerIndexPtr()[col + 1];
+            data->pattern.outerIndexPtr()[col + 1];
         for (JacobianStorageIndex offset = begin; offset < end; ++offset) {
-            const int row = fixedJacobianPattern_.innerIndexPtr()[offset];
-            fixedJacobianOffsets_.emplace(
+            const int row = data->pattern.innerIndexPtr()[offset];
+            data->offsets.emplace(
                 sparseEntryKey(row, static_cast<int>(col)), offset);
         }
     }
 
     const auto offsetOrInvalid = [&](int row, int col) {
-        const auto found = fixedJacobianOffsets_.find(sparseEntryKey(row, col));
-        return found == fixedJacobianOffsets_.end()
+        const auto found = data->offsets.find(sparseEntryKey(row, col));
+        return found == data->offsets.end()
             ? invalidJacobianOffset
             : found->second;
     };
 
-    fixedJacobianEdgeScatter_.assign(mesh_.numEdges(), {});
+    data->edgeScatter.assign(mesh_.numEdges(), {});
     for (Index edgeId = 0; edgeId < mesh_.numEdges(); ++edgeId) {
-        auto& scatter = fixedJacobianEdgeScatter_[edgeId];
+        auto& scatter = data->edgeScatter[edgeId];
         scatter.fill(invalidJacobianOffset);
         const Edge& edge = mesh_.getEdge(edgeId);
         const int nodes[2] = {
@@ -776,10 +830,10 @@ void CoupledDDAssembler::rebuildFixedJacobianPattern(
 
     // Only source assembly consumes this table. Vector-QF mobility still needs
     // the separate edge stencil and gradient sensitivities with avalanche off.
-    fixedJacobianAvalancheScatter_.assign(
+    data->avalancheScatter.assign(
         impactIonizationCoupled_ ? mesh_.numEdges() : 0, {});
-    for (Index edgeId = 0; edgeId < fixedJacobianAvalancheScatter_.size(); ++edgeId) {
-        auto& scatter = fixedJacobianAvalancheScatter_[edgeId];
+    for (Index edgeId = 0; edgeId < data->avalancheScatter.size(); ++edgeId) {
+        auto& scatter = data->avalancheScatter[edgeId];
         scatter.fill(invalidJacobianOffset);
         const EdgeAssemblyKernel& edge = edgeAssemblyKernels_[edgeId];
         const int node0 = static_cast<int>(edge.n0);
@@ -811,9 +865,9 @@ void CoupledDDAssembler::rebuildFixedJacobianPattern(
         }
     }
 
-    fixedJacobianNodeScatter_.assign(mesh_.numNodes(), {});
+    data->nodeScatter.assign(mesh_.numNodes(), {});
     for (Index node = 0; node < mesh_.numNodes(); ++node) {
-        auto& scatter = fixedJacobianNodeScatter_[node];
+        auto& scatter = data->nodeScatter[node];
         scatter.fill(invalidJacobianOffset);
         const int i = static_cast<int>(node);
         for (int rowBlock = 0; rowBlock < 3; ++rowBlock)
@@ -824,10 +878,10 @@ void CoupledDDAssembler::rebuildFixedJacobianPattern(
                         colBlock * nodeCount + i);
     }
 
-    fixedJacobianCellScatter_.assign(
+    data->cellScatter.assign(
         includeCellStencil ? mesh_.numCells() : 0, {});
-    for (Index cellId = 0; cellId < fixedJacobianCellScatter_.size(); ++cellId) {
-        auto& scatter = fixedJacobianCellScatter_[cellId];
+    for (Index cellId = 0; cellId < data->cellScatter.size(); ++cellId) {
+        auto& scatter = data->cellScatter[cellId];
         scatter.fill(invalidJacobianOffset);
         const Cell& cell = mesh_.getCell(cellId);
         for (int rowBlock = 0; rowBlock < 3; ++rowBlock) {
@@ -851,14 +905,19 @@ void CoupledDDAssembler::rebuildFixedJacobianPattern(
     fixedJacobianBoundarySignature_ = boundarySignature;
     fixedJacobianIncludesCellStencil_ = includeCellStencil;
     hasFixedJacobianPattern_ = true;
+    fixedJacobian_ = std::move(data);
+    if (structureCache_) {
+        structureCache_->key = std::move(key);
+        structureCache_->data = fixedJacobian_;
+    }
     incrementPerformanceCounter("jacobian.pattern_build_calls");
 }
 
 CoupledDDAssembler::JacobianStorageIndex
 CoupledDDAssembler::fixedJacobianOffset(int row, int col) const
 {
-    const auto found = fixedJacobianOffsets_.find(sparseEntryKey(row, col));
-    if (found == fixedJacobianOffsets_.end()) {
+    const auto found = fixedJacobian_->offsets.find(sparseEntryKey(row, col));
+    if (found == fixedJacobian_->offsets.end()) {
         throw std::logic_error(
             "CoupledDDAssembler: fixed Jacobian pattern misses assembled entry (" +
             std::to_string(row) + "," + std::to_string(col) + ").");
@@ -3525,6 +3584,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         recombination_.bandToBandEnabled();
     if (!hasFixedJacobianPattern_ ||
         boundarySignature != fixedJacobianBoundarySignature_ ||
+        constrainedRows != fixedJacobian_->constrainedRows ||
         includeCellStencil != fixedJacobianIncludesCellStencil_) {
         rebuildFixedJacobianPattern(
             constrainedRows, includeCellStencil, boundarySignature);
@@ -3533,7 +3593,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
     SparseMatrixd J;
     {
         ScopedPerformanceTimer initializeTimer("jacobian.initialize_values");
-        J = fixedJacobianPattern_;
+        J = fixedJacobian_->pattern;
     }
     double* jacobianValues = J.valuePtr();
     std::size_t assembledContributionCount = 0;
@@ -3561,7 +3621,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     (((rowBlock * 3 + colBlock) * 2 + localRow) * 2) +
                     localCol);
                 const JacobianStorageIndex offset =
-                    fixedJacobianEdgeScatter_[activeEdge][index];
+                    fixedJacobian_->edgeScatter[activeEdge][index];
                 if (offset != invalidJacobianOffset)
                     return offset;
             }
@@ -3584,7 +3644,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                     (((rowBlock * 3 + colBlock) * 3 + localRow) * 3) +
                     localCol);
                 const JacobianStorageIndex offset =
-                    fixedJacobianCellScatter_[activeCell][index];
+                    fixedJacobian_->cellScatter[activeCell][index];
                 if (offset != invalidJacobianOffset)
                     return offset;
             }
@@ -3594,7 +3654,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             rowNode == static_cast<int>(activeNode) &&
             colNode == static_cast<int>(activeNode)) {
             const JacobianStorageIndex offset =
-                fixedJacobianNodeScatter_[activeNode][static_cast<std::size_t>(
+                fixedJacobian_->nodeScatter[activeNode][static_cast<std::size_t>(
                     rowBlock * 3 + colBlock)];
             if (offset != invalidJacobianOffset)
                 return offset;
@@ -4486,17 +4546,29 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
 
     struct EndpointState {
         Real psi, qfLocal, qfRelative;
+        Real reference, logDensityRatio;
         Real eta, density, fermiDensity;
     };
     struct EndpointCache {
         Index edge = std::numeric_limits<Index>::max();
         std::array<EndpointState, 8> entries;
         std::size_t size = 0;
+        std::size_t replacement = 0;
     };
     std::array<EndpointCache, 2> electronEndpoints, holeEndpoints;
+    // Lifetime is one Jacobian assembly: no carrier or temperature state is
+    // shared across Newton updates. Node, carrier and reference representation
+    // are distinct even when their rounded physical QFs happen to agree.
+    std::vector<EndpointCache> electronNodes, holeNodes;
+    if (fermiNodeCacheEnabled_ && usesFermiDirac_) {
+        electronNodes.resize(mesh_.numNodes());
+        holeNodes.resize(mesh_.numNodes());
+        incrementPerformanceCounter("jacobian.fermi_node_cache_assemblies");
+    }
     std::uint64_t endpointCacheHits = 0, endpointCacheMisses = 0;
     const auto endpointState = [&](EndpointCache& cache, Index edge,
                                    Real potential, Real localQf, Real relativeQf,
+                                   Real reference, Real logDensityRatio,
                                    auto&& evaluate) {
         if (cache.edge != edge) {
             cache.edge = edge;
@@ -4508,7 +4580,8 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         for (std::size_t k = 0; k < cache.size; ++k) {
             const auto& value = cache.entries[k];
             if (same(value.psi, potential) && same(value.qfLocal, localQf) &&
-                same(value.qfRelative, relativeQf)) {
+                same(value.qfRelative, relativeQf) && same(value.reference, reference) &&
+                same(value.logDensityRatio, logDensityRatio)) {
                 ++endpointCacheHits;
                 return value;
             }
@@ -4518,8 +4591,12 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
         value.psi = potential;
         value.qfLocal = localQf;
         value.qfRelative = relativeQf;
+        value.reference = reference;
+        value.logDensityRatio = logDensityRatio;
         if (cache.size < cache.entries.size())
             cache.entries[cache.size++] = value;
+        else if (fermiNodeCacheEnabled_)
+            cache.entries[cache.replacement++ % cache.entries.size()] = value;
         return value;
     };
 
@@ -4580,7 +4657,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             return 0.0;
         const Real coef = mun * Vt_ * fieldFactor * couple_e / h;
         if (usesFermiDirac_) {
-            const auto left = endpointState(electronEndpoints[0], e, psi_i, phin_i, phin_i, [&] {
+            const auto left = endpointState(fermiNodeCacheEnabled_ ? electronNodes[idxI] : electronEndpoints[0],
+                fermiNodeCacheEnabled_ ? idxI : e, psi_i, phin_i, phin_i,
+                electronReferenceI, edgeKernel.electronLogNiNc0, [&] {
                 EndpointState v{};
                 const Real psiRelative = electronPsi_i - electronReferenceI;
                 v.eta = (psiRelative - phin_i) / Vt_ + edgeKernel.electronLogNiNc0;
@@ -4588,7 +4667,9 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 v.fermiDensity = Nc_[idxI] * fermiDiracHalf(v.eta);
                 return v;
             });
-            const auto right = endpointState(electronEndpoints[1], e, psi_j, phinJLocal, phin_j, [&] {
+            const auto right = endpointState(fermiNodeCacheEnabled_ ? electronNodes[idxJ] : electronEndpoints[1],
+                fermiNodeCacheEnabled_ ? idxJ : e, psi_j, phinJLocal, phin_j,
+                electronReferenceI, edgeKernel.electronLogNiNc1, [&] {
                 EndpointState v{};
                 const Real psiRelative = electronPsi_j - electronReferenceI;
                 v.eta = (psiRelative - phin_j) / Vt_ + edgeKernel.electronLogNiNc1;
@@ -4677,14 +4758,18 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
             return 0.0;
         const Real coef = mup * Vt_ * fieldFactor * couple_e / h;
         if (usesFermiDirac_) {
-            const auto left = endpointState(holeEndpoints[0], e, psi_i, phip_i, phip_i, [&] {
+            const auto left = endpointState(fermiNodeCacheEnabled_ ? holeNodes[idxI] : holeEndpoints[0],
+                fermiNodeCacheEnabled_ ? idxI : e, psi_i, phip_i, phip_i,
+                holeReferenceI, edgeKernel.holeLogNiNv0, [&] {
                 EndpointState v{};
                 const Real psiRelative = psi_i - holeReferenceI;
                 v.eta = (phip_i - psiRelative) / Vt_ + edgeKernel.holeLogNiNv0;
                 v.density = Nv_[idxI] * fermiDiracHalf(v.eta);
                 return v;
             });
-            const auto right = endpointState(holeEndpoints[1], e, psi_j, phip_j, phip_j, [&] {
+            const auto right = endpointState(fermiNodeCacheEnabled_ ? holeNodes[idxJ] : holeEndpoints[1],
+                fermiNodeCacheEnabled_ ? idxJ : e, psi_j, phip_j, phip_j,
+                holeReferenceI, edgeKernel.holeLogNiNv1, [&] {
                 EndpointState v{};
                 const Real psiRelative = psi_j - holeReferenceI;
                 v.eta = (phip_j - psiRelative) / Vt_ + edgeKernel.holeLogNiNv1;
@@ -5217,7 +5302,7 @@ SparseMatrixd CoupledDDAssembler::assembleJacobian(
                 const int rows[4] = {
                     phinOffset() + i, phipOffset() + i,
                     phinOffset() + j, phipOffset() + j};
-                const auto& scatter = fixedJacobianAvalancheScatter_[e];
+                const auto& scatter = fixedJacobian_->avalancheScatter[e];
                 for (std::size_t rowSlot = 0; rowSlot < 4; ++rowSlot) {
                     const auto& derivatives = rowSlot < 2 ? dS0 : dS1;
                     for (std::size_t k = 0; k < derivativeCount; ++k) {

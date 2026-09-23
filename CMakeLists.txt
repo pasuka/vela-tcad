@@ -44,6 +44,10 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 option(VELA_ENABLE_PYTHON "Build the pybind11 Python API" OFF)
 option(VELA_ENABLE_HDF5 "Build Sentaurus HDF5/TDR import tools when HDF5 is available" ON)
+option(VELA_ENABLE_HDF5_STATE "Build required HDF5/HighFive restart storage" ON)
+if(NOT VELA_ENABLE_HDF5_STATE)
+    message(FATAL_ERROR "Production state storage requires VELA_ENABLE_HDF5_STATE=ON")
+endif()
 option(VELA_ENABLE_GPROF "Instrument Vela targets for GNU gprof" OFF)
 option(VELA_ENABLE_LTO "Enable conservative link-time optimization for Vela targets" OFF)
 option(VELA_ENABLE_UMFPACK "Use SuiteSparse UMFPACK for robust bordered solves when available" ON)
@@ -151,18 +155,23 @@ if(VELA_ENABLE_LTO AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     message(FATAL_ERROR "VELA_ENABLE_LTO currently requires the GNU C++ compiler")
 endif()
 
-if(VELA_ENABLE_HDF5)
+if(VELA_ENABLE_HDF5 OR VELA_ENABLE_HDF5_STATE)
     find_package(hdf5 CONFIG QUIET)
     if(TARGET hdf5-shared)
         set(VELA_HDF5_TARGET hdf5-shared)
     elseif(TARGET hdf5-static)
         set(VELA_HDF5_TARGET hdf5-static)
     else()
-        set(VELA_HDF5_TARGET "")
+        find_package(HDF5 QUIET COMPONENTS C)
+        if(TARGET HDF5::HDF5)
+            set(VELA_HDF5_TARGET HDF5::HDF5)
+        else()
+            set(VELA_HDF5_TARGET "")
+        endif()
     endif()
 
     if(VELA_HDF5_TARGET)
-        message(STATUS "Sentaurus HDF5/TDR import enabled via ${VELA_HDF5_TARGET}")
+        message(STATUS "HDF5 library detected via ${VELA_HDF5_TARGET}; TDR import option=${VELA_ENABLE_HDF5}")
     else()
         message(STATUS "Sentaurus HDF5/TDR import disabled: HDF5 package not found")
     endif()
@@ -245,6 +254,7 @@ add_library(vela_core STATIC
     src/io/CSVWriter.cpp
     src/io/CsvUtils.cpp
     src/io/DDSolutionCsv.cpp
+    src/io/DDSolutionFile.cpp
     src/physics/DopingModel.cpp
     src/physics/CarrierStatistics.cpp
     src/physics/DensityGradientQuantumPotential.cpp
@@ -304,6 +314,28 @@ target_link_libraries(vela_core
         Boost::headers
 )
 target_compile_definitions(vela_core PUBLIC VELA_VERSION="${PROJECT_VERSION}")
+if(VELA_ENABLE_HDF5_STATE)
+    if(NOT VELA_HDF5_TARGET)
+        message(FATAL_ERROR "HDF5 state archives require a detected HDF5 library")
+    endif()
+    set(HIGHFIVE_FIND_HDF5 OFF)
+    find_package(HighFive 3 CONFIG QUIET)
+    if(NOT TARGET HighFive::Include)
+        include(FetchContent)
+        set(HIGHFIVE_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+        set(HIGHFIVE_EXAMPLES OFF CACHE BOOL "" FORCE)
+        set(HIGHFIVE_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+        # HighFive v3.3.0; pin the source, rather than a moving branch.
+        FetchContent_Declare(HighFive
+            GIT_REPOSITORY https://github.com/highfive-devs/highfive.git
+            GIT_TAG be0ddb3d43ce0f53db2d8b1438e819c5a5cb278a)
+        FetchContent_MakeAvailable(HighFive)
+    endif()
+    target_sources(vela_core PRIVATE src/io/StateArchive.cpp src/io/DDSolutionState.cpp src/io/StateIdentity.cpp src/io/ElectrothermalState.cpp)
+    target_link_libraries(vela_core PRIVATE HighFive::Include ${VELA_HDF5_TARGET})
+    target_compile_definitions(vela_core PUBLIC VELA_ENABLE_HDF5_STATE=1)
+    message(STATUS "Independent HDF5/HighFive state archive enabled; no FlatBuffers dependency")
+endif()
 option(VELA_ENABLE_OPENBLAS_THREAD_CONTROL "Enable explicit 1/2/4-thread OpenBLAS experiments" OFF)
 if(VELA_ENABLE_OPENBLAS_THREAD_CONTROL)
     find_library(VELA_OPENBLAS_CONTROL_LIBRARY NAMES openblas REQUIRED)
@@ -415,7 +447,7 @@ if(VELA_ENABLE_LTO)
     message(STATUS "GNU single-worker link-time optimization enabled")
 endif()
 
-if(VELA_HDF5_TARGET)
+if(VELA_HDF5_TARGET AND VELA_ENABLE_HDF5)
     add_library(vela_sentaurus STATIC
         src/io/SentaurusTdrReader.cpp
     )
@@ -515,7 +547,7 @@ target_link_libraries(sentaurus_vanoverstraeten_fit PRIVATE vela_core)
 add_executable(vanoverstraeten_parameter_sweep src/tools/vanoverstraeten_parameter_sweep.cpp)
 target_link_libraries(vanoverstraeten_parameter_sweep PRIVATE vela_core)
 
-if(VELA_HDF5_TARGET)
+if(VELA_HDF5_TARGET AND VELA_ENABLE_HDF5)
     add_executable(sentaurus_import src/tools/sentaurus_import.cpp)
     target_link_libraries(sentaurus_import PRIVATE vela_sentaurus)
 endif()
@@ -559,6 +591,24 @@ add_test(NAME ascii_sources
             -P ${VELA_ASCII_CHECK_SCRIPT})
 
 add_executable(test_scaling tests/test_scaling.cpp)
+if(VELA_ENABLE_HDF5_STATE)
+    add_executable(test_state_archive tests/test_state_archive.cpp)
+    target_link_libraries(test_state_archive PRIVATE vela_core Catch2::Catch2WithMain)
+    add_test(NAME state_archive_contract COMMAND test_state_archive)
+    vela_set_windows_msys2_test_path(state_archive_contract)
+    add_executable(vela_state_archive_tool src/tools/vela_state_archive_tool.cpp)
+    target_link_libraries(vela_state_archive_tool PRIVATE vela_core)
+    add_test(NAME state_archive_python_interop
+        COMMAND ${CMAKE_COMMAND} -E env "VELA_STATE_ARCHIVE_TOOL=$<TARGET_FILE:vela_state_archive_tool>"
+            ${Python3_EXECUTABLE} -m unittest tests.regression.test_state_archive)
+    set_tests_properties(state_archive_python_interop PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    vela_set_windows_msys2_test_path(state_archive_python_interop)
+    add_test(NAME state_archive_dc_worker
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_hdf5_state_worker.py
+            --runner $<TARGET_FILE:vela_example_runner>)
+    set_tests_properties(state_archive_dc_worker PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    vela_set_windows_msys2_test_path(state_archive_dc_worker)
+endif()
 target_link_libraries(test_scaling PRIVATE vela_core Catch2::Catch2WithMain)
 
 add_executable(test_mesh tests/test_mesh.cpp)
@@ -706,7 +756,7 @@ target_link_libraries(test_mos_interface_charge PRIVATE vela_core Catch2::Catch2
 add_executable(test_material_local_poisson_charge tests/test_material_local_poisson_charge.cpp)
 target_link_libraries(test_material_local_poisson_charge PRIVATE vela_core Catch2::Catch2WithMain)
 
-if(VELA_HDF5_TARGET)
+if(VELA_HDF5_TARGET AND VELA_ENABLE_HDF5)
     add_executable(test_sentaurus_tdr_reader tests/test_sentaurus_tdr_reader.cpp)
     target_link_libraries(test_sentaurus_tdr_reader PRIVATE vela_sentaurus Catch2::Catch2WithMain)
 endif()
@@ -772,7 +822,7 @@ vela_catch_discover_tests(test_mos_interface_charge)
 add_test(NAME interface COMMAND test_mos_interface_charge [interface])
 vela_catch_discover_tests(test_material_local_poisson_charge)
 
-if(VELA_HDF5_TARGET)
+if(VELA_HDF5_TARGET AND VELA_ENABLE_HDF5)
     vela_catch_discover_tests(test_sentaurus_tdr_reader)
     add_test(NAME sentaurus_tdr COMMAND test_sentaurus_tdr_reader [sentaurus])
     vela_set_windows_msys2_test_path(sentaurus_tdr)
@@ -947,6 +997,9 @@ set_tests_properties(dc_worker_protocol PROPERTIES
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 vela_set_windows_msys2_test_path(dc_worker_protocol)
 
+# Historical VDS1/FlatBuffers/NPY worker experiments are retired.
+# Production state coverage is registered above as state_archive_*.
+
 add_test(NAME ldmos_production_export_regression
     COMMAND ${Python3_EXECUTABLE} -m unittest tests.regression.test_ldmos_production_export)
 set_tests_properties(ldmos_production_export_regression PROPERTIES
@@ -1077,7 +1130,7 @@ add_test(NAME diagnose_pn2d_0v_current_balance_newton_failure
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_diagnose_pn2d_0v_current_balance.py)
 vela_set_windows_msys2_test_path(diagnose_pn2d_0v_current_balance_newton_failure)
 
-if(VELA_HDF5_TARGET)
+if(VELA_HDF5_TARGET AND VELA_ENABLE_HDF5)
     add_test(NAME sentaurus_sample_integration
         COMMAND ${Python3_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/test_sentaurus_sample_integration.py)

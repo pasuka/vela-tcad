@@ -6349,6 +6349,8 @@ NewtonResult NewtonSolver::solveClassicalWithFrozenElectronQuantumPotential(
         cfg_.carrierDiagonalFloor,
         cfg_.carrierStatistics,
         cfg_.electronQuantumPotential);
+    assembler.setStructureCache(cfg_.sequentialJacobianStructure);
+    assembler.setFermiNodeCache(cfg_.diagnosticFermiNodeCache);
     assembler.setElectronQuantumPotential(electronQuantumPotential_V);
     configureQuasiFermiReferences(assembler);
     if (cfg_.quasiFermiRecenterOnInitialState) {

@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))
 sys.path.insert(0,str(ROOT/'scripts'))
+import electrothermal_state, state_archive
 SCRIPT=ROOT/'scripts/prepare_templates_ldmos_electrothermal.py'
 class PreparationTest(unittest.TestCase):
     def setUp(self):
@@ -12,6 +13,8 @@ class PreparationTest(unittest.TestCase):
         self.export=self.base/'export';(self.export/'fields').mkdir(parents=True)
         nodes=[dict(id=i,x=x,y=y) for i,(x,y) in enumerate(((0,0),(2,0),(.5,.5),(0,1)))]
         mesh=dict(nodes=nodes,triangles=[dict(id=0,region_id=0,node_ids=[0,1,2]),dict(id=1,region_id=1,node_ids=[0,2,3])],contacts=[dict(name='source',node_ids=[0]),dict(name='drain',node_ids=[1]),dict(name='gate',node_ids=[3]),dict(name='th_lat',node_ids=[2])])
+        mesh['regions']=[dict(id=0,name='silicon',material='Si',cell_ids=[0]),dict(id=1,name='oxide',material='SiO2',cell_ids=[1])]
+        for i,contact in enumerate(mesh['contacts']):contact.update(id=i,region_id=0 if i<2 else 1)
         self.save('mesh.json',mesh);self.save('geometry.json',{})
         self.save('thermal.json',dict(mesh_file=str(self.base/'mesh.json'),coordinate_to_metres=1e-6,region_conductivity=[],thermodes=[]))
         self.save('profile.json',dict(contacts=[dict(name='gate',flatband_voltage=-.56)],solver=dict(mobility=dict(electron_saturation_velocity_m_s=1.07e7,hole_saturation_velocity_m_s=8.37e6,ialmob=dict(geometry_file=str(self.base/'geometry.json'))),carrier_row_convergence=dict(eps_row=1e-8),continuity_row_scaling={},block_absolute_convergence={})))
@@ -25,7 +28,7 @@ class PreparationTest(unittest.TestCase):
         return subprocess.run([sys.executable,'-X','utf8',str(SCRIPT),'--thermal-input',str(self.base/'thermal.json'),'--export',str(self.export),'--profile',str(self.base/'profile.json'),'--couples',str(self.base/'couples.csv'),'--output',str(self.base/'out'),'--gate','8','--drain','40','--freeze-temperature','300',*extra],cwd=ROOT,capture_output=True,text=True)
     def test_units_gate_sign_and_qualified_obtuse_geometry(self):
         run=self.run_prepare();self.assertEqual(run.returncode,0,run.stderr)
-        output=json.loads((self.base/'out/input.json').read_text());manifest=json.loads((self.base/'out/manifest.json').read_text())
+        output=electrothermal_state.read_bound_record(self.base/'out/input.json');manifest=json.loads((self.base/'out/manifest.json').read_text())
         self.assertAlmostEqual(sum(output['silicon_area_m2']),.5e-12,delta=1e-26)
         edge=next(e for e in output['edge_geometry'] if e['nodes']==[0,1])
         # Qualified negative-cotangent fallback is the barycentric dual
@@ -40,13 +43,14 @@ class PreparationTest(unittest.TestCase):
         self.assertIn(str(self.base/'geometry.json'),manifest['sources_sha256'])
 
     def test_restart_retains_sub_ulp_quasi_fermi_increments(self):
-        state=self.base/'state.csv'
-        with state.open('w',newline='') as f:
-            names=['node_id','psi','phin','phip','electron_qf_increment_V','hole_qf_increment_V','electron_qf_reference_V','hole_qf_reference_V']
-            w=csv.writer(f);w.writerow(names)
-            for i in range(4):w.writerow([i,-3.5,-4.,-4.,1e-20,-2e-20,-4.,-4.])
+        state=self.base/'state.h5'
+        fields=dict(psi=[-3.5]*4,phin=[-4.]*4,phip=[-4.]*4,electrons_m3=[1.]*4,holes_m3=[1.]*4,
+            electron_qf_increment_V=[1e-20]*4,hole_qf_increment_V=[-2e-20]*4,
+            electron_qf_reference_V=[-4.]*4,hole_qf_reference_V=[-4.]*4)
+        mesh=json.loads((self.base/'mesh.json').read_text())
+        state_archive.write(state,fields,dict(mode='dd',potential_origin_V=4.,mesh_sha256=state_archive.mesh_identity(mesh,1e-6)))
         run=self.run_prepare('--isothermal-state',str(state));self.assertEqual(run.returncode,0,run.stderr)
-        output=json.loads((self.base/'out/input.json').read_text())
+        output=electrothermal_state.read_bound_record(self.base/'out/input.json')
         self.assertEqual(output['state_interleaved'][1],0.)
         self.assertEqual(output['electron_qf_reference_V'][0],0.)
         self.assertEqual(output['referenced_state_interleaved'][1],1e-20)
@@ -69,7 +73,7 @@ class PreparationTest(unittest.TestCase):
         mesh,debug,native=self.native_geometry_fixture()
         run=self.run_prepare('--native-poisson-debug',str(debug),'--native-poisson-export',str(native))
         self.assertEqual(run.returncode,0,run.stderr)
-        cfg=json.loads((self.base/'out/input.json').read_text())
+        cfg=electrothermal_state.read_bound_record(self.base/'out/input.json')
         self.assertEqual(cfg['silicon_area_m2'],[.1e-12,.15e-12,.25e-12,0.])
         edge=next(e for e in cfg['edge_geometry'] if e['nodes']==[0,2])
         self.assertAlmostEqual(edge['poisson_F_per_m'],8.8541878128e-12*(11.7*.2+3.9*.7),delta=1e-25)
@@ -131,16 +135,25 @@ class ProbeInputTest(unittest.TestCase):
     def test_state_validation_and_profiling_preserve_solver_results(self):
         with tempfile.TemporaryDirectory() as name:
             base=Path(name);mesh=base/'mesh.json';source=base/'input.json';target=base/'output.json'
-            mesh.write_text(json.dumps(dict(nodes=[dict(id=i,x=x,y=y) for i,(x,y) in enumerate(((0,0),(1,0),(0,1)))],triangles=[dict(id=0,region_id=0,node_ids=[0,1,2])],regions=[dict(id=0,name='silicon',material='Silicon',cell_ids=[0])],contacts=[])),encoding='utf-8')
+            mesh.write_text(json.dumps(dict(nodes=[dict(id=i,x=x,y=y) for i,(x,y) in enumerate(((0,0),(1,0),(0,1)))],triangles=[dict(id=0,region_id=0,node_ids=[0,1,2])],regions=[dict(id=0,name='silicon',material='Si',cell_ids=[0])],contacts=[])),encoding='utf-8')
             cfg=dict(mesh_file=str(mesh),coordinate_to_metres=1.,region_conductivity=[dict(region_id=0,model='constant',value_W_per_m_K=1.)],thermodes=[],silicon_area_m2=[1/6]*3,fixed_charge_C_per_m=[0.]*3,edge_geometry=[dict(nodes=[a,b],poisson_F_per_m=1e-10,transport_weight=0.) for a,b in ((0,1),(1,2),(0,2))],donors_m3=[0.]*3,acceptors_m3=[0.]*3,mobility_SI=dict(model='constant'),boundaries=[],state_interleaved=[0.,0.,0.,300.]*3)
-            source.write_text(json.dumps(cfg),encoding='utf-8')
+            import electrothermal_state, state_archive
+            cfg.update(electron_qf_reference_V=[0.]*3,hole_qf_reference_V=[0.]*3)
+            serial=0
+            def save_input():
+                nonlocal serial
+                serial+=1
+                packed=electrothermal_state.pack(base/f'input_{serial}.json',cfg,
+                    dict(mode='electrothermal',potential_origin_V=0.,mesh_sha256=state_archive.mesh_identity(json.loads(mesh.read_text()),1.)))
+                source.write_text(json.dumps(packed),encoding='utf-8')
+            save_input()
             run=lambda:subprocess.run([os.environ['VELA_ELECTROTHERMAL_PROBE'],str(source),str(target)],capture_output=True,text=True)
             valid=run();self.assertEqual(valid.returncode,0,valid.stderr)
-            baseline=json.loads(target.read_text(encoding='utf-8'))
+            baseline=electrothermal_state.read_bound_record(target)
             target=base/'profiled_output.json'
-            cfg['performance_profiling']=True;source.write_text(json.dumps(cfg),encoding='utf-8')
+            cfg['performance_profiling']=True;save_input()
             profiled=run();self.assertEqual(profiled.returncode,0,profiled.stderr)
-            observed=json.loads(target.read_text(encoding='utf-8'));performance=observed.pop('performance')
+            observed=electrothermal_state.read_bound_record(target);performance=observed.pop('performance')
             self.assertEqual(observed,baseline)
             self.assertEqual(performance['assembly_calls'],1)
             self.assertGreater(performance['fermi_half_calls'],0)
@@ -154,9 +167,9 @@ class ProbeInputTest(unittest.TestCase):
             solved=[]
             for enabled in (False,True):
                 cfg['performance_profiling']=enabled;target=base/f'newton_{enabled}.json'
-                source.write_text(json.dumps(cfg),encoding='utf-8')
+                save_input()
                 execution=run();self.assertEqual(execution.returncode,0,execution.stderr)
-                output=json.loads(target.read_text(encoding='utf-8'))
+                output=electrothermal_state.read_bound_record(target)
                 self.assertGreater(output['newton_updates'],0)
                 if enabled:
                     self.assertEqual(output.pop('performance')['factorizations'],output['newton_updates'])
@@ -174,15 +187,17 @@ class ProbeInputTest(unittest.TestCase):
             for enabled in (False,True):
                 cfg['defer_recentered_candidate_jacobian']=enabled
                 target=base/f'deferred_{enabled}.json'
-                source.write_text(json.dumps(cfg),encoding='utf-8')
+                save_input()
                 execution=run();self.assertEqual(execution.returncode,0,execution.stderr)
-                output=json.loads(target.read_text(encoding='utf-8'))
+                output=electrothermal_state.read_bound_record(target)
                 counts=output.pop('performance')
                 if enabled:self.assertGreater(counts['residual_only_calls'],0)
                 deferred.append(output)
             self.assertEqual(deferred[0],deferred[1])
-            target=base/'invalid_output.json';cfg['state_interleaved'].pop();source.write_text(json.dumps(cfg),encoding='utf-8')
-            invalid=run();self.assertNotEqual(invalid.returncode,0);self.assertIn('Invalid electrothermal state size',invalid.stderr);self.assertFalse(target.exists())
+            target=base/'invalid_output.json';cfg['state_interleaved'].pop()
+            with self.assertRaisesRegex(ValueError,'four-equation layout'):save_input()
+            source.write_text(json.dumps(cfg),encoding='utf-8')
+            invalid=run();self.assertNotEqual(invalid.returncode,0);self.assertIn('requires HDF5',invalid.stderr);self.assertFalse(target.exists())
 
 class ElectrothermalStepPolicyTest(unittest.TestCase):
     def test_linear_prediction_keeps_sub_ulp_qf_increments_and_does_not_mutate_seeds(self):

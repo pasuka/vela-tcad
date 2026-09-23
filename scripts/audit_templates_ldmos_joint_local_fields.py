@@ -8,6 +8,7 @@ import csv
 import hashlib
 import json
 import os
+from electrothermal_state import read_bound_record
 from pathlib import Path
 import subprocess
 
@@ -18,7 +19,7 @@ from evidence_paths import candidate_path
 
 
 def read(path):
-    return json.loads(Path(path).read_text(encoding='utf-8'))
+    return read_bound_record(path)
 
 
 def sha(path):

@@ -93,7 +93,13 @@ Prerequisites:
 - nlohmann/json
 - Catch2 v3
 - Python 3 interpreter for CTest regression orchestration
-- HDF5 development package for optional import tooling (`VELA_ENABLE_HDF5=ON`)
+- HDF5 development package and HighFive 3 for restart storage. CMake uses an
+  installed HighFive package or fetches the pinned v3.3.0 source. TDR import is
+  separately controlled by `VELA_ENABLE_HDF5`; disabling import does not disable
+  the required state archive library.
+- Python `numpy` and `h5py` for state preparation and regression tests. Use the
+  same Python interpreter selected by CMake; its h5py build and loaded HDF5
+  runtime must be compatible.
 
 Ubuntu/Debian:
 
@@ -108,7 +114,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
   nlohmann-json3-dev \
   libspdlog-dev \
   catch2 \
-  python3 \
+  python3 python3-numpy python3-h5py \
   libhdf5-dev
 ```
 
@@ -132,14 +138,16 @@ workflows can share the same Windows UCRT64 configuration.
 
 Preset summary (from `CMakePresets.json`):
 
-| Preset | Kind | Binary dir | Python | HDF5 | Typical command |
+| Preset | Kind | Binary dir | Python | TDR import | Typical command |
 | --- | --- | --- | --- | --- | --- |
 | `windows-ucrt64-debug` | Configure / Build / Test | `build/` | OFF | ON | `cmake --preset windows-ucrt64-debug` |
 | `windows-ucrt64-debug-python` | Configure / Build / Test | `build-python/` | ON | ON (inherited) | `cmake --preset windows-ucrt64-debug-python` |
 | `windows-ucrt64-poisson` | Test | `build/` | OFF | ON | `ctest --preset windows-ucrt64-poisson` |
 
-If HDF5 is not available, CMake keeps the core build but disables the optional
-import executable and HDF5-specific tests.
+HDF5 and HighFive are required for production restart storage in every preset;
+configuration fails if the state-storage dependencies are unavailable. The
+optional TDR import tools can be disabled with `VELA_ENABLE_HDF5=OFF` without
+disabling HDF5 state storage.
 
 ### Windows / MSYS2 UCRT64
 
@@ -177,6 +185,8 @@ pacman -S --needed \
   mingw-w64-ucrt-x86_64-hdf5 \
   mingw-w64-ucrt-x86_64-catch \
   mingw-w64-ucrt-x86_64-python \
+  mingw-w64-ucrt-x86_64-python-numpy \
+  mingw-w64-ucrt-x86_64-python-h5py \
   mingw-w64-ucrt-x86_64-gdb
 ```
 

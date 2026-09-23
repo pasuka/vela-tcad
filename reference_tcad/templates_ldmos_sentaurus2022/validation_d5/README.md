@@ -51,5 +51,8 @@ KCL 在结束后独立审计。完整曲线的工程/最终判据来自
 [既有评分器](../../../scripts/analyze_templates_ldmos_stage4_d5.py)，未修改。
 
 输入回归：`python -m unittest tests.regression.test_ldmos_reference_fixture`。
+生产种子和新建状态采用 `vela.state/2` HDF5，需要匹配的 numpy/h5py 环境。
+原 CSV 种子已在逐字段转换验证及引用迁移后退役；`provenance.json` 中的
+`source_csv_path` 是历史来源，不是运行依赖。曲线和掺杂仍使用 CSV。
 输出与性能文件保留在忽略的 `build/` 内。历史完整曲线资格与本次默认值验证
 分别记录于 [当前状态](../../../docs/validation/templates_ldmos_current_status.md)。

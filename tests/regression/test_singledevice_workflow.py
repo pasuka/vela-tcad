@@ -76,6 +76,9 @@ class SingleDeviceWorkflowTest(unittest.TestCase):
 
             by_name = {stage["name"]: stage for stage in manifest["stages"]}
             common = manifest["common_saved_state"]
+            self.assertEqual(Path(common).suffix, ".h5")
+            self.assertTrue(all(Path(stage["final_state_file"]).suffix == ".h5"
+                                for stage in manifest["stages"]))
             self.assertEqual(common, by_name["linear_drain_ramp"]["initial_state_file"])
             self.assertEqual(common, by_name["saturation_drain_ramp"]["initial_state_file"])
             self.assertEqual(

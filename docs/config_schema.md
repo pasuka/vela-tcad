@@ -15,6 +15,30 @@ Scope and conventions:
 - Relative paths are resolved from the directory of the config JSON file.
 - Legacy decks remain supported where noted.
 - Prototype features are marked explicitly.
+
+Experimental classical DC assembly reuse: `solver.diagnostic_reuse_jacobian_structure`
+(boolean, default `false`) shares an immutable zero-valued sparse pattern, offset
+map and scatter tables between sequential Newton point services on the same
+`DCSweep` instance. It does not share numerical Jacobian values, residuals or
+carrier states. An exact compatibility key checks node numbering, geometry,
+transport support/stencils, material statistics, temperature, cell stencil mode
+and constrained rows. A prepared-input cache miss or an explicit context clear
+also invalidates the cache. `jacobian.structure_cache_hits/misses` and
+`jacobian.structure_cache_check` report reuse and compatibility-check cost;
+`jacobian.pattern_build_calls` counts actual builds. This candidate is separate
+from linear-solver symbolic-analysis reuse and does not cover the independent
+four-equation electrothermal service. It requires a persistent DC worker to
+reuse across separate point requests.
+
+`solver.diagnostic_fermi_node_cache` (boolean, default `false`) selects a bounded
+per-node/per-carrier endpoint-statistics cache within each classical Jacobian
+assembly. Neighboring edges can share identical Fermi trial evaluations. Keys
+compare the exact potential, local/relative QF, reference origin and material
+logarithm; all entries expire at the end of the assembly. Flux formulas and
+finite-difference derivatives are unchanged. The counter
+`jacobian.fermi_node_cache_assemblies` confirms execution; existing endpoint hit
+and miss counters include this cache when enabled. It is independent of structure
+reuse and is an experimental option, not the production default.
 - Field names with historical SI suffixes are kept for compatibility. In
   `unit_scaling` mode the numeric interpretation is described explicitly below.
 
@@ -197,6 +221,10 @@ existing lifetimes. No nonlinear state is implicitly reused. Use
 defaults to UMFPACK and reuse. Historical experiment drivers keep explicit control
 flags and reject a resume with changed cache policy. See the
 [cross-point experiment](validation/templates_ldmos_cross_point_analysis_2026-09-19.md).
+
+The sequential worker loads explicit HDF5 state files. The former experimental
+`initial_state_vds_hex` transport is rejected. State reuse and sparse symbolic
+analysis reuse are independent policies.
 
 `VELA_LINEAR_CAPTURE_DIR` is an opt-in diagnostic directory, which must already
 exist. It records at most four large three-block solver inputs per process as
@@ -1743,10 +1771,24 @@ Output and current fields:
 - write_vtk
 - vtk_prefix
 - csv_file
-- initial_state_file: optional restart-state CSV used as the initial
+- initial_state_file: optional `vela.state/2` HDF5 file (`.h5`) used as the initial
   `DDSolution` for the first solved bias.
-- write_state_file: optional restart-state CSV overwritten after every
+- write_state_file: optional restart-state file overwritten after every
   converged point with the latest `DDSolution`.
+  `state_format` defaults to `hdf5` and accepts only that value. The required
+  `VELA_ENABLE_HDF5_STATE=ON` build uses HDF5/HighFive directly, without
+  FlatBuffers. CSV, VDS1, NPY and the old `vela.ddstate/1` schema are not runtime
+  restart formats. Current cases and explicit paths must use `.h5`.
+  Values are binary64, potentials in V and densities in m^-3. Mesh identity
+  includes numbering/order, coordinates, connectivity, regions, contacts and
+  length units. Loading checks the mesh and potential origin; reference changes
+  require an explicit seed translation. QF references and increments are stored
+  independently, as are enabled quantum fields. Writes close a same-directory
+  temporary file before replacement. The shared four-equation representation
+  also requires explicit lattice temperature in K; it never supplies missing
+  temperature from a default. See the [storage interface](state_archive.md),
+  [production migration contract](validation/templates_ldmos_hdf5_production_migration_plan_2026-09-23.md)
+  and [current qualification scope](validation/templates_ldmos_hdf5_migration_execution_2026-09-23.md).
 - `initialization.mode`: optional first-point initialization mode. `none`
   preserves the baseline cold-start path; `poisson_block` runs one Newton
   Poisson block solve before the first coupled Newton solve and uses that state
@@ -1755,7 +1797,7 @@ Output and current fields:
   `initialization.mode` is `poisson_block`. It records the first-point
   initialization bias as `bias_V`, plus the cold-state and Poisson-block
   residual norms.
-- `initialization.write_state_file`: optional restart-state CSV written only
+- `initialization.write_state_file`: optional HDF5 restart state written only
   when `initialization.mode` is `poisson_block`. It captures the Poisson-block
   handoff state for the first bias point before ordinary sweep continuation
   begins.
@@ -1827,7 +1869,7 @@ python scripts/generate_pn2d_config.py \
   --set mesh_file="inputs/mesh.json" \
   --set node_doping_file="inputs/doping.csv" \
   --set materials_file="inputs/materials.json" \
-  --set initial_state_file="inputs/bv_prebias_5p9V_state.csv"
+  --set initial_state_file="inputs/bv_prebias_5p9V_state.h5"
 ```
 
 `--set` accepts only declared template parameters and parses its value as JSON

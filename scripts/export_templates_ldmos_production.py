@@ -72,7 +72,21 @@ def export_bundle(evidence, output, profile_path=PROFILE):
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, target)
     for path, value in generated.items():
-        path.write_text(json.dumps(value, indent=2) + '\n', encoding='utf-8')
+        if 'state_interleaved' in value or 'referenced_state_interleaved' in value:
+            # One-time migration of a hash-verified frozen input, not a runtime
+            # fallback. Keep original source hashes in the export manifest.
+            try:
+                from . import electrothermal_state, state_archive
+            except ImportError:
+                import electrothermal_state, state_archive
+            mesh=read(Path(value['mesh_file']))
+            metadata=dict(mode='electrothermal',
+                mesh_sha256=state_archive.mesh_identity(mesh,value.get('coordinate_to_metres',1.)),
+                potential_origin_V=value.get('potential_origin_V',0.))
+            electrothermal_state.write(path,value,metadata)
+        else:
+            path.write_text(json.dumps(value, indent=2) + '\n', encoding='utf-8')
+    states=list(output.glob('*_state_*.h5'))
     manifest = dict(
         schema='vela.ldmos.production_export.v1',
         scope='Frozen input/configuration reproduction only; execution and acceptance are separate',
@@ -80,7 +94,7 @@ def export_bundle(evidence, output, profile_path=PROFILE):
         profile_sha256=sha(profile_path),
         qualified_linux_runner_sha256=profile['qualified_linux_runner_sha256'],
         sources_sha256=profile['files_sha256'], path_replacements=mapping,
-        files_sha256={str(p.relative_to(output)): sha(p) for p in sorted([*copies, *generated])})
+        files_sha256={str(p.relative_to(output)): sha(p) for p in sorted([*copies, *generated, *states])})
     (output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
     return manifest
 

@@ -466,7 +466,7 @@ def stage_sweep(
         "max_retries": 20,
         "stop_on_failure": True,
         "write_vtk": False,
-        "write_state_file": f"outputs/stages/{stage_id}/final_state.csv",
+        "write_state_file": f"outputs/stages/{stage_id}/final_state.h5",
         "write_state_every_point_prefix": (
             f"outputs/stages/{stage_id}/states/state"
         ),
@@ -634,12 +634,12 @@ def prepare(
         low_voltage_points.append(stop_voltage)
     low_voltage_points = sorted(set(low_voltage_points))
 
-    equilibrium_state = "outputs/stages/00_equilibrium/final_state.csv"
-    unit_resistor_state = "outputs/stages/01_unit_resistor_1v/final_state.csv"
+    equilibrium_state = "outputs/stages/00_equilibrium/final_state.h5"
+    unit_resistor_state = "outputs/stages/01_unit_resistor_1v/final_state.h5"
     avalanche_activation_state = (
-        "outputs/stages/04_avalanche_activation_1v/final_state.csv"
+        "outputs/stages/04_avalanche_activation_1v/final_state.h5"
     )
-    avalanche_state = "outputs/stages/05_avalanche_on_60v/final_state.csv"
+    avalanche_state = "outputs/stages/05_avalanche_on_60v/final_state.h5"
     threshold_outer_voltage = (
         SENTAURUS_REFERENCE_BVDS_V
         + SENTAURUS_SERIES_RESISTANCE_OHM_UM

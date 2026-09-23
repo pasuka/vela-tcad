@@ -148,6 +148,8 @@ struct NewtonConfig {
     /// Explicit sequential experiment; no nonlinear state is retained here.
     /// The owner controls lifetime and invalidation across DC requests.
     std::shared_ptr<LinearSolver> sequentialLinearSolver;
+    std::shared_ptr<CoupledDDAssembler::StructureCache> sequentialJacobianStructure;
+    bool diagnosticFermiNodeCache = false;
     int maxIter = 20;
     Real reltol = 1.0e-8;
     Real abstol = 1.0e-18;

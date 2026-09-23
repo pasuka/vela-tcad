@@ -1,0 +1,11 @@
+namespace vela_state;
+table DDState {
+  version:uint = 1;
+  node_count:ulong;
+  field_names:[string] (required);
+  values:[double] (required);
+  units:string (required);
+}
+root_type DDState;
+file_identifier "VDSF";
+file_extension "vfb";

@@ -50,12 +50,12 @@ def prepare_corrected_support_seed(bundle: Path, *, branch_probe: bool = False) 
     sweep["start"] = bias
     sweep["stop"] = sweep["bias_points"][-1]
     sweep["initial_state_file"] = (
-        f"{OUTPUT_ROOT}/ialmob_off_corrected_triangle_support_seed/final_state.csv"
+        f"{OUTPUT_ROOT}/ialmob_off_corrected_triangle_support_seed/final_state.h5"
         if branch_probe else
         f"{OUTPUT_ROOT}/ialmob_off_direct_current_locator/"
-        "states/state_bias_15p856737.csv"
+        "states/state_bias_15p856737.h5"
     )
-    sweep["write_state_file"] = f"{output}/final_state.csv"
+    sweep["write_state_file"] = f"{output}/final_state.h5"
     sweep["write_state_every_point_prefix"] = f"{output}/states/state"
     sweep["external_circuit"]["enabled"] = False
     sweep["continuation"] = {"arclength": {"enabled": False}}
@@ -135,7 +135,7 @@ def prepare_case(
     sweep["start"] = targets[0]
     sweep["stop"] = targets[-1]
     sweep["initial_state_file"] = initial_state
-    sweep["write_state_file"] = f"{output}/final_state.csv"
+    sweep["write_state_file"] = f"{output}/final_state.h5"
     sweep["write_state_every_point_prefix"] = f"{output}/states/state"
     sweep.pop("voltage_to_current", None)
     circuit = sweep["external_circuit"]
@@ -246,9 +246,9 @@ def main() -> int:
             case="ialmob_off",
             source_config="simulation_direct_bordered_ialmob_off_bvds.json",
             initial_state=(
-                f"{OUTPUT_ROOT}/ialmob_off_corrected_triangle_support_branch_probe/final_state.csv"
+                f"{OUTPUT_ROOT}/ialmob_off_corrected_triangle_support_branch_probe/final_state.h5"
                 if args.use_corrected_support_seed else
-                f"{OUTPUT_ROOT}/ialmob_off_direct_current_locator/states/state_bias_15p856737.csv"
+                f"{OUTPUT_ROOT}/ialmob_off_direct_current_locator/states/state_bias_15p856737.h5"
             ),
             initial_inner=(
                 15.857737161516594
@@ -259,9 +259,9 @@ def main() -> int:
                 if args.use_corrected_support_seed else 3.32361934414161e-9
             ),
             previous_state=(
-                f"{OUTPUT_ROOT}/ialmob_off_corrected_triangle_support_seed/final_state.csv"
+                f"{OUTPUT_ROOT}/ialmob_off_corrected_triangle_support_seed/final_state.h5"
                 if args.use_corrected_support_seed else
-                f"{OUTPUT_ROOT}/ialmob_off_direct_current_locator/states/state_bias_15p880551.csv"
+                f"{OUTPUT_ROOT}/ialmob_off_direct_current_locator/states/state_bias_15p880551.h5"
             ),
             previous_inner=(
                 15.856737161516595
@@ -287,10 +287,10 @@ def main() -> int:
             bundle,
             case="ialmob_on",
             source_config="simulation_direct_bordered_ialmob_on_bvds.json",
-            initial_state=f"{OUTPUT_ROOT}/ialmob_on_seed/final_state.csv",
+            initial_state=f"{OUTPUT_ROOT}/ialmob_on_seed/final_state.h5",
             initial_inner=0.8078552725248964,
             initial_physical_outer=5.9253738367672866e-11,
-            previous_state="outputs/ialmob_ablation/probe_60v/ialmob_on/final_state.csv",
+            previous_state="outputs/ialmob_ablation/probe_60v/ialmob_on/final_state.h5",
             previous_inner=0.8068552725248964,
             previous_physical_outer=64.9522443569,
             initial_step=2.0e-12,

@@ -87,7 +87,7 @@ def configure_case(
     sweep["start"] = first_outer_voltage_v
     sweep["stop"] = final_outer_voltage_v
     sweep["initial_state_file"] = initial_state_file
-    sweep["write_state_file"] = f"{output_directory}/final_state.csv"
+    sweep["write_state_file"] = f"{output_directory}/final_state.h5"
     sweep["write_state_every_point_prefix"] = f"{output_directory}/states/state"
     sweep["write_vtk"] = False
     sweep.pop("vtk_prefix", None)
@@ -160,14 +160,14 @@ def prepare(bundle: Path) -> dict[str, Any]:
         case="ialmob_off",
         output_directory=f"{output_root}/ialmob_off",
         initial_state_file=(
-            f"{output_root}/ialmob_off/states/state_bias_15p723336.csv"
+            f"{output_root}/ialmob_off/states/state_bias_15p723336.h5"
         ),
         initial_inner_voltage_v=OFF_CURRENT_INNER_V,
         first_outer_voltage_v=OFF_CURRENT_OUTER_V,
         final_outer_voltage_v=FINAL_OUTER_V,
         initial_outer_step_v=12.5,
         previous_state_file=(
-            "diagnostics/direct_bordered_step/states/state_bias_15p721532.csv"
+            "diagnostics/direct_bordered_step/states/state_bias_15p721532.h5"
         ),
         previous_inner_voltage_v=OFF_PREVIOUS_INNER_V,
     )
@@ -179,7 +179,7 @@ def prepare(bundle: Path) -> dict[str, Any]:
         template,
         case="ialmob_on",
         output_directory=f"{output_root}/ialmob_on_seed",
-        initial_state_file="outputs/ialmob_ablation/probe_60v/ialmob_on/final_state.csv",
+        initial_state_file="outputs/ialmob_ablation/probe_60v/ialmob_on/final_state.h5",
         initial_inner_voltage_v=ON_PREVIOUS_INNER_V,
         first_outer_voltage_v=ON_SEED_INNER_V,
         final_outer_voltage_v=ON_SEED_INNER_V,
@@ -220,14 +220,14 @@ def prepare(bundle: Path) -> dict[str, Any]:
             case="ialmob_on",
             output_directory=f"{output_root}/ialmob_on",
             initial_state_file=(
-                f"{output_root}/ialmob_on_seed/final_state.csv"
+                f"{output_root}/ialmob_on_seed/final_state.h5"
             ),
             initial_inner_voltage_v=terminal_inner,
             first_outer_voltage_v=terminal_outer,
             final_outer_voltage_v=FINAL_OUTER_V,
             initial_outer_step_v=12.5,
             previous_state_file=(
-                "outputs/ialmob_ablation/probe_60v/ialmob_on/final_state.csv"
+                "outputs/ialmob_ablation/probe_60v/ialmob_on/final_state.h5"
             ),
             previous_inner_voltage_v=ON_PREVIOUS_INNER_V,
         )

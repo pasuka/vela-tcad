@@ -98,7 +98,7 @@ def make_gate8_prebias(base: dict[str, Any], initial_state: Path,
         "stop": 8.0, "step": 0.5,
         "bias_points": [5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0],
         "initial_state_file": str(initial_state.resolve()),
-        "write_state_file": str((output / "gate8_prebias_state.csv").resolve()),
+        "write_state_file": str((output / "gate8_prebias_state.h5").resolve()),
     })
     config["sweep"].pop("write_state_every_point_prefix", None)
     redirect_diagnostics(config, output, "gate8_prebias")
@@ -117,7 +117,7 @@ def make_gate_prebias_vd0(base: dict[str, Any], initial_state: Path,
         "contact": "gate", "current_contact": "drain", "start": 0.0,
         "stop": 8.0, "step": 0.5, "bias_points": points,
         "initial_state_file": str(initial_state.resolve()),
-        "write_state_file": str((output / "gate_prebias_vd0_state.csv").resolve()),
+        "write_state_file": str((output / "gate_prebias_vd0_state.h5").resolve()),
         "write_state_every_point_prefix": str((output / "gate_prebias_vd0_point").resolve()),
     })
     redirect_diagnostics(config, output, "gate_prebias_vd0")
@@ -165,7 +165,7 @@ def make_idvd(base: dict[str, Any], gate_V: float, initial_state: Path,
         "initial_step": IDVD_INITIAL_INTERNAL_STEP_V,
         "growth_factor": IDVD_GROWTH_FACTOR,
         "initial_state_file": str(initial_state.resolve()),
-        "write_state_file": str((output / f"{stem}_state.csv").resolve()),
+        "write_state_file": str((output / f"{stem}_state.h5").resolve()),
         "write_state_every_point_prefix": str((output / f"{stem}_point").resolve()),
     })
     redirect_diagnostics(config, output, stem)
@@ -191,7 +191,7 @@ def make_drain_zero_prebias(base: dict[str, Any], gate_V: float,
         "stop": 0.0, "step": -0.025,
         "bias_points": [0.1, 0.075, 0.05, 0.025, 0.0],
         "initial_state_file": str(initial_state.resolve()),
-        "write_state_file": str((output / f"{stem}_state.csv").resolve()),
+        "write_state_file": str((output / f"{stem}_state.h5").resolve()),
     })
     config["sweep"].pop("write_state_every_point_prefix", None)
     redirect_diagnostics(config, output, stem)
@@ -237,7 +237,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise ValueError("Vg=4 and Vg=8 D5 references must share exact drain points")
     if args.prebiased_dir:
         prebiased = args.prebiased_dir.resolve()
-        required = [prebiased / f"gate_prebias_vd0_point_bias_{gate}p000000.csv"
+        required = [prebiased / f"gate_prebias_vd0_point_bias_{gate}p000000.h5"
                     for gate in (4, 8)]
         if not all(path.is_file() for path in required):
             raise FileNotFoundError("--prebiased-dir lacks Vg=4/8, Vd=0 checkpoint states")
@@ -263,17 +263,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.prebiased_dir and all(item["status"] == "pass" for item in runs):
         prebiased = args.prebiased_dir.resolve()
         zero_states = {
-            4.0: prebiased / "gate_prebias_vd0_point_bias_4p000000.csv",
-            8.0: prebiased / "gate_prebias_vd0_point_bias_8p000000.csv",
+            4.0: prebiased / "gate_prebias_vd0_point_bias_4p000000.h5",
+            8.0: prebiased / "gate_prebias_vd0_point_bias_8p000000.h5",
         }
     elif args.equilibrium_state and all(item["status"] == "pass" for item in runs):
         zero_states = {
-            4.0: output / "gate_prebias_vd0_point_bias_4p000000.csv",
-            8.0: output / "gate_prebias_vd0_point_bias_8p000000.csv",
+            4.0: output / "gate_prebias_vd0_point_bias_4p000000.h5",
+            8.0: output / "gate_prebias_vd0_point_bias_8p000000.h5",
         }
     elif all(item["status"] == "pass" for item in runs):
         for gate, initial in ((4.0, args.vg4_initial_state),
-                              (8.0, output / "gate8_prebias_state.csv")):
+                              (8.0, output / "gate8_prebias_state.h5")):
             prebias = make_drain_zero_prebias(base, gate, initial, output)
             prebias_path = output / f"drain_zero_vg{int(gate)}.json"
             prebias_path.write_text(json.dumps(prebias, indent=2) + "\n", encoding="utf-8")
@@ -281,7 +281,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                                 output / f"drain_zero_vg{int(gate)}.log"))
             if runs[-1]["return_code"] != 0:
                 break
-            zero_states[gate] = output / f"drain_zero_vg{int(gate)}_state.csv"
+            zero_states[gate] = output / f"drain_zero_vg{int(gate)}_state.h5"
     if all(item["status"] == "pass" for item in runs):
         for gate in (4.0, 8.0):
             config = make_idvd(

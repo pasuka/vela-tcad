@@ -68,7 +68,7 @@ def build_bvds_case(
     sweep["start"] = activation_points[0]
     sweep["stop"] = float(stop_voltage_V)
     sweep["initial_state_file"] = (
-        f"outputs/ialmob_ablation/probe_60v/{case}/final_state.csv"
+        f"outputs/ialmob_ablation/probe_60v/{case}/final_state.h5"
     )
     sweep.pop("diagnostics", None)
     sweep["write_vtk"] = False

@@ -65,7 +65,7 @@ def build_case(base: dict[str, Any], name: str) -> dict[str, Any]:
     sweep["start"] = TARGET_INNER_V
     sweep["stop"] = TARGET_INNER_V
     sweep["bias_points"] = [TARGET_INNER_V]
-    sweep["write_state_file"] = f"{root}/final_state.csv"
+    sweep["write_state_file"] = f"{root}/final_state.h5"
     sweep["write_state_every_point_prefix"] = f"{root}/states/state"
     sweep["diagnostics"] = {
         "release_bv_config_audit": {

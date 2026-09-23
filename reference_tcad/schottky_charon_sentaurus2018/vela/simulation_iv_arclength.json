@@ -10,7 +10,7 @@
   "doping": [
     {
       "region": "R.Silicon",
-      "donors": 1.0000000000000034e16,
+      "donors": 1.0000000000000034e+16,
       "acceptors": 0.0
     }
   ],
@@ -23,9 +23,9 @@
     {
       "name": "anode",
       "type": "schottky",
-      "barrier_eV": 0.70,
-      "electron_surface_recombination_velocity_m_per_s": 4.91e6,
-      "hole_surface_recombination_velocity_m_per_s": 2.74e6,
+      "barrier_eV": 0.7,
+      "electron_surface_recombination_velocity_m_per_s": 4910000.0,
+      "hole_surface_recombination_velocity_m_per_s": 2740000.0,
       "emission_model": "thermionic_robin",
       "bias": 0.0
     }
@@ -33,8 +33,8 @@
   "solver": {
     "method": "newton",
     "max_iter": 150,
-    "reltol": 1e-5,
-    "abstol": 2e-9,
+    "reltol": 1e-05,
+    "abstol": 2e-09,
     "diagnostics": false,
     "damping_psi": 0.5,
     "max_update": 5.0,
@@ -50,23 +50,23 @@
     "stop": 1.0,
     "step": 0.005,
     "initial_step": 0.005,
-    "initial_state_file": "outputs/states/schottky_bias_0p820000.csv",
+    "initial_state_file": "outputs/states/schottky_bias_0p820000.h5",
     "continuation": {
       "arclength": {
         "enabled": true,
         "predictor": "tangent",
         "initial_step": 0.01,
-        "min_step": 1e-6,
+        "min_step": 1e-06,
         "max_step": 0.05,
         "growth_factor": 1.2,
         "shrink_factor": 0.5,
         "max_corrector_iterations": 50,
-        "corrector_tolerance": 1e-5,
+        "corrector_tolerance": 1e-05,
         "max_step_retries": 10,
         "parameter_scale": 1.0,
         "damping_factor": 0.5,
         "max_line_search_steps": 12,
-        "bias_finite_difference_step_V": 1e-5
+        "bias_finite_difference_step_V": 1e-05
       }
     },
     "write_state_every_point_prefix": "outputs/arclength_states/schottky",
@@ -76,5 +76,6 @@
   },
   "validation": {
     "check_contact_quasi_fermi_bias": false
-  }
+  },
+  "state_format": "hdf5"
 }

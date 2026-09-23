@@ -3,6 +3,8 @@ This is a state audit, not a self-consistent curve or acceptance runner.
 """
 import argparse, csv, hashlib, json, math
 from pathlib import Path
+import electrothermal_state
+import state_archive
 
 
 def read(path):
@@ -124,7 +126,7 @@ def main():
     cfg={k:thermal[k] for k in ('mesh_file','coordinate_to_metres','region_conductivity','thermodes')}
     retained=None
     if a.state_result:
-        previous=read(a.state_result);state=previous['state_interleaved']
+        previous=electrothermal_state.read_bound_record(a.state_result);state=previous['state_interleaved']
         if 'referenced_state_interleaved' in previous:
             retained=[[],[],[],[]]
             for i in range(count):
@@ -135,7 +137,9 @@ def main():
             for k in range(3):
                 if area[i]>0. or k==0:state[4*i+k]+=previous.get('potential_origin_V',0.)
     if a.isothermal_state:
-        rows=list(csv.DictReader(a.isothermal_state.open()))
+        restart,metadata=state_archive.read(a.isothermal_state,count,state_archive.mesh_identity(mesh,length))
+        if metadata['mode']!='dd':raise ValueError('Isothermal seed must use DD mode')
+        rows=state_archive.fields_to_rows(restart)
         assert [int(r['node_id']) for r in rows]==list(range(count))
         source_node=next(c for c in mesh['contacts'] if c['name']=='source')['node_ids'][0]
         offset=-float(rows[source_node]['phin'])
@@ -169,7 +173,13 @@ def main():
     if a.native_poisson_debug:
         from templates_ldmos_native_poisson import apply_native_poisson
         cfg=apply_native_poisson(cfg,mesh,a.native_poisson_debug,a.native_poisson_export)
-    output=a.output/'input.json';output.write_text(json.dumps(cfg),encoding='utf-8')
+    # Native field imports have no split QF history. Make that representation
+    # explicit here; never infer missing temperature in a restart reader.
+    if 'electron_qf_reference_V' not in cfg:
+        cfg.update(electron_qf_reference_V=[0.]*count,hole_qf_reference_V=[0.]*count)
+    output=a.output/'input.json'
+    electrothermal_state.write(output,cfg,dict(mode='electrothermal',potential_origin_V=a.potential_origin,
+        mesh_sha256=state_archive.mesh_identity(mesh,length),bias=dict(gate_V=a.gate,drain_V=a.drain)))
     sources=[Path(__file__),a.thermal_input,a.profile,a.couples,Path(thermal['mesh_file']),Path(mobility['ialmob']['geometry_file']),*sorted((a.export/'fields').glob('*.csv'))]
     if a.state_result:sources.append(a.state_result)
     if a.isothermal_state:sources.append(a.isothermal_state)

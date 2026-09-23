@@ -2,8 +2,8 @@
   "schema": "vela.templates_ldmos.linked_d5_inputs.v1",
   "template": "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d5_auger_no_generation_config.json",
   "seeds": {
-    "4": "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg4_qualified/state.csv",
-    "8": "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg8_qualified/state.csv"
+    "4": "reference_tcad/templates_ldmos_sentaurus2022/seeds/0e9685776c538f62.h5",
+    "8": "reference_tcad/templates_ldmos_sentaurus2022/seeds/4994de512efe74e5.h5"
   },
   "references": {
     "4": "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg1_n4_des_drain_curve.csv",
@@ -16,9 +16,9 @@
     "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg1_n4_des_drain_curve.csv": "3c9266b2616e2e779b853cee7bd94a0ee13478015d727c5bc2306ed8e152cb6a",
     "reference_staging/templates_ldmos_stage4_idvd_ablation_20260903/analysis_r2/normalized/D5-no-IALMob/IdVd_Vg2_n4_des_drain_curve.csv": "9545a194974f5f66205350df8585ca306fed87e9b8bcf15cfd7511a38e095d16",
     "reference_tcad/templates_ldmos_sentaurus2022/profiles/materials_fermi_consistent_300k.json": "bcd6cd7ca25d9a7b9af45f7d71372b422b35a2201134b84c05ad65a6eff2ba52",
-    "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg4_qualified/state.csv": "0e9685776c538f624ae62e31adf55feae7dc94ebdb22d5e8475435ec11ff9376",
-    "reference_staging/templates_ldmos_fermi_accuracy_20260912/r1/zero_seeds/vg8_qualified/state.csv": "4994de512efe74e5efece043ffb893f3225ce0ab3646682522ae00817b870a4a",
-    "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d5_auger_no_generation_config.json": "d8c75f866f402ae82682cd6b3ddd2a21d4358b94f10451099256a264608dfc37"
+    "reference_tcad/templates_ldmos_sentaurus2022/profiles/linked_d5_auger_no_generation_config.json": "33f870bd77a360f2d6d09f0e27120ed1aca769b0077e7187bdd1de34ee1e05db",
+    "reference_tcad/templates_ldmos_sentaurus2022/seeds/0e9685776c538f62.h5": "0bf023f041c1816cf59e871e9a292422d2a520bfb40667c8a38bcc5214db510b",
+    "reference_tcad/templates_ldmos_sentaurus2022/seeds/4994de512efe74e5.h5": "da65b4434c14d1ed03d35b6010abdcb80a1ed57bbe10de5e7707d279bb74057b"
   },
   "note": "Explicit plain Auger (generation disabled), native H/N0 and prior Fermi/material baseline. Numerical qualification recorded separately.",
   "parameter_audit": {
@@ -35,5 +35,7 @@
       ]
     },
     "N0_input_units": "cm^-3 (unit_scaling)"
-  }
+  },
+  "state_schema": "vela.state/2",
+  "state_migration": "HDF5 decoded fields verified equal to source CSV on T470p; original physics and gates retained."
 }

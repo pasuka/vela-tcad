@@ -69,14 +69,14 @@ def materialize(output_root: Path) -> tuple[Path, Path]:
     stage_a["output_csv"] = _absolute(stage_a_dir / "sweep.csv")
     stage_a["sweep"]["write_state_every_point_prefix"] = _absolute(
         stage_a_dir / "states" / "schottky")
-    stage_a["sweep"]["write_state_file"] = _absolute(stage_a_dir / "last_state.csv")
+    stage_a["sweep"]["write_state_file"] = _absolute(stage_a_dir / "last_state.h5")
 
     stage_b["output_csv"] = _absolute(stage_b_dir / "sweep.csv")
     stage_b["sweep"]["initial_state_file"] = _absolute(
-        stage_a_dir / "states" / "schottky_bias_0p820000.csv")
+        stage_a_dir / "states" / "schottky_bias_0p820000.h5")
     stage_b["sweep"]["write_state_every_point_prefix"] = _absolute(
         stage_b_dir / "states" / "schottky")
-    stage_b["sweep"]["write_state_file"] = _absolute(stage_b_dir / "last_state.csv")
+    stage_b["sweep"]["write_state_file"] = _absolute(stage_b_dir / "last_state.h5")
 
     path_a = stage_a_dir / "simulation.json"
     path_b = stage_b_dir / "simulation.json"

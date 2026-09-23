@@ -1,6 +1,10 @@
 #include "vela/io/CsvUtils.h"
 #include "vela/equation/AssemblerUtils.h"
 #include "vela/io/DDSolutionCsv.h"
+#ifdef VELA_ENABLE_HDF5_STATE
+#include "vela/io/DDSolutionState.h"
+#include "vela/io/StateIdentity.h"
+#endif
 #include "vela/io/MeshReader.h"
 #include "vela/material/MaterialDatabase.h"
 #include "vela/core/PhysicalConstants.h"
@@ -414,10 +418,36 @@ NewtonProblem loadNewtonProblem(const std::string& configFile, const nlohmann::j
         std::move(contacts.specs)};
 }
 
+class DDStateCliScope {
+public:
+    DDStateCliScope(const NewtonProblem& problem, const nlohmann::json& cfg, const std::filesystem::path& directory) {
+        const auto format = cfg.value("state_format", std::string("hdf5"));
+        if (format != "hdf5")
+            throw std::invalid_argument("Unknown state_format");
+#ifdef VELA_ENABLE_HDF5_STATE
+        if (format == "hdf5")
+            scope_ = std::make_unique<vela::DDStateArchiveScope>(nlohmann::json{
+                {"mode","dd"},{"mesh_sha256",vela::stateMeshIdentity(problem.mesh, problem.newton.inputScaling)},
+                {"potential_origin_V",cfg.value("potential_origin_V",0.)},
+                {"source_config_sha256",vela::stateSha256(cfg.dump())},
+                {"input_file_sha256",vela::stateInputProvenance(cfg,directory)},
+                {"contact_biases_V",problem.biases}});
+#else
+        (void)problem;
+        if (format == "hdf5") throw std::invalid_argument("HDF5 state archives not enabled in this build");
+#endif
+    }
+private:
+#ifdef VELA_ENABLE_HDF5_STATE
+    std::unique_ptr<vela::DDStateArchiveScope> scope_;
+#endif
+};
+
 NewtonCliResult runNewtonConfig(const std::string& configFile, const nlohmann::json& cfg)
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
 
     vela::NewtonResult result = vela::runNewton(
         problem.mesh,
@@ -445,13 +475,14 @@ nlohmann::json runNewtonSolveFromState(const std::string& configFile,
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution initial =
         readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
     vela::NewtonResult result = solver.solve(initial);
 
     if (cfg.contains("output_state_file")) {
-        vela::writeDDSolutionStateCsv(
+        vela::writeDDSolutionState(
             resolvePath(cfgDir, cfg.at("output_state_file").get<std::string>()),
             result.solution,
             problem.newton.inputScaling);
@@ -644,7 +675,7 @@ vela::DDSolution readExternalState(const std::filesystem::path& cfgDir,
                                    vela::Index nodeCount)
 {
     if (cfg.contains("state_file")) {
-        return vela::readDDSolutionStateCsv(
+        return vela::readDDSolutionState(
             resolvePath(
                 cfgDir, cfg.at("state_file").get<std::string>()),
             nodeCount,
@@ -679,6 +710,7 @@ nlohmann::json runSrhFixedStateProbe(const std::string& configFile,
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::Index nodeCount = problem.mesh.numNodes();
     const std::filesystem::path fieldsDir = resolvePath(
         cfgDir, cfg.at("fixed_state_fields_dir").get<std::string>());
@@ -878,6 +910,7 @@ nlohmann::json writeDdStateVtk(const std::string& configFile,
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state =
         readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const std::filesystem::path outputPath =
@@ -1031,6 +1064,7 @@ nlohmann::json runNewtonResidualProbe(const std::string& configFile, const nlohm
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state = readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
     const vela::NewtonResidualEvaluation residual = solver.evaluateResidual(state);
@@ -1061,6 +1095,7 @@ nlohmann::json runNewtonPoissonTermProbe(
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state =
         readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
@@ -1150,6 +1185,7 @@ nlohmann::json runNewtonStepProbe(const std::string& configFile, const nlohmann:
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state = readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
     const vela::NewtonStepEvaluation step = solver.evaluateStep(state);
@@ -1295,6 +1331,7 @@ nlohmann::json runNewtonFeedbackSubstitutionProbe(
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state =
         readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::DDSolution replacement = readFeedbackReplacementState(
@@ -1589,6 +1626,7 @@ nlohmann::json runNewtonPoissonQfpCrossBlockProbe(
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state =
         readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::DDSolution replacement = readFeedbackReplacementState(
@@ -1956,6 +1994,7 @@ nlohmann::json runNewtonJvpProbe(const std::string& configFile, const nlohmann::
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state = readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
 
@@ -2162,6 +2201,7 @@ nlohmann::json runNewtonBlockStepProbe(const std::string& configFile, const nloh
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state = readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
 
@@ -2285,6 +2325,7 @@ nlohmann::json runNewtonRegularizedCarrierStepProbe(
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state = readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
 
@@ -2369,6 +2410,7 @@ nlohmann::json runNewtonCarrierRowProbe(const std::string& configFile, const nlo
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state = readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
     const vela::NewtonCarrierRowDiagnosticsEvaluation diagnostics =
@@ -2433,6 +2475,7 @@ nlohmann::json runNewtonPoissonLinearProbe(
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state =
         readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const auto focusNode = static_cast<vela::Index>(cfg.at("focus_node").get<int>());
@@ -2595,6 +2638,7 @@ nlohmann::json runNewtonCarrierBlockDecompositionProbe(
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state =
         readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
@@ -2783,6 +2827,7 @@ nlohmann::json runNewtonCarrierTermProbe(const std::string& configFile, const nl
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state = readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
     const CarrierTermProbeOptions options = carrierTermProbeOptionsFromJson(cfg);
@@ -2903,6 +2948,7 @@ nlohmann::json runSgEdgeFluxProbe(const std::string& configFile, const nlohmann:
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state = readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
     const std::vector<vela::CoupledDDEdgeFluxDiagnostic> edges =
@@ -2986,6 +3032,7 @@ nlohmann::json runTransportEdgeJacobianProbe(
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state =
         readExternalState(cfgDir, cfg, problem.mesh.numNodes());
     const vela::NewtonSolver solver = makeNewtonSolver(problem);
@@ -3117,6 +3164,7 @@ nlohmann::json runEdgeMobilityProbe(const std::string& configFile, const nlohman
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const vela::DDSolution state = readExternalState(cfgDir, cfg, problem.mesh.numNodes());
 
     writeEdgeMobilityProbeCsv(
@@ -3141,10 +3189,11 @@ nlohmann::json runNewtonJacobianBlockProbe(const std::string& configFile,
 {
     const std::filesystem::path cfgDir = configDirectory(configFile);
     NewtonProblem problem = loadNewtonProblem(configFile, cfg);
+    DDStateCliScope stateScope(problem, cfg, configDirectory(configFile));
     const std::filesystem::path statePath =
         resolvePath(cfgDir, cfg.at("state_file").get<std::string>());
     const vela::DDSolution state =
-        vela::readDDSolutionStateCsv(
+        vela::readDDSolutionState(
             statePath,
             problem.mesh.numNodes(),
             problem.newton.inputScaling);
@@ -3269,6 +3318,8 @@ int runDCWorker(bool reuseLinearAnalysis = true)
             auto cfg = vela::canonicalizeDeck(nlohmann::json::parse(input));
             if (cfg.value("simulation_type", std::string("dc_sweep")) != "dc_sweep")
                 throw std::invalid_argument("--dc-worker accepts only dc_sweep configs");
+            if (request.contains("initial_state_vds_hex"))
+                throw std::invalid_argument("VDS1 memory seeds are retired; provide an HDF5 state_file");
             const auto result = sweep.runWithResult(path);
             const bool converged = !result.points.empty() && std::all_of(
                 result.points.begin(), result.points.end(),

@@ -49,7 +49,7 @@ def prepare_case(
     sweep["start"] = switch_voltage
     sweep["stop"] = switch_voltage
     sweep["initial_state_file"] = initial_state
-    sweep["write_state_file"] = f"{relative_output}/final_state.csv"
+    sweep["write_state_file"] = f"{relative_output}/final_state.h5"
     sweep["write_state_every_point_prefix"] = f"{relative_output}/states/state"
     sweep["voltage_to_current"] = {
         "enabled": True,
@@ -93,7 +93,7 @@ def main() -> int:
             bundle,
             case="ialmob_off",
             source_config="simulation_direct_bordered_ialmob_off_bvds.json",
-            initial_state=f"{OUTPUT_ROOT}/ialmob_off/states/state_bias_15p829142.csv",
+            initial_state=f"{OUTPUT_ROOT}/ialmob_off/states/state_bias_15p829142.h5",
             switch_voltage=15.829142186578611,
             current_points=[1.0e-8, 5.0e-8, 8.0e-8, 1.0e-7, 1.2e-7],
         ),
@@ -101,7 +101,7 @@ def main() -> int:
             bundle,
             case="ialmob_on",
             source_config="simulation_direct_bordered_ialmob_on_bvds.json",
-            initial_state=f"{OUTPUT_ROOT}/ialmob_on_seed/final_state.csv",
+            initial_state=f"{OUTPUT_ROOT}/ialmob_on_seed/final_state.h5",
             switch_voltage=0.8078552725248964,
             current_points=[1.0e-9, 1.0e-8, 5.0e-8, 8.0e-8, 1.0e-7, 1.2e-7],
         ),

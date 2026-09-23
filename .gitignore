@@ -76,6 +76,9 @@ tmp/
 reference_staging/
 docs/validation/daily_report_*/
 docs/validation/leadership_report_*/
+/.chart-data-*/
+/output/pdf/
+/docs/reports/ldmos_review_2026-09-12_17.zip
 
 # Example-generated outputs
 examples/*/outputs/

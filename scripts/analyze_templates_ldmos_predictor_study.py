@@ -3,13 +3,14 @@ import argparse
 import hashlib
 import json
 import math
+from electrothermal_state import read_bound_record
 from pathlib import Path
 
 from evidence_paths import candidate_path
 
 
 def read(path):
-    return json.loads(path.read_text(encoding='utf-8'))
+    return read_bound_record(path)
 
 
 def state_delta(a,b):

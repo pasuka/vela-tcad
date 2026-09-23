@@ -4,13 +4,20 @@ Native electrical curve and temperature-field comparison remains a separate gate
 """
 import argparse,csv,hashlib,json,math,os,subprocess,time
 from pathlib import Path
+import electrothermal_state
+import state_archive
 
 if os.name == "nt":
     from run_templates_ldmos_linked_d5 import cpu_times
 
 
-def load(path):return json.loads(path.read_text(encoding='utf-8'))
+def load(path):return electrothermal_state.read_bound_record(path)
 def save(path,value):
+    if isinstance(value,dict) and ('state_interleaved' in value or 'referenced_state_interleaved' in value):
+        mesh=load(Path(value['mesh_file']))
+        electrothermal_state.write(path,value,dict(mode='electrothermal',potential_origin_V=value.get('potential_origin_V',0.),
+            mesh_sha256=state_archive.mesh_identity(mesh,value.get('coordinate_to_metres',1.))))
+        return
     temporary=path.with_suffix(path.suffix+'.tmp');temporary.write_text(json.dumps(value,indent=2),encoding='utf-8');temporary.replace(path)
 def hash_file(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 

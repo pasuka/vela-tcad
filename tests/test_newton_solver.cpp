@@ -5844,3 +5844,135 @@ TEST_CASE("QF repartition preserves carriers flux residual and Jacobian",
         CHECK(x(N+1)+delta!=x(N+1));
     }
 }
+
+TEST_CASE("Fermi endpoint node reuse preserves derivatives across references quantum and trial states", "[newton][fermi_node_cache]")
+{
+    const bool localReferences = GENERATE(false, true);
+    const bool quantum = GENERATE(false, true);
+    const Real thermalVoltage = GENERATE(constants::Vt_300, 1.5 * constants::Vt_300);
+    const auto mesh = makePNMesh();
+    const auto doping = makePNDoping(mesh);
+    MaterialDatabase materials;
+    MobilityModelConfig mobility = mobilityModelConfig("constant_field");
+    mobility.highFieldDrivingForce = "quasi_fermi_gradient";
+    mobility.highFieldGradientDiscretization = "transport_cell_vector";
+    const int n = static_cast<int>(mesh.numNodes());
+    const auto recombination = recombinationModelConfig({"srh", "auger"});
+    BandgapNarrowingConfig bgn; bgn.model = "old_slotboom";
+    CoupledDDAssembler off(mesh, materials, doping, thermalVoltage, mobility,
+        recombination, bgn, {}, {}, {}, {}, {}, CarrierStatisticsConfig{"fermi_dirac"});
+    CoupledDDAssembler on(mesh, materials, doping, thermalVoltage, mobility,
+        recombination, bgn, {}, {}, {}, {}, {}, CarrierStatisticsConfig{"fermi_dirac"});
+    on.setFermiNodeCache(true);
+    for (auto* assembler : {&off, &on}) {
+        if (localReferences)
+            assembler->setQuasiFermiReferenceFields(VectorXd::LinSpaced(n,28.,28.004),
+                                                   VectorXd::LinSpaced(n,28.,27.996));
+        else assembler->setQuasiFermiReferences(28.,28.);
+        if (quantum) assembler->setElectronQuantumPotential(VectorXd::LinSpaced(n,0.,.015));
+    }
+    VectorXd x(3*n);
+    x.head(n) = VectorXd::LinSpaced(n,27.98,28.02);
+    x.segment(n,n) = VectorXd::LinSpaced(n,-.01,.01);
+    x.tail(n) = -x.segment(n,n);
+    x(n+2) = 1e-20;
+    CoupledDDBoundaryConditions bc;
+    bc.phin[0] = 28.; bc.phip[0] = 28.;
+    for (int trial=0; trial<3; ++trial) {
+        x(1) += .001; x(n+2) *= 2.;
+        const auto expected = off.assembleJacobian(x,bc);
+        const auto actual = on.assembleJacobian(x,bc);
+        REQUIRE(expected.nonZeros() == actual.nonZeros());
+        REQUIRE(std::equal(expected.valuePtr(),expected.valuePtr()+expected.nonZeros(),actual.valuePtr()));
+        REQUIRE((off.residual(x,bc)-on.residual(x,bc)).norm() == 0.);
+    }
+    if (!localReferences) {
+        const auto measured = [&](CoupledDDAssembler& assembler) {
+            PerformanceProfiler profiler({true,"unused.json"});
+            ActivePerformanceProfilerScope active(&profiler);
+            assembler.assembleJacobian(x,bc);
+            return profiler.toJson().at("counters");
+        };
+        const auto original = measured(off), candidate = measured(on);
+        REQUIRE(candidate.at("jacobian.fermi_node_cache_assemblies").get<int>() == 1);
+        REQUIRE(candidate.at("jacobian.endpoint_cache_misses").get<int>() <
+                original.at("jacobian.endpoint_cache_misses").get<int>());
+    }
+}
+
+TEST_CASE("Jacobian structure cache shares only immutable structure across states", "[newton][structure_cache]")
+{
+    const auto mesh = makePNMesh();
+    MaterialDatabase materials;
+    const auto doping = makePNDoping(mesh);
+    auto cache = std::make_shared<CoupledDDAssembler::StructureCache>();
+    PerformanceProfiler profiler({true, "unused.json"});
+    ActivePerformanceProfilerScope active(&profiler);
+    CoupledDDAssembler first(mesh, materials, doping, constants::Vt_300, 1e-6, 1e-6);
+    first.setStructureCache(cache);
+    const int n = static_cast<int>(mesh.numNodes());
+    const CoupledDDState state{VectorXd::Zero(n), VectorXd::Zero(n), VectorXd::Zero(n)};
+    auto x = first.pack(state);
+    CoupledDDBoundaryConditions bc;
+    bc.psi[0] = 0.; bc.phin[0] = 0.; bc.phip[0] = 0.;
+    const auto original = first.assembleJacobian(x, bc);
+    x(1) = .001;
+    CoupledDDAssembler second(mesh, materials, doping, constants::Vt_300, 1e-6, 1e-6);
+    second.setStructureCache(cache);
+    const auto candidate = second.assembleJacobian(x, bc);
+    CoupledDDAssembler fresh(mesh, materials, doping, constants::Vt_300, 1e-6, 1e-6);
+    const auto expected = fresh.assembleJacobian(x, bc);
+    REQUIRE(candidate.nonZeros() == expected.nonZeros());
+    REQUIRE(std::equal(candidate.outerIndexPtr(), candidate.outerIndexPtr()+candidate.outerSize()+1, expected.outerIndexPtr()));
+    REQUIRE(std::equal(candidate.innerIndexPtr(), candidate.innerIndexPtr()+candidate.nonZeros(), expected.innerIndexPtr()));
+    REQUIRE(std::equal(candidate.valuePtr(), candidate.valuePtr()+candidate.nonZeros(), expected.valuePtr()));
+    REQUIRE((candidate-original).norm() > 0.);
+    REQUIRE((second.residual(x, bc)-fresh.residual(x, bc)).norm() == 0.);
+    // Publishing a new constraint pattern must not mutate the first reader.
+    bc.psi[1] = 0.;
+    second.assembleJacobian(x, bc);
+    bc.psi.erase(1);
+    REQUIRE((first.assembleJacobian(first.pack(state), bc)-original).norm() == 0.);
+    const auto counters = profiler.toJson().at("counters");
+    REQUIRE(counters.at("jacobian.structure_cache_hits").get<int>() == 1);
+    REQUIRE(counters.at("jacobian.structure_cache_misses").get<int>() == 2);
+}
+
+TEST_CASE("Jacobian structure cache invalidates incompatible geometry temperature and stencils", "[newton][structure_cache]")
+{
+    const int change = GENERATE(0,1,2,3);
+    const auto mesh = makePNMesh();
+    DeviceMesh changed;
+    for (auto node : mesh.nodes()) { if (change==0) node.x *= 1.1; changed.addNode(node); }
+    for (auto cell : mesh.cells()) { if (change==1) std::rotate(cell.node_ids.begin(),cell.node_ids.begin()+1,cell.node_ids.end()); changed.addCell(cell); }
+    for (const auto& region : mesh.regions()) changed.addRegion(region);
+    for (const auto& contact : mesh.contacts()) changed.addContact(contact);
+    changed.buildEdges();
+    MaterialDatabase materials;
+    const auto doping = makePNDoping(mesh);
+    auto cache = std::make_shared<CoupledDDAssembler::StructureCache>();
+    MobilityModelConfig mobility;
+    auto recombination = recombinationModelConfig({"none"});
+    CoupledDDAssembler first(mesh, materials, doping, constants::Vt_300, mobility, recombination);
+    first.setStructureCache(cache);
+    const int n = static_cast<int>(mesh.numNodes());
+    const CoupledDDState state{VectorXd::Zero(n),VectorXd::Zero(n),VectorXd::Zero(n)};
+    const auto x=first.pack(state);
+    CoupledDDBoundaryConditions bc;
+    first.assembleJacobian(x,bc);
+    if (change==3) mobility.carrierCurrentDiscretization="element_qf_gradient";
+    const auto vt=constants::Vt_300*(change==2?1.1:1.);
+    PerformanceProfiler profiler({true,"unused.json"});
+    ActivePerformanceProfilerScope active(&profiler);
+    CoupledDDAssembler candidate(changed,materials,doping,vt,mobility,recombination);
+    candidate.setStructureCache(cache);
+    CoupledDDAssembler fresh(changed,materials,doping,vt,mobility,recombination);
+    const auto actual=candidate.assembleJacobian(x,bc);
+    const auto expected=fresh.assembleJacobian(x,bc);
+    REQUIRE(actual.nonZeros()==expected.nonZeros());
+    REQUIRE(std::equal(actual.valuePtr(),actual.valuePtr()+actual.nonZeros(),expected.valuePtr()));
+    REQUIRE((actual-expected).norm()==0.);
+    const auto counters=profiler.toJson().at("counters");
+    REQUIRE(counters.at("jacobian.structure_cache_misses").get<int>()==1);
+    REQUIRE_FALSE(counters.contains("jacobian.structure_cache_hits"));
+}

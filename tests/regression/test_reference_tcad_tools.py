@@ -908,7 +908,7 @@ Ionization
         )
         self.assertEqual(
             bv["vela_sweep_initialization"]["write_state_file"],
-            "poisson_block_initial_state.csv",
+            "poisson_block_initial_state.h5",
         )
         self.assertNotIn("candidate_bias_scale", bv["comparison"])
         self.assertEqual(bv["runtime_diagnostic"]["step"], 0.05)
@@ -9449,6 +9449,9 @@ LOOKUP_TABLE default
     def test_prepare_pn2d_bv_focused_restart_writes_restart_and_config(self) -> None:
         with tempfile.TemporaryDirectory(prefix="vela_focused_restart_") as tmp:
             root = Path(tmp)
+            (root / "mesh.json").write_text(json.dumps({
+                "nodes": [{"id": 0, "x": 0., "y": 0.}, {"id": 1, "x": 1e-6, "y": 0.}],
+                "triangles": [], "regions": [], "contacts": []}))
             base = root / "base.json"
             vtk = root / "restart.vtk"
             out = root / "focused"
@@ -9521,7 +9524,8 @@ LOOKUP_TABLE default
             )
 
             self.assertEqual(result.returncode, 0, result.stderr)
-            restart_rows = self._read_csv(out / "restart_from_vtk.csv")
+            from scripts import state_archive
+            restart_rows = state_archive.read_rows(out / "restart_from_vtk.h5")
             config = json.loads((out / "simulation.json").read_text())
 
         self.assertEqual(restart_rows[0]["node_id"], "0")
@@ -9530,7 +9534,7 @@ LOOKUP_TABLE default
         self.assertEqual(config["sweep"]["start"], -12.9078)
         self.assertEqual(config["sweep"]["stop"], -13.2)
         self.assertAlmostEqual(config["sweep"]["step"], -0.0922)
-        self.assertTrue(config["sweep"]["initial_state_file"].endswith("restart_from_vtk.csv"))
+        self.assertTrue(config["sweep"]["initial_state_file"].endswith("restart_from_vtk.h5"))
         self.assertEqual(Path(config["sweep"]["vtk_prefix"]).parts[-2:], ("vtk", "focused_restart"))
         self.assertTrue(config["sweep"]["diagnostics"]["newton_history"]["csv_file"].endswith("newton_history.csv"))
 

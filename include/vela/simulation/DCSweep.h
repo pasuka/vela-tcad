@@ -460,7 +460,10 @@ public:
         : reusePreparedInputs_(reusePreparedInputs || reuseLinearAnalysis),
           reuseLinearAnalysis_(reuseLinearAnalysis) {}
     /// Clear on rejected/invalid worker requests; never retain rejected states.
-    void clearLinearContext() const { sequentialLinearSolver_.reset(); }
+    void clearLinearContext() const {
+        sequentialLinearSolver_.reset();
+        sequentialJacobianStructure_.reset();
+    }
     std::vector<DCSweepPoint> run(const std::string& configFile) const;
     DCSweepResult runWithResult(const std::string& configFile) const;
 private:
@@ -468,6 +471,7 @@ private:
     bool reusePreparedInputs_;
     bool reuseLinearAnalysis_;
     mutable std::shared_ptr<LinearSolver> sequentialLinearSolver_;
+    mutable std::shared_ptr<CoupledDDAssembler::StructureCache> sequentialJacobianStructure_;
     mutable std::shared_ptr<PreparedInputs> preparedInputs_;
 };
 

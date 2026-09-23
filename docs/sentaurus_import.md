@@ -3,6 +3,11 @@
 This document describes the optional Sentaurus import path used to convert
 Sentaurus TDR/HDF5 and related text outputs into Vela-friendly neutral fixtures.
 
+TDR and the optional `vela.ddstate/1` HDF5 restart files share the HDF5 container,
+but use different schemas. They are not interchangeable by renaming files.
+See the [implementation and sample compatibility audit](validation/templates_ldmos_tdr_hdf5_compatibility_2026-09-22.md)
+for supported geometry/state layouts, units, node mapping, and conversion limits.
+
 ## Scope
 
 The repository provides two complementary import paths:

@@ -23,7 +23,6 @@ from copy import deepcopy
 from run_templates_ldmos_stage4_d5 import assert_d5_contract, read_points
 from analyze_templates_ldmos_stage4_d5 import curve_error, kcl_audit, LIMITS
 from summarize_templates_ldmos_idvd_ablation import read_curve
-from translate_dd_state import translate_state_csv
 from dc_worker_client import DCWorker
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -86,6 +85,10 @@ def write(path, value):
             time.sleep(.1)
 
 def rows(path):
+    if Path(path).suffix == '.h5':
+        import state_archive
+        count, identity = state_binding()
+        return state_archive.fields_to_rows(state_archive.read(path, count, identity)[0])
     with path.open(newline='', encoding='utf-8') as stream:
         return list(csv.DictReader(stream))
 
@@ -94,6 +97,37 @@ def csv_out(path, data):
         writer = csv.DictWriter(stream, fieldnames=list(data[0]))
         writer.writeheader()
         writer.writerows(data)
+
+
+_STATE_BINDING = None
+def state_binding():
+    global _STATE_BINDING
+    key = (id(BASE), str(ROOT))
+    if _STATE_BINDING is None or _STATE_BINDING[0] != key:
+        import state_archive
+        mesh = read(Path(BASE['mesh_file'].replace('@workspace',str(ROOT))))
+        factor = 1e-6 if BASE.get('scaling',{}).get('mode') == 'unit_scaling' else 1.
+        _STATE_BINDING = (key, len(mesh['nodes']), state_archive.mesh_identity(mesh,factor))
+    return _STATE_BINDING[1:]
+
+
+def state_suffix():
+    return '.h5'
+
+
+def state_path(directory):
+    return Path(directory)/('state'+state_suffix())
+
+
+def state_out(path, data, frame, *, bias=None, parents=()):
+    import state_archive
+    count, identity = state_binding()
+    if len(data) != count: raise ValueError('State node count mismatch')
+    metadata=dict(mode='dd',mesh_sha256=identity,potential_origin_V=frame,state_role='predicted',
+        source_state_sha256=[digest(Path(p)) for p in parents])
+    if bias is not None:metadata.update(bias_V=bias-frame,bias_contact='drain')
+    state_archive.write(path,state_archive.rows_to_fields(data),metadata)
+
 
 def close_bias(a,b):return abs(a-b)<=32*math.ulp(max(abs(a),abs(b),1.))
 
@@ -171,6 +205,8 @@ def prepare_config(base, dest, seed, target, cap, gate, frame=0.):
             return value.replace('@workspace',str(ROOT)).replace('@output',str(dest))
         return value
     cfg=expand(deepcopy(base))
+    cfg['state_format'] = 'hdf5'
+    cfg['potential_origin_V'] = frame
     for contact in cfg['contacts']:
         contact['bias']=(gate if contact['name']=='gate' else target if contact['name']=='drain' else 0.)-frame
     raw=target-frame
@@ -233,7 +269,9 @@ def translate(source,destination,subtract):
     mesh=read(Path(BASE['mesh_file'].replace('@workspace',str(ROOT))))
     si={int(r['id']) for r in mesh['regions'] if r['material'].lower() in ('si','silicon')}
     nodes={int(n) for t in mesh['triangles'] if int(t['region_id']) in si for n in t['node_ids']}
-    translate_state_csv(source,destination,subtract,nodes)
+    import state_archive
+    count,identity=state_binding()
+    state_archive.translate(source,destination,subtract,nodes,count,identity)
 
 class CheckpointSweep:
 
@@ -254,13 +292,13 @@ class CheckpointSweep:
         write(self.out / 'ledger.json', self.ledger)
 
     def point(self, dest, bias):
-        state = rows(dest / 'state.csv')
+        state = rows(state_path(dest))
         assert len(state) == len({int(r['node_id']) for r in state}) == 10241
         for row in state:
             assert all(math.isfinite(float(row[k])) for k in ('psi', 'phin', 'phip', 'electrons_m3', 'holes_m3'))
             assert min(float(row['electrons_m3']), float(row['holes_m3'])) >= 0.
-        return dict(bias_V=bias, case=dest.relative_to(HERE).as_posix(), state=str(dest / 'state.csv'),
-                    sha256=digest(dest / 'state.csv'))
+        return dict(bias_V=bias, case=dest.relative_to(HERE).as_posix(), state=str(state_path(dest)),
+                    sha256=digest(state_path(dest)))
 
 class FrameSweep(CheckpointSweep):
 
@@ -299,7 +337,7 @@ class FrameSweep(CheckpointSweep):
         suffix='' if not self.ledger['frame_events'] else f'_{len(self.ledger["frame_events"])}'
         inputs = self.out/f'frame_inputs{suffix}'
         inputs.mkdir(exist_ok=False)
-        translated = inputs/f'frame{FRAME:g}_seed.csv'
+        translated = inputs/(f'frame{FRAME:g}_seed'+state_suffix())
         translate(parent,translated,FRAME)
         event = dict(status='running',physical_bias_V=FRAME_PIVOT,old_frame_V=0.,new_frame_V=FRAME,
             parent_state=str(parent),parent_sha256=digest(parent),translated_seed=str(translated),
@@ -319,8 +357,8 @@ class FrameSweep(CheckpointSweep):
         if not good(result,dest,FRAME_PIVOT):
             event['status']='failed_closure';self.save()
             raise RuntimeError('Planned frame change did not qualify under original gates')
-        canonical = inputs/'canonical_for_comparison.csv'
-        translate(dest/'state.csv',canonical,-FRAME)
+        canonical = inputs/('canonical_for_comparison'+state_suffix())
+        translate(state_path(dest),canonical,-FRAME)
         delta = state_difference(canonical,parent)
         new_ports,new_kcl = ports(dest,FRAME_PIVOT-FRAME)
         old_ports,old_kcl = ports(parent.parent,FRAME_PIVOT)
@@ -334,7 +372,7 @@ class FrameSweep(CheckpointSweep):
             accepted=self.point(dest,FRAME_PIVOT))
         self.save()
         if not all(checks.values()): raise RuntimeError('Frame-equivalence guard failed')
-        self.ledger.update(frame_V=FRAME,accepted_state=str(dest/'state.csv'))
+        self.ledger.update(frame_V=FRAME,accepted_state=str(state_path(dest)))
         self.save()
         print('FRAME_QUALIFIED',FRAME_PIVOT,'frame',FRAME,flush=True)
 
@@ -431,9 +469,9 @@ class Sweep(FrameSweep):
                 for field, reference, increment in [('phin','electron_qf_reference_V','electron_qf_increment_V'),('phip','hole_qf_reference_V','hole_qf_increment_V')]:
                     current[reference]=current[field]
                     current[increment]='0'
-            prediction=HERE/'predictor_inputs'/f"seed_{len(self.ledger['runs']):05d}.csv"
+            prediction=HERE/'predictor_inputs'/(f"seed_{len(self.ledger['runs']):05d}"+state_suffix())
             prediction.parent.mkdir(exist_ok=True)
-            csv_out(prediction,current_rows)
+            state_out(prediction,current_rows,self.ledger['frame_V'],bias=target,parents=(parent,previous))
             metadata=dict(mode='outer_secant_guarded_v1', ratio=ratio, previous_state=str(previous),
                 previous_sha256=digest(previous), current_state=str(parent), current_sha256=digest(parent),
                 predicted_state=str(prediction), predicted_sha256=digest(prediction))

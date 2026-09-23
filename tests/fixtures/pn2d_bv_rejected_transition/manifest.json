@@ -9,12 +9,14 @@
     "mesh.json": "a2214ee99a8c7463fb1e49cc0179ae8f84bf4f4984f50c2ad8c648f396913de5",
     "doping.csv": "c8bf364645f81fee573c00aaa97b646cc9d87931746ccaee16a24bc700da1a40",
     "materials.json": "212b896ed86ace76d0d02e86b90f6ced6a2851417b2ec321d0dd702cfbfa6524",
-    "parent_state_m19p6921875V.csv": "dd2de1df9fb3311bcc6457deba5e5a02f636ba3b7b4fdd5f3c0a1945fecfdd33"
+    "parent_state_m19p6921875V.h5": "f2dc583aca848776020c339cc176f7d58b82e30f6cce772e68fa495b640d8776"
   },
   "origin": {
     "baseline": "build-release/pn2d-wp0-on-a-20260729/net_doping_on",
     "parent_state_source_sha256": "22fddd39cf344a2b22823680410cf2a57d16538efa16738fb2dd079d78774dec",
     "mesh_source_sha256": "c9aaf5f3130f2e1e78e399d155390ed8f19a306ff9ab5af4904230b5e328bc7e",
-    "doping_source_sha256": "714bb5c461d0acba49b1f9211318cc120a2e3891f92367776b636eda4b7fd155"
-  }
+    "doping_source_sha256": "714bb5c461d0acba49b1f9211318cc120a2e3891f92367776b636eda4b7fd155",
+    "csv_fixture_sha256": "dd2de1df9fb3311bcc6457deba5e5a02f636ba3b7b4fdd5f3c0a1945fecfdd33"
+  },
+  "state_schema": "vela.state/2"
 }

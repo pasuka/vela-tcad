@@ -116,7 +116,7 @@
     "step": -0.1,
     "stop": -1.0,
     "vtk_prefix": "reverse/state",
-    "write_state_file": "reverse/last.csv",
+    "write_state_file": "reverse/last.h5",
     "write_vtk": true,
     "bias_points": [
       -0.0,
@@ -133,5 +133,6 @@
     ],
     "write_state_every_point_prefix": "reverse/accepted",
     "stop_on_failure": true
-  }
+  },
+  "state_format": "hdf5"
 }

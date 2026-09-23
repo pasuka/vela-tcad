@@ -100,7 +100,7 @@ def stage_config(base: dict[str, Any], base_dir: Path, run_dir: Path,
     config["log_file"] = str((run_dir / f"{stem}.log").resolve())
     config["sweep"].pop("initial_state_file", None)
     config["sweep"]["write_state_file"] = str(
-        (run_dir / f"{stem}_final_state.csv").resolve())
+        (run_dir / f"{stem}_final_state.h5").resolve())
     config["sweep"]["write_vtk"] = False
     diagnostics(config["sweep"], run_dir, stem)
     return config
@@ -121,7 +121,7 @@ def materialize(linear_base_path: Path, saturation_base_path: Path,
     saturation_biases = expanded_biases(saturation_reference_biases, 2)
 
     run_dir.mkdir(parents=True, exist_ok=True)
-    common_state = (run_dir / "common_saved_equilibrium_state.csv").resolve()
+    common_state = (run_dir / "common_saved_equilibrium_state.h5").resolve()
 
     equilibrium = stage_config(
         linear_base, linear_base_path.parent, run_dir, "00_equilibrium")

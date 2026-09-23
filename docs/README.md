@@ -6,6 +6,92 @@ evidence.
 
 ## Current References
 
+- [Restart state storage](state_archive.md): current `vela.state/2` fields, units,
+  mesh/source identity, atomic checkpoint writes and strict recovery semantics.
+- [HDF5 production state migration plan, 2026-09-23](validation/templates_ldmos_hdf5_production_migration_plan_2026-09-23.md):
+  authorized scope, state schema, restart transactions, active-fixture migration,
+  electrothermal coverage and acceptance gates. See the execution record for final results.
+- [HDF5 migration execution, 2026-09-23](validation/templates_ldmos_hdf5_migration_execution_2026-09-23.md):
+  T470p Release validation; 850 CTest entries, G3/D4/D0 and frozen-300 K recovery
+  passed. Final three-round D5 overhead is 0.4572%, below 3%; C560 Linux CTest passed.
+- [HDF5 Linux CI, 2026-09-23](validation/templates_ldmos_linux_ci_2026-09-23.md):
+  isolated Ubuntu 26.04/GCC 15 Debug build and 850/850 CTest passed on C560 with
+  SparseLU; actual dependency detection and GitHub Actions differences are recorded.
+
+- [LDMOS worktree cleanup, 2026-09-22](validation/templates_ldmos_worktree_cleanup_2026-09-22.md):
+  duplicate artifacts and explicitly authorized historical JSON/CSV outputs removed;
+  118.68 GB total logical file bytes released. Production dependencies and latest HDF5
+  evidence retained; old per-point output paths may no longer be replayable.
+
+- [TDR and Vela HDF5 schema compatibility, 2026-09-22](validation/templates_ldmos_tdr_hdf5_compatibility_2026-09-22.md):
+  actual files share the HDF5 container but require different schemas; importer tests
+  and bidirectional schema-rejection checks pass. No native TDR write compatibility claimed.
+
+- [T470p HDF5 full-curve repeated pairing, 2026-09-22](validation/templates_ldmos_hdf5_full_repeats_2026-09-22.md):
+  three alternating serial rounds complete: twelve full D5 curves / 372 points, six joint
+  gates and all-field repeated audits pass. HDF5 adds 0.8695% total wall time versus VDS1,
+  meeting the approved 3% criterion; unchanged Release program, numerical gates and defaults.
+
+- [Public DD state formats on T470p, 2026-09-22](validation/templates_ldmos_public_state_formats_2026-09-22.md):
+  optional HDF5/HighFive, FlatBuffers and structured NPY interfaces pass local/remote
+  checks and twelve paired short curves / 96 exact points; all-field equality confirmed.
+  One-round combined wall costs are +0.297%/+0.304%/+0.672% versus matched VDS1.
+  No speed ranking or default promotion; HDF5 remains the preferred public-storage candidate.
+
+- [T470p binary restart state and reduced seed writes, 2026-09-22](validation/templates_ldmos_binary_state_2026-09-22.md):
+  eight short curves / 64 exact points pass unchanged gates and identical states
+  and trajectories. VDS1 saves 12.11%/10.95% versus CSV in one paired round.
+  Separate memory predictor seeds remove 60 files per curve but add 11.78%/12.52%
+  wall time including transport and reconstruction audit; not promoted. Defaults unchanged.
+
+- [T470p D5 file reuse and cost-per-volt controls, 2026-09-22](validation/templates_ldmos_d5_file_efficiency_2026-09-22.md):
+  eight short curves / 64 exact points pass unchanged gates and cold final audits.
+  Bounded CSV/hash reuse saves 3.00%/2.61% in one paired round with identical trajectories.
+  Separate efficiency control saves six services per curve but increases combined wall time
+  0.87%; cost-regression feedback never triggers. No default promotion or full-curve claim.
+
+- [T470p D5 cost-feedback continuation and parent timing, 2026-09-22](validation/templates_ldmos_d5_cost_continuation_2026-09-22.md):
+  dual-gate first-eight-point controls pass original state gates, but wall time grows
+  10.57%/10.21% and updates 367/349 to 386/379. Candidate not promoted to full curves.
+  Nonoverlapping parent timers locate 26.1/26.3 s outside worker calls in the controls;
+  budget-per-step feedback does not minimize total continuation cost. Defaults unchanged.
+
+- [T470p D5 assembly/Fermi reuse candidates, 2026-09-22](validation/templates_ldmos_d5_kernel_candidates_2026-09-22.md):
+  immutable pattern/scatter reuse passes dual-gate first-eight-point controls;
+  one paired round reduces wall time by 5.66%/5.90% with identical states and trajectories.
+  Fermi endpoint reuse reduces evaluations without a clear timing gain. Combined
+  62-point full curves pass original gates and exact state/trajectory checks;
+  full-curve qualification is not paired timing. Defaults unchanged.
+
+- [T470p D5 completed gprof results, 2026-09-22](validation/templates_ldmos_d5_gprof_results_2026-09-22.md):
+  62 exact points pass unchanged curve/joint gates, with identical states, trajectories
+  and recorded counters to ordinary Release. Cross-checks Fermi edge assembly, repeated
+  pattern/scatter construction and point-service overhead; proposes progress/cost-based
+  continuation without v3's fixed voltage split. No production-policy changes.
+
+- [T470p D5 baseline gprof and adaptive continuation, 2026-09-21](validation/templates_ldmos_d5_gprof_t470p_2026-09-21.md):
+  historical pause record and isolated Release/frozen DLL profiling contract;
+  resumed and completed on September 22 (see results above).
+  Separates v3's case-specific voltage split from a proposed
+  progress/cost-driven adaptive controller; no production changes.
+
+- [T470p D5 protected 0.8 V full curves, 2026-09-21](validation/templates_ldmos_d5_step08_full_2026-09-21.md):
+  four full curves and fresh paired states pass unchanged gates. One paired round
+  reduces wall time by 9.70%/29.06%, but Vg4 Newton updates increase 5.34% due to
+  costly recovery points. Low-voltage and no-history safeguards are required;
+  two earlier failures remain separate evidence. No production-default promotion.
+
+- [T470p D5 targeted step/prediction/row controls, 2026-09-21](validation/templates_ldmos_d5_targeted_controls_2026-09-21.md):
+  20 bounded paths and 12 node-trace controls qualify; 0.8 V steps with fixed 0.2 V QF
+  cap reduce short-window work. Larger jumps can trigger internal recovery. Diagnoses
+  one low-voltage prediction counterexample and corrects legacy trace-density units
+  in analysis; no full-curve or production-default promotion.
+
+- [T470p D5 Newton and prediction localization, 2026-09-21](validation/templates_ldmos_d5_newton_localization_2026-09-21.md):
+  six repeated UMFPACK traces: 251 drain advances versus native 49; average updates per
+  advance comparable. Sixteen fixed-state prediction controls pass original gates;
+  one low-voltage prediction counterexample identified. No production default changes.
+
 - [LDMOS performance closeout and production defaults, 2026-09-20](validation/templates_ldmos_performance_closeout_2026-09-20.md):
   cross-point main-Newton analysis reuse enabled by default; UMFPACK preferred,
   SparseLU fallback, then STRUMPACK/MUMPS/SuperLU_MT in the available-backend list.

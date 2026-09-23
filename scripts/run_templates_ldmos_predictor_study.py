@@ -8,6 +8,8 @@ import argparse
 import hashlib
 import json
 import os
+from electrothermal_state import read_bound_record, write as write_state_record
+from state_archive import mesh_identity
 from pathlib import Path, PurePosixPath
 import subprocess
 import time
@@ -16,7 +18,7 @@ from run_templates_ldmos_electrothermal_curve import state_gate
 
 
 def read(p):
-    return json.loads(p.read_text(encoding='utf-8'))
+    return read_bound_record(p)
 
 
 def sha(p):
@@ -71,7 +73,9 @@ def main():
                 cfg[key]=initial[key]
             cfg['initialization']='provided_state'
             cfg['diagnostic_density_update_iterations']=60 if args.phase=='D' else 0
-            inp=case/'input.json';inp.write_text(json.dumps(cfg),encoding='utf-8')
+            inp=case/'input.json'
+            mesh=read(Path(cfg['mesh_file']))
+            write_state_record(inp,cfg,dict(mode='electrothermal',mesh_sha256=mesh_identity(mesh,cfg.get('coordinate_to_metres',1.)),potential_origin_V=cfg.get('potential_origin_V',0.)))
             deck=read(root/'cases_r7'/('vela_vg%d.json'%gate))
             deck.update(input_file=str(inp),output_directory=str(case/'results'),initialization=dict(mode='provided_state'))
             deck['sweep'].update(step_policy='fixed_targets' if args.phase in ('A','C') else 'actual_step' if variant=='actual_step' else 'adaptive',bias_points_V=targets,

@@ -27,7 +27,8 @@ class DCWorker:
     def run(self, config, timeout=600):
         before = self.cpu_reader(self.proc) if self.count else dict(kernel=0., user=0., total=0.)
         self.count += 1
-        self.proc.stdin.write(json.dumps({'id': self.count, 'config': str(config)}) + '\n')
+        request={'id': self.count, 'config': str(config)}
+        self.proc.stdin.write(json.dumps(request) + '\n')
         self.proc.stdin.flush()
         try:
             line = self.responses.get(timeout=timeout)

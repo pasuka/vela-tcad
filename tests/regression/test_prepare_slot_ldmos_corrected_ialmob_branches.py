@@ -117,7 +117,7 @@ class CorrectedIalmobBranchPreparationTest(unittest.TestCase):
             for case in ("ialmob_off", "ialmob_on"):
                 seed = (
                     bundle / OUTPUT_ROOT / case / "states" /
-                    "state_bias_0p050000.csv"
+                    "state_bias_0p050000.h5"
                 )
                 seed.parent.mkdir(parents=True)
                 seed.write_text("seed\n", encoding="utf-8")
@@ -194,7 +194,7 @@ class CorrectedIalmobBranchPreparationTest(unittest.TestCase):
             for case in ("ialmob_off", "ialmob_on"):
                 seed = (
                     bundle / "outputs/ialmob_ablation/corrected_low_voltage_newton_20260823" /
-                    case / "states/state_bias_0p050000.csv"
+                    case / "states/state_bias_0p050000.h5"
                 )
                 seed.parent.mkdir(parents=True)
                 seed.write_text("state\n", encoding="utf-8")
@@ -219,7 +219,7 @@ class CorrectedIalmobBranchPreparationTest(unittest.TestCase):
             for case in ("ialmob_off", "ialmob_on"):
                 seed = (
                     bundle / "outputs/ialmob_ablation/corrected_dense_low_voltage_20260823" /
-                    case / "states/state_bias_0p100000.csv"
+                    case / "states/state_bias_0p100000.h5"
                 )
                 seed.parent.mkdir(parents=True)
                 seed.write_text("state\n", encoding="utf-8")
@@ -242,7 +242,7 @@ class CorrectedIalmobBranchPreparationTest(unittest.TestCase):
             for case in ("ialmob_off", "ialmob_on"):
                 seed = (
                     bundle / "outputs/ialmob_ablation/corrected_post_dense_20260823" /
-                    case / "states/state_bias_0p150000.csv"
+                    case / "states/state_bias_0p150000.h5"
                 )
                 seed.parent.mkdir(parents=True)
                 seed.write_text("state\n", encoding="utf-8")
@@ -273,7 +273,7 @@ class CorrectedIalmobBranchPreparationTest(unittest.TestCase):
                 seed = (
                     bundle /
                     "outputs/ialmob_ablation/corrected_point_two_recovery_20260823" /
-                    case / "states/state_bias_0p200000.csv"
+                    case / "states/state_bias_0p200000.h5"
                 )
                 seed.parent.mkdir(parents=True)
                 seed.write_text("state\n", encoding="utf-8")
@@ -300,7 +300,7 @@ class CorrectedIalmobBranchPreparationTest(unittest.TestCase):
                 seed = (
                     bundle /
                     "outputs/ialmob_ablation/corrected_one_volt_extension_20260823" /
-                    case / "states/state_bias_1p000000.csv"
+                    case / "states/state_bias_1p000000.h5"
                 )
                 seed.parent.mkdir(parents=True)
                 seed.write_text("state\n", encoding="utf-8")

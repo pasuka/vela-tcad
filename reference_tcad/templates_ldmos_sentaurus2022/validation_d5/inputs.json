@@ -2,8 +2,8 @@
   "schema": "vela.templates_ldmos.linked_d5_inputs.v1",
   "template": "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/config.json",
   "seeds": {
-    "4": "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/seeds/vg4_vd0.csv",
-    "8": "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/seeds/vg8_vd0.csv"
+    "4": "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/seeds/vg4_vd0.h5",
+    "8": "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/seeds/vg8_vd0.h5"
   },
   "references": {
     "4": "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/reference_curves/vg4.csv",
@@ -16,9 +16,9 @@
     "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/reference_curves/vg4.csv": "3c9266b2616e2e779b853cee7bd94a0ee13478015d727c5bc2306ed8e152cb6a",
     "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/reference_curves/vg8.csv": "9545a194974f5f66205350df8585ca306fed87e9b8bcf15cfd7511a38e095d16",
     "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/data/materials_fermi_consistent_300k.json": "bcd6cd7ca25d9a7b9af45f7d71372b422b35a2201134b84c05ad65a6eff2ba52",
-    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/seeds/vg4_vd0.csv": "0e9685776c538f624ae62e31adf55feae7dc94ebdb22d5e8475435ec11ff9376",
-    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/seeds/vg8_vd0.csv": "4994de512efe74e5efece043ffb893f3225ce0ab3646682522ae00817b870a4a",
-    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/config.json": "ab467bb7ffb1b8a92384be6286126b02c4ee4edbabb9d39a97fe0b3ba65c4d5d"
+    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/config.json": "3a510295ba3e346154471a94c73589e5180dac4c9c88162b655d633fadc2b1c7",
+    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/seeds/vg4_vd0.h5": "0bf023f041c1816cf59e871e9a292422d2a520bfb40667c8a38bcc5214db510b",
+    "reference_tcad/templates_ldmos_sentaurus2022/validation_d5/seeds/vg8_vd0.h5": "da65b4434c14d1ed03d35b6010abdcb80a1ed57bbe10de5e7707d279bb74057b"
   },
   "note": "Portable D5 validation fixture; paths relocated only, original physics and convergence gates unchanged. Source provenance is historical, not a runtime dependency.",
   "parameter_audit": {
@@ -35,5 +35,7 @@
       ]
     },
     "N0_input_units": "cm^-3 (unit_scaling)"
-  }
+  },
+  "state_schema": "vela.state/2",
+  "state_migration": "HDF5 decoded fields verified equal to source CSV on T470p; original physics and gates retained."
 }

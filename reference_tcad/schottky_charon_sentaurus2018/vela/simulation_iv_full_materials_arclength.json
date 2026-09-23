@@ -4,40 +4,81 @@
   "mesh_file": "mesh.json",
   "materials_file": "materials_full_sentaurus2018.json",
   "output_csv": "outputs/ablations/full_materials/vela_schottky_iv_arclength.csv",
-  "scaling": { "mode": "unit_scaling" },
+  "scaling": {
+    "mode": "unit_scaling"
+  },
   "node_doping_file": "doping.csv",
-  "doping": [{ "region": "R.Silicon", "donors": 1.0000000000000034e16, "acceptors": 0.0 }],
-  "contacts": [
-    { "name": "cathode", "type": "ohmic", "bias": 0.0 },
+  "doping": [
     {
-      "name": "anode", "type": "schottky", "barrier_eV": 0.70,
-      "electron_surface_recombination_velocity_m_per_s": 4.91e6,
-      "hole_surface_recombination_velocity_m_per_s": 2.74e6,
-      "emission_model": "thermionic_robin", "bias": 0.0
+      "region": "R.Silicon",
+      "donors": 1.0000000000000034e+16,
+      "acceptors": 0.0
+    }
+  ],
+  "contacts": [
+    {
+      "name": "cathode",
+      "type": "ohmic",
+      "bias": 0.0
+    },
+    {
+      "name": "anode",
+      "type": "schottky",
+      "barrier_eV": 0.7,
+      "electron_surface_recombination_velocity_m_per_s": 4910000.0,
+      "hole_surface_recombination_velocity_m_per_s": 2740000.0,
+      "emission_model": "thermionic_robin",
+      "bias": 0.0
     }
   ],
   "solver": {
-    "method": "newton", "max_iter": 150, "reltol": 1e-5,
-    "stall_residual_floor": 2e-9,
-    "diagnostics": false, "damping_psi": 0.5, "max_update": 5.0,
-    "quasi_fermi_update_limit_V": 0.0, "warm_start": true,
-    "taun": 1e-5, "taup": 3e-6,
-    "recombination": ["srh"]
+    "method": "newton",
+    "max_iter": 150,
+    "reltol": 1e-05,
+    "stall_residual_floor": 2e-09,
+    "diagnostics": false,
+    "damping_psi": 0.5,
+    "max_update": 5.0,
+    "quasi_fermi_update_limit_V": 0.0,
+    "warm_start": true,
+    "taun": 1e-05,
+    "taup": 3e-06,
+    "recombination": [
+      "srh"
+    ]
   },
   "sweep": {
-    "mode": "bv_reverse", "start": 0.82, "stop": 1.0,
-    "step": 0.005, "initial_step": 0.005,
-    "initial_state_file": "outputs/ablations/full_materials/states/schottky_bias_0p820000.csv",
-    "continuation": { "arclength": {
-      "enabled": true, "predictor": "tangent", "initial_step": 0.01,
-      "min_step": 1e-6, "max_step": 0.05, "growth_factor": 1.2,
-      "shrink_factor": 0.5, "max_corrector_iterations": 50,
-      "corrector_tolerance": 1e-5, "max_step_retries": 10,
-      "parameter_scale": 1.0, "damping_factor": 0.5,
-      "max_line_search_steps": 12, "bias_finite_difference_step_V": 1e-5
-    }},
+    "mode": "bv_reverse",
+    "start": 0.82,
+    "stop": 1.0,
+    "step": 0.005,
+    "initial_step": 0.005,
+    "initial_state_file": "outputs/ablations/full_materials/states/schottky_bias_0p820000.h5",
+    "continuation": {
+      "arclength": {
+        "enabled": true,
+        "predictor": "tangent",
+        "initial_step": 0.01,
+        "min_step": 1e-06,
+        "max_step": 0.05,
+        "growth_factor": 1.2,
+        "shrink_factor": 0.5,
+        "max_corrector_iterations": 50,
+        "corrector_tolerance": 1e-05,
+        "max_step_retries": 10,
+        "parameter_scale": 1.0,
+        "damping_factor": 0.5,
+        "max_line_search_steps": 12,
+        "bias_finite_difference_step_V": 1e-05
+      }
+    },
     "write_state_every_point_prefix": "outputs/ablations/full_materials/arclength_states/schottky",
-    "write_vtk": false, "contact": "anode", "current_contact": "anode"
+    "write_vtk": false,
+    "contact": "anode",
+    "current_contact": "anode"
   },
-  "validation": { "check_contact_quasi_fermi_bias": false }
+  "validation": {
+    "check_contact_quasi_fermi_bias": false
+  },
+  "state_format": "hdf5"
 }

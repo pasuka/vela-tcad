@@ -98,7 +98,7 @@ def prepare_config(
         "contact": "drain",
         "current_contact": "drain",
         "initial_state_file": str(initial_state.resolve()),
-        "write_state_file": str(output_dir / "last_state.csv"),
+        "write_state_file": str(output_dir / "last_state.h5"),
         "write_state_every_point_prefix": str(output_dir / "states" / "state"),
         "write_vtk": False,
         "breakdown": {

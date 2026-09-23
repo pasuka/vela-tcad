@@ -266,7 +266,7 @@ class SlotLdmosPreparationTests(unittest.TestCase):
             self.assertEqual(avalanche_activation["sweep"]["start"], 1.0)
             self.assertEqual(
                 avalanche_activation["sweep"]["initial_state_file"],
-                "outputs/stages/01_unit_resistor_1v/final_state.csv",
+                "outputs/stages/01_unit_resistor_1v/final_state.h5",
             )
             self.assertEqual(
                 avalanche_activation["sweep"]["external_circuit"][
@@ -277,7 +277,7 @@ class SlotLdmosPreparationTests(unittest.TestCase):
             self.assertEqual(avalanche_on["sweep"]["start"], 10.0)
             self.assertEqual(
                 avalanche_on["sweep"]["initial_state_file"],
-                "outputs/stages/04_avalanche_activation_1v/final_state.csv",
+                "outputs/stages/04_avalanche_activation_1v/final_state.h5",
             )
             for document in [iic, avalanche_activation, avalanche_on, final]:
                 audit = document["sweep"]["diagnostics"][
@@ -287,7 +287,7 @@ class SlotLdmosPreparationTests(unittest.TestCase):
                 self.assertTrue(audit["csv_file"].endswith("avalanche_summary.csv"))
             self.assertEqual(
                 final["sweep"]["initial_state_file"],
-                "outputs/stages/05_avalanche_on_60v/final_state.csv",
+                "outputs/stages/05_avalanche_on_60v/final_state.h5",
             )
             threshold_outer = (
                 MODULE.SENTAURUS_REFERENCE_BVDS_V

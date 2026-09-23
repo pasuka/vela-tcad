@@ -112,7 +112,7 @@
     "checkpoint_directory": { "default": "bv_external_resistor_checkpoints", "path": true, "type": "string" },
     "evaluation_csv": { "default": "bv_external_resistor_evaluations.csv", "path": true, "type": "string" },
     "initial_inner_voltage_V": { "default": 5.9, "type": "number" },
-    "initial_state_file": { "default": "inputs/bv_prebias_5p9V_state.csv", "path": true, "type": "string" },
+    "initial_state_file": { "default": "inputs/bv_prebias_5p9V_state.h5", "path": true, "type": "string" },
     "materials_file": { "default": "inputs/materials.json", "path": true, "type": "string" },
     "max_inner_voltage_step_V": { "default": 0.025, "type": "number" },
     "mesh_file": { "default": "inputs/mesh.json", "path": true, "type": "string" },
@@ -128,7 +128,7 @@
     "resume": { "default": true, "type": "boolean" },
     "solver_diagnostics": { "default": false, "type": "boolean" },
     "state_every_point_prefix": { "default": "bv_external_resistor_states/state", "path": true, "type": "string" },
-    "state_output": { "default": "bv_external_resistor_last_state.csv", "path": true, "type": "string" }
+    "state_output": { "default": "bv_external_resistor_last_state.h5", "path": true, "type": "string" }
   },
   "template": "bvmethods_nmos_external_resistor",
   "template_schema": "vela.simulation-template.v1",
