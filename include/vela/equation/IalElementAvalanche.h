@@ -35,6 +35,9 @@ struct IalElementAvalancheResult {
 
 /// All nine (psi, phin, phip) columns include supplied carrier-statistics
 /// responses, local IALMob/HFS, QF/normal fields, and cosine alpha mixing.
+/// Contact elements retain the full QF current gradient, including at interface
+/// overlaps; non-contact interface elements use its tangential component.
+/// The contact alpha drive uses the electric field, separately from the current.
 /// Geometry, doping, orientation and temperature are fixed. Equal extrema use
 /// the first local index on each selected min/max branch; zero norms and the
 /// cutoff select zero slope. At such nonsmooth points this is a branch Jacobian,

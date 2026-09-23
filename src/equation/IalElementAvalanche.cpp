@@ -108,7 +108,12 @@ IalElementAvalancheResult evaluateIalElementAvalanche(
                            const D& mu,const ElementIonizationCurve& curve) {
         IalElementAvalancheCarrier r;
         const Vec g=gradient(qf);
-        r.currentField_V_per_m=geometry.partialBoundaryLayer
+        // At an electrode, native PMI retains the full QF current even when
+        // the element also belongs to an interface layer. Only alpha falls
+        // back to the electric field; it must not replace the current drive.
+        const bool tangentialCurrent=geometry.partialBoundaryLayer
+            && !geometry.touchesEffectiveElectrode;
+        r.currentField_V_per_m=tangentialCurrent
             ?detail::dualAbs(g[0]*D(geometry.boundaryTangent[0])+g[1]*D(geometry.boundaryTangent[1]))
             :norm(g);
         r.ionizationField_V_per_m=geometry.touchesEffectiveElectrode?electric:r.currentField_V_per_m;

@@ -6,10 +6,16 @@ evidence.
 
 ## Current References
 
+- [SLOT contact avalanche kernel fix, 2026-09-23](validation/slot_ldmos_contact_kernel_fix_2026-09-23.md):
+  contact/interface full-gradient correction, analytic regression, full local
+  nine-column live-mobility Jacobian checks and native 10/37 V replay.
+  Coupled Newton assembly and strict BVDS remain unqualified.
+
 - [SLOT PMI callback follow-up, 2026-09-23](validation/slot_ldmos_pmi_callback_followup_2026-09-23.md):
   complete callback-to-element matching, contact full-gradient current evidence,
   effective current scale, saved-state precision limits and qualified frozen
-  AvalDensGradQF-off control. Research-kernel correction and coupled validation remain pending.
+  AvalDensGradQF-off control. The contact-kernel correction is now verified in
+  the report above; coupled validation remains pending.
 
 - [SLOT native avalanche identification, 2026-09-23](validation/slot_ldmos_native_avalanche_identification_2026-09-23.md):
   compiler-independent frozen controls, extrema harmonic density, cosine alpha

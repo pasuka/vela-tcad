@@ -58,13 +58,21 @@ void perturb(State& s,int col,Real delta) {
 
 TEST_CASE("Element density-gradient avalanche includes all nine live mobility columns",
           "[avalanche][ialmob][element-density][jacobian]") {
-    for (bool fermi:{false,true}) for (int boundary:{0,1,2,3}) {
+    for (bool fermi:{false,true}) for (int boundary:{0,1,2,3})
+    for (bool normalOnly:{false,true}) {
+        if(normalOnly && boundary!=3)continue;
         Fixture f;f.g.partialBoundaryLayer=(boundary&1);f.g.touchesEffectiveElectrode=(boundary&2);
         if(f.g.touchesEffectiveElectrode)
             for(auto& s:f.reference)s.potential_V=s.electronQf_V;
+        if(normalOnly) {
+            f.g.boundaryTangent={1.,0.};
+            f.reference[1].electronQf_V=f.reference[0].electronQf_V;
+            f.reference[1].holeQf_V=f.reference[0].holeQf_V;
+        }
         auto state=f.reference;f.populate(state,fermi);const auto actual=f.evaluate(state);
         for(int col=0;col<9;++col) for(Real step:{1e-6,3e-7}) {
-            INFO("fermi="<<fermi<<" boundary="<<boundary<<" column="<<col<<" step="<<step);
+            INFO("fermi="<<fermi<<" boundary="<<boundary<<" normalOnly="<<normalOnly
+                <<" column="<<col<<" step="<<step);
             auto plus=state,minus=state;perturb(plus,col,step);perturb(minus,col,-step);
             f.populate(plus,fermi);f.populate(minus,fermi);
             const auto a=f.evaluate(plus),b=f.evaluate(minus);
@@ -117,6 +125,52 @@ TEST_CASE("Element avalanche density uses extrema and declares a one-sided tie b
     minus[0].electronResponse_m3_per_V=minus[0].electrons_m3/vt;
     const Real fd=(r.value-f.evaluate(minus).electron.density_m3.value)/step;
     CHECK(r.derivative[0]==Catch::Approx(fd).epsilon(1e-6));
+}
+
+TEST_CASE("Element avalanche contact keeps the full quasi Fermi gradient at an interface",
+          "[avalanche][ialmob][element-density][contact-gradient]") {
+    Fixture f;
+    f.g.partialBoundaryLayer=true;
+    f.g.boundaryTangent={1.,0.};
+    auto state=f.reference;
+    state[0].electronQf_V=0.;state[1].electronQf_V=.3;state[2].electronQf_V=.4;
+    state[0].holeQf_V=0.;state[1].holeQf_V=-.3;state[2].holeQf_V=.4;
+    f.populate(state,false);
+    // 3-4-5 gradients: an insulating interface sees only the tangential 3,
+    // while a contacting element must retain both components and see 5.
+    const auto insulating=f.evaluate(state);
+    f.g.touchesEffectiveElectrode=true;
+    const auto contact=f.evaluate(state);
+    for(bool hole:{false,true}) {
+        const auto& projected=hole?insulating.hole:insulating.electron;
+        const auto& full=hole?contact.hole:contact.electron;
+        CHECK(projected.currentField_V_per_m.value==Catch::Approx(3e7));
+        CHECK(full.currentField_V_per_m.value==Catch::Approx(5e7));
+        CHECK(full.ionizationField_V_per_m.value==Catch::Approx(std::hypot(1e7,4e6)));
+        const std::array<Real,3> slopes=hole
+            ?std::array<Real,3>{-2e7,-6e7,8e7}
+            :std::array<Real,3>{-1.4e8,6e7,8e7};
+        for(int col=0;col<9;++col) {
+            const Real expected=col%3==(hole?2:1)?slopes[col/3]:0.;
+            CHECK(full.currentField_V_per_m.derivative[col]
+                ==Catch::Approx(expected).epsilon(1e-13).margin(1e-7));
+        }
+    }
+    // A purely normal QF gradient must still produce contact avalanche.
+    state[1].electronQf_V=state[0].electronQf_V;
+    state[1].holeQf_V=state[0].holeQf_V;
+    f.populate(state,false);
+    const auto normalContact=f.evaluate(state);
+    f.g.touchesEffectiveElectrode=false;
+    const auto normalInsulator=f.evaluate(state);
+    for(bool hole:{false,true}) {
+        const auto& c=hole?normalContact.hole:normalContact.electron;
+        const auto& i=hole?normalInsulator.hole:normalInsulator.electron;
+        CHECK(c.currentField_V_per_m.value==Catch::Approx(4e7));
+        CHECK(c.generation_m3_per_s.value>0.);
+        CHECK(i.currentField_V_per_m.value==0.);
+        CHECK(i.generation_m3_per_s.value==0.);
+    }
 }
 
 TEST_CASE("Element avalanche contact alpha does not create current at constant quasi Fermi potential",

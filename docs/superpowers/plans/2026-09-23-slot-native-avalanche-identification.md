@@ -35,6 +35,14 @@ saved-state precision limits are documented in
 Correct the isolated research kernel and verify its nine-column derivatives
 before coupled integration; no production behavior changed in this follow-up.
 
+The isolated contact correction is now implemented and verified: Release 61
+cases/2,702 assertions and 8/8 selected CTests pass. Full nine-column tests retain
+live statistics and mobility, including pure-normal contact gradients. Native
+10/37 V inputs replay unchanged outside the contact/interface overlap; targeted
+contact differences pass the existing 1e-5 derivative-block criterion. See
+`docs/validation/slot_ldmos_contact_kernel_fix_2026-09-23.md` for saved-state
+precision limits and local source improvements. Coupled assembly remains pending.
+
 The available fallback uses the built-in isotropic van Overstraeten model with
 only both carriers' low/high `a` set to 1 cm^-1 and `b` to 0 V/cm. At the fixed
 300 K state this should give unit alpha wherever the model evaluates a nonzero
