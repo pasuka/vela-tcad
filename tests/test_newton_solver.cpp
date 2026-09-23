@@ -4998,6 +4998,58 @@ TEST_CASE("NewtonSolver: reports maximum contact majority quasi-Fermi drop", "[n
     REQUIRE(solver.maxContactMajorityQuasiFermiDrop(state) == Catch::Approx(0.0));
 }
 
+TEST_CASE("NewtonSolver: mixed contacts guard the local majority species",
+          "[newton][contact][diagnostics][mixed-contact]")
+{
+    DeviceMesh mesh = makePNMesh();
+    MaterialDatabase matdb;
+    DopingModel doping = makePNDoping(mesh);
+    // The named cathode consists of nodes 1 and 2, both adjacent to interior
+    // node 4. Vary the contact average through positive, zero and negative:
+    // a remote segment's doping must not change the species on either edge.
+    const Real acceptors = GENERATE(0.5e21, 1.0e21, 2.0e21);
+    doping.setNodeDoping(1, 1.0e21, 0.0);
+    doping.setNodeDoping(2, 0.0, acceptors);
+    doping.setNodeDoping(4, 0.0, 1.0e21);
+    const bool referenced = GENERATE(false, true);
+    NewtonSolver solver(mesh, matdb, doping, zeroBias(), newtonConfig());
+    DDSolution state;
+    const int n = static_cast<int>(mesh.numNodes());
+    state.psi = VectorXd::Zero(n);
+    state.phin = state.phip = VectorXd::Zero(n);
+    state.n = state.p = VectorXd::Constant(n, 1e21);
+    // Include signals below the ULP of the referenced physical potential.
+    const Real scale = referenced ? 1e-22 : 1e-12;
+    if (referenced) {
+        state.electronQfReference = state.holeQfReference = VectorXd::Constant(n, 10.0);
+        state.phinIncrement = state.phipIncrement = VectorXd::Zero(n);
+        state.phin = state.phip = VectorXd::Constant(n, 10.0);
+    }
+    auto& electron = referenced ? state.phinIncrement : state.phin;
+    auto& hole = referenced ? state.phipIncrement : state.phip;
+    electron(1) = 2.0 * scale;
+    hole(2) = 3.0 * scale;
+    hole(1) = 0.2;     // Minority on the n+ contact segment.
+    electron(2) = 0.3; // Minority on the p+ contact segment.
+    const auto drop = [&]() { return solver.maxContactMajorityQuasiFermiDrop(state, {"cathode"}); };
+    CHECK(drop() / scale == Catch::Approx(3.0));
+    // A real majority drop on either segment still blocks acceptance.
+    electron(1) = 7.0 * scale;
+    CHECK(drop() / scale == Catch::Approx(7.0));
+    hole(2) = 9.0 * scale;
+    CHECK(drop() / scale == Catch::Approx(9.0));
+    // Missing transport density still excludes that species on the edge.
+    state.p(2) = 0.0;
+    CHECK(drop() / scale == Catch::Approx(7.0));
+    state.p(2) = 1e21;
+
+    // With zero net doping at an endpoint both species must be guarded,
+    // irrespective of the other segment's positive mean contact doping.
+    doping.setNodeDoping(2, 1e21, 1e21);
+    NewtonSolver compensated(mesh, matdb, doping, zeroBias(), newtonConfig());
+    CHECK(compensated.maxContactMajorityQuasiFermiDrop(state, {"cathode"}) == Catch::Approx(0.3));
+}
+
 TEST_CASE("NewtonSolver: parses block residual norm controls", "[newton][config]")
 {
     const NewtonConfig cfg = newtonConfigFromJson(nlohmann::json{

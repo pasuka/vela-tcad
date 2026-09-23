@@ -1053,6 +1053,11 @@ Notes:
   acceptance path. When greater than zero, a Poisson-block line-search stall is
   accepted only if the maximum majority-carrier quasi-Fermi drop across contact-to-interior edges
   is below this value. The default is `5e-11` V; `0` disables this guard.
+  The species is selected from the net doping at each edge's contact endpoint:
+  donors select electrons, acceptors select holes, and zero net doping checks
+  both. A mixed n+/p+ electrode is not classified by its mean doping. Edges
+  between contacts and species with no positive finite transport density are
+  excluded. Referenced QF differences retain their reference/increment split.
 - `block_absolute_convergence` is an optional authoritative per-block Newton
   convergence contract. With `mode: enforce`, scalar `reltol`, `abstol`, and
   numerical-floor acceptance no longer bypass the block contract: the raw

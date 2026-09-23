@@ -6,6 +6,12 @@ evidence.
 
 ## Current References
 
+- [SLOT mixed-contact guard and escape controls, 2026-09-23](validation/slot_ldmos_contact_guard_and_escape_controls_2026-09-23.md):
+  local contact-majority classification fix, T1 update traces, HFS-off and
+  single-node residual controls, ULP sensitivity limits and unchanged-gate
+  device revalidation. A 0.025 V continuation now qualifies new-source points
+  through 2.125 V; the 10 V observed-source checkpoint remains rejected.
+
 - [SLOT comparison analysis for LLM review, 2026-09-23](validation/slot_ldmos_comparison_analysis_for_llm_2026-09-23.md):
   Chinese evidence summary, separate projected-SG and observed-source qualification,
   qualified new-source 2 V, failed 2.125/10 V controls, Jacobian coverage limits,

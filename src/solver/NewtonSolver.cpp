@@ -4159,21 +4159,11 @@ Real NewtonSolver::maxContactMajorityQuasiFermiDrop(
             continue;
         }
         std::vector<bool> isContactNode(mesh_.numNodes(), false);
-        Real netDopingSum = 0.0;
-        int netDopingCount = 0;
         for (Index node : contact.node_ids) {
             if (node >= mesh_.numNodes())
                 continue;
             isContactNode[node] = true;
-            netDopingSum += doping_.netDoping(node);
-            ++netDopingCount;
         }
-        if (netDopingCount == 0)
-            continue;
-
-        const Real meanNetDoping = netDopingSum / static_cast<Real>(netDopingCount);
-        const bool electronMajority = meanNetDoping > 0.0;
-        const bool holeMajority = meanNetDoping < 0.0;
         for (Index e = 0; e < mesh_.numEdges(); ++e) {
             const Edge& edge = mesh_.getEdge(e);
             const bool n0Contact = isContactNode[edge.n0];
@@ -4187,6 +4177,14 @@ Real NewtonSolver::maxContactMajorityQuasiFermiDrop(
                 isAnyTransportContactNode[edge.n1]) {
                 continue;
             }
+            // A single electrode can span both n+ and p+ semiconductor.
+            // Select the equilibrium majority species at this edge's contact
+            // endpoint, not from an average over unrelated contact segments.
+            // Compensated/undoped endpoints retain the guard on both species.
+            const Index contactNode = n0Contact ? edge.n0 : edge.n1;
+            const Real contactNetDoping = doping_.netDoping(contactNode);
+            const bool electronMajority = contactNetDoping > 0.0;
+            const bool holeMajority = contactNetDoping < 0.0;
             const int i = static_cast<int>(edge.n0);
             const int j = static_cast<int>(edge.n1);
             const bool electronTransportEdge =
