@@ -128,13 +128,15 @@ std::size_t readSizeAttribute(hid_t object, const std::string& name, std::size_t
 std::vector<std::string> childNames(hid_t group)
 {
     std::vector<std::string> names;
-    auto callback = [](hid_t, const char* name, const H5L_info2_t*, void* data) -> herr_t {
+    // Keep the callback and iterator on the configured HDF5 API version.
+    // HDF5 1.10 has no H5L_info2_t or H5Literate2.
+    auto callback = [](hid_t, const char* name, const H5L_info_t*, void* data) -> herr_t {
         auto* out = static_cast<std::vector<std::string>*>(data);
         out->emplace_back(name);
         return 0;
     };
     hsize_t index = 0;
-    H5Literate2(group, H5_INDEX_NAME, H5_ITER_INC, &index, callback, &names);
+    H5Literate(group, H5_INDEX_NAME, H5_ITER_INC, &index, callback, &names);
     return names;
 }
 
