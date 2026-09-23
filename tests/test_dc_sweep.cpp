@@ -402,6 +402,116 @@ TEST_CASE("DCSweep prepared inputs preserve fresh-solve results and invalidate b
     REQUIRE(changed.front().totalCurrent == DCSweep().run(config.string()).front().totalCurrent);
 }
 
+TEST_CASE("DCSweep structure reuse defaults on and honors explicit controls",
+          "[dc_sweep][structure_cache]")
+{
+    const auto dir = makeUniqueSweepDir();
+    std::filesystem::create_directories(dir);
+    const ScopedDirectoryCleanup cleanup{dir};
+    const auto mesh = writePNMeshWithInterior(dir);
+    const auto config = dir / "structure.json";
+    const auto profile = dir / "profile.json";
+    auto cfg = baseSweepConfig(dir, mesh, dir / "curve.csv");
+    cfg["solver"].update({{"method", "newton"}, {"line_search", true},
+        {"performance_profiling", {{"enabled", true}, {"json_file", profile.string()}}}});
+    cfg["sweep"].update({{"start", 0.05}, {"stop", 0.05}, {"write_vtk", false}});
+    bool enabled = true;
+    SECTION("omitted option enables reuse") {}
+    SECTION("production option enables reuse") {
+        cfg["solver"]["reuse_jacobian_structure"] = true;
+    }
+    SECTION("production option disables reuse") {
+        cfg["solver"]["reuse_jacobian_structure"] = false;
+        enabled = false;
+    }
+    SECTION("historical explicit opt-out remains effective") {
+        cfg["solver"]["diagnostic_reuse_jacobian_structure"] = false;
+        enabled = false;
+    }
+    SECTION("production opt-out overrides historical opt-in") {
+        cfg["solver"]["reuse_jacobian_structure"] = false;
+        cfg["solver"]["diagnostic_reuse_jacobian_structure"] = true;
+        enabled = false;
+    }
+    SECTION("production opt-in overrides historical opt-out") {
+        cfg["solver"]["reuse_jacobian_structure"] = true;
+        cfg["solver"]["diagnostic_reuse_jacobian_structure"] = false;
+    }
+    const auto counters = [&] {
+        return nlohmann::json::parse(readTextFile(profile)).at("counters");
+    };
+    DCSweep sweep;
+    std::ofstream(config) << cfg.dump(2);
+    REQUIRE(sweep.run(config.string()).front().converged);
+    REQUIRE(counters().value("jacobian.pattern_build_calls", 0) > 0);
+    cfg["sweep"].update({{"start", 0.025}, {"stop", 0.025}});
+    std::ofstream(config) << cfg.dump(2);
+    const auto reused = sweep.run(config.string());
+    REQUIRE(reused.front().converged);
+    const auto counts = counters();
+    REQUIRE(counts.value("dc.prepared_inputs.hits", 0) == 1);
+    REQUIRE(counts.value("jacobian.structure_cache_hits", 0) == (enabled ? 1 : 0));
+    REQUIRE(counts.value("jacobian.pattern_build_calls", 0) == (enabled ? 0 : 1));
+    REQUIRE(counts.value("jacobian.fermi_node_cache_assemblies", 0) == 0);
+    cfg["solver"]["reuse_jacobian_structure"] = false;
+    std::ofstream(config) << cfg.dump(2);
+    const auto fresh = DCSweep().run(config.string());
+    REQUIRE(fresh.front().converged);
+    REQUIRE(reused.front().totalCurrent == fresh.front().totalCurrent);
+    REQUIRE(reused.front().iterations == fresh.front().iterations);
+}
+
+TEST_CASE("DCSweep structure reuse rebuilds after input changes and context reset",
+          "[dc_sweep][structure_cache]")
+{
+    const auto dir = makeUniqueSweepDir();
+    std::filesystem::create_directories(dir);
+    const ScopedDirectoryCleanup cleanup{dir};
+    const auto mesh = writePNMeshWithInterior(dir);
+    const auto config = dir / "structure.json";
+    const auto profile = dir / "profile.json";
+    auto cfg = baseSweepConfig(dir, mesh, dir / "curve.csv");
+    cfg["solver"].update({{"method", "newton"}, {"line_search", true},
+        {"performance_profiling", {{"enabled", true}, {"json_file", profile.string()}}}});
+    cfg["sweep"].update({{"start", 0.05}, {"stop", 0.05}, {"write_vtk", false}});
+    DCSweep sweep;
+    const auto solve = [&] {
+        std::ofstream(config) << cfg.dump(2);
+        const auto points = sweep.run(config.string());
+        REQUIRE(points.front().converged);
+        return nlohmann::json::parse(readTextFile(profile)).at("counters");
+    };
+    REQUIRE(solve().value("jacobian.pattern_build_calls", 0) == 1);
+    REQUIRE(solve().value("jacobian.structure_cache_hits", 0) == 1);
+    SECTION("changed material preparation invalidates the shared structure") {
+        cfg["doping"][0]["donors"] = 2.0e23;
+    }
+    SECTION("changed mesh bytes invalidate the shared structure") {
+        auto changed = nlohmann::json::parse(readTextFile(mesh));
+        for (auto& node : changed["nodes"])
+            node["x"] = node["x"].get<double>() * 1.1;
+        std::ofstream(mesh) << changed.dump(2);
+    }
+    SECTION("explicit context reset invalidates the shared structure") {
+        sweep.clearLinearContext();
+    }
+    SECTION("disabling then enabling cannot resurrect an old entry") {
+        cfg["solver"]["reuse_jacobian_structure"] = false;
+        REQUIRE(solve().value("jacobian.structure_cache_hits", 0) == 0);
+        cfg["solver"].erase("reuse_jacobian_structure");
+    }
+    const auto rebuilt = solve();
+    REQUIRE(rebuilt.value("jacobian.pattern_build_calls", 0) == 1);
+    REQUIRE(rebuilt.value("jacobian.structure_cache_misses", 0) == 1);
+    REQUIRE(rebuilt.value("jacobian.structure_cache_hits", 0) == 0);
+    REQUIRE(solve().value("jacobian.structure_cache_hits", 0) == 1);
+    // A different scan object owns a separate cache even with identical inputs.
+    REQUIRE(DCSweep().run(config.string()).front().converged);
+    const auto isolated = nlohmann::json::parse(readTextFile(profile)).at("counters");
+    REQUIRE(isolated.value("jacobian.structure_cache_hits", 0) == 0);
+    REQUIRE(isolated.value("jacobian.pattern_build_calls", 0) == 1);
+}
+
 TEST_CASE("DCSweep: default runtime log file is generated", "[dc_sweep][runtime_log]")
 {
     const std::filesystem::path dir = makeUniqueSweepDir();

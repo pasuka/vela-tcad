@@ -3269,7 +3269,11 @@ DCSweepResult DCSweep::runWithResult(const std::string& configFile) const
         sequentialLinearSolver_.reset();
     }
     newton.diagnosticFermiNodeCache = solverCfg.value("diagnostic_fermi_node_cache", false);
-    if (solverCfg.value("diagnostic_reuse_jacobian_structure", false) &&
+    // The production option takes precedence over the historical experiment alias.
+    const bool reuseJacobianStructure = solverCfg.contains("reuse_jacobian_structure")
+        ? solverCfg.at("reuse_jacobian_structure").get<bool>()
+        : solverCfg.value("diagnostic_reuse_jacobian_structure", true);
+    if (reuseJacobianStructure &&
         (solverMethod == SolverMethod::Newton || solverMethod == SolverMethod::GummelNewton)) {
         if (!sequentialJacobianStructure_)
             sequentialJacobianStructure_ = std::make_shared<CoupledDDAssembler::StructureCache>();

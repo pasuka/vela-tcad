@@ -16,8 +16,8 @@ Scope and conventions:
 - Legacy decks remain supported where noted.
 - Prototype features are marked explicitly.
 
-Experimental classical DC assembly reuse: `solver.diagnostic_reuse_jacobian_structure`
-(boolean, default `false`) shares an immutable zero-valued sparse pattern, offset
+Classical DC assembly reuse: `solver.reuse_jacobian_structure`
+(boolean, default `true`) shares an immutable zero-valued sparse pattern, offset
 map and scatter tables between sequential Newton point services on the same
 `DCSweep` instance. It does not share numerical Jacobian values, residuals or
 carrier states. An exact compatibility key checks node numbering, geometry,
@@ -25,7 +25,11 @@ transport support/stencils, material statistics, temperature, cell stencil mode
 and constrained rows. A prepared-input cache miss or an explicit context clear
 also invalidates the cache. `jacobian.structure_cache_hits/misses` and
 `jacobian.structure_cache_check` report reuse and compatibility-check cost;
-`jacobian.pattern_build_calls` counts actual builds. This candidate is separate
+`jacobian.pattern_build_calls` counts actual builds. Set the option to `false`
+to clear the shared structure and rebuild independently. The historical
+`solver.diagnostic_reuse_jacobian_structure` alias remains valid when the
+production option is absent; an explicit production option takes precedence.
+This cache is separate
 from linear-solver symbolic-analysis reuse and does not cover the independent
 four-equation electrothermal service. It requires a persistent DC worker to
 reuse across separate point requests.

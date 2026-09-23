@@ -6,6 +6,8 @@ evidence.
 
 ## Current References
 
+- [Default DC assembly structure reuse, 2026-09-23](validation/templates_ldmos_structure_default_2026-09-23.md):
+  production option, invalidation boundaries and T470p default-path regression.
 - [Restart state storage](state_archive.md): current `vela.state/2` fields, units,
   mesh/source identity, atomic checkpoint writes and strict recovery semantics.
 - [HDF5 production state migration plan, 2026-09-23](validation/templates_ldmos_hdf5_production_migration_plan_2026-09-23.md):

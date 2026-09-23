@@ -2,6 +2,12 @@
 
 更新：2026-09-23。当前工作分支 `codex/templates-ldmos-phase-a`。
 
+新增 [经典 DC 装配结构默认化](templates_ldmos_structure_default_2026-09-23.md)：
+正式字段 `solver.reuse_jacobian_structure` 默认开启，保留失效重建、显式关闭及
+扫描对象隔离。Fermi 缓存和四方程自热接入范围不变；T470p Release 全量
+852/852 通过，双栅压默认前八点共16点字段逐位一致、轨迹不变，更新367/349。
+每条结构构建1次、命中70/71次；本轮整理提交至当前工作分支，无新增性能加速比例认领。
+
 新增 [HDF5生产状态迁移方案](templates_ldmos_hdf5_production_migration_plan_2026-09-23.md)：
 补齐状态合同、检查点事务、活跃种子迁移、构建依赖及D0温度/恢复验收范围。
 按授权在 T470p 执行迁移，见[执行记录](templates_ldmos_hdf5_migration_execution_2026-09-23.md)。
