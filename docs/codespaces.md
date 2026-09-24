@@ -151,6 +151,23 @@ $cs = 'vela-tcad-compute-69r6rj7pvvjc54g9'
 实例停止后，上述 SSH 操作可重新启动它并消耗额度。实例仍受 GitHub 保留期策略管理，
 如果以后已被自动删除，需要从已推送的配置分支重新创建。
 
+## GCC 16 迁移验收（2026-09-24）
+
+- 实例仍为 `vela-tcad-compute-69r6rj7pvvjc54g9`；采用同一 CI 软件源重建容器。
+- 被编译提交：`de6a62bc282936682f779ccf29dba08e9e2a0041`。
+- 实际版本：`16.0.1 20260315 (experimental)`，Ubuntu 包版本
+  `16-20260315-1ubuntu1~24~ppa1`。这是该软件源提供的 GCC 16 开发快照，
+  不应称为稳定版 GCC 16；与 CI 对齐安装来源和主版本，不承诺未来补丁版本相同。
+- CMake 实际使用 `/usr/bin/gcc-16`、`/usr/bin/g++-16`，相关 binutils 使用
+  `gcc-ar-16` / `gcc-ranlib-16`；UMFPACK、SPQR、METIS、HDF5 状态存储均启用。
+- 独立 Release 目录 `build-codespaces-gcc16-release/`：183/183 构建步骤成功。
+- 4 路重复 Build：CMake 配置约 0.6 秒、生成约 0.3 秒，Ninja 返回
+  `no work to do`，未重新下载依赖或重新编译。
+- 2 路完整 CTest：**852/852 通过，0 失败**，实际用时 28.59 秒。
+- 实测同一实例停止后启动，旧工具链和二进制保留；容器重建后 `/workspaces`
+  中旧 GCC 13 二进制也保留。
+- 本地证据位于 `build/codespaces-gcc16-validation/`；此结果不是跨编译器仿真性能排名。
+
 ## 参考
 
 - [GitHub 开发容器配置](https://docs.github.com/en/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration/introduction-to-dev-containers)
