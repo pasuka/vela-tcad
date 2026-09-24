@@ -45,8 +45,14 @@ switch ($Action) {
     'List' { $ghArgs += @('list', '--repo', 'pasuka/vela-tcad') }
     'Stop' { $ghArgs += @('stop', '-c', $Codespace) }
     'Fetch' {
-        if (-not $RemotePath.StartsWith('/')) { throw 'RemotePath must be absolute.' }
-        $ghArgs += @('cp', '-c', $Codespace, '-r', "remote:$RemotePath", $Destination)
+        # gh 2.101 quotes literal paths for SCP, but modern Windows OpenSSH
+        # treats those quotes as filename characters under SFTP. --expand
+        # avoids the added quotes. Allow only shell-inert absolute paths so
+        # this remains safe with either SCP or SFTP; never expand user code.
+        if ($RemotePath -cnotmatch '\A/[A-Za-z0-9_./-]+\z') {
+            throw 'RemotePath must be absolute and contain only ASCII letters, digits, /, _, ., or -.'
+        }
+        $ghArgs += @('cp', '-c', $Codespace, '--expand', '-r', "remote:$RemotePath", $Destination)
     }
     default {
         $body = switch ($Action) {
