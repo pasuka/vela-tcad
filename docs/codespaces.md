@@ -5,12 +5,16 @@ SSH 功能在 Codespace 内执行命令。无需 VS Code 插件，也无需向�
 
 ## 环境与目录
 
-- `.devcontainer/Dockerfile`：Ubuntu 24.04，系统 GCC 13、CMake、Ninja、Catch2 3，
+- `.devcontainer/Dockerfile`：Ubuntu 24.04，GCC 16、CMake、Ninja、Catch2 3，
   Boost、Eigen、JSON、spdlog、HDF5、SuiteSparse、OpenBLAS、METIS，以及 Python
-  NumPy、h5py、Pillow。与 Linux CI 使用相同的依赖类别，但 CI 单独安装 GCC 16。
+  NumPy、h5py、Pillow。GCC 与 Linux CI 中的 `egor-tensin/setup-gcc@v2`
+  使用同一个 `ubuntu-toolchain-r/test` 软件源，安装 `gcc-16` / `g++-16`。
+  两者对齐 GCC 主版本，不锁定软件源后续发布的具体补丁版本。
 - `.devcontainer/devcontainer.json`：安装 SSH 服务，建议最低 4 CPU / 16 GB。
   创建时只自动配置 CMake，不自动编译或运行仿真。
-- 云端源码默认 `/workspaces/vela-tcad`；构建目录 `build-codespaces-release/`。
+- 云端源码默认 `/workspaces/vela-tcad`；构建目录 `build-codespaces-gcc16-release/`。
+  编译脚本显式指定并检查 GCC 16；原 GCC 13 的 `build-codespaces-release/` 保留，
+  切换时不混用 CMake 缓存或旧二进制。
   Windows UCRT64 的二进制和 CMake 缓存不能复制到 Linux 使用。
 - Release、Python API 关闭；必须检测到 UMFPACK、SPQR、METIS、HDF5 状态存储。
   MUMPS、SuperLU_MT、STRUMPACK 关闭，和现有 Linux CI 的配置一致。
@@ -38,6 +42,26 @@ SSH 功能在 Codespace 内执行命令。无需 VS Code 插件，也无需向�
    如已有 Codespace，先同步配置，再执行 `gh codespace rebuild -c 实例名称`。
    初次创建若进入恢复环境，应先查 `gh codespace logs -c 实例名称`，修复容器构建错误。
 
+## 停止、启动与环境复用
+
+普通停止后再启动同一个 Codespace，不需要重新下载编译器或安装依赖。
+源码、构建目录和结果位于持久化的 `/workspaces`，可继续使用已有二进制和 Ninja
+增量编译。当前配置只有 `postCreateCommand`，没有每次启动重新安装的命令。
+每次 Build 会重新运行一次 CMake 配置检查；这是检查依赖和生成规则，不是重装系统环境，
+未变化的目标通常不会重新编译，已经下载的 HighFive 也会复用。
+
+| 操作 | 环境和构建文件如何处理 |
+| --- | --- |
+| 停止后重新启动同一实例 | 保留已安装工具、源码、编译产物和结果 |
+| 修改普通源码并 Sync / Build | 不重装工具链，仅更新代码和增量编译 |
+| 修改 Dockerfile / devcontainer 并重建 | 重新构建容器，可复用 Docker 缓存；`/workspaces` 保留 |
+| 删除实例后新建，或保留期到期被删除 | 重新创建环境；旧实例未取回的结果不能依赖其继续存在 |
+
+此次从 GCC 13 切换到 GCC 16 需要同步配置并重建一次容器，然后在新的
+`build-codespaces-gcc16-release/` 完整编译；以后正常启动无需重复这次迁移。
+容器重建不会保留 `/workspaces` 以外手动安装的额外工具，因此长期依赖写入 Dockerfile。
+停止实例也不等于暂停并保留仿真进程，长任务恢复仍需要应用自己的检查点。
+
 ## 本机 PowerShell / Codex 命令
 
 在本地仓库根目录执行。第一次先查询实例名称，再将名称保存到 `$cs`：
@@ -59,11 +83,11 @@ $cs = '替换为列表中的实例名称'
 .\scripts\Invoke-Codespace.ps1 -Action Sync -Codespace $cs
 
 # 任意 Bash 命令，从云端仓库根目录执行；这里仅查看构建结果。
-.\scripts\Invoke-Codespace.ps1 -Action Run -Codespace $cs -Command 'ls -lh build-codespaces-release'
+.\scripts\Invoke-Codespace.ps1 -Action Run -Codespace $cs -Command 'ls -lh build-codespaces-gcc16-release'
 
 # 下载配置日志，保存到本地被 Git 忽略的构建目录。
 New-Item -ItemType Directory -Force build\codespaces-results | Out-Null
-.\scripts\Invoke-Codespace.ps1 -Action Fetch -Codespace $cs -RemotePath '/workspaces/vela-tcad/build-codespaces-release/configure.log' -Destination '.\build\codespaces-results\'
+.\scripts\Invoke-Codespace.ps1 -Action Fetch -Codespace $cs -RemotePath '/workspaces/vela-tcad/build-codespaces-gcc16-release/configure.log' -Destination '.\build\codespaces-results\'
 
 # 完成并取回结果后停止计算。
 .\scripts\Invoke-Codespace.ps1 -Action Stop -Codespace $cs
@@ -79,7 +103,7 @@ Fetch 已使用验证通过的兼容参数，并限制远端绝对路径只能�
 
 可以直接告诉 Codex：“在指定 Codespace 上编译并运行 Poisson 测试”。执行前应明确
 实例名称及代码版本；仿真时还需指定配置、网格、输出目录和需要的求解后端。
-使用 Run 提交实际仿真命令，将结果写到 `build-codespaces-release/` 下，使用 Fetch
+使用 Run 提交实际仿真命令，将结果写到 `build-codespaces-gcc16-release/` 下，使用 Fetch
 取回结果目录。云端编译失败、测试失败或远程命令失败会传回本机错误，不会作为成功处理。
 
 ## 夜间仿真和费用边界
@@ -102,7 +126,8 @@ SSH、下载等操作可能启动已停止的实例并产生计算用量；List 
 路径、测试筛选转义、缺少实例参数、非法并行数以及失败退出码传递。通过新脚本
 实际查询 GitHub Codespaces 列表成功。现有 Ubuntu 24.04 WSL 的离线脚本检查通过。
 
-随后在 GitHub Codespaces 完成实际云端验收：
+最初 GCC 13 配置在 GitHub Codespaces 的云端验收记录如下；此记录不作为
+GCC 16 迁移后的验收证据：
 
 - 配置分支：`codex/codespaces-compute`。
 - 实例：`vela-tcad-compute-69r6rj7pvvjc54g9`，区域 SouthEastAsia，
@@ -133,3 +158,5 @@ $cs = 'vela-tcad-compute-69r6rj7pvvjc54g9'
 - [创建 Codespace](https://cli.github.com/manual/gh_codespace_create)
 - [复制文件](https://cli.github.com/manual/gh_codespace_cp)
 - [空闲超时与计费期间](https://docs.github.com/en/codespaces/setting-your-user-preferences/setting-your-timeout-period-for-github-codespaces)
+- [重建与文件持久化](https://docs.github.com/en/codespaces/developing-in-a-codespace/rebuilding-the-container-in-a-codespace)
+- [CI 使用的 GCC 安装动作源码](https://github.com/egor-tensin/setup-gcc/blob/v2/action.yml)
