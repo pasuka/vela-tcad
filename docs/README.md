@@ -6,6 +6,10 @@ evidence.
 
 ## Current References
 
+- [SLOT local-origin low-voltage completion, 2026-09-24](validation/slot_ldmos_local_origin_low_voltage_2026-09-24.md):
+  36 qualified points from local equilibrium to 2.125 V including restart recovery,
+  six-point path comparison, serial 92-test tool verification; high-voltage/BVDS remains open.
+
 - [SLOT HDF5 continuation and native low-bias comparison, 2026-09-24](validation/slot_ldmos_hdf5_continuation_2026-09-24.md):
   three-driver state migration, block-probe output fix, Release regression,
   checkpoint confirmation, repeat-chain progress and native 2.025 V evidence.
