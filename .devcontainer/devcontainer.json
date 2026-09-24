@@ -1,0 +1,16 @@
+{
+  "name": "Vela TCAD compute",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {}
+  },
+  "remoteUser": "vscode",
+  "hostRequirements": { "cpus": 4, "memory": "16gb" },
+  "containerEnv": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VELA_LINEAR_THREADS": "1"
+  },
+  "postCreateCommand": "bash scripts/codespaces/build.sh configure",
+  "waitFor": "postCreateCommand"
+}

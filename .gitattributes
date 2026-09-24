@@ -18,3 +18,7 @@ reference_tcad/templates_ldmos_sentaurus2022/contracts/materials.json -text
 scripts/prepare_templates_ldmos_ialmob_transport.py -text
 tests/fixtures/pn2d_bv_rejected_transition/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 *.h5 binary
+
+# Container scripts must remain runnable after a Windows checkout.
+.devcontainer/** text eol=lf
+scripts/codespaces/*.sh text eol=lf

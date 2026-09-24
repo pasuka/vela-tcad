@@ -6,6 +6,9 @@ evidence.
 
 ## Current References
 
+- [Codespaces build environment](codespaces.md): container dependencies and
+  PowerShell/Codex commands for remote builds, tests, and result retrieval.
+
 - [Default DC assembly structure reuse, 2026-09-23](validation/templates_ldmos_structure_default_2026-09-23.md):
   production option, invalidation boundaries and T470p default-path regression.
 - [Restart state storage](state_archive.md): current `vela.state/2` fields, units,
