@@ -82,6 +82,9 @@ them.
 
 ## Build
 
+For cloud builds controlled from local PowerShell or Codex, see the
+[Codespaces setup](docs/codespaces.md). No VS Code extension is required.
+
 On Windows, this repository is developed primarily in MSYS2 UCRT64. If a tool or agent needs to build, test, or debug on Windows, it should assume `D:\msys64\ucrt64` is the default toolchain unless the user says otherwise.
 
 Prerequisites:
