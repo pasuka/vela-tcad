@@ -1,5 +1,6 @@
 #include "vela/equation/LatticeHeatAssembler.h"
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <set>
 #include <stdexcept>
@@ -85,6 +86,23 @@ LatticeHeatAssembler::LatticeHeatAssembler(
     }
 }
 
+std::vector<std::uint64_t> LatticeHeatAssembler::structureIdentity() const {
+    std::vector<std::uint64_t> key{static_cast<std::uint64_t>(nodalAreas_.size()),elements_.size(),boundaries_.size()};
+    const auto real=[&](Real x){key.push_back(std::bit_cast<std::uint64_t>(x));};
+    for(const auto& e:elements_){
+        for(auto i:e.nodes)key.push_back(i);
+        real(e.area);for(int i=0;i<9;++i)real(e.gradientIntegral.data()[i]);
+        key.push_back(static_cast<std::uint64_t>(e.law.model));real(e.law.constant_W_per_m_K);
+        real(e.law.numerator);for(auto v:e.law.denominator)real(v);
+    }
+    for(const auto& b:boundaries_){for(auto i:b.input.nodes)key.push_back(i);
+        real(b.length);real(b.input.ambient_K);real(b.input.conductance_W_per_m2_K);}
+    return key;
+}
+void LatticeHeatAssembler::appendStructure(std::vector<Eigen::Triplet<Real>>& entries,Index stride,Index offset) const {
+    for(const auto& e:elements_)for(auto i:e.nodes)for(auto j:e.nodes)entries.emplace_back(stride*i+offset,stride*j+offset,0.);
+    for(const auto& b:boundaries_)for(auto i:b.input.nodes)for(auto j:b.input.nodes)entries.emplace_back(stride*i+offset,stride*j+offset,0.);
+}
 LatticeHeatAssembly LatticeHeatAssembler::assemble(const VectorXd& t, const VectorXd& q) const {
     require(t.size()==nodalAreas_.size() && t.allFinite() && (t.array()>0).all(),
             "Invalid nodal lattice temperature vector");
@@ -93,7 +111,18 @@ LatticeHeatAssembly LatticeHeatAssembler::assemble(const VectorXd& t, const Vect
     LatticeHeatAssembly result;
     result.residual_W_per_m=VectorXd::Zero(t.size());
     std::vector<Eigen::Triplet<Real>> entries;
-    entries.reserve(elements_.size()*9+boundaries_.size()*4);
+    std::size_t cursor=0;
+    if(structure_){
+        auto key=structureIdentity();
+        if(!structure_->matches(key)){
+            appendStructure(entries);structure_->build(std::move(key),t.size(),entries);entries.clear();
+        }else ++structure_->hits;
+        result.jacobian_W_per_m_K=structure_->zeroMatrix();
+    }else entries.reserve(elements_.size()*9+boundaries_.size()*4);
+    const auto add=[&](Index i,Index j,Real value){
+        if(structure_)structure_->add(result.jacobian_W_per_m_K,cursor,i,j,value);
+        else entries.emplace_back(i,j,value);
+    };
     for (Index c=0; c<elements_.size(); ++c) {
         const auto& e=elements_[c];
         Eigen::Vector3d local(t[e.nodes[0]],t[e.nodes[1]],t[e.nodes[2]]);
@@ -104,7 +133,7 @@ LatticeHeatAssembly LatticeHeatAssembler::assemble(const VectorXd& t, const Vect
         for (int a=0; a<3; ++a) {
             result.residual_W_per_m[e.nodes[a]] += k*gradient[a]-q[c]*e.area/3;
             for (int b=0; b<3; ++b)
-                entries.emplace_back(e.nodes[a],e.nodes[b],k*e.gradientIntegral(a,b)+dk*gradient[a]/3);
+                add(e.nodes[a],e.nodes[b],k*e.gradientIntegral(a,b)+dk*gradient[a]/3);
         }
     }
     for (const auto& boundary : boundaries_) {
@@ -115,10 +144,10 @@ LatticeHeatAssembly LatticeHeatAssembler::assemble(const VectorXd& t, const Vect
         result.residual_W_per_m[b.nodes[1]] += factor*(d0+2*d1);
         result.outward_boundary_heat_W_per_m += 3*factor*(d0+d1);
         for (int i=0;i<2;++i) for (int j=0;j<2;++j)
-            entries.emplace_back(b.nodes[i],b.nodes[j],factor*(i==j?2:1));
+            add(b.nodes[i],b.nodes[j],factor*(i==j?2:1));
     }
-    result.jacobian_W_per_m_K.resize(t.size(),t.size());
-    result.jacobian_W_per_m_K.setFromTriplets(entries.begin(),entries.end());
+    if(!structure_){result.jacobian_W_per_m_K.resize(t.size(),t.size());
+        result.jacobian_W_per_m_K.setFromTriplets(entries.begin(),entries.end());}
     return result;
 }
 } // namespace vela

@@ -45,7 +45,17 @@ TEST_CASE("Sweep preparation observes exact sources and never caches carrier sta
         CHECK(actual["performance"]["static_preparation_reused"]==hit);
         actual.erase("performance");expected.erase("performance");CHECK(actual==expected);
     };
-    compare(false);compare(true);
+    cfg["reuse_jacobian_structure"]=false;compare(false);compare(true);
+    cfg.erase("reuse_jacobian_structure");
+    const auto first=solveElectrothermalPoint(cfg,log,&context);
+    CHECK(first["performance"]["jacobian_structure_reuse_enabled"]==true);
+    CHECK(first["performance"]["jacobian_structure_builds"]==1);
+    CHECK(solveElectrothermalPoint(cfg,log,&context)["performance"]["jacobian_structure_builds"]==0);
+    context.clear();
+    CHECK(solveElectrothermalPoint(cfg,log,&context)["performance"]["jacobian_structure_builds"]==1);
+    cfg["reuse_jacobian_structure"]=false;compare(true);
+    cfg["reuse_jacobian_structure"]=true;
+    CHECK(solveElectrothermalPoint(cfg,log,&context)["performance"]["jacobian_structure_builds"]==1);
     cfg["state_interleaved"][3]=350.;cfg["boundaries"][0]["value"]=.1;compare(true);
     cfg["donors_m3"][0]=1e20;compare(false);compare(true);
     cfg["coordinate_to_metres"]=2.;compare(false);
@@ -308,10 +318,13 @@ TEST_CASE("Four-equation operator couples live IALMob current and conservative h
         options->element.reuseThermalHighField=true;options->element.explicitHighFieldPartials=true;
         options->element.generatedLowFieldPartials=true;f.mobility.ialmob=options;
     }
+    bool reuseStructure=false;
+    SECTION("Cached four-equation structure retains all coupled partials"){reuseStructure=true;}
     LatticeConductivity law;law.model=LatticeConductivity::Model::InverseQuadratic;
     law.numerator=100.;law.denominator={-.0393,.00155,1.82e-6};
     LatticeHeatAssembler heat(f.mesh,1.,{{0,law},{1,law}},{{{0,1},300.,2e6}});
     ElectrothermalAssembler coupled(f.mesh,f.doping,g,heat,f.mobility);
+    if(reuseStructure)coupled.setStructureCache(std::make_shared<ElectrothermalAssembler::StructureCache>());
     VectorXd x(24);for(int i=0;i<6;++i){x[4*i]=.48+.012*i;x[4*i+1]=.003*i;x[4*i+2]=.96-.002*i;x[4*i+3]=350.+12.*i;}
     for(int mode:{0,1,2}){
         const bool constrained=mode!=0;
@@ -683,4 +696,59 @@ TEST_CASE("Electrothermal tangent contact derivative matches fixed-state bias di
         auto bad=bc;bad.potential_V[0]=psi;
         CHECK_THROWS_AS(experimental::electrothermalContactBiasDerivative(6,bad,{0}),std::invalid_argument);
     }
+}
+
+TEST_CASE("Electrothermal structure reuse survives zero derivatives temperature and constraint changes", "[electrothermal][structure]") {
+    Fixture f;ElectrothermalGeometry g;
+    g.siliconArea_m2=VectorXd::Zero(6);g.fixedCharge_C_per_m=VectorXd::Zero(6);
+    g.poissonEdge_F_per_m=VectorXd::Zero(f.mesh.numEdges());g.transportWeight=g.poissonEdge_F_per_m;
+    for(const auto& cell:f.mesh.cells())if(cell.region_id==0)for(Index i:cell.node_ids)g.siliconArea_m2[i]+=1e-14/6.;
+    for(const auto& e:f.mesh.edges()){
+        g.poissonEdge_F_per_m[e.id]=constants::eps0*8.*e.couple/e.length;
+        g.transportWeight[e.id]=e.transport_couple/e.length;
+    }
+    LatticeConductivity law;law.model=LatticeConductivity::Model::InverseQuadratic;
+    law.numerator=100.;law.denominator={-.0393,.00155,1.82e-6};
+    LatticeHeatAssembler heat(f.mesh,1.,{{0,law},{1,law}},{{{0,1},300.,2e6}});
+    auto cache=std::make_shared<ElectrothermalAssembler::StructureCache>();
+    ElectrothermalAssembler plain(f.mesh,f.doping,g,heat,f.mobility),cached(f.mesh,f.doping,g,heat,f.mobility);
+    cached.setStructureCache(cache);
+    ElectrothermalBoundary bc;
+    VectorXd x(24);for(int i=0;i<6;++i){x[4*i]=.48;x[4*i+1]=0.;x[4*i+2]=0.;x[4*i+3]=300.;}
+    const auto check=[&](){
+        const auto a=plain.assemble(x,bc),b=cached.assemble(x,bc);
+        CHECK((a.residual.array()==b.residual.array()).all());
+        CHECK((Eigen::MatrixXd(a.jacobian).array()==Eigen::MatrixXd(b.jacobian).array()).all());
+        CHECK((a.electronOutflow_A_per_m.array()==b.electronOutflow_A_per_m.array()).all());
+        CHECK((a.holeOutflow_A_per_m.array()==b.holeOutflow_A_per_m.array()).all());
+        CHECK(a.latticeSource_W_per_m==b.latticeSource_W_per_m);
+        CHECK(a.boundaryHeat_W_per_m==b.boundaryHeat_W_per_m);
+        const auto count=cache->coupled->hits;
+        const auto residual=cached.assemble(x,bc,{},{},false);
+        CHECK(residual.jacobian.rows()==0);CHECK((residual.residual.array()==b.residual.array()).all());
+        CHECK(cache->coupled->hits==count);
+        return b.jacobian;
+    };
+    const auto first=check();const Eigen::MatrixXd retained=first;
+    const auto nnz=first.nonZeros();
+    for(Real temperature:{401.,299.,514.,300.}){
+        for(int i=0;i<6;++i){x[4*i]=.48+.012*i;x[4*i+1]=.003*i;x[4*i+2]=.96-.002*i;x[4*i+3]=temperature+3.*i;}
+        CHECK(check().nonZeros()==nnz);
+    }
+    CHECK(cache->coupled->builds==1);CHECK(cache->heat->builds==1);
+    CHECK((Eigen::MatrixXd(first).array()==retained.array()).all());
+    bc.neutralContactBias_V={{0,0.}};check();CHECK(cache->coupled->builds==2);
+    bc.holeRecombination={{0,{1.93e4,1e-7}}};check();CHECK(cache->coupled->builds==3);
+    bc.temperature_K={{4,350.}};check();CHECK(cache->coupled->builds==4);
+    bc.temperature_K[4]=410.;check();CHECK(cache->coupled->builds==4);
+    // A new point assembler may share structure, but never old matrix values.
+    ElectrothermalAssembler next(f.mesh,f.doping,g,heat,f.mobility);next.setStructureCache(cache);
+    const auto a=next.assemble(x,bc);CHECK(cache->coupled->builds==4);
+    CHECK((a.jacobian-check()).norm()==0.);
+    g.poissonEdge_F_per_m[0]*=1.1;
+    ElectrothermalAssembler changed(f.mesh,f.doping,g,heat,f.mobility),fresh(f.mesh,f.doping,g,heat,f.mobility);
+    changed.setStructureCache(cache);
+    CHECK((changed.assemble(x,bc).jacobian-fresh.assemble(x,bc).jacobian).norm()==0.);
+    CHECK(cache->coupled->builds==5);
+    cached.setStructureCache(nullptr);CHECK((cached.assemble(x,bc).jacobian-plain.assemble(x,bc).jacobian).norm()==0.);
 }

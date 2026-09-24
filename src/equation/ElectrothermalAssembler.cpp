@@ -4,6 +4,7 @@
 #include "vela/core/PhysicalConstants.h"
 #include "vela/physics/CarrierStatistics.h"
 #include <cmath>
+#include <bit>
 #include <stdexcept>
 #include <limits>
 
@@ -115,6 +116,46 @@ std::pair<Real,Real> ElectrothermalAssembler::neutralPotential(Index node,Real b
     return result;
 }
 
+void ElectrothermalAssembler::prepareStructure(const ElectrothermalBoundary& bc,const std::vector<bool>& constrained) const {
+    auto key=heat_.structureIdentity();
+    const auto real=[&](Real v){key.push_back(std::bit_cast<std::uint64_t>(v));};
+    key.push_back(mesh_.numNodes());key.push_back(mesh_.numEdges());key.push_back(mesh_.numCells());
+    for(const auto& node:mesh_.nodes()){key.push_back(node.id);real(node.x);real(node.y);}
+    for(const auto& edge:mesh_.edges()){key.push_back(edge.id);key.push_back(edge.n0);key.push_back(edge.n1);}
+    for(const auto& cell:mesh_.cells()){key.push_back(cell.id);key.push_back(cell.region_id);
+        key.push_back(cell.node_ids.size());for(auto i:cell.node_ids)key.push_back(i);}
+    for(const auto* v:{&geometry_.siliconArea_m2,&geometry_.recombinationArea_m2,
+                      &geometry_.fixedCharge_C_per_m,&geometry_.poissonEdge_F_per_m,&geometry_.transportWeight})
+        for(auto value:*v)real(value);
+    for(bool c:constrained)key.push_back(c);
+    key.push_back(bc.neutralContactBias_V.size());for(const auto& [i,v]:bc.neutralContactBias_V)key.push_back(i);
+    key.push_back(bc.holeRecombination.size());for(const auto& [i,v]:bc.holeRecombination)key.push_back(i);
+    key.push_back(mobility_.model=="ialmob");
+    if(mobility_.model=="ialmob")for(const auto& supports:mobility_.ialmobGeometry->edges){
+        key.push_back(supports.size());for(const auto& s:supports){key.push_back(s.support);real(s.weight);
+            key.push_back(mobility_.ialmobGeometry->cells[s.support].cellId);}}
+    auto& cache=*structure_->coupled;
+    if(cache.matches(key)){++cache.hits;return;}
+    std::vector<Eigen::Triplet<Real>> entries;
+    const auto add=[&](Index row,Index column){if(!constrained[row])entries.emplace_back(row,column,0.);};
+    const Index n=mesh_.numNodes();
+    for(Index i=0;i<n;++i)for(int r=0;r<4;++r)for(int c=0;c<4;++c)add(4*i+r,4*i+c);
+    for(const auto& edge:mesh_.edges()){
+        for(Index i:{edge.n0,edge.n1})for(Index j:{edge.n0,edge.n1})add(4*i,4*j);
+        if(geometry_.transportWeight[edge.id]==0.)continue;
+        for(Index i:{edge.n0,edge.n1})for(Index j:{edge.n0,edge.n1})
+            for(int r=1;r<4;++r)for(int c=0;c<4;++c)add(4*i+r,4*j+c);
+        if(mobility_.model=="ialmob")for(const auto& s:mobility_.ialmobGeometry->edges[edge.id])
+            for(Index j:mesh_.getCell(mobility_.ialmobGeometry->cells[s.support].cellId).node_ids)
+                for(Index i:{edge.n0,edge.n1})for(int r=1;r<4;++r)for(int c=0;c<4;++c)add(4*i+r,4*j+c);
+    }
+    std::vector<Eigen::Triplet<Real>> thermal;heat_.appendStructure(thermal,4,3);
+    for(const auto& e:thermal)add(e.row(),e.col());
+    for(Index row=0;row<4*n;++row)if(constrained[row])entries.emplace_back(row,row,0.);
+    for(const auto& [i,v]:bc.neutralContactBias_V)entries.emplace_back(4*i,4*i+3,0.);
+    cache.build(std::move(key),4*n,entries);
+}
+
 ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
     const ElectrothermalBoundary& bc,const VectorXd& eReference,const VectorXd& hReference,bool buildJacobian,bool skipEquilibriumTransport,
     bool diagnosticFreezeMobilityDerivatives,bool diagnosticFreezeRecombinationDerivatives,
@@ -156,8 +197,15 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
     for(Index i=0;i<n;++i)if(geometry_.siliconArea_m2[i]==0.){
         constrained[4*i+1]=true;constrained[4*i+2]=true;
     }
+    std::size_t scatterCursor=0;
+    if(buildJacobian && structure_){prepareStructure(bc,constrained);out.jacobian=structure_->coupled->zeroMatrix();}
+    const auto insert=[&](Index row,Index column,Real value){
+        if(!buildJacobian)return;
+        if(structure_)structure_->coupled->add(out.jacobian,scatterCursor,row,column,value);
+        else entries.emplace_back(row,column,value);
+    };
     const auto add=[&](Index row,Index column,Real value){
-        if(buildJacobian && !constrained[row] && value!=0.)entries.emplace_back(row,column,value);
+        if(buildJacobian && !constrained[row] && (structure_ || value!=0.))insert(row,column,value);
     };
     std::vector<SiliconThermalState> states(n);std::vector<SiliconThermalResult> properties(n);
     VectorXd t(n),psi(n),fn(n),fp(n),ne=VectorXd::Zero(n),nh=ne,dne=ne,dnh=ne,dneT=ne,dnhT=ne;
@@ -254,17 +302,17 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
         for(SparseMatrixd::InnerIterator it(heat.jacobian_W_per_m_K,k);it;++it)
             add(4*it.row()+3,4*it.col()+3,it.value());
     for(Index i=0;i<n;++i)if(geometry_.siliconArea_m2[i]==0.)for(int k=1;k<=2;++k){
-        if(!fixed[k]->contains(i)){out.residual[4*i+k]=x[4*i+k]+ref(i,k==1);entries.emplace_back(4*i+k,4*i+k,1.);}
+        if(!fixed[k]->contains(i)){out.residual[4*i+k]=x[4*i+k]+ref(i,k==1);insert(4*i+k,4*i+k,1.);}
     }
     for(int k=0;k<4;++k)for(const auto& [i,value]:*fixed[k]){
-        out.residual[4*i+k]=x[4*i+k]-(value-(k==1?ref(i,true):k==2?ref(i,false):0.));entries.emplace_back(4*i+k,4*i+k,1.);
+        out.residual[4*i+k]=x[4*i+k]-(value-(k==1?ref(i,true):k==2?ref(i,false):0.));insert(4*i+k,4*i+k,1.);
     }
     for(const auto& [i,bias]:bc.neutralContactBias_V){
         const auto [potential,derivative]=neutralPotential(i,bias,t[i]);
-        out.residual[4*i]=psi[i]-potential;entries.emplace_back(4*i,4*i,1.);entries.emplace_back(4*i,4*i+3,-derivative);
+        out.residual[4*i]=psi[i]-potential;insert(4*i,4*i,1.);insert(4*i,4*i+3,-derivative);
         for(int k=1;k<=2;++k){
             if(k==2 && bc.holeRecombination.contains(i))continue;
-            out.residual[4*i+k]=x[4*i+k]-(bias-ref(i,k==1));entries.emplace_back(4*i+k,4*i+k,1.);
+            out.residual[4*i+k]=x[4*i+k]-(bias-ref(i,k==1));insert(4*i+k,4*i+k,1.);
         }
         if(const auto found=bc.holeRecombination.find(i);found!=bc.holeRecombination.end()){
             const auto& contact=found->second;
@@ -301,7 +349,7 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
             }
         }
     }
-    if(buildJacobian){out.jacobian.resize(4*n,4*n);out.jacobian.setFromTriplets(entries.begin(),entries.end());}
+    if(buildJacobian && !structure_){out.jacobian.resize(4*n,4*n);out.jacobian.setFromTriplets(entries.begin(),entries.end());}
     for(const auto& [node,row]:audited){row->residual=out.residual[4*node+2];row->fluxAbs=out.holeFluxAbs_A_per_m[node];}
     return out;
 }

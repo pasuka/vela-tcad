@@ -141,6 +141,17 @@ class ElectrothermalRunnerTest(unittest.TestCase):
               ['performance']['static_preparation_reused'] for r in ledger['runs']]
         self.assertEqual(hits[:2],[False,False])
         self.assertTrue(all(hits[2:]))
+    def test_structure_cache_is_fresh_on_resume_and_safe_after_failure(self):
+        self.deck['reuse_jacobian_structure']=True
+        self.input['performance_profiling']=True
+        self.write('input.json',self.input)
+        self.test_pause_then_failed_heat_gate_keeps_accepted_zero()
+        ledger=self.read((self.root/'output/ledger.json'))
+        self.assertGreater(len(ledger['runs']),2)
+        hits=[self.read((Path(r['directory'])/'output.json'))
+              ['performance']['static_preparation_reused'] for r in ledger['runs']]
+        self.assertEqual(hits[:2],[False,False])
+        self.assertTrue(all(hits[2:]))
     def test_voltage_update_limit_changes_path_but_preserves_converged_state(self):
         self.deck['sweep']['max_newton']=10
         for boundary in self.input['boundaries']:
@@ -820,6 +831,7 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.assertEqual(trajectories[0],trajectories[1])
 
     def test_static_preparation_reuse_preserves_initialization_and_resume(self):
+        self.deck['reuse_jacobian_structure']=False  # Isolate immutable input preparation.
         self.deck['initialization']=dict(mode='neutral_300K',gate_voltage_V=.1,max_newton=10)
         self.input.update(skip_equilibrium_poisson_transport=True,performance_profiling=True,
                           reuse_physics_preparation=True)
@@ -842,6 +854,36 @@ class ElectrothermalRunnerTest(unittest.TestCase):
             run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
             self.assertEqual(paths[-1].read_bytes(),before)
         self.assertEqual(trajectories[0],trajectories[1])
+
+    def test_structure_reuse_preserves_initialization_and_resume(self):
+        self.deck['initialization']=dict(mode='neutral_300K',gate_voltage_V=.1,max_newton=10)
+        self.input.update(skip_equilibrium_poisson_transport=True,performance_profiling=True,
+                          reuse_physics_preparation=True)
+        self.input['boundaries'][-4]['value']=.1
+        self.write('input.json',self.input)
+        trajectories=[]
+        for requested in (None,False,True):
+            enabled=True if requested is None else requested
+            self.deck.update(output_directory='structure_'+str(requested),resume=False)
+            self.deck.pop('reuse_jacobian_structure',None)
+            if requested is not None:self.deck['reuse_jacobian_structure']=requested
+            run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
+            ledger=self.read((self.root/self.deck['output_directory']/'ledger.json'))
+            paths=[Path(r['result']) for r in ledger['initialization_runs']]
+            paths += [Path(r['directory'])/'output.json' for r in ledger['runs']]
+            trajectory=[]
+            for i,path in enumerate(paths):
+                result=self.read(path);perf=result.pop('performance')
+                self.assertEqual(perf['static_preparation_reused'],enabled and i>0)
+                self.assertEqual(perf['jacobian_structure_reuse_enabled'],enabled)
+                if enabled:
+                    self.assertGreater(perf['jacobian_structure_hits']+perf['jacobian_structure_builds'],0)
+                trajectory.append(result)
+            trajectories.append(trajectory)
+            before=paths[-1].read_bytes();self.deck['resume']=True
+            run=self.run_deck();self.assertEqual(run.returncode,0,run.stderr)
+            self.assertEqual(paths[-1].read_bytes(),before)
+        for trajectory in trajectories[1:]:self.assertEqual(trajectories[0],trajectory)
 
     def test_neutral_root_newton_preserves_initialization_and_reports_all_work(self):
         self.deck['initialization']=dict(mode='neutral_300K',gate_voltage_V=.1,max_newton=10)

@@ -7,6 +7,9 @@ namespace vela {
 /// Sweep-local immutable preparation cache. Each point still owns its state,
 /// temperature preparation, neutral roots and nonlinear solver. Not thread-safe.
 class ElectrothermalPreparationContext {
+public:
+    void clear() { prepared_.reset(); }
+private:
     struct Impl;
     std::shared_ptr<Impl> prepared_;
     friend nlohmann::json solveElectrothermalPoint(const nlohmann::json&,

@@ -9,6 +9,11 @@ evidence.
 - [Codespaces build environment](codespaces.md): container dependencies and
   PowerShell/Codex commands for remote builds, tests, and result retrieval.
 
+- [Default electrothermal assembly structure reuse, 2026-09-24](validation/templates_ldmos_thermal_structure_2026-09-24.md):
+  four-equation/thermal structure reuse; C560/T470p full regression, D0 curves,
+  three paired repetitions and omitted-option checks passed. Default is on;
+  measured aggregate timing improvement is small (0.70%).
+
 - [Default DC assembly structure reuse, 2026-09-23](validation/templates_ldmos_structure_default_2026-09-23.md):
   production option, invalidation boundaries and T470p default-path regression.
 - [Restart state storage](state_archive.md): current `vela.state/2` fields, units,

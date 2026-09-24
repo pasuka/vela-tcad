@@ -70,6 +70,7 @@ struct vela::ElectrothermalPreparationContext::Impl {
     ElectrothermalGeometry geometry;
     MobilityModelConfig mobility;
     std::unique_ptr<LatticeHeatAssembler> heat;
+    std::shared_ptr<ElectrothermalAssembler::StructureCache> structure;
     double meshSeconds=0.,inputSeconds=0.,geometrySeconds=0.;
     explicit Impl(const json& cfg) {
         auto stage=Clock::now();
@@ -152,6 +153,13 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
         SiliconThermalParameters siliconParameters;
         siliconParameters.augerWithGeneration=cfg.value("auger_with_generation",false);
         ElectrothermalAssembler assembler(mesh,doping,prepared->geometry,heat,prepared->mobility,SiliconThermalPhysics(siliconParameters),.1,.04,cfg.value("reuse_physics_preparation",false),cfg.value("reuse_ialmob_screening",false),cfg.value("reuse_neutral_contact_roots",false),cfg.value("diagnostic_neutral_root_newton",false));
+        const bool reuseStructure=cfg.value("reuse_jacobian_structure",true);
+        if(reuseStructure){
+            if(!prepared->structure)prepared->structure=std::make_shared<ElectrothermalAssembler::StructureCache>();
+            assembler.setStructureCache(prepared->structure);
+        }else prepared->structure.reset();
+        const auto structureBefore=reuseStructure?std::array<std::size_t,4>{prepared->structure->coupled->builds,
+            prepared->structure->coupled->hits,prepared->structure->heat->builds,prepared->structure->heat->hits}:std::array<std::size_t,4>{};
         const double assemblerPreparationSeconds=Preparation::elapsed(assemblerStart);
         const double pointPreparationSeconds=Preparation::elapsed(preparationStart);
         ElectrothermalBoundary bc;
@@ -1136,6 +1144,14 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             perf["preparation_ialmob_geometry_seconds"]=preparationHit?0.:prepared->geometrySeconds;
             perf["preparation_assembler_seconds"]=assemblerPreparationSeconds;
             perf["static_preparation_reused"]=preparationHit;
+            perf["jacobian_structure_reuse_enabled"]=reuseStructure;
+            if(reuseStructure){
+                perf["jacobian_structure_builds"]=prepared->structure->coupled->builds-structureBefore[0];
+                perf["jacobian_structure_hits"]=prepared->structure->coupled->hits-structureBefore[1];
+                perf["heat_structure_builds"]=prepared->structure->heat->builds-structureBefore[2];
+                perf["heat_structure_hits"]=prepared->structure->heat->hits-structureBefore[3];
+                perf["jacobian_structure_nonzeros"]=prepared->structure->coupled->pattern.nonZeros();
+            }
             perf["ialmob_pass_calls"]=ialKernelProfile.passes;
             perf["ialmob_pass_seconds"]=ialKernelProfile.seconds;
             perf["ialmob_high_field_evaluations"]=ialKernelProfile.highFieldEvaluations;

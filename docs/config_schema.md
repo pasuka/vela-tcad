@@ -69,6 +69,22 @@ reuse and is an experimental option, not the production default.
 
 ### Explicit electrothermal DC entry
 
+The four-equation entry has a separate `reuse_jacobian_structure` option
+(default `true`), accepted in the prepared point input or at sweep
+deck level (the deck wins). It retains a zero-valued coupled/thermal sparse
+pattern and checked scatter positions in the sweep preparation context. An
+enabled deck retains that context even when `reuse_static_preparation` is absent
+or explicitly `false`. To disable both structural and immutable-input reuse,
+set both options to `false`; disabling structure alone leaves the existing
+static-preparation setting in effect.
+Exact topology/geometry, IALMob support, and constrained-row identities guard
+reuse; ordinary bias and unknown-temperature changes refill values. Contact
+row type changes rebuild the coupled pattern. Residuals, all physical values,
+temperature partials and numeric factorizations are still evaluated. A new
+process starts fresh; explicit disabling drops the shared structural cache.
+This entry has its own electrothermal qualification; it does not change the
+classical DC implementation. See the [electrothermal structure validation](validation/templates_ldmos_thermal_structure_2026-09-24.md) for correctness and timing limits.
+
 `simulation_type: "electrothermal_dc_sweep"` selects the in-process four-equation
 silicon service. This is a separate explicit schema; the legacy DC fields above
 do not select or configure it. Its initial scope is the audited LDMOS SI model,

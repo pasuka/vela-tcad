@@ -220,7 +220,8 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
             {"exact_points",json::array()},{"accepted_bias_V",0.},{"accepted_result",nullptr},{"next_step_V",step},{"wall_seconds",0.}};
     }
     ElectrothermalPreparationContext preparation;
-    auto* preparationContext=deck.value("reuse_static_preparation",false)?&preparation:nullptr;
+    if(deck.contains("reuse_jacobian_structure"))input["reuse_jacobian_structure"]=deck.at("reuse_jacobian_structure").get<bool>();
+    auto* preparationContext=(deck.value("reuse_static_preparation",false) || input.value("reuse_jacobian_structure",true))?&preparation:nullptr;
     const double priorWall=ledger.value("wall_seconds",0.);
     auto checkpoint=[&] {
         ledger["next_step_V"]=step;

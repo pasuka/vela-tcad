@@ -1,6 +1,18 @@
 # Templates/LDMOS 当前验证状态
 
-更新：2026-09-23。当前工作分支 `codex/templates-ldmos-phase-a`。
+更新：2026-09-24。当前工作分支 `codex/templates-ldmos-phase-a`。
+
+新增 [四方程自热装配结构复用](templates_ldmos_thermal_structure_2026-09-24.md)：
+`reuse_jacobian_structure` 默认开启，保留结构失效重建和显式关闭；原 D0 物理、
+Newton 及验收门限不变。C560 Debug 与 T470p Release 的候选/最终默认版本
+均各通过 853/853 CTest；48 次代表点/恢复、前八点、首组完整曲线通过。
+三轮 12 条完整曲线、372 精确点、6 组联合验收及 434 组状态对照通过；
+另对首组全部 62 对精确点完成载流子、带边和热量的开关审计。
+三轮墙钟总计减少 0.698%，Vg4/Vg8 均值变化 -1.151%/-0.217%；
+第三轮 Vg8 变慢 0.680%，不认领每组均加速或显著稳定收益。
+最终省略两个复用配置的双栅压前八点通过，与显式开启候选数值及推进轨迹一致。
+任务目录 `D:/code-repo/vela-bench/electrothermal_structure_20260924` 的
+候选、后处理及默认验证批次全部完成；本轮修改整理提交至当前 worktree 分支。
 
 新增 [经典 DC 装配结构默认化](templates_ldmos_structure_default_2026-09-23.md)：
 正式字段 `solver.reuse_jacobian_structure` 默认开启，保留失效重建、显式关闭及
