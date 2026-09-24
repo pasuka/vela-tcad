@@ -9,6 +9,11 @@ evidence.
 - [Codespaces build environment](codespaces.md): container dependencies and
   PowerShell/Codex commands for remote builds, tests, and result retrieval.
 
+- [T470p electrothermal gprof, 2026-09-24](validation/templates_ldmos_thermal_gprof_2026-09-24.md):
+  latest default structure reuse, full D0 Release/gprof controls and original gates;
+  assembly/IALMob and factorization dominate. Four-equation linear-object reuse
+  across points remains distinct from the completed assembly cache.
+
 - [Default electrothermal assembly structure reuse, 2026-09-24](validation/templates_ldmos_thermal_structure_2026-09-24.md):
   four-equation/thermal structure reuse; C560/T470p full regression, D0 curves,
   three paired repetitions and omitted-option checks passed. Default is on;
