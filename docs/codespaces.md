@@ -73,6 +73,10 @@ New-Item -ItemType Directory -Force build\codespaces-results | Out-Null
 明确指定实例，避免误操作其他 Codespace。Sync 遇到云端源码更改或分支分叉时失败，
 不会强制覆盖。它只拉取当前分支的上游，不上传本机修改，也不自动切换分支。
 
+本机 GitHub CLI 2.101 与 Windows OpenSSH 的默认文件复制存在路径引号兼容问题。
+Fetch 已使用验证通过的兼容参数，并限制远端绝对路径只能包含英文字母、数字、
+`/`、`_`、`.`、`-`，拒绝空格、通配符和 shell 表达式；结果目录请使用这些字符命名。
+
 可以直接告诉 Codex：“在指定 Codespace 上编译并运行 Poisson 测试”。执行前应明确
 实例名称及代码版本；仿真时还需指定配置、网格、输出目录和需要的求解后端。
 使用 Run 提交实际仿真命令，将结果写到 `build-codespaces-release/` 下，使用 Fetch
@@ -98,9 +102,29 @@ SSH、下载等操作可能启动已停止的实例并产生计算用量；List 
 路径、测试筛选转义、缺少实例参数、非法并行数以及失败退出码传递。通过新脚本
 实际查询 GitHub Codespaces 列表成功。现有 Ubuntu 24.04 WSL 的离线脚本检查通过。
 
-本机没有 Docker，WSL 缺少完整 Python 回归依赖，本次没有构建容器镜像或执行
-云端 C++ 编译/CTest；首次实例启动后仍须完成上面的 Build 和完整 Test 验收。
-容器配置尚不能作为 Linux 数值回归通过的证据。
+随后在 GitHub Codespaces 完成实际云端验收：
+
+- 配置分支：`codex/codespaces-compute`。
+- 实例：`vela-tcad-compute-69r6rj7pvvjc54g9`，区域 SouthEastAsia，
+  `standardLinux32gb`（4 vCPU、16 GB 内存、32 GB 工作区磁盘）。
+- 被编译的提交：`a90d7903a1e3b940f5ea2f3dcdbfbb3a26baf182`。
+- GCC 13.3.0、CMake 3.28.3、Python 3.12.3、h5py 3.10.0、NumPy 1.26.4、
+  HDF5 1.10.10；UMFPACK、SPQR、METIS、HDF5 状态存储实际启用。
+- Release 全目标编译：`Build -Jobs 4`，183/183 个 Ninja 步骤完成。
+- 完整回归：`Test -Jobs 2`，**852/852 通过，0 失败**，CTest 实际用时 27.83 秒。
+- 本地证据目录：`build/codespaces-validation/`，包含编译、CTest 和原始远端日志，
+  按项目约定不提交生成日志。
+
+这是构建及完整 CTest 验收，不是与 T470p 的性能对比，也不代表已经运行用户的
+15 分钟至 4 小时生产仿真。此实例的使用示例：
+
+```powershell
+$cs = 'vela-tcad-compute-69r6rj7pvvjc54g9'
+.\scripts\Invoke-Codespace.ps1 -Action Build -Codespace $cs -Jobs 4
+```
+
+实例停止后，上述 SSH 操作可重新启动它并消耗额度。实例仍受 GitHub 保留期策略管理，
+如果以后已被自动删除，需要从已推送的配置分支重新创建。
 
 ## 参考
 
