@@ -11572,7 +11572,18 @@ LOOKUP_TABLE default
             rows = self._read_csv(output)
             status = json.loads(result.stdout)
             for step in status["block_steps"]:
-                trial = self._read_csv(Path(step["trial_state_file"]))
+                from scripts import state_archive
+                trial_path = Path(step["trial_state_file"])
+                self.assertEqual(trial_path.suffix, ".h5")
+                mesh = json.loads((root / "mesh.json").read_text())
+                trial_fields, metadata = state_archive.read(
+                    trial_path, 4, state_archive.mesh_identity(mesh, 1e-6))
+                trial = state_archive.fields_to_rows(trial_fields)
+                self.assertEqual(metadata["potential_origin_V"], 0.)
+                self.assertEqual(metadata["state_role"], "block_step_candidate")
+                self.assertFalse(metadata["qualified"])
+                self.assertEqual(metadata["block_mode"], step["mode"])
+                self.assertIn("mesh_file", metadata["input_file_sha256"])
                 self.assertEqual(len(trial), 4)
                 self.assertIn("electrons_m3", trial[0])
                 self.assertIn("holes_m3", trial[0])

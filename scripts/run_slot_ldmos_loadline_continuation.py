@@ -2,7 +2,7 @@
 """Bounded SLOT independent-device load-line continuation with audited checkpoints.
 
 Only qualified direct device evaluations may seed another solve. External points
-also require a closed load line and byte-identical circuit confirmation. Changed
+also require a closed load line and bit-identical decoded circuit state confirmation. Changed
 confirmation states remain unqualified; no placeholder circuit row proves the
 device equations. This driver does not establish original AvalDensGradQF parity.
 """
@@ -27,9 +27,12 @@ def _module(name):
     return module
 
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import slot_state_archive as states
+
 direct = _module("run_slot_ldmos_noavalanche_continuation")
 audit = _module("audit_slot_ldmos_local_continuity")
-SCHEMA = "vela.slot_ldmos.loadline_continuation.v1"
+SCHEMA = "vela.slot_ldmos.loadline_continuation.v2"
 RESISTANCE = 1e12  # ohm*um; current is signed A/um throughout
 TOLERANCE = 1e-6  # V
 
@@ -215,9 +218,10 @@ def qualify_files(state, iv, terms, bias, base, mesh_ids, *, expected_count=1263
                 raise EvidenceError("closure criterion inconsistent with physical evidence")
             if (relative and ratio > .01) or (not relative and abs(mismatch) > 1e-12):
                 raise NumericalFailure("global_closure: actual carrier mismatch exceeds gate")
-        states = read_rows(state)
-        node_ids(states, mesh_ids)
-        for value in states:
+        arrays, _ = states.read(state, base, Path("."))
+        state_rows = states.archive.fields_to_rows(arrays)
+        node_ids(state_rows, mesh_ids)
+        for value in state_rows:
             for key in ("psi", "phin", "phip", "electrons_m3", "holes_m3"):
                 finite(value[key])
             for key, number in value.items():
@@ -327,7 +331,7 @@ class Campaign:
                 raise EvidenceError("stored load-line residual does not match device proof")
             confirmation = outer["confirmation"]
             verify_hashes(confirmation["evidence"])
-            if confirmation["state_sha256"] != point["state_sha256"]:
+            if confirmation["device_state_sha256"] != point["state_sha256"]:
                 raise EvidenceError("confirmation state identity mismatch")
             if hasattr(self.backend, "validate_confirmation"):
                 self.backend.validate_confirmation(point, outer["outer_V"], confirmation)
@@ -391,7 +395,7 @@ class Campaign:
         except NumericalFailure as exc:
             atomic_json(directory / "result.json", {"qualified": False, "failure": str(exc)})
             raise
-        if confirmation["state_sha256"] != point["state_sha256"]:
+        if confirmation["device_state_sha256"] != point["state_sha256"]:
             raise EvidenceError("confirmation inherited proof for a different state")
         checkpoint = {"outer_V": target, "device_id": point["id"], "residual_V": value, "confirmation": confirmation}
         self.snapshot["outer_ledger"].append(checkpoint)
@@ -550,7 +554,7 @@ class SolverBackend:
         short = "p" if document["solver"].get("method") == "poisson_only" else "d"
         directory = config.parent / short
         document["output_csv"] = str((directory / "iv.csv").resolve())
-        document["sweep"]["write_state_file"] = str((directory / "final_state.csv").resolve())
+        document["sweep"]["write_state_file"] = str((directory / "final_state.h5").resolve())
         document["sweep"]["write_state_every_point_prefix"] = str((directory / "states/s").resolve())
         self.helper.redirect_diagnostics(document, directory)
         config.parent.mkdir(parents=True, exist_ok=True)
@@ -621,10 +625,10 @@ class SolverBackend:
             _, _, prewarm_dir, passed = self._write_run(self.helper.render_poisson_prewarm(
                 self.base, directory, bias, initial, 1, self.prewarm_iterations))
             if passed:
-                initial = prewarm_dir / "final_state.csv"
+                initial = prewarm_dir / "final_state.h5"
         document, config, run_dir, passed = self._write_run(self.helper.render_attempt(
             self.base, directory, bias, initial, 1, self.max_newton_iterations))
-        candidate = run_dir / "final_state.csv"
+        candidate = run_dir / "final_state.h5"
         failure = NumericalFailure("device_numerical: full device solve did not converge")
         if passed:
             try:
@@ -688,10 +692,10 @@ class SolverBackend:
         _, _, run_dir, passed = self._write_run((document, config, run_dir))
         if not passed:
             raise NumericalFailure("confirmation_unqualified: circuit solve failed")
-        state = run_dir / "final_state.csv"
-        if sha256(state) != point["state_sha256"]:
+        state = run_dir / "final_state.h5"
+        if states.digest(state, self.base, self.repo) != states.digest(point["state_file"], self.base, self.repo):
             raise NumericalFailure("confirmation_state_changed: full device requalification is required; target remains pending")
-        confirmation = {"state_sha256": sha256(state), "state_file": str(state.resolve()),
+        confirmation = {"device_state_sha256": point["state_sha256"], "state_sha256": sha256(state), "state_file": str(state.resolve()),
                         "iv_file": str((run_dir / "iv.csv").resolve()), "config_file": str(config.resolve()),
                         "evidence": hashes([state, run_dir / "iv.csv", config])}
         self.validate_confirmation(point, outer, confirmation)
@@ -702,7 +706,8 @@ class SolverBackend:
         row = read_rows(confirmation["iv_file"])[-1]
         config = json.loads(Path(confirmation["config_file"]).read_text(encoding="utf-8"))
         circuit = config["sweep"]["external_circuit"]
-        if (row.get("converged") != "1" or row.get("boundary_control_mode") != "external_resistor"
+        if (confirmation["device_state_sha256"] != point["state_sha256"]
+                or row.get("converged") != "1" or row.get("boundary_control_mode") != "external_resistor"
                 or not circuit["enabled"] or circuit["current_direction"] != self.base["sweep"]["external_circuit"]["current_direction"]
                 or finite(row["series_resistance_ohm_um"]) != RESISTANCE
                 or finite(row["outer_voltage_V"]) != outer
@@ -710,7 +715,8 @@ class SolverBackend:
                 or finite(row["current_total_A_per_um"]) != point["current_A_per_um"]
                 or row["bias_contact"] != self.base["sweep"]["contact"]
                 or row["current_contact"] != self.base["sweep"].get("current_contact", self.base["sweep"]["contact"])
-                or sha256(confirmation["state_file"]) != point["state_sha256"]):
+                or sha256(confirmation["state_file"]) != confirmation["state_sha256"]
+                or states.digest(confirmation["state_file"], self.base, self.repo) != states.digest(point["state_file"], self.base, self.repo)):
             raise EvidenceError("confirmation terminal/current/voltage/state identity mismatch")
         value = residual(finite(row["inner_voltage_V"]), finite(row["current_total_A_per_um"]), outer, circuit["current_direction"])
         if abs(value) > TOLERANCE or not math.isclose(finite(row["load_line_residual_V"]), value, rel_tol=0, abs_tol=1e-12):
@@ -758,7 +764,9 @@ def main(argv=None):
         identity["files"].update(hashes([args.base_config, args.initial_state, Path(__file__),
             Path(__file__).with_name("run_slot_ldmos_noavalanche_continuation.py"),
             Path(__file__).with_name("audit_slot_ldmos_local_continuity.py"),
-            Path(__file__).with_name("slot_poly_equilibrium.py")]))
+            Path(__file__).with_name("slot_poly_equilibrium.py"),
+            Path(__file__).with_name("slot_state_archive.py"),
+            Path(__file__).with_name("state_archive.py")]))
         identity["frozen_config"] = base
         identity["thread_environment"] = {key: os.environ.get(key) for key in
                                           ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS")}
@@ -768,6 +776,7 @@ def main(argv=None):
             "carrier_corrector_mode", "restore_poly_equilibrium")}
         identity["solver_options"] = solver_options
         backend = SolverBackend(base, args.repo_root, args.runner, **solver_options)
+        states.read(args.initial_state, base, args.repo_root)
         budget_options = {key: getattr(args, key) for key in (
             "max_attempts", "max_shots", "max_inner_retries", "max_inner_step",
             "min_inner_step", "min_outer_step", "max_total_seconds")}

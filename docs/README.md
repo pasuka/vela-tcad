@@ -6,6 +6,15 @@ evidence.
 
 ## Current References
 
+- [SLOT HDF5 continuation and native low-bias comparison, 2026-09-24](validation/slot_ldmos_hdf5_continuation_2026-09-24.md):
+  three-driver state migration, block-probe output fix, Release regression,
+  checkpoint confirmation, repeat-chain progress and native 2.025 V evidence.
+
+- [SLOT status and handoff, 2026-09-24](validation/slot_ldmos_status_and_handoff_2026-09-24.md):
+  original-deck function and parameter matrix, completed versus unfinished
+  validation, current HDF5 anchors and next-stage entry; separates projected-SG
+  high-voltage results from the controlled new-source 2.125 V qualification.
+
 - [SLOT local main integration, 2026-09-23](validation/slot_ldmos_main_integration_2026-09-23.md):
   HDF5 restart compatibility, default Jacobian structure reuse, retained SLOT
   physics fixes and bounded Release revalidation; continuation driver migration

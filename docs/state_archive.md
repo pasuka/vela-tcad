@@ -87,6 +87,34 @@ Python: `state_archive.py`, `electrothermal_state.py`. The migration-only
 binary64 equality and source/output hashes. It is not a runtime fallback.
 Curve/statistics CSV and mesh/doping inputs retain their existing formats.
 
+The SLOT direct-continuation, load-line and Poly-equilibrium drivers use the
+same HDF5 contract. Their shared `slot_state_archive.py` checks independent mesh
+identity, DD mode, potential origin and nonnegative carrier densities. Secant
+and equilibrium outputs remain unqualified candidates with parent hashes;
+split QF references and increments are retained separately. Block-step probes
+also write HDF5 candidates, never accepted checkpoints. A successful probe
+without its expected HDF5 candidate is an interface failure, not a reason to
+bisect voltage.
+The continuation report records the supplied seed separately; it reports no
+qualified bias/state until at least one target passes in that run. A seed's
+previous model or accepted-state label does not itself qualify the new campaign.
+Timeouts during the coupled solve, row audit or carrier-candidate correction
+stop that target without voltage bisection. The report preserves the target and
+records the timed-out stage; a missing convergence result is not numerical failure.
+After each finished attempt, `reports/adaptive_checkpoint.json` atomically records
+the last qualified state and hash, previous predictor state, remaining targets
+and last completed attempt. It is flushed once per attempt, not per Newton
+iteration. This recovery record does not indicate whether a process is running;
+configuration identity and the referenced qualification evidence must be checked
+before using it to prepare a new continuation campaign.
+
+SLOT load-line checkpoint schema v2 binds the independently qualified device
+file and the circuit confirmation file separately. Numerical confirmation
+requires exact decoded field equality; differing container/provenance bytes
+alone do not invalidate the state. Both concrete files retain their own hashes.
+Legacy CSV checkpoints/v1 load-line ledgers require explicit migration and
+requalification, not implicit runtime fallback.
+
 The general codec preserves binary64 values including signed zero. The DD
 solver writer retains its pre-existing normalization of subnormal values to
 zero; migration comparisons distinguish that solver policy from serialization.

@@ -5,14 +5,14 @@ original coupled convergence, update-history and all-active continuity gates.
 """
 from __future__ import annotations
 
-import csv
 import hashlib
 import json
 import math
-import os
 from pathlib import Path
 import sys
-import tempfile
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import slot_state_archive as states
 
 
 _REQUIRED = ["node_id", "psi", "phin", "phip", "electrons_m3", "holes_m3"]
@@ -181,7 +181,7 @@ def write_poly_equilibrium_restart(document: dict, input_path: Path, output_path
                                    config_directory: Path, bias: float) -> dict:
     """Validate the narrow profile and atomically write an unqualified candidate.
 
-    CSV state quantities are SI regardless of deck input scaling. At fixed psi,
+    HDF5 state quantities are SI regardless of deck input scaling. At fixed psi,
     temperature, doping and quantum potential, Boltzmann n changes by
     exp((old_fn-new_fn)/Vt), and p by exp((new_fp-old_fp)/Vt).
     """
@@ -195,25 +195,19 @@ def write_poly_equilibrium_restart(document: dict, input_path: Path, output_path
     except (KeyError, TypeError, AttributeError) as exc:
         raise ValueError("Poly equilibrium restart: malformed mesh/material/contact configuration") from exc
     source_bytes = source.read_bytes()
-    with source.open(encoding="utf-8-sig", newline="") as stream:
-        reader = csv.DictReader(stream)
-        fields = reader.fieldnames or []
-        _require(fields[:6] == _REQUIRED and len(set(fields)) == len(fields)
-                 and set(fields[6:]) <= set(_SPLIT + _QUANTUM), "unsupported or malformed CSV header")
-        split = set(fields) & set(_SPLIT)
-        _require(not split or len(split) == 4, "all four split QF columns must be present together")
-        _require(_QUANTUM[1] not in fields or _QUANTUM[0] in fields, "quantum-like field needs quantum field")
-        rows = list(reader)
+    arrays, metadata = states.read(source, document, config_directory)
+    rows = states.archive.fields_to_rows(arrays)
+    split = states.archive.SPLIT <= arrays.keys()
     seen = set()
     maximum = 0.0
     vt = 1.380649e-23 * 300 / 1.602176634e-19
     for row in rows:
-        _require(None not in row and all(value is not None for value in row.values()), "malformed CSV row")
+        _require(None not in row and all(value is not None for value in row.values()), "malformed HDF5 row")
         try:
             node = int(row["node_id"])
         except ValueError as exc:
-            raise ValueError("Poly equilibrium restart: invalid CSV node ID") from exc
-        _require(node in nodes and node not in seen, "unknown or duplicate CSV node ID")
+            raise ValueError("Poly equilibrium restart: invalid HDF5 node ID") from exc
+        _require(node in nodes and node not in seen, "unknown or duplicate HDF5 node ID")
         seen.add(node)
         values = {key: _finite(value, key) for key, value in row.items() if key != "node_id"}
         for key in ("electrons_m3", "holes_m3"):
@@ -242,28 +236,17 @@ def write_poly_equilibrium_restart(document: dict, input_path: Path, output_path
             except OverflowError as exc:
                 raise ValueError("Poly equilibrium restart: density transformation overflow") from exc
             _require(math.isfinite(transformed) and transformed > 0, "density transformation overflow/underflow")
-            row[density] = format(transformed, ".17g")
-            row[field] = format(target, ".17g")
+            row[density] = transformed
+            row[field] = target
             if split:
-                row[f"{carrier}_qf_reference_V"] = format(target, ".17g")
-                row[f"{carrier}_qf_increment_V"] = "0"
-    _require(seen == nodes, "CSV state does not cover every mesh node")
+                row[f"{carrier}_qf_reference_V"] = target
+                row[f"{carrier}_qf_increment_V"] = 0.
+    _require(seen == nodes, "HDF5 state does not cover every mesh node")
     provenance = {"seed": str(source), "input_sha256": hashlib.sha256(source_bytes).hexdigest(),
                   "output": str(output), "mesh_file": str(mesh_path), "bias_V": bias,
                   "temperature_K": 300, "poly_nodes": len(targets), "components": components,
                   "max_qf_change_V": maximum, "qualified": False,
                   "scope": "isolated source-free constant-mobility PolySilicon candidate; original gates required"}
-    # No output is touched until all configuration, topology and state checks pass.
-    temporary = None
-    try:
-        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", newline="", dir=output.parent,
-                                         prefix=output.name + ".", suffix=".tmp", delete=False) as stream:
-            temporary = Path(stream.name)
-            writer = csv.DictWriter(stream, fieldnames=fields)
-            writer.writeheader()
-            writer.writerows(rows)
-        os.replace(temporary, output)
-    finally:
-        if temporary is not None and temporary.exists():
-            temporary.unlink()
+    states.write_candidate(output, states.archive.rows_to_fields(rows), metadata,
+                           document, [source], bias, "poly_equilibrium_candidate")
     return provenance

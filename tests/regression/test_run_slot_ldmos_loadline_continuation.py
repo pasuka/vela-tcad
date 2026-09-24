@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+from tests.regression import slot_state_fixture as h5
 import importlib.util
 import json
 import math
@@ -114,8 +115,8 @@ class QualificationTests(Base):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
-        self.state = self.root / "state.csv"
-        csv_write(self.state, [{"node_id": i, "psi": 0, "phin": 0, "phip": 0,
+        self.state = self.root / "state.h5"
+        h5.write(self.state, [{"node_id": i, "psi": 0, "phin": 0, "phip": 0,
                               "electrons_m3": 1, "holes_m3": 1} for i in range(3)])
         self.iv = self.root / "iv.csv"
         self.terms = self.root / "terms.csv"
@@ -124,7 +125,7 @@ class QualificationTests(Base):
 
     def qualify(self, **kwargs):
         csv_write(self.iv, [self.row]); csv_write(self.terms, self.rows)
-        return M.qualify_files(self.state, self.iv, self.terms, 1., deck(),
+        return M.qualify_files(self.state, self.iv, self.terms, 1., dict(deck(), mesh_file=str(self.root / "mesh.json")),
                                {0, 1, 2}, expected_count=2, updates=1, **kwargs)
 
     def test_absolute_criterion_and_all_active_not_source_rows(self):
@@ -136,8 +137,8 @@ class QualificationTests(Base):
     def test_zero_updates_only_at_same_imported_bias(self):
         csv_write(self.iv, [self.row]); csv_write(self.terms, self.rows)
         with self.assertRaisesRegex(M.NumericalFailure, "zero_coupled_update"):
-            M.qualify_files(self.state, self.iv, self.terms, 1., deck(), {0, 1, 2}, expected_count=2, updates=0)
-        M.qualify_files(self.state, self.iv, self.terms, 1., deck(), {0, 1, 2}, expected_count=2, updates=0, same_bias=True)
+            M.qualify_files(self.state, self.iv, self.terms, 1., dict(deck(), mesh_file=str(self.root / "mesh.json")), {0, 1, 2}, expected_count=2, updates=0)
+        M.qualify_files(self.state, self.iv, self.terms, 1., dict(deck(), mesh_file=str(self.root / "mesh.json")), {0, 1, 2}, expected_count=2, updates=0, same_bias=True)
 
     def test_missing_duplicate_and_changed_active_rows(self):
         for rows in (term_rows()[:-1], term_rows() + [term_rows()[0]]):
@@ -214,12 +215,12 @@ class AnalyticBackend:
             raise KeyboardInterrupt()
         if self.fail:
             self.fail(bias, seed)
-        state = directory / "state.csv"
-        csv_write(state, [{"node_id": i, "psi": bias, "phin": 0, "phip": 0,
+        state = directory / "state.h5"
+        h5.write(state, [{"node_id": i, "psi": bias, "phin": 0, "phip": 0,
                           "electrons_m3": 1, "holes_m3": 1} for i in range(3)])
         iv = directory / "iv.csv"; terms = directory / "terms.csv"
         csv_write(iv, [iv_row(bias, self.function(bias))]); csv_write(terms, term_rows())
-        return M.qualify_files(state, iv, terms, bias, deck(), {0, 1, 2},
+        return M.qualify_files(state, iv, terms, bias, dict(deck(), mesh_file=str(directory / "mesh.json")), {0, 1, 2},
                                expected_count=2, updates=0 if same_bias else 1, same_bias=same_bias)
 
     def confirm(self, point, outer, directory):
@@ -228,12 +229,12 @@ class AnalyticBackend:
         path = directory / "confirmation.json"
         path.write_text(json.dumps({"inner_V": point["inner_V"], "outer_V": outer,
                                     "current_A_per_um": point["current_A_per_um"]}))
-        return {"state_sha256": point["state_sha256"], "evidence": M.hashes([path])}
+        return {"device_state_sha256": point["state_sha256"], "state_sha256": point["state_sha256"], "evidence": M.hashes([path])}
 
     def validate(self, point):
         M.verify_hashes(point["evidence"])
         checked = M.qualify_files(Path(point["state_file"]), Path(point["iv_file"]),
-                                 Path(point["terms_file"]), point["inner_V"], deck(), {0, 1, 2},
+                                 Path(point["terms_file"]), point["inner_V"], dict(deck(), mesh_file=str(Path(point["state_file"]).parent / "mesh.json")), {0, 1, 2},
                                  expected_count=2, expected_active=point["active_ids"],
                                  updates=point["coupled_newton_updates"],
                                  same_bias=point["same_bias_requalification"])
@@ -247,7 +248,7 @@ class CampaignTests(Base):
         self.assertTrue(hasattr(M, "Campaign"), "persisted bounded controller is missing")
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
-        self.seed = self.root / "seed.csv"; self.seed.write_text("imported")
+        self.seed = self.root / "seed.h5"; self.seed.write_text("imported")
         self.runner = self.root / "runner.exe"; self.runner.write_text("runner")
         self.identity = {"files": M.hashes([self.runner, self.seed]), "config_sha256": "frozen"}
         self.backend = AnalyticBackend()
@@ -416,10 +417,10 @@ class SolverBackendTests(Base):
         self.root = Path(self.tmp.name)
         self.base = deck()
         mesh = self.root / "mesh.json"
-        mesh.write_text(json.dumps({"nodes": [{"id": i} for i in range(3)]}))
+        mesh.write_text(json.dumps(h5.mesh()))
         self.base["mesh_file"] = str(mesh)
-        self.seed = self.root / "seed.csv"
-        csv_write(self.seed, [{"node_id": i, "psi": 1, "phin": 0, "phip": 0,
+        self.seed = self.root / "seed.h5"
+        h5.write(self.seed, [{"node_id": i, "psi": 1, "phin": 0, "phip": 0,
                               "electrons_m3": 1, "holes_m3": 1} for i in range(3)])
         self.calls = []
         self.zero_updates = False
@@ -451,13 +452,17 @@ class SolverBackendTests(Base):
                        inner_voltage_V=str(inner), outer_voltage_V=str(bias),
                        series_resistance_ohm_um="1e12", load_line_residual_V=str(inner * 1.02 - bias),
                        boundary_control_mode="external_resistor")
-            state.write_bytes(Path(document["sweep"]["initial_state_file"]).read_bytes())
+            fields, meta = h5.state_archive.inspect(Path(document["sweep"]["initial_state_file"]))
+            meta["confirmation_provenance"] = "different container, same fields"
+            h5.state_archive.write(state, fields, meta)
             if self.change_confirmation:
-                state.write_bytes(state.read_bytes() + b"\n")
+                fields, meta = h5.state_archive.inspect(state)
+                fields["psi"][0] += 1e-12
+                h5.state_archive.write(state, fields, meta)
         else:
             row = iv_row(bias, bias * .02 / 1e12)
             if self.zero_updates: row["newton_iterations"] = "0"
-            csv_write(state, [{"node_id": i, "psi": bias, "phin": 0, "phip": 0,
+            h5.write(state, [{"node_id": i, "psi": bias, "phin": 0, "phip": 0,
                               "electrons_m3": 1, "holes_m3": 1} for i in range(3)])
         csv_write(output, [row])
         return 0, False, .001
@@ -472,7 +477,8 @@ class SolverBackendTests(Base):
         self.backend.validate(point)
         self.assertEqual(len(self.calls), 2)
         confirm = self.backend.confirm(point, 1.122, self.root / "confirm")
-        self.assertEqual(confirm["state_sha256"], point["state_sha256"])
+        self.assertEqual(confirm["device_state_sha256"], point["state_sha256"])
+        self.assertNotEqual(confirm["state_sha256"], point["state_sha256"])
         self.backend.validate_confirmation(point, 1.122, confirm)
         for call in (self.calls[0], self.calls[-1]):
             solver = M.clone(call["solver"])
@@ -540,7 +546,7 @@ class SolverBackendTests(Base):
             rendered = self.backend.helper.render_attempt(document, directory / "validator", bias, state, 2)
             document, config, run_dir, passed = self.backend._write_run(rendered)
             self.assertTrue(passed)
-            final = run_dir / "final_state.csv"
+            final = run_dir / "final_state.h5"
             self.backend.helper.audit_local_candidate(document, final, bias, runner, repo, run_dir, timeout, config.parent)
             (run_dir / "config.json").write_bytes(config.read_bytes())
             return {"passed": True, "state_file": str(final), "coupled_newton_iterations": 999}
@@ -554,7 +560,7 @@ class CliTests(Base):
     def test_cli_requires_explicit_inner_voltage_and_exposes_budgets(self):
         self.assertTrue(hasattr(M, "parser"), "CLI is missing")
         args = M.parser().parse_args(["--repo-root", ".", "--runner", "runner.exe",
-            "--base-config", "base.json", "--initial-state", "state.csv", "--initial-inner-bias", "37.03",
+            "--base-config", "base.json", "--initial-state", "state.h5", "--initial-inner-bias", "37.03",
             "--outer-targets", "37.075", "37.1", "--output-dir", "out", "--resume",
             "--max-attempts", "80", "--carrier-corrector-passes", "12", "--restore-poly-equilibrium"])
         self.assertEqual(args.outer_targets, [37.075, 37.1])

@@ -8,10 +8,16 @@ import csv
 import importlib.util
 import json
 import math
+import os
+import hashlib
 import subprocess
 import time
 from collections import deque
 from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import slot_state_archive as states
 
 
 DEFAULT_TARGETS = [0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 40.0, 60.0]
@@ -56,6 +62,23 @@ def load_rejected_final_state(path: Path) -> Path | None:
     return candidate.resolve() if candidate.exists() else None
 
 
+def write_adaptive_checkpoint(bundle: Path, checkpoint: dict) -> None:
+    """Persist one small recovery record per finished attempt, not per iteration.
+
+    This records completed evidence only; it does not claim a process is alive.
+    A restart must still validate the state/configuration before reusing it.
+    """
+    target = bundle / "reports" / "adaptive_checkpoint.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_suffix(".tmp")
+    with temporary.open("w", encoding="utf-8") as stream:
+        json.dump(checkpoint, stream, indent=2, allow_nan=False)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(temporary, target)
+
+
 def redirect_diagnostics(document: dict, run_dir: Path) -> None:
     """Keep each attempt's diagnostics separate from the base deck evidence."""
     solver = document.get("solver", {})
@@ -81,49 +104,31 @@ def redirect_diagnostics(document: dict, run_dir: Path) -> None:
 def write_secant_restart(previous_path: Path, current_path: Path,
                           output_path: Path, previous_bias: float,
                           current_bias: float, target_bias: float,
-                          max_ratio: float = 2.0) -> float:
-    """Predict coupled unknowns without discarding saved tiny QF increments."""
+                          max_ratio: float = 2.0, *, document: dict,
+                          config_directory: Path) -> float:
+    """Predict HDF5 unknowns without folding sub-ULP split QF increments."""
+    if not all(math.isfinite(v) for v in (previous_bias, current_bias, target_bias, max_ratio)) or max_ratio <= 0:
+        raise ValueError("invalid secant bias/ratio")
     denominator = current_bias - previous_bias
-    if denominator == 0.0:
+    if denominator == 0:
         raise ValueError("secant restart requires distinct previous/current biases")
-    ratio = max(-max_ratio, min(max_ratio, (target_bias - current_bias) / denominator))
-    with previous_path.open(newline="", encoding="utf-8-sig") as stream:
-        previous_rows = list(csv.DictReader(stream))
-    with current_path.open(newline="", encoding="utf-8-sig") as stream:
-        reader = csv.DictReader(stream)
-        current_rows = list(reader)
-        fieldnames = reader.fieldnames
-    if fieldnames is None or len(previous_rows) != len(current_rows):
-        raise ValueError("secant restart state shapes do not match")
-    extrapolated = {"psi", "phin", "phip"}
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=fieldnames)
-        writer.writeheader()
-        for previous, current in zip(previous_rows, current_rows, strict=True):
-            if previous.get("node_id") != current.get("node_id"):
-                raise ValueError("secant restart node ordering does not match")
-            row = dict(current)
-            for field in extrapolated:
-                row[field] = format(
-                    float(current[field]) + ratio * (
-                        float(current[field]) - float(previous[field])), ".17g")
-            for carrier, field in (("electron", "phin"), ("hole", "phip")):
-                ref = f"{carrier}_qf_reference_V"
-                inc = f"{carrier}_qf_increment_V"
-                if ref in row and inc in row:
-                    if ref in previous and inc in previous:
-                        # Extrapolate the two components separately. Rebuilding
-                        # the increment from the rounded absolute QF loses the
-                        # leakage-current signal at biased contacts.
-                        for component in (ref, inc):
-                            now = float(current[component])
-                            delta = now - float(previous[component])
-                            row[component] = format(math.fsum((now, ratio * delta)), ".17g")
-                        row[field] = format(math.fsum((float(row[ref]), float(row[inc]))), ".17g")
-                    else:
-                        row[inc] = format(float(row[field]) - float(row[ref]), ".17g")
-            writer.writerow(row)
+    ratio = max(-max_ratio, min(max_ratio, (target_bias-current_bias)/denominator))
+    previous, _ = states.read(previous_path, document, config_directory)
+    current, metadata = states.read(current_path, document, config_directory)
+    if previous.keys() != current.keys():
+        raise ValueError("secant restart state fields do not match")
+    output = {key: value.copy() for key, value in current.items()}
+    for field in ("psi", "phin", "phip"):
+        output[field] = current[field] + ratio * (current[field] - previous[field])
+    for carrier, field in (("electron", "phin"), ("hole", "phip")):
+        ref, inc = f"{carrier}_qf_reference_V", f"{carrier}_qf_increment_V"
+        if ref in output:
+            for component in (ref, inc):
+                output[component] = [math.fsum((float(now), ratio * (float(now)-float(old))))
+                    for now, old in zip(current[component], previous[component], strict=True)]
+            output[field] = [math.fsum((a,b)) for a,b in zip(output[ref], output[inc], strict=True)]
+    states.write_candidate(output_path, output, metadata, document, [previous_path, current_path],
+                           target_bias, "secant_candidate")
     return ratio
 
 
@@ -136,9 +141,10 @@ def render_attempt(base: dict, bundle: Path, target: float,
                    solver_method: str | None = None,
                    gummel_max_iterations: int | None = None) -> tuple[dict, Path, Path]:
     document = json.loads(json.dumps(base))
+    document["state_format"] = "hdf5"
     run_rel = Path("outputs") / "stages" / stage_name(base) / (
         f"attempt_{attempt_index:03d}_v_{tag(target)}")
-    state_rel = run_rel / "final_state.csv"
+    state_rel = run_rel / "final_state.h5"
     document["output_csv"] = str(run_rel / "iv.csv")
     document["sweep"]["bias_points"] = [target]
     document["sweep"]["initial_state_file"] = str(initial_state.resolve())
@@ -177,6 +183,7 @@ def render_poisson_prewarm(base: dict, bundle: Path, target: float,
                            qf_initialization: str = "preserve_initial") -> tuple[dict, Path, Path]:
     """Render a Poisson-only contact-bias basin solve before coupled Newton."""
     document = json.loads(json.dumps(base))
+    document["state_format"] = "hdf5"
     run_rel = Path("outputs") / "stages" / stage_name(base) / (
         f"prewarm_{attempt_index:03d}_v_{tag(target)}")
     document["output_csv"] = str(run_rel / "iv.csv")
@@ -184,7 +191,7 @@ def render_poisson_prewarm(base: dict, bundle: Path, target: float,
     document["sweep"]["initial_state_file"] = str(initial_state.resolve())
     document["sweep"]["write_state_every_point_prefix"] = str(
         run_rel / "states" / "state")
-    document["sweep"]["write_state_file"] = str(run_rel / "final_state.csv")
+    document["sweep"]["write_state_file"] = str(run_rel / "final_state.h5")
     solver = document["solver"]
     solver["method"] = "poisson_only"
     if qf_initialization not in ("preserve_initial", "contact_basin"):
@@ -201,11 +208,13 @@ def render_poisson_prewarm(base: dict, bundle: Path, target: float,
 def render_cold_equilibrium(base: dict, bundle: Path) -> tuple[dict, Path, Path]:
     """Build a local zero-bias seed without consuming an imported solution."""
     require_direct_device_bias(base)
-    if physics_branch(base) != "noavalanche":
-        raise ValueError("cold SLOT initialization requires no avalanche")
+    # Keep the configured source and its derivatives. The local initialization
+    # is a candidate; run() requalifies zero with the original coupled solver
+    # and every active carrier row before allowing a positive-bias step.
     if any(float(c.get("bias", 0.0)) != 0.0 for c in base["contacts"]):
         raise ValueError("cold SLOT initialization requires zero terminal biases")
     document = json.loads(json.dumps(base))
+    document["state_format"] = "hdf5"
     document.pop("state_file", None)
     document.pop("state_fields_dir", None)
     sweep = document["sweep"]
@@ -213,7 +222,7 @@ def render_cold_equilibrium(base: dict, bundle: Path) -> tuple[dict, Path, Path]
     run_dir = (bundle / "cold_equilibrium").resolve()
     document["output_csv"] = str(run_dir / "iv.csv")
     sweep.update(bias_points=[0.0], start=0.0, stop=0.0, max_retries=0,
-                 write_state_file=str(run_dir / "final_state.csv"),
+                 write_state_file=str(run_dir / "final_state.h5"),
                  write_state_every_point_prefix=str(run_dir / "states/state"))
     document["solver"].update(method="poisson_only", max_iter=100,
         poisson_only_quasi_fermi_initialization="contact_basin")
@@ -241,7 +250,7 @@ def render_batch_predictor(base: dict, bundle: Path, biases: list[float],
     document["sweep"]["bias_points"] = biases
     document["sweep"]["write_state_every_point_prefix"] = str(
         run_rel / "states" / "state")
-    document["sweep"]["write_state_file"] = str(run_rel / "final_state.csv")
+    document["sweep"]["write_state_file"] = str(run_rel / "final_state.h5")
     continuation = document["sweep"].setdefault("continuation", {})
     continuation["predictor"] = {
         "mode": "secant",
@@ -322,6 +331,7 @@ def audit_local_candidate(document: dict, state: Path, bias: float,
     probe_dir = run_dir / "local_audit"
     probe_dir.mkdir(parents=True, exist_ok=True)
     probe = json.loads(json.dumps(document))
+    probe["state_format"] = "hdf5"
     probe["simulation_type"] = "newton_carrier_term_probe"
     probe["state_file"] = str(state.resolve())
     probe["output_csv"] = str((probe_dir / "terms.csv").resolve())
@@ -378,10 +388,11 @@ def correct_local_candidate(document: dict, state: Path, bias: float,
     root = run_dir / "local_corrector"
     root.mkdir(parents=True, exist_ok=True)
     base = json.loads(json.dumps(document))
+    base["state_format"] = "hdf5"
     for key in ("mesh_file", "node_doping_file", "materials_file"):
         if key in base:
             base[key] = str((config_directory / base[key]).resolve())
-    result = {"passed": False, "mode": mode, "steps": [], "state_file": "", "validation_row": {},
+    result = {"passed": False, "timed_out": False, "mode": mode, "steps": [], "state_file": "", "validation_row": {},
               "coupled_newton_iterations": 0}
     current = state.resolve()
     for iteration in range(1, max_passes + 1):
@@ -404,20 +415,29 @@ def correct_local_candidate(document: dict, state: Path, bias: float,
         config = step_dir / "config.json"
         config.write_text(json.dumps(probe, indent=2), encoding="utf-8")
         code, timed_out, elapsed = execute_config(runner, repo, config, step_dir, timeout_seconds)
-        trial = step_dir / f"trial_{mode}.csv"
+        trial = step_dir / f"trial_{mode}.h5"
         step = {"iteration": iteration, "exit_code": code, "timed_out": timed_out,
                 "elapsed_s": elapsed, "local_audit_passed": False}
         result["steps"].append(step)
-        if code != 0 or timed_out or not trial.is_file():
+        if timed_out:
+            result.update(timed_out=True, timeout_stage="block_probe")
+        if code == 0 and not timed_out and not trial.is_file():
+            result["failure_reason"] = "missing_hdf5_candidate"
+            (root / "summary.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+            raise RuntimeError(f"Successful block probe did not write HDF5 candidate: {trial}")
+        if code != 0 or timed_out:
             break
         if restore_poly_equilibrium:
-            projected = step_dir / "poly_equilibrium_candidate.csv"
+            projected = step_dir / "poly_equilibrium_candidate.h5"
             step["poly_equilibrium"] = restore_poly_candidate(
                 base, trial, projected, config_directory, bias)
             trial = projected
         audit = audit_local_candidate(base, trial, bias, runner, repo, step_dir,
                                       timeout_seconds, config_directory)
         step["local_audit_passed"] = audit["passed"]
+        if audit.get("timed_out", False):
+            result.update(timed_out=True, timeout_stage="candidate_audit")
+            break
         current = trial
         if audit["passed"]:
             validation_dir = root / ("validation" if iteration == 1 else f"validation_{iteration:03d}")
@@ -426,17 +446,19 @@ def correct_local_candidate(document: dict, state: Path, bias: float,
             validation["output_csv"] = str((validation_dir / "iv.csv").resolve())
             validation["sweep"]["bias_points"] = [bias]
             validation["sweep"]["initial_state_file"] = str(current.resolve())
-            validation["sweep"]["write_state_file"] = str((validation_dir / "final_state.csv").resolve())
+            validation["sweep"]["write_state_file"] = str((validation_dir / "final_state.h5").resolve())
             validation["sweep"]["write_state_every_point_prefix"] = str((validation_dir / "states/state").resolve())
             redirect_diagnostics(validation, validation_dir)
             config = validation_dir / "config.json"
             config.write_text(json.dumps(validation, indent=2), encoding="utf-8")
             code, timed_out, elapsed = execute_config(runner, repo, config, validation_dir, timeout_seconds)
             row = load_last_row(validation_dir / "iv.csv")
-            candidate = validation_dir / "final_state.csv"
+            candidate = validation_dir / "final_state.h5"
             result["validation_row"] = row
             result["validation_exit_code"] = code
             result["validation_timed_out"] = timed_out
+            if timed_out:
+                result.update(timed_out=True, timeout_stage="coupled_validation")
             result["validation_elapsed_s"] = elapsed
             result["coupled_newton_iterations"] += int(row.get("newton_iterations", "0"))
             step["validation_directory"] = str(validation_dir.resolve())
@@ -446,6 +468,9 @@ def correct_local_candidate(document: dict, state: Path, bias: float,
                 final_audit = audit_local_candidate(validation, candidate, bias, runner, repo,
                     validation_dir, timeout_seconds, config_directory)
                 result["passed"] = final_audit["passed"]
+                if final_audit.get("timed_out", False):
+                    result.update(timed_out=True, timeout_stage="final_audit")
+                    break
                 if result["passed"]:
                     result["state_file"] = str(candidate.resolve())
                     break
@@ -502,6 +527,7 @@ def run(args: argparse.Namespace) -> int:
     if getattr(args, "restore_poly_equilibrium", False) and not args.carrier_corrector_passes:
         raise ValueError("poly equilibrium restoration requires carrier corrector passes")
     require_direct_device_bias(base)
+    base["state_format"] = "hdf5"
     runner = args.runner.resolve()
     cold_start = getattr(args, "cold_start", False)
     if cold_start:
@@ -516,7 +542,7 @@ def run(args: argparse.Namespace) -> int:
         code, timed_out, _ = execute_config(runner, args.repo_root, config, run_dir, args.timeout_seconds)
         if code != 0 or timed_out or load_last_row(run_dir / "iv.csv").get("converged") != "1":
             raise RuntimeError("Local equilibrium Poisson initialization failed")
-        initial_state = run_dir / "final_state.csv"
+        initial_state = run_dir / "final_state.h5"
         # The Poisson seed is only a candidate. Zero must pass the same full
         # coupled and all-active carrier-row gates as every later point.
         args.initial_bias = 0.0
@@ -526,6 +552,7 @@ def run(args: argparse.Namespace) -> int:
         initial_state = args.initial_state.resolve()
     if not initial_state.exists():
         raise FileNotFoundError(initial_state)
+    states.read(initial_state, base, bundle)
     if args.audit_local_continuity and args.batch_predictor:
         raise ValueError("local qualification requires auditing each state before the next bias")
     if args.carrier_corrector_passes < 0:
@@ -590,6 +617,9 @@ def run(args: argparse.Namespace) -> int:
     requested = deque(args.targets)
     current_bias = args.initial_bias
     current_state = initial_state
+    # Loading a seed (possibly from another model) does not qualify a point in
+    # this campaign. Keep its identity separately until a target passes.
+    current_qualified = False
     previous_state = args.secant_previous_state.resolve() if args.secant_previous_state is not None else None
     previous_bias = args.secant_previous_bias
     attempts: list[dict[str, object]] = []
@@ -605,11 +635,11 @@ def run(args: argparse.Namespace) -> int:
                 raise FileNotFoundError(previous_state)
             predicted_state = bundle / "outputs" / "stages" / (
                 stage_name(base)) / (
-                f"secant_seed_v_{tag(target)}.csv")
+                f"secant_seed_{attempt_index:03d}_v_{tag(target)}.h5")
             write_secant_restart(
                 previous_state, current_state, predicted_state,
                 previous_bias, current_bias, target,
-                args.secant_max_ratio)
+                args.secant_max_ratio, document=base, config_directory=bundle)
             attempt_initial_state = predicted_state
         prewarm_converged = False
         prewarm_elapsed = 0.0
@@ -626,7 +656,7 @@ def run(args: argparse.Namespace) -> int:
                 runner, args.repo_root, prewarm_config, prewarm_dir,
                 args.timeout_seconds)
             prewarm_row = load_last_row(prewarm_dir / "iv.csv")
-            prewarm_state = prewarm_dir / "final_state.csv"
+            prewarm_state = prewarm_dir / "final_state.h5"
             prewarm_converged = (
                 prewarm_exit == 0 and prewarm_row.get("converged") == "1"
                 and prewarm_state.exists())
@@ -670,7 +700,7 @@ def run(args: argparse.Namespace) -> int:
         exit_code, timed_out, elapsed = execute_config(
             runner, args.repo_root, config_path, run_dir, args.timeout_seconds)
         iv_row = load_last_row(run_dir / "iv.csv")
-        next_state = run_dir / "final_state.csv"
+        next_state = run_dir / "final_state.h5"
         converged = exit_code == 0 and iv_row.get("converged") == "1" and next_state.exists()
         local_audit = None
         if converged and args.audit_local_continuity:
@@ -682,6 +712,10 @@ def run(args: argparse.Namespace) -> int:
         failure_reason = iv_row.get("failure_reason", "")
         if local_audit is not None and not converged:
             failure_reason = "local_continuity_audit" if not local_audit["passed"] else "zero_newton_new_voltage"
+        timeout_stage = "coupled_solve" if timed_out else None
+        if local_audit is not None and local_audit.get("timed_out", False):
+            timed_out = True
+            timeout_stage = "local_audit"
         rejected_final_state = load_rejected_final_state(run_dir / "attempts.csv")
         corrector = None
         coupled_iterations = int(iv_row.get("newton_iterations", "0"))
@@ -701,6 +735,11 @@ def run(args: argparse.Namespace) -> int:
                     failure_reason = ""
                 else:
                     failure_reason = "local_corrector_unqualified"
+                if corrector.get("timed_out", False):
+                    timed_out = True
+                    timeout_stage = "corrector_" + corrector["timeout_stage"]
+        if timed_out:
+            failure_reason = "timeout"
         attempts.append({
             "attempt": attempt_index, "start_bias_V": current_bias,
             "target_bias_V": target, "elapsed_s": elapsed,
@@ -709,6 +748,7 @@ def run(args: argparse.Namespace) -> int:
             "poisson_prewarm_elapsed_s": prewarm_elapsed,
             "poisson_prewarm_failure_reason": prewarm_failure,
             "timed_out": timed_out, "exit_code": exit_code,
+            "timeout_stage": timeout_stage,
             "converged": converged, "failure_reason": failure_reason,
             "local_audit_passed": local_audit["passed"] if local_audit is not None else None,
             "local_corrector_passed": corrector["passed"] if corrector is not None else None,
@@ -724,17 +764,39 @@ def run(args: argparse.Namespace) -> int:
                 else "last_accepted_iterate"),
             "config_file": str(config_path.resolve()),
         })
+        stop_after_attempt = False
         if converged:
             if target != current_bias:
                 previous_state, previous_bias = current_state, current_bias
             current_bias = target
             current_state = next_state
+            current_qualified = True
             requested.popleft()
-            continue
-        midpoint = 0.5 * (current_bias + target)
-        if target - current_bias <= args.min_step_V or midpoint <= current_bias:
+        # A wall-clock budget exhaustion supplies no numerical convergence
+        # result. Keep the target pending instead of inferring a smaller step.
+        elif timed_out:
+            stop_after_attempt = True
+        else:
+            midpoint = 0.5 * (current_bias + target)
+            if target - current_bias <= args.min_step_V or midpoint <= current_bias:
+                stop_after_attempt = True
+            else:
+                requested.appendleft(midpoint)
+        write_adaptive_checkpoint(bundle, {
+            "schema": "vela.slot_ldmos.adaptive_checkpoint.v1",
+            "completed": not requested,
+            "base_config_sha256": hashlib.sha256(base_config.read_bytes()).hexdigest(),
+            "last_successful_bias_V": current_bias if current_qualified else None,
+            "last_successful_state": str(current_state) if current_qualified else None,
+            "state_sha256": hashlib.sha256(current_state.read_bytes()).hexdigest() if current_qualified else None,
+            "previous_bias_V": previous_bias if previous_state is not None else None,
+            "previous_state": str(previous_state) if previous_state is not None else None,
+            "previous_state_sha256": hashlib.sha256(previous_state.read_bytes()).hexdigest() if previous_state is not None else None,
+            "remaining_targets_V": list(requested),
+            "last_finished_attempt": attempts[-1],
+        })
+        if stop_after_attempt:
             break
-        requested.appendleft(midpoint)
 
     report_dir = bundle / "reports"
     report_dir.mkdir(parents=True, exist_ok=True)
@@ -749,8 +811,12 @@ def run(args: argparse.Namespace) -> int:
         "physics_branch": branch,
         "impact_ionization": base.get("solver", {}).get("impact_ionization", "none"),
         "completed": completed_all,
-        "last_successful_bias_V": current_bias,
-        "last_successful_state": str(current_state),
+        "termination_reason": "completed" if completed_all else (
+            "timeout" if attempts and attempts[-1]["timed_out"] else "unqualified_or_attempt_budget"),
+        "initial_bias_V": args.initial_bias,
+        "initial_state": str(initial_state),
+        "last_successful_bias_V": current_bias if current_qualified else None,
+        "last_successful_state": str(current_state) if current_qualified else None,
         "remaining_targets_V": list(requested),
         "timeout_seconds": args.timeout_seconds,
         "max_newton_iterations": args.max_newton_iterations,

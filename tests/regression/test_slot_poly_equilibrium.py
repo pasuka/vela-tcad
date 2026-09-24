@@ -1,6 +1,6 @@
 """Synthetic restart invariants; these tests do not qualify a device solution."""
 import copy
-import csv
+from tests.regression import slot_state_fixture as h5
 import importlib.util
 import json
 import math
@@ -22,8 +22,8 @@ class PolyEquilibriumTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.source = self.root / "state.csv"
-        self.output = self.root / "candidate.csv"
+        self.source = self.root / "state.h5"
+        self.output = self.root / "candidate.h5"
         self.mesh = {
             "nodes": [{"id": i, "x": i, "y": i % 2} for i in range(9)],
             "regions": [{"id": 0, "material": "PolySilicon"},
@@ -56,18 +56,14 @@ class PolyEquilibriumTests(unittest.TestCase):
 
     def persist(self):
         (self.root / "mesh.json").write_text(json.dumps(self.mesh))
-        with self.source.open("w", newline="") as stream:
-            writer = csv.DictWriter(stream, self.fields)
-            writer.writeheader()
-            writer.writerows(self.rows)
+        h5.write(self.source, self.rows, self.mesh)
 
     def run_helper(self, bias=2.0):
         self.persist()
         return self.write_restart(self.doc, self.source, self.output, self.root, bias)
 
     def read_output(self):
-        with self.output.open(newline="") as stream:
-            return list(csv.DictReader(stream))
+        return h5.read(self.output)
 
     def test_components_preserve_input_nonpoly_psi_and_quantum(self):
         self.persist()
@@ -77,10 +73,10 @@ class PolyEquilibriumTests(unittest.TestCase):
         out = self.read_output()
         self.assertEqual(self.source.read_bytes(), original)
         self.assertEqual(self.doc, document)
-        self.assertEqual(out[6:], self.rows[6:])
+        self.assertEqual(out[6:], h5.read(self.source)[6:])
         for i in range(6):
             for field in ("psi", "electron_quantum_potential_V"):
-                self.assertEqual(out[i][field], self.rows[i][field])
+                self.assertEqual(out[i][field], float(self.rows[i][field]))
             qf = 0.1 if i < 3 else -0.1
             self.assertEqual(float(out[i]["phin"]), qf)
             self.assertEqual(float(out[i]["phip"]), qf)
@@ -115,7 +111,7 @@ class PolyEquilibriumTests(unittest.TestCase):
         result = self.run_helper()
         self.assertEqual(result["max_qf_change_V"], 1e-17)
 
-    def test_legacy_csv_without_split_columns(self):
+    def test_hdf5_without_split_arrays(self):
         self.fields = self.fields[:7]
         self.rows = [{key: row[key] for key in self.fields} for row in self.rows]
         self.run_helper()

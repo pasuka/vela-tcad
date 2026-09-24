@@ -2234,8 +2234,13 @@ nlohmann::json runNewtonBlockStepProbe(const std::string& configFile, const nloh
         if (cfg.contains("output_state_prefix")) {
             const std::filesystem::path trialPath = resolvePath(
                 cfgDir, cfg.at("output_state_prefix").get<std::string>()
-                            + "_" + mode + ".csv");
-            vela::writeDDSolutionStateCsv(
+                            + "_" + mode + ".h5");
+            auto metadata = *vela::activeDDStateArchiveMetadata();
+            metadata["state_role"] = "block_step_candidate";
+            metadata["qualified"] = false;
+            metadata["block_mode"] = mode;
+            vela::DDStateArchiveScope candidateScope(std::move(metadata));
+            vela::writeDDSolutionState(
                 trialPath, steps.back().trialSolution, problem.newton.inputScaling);
             summaries.back()["trial_state_file"] = trialPath.string();
         }
