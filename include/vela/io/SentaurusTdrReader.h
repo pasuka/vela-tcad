@@ -54,7 +54,7 @@ struct SentaurusTdrExportOptions {
     std::string compensatedDopingPolicy = "reported";
     /// Unit carried by the raw TDR geometry dataset. Neutral nodes are always
     /// exported in micrometres. SDevice TDR commonly uses um; SProcess TDR
-    /// commonly uses cm, so callers must declare the source contract.
+    /// commonly uses cm. An empty override uses the geometry's unit metadata.
     std::string coordinateUnit;
 };
 

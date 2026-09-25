@@ -42,7 +42,8 @@ Basic usage:
 
 ```bash
 sentaurus_import --tdr FILE [--inventory-json FILE] [--export-dir DIR] \
-  [--compensated-doping-policy reported|dominant_signed_region]
+  [--compensated-doping-policy reported|dominant_signed_region] \
+  [--coordinate-unit um|cm]
 ```
 
 Arguments:
@@ -50,6 +51,9 @@ Arguments:
 - `--tdr`: input Sentaurus TDR file (required)
 - `--inventory-json`: write parsed inventory metadata as JSON
 - `--export-dir`: write neutral fixture exports for conversion/comparison flows
+- `--coordinate-unit`: explicitly override the source geometry unit with `um`
+  or `cm`. If omitted, use the TDR geometry unit metadata. Neutral coordinates
+  are exported in micrometres in either case.
 - `--compensated-doping-policy`: policy for compensated doping handling;
   accepted values:
   - `reported` (default)
