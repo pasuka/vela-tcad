@@ -6,9 +6,16 @@ evidence.
 
 ## Current References
 
+- [Latest D0 Release closeout, 2026-09-25](validation/templates_ldmos_release_closeout_2026-09-25.md):
+  Codespaces Release 858/858 CTest, 590 exact points, 698 identical state pairs,
+  62 native local fields and six checkpoints passed. Three paired rounds reduce
+  mean dual-gate wall time by 1.10%; all 6,390 archive members verified remotely,
+  with the small verification report retrieved locally at the user's request.
+
 - [Linked defaults and electrothermal cross-point linear reuse, 2026-09-25](validation/templates_ldmos_thermal_linear_reuse_2026-09-25.md):
   unified production defaults, exact-pattern reuse and failure/restart invalidation;
-  UCRT64 Debug 858-test regression passed; full-curve timing remains unmeasured.
+  UCRT64 Debug 858-test regression passed; subsequent full-curve timing is recorded
+  in the latest D0 Release closeout above.
 
 - [Shared Halley default integration, 2026-09-25](validation/templates_ldmos_halley_default_2026-09-25.md):
   C++ and isothermal/electrothermal JSON defaults unified, explicit legacy retained.

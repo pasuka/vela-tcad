@@ -1,12 +1,21 @@
 # Templates/LDMOS 当前验证状态
 
-更新：2026-09-25。当前工作分支 `codex/templates-ldmos-phase-a`。
+更新：2026-09-25。当前收尾基线为本地 main `ff9fccb1`；此前算例分支为 `codex/templates-ldmos-phase-a`。
+
+最新 [D0 Release 收尾验证](templates_ldmos_release_closeout_2026-09-25.md)：
+在本地 main `ff9fccb1` 冻结代码上执行 Codespaces Release 验证。
+完整 CTest 858/858、4条短曲线、4条完整开关曲线、原生62点局部场已通过；
+最大保存状态差为0，漏压符号分析37/35降至2/1，Newton仍为344/303。
+六个真实检查点、全部590点及698对状态检查通过，轨迹一致；9组原生电热联合
+及62点局部场通过。三轮平均双栅压墙钟300.849→297.550 s，下降1.0965%，
+各轮下降0.7182%–1.3439%，属小幅收益。按用户要求，完整包留在远端；
+6,390个归档成员及1,292个冻结文件校验通过，小型校验报告已回收并核对散列。
 
 新增 [Linked 默认配置及电热线性对象跨点复用](templates_ldmos_thermal_linear_reuse_2026-09-25.md)：
 linked 默认 UMFPACK/worker/跨点分析复用；四方程默认可用 UMFPACK，扫描上下文
 保留线性对象并核对精确结构，失败/拒绝失效，恢复检查有效线性策略。
 本机 UCRT64 Debug 完整 CTest 858/858、专项 Python 22/22 通过。
-本轮未重跑 D0 完整曲线及 Release 重复计时，不认领新的完整曲线性能资格。
+该接入阶段未重跑 D0 完整曲线及 Release 重复计时；后续资格见上方最新收尾验证。
 
 新增 [Halley 默认化集成复核](templates_ldmos_halley_default_2026-09-25.md)：
 C++、等温及电热配置入口统一默认 Halley，保留显式 legacy、保护及回退；
