@@ -14,6 +14,7 @@
 #include "vela/core/PhysicsCallCounters.h"
 #include "vela/core/IalKernelProfiling.h"
 #include "vela/physics/CarrierStatistics.h"
+#include "vela/physics/IalMobilityJson.h"
 #include <chrono>
 #include "vela/solver/NewtonSolver.h"
 #include <nlohmann/json.hpp>
@@ -50,7 +51,8 @@ std::string preparationIdentity(const json& cfg) {
         "silicon_area_m2","recombination_area_m2","fixed_charge_C_per_m","edge_geometry",
         "donors_m3","acceptors_m3","mobility_SI","reuse_ialmob_local_preparation",
         "residual_ialmob_values_only","reuse_ialmob_thermal_high_field",
-        "diagnostic_ialmob_explicit_high_field","diagnostic_ialmob_generated_low_field"})if(cfg.contains(name))key[name]=cfg.at(name);
+        "diagnostic_ialmob_explicit_high_field","diagnostic_ialmob_generated_low_field",
+        "diagnostic_ialmob_screening_method"})if(cfg.contains(name))key[name]=cfg.at(name);
     // Compare complete bytes, not timestamps or a hash with possible collisions.
     // Mesh bytes include contacts; mobility JSON includes crystal axes and units.
     key["mesh_source_bytes"]=sourceBytes(cfg.at("mesh_file"));
@@ -115,7 +117,11 @@ struct vela::ElectrothermalPreparationContext::Impl {
         nd=values(cfg.at("donors_m3"));na=values(cfg.at("acceptors_m3"));
         if(nd.size()!=mesh.numNodes() || na.size()!=mesh.numNodes())throw std::invalid_argument("Doping size mismatch");
         doping=DopingModel(mesh.numNodes());for(Index i=0;i<mesh.numNodes();++i)doping.setNodeDoping(i,nd[i],na[i]);
-        mobility=mobilityModelConfigFromJson(cfg.at("mobility_SI"));
+        auto mobilityInput=cfg.at("mobility_SI");
+        const auto screeningMethod=ial_json::electrothermalScreeningMethod(cfg);
+        if (mobilityInput.is_object() && mobilityInput.contains("ialmob"))
+            mobilityInput["ialmob"]["screening_method"]=ialScreeningMethodName(screeningMethod);
+        mobility=mobilityModelConfigFromJson(mobilityInput);
         if(mobility.ialmob){
             auto options=std::make_shared<IalTransportOptions>(*mobility.ialmob);
             options->element.reuseLocalPreparation=cfg.value("reuse_ialmob_local_preparation",false);
@@ -135,6 +141,7 @@ struct vela::ElectrothermalPreparationContext::Impl {
 nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::ostream& progress,
     ElectrothermalPreparationContext* context) {
         IalKernelProfilingScope ialProfileScope(cfg.value("diagnostic_ialmob_kernel_timing",false));
+        ElectrothermalCostScope costScope(cfg.value("diagnostic_electrothermal_cost",std::string("off")));
         const auto preparationStart=PreparationClock::now();
         using Preparation=ElectrothermalPreparationContext::Impl;
         const auto keyStart=PreparationClock::now();
@@ -1160,6 +1167,19 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             perf["ialmob_screening_cache_hits"]=ialKernelProfile.screeningHits;
             perf["ialmob_local_preparation_hits"]=ialKernelProfile.localPreparationHits;
             perf["ialmob_local_preparation_builds"]=ialKernelProfile.localPreparationBuilds;
+            perf["ialmob_screening_method"]=ialScreeningMethodName(ial_json::electrothermalScreeningMethod(cfg));
+            perf["ialmob_screening_candidate_calls"]=ialKernelProfile.screeningCandidateCalls;
+            perf["ialmob_screening_function_evaluations"]=ialKernelProfile.screeningFunctionEvaluations;
+            perf["ialmob_screening_fallbacks"]=ialKernelProfile.screeningFallbacks;
+        }
+        if(electrothermalCostProfile.mode!=ElectrothermalCostProfile::Off){
+            auto& cost=result["subcost_diagnostics"];
+            cost["mode"]=cfg.at("diagnostic_electrothermal_cost");
+            const std::array<const char*,ElectrothermalCostProfile::Count> names{
+                "residual_heat_total","residual_heat_matrix_prepare","residual_heat_matrix_fill",
+                "residual_heat_matrix_finish","screening_root","solver_create","symbolic_analysis","numeric_factorization"};
+            for(std::size_t i=0;i<names.size();++i)cost[names[i]]={
+                {"seconds",electrothermalCostProfile.seconds[i]},{"calls",electrothermalCostProfile.calls[i]}};
         }
         if(profiling)result["performance"]["preparation_counts"]=assembler.preparationCounts();
         if(profiling)result["performance"]["neutral_root_counts"]=assembler.neutralRootCounts();

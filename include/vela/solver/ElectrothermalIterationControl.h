@@ -1,5 +1,6 @@
 #pragma once
 #include "vela/core/Types.h"
+#include "vela/core/ElectrothermalCostProfile.h"
 #include <Eigen/SparseLU>
 #if defined(VELA_HAS_UMFPACK)
 #include <Eigen/UmfPackSupport>
@@ -34,13 +35,16 @@ public:
             && std::equal(outer_.begin(),outer_.end(),matrix_.outerIndexPtr())
             && std::equal(inner_.begin(),inner_.end(),matrix_.innerIndexPtr());
         if(!same){
-            lu_=makeSolver();
-            lu_->analyzePattern(matrix_);++analyses_;
+            {ElectrothermalCostTimer timer(ElectrothermalCostProfile::SolverCreate,electrothermalCostProfile.mode==ElectrothermalCostProfile::Linear);
+            lu_=makeSolver();}
+            {ElectrothermalCostTimer timer(ElectrothermalCostProfile::Symbolic,electrothermalCostProfile.mode==ElectrothermalCostProfile::Linear);
+            lu_->analyzePattern(matrix_);++analyses_;}
             rows_=matrix_.rows();cols_=matrix_.cols();
             outer_.assign(matrix_.outerIndexPtr(),matrix_.outerIndexPtr()+matrix_.outerSize()+1);
             inner_.assign(matrix_.innerIndexPtr(),matrix_.innerIndexPtr()+matrix_.nonZeros());
         }
-        lu_->factorize(matrix_);++factorizations_;
+        {ElectrothermalCostTimer timer(ElectrothermalCostProfile::Numeric,electrothermalCostProfile.mode==ElectrothermalCostProfile::Linear);
+        lu_->factorize(matrix_);++factorizations_;}
     }
     Eigen::ComputationInfo info() const {return lu_->info();}
     VectorXd solve(const VectorXd& rhs) {return lu_->solve(rhs);}

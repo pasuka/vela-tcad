@@ -1,9 +1,11 @@
 #pragma once
 
 #include "vela/core/Types.h"
+#include "vela/physics/IalScreeningRoot.h"
 #include <array>
 #include <map>
 #include <memory>
+#include <tuple>
 
 namespace vela {
 
@@ -59,10 +61,10 @@ struct IalMobilityDifferential {
 /// only on mass and temperature; exact keys never reuse another temperature.
 class IalScreeningCache {
 public:
-    Real minimum(Real mass,Real temperature);
+    Real minimum(Real mass,Real temperature,IalScreeningMethod method=defaultIalScreeningMethod);
     std::size_t size() const {return roots_.size();}
 private:
-    std::map<std::pair<Real,Real>,Real> roots_;
+    std::map<std::tuple<Real,Real,IalScreeningMethod>,Real> roots_;
 };
 
 /// Local to one transport-state preparation. Model objects must remain alive
@@ -84,7 +86,12 @@ private:
 class IalMobility {
 public:
     /// Local temperature is explicit; coupled electrical callers still supply 300 K.
-    explicit IalMobility(IalMobilityParameters parameters, bool electron);
+    explicit IalMobility(IalMobilityParameters parameters, bool electron,
+                         IalScreeningMethod method=defaultIalScreeningMethod);
+    IalScreeningMethod screeningMethod() const { return screeningMethod_; }
+    IalMobility withScreeningMethod(IalScreeningMethod method) const {
+        return IalMobility(params_,electron_,method);
+    }
     IalMobilityResult evaluate(const IalMobilityState& state,IalScreeningCache* cache=nullptr,
                               IalMobilityPreparationCache* preparation=nullptr,bool generated=false) const;
     IalMobilityDifferential evaluateWithDerivatives(const IalMobilityState& state,
@@ -98,6 +105,7 @@ private:
     IalMobilityResult evaluatePrepared(const IalMobilityState& state,Real minimum) const;
     IalMobilityParameters params_;
     bool electron_;
+    IalScreeningMethod screeningMethod_;
     Real pMin_;
 };
 

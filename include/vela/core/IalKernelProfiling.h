@@ -11,6 +11,7 @@ struct IalKernelProfile {
     std::array<double,3> seconds{};
     std::uint64_t highFieldEvaluations=0,highFieldReuses=0;
     std::uint64_t screeningRequests=0,screeningHits=0;
+    std::uint64_t screeningCandidateCalls=0,screeningFunctionEvaluations=0,screeningFallbacks=0;
     std::uint64_t localPreparationHits=0,localPreparationBuilds=0;
 };
 inline thread_local IalKernelProfile ialKernelProfile;

@@ -135,7 +135,8 @@ std::shared_ptr<const IalTransportGeometry> geometry(const MobilityModelConfig& 
 }
 
 std::shared_ptr<const IalTransportOptions> ialTransportOptionsFromJson(const json& input) {
-    keys(input,{"geometry_file","effective_electrodes","crystal_x","crystal_y","electron_parameters_cm","hole_parameters_cm","high_field","reference_density_m3"});
+    keys(input,{"geometry_file","effective_electrodes","crystal_x","crystal_y","electron_parameters_cm","hole_parameters_cm","high_field","reference_density_m3","screening_method"});
+    const auto method=ial_json::screeningMethod(input);
     auto options=std::make_shared<IalTransportOptions>();
     options->geometryFile=input.at("geometry_file");
     if (!std::filesystem::path(options->geometryFile).is_absolute())
@@ -145,9 +146,9 @@ std::shared_ptr<const IalTransportOptions> ialTransportOptionsFromJson(const jso
     options->element.highField=input.value("high_field",true);
     options->element.referenceDensity_m3=input.value("reference_density_m3",1e18);
     for (const auto& [name,p]:input.at("electron_parameters_cm").items())
-        options->electrons.emplace(std::stoi(name),IalMobility(ial_json::parameters(p,true),true));
+        options->electrons.emplace(std::stoi(name),IalMobility(ial_json::parameters(p,true),true,method));
     for (const auto& [name,p]:input.at("hole_parameters_cm").items())
-        options->holes.emplace(std::stoi(name),IalMobility(ial_json::parameters(p,false),false));
+        options->holes.emplace(std::stoi(name),IalMobility(ial_json::parameters(p,false),false,method));
     return options;
 }
 

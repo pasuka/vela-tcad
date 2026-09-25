@@ -1,6 +1,8 @@
 #include "vela/equation/ElectrothermalAssembler.h"
 #include "vela/simulation/ElectrothermalSimulation.h"
 #include "vela/core/IalKernelProfiling.h"
+#include "vela/core/ElectrothermalCostProfile.h"
+#include "vela/solver/ElectrothermalIterationControl.h"
 #include <sstream>
 #include "vela/solver/ElectrothermalTangent.h"
 #include <Eigen/SparseLU>
@@ -17,6 +19,34 @@
 #include <chrono>
 
 using namespace vela;
+TEST_CASE("Electrothermal cost diagnostics isolate stages and preserve solutions", "[electrothermal][cost_profile]") {
+    using P=ElectrothermalCostProfile;
+    ElectrothermalCostScope disabled("off");
+    SparseMatrixd matrix(2,2);std::vector<Eigen::Triplet<Real>> entries{{0,0,3.},{0,1,-1.},{1,0,-1.},{1,1,2.}};
+    matrix.setFromTriplets(entries.begin(),entries.end());
+    VectorXd rhs(2);rhs<<2.,1.;
+    for(const auto* mode:{"off","heat","screening","linear"}){
+        ElectrothermalCostScope scope(mode);
+        experimental::ElectrothermalDirectSolver solver;
+        solver.compute(matrix,true);const VectorXd first=solver.solve(rhs);
+        solver.compute(matrix,true);const VectorXd second=solver.solve(rhs);
+        CHECK((matrix*second-rhs).norm()<1e-13);CHECK((first-second).norm()==0.);
+        CHECK(solver.analyses()==1);CHECK(solver.factorizations()==2);
+        CHECK(electrothermalCostProfile.calls[P::Symbolic]==(std::string(mode)=="linear"?1:0));
+        CHECK(electrothermalCostProfile.calls[P::Numeric]==(std::string(mode)=="linear"?2:0));
+        IalMobility model(IalMobility::siliconDefaults(true),true);
+        const IalMobilityState state{1e22,1e20,1e21,1e15,1e6,1e-8,350.};
+        const auto result=model.evaluate(state);
+        CHECK(result.mobility_m2_per_Vs>0.);
+        // Construction prepares the 300 K minimum; evaluation solves at 350 K.
+        CHECK(electrothermalCostProfile.calls[P::ScreeningRoot]==(std::string(mode)=="screening"?2:0));
+        CHECK(electrothermalCostProfile.calls[P::HeatTotal]==0);
+    }
+    CHECK(electrothermalCostProfile.mode==P::Off);
+    CHECK(electrothermalCostProfile.calls[P::Symbolic]==0);
+    CHECK_THROWS_AS(ElectrothermalCostScope("invalid"),std::invalid_argument);
+    CHECK(electrothermalCostProfile.mode==P::Off);
+}
 TEST_CASE("Sweep preparation observes exact sources and never caches carrier state", "[electrothermal][preparation_context]") {
     using J=nlohmann::json;
     const auto path=std::filesystem::temp_directory_path()/
@@ -109,6 +139,25 @@ struct Fixture {
     }
     ~Fixture() {std::error_code ec;std::filesystem::remove(path,ec);}
 };
+}
+
+TEST_CASE("Shared IALMob JSON applies default and explicit screening methods to both carriers", "[ialmob][screening_default][config]") {
+    using nlohmann::json;
+    json options={{"geometry_file",(std::filesystem::temp_directory_path()/"screening_geometry.json").string()},
+        {"effective_electrodes",{"gate"}},{"crystal_x",{1,0,0}},{"crystal_y",{0,1,0}},
+        {"electron_parameters_cm",{{"100",json::object()}}},{"hole_parameters_cm",{{"100",json::object()}}}};
+    const auto check=[&](IalScreeningMethod expected){
+        const auto config=mobilityModelConfigFromJson({{"model","ialmob"},
+            {"high_field_driving_force","quasi_fermi_gradient"},{"ialmob",options}});
+        REQUIRE(config.ialmob);
+        CHECK(config.ialmob->electrons.at(100).screeningMethod()==expected);
+        CHECK(config.ialmob->holes.at(100).screeningMethod()==expected);
+    };
+    check(IalScreeningMethod::Halley);
+    options["screening_method"]="legacy";check(IalScreeningMethod::Legacy);
+    options["screening_method"]="halley";check(IalScreeningMethod::Halley);
+    options["screening_method"]="invalid";
+    CHECK_THROWS_AS(ialTransportOptionsFromJson(options),std::invalid_argument);
 }
 
 TEST_CASE("IALMob Fermi Auger enhancement has a consistent coupled source Jacobian",
@@ -319,6 +368,16 @@ TEST_CASE("Four-equation operator couples live IALMob current and conservative h
         options->element.generatedLowFieldPartials=true;f.mobility.ialmob=options;
     }
     bool reuseStructure=false;
+    const auto screening=[&](IalScreeningMethod method){
+        auto options=std::make_shared<IalTransportOptions>(*f.mobility.ialmob);
+        for(auto& [family,model]:options->electrons)model=model.withScreeningMethod(method);
+        for(auto& [family,model]:options->holes)model=model.withScreeningMethod(method);
+        f.mobility.ialmob=options;
+    };
+    SECTION("Tight bracket Newton screening preserves coupled columns"){screening(IalScreeningMethod::Newton);}
+    SECTION("Tight bracket Halley screening preserves coupled columns"){screening(IalScreeningMethod::Halley);}
+    SECTION("Explicit legacy screening preserves coupled columns"){screening(IalScreeningMethod::Legacy);}
+    SECTION("TOMS748 screening preserves coupled columns"){screening(IalScreeningMethod::Toms748);}
     SECTION("Cached four-equation structure retains all coupled partials"){reuseStructure=true;}
     LatticeConductivity law;law.model=LatticeConductivity::Model::InverseQuadratic;
     law.numerator=100.;law.denominator={-.0393,.00155,1.82e-6};
@@ -724,9 +783,13 @@ TEST_CASE("Electrothermal structure reuse survives zero derivatives temperature 
         CHECK(a.latticeSource_W_per_m==b.latticeSource_W_per_m);
         CHECK(a.boundaryHeat_W_per_m==b.boundaryHeat_W_per_m);
         const auto count=cache->coupled->hits;
+        ElectrothermalCostScope cost("heat");
         const auto residual=cached.assemble(x,bc,{},{},false);
         CHECK(residual.jacobian.rows()==0);CHECK((residual.residual.array()==b.residual.array()).all());
         CHECK(cache->coupled->hits==count);
+        CHECK(electrothermalCostProfile.calls[ElectrothermalCostProfile::HeatTotal]==1);
+        CHECK(electrothermalCostProfile.calls[ElectrothermalCostProfile::HeatMatrixFill]>0);
+        CHECK(electrothermalCostProfile.calls[ElectrothermalCostProfile::ScreeningRoot]==0);
         return b.jacobian;
     };
     const auto first=check();const Eigen::MatrixXd retained=first;

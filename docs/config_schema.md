@@ -69,6 +69,17 @@ reuse and is an experimental option, not the production default.
 
 ### Explicit electrothermal DC entry
 
+The four-equation point input also accepts `diagnostic_electrothermal_cost`
+(`off`, default; `heat`; `screening`; or `linear`). This is opt-in wall-clock
+instrumentation only. `heat` splits the thermal matrix preparation, derivative
+scatter, and finalization specifically during residual-only coupled requests;
+`screening` measures complete screening-minimum calls; `linear` separates
+solver creation, actual symbolic analysis, and numerical factorization.
+Results are in `subcost_diagnostics` with seconds and call counts. These are
+nested costs, not independent additions to existing assembly/factorization
+totals. Per-call clock overhead must be measured, especially for thermal
+scatter and screening; diagnostic times are not promises of removable cost.
+
 The four-equation entry has a separate `reuse_jacobian_structure` option
 (default `true`), accepted in the prepared point input or at sweep
 deck level (the deck wins). It retains a zero-valued coupled/thermal sparse
@@ -164,6 +175,25 @@ separate run for this diagnosis. Pass counts, high-field evaluations/reuses,
 screening cache requests/hits and local preparation hits/builds are also recorded.
 These point-scoped counters include preparation and final outputs, whereas the
 existing solve-loop counters retain their narrower scope.
+
+`solver.mobility.ialmob.screening_method` (isothermal DC) and
+`mobility_SI.ialmob.screening_method` (electrothermal input) select the screening
+minimum root algorithm. Omission uses safeguarded `halley`, including direct C++
+construction. Explicit `legacy` retains the original algorithm; `newton` and
+`toms748` remain comparison alternatives. The electrothermal top-level
+`diagnostic_ialmob_screening_method` remains an explicit alias; conflicting
+formal and alias declarations are rejected. The alternatives solve the same
+stationarity equation in a logarithmic variable with an analytic bracket,
+finite/sign checks and fallback to the qualified legacy path. No temperature
+quantization or cross-temperature root reuse is permitted. The algorithm is part
+of both static preparation identity and exact screening-cache keys. Results record
+`ialmob_screening_method`, `ialmob_screening_candidate_calls`,
+`ialmob_screening_function_evaluations` and `ialmob_screening_fallbacks` in
+`performance`. Candidate function counts cover transformed-equation evaluations;
+they do not count legacy derivative evaluations and must not be compared as
+equivalent work. This option does not change the physical model or acceptance
+gates. Comparison runs must explicitly select `legacy` as their baseline instead
+of relying on an omitted option.
 
 `diagnostic_ialmob_explicit_high_field` and
 `diagnostic_ialmob_generated_low_field` (both default false) select independent

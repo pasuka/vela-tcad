@@ -76,6 +76,19 @@ class ElectrothermalRunnerTest(unittest.TestCase):
         self.assertEqual(float(rows[0]['peak_temperature_K']),300.)
         # Volume accumulation can round the uniform mean by one ULP.
         self.assertAlmostEqual(float(rows[0]['mean_temperature_K']),300.,delta=1e-12)
+    def test_screening_default_and_explicit_legacy_reach_point_service(self):
+        self.input['performance_profiling']=True
+        for method in (None,'legacy','halley'):
+            with self.subTest(method=method):
+                self.input.pop('diagnostic_ialmob_screening_method',None)
+                if method is not None:
+                    self.input['diagnostic_ialmob_screening_method']=method
+                self.write('input.json',self.input)
+                self.deck['output_directory']='screening_'+str(method)
+                run=self.run_deck()
+                self.assertEqual(run.returncode,0,run.stderr)
+                result=self.read(self.root/self.deck['output_directory']/'step_0000/output.json')
+                self.assertEqual(result['performance']['ialmob_screening_method'],method or 'halley')
     def test_completed_resume_rejects_corrupted_referenced_state(self):
         self.assertEqual(self.run_deck().returncode,0)
         path=self.root/'output/step_0000/output.json'

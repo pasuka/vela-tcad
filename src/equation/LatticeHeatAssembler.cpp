@@ -1,4 +1,5 @@
 #include "vela/equation/LatticeHeatAssembler.h"
+#include "vela/core/ElectrothermalCostProfile.h"
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -104,6 +105,8 @@ void LatticeHeatAssembler::appendStructure(std::vector<Eigen::Triplet<Real>>& en
     for(const auto& b:boundaries_)for(auto i:b.input.nodes)for(auto j:b.input.nodes)entries.emplace_back(stride*i+offset,stride*j+offset,0.);
 }
 LatticeHeatAssembly LatticeHeatAssembler::assemble(const VectorXd& t, const VectorXd& q) const {
+    const bool timed=electrothermalCostProfile.mode==ElectrothermalCostProfile::Heat && electrothermalCostProfile.residualHeat;
+    ElectrothermalCostTimer total(ElectrothermalCostProfile::HeatTotal,timed);
     require(t.size()==nodalAreas_.size() && t.allFinite() && (t.array()>0).all(),
             "Invalid nodal lattice temperature vector");
     require(q.size()==static_cast<Eigen::Index>(elements_.size()) && q.allFinite(),
@@ -112,6 +115,7 @@ LatticeHeatAssembly LatticeHeatAssembler::assemble(const VectorXd& t, const Vect
     result.residual_W_per_m=VectorXd::Zero(t.size());
     std::vector<Eigen::Triplet<Real>> entries;
     std::size_t cursor=0;
+    { ElectrothermalCostTimer prepare(ElectrothermalCostProfile::HeatMatrixPrepare,timed);
     if(structure_){
         auto key=structureIdentity();
         if(!structure_->matches(key)){
@@ -119,6 +123,7 @@ LatticeHeatAssembly LatticeHeatAssembler::assemble(const VectorXd& t, const Vect
         }else ++structure_->hits;
         result.jacobian_W_per_m_K=structure_->zeroMatrix();
     }else entries.reserve(elements_.size()*9+boundaries_.size()*4);
+    }
     const auto add=[&](Index i,Index j,Real value){
         if(structure_)structure_->add(result.jacobian_W_per_m_K,cursor,i,j,value);
         else entries.emplace_back(i,j,value);
@@ -132,6 +137,7 @@ LatticeHeatAssembly LatticeHeatAssembler::assemble(const VectorXd& t, const Vect
         result.integrated_source_W_per_m += q[c]*e.area;
         for (int a=0; a<3; ++a) {
             result.residual_W_per_m[e.nodes[a]] += k*gradient[a]-q[c]*e.area/3;
+            ElectrothermalCostTimer fill(ElectrothermalCostProfile::HeatMatrixFill,timed);
             for (int b=0; b<3; ++b)
                 add(e.nodes[a],e.nodes[b],k*e.gradientIntegral(a,b)+dk*gradient[a]/3);
         }
@@ -143,9 +149,11 @@ LatticeHeatAssembly LatticeHeatAssembler::assemble(const VectorXd& t, const Vect
         result.residual_W_per_m[b.nodes[0]] += factor*(2*d0+d1);
         result.residual_W_per_m[b.nodes[1]] += factor*(d0+2*d1);
         result.outward_boundary_heat_W_per_m += 3*factor*(d0+d1);
+        ElectrothermalCostTimer fill(ElectrothermalCostProfile::HeatMatrixFill,timed);
         for (int i=0;i<2;++i) for (int j=0;j<2;++j)
             add(b.nodes[i],b.nodes[j],factor*(i==j?2:1));
     }
+    ElectrothermalCostTimer finish(ElectrothermalCostProfile::HeatMatrixFinish,timed);
     if(!structure_){result.jacobian_W_per_m_K.resize(t.size(),t.size());
         result.jacobian_W_per_m_K.setFromTriplets(entries.begin(),entries.end());}
     return result;

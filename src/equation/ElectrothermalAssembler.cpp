@@ -1,4 +1,5 @@
 #include "vela/equation/ElectrothermalAssembler.h"
+#include "vela/core/ElectrothermalCostProfile.h"
 #include "vela/discretization/ThermalSgCurrent.h"
 #include "vela/equation/LatticeBandEdgeWork.h"
 #include "vela/core/PhysicalConstants.h"
@@ -295,7 +296,8 @@ ElectrothermalAssembly ElectrothermalAssembler::assemble(const VectorXd& x,
         }
         for(const auto& [column,value]:dp){add(4*a+3,column,-.5*value);add(4*b+3,column,-.5*value);}
     }
-    const auto heat=heat_.assemble(t,VectorXd::Zero(mesh_.numCells()));
+    const auto heat=[&]{ResidualHeatCostScope cost(!buildJacobian);
+        return heat_.assemble(t,VectorXd::Zero(mesh_.numCells()));}();
     out.boundaryHeat_W_per_m=heat.outward_boundary_heat_W_per_m;
     for(Index i=0;i<n;++i)out.residual[4*i+3]+=heat.residual_W_per_m[i];
     for(int k=0;k<heat.jacobian_W_per_m_K.outerSize();++k)

@@ -6,8 +6,33 @@ evidence.
 
 ## Current References
 
+- [Shared Halley default integration, 2026-09-25](validation/templates_ldmos_halley_default_2026-09-25.md):
+  C++ and isothermal/electrothermal JSON defaults unified, explicit legacy retained.
+  Codespaces Release 858/858 CTest and seven full D0/G3/D5/D4 curves (217 points)
+  passed. Default D0 states match the qualified explicit Halley run exactly.
+
+- [Screening-root full D0 qualification and repeats, 2026-09-25](validation/templates_ldmos_screening_full_2026-09-25.md):
+  20 full curves / 620 exact points, 10 native joint checks and 744 state pairs
+  passed. Halley reduced aggregate wall time by 6.70% over three fresh
+  interleaved dual-gate rounds (5.68%-7.24% per round); all six gate pairs were
+  faster. Newton work is unchanged, with small assembly-count differences.
+  Evidence was retrieved; default was legacy in that experiment. The subsequent
+  shared-default integration above promotes Halley after full regression.
+
+- [Screening-root candidates on Codespaces, 2026-09-24](validation/templates_ldmos_screening_candidates_2026-09-24.md):
+  local main merged; Release 856/856 CTest and eight short D0 curves passed.
+  Safeguarded Newton/Halley/TOMS748 retain states and Newton work; one-round
+  paired wall reductions are 6.36%/7.18%/6.32%. Legacy was the default then;
+  full curves and repeated end-to-end qualification are tracked in the newer
+  2026-09-25 report above.
+
 - [Codespaces build environment](codespaces.md): container dependencies and
   PowerShell/Codex commands for remote builds, tests, and result retrieval.
+
+- [T470p electrothermal subcost measurements, 2026-09-24](validation/templates_ldmos_thermal_subcost_2026-09-24.md):
+  eight full D0 curves and four joint checks passed with identical states/work;
+  screening roots dominate the three measured candidates. Thermal scatter
+  requires explicit clock-bias qualification; diagnostic timers default off.
 
 - [T470p electrothermal gprof, 2026-09-24](validation/templates_ldmos_thermal_gprof_2026-09-24.md):
   latest default structure reuse, full D0 Release/gprof controls and original gates;
