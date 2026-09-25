@@ -85,9 +85,9 @@ The four-equation entry has a separate `reuse_jacobian_structure` option
 deck level (the deck wins). It retains a zero-valued coupled/thermal sparse
 pattern and checked scatter positions in the sweep preparation context. An
 enabled deck retains that context even when `reuse_static_preparation` is absent
-or explicitly `false`. To disable both structural and immutable-input reuse,
-set both options to `false`; disabling structure alone leaves the existing
-static-preparation setting in effect.
+or explicitly `false`. To disable all sweep-context caches, set `reuse_jacobian_structure`,
+`reuse_static_preparation`, and `reuse_linear_analysis` to `false`. Linear-analysis
+reuse also retains immutable preparation so its exact input identity can be checked.
 Exact topology/geometry, IALMob support, and constrained-row identities guard
 reuse; ordinary bias and unknown-temperature changes refill values. Contact
 row type changes rebuild the coupled pattern. Residuals, all physical values,
@@ -289,13 +289,32 @@ Unset, empty, or `1` retains the existing statistics; other values are rejected.
 The switch is read at solver construction and does not change factorization controls.
 Use it for paired end-to-end timing; gather detailed factor diagnostics separately.
 
-`electrothermal_linear_solver` selects `sparselu_colamd` (default),
-`sparselu_amd`, or `umfpack` for this four-equation service only. `umfpack`
+`electrothermal_linear_solver` selects `umfpack`, `sparselu_colamd`, or
+`sparselu_amd` for this four-equation service only. Omission prefers `umfpack`
+when compiled in, otherwise `sparselu_colamd`. `umfpack`
 requires a build with detected SuiteSparse UMFPACK; unavailable or unknown
 selections fail explicitly. Unless the explicit adaptive-Jacobian experiment is enabled,
 all choices repeat numerical factorization and reuse symbolic analysis only for identical compressed sparse indices when
 enabled. Backend changes can alter Newton trajectories through roundoff and
 require independent numerical and performance qualification.
+
+`reuse_linear_analysis` defaults to `true`. A sweep retains its direct solver
+across accepted points; a standalone point needs an explicit preparation context
+to share it. The point's `reuse_sparselu_symbolic` option now defaults to `true`
+and applies to all supported backends. Explicit `false` forces analysis on each
+factorization and prevents cross-point retention. Deck-level values for these
+options and `electrothermal_linear_solver` override the prepared point input.
+Reuse checks dimensions and every compressed sparse index, as well as the backend
+(including ordering) and immutable preparation identity. Changed coefficients
+always receive fresh numerical factors unless the separate adaptive-Jacobian
+experiment requests lagging. Failed/throwing solves or rejected sweep gates drop
+the linear context. Restart starts with a fresh context; no factors are serialized. The checkpoint
+records the effective linear policy and rejects a changed or missing policy,
+including on an already completed scan.
+`performance.symbolic_analyses` is a per-point delta, including separate tangent
+preparation, not a lifetime total. `linear_object_reused` reports object retention,
+not a guarantee of a symbolic hit when the matrix pattern changes.
+
 
 `diagnostic_density_update_iterations` is a nonnegative integer in the point
 input, default `0` (disabled). During at most this many initial coupled Newton

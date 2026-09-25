@@ -4,14 +4,18 @@
 #include <filesystem>
 #include <memory>
 namespace vela {
+namespace experimental { class ElectrothermalDirectSolver; }
 /// Sweep-local immutable preparation cache. Each point still owns its state,
-/// temperature preparation, neutral roots and nonlinear solver. Not thread-safe.
+/// temperature preparation, neutral roots and nonlinear state. Linear analysis may
+/// persist, but each Newton matrix is numerically refactorized. Not thread-safe.
 class ElectrothermalPreparationContext {
 public:
-    void clear() { prepared_.reset(); }
+    void clear() { prepared_.reset(); clearLinearContext(); }
+    void clearLinearContext() { linear_.reset(); }
 private:
     struct Impl;
     std::shared_ptr<Impl> prepared_;
+    std::shared_ptr<experimental::ElectrothermalDirectSolver> linear_;
     friend nlohmann::json solveElectrothermalPoint(const nlohmann::json&,
         std::ostream&, ElectrothermalPreparationContext*);
 };

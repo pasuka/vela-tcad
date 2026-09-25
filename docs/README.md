@@ -6,6 +6,10 @@ evidence.
 
 ## Current References
 
+- [Linked defaults and electrothermal cross-point linear reuse, 2026-09-25](validation/templates_ldmos_thermal_linear_reuse_2026-09-25.md):
+  unified production defaults, exact-pattern reuse and failure/restart invalidation;
+  UCRT64 Debug 858-test regression passed; full-curve timing remains unmeasured.
+
 - [Shared Halley default integration, 2026-09-25](validation/templates_ldmos_halley_default_2026-09-25.md):
   C++ and isothermal/electrothermal JSON defaults unified, explicit legacy retained.
   Codespaces Release 858/858 CTest and seven full D0/G3/D5/D4 curves (217 points)

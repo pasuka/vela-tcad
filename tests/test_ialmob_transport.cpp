@@ -69,6 +69,7 @@ TEST_CASE("Sweep preparation observes exact sources and never caches carrier sta
         cfg["boundaries"].push_back({{"node",i},{"kind",std::array{"psi","fn","fp","temperature"}[k]},{"value",v}});}
     for(auto e:std::array<std::array<int,2>,5>{{{0,1},{1,2},{0,2},{2,3},{0,3}}})
         cfg["edge_geometry"].push_back({{"nodes",e},{"poisson_F_per_m",1e-10},{"transport_weight",0.}});
+    const auto originalCfg=cfg;
     ElectrothermalPreparationContext context;std::ostringstream log;
     const auto compare=[&](bool hit){
         auto actual=solveElectrothermalPoint(cfg,log,&context),expected=solveElectrothermalPoint(cfg,log);
@@ -96,6 +97,42 @@ TEST_CASE("Sweep preparation observes exact sources and never caches carrier sta
     REQUIRE(std::filesystem::file_size(path)==size);compare(false);compare(true);
     {std::ofstream f(path);f<<"bad mesh";}
     CHECK_THROWS(solveElectrothermalPoint(cfg,log,&context));write();compare(true);
+    // Fresh point states, changing bias/temperature, one exact symbolic pattern.
+    cfg=originalCfg;cfg["diagnostic_newton_max_iterations"]=8;
+    std::vector<std::string> backends{"sparselu_colamd","sparselu_amd"};
+#if defined(VELA_HAS_UMFPACK)
+    backends.push_back("umfpack");
+#endif
+    context.clear();
+    for(const auto& backend:backends){
+        cfg["electrothermal_linear_solver"]=backend;
+        const auto checkPoint=[&](bool reused,unsigned analyses){
+            auto actual=solveElectrothermalPoint(cfg,log,&context);
+            auto expected=solveElectrothermalPoint(cfg,log);
+            REQUIRE(actual["diagnostic_stop"]=="diagnostic_scaled_residual");
+            REQUIRE(actual["performance"]["factorizations"].get<unsigned>()>0);
+            CHECK(actual["performance"]["linear_object_reused"]==reused);
+            CHECK(actual["performance"]["symbolic_analyses"]==analyses);
+            actual.erase("performance");expected.erase("performance");CHECK(actual==expected);
+        };
+        cfg["boundaries"][0]["value"]=.04;checkPoint(false,1);
+        cfg["boundaries"][0]["value"]=.06;
+        cfg["boundaries"][3]["value"]=301.;checkPoint(true,0);
+        cfg["reuse_linear_analysis"]=false;checkPoint(false,1);
+        cfg.erase("reuse_linear_analysis");checkPoint(false,1);checkPoint(true,0);
+        cfg["reuse_sparselu_symbolic"]=false;checkPoint(false,1);
+        cfg.erase("reuse_sparselu_symbolic");checkPoint(false,1);
+        cfg["edge_geometry"][0]["poisson_F_per_m"]=
+            cfg["edge_geometry"][0]["poisson_F_per_m"].get<double>()*1.1;
+        checkPoint(false,1);
+        cfg["diagnostic_newton_max_iterations"]=0;
+        CHECK(solveElectrothermalPoint(cfg,log,&context)["diagnostic_stop"]=="frozen_state");
+        cfg["diagnostic_newton_max_iterations"]=8;checkPoint(false,1);
+        auto bad=cfg;bad["boundaries"][0]["kind"]="invalid";
+        CHECK_THROWS(solveElectrothermalPoint(bad,log,&context));checkPoint(false,1);
+        context.clear();checkPoint(false,1);
+    }
+
 }
 namespace {
 struct Fixture {

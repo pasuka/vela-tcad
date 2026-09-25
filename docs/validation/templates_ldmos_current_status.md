@@ -2,6 +2,12 @@
 
 更新：2026-09-25。当前工作分支 `codex/templates-ldmos-phase-a`。
 
+新增 [Linked 默认配置及电热线性对象跨点复用](templates_ldmos_thermal_linear_reuse_2026-09-25.md)：
+linked 默认 UMFPACK/worker/跨点分析复用；四方程默认可用 UMFPACK，扫描上下文
+保留线性对象并核对精确结构，失败/拒绝失效，恢复检查有效线性策略。
+本机 UCRT64 Debug 完整 CTest 858/858、专项 Python 22/22 通过。
+本轮未重跑 D0 完整曲线及 Release 重复计时，不认领新的完整曲线性能资格。
+
 新增 [Halley 默认化集成复核](templates_ldmos_halley_default_2026-09-25.md)：
 C++、等温及电热配置入口统一默认 Halley，保留显式 legacy、保护及回退；
 Codespaces Release 完整 CTest 858/858、D0/G3/D5/D4 共7条长曲线217点通过。

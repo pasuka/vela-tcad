@@ -17,7 +17,14 @@ namespace vela::experimental {
 // matrix values are identical. Only exact compressed index arrays are reused.
 class ElectrothermalDirectSolver {
 public:
-    explicit ElectrothermalDirectSolver(std::string backend="sparselu_colamd"):backend_(std::move(backend)) {
+    static std::string defaultBackend() {
+#if defined(VELA_HAS_UMFPACK)
+        return "umfpack";
+#else
+        return "sparselu_colamd";
+#endif
+    }
+    explicit ElectrothermalDirectSolver(std::string backend=defaultBackend()):backend_(std::move(backend)) {
         if(backend_!="sparselu_colamd" && backend_!="sparselu_amd" && backend_!="umfpack")
             throw std::invalid_argument("Unknown electrothermal linear solver: "+backend_);
 #if !defined(VELA_HAS_UMFPACK)
@@ -30,10 +37,11 @@ public:
         // Eigen's UMFPACK adapter retains a reference to the input matrix for
         // iterative refinement during solve(), beyond this compute() call.
         matrix_=std::move(matrix);
-        const bool same=reuse && lu_ && rows_==matrix_.rows() && cols_==matrix_.cols()
+        const bool same=reuse && reusable_ && lu_ && rows_==matrix_.rows() && cols_==matrix_.cols()
             && inner_.size()==static_cast<std::size_t>(matrix_.nonZeros())
             && std::equal(outer_.begin(),outer_.end(),matrix_.outerIndexPtr())
             && std::equal(inner_.begin(),inner_.end(),matrix_.innerIndexPtr());
+        reusable_=false;
         if(!same){
             {ElectrothermalCostTimer timer(ElectrothermalCostProfile::SolverCreate,electrothermalCostProfile.mode==ElectrothermalCostProfile::Linear);
             lu_=makeSolver();}
@@ -45,9 +53,16 @@ public:
         }
         {ElectrothermalCostTimer timer(ElectrothermalCostProfile::Numeric,electrothermalCostProfile.mode==ElectrothermalCostProfile::Linear);
         lu_->factorize(matrix_);++factorizations_;}
+        reusable_=lu_->info()==Eigen::Success;
     }
     Eigen::ComputationInfo info() const {return lu_->info();}
-    VectorXd solve(const VectorXd& rhs) {return lu_->solve(rhs);}
+    VectorXd solve(const VectorXd& rhs) {
+        try {
+            VectorXd result=lu_->solve(rhs);
+            if(lu_->info()!=Eigen::Success || !result.allFinite())reusable_=false;
+            return result;
+        } catch(...) {reusable_=false;throw;}
+    }
     unsigned analyses() const {return analyses_;}
     unsigned factorizations() const {return factorizations_;}
 private:
@@ -78,6 +93,7 @@ private:
     Eigen::Index rows_=0,cols_=0;
     std::vector<SparseMatrixd::StorageIndex> outer_,inner_;
     unsigned analyses_=0,factorizations_=0;
+    bool reusable_=false;
 };
 using ElectrothermalSparseLU=ElectrothermalDirectSolver;
 

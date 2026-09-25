@@ -140,6 +140,14 @@ struct vela::ElectrothermalPreparationContext::Impl {
 };
 nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::ostream& progress,
     ElectrothermalPreparationContext* context) {
+        // Failed or throwing point requests must not leave reusable linear state.
+        struct LinearRequestGuard {
+            ElectrothermalPreparationContext* context;
+            bool accepted=false;
+            ~LinearRequestGuard(){if(context && !accepted)context->clearLinearContext();}
+        } linearGuard{context};
+        const bool reuseLinear=cfg.value("reuse_linear_analysis",true);
+        if(context && !reuseLinear)context->clearLinearContext();
         IalKernelProfilingScope ialProfileScope(cfg.value("diagnostic_ialmob_kernel_timing",false));
         ElectrothermalCostScope costScope(cfg.value("diagnostic_electrothermal_cost",std::string("off")));
         const auto preparationStart=PreparationClock::now();
@@ -150,6 +158,7 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
         const bool preparationHit=context && context->prepared_ && context->prepared_->identity==identity;
         auto prepared=preparationHit?context->prepared_:std::make_shared<Preparation>(cfg);
         if(context && !preparationHit) {
+            context->clearLinearContext();
             if(preparationIdentity(cfg)!=identity)throw std::runtime_error("Preparation inputs changed during construction");
             prepared->identity=std::move(identity);context->prepared_=prepared;
         }
@@ -357,7 +366,7 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
                 rows=rows.unaryExpr([](Real v){return 1./std::max(v,1e-100);});
                 for(int k=0;k<matrix.outerSize();++k)for(SparseMatrixd::InnerIterator it(matrix,k);it;++it)
                     it.valueRef()*=rows[it.row()]*columns[it.col()];
-                experimental::ElectrothermalDirectSolver tangentSolver(cfg.value("electrothermal_linear_solver",std::string("sparselu_colamd")));
+                experimental::ElectrothermalDirectSolver tangentSolver(cfg.value("electrothermal_linear_solver",experimental::ElectrothermalDirectSolver::defaultBackend()));
                 const auto factorStart=Clock::now();++factorizations;
                 tangentSolver.compute(matrix,false);factorizationSeconds+=seconds(factorStart);tangentAnalyses=tangentSolver.analyses();
                 if(tangentSolver.info()!=Eigen::Success)throw std::runtime_error("Tangent factorization failed");
@@ -523,10 +532,19 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
         const Real voltageUpdateLimit=cfg.value("diagnostic_voltage_update_limit_V",.2);
         if(!(voltageUpdateLimit>0. && std::isfinite(voltageUpdateLimit)))
             throw std::invalid_argument("Voltage update limit must be positive and finite");
-        const bool reuseSymbolic=cfg.value("reuse_sparselu_symbolic",false);
+        const bool reuseSymbolic=cfg.value("reuse_sparselu_symbolic",true);
         if(cfg.contains("diagnostic_stagnation_window") && !cfg.at("diagnostic_stagnation_window").is_number_unsigned())
             throw std::invalid_argument("Stagnation window must be a nonnegative integer");
-        experimental::ElectrothermalDirectSolver lu(cfg.value("electrothermal_linear_solver",std::string("sparselu_colamd")));
+        const auto linearBackend=cfg.value("electrothermal_linear_solver",experimental::ElectrothermalDirectSolver::defaultBackend());
+        const bool retainLinear=context && reuseLinear && reuseSymbolic;
+        if(context && (!retainLinear || (context->linear_ && context->linear_->backend()!=linearBackend)))
+            context->clearLinearContext();
+        const bool linearObjectReused=retainLinear && bool(context->linear_);
+        auto linear=linearObjectReused?context->linear_:
+            std::make_shared<experimental::ElectrothermalDirectSolver>(linearBackend);
+        if(retainLinear)context->linear_=linear;
+        auto& lu=*linear;
+        const auto analysesBefore=lu.analyses();
         experimental::ElectrothermalStagnationWatch stagnation(cfg.value("diagnostic_stagnation_window",0u));
         const bool residualRecovery=cfg.value("diagnostic_ngmres_recovery",false);
         if(residualRecovery && solveMode!="coupled")throw std::invalid_argument("NGMRES recovery requires coupled equations");
@@ -665,7 +683,7 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
                             if(regularized)operatorMatrix+=mass/pseudoTau;
                             for(int k=0;k<operatorMatrix.outerSize();++k)for(SparseMatrixd::InnerIterator it(operatorMatrix,k);it;++it)
                                 it.valueRef()*=rows[it.row()]*columns[it.col()];
-                            experimental::ElectrothermalDirectSolver auditSolver(cfg.value("electrothermal_linear_solver",std::string("sparselu_colamd")));
+                            experimental::ElectrothermalDirectSolver auditSolver(cfg.value("electrothermal_linear_solver",experimental::ElectrothermalDirectSolver::defaultBackend()));
                             auditSolver.compute(operatorMatrix,false);
                             json record={{"frozen_mobility_derivatives",bool(frozen&1)},{"frozen_recombination_derivatives",bool(frozen&2)},
                                 {"regularized",regularized},{"steady_residual_exact",true}};
@@ -1184,8 +1202,12 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
         if(profiling)result["performance"]["preparation_counts"]=assembler.preparationCounts();
         if(profiling)result["performance"]["neutral_root_counts"]=assembler.neutralRootCounts();
         if(profiling)result["performance"]["neutral_root_iteration_counts"]=assembler.neutralRootIterationCounts();
-        if(profiling)result["performance"]["symbolic_analyses"]=lu.analyses()+tangentAnalyses;
-        if(profiling)result["performance"]["linear_solver"]=lu.backend();
+        if(profiling)result["performance"]["symbolic_analyses"]=lu.analyses()-analysesBefore+tangentAnalyses;
+        if(profiling){
+            result["performance"]["linear_solver"]=lu.backend();
+            result["performance"]["linear_analysis_reuse_enabled"]=reuseLinear;
+            result["performance"]["linear_object_reused"]=linearObjectReused;
+        }
         if(profiling && (densityIterations || localProjection || pseudoTransient)) {
             result["performance"]["density_coordinate_evaluation_seconds"]=densityEvaluationSeconds;
             result["performance"]["density_coordinate_evaluations"]=densityEvaluations;
@@ -1204,5 +1226,6 @@ nlohmann::json vela::solveElectrothermalPoint(const nlohmann::json& cfg, std::os
             result["jacobian_audit"]={{"step",step},{"action",list(a.jacobian*direction)},
                 {"central_difference",list((plus.residual-minus.residual)/(2.*step))}};
         }
+        linearGuard.accepted=stop=="diagnostic_scaled_residual";
         return result;
 }

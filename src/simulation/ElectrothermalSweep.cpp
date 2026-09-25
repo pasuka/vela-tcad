@@ -1,5 +1,6 @@
 #include "vela/simulation/ElectrothermalSimulation.h"
 #include "vela/solver/ElectrothermalStepControl.h"
+#include "vela/solver/ElectrothermalIterationControl.h"
 #include "vela/solver/ElectrothermalLocalPrediction.h"
 #include "vela/io/ElectrothermalState.h"
 #include "vela/io/StateIdentity.h"
@@ -195,6 +196,13 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
     double origin=input.value("potential_origin_V",0.);
     for(const auto& b:input.at("boundaries")) if(drain.contains(b.at("node"))&&b.at("kind")=="neutral_contact"&&b.at("value").get<double>()+origin!=0.)
         throw std::invalid_argument("Initial drain bias must be zero");
+    const auto option=[&](const char* name,const json& fallback) {
+        return deck.contains(name)?deck.at(name):input.value(name,fallback);
+    };
+    const json linearPolicy={
+        {"electrothermal_linear_solver",option("electrothermal_linear_solver",experimental::ElectrothermalDirectSolver::defaultBackend())},
+        {"reuse_linear_analysis",option("reuse_linear_analysis",true)},
+        {"reuse_sparselu_symbolic",option("reuse_sparselu_symbolic",true)}};
     json ledger,state=input; double current=0.,step=initial;std::size_t index=0;
     if(deck.value("resume",false)) {
         ledger=read(root/"ledger.json");
@@ -202,6 +210,8 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
            ledger.value("initialization",json::object())!=initialization ||
            ledger.at("input_file_sha256")!=archiveMetadata.at("input_file_sha256"))
             throw std::invalid_argument("Restart input, mesh or sweep differs from checkpoint");
+        if(ledger.value("linear_policy",json::object())!=linearPolicy)
+            throw std::invalid_argument("Restart linear solver policy differs from checkpoint");
         // Validate every history dependency, including completed checkpoints.
         for(const auto& entry:ledger.at("runs")) if(entry.at("gate").value("pass_gate",false))
             readState(fs::path(entry.at("directory").get<std::string>())/"output.json");
@@ -216,12 +226,14 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
         fs::create_directories(root);saveState(root/"input_snapshot.json",input);save(root/"mesh_snapshot.json",mesh);
         ledger={{"schema","vela.electrothermal_dc_sweep.v1"},{"scope","Explicit audited silicon electrothermal DC; reference acceptance is scored separately"},
             {"input_file_sha256",archiveMetadata.at("input_file_sha256")},
-            {"input_file",inputPath.string()},{"sweep",control},{"initialization",initialization},{"status","running"},{"runs",json::array()},
+            {"linear_policy",linearPolicy},{"input_file",inputPath.string()},{"sweep",control},{"initialization",initialization},{"status","running"},{"runs",json::array()},
             {"exact_points",json::array()},{"accepted_bias_V",0.},{"accepted_result",nullptr},{"next_step_V",step},{"wall_seconds",0.}};
     }
     ElectrothermalPreparationContext preparation;
     if(deck.contains("reuse_jacobian_structure"))input["reuse_jacobian_structure"]=deck.at("reuse_jacobian_structure").get<bool>();
-    auto* preparationContext=(deck.value("reuse_static_preparation",false) || input.value("reuse_jacobian_structure",true))?&preparation:nullptr;
+    for(const auto* key:{"reuse_linear_analysis","reuse_sparselu_symbolic","electrothermal_linear_solver"})
+        if(deck.contains(key))input[key]=deck.at(key);
+    auto* preparationContext=(deck.value("reuse_static_preparation",false) || input.value("reuse_jacobian_structure",true) || input.value("reuse_linear_analysis",true))?&preparation:nullptr;
     const double priorWall=ledger.value("wall_seconds",0.);
     auto checkpoint=[&] {
         ledger["next_step_V"]=step;
@@ -262,7 +274,7 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
             initRuns.push_back({{"gate_V",voltage},{"solve_mode",cfg["solve_mode"]},{"result",(directory/"output.json").string()},
                 {"gate",acceptance},{"newton_updates",result.at("newton_updates")}});
             ledger["initialization_runs"]=initRuns;checkpoint();
-            if(acceptance.at("pass_gate").get<bool>()) {state=result;return true;}return false;
+            if(acceptance.at("pass_gate").get<bool>()) {state=result;return true;}preparation.clearLinearContext();return false;
         };
         if(!solveInitial(0.,true,true)||!solveInitial(0.,false,false)) {
             ledger["status"]="initialization_failed";checkpoint();return ledger;
@@ -385,6 +397,7 @@ json runElectrothermalSweep(const json& deck,const fs::path& configFile) {
             if(stepPolicy=="actual_step")step=experimental::electrothermalActualStep(step,truncatedStep?actualStep:step,updates,growth,minimum,maximum);
             else if(updates<=growth) step=std::min(maximum,step*1.5);else if(updates>20) step=std::max(minimum,step*.5);
         } else {
+            preparation.clearLinearContext();
             if(stepPolicy=="fixed_targets"){ledger["status"]="failed";checkpoint();return ledger;}
             step=(target-current)*.5;
             if(target==0.||step<minimum) {ledger["status"]="failed";checkpoint();return ledger;}
