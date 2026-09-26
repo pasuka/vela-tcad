@@ -25,7 +25,7 @@
     "sentaurus_version": {"type": "string", "description": "Version banner from the _des.log header, e.g. T-2022.03-SP2 (0.7745337)."},
     "deck_matches_repository": {
       "type": "boolean",
-      "description": "True when every producer cmd hash equals the corresponding reference_tcad/<case>/source file. False cases are fixtures or partial references and are excluded from the plan section 8 acceptance."
+      "description": "True when every producer cmd equals the corresponding reference_tcad/<case>/source file after stripping comments and collapsing whitespace (plan section 12.4 check 2); byte equality is not required because Workbench re-indents decks. False cases (different physics or settings, substituted placeholders, transposed mesh) are fixtures or partial references and are excluded from the plan section 8 acceptance."
     },
     "origin": {
       "type": "object",

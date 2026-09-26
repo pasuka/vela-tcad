@@ -114,7 +114,7 @@
       "compare": "findings",
       "expected_exit_code": 1,
       "coverage": ["Thermode{} -> E105", "System(...) -> E109", "Method/SubMethod ignored"],
-      "reference_artifacts": "VM has run02 results (deck differs by Workbench substitution); fixture only"
+      "reference_artifacts": "VM run02 results usable (deck differs from the VM copy only by trailing whitespace); fixture only while Thermode/System are fail-closed"
     }
   ],
   "parameter_files": [

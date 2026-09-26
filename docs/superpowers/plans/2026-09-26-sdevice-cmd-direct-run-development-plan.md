@@ -1007,7 +1007,7 @@ WP11 的并发测试矩阵：同目录 4 个不同 cmd 并行；4 个目录各 1
 | 编号 | 事项 | 状态 |
 | --- | --- | --- |
 | A-1 | VM 归档目录布局（盘点文档第 5 节）；用户要求确认布局后再复制 | 待确认 |
-| A-2 | `File{Parameter}` 缺失：pn2d/schottky/genius_bjt 主验收 deck 原文都无 `Parameter=`，按决定 4 为 `E301`；验收使用追加 `Parameter="models.par"` 的副本 | 待确认 |
+| A-2 | `File{Parameter}` 缺失：pn2d/schottky/genius_bjt 主验收 deck 原文都无 `Parameter=`，按决定 4 为 `E301`；验收使用追加 `Parameter="models.par"` 的副本 | 已确认（2026-09-26） |
 | A-3 | `pn2d_iv`/`pn2d_bv`/bvmethods 的 Sentaurus 重跑时机（用户决定：暂不重跑） | 延后 |
 | A-4 | 多段扫描 `.plt` 的 `time` 语义与电流符号因子的证据文件 | WP8 回填 |
 
