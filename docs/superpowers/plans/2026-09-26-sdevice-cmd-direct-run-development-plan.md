@@ -1006,7 +1006,7 @@ WP11 的并发测试矩阵：同目录 4 个不同 cmd 并行；4 个目录各 1
 
 | 编号 | 事项 | 状态 |
 | --- | --- | --- |
-| A-1 | VM 归档目录布局（盘点文档第 5 节）；用户要求确认布局后再复制 | 待确认 |
+| A-1 | VM 归档目录布局（盘点文档第 5 节）；首批 7 个案例已复制到 `/home/tcad/vela_reference_artifacts/<case>/v1/`，manifest 入库 | 已确认并执行（2026-09-26） |
 | A-2 | `File{Parameter}` 缺失：pn2d/schottky/genius_bjt 主验收 deck 原文都无 `Parameter=`，按决定 4 为 `E301`；验收使用追加 `Parameter="models.par"` 的副本 | 已确认（2026-09-26） |
 | A-3 | `pn2d_iv`/`pn2d_bv`/bvmethods 的 Sentaurus 重跑时机（用户决定：暂不重跑） | 延后 |
 | A-4 | 多段扫描 `.plt` 的 `time` 语义与电流符号因子的证据文件 | WP8 回填 |
@@ -1018,7 +1018,7 @@ WP0 交付（2026-09-26）：`schemas/vela.{sentaurus_execution_ir.v2,mesh_quali
 `scripts/vela_sdevice/schema_validator.py`（纯标准库 draft-07 子集校验器，供随包 Python 使用）、
 `tests/fixtures/sdevice/`（7 个完整 golden + 3 个 findings golden，索引 `fixtures.json`）、
 [`docs/sentaurus_sdevice_workflow.md`](../../sentaurus_sdevice_workflow.md)（契约与消息目录）、
-CTest `sdevice_contracts`。VM 目录与首份 manifest 依 A-1 延后。
+CTest `sdevice_contracts`。VM 目录与首批 manifest（7 个案例，`reference_tcad/<case>/artifact_manifest.json`）已于 A-1 确认后完成。
 
 ## 附录 B：`.vtu` 输出字段（TDR 数据名）与 `Plot{}` 别名映射
 

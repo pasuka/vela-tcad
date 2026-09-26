@@ -409,6 +409,54 @@ class SchemaValidatorTest(unittest.TestCase):
             sv.collect_errors({"type": "object", "patternProperties": {}}, {})
 
 
+class ArtifactManifestTest(unittest.TestCase):
+    """reference_tcad/<case>/artifact_manifest.json files registered against the VM archive."""
+
+    CATEGORY_BY_DIR = {"source": "A", "plt": "B", "mesh": "C", "tdr": "D", "log": "E"}
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.schema = sv.load_schema(C7)
+        cls.manifests = sorted((REPO / "reference_tcad").glob("*/artifact_manifest.json"))
+
+    def test_first_batch_is_registered(self) -> None:
+        cases = {path.parent.name for path in self.manifests}
+        self.assertTrue({"pn2d_sentaurus2018", "schottky_charon_sentaurus2018",
+                         "genius_bjt_sentaurus2022", "transportmodels_sentaurus2022"} <= cases, cases)
+
+    def test_manifests_validate_and_are_consistent(self) -> None:
+        for path in self.manifests:
+            manifest = load_json(path)
+            case = path.parent.name
+            with self.subTest(case=case):
+                self.assertEqual([], sv.collect_errors(self.schema, manifest))
+                self.assertEqual(case, manifest["case"])
+                paths = [a["path"] for a in manifest["artifacts"]]
+                self.assertEqual(len(paths), len(set(paths)), "duplicate artifact paths")
+                archived_sources = {a["path"][len("source/"):] for a in manifest["artifacts"]
+                                    if a["path"].startswith("source/")}
+                repo_source = REPO / "reference_tcad" / case / "source"
+                for artifact in manifest["artifacts"]:
+                    top = artifact["path"].split("/", 1)[0]
+                    self.assertEqual(self.CATEGORY_BY_DIR[top], artifact["category"], artifact["path"])
+                    producer = artifact["producer"]
+                    if producer["tool"] == "repository":
+                        name = artifact["path"].split("/")[-1]
+                        repo_file = repo_source / name
+                        self.assertTrue(repo_file.is_file(), f"{artifact['path']} claims a repository origin")
+                        self.assertEqual(normalised_sha256(repo_file), artifact["sha256"], artifact["path"])
+                    if producer["tool"] in {"sdevice", "sde", "snmesh", "sprocess"}:
+                        self.assertIn("cmd", producer, artifact["path"])
+                        variant = artifact["path"].split("/")[1] if artifact["path"].count("/") == 2 else None
+                        expected = f"{variant}/{producer['cmd']}" if variant else producer["cmd"]
+                        self.assertIn(expected, archived_sources, f"{artifact['path']}: producer cmd not archived")
+                    if producer["tool"] == "sdevice":
+                        self.assertIn("cmd_sha256", producer, artifact["path"])
+                        if manifest["deck_matches_repository"]:
+                            self.assertTrue((repo_source / producer["cmd"]).is_file(),
+                                            f"{case}: {producer['cmd']} missing from the repository source")
+
+
 class MessageCatalogueTest(unittest.TestCase):
     def test_catalogue_ids_are_unique_and_consistent(self) -> None:
         rows = []
