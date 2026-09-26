@@ -39,10 +39,10 @@ VM 根目录：`/root/sentaurus_runs/vela_oracle_2022`（记 R）、
 | schottky `schottky_n_des.cmd` | `R/schottky_t2022_refresh_20260818` | `schottky_n_msh.tdr` | `schottky_n_des.tdr` | `forward_schottky_n_iv_des.plt`（+ 初始 `schottky_n_iv_des.plt`） | `schottky_n_des.log` | ✓ des `2d27fafd`、sde `c381e21d` | 可直接归档 |
 | genius_bjt `bjt_m0_des.cmd` | `R/genius_bjt_wp0_wp2_20260902/run_v2` | `bjt_msh.tdr`（coarse） | `bjt_m0_des.tdr` + `bjt_m0_{equilibrium,vbe070}_des.tdr` + `bjt_m0_vce_000N_des.tdr` | `bjt_m0_{base,collector}_bjt_m0_des.plt` | `bjt_m0_des.log` | ✓ `417f2914`；sde `2cd887d2` | 可归档 |
 | genius_bjt `bjt_m1_des.cmd` | `R/genius_bjt_refined_multibias_20260904/source`（同 `H/genius_bjt_mesh_sensitivity_20260903/local_refined/source`） | `bjt_msh.tdr`（local_refined） | 同上模式 | 同上模式 | `bjt_m1_des.log` | ✓ `1cfb8cbe`；`bjt_sde_local_refined.cmd` `1c3b0f0d`（run_v2 内的 m1 是旧版 `40d4321a`，勿用） | 可归档 |
-| bvmethods 6 个 deck | `R/bvmethods_t2022_refresh_20260818`（Workbench 节点 n3–n8） | `n1_msh.tdr` | `n3..n8_des.tdr` | `n3..n8_des.plt` | `n3..n8_des.log` | ✗ 预处理后的 `pp3–pp8_des.cmd` 与仓库整理版不同：aba_poisson `BreakAtIonIntegral(1 1.1)` vs 仓库 `(3 1.)`、Plot 字段名不同；external_resistor `Band2Band(Model=NonLocalPath)`/`Avalanche(GradQuasiFermi)`/`AbsVal=1.3e-3` vs 仓库 `E2`/`Eparallel`/`1.443e-3`；参数文件 `pp*_des.par`（489 B）≠ `models.par`（547 B） | 若要 deck 一致的参考，需按仓库 deck 重跑（含用 `bvmethods_nmos_sde.cmd` 重建网格） |
+| bvmethods 6 个 deck | `R/bvmethods_t2022_refresh_20260818`（Workbench 节点 n3–n8） | `n1_msh.tdr` | `n3..n8_des.tdr` | `n3..n8_des.plt` | `n3..n8_des.log` | ✗ **物理/设置不同**：预处理后的 `pp3–pp8_des.cmd` 与仓库整理版比，aba_poisson `BreakAtIonIntegral(1 1.1)` vs 仓库 `(3 1.)`（击穿判据不同 → 扫描终点不同）、Plot 字段名不同；external_resistor `Band2Band(Model=NonLocalPath)`/`Avalanche(GradQuasiFermi)`/`AbsVal=1.3e-3` vs 仓库 `E2`/`Eparallel`/`1.443e-3`（隧穿模型、雪崩驱动力、停止电流三处物理/判据不同）。参数文件 `pp*_des.par` 与 `models.par` 只有格式差异（数值相同）。网格：VM `n1_msh.tdr` 由 `pp1_dvs.cmd` 生成，仓库 `bvmethods_nmos_sde.cmd` 是同一器件的**坐标轴转置重写**（VM x=深度、仓库 y=深度，`PolySilicon`→`PolySi`，`Tox 20e-4`→`0.002`），几何等价但节点坐标不同 | VM 结果是“另一组设置”的结果，不能作为仓库 deck 的验收基准；若要 deck 一致的参考，需按仓库 deck 重跑（含用 `bvmethods_nmos_sde.cmd` 重建网格） |
 | bvmethods `full_physics_ablation_sdevice.cmd` | — | — | ✗ | ✗ | ✗ | 仓库文件是模板（`SRH_MODEL`/`ENORMAL_MODEL`/`SRH_PARAMETER_FILE` 占位符） | 需先物化 4 个 deck；用户决定暂缓 |
-| singledevice | `R/singledevice_t2022_refresh_20260818` | `n2_msh.tdr` | `singledevice_des.tdr`、`n2_{Lin,Sat}_des.tdr` | `IdVgs{Lin,Sat}_singledevice.plt` | `singledevice.log_des.log` | ✗（VM 版为已预处理的 CRLF 文件，4 576 B vs 仓库 4 426 B 含 `@…@`） | 仅作“预处理指令应被拒绝”夹具 |
-| transportmodels pp6/pp7/pp12/pp13 | `R/transportmodels_dd_dg_t2022_20260818_run02` | `n1_msh.tdr` | `n6/n7/n12/n13_des.tdr` | `IdVgs_n6/n7_des.plt`、`IdVds_n12/n13_des.plt` | `n6..n13_des.log` | ✗（VM 版 2 301 B vs 仓库 2 265 B 等） | fail-closed 夹具（`Thermode{}`、`System(...)`），无需重跑 |
+| singledevice | `R/singledevice_t2022_refresh_20260818` | `n2_msh.tdr` | `singledevice_des.tdr`、`n2_{Lin,Sat}_des.tdr` | `IdVgs{Lin,Sat}_singledevice.plt` | `singledevice.log_des.log` | ✗（形式）：VM 版是手工替换占位符后的 CRLF 文件（`@tdr@`→`n2_msh.tdr`、`n@node@`→`n2` 等），另有 Plot 名 `ImpactIonization`→仓库 `AvalancheGeneration`；物理与 Solve 序列相同 | 仓库版本本身会被 E101/E102 拒绝，只作“预处理指令应被拒绝”夹具；VM 结果仅供人工参考 |
+| transportmodels pp6/pp7/pp12/pp13 | `R/transportmodels_dd_dg_t2022_20260818_run02` | `n1_msh.tdr` | `n6/n7/n12/n13_des.tdr` | `IdVgs_n6/n7_des.plt`、`IdVds_n12/n13_des.plt` | `n6..n13_des.log` | ✓（归一化后）：VM 版 2 301 B vs 仓库 2 265 B 的差异**只是行尾空白与末尾空行**（`pp6` 逐行 diff 验证），剥除空白后相同 | 可作参考；当前因 `Thermode{}`、`System(...)` 为 fail-closed 夹具，无需重跑 |
 | templates_ldmos | `R/templates_ldmos/phase01_original_20260826_02/work` | `n1_fps.tdr`（Sentaurus Process 输出，9.5 MB） | `n2/n4/n6_des.tdr` | `IdVg_n2_des.plt`、`IdVd_Vg{1,2}_n4_des.plt`、`n6_des.plt` | `n2/n4/n6_des.log` | 仓库**没有**任何 sdevice cmd（只有 JSON 契约与 `.h5` 种子） | fail-closed 夹具需先把 `IdVg.cmd/IdVd.cmd/BVdss.cmd` 从 VM 拷回 |
 
 附带事实：
@@ -98,12 +98,17 @@ VM 根目录：`/root/sentaurus_runs/vela_oracle_2022`（记 R）、
 结构摘要。deck 与仓库不一致的案例（bvmethods、singledevice、transportmodels）在 manifest 中
 标注 `deck_matches_repository: false`，只作夹具或“部分参考”，不进入第 8 节一致性验收。
 
+“deck 一致”的判定规则与计划第 12.4 节第 2 条相同：剥除注释、折叠空白后逐 token 比较，而不是
+字节相等（TDR/日志的哈希才按字节）。按此规则：pn2d_0v、schottky、genius_bjt m0/m1、
+transportmodels 一致；bvmethods（物理与判据不同、网格坐标转置）与 singledevice（占位符替换、
+Plot 名）不一致；templates_ldmos 仓库无 deck 可比。
+
 ## 6. 待决项（登记到计划附录 A）
 
 | 编号 | 事项 | 影响 | 建议 |
 | --- | --- | --- | --- |
 | A-1 | 归档布局（第 5 节）与是否复制 `*.out`/`*.log`（含主机名等标识） | WP0 VM 部分、WP9 manifest | 采用第 5 节布局；日志复制到 VM 归档目录（不进仓库），manifest 只存哈希与提取的版本/退出信息 |
-| A-2 | `File{Parameter}` 缺失的处理：现决定 4 为致命 `E301`，但 5/6 个主验收 deck 原文无 `Parameter` | WP1 golden、WP5 门 4、WP10 验收 | 保持 `E301`，并让 `vela device -P` 生成的 `models.par` 成为标准补齐动作；验收夹具用追加了 `Parameter="models.par"` 的副本（物理不变：该文件就是 Sentaurus 默认参数导出） |
+| A-2 | `File{Parameter}` 缺失的处理：现决定 4 为致命 `E301`，但 5/6 个主验收 deck 原文无 `Parameter` | WP1 golden、WP5 门 4、WP10 验收 | **已确认（2026-09-26）**：保持 `E301`；验收夹具用追加了 `Parameter="models.par"` 的副本（物理不变：该文件就是 Sentaurus 默认参数导出） |
 | A-3 | `pn2d_iv`/`pn2d_bv`/bvmethods 重跑时机 | WP10 曲线与场量验收、决定 20 的符号因子（预期取自 `pn2d_iv.plt`） | 在 WP5 可运行 `--check` 之后、WP10 之前的一个批次内完成（约 4 次 sdevice + 1 次 sde/snmesh） |
 | A-4 | `.plt` 多段扫描的 `time` 语义（每段重置或累加）需含两个 `Quasistationary` 的参考 `.plt` | C6 输出契约 | 现成证据：`bjt_m0/m1_{base,collector}_*.plt`（两段各自文件，因 `NewCurrentPrefix` 切换）与 transportmodels `IdVgs_n6_des.plt`（`init_` 段被 `System("rm ...")` 删除）；在 WP8 读取这些文件确定 |
 
