@@ -1,0 +1,136 @@
+{
+  "schema": "vela.sentaurus_execution_ir.v2",
+  "source": {
+    "path": "pn2d_0v_sdevice.cmd",
+    "sha256": "0e699077ae5514ad5b90295dd48e85ddaddcca94df2e3caf9cadfd2f4005f84d",
+    "line_count": 87,
+    "syntax_version": "T-2022.03"
+  },
+  "verdict": {
+    "accepted": false,
+    "exit_code": 3,
+    "fatal_ids": ["E301"]
+  },
+  "preprocessor_findings": [],
+  "errors": [
+    {
+      "id": "E301",
+      "severity": "fatal",
+      "line": 1,
+      "section": "File",
+      "text": "File {",
+      "message": "File{Parameter} is not declared: vela device requires a parameter file (add Parameter=\"<name>.par\" or export the defaults with 'vela device -P')"
+    }
+  ],
+  "warnings": [
+    {
+      "id": "W102",
+      "severity": "warning",
+      "line": 73,
+      "section": "Math",
+      "text": "NotDamped=100",
+      "message": "Math keyword 'NotDamped' is recorded and ignored (no Vela equivalent)"
+    }
+  ],
+  "files": {
+    "grid": {"raw": "pn2d_msh.tdr", "resolved": "pn2d_msh.tdr", "kind": "tdr", "line": 2},
+    "parameter": null,
+    "current": {"raw": "pn2d_0v.plt", "resolved": "pn2d_0v.plt", "line": 4},
+    "plot": {"raw": "pn2d_0v_des.tdr", "resolved": "pn2d_0v_des.tdr", "vela": "pn2d_0v_des.vtu", "line": 3},
+    "output": {"raw": "pn2d_0v.log", "resolved": "pn2d_0v.log_des.log", "line": 5},
+    "ignored": []
+  },
+  "electrodes": [
+    {"name": "Anode", "voltage_V": 0.0, "attributes": {}, "line": 9},
+    {"name": "Cathode", "voltage_V": 0.0, "attributes": {}, "line": 10}
+  ],
+  "physics": {
+    "temperature_K": 300.0,
+    "global": [
+      {"model": "Mobility", "args": [{"name": "DopingDependence"}], "line": 17},
+      {"model": "Recombination", "args": [{"name": "SRH"}], "line": 23},
+      {"model": "EffectiveIntrinsicDensity", "args": [{"name": "OldSlotboom"}], "line": 29}
+    ],
+    "scoped": [],
+    "effective": [
+      {"key": "EffectiveIntrinsicDensity.OldSlotboom", "parameters": {}, "status": "supported", "vela": "solver.bandgap_narrowing=old_slotboom"},
+      {"key": "Mobility.DopingDependence", "parameters": {}, "status": "supported", "vela": "solver.mobility.model=masetti"},
+      {"key": "Recombination.SRH", "parameters": {}, "status": "supported", "vela": "solver.recombination+=srh"}
+    ],
+    "fixed_charges": []
+  },
+  "plot": {
+    "explicit": false,
+    "fields": [
+      {"name": "Potential", "data_name": "ElectrostaticPotential", "component": "scalar", "line": 38},
+      {"name": "ElectricField", "data_name": "ElectricField", "component": "scalar", "line": 39},
+      {"name": "eDensity", "data_name": "eDensity", "component": "scalar", "line": 43},
+      {"name": "hDensity", "data_name": "hDensity", "component": "scalar", "line": 44},
+      {"name": "eQuasiFermi", "data_name": "eQuasiFermiPotential", "component": "scalar", "line": 48},
+      {"name": "hQuasiFermi", "data_name": "hQuasiFermiPotential", "component": "scalar", "line": 49},
+      {"name": "eCurrent", "data_name": "eCurrentDensity", "component": "scalar", "line": 53},
+      {"name": "hCurrent", "data_name": "hCurrentDensity", "component": "scalar", "line": 54},
+      {"name": "TotalCurrent", "data_name": "TotalCurrentDensity", "component": "scalar", "line": 55},
+      {"name": "Doping", "data_name": "DopingConcentration", "component": "scalar", "line": 59},
+      {"name": "DonorConcentration", "data_name": "DonorConcentration", "component": "scalar", "line": 60},
+      {"name": "AcceptorConcentration", "data_name": "AcceptorConcentration", "component": "scalar", "line": 61},
+      {"name": "SRHRecombination", "data_name": "srhRecombination", "component": "scalar", "line": 65}
+    ]
+  },
+  "current_plot": {"entries": []},
+  "math": {
+    "iterations": 50,
+    "digits": 5,
+    "rel_err_control": true,
+    "err_ref_electron_cm3": null,
+    "err_ref_hole_cm3": null,
+    "extrapolate": true,
+    "derivatives": true,
+    "aval_derivatives": true,
+    "compute_ionization_integrals": false,
+    "break_at_ion_integral": null,
+    "break_criteria": [],
+    "exit_on_failure": false,
+    "number_of_threads": 1,
+    "ignored": [
+      {"keyword": "NotDamped", "value": "100", "line": 73, "finding_id": "W102"}
+    ]
+  },
+  "solve": {
+    "statements": [
+      {"kind": "coupled", "line": 80, "equations": ["Poisson"], "iterations": 100},
+      {"kind": "coupled", "line": 84, "equations": ["Poisson", "Electron", "Hole"], "iterations": 100}
+    ]
+  },
+  "stages": [
+    {
+      "index": 0,
+      "kind": "initial",
+      "statement_index": 0,
+      "equations": ["Poisson"],
+      "iterations": 100,
+      "current_prefix": "",
+      "outputs": {"current_file": "pn2d_0v.plt", "plot_files": [], "current_plot_times": null},
+      "depends_on": [],
+      "line": 80
+    },
+    {
+      "index": 1,
+      "kind": "initial",
+      "statement_index": 1,
+      "equations": ["Poisson", "Electron", "Hole"],
+      "iterations": 100,
+      "current_prefix": "",
+      "outputs": {"current_file": "pn2d_0v.plt", "plot_files": [], "current_plot_times": null},
+      "depends_on": [0],
+      "line": 84
+    }
+  ],
+  "analysis": {
+    "kind": "equilibrium",
+    "reason": "R1: no Quasistationary statement",
+    "sweep_contacts": [],
+    "final_contact": null,
+    "final_voltage": null
+  }
+}

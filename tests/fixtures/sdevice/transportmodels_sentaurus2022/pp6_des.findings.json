@@ -1,0 +1,19 @@
+{
+  "schema": "vela.sdevice_fixture_findings.v1",
+  "source": {
+    "path": "pp6_des.cmd",
+    "sha256": "179b4c47b70f36a648969d1e90b3c490c81f49ba452f736afccf7932ed4ee7de",
+    "line_count": 108
+  },
+  "verdict": {"accepted": false, "exit_code": 1, "fatal_ids": ["E105", "E109"]},
+  "preprocessor_findings": [],
+  "errors": [
+    {"id": "E105", "line": 24, "text": "Thermode{"},
+    {"id": "E109", "line": 107, "text": "System(\"rm init_n6_des.plt\")"}
+  ],
+  "notes": [
+    "Workbench-preprocessed TransportModels deck (drift-diffusion IdVgs node). Its Physics set (Fermi, OldSlotboom, DopingDep, e/hHighFieldsaturation(GradQuasiFermi), Enormal, SRH(DopingDep TempDependence)) is entirely within the supported list; the only blockers are the Thermode{} section and the System(...) shell command.",
+    "Thermode{} is inert here because no Temperature equation is solved; the plan nevertheless rejects it in stage 1 (section 4.6). Downgrading an inert Thermode{} to a warning is a recorded follow-up decision, not part of WP0.",
+    "System(...) executes a shell command in sdevice; vela device never runs shell commands from a deck (E109)."
+  ]
+}

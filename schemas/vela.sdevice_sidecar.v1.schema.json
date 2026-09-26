@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.sdevice_sidecar.v1",
+  "title": "Vela sdevice sidecar override file v1 (contract C10)",
+  "description": "Optional <stem>.vela.json placed next to <stem>_des.cmd. It carries Vela-only numerical options that the sdevice command language cannot express (plan section 9, decision 23). Only the whitelisted top-level keys are allowed; electrodes, physics models, sweep goals and file names can never be changed here. The orchestrator deep-merges the sidecar into every generated stage deck after emission (objects merge key by key, arrays and scalars replace) and logs every replaced key with W207. The merged deck must still validate against configs/schema/vela-simulation.schema.json (E409 otherwise).",
+  "type": "object",
+  "required": ["schema"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "vela.sdevice_sidecar.v1"},
+    "description": {"type": "string"},
+    "apply_to": {
+      "type": "array",
+      "description": "Stage plan indices the overrides apply to; absent or empty means every stage.",
+      "items": {"type": "integer", "minimum": 0}
+    },
+    "solver": {
+      "type": "object",
+      "description": "Merged into deck.solver. Physics model selections are rejected: the emitter owns mobility/recombination/impact_ionization/bandgap_narrowing/carrier_statistics model choices.",
+      "additionalProperties": true,
+      "not": {
+        "anyOf": [
+          {"required": ["mobility"]},
+          {"required": ["recombination"]},
+          {"required": ["impact_ionization"]},
+          {"required": ["band_to_band"]},
+          {"required": ["bandgap_narrowing"]},
+          {"required": ["carrier_statistics"]},
+          {"required": ["electron_quantum_potential"]},
+          {"required": ["temperature_K"]}
+        ]
+      }
+    },
+    "mesh_geometry": {
+      "type": "object",
+      "description": "Merged into deck.mesh_geometry (node_volume_policy, require_non_obtuse, material_support_policy, ...).",
+      "additionalProperties": true
+    },
+    "discretization": {
+      "type": "object",
+      "description": "Merged into deck.discretization (poisson_charge_volume_policy, current support profile, ...).",
+      "additionalProperties": true
+    },
+    "sweep": {
+      "type": "object",
+      "description": "Only sweep.diagnostics may be overridden; contact, start/stop/step, goals and output names belong to the cmd.",
+      "required": ["diagnostics"],
+      "additionalProperties": false,
+      "properties": {
+        "diagnostics": {"type": "object", "additionalProperties": true}
+      }
+    },
+    "runtime_log": {
+      "type": "object",
+      "description": "Merged into deck.runtime_log; only the profile may be changed (the file and append mode are fixed by the orchestrator).",
+      "required": ["profile"],
+      "additionalProperties": false,
+      "properties": {
+        "profile": {"enum": ["minimal", "default", "debug"]}
+      }
+    }
+  }
+}

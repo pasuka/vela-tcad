@@ -249,6 +249,12 @@ evidence.
 - [Sentaurus VMware SSH workflow](sentaurus_vm_ssh_workflow.md): Host-only
   VMware networking, legacy CentOS SSH setup, and remote Sentaurus run/copy
   commands for the local Sentaurus 2018 VM.
+- [SDevice cmd direct-run workflow](sentaurus_sdevice_workflow.md): frozen
+  `vela device` contracts (execution IR v2, mesh qualification, stage plan,
+  artifact manifest, sidecar), CLI/exit codes, output naming and the message
+  catalogue; fixtures under `tests/fixtures/sdevice/`. Reference-artifact
+  inventory and pending archive decisions:
+  [2026-09-26 inventory](validation/sdevice_reference_artifact_inventory_2026-09-26.md).
 - [Poisson unit-scaling notes](development_poisson_unit_scaling.md): developer
   notes for the scaled Poisson assembly path used by
   `scaling.mode = "unit_scaling"`.

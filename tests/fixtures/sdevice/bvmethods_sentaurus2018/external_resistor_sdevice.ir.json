@@ -1,0 +1,182 @@
+{
+  "schema": "vela.sentaurus_execution_ir.v2",
+  "source": {
+    "path": "external_resistor_sdevice.cmd",
+    "sha256": "1c71f2bb8844ec9dff00c12cd8e680b53cf6328a3d4059006c87caae627717c2",
+    "line_count": 55,
+    "syntax_version": "T-2022.03"
+  },
+  "verdict": {
+    "accepted": true,
+    "exit_code": 0,
+    "fatal_ids": []
+  },
+  "preprocessor_findings": [],
+  "errors": [],
+  "warnings": [
+    {
+      "id": "W112",
+      "severity": "warning",
+      "line": 12,
+      "section": "Electrode",
+      "text": "Resistor=1e7",
+      "message": "Electrode attribute 'Resistor' accepted as an alias of 'Resist' (Table 206)"
+    },
+    {
+      "id": "W102",
+      "severity": "warning",
+      "line": 38,
+      "section": "Math",
+      "text": "Notdamped=100",
+      "message": "Math keyword 'Notdamped' is recorded and ignored (no Vela equivalent)"
+    },
+    {
+      "id": "W102",
+      "severity": "warning",
+      "line": 44,
+      "section": "Math",
+      "text": "Transient=BE",
+      "message": "Math keyword 'Transient' is recorded and ignored (no Vela equivalent)"
+    }
+  ],
+  "files": {
+    "grid": {"raw": "bvmethods_nmos_msh.tdr", "resolved": "bvmethods_nmos_msh.tdr", "kind": "tdr", "line": 4},
+    "parameter": {"raw": "models.par", "resolved": "models.par", "keyword": "Parameter", "line": 6},
+    "current": {"raw": "external_resistor_des.plt", "resolved": "external_resistor_des.plt", "line": 7},
+    "plot": {"raw": "external_resistor_des.tdr", "resolved": "external_resistor_des.tdr", "vela": "external_resistor_des.vtu", "line": 5},
+    "output": {"raw": "external_resistor_des.log", "resolved": "external_resistor_des.log", "line": 8},
+    "ignored": []
+  },
+  "electrodes": [
+    {"name": "drain", "voltage_V": 0.0, "attributes": {"resist_ohm_um": 10000000.0}, "line": 12},
+    {"name": "source", "voltage_V": 0.0, "attributes": {}, "line": 13},
+    {"name": "gate", "voltage_V": 0.0, "attributes": {"barrier_V": -0.55}, "line": 14},
+    {"name": "substrate", "voltage_V": 0.0, "attributes": {}, "line": 15}
+  ],
+  "physics": {
+    "temperature_K": 300.0,
+    "global": [
+      {"model": "EffectiveIntrinsicDensity", "args": [{"name": "OldSlotboom"}], "line": 19},
+      {"model": "Mobility", "args": [{"name": "DopingDep"}, {"name": "HighFieldsaturation", "args": [{"name": "GradQuasiFermi"}]}, {"name": "Enormal"}], "line": 20},
+      {"model": "Recombination", "args": [{"name": "SRH", "args": [{"name": "DopingDep"}]}, {"name": "Band2Band", "args": [{"name": "E2"}]}, {"name": "Avalanche", "args": [{"name": "Eparallel"}]}], "line": 21},
+      {"model": "Fermi", "args": [], "line": 22}
+    ],
+    "scoped": [],
+    "effective": [
+      {"key": "EffectiveIntrinsicDensity.OldSlotboom", "parameters": {}, "status": "supported", "vela": "solver.bandgap_narrowing=old_slotboom"},
+      {"key": "Fermi", "parameters": {}, "status": "supported", "vela": "solver.carrier_statistics.model=fermi_dirac"},
+      {"key": "Mobility.DopingDependence", "parameters": {}, "status": "supported", "vela": "solver.mobility.model=masetti"},
+      {"key": "Mobility.Enormal", "parameters": {}, "status": "supported", "vela": "solver.mobility.model+=_lombardi"},
+      {"key": "Mobility.HighFieldSaturation", "parameters": {"driving_force": "GradQuasiFermi"}, "status": "supported", "vela": "solver.mobility.model+=_field; solver.mobility.high_field_driving_force=quasi_fermi_gradient"},
+      {"key": "Recombination.Avalanche", "parameters": {"driving_force": "Eparallel"}, "status": "supported", "vela": "solver.impact_ionization.model=van_overstraeten; solver.impact_ionization.driving_force=electric_field_parallel"},
+      {"key": "Recombination.Band2Band", "parameters": {"model": "E2"}, "status": "supported", "vela": "solver.band_to_band.model=e2"},
+      {"key": "Recombination.SRH", "parameters": {"doping_dependence": true}, "status": "supported", "vela": "solver.recombination+=srh; solver.srh_doping_dependence=true"}
+    ],
+    "fixed_charges": []
+  },
+  "plot": {
+    "explicit": false,
+    "fields": [
+      {"name": "eDensity", "data_name": "eDensity", "component": "scalar", "line": 26},
+      {"name": "hDensity", "data_name": "hDensity", "component": "scalar", "line": 26},
+      {"name": "TotalCurrent", "data_name": "TotalCurrentDensity", "component": "vector", "line": 27},
+      {"name": "eCurrent", "data_name": "eCurrentDensity", "component": "vector", "line": 27},
+      {"name": "hCurrent", "data_name": "hCurrentDensity", "component": "vector", "line": 27},
+      {"name": "ElectricField", "data_name": "ElectricField", "component": "vector", "line": 28},
+      {"name": "Potential", "data_name": "ElectrostaticPotential", "component": "scalar", "line": 28},
+      {"name": "SpaceCharge", "data_name": "SpaceCharge", "component": "scalar", "line": 28},
+      {"name": "Doping", "data_name": "DopingConcentration", "component": "scalar", "line": 29},
+      {"name": "SRH", "data_name": "srhRecombination", "component": "scalar", "line": 30},
+      {"name": "Band2Band", "data_name": "Band2BandGeneration", "component": "scalar", "line": 30},
+      {"name": "AvalancheGeneration", "data_name": "AvalancheGeneration", "component": "scalar", "line": 31},
+      {"name": "eAvalancheGeneration", "data_name": "eAvalancheGeneration", "component": "scalar", "line": 31},
+      {"name": "hAvalancheGeneration", "data_name": "hAvalancheGeneration", "component": "scalar", "line": 31},
+      {"name": "eIonIntegral", "data_name": "eIonIntegral", "component": "scalar", "line": 32},
+      {"name": "hIonIntegral", "data_name": "hIonIntegral", "component": "scalar", "line": 32},
+      {"name": "MeanIonIntegral", "data_name": "MeanIonIntegral", "component": "scalar", "line": 32},
+      {"name": "eAlphaAvalanche", "data_name": "eAlphaAvalanche", "component": "scalar", "line": 32},
+      {"name": "hAlphaAvalanche", "data_name": "hAlphaAvalanche", "component": "scalar", "line": 32}
+    ]
+  },
+  "current_plot": {"entries": []},
+  "math": {
+    "iterations": 20,
+    "digits": 5,
+    "rel_err_control": true,
+    "err_ref_electron_cm3": 10000000000.0,
+    "err_ref_hole_cm3": 10000000000.0,
+    "extrapolate": true,
+    "derivatives": true,
+    "aval_derivatives": true,
+    "compute_ionization_integrals": false,
+    "break_at_ion_integral": null,
+    "break_criteria": [
+      {"kind": "Current", "contact": "drain", "abs_val_A_per_um": 0.001443, "min_val_A_per_um": null, "max_val_A_per_um": null, "line": 43}
+    ],
+    "exit_on_failure": false,
+    "number_of_threads": 1,
+    "ignored": [
+      {"keyword": "Notdamped", "value": "100", "line": 38, "finding_id": "W102"},
+      {"keyword": "Transient", "value": "BE", "line": 44, "finding_id": "W102"}
+    ]
+  },
+  "solve": {
+    "statements": [
+      {"kind": "coupled", "line": 48, "equations": ["Poisson"], "iterations": 100},
+      {"kind": "coupled", "line": 49, "equations": ["Poisson", "Electron", "Hole"], "iterations": null},
+      {
+        "kind": "quasistationary",
+        "line": 50,
+        "goal": {"contact": "drain", "voltage_V": 100000.0},
+        "t_control": {"initial_step": 1e-07, "min_step": 1e-10, "max_step": 0.025, "increment": 1.41, "decrement": null, "do_zero": false},
+        "body": [
+          {"kind": "coupled", "line": 54, "equations": ["Poisson", "Electron", "Hole"], "iterations": null}
+        ]
+      }
+    ]
+  },
+  "stages": [
+    {
+      "index": 0,
+      "kind": "initial",
+      "statement_index": 0,
+      "equations": ["Poisson"],
+      "iterations": 100,
+      "current_prefix": "",
+      "outputs": {"current_file": "external_resistor_des.plt", "plot_files": [], "current_plot_times": null},
+      "depends_on": [],
+      "line": 48
+    },
+    {
+      "index": 1,
+      "kind": "initial",
+      "statement_index": 1,
+      "equations": ["Poisson", "Electron", "Hole"],
+      "iterations": null,
+      "current_prefix": "",
+      "outputs": {"current_file": "external_resistor_des.plt", "plot_files": [], "current_plot_times": null},
+      "depends_on": [0],
+      "line": 49
+    },
+    {
+      "index": 2,
+      "kind": "sweep",
+      "statement_index": 2,
+      "equations": ["Poisson", "Electron", "Hole"],
+      "iterations": null,
+      "goal": {"contact": "drain", "voltage_V": 100000.0},
+      "t_control": {"initial_step": 1e-07, "min_step": 1e-10, "max_step": 0.025, "increment": 1.41, "decrement": null, "do_zero": false},
+      "current_prefix": "",
+      "outputs": {"current_file": "external_resistor_des.plt", "plot_files": [], "current_plot_times": null},
+      "depends_on": [1],
+      "line": 50
+    }
+  ],
+  "analysis": {
+    "kind": "bv",
+    "reason": "R2: one Quasistationary with a voltage goal and an avalanche model, ionization integral or current break criterion",
+    "sweep_contacts": ["drain"],
+    "final_contact": "drain",
+    "final_voltage": 100000.0
+  }
+}

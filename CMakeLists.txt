@@ -1391,6 +1391,13 @@ set_tests_properties(sentaurus_parameter_map PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sentaurus_parameter_map)
 
+add_test(NAME sdevice_contracts
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sdevice_contracts)
+set_tests_properties(sdevice_contracts PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_contracts)
+
 add_test(NAME sentaurus_mesh_builder
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_sentaurus_mesh_builder)
