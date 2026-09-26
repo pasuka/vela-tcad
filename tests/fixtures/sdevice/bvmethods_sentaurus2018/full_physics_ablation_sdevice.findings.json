@@ -1,0 +1,19 @@
+{
+  "schema": "vela.sdevice_fixture_findings.v1",
+  "source": {
+    "path": "full_physics_ablation_sdevice.cmd",
+    "sha256": "7a792768da51aefc49fd27e65250aaecc29eafee6bb7f91104bd4637a223d5cc",
+    "line_count": 68
+  },
+  "verdict": {"accepted": false, "exit_code": 1, "fatal_ids": ["E107"]},
+  "preprocessor_findings": [],
+  "errors": [
+    {"id": "E107", "line": 22, "text": "ENORMAL_MODEL"},
+    {"id": "E107", "line": 24, "text": "SRH_MODEL"}
+  ],
+  "notes": [
+    "The repository file is a template: SRH_PARAMETER_FILE, ENORMAL_MODEL and SRH_MODEL are placeholders that a materialisation step replaces before Sentaurus can run it. The parser must report them as unknown Physics tokens, not as Workbench placeholders (they are not delimited by '@').",
+    "Parameter=\"SRH_PARAMETER_FILE\" resolves to SRH_PARAMETER_FILE.par (no '.' in the base name); its existence is checked at gate 4, not by the parser.",
+    "Set(\"drain\" mode current) and Goal{Current=} are supported constructs and must not appear in errors[]. CurrentPlot{AvalancheGeneration(Integrate(Semiconductor))} is ignored with W106."
+  ]
+}

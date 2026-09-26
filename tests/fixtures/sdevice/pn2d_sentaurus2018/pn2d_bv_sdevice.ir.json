@@ -1,0 +1,192 @@
+{
+  "schema": "vela.sentaurus_execution_ir.v2",
+  "source": {
+    "path": "pn2d_bv_sdevice.cmd",
+    "sha256": "711953f06ce9404f2b58d217e052f713df692de13c3557883be5cbc59ac46162",
+    "line_count": 100,
+    "syntax_version": "T-2022.03"
+  },
+  "verdict": {
+    "accepted": false,
+    "exit_code": 3,
+    "fatal_ids": ["E301"]
+  },
+  "preprocessor_findings": [],
+  "errors": [
+    {
+      "id": "E301",
+      "severity": "fatal",
+      "line": 1,
+      "section": "File",
+      "text": "File {",
+      "message": "File{Parameter} is not declared: vela device requires a parameter file (add Parameter=\"<name>.par\" or export the defaults with 'vela device -P')"
+    }
+  ],
+  "warnings": [
+    {
+      "id": "W102",
+      "severity": "warning",
+      "line": 80,
+      "section": "Math",
+      "text": "NotDamped=100",
+      "message": "Math keyword 'NotDamped' is recorded and ignored (no Vela equivalent)"
+    },
+    {
+      "id": "W102",
+      "severity": "warning",
+      "line": 81,
+      "section": "Math",
+      "text": "Method=Blocked",
+      "message": "Math keyword 'Method' is recorded and ignored (no Vela equivalent)"
+    }
+  ],
+  "files": {
+    "grid": {"raw": "pn2d_msh.tdr", "resolved": "pn2d_msh.tdr", "kind": "tdr", "line": 2},
+    "parameter": null,
+    "current": {"raw": "pn2d_bv.plt", "resolved": "pn2d_bv.plt", "line": 4},
+    "plot": {"raw": "pn2d_bv_des.tdr", "resolved": "pn2d_bv_des.tdr", "vela": "pn2d_bv_des.vtu", "line": 3},
+    "output": {"raw": "pn2d_bv.log", "resolved": "pn2d_bv.log_des.log", "line": 5},
+    "ignored": []
+  },
+  "electrodes": [
+    {"name": "Anode", "voltage_V": 0.0, "attributes": {}, "line": 9},
+    {"name": "Cathode", "voltage_V": 0.0, "attributes": {}, "line": 10}
+  ],
+  "physics": {
+    "temperature_K": 300.0,
+    "global": [
+      {"model": "Mobility", "args": [{"name": "DopingDependence"}, {"name": "HighFieldSaturation"}], "line": 14},
+      {"model": "Recombination", "args": [{"name": "SRH"}, {"name": "Avalanche", "args": [{"name": "VanOverstraeten"}]}], "line": 19},
+      {"model": "EffectiveIntrinsicDensity", "args": [{"name": "OldSlotboom"}], "line": 24}
+    ],
+    "scoped": [],
+    "effective": [
+      {"key": "EffectiveIntrinsicDensity.OldSlotboom", "parameters": {}, "status": "supported", "vela": "solver.bandgap_narrowing=old_slotboom"},
+      {"key": "Mobility.DopingDependence", "parameters": {}, "status": "supported", "vela": "solver.mobility.model=masetti"},
+      {"key": "Mobility.HighFieldSaturation", "parameters": {}, "status": "supported", "vela": "solver.mobility.model+=_field"},
+      {"key": "Recombination.Avalanche", "parameters": {"model": "VanOverstraeten"}, "status": "supported", "vela": "solver.impact_ionization.model=van_overstraeten"},
+      {"key": "Recombination.SRH", "parameters": {}, "status": "supported", "vela": "solver.recombination+=srh"}
+    ],
+    "fixed_charges": []
+  },
+  "plot": {
+    "explicit": false,
+    "fields": [
+      {"name": "Potential", "data_name": "ElectrostaticPotential", "component": "scalar", "line": 33},
+      {"name": "eQuasiFermi", "data_name": "eQuasiFermiPotential", "component": "scalar", "line": 34},
+      {"name": "hQuasiFermi", "data_name": "hQuasiFermiPotential", "component": "scalar", "line": 35},
+      {"name": "eDensity", "data_name": "eDensity", "component": "scalar", "line": 39},
+      {"name": "hDensity", "data_name": "hDensity", "component": "scalar", "line": 40},
+      {"name": "ElectricField", "data_name": "ElectricField", "component": "scalar", "line": 44},
+      {"name": "ElectricField", "data_name": "ElectricField", "component": "vector", "line": 45},
+      {"name": "eCurrent", "data_name": "eCurrentDensity", "component": "scalar", "line": 49},
+      {"name": "hCurrent", "data_name": "hCurrentDensity", "component": "scalar", "line": 50},
+      {"name": "TotalCurrent", "data_name": "TotalCurrentDensity", "component": "scalar", "line": 51},
+      {"name": "eCurrentDensity", "data_name": "eCurrentDensity", "component": "vector", "line": 52},
+      {"name": "hCurrentDensity", "data_name": "hCurrentDensity", "component": "vector", "line": 53},
+      {"name": "TotalCurrentDensity", "data_name": "TotalCurrentDensity", "component": "vector", "line": 54},
+      {"name": "Doping", "data_name": "DopingConcentration", "component": "scalar", "line": 58},
+      {"name": "DonorConcentration", "data_name": "DonorConcentration", "component": "scalar", "line": 59},
+      {"name": "AcceptorConcentration", "data_name": "AcceptorConcentration", "component": "scalar", "line": 60},
+      {"name": "SpaceCharge", "data_name": "SpaceCharge", "component": "scalar", "line": 61},
+      {"name": "SRHRecombination", "data_name": "srhRecombination", "component": "scalar", "line": 65},
+      {"name": "eAlphaAvalanche", "data_name": "eAlphaAvalanche", "component": "scalar", "line": 66},
+      {"name": "hAlphaAvalanche", "data_name": "hAlphaAvalanche", "component": "scalar", "line": 67},
+      {"name": "AvalancheGeneration", "data_name": "AvalancheGeneration", "component": "scalar", "line": 68},
+      {"name": "eMobility", "data_name": "eMobility", "component": "scalar", "line": 72},
+      {"name": "hMobility", "data_name": "hMobility", "component": "scalar", "line": 73}
+    ]
+  },
+  "current_plot": {"entries": []},
+  "math": {
+    "iterations": 80,
+    "digits": 5,
+    "rel_err_control": true,
+    "err_ref_electron_cm3": null,
+    "err_ref_hole_cm3": null,
+    "extrapolate": true,
+    "derivatives": true,
+    "aval_derivatives": true,
+    "compute_ionization_integrals": false,
+    "break_at_ion_integral": null,
+    "break_criteria": [],
+    "exit_on_failure": false,
+    "number_of_threads": 1,
+    "ignored": [
+      {"keyword": "NotDamped", "value": "100", "line": 80, "finding_id": "W102"},
+      {"keyword": "Method", "value": "Blocked", "line": 81, "finding_id": "W102"}
+    ]
+  },
+  "solve": {
+    "statements": [
+      {"kind": "coupled", "line": 85, "equations": ["Poisson"], "iterations": 100},
+      {"kind": "coupled", "line": 86, "equations": ["Poisson", "Electron", "Hole"], "iterations": 100},
+      {
+        "kind": "quasistationary",
+        "line": 88,
+        "goal": {"contact": "Anode", "voltage_V": -20.0},
+        "t_control": {"initial_step": 0.0001, "min_step": 1e-10, "max_step": 0.05, "increment": 1.2, "decrement": 2.0, "do_zero": false},
+        "body": [
+          {"kind": "coupled", "line": 96, "equations": ["Poisson", "Electron", "Hole"], "iterations": null},
+          {"kind": "plot", "line": 98, "file_prefix": "pn2d_bv_multibias", "time": {"range": [0.0, 1.0], "intervals": 400}, "no_overwrite": true}
+        ]
+      }
+    ]
+  },
+  "stages": [
+    {
+      "index": 0,
+      "kind": "initial",
+      "statement_index": 0,
+      "equations": ["Poisson"],
+      "iterations": 100,
+      "current_prefix": "",
+      "outputs": {"current_file": "pn2d_bv.plt", "plot_files": [], "current_plot_times": null},
+      "depends_on": [],
+      "line": 85
+    },
+    {
+      "index": 1,
+      "kind": "initial",
+      "statement_index": 1,
+      "equations": ["Poisson", "Electron", "Hole"],
+      "iterations": 100,
+      "current_prefix": "",
+      "outputs": {"current_file": "pn2d_bv.plt", "plot_files": [], "current_plot_times": null},
+      "depends_on": [0],
+      "line": 86
+    },
+    {
+      "index": 2,
+      "kind": "sweep",
+      "statement_index": 2,
+      "equations": ["Poisson", "Electron", "Hole"],
+      "iterations": null,
+      "goal": {"contact": "Anode", "voltage_V": -20.0},
+      "t_control": {"initial_step": 0.0001, "min_step": 1e-10, "max_step": 0.05, "increment": 1.2, "decrement": 2.0, "do_zero": false},
+      "current_prefix": "",
+      "outputs": {
+        "current_file": "pn2d_bv.plt",
+        "plot_files": [
+          {
+            "file_prefix": "pn2d_bv_multibias",
+            "time": {"range": [0.0, 1.0], "intervals": 400},
+            "no_overwrite": true,
+            "sentaurus_pattern": "pn2d_bv_multibias_NNNN_des.tdr",
+            "vela_pattern": "pn2d_bv_multibias_NNNN_des.vtu"
+          }
+        ],
+        "current_plot_times": null
+      },
+      "depends_on": [1],
+      "line": 88
+    }
+  ],
+  "analysis": {
+    "kind": "bv",
+    "reason": "R2: one Quasistationary with a voltage goal and an avalanche model, ionization integral or current break criterion",
+    "sweep_contacts": ["Anode"],
+    "final_contact": "Anode",
+    "final_voltage": -20.0
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "vela.sdevice_fixture_findings.v1",
+  "source": {
+    "path": "singledevice_sdevice.cmd",
+    "sha256": "138da5df58a044caefc6cbacc5536a22ea0f4176f0585faacf440218bddfd1ab",
+    "line_count": 160
+  },
+  "verdict": {"accepted": false, "exit_code": 1, "fatal_ids": ["E101", "E102"]},
+  "preprocessor_findings": [
+    {"id": "E101", "line": 1, "text": "#setdep"},
+    {"id": "E102", "line": 1, "text": "@previous@"},
+    {"id": "E102", "line": 4, "text": "@tdr@"},
+    {"id": "E102", "line": 5, "text": "@tdrdat@"},
+    {"id": "E102", "line": 6, "text": "@parameter@"},
+    {"id": "E102", "line": 7, "text": "@plot@"},
+    {"id": "E102", "line": 8, "text": "@log@"},
+    {"id": "E102", "line": 107, "text": "@node@"},
+    {"id": "E102", "line": 122, "text": "@node@"},
+    {"id": "E102", "line": 131, "text": "@node@"},
+    {"id": "E102", "line": 133, "text": "@node@"},
+    {"id": "E102", "line": 151, "text": "@node@"}
+  ],
+  "notes": [
+    "Lines 19-23, 40-51, 88, 124, 126 and 154-158 start with '#' followed by a word that is not a Workbench directive; they are ordinary comments and must not be reported.",
+    "The Save/Load, Plot(-Loadable ...) and eQuantumPotential constructs are not evaluated because preprocessor findings stop the run at gate 1."
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.reference_artifact_manifest.v1",
+  "title": "Vela reference artifact manifest v1 (contract C7)",
+  "description": "Per-case inventory of Sentaurus reference artifacts that stay outside the public repository (plan section 12). The manifest is committed as reference_tcad/<case>/artifact_manifest.json and an identical copy lives next to the archived files. Hashes describe the archived copies only: TDR files embed timestamps, so a rerun of the same deck produces different hashes. Reproducibility is expressed by producer.cmd_sha256 + sentaurus_version + the structural summary, not by the artifact hash.",
+  "type": "object",
+  "required": ["schema", "case", "version", "created_utc", "store", "sentaurus_version", "deck_matches_repository", "artifacts"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "vela.reference_artifact_manifest.v1"},
+    "case": {"type": "string", "pattern": "^[a-z0-9_]+$", "description": "reference_tcad case directory name."},
+    "version": {"type": "string", "pattern": "^v[0-9]+$", "description": "Archive version sub-directory (v1, v2, ...). Registered files are immutable; regenerated artifacts go to a new version."},
+    "created_utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "store": {
+      "type": "object",
+      "required": ["kind", "root"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"enum": ["ssh", "content_addressed", "github_release", "local"]},
+        "host": {"type": "string", "description": "ssh: alias from the user's ssh config (sentaurus)."},
+        "root": {"type": "string", "description": "ssh/local: absolute root directory; content_addressed: URL or path of the sha256/ tree; github_release: owner/repo."},
+        "tag": {"type": "string", "description": "github_release only."}
+      }
+    },
+    "sentaurus_version": {"type": "string", "description": "Version banner from the _des.log header, e.g. T-2022.03-SP2 (0.7745337)."},
+    "deck_matches_repository": {
+      "type": "boolean",
+      "description": "True when every producer cmd hash equals the corresponding reference_tcad/<case>/source file. False cases are fixtures or partial references and are excluded from the plan section 8 acceptance."
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "vm_run_directory": {"type": "string", "description": "Directory the files were copied from (provenance only, may no longer exist)."},
+        "note": {"type": "string"}
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/definitions/artifact"}
+    }
+  },
+  "definitions": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifact": {
+      "type": "object",
+      "required": ["path", "category", "sha256", "bytes", "producer", "verify"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^(source|mesh|plt|tdr|log)/[A-Za-z0-9._/-]+$",
+          "description": "Relative path inside <root>/<case>/<version>/; the first component is the category directory."
+        },
+        "category": {"enum": ["A", "B", "C", "D", "E"], "description": "A source, B curve (.plt), C mesh, D field (_des.tdr), E log (plan table 12.1)."},
+        "sha256": {"$ref": "#/definitions/sha256"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "producer": {
+          "type": "object",
+          "required": ["tool"],
+          "additionalProperties": false,
+          "properties": {
+            "tool": {"enum": ["sde", "snmesh", "sdevice", "sprocess", "repository", "other"]},
+            "cmd": {"type": "string", "description": "Command file (basename) that produced the artifact."},
+            "cmd_sha256": {"$ref": "#/definitions/sha256", "description": "LF-normalised hash of that command file (same rule as execution IR source.sha256)."},
+            "parameter_file": {"type": "string"},
+            "parameter_sha256": {"$ref": "#/definitions/sha256"},
+            "run_directory": {"type": "string"},
+            "finished_utc": {"type": "string"}
+          }
+        },
+        "summary": {
+          "type": "object",
+          "description": "Structural summary extracted at registration; keys depend on the category.",
+          "additionalProperties": false,
+          "properties": {
+            "nodes": {"type": "integer", "minimum": 0},
+            "elements": {"type": "integer", "minimum": 0},
+            "contacts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "node_count"],
+                "additionalProperties": false,
+                "properties": {"name": {"type": "string"}, "node_count": {"type": "integer", "minimum": 0}}
+              }
+            },
+            "materials": {"type": "array", "items": {"type": "string"}},
+            "datasets": {"type": "array", "items": {"type": "string"}, "description": ".plt data group names or TDR field names."},
+            "rows": {"type": "integer", "minimum": 0},
+            "first_bias_V": {"type": "number"},
+            "last_bias_V": {"type": "number"},
+            "goal_reached": {"type": "boolean"},
+            "bias_V": {"type": "object", "additionalProperties": {"type": "number"}, "description": "_des.tdr: electrode voltages of the plotted state when known."},
+            "exit_status": {"type": "string", "description": "_des.log: final line class (Good Bye / error text)."}
+          }
+        },
+        "verify": {
+          "type": "object",
+          "required": ["status"],
+          "additionalProperties": false,
+          "properties": {
+            "status": {"enum": ["registered", "verified", "mismatch", "unavailable"]},
+            "checked_utc": {"type": "string"},
+            "note": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}

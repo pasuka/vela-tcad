@@ -486,7 +486,8 @@ Vela `unit_scaling` 的 `*_A_per_um` 列一致。数据来源：主 CSV（扫描
 | `reference_tcad/bvmethods_sentaurus2018/source/full_physics_ablation_sdevice.cmd` | `Set(... mode current)` + `Goal{Current=}`、`CurrentPlot{Integrate}` |
 | `reference_tcad/schottky_charon_sentaurus2018/source/schottky_n_des.cmd` | Schottky 电极属性、`ExitOnFailure`、`NewCurrentPrefix`、`*` 注释 |
 | `reference_tcad/singledevice_sentaurus2018/source/singledevice_sdevice.cmd` | 多段扫描 + `Save/Load` + 预处理指令（应被拒绝） |
-| `reference_tcad/templates_ldmos_sentaurus2022`、`transportmodels_sentaurus2022`、`genius_bjt_sentaurus2022` 的 sdevice cmd | 2022 语法；IALMob/Thermodynamic 等 fail-closed 用例 |
+| `reference_tcad/genius_bjt_sentaurus2022/source/bjt_m0_des.cmd`（`bjt_m1` 同构） | 2022 语法正例：裸 `Poisson`、顶层 `Plot(FilePrefix)`、两段 `Quasistationary`、`Time=(a; b; c)` 列表、`Current/Output` 无扩展名 |
+| `reference_tcad/templates_ldmos_sentaurus2022`（cmd 仅在 VM）、`transportmodels_sentaurus2022/source/pp6_des.cmd` | 2022 语法；IALMob/Thermodynamic、`Thermode{}`、`System(...)` 等 fail-closed 用例 |
 
 ## 9. 架构与落点
 
@@ -1000,10 +1001,24 @@ WP11 的并发测试矩阵：同目录 4 个不同 cmd 并行；4 个目录各 1
 
 ## 附录 A：待确认事项
 
-截至 2026-09-26 无待确认事项（决定 1–24 均已确认）。后续新增的待决项在此登记。
+截至 2026-09-26 决定 1–24 均已确认。WP0 盘点后登记以下待决项（详见
+[产物盘点](../../validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节）：
 
-执行前需要的输入（非决策）：VM 上首批验收案例产物的现存路径（供 WP0 归档）；若希望
-使用不同于 `/home/tcad/vela_reference_artifacts/` 的根目录，在 WP0 指定。
+| 编号 | 事项 | 状态 |
+| --- | --- | --- |
+| A-1 | VM 归档目录布局（盘点文档第 5 节）；用户要求确认布局后再复制 | 待确认 |
+| A-2 | `File{Parameter}` 缺失：pn2d/schottky/genius_bjt 主验收 deck 原文都无 `Parameter=`，按决定 4 为 `E301`；验收使用追加 `Parameter="models.par"` 的副本 | 待确认 |
+| A-3 | `pn2d_iv`/`pn2d_bv`/bvmethods 的 Sentaurus 重跑时机（用户决定：暂不重跑） | 延后 |
+| A-4 | 多段扫描 `.plt` 的 `time` 语义与电流符号因子的证据文件 | WP8 回填 |
+
+执行前需要的输入（非决策）：VM 上首批验收案例产物的现存路径已盘点完毕；若希望
+使用不同于 `/home/tcad/vela_reference_artifacts/` 的根目录，在确认 A-1 时指定。
+
+WP0 交付（2026-09-26）：`schemas/vela.{sentaurus_execution_ir.v2,mesh_qualification.v1,stage_plan.v1,reference_artifact_manifest.v1,sdevice_sidecar.v1}.schema.json`、
+`scripts/vela_sdevice/schema_validator.py`（纯标准库 draft-07 子集校验器，供随包 Python 使用）、
+`tests/fixtures/sdevice/`（7 个完整 golden + 3 个 findings golden，索引 `fixtures.json`）、
+[`docs/sentaurus_sdevice_workflow.md`](../../sentaurus_sdevice_workflow.md)（契约与消息目录）、
+CTest `sdevice_contracts`。VM 目录与首份 manifest 依 A-1 延后。
 
 ## 附录 B：`.vtu` 输出字段（TDR 数据名）与 `Plot{}` 别名映射
 

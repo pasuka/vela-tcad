@@ -1,0 +1,204 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vela.mesh_qualification.v1",
+  "title": "Vela imported-mesh qualification report v1 (contract C2)",
+  "description": "Report written by the WP2 mesh importer next to mesh.json and doping.csv when a Sentaurus TDR or DF-ISE grid is converted for vela device. It records what the mesh is (counts, materials, contacts, angles, units) so that the pre-flight gates (plan section 7, step 5) and the deck emitter can decide without re-reading the mesh. It never contains solver decisions other than the recommended node-volume policy.",
+  "type": "object",
+  "required": [
+    "schema",
+    "source",
+    "dimension",
+    "coordinate_unit",
+    "bounding_box_um",
+    "nodes",
+    "elements",
+    "regions",
+    "materials",
+    "contacts",
+    "angles",
+    "doping",
+    "outputs",
+    "qualification"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "vela.mesh_qualification.v1"},
+    "source": {
+      "type": "object",
+      "required": ["grid_file", "format", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "grid_file": {"type": "string", "description": "File{Grid} as resolved by the parser (basename, relative to the cmd directory)."},
+        "format": {"enum": ["tdr", "dfise"]},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA-256 of the grid file bytes (for DF-ISE: the .grd file)."},
+        "companion_file": {"type": "string", "description": "DF-ISE only: the .dat file that supplied the doping fields."},
+        "companion_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "importer": {"type": "string", "description": "Tool and version that produced the conversion, e.g. sentaurus_import <commit> or dfise_reader v1."}
+      }
+    },
+    "dimension": {"type": "integer", "enum": [1, 2, 3], "description": "Spatial dimension of the source grid. vela device accepts 2 only (E402 otherwise)."},
+    "coordinate_unit": {
+      "type": "object",
+      "required": ["declared", "applied_scale_to_um"],
+      "additionalProperties": false,
+      "properties": {
+        "declared": {"type": ["string", "null"], "description": "Unit attribute found in the file (TDR) or the DF-ISE convention 'um'; null when absent."},
+        "applied_scale_to_um": {"type": "number", "exclusiveMinimum": 0, "description": "Factor applied to the stored coordinates to obtain micrometres in mesh.json."}
+      }
+    },
+    "bounding_box_um": {
+      "type": "object",
+      "required": ["min", "max"],
+      "additionalProperties": false,
+      "properties": {
+        "min": {"type": "array", "minItems": 2, "maxItems": 3, "items": {"type": "number"}},
+        "max": {"type": "array", "minItems": 2, "maxItems": 3, "items": {"type": "number"}}
+      }
+    },
+    "nodes": {
+      "type": "object",
+      "required": ["count"],
+      "additionalProperties": false,
+      "properties": {
+        "count": {"type": "integer", "minimum": 3}
+      }
+    },
+    "elements": {
+      "type": "object",
+      "required": ["count", "by_kind", "converted_quadrilaterals"],
+      "additionalProperties": false,
+      "properties": {
+        "count": {"type": "integer", "minimum": 1, "description": "Elements written to mesh.json (triangles after any conversion)."},
+        "by_kind": {
+          "type": "object",
+          "description": "Element kinds found in the source grid before conversion.",
+          "required": ["triangle"],
+          "additionalProperties": false,
+          "properties": {
+            "point": {"type": "integer", "minimum": 0},
+            "line": {"type": "integer", "minimum": 0},
+            "triangle": {"type": "integer", "minimum": 0},
+            "quadrilateral": {"type": "integer", "minimum": 0},
+            "tetrahedron": {"type": "integer", "minimum": 0},
+            "other": {"type": "integer", "minimum": 0}
+          }
+        },
+        "converted_quadrilaterals": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of quadrilaterals split into two triangles by the deterministic diagonal rule documented by WP2; 0 when the importer rejects quadrilaterals instead."
+        }
+      }
+    },
+    "regions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "material", "element_count"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "material": {"type": "string", "description": "Vela material name after the importer's mapping (Silicon -> Si, Oxide -> SiO2); unmapped names are passed through verbatim."},
+          "source_material": {"type": "string", "description": "Material name as stored in the grid when it differs from 'material'."},
+          "element_count": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "materials": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string"},
+      "description": "Distinct Vela material names in region order of first appearance."
+    },
+    "contacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "node_count", "edge_count"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "node_count": {"type": "integer", "minimum": 1},
+          "edge_count": {"type": "integer", "minimum": 0},
+          "adjacent_materials": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "angles": {
+      "type": "object",
+      "required": ["max_deg", "obtuse_element_count", "obtuse_fraction"],
+      "additionalProperties": false,
+      "properties": {
+        "max_deg": {"type": "number", "exclusiveMinimum": 0, "maximum": 180},
+        "obtuse_element_count": {"type": "integer", "minimum": 0},
+        "obtuse_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+        "min_deg": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "doping": {
+      "type": "object",
+      "required": ["file", "columns", "source_fields"],
+      "additionalProperties": false,
+      "properties": {
+        "file": {"type": "string", "description": "doping.csv basename."},
+        "columns": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Column names written to doping.csv; the contract fixes them to node_id, donors_cm3, acceptors_cm3."
+        },
+        "source_fields": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Grid datasets consumed (e.g. DonorConcentration, AcceptorConcentration, DopingConcentration)."
+        },
+        "net_only": {"type": "boolean", "description": "True when only the net DopingConcentration was available and donors/acceptors were split by sign."}
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["mesh_json", "doping_csv"],
+      "additionalProperties": false,
+      "properties": {
+        "mesh_json": {"type": "string"},
+        "doping_csv": {"type": "string"}
+      }
+    },
+    "qualification": {
+      "type": "object",
+      "required": [
+        "two_dimensional",
+        "triangles_only",
+        "coordinates_plausible",
+        "non_obtuse",
+        "recommended_node_volume_policy",
+        "allow_obtuse"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "two_dimensional": {"type": "boolean"},
+        "triangles_only": {"type": "boolean", "description": "True when the source grid had no non-triangle 2-D elements (before conversion)."},
+        "coordinates_plausible": {"type": "boolean", "description": "Bounding box extent within 1e-3 .. 1e4 um in every direction (plan section 7 step 5)."},
+        "non_obtuse": {"type": "boolean"},
+        "recommended_node_volume_policy": {
+          "enum": ["barycentric", "mixed_voronoi"],
+          "description": "barycentric for every imported Sentaurus mesh (plan section 7); mixed_voronoi only when non_obtuse is true and a sidecar asks for it."
+        },
+        "allow_obtuse": {"type": "boolean", "description": "Always true for imported meshes: obtuse triangles are reported, not rejected."},
+        "electrodes_checked": {
+          "type": "array",
+          "description": "Filled by the orchestrator at gate 5: electrode names from the IR and whether each one matched a contact.",
+          "items": {
+            "type": "object",
+            "required": ["electrode", "matched"],
+            "additionalProperties": false,
+            "properties": {
+              "electrode": {"type": "string"},
+              "matched": {"type": "boolean"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

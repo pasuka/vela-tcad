@@ -1,0 +1,173 @@
+{
+  "schema": "vela.sentaurus_execution_ir.v2",
+  "source": {
+    "path": "pn2d_iv_sdevice.cmd",
+    "sha256": "c3dc1d21a77b4ffa53b95fd9d5b54401166acdd938e5940e9e35008453b1bf17",
+    "line_count": 107,
+    "syntax_version": "T-2022.03"
+  },
+  "verdict": {
+    "accepted": false,
+    "exit_code": 3,
+    "fatal_ids": ["E301"]
+  },
+  "preprocessor_findings": [],
+  "errors": [
+    {
+      "id": "E301",
+      "severity": "fatal",
+      "line": 1,
+      "section": "File",
+      "text": "File {",
+      "message": "File{Parameter} is not declared: vela device requires a parameter file (add Parameter=\"<name>.par\" or export the defaults with 'vela device -P')"
+    }
+  ],
+  "warnings": [
+    {
+      "id": "W102",
+      "severity": "warning",
+      "line": 78,
+      "section": "Math",
+      "text": "NotDamped=100",
+      "message": "Math keyword 'NotDamped' is recorded and ignored (no Vela equivalent)"
+    }
+  ],
+  "files": {
+    "grid": {"raw": "pn2d_msh.tdr", "resolved": "pn2d_msh.tdr", "kind": "tdr", "line": 2},
+    "parameter": null,
+    "current": {"raw": "pn2d_iv.plt", "resolved": "pn2d_iv.plt", "line": 4},
+    "plot": {"raw": "pn2d_iv_des.tdr", "resolved": "pn2d_iv_des.tdr", "vela": "pn2d_iv_des.vtu", "line": 3},
+    "output": {"raw": "pn2d_iv.log", "resolved": "pn2d_iv.log_des.log", "line": 5},
+    "ignored": []
+  },
+  "electrodes": [
+    {"name": "Anode", "voltage_V": 0.0, "attributes": {}, "line": 9},
+    {"name": "Cathode", "voltage_V": 0.0, "attributes": {}, "line": 10}
+  ],
+  "physics": {
+    "temperature_K": 300.0,
+    "global": [
+      {"model": "Mobility", "args": [{"name": "DopingDependence"}], "line": 17},
+      {"model": "Recombination", "args": [{"name": "SRH"}], "line": 23},
+      {"model": "EffectiveIntrinsicDensity", "args": [{"name": "OldSlotboom"}], "line": 29}
+    ],
+    "scoped": [],
+    "effective": [
+      {"key": "EffectiveIntrinsicDensity.OldSlotboom", "parameters": {}, "status": "supported", "vela": "solver.bandgap_narrowing=old_slotboom"},
+      {"key": "Mobility.DopingDependence", "parameters": {}, "status": "supported", "vela": "solver.mobility.model=masetti"},
+      {"key": "Recombination.SRH", "parameters": {}, "status": "supported", "vela": "solver.recombination+=srh"}
+    ],
+    "fixed_charges": []
+  },
+  "plot": {
+    "explicit": false,
+    "fields": [
+      {"name": "Potential", "data_name": "ElectrostaticPotential", "component": "scalar", "line": 38},
+      {"name": "ElectricField", "data_name": "ElectricField", "component": "scalar", "line": 39},
+      {"name": "eDensity", "data_name": "eDensity", "component": "scalar", "line": 43},
+      {"name": "hDensity", "data_name": "hDensity", "component": "scalar", "line": 44},
+      {"name": "eQuasiFermi", "data_name": "eQuasiFermiPotential", "component": "scalar", "line": 48},
+      {"name": "hQuasiFermi", "data_name": "hQuasiFermiPotential", "component": "scalar", "line": 49},
+      {"name": "eCurrent", "data_name": "eCurrentDensity", "component": "scalar", "line": 53},
+      {"name": "hCurrent", "data_name": "hCurrentDensity", "component": "scalar", "line": 54},
+      {"name": "TotalCurrent", "data_name": "TotalCurrentDensity", "component": "scalar", "line": 55},
+      {"name": "Doping", "data_name": "DopingConcentration", "component": "scalar", "line": 59},
+      {"name": "DonorConcentration", "data_name": "DonorConcentration", "component": "scalar", "line": 60},
+      {"name": "AcceptorConcentration", "data_name": "AcceptorConcentration", "component": "scalar", "line": 61},
+      {"name": "SRHRecombination", "data_name": "srhRecombination", "component": "scalar", "line": 65},
+      {"name": "eMobility", "data_name": "eMobility", "component": "scalar", "line": 69},
+      {"name": "hMobility", "data_name": "hMobility", "component": "scalar", "line": 70}
+    ]
+  },
+  "current_plot": {"entries": []},
+  "math": {
+    "iterations": 50,
+    "digits": 5,
+    "rel_err_control": true,
+    "err_ref_electron_cm3": null,
+    "err_ref_hole_cm3": null,
+    "extrapolate": true,
+    "derivatives": true,
+    "aval_derivatives": true,
+    "compute_ionization_integrals": false,
+    "break_at_ion_integral": null,
+    "break_criteria": [],
+    "exit_on_failure": false,
+    "number_of_threads": 1,
+    "ignored": [
+      {"keyword": "NotDamped", "value": "100", "line": 78, "finding_id": "W102"}
+    ]
+  },
+  "solve": {
+    "statements": [
+      {"kind": "coupled", "line": 83, "equations": ["Poisson"], "iterations": 100},
+      {"kind": "coupled", "line": 85, "equations": ["Poisson", "Electron", "Hole"], "iterations": 100},
+      {
+        "kind": "quasistationary",
+        "line": 91,
+        "goal": {"contact": "Anode", "voltage_V": 10.0},
+        "t_control": {"initial_step": 0.001, "min_step": 1e-08, "max_step": 0.025, "increment": 1.3, "decrement": null, "do_zero": false},
+        "body": [
+          {"kind": "coupled", "line": 101, "equations": ["Poisson", "Electron", "Hole"], "iterations": null},
+          {"kind": "plot", "line": 105, "file_prefix": "pn2d_iv_multibias", "time": {"range": [0.0, 1.0], "intervals": 200}, "no_overwrite": true}
+        ]
+      }
+    ]
+  },
+  "stages": [
+    {
+      "index": 0,
+      "kind": "initial",
+      "statement_index": 0,
+      "equations": ["Poisson"],
+      "iterations": 100,
+      "current_prefix": "",
+      "outputs": {"current_file": "pn2d_iv.plt", "plot_files": [], "current_plot_times": null},
+      "depends_on": [],
+      "line": 83
+    },
+    {
+      "index": 1,
+      "kind": "initial",
+      "statement_index": 1,
+      "equations": ["Poisson", "Electron", "Hole"],
+      "iterations": 100,
+      "current_prefix": "",
+      "outputs": {"current_file": "pn2d_iv.plt", "plot_files": [], "current_plot_times": null},
+      "depends_on": [0],
+      "line": 85
+    },
+    {
+      "index": 2,
+      "kind": "sweep",
+      "statement_index": 2,
+      "equations": ["Poisson", "Electron", "Hole"],
+      "iterations": null,
+      "goal": {"contact": "Anode", "voltage_V": 10.0},
+      "t_control": {"initial_step": 0.001, "min_step": 1e-08, "max_step": 0.025, "increment": 1.3, "decrement": null, "do_zero": false},
+      "current_prefix": "",
+      "outputs": {
+        "current_file": "pn2d_iv.plt",
+        "plot_files": [
+          {
+            "file_prefix": "pn2d_iv_multibias",
+            "time": {"range": [0.0, 1.0], "intervals": 200},
+            "no_overwrite": true,
+            "sentaurus_pattern": "pn2d_iv_multibias_NNNN_des.tdr",
+            "vela_pattern": "pn2d_iv_multibias_NNNN_des.vtu"
+          }
+        ],
+        "current_plot_times": null
+      },
+      "depends_on": [1],
+      "line": 91
+    }
+  ],
+  "analysis": {
+    "kind": "iv",
+    "reason": "R3: one Quasistationary with a voltage goal and no avalanche model, ionization integral or current break criterion",
+    "sweep_contacts": ["Anode"],
+    "final_contact": "Anode",
+    "final_voltage": 10.0
+  }
+}

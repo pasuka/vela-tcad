@@ -1,0 +1,178 @@
+{
+  "schema": "vela.sentaurus_execution_ir.v2",
+  "source": {
+    "path": "schottky_n_des.cmd",
+    "sha256": "2d27fafd43a86501b1420ea3a6c42cf42f35c56198782684fd2162b5afd20d00",
+    "line_count": 59,
+    "syntax_version": "T-2022.03"
+  },
+  "verdict": {
+    "accepted": false,
+    "exit_code": 3,
+    "fatal_ids": ["E301"]
+  },
+  "preprocessor_findings": [],
+  "errors": [
+    {
+      "id": "E301",
+      "severity": "fatal",
+      "line": 15,
+      "section": "File",
+      "text": "File {",
+      "message": "File{Parameter} is not declared: vela device requires a parameter file (add Parameter=\"<name>.par\" or export the defaults with 'vela device -P')"
+    }
+  ],
+  "warnings": [
+    {
+      "id": "W102",
+      "severity": "warning",
+      "line": 42,
+      "section": "Math",
+      "text": "NotDamped=50",
+      "message": "Math keyword 'NotDamped' is recorded and ignored (no Vela equivalent)"
+    },
+    {
+      "id": "W103",
+      "severity": "warning",
+      "line": 48,
+      "section": "Solve",
+      "text": "LineSearchDamping=1.0e-3",
+      "message": "Coupled option 'LineSearchDamping' is recorded and ignored"
+    }
+  ],
+  "files": {
+    "grid": {"raw": "schottky_n_msh.tdr", "resolved": "schottky_n_msh.tdr", "kind": "tdr", "line": 16},
+    "parameter": null,
+    "current": {"raw": "schottky_n_iv", "resolved": "schottky_n_iv_des.plt", "line": 18},
+    "plot": {"raw": "schottky_n_des.tdr", "resolved": "schottky_n_des.tdr", "vela": "schottky_n_des.vtu", "line": 17},
+    "output": {"raw": "schottky_n_des.log", "resolved": "schottky_n_des.log", "line": 19},
+    "ignored": []
+  },
+  "electrodes": [
+    {
+      "name": "anode",
+      "voltage_V": 0.0,
+      "attributes": {
+        "schottky": true,
+        "workfunction_eV": 4.75,
+        "e_rec_velocity_cm_s": 4910000.0,
+        "h_rec_velocity_cm_s": 2740000.0
+      },
+      "line": 5
+    },
+    {"name": "cathode", "voltage_V": 0.0, "attributes": {}, "line": 12}
+  ],
+  "physics": {
+    "temperature_K": 300.0,
+    "global": [
+      {"model": "Recombination", "args": [{"name": "SRH"}], "line": 23}
+    ],
+    "scoped": [],
+    "effective": [
+      {"key": "Recombination.SRH", "parameters": {}, "status": "supported", "vela": "solver.recombination+=srh"}
+    ],
+    "fixed_charges": []
+  },
+  "plot": {
+    "explicit": false,
+    "fields": [
+      {"name": "Potential", "data_name": "ElectrostaticPotential", "component": "scalar", "line": 27},
+      {"name": "ElectricField", "data_name": "ElectricField", "component": "vector", "line": 27},
+      {"name": "SpaceCharge", "data_name": "SpaceCharge", "component": "scalar", "line": 27},
+      {"name": "eDensity", "data_name": "eDensity", "component": "scalar", "line": 28},
+      {"name": "hDensity", "data_name": "hDensity", "component": "scalar", "line": 28},
+      {"name": "eCurrent", "data_name": "eCurrentDensity", "component": "vector", "line": 28},
+      {"name": "hCurrent", "data_name": "hCurrentDensity", "component": "vector", "line": 28},
+      {"name": "eQuasiFermi", "data_name": "eQuasiFermiPotential", "component": "scalar", "line": 29},
+      {"name": "hQuasiFermi", "data_name": "hQuasiFermiPotential", "component": "scalar", "line": 29},
+      {"name": "DonorConcentration", "data_name": "DonorConcentration", "component": "scalar", "line": 30},
+      {"name": "AcceptorConcentration", "data_name": "AcceptorConcentration", "component": "scalar", "line": 30},
+      {"name": "Doping", "data_name": "DopingConcentration", "component": "scalar", "line": 30},
+      {"name": "ConductionBandEnergy", "data_name": "ConductionBandEnergy", "component": "scalar", "line": 31},
+      {"name": "ValenceBandEnergy", "data_name": "ValenceBandEnergy", "component": "scalar", "line": 31},
+      {"name": "BandGap", "data_name": "BandGap", "component": "scalar", "line": 31},
+      {"name": "SRH", "data_name": "srhRecombination", "component": "scalar", "line": 32},
+      {"name": "eMobility", "data_name": "eMobility", "component": "scalar", "line": 32},
+      {"name": "hMobility", "data_name": "hMobility", "component": "scalar", "line": 32}
+    ]
+  },
+  "current_plot": {"entries": []},
+  "math": {
+    "iterations": 25,
+    "digits": 6,
+    "rel_err_control": true,
+    "err_ref_electron_cm3": 100000000.0,
+    "err_ref_hole_cm3": 100000000.0,
+    "extrapolate": true,
+    "derivatives": true,
+    "aval_derivatives": true,
+    "compute_ionization_integrals": false,
+    "break_at_ion_integral": null,
+    "break_criteria": [],
+    "exit_on_failure": true,
+    "number_of_threads": 4,
+    "ignored": [
+      {"keyword": "NotDamped", "value": "50", "line": 42, "finding_id": "W102"}
+    ]
+  },
+  "solve": {
+    "statements": [
+      {"kind": "coupled", "line": 48, "equations": ["Poisson"], "iterations": 100, "options": {"LineSearchDamping": "1.0e-3"}},
+      {"kind": "coupled", "line": 49, "equations": ["Poisson", "Electron", "Hole"], "iterations": 100},
+      {"kind": "new_current_prefix", "line": 51, "prefix": "forward_"},
+      {
+        "kind": "quasistationary",
+        "line": 52,
+        "goal": {"contact": "anode", "voltage_V": 1.0},
+        "t_control": {"initial_step": 0.01, "min_step": 1e-06, "max_step": 0.05, "increment": 1.35, "decrement": 2.0, "do_zero": false},
+        "body": [
+          {"kind": "coupled", "line": 57, "equations": ["Poisson", "Electron", "Hole"], "iterations": null}
+        ]
+      }
+    ]
+  },
+  "stages": [
+    {
+      "index": 0,
+      "kind": "initial",
+      "statement_index": 0,
+      "equations": ["Poisson"],
+      "iterations": 100,
+      "current_prefix": "",
+      "outputs": {"current_file": "schottky_n_iv_des.plt", "plot_files": [], "current_plot_times": null},
+      "depends_on": [],
+      "line": 48
+    },
+    {
+      "index": 1,
+      "kind": "initial",
+      "statement_index": 1,
+      "equations": ["Poisson", "Electron", "Hole"],
+      "iterations": 100,
+      "current_prefix": "",
+      "outputs": {"current_file": "schottky_n_iv_des.plt", "plot_files": [], "current_plot_times": null},
+      "depends_on": [0],
+      "line": 49
+    },
+    {
+      "index": 2,
+      "kind": "sweep",
+      "statement_index": 3,
+      "equations": ["Poisson", "Electron", "Hole"],
+      "iterations": null,
+      "goal": {"contact": "anode", "voltage_V": 1.0},
+      "t_control": {"initial_step": 0.01, "min_step": 1e-06, "max_step": 0.05, "increment": 1.35, "decrement": 2.0, "do_zero": false},
+      "current_prefix": "forward_",
+      "outputs": {"current_file": "forward_schottky_n_iv_des.plt", "plot_files": [], "current_plot_times": null},
+      "depends_on": [1],
+      "line": 52
+    }
+  ],
+  "analysis": {
+    "kind": "iv",
+    "reason": "R3: one Quasistationary with a voltage goal and no avalanche model, ionization integral or current break criterion",
+    "sweep_contacts": ["anode"],
+    "final_contact": "anode",
+    "final_voltage": 1.0
+  }
+}
