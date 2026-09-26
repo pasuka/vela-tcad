@@ -1,0 +1,769 @@
+{
+  "schema": "vela.reference_artifact_manifest.v1",
+  "case": "genius_bjt_sentaurus2022",
+  "version": "v1",
+  "created_utc": "2026-09-26T14:23:18Z",
+  "store": {
+    "kind": "ssh",
+    "host": "sentaurus",
+    "root": "/home/tcad/vela_reference_artifacts"
+  },
+  "sentaurus_version": "T-2022.03-SP2 (0.7745337)",
+  "deck_matches_repository": true,
+  "origin": {
+    "vm_run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source; /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+    "note": "Variant m0 = coarse mesh (run_v2), m1 = local_refined mesh (refined_multibias_20260904). The bjt_m1_des.cmd inside run_v2 is an older revision and was not archived."
+  },
+  "artifacts": [
+    {
+      "path": "source/m0/bjt_m0_des.cmd",
+      "category": "A",
+      "sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068",
+      "bytes": 1406,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_des.cmd"
+      }
+    },
+    {
+      "path": "source/m0/bjt_sde.cmd",
+      "category": "A",
+      "sha256": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05",
+      "bytes": 3812,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_sde.cmd"
+      }
+    },
+    {
+      "path": "source/m0/bjt_msh.cmd",
+      "category": "A",
+      "sha256": "d5907e4a13ef45e7a7ccc8955dce8831f093774f88ac0b72f3cc65a444f9fe74",
+      "bytes": 2606,
+      "producer": {
+        "tool": "other",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_msh.cmd"
+      }
+    },
+    {
+      "path": "mesh/m0/bjt_msh.tdr",
+      "category": "C",
+      "sha256": "3077a2e3d49826fba4db95e00837ace77dd3e05ea36dd3e3c522e0529155d21e",
+      "bytes": 140074,
+      "producer": {
+        "tool": "snmesh",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_msh.cmd",
+        "finished_utc": "2026-09-02T02:07:28Z",
+        "cmd_sha256": "d5907e4a13ef45e7a7ccc8955dce8831f093774f88ac0b72f3cc65a444f9fe74"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_msh.tdr"
+      }
+    },
+    {
+      "path": "mesh/m0/bjt_bnd.tdr",
+      "category": "C",
+      "sha256": "40050137e12733d942e8c4396201053a0f2ca5bfc3583837d0b2bb4dc72125e9",
+      "bytes": 17048,
+      "producer": {
+        "tool": "sde",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_sde.cmd",
+        "finished_utc": "2026-09-02T02:04:14Z",
+        "cmd_sha256": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_bnd.tdr"
+      }
+    },
+    {
+      "path": "mesh/m0/bjt_msh.log",
+      "category": "C",
+      "sha256": "e0e5a872c7ee76662e2ecb2099d78500799b89ce5a04f3116965813f319c9375",
+      "bytes": 2984,
+      "producer": {
+        "tool": "snmesh",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_msh.cmd",
+        "finished_utc": "2026-09-02T02:07:28Z",
+        "cmd_sha256": "d5907e4a13ef45e7a7ccc8955dce8831f093774f88ac0b72f3cc65a444f9fe74"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_msh.log"
+      }
+    },
+    {
+      "path": "mesh/m0/bjt_sde.log",
+      "category": "C",
+      "sha256": "8e70b5849d6ed1fbc35f1e483e983e52990bb453134ac5658397ff14f980d1f8",
+      "bytes": 4760,
+      "producer": {
+        "tool": "sde",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_sde.cmd",
+        "finished_utc": "2026-09-02T02:07:28Z",
+        "cmd_sha256": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_sde.log"
+      }
+    },
+    {
+      "path": "plt/m0/bjt_m0_des.plt",
+      "category": "B",
+      "sha256": "81723e933f000f1bb2a6a4ead9929ae88bd16de00c43678bdb4b612523c02295",
+      "bytes": 2221,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:26:21Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_des.plt"
+      }
+    },
+    {
+      "path": "plt/m0/bjt_m0_base_bjt_m0_des.plt",
+      "category": "B",
+      "sha256": "dd05b1888149055604614241312f51e8ba3da32028f5cf7b40d131d5aa391c26",
+      "bytes": 22587,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:26:56Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_base_bjt_m0_des.plt"
+      }
+    },
+    {
+      "path": "plt/m0/bjt_m0_collector_bjt_m0_des.plt",
+      "category": "B",
+      "sha256": "0aff50fa989d04249b606e9b811a1fd655a7ea545ab4dcefe2e8293bfae0ed9b",
+      "bytes": 19592,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:27:45Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_collector_bjt_m0_des.plt"
+      }
+    },
+    {
+      "path": "tdr/m0/bjt_m0_des.tdr",
+      "category": "D",
+      "sha256": "905c82ec88d7e3700c65505d3378359dc9253e32ba45e6e5ac518135d373ba3b",
+      "bytes": 1091582,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:27:45Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m0/bjt_m0_equilibrium_des.tdr",
+      "category": "D",
+      "sha256": "e7d708d8630b91220c9bd09182e4e7e99ec32b9b7601c11ef6754dc58a892be7",
+      "bytes": 642808,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:26:21Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_equilibrium_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m0/bjt_m0_vbe070_des.tdr",
+      "category": "D",
+      "sha256": "05b4a351be1944f9ee41113b3ee98bc4f8de9798acd53193e49e8b98e6e29159",
+      "bytes": 1077019,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:26:56Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_vbe070_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m0/bjt_m0_vce_0000_des.tdr",
+      "category": "D",
+      "sha256": "dcf8895c00b92f91936db13d984f0348827c36f1ef666c5dd7b50f12fcaaf146",
+      "bytes": 1077046,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:26:56Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_vce_0000_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m0/bjt_m0_vce_0001_des.tdr",
+      "category": "D",
+      "sha256": "a3768e9e36d4cdd194e2ac800d36c1908f60fec9cfc19b7c0fa40414c3ce0b5c",
+      "bytes": 1081190,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:27:03Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_vce_0001_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m0/bjt_m0_vce_0002_des.tdr",
+      "category": "D",
+      "sha256": "6170bfc41753e7f85c1df086d94b2b03c29b8b58c6ef226f79913c26ce9a3725",
+      "bytes": 1084237,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:27:20Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_vce_0002_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m0/bjt_m0_vce_0003_des.tdr",
+      "category": "D",
+      "sha256": "eb4f37736f6a1540051204c0f1c7a3640a6727402cef3c689a4be184415dc105",
+      "bytes": 1088283,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:27:45Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_vce_0003_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m0/bjt_m0_des_min_des.tdr",
+      "category": "D",
+      "sha256": "b0f17e7c3994d2b8396ef8a86b785a7a778f4fddeb3da0d875c0dc156fab4652",
+      "bytes": 615450,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:27:21Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_des_min_des.tdr"
+      }
+    },
+    {
+      "path": "log/m0/bjt_m0_des.log",
+      "category": "E",
+      "sha256": "3df5ec5551eb32f44cfc215bdaba259b3b011ee65359d13a5ab648d553920956",
+      "bytes": 118964,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:27:45Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0_des.log"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/m0/bjt_m0.stdout",
+      "category": "E",
+      "sha256": "1449e21dccba9f7793e594055fbffafb5acc66c91f142afe99de2394fdffcfd2",
+      "bytes": 119586,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_m0_des.cmd",
+        "finished_utc": "2026-09-02T03:27:45Z",
+        "cmd_sha256": "417f2914685ced6049e11cfea4edba61a2e58bcde49c485d243a5da80177e068"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/bjt_m0.stdout"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/m0/sde.stdout",
+      "category": "E",
+      "sha256": "17bf5ea298807fc290f80692bb2cb693be3756c39a572a2f288642fb05ba13a3",
+      "bytes": 8797,
+      "producer": {
+        "tool": "sde",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2",
+        "cmd": "bjt_sde.cmd",
+        "finished_utc": "2026-09-02T02:07:28Z",
+        "cmd_sha256": "2cd887d27b6571d7941449a8d125e82b49e414ddd8df563872b0469b8f015a05"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_wp0_wp2_20260902/run_v2/sde.stdout"
+      }
+    },
+    {
+      "path": "source/m1/bjt_m1_des.cmd",
+      "category": "A",
+      "sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27",
+      "bytes": 1571,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_des.cmd"
+      }
+    },
+    {
+      "path": "source/m1/bjt_sde_local_refined.cmd",
+      "category": "A",
+      "sha256": "1c3b0f0dd39f4b106399f01a6744b83e78ebad5a83f78b8b8b1aee923381c9ca",
+      "bytes": 4706,
+      "producer": {
+        "tool": "repository",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_sde_local_refined.cmd"
+      }
+    },
+    {
+      "path": "source/m1/bjt_msh.cmd",
+      "category": "A",
+      "sha256": "793373d1b8018cda482808d9d4321320f80a75dd1d30ba7e366a62fc38e530fa",
+      "bytes": 3346,
+      "producer": {
+        "tool": "other",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_msh.cmd"
+      }
+    },
+    {
+      "path": "mesh/m1/bjt_msh.tdr",
+      "category": "C",
+      "sha256": "5ff641b2740f170b7627a18d18e7c34801fd51c77aeb7e30ee788bdbd81ca078",
+      "bytes": 329768,
+      "producer": {
+        "tool": "snmesh",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_msh.cmd",
+        "finished_utc": "2026-09-04T05:34:54Z",
+        "cmd_sha256": "793373d1b8018cda482808d9d4321320f80a75dd1d30ba7e366a62fc38e530fa"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_msh.tdr"
+      }
+    },
+    {
+      "path": "mesh/m1/bjt_bnd.tdr",
+      "category": "C",
+      "sha256": "c522e0703e5d8c8864753a410aeb5ee7a51cf1a656c692bf1d9ca0a6d57119fb",
+      "bytes": 17048,
+      "producer": {
+        "tool": "sde",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_sde_local_refined.cmd",
+        "finished_utc": "2026-09-04T05:31:39Z",
+        "cmd_sha256": "1c3b0f0dd39f4b106399f01a6744b83e78ebad5a83f78b8b8b1aee923381c9ca"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_bnd.tdr"
+      }
+    },
+    {
+      "path": "mesh/m1/bjt_msh.log",
+      "category": "C",
+      "sha256": "7c96b5bd48ccd7aee1a5fea356060015a646b523e41a6c3db432041261595381",
+      "bytes": 2983,
+      "producer": {
+        "tool": "snmesh",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_msh.cmd",
+        "finished_utc": "2026-09-04T05:34:54Z",
+        "cmd_sha256": "793373d1b8018cda482808d9d4321320f80a75dd1d30ba7e366a62fc38e530fa"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_msh.log"
+      }
+    },
+    {
+      "path": "mesh/m1/bjt_sde_local_refined.log",
+      "category": "C",
+      "sha256": "5b6e1e9dea333d168eaf25e4a437ea12fb2a688b1e59e3bd7cbcc36e17377dc4",
+      "bytes": 5768,
+      "producer": {
+        "tool": "sde",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_sde_local_refined.cmd",
+        "finished_utc": "2026-09-04T05:34:54Z",
+        "cmd_sha256": "1c3b0f0dd39f4b106399f01a6744b83e78ebad5a83f78b8b8b1aee923381c9ca"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_sde_local_refined.log"
+      }
+    },
+    {
+      "path": "plt/m1/bjt_m1_des.plt",
+      "category": "B",
+      "sha256": "56b23a5c4fef477b63a25d818ce700d1057883a72b35c6121cee0eefa62486a9",
+      "bytes": 2221,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T05:55:51Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_des.plt"
+      }
+    },
+    {
+      "path": "plt/m1/bjt_m1_base_bjt_m1_des.plt",
+      "category": "B",
+      "sha256": "5307549427eaf88001f24b1720bf329691a1c9d6cbfef0e5d4a4480cb47a3cb0",
+      "bytes": 22587,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T05:57:44Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_base_bjt_m1_des.plt"
+      }
+    },
+    {
+      "path": "plt/m1/bjt_m1_collector_bjt_m1_des.plt",
+      "category": "B",
+      "sha256": "d4fdbf54e1ade2f100f962fb0a495018d97f5d9d1cb81096ebbe9c1aa5b8e8be",
+      "bytes": 19592,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T06:00:59Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_collector_bjt_m1_des.plt"
+      }
+    },
+    {
+      "path": "tdr/m1/bjt_m1_des.tdr",
+      "category": "D",
+      "sha256": "5d93605c15cecc28e97751bebf29ce18a982c29d45bb7665ac1381e0bdeaafb5",
+      "bytes": 3103311,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T06:00:59Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m1/bjt_m1_equilibrium_des.tdr",
+      "category": "D",
+      "sha256": "bbe1087d7a07846a17e6e40f7825eee1ea38d31f823fd352ba8681c6cb17eb3f",
+      "bytes": 2156218,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T05:55:51Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_equilibrium_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m1/bjt_m1_vbe070_des.tdr",
+      "category": "D",
+      "sha256": "9d7dff07a63a33e3b274626c7ca9e1b3c819684cd51d6fa2a417f9193a641903",
+      "bytes": 3122749,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T05:57:44Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_vbe070_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m1/bjt_m1_vce_0000_des.tdr",
+      "category": "D",
+      "sha256": "4c9bfb156b4b6df12973f9191cf3db2ca5c168a85a32c35ceaf56c33cbd6a723",
+      "bytes": 3122756,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T05:57:45Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_vce_0000_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m1/bjt_m1_vce_0001_des.tdr",
+      "category": "D",
+      "sha256": "d03b53d4aed61c64fa61ce5407971390133c004c852132a70ab0b593f7ee1e35",
+      "bytes": 3108670,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T05:59:14Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_vce_0001_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m1/bjt_m1_vce_0002_des.tdr",
+      "category": "D",
+      "sha256": "dd3e825ff5d45850eca16d6d6129238195347b261ffb7bdfc0ba648585f95397",
+      "bytes": 3107142,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T06:00:05Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_vce_0002_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m1/bjt_m1_vce_0003_des.tdr",
+      "category": "D",
+      "sha256": "71aa2080f8afbcdb9db411f718f319881b277a597b95543f64a61ba925ca61d4",
+      "bytes": 3108017,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T06:00:59Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_vce_0003_des.tdr"
+      }
+    },
+    {
+      "path": "tdr/m1/bjt_m1_des_min_des.tdr",
+      "category": "D",
+      "sha256": "e3caf03ae50d6a7f2a1383197cd89d3f21a0fd171a7b82be0f52587b2b5c54f0",
+      "bytes": 1571330,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T06:00:04Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_des_min_des.tdr"
+      }
+    },
+    {
+      "path": "log/m1/bjt_m1_des.log",
+      "category": "E",
+      "sha256": "64433767ed6fd8857c41010db01d389d2d15e43689e4b88df44a00e29904ba63",
+      "bytes": 118222,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T06:00:59Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/bjt_m1_des.log"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/m1/sdevice.stdout",
+      "category": "E",
+      "sha256": "b0efc852ae20451cb7c715fcbcf71a01b1db64b598aabea1023e9d4eda6f84be",
+      "bytes": 118760,
+      "producer": {
+        "tool": "sdevice",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_m1_des.cmd",
+        "finished_utc": "2026-09-04T06:00:59Z",
+        "cmd_sha256": "1cfb8cbe296e1dcf65deea638180875d687145da3cd0e594a69d18f7a8cedc27"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/sdevice.stdout"
+      },
+      "summary": {
+        "exit_status": "Good Bye"
+      }
+    },
+    {
+      "path": "log/m1/sde.stdout",
+      "category": "E",
+      "sha256": "63bc7512564f42d871381f9b00fdac6304abd1164d64afb28444309ec3caa166",
+      "bytes": 9760,
+      "producer": {
+        "tool": "sde",
+        "run_directory": "/root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source",
+        "cmd": "bjt_sde_local_refined.cmd",
+        "finished_utc": "2026-09-04T05:34:54Z",
+        "cmd_sha256": "1c3b0f0dd39f4b106399f01a6744b83e78ebad5a83f78b8b8b1aee923381c9ca"
+      },
+      "verify": {
+        "status": "registered",
+        "checked_utc": "2026-09-26T14:23:18Z",
+        "note": "sha256 computed on the VM copy at registration; origin /root/sentaurus_runs/vela_oracle_2022/genius_bjt_refined_multibias_20260904/source/sde.stdout"
+      }
+    }
+  ]
+}
