@@ -1,0 +1,1046 @@
+# Sentaurus SDevice 命令文件直读运行（`vela device`）开发方案
+
+日期：2026-09-26
+
+状态：方案 v2.3（v1 代码库盘点；v2 手册核对与平台/产物/命名决定；v2.1 待决项确认；v2.2 自审核
+修正；v2.3 全部提案已采纳，第 10 节重写为低耦合工作包 WP0–WP12 + 接口契约 C1–C10）；
+开发工作树 `.worktrees/sdevice-cmd-frontend`（分支 `codex/sdevice-cmd-frontend`）已建立；实施从 WP0 开始
+
+目标 Sentaurus 语法版本：SDevice T-2022.03（命令文件语法）；Workbench 预处理指令不展开
+
+手册依据：`D:\工作\学习资料\TCAD软件手册\Sentaurus帮助文档\data\sdevice_ug.pdf`
+（Sentaurus Device User Guide, Version T-2022.03）；本文引用的章节/表号均出自该版本。
+手册为 Synopsys 专有文档，只引用结论，不复制原文入库。
+
+Vela 基线：本方案制定时本地 `main` 为 `04e07713`；正式执行时重新记录实际提交
+
+## 1. 执行摘要
+
+目标是让 Vela 以与 `sdevice` 一致的子进程 CLI 方式，直接读取 SDevice `.cmd`
+文件，自动完成：解析 → 逐项映射为 Vela JSON deck → 核对并写用户可读 log →
+运行仿真 → 输出 XML `.vtu`（每偏置点一个文件、字段名与 Sentaurus 一致）与
+DF-ISE `.plt` 电流曲线；不满足要求时写 log 并以约定退出码返回。
+
+盘点结论：这条流水线**已有可工作的 Python 原型**，不是从零开始。
+`scripts/sentaurus_import.py` 的 `device`/`reference` 子命令已经覆盖
+SDevice `.cmd` 解析、物理模型白名单分类、执行 IR、deck 生成、失败报告与运行
+调用；C++ 侧 `sentaurus_import` 可读 TDR，`vela_example_runner` 有稳定退出码、
+运行 log 与每偏置点 VTK 输出。
+
+主要缺口集中在六处：
+
+1. 解析覆盖：`*` 行注释（手册第 1 章：以 `*` 或 `#` 开头的字符串被忽略）、
+   Electrode 属性（手册 Table 206：`Barrier`/`Resist`/`Schottky`/`Workfunction`/
+   `eRecVelocity` 等）、`System{}`、扫描内 `Plot(...)`、`Set(... mode current)`、
+   预处理指令检测。
+2. 映射缺失：`Math{}`、`Plot{}`、`File{}` 三段“解析了但未映射”；
+   `Band2Band(E2)`、`poisson_only`（ABA）、外接电阻、电流目标扫描、
+   `BreakAtIonIntegral` 等 Vela 已有能力未接线。
+3. 多段 `Solve`：当前只取最后一个 `Quasistationary`；
+   `Quasistationary` 步长（归一化变量 t）被当作伏特使用。
+4. `.par` → `materials_file` 发射器缺失（只有语法 IR 与映射矩阵）。
+5. 网格输入：TDR 路径依赖手写的 `*_reference.json` 与 `--device` 模板；
+   DF-ISE `.grd/.dat` 只有读取函数散落在比较脚本中，没有导入器。
+6. 输出契约：无 XML `.vtu`、无字段选择与 Sentaurus 命名、无 `.plt` 写出、
+   无统一 log 与退出码。
+
+建议架构：`vela` 原生启动器（`vela device <cmd>`）+ Python（≥ 3.10，纯标准库）
+编排器 + 现有 C++ 二进制（`vela_example_runner`、`sentaurus_import`），全部随
+`bin/` 打包；以已有的 `vela.sentaurus_execution_ir.v1` 为稳定契约；C++ 侧只做
+必要增量（`.vtu` 写出器、字段选择、电流终止判据）。
+
+## 2. 已确认的需求与决策
+
+| 编号 | 用户决定 | 方案中的处理 |
+| --- | --- | --- |
+| 1 | 子进程 CLI，调用方式与 `sdevice` 一致 | `vela device [选项] <cmd 文件或 basename>`；扩展名补全、选项镜像见第 5 节；工作目录 = cmd 所在目录 |
+| 2 | 返回值参考 `sdevice` CLI（手册）；log 与结果文件与 cmd 同目录；log 供用户阅读 | 手册无数值退出码表，只定义 0/非 0 与 `ExitOnFailure` 语义；第 5.2 节给出 Vela 细分码；第 6 节输出契约 |
+| 3 | 当前阶段网格由用户提供 `_msh.tdr` 或 DF-ISE 文件 | 本方案不含 SDE 造网；`File{Grid}` 只接受 `.tdr` 或 `.grd`(+`.dat`) |
+| 4 | 材料参数文件必须检查，不存在则提示补齐 | `File{Parameter}` 缺失或文件不存在 → 致命错误 + 明确提示 |
+| 5 | Sentaurus 2022 语法；预处理指令不展开，发现即要求用户先展开 | 解析前检测 `#if/#setdep/...`、`@…@`、`!( … )!`，fail-closed |
+| 6 | 接受阶段 1 只支持 2-D DC Quasistationary，其余 fail-closed | 第 4.7 节显式拒绝清单 |
+| 7 | XML `.vtu`、每偏置点一个文件、需要 `.plt` | 第 6 节；新增 C++ `.vtu` 写出器与 Python `.plt` 写出器 |
+| 8 | 结果须与 Sentaurus 在阈值内一致 | 第 8 节：阈值来自已验证证据，按案例冻结，不因通过测试而放宽 |
+| 9 | 手册位于本地目录（T-2022.03 全套 PDF） | 已核对命令行选项（附录 D）、文件命名（附录 C）、`Math`/`Electrode`/`File` 表（附录 G）、数据名（附录 F）、Quasistationary 与收敛准则（第 4/6 章）；结论写入第 4–6 节 |
+| 10 | 验收产物部分在仓库、部分在 Sentaurus 虚拟机，体积大不宜入库；需要核对环节与存放方案 | 第 12 节：清单+哈希入库、原始产物放外部存储、`reference_staging/` 本地暂存、核对脚本作为验收前置门 |
+| 11 | 平台：Windows 与 Ubuntu 24.04；Python ≥ 3.10；`vela` 可执行 + `bin/` 依赖与子程序；Linux 上多个 sdevice 脚本多进程并发（同目录或不同目录） | 第 13 节：部署布局、启动器、并发安全约束 |
+| 12 | `.vtu` 字段名与 Sentaurus TDR 数据集名一致 | 第 6.4 节与附录 B：输出名 = 手册附录 F 数据名；`Plot{}` 中的常见别名只作输入识别 |
+| 13 | `Trap(s)` 改为 fail-closed；`CurrentPlot{Field((x y))}` 忽略并在 log 以 warning 注明 | 第 4.3/4.4 节 |
+| 14 | 退出码按 0/非 0，非 0 给出细分码 | 第 5.2 节表按此冻结（0、1–7） |
+| 15 | 存储方案需要解释；能否用 GitHub Copilot 提供的存储空间 | 第 12.2 节：Copilot 不提供存储；仓库 `pasuka/vela-tcad` 是 **公开仓**，专有产物只能进私有仓或私有存储；当前阶段选 S3（决定 18），S2b（私有配套仓 + Releases）为后续迁移首选 |
+| 16 | Python 随 `bin/` 携带 | 第 13.1 节：Windows 用官方 embeddable 包，Linux 用 python-build-standalone，固定 3.12 |
+| 17 | “参数文件”是什么 | `sdevice -P/-L` 写出的 `.par` 材料模型参数文件（即 `File{Parameter}` 所指文件）；建议 `vela device -P` 写出 Vela 默认参数的 `.par`，供无 Sentaurus 的用户起步（第 5.1/WP3） |
+| 18 | 当前阶段存储选 S3：验收产物存放在 Sentaurus 虚拟机的指定路径 | 第 12.2 节：VM 路径约定、SSH 拉取、本地镜像与单点风险缓解；manifest 仍以哈希为键，日后可无缝迁移到 S2b/S1 |
+| 19 | `-P` 输出只含 Vela 实现的模型段 | 第 5.1 节与 WP3 按此冻结 |
+| 20 | 电流符号约定以首个核对通过的参考 `.plt` 为准 | 第 6.3 节：约定确定程序与固化方式 |
+| 21 | 同意退出码 8（被外部中止） | 第 5.2 节表冻结为 0、1–8 |
+| 22 | log 文案英文 + 稳定编号，不附中文释义行 | 第 6.2 节 |
+| 23 | 同意提案 A（sidecar `<stem>.vela.json`）与提案 B（deck 用 `format_version: 2`） | 第 9 节；契约 C10；WP4 实现 |
+| 24 | 在独立 worktree 中开发；任务细化为低耦合工作包，每包有目标/内容/验收标准 | 第 10 节重写为 WP0–WP12 + 契约 C1–C10；工作树 `.worktrees/sdevice-cmd-frontend`（分支 `codex/sdevice-cmd-frontend`） |
+
+## 3. 现状盘点（可复用资产）
+
+### 3.1 运行时入口与输出
+
+| 能力 | 现状 | 证据 |
+| --- | --- | --- |
+| CLI | `vela_example_runner --config <json> [--mesh-report] [--log auto\|off\|path] [--log-profile minimal\|default\|debug]` | `src/tools/vela_example_runner.cpp:42-43` |
+| 退出码 | `0` 收敛；`1` 失败/未收敛/异常；`2` 用法错误或未知 `simulation_type`；stdout 一行 JSON status | `src/tools/vela_example_runner.cpp:3489-3500` |
+| `simulation_type` | `dc_sweep`、`poisson`、`newton`、`newton_solve_from_state`、`electrothermal_dc_sweep`、`write_dd_state_vtk`、多种 probe | `src/tools/vela_example_runner.cpp:3397-3490` |
+| 运行 log | `runtime_log{enabled,file,level,flush_level,append,profile}`，默认 `<config stem>.log` | `docs/config_schema.md` `runtime_log`；`include/vela/core/RuntimeLog.h` |
+| VTK | legacy ASCII `UNSTRUCTURED_GRID`；DC sweep 每收敛点一个文件 `<prefix>_NNNN_<V>V.vtk` | `src/io/VTKWriter.cpp:24-27`；`src/simulation/DCSweep.cpp:2839-2845, 7237-7242` |
+| VTK 字段 | Potential/QF/n/p/NetDoping/ElectricField(+Vector)/SRH/Auger/SpaceCharge/BandGap/BGN/Affinity/Ec/Ev/Band2Band/AvalancheGeneration/J 分量/Mobility/Velocity/Alpha/IonIntegral 等 | `src/solver/GummelSolver.cpp:944-1126, 1511-1531, 1716-1752` |
+| 曲线 CSV | 单一 `current_contact` 的 e/h/total 电流；`unit_scaling` 下附 `*_A_per_um` 列 | `src/simulation/DCSweep.cpp:3554-3590` |
+| 全接触电流 | `diagnostics.terminal_balance` 单独 CSV | `docs/config_schema.md` `sweep` 诊断字段 |
+| 状态链 | `write_state_file`/`initial_state_file`（HDF5 `.h5`，`vela.state/2`） | `docs/config_schema.md` `sweep` |
+| 外接电阻 / 电流目标 | `sweep.external_circuit.series_resistor`、`sweep.voltage_to_current` | `docs/config_schema.md` “External circuit and voltage-to-current boundary control” |
+| 击穿终止判据 | `sweep.breakdown.{max_electric_field_V_per_m,current_jump_ratio,non_convergence}` | `docs/config_schema.md:2505-2515` |
+| 电离积分 | `diagnostics.path_ionization_integrals{break_rank,break_value,...}` | `docs/config_schema.md` `sweep` 诊断字段 |
+
+### 3.2 Sentaurus 前端（Python）
+
+| 模块 | 作用 | 证据 |
+| --- | --- | --- |
+| `parse_cmd()` | `File`/`Electrode`(仅 Name/Voltage)/`Thermode`/`Physics`(含 Material/MaterialInterface 作用域)/`Plot`/`Math`/`Solve`(Coupled、Quasistationary、NewCurrentPrefix、CurrentPlot、Save/Load)；`@var@` 占位符展开与未解析报告 | `scripts/sentaurus_import.py:223-545` |
+| 注释处理 | 仅 `#` 与 `//`；**不处理 `*`**（手册第 1 章规定注释字符为 `*` 与 `#`；`//` 非手册语法） | `scripts/sentaurus_import.py:138-144` |
+| 执行 IR | 模型白名单（supported / metadata_only / unsupported，fail-closed）、analysis kind 推导、有序 stages | `scripts/sentaurus_execution_ir.py:28-75, 118-260` |
+| Physics 映射 | DopingDep→masetti；HighFieldSaturation/Enormal→masetti_field(_lombardi)；SRH/Auger；SRH(DopingDep TempDependence)；eQuantumPotential；OldSlotboom；Avalanche(VanOverstraeten)（其它系数模型 fail-closed，`--allow-lossy` 才替换）；Fermi | `scripts/sentaurus_import.py:571-679` |
+| `device` 子命令 | SDE+SDevice → `device_ir.json`/`execution_ir.json`/`mesh.json`/`doping.csv`/`simulation.json`/`run_manifest.json`；失败写 `fail_report.json{stage,message}`；`--run` 调 runner | `scripts/sentaurus_import.py:1463-1710` |
+| `reference` 子命令 | TDR 网格路径：`sentaurus_import.exe` → `convert_tcad_export.py` → patch deck → 运行 → 与 `.plt` 比对 | `scripts/sentaurus_import.py:1107-1337` |
+| 步长映射 | `MaxStep/MinStep/Increment/Decrement` → `max_step/min_step/growth_factor/shrink_factor/max_retries`；**未做归一化时间→伏特换算** | `scripts/sentaurus_import.py:895-917` |
+| TDR 读取 | C++ `sentaurus_import --tdr --inventory-json --export-dir`（nodes/elements/contacts/doping/fields CSV） | `src/tools/sentaurus_import.cpp:92-98`；`docs/sentaurus_import.md` |
+| TDR 导出 → deck | `convert_tcad_export.py --device {pn_diode,nmos2d,...}`（依赖器件模板选扫描接触） | `scripts/convert_tcad_export.py:189-243` |
+| DF-ISE 读取 | `parse_grd`/`parse_dat`（比较脚本内） | `scripts/compare_sentaurus_tdr_tdx.py:40-130` |
+| DF-ISE 写出 | `render_dfise_grid`/`render_dfise_doping` | `scripts/run_pn2d_same_mesh_sdevice_vector_export.py:116-290` |
+| `.plt` 读取 | `export_plt_reference`（`datasets`+`Data`） | `scripts/sentaurus_import.py:113-135`；夹具 `tests/regression/test_sentaurus_import_tools.py:2849-2872` |
+| `.par` | 语法 IR `sentaurus_parameter_ir.py`；映射矩阵/分类 `sentaurus_parameter_map.py`（exact/frozen/approximated/unsupported）；**无发射器** | `docs/sentaurus_parameter_import.md` |
+| 验收契约 | `configs/sentaurus_e2e_contract.json` + `schemas/vela.sentaurus_e2e_contract.v1.schema.json` | — |
+| 曲线比对 | `scripts/compare_reference_curves.py`（orders-of-magnitude、相对误差、趋势） | `scripts/sentaurus_import.py:1260-1320` 调用方式 |
+| 测试 | 13 个 `tests/regression/test_sentaurus_*.py`，含 `device --allow-lossy` 端到端 | `tests/regression/test_sentaurus_import_tools.py:134-214` |
+
+### 3.3 未合并分支
+
+`codex/sentaurus2022-sde-workflow`（worktree `D:/code-repo/copilot-worktrees/vela-tcad-dev`，
+领先 `main` 22 提交、落后 95）包含 gmsh SDE 后端、ABA/BAB 布尔、解析型掺杂、
+细化窗与 `test_sentaurus_device_e2e_contract.py`。按用户决定 3，本方案
+**不依赖该分支**；SDE 造网列为后续阶段的前置条件。
+
+## 4. SDevice 命令 → Vela 映射契约
+
+“状态”列：`✅` 已有；`⚠️` 部分/有缺陷；`❌` 缺失；`⛔` 阶段 1 显式拒绝。
+
+### 4.1 `File{}`
+
+文件名规则（手册附录 C“File-Naming Conventions”，Table 194）：基名中含 `.` 的字符串
+按字面使用；否则追加工具扩展名 `_des.<ext>`：命令文件 `_des.cmd`/`.cmd`、日志
+`_des.log`、参数 `.par`、网格 `.tdr`、Save/Load `_des.sav`、器件 Plot `_des.tdr`、
+电流 `_des.plt`。Quasistationary 期间的 plot/save 文件按全局序号编号
+（`<prefix>_NNNN_des.tdr`，手册第 5 章“When to Plot”示例）。`Output` 默认值为
+`"output"`（Table 207）。`NewCurrentPrefix` 把前缀加到默认电流文件名之前
+（第 5 章“Current File”；仓库证据：`Current="schottky_n_iv"` +
+`NewCurrentPrefix="forward_"` → `forward_schottky_n_iv_des.plt`，
+`reference_tcad/schottky_charon_sentaurus2018/schottky_charon_sentaurus2018_reference.json:80`）。
+
+| 命令 | Vela | 状态 | 说明 |
+| --- | --- | --- | --- |
+| `Grid="x_msh.tdr"` | `mesh_file`+`node_doping_file`（经 TDR 导入） | ⚠️ | 现仅 `reference` 路径；需并入统一入口 |
+| `Grid="x_msh.grd"` (+ 同名 `.dat`) | 同上（经 DF-ISE 导入器） | ❌ | 复用 `parse_grd/parse_dat`；边索引单元 → 节点三角形；`material=Contact` 区 → contacts。DF-ISE 不在 Table 194 中，是 Vela 扩展输入 |
+| `Parameter=`/`Parameters="models.par"` | `materials_file` | ❌ | 两种拼写都接受（Table 207 列 `Parameters`，决赛 deck 用 `Parameter`）；缺 key 或文件不存在 → 致命错误，提示补齐 |
+| `Current="x"` | `output_csv` → `<NewCurrentPrefix>x_des.plt` | ❌ | 按 Table 194 规则补全 |
+| `Plot="x_des.tdr"` | `sweep.vtk_prefix` → `x_des_NNNN.vtu` 序列 | ❌ | `.tdr` 被 `.vtu` 替代；`build_device_deck` 目前硬编码 `write_vtk:false`（`scripts/sentaurus_import.py:1537`） |
+| `Output="x.log"` | 统一 log 文件 | ❌ | 无扩展名时补 `_des.log`；缺省 `output_des.log`（Table 207） |
+| `Load=`, `Save=`, `ACExtract=`, `NewtonPlot=`, `Extraction=`, `MobilityDoping=`, `LifeTime=` 等 | — | ⛔/忽略 | `Save/Load` 在 `Solve` 内处理；其余 File 键 fail-closed（影响物理者）或 log 警告忽略（纯附加输出者） |
+
+### 4.2 `Electrode{}`
+
+属性集合以手册附录 G Table 206 为准。
+
+| 属性（Table 206） | Vela | 状态 | 说明 |
+| --- | --- | --- | --- |
+| `Name=<string>`, `Voltage=<float>` (V) | `contacts[].{name,bias}` | ✅ | 电极名必须与网格 contact 名一致（已有检查）；`Name=Regexp(...)` ⛔ |
+| `Barrier=<float>` (**V**) | `contacts[].type="metal_gate"` + 势垒字段 | ❌ | 手册 Eq. 104：绝缘体上接触 `φ = φ_F − Φ_MS`，`Barrier` 即 Φ_MS（相对本征参考半导体）；缺省 Φ_MS = 0。WP4a 需用一个 MOS 电容夹具验证 Vela `metal_gate` 的参考能级与 Eq. 104 一致（带平电压对照），而不是只拷数值 |
+| `Workfunction=<float>` (eV) | `contacts[].work_function_eV` | ❌ | 同上，Φ_MS 由金属功函数与本征半导体参考能级之差给出 |
+| `Resist=<float>` (Ω·µm^(3−d)，2-D 即 Ω·µm)；训练 deck 中的 `Resistor=` 作别名接受 | `sweep.external_circuit{mode:"series_resistor", resistance_ohm_um}` | ❌ | Vela 侧已支持；`Voltage` 变为外电压；仓库证据 `bvmethods_sentaurus2018/source/external_resistor_sdevice.cmd:12` 用 `Resistor=1e7` 且已在 Sentaurus 上运行成功 |
+| `Schottky` + `eRecVelocity`/`hRecVelocity` (cm/s，默认 2.573e6 / 1.93e6) | `contacts[].type="schottky"`, `emission_model:"thermionic_robin"`, 速度字段 | ❌ | 仅 Newton 路径支持（`docs/config_schema.md` contacts）；缺省速度按手册默认写入 |
+| `Material=<string>`（金属，如 `"Gold"`） | `work_function_eV` ← `.par` 中 `Material="Gold"{Bandgap{WorkFunction}}` | ❌ | 手册“Contacts on Insulators”：功函数取自参数文件；`.par` 无该材料时致命 |
+| `Material=<string>(N=|P=)`（多晶硅栅仿真） | — | ⛔ | 阶段 1 不支持接触侧半导体模型 |
+| `Poisson=Dirichlet`（默认）/`Neumann` | — | `Dirichlet` 接受；`Neumann` ⛔ |
+| `AreaFactor=<float>` | 电流乘子 | ⛔（≠1 时） | 可后续映射到输出缩放 |
+| `Charge=`, `Current=`, `DistResist=`, `EqOhmic`, `SRDoping`, `FGcap`, `Extraction{}`, `CyclicNorm`, 瞬态 `(<v> At <t>)` 列表 | — | ⛔ | `Current=` 的电流边界仅通过 `Quasistationary Goal{Current}` + `Set(mode current)` 支持（4.6） |
+| 未在 Table 206 中的属性 | — | ⛔ | 语法错误级别拒绝 |
+
+### 4.3 `Physics{}`
+
+手册第 2 章“Physical Models and the Hierarchy of Their Specification”：全局 `Physics{}` 应用于所有
+区域；`Physics(Material=)`/`Physics(Region=)` 中的模型**叠加**到全局模型上；同一区域同时有
+区域块与材料块时，区域块覆盖材料块（不继承）；界面块（`MaterialInterface`/`RegionInterface`）
+独立于全局，且不允许迁移率/BGN 等体模型。据此，Vela 的接受规则是：为每个半导体区域计算
+“有效模型集 = 全局 ∪（区域块，否则材料块）”，**所有半导体区域的有效模型集必须相同**（Vela
+只有一套全局物理），否则 fail-closed；绝缘体区域的块只允许含 `Traps(FixedCharge)`。
+
+| 模型 | Vela | 状态 |
+| --- | --- | --- |
+| `Mobility(DopingDep/DopingDependence)` | `solver.mobility.model=masetti` | ✅ |
+| `HighFieldSaturation(GradQuasiFermi/Eparallel)`、`Enormal` | `masetti_field`/`masetti_lombardi`/`masetti_field_lombardi` + `high_field_driving_force` | ✅（驱动力目前固定为 `quasi_fermi_gradient`，需按参数选择） |
+| `Recombination(SRH[(DopingDep TempDependence)]/Auger)` | `solver.recombination`, `srh_doping_dependence` | ✅（但现有映射把 τ 等参数硬编码在 `apply_solver_physics`，新发射器（WP3/WP4）必须取自 `.par`） |
+| `Avalanche(VanOverstraeten/…)` + 驱动力 | `solver.impact_ionization`（系数取自 `.par`） | ✅（Okuto/Lackner/UniBo fail-closed） |
+| `Band2Band(E2)` | `solver.band_to_band.model="e2"`（A/B 取自 `.par`） | ❌（Vela 已实现，未映射） |
+| `EffectiveIntrinsicDensity(OldSlotboom)` | `bandgap_narrowing="old_slotboom"` | ✅ |
+| `Fermi` | `carrier_statistics.model="fermi_dirac"` | ✅ |
+| `eQuantumPotential` | `electron_quantum_potential` | ✅ |
+| `Temperature=`（默认 300 K） | `solver.temperature_K`；同时作为 `.par` 发射器的冻结温度 | ❌ |
+| `AreaFactor=` | — | ⛔（≠1 时） |
+| `Traps(Conc=<float> FixedCharge)` 于 `MaterialInterface`/`RegionInterface` 块 | `interfaces[].fixed_charge_m2`（cm⁻²） | ❌（手册第 2/17 章：界面固定电荷用 `Traps(... FixedCharge)` 表达；仅均匀分布可映射） |
+| `Traps((FixedCharge SpatialShape=Uniform Conc=<float>))` 于绝缘体区域/材料块 | `regions[].fixed_charge_m3`（cm⁻³） | ❌（`SpatialShape=Gaussian` ⛔） |
+| 其它 `Trap(s)`（能级、施主/受主、分布、动力学） | — | ⛔（决定 13：从 `METADATA_ONLY_MODELS` 移入 `KNOWN_UNSUPPORTED_MODELS`，`--allow-lossy` 也不放行） |
+| `Physics(Material=…)`/`(Region=…)` 作用域 | 按上述有效模型集规则展开 | ⚠️（有效集不一致即拒绝） |
+| `Thermodynamic`/`Hydrodynamic`/`eTemperature`/`IALMob`/`hQuantumPotential` | — | ⛔（已 fail-closed） |
+
+网格材料约束（与 Physics 共同决定可运行性）：Vela 内置材料只有 `Si` 与 `SiO2`
+（`src/material/MaterialDatabase.cpp:258-277`），TDR 导入器将 `Silicon→Si`、`Oxide→SiO2`，其余名字
+原样透传（`src/io/SentaurusTdrReader.cpp:415-424`），未定义的材料在运行时抛出 `unknown material`。
+因此阶段 1：网格中每种材料必须是 `Si`/`SiO2`，或在 `.par` 中有 `Material="..."` 段可由 WP3 发射器
+写出（绝缘体至少 `Epsilon`，如 Nitride）；`PolySilicon` 作为半导体区域在阶段 1 fail-closed（仅有 LDMOS
+工作树的部分资格证据，未进入 main 默认路径）。材料文件采用仓库现有的基于 `role`
+（`transport_semiconductor`/`dielectric`）与 `provenance` 的 schema
+（`schemas/vela.templates_ldmos.materials.v1.schema.json`，建议在 WP0 以通用名别名发布），而不是旧的
+“缺字段就继承”格式，避免绝缘体条目意外继承半导体参数。
+
+### 4.4 `Plot{}` 与 `CurrentPlot{}`
+
+手册附录 F：`Plot`/`CurrentPlot` 中的名字与 TDR/PLT 数据名相同（除另有标注）；
+`/Vector`、`/Element` 后缀选择向量/单元数据。仓库中已在 Sentaurus 上运行成功的
+各 deck 还使用 `Potential`、`Doping`、`SRH`、`eQuasiFermi`、`eCurrent/Vector`、
+`Affinity`、`ConductionBand`、`Band2Band`、`Auger`、`Temperature` 等历史别名，
+因此输入端同时接受数据名与附录 B 列出的别名；输出端统一用数据名。
+
+| 命令 | Vela | 状态 | 说明 |
+| --- | --- | --- | --- |
+| 字段列表 | `.vtu` 写出字段选择 + TDR 数据名/单位 | ❌ | 需 C++ 字段过滤与名称/单位映射（附录 B） |
+| `/Vector` 后缀 | 向量字段 | ⚠️ | Vela 已有向量数组，需按名映射 |
+| `/Element` 后缀 | 单元字段 | ⚠️ | 仅对已有单元数组（如单元电场）提供；其余警告跳过 |
+| Vela 无法提供的字段（如 `eTemperature`） | — | 输出项：写 log warning 并跳过，不致命 |
+| `DatasetsFromGrid`, `PlotExplicit`/`-PlotLoadable` 等 | — | 警告忽略 |
+| `CurrentPlot{ <Field>((x y)) }`（按坐标采样） | 无 | 按决定 13：忽略，log 以 warning 注明 |
+| `CurrentPlot{ AvalancheGeneration(Integrate(...)) }` 等 域积分/极值 | `diagnostics.release_bv_config_audit` 有 qG 积分 | ⚠️ 后续阶段；阶段 1 警告忽略 |
+
+### 4.5 `Math{}`
+
+默认值与语义出自手册附录 G Table 211 与第 6 章“Convergence and Error Control”。
+Sentaurus 的收敛判据（Eq. 31）是更新量准则：`|Δx| / (|x| + x_ref) < 10^-Digits`
+（`RelErrControl` 默认），或 RHS 范数 `< RhsMin`；Vela 的判据是残差范数
+（`abstol/reltol`）。二者无一一对应，映射只能是“不更松”的启发式并在 log
+记录；一致性以第 8 节的阈值评价。
+
+| 关键字（默认） | Vela | 状态 | 说明 |
+| --- | --- | --- | --- |
+| `Iterations=`（50） | `solver.max_iter` / `handoff.newton_max_iter` | ❌ | `Coupled(Iterations=)` 覆盖全局值 |
+| `Digits=`（5）, `RelErrControl`（+）, `ErrRef(Electron/Hole)=`（cm⁻³） | `solver.reltol/abstol` 启发式 | ❌ | 见上文；原值原样写入 log 与 IR |
+| `Extrapolate`（−） | `sweep.predictor="linear"`（否则 `none`） | ❌ | `Extrapolate(Order=2 ...)` 参数警告忽略 |
+| `Derivatives`（+）, `AvalDerivatives`（+） | `impact_ionization.source_jacobian` 非 `frozen`；`-AvalDerivatives` → `frozen` | ❌ | Vela 默认 `finite_difference` 已含导数 |
+| `ComputeIonizationIntegrals`（off）, `BreakAtIonIntegral(<int> <float>)`（默认 1 1） | `diagnostics.path_ionization_integrals{enabled,break_rank,break_value}` | ❌ | Vela 已实现 |
+| `BreakCriteria{ Current(Contact= AbsVal=/MinVal=/MaxVal=) Voltage(...) }` | `sweep.breakdown` 新增电流绝对值/区间判据；电压判据用扫描终点 | ❌（C++） | 单位 2-D 为 A/µm（手册第 4 章） |
+| `ExitOnFailure`（off） | 退出码语义（第 5 节） | ❌ | Table 211：“Terminate the simulation as soon as a Solve command fails”；证据 deck `schottky_n_des.cmd:44` |
+| `NumberOfThreads=`（1） | 进程线程数（`OMP_NUM_THREADS` 等，第 13 节） | ❌ | CLI `--threads` 优先 |
+| `NotDamped`（1000）, `Method=`, `Transient=BE`, `CNormPrint`, `WallClock`, `CheckUndefinedModels`, `ParameterInheritance`, `PlotExplicit` 等 | — | 记录并忽略（log 明示） |
+| 未知关键字 | — | 记录 warning；不致命（Math 不改变方程） |
+
+### 4.6 `Solve{}`
+
+手册第 4 章“Quasistationary Ramps”：内部变量 `t` 从 0 到 1，`V = V0 + t (V1 − V0)`，
+`InitialStep/MaxStep/MinStep/Increment/Decrement` 均定义在 `t` 上；`t = 0` 点在前一
+语句已求解同一方程组时省略（`DoZero` 可强制）；步长小于 `MinStep` 时退出该
+`Quasistationary`（不是退出程序）。第 5 章“When to Plot”：`Plot(... Time=(Range=(0 1)
+Intervals=n))` 强制在这些 `t` 点求解并写文件，文件名 `<FilePrefix>_NNNN_des.tdr`。
+“Current File”：默认每个接受步写一行电流；存在 `CurrentPlot(Time=...)` 时仅写指定
+`t` 点（内部仍可计算中间点）。
+
+| 命令 | Vela | 状态 | 说明 |
+| --- | --- | --- | --- |
+| `Coupled{Poisson}` 初始化 | `sweep.initialization.mode="poisson_block"` | ✅ | |
+| `Coupled{Poisson Electron Hole}` | `solver.method="gummel_newton"`/`newton` | ✅ | `Coupled(Iterations= LineSearchDamping= Method=)` → `max_iter`；其余记录 |
+| `Coupled{Poisson}` 扫描（ABA） | `solver.method="poisson_only"` | ❌ | Vela 已实现 |
+| `Coupled{Poisson Electron}` 单载流子、`Coupled{... Circuit/Contact/Temperature}` | — | ⛔ | |
+| `Quasistationary(... Goal{Name Voltage})`，单一 Goal | `sweep{contact,start,stop,step,initial_step,min_step,max_step,growth_factor,shrink_factor,max_retries}` | ⚠️ | 步长乘 `|V1−V0|` 从 `t` 换算为伏特；`start` 取当前电极电压 |
+| 同一 `Quasistationary` 内多个 `Goal`（同步扫描） | — | ⛔ | Vela 单接触扫描；手册允许多 Goal |
+| `Goal{Name=Regexp(...)}`、`Goal{Model= Parameter= Value=}`（参数扫描）、`Goal{DopingWell/WellContactName}` | — | ⛔ | |
+| 多个 `Quasistationary` 顺序执行 | 每段一个 `dc_sweep` deck，HDF5 `write_state_file`→`initial_state_file` 链接；后段 `contacts[].bias` 取前段**实际到达**的终值 | ❌ | 目前只取最后一段。语义细则：（a）前段未达 Goal 时，与 `sdevice` 一致从最后接受的偏置继续，log 明示；（b）`Load` 后电极电压回到该状态保存时的值，编排器为每个状态文件记录电极电压表；（c）`initialization.mode=poisson_block` 与 `initial_state_file` 互斥（schema），只用于第一段；（d）第一段前无 `Coupled{Poisson}` 时 `initialization.mode=none` |
+| `Goal{Name Current=}` + `Set("c" mode current)` | `sweep.voltage_to_current` | ❌ | Vela 已实现；单位 A/µm |
+| 扫描内 `Plot(FilePrefix Time=(Range Intervals | 列表) NoOverWrite)` | 新增 `sweep.vtk_bias_points`（必经点 + 写 `.vtu`） | ❌ | 未解析；`Intervals` 含义按手册 Eq. 28 |
+| 扫描内 `CurrentPlot(Time=(Range Intervals))` | `.plt` 写出点过滤 + 必经点 | ⚠️ | 现仅用于推导 `step` |
+| 顶层 `Plot(FilePrefix=)` / `CurrentPlot` | `write_dd_state_vtk` 当前状态 / 写一行电流 | ❌ | |
+| `Save/Load(FilePrefix=)` | 命名 HDF5 状态文件（`_des.sav` 由 `.h5` 替代） | ❌（已解析为事件） | |
+| `NewCurrentPrefix=` | `.plt` 文件名前缀 | ⚠️ | 已解析，未用于输出 |
+| `Transient(...)`, `ACCoupled`, `Plugin`, `Continuation`, `Unset`, `Set` 其它用法 | — | ⛔ | |
+| `System{}`（混合模式） | — | ⛔ | 未解析，需先识别再拒绝 |
+| `Thermode{}` | 电热服务是独立 schema | ⛔ | 已解析，阶段 1 拒绝 |
+
+### 4.7 显式 fail-closed 清单（阶段 1）
+
+Workbench 预处理指令（`#if/#elif/#else/#endif/#setdep/#define/#include/#noprint/#header/#endheader/#split/#endsplit/#exit`）、
+`@…@` 占位符、Tcl `!( … )!` 块、`System{}`、`Transient`、`ACCoupled`、`Plugin`、
+`Continuation`、`Thermode`、`Thermodynamic`/`Hydrodynamic`/载流子温度、`IALMob`、
+`hQuantumPotential`、除均匀 `FixedCharge` 外的 `Trap(s)`、Okuto/Lackner/UniBo 系数模型
+（无 `--allow-lossy`）、半导体区域间有效 `Physics` 模型集不一致、多 `Goal` 同步扫描、`Regexp`
+电极名、参数/掺杂阱 Goal、多晶硅半导体区域、未定义材料、3-D 或 1-D 网格、非三角形单元
+（TDR 元素类型 3 等；WP2 可选实现矩形确定性对角剖分，否则拒绝）、`Electrode` 未列属性、
+`Grid` 非 `.tdr/.grd`、从标准输入读取命令文件（`sdevice` 支持，Vela 不支持）。每一项都
+必须给出源文件行号与原文命令的诊断信息，并带稳定的消息编号（第 6.2 节）。
+
+## 5. CLI 与返回值契约（对齐 `sdevice`）
+
+### 5.1 调用形式
+
+```text
+vela device [选项] <name_des.cmd | name_des | name>
+```
+
+- 手册附录 D：`sdevice [<options>] [<commandfile>]`，“自动追加相应扩展名”；命令文件
+  扩展名为 `_des.cmd` 或 `.cmd`（Table 194）。Vela 按“字面文件存在 → `<name>.cmd`
+  → `<name>_des.cmd`”顺序解析；未给命令文件时 `sdevice` 读标准输入，Vela 不支持，
+  按用法错误退出。
+- 工作目录取 cmd 文件所在目录；`File{}` 内相对路径相对该目录解析；所有用户可见
+  产物写入该目录。
+- `sdevice` 选项（附录 D）的镜像策略：
+
+| `sdevice` 选项 | Vela 处理 |
+| --- | --- |
+| `-h` | 同义：列出选项并退出 |
+| `-v` | 同义：打印版本头（Vela 版本、提交、支持的 SDevice 语法版本） |
+| `-q` | 同义：安静模式（不向 stdout 回显进度，log 文件不变） |
+| `-n` | 同义：log 中不写 Newton 迭代信息（对应 `runtime_log.profile=minimal`） |
+| `--exit-on-failure` | 同义：等于 `Math{ExitOnFailure}` |
+| `--threads <int>` / `--max_threads <int>` | 同义：线程数上限，优先于 `Math{NumberOfThreads}`（第 13 节） |
+| `--verbose` | 同义：`runtime_log.profile=debug` |
+| `-i` | 部分同义：写初始解（平衡态）的 plot 后退出；阶段 1 实现为“完成校验 + 首个平衡态求解 + 写 `.vtu`” |
+| `-P`/`-L` 系列（写参数文件并退出） | `-P`：把 `share/vela/materials/models.par`（Vela 默认硬参数的 `.par` 形式，只含 Vela 实现的模型段）复制到当前目录并退出；`-P <cmd>`/`-P:<Material>` 在 Vela 只有硬一种材料时与 `-P` 同义，其他材料拒绝；`-L` 系列拒绝（WP3 交付） |
+| `-d`, `-M`, `-S`, `-r`, `-ver`, `-rel`, `-versions`, `--tcl`, `--xml`, `--field-names`, `--parameter-names`, `--compiler-version` | 拒绝：“option not supported by vela device”，用法错误退出 |
+
+　Vela 自有选项（与 `sdevice` 不冲突）：`--check`（仅解析+校验+生成 deck，不求解）、
+`--allow-lossy`（显式接受已登记的有损替代）、`--keep-intermediate/--no-keep-intermediate`、
+`--vtu-binary`（appended raw 二进制，默认 ASCII）。
+
+### 5.2 退出码（已确认：0/非 0 + 细分码）
+
+手册事实（T-2022.03）：附录 D 与第 4/6 章**未定义数值退出码表**；可确定的语义只有
+（a）`Math{ExitOnFailure}` / `--exit-on-failure`：“某个 Solve 命令失败后立即终止仿真”，
+默认 off，即默认情况下失败的 `Solve` 语句被记录后继续执行后续语句；
+（b）`Quasistationary` 步长小于 `MinStep` 时退出该语句，不是退出程序；
+（c）Workbench 仅按 0/非 0 判定节点 done/failed（SWB 手册“Rerunning Failed Nodes”）。
+因此 Vela 契约（决定 14 已确认）：**0 = 流程完成；非 0 = 失败**，非 0 按下表细分；平台侧只需
+判 0/非 0 即可与 Workbench 行为一致，细分码供分类统计与自动重跑策略使用。
+
+| 退出码 | 含义 | 触发示例 |
+| --- | --- | --- |
+| 0 | 仿真流程完成（无 `ExitOnFailure` 时包含“某 stage 未达 Goal”，log 与 `.plt` 中明示） | 正常完成 |
+| 1 | 输入致命错误：解析失败、不支持的命令/模型、预处理指令未展开 | `IALMob`、`#if`、`@Vg@`、`Trap` |
+| 2 | 用法错误 | 无命令文件、不支持的选项（沿用 runner 约定） |
+| 3 | 输入文件缺失 | `Grid`/`Parameter` 文件不存在、`Parameter` 未声明 |
+| 4 | 校验失败 | 电极名与 contact 不符、钝角网格不满足节点体积策略、`.par` 含不可导入的激活参数 |
+| 5 | 求解失败 | `ExitOnFailure` 且某 stage 失败；或首个 stage（平衡态）失败 |
+| 6 | 输出写入失败 | `.vtu/.plt/.log` 不可写 |
+| 7 | 并发冲突 | 同一 cmd 已有运行中的实例（第 13 节锁文件） |
+| 8 | 被外部中止（SIGINT/SIGTERM/Ctrl+C）；已写的 `.plt`/`.vtu` 保留，log 记录中止点 | 平台终止任务 |
+
+`sdevice` 对 INT 信号的默认行为是退出（手册“Snapshots”）；Vela 在收到中止信号时结束当前
+偏置点、刷新 log、释放锁文件、以码 8 退出；`Interrupt=PlotRequest/BreakRequest` 阶段 1 不支持。
+
+每个非 0 退出都同时写：log 尾部的 `[FATAL]` 摘要、中间目录内
+`fail_report.json{stage,message,details,exit_code}`（复用现有 `_write_fail_report`）。
+
+## 6. 输出契约
+
+### 6.1 目录布局
+
+文件名按手册附录 C 规则补全（含 `.` 者字面使用，否则追加 `_des.<ext>`）；器件 plot
+的 `.tdr` 由 `.vtu` 替代，`.sav` 由 `.h5` 替代。
+
+```text
+<cmd 目录>/
+  name_des.cmd
+  name_des.log                       # File{Output}；缺省 output_des.log
+  <NewCurrentPrefix>name_des.plt     # File{Current}
+  name_des.vtu                       # File{Plot}：末态（与 sdevice 默认“仿真结束时写一次”一致）
+  <FilePrefix>_0000_des.vtu ...      # Solve 内 Plot(FilePrefix Time=... NoOverWrite)：全局序号，规则同 _NNNN_des.tdr
+  name_des.pvd                       # ParaView 序列索引，timestep = 全局偏置点序号（多段扫描下“偏置”不唯一）；Vela 扩展
+  name_des_vela/                     # 中间产物，默认保留，`--no-keep-intermediate` 删除
+    execution_ir.json  mesh.json  doping.csv  materials.json
+    simulation_stage00.json ...      stage00_state.h5 ...
+    stage00.csv ...  run_manifest.json  fail_report.json  .lock
+```
+
+“每偏置点一个文件”的默认行为：当 deck 没有任何 `Plot(...)` 语句时，`sdevice` 只在
+结束时写一个 plot；为满足决定 7，Vela 默认额外按接受的偏置点写 `name_des_NNNN.vtu`
+并生成 `.pvd`；可用 `--plot-final-only` 关闭以严格对齐 `sdevice` 文件集。求解失败或被中止时，
+末态 `name_des.vtu` 写**最后接受**的状态（与 `sdevice` 在 Solve 结束时写 plot 的行为一致），
+`FieldData` 中标记 `goal_reached=false`。
+
+输出产物的溩源：每个 `.vtu` 的 `FieldData` 包含 `VelaVersion`、`CmdSHA256`、`Stage`、`t`、
+全部电极的 `OuterVoltage/InnerVoltage/TotalCurrent`；`.plt` 头部注释行写 Vela 版本与 cmd 哈希
+（DF-ISE `Info{}` 内允许的字段以仓库夹具为准，不确定则不写，避免破坏 Sentaurus Visual 读取）。
+
+### 6.2 log（供用户阅读）
+
+单一文件，顺序追加：
+
+1. 头部：`vela device` 版本、Vela 提交、cmd 路径与 SHA-256、时间、主机/进程号。
+2. 命令文件回显（`sdevice` 日志也回显命令文件）。
+3. 解析报告：识别到的各段摘要；每条映射决策（“`Iterations=20` →
+   `solver.max_iter=20`”）；忽略项与 warning（含 `CurrentPlot` 坐标采样）；不支持项
+   （若致命则到此结束）。
+4. 输入检查：网格统计（节点/单元/接触/最大角）、材料文件分类结果
+   （exact/frozen/approximated 计数与温度）、电极一致性。
+5. 各 stage：目标、步长、偏置点数、收敛/重试摘要——由 runner 的
+   `runtime_log{file: 同一文件, append: true, profile: minimal|default|debug}` 直接写入。
+6. 结束摘要：写出的文件清单、是否到达 Goal、退出码。
+
+消息约定：所有 warning/error 行带稳定编号（`W1xx` 解析、`W2xx` 映射忽略、`E1xx` 语法/不支持、
+`E3xx` 文件、`E4xx` 校验、`E5xx` 求解、`E6xx` 输出、`E7xx` 并发），与退出码百位对应，并在
+`docs/sentaurus_sdevice_workflow.md` 附消息目录，供平台按编号匹配而不是按文案匹配。消息文案
+英文（与 `sdevice` 日志一致，避免编码问题），不附中文释义行（决定 22）。除 `-q` 外，
+编排器在 stdout 回显 stage/偏置点进度一行，供平台展示进度。
+
+### 6.3 `.plt`（DF-ISE xyplot）
+
+按仓库夹具格式（`tests/regression/test_sentaurus_import_tools.py:2849`）写出：
+`datasets` 含 `time` 与每个电极的 `OuterVoltage`、`InnerVoltage`、`eCurrent`、
+`hCurrent`、`TotalCurrent`（手册 Table 179 列为标准接触数据组；`Charge`、
+`QuasiFermiPotential`、`DisplacementCurrent` 在 Vela 有值时才写）；`time` 为当前
+`Quasistationary` 的 `t`（手册定义：`V = V0 + t(V1−V0)`）；2-D 电流单位 A/µm，与
+Vela `unit_scaling` 的 `*_A_per_um` 列一致。数据来源：主 CSV（扫描接触）+
+`diagnostics.terminal_balance`（其余电极）。写出点集合遵守 `CurrentPlot(Time=...)`
+过滤规则。多段扫描时 `time` 列是每段重新从 0 起还是累加，手册未明说，在 12.4 核对时用含
+两个 `Quasistationary` 的参考 `.plt`（如 `full_physics_ablation`）确定并写入契约。
+
+`.plt` **增量写出**：`sdevice` 在每个接受步后追加电流文件，因此被中止的运行也留下可用的部分
+曲线。Vela 编排器跟踪 runner 的 CSV，每新增一个接受点就重写一次 `.plt`（写 `.tmp` 再 rename），
+而不是等全部 stage 结束后才生成。
+
+电流符号约定（决定 20）：以首个通过第 12.4 节核对的参考 `.plt`（预期为
+`pn2d_iv`）为准——在正向偏置下比较 `Anode TotalCurrent` 的符号与 Vela
+`current_total_A_per_um` 的符号（Vela 以流入器件为正），得到一个全局符号因子
+（+1 或 −1）。该因子对所有电极、所有案例统一（Sentaurus 的接触电流符号约定是全局的，
+不按案例变化），作为常量固化在 `.plt` 写出器中，并用该参考 `.plt` 的前三个偏置点
+建一个回归测试；契约文档记录确定符号时使用的文件哈希。其他案例的比对不得再用
+`candidate_scale=-1` 等讲法掉符号差异；若出现矛盾，说明接触电流的定义本身不一致，
+必须回到第 8 节作为差异登记，而不是改符号。
+
+### 6.4 `.vtu`
+
+- 新增 C++ XML `UnstructuredGrid` 写出器（Float64；ASCII 默认，`--vtu-binary` 选
+  appended raw），`region_id` 作 CellData，区域/材料名与偏置写入 `FieldData`。
+- 字段名与单位采用手册附录 F（Table 195/196）的 TDR 数据名（决定 12），见附录 B；
+  向量数据用同名 3 分量数组（z 分量为 0）。
+- 只写 `Plot{}` 请求的字段；手册“What to Plot”指出 `sdevice` 默认额外写出载流子密度等
+  隐式字段（`PlotExplicit` 可关），Vela 同样隐式追加 `ElectrostaticPotential`、
+  `eDensity`、`hDensity`、`DopingConcentration`；`PlotExplicit` 时不追加。
+- 请求了 Vela 无法提供的字段时 log warning 并跳过。
+
+## 7. 校验流程（pre-flight gates）
+
+按顺序执行，任一失败即按第 5.2 节退出：
+
+0. 运行环境：定位 `bin/` 子程序、Python ≥ 3.10；取 `<stem>_vela/.lock`（第 13.2 节）；
+   打开/创建 `File{Output}` log 并写头部。
+1. 预处理指令/占位符扫描（在剥离注释之前）。
+2. 语法解析：段落完整、括号匹配、未知段名。
+3. 命令白名单：`Physics`/`Solve`/`Electrode` 属性/`Math` 的分类（第 4 节）。
+4. 文件存在性：`Grid`（`.tdr` 或 `.grd`+`.dat`）、`Parameter`/`Parameters`。
+5. 网格导入与资格：仅 2-D 三角形；接触名集合 ⊇ 电极名集合；坐标单位与包围盒合理性
+   （TDR 带单位属性，`sentaurus_import --coordinate-unit`；DF-ISE 约定 µm，包围盒落在 1e-3–1e4 µm
+   之外则拒绝）；网格材料全部可解析（内置 Si/SiO2 或 `.par` 发射条目）。**导入网格的默认离散策略
+   是 `node_volume_policy=barycentric` 且允许钝角（保留负余切回退）**：Sentaurus Mesh 的 Delaunay
+   网格普遍含钝角三角形，现有 `device` 路径的 `mixed_voronoi + require_non_obtuse` 只对它自己生成的
+   直角三角形网格成立，不能沿用；`mixed_voronoi` 只在网格通过非钝角检查且案例契约要求时由
+   sidecar（第 9 节提案）启用。报告最大角、钝角单元数与占比。
+6. 材料：`.par` 语法 IR → 以执行 IR 激活模型为上下文分类
+   （`assert_importable`）；`approximated` 需 `--allow-lossy`；
+   `unsupported_*` 致命。
+7. Deck 校验：生成的每个 stage deck 通过
+   `configs/schema/vela-simulation.schema.json`；扫描方向/步长范围检查
+   （复用 `generate_pn2d_config.py` 的检查逻辑）。
+8. 一致性：电极初始电压与第一段 `start` 一致；stage 链的状态文件依赖闭合；
+   `Plot`/`CurrentPlot` 的 `t` 点落在 `[0,1]`。
+
+`--check` 在第 8 步后停止并返回 0（或对应失败码），产物只有 log 与中间目录。
+
+## 8. 结果一致性验收
+
+- 曲线：沿用 `compare_reference_curves.py` 与
+  `configs/sentaurus_e2e_contract.json` 的按案例契约；指标为
+  orders-of-magnitude、相对误差、趋势一致性、终端电流守恒。
+- 场量：`.vtu` 字段与 Sentaurus `_des.tdr` 导出（`sentaurus_import.exe`
+  fields CSV）逐节点比较：电势 RMS、载流子密度 log10 分位数、电场结区误差。
+- 阈值来源：只能来自已验证证据（如 PN2D IV OOM ≤ 0.4 的现行门限；PN2D BV
+  在 −13.2 V 的 0.70x 已知偏差；LDMOS 峰值 gm 24% 已知偏差），按案例冻结
+  于契约文件；任何放宽都需在契约中记录理由。已知差异进入
+  `known_difference_ledger`，不自动成为其它案例的容差地板。
+- 验收 deck（需用户提供对应 `_msh.tdr`/`.grd+.dat`、参考 `.plt` 与
+  `_des.tdr`；产物的存放与核对见第 12 节，核对未通过的案例不计入验收）：
+
+| 案例 | 覆盖点 |
+| --- | --- |
+| `reference_tcad/pn2d_sentaurus2018/source/pn2d_{0v,iv,bv}_sdevice.cmd` | 平衡态/IV/BV、`Plot(Time=Intervals)`、OldSlotboom、VanOverstraeten |
+| `reference_tcad/bvmethods_sentaurus2018/source/aba_poisson_sdevice.cmd` | `Barrier=`、`Fermi`、ABA `poisson_only`、`BreakAtIonIntegral` |
+| `reference_tcad/bvmethods_sentaurus2018/source/external_resistor_sdevice.cmd` | `Resistor=`、`BreakCriteria{Current}`、`AvalDerivatives`、Band2Band(E2) |
+| `reference_tcad/bvmethods_sentaurus2018/source/full_physics_ablation_sdevice.cmd` | `Set(... mode current)` + `Goal{Current=}`、`CurrentPlot{Integrate}` |
+| `reference_tcad/schottky_charon_sentaurus2018/source/schottky_n_des.cmd` | Schottky 电极属性、`ExitOnFailure`、`NewCurrentPrefix`、`*` 注释 |
+| `reference_tcad/singledevice_sentaurus2018/source/singledevice_sdevice.cmd` | 多段扫描 + `Save/Load` + 预处理指令（应被拒绝） |
+| `reference_tcad/templates_ldmos_sentaurus2022`、`transportmodels_sentaurus2022`、`genius_bjt_sentaurus2022` 的 sdevice cmd | 2022 语法；IALMob/Thermodynamic 等 fail-closed 用例 |
+
+## 9. 架构与落点
+
+```mermaid
+flowchart LR
+  A["name_des.cmd + File.Grid + File.Parameter"] --> V["vela device（C++ 启动器）"]
+  V --> B["bin/vela_sdevice.pyz（Python ≥ 3.10 编排）<br/>parse → execution_ir.json"]
+  B --> C{"pre-flight gates"}
+  C -- fail --> L["name_des.log + fail_report.json<br/>exit 1..7"]
+  C -- pass --> D["deck 发射器<br/>mesh.json doping.csv materials.json<br/>simulation_stageNN.json"]
+  D --> E["bin/vela_example_runner（逐 stage，HDF5 状态链）<br/>bin/sentaurus_import（TDR）"]
+  E --> F["*.vtu + .pvd / .plt / .log"]
+  E --> L
+```
+
+- **入口**：`vela`（`vela.exe`）是一个小 C++ 启动器，子命令 `device` 镜像 `sdevice`。
+  它定位自身目录下的 `bin/`，使用随包的 `bin/python/`（开发者可用 `VELA_PYTHON` 覆盖）
+  以子进程运行 `bin/vela_sdevice.pyz`，透传参数与退出码。统一的原生入口满足“可执行
+  二进制 + `bin/`”的部署要求，同时保留了现有 Python 前端的全部解析/测试资产。
+- **编排器**：`scripts/vela_sdevice/`（包）打包为 zipapp，纯标准库（现有 `sentaurus_*.py`
+  已是纯标准库），不依赖 numpy/h5py；TDR 读取由 `bin/sentaurus_import` 完成。
+- **契约**：`execution_ir.json`（`schemas/vela.sentaurus_execution_ir.v1.schema.json`，
+  需升 v2）是前端与发射器之间的稳定契约；若日后要去掉 Python 依赖，只需把“IR →
+  deck 发射器 + 编排”移植进 `vela` 二进制（后续工作，不在 WP0–WP12 内）。
+- **C++ 增量**限定为：`vela` 启动器；`.vtu` 写出器与字段选择/命名；
+  `sweep.vtk_bias_points`；`sweep.breakdown` 电流判据；主 CSV 可选全接触电流列（或沿用
+  `terminal_balance`）；线程数环境变量注入。每项都需 Catch2 测试且现有回归不回退。
+- **提案 A（已采纳，决定 23）：sidecar 覆盖文件**。sdevice cmd 无法表达 Vela 特有的数值选项
+  （`node_volume_policy`、`solver.method`、`handoff`、诊断开关），而验收与排错都需要不改 cmd
+  就能调这些选项。建议：若存在 `<stem>.vela.json`，则在生成每个 stage deck 后按 JSON merge
+  叠加（只允许白名单内的 `solver/mesh_geometry/discretization/sweep.diagnostics` 键，不允许改
+  电极、物理模型与扫描目标），并在 log 与 `run_manifest.json` 中逐键记录。默认无 sidecar。
+- **提案 B（已采纳，决定 23）：生成的 deck 使用 `format_version: 2`**。`docs/config_schema.md` 标明
+  `scaling.mode: unit_scaling` 这种过渡形式“计划移除”，而现有 `device` 路径仍在生成它。新发射器
+  直接使用 v2 键名（`donors_cm3` 等）与基于 `role` 的材料文件，避免上线后再迁移。
+
+## 10. 工作分解（WP）、接口契约与验收标准
+
+原则：每个工作包（WP）只依赖**已冻结的契约**（schema/文件格式/CLI 协议），不依赖其它 WP 的
+实现；每个 WP 独占一组文件路径，避免并行开发时改同一文件；每个 WP 的验收是可执行的测试或
+可检查的产物，不是“已实现”三个字。
+
+### 10.0 接口契约（WP0 先冻结，其余 WP 只依赖这些）
+
+| 契约 | 内容 | 生产者 | 消费者 | 冻结形式 |
+| --- | --- | --- | --- | --- |
+| C1 执行 IR v2 | cmd 的结构化表示：`files`（按附录 C 补全后的输出名）、`electrodes[].attributes`、`physics.effective_models`（按 4.3 规则展开后的有效集）、`fixed_charges[]`、`math`（结构化）、`plot`、`stages[]`（含 `outputs`）、`preprocessor_findings`、`warnings[]`（带编号） | WP1 | WP3、WP4、WP5 | `schemas/vela.sentaurus_execution_ir.v2.schema.json` + `tests/fixtures/sdevice/*.ir.json` golden |
+| C2 网格包 | `mesh.json`（现有 `JsonMeshReader` 契约）+ `doping.csv`（`node_id,donors_cm3,acceptors_cm3`）+ `mesh_qualification.json`（节点/单元/接触名与节点数、最大角、钝角占比、材料集合、包围盒、单位） | WP2 | WP4、WP5 | `schemas/vela.mesh_qualification.v1.schema.json` |
+| C3 材料文件 | 基于 `role`/`provenance` 的材料 JSON（现有 `vela.templates_ldmos.materials.v1`，加通用别名 `vela.materials.v1`），每种网格材料一条 | WP3 | WP4 | 现有 schema + 别名 |
+| C4 stage 计划 | `stage_plan.json`：有序 stage 列表（deck 路径、输入/输出状态文件、电极电压表、`t`→偏置映射、必经点、`.plt` 写出点、`.vtu` 写出点、`exit_on_failure`） | WP4 | WP5、WP8 | `schemas/vela.stage_plan.v1.schema.json` |
+| C5 求解器协议 | deck（`format_version: 2`）键集；runner 退出码 0/1/2；主 CSV 与 `terminal_balance` CSV 列名；HDF5 状态文件；新增键 `sweep.vtk_format/vtk_fields/vtk_bias_points`、`sweep.breakdown.current_*_A_per_um`、`sweep.csv_all_contacts` | WP6（新增键） | WP4、WP5、WP8 | `docs/config_schema.md` + `configs/schema/vela-simulation.schema.json` |
+| C6 输出文件契约 | `.plt` 数据组与顺序、`time` 语义、符号因子；`.vtu` 字段名/单位/`FieldData` 键；`.pvd` 结构；文件命名规则 | WP8、WP6 | WP10 | `docs/sentaurus_sdevice_workflow.md` 第“输出”节 + 夹具 |
+| C7 产物清单 | `artifact_manifest.json` | WP9 | WP10 | `schemas/vela.reference_artifact_manifest.v1.schema.json` |
+| C8 CLI/退出码/消息目录 | 第 5 节选项表、退出码 0–8、`W1xx/E1xx–E8xx` 编号 | WP0 | WP5、WP7、WP12 | `docs/sentaurus_sdevice_workflow.md` |
+| C9 启动器协议 | `vela device <args>` → `bin/python/... bin/vela_sdevice.pyz device <args>`，cwd 不变，退出码透传，`VELA_PYTHON` 覆盖 | WP7 | WP5 | 同上 |
+| C10 sidecar | `<stem>.vela.json` 白名单键（`solver`、`mesh_geometry`、`discretization`、`sweep.diagnostics`）与合并规则（深合并、数组替换） | WP0 | WP4 | `schemas/vela.sdevice_sidecar.v1.schema.json` |
+
+### 10.1 依赖关系与并行组
+
+```mermaid
+flowchart LR
+  WP0[WP0 契约与夹具] --> WP1[WP1 cmd 解析器]
+  WP0 --> WP2[WP2 网格导入]
+  WP0 --> WP3[WP3 材料参数]
+  WP0 --> WP6[WP6 C++ 求解器增量]
+  WP0 --> WP7[WP7 C++ 启动器]
+  WP0 --> WP8[WP8 .plt/.pvd 库]
+  WP0 --> WP9[WP9 产物工具]
+  WP0 --> WP4a[WP4a 栅接触能级核对]
+  WP1 -. C1 .-> WP4[WP4 deck 发射器]
+  WP4a -. 公式 .-> WP4
+  WP4 -. C4 .-> WP5[WP5 编排器 CLI]
+  WP2 -. C2 .-> WP5
+  WP3 -. C3 .-> WP5
+  WP8 -. 库 .-> WP5
+  WP6 -. C5 .-> WP5
+  WP7 -. C9 .-> WP11[WP11 打包与并发]
+  WP5 --> WP10[WP10 一致性验收]
+  WP9 -. C7 .-> WP10
+  WP5 --> WP11
+  WP10 --> WP12[WP12 文档]
+```
+
+并行组：**组 A**（WP0 后可同时开工，互不改同一文件）= WP1、WP2、WP3、WP4a、WP6、WP7、WP8、WP9；
+**组 B** = WP4（需 C1 冻结，可先用 golden IR 夹具开发，不等 WP1 完工）；**组 C** = WP5
+（需 C2–C5、C9，可先用假 runner/假网格开发）；**组 D** = WP10、WP11、WP12。
+
+### 10.2 工作包卡片
+
+每张卡片：目标 / 范围 / 输入 / 输出 / 独占文件 / 验收标准 / 明确不做。
+
+#### WP0 契约与夹具冻结
+
+- 目标：让其余 WP 只依赖文件格式与 schema，不依赖彼此的代码。
+- 范围：写出 C1、C2、C4、C7、C10 的 JSON schema；把第 8 节验收 deck 复制为
+  `tests/fixtures/sdevice/<case>/` 夹具（cmd + `.par`），并手写每个 deck 的期望 IR v2 golden
+  （含被拒绝 deck 的期望错误编号）；写 `docs/sentaurus_sdevice_workflow.md` 初稿（第 4–6 节
+  契约 + 消息目录 C8）；在 VM 建 `/home/tcad/vela_reference_artifacts/` 并归档首批产物。
+- 输入：本方案。输出：schema 文件、夹具、workflow 文档初稿、VM 目录。
+- 独占文件：`schemas/vela.sentaurus_execution_ir.v2.schema.json`、
+  `schemas/vela.mesh_qualification.v1.schema.json`、`schemas/vela.stage_plan.v1.schema.json`、
+  `schemas/vela.reference_artifact_manifest.v1.schema.json`、`schemas/vela.sdevice_sidecar.v1.schema.json`、
+  `tests/fixtures/sdevice/**`、`docs/sentaurus_sdevice_workflow.md`。
+- 验收：`python -m jsonschema`（或仓库现有校验器）能校验每个 golden；每个 schema 有一个
+  最小合法样例与一个非法样例的单测（`tests/regression/test_sdevice_contracts.py`）；消息目录
+  编号无重复；VM 目录与首份 `artifact_manifest.json` 存在（可用 `ssh sentaurus ls` 验证）。
+- 不做：任何解析/求解代码。
+
+#### WP1 cmd 解析器 → IR v2
+
+- 目标：把 T-2022.03 语法的 sdevice cmd 无损解析为 C1，未支持项 fail-closed 且带行号与编号。
+- 范围：新包 `scripts/vela_sdevice/cmd_parser/`（词法：字符串/注释/预处理指令；语法：段落、
+  括号、赋值；语义：4.1–4.6 全部关键字，大小写不敏感，别名表，4.3 有效模型集展开，
+  附录 C 文件名补全，`t` 步长保留原值）。现有 `sentaurus_import.py` 不改，只在最后加薄的
+  委托导出以保持旧测试。
+- 输入：cmd 文本。输出：IR v2 JSON 或带编号的错误。
+- 独占文件：`scripts/vela_sdevice/cmd_parser/**`、`tests/regression/test_sdevice_cmd_parser.py`。
+- 验收：（1）第 8 节全部夹具 deck 的 IR 与 golden 逐字节一致；（2）4.7 节每一类 fail-closed 至少
+  一个夹具，错误编号与行号正确；（3）性质测试：对任意夹具，剥注释不改变引号内文本；
+  关键字大小写变体产生相同 IR；BOM/CRLF 变体产生相同 IR；（4）现有 `test_sentaurus_*` 全部仍通过。
+- 不做：读网格、读 `.par`、生成 deck。
+
+#### WP2 网格导入（TDR / DF-ISE → C2）
+
+- 目标：把 `File{Grid}` 指向的 `.tdr` 或 `.grd+.dat` 转成 C2 网格包并给出资格报告。
+- 范围：`scripts/vela_sdevice/mesh_import/`：TDR 路径调用 `bin/sentaurus_import`（`--export-dir`，
+  `--coordinate-unit`）后转换；DF-ISE 路径新写解析（复用 `compare_sentaurus_tdr_tdx.py` 的
+  `parse_grd/parse_dat` 逻辑，边索引单元→节点三角形，`Contact` 区→contacts 与 `edge_node_ids`，
+  掺杂字段→`doping.csv`）；资格报告（2-D、三角形、接触名/节点数、最大角、钝角占比、材料集合、
+  包围盒与单位合理性）；四边形单元：拒绝，或实现确定性对角剖分（二选一，写入报告）。
+- 输入：网格文件路径。输出：C2 三件。
+- 独占文件：`scripts/vela_sdevice/mesh_import/**`、`tests/regression/test_sdevice_mesh_import.py`、
+  `tests/fixtures/sdevice_mesh/**`（用 `render_dfise_grid` 合成的小网格 + 同源 TDR 由
+  `sentaurus_import` 导出的 CSV 快照）。
+- 验收：（1）合成 DF-ISE 夹具导入后节点/单元/接触/掺杂与生成器输入一致；（2）同一网格的
+  TDR 导出与 DF-ISE 导入结果一致（复用 `compare_sentaurus_tdr_tdx.py` 的比较逻辑，坐标 1e-9 µm、
+  拓扑完全一致）；（3）`mesh.json` 能被 `JsonMeshReader` 读取（用 `vela_example_runner --config`
+  跑一个 `poisson` 最小 deck 作为冒烟）；（4）资格报告通过 C2 schema；（5）含钝角三角形的夹具
+  不被拒绝，报告钝角占比。
+- 不做：任何 SDE 造网；不决定离散策略（只报告）。
+
+#### WP3 材料参数（`.par` → C3；`models.par`；`-P`）
+
+- 目标：把 `.par` 中被激活模型的参数无损、可追溯地写成 C3；提供 Vela 默认参数的 `.par`。
+- 范围：`scripts/vela_sdevice/materials/`：以 C1 的 `effective_models` 与 `temperature_K`、C2 的
+  材料集合为输入，调用现有 `sentaurus_parameter_ir.py`/`sentaurus_parameter_map.py`，发射
+  每种材料的条目（半导体全参数；绝缘体 `Epsilon`；金属电极 `WorkFunction`）；实现
+  `share/vela/materials/models.par` 生成脚本与往返测试；`approximated` 仅 `--allow-lossy`。
+- 输入：`.par` 路径、激活模型列表、温度、材料名列表、电极材料名列表。输出：`materials.json`
+  + `materials_report.json`（每参数的状态与来源）。
+- 独占文件：`scripts/vela_sdevice/materials/**`、`share/vela/materials/models.par`（生成产物）、
+  `scripts/generate_default_models_par.py`、`tests/regression/test_sdevice_materials.py`。
+- 验收：（1）PN2D `models.par` + IV 激活集 → 与 `pn2d_sentaurus2018_iv_materials.json` 的数值
+  逐项一致（容差 1e-12 相对）；（2）`models.par`（Vela 默认）往返闭合：解析+发射后与
+  `MaterialDatabase` 内置 Si/SiO2 数值一致；（3）缺 `Material="Nitride"` 但网格含 Nitride →
+  错误编号 E4xx；（4）`unsupported_*` 激活参数 → 致命，`approximated` 无 `--allow-lossy` → 致命，
+  有则写入并记录；（5）输出通过 C3 schema。
+- 不做：改 `apply_solver_physics`（旧入口不动）；不生成 deck。
+
+#### WP4a 栅接触参考能级核对（独立小课题）
+
+- 目标：确定 `Barrier`/`Workfunction` → Vela `metal_gate` 字段的精确公式。
+- 范围：1-D 等效 MOS 电容 Vela 夹具，扫描 `Barrier` 与 `Workfunction`，提取带平电压，
+  与手册 Eq. 104（Φ_MS 相对本征参考半导体）比较；产出映射式与说明。
+- 输出：`docs/validation/sdevice_gate_contact_reference_2026-xx-xx.md` + 一个 Catch2 或 Python
+  回归测试固定该公式。
+- 独占文件：上述文档、`tests/regression/test_sdevice_gate_contact_mapping.py`。
+- 验收：夹具带平电压与 Eq. 104 预测之差 ≤ 1 mV（三个 Barrier 值）；公式写入 C4 发射规则。
+- 不做：改 Vela 接触物理。
+
+#### WP4 IR → stage 计划与 deck 发射器
+
+- 目标：纯函数：C1 + C2 报告 + C3 路径 + sidecar → C4 `stage_plan.json` 与各 stage 的
+  `format_version: 2` deck。
+- 范围：`scripts/vela_sdevice/deck_emit/`：4.1/4.2/4.5/4.6 的全部映射；`t`→伏特；stage 链
+  （状态文件、电极电压表、未达 Goal 续接规则、`Load`）；`Math` 启发式映射并生成映射决策
+  列表；导入网格默认 `barycentric` + 允许钝角；sidecar 白名单深合并；`Plot/CurrentPlot`
+  `Time` → 必经点/写出点。
+- 输入：IR v2、`mesh_qualification.json`、materials 路径、可选 sidecar。输出：C4 + decks。
+- 独占文件：`scripts/vela_sdevice/deck_emit/**`、`tests/regression/test_sdevice_deck_emit.py`、
+  `tests/fixtures/sdevice/<case>/expected_stage_plan.json`、`expected_stage*.json`。
+- 验收：（1）每个夹具 IR 生成的 decks 与 golden 一致，并通过 `configs/schema/vela-simulation.schema.json`；
+  （2）`t` 换算性质测试：`MaxStep=0.025, |V1−V0|=10` → `max_step=0.25`；（3）两段扫描的
+  stage 计划：第二段 `contacts[].bias` 等于第一段 Goal；模拟“第一段停在 3.2 V”的输入时第二段
+  从 3.2 V 起；（4）sidecar 非白名单键 → 错误编号；（5）`decks` 中不出现旧格式键（`scaling`、
+  `donors`、`Nc_m3`）——用 `canonicalizeDeck` 或 schema 拒绝验证。
+- 不做：运行 runner；读 cmd 文本（只吃 IR）。
+
+#### WP5 编排器 CLI（`vela_sdevice.pyz`）
+
+- 目标：把 WP1–WP4、WP8 串成第 5–7 节定义的行为：CLI、gates、log、退出码、锁、信号、
+  stage 执行、`.plt` 增量写出、`.vtu`/`.pvd` 归位。
+- 范围：`scripts/vela_sdevice/orchestrator/` + `scripts/vela_sdevice/__main__.py`；zipapp 构建
+  脚本；runner 以子进程运行（cwd=`<stem>_vela/`，ASCII 相对路径）；`--check`、`-P`、`-i`、
+  `--exit-on-failure`、线程环境变量；消息编号；`fail_report.json`/`run_manifest.json`。
+- 输入：cmd 路径。输出：第 6.1 节全部产物。
+- 独占文件：`scripts/vela_sdevice/orchestrator/**`、`scripts/vela_sdevice/__main__.py`、
+  `scripts/build_vela_sdevice_pyz.py`、`tests/regression/test_sdevice_orchestrator.py`。
+- 验收：（1）用**假 runner**（一个写固定 CSV/状态文件并按参数返回退出码的脚本）覆盖：退出码
+  0–8 每个至少一例；锁冲突；SIGTERM 下保留部分 `.plt` 并删锁；日志包含头部/回显/映射决策/
+  结束摘要；（2）用真 runner 跑 `tests/fixtures/sdevice/pn2d_iv`（合成小网格）端到端退出 0；
+  （3）含中文与空格的临时目录名下端到端退出 0（Windows 与 Linux 各一次）；（4）`--check`
+  不启动 runner（假 runner 计数为 0）。
+- 不做：C++ 改动；数值验收。
+
+#### WP6 C++ 求解器增量（C5 新增键）
+
+- 目标：runner 能按 deck 键写 XML `.vtu`（字段子集、TDR 数据名、单位）、在必经点落点、
+  按电流判据终止、在主 CSV 输出全部接触电流。
+- 范围：`src/io/VtuWriter.{h,cpp}`（新）；`writeDDSolutionVTK` 增加字段选择与命名映射；
+  `DCSweep` 解析 `sweep.vtk_format/vtk_fields/vtk_bias_points/csv_all_contacts`、
+  `sweep.breakdown.current_{abs,min,max}_A_per_um`；`write_dd_state_vtk` 复用；
+  `docs/config_schema.md` 增补。
+- 独占文件：上述源文件与 `tests/test_vtu_writer.cpp`、`tests/test_dc_sweep_output_contract.cpp`
+  （新）；`DCSweep.cpp` 只改解析与输出分支，不碰步进/求解逻辑。
+- 验收：（1）Catch2：写出的 `.vtu` 用独立解析（`tinyxml2`/手写 XML 读）回读节点/单元/字段名/
+  单位/`FieldData`；（2）字段子集与别名映射表测试；（3）`vtk_bias_points` 落点精确到 1e-12 V
+  且不改变其它点的自适应行为（对比无必经点时的 CSV，除新增点外逐行一致）；（4）电流判据在合成
+  单调电流序列上于正确点终止并在 CSV 标记原因；（5）`ctest --preset windows-ucrt64-debug` 全部
+  既有测试无回退（含 `pn2d_config_templates`、`pn2d_node_volume_policy_default_acceptance`）。
+- 不做：任何物理/离散/收敛逻辑改动。
+
+#### WP7 C++ 启动器 `vela`
+
+- 目标：`vela device …` 原生入口，按 C9 找到 `bin/` 与 Python，透传参数与退出码。
+- 范围：`src/tools/vela.cpp`（新）+ CMake 目标；Windows 宽字符 `wmain`/`CreateProcessW`，
+  Linux `execv`；`--version`；未知子命令用法错误退出 2。
+- 独占文件：`src/tools/vela.cpp`、`CMakeLists.txt` 中新增目标块、`tests/test_vela_launcher.cpp`
+  或 Python 测试 `tests/regression/test_vela_launcher.py`。
+- 验收：（1）用一个回显参数的假 `vela_sdevice.pyz` 验证参数含空格/中文/引号时逐个透传；（2）
+  假脚本返回 0–8 时启动器退出码相同；（3）无可用 Python 时退出 2 并给出编号消息；
+  （4）`VELA_PYTHON` 覆盖生效。
+- 不做：任何业务逻辑。
+
+#### WP8 `.plt`/`.pvd` 写出库（纯函数）
+
+- 目标：从 runner CSV（主 CSV + `terminal_balance`）与 C4 的电极表/`t` 映射生成 DF-ISE `.plt`
+  与 `.pvd`。
+- 范围：`scripts/vela_sdevice/plt/`：数据组顺序、`time` 计算、符号因子常量（初值 +1，WP10
+  确定后改）、写出点过滤、原子写；`.pvd` 生成。
+- 独占文件：`scripts/vela_sdevice/plt/**`、`tests/regression/test_sdevice_plt_writer.py`。
+- 验收：（1）写出的 `.plt` 能被现有 `export_plt_reference` 读回且数值一致；（2）与仓库
+  `.plt` 夹具格式逐行结构一致（`DF-ISE text`/`Info{}`/`Data{}`）；（3）多段扫描的 `time`
+  按契约（WP10 核对后固定）；（4）`.pvd` 被 `xml.etree` 解析且文件引用全部存在。
+- 不做：读 cmd；运行 runner。
+
+#### WP9 验收产物工具
+
+- 目标：第 12 节 `register/fetch/verify`。
+- 范围：`scripts/reference_artifacts.py`（S3 后端：`ssh`/`scp`/`rsync` 通过别名 `sentaurus`；
+  可替换的传输后端接口以便单测用本地目录模拟）；`verify` 的 6 项检查与报告。
+- 独占文件：`scripts/reference_artifacts.py`、`tests/regression/test_reference_artifacts.py`。
+- 验收：（1）本地模拟后端下 `register→fetch→verify` 全绿；（2）篡改一个字节 → `verify`
+  失败并指出文件；（3）`.log` 回显与 `source/*.cmd` 不一致 → 失败；（4）VM 不可达 → 明确
+  “无法核对”状态而非异常栈。
+- 不做：任何 Vela 求解。
+
+#### WP10 一致性验收
+
+- 目标：对第 8 节案例建立契约阈值并出报告；确定 `.plt` 符号因子与多段 `time` 语义。
+- 范围：`configs/sdevice_acceptance_contract.json`（扩展现有 e2e 契约）；比对脚本复用
+  `compare_reference_curves.py` 与场量比较脚本；`sdevice_e2e_<case>` CTest（由
+  `VELA_REFERENCE_ARTIFACTS_DIR` 门控）；报告入 `docs/validation/`。
+- 验收：（1）pn2d 0v/iv/bv 曲线与场量通过契约；（2）符号因子与 `time` 语义写入 C6 并把 WP8
+  常量改为确定值，附回归测试；（3）bvmethods/schottky 案例 `--check` 退出 0，数值差异登记
+  账本；（4）2022 deck 被拒绝并记录编号。
+- 不做：为通过阈值修改任何 Vela 物理默认。
+
+#### WP11 打包与并发验证
+
+- 目标：第 13 节目录树、随包 Python、干净机器冒烟、并发矩阵。
+- 范围：`scripts/package_vela.py`、CMake `install()` 规则、`THIRD_PARTY_NOTICES` 生成；
+  并发测试脚本 `tests/regression/test_sdevice_concurrency.py`（Linux 运行，Windows 跳过并明示）。
+- 验收：（1）Windows zip 与 Ubuntu 24.04 tar 在无系统 Python 的环境解包后 `vela device pn2d_iv_des`
+  退出 0；（2）13.3 并发矩阵通过；（3）包内无 `reference_staging`/专有产物；（4）`vela device -P`
+  写出 `models.par` 且能被同一 deck 使用。
+
+#### WP12 文档与收尾
+
+- 范围：`docs/sentaurus_sdevice_workflow.md` 完稿（含消息目录、支持子集表、示例 sidecar）、
+  `docs/README.md` 索引、`docs/config_schema.md`/`docs/sentaurus_import.md` 增补、CHANGELOG 条目。
+- 验收：文档中的每条命令可执行；链接检查通过；DoD 六条逐项引用证据。
+
+### 10.3 阶段与 WP 的对应
+
+| 阶段 | WP | 可并行 |
+| --- | --- | --- |
+| 阶段 1 契约 | WP0 | — |
+| 阶段 2 组件 | WP1、WP2、WP3、WP4a、WP6、WP7、WP8、WP9 | 全部可并行，文件不相交 |
+| 阶段 3 组装 | WP4 → WP5 | WP4 可在 WP1 完成前用 golden IR 开发 |
+| 阶段 4 验收与交付 | WP10、WP11、WP12 | WP11 可与 WP10 并行 |
+
+### 10.4 开发分支与工作树
+
+- 工作树：`.worktrees/sdevice-cmd-frontend`，分支 `codex/sdevice-cmd-frontend`（自 `main`），
+  与仓库现有 `.worktrees/*` 约定一致；构建目录使用工作树内的 `build/`（CMake preset 默认）。
+- 每个 WP 在该分支上以独立提交（或子分支 `codex/sdevice-cmd-frontend/wpN`）交付，提交信息
+  以 `sdevice(WPn):` 开头；WP 合入前必须通过其卡片的验收测试与 `ctest -R sdevice`。
+- 大产物（网格/参考 `.tdr`/`.plt`）不进分支；夹具用合成小网格。
+
+### 阶段 1 完成标准（Definition of Done）
+
+下列全部成立才算阶段 1 完成；任一项不成立则不得对外宣称“无缝读取 sdevice cmd”：
+
+1. `vela device pn2d_{0v,iv,bv}_sdevice` 在 Windows 与 Ubuntu 24.04 的打包目录中（无系统 Python）
+   端到端退出 0，产出 `.log/.plt/.vtu/.pvd`，且曲线与场量比对通过各自契约阈值。
+2. 第 8 节表中的 bvmethods（ABA、外接电阻、电流目标）与 schottky 案例至少完成“解析+校验+生成
+   deck”（`--check` 退出 0）；它们的数值验收按契约单独登记（已知差异可进账本）。
+3. 4.7 节每一类 fail-closed 项至少一个注入用例，退出码与消息编号正确；2022 参考 deck（IALMob/
+   Thermodynamic）被正确拒绝。
+4. 所有映射内的 `Math`/`Electrode`/`Physics`/`Solve` 关键字在 golden IR 测试中有覆盖；
+   `sdevice_frontend` CTest 在无 Sentaurus 产物的机器上全绿。
+5. 并发矩阵（13.3）通过；含中文/空格路径冒烟通过；中止信号下保留部分 `.plt` 并释放锁。
+6. 现有全部 CTest 不回退（含 PN2D BV 模板门）；`docs/sentaurus_sdevice_workflow.md`、
+   `config_schema.md`、`sentaurus_import.md` 与消息目录完稿。
+
+## 11. 风险与未决问题
+
+1. **退出码数值**：手册只定义 0/非 0 与 `ExitOnFailure` 语义；第 5.2 节的细分码是
+   Vela 约定，需平台方确认后冻结。
+2. **收敛准则不等价**：`Digits/ErrRef`（更新量，Eq. 31）与 Vela 残差准则无一一对应；
+   映射只能保证“不更松”的启发式并在 log 记录，误差评价以第 8 节阈值为准。
+3. **已知物理差异**：PN2D BV 深雪崩区 0.70x、LDMOS 峰值 gm 24%、界面节点
+   Poisson 电荷体积策略等已在验证文档中登记；这些决定了部分案例的可达阈值，
+   不能靠前端映射消除。
+4. **`.par` 覆盖率**：现有矩阵对 PN2D `models.par` 报告 8 个阻断项
+   （Auger H/N0、Bandgap 次级公式、mutunnel 等），只有当这些参数所属模型被
+   激活时才致命；仍可能出现用户 `.par` 触发 fail-closed 的情况，需在 log 中
+   给出可操作的提示。
+5. **多段扫描的状态链**：依赖 HDF5 状态文件（构建要求
+   `VELA_ENABLE_HDF5_STATE=ON`，`CMakeLists.txt:47`）；部署包需带 HDF5 运行库；
+   NFS 上的 HDF5 文件锁可能失败，需在编排器设置 `HDF5_USE_FILE_LOCKING=FALSE`
+   并由自身锁文件保证互斥。
+6. **`Plot(Time=...)` 与自适应步长**：Vela 的偏置点由自适应步长决定，指定
+   偏置点需要 sweep 精确落点（现有 `bias_points` 可精确落点，但与自适应
+   `start/stop/step` 互斥），WP6 需设计“自适应 + 必经点”语义（手册中 `Intervals`
+   同样是“强制在这些 t 求解”）。
+7. **随包 Python 的维护**：需随 Vela 发版升级 CPython 安全版本；Windows embeddable 包与
+   Linux standalone 包的行为差异（`._pth`、`sys.path`、缺少 `venv`/pip）需在打包冒烟测试中
+   覆盖；若平台后续要求完全无 Python，走后续的 C++ 移植。
+8. **专有产物的存放与共享**：Sentaurus 日志/TDR 带 Synopsys 专有标识（仓库已有
+   相关审查记录）；主仓公开，原始产物只能留在 VM（S3）或日后的私有存储。S3 的单点
+   风险（VM 磁盘/快照丢失即全部丢失）靠本地镜像与离线备份缓解，manifest 哈希可发现
+   丢失/损坏但不能恢复数据。
+9. **并发资源争用**：多进程默认各自开满线程会超售 CPU；第 13.3 节要求默认单线程
+   （与 `NumberOfThreads` 默认 1 一致）。
+10. **Python 版本偏差**：本机开发环境是 Python 3.14，随包是 3.12，平台下限 3.10；脚本不得使用
+    3.13+ 特有语法/库，CI 矩阵覆盖 3.10–3.14，打包冒烟用随包解释器。
+11. **`metal_gate` 参考能级**：Vela 栅接触的 `barrier/work_function/flatband` 定义是否等于手册
+    Eq. 104 的 Φ_MS（相对本征参考半导体）尚未逐字核对；若参考不同（如中带隙 vs 本征费米能级，
+    或包含半导体功函数），阈值电压会系统性偏移。WP4a 用 MOS 电容带平电压夹具验证后再固定映射。
+
+## 12. 验收产物管理与核对
+
+### 12.1 产物分类与入库策略
+
+| 类别 | 例子 | 体积 | 入库策略 |
+| --- | --- | --- | --- |
+| A 源文件 | `*_des.cmd`、`*_sde.cmd`、`models.par` | KB | 入库（现状） |
+| B 参考曲线 | Sentaurus `.plt` 及其 CSV 形式 | KB–MB | `.plt`→CSV 入库（现状 `reference_curves/`）；原始 `.plt` 只存哈希 |
+| C 网格 | `_msh.tdr`、`.grd/.dat` | MB–十 MB | 不入库；存外部库，仓库只存 SHA-256 + 结构摘要（节点/单元/接触名） |
+| D 场量 | `_des.tdr` 多偏置序列 | 十 MB–GB | 不入库；存外部库；必要时入库“衍生稀疏样本”（选定节点集的 CSV，< 1 MB） |
+| E 日志 | `_des.log` | MB | 不入库（含专有标识、主机名）；只存哈希与提取的版本/退出信息 |
+
+仓库已有先例：`schottky_charon_sentaurus2018_reference.json` 的 `sha256` 块对
+`raw/*.tdr`、`raw/*.plt` 只记哈希不入库；`.gitignore` 已排除 `reference_staging/`；
+`test_sentaurus_sample_integration.py` 用环境变量（`VELA_SENTAURUS_PN2D_2018_DIR`）
+门控并在缺失时 `skipTest`。本方案把这些做法统一为下面的清单 + 存储 + 核对工具。
+
+### 12.2 存储方案
+
+前提事实：
+
+- `pasuka/vela-tcad` 是 **公开** GitHub 仓库（`gh repo view` → `visibility: PUBLIC`，当前约 78 MB）。
+  Sentaurus 原始产物（TDR/日志带 Synopsys 专有标识）不能进入该仓，包括它的 LFS 与
+  Releases（公开仓的 Release 附件任何人可下载）。仓库内只能存清单、哈希与衍生的
+  非专有数据（如 `.plt`→CSV）。
+- GitHub Copilot（任何套餐）**不提供文件存储空间**；它是代码助手订阅。可用的是
+  GitHub 账户本身的存储能力：仓库（单文件 ≤ 100 MiB，推荐仓库 < 1 GB）、Git LFS
+  （免费额度约 1 GB 存储 + 1 GB/月流量，超出购买数据包；以 GitHub 当前定价为准）、
+  Releases 附件（单文件 ≤ 2 GiB，总量与下载流量不限）。GitHub Actions 产物（最多保留
+  90 天）与 Codespaces 存储都不适合长期保存参考产物。
+- 本机已安装 `git-lfs 3.8` 与 GitHub CLI `gh`，下面任一方案都不需要新工具。
+
+各方案含义：
+
+| 方案 | 是什么 | 工作方式 | 优点 | 代价 |
+| --- | --- | --- | --- | --- |
+| S1 内容寻址文件库 | 公司内部的共享盘（NAS/SMB）或对象存储（MinIO/阿里云 OSS/腾讯云 COS 等 S3 兼容服务） | 每个文件以它的 SHA-256 作文件名存放（`sha256/ab/abcd...`）；仓库内 `artifact_manifest.json` 记录“案例内相对名 → 哈希”；`fetch` 按哈希下载 | 容量不受 GitHub 限制；同内容自动去重；内网速度快；不上公网 | 需要一个团队都能访问的共享位置；CI/外网机器需额外授权 |
+| S2a 私有配套仓 + Git LFS | 新建 **私有** 仓 `pasuka/vela-tcad-reference-artifacts`，大文件用 Git LFS 存 | `git clone` 即得全部产物；主仓 manifest 记录配套仓的提交哈希 | 版本化强，与 git 工作流一致 | LFS 免费额度很快用完（一个 LDMOS 多偏置 TDR 序列就可能超 1 GB），每次 clone 都计流量 |
+| S2b 私有配套仓 + Releases 附件（后续迁移首选） | 同一个私有配套仓，但大文件不进 git，而是作为 Release 附件上传（一个案例一个 tag，如 `pn2d_sentaurus2018-v1`） | `gh release upload <tag> <files>` 上传；`gh release download <tag> -p <pattern>` 下载；主仓 manifest 记录 `repo/tag/asset` + SHA-256 | 免费、不占 LFS 额度、不限流量、单文件 2 GiB；附件不可变更（重发需新 tag）天然适合“冻结产物”；现有 `gh` 即可用 | 下载需 GitHub 登录（`gh auth` 或 token）；不适合频繁改动的文件；依赖公网 |
+| S3 仅虚拟机就地 | 产物留在 Sentaurus VM 上，需要时用现有 SSH 工作流（`docs/sentaurus_vm_ssh_workflow.md`）拉取 | `fetch` 通过 `scp`/`rsync` 从 VM 取文件 | 零新基础设施 | 单点：VM 不开机就无法验收；VM 磁盘重装即丢失；不适合 CI |
+
+当前阶段决定（决定 18）：**采用 S3**，验收产物存放在 Sentaurus 虚拟机的指定路径。
+具体约定：
+
+- VM 根目录 `/home/tcad/vela_reference_artifacts/<case>/`（与现有自动化根目录
+  `~/sentaurus_runs/vela_oracle_2022` 并列，不混用；若你指定其它路径，在 manifest 的
+  `store.root` 中记录即可）；案例内目录与 manifest 的相对名一致（`source/`、`mesh/`、
+  `plt/`、`tdr/`、`log/`）。登记后的文件视为只读：文件内容变化会被哈希核对拒绝，
+  重新生成的产物用新的版本子目录（`<case>/v2/`）并更新 manifest。
+- 传输使用现有 SSH 别名 `sentaurus`（用户 `tcad`，`docs/sentaurus_vm_ssh_workflow.md`）：
+  `fetch` 用 `scp`/`rsync` 拉到 `reference_staging/<case>/` 后立即校验哈希；`register` 在 VM
+  上用 `sha256sum` 算哈希（避免先下载大文件），再拉取提取摘要所需的文件。
+- manifest 的 `store` 字段写 `{"kind":"ssh","host":"sentaurus","root":"/home/tcad/vela_reference_artifacts"}`；
+  哈希与摘要与存储后端无关，日后切换到 S2b/S1 只需改 `store` 并重跑 `verify`。
+- 单点风险缓解：（a）`reference_staging/` 本地镜像保留已拉取的副本，`verify` 在 VM 不在线时
+  可对本地副本核对并在报告中标注“未与源比对”；（b）建议定期把 VM 根目录同步到一份
+  离线介质（`rsync` 到本机外置盘），因为 VM 磁盘重装就会丢失全部产物；（c）CI 上的
+  e2e 测试在无产物时跳过并明示，不影响单测。
+
+S1/S2b 保留为后续迁移选项；不允许在公开主仓里用 LFS 或 Releases 存专有产物。
+
+本地工作副本统一放在已忽略的 `reference_staging/<case>/`，环境变量
+`VELA_REFERENCE_ARTIFACTS_DIR` 指向它（默认即该目录）；`fetch` 后管理员路径与仓库
+测试读取的路径一致。
+
+### 12.3 清单内容（`reference_tcad/<case>/artifact_manifest.json`）
+
+每个产物一条：相对名、类别（A–E）、SHA-256、字节数、产生它的 cmd 哈希、Sentaurus
+版本（从 `.log` 头提取）、采集时间、存储位置（S3：`store{kind:ssh,host,root}` + 相对路径；
+S2b：`repo/tag/asset`；S1：`store/sha256/...`）、结构摘要（网格：节点/单元/接触名与节点数；
+`.plt`：数据组名、行数、首末偏置；`_des.tdr`：偏置、数据集名）。
+schema 文件 `schemas/vela.reference_artifact_manifest.v1.schema.json`。
+
+### 12.4 核对环节（`scripts/reference_artifacts.py verify --case <case>`）
+
+验收前必须通过，否则该案例不计入验收：
+
+1. 存在性与哈希：清单中每个产物可从 VM 指定路径拉取（或已在 `reference_staging/`），
+   SHA-256 一致；VM 不在线且本地无副本 → 该案例标为“无法核对”，不得用未核对副本验收。
+2. 来源一致：`.log` 中回显的命令文件与仓库 `source/*.cmd` 内容一致（剥除空白/注释后
+   比对）；`.log` 中的 `Parameter` 文件名与仓库 `.par` 哈希一致。
+3. 结构一致：网格接触名集合 ⊇ cmd `Electrode` 名；`.plt` 数据组名与电极名对应；
+   `.plt` 首末偏置与 cmd `Goal` 一致（未达 Goal 时记录为“部分参考”）。
+4. 完整性：TDR 可由 `sentaurus_import` 读取且字段清单覆盖比对所需数据名；
+   DF-ISE `.grd/.dat` 可解析且与同源 TDR 一致（复用 `compare_sentaurus_tdr_tdx.py`）。
+5. 版本：`.log` 头部版本为 T-2022.03（或案例声明的 2018 版本，并标注为语法兼容案例）。
+6. 输出 `verify_report.json` 与 Markdown 摘要到 `docs/validation/`；失败项逐条列出。
+
+`register` 子命令负责登记 VM 指定路径下的新产物（远端 `sha256sum`、拉取摘要所需文件、
+写清单）；`fetch` 从 VM 拉取到 `reference_staging/` 并校验。三个子命令都有单测（用本地
+临时目录 + 可替换的传输后端充当 VM）。
+
+## 13. 部署布局与并发约束
+
+### 13.1 目录树（Windows 与 Ubuntu 24.04 同构）
+
+```text
+vela/                          # 解包根目录，可任意放置
+  vela(.exe)                   # C++ 启动器：`vela device ...`
+  bin/
+    vela_example_runner(.exe)  # 求解器
+    sentaurus_import(.exe)     # TDR 导入（HDF5）
+    vela_sdevice.pyz           # Python 编排器（zipapp，纯标准库）
+    python/                    # 随包 CPython 3.12（见下）
+    *.dll | *.so*              # HDF5、zlib、libstdc++/libgcc/libwinpthread（UCRT64）、可选 UMFPACK 等
+  share/vela/
+    schemas/  templates/                # JSON schema、deck 模板
+    materials/models.par                # Vela 默认硬参数的 `.par`（`vela device -P` 的来源）
+    docs/sentaurus_sdevice_workflow.md
+  VERSION  LICENSE  THIRD_PARTY_NOTICES   # 后者含 CPython/OpenSSL/HDF5 等许可
+```
+
+- Linux：二进制以 RPATH `$ORIGIN`（`bin/` 内）链接；在 Ubuntu 24.04 或更旧 glibc 上构建；
+  不依赖系统 HDF5 包。Windows：UCRT64 运行库与 HDF5 DLL 随 `bin/`；启动器在调用子
+  程序前把 `bin/` 前置到 `PATH`。
+- **Python 随 `bin/` 携带**（决定 16）：固定 CPython 3.12（维护到 2028），编排器只用标准库。
+  - Windows：python.org 官方 “Windows embeddable package (64-bit)”（`python-3.12.x-embed-amd64.zip`，
+    解压约 15 MB，无 pip/tkinter，自带 `vcruntime140.dll`）放 `bin/python/`；通过
+    `python312._pth` 锁定 `sys.path`（只含自身与 `../vela_sdevice.pyz`），避免被用户系统
+    Python 的环境变量干扰（官方 embeddable 包默认忽略 `PYTHONPATH`/用户 site）。
+  - Linux：`python-build-standalone`（astral-sh，原 indygreg）的
+    `cpython-3.12.x-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz`（约 30–40 MB，
+    可重定位，面向旧 glibc 构建，Ubuntu 24.04 可用）放 `bin/python/`，启动时设
+    `PYTHONNOUSERSITE=1`、清空 `PYTHONPATH`/`PYTHONHOME`。
+  - 启动器查找顺序：`VELA_PYTHON`（开发者覆盖）→ `bin/python/`（正式部署）→ PATH 中
+    `python3`/`python`（仅作应急，需 ≥ 3.10 并在 log 警告）。
+  - 代价：包体增大 15–40 MB；需在 `THIRD_PARTY_NOTICES` 列出 PSF 与随带库许可；安全更新随
+    Vela 发版升级。
+- 打包：CMake `install()` + `scripts/package_vela.py`（下载并校验 Python 运行时哈希、收集
+  依赖、生成 zipapp、写 VERSION。产出 `vela-<ver>-win64.zip` /
+  `vela-<ver>-ubuntu24.04-x86_64.tar.gz`）。
+
+### 13.2 并发安全约束（Linux 多进程，同目录或不同目录）
+
+- 所有中间产物只写入 `<cmd 目录>/<stem>_vela/`，文件名由 cmd stem 派生；不使用固定名
+  的临时文件、不写当前工作目录以外的位置、不使用用户级缓存目录。
+- 路径字符集：用户目录可能含中文或空格（如本机的 `D:\工作\...`）。C++ runner 目前用窄字符
+  `std::ifstream(configFile)` 打开路径（`src/tools/vela_example_runner.cpp:3387`），Windows 上
+  非 ASCII 路径依赖活动代码页。规则：编排器以 `<stem>_vela/` 为子进程 cwd，只传纯 ASCII 的
+  **相对**路径（deck 内的 `mesh_file`/`materials_file`/输出名全部相对且 ASCII），由编排器（Python，
+  Unicode 安全）把产物搬到用户目录并改名；`vela` 启动器在 Windows 用宽字符 API（`wmain`/
+  `CreateProcessW`）透传参数。WP11 冒烟测试必须包含含中文与空格的目录名和 cmd 文件名。
+- 安全：cmd 是用户输入；解析不用 `eval`，子进程一律用参数列表而非 shell 字符串；`File{}` 中指向
+  目录外的路径（`../`）允许但在 log 中标注。
+- 互斥：`<stem>_vela/.lock`（含 PID、主机、时间），`O_EXCL` 创建；已存在且进程存活时以
+  退出码 7 拒绝；陈旧锁（进程不存在）覆盖并在 log 警告。不同 stem 在同一目录互不干扰。
+- 输出原子性：`.plt`/`.vtu`/`.pvd`/manifest 先写 `<name>.tmp` 再 `rename`，避免读者看到半文件。
+- 线程：默认每进程 1 线程（与 `Math{NumberOfThreads}` 默认一致）；`--threads`/`NumberOfThreads`
+  映射到 `OMP_NUM_THREADS`、`OPENBLAS_NUM_THREADS`、`MKL_NUM_THREADS` 后再启动 runner。
+- HDF5：`HDF5_USE_FILE_LOCKING=FALSE`（状态文件每运行私有，互斥由锁文件保证）。
+- 环境隔离：启动器不读写共享配置；环境变量只作读取（`VELA_PYTHON`、`VELA_THREADS`）。
+- 已知需审查的现有全局开关：`VELA_LINEAR_CAPTURE_DIR`（调试用，启动器不设置）。
+
+### 13.3 验证
+
+WP11 的并发测试矩阵：同目录 4 个不同 cmd 并行；4 个目录各 1 个 cmd 并行；同一 cmd
+两次并行（预期一个退出码 7）；结果与串行基线逐字节（`.plt`）与数值（`.vtu`，
+容差 0，仅在默认单线程下要求；多线程 BLAS 时改用小容差）一致；`ps` 采样确认线程数不超过设定。
+
+## 附录 A：待确认事项
+
+截至 2026-09-26 无待确认事项（决定 1–24 均已确认）。后续新增的待决项在此登记。
+
+执行前需要的输入（非决策）：VM 上首批验收案例产物的现存路径（供 WP0 归档）；若希望
+使用不同于 `/home/tcad/vela_reference_artifacts/` 的根目录，在 WP0 指定。
+
+## 附录 B：`.vtu` 输出字段（TDR 数据名）与 `Plot{}` 别名映射
+
+输出名与单位出自手册附录 F Table 195（标量）/196（向量）；“别名”列是仓库 deck 中
+实际出现、且已在 Sentaurus 上运行成功的 `Plot{}` 写法，仅用于输入识别。
+
+| TDR 数据名（输出） | 常见 `Plot{}` 别名 | Vela 现有数组 | 单位（手册） |
+| --- | --- | --- | --- |
+| `ElectrostaticPotential` | `Potential` | `Potential` | V |
+| `eQuasiFermiPotential` / `hQuasiFermiPotential` | `eQuasiFermi` / `hQuasiFermi` | `ElectronQuasiFermi` / `HoleQuasiFermi` | V |
+| `eDensity` / `hDensity` | — | `Electrons` / `Holes` | cm⁻³ |
+| `DopingConcentration` | `Doping` | `NetDoping` | cm⁻³ |
+| `DonorConcentration` / `AcceptorConcentration` | — | 需从 doping 模型导出 | cm⁻³ |
+| `SpaceCharge` | — | `SpaceCharge` | cm⁻³ |
+| `ElectricField`（标量；`/Vector` 为向量） | — | `ElectricField` / `ElectricFieldVector` | V/cm |
+| `eCurrentDensity` / `hCurrentDensity` / `TotalCurrentDensity`（向量） | `eCurrent/Vector` / `hCurrent/Vector` / `TotalCurrent/Vector` | `J_n_total` / `J_p_total` / `TotalCurrentDensityVector` | A/cm² |
+| `ConductionCurrentDensity` | — | = `J_n_total + J_p_total` | A/cm² |
+| `eMobility` / `hMobility` | — | `ElectronMobilityCm2PerVs` / `HoleMobilityCm2PerVs` | cm²/(V·s) |
+| `eVelocity` / `hVelocity` | — | `ElectronVelocity` / `HoleVelocity` | cm/s（`v = J/(nq)`；需核对现有定义） |
+| `srhRecombination` | `SRH`, `SRHRecombination` | `SRHRecombinationCm3PerS` | cm⁻³·s⁻¹ |
+| `AugerRecombination` | `Auger` | `AugerRecombinationCm3PerS` | cm⁻³·s⁻¹ |
+| `TotalRecombination` | — | 需汇总 | cm⁻³·s⁻¹ |
+| `Band2BandGeneration` | `Band2Band` | `Band2BandGeneration` | cm⁻³·s⁻¹（需核对现有单位） |
+| `AvalancheGeneration` / `eAvalancheGeneration` / `hAvalancheGeneration` | — | `AvalancheGeneration`；按载流子拆分需新增 | cm⁻³·s⁻¹（需核对现有单位） |
+| `eAlphaAvalanche` / `hAlphaAvalanche` | — | `ElectronAlphaAvalanche` / `HoleAlphaAvalanche` | cm⁻¹ |
+| `eIonIntegral` / `hIonIntegral` / `MeanIonIntegral` | — | 同名 | 1 |
+| `BandGap` / `BandgapNarrowing` / `EffectiveBandGap` | `BandGapNarrowing` | `BandGap` / `BandgapNarrowing` / 需计算 | eV |
+| `ElectronAffinity` | `Affinity` | `ElectronAffinity` | eV |
+| `ConductionBandEnergy` / `ValenceBandEnergy` | `ConductionBand` / `ValenceBand` | 同名 | eV |
+| `EffectiveIntrinsicDensity` / `IntrinsicDensity` | — | `EffectiveIntrinsicDensity` / 需导出 | cm⁻³ |
+| `eEffectiveStateDensity` / `hEffectiveStateDensity` | — | Nc/Nv 节点数组（需接线） | cm⁻³ |
+| `eQuantumPotential` | — | 量子势数组（需接线） | eV（手册；注意与 Vela 的 V 表示换算） |
+| `eEparallel` / `hEparallel` | — | `ElectronEparallel` / `HoleEparallel` | V/cm |
+| `eEnormal` / `hEnormal` | `eENormal` / `hENormal` | `ElectronEnormal` / `HoleEnormal` | V/cm |
+| `eGradQuasiFermi` / `hGradQuasiFermi`（向量） | `.../Vector` | `ElectronGradQuasiFermiVector` / `HoleGradQuasiFermiVector` | V/cm |
+| `eTemperature` / `hTemperature` / `LatticeTemperature` | `Temperature` | 不提供（log warning 跳过） | K |
+
+说明：Vela 现有数组名与单位见 `src/solver/GummelSolver.cpp:944-1752`；表中“需核对”项在
+WP6 实现时以代码为准逐项确认，不得凭表填单位。向量数据在 `.vtu` 中以同名 3 分量
+`DataArray` 写出（与 ParaView 惯例一致），不再保留 `Vector` 后缀。
