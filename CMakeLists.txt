@@ -519,6 +519,36 @@ endif()
 add_executable(vela_example_runner src/tools/vela_example_runner.cpp)
 target_link_libraries(vela_example_runner PRIVATE vela_core)
 
+# ---------------------------------------------------------------------------
+# Native launcher `vela device ...` (sdevice front end, contract C9)
+# ---------------------------------------------------------------------------
+# Configure-time snapshot; reconfigure to refresh after new commits.
+set(VELA_GIT_DESCRIBE "unknown")
+find_package(Git QUIET)
+if(Git_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_SOURCE_DIR}
+                describe --tags --always --dirty
+        RESULT_VARIABLE _vela_git_describe_result
+        OUTPUT_VARIABLE _vela_git_describe
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET)
+    if(_vela_git_describe_result EQUAL 0 AND NOT _vela_git_describe STREQUAL "")
+        set(VELA_GIT_DESCRIBE "${_vela_git_describe}")
+    endif()
+endif()
+add_executable(vela src/tools/vela.cpp)
+target_compile_definitions(vela PRIVATE
+    VELA_VERSION="${PROJECT_VERSION}"
+    VELA_GIT_DESCRIBE="${VELA_GIT_DESCRIBE}")
+if(MINGW)
+    # wmain entry point; fully static so the launcher also runs from the
+    # package root, where the UCRT64 runtime DLLs (kept in bin/) are absent.
+    target_link_options(vela PRIVATE -municode -static)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_options(vela PRIVATE -static-libgcc -static-libstdc++)
+endif()
+
 add_executable(pn2d_jacobian_block_audit src/tools/pn2d_jacobian_block_audit.cpp)
 target_link_libraries(pn2d_jacobian_block_audit PRIVATE vela_core)
 
@@ -1425,6 +1455,15 @@ add_test(NAME sdevice_mesh_import
 set_tests_properties(sdevice_mesh_import PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sdevice_mesh_import)
+
+add_test(NAME sdevice_vela_launcher
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_vela_launcher)
+set_tests_properties(sdevice_vela_launcher PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_vela_launcher)
+set_property(TEST sdevice_vela_launcher APPEND PROPERTY
+    ENVIRONMENT "VELA_LAUNCHER=$<TARGET_FILE:vela>")
 
 add_test(NAME sentaurus_mesh_builder
     COMMAND ${Python3_EXECUTABLE} -m unittest
