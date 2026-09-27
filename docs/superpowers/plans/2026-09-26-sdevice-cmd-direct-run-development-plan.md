@@ -1020,6 +1020,21 @@ WP0 交付（2026-09-26）：`schemas/vela.{sentaurus_execution_ir.v2,mesh_quali
 [`docs/sentaurus_sdevice_workflow.md`](../../sentaurus_sdevice_workflow.md)（契约与消息目录）、
 CTest `sdevice_contracts`。VM 目录与首批 manifest（7 个案例，`reference_tcad/<case>/artifact_manifest.json`）已于 A-1 确认后完成。
 
+并行组 A 进度（2026-09-27，分支 `codex/sdevice-cmd-frontend`）：
+
+| WP | 状态 | 提交 | 验收要点 |
+| --- | --- | --- | --- |
+| WP1 解析器 | 完成 | `b93e477e` | 10 个夹具全部复现 golden；E101–E117/E301 各一注入用例；BOM/CRLF/大小写/段序不变性；CTest `sdevice_cmd_parser`（29 测试） |
+| WP8 `.plt`/`.pvd` | 完成 | `5dbeeada` | 经旧读取器 `export_plt_reference` 往返一致；符号因子常量 +1 待 WP10；CTest `sdevice_plt_writer`（15） |
+| WP9 产物工具 | 完成 | `273e57b9` | `register/fetch/verify`（12.4 六项 + `--offline`）；本地镜像后端全绿；篡改/哈希不符/不可达三类失败；CTest `sdevice_reference_artifacts`（21） |
+| WP2 网格导入 | 完成 | `021593de` | DF-ISE 合成夹具往返；钝角报告不拒绝；四边形 E402；TDR 路径需 `sentaurus_import`；runner 冒烟加载 `mesh.json`；CTest `sdevice_mesh_import`（8） |
+| WP7 启动器 | 完成 | `0074228d` | `vela device` 参数逐个透传（空格/引号/中文）、退出码 0–8 透传、无解释器 E202；CTest `sdevice_vela_launcher`（11） |
+| WP3 材料 | **未开始** | — | 需要 `.par` IR/映射矩阵 → C3 发射器与默认 `models.par` |
+| WP6 C++ 增量 | **未开始** | — | `.vtu` 写出器、`vtk_bias_points`、电流判据、全接触 CSV |
+| WP4a 栅接触能级 | **未开始** | — | MOS 电容夹具核对 Eq. 104 |
+
+组 A 集成检查：`ctest --test-dir build -R sdevice` 6/6 通过（2026-09-27）。
+
 ## 附录 B：`.vtu` 输出字段（TDR 数据名）与 `Plot{}` 别名映射
 
 输出名与单位出自手册附录 F Table 195（标量）/196（向量）；“别名”列是仓库 deck 中
