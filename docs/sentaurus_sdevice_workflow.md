@@ -22,8 +22,11 @@
 
 校验工具：`python scripts/vela_sdevice/schema_validator.py <schema> <json>...`
 （纯标准库的 draft-07 子集校验器；安装了 `jsonschema` 时单测会交叉比对两者结论）。
+解析器（WP1）：`python -m vela_sdevice.cmd_parser <deck.cmd>`（`PYTHONPATH=scripts`）打印 IR v2 并以
+`verdict.exit_code` 退出；库接口 `vela_sdevice.cmd_parser.parse_cmd_file/parse_cmd_text`。
 夹具：`tests/fixtures/sdevice/`（索引 `fixtures.json`，比较规则见第 5 节）。
-契约单测：`tests/regression/test_sdevice_contracts.py`（CTest 名 `sdevice_contracts`）。
+契约单测：`tests/regression/test_sdevice_contracts.py`（CTest 名 `sdevice_contracts`）；解析器单测
+`tests/regression/test_sdevice_cmd_parser.py`（CTest 名 `sdevice_cmd_parser`）。
 
 ## 2. CLI 与退出码（C8）
 
@@ -226,9 +229,11 @@ schema 之外、golden 夹具所依赖的确定性规则：
    可选键（`goal`、`t_control`、`options`、`current_mode_contacts`）只在有内容时出现。
 9. **analysis.kind 规则**：R1 无 Quasistationary → `equilibrium`；R2 单个电压扫描且存在
    `Recombination.Avalanche`、`ComputeIonizationIntegrals`/`BreakAtIonIntegral` 或电流
-   `BreakCriteria` → `bv`；R3 单个电压扫描（其它） → `iv`；R4 多个 Quasistationary → `multi_stage`；
-   R5 存在致命发现 → 仍按 R1–R4 推导（`verdict` 单独表达拒绝）。`reason` 字符串固定为
-   `"R<n>: <本节描述>"`（见 golden）。
+   `BreakCriteria` → `bv`；R3 单个电压扫描（其它） → `iv`（单个电流目标扫描也记 `iv`，
+   `reason` 为 `"R3: one Quasistationary with a current goal"`）；R4 多个 Quasistationary → `multi_stage`；
+   R5 在门 1 被拒（预处理指令/占位符/Tcl 块）或文件不可解码（E115）→ `rejected`，各节不再求值，
+   `electrodes`/`solve.statements` 为空；其它致命发现仍按 R1–R4 推导（`verdict` 单独表达拒绝）。
+   `reason` 字符串固定为 `"R<n>: <本节描述>"`（见 golden 与 `scripts/vela_sdevice/cmd_parser/solve.py`）。
 10. **verdict**：`accepted` = `errors` 与 `preprocessor_findings` 皆空；`exit_code` 取致命发现中
     最小的退出码段（E1xx→1，E301→3）；`fatal_ids` 按首次出现顺序去重。
 
