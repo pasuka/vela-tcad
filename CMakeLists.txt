@@ -1412,6 +1412,13 @@ set_tests_properties(sdevice_plt_writer PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sdevice_plt_writer)
 
+add_test(NAME sdevice_reference_artifacts
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_reference_artifacts)
+set_tests_properties(sdevice_reference_artifacts PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_reference_artifacts)
+
 add_test(NAME sentaurus_mesh_builder
     COMMAND ${Python3_EXECUTABLE} -m unittest
             tests.regression.test_sentaurus_mesh_builder)
