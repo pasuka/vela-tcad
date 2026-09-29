@@ -3,6 +3,7 @@
 #include "vela/core/Types.h"
 #include <functional>
 #include <string>
+#include <vector>
 
 namespace vela::detail {
 
@@ -20,6 +21,10 @@ struct DCSweepStepControlConfig {
     int maxRetries = 5;
     bool stopOnFailure = true;
     std::function<bool()> stopRequested;
+    /// Biases strictly between start and stop that the controller must land
+    /// on exactly (merged into the nominal target sequence).  Points outside
+    /// the swept interval or coinciding with a nominal target are ignored.
+    std::vector<Real> mandatoryPoints;
 };
 
 struct DCSweepStepControlState {

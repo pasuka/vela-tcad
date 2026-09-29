@@ -20,6 +20,7 @@
 #include <nlohmann/json_fwd.hpp>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace vela {
@@ -228,6 +229,26 @@ void writeDDSolutionVTK(const std::string&    filename,
                         const DDSolution&     sol,
                         UnitScalingConfig scaling = {});
 
+/**
+ * @brief Output options for the full DD exporter.
+ *
+ * ``format == "legacy"`` (default) writes every diagnostic array to a legacy
+ * ASCII ``.vtk`` file exactly as before.  ``format == "vtu"`` writes an XML
+ * UnstructuredGrid file whose arrays carry Sentaurus TDR data names and units
+ * (see ``tdrFieldCatalogue()`` in ``vela/io/VtuWriter.h``); ``fields`` lists
+ * the requested TDR names (``Name`` or ``Name/Vector``; empty selects all),
+ * ``fieldDataStrings``/``fieldDataValues`` become ``FieldData`` entries and
+ * ``skippedFields`` (optional) receives requested names that were not written.
+ */
+struct DDSolutionVtkOptions {
+    std::string format = "legacy";
+    std::vector<std::string> fields;
+    bool binary = false;
+    std::vector<std::pair<std::string, std::string>> fieldDataStrings;
+    std::vector<std::pair<std::string, Real>> fieldDataValues;
+    std::vector<std::string>* skippedFields = nullptr;
+};
+
 void writeDDSolutionVTK(const std::string& filename,
                         const DeviceMesh& mesh,
                         const MaterialDatabase& matdb,
@@ -242,6 +263,7 @@ void writeDDSolutionVTK(const std::string& filename,
                         const CarrierStatisticsConfig& carrierStatistics = {},
                         const std::vector<CoupledDDEdgeFluxDiagnostic>*
                             sgEdgeFluxDiagnostics = nullptr,
-                        bool writeCellFirstSgCurrentDiagnostics = false);
+                        bool writeCellFirstSgCurrentDiagnostics = false,
+                        const DDSolutionVtkOptions* vtkOptions = nullptr);
 
 } // namespace vela
