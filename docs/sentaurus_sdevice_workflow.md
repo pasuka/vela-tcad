@@ -83,10 +83,15 @@ electrode_materials=(), allow_lossy=False, band_edge_sensitive=False)`；命令�
 
 - 激活模型来自 C1 `physics.effective[].key`（`vela_sdevice.materials.active_models_from_ir`），映射到
   `scripts/sentaurus_parameter_map.py` 的模型名；参数状态由该矩阵给出，发射器只评估冻结定律。
-- `share/vela/materials/models.par`（`scripts/generate_default_models_par.py` 由 C++ 内置 Si/SiO2 生成，
-  即 `vela device -P` 的输出）是默认库：用户 `.par` 未给出的节/参数逐参数回退到它，并记 `origin=vela_default`；
-  网格材料在两者中都没有 → E403。Vela 没有 Sentaurus 的内置默认值，激活模型所需的节缺失 → E404
-  `(missing_section)`。
+- `share/vela/materials/models.par`（`scripts/generate_default_models_par.py` 生成，即 `vela device -P` 的输出）是默认库：
+  Silicon 采用与 Sentaurus 默认参数集相同的文献值（Green 1990 带隙/态密度质量、Masetti 1983、Canali 1975、
+  Scharfetter、Dziewior–Schmid Auger、Slotboom–de Graaff 1976、van Overstraeten–de Man 1970、Wettstein 2001），
+  Oxide/Nitride 采用仓库已对齐的 Sentaurus 介电参数（ε 3.9/7.5，E_g 9/5 eV，χ 0.9/1.9 eV）；发射器支持的每个模型在库中都有节。
+  Vela 不能表示的 Sentaurus 默认值改为 Vela 自身定律（`ConstantMobility.Exponent=2.2,2.2`，无 `mutunnel`，`Auger.H=0`，
+  `HighFieldDependence.betaexp=vsatexp=0`）。用户 `.par` 未给出的节/参数逐参数回退到该库并记 `origin=vela_default`；
+  网格材料在两者中都没有 → E403；激活模型所需的节在两者中都缺失 → E404 `(missing_section)`。
+  C++ `MaterialDatabase` 内置 Si（nᵢ 1e10、N_c 2.8e19、N_v 1.04e19 cm⁻³、E_g 1.12 eV）仍是无材料文件 JSON deck 的
+  遗留默认，与该库不同；`vela device` 始终经由材料文件，不使用内置值。
 - 半导体标量：`Eg(T)` 为 Varshni；`Nc/Nv` 用 Formula 1 质量律与 `2(2π m kB T/h²)^{3/2}`（CODATA 2018，与
   `include/vela/core/PhysicalConstants.h` 一致）；`ni = sqrt(Nc Nv) exp(−(Eg(T)+dEg0)/2kT)`，`dEg0(OldSlotboom)`
   只在 OldSlotboom 激活时折入 `ni`，不进入 `bandgap_eV`；`mun/mup` 取 `ConstantMobility.mumax`。

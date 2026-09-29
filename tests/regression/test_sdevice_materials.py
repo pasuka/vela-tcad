@@ -174,12 +174,14 @@ class Pn2dSiliconTest(unittest.TestCase):
 class ReferenceNiTest(unittest.TestCase):
     """The checked-in IV reference ``ni`` (1.4638914958767616e10 cm^-3).
 
-    That literal predates this emitter and its derivation is not recorded;
-    no combination of the documented laws, CODATA/rounded constants, or the
-    2.5094e19 prefactor reproduces it closer than ~2.7e-4 (the P0 variants'
-    value 1.4634826855669146e10 is the 2.5094e19-prefactor result).  The
-    emitter therefore pins the closed form at 1e-12 (``Pn2dSiliconTest``) and
-    checks the reference at 5e-4, reporting the deviation.
+    The June 2026 PN2D work derived that literal from ``models.par`` (plan
+    2026-06-13, commit e2d9a1c8) but did not record the computation; it also
+    equals the Sentaurus contact-edge ``ni_eff`` (~1.65562e10, doping 1e17)
+    divided by the OldSlotboom factor at Nref, i.e. Sentaurus' internal value.
+    No evaluation of the documented laws with CODATA (1969-2018), rounded or
+    Sentaurus (q = 1.602192e-19) constants reproduces it closer than ~2.7e-4.
+    The emitter therefore pins the closed form at 1e-12 (``Pn2dSiliconTest``)
+    and checks the reference at 5e-4, freezing the observed deviation.
     """
 
     def test_reference_ni_within_documented_tolerance(self) -> None:
@@ -192,53 +194,82 @@ class ReferenceNiTest(unittest.TestCase):
 
 
 class DefaultLibraryTest(unittest.TestCase):
-    """Acceptance 2: ``share/vela/materials/models.par`` round trip."""
+    """Acceptance 2: ``share/vela/materials/models.par`` (``vela device -P``).
+
+    The library carries the published silicon defaults Sentaurus also ships,
+    so it must reproduce the PN2D ``sdevice -P`` dump physics exactly and
+    provide a fallback section for every model the emitter supports.
+    """
+
+    ALL_MODELS = ["DopingDependence", "HighFieldSaturation", "SRH", "TempDependence", "Auger", "OldSlotboom",
+                  "VanOverstraeten", "eQuantumPotential"]
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.builtins = gen.builtin_materials()
         cls.result = mat.emit_materials(mat.default_models_par_path(), active_models=[], temperature_K=300.0,
-                                        mesh_materials=["Si", "SiO2"])
+                                        mesh_materials=["Si", "SiO2", "Nitride"])
 
     def test_generated_file_is_current(self) -> None:
         self.assertEqual(0, gen.main(["--check"]))
+        text = mat.default_models_par_path().read_text(encoding="utf-8")
+        self.assertNotIn("Synopsys", text)
+        self.assertNotIn("Copyright", text)
 
-    def test_silicon_round_trips_every_expressible_field(self) -> None:
+    def test_silicon_matches_the_sentaurus_default_dump(self) -> None:
+        for models in ([], ["OldSlotboom"]):
+            library = _material(mat.emit_materials(mat.default_models_par_path(), active_models=models,
+                                                   temperature_K=300.0, mesh_materials=["Si"]), "Si")
+            dump = _material(mat.emit_materials(PN2D_PAR, active_models=models, temperature_K=300.0,
+                                                mesh_materials=["Si"]), "Si")
+            for key, value in dump.items():
+                if key != "provenance":
+                    self.assertEqual(value, library[key], f"{key} with {models}")
         si = _material(self.result, "Si")
-        b = self.builtins["si"]
-        self.assertEqual(b["eps_r"], si["eps_r"])
-        self.assertEqual(b["bandgap_eV"], si["bandgap_eV"])
-        self.assertEqual(b["electron_affinity_eV"], si["electron_affinity_eV"])
-        self.assertEqual(b["temperature_K"], si["temperature_K"])
-        self.assertAlmostEqual(b["mun"] * 1.0e4 / si["electron_mobility_cm2_per_V_s"], 1.0, delta=1e-12)
-        self.assertAlmostEqual(b["mup"] * 1.0e4 / si["hole_mobility_cm2_per_V_s"], 1.0, delta=1e-12)
-        self.assertAlmostEqual(b["Nc_m3"] / 1.0e6 / si["conduction_band_density_of_states_cm3"], 1.0, delta=1e-12)
-        self.assertAlmostEqual(b["Nv_m3"] / 1.0e6 / si["valence_band_density_of_states_cm3"], 1.0, delta=1e-12)
+        expected = pn2d_silicon_closed_form(fold_old_slotboom=False)
+        self.assertAlmostEqual(expected["ni"] / si["intrinsic_carrier_density_cm3"], 1.0, delta=1e-12)
+        self.assertAlmostEqual(1.0750e10, si["intrinsic_carrier_density_cm3"], delta=1e6)
+        self.assertEqual(1417.0, si["electron_mobility_cm2_per_V_s"])
         self.assertEqual([], sv.collect_errors(SCHEMA, self.result.materials))
 
-    def test_silicon_ni_is_derived_not_the_builtin(self) -> None:
-        """The built-in ni (1e10) is not consistent with the built-in Nc/Nv/Eg; the emitter derives ni."""
-        si = _material(self.result, "Si")
-        b = self.builtins["si"]
-        derived = math.sqrt(b["Nc_m3"] * b["Nv_m3"]) / 1.0e6 * math.exp(-b["bandgap_eV"] / (2.0 * KT300))
-        self.assertAlmostEqual(derived / si["intrinsic_carrier_density_cm3"], 1.0, delta=1e-12)
-        self.assertAlmostEqual(0.6676, si["intrinsic_carrier_density_cm3"] / (b["ni"] / 1.0e6), delta=1e-3)
-
-    def test_oxide_round_trips(self) -> None:
+    def test_dielectrics_follow_the_sentaurus_defaults(self) -> None:
         sio2 = _material(self.result, "SiO2")
-        b = self.builtins["sio2"]
-        self.assertEqual("dielectric", sio2["role"])
-        self.assertEqual(b["eps_r"], sio2["eps_r"])
-        self.assertEqual(b["bandgap_eV"], sio2["bandgap_eV"])
-        self.assertEqual(b["electron_affinity_eV"], sio2["electron_affinity_eV"])
-        self.assertNotIn("intrinsic_carrier_density_cm3", sio2)
-        self.assertNotIn("electron_mobility_cm2_per_V_s", sio2)
+        nitride = _material(self.result, "Nitride")
+        self.assertEqual({"name": "SiO2", "role": "dielectric", "eps_r": 3.9, "bandgap_eV": 9.0,
+                          "electron_affinity_eV": 0.9, "temperature_K": 300.0},
+                         {k: v for k, v in sio2.items() if k != "provenance"})
+        self.assertEqual({"name": "Nitride", "role": "dielectric", "eps_r": 7.5, "bandgap_eV": 5.0,
+                          "electron_affinity_eV": 1.9, "temperature_K": 300.0},
+                         {k: v for k, v in nitride.items() if k != "provenance"})
+
+    def test_every_supported_model_has_a_lossless_fallback(self) -> None:
+        for temperature in (300.0, 350.0):
+            result = mat.emit_materials(mat.default_models_par_path(), active_models=self.ALL_MODELS,
+                                        temperature_K=temperature, mesh_materials=["Si"])
+            self.assertEqual([], result.report["lossy"], temperature)
+            self.assertNotIn("unmapped", result.report["counts"])
+            targets = {r["target"].split(".")[1] for r in result.report["solver_parameters"]}
+            self.assertEqual({"auger_cn_m6_per_s", "auger_cp_m6_per_s", "bandgap_narrowing",
+                              "electron_quantum_potential", "impact_ionization", "mobility",
+                              "srh_doping_dependence"}, targets)
+            self.assertEqual(3.6, _material(result, "Si")["electron_quantum_gamma"])
+        # Vela-representable substitutions for Sentaurus defaults are explicit in the library.
+        text = mat.default_models_par_path().read_text(encoding="utf-8")
+        self.assertRegex(text, r"Exponent\s*=\s*2\.2 ,\s*2\.2")
+        self.assertRegex(text, r"\bH\s*=\s*0 ,\s*0")
+        self.assertNotRegex(text, r"^\s*mutunnel\s*=", msg="mutunnel must not be a library parameter")
+
+    def test_builtin_cpp_silicon_is_documented_as_legacy(self) -> None:
+        """The C++ MaterialDatabase Si (ni 1e10, Nc 2.8e19, Nv 1.04e19, Eg 1.12) is not the library source."""
+        si = _material(self.result, "Si")
+        self.assertNotAlmostEqual(1.0e10, si["intrinsic_carrier_density_cm3"], delta=1e8)
+        self.assertNotEqual(1.12, si["bandgap_eV"])
+        self.assertIn("MaterialDatabase", gen.__doc__)
 
     def test_partial_user_file_falls_back_per_parameter(self) -> None:
         result = mat.emit_materials(BV_PAR, active_models=["SRH"], temperature_K=300.0, mesh_materials=["Si", "SiO2"])
         si_report = next(m for m in result.report["materials"] if m["name"] == "Si")
         self.assertFalse(si_report["defined_in_parameter_file"])
-        self.assertEqual(["user_global"], si_report["sections"]["Scharfetter"]["origins"])
+        self.assertEqual(["user_global", "vela_default"], si_report["sections"]["Scharfetter"]["origins"])
         self.assertEqual(["vela_default"], si_report["sections"]["Bandgap"]["origins"])
         taumax = next(r for r in result.report["solver_parameters"]
                       if r["target"] == "solver.srh_doping_dependence.electron.tau_max_s")
@@ -246,6 +277,8 @@ class DefaultLibraryTest(unittest.TestCase):
         self.assertEqual("user_global", taumax["origin"])
         self.assertEqual(_material(self.result, "Si")["conduction_band_density_of_states_cm3"],
                          _material(result, "Si")["conduction_band_density_of_states_cm3"])
+        # The user's global Scharfetter block wins over the library's Silicon block parameter by parameter.
+        self.assertNotEqual(1e-5, taumax["value_si"])
 
 
 class FailClosedTest(unittest.TestCase):
@@ -253,17 +286,25 @@ class FailClosedTest(unittest.TestCase):
 
     def test_missing_mesh_material_is_e403(self) -> None:
         with self.assertRaises(mat.MaterialsError) as ctx:
-            mat.emit_materials(BV_PAR, active_models=["SRH"], temperature_K=300.0, mesh_materials=["Si", "Nitride"])
+            mat.emit_materials(BV_PAR, active_models=["SRH"], temperature_K=300.0, mesh_materials=["Si", "HfO2"])
         self.assertEqual("E403", ctx.exception.message_id)
-        self.assertEqual("Material 'Nitride' is neither built in nor defined in the parameter file",
+        self.assertEqual("Material 'HfO2' is neither built in nor defined in the parameter file",
                          ctx.exception.message)
 
-    def test_nitride_defined_in_parameter_file_is_a_dielectric(self) -> None:
+    def test_user_defined_dielectric_and_library_fallback(self) -> None:
+        text = ('Material = "HfO2" {\nEpsilon\n{\n  epsilon = 25  # [1]\n}\n}\n'
+                'Material = "Nitride" {\nEpsilon\n{\n  epsilon = 7.0  # [1]\n}\n}\n')
         with _tmpdir() as tmp:
-            par = _write_par(Path(tmp), 'Material = "Nitride" {\nEpsilon\n{\n  epsilon = 7.5  # [1]\n}\n}\n')
-            result = mat.emit_materials(par, active_models=[], temperature_K=300.0, mesh_materials=["Si", "Nitride"])
+            par = _write_par(Path(tmp), text)
+            result = mat.emit_materials(par, active_models=[], temperature_K=300.0,
+                                        mesh_materials=["Si", "HfO2", "Nitride"])
+        hfo2 = _material(result, "HfO2")
+        self.assertEqual({"name": "HfO2", "role": "dielectric", "eps_r": 25.0, "temperature_K": 300.0},
+                         {k: v for k, v in hfo2.items() if k != "provenance"})
+        # The user's Epsilon overrides the library; the library's Bandgap fills in.
         nitride = _material(result, "Nitride")
-        self.assertEqual({"name": "Nitride", "role": "dielectric", "eps_r": 7.5, "temperature_K": 300.0},
+        self.assertEqual({"name": "Nitride", "role": "dielectric", "eps_r": 7.0, "bandgap_eV": 5.0,
+                          "electron_affinity_eV": 1.9, "temperature_K": 300.0},
                          {k: v for k, v in nitride.items() if k != "provenance"})
         self.assertEqual([], sv.collect_errors(SCHEMA, result.materials))
 
@@ -313,12 +354,20 @@ class FailClosedTest(unittest.TestCase):
         self.assertEqual([("Bandgap", "Bgn2Chi")], [(x["section"], x["parameter"]) for x in result.report["lossy"]])
 
     def test_missing_section_for_active_model_is_e404(self) -> None:
-        with self.assertRaises(mat.MaterialsError) as ctx:
-            mat.emit_materials(BV_PAR, active_models=["SRH", "DopingDependence"], temperature_K=300.0,
-                               mesh_materials=["Si"])
-        self.assertEqual("E404", ctx.exception.message_id)
-        self.assertEqual("Parameter 'Si.DopingDependence' of active model 'DopingDependence' cannot be imported "
-                         "(missing_section)", ctx.exception.message)
+        with _tmpdir() as tmp:
+            par = _write_par(Path(tmp), 'Material = "Silicon" {\nEpsilon\n{\n  epsilon = 11.7  # [1]\n}\n}\n')
+            # Without the default library nothing can supply the SRH lifetimes.
+            with self.assertRaises(mat.MaterialsError) as ctx:
+                mat.emit_materials(par, active_models=["SRH"], temperature_K=300.0, mesh_materials=["Si"],
+                                   default_par=Path(tmp) / "absent.par")
+            self.assertEqual("E404", ctx.exception.message_id)
+            self.assertEqual("Parameter 'Si.Scharfetter' of active model 'SRH' cannot be imported "
+                             "(missing_section)", ctx.exception.message)
+            # With the library the same file imports and records the fallback origin.
+            result = mat.emit_materials(par, active_models=["SRH"], temperature_K=300.0, mesh_materials=["Si"])
+            si_report = next(m for m in result.report["materials"] if m["name"] == "Si")
+            self.assertEqual(["vela_default"], si_report["sections"]["Scharfetter"]["origins"])
+            self.assertEqual(["user_material"], si_report["sections"]["Epsilon"]["origins"])
 
     def test_region_scope_with_active_parameters_is_e404(self) -> None:
         text = 'Region = "R.Si" {\nScharfetter\n{\n  taumax = 1e-6 , 1e-6  # [s]\n}\n}\n'
@@ -457,7 +506,7 @@ class CliTest(unittest.TestCase):
     def test_cli_exit_codes(self) -> None:
         with _tmpdir() as tmp:
             out = Path(tmp) / "out"
-            proc = self.run_cli("--par", str(BV_PAR), "--model", "SRH", "--materials", "Si", "Nitride", "--out", str(out))
+            proc = self.run_cli("--par", str(BV_PAR), "--model", "SRH", "--materials", "Si", "HfO2", "--out", str(out))
             self.assertEqual(4, proc.returncode)
             self.assertIn("E403", proc.stderr)
             proc = self.run_cli("--par", str(Path(tmp) / "absent.par"), "--materials", "Si", "--out", str(out))

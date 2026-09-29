@@ -368,9 +368,11 @@ _INERT_RULES: Dict[Tuple[str, str], Callable[[Sequence[Any], Dict[str, Any], _Co
         "both carriers use exponent 2.2, the law Material::atTemperature applies" if _all(v, 2.2) else
         ("(T/300 K)^-Exponent = 1 at the reference temperature" if _at_reference_temperature(c) else None)),
     ("HighFieldDependence", "betaexp"): lambda v, s, c: (
-        "(T/300 K)^betaexp = 1 at the reference temperature" if _at_reference_temperature(c) else None),
+        "exponent 0 removes the beta temperature law" if _all(v, 0.0) else
+        ("(T/300 K)^betaexp = 1 at the reference temperature" if _at_reference_temperature(c) else None)),
     ("HighFieldDependence", "vsatexp"): lambda v, s, c: (
-        "(T/300 K)^vsatexp = 1 at the reference temperature" if _at_reference_temperature(c) else None),
+        "exponent 0 removes the vsat temperature law" if _all(v, 0.0) else
+        ("(T/300 K)^vsatexp = 1 at the reference temperature" if _at_reference_temperature(c) else None)),
     ("Auger", "H"): lambda v, s, c: (
         "carrier-density enhancement 1 + H exp(-n/N0) is 1 for H = 0" if _all(v, 0.0) else None),
     ("Auger", "N0"): lambda v, s, c: (

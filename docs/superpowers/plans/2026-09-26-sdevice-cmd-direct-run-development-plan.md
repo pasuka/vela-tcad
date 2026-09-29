@@ -1029,14 +1029,16 @@ CTest `sdevice_contracts`。VM 目录与首批 manifest（7 个案例，`referen
 | WP9 产物工具 | 完成 | `273e57b9` | `register/fetch/verify`（12.4 六项 + `--offline`）；本地镜像后端全绿；篡改/哈希不符/不可达三类失败；CTest `sdevice_reference_artifacts`（21） |
 | WP2 网格导入 | 完成 | `021593de` | DF-ISE 合成夹具往返；钝角报告不拒绝；四边形 E402；TDR 路径需 `sentaurus_import`；runner 冒烟加载 `mesh.json`；CTest `sdevice_mesh_import`（8） |
 | WP7 启动器 | 完成 | `0074228d` | `vela device` 参数逐个透传（空格/引号/中文）、退出码 0–8 透传、无解释器 E202；CTest `sdevice_vela_launcher`（11） |
-| WP3 材料 | 完成 | `fcea7cad` | PN2D `models.par`+IV 激活集 → C3 闭式值 1e-12 一致、通过 C3 schema；默认 `models.par` 往返（除 `ni` 外全部字段闭合，见下）；Nitride 缺失 E403；`unsupported_*` E404、`approximated` 需 `--allow-lossy`；CTest `sdevice_materials`（28） |
+| WP3 材料 | 完成 | `fcea7cad` + 后续 | PN2D `models.par`+IV 激活集 → C3 闭式值 1e-12 一致、通过 C3 schema；默认 `models.par` 为 Sentaurus 默认 Silicon 参数集（文献值）+ Oxide/Nitride，与 PN2D `sdevice -P` 转储的发射结果逐字段相等，支持的全部模型在 300/350 K 无损回退；HfO2 等未知材料 E403；`unsupported_*` E404、`approximated` 需 `--allow-lossy`；CTest `sdevice_materials`（30） |
 | WP6 C++ 增量 | 完成 | `0c9756ba` | `VtuWriter` XML `.vtu`（独立解析回读节点/单元/字段名/单位/FieldData，ASCII+binary）；TDR 字段目录与 `Name`/`Name/Vector` 选择；`vtk_bias_points` 落点 1e-12 V 且其它点不变；`breakdown.current_{abs,min,max}_A_per_um` 在单调电流序列上于正确点终止并标记 CSV；`csv_all_contacts`；Catch2 `vtu_writer`（5）、`dc_sweep_output_contract`（4）；全量 CTest 见集成检查 |
 | WP4a 栅接触能级 | 完成 | `e5cae3e9` | Vela `metal_gate` 与 Eq. 104 同参考能级：`work_function_eV = Barrier`；`WorkFunction` 经 `Φ_S,i = χ+E_g/2+(kT/2)ln(N_c/N_v)` 换算；MOS 电容夹具三个 Barrier 值平带偏差 2e-16 V；文档 `docs/validation/sdevice_gate_contact_reference_2026-09-29.md`；CTest `sdevice_gate_contact_mapping`（6） |
 
-WP3 验收偏离（2026-09-29）：（1）历史 IV 参考 `ni=1.4638914958767616e10` 的推导无记录、任何在案公式均不能复现
-（最接近 −2.7e-4），发射器以 SI 常数闭式公式为准并在测试中以 5e-4 核对；（2）C++ 内置 Si 的 `ni=1e10` 与其
-`Nc/Nv/Eg` 不自洽（推导值 6.68e9 cm⁻³），默认 `models.par` 往返因此只对 `ni` 以外的字段闭合，`vela device`
-默认材料的 `ni` 为推导值——需用户确认是否接受或改内置。
+WP3 验收偏离与处理（2026-09-29，依用户意见调整）：（1）历史 IV 参考 `ni=1.4638914958767616e10` 确认为 2026-06 从
+`models.par` 推导（计划 2026-06-13 / 提交 e2d9a1c8）但算法未记录；它等于 Sentaurus 接触边反推 `ni_eff`（≈1.65562e10）
+除以 Nref 处的 OldSlotboom 因子，以 CODATA 1969–2018/圆整/Sentaurus 常数评估在案公式均不能复现（最接近 −2.7e-4），
+发射器以 SI 常数闭式公式为准，测试以 5e-4 核对；（2）默认 `models.par` 不再从 C++ 内置 Si（nᵢ 1e10 与 Nc/Nv/Eg 不自洽）生成，
+改为 Sentaurus 默认 Silicon 参数集的文献值（无 BGN 时 nᵢ=1.0750e10，OldSlotboom 时 1.4635e10 cm⁻³）；C++ 内置保持不变，
+是否对齐待单独决定（影响所有无材料文件的遗留 deck 与基线）。
 
 组 A 集成检查：`ctest --test-dir build -R sdevice` 8/8 通过（2026-09-29）；全量 CTest 见提交说明。
 
