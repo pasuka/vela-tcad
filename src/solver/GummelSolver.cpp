@@ -8,6 +8,7 @@
 #include "vela/solver/LinearSolver.h"
 #include "vela/physics/CarrierStatistics.h"
 #include "vela/io/VTKWriter.h"
+#include "vela/io/VtuWriter.h"
 #include "vela/post/ElectricFieldDiagnostics.h"
 #include "vela/post/PathIonizationIntegral.h"
 #include <nlohmann/json.hpp>
@@ -878,7 +879,43 @@ std::vector<Real> nodeFieldMagnitudesVcm(const std::vector<NodeField2>& fields, 
     return out;
 }
 
-void writeRecoveredElectricFields(VTKWriter& writer,
+/**
+ * Legacy ``.vtk`` sink that can be switched off.  The DD exporter computes
+ * its diagnostic arrays once; in legacy mode every array is appended to the
+ * ``.vtk`` file as before, in ``vtu`` mode the calls are no-ops and the
+ * TDR-named subset is written by ``writeTdrVtu`` at the end.
+ */
+class DDVtkSink {
+public:
+    DDVtkSink(const std::string& filename, const DeviceMesh& mesh, bool legacy)
+    {
+        if (legacy) {
+            legacy_.emplace(filename, mesh);
+            legacy_->write();
+        }
+    }
+    void addNodeScalar(const std::string& name, const std::vector<Real>& values)
+    {
+        if (legacy_) legacy_->addNodeScalar(name, values);
+    }
+    void addNodeVector(const std::string& name, const std::vector<Point3>& values)
+    {
+        if (legacy_) legacy_->addNodeVector(name, values);
+    }
+    void addCellScalar(const std::string& name, const std::vector<Real>& values)
+    {
+        if (legacy_) legacy_->addCellScalar(name, values);
+    }
+    void addCellVector(const std::string& name, const std::vector<Point3>& values)
+    {
+        if (legacy_) legacy_->addCellVector(name, values);
+    }
+
+private:
+    std::optional<VTKWriter> legacy_;
+};
+
+void writeRecoveredElectricFields(DDVtkSink& writer,
                                   const DeviceMesh& mesh,
                                   const DDSolution& sol,
                                   const UnitScalingConfig& scaling)
@@ -933,8 +970,7 @@ void writeDDSolutionVTK(const std::string& filename,
 {
     const Index N = mesh.numNodes();
 
-    VTKWriter writer(filename, mesh);
-    writer.write();
+    DDVtkSink writer(filename, mesh, true);
     writeRecoveredElectricFields(writer, mesh, sol, scaling);
 
     auto toVec = [&](const VectorXd& v) {
@@ -970,11 +1006,16 @@ void writeDDSolutionVTK(const std::string& filename,
                         const CarrierStatisticsConfig& carrierStatistics,
                         const std::vector<CoupledDDEdgeFluxDiagnostic>*
                             sgEdgeFluxDiagnostics,
-                        bool writeCellFirstSgCurrentDiagnostics)
+                        bool writeCellFirstSgCurrentDiagnostics,
+                        const DDSolutionVtkOptions* vtkOptions)
 {
     const Index N = mesh.numNodes();
-    VTKWriter writer(filename, mesh);
-    writer.write();
+    const bool exportTdrVtu = vtkOptions != nullptr && vtkOptions->format == "vtu";
+    if (vtkOptions != nullptr && vtkOptions->format != "vtu" && vtkOptions->format != "legacy") {
+        throw std::invalid_argument(
+            "writeDDSolutionVTK: vtk format must be 'legacy' or 'vtu', got '" + vtkOptions->format + "'.");
+    }
+    DDVtkSink writer(filename, mesh, !exportTdrVtu);
     writeRecoveredElectricFields(writer, mesh, sol, scaling);
 
     auto toVec = [&](const VectorXd& v) {
@@ -1753,6 +1794,138 @@ void writeDDSolutionVTK(const std::string& filename,
     writer.addNodeScalar("HoleEparallel", holeHighFieldDrive_V_cm);
     writer.addNodeScalar("ElectronMobilityLimiter", electronMobilityLimiter);
     writer.addNodeScalar("HoleMobilityLimiter", holeMobilityLimiter);
+
+    if (!exportTdrVtu)
+        return;
+
+    // ------------------------------------------------------------------
+    // TDR-named XML export (contract C6, docs/sentaurus_sdevice_workflow.md
+    // section 3.3).  Every array is converted to the Appendix F unit listed
+    // in tdrFieldCatalogue(); requested names that this build cannot provide
+    // are reported through vtkOptions->skippedFields instead of being written.
+    // ------------------------------------------------------------------
+    TdrFieldSelection selection(vtkOptions->fields);
+    VtuWriter vtu(mesh, vtkOptions->binary ? VtuWriter::Encoding::Binary
+                                           : VtuWriter::Encoding::Ascii);
+    for (const auto& [name, text] : vtkOptions->fieldDataStrings)
+        vtu.addFieldString(name, text);
+    for (const auto& [name, value] : vtkOptions->fieldDataValues)
+        vtu.addFieldValue(name, value);
+
+    const Real concentrationToCm3 = units.concentrationM3PerInternal() / 1.0e6;
+    auto concentration = [&](const std::vector<Real>& internal) {
+        std::vector<Real> out(internal.size());
+        for (std::size_t i = 0; i < internal.size(); ++i)
+            out[i] = internal[i] * concentrationToCm3;
+        return out;
+    };
+    auto magnitudes = [&](const std::vector<Point3>& vectors) {
+        std::vector<Real> out(vectors.size());
+        for (std::size_t i = 0; i < vectors.size(); ++i)
+            out[i] = vectors[i].norm();
+        return out;
+    };
+    auto unitOf = [](const std::string& tdrName) {
+        const TdrFieldSpec* spec = tdrFieldSpec(tdrName);
+        return spec != nullptr ? spec->unit : std::string("1");
+    };
+    auto scalar = [&](const std::string& tdrName, const std::vector<Real>& values) {
+        if (!selection.wantsScalar(tdrName))
+            return;
+        vtu.addPointScalar(tdrName, unitOf(tdrName), values);
+        selection.markProvided(tdrName, false);
+    };
+    auto vector = [&](const std::string& tdrName, const std::vector<Point3>& values) {
+        // Sentaurus writes one data set per name; the vector form carries the
+        // magnitude implicitly, so a request for both yields the vector only.
+        if (selection.wantsVector(tdrName)) {
+            vtu.addPointVector(tdrName, unitOf(tdrName), values);
+            selection.markProvided(tdrName, true);
+            selection.markProvided(tdrName, false);
+        } else if (selection.wantsScalar(tdrName)) {
+            vtu.addPointScalar(tdrName, unitOf(tdrName), magnitudes(values));
+            selection.markProvided(tdrName, false);
+        }
+    };
+
+    std::vector<Real> donors_internal(N, 0.0);
+    std::vector<Real> acceptors_internal(N, 0.0);
+    for (Index i = 0; i < N; ++i) {
+        donors_internal[i] = doping.donors(i);
+        acceptors_internal[i] = doping.acceptors(i);
+    }
+    std::vector<Real> electronVelocity_cm_s(N, 0.0);
+    std::vector<Real> holeVelocity_cm_s(N, 0.0);
+    std::vector<Real> totalRecombination_cm3_s(N, 0.0);
+    std::vector<Real> effectiveBandGap_eV(N, std::numeric_limits<Real>::quiet_NaN());
+    std::vector<Real> bandToBandGeneration_cm3_s = concentration(bandToBandGeneration);
+    std::vector<Real> avalanche_cm3_s = concentration(avalanche);
+    std::vector<Real> electronAlpha_cm(N, 0.0);
+    std::vector<Real> holeAlpha_cm(N, 0.0);
+    for (Index i = 0; i < N; ++i) {
+        // v = mu * F with mu in cm^2/(V s) and the impact-ionization drive in V/cm.
+        electronVelocity_cm_s[i] =
+            electronMobility_cm2_V_s[i] * electronImpactIonizationDrive[i] * scaleToVcm;
+        holeVelocity_cm_s[i] =
+            holeMobility_cm2_V_s[i] * holeImpactIonizationDrive[i] * scaleToVcm;
+        totalRecombination_cm3_s[i] = srh_cm3_s[i] + auger_cm3_s[i] -
+            bandToBandGeneration_cm3_s[i] - avalanche_cm3_s[i];
+        effectiveBandGap_eV[i] = bandGap_eV[i] - bandgapNarrowing_eV[i];
+        electronAlpha_cm[i] = electronAlphaAvalanche[i] / 100.0;
+        holeAlpha_cm[i] = holeAlphaAvalanche[i] / 100.0;
+    }
+
+    scalar("ElectrostaticPotential", toVec(sol.psi));
+    scalar("eQuasiFermiPotential", toVec(sol.phin));
+    scalar("hQuasiFermiPotential", toVec(sol.phip));
+    scalar("eDensity", concentration(toVec(sol.n)));
+    scalar("hDensity", concentration(toVec(sol.p)));
+    scalar("DopingConcentration", concentration(netDop));
+    scalar("DonorConcentration", concentration(donors_internal));
+    scalar("AcceptorConcentration", concentration(acceptors_internal));
+    scalar("SpaceCharge", spaceCharge_cm3);
+    vector("ElectricField", electricFieldVector_V_cm);
+    vector("eCurrentDensity", sentaurusElectronCurrentDensity_A_cm2);
+    vector("hCurrentDensity", sentaurusHoleCurrentDensity_A_cm2);
+    vector("TotalCurrentDensity", sentaurusTotalCurrentDensity_A_cm2);
+    vector("ConductionCurrentDensity", sentaurusTotalCurrentDensity_A_cm2);
+    scalar("eMobility", electronMobility_cm2_V_s);
+    scalar("hMobility", holeMobility_cm2_V_s);
+    scalar("eVelocity", electronVelocity_cm_s);
+    scalar("hVelocity", holeVelocity_cm_s);
+    scalar("srhRecombination", srh_cm3_s);
+    scalar("AugerRecombination", auger_cm3_s);
+    scalar("Band2BandGeneration", bandToBandGeneration_cm3_s);
+    scalar("AvalancheGeneration", avalanche_cm3_s);
+    scalar("TotalRecombination", totalRecombination_cm3_s);
+    scalar("eAlphaAvalanche", electronAlpha_cm);
+    scalar("hAlphaAvalanche", holeAlpha_cm);
+    scalar("eIonIntegral", electronIonIntegral);
+    scalar("hIonIntegral", holeIonIntegral);
+    scalar("MeanIonIntegral", meanIonIntegral);
+    scalar("BandGap", bandGap_eV);
+    scalar("BandgapNarrowing", bandgapNarrowing_eV);
+    scalar("EffectiveBandGap", effectiveBandGap_eV);
+    scalar("ElectronAffinity", electronAffinity_eV);
+    scalar("ConductionBandEnergy", conductionBandEnergy_eV);
+    scalar("ValenceBandEnergy", valenceBandEnergy_eV);
+    scalar("EffectiveIntrinsicDensity", concentration(effectiveNi));
+    scalar("eEffectiveStateDensity", concentration(densityOfStatesNc));
+    scalar("hEffectiveStateDensity", concentration(densityOfStatesNv));
+    scalar("eEparallel", electronHighFieldDrive_V_cm);
+    scalar("hEparallel", holeHighFieldDrive_V_cm);
+    scalar("eEnormal", nodeSurfaceNormalField_V_cm);
+    scalar("hEnormal", nodeSurfaceNormalField_V_cm);
+    vector("eGradQuasiFermi", electronQfGradientVector_V_cm);
+    vector("hGradQuasiFermi", holeQfGradientVector_V_cm);
+
+    if (vtkOptions->skippedFields != nullptr) {
+        for (const std::string& name : selection.unavailable())
+            vtkOptions->skippedFields->push_back(name);
+        for (const std::string& name : selection.undelivered())
+            vtkOptions->skippedFields->push_back(name);
+    }
+    vtu.write(filename);
 }
 
 } // namespace vela

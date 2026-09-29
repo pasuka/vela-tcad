@@ -2089,6 +2089,46 @@ Output and current fields:
 - current_contact
 - write_vtk
 - vtk_prefix
+- vtk_format: `legacy` (default) writes the ASCII `.vtk` file with every
+  diagnostic array under Vela's historical names; `vtu` writes an XML
+  UnstructuredGrid `.vtu` file (Float64 arrays, `region_id` Int32 cell data,
+  `FieldData` with `VelaVersion`, `SweepContact`, `Bias_V`, `PointIndex`,
+  `Converged`, per-contact `<name>_TotalCurrent_A_per_um` when
+  `csv_all_contacts` is on, and one `Unit:<array>` string per array). Array
+  names and units follow the Sentaurus TDR data names of the manual's
+  Appendix F (`ElectrostaticPotential` V, `eDensity`/`hDensity` cm^-3,
+  `DopingConcentration`/`DonorConcentration`/`AcceptorConcentration`/
+  `SpaceCharge` cm^-3, `ElectricField` V/cm, `eCurrentDensity`/
+  `hCurrentDensity`/`TotalCurrentDensity`/`ConductionCurrentDensity` A/cm^2,
+  `eMobility`/`hMobility` cm^2/(V*s), `eVelocity`/`hVelocity` cm/s,
+  `srhRecombination`/`AugerRecombination`/`Band2BandGeneration`/
+  `AvalancheGeneration`/`TotalRecombination` cm^-3*s^-1, `eAlphaAvalanche`/
+  `hAlphaAvalanche` cm^-1, `eIonIntegral`/`hIonIntegral`/`MeanIonIntegral`,
+  `BandGap`/`BandgapNarrowing`/`EffectiveBandGap`/`ElectronAffinity`/
+  `ConductionBandEnergy`/`ValenceBandEnergy` eV, `EffectiveIntrinsicDensity`/
+  `eEffectiveStateDensity`/`hEffectiveStateDensity` cm^-3, `eEparallel`/
+  `hEparallel`/`eEnormal`/`hEnormal` V/cm, `eGradQuasiFermi`/`hGradQuasiFermi`
+  V/cm). The authoritative list is `tdrFieldCatalogue()` in
+  `include/vela/io/VtuWriter.h`.
+- vtk_fields: optional array of TDR names for `vtk_format: "vtu"`. `Name`
+  requests the scalar form (the magnitude for vector quantities),
+  `Name/Vector` the three-component array; a vector request supersedes a
+  scalar request for the same name. An empty or absent list writes the whole
+  catalogue. Requested names the build cannot provide are not written; they
+  are listed per point in `DCSweepPoint::skippedVtkFields` and logged as
+  `vtk_fields_skipped`.
+- vtk_binary: `false` (default, ASCII arrays) or `true` (base64 inline binary
+  with a UInt32 header) for `vtk_format: "vtu"`.
+- vtk_bias_points: optional array of biases the adaptive sweep must land on
+  exactly (to 1e-12 V). Each becomes an additional accepted point with a VTK
+  file even when `write_vtk` is false; the adaptive step size is not changed,
+  so all other visited biases are identical to a run without the list.
+  Points outside `[start, stop]` or equal to a nominal target are ignored.
+  Explicit `bias_points` sweeps do not use this key.
+- csv_all_contacts: when `true`, the sweep CSV gains
+  `contact_<name>_electron_A_per_um`, `contact_<name>_hole_A_per_um` and
+  `contact_<name>_total_A_per_um` for every mesh contact (the monitored
+  `current_contact` columns are unchanged).
 - csv_file
 - initial_state_file: optional `vela.state/2` HDF5 file (`.h5`) used as the initial
   `DDSolution` for the first solved bias.
@@ -2768,6 +2808,21 @@ breakdown (for BV reverse):
 - breakdown.max_electric_field_V_per_m
 - breakdown.current_jump_ratio
 - breakdown.non_convergence
+
+Terminal-current stop criteria (every sweep mode; Sentaurus
+`BreakCriteria{ Current(...) }`):
+- breakdown.current_abs_A_per_um: stop once `|I| >= value` (positive number).
+- breakdown.current_min_A_per_um: stop once the signed current `I <= value`.
+- breakdown.current_max_A_per_um: stop once the signed current `I >= value`.
+- breakdown.current_contact: contact whose total current is tested; defaults
+  to `sweep.current_contact`.
+
+`I` is the total current of that contact in A/um for a 2-D device. The
+criterion is evaluated after each accepted point; the point that triggers it
+is recorded (`breakdown_detected=1`, `criterion` one of `current_abs`,
+`current_min`, `current_max`) and the sweep ends there. When any of these
+criteria is configured the CSV gains `stop_criterion` (empty until the stop
+point) and `stop_current_A_per_um` columns.
 
 In `unit_scaling` mode, BV CSV output keeps `max_electric_field_V_per_m` as a compatibility column name using active internal electric-field values, and
 also appends `max_electric_field_V_per_cm` using the active unit system conversion.

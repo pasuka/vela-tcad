@@ -102,6 +102,27 @@ electrode_materials=(), allow_lossy=False, band_edge_sensitive=False)`；命令�
 
 单测 `tests/regression/test_sdevice_materials.py`（CTest 名 `sdevice_materials`）。
 
+### 2.5 栅接触参考能级（C4 发射规则，WP4a）
+
+手册 Eq. 104 `ψ = φ_F − Φ_MS` 与 Vela `metal_gate`（`ψ = bias − work_function_eV`）共用本征半导体参考能级，
+映射精确（平带电压夏具偏差 2e-16 V，见
+[栅接触核对](validation/sdevice_gate_contact_reference_2026-09-29.md)）：
+
+- `Electrode{ Barrier=Φ_MS }`（缺省 0）→ `contacts[]: {type:"metal_gate", work_function_eV: Φ_MS}`；
+- `Electrode{ WorkFunction=Φ_M }` → `work_function_eV = Φ_M − (χ + E_g/2 + (kT/2)·ln(N_c/N_v))`，参数取 C3 中参考半导体（Si）的值；
+- `Electrode{ Material="X" }` → `Φ_M` 取 WP3 报告 `electrodes[].work_function_eV`（`.par` `Bandgap{WorkFunction}`），再按上条换算；
+- `Material="Silicon"(N=...)` 多晶硅栅与氧化层固定电荷不在本规则内（WP4 处理）。
+
+### 2.6 求解器新增键（C5，WP6）
+
+`format_version: 2` deck 的 `sweep` 块新增（定义与默认值见 `docs/config_schema.md`）：`vtk_format` (`legacy`|`vtu`)、
+`vtk_fields`（TDR 数据名，`Name` / `Name/Vector`）、`vtk_binary`、`vtk_bias_points`（必经点，1e-12 V 落点，不改变
+其它自适应点）、`csv_all_contacts`（每接触 `contact_<name>_{electron,hole,total}_A_per_um` 列），以及
+`breakdown.current_{abs,min,max}_A_per_um` + `breakdown.current_contact`（电流终止判据，所有 sweep 模式；触发点的
+`criterion` 为 `current_abs|current_min|current_max`，CSV 增加 `stop_criterion`/`stop_current_A_per_um` 列）。
+`.vtu` 字段目录与单位由 `tdrFieldCatalogue()`（`include/vela/io/VtuWriter.h`）定义；不可提供的请求字段记入
+`DCSweepPoint::skippedVtkFields` 并写 runtime log `vtk_fields_skipped`，由 WP5 转为 W202。
+
 ## 3. 输出契约（C6）
 
 ### 3.1 文件命名

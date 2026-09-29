@@ -251,6 +251,7 @@ add_library(vela_core STATIC
     src/mesh/BoxGeometryBuilder.cpp
     src/io/MeshReader.cpp
     src/io/VTKWriter.cpp
+    src/io/VtuWriter.cpp
     src/io/CSVWriter.cpp
     src/io/CsvUtils.cpp
     src/io/DDSolutionCsv.cpp
@@ -771,6 +772,12 @@ target_link_libraries(test_line_search_backtrack_failure PRIVATE vela_core Catch
 add_executable(test_dc_sweep tests/test_dc_sweep.cpp)
 target_link_libraries(test_dc_sweep PRIVATE vela_core Catch2::Catch2WithMain)
 
+add_executable(test_dc_sweep_output_contract tests/test_dc_sweep_output_contract.cpp)
+target_link_libraries(test_dc_sweep_output_contract PRIVATE vela_core Catch2::Catch2WithMain)
+
+add_executable(test_vtu_writer tests/test_vtu_writer.cpp)
+target_link_libraries(test_vtu_writer PRIVATE vela_core Catch2::Catch2WithMain)
+
 add_executable(test_pseudo_arclength tests/test_pseudo_arclength.cpp)
 target_link_libraries(test_pseudo_arclength PRIVATE vela_core Catch2::Catch2WithMain)
 
@@ -857,6 +864,10 @@ vela_catch_discover_tests(test_density_gradient_quantum_potential)
 vela_catch_discover_tests(test_line_search_backtrack_failure)
 vela_catch_discover_tests(test_dc_sweep)
 add_test(NAME dc_sweep COMMAND test_dc_sweep [dc_sweep])
+vela_catch_discover_tests(test_dc_sweep_output_contract)
+add_test(NAME dc_sweep_output_contract COMMAND test_dc_sweep_output_contract [output_contract])
+vela_catch_discover_tests(test_vtu_writer)
+add_test(NAME vtu_writer COMMAND test_vtu_writer [vtu_writer])
 vela_catch_discover_tests(test_pseudo_arclength)
 add_test(NAME pseudo_arclength COMMAND test_pseudo_arclength [arclength])
 vela_set_windows_msys2_test_path(pseudo_arclength)
@@ -1471,6 +1482,15 @@ add_test(NAME sdevice_materials
 set_tests_properties(sdevice_materials PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(sdevice_materials)
+
+add_test(NAME sdevice_gate_contact_mapping
+    COMMAND ${Python3_EXECUTABLE} -m unittest
+            tests.regression.test_sdevice_gate_contact_mapping)
+set_tests_properties(sdevice_gate_contact_mapping PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+vela_set_windows_msys2_test_path(sdevice_gate_contact_mapping)
+set_property(TEST sdevice_gate_contact_mapping APPEND PROPERTY
+    ENVIRONMENT "VELA_EXAMPLE_RUNNER=$<TARGET_FILE:vela_example_runner>")
 
 add_test(NAME sentaurus_mesh_builder
     COMMAND ${Python3_EXECUTABLE} -m unittest
