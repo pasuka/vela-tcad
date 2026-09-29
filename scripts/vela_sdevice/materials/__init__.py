@@ -371,6 +371,10 @@ _INERT_RULES: Dict[Tuple[str, str], Callable[[Sequence[Any], Dict[str, Any], _Co
         "(T/300 K)^betaexp = 1 at the reference temperature" if _at_reference_temperature(c) else None),
     ("HighFieldDependence", "vsatexp"): lambda v, s, c: (
         "(T/300 K)^vsatexp = 1 at the reference temperature" if _at_reference_temperature(c) else None),
+    ("Auger", "H"): lambda v, s, c: (
+        "carrier-density enhancement 1 + H exp(-n/N0) is 1 for H = 0" if _all(v, 0.0) else None),
+    ("Auger", "N0"): lambda v, s, c: (
+        "reference density of the enhancement term, whose coefficient H is 0" if _all(s.get("H", []), 0.0) else None),
 }
 #: Rows whose lossy status collapses to an exact frozen value at one temperature.
 _FROZEN_RULES: Dict[Tuple[str, str], str] = {

@@ -40,7 +40,7 @@ BV_IR = FIXTURES / "pn2d_sentaurus2018" / "pn2d_bv_sdevice.ir.json"
 IV_REFERENCE = REPO / "reference_tcad" / "pn2d_sentaurus2018" / "source" / "pn2d_sentaurus2018_iv_materials.json"
 SCHEMA = sv.load_schema(REPO / "schemas" / "vela.templates_ldmos.materials.v1.schema.json")
 WORKFLOW_DOC = REPO / "docs" / "sentaurus_sdevice_workflow.md"
-CATALOGUE_ROW = re.compile(r"^\| (?P<id>[WE][1-8]\d{2}) \| (?P<severity>warning|fatal) \| (?P<exit>[0-8]|—) \| `(?P<template>[^`]*)` \|")
+CATALOGUE_ROW = re.compile(r"^\| (?P<id>[WE][1-8]\d{2}) \| (?P<severity>warning|fatal) \| (?P<exit>[0-8]|\u2014) \| `(?P<template>[^`]*)` \|")
 
 KB = 1.380649e-23
 Q = 1.602176634e-19
@@ -343,6 +343,30 @@ class FailClosedTest(unittest.TestCase):
             with self.assertRaises(mat.MaterialsError) as ctx:
                 mat.emit_materials(par, active_models=[], temperature_K=300.0, mesh_materials=["Si"])
             self.assertEqual("E410", ctx.exception.message_id)
+
+    def test_auger_polynomial_collapses_to_frozen_constants(self) -> None:
+        text = ('Material = "Silicon" {\nAuger\n{\n  A = 0.67e-31 , 0.72e-31  # [cm^6/s]\n'
+                '  B = 2.45e-31 , 4.50e-33  # [cm^6/s]\n  C = -2.2e-32 , 2.63e-32  # [cm^6/s]\n'
+                '  H = 0 , 0  # [1]\n  N0 = 1e18 , 1e18  # [cm^-3]\n}\n}\n')
+        with _tmpdir() as tmp:
+            par = _write_par(Path(tmp), text)
+            result = mat.emit_materials(par, active_models=["Auger"], temperature_K=300.0, mesh_materials=["Si"])
+            rows = {(r["parameter"], r["carrier"]): r for r in result.report["solver_parameters"] if r["section"] == "Auger"}
+            collapsed = rows[("A+B(T/300)+C(T/300)^2", "electron")]
+            self.assertEqual("solver.auger_cn_m6_per_s", collapsed["target"])
+            self.assertAlmostEqual(2.9e-43, collapsed["value_si"], delta=1e-55)  # Vela's Cn = 2.9e-31 cm^6/s
+            self.assertAlmostEqual(1.028e-43, rows[("A+B(T/300)+C(T/300)^2", "hole")]["value_si"], delta=1e-55)
+            self.assertEqual("frozen_at_temperature", collapsed["status"])
+            self.assertEqual([], result.report["lossy"])
+            inert = {(x["section"], x["parameter"]) for x in result.report["inert"]}
+            self.assertIn(("Auger", "H"), inert)
+            self.assertIn(("Auger", "N0"), inert)
+            # H != 0 is a real carrier-density enhancement Vela lacks: fatal even with allow_lossy.
+            par2 = _write_par(Path(tmp), text.replace("H = 0 , 0", "H = 3.46667 , 8.25688"), "enh.par")
+            with self.assertRaises(mat.MaterialsError) as ctx:
+                mat.emit_materials(par2, active_models=["Auger"], temperature_K=300.0, mesh_materials=["Si"],
+                                   allow_lossy=True)
+            self.assertIn("Si.Auger.H", ctx.exception.message)
 
     def test_electrode_work_function(self) -> None:
         text = 'Material = "Gold" {\nBandgap\n{\n  WorkFunction = 5.1  # [eV]\n}\n}\n'

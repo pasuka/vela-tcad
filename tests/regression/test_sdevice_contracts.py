@@ -40,7 +40,7 @@ C10 = SCHEMAS / "vela.sdevice_sidecar.v1.schema.json"
 ALL_SCHEMAS = (C1, C2, C4, C7, C10)
 
 SHA256 = "0" * 64
-CATALOGUE_ROW = re.compile(r"^\| (?P<id>[WE][1-8]\d{2}) \| (?P<severity>warning|fatal) \| (?P<exit>[0-8]|—) \|")
+CATALOGUE_ROW = re.compile(r"^\| (?P<id>[WE][1-8]\d{2}) \| (?P<severity>warning|fatal) \| (?P<exit>[0-8]|\u2014) \|")
 
 
 def normalised_text(path: Path) -> str:
@@ -201,7 +201,7 @@ class SchemaFileTest(unittest.TestCase):
         mesh = minimal_mesh_qualification()
         mesh["dimension"] = 4
         plan = minimal_stage_plan()
-        plan["work_dir"] = "工作目录_vela"                    # ASCII only
+        plan["work_dir"] = "\u5de5\u4f5c\u76ee\u5f55_vela"        # ASCII only (CJK escaped)
         manifest = minimal_manifest()
         manifest["artifacts"][0]["path"] = "raw/pn2d_0v.plt"   # category directory not allowed
         sidecar = minimal_sidecar()
@@ -471,7 +471,7 @@ class MessageCatalogueTest(unittest.TestCase):
             message_id, severity, exit_code = match["id"], match["severity"], match["exit"]
             if message_id.startswith("W"):
                 self.assertEqual("warning", severity, message_id)
-                self.assertEqual("—", exit_code, message_id)
+                self.assertEqual("\u2014", exit_code, message_id)
             else:
                 self.assertEqual("fatal", severity, message_id)
                 self.assertEqual(message_id[1], exit_code, message_id)
