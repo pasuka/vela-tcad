@@ -314,7 +314,10 @@ schema 之外、golden 夹具所依赖的确定性规则：
 ## 7. 待决与后续
 
 - A-1 VM 归档布局、A-2 `Parameter` 缺失处理、A-3 重跑时机、A-4 多段 `.plt` 的 `time` 语义：
-  见 [产物盘点](validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节。
+  见 [产物盘点](validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节；A-3/A-4 已细化为开发方案的
+  WP14（Sentaurus 参考重跑，需用户授权）与 WP10 步骤 2–3。
+- A-5 C++ `MaterialDatabase` 内置 Si/SiO2 与本文第 2.4 节默认库的对齐及重新基线化：开发方案 WP13（用户 2026-09-29 要求列入）；
+  完成前第 2.4 节的“遗留默认”说明保持有效。
 - 惰性 `Thermode{}`（未求解温度方程）是否从 E105 降级为警告：transportmodels DD deck 的唯一阻塞项之一，
   阶段 1 维持拒绝。
-- C5 新增键、C6 的 `time` 语义与符号因子由对应 WP 回填本文（C3 见第 2.4 节）。
+- C5 新增键已由 WP6 回填第 2.6 节；C6 的 `time` 语义与符号因子由 WP10 回填第 3.3 节（C3 见第 2.4 节）。
