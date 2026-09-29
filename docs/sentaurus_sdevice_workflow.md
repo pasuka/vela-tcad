@@ -11,7 +11,7 @@
 | --- | --- | --- | --- |
 | C1 执行 IR v2 | `schemas/vela.sentaurus_execution_ir.v2.schema.json` | WP1 → WP3/WP4/WP5 | 冻结 |
 | C2 网格包 | `schemas/vela.mesh_qualification.v1.schema.json` + 现有 `mesh.json`/`doping.csv` 契约 | WP2 → WP4/WP5 | 冻结 |
-| C3 材料文件 | `schemas/vela.templates_ldmos.materials.v1.schema.json`（通用别名由 WP3 发布） | WP3 → WP4 | 沿用现有 |
+| C3 材料文件 | `schemas/vela.templates_ldmos.materials.v1.schema.json`（WP3 不另设别名，见第 2.4 节） | WP3 → WP4 | 沿用现有 |
 | C4 stage 计划 | `schemas/vela.stage_plan.v1.schema.json` | WP4 → WP5/WP8 | 冻结 |
 | C5 求解器协议 | `docs/config_schema.md` + `configs/schema/vela-simulation.schema.json` | WP6 → WP4/WP5/WP8 | 新增键待 WP6 |
 | C6 输出文件契约 | 本文第 3 节 | WP8/WP6 → WP10 | 初稿 |
@@ -66,6 +66,41 @@ Vela 自有选项：`--check`、`--allow-lossy`、`--keep-intermediate/--no-keep
 `vela device <args>` → 子进程 `<python> bin/vela_sdevice.pyz device <args>`，cwd 不变，退出码透传。
 `<python>` 查找顺序：`VELA_PYTHON` → `bin/python/` → PATH 中 `python3`/`python`（≥ 3.10，log 警告）。
 Windows 用宽字符 API 透传参数；`bin/` 前置到 `PATH`。
+
+### 2.4 材料发射器（C3，WP3）
+
+库接口 `vela_sdevice.materials.emit_materials(par, active_models, temperature_K, mesh_materials,
+electrode_materials=(), allow_lossy=False, band_edge_sensitive=False)`；命令行
+`python -m vela_sdevice.materials --par <file> --ir execution_ir.json --materials Si SiO2 --out <dir>`。
+输出 `materials.json`（C3；`schema` 恒为 `vela.templates_ldmos.materials.v1`，C++ 装载器只接受该 id，
+因此不发布通用别名）与 `materials_report.json`（`vela.sdevice_materials_report.v1`：每个参数的
+矩阵状态、来源文件/行、`origin ∈ {user_material, user_global, vela_default}`；`solver_parameters[]`
+把 Masetti/Scharfetter/OldSlotboom/van Overstraeten/HighField 参数按矩阵 `target` 换成 SI 值交给 WP4；
+`electrodes[]` 给出 `Electrode{Material=}` 的 `Bandgap.WorkFunction`；`inert[]`/`lossy[]` 列出被判定
+无效果或有损的参数及理由）。
+
+规则：
+
+- 激活模型来自 C1 `physics.effective[].key`（`vela_sdevice.materials.active_models_from_ir`），映射到
+  `scripts/sentaurus_parameter_map.py` 的模型名；参数状态由该矩阵给出，发射器只评估冻结定律。
+- `share/vela/materials/models.par`（`scripts/generate_default_models_par.py` 由 C++ 内置 Si/SiO2 生成，
+  即 `vela device -P` 的输出）是默认库：用户 `.par` 未给出的节/参数逐参数回退到它，并记 `origin=vela_default`；
+  网格材料在两者中都没有 → E403。Vela 没有 Sentaurus 的内置默认值，激活模型所需的节缺失 → E404
+  `(missing_section)`。
+- 半导体标量：`Eg(T)` 为 Varshni；`Nc/Nv` 用 Formula 1 质量律与 `2(2π m kB T/h²)^{3/2}`（CODATA 2018，与
+  `include/vela/core/PhysicalConstants.h` 一致）；`ni = sqrt(Nc Nv) exp(−(Eg(T)+dEg0)/2kT)`，`dEg0(OldSlotboom)`
+  只在 OldSlotboom 激活时折入 `ni`，不进入 `bandgap_eV`；`mun/mup` 取 `ConstantMobility.mumax`。
+- 绝缘体只需 `Epsilon`（可带 `Bandgap`）；`Region=`/`*Interface=` 作用域含激活参数 → E404 `(unsupported_scope)`。
+- `approximated` 需 `--allow-lossy`；`unsupported_*`/`unmapped` 致命。发射器对以下矩阵行做有据可查的“无效果”
+  降级并写入 `inert[]`：`Bandgap.alpha2=0`、`beta2`（alpha2=0）、`EgMin=0`、`dEgMin`（EgMin=0）、
+  `Bgn2Chi`（无带边敏感接触/异质界面时；`--band-edge-sensitive` 保持有损）、`ConstantMobility.mutunnel`
+  （无隧穿模型）、`ConstantMobility.Exponent`（两载流子均为 2.2，或 T=300 K）、
+  `HighFieldDependence.betaexp/vsatexp`（T=300 K）；`Auger.A/B/C` 在冻结温度上精确合成为常数。
+- 已知偏差：历史参考 `pn2d_sentaurus2018_iv_materials.json` 的 `ni=1.4638914958767616e10` 无法由任何记录在案的
+  公式复现（最接近 −2.7e-4），发射器以闭式公式为准并在测试中以 5e-4 核对；C++ 内置 Si 的 `ni=1e10` 与其
+  `Nc/Nv/Eg` 不自洽（推导值 6.68e9），默认库往返因此只对 `ni` 以外的字段闭合。
+
+单测 `tests/regression/test_sdevice_materials.py`（CTest 名 `sdevice_materials`）。
 
 ## 3. 输出契约（C6）
 
@@ -182,6 +217,7 @@ Vela 替换：器件 plot `.tdr` → `.vtu`；`.sav` → `.h5`；另生成 `<plo
 | E407 | fatal | 4 | `Stage chain is inconsistent: {detail}` | 状态文件依赖、`t` 越界、起始电压不一致 |
 | E408 | fatal | 4 | `Node-volume policy '{policy}' requires a non-obtuse mesh ({n} obtuse elements)` | |
 | E409 | fatal | 4 | `Sidecar '{file}' is invalid: {detail}` | 白名单外键、schema 失败、合并后 deck 失败 |
+| E410 | fatal | 4 | `Parameter file '{name}' cannot be parsed: {detail}` | `.par` 语法无法分类（`ParParseError`） |
 | E501 | fatal | 5 | `Equilibrium stage failed: {detail}` | 首个 stage 不收敛 |
 | E502 | fatal | 5 | `Stage {n} failed with ExitOnFailure: {detail}` | |
 | E503 | fatal | 5 | `Solver terminated abnormally (exit code {code})` | runner 崩溃 |
@@ -255,4 +291,4 @@ schema 之外、golden 夹具所依赖的确定性规则：
   见 [产物盘点](validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节。
 - 惰性 `Thermode{}`（未求解温度方程）是否从 E105 降级为警告：transportmodels DD deck 的唯一阻塞项之一，
   阶段 1 维持拒绝。
-- C3 通用别名 `vela.materials.v1`、C5 新增键、C6 的 `time` 语义与符号因子由对应 WP 回填本文。
+- C5 新增键、C6 的 `time` 语义与符号因子由对应 WP 回填本文（C3 见第 2.4 节）。
