@@ -29,7 +29,7 @@ from vela_sdevice.cmd_parser.lexer import strip_comments  # noqa: E402
 FIXTURES = REPO / "tests" / "fixtures" / "sdevice"
 SCHEMA = sv.load_schema(REPO / "schemas" / "vela.sentaurus_execution_ir.v2.schema.json")
 WORKFLOW_DOC = REPO / "docs" / "sentaurus_sdevice_workflow.md"
-CATALOGUE_ROW = re.compile(r"^\| (?P<id>[WE][1-8]\d{2}) \| (?P<severity>warning|fatal) \| (?P<exit>[0-8]|—) \| `(?P<template>[^`]*)` \|")
+CATALOGUE_ROW = re.compile(r"^\| (?P<id>[WE][1-8]\d{2}) \| (?P<severity>warning|fatal) \| (?P<exit>[0-8]|\u2014) \| `(?P<template>[^`]*)` \|")
 
 BASE_DECK = """File {{
   Grid = "x_msh.tdr"
