@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "files": 204,
+  "raw_identical": 204,
+  "normalized_identical": 204,
+  "runner": "/workspaces/simplemos-hfs-merged-20260926/source-continuation-v2/build/vela_example_runner",
+  "runner_sha256": "87b934c79451110467cee69b62f6ec2e312a8aea51ab85c07bf2c0577ad05ea3",
+  "importer": "/workspaces/simplemos-hfs-merged-20260926/source-continuation-v2/build/sentaurus_import",
+  "importer_sha256": "f59df0314ce51f0604e6ece520ab02796b79c996c799b7048b6e56dc4dae7b4f",
+  "build": "Existing frozen GCC16 Release build; no solver rebuild or numerical change"
+}

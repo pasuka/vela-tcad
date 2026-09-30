@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "tests": 993,
+  "downloaded_verified": [
+    "build.exit",
+    "build.stdout.log",
+    "configure.exit",
+    "configure.stdout.log",
+    "ctest.exit",
+    "ctest.stdout.log",
+    "ctest.xml",
+    "inventory.exit",
+    "job.exit",
+    "source_seal.json",
+    "status.json"
+  ],
+  "binary": "5437a84f1eb2b7e7d199386b69e4ca978a644dddd8718d5651adadc21af0dfff",
+  "junit": {
+    "name": "(empty)",
+    "tests": "993",
+    "failures": "0",
+    "disabled": "0",
+    "skipped": "0",
+    "hostname": "",
+    "time": "139",
+    "timestamp": "2026-09-30T11:47:59"
+  }
+}

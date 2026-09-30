@@ -1,6 +1,9 @@
 # Provenance-bound C++ replay fixtures are compared by exact byte hash.
 tests/fixtures/pn2d_minimal6_synthetic/states/**/export/vela_*.csv binary
 
+# The SimpleMOS delivery copies preserve the frozen Windows CRLF bytes.
+reference_tcad/simplemos_sentaurus2022/engineering/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
 # PN2D campaign contracts and paired inputs retain their recorded byte hashes.
 reference_tcad/pn2d_sentaurus2018/variants/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 scripts/analyze_pn2d_sections.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

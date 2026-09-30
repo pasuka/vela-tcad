@@ -1,0 +1,127 @@
+{
+  "simulation_type": "newton_solve_from_state",
+  "mesh_file": "n20/mesh.json",
+  "node_doping_file": "n20/doping.csv",
+  "materials_file": "materials.json",
+  "scaling": {
+    "mode": "unit_scaling"
+  },
+  "doping": [],
+  "contacts": [
+    {
+      "name": "source",
+      "bias": 0.0,
+      "type": "ohmic"
+    },
+    {
+      "name": "drain",
+      "bias": 0.0,
+      "type": "ohmic"
+    },
+    {
+      "name": "gate",
+      "bias": 0.0,
+      "type": "ohmic"
+    },
+    {
+      "name": "substrate",
+      "bias": 0.0,
+      "type": "ohmic"
+    }
+  ],
+  "solver": {
+    "method": "newton",
+    "max_iter": 200,
+    "reltol": 1e-07,
+    "abstol": 1e-12,
+    "damping_psi": 0.35,
+    "warm_start": true,
+    "quasi_fermi_update_limit_V": 0.025,
+    "srh_density_coupling": "sentaurus_default",
+    "quasi_fermi_reference": "contact_basin",
+    "continuity_row_scaling": {
+      "enabled": true,
+      "flux_fraction": 0.001,
+      "scale_floor": 1e-30,
+      "min_source_scale": 1e-18,
+      "min_weight": 1e-12,
+      "max_weight": 1000000000000.0
+    },
+    "mobility": {
+      "model": "phumob_field_lombardi",
+      "doping_concentration_basis": "total_impurity",
+      "edge_averaging": "element_box_phumob",
+      "surface": {
+        "discretization": "element_distance_gradient",
+        "acoustic_factor": 1.0,
+        "roughness_factor": 1.0
+      },
+      "high_field_driving_force": "quasi_fermi_gradient",
+      "high_field_gradient_discretization": "element_vertex_partial_layer",
+      "jacobian_field_derivatives": true
+    },
+    "recombination": [
+      "srh"
+    ],
+    "srh_doping_dependence": {
+      "enabled": true,
+      "concentration_basis": "total_impurity",
+      "temperature_dependence": false,
+      "reference_temperature_K": 300.0,
+      "electron_temperature_exponent": -1.5,
+      "hole_temperature_exponent": -1.5,
+      "electron": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 1e-05,
+        "reference_doping_m3": 1e+16,
+        "gamma": 1.0
+      },
+      "hole": {
+        "tau_min_s": 0.0,
+        "tau_max_s": 3e-06,
+        "reference_doping_m3": 1e+16,
+        "gamma": 1.0
+      }
+    },
+    "bandgap_narrowing": {
+      "model": "old_slotboom",
+      "fermi_statistics_correction": false,
+      "equal_ni_flux_evaluation": "compensated_log_expm1"
+    },
+    "impact_ionization": {
+      "model": "none"
+    },
+    "carrier_row_convergence": {
+      "mode": "enforce",
+      "eps_row": 1e-06,
+      "scale_floor": 0.0,
+      "min_source_scale": 0.0,
+      "min_source_scale_fraction": 0.0,
+      "min_source_global_fraction": 0.0,
+      "min_carrier_density_m3": 1e-300,
+      "min_flux_scale_fraction": 0.0,
+      "min_flux_scale": 0.0,
+      "min_newton_max_iter": 200
+    },
+    "global_continuity_closure": {
+      "mode": "off",
+      "tolerance": 1e-06,
+      "source_floor": 1e-10
+    },
+    "diagnostics": true,
+    "linear_refinement_iterations": 4,
+    "region_resolved_interface_assembly": {
+      "poisson_charge_node_volume": "signed_transport",
+      "transport_edge_geometry": "element_box",
+      "srh_signed_transport_volume_fraction": 1.0
+    },
+    "poisson_residual_precision": "binary128",
+    "stable_merit_comparison": true,
+    "exact_dirichlet_updates": true,
+    "split_dd_state": true
+  },
+  "mesh_geometry": {
+    "poisson_permittivity_policy": "cell_material",
+    "cell_box_policy": "delaunay_transfer"
+  }
+}

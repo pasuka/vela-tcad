@@ -242,6 +242,9 @@ evidence.
   `scaling.mode = "unit_scaling"`.
 - [PN2D BV validation](validation/pn2d_bv_validation.md): current qualified
   template policy, validation gates, limitations, and evidence map.
+- [SimpleMOS engineering reference](../reference_tcad/simplemos_sentaurus2022/engineering/README.md):
+  qualified configuration, run entry, external input requirements, 816-point
+  evidence and a portable read-only hash/coverage audit.
 - [SimpleMOS branch status](validation/simplemos_branch_status.md): explicit
   production options, diagnostic boundaries, local evidence dependencies, and
   the current n23 Id-Vg comparison.

@@ -8,6 +8,28 @@ will be treated as an immutable device input. SVisual plotting and extraction
 are also outside scope; the comparison uses gate outer voltage and drain total
 current directly.
 
+## Current engineering entry (2026-09-30)
+
+Use [engineering/README.md](engineering/README.md) for the current validated
+configuration, numerical run commands, external input requirements, and
+byte-verifiable small evidence package. The n17–n24, Vd=0.05/1 V,
+Vg=0:0.05:2.5 V matrix passed **816/816 dual-initialization points** with a
+maximum absolute M60 current error of **0.186617394672%** against the 2% gate.
+The subsequent Release regression passed **993/993**. The explicit profile
+includes PhuMob, Enormal, HFS, signed Si source volumes and complete split state.
+
+```text
+python reference_tcad/simplemos_sentaurus2022/engineering/verify.py
+```
+
+This command only audits the shipped evidence. New simulations require the
+external frozen meshes, complete split seeds and M60 native exports described
+in the engineering README. No proprietary TDR/PLT or generated states are shipped.
+The earlier M0–M4 contracts and commands below document historical stages;
+their fail-closed model statements and earlier tolerances are not the current
+engineering run instructions. Original inputs and historical evidence remain
+unchanged. See also the [current branch status](../../docs/validation/simplemos_branch_status.md).
+
 ## Frozen source
 
 - release: `T-2022.03-SP2` (`0.7745337, x86_64, Linux`)
@@ -56,7 +78,7 @@ independent equilibrium, drain-ramp, and gate-sweep state chain. Add
 Workflow acceptance proves restart continuity only; it does not waive the
 fail-closed PhuMob gate or claim current parity with the original deck.
 
-## Current status
+## Historical milestone status (M0–M4)
 
 M0 freezes provenance and scope. M1 adds scope-aware SDevice model parsing and
 keeps PhuMob fail-closed until an exact solver path is available. M2
