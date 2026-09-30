@@ -255,6 +255,8 @@ evidence.
   catalogue; fixtures under `tests/fixtures/sdevice/`. Reference-artifact
   inventory and pending archive decisions:
   [2026-09-26 inventory](validation/sdevice_reference_artifact_inventory_2026-09-26.md).
+  Implementation status, remaining work packages and handoff notes:
+  [2026-09-30 handoff](validation/sdevice_cmd_frontend_handoff_2026-09-30.md).
 - [Poisson unit-scaling notes](development_poisson_unit_scaling.md): developer
   notes for the scaled Poisson assembly path used by
   `scaling.mode = "unit_scaling"`.
