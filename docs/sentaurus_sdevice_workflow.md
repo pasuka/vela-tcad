@@ -313,6 +313,8 @@ schema 之外、golden 夹具所依赖的确定性规则：
 
 ## 7. 待决与后续
 
+实施状态、剩余工作包票据与交接说明见 [2026-09-30 交接文档](validation/sdevice_cmd_frontend_handoff_2026-09-30.md)。
+
 - A-1 VM 归档布局、A-2 `Parameter` 缺失处理、A-3 重跑时机、A-4 多段 `.plt` 的 `time` 语义：
   见 [产物盘点](validation/sdevice_reference_artifact_inventory_2026-09-26.md) 第 6 节；A-3/A-4 已细化为开发方案的
   WP14（Sentaurus 参考重跑，需用户授权）与 WP10 步骤 2–3。
