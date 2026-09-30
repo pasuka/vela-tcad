@@ -4,7 +4,7 @@ from pathlib import Path
 import unittest
 
 from tests.regression.simplemos_evidence_chain import (
-    assert_source_hashes_current_or_m44,
+    assert_historical_source_provenance,
 )
 
 
@@ -80,7 +80,7 @@ class SimpleMosM30DoubleOffCausalClosureTest(unittest.TestCase):
                              sha256(REPO / artifact["path"]))
         for relative, expected in evidence["source_hashes"].items():
             self.assertTrue((REPO / relative).is_file())
-        assert_source_hashes_current_or_m44(self, evidence)
+        assert_historical_source_provenance(self, EVIDENCE)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ import hashlib
 import json
 from pathlib import Path
 import unittest
+from tests.regression.simplemos_evidence_chain import assert_historical_source_provenance
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -95,17 +96,7 @@ class SimpleMosM41EqualNiFluxAblationTest(unittest.TestCase):
         self.assertEqual(self.evidence["status"], "failed")
         for artifact in self.evidence["artifacts"]:
             self.assertEqual(artifact["sha256"], sha256(REPO / artifact["path"]))
-        for relative, expected in self.evidence["source_hashes"].items():
-            current = sha256(REPO / relative)
-            if expected == current:
-                continue
-            superseding = (self.m46_evidence, self.m45_evidence, self.m44_evidence,
-                           self.m43_evidence)
-            self.assertTrue(
-                any(evidence["status"] == "frozen" and
-                    evidence["source_hashes"].get(relative) == current
-                    for evidence in superseding),
-                f"changed M41 source is not frozen by M43/M44/M45/M46: {relative}")
+        assert_historical_source_provenance(self, EVIDENCE)
 
 
 if __name__ == "__main__":

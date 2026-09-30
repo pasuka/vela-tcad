@@ -1,0 +1,925 @@
+{
+  "schema": "vela.simplemos.historical-source-provenance/1",
+  "scope": "Historical evidence integrity only; numerical expectations and original hashes unchanged. No current solver qualification.",
+  "known_gap_key": "src/equation/CoupledDDAssembler.cpp:e525d828d0199dafdea947377dc6faed7cea419b5cb76fc1f51ae05d3dfe64ed",
+  "known_gap": {
+    "status": "unavailable",
+    "reason": "No exact bytes found in reachable Git history or retained local source snapshots. Historical metadata only; not a current-source qualification."
+  },
+  "sources": {
+    "docs/validation/figures/simplemos_m30/simplemos_m30_double_off_causal_closure.png:084efc3ba6034dcad659f3a383bb054f38e92c49a2dd0a9e656ec07ac5b9eeb5": {
+      "status": "recovered",
+      "git_blob": "78a7f994836565edf79d68d4c7441385f19719f0",
+      "materialization": "git_blob"
+    },
+    "docs/validation/figures/simplemos_m31/simplemos_m31_minority_poisson_perturbation.png:6cd26314a59b50e345432439095933b9102389d1d724652b5cd65adabfba7e29": {
+      "status": "recovered",
+      "git_blob": "c02e9dbe2601e6220e0f19e09ae8b721e93f261b",
+      "materialization": "git_blob"
+    },
+    "docs/validation/figures/simplemos_m32/simplemos_m32_electron_qf_scaled_perturbation.png:14e13e764dce5b6bfbef3668c33fabb412734d48e0ecece0e375b396dbbee87d": {
+      "status": "recovered",
+      "git_blob": "8d3aa52e982318ea593f9f21dd299dd93ee6bce8",
+      "materialization": "git_blob"
+    },
+    "docs/validation/figures/simplemos_m33/simplemos_m33_region_resolved_interface_assembly.png:55df52866b2846faf8623d4a41cf1d1d5039a980ed8043c0e3e51562e638587d": {
+      "status": "recovered",
+      "git_blob": "8ec6e49a8aa075b27ebd3a911d646c93dc1c7782",
+      "materialization": "git_blob"
+    },
+    "docs/validation/figures/simplemos_m35/simplemos_m35_signed_average_box_assembly.png:b0bee57e882e97fb5bc10e07f65bce2e9578ee3780ff84c564272dab8d637ef7": {
+      "status": "recovered",
+      "git_blob": "de54fc83405db52df3f1453412c3a2f590940889",
+      "materialization": "git_blob"
+    },
+    "docs/validation/simplemos_m30_double_off_causal_closure_2026-08-31.md:e0515cbedd0b3a3c7c7d5e0217447fa702c445ceec02c4a55ff30275f433c2a3": {
+      "status": "recovered",
+      "git_blob": "6599208497c82f7044a8da4c1a32dc598bff5c88",
+      "materialization": "git_blob"
+    },
+    "docs/validation/simplemos_m31_minority_poisson_perturbation_2026-08-31.md:461d7f0b70edcfb750e2be0033dee32fc59af1e199c0a2808b78111858b6237d": {
+      "status": "recovered",
+      "git_blob": "9cd5d5796705a0ea87e3ed552a3f51a3773c1331",
+      "materialization": "git_blob"
+    },
+    "docs/validation/simplemos_m32_electron_qf_scaled_perturbation_2026-08-31.md:7728723bae10d5a8bbc871aa8a0ffb51deed70d60fe3c6e86188eeda0b820d3a": {
+      "status": "recovered",
+      "git_blob": "19bc7cea4ba919977e41b4091bc4bbe7bbee8b37",
+      "materialization": "git_blob"
+    },
+    "docs/validation/simplemos_m33_region_resolved_interface_assembly_2026-08-31.md:0ca0941ed471eb31e2cbe523ba4b2bfeecde1ab1786abe8eefbc291f7e667700": {
+      "status": "recovered",
+      "git_blob": "cbeefbcfd82cfa003e593207a593ee99aa514967",
+      "materialization": "git_blob"
+    },
+    "docs/validation/simplemos_m35_signed_average_box_assembly_2026-08-31.md:f8b66f8bf1ddf4befbc0745011a9a6ce03d9f4c5a726eacad9c69c97d0766d3f": {
+      "status": "recovered",
+      "git_blob": "f2f30cb6723d23045acf23db7cbcdd86a50679b0",
+      "materialization": "git_blob"
+    },
+    "docs/validation/simplemos_m36_boundary_contact_measure_audit_2026-08-31.md:b627b20d55ed3539474093707bc8098ea52347054d3f2baf3255db5efac46cf6": {
+      "status": "recovered",
+      "git_blob": "7e3df17107d4002ed68dae565c71edf4b9e960f9",
+      "materialization": "git_blob"
+    },
+    "docs/validation/simplemos_m37_measure_contact_qf_ablation_2026-08-31.md:232da39984ab1b46ac676f31d473d3d1ebb1aa1c37cfa15173d4633ae4c7ab8e": {
+      "status": "recovered",
+      "git_blob": "03343a76f8a49d3f003f85b38599f52f0fa935dc",
+      "materialization": "git_blob"
+    },
+    "docs/validation/simplemos_m39_bgn_chain_first_divergence_2026-09-01.md:7cc19c014343f127a519cdb0757998eeb4d7bdbdb1254ec64913f78302133f52": {
+      "status": "recovered",
+      "git_blob": "894b855700b536e9d6c68d47c631c673ffae5688",
+      "materialization": "git_blob"
+    },
+    "docs/validation/simplemos_m40_true_no_bgn_factorial_2026-09-01.md:e6471114771940af7c8f03e930249ea35eea0bcb71752d039df179395d7fd6fd": {
+      "status": "recovered",
+      "git_blob": "f21b6a0bd4e0f2983b3e5e419c3974980f9b6672",
+      "materialization": "git_blob"
+    },
+    "include/vela/physics/BandgapNarrowing.h:ea7c9ac8a0355e8ab6af83eb59f95dbaf0d7a6d7c919bb57e36391d5ae06ac46": {
+      "status": "recovered",
+      "git_blob": "ca1b24fb5b5f6ae03613dc8c7f77a6e6dc1c1d5f",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/first_layer_feedback_audit/m26_first_layer_feedback_audit_report.json:011fb4e66ca9fbeeb70d2c4e10fa64c36adac105c4e1c01e48d0f76b4159023e": {
+      "status": "recovered",
+      "git_blob": "a40af8d8560d2b709847d0a319a0741cf1f06684",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_key_state_drain_cut_edges.csv:ecadb0ce05ad8033abb8b3690d2443e6843877a2bd93f537cb22c9573006a259": {
+      "status": "recovered",
+      "git_blob": "dc4807a5870e7798bdefa151c55aa0d33c2fdb00",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_n23_hfs_deep_off_report.json:68811209c12a644b53990c01e295c114afd20fc0b4b482dc7d098d9a5884aefb": {
+      "status": "recovered",
+      "git_blob": "cddc49b81625f29f2c9fc0dea1891ee1c51a0167",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_interface_node_measures.csv:8b8116543ab6d5159b9ecfa25bb6ba56264586a48d4d236e8d09a136c356e718": {
+      "status": "recovered",
+      "git_blob": "86a25b7e94af9d021d97f19b861a0a4583dd2b71",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/signed_average_box_assembly/m35_signed_average_box_assembly_report.json:4d8eb73c8bb39d3117da3fd883e9328a015db7c64008e3db9ab08c8117526061": {
+      "status": "recovered",
+      "git_blob": "7ae029dede5eba82ebcc7edc207268328ef35ca3",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m10_fixed_state_replay_contract_v1.json:8219e4bcc86dbef2da4cd01ea7c02e519249eb7f4ff4dc16631d41cb9e12aa23": {
+      "status": "recovered",
+      "git_blob": "2554e248931e4206cb5cf69880fec1d4aafda154",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m12_terminal_sensitivity_contract_v1.json:a13916634bd8a191776da88eef6b684db491af1afbe25cd26e2c14327645e091": {
+      "status": "recovered",
+      "git_blob": "d92c833779e7293ce87d0dc323fab3cf1f3517ee",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m27_cross_solver_response_audit_evidence.json:c84f2ffbd4fbfd042f9b4086c23d1c3c01e7bfe5e4aab197b9e407f17e4cc3ea": {
+      "status": "recovered",
+      "git_blob": "c3eaa1b8f9f126dc0be162e474338d43f9ba61ed",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m29_bgn_srh_factorial_evidence.json:37c379047a275d66c00670f556ae3245f324fb0471ad64b83069ba633c785865": {
+      "status": "recovered",
+      "git_blob": "bc972bbe4eb3e1af3ac5f2edf2cebb123dfb1a3d",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m30_double_off_causal_closure_contract_v1.json:d613cce688b8d11f71d02c07efc2daabc557a16fe6b47b821ca601745bef525b": {
+      "status": "recovered",
+      "git_blob": "cdf13dd145048316382a3b9521bf1e3ca942a231",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m30_double_off_causal_closure_evidence.json:3f1e7a815f01c213c55ed717c2b483016cd1c62c9ce02fbf9e887219bc737be9": {
+      "status": "recovered",
+      "git_blob": "13640481c039805508cb034043a7808cdd905318",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_contract_v1.json:6bb1c782291dae53efbd2f1593839dea68911f0eeb78d699db432292da362a6a": {
+      "status": "recovered",
+      "git_blob": "bbb4cade7862604f795e991ca0bc4cb1238e4e3d",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_evidence.json:f9cc15740915235cc92bc48a88ac28391b3428baff112fd6ae0653d88cf7670a": {
+      "status": "recovered",
+      "git_blob": "7e0b654404d82196db6fc367b6fa0fc895940df7",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m32_electron_qf_scaled_perturbation_contract_v1.json:e3d12b13fd3b74153981eb568acc2f9eac09d254b513e1cd7dc21b27c612fae3": {
+      "status": "recovered",
+      "git_blob": "643cdbbf12dd95351990211b026a2461c9a78fbd",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m33_region_resolved_interface_assembly_contract_v1.json:f5f4f354e9fa919222681d3335d393428a1f775bdb0fba63adb053a22f844a02": {
+      "status": "recovered",
+      "git_blob": "a73c3695a28d53e27a5cd7b0a5ef5fa478ac4d1b",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m35_signed_average_box_assembly_contract_v1.json:67810ec0107e6725e2ab14cf0b1d9f856f7799211024d1330ca15b40d97cebf1": {
+      "status": "recovered",
+      "git_blob": "ec1fe96ed9f5f94f4b2c2818ced2229da3e717f0",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m36_boundary_contact_measure_audit_contract_v1.json:3a8938bfa9da0d787732f96a51d4fe09faf9fbe7aee864ac5bba18134fb19d47": {
+      "status": "recovered",
+      "git_blob": "ed317354ff49e5e47ac44a09c1fc3fddbaf2f3c4",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m37_measure_contact_qf_ablation_contract_v1.json:f17f454963d0c892d5349e179c9c327d440734292caa5f41f424fd6b74447fa2": {
+      "status": "recovered",
+      "git_blob": "70e9fbe73f0795c99ab719b74f95b98fc40f17c0",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m39_bgn_chain_first_divergence_contract_v1.json:5127f4e757be9a1fdb6fe5001e1266ef43657b2dcfe1ec45f5c7c2f34ee20113": {
+      "status": "recovered",
+      "git_blob": "d6e23a55ebbb9b626844ba4d2bf5608e04d2898c",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m39_bgn_chain_first_divergence_evidence.json:ddce32b03a1505530ac63c1db58928c3d261e7da7492580b52c77a64edc6904e": {
+      "status": "recovered",
+      "git_blob": "e24233778c38f2b87b7babb44c23464835b8a313",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m40_true_no_bgn_factorial_contract_v1.json:b8c9ba697dfeae3050916ba1d229020d253b62d10b9cb28719557999339d5b3d": {
+      "status": "recovered",
+      "git_blob": "809de8a1e1ccf4315d587c93b31de6a8916cfaa4",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m41_equal_ni_flux_ablation_contract_v1.json:5ecf335627e5d23cdaa8537b837318cff0a6abeac7ee8d04f56f3a1e4dfabaa3": {
+      "status": "recovered",
+      "git_blob": "a3e6349211931c0d090c318dc82136f84186084a",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m41_equal_ni_flux_ablation_evidence.json:a2a77b8e49842c85ef7dfafc9f9d9ac7260b3b79e39c4a7c1fe588f04634af11": {
+      "status": "recovered",
+      "git_blob": "00d51855890e48a9a39a83fe1b1a1ce8422686de",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m42_no_bgn_self_consistent_interaction_contract_v1.json:e1577bb5391ee973a7ea12929e59d09b096c24b002208fb7cf032cfaf7cc798c": {
+      "status": "recovered",
+      "git_blob": "9f3d27417b398045168c4a16e67e76146742f1c5",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m44_qf_coordinate_consistency_evidence.json:9194b3edabed2545214e5cc32f06cc7e24e0610a4e160ddfd72356d22152ed29": {
+      "status": "recovered",
+      "git_blob": "97ef7f86e98ea061ba4685ba9b4a4e9dddefd4b2",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m45_post_qf_rebaseline_contract_v1.json:7f5203a8b3f120a808fce78e62713895806cba7ce0d4cdeaf1c643507232aaa7": {
+      "status": "recovered",
+      "git_blob": "ec7c493e92acd0e1cd26cefc093e8a89fc18f7cd",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m45_post_qf_rebaseline_evidence.json:7af4f931cca68009b92c3b14cd0d7fe880439dd4659795ceb3a16f2f841616b4": {
+      "status": "recovered",
+      "git_blob": "80122fc1c0a5972ad9373d66f7c138c8d8b43721",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m46_full_matrix_requalification_contract_v1.json:3c3a3b0cc782cf2917c08e4011418e597070b92d2d164520bc5ae6a94c11c980": {
+      "status": "recovered",
+      "git_blob": "eb16390f051ca41a44325dcd70606663924cd7dd",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json:de83d5dbafb8c055de239732578431dc0176d77f248b1c1ca537b2a52bf4b7f1": {
+      "status": "recovered",
+      "git_blob": "9545b5c9c70d94c4aa1954c801a66930f655fb45",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m9_hfs_diagnostics_contract_v1.json:1ed8de6fa7919565bec9b9fd8ed40400b816bcd1fe278774833dcef31ba0398e": {
+      "status": "recovered",
+      "git_blob": "f09966c16f2b52c9c5076926ac550a1196ce3682",
+      "materialization": "git_blob"
+    },
+    "reference_tcad/simplemos_sentaurus2022/true_no_bgn_factorial/m40_true_no_bgn_factorial_report.json:1bffb4582a2dc39944b988c8a58956fbcd3677e47179a748ba670228ef59c455": {
+      "status": "recovered",
+      "git_blob": "4f9b4ff3a30358311907999d85d5045c7e5ed004",
+      "materialization": "git_blob"
+    },
+    "scripts/audit_simplemos_m9_hfs_parameters.py:a8ec18cb6c96e9473967ae371d897aa02652b67adbbfbf114af3f27b1e88d35e": {
+      "status": "recovered",
+      "git_blob": "c9ad42b1fb763bd555544a0a17eaf9a58f6feca0",
+      "materialization": "git_blob"
+    },
+    "scripts/build_simplemos_m10_report_artifact.py:a5905eef06a7ec2e8dc2e7127d13a27660ec8ec2be91a3e3884b59033be6843b": {
+      "status": "recovered",
+      "git_blob": "b6e654422fbf970165105fed2f8ec7e880c2271f",
+      "materialization": "git_blob"
+    },
+    "scripts/build_simplemos_m9_report_artifact.py:a9e01359e0e9e18ebefa807c5765f624e48e90aa7406c086453a68f24b02c7a9": {
+      "status": "recovered",
+      "git_blob": "dd4f5dd0a72dabb473bd08ae4c12bf8292d79117",
+      "materialization": "git_blob"
+    },
+    "scripts/compare_simplemos_m4_controlled_matrix.py:931e323a5a87dbba2c3671f12bc11d16587c32fdee64b4e96d10af0fec4c9a94": {
+      "status": "recovered",
+      "git_blob": "a65f6075090187078623cb2627e80b614928c42a",
+      "materialization": "git_blob"
+    },
+    "scripts/freeze_simplemos_m10_fixed_state_replay_evidence.py:7e2981adde4ea501598236314d0be28ed357bb8c5cb3e9975d81438d40f8f22b": {
+      "status": "recovered",
+      "git_blob": "9b392868c65cfc2659e786d5f4d50a0d1fbd4cd6",
+      "materialization": "git_blob"
+    },
+    "scripts/freeze_simplemos_m12_terminal_sensitivity_evidence.py:e85616147df89a533412510ee94bfc5650f2b064e50a5463218d2301be8a5ba2": {
+      "status": "recovered",
+      "git_blob": "9e9facace34d2fd9710e9a9d62f46336c18c6e6c",
+      "materialization": "git_blob"
+    },
+    "scripts/freeze_simplemos_m30_double_off_causal_closure_evidence.py:005fb96c16904514388a20ec5fc0569380a53e407d7244cd4882f3bbdfe93694": {
+      "status": "recovered",
+      "git_blob": "81c48a0a3696c6244744ba9f9e67bccd37fa05ba",
+      "materialization": "git_blob"
+    },
+    "scripts/freeze_simplemos_m31_minority_poisson_perturbation_evidence.py:f3531cd038d145141f623eafa79161d95c243ab62d627876cb2656b637defc81": {
+      "status": "recovered",
+      "git_blob": "f3eb0bc7cb5ad140407ec02e5673ef515054ea26",
+      "materialization": "git_blob"
+    },
+    "scripts/freeze_simplemos_m32_electron_qf_scaled_perturbation_evidence.py:a09686151ce905a8ff1485d9e1036d4477fd8dab0c5d9584ac37974d026458e8": {
+      "status": "recovered",
+      "git_blob": "62663093bd7cb198834434c9a2ae17db2373a374",
+      "materialization": "git_blob"
+    },
+    "scripts/freeze_simplemos_m33_region_resolved_interface_assembly_evidence.py:937474d03dc7ca7ca2924232c942fb54350dd7a09b7208380718800b0c547246": {
+      "status": "recovered",
+      "git_blob": "2a208f585ecbad1314cf2f9a5d9c834c12aa72fe",
+      "materialization": "git_blob"
+    },
+    "scripts/freeze_simplemos_m35_signed_average_box_assembly_evidence.py:2b0066dda483433f2c3a1a387b83bb72fefcc5b4dbfb89229c1ee1a4ce0ce8e2": {
+      "status": "recovered",
+      "git_blob": "51d1f115cbf341bc585cca4a4eebb91069e6b650",
+      "materialization": "git_blob"
+    },
+    "scripts/freeze_simplemos_m36_boundary_contact_measure_audit_evidence.py:85fddd9476d44e1e88dbe34da33fb0bb7417dde88539d3ef14194516c1b6169e": {
+      "status": "recovered",
+      "git_blob": "ced68fb979589db2a295a85c4c1ffd6879786496",
+      "materialization": "git_blob"
+    },
+    "scripts/freeze_simplemos_m37_measure_contact_qf_ablation_evidence.py:1c6856642711cd23d5f4302acce9d01129dfa7d6f317b9af324bd906917b23cf": {
+      "status": "recovered",
+      "git_blob": "3120abfc866fd7700d96f04fe50a9c95ed489073",
+      "materialization": "git_blob"
+    },
+    "scripts/freeze_simplemos_m39_bgn_chain_first_divergence_evidence.py:011d89a0113fee2a581e6ed478c8ab6f7ca693d7a884c271c3f44174a73f8349": {
+      "status": "recovered",
+      "git_blob": "c0495aec6bd4e5935482febb883a2975a038b83d",
+      "materialization": "git_blob"
+    },
+    "scripts/freeze_simplemos_m40_true_no_bgn_factorial_evidence.py:31af534283d085fed5952ee4caaf8d6d6c5ffc353d6585586577c50da8d6e528": {
+      "status": "recovered",
+      "git_blob": "948913262f065b2b02e7c0a0d21abc91c7c7840f",
+      "materialization": "git_blob"
+    },
+    "scripts/freeze_simplemos_m9_hfs_diagnostics_evidence.py:d32b48c65d1988e009d09459260f7070b708e1336be4e66b3606fe4ebf2d0eca": {
+      "status": "recovered",
+      "git_blob": "805e3376e358d11ac7c3389787c7889585c5bdd0",
+      "materialization": "git_blob"
+    },
+    "scripts/plot_simplemos_m10_fixed_state_replay.py:d9eb23a6f748521a1e77d010e2d632b6f3132a44ff714992f1883cc5c8067713": {
+      "status": "recovered",
+      "git_blob": "2170b3fdc43b8e071474b0ca29debddf601e3f3c",
+      "materialization": "git_blob"
+    },
+    "scripts/plot_simplemos_m12_terminal_sensitivity.py:d7ee2e06d8063e9c2b77d31cad208bcca686caed58e23f52a2f646e1f44ca017": {
+      "status": "recovered",
+      "git_blob": "b025e8ea4321a698498fc1bfcd816af1328c79a9",
+      "materialization": "git_blob"
+    },
+    "scripts/plot_simplemos_m30_double_off_causal_closure.py:2e96bedd0d5b5a368c1e215f8b3008e224ce1732e5f16e84802b9d30c0d9fb21": {
+      "status": "recovered",
+      "git_blob": "aa8c5a689d79cb117d018b449c44c3469b59a36c",
+      "materialization": "git_blob"
+    },
+    "scripts/plot_simplemos_m31_minority_poisson_perturbation.py:8e65b7f1339ec59efecd0f47036c4fa1f7f61916dc84576d4ad5f5b4b65b8a0f": {
+      "status": "recovered",
+      "git_blob": "3b66835bd057d4f0e1840176f535d8dff7b2dbf7",
+      "materialization": "git_blob"
+    },
+    "scripts/plot_simplemos_m32_electron_qf_scaled_perturbation.py:c04d1c1192499e3be0565793b8a75fe2ec9bf609786c9f651556bdbcf931a6c9": {
+      "status": "recovered",
+      "git_blob": "95146fd44c0304b4612d405a3cb8e2b52e778981",
+      "materialization": "git_blob"
+    },
+    "scripts/plot_simplemos_m33_region_resolved_interface_assembly.py:d8538bef790f161721ba12f6e14eede12c1c7aa28de8305c5948359fe582639f": {
+      "status": "recovered",
+      "git_blob": "9b07dc4da0602c3ff1d4c8fa6a749418997d57c9",
+      "materialization": "git_blob"
+    },
+    "scripts/plot_simplemos_m35_signed_average_box_assembly.py:740b94b167d50e28cd9eb568a41cb47766537834a7ccc8cb519e11fad8f6f50b": {
+      "status": "recovered",
+      "git_blob": "d8eaf7043787a09ddc8e43328877a5a69072de2f",
+      "materialization": "git_blob"
+    },
+    "scripts/plot_simplemos_m9_hfs_diagnostics.py:fd33ecf2ab58f1e9ba43d9496d9adbf9ab1d2eef7e751009eaea4c39f5d4abb7": {
+      "status": "recovered",
+      "git_blob": "dc961a6c8ed9315ddcf9c18676fff9fe25a8ddb3",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m10_fixed_state_replay.py:fe3a379a1e684f3767212f391a9f67fd5995a625ee1c7b0794f51c3dba85d675": {
+      "status": "recovered",
+      "git_blob": "1e14aa4619e03ef64f858b4788441d73ccc1cb8a",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m12_terminal_sensitivity.py:4910345afe662772708a75e3650976530c4711802e82ed7982aa96d5d1bfa789": {
+      "status": "recovered",
+      "git_blob": "e842e02105779d92a9bc803c308c396424770484",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m30_double_off_causal_closure.py:46263d34fda3d66a8ff065247749becc79a8bdd0a6aae192aa00a2b6f42a8e1b": {
+      "status": "recovered",
+      "git_blob": "1e0a454fd8c02566d0eca8c96e67a79fc1be95d6",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m31_minority_poisson_perturbation.py:73c6a43e034c73c3af245b2955577eb3eb13a6ba3b5e316a62a174271d444d2b": {
+      "status": "recovered",
+      "git_blob": "6095d89f21fe721b7ed4d1c6102ec92ae189806b",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m32_electron_qf_scaled_perturbation.py:a3b7415a24440cd01c671bfa8f7faae227a55b13540a305655dc84d841f6c148": {
+      "status": "recovered",
+      "git_blob": "e37523b51eadc912b0e76cd557782f9b20dd7a12",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m33_region_resolved_interface_assembly.py:82e40e33ea907e564addd26fcd9dcbc64a5b38827f46298fc08381f44cb5053c": {
+      "status": "recovered",
+      "git_blob": "0a988a0020e361c8d8328322feef9657753bb72e",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m35_signed_average_box_assembly.py:29d25928c729e6745a0154c3143c715e4f055f1b32eefa384fa202e46dffae0b": {
+      "status": "recovered",
+      "git_blob": "035c43a7e73a8487b960fd7570cbfeb3debdbed5",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m36_boundary_contact_measure_audit.py:cae379c26c2926d0b8e7c20149582fe94eb2fcac1014ef5916499032976b58c9": {
+      "status": "recovered",
+      "git_blob": "14a7c3dd2f9fb0086e795886a8986dd9d5978c62",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m37_measure_contact_qf_ablation.py:82b5f4f4a935be0c367161cbf34d991a7356c9b4c62e4414e2715af0387955b1": {
+      "status": "recovered",
+      "git_blob": "d3abca4b634b0720de1c65c46e496a9a2861fe87",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m39_bgn_chain_first_divergence.py:8561aeb6da4172725dcabdd847b5a56396e55ff0807c5fa1bb1bfe5e3193c492": {
+      "status": "recovered",
+      "git_blob": "de9a7a94c03d39db3fe90deffa6a53dd535034f1",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m40_true_no_bgn_factorial.py:102f1c149d82321976f7e0aeaba4ec70f151791ca8c57611013f60ab6cfa6321": {
+      "status": "recovered",
+      "git_blob": "5d62c5494d5336537682f71d1b82b71cbd46f500",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m41_equal_ni_flux_ablation.py:36f35a72bee1bec249af392c313eef7b7d8608efb3e2c03b04cb1350cd73e292": {
+      "status": "recovered",
+      "git_blob": "d5fb6b8dfc283f9ce16ff7e9dd8102c3e55af35a",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m42_no_bgn_self_consistent_interaction.py:572550a9351898a879fcfaad4d54635f7d340e093adbf998818e2e9d4a85f541": {
+      "status": "recovered",
+      "git_blob": "95a5c0dae4624de73630e9dc978f3468ded04fb8",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m45_post_qf_rebaseline.py:ca9a8ae2a594f0b2d7105a8b26b7ccf98c573e5875a9c7b22e7d89bb33751f1d": {
+      "status": "recovered",
+      "git_blob": "acb1465cfaf018261e0d4e38b04b3aa3628e68d8",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m46_full_matrix_requalification.py:59e133d1d879c31d9b8f02171646afe67afc3f41b82beac6a7e20b3b4e5b6a2d": {
+      "status": "recovered",
+      "git_blob": "5870128b237b5ba9311edf1a92c396fc3c06646f",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m8_original_matrix.py:e4948b5e6c80e4866c99e2c5df31a7d26c73b478f4713cef4f4c525bff0f89f9": {
+      "status": "recovered",
+      "git_blob": "a7988cb95ec648986ed5306854a81c95d2c460f1",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m9_edge_hfs_diagnostics.py:9fd90393e893e2aa596427b1d654228994697798072dfc2892087734bf207cf6": {
+      "status": "recovered",
+      "git_blob": "e2b934b2ab6dfefc772e2bb6c5c078bc04471459",
+      "materialization": "git_blob"
+    },
+    "scripts/run_simplemos_m9_refdens_scan.py:92d4964e5c3ae6b43aa23a41298ba7b9892f8bd62f0f9240d2bf1a4e556fd843": {
+      "status": "recovered",
+      "git_blob": "58152e487134916d090c6eab25a4a5592568e5ca",
+      "materialization": "git_blob"
+    },
+    "tests/regression/simplemos_evidence_chain.py:d19ad33a2be57764004934e6951a4fd2ed41e396909791061395b3b970490d71": {
+      "status": "recovered",
+      "git_blob": "e7a8dd760ce6cf410e96c70316df018930e6f74f",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m10_fixed_state_replay.py:7c1e5bc8b53e2e4c886168c138d619ce1643b17608ddbcfadf34440c913ffb95": {
+      "status": "recovered",
+      "git_blob": "30e3a9009944082f225928baa530903f375c6dcc",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m12_terminal_sensitivity.py:ce2cf5dd1b45649bd99265a7c648a213d9fb7f9706795bda1b5879280b56b4ff": {
+      "status": "recovered",
+      "git_blob": "f98c86dca483163ab4a2aadba58d4b16547da4f7",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m30_double_off_causal_closure.py:dc0f4c808c935d419ee399a7b3e9930eefa02a9c9d866bbe661e721113fa1fb5": {
+      "status": "recovered",
+      "git_blob": "264f5ea714847eebaddd10d32686d77fd0d1721c",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m31_minority_poisson_perturbation.py:99bd8e3c0832b4e6683585bf8300f8d8fa874be5ebd0cd104588918883823166": {
+      "status": "recovered",
+      "git_blob": "933ab4e07a6b13008d45d6a916508573cc44af8b",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m32_electron_qf_scaled_perturbation.py:6aa7b041f428a7f0b325c2494dec9fc2814fad4ec5bb7a84b5f982d3c78b7cb0": {
+      "status": "recovered",
+      "git_blob": "079d103de2632bf8c2b35a1c54fcb5db9873c163",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m37_measure_contact_qf_ablation.py:044235fedb3823e16c3c7b0bb98bd98faf29911eb7a4209029c6efc2130b4d38": {
+      "status": "recovered",
+      "git_blob": "bd01daf80fb6e22452e3ab47a84a1b0e596b6115",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m41_equal_ni_flux_ablation.py:2300bc8f9b70378f7f41ce9f213d623ca430610677d4fb18a8c594bd8e76ae98": {
+      "status": "recovered",
+      "git_blob": "918869000276d2574140450908c7d94f0a500c03",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m42_no_bgn_self_consistent_interaction.py:42e0b180b88afd9b1fce35a0ed86739e84d147441e71da6a7ad3147a73611033": {
+      "status": "recovered",
+      "git_blob": "e21c79e05676cbe681df139b0b162f2f3238945c",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m45_post_qf_rebaseline.py:f9686e495a1f3903dbaf73beeef99860ebb994fc4b05e61c0058d0595e010f66": {
+      "status": "recovered",
+      "git_blob": "994b1c04e0f62b40965fc6b55700a451ea88cf5f",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m46_full_matrix_requalification.py:9428629ef12bf259701d3a34a51fa432b52add2461654e1322f0aadb82024138": {
+      "status": "recovered",
+      "git_blob": "b18c597cdd26f8c2090c85b0baabab0fbebfc6f3",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m9_hfs_diagnostics.py:2c25e474d0c8baeadbe91f0eb809994ba3235b251b8d945fadc6bc4a550c7b92": {
+      "status": "recovered",
+      "git_blob": "64186d4e80ac6fc61f285ed670979c5a197dcccd",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_reference_tcad_tools.py:1844ca453be92c527c3ef8b84ecf92c4dd63c3c07aee279c024ee637a7d9b21b": {
+      "status": "recovered",
+      "git_blob": "49615b5fbda905767fd8c11e4b659262fae85373",
+      "materialization": "git_blob"
+    },
+    "CMakeLists.txt:d0405e1972c95a008f2b3f246e93a490cec147fa4e820934b81d35830034b118": {
+      "status": "recovered",
+      "git_blob": "bf48ff6b307a25c014278657042a037e7fc53e29",
+      "materialization": "git_blob"
+    },
+    "include/vela/equation/AssemblerUtils.h:f5646b1eec6efbc16fa858dc8f8b618d6496bfc810c5ba767c9cc2531f2e93f7": {
+      "status": "recovered",
+      "git_blob": "14ffb3691a56dc657244c78f78ce077afe133a62",
+      "materialization": "git_blob"
+    },
+    "include/vela/solver/NewtonSolver.h:65753c3ed686b59566a3a66df8a1837b71dd0e5a9f80dc1c44d17a2c9f0412ba": {
+      "status": "recovered",
+      "git_blob": "7f7c4231298f3d9c5065965174dc9ca375e732f8",
+      "materialization": "git_blob"
+    },
+    "src/solver/GummelSolver.cpp:63221ade6ee484ace604cd2c6971a32625cbda20fe45360cf30cf26ac9f187f3": {
+      "status": "recovered",
+      "git_blob": "e00aac12e0eac99ef2b9346c874123018fb59e9f",
+      "materialization": "git_blob"
+    },
+    "include/vela/equation/DDAssembler.h:c9d86a177cb7a32df842483cbfcdf5fbf89c1c747d7d932e50d09dc61081e58c": {
+      "status": "recovered",
+      "git_blob": "982e4a6cd3784a4956a26290a5aa9a681916fcbc",
+      "materialization": "git_blob"
+    },
+    "src/solver/NewtonSolver.cpp:cb37eb85dd21e7faad9d7f85f0eb1d775be231a8b0b79a47adb731e17374a065": {
+      "status": "recovered",
+      "git_blob": "89369bc902b9b5b707e26db58f23d820174ef456",
+      "materialization": "git_blob"
+    },
+    "include/vela/equation/CoupledDDAssembler.h:863c80342ce717642500df37ae554685204981b6757bf8e89b571c99255c47be": {
+      "status": "recovered",
+      "git_blob": "b1fc911d93e8af3c0b0141f0956859a9d36801f7",
+      "materialization": "git_blob"
+    },
+    "src/equation/CoupledDDAssembler.cpp:62db5a538ee95439feeea88a0d860b8bd51d22ef88db9829743dd41bcb0d67f2": {
+      "status": "recovered",
+      "git_blob": "9b6a2e32ece767f9400158ec11e55635a4c942b6",
+      "materialization": "git_blob"
+    },
+    "tests/test_mos_mixed_material.cpp:6e6a96ce074a04c58f76781a241d8cd2369c52978f02f7de25fee8ab15b2e794": {
+      "status": "recovered",
+      "git_blob": "28b5050a6a7c25a37bd0d785e603a96b2b12b171",
+      "materialization": "git_blob"
+    },
+    "CMakeLists.txt:f5dbf208763fb701b3af63d6a88f0cff5691d6413fcd575b18bd395aa8ba202c": {
+      "status": "recovered",
+      "git_blob": "b98422c413c0110454426b249a063bca905c4763",
+      "materialization": "git_blob"
+    },
+    "tests/regression/simplemos_evidence_chain.py:d5eed59e6613194d567b6c2007dee778458b86bafdc60a44f475b39e4a57988e": {
+      "status": "recovered",
+      "git_blob": "e025fc176b99b41aa4e0657f91e94dbeff8f7faa",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m41_equal_ni_flux_ablation.py:064046c63d5d1971a536a32a72682d4ec5198e8f8f4213c4e4f4ad6137b71c7a": {
+      "status": "recovered",
+      "git_blob": "b92afe1ebe6b0d6ec56a94afb49ce03e253bdabe",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m42_no_bgn_self_consistent_interaction.py:cd6ba165ccb0fb42f4ab7c0d4799a287c458ad7f4fe82ab1307b0e6d1392ec7d": {
+      "status": "recovered",
+      "git_blob": "90a3abe97af5d646be0fa13c1c6b241265b4a5bc",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m45_post_qf_rebaseline.py:c9e54512e56bdcdb119398967452bdcfca1b21c72d1aad952ca5aab809bc447f": {
+      "status": "recovered",
+      "git_blob": "0f9093647d86d3842e6adc82fd51e251190fd926",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m10_fixed_state_replay.py:3c6b4a18b9328a2a7fd5917921a229774ecc0f7561e63ba3eee53b120ee2ff4c": {
+      "status": "recovered",
+      "git_blob": "c06da873fda1034c33a2bca42fca6e8fd7636fdd",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m12_terminal_sensitivity.py:e2e045413b43c6fcf5375c88373ec07832a775fa09b327330bc75e295d6ae829": {
+      "status": "recovered",
+      "git_blob": "5fb0cc3e772f0220e75bd75da66fd6a4a43e2ddb",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m30_double_off_causal_closure.py:50bc5308d877ba8cd8278d5f9b0fee4da2ddadbfea48606fbdbae07764ee959d": {
+      "status": "recovered",
+      "git_blob": "e63a392ecaf07aac23c29fb42084f86df05ddca0",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m9_hfs_diagnostics.py:79903fe14eca5b5dcdf3f3ec86e0c1849a055b586f6ec2f3160a4c3035622a76": {
+      "status": "recovered",
+      "git_blob": "2e2666780b0092f362c2ca12b079c09df02e64c5",
+      "materialization": "git_blob"
+    },
+    "src/solver/NewtonSolver.cpp:95de9308e18bdd428f62df47cbc1f6e1658f50188d2ffe45f5757ab7e9248b73": {
+      "status": "recovered",
+      "git_blob": "455b53bc32faec94976dcaa292311ece0de2a051",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m31_minority_poisson_perturbation.py:d9d3670916e99853fa250649bc19db602f04902ee8767d3dbd7bb244c6c19b47": {
+      "status": "recovered",
+      "git_blob": "ef0ae4e4f9e033bc77804385640b6004d311ad49",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m32_electron_qf_scaled_perturbation.py:56888a4fb285187e38968fd90eb1c13d19789b686cfb50d3a783bd38695a01e0": {
+      "status": "recovered",
+      "git_blob": "5a9e2b5773e4c72627c7511f5e2bbedd27eb9a56",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m33_region_resolved_interface_assembly.py:e50777ee922d677e3d5ad616055072d71ae291c3f559a7c6ad60f8517e004c55": {
+      "status": "recovered",
+      "git_blob": "bef9b8a410a8562b35f66937cc1cbf9f48b9377f",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m35_signed_average_box_assembly.py:f75b0a0f7dce0d9cffdd631c1f043307658ced0298226ff495802008568257a1": {
+      "status": "recovered",
+      "git_blob": "9cdf116a6d06da8f1d4661e60ee15baa4ed672bf",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m36_boundary_contact_measure_audit.py:686237346c9fbd93af0cf80995d9d7ea83b40b126375d221849bed2f83b6cdb9": {
+      "status": "recovered",
+      "git_blob": "51c0eb256fe98f6e3d8692919a25bce1e0843f8f",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m37_measure_contact_qf_ablation.py:7b6ddbf679916c7c3ef3b580147d83461cd2e1a3ab3a695a86a914f1dcac16dd": {
+      "status": "recovered",
+      "git_blob": "3abd543d9c225d392817726658fc6ba772cdef4d",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m39_bgn_chain_first_divergence.py:eeb16e23303fa837c0964ed2adf5eb136e2e33154b27093f03ace51158f745c7": {
+      "status": "recovered",
+      "git_blob": "93bd88793aafa25068d18c5a2721865dd60d2d14",
+      "materialization": "git_blob"
+    },
+    "tests/regression/test_simplemos_m40_true_no_bgn_factorial.py:daa1eeb7e5c9d1437ae9f235dfc4c332e703ae58e7d6187a227c8decc6bd95d0": {
+      "status": "recovered",
+      "git_blob": "28461fcca47a627f89a93c31fbcf7631c0d50117",
+      "materialization": "git_blob"
+    },
+    "tests/test_newton_solver.cpp:47d5f3cf33b12d00a23a2373ed8c9b1137945c3bf37d1cde7ed7b39b27809df0": {
+      "status": "recovered",
+      "git_blob": "dd8e47119aaf1d84bdfa7e12c453c2eb241a4c83",
+      "materialization": "git_blob"
+    },
+    "CMakeLists.txt:13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8": {
+      "status": "recovered",
+      "git_blob": "9c096a10917d36b2aa21143f83ecae66d34e13b4",
+      "materialization": "git_blob"
+    },
+    "src/simulation/DCSweep.cpp:b1bf23e732e0774b3001237b5a1f122db7dac3c13a2c8e39cab6cb1ff1b0c584": {
+      "status": "recovered",
+      "git_blob": "4d8d9333d52e1a99dc124de241e83af6fb5c8097",
+      "materialization": "git_blob"
+    },
+    "src/tools/vela_example_runner.cpp:cc5ca8d7ee8a710e83808eee363b878957901de9bff18b39bc3f3a5c85cf52b4": {
+      "status": "recovered",
+      "git_blob": "e260f843f1cd3013f521a6c996bef3853d85d048",
+      "materialization": "git_blob"
+    },
+    "src/equation/CoupledDDAssembler.cpp:e525d828d0199dafdea947377dc6faed7cea419b5cb76fc1f51ae05d3dfe64ed": {
+      "status": "unavailable",
+      "reason": "No exact bytes found in reachable Git history or retained local source snapshots. Historical metadata only; not a current-source qualification."
+    }
+  },
+  "evidence": {
+    "simplemos_m9_hfs_diagnostics_evidence.json": {
+      "sha256": "e61a65d57ec26c097c022484f56d5e7e58ea98601faaa888ce6a923b389f819f",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m9_hfs_diagnostics_contract_v1.json": "1ed8de6fa7919565bec9b9fd8ed40400b816bcd1fe278774833dcef31ba0398e",
+        "src/tools/vela_example_runner.cpp": "cc5ca8d7ee8a710e83808eee363b878957901de9bff18b39bc3f3a5c85cf52b4",
+        "scripts/run_simplemos_m9_refdens_scan.py": "92d4964e5c3ae6b43aa23a41298ba7b9892f8bd62f0f9240d2bf1a4e556fd843",
+        "scripts/audit_simplemos_m9_hfs_parameters.py": "a8ec18cb6c96e9473967ae371d897aa02652b67adbbfbf114af3f27b1e88d35e",
+        "scripts/run_simplemos_m9_edge_hfs_diagnostics.py": "9fd90393e893e2aa596427b1d654228994697798072dfc2892087734bf207cf6",
+        "scripts/plot_simplemos_m9_hfs_diagnostics.py": "fd33ecf2ab58f1e9ba43d9496d9adbf9ab1d2eef7e751009eaea4c39f5d4abb7",
+        "scripts/freeze_simplemos_m9_hfs_diagnostics_evidence.py": "d32b48c65d1988e009d09459260f7070b708e1336be4e66b3606fe4ebf2d0eca",
+        "scripts/build_simplemos_m9_report_artifact.py": "a9e01359e0e9e18ebefa807c5765f624e48e90aa7406c086453a68f24b02c7a9",
+        "tests/regression/test_reference_tcad_tools.py": "1844ca453be92c527c3ef8b84ecf92c4dd63c3c07aee279c024ee637a7d9b21b",
+        "tests/regression/test_simplemos_m9_hfs_diagnostics.py": "79903fe14eca5b5dcdf3f3ec86e0c1849a055b586f6ec2f3160a4c3035622a76"
+      }
+    },
+    "simplemos_m10_fixed_state_replay_evidence.json": {
+      "sha256": "b44c13c9c0b172f7e0e23908ecf7a77b4b9a59b2af6adb2ad5e74470ba509ba9",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m10_fixed_state_replay_contract_v1.json": "8219e4bcc86dbef2da4cd01ea7c02e519249eb7f4ff4dc16631d41cb9e12aa23",
+        "src/tools/vela_example_runner.cpp": "cc5ca8d7ee8a710e83808eee363b878957901de9bff18b39bc3f3a5c85cf52b4",
+        "scripts/run_simplemos_m10_fixed_state_replay.py": "fe3a379a1e684f3767212f391a9f67fd5995a625ee1c7b0794f51c3dba85d675",
+        "scripts/plot_simplemos_m10_fixed_state_replay.py": "d9eb23a6f748521a1e77d010e2d632b6f3132a44ff714992f1883cc5c8067713",
+        "scripts/freeze_simplemos_m10_fixed_state_replay_evidence.py": "7e2981adde4ea501598236314d0be28ed357bb8c5cb3e9975d81438d40f8f22b",
+        "scripts/build_simplemos_m10_report_artifact.py": "a5905eef06a7ec2e8dc2e7127d13a27660ec8ec2be91a3e3884b59033be6843b",
+        "tests/regression/test_reference_tcad_tools.py": "1844ca453be92c527c3ef8b84ecf92c4dd63c3c07aee279c024ee637a7d9b21b",
+        "tests/regression/test_simplemos_m10_fixed_state_replay.py": "3c6b4a18b9328a2a7fd5917921a229774ecc0f7561e63ba3eee53b120ee2ff4c"
+      }
+    },
+    "simplemos_m12_terminal_sensitivity_evidence.json": {
+      "sha256": "8fc083667a884cccca3ef8ebe47ede6cb11fe3025697535da313e679859fb496",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m12_terminal_sensitivity_contract_v1.json": "a13916634bd8a191776da88eef6b684db491af1afbe25cd26e2c14327645e091",
+        "scripts/run_simplemos_m12_terminal_sensitivity.py": "4910345afe662772708a75e3650976530c4711802e82ed7982aa96d5d1bfa789",
+        "scripts/plot_simplemos_m12_terminal_sensitivity.py": "d7ee2e06d8063e9c2b77d31cad208bcca686caed58e23f52a2f646e1f44ca017",
+        "scripts/freeze_simplemos_m12_terminal_sensitivity_evidence.py": "e85616147df89a533412510ee94bfc5650f2b064e50a5463218d2301be8a5ba2",
+        "tests/regression/test_simplemos_m12_terminal_sensitivity.py": "e2e045413b43c6fcf5375c88373ec07832a775fa09b327330bc75e295d6ae829",
+        "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+      }
+    },
+    "simplemos_m30_double_off_causal_closure_evidence.json": {
+      "sha256": "3f1e7a815f01c213c55ed717c2b483016cd1c62c9ce02fbf9e887219bc737be9",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m30_double_off_causal_closure_contract_v1.json": "d613cce688b8d11f71d02c07efc2daabc557a16fe6b47b821ca601745bef525b",
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m29_bgn_srh_factorial_evidence.json": "37c379047a275d66c00670f556ae3245f324fb0471ad64b83069ba633c785865",
+        "scripts/run_simplemos_m30_double_off_causal_closure.py": "46263d34fda3d66a8ff065247749becc79a8bdd0a6aae192aa00a2b6f42a8e1b",
+        "scripts/plot_simplemos_m30_double_off_causal_closure.py": "2e96bedd0d5b5a368c1e215f8b3008e224ce1732e5f16e84802b9d30c0d9fb21",
+        "scripts/freeze_simplemos_m30_double_off_causal_closure_evidence.py": "005fb96c16904514388a20ec5fc0569380a53e407d7244cd4882f3bbdfe93694",
+        "tests/regression/test_simplemos_m30_double_off_causal_closure.py": "50bc5308d877ba8cd8278d5f9b0fee4da2ddadbfea48606fbdbae07764ee959d",
+        "docs/validation/simplemos_m30_double_off_causal_closure_2026-08-31.md": "e0515cbedd0b3a3c7c7d5e0217447fa702c445ceec02c4a55ff30275f433c2a3",
+        "docs/validation/figures/simplemos_m30/simplemos_m30_double_off_causal_closure.png": "084efc3ba6034dcad659f3a383bb054f38e92c49a2dd0a9e656ec07ac5b9eeb5",
+        "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+      }
+    },
+    "simplemos_m31_minority_poisson_perturbation_evidence.json": {
+      "sha256": "f9cc15740915235cc92bc48a88ac28391b3428baff112fd6ae0653d88cf7670a",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_contract_v1.json": "6bb1c782291dae53efbd2f1593839dea68911f0eeb78d699db432292da362a6a",
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m30_double_off_causal_closure_evidence.json": "3f1e7a815f01c213c55ed717c2b483016cd1c62c9ce02fbf9e887219bc737be9",
+        "include/vela/solver/NewtonSolver.h": "65753c3ed686b59566a3a66df8a1837b71dd0e5a9f80dc1c44d17a2c9f0412ba",
+        "src/solver/NewtonSolver.cpp": "95de9308e18bdd428f62df47cbc1f6e1658f50188d2ffe45f5757ab7e9248b73",
+        "src/tools/vela_example_runner.cpp": "cc5ca8d7ee8a710e83808eee363b878957901de9bff18b39bc3f3a5c85cf52b4",
+        "tests/test_newton_solver.cpp": "47d5f3cf33b12d00a23a2373ed8c9b1137945c3bf37d1cde7ed7b39b27809df0",
+        "scripts/run_simplemos_m31_minority_poisson_perturbation.py": "73c6a43e034c73c3af245b2955577eb3eb13a6ba3b5e316a62a174271d444d2b",
+        "scripts/plot_simplemos_m31_minority_poisson_perturbation.py": "8e65b7f1339ec59efecd0f47036c4fa1f7f61916dc84576d4ad5f5b4b65b8a0f",
+        "scripts/freeze_simplemos_m31_minority_poisson_perturbation_evidence.py": "f3531cd038d145141f623eafa79161d95c243ab62d627876cb2656b637defc81",
+        "tests/regression/test_simplemos_m31_minority_poisson_perturbation.py": "d9d3670916e99853fa250649bc19db602f04902ee8767d3dbd7bb244c6c19b47",
+        "docs/validation/simplemos_m31_minority_poisson_perturbation_2026-08-31.md": "461d7f0b70edcfb750e2be0033dee32fc59af1e199c0a2808b78111858b6237d",
+        "docs/validation/figures/simplemos_m31/simplemos_m31_minority_poisson_perturbation.png": "6cd26314a59b50e345432439095933b9102389d1d724652b5cd65adabfba7e29",
+        "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+      }
+    },
+    "simplemos_m32_electron_qf_scaled_perturbation_evidence.json": {
+      "sha256": "f5809b86a90b667fd8f5a314915609ee1115270fe5ce488aef16eae53005854f",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m32_electron_qf_scaled_perturbation_contract_v1.json": "e3d12b13fd3b74153981eb568acc2f9eac09d254b513e1cd7dc21b27c612fae3",
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m31_minority_poisson_perturbation_evidence.json": "f9cc15740915235cc92bc48a88ac28391b3428baff112fd6ae0653d88cf7670a",
+        "scripts/run_simplemos_m32_electron_qf_scaled_perturbation.py": "a3b7415a24440cd01c671bfa8f7faae227a55b13540a305655dc84d841f6c148",
+        "scripts/plot_simplemos_m32_electron_qf_scaled_perturbation.py": "c04d1c1192499e3be0565793b8a75fe2ec9bf609786c9f651556bdbcf931a6c9",
+        "scripts/freeze_simplemos_m32_electron_qf_scaled_perturbation_evidence.py": "a09686151ce905a8ff1485d9e1036d4477fd8dab0c5d9584ac37974d026458e8",
+        "tests/regression/test_simplemos_m32_electron_qf_scaled_perturbation.py": "56888a4fb285187e38968fd90eb1c13d19789b686cfb50d3a783bd38695a01e0",
+        "docs/validation/simplemos_m32_electron_qf_scaled_perturbation_2026-08-31.md": "7728723bae10d5a8bbc871aa8a0ffb51deed70d60fe3c6e86188eeda0b820d3a",
+        "docs/validation/figures/simplemos_m32/simplemos_m32_electron_qf_scaled_perturbation.png": "14e13e764dce5b6bfbef3668c33fabb412734d48e0ecece0e375b396dbbee87d",
+        "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+      }
+    },
+    "simplemos_m33_region_resolved_interface_assembly_evidence.json": {
+      "sha256": "38c80aff32215b21860a72db46f9bcc4914fc59af0f88012d9f3337b2383cf47",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m33_region_resolved_interface_assembly_contract_v1.json": "f5f4f354e9fa919222681d3335d393428a1f775bdb0fba63adb053a22f844a02",
+        "scripts/run_simplemos_m33_region_resolved_interface_assembly.py": "82e40e33ea907e564addd26fcd9dcbc64a5b38827f46298fc08381f44cb5053c",
+        "scripts/plot_simplemos_m33_region_resolved_interface_assembly.py": "d8538bef790f161721ba12f6e14eede12c1c7aa28de8305c5948359fe582639f",
+        "scripts/freeze_simplemos_m33_region_resolved_interface_assembly_evidence.py": "937474d03dc7ca7ca2924232c942fb54350dd7a09b7208380718800b0c547246",
+        "tests/regression/test_simplemos_m33_region_resolved_interface_assembly.py": "e50777ee922d677e3d5ad616055072d71ae291c3f559a7c6ad60f8517e004c55",
+        "tests/test_mos_mixed_material.cpp": "6e6a96ce074a04c58f76781a241d8cd2369c52978f02f7de25fee8ab15b2e794",
+        "docs/validation/simplemos_m33_region_resolved_interface_assembly_2026-08-31.md": "0ca0941ed471eb31e2cbe523ba4b2bfeecde1ab1786abe8eefbc291f7e667700",
+        "docs/validation/figures/simplemos_m33/simplemos_m33_region_resolved_interface_assembly.png": "55df52866b2846faf8623d4a41cf1d1d5039a980ed8043c0e3e51562e638587d",
+        "include/vela/equation/AssemblerUtils.h": "f5646b1eec6efbc16fa858dc8f8b618d6496bfc810c5ba767c9cc2531f2e93f7",
+        "include/vela/equation/DDAssembler.h": "c9d86a177cb7a32df842483cbfcdf5fbf89c1c747d7d932e50d09dc61081e58c",
+        "include/vela/solver/NewtonSolver.h": "65753c3ed686b59566a3a66df8a1837b71dd0e5a9f80dc1c44d17a2c9f0412ba",
+        "src/equation/CoupledDDAssembler.cpp": "e525d828d0199dafdea947377dc6faed7cea419b5cb76fc1f51ae05d3dfe64ed",
+        "src/solver/NewtonSolver.cpp": "95de9308e18bdd428f62df47cbc1f6e1658f50188d2ffe45f5757ab7e9248b73",
+        "src/simulation/DCSweep.cpp": "b1bf23e732e0774b3001237b5a1f122db7dac3c13a2c8e39cab6cb1ff1b0c584",
+        "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+      }
+    },
+    "simplemos_m35_signed_average_box_assembly_evidence.json": {
+      "sha256": "cb330fd8c70aeed8bb555d5520aceae62914adb723bf859c109815b610d79a3d",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m35_signed_average_box_assembly_contract_v1.json": "67810ec0107e6725e2ab14cf0b1d9f856f7799211024d1330ca15b40d97cebf1",
+        "reference_tcad/simplemos_sentaurus2022/sentaurus_interface_box_probe/m34_interface_node_measures.csv": "8b8116543ab6d5159b9ecfa25bb6ba56264586a48d4d236e8d09a136c356e718",
+        "scripts/run_simplemos_m35_signed_average_box_assembly.py": "29d25928c729e6745a0154c3143c715e4f055f1b32eefa384fa202e46dffae0b",
+        "scripts/plot_simplemos_m35_signed_average_box_assembly.py": "740b94b167d50e28cd9eb568a41cb47766537834a7ccc8cb519e11fad8f6f50b",
+        "scripts/freeze_simplemos_m35_signed_average_box_assembly_evidence.py": "2b0066dda483433f2c3a1a387b83bb72fefcc5b4dbfb89229c1ee1a4ce0ce8e2",
+        "tests/regression/test_simplemos_m35_signed_average_box_assembly.py": "f75b0a0f7dce0d9cffdd631c1f043307658ced0298226ff495802008568257a1",
+        "tests/test_mos_mixed_material.cpp": "6e6a96ce074a04c58f76781a241d8cd2369c52978f02f7de25fee8ab15b2e794",
+        "tests/test_newton_solver.cpp": "47d5f3cf33b12d00a23a2373ed8c9b1137945c3bf37d1cde7ed7b39b27809df0",
+        "docs/validation/simplemos_m35_signed_average_box_assembly_2026-08-31.md": "f8b66f8bf1ddf4befbc0745011a9a6ce03d9f4c5a726eacad9c69c97d0766d3f",
+        "docs/validation/figures/simplemos_m35/simplemos_m35_signed_average_box_assembly.png": "b0bee57e882e97fb5bc10e07f65bce2e9578ee3780ff84c564272dab8d637ef7",
+        "include/vela/equation/AssemblerUtils.h": "f5646b1eec6efbc16fa858dc8f8b618d6496bfc810c5ba767c9cc2531f2e93f7",
+        "include/vela/equation/DDAssembler.h": "c9d86a177cb7a32df842483cbfcdf5fbf89c1c747d7d932e50d09dc61081e58c",
+        "src/equation/CoupledDDAssembler.cpp": "e525d828d0199dafdea947377dc6faed7cea419b5cb76fc1f51ae05d3dfe64ed",
+        "src/solver/NewtonSolver.cpp": "95de9308e18bdd428f62df47cbc1f6e1658f50188d2ffe45f5757ab7e9248b73",
+        "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+      }
+    },
+    "simplemos_m36_boundary_contact_measure_audit_evidence.json": {
+      "sha256": "bcea9bbebb418f441d27b9425ed2f5df4eac7986afabcb0db069b56aa2e30fd3",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m36_boundary_contact_measure_audit_contract_v1.json": "3a8938bfa9da0d787732f96a51d4fe09faf9fbe7aee864ac5bba18134fb19d47",
+        "scripts/run_simplemos_m36_boundary_contact_measure_audit.py": "cae379c26c2926d0b8e7c20149582fe94eb2fcac1014ef5916499032976b58c9",
+        "scripts/freeze_simplemos_m36_boundary_contact_measure_audit_evidence.py": "85fddd9476d44e1e88dbe34da33fb0bb7417dde88539d3ef14194516c1b6169e",
+        "tests/regression/test_simplemos_m36_boundary_contact_measure_audit.py": "686237346c9fbd93af0cf80995d9d7ea83b40b126375d221849bed2f83b6cdb9",
+        "docs/validation/simplemos_m36_boundary_contact_measure_audit_2026-08-31.md": "b627b20d55ed3539474093707bc8098ea52347054d3f2baf3255db5efac46cf6",
+        "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+      }
+    },
+    "simplemos_m37_measure_contact_qf_ablation_evidence.json": {
+      "sha256": "9d8543b9cecd1687ceb58f89af5fd924d8eafe1468864780d3e1088e0c3e51b4",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m37_measure_contact_qf_ablation_contract_v1.json": "f17f454963d0c892d5349e179c9c327d440734292caa5f41f424fd6b74447fa2",
+        "reference_tcad/simplemos_sentaurus2022/signed_average_box_assembly/m35_signed_average_box_assembly_report.json": "4d8eb73c8bb39d3117da3fd883e9328a015db7c64008e3db9ab08c8117526061",
+        "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_n23_hfs_deep_off_report.json": "68811209c12a644b53990c01e295c114afd20fc0b4b482dc7d098d9a5884aefb",
+        "reference_tcad/simplemos_sentaurus2022/n23_hfs_deep_off/m22_key_state_drain_cut_edges.csv": "ecadb0ce05ad8033abb8b3690d2443e6843877a2bd93f537cb22c9573006a259",
+        "reference_tcad/simplemos_sentaurus2022/first_layer_feedback_audit/m26_first_layer_feedback_audit_report.json": "011fb4e66ca9fbeeb70d2c4e10fa64c36adac105c4e1c01e48d0f76b4159023e",
+        "scripts/run_simplemos_m37_measure_contact_qf_ablation.py": "82b5f4f4a935be0c367161cbf34d991a7356c9b4c62e4414e2715af0387955b1",
+        "scripts/freeze_simplemos_m37_measure_contact_qf_ablation_evidence.py": "1c6856642711cd23d5f4302acce9d01129dfa7d6f317b9af324bd906917b23cf",
+        "tests/regression/test_simplemos_m37_measure_contact_qf_ablation.py": "7b6ddbf679916c7c3ef3b580147d83461cd2e1a3ab3a695a86a914f1dcac16dd",
+        "tests/test_mos_mixed_material.cpp": "6e6a96ce074a04c58f76781a241d8cd2369c52978f02f7de25fee8ab15b2e794",
+        "tests/test_newton_solver.cpp": "47d5f3cf33b12d00a23a2373ed8c9b1137945c3bf37d1cde7ed7b39b27809df0",
+        "docs/validation/simplemos_m37_measure_contact_qf_ablation_2026-08-31.md": "232da39984ab1b46ac676f31d473d3d1ebb1aa1c37cfa15173d4633ae4c7ab8e",
+        "include/vela/equation/AssemblerUtils.h": "f5646b1eec6efbc16fa858dc8f8b618d6496bfc810c5ba767c9cc2531f2e93f7",
+        "include/vela/equation/DDAssembler.h": "c9d86a177cb7a32df842483cbfcdf5fbf89c1c747d7d932e50d09dc61081e58c",
+        "src/equation/CoupledDDAssembler.cpp": "e525d828d0199dafdea947377dc6faed7cea419b5cb76fc1f51ae05d3dfe64ed",
+        "src/solver/NewtonSolver.cpp": "95de9308e18bdd428f62df47cbc1f6e1658f50188d2ffe45f5757ab7e9248b73",
+        "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+      }
+    },
+    "simplemos_m39_bgn_chain_first_divergence_evidence.json": {
+      "sha256": "ddce32b03a1505530ac63c1db58928c3d261e7da7492580b52c77a64edc6904e",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m39_bgn_chain_first_divergence_contract_v1.json": "5127f4e757be9a1fdb6fe5001e1266ef43657b2dcfe1ec45f5c7c2f34ee20113",
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m27_cross_solver_response_audit_evidence.json": "c84f2ffbd4fbfd042f9b4086c23d1c3c01e7bfe5e4aab197b9e407f17e4cc3ea",
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m29_bgn_srh_factorial_evidence.json": "37c379047a275d66c00670f556ae3245f324fb0471ad64b83069ba633c785865",
+        "scripts/run_simplemos_m39_bgn_chain_first_divergence.py": "8561aeb6da4172725dcabdd847b5a56396e55ff0807c5fa1bb1bfe5e3193c492",
+        "scripts/freeze_simplemos_m39_bgn_chain_first_divergence_evidence.py": "011d89a0113fee2a581e6ed478c8ab6f7ca693d7a884c271c3f44174a73f8349",
+        "tests/regression/test_simplemos_m39_bgn_chain_first_divergence.py": "eeb16e23303fa837c0964ed2adf5eb136e2e33154b27093f03ace51158f745c7",
+        "docs/validation/simplemos_m39_bgn_chain_first_divergence_2026-09-01.md": "7cc19c014343f127a519cdb0757998eeb4d7bdbdb1254ec64913f78302133f52",
+        "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+      }
+    },
+    "simplemos_m40_true_no_bgn_factorial_evidence.json": {
+      "sha256": "0536b7392405cc334cd2b37df411749c6ca5090bb1411fca4705c6ac6c00fa37",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m40_true_no_bgn_factorial_contract_v1.json": "b8c9ba697dfeae3050916ba1d229020d253b62d10b9cb28719557999339d5b3d",
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m39_bgn_chain_first_divergence_evidence.json": "ddce32b03a1505530ac63c1db58928c3d261e7da7492580b52c77a64edc6904e",
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m29_bgn_srh_factorial_evidence.json": "37c379047a275d66c00670f556ae3245f324fb0471ad64b83069ba633c785865",
+        "scripts/run_simplemos_m40_true_no_bgn_factorial.py": "102f1c149d82321976f7e0aeaba4ec70f151791ca8c57611013f60ab6cfa6321",
+        "scripts/freeze_simplemos_m40_true_no_bgn_factorial_evidence.py": "31af534283d085fed5952ee4caaf8d6d6c5ffc353d6585586577c50da8d6e528",
+        "tests/regression/test_simplemos_m40_true_no_bgn_factorial.py": "daa1eeb7e5c9d1437ae9f235dfc4c332e703ae58e7d6187a227c8decc6bd95d0",
+        "docs/validation/simplemos_m40_true_no_bgn_factorial_2026-09-01.md": "e6471114771940af7c8f03e930249ea35eea0bcb71752d039df179395d7fd6fd",
+        "CMakeLists.txt": "13794e3ff58de8f3c2ad8c3384ffeeb356718c21a43ee2fa4ff465dd80b1f7b8"
+      }
+    },
+    "simplemos_m41_equal_ni_flux_ablation_evidence.json": {
+      "sha256": "a2a77b8e49842c85ef7dfafc9f9d9ac7260b3b79e39c4a7c1fe588f04634af11",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m41_equal_ni_flux_ablation_contract_v1.json": "5ecf335627e5d23cdaa8537b837318cff0a6abeac7ee8d04f56f3a1e4dfabaa3",
+        "scripts/run_simplemos_m41_equal_ni_flux_ablation.py": "36f35a72bee1bec249af392c313eef7b7d8608efb3e2c03b04cb1350cd73e292",
+        "reference_tcad/simplemos_sentaurus2022/true_no_bgn_factorial/m40_true_no_bgn_factorial_report.json": "1bffb4582a2dc39944b988c8a58956fbcd3677e47179a748ba670228ef59c455",
+        "include/vela/physics/BandgapNarrowing.h": "ea7c9ac8a0355e8ab6af83eb59f95dbaf0d7a6d7c919bb57e36391d5ae06ac46",
+        "include/vela/equation/CoupledDDAssembler.h": "863c80342ce717642500df37ae554685204981b6757bf8e89b571c99255c47be",
+        "src/equation/CoupledDDAssembler.cpp": "62db5a538ee95439feeea88a0d860b8bd51d22ef88db9829743dd41bcb0d67f2",
+        "src/solver/NewtonSolver.cpp": "cb37eb85dd21e7faad9d7f85f0eb1d775be231a8b0b79a47adb731e17374a065",
+        "src/solver/GummelSolver.cpp": "63221ade6ee484ace604cd2c6971a32625cbda20fe45360cf30cf26ac9f187f3"
+      }
+    },
+    "simplemos_m42_no_bgn_self_consistent_interaction_evidence.json": {
+      "sha256": "ef6d1aa87d638523576dfa0564dee452d1fffaa5e8f93a31be0bb2e3c38ea82c",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m42_no_bgn_self_consistent_interaction_contract_v1.json": "e1577bb5391ee973a7ea12929e59d09b096c24b002208fb7cf032cfaf7cc798c",
+        "scripts/run_simplemos_m42_no_bgn_self_consistent_interaction.py": "572550a9351898a879fcfaad4d54635f7d340e093adbf998818e2e9d4a85f541",
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m41_equal_ni_flux_ablation_evidence.json": "a2a77b8e49842c85ef7dfafc9f9d9ac7260b3b79e39c4a7c1fe588f04634af11",
+        "src/equation/CoupledDDAssembler.cpp": "62db5a538ee95439feeea88a0d860b8bd51d22ef88db9829743dd41bcb0d67f2",
+        "src/solver/NewtonSolver.cpp": "cb37eb85dd21e7faad9d7f85f0eb1d775be231a8b0b79a47adb731e17374a065"
+      }
+    },
+    "simplemos_m45_post_qf_rebaseline_evidence.json": {
+      "sha256": "7af4f931cca68009b92c3b14cd0d7fe880439dd4659795ceb3a16f2f841616b4",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m45_post_qf_rebaseline_contract_v1.json": "7f5203a8b3f120a808fce78e62713895806cba7ce0d4cdeaf1c643507232aaa7",
+        "scripts/run_simplemos_m45_post_qf_rebaseline.py": "ca9a8ae2a594f0b2d7105a8b26b7ccf98c573e5875a9c7b22e7d89bb33751f1d",
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m44_qf_coordinate_consistency_evidence.json": "9194b3edabed2545214e5cc32f06cc7e24e0610a4e160ddfd72356d22152ed29",
+        "CMakeLists.txt": "f5dbf208763fb701b3af63d6a88f0cff5691d6413fcd575b18bd395aa8ba202c",
+        "scripts/run_simplemos_m31_minority_poisson_perturbation.py": "73c6a43e034c73c3af245b2955577eb3eb13a6ba3b5e316a62a174271d444d2b",
+        "scripts/run_simplemos_m32_electron_qf_scaled_perturbation.py": "a3b7415a24440cd01c671bfa8f7faae227a55b13540a305655dc84d841f6c148",
+        "scripts/run_simplemos_m37_measure_contact_qf_ablation.py": "82b5f4f4a935be0c367161cbf34d991a7356c9b4c62e4414e2715af0387955b1",
+        "scripts/run_simplemos_m41_equal_ni_flux_ablation.py": "36f35a72bee1bec249af392c313eef7b7d8608efb3e2c03b04cb1350cd73e292",
+        "scripts/run_simplemos_m42_no_bgn_self_consistent_interaction.py": "572550a9351898a879fcfaad4d54635f7d340e093adbf998818e2e9d4a85f541",
+        "tests/regression/simplemos_evidence_chain.py": "d5eed59e6613194d567b6c2007dee778458b86bafdc60a44f475b39e4a57988e",
+        "tests/regression/test_simplemos_m9_hfs_diagnostics.py": "2c25e474d0c8baeadbe91f0eb809994ba3235b251b8d945fadc6bc4a550c7b92",
+        "tests/regression/test_simplemos_m10_fixed_state_replay.py": "7c1e5bc8b53e2e4c886168c138d619ce1643b17608ddbcfadf34440c913ffb95",
+        "tests/regression/test_simplemos_m12_terminal_sensitivity.py": "ce2cf5dd1b45649bd99265a7c648a213d9fb7f9706795bda1b5879280b56b4ff",
+        "tests/regression/test_simplemos_m30_double_off_causal_closure.py": "dc0f4c808c935d419ee399a7b3e9930eefa02a9c9d866bbe661e721113fa1fb5",
+        "tests/regression/test_simplemos_m31_minority_poisson_perturbation.py": "99bd8e3c0832b4e6683585bf8300f8d8fa874be5ebd0cd104588918883823166",
+        "tests/regression/test_simplemos_m32_electron_qf_scaled_perturbation.py": "6aa7b041f428a7f0b325c2494dec9fc2814fad4ec5bb7a84b5f982d3c78b7cb0",
+        "tests/regression/test_simplemos_m37_measure_contact_qf_ablation.py": "044235fedb3823e16c3c7b0bb98bd98faf29911eb7a4209029c6efc2130b4d38",
+        "tests/regression/test_simplemos_m41_equal_ni_flux_ablation.py": "064046c63d5d1971a536a32a72682d4ec5198e8f8f4213c4e4f4ad6137b71c7a",
+        "tests/regression/test_simplemos_m42_no_bgn_self_consistent_interaction.py": "cd6ba165ccb0fb42f4ab7c0d4799a287c458ad7f4fe82ab1307b0e6d1392ec7d",
+        "tests/regression/test_simplemos_m45_post_qf_rebaseline.py": "c9e54512e56bdcdb119398967452bdcfca1b21c72d1aad952ca5aab809bc447f"
+      }
+    },
+    "simplemos_m46_full_matrix_requalification_evidence.json": {
+      "sha256": "cc4eab4af3f33dc5d57c15eb984c475447b0aee10c8dedd3f1f7be82237ccd28",
+      "sources": {
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m46_full_matrix_requalification_contract_v1.json": "3c3a3b0cc782cf2917c08e4011418e597070b92d2d164520bc5ae6a94c11c980",
+        "scripts/run_simplemos_m46_full_matrix_requalification.py": "59e133d1d879c31d9b8f02171646afe67afc3f41b82beac6a7e20b3b4e5b6a2d",
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m8_original_physics_evidence.json": "de83d5dbafb8c055de239732578431dc0176d77f248b1c1ca537b2a52bf4b7f1",
+        "reference_tcad/simplemos_sentaurus2022/simplemos_m45_post_qf_rebaseline_evidence.json": "7af4f931cca68009b92c3b14cd0d7fe880439dd4659795ceb3a16f2f841616b4",
+        "scripts/run_simplemos_m8_original_matrix.py": "e4948b5e6c80e4866c99e2c5df31a7d26c73b478f4713cef4f4c525bff0f89f9",
+        "scripts/compare_simplemos_m4_controlled_matrix.py": "931e323a5a87dbba2c3671f12bc11d16587c32fdee64b4e96d10af0fec4c9a94",
+        "CMakeLists.txt": "d0405e1972c95a008f2b3f246e93a490cec147fa4e820934b81d35830034b118",
+        "tests/regression/simplemos_evidence_chain.py": "d19ad33a2be57764004934e6951a4fd2ed41e396909791061395b3b970490d71",
+        "tests/regression/test_simplemos_m41_equal_ni_flux_ablation.py": "2300bc8f9b70378f7f41ce9f213d623ca430610677d4fb18a8c594bd8e76ae98",
+        "tests/regression/test_simplemos_m42_no_bgn_self_consistent_interaction.py": "42e0b180b88afd9b1fce35a0ed86739e84d147441e71da6a7ad3147a73611033",
+        "tests/regression/test_simplemos_m45_post_qf_rebaseline.py": "f9686e495a1f3903dbaf73beeef99860ebb994fc4b05e61c0058d0595e010f66",
+        "tests/regression/test_simplemos_m46_full_matrix_requalification.py": "9428629ef12bf259701d3a34a51fa432b52add2461654e1322f0aadb82024138"
+      }
+    }
+  }
+}

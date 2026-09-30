@@ -22,10 +22,21 @@ def migrate(source, mesh_path, output, scaling, origin):
     else:
         raise ValueError('Migration input must be CSV or VDS1')
     mesh = json.loads(mesh_path.read_text(encoding='utf-8-sig'))
+    coordinate_metadata = {}
+    for key in ('packed_potential_scale_V','split_state_schema','split_mesh_fingerprint'):
+        present = [key in row for row in data]
+        if any(present):
+            if not all(present): raise ValueError('Partial coordinate metadata: '+key)
+            values = [row[key] for row in data]
+            converted = [float(v) for v in values] if key=='packed_potential_scale_V' else values
+            if any(v != converted[0] for v in converted): raise ValueError('Inconsistent coordinate metadata: '+key)
+            coordinate_metadata[key]=converted[0]
+            for row in data: del row[key]
     fields = state_archive.rows_to_fields(data)
     if len(data) != len(mesh['nodes']): raise ValueError('Mesh/state node count differs')
     metadata = dict(mode='dd',mesh_sha256=state_archive.mesh_identity(mesh,1e-6 if scaling=='unit_scaling' else 1.),
                     potential_origin_V=origin,source_state_sha256=sha(source))
+    metadata.update(coordinate_metadata)
     state_archive.write(output,fields,metadata)
     restored,actual_metadata = state_archive.read(output,len(data),metadata['mesh_sha256'])
     if actual_metadata != metadata: raise ValueError('Metadata changed')

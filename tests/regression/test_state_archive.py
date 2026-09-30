@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from decimal import Decimal, localcontext
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]/'scripts'))
@@ -57,6 +58,34 @@ class StateArchiveTest(unittest.TestCase):
         got, metadata = archive.read(self.path, 3, 'a'*64)
         self.assertFields(got)
         self.assertEqual(metadata, self.meta)
+
+    def test_three_block_packed_state_roundtrip_and_partial_rejection(self):
+        self.meta.update(packed_potential_scale_V=.03125,
+                         split_state_schema='vela.split-dd-state.v1',split_mesh_fingerprint='test-mesh')
+        for block,name in enumerate(archive.PACKED):
+            self.fields[name]=[8. if block==0 else 1e-18]*3
+            self.fields[name+'_low']=[float.fromhex('0x0.0000000000001p-1022'),1e-30,-1e-30]
+        with localcontext() as ctx:
+            ctx.prec=100
+            d=lambda v:Decimal.from_float(float(v))
+            for i in range(3):
+                for block,name in enumerate(archive.PACKED):
+                    value=(d(self.fields[name][i])+d(self.fields[name+'_low'][i]))*d(.03125)
+                    if block:
+                        car='electron' if block==1 else 'hole'
+                        self.fields[car+'_qf_increment_V'][i]=float(value)
+                        value+=d(self.fields[car+'_qf_reference_V'][i])
+                    self.fields[('psi','phin','phip')[block]][i]=float(value)
+        archive.write(self.path,self.fields,self.meta)
+        self.assertFields(archive.read(self.path,3,'a'*64)[0])
+        before=self.path.read_bytes()
+        with self.assertRaises(ValueError):archive.translate(self.path,self.path.parent/'shift.h5',1.,{0,1,2},3,'a'*64)
+        self.meta.pop('split_mesh_fingerprint')
+        with self.assertRaises(ValueError):archive.write(self.path,self.fields,self.meta)
+        self.assertEqual(before,self.path.read_bytes())
+        self.meta['split_mesh_fingerprint']='test-mesh'
+        self.fields['packed_psi'][0]+=1.
+        with self.assertRaises(ValueError):archive.write(self.path,self.fields,self.meta)
 
     def test_row_bridge_preserves_signed_zero_and_split_low_bits(self):
         rows=archive.fields_to_rows(self.fields)

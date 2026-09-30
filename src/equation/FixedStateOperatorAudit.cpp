@@ -286,7 +286,7 @@ FixedStateOperatorAuditResult evaluateFixedStateOperators(
             qfMobility ? electronQfField : electricField;
         const Real holeMobilityField = qfMobility ? holeQfField : electricField;
         const detail::EdgeMobilityCarrierState mobilityState{
-            state.n(i), state.n(j), state.p(i), state.p(j)};
+            state.n(i), state.n(j), state.p(i), state.p(j), &state.n, &state.p};
         const Real electronMobility = detail::edgeMobility(
             edgeCells, mesh, dopingModel, *mobility, cellMaterials, edgeId,
             CarrierType::Electron, electronMobilityField, &mobilityConfig,

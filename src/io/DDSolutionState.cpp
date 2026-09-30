@@ -38,11 +38,33 @@ StateArchive archiveDDSolution(const DDSolution& solution, nlohmann::json metada
     } else if (solution.electronQfReference.size() || solution.holeQfReference.size()) {
         throw std::invalid_argument("DD reference without increment");
     }
+    if (solution.packedLow.size() && !solution.hasConsistentSplitPackedState())
+        throw std::invalid_argument("Cannot archive stale or incomplete split DD coordinates");
+    if (solution.hasConsistentPackedState()) {
+        const int count = static_cast<int>(s.nodeCount);
+        const char* names[] = {"packed_psi", "packed_electron_qf_increment", "packed_hole_qf_increment"};
+        for (int block = 0; block < 3; ++block) {
+            field(names[block], solution.packedState.segment(block * count, count));
+            if (solution.packedLow.size()) {
+                const std::string low = std::string(names[block]) + "_low";
+                field(low.c_str(), solution.packedLow.segment(block * count, count));
+            }
+        }
+        s.metadata["packed_potential_scale_V"] = solution.packedPotentialScale_V;
+        if (solution.packedLow.size()) {
+            s.metadata["split_state_schema"] = "vela.split-dd-state.v1";
+            s.metadata["split_mesh_fingerprint"] = solution.packedMeshFingerprint;
+        }
+    }
     // Preserve the pre-existing solver restart writer's subnormal policy.
     // The general archive codec itself is lossless and never normalizes values.
-    for (auto& [name, values] : s.fields)
+    for (auto& [name, values] : s.fields) {
+        // Low coordinate tails are solver state, including subnormal tails.
+        // They must not inherit physical-output normalization.
+        if (name.starts_with("packed_") && name.ends_with("_low")) continue;
         for (auto& v : values)
             if (v != 0. && std::abs(v) < std::numeric_limits<double>::min()) v = 0.;
+    }
     validateStateArchive(s);
     return s;
 }
@@ -71,6 +93,27 @@ DDSolution restoreDDSolution(const StateArchive& archive, UnitScalingConfig scal
         field("hole_qf_reference_V", s.holeQfReference);
         s.electronQfReference_V = s.electronQfReference(0);
         s.holeQfReference_V = s.holeQfReference(0);
+    }
+    if (archive.fields.contains("packed_psi")) {
+        const int count = static_cast<int>(archive.nodeCount);
+        s.packedState.resize(3 * count);
+        const bool low = archive.fields.contains("packed_psi_low");
+        if (low) s.packedLow.resize(3 * count);
+        const char* names[] = {"packed_psi", "packed_electron_qf_increment", "packed_hole_qf_increment"};
+        for (int block = 0; block < 3; ++block) {
+            VectorXd values;
+            field(names[block], values);
+            s.packedState.segment(block * count, count) = values;
+            if (low) {
+                const std::string name = std::string(names[block]) + "_low";
+                field(name.c_str(), values);
+                s.packedLow.segment(block * count, count) = values;
+            }
+        }
+        s.packedPotentialScale_V = archive.metadata.at("packed_potential_scale_V");
+        if (low) s.packedMeshFingerprint = archive.metadata.at("split_mesh_fingerprint");
+        if (!s.hasConsistentPackedState())
+            throw std::invalid_argument("Archived DD coordinates disagree with physical state");
     }
     s.converged = true; s.iters = 0;
     return s;

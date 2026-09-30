@@ -6,7 +6,7 @@ from pathlib import Path
 import unittest
 
 from tests.regression.simplemos_evidence_chain import (
-    assert_hash_mapping_current_or_superseded,
+    assert_historical_source_provenance,
 )
 
 
@@ -49,8 +49,7 @@ class SimpleMosM10FixedStateReplayTest(unittest.TestCase):
                 self.assertEqual(artifact["sha256"], sha256(ROOT / artifact["path"]))
         for relative, expected in evidence["implementation_sha256"].items():
             self.assertTrue((ROOT / relative).is_file())
-        assert_hash_mapping_current_or_superseded(
-            self, evidence["implementation_sha256"])
+        assert_historical_source_provenance(self, EVIDENCE)
 
 
 if __name__ == "__main__":

@@ -19,6 +19,56 @@ scripts/prepare_templates_ldmos_ialmob_transport.py -text
 tests/fixtures/pn2d_bv_rejected_transition/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 *.h5 binary
 
+# Historical SimpleMOS evidence is byte-pinned independently of live sources.
+reference_tcad/simplemos_sentaurus2022/** -text
+tests/fixtures/simplemos_historical_sources/sources.zip binary
+
 # Container scripts must remain runnable after a Windows checkout.
 .devcontainer/** text eol=lf
 scripts/codespaces/*.sh text eol=lf
+
+# Exact historical report bytes named by SimpleMOS evidence manifests.
+docs/validation/figures/simplemos_m10/simplemos_m10_mapping_sensitivity.png -text
+docs/validation/figures/simplemos_m10/simplemos_m10_mobility_p95_replay.png -text
+docs/validation/figures/simplemos_m10/simplemos_m10_terminal_error_heatmap.png -text
+docs/validation/figures/simplemos_m11/simplemos_m11_aggregate_effects.png -text
+docs/validation/figures/simplemos_m11/simplemos_m11_condition_effect_heatmap.png -text
+docs/validation/figures/simplemos_m11/simplemos_m11_n21_vd0p05_residuals.png -text
+docs/validation/figures/simplemos_m11/simplemos_m11_variant_errors.png -text
+docs/validation/figures/simplemos_m8a/simplemos_m8a_confirmation_full_idvg.png -text
+docs/validation/figures/simplemos_m8a/simplemos_m8a_confirmation_improvement.png -text
+docs/validation/figures/simplemos_m8a/simplemos_m8a_confirmation_residual.png -text
+docs/validation/figures/simplemos_m8a/simplemos_m8a_gap_change.png -text
+docs/validation/figures/simplemos_m8a/simplemos_m8a_model_response.png -text
+docs/validation/figures/simplemos_m8a/simplemos_m8a_paired_idvg.png -text
+docs/validation/figures/simplemos_m8a/simplemos_m8a_signed_residual.png -text
+docs/validation/figures/simplemos_m8b/simplemos_m8b_best_control_idvg.png -text
+docs/validation/figures/simplemos_m8b/simplemos_m8b_error_change.png -text
+docs/validation/figures/simplemos_m8b/simplemos_m8b_residual.png -text
+docs/validation/figures/simplemos_m8b/simplemos_m8b_sentaurus_response.png -text
+docs/validation/figures/simplemos_m9/simplemos_m9_refdens_error_change.png -text
+docs/validation/figures/simplemos_m9/simplemos_m9_refdens_pointwise_response.png -text
+docs/validation/figures/simplemos_m9/simplemos_m9_refdens_sentaurus_response.png -text
+docs/validation/figures/simplemos_m9/simplemos_m9_vela_edge_limiter.png -text
+docs/validation/reports/simplemos_m11/CHART_MAP.md -text
+docs/validation/reports/simplemos_m11/artifact.json -text
+docs/validation/reports/simplemos_m11/simplemos_m11_mobility_factorial_report.html -text
+docs/validation/reports/simplemos_m48/artifact.json -text
+docs/validation/reports/simplemos_m49/artifact.json -text
+docs/validation/reports/simplemos_m50/artifact.json -text
+docs/validation/reports/simplemos_m51/artifact.json -text
+docs/validation/reports/simplemos_m52/artifact.json -text
+docs/validation/reports/simplemos_m53/artifact.json -text
+docs/validation/reports/simplemos_m54/artifact.json -text
+docs/validation/reports/simplemos_m56/artifact.json -text
+docs/validation/simplemos_m45_post_qf_rebaseline_2026-09-01.md -text
+docs/validation/simplemos_m46_full_matrix_requalification_2026-09-01.md -text
+docs/validation/simplemos_m47_default_bgn_self_consistent_attribution_2026-09-01.md -text
+docs/validation/simplemos_m48_terminal_partition_continuity_closure_2026-09-01.md -text
+docs/validation/simplemos_m49_substrate_electron_transport_attribution_2026-09-01.md -text
+docs/validation/simplemos_m50_native_substrate_face_flux_export_2026-09-01.md -text
+docs/validation/simplemos_m51_current_weighting_attribution_2026-09-01.md -text
+docs/validation/simplemos_m52_direct_current_attribution_2026-09-02.md -text
+docs/validation/simplemos_m53_direct_current_full_matrix_2026-09-02.md -text
+docs/validation/simplemos_m54_terminal_common_mode_attribution_2026-09-02.md -text
+docs/validation/simplemos_m56_si_oxide_interface_topology_2026-09-02.md -text

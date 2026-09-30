@@ -15,6 +15,7 @@
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+#include <array>
 
 using namespace vela;
 
@@ -90,6 +91,116 @@ Index edgeByNodes(const DeviceMesh& mesh, Index a, Index b)
 }
 
 } // namespace
+
+TEST_CASE("PhuMob chain rule resolves weak populations and the G floor",
+          "[mobility][phumob][stable_chain]")
+{
+    // Independent 100-digit chain rule and 1e-20/1e-25 logarithmic-density
+    // differences of the manual equations; references are in SI mobility units.
+    struct Sample {
+        PhuMobScalarState state;
+        std::array<Real,4> expected;
+        bool floor;
+    };
+    const std::array<Sample,3> samples{{
+        {{1e23,2e21,8e22,3e20,300},
+         {1.0385370458836108e-3,-5.5224972604801945e-5,
+          -2.5310703066440914e-3,2.0004058349426506e-6},false},
+        {{5e25,2e23,5e25,1e3,300},
+         {4.8176497592391926e-3,7.043788402956757e-26,
+          3.8496665629276428e-3,1.9462427440182106e-25},false},
+        {{5e27,2e23,5e27,1e3,300},
+         {9.507997427143333e-4,1.8252671486063443e-28,
+          4.798362760818133e-3,1.230417748427984e-27},true}
+    }};
+    for (const auto& sample : samples) {
+        for (int c=0;c<2;++c) {
+            const auto carrier=c==0?CarrierType::Electron:CarrierType::Hole;
+            const auto value=evaluatePhuMobLogDensityDerivatives(carrier,sample.state);
+            CAPTURE(c,sample.state.donors);
+            // Ratio checks have no absolute tolerance that could hide a zero.
+            REQUIRE(std::abs(value.electrons/sample.expected[2*c]-1)<2e-12);
+            REQUIRE(std::abs(value.holes/sample.expected[2*c+1]-1)<2e-12);
+            if(sample.floor)
+                REQUIRE(evaluatePhuMobScalar(carrier,sample.state).screeningGDerivative==0.0);
+        }
+    }
+}
+
+TEST_CASE("PhuMob log-density derivatives preserve units and temperature dependence",
+          "[mobility][phumob][stable_chain]")
+{
+    for(Real temperature : {100.,300.,350.}) {
+        PhuMobScalarState state{1e23,2e22,8e22,3e21,temperature};
+        PhuMobParameters params;
+        for(auto species : {PhuMobDonorSpecies::Arsenic,PhuMobDonorSpecies::Phosphorus}) {
+            params.donorSpecies=species;
+            for(auto carrier : {CarrierType::Electron,CarrierType::Hole}) {
+                const auto d=evaluatePhuMobLogDensityDerivatives(carrier,state,params);
+                for(int population=0;population<2;++population) {
+                    auto plus=state,minus=state;
+                    const Real step=1e-4;
+                    if(population==0) { plus.electrons*=std::exp(step);minus.electrons*=std::exp(-step); }
+                    else { plus.holes*=std::exp(step);minus.holes*=std::exp(-step); }
+                    const Real fd=(evaluatePhuMobScalar(carrier,plus,params).mobility-
+                                   evaluatePhuMobScalar(carrier,minus,params).mobility)/(2*step);
+                    const Real derivative=population==0?d.electrons:d.holes;
+                    CAPTURE(temperature,population);
+                    REQUIRE(std::abs(fd/derivative-1)<2e-7);
+                }
+                auto converted=params;
+                converted.internalConcentrationToCm3=1.;
+                converted.internalMobilityToCm2PerVS=1.;
+                for(auto cp : {&converted.electronArsenic,&converted.electronPhosphorus,&converted.holeBoron}) {
+                    cp->muMax*=1e4;cp->muMin*=1e4;cp->nRef*=1e-6;
+                }
+                converted.donorClusterReference*=1e-6;converted.acceptorClusterReference*=1e-6;
+                auto local=state;local.donors*=1e-6;local.acceptors*=1e-6;
+                local.electrons*=1e-6;local.holes*=1e-6;
+                const auto dc=evaluatePhuMobLogDensityDerivatives(carrier,local,converted);
+                REQUIRE(std::abs(dc.electrons*1e-4/d.electrons-1)<2e-13);
+                REQUIRE(std::abs(dc.holes*1e-4/d.holes-1)<2e-13);
+            }
+        }
+    }
+}
+
+TEST_CASE("PhuMob assembly preserves a weak cross column and conservative signs",
+          "[mobility][phumob][stable_chain][jacobian]")
+{
+    const auto mesh=makePhuMobTriangle();
+    const MaterialDatabase materials;
+    DopingModel doping(mesh.numNodes());
+    for(Index node=0;node<mesh.numNodes();++node)
+        doping.setNodeDoping(node,5e27,2e23);
+    CoupledDDAssembler assembler(mesh,materials,doping,constants::Vt_300,
+        mobilityModelConfig("phumob"),recombinationModelConfig({"none"}));
+    const Real ni=materials.getMaterial("Si",300.).ni;
+    CoupledDDState state;
+    state.psi=VectorXd(3);state.psi<<0.,.01,-.02;
+    state.phin=state.psi.array()-constants::Vt_300*std::log(5e27/ni);
+    state.phip=state.psi.array()+constants::Vt_300*std::log(1e3/ni);
+    const auto x=assembler.pack(state);
+    const CoupledDDBoundaryConditions bcs;
+    const auto J=assembler.assembleJacobian(x,bcs);
+    const auto edges=assembler.sgEdgeFluxDiagnostics(x,bcs);
+    const auto edge=std::find_if(edges.begin(),edges.end(),[](const auto& e) {
+        return (e.node0==0 && e.node1==1) || (e.node0==1 && e.node1==0);
+    });
+    REQUIRE(edge!=edges.end());
+    // Independent 100-digit weak derivative at this uniform carrier state.
+    const Real dmuDlogP=1.8252671486063443e-28;
+    const Real expected=(edge->node0==0?1.:-1.)*edge->electronFlux/
+        edge->electronMobility_m2_V_s*dmuDlogP/(2*constants::Vt_300);
+    REQUIRE(expected!=0.);
+    REQUIRE(std::abs(J.coeff(3,7)/expected-1)<1e-10);
+    // Every unconstrained continuity edge contributes equal and opposite rows.
+    for(int column=0;column<9;++column) {
+        Real sum=0.,scale=0.;
+        for(int row=3;row<6;++row) { sum+=J.coeff(row,column);scale+=std::abs(J.coeff(row,column)); }
+        REQUIRE(std::abs(sum)<=4e-15*scale);
+    }
+}
 
 TEST_CASE("PhuMob defaults reproduce T-2022.03 silicon parameters",
           "[mobility][phumob][parameters]")

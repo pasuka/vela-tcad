@@ -4,7 +4,7 @@ from pathlib import Path
 import unittest
 
 from tests.regression.simplemos_evidence_chain import (
-    assert_source_hashes_current_or_m44,
+    assert_historical_source_provenance,
 )
 
 
@@ -62,7 +62,7 @@ class SimpleMosM40TrueNoBgnFactorialTest(unittest.TestCase):
         self.assertEqual(self.evidence["status"], "frozen")
         for artifact in self.evidence["artifacts"]:
             self.assertEqual(artifact["sha256"], sha256(REPO / artifact["path"]))
-        assert_source_hashes_current_or_m44(self, self.evidence)
+        assert_historical_source_provenance(self, EVIDENCE)
 
 
 if __name__ == "__main__":

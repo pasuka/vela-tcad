@@ -3,6 +3,7 @@ import hashlib
 import json
 from pathlib import Path
 import unittest
+from tests.regression.simplemos_evidence_chain import assert_historical_source_provenance
 
 
 REPO = Path(__file__).resolve().parents[2]
@@ -76,8 +77,7 @@ class SimpleMosM46FullMatrixRequalificationTest(unittest.TestCase):
         self.assertEqual(self.evidence["status"], "frozen")
         for artifact in self.evidence["artifacts"]:
             self.assertEqual(artifact["sha256"], sha256(REPO / artifact["path"]))
-        for relative, expected in self.evidence["source_hashes"].items():
-            self.assertEqual(expected, sha256(REPO / relative))
+        assert_historical_source_provenance(self, EVIDENCE)
 
 
 if __name__ == "__main__":

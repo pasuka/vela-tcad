@@ -36,7 +36,8 @@ LineSearchResult BacktrackingLineSearch::search(
     const ResidualFunction& residualFunction,
     const AcceptFunction& acceptFunction,
     const NormFunction& normFunction,
-    const DecreaseAcceptFunction& decreaseAcceptFunction) const
+    const DecreaseAcceptFunction& decreaseAcceptFunction,
+    const CandidateFunction& candidateFunction) const
 {
     ScopedPerformanceTimer timer("newton.line_search");
     incrementPerformanceCounter("newton.line_search_calls");
@@ -67,7 +68,7 @@ LineSearchResult BacktrackingLineSearch::search(
     Real bestRejectedResidualNorm = std::numeric_limits<Real>::infinity();
     for (int k = 0; k < attempts; ++k) {
         incrementPerformanceCounter("newton.line_search_attempts");
-        VectorXd candidate = x + alpha * step;
+        VectorXd candidate = candidateFunction ? candidateFunction(x,step,alpha) : VectorXd(x + alpha * step);
         VectorXd residual = residualFunction(candidate);
         const Real norm = normOf(residual);
         const bool finite = candidate.allFinite() && residual.allFinite() && std::isfinite(norm);

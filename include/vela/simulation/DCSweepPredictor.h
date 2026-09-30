@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vela/simulation/DCSweep.h"
+#include "vela/equation/SplitDDRuntime.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -154,6 +155,10 @@ inline DDSolution predictDCSweepInitialState(const SweepPredictorConfig& config,
     const Real maxRatio = std::max(config.maxExtrapolationRatio, 1.0);
     const Real ratio = std::clamp(unclampedRatio, -maxRatio, maxRatio);
     const std::vector<std::string> fields = effectivePredictorFields(config);
+
+    if(previous->packedLow.size()!=0 || current.packedLow.size()!=0)
+        return predictSplitDDState(*previous,current,ratio,
+            {predictorUsesField(fields,"psi"),predictorUsesField(fields,"phin"),predictorUsesField(fields,"phip")});
 
     if (predictorUsesField(fields, "psi")) {
         requireMatchingFieldSize(previous->psi, current.psi, "psi");

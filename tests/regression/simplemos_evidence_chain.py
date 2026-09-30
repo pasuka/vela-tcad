@@ -1,52 +1,57 @@
-"""Helpers for validating superseded SimpleMOS frozen source hashes."""
-
+"""Historical source integrity; these checks do not qualify the live solver."""
 from __future__ import annotations
-
 import hashlib
 import json
 from pathlib import Path
 from unittest import TestCase
-
+import zipfile
 
 REPO = Path(__file__).resolve().parents[2]
-M44_EVIDENCE = (REPO / "reference_tcad/simplemos_sentaurus2022"
-                / "simplemos_m44_qf_coordinate_consistency_evidence.json")
-M45_EVIDENCE = (REPO / "reference_tcad/simplemos_sentaurus2022"
-                / "simplemos_m45_post_qf_rebaseline_evidence.json")
-M46_EVIDENCE = (REPO / "reference_tcad/simplemos_sentaurus2022"
-                / "simplemos_m46_full_matrix_requalification_evidence.json")
+ARCHIVE = REPO / 'tests/fixtures/simplemos_historical_sources/sources.zip'
+MANIFEST = ARCHIVE.with_name('manifest.json')
+KNOWN_GAP = ('src/equation/CoupledDDAssembler.cpp:'
+             'e525d828d0199dafdea947377dc6faed7cea419b5cb76fc1f51ae05d3dfe64ed')
 
 
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def validate_historical_provenance(evidence_path: Path, manifest_path=MANIFEST,
+                                 archive_path=ARCHIVE) -> list[dict]:
+    """Check exact evidence/source bytes; return explicitly unrecovered sources.
+
+    A recorded gap is metadata only, never a recovered blob or a live-source
+    qualification. Unknown evidence, altered maps and absent members fail.
+    """
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    if manifest['schema'] != 'vela.simplemos.historical-source-provenance/1':
+        raise ValueError('Unsupported historical source manifest')
+    raw = evidence_path.read_bytes()
+    record = manifest['evidence'][evidence_path.name]
+    if hashlib.sha256(raw).hexdigest() != record['sha256']:
+        raise ValueError('Historical evidence bytes changed')
+    evidence = json.loads(raw)
+    sources = evidence.get('source_hashes', evidence.get('implementation_sha256'))
+    if not sources or sources != record['sources']:
+        raise ValueError('Historical source map changed')
+    gaps = []
+    with zipfile.ZipFile(archive_path) as archive:
+        for path, digest in sources.items():
+            key = path + ':' + digest
+            entry = manifest['sources'][key]
+            if entry['status'] == 'unavailable':
+                if (entry != manifest['known_gap'] or key != KNOWN_GAP
+                        or key != manifest['known_gap_key']):
+                    raise ValueError('Unrecognized archival gap')
+                gaps.append(dict(path=path, sha256=digest, **entry))
+                continue
+            if entry['status'] != 'recovered':
+                raise ValueError('Unknown source status')
+            if hashlib.sha256(archive.read(digest)).hexdigest() != digest:
+                raise ValueError('Historical source bytes changed: ' + path)
+    return gaps
 
 
-def assert_source_hashes_current_or_m44(
-        testcase: TestCase, evidence: dict) -> None:
-    """Accept an old hash when frozen M44, M45, or M46 pins its successor."""
-    assert_hash_mapping_current_or_superseded(
-        testcase, evidence["source_hashes"])
-
-
-def assert_hash_mapping_current_or_superseded(
-        testcase: TestCase, expected_hashes: dict[str, str]) -> None:
-    """Validate a source-hash map against current or superseding evidence."""
-    m44 = json.loads(M44_EVIDENCE.read_text(encoding="utf-8"))
-    testcase.assertEqual(m44["status"], "frozen")
-    superseding = [m44]
-    if M46_EVIDENCE.is_file():
-        m46 = json.loads(M46_EVIDENCE.read_text(encoding="utf-8"))
-        testcase.assertEqual(m46["status"], "frozen")
-        superseding.insert(0, m46)
-    if M45_EVIDENCE.is_file():
-        m45 = json.loads(M45_EVIDENCE.read_text(encoding="utf-8"))
-        testcase.assertEqual(m45["status"], "frozen")
-        superseding.insert(0, m45)
-    for relative, expected in expected_hashes.items():
-        current = sha256(REPO / relative)
-        if expected == current:
-            continue
-        testcase.assertTrue(
-            any(item["source_hashes"].get(relative) == current
-                for item in superseding),
-            f"changed source is not frozen by superseding M44/M45/M46: {relative}")
+def assert_historical_source_provenance(testcase: TestCase, evidence_path: Path):
+    """Validate the archive, with an explicit record of unavailable provenance."""
+    try:
+        return validate_historical_provenance(evidence_path)
+    except (KeyError, ValueError, OSError, zipfile.BadZipFile) as exc:
+        testcase.fail(str(exc))

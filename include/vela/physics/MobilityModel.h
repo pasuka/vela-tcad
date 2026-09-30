@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <array>
 
 namespace vela {
 
@@ -91,6 +92,13 @@ struct PhuMobScalarResult {
     Real screeningParameter = 0.0;               ///< P_i [-].
     Real screeningF = 0.0;                       ///< F(P_i) [-].
     Real screeningG = 0.0;                       ///< G(P_i) after the documented clamp [-].
+    Real screeningGDerivative = 0.0;             ///< dG/dP; zero on the floor branch.
+};
+
+/** Carrier chain terms at fixed impurities and temperature, in active mobility units. */
+struct PhuMobLogDensityDerivatives {
+    Real electrons = 0.0; ///< d(mu)/d(log n), retaining small n contributions.
+    Real holes = 0.0;     ///< d(mu)/d(log p), retaining small p contributions.
 };
 
 struct CaugheyThomasParameters {
@@ -117,6 +125,7 @@ struct FieldMobilityParameters {
 };
 
 struct SurfaceMobilityParameters {
+    std::string discretization = "legacy_cell_centroid";
     Real thetaElectron = 0.0; ///< Electron vertical-field degradation coefficient [m/V]
     Real thetaHole = 0.0;     ///< Hole vertical-field degradation coefficient [m/V]
     Real beta = 1.0;          ///< Vertical-field roll-off exponent [-]
@@ -132,6 +141,9 @@ struct SurfaceMobilityParameters {
     std::vector<Real> cellDistances;
     std::vector<Real> cellNormalX;
     std::vector<Real> cellNormalY;
+    // True vertex distances; the element profile differentiates their linear
+    // interpolant without normalizing its gradient.
+    std::vector<Real> nodeDistances;
 };
 
 /** Sentaurus T-2022.03 Enhanced Lombardi coefficients, stored in SI units. */
@@ -162,6 +174,7 @@ struct MobilityModelConfig {
     /// only the configured high-field saturation limiter.
     std::string model = "constant";
     // element_box is qualified for state-independent constant/Masetti only.
+    // element_box_phumob is an explicit, restricted carrier-dependent candidate.
     std::string edgeAveraging = "legacy";
     std::string highFieldDrivingForce = "electric_field";
     /// Spatial discretization for a quasi-Fermi-gradient high-field drive.
@@ -184,6 +197,9 @@ struct MobilityModelConfig {
     std::string carrierCurrentDiscretization = "scharfetter_gummel_edge";
     std::string dopingConcentrationBasis = "net_doping";
     bool jacobianFieldDerivatives = true;
+    // Geometry only: two independent gradient columns, in active field/V.
+    struct HighFieldCell {bool contact=false; std::array<Real,4> stencil{};};
+    std::vector<HighFieldCell> highFieldCells;
 
     // 300 K silicon defaults converted from common Caughey-Thomas parameter
     // sets expressed in cm^2/(V s) and cm^-3.
@@ -369,6 +385,11 @@ std::unique_ptr<MobilityModel> makeMobilityModel(const MobilityModelConfig& conf
  * impurity mobility interface above.
  */
 PhuMobScalarResult evaluatePhuMobScalar(
+    CarrierType carrier,
+    const PhuMobScalarState& state,
+    const PhuMobParameters& params = {});
+
+PhuMobLogDensityDerivatives evaluatePhuMobLogDensityDerivatives(
     CarrierType carrier,
     const PhuMobScalarState& state,
     const PhuMobParameters& params = {});

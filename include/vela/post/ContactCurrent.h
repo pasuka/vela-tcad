@@ -150,6 +150,7 @@ private:
     std::unique_ptr<MobilityModel> mobility_;
     Real thermalVoltage_;
     DDScalingSpec scaling_;
+    BandgapNarrowingConfig bandgapConfig_;
     bool bgnEnabled_ = false;
     bool compensatedEqualNiFlux_ = false;
     std::vector<Real> ni_;
