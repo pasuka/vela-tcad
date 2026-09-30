@@ -1,0 +1,22 @@
+{
+  "input_hashes": {
+    "build-release/libvela_core.a": "45efc8522243b1d047fa674fc31b7a49c5ada5646b4e6c21d1ff68a5f48e9756",
+    "build-release/phumob_local_source_20260909/scaled_source/CoupledDDAssembler.cpp": "2c85015112b7e11498cfb80dbda395919c11069c1f057c58d7ead3b99450f0e8",
+    "build-release/phumob_source_precision_20260910/audit_shared.h": "a97ee059f431fd9dcc637bbb205dd7b4d5c9d8dbb6997446e54bcca8c371e0b7",
+    "build-release/phumob_source_precision_20260910/compile_commands.json": "ab8d9176ff9da085e013cd3d6ca0a93ed9623637ca64e0913f57a1565fa787f0",
+    "build-release/phumob_source_precision_20260910/CoupledDDAssembler.compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_source_precision_20260910/CoupledDDAssembler.cpp": "9c8a9b6e20dc7650e5e38fb74b2b30ebecd0ce84a9e8411ae2833b2ee51cc244",
+    "build-release/phumob_source_precision_20260910/CoupledDDAssembler.o": "0121067b5ab6cfa0adeb28aecc62d7ed175355ac08b76d94d029739a4fb046c3",
+    "build-release/phumob_source_precision_20260910/link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_source_precision_20260910/link_command.json": "0edbdc0925055df2c5d0954de95c2a8b41a94d8f567a6a7489409b4334db10da",
+    "build-release/phumob_source_precision_20260910/NewtonSolver.compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_source_precision_20260910/NewtonSolver.cpp": "3dae9362f67a5f3e5bb24dff0841dd8fd55833fc326910e985ecd269c65fb1c2",
+    "build-release/phumob_source_precision_20260910/NewtonSolver.o": "18947fb194c06c81a1834867838c940b6e2d865d413a2b270d8ae1d398def2a6",
+    "build-release/phumob_source_precision_20260910/runner.exe": "259edc13a24ffc365a183d46810f8d57ce689f4232c221438f6340094b6da6c1",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/stable_merit/build_evidence.json": "6f36d43d5dd2a32aed86e80fbccc30ca5601ab6c420a82b13245693cbcab1fbe",
+    "scripts/audit_simplemos_e1089_linesearch_20260909.py": "c4940cae173bd953b50d9750b5a6226b38ce702084e9af455775650a8084ea73",
+    "scripts/audit_simplemos_linesearch_precision_20260908.py": "7d4f76faacc57edf26762dc83c4dc36d33a4e19675a0277b1a0fabcbfd4b5332",
+    "scripts/audit_simplemos_lowvd_source_precision_20260910.py": "a95603fe1d0b0d5c4b74af94b34bc11ad8acb3dd8e7039f736e2e4cbcba8af19",
+    "scripts/audit_simplemos_minority_residual_20260906.py": "049664c1bc5b3fee12f33bc2459f1a68a6485e2283cf298859000ce3431da6ab"
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "index": 50,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n19_vd_0p050000_endpoint_vg_050_baseline\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n19_vd_0p050000_endpoint_vg_050_baseline"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "index": 50,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n19_vd_0p050000_endpoint_vg_050_observed\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n19_vd_0p050000_endpoint_vg_050_observed"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "index": 40,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n19_vd_1p000000_endpoint_vg_040_baseline\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n19_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "index": 40,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n19_vd_1p000000_endpoint_vg_040_observed\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n19_vd_1p000000_endpoint_vg_040_observed"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "index": 50,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n19_vd_1p000000_endpoint_vg_050_baseline\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n19_vd_1p000000_endpoint_vg_050_baseline"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "index": 50,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n19_vd_1p000000_endpoint_vg_050_observed\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n19_vd_1p000000_endpoint_vg_050_observed"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 40,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n23_vd_0p050000_endpoint_vg_040_baseline\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n23_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 40,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n23_vd_0p050000_endpoint_vg_040_observed\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n23_vd_0p050000_endpoint_vg_040_observed"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 50,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n23_vd_0p050000_endpoint_vg_050_baseline\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n23_vd_0p050000_endpoint_vg_050_baseline"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "index": 50,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n23_vd_0p050000_endpoint_vg_050_observed\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n23_vd_0p050000_endpoint_vg_050_observed"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 40,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n23_vd_1p000000_endpoint_vg_040_baseline\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n23_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 40,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n23_vd_1p000000_endpoint_vg_040_observed\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n23_vd_1p000000_endpoint_vg_040_observed"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 50,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n23_vd_1p000000_endpoint_vg_050_baseline\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n23_vd_1p000000_endpoint_vg_050_baseline"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "index": 50,
+      "tdr": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_raw\\bundle\\m65_n23_vd_1p000000_endpoint_vg_050_observed\\final_des.tdr",
+      "export": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_restore_20260912\\rest_exports\\m65_n23_vd_1p000000_endpoint_vg_050_observed"
+    }
+  ]
+}

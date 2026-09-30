@@ -1,0 +1,12 @@
+{
+  "native_states": 16,
+  "cell_checks": 56000,
+  "edge_checks": 59360,
+  "native_replay_failures": 16,
+  "native_replay_max_relative": 0.9981937790063552,
+  "masetti_reclosure_failures": 0,
+  "exact_phumob_cell_max_relative": 7.357722481060591e-06,
+  "heldout_phumob_cell_max_relative": 6.661338147750939e-16,
+  "native_algorithm_identified": false,
+  "diagnostic_fit_parameters_added": 0
+}

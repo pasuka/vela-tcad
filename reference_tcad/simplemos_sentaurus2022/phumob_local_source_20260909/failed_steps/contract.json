@@ -1,0 +1,21 @@
+{
+  "jobs": [
+    {
+      "label": "native_first",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\native\\vg_010\\attempt_0",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\failed_steps\\native_first"
+    },
+    {
+      "label": "native_reload",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\native\\vg_010\\attempt_1",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\failed_steps\\native_reload"
+    },
+    {
+      "label": "qualified_control",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\vela\\vg_010\\attempt_0",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\failed_steps\\qualified_control"
+    }
+  ],
+  "scope": "Evaluate one current-production Newton direction and clipped full trial on frozen final states. Does not replay line search or accept a new state. Original all-row gate 1e-6 retained.",
+  "norm": "Decimal100 sum(trial residual squared - baseline residual squared) using exactly the exported double residual values. Evaluates norm comparison, not residual-kernel precision."
+}

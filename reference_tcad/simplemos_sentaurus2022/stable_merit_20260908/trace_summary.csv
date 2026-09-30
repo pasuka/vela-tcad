@@ -1,0 +1,13 @@
+key,name,attempts,accepted,exact_fallback
+m65_n19_vd_1p000000_endpoint_vg016,failure_original_restart,1288,200,0
+m65_n19_vd_1p000000_endpoint_vg016,failure_saved_state,1263,200,0
+m65_n23_vd_1p000000_endpoint_vg016,failure_original_restart,306,35,0
+m65_n23_vd_1p000000_endpoint_vg016,failure_saved_state,298,30,0
+m65_n19_vd_0p050000_endpoint_vg016,control_finite,364,60,0
+m65_n19_vd_0p050000_endpoint_vg016,control_finite_native_seed,212,36,0
+m65_n19_vd_1p000000_endpoint_vg016,control_finite,1925,200,0
+m65_n19_vd_1p000000_endpoint_vg016,control_finite_native_seed,1674,200,0
+m65_n23_vd_0p050000_endpoint_vg016,control_finite,1194,200,0
+m65_n23_vd_0p050000_endpoint_vg016,control_finite_native_seed,654,127,0
+m65_n23_vd_1p000000_endpoint_vg016,control_finite,2446,200,0
+m65_n23_vd_1p000000_endpoint_vg016,control_finite_native_seed,165,41,0

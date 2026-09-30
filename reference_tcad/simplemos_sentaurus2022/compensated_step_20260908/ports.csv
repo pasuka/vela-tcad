@@ -1,0 +1,15 @@
+key,name,mode,carry,relative,qualified
+m65_n19_vd_1p000000_endpoint_vg016,failure_original_restart,legacy,True,2.6645352591003757e-15,True
+m65_n19_vd_1p000000_endpoint_vg016,failure_original_restart,stable,True,2.6645352591003757e-15,True
+m65_n23_vd_1p000000_endpoint_vg016,failure_original_restart,legacy,True,7.549516567451064e-15,True
+m65_n23_vd_1p000000_endpoint_vg016,failure_original_restart,stable,True,7.549516567451064e-15,True
+m65_n23_vd_1p000000_endpoint_vg016,failure_original_restart,stable,False,2.886579864025407e-15,True
+m65_n19_vd_0p050000_endpoint_vg016,control_finite,legacy,True,4.9960036108132044e-15,True
+m65_n19_vd_0p050000_endpoint_vg016,control_finite,stable,True,4.9960036108132044e-15,True
+m65_n19_vd_1p000000_endpoint_vg016,control_finite,legacy,True,9.992007221626409e-16,True
+m65_n19_vd_1p000000_endpoint_vg016,control_finite,stable,True,9.992007221626409e-16,True
+m65_n23_vd_0p050000_endpoint_vg016,control_finite,legacy,True,4.107825191113079e-15,True
+m65_n23_vd_0p050000_endpoint_vg016,control_finite,legacy,False,9.325873406851315e-15,True
+m65_n23_vd_0p050000_endpoint_vg016,control_finite,stable,True,4.107825191113079e-15,True
+m65_n23_vd_1p000000_endpoint_vg016,control_finite,legacy,True,4.440892098500626e-16,True
+m65_n23_vd_1p000000_endpoint_vg016,control_finite,stable,True,4.440892098500626e-16,True

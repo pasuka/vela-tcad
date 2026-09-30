@@ -1,0 +1,13 @@
+{
+  "status": "completed_box_weighted_mobility_and_SG_check",
+  "mobility": "sum(native element-vertex box measures * Masetti(node total impurity)) / sum(native element-vertex box measures). Never replace denominator with coordinate triangle area.",
+  "physical_parameters_fitted": false,
+  "q_C": 1.602192e-19,
+  "thermal_voltage_V": 0.025851995266484913,
+  "flux": "Sum per-element native coefficient times element mobility; SG in cm units, conventional terminal current with A/cm to A/um factor 1e-4.",
+  "input_hashes": {
+    "scripts/audit_simplemos_masetti_box_mobility_20260907.py": "38305a33b2f79978ae7c886537cf23319a7f1b235a5e4752ed3f36c18ff90573",
+    "reference_tcad/simplemos_sentaurus2022/masetti_local_discretization_20260907/validation_evidence.json": "17e50a8b374f33da799aad7e55d9440d754de4e9d9ca7b2ee8ae3c6ef5d7fb19",
+    "reference_tcad/simplemos_sentaurus2022/masetti_runtime_calibration_20260907/native_contract.json": "99291fdadd04dcfe56faa30800e21ed33c32962764037937208d380c34372be7"
+  }
+}

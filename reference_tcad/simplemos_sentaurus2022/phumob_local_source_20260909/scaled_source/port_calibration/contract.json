@@ -1,0 +1,11 @@
+{
+  "scope": "Same frozen pair source, direct physical current-gradient dot full-J tangent, adjoint dot source, and actual signed DC Id.",
+  "gates": {
+    "prediction": 0.001,
+    "duality": 1e-06,
+    "two_amplitude": 0.001,
+    "even_over_odd": 0.01,
+    "signal_over_drift": 100
+  },
+  "does_not_override_field_response_failures": true
+}

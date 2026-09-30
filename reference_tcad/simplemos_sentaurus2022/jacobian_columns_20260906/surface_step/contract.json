@@ -1,0 +1,34 @@
+{
+  "status": "frozen_before_execution",
+  "jobs": [
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "step": 1e-07,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_jacobian_columns_20260906\\surface_step\\m65_n19_vd_1p000000_endpoint\\1e-07\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "step": 1e-08,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_jacobian_columns_20260906\\surface_step\\m65_n19_vd_1p000000_endpoint\\1e-08\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "step": 1e-07,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_jacobian_columns_20260906\\surface_step\\m65_n23_vd_1p000000_endpoint\\1e-07\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "step": 1e-08,
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_jacobian_columns_20260906\\surface_step\\m65_n23_vd_1p000000_endpoint\\1e-08\\config.json"
+    }
+  ],
+  "trigger": "Four stable psi-column carrier-block errors >.1% remain with vector-chain correction and disappear without Lombardi.",
+  "comparison_axis": "Change only local transport/surface finite-difference step coefficient from 1e-6 to 1e-7 or 1e-8; vector chain step remains 1e-7. Physical residual unchanged.",
+  "gates": {
+    "active_block_relative_floor": 1e-10,
+    "stable_fd_relative": 0.0001,
+    "jacobian_relative": 0.001,
+    "roundoff_multiplier": 64
+  },
+  "production_changes": false
+}

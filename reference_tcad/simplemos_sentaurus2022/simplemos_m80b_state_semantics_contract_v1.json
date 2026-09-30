@@ -1,0 +1,90 @@
+{
+  "schema": "vela.simplemos.m80b_state_semantics.v1",
+  "matrix": {
+    "pair_count": 8,
+    "case_count": 16,
+    "pairs": [
+      {
+        "low_device": "n17",
+        "high_device": "n21",
+        "drain_voltage_V": 0.05,
+        "diagnostic_gate_voltage_V": 0.8
+      },
+      {
+        "low_device": "n17",
+        "high_device": "n21",
+        "drain_voltage_V": 1.0,
+        "diagnostic_gate_voltage_V": 0.75
+      },
+      {
+        "low_device": "n18",
+        "high_device": "n22",
+        "drain_voltage_V": 0.05,
+        "diagnostic_gate_voltage_V": 0.8
+      },
+      {
+        "low_device": "n18",
+        "high_device": "n22",
+        "drain_voltage_V": 1.0,
+        "diagnostic_gate_voltage_V": 0.75
+      },
+      {
+        "low_device": "n19",
+        "high_device": "n23",
+        "drain_voltage_V": 0.05,
+        "diagnostic_gate_voltage_V": 0.9
+      },
+      {
+        "low_device": "n19",
+        "high_device": "n23",
+        "drain_voltage_V": 1.0,
+        "diagnostic_gate_voltage_V": 0.8
+      },
+      {
+        "low_device": "n20",
+        "high_device": "n24",
+        "drain_voltage_V": 0.05,
+        "diagnostic_gate_voltage_V": 0.85
+      },
+      {
+        "low_device": "n20",
+        "high_device": "n24",
+        "drain_voltage_V": 1.0,
+        "diagnostic_gate_voltage_V": 0.8
+      }
+    ]
+  },
+  "execution": {
+    "new_nonlinear_solves": 0,
+    "new_sentaurus_runs": 0,
+    "new_physical_parameters": 0
+  },
+  "state_mapping": "Map raw Sentaurus psi/phin/phip unchanged, but reconstruct n/p with Vela's unchanged ni/Vt for a coherent Vela residual state. Keep raw carrier identity differences in separate ledger; never describe raw and recomputed densities as identical.",
+  "definitions": {
+    "exact_identity": "gV(uV)-gS(uS) = (gV(uV)-gV(uS)) + (gV(uS)-gS(uS))",
+    "prediction": "-lambda_at_uS dot (FV(uS)-FV(uV)), plus separately measured target difference; baseline adjoint prediction is a nonlinear sensitivity control.",
+    "scope": "FV(uS) is Vela reaction to the mapped state, not native Sentaurus residual and not proof of a defective operator.",
+    "components": "Poisson dielectric/electron/hole/dopant/boundary/reconstruction remainder; solved electron/hole transport/SRH/impact/gauge/boundary terms; remaining equation mismatch separately retained.",
+    "space": "Exclusive SiSiO2/SiNitride/triple/otherSi/nonSi tags; independent shallow source/channel/drain/deep-body partition at .05/.10/.20 um. Do not double-count triple nodes.",
+    "thresholds_are_screening": "Residual representation and local linear approximation qualify numerical attribution, not causal physical correction. Independent native evidence remains mandatory."
+  },
+  "thresholds": {
+    "coordinate_um": 1e-10,
+    "boltzmann_dex": 1e-06,
+    "current_replay_relative": 1e-08,
+    "adjoint_relative_residual": 1e-10,
+    "poisson_scale_relative": 1e-06,
+    "component_reconstruction_relative": 1e-05,
+    "linear_remainder_fraction": 0.2,
+    "linear_remainder_floor_dex": 0.0001,
+    "stable_pairs": 6,
+    "max_cancellation_ratio_for_candidate": 10
+  },
+  "release": "No candidate A/B from state substitution alone. M81 localization pilot only if qualified linear remainder and at least6/8 pair stable dominant signs with cancellation ratio <=10; otherwise stop and report unresolved representation/nonlinearity.",
+  "source_identity_gate": {
+    "common_inferred_thermal_voltage_spread_V": 1e-14,
+    "source_relation_error_V": 1e-12,
+    "raw_to_reconstructed_max_dex": 1e-05,
+    "note": "Source Vt is inferred solely to verify exported state identity; never passed into a solver or material file."
+  }
+}

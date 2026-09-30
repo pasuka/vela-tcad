@@ -1,0 +1,22 @@
+{
+  "status": "frozen_before_stable_execution",
+  "description": "Only the analytic equal-ni/no-BGN Boltzmann SG psi derivative is evaluated via stable flux times logarithmic Bernoulli derivative. Original physical residual, geometry experiment and acceptance gates unchanged.",
+  "retained_failure": "Original baseline and three variants fail hole-row/psi-column JVP. No original full replacement DC has run.",
+  "scope": "Masetti, fixed 300 K and no field-dependent mobility; no production change or claim about clipping-active states.",
+  "input_hashes": {
+    "scripts/validate_simplemos_joint_stable_20260907.py": "6e745275dde486e81cbf6792fe5aa1b6914a32f788e94d93a8206c876754d91e",
+    "scripts/check_simplemos_joint_geometry_20260907.py": "96f1506002f7e0de84ff91ca55d7cc5935cecef32a6d9e1fa5b9f7b9c7e7b2cd",
+    "scripts/build_simplemos_joint_stable_20260907.py": "bc8190c49680c55f993a84a1693fb5cba43e25a720fabf4d6d8ab396ba663aa8",
+    "scripts/diagnostics/simplemos_stable_sg_psi_derivative.hpp": "f208b19bf5020a0310f22808c61b5a0e0ee1353951295a1526ba21952cfb96d8",
+    "scripts/diagnostics/simplemos_native_geometry.hpp": "e9dcdb9cc9a27e725b2ae58e4ee6fcea7f672f14e7ee57d39cef3cd7ec968966",
+    "reference_tcad/simplemos_sentaurus2022/joint_geometry_20260907/freeze.json": "55d70a52fd53bba0ea44cec02acf9a23e1e45eb47b79fad32e5bcecc1f71ce49",
+    "reference_tcad/simplemos_sentaurus2022/joint_geometry_20260907/preflight_checks.csv": "7df4e0b6b07efe40b4b00b1d013e6aedc8e4c92f52c5861faa4351d7d5af6a56",
+    "reference_tcad/simplemos_sentaurus2022/joint_geometry_20260907/preflight_jvp.csv": "10bf943eb439623240c84ea6a27dc7f852246e471e1ace8b6ff1ef8695ce9ab6",
+    "reference_tcad/simplemos_sentaurus2022/joint_geometry_20260907/preflight_ports.csv": "40d3dc1e570f0bbb1a325e2dd223384b0abfb7b13839e9ec2ec27ac25bf039ad",
+    "build-release/simplemos_joint_stable_20260907/compile_commands.json": "f2651fb6f736f7a2964912030242502f7f41dc2542529325ff25ded0c67cd49d",
+    "build-release/simplemos_joint_geometry_20260907/runner.cpp": "9a686f18a29283bd1303c7e218bf937d13e0235b152a705c555e9a4389621a64",
+    "build-release/simplemos_joint_stable_20260907/CoupledDDAssembler.cpp": "066290f3adcd9c5010960ee81206c068991bc0d77dcbf051322914c641ecbb5c",
+    "build-release/simplemos_linear_refinement_20260906/NewtonSolver.cpp": "4f833b164c034a8edcee38c6687c6d4c2360504658f812c2197c1b1ea08896b0",
+    "build-release/simplemos_joint_geometry_20260907/ContactCurrent.cpp": "a5c993d70046bf1ff858852c446e459041abceaded31c507b795ee54df3b4997"
+  }
+}

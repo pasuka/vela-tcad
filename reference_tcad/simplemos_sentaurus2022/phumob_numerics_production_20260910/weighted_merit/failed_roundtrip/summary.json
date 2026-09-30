@@ -1,0 +1,8 @@
+{
+  "prior_final_residual": 6.062997752839957e-11,
+  "first_reload_initial_residual": 1.0973366169765666e-10,
+  "norm_ratio": 1.809891182068417,
+  "zero_Newton_iterations": true,
+  "cohort_credit": false,
+  "interpretation": "A saved-state roundtrip changes the residual before any Newton update. This diagnoses numerical representation/repacking; it does not establish a complete remedy or justify additional cohort reloads."
+}

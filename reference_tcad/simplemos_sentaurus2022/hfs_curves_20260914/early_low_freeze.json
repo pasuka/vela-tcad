@@ -1,0 +1,28 @@
+{
+  "input_hashes": {
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/continuation/vg_000/attempt_0/independent_acceptance.json": "f9c24d942dde59cd62eff7591338be2c549f0a6957d6c6503298c8efcc922933",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/continuation/vg_000/attempt_0/state.csv": "51a7e27e2386e3a42da2b2c19c163b599540f9118f3b44e8e3b6f9c7a02e6cf1",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/continuation/vg_010/attempt_0/independent_acceptance.json": "083d34ad0df829d1b0b36a1d3d4aa68e63aa5f191bf097f1dfb251e7644b367b",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_0p050000_endpoint/continuation/vg_010/attempt_0/state.csv": "6509cc6a64c20249a780ab817af29f2d89cc5e0dd3046edc5779fe805f7c82e2",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_1p000000_endpoint/continuation/vg_000/attempt_0/independent_acceptance.json": "ae96f0927da160ef936495da6efe8ae23c1fd2ede0c94b2f348b91f8f3448390",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_1p000000_endpoint/continuation/vg_000/attempt_0/state.csv": "aa2bee344243e9bd640692998828790bb14e0bfcf7379648feeed8c37d82af48",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_1p000000_endpoint/continuation/vg_010/attempt_0/independent_acceptance.json": "1faee6aeb2397448c669a99dce360489e6981c9f765954d2465ee198c7013f04",
+    "build-release/enormal_curves_20260912/vela/m65_n19_vd_1p000000_endpoint/continuation/vg_010/attempt_0/state.csv": "4389f9e63e9b922450798c9f6a90bc439ce04ba3ff673feb6b5b4c86ece589a5",
+    "build-release/enormal_curves_20260912/vela/m65_n23_vd_0p050000_endpoint/continuation/vg_000/attempt_0/independent_acceptance.json": "e6a896f1a665c288d838ca0f4db897b72525f38526c9c65bb05b9e4e4f04226a",
+    "build-release/enormal_curves_20260912/vela/m65_n23_vd_0p050000_endpoint/continuation/vg_000/attempt_0/state.csv": "a2e6584d9521637335c6b8f430cd317b5bfe7f08aae8031cf224eed13d59979a",
+    "build-release/enormal_curves_20260912/vela/m65_n23_vd_0p050000_endpoint/continuation/vg_010/attempt_0/independent_acceptance.json": "7ba34cdd8da4aff3129bbac6a48d2f1b88b2616749a5398da98cbab71bb8e3e6",
+    "build-release/enormal_curves_20260912/vela/m65_n23_vd_0p050000_endpoint/continuation/vg_010/attempt_0/state.csv": "bd83ee9a95141bd95129c330e7e6f7b546ebe9383e556fad08fbcc7bef4ae77d",
+    "build-release/enormal_curves_20260912/vela/m65_n23_vd_1p000000_endpoint/continuation/vg_000/attempt_0/independent_acceptance.json": "205972ebba987444e29cf51b3bf6009d60e6f604e19f3b07d9149bfdb5ea0ba5",
+    "build-release/enormal_curves_20260912/vela/m65_n23_vd_1p000000_endpoint/continuation/vg_000/attempt_0/state.csv": "62c67bf94e0dc3d027f705fdda9a1bf1d3aa148ec1d6727e6b9830398abeb16f",
+    "build-release/enormal_curves_20260912/vela/m65_n23_vd_1p000000_endpoint/continuation/vg_010/attempt_0/independent_acceptance.json": "b466f1dc602dde5a2256e27551b4b783a330b6883d7f6bbbc204f92f355f1187",
+    "build-release/enormal_curves_20260912/vela/m65_n23_vd_1p000000_endpoint/continuation/vg_010/attempt_0/state.csv": "866b122ca671ab44d23c1bc2e9d43486af648fbf565ef2827267d5622575acc7",
+    "build-release/hfs_candidate_20260914/v1/inputs/m65_n19_vd_0p050000_endpoint_vg_040/template.json": "3a5c205df05f029694fe3cde79b67479ca38429b58162a0c468997cb1cef3575",
+    "build-release/hfs_candidate_20260914/v1/inputs/m65_n19_vd_1p000000_endpoint_vg_040/template.json": "4aac737184a014dbfc9fcf389d4c44b61c13026b7c23fcbbe1bf97967625ecac",
+    "build-release/hfs_candidate_20260914/v1/inputs/m65_n23_vd_0p050000_endpoint_vg_040/template.json": "4e934ca11f3c7a137ec917b92e9089211721c7218800352d977fc4cb724611a7",
+    "build-release/hfs_candidate_20260914/v1/inputs/m65_n23_vd_1p000000_endpoint_vg_040/template.json": "0af1d8e62465c11b7551c69858e33f8d99b967ee686878cc596aca102b550ef9",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/completion_evidence.json": "db88c75d412b30533f766040f7e9503c90f64adf0cdb12f9908579dd985e77d2",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/completion_evidence.json": "39f7e0c110ec76418199113c5a540b383141146f5b0a98fa36808721aeb3e8b8",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/early_low_contract.json": "d8b366c50799800ecd403ebe9d9cbedb9ec198b32c8f7182a5e04d94a86645a5",
+    "scripts/simplemos_hfs_early_low_20260914.py": "0df591935328e7241c0b6e90b8ec8049d1afbe6527bbbe1dbc9442bfb644e69f"
+  }
+}

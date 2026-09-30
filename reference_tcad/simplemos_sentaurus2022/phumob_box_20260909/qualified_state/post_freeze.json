@@ -1,0 +1,24 @@
+{
+  "input_hashes": {
+    "build-release/phumob_box_20260909/qualified_state/candidate/dc/phumob/m65_n19_vd_0p050000_endpoint/vela/vg_040/attempt_0/state.csv": "17af65bf76d5403e5b3856b41bb10362b1b9574d5143b1824f313ec682eb99a6",
+    "build-release/phumob_box_20260909/qualified_state/candidate/dc/phumob/m65_n19_vd_0p050000_endpoint/vela/vg_050/attempt_0/state.csv": "cacb0cd1d80d0e0f7effa7e0f894c81d039320f29ea31b7cea51a34e5e00536c",
+    "build-release/phumob_box_20260909/qualified_state/candidate/dc/phumob/m65_n19_vd_1p000000_endpoint/vela/vg_040/attempt_0/state.csv": "bb4ca2aeba5de1213e8bbb2586e021e72c1d485e5c2ad6796bd78ba585378dfe",
+    "build-release/phumob_box_20260909/qualified_state/candidate/dc/phumob/m65_n19_vd_1p000000_endpoint/vela/vg_050/attempt_0/state.csv": "8d9047a54840f5f73c48fb8c1315e97decd1e464ab21bb3379fc9131498f707b",
+    "build-release/phumob_box_20260909/qualified_state/candidate/dc/phumob/m65_n23_vd_0p050000_endpoint/vela/vg_040/attempt_0/state.csv": "c30d1ae61e2bf775a2d7e280cc12990afa41782bbb7d08ee75d51e875d0e8c1d",
+    "build-release/phumob_box_20260909/qualified_state/candidate/dc/phumob/m65_n23_vd_0p050000_endpoint/vela/vg_050/attempt_0/state.csv": "e463beccfc2af18498bcfc2556d7fc924c49ce58c825a060cb4149a13edac197",
+    "build-release/phumob_box_20260909/qualified_state/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/vela/vg_040/attempt_0/state.csv": "039d56adf2c0eb159779298b1a41290faed72ed82e918634b504f527baadc154",
+    "build-release/phumob_box_20260909/qualified_state/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/vela/vg_050/attempt_0/state.csv": "f12f74aab7afe18389ad99d61df9d37bea68d6ee647acbe93023f31ec62a02d4",
+    "build-release/phumob_box_20260909/qualified_state/post_jvp/m65_n19_vd_0p050000_endpoint_vg_040/config.json": "f9ee3f6abf35189ee30e879c514076532f58093848d31d28cd122e4780806baf",
+    "build-release/phumob_box_20260909/qualified_state/post_jvp/m65_n19_vd_0p050000_endpoint_vg_050/config.json": "81170fac248532156bade7aafab546e27df6044c6bfb52a2fe6b0a109ef7111d",
+    "build-release/phumob_box_20260909/qualified_state/post_jvp/m65_n19_vd_1p000000_endpoint_vg_040/config.json": "f8bf2900f7a2e04a7a88e9c5a6bf46196adc92c0a752ccb1110ab54503323302",
+    "build-release/phumob_box_20260909/qualified_state/post_jvp/m65_n19_vd_1p000000_endpoint_vg_050/config.json": "b58970ccef5b2cc507449d621e01a48961399f1113ac164f5797e752d9433ecc",
+    "build-release/phumob_box_20260909/qualified_state/post_jvp/m65_n23_vd_0p050000_endpoint_vg_040/config.json": "2f834c546d5ff00b152a00548809fa3a0260e9f1693db09c7acde252fb7bc01a",
+    "build-release/phumob_box_20260909/qualified_state/post_jvp/m65_n23_vd_0p050000_endpoint_vg_050/config.json": "4b374124cc1e09bec95013827a25f544fbf9fd20653fe93f3312190ff129e18f",
+    "build-release/phumob_box_20260909/qualified_state/post_jvp/m65_n23_vd_1p000000_endpoint_vg_040/config.json": "fa6bbdc584b5b1483977ec9eb72ea7c5af7ab633bcf19bd27ee18f134ace8507",
+    "build-release/phumob_box_20260909/qualified_state/post_jvp/m65_n23_vd_1p000000_endpoint_vg_050/config.json": "e5331fe8fda6fb5c6ef4fdbc1e107bbe9af08d1b8d6f0a6d462344e31ee08863",
+    "build-release/vela_example_runner.exe": "a67a2e971ef585591c19ea664de5edbfda3d2c2189a54ef7410a40e6ca302be6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/dc_comparison_evidence.json": "cadc0c4d33f4a80b2f93b680db629ceecc3522b82ad9e9b165a5db1c9cb0834a",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/post_contract.json": "cc2e0e9a4800fc78d234dabb30ed78e6397ed3a72ad064085bc39e4fd31ceee5",
+    "scripts/analyze_simplemos_phumob_box_20260909.py": "46f16ee30e92aeb09fc7040da71e3b0ec9da508d38b1f0af3f68e217ac3a56d2"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "status": "frozen_before_execution",
+  "contract_sha256": "487c5f2bc3494ea12f6ec6f872a586378de75ae704edbb7bb01d41d16fa24ff8",
+  "input_hashes": {
+    "scripts/run_simplemos_m81_sentaurus_ifm_pilot.py": "a585632e9be940a39f69c4469d84116fd98a634fb2521a7e436c14e167ddfa6d",
+    "scripts/run_simplemos_m80b_state_semantics.py": "7c02dc5d17a2da5db54a518a473659b73b54ae4a2dd0d535b713dfde45723971",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m80b_state_semantics_contract_v1.json": "340c2f67115cf81780988ec8e51504fd0a92d972b9f3f57ab67371884c43e298",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m80b_state_semantics_contract_freeze_v1.json": "03ad8406b7ea9769c8029b3e253c666322e99c1790b301fd2ce9ba8d42b21818",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_m80b_state_semantics_evidence.json": "3f6e757ac03c432b8955aa33d38ced4280cff1f7634d634d55061003d02d2bce",
+    "docs/validation/simplemos_post_m78_research_debug_plan_2026-09-05.md": "072fe132871be8cdc29d29a7ad924370d1c48b4e6a45f96b35bd3285c5ae4257",
+    "build-release/m81_sentaurus_ifm_pilot/bundle/n19/input_fps.tdr": "4ee2287ce8057fa45bc9e00aa5603d7f7f7fd29d50f02d77215d7d3d6cae358a",
+    "build-release/m81_sentaurus_ifm_pilot/bundle/n19/m81_des.cmd": "464d2db3ad652217e102925aa80460bc5ec9493af1fea50c13813c06e1e4385f",
+    "build-release/m81_sentaurus_ifm_pilot/bundle/n19/state_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/m81_sentaurus_ifm_pilot/bundle/n19/state_des.tdr": "da4eeafa24fb35eb9080aad0c9a02e26df841086872d7a98cbf5db98209623ab",
+    "build-release/m81_sentaurus_ifm_pilot/bundle/n23/input_fps.tdr": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016",
+    "build-release/m81_sentaurus_ifm_pilot/bundle/n23/m81_des.cmd": "464d2db3ad652217e102925aa80460bc5ec9493af1fea50c13813c06e1e4385f",
+    "build-release/m81_sentaurus_ifm_pilot/bundle/n23/state_circuit_des.sav": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5",
+    "build-release/m81_sentaurus_ifm_pilot/bundle/n23/state_des.tdr": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30"
+  }
+}

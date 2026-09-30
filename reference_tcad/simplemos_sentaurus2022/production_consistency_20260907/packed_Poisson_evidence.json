@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/production_consistency_20260907/analysis_evidence.json": "b60e5e1c4f3e68e228cc5aac6cb24831db43f9f898962964412dac49696a741e",
+    "reference_tcad/simplemos_sentaurus2022/production_consistency_20260907/packed_Poisson_replay.csv": "04b03b3742f4eb1b8fad91a4dd60062251c0a04c85baa8e37a4a4a1d66d03b83",
+    "reference_tcad/simplemos_sentaurus2022/production_consistency_20260907/packed_Poisson_replay_worst.csv": "9bfe5f0355e5d84f28e0a6418e0d78f5d3f8a8fcf7cb41aaf65de072ba0cdd54",
+    "scripts/audit_simplemos_packed_poisson_replay_20260907.py": "2cee74db6e718109a9f7996265ee06b5a4371b20e29f7785990320a80f0167c2"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "build-release/enormal_candidate_20260912/v1/smoke/jvp.csv": "edd9a228358e1c7bf9d7f11dd71637a5f8e1ee4b324f222453c367e7fa1e3b5c",
+    "build-release/enormal_candidate_20260912/v1/smoke/jvp.json": "9e8d10654be5410c12c9e426c856372fe4e8929f14734f6b95d6f2b3e187c979",
+    "build-release/enormal_candidate_20260912/v1/smoke/jvp.status.json": "c647f095cf42f81f6834a9e634d37252d8925a01744e5192391d44743b6e27db",
+    "build-release/enormal_candidate_20260912/v1/smoke/jvp.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/enormal_candidate_20260912/v1/smoke/jvp.stdout.txt": "9f26ebf8c0fbb284461fea751b2940952aeeff115570a747c56f3b01657ec7d8",
+    "reference_tcad/simplemos_sentaurus2022/enormal_candidate_20260912/v1/candidate_freeze.json": "50b1041c0ca54fed17b68e8232eed61fbe1dc772aef649ef5301bef3c72d397a",
+    "reference_tcad/simplemos_sentaurus2022/enormal_candidate_20260912/v1/smoke_jvp.csv": "916e3d267c417f0f592e6313b03aa0b0f5bd194ccacd8845f0a775a7a962a5c3"
+  }
+}

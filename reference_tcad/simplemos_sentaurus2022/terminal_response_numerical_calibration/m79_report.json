@@ -1,0 +1,23 @@
+{
+  "schema": "vela.simplemos.m79.report.v1",
+  "endpoints": 16,
+  "cases": 8,
+  "matrix_complete": false,
+  "observer_pass": false,
+  "finite_prediction_pass": true,
+  "m80_released": false,
+  "new_nonlinear_solves": 0,
+  "new_sentaurus_runs": 0,
+  "failed_gates": [
+    "pass_current_derivative"
+  ],
+  "status": "stopped_at_qualification_gate",
+  "maximum": {
+    "current_replay_relative": 5.551115123125783e-16,
+    "adjoint_relative_residual": 9.641830264336739e-17,
+    "jvp_max_relative": 9.070059964837288e-05,
+    "current_fd_max_relative": 2.20241545341766,
+    "duality_relative": 6.504705860226117e-16,
+    "linear_solve_relative": 3.5224893633163946e-16
+  }
+}

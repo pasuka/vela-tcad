@@ -1,0 +1,11 @@
+{
+  "distinct_cross_entries": 164,
+  "distinct_cross_failures": 0,
+  "cross_max_relative": 2.710493632551023e-14,
+  "before_after_max_row_ratio": 1.2958429899393048e-07,
+  "before_after_max_kcl_over_Id": 1.49939254785347e-14,
+  "before_after_max_port_relative": 1.0658141036401503e-14,
+  "iterations_unchanged": true,
+  "native_internal_minimizer_identified": false,
+  "native_cutoff_result": "At 299/300 K holes select the lower root; at 350 K holes exclude the lower root but cannot distinguish the upper root from G-value clipping. Electron samples do not distinguish the hypotheses."
+}

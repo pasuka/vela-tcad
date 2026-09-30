@@ -1,0 +1,9 @@
+case,vg,initializations,qualified_states,all_states_qualified,numerical_invariance,invariance_qualified
+m65_n19_vd_0p050000_endpoint,0.35,4,0,False,False,False
+m65_n19_vd_0p050000_endpoint,1.0,2,0,False,False,False
+m65_n19_vd_1p000000_endpoint,0.35,2,0,False,False,False
+m65_n19_vd_1p000000_endpoint,1.0,2,0,False,False,False
+m65_n23_vd_0p050000_endpoint,0.35,2,0,False,False,False
+m65_n23_vd_0p050000_endpoint,1.0,4,2,False,False,False
+m65_n23_vd_1p000000_endpoint,0.35,2,0,False,False,False
+m65_n23_vd_1p000000_endpoint,1.0,2,0,False,False,False

@@ -1,0 +1,15 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_generated_box_mobility_20260907/extraction_fix_tests.log": "239715f554bff1f8d7eb5dd73ddc5a2630832d26f32013d0b0b04a6acb0a9431",
+    "build-release/simplemos_generated_box_mobility_20260907/full_ctest.log": "8d5bdefa130c05fa86adc731e8f18a23903193f3c2b702b606071a12e98ae3ee",
+    "build-release/simplemos_generated_box_mobility_20260907/full_ctest.xml": "a6d042d611ef3f02f4f104c3c5e29c677f6523d23dce4ec58618948d3d0c939d",
+    "build-release/simplemos_generated_box_mobility_20260907/unit_tests.log": "d345977ff755ebb51d5079c62d7e0562a66ea5cce136c86725610cc07c55df81",
+    "docs/validation/simplemos_generated_box_mobility_validation_2026-09-07.md": "3d670db3386cff850fa609a118924ff5ffdcb8fd8ff1fe972c458b460cfc224b",
+    "reference_tcad/simplemos_sentaurus2022/generated_box_mobility_20260907/current_extraction_fix/ctest_audit.json": "715570eb6497c3c7c04812256cbeadcf15a5302729942c3c575f2f1834847d6d",
+    "reference_tcad/simplemos_sentaurus2022/generated_box_mobility_20260907/current_extraction_fix/extraction_fix_identity.csv": "98b5d1138c049f2a66bc5f8c57d35cb5e855ea193e2e206d921795d1cdaaf762",
+    "reference_tcad/simplemos_sentaurus2022/generated_box_mobility_20260907/current_extraction_fix/final_summary.json": "54674941037ea246d7b08c81b90583583cd69a474818b09249c6c1001d1e39ea",
+    "reference_tcad/simplemos_sentaurus2022/generated_box_mobility_20260907/current_extraction_fix/physical_gates.csv": "7a2703fb484094fadbfb9c1bec988bc02884d7d6a7b5fe1b4b240eb6b4b22572",
+    "reference_tcad/simplemos_sentaurus2022/generated_box_mobility_20260907/current_extraction_fix/validation_evidence.json": "69c59d95657685a0a2c62bebc23220515a70672e2a7fefccdc75a1eede6e0755",
+    "scripts/report_simplemos_generated_box_mobility_20260907.py": "c151edc5d3344d6ba50e78ffd09cd23354012520815fa20f8022736af9fa09ba"
+  }
+}

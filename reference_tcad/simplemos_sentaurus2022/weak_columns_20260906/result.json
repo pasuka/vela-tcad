@@ -1,0 +1,20 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_weak_columns_20260906/m65_n19_vd_0p050000_endpoint/components.csv": "c24d7be4d62cf5d879de6e6389cddab9f53fbd2a1d25effe8a598ec43a17297d",
+    "build-release/simplemos_weak_columns_20260906/m65_n19_vd_0p050000_endpoint/config.status.json": "c2622502375c2b1d5369ef2f3d5c711319c936bde3c72cf31a077fda44b87bc9",
+    "build-release/simplemos_weak_columns_20260906/m65_n19_vd_1p000000_endpoint/components.csv": "00d6497e941d03f1e81d95aa4e4b05ce020821a75e07f3167af74c8ff2540648",
+    "build-release/simplemos_weak_columns_20260906/m65_n19_vd_1p000000_endpoint/config.status.json": "2a0eee62347610e9159a9fc792ad452c9c199143fdf014d12e0098706069b2f0",
+    "build-release/simplemos_weak_columns_20260906/m65_n23_vd_0p050000_endpoint/components.csv": "8c9b2081c8f11bbc75cf47619b4d9fe44dc6ba3fec2ffce776a1d568b71d2a83",
+    "build-release/simplemos_weak_columns_20260906/m65_n23_vd_0p050000_endpoint/config.status.json": "38b200d9026b7bd093e9182ceb274a132f9bf054a6d26970a7bc6b0b22391d4d",
+    "build-release/simplemos_weak_columns_20260906/m65_n23_vd_1p000000_endpoint/components.csv": "96138c19c541c0736123e7fbb7237d92ae304562244f3ef21176fa19c3fbff72",
+    "build-release/simplemos_weak_columns_20260906/m65_n23_vd_1p000000_endpoint/config.status.json": "69c26b25187c02fe1f04b8a7f03903c561aa7b9e6dd8fd5d7c66c4907e4ed98d",
+    "reference_tcad/simplemos_sentaurus2022/weak_columns_20260906/freeze.json": "7b0785e90c39a64ac1e7a29f705e4aed9afb38a6eff726d3386fe949ea775a6d",
+    "scripts/analyze_simplemos_weak_columns_20260906.py": "ad29224653946af26eae6da5135b5f7e44a48f36f6b8e8e71586b8ce88222768"
+  },
+  "targets": 33,
+  "reference_qualified": 33,
+  "legacy_step_passed": 31,
+  "fine_step_passed": 33,
+  "finer_step_passed": 33,
+  "production_promoted": false
+}

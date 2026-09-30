@@ -1,0 +1,6 @@
+{
+  "input_hashes": {
+    "docs/validation/simplemos_hfs_curve_pause_2026-09-14.md": "a1a5349c60e37f089bf0f21abbc925068f757c1b5d3f0ca24461f7103ad390f3",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/pause_20260914_2213/snapshot_evidence.json": "e52857d38ac0ada10334dd51ffaeb7b9392e83efba667f9124a4ad162f228aee"
+  }
+}

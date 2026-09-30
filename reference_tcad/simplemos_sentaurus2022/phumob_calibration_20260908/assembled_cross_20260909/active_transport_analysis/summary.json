@@ -1,0 +1,14 @@
+{
+  "cases": 4,
+  "nonzero_entry_checks": 328,
+  "base_closure_max_relative": 2.007052377922218e-16,
+  "scalar_mu_max_relative": 5.737555516514978e-16,
+  "reference_units_and_state_qualified": true,
+  "derivative_failures": 212,
+  "production_zero_count": 188,
+  "residual_fd_zero_count": 177,
+  "absolute_reference_min": 2.7053434064933716e-29,
+  "absolute_reference_max": 3.697006953137067e-16,
+  "max_absolute_derivative_error": 3.697006953137067e-16,
+  "production_changed": false
+}

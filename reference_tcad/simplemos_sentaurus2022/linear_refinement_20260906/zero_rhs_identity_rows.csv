@@ -1,0 +1,2 @@
+tag,iteration,identity_zero_rhs_nonzero_defect_rows,carrier,node,max_absolute_identity_defect,step_V,backward_ratio,interpretation
+m65_n23_vd_0p050000_endpoint\vg_020\hole_minus,1,6,electron,1091,5.234672931710341e-29,1.353267635126356e-30,1.0,"For F=0 and J(row,:)=unit row, abs(Jdx+F)/(abs(F)+abs(J)abs(dx)) is 1 for any nonzero roundoff step, independent of its absolute size."

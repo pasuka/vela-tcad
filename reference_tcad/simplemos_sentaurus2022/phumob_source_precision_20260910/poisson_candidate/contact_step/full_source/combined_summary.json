@@ -1,0 +1,13 @@
+{
+  "DC": 20,
+  "qualified_DC": 20,
+  "responses": 8,
+  "qualified_responses": 8,
+  "native_response_qualified": false,
+  "finite_volume_replacement": false,
+  "native_port_responses": 16,
+  "qualified_native_ports": 16,
+  "max_native_relative": 9.908026436855621e-06,
+  "numerical_combination": "packed Poisson + exact contact step + stable merit + corrected restart coordinates",
+  "production_modified": false
+}

@@ -1,0 +1,25 @@
+{
+  "total": 782,
+  "passed": 766,
+  "failed": [
+    "simplemos_m9_hfs_diagnostics",
+    "simplemos_m10_fixed_state_replay",
+    "simplemos_m12_terminal_sensitivity",
+    "simplemos_m30_double_off_causal_closure",
+    "simplemos_m31_minority_poisson_perturbation",
+    "simplemos_m32_electron_qf_scaled_perturbation",
+    "simplemos_m33_region_resolved_interface_assembly",
+    "simplemos_m35_signed_average_box_assembly",
+    "simplemos_m36_boundary_contact_measure_audit",
+    "simplemos_m37_measure_contact_qf_ablation",
+    "simplemos_m39_bgn_chain_first_divergence",
+    "simplemos_m40_true_no_bgn_factorial",
+    "simplemos_m41_equal_ni_flux_ablation",
+    "simplemos_m42_no_bgn_self_consistent_interaction",
+    "simplemos_m45_post_qf_rebaseline",
+    "simplemos_m46_full_matrix_requalification"
+  ],
+  "new_failures": [],
+  "missing_previous_failures": [],
+  "seconds": 230.02
+}

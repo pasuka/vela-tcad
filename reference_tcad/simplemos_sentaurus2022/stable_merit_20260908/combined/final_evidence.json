@@ -1,0 +1,33 @@
+{
+  "input_hashes": {
+    "docs/validation/simplemos_stable_merit_step_and_srh_calibration_2026-09-08.md": "7422fb756453018864aa6b5dc1e602d8131954bc4b3e6fe51a67479d676a8adf",
+    "reference_tcad/simplemos_sentaurus2022/compensated_step_20260908/build_evidence.json": "b787e698792154e27bee32b31192d845fe5e06d839b3080ad4dc9d060e9fa006",
+    "reference_tcad/simplemos_sentaurus2022/compensated_step_20260908/evidence.json": "5a0d4f8fecbd50e975b8176efd4875b725d6cdcc238cdaf0a5310bb4aeffc7a5",
+    "reference_tcad/simplemos_sentaurus2022/compensated_step_20260908/freeze.json": "d28e5867ecf564179bc892c64d5ae19f43c8c63691f04229929b9fda91c0c333",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/build_evidence.json": "7f8c35156c720cc55fc395fbbd7f41e8b8972309efb515c6b2b3437e4fdf18f9",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/evidence.json": "994405ba9b569d7beba354c35e37f3b534cf5ed91330f542ac37e4c68f1da550",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/freeze.json": "3e81031652789694c15d958f1ce283946504971dcc8c05ea211b133ae07142a0",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/preflight_evidence.json": "44bd8bf5be073e6b49ea011ad39adc3e81ea8177c08273b8d892ac1ab8c90ce5",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/qualification/evidence.json": "e1de78776af436d87d31f4c73759142dba5842d0a470bdec1b6de823b9b068b2",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/qualification/freeze.json": "2f392622bcda3c25afeb1ca0151251e98dcf09e779ff80b4e5e0d84f976e4ed3",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/qualification/guards_evidence.json": "b68516f101aee4496e60c7c7ce327b57acc2c6f5308a174d2eac6a96b6a16a00",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/qualified_remainder/evidence.json": "8b8fa9de40d33e28ef0030470b7b3bd0c9d65e4377071318a17af0643f293a18",
+    "reference_tcad/simplemos_sentaurus2022/srh_hotspots_20260908/qualified_remainder/freeze.json": "1c27c743e19f7f7a5e6f614d48a92d173f0f091a08d7788180702ac18d583e62",
+    "reference_tcad/simplemos_sentaurus2022/stable_merit_20260908/build_evidence.json": "ad4fa8b33d3f762ce176922d4f2d82f6fa92e2ae5fd63903cc47a652239db8f2",
+    "reference_tcad/simplemos_sentaurus2022/stable_merit_20260908/combined/guard_reasons.csv": "043c7da5d9d12a3ae97d041bc1317ee8c90dea9e30a0db18bc9c08316ab57f52",
+    "reference_tcad/simplemos_sentaurus2022/stable_merit_20260908/combined/remaining_rejection.csv": "52365ac236c829cca901b1a1de5788de32c8d19218d2a0c428bf2de47d5ed999",
+    "reference_tcad/simplemos_sentaurus2022/stable_merit_20260908/combined/solver_status.csv": "82e80203be79ddaf67af88ede5bf5d8717134b5033e15fab68363cef4b5dba83",
+    "reference_tcad/simplemos_sentaurus2022/stable_merit_20260908/combined/summary.json": "3140abf412c2ec7bd646e95128d150e256ae0523da5056f1329b9d5237bb1904",
+    "reference_tcad/simplemos_sentaurus2022/stable_merit_20260908/combined/verification.json": "9ff00f9a671f6af161a7b241a7fbe3db631a8ca0686fe33fad9d5e58a7eca6b3",
+    "reference_tcad/simplemos_sentaurus2022/stable_merit_20260908/evidence.json": "9dd96356c6d5a068c1c0b3f9da0a239e804019ca3b613ce095e3a1fce71ee8ba",
+    "reference_tcad/simplemos_sentaurus2022/stable_merit_20260908/freeze.json": "88f6d14061a0b048556cfaabcffc97dbe8a2580fbb0258c43ce24f4b4a182c63",
+    "scripts/audit_simplemos_srh_response_remainder_20260908.py": "90e86f224a134bf27a7f85ad3e5542ff80e4c2a98a178e06c8102a804c75368d",
+    "scripts/build_simplemos_compensated_step_20260908.py": "ebc465bbf77f4156bf75c11daa0af113ee8ef34f64c3c8cc47669a68bf471555",
+    "scripts/build_simplemos_stable_merit_20260908.py": "04924a4411b8e17f395eccab8c072bd30e3d67f8430737c6d8875be84588caf0",
+    "scripts/calibrate_simplemos_srh_hotspots_20260908.py": "33c2cdd63da8dd02482dddf42bff53103a10d504d735897353a73d2b7eab74db",
+    "scripts/check_simplemos_hotspot_contract_20260908.py": "580ac1401e0f7aaef74cc93a847c6a5606e667b4369285de77bd5b75211e0a37",
+    "scripts/report_simplemos_stable_merit_step_srh_20260908.py": "03216c8c2762cd08ad7cdd63cfbe01f6103161ab0b98a52eb203dec6f9a1e772",
+    "scripts/validate_simplemos_compensated_step_20260908.py": "4fc170f896305964ed40dfdd6f4697c6fb19650facfb03d240e9ae424378b9ff",
+    "scripts/validate_simplemos_stable_merit_20260908.py": "a5453d4204d9f0bc42de835af7ec3fbfbd5377db149119d5a1aa14d34a00f42b"
+  }
+}

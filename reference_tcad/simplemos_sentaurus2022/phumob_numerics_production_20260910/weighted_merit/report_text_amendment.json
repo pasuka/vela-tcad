@@ -1,0 +1,7 @@
+{
+  "reason": "Final mesh check: n19 has 1480 nodes, n23 has 1482. Correct the report and generator sentence; no data, numerical output, gates or qualification changed.",
+  "original_report": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_numerics_production_20260910\\weighted_merit\\report_text_preimage\\report.md",
+  "original_generator": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_numerics_production_20260910\\weighted_merit\\report_text_preimage\\generator.py",
+  "n19_nodes": 1480,
+  "n23_nodes": 1482
+}

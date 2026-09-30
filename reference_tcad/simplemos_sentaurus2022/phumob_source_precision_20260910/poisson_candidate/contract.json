@@ -1,0 +1,139 @@
+{
+  "jobs": [
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\kernel\\m65_n19_vd_0p050000_endpoint\\zero",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.0,
+      "label": "zero",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\zero",
+      "mode": "kernel"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\packed\\m65_n19_vd_0p050000_endpoint\\zero",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.0,
+      "label": "zero",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\zero",
+      "mode": "packed"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\kernel\\m65_n19_vd_0p050000_endpoint\\plus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.001,
+      "label": "plus_full",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\plus_full",
+      "mode": "kernel"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\packed\\m65_n19_vd_0p050000_endpoint\\plus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.001,
+      "label": "plus_full",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\plus_full",
+      "mode": "packed"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\kernel\\m65_n19_vd_0p050000_endpoint\\minus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": -0.001,
+      "label": "minus_full",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\minus_full",
+      "mode": "kernel"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\packed\\m65_n19_vd_0p050000_endpoint\\minus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": -0.001,
+      "label": "minus_full",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\minus_full",
+      "mode": "packed"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\kernel\\m65_n23_vd_0p050000_endpoint\\zero",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.0,
+      "label": "zero",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\zero",
+      "mode": "kernel"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\packed\\m65_n23_vd_0p050000_endpoint\\zero",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.0,
+      "label": "zero",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\zero",
+      "mode": "packed"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\kernel\\m65_n23_vd_0p050000_endpoint\\plus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.001,
+      "label": "plus_full",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\plus_full",
+      "mode": "kernel"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\packed\\m65_n23_vd_0p050000_endpoint\\plus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.001,
+      "label": "plus_full",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\plus_full",
+      "mode": "packed"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\kernel\\m65_n23_vd_0p050000_endpoint\\minus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": -0.001,
+      "label": "minus_full",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\minus_full",
+      "mode": "kernel"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\packed\\m65_n23_vd_0p050000_endpoint\\minus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": -0.001,
+      "label": "minus_full",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\minus_full",
+      "mode": "packed"
+    }
+  ],
+  "change": "Replace only Poisson residual evaluation with binary128 arithmetic. Kernel uses the existing double psi/n/p; packed recomputes physical psi and Boltzmann density from the actual packed double state. Original Jacobian, state storage, stable merit, source, 200 iterations, 1e-6 carrier gate and 1e-8 KCL gate retained.",
+  "production_changed": false,
+  "qualification": "A diagnostic candidate. Do not combine qualified points with prior implementations to claim 16/16."
+}

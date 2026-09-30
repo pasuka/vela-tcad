@@ -1,0 +1,14 @@
+{
+  "input_hashes": {
+    "build-release/enormal_restore_20260912/vendor_reference/enormal_native_models.par": "aab018ee48a57521decb4d70fb3be4f67f02a1c6e082c930330e5a838a810b4f",
+    "build-release/hfs_observer_preflight_20260912/v2/canali_diagnostic.h": "a3ea05e38fcdd88fab701111e34955b52b83cfa5c5d7a90d7b46a41d2cde1f21",
+    "build-release/hfs_observer_preflight_20260912/v2/canali_diagnostic_test.cpp": "46d4422f148e9412232a5061d20d9f9591b1a3eb68ab3b39fb83fc7d995f90a9",
+    "build-release/hfs_observer_preflight_20260912/v2/canali_diagnostic_test.exe": "c7543bfe3ee650a1b66d6b82cbf1816e44d67cf2e4a87a80773a9dc2606fdf79",
+    "build-release/hfs_observer_preflight_20260912/v2/compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/hfs_observer_preflight_20260912/v2/pmi_vela_hfs_observer.C": "d035d03de2e0e992dbe0f52f1a6ebdb74e9ecabc57f8dd776315108e4738ec3a",
+    "build-release/hfs_observer_preflight_20260912/v2/values.csv": "7b897e4fd3775e51cdd4a9fe50a3359cb4fab5c4f59f629acc5e42ede8dfa4d1",
+    "reference_tcad/simplemos_sentaurus2022/hfs_observer_preflight_20260912/v2/checks.csv": "c9056672bed0dcb9b4d5ebf33827b6c3c13d6e32378062368ebd77133609ad10",
+    "reference_tcad/simplemos_sentaurus2022/hfs_observer_preflight_20260912/v2/summary.json": "af240990957371337d675e18e2169ef6ca32d092f6538b565e92674b0d47aa88",
+    "scripts/prepare_simplemos_hfs_observer_v2_20260912.py": "24c05a45ac58fb2eb3007b305d369f7855f948762aa937cebd98a54eb95f887f"
+  }
+}

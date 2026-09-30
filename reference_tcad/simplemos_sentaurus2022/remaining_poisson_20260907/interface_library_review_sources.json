@@ -1,0 +1,31 @@
+{
+  "scope": "Read-only source and manual comparison; no simulator execution or implementation changes",
+  "charon_commit": "7cc38745625a6011ae3584ed111ec7ee74fb890e",
+  "genius_commit": "543da8452d5dfd33e6f8c457f962f6f670f0fce7",
+  "input_hashes": {
+    "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\m79_research\\sdevice_ug_local_2022.txt": "a9f446d57a1ccfe2a2c16d9ccb263c74b9b3e295ad97e077a1d5997a46a852ae",
+    "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\reference_tcad\\simplemos_sentaurus2022\\remaining_poisson_20260907\\interface_formula.csv": "d57db26a64bebd9a972d6d5b8b401a263ec09bb987196b13ea22941443293bcc",
+    "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\docs\\validation\\simplemos_remaining_poisson_dielectric_localization_2026-09-07.md": "bb6347248f6d339afacb953adfa1a33e4290ded987bfc9a8ac258d739013c398",
+    "D:\\code-repo\\tcad-charon\\src\\evaluators\\Charon_ClosureModel_Factory_impl.hpp": "ce2526b2e5b02affc3abb8f7aa239a3ac71b550b567d151314f11e027da2808e",
+    "D:\\code-repo\\tcad-charon\\src\\evaluators\\Charon_PotentialFlux_impl.hpp": "ca19e8c7cb865f9c20d777e06df5b727f751457f90ecd2c51290415d46151cc2",
+    "D:\\code-repo\\tcad-charon\\src\\equation_sets\\Charon_EquationSet_NLPoisson_impl.hpp": "21c34620abc4414b3cbe5c60729ccd9592c9747d019e1a783872e3b5e314f6f4",
+    "D:\\code-repo\\tcad-charon\\src\\evaluators\\Charon_SGCVFEM_PotentialFlux_impl.hpp": "8029199ef2b65a52924c037efedf2b06927d1a5169d67d75881f996cdd71812e",
+    "D:\\code-repo\\tcad-charon\\src\\evaluators\\Charon_Integrator_SubCVFluxDotNorm_impl.hpp": "b7747e14c142824fe272c44aeff332e28b6ffa47c75d3dc0f86ff174dbcf525c",
+    "D:\\code-repo\\tcad-charon\\src\\evaluators\\Charon_SGCharon1_PotentialFlux_impl.hpp": "d4479cd59864ac569f8e4a0babc4bf8b84962ff0544afe15cf6fb19388c6007c",
+    "D:\\code-repo\\tcad-charon\\test\\nightlyTests\\trapSRH\\nmosfet.nlp.inp": "a009c074bfb34068002e316f096cba9adac38363ec99cc738dcbfafd87b22393",
+    "D:\\code-repo\\Genius-TCAD-Open\\src\\solution\\semiconductor_region.cc": "9f3b9eb335da6a77cfd83b533787eb04d2e11ae241598aad92c2c1bb5b309e72",
+    "D:\\code-repo\\Genius-TCAD-Open\\src\\solution\\insulator_region.cc": "b6194be32b9bbc97494bd64e30e72456d318756c74056a6b8daa7003777cf820",
+    "D:\\code-repo\\Genius-TCAD-Open\\include\\solution\\fvm_node_info.h": "c676cb6449200a2effd7fa2e7fab040e14d243b94de34688f61b91586713f630",
+    "D:\\code-repo\\Genius-TCAD-Open\\src\\solver\\poisson\\poisson_semiconductor.cc": "04682556fa8dc9117681f5da243081d2207fe60861935f9f9a8647ae8acfe9af",
+    "D:\\code-repo\\Genius-TCAD-Open\\src\\solver\\poisson\\poisson_insulator.cc": "64566273a5531a24ae4090c5cef99534117fcd922864efbcfa867594bc48ba51",
+    "D:\\code-repo\\Genius-TCAD-Open\\src\\solver\\poisson\\poisson_boundary_is_interface.cc": "ec6d8b5c0953003476797171b7c531a1731219af43cbb5d6f7a3870641afefea",
+    "D:\\code-repo\\Genius-TCAD-Open\\src\\solver\\poisson\\poisson.cc": "995f426bb311671b027718141d941edf27ea82c89f78d2c0777a1baa15ffa4ed",
+    "D:\\code-repo\\Genius-TCAD-Open\\src\\solver\\ddm1\\ddm1_semiconductor.cc": "5c0714977c800900545c08bbd1861cb5488c8f4f593c81780afbf6cf7f36dfe6",
+    "D:\\code-repo\\Genius-TCAD-Open\\src\\solver\\ddm1\\ddm1_insulator.cc": "05f8c2ca18d5289eeac117f336a9e765d9cb49cc1d48c44b3c8ce2ae84982e8e",
+    "D:\\code-repo\\Genius-TCAD-Open\\src\\solver\\ddm1\\ddm1_boundary_is_interface.cc": "99318ca950f58f608175824cf6d9847127158d880ee8363de1a8f9a43909c25c",
+    "D:\\code-repo\\tcad-charon\\src\\Charon_Material_Properties.cpp": "c2ed2e5ffdda1445b549ffa601f10d10f1d8a1148df8ca9351a01443a7d805e5",
+    "D:\\code-repo\\Genius-TCAD-Open\\src\\material\\Si\\Si_basic.cc": "27543ad01014359223a5742efc21d3cf4cdbf21166465757aa4685261bdfc083",
+    "D:\\code-repo\\Genius-TCAD-Open\\src\\material\\SiO2\\SiO2_basic.cc": "8f9958b5d5372745a0543e0bd27065701a565cdff20917b927cd22010dcee0ee",
+    "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\docs\\validation\\simplemos_interface_permittivity_sentaurus_charon_genius_review_2026-09-07.md": "18ee1d0a0d000b4cad1d07cce178fb491e8348de869ce30d6bb464fd253ab4b1"
+  }
+}

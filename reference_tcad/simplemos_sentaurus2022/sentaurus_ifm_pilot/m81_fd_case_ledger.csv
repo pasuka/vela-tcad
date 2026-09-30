@@ -1,0 +1,11 @@
+device,case,fixed_charge_cm_3,deck,exit_code,current_A_per_um
+n19,zero,0.0,build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n19/zero/m81_des.cmd,0,1.95731960113833e-06
+n19,plus_1e13,10000000000000.0,build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n19/plus_1e13/m81_des.cmd,0,1.95834522869426e-06
+n19,minus_1e13,-10000000000000.0,build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n19/minus_1e13/m81_des.cmd,0,1.95629430057882e-06
+n19,plus_5e12,5000000000000.0,build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n19/plus_5e12/m81_des.cmd,0,1.95783237405404e-06
+n19,minus_5e12,-5000000000000.0,build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n19/minus_5e12/m81_des.cmd,0,1.95680690998601e-06
+n23,zero,0.0,build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n23/zero/m81_des.cmd,0,1.56350743444759e-08
+n23,plus_1e13,10000000000000.0,build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n23/plus_1e13/m81_des.cmd,0,1.564622466223e-08
+n23,minus_1e13,-10000000000000.0,build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n23/minus_1e13/m81_des.cmd,0,1.56239322903294e-08
+n23,plus_5e12,5000000000000.0,build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n23/plus_5e12/m81_des.cmd,0,1.56406484721451e-08
+n23,minus_5e12,-5000000000000.0,build-release/m81_sentaurus_ifm_pilot/fixed_charge_bundle/n23/minus_5e12/m81_des.cmd,0,1.56295022744895e-08

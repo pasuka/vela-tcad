@@ -1,0 +1,10 @@
+{
+  "scripts_syntax_checked": [
+    "scripts\\report_simplemos_native_pair_source_20260909.py",
+    "scripts\\analyze_simplemos_native_pair_source_20260909.py",
+    "scripts\\native_simplemos_phumob_pair_source_20260909.py"
+  ],
+  "links_checked": 12,
+  "manifests_verified": 6,
+  "direct_hash_entries_verified": 582
+}

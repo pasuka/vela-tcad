@@ -1,0 +1,5 @@
+vg,vd,high_absolute_improved,low_absolute_nonworse,paired_log_improved,qualified
+0.8,0.05,True,True,True,True
+0.8,1.0,True,True,True,True
+1.0,0.05,True,True,True,True
+1.0,1.0,True,True,True,True

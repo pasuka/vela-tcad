@@ -1,0 +1,9 @@
+{
+  "strict_states": 18,
+  "passed_amplitudes": 4,
+  "amplitudes": 8,
+  "new_nonlinear_solves": 18,
+  "new_sentaurus_runs": 0,
+  "m82_released": false,
+  "m83_released": false
+}

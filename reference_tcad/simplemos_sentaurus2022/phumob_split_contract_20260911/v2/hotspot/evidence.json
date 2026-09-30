@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "scripts/localize_simplemos_split_contract_baseline_20260911.py": "1273167b17f13d60d1c493c8d5523b4c09089f69a920d826f82ee0144bc3da9e",
+    "build-release/split_contract_0911/v2/states/n23/1.0/0/operator.json": "8d1f03339b2fa09e0ac8b554a2d198af252467dc89cbce8ca24eaf82a1bb59d1",
+    "build-release/split_contract_0911/v2/states/n23/1.0/0/results.csv.base.json": "2e2700ab8bca95392d6b31cc5ac2ed18517e06bebe6f6d5fbb8bff85f30696d9",
+    "build-release/split_contract_0911/v2/states/n23/1.0/0/results.csv": "7db5759014b0a2b89b1bef5c3301def2a3b728b7c8ae316d0a015ff8c6e26a8e",
+    "build-release/split_contract_0911/v2/states/n23/1.0/0/baseline.csv": "06f464394d7b49f77f9829e2f265e233190e50dec4228f161671a5c199df80ed",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_contract_20260911/v2/hotspot/summary.json": "88ffa5a068c4433612695e6bb56a8cf704adce354b3c8e15fd1bd1fdd7969681",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_contract_20260911/v2/hotspot/edges.csv": "8107ed55b9cd748ebced16ac9b7409f5fdbefd715391a09b888eef459fe91215"
+  }
+}

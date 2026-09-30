@@ -1,0 +1,13 @@
+{
+  "input_hashes": {
+    "build-release/phumob_box_20260909/qualified_state/ctest_full.log": "7f3919e8b5caca09a39f3c164268b23695786cc95209779748b31943cb45c371",
+    "build-release/phumob_box_20260909/qualified_state/ctest_full.xml": "3077bae6e223e776c5e741600d15d1bbe39f95ed9afc470b0e7b7ff403b21626",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/ctest_comparison.json": "cf826b308b2ff7f1acac919d85ec3be93e9b38fbe9c4c7ccea099da95cf3dd18",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/dc_comparison_evidence.json": "cadc0c4d33f4a80b2f93b680db629ceecc3522b82ad9e9b165a5db1c9cb0834a",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/nwell_pairs.csv": "0ea4276aed490ce068c7ca0ebb5a27312c95ed03da659a7fd9d6f56fe550351e",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/post_evidence.json": "31b08cf91240c7a0f2bfaa3106352aab5634ec39d1e0bba1b3e16a49ce599cdc",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/review_facts.json": "0a391abb6c28e2d5c18cb6a719e1dc3767512aecd9b6084e4b0005097f04160c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_fix_20260909/ctest_comparison.json": "a365bbb55d030083ae96a9b6b82b811beee0b66321a523d14b34019770cd6602",
+    "scripts/seal_simplemos_phumob_box_20260909.py": "bfaa878373b4f8eefa046040c97657305ee15f633c142aeb36612a1dcd925ccd"
+  }
+}

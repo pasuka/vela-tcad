@@ -1,0 +1,6 @@
+{
+  "local_derivatives_passed": true,
+  "native_pilot_passed": true,
+  "native_remaining_response_pending": true,
+  "release": "DC numerical qualification may be assessed now; Enormal stage release still requires all four native and cross-solver response cases. No HFS or curve release from this run alone."
+}

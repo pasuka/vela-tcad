@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/native_evidence.json": "f9bd6e4d308d9c2c73f91d59a9122ca7df847526f7cfc9f301b9a79b39f595fd",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/native_overlap.csv": "8b17fdd61bacc4fccf1f6bf0fa0336e055ff6bd501b49d5799e595b99dd8339c",
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/native_points.csv": "1104712b87063aecf310f919336c8500950854724e77865a0f0656f0f69fd201",
+    "scripts/qualify_simplemos_enormal_curves_20260912.py": "0cba1dee3618bb0d0a14f96a0281273a1ebbe1b91214e9d4ede4d6245b7a1091"
+  }
+}

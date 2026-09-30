@@ -1,0 +1,39 @@
+{
+  "arms": {
+    "baseline_refined": {
+      "total": 8,
+      "qualified": 8,
+      "failed": 0,
+      "qualified_max_abs_Id_error_relative": 0.14064183367952676,
+      "diagnostic_all_max_abs_Id_error_relative": 0.14064183367952676,
+      "failure_reasons": []
+    },
+    "masetti_plain": {
+      "total": 8,
+      "qualified": 0,
+      "failed": 8,
+      "qualified_max_abs_Id_error_relative": null,
+      "diagnostic_all_max_abs_Id_error_relative": 0.13699519318067654,
+      "failure_reasons": [
+        "carrier_row_convergence_line_search_rejected"
+      ]
+    },
+    "masetti_refined": {
+      "total": 8,
+      "qualified": 8,
+      "failed": 0,
+      "qualified_max_abs_Id_error_relative": 0.13699519318067677,
+      "diagnostic_all_max_abs_Id_error_relative": 0.13699519318067677,
+      "failure_reasons": []
+    }
+  },
+  "native_states": 16,
+  "native_qualified": 16,
+  "strict_qualified_model_pairs": 8,
+  "qualified_nwell_pairs": 8,
+  "scope": "Eight independent working points; composite bulk/surface/high-field control. Failed outcomes remain diagnostic; no full-curve or initialization-invariance qualification.",
+  "production_changes": false,
+  "acceptance_changes": false,
+  "m82_released": false,
+  "m83_released": false
+}

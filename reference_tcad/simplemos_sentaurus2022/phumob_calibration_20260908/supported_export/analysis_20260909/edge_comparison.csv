@@ -1,0 +1,17 @@
+key,model,edges,max_relative,qualified
+m65_n19_vd_0p050000_endpoint_vg_040,masetti_control,2691,4.440892098500626e-16,True
+m65_n19_vd_0p050000_endpoint_vg_050,masetti_control,2691,4.440892098500626e-16,True
+m65_n19_vd_0p050000_endpoint_vg_040,phumob,2691,7.357722481060591e-06,False
+m65_n19_vd_0p050000_endpoint_vg_050,phumob,2691,7.357722481060591e-06,False
+m65_n19_vd_1p000000_endpoint_vg_040,masetti_control,2691,4.440892098500626e-16,True
+m65_n19_vd_1p000000_endpoint_vg_050,masetti_control,2691,4.440892098500626e-16,True
+m65_n19_vd_1p000000_endpoint_vg_040,phumob,2691,7.357722481060591e-06,False
+m65_n19_vd_1p000000_endpoint_vg_050,phumob,2691,7.35772248194877e-06,False
+m65_n23_vd_0p050000_endpoint_vg_040,masetti_control,2691,5.551115123125783e-16,True
+m65_n23_vd_0p050000_endpoint_vg_050,masetti_control,2691,5.551115123125783e-16,True
+m65_n23_vd_0p050000_endpoint_vg_040,phumob,2691,7.354549003579791e-06,False
+m65_n23_vd_0p050000_endpoint_vg_050,phumob,2691,7.354549003579791e-06,False
+m65_n23_vd_1p000000_endpoint_vg_040,masetti_control,2691,5.551115123125783e-16,True
+m65_n23_vd_1p000000_endpoint_vg_050,masetti_control,2691,5.551115123125783e-16,True
+m65_n23_vd_1p000000_endpoint_vg_040,phumob,2691,7.354549003579791e-06,False
+m65_n23_vd_1p000000_endpoint_vg_050,phumob,2691,7.354549003579791e-06,False

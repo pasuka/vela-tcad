@@ -1,0 +1,10 @@
+{
+  "DC": 12,
+  "qualified_DC": 10,
+  "qualified_dual": 4,
+  "qualified_ports": 12,
+  "qualified_physical_gates": 2,
+  "max_row_ratio": 0.0006336235018643057,
+  "max_manual_absolute_Id_error": 1.1262413224244483e-10,
+  "qualified": false
+}

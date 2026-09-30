@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/native_points.csv": "0009d7088e577a8379eda85acc4fa5cb87277951f20e28839f3e2da734ff2b52",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/supported_export/native_points.csv": "0e3bfa67bf44d4c4e1b6df0a11c540a576eeab7fd4bd4598bc43d3a8590a0928",
+    "reference_tcad/simplemos_sentaurus2022/phumob_packed_restart_20260910/cohort_v2/comparison.csv": "5272476a0d5e5b2180b19a4844fa30dcbd3d51d01b6d85b979e1c193dea1dd44",
+    "reference_tcad/simplemos_sentaurus2022/phumob_packed_restart_20260910/cohort_v2/comparison_summary.json": "c9249492d7da25ec58732a2ff378513396b710484b9ae6706cfd1213b214ca58",
+    "reference_tcad/simplemos_sentaurus2022/phumob_packed_restart_20260910/cohort_v2/dc_evidence.json": "6162fe4a646c53e0ebf4210000a1c7f359e4203e4d1d4dc2bfe10913faa147fc",
+    "reference_tcad/simplemos_sentaurus2022/phumob_packed_restart_20260910/cohort_v2/selected_states.csv": "be61fdefc767fcfafbdde32a400e742f1b6c72a38ed9ee841434e36e9b47102a",
+    "reference_tcad/simplemos_sentaurus2022/phumob_packed_restart_20260910/cohort_v2/source_activation.csv": "60f7308587828ab6b27788091abdf62407c2a803ddcc867a5160b4ac1ce177b3"
+  }
+}

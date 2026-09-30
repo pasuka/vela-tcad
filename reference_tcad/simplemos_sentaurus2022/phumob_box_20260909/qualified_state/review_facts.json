@@ -1,0 +1,15 @@
+{
+  "points": 8,
+  "attempts": 32,
+  "accepted_attempts": 32,
+  "failed_attempts": 0,
+  "max_row_ratio": 7.354958329163482e-07,
+  "max_kcl_over_Id": 1.8247052028093945e-14,
+  "max_port_relative": 1.0658141036401503e-14,
+  "fixed_state_density_preflight_count": 8,
+  "fixed_state_density_max_relative": 0.0,
+  "distinct_nonzero_cross_entries": 432,
+  "native_error_improved_points": 8,
+  "candidate_pair_error_max_percent": 0.004092438275549171,
+  "legacy_pair_error_max_percent": 1.0707473443189564
+}

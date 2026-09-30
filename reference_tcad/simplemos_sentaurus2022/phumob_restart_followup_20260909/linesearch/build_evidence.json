@@ -1,0 +1,21 @@
+{
+  "input_hashes": {
+    "build-release/libvela_core.a": "45efc8522243b1d047fa674fc31b7a49c5ada5646b4e6c21d1ff68a5f48e9756",
+    "build-release/phumob_restart_followup_20260909/linesearch/audit_shared.h": "a97ee059f431fd9dcc637bbb205dd7b4d5c9d8dbb6997446e54bcca8c371e0b7",
+    "build-release/phumob_restart_followup_20260909/linesearch/compile_commands.json": "6fcc90b11ed3394e24bda4e2a6ced19f4dc87247ae2108b3fdedf7509119d9eb",
+    "build-release/phumob_restart_followup_20260909/linesearch/CoupledDDAssembler.compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_restart_followup_20260909/linesearch/CoupledDDAssembler.cpp": "113c52e6a8d03f487159ad34fe7647b4f0a827fb13fb7d6cb37c0b7f09112edf",
+    "build-release/phumob_restart_followup_20260909/linesearch/CoupledDDAssembler.o": "48fff2bbd2aa63f620b2cfbb5d3366a182ac0449da6705fc84e7f5c9d9bd9790",
+    "build-release/phumob_restart_followup_20260909/linesearch/link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_restart_followup_20260909/linesearch/link_command.json": "284c5dbc78e3db8c366858d91d8961c0ef55cc4ead4903c85499e593f4eca15b",
+    "build-release/phumob_restart_followup_20260909/linesearch/NewtonSolver.compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_restart_followup_20260909/linesearch/NewtonSolver.cpp": "a57815a98e5ab2e4ca93519ce7f8ab988f22a750cf75363208a91a432f7611c0",
+    "build-release/phumob_restart_followup_20260909/linesearch/NewtonSolver.o": "83b498bb82726c8ac6fa3465d6320637834718bc95a153a94209243b53bad6a5",
+    "build-release/phumob_restart_followup_20260909/linesearch/runner.exe": "3785382cf5c9abb67cf18a5aa61dcda16576052b20fe17afed3c87b58965630f",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/restart_coordinates/build_evidence.json": "008aef65c997c1561f956d88dde3dbdbaf4231340ad24725a1e3e2ea552e016b",
+    "scripts/audit_simplemos_e1089_linesearch_20260909.py": "c4940cae173bd953b50d9750b5a6226b38ce702084e9af455775650a8084ea73",
+    "scripts/audit_simplemos_linesearch_precision_20260908.py": "7d4f76faacc57edf26762dc83c4dc36d33a4e19675a0277b1a0fabcbfd4b5332",
+    "scripts/audit_simplemos_minority_residual_20260906.py": "049664c1bc5b3fee12f33bc2459f1a68a6485e2283cf298859000ce3431da6ab",
+    "src/equation/CoupledDDAssembler.cpp": "8620d655c44702626f7051e399f872a8f01cc10b6d7108b2ca4218f05f5b8799"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/export_precision.csv": "58548338629f6c40e75b993211db3930fb8f95c5035e013f4c4aece28e8d7b83",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/export_precision_freeze.json": "3964cb445fcd40716c8c21657a6875091333178129398832145dc89b14120a40",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/export_precision_summary.json": "aa16f75e7d8adc537b2b1465667349c73b3a96e64a6e5186fde491e0184e0c1d"
+  }
+}

@@ -1,0 +1,4 @@
+case,current_relative,potential_max_V,density_relative,mobility_relative,qualified
+m65_n19_vd_1p000000_endpoint,0.0,0.0,0.0,0.0,True
+m65_n23_vd_0p050000_endpoint,0.0,1.5777218104420236e-30,0.0,0.0,True
+m65_n23_vd_1p000000_endpoint,0.0,0.0,0.0,0.0,True

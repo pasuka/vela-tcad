@@ -1,0 +1,7 @@
+{
+  "native_exit_and_bias_qualified": 20,
+  "response_qualified": 0,
+  "acceptance_relaxed": false,
+  "analysis_error": "Original response analyzer divided by the exactly zero central slope; preserve its traceback. This record classifies the zero signal as failure, not a linearity pass.",
+  "manual": "T-2022.03 Device User Guide page 995, Factor Models Applied to Mobility Components, Equation 1074."
+}

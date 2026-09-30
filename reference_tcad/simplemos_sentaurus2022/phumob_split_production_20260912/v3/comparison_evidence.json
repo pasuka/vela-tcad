@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/native_points.csv": "0009d7088e577a8379eda85acc4fa5cb87277951f20e28839f3e2da734ff2b52",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/supported_export/native_points.csv": "0e3bfa67bf44d4c4e1b6df0a11c540a576eeab7fd4bd4598bc43d3a8590a0928",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_production_20260912/v3/comparison.csv": "c4e6c3a75cd3380cd2800329afe6e5c0d3a33316dec541de8a990e165af4fd33",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_production_20260912/v3/comparison_summary.json": "e8694cb01d7207739ed9c2d1d5c4e0bfa8671d0e32b2bb2be35fd1c635c5fad9",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_production_20260912/v3/dc_evidence.json": "3a805e7e6e09c7a3f305a8466be4b3c988c99e151abd49e17731cda0a66eb01d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_production_20260912/v3/selected_states.csv": "bbaf582a8872dbf864ba1ee30597237ab2ddd0e4672893313eca37fb8cd6ed65",
+    "reference_tcad/simplemos_sentaurus2022/phumob_split_production_20260912/v3/source_activation.csv": "184deb0cb2622daad438bc8173105886a7190e5e8e5f4f70c12acb3b507812d2"
+  }
+}

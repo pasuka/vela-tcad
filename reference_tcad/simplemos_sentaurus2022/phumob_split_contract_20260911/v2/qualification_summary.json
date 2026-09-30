@@ -1,0 +1,20 @@
+{
+  "scope": "experimental unified state and fixed-state qualification; no production Newton migration or DC",
+  "split_partition_cases": 6,
+  "main_checkpoint_jobs": 54,
+  "additional_port_jobs": 8,
+  "hotspot_micro_directions": 18,
+  "nonzero_edge_responses": 198,
+  "nonzero_port_directions": 6,
+  "small_step_jv_blocks_passed": 18,
+  "full_step_jv_blocks_passed": 17,
+  "full_step_jv_blocks_total": 18,
+  "whole_dd_merit_descent": 12,
+  "old_production_residual_cases_passed": 5,
+  "old_production_residual_cases_total": 6,
+  "old_production_residual_failure": "n23 Vd=1 Vg=0 hole node 1087; frozen 1e-10 gate retained",
+  "formal_dual_initialization_cases": "10/16 unchanged",
+  "new_test_assertions": 48,
+  "ctest": "23/23",
+  "sentaurus_runs": 0
+}

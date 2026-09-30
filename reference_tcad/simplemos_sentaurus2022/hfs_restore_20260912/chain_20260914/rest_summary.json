@@ -1,0 +1,11 @@
+{
+  "element_carrier_pairs": 482,
+  "columns": 4338,
+  "qualified": 4338,
+  "max_nonzero_relative": 6.2265827423873006e-30,
+  "max_zero_absolute": 0,
+  "all_prototype_columns_qualified": true,
+  "native_matrix_qualified": false,
+  "production_matrix_qualified": false,
+  "cutoff_boundary_qualified": false
+}

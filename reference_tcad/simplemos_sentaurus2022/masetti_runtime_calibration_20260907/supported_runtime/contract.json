@@ -1,0 +1,37 @@
+{
+  "status": "frozen_before_execution",
+  "jobs": [
+    {
+      "key": "m65_n19_vd_0p050000_endpoint_vg020",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 1.0,
+      "native_Id_A_per_um": 6.4853828141673e-06
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg020",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 1.0,
+      "native_Id_A_per_um": 3.83983089057583e-05
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint_vg020",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 1.0,
+      "native_Id_A_per_um": 2.08718282997021e-07
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg020",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 1.0,
+      "native_Id_A_per_um": 1.24108214099688e-06
+    }
+  ],
+  "remote": "/tmp/vela_simplemos_masetti_runtime_20260907/supported",
+  "prior_failure": "Default Element mobility exposes no Edge-RegionWise eMobility runtime dataset. First diagnostic attempts are retained and do not qualify native DC exports.",
+  "changes": "Restrict scalar mobility to vertex/element and vector current to element. Explicit topology still includes element-vertex indices, measures and element-edge coefficients.",
+  "physics_solver_and_gates_unchanged": true
+}

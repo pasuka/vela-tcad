@@ -1,0 +1,15 @@
+{
+  "input_hashes": {
+    "build-release/pr_fix/roundtrip_v2/failed/edges.csv": "e30556f49c01cb7258ef07cb3b8db20b30f7ca60bf4a5a85c1050d8a014048c4",
+    "build-release/pr_fix/roundtrip_v2/failed/state.csv": "0bf0e026fc20341669272dbf742593b97e39990a475657b9233eb51f8301cfe8",
+    "build-release/pr_fix/roundtrip_v2/failed/vector.csv": "4363ae897fbb50ded3019fb7bc3b27db46abd7b7a45e4df7c667a0ce9992d007",
+    "build-release/pr_fix/roundtrip_v2/failed/vector.json": "8555ecf794cef813226e63c1414ee7e47d906d15f28344aa1b102b16501fc201",
+    "build-release/pr_fix/roundtrip_v2/failed/vector.status.json": "a39840f7bee798bef94154f7755c74fe21f17c6ccf50053a653411e6ce6f0a21",
+    "build-release/pr_fix/roundtrip_v2/failed/vector.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/pr_fix/roundtrip_v2/failed/vector.stdout.txt": "27889436d75893f2b757f007edcae2957eff79fad9afb3d6ff36d8bf8b1c2eec",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/packed_roundtrip/replay_evidence.json": "29f12a7ad77ed12da33372808f5839212049b8f366ab1d1c0e527f4a25572aad",
+    "reference_tcad/simplemos_sentaurus2022/phumob_packed_restart_20260910/roundtrip_v2_evidence.json": "9b232e76484000d3334287a54fd0af663e9d5bbc3ce04320f787367292bdf526",
+    "reference_tcad/simplemos_sentaurus2022/phumob_packed_restart_20260910/vector_summary.json": "2bae48d924edaad9044ff4dd0c429439582f211dc1b3a96d4bbd8867aecffd1f",
+    "scripts/check_simplemos_packed_vectors_20260910.py": "10599004c3d6a4c0d35064df13d42565e54e1aba285054027e4c325eb967b8e8"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "reviewed_states": 40,
+  "new_states": 30,
+  "reused_states": 10,
+  "dc_calibration_passed": true,
+  "jvp_passed": true,
+  "observer_passed": true,
+  "no_production_changes": true,
+  "m82_released": false,
+  "m83_released": false,
+  "input_hashes": {
+    "scripts/review_simplemos_vector_chain_matrix.py": "130bb34eccad5f21bef570ab85047e3ad35cd321415a758c9bedb20420c28b95",
+    "tests/regression/test_simplemos_vector_chain_matrix.py": "7896ff0440eb9148632dd142041b6b4ca2bc835d21e4c48500ed62484606394e",
+    "reference_tcad/simplemos_sentaurus2022/strict_flux_precision/current_error_ledger.csv": "c0b9df89c4c976bbbcc3817252d581887a50139c3b8aebb661d512ff6e68a1b3"
+  }
+}

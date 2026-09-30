@@ -1,0 +1,5 @@
+key,failed_preflight_rows,self_consistent_DC_run,original_frozen_gates_retained
+m65_n19_vd_0p050000_endpoint_vg020,522,False,True
+m65_n19_vd_1p000000_endpoint_vg020,525,False,True
+m65_n23_vd_0p050000_endpoint_vg020,475,False,True
+m65_n23_vd_1p000000_endpoint_vg020,479,False,True

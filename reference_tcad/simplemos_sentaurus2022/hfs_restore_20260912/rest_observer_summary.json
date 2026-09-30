@@ -1,0 +1,9 @@
+{
+  "samples": 13188,
+  "final_state_qualified": 13188,
+  "all_observed_final_states_qualified": true,
+  "canali_sample_max_relative": 5.551115123125783e-16,
+  "cell_formation_qualified": false,
+  "production_changed": false,
+  "scope": "All adjacent hypotheses retained. Coverage is last-call only. Mathematical PhuMob floor is unfitted and retains its existing hole qualification gap. No field or cell identity is inferred from a minimum error alone."
+}

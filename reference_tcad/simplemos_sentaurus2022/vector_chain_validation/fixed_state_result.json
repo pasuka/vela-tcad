@@ -1,0 +1,10 @@
+{
+  "Jv_checks_passed": true,
+  "prediction_A_per_um_at_1e13": 9.317600172195675e-12,
+  "old_self_consistent_FD_A_per_um": 9.317599561950568e-12,
+  "relative_error": 6.549381126319531e-08,
+  "base_current_relative_change": 1.716671249596402e-11,
+  "adjoint_relative_residual": 4.6656987338463347e-17,
+  "minimum_defect_reduction": 0.9999894544171999,
+  "passed": true
+}

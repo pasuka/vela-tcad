@@ -1,0 +1,32 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_production_migration_20260907/build_final.log": "8b79eff944d93cf2017e828a361d741d0499eda5709652060297885713fb68d8",
+    "build-release/simplemos_production_migration_20260907/configure_final.log": "102353c355a577da05ee6b2d1da113c0d24c711a604bb057024a8acb56650850",
+    "build-release/simplemos_production_migration_20260907/ctest.log": "020728106296edae06e08b5473c6033d046716ecbe8f0b0f4c97ce9280f4e1ed",
+    "build-release/simplemos_production_migration_20260907/geometry_test.log": "1bbebb51af385d76d2a1d622cee34c936228019fc4aa87f23746caa8290afb3e",
+    "build-release/simplemos_production_migration_20260907/numerics_test.log": "0bf35792898f383f38f8b796fa119d56f8295c397d8a757378ca27980bd039e2",
+    "build-release/simplemos_production_migration_20260907/run.log": "31493f8f81dbe6e7894e96654ad91b99960c9234b5605c17295084f8712f4a95",
+    "build-release/simplemos_production_migration_20260907/run_resumed.log": "c1bf7b622351bb55a7c4640073a8a6cf280dbb75256e104fe037c33b67d541ea",
+    "CMakeLists.txt": "70c988350866bdf6970f6c663cf9a3f202c29b56698c7067afd530d658c8afea",
+    "docs/config_schema.md": "0193fa424363caa71741649d42c0fb5b7b73090299d2885d93b4a50341a97abd",
+    "docs/validation/simplemos_production_consistency_and_local_fields_2026-09-07.md": "f5606a967fb3b4f8c5f126bfe0d58c7f74636244d799cfb7cf4c2da441645c4e",
+    "docs/validation/simplemos_production_migration_and_native_mobility_response_2026-09-07.md": "921feb3a4921d578b80314de17d0238fd60310e6c68734157d893cde28db115b",
+    "reference_tcad/simplemos_sentaurus2022/native_mobility_candidate_20260907/cache_consistent/cache_addendum_freeze.json": "dd12c9869d02451bb0c0568fba320c502d2b8dda669c77166a74a38bafb2e7b1",
+    "reference_tcad/simplemos_sentaurus2022/native_mobility_candidate_20260907/cache_consistent/local_fields.csv": "c3b0ac8484927e4087b12a56163e27cf781b130ea0dd03ac1704880d60c84a38",
+    "reference_tcad/simplemos_sentaurus2022/native_mobility_candidate_20260907/cache_consistent/preflight.csv": "38bb20e848624b851f0195f96c7b00594e78850f7031bd8bebf7d0f17a453fd3",
+    "reference_tcad/simplemos_sentaurus2022/native_mobility_candidate_20260907/cache_consistent/response.csv": "bbc9392ff592dcf96a8409d1707b378945fde276338b110087bd0361716d5194",
+    "reference_tcad/simplemos_sentaurus2022/native_mobility_candidate_20260907/cache_consistent/validation_evidence.json": "ab89472e2717d0190a2442595e4b71924ee2d3935a8f76617d77763fa229cba8",
+    "reference_tcad/simplemos_sentaurus2022/native_mobility_candidate_20260907/preflight.csv": "ee242158f6abbe6c8c170ce18a026aedee93b4c57a2e379013cecf7ae396a0da",
+    "reference_tcad/simplemos_sentaurus2022/production_migration_20260907/acceptance_addendum.json": "14b7c786fcee043a340a1d09e3def066f44a99b91db95d0103bd309bafbf397a",
+    "reference_tcad/simplemos_sentaurus2022/production_migration_20260907/acceptance_addendum_freeze.json": "e174dfa16bd8bcad1cba0ee107078230b7784221be8e08bbc0b491db7ed04065",
+    "reference_tcad/simplemos_sentaurus2022/production_migration_20260907/ctest_audit.json": "43606017d6ddeaa7ee5de928651cca4a8ac86412f7bb3b888cef4b81dc2908e9",
+    "reference_tcad/simplemos_sentaurus2022/production_migration_20260907/dc.csv": "1052cfee9aa527b8a5dca58f9fdc345559fdaff701209e96e45b5ca5b2d02aa9",
+    "reference_tcad/simplemos_sentaurus2022/production_migration_20260907/equivalence.csv": "b2520de4d76d96fb7f376acca425bd9597c4f0809e53da2236df62ec9aad22fc",
+    "reference_tcad/simplemos_sentaurus2022/production_migration_20260907/ports.csv": "af92c85cc73a2d378c390d7e7b83de953d4ce482b809cd082ae31af5c0d6bea7",
+    "reference_tcad/simplemos_sentaurus2022/production_migration_20260907/prechange_evidence.json": "4c83d8992df5a9dbb4157adbb52262cb3c0f31f3ba7ee4c485dcd9a453fd82f2",
+    "reference_tcad/simplemos_sentaurus2022/production_migration_20260907/validation_evidence.json": "7f88ac38d310f380d83007c5060641947fd49339113e87e16b083539d1da71ce",
+    "scripts/report_simplemos_production_and_mobility_20260907.py": "b32043ded9501be3394f4b66468540fcaa22efcaf0625c91fd92e55b3988c446",
+    "tests/test_newton_solver.cpp": "e11e6b209c82e2d1e722f98aeb5c8126f892213e72f5c625e7c2b5ff8d302e7d",
+    "tests/test_production_numerics.cpp": "1bc04a2efacccce1c632d193bfcbdad969d9286c9bf4d6a095589b0961152c6f"
+  }
+}

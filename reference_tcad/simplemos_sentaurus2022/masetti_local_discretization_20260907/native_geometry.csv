@@ -1,0 +1,3 @@
+device,coordinate_max_um,coefficient_permutation,coefficient_mapping_max_absolute,measure_permutation,measure_mapping_max_um2,cells,signed_Si_volume_max_difference_um2,legacy_K_relative_frobenius,region_local_K_relative_frobenius,cells_differing_from_raw_coefficients_at_1e_minus_10,cells_differing_from_signed_measure_at_1e_minus_14
+n19,0.0,"[1, 0, 2]",5.115907697472721e-13,"[0, 2, 1]",4.341043854678289e-21,2742,6.3108872417680944e-18,0.0011337730295990203,0.0011316729054734623,128,128
+n23,0.0,"[1, 0, 2]",1.5631940186722204e-13,"[0, 2, 1]",2.117582368135751e-21,2746,6.3108872417680944e-18,0.0011367060316664322,0.0011344623578564412,124,124

@@ -1,0 +1,9 @@
+{
+  "psi_max_V": 5.88e-15,
+  "phin_max_V": 4.4388347e-12,
+  "phip_max_V": 6.31125e-13,
+  "density_max_relative": 1.7185475265080186e-10,
+  "dual_Id_relative": 1.9095836023552692e-14,
+  "dual_qualified": true,
+  "error_percent": 0.0033879871442099585
+}

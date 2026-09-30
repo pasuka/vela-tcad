@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/fixed_raw_evidence.json": "597eeb7dee0cc703bbef557e04bfffe4ccbed15ec42efab02915e1b38b5b72a9",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/probe_consistency.csv": "d8a8f40bf9374a2ab50e859d4d333597da3b242950f53b4b9c29610807dd7954",
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/probe_summary.json": "7e2c88941b29edbab3a979242d3e07780e334d3f58f93e8bc472d6e0e798d977",
+    "scripts/analyze_simplemos_phumob_box_20260909.py": "46f16ee30e92aeb09fc7040da71e3b0ec9da508d38b1f0af3f68e217ac3a56d2"
+  }
+}

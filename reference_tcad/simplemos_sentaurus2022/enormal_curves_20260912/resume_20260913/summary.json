@@ -1,0 +1,11 @@
+{
+  "time": "2026-09-13T09:50:20.939550+08:00",
+  "completed_states": 306,
+  "remaining_states": 102,
+  "interrupted_targets": 4,
+  "runner": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_candidate_20260912\\v1\\bin\\vela_example_runner.exe",
+  "runner_sha256": "78598555862218fb68ae1c3cd506db4c2725fbb3c705f93c826bcf73ce9585c8",
+  "source_changed": false,
+  "acceptance_changed": false,
+  "method": "Original driver and cached completed solver/probe statuses. Repeat four archived unfinished targets from their original input seed; preserve the original one-reload rule for numerical failures."
+}

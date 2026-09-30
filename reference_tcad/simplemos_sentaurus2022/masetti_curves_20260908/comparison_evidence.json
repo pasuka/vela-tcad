@@ -1,0 +1,9 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/comparison.csv": "f2c35f55ed5ec15a9e2c8e05a9ae6fe874d99124ac7e90fcc0230a2488a3e37c",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/native_evidence.json": "7805383f70f50071bdb7664519caec5ea0a18cd2764f584c6378431209dbffaa",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/summary.json": "d5444f2ed52ac827e67dc29a62995e151c4be7d980779e32c28483b2483a9042",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/vela_continuation_evidence.json": "19f923f36ce7d5bbf00848e0ce9fb9c0567fdefd67e02fc4575492e76edc0ac2",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/vela_native_evidence.json": "1f352f975e29925fed13b4f05f86309a50d4d80d197b00ca34bc4e6110d39898"
+  }
+}

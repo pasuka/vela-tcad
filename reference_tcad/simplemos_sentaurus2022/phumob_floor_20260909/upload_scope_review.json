@@ -1,0 +1,126 @@
+{
+  "remote": "/tmp/vela_phumob_floor_20260909",
+  "archive_bytes": 2533111,
+  "files": [
+    {
+      "job": "T299",
+      "file": "input_fps.tdr",
+      "bytes": 1803602,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T299",
+      "file": "native_des.cmd",
+      "bytes": 995,
+      "same_as_previously_uploaded": false
+    },
+    {
+      "job": "T299",
+      "file": "result_050_circuit_des.sav",
+      "bytes": 306,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T299",
+      "file": "result_050_des.sav",
+      "bytes": 1110422,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T299",
+      "file": "runtime.tcl",
+      "bytes": 2360,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T300",
+      "file": "input_fps.tdr",
+      "bytes": 1803602,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T300",
+      "file": "native_des.cmd",
+      "bytes": 995,
+      "same_as_previously_uploaded": false
+    },
+    {
+      "job": "T300",
+      "file": "result_050_circuit_des.sav",
+      "bytes": 306,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T300",
+      "file": "result_050_des.sav",
+      "bytes": 1110422,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T300",
+      "file": "runtime.tcl",
+      "bytes": 2360,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T301",
+      "file": "input_fps.tdr",
+      "bytes": 1803602,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T301",
+      "file": "native_des.cmd",
+      "bytes": 995,
+      "same_as_previously_uploaded": false
+    },
+    {
+      "job": "T301",
+      "file": "result_050_circuit_des.sav",
+      "bytes": 306,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T301",
+      "file": "result_050_des.sav",
+      "bytes": 1110422,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T301",
+      "file": "runtime.tcl",
+      "bytes": 2360,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T350",
+      "file": "input_fps.tdr",
+      "bytes": 1803602,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T350",
+      "file": "native_des.cmd",
+      "bytes": 995,
+      "same_as_previously_uploaded": false
+    },
+    {
+      "job": "T350",
+      "file": "result_050_circuit_des.sav",
+      "bytes": 306,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T350",
+      "file": "result_050_des.sav",
+      "bytes": 1110422,
+      "same_as_previously_uploaded": true
+    },
+    {
+      "job": "T350",
+      "file": "runtime.tcl",
+      "bytes": 2360,
+      "same_as_previously_uploaded": true
+    }
+  ]
+}

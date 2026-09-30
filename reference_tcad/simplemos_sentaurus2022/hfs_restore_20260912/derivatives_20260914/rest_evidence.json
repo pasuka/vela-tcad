@@ -1,0 +1,15 @@
+{
+  "input_hashes": {
+    "build-release/hfs_restore_20260912/derivatives_20260914/rest_compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/hfs_restore_20260912/derivatives_20260914/rest_cpp.csv": "c3b2e84123ac8158aae46df7556555afd00dbe6c735d051e6956082d10b36243",
+    "build-release/hfs_restore_20260912/derivatives_20260914/rest_input.txt": "76ec128d455bfbbf3b1ed1fd83a1b2eecad7cbfd046e8bd30959a0cd67723799",
+    "build-release/hfs_restore_20260912/derivatives_20260914/rest_probe.cpp": "f0760d0a3cf49bbb01541fd81a17abf80d7e7d38308a2ff254cfcfeee5688bd0",
+    "build-release/hfs_restore_20260912/derivatives_20260914/rest_probe.exe": "7a99b71b509014682a7fb6a0bd2f1c35fb478f866b2d637373f79ae2a474ddb7",
+    "build-release/hfs_restore_20260912/pmi/canali_diagnostic.h": "a3ea05e38fcdd88fab701111e34955b52b83cfa5c5d7a90d7b46a41d2cde1f21",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/derivatives_20260914/rest_checks.csv": "5f0c7cff202d43de5bdd1c9986d156c9f5479f6f817cca99a9a5e7e9fbd760fd",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/derivatives_20260914/rest_contract.json": "8b12968279930b7ef43dd7d70df8af3b7853755d35879ff36fd41b4280d854dc",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/derivatives_20260914/rest_summary.json": "7f66e8b0239978f46b3a4bffd5ee6fdd62ae9cde270a8bd1eeaabcfaee1a1039",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/rest_observer_evidence.json": "b2d9d9fdf65df7dd6ff61350475778110cb1efb2dcf79a089aa622dafcf17538",
+    "scripts/check_simplemos_hfs_sample_derivatives_20260914.py": "8d18f409d27b8b9e1a894aa7909718492b61a13554dbee7448d9f3fe12af6518"
+  }
+}

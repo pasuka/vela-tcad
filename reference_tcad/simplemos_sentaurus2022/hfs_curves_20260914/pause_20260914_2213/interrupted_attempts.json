@@ -1,0 +1,83 @@
+[
+  {
+    "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_curves_20260914\\vela\\m65_n19_vd_0p050000_endpoint\\continuation\\vg_024\\attempt_0",
+    "case": "m65_n19_vd_0p050000_endpoint",
+    "arm": "continuation",
+    "index": 24,
+    "state_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_curves_20260914\\vela\\m65_n19_vd_0p050000_endpoint\\continuation\\vg_025\\attempt_0\\state.csv",
+    "output_state_exists": true,
+    "status": "administratively_interrupted_not_numerical_failure",
+    "present_files": [
+      "acceptance_edges.json",
+      "all_row.json",
+      "config.json",
+      "functional.json",
+      "input_freeze.json",
+      "state.csv"
+    ]
+  },
+  {
+    "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_curves_20260914\\vela\\m65_n19_vd_0p050000_endpoint\\native\\vg_018\\attempt_0",
+    "case": "m65_n19_vd_0p050000_endpoint",
+    "arm": "native",
+    "index": 18,
+    "state_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_curves_20260914\\initial\\m65_n19_vd_0p050000_endpoint\\vg_018\\state.csv",
+    "output_state_exists": false,
+    "status": "administratively_interrupted_not_numerical_failure",
+    "present_files": [
+      "acceptance_edges.json",
+      "all_row.json",
+      "config.json",
+      "functional.json",
+      "input_freeze.json"
+    ]
+  },
+  {
+    "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_curves_20260914\\vela\\m65_n19_vd_1p000000_endpoint\\continuation\\vg_025\\attempt_0",
+    "case": "m65_n19_vd_1p000000_endpoint",
+    "arm": "continuation",
+    "index": 25,
+    "state_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_curves_20260914\\vela\\m65_n19_vd_1p000000_endpoint\\continuation\\vg_026\\attempt_0\\state.csv",
+    "output_state_exists": true,
+    "status": "administratively_interrupted_not_numerical_failure",
+    "present_files": [
+      "acceptance_edges.json",
+      "all_row.json",
+      "config.json",
+      "config.status.json",
+      "config.stderr.txt",
+      "config.stdout.txt",
+      "functional.json",
+      "input_freeze.json",
+      "state.csv"
+    ]
+  },
+  {
+    "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_curves_20260914\\vela\\m65_n19_vd_1p000000_endpoint\\native\\vg_015\\attempt_0",
+    "case": "m65_n19_vd_1p000000_endpoint",
+    "arm": "native",
+    "index": 15,
+    "state_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\hfs_curves_20260914\\initial\\m65_n19_vd_1p000000_endpoint\\vg_015\\state.csv",
+    "output_state_exists": true,
+    "status": "administratively_interrupted_not_numerical_failure",
+    "present_files": [
+      "acceptance_edges.csv",
+      "acceptance_edges.json",
+      "acceptance_edges.status.json",
+      "acceptance_edges.stderr.txt",
+      "acceptance_edges.stdout.txt",
+      "all_row.csv",
+      "all_row.json",
+      "all_row.status.json",
+      "all_row.stderr.txt",
+      "all_row.stdout.txt",
+      "config.json",
+      "config.status.json",
+      "config.stderr.txt",
+      "config.stdout.txt",
+      "functional.json",
+      "input_freeze.json",
+      "state.csv"
+    ]
+  }
+]

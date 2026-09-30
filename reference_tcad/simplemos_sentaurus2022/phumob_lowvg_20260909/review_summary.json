@@ -1,0 +1,22 @@
+{
+  "points": 16,
+  "low_points": 8,
+  "low_attempts": 35,
+  "low_failed_attempts": 4,
+  "qualified_points": {
+    "legacy": 16,
+    "candidate": 15
+  },
+  "max_absolute_Id_error_percent": {
+    "legacy": 1.130937313934488,
+    "candidate": 0.8081352366535954
+  },
+  "improved_points": 15,
+  "source_components": 128,
+  "source_floor_active": 0,
+  "unfloored_source_max_relative": 0.007569188689407588,
+  "candidate_worst_row": 5.4509732227775776e-06,
+  "native_G_algorithm_identified": false,
+  "full_curve": false,
+  "defaults_changed": false
+}

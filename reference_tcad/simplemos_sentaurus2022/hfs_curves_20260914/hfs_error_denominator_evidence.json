@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/comparison_evidence.json": "998777fbee004ab16b4eb52350a580dab386b30cc85ac29bf781990764b21e7d",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/hfs_error_denominator_audit.csv": "fd89829ce32ca42a567640a044fb10b59d994c512d39867333f593e97ca46ccb",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/sixteen_evidence.json": "1254184dd840665069c5430d84ec37cbd56ffebc98b28e40609429629845e41e"
+  }
+}

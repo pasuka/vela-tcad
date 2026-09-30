@@ -1,0 +1,19 @@
+{
+  "scope": "Four matched integrated pair-source directions, direct native DC current, two signed amplitudes, zero drift and comparison to Vela finite differences. No fit and no finite volume replacement.",
+  "gates": {
+    "kcl": 1e-08,
+    "bias_V": 1e-10,
+    "zero_Id_relative": 1e-08,
+    "matched_sites": 8,
+    "prediction": 0.001,
+    "two_amplitude": 0.001,
+    "even_over_odd": 0.01,
+    "signal_over_drift": 100
+  },
+  "raw_comparison_gate": 0.001,
+  "charge_normalized_comparison": "Supplementary dId/q comparison using the rounded manual q and Vela SI q; the manual printed value is not proof of the native runtime constant. Raw comparison remains independently gated.",
+  "export_precision": "Native current is printed with 15 significant digits. Bound odd-signal rounding by one half of the sum of the two half-last-place errors; use export resolution as a floor on zero-drift noise. Require rounding/signal <= prediction gate.",
+  "q_native_C": 1.602192e-19,
+  "q_vela_C": 1.602176634e-19,
+  "field_limit": "Previous Vela whole-field source calibration remains 6/8; native terminal qualification cannot override it."
+}

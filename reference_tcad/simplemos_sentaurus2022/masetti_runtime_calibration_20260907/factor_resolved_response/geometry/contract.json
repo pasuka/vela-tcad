@@ -1,0 +1,179 @@
+{
+  "status": "frozen_before_execution",
+  "cases": [
+    {
+      "key": "m65_n19_vd_0p050000_endpoint_vg020",
+      "device": "n19",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n19_vd_0p050000_endpoint\\vg_020",
+      "vd": 0.05,
+      "vg": 1.0,
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n19_vd_0p050000_endpoint_vg020\\source.txt",
+      "base_Id_A_per_um": 6.629558707786282e-06,
+      "unit_feedback_A_per_um": -5.815549699329145e-07,
+      "unit_direct_A_per_um": 0.0,
+      "unit_prediction_A_per_um": -5.815549699329145e-07,
+      "jobs": [
+        {
+          "label": "zero",
+          "scale": 0.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n19_vd_0p050000_endpoint_vg020\\zero\\config.json"
+        },
+        {
+          "label": "plus_full",
+          "scale": 0.001,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n19_vd_0p050000_endpoint_vg020\\plus_full\\config.json"
+        },
+        {
+          "label": "minus_full",
+          "scale": -0.001,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n19_vd_0p050000_endpoint_vg020\\minus_full\\config.json"
+        },
+        {
+          "label": "plus_half",
+          "scale": 0.0005,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n19_vd_0p050000_endpoint_vg020\\plus_half\\config.json"
+        },
+        {
+          "label": "minus_half",
+          "scale": -0.0005,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n19_vd_0p050000_endpoint_vg020\\minus_half\\config.json"
+        }
+      ]
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg020",
+      "device": "n19",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n19_vd_1p000000_endpoint\\vg_020",
+      "vd": 1.0,
+      "vg": 1.0,
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n19_vd_1p000000_endpoint_vg020\\source.txt",
+      "base_Id_A_per_um": 3.895049726726436e-05,
+      "unit_feedback_A_per_um": -2.963172086993557e-06,
+      "unit_direct_A_per_um": 0.0,
+      "unit_prediction_A_per_um": -2.963172086993557e-06,
+      "jobs": [
+        {
+          "label": "zero",
+          "scale": 0.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n19_vd_1p000000_endpoint_vg020\\zero\\config.json"
+        },
+        {
+          "label": "plus_full",
+          "scale": 0.001,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n19_vd_1p000000_endpoint_vg020\\plus_full\\config.json"
+        },
+        {
+          "label": "minus_full",
+          "scale": -0.001,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n19_vd_1p000000_endpoint_vg020\\minus_full\\config.json"
+        },
+        {
+          "label": "plus_half",
+          "scale": 0.0005,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n19_vd_1p000000_endpoint_vg020\\plus_half\\config.json"
+        },
+        {
+          "label": "minus_half",
+          "scale": -0.0005,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n19_vd_1p000000_endpoint_vg020\\minus_half\\config.json"
+        }
+      ]
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint_vg020",
+      "device": "n23",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n23_vd_0p050000_endpoint\\vg_020",
+      "vd": 0.05,
+      "vg": 1.0,
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n23_vd_0p050000_endpoint_vg020\\source.txt",
+      "base_Id_A_per_um": 2.358186669528369e-07,
+      "unit_feedback_A_per_um": -2.7736353830194966e-08,
+      "unit_direct_A_per_um": 0.0,
+      "unit_prediction_A_per_um": -2.7736353830194966e-08,
+      "jobs": [
+        {
+          "label": "zero",
+          "scale": 0.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n23_vd_0p050000_endpoint_vg020\\zero\\config.json"
+        },
+        {
+          "label": "plus_full",
+          "scale": 0.001,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n23_vd_0p050000_endpoint_vg020\\plus_full\\config.json"
+        },
+        {
+          "label": "minus_full",
+          "scale": -0.001,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n23_vd_0p050000_endpoint_vg020\\minus_full\\config.json"
+        },
+        {
+          "label": "plus_half",
+          "scale": 0.0005,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n23_vd_0p050000_endpoint_vg020\\plus_half\\config.json"
+        },
+        {
+          "label": "minus_half",
+          "scale": -0.0005,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n23_vd_0p050000_endpoint_vg020\\minus_half\\config.json"
+        }
+      ]
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg020",
+      "device": "n23",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n23_vd_1p000000_endpoint\\vg_020",
+      "vd": 1.0,
+      "vg": 1.0,
+      "source": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n23_vd_1p000000_endpoint_vg020\\source.txt",
+      "base_Id_A_per_um": 1.3628624374141442e-06,
+      "unit_feedback_A_per_um": -1.496600310313652e-07,
+      "unit_direct_A_per_um": 0.0,
+      "unit_prediction_A_per_um": -1.496600310313652e-07,
+      "jobs": [
+        {
+          "label": "zero",
+          "scale": 0.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n23_vd_1p000000_endpoint_vg020\\zero\\config.json"
+        },
+        {
+          "label": "plus_full",
+          "scale": 0.001,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n23_vd_1p000000_endpoint_vg020\\plus_full\\config.json"
+        },
+        {
+          "label": "minus_full",
+          "scale": -0.001,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n23_vd_1p000000_endpoint_vg020\\minus_full\\config.json"
+        },
+        {
+          "label": "plus_half",
+          "scale": 0.0005,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n23_vd_1p000000_endpoint_vg020\\plus_half\\config.json"
+        },
+        {
+          "label": "minus_half",
+          "scale": -0.0005,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_runtime_20260907\\factor_resolved_response\\geometry\\m65_n23_vd_1p000000_endpoint_vg020\\minus_half\\config.json"
+        }
+      ]
+    }
+  ],
+  "new_DC": 20,
+  "definition": "Change g_all to native summed Si g, while holding Vela edge mobility.",
+  "direct": "Same signed edge source in residual, term diagnostics and contact current. Explicit direct drain contribution is included; replaced contact rows are excluded from feedback.",
+  "amplitudes": "plus/minus .001 and .0005 of the defined coefficient-difference source, with zero control.",
+  "frozen_gates": {
+    "prediction_relative": 0.001,
+    "two_amplitude_relative": 0.001,
+    "even_over_odd": 0.01,
+    "zero_drift_dex": 1e-05,
+    "minimum_signal_over_zero_drift": 100
+  },
+  "exclusions": "This is an electron distributed source calibration. It is not a self-consistent mobility-model replacement, a hole source calibration, or a Poisson correction.",
+  "production_changes": false,
+  "acceptance_changes": false,
+  "factor": "geometry",
+  "geometry_source_resolution_relative": 1e-10,
+  "original_factor_preflight_failure_retained": true,
+  "resolution_note": "Only this diagnostic geometry source sets near-identity geometry ratios to exactly one. The complementary source is the combined source minus this resolved geometry source. Original solver and source-response gates are unchanged."
+}

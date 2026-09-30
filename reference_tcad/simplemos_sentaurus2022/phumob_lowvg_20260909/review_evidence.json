@@ -1,0 +1,18 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_box_20260909/qualified_state/dc_comparison_evidence.json": "cadc0c4d33f4a80b2f93b680db629ceecc3522b82ad9e9b165a5db1c9cb0834a",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/all_attempts.csv": "181f5fe6fa76c08d63d3be108e5f09e46bd3ec31579a0cf665c60c297d582f18",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/calibration_evidence.json": "b94a275ab23db0a6d2c6b6894f39325d595b0b82efb0919c59722e02b67311c6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/dc_comparison_evidence.json": "18ce66262e835e8954cdbdd033321c80e98914509a058ca2614d84f94681a499",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/export_precision_evidence.json": "f7e21fb60059db06ba8f6c5243b2ad3c81764f03182e36a97b7a9ce189b4d997",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/minority_row_ranking.csv": "263bf8611d3569b3a0110dcad9e19e9646ca43b1477fc848379743a7de646b67",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/native_field_comparison.csv": "3fe1753f494db30a1337f1d9e3bbcd13fb4426a442cbbd2dbc3780d44de9fef9",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/nwell_pairs.csv": "1249be725607ba2e83fb7c81a98757a7d9f62f1fa9c6e195c30bdec5fe2305a3",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/post_evidence.json": "8032ea1bbe4b9c877b4051242861d7635375ee8c437fd67345ef009c2f5b9b27",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/review_summary.json": "941db7b8a8c66a10187f1b7ce692073a554bbd2b5470a8643a361b49545f1bd0",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/sixteen_points.csv": "9e0e2823ab1a8fe4a2771818ced60230d75955e308109a248776dcc44b2999da",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/source_support.csv": "0439497fe41176357dc400b6c95805b6261ded6c8102be4c31fb1dc7454cdeba",
+    "reference_tcad/simplemos_sentaurus2022/phumob_lowvg_20260909/supported_export/export_evidence.json": "9352da1005d6a6d8995a1faa070abe3af6a36605ca259ebf5df0131051f7edc0",
+    "scripts/review_simplemos_phumob_lowvg_20260909.py": "b8fae0f5deb76406abc01c4ced868e43692285f75619630cd31b1f5af66811c6"
+  }
+}

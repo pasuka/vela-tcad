@@ -1,0 +1,30 @@
+{
+  "input_hashes": {
+    "build-release/phumob_numerics_production_20260910/build_weighted.log": "f1de691435bb781c2600a121ac091bc1a00251b2a421085440e1e1f0172cf8ec",
+    "build-release/phumob_numerics_production_20260910/ctest_weighted.log": "f499e4f0696288e728598582c099b1e09fdabcd610e20229a85f9dc0deb67019",
+    "build-release/phumob_numerics_production_20260910/numerics_test_weighted.log": "6a59e27eb399d91f59ab2c3c9b9d0b42d29e46bab5bb4828416d321755bec6b7",
+    "build-release/phumob_numerics_production_20260910/warm_restart_test.log": "27d295c67847e5b5f78973520d98abbed60dbfd5c3674276e03cf02be30dba4c",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/report_text_preimage/generator.py": "5cfc19a6bbf84ce3832ef8889aa90941ceadde8a165ab4c9f6bbf53074d7f695",
+    "build-release/phumob_numerics_production_20260910/weighted_merit/report_text_preimage/report.md": "c41e91d658c24235166f7264cb54d5b75c4ee275334c996916ee6b601b77969d",
+    "docs/validation/simplemos_branch_status.md": "8c5a8108a58da492ad964abcbf3edaf0283d6bccf5e21e6561bcd00f15be33df",
+    "docs/validation/simplemos_production_precision_and_sixteen_point_2026-09-10.md": "403a90c09d0b8fe9aef2b9e664149cef68e9c03dd0d4b4400d3280ee4d258fcc",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/comparison_evidence.json": "6504fba905c0ccc02138b163f71e1f91ecca47c422ebfbbbbb4344031a2cdfc0",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/completion_evidence.json": "b12937f6bf83beb22100428b9b2c40a8e03482b021a8d931b3f807a2d440b1cb",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/completion_summary.json": "2914439f72189ee31cb638cf9137b8c404449886e22e75f5f59c4eed1379278e",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/failed_restart_isolation/evidence.json": "daacfd5983845ccc5899b40c2d731622ecdbc23b701d3ba1b5d6b48f9733b86c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/failed_roundtrip/evidence.json": "897c8f9eeaba4c6cada695b46c292666cdccb58bb1cf2e313010b6461c118eba",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/jvp_evidence.json": "4fc65794b6f2ca4843e75ffdb3b81934f0ee1ec8c0c5648215f6198046a1f49d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/report_text_amendment.json": "2721453e9357c92d4520d245cdd1a0bc0543ca307f4b01538258f49695274cd4",
+    "reference_tcad/simplemos_sentaurus2022/phumob_numerics_production_20260910/weighted_merit/source/production_evidence.json": "23e4a596b4613cd17818520e0c6864a1b24c40c11cba75636c9d976d1ca3d1a7",
+    "scripts/check_simplemos_failed_state_roundtrip_20260910.py": "2dbe140dc00a5d7f54d251c51040e402f29c18bc6189a654f7ec83a443179626",
+    "scripts/finish_simplemos_failed_restart_isolation_20260910.py": "4b1b0e16814a8b9924138d1d8fd50c69dce49832599ac1f581fb08066d177944",
+    "scripts/isolate_simplemos_production_failed_restart_20260910.py": "6582abfe9a7537fac026efc59147c4b24ee10c744bed3b249d83df976da85729",
+    "scripts/migrate_simplemos_numerics_20260910.py": "8b69995338e39ddf9b83e7dd11f49044861570109558fedff66d3f5fef204999",
+    "scripts/report_simplemos_production_precision_20260910.py": "8ff71b7d05dea512498de5d719581e9f8eb9d339e06075170bc1070d4fa8e9e5",
+    "scripts/validate_simplemos_production_precision_20260910.py": "907dd5286b902e83511533ba567944a9a1a0b43fd3e58d1b9585216e0ea49bd3",
+    "scripts/validate_simplemos_production_source_20260910.py": "96f0ddd4e16d09d95f6b8e935d637c069c355fbf45377122c07b1b83ed410f85",
+    "scripts/validate_simplemos_production_unit_block_20260910.py": "976f2cf833709157a2c3bfcdc7d4cd49238bee31c9cab9a547edf9f8d8336417",
+    "scripts/validate_simplemos_production_weighted_20260910.py": "1b6f096fc533bbccd167628289ddeca11e7f3c98abe6d47039d32cba14591961",
+    "scripts/validate_simplemos_production_weighted_source_20260910.py": "2ab70f9bd8db8cdd5703bd725b172ca2b3e18c1623d31504985174852d4c051d"
+  }
+}

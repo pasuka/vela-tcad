@@ -1,0 +1,63 @@
+{
+  "points": 204,
+  "native_qualified": 204,
+  "continuation_qualified": 204,
+  "independent_qualified": 204,
+  "dual_qualified": 204,
+  "comparison_qualified": 204,
+  "curves": [
+    {
+      "device": "n19",
+      "vd": 0.05,
+      "qualified": 51,
+      "total": 51,
+      "error_min_percent": -0.03669735491474979,
+      "error_max_percent": 0.0044370682471095435,
+      "worst_vg": 0.0
+    },
+    {
+      "device": "n19",
+      "vd": 1.0,
+      "qualified": 51,
+      "total": 51,
+      "error_min_percent": 0.0013065967728431715,
+      "error_max_percent": 0.005448560038523453,
+      "worst_vg": 0.16
+    },
+    {
+      "device": "n23",
+      "vd": 0.05,
+      "qualified": 51,
+      "total": 51,
+      "error_min_percent": -0.020969928559755324,
+      "error_max_percent": 0.005789135608225138,
+      "worst_vg": 0.0
+    },
+    {
+      "device": "n23",
+      "vd": 1.0,
+      "qualified": 51,
+      "total": 51,
+      "error_min_percent": -0.8708759091984652,
+      "error_max_percent": 0.006605729424369322,
+      "worst_vg": 0.0
+    }
+  ],
+  "attempts": 408,
+  "failed_attempts": 0,
+  "reloads": 0,
+  "max_row_ratio": 4.1347747915289726e-07,
+  "max_port_relative": 4.440892098500626e-16,
+  "max_dual_Id_relative": 7.676833613246004e-10,
+  "max_dual_psi_V": 1.509315e-11,
+  "max_dual_phin_V": 1.0863621e-10,
+  "max_dual_phip_V": 3.48272167e-09,
+  "max_dual_density_relative": 1.3471769677586565e-07,
+  "all_qualified": true,
+  "acceptance_changed": false,
+  "production_default_changed": false,
+  "scope": "300 K PhuMob + Enormal, OldSlotboom, doping SRH; original n19/n23 meshes, Vd .05/1, Vg 0..1 step .02. Explicit split state and geometry bundle; no HFS.",
+  "limits": "PhuMob internal native minimum-search/weak hole cell gate remains unresolved. Source terms below the existing source floor do not gain independent relative-source qualification. Current curve qualification does not certify every local physical field. HFS and original n17-n24 0..2.5 V matrix remain separate gates.",
+  "runner": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_candidate_20260912\\v1\\bin\\vela_example_runner.exe",
+  "runner_sha256": "78598555862218fb68ae1c3cd506db4c2725fbb3c705f93c826bcf73ce9585c8"
+}

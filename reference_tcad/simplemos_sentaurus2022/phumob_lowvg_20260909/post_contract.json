@@ -1,0 +1,39 @@
+{
+  "jobs": [
+    {
+      "key": "m65_n19_vd_0p050000_endpoint_vg_000",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\post_jvp\\m65_n19_vd_0p050000_endpoint_vg_000\\config.json"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint_vg_010",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\post_jvp\\m65_n19_vd_0p050000_endpoint_vg_010\\config.json"
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg_000",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\post_jvp\\m65_n19_vd_1p000000_endpoint_vg_000\\config.json"
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg_010",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\post_jvp\\m65_n19_vd_1p000000_endpoint_vg_010\\config.json"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint_vg_000",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\post_jvp\\m65_n23_vd_0p050000_endpoint_vg_000\\config.json"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint_vg_010",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\post_jvp\\m65_n23_vd_0p050000_endpoint_vg_010\\config.json"
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg_000",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\post_jvp\\m65_n23_vd_1p000000_endpoint_vg_000\\config.json"
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg_010",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\post_jvp\\m65_n23_vd_1p000000_endpoint_vg_010\\config.json"
+    }
+  ],
+  "gate": 0.0001,
+  "scope": "Eight accepted Vela-initialized candidate states; this derivative gate is independent of native-initialization completion and does not grant dual-initialization acceptance.",
+  "weak_SRH_cross": "Retained in output; excluded from whole-residual finite-difference qualification."
+}

@@ -10,6 +10,11 @@ current directly.
 
 ## Current engineering entry (2026-09-30)
 
+Historical diagnostic files are indexed in the
+[evidence archive and recovery guide](local_evidence_20260930/README.md).
+Small records are checked in; detailed tables and figures have a fully hashed
+persistent archive on the Sentaurus VM, independent of this disposable worktree.
+
 Use [engineering/README.md](engineering/README.md) for the current validated
 configuration, numerical run commands, external input requirements, and
 byte-verifiable small evidence package. The n17–n24, Vd=0.05/1 V,

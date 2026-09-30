@@ -1,0 +1,4 @@
+tag,iteration,worst_carrier,worst_node,worst_raw_step_V,worst_capped_step_V,capped_carrier_rows,worst_nonlinear_ratio,last_linear_max,last_linear_rows_above_1e_minus_8,trials,all_finite_valid,all_rejected_non_decrease,poisson_merit_fraction
+m65_n19_vd_0p050000_endpoint\vg_007\vela,6,hole,1041,-5.34491743634576e-08,-5.34491743634576e-08,0,0.06744979723526122,1.6873453801209654e-15,0,13,True,True,1.0
+m65_n23_vd_0p050000_endpoint\vg_020\hole_minus,1,hole,355,0.07060983347515791,0.025,888,1.0324377810991177,0.5395913091341114,357,13,True,True,0.4999999999999999
+m65_n23_vd_1p000000_endpoint\vg_007\vela,6,hole,973,-0.4479635880484619,-0.025,17,1.775854403631594,2.2312346046746975e-13,0,13,True,True,0.9999989120663997

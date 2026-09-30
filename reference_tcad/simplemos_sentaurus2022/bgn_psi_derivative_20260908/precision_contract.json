@@ -1,0 +1,30 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\vela\\m65_n19_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\acceptance_edges.csv"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\vela\\m65_n19_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\acceptance_edges.csv"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\vela\\m65_n23_vd_0p050000_endpoint\\vela\\vg_040\\attempt_0\\acceptance_edges.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_bgn_restore_20260908\\intrinsic_control\\vela\\m65_n23_vd_1p000000_endpoint\\vela\\vg_040\\attempt_0\\acceptance_edges.csv"
+    }
+  ],
+  "precision": 100,
+  "finite_difference_step_V": "1e-25",
+  "selection": "Per case and carrier choose 12 silicon edges with largest absolute expanded-versus-factored double derivative difference. Selection is deterministic; no result threshold selects edges.",
+  "reference": "Central differences of independently reconstructed unfactorized SG density flux at Decimal-100; also evaluate original expanded derivative formula at Decimal-100.",
+  "parameters": "Exact binary64 values of exported ni/psi/quasi-Fermi potentials, promoted to Decimal; coefficient=1. Physical-potential CSV audit is not a replay of internally split quasi-Fermi references.",
+  "gates": {
+    "expanded_high_precision_relative": 1e-30,
+    "factored_double_relative": 1e-07
+  },
+  "purpose": "Distinguish algebraic omissions from subtraction loss. Full production Jv is independently required."
+}

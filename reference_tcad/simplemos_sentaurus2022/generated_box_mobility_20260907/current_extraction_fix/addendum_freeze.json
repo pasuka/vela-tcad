@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/generated_box_mobility_20260907/current_extraction_fix/addendum.json": "6fc918ea067b26a3912bc059707d3342ee53c3161422f79400db72239b3a9309",
+    "reference_tcad/simplemos_sentaurus2022/generated_box_mobility_20260907/current_extraction_fix/freeze.json": "398c8f975cc5f085c41476e0ee99dbae8b47b7a193fd0e9f44aa095fa81ffea1",
+    "scripts/complete_simplemos_generated_box_mobility_20260907.py": "759d7da3c395cb85920719fc772ab8da336be1f0ca325895f79d73a27467b75c"
+  }
+}

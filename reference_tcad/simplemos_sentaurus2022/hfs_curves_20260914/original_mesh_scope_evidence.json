@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/original_mesh_scope.json": "a6d2db021aefa167b3603fc9adc5e67c48c79ded27cbabfb2b221fe5f8c30b17",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/original_scope_evidence.json": "56100507082c37a26df87a20ea1cce6e57b70ac9cb5ad99d5a36c2b86a090c4c",
+    "scripts/analyze_simplemos_joint_eight_point_20260907.py": "2a9109ef8d6bc41eb020fb5a3aaaf190d419b81cff7a12acee24d1928b7ecfd4",
+    "scripts/validate_simplemos_remaining_dielectric_20260907.py": "dbf3c968cab432d81994f0c2514101b525094acda0c5f350b86ea0eb8dd1eef6"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/enormal_candidate_20260912/v1/comparison.csv": "e1947758e3671f91887d9cfb543dde113b7b660bd0d8f38ae3466e9762383e6b",
+    "reference_tcad/simplemos_sentaurus2022/enormal_candidate_20260912/v1/dc_evidence.json": "17c6839eb957713beeb6a48fece328beec6ed0024218aed3d248c4adfcb3695b",
+    "reference_tcad/simplemos_sentaurus2022/enormal_candidate_20260912/v1/selected_states.csv": "277cda8b120366b858f1679ad87993b65ea766a41c3417ea96c69f595655e550",
+    "reference_tcad/simplemos_sentaurus2022/enormal_candidate_20260912/v1/summary.json": "3401858b78ceabaf033cf4140e13c6eeee6ea9a8a5ad8e79d7566d7c9004823e",
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/native_points.csv": "1104712b87063aecf310f919336c8500950854724e77865a0f0656f0f69fd201",
+    "scripts/summarize_simplemos_enormal_candidate_20260912.py": "090dd1c6ee4ca292d264b6307569fa9d078642a9a6b4a1933517deb1bdfbd455"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "jobs": [
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\m65_n19_vd_0p050000_endpoint\\plus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.001,
+      "label": "plus_full",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\plus_full",
+      "trace_iteration": 3
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\m65_n19_vd_0p050000_endpoint\\minus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": -0.001,
+      "label": "minus_full",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\minus_full",
+      "trace_iteration": 1
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\m65_n23_vd_0p050000_endpoint\\plus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.001,
+      "label": "plus_full",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\plus_full",
+      "trace_iteration": 1
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\m65_n23_vd_0p050000_endpoint\\minus_full",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": -0.001,
+      "label": "minus_full",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\minus_full",
+      "trace_iteration": 31
+    }
+  ],
+  "scope": "Replay the four +/-full low-Vd source failures from identical original inputs, with stable merit and corrected restart coordinates. Trace only the final rejected iteration. Preserve 200-iteration budget, 1e-6 row gate, 1e-8 KCL gate, damping, source and Jacobian.",
+  "production_changed": false
+}

@@ -1,0 +1,12 @@
+{
+  "python_syntax_checks": 7,
+  "evidence_manifests": 27,
+  "unique_file_hashes_verified": 1390,
+  "report_links_checked": 25,
+  "snapshot_files": 24,
+  "production_jacobian_repaired": true,
+  "native_cutoff_internal_algorithm_identified": false,
+  "native_element_box_phumob_restored": false,
+  "full_ctest_all_green": false,
+  "commit_or_push": false
+}

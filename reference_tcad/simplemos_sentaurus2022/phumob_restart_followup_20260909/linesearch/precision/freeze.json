@@ -1,0 +1,10 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/linesearch/precision/contract.json": "3ee1cf045feaeeff1adf6c8a6e57d484e49f4810c25a794c24f86a5a64014686",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/linesearch/replay_evidence.json": "77d111529f5624f65bbfdef8966198f476ea97fd73460fdd5ef35d3ce7e6ec58",
+    "scripts/analyze_simplemos_e1089_precision_20260909.py": "be65d458db5e61de48f8ebc11d3474fa69b7412a2600584d3127f1126ab4f1bd",
+    "scripts/analyze_simplemos_linesearch_precision_20260908.py": "9a4d2756271aaa34ec4bb33224abbd95d82629efd7984301004ce1ac9a6c1fd9",
+    "scripts/analyze_simplemos_minority_residual_20260906.py": "64fd54850bad255f9549497c510858da0d476144a22d444b8e704dd7f775f146",
+    "scripts/audit_simplemos_bgn_psi_precision_20260908.py": "88c0c835b683495fce273ab169aefd11ecf834b3a58a5931c8dfc49c53f1cd7d"
+  }
+}

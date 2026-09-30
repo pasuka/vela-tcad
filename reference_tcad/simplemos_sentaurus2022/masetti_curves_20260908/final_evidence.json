@@ -1,0 +1,22 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_masetti_curves_20260908/idvg_comparison.png": "eac080d40d869f94fea3f55850d6f29b06aa28e9a4cc1f2a7761ed37d099500a",
+    "build-release/simplemos_masetti_curves_20260908/idvg_comparison.svg": "ffc0739369cdc2acb86cdc7e7603166e5ab647d7c404cec3779d260fcef267a8",
+    "build-release/simplemos_masetti_curves_20260908/parallel_finish.sh": "7251362976fb59a662e1566f09e91b7100b09a842dfd14b57a4f4f4967a4812d",
+    "build-release/simplemos_masetti_curves_20260908/unit_tests.log": "4a203f958ef9d765ff1f89816631e1bdf553b4acf1d56449f1d10ad92bb46ff3",
+    "docs/validation/simplemos_masetti_fullcurve_validation_2026-09-08.md": "f88b8033b2b7b7e8c23b4a05f6df075819f4ba25f8691a6f58acb6d1e534d185",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/anchor_replays.csv": "fb45b9e5f508bf7b51a02c539ac6ebfdaaeff61bdff0c5676fbd4ea95b3e2bbb",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/comparison_evidence.json": "46863951bcc36584622aaa0aa60ca111a0de00ede97d6ba7195e61092b879974",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/failed_attempts.csv": "2dc40e35b1fdfdeeb92fede34bd833c0b84e69b36b1b594300b16785a293c5d6",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/mapping_checks.csv": "192ee44f5ac16e8ee144c5930e5ef9ba04b358c94d63270adce601ad14ac9997",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/parallel_dispatch_addendum.json": "22709f8ebb6d199113962a76170f19aa3402156e03ac6491e87ea4d795bdc0b4",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/parallel_dispatch_freeze.json": "a1bf8ec1a98994d5c12a116275bf9ac3fc20c4cea91b14841a59b987c3127f24",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/staged/m65_n19_vd_0p050000_endpoint/evidence.json": "068325dec44b0aedd4fc615bc92a7112c3966a89c65c791472784bafad89d384",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/staged/m65_n19_vd_0p050000_endpoint/freeze.json": "c20ff6682a86f1812334ae6d0ee3c7792eebd79a303ced772c277c171b3d99fc",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/staged/m65_n19_vd_1p000000_endpoint/evidence.json": "7ffa97abe916b62bd99bfedecb1de90ecce71e76fa619ba4185c68f6ea3c3116",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/staged/m65_n19_vd_1p000000_endpoint/freeze.json": "b58d64f66119d4b8037cd4d6a24e0a9a96adcec7b1ecece5ee1af0c45386e12b",
+    "reference_tcad/simplemos_sentaurus2022/masetti_curves_20260908/voltage_bands.csv": "df6b9ca150048cea92359785ae35cdace32cf3750d4c62fa56801f0d7c359761",
+    "scripts/report_simplemos_masetti_curves_20260908.py": "04996aec881e402673c669df5722c12b91cc0bb2380b86d48e4bff8a5bf9778a",
+    "tests/regression/test_simplemos_masetti_curves.py": "b25e2e84b17526eb09bf0ed1d3af5800a8b74e8c007c642d03d25b34f66d3dc1"
+  }
+}

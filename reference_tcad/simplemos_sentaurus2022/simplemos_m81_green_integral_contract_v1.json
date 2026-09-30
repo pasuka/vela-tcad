@@ -1,0 +1,20 @@
+{
+  "status": "frozen_before_read_only_evaluation",
+  "device": "n23",
+  "source": "Reuse existing M34 native region-local MeasureCoefficients; no new geometric export or solve.",
+  "formula": "delta_I = q * delta_N_cm^-3 * sum_Silicon_nodes(Gpot_s^-1 * native_Si_measure_um2) * 1e-12; 1 um depth; signed measures; multiply volume exactly once; no fitted sign/scale.",
+  "q_C": 1.602176634e-19,
+  "delta_N_cm_3": 10000000000000.0,
+  "um3_to_cm3": 1e-12,
+  "measure_permutation": [
+    0,
+    2,
+    1
+  ],
+  "gates": {
+    "relative_error_vs_native_dI": 0.05,
+    "same_sign": true,
+    "coordinate_tolerance_um": 1e-10
+  },
+  "m82_released": false
+}

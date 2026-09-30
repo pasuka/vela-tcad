@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/comparison_evidence.json": "5868dbbd76a8a7db3f76640cb940c09f1120d4672693ce5760b116a8f5163c9d",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/control_summary.json": "6643395dfe91cf29af07f8df30b9c1ee2c8cc71de219987fc21f3b082c5d55c6",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/low_control_comparison.csv": "de720cdea8b5fcf8eb2aa744c5f75d87226d844c8aa88a946fe39b455ca27d89",
+    "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/low_control_evidence.json": "a772798d536bbd64f35fd6be8bdd3595226a369392b887b6f4630f0e4cb7b21b"
+  }
+}

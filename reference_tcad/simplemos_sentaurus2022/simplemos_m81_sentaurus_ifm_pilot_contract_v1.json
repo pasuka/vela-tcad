@@ -1,0 +1,50 @@
+{
+  "schema": "vela.simplemos.m81_sentaurus_ifm_pilot.v1",
+  "cases": [
+    {
+      "device": "n19",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.9,
+      "source_state": "build-release/m69_stage_v2/sentaurus_raw/sentaurus_bundle/n19/vd_0p050000/m69_n19_vd_0p050000_vg_0p900000_gate_0000_des.tdr",
+      "source_deck": "build-release/m69_stage_v2/sentaurus_bundle/n19/vd_0p050000/m69_n19_vd_0p050000_vg_0p900000_des.cmd",
+      "deck": "build-release/m81_sentaurus_ifm_pilot/bundle/n19/m81_des.cmd"
+    },
+    {
+      "device": "n23",
+      "drain_voltage_V": 0.05,
+      "gate_voltage_V": 0.9,
+      "source_state": "build-release/m69_stage_v2/sentaurus_raw/sentaurus_bundle/n23/vd_0p050000/m69_n23_vd_0p050000_vg_0p900000_gate_0000_des.tdr",
+      "source_deck": "build-release/m69_stage_v2/sentaurus_bundle/n23/vd_0p050000/m69_n23_vd_0p050000_vg_0p900000_des.cmd",
+      "deck": "build-release/m81_sentaurus_ifm_pilot/bundle/n23/m81_des.cmd"
+    }
+  ],
+  "remote_root": "/tmp/vela_simplemos_m81_ifm_20260905",
+  "physics": "M65/M69 no-BGN original mobility/SRH. ImplicitACSystem and deterministic donor variation disable only mobility/BGN variation pathways.",
+  "execution": {
+    "initial_dc_reclosures": 2,
+    "initial_ac_ifm_points": 2,
+    "new_bias_sweeps": 0,
+    "explicit_fd_solves": 0,
+    "full_matrix_expansion": false
+  },
+  "gates": {
+    "runtime": "T-2022.03-SP2",
+    "dc_reclosure_dex": 1e-05,
+    "finite_green_fields": true,
+    "native_current_variation_present": true,
+    "m82_release": false
+  },
+  "next_step": "After successful native pilot, separately freeze explicit fixed-charge finite-difference calibration at two amplitudes; no candidate A/B or production change before that comparison.",
+  "independence": "M80 mapped residual is not native residual. This pilot obtains native current Green functions and native uniform doping response.",
+  "manual_pages": [
+    152,
+    153,
+    783,
+    784,
+    809,
+    810,
+    815,
+    817,
+    1589
+  ]
+}

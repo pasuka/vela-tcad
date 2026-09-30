@@ -1,0 +1,151 @@
+{
+  "total": 780,
+  "passed": 764,
+  "failed": 16,
+  "failures": [
+    {
+      "test": "simplemos_m9_hfs_diagnostics",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_frozen_evidence_preserves_baseline_and_artifact_hashes (tests.regression.test_simplemos_m9_hfs_diagnostics.SimpleMosM9HfsDiagnosticsTest.test_frozen_evidence_preserves_baseline_and_artifact_hashes)",
+        "AssertionError: False is not true : changed source is not frozen by superseding M44/M45/M46: src/tools/vela_example_runner.cpp"
+      ]
+    },
+    {
+      "test": "simplemos_m10_fixed_state_replay",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_frozen_evidence_is_complete_and_integral (tests.regression.test_simplemos_m10_fixed_state_replay.SimpleMosM10FixedStateReplayTest.test_frozen_evidence_is_complete_and_integral)",
+        "AssertionError: False is not true : changed source is not frozen by superseding M44/M45/M46: src/tools/vela_example_runner.cpp"
+      ]
+    },
+    {
+      "test": "simplemos_m12_terminal_sensitivity",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_artifact_and_implementation_hashes_match (tests.regression.test_simplemos_m12_terminal_sensitivity.SimpleMosM12TerminalSensitivityTest.test_artifact_and_implementation_hashes_match)",
+        "AssertionError: False is not true : changed source is not frozen by superseding M44/M45/M46: CMakeLists.txt"
+      ]
+    },
+    {
+      "test": "simplemos_m30_double_off_causal_closure",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_frozen_artifact_and_source_hashes_match (tests.regression.test_simplemos_m30_double_off_causal_closure.SimpleMosM30DoubleOffCausalClosureTest.test_frozen_artifact_and_source_hashes_match)",
+        "AssertionError: False is not true : changed source is not frozen by superseding M44/M45/M46: CMakeLists.txt"
+      ]
+    },
+    {
+      "test": "simplemos_m31_minority_poisson_perturbation",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_frozen_artifact_and_source_hashes_match (tests.regression.test_simplemos_m31_minority_poisson_perturbation.SimpleMosM31MinorityPoissonPerturbationTest.test_frozen_artifact_and_source_hashes_match)",
+        "AssertionError: False is not true : changed source is not frozen by superseding M44/M45/M46: include/vela/solver/NewtonSolver.h"
+      ]
+    },
+    {
+      "test": "simplemos_m32_electron_qf_scaled_perturbation",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_frozen_artifact_and_source_hashes_match (tests.regression.test_simplemos_m32_electron_qf_scaled_perturbation.SimpleMosM32ElectronQfScaledPerturbationTest.test_frozen_artifact_and_source_hashes_match)",
+        "AssertionError: False is not true : changed source is not frozen by superseding M44/M45/M46: CMakeLists.txt"
+      ]
+    },
+    {
+      "test": "simplemos_m33_region_resolved_interface_assembly",
+      "category": "missing_historical_source",
+      "previously_failed": true,
+      "evidence": [
+        "FileNotFoundError: [Errno 2] No such file or directory: 'D:\\\\code-repo\\\\vela-tcad\\\\.worktrees\\\\simplemos-sdevice-validation\\\\tests\\\\test_mos_mixed_material.cpp'"
+      ]
+    },
+    {
+      "test": "simplemos_m35_signed_average_box_assembly",
+      "category": "missing_historical_source",
+      "previously_failed": true,
+      "evidence": [
+        "FileNotFoundError: [Errno 2] No such file or directory: 'D:\\\\code-repo\\\\vela-tcad\\\\.worktrees\\\\simplemos-sdevice-validation\\\\tests\\\\test_mos_mixed_material.cpp'"
+      ]
+    },
+    {
+      "test": "simplemos_m36_boundary_contact_measure_audit",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_frozen_artifact_and_source_hashes_match (tests.regression.test_simplemos_m36_boundary_contact_measure_audit.SimpleMosM36BoundaryContactMeasureAuditTest.test_frozen_artifact_and_source_hashes_match)",
+        "AssertionError: False is not true : changed source is not frozen by superseding M44/M45/M46: CMakeLists.txt"
+      ]
+    },
+    {
+      "test": "simplemos_m37_measure_contact_qf_ablation",
+      "category": "missing_historical_source",
+      "previously_failed": true,
+      "evidence": [
+        "FileNotFoundError: [Errno 2] No such file or directory: 'D:\\\\code-repo\\\\vela-tcad\\\\.worktrees\\\\simplemos-sdevice-validation\\\\tests\\\\test_mos_mixed_material.cpp'"
+      ]
+    },
+    {
+      "test": "simplemos_m39_bgn_chain_first_divergence",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_frozen_artifact_and_source_hashes_match (tests.regression.test_simplemos_m39_bgn_chain_first_divergence.SimpleMosM39BgnChainFirstDivergenceTest.test_frozen_artifact_and_source_hashes_match)",
+        "AssertionError: False is not true : changed source is not frozen by superseding M44/M45/M46: CMakeLists.txt"
+      ]
+    },
+    {
+      "test": "simplemos_m40_true_no_bgn_factorial",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_frozen_artifact_and_source_hashes_match (tests.regression.test_simplemos_m40_true_no_bgn_factorial.SimpleMosM40TrueNoBgnFactorialTest.test_frozen_artifact_and_source_hashes_match)",
+        "AssertionError: False is not true : changed source is not frozen by superseding M44/M45/M46: CMakeLists.txt"
+      ]
+    },
+    {
+      "test": "simplemos_m41_equal_ni_flux_ablation",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_frozen_artifact_and_source_hashes_match (tests.regression.test_simplemos_m41_equal_ni_flux_ablation.SimpleMosM41EqualNiFluxAblationTest.test_frozen_artifact_and_source_hashes_match)",
+        "AssertionError: False is not true : changed M41 source is not frozen by M43/M44/M45/M46: include/vela/equation/CoupledDDAssembler.h"
+      ]
+    },
+    {
+      "test": "simplemos_m42_no_bgn_self_consistent_interaction",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_frozen_artifact_and_source_hashes_match (tests.regression.test_simplemos_m42_no_bgn_self_consistent_interaction.SimpleMosM42NoBgnSelfConsistentInteractionTest.test_frozen_artifact_and_source_hashes_match)",
+        "AssertionError: False is not true : changed M42 source is not frozen by M43/M44/M45/M46: src/equation/CoupledDDAssembler.cpp"
+      ]
+    },
+    {
+      "test": "simplemos_m45_post_qf_rebaseline",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_frozen_artifact_and_source_hashes_match (tests.regression.test_simplemos_m45_post_qf_rebaseline.SimpleMosM45PostQfRebaselineTest.test_frozen_artifact_and_source_hashes_match)",
+        "AssertionError: False is not true : changed source is not frozen by superseding M44/M45/M46: CMakeLists.txt"
+      ]
+    },
+    {
+      "test": "simplemos_m46_full_matrix_requalification",
+      "category": "historical_source_hash",
+      "previously_failed": true,
+      "evidence": [
+        "FAIL: test_frozen_artifact_and_source_hashes_match (tests.regression.test_simplemos_m46_full_matrix_requalification.SimpleMosM46FullMatrixRequalificationTest.test_frozen_artifact_and_source_hashes_match)",
+        "AssertionError: 'd0405e1972c95a008f2b3f246e93a490cec147fa4e820934b81d35830034b118' != 'aba9d386d66bb2da7e984a4ccfddd267141a0c8e6b85e48de6bfb559d8a42410'"
+      ]
+    }
+  ],
+  "new_failures": [],
+  "old_evidence_updated": false,
+  "after_extraction_fix": "7 targeted CTests passed plus all 32 DC states bit-identical and terminal outputs independently agree. Full 780-test run preceded the two-line extraction fix."
+}

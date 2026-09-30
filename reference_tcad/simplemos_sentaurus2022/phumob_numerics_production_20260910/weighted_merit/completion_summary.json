@@ -1,0 +1,74 @@
+{
+  "production_source": {
+    "DC": 20,
+    "qualified_DC": 20,
+    "responses": 8,
+    "qualified_responses": 8,
+    "native_response_qualified": false,
+    "finite_volume_replacement": false,
+    "qualified_native_ports": 16,
+    "native_ports": 16,
+    "max_native_relative": 9.908026436855621e-06,
+    "identical_states": 20,
+    "identical_ports": 20,
+    "production_numerics": true
+  },
+  "cohort": {
+    "points": 16,
+    "qualified": 15,
+    "attempts": 38,
+    "failed_attempts": 7,
+    "qualified_selected": 31,
+    "max_row_ratio": 0.00044150373776080475,
+    "max_dual_Id_relative": 6.017408793468348e-14,
+    "max_native_error_percent": 0.8081352366533956,
+    "source_components": 64,
+    "source_relative_active": 0,
+    "acceptance_changed": false,
+    "options": {
+      "poisson_residual_precision": "binary128",
+      "stable_merit_comparison": true,
+      "exact_dirichlet_updates": true
+    }
+  },
+  "jvp": {
+    "states": 16,
+    "checks": 336,
+    "failures": 0,
+    "max_relative": 6.543020962148553e-07
+  },
+  "roundtrip": {
+    "prior_final_residual": 6.062997752839957e-11,
+    "first_reload_initial_residual": 1.0973366169765666e-10,
+    "norm_ratio": 1.809891182068417,
+    "zero_Newton_iterations": true,
+    "cohort_credit": false,
+    "interpretation": "A saved-state roundtrip changes the residual before any Newton update. This diagnoses numerical representation/repacking; it does not establish a complete remedy or justify additional cohort reloads."
+  },
+  "ctest_total": 795,
+  "ctest_passed": 779,
+  "historical_failures": [
+    "simplemos_m10_fixed_state_replay",
+    "simplemos_m12_terminal_sensitivity",
+    "simplemos_m30_double_off_causal_closure",
+    "simplemos_m31_minority_poisson_perturbation",
+    "simplemos_m32_electron_qf_scaled_perturbation",
+    "simplemos_m33_region_resolved_interface_assembly",
+    "simplemos_m35_signed_average_box_assembly",
+    "simplemos_m36_boundary_contact_measure_audit",
+    "simplemos_m37_measure_contact_qf_ablation",
+    "simplemos_m39_bgn_chain_first_divergence",
+    "simplemos_m40_true_no_bgn_factorial",
+    "simplemos_m41_equal_ni_flux_ablation",
+    "simplemos_m42_no_bgn_self_consistent_interaction",
+    "simplemos_m45_post_qf_rebaseline",
+    "simplemos_m46_full_matrix_requalification",
+    "simplemos_m9_hfs_diagnostics"
+  ],
+  "new_failures": 0,
+  "scripts_parsed": 10,
+  "full_curves_launched": false,
+  "Enormal_HFS_launched": false,
+  "native_new_runs": 0,
+  "report": "docs\\validation\\simplemos_production_precision_and_sixteen_point_2026-09-10.md"
+}

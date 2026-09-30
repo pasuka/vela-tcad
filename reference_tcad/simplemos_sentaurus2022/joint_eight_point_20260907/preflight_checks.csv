@@ -1,0 +1,9 @@
+key,arm,Poisson_source_relative_error,carrier_source_error_over_bound,qualified
+m65_n19_vd_0p050000_endpoint_vg016,baseline,0.0,0.0,True
+m65_n19_vd_0p050000_endpoint_vg016,joint,1.821716001729112e-12,0.45293784078193144,True
+m65_n19_vd_1p000000_endpoint_vg016,baseline,0.0,0.0,True
+m65_n19_vd_1p000000_endpoint_vg016,joint,1.292577877813037e-12,0.4652937891514363,True
+m65_n23_vd_0p050000_endpoint_vg016,baseline,0.0,0.0,True
+m65_n23_vd_0p050000_endpoint_vg016,joint,6.238080380598256e-13,0.47767125798547305,True
+m65_n23_vd_1p000000_endpoint_vg016,baseline,0.0,0.0,True
+m65_n23_vd_1p000000_endpoint_vg016,joint,6.457203992173965e-13,0.5686629646645942,True

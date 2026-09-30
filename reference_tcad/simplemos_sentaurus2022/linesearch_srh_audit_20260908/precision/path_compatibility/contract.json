@@ -1,0 +1,18 @@
+{
+  "modes": {
+    "rounded": "100-digit sum of exported rounded production edge fluxes and source products; isolates summation/norm rounding.",
+    "kernel": "Exact binary G/psi/n/p Poisson operands and exported SG/SRH kernel operands, fixed double material/geometry coefficients.",
+    "split": "Exact x times potential scale, retained qf reference plus increment, recomputed densities and SG/SRH in high precision at actual rounded candidate x.",
+    "ideal": "As split, but x=base_x+alpha*capped_step formed without double rounding; diagnostic mathematical trial, not a representable production iterate."
+  },
+  "precisions": [
+    60,
+    100
+  ],
+  "gates": {
+    "precision_agreement_over_row_scale": 1e-20,
+    "rounded_assembly_reconstruction_over_scale": 1e-10
+  },
+  "decisions": "Use each representation own baseline merit. Reproduce actual norm and global-mode formula; norm<base or norm<=(1-1e-4*alpha)*base. Never accept a state from a diagnostic scan.",
+  "scope": "All Poisson rows and both free Si carrier rows; exact binary operands, all source and boundary/gauge rows retained. Linear defect uses exported full Jacobian and raw/capped directions."
+}

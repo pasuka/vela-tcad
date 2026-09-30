@@ -1,0 +1,6 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/srh/native_rows/freeze.json": "2469400507f7f0b9d1ace00e287b869ef7e2ea7a5cdc543a651b82a558f6b7ef",
+    "reference_tcad/simplemos_sentaurus2022/constants_srh_finite_20260908/srh/native_rows/row_replay.csv": "d080050888e7ecf0d3e596cdc12cd5510f1ad60ed27436cb726641e193fbcb24"
+  }
+}

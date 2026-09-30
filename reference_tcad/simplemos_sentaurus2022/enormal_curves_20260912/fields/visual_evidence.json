@@ -1,0 +1,9 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/fields/curve_maxima.csv": "22933bba943ae97c5966a9d9296ea2feb3135fc380ad5835b0038221b1b35ec0",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/fields/evidence.json": "d4810c61538c7e1e6f07cfde430578e683a6affe7bdfbb2d4d94938cf4afeadf",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/fields/field_error_curves.pdf": "8ad0e9d499b9c53fda9010c6d3b0209e0e0d73695f18cafdb16300d5224017bd",
+    "reference_tcad/simplemos_sentaurus2022/enormal_curves_20260912/fields/field_error_curves.png": "ee353c47cfb97fa4910998957eb7e7809497b23829681bad7e818013e8e9b554",
+    "scripts/plot_simplemos_enormal_curve_fields_20260913.py": "ac87b19d260476b8961ba4dd6d7b5ea4f795955d6bb9cedf201e4bd8efcb70c4"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "status": "frozen_before_resume",
+  "retained_failure": "Original driver expected isolated acceptance JSON fields absent from production carrier-term probe. All three completed DC replays and outputs retained.",
+  "method": "Independent reconstruction of same acceptance from production solved rows plus conservative edge exports. No solver or acceptance threshold changes.",
+  "additional_read_only_probes": 32
+}

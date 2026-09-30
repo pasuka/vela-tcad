@@ -1,0 +1,71 @@
+{
+  "status": "frozen_before_nonlinear_execution",
+  "cases": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "source_config": "build-release/m65_ni/vela/n19/vd_0p050000/20_gate_sweep/config.json",
+      "state": "build-release/m65_ni/vela/n19/vd_0p050000/20_gate_sweep/state.csv",
+      "vd": 0.05,
+      "vg": 0.9,
+      "reference_current_A_per_um": 2.0520296762505757e-06,
+      "current_scale": 1e-08
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "source_config": "build-release/m65_ni/vela/n19/vd_1p000000/20_gate_sweep/config.json",
+      "state": "build-release/m65_ni/vela/n19/vd_1p000000/20_gate_sweep/state.csv",
+      "vd": 1.0,
+      "vg": 0.8,
+      "reference_current_A_per_um": 3.021975259721053e-06,
+      "current_scale": 1e-08
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "source_config": "build-release/m65_ni/vela/n23/vd_0p050000/20_gate_sweep/config.json",
+      "state": "build-release/m65_ni/vela/n23/vd_0p050000/20_gate_sweep/state.csv",
+      "vd": 0.05,
+      "vg": 0.9,
+      "reference_current_A_per_um": 1.7876117907133447e-08,
+      "current_scale": 1e-08
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "source_config": "build-release/m65_ni/vela/n23/vd_1p000000/20_gate_sweep/config.json",
+      "state": "build-release/m65_ni/vela/n23/vd_1p000000/20_gate_sweep/state.csv",
+      "vd": 1.0,
+      "vg": 0.8,
+      "reference_current_A_per_um": 9.22882968331957e-09,
+      "current_scale": 1e-08
+    }
+  ],
+  "arms": [
+    "original",
+    "strict"
+  ],
+  "counts": {
+    "nonlinear_reclosures": 8,
+    "new_bias_sweeps": 0,
+    "sentaurus_runs": 0
+  },
+  "changes": "Same original saved state and physical model in both arms. Strict arm enforces local source/flux row residual <=1e-6 and enables global source-relative gate above a declared absolute relevance floor. max_iter 100->200; original block tolerances and stall floors unchanged. No recovery algorithm, row-scaling, damping, mesh or physical parameter changes.",
+  "reviewed_resolution": {
+    "local_flux_or_source_floor_A_per_um": 1e-20,
+    "global_source_floor_A_per_um": 1e-18,
+    "rationale": "Audit observed net sources 3.8e-21..4.8e-20 A/um and contact-source mismatch 3.4e-20..5.6e-19 A/um. Source-relative global percentages here resolve cancellation noise, not Id accuracy. Global qualification flags must be reported; unqualified is not evidence of source-relative closure. Independent terminal KCL/Id remains mandatory. Local absolute floor suppresses sub-1e-20 A/um flow rows, while retaining observed electron residual violations and the resolvable high-Vd hole rows.",
+    "density_screening": "disabled; use current/flux normalization instead of ambiguous internal density units"
+  },
+  "gates": {
+    "native_converged": true,
+    "local_satisfied": true,
+    "global_satisfied": true,
+    "terminal_kcl_over_Id": 1e-08,
+    "current_materiality_dex": 0.0001,
+    "pair_materiality_dex": 0.0001
+  },
+  "failure_policy": "Keep last accepted failed state for diagnostics only. A failed strict solve cannot establish a converged Id correction or validate M80. Do not relax gates after results.",
+  "m82_released": false
+}

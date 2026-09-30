@@ -1,0 +1,50 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.0,
+      "index": 0,
+      "model": "combined",
+      "arm": "diagnostic",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_numerics_production_20260910\\weighted_merit\\failed_restart_isolation\\combined\\original.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_numerics_production_20260910\\weighted_merit\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\native\\vg_000\\attempt_1\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.0,
+      "index": 0,
+      "model": "double_poisson",
+      "arm": "diagnostic",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_numerics_production_20260910\\weighted_merit\\failed_restart_isolation\\double_poisson\\original.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_numerics_production_20260910\\weighted_merit\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\native\\vg_000\\attempt_1\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.0,
+      "index": 0,
+      "model": "ordinary_merit",
+      "arm": "diagnostic",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_numerics_production_20260910\\weighted_merit\\failed_restart_isolation\\ordinary_merit\\original.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_numerics_production_20260910\\weighted_merit\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\native\\vg_000\\attempt_1\\state.csv"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.0,
+      "index": 0,
+      "model": "unprojected_contacts",
+      "arm": "diagnostic",
+      "original_config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_numerics_production_20260910\\weighted_merit\\failed_restart_isolation\\unprojected_contacts\\original.json",
+      "seed": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_numerics_production_20260910\\weighted_merit\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\native\\vg_000\\attempt_1\\state.csv"
+    }
+  ],
+  "scope": "Additional same-state reload diagnostics only. Not a second allowed cohort reload; no 16-point qualification credit.",
+  "gate": 1e-06
+}

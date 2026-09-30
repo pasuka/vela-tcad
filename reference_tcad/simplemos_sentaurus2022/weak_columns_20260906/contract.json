@@ -1,0 +1,32 @@
+{
+  "status": "frozen_before_execution",
+  "cases": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_weak_columns_20260906\\m65_n19_vd_0p050000_endpoint\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_weak_columns_20260906\\m65_n19_vd_1p000000_endpoint\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_weak_columns_20260906\\m65_n23_vd_0p050000_endpoint\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_weak_columns_20260906\\m65_n23_vd_1p000000_endpoint\\config.json"
+    }
+  ],
+  "targets": 33,
+  "method": "Poisson: difference hole charge before large dielectric/dopant terms. Continuity: difference corresponding edge fluxes and SRH first, then accumulate in long double. Underlying flux/mobility evaluation remains double.",
+  "independent_reference": "Richardson R(h)=(4D(h/2)-D(h))/3, qualified by comparison with R(h/2); h in 1e-3,1e-4,1e-5,1e-6. Keep all step results. No use of the Jacobian to select the reference.",
+  "gates": {
+    "reference_step_relative": 0.0001,
+    "jacobian_relative": 0.001,
+    "component_reconstruction_scaled_error": 1e-10
+  },
+  "jacobian_controls": "Same physical residual, vector-chain enabled; original transport step 1e-6 and independent 1e-7/1e-8 controls.",
+  "limitations": "Term-wise cancellation control is not arbitrary-precision mobility; unresolved small signals remain unqualified.",
+  "production_changes": false
+}

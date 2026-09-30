@@ -1,0 +1,7 @@
+{
+  "original_cpp_independent_formula_max_relative": 6.661338147750939e-16,
+  "heldout_diagnostic_max_relative": 6.661338147750939e-16,
+  "inferred_constants_are_diagnostic_only": true,
+  "native_floor_algorithm_identified": false,
+  "production_changed": false
+}

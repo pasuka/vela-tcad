@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/dc_evidence.json": "661a64b3ec52c0873faaffea2c9ca5d439b1a3b0133763bc51e5765a6cd0a10d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/ports.csv": "2166182db04fe3cd0b88e9dbaddff88778ccd8d6fe41bb7c99727e436012bb96",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/response.csv": "7b327ef6a82a58718a50ad819c8e84f18d73d2c25a74f06a3c57048a2d696676",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/summary.json": "74f81f6fc0b8b5aba13f66d45f01dac0d90ea48f756a69eab833f246af8d89ac"
+  }
+}

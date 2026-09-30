@@ -1,0 +1,111 @@
+{
+  "jobs": [
+    {
+      "label": "native_first",
+      "device": "n23",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\native\\vg_010\\attempt_0",
+      "mode": "legacy",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\native_first\\legacy"
+    },
+    {
+      "label": "native_first",
+      "device": "n23",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\native\\vg_010\\attempt_0",
+      "mode": "corrected",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\native_first\\corrected"
+    },
+    {
+      "label": "native_reload",
+      "device": "n23",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\native\\vg_010\\attempt_1",
+      "mode": "legacy",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\native_reload\\legacy"
+    },
+    {
+      "label": "native_reload",
+      "device": "n23",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\native\\vg_010\\attempt_1",
+      "mode": "corrected",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\native_reload\\corrected"
+    },
+    {
+      "label": "qualified_control",
+      "device": "n23",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\vela\\vg_010\\attempt_0",
+      "mode": "legacy",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\qualified_control\\legacy"
+    },
+    {
+      "label": "qualified_control",
+      "device": "n23",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\vela\\vg_010\\attempt_0",
+      "mode": "corrected",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\qualified_control\\corrected"
+    },
+    {
+      "label": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n19_vd_0p050000_endpoint\\vela\\vg_000\\attempt_0",
+      "mode": "legacy",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\m65_n19_vd_0p050000_endpoint\\legacy"
+    },
+    {
+      "label": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n19_vd_0p050000_endpoint\\vela\\vg_000\\attempt_0",
+      "mode": "corrected",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\m65_n19_vd_0p050000_endpoint\\corrected"
+    },
+    {
+      "label": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n19_vd_1p000000_endpoint\\vela\\vg_000\\attempt_0",
+      "mode": "legacy",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\m65_n19_vd_1p000000_endpoint\\legacy"
+    },
+    {
+      "label": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n19_vd_1p000000_endpoint\\vela\\vg_000\\attempt_0",
+      "mode": "corrected",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\m65_n19_vd_1p000000_endpoint\\corrected"
+    },
+    {
+      "label": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_0p050000_endpoint\\vela\\vg_000\\attempt_0",
+      "mode": "legacy",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\m65_n23_vd_0p050000_endpoint\\legacy"
+    },
+    {
+      "label": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_0p050000_endpoint\\vela\\vg_000\\attempt_0",
+      "mode": "corrected",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\m65_n23_vd_0p050000_endpoint\\corrected"
+    },
+    {
+      "label": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\vela\\vg_000\\attempt_0",
+      "mode": "legacy",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\m65_n23_vd_1p000000_endpoint\\legacy"
+    },
+    {
+      "label": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_lowvg_20260909\\candidate\\dc\\phumob\\m65_n23_vd_1p000000_endpoint\\vela\\vg_000\\attempt_0",
+      "mode": "corrected",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\restart_coordinates\\identity\\m65_n23_vd_1p000000_endpoint\\corrected"
+    }
+  ],
+  "scope": "Zero-iteration pack/restart identity on 2 failed states, qualified same-bias control, and four Vg=0 controls. No source perturbation. Followed by at most one 200-iteration repair run from each failed output; keep all original failures.",
+  "gates": {
+    "state_relative_increment": 1e-14,
+    "residual_identity_relative": 1e-10,
+    "row": 1e-06,
+    "kcl": 1e-08
+  },
+  "change": "Subtract old-new references before adding saved increment in the two existing warm_start branches. Contact projection and consistency guards retained.",
+  "production_modified": false
+}

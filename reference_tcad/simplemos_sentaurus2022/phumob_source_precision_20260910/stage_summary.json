@@ -1,0 +1,35 @@
+{
+  "identity_replays": 4,
+  "qualified_identity": 4,
+  "precision_snapshots": 16,
+  "max_precision_agreement": 2.1792985210853677e-41,
+  "max_rounded_reconstruction": 3.068881496955257e-16,
+  "max_linear_defect_over_residual": 4.5653582066832836e-17,
+  "kernel_DC": 6,
+  "kernel_qualified": 2,
+  "packed_DC": 10,
+  "packed_qualified": 10,
+  "production_modified": false,
+  "uniform_16_point_qualification": false,
+  "full_phumob_curves": false,
+  "combined": {
+    "DC": 20,
+    "qualified_DC": 20,
+    "responses": 8,
+    "qualified_responses": 8,
+    "native_response_qualified": false,
+    "finite_volume_replacement": false,
+    "native_port_responses": 16,
+    "qualified_native_ports": 16,
+    "max_native_relative": 9.908026436855621e-06,
+    "numerical_combination": "packed Poisson + exact contact step + stable merit + corrected restart coordinates",
+    "production_modified": false
+  },
+  "poisson_direction_checks": {
+    "checks": 18,
+    "qualified": 18,
+    "max_relative": 1.394526531919878e-09,
+    "gate": 1e-06,
+    "scope": "Poisson block only, three state-direction blocks and three step sizes at two frozen low-Vd bases; actual representable central displacement used. Does not claim arbitrary carrier cross-block audit or production integration."
+  }
+}

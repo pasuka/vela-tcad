@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "build-release/phumob_restart_followup_20260909/source_runner.exe": "fc9b81c3b90b78eb1505afce1fd7b77aa5e842c0a1a0616be69638516f30900d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/evidence.json": "041ac85e801ddddb960a64c1845a1dfb87f6f4dc7cfebcecf99f791e337711f0",
+    "reference_tcad/simplemos_sentaurus2022/phumob_restart_followup_20260909/zero_plateau/contract.json": "ef789148f39373a0d6243989f8d4ee4bf5adc91f303e0db46785a26b36f6cf7d",
+    "scripts/check_simplemos_lowvd_zero_plateau_20260909.py": "8e40cf0a726849efd59f302bb692935f0affc27165ee9cd0a0d10d38d7a0007f"
+  }
+}

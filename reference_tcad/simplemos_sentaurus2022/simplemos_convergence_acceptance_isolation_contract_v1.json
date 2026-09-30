@@ -1,0 +1,65 @@
+{
+  "status": "frozen_before_execution",
+  "cases": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "source_config": "build-release/m65_ni/vela/n19/vd_0p050000/20_gate_sweep/config.json",
+      "state": "build-release/m65_ni/vela/n19/vd_0p050000/20_gate_sweep/state.csv",
+      "vd": 0.05,
+      "vg": 0.9,
+      "reference_current_A_per_um": 2.0520296762505757e-06,
+      "current_scale": 1e-08
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "source_config": "build-release/m65_ni/vela/n19/vd_1p000000/20_gate_sweep/config.json",
+      "state": "build-release/m65_ni/vela/n19/vd_1p000000/20_gate_sweep/state.csv",
+      "vd": 1.0,
+      "vg": 0.8,
+      "reference_current_A_per_um": 3.021975259721053e-06,
+      "current_scale": 1e-08
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "source_config": "build-release/m65_ni/vela/n23/vd_0p050000/20_gate_sweep/config.json",
+      "state": "build-release/m65_ni/vela/n23/vd_0p050000/20_gate_sweep/state.csv",
+      "vd": 0.05,
+      "vg": 0.9,
+      "reference_current_A_per_um": 1.7876117907133447e-08,
+      "current_scale": 1e-08
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "source_config": "build-release/m65_ni/vela/n23/vd_1p000000/20_gate_sweep/config.json",
+      "state": "build-release/m65_ni/vela/n23/vd_1p000000/20_gate_sweep/state.csv",
+      "vd": 1.0,
+      "vg": 0.8,
+      "reference_current_A_per_um": 9.22882968331957e-09,
+      "current_scale": 1e-08
+    }
+  ],
+  "additional_nonlinear_reclosures": 4,
+  "new_bias_sweeps": 0,
+  "sentaurus_runs": 0,
+  "trigger": "All four first strict solves failed. Inspection of NewtonSolver.cpp globalClosureLineSearchNorm shows both report and enforce alter line-search merit, even when sources are unqualified. Thus first contrast is not an acceptance-only intervention.",
+  "change": "Only global_continuity_closure.mode -> off within Newton, plus diagnostics logging. Keep local enforce at 1e-6, identical state, tolerances, row scaling, damping and iteration limit. Independently recompute the same global closure and KCL after each solve; original release thresholds unchanged.",
+  "gates": {
+    "native_converged": true,
+    "local_satisfied": true,
+    "global_satisfied": true,
+    "terminal_kcl_over_Id": 1e-08,
+    "current_materiality_dex": 0.0001,
+    "pair_materiality_dex": 0.0001
+  },
+  "global_profile": {
+    "mode": "enforce",
+    "tolerance": 1e-06,
+    "source_floor": 1e-10
+  },
+  "no_posthoc_relaxation": true,
+  "m82_released": false
+}

@@ -1,0 +1,178 @@
+{
+  "jobs": [
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.0,
+      "label": "zero",
+      "alpha": 0.0
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.0,
+      "label": "plus_full",
+      "alpha": 0.001
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.0,
+      "label": "minus_full",
+      "alpha": -0.001
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.0,
+      "label": "plus_half",
+      "alpha": 0.0005
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.0,
+      "label": "minus_half",
+      "alpha": -0.0005
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.0,
+      "label": "zero",
+      "alpha": 0.0
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.0,
+      "label": "plus_full",
+      "alpha": 0.001
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.0,
+      "label": "minus_full",
+      "alpha": -0.001
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.0,
+      "label": "plus_half",
+      "alpha": 0.0005
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.0,
+      "label": "minus_half",
+      "alpha": -0.0005
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.0,
+      "label": "zero",
+      "alpha": 0.0
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.0,
+      "label": "plus_full",
+      "alpha": 0.001
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.0,
+      "label": "minus_full",
+      "alpha": -0.001
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.0,
+      "label": "plus_half",
+      "alpha": 0.0005
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.0,
+      "label": "minus_half",
+      "alpha": -0.0005
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.0,
+      "label": "zero",
+      "alpha": 0.0
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.0,
+      "label": "plus_full",
+      "alpha": 0.001
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.0,
+      "label": "minus_full",
+      "alpha": -0.001
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.0,
+      "label": "plus_half",
+      "alpha": 0.0005
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.0,
+      "label": "minus_half",
+      "alpha": -0.0005
+    }
+  ],
+  "remote": "/tmp/vela_simplemos_phumob_pair_source_20260909",
+  "source": "same integrated particle source as local experiment; native cm^-3 s^-1 rate = particle source/(native Si box m2 * 1e6). Added PMI, retains native SRH and PhuMob.",
+  "manual": "Local T-2022.03 UG pp1214-1216,1230,1240,1266-1268; simplified PMI output is constant w.r.t. all independent variables, derivatives exactly zero.",
+  "gates": {
+    "kcl": 1e-08,
+    "bias_V": 1e-10,
+    "zero_Id_relative": 1e-08,
+    "matched_sites": 8,
+    "prediction": 0.001,
+    "two_amplitude": 0.001,
+    "even_over_odd": 0.01,
+    "signal_over_drift": 100
+  },
+  "finite_volume_replacement": false
+}

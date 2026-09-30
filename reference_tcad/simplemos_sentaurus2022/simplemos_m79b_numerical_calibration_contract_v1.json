@@ -1,0 +1,105 @@
+{
+  "schema": "vela.simplemos.m79b_numerical_calibration.v1",
+  "purpose": "Resolve M79 numerical differentiation/linear solve failures; no threshold relaxation.",
+  "supersedes_proposed_action_only": "M78 conditional local-support A/B is not executed; user authorized post-M78 research plan instead.",
+  "matrix": {
+    "pair_count": 8,
+    "case_count": 16,
+    "pairs": [
+      {
+        "low_device": "n17",
+        "high_device": "n21",
+        "drain_voltage_V": 0.05,
+        "diagnostic_gate_voltage_V": 0.8
+      },
+      {
+        "low_device": "n17",
+        "high_device": "n21",
+        "drain_voltage_V": 1.0,
+        "diagnostic_gate_voltage_V": 0.75
+      },
+      {
+        "low_device": "n18",
+        "high_device": "n22",
+        "drain_voltage_V": 0.05,
+        "diagnostic_gate_voltage_V": 0.8
+      },
+      {
+        "low_device": "n18",
+        "high_device": "n22",
+        "drain_voltage_V": 1.0,
+        "diagnostic_gate_voltage_V": 0.75
+      },
+      {
+        "low_device": "n19",
+        "high_device": "n23",
+        "drain_voltage_V": 0.05,
+        "diagnostic_gate_voltage_V": 0.9
+      },
+      {
+        "low_device": "n19",
+        "high_device": "n23",
+        "drain_voltage_V": 1.0,
+        "diagnostic_gate_voltage_V": 0.8
+      },
+      {
+        "low_device": "n20",
+        "high_device": "n24",
+        "drain_voltage_V": 0.05,
+        "diagnostic_gate_voltage_V": 0.85
+      },
+      {
+        "low_device": "n20",
+        "high_device": "n24",
+        "drain_voltage_V": 1.0,
+        "diagnostic_gate_voltage_V": 0.8
+      }
+    ]
+  },
+  "pilot_devices": [
+    "n19",
+    "n23",
+    "n20",
+    "n24"
+  ],
+  "execution": {
+    "new_nonlinear_solves": 0,
+    "new_sentaurus_runs": 0,
+    "gate_states_only": true,
+    "expand_only_after_pilot_pass": true,
+    "no_production_changes": true
+  },
+  "definitions": {
+    "reference": "Frozen matched-ni/no-BGN M65 and electron-only M74 gate endpoints",
+    "parameter": "alpha from legacy electron Poisson volume (0) to Si barycentric (1)",
+    "source": "F_alpha=F_candidate(u)-F_baseline(u) at each endpoint; coordinates and all other settings identical",
+    "current": "Same signed drain current A/um as frozen curve; check both residual functional and production extractor",
+    "prediction": "-lambda.T F_alpha plus explicit g_alpha; compare dI/(I ln10) at both endpoints against log10|I1/I0|",
+    "finite_difference": "Centered +/- directions, max physical component 1e-5 and 5e-6 V; response plus deterministic psi/phin/phip directions with contact exclusion",
+    "signal": "Current directional derivative above max(1e-20 A/um, 1e-12*full_gradient_norm); other rows reported but not qualified",
+    "failure": "No M80 on failed identity/Jacobian/duality gates. Finite-amplitude failure requires separately frozen small-amplitude calibration. Never relax thresholds retrospectively."
+  },
+  "thresholds": {
+    "current_replay_relative": 1e-08,
+    "adjoint_relative_residual": 1e-10,
+    "jvp_relative": 0.001,
+    "current_fd_relative": 0.001,
+    "duality_relative": 1e-08,
+    "linear_solve_relative": 1e-08,
+    "finite_prediction_relative": 0.1,
+    "finite_prediction_floor_dex": 0.0001,
+    "continuity_source_norm": 0.0,
+    "direct_current_term": 0.0
+  },
+  "calibration": {
+    "finite_difference_steps_V": [
+      1e-06,
+      5e-07,
+      2.5e-07
+    ],
+    "response_direction": "Project only the FD test tangent onto psi/phin to avoid normalization by nearly unconstrained hole increments; full J, adjoint, parameter source and solved response retain all three blocks. Separate hole FD direction is mandatory.",
+    "linear_refinement": "Three iterative-refinement corrections with long-double residual accumulation, same double matrix and RHS",
+    "acceptance": "All original numerical and finite-response thresholds unchanged; all three FD steps must pass for measured signals.",
+    "prior_result": "M79 remains stopped_at_qualification_gate and is not rewritten."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "status": "completed_native_runtime_geometry_mobility_identity",
+  "input_hashes": {
+    "scripts/audit_simplemos_runtime_geometry_20260907.py": "d670fd619ee5af5b0046eaf0f0834bbb0b5fc06e8ca5b4151069c96871611560",
+    "reference_tcad/simplemos_sentaurus2022/masetti_runtime_calibration_20260907/geometry_runtime/freeze.json": "53f7b97eea9a38d4a89a030ca1c70777ae5aff527f2d10da974b0878b57da899",
+    "build-release/simplemos_masetti_runtime_20260907/geometry_runtime/results.tgz": "5ce06549b8cf0371b0b869b199a766fde2a9e2ff8b363d066f8872ac3af86a44"
+  },
+  "edge_definition": "No unsupported edge-mobility dataset used. Actual element-edge coefficients and element mobility are available; their sum defines the calibrated conservative SG coefficient.",
+  "vector_plots": "No claim that a plotted current vector is an individual conservative edge flux."
+}

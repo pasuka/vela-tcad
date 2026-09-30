@@ -1,0 +1,11 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/chain_20260914/pilot_checks.csv": "4d0f097b876a4b7b08f2dfe500b70f6c45315df420e0306e4960a062c2a7daac",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/chain_20260914/pilot_contract.json": "024de703a0f827f3a6d16501d7db99411a79d3414cdb2bce3e7aafdf34cd1033",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/chain_20260914/pilot_selection.csv": "d5279c9d60384616143312a871cf15e0bcc286b6355f9c49fb8f97a103a6d67a",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/chain_20260914/pilot_summary.json": "0c22801721c234d8b7b670c61c6ebd7a4548f4f4d72f52f5a80c4ff5de748498",
+    "reference_tcad/simplemos_sentaurus2022/hfs_restore_20260912/formation_20260914/v2/pilot_evidence.json": "b1f338be7ff1c4965d6f563fc6ffa1368435c21399908eb5753cd269b384ede8",
+    "scripts/audit_simplemos_phumob_cross_derivatives_20260908.py": "832794b8338187994750b2f7c371999c71b86804f4892d73be238a09d1b1c3ae",
+    "scripts/check_simplemos_hfs_chain_20260914.py": "b2b520cbc1c30a0de055cfa0b9ed2fbfdcbdd6401802f7f15b096c097a981ce3"
+  }
+}

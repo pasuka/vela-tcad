@@ -1,0 +1,17 @@
+{
+  "time": "2026-09-13T11:07:11.182795+08:00",
+  "completed_before_resume": 306,
+  "remaining_targets_completed": 102,
+  "all_targets": 408,
+  "qualified_bias_pairs": 204,
+  "completed_attempts": 408,
+  "numerical_failed_attempts": 0,
+  "numerical_reloads": 0,
+  "administrative_interrupted_attempts": 4,
+  "previous_306_states_byte_identical": true,
+  "interrupted_archives_verified": true,
+  "all_qualified": true,
+  "acceptance_changed": false,
+  "production_changed_during_resume": false,
+  "scope": "Enormal four complete 0..1 V curves and native field/SRH comparison. Four interrupted attempts are separate from completed numerical attempts. HFS and original full matrix not executed."
+}

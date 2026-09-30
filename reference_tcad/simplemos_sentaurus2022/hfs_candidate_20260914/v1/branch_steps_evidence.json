@@ -1,0 +1,9 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/branch_steps.csv": "dbcf0b8809a882dc3266865c093f434334bbd44ec1ed5315cd1fa65cf787128c",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/branch_steps_summary.json": "5900fc0c0b9122042e77564c52c665a2449ec49df40d0e3402ab1fde4bf79bbd",
+    "reference_tcad/simplemos_sentaurus2022/hfs_candidate_20260914/v1/input_evidence.json": "3ffafea304f5583a20982ed9c74d5e6d77d3ad950ce2adcfdc1d20ec49be66fb",
+    "scripts/audit_simplemos_hfs_branch_steps_20260914.py": "8c64bca2b563da1ec9cdb407b602946211e8a20569cdd7e37f1e0594129de75a",
+    "scripts/calibrate_simplemos_hfs_formation_v2_20260914.py": "b7e941b7bc1971d886bc8f794c61c569b362904b845da0e7b0039495cca24f41"
+  }
+}

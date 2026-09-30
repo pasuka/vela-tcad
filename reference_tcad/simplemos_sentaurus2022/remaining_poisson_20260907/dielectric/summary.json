@@ -1,0 +1,9 @@
+{
+  "finite_qualified": 32,
+  "finite_count": 32,
+  "dual_qualified": 16,
+  "port_qualified": 32,
+  "all_native_K_promoted": true,
+  "production_changed": false,
+  "full_curve_started": false
+}

@@ -6,6 +6,10 @@ evidence.
 
 ## Current References
 
+- [SimpleMOS historical evidence archive and recovery](../reference_tcad/simplemos_sentaurus2022/local_evidence_20260930/README.md):
+  1,424 small records in Git; complete 1,946-file archive on the Sentaurus VM,
+  with exact hashes and recovery of 522 detailed historical artifacts to their original paths.
+
 - [Latest D0 Release closeout, 2026-09-25](validation/templates_ldmos_release_closeout_2026-09-25.md):
   Codespaces Release 858/858 CTest, 590 exact points, 698 identical state pairs,
   62 native local fields and six checkpoints passed. Three paired rounds reduce

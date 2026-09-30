@@ -1,0 +1,7 @@
+device,vd,index,identity,trials,dest,new_dest,coordinates,residual_identity
+n19,0.05,0,True,13,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\pr_fix\stalls\n19\0.05\0,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\psi_split_0911\v2\states\n19\0.05\0,4440,True
+n19,0.05,10,True,13,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\pr_fix\stalls\n19\0.05\10,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\psi_split_0911\v2\states\n19\0.05\10,4440,True
+n23,0.05,10,True,13,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\pr_fix\stalls\n23\0.05\10,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\psi_split_0911\v2\states\n23\0.05\10,4446,True
+n23,1.0,0,True,13,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\pr_fix\stalls\n23\1.0\0,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\psi_split_0911\v2\states\n23\1.0\0,4446,True
+n23,1.0,10,True,13,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\pr_fix\stalls\n23\1.0\10,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\psi_split_0911\v2\states\n23\1.0\10,4446,True
+n19,0.05,40,True,13,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\pr_fix\stalls\n19\0.05\40,D:\code-repo\vela-tcad\.worktrees\simplemos-sdevice-validation\build-release\psi_split_0911\v2\states\n19\0.05\40,4440,True

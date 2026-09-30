@@ -1,0 +1,62 @@
+{
+  "rows": [
+    {
+      "device": "n17",
+      "nodes": 1542,
+      "free_Si_nodes": 958,
+      "required_carrier_rows": 1916,
+      "current_four_curve_helper_accepts_shape": false
+    },
+    {
+      "device": "n18",
+      "nodes": 1542,
+      "free_Si_nodes": 958,
+      "required_carrier_rows": 1916,
+      "current_four_curve_helper_accepts_shape": false
+    },
+    {
+      "device": "n19",
+      "nodes": 1480,
+      "free_Si_nodes": 907,
+      "required_carrier_rows": 1814,
+      "current_four_curve_helper_accepts_shape": true
+    },
+    {
+      "device": "n20",
+      "nodes": 1480,
+      "free_Si_nodes": 907,
+      "required_carrier_rows": 1814,
+      "current_four_curve_helper_accepts_shape": true
+    },
+    {
+      "device": "n21",
+      "nodes": 1540,
+      "free_Si_nodes": 958,
+      "required_carrier_rows": 1916,
+      "current_four_curve_helper_accepts_shape": false
+    },
+    {
+      "device": "n22",
+      "nodes": 1540,
+      "free_Si_nodes": 958,
+      "required_carrier_rows": 1916,
+      "current_four_curve_helper_accepts_shape": false
+    },
+    {
+      "device": "n23",
+      "nodes": 1482,
+      "free_Si_nodes": 907,
+      "required_carrier_rows": 1814,
+      "current_four_curve_helper_accepts_shape": true
+    },
+    {
+      "device": "n24",
+      "nodes": 1482,
+      "free_Si_nodes": 907,
+      "required_carrier_rows": 1814,
+      "current_four_curve_helper_accepts_shape": true
+    }
+  ],
+  "finding": "Current four-curve support and qualification helpers assert 907 free Si nodes / 1814 carrier rows. GOxTime10 meshes require 958 / 1916. A separate mesh-derived all-row adapter is required before original full-matrix runs; original frozen helpers must remain unchanged.",
+  "qualification": "Read-only row-support inventory; no new model or solver qualification."
+}

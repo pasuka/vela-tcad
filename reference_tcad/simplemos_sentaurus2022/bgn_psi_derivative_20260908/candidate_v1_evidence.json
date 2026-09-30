@@ -1,0 +1,15 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_bgn_psi_derivative_20260908/build.log": "eba9dec49c3c516f3f58ec80db87ed65d6c34270d48bc451d497e817e0a3a15a",
+    "build-release/simplemos_bgn_psi_derivative_20260908/candidate_v1/build-release/libvela_core.a": "0509a53b8a120c5bc0f9526d60f1cf54f32d5a0f2ebe71e6b5d3eae97798d44f",
+    "build-release/simplemos_bgn_psi_derivative_20260908/candidate_v1/build-release/vela_example_runner.exe": "aa2c379d69fde90c89090fca08c035dd17b7d9c8983aeaae4d94aa5e2b75c41f",
+    "build-release/simplemos_bgn_psi_derivative_20260908/candidate_v1/include/vela/discretization/StableSGDerivative.h": "b804e06328671b511fbad290c52e13aae78c8e460b07c69196e56365a69ce8c6",
+    "build-release/simplemos_bgn_psi_derivative_20260908/candidate_v1/src/equation/CoupledDDAssembler.cpp": "d775ac1fbc12638fd88cc64a94b6e1e3a4cdf84a50863fa1006fdcedafc3f26d",
+    "build-release/simplemos_bgn_psi_derivative_20260908/candidate_v1/tests/test_dc_sweep.cpp": "435cefe8982612aea2749169c5611d79a8019ebd58dd9bfa1e0d9140e89bdc5e",
+    "build-release/simplemos_bgn_psi_derivative_20260908/candidate_v1/tests/test_production_numerics.cpp": "27bff7ac3eeb2b4bb9d1f123e1481c8a7d73ec289290114ddf1c71295f9b06c2",
+    "build-release/simplemos_bgn_psi_derivative_20260908/candidate_v1/tests/test_sg_flux.cpp": "d1fbbaf5b0b0c33eab5ddda1ea9028499c231c1bc2413809478d14138ce1b13d",
+    "build-release/simplemos_bgn_psi_derivative_20260908/ctest.log": "76af999420b84b7c99995b4b3417d64796ad467b4c286bc71ef68f42e248c5f6",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/candidate_v1_identity.json": "3799e03bfae4a2e355fc16253a2ac036a14b75e439915479bb5f10ebf9b658ca",
+    "reference_tcad/simplemos_sentaurus2022/bgn_psi_derivative_20260908/comparison_evidence.json": "6d44261c726091d90ae25289e909c14e2b270f08f68391f519d7865c5e9ce54c"
+  }
+}

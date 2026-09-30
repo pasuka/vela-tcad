@@ -1,0 +1,9 @@
+{
+  "states": 64,
+  "identity_pass": 45,
+  "local_pass": 0,
+  "global_pass": 32,
+  "max_kcl_over_Id": 1623.245567201609,
+  "nonlinear_solves": 0,
+  "strict_contrast_not_yet_run": true
+}

@@ -1,0 +1,6 @@
+{
+  "scope": "Use the already inferred floor to calculate both roots of G(P)=G_floor. Test P clipping at each root and G-value clipping on all other cells.",
+  "interpretation": "Diagnostic identification only; root ambiguity is retained when the mesh does not sample the interval. No production parameters fitted.",
+  "original_cell_gate": 1e-07,
+  "algorithm_distinction_relative": 1e-12
+}

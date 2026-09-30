@@ -1,0 +1,51 @@
+[
+  {
+    "original": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\vela\\m65_n23_vd_0p050000_endpoint\\continuation\\vg_016\\attempt_0",
+    "archive": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\resume_20260913\\interrupted\\m65_n23_vd_0p050000_endpoint\\continuation\\vg_016\\attempt_0",
+    "files": {
+      "acceptance_edges.json": "995137cce60b5b8f7a2356b2ab9e920d7da2c393fe0fa2bbdeb0c84c8d1b8169",
+      "all_row.json": "71e3f23b986d1c7e0ce5c650dc4f68f3596e29dcf4dba96916b907cb17ff61c2",
+      "config.json": "da29608865014b49eb9d2cd94402ddcbe4b226fec17a30ceaf95e5e86d4b7c7c",
+      "functional.json": "4e2cfe52c2cb55367398a7fdc666b2c2275b5ca2bee45ca83d6026c554c9a76a",
+      "input_freeze.json": "088cc09390829e48bfda01a43c488f18ab87904b5bfe9c91289435bb413298ed",
+      "state.csv": "2bb03f5d114232ec2ea92556cb25363b7cdfcfeb88846ff3f2f64311e113aaac"
+    },
+    "classification": "Administrative interruption: no final solver status or result; not a qualified state or a numerical failure."
+  },
+  {
+    "original": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\vela\\m65_n23_vd_0p050000_endpoint\\native\\vg_031\\attempt_0",
+    "archive": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\resume_20260913\\interrupted\\m65_n23_vd_0p050000_endpoint\\native\\vg_031\\attempt_0",
+    "files": {
+      "acceptance_edges.json": "22e2f82867ebe59f4a536734fcc87c8a92c9b55ee6a5ddacf06dba703f45df3d",
+      "all_row.json": "05b3664cc0db1ae2f3661270b55c471d6a7f69fd9d04f2fcd2051731bc4dcbbd",
+      "config.json": "a048ef8e27b5b2a2d602a7b49b5c1bfc732df908e590c043bc392b5fcc8cecf6",
+      "functional.json": "fa3c9b0085ab55847135debb1f400ee37f4616955a1e3c56084666efbaf69756",
+      "input_freeze.json": "b487f4f1a129fee829aac825a9a66f3e8b61d8742d4b2ac3ed86bf21881e9ae1"
+    },
+    "classification": "Administrative interruption: no final solver status or result; not a qualified state or a numerical failure."
+  },
+  {
+    "original": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\vela\\m65_n23_vd_1p000000_endpoint\\continuation\\vg_016\\attempt_0",
+    "archive": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\resume_20260913\\interrupted\\m65_n23_vd_1p000000_endpoint\\continuation\\vg_016\\attempt_0",
+    "files": {
+      "acceptance_edges.json": "17f5cc00cbe6b708981ac1d7f4115eaf480cad503b27c8e127b8566444dd1aba",
+      "all_row.json": "f5841aac58c2ff0dbb36b1919a9c9e26173322282780ff27f39a1e834d0aa743",
+      "config.json": "7000ec1efe66d1d698da5af3dd90b77db12e084475194487d40774c285d191ea",
+      "functional.json": "39a04b8aacb12f70b334e58918c785040a915743187e2c05eab81924f10bcb4a",
+      "input_freeze.json": "9ca51a119c6584b0be113c13fc6cdd808cde6d04b13fd2dd85888538c9d38888"
+    },
+    "classification": "Administrative interruption: no final solver status or result; not a qualified state or a numerical failure."
+  },
+  {
+    "original": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\vela\\m65_n23_vd_1p000000_endpoint\\native\\vg_023\\attempt_0",
+    "archive": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\enormal_curves_20260912\\resume_20260913\\interrupted\\m65_n23_vd_1p000000_endpoint\\native\\vg_023\\attempt_0",
+    "files": {
+      "acceptance_edges.json": "11fafcb230ff61fc3fb40a55e715ba13848fed1f21cc0de46f4086c9c6fd16e7",
+      "all_row.json": "6624c4f5145177ace5a469e1e59362c89f29b92bf03daa95b89ad4acaf477315",
+      "config.json": "ce46d0280c6ffb4ef9519f75e3f0016bb51bcdbaf5fe9b0439d3cfc550969e8e",
+      "functional.json": "c7a984bfe1beb38187555c79ca60694819c066331211172822f46daddfe794a4",
+      "input_freeze.json": "30af15f6946f6e2d2ce82459238dc9a9edadacf81301e37687cd3885df28a9b2"
+    },
+    "classification": "Administrative interruption: no final solver status or result; not a qualified state or a numerical failure."
+  }
+]

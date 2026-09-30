@@ -1,0 +1,15 @@
+{
+  "status": "failed",
+  "qualified_states": 5,
+  "passed_amplitudes": 0,
+  "max_fd_adjoint_relative": 0.0034078861447087412,
+  "two_amplitude_derivative_relative": 3.5371613860135653e-08,
+  "vela_native_normalized_ratios": [
+    0.9929102273885996,
+    0.992910983293775
+  ],
+  "new_nonlinear_solves": 5,
+  "new_sentaurus_runs": 0,
+  "m82_released": false,
+  "m83_released": false
+}

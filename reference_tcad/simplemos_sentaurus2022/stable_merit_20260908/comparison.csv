@@ -1,0 +1,13 @@
+key,name,psi_max_V,phin_max_V,phip_max_V,density_max_relative,Id_relative,legacy_qualified,stable_qualified,state_close,strict_pair_qualified
+m65_n19_vd_1p000000_endpoint_vg016,failure_original_restart,0.0,5.1e-21,5.0948601e-10,1.970780183491172e-08,1.1879386363489175e-14,False,True,True,False
+m65_n19_vd_1p000000_endpoint_vg016,failure_saved_state,0.0,1.079e-21,2.28384e-11,8.83428441511569e-10,8.659739592076221e-15,True,True,True,True
+m65_n23_vd_1p000000_endpoint_vg016,failure_original_restart,0.0,7.24e-25,4.51151e-12,1.7451307066096433e-10,5.10702591327572e-15,False,False,True,False
+m65_n23_vd_1p000000_endpoint_vg016,failure_saved_state,0.0,7.76e-25,2.808e-14,1.0871303857129533e-12,6.439293542825908e-15,True,True,True,True
+m65_n19_vd_0p050000_endpoint_vg016,control_finite,0.0,0.0,0.0,0.0,0.0,True,True,True,True
+m65_n19_vd_0p050000_endpoint_vg016,control_finite_native_seed,0.0,1.1e-22,0.0,0.0,4.440892098500626e-16,True,True,True,True
+m65_n19_vd_1p000000_endpoint_vg016,control_finite,0.0,2.52e-22,1.1438489e-10,4.424602906283326e-09,3.1086244689504383e-15,True,True,True,True
+m65_n19_vd_1p000000_endpoint_vg016,control_finite_native_seed,0.0,4.7e-22,2.0374657e-10,7.881272523491134e-09,3.3306690738754696e-15,True,True,True,True
+m65_n23_vd_0p050000_endpoint_vg016,control_finite,0.0,0.0,0.0,0.0,0.0,True,True,True,True
+m65_n23_vd_0p050000_endpoint_vg016,control_finite_native_seed,0.0,1.3e-20,1.1e-25,0.0,8.43769498715119e-15,True,True,True,True
+m65_n23_vd_1p000000_endpoint_vg016,control_finite,0.0,8.18e-15,0.0,3.1596947280831955e-13,7.593925488436071e-14,True,True,True,True
+m65_n23_vd_1p000000_endpoint_vg016,control_finite_native_seed,0.0,0.0,0.0,0.0,0.0,True,True,True,True

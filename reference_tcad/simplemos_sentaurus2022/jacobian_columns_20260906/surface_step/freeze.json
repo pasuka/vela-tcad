@@ -1,0 +1,14 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/build_command.json": "953afa993e8dab14fb914cb2262dda36bc3ac2d3133f725f0d5692fae389e37a",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/CoupledDDAssembler.cpp": "d712858e6c2e98029ddbf7954c0bb1ccfceb460e0c591c1f9a835565b321a27b",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n19_vd_1p000000_endpoint/1e-07/config.json": "baddde5cb917112138703f19713ea64a7643225fe6250263d0137022a96ea6db",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n19_vd_1p000000_endpoint/1e-08/config.json": "9f4ac0f4111ec391cfe48407a58d42e26685074b8a637959aa83674ea172bb8a",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n23_vd_1p000000_endpoint/1e-07/config.json": "b624546e4545ccb088b85977cbe04484f777457a2144b74559a9bf50f694c708",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/m65_n23_vd_1p000000_endpoint/1e-08/config.json": "e414755fe7f9e4b4549a041a8192ba14882fc4385ff4fea740b18f935f517050",
+    "build-release/simplemos_jacobian_columns_20260906/surface_step/runner.exe": "3370c6af8d393b7e3aa6477b7481fe4f065b77f0a42a54bc6408aafde6d6d88e",
+    "reference_tcad/simplemos_sentaurus2022/jacobian_columns_20260906/freeze.json": "9e48241c10e19032f6ed8c01f1241cfa86404692a9a9b6bd3ea37b60b557ca9e",
+    "reference_tcad/simplemos_sentaurus2022/jacobian_columns_20260906/surface_step/contract.json": "a3bdc3ca00ddfc68e13619831f8274520c09792cac0a5bdda4e8d784ae743809",
+    "scripts/audit_simplemos_surface_derivative_step_20260906.py": "d7b60b37919fb5c30a1ac29fde6504b3a7c146aba064da8bd7c5b7beb7ef2a6e"
+  }
+}

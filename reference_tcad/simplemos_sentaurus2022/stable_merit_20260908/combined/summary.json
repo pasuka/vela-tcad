@@ -1,0 +1,50 @@
+{
+  "DC_total": 58,
+  "stable": {
+    "DC": 24,
+    "stable_qualified": 11,
+    "stable_total": 12,
+    "stable_failed_path_qualified": 3,
+    "stable_failed_path_total": 4,
+    "stable_controls_qualified": 8,
+    "stable_controls_total": 8,
+    "legacy_identity": true,
+    "ports_qualified": 24,
+    "all_stable_qualified": false,
+    "production_changes": false
+  },
+  "compensated_step": {
+    "DC": 14,
+    "carry_qualified": 8,
+    "carry_total": 12,
+    "identity_passed": 2,
+    "carry_failures_qualified": 0,
+    "failure_cases": 4,
+    "carry_controls_qualified": 8,
+    "control_cases": 8,
+    "ports_passed": 14,
+    "production_changes": false
+  },
+  "srh": {
+    "DC": 20,
+    "qualified_DC": 10,
+    "responses": 8,
+    "qualified_responses": 0,
+    "qualified": false,
+    "native_response_qualified": false,
+    "finite_replacement": false
+  },
+  "srh_supplementary": {
+    "qualified": false,
+    "zero_drift_passed": 4,
+    "input_guards_passed": 9
+  },
+  "stable_control_strict_pairs": 8,
+  "stable_control_pairs": 8,
+  "carry_control_state_close": 8,
+  "carry_control_comparisons": 8,
+  "qualified_srh_remainder_max_relative": 2.330725077790991e-08,
+  "production_changes": false,
+  "native_new_simulations": 0,
+  "finite_srh_expansion": false
+}

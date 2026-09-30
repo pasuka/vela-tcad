@@ -1,0 +1,7 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/export_evidence.json": "07e28518d8d33a42f4430a2337f50abee95cd04a9857243c93e633e6b5f1d61b",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/semantics.csv": "083c9b65ae8421dafb2939b71b730096a22826f848b5eeaa07ebdafabc018833",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/vela_freeze.json": "4ed0cbea5a87234cc5d9134257577b67b952a25a91494262c9d6e7ef9781438a"
+  }
+}

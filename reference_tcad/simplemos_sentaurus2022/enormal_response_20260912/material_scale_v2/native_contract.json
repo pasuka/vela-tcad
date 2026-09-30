@@ -1,0 +1,248 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n19_vd_0p050000_endpoint_vg_040_zero",
+      "label": "zero",
+      "delta": 0.0,
+      "baseline": "m65_n19_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n19_vd_0p050000_endpoint_vg_040_minus_large",
+      "label": "minus_large",
+      "delta": -0.001,
+      "baseline": "m65_n19_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n19_vd_0p050000_endpoint_vg_040_minus_small",
+      "label": "minus_small",
+      "delta": -0.0005,
+      "baseline": "m65_n19_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n19_vd_0p050000_endpoint_vg_040_plus_small",
+      "label": "plus_small",
+      "delta": 0.0005,
+      "baseline": "m65_n19_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n19_vd_0p050000_endpoint_vg_040_plus_large",
+      "label": "plus_large",
+      "delta": 0.001,
+      "baseline": "m65_n19_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n19_vd_1p000000_endpoint_vg_040_zero",
+      "label": "zero",
+      "delta": 0.0,
+      "baseline": "m65_n19_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n19_vd_1p000000_endpoint_vg_040_minus_large",
+      "label": "minus_large",
+      "delta": -0.001,
+      "baseline": "m65_n19_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n19_vd_1p000000_endpoint_vg_040_minus_small",
+      "label": "minus_small",
+      "delta": -0.0005,
+      "baseline": "m65_n19_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n19_vd_1p000000_endpoint_vg_040_plus_small",
+      "label": "plus_small",
+      "delta": 0.0005,
+      "baseline": "m65_n19_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n19_vd_1p000000_endpoint_vg_040_plus_large",
+      "label": "plus_large",
+      "delta": 0.001,
+      "baseline": "m65_n19_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n23_vd_0p050000_endpoint_vg_040_zero",
+      "label": "zero",
+      "delta": 0.0,
+      "baseline": "m65_n23_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n23_vd_0p050000_endpoint_vg_040_minus_large",
+      "label": "minus_large",
+      "delta": -0.001,
+      "baseline": "m65_n23_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n23_vd_0p050000_endpoint_vg_040_minus_small",
+      "label": "minus_small",
+      "delta": -0.0005,
+      "baseline": "m65_n23_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n23_vd_0p050000_endpoint_vg_040_plus_small",
+      "label": "plus_small",
+      "delta": 0.0005,
+      "baseline": "m65_n23_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n23_vd_0p050000_endpoint_vg_040_plus_large",
+      "label": "plus_large",
+      "delta": 0.001,
+      "baseline": "m65_n23_vd_0p050000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n23_vd_1p000000_endpoint_vg_040_zero",
+      "label": "zero",
+      "delta": 0.0,
+      "baseline": "m65_n23_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n23_vd_1p000000_endpoint_vg_040_minus_large",
+      "label": "minus_large",
+      "delta": -0.001,
+      "baseline": "m65_n23_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n23_vd_1p000000_endpoint_vg_040_minus_small",
+      "label": "minus_small",
+      "delta": -0.0005,
+      "baseline": "m65_n23_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n23_vd_1p000000_endpoint_vg_040_plus_small",
+      "label": "plus_small",
+      "delta": 0.0005,
+      "baseline": "m65_n23_vd_1p000000_endpoint_vg_040_baseline"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 0.8,
+      "index": 40,
+      "name": "m65_n23_vd_1p000000_endpoint_vg_040_plus_large",
+      "label": "plus_large",
+      "delta": 0.001,
+      "baseline": "m65_n23_vd_1p000000_endpoint_vg_040_baseline"
+    }
+  ],
+  "remote_root": "/tmp/vela_simplemos_enormal_material_scale_20260912",
+  "parameter_direction": "For f=1+delta divide B,C,delta,eta by f, both carriers; inverse acoustic and roughness scattering are then multiplied by f. Native a_ac/a_sr stay at defaults. No stress model is enabled.",
+  "deltas": [
+    -0.001,
+    -0.0005,
+    0,
+    0.0005,
+    0.001
+  ],
+  "stages": "Five points for the first case must show a nonzero qualified two-amplitude response before launching the other fifteen.",
+  "gates": {
+    "native_exit_zero": true,
+    "kcl_over_Id": 1e-08,
+    "bias_V": 1e-10,
+    "zero_Id_relative": 1e-12,
+    "zero_potential_V": 1e-12,
+    "zero_density_relative": 1e-10,
+    "two_amplitude_relative": 0.001,
+    "even_over_odd": 0.01,
+    "signal_over_zero_drift": 100
+  },
+  "original_acceptance_changed": false,
+  "pilot_case": "m65_n19_vd_0p050000_endpoint",
+  "corrects": "Prior a_ac/a_sr experiment was a zero-signal failure, preserved separately."
+}

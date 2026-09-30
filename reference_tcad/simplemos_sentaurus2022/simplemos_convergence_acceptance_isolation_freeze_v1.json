@@ -1,0 +1,20 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_convergence_acceptance_isolation/m65_n19_vd_0p050000_endpoint/config.json": "d19630535c8bc968c0ec5b51f3b999f3b911197bddd8912cccd3efe002587471",
+    "build-release/simplemos_convergence_acceptance_isolation/m65_n19_vd_1p000000_endpoint/config.json": "f6fe08816c51305404a879675ce799068890548a359aae7b1ef4099a92801cd9",
+    "build-release/simplemos_convergence_acceptance_isolation/m65_n23_vd_0p050000_endpoint/config.json": "5ccda37f616b9672c922e0ed79a1f7e30ad780dfcfcbca22ab1f5f3117dbfd36",
+    "build-release/simplemos_convergence_acceptance_isolation/m65_n23_vd_1p000000_endpoint/config.json": "517d425b52a4a169624bb72a0ffd3f876d4ee855bb23d52c8a0df60bee606bfc",
+    "build-release/simplemos_strict_convergence/m65_n19_vd_0p050000_endpoint/strict/config.json": "92b339414e09f8574d4eb996c4a24f76b638707c365d74194ef756d7915be676",
+    "build-release/simplemos_strict_convergence/m65_n19_vd_1p000000_endpoint/strict/config.json": "899973ca459749e905a36f68f56c1835c6cf70c42c1ce4bd42c0d150d428fca3",
+    "build-release/simplemos_strict_convergence/m65_n23_vd_0p050000_endpoint/strict/config.json": "90f3a1f4476750a29629dfb4a54d1c8a608c4f43da5ef81069331b9660b6633a",
+    "build-release/simplemos_strict_convergence/m65_n23_vd_1p000000_endpoint/strict/config.json": "00554c4091ec850c790020b7ed38dfff5318c1b93d4716fbd820e46d6e64ee96",
+    "build-release/vela_example_runner.exe": "6642a845d9d6dd30fea4e23ce8950428b852d57e09a6752d3c43db88f99dccf9",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_convergence_acceptance_isolation_contract_v1.json": "b34cfaa9c5e8c60f498ec82770051cc2bbb71595c817a07a1a7822532ec18c82",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_strict_convergence_contract_v1.json": "e93a4beb44d0ace971e1b9e53fe7ff0bca81e3ad690a9e270cf1a7cdf571c33f",
+    "reference_tcad/simplemos_sentaurus2022/simplemos_strict_convergence_freeze_v1.json": "cfe3f8b1e500d41465b226c699c01cd32bd8f58b918a1a24c31ca76281e187e3",
+    "reference_tcad/simplemos_sentaurus2022/strict_convergence_contrast/case_ledger.csv": "8a2a650f52dc1c5bd85f717869ffe2b224c2b025b72d04fb14aa77715d3fb3de",
+    "reference_tcad/simplemos_sentaurus2022/strict_convergence_contrast/summary.json": "8eb680d2ce310fd8ae7713a67fe3f7d6d3c1518e62f692f09cfcc015574ed911",
+    "scripts/run_simplemos_convergence_acceptance_isolation.py": "6b82045bf7e62d63d5dcc5f8ba76dd64ef84e88b8d367a8574138212b18e9ce8",
+    "src/solver/NewtonSolver.cpp": "c3b4f7cb969a5a1c831e660cd06bd358cd6d6ac3b30cbe80dcbb471d1f4371b9"
+  }
+}

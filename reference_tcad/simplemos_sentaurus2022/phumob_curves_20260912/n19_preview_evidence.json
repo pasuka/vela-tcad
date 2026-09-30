@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "build-release/phumob_curves_20260912/n19_preview.tgz": "b997e7c11309c5b1f4fe147f652bc3f14def5ba4b189f4d29f609ba595fde9af",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/n19_partial_comparison.csv": "2e5592451deed7085d95e28d1e3eaea0b9a1d96394cd525bd85bec56db79a64c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/n19_preview_points.csv": "1bd6ae9e944efc175aacd63cfeb2f756d19b7b14e3610ee992d8b0e0b75ad6c9",
+    "reference_tcad/simplemos_sentaurus2022/phumob_curves_20260912/n19_preview_summary.json": "b88badba15a08461fb2bb8ea54dd76c1edc2dbcd764a907f3ecf414d5683bebc"
+  }
+}

@@ -1,0 +1,5 @@
+case,points,max_current_change_relative,response_qualified,reason
+m65_n19_vd_0p050000_endpoint,5,0.0,False,"a_ac and a_sr are stress enhancement factors, inactive without the corresponding stress model; zero signal cannot calibrate direct inverse-scattering scaling."
+m65_n19_vd_1p000000_endpoint,5,0.0,False,"a_ac and a_sr are stress enhancement factors, inactive without the corresponding stress model; zero signal cannot calibrate direct inverse-scattering scaling."
+m65_n23_vd_0p050000_endpoint,5,0.0,False,"a_ac and a_sr are stress enhancement factors, inactive without the corresponding stress model; zero signal cannot calibrate direct inverse-scattering scaling."
+m65_n23_vd_1p000000_endpoint,5,0.0,False,"a_ac and a_sr are stress enhancement factors, inactive without the corresponding stress model; zero signal cannot calibrate direct inverse-scattering scaling."

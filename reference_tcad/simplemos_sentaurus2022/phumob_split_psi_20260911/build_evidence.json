@@ -1,0 +1,23 @@
+{
+  "input_hashes": {
+    "scripts/validate_simplemos_split_psi_20260911.py": "710dc28bf88d3a22223e7e8405f6f3c81881d47af1b4f66508c27f4cfce9b863",
+    "src/equation/CoupledDDAssembler.cpp": "1d7ff86e020b2081e02d66ca4911d4cd53df0fa4249b4cdc1c1dbc199b2d243a",
+    "build-release/CMakeFiles/vela_example_runner.dir/src/tools/vela_example_runner.cpp.obj": "a55b3b05399f68c7849328738e1eaa29fe6ae6ece2efea00f951a9d2adbf1171",
+    "build-release/libvela_core.a": "cf35571f286f80d579cda4e848fa1c3ab37052bead848ce1aa3950dd18cdb94e",
+    "build-release/vela_example_runner.exe": "7664f4bc279817d1557438b3633ba6bca72eb35c41f0ab53b7589c6fac8146c0",
+    "include/vela/numerics/SplitCoordinate.h": "1083b16c08c331ab6f9c2ac1e18e5631dbaa8169fd927a8916ec7207b30a430f",
+    "include/vela/equation/ExtendedPoissonResidual.h": "b23b776c151e918a653de459b5010a765d8be006410264c3790e98edcae8b368",
+    "build-release/psi_split_0911/probe/assembler.o": "0724b1e78fa3c31fc329d2e266abda1eee44a76a064bb732ddd92a6fea1fad03",
+    "build-release/psi_split_0911/probe/compile.json": "831b2f5c94478d5376449b3534bbaea700f512d7bb16b95c9623cfec7bcd3c32",
+    "build-release/psi_split_0911/probe/compile.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/psi_split_0911/probe/compile_first_failure.log": "c8b6209ce4660c2457cfab7fd6d389f93c15bd42b9e48239b0466b23a8b6ef14",
+    "build-release/psi_split_0911/probe/CoupledDDAssembler.cpp": "34afac3136bf33a41e412d23581bb0c2fd0216e297b7e0f7c6fe62bd01e66f49",
+    "build-release/psi_split_0911/probe/kernel.cpp": "0e9676d2b6e9e490a55ce1a308607e2cbbd8284994dce44509b75c8a27317d0a",
+    "build-release/psi_split_0911/probe/kernel.exe": "23b4896cf70fb0b9cd1e02ea8a3f104274a0c7f28c0db6a08436f5bdecf1e560",
+    "build-release/psi_split_0911/probe/kernel.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/psi_split_0911/probe/kernel_compile.json": "e6b0d58d18e86f55f181aac75a2d7f4889fcc2f04c21527e9922224755d1545c",
+    "build-release/psi_split_0911/probe/link.json": "7265dad24d02165a5633462ac6640b7077a27a2ab3a80975ecf13510d6cc13d6",
+    "build-release/psi_split_0911/probe/link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/psi_split_0911/probe/runner.exe": "59e1c09f492ed33cad258341a533e362f859c8b0105ae93652a47caf92201459"
+  }
+}

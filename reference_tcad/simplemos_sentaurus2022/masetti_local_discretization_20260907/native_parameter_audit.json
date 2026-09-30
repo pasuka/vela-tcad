@@ -1,0 +1,14 @@
+{
+  "status": "all_18_Masetti_parameters_match",
+  "command": "sdevice -P:Silicon",
+  "remote_directory": "/tmp/vela_simplemos_masetti_local_20260907/parameter_audit",
+  "formula_electron": 1,
+  "formula_hole": 1,
+  "temperature_K": 300,
+  "limitations": "This checks built-in numerical parameters for the selected formula. It does not identify internal vertex/element averaging or prove an exported plot is native edge mobility.",
+  "input_hashes": {
+    "scripts/audit_simplemos_masetti_parameters_20260907.py": "eb573ae8f74fef1b671fae77dbe7d0bd3c4fc3efc924ea9c1da1f3936d6bf38e",
+    "build-release/simplemos_masetti_local_20260907/native_models.par": "aab018ee48a57521decb4d70fb3be4f67f02a1c6e082c930330e5a838a810b4f",
+    "scripts/audit_simplemos_subset_mobility_export_20260907.py": "25b80fa7b9444e5a0036ced9d11f3e95fde9b6e8b887550580927ff30e78fc7a"
+  }
+}

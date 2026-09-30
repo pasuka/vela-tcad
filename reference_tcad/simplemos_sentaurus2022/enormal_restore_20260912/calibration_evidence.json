@@ -1,0 +1,13 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/cell_formation.csv": "5b8b8846eb2a52f805a0511068171d7e0fcb250386817b1e8bfd83623f63df5a",
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/export_evidence.json": "67c1eea6a04a5dbf5c12de4d461a57808b2640841504a4e4e1e58f9761d6ca5e",
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/field_identity.csv": "d22e99ba1448ba36a233a4d8c234500ab25e951e0c8d457b3fc7f1f7d098855a",
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/formation_summary.csv": "6068e39418887a749f8bb2757bd2a6788b01a292661c8b1d4d924810dcb51ba8",
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/observer_samples.csv": "2c57a7072ee3c9d6c8dfebadfcbf18525d1a4fd0bc07467b3a4503ba5c7e54a5",
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/spatial_summary.csv": "c2eb40070b4d8b04d85f23ef4d53388cbf962c74567e7f34f34d422614f4e29d",
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/summary.json": "bcd5678a558c22f202bddc8acf2b8d9ed08e044f39d5baa8d7769f7566a274a3",
+    "reference_tcad/simplemos_sentaurus2022/phumob_calibration_20260908/supported_export/analysis_20260909/screening_floor/floor_inference.csv": "6f0cb3d258e0c5997d894c36c6c982dd2afe21beec21dbf213dadb6335b7ae75",
+    "scripts/calibrate_simplemos_enormal_20260912.py": "54f95c2a78e7ae80a611163a0416cfa1a64b61b35101145f4216358814588ddd"
+  }
+}

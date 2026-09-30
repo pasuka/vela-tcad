@@ -1,0 +1,59 @@
+{
+  "schema": "vela.simplemos.m81.execution_status.v1",
+  "date": "2026-09-05",
+  "status": "blocked_by_upload_approval",
+  "prepared_cases": 2,
+  "devices": [
+    "n19",
+    "n23"
+  ],
+  "drain_voltage_V": 0.05,
+  "gate_voltage_V": 0.9,
+  "runtime_verified": "T-2022.03-SP2",
+  "remote_host_alias": "sentaurus",
+  "remote_root": "/tmp/vela_simplemos_m81_ifm_20260905",
+  "remote_directory_created": true,
+  "upload_executed": false,
+  "new_sentaurus_device_solves": 0,
+  "m79_qualified": true,
+  "m80_numerical_and_linear_cases_passed": 16,
+  "m80_pair_spatial_review_passed": 8,
+  "m82_released": false,
+  "m83_released": false,
+  "review_rejections": 2,
+  "rejection_reason": "Explicit user confirmation of destination ownership/authorization and transfer authorization is required by automatic approval review. Matching remote file hashes was not accepted as authorization.",
+  "required_user_confirmation": "Confirm sentaurus belongs to the user/organization or is an explicitly authorized destination; authorize transfer of two-case mesh/state/decks and M81 execution.",
+  "verified_remote_provenance": [
+    {
+      "device": "n19",
+      "file": "input_fps.tdr",
+      "sha256": "4ee2287ce8057fa45bc9e00aa5603d7f7fd29d50f02d77215d7d3d6cae358a"
+    },
+    {
+      "device": "n19",
+      "file": "state_des.tdr",
+      "sha256": "da4eeafa24fb35eb9080aad0c9a02e26df841086872d7a98cbf5db98209623ab"
+    },
+    {
+      "device": "n19",
+      "file": "state_circuit_des.sav",
+      "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5"
+    },
+    {
+      "device": "n23",
+      "file": "input_fps.tdr",
+      "sha256": "d4c50bf96ccaf817389255071fa07271de20eb95fa8ef5be74ecfd204bbf5016"
+    },
+    {
+      "device": "n23",
+      "file": "state_des.tdr",
+      "sha256": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30"
+    },
+    {
+      "device": "n23",
+      "file": "state_circuit_des.sav",
+      "sha256": "3f35a68b78eaacca5c4cc995ab0be8ddb49fbac9ded5e499a65e9851781fcba5"
+    }
+  ],
+  "new_files": "Two identical 1570-byte m81_des.cmd decks; no C++ source or credentials in bundle."
+}

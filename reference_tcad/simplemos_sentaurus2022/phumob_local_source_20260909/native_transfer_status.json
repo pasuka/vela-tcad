@@ -1,0 +1,12 @@
+{
+  "status": "awaiting_specific_payload_authorization",
+  "upload_attempt": "rejected_before_scp_execution",
+  "archive": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\native\\input.tgz",
+  "sha256": "1c5ed4b063431dd101104f4a6ebb967f4ad0f37ff4899ae2aba0af87bd7875c6",
+  "destination": "sentaurus:/tmp/vela_simplemos_phumob_pair_source_20260909/input.tgz",
+  "remote_directory_created": true,
+  "uploaded": false,
+  "native_simulations_started": false,
+  "reason": "Automatic approval reviewer required specific authorization for this payload and destination despite standing Sentaurus authorization; explicit batch question was presented to user.",
+  "no_workaround_attempted": true
+}

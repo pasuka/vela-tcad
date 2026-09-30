@@ -1,0 +1,15 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_minority_invariance_20260906/m65_n19_vd_0p050000_endpoint/vg_007/vela/state.csv": "775f08ad04550fe51843f955c5ed2c43983543df1754f777c35484cd87255519",
+    "build-release/simplemos_minority_invariance_20260906/m65_n23_vd_0p050000_endpoint/vg_020/vela/state.csv": "e61388889513b65d86378e18e948e1489f6d5a60b8d6cf806a83c1fe704de911",
+    "build-release/simplemos_minority_invariance_20260906/m65_n23_vd_1p000000_endpoint/vg_007/vela/state.csv": "b9fd83be104eaafafa2838286f30aad025ccab1024d193017ad55fba117146d0",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n19_vd_0p050000_endpoint/vg_007/vela/config.json": "3b24d0b65e3d8aa789e2fb1cbc248d9e8efb31b61534566de4c3ecef1f0bb1f9",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n23_vd_0p050000_endpoint/vg_020/vela/config.json": "9c32fa8e1b5e0138dbf83b70d053d089eeb0be100d25fdc2a700ac9209141ce1",
+    "build-release/simplemos_minority_residual_20260906/linear/m65_n23_vd_1p000000_endpoint/vg_007/vela/config.json": "9b00b4c165d71e60bf54b19b953a9754b294d5317ccdd2ae41eab60ef69765f5",
+    "build-release/simplemos_minority_residual_20260906/linear/runner.cpp": "5057db899ee40d7cd38211d0717580291b6e3edbce93b1e222b4acc401edb9cb",
+    "build-release/simplemos_minority_residual_20260906/linear/runner.exe": "590de00cde169984580528b6acec671b27369746cf8057c596c5b28d9f06f991",
+    "reference_tcad/simplemos_sentaurus2022/minority_residual_20260906/freeze.json": "ae1b1f4ceba671891f22998eae9cc1907c846cbc00fe4df97f9c0a0cc6455cc4",
+    "reference_tcad/simplemos_sentaurus2022/minority_residual_20260906/linear/contract.json": "d82487712fd7a12c248183e253f20adeec3fc073e0d0ea5597e3788b5e22d404",
+    "scripts/check_simplemos_minority_linear_20260906.py": "a82e5967550c1fa74743eabff66aab1152a2db9e512a87b55f82fdd04542f558"
+  }
+}

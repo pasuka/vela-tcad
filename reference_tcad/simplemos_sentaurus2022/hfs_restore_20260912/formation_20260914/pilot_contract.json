@@ -1,0 +1,16 @@
+{
+  "source": "T-2022.03 manual pp. 448,452-453; original default contact and PartialLayer settings.",
+  "hypotheses": [
+    "raw_qf_any_contact",
+    "boundary_qf_any_contact",
+    "boundary_qf_any_contact_cut1",
+    "boundary_qf_edge_contact_cut1"
+  ],
+  "cutoff_status": "1 V/cm hard cutoff inferred from pilot samples; not a documented or production-qualified parameter.",
+  "field_gate_absolute_V_cm": 0.0001,
+  "field_gate_relative": 1e-09,
+  "cell_gate_relative": 1e-07,
+  "existing_PhUMob_hole_failure_preserved": true,
+  "production_changed": false,
+  "acceptance_changed": false
+}

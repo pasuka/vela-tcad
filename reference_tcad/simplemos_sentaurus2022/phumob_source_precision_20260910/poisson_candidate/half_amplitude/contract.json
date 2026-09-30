@@ -1,0 +1,49 @@
+{
+  "jobs": [
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\half_amplitude\\m65_n19_vd_0p050000_endpoint\\plus_half",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.0005,
+      "label": "plus_half",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\plus_half",
+      "mode": "packed"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint",
+      "device": "n19",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\half_amplitude\\m65_n19_vd_0p050000_endpoint\\minus_half",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n19_vd_0p050000_endpoint_source.txt",
+      "alpha": -0.0005,
+      "label": "minus_half",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n19_vd_0p050000_endpoint\\minus_half",
+      "mode": "packed"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\half_amplitude\\m65_n23_vd_0p050000_endpoint\\plus_half",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": 0.0005,
+      "label": "plus_half",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\plus_half",
+      "mode": "packed"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint",
+      "device": "n23",
+      "dest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_source_precision_20260910\\poisson_candidate\\half_amplitude\\m65_n23_vd_0p050000_endpoint\\minus_half",
+      "kind": "source",
+      "source_file": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_local_source_20260909\\scaled_source\\m65_n23_vd_0p050000_endpoint_source.txt",
+      "alpha": -0.0005,
+      "label": "minus_half",
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_restart_followup_20260909\\stable_merit\\source\\m65_n23_vd_0p050000_endpoint\\minus_half",
+      "mode": "packed"
+    }
+  ],
+  "scope": "Same packed Poisson candidate, source values, original settled bases, gates and 200-iteration limit; add the previously frozen +/-0.0005 amplitude. Full-amplitude results are required separately; this contract does not presume they pass."
+}

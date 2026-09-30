@@ -1,0 +1,8 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/intrinsic_control/comparison.csv": "10e21d67ec61bb2080b7b0a92db8355e5d70a6336917a18bb0814b8dca4bd675",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/intrinsic_control/run_evidence.json": "7b4c987aa4f23230b5f300dda929c034bb92da80a31cf32250605cf0714748ee",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/intrinsic_control/summary.json": "ed314088c6daf2672a510234ea1c76f64cd91f5f72b03f10bf7c4c6432e71a71",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/native_evidence.json": "870b8328b4bcafbf64544f130955cc87989004c48d1fbb9f8bf014f202190691"
+  }
+}

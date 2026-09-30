@@ -1,0 +1,10 @@
+{
+  "input_hashes": {
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/calibration_evidence.json": "55a4bb3d93af614761b066d18c24adf59aeb087590ac5736adedc1c05af4d757",
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/floor_position_cells.csv": "862f7183d9ba7894c628ac0443417bd1ce72d0ab1b0ec9299f0a030f6cffc658",
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/floor_position_control.csv": "32b66fce3927f82ca26220daec73ed02cdd9283b1720fee0d3e3837c8f7a8c57",
+    "reference_tcad/simplemos_sentaurus2022/enormal_restore_20260912/floor_position_summary.json": "c5fd19807ff2bc44093abd765e0e487a630a866b0de488b576073a30cf6ab972",
+    "reference_tcad/simplemos_sentaurus2022/phumob_floor_20260909/ramped/cutoff/roots.csv": "cd617ec3bd9fdbcc0701ddc8c5b5f192e27488374eb9e34e74158bf7f4d866a1",
+    "scripts/audit_simplemos_enormal_floor_control_20260912.py": "aafb917527176898448feca259d28372a0e86587a51ebe6c28ba75a5ac3e0f74"
+  }
+}

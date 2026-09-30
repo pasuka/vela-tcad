@@ -1,0 +1,15 @@
+{
+  "points": 8,
+  "cell_checks": 28000,
+  "cell_mu_max_relative": 8.236804311405198e-16,
+  "edge_checks": 29680,
+  "edge_mu_max_relative": 8.036656868295656e-16,
+  "cross_checks": 864,
+  "cross_failed": 0,
+  "cross_max_relative": 5.84835557007987e-15,
+  "third_vertex_nonzero_contributions": 240,
+  "base_closure_max_relative": 2.1433081546442916e-16,
+  "gated_blocks": 168,
+  "gated_block_failures": 0,
+  "gated_block_max_relative": 6.53973156901465e-07
+}

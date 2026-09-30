@@ -1,0 +1,6 @@
+{
+  "initial_failure": "Initial SRH manifest lookup used SRHRecombination; actual field name is srhRecombination. Frozen initial inputs and script retained; no SRH result admitted from that run.",
+  "amendment": "Separate srh_fields output uses the exact exported name. An initial output-prefix typo in its input-manifest path failed before freezing and was corrected. Physics, fields, units and thresholds unchanged.",
+  "original_manifest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\reference_tcad\\simplemos_sentaurus2022\\phumob_lowvg_20260909\\srh_freeze.json",
+  "corrected_manifest": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\reference_tcad\\simplemos_sentaurus2022\\phumob_lowvg_20260909\\srh_fields\\srh_freeze.json"
+}

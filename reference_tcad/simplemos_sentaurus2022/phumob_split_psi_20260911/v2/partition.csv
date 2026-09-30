@@ -1,0 +1,7 @@
+device,vd,index,same_exact_potential,poisson_identical,phin_residual_changed,phin_residual_max_difference,phip_residual_changed,phip_residual_max_difference,full_partition_invariant
+n19,0.05,0,True,True,822,1.612680754424487e-24,841,3.17155340072962e-27,False
+n19,0.05,10,True,True,802,2.1299712148384516e-22,826,1.9059101779141237e-27,False
+n23,0.05,10,True,True,833,1.8904814193102893e-24,844,1.7859723035245517e-27,False
+n23,1.0,0,True,True,810,1.7209545529002556e-25,846,1.5090459698938807e-26,False
+n23,1.0,10,True,True,821,1.2164836958941392e-23,857,1.412723963259079e-26,False
+n19,0.05,40,True,True,797,4.687424391798305e-16,850,1.484603866164871e-27,False

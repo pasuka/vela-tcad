@@ -1,0 +1,10 @@
+{
+  "attempts": 20,
+  "failed_attempts": 0,
+  "response_checks": 8,
+  "qualified": 8,
+  "max_raw_relative": 6.398122074080526e-05,
+  "max_normalized_relative": 3.156429998707466e-06,
+  "all_qualified": true,
+  "acceptance_changed": false
+}

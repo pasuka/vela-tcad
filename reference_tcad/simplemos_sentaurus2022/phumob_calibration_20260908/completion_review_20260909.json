@@ -1,0 +1,13 @@
+{
+  "python_syntax_checks": 8,
+  "evidence_identity_checks": 6,
+  "report_links_checked": 15,
+  "native_states_qualified": 16,
+  "port_replays_qualified": 16,
+  "production_element_box_phumob_qualified": false,
+  "matrix_distinct_entries": 164,
+  "matrix_distinct_failures": 106,
+  "matrix_distinct_zeros": 94,
+  "max_cross_error_over_sampled_direct_column": 0.0006691302941371921,
+  "interpretation": "Completion of calibration and localization; failed numerical gates remain failed. No new production solver build, full CTest, PhuMob self-consistent solve, commit, or push."
+}

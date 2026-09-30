@@ -1,0 +1,38 @@
+{
+  "jobs": [
+    {
+      "key": "m65_n19_vd_0p050000_endpoint_vg_040",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_box_20260909\\qualified_state\\post_jvp\\m65_n19_vd_0p050000_endpoint_vg_040\\config.json"
+    },
+    {
+      "key": "m65_n19_vd_0p050000_endpoint_vg_050",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_box_20260909\\qualified_state\\post_jvp\\m65_n19_vd_0p050000_endpoint_vg_050\\config.json"
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg_040",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_box_20260909\\qualified_state\\post_jvp\\m65_n19_vd_1p000000_endpoint_vg_040\\config.json"
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg_050",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_box_20260909\\qualified_state\\post_jvp\\m65_n19_vd_1p000000_endpoint_vg_050\\config.json"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint_vg_040",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_box_20260909\\qualified_state\\post_jvp\\m65_n23_vd_0p050000_endpoint_vg_040\\config.json"
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint_vg_050",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_box_20260909\\qualified_state\\post_jvp\\m65_n23_vd_0p050000_endpoint_vg_050\\config.json"
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg_040",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_box_20260909\\qualified_state\\post_jvp\\m65_n23_vd_1p000000_endpoint_vg_040\\config.json"
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg_050",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_box_20260909\\qualified_state\\post_jvp\\m65_n23_vd_1p000000_endpoint_vg_050\\config.json"
+    }
+  ],
+  "gate": 0.0001,
+  "weak_SRH_cross": "Excluded from whole-residual FD qualification, retained in output."
+}

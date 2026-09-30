@@ -1,0 +1,23 @@
+{
+  "jobs": [
+    {
+      "case": "m65_n19_vd_0p050000_endpoint",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\post_jvp\\m65_n19_vd_0p050000_endpoint\\config.json"
+    },
+    {
+      "case": "m65_n19_vd_1p000000_endpoint",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\post_jvp\\m65_n19_vd_1p000000_endpoint\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_0p050000_endpoint",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\post_jvp\\m65_n23_vd_0p050000_endpoint\\config.json"
+    },
+    {
+      "case": "m65_n23_vd_1p000000_endpoint",
+      "path": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\phumob_fix_20260909\\post_jvp\\m65_n23_vd_1p000000_endpoint\\config.json"
+    }
+  ],
+  "gate": 0.0001,
+  "source": "Qualified final Vela-initialized state, all SRH settings restored.",
+  "weak_source_blocks": "Retained but separately labeled; no weak SRH calibration inferred."
+}

@@ -1,0 +1,47 @@
+{
+  "status": "resumed_baseline",
+  "recorded_at": "2026-09-15T08:46:31.196344+08:00",
+  "immutable_completed_at_resume": 64,
+  "remaining_at_resume": 344,
+  "administrative_interruptions_retained": 4,
+  "resume_root": "build-release/hfs_curves_20260914/resume_20260915",
+  "preflight": "reference_tcad/simplemos_sentaurus2022/hfs_curves_20260914/resume_20260915/preflight_evidence.json",
+  "policy": "Finish unchanged baseline before SRH volume repair; current live progress is separate.",
+  "driver_records": {
+    "continuation": {
+      "pid": 8224,
+      "arm": "continuation",
+      "status": "running",
+      "recorded_at": "2026-09-15T08:23:53.941799+08:00"
+    },
+    "native": {
+      "pid": 15132,
+      "arm": "native",
+      "status": "running",
+      "recorded_at": "2026-09-15T08:23:54.125451+08:00"
+    },
+    "completion": {
+      "pid": 16828,
+      "status": "waiting",
+      "recorded_at": "2026-09-15T08:46:25.771424+08:00",
+      "drivers": [
+        {
+          "pid": 8224,
+          "arm": "continuation",
+          "status": "running",
+          "recorded_at": "2026-09-15T08:23:53.941799+08:00"
+        },
+        {
+          "pid": 15132,
+          "arm": "native",
+          "status": "running",
+          "recorded_at": "2026-09-15T08:23:54.125451+08:00"
+        }
+      ]
+    }
+  },
+  "last_observed_qualified_states": 89,
+  "last_observed_failed_attempts": 0,
+  "latest_report": "docs/validation/simplemos_hfs_curve_resume_2026-09-15.md",
+  "postprocessing": "Already running dependency coordinator; waits for both arms, then analysis, fields, plots/archive, seal and report. No SRH repair launch."
+}

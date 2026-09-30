@@ -1,0 +1,27 @@
+{
+  "input_hashes": {
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n19_vd_0p050000_endpoint/config.json": "ea93a613725f745efd71643e63478ab8aa1afce858f5ec5d7584dd2351dcc654",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n19_vd_0p050000_endpoint/config.status.json": "825be507b1b1a8c26f1c522ab4f5a6d03070fe50eb70cab6e7bbb91d4cdafc0a",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n19_vd_0p050000_endpoint/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n19_vd_0p050000_endpoint/config.stdout.txt": "bb32597ef94b6511bc4dedcfd135f6369c1406afae52fe7fdd6a35ce878d578b",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n19_vd_0p050000_endpoint/jvp.csv": "86f9b699b66efabad29a62414c6470881b314b83231880d58b8c2a1fcadcaf38",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n19_vd_1p000000_endpoint/config.json": "4848c31fc59ef1cc8c497cf667259d528d459b1987c856ec9aa4030c8fdb49ad",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n19_vd_1p000000_endpoint/config.status.json": "cc64a24a587e2eea902c29366e14a615c21f89393307018109028a2197683cc4",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n19_vd_1p000000_endpoint/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n19_vd_1p000000_endpoint/config.stdout.txt": "ddea7effad3d2a214af0b1509470d46d3508c2bf0cf5083ce91ab845f829f19b",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n19_vd_1p000000_endpoint/jvp.csv": "2c9dd2916596fd68f3f048e0d05fae54cf6e81ceb982fd7845528d069fad0d39",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n23_vd_0p050000_endpoint/config.json": "ec5281aa11b349bb82f4b0bb2d33fb74ebc4230f0822e77c4c13e8c967a405eb",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n23_vd_0p050000_endpoint/config.status.json": "7b3cd48a81fc1dd2bfd5d377db902a406150e5bba84fca035d374d035df1fb32",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n23_vd_0p050000_endpoint/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n23_vd_0p050000_endpoint/config.stdout.txt": "07ca7c02c60f32eb26cc31817932969910197489af95cb743021fbb0a4b81ed0",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n23_vd_0p050000_endpoint/jvp.csv": "5a90c0f96c9fcec6cd36f164ba3ea05ac327146738c594347fe7365ccb571b49",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n23_vd_1p000000_endpoint/config.json": "d15ceb5aedb705a694cc42e40ec8c530005a837b4c0ff7c0012e5e040ba4943f",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n23_vd_1p000000_endpoint/config.status.json": "edbf571a9c71782fa286b838cb129475d9a95fedffb145ffe4075f216292073a",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n23_vd_1p000000_endpoint/config.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n23_vd_1p000000_endpoint/config.stdout.txt": "759be41d57e845ebaf409944142358331c02cc1ae5123e1464ad4c2ef80894e9",
+    "build-release/simplemos_bgn_restore_20260908/intrinsic_control/jvp/m65_n23_vd_1p000000_endpoint/jvp.csv": "1d73cb31bd2abef7351894663f5451caff3997cbdd1072925b37305957d83e02",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/intrinsic_control/jvp/blocks.csv": "ac1cfc23e123aefc211d97130f69613967c6bc594daceb43e06c4276cc2ed44b",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/intrinsic_control/jvp/freeze.json": "18f127badadeaab00f454a663ad5881909870f1edc2a5d2eba7c58f91d52c405",
+    "reference_tcad/simplemos_sentaurus2022/bgn_restore_20260908/intrinsic_control/jvp/summary.json": "c03876e4001cdec2a7435e29b25bf5a7dbc26f5a0580bbd9bcee2d4c1b24167a"
+  }
+}

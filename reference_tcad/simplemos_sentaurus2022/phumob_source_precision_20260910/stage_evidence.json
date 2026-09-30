@@ -1,0 +1,30 @@
+{
+  "input_hashes": {
+    "docs/validation/simplemos_lowvd_source_precision_2026-09-10.md": "5e442dc0f5140c1a69efca16f772bcfad570452ba9d42798ec63a3e13363a97c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/native/zero_points.csv": "fb489c8d61b1d0bd6ed0fec71c41b6dccae686f6ca2db66d7882a6239577a8ef",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/contact_step/dc_evidence.json": "4e5355780c59b7718fd16f1c970394a19b48d67a187e150716be58edf065e320",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/contact_step/full_source/combined_evidence.json": "18152fe8cb25b75eda8f7a7f6f3f7f4ac5be79527db8dbaeb5ef410d63c2e97d",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/contact_step/identity_rows/evidence.json": "a8556a2037477ea2419207e6e6db051df17b37cb38283826e74fcc12b1b8be88",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/dc_evidence.json": "5986f1f257b13729b909e29b3c95bd4e3d5ec0132920fb2d237d189228acd790",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/disabled_identity/evidence.json": "87f0191a6019d3f1fae2a2d0413ad499c4339057aa3783718a52d5a47256f9de",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/half_amplitude/dc_evidence.json": "1cc3166e31c348eaa3b3a68c5b7b508aba0e36be573c69950d0ff2b409bb6edf",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/kernel_check/evidence.json": "cdd73d33758bf8e64ecd84d4270dacfa853c02f7a48fd7b5fa120d18b84a936b",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/response/evidence.json": "ad85f55fb354c5b381aedf9b1f5e803fdb909fa13a322a7c9e577f98080850c2",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/poisson_candidate/response/jvp/evidence.json": "320c06e576bb8ab00266d6b14ebaa37102c0373df105e48e81da91768125de59",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/precision/evidence.json": "09846f853c3f61ed1a380d29bfd49f90804fca2068a212186c9c5f89458a4063",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/replay_evidence.json": "81088c571bfa6e5afe9206f6b5fd33a5f2e1b0b00823199811fc5faa0775e4f1",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/stage_summary.json": "f122aadb9e31c9c4005d9395cf00453b9c8294681d55b04b2ba7894e28765000",
+    "reference_tcad/simplemos_sentaurus2022/phumob_source_precision_20260910/zero_current_comparison.csv": "b98a263c15b849fd0facbe2078db3c248b73785feadde5a223a9f65596e0d870",
+    "scripts/analyze_simplemos_lowvd_source_precision_20260910.py": "f77315c9fde1e1dfa56d01ee3f0c53133d98ba212f3976d817e60094fb38cabf",
+    "scripts/audit_simplemos_lowvd_source_precision_20260910.py": "a95603fe1d0b0d5c4b74af94b34bc11ad8acb3dd8e7039f736e2e4cbcba8af19",
+    "scripts/calibrate_simplemos_packed_poisson_response_20260910.py": "5b70636b2ca1fe884dff5d7d7955c55c9206d78a84fb44f838321d28a42bc699",
+    "scripts/check_simplemos_packed_poisson_jvp_20260910.py": "f58a2e7138c8586bfe3573cdd464da71125609c6273596da599ead2c9ab84664",
+    "scripts/check_simplemos_poisson_precision_20260910.py": "d5e8aee4c183d23131af5ef0b5ba3692c49b8f92c0d1d08ed5d4e9d5c68ae859",
+    "scripts/diagnostics/simplemos_poisson_precision.hpp": "5510832ab026d17a30cf931a66bead58f5a55a0f2a070a2b14ae52da2d637dfb",
+    "scripts/report_simplemos_source_precision_20260910.py": "3754a346aa62fc86f243ff93cdaafc1b04cfdf7df8d8380f8f2248e2b13d8e19",
+    "scripts/validate_simplemos_combined_source_20260910.py": "debba0819bc7e859d2536e00b15d67aecc2dab73eb1c3de8f8653f09bdcd30a3",
+    "scripts/validate_simplemos_exact_contact_step_20260910.py": "7e76be1f4619e251905c4cbddab36ccf555a5ca4a9c2cfa0505ec9c27f6af238",
+    "scripts/validate_simplemos_poisson_half_source_20260910.py": "aa5ac5b45b386056351bf8d2fbb4ec50943927f12186bd0d3d3d00c1aa6602d5",
+    "scripts/validate_simplemos_poisson_precision_20260910.py": "01d35ac4404b5e50dfa02c9aebffb34efb8973393f5ad4226b55581f52030c80"
+  }
+}

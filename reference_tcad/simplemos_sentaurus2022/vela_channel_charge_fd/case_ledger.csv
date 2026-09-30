@@ -1,0 +1,6 @@
+name,amplitude_cm_3,current_A_per_um,exit_code,native_converged,iterations,convergence_reason,failure_reason,final_residual,local_satisfied,local_violations,local_max_ratio,global_satisfied,electron_global_qualified,hole_global_qualified,kcl_over_Id,qualified
+zero,0.0,1.787614326121388e-08,0,True,0,stall_residual_floor,,7.335127754067268e-11,True,0,2.329459013337402e-09,True,False,False,1.716926063867485e-11,True
+plus_1e13,10000000000000.0,1.7885463267696365e-08,0,True,6,reltol,,7.833117624230683e-11,True,0,1.6402212117191993e-09,True,False,False,5.921564279331043e-15,True
+minus_1e13,-10000000000000.0,1.7866828068572464e-08,0,True,6,reltol,,7.723408084082132e-11,True,0,1.6400726741186346e-09,True,False,False,3.731365122935532e-15,True
+plus_5e12,5000000000000.0,1.788080266101442e-08,0,True,16,stall_residual_floor,,5.028016716075107e-11,True,0,4.572274343880256e-10,True,False,False,4.553238409486868e-16,True
+minus_5e12,-5000000000000.0,1.787148506112289e-08,0,True,16,stall_residual_floor,,6.756462732846344e-11,True,0,9.807497488017178e-12,True,False,False,4.4262636377253797e-16,True

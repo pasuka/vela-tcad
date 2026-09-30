@@ -1,0 +1,18 @@
+{
+  "input_hashes": {
+    "build-release/phumob_local_source_20260909/failed_trace/native_first/acceptance_edges.json": "bcd0515b66ad9fbbbf98e387b3494338f0939c5f7d7ac396458504660d744494",
+    "build-release/phumob_local_source_20260909/failed_trace/native_first/all_row.json": "ebe4863116431a06ae1707a9b9327e8bda8a8964b7e4618c04e9ab1b147c012d",
+    "build-release/phumob_local_source_20260909/failed_trace/native_first/config.json": "020587f8a953b77443b1c8c41814e09b6eb993d4ab996ae27c4027e0136e8bb8",
+    "build-release/phumob_local_source_20260909/failed_trace/native_reload/acceptance_edges.json": "4ce60b3a79b60a8e4799484a8617c53475c8288cc933879865c1dacffcd81048",
+    "build-release/phumob_local_source_20260909/failed_trace/native_reload/all_row.json": "6969bd6d699cd335c388f69f9c4281ba737aadd51119aaaa01c9443e4b1bd417",
+    "build-release/phumob_local_source_20260909/failed_trace/native_reload/config.json": "234ac14f323726d6e451d5b5c45dd1938fc10fa0de16039cd4a68d34b49d65f1",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_010/attempt_0/config.json": "987d5348d0e79bcbf14071a105c0ca04ee73d064b253b9a578e93e8802e33551",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_010/attempt_0/state.csv": "1f1556751757e2ab1643698155decfca7588e6b849f3b4e1d1850062a293bf7f",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_010/attempt_1/config.json": "391df9ed281cfb4f4e77a4c43f88d50eacada871fc6c4f1db10c13ff590c6c77",
+    "build-release/phumob_lowvg_20260909/candidate/dc/phumob/m65_n23_vd_1p000000_endpoint/native/vg_010/attempt_1/state.csv": "0530522071827d57b3bd8ed9f53f267937f2006f7665d536ff8fdcd525c47612",
+    "build-release/vela_example_runner.exe": "a67a2e971ef585591c19ea664de5edbfda3d2c2189a54ef7410a40e6ca302be6",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/failed_trace/contract.json": "bb5c10912244519772380e4706d724db4484e2882576b35853352a65f9f2b767",
+    "scripts/trace_simplemos_phumob_lowvg_failed_restart_20260909.py": "c3acc7bce664387dcf42ba485705d59a6d2c08c0a3ddd7a7117c149a64bc2374",
+    "src/solver/NewtonSolver.cpp": "59201c936f6fa2519fd8f55542af6ebf9bcbb7f08d15309c22abe571ce0d40f0"
+  }
+}

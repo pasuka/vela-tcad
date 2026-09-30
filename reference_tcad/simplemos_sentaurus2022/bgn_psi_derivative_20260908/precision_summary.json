@@ -1,0 +1,8 @@
+{
+  "checks": 192,
+  "expanded_hp_max_error": 2.6412630152007636e-53,
+  "expanded_double_max_error": 43633500.59118484,
+  "factored_double_max_error": 3.952533593129006e-08,
+  "high_precision_formula_pass": true,
+  "factored_pass": true
+}

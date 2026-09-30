@@ -1,0 +1,188 @@
+{
+  "status": "frozen_before_execution",
+  "cases": [
+    {
+      "key": "m65_n19_vd_0p050000_endpoint_vg020",
+      "device": "n19",
+      "vd": 0.05,
+      "vg": 1.0,
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n19_vd_0p050000_endpoint\\vg_020",
+      "edge": 965,
+      "node0": 320,
+      "node1": 324,
+      "base_Id_A_per_um": 6.629558707786282e-06,
+      "native_amplitude": 2.0689225417159224e+18,
+      "scaled_amplitude": 0.00017409364778608674,
+      "current_amplitude_A_per_um": 3.314779353893141e-09,
+      "prediction_A_per_um": 4.4731840745634937e-10,
+      "jobs": [
+        {
+          "label": "zero",
+          "mult": 0.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n19_vd_0p050000_endpoint_vg020\\zero\\config.json"
+        },
+        {
+          "label": "plus_full",
+          "mult": 1.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n19_vd_0p050000_endpoint_vg020\\plus_full\\config.json"
+        },
+        {
+          "label": "minus_full",
+          "mult": -1.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n19_vd_0p050000_endpoint_vg020\\minus_full\\config.json"
+        },
+        {
+          "label": "plus_half",
+          "mult": 0.5,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n19_vd_0p050000_endpoint_vg020\\plus_half\\config.json"
+        },
+        {
+          "label": "minus_half",
+          "mult": -0.5,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n19_vd_0p050000_endpoint_vg020\\minus_half\\config.json"
+        }
+      ]
+    },
+    {
+      "key": "m65_n19_vd_1p000000_endpoint_vg020",
+      "device": "n19",
+      "vd": 1.0,
+      "vg": 1.0,
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n19_vd_1p000000_endpoint\\vg_020",
+      "edge": 965,
+      "node0": 320,
+      "node1": 324,
+      "base_Id_A_per_um": 3.895049726726436e-05,
+      "native_amplitude": 1.215549410741948e+19,
+      "scaled_amplitude": 0.0010228484958396805,
+      "current_amplitude_A_per_um": 1.9475248633632178e-08,
+      "prediction_A_per_um": 4.046725573777438e-09,
+      "jobs": [
+        {
+          "label": "zero",
+          "mult": 0.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n19_vd_1p000000_endpoint_vg020\\zero\\config.json"
+        },
+        {
+          "label": "plus_full",
+          "mult": 1.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n19_vd_1p000000_endpoint_vg020\\plus_full\\config.json"
+        },
+        {
+          "label": "minus_full",
+          "mult": -1.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n19_vd_1p000000_endpoint_vg020\\minus_full\\config.json"
+        },
+        {
+          "label": "plus_half",
+          "mult": 0.5,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n19_vd_1p000000_endpoint_vg020\\plus_half\\config.json"
+        },
+        {
+          "label": "minus_half",
+          "mult": -0.5,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n19_vd_1p000000_endpoint_vg020\\minus_half\\config.json"
+        }
+      ]
+    },
+    {
+      "key": "m65_n23_vd_0p050000_endpoint_vg020",
+      "device": "n23",
+      "vd": 0.05,
+      "vg": 1.0,
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n23_vd_0p050000_endpoint\\vg_020",
+      "edge": 965,
+      "node0": 320,
+      "node1": 324,
+      "base_Id_A_per_um": 2.358186669528369e-07,
+      "native_amplitude": 7.359321748566859e+16,
+      "scaled_amplitude": 6.194158647365207e-06,
+      "current_amplitude_A_per_um": 1.1790933347641845e-10,
+      "prediction_A_per_um": 1.995790459507681e-11,
+      "jobs": [
+        {
+          "label": "zero",
+          "mult": 0.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n23_vd_0p050000_endpoint_vg020\\zero\\config.json"
+        },
+        {
+          "label": "plus_full",
+          "mult": 1.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n23_vd_0p050000_endpoint_vg020\\plus_full\\config.json"
+        },
+        {
+          "label": "minus_full",
+          "mult": -1.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n23_vd_0p050000_endpoint_vg020\\minus_full\\config.json"
+        },
+        {
+          "label": "plus_half",
+          "mult": 0.5,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n23_vd_0p050000_endpoint_vg020\\plus_half\\config.json"
+        },
+        {
+          "label": "minus_half",
+          "mult": -0.5,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n23_vd_0p050000_endpoint_vg020\\minus_half\\config.json"
+        }
+      ]
+    },
+    {
+      "key": "m65_n23_vd_1p000000_endpoint_vg020",
+      "device": "n23",
+      "vd": 1.0,
+      "vg": 1.0,
+      "base": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_reference_subset_20260906\\vela\\masetti_refined\\m65_n23_vd_1p000000_endpoint\\vg_020",
+      "edge": 965,
+      "node0": 320,
+      "node1": 324,
+      "base_Id_A_per_um": 1.3628624374141442e-06,
+      "native_amplitude": 4.253159135181047e+17,
+      "scaled_amplitude": 3.5797785904567e-05,
+      "current_amplitude_A_per_um": 6.814312187070721e-10,
+      "prediction_A_per_um": 2.247450956149373e-10,
+      "jobs": [
+        {
+          "label": "zero",
+          "mult": 0.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n23_vd_1p000000_endpoint_vg020\\zero\\config.json"
+        },
+        {
+          "label": "plus_full",
+          "mult": 1.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n23_vd_1p000000_endpoint_vg020\\plus_full\\config.json"
+        },
+        {
+          "label": "minus_full",
+          "mult": -1.0,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n23_vd_1p000000_endpoint_vg020\\minus_full\\config.json"
+        },
+        {
+          "label": "plus_half",
+          "mult": 0.5,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n23_vd_1p000000_endpoint_vg020\\plus_half\\config.json"
+        },
+        {
+          "label": "minus_half",
+          "mult": -0.5,
+          "config": "D:\\code-repo\\vela-tcad\\.worktrees\\simplemos-sdevice-validation\\build-release\\simplemos_masetti_local_20260907\\channel_response\\m65_n23_vd_1p000000_endpoint_vg020\\minus_half\\config.json"
+        }
+      ]
+    }
+  ],
+  "new_self_consistent_runs": 20,
+  "scope": "n19/n23 x Vd=.05/1 at Vg=1. Same free-node channel edge 320-324. Recalibrate fresh Masetti weights, not reuse PhuMob weights.",
+  "source": "State-independent conservative electron edge flux, + at node0 and - at node1 before contact rows. Same source in post row diagnostics; no direct contact term on this free edge.",
+  "amplitude": "Full/half = .05%/.025% of each frozen Vela Id; fixed before execution.",
+  "gates": {
+    "source_relative": 1e-08,
+    "fd_relative": 0.001,
+    "two_amplitude_relative": 0.001,
+    "even_fraction": 0.01,
+    "minimum_signal_to_zero_drift": 100,
+    "zero_drift_dex": 1e-05,
+    "kcl_over_Id": 1e-08
+  },
+  "original_all_row_and_global_gates_unchanged": true,
+  "production_changes": false
+}

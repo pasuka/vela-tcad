@@ -1,0 +1,26 @@
+{
+  "input_hashes": {
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_0p050000_endpoint/zero/adjoint.csv": "072370bea8f39df344721cd3febb81e84491701260a24aba9e3a51ac4558a845",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_0p050000_endpoint/zero/adjoint.json": "d367ce6f58353240dd5e427bf9d6b2a7a3a94afb722fd768a9474a8b19d6232d",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_0p050000_endpoint/zero/adjoint.status.json": "72da8cc08ca57f527b9386ce516feee4e89c47d3f6fea7ef77872bd4188ad673",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_0p050000_endpoint/zero/adjoint.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_0p050000_endpoint/zero/adjoint.stdout.txt": "5e58319915c9d5ffa77cef7684df63fd9d9d0317a279e5976f286e41d528a809",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_1p000000_endpoint/zero/adjoint.csv": "9bb6355efb1c92644ee91e9b05fc5e513e65f67f1478fd1ff134b73f98c4e8c1",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_1p000000_endpoint/zero/adjoint.json": "4c082f25048d66d3cea80cc8aa16bc90402f479df1ccb155f649c6382843552d",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_1p000000_endpoint/zero/adjoint.status.json": "08023f8cf1110124faab7d6d1671ec3fb41c2ed0e414686aecf38c68adc25412",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_1p000000_endpoint/zero/adjoint.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n19_vd_1p000000_endpoint/zero/adjoint.stdout.txt": "6c4e090cc1992ed2204bde3956ed31542e4d507a039ec551bca15d2892d640e1",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_0p050000_endpoint/zero/adjoint.csv": "fe631293fdf9f0de7f9f04e5a2f6919b71c833cb8fed5a5ab42b8a9dc765debc",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_0p050000_endpoint/zero/adjoint.json": "a4a223228b833ffff3fd5d220d46a151361e657ba8dd24a63c05857d229810b2",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_0p050000_endpoint/zero/adjoint.status.json": "1cf184ee9ea160484dea92c3ef61f35e2a0c93819260202f55b34898ed65d70f",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_0p050000_endpoint/zero/adjoint.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_0p050000_endpoint/zero/adjoint.stdout.txt": "47a36d70185803a86cc37f9ea6fda9f2a2df72290f32975184f3c6c353fa731b",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_1p000000_endpoint/zero/adjoint.csv": "7c10d56a1357eca2ca3025046fad0980c3b5116965301bad43d70ad1fd0acf08",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_1p000000_endpoint/zero/adjoint.json": "32ef05b01914ceac095da6e205e1bdeb9f815329dc67f105d5db192633ea93a4",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_1p000000_endpoint/zero/adjoint.status.json": "e417c8caa27167262f78fcdc2adcb68710ca4613cd9015eb7a8d50d2882e40d8",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_1p000000_endpoint/zero/adjoint.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build-release/phumob_local_source_20260909/scaled_source/fixed/m65_n23_vd_1p000000_endpoint/zero/adjoint.stdout.txt": "3218301082620ffdd4440faf2b73789a4aef1d6e65f1ecac7733be0a58b3fe8c",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/port_calibration/freeze.json": "76310cfdda3f4fb415b6a9da5b8b5cf7a965dc5f3a97c3f9efdf5e3cc3af3100",
+    "reference_tcad/simplemos_sentaurus2022/phumob_local_source_20260909/scaled_source/port_calibration/ports.csv": "fed97ff9d0ab2577bc350e0770226132d1ad5306bc67db7d1434cef9c1bdd7fd"
+  }
+}

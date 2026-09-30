@@ -1,0 +1,253 @@
+{
+  "status": "read_only_supplemental_audit",
+  "note": "State differences are supplemental diagnostics; no post-hoc change to the frozen Id release gate.",
+  "fields": [
+    {
+      "device": "n19",
+      "field": "ElectrostaticPotential",
+      "region": 0,
+      "nodes": 942,
+      "metric": "absolute_difference_V",
+      "maximum": 1.957319639700472e-09
+    },
+    {
+      "device": "n19",
+      "field": "ElectrostaticPotential",
+      "region": 1,
+      "nodes": 243,
+      "metric": "absolute_difference_V",
+      "maximum": 1.8237968912870883e-09
+    },
+    {
+      "device": "n19",
+      "field": "ElectrostaticPotential",
+      "region": 2,
+      "nodes": 176,
+      "metric": "absolute_difference_V",
+      "maximum": 1.954747808063928e-09
+    },
+    {
+      "device": "n19",
+      "field": "ElectrostaticPotential",
+      "region": 3,
+      "nodes": 176,
+      "metric": "absolute_difference_V",
+      "maximum": 1.9547470309078108e-09
+    },
+    {
+      "device": "n19",
+      "field": "eDensity",
+      "region": 0,
+      "nodes": 942,
+      "metric": "absolute_log10_ratio_dex",
+      "maximum": 3.158813686490405e-08
+    },
+    {
+      "device": "n19",
+      "field": "hDensity",
+      "region": 0,
+      "nodes": 942,
+      "metric": "absolute_log10_ratio_dex",
+      "maximum": 3.282869327792115e-08
+    },
+    {
+      "device": "n19",
+      "field": "eQuasiFermiPotential",
+      "region": 0,
+      "nodes": 942,
+      "metric": "absolute_difference_V",
+      "maximum": 1.9573201046063637e-09
+    },
+    {
+      "device": "n19",
+      "field": "eQuasiFermiPotential",
+      "region": 1,
+      "nodes": 243,
+      "metric": "absolute_difference_V",
+      "maximum": 1.9478971798991395e-09
+    },
+    {
+      "device": "n19",
+      "field": "eQuasiFermiPotential",
+      "region": 2,
+      "nodes": 176,
+      "metric": "absolute_difference_V",
+      "maximum": 1.9554561510415716e-09
+    },
+    {
+      "device": "n19",
+      "field": "eQuasiFermiPotential",
+      "region": 3,
+      "nodes": 176,
+      "metric": "absolute_difference_V",
+      "maximum": 1.9554560609647e-09
+    },
+    {
+      "device": "n19",
+      "field": "hQuasiFermiPotential",
+      "region": 0,
+      "nodes": 942,
+      "metric": "absolute_difference_V",
+      "maximum": 1.9573197266823e-09
+    },
+    {
+      "device": "n19",
+      "field": "hQuasiFermiPotential",
+      "region": 1,
+      "nodes": 243,
+      "metric": "absolute_difference_V",
+      "maximum": 4.59131840755073e-12
+    },
+    {
+      "device": "n19",
+      "field": "hQuasiFermiPotential",
+      "region": 2,
+      "nodes": 176,
+      "metric": "absolute_difference_V",
+      "maximum": 6.252955029616049e-11
+    },
+    {
+      "device": "n19",
+      "field": "hQuasiFermiPotential",
+      "region": 3,
+      "nodes": 176,
+      "metric": "absolute_difference_V",
+      "maximum": 3.492260204976394e-10
+    },
+    {
+      "device": "n23",
+      "field": "ElectrostaticPotential",
+      "region": 0,
+      "nodes": 942,
+      "metric": "absolute_difference_V",
+      "maximum": 1.5635381878098542e-11
+    },
+    {
+      "device": "n23",
+      "field": "ElectrostaticPotential",
+      "region": 1,
+      "nodes": 245,
+      "metric": "absolute_difference_V",
+      "maximum": 1.461314402817493e-11
+    },
+    {
+      "device": "n23",
+      "field": "ElectrostaticPotential",
+      "region": 2,
+      "nodes": 177,
+      "metric": "absolute_difference_V",
+      "maximum": 1.5629275651463104e-11
+    },
+    {
+      "device": "n23",
+      "field": "ElectrostaticPotential",
+      "region": 3,
+      "nodes": 177,
+      "metric": "absolute_difference_V",
+      "maximum": 1.562949769606803e-11
+    },
+    {
+      "device": "n23",
+      "field": "eDensity",
+      "region": 0,
+      "nodes": 942,
+      "metric": "absolute_log10_ratio_dex",
+      "maximum": 2.549651446000118e-10
+    },
+    {
+      "device": "n23",
+      "field": "hDensity",
+      "region": 0,
+      "nodes": 942,
+      "metric": "absolute_log10_ratio_dex",
+      "maximum": 2.625562822048689e-10
+    },
+    {
+      "device": "n23",
+      "field": "eQuasiFermiPotential",
+      "region": 0,
+      "nodes": 942,
+      "metric": "absolute_difference_V",
+      "maximum": 1.563573576168764e-11
+    },
+    {
+      "device": "n23",
+      "field": "eQuasiFermiPotential",
+      "region": 1,
+      "nodes": 245,
+      "metric": "absolute_difference_V",
+      "maximum": 1.5634695173029852e-11
+    },
+    {
+      "device": "n23",
+      "field": "eQuasiFermiPotential",
+      "region": 2,
+      "nodes": 177,
+      "metric": "absolute_difference_V",
+      "maximum": 1.563497070734188e-11
+    },
+    {
+      "device": "n23",
+      "field": "eQuasiFermiPotential",
+      "region": 3,
+      "nodes": 177,
+      "metric": "absolute_difference_V",
+      "maximum": 1.563557616712785e-11
+    },
+    {
+      "device": "n23",
+      "field": "hQuasiFermiPotential",
+      "region": 0,
+      "nodes": 942,
+      "metric": "absolute_difference_V",
+      "maximum": 1.5635097383448482e-11
+    },
+    {
+      "device": "n23",
+      "field": "hQuasiFermiPotential",
+      "region": 1,
+      "nodes": 245,
+      "metric": "absolute_difference_V",
+      "maximum": 3.3615173361881134e-14
+    },
+    {
+      "device": "n23",
+      "field": "hQuasiFermiPotential",
+      "region": 2,
+      "nodes": 177,
+      "metric": "absolute_difference_V",
+      "maximum": 4.989006125113299e-13
+    },
+    {
+      "device": "n23",
+      "field": "hQuasiFermiPotential",
+      "region": 3,
+      "nodes": 177,
+      "metric": "absolute_difference_V",
+      "maximum": 2.7924476966867395e-12
+    }
+  ],
+  "currents": [
+    {
+      "device": "n19",
+      "m69_source_current_A_per_um": 1.95731974157096e-06,
+      "m81_reclosed_current_A_per_um": 1.95731960115792e-06,
+      "absolute_log10_ratio_dex": 3.1155160503221084e-08
+    },
+    {
+      "device": "n23",
+      "m69_source_current_A_per_um": 1.5635074359902e-08,
+      "m81_reclosed_current_A_per_um": 1.56350743583972e-08,
+      "absolute_log10_ratio_dex": 4.179872582339036e-11
+    }
+  ],
+  "input_hashes": {
+    "build-release/m69_stage_v2/sentaurus_raw/sentaurus_bundle/n19/vd_0p050000/m69_n19_vd_0p050000_vg_0p900000_gate_0000_des.tdr": "da4eeafa24fb35eb9080aad0c9a02e26df841086872d7a98cbf5db98209623ab",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n19/reclosed_des.tdr": "af5ec1ea53470d8ac12f68eae12031bce1956c9059623abaf6f3ae72538d5131",
+    "build-release/m69_stage_v2/sentaurus_raw/sentaurus_bundle/n19/vd_0p050000/IdVg_m69_n19_vd_0p050000_vg_0p900000_des.plt": "a033dd4ba37002d19d572fe56fdea5a386a357d668db1050f27a468ba5a76292",
+    "build-release/m69_stage_v2/sentaurus_raw/sentaurus_bundle/n23/vd_0p050000/m69_n23_vd_0p050000_vg_0p900000_gate_0000_des.tdr": "9dd1e21fe12ea369a23a3fc47b0cbd676c567e2102eaacc46d25149d3df03f30",
+    "build-release/m81_sentaurus_ifm_pilot/output_amendment_raw/n23/reclosed_des.tdr": "42baeb9062ef205ec40d462186b72fe746ee7563aaa4ef07da2f89bbedb8d589",
+    "build-release/m69_stage_v2/sentaurus_raw/sentaurus_bundle/n23/vd_0p050000/IdVg_m69_n23_vd_0p050000_vg_0p900000_des.plt": "b6654a81c9d8c8ea60f8a3b79393f1b9e61a742036206eb0795ca23702e9ea61",
+    "scripts/audit_simplemos_m81_state_closure.py": "ddd672547a5d3719562d6289a58a1631ebdfe5d17167b49ded72d18f20475651"
+  }
+}
