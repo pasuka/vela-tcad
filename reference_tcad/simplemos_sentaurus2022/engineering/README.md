@@ -122,8 +122,21 @@ The original joined summary predates the provenance repair and still says
 `full_regression_passed=false`. It is preserved as history; the later regression
 record supersedes that status. The original n17 high-Vd retry exit was empty;
 the independent cached replay passed without changing 162 states. This is not
-recovery of the original process exit code. The older bad_alloc failure remains
-unexplained and was not reproduced in the successful retry.
+recovery of the original process exit code. The older bad_alloc failure was not
+reproduced in the successful retry. A later Windows Event 2004 was recovered
+within 0.16 seconds of the failure record, with system committed memory near
+its limit. This supports resource exhaustion; the largest process's owning
+task has not been recovered.
+
+The subsequent [mobility field audit](../../../docs/validation/simplemos_mobility_field_audit_2026-09-30.md)
+covers all 816 existing states without new DC solves. Same-export cell mobility
+maximum relative differences are 1.628364e-6 (electron) and 9.621782e-6 (hole).
+The unchanged 1e-7 cell gate passes 805/816 and 0/816 states respectively; these
+are separate from the qualified engineering current gates. Cell reconstruction
+and full-split production edge mobility agree within 3.01e-13. Native node
+display mobility is not interchangeable with conservative edge mobility; its
+exact display projection remains unqualified. Raw audit outputs remain outside
+this frozen numerical evidence package.
 
 See the [matrix closeout](../../../docs/validation/simplemos_engineering_joined_closeout_2026-09-30.md)
 and [subsequent provenance/commit review](../../../docs/validation/simplemos_provenance_and_commit_review_2026-09-30.md).
