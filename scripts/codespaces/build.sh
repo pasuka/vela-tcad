@@ -28,7 +28,7 @@ configure() {
         fi
         "$compiler" --version | head -n 1
     done
-    /usr/bin/python3 -c 'import h5py, numpy, PIL; print(h5py.version.info)'
+    /usr/bin/python3 -c 'import h5py, numpy, PIL, jsonschema; print(h5py.version.info)'
     mkdir -p "$build_dir"
     cmake -S . -B "$build_dir" -G Ninja \
         -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \

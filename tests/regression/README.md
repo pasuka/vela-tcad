@@ -6,17 +6,21 @@ contracts.  Device-level reusable inputs live under `reference_tcad/`; the
 repository no longer ships a separate set of uncalibrated engineering example
 decks.
 
-The Python regression environment needs NumPy, Pillow, and h5py. On Ubuntu,
-install `python3-numpy python3-pil python3-h5py` and use `/usr/bin/python3`
+The Python regression environment needs NumPy, Pillow, h5py, and jsonschema. On Ubuntu,
+install `python3-numpy python3-pil python3-h5py python3-jsonschema` and use `/usr/bin/python3`
 for CMake/CTest so that it sees the apt-installed modules. The C/C++ HDF5
 development library alone does not provide the Python `h5py` module.
 
 On Windows CI, install the UCRT64 `python-numpy`, `python-pillow`, and
-`python-h5py` packages and pass
+`python-h5py` and `python-jsonschema` packages and pass
 `-DPython3_EXECUTABLE="$(cygpath -m /ucrt64/bin/python.exe)"` to CMake from the
 MSYS2 shell. Check imports with `/ucrt64/bin/python.exe` as well: an unpinned
 CMake search can select the hosted runner's separate Python installation even
 when the shell's `python` is UCRT64.
+
+Sentaurus frontend tests require full JSON Schema validation, including nested
+properties. Missing `jsonschema` is an environment failure, not a reason to
+silently fall back to top-level structural checks.
 
 LDMOS linked-input manifests retain byte-exact SHA-256 checks. The repository's
 `.gitattributes` specifies the originally qualified LF or CRLF form for each

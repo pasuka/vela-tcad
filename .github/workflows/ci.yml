@@ -50,10 +50,11 @@ jobs:
             python3 \
             python3-pil \
             python3-numpy \
-            python3-h5py
+            python3-h5py \
+            python3-jsonschema
 
       - name: Check regression Python dependencies
-        run: /usr/bin/python3 -c "import h5py, numpy, PIL; print(h5py.version.info)"
+        run: /usr/bin/python3 -c "import h5py, numpy, PIL, jsonschema; print(h5py.version.info)"
 
       - name: Configure debug build
         # Keep optional OpenMP direct backends disabled in this Linux CI job.

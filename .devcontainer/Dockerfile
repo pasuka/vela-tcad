@@ -9,7 +9,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     build-essential gcc-16 g++-16 cmake ninja-build pkg-config git \
     libsuitesparse-dev libopenblas-pthread-dev libmetis-dev libhdf5-dev \
     libboost-dev libspdlog-dev libeigen3-dev nlohmann-json3-dev catch2 \
-    python3 python3-pil python3-numpy python3-h5py \
+    python3 python3-pil python3-numpy python3-h5py python3-jsonschema \
     && ln -sfn /usr/bin/gcc-16 /usr/local/bin/gcc \
     && ln -sfn /usr/bin/gcc-16 /usr/local/bin/cc \
     && ln -sfn /usr/bin/g++-16 /usr/local/bin/g++ \
