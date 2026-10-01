@@ -1,0 +1,8 @@
+{
+  "restored_paths": 795,
+  "remaining_mismatches": [],
+  "method": "exact git cat-file blob materialization; checkout-index kept stat-matching paths unchanged",
+  "all_byte_pinned_files_checked": 2450,
+  "all_byte_pinned_mismatches": 0,
+  "lf_scripts_materialized": 626
+}

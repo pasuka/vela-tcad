@@ -1,0 +1,206 @@
+[
+  {
+    "name": "simplemos_m2_tdr_gate",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_historical_provenance",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_engineering_join",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_regression_exit_capture",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_engineering_codespaces",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_reference_package",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_mobility_field_audit",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_evidence_archive",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_engineering_evidence_audit",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_engineering_matrix_contract",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m3_workflow",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m4_controlled_matrix",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m8_original_matrix",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m9_hfs_diagnostics",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m10_fixed_state_replay",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m11_mobility_factorial",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m12_terminal_sensitivity",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m13_spatial_attribution",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m14_adjoint_attribution",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m15_operator_adjoint",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m16_transport_factor",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m17_sg_secant",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m18_qf_edge_localization",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m19_drain_cut_audit",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m20_drain_adjacent_row_audit",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m21_incident_edge_balance",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m22_n23_hfs_deep_off",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m23_numerical_resolvability",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m24_contact_boundary_audit",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m25_qf_reference_transform_audit",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m26_first_layer_feedback_audit",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m27_cross_solver_response_audit",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m28_exact_bias_path_audit",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m29_bgn_srh_factorial",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m30_double_off_causal_closure",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m31_minority_poisson_perturbation",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m32_electron_qf_scaled_perturbation",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m33_region_resolved_interface_assembly",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m34_sentaurus_interface_box_probe",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m35_signed_average_box_assembly",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m36_boundary_contact_measure_audit",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m37_measure_contact_qf_ablation",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m38_ldmos_mechanism_crosscheck",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m39_bgn_chain_first_divergence",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m40_true_no_bgn_factorial",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m41_equal_ni_flux_ablation",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m42_no_bgn_self_consistent_interaction",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m43_sg_kernel_consistency",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m44_qf_coordinate_consistency",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m45_post_qf_rebaseline",
+    "exit": 0
+  },
+  {
+    "name": "simplemos_m46_full_matrix_requalification",
+    "exit": 0
+  }
+]

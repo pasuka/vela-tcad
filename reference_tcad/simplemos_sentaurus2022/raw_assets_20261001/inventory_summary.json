@@ -1,0 +1,38 @@
+{
+  "snapshot_date": "2026-10-01",
+  "source_head": "8680319e99fd3b2759f83788ffec9a76924d6e12",
+  "source_scope": "All matching assets physically present in this worktree, including existing compressed bundles unchanged. Excludes this archive output directory. Does not fetch states present only on T470p or Codespaces; not a full worktree backup.",
+  "selection": "h5/hdf5/tdr; existing zip/tar/gz/7z/xz/bz2/tgz; log/out/err/stdout/stderr/exit/exitcode/txt and stdout/stderr names; plt/vds/vds1/cmd/par/status.json",
+  "files": 60489,
+  "source_bytes": 7772846298,
+  "groups": {
+    "log_or_text_record": {
+      "files": 38276,
+      "bytes": 299814848
+    },
+    "existing_compressed_bundle": {
+      "files": 156,
+      "bytes": 2650082432
+    },
+    "native_curve_or_execution_context": {
+      "files": 18976,
+      "bytes": 227118292
+    },
+    "state_or_mesh": {
+      "files": 3081,
+      "bytes": 4595830726
+    }
+  },
+  "h5_count": 48,
+  "tdr_count": 3033,
+  "scan_errors": 0,
+  "local_deletions": 0,
+  "archive_phase_solver_runs": 0,
+  "structured_supplement": {
+    "files": 465,
+    "bytes": 10467811,
+    "selection": "CSV/JSON/JSONL names matching newton, iteration, attempt, solver log/stat/trace, convergence, residual log/trace/history or failure; excludes main ZIP members."
+  },
+  "combined_files": 60954,
+  "combined_source_bytes": 7783314109
+}

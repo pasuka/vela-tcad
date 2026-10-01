@@ -10,6 +10,10 @@ current directly.
 
 ## Current engineering entry (2026-09-30)
 
+The [2026-10-01 raw asset archive and main migration](raw_assets_20261001/README.md)
+adds persistent VM storage for local H5/TDR, solver logs and existing bundles,
+with complete member hashes and source-to-main commit mapping.
+
 Historical diagnostic files are indexed in the
 [evidence archive and recovery guide](local_evidence_20260930/README.md).
 Small records are checked in; detailed tables and figures have a fully hashed

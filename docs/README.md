@@ -6,6 +6,10 @@ evidence.
 
 ## Current References
 
+- [SimpleMOS raw states/logs archive and local main migration](../reference_tcad/simplemos_sentaurus2022/raw_assets_20261001/README.md):
+  complete local H5/TDR coverage, 60,954 assets including structured logs and existing bundles,
+  persistent VM storage, restore tool and source-to-main commit mapping.
+
 - [SimpleMOS historical evidence archive and recovery](../reference_tcad/simplemos_sentaurus2022/local_evidence_20260930/README.md):
   1,424 small records in Git; complete 1,946-file archive on the Sentaurus VM,
   with exact hashes and recovery of 522 detailed historical artifacts to their original paths.

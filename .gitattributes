@@ -75,3 +75,7 @@ docs/validation/simplemos_m52_direct_current_attribution_2026-09-02.md -text
 docs/validation/simplemos_m53_direct_current_full_matrix_2026-09-02.md -text
 docs/validation/simplemos_m54_terminal_common_mode_attribution_2026-09-02.md -text
 docs/validation/simplemos_m56_si_oxide_interface_topology_2026-09-02.md -text
+
+# SimpleMOS live script hashes are frozen in LF form in early evidence.
+scripts/*simplemos*.py text eol=lf
+tests/regression/*simplemos*.py text eol=lf

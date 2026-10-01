@@ -920,7 +920,7 @@ set_tests_properties(simplemos_m2_tdr_gate PROPERTIES
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 vela_set_windows_msys2_test_path(simplemos_m2_tdr_gate)
 
-foreach(_simplemos_contract IN ITEMS historical_provenance engineering_join regression_exit_capture engineering_codespaces reference_package mobility_field_audit evidence_archive)
+foreach(_simplemos_contract IN ITEMS historical_provenance engineering_join regression_exit_capture engineering_codespaces reference_package mobility_field_audit evidence_archive raw_archive)
     add_test(NAME simplemos_${_simplemos_contract}
         COMMAND ${Python3_EXECUTABLE} -m unittest
                 tests.regression.test_simplemos_${_simplemos_contract})

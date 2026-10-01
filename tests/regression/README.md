@@ -44,7 +44,7 @@ Generated TDR, VTK, accepted-state, and log files remain under ignored
 inputs or explicitly generated temporary fixtures and must not present
 synthetic smoke data as commercial-tool calibration evidence.
 
-SimpleMOS historical M9/M10/M12 and M30–M46 checks validate original report
+SimpleMOS historical M9/M10/M12 and M30-M46 checks validate original report
 and artifact bytes against archived source provenance, not the evolving live
 source tree. See `tests/fixtures/simplemos_historical_sources/README.md` for
 the 132 recovered source revisions and the one explicitly unrecovered source
