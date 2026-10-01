@@ -437,6 +437,8 @@ std::string sanitizeFilename(std::string value)
 bool isDonorConcentrationField(const std::string& name)
 {
     return name == "DonorConcentration" ||
+        name == "PActive" ||
+        name == "AsActive" ||
         name == "PhosphorusActiveConcentration" ||
         name == "ArsenicActiveConcentration" ||
         name == "AntimonyActiveConcentration" ||
@@ -453,6 +455,7 @@ bool isAggregateDonorConcentrationField(const std::string& name)
 bool isAcceptorConcentrationField(const std::string& name)
 {
     return name == "AcceptorConcentration" ||
+        name == "BActive" ||
         name == "BoronActiveConcentration" ||
         name == "AluminumActiveConcentration" ||
         name == "IndiumActiveConcentration" ||
